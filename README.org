@@ -4,7 +4,7 @@ Base is an industrial-strength alternative to the OCaml standard
 library.  It was developed by Jane Street, which is the largest
 industrial user of OCaml.
 
-Base aims to be fast to build and as such as no dependencies outside
+Base aims to be fast to build and as such has no dependencies outside
 of the compiler distribution (this is not true at the moment but will
 be soon).
 
