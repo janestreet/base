@@ -1,4 +1,4 @@
-version = "$(pkg_version)"
+version = "VERSION"
 description = "Standard library for OCaml"
 requires = "base.0 base.shadow-stdlib"
 archive(byte  ) = "base.cma"
@@ -8,7 +8,7 @@ plugin(native) = "base.cmxs"
 exists_if = "base.cma"
 
 package "0" (
-  version = "$(pkg_version)"
+  version = "VERSION"
   description = ""
   requires = "base.caml"
   archive(byte  ) = "base0.cma"
@@ -19,7 +19,7 @@ package "0" (
 )
 
 package "caml" (
-  version = "$(pkg_version)"
+  version = "VERSION"
   description = ""
   requires = ""
   archive(byte  ) = "caml.cma"
@@ -30,7 +30,7 @@ package "caml" (
 )
 
 package "shadow-stdlib" (
-  version = "$(pkg_version)"
+  version = "VERSION"
   description = ""
   requires = "base.caml"
   archive(byte  ) = "shadow_stdlib.cma"

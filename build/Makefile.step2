@@ -1,0 +1,66 @@
+# -*- makefile -*-
+
+default: all
+
+include build/Makefile.config
+include build/Makefile.rules
+
+# compiler-stdlib
+
+compiler-stdlib/src/caml.cmo: compiler-stdlib/src/caml.ml
+	$(OCAMLC) -I compiler-stdlib/src -g -bin-annot -c $<
+
+compiler-stdlib/src/caml.cmx: compiler-stdlib/src/caml.ml
+	$(OCAMLOPT) -I compiler-stdlib/src -g -bin-annot -c $<
+
+# shadow-stdlib
+
+shadow-stdlib/src/shadow_stdlib.cmo: shadow-stdlib/src/shadow_stdlib.ml shadow-stdlib/src/shadow_stdlib.cmi compiler-stdlib/src/caml.cmo
+	$(OCAMLC) -I compiler-stdlib/src -I shadow-stdlib/src -g -bin-annot -c $<
+
+shadow-stdlib/src/shadow_stdlib.cmx: shadow-stdlib/src/shadow_stdlib.ml shadow-stdlib/src/shadow_stdlib.cmi compiler-stdlib/src/caml.cmx
+	$(OCAMLOPT) -I compiler-stdlib/src -I shadow-stdlib/src -g -bin-annot -c $<
+
+shadow-stdlib/src/shadow_stdlib.cmi: shadow-stdlib/src/shadow_stdlib.mli
+	$(OCAMLC) -I compiler-stdlib/src -I shadow-stdlib/src -g -bin-annot -c $<
+
+# base
+
+wrapper/base.cmo: wrapper/base.ml compiler-stdlib/src/caml.cmo shadow-stdlib/src/shadow_stdlib.cmi bootstrap/src/base0.cma
+	$(OCAMLC) -I compiler-stdlib/src -I shadow-stdlib/src -I bootstrap/src -I wrapper -g -bin-annot -c $<
+
+wrapper/base.cmx: wrapper/base.ml compiler-stdlib/src/caml.cmx shadow-stdlib/src/shadow_stdlib.cmx bootstrap/src/base0.cmxa
+	$(OCAMLOPT) -I compiler-stdlib/src -I shadow-stdlib/src -I bootstrap/src -I wrapper -g -bin-annot -c $<
+
+# base0
+
+bootstrap/src/base0.cmo: bootstrap/src/base0.ml-gen
+	$(OCAMLC) -c -no-alias-deps -w -49 -o $@ -g -bin-annot -impl $<
+
+bootstrap/src/base0.cmx: bootstrap/src/base0.ml-gen
+	$(OCAMLOPT) -c -no-alias-deps -w -49 -o $@ -g -bin-annot -impl $<
+
+bootstrap/src/libbase0_stubs.a: $(BASE0_O_FILES)
+	$(OCAMLMKLIB) -o bootstrap/src/base0_stubs $(BASE0_O_FILES)
+
+bootstrap/src/base0.cma: $(BASE0_CMO_FILES)
+	$(OCAMLC) -a -o $@ -dllib -lbase0_stubs -cclib -lbase0_stubs -g $(BASE0_CMO_FILES)
+
+bootstrap/src/base0.cmxa: $(BASE0_CMX_FILES)
+	$(OCAMLOPT) -a -o $@ -cclib -lbase0_stubs -g $(BASE0_CMX_FILES)
+
+# Other libraries
+
+%.cma: %.cmo
+	$(OCAMLC) -a -o $@ -g $<
+
+%.cmxa: %.cmx
+	$(OCAMLOPT) -a -o $@ -g $<
+
+shadow-stdlib/src/shadow_stdlib.mli: shadow-stdlib/gen/gen.exe compiler-stdlib/src/caml.cmo
+	shadow-stdlib/gen/gen.exe compiler-stdlib/src/caml.cmi > $@
+
+shadow-stdlib/gen/gen.exe: shadow-stdlib/gen/gen.ml shadow-stdlib/gen/mapper.ml compiler-stdlib/src/caml.cmo
+	$(OCAMLC) -o $@ -I +compiler-libs -I shadow-stdlib/gen ocamlcommon.cma ocamlbytecomp.cma ocamltoplevel.cma str.cma compiler-stdlib/src/caml.cmo -g shadow-stdlib/gen/mapper.ml shadow-stdlib/gen/gen.ml
+
+all: $(TARGETS) bootstrap/src/libbase0_stubs.a
