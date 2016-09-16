@@ -1,0 +1,10 @@
+(library
+ ((name base)
+  (wrapped false)
+  (public_name base)
+  (libraries (base0 shadow_stdlib))
+  (js_of_ocaml ())
+  ;; This library is not bootstrapped so we don't use preprocessors
+  (preprocess ((no_preprocessing All)))
+  ))
+

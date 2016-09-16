@@ -1,0 +1,8 @@
+(library
+ ((name base_test)
+  (libraries (base
+              sexplib
+              nums
+              expect_test_helpers_kernel))))
+
+(toplevel_expect_tests ((libraries (base))))

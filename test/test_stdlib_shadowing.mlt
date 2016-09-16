@@ -1,0 +1,24 @@
+(* Additional shadowing tests, to make sure the [@@deprecated] attributes are properly
+   transported in [Base] *)
+open Base
+
+let () = seek_in stdin 0
+[%%expect{|
+Line _, characters 9-16:
+Warning 3: deprecated: Base.seek_in
+[2016-09] use Caml.seek_in instead
+Line _, characters 17-22:
+Warning 3: deprecated: Base.stdin
+[2016-09] use Caml.stdin instead
+Line _:
+Error: Some fatal warnings were triggered (2 occurrences)
+|}]
+
+let _ = StringLabels.make 10 'x'
+[%%expect{|
+Line _, characters 8-25:
+Warning 3: deprecated: module Base.StringLabels
+[2016-09] use Caml.StringLabels instead
+Line _:
+Error: Some fatal warnings were triggered (1 occurrences)
+|}]

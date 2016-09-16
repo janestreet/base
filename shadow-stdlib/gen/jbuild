@@ -1,0 +1,7 @@
+(executables
+ ((names (gen))
+  (libraries (str ocamlopttoplevel caml))
+  (link_flags (-linkall))
+  (preprocess ((no_preprocessing all)))))
+
+(ocamllex (mapper))

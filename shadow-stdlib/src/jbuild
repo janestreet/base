@@ -1,0 +1,15 @@
+(library
+ ((name shadow_stdlib)
+  (public_name base.shadow-stdlib)
+  (wrapped false)
+  (libraries (caml))
+  (preprocess ((no_preprocessing all)))))
+
+;; Generate a file containing:
+;;
+;; val output : out_channel -> string -> unit [@@deprecated "..."]
+;; type nonrec in_channel = in_channel [@@deprecated "..."]
+(rule
+ ((targets (shadow_stdlib.mli))
+  (deps (../gen/gen.exe ${ROOT}/.liblinks/caml/caml.cmi))
+  (action "${<} ${ROOT}/.liblinks/caml/caml.cmi > ${@}")))

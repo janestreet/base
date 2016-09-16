@@ -1,0 +1,1 @@
+let owner = "nobody"

@@ -1,0 +1,40 @@
+(rule
+ ((targets (base_int63_backend.ml))
+  (deps (select-int63-backend.c))
+  (action "${OCAMLC} -ccopt -E -c ${<} | \
+             grep '^\"OUT:[^\"]*\"$' | \
+             sed 's/\"OUT:\\([^\"]*\\)\"/\\1/' > ${@}")))
+
+;; Create the target atomically to avoid having a window where the file is truncated but
+;; not yet written to, which is problematic because the file is committed.
+(rule
+ ((targets (pow_overflow_bounds.ml))
+  (deps (../generate/generate_pow_overflow_bounds.exe))
+  (action "tmp=\"$(mktemp --tmpdir pow_overflowXXXXXX)\"
+           ${<} > \"$tmp\"
+           mv \"$tmp\" ${@}")))
+
+;; The idiom for base is `open Base`. Since this is not properly
+;; supported at the moment, the implementation is in the library base0
+;; and we have an unwrapped library `base` containing only `include
+;; Base0.Std`.
+(library
+ ((name base0_non_bootstrapped)
+  (inline_tests ((javascript build_and_run)))
+  (libraries
+   (caml
+    ppx_inline_test_lib))
+  (c_flags (:standard -D_LARGEFILE64_SOURCE -mpopcnt))
+  (c_names
+   ;; If you add c stubs in here, ask yourself this question: would it make sense/can it
+   ;; be implemented under windows and in javascript? If not, perhaps this piece of code
+   ;; should go in core instead, since base is supposed to be a portable library.
+   (exn_stubs
+    int_math_stubs
+    internalhash_stubs
+    heap_block_stubs
+    hash_stubs))
+  (preprocess (((pps (BASE -check-doc-comments -inside-base -no-optcomp)) All)))
+  (js_of_ocaml ())))
+
+(ocamllex (hex_lexer))

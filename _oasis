@@ -1,0 +1,152 @@
+OASISFormat:           0.4
+OCamlVersion:          >= 4.03.0
+FindlibVersion:        >= 1.3.2
+Name:                  base
+Version:               114.10+84
+Synopsis:              Standard library for OCaml
+Authors:               Jane Street Group, LLC <opensource@janestreet.com>
+Copyrights:            (C) 2016 Jane Street Group LLC <opensource@janestreet.com>
+Maintainers:           Jane Street Group, LLC <opensource@janestreet.com>
+License:               Apache-2.0
+LicenseFile:           LICENSE.txt
+Homepage:              https://github.com/janestreet/base
+Plugins:               StdFiles (0.3), DevFiles (0.3)
+XStdFilesAUTHORS:      false
+XStdFilesREADME:       false
+BuildTools:            ocamlbuild
+BetaFeatures:          section_object
+AlphaFeatures:         ocamlbuild_more_args
+XOCamlbuildPluginTags: package(js-build-tools.ocamlbuild_goodies)
+FilesAB:               META.ab
+Description:
+  Base is a consisitent and portable standard library for OCaml. It is a
+  replacement to the stdlib shipped with the compiler rather than an
+  extensions.
+
+Library base
+  Path:         wrapper
+  Pack:         false
+  Modules:      Base
+  BuildDepends: base0,
+                shadow_stdlib
+
+Library base0
+  Path:         bootstrap/src
+  Pack:         true
+  Modules:      Applicative,
+                Applicative_intf,
+                Array_permute,
+                Avltree,
+                Base_array,
+                Base_char,
+                Base_hash_set,
+                Base_hash_set_intf,
+                Base_hashtbl,
+                Base_hashtbl_intf,
+                Base_int,
+                Base_int32,
+                Base_int63,
+                Base_int63_backend,
+                Base_int63_backends,
+                Base_int63_emul,
+                Base_int64,
+                Base_lazy,
+                Base_list,
+                Base_map,
+                Base_map_intf,
+                Base_nativeint,
+                Base_printf,
+                Base_random,
+                Base_set,
+                Base_set_intf,
+                Base_string,
+                Binary_search,
+                Binary_searchable,
+                Binary_searchable_intf,
+                Blit,
+                Blit_intf,
+                Bool,
+                Commutative_group,
+                Comparable,
+                Comparable_intf,
+                Comparator,
+                Container,
+                Container_intf,
+                Either,
+                Either_intf,
+                Equal,
+                Error,
+                Exn,
+                Field,
+                Float,
+                Float0,
+                Floatable,
+                Fn,
+                Hash,
+                Hash_intf,
+                Hashable,
+                Hasher,
+                Heap_block,
+                Hex_lexer,
+                Identifiable,
+                Import,
+                Info,
+                Info_intf,
+                Int_conversions,
+                Int_intf,
+                Int_math,
+                Int_pow2,
+                Int_replace_polymorphic_compare,
+                Intable,
+                Invariant,
+                Invariant_intf,
+                Maybe_bound,
+                Monad,
+                Monad_intf,
+                Option,
+                Or_error,
+                Ordered_collection_common,
+                Ordering,
+                Poly,
+                Polymorphic_compare,
+                Polymorphic_compare_intf,
+                Popcount,
+                Pow_overflow_bounds,
+                Pretty_printer,
+                Result,
+                Sequence,
+                Sexp,
+                Sexp0,
+                Sexp_conv,
+                Sexp_conv_error,
+                Sexpable,
+                Sexplib,
+                Sign,
+                Sign0,
+                Source_code_position,
+                Source_code_position0,
+                Staged,
+                Std,
+                Stringable,
+                T,
+                Validate,
+                Variant,
+                With_return,
+                Word_size
+  BuildDepends: caml
+  CSources:     exn_stubs.c,
+                hash_stubs.c,
+                heap_block_stubs.c,
+                int_math_stubs.c,
+                internalhash_stubs.c
+
+Library caml
+  Path:    compiler-stdlib/src
+  Pack:    false
+  Modules: Caml
+
+Library shadow_stdlib
+  Path:         shadow-stdlib/src
+  Pack:         false
+  Modules:      Shadow_stdlib
+  BuildDepends: caml

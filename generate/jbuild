@@ -1,0 +1,13 @@
+(rule
+ ((targets (generate_pow_overflow_bounds.exe
+            ;; List {cmx,cmi,o} as targets to avoid removal as stale-artifacts
+            generate_pow_overflow_bounds.cmi
+            generate_pow_overflow_bounds.cmx
+            generate_pow_overflow_bounds.o
+            ))
+  (deps (generate_pow_overflow_bounds.ml))
+  ;; This needs to be pure OCaml (no Core!), since we need this in order to build Core.
+  (action "${OCAMLOPT} nums.cmxa ${<} -o generate_pow_overflow_bounds.exe")))
+
+;; Have the default build in this directory do something useful.
+(alias ((name DEFAULT) (deps (generate_pow_overflow_bounds.exe))))

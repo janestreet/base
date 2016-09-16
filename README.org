@@ -1,0 +1,43 @@
+* Base
+
+Base is an industrial-strength alternative to the OCaml standard
+library.  It was developed by Jane Street, which is the largest
+industrial user of OCaml.
+
+Base aims to be fast to build and as such as no dependencies outside
+of the compiler distribution (this is not true at the moment but will
+be soon).
+
+It is fully portable and especially work in environment such as
+javascript. As such it doesn't provides IO or other system dependant
+functions which are left to third-party libraries.
+
+** How to use Base
+
+Base is a full standard library replacement rather that an extension.
+This is to help enforce the Base conventions in code using it. The
+recommended way to use it is through the =-open= command-line argument
+of the compiler:
+
+#+begin_src
+$ ocamlc -open Base ...
+#+end_src
+
+This will ensure that all of your source files are in the Base
+namespace rather than in the one of the default standard library from
+the compiler discribution.
+
+** Using the OCaml standard library with Base
+
+After an =open Base=, all the modules, values, types, ... coming from
+the OCaml standard library that one normally gets in the default
+environment are deprecated.
+
+In order to access these values, one must use the =Caml= library,
+which re-exports them all through the toplevel name =Caml=:
+=Caml.String=, =Caml.print_string=, ...
+
+** Base and ppx rewriters
+
+The code of Base itself uses ppx rewriters such as [[https://github.com/janestreet/ppx_sexp_conv][ppx_sexp_conv]]. In
+order to have 0-dependencies, the code of Base is bootstrapped.

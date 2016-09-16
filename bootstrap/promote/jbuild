@@ -1,0 +1,13 @@
+(executables
+ ((names (promote))
+  (libraries (core shexp_process))))
+
+(alias
+ ((name runtest)
+  (deps (promote.exe
+         ../../../../.ppx/BASE/ppx.exe
+         (glob_files ../../src/{jbuild,*.{c,h,ml,mli,mll}})))
+  (action "./promote.exe -check \
+             -ppx ${ROOT}/.ppx/BASE/ppx.exe \
+             -src ${ROOT}/lib/base/src       \
+             -dst ${ROOT}/lib/base/bootstrap")))
