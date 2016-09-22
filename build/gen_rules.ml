@@ -170,7 +170,7 @@ let () =
   in
   pr "TARGETS := %s"
     (String.concat ~sep:" "
-       (targets ".cma" @ if has_ocamlopt then targets ".cmxa" else []));
+       (targets ".cma" @ if has_ocamlopt then targets ".cmxa" @ targets ".cmxs" else []));
   let sorted_mods = topsort deps in
   let all_cm ext =
     ((bootstrap_dir ^/ "base0" ^ ext) ::

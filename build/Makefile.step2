@@ -57,6 +57,11 @@ bootstrap/src/base0.cmxa: $(BASE0_CMX_FILES)
 %.cmxa: %.cmx
 	$(OCAMLOPT) -a -o $@ -g $<
 
+bootstrap/src/base0.cmxs: bootstrap/src/libbase0_stubs.a
+
+%.cmxs: %.cmxa
+	$(OCAMLOPT) -I $(dir $<) -shared -linkall -o $@ $<
+
 shadow-stdlib/src/shadow_stdlib.mli: shadow-stdlib/gen/gen.exe compiler-stdlib/src/caml.cmo
 	shadow-stdlib/gen/gen.exe compiler-stdlib/src/caml.cmi > $@
 
