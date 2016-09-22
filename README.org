@@ -5,8 +5,7 @@ library.  It was developed by Jane Street, which is the largest
 industrial user of OCaml.
 
 Base aims to be fast to build and as such has no dependencies outside
-of the compiler distribution (this is not true at the moment but will
-be soon).
+of the compiler distribution.
 
 It is fully portable and especially work in environment such as
 javascript. As such it doesn't provides IO or other system dependant
