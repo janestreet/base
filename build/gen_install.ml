@@ -52,10 +52,15 @@ let () =
   in
   pr "lib: [";
   pr "  \"META\"";
+  pr "  \"opam\"";
   List.iter lib ~f:(fun fn ->
       pr "  %S" fn);
   pr "]";
   pr "stublibs: [";
   List.iter stublibs ~f:(fun fn ->
       pr "  %S" fn);
+  pr "]";
+  pr "doc: [";
+  pr "  \"README.org\"";
+  pr "  \"LICENSE.txt\"";
   pr "]"
