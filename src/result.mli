@@ -7,20 +7,39 @@ open! Import
 
     {[
       let ric_of_ticker = function
-      | "IBM" -> Ok "IBM.N"
-      | "MSFT" -> Ok "MSFT.OQ"
-      | "AA" -> Ok "AA.N"
-      | "CSCO" -> Ok "CSCO.OQ"
-      | _ as ticker -> Error (sprintf "can't find ric of %s" ticker)
+        | "IBM" -> Ok "IBM.N"
+        | "MSFT" -> Ok "MSFT.OQ"
+        | "AA" -> Ok "AA.N"
+        | "CSCO" -> Ok "CSCO.OQ"
+        | _ as ticker -> Error (sprintf "can't find ric of %s" ticker)
     ]}
 
     The return type of ric_of_ticker could be [string option], but [(string, string)
-    Result.t] gives more control over the error message.
-*)
+    Result.t] gives more control over the error message. *)
 type ('ok, 'err) t = ('ok, 'err) Pervasives.result =
   | Ok of 'ok
   | Error of 'err
-[@@deriving sexp, compare, hash]
+[@@deriving_inline sexp, compare, hash]
+include
+sig
+  [@@@ocaml.warning "-32"]
+  val hash_fold_t :
+    (Ppx_hash_lib.Std.Hash.state -> 'ok -> Ppx_hash_lib.Std.Hash.state) ->
+    (Ppx_hash_lib.Std.Hash.state -> 'err -> Ppx_hash_lib.Std.Hash.state)
+    ->
+    Ppx_hash_lib.Std.Hash.state ->
+    ('ok,'err) t -> Ppx_hash_lib.Std.Hash.state
+  val compare :
+    ('ok -> 'ok -> int) ->
+    ('err -> 'err -> int) -> ('ok,'err) t -> ('ok,'err) t -> int
+  val t_of_sexp :
+    (Sexplib.Sexp.t -> 'ok) ->
+    (Sexplib.Sexp.t -> 'err) -> Sexplib.Sexp.t -> ('ok,'err) t
+  val sexp_of_t :
+    ('ok -> Sexplib.Sexp.t) ->
+    ('err -> Sexplib.Sexp.t) -> ('ok,'err) t -> Sexplib.Sexp.t
+end
+[@@@end]
 
 include Monad.S2 with type ('a,'err) t := ('a,'err) t
 
@@ -35,7 +54,10 @@ val failf : ('a, unit, string, (_, string) t) format4 -> 'a
 val is_ok    : (_, _) t -> bool
 val is_error : (_, _) t -> bool
 
-val ok    : ('ok, _   ) t -> 'ok  option
+val ok             : ('ok, _     ) t -> 'ok option
+val ok_exn         : ('ok, exn   ) t -> 'ok
+val ok_or_failwith : ('ok, string) t -> 'ok
+
 val error : (_  , 'err) t -> 'err option
 
 val of_option : 'ok option -> error:'err -> ('ok, 'err) t
@@ -55,21 +77,15 @@ val combine
   -> ('ok3, 'err) t
 
 (** [ok_fst] is useful with [List.partition_map].  Continuing the above example:
-{[
-    let rics, errors = List.partition_map ~f:Result.ok_fst
-      (List.map ~f:ric_of_ticker ["AA"; "F"; "CSCO"; "AAPL"]) ]} *)
+    {[
+      let rics, errors = List.partition_map ~f:Result.ok_fst
+                           (List.map ~f:ric_of_ticker ["AA"; "F"; "CSCO"; "AAPL"]) ]} *)
 val ok_fst : ('ok, 'err) t -> [ `Fst of 'ok | `Snd of 'err ]
 
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false *)
 val ok_if_true : bool -> error : 'err -> (unit, 'err) t
 
 val try_with : (unit -> 'a) -> ('a, exn) t
-
-(** [ok_exn t] returns [x] if [t = Ok x], and raises [exn] if [t = Error exn] *)
-val ok_exn : ('ok, exn) t -> 'ok
-
-(** raises [Failure] in the [Error] case *)
-val ok_or_failwith : ('ok, string) t -> 'ok
 
 (** [ok_unit = Ok ()], used to avoid allocation as a performance hack *)
 val ok_unit : (unit, _) t

@@ -1,10 +1,13 @@
 open! Import
 
-type 'a t = 'a [@@deriving sexp_of]
+type 'a t = 'a [@@deriving_inline sexp_of]
+let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+  fun _of_a  -> fun v  -> _of_a v
+[@@@end]
 
-external is_heap_block : Obj.t -> bool = "core_heap_block_is_heap_block" [@@noalloc]
+external is_heap_block : Caml.Obj.t -> bool = "core_heap_block_is_heap_block" [@@noalloc]
 
-let is_ok v = is_heap_block (Obj.repr v)
+let is_ok v = is_heap_block (Caml.Obj.repr v)
 
 let create v = if is_ok v then Some v else None
 
@@ -18,4 +21,4 @@ let value t = t
 
 let bytes_per_word = Word_size.(num_bits word_size) / 8
 
-let bytes (type a) (t : a t) = (Obj.size (Obj.repr (t : a t)) + 1) * bytes_per_word
+let bytes (type a) (t : a t) = (Caml.Obj.size (Caml.Obj.repr (t : a t)) + 1) * bytes_per_word

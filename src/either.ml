@@ -1,9 +1,110 @@
 open! Import
 
+module Array = Array0
+
 type ('f, 's) t =
   | First  of 'f
   | Second of 's
-[@@deriving compare, hash, sexp]
+[@@deriving_inline compare, hash, sexp]
+let t_of_sexp :
+  'f 's .
+       (Sexplib.Sexp.t -> 'f) ->
+  (Sexplib.Sexp.t -> 's) -> Sexplib.Sexp.t -> ('f,'s) t
+  = fun (type f) -> fun (type s) ->
+    (let _tp_loc = "src/either.ml.t"  in
+     fun _of_f  ->
+     fun _of_s  ->
+       function
+       | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                               ("first"|"First" as _tag))::sexp_args) as _sexp ->
+         (match sexp_args with
+          | v0::[] -> let v0 = _of_f v0  in First v0
+          | _ ->
+            Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+       | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                               ("second"|"Second" as _tag))::sexp_args) as _sexp ->
+         (match sexp_args with
+          | v0::[] -> let v0 = _of_s v0  in Second v0
+          | _ ->
+            Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+       | Sexplib.Sexp.Atom ("first"|"First") as sexp ->
+         Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+       | Sexplib.Sexp.Atom ("second"|"Second") as sexp ->
+         Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+       | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
+         Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
+       | Sexplib.Sexp.List [] as sexp ->
+         Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
+       | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp : (Sexplib.Sexp.t
+                                                                    ->
+                                                                    f) ->
+       (Sexplib.Sexp.t
+        -> s) ->
+       Sexplib.Sexp.t
+       ->
+         (f,s) t)
+
+let sexp_of_t :
+  'f 's .
+       ('f -> Sexplib.Sexp.t) ->
+  ('s -> Sexplib.Sexp.t) -> ('f,'s) t -> Sexplib.Sexp.t
+  = fun (type f) -> fun (type s) ->
+    (fun _of_f  ->
+       fun _of_s  ->
+         function
+         | First v0 ->
+           let v0 = _of_f v0  in
+           Sexplib.Sexp.List [Sexplib.Sexp.Atom "First"; v0]
+         | Second v0 ->
+           let v0 = _of_s v0  in
+           Sexplib.Sexp.List [Sexplib.Sexp.Atom "Second"; v0] : (f ->
+                                                                 Sexplib.Sexp.t)
+         ->
+           (s ->
+            Sexplib.Sexp.t)
+         ->
+           (f,
+            s) t ->
+         Sexplib.Sexp.t)
+
+let hash_fold_t :
+  'f 's .
+       (Ppx_hash_lib.Std.Hash.state -> 'f -> Ppx_hash_lib.Std.Hash.state) ->
+  (Ppx_hash_lib.Std.Hash.state -> 's -> Ppx_hash_lib.Std.Hash.state) ->
+  Ppx_hash_lib.Std.Hash.state ->
+  ('f,'s) t -> Ppx_hash_lib.Std.Hash.state
+  = fun (type f) -> fun (type s) ->
+    (fun _hash_fold_f  ->
+       fun _hash_fold_s  ->
+       fun hsv  ->
+       fun arg  ->
+         match arg with
+         | First _a0 ->
+           _hash_fold_f (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+         | Second _a0 ->
+           _hash_fold_s (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0 :
+             (Ppx_hash_lib.Std.Hash.state -> f -> Ppx_hash_lib.Std.Hash.state) ->
+         (Ppx_hash_lib.Std.Hash.state -> s -> Ppx_hash_lib.Std.Hash.state) ->
+         Ppx_hash_lib.Std.Hash.state -> (f,s) t -> Ppx_hash_lib.Std.Hash.state)
+
+let compare :
+  'f 's .
+       ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f,'s) t -> ('f,'s) t -> int
+  =
+  fun _cmp__f  ->
+  fun _cmp__s  ->
+  fun a__001_  ->
+  fun b__002_  ->
+    if Pervasives.(==) a__001_ b__002_
+    then 0
+    else
+      (match (a__001_, b__002_) with
+       | (First _a__006_,First _b__005_) -> _cmp__f _a__006_ _b__005_
+       | (First _,_) -> (-1)
+       | (_,First _) -> 1
+       | (Second _a__004_,Second _b__003_) -> _cmp__s _a__004_ _b__003_)
+
+[@@@end]
 
 let swap = function
   | First  x -> Second x
@@ -180,7 +281,7 @@ module Make_focused (M : sig
       false)
   ;;
 
-  let mem ?(equal = (=)) t a = exists t ~f:(equal a)
+  let mem ?(equal = Poly.equal) t a = exists t ~f:(equal a)
   ;;
 
   let for_all c ~f =
@@ -202,10 +303,8 @@ module Make_focused (M : sig
   ;;
 
   let to_list c = List.rev (fold c ~init:[] ~f:(fun acc x -> x :: acc))
-  ;;
 
   let to_array c = Array.of_list (to_list c)
-  ;;
 
   let min_elt t ~cmp =
     fold t ~init:None ~f:(fun acc elt ->

@@ -1,32 +1,28 @@
 open StdLabels
 
 let () =
+  let cmi_fn, oc =
+    match Sys.argv with
+    | [|_; "-caml-cmi"; cmi_fn; "-o"; fn|] ->
+      (cmi_fn, open_out fn)
+    | _ ->
+      failwith "bad command line arguments"
+  in
+
   try
-    let dir = Filename.dirname Sys.argv.(1)
-    and module_ =
-      Filename.chop_extension
-        (String.capitalize (Filename.basename Sys.argv.(1))) in
-    Clflags.include_dirs := dir :: !Clflags.include_dirs;
-    Toploop.set_paths ();
-    Warnings.parse_options false "-58";
+    let cmi = Cmi_format.read_cmi cmi_fn in
     let buf = Buffer.create 512 in
     let pp = Format.formatter_of_buffer buf in
     Format.pp_set_margin pp max_int; (* so we can parse line by line below *)
-    let res =
-      Toploop.execute_phrase true pp
-        (!Toploop.parse_toplevel_phrase
-           (Lexing.from_string ("include " ^ module_ ^ ";;")))
-    in
-    assert res;
+    Format.fprintf pp "%a@." Printtyp.signature cmi.Cmi_format.cmi_sign;
     let s = Buffer.contents buf in
     let lines = Str.split (Str.regexp "\n") s in
-    Buffer.clear buf;
-    Buffer.add_string buf "[@@@warning \"-3\"]";
+    Printf.fprintf oc "[@@@warning \"-3\"]\n\n";
     List.iter lines ~f:(fun line ->
-      Printf.bprintf buf "%s\n" (Mapper.line (Lexing.from_string line)));
-    let s = Buffer.contents buf in
-    Parse.interface (Lexing.from_string s)
-    |> Format.printf "%a@." Pprintast.signature
+      let repl = Mapper.line (Lexing.from_string line) in
+      if repl <> "" then
+        Printf.fprintf oc "%s\n\n" repl);
+    flush oc
   with exn ->
     Location.report_exception Format.err_formatter exn;
     exit 2

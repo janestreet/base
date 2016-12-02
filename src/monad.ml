@@ -1,8 +1,26 @@
 open! Import
 
+module List = List0
+
 include Monad_intf
 
-module Make2 (M : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) M.t = struct
+module type Basic_general = sig
+  type ('a, 'i, 'j, 'd, 'e) t
+
+  val bind
+    :  ('a, 'i, 'j, 'd, 'e) t
+    -> f:('a -> ('b, 'j, 'k, 'd, 'e) t)
+    -> ('b, 'i, 'k, 'd, 'e) t
+
+  val map
+    : [ `Define_using_bind
+      | `Custom of (('a, 'i, 'j, 'd, 'e) t -> f:('a -> 'b) -> ('b, 'i, 'j, 'd, 'e) t)
+      ]
+
+  val return : 'a -> ('a, 'i, 'i, 'd, 'e) t
+end
+
+module Make_general (M : Basic_general) = struct
 
   let bind   = M.bind
   let return = M.return
@@ -51,12 +69,30 @@ module Make2 (M : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) M.t = struct
 
 end
 
-module Make (M : Basic) : S with type 'a t := 'a M.t = struct
-  include Make2 (struct
-      type ('a, 'e) t = 'a M.t
-      include (M : Basic with type 'a t := 'a M.t)
-    end)
-end
+module Make_indexed (M : Basic_indexed)
+  : S_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t =
+  Make_general (struct
+    type ('a, 'i, 'j, 'd, 'e) t = ('a, 'i, 'j) M.t
+    include (M : Basic_indexed with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t)
+  end)
+
+module Make3 (M : Basic3) : S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) M.t =
+  Make_general (struct
+    type ('a, 'i, 'j, 'd, 'e) t = ('a, 'd, 'e) M.t
+    include (M : Basic3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t)
+  end)
+
+module Make2 (M : Basic2) : S2 with type ('a, 'd) t := ('a, 'd) M.t =
+  Make_general (struct
+    type ('a, 'i, 'j, 'd, 'e) t = ('a, 'd) M.t
+    include (M : Basic2 with type ('a, 'b) t := ('a, 'b) M.t)
+  end)
+
+module Make (M : Basic) : S with type 'a t := 'a M.t =
+  Make_general (struct
+    type ('a, 'i, 'j, 'd, 'e) t = 'a M.t
+    include (M : Basic with type 'a t := 'a M.t)
+  end)
 
 module Ident = struct
   type 'a t = 'a

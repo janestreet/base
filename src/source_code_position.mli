@@ -5,13 +5,22 @@ open! Import
 
 (** See INRIA's OCaml documentation for a description of these fields. *)
 type t
-  = Lexing.position
+  = Caml.Lexing.position
   = { pos_fname : string
     ; pos_lnum  : int
     ; pos_bol   : int
     ; pos_cnum  : int
     }
-  [@@deriving hash, sexp_of]
+[@@deriving_inline hash, sexp_of]
+include
+sig
+  [@@@ocaml.warning "-32"]
+  val sexp_of_t : t -> Sexplib.Sexp.t
+  val hash_fold_t :
+    Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+end
+[@@@end]
 (** [sexp_of_t] uses the form ["FILE:LINE:COL"], and does not have a corresponding
     [of_sexp]. *)
 

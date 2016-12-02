@@ -1,8 +1,33 @@
 open! Import
 
-module List = ListLabels
+type 'a t = 'a option [@@deriving_inline sexp, compare, hash]
+let hash_fold_t :
+  'a .
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
+  Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
+  =
+  fun _hash_fold_a  ->
+  fun hsv  ->
+  fun arg  ->
+    hash_fold_option (fun hsv  -> fun arg  -> _hash_fold_a hsv arg) hsv
+      arg
 
-type 'a t = 'a option [@@deriving sexp, compare, hash]
+let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
+  fun _cmp__a  ->
+  fun a__001_  ->
+  fun b__002_  ->
+    match (a__001_, b__002_) with
+    | (None ,None ) -> 0
+    | (None ,Some _) -> (-1)
+    | (Some _,None ) -> 1
+    | (Some _x__003_,Some _x__004_) -> _cmp__a _x__003_ _x__004_
+
+let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
+  let _tp_loc = "src/option.ml.t"  in
+  fun _of_a  -> fun t  -> (option_of_sexp _of_a) t
+let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+  fun _of_a  -> fun v  -> (sexp_of_option _of_a) v
+[@@@end]
 
 let is_none = function None -> true | _ -> false
 
@@ -48,12 +73,12 @@ let value_exn ?here ?error ?message t =
       | None  , Some e, None   -> e
       | None  , Some e, Some m -> Error.tag e ~tag:m
       | Some p, None  , None   ->
-        Error.create "Option.value_exn" p [%sexp_of: Source_code_position0.t]
+        Error.create "Option.value_exn" p Source_code_position0.sexp_of_t
       | Some p, None  , Some m ->
-        Error.create m p [%sexp_of: Source_code_position0.t]
+        Error.create m p Source_code_position0.sexp_of_t
       | Some p, Some e, _      ->
         Error.create (value message ~default:"") (e, p)
-          [%sexp_of: Error.t * Source_code_position0.t]
+          (sexp_of_pair Error.sexp_of_t Source_code_position0.sexp_of_t)
     in
     Error.raise error
 ;;
@@ -90,7 +115,7 @@ let exists t ~f =
   | Some x -> f x
 ;;
 
-let mem ?(equal = (=)) t a =
+let mem ?(equal = Poly.equal) t a =
   match t with
   | None -> false
   | Some a' -> equal a a'
@@ -153,14 +178,6 @@ let merge a b ~f =
   | None, x | x, None -> x
   | Some a, Some b -> Some (f a b)
 
-let%test_module _ = (module struct
-  let f = (+)
-  let%test _ = merge None None ~f  = None
-  let%test _ = merge (Some 3) None ~f = Some 3
-  let%test _ = merge None (Some 3) ~f = Some 3
-  let%test _ = merge (Some 1) (Some 3) ~f = (Some 4)
-end)
-
 let filter t ~f =
   match t with
   | Some v as o when f v -> o
@@ -171,19 +188,19 @@ let try_with f =
   with _ -> None
 
 include Monad.Make (struct
-  type 'a t = 'a option
-  let return x = Some x
-  let map t ~f =
-    match t with
-    | None -> None
-    | Some a -> Some (f a)
-  ;;
-  let map = `Custom map
-  let bind o ~f =
-    match o with
-    | None -> None
-    | Some x -> f x
-end)
+    type 'a t = 'a option
+    let return x = Some x
+    let map t ~f =
+      match t with
+      | None -> None
+      | Some a -> Some (f a)
+    ;;
+    let map = `Custom map
+    let bind o ~f =
+      match o with
+      | None -> None
+      | Some x -> f x
+  end)
 
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until  t ~init ~f = Container.fold_until  ~fold ~init ~f t

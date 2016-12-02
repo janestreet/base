@@ -1,21 +1,7 @@
 open! Import
+open! Polymorphic_compare
 
-module List  = Caml.ListLabels
-module Array = Caml.ArrayLabels
-module Lazy  = Base_lazy
-
-module List_helpers = struct
-
-  let is_empty = function
-    | [] -> true
-    | _  -> false
-
-  let range x y =
-    Array.to_list (Array.init (y-x) ~f:(fun i -> x + i))
-
-  let%test_unit _ =
-    assert (range 10 20 = [ 10; 11; 12; 13; 14; 15; 16; 17; 18; 19 ])
-end
+module Array = Array0
 
 module Step = struct
   (* 'a is an item in the sequence, 's is the state that will produce the remainder of
@@ -24,7 +10,27 @@ module Step = struct
     | Done
     | Skip of 's
     | Yield of 'a * 's
-  [@@deriving sexp_of]
+  [@@deriving_inline sexp_of]
+  let sexp_of_t :
+    'a 's .
+         ('a -> Sexplib.Sexp.t) ->
+    ('s -> Sexplib.Sexp.t) -> ('a,'s) t -> Sexplib.Sexp.t
+    = fun (type a) -> fun (type s) ->
+      (fun _of_a  ->
+         fun _of_s  ->
+           function
+           | Done  -> Sexplib.Sexp.Atom "Done"
+           | Skip v0 ->
+             let v0 = _of_s v0  in
+             Sexplib.Sexp.List [Sexplib.Sexp.Atom "Skip"; v0]
+           | Yield (v0,v1) ->
+             let v0 = _of_a v0
+
+             and v1 = _of_s v1
+             in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Yield"; v0; v1] :
+                  (a -> Sexplib.Sexp.t) -> (s -> Sexplib.Sexp.t) -> (a,s) t -> Sexplib.Sexp.t)
+
+  [@@@end]
 end
 
 open Step
@@ -51,14 +57,14 @@ let unfold_with s ~init ~f =
   | Sequence(s, next) ->
     Sequence((init, s) ,
              (fun (seed, s) ->
-               match next s with
-               | Done -> Done
-               | Skip s -> Skip (seed, s)
-               | Yield(a,s) ->
-                 match f seed a with
-                 | Done -> Done
-                 | Skip seed -> Skip (seed, s)
-                 | Yield(a,seed) -> Yield(a,(seed,s))))
+                match next s with
+                | Done -> Done
+                | Skip s -> Skip (seed, s)
+                | Yield(a,s) ->
+                  match f seed a with
+                  | Done -> Done
+                  | Skip seed -> Skip (seed, s)
+                  | Yield(a,seed) -> Yield(a,(seed,s))))
 
 let unfold_with_and_finish s ~init ~running_step ~inner_finished ~finishing_step =
   match s with
@@ -91,8 +97,8 @@ let unfold_with_and_finish s ~init ~running_step ~inner_finished ~finishing_step
 let of_list l =
   unfold_step ~init:l
     ~f:(function
-        | [] -> Done
-        | x::l -> Yield(x,l))
+      | [] -> Done
+      | x::l -> Yield(x,l))
 
 
 let fold t ~init ~f =
@@ -105,11 +111,9 @@ let fold t ~init ~f =
   match t with
   | Sequence(seed, next) -> loop seed init next f
 
-let%test _ = fold ~f:(+) ~init:0 (of_list [1; 2; 3; 4; 5]) = 15
-let%test _ = fold ~f:(+) ~init:0 (of_list []) = 0
-
 let to_list_rev t =
-      fold t ~init:[] ~f:(fun l x -> x::l)
+  fold t ~init:[] ~f:(fun l x -> x::l)
+
 
 let to_list (Sequence(s,next)) =
   let safe_to_list t =
@@ -118,19 +122,14 @@ let to_list (Sequence(s,next)) =
   let rec to_list s next i =
     if i = 0 then safe_to_list (Sequence(s,next))
     else
-    match next s with
-    | Done -> []
-    | Skip s -> to_list s next i
-    | Yield(a,s) -> a::(to_list s next (i-1))
+      match next s with
+      | Done -> []
+      | Skip s -> to_list s next i
+      | Yield(a,s) -> a::(to_list s next (i-1))
   in
   to_list s next 500
 
-let%test _ =
-  let test_equal l = to_list (of_list l) = l in
-  test_equal [] && test_equal [1; 2; 3; 4; 5]
-(* The test for longer list is after range *)
-
-let sexp_of_t sexp_of_a t = to_list t |> [%sexp_of: a list]
+let sexp_of_t sexp_of_a t = sexp_of_list sexp_of_a (to_list t)
 
 let range ?(stride=1) ?(start=`inclusive) ?(stop=`exclusive) start_v stop_v =
   let step =
@@ -151,14 +150,6 @@ let range ?(stride=1) ?(start=`inclusive) ?(stop=`exclusive) start_v stop_v =
   in
   unfold_step ~init ~f:step
 
-let%test _ = to_list (range 0 5) = [0;1;2;3;4]
-let%test _ = to_list (range ~stop:`inclusive 0 5) = [0;1;2;3;4;5]
-let%test _ = to_list (range ~start:`exclusive 0 5) = [1;2;3;4]
-let%test _ = to_list (range ~stride:(-2) 5 1) = [5;3]
-
-(* Test for to_list *)
-let%test _ = to_list (range 0 5000) = List_helpers.range 0 5000
-
 let of_lazy t_lazy =
   unfold_step ~init:t_lazy ~f:(fun t_lazy ->
     let Sequence (s, next) = Lazy.force t_lazy in
@@ -166,10 +157,6 @@ let of_lazy t_lazy =
     | Done         -> Done
     | Skip s       -> Skip (let v = Sequence (s, next) in lazy v)
     | Yield (x, s) -> Yield (x, let v = Sequence (s, next) in lazy v))
-
-(* Functions used for testing by comparing to List implementation*)
-let test_to_list s f g =
-  to_list (f s) = g (to_list s)
 
 let map t ~f =
   match t with
@@ -186,7 +173,7 @@ let mapi t ~f =
   match t with
   | Sequence(s, next) ->
     Sequence((0,s),
-              fun (i,s) ->
+             fun (i,s) ->
                match next s with
                | Done -> Done
                | Skip s -> Skip (i,s)
@@ -203,72 +190,10 @@ let filter t ~f =
                | Yield(a,s) when f a -> Yield(a,s)
                | Yield (_,s) -> Skip s)
 
-(* For testing, we create a sequence which is equal to 1;2;3;4;5, but
-   with a more interesting structure inside*)
-
-let s12345 = map ~f:(fun x -> x / 2) (filter ~f:(fun x -> x mod 2 = 0)
-                                        (of_list [1;2;3;4;5;6;7;8;9;10]))
-
-let sempty = filter ~f:(fun x -> x < 0) (of_list [1;2;3;4])
-
-let test f g = test_to_list s12345 f g && test_to_list sempty f g
-
-let%test _ =
-  to_list s12345 = [1; 2; 3; 4; 5] &&
-  to_list sempty = []
-
-let%test _ =
-  to_list (unfold_with s12345 ~init:1
-             ~f:(fun s _ ->
-               if s mod 2 = 0 then
-                 Skip (s+1)
-               else if s = 5 then
-                 Done
-               else
-                 Yield(s, s+1)))
-  = [1;3]
-
-let test_delay init =
-  unfold_with_and_finish ~init
-    ~running_step:(fun prev next ->
-      Yield (prev, next))
-    ~inner_finished:(fun x -> Some x)
-    ~finishing_step:(fun prev ->
-      match prev with
-      | None -> Done
-      | Some prev -> Yield (prev, None))
-
-let%test _ =
-  to_list (test_delay 0 s12345)
-  = [0; 1; 2; 3; 4; 5]
-
-let%test _ =
-  to_list (test_delay 0 sempty)
-  = [0]
-
-let%test _ = to_list s12345 = [1; 2; 3; 4; 5]
-
-let%test _ = test
-         (map ~f:(fun i -> -i))
-         (List.map ~f:(fun i -> -i))
-
-let%test _ = test
-         (mapi ~f:(fun i j -> j - 2 *i))
-         (List.mapi ~f:(fun i j -> j - 2 *i))
-
-let%test _ = test
-         (filter ~f:(fun i -> i mod 2 = 0))
-         (List.filter ~f:(fun i -> i mod 2 = 0))
-
 let filteri t ~f =
   map ~f:snd (
-  filter (mapi t ~f:(fun i s -> (i,s)))
-    ~f:(fun (i,s) -> f i s))
-
-let%test _ = test
-         (filter ~f:(fun i -> i mod 2 = 0))
-         (List.filter ~f:(fun i -> i mod 2 = 0))
-
+    filter (mapi t ~f:(fun i s -> (i,s)))
+      ~f:(fun (i,s) -> f i s))
 
 let length t =
   let rec loop i s next =
@@ -280,18 +205,16 @@ let length t =
   match t with
   | Sequence (seed, next) -> loop 0 seed next
 
-let%test _ = length s12345 = 5 && length sempty = 0
-
 
 let to_list_rev_with_length t =
-      fold t ~init:([],0) ~f:(fun (l,i) x -> (x::l,i+1))
+  fold t ~init:([],0) ~f:(fun (l,i) x -> (x::l,i+1))
 
 let to_array t =
   let (l,len) = to_list_rev_with_length t in
   match l with
   | [] -> [||]
   | x::l ->
-    let a = Array.make len x in
+    let a = Array.create ~len x in
     let rec loop i l =
       match l with
       | [] -> assert (i = -1)
@@ -310,9 +233,6 @@ let find t ~f =
   match t with
   | Sequence (seed, next) -> loop seed next f
 
-let%test _ = find s12345 ~f:(fun x -> x = 3) = Some 3 &&
-       find s12345 ~f:(fun x -> x = 7) = None
-
 let find_map t ~f =
   let rec loop s next f =
     match next s with
@@ -326,8 +246,19 @@ let find_map t ~f =
   match t with
   | Sequence (seed, next) -> loop seed next f
 
-let%test _ = find_map s12345 ~f:(fun x -> if x = 3 then Some "a" else None) = Some "a" &&
-       find_map s12345 ~f:(fun x -> if x = 7 then Some "a" else None) = None
+
+let find_mapi t ~f =
+  let rec loop s next f i =
+    match next s with
+    | Done -> None
+    | Yield(a,s) ->
+      (match f i a with
+       | None -> loop s next f (i+1)
+       | some_b -> some_b)
+    | Skip s -> loop s next f i
+  in
+  match t with
+  | Sequence (seed, next) -> loop seed next f 0
 
 let for_all t ~f =
   let rec loop s next f =
@@ -339,9 +270,16 @@ let for_all t ~f =
   match t with
   | Sequence (seed, next) -> loop seed next f
 
-let%test _ = for_all sempty ~f:(fun _ -> false)
-let%test _ = for_all s12345 ~f:(fun x -> x > 0)
-let%test _ = not (for_all s12345 ~f:(fun x -> x < 5))
+let for_alli t ~f =
+  let rec loop s next f i =
+    match next s with
+    | Done -> true
+    | Yield(a,_) when not (f i a) -> false
+    | Yield (_,s) -> loop s next f (i+1)
+    | Skip s -> loop s next f i
+  in
+  match t with
+  | Sequence (seed, next) -> loop seed next f 0
 
 let exists t ~f =
   let rec loop s next f =
@@ -353,9 +291,16 @@ let exists t ~f =
   match t with
   | Sequence (seed, next) -> loop seed next f
 
-let%test _ = not (exists sempty ~f:(fun _ -> assert false))
-let%test _ = exists s12345 ~f:(fun x -> x = 5)
-let%test _ = not (exists s12345 ~f:(fun x -> x = 0))
+let existsi t ~f =
+  let rec loop s next f i =
+    match next s with
+    | Done -> false
+    | Yield(a,_) when f i a -> true
+    | Yield(_,s) -> loop s next f (i+1)
+    | Skip s -> loop s next f i
+  in
+  match t with
+  | Sequence (seed, next) -> loop seed next f 0
 
 let iter t ~f =
   let rec loop seed next f =
@@ -371,11 +316,6 @@ let iter t ~f =
   match t with
   | Sequence(seed, next) -> loop seed next f
 
-let%test _ =
-  let l = ref [] in
-  iter s12345 ~f:(fun x -> l := x::!l);
-  !l = [5;4;3;2;1]
-
 let is_empty t =
   let rec loop s next =
     match next s with
@@ -385,9 +325,6 @@ let is_empty t =
   in
   match t with
   | Sequence(seed, next) -> loop seed next
-
-let%test _ = is_empty sempty
-let%test _ = not (is_empty (of_list [1]))
 
 let mem ?(equal = (=)) t a =
   let rec loop s next a =
@@ -399,13 +336,8 @@ let mem ?(equal = (=)) t a =
   match t with
   | Sequence(seed, next) -> loop seed next a
 
-let%test _ = mem s12345 1
-let%test _ = not (mem s12345 6)
-
 let empty =
   Sequence((), fun () -> Done)
-
-let%test _ = to_list empty = []
 
 let bind t ~f =
   unfold_step
@@ -425,24 +357,18 @@ let bind t ~f =
         | Yield(a,s) -> Yield(a, (Sequence(s,next) , rest)))
     ~init:(empty,t)
 
-let%test _ = to_list (bind sempty ~f:(fun _ -> s12345)) = []
-let%test _ = to_list (bind s12345 ~f:(fun _ -> sempty)) = []
-let%test _ = to_list (bind s12345 ~f:(fun x -> of_list [x;-x])) = [1;-1;2;-2;3;-3;4;-4;5;-5]
-
 let return x =
   unfold_step ~init:(Some x)
     ~f:(function
       | None -> Done
       | Some x -> Yield(x,None))
 
-let%test _ = to_list (return 1) = [1]
-
 include Monad.Make(struct
-  type nonrec 'a t = 'a t
-  let map = `Custom map
-  let bind = bind
-  let return = return
-end)
+    type nonrec 'a t = 'a t
+    let map = `Custom map
+    let bind = bind
+    let return = return
+  end)
 
 let nth s n =
   if n < 0 then None
@@ -451,28 +377,149 @@ let nth s n =
       match next s with
       | Done -> None
       | Skip s -> loop i s next
-      | Yield(a,s) -> if i == 0 then Some a else loop (i-1) s next
+      | Yield(a,s) -> if phys_equal i 0 then Some a else loop (i-1) s next
     in
     match s with
     | Sequence(s,next) ->
       loop n s next
 
-let%test _ = nth s12345 3 = Some 4
-let%test _ = nth s12345 5 = None
-
 let nth_exn s n =
-  if n < 0 then raise (Invalid_argument "Core.Sequence.nth")
+  if n < 0 then raise (Invalid_argument "Sequence.nth")
   else
-  match nth s n with
-  | None -> failwith "Sequence.nth"
-  | Some x -> x
+    match nth s n with
+    | None -> failwith "Sequence.nth"
+    | Some x -> x
 
 module Merge_with_duplicates_element = struct
-  type 'a t =
+  type ('a, 'b) t =
     | Left of 'a
-    | Right of 'a
-    | Both of 'a * 'a
-  [@@deriving compare, hash, sexp]
+    | Right of 'b
+    | Both of 'a * 'b
+  [@@deriving_inline compare, hash, sexp]
+  let t_of_sexp :
+    'a 'b .
+         (Sexplib.Sexp.t -> 'a) ->
+    (Sexplib.Sexp.t -> 'b) -> Sexplib.Sexp.t -> ('a,'b) t
+    = fun (type a) -> fun (type b) ->
+      (let _tp_loc = "src/sequence.ml.Merge_with_duplicates_element.t"  in
+       fun _of_a  ->
+       fun _of_b  ->
+         function
+         | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                                 ("left"|"Left" as _tag))::sexp_args) as _sexp ->
+           (match sexp_args with
+            | v0::[] -> let v0 = _of_a v0  in Left v0
+            | _ ->
+              Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+         | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                                 ("right"|"Right" as _tag))::sexp_args) as _sexp ->
+           (match sexp_args with
+            | v0::[] -> let v0 = _of_b v0  in Right v0
+            | _ ->
+              Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+         | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                                 ("both"|"Both" as _tag))::sexp_args) as _sexp ->
+           (match sexp_args with
+            | v0::v1::[] ->
+              let v0 = _of_a v0
+
+              and v1 = _of_b v1
+              in Both (v0, v1)
+            | _ ->
+              Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+         | Sexplib.Sexp.Atom ("left"|"Left") as sexp ->
+           Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+         | Sexplib.Sexp.Atom ("right"|"Right") as sexp ->
+           Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+         | Sexplib.Sexp.Atom ("both"|"Both") as sexp ->
+           Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+         | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
+           Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
+         | Sexplib.Sexp.List [] as sexp ->
+           Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
+         | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp : (Sexplib.Sexp.t
+                                                                      ->
+                                                                      a) ->
+         (Sexplib.Sexp.t
+          -> b) ->
+         Sexplib.Sexp.t
+         ->
+           (a,b) t)
+
+  let sexp_of_t :
+    'a 'b .
+         ('a -> Sexplib.Sexp.t) ->
+    ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+    = fun (type a) -> fun (type b) ->
+      (fun _of_a  ->
+         fun _of_b  ->
+           function
+           | Left v0 ->
+             let v0 = _of_a v0  in
+             Sexplib.Sexp.List [Sexplib.Sexp.Atom "Left"; v0]
+           | Right v0 ->
+             let v0 = _of_b v0  in
+             Sexplib.Sexp.List [Sexplib.Sexp.Atom "Right"; v0]
+           | Both (v0,v1) ->
+             let v0 = _of_a v0
+
+             and v1 = _of_b v1
+             in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Both"; v0; v1] :
+                  (a -> Sexplib.Sexp.t) -> (b -> Sexplib.Sexp.t) -> (a,b) t -> Sexplib.Sexp.t)
+
+  let hash_fold_t :
+    'a 'b .
+         (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
+    (Ppx_hash_lib.Std.Hash.state -> 'b -> Ppx_hash_lib.Std.Hash.state) ->
+    Ppx_hash_lib.Std.Hash.state ->
+    ('a,'b) t -> Ppx_hash_lib.Std.Hash.state
+    = fun (type a) -> fun (type b) ->
+      (fun _hash_fold_a  ->
+         fun _hash_fold_b  ->
+         fun hsv  ->
+         fun arg  ->
+           match arg with
+           | Left _a0 ->
+             _hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+           | Right _a0 ->
+             _hash_fold_b (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
+           | Both (_a0,_a1) ->
+             _hash_fold_b
+               (_hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 2) _a0)
+               _a1 : (Ppx_hash_lib.Std.Hash.state ->
+                      a -> Ppx_hash_lib.Std.Hash.state)
+           ->
+             (Ppx_hash_lib.Std.Hash.state ->
+              b -> Ppx_hash_lib.Std.Hash.state)
+           ->
+             Ppx_hash_lib.Std.Hash.state ->
+           (a,b) t -> Ppx_hash_lib.Std.Hash.state)
+
+  let compare :
+    'a 'b .
+         ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+    =
+    fun _cmp__a  ->
+    fun _cmp__b  ->
+    fun a__001_  ->
+    fun b__002_  ->
+      if Pervasives.(==) a__001_ b__002_
+      then 0
+      else
+        (match (a__001_, b__002_) with
+         | (Left _a__010_,Left _b__009_) -> _cmp__a _a__010_ _b__009_
+         | (Left _,_) -> (-1)
+         | (_,Left _) -> 1
+         | (Right _a__008_,Right _b__007_) -> _cmp__b _a__008_ _b__007_
+         | (Right _,_) -> (-1)
+         | (_,Right _) -> 1
+         | (Both (_a__004_,_a__006_),Both (_b__003_,_b__005_)) ->
+           let ret = _cmp__a _a__004_ _b__003_  in
+           if Pervasives.(<>) ret 0
+           then ret
+           else _cmp__b _a__006_ _b__005_)
+
+  [@@@end]
 end
 
 let merge_with_duplicates (Sequence (s1, next1)) (Sequence (s2, next2)) ~cmp =
@@ -494,8 +541,8 @@ let merge_with_duplicates (Sequence (s1, next1)) (Sequence (s2, next2)) ~cmp =
   Sequence((Skip s1, Skip s2), next)
 
 let merge s1 s2 ~cmp =
-  merge_with_duplicates s1 s2 ~cmp
-  |> map ~f:(function Left x | Right x | Both (x, _) -> x)
+  map (merge_with_duplicates s1 s2 ~cmp)
+    ~f:(function Left x | Right x | Both (x, _) -> x)
 
 let hd s =
   let rec loop s next =
@@ -507,31 +554,23 @@ let hd s =
   match s with
   | Sequence (s,next) -> loop s next
 
-let%test _ = hd s12345 = Some 1
-let%test _ = hd sempty = None
-
 let hd_exn s =
   match hd s with
   | None -> failwith "hd_exn"
   | Some a -> a
 
 let tl s =
- let rec loop s next =
-   match next s with
-   | Done -> None
-   | Skip s -> loop s next
-   | Yield(_,a) -> Some a
- in
- match s with
- | Sequence (s,next) ->
-  match loop s next with
+  let rec loop s next =
+    match next s with
+    | Done -> None
+    | Skip s -> loop s next
+    | Yield(_,a) -> Some a
+  in
+  match s with
+  | Sequence (s,next) ->
+    match loop s next with
     | None -> None
     | Some s -> Some (Sequence(s,next))
-
-let%test _ = tl sempty = None
-let%test _ =  match tl s12345 with
-         | Some l -> to_list l = [2;3;4;5]
-         | None -> false
 
 let tl_eagerly_exn s =
   match tl s with
@@ -554,24 +593,16 @@ let next s =
   match s with
   | Sequence(s, next) -> loop s next
 
-let%test _ = next sempty = None
-let%test _ = match next s12345 with
-       | Some (1,l) -> to_list l = [2;3;4;5]
-       | _ -> false
-
 let filter_opt s =
   match s with
   | Sequence(s, next) ->
     Sequence(s,
-      fun s ->
-      match next s with
-      | Done -> Done
-      | Skip s -> Skip s
-      | Yield(None, s) -> Skip s
-      | Yield(Some a, s) -> Yield(a, s))
-
-let%test _ = to_list (filter_opt (of_list [None; Some 1; None ;Some 2; Some 3])) =
-             [1;2;3]
+             fun s ->
+               match next s with
+               | Done -> Done
+               | Skip s -> Skip s
+               | Yield(None, s) -> Skip s
+               | Yield(Some a, s) -> Yield(a, s))
 
 let filter_map s ~f =
   filter_opt (map s ~f)
@@ -593,10 +624,6 @@ let split_n s n =
   match s with
   | Sequence(s, next) -> loop s n [] next
 
-let%test _ =
-  let (l,r) = split_n s12345 2 in
-  l = [1;2] && to_list r = [3;4;5]
-
 let split_n_eagerly s n =
   let pre, suf = split_n s n in
   of_list pre, suf
@@ -609,8 +636,6 @@ let chunks_exn t n =
       match split_n t n with
       | [], _empty -> Done
       | _::_ as xs, t -> Yield (xs, t))
-
-let%test _ = to_list (chunks_exn s12345 2) = [[1;2];[3;4];[5]]
 
 let findi s ~f =
   find (mapi s ~f:(fun i s -> (i,s)))
@@ -627,22 +652,19 @@ let append s1 s2 =
     Sequence(`First_list s1,
              function
              | `First_list s1 ->
-                begin
-                match next1 s1 with
-                  | Done -> Skip (`Second_list s2)
-                  | Skip s1 -> Skip (`First_list s1)
-                  | Yield(a,s1) -> Yield(a, `First_list s1)
-                end
+               begin
+                 match next1 s1 with
+                 | Done -> Skip (`Second_list s2)
+                 | Skip s1 -> Skip (`First_list s1)
+                 | Yield(a,s1) -> Yield(a, `First_list s1)
+               end
              | `Second_list s2 ->
-                begin
-                match next2 s2 with
-                  | Done -> Done
-                  | Skip s2 -> Skip (`Second_list s2)
-                  | Yield(a,s2) -> Yield(a, `Second_list s2)
-                end)
-
-let%test _ = to_list (append s12345 s12345) = [1;2;3;4;5;1;2;3;4;5]
-let%test _ = to_list (append sempty s12345) = [1;2;3;4;5]
+               begin
+                 match next2 s2 with
+                 | Done -> Done
+                 | Skip s2 -> Skip (`Second_list s2)
+                 | Yield(a,s2) -> Yield(a, `Second_list s2)
+               end)
 
 let concat_map s ~f = bind s ~f
 
@@ -661,10 +683,6 @@ let zip (Sequence (s1, next1)) (Sequence (s2, next2)) =
     | s1, Skip s2 -> Skip (s1, next2 s2)
   in
   Sequence ((Skip s1, Skip s2), next)
-
-let%test _ = to_list (zip s12345 sempty) = []
-let%test _ = to_list (zip s12345 (of_list [6;5;4;3;2;1])) = [1,6;2,5;3,4;4,3;5,2]
-let%test _ = to_list (zip s12345 (of_list ["a"])) = [1,"a"]
 
 let zip_full (Sequence(s1,next1)) (Sequence(s2,next2)) =
   let next = function
@@ -690,22 +708,22 @@ let bounded_length (Sequence(seed,next)) ~at_most =
 
 let length_is_bounded_by ?(min=(-1)) ?max t =
   let length_is_at_least (Sequence(s,next)) =
-     let rec loop s acc =
-       if acc >= min then true else
-         match next s with
-         | Done -> false
-         | Skip s -> loop s acc
-         | Yield(_,s) -> loop s (acc + 1)
-     in loop s 0
+    let rec loop s acc =
+      if acc >= min then true else
+        match next s with
+        | Done -> false
+        | Skip s -> loop s acc
+        | Yield(_,s) -> loop s (acc + 1)
+    in loop s 0
   in
   match max with
-    | None -> length_is_at_least t
-    | Some max ->
-      begin
-        match bounded_length t ~at_most:max with
-        | `Is len when len >= min -> true
-        | _ -> false
-      end
+  | None -> length_is_at_least t
+  | Some max ->
+    begin
+      match bounded_length t ~at_most:max with
+      | `Is len when len >= min -> true
+      | _ -> false
+    end
 
 let iteri s ~f =
   iter (mapi s ~f:(fun i s -> (i, s)))
@@ -737,23 +755,12 @@ let find_consecutive_duplicate (Sequence(s, next)) ~equal =
   in
   loop None s
 
-let%test _ = find_consecutive_duplicate s12345 ~equal:(=) = None
-let%test _ = find_consecutive_duplicate (of_list [1;2;2;3;4;4;5]) ~equal:(=) = Some (2,2)
-
 let remove_consecutive_duplicates s ~equal =
   unfold_with s ~init:None
     ~f:(fun prev a ->
-          match prev with
-          | Some b when equal a b -> Skip(Some a)
-          | None | Some _ -> Yield(a, Some a))
-
-let%test _ = to_list
-         (remove_consecutive_duplicates ~equal:(=) (of_list [1;2;2;3;3;3;3;4;4;5;6;6;7]))
-       = [1;2;3;4;5;6;7]
-let%test _ = to_list
-         (remove_consecutive_duplicates ~equal:(=) s12345) = [1;2;3;4;5]
-
-let%test _ = to_list (remove_consecutive_duplicates ~equal:(fun _ _ -> true) s12345) = [1]
+      match prev with
+      | Some b when equal a b -> Skip(Some a)
+      | None | Some _ -> Yield(a, Some a))
 
 let count s ~f =
   length (filter s ~f)
@@ -768,74 +775,55 @@ let init n ~f =
       if i >= n then Done
       else Yield(f i, i + 1))
 
-let%test _ = to_list (init (-1) ~f:(fun _ -> assert false)) = []
-let%test _ = to_list (init 5 ~f:Fn.id) = [0; 1; 2; 3; 4]
-
-
 let sub s ~pos ~len =
   if pos < 0 || len < 0 then failwith "Sequence.sub";
   match s with
   | Sequence(s, next) ->
     Sequence((0,s),
-              (fun (i, s) ->
-                 if i - pos >= len then Done
-                 else
-                   match next s with
-                   | Done -> Done
-                   | Skip s -> Skip (i, s)
-                   | Yield(a, s) when i >= pos -> Yield (a,(i + 1, s))
-                   | Yield(_, s) -> Skip(i + 1, s)))
-
-
-let%test _ = to_list (sub s12345 ~pos:4 ~len:10) = [5]
-let%test _ = to_list (sub s12345 ~pos:1 ~len:2) = [2;3]
-let%test _ = to_list (sub s12345 ~pos:0 ~len:0) = []
+             (fun (i, s) ->
+                if i - pos >= len then Done
+                else
+                  match next s with
+                  | Done -> Done
+                  | Skip s -> Skip (i, s)
+                  | Yield(a, s) when i >= pos -> Yield (a,(i + 1, s))
+                  | Yield(_, s) -> Skip(i + 1, s)))
 
 let take s len =
   if len < 0 then failwith "Sequence.take";
   match s with
   | Sequence(s, next) ->
     Sequence((0,s),
-              (fun (i, s) ->
-                 if i >= len then Done
-                 else
-                   match next s with
-                   | Done -> Done
-                   | Skip s -> Skip (i, s)
-                   | Yield(a, s) -> Yield (a,(i + 1, s))))
-
-let%test _ = to_list (take s12345 2) = [1;2]
-let%test _ = to_list (take s12345 0) = []
-let%test _ = to_list (take s12345 9) = [1;2;3;4;5]
+             (fun (i, s) ->
+                if i >= len then Done
+                else
+                  match next s with
+                  | Done -> Done
+                  | Skip s -> Skip (i, s)
+                  | Yield(a, s) -> Yield (a,(i + 1, s))))
 
 let drop s len =
   if len < 0 then failwith "Sequence.drop";
   match s with
   | Sequence(s, next) ->
     Sequence((0,s),
-              (fun (i, s) ->
-                   match next s with
-                   | Done -> Done
-                   | Skip s -> Skip (i, s)
-                   | Yield(a, s) when i >= len -> Yield (a,(i + 1, s))
-                   | Yield(_, s) -> Skip (i+1, s)))
-
-let%test _ = to_list (drop s12345 2) = [3;4;5]
-let%test _ = to_list (drop s12345 0) = [1;2;3;4;5]
-let%test _ = to_list (drop s12345 9) = []
+             (fun (i, s) ->
+                match next s with
+                | Done -> Done
+                | Skip s -> Skip (i, s)
+                | Yield(a, s) when i >= len -> Yield (a,(i + 1, s))
+                | Yield(_, s) -> Skip (i+1, s)))
 
 let take_while s ~f =
   match s with
   | Sequence(s, next) ->
     Sequence(s,
              fun s ->
-              match next s with
-              | Done -> Done
-              | Skip s -> Skip s
-              | Yield (a, s) when f a -> Yield(a,s)
-              | Yield (_,_) -> Done)
-
-let%test _ = to_list (take_while ~f:(fun x -> x < 3) s12345) = [1;2]
+               match next s with
+               | Done -> Done
+               | Skip s -> Skip s
+               | Yield (a, s) when f a -> Yield(a,s)
+               | Yield (_,_) -> Done)
 
 let drop_while s ~f =
   match s with
@@ -844,25 +832,21 @@ let drop_while s ~f =
              function
              |`Dropping s ->
                begin
-                match next s with
-                | Done -> Done
-                | Skip s -> Skip (`Dropping s)
-                | Yield(a, s) when f a -> Skip (`Dropping s)
-                | Yield(a, s) -> Yield(a, `Identity s)
+                 match next s with
+                 | Done -> Done
+                 | Skip s -> Skip (`Dropping s)
+                 | Yield(a, s) when f a -> Skip (`Dropping s)
+                 | Yield(a, s) -> Yield(a, `Identity s)
                end
              | `Identity s -> lift_identity next s)
-
-let%test _ = to_list (drop_while ~f:(fun x -> x < 3) s12345) = [3;4;5]
 
 let shift_right s x =
   match s with
   | Sequence(seed, next) ->
     Sequence(`Consing (seed, x),
              function
-               | `Consing (seed, x) -> Yield(x, `Identity seed)
-               | `Identity s -> lift_identity next s)
-
-let%test _ = to_list (shift_right  (shift_right s12345 0) (-1)) = [-1;0;1;2;3;4;5]
+             | `Consing (seed, x) -> Yield(x, `Identity seed)
+             | `Identity s -> lift_identity next s)
 
 let shift_right_with_list s l =
   append (of_list l) s
@@ -894,35 +878,17 @@ let intersperse s ~sep =
                end
              | `Putting(a,s) -> Yield(a,`Running s))
 
-let%test _ = to_list (intersperse ~sep:'a' (of_list [])) = []
-let%test _ = to_list (intersperse ~sep:'a' (of_list ['b'])) = ['b']
-let%test _ = to_list (intersperse ~sep:(-1) (take s12345 1)) = [1]
-let%test _ = to_list (intersperse ~sep:0 s12345) = [1;0;2;0;3;0;4;0;5]
-
 let repeat x =
   unfold_step ~init:x ~f:(fun x -> Yield(x, x))
 
-let%test _ = to_list (take (repeat 1) 3) = [1;1;1]
-
 let cycle_list_exn xs =
-  if List_helpers.is_empty xs then raise (Invalid_argument "Core.Sequence.cycle_list_exn");
+  if List.is_empty xs then raise (Invalid_argument "Sequence.cycle_list_exn");
   let s = of_list xs in
   concat_map ~f:(fun () -> s) (repeat ())
-
-let%test _ = to_list (take (cycle_list_exn [1;2;3;4;5]) 7) = [1;2;3;4;5;1;2]
-
-let%test _ =
-  match cycle_list_exn [] with
-  | exception Invalid_argument "Core.Sequence.cycle_list_exn" -> true
-  | _ -> false
 
 let cartesian_product sa sb =
   concat_map sa
     ~f:(fun a -> zip (repeat a) sb)
-
-let%test _ = to_list (cartesian_product (of_list ['a';'b']) s12345) =
-       ['a',1;'a',2;'a',3;'a',4;'a',5;
-        'b',1;'b',2;'b',3;'b',4;'b',5]
 
 let singleton x = return x
 
@@ -936,15 +902,6 @@ let delayed_fold s ~init ~f ~finish =
   in
   match s with
   | Sequence(s, next) -> loop s next finish f init
-
-let%test _ =
-  delayed_fold s12345 ~init:0.0
-    ~f:(fun a i ~k ->
-      if a <= 5.0 then
-        k (a +. (float_of_int i)) else
-        a)
-    ~finish:(fun _ -> assert false)
-  = 6.0
 
 let fold_result t ~init ~f =
   delayed_fold t ~init
@@ -975,13 +932,6 @@ let memoize (type a) (Sequence (s, next)) =
   in
   Sequence (memoize s, (fun (M.T l) -> Lazy.force l))
 
-let%test _ =
-  let num_computations = ref 0 in
-  let t = memoize (unfold ~init:() ~f:(fun () -> incr num_computations; None)) in
-  iter t ~f:Fn.id;
-  iter t ~f:Fn.id;
-  !num_computations = 1
-
 let drop_eagerly s len =
   let rec loop i ~len s next =
     if i >= len then Sequence(s, next)
@@ -1003,11 +953,6 @@ let drop_while_option (Sequence (s, next)) ~f =
   in
   loop s
 
-let%test _ = to_list (drop_eagerly s12345 0) = [1;2;3;4;5]
-let%test _ = to_list (drop_eagerly s12345 2) = [3;4;5]
-let%test _ = to_list (drop_eagerly s12345 5) = []
-let%test _ = to_list (drop_eagerly s12345 8) = []
-
 let compare compare_a t1 t2 =
   With_return.with_return (fun r ->
     iter (zip_full t1 t2) ~f:(function
@@ -1019,24 +964,6 @@ let compare compare_a t1 t2 =
         then r.return c);
     0);
 ;;
-
-let compare_tests =
-  [ [1; 2; 3] , [1; 2; 3] , 0
-  ; [1; 2; 3] , []        , 1
-  ; []        , [1; 2; 3] , -1
-  ; [1; 2]    , [1; 2; 3] , -1
-  ; [1; 2; 3] , [1; 2]    , 1
-  ; [1; 3; 2] , [1; 2; 3] , 1
-  ; [1; 2; 3] , [1; 3; 2] , -1 ]
-
-(* this test has to use base OCaml library functions to avoid circular dependencies *)
-let%test _ =
-  List.for_all
-    ~f:(fun b -> b)
-    (List.map
-       ~f:(fun (l1, l2, expected_res) ->
-         compare Pervasives.compare (of_list l1) (of_list l2) = expected_res)
-       compare_tests)
 
 let interleave (Sequence (s1, f1)) =
   let next (todo_stack, done_stack, s1) =
@@ -1085,6 +1012,12 @@ module Generator = struct
   let yield e = (); fun k -> Wrap (Yield (e, k))
 
   let to_steps t = t (fun () -> Wrap Done)
+
+  let of_sequence sequence =
+    delayed_fold sequence
+      ~init:()
+      ~f:(fun () x ~k f -> Wrap (Yield (x, fun () -> k () f)))
+      ~finish:return
 
   let run t =
     let init () = to_steps t in

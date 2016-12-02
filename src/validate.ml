@@ -1,8 +1,6 @@
 open! Import
-open! Int_replace_polymorphic_compare
 
-module List = Base_list
-module String = StringLabels
+module String = String0
 
 (** Each single_error is a path indicating the location within the datastructure in
     question that is being validated, along with an error message. *)
@@ -10,9 +8,8 @@ type single_error =
   { path : string list;
     error : Error.t;
   }
-[@@deriving compare, hash, sexp]
 
-type t = single_error list [@@deriving compare, hash, sexp]
+type t = single_error list
 
 type 'a check = 'a -> t
 
@@ -51,7 +48,8 @@ let protect f v =
   try
     f v
   with exn ->
-    fails "Exception raised during validation" exn [%sexp_of: exn]
+    Error.raise_s
+      (Sexp.message "Exception raised during validation" [ "", sexp_of_exn exn ])
 ;;
 
 let path_string path = String.concat ~sep:"." path
@@ -61,11 +59,11 @@ let errors t =
     (Error.to_string_hum (Error.tag error ~tag:(path_string path))))
 ;;
 
-let result_fail t =
-  let _no_inline x = x in
-  Or_error.error "validation errors"
+let [@inline never] result_fail t =
+  Or_error.error
+    "validation errors"
     (List.map t ~f:(fun { path; error } -> (path_string path, error)))
-    [%sexp_of: (string * Error.t) list]
+    (sexp_of_list (sexp_of_pair sexp_of_string Error.sexp_of_t))
 ;;
 
 (** [result] is carefully implemented so that it can be inlined -- calling [result_fail],

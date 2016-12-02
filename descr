@@ -1,4 +1,0 @@
-Standard library for OCaml
-Base is a consisitent and portable standard library for OCaml. It is a
-replacement to the stdlib shipped with the compiler rather than an
-extensions.

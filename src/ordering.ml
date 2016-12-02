@@ -1,12 +1,70 @@
 open! Import
 
-type t = Less | Equal | Greater [@@deriving compare, hash, enumerate, sexp]
+type t = Less | Equal | Greater [@@deriving_inline compare, hash, enumerate, sexp]
+let t_of_sexp : Sexplib.Sexp.t -> t =
+  let _tp_loc = "src/ordering.ml.t"  in
+  function
+  | Sexplib.Sexp.Atom ("less"|"Less") -> Less
+  | Sexplib.Sexp.Atom ("equal"|"Equal") -> Equal
+  | Sexplib.Sexp.Atom ("greater"|"Greater") -> Greater
+  | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("less"|"Less"))::_) as sexp ->
+    Sexplib.Conv_error.stag_no_args _tp_loc sexp
+  | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("equal"|"Equal"))::_) as sexp ->
+    Sexplib.Conv_error.stag_no_args _tp_loc sexp
+  | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("greater"|"Greater"))::_) as sexp
+    -> Sexplib.Conv_error.stag_no_args _tp_loc sexp
+  | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
+    Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
+  | Sexplib.Sexp.List [] as sexp ->
+    Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
+  | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp
+let sexp_of_t : t -> Sexplib.Sexp.t =
+  function
+  | Less  -> Sexplib.Sexp.Atom "Less"
+  | Equal  -> Sexplib.Sexp.Atom "Equal"
+  | Greater  -> Sexplib.Sexp.Atom "Greater"
+let all : t list = [Less; Equal; Greater]
+let (hash_fold_t :
+       Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+  (fun hsv  ->
+     fun arg  ->
+       match arg with
+       | Less  -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
+       | Equal  -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
+       | Greater  -> Ppx_hash_lib.Std.Hash.fold_int hsv 2 : Ppx_hash_lib.Std.Hash.state
+       ->
+         t ->
+       Ppx_hash_lib.Std.Hash.state)
+
+let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+  fun arg  ->
+    Ppx_hash_lib.Std.Hash.get_hash_value
+      (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
+
+let compare : t -> t -> int =
+  fun a__001_  ->
+  fun b__002_  ->
+    if Pervasives.(==) a__001_ b__002_
+    then 0
+    else
+      (match (a__001_, b__002_) with
+       | (Less ,Less ) -> 0
+       | (Less ,_) -> (-1)
+       | (_,Less ) -> 1
+       | (Equal ,Equal ) -> 0
+       | (Equal ,_) -> (-1)
+       | (_,Equal ) -> 1
+       | (Greater ,Greater ) -> 0)
+
+[@@@end]
+
+let equal a b = compare a b = 0
 
 module Export = struct
   type _ordering = t =
-  | Less
-  | Equal
-  | Greater
+    | Less
+    | Equal
+    | Greater
 end
 
 let of_int n =
@@ -22,16 +80,3 @@ let to_int = function
   | Equal   -> 0
   | Greater -> 1
 ;;
-
-let%test _ = of_int (-10) = Less
-let%test _ = of_int (-1)  = Less
-let%test _ = of_int 0     = Equal
-let%test _ = of_int 1     = Greater
-let%test _ = of_int 10    = Greater
-
-let%test _ = of_int (Pervasives.compare 0 1) = Less
-let%test _ = of_int (Pervasives.compare 1 1) = Equal
-let%test _ = of_int (Pervasives.compare 1 0) = Greater
-
-let%test _ = List.for_all (fun t -> t = (t |> to_int |> of_int)) all
-let%test _ = List.for_all (fun i -> i = (i |> of_int |> to_int)) [ -1; 0; 1 ]

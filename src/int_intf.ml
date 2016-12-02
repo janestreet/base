@@ -4,28 +4,27 @@ module type Round = sig
   type t
 
   (** [round] rounds an int to a multiple of a given [to_multiple_of] argument, according
-     to a direction [dir], with default [dir] being [`Nearest].  [round] will raise if
-     [to_multiple_of <= 0].
+      to a direction [dir], with default [dir] being [`Nearest].  [round] will raise if
+      [to_multiple_of <= 0].
 
-     {v
+      {v
        | `Down    | rounds toward Int.neg_infinity                          |
        | `Up      | rounds toward Int.infinity                              |
        | `Nearest | rounds to the nearest multiple, or `Up in case of a tie |
        | `Zero    | rounds toward zero                                      |
      v}
 
-     Here are some examples for [round ~to_multiple_of:10] for each direction:
+      Here are some examples for [round ~to_multiple_of:10] for each direction:
 
-     {v
+      {v
        | `Down    | {10 .. 19} --> 10 | { 0 ... 9} --> 0 | {-10 ... -1} --> -10 |
        | `Up      | { 1 .. 10} --> 10 | {-9 ... 0} --> 0 | {-19 .. -10} --> -10 |
        | `Zero    | {10 .. 19} --> 10 | {-9 ... 9} --> 0 | {-19 .. -10} --> -10 |
        | `Nearest | { 5 .. 14} --> 10 | {-5 ... 4} --> 0 | {-15 ... -6} --> -10 |
      v}
 
-     For convenience and performance, there are variants of [round] with [dir] hard-coded.
-     If you are writing performance-critical code you should use these.
-  *)
+      For convenience and performance, there are variants of [round] with [dir] hard-coded.
+      If you are writing performance-critical code you should use these. *)
 
   val round : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> to_multiple_of:t -> t
 
@@ -38,7 +37,18 @@ end
 module type Hexable = sig
   type t
   module Hex : sig
-    type nonrec t = t [@@deriving sexp, compare, hash]
+    type nonrec t = t [@@deriving_inline sexp, compare, hash]
+    include
+    sig
+      [@@@ocaml.warning "-32"]
+      val hash_fold_t :
+        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+      val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+      val compare : t -> t -> int
+      val t_of_sexp : Sexplib.Sexp.t -> t
+      val sexp_of_t : t -> Sexplib.Sexp.t
+    end
+    [@@@end]
 
     include Stringable.S with type t := t
 
@@ -47,7 +57,17 @@ module type Hexable = sig
 end
 
 module type S = sig
-  type t [@@deriving hash, sexp]
+  type t [@@deriving_inline hash, sexp]
+  include
+  sig
+    [@@@ocaml.warning "-32"]
+    val t_of_sexp : Sexplib.Sexp.t -> t
+    val sexp_of_t : t -> Sexplib.Sexp.t
+    val hash_fold_t :
+      Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+    val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+  end
+  [@@@end]
 
   include Floatable.S          with type t := t
   include Intable.S            with type t := t
@@ -192,7 +212,8 @@ module type S = sig
 
 end
 
-let%test_module _ = (module struct
-  (** this functor's type-correctness ensures that every value in [S.O] is also in [S]. *)
-  module Check_O_contained_in_S (M : S) : sig end = (M : module type of M.O)
-end)
+include
+  (struct
+    (** this functor's type-correctness ensures that every value in [S.O] is also in [S]. *)
+    module Check_O_contained_in_S (M : S) : sig end = (M : module type of M.O)
+  end : sig end)

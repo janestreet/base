@@ -34,8 +34,7 @@ val slice
     {v
       pos' = match pos with None -> 0 | Some i -> i
       len' = match len with None -> length - pos | Some i -> i
-    v}
- *)
+    v} *)
 
 val get_pos_len     : ?pos:int -> ?len:int -> length:int -> (int * int, string) Result.t
 val get_pos_len_exn : ?pos:int -> ?len:int -> length:int -> int * int
@@ -44,4 +43,6 @@ val get_pos_len_exn : ?pos:int -> ?len:int -> length:int -> int * int
     [pos >= 0 && len >= 0 && pos + len <= length]. *)
 val check_pos_len_exn : pos:int -> len:int -> length:int -> unit
 
-
+module Private : sig
+  val slow_check_pos_len_exn : pos:int -> len:int -> length:int -> unit
+end

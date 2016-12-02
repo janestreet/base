@@ -10,25 +10,26 @@
    1. it makes type errors more readable (less aliasing)
    2. the typer in ocaml 4.01 allows this:
 
-      module A = struct
-        type t = {a : int}
-      end
-      type t = A.t
-      let f (x : t) = x.a
+   {[
+     module A = struct
+       type t = {a : int}
+     end
+     type t = A.t
+     let f (x : t) = x.a
+   ]}
 
-      (although with Warning 40: a is used out of scope)
-      which means that if [t_with_perm] was really an alias on [For_generated_code.t],
-      people could say [t.setter] and break the abstraction with no indication that
-      something ugly is going on in the source code.
-      The warning is (I think) for people who want to make their code compatible with
-      previous versions of ocaml, so we may very well turn it off.
+   (although with Warning 40: a is used out of scope)
+   which means that if [t_with_perm] was really an alias on [For_generated_code.t],
+   people could say [t.setter] and break the abstraction with no indication that
+   something ugly is going on in the source code.
+   The warning is (I think) for people who want to make their code compatible with
+   previous versions of ocaml, so we may very well turn it off.
 
    The type t_with_perm could also have been a [unit -> For_generated_code.t] to work
    around value restriction and then [For_generated_code.t] would have been a proper
    abstract type, but it looks like it could impact performance (for example, a fold on a
    record type with 40 fields would actually allocate the 40 [For_generated_code.t]'s at
-   every single fold.)
-*)
+   every single fold.) *)
 
 module For_generated_code = struct
   type ('perm, 'record, 'field) t = {
@@ -43,7 +44,7 @@ module For_generated_code = struct
 end
 
 type ('perm, 'record, 'field) t_with_perm =
-| Field of ('perm, 'record, 'field) For_generated_code.t
+  | Field of ('perm, 'record, 'field) For_generated_code.t
 type ('record, 'field) t = ([ `Read | `Set_and_create], 'record, 'field) t_with_perm
 type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
@@ -56,4 +57,4 @@ let fset (Field f) r v = f.For_generated_code.fset r v
 let setter (Field f) = f.For_generated_code.setter
 
 type ('perm, 'record, 'result) user =
-    { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }
+  { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }

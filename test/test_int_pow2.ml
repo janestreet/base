@@ -2,19 +2,19 @@ open! Import
 open! Int
 
 let examples =
-    [ -1
-    ; 0
-    ; 1
-    ; 2
-    ; 3
-    ; 4
-    ; 5
-    ; 7
-    ; 8
-    ; 9
-    ; 63
-    ; 64
-    ; 65 ]
+  [ -1
+  ; 0
+  ; 1
+  ; 2
+  ; 3
+  ; 4
+  ; 5
+  ; 7
+  ; 8
+  ; 9
+  ; 63
+  ; 64
+  ; 65 ]
 ;;
 
 let examples_64_bit =
@@ -89,3 +89,34 @@ let%expect_test "[ceil_log2]" [@tags "64-bits-only"] =
     (4_611_686_018_427_387_902 (Ok 62))
     (4_611_686_018_427_387_903 (Ok 62)) |}];
 ;;
+
+let%test_module "int_math" =
+  (module struct
+
+    let test_cases () =
+      let cases = [ 0xAA; 0xAA_AA; 0xAA_AA_AA;  0x80; 0x80_08; 0x80_00_08; ]
+      in
+      match Word_size.word_size with
+      | W64 -> (* create some >32 bit values... *)
+        (* We can't use literals directly because the compiler complains on 32 bits. *)
+        let cases = cases @ [ (0xAA_AA lsl 16) lor 0xAA_AA;
+                              (0x80_00 lsl 16) lor 0x00_08; ] in
+        let added_cases = List.map cases ~f:(fun x -> x lsl 16) in
+        List.concat [ cases; added_cases ]
+      | W32 -> cases
+    ;;
+
+    let%test_unit "ceil_pow2" =
+      List.iter (test_cases ())
+        ~f:(fun x -> let p2 = ceil_pow2 x in
+             assert( (is_pow2 p2) && (p2 >= x && x >= (p2 / 2)) )
+           )
+    ;;
+
+    let%test_unit "floor_pow2" =
+      List.iter (test_cases ())
+        ~f:(fun x -> let p2 = floor_pow2 x in
+             assert( (is_pow2 p2) && ((2 * p2) >= x && x >= p2) )
+           )
+    ;;
+  end)

@@ -11,8 +11,7 @@
       Conor McBride and Ross Paterson.
       Journal of Functional Programming 18:1 (2008), pages 1-13.
       http://staff.city.ac.uk/~ross/papers/Applicative.pdf
-    v}
-*)
+    v} *)
 
 open! Import
 
@@ -27,8 +26,7 @@ module type Basic = sig
       - homomorphism: [return f <*> return x = return (f x)]
       - interchange:  [tf <*> return x = return (fun f -> f x) <*> tf]
 
-      Note: <*> is the infix notation for apply.
-  *)
+      Note: <*> is the infix notation for apply. *)
 
   (** The [map] argument to [Applicative.Make] says how to implement the applicative's
       [map] function.  [`Define_using_apply] means to define [map t ~f = return f <*> t].
@@ -55,6 +53,8 @@ module type S = sig
   val map3 : 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t
 
   val all : 'a t list -> 'a list t
+
+  val all_ignore : unit t list -> unit t
 
   val both : 'a t -> 'b t -> ('a * 'b) t
 
@@ -91,8 +91,7 @@ module type Args = sig
 
       {[
         step ~f:(fun f x -> f ~foo:x) : ('a -> 'r1, 'r2) t -> (foo:'a -> 'r1, 'r2) t
-      ]}
-  *)
+      ]} *)
   val step : ('f1, 'r) t -> f:('f2 -> 'f1) -> ('f2, 'r) t
 
   (** The preferred way to factor out an [Args] sub-sequence:
@@ -131,8 +130,7 @@ module type Args = sig
             @@ zap "D"
             @> nil
           )
-      ]}
-  *)
+      ]} *)
 
   val mapN : f:'f -> ('f, 'r) t -> 'r arg
 
@@ -166,6 +164,8 @@ module type S2 = sig
     -> ('d, 'e) t
 
   val all : ('a, 'e) t list -> ('a list, 'e) t
+
+  val all_ignore : (unit, 'e) t list -> (unit, 'e) t
 
   val both : ('a, 'e) t -> ('b, 'e) t -> ('a * 'b, 'e) t
 
@@ -208,7 +208,7 @@ end
 
 module Args_to_Args2 (X : Args) : (
   Args2 with type ('a, 'e) arg = 'a X.arg
-        with type ('f, 'r, 'e) t = ('f, 'r) X.t
+  with type ('f, 'r, 'e) t = ('f, 'r) X.t
 ) = struct
   type ('a, 'e) arg = 'a X.arg
   type ('f, 'r, 'e) t = ('f, 'r) X.t

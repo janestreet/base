@@ -2,7 +2,15 @@
 
 open! Import
 
-type t = Sign0.t = Neg | Zero | Pos [@@deriving hash]
+type t = Sign0.t = Neg | Zero | Pos [@@deriving_inline hash]
+include
+sig
+  [@@@ocaml.warning "-32"]
+  val hash_fold_t :
+    Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+end
+[@@@end]
 
 (** This provides [to_string]/[of_string], sexp/bin_io conversion, Map, Hashtbl, etc. *)
 include Identifiable.S with type t := t

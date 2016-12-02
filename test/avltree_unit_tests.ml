@@ -218,8 +218,8 @@ let%test_module _ =
                ~if_found:     (fun data -> `Found     data)
                ~if_not_found: (fun key  -> `Not_found key))
             ~expect:(match Map.find map key with
-                     | None      -> `Not_found key
-                     | Some data -> `Found     data))
+              | None      -> `Not_found key
+              | Some data -> `Found     data))
 
     let iter = iter
 

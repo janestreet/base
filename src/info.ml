@@ -4,7 +4,7 @@
 
 open! Import
 
-module List = Base_list
+module String = String0
 
 module Message = struct
   type t =
@@ -17,7 +17,52 @@ module Message = struct
     | Tag_arg             of string * Sexp.t * t
     | Of_list             of int option * t list
     | With_backtrace      of t * string (* backtrace *)
-  [@@deriving sexp_of]
+  [@@deriving_inline sexp_of]
+  let rec sexp_of_t : t -> Sexplib.Sexp.t =
+    function
+    | Could_not_construct v0 ->
+      let v0 = Sexp.sexp_of_t v0  in
+      Sexplib.Sexp.List [Sexplib.Sexp.Atom "Could_not_construct"; v0]
+    | String v0 ->
+      let v0 = sexp_of_string v0  in
+      Sexplib.Sexp.List [Sexplib.Sexp.Atom "String"; v0]
+    | Exn v0 ->
+      let v0 = sexp_of_exn v0  in
+      Sexplib.Sexp.List [Sexplib.Sexp.Atom "Exn"; v0]
+    | Sexp v0 ->
+      let v0 = Sexp.sexp_of_t v0  in
+      Sexplib.Sexp.List [Sexplib.Sexp.Atom "Sexp"; v0]
+    | Tag_sexp (v0,v1,v2) ->
+      let v0 = sexp_of_string v0
+
+      and v1 = Sexp.sexp_of_t v1
+
+      and v2 = sexp_of_option Source_code_position0.sexp_of_t v2
+      in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Tag_sexp"; v0; v1; v2]
+    | Tag_t (v0,v1) ->
+      let v0 = sexp_of_string v0
+
+      and v1 = sexp_of_t v1
+      in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Tag_t"; v0; v1]
+    | Tag_arg (v0,v1,v2) ->
+      let v0 = sexp_of_string v0
+
+      and v1 = Sexp.sexp_of_t v1
+
+      and v2 = sexp_of_t v2
+      in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Tag_arg"; v0; v1; v2]
+    | Of_list (v0,v1) ->
+      let v0 = sexp_of_option sexp_of_int v0
+
+      and v1 = sexp_of_list sexp_of_t v1
+      in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Of_list"; v0; v1]
+    | With_backtrace (v0,v1) ->
+      let v0 = sexp_of_t v0
+
+      and v1 = sexp_of_string v1
+      in Sexplib.Sexp.List [Sexplib.Sexp.Atom "With_backtrace"; v0; v1]
+
+  [@@@end]
 
   let rec to_strings_hum t ac =
     (* We use [Sexp.to_string_mach], despite the fact that we are implementing
@@ -51,7 +96,7 @@ module Message = struct
         to_strings_hum t (if List.is_empty ac then ac else ("; " :: ac)))
   ;;
 
-  let to_string_hum_deprecated t = String.concat "" (to_strings_hum t [])
+  let to_string_hum_deprecated t = String.concat (to_strings_hum t [])
 
   let rec to_sexps_hum t ac =
     match t with
@@ -104,11 +149,11 @@ let sexp_of_t t = Message.to_sexp_hum (to_message t)
 let t_of_sexp sexp = lazy (Message.Sexp sexp)
 
 let compare t1 t2 =
-  [%compare: Sexp.t] (t1 |> [%sexp_of: t]) (t2 |> [%sexp_of: t])
+  Sexp.compare (sexp_of_t t1) (sexp_of_t t2)
 ;;
 
-let hash_fold_t state t = [%hash_fold: Sexp.t] state (t |> [%sexp_of: t])
-let hash = [%hash: t]
+let hash_fold_t state t = Sexp.hash_fold_t state (sexp_of_t t)
+let hash t = Hash.run hash_fold_t t
 
 let to_string_hum t =
   match to_message t with
@@ -125,8 +170,6 @@ let of_lazy l = lazy (protect (fun () -> String (Lazy.force l)))
 let of_string message = Lazy.from_val (String message)
 
 let createf format = Printf.ksprintf of_string format
-
-let%test _ = to_string_hum (of_string "a\nb") = "a\nb"
 
 let of_thunk f = lazy (protect (fun () -> String (f ())))
 
@@ -152,14 +195,14 @@ exception Exn of t
 
 let () =
   (* We install a custom exn-converter rather than use
-     [exception Exn of t [@@deriving sexp]] to eliminate the extra wrapping of
+     [exception Exn of t [@@deriving_inline sexp][@@@end]] to eliminate the extra wrapping of
      "(Exn ...)". *)
   Sexplib.Conv.Exn_converter.add [%extension_constructor Exn]
     (function
-    | Exn t -> sexp_of_t t
-    | _ ->
-      (* Reaching this branch indicates a bug in sexplib. *)
-      assert false)
+      | Exn t -> sexp_of_t t
+      | _ ->
+        (* Reaching this branch indicates a bug in sexplib. *)
+        assert false)
 ;;
 
 let to_exn t =
@@ -175,7 +218,7 @@ let of_exn ?backtrace exn =
   let backtrace =
     match backtrace with
     | None -> None
-    | Some `Get -> Some (Printexc.get_backtrace ())
+    | Some `Get -> Some (Caml.Printexc.get_backtrace ())
     | Some (`This s) -> Some s
   in
   match exn, backtrace with
@@ -185,7 +228,7 @@ let of_exn ?backtrace exn =
   | _    , Some backtrace -> lazy (With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace))
 ;;
 
-let pp ppf t = Format.pp_print_string ppf (to_string_hum t)
+let pp ppf t = Caml.Format.pp_print_string ppf (to_string_hum t)
 let () = Pretty_printer.register "Base.Info.pp"
 
 module Internal_repr = Message

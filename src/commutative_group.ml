@@ -5,13 +5,19 @@
     1: associativity: (a+b)+c = a+(b+c) for all elt's a,b,c
     2: identity: zero+a = a+zero = a for all elt's a
     3: inverses: given any elt a there exists a (unique) elt b such that a+b=b+a=zero
-    4: commutativity: a+b = b+a
-*)
+    4: commutativity: a+b = b+a *)
 
 open! Import
 
 module type S = sig
-  type t [@@deriving sexp]  (* an element of the group *)
+  type t [@@deriving_inline sexp]
+  include
+  sig
+    [@@@ocaml.warning "-32"]
+    val t_of_sexp : Sexplib.Sexp.t -> t
+    val sexp_of_t : t -> Sexplib.Sexp.t
+  end
+  [@@@end]  (* an element of the group *)
 
   val zero : t
   val (+)  : t -> t -> t

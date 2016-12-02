@@ -1,6 +1,9 @@
+(** A lazy string, implemented with [Info], but intended specifically for error
+    messages. *)
+
 open! Import
 
-include Info_intf.S
+include Info_intf.S with type t = private Info.t
 
 (** Note that the exception raised by this function maintains a reference to the [t]
     passed in. *)

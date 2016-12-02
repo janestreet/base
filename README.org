@@ -1,42 +1,204 @@
 * Base
 
-Base is an industrial-strength alternative to the OCaml standard
-library.  It was developed by Jane Street, which is the largest
-industrial user of OCaml.
+Base is a standard library for OCaml. It is not an extension but rather
+a wholesale replacement of the standard library distributed with the
+OCaml compiler. In particular it makes different choices and doesn't
+re-export features that are not fully portable such as I/O, which are
+left to other libraries.
 
-Base aims to be fast to build and as such has no dependencies outside
-of the compiler distribution.
+** Overview
 
-It is fully portable and especially work in environment such as
-javascript. As such it doesn't provides IO or other system dependant
-functions which are left to third-party libraries.
+Base provides a standard set of general purpose modules. Everything
+exposed by Base is fully portable and should work in any environment
+that can run OCaml code: Unix, Windows, Javascript, embedded systems, etc.
 
-** How to use Base
+Base uses [[https://github.com/janestreet/jbuilder][jbuilder]] to build which
+requires nothing more than the compiler. In particular, you don't need
+=bash= or =make= to build Base.
 
-Base is a full standard library replacement rather that an extension.
-This is to help enforce the Base conventions in code using it. The
-recommended way to use it is through the =-open= command-line argument
-of the compiler:
-
-#+begin_src
-$ ocamlc -open Base ...
-#+end_src
-
-This will ensure that all of your source files are in the Base
-namespace rather than in the one of the default standard library from
-the compiler discribution.
+Outside of jbuilder, Base has no dependencies and is fast to build.
 
 ** Using the OCaml standard library with Base
 
-After an =open Base=, all the modules, values, types, ... coming from
-the OCaml standard library that one normally gets in the default
-environment are deprecated.
+Base is intended as a full stdlib replacement.  As a result, after an
+=open Base=, all the modules, values, types, ... coming from the OCaml
+standard library that one normally gets in the default environment are
+deprecated.
 
 In order to access these values, one must use the =Caml= library,
 which re-exports them all through the toplevel name =Caml=:
 =Caml.String=, =Caml.print_string=, ...
 
-** Base and ppx rewriters
+The recommended way to build code using Base is as follows:
 
-The code of Base itself uses ppx rewriters such as [[https://github.com/janestreet/ppx_sexp_conv][ppx_sexp_conv]]. In
-order to have 0-dependencies, the code of Base is bootstrapped.
+#+begin_src ocaml
+$ ocamlc -open Base
+#+end_src
+
+** Differences between Base and the OCaml standard library
+
+Programmers who are used to the OCaml standard library should read
+through this section to understand major differences between the two
+libraries that one should be aware of when switching to Base.
+
+*** Comparison operators
+
+The comparison operators exposed by the OCaml standard library are
+polymorphic:
+
+#+begin_src ocaml
+val compare : 'a -> 'a -> int
+val ( <= ) : 'a -> 'a -> bool
+...
+#+end_src
+
+What they implement is structural comparison of the runtime
+representation of values. Since these are often error-prone,
+i.e. they don't correspond to what the user expects, they are not
+exposed directly by Base.
+
+To use polymorphic comparison with Base, one should use the
+=Polymorphic_compare= module. The default comparison operators exposed
+by Base are the integer ones, just like the default arithmetic
+operators are the integer ones.
+
+The recommended way to compare arbitrary complex data structures is to
+use the specific =compare= functions. For instance:
+
+#+begin_src ocaml
+List.compare String.compare x y
+#+end_src
+
+The [[https://github.com/janestreet/ppx_compare][ppx_compare]] rewriter
+offers an alternative way to write this:
+
+#+begin_src ocaml
+[%compare: string list] x y
+#+end_src
+
+** Base and ppx code generators
+
+Base uses a few ppx code generators to implement:
+
+- reliable and customizable comparison of OCaml values
+- reliable and customizable hash of OCaml values
+- conversions between OCaml values and s-expression
+
+However, it doesn't need these code generators to build. What it does
+instead is use ppx as a code verification tool during development. It
+works in a very similar fashion to
+[[https://github.com/janestreet/ppx_expect][expectation tests]].
+
+Whenever you see this in the code source:
+
+#+begin_src ocaml
+type t = ... [@@deriving_inline sexp_of]
+let sexp_of_t = ...
+[@@@end]
+#+end_src
+
+the code between the =[@@deriving_inline]= and the =[@@@end]= is
+generated code. The generated code is currently quite big and hard to
+read, however we are working on making it look like human-written
+code.
+
+You can put the following elisp code in your =~/.emacs= file to hide
+these blocks:
+
+#+begin_src scheme
+(defun deriving-inline-forward-sexp (&optional arg)
+  (search-forward-regexp "\\[@@@end\\]") nil nil arg)
+
+(defun setup-hide-deriving-inline ()
+  (inline)
+  (hs-minor-mode t)
+  (let ((hs-hide-comments-when-hiding-all nil))
+    (hs-hide-all)))
+
+(require 'hideshow)
+(add-to-list 'hs-special-modes-alist
+             '(tuareg-mode "\\[@@deriving_inline[^]]*\\]" "\\[@@@end\\]" nil
+                           deriving-inline-forward-sexp nil))
+(add-hook 'tuareg-mode-hook 'setup-hide-deriving-inline))
+#+end_src
+
+Things are not yet setup in the git repository to make it convenient
+to change types and update the generated code, but they will be setup
+soon.
+
+** Base coding rules
+
+There are a few coding rules across the code base that are enforced by
+lint tools.
+
+These rules are:
+
+- Opening the =Caml= module is not allowed. Inside Base, the OCaml
+  stdlib is shadowed and accessible through the =Caml= module. We
+  forbid opening =Caml= so that we know exactly where things come
+  from.
+- =Caml.Foo= modules cannot be aliased, one must use =Caml.Foo=
+  explicitly. This is to avoid having to remember a list of aliases
+  at the beginning of each file.
+- For some modules that are both in the OCaml stdlib and Base, such as
+  =String=, we define a module =String0= for common functions that
+  cannot be defined directly in =Base.String= to avoid creating a
+  circular dependency.  Expect for =String= itself, other modules
+  are not allowed to use =Caml.String= and must use either =String= or
+  =String0= instead.
+- Indentation is exactly the one of =ocp-indent=.
+- A few other coding style rules enforced by
+  [[https://github/janestreet/ppx_js_style][ppx_js_style]].
+
+The Base specific coding rules are checked by =ppx_base_lint=, in the
+=lint= subfolder. The indentation rules are checked by a wrapper around
+=ocp-indent= and the coding style rules are checked by =ppx_js_style=.
+
+These checks are currently not run by =jbuilder=, but it will soon get
+a =-dev= flag to run them automatically.
+
+** Roadmap
+
+Following is the current plan for a stable version 1 of Base.
+
+*** Add missing modules
+
+There are still a few missing modules in Base:
+
+- =Buffer=
+- =Bytes= (and make Base -safe-string compliant)
+- =Format=
+- =Queue=
+- =Ref=
+- =Type_equal=
+- =Uchar=
+- =Unit=
+
+For =Format=, it might be better to simply import the
+[[http://erratique.ch/software/fmt][Fmt module]] that
+provides a better API than the =Format= module of the stdlib.
+
+*** Add more integer types
+
+Add support for ={,u}int{8,16,32,64}=. These are always useful when
+implementing binary protocols.
+
+Initially they should be implemented with C stubs and eventually we
+should propose their inclusion in the compiler.
+
+*** 80 columns limit
+
+Currently lines in Base are limited to a maximum width of 90
+characters. To make things more standard, we should use an 80 columns
+limit.  The only thing needed for this is to extend the style checker
+to enforce a maximum line width.
+
+*** Remove implicit uses of polymorphic comparison
+
+Such as =List.mem= where =?equal= defaults to the polymorphic
+comparison. These are error-prone.
+
+*** Improve the generated code
+
+Improve our code generators to produce code that looks more like
+hand-written code.

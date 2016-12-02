@@ -18,16 +18,29 @@
         ...
       else
         ...
-    ]}
-*)
+    ]} *)
 
 open! Import
 
 type t =
-| Less
-| Equal
-| Greater
-[@@deriving compare, hash, sexp]
+  | Less
+  | Equal
+  | Greater
+[@@deriving_inline compare, enumerate, hash, sexp]
+include
+sig
+  [@@@ocaml.warning "-32"]
+  val t_of_sexp : Sexplib.Sexp.t -> t
+  val sexp_of_t : t -> Sexplib.Sexp.t
+  val hash_fold_t :
+    Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+  val all : t list
+  val compare : t -> t -> int
+end
+[@@@end]
+
+include Equal.S with type t := t
 
 (** [of_int n] is:
 
@@ -35,8 +48,7 @@ type t =
       Less     if n < 0
       Equal    if n = 0
       Greater  if n > 0
-    v}
-*)
+    v} *)
 val of_int : int -> t
 
 (** [to_int t] is:
@@ -48,13 +60,12 @@ val of_int : int -> t
     v}
 
     It can be useful when writing a comparison function to allow one to return
-    [Ordering.t] values and transform them to [int]s later.
-*)
+    [Ordering.t] values and transform them to [int]s later. *)
 val to_int : t -> int
 
 module Export : sig
   type _ordering = t =
-  | Less
-  | Equal
-  | Greater
+    | Less
+    | Equal
+    | Greater
 end

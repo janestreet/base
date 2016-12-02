@@ -463,7 +463,7 @@ module type Container = sig
         let count    = C.count
         let exists   = C.exists
         let find     = C.find
-        ...
+        (* ... *)
       ]}
 
       This is preferable to:
@@ -476,8 +476,7 @@ module type Container = sig
       container functions ([length] being a common one).
 
       [Container.Make0] is like [Container.Make], but for monomorphic containers like
-      [string].
-  *)
+      [string]. *)
   module Make  (T : Make_arg)  : S1 with type 'a t := 'a T.t
   module Make0 (T : Make0_arg) : S0 with type    t :=    T.t and type elt := T.elt
 end

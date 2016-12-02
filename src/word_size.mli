@@ -2,7 +2,9 @@
 
 open! Import
 
-type t = W32 | W64
+type t = W32 | W64 [@@deriving_inline sexp_of]
+include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+[@@@end]
 
 val num_bits : t -> int
 

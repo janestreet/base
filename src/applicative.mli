@@ -19,8 +19,7 @@ module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t
         mf >>= fun f ->
         mx >>| fun x ->
         f x
-    ]}
-*)
+    ]} *)
 module Of_monad (M : Monad.S)   : S with type 'a t := 'a M.t
 module Compose  (F : S) (G : S) : S with type 'a t =  'a F.t G.t
 module Pair     (F : S) (G : S) : S with type 'a t =  'a F.t * 'a G.t

@@ -2,8 +2,8 @@
 
     The functions of [Hash_intf.S] are only allowed to be used in specific sequence:
 
-        alloc, reset ?seed, fold_..*, get_hash_value,
-               reset ?seed, fold_..*, get_hash_value, ...
+    alloc, reset ?seed, fold_..*, get_hash_value,
+    reset ?seed, fold_..*, get_hash_value, ...
 
     (The optional [seed]s passed to each reset may differ.)
 
@@ -23,8 +23,9 @@
     [get_hash_value] requires a valid state and makes it invalid.
 
     These requirements are currently formally encoded in [Check_initialized_correctly]
-    module in bench/bench.ml.
-*)
+    module in bench/bench.ml. *)
+
+open! Import0
 
 module type S = sig
 
@@ -35,9 +36,9 @@ module type S = sig
   type state
 
   (** [fold_<T> state v] incorporates a value [v] of type <T> into the hash-state,
-      returning a modified hash-state. Implementations of the [fold_<T>] functions may
-      mutate the [state] argument in place, and return a reference to it.
-      Implementations of the fold_<T> functions should not allocate. *)
+      returning a modified hash-state.  Implementations of the [fold_<T>] functions may
+      mutate the [state] argument in place, and return a reference to it.  Implementations
+      of the fold_<T> functions should not allocate. *)
   val fold_int    : state -> int    -> state
   val fold_int64  : state -> int64  -> state
   val fold_float  : state -> float  -> state
@@ -46,7 +47,7 @@ module type S = sig
   (** [seed] is the type used to seed the initial hash-state. *)
   type seed
 
-  (** [alloc ()] returns a fresh uninitialized hash-state. May allocate. *)
+  (** [alloc ()] returns a fresh uninitialized hash-state.  May allocate. *)
   val alloc : unit -> state
 
   (** [reset ?seed state] initializes/resets a hash-state with the given [seed], or else a
@@ -70,31 +71,29 @@ module type Builtin_intf = sig
   type state
   type 'a folder = state -> 'a -> state
 
-  val hash_fold_nativeint    : nativeint     folder
-  val hash_fold_int64        : int64         folder
-  val hash_fold_int32        : int32         folder
-  val hash_fold_char         : char          folder
-  val hash_fold_int          : int           folder
-  val hash_fold_bool         : bool          folder
-  val hash_fold_string       : string        folder
-  val hash_fold_float        : float         folder
-  val hash_fold_unit         : unit          folder
+  val hash_fold_nativeint : nativeint folder
+  val hash_fold_int64     : int64     folder
+  val hash_fold_int32     : int32     folder
+  val hash_fold_char      : char      folder
+  val hash_fold_int       : int       folder
+  val hash_fold_bool      : bool      folder
+  val hash_fold_string    : string    folder
+  val hash_fold_float     : float     folder
+  val hash_fold_unit      : unit      folder
 
-  val hash_fold_option       : 'a folder -> 'a option  folder
-  val hash_fold_list         : 'a folder -> 'a list    folder
-  val hash_fold_lazy_t       : 'a folder -> 'a lazy_t  folder
+  val hash_fold_option : 'a folder -> 'a option folder
+  val hash_fold_list   : 'a folder -> 'a list   folder
+  val hash_fold_lazy_t : 'a folder -> 'a lazy_t folder
 
   (** Hash support for [array] and [ref] is provided, but is potentially DANGEROUS, since
       it incorporates the current contents of the array/ref into the hash value.  Because
       of this we add a [_frozen] suffix to the function name.
 
-      Hash support for [string] is also potentially DANGEROUS, but strings are mutated less
-      often, so we don't append [_frozen] to it.
+      Hash support for [string] is also potentially DANGEROUS, but strings are mutated
+      less often, so we don't append [_frozen] to it.
 
-      Also note that we don't support [bytes].
-  *)
-
-  val hash_fold_ref_frozen : 'a folder -> 'a ref folder
+      Also note that we don't support [bytes]. *)
+  val hash_fold_ref_frozen   : 'a folder -> 'a ref   folder
   val hash_fold_array_frozen : 'a folder -> 'a array folder
 
 end
@@ -105,20 +104,19 @@ module type Full = sig
 
   type 'a folder = state -> 'a -> state
 
-  (** [create ?seed ()] is a convenience. Equivalent to [reset ?seed (alloc ())] *)
+  (** [create ?seed ()] is a convenience.  Equivalent to [reset ?seed (alloc ())] *)
   val create : ?seed:seed -> unit -> state
 
   module Builtin : Builtin_intf
     with type state := state
      and type 'a folder := 'a folder
 
-  (** [run ?seed folder x] runs [folder] on [x] in a newly allocated
-      hash-state, initialized using optional [seed] or a default-seed.
+  (** [run ?seed folder x] runs [folder] on [x] in a newly allocated hash-state,
+      initialized using optional [seed] or a default-seed.
 
       The following identity exists: [run [%hash_fold: T]] == [[%hash: T]]
 
-      [run] can be used if we wish to run a hash-folder with a non-default seed.
-  *)
-  val run : ?seed:seed-> 'a folder -> 'a -> hash_value
+      [run] can be used if we wish to run a hash-folder with a non-default seed. *)
+  val run : ?seed:seed -> 'a folder -> 'a -> hash_value
 
 end

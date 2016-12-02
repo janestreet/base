@@ -12,8 +12,7 @@
     {[
       type 'a t
       include Invariant.S1 with type 'a t := 'a t
-    ]}
-*)
+    ]} *)
 
 open! Import
 
@@ -67,9 +66,7 @@ module type Invariant = sig
       ]}
 
       It's okay to use [ <:sexp_of< _ t >> ] because the exceptions raised by [check_a]
-      will show the parts that are sexp_opaque at top-level.
-
-  *)
+      will show the parts that are sexp_opaque at top-level. *)
   val invariant
     :  Source_code_position0.t
     -> 'a
@@ -86,16 +83,15 @@ module type Invariant = sig
           { foo : Foo.t;
             bar : Bar.t;
           }
-        with fields
+        [@@deriving_inline fields][@@@end]
 
         let invariant t : unit =
-          invariant "Foo.invariant" t <:sexp_of< t >> (fun () ->
+          Invariant.invariant [%here] t [%sexp_of: t] (fun () ->
             let check f = Invariant.check_field t f in
             Fields.iter
               ~foo:(check Foo.invariant)
               ~bar:(check Bar.invariant))
         ;;
-      ]}
-  *)
+      ]} *)
   val check_field : 'a -> 'b t -> ('a, 'b) Field.t -> unit
 end

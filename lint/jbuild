@@ -1,0 +1,4 @@
+(library
+ ((name ppx_base_lint)
+  (libraries (compiler-libs.common ppx_core ppx_driver))
+  (preprocess no_preprocessing)))

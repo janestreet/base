@@ -18,8 +18,7 @@
      (* find the index in [t] where all elements to the left are less than [e] *)
      binary_search_segmented t ~get ~length ~segment_of:(fun e' ->
        if compare e' e <= 0 then `Left else `Right) `First_on_right
-   ]}
-*)
+   ]} *)
 
 open! Import
 

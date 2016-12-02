@@ -1,5 +1,5 @@
-(* A few small things copied from other parts of Base because
-   they depend on us, so we can't use them. *)
+(* A few small things copied from other parts of Base because they depend on us, so we
+   can't use them. *)
 
 open! Import
 
@@ -9,31 +9,29 @@ module Int = struct
   let max (x : t) y = if x > y then x else y
 end
 
-let phys_equal = (==)
-
-(* Its important that Empty have no args. It's tempting to make this type
-   a record (e.g. to hold the compare function), but a lot of memory is saved
-   by Empty being an immediate, since all unused buckets in the hashtbl don't
-   use any memory (besides the array cell) *)
+(* Its important that Empty have no args. It's tempting to make this type a record
+   (e.g. to hold the compare function), but a lot of memory is saved by Empty being an
+   immediate, since all unused buckets in the hashtbl don't use any memory (besides the
+   array cell) *)
 type ('k, 'v) t =
-| Empty
-| Node of { mutable left   : ('k, 'v) t
-          ;         key    : 'k
-          ; mutable value  : 'v
-          ; mutable height : int
-          ; mutable right  : ('k, 'v) t
-          }
-| Leaf of {         key    : 'k
-          ; mutable value  : 'v
-          }
+  | Empty
+  | Node of { mutable left   : ('k, 'v) t
+            ;         key    : 'k
+            ; mutable value  : 'v
+            ; mutable height : int
+            ; mutable right  : ('k, 'v) t
+            }
+  | Leaf of {         key    : 'k
+            ; mutable value  : 'v
+            }
 
 
 let empty = Empty
 
 let height = function
-   | Empty -> 0
-   | Leaf _ -> 1
-   | Node { left = _; key = _; value = _; height; right = _ } -> height
+  | Empty -> 0
+  | Leaf _ -> 1
+  | Node { left = _; key = _; value = _; height; right = _ } -> height
 
 let invariant compare =
   let legal_left_key key = function
@@ -64,11 +62,10 @@ let invariant t ~compare = invariant compare t
 
 (* In the following comments,
    't is balanced' means that 'invariant t' does not
-     raise an exception.  This implies of course that each node's height field is
-     correct.
+   raise an exception.  This implies of course that each node's height field is
+   correct.
    't is balanceable' means that height of the left and right subtrees of t
-     differ by at most 3.
-*)
+   differ by at most 3. *)
 
 (* @pre: left and right subtrees have correct heights
    @post: output has the correct height *)
@@ -80,8 +77,7 @@ let update_height = function
 
 (* @pre: left and right subtrees are balanced
    @pre: tree is balanceable
-   @post: output is balanced (in particular, height is correct)
-*)
+   @post: output is balanced (in particular, height is correct) *)
 let balance tree =
   match tree with
   | Empty | Leaf _ -> tree
@@ -153,20 +149,18 @@ let balance tree =
             right_node_left
         end
     end else begin
-          update_height tree;
-          tree
+      update_height tree;
+      tree
     end
 ;;
 
 (* @pre: tree is balanceable
    @pre: abs (height (right node) - height (balance tree)) <= 3
-   @post: result is balanceable
-*)
+   @post: result is balanceable *)
 
 (* @pre: tree is balanceable
    @pre: abs (height (right node) - height (balance tree)) <= 3
-   @post: result is balanceable
-*)
+   @post: result is balanceable *)
 let set_left node tree =
   let tree = balance tree in
   match node with
@@ -179,8 +173,7 @@ let set_left node tree =
 
 (* @pre: tree is balanceable
    @pre: abs (height (left node) - height (balance tree)) <= 3
-   @post: result is balanceable
-*)
+   @post: result is balanceable *)
 let set_right node tree =
   let tree = balance tree in
   match node with
@@ -222,9 +215,9 @@ let add =
         added := false;
         if replace then r.value <- v;
       end else if c < 0 then
-          set_left t (add left replace added compare k v)
-        else
-          set_right t (add right replace added compare k v);
+        set_left t (add left replace added compare k v)
+      else
+        set_right t (add right replace added compare k v);
       t
   in
   fun t ~replace ~compare ~added ~key ~data ->

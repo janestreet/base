@@ -1,8 +1,32 @@
 open! Import
 
-module List = Base_list
+type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, hash, sexp]
+let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
+  let _tp_loc = "src/or_error.ml.t"  in
+  fun _of_a  -> fun t  -> (Result.t_of_sexp _of_a Error.t_of_sexp) t
+let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+  fun _of_a  -> fun v  -> (Result.sexp_of_t _of_a Error.sexp_of_t) v
+let hash_fold_t :
+  'a .
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
+  Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
+  =
+  fun _hash_fold_a  ->
+  fun hsv  ->
+  fun arg  ->
+    Result.hash_fold_t (fun hsv  -> fun arg  -> _hash_fold_a hsv arg)
+      (fun hsv  -> fun arg  -> Error.hash_fold_t hsv arg) hsv arg
 
-type 'a t = ('a, Error.t) Result.t [@@deriving compare, hash, sexp]
+let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
+  fun _cmp__a  ->
+  fun a__001_  ->
+  fun b__002_  ->
+    Result.compare
+      (fun a__003_  -> fun b__004_  -> _cmp__a a__003_ b__004_)
+      (fun a__005_  -> fun b__006_  -> Error.compare a__005_ b__006_)
+      a__001_ b__002_
+
+[@@@end]
 
 let invariant invariant_a t =
   match t with
@@ -67,14 +91,12 @@ let error_string message = Error (Error.of_string message)
 
 let errorf format = Printf.ksprintf error_string format
 
-let%test _ = errorf "foo %d" 13 = error_string "foo 13"
-
 let tag t ~tag = Result.map_error t ~f:(Error.tag ~tag)
 let tag_arg t message a sexp_of_a =
   Result.map_error t ~f:(fun e -> Error.tag_arg e message a sexp_of_a)
 ;;
 
-let unimplemented s = error "unimplemented" s [%sexp_of: string]
+let unimplemented s = error "unimplemented" s sexp_of_string
 
 let combine_errors l =
   let ok, errs = List.partition_map l ~f:Result.ok_fst in
@@ -83,25 +105,7 @@ let combine_errors l =
   | _ -> Error (Error.of_list errs)
 ;;
 
-let%test_unit _ =
-  for i = 0 to 10; do
-    assert (combine_errors (List.init i ~f:(fun _ -> Ok ()))
-            = Ok (List.init i ~f:(fun _ -> ())));
-  done
-let%test _ = Result.is_error (combine_errors [ error_string "" ])
-let%test _ = Result.is_error (combine_errors [ Ok (); error_string "" ])
-
-
 let combine_errors_unit l = Result.map (combine_errors l) ~f:(fun (_ : unit list) -> ())
-
-let%test _ = combine_errors_unit [Ok (); Ok ()] = Ok ()
-let%test _ = combine_errors_unit [] = Ok ()
-let%test _ =
-  let a = Error.of_string "a" and b = Error.of_string "b" in
-  match combine_errors_unit [Ok (); Error a; Ok (); Error b] with
-  | Ok _ -> false
-  | Error e -> Error.to_string_hum e = Error.to_string_hum (Error.of_list [a;b])
-;;
 
 let filter_ok_at_least_one l =
   let ok, errs = List.partition_map l ~f:Result.ok_fst in
@@ -140,10 +144,10 @@ let iter t ~f =
 ;;
 
 module C = Container.Make (struct
-  type nonrec 'a t = 'a t
-  let fold = fold
-  let iter = `Custom iter
-end)
+    type nonrec 'a t = 'a t
+    let fold = fold
+    let iter = `Custom iter
+  end)
 
 let count       = C.count
 let exists      = C.exists

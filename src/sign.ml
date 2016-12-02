@@ -14,5 +14,3 @@ let flip = function
   | Pos -> Neg
 
 let ( * ) t t' = of_int (to_int t * to_int t')
-
-let%test _ = of_int 37 = Pos && of_int (-22) = Neg && of_int 0 = Zero

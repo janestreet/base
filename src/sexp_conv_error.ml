@@ -1,8 +1,12 @@
 (* Conv_error: Module for Handling Errors during Automated S-expression
    Conversions *)
 
-open Printf
-open Sexp_conv
+open! Import0
+open  Printf
+open  Sexp_conv
+
+module List   = List0
+module String = String0
 
 (* Errors concerning tuples *)
 
@@ -39,12 +43,12 @@ let unexpected_stag loc sexp =
 let record_only_pairs_expected loc sexp =
   let msg =
     loc ^
-      "_of_sexp: record conversion: only pairs expected, \
-      their first element must be an atom" in
+    "_of_sexp: record conversion: only pairs expected, \
+     their first element must be an atom" in
   of_sexp_error msg sexp
 
 let record_superfluous_fields ~what ~loc rev_fld_names sexp =
-  let fld_names_str = String.concat " " (List.rev rev_fld_names) in
+  let fld_names_str = String.concat (List.rev rev_fld_names) ~sep:" " in
   let msg = sprintf "%s_of_sexp: %s: %s" loc what fld_names_str in
   of_sexp_error msg sexp
 
@@ -55,7 +59,7 @@ let record_extra_fields loc rev_fld_names sexp =
   record_superfluous_fields ~what:"extra fields" ~loc rev_fld_names sexp
 
 let rec record_get_undefined_loop fields = function
-  | [] -> String.concat " " (List.rev fields)
+  | [] -> String.concat (List.rev fields) ~sep:" "
   | (true, field) :: rest -> record_get_undefined_loop (field :: fields) rest
   | _ :: rest -> record_get_undefined_loop fields rest
 
@@ -75,7 +79,7 @@ let record_poly_field_value loc sexp =
   let msg =
     loc ^
     "_of_sexp: cannot convert values of types resulting from polymorphic \
-    record fields"
+     record fields"
   in
   of_sexp_error msg sexp
 

@@ -1,21 +1,28 @@
 (*
-  This is the interface to the runtime support for [ppx_hash].
+   This is the interface to the runtime support for [ppx_hash].
 
-  The [ppx_hash] syntax extension supports: [@@deriving hash] and [%hash_fold: TYPE] and [%hash: TYPE]
+   The [ppx_hash] syntax extension supports: [@@deriving_inline hash][@@@end] and [%hash_fold: TYPE] and
+   [%hash: TYPE]
 
-  For type [t] a function [hash_fold_t] of type [Hash.state -> t -> Hash.state] is generated.
+   For type [t] a function [hash_fold_t] of type [Hash.state -> t -> Hash.state] is
+   generated.
 
-  The generated [hash_fold_<T>] function is compositional, following the structure of the
-  type; allowing user overrides at every level. This is in contrast to ocaml's builtin
-  polymorphic hashing [Hashtbl.hash] which ignores user overrides.
+   The generated [hash_fold_<T>] function is compositional, following the structure of the
+   type; allowing user overrides at every level. This is in contrast to ocaml's builtin
+   polymorphic hashing [Hashtbl.hash] which ignores user overrides.
 
-  The generator also provides a direct hash-function [hash] (named [hash_<T>] when <T> != "t")
-  of type: [t -> Hash.hash_value] as a wrapper around the hash-fold function.
+   The generator also provides a direct hash-function [hash] (named [hash_<T>] when <T> !=
+   "t") of type: [t -> Hash.hash_value] as a wrapper around the hash-fold function.
 
-  The folding hash function can be accessed as [%hash_fold: TYPE]
-  The direct hash function can be accessed as [%hash: TYPE]
+   The folding hash function can be accessed as [%hash_fold: TYPE]
+   The direct hash function can be accessed as [%hash: TYPE]
 *)
 
+open! Import0
+
+module Array = Array0
+module Char  = Char0
+module List  = List0
 
 (** Builtin folding-style hash functions, abstracted over [Hash_intf.S] *)
 module Folding (Hash : Hash_intf.S)
@@ -36,12 +43,12 @@ module Folding (Hash : Hash_intf.S)
 
   (* This ignores the sign bit on 32-bit architectures, but it's unlikely to lead to
      frequent collisions (min_value colliding with 0 is the most likely one).  *)
-  let hash_fold_int32        = as_int Int32.to_int
+  let hash_fold_int32        = as_int Caml.Int32.to_int
 
-  let hash_fold_char         = as_int Char.code
+  let hash_fold_char         = as_int Char.to_int
   let hash_fold_bool         = as_int (function true -> 1 | false -> 0)
 
-  let hash_fold_nativeint s x = hash_fold_int64 s (Int64.of_nativeint x)
+  let hash_fold_nativeint s x = hash_fold_int64 s (Caml.Int64.of_nativeint x)
 
   let hash_fold_option hash_fold_elem s = function
     | None -> hash_fold_int s 0
@@ -62,7 +69,7 @@ module Folding (Hash : Hash_intf.S)
     s
 
   let hash_fold_lazy_t hash_fold_elem s x =
-    hash_fold_elem s (Lazy.force x)
+    hash_fold_elem s (Caml.Lazy.force x)
 
   let hash_fold_ref_frozen hash_fold_elem s x = hash_fold_elem s (!x)
 
@@ -102,11 +109,10 @@ end
 
 module Internalhash : sig
   include Hash_intf.S
-  with type state      = private int (* allow optimizations for immediate type *)
-   and type seed       = int
-   and type hash_value = int
+    with type state      = private int (* allow optimizations for immediate type *)
+     and type seed       = int
+     and type hash_value = int
 
-  (* external create_seeded  : seed            -> state = "%identity"                [@@noalloc] *)
   external fold_int64     : state -> int64  -> state = "internalhash_fold_int64"  [@@noalloc]
   external fold_int       : state -> int    -> state = "internalhash_fold_int"    [@@noalloc]
   external fold_float     : state -> float  -> state = "internalhash_fold_float"  [@@noalloc]

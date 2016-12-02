@@ -15,27 +15,25 @@ open! Import
                 int64        64    64
        v}
 
-  In both cases, the following inequalities hold:
+    In both cases, the following inequalities hold:
 
     {[
       width(int) < width(nativeint)
       && width(int32) <= width(nativeint) <= width(int64)
     ]}
 
-  The conversion functions come in one of two flavors.
+    The conversion functions come in one of two flavors.
 
-  If width(foo) <= width(bar) on both 32-bit and 64-bit architectures, then we have
+    If width(foo) <= width(bar) on both 32-bit and 64-bit architectures, then we have
 
     {[ val foo_to_bar : foo -> bar ]}
 
-  otherwise we have
+    otherwise we have
 
     {[
       val foo_to_bar     : foo -> bar option
       val foo_to_bar_exn : foo -> bar
-    ]}
-
-*)
+    ]} *)
 val int_to_int32           : int       -> int32 option
 val int_to_int32_exn       : int       -> int32
 val int_to_int64           : int       -> int64
@@ -69,11 +67,11 @@ val num_bits_nativeint     : int
 (** human-friendly string (and possibly sexp) conversions *)
 module Make (I : sig
 
-  type t
+    type t
 
-  val to_string : t -> string
+    val to_string : t -> string
 
-end) : sig
+  end) : sig
 
   val to_string_hum
     :  ?delimiter:char  (** defaults to ['_'] *)
@@ -85,20 +83,29 @@ end) : sig
 end
 
 module Make_hex (I : sig
-                   type t [@@deriving compare, hash]
+    type t [@@deriving_inline compare, hash]
+    include
+    sig
+      [@@@ocaml.warning "-32"]
+      val hash_fold_t :
+        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+      val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+      val compare : t -> t -> int
+    end
+    [@@@end]
 
-                   (** [to_string] and [of_string] convert between [t] and unsigned,
-                       unprefixed hexadecimal.
-                       They must be able to handle all non-negative values and also
-                       [min_value]. [to_string min_value] must write a positive hex
-                       representation. *)
-                   val to_string : t -> string
-                   val of_string : string -> t
-                   val zero : t
-                   val (<) : t -> t -> bool
-                   val neg : t -> t
-                   val module_name : string
-                 end)
+    (** [to_string] and [of_string] convert between [t] and unsigned,
+        unprefixed hexadecimal.
+        They must be able to handle all non-negative values and also
+        [min_value]. [to_string min_value] must write a positive hex
+        representation. *)
+    val to_string : t -> string
+    val of_string : string -> t
+    val zero : t
+    val (<) : t -> t -> bool
+    val neg : t -> t
+    val module_name : string
+  end)
   : Int_intf.Hexable with type t := I.t
 (** in the output, [to_string], [of_string], [sexp_of_t], and [t_of_sexp] convert
     between [t] and signed hexadecimal with an optional "0x" or "0X" prefix. *)

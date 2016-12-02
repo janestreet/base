@@ -1,27 +1,126 @@
 open! Import
 
 type ('a, 'b) t = ('a, 'b) Pervasives.result =
-| Ok of 'a
-| Error of 'b
-[@@deriving sexp, compare, hash]
+  | Ok of 'a
+  | Error of 'b
+[@@deriving_inline sexp, compare, hash]
+let hash_fold_t :
+  'a 'b .
+       (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
+  (Ppx_hash_lib.Std.Hash.state -> 'b -> Ppx_hash_lib.Std.Hash.state) ->
+  Ppx_hash_lib.Std.Hash.state ->
+  ('a,'b) t -> Ppx_hash_lib.Std.Hash.state
+  = fun (type a) -> fun (type b) ->
+    (fun _hash_fold_a  ->
+       fun _hash_fold_b  ->
+       fun hsv  ->
+       fun arg  ->
+         match arg with
+         | Ok _a0 ->
+           _hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+         | Error _a0 ->
+           _hash_fold_b (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0 :
+             (Ppx_hash_lib.Std.Hash.state -> a -> Ppx_hash_lib.Std.Hash.state) ->
+         (Ppx_hash_lib.Std.Hash.state -> b -> Ppx_hash_lib.Std.Hash.state) ->
+         Ppx_hash_lib.Std.Hash.state -> (a,b) t -> Ppx_hash_lib.Std.Hash.state)
+
+let compare :
+  'a 'b .
+       ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+  =
+  fun _cmp__a  ->
+  fun _cmp__b  ->
+  fun a__001_  ->
+  fun b__002_  ->
+    if Pervasives.(==) a__001_ b__002_
+    then 0
+    else
+      (match (a__001_, b__002_) with
+       | (Ok _a__006_,Ok _b__005_) -> _cmp__a _a__006_ _b__005_
+       | (Ok _,_) -> (-1)
+       | (_,Ok _) -> 1
+       | (Error _a__004_,Error _b__003_) -> _cmp__b _a__004_ _b__003_)
+
+let t_of_sexp :
+  'a 'b .
+       (Sexplib.Sexp.t -> 'a) ->
+  (Sexplib.Sexp.t -> 'b) -> Sexplib.Sexp.t -> ('a,'b) t
+  = fun (type a) -> fun (type b) ->
+    (let _tp_loc = "src/result.ml.t"  in
+     fun _of_a  ->
+     fun _of_b  ->
+       function
+       | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                               ("ok"|"Ok" as _tag))::sexp_args) as _sexp ->
+         (match sexp_args with
+          | v0::[] -> let v0 = _of_a v0  in Ok v0
+          | _ ->
+            Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+       | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                               ("error"|"Error" as _tag))::sexp_args) as _sexp ->
+         (match sexp_args with
+          | v0::[] -> let v0 = _of_b v0  in Error v0
+          | _ ->
+            Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+       | Sexplib.Sexp.Atom ("ok"|"Ok") as sexp ->
+         Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+       | Sexplib.Sexp.Atom ("error"|"Error") as sexp ->
+         Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+       | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
+         Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
+       | Sexplib.Sexp.List [] as sexp ->
+         Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
+       | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp : (Sexplib.Sexp.t
+                                                                    ->
+                                                                    a) ->
+       (Sexplib.Sexp.t
+        -> b) ->
+       Sexplib.Sexp.t
+       ->
+         (a,b) t)
+
+let sexp_of_t :
+  'a 'b .
+       ('a -> Sexplib.Sexp.t) ->
+  ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+  = fun (type a) -> fun (type b) ->
+    (fun _of_a  ->
+       fun _of_b  ->
+         function
+         | Ok v0 ->
+           let v0 = _of_a v0  in
+           Sexplib.Sexp.List [Sexplib.Sexp.Atom "Ok"; v0]
+         | Error v0 ->
+           let v0 = _of_b v0  in
+           Sexplib.Sexp.List [Sexplib.Sexp.Atom "Error"; v0] : (a ->
+                                                                Sexplib.Sexp.t)
+         ->
+           (b ->
+            Sexplib.Sexp.t)
+         ->
+           (a,
+            b) t ->
+         Sexplib.Sexp.t)
+
+[@@@end]
 
 type ('a, 'b) _t = ('a, 'b) t
 
 include Monad.Make2 (struct
-  type ('a, 'b) t = ('a,'b) _t
+    type ('a, 'b) t = ('a,'b) _t
 
-  let bind x ~f = match x with
-    | Error _ as x -> x
-    | Ok x -> f x
+    let bind x ~f = match x with
+      | Error _ as x -> x
+      | Ok x -> f x
 
-  let map x ~f = match x with
-    | Error _ as x -> x
-    | Ok x -> Ok (f x)
+    let map x ~f = match x with
+      | Error _ as x -> x
+      | Ok x -> Ok (f x)
 
-  let map = `Custom map
+    let map = `Custom map
 
-  let return x = Ok x
-end)
+    let return x = Ok x
+  end)
 
 let ignore = ignore_m
 
@@ -93,8 +192,8 @@ let ok_or_failwith = function
 module Export = struct
   type ('ok, 'err) _result =
     ('ok, 'err) t =
-      | Ok of 'ok
-      | Error of 'err
+    | Ok of 'ok
+    | Error of 'err
 
   let is_error   = is_error
   let is_ok      = is_ok

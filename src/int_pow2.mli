@@ -1,5 +1,5 @@
 (** This module is not exposed in Base.  Instead, these functions are accessed and
-    commented in Base_int. *)
+    commented in Int. *)
 
 open! Import
 

@@ -1,7 +1,4 @@
-
 open! Import
-
-module String = Bytes
 
 type 'a int_spec = {
   name : string;
@@ -27,7 +24,7 @@ let convert a b a_to_b b_to_a =
       if is_in_range i then
         a_to_b i
       else
-        Base_printf.failwithf
+        Printf.failwithf
           "conversion from %s to %s failed: %s is out of range"
           a_name b_name (a_to_string i) ()
     in
@@ -36,11 +33,11 @@ let convert a b a_to_b b_to_a =
 
 let compare_int (x : int) y = compare x y
 
-let int_num_bits = Sys.int_size
+let int_num_bits = Caml.Sys.int_size
 
 let () = assert(   int_num_bits = 63
-                || int_num_bits = 31
-                || int_num_bits = 32 )
+                   || int_num_bits = 31
+                   || int_num_bits = 32 )
 
 let int = {
   name = "int";
@@ -54,65 +51,65 @@ let int = {
 let int32 = {
   name = "int32";
   num_bits = 32;
-  max = Int32.max_int;
-  min = Int32.min_int;
-  to_string = Int32.to_string;
-  compare = Int32.compare;
+  max = Caml.Int32.max_int;
+  min = Caml.Int32.min_int;
+  to_string = Caml.Int32.to_string;
+  compare = Caml.Int32.compare;
 }
 
 let int63 = {
   name = "int63";
   num_bits = 63;
-  max = Int64.shift_right Int64.max_int 1;
-  min = Int64.shift_right Int64.min_int 1;
-  to_string = Int64.to_string;
-  compare = Int64.compare;
+  max = Caml.Int64.shift_right Caml.Int64.max_int 1;
+  min = Caml.Int64.shift_right Caml.Int64.min_int 1;
+  to_string = Caml.Int64.to_string;
+  compare = Caml.Int64.compare;
 }
 
 let int64 = {
   name = "int64";
   num_bits = 64;
-  max = Int64.max_int;
-  min = Int64.min_int;
-  to_string = Int64.to_string;
-  compare = Int64.compare;
+  max = Caml.Int64.max_int;
+  min = Caml.Int64.min_int;
+  to_string = Caml.Int64.to_string;
+  compare = Caml.Int64.compare;
 }
 
 let nativeint = {
   name = "nativeint";
   num_bits = Word_size.num_bits Word_size.word_size;
-  max = Nativeint.max_int;
-  min = Nativeint.min_int;
-  to_string = Nativeint.to_string;
-  compare = Nativeint.compare;
+  max = Caml.Nativeint.max_int;
+  min = Caml.Nativeint.min_int;
+  to_string = Caml.Nativeint.to_string;
+  compare = Caml.Nativeint.compare;
 }
 
 let (int_to_int32, int_to_int32_exn) =
-  convert int int32 Int32.of_int Int32.to_int
+  convert int int32 Caml.Int32.of_int Caml.Int32.to_int
 let (int32_to_int, int32_to_int_exn) =
-  convert int32 int Int32.to_int Int32.of_int
+  convert int32 int Caml.Int32.to_int Caml.Int32.of_int
 
-let int_to_int64 = Int64.of_int
+let int_to_int64 = Caml.Int64.of_int
 let (int64_to_int, int64_to_int_exn) =
-  convert int64 int Int64.to_int Int64.of_int
+  convert int64 int Caml.Int64.to_int Caml.Int64.of_int
 
-let int_to_nativeint = Nativeint.of_int
+let int_to_nativeint = Caml.Nativeint.of_int
 let (nativeint_to_int, nativeint_to_int_exn) =
-  convert nativeint int Nativeint.to_int Nativeint.of_int
+  convert nativeint int Caml.Nativeint.to_int Caml.Nativeint.of_int
 
-let int32_to_int64 = Int64.of_int32
+let int32_to_int64 = Caml.Int64.of_int32
 let (int64_to_int32, int64_to_int32_exn) =
-  convert int64 int32 Int64.to_int32 Int64.of_int32
+  convert int64 int32 Caml.Int64.to_int32 Caml.Int64.of_int32
 
-let int32_to_nativeint = Nativeint.of_int32
+let int32_to_nativeint = Caml.Nativeint.of_int32
 let (nativeint_to_int32, nativeint_to_int32_exn) =
-  convert nativeint int32 Nativeint.to_int32 Nativeint.of_int32
+  convert nativeint int32 Caml.Nativeint.to_int32 Caml.Nativeint.of_int32
 ;;
 
 let (int64_to_nativeint, int64_to_nativeint_exn) =
-  convert int64 nativeint Int64.to_nativeint Int64.of_nativeint
+  convert int64 nativeint Caml.Int64.to_nativeint Caml.Int64.of_nativeint
 ;;
-let nativeint_to_int64 = Int64.of_nativeint
+let nativeint_to_int64 = Caml.Int64.of_nativeint
 
 let int64_fit_on_int63_exn =
   let (_, int64_to_int63_exn) = convert int64 int63 Fn.id Fn.id in
@@ -160,33 +157,12 @@ let insert_delimiter input ~delimiter =
 let insert_underscores input =
   insert_delimiter input ~delimiter:'_'
 
-let%test_module "pretty" = (module struct
-
-  let check input output =
-    Base_list.for_all [""; "+"; "-"] ~f:(fun prefix ->
-      let input  = prefix ^ input  in
-      let output = prefix ^ output in
-      output = insert_underscores input)
-
-  let%test _ = check          "1"             "1"
-  let%test _ = check         "12"            "12"
-  let%test _ = check        "123"           "123"
-  let%test _ = check       "1234"         "1_234"
-  let%test _ = check      "12345"        "12_345"
-  let%test _ = check     "123456"       "123_456"
-  let%test _ = check    "1234567"     "1_234_567"
-  let%test _ = check   "12345678"    "12_345_678"
-  let%test _ = check  "123456789"   "123_456_789"
-  let%test _ = check "1234567890" "1_234_567_890"
-
-end)
-
-let sexp_of_int_style : [ `Underscores | `No_underscores ] ref = ref `No_underscores
+let sexp_of_int_style = Sexp.of_int_style
 
 module Make (I : sig
-  type t
-  val to_string : t -> string
-end) = struct
+    type t
+    val to_string : t -> string
+  end) = struct
 
   open I
 
@@ -199,13 +175,22 @@ end) = struct
     let s = to_string t in
     Sexp.Atom
       (match !sexp_of_int_style with
-      | `Underscores -> insert_delimiter_every s ~chars_per_delimiter ~delimiter:'_'
-      | `No_underscores -> s)
+       | `Underscores -> insert_delimiter_every s ~chars_per_delimiter ~delimiter:'_'
+       | `No_underscores -> s)
   ;;
 end
 
 module Make_hex (I : sig
-    type t [@@deriving compare, hash]
+    type t [@@deriving_inline compare, hash]
+    include
+    sig
+      [@@@ocaml.warning "-32"]
+      val hash_fold_t :
+        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+      val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+      val compare : t -> t -> int
+    end
+    [@@@end]
     val to_string : t -> string
     val of_string : string -> t
     val zero : t
@@ -217,7 +202,18 @@ struct
 
   module T_hex = struct
 
-    type t = I.t [@@deriving compare, hash]
+    type t = I.t [@@deriving_inline compare, hash]
+    let (hash_fold_t :
+           Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+      fun hsv  -> fun arg  -> I.hash_fold_t hsv arg
+    let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+      fun arg  ->
+        Ppx_hash_lib.Std.Hash.get_hash_value
+          (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
+
+    let compare : t -> t -> int =
+      fun a__001_  -> fun b__002_  -> I.compare a__001_ b__002_
+    [@@@end]
 
     let chars_per_delimiter = 4
 
@@ -241,11 +237,11 @@ struct
       failwith (Printf.sprintf "%s.of_string: invalid input %S" I.module_name str)
 
     let of_string_with_delimiter str =
-      I.of_string (Base_string.filter str ~f:(fun c -> c <> '_'))
+      I.of_string (String.filter str ~f:(fun c -> Char.( <> ) c '_'))
 
     let of_string str =
       let module L = Hex_lexer in
-      match Option.try_with (fun () -> L.parse_hex (Lexing.from_string str)) with
+      match Option.try_with (fun () -> L.parse_hex (Caml.Lexing.from_string str)) with
       | None -> invalid str
       | Some (Neg body) -> I.neg (of_string_with_delimiter body)
       | Some (Pos body) -> of_string_with_delimiter body

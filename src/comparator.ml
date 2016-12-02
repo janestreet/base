@@ -38,17 +38,24 @@ module S_to_S1 (S : S) = struct
   let comparator = comparator
 end
 
-module Make (M : sig type t [@@deriving compare, sexp_of] end) = struct
+module Make (M : sig type t [@@deriving_inline compare, sexp_of]
+    include
+    sig
+      [@@@ocaml.warning "-32"]
+      val sexp_of_t : t -> Sexplib.Sexp.t
+      val compare : t -> t -> int
+    end
+    [@@@end] end) = struct
   include M
   type comparator_witness
   let comparator = M.({ compare; sexp_of_t })
 end
 
 module Make1 (M : sig
-  type 'a t
-  val compare : 'a t -> 'a t -> int
-  val sexp_of_t : 'a t -> Sexp.t
-end) = struct
+    type 'a t
+    val compare : 'a t -> 'a t -> int
+    val sexp_of_t : 'a t -> Sexp.t
+  end) = struct
   type comparator_witness
   let comparator = M.({ compare; sexp_of_t })
 end
@@ -56,8 +63,8 @@ end
 module Poly = struct
   type 'a t = 'a
   include Make1 (struct
-    type 'a t = 'a
-    let compare = Pervasives.compare
-    let sexp_of_t = [%sexp_of: _]
-  end)
+      type 'a t = 'a
+      let compare = Pervasives.compare
+      let sexp_of_t _ = Sexp.Atom "_"
+    end)
 end

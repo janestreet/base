@@ -1,5 +1,5 @@
-(* This module is for ppx_sexp_conv, we should get rid of it, but it's not a trivial
-   change. *)
+(** This module is for use by ppx_sexp_conv, and is thus not in the interface of
+    Base. *)
 module Conv_error = Sexp_conv_error
-module Conv = Sexp_conv
-module Sexp = Sexp0
+module Conv       = Sexp_conv
+module Sexp       = Sexp

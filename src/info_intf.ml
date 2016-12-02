@@ -16,24 +16,34 @@
 
     For info where you want to attach some content, you would write:
 
-    {[Info.create "Unable to find file" filename <:sexp_of< string >>]}
+    {[Info.create "Unable to find file" filename [%sexp_of: string]]}
 
     Or even,
 
     {[
-    Info.create "price too big" (price, [`Max max_price])
-      (<:sexp_of< float * [`Max of float] >>)
+      Info.create "price too big" (price, [`Max max_price])
+        [%sexp_of: float * [`Max of float]]
     ]}
 
-    Note that an [Info.t] can be created from any arbritrary sexp with [Info.t_of_sexp].
-*)
+    Note that an [Info.t] can be created from any arbritrary sexp with [Info.t_of_sexp]. *)
 
 open! Import
 
 module type S = sig
 
   (** Serialization and comparison force the lazy message. *)
-  type t [@@deriving compare, hash, sexp]
+  type t [@@deriving_inline compare, hash, sexp]
+  include
+  sig
+    [@@@ocaml.warning "-32"]
+    val t_of_sexp : Sexplib.Sexp.t -> t
+    val sexp_of_t : t -> Sexplib.Sexp.t
+    val hash_fold_t :
+      Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+    val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+    val compare : t -> t -> int
+  end
+  [@@@end]
 
   include Invariant_intf.S with type t := t
 
@@ -43,8 +53,7 @@ module type S = sig
       (of_string s) = s].
 
       If this string is going to go into a log file, you may find it useful to ensure that
-      the string is only one line long.  To do this, use [to_string_mach t].
-  *)
+      the string is only one line long.  To do this, use [to_string_mach t]. *)
   val to_string_hum : t -> string
 
   (** [to_string_mach t] outputs [t] as a sexp on a single-line. *)
@@ -53,8 +62,7 @@ module type S = sig
   (** old version (pre 109.61) of [to_string_hum] that some applications rely on.
 
       Calls should be replaced with [to_string_mach t], which outputs more parenthesis and
-      backslashes.
-  *)
+      backslashes. *)
   val to_string_hum_deprecated : t -> string
 
   val of_string : string -> t
@@ -92,11 +100,11 @@ module type S = sig
   val of_list : ?trunc_after:int -> t list -> t
 
   (** [of_exn] and [to_exn] are primarily used with [Error], but their definitions have to
-     be here because they refer to the underlying representation. *)
+      be here because they refer to the underlying representation. *)
   val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> t
   val to_exn : t -> exn
 
-  val pp : Format.formatter -> t -> unit
+  val pp : Caml.Format.formatter -> t -> unit
 
   module Internal_repr : sig
     type info = t
@@ -113,7 +121,9 @@ module type S = sig
       | Tag_arg             of string * Sexp.t * t
       | Of_list             of int option * t list
       | With_backtrace      of t * string (** The second argument is the backtrace *)
-    [@@deriving sexp_of]
+    [@@deriving_inline sexp_of]
+    include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+    [@@@end]
 
     val of_info : info -> t
     val to_info : t -> info

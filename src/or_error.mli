@@ -3,13 +3,23 @@
 
     A common idiom is to wrap a function that is not implemented on all platforms, e.g.:
 
-    val do_something_linux_specific : (unit -> unit) Or_error.t
-*)
+    val do_something_linux_specific : (unit -> unit) Or_error.t *)
 
 open! Import
 
 (** Serialization and comparison of an [Error] force the error's lazy message. **)
-type 'a t = ('a, Error.t) Result.t [@@deriving compare, hash, sexp]
+type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, hash, sexp]
+include
+sig
+  [@@@ocaml.warning "-32"]
+  val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
+  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+  val hash_fold_t :
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
+    Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+end
+[@@@end]
 
 (** [Applicative] functions don't have quite the same semantics as
     [Applicative.of_Monad(Or_error)] would give -- [apply (Error e1) (Error e2)] returns

@@ -47,7 +47,7 @@ let%test_unit _ =
 
 let round t =
   let sexp = sexp_of_t t in
-  Polymorphic_compare.(=) sexp (sexp_of_t (t_of_sexp sexp))
+  Sexp.(=) sexp (sexp_of_t (t_of_sexp sexp))
 ;;
 
 let%test _ = round (of_string "hello")
@@ -58,3 +58,5 @@ let%test _ = round (tag_arg (of_string "hello") "tag" 13
                       [%sexp_of: int])
 let%test _ = round (of_list [ of_string "hello"; of_string "goodbye" ])
 let%test _ = round (t_of_sexp (Sexplib.Sexp.of_string "((random sexp 1)(b 2)((c (1 2 3))))"))
+
+let%test _ = String.equal (to_string_hum (of_string "a\nb")) "a\nb"

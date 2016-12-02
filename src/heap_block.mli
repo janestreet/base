@@ -14,12 +14,17 @@
 
     The results of calling {!String.make}, {!String.create}, {!Array.make}, and
     {!Pervasives.ref} are guaranteed to be heap-allocated and non-constant except when the
-    length argument is [0].
-*)
+    length argument is [0]. *)
 
 open! Import
 
-type +'a t = private 'a [@@deriving sexp_of]
+type +'a t = private 'a [@@deriving_inline sexp_of]
+include
+sig
+  [@@@ocaml.warning "-32"]
+  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+end
+[@@@end]
 
 (** [create v] returns [Some t] if [v] is a heap block, where [t] is physically equal
     to [v] *)

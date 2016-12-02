@@ -60,3 +60,30 @@ let%test_module "Hex" =
       | Some _ -> failwith "Hex may not have '_' before the first digit."
 
   end)
+
+let%test _ = (neg 5 + 5 = 0)
+
+let%test _ = pow min_value 1 = min_value
+let%test _ = pow max_value 1 = max_value
+
+let%test "comparisons" =
+  let original_compare (x : int) y = Caml.compare x y in
+  let valid_compare x y =
+    let result = compare x y in
+    let expect = original_compare x y in
+    assert (Bool.(=) (result < 0) (expect < 0));
+    assert (Bool.(=) (result > 0) (expect > 0));
+    assert (Bool.(=) (result = 0) (expect = 0));
+    assert (result = expect);
+  in
+  (valid_compare min_value min_value);
+  (valid_compare min_value (-1));
+  (valid_compare (-1) min_value);
+  (valid_compare min_value 0);
+  (valid_compare 0    min_value);
+  (valid_compare max_value (-1));
+  (valid_compare (-1) max_value);
+  (valid_compare max_value min_value);
+  (valid_compare max_value max_value);
+  true
+;;

@@ -2,7 +2,7 @@
     you want to use polymorphic compare in some small scope of a file within which
     polymorphic compare has been hidden, typically by [No_polymorphic_compare]. *)
 
-open! Import
+open! Import0
 
 val compare    : 'a -> 'a -> int
 
@@ -22,3 +22,4 @@ val (<>)    : 'a -> 'a -> bool
 val equal   : 'a -> 'a -> bool
 val min     : 'a -> 'a -> 'a
 val max     : 'a -> 'a -> 'a
+

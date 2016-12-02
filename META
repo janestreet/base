@@ -1,0 +1,31 @@
+version = "0.1.alpha1"
+description = "Full standard library replacement for OCaml"
+requires = "base.caml base.shadow_stdlib"
+archive(byte  ) = "base.cma"
+archive(native) = "base.cmxa"
+plugin(byte  ) = "base.cma"
+plugin(native) = "base.cmxs"
+exists_if = "base.cma"
+linkopts(javascript) = "+base/runtime.js"
+
+package "caml" (
+  version = "0.1.alpha1"
+  description = ""
+  requires = ""
+  archive(byte  ) = "caml.cma"
+  archive(native) = "caml.cmxa"
+  plugin(byte  ) = "caml.cma"
+  plugin(native) = "caml.cmxs"
+  exists_if = "caml.cma"
+)
+
+package "shadow_stdlib" (
+  version = "0.1.alpha1"
+  description = ""
+  requires = "base.caml"
+  archive(byte  ) = "shadow_stdlib.cma"
+  archive(native) = "shadow_stdlib.cmxa"
+  plugin(byte  ) = "shadow_stdlib.cma"
+  plugin(native) = "shadow_stdlib.cmxs"
+  exists_if = "shadow_stdlib.cma"
+)

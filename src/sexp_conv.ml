@@ -1,10 +1,12 @@
 (* Utility Module for S-expression Conversions *)
 
-open Printf
-module Sexp = Sexp0
-open Sexp
+open! Import0
+open  Caml.Printf
+open  Sexp
 
-module String = Bytes
+module Array  = Array0
+module List   = List0
+module String = String0
 
 type sexp_bool = bool
 type 'a sexp_option = 'a option
@@ -27,7 +29,7 @@ external format_float : string -> float -> string = "caml_format_float"
 let default_string_of_float =
   ref (fun x ->
     let y = format_float "%.15G" x in
-    if float_of_string y = x then
+    if float_of_string y =. x then
       y
     else
       format_float "%.17G" x)
@@ -36,19 +38,19 @@ let default_string_of_float =
 let read_old_option_format = ref true
 let write_old_option_format = ref true
 
-let list_map f l = List.rev (List.rev_map f l)
+let list_map f l = List.rev (List.rev_map l ~f)
 
 let sexp_of_unit () = List []
-let sexp_of_bool b = Atom (string_of_bool b)
+let sexp_of_bool b = Atom (Caml.string_of_bool b)
 let sexp_of_string str = Atom str
 let sexp_of_char c = Atom (String.make 1 c)
 let sexp_of_int n = Atom (string_of_int n)
 let sexp_of_float n = Atom (!default_string_of_float n)
-let sexp_of_int32 n = Atom (Int32.to_string n)
-let sexp_of_int64 n = Atom (Int64.to_string n)
-let sexp_of_nativeint n = Atom (Nativeint.to_string n)
+let sexp_of_int32 n = Atom (Caml.Int32.to_string n)
+let sexp_of_int64 n = Atom (Caml.Int64.to_string n)
+let sexp_of_nativeint n = Atom (Caml.Nativeint.to_string n)
 let sexp_of_ref sexp_of__a rf = sexp_of__a !rf
-let sexp_of_lazy_t sexp_of__a lv = sexp_of__a (Lazy.force lv)
+let sexp_of_lazy_t sexp_of__a lv = sexp_of__a (Caml.Lazy.force lv)
 
 let sexp_of_option sexp_of__a = function
   | Some x when !write_old_option_format -> List [sexp_of__a x]
@@ -64,7 +66,7 @@ let sexp_of_triple sexp_of__a sexp_of__b sexp_of__c (a, b, c) =
 
 (* List.rev (List.rev_map ...) is tail recursive, the OCaml standard
    library List.map is NOT. *)
-let sexp_of_list sexp_of__a lst = List (List.rev (List.rev_map sexp_of__a lst))
+let sexp_of_list sexp_of__a lst = List (List.rev (List.rev_map lst ~f:sexp_of__a))
 
 let sexp_of_array sexp_of__a ar =
   let lst_ref = ref [] in
@@ -74,8 +76,8 @@ let sexp_of_array sexp_of__a ar =
   List !lst_ref
 
 let sexp_of_hashtbl sexp_of_key sexp_of_val htbl =
-  let coll k v acc = List [sexp_of_key k; sexp_of_val v] :: acc in
-  List (Hashtbl.fold coll htbl [])
+  let coll ~key:k ~data:v acc = List [sexp_of_key k; sexp_of_val v] :: acc in
+  List (Caml.Hashtbl.fold htbl ~init:[] ~f:coll)
 
 let sexp_of_opaque _ = Atom "<opaque>"
 let sexp_of_fun _ = Atom "<fun>"
@@ -97,15 +99,16 @@ module Exn_converter = struct
     let compare t1 t2 = Pervasives.compare (t1 : int) t2
   end
 
-  module Exn_ids = Map.Make (Int)
+  module Exn_ids = Caml.Map.Make (Int)
 
-  let exn_id_map : ((extension_constructor, (exn -> Sexp.t)) Ephemeron.K1.t) Exn_ids.t ref =
+  let exn_id_map
+    : (extension_constructor, exn -> Sexp.t) Caml.Ephemeron.K1.t Exn_ids.t ref =
     ref Exn_ids.empty
 
   (* [Obj.extension_id] works on both the exception itself, and the extension slot of the
      exception. *)
   let rec clean_up_handler (slot : extension_constructor) =
-    let id = Obj.extension_id slot in
+    let id = Caml.Obj.extension_id slot in
     let old_exn_id_map = !exn_id_map in
     let new_exn_id_map = Exn_ids.remove id old_exn_id_map in
     (* This trick avoids mutexes and should be fairly efficient *)
@@ -117,13 +120,13 @@ module Exn_converter = struct
   (* Ephemerons are used so that [sexp_of_exn] closure don't keep the
      extension_constructor live. *)
   let add ?(finalise = true) extension_constructor sexp_of_exn =
-    let id = Obj.extension_id extension_constructor in
+    let id = Caml.Obj.extension_id extension_constructor in
     let rec loop () =
       let old_exn_id_map = !exn_id_map in
-      let ephe = Ephemeron.K1.create () in
-      Ephemeron.K1.set_data ephe sexp_of_exn;
-      Ephemeron.K1.set_key ephe extension_constructor;
-      let new_exn_id_map = Exn_ids.add id ephe old_exn_id_map in
+      let ephe = Caml.Ephemeron.K1.create () in
+      Caml.Ephemeron.K1.set_data ephe sexp_of_exn;
+      Caml.Ephemeron.K1.set_key ephe extension_constructor;
+      let new_exn_id_map = Exn_ids.add old_exn_id_map ~key:id ~data:ephe in
       (* This trick avoids mutexes and should be fairly efficient *)
       if !exn_id_map != old_exn_id_map then
         loop ()
@@ -131,7 +134,7 @@ module Exn_converter = struct
         exn_id_map := new_exn_id_map;
         if finalise then
           try
-            Gc.finalise clean_up_handler extension_constructor
+            Caml.Gc.finalise clean_up_handler extension_constructor
           with Invalid_argument _ ->
             (* Pre-allocated extension constructors cannot be finalised *)
             ()
@@ -140,24 +143,24 @@ module Exn_converter = struct
     loop ()
 
   let add_auto ?finalise exn sexp_of_exn =
-    add ?finalise (Obj.extension_constructor exn) sexp_of_exn
+    add ?finalise (Caml.Obj.extension_constructor exn) sexp_of_exn
 
   let find_auto exn =
-    let id = Obj.extension_id (Obj.extension_constructor exn) in
+    let id = Caml.Obj.extension_id (Caml.Obj.extension_constructor exn) in
     match Exn_ids.find id !exn_id_map with
     | exception Not_found -> None
     | ephe ->
-      match Ephemeron.K1.get_data ephe with
+      match Caml.Ephemeron.K1.get_data ephe with
       | None -> None
       | Some sexp_of_exn -> Some (sexp_of_exn exn)
 
 
   module For_unit_tests_only = struct
-    let size () = Exn_ids.fold (fun _ ephe acc ->
-      match Ephemeron.K1.get_data ephe with
+    let size () = Exn_ids.fold !exn_id_map ~init:0 ~f:(fun ~key:_ ~data:ephe acc ->
+      match Caml.Ephemeron.K1.get_data ephe with
       | None -> acc
       | Some _ -> acc + 1
-    ) !exn_id_map 0
+    )
   end
 
 end
@@ -167,17 +170,17 @@ let sexp_of_exn_opt exn = Exn_converter.find_auto exn
 
 let sexp_of_exn exn =
   match sexp_of_exn_opt exn with
-  | None -> List [Atom (Printexc.to_string exn)]
+  | None -> List [Atom (Caml.Printexc.to_string exn)]
   | Some sexp -> sexp
 
 let exn_to_string e = Sexp.to_string_hum (sexp_of_exn e)
 
-(* {[exception Blah [@@deriving sexp]]} generates a call to the function
+(* {[exception Blah [@@deriving_inline sexp][@@@end]]} generates a call to the function
    [Exn_converter.add] defined in this file.  So we are guaranted that as soon as we
    mark an exception as sexpable, this module will be linked in and this printer will be
    registered, which is what we want. *)
 let () =
-  Printexc.register_printer (fun exn ->
+  Caml.Printexc.register_printer (fun exn ->
     match sexp_of_exn_opt exn with
     | None -> None
     | Some sexp ->
@@ -185,7 +188,7 @@ let () =
 
 (* Conversion of S-expressions to OCaml-values *)
 
-exception Of_sexp_error of exn * t
+exception Of_sexp_error = Sexp.Of_sexp_error
 
 let record_check_extra_fields = ref true
 
@@ -209,48 +212,48 @@ let string_of_sexp sexp = match sexp with
 
 let char_of_sexp sexp = match sexp with
   | Atom str ->
-      if String.length str <> 1 then
-        of_sexp_error
-          "char_of_sexp: atom string must contain one character only" sexp;
-      str.[0]
+    if String.length str <> 1 then
+      of_sexp_error
+        "char_of_sexp: atom string must contain one character only" sexp;
+    str.[0]
   | List _ -> of_sexp_error "char_of_sexp: atom needed" sexp
 
 let int_of_sexp sexp = match sexp with
   | Atom str ->
-      (try int_of_string str
-      with exc -> of_sexp_error ("int_of_sexp: " ^ exn_to_string exc) sexp)
+    (try Caml.int_of_string str
+     with exc -> of_sexp_error ("int_of_sexp: " ^ exn_to_string exc) sexp)
   | List _ -> of_sexp_error "int_of_sexp: atom needed" sexp
 
 let float_of_sexp sexp = match sexp with
   | Atom str ->
-      (try float_of_string str
-      with exc ->
-        of_sexp_error ("float_of_sexp: " ^ exn_to_string exc) sexp)
+    (try Caml.float_of_string str
+     with exc ->
+       of_sexp_error ("float_of_sexp: " ^ exn_to_string exc) sexp)
   | List _ -> of_sexp_error "float_of_sexp: atom needed" sexp
 
 let int32_of_sexp sexp = match sexp with
   | Atom str ->
-      (try Int32.of_string str
-      with exc ->
-        of_sexp_error ("int32_of_sexp: " ^ exn_to_string exc) sexp)
+    (try Caml.Int32.of_string str
+     with exc ->
+       of_sexp_error ("int32_of_sexp: " ^ exn_to_string exc) sexp)
   | List _ -> of_sexp_error "int32_of_sexp: atom needed" sexp
 
 let int64_of_sexp sexp = match sexp with
   | Atom str ->
-      (try Int64.of_string str
-      with exc ->
-        of_sexp_error ("int64_of_sexp: " ^ exn_to_string exc) sexp)
+    (try Caml.Int64.of_string str
+     with exc ->
+       of_sexp_error ("int64_of_sexp: " ^ exn_to_string exc) sexp)
   | List _ -> of_sexp_error "int64_of_sexp: atom needed" sexp
 
 let nativeint_of_sexp sexp = match sexp with
   | Atom str ->
-      (try Nativeint.of_string str
-      with exc ->
-        of_sexp_error ("nativeint_of_sexp: " ^ exn_to_string exc) sexp)
+    (try Caml.Nativeint.of_string str
+     with exc ->
+       of_sexp_error ("nativeint_of_sexp: " ^ exn_to_string exc) sexp)
   | List _ -> of_sexp_error "nativeint_of_sexp: atom needed" sexp
 
 let ref_of_sexp a__of_sexp sexp = ref (a__of_sexp sexp)
-let lazy_t_of_sexp a__of_sexp sexp = Lazy.from_val (a__of_sexp sexp)
+let lazy_t_of_sexp a__of_sexp sexp = Caml.Lazy.from_val (a__of_sexp sexp)
 
 let option_of_sexp a__of_sexp sexp =
   if !read_old_option_format then
@@ -258,7 +261,7 @@ let option_of_sexp a__of_sexp sexp =
     | List [] | Atom ("none" | "None") -> None
     | List [el] | List [Atom ("some" | "Some"); el] -> Some (a__of_sexp el)
     | List _ ->
-        of_sexp_error "option_of_sexp: list must represent optional value" sexp
+      of_sexp_error "option_of_sexp: list must represent optional value" sexp
     | Atom _ -> of_sexp_error "option_of_sexp: only none can be atom" sexp
   else
     match sexp with
@@ -269,53 +272,53 @@ let option_of_sexp a__of_sexp sexp =
 
 let pair_of_sexp a__of_sexp b__of_sexp sexp = match sexp with
   | List [a_sexp; b_sexp] ->
-      let a = a__of_sexp a_sexp in
-      let b = b__of_sexp b_sexp in
-      a, b
+    let a = a__of_sexp a_sexp in
+    let b = b__of_sexp b_sexp in
+    a, b
   | List _ ->
-      of_sexp_error
-        "pair_of_sexp: list must contain exactly two elements only" sexp
+    of_sexp_error
+      "pair_of_sexp: list must contain exactly two elements only" sexp
   | Atom _ -> of_sexp_error "pair_of_sexp: list needed" sexp
 
 let triple_of_sexp a__of_sexp b__of_sexp c__of_sexp sexp = match sexp with
   | List [a_sexp; b_sexp; c_sexp] ->
-      let a = a__of_sexp a_sexp in
-      let b = b__of_sexp b_sexp in
-      let c = c__of_sexp c_sexp in
-      a, b, c
+    let a = a__of_sexp a_sexp in
+    let b = b__of_sexp b_sexp in
+    let c = c__of_sexp c_sexp in
+    a, b, c
   | List _ ->
-      of_sexp_error
-        "triple_of_sexp: list must contain exactly three elements only" sexp
+    of_sexp_error
+      "triple_of_sexp: list must contain exactly three elements only" sexp
   | Atom _ -> of_sexp_error "triple_of_sexp: list needed" sexp
 
 let list_of_sexp a__of_sexp sexp = match sexp with
   | List lst ->
-      let rev_lst = List.rev_map a__of_sexp lst in
-      List.rev rev_lst
+    let rev_lst = List.rev_map lst ~f:a__of_sexp in
+    List.rev rev_lst
   | Atom _ -> of_sexp_error "list_of_sexp: list needed" sexp
 
 let array_of_sexp a__of_sexp sexp = match sexp with
   | List [] -> [||]
   | List (h :: t) ->
-      let len = List.length t + 1 in
-      let res = Array.make len (a__of_sexp h) in
-      let rec loop i = function
-        | [] -> res
-        | h :: t -> res.(i) <- a__of_sexp h; loop (i + 1) t in
-      loop 1 t
+    let len = List.length t + 1 in
+    let res = Array.create ~len (a__of_sexp h) in
+    let rec loop i = function
+      | [] -> res
+      | h :: t -> res.(i) <- a__of_sexp h; loop (i + 1) t in
+    loop 1 t
   | Atom _ -> of_sexp_error "array_of_sexp: list needed" sexp
 
 let hashtbl_of_sexp key_of_sexp val_of_sexp sexp = match sexp with
   | List lst ->
-      let htbl = Hashtbl.create 0 in
-      let act = function
-        | List [k_sexp; v_sexp] ->
-            Hashtbl.add htbl (key_of_sexp k_sexp) (val_of_sexp v_sexp)
-        | List _ | Atom _ ->
-            of_sexp_error "hashtbl_of_sexp: tuple list needed" sexp
-      in
-      List.iter act lst;
-      htbl
+    let htbl = Caml.Hashtbl.create 0 in
+    let act = function
+      | List [k_sexp; v_sexp] ->
+        Caml.Hashtbl.add htbl ~key:(key_of_sexp k_sexp) ~data:(val_of_sexp v_sexp)
+      | List _ | Atom _ ->
+        of_sexp_error "hashtbl_of_sexp: tuple list needed" sexp
+    in
+    List.iter lst ~f:act;
+    htbl
   | Atom _ -> of_sexp_error "hashtbl_of_sexp: list needed" sexp
 
 let opaque_of_sexp sexp =
@@ -331,103 +334,103 @@ let get_flc_error name (file, line, chr) =
 
 let () =
   List.iter
-    (fun (extension_constructor, handler) -> Exn_converter.add ~finalise:false extension_constructor handler)
+    ~f:(fun (extension_constructor, handler) -> Exn_converter.add ~finalise:false extension_constructor handler)
     [
       (
         [%extension_constructor Assert_failure],
         (function
-        | Assert_failure arg -> get_flc_error "Assert_failure" arg
-        | _ -> assert false)
+          | Assert_failure arg -> get_flc_error "Assert_failure" arg
+          | _ -> assert false)
       );(
         [%extension_constructor Exit],
         (function
-        | Exit -> Atom "Exit"
-        | _ -> assert false)
+          | Caml.Exit -> Atom "Exit"
+          | _ -> assert false)
       );(
         [%extension_constructor End_of_file],
         (function
-        | End_of_file -> Atom "End_of_file"
-        | _ -> assert false)
+          | End_of_file -> Atom "End_of_file"
+          | _ -> assert false)
       );(
         [%extension_constructor Failure],
         (function
-        | Failure arg -> List [Atom "Failure"; Atom arg ]
-        | _ -> assert false)
+          | Failure arg -> List [Atom "Failure"; Atom arg ]
+          | _ -> assert false)
       );(
         [%extension_constructor Not_found],
         (function
-        | Not_found -> Atom "Not_found"
-        | _ -> assert false)
+          | Not_found -> Atom "Not_found"
+          | _ -> assert false)
       );(
         [%extension_constructor Invalid_argument],
         (function
-        | Invalid_argument arg -> List [Atom "Invalid_argument"; Atom arg ]
-        | _ -> assert false)
+          | Invalid_argument arg -> List [Atom "Invalid_argument"; Atom arg ]
+          | _ -> assert false)
       );(
         [%extension_constructor Match_failure],
         (function
-        | Match_failure arg -> get_flc_error "Match_failure" arg
-        | _ -> assert false)
+          | Match_failure arg -> get_flc_error "Match_failure" arg
+          | _ -> assert false)
       );(
         [%extension_constructor Sys_error],
         (function
-        | Sys_error arg -> List [Atom "Sys_error"; Atom arg ]
-        | _ -> assert false)
+          | Sys_error arg -> List [Atom "Sys_error"; Atom arg ]
+          | _ -> assert false)
       );(
-        [%extension_constructor Arg.Help],
+        [%extension_constructor Caml.Arg.Help],
         (function
-        | Arg.Help arg -> List [Atom "Arg.Help"; Atom arg ]
-        | _ -> assert false)
+          | Caml.Arg.Help arg -> List [Atom "Arg.Help"; Atom arg ]
+          | _ -> assert false)
       );(
-        [%extension_constructor Arg.Bad],
+        [%extension_constructor Caml.Arg.Bad],
         (function
-        | Arg.Bad arg -> List [Atom "Arg.Bad"; Atom arg ]
-        | _ -> assert false)
+          | Caml.Arg.Bad arg -> List [Atom "Arg.Bad"; Atom arg ]
+          | _ -> assert false)
       );(
-        [%extension_constructor Lazy.Undefined],
+        [%extension_constructor Caml.Lazy.Undefined],
         (function
-        | Lazy.Undefined -> Atom "Lazy.Undefined"
-        | _ -> assert false)
+          | Caml.Lazy.Undefined -> Atom "Lazy.Undefined"
+          | _ -> assert false)
       );(
-        [%extension_constructor Parsing.Parse_error],
+        [%extension_constructor Caml.Parsing.Parse_error],
         (function
-        | Parsing.Parse_error -> Atom "Parsing.Parse_error"
-        | _ -> assert false)
+          | Caml.Parsing.Parse_error -> Atom "Parsing.Parse_error"
+          | _ -> assert false)
       );(
-        [%extension_constructor Queue.Empty],
+        [%extension_constructor Caml.Queue.Empty],
         (function
-        | Queue.Empty -> Atom "Queue.Empty"
-        | _ -> assert false)
+          | Caml.Queue.Empty -> Atom "Queue.Empty"
+          | _ -> assert false)
       );(
-        [%extension_constructor Scanf.Scan_failure],
+        [%extension_constructor Caml.Scanf.Scan_failure],
         (function
-        | Scanf.Scan_failure arg -> List [Atom "Scanf.Scan_failure"; Atom arg ]
-        | _ -> assert false)
+          | Caml.Scanf.Scan_failure arg -> List [Atom "Scanf.Scan_failure"; Atom arg ]
+          | _ -> assert false)
       );(
-        [%extension_constructor Stack.Empty],
+        [%extension_constructor Caml.Stack.Empty],
         (function
-        | Stack.Empty -> Atom "Stack.Empty"
-        | _ -> assert false)
+          | Caml.Stack.Empty -> Atom "Stack.Empty"
+          | _ -> assert false)
       );(
-        [%extension_constructor Stream.Failure],
+        [%extension_constructor Caml.Stream.Failure],
         (function
-        | Stream.Failure -> Atom "Stream.Failure"
-        | _ -> assert false)
+          | Caml.Stream.Failure -> Atom "Stream.Failure"
+          | _ -> assert false)
       );(
-        [%extension_constructor Stream.Error],
+        [%extension_constructor Caml.Stream.Error],
         (function
-        | Stream.Error arg -> List [Atom "Stream.Error"; Atom arg ]
-        | _ -> assert false)
+          | Caml.Stream.Error arg -> List [Atom "Stream.Error"; Atom arg ]
+          | _ -> assert false)
       );(
-        [%extension_constructor Sys.Break],
+        [%extension_constructor Caml.Sys.Break],
         (function
-        | Sys.Break -> Atom "Sys.Break"
-        | _ -> assert false)
+          | Caml.Sys.Break -> Atom "Sys.Break"
+          | _ -> assert false)
       );(
         [%extension_constructor Of_sexp_error],
         (function
-        | Of_sexp_error (exc, sexp) ->
+          | Of_sexp_error (exc, sexp) ->
             List [Atom "Sexplib.Conv.Of_sexp_error"; sexp_of_exn exc; sexp]
-        | _ -> assert false)
+          | _ -> assert false)
       );
     ]

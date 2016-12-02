@@ -19,20 +19,20 @@
     Here's an example of how you would use validate with a record.
 
     {[
-     type t =
-       { foo: int;
-         bar: float;
-       }
-     with fields
+      type t =
+        { foo: int;
+          bar: float;
+        }
+      with fields
 
-     let validate t =
-       let module V = Validate in
-       let w check = V.field_folder t check in
-       V.of_list
-         (Fields.fold ~init:[]
-            ~foo:(w Int.validate_positive)
-            ~bar:(w Float.validate_non_negative)
-         )
+      let validate t =
+        let module V = Validate in
+        let w check = V.field_folder t check in
+        V.of_list
+          (Fields.fold ~init:[]
+             ~foo:(w Int.validate_positive)
+             ~bar:(w Float.validate_non_negative)
+          )
     ]}
 
 
@@ -50,8 +50,7 @@
                                    ~fst:Float.validate_positive
                                    ~snd:Int.validate_non_negative)
         | Snoo floogle -> V.name "Snoo" Floogle.validate
-    ]}
-*)
+    ]} *)
 
 open! Import
 

@@ -1,6 +1,6 @@
 open! Import
 
-(** Signatures required of types which can be used in [@@deriving hash].
+(** Signatures required of types which can be used in [@@deriving_inline hash][@@@end].
 
     For a more in-depth discussion, see documentation in ppx/ppx_hash/README.md and
     ppx/ppx_hash/doc/design.notes.

@@ -1,8 +1,13 @@
 (library
  ((name base_test)
   (libraries (base
+              core_kernel.base_for_tests
+              caml
               sexplib
-              nums
-              expect_test_helpers_kernel))))
+              num
+              expect_test_helpers_kernel
+              stdio))))
 
 (toplevel_expect_tests ((libraries (base))))
+
+(enforce_style ())

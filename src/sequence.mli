@@ -19,11 +19,11 @@
     more work up front.  A function has the [_eagerly] suffix iff it matches both of these
     conditions:
 
-      * It might consume an element from an input [t] before returning.
+    - It might consume an element from an input [t] before returning.
 
-      * It only returns a [t] (not paired with something else, not wrapped in an [option],
-        etc.).  If it returns anything other than a [t] and it has at least one [t] input,
-        it's probably demanding elements from the input [t] anyway.
+    - It only returns a [t] (not paired with something else, not wrapped in an [option],
+    etc.).  If it returns anything other than a [t] and it has at least one [t] input,
+    it's probably demanding elements from the input [t] anyway.
 
     Only [*_exn] functions can raise exceptions, except if the function underlying the
     sequence (the [f] passed to [unfold]) raises, in which case the exception will
@@ -31,7 +31,14 @@
 
 open! Import
 
-type +'a t [@@deriving compare, sexp_of]
+type +'a t [@@deriving_inline compare, sexp_of]
+include
+sig
+  [@@@ocaml.warning "-32"]
+  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+end
+[@@@end]
 type 'a sequence = 'a t
 
 include Container.S1 with type 'a t := 'a t
@@ -58,7 +65,15 @@ module Step : sig
     | Done
     | Skip of 's
     | Yield of 'a * 's
-  [@@deriving sexp_of]
+  [@@deriving_inline sexp_of]
+  include
+  sig
+    [@@@ocaml.warning "-32"]
+    val sexp_of_t :
+      ('a -> Sexplib.Sexp.t) ->
+      ('s -> Sexplib.Sexp.t) -> ('a,'s) t -> Sexplib.Sexp.t
+  end
+  [@@@end]
 end
 
 (** [unfold_step ~init ~f] constructs a sequence by giving an initial state [init] and a
@@ -102,11 +117,29 @@ val filter : 'a t -> f: ('a -> bool) -> 'a t
 val merge : 'a t -> 'a t -> cmp:('a -> 'a -> int) -> 'a t
 
 module Merge_with_duplicates_element : sig
-  type 'a t =
+  type ('a, 'b) t =
     | Left of 'a
-    | Right of 'a
-    | Both of 'a * 'a
-  [@@deriving compare, hash, sexp]
+    | Right of 'b
+    | Both of 'a * 'b
+  [@@deriving_inline compare, hash, sexp]
+  include
+  sig
+    [@@@ocaml.warning "-32"]
+    val t_of_sexp :
+      (Sexplib.Sexp.t -> 'a) ->
+      (Sexplib.Sexp.t -> 'b) -> Sexplib.Sexp.t -> ('a,'b) t
+    val sexp_of_t :
+      ('a -> Sexplib.Sexp.t) ->
+      ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+    val hash_fold_t :
+      (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
+      (Ppx_hash_lib.Std.Hash.state -> 'b -> Ppx_hash_lib.Std.Hash.state) ->
+      Ppx_hash_lib.Std.Hash.state ->
+      ('a,'b) t -> Ppx_hash_lib.Std.Hash.state
+    val compare :
+      ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+  end
+  [@@@end]
 end
 
 (** [merge_with_duplicates_element t1 t2 ~cmp] is like [merge], except that for each
@@ -114,9 +147,9 @@ end
     [Merge_with_duplicates_element]. *)
 val merge_with_duplicates
   :  'a t
-  -> 'a t
-  -> cmp:('a -> 'a -> int)
-  -> 'a Merge_with_duplicates_element.t t
+  -> 'b t
+  -> cmp:('a -> 'b -> int)
+  -> ('a, 'b) Merge_with_duplicates_element.t t
 
 val hd     : 'a t -> 'a option
 val hd_exn : 'a t -> 'a
@@ -126,11 +159,18 @@ val hd_exn : 'a t -> 'a
 val tl             : 'a t -> 'a t option
 val tl_eagerly_exn : 'a t -> 'a t
 
-val findi : 'a t -> f:(int -> 'a -> bool) -> (int * 'a) option
+val find_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b         option
+val findi     : 'a t -> f:(int -> 'a -> bool)      -> (int * 'a) option
 
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f]. It raises if
     there is no such element. *)
 val find_exn : 'a t -> f:('a -> bool) -> 'a
+
+(** Like [for_all], but passes the index as an argument. *)
+val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
+
+(** Like [exists], but passes the index as an argument. *)
+val existsi : 'a t -> f:(int -> 'a -> bool) -> bool
 
 (** [append t1 t2] first produces the elements of [t1], then produces the elements of
     [t2]. *)
@@ -255,7 +295,7 @@ val split_n : 'a t -> int -> 'a list * 'a t
 (** [split_n_eagerly t n] behaves as [split_n t n], but converts the prefix into a
     sequence. *)
 val split_n_eagerly : 'a t -> int -> 'a t * 'a t
-  [@@deprecated "[since 2015-11] Use {!Sequence.split_n} instead."]
+[@@deprecated "[since 2015-11] Use {!Sequence.split_n} instead."]
 
 (** [chunks_exn t n] produces lists of elements of [t], up to [n] elements at a time. The
     last list may contain fewer than [n] elements. No list contains zero elements. If [n]
@@ -317,8 +357,7 @@ val singleton : 'a -> 'a t
 
     It is possible to exit early by not calling [k] in [f]. It is also possible to call
     [k] multiple times. This results in the rest of the sequence being folded over
-    multiple times, independently.
-*)
+    multiple times, independently. *)
 val delayed_fold
   :  'a t
   -> init:'s
@@ -336,7 +375,7 @@ val of_list : 'a list -> 'a t
 
 (** [of_lazy t_lazy] produces a sequence that forces [t_lazy] the first time it needs to
     compute an element. *)
-val of_lazy : 'a t Base_lazy.t -> 'a t
+val of_lazy : 'a t Lazy.t -> 'a t
 
 (** [memoize t] produces each element of [t], but also memoizes them so that if you
     consume the same element multiple times it is only computed once.  It's a non-eager
@@ -392,11 +431,11 @@ val length_is_bounded_by: ?min:int -> ?max:int -> _ t -> bool
       let sequence_of_option x = Generator.run (traverse_option x)
       let sequence_of_array  x = Generator.run (traverse_array  x)
       let sequence_of_bst    x = Generator.run (traverse_bst    x)
-    ]}
-*)
+    ]} *)
 
 module Generator : sig
   include Monad.S2
   val yield : 'elt -> (unit, 'elt) t
+  val of_sequence : 'elt sequence -> (unit, 'elt) t
   val run : (unit, 'elt) t -> 'elt sequence
 end

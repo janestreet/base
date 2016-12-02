@@ -1,6 +1,17 @@
 open! Import
 
-type 'a t = 'a option [@@deriving compare, hash, sexp]
+type 'a t = 'a option [@@deriving_inline compare, hash, sexp]
+include
+sig
+  [@@@ocaml.warning "-32"]
+  val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
+  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+  val hash_fold_t :
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
+    Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+end
+[@@@end]
 
 include Container.S1 with type 'a t := 'a t
 include Equal.S1     with type 'a t := 'a t
@@ -26,8 +37,7 @@ val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 val call : 'a -> f:('a -> unit) t -> unit
 
 (** [value None ~default] = [default]
-    [value (Some x) ~default] = [x]
-*)
+    [value (Some x) ~default] = [x] *)
 val value : 'a t -> default:'a -> 'a
 
 (** [value_exn (Some x)] = [x].  [value_exn None] raises an error whose contents contain

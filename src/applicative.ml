@@ -19,12 +19,14 @@ module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = struct
 
   let map3 ta tb tc ~f = map ~f ta <*> tb <*> tc
 
-  let all ts = Base_list.fold_right ts ~init:(return []) ~f:(map2 ~f:(fun x xs -> x :: xs))
+  let all ts = List.fold_right ts ~init:(return []) ~f:(map2 ~f:(fun x xs -> x :: xs))
 
   let both ta tb = map2 ta tb ~f:(fun a b -> (a, b))
 
   let ( *> ) u v = return (fun () y -> y) <*> u <*> v
   let ( <* ) u v = return (fun x () -> x) <*> u <*> v
+
+  let all_ignore ts = List.fold ts ~init:(return ()) ~f:( *> )
 
   module Applicative_infix = struct
     let ( <*> ) = ( <*> )

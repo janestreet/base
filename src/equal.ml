@@ -12,8 +12,7 @@
     {[
       type 'a t
       include Equal.S1 with type 'a t := 'a t
-    ]}
-*)
+    ]} *)
 
 open! Import
 

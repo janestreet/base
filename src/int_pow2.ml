@@ -1,8 +1,9 @@
-(** While I would have preferred to put these functions with Base_int, there is a
-    dependency between Base_hashtbl, where it is used, and Base_int that prevents it. *)
+(** While I would have preferred to put these functions with Int, there is a
+    dependency between Hashtbl, where it is used, and Int that prevents it. *)
 
 open! Import
 open! Sexplib.Conv
+
 
 let raise_s = Error.raise_s
 
@@ -10,7 +11,7 @@ let raise_s = Error.raise_s
     fast bsr (bit scan reverse). As some have observed, these would return 0 for values of
     0, and do not support negative numbers *)
 let non_positive_argument () =
-  Base_printf.invalid_argf "argument must be strictly positive" ()
+  Printf.invalid_argf "argument must be strictly positive" ()
 
 (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
 let ceil_pow2 x =
@@ -40,15 +41,14 @@ let is_pow2 x =
   (x land (x-1)) = 0
 ;;
 
+(* C stub for int clz to use the CLZ/BSR instruction where possible *)
+external int_clz : int -> int = "int_math_int_clz" [@@noalloc]
+
 let floor_log2 i =
-  if i <= 0 then raise_s [%message "[Int.floor_log2] got invalid input" ~_:(i : int)];
-  let result = ref 0 in
-  let i = ref i in
-  while !i > 1 do
-    result := !result + 1;
-    i := !i lsr 1;
-  done;
-  !result
+  if i <= 0 then
+    raise_s (Sexp.message "[Int.floor_log2] got invalid input"
+               ["", sexp_of_int i]);
+  (Caml.Sys.word_size - 1) - int_clz i
 ;;
 
 let ceil_log2 i =
@@ -57,32 +57,3 @@ let ceil_log2 i =
   then r
   else r + 1
 ;;
-
-let%test_module "int_math" = (module struct
-
-  let test_cases () =
-    let cases = [ 0xAA; 0xAA_AA; 0xAA_AA_AA;  0x80; 0x80_08; 0x80_00_08; ]
-    in
-    if Sys.word_size = 64 then (* create some >32 bit values... *)
-      (* We can't use literals directly because the compiler complains on 32 bits. *)
-      let cases = cases @ [ (0xAA_AA lsl 16) lor 0xAA_AA;
-                            (0x80_00 lsl 16) lor 0x00_08; ] in
-      let added_cases = Base_list.map cases ~f:(fun x -> x lsl 16) in
-      List.concat [ cases; added_cases ]
-    else cases
-  ;;
-
-  let%test_unit "ceil_pow2" =
-    Base_list.iter (test_cases ())
-      ~f:(fun x -> let p2 = ceil_pow2 x in
-        assert( (is_pow2 p2) && (p2 >= x && x >= (p2 / 2)) )
-      )
-    ;;
-
-  let%test_unit "floor_pow2" =
-    Base_list.iter (test_cases ())
-      ~f:(fun x -> let p2 = floor_pow2 x in
-        assert( (is_pow2 p2) && ((2 * p2) >= x && x >= p2) )
-      )
-    ;;
-end)

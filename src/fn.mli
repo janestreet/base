@@ -8,10 +8,8 @@ external ( |> ) : 'a -> ( 'a -> 'b) -> 'b = "%revapply"
 (** produces a function that just returns its first argument *)
 val const : 'a -> _ -> 'a
 
-(**
- * [ignore] is the same as [Pervasives.ignore].  It is useful to have here so
- * that code that rebinds [ignore] can still refer to [Fn.ignore].
- *)
+(** [ignore] is the same as [Pervasives.ignore].  It is useful to have here so that code
+    that rebinds [ignore] can still refer to [Fn.ignore]. *)
 external ignore : _ -> unit = "%ignore"
 
 (** Negates a function *)

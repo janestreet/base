@@ -1,5 +1,8 @@
 open! Import
 
+module Array = Array0
+module List  = List0
+
 include Container_intf
 
 let with_return = With_return.with_return
@@ -59,7 +62,7 @@ let exists ~iter c ~f =
     false)
 ;;
 
-let mem ~iter ?(equal = (=)) t a = exists ~iter t ~f:(equal a)
+let mem ~iter ?(equal = Poly.equal) t a = exists ~iter t ~f:(equal a)
 
 let for_all ~iter c ~f =
   with_return (fun r ->
@@ -112,15 +115,15 @@ end = struct
 end
 
 module Make (T : Make_arg) = Make_gen (struct
-  include T
-  type 'a elt = 'a
-end)
+    include T
+    type 'a elt = 'a
+  end)
 
 module Make0 (T : Make0_arg) = Make_gen (struct
-  include (T : Make0_arg with type t := T.t and type elt := T.elt)
-  type 'a t   = T.t
-  type 'a elt = T.elt
-end)
+    include (T : Make0_arg with type t := T.t and type elt := T.elt)
+    type 'a t   = T.t
+    type 'a elt = T.elt
+  end)
 
 open T
 
@@ -129,7 +132,7 @@ open T
    interfaces.  They ensure that each particular [S?] is an instance of a more generic
    signature. *)
 module Check (T : T1) (Elt : T1)
-  (M : Generic with type 'a t := 'a T.t with type 'a elt := 'a Elt.t) = struct end
+    (M : Generic with type 'a t := 'a T.t with type 'a elt := 'a Elt.t) = struct end
 
 module Check_S0 (M : S0) =
   Check (struct type 'a t = M.t end) (struct type 'a t = M.elt end) (M)

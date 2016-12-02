@@ -4,12 +4,19 @@
     64-bit floats.  E.g., one can have [let x = ~-. (2. ** 62.) in x = x -. 1.] evaluate
     to [false] while [let x = ~-. (2. ** 62.) in let y = x -. 1 in x = y] evaluates to
     [true].  This is related to 80-bit registers being used for calculations; you can
-    force representation as a 64-bit value by let-binding.
-*)
+    force representation as a 64-bit value by let-binding. *)
 
 open! Import
 
-type t = float [@@deriving hash]
+type t = float [@@deriving_inline hash]
+include
+sig
+  [@@@ocaml.warning "-32"]
+  val hash_fold_t :
+    Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+end
+[@@@end]
 
 include Floatable.S with type t := t
 
@@ -45,8 +52,7 @@ val minus_one : t
 
     See also: http://en.wikipedia.org/wiki/Machine_epsilon
 
-    (Not to be confused with {!val:robust_comparison_tolerance}.)
-*)
+    (Not to be confused with {!val:robust_comparison_tolerance}.) *)
 val epsilon_float : t
 
 val max_finite_value : t
@@ -106,12 +112,11 @@ val to_int64 : t -> int64
     The following properties hold:
 
     - [of_int (iround_*_exn i) = i] for any float [i] that is an integer with
-      [min_int <= i <= max_int].
+    [min_int <= i <= max_int].
 
     - [round_* i = i] for any float [i] that is an integer.
 
-    - [iround_*_exn (of_int i) = i] for any int [i] with [-2**52 <= i <= 2**52].
-*)
+    - [iround_*_exn (of_int i) = i] for any int [i] with [-2**52 <= i <= 2**52]. *)
 val round      : ?dir:[`Zero|`Nearest|`Up|`Down] -> t -> t
 val iround     : ?dir:[`Zero|`Nearest|`Up|`Down] -> t -> int option
 val iround_exn : ?dir:[`Zero|`Nearest|`Up|`Down] -> t -> int
@@ -133,9 +138,9 @@ val iround_down_exn         : t -> int
 val iround_up_exn           : t -> int
 val iround_nearest_exn      : t -> int
 
-val int63_round_down_exn    : t -> Base_int63.t
-val int63_round_up_exn      : t -> Base_int63.t
-val int63_round_nearest_exn : t -> Base_int63.t
+val int63_round_down_exn    : t -> Int63.t
+val int63_round_up_exn      : t -> Int63.t
+val int63_round_nearest_exn : t -> Int63.t
 
 (** If [f <= iround_lbound || f >= iround_ubound], then [iround*] functions will refuse
     to round [f], returning [None] or raising as appropriate. *)
@@ -153,12 +158,10 @@ val is_inf : t -> bool
 val min_inan : t -> t -> t
 val max_inan : t -> t -> t
 
-(*_  *)
 val (+) : t -> t -> t
 val (-) : t -> t -> t
 val ( * ) : t -> t -> t
 val (/) : t -> t -> t
-val ( ** ) : t -> t -> t
 
 val (~-) : t -> t
 
@@ -181,15 +184,13 @@ val modf : t -> Parts.t
 
     {[ let mod_float x y = x -. floor(x/.y) *. y ]}
 
-    and therefore resembles [mod] on integers more than [%].
-*)
+    and therefore resembles [mod] on integers more than [%]. *)
 val mod_float : t -> t -> t
 
 (** {6 Ordinary functions for arithmetic operations}
 
     These are for modules that inherit from t, since the infix operators are more
-    convenient
-*)
+    convenient *)
 val add : t -> t -> t
 val sub : t -> t -> t
 val neg : t -> t
@@ -210,6 +211,17 @@ module O : sig
   val zero     : t
   val of_int   : int -> t
   val of_float : float -> t
+end
+
+(** Similar to [O], except that operators are suffixed with a dot, as in the OCaml
+    standard library. *)
+module O_dot : sig
+  val ( +.  ) : t -> t -> t
+  val ( -.  ) : t -> t -> t
+  val ( *.  ) : t -> t -> t
+  val ( /.  ) : t -> t -> t
+  val ( **. ) : t -> t -> t
+  val ( ~-. ) : t -> t
 end
 
 (** Like [to_string], but guaranteed to be round-trippable.
@@ -239,12 +251,10 @@ val to_string_hum
     large for this format (i.e., the absolute value is at least 999.95e15), scientific
     notation is used instead. E.g.:
 
-    {[
-      to_padded_compact_string     (-0.01) =  "-0  "
-      to_padded_compact_string       1.89  =   "1.9"
-      to_padded_compact_string 999_949.99  = "999k9"
-      to_padded_compact_string 999_950.    =   "1m "
-    ]}
+    - [to_padded_compact_string     (-0.01) =  "-0  "]
+    - [to_padded_compact_string       1.89  =   "1.9"]
+    - [to_padded_compact_string 999_949.99  = "999k9"]
+    - [to_padded_compact_string 999_950.    =   "1m "]
 
     In the case where the digit after the "decimal", or the "decimal" itself are
     omitted, the numbers are padded on the right with spaces to ensure the last two
@@ -252,33 +262,25 @@ val to_string_hum
     (except in the case of scientific notation, where the exponent is the right-most
     element in the string and could take up to four characters).
 
-    {[
-      to_padded_compact_string    1. =    "1  ";
-      to_padded_compact_string  1.e6 =    "1m ";
-      to_padded_compact_string 1.e16 = "1.e+16";
-      to_padded_compact_string max_finite_value = "1.8e+308";
-    ]}
+    - [to_padded_compact_string    1. =    "1  "]
+    - [to_padded_compact_string  1.e6 =    "1m "]
+    - [to_padded_compact_string 1.e16 = "1.e+16"]
+    - [to_padded_compact_string max_finite_value = "1.8e+308"]
 
     Numbers in the range -.05 < x < .05 are rendered as "0  " or "-0  ".
 
     Other cases:
 
-    {[
-      to_padded_compact_string nan          =  "nan  "
-      to_padded_compact_string infinity     =  "inf  "
-      to_padded_compact_string neg_infinity = "-inf  "
-    ]}
+    - [to_padded_compact_string nan          =  "nan  "]
+    - [to_padded_compact_string infinity     =  "inf  "]
+    - [to_padded_compact_string neg_infinity = "-inf  "]
 
     Exact ties are resolved to even in the decimal:
 
-    {[
-      to_padded_compact_string      3.25 =  "3.2"
-      to_padded_compact_string      3.75 =  "3.8"
-      to_padded_compact_string 33_250.   = "33k2"
-      to_padded_compact_string 33_350.   = "33k4"
-    ]}
-
-*)
+    - [to_padded_compact_string      3.25 =  "3.2"]
+    - [to_padded_compact_string      3.75 =  "3.8"]
+    - [to_padded_compact_string 33_250.   = "33k2"]
+    - [to_padded_compact_string 33_350.   = "33k4"] *)
 val to_padded_compact_string : t -> string
 
 (** [int_pow x n] computes [x ** float n] via repeated squaring.  It is generally much
@@ -314,97 +316,104 @@ val frexp : t -> t * int
 
 (** Base 10 logarithm *)
 external log10 : t -> t = "caml_log10_float" "log10"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** [expm1 x] computes [exp x -. 1.0], giving numerically-accurate results
     even if [x] is close to [0.0]. *)
 external expm1 : t -> t = "caml_expm1_float" "caml_expm1"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** [log1p x] computes [log(1.0 +. x)] (natural logarithm),
     giving numerically-accurate results even if [x] is close to [0.0]. *)
 external log1p : t -> t = "caml_log1p_float" "caml_log1p"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** [copysign x y] returns a float whose absolute value is that of
     [x] and whose sign is that of [y].  If [x] is [nan], returns
     [nan].  If [y] is [nan], returns either [x] or [-. x], but it is
     not specified which. *)
 external copysign : t -> t -> t = "caml_copysign_float" "caml_copysign"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Cosine.  Argument is in radians. *)
 external cos : t -> t = "caml_cos_float" "cos"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Sine.  Argument is in radians. *)
 external sin : t -> t = "caml_sin_float" "sin"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Tangent.  Argument is in radians. *)
 external tan : t -> t = "caml_tan_float" "tan"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Arc cosine.  The argument must fall within the range [[-1.0, 1.0]].
     Result is in radians and is between [0.0] and [pi]. *)
 external acos : t -> t = "caml_acos_float" "acos"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Arc sine.  The argument must fall within the range [[-1.0, 1.0]].
     Result is in radians and is between [-pi/2] and [pi/2]. *)
 external asin : t -> t = "caml_asin_float" "asin"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Arc tangent.
     Result is in radians and is between [-pi/2] and [pi/2]. *)
 external atan : t -> t = "caml_atan_float" "atan"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** [atan2 y x] returns the arc tangent of [y /. x].  The signs of [x]
     and [y] are used to determine the quadrant of the result.
     Result is in radians and is between [-pi] and [pi]. *)
 external atan2 : t -> t -> t = "caml_atan2_float" "atan2"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** [hypot x y] returns [sqrt(x *. x + y *. y)], that is, the length
     of the hypotenuse of a right-angled triangle with sides of length
     [x] and [y], or, equivalently, the distance of the point [(x,y)]
     to origin. *)
 external hypot : t -> t -> t = "caml_hypot_float" "caml_hypot"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Hyperbolic cosine.  Argument is in radians. *)
 external cosh : t -> t = "caml_cosh_float" "cosh"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Hyperbolic sine.  Argument is in radians. *)
 external sinh : t -> t = "caml_sinh_float" "sinh"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Hyperbolic tangent.  Argument is in radians. *)
 external tanh : t -> t = "caml_tanh_float" "tanh"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Square root. *)
 external sqrt : t -> t = "caml_sqrt_float" "sqrt"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Exponential. *)
 external exp : t -> t = "caml_exp_float" "exp"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** Natural logarithm. *)
 external log : t -> t = "caml_log_float" "log"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 module Class : sig
   type t =
-  | Infinite
-  | Nan
-  | Normal
-  | Subnormal
-  | Zero
-  [@@deriving sexp]
+    | Infinite
+    | Nan
+    | Normal
+    | Subnormal
+    | Zero
+  [@@deriving_inline sexp]
+  include
+  sig
+    [@@@ocaml.warning "-32"]
+    val t_of_sexp : Sexplib.Sexp.t -> t
+    val sexp_of_t : t -> Sexplib.Sexp.t
+  end
+  [@@@end]
 
   include Stringable.S with type t := t
 end
@@ -419,17 +428,16 @@ end
            | pos subnormals   Subnormal  2. ** -1023.
            | pos normals      Normal     3.14
            v infinity         Infinite   infinity
-    v}
-*)
+    v} *)
 val classify : t -> Class.t
 
 (** [is_finite t] returns [true] iff [classify t] is in [Normal; Subnormal; Zero;]. *)
 val is_finite : t -> bool
 
 (*_ Caution: If we remove this sig item, [sign] will still be present from
-    [Comparable.With_zero]. *)
+  [Comparable.With_zero]. *)
 val sign : t -> Sign.t
-   [@@deprecated "[since 2016-01] Replace [sign] with [robust_sign] or [sign_exn]"]
+[@@deprecated "[since 2016-01] Replace [sign] with [robust_sign] or [sign_exn]"]
 
 (** The sign of a float.  Both [-0.] and [0.] map to [Zero].  Raises on nan.  All other
     values map to [Neg] or [Pos]. *)
@@ -449,18 +457,43 @@ val sign_or_nan : t -> Sign_or_nan.t
       create_ieee_exn ~negative:false ~exponent ~mantissa
       = 2 ** (exponent - 1023) * (1 + (2 ** -52) * mantissa)
     ]} *)
-val create_ieee     : negative:bool -> exponent:int -> mantissa:Base_int63.t -> t Or_error.t
-val create_ieee_exn : negative:bool -> exponent:int -> mantissa:Base_int63.t -> t
+val create_ieee     : negative:bool -> exponent:int -> mantissa:Int63.t -> t Or_error.t
+val create_ieee_exn : negative:bool -> exponent:int -> mantissa:Int63.t -> t
 val ieee_negative : t -> bool
 val ieee_exponent : t -> int
-val ieee_mantissa : t -> Base_int63.t
+val ieee_mantissa : t -> Int63.t
 
 module Nan_dist : sig
-  type t = Without | With_single | With_all [@@deriving sexp]
+  type t = Without | With_single | With_all [@@deriving_inline sexp]
+  include
+  sig
+    [@@@ocaml.warning "-32"]
+    val t_of_sexp : Sexplib.Sexp.t -> t
+    val sexp_of_t : t -> Sexplib.Sexp.t
+  end
+  [@@@end]
 end
 
 (** S-expressions contain at most 8 significant digits. *)
 module Terse : sig
-  type nonrec t = t [@@deriving sexp]
+  type nonrec t = t [@@deriving_inline sexp]
+  include
+  sig
+    [@@@ocaml.warning "-32"]
+    val t_of_sexp : Sexplib.Sexp.t -> t
+    val sexp_of_t : t -> Sexplib.Sexp.t
+  end
+  [@@@end]
   include Stringable.S with type t := t
+end
+
+(**/**)
+module Private : sig
+  val lower_bound_for_int : int -> t
+  val upper_bound_for_int : int -> t
+  val specialized_hash : t -> int
+  val one_ulp_less_than_half : t
+  val int63_round_nearest_portable_alloc_exn : t -> Int63.t
+  val int63_round_nearest_arch64_noalloc_exn : t -> Int63.t
+  val iround_nearest_exn_64 : t -> int
 end

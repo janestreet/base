@@ -17,7 +17,7 @@ end
     values stored in the record field with name [name]. ['perm] is a way
     of restricting the operations that can be used. *)
 type ('perm, 'record, 'field) t_with_perm =
-| Field of ('perm, 'record, 'field) For_generated_code.t
+  | Field of ('perm, 'record, 'field) For_generated_code.t
 
 (** A record field with no restriction. *)
 type ('record, 'field) t = ([ `Read | `Set_and_create], 'record, 'field) t_with_perm
@@ -31,4 +31,4 @@ val fset : ([> `Set_and_create], 'r, 'a) t_with_perm -> 'r -> 'a -> 'r
 val setter : ([> `Set_and_create], 'r, 'a) t_with_perm -> ('r -> 'a -> unit) option
 
 type ('perm, 'record, 'result) user =
-    { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }
+  { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }

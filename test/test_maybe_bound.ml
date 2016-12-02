@@ -1,6 +1,31 @@
 open! Import
 open! Maybe_bound
 
+let%test_unit "bounds_crossed" =
+  let a, b, c, d = Incl 1, Excl 1, Incl 3, Excl 3 in
+  let cases = [
+    a, a, false;
+    a, b, false;
+    a, c, false;
+    a, d, false;
+    b, a, false;
+    b, b, false;
+    b, c, false;
+    b, d, false;
+    c, a, true;
+    c, b, true;
+    c, c, false;
+    c, d, false;
+    d, a, true;
+    d, b, true;
+    d, c, false;
+    d, d, false;
+  ] in
+  List.iter cases ~f:(fun (lower, upper, expect) ->
+    let actual = bounds_crossed ~lower ~upper ~compare in
+    assert ([%equal: bool] expect actual));
+;;
+
 let%test_module "is_lower_bound" =
   (module struct
     let compare = Int.compare
@@ -87,3 +112,4 @@ let%test_module "check_range" =
         ; (5, Above_upper_bound)
         ]
   end)
+

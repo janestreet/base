@@ -4,7 +4,7 @@
 open! Import
 
 (*_ This interface is not defined in int_intf.ml because we don't want users of Core to
-    think about it. *)
+  think about it. *)
 module type T = sig
   type t
   include Floatable.S  with type t := t

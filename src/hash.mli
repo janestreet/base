@@ -1,8 +1,10 @@
+open! Import0
+
 module F (Hash : Hash_intf.S) :
   Hash_intf.Full
-    with type hash_value = Hash.hash_value
-     and type state      = Hash.state
-     and type seed       = Hash.seed
+  with type hash_value = Hash.hash_value
+   and type state      = Hash.state
+   and type seed       = Hash.seed
 
 (**
    The code of ppx_hash is agnostic to the choice of hash algorithm that is used. However,
@@ -37,8 +39,7 @@ module F (Hash : Hash_intf.S) :
    Hence, we are here making the choice of using this Internalhash (that is, Murmur3, the
    OCaml hash algorithm as of 4.03) as our hash algorithm. It means that the state of the
    hash function does not need to be preallocated, and makes for simpler use in hash
-   tables and other structures.
-*)
+   tables and other structures. *)
 include Hash_intf.Full
   with type state      = private int
    and type seed       = int
