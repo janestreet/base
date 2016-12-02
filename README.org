@@ -119,7 +119,7 @@ these blocks:
 (add-to-list 'hs-special-modes-alist
              '(tuareg-mode "\\[@@deriving_inline[^]]*\\]" "\\[@@@end\\]" nil
                            deriving-inline-forward-sexp nil))
-(add-hook 'tuareg-mode-hook 'setup-hide-deriving-inline))
+(add-hook 'tuareg-mode-hook 'setup-hide-deriving-inline)
 #+end_src
 
 Things are not yet setup in the git repository to make it convenient
