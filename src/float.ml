@@ -199,9 +199,6 @@ let one = 1.
 let minus_one = -1.
 
 let pi = 0x3.243f6a8885a308d313198a2e037073
-let pi_2 = 0x3.243F6A8885A308D31319p-1
-let pi_4 = 0x3.243f6a8885a308d313198a2e037073p-2
-let inv_pi = 0x0.517cc1b727220a94fe13abe8fa9a6e
 let sqrt_pi = 0x1.c5bf891b4ef6aa79c3b0520d5db938
 
 (* The bits of INRIA's [Pervasives] that we just want to expose in

@@ -43,10 +43,7 @@ val one : t
 val minus_one : t
 
 val pi : t      (** The constant pi. *)
-val pi_2 : t    (** The constant pi/2. *)
-val pi_4 : t    (** The constant pi/4. *)
 val sqrt_pi : t (** The constant sqrt(pi). *)
-val inv_pi : t  (** The constant 1/pi. *)
 
 (** The difference between 1.0 and the smallest exactly representable floating-point
     number greater than 1.0.  That is:
