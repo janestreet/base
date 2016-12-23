@@ -353,9 +353,10 @@ module Export = struct
   let ( ^ ) = String.( ^ )
 
   (** Reference operations *)
-  let ref    = ref
-  let ( ! )  = ( ! )
-  (* Declared as an external so that the compiler skips the caml_modify when possible *)
+  (* Declared as an externals so that the compiler skips the caml_modify when possible and
+     to keep reference unboxing working *)
+  external ( ! ) : 'a ref -> 'a = "%field0"
+  external ref : 'a -> 'a ref = "%makemutable"
   external ( := ) : 'a ref -> 'a -> unit = "%setfield0"
 
   (** Pair operations *)

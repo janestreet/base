@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <caml/mlvalues.h>
 #include <caml/hash.h>
+#include "internalhash.h"
 
 /* This pretends that the state of the OCaml internal hash function, which is an
    int32, is actually stored in an OCaml int. */

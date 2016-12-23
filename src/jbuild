@@ -20,6 +20,7 @@
   (libraries
    (caml
     shadow_stdlib))
+  (public_headers (internalhash))
   (c_flags (:standard -D_LARGEFILE64_SOURCE -mpopcnt))
   (c_names
    ;; If you add c stubs in here, ask yourself this question: would it make sense/can it

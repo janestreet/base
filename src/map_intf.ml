@@ -136,17 +136,17 @@ module Symmetric_diff_element = struct
       then 0
       else
         (match (t__004_, t__006_) with
-         | (`Left _left__015_,`Left _right__016_) ->
-           _cmp__v _left__015_ _right__016_
-         | (`Right _left__013_,`Right _right__014_) ->
-           _cmp__v _left__013_ _right__014_
-         | (`Unequal _left__007_,`Unequal _right__008_) ->
-           let (t__009_,t__010_) = _left__007_  in
-           let (t__011_,t__012_) = _right__008_  in
-           let ret = _cmp__v t__009_ t__011_  in
+         | (`Left _left__007_,`Left _right__008_) ->
+           _cmp__v _left__007_ _right__008_
+         | (`Right _left__009_,`Right _right__010_) ->
+           _cmp__v _left__009_ _right__010_
+         | (`Unequal _left__011_,`Unequal _right__012_) ->
+           let (t__013_,t__014_) = _left__011_  in
+           let (t__015_,t__016_) = _right__012_  in
+           let ret = _cmp__v t__013_ t__015_  in
            if Pervasives.(<>) ret 0
            then ret
-           else _cmp__v t__010_ t__012_
+           else _cmp__v t__014_ t__016_
          | (x,y) -> Pervasives.compare x y)
 
   [@@@end]

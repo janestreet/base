@@ -36,10 +36,10 @@ let compare :
     then 0
     else
       (match (a__001_, b__002_) with
-       | (Ok _a__006_,Ok _b__005_) -> _cmp__a _a__006_ _b__005_
+       | (Ok _a__003_,Ok _b__004_) -> _cmp__a _a__003_ _b__004_
        | (Ok _,_) -> (-1)
        | (_,Ok _) -> 1
-       | (Error _a__004_,Error _b__003_) -> _cmp__b _a__004_ _b__003_)
+       | (Error _a__005_,Error _b__006_) -> _cmp__b _a__005_ _b__006_)
 
 let t_of_sexp :
   'a 'b .

@@ -38,11 +38,11 @@ let rec compare : t -> t -> int =
     then 0
     else
       (match (a__001_, b__002_) with
-       | (Atom _a__006_,Atom _b__005_) ->
-         (Pervasives.compare : string -> string -> int) _a__006_ _b__005_
+       | (Atom _a__003_,Atom _b__004_) ->
+         (Pervasives.compare : string -> string -> int) _a__003_ _b__004_
        | (Atom _,_) -> (-1)
        | (_,Atom _) -> 1
-       | (List _a__004_,List _b__003_) ->
+       | (List _a__005_,List _b__006_) ->
          let rec loop a b =
            match (a, b) with
            | ([],[]) -> 0
@@ -52,7 +52,7 @@ let rec compare : t -> t -> int =
              let n = compare x y  in
              if Pervasives.(=) n 0 then loop xs ys else n
          in
-         loop _a__004_ _b__003_)
+         loop _a__005_ _b__006_)
 
 [@@@end]
 

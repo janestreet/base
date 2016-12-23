@@ -623,6 +623,34 @@ let mem ?(equal = Char.(=)) t c =
   loop 0
 ;;
 
+(* fast version, if we ever need it:
+   {[
+     let concat_array ~sep ar =
+       let ar_len = Array.length ar in
+       if ar_len = 0 then ""
+       else
+         let sep_len = length sep in
+         let res_len_ref = ref (sep_len * (ar_len - 1)) in
+         for i = 0 to ar_len - 1 do
+           res_len_ref := !res_len_ref + length ar.(i)
+         done;
+         let res = create !res_len_ref in
+         let str_0 = ar.(0) in
+         let len_0 = length str_0 in
+         blit ~src:str_0 ~src_pos:0 ~dst:res ~dst_pos:0 ~len:len_0;
+         let pos_ref = ref len_0 in
+         for i = 1 to ar_len - 1 do
+           let pos = !pos_ref in
+           blit ~src:sep ~src_pos:0 ~dst:res ~dst_pos:pos ~len:sep_len;
+           let new_pos = pos + sep_len in
+           let str_i = ar.(i) in
+           let len_i = length str_i in
+           blit ~src:str_i ~src_pos:0 ~dst:res ~dst_pos:new_pos ~len:len_i;
+           pos_ref := new_pos + len_i
+         done;
+         res
+   ]} *)
+
 let concat_array ?sep ar = concat ?sep (Array.to_list ar)
 
 let concat_map ?sep s ~f = concat_array ?sep (Array.map (to_array s) ~f)
@@ -731,34 +759,6 @@ include Comparable.Validate (T)
 (* for interactive top-levels -- modules deriving from String should have String's pretty
    printer. *)
 let pp = Caml.Format.pp_print_string
-
-(* fast version, if we ever need it:
-   {[
-     let concat_array ~sep ar =
-       let ar_len = Array.length ar in
-       if ar_len = 0 then ""
-       else
-         let sep_len = length sep in
-         let res_len_ref = ref (sep_len * (ar_len - 1)) in
-         for i = 0 to ar_len - 1 do
-           res_len_ref := !res_len_ref + length ar.(i)
-         done;
-         let res = create !res_len_ref in
-         let str_0 = ar.(0) in
-         let len_0 = length str_0 in
-         blit ~src:str_0 ~src_pos:0 ~dst:res ~dst_pos:0 ~len:len_0;
-         let pos_ref = ref len_0 in
-         for i = 1 to ar_len - 1 do
-           let pos = !pos_ref in
-           blit ~src:sep ~src_pos:0 ~dst:res ~dst_pos:pos ~len:sep_len;
-           let new_pos = pos + sep_len in
-           let str_i = ar.(i) in
-           let len_i = length str_i in
-           blit ~src:str_i ~src_pos:0 ~dst:res ~dst_pos:new_pos ~len:len_i;
-           pos_ref := new_pos + len_i
-         done;
-         res
-   ]} *)
 
 let of_char c = make 1 c
 

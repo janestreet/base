@@ -1,6 +1,23 @@
 open! Import
 open! Int
 
+let%expect_test "hash coherence" [@tags "64-bits-only"] =
+  check_int_hash_coherence [%here] (module Int);
+  [%expect {|
+    ((value -4_611_686_018_427_387_904)
+     (hash1 -4_611_686_018_427_387_904)
+     (hash2 923_909_958))
+    ((value 0)
+     (hash1 0)
+     (hash2 1_058_613_066))
+    ((value 37)
+     (hash1 37)
+     (hash2 335_628_541))
+    ((value 4_611_686_018_427_387_903)
+     (hash1 4_611_686_018_427_387_903)
+     (hash2 779_219_868)) |}];
+;;
+
 let%test_module "Hex" =
   (module struct
 

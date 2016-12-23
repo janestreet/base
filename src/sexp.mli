@@ -27,7 +27,7 @@ exception Of_sexp_error of exn * t
 (** {1 Helpers} *)
 
 val message : string -> (string * t) list -> t
-(** Helper to build nice s-expressions for error messages.  It immitates the behavior of
+(** Helper to build nice s-expressions for error messages.  It imitates the behavior of
     [[%message ...]] from the ppx_sexp_message rewriter.
 
     [message name key_values] produces a s-expression list starting with atom [name] and

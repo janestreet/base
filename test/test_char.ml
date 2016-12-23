@@ -10,6 +10,11 @@ let%test _ =      is_whitespace '\013'  (* '\r': carriage return *)
 let%test _ = not (is_whitespace '\014') (* shift out *)
 let%test _ =      is_whitespace '\032'  (* space *)
 
+let%expect_test "hash coherence" =
+  check_hash_coherence [%here] (module Char) [ min_value; 'a'; max_value ];
+  [%expect {| |}];
+;;
+
 let%test_module "int to char conversion" =
   (module struct
 

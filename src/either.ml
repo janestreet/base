@@ -99,10 +99,10 @@ let compare :
     then 0
     else
       (match (a__001_, b__002_) with
-       | (First _a__006_,First _b__005_) -> _cmp__f _a__006_ _b__005_
+       | (First _a__003_,First _b__004_) -> _cmp__f _a__003_ _b__004_
        | (First _,_) -> (-1)
        | (_,First _) -> 1
-       | (Second _a__004_,Second _b__003_) -> _cmp__s _a__004_ _b__003_)
+       | (Second _a__005_,Second _b__006_) -> _cmp__s _a__005_ _b__006_)
 
 [@@@end]
 

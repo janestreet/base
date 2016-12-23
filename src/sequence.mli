@@ -355,9 +355,12 @@ val singleton : 'a -> 'a t
           ~finish:return
     ]}
 
-    It is possible to exit early by not calling [k] in [f]. It is also possible to call
-    [k] multiple times. This results in the rest of the sequence being folded over
-    multiple times, independently. *)
+    It is possible to exit early by not calling [k] in [f].  It is also possible to call
+    [k] multiple times.  This results in the rest of the sequence being folded over
+    multiple times, independently.
+
+    Note that [delayed_fold], when targeting JavaScript, can result in stack overflow as
+    JavaScript doesn't generally have tail call optimization. *)
 val delayed_fold
   :  'a t
   -> init:'s

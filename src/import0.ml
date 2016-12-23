@@ -73,7 +73,6 @@ external not : bool -> bool = "%boolnot"
 (* This need to be declared as an external for the warnings to work properly *)
 external ignore : _ -> unit = "%ignore"
 
-let ( !   ) = Caml.( !   )
 let ( !=  ) = Caml.( !=  )
 let ( *   ) = Caml.( *   )
 let ( **  ) = Caml.( **  )
@@ -143,6 +142,12 @@ let ( >=. ) (x : float) y = Poly.( >= ) x y
 (* let ( :=  ) = Caml.( :=  ) *)
 external ( := ) : 'a ref -> 'a -> unit = "%setfield0"
 
+(* Not polymorphic, but allow unboxing of references *)
+(* let ( ! ) = Caml.( ! ) *)
+(* let ref   = Caml.ref   *)
+external ( ! ) : 'a ref -> 'a = "%field0"
+external ref : 'a -> 'a ref = "%makemutable"
+
 let ( @   ) = Caml.( @   )
 let ( ^   ) = Caml.( ^   )
 let ( ~-  ) = Caml.( ~-  )
@@ -169,7 +174,6 @@ let invalid_arg     = Caml.invalid_arg
 let max_int         = Caml.max_int
 let min_int         = Caml.min_int
 let raise           = Caml.raise
-let ref             = Caml.ref
 let snd             = Caml.snd
 let succ            = Caml.succ
 let string_of_int   = Caml.string_of_int

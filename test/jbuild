@@ -6,7 +6,8 @@
               sexplib
               num
               expect_test_helpers_kernel
-              stdio))))
+              stdio))
+  (js_of_ocaml ())))
 
 (toplevel_expect_tests ((libraries (base))))
 

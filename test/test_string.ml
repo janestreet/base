@@ -1,6 +1,11 @@
 open! Import
 open! String
 
+let%expect_test "hash coherence" [@tags "64-bits-only"] =
+  check_hash_coherence [%here] (module String) [ ""; "a"; "foo" ];
+  [%expect {| |}];
+;;
+
 let%test_module "Blit" =
   (module Test_blit.Test
        (struct

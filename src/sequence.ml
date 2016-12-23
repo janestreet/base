@@ -507,17 +507,17 @@ module Merge_with_duplicates_element = struct
       then 0
       else
         (match (a__001_, b__002_) with
-         | (Left _a__010_,Left _b__009_) -> _cmp__a _a__010_ _b__009_
+         | (Left _a__003_,Left _b__004_) -> _cmp__a _a__003_ _b__004_
          | (Left _,_) -> (-1)
          | (_,Left _) -> 1
-         | (Right _a__008_,Right _b__007_) -> _cmp__b _a__008_ _b__007_
+         | (Right _a__005_,Right _b__006_) -> _cmp__b _a__005_ _b__006_
          | (Right _,_) -> (-1)
          | (_,Right _) -> 1
-         | (Both (_a__004_,_a__006_),Both (_b__003_,_b__005_)) ->
-           let ret = _cmp__a _a__004_ _b__003_  in
+         | (Both (_a__007_,_a__009_),Both (_b__008_,_b__010_)) ->
+           let ret = _cmp__a _a__007_ _b__008_  in
            if Pervasives.(<>) ret 0
            then ret
-           else _cmp__b _a__006_ _b__005_)
+           else _cmp__b _a__009_ _b__010_)
 
   [@@@end]
 end
@@ -903,19 +903,31 @@ let delayed_fold s ~init ~f ~finish =
   match s with
   | Sequence(s, next) -> loop s next finish f init
 
-let fold_result t ~init ~f =
-  delayed_fold t ~init
-    ~f:(fun acc x ~k -> Result.bind (f acc x) ~f:k)
-    ~finish:Result.return
+let fold_until s ~init ~f =
+  let rec loop s next f =
+    fun acc ->
+      match next s with
+      | Done   -> Container_intf.Finished_or_stopped_early.Finished acc
+      | Skip s ->  loop s next f acc
+      | Yield(a, s) -> match (f acc a : ('a, 'b) Container_intf.Continue_or_stop.t) with
+        | Stop x -> Container_intf.Finished_or_stopped_early.Stopped_early x
+        | Continue acc -> loop s next f acc
+  in
+  match s with
+  | Sequence(s, next) -> loop s next f init
 
-let fold_until t ~init ~f =
-  delayed_fold t ~init
-    ~f:(fun acc x ~k ->
-      match (f acc x : ('a, 'b) Container_intf.Continue_or_stop.t) with
-      | Stop     x  -> Container_intf.Finished_or_stopped_early.Stopped_early x
-      | Continue x -> k x
-    )
-    ~finish:(fun x -> Finished x)
+let fold_result s ~init ~f =
+  let rec loop s next f =
+    fun acc ->
+      match next s with
+      | Done   -> Result.return acc
+      | Skip s ->  loop s next f acc
+      | Yield(a, s) -> match (f acc a : (_, _) Result.t) with
+        | Error _ as e -> e
+        | Ok acc -> loop s next f acc
+  in
+  match s with
+  | Sequence(s, next) -> loop s next f init
 
 let force_eagerly t = of_list (to_list t)
 

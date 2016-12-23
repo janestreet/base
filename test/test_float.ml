@@ -3,6 +3,11 @@ open! Float
 open! Float.O_dot
 open! Float.Private
 
+let%expect_test "hash coherence" [@tags "64-bits-only"] =
+  check_hash_coherence [%here] (module Float) [ min_value; 0.; 37.; max_value ];
+  [%expect {| |}];
+;;
+
 let exponent_bits = 11
 let mantissa_bits = 52
 
