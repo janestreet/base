@@ -375,7 +375,10 @@ end
 include O (* [Int63] and [Int63.O] agree value-wise *)
 
 module Repr = struct
-  type 'a t = Int : int t | Int64 : int64 t
+  type emulated = t
+  type ('underlying_type, 'intermediate_type) t =
+    | Int   : (int   , int     ) t
+    | Int64 : (int64 , emulated) t
 end
 
 let repr = Repr.Int64

@@ -16,7 +16,7 @@ module type Int_or_more = sig
   val of_int : int -> t
   val to_int : t -> int option
   val of_float_unchecked : float -> t
-  val repr : t Int63_emul.Repr.t
+  val repr : (t, t) Int63_emul.Repr.t
 end
 
 module Native : Int_or_more with type t = private int = struct

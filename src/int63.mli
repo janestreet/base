@@ -36,7 +36,9 @@ val random : ?state : Random.State.t -> t -> t
 (**/**)
 module Private : sig
   module Repr : sig
-    type 'a t = Int : int t | Int64 : int64 t
+    type ('underlying_type, 'intermediate_type) t =
+      | Int   : (int   , int         ) t
+      | Int64 : (int64 , Int63_emul.t) t
   end
-  val repr : t Repr.t
+  val repr : (t, t) Repr.t
 end
