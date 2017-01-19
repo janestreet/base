@@ -10,7 +10,6 @@ open! Import0
 
 let failwithf = Printf.failwithf
 
-let compare       = Caml.Char.compare
 let escaped       = Caml.Char.escaped
 let lowercase     = Caml.Char.lowercase_ascii
 let to_int        = Caml.Char.code

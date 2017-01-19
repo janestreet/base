@@ -29,7 +29,7 @@ module T = struct
   let compare (x : t) y = compare x y
   let equal (x : t) y = x = y
 
-  external specialized_hash : float -> int = "caml_hash_double" [@@noalloc]
+  external specialized_hash : float -> int = "Base_hash_double" [@@noalloc]
 
   let _ = hash
   let hash = specialized_hash
@@ -623,7 +623,7 @@ module Class = struct
     | Normal
     | Subnormal
     | Zero
-  [@@deriving_inline sexp]
+  [@@deriving_inline compare, enumerate, sexp]
   let t_of_sexp : Sexplib.Sexp.t -> t =
     let _tp_loc = "src/float.ml.Class.t"  in
     function
@@ -654,6 +654,28 @@ module Class = struct
     | Normal  -> Sexplib.Sexp.Atom "Normal"
     | Subnormal  -> Sexplib.Sexp.Atom "Subnormal"
     | Zero  -> Sexplib.Sexp.Atom "Zero"
+  let all : t list = [Infinite; Nan; Normal; Subnormal; Zero]
+  let compare : t -> t -> int =
+    fun a__001_  ->
+    fun b__002_  ->
+      if Ppx_compare_lib.phys_equal a__001_ b__002_
+      then 0
+      else
+        (match (a__001_, b__002_) with
+         | (Infinite ,Infinite ) -> 0
+         | (Infinite ,_) -> (-1)
+         | (_,Infinite ) -> 1
+         | (Nan ,Nan ) -> 0
+         | (Nan ,_) -> (-1)
+         | (_,Nan ) -> 1
+         | (Normal ,Normal ) -> 0
+         | (Normal ,_) -> (-1)
+         | (_,Normal ) -> 1
+         | (Subnormal ,Subnormal ) -> 0
+         | (Subnormal ,_) -> (-1)
+         | (_,Subnormal ) -> 1
+         | (Zero ,Zero ) -> 0)
+
   [@@@end]
 
   let to_string t = string_of_sexp (sexp_of_t t)
@@ -946,33 +968,6 @@ let create_ieee_exn ~negative ~exponent ~mantissa =
 
 let create_ieee ~negative ~exponent ~mantissa =
   Or_error.try_with (fun () -> create_ieee_exn ~negative ~exponent ~mantissa)
-
-module Nan_dist = struct
-  type t = Without | With_single | With_all [@@deriving_inline sexp]
-  let t_of_sexp : Sexplib.Sexp.t -> t =
-    let _tp_loc = "src/float.ml.Nan_dist.t"  in
-    function
-    | Sexplib.Sexp.Atom ("without"|"Without") -> Without
-    | Sexplib.Sexp.Atom ("with_single"|"With_single") -> With_single
-    | Sexplib.Sexp.Atom ("with_all"|"With_all") -> With_all
-    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("without"|"Without"))::_) as sexp
-      -> Sexplib.Conv_error.stag_no_args _tp_loc sexp
-    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("with_single"|"With_single"))::_)
-      as sexp -> Sexplib.Conv_error.stag_no_args _tp_loc sexp
-    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("with_all"|"With_all"))::_) as
-      sexp -> Sexplib.Conv_error.stag_no_args _tp_loc sexp
-    | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
-      Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-    | Sexplib.Sexp.List [] as sexp ->
-      Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-    | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp
-  let sexp_of_t : t -> Sexplib.Sexp.t =
-    function
-    | Without  -> Sexplib.Sexp.Atom "Without"
-    | With_single  -> Sexplib.Sexp.Atom "With_single"
-    | With_all  -> Sexplib.Sexp.Atom "With_all"
-  [@@@end]
-end
 
 module Terse = struct
   type nonrec t = t

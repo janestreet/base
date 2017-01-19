@@ -12,6 +12,7 @@ include
        with module Pervasives := Pervasives
        (* These modules are redefined in Base *)
        with module Array     := Caml.Array
+       with module Buffer    := Caml.Buffer
        with module Char      := Caml.Char
        with module Hashtbl   := Caml.Hashtbl
        with module Int32     := Caml.Int32
@@ -27,8 +28,6 @@ include
      ))
 
 type 'a ref = 'a Caml.ref = { mutable contents: 'a }
-
-module Pervasives = Caml.Pervasives
 
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)
 module Caml = struct
@@ -171,6 +170,7 @@ let fst             = Caml.fst
 let incr            = Caml.incr
 let int_of_float    = Caml.int_of_float
 let invalid_arg     = Caml.invalid_arg
+let lnot            = Caml.lnot
 let max_int         = Caml.max_int
 let min_int         = Caml.min_int
 let raise           = Caml.raise

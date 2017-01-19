@@ -56,7 +56,7 @@ module type Hexable = sig
   end
 end
 
-module type S = sig
+module type S_common = sig
   type t [@@deriving_inline hash, sexp]
   include
   sig
@@ -77,10 +77,6 @@ module type S = sig
 
   (** [delimiter] is underscore by default *)
   val to_string_hum : ?delimiter:char -> t -> string
-
-  (** The number of bits available in this integer type.  Note that the integer
-      representations are signed *)
-  val num_bits : int
 
   (** {9 Infix operators and constants } *)
 
@@ -123,25 +119,23 @@ module type S = sig
   (** float division of integers *)
   val ( // ) : t -> t -> float
 
-  (** A sub-module designed to be opened to make working with ints more convenient.  *)
-  module O : sig
+  (** Same as [bit_and] *)
+  val ( land ) : t -> t -> t
 
-    val ( + ) : t -> t -> t
-    val ( - ) : t -> t -> t
-    val ( * ) : t -> t -> t
-    val ( / ) : t -> t -> t
-    val ( ~- ) : t -> t
-    include Polymorphic_compare_intf.Infix with type t := t
+  (** Same as [bit_or]  *)
+  val ( lor ) : t -> t -> t
 
-    val abs    : t -> t
-    val neg    : t -> t
-    val zero   : t
-    val of_int_exn : int -> t
+  (** Same as [bit_xor] *)
+  val ( lxor ) : t -> t -> t
 
-    val ( % )  : t -> t -> t
-    val ( /% ) : t -> t -> t
-    val ( // ) : t -> t -> float
-  end
+  (** Same as [bit_not] *)
+  val lnot : t -> t
+
+  (** Same as [shift_left] *)
+  val ( lsl ) : t -> int -> t
+
+  (** Same as [shift_right] *)
+  val ( asr ) : t -> int -> t
 
   (** {9 Successor and predecessor functions } *)
 
@@ -157,12 +151,6 @@ module type S = sig
   (** [pow base exponent] returns [base] raised to the power of [exponent].  It is OK if
       [base <= 0].  [pow] raises if [exponent < 0], or an integer overflow would occur. *)
   val pow : t -> t -> t
-
-  (** The largest representable integer *)
-  val max_value : t
-
-  (** The smallest representable integer *)
-  val min_value : t
 
   (** {9 Bit-wise logical operations } *)
 
@@ -180,10 +168,6 @@ module type S = sig
 
   (** shifts right, preserving the sign of the input. *)
   val shift_right : t -> int -> t
-
-  (** shifts right, filling in with zeroes, which will not preserve the sign of the
-      input *)
-  val shift_right_logical : t -> int -> t
 
   (** {9 Increment and decrement functions for integer references } *)
 
@@ -209,11 +193,81 @@ module type S = sig
       The result is unspecified if the argument is nan or falls outside the range
       of representable integers. *)
   val of_float_unchecked : float -> t
+end
 
+module type Operators_unbounded = sig
+  type t
+
+  val ( + ) : t -> t -> t
+  val ( - ) : t -> t -> t
+  val ( * ) : t -> t -> t
+  val ( / ) : t -> t -> t
+  val ( ~- ) : t -> t
+  include Polymorphic_compare_intf.Infix with type t := t
+
+  val abs    : t -> t
+  val neg    : t -> t
+  val zero   : t
+  val of_int_exn : int -> t
+
+  val ( % )  : t -> t -> t
+  val ( /% ) : t -> t -> t
+  val ( // ) : t -> t -> float
+
+  val ( land ) : t -> t -> t
+  val ( lor  ) : t -> t -> t
+  val ( lxor ) : t -> t -> t
+  val lnot     : t -> t
+
+  val ( lsl ) : t -> int -> t
+  val ( asr ) : t -> int -> t
+end
+
+module type Operators = sig
+  include Operators_unbounded
+  val ( lsr ) : t -> int -> t
+end
+
+(** [S_unbounded] is a generic interface for unbounded integers, e.g. [Bignum.Bigint].
+    [S_unbounded] is a restriction of [S] (below) that omits values that depend on
+    fixed-size integers. *)
+module type S_unbounded = sig
+  include S_common
+
+  (** A sub-module designed to be opened to make working with ints more convenient.  *)
+  module O : Operators_unbounded with type t := t
+end
+
+(** [S] is a generic interface for fixed-size integers. *)
+module type S = sig
+  include S_common
+
+  (** The number of bits available in this integer type.  Note that the integer
+      representations are signed *)
+  val num_bits : int
+
+  (** The largest representable integer *)
+  val max_value : t
+
+  (** The smallest representable integer *)
+  val min_value : t
+
+  (** Same as [shift_right_logical] *)
+  val ( lsr ) : t -> int -> t
+
+  (** shifts right, filling in with zeroes, which will not preserve the sign of the
+      input *)
+  val shift_right_logical : t -> int -> t
+
+  (** A sub-module designed to be opened to make working with ints more convenient.  *)
+  module O : Operators with type t := t
 end
 
 include
   (struct
-    (** this functor's type-correctness ensures that every value in [S.O] is also in [S]. *)
-    module Check_O_contained_in_S (M : S) : sig end = (M : module type of M.O)
+    (** Various functors whose type-correctness ensures desired relationships between
+        interfaces. *)
+    module Check_O_contained_in_S           (M : S)           = (M : module type of M.O)
+    module Check_O_contained_in_S_unbounded (M : S_unbounded) = (M : module type of M.O)
+    module Check_S_unbounded_in_S           (M : S)           = (M : S_unbounded)
   end : sig end)

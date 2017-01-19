@@ -16,10 +16,7 @@ module T = struct
         (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
   let compare : t -> t -> int =
-    fun a__001_  ->
-    fun b__002_  ->
-      (Pervasives.compare : bool -> bool -> int) a__001_ b__002_
-
+    fun a__001_  -> fun b__002_  -> compare_bool a__001_ b__002_
   [@@@end]
 
   (* we use physical equality here because for bools it is the same *)

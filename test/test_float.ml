@@ -186,10 +186,10 @@ let%test_module "IEEE" =
       f zero                         false 0                                 (!! 0);
       f min_positive_subnormal_value false 0                                 (!! 1);
       f min_positive_normal_value    false 1                                 (!! 0);
-      f epsilon_float                false Pervasives.(1023 - mantissa_bits) (!! 0);
+      f epsilon_float                false Int.(1023 - mantissa_bits)        (!! 0);
       f one                          false 1023                              (!! 0);
       f minus_one                    true  1023                              (!! 0);
-      f max_finite_value             false Pervasives.(exponent_mask - 1)    mantissa_mask;
+      f max_finite_value             false Int.(exponent_mask - 1)    mantissa_mask;
       f infinity                     false exponent_mask                     (!! 0);
       f neg_infinity                 true  exponent_mask                     (!! 0);
       f nan                          false exponent_mask                     (!! 1)
@@ -355,8 +355,8 @@ let%test "int_pow misc" =
   && int_pow (-0.) (-2) = infinity
   && int_pow 1.5 5000 = infinity
   && int_pow 1.5 (-5000) = 0.
-  && int_pow (-1.) Pervasives.max_int = -1.
-  && int_pow (-1.) Pervasives.min_int = 1.
+  && int_pow (-1.) Int.max_value = -1.
+  && int_pow (-1.) Int.min_value = 1.
 
 (* some ugly corner cases with extremely large exponents and some serious precision loss *)
 let%test "int_pow bad cases" [@tags "64-bits-only"]  =
@@ -412,11 +412,11 @@ let%test_module _ =
 
     let () = Random.init 137
 
-    let (=) = Pervasives.(=)
-    let (>=) = Pervasives.(>=)
-    let (+) = Pervasives.(+)
-    let (-) = Pervasives.(-)
-    let ( * ) = Pervasives.( * )
+    let (=)   = Caml.(=)
+    let (>=)  = Caml.(>=)
+    let ( + ) = Int.( + )
+    let ( - ) = Int.( - )
+    let ( * ) = Int.( * )
 
     (* round:
        ...  <-)[-><-)[-><-)[-><-)[-><-)[-><-)[->   ...
@@ -448,7 +448,7 @@ let%test_module _ =
       let result4 = try Some (specialized_iround_exn x) with _exn -> None in
       let result5 = try Some (Int.of_float (float_rounding x)) with _exn -> None in
       let result6 = try Some (Int.of_float (round ~dir x)) with _exn -> None in
-      let (=) = Pervasives.(=) in
+      let (=) = Caml.(=) in
       if result1 = result2 && result2 = result3 && result3 = result4
          && result4 = result5 && result5 = result6 then
         validate result1
@@ -956,12 +956,12 @@ let%test_module "Hexadecimal syntax" =
   (module struct
 
     let should_fail str =
-      try ignore(Pervasives.float_of_string str : float); false
+      try ignore(Caml.float_of_string str : float); false
       with _ -> true
 
     let is_4_03 = String.is_prefix ~prefix:"4.03" Caml.Sys.ocaml_version
 
-    let test_equal str g = Pervasives.float_of_string str = g
+    let test_equal str g = Caml.float_of_string str = g
     let%test _ = is_4_03 || should_fail "0x"
     let%test _ = is_4_03 || should_fail "0x.p0"
     let%test _ = test_equal  "0x0" 0.

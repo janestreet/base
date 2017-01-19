@@ -11,14 +11,14 @@
   h ^= h >> 16; \
   return Val_int(h & 0x3FFFFFFFU);
 
-CAMLprim value caml_hash_string (value string)
+CAMLprim value Base_hash_string (value string)
 {
   uint32_t h;
   h = caml_hash_mix_string (0, string);
   FINAL_MIX_AND_RETURN(h)
 }
 
-CAMLprim value caml_hash_double (value d)
+CAMLprim value Base_hash_double (value d)
 {
   uint32_t h;
   h = caml_hash_mix_double (0, Double_val(d));

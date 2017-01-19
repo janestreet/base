@@ -23,11 +23,11 @@ static int64_t int_pow(int64_t base, int64_t exponent) {
   return ret;
 }
 
-CAMLprim value int_math_int_pow_stub(value base, value exponent) {
+CAMLprim value Base_int_math_int_pow_stub(value base, value exponent) {
   return (Val_long(int_pow(Long_val(base), Long_val(exponent))));
 }
 
-CAMLprim value int_math_int64_pow_stub(value base, value exponent) {
+CAMLprim value Base_int_math_int64_pow_stub(value base, value exponent) {
   CAMLparam2(base, exponent);
   CAMLreturn(caml_copy_int64(int_pow(Int64_val(base), Int64_val(exponent))));
 }
@@ -35,7 +35,7 @@ CAMLprim value int_math_int64_pow_stub(value base, value exponent) {
 /* This implementation is faster than [__builtin_popcount(v) - 1], even though
  * it seems more complicated.  The [&] clears the shifted sign bit after
  * [Long_val] or [Int_val]. */
-CAMLprim value int_math_int_popcount(value v) {
+CAMLprim value Base_int_math_int_popcount(value v) {
 #ifdef ARCH_SIXTYFOUR
   return Val_int (__builtin_popcountll (Long_val (v) & ~((uint64_t)1 << 63)));
 #else
@@ -43,7 +43,7 @@ CAMLprim value int_math_int_popcount(value v) {
 #endif
 }
 
-CAMLprim value int_math_int_clz(value v) {
+CAMLprim value Base_int_math_int_clz(value v) {
 #ifdef ARCH_SIXTYFOUR
   return Val_int (__builtin_clzll (Long_val(v)));
 #else

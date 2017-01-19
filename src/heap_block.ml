@@ -5,7 +5,7 @@ let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
   fun _of_a  -> fun v  -> _of_a v
 [@@@end]
 
-external is_heap_block : Caml.Obj.t -> bool = "core_heap_block_is_heap_block" [@@noalloc]
+external is_heap_block : Caml.Obj.t -> bool = "Base_heap_block_is_heap_block" [@@noalloc]
 
 let is_ok v = is_heap_block (Caml.Obj.repr v)
 

@@ -131,32 +131,18 @@ module T = struct
   let compare : t -> t -> int =
     fun a__001_  ->
     fun b__002_  ->
-      if Pervasives.(==) a__001_ b__002_
+      if Ppx_compare_lib.phys_equal a__001_ b__002_
       then 0
       else
-        (let ret =
-           (Pervasives.compare : string -> string -> int) a__001_.pos_fname
-             b__002_.pos_fname
-         in
-         if Pervasives.(<>) ret 0
-         then ret
-         else
-           (let ret =
-              (Pervasives.compare : int -> int -> int) a__001_.pos_lnum
-                b__002_.pos_lnum
-            in
-            if Pervasives.(<>) ret 0
-            then ret
-            else
-              (let ret =
-                 (Pervasives.compare : int -> int -> int) a__001_.pos_bol
-                   b__002_.pos_bol
-               in
-               if Pervasives.(<>) ret 0
-               then ret
-               else
-                 (Pervasives.compare : int -> int -> int) a__001_.pos_cnum
-                   b__002_.pos_cnum)))
+        (match compare_string a__001_.pos_fname b__002_.pos_fname with
+         | 0 ->
+           (match compare_int a__001_.pos_lnum b__002_.pos_lnum with
+            | 0 ->
+              (match compare_int a__001_.pos_bol b__002_.pos_bol with
+               | 0 -> compare_int a__001_.pos_cnum b__002_.pos_cnum
+               | n -> n)
+            | n -> n)
+         | n -> n)
 
   [@@@end]
 end

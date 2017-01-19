@@ -352,6 +352,10 @@ module type S_without_submodules = sig
   val hash : 'a -> int
   val hash_param : int -> int -> 'a -> int
 
+  (** We use [[@@deriving_inline sexp_of][@@@end]] but not [[@@deriving sexp]] because we want people to
+      be explicit about the hash and comparison functions used when creating hashtables.
+      One can use [Hashtbl.Poly.t], which does have [[@@deriving_inline sexp][@@@end]], to use
+      polymorphic comparison and hashing. *)
   type ('a, 'b) t [@@deriving_inline sexp_of]
   include
   sig
@@ -361,10 +365,6 @@ module type S_without_submodules = sig
       ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
   end
   [@@@end]
-  (** We use [[@@deriving_inline sexp_of][@@@end]] but not [[@@deriving sexp]] because we want people to
-      be explicit about the hash and comparison functions used when creating hashtables.
-      One can use [Hashtbl.Poly.t], which does have [[@@deriving_inline sexp][@@@end]], to use
-      polymorphic comparison and hashing. *)
 
   include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
 

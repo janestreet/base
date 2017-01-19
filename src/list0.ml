@@ -14,20 +14,24 @@ let rev_append  = Caml.List.rev_append
 let sort        = Caml.List.sort
 let stable_sort = Caml.List.stable_sort
 let tl_exn      = Caml.List.tl
+let unzip       = Caml.List.split
 
 (* These are eta expanded in order to permute parameter order to follow Base
    conventions. *)
-let exists      t           ~f = Caml.List.exists     t           ~f
-let exists2_ok  l1 l2       ~f = Caml.List.exists2    l1 l2       ~f
-let find_exn    t           ~f = Caml.List.find       t           ~f
-let fold        t     ~init ~f = Caml.List.fold_left  t           ~f ~init
-let fold2_ok    l1 l2 ~init ~f = Caml.List.fold_left2 l1 l2 ~init ~f
-let for_all     t           ~f = Caml.List.for_all    t           ~f
-let for_all2_ok l1 l2       ~f = Caml.List.for_all2   l1 l2       ~f
-let iter        t           ~f = Caml.List.iter       t           ~f
-let iter2_ok    l1 l2       ~f = Caml.List.iter2      l1 l2       ~f
-let rev_map     t           ~f = Caml.List.rev_map    t           ~f
-let rev_map2_ok l1 l2       ~f = Caml.List.rev_map2   l1 l2       ~f
+let exists       t                 ~f = Caml.List.exists     t           ~f
+let exists2_ok   l1 l2             ~f = Caml.List.exists2    l1 l2       ~f
+let find_exn     t                 ~f = Caml.List.find       t           ~f
+let fold         t           ~init ~f = Caml.List.fold_left  t           ~f ~init
+let fold2_ok     l1 l2 ~init       ~f = Caml.List.fold_left2 l1 l2 ~init ~f
+let for_all      t                 ~f = Caml.List.for_all    t           ~f
+let for_all2_ok  l1 l2             ~f = Caml.List.for_all2   l1 l2       ~f
+let iter         t                 ~f = Caml.List.iter       t           ~f
+let iter2_ok     l1 l2             ~f = Caml.List.iter2      l1 l2       ~f
+let nontail_map  t                 ~f = Caml.List.map        t           ~f
+let nontail_mapi t                 ~f = Caml.List.mapi       t           ~f
+let partition    t                 ~f = Caml.List.partition  t           ~f
+let rev_map      t                 ~f = Caml.List.rev_map    t           ~f
+let rev_map2_ok  l1 l2             ~f = Caml.List.rev_map2   l1 l2       ~f
 
 let rev = function
   | [] | [_] as res -> res

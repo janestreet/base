@@ -146,10 +146,7 @@ include Conv.Make_hex(struct
           (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
     let compare : t -> t -> int =
-      fun a__001_  ->
-      fun b__002_  ->
-        (Pervasives.compare : int64 -> int64 -> int) a__001_ b__002_
-
+      fun a__001_  -> fun b__002_  -> compare_int64 a__001_ b__002_
     [@@@end]
 
     let zero = zero
@@ -192,6 +189,14 @@ module O = struct
       let of_string = T.of_string
       let to_string = T.to_string
     end)
+
+  let ( land ) = bit_and
+  let ( lor  ) = bit_or
+  let ( lxor ) = bit_xor
+  let ( lnot ) = bit_not
+  let ( lsl  ) = shift_left
+  let ( asr  ) = shift_right
+  let ( lsr  ) = shift_right_logical
 end
 
 include O (* [Int64] and [Int64.O] agree value-wise *)

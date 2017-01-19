@@ -503,7 +503,7 @@ module Merge_with_duplicates_element = struct
     fun _cmp__b  ->
     fun a__001_  ->
     fun b__002_  ->
-      if Pervasives.(==) a__001_ b__002_
+      if Ppx_compare_lib.phys_equal a__001_ b__002_
       then 0
       else
         (match (a__001_, b__002_) with
@@ -514,10 +514,9 @@ module Merge_with_duplicates_element = struct
          | (Right _,_) -> (-1)
          | (_,Right _) -> 1
          | (Both (_a__007_,_a__009_),Both (_b__008_,_b__010_)) ->
-           let ret = _cmp__a _a__007_ _b__008_  in
-           if Pervasives.(<>) ret 0
-           then ret
-           else _cmp__b _a__009_ _b__010_)
+           (match _cmp__a _a__007_ _b__008_ with
+            | 0 -> _cmp__b _a__009_ _b__010_
+            | n -> n))
 
   [@@@end]
 end

@@ -14,13 +14,7 @@ let hash_fold_t :
 
 let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
   fun _cmp__a  ->
-  fun a__001_  ->
-  fun b__002_  ->
-    match (a__001_, b__002_) with
-    | (None ,None ) -> 0
-    | (None ,Some _) -> (-1)
-    | (Some _,None ) -> 1
-    | (Some _x__003_,Some _x__004_) -> _cmp__a _x__003_ _x__004_
+  fun a__001_  -> fun b__002_  -> compare_option _cmp__a a__001_ b__002_
 
 let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
   let _tp_loc = "src/option.ml.t"  in

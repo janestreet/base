@@ -1,7 +1,7 @@
 open! Import
 
 (* C stub for int popcount to use the POPCNT instruction where possible *)
-external int_popcount : int -> int = "int_math_int_popcount" [@@noalloc]
+external int_popcount : int -> int = "Base_int_math_int_popcount" [@@noalloc]
 
 (* To maintain javascript compatibility and enable unboxing, we implement popcount in
    OCaml rather than use C stubs. Implementation adapted from:

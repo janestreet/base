@@ -301,7 +301,7 @@ let%test_unit _ =
 
 let%test_module "Hash" =
   (module struct
-    external hash : string -> int = "caml_hash_string" [@@noalloc]
+    external hash : string -> int = "Base_hash_string" [@@noalloc]
 
     let%test_unit _ =
       List.iter ~f:(fun string ->

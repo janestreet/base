@@ -12,29 +12,7 @@ let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
   fun _of_a  -> fun v  -> (sexp_of_array _of_a) v
 let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
   fun _cmp__a  ->
-  fun a__001_  ->
-  fun b__002_  ->
-    if Pervasives.(==) a__001_ b__002_
-    then 0
-    else
-      (let len_a = Array.length a__001_  in
-       let len_b = Array.length b__002_  in
-       let ret = Pervasives.compare len_a len_b  in
-       if Pervasives.(<>) ret 0
-       then ret
-       else
-         (let rec loop i =
-            if Pervasives.(=) i len_a
-            then 0
-            else
-              (let l = Array.unsafe_get a__001_ i
-
-               and r = Array.unsafe_get b__002_ i
-               in
-               let res = _cmp__a l r  in
-               if Pervasives.(<>) res 0 then res else loop (i + 1))
-          in
-          loop 0))
+  fun a__001_  -> fun b__002_  -> compare_array _cmp__a a__001_ b__002_
 
 [@@@end]
 

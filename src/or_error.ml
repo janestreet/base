@@ -20,11 +20,7 @@ let hash_fold_t :
 let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
   fun _cmp__a  ->
   fun a__001_  ->
-  fun b__002_  ->
-    Result.compare
-      (fun a__003_  -> fun b__004_  -> _cmp__a a__003_ b__004_)
-      (fun a__005_  -> fun b__006_  -> Error.compare a__005_ b__006_)
-      a__001_ b__002_
+  fun b__002_  -> Result.compare _cmp__a Error.compare a__001_ b__002_
 
 [@@@end]
 

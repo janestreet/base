@@ -42,7 +42,7 @@ let is_pow2 x =
 ;;
 
 (* C stub for int clz to use the CLZ/BSR instruction where possible *)
-external int_clz : int -> int = "int_math_int_clz" [@@noalloc]
+external int_clz : int -> int = "Base_int_math_int_clz" [@@noalloc]
 
 let floor_log2 i =
   if i <= 0 then

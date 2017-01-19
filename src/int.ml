@@ -132,9 +132,7 @@ include Conv.Make_hex(struct
           (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
     let compare : t -> t -> int =
-      fun a__001_  ->
-      fun b__002_  -> (Pervasives.compare : int -> int -> int) a__001_ b__002_
-
+      fun a__001_  -> fun b__002_  -> compare_int a__001_ b__002_
     [@@@end]
 
     let zero = zero
@@ -166,7 +164,7 @@ let decr = Pervasives.decr
 let shift_right a b = a asr b
 let shift_right_logical a b = a lsr b
 let shift_left a b = a lsl b
-let bit_not a = Caml.lnot a
+let bit_not a = lnot a
 let bit_or a b = a lor b
 let bit_and a b = a land b
 let bit_xor a b = a lxor b
@@ -246,6 +244,14 @@ module O = struct
 
   let (//) x y = to_float x /. to_float y
   ;;
+
+  let ( land ) = ( land )
+  let ( lor  ) = ( lor  )
+  let ( lxor ) = ( lxor )
+  let ( lnot ) = ( lnot )
+  let ( lsl  ) = ( lsl  )
+  let ( asr  ) = ( asr  )
+  let ( lsr  ) = ( lsr  )
 end
 
 include O (* [Int] and [Int.O] agree value-wise *)

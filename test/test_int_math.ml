@@ -6,7 +6,7 @@ let%test_unit _ =
   for i = 0 to x do
     for j = 0 to x do
       assert (int_pow i j
-              = Pervasives.(int_of_float ((float_of_int i) ** (float_of_int j))))
+              = Caml.(int_of_float ((float_of_int i) ** (float_of_int j))))
     done
   done
 

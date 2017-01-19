@@ -42,7 +42,7 @@ let%test_module "Sequence.merge*" =
               (of_list [ 1; 2; ])
               (of_list [ 2; 3; ])
               (* Can't use Core_int.compare because it would be a dependency cycle. *)
-              ~cmp:Pervasives.compare))
+              ~cmp:Int.compare))
         [ Left 1; Both (2, 2); Right 3; ]
 
     let%test_unit _ =
@@ -51,7 +51,7 @@ let%test_module "Sequence.merge*" =
            (merge_with_duplicates
               (of_list [ 2; 1; ])
               (of_list [ 2; 3; ])
-              ~cmp:Pervasives.compare))
+              ~cmp:Int.compare))
         [ Both (2, 2); Left 1; Right 3; ]
 
     let%test_unit _ =
@@ -311,7 +311,7 @@ let%test _ =
     ~f:(fun b -> b)
     (List.map
        ~f:(fun (l1, l2, expected_res) ->
-         compare Pervasives.compare (of_list l1) (of_list l2) = expected_res)
+         compare Int.compare (of_list l1) (of_list l2) = expected_res)
        compare_tests)
 
 let%expect_test _ =

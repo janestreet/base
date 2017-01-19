@@ -3,6 +3,7 @@
 
 open! Import0
 open Hash.Builtin
+open Ppx_compare_lib.Builtin
 open Caml.Format
 
 module Char   = Char0
@@ -34,25 +35,15 @@ let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
 let rec compare : t -> t -> int =
   fun a__001_  ->
   fun b__002_  ->
-    if Pervasives.(==) a__001_ b__002_
+    if Ppx_compare_lib.phys_equal a__001_ b__002_
     then 0
     else
       (match (a__001_, b__002_) with
-       | (Atom _a__003_,Atom _b__004_) ->
-         (Pervasives.compare : string -> string -> int) _a__003_ _b__004_
+       | (Atom _a__003_,Atom _b__004_) -> compare_string _a__003_ _b__004_
        | (Atom _,_) -> (-1)
        | (_,Atom _) -> 1
        | (List _a__005_,List _b__006_) ->
-         let rec loop a b =
-           match (a, b) with
-           | ([],[]) -> 0
-           | ([],_) -> (-1)
-           | (_,[]) -> 1
-           | (x::xs,y::ys) ->
-             let n = compare x y  in
-             if Pervasives.(=) n 0 then loop xs ys else n
-         in
-         loop _a__005_ _b__006_)
+         compare_list compare _a__005_ _b__006_)
 
 [@@@end]
 

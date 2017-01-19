@@ -20,7 +20,7 @@
   (libraries
    (caml
     shadow_stdlib))
-  (public_headers (internalhash))
+  (install_c_headers (internalhash))
   (c_flags (:standard -D_LARGEFILE64_SOURCE -mpopcnt))
   (c_names
    ;; If you add c stubs in here, ask yourself this question: would it make sense/can it
@@ -30,7 +30,8 @@
     int_math_stubs
     internalhash_stubs
     heap_block_stubs
-    hash_stubs))
+    hash_stubs
+    string_dict_stubs))
   (preprocess no_preprocessing)
   (lint (pps (ppx_base ppx_base_lint -check-doc-comments -no-optcomp
                     -type-conv-keep-w32=impl

@@ -29,8 +29,7 @@ CAMLextern unsigned char * caml_page_table[Pagetable1_size];
 
 #define Is_in_heap_or_young(a) (Classify_addr(a) & (In_heap | In_young))
 
-CAMLprim value
-core_heap_block_is_heap_block(value v)
+CAMLprim value Base_heap_block_is_heap_block(value v)
 {
   return (Is_block(v) && Is_in_heap_or_young(v)) ? Val_true : Val_false;
 }

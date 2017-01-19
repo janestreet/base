@@ -299,30 +299,30 @@ let%test_unit _ =
 ;;
 
 let%test _ = find_consecutive_duplicate [(0,'a');(1,'b');(2,'b')]
-               ~equal:(fun (_, a) (_, b) -> Pervasives.(=) a b) = Some ((1, 'b'), (2, 'b'))
+               ~equal:(fun (_, a) (_, b) -> Char.(=) a b) = Some ((1, 'b'), (2, 'b'))
 ;;
 
-let%test _ = remove_consecutive_duplicates ~equal:Pervasives.(=) [] = []
-let%test _ = remove_consecutive_duplicates ~equal:Pervasives.(=) [5;5;5;5;5] = [5]
-let%test _ = remove_consecutive_duplicates ~equal:Pervasives.(=) [5;6;5;6;5;6] = [5;6;5;6;5;6]
-let%test _ = remove_consecutive_duplicates ~equal:Pervasives.(=) [5;5;6;6;5;5;8;8] = [5;6;5;8]
+let%test _ = remove_consecutive_duplicates ~equal:Int.(=) [] = []
+let%test _ = remove_consecutive_duplicates ~equal:Int.(=) [5;5;5;5;5] = [5]
+let%test _ = remove_consecutive_duplicates ~equal:Int.(=) [5;6;5;6;5;6] = [5;6;5;6;5;6]
+let%test _ = remove_consecutive_duplicates ~equal:Int.(=) [5;5;6;6;5;5;8;8] = [5;6;5;8]
 let%test _ = remove_consecutive_duplicates         [(0,1);(0,2);(2,2);(4,1)]
-               ~equal:(fun (a,_) (b,_) -> Pervasives.(=) a b) = [      (0,2);(2,2);(4,1)]
+               ~equal:(fun (a,_) (b,_) -> Int.(=) a b) = [      (0,2);(2,2);(4,1)]
 let%test _ = remove_consecutive_duplicates         [(0,1);(2,2);(0,2);(4,1)]
-               ~equal:(fun (a,_) (b,_) -> Pervasives.(=) a b) = [(0,1);(2,2);(0,2);(4,1)]
+               ~equal:(fun (a,_) (b,_) -> Int.(=) a b) = [(0,1);(2,2);(0,2);(4,1)]
 let%test _ = remove_consecutive_duplicates         [(0,1);(2,1);(0,2);(4,2)]
-               ~equal:(fun (_,a) (_,b) -> Pervasives.(=) a b) = [      (2,1);      (4,2)]
+               ~equal:(fun (_,a) (_,b) -> Int.(=) a b) = [      (2,1);      (4,2)]
 let%test _ = remove_consecutive_duplicates         [(0,1);(2,2);(0,2);(4,1)]
-               ~equal:(fun (_,a) (_,b) -> Pervasives.(=) a b) = [(0,1);      (0,2);(4,1)]
+               ~equal:(fun (_,a) (_,b) -> Int.(=) a b) = [(0,1);      (0,2);(4,1)]
 
 let%test _ = dedup [] = []
 let%test _ = dedup [5;5;5;5;5] = [5]
 let%test _ = length (dedup [2;1;5;3;4]) = 5
 let%test _ = length (dedup [2;3;5;3;4]) = 4
 let%test _ = length (dedup [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (a,_) (b,_) ->
-  Pervasives.compare a b)) = 3
+  Int.compare a b)) = 3
 let%test _ = length (dedup [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (_,a) (_,b) ->
-  Pervasives.compare a b)) = 2
+  Int.compare a b)) = 2
 
 let%test _ = find_a_dup [] = None
 let%test _ = find_a_dup [3] = None
@@ -333,9 +333,9 @@ let%test _ = find_a_dup [3;5;4;5;12] = Some 5
 let%test _ = find_a_dup [3;5;12;5;12] = Some 5
 let%test _ = find_a_dup [(0,1);(2,2);(0,2);(4,1)] = None
 let%test _ = (find_a_dup [(0,1);(2,2);(0,2);(4,1)]
-                ~compare:(fun (_,a) (_,b) -> Pervasives.compare a b)) <> None
+                ~compare:(fun (_,a) (_,b) -> Int.compare a b)) <> None
 let%test _ = let dup = find_a_dup [(0,1);(2,2);(0,2);(4,1)]
-                         ~compare:(fun (a,_) (b,_) -> Pervasives.compare a b)
+                         ~compare:(fun (a,_) (b,_) -> Int.compare a b)
   in
   match dup with
   | Some (0, _) -> true
@@ -350,9 +350,9 @@ let%test _ = find_all_dups [3;5;4;5;12] = [5]
 let%test _ = find_all_dups [3;5;12;5;12] = [5;12]
 let%test _ = find_all_dups [(0,1);(2,2);(0,2);(4,1)] = []
 let%test _ = length (find_all_dups [(0,1);(2,2);(0,2);(4,1)]
-                       ~compare:(fun (_,a) (_,b) -> Pervasives.compare a b)) = 2
+                       ~compare:(fun (_,a) (_,b) -> Int.compare a b)) = 2
 let%test _ = length (find_all_dups [(0,1);(2,2);(0,2);(4,1)]
-                       ~compare:(fun (a,_) (b,_) -> Pervasives.compare a b)) = 1
+                       ~compare:(fun (a,_) (b,_) -> Int.compare a b)) = 1
 
 let%test _ = counti [0;1;2;3;4] ~f:(fun idx x -> idx = x) = 5
 let%test _ = counti [0;1;2;3;4] ~f:(fun idx x -> idx = 4-x) = 1

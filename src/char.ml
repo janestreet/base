@@ -5,7 +5,7 @@ module String = String0
 include Char0
 
 module T = struct
-  type t = char [@@deriving_inline hash, sexp]
+  type t = char [@@deriving_inline compare, hash, sexp]
   let t_of_sexp : Sexplib.Sexp.t -> t =
     let _tp_loc = "src/char.ml.T.t"  in fun t  -> char_of_sexp t
   let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> sexp_of_char v
@@ -17,9 +17,9 @@ module T = struct
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
+  let compare : t -> t -> int =
+    fun a__001_  -> fun b__002_  -> compare_char a__001_ b__002_
   [@@@end]
-
-  let compare = compare
 
   let to_string t = String.make 1 t
 

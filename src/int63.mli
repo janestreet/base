@@ -35,6 +35,9 @@ val random : ?state : Random.State.t -> t -> t
 
 (**/**)
 module Private : sig
+  (** [val repr] states how [Int63.t] is represented, i.e. as an [int] or an [int64], and
+      can be used for building Int63 operations that behave differently depending on the
+      representation (e.g. see core_int63.ml). *)
   module Repr : sig
     type ('underlying_type, 'intermediate_type) t =
       | Int   : (int   , int         ) t

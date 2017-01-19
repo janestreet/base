@@ -3,7 +3,10 @@
 
 open! Import
 
-(** See INRIA's OCaml documentation for a description of these fields. *)
+(** See INRIA's OCaml documentation for a description of these fields.
+
+    [sexp_of_t] uses the form ["FILE:LINE:COL"], and does not have a corresponding
+    [of_sexp]. *)
 type t
   = Caml.Lexing.position
   = { pos_fname : string
@@ -21,8 +24,6 @@ sig
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 end
 [@@@end]
-(** [sexp_of_t] uses the form ["FILE:LINE:COL"], and does not have a corresponding
-    [of_sexp]. *)
 
 include Comparable.S with type t := t
 include Hashable.S   with type t := t

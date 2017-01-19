@@ -44,7 +44,7 @@ let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
 let compare : t -> t -> int =
   fun a__001_  ->
   fun b__002_  ->
-    if Pervasives.(==) a__001_ b__002_
+    if Ppx_compare_lib.phys_equal a__001_ b__002_
     then 0
     else
       (match (a__001_, b__002_) with

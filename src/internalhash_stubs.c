@@ -6,27 +6,27 @@
 /* This pretends that the state of the OCaml internal hash function, which is an
    int32, is actually stored in an OCaml int. */
 
-CAMLprim value internalhash_fold_int32(value st, value i)
+CAMLprim value Base_internalhash_fold_int32(value st, value i)
 {
   return Val_long(caml_hash_mix_uint32(Long_val(st), Int32_val(i)));
 }
 
-CAMLprim value internalhash_fold_nativeint(value st, value i)
+CAMLprim value Base_internalhash_fold_nativeint(value st, value i)
 {
   return Val_long(caml_hash_mix_intnat(Long_val(st), Nativeint_val(i)));
 }
 
-CAMLprim value internalhash_fold_int64(value st, value i)
+CAMLprim value Base_internalhash_fold_int64(value st, value i)
 {
   return Val_long(caml_hash_mix_int64(Long_val(st), Int64_val(i)));
 }
 
-CAMLprim value internalhash_fold_int(value st, value i)
+CAMLprim value Base_internalhash_fold_int(value st, value i)
 {
   return Val_long(caml_hash_mix_intnat(Long_val(st), Long_val(i)));
 }
 
-CAMLprim value internalhash_fold_float(value st, value i)
+CAMLprim value Base_internalhash_fold_float(value st, value i)
 {
   return Val_long(caml_hash_mix_double(Long_val(st), Double_val(i)));
 }
@@ -39,7 +39,7 @@ CAMLprim value internalhash_fold_float(value st, value i)
   h *= 0xc2b2ae35; \
   h ^= h >> 16;
 
-CAMLprim value internalhash_get_hash_value(value st)
+CAMLprim value Base_internalhash_get_hash_value(value st)
 {
   uint32_t h = Int_val(st);
   FINAL_MIX(h);
@@ -58,7 +58,7 @@ CAMLprim value internalhash_get_hash_value(value st)
   h = h * 5 + 0xe6546b64;
 
 /* Version of [caml_hash_mix_string] from hash.c - adapted for arbitrary char arrays */
-CAMLexport uint32_t internalhash_fold_blob(uint32_t h, mlsize_t len, uint8_t *s)
+CAMLexport uint32_t Base_internalhash_fold_blob(uint32_t h, mlsize_t len, uint8_t *s)
 {
   mlsize_t i;
   uint32_t w;
@@ -89,13 +89,13 @@ CAMLexport uint32_t internalhash_fold_blob(uint32_t h, mlsize_t len, uint8_t *s)
   return h;
 }
 
-CAMLprim value internalhash_fold_string(value st, value v_str)
+CAMLprim value Base_internalhash_fold_string(value st, value v_str)
 {
   uint32_t h = Long_val(st);
   mlsize_t len = caml_string_length(v_str);
   uint8_t *s = (uint8_t *) String_val(v_str);
 
-  h = internalhash_fold_blob(h, len, s);
+  h = Base_internalhash_fold_blob(h, len, s);
 
   return Val_long(h);
 }

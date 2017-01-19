@@ -406,12 +406,14 @@ module Class : sig
     | Normal
     | Subnormal
     | Zero
-  [@@deriving_inline sexp]
+  [@@deriving_inline compare, enumerate, sexp]
   include
   sig
     [@@@ocaml.warning "-32"]
     val t_of_sexp : Sexplib.Sexp.t -> t
     val sexp_of_t : t -> Sexplib.Sexp.t
+    val all : t list
+    val compare : t -> t -> int
   end
   [@@@end]
 
@@ -462,17 +464,6 @@ val create_ieee_exn : negative:bool -> exponent:int -> mantissa:Int63.t -> t
 val ieee_negative : t -> bool
 val ieee_exponent : t -> int
 val ieee_mantissa : t -> Int63.t
-
-module Nan_dist : sig
-  type t = Without | With_single | With_all [@@deriving_inline sexp]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val t_of_sexp : Sexplib.Sexp.t -> t
-    val sexp_of_t : t -> Sexplib.Sexp.t
-  end
-  [@@@end]
-end
 
 (** S-expressions contain at most 8 significant digits. *)
 module Terse : sig

@@ -1,0 +1,76 @@
+open! Import
+
+module type S = sig
+  (** Extensible character buffers.
+
+      This module implements character buffers that automatically expand as necessary.  It
+      provides accumulative concatenation of strings in quasi-linear time (instead of
+      quadratic time when strings are concatenated pairwise).
+  *)
+
+  (** The abstract type of buffers. *)
+  type t [@@deriving_inline sexp_of]
+  include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+  [@@@end]
+
+  (** [create n] returns a fresh buffer, initially empty.  The [n] parameter is the
+      initial size of the internal storage medium that holds the buffer contents. That
+      storage is automatically reallocated when more than [n] characters are stored in the
+      buffer, but shrinks back to [n] characters when [reset] is called.  For best
+      performance, [n] should be of the same order of magnitude as the number of
+      characters that are expected to be stored in the buffer (for instance, 80 for a
+      buffer that holds one output line).  Nothing bad will happen if the buffer grows
+      beyond that limit, however. In doubt, take [n = 16] for instance. *)
+  val create : int -> t
+
+  (** Return a copy of the current contents of the buffer.  The buffer itself is
+      unchanged. *)
+  val contents : t -> string
+
+  (** [blit ~src ~src_pos ~dst ~dst_pos ~len] copies [len] characters from the current
+      contents of the buffer [src], starting at offset [src_pos] to string [dst], starting
+      at character [dst_pos].
+
+      Raise [Invalid_argument] if [src_pos] and [len] do not designate a valid substring
+      of [src], or if [dst_pos] and [len] do not designate a valid substring of [dst]. *)
+
+  include Blit.S_distinct with type src := t with type dst := string
+
+  (** get the (zero-based) n-th character of the buffer. Raise [Invalid_argument] if index
+      out of bounds *)
+  val nth : t -> int -> char
+
+  (** Return the number of characters currently contained in the buffer. *)
+  val length : t -> int
+
+  (** Empty the buffer. *)
+  val clear : t -> unit
+
+  (** Empty the buffer and deallocate the internal storage holding the buffer contents,
+      replacing it with the initial internal storage of length [n] that was allocated by
+      [create n].  For long-lived buffers that may have grown a lot, [reset] allows faster
+      reclamation of the space used by the buffer. *)
+  val reset : t -> unit
+
+  (** [add_char b c] appends the character [c] at the end of the buffer [b]. *)
+  val add_char : t -> char -> unit
+
+  (** [add_string b s] appends the string [s] at the end of the buffer [b]. *)
+  val add_string : t -> string -> unit
+
+  (** [add_substring b s pos len] takes [len] characters from offset [pos] in string [s]
+      and appends them at the end of the buffer [b]. *)
+  val add_substring : t -> string -> pos:int -> len:int -> unit
+
+  (** [add_buffer b1 b2] appends the current contents of buffer [b2] at the end of buffer
+      [b1].  [b2] is not modified. *)
+  val add_buffer : t -> t -> unit
+
+end
+
+module type Buffer = sig
+  module type S = S
+
+  (** Buffers using strings as underlying storage medium *)
+  include S with type t = Caml.Buffer.t
+end

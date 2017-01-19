@@ -93,7 +93,7 @@ let compare_interval_comparison :
   interval_comparison -> interval_comparison -> int =
   fun a__003_  ->
   fun b__004_  ->
-    if Pervasives.(==) a__003_ b__004_
+    if Ppx_compare_lib.phys_equal a__003_ b__004_
     then 0
     else
       (match (a__003_, b__004_) with
