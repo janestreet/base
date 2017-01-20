@@ -99,7 +99,6 @@ let%expect_test "[compare_abstract]" =
   show_raise (fun () -> compare_abstract ~type_name:"TY" () ());
   [%expect {|
     (raised (
-      exn (
-        Failure
-        "Compare called on the type TY, which is abtract in an implementation."))) |}];
+      Failure
+      "Compare called on the type TY, which is abtract in an implementation.")) |}];
 ;;
