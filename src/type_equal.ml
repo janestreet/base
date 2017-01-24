@@ -124,7 +124,7 @@ module Id = struct
       | { witness = v_witness; name = v_name; to_sexp = v_to_sexp } ->
         let bnds = []  in
         let arg =
-          (fun _f  -> Sexplib.Conv.sexp_of_fun Pervasives.ignore) v_to_sexp
+          (fun _f  -> let open Sexplib.Conv in sexp_of_fun ignore) v_to_sexp
         in
         let bnd = Sexplib.Sexp.List [Sexplib.Sexp.Atom "to_sexp"; arg]  in
         let bnds = bnd :: bnds  in

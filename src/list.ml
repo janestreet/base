@@ -21,17 +21,12 @@ module Or_unequal_lengths = struct
     | Ok of 'a
     | Unequal_lengths
   [@@deriving_inline sexp_of]
-  let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t = fun
-    (type a) ->
-    (fun _of_a  ->
-       function
-       | Ok v0 ->
-         let v0 = _of_a v0  in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Ok"; v0]
-       | Unequal_lengths  -> Sexplib.Sexp.Atom "Unequal_lengths" : (a ->
-                                                                    Sexplib.Sexp.t)
-       ->
-         a t ->
-       Sexplib.Sexp.t)
+  let sexp_of_t : type a.(a -> Sexplib.Sexp.t) -> a t -> Sexplib.Sexp.t =
+    fun _of_a  ->
+      function
+      | Ok v0 ->
+        let v0 = _of_a v0  in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Ok"; v0]
+      | Unequal_lengths  -> Sexplib.Sexp.Atom "Unequal_lengths"
 
   [@@@end]
 end

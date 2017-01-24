@@ -68,31 +68,36 @@ module T = struct
           Sexplib.Conv_error.record_only_pairs_expected _tp_loc sexp
         | [] -> ()  in
       (iter field_sexps;
-       if Pervasives.(<>) (!duplicates) []
-       then
-         Sexplib.Conv_error.record_duplicate_fields _tp_loc (!duplicates)
-           sexp
-       else
-       if Pervasives.(<>) (!extra) []
-       then Sexplib.Conv_error.record_extra_fields _tp_loc (!extra) sexp
-       else
-         (match ((!pos_fname_field), (!pos_lnum_field), (!pos_bol_field),
-                 (!pos_cnum_field))
-          with
-          | (Some pos_fname_value,Some pos_lnum_value,Some
-                                                        pos_bol_value,Some pos_cnum_value) ->
-            {
-              pos_fname = pos_fname_value;
-              pos_lnum = pos_lnum_value;
-              pos_bol = pos_bol_value;
-              pos_cnum = pos_cnum_value
-            }
-          | _ ->
-            Sexplib.Conv_error.record_undefined_elements _tp_loc sexp
-              [((Pervasives.(=) (!pos_fname_field) None), "pos_fname");
-               ((Pervasives.(=) (!pos_lnum_field) None), "pos_lnum");
-               ((Pervasives.(=) (!pos_bol_field) None), "pos_bol");
-               ((Pervasives.(=) (!pos_cnum_field) None), "pos_cnum")]))
+       (match !duplicates with
+        | _::_ ->
+          Sexplib.Conv_error.record_duplicate_fields _tp_loc (!duplicates)
+            sexp
+        | [] ->
+          (match !extra with
+           | _::_ ->
+             Sexplib.Conv_error.record_extra_fields _tp_loc (!extra) sexp
+           | [] ->
+             (match ((!pos_fname_field), (!pos_lnum_field),
+                     (!pos_bol_field), (!pos_cnum_field))
+              with
+              | (Some pos_fname_value,Some pos_lnum_value,Some
+                                                            pos_bol_value,Some pos_cnum_value) ->
+                {
+                  pos_fname = pos_fname_value;
+                  pos_lnum = pos_lnum_value;
+                  pos_bol = pos_bol_value;
+                  pos_cnum = pos_cnum_value
+                }
+              | _ ->
+                Sexplib.Conv_error.record_undefined_elements _tp_loc
+                  sexp
+                  [((Sexplib.Conv.(=) (!pos_fname_field) None),
+                    "pos_fname");
+                   ((Sexplib.Conv.(=) (!pos_lnum_field) None),
+                    "pos_lnum");
+                   ((Sexplib.Conv.(=) (!pos_bol_field) None), "pos_bol");
+                   ((Sexplib.Conv.(=) (!pos_cnum_field) None),
+                    "pos_cnum")]))))
     | Sexplib.Sexp.Atom _ as sexp ->
       Sexplib.Conv_error.record_list_instead_atom _tp_loc sexp
 

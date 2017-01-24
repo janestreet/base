@@ -11,24 +11,22 @@ module Step = struct
     | Skip of 's
     | Yield of 'a * 's
   [@@deriving_inline sexp_of]
-  let sexp_of_t :
-    'a 's .
-         ('a -> Sexplib.Sexp.t) ->
-    ('s -> Sexplib.Sexp.t) -> ('a,'s) t -> Sexplib.Sexp.t
-    = fun (type a) -> fun (type s) ->
-      (fun _of_a  ->
-         fun _of_s  ->
-           function
-           | Done  -> Sexplib.Sexp.Atom "Done"
-           | Skip v0 ->
-             let v0 = _of_s v0  in
-             Sexplib.Sexp.List [Sexplib.Sexp.Atom "Skip"; v0]
-           | Yield (v0,v1) ->
-             let v0 = _of_a v0
+  let sexp_of_t : type a
+                         s.(a -> Sexplib.Sexp.t) ->
+    (s -> Sexplib.Sexp.t) -> (a,s) t -> Sexplib.Sexp.t
+    =
+    fun _of_a  ->
+    fun _of_s  ->
+      function
+      | Done  -> Sexplib.Sexp.Atom "Done"
+      | Skip v0 ->
+        let v0 = _of_s v0  in
+        Sexplib.Sexp.List [Sexplib.Sexp.Atom "Skip"; v0]
+      | Yield (v0,v1) ->
+        let v0 = _of_a v0
 
-             and v1 = _of_s v1
-             in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Yield"; v0; v1] :
-                  (a -> Sexplib.Sexp.t) -> (s -> Sexplib.Sexp.t) -> (a,s) t -> Sexplib.Sexp.t)
+        and v1 = _of_s v1
+        in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Yield"; v0; v1]
 
   [@@@end]
 end
@@ -396,104 +394,81 @@ module Merge_with_duplicates_element = struct
     | Right of 'b
     | Both of 'a * 'b
   [@@deriving_inline compare, hash, sexp]
-  let t_of_sexp :
-    'a 'b .
-         (Sexplib.Sexp.t -> 'a) ->
-    (Sexplib.Sexp.t -> 'b) -> Sexplib.Sexp.t -> ('a,'b) t
-    = fun (type a) -> fun (type b) ->
-      (let _tp_loc = "src/sequence.ml.Merge_with_duplicates_element.t"  in
-       fun _of_a  ->
-       fun _of_b  ->
-         function
-         | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
-                                 ("left"|"Left" as _tag))::sexp_args) as _sexp ->
-           (match sexp_args with
-            | v0::[] -> let v0 = _of_a v0  in Left v0
-            | _ ->
-              Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-         | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
-                                 ("right"|"Right" as _tag))::sexp_args) as _sexp ->
-           (match sexp_args with
-            | v0::[] -> let v0 = _of_b v0  in Right v0
-            | _ ->
-              Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-         | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
-                                 ("both"|"Both" as _tag))::sexp_args) as _sexp ->
-           (match sexp_args with
-            | v0::v1::[] ->
-              let v0 = _of_a v0
+  let t_of_sexp : type a
+                         b.(Sexplib.Sexp.t -> a) ->
+    (Sexplib.Sexp.t -> b) -> Sexplib.Sexp.t -> (a,b) t
+    =
+    let _tp_loc = "src/sequence.ml.Merge_with_duplicates_element.t"  in
+    fun _of_a  ->
+    fun _of_b  ->
+      function
+      | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                              ("left"|"Left" as _tag))::sexp_args) as _sexp ->
+        (match sexp_args with
+         | v0::[] -> let v0 = _of_a v0  in Left v0
+         | _ -> Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+      | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                              ("right"|"Right" as _tag))::sexp_args) as _sexp ->
+        (match sexp_args with
+         | v0::[] -> let v0 = _of_b v0  in Right v0
+         | _ -> Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+      | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                              ("both"|"Both" as _tag))::sexp_args) as _sexp ->
+        (match sexp_args with
+         | v0::v1::[] ->
+           let v0 = _of_a v0
 
-              and v1 = _of_b v1
-              in Both (v0, v1)
-            | _ ->
-              Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-         | Sexplib.Sexp.Atom ("left"|"Left") as sexp ->
-           Sexplib.Conv_error.stag_takes_args _tp_loc sexp
-         | Sexplib.Sexp.Atom ("right"|"Right") as sexp ->
-           Sexplib.Conv_error.stag_takes_args _tp_loc sexp
-         | Sexplib.Sexp.Atom ("both"|"Both") as sexp ->
-           Sexplib.Conv_error.stag_takes_args _tp_loc sexp
-         | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
-           Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-         | Sexplib.Sexp.List [] as sexp ->
-           Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-         | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp : (Sexplib.Sexp.t
-                                                                      ->
-                                                                      a) ->
-         (Sexplib.Sexp.t
-          -> b) ->
-         Sexplib.Sexp.t
-         ->
-           (a,b) t)
+           and v1 = _of_b v1
+           in Both (v0, v1)
+         | _ -> Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+      | Sexplib.Sexp.Atom ("left"|"Left") as sexp ->
+        Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+      | Sexplib.Sexp.Atom ("right"|"Right") as sexp ->
+        Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+      | Sexplib.Sexp.Atom ("both"|"Both") as sexp ->
+        Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+      | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
+        Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
+      | Sexplib.Sexp.List [] as sexp ->
+        Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
+      | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp
 
-  let sexp_of_t :
-    'a 'b .
-         ('a -> Sexplib.Sexp.t) ->
-    ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
-    = fun (type a) -> fun (type b) ->
-      (fun _of_a  ->
-         fun _of_b  ->
-           function
-           | Left v0 ->
-             let v0 = _of_a v0  in
-             Sexplib.Sexp.List [Sexplib.Sexp.Atom "Left"; v0]
-           | Right v0 ->
-             let v0 = _of_b v0  in
-             Sexplib.Sexp.List [Sexplib.Sexp.Atom "Right"; v0]
-           | Both (v0,v1) ->
-             let v0 = _of_a v0
+  let sexp_of_t : type a
+                         b.(a -> Sexplib.Sexp.t) ->
+    (b -> Sexplib.Sexp.t) -> (a,b) t -> Sexplib.Sexp.t
+    =
+    fun _of_a  ->
+    fun _of_b  ->
+      function
+      | Left v0 ->
+        let v0 = _of_a v0  in
+        Sexplib.Sexp.List [Sexplib.Sexp.Atom "Left"; v0]
+      | Right v0 ->
+        let v0 = _of_b v0  in
+        Sexplib.Sexp.List [Sexplib.Sexp.Atom "Right"; v0]
+      | Both (v0,v1) ->
+        let v0 = _of_a v0
 
-             and v1 = _of_b v1
-             in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Both"; v0; v1] :
-                  (a -> Sexplib.Sexp.t) -> (b -> Sexplib.Sexp.t) -> (a,b) t -> Sexplib.Sexp.t)
+        and v1 = _of_b v1
+        in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Both"; v0; v1]
 
-  let hash_fold_t :
-    'a 'b .
-         (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
-    (Ppx_hash_lib.Std.Hash.state -> 'b -> Ppx_hash_lib.Std.Hash.state) ->
-    Ppx_hash_lib.Std.Hash.state ->
-    ('a,'b) t -> Ppx_hash_lib.Std.Hash.state
-    = fun (type a) -> fun (type b) ->
-      (fun _hash_fold_a  ->
-         fun _hash_fold_b  ->
-         fun hsv  ->
-         fun arg  ->
-           match arg with
-           | Left _a0 ->
-             _hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
-           | Right _a0 ->
-             _hash_fold_b (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
-           | Both (_a0,_a1) ->
-             _hash_fold_b
-               (_hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 2) _a0)
-               _a1 : (Ppx_hash_lib.Std.Hash.state ->
-                      a -> Ppx_hash_lib.Std.Hash.state)
-           ->
-             (Ppx_hash_lib.Std.Hash.state ->
-              b -> Ppx_hash_lib.Std.Hash.state)
-           ->
-             Ppx_hash_lib.Std.Hash.state ->
-           (a,b) t -> Ppx_hash_lib.Std.Hash.state)
+  let hash_fold_t : type a
+                           b.(Ppx_hash_lib.Std.Hash.state -> a -> Ppx_hash_lib.Std.Hash.state) ->
+    (Ppx_hash_lib.Std.Hash.state -> b -> Ppx_hash_lib.Std.Hash.state) ->
+    Ppx_hash_lib.Std.Hash.state -> (a,b) t -> Ppx_hash_lib.Std.Hash.state
+    =
+    fun _hash_fold_a  ->
+    fun _hash_fold_b  ->
+    fun hsv  ->
+    fun arg  ->
+      match arg with
+      | Left _a0 ->
+        _hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+      | Right _a0 ->
+        _hash_fold_b (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
+      | Both (_a0,_a1) ->
+        _hash_fold_b
+          (_hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 2) _a0) _a1
 
   let compare :
     'a 'b .

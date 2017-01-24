@@ -6,86 +6,62 @@ type ('f, 's) t =
   | First  of 'f
   | Second of 's
 [@@deriving_inline compare, hash, sexp]
-let t_of_sexp :
-  'f 's .
-       (Sexplib.Sexp.t -> 'f) ->
-  (Sexplib.Sexp.t -> 's) -> Sexplib.Sexp.t -> ('f,'s) t
-  = fun (type f) -> fun (type s) ->
-    (let _tp_loc = "src/either.ml.t"  in
-     fun _of_f  ->
-     fun _of_s  ->
-       function
-       | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
-                               ("first"|"First" as _tag))::sexp_args) as _sexp ->
-         (match sexp_args with
-          | v0::[] -> let v0 = _of_f v0  in First v0
-          | _ ->
-            Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-       | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
-                               ("second"|"Second" as _tag))::sexp_args) as _sexp ->
-         (match sexp_args with
-          | v0::[] -> let v0 = _of_s v0  in Second v0
-          | _ ->
-            Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-       | Sexplib.Sexp.Atom ("first"|"First") as sexp ->
-         Sexplib.Conv_error.stag_takes_args _tp_loc sexp
-       | Sexplib.Sexp.Atom ("second"|"Second") as sexp ->
-         Sexplib.Conv_error.stag_takes_args _tp_loc sexp
-       | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
-         Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-       | Sexplib.Sexp.List [] as sexp ->
-         Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-       | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp : (Sexplib.Sexp.t
-                                                                    ->
-                                                                    f) ->
-       (Sexplib.Sexp.t
-        -> s) ->
-       Sexplib.Sexp.t
-       ->
-         (f,s) t)
+let t_of_sexp : type f
+                       s.(Sexplib.Sexp.t -> f) ->
+  (Sexplib.Sexp.t -> s) -> Sexplib.Sexp.t -> (f,s) t
+  =
+  let _tp_loc = "src/either.ml.t"  in
+  fun _of_f  ->
+  fun _of_s  ->
+    function
+    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                            ("first"|"First" as _tag))::sexp_args) as _sexp ->
+      (match sexp_args with
+       | v0::[] -> let v0 = _of_f v0  in First v0
+       | _ -> Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
+                            ("second"|"Second" as _tag))::sexp_args) as _sexp ->
+      (match sexp_args with
+       | v0::[] -> let v0 = _of_s v0  in Second v0
+       | _ -> Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+    | Sexplib.Sexp.Atom ("first"|"First") as sexp ->
+      Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+    | Sexplib.Sexp.Atom ("second"|"Second") as sexp ->
+      Sexplib.Conv_error.stag_takes_args _tp_loc sexp
+    | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
+      Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
+    | Sexplib.Sexp.List [] as sexp ->
+      Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
+    | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp
 
-let sexp_of_t :
-  'f 's .
-       ('f -> Sexplib.Sexp.t) ->
-  ('s -> Sexplib.Sexp.t) -> ('f,'s) t -> Sexplib.Sexp.t
-  = fun (type f) -> fun (type s) ->
-    (fun _of_f  ->
-       fun _of_s  ->
-         function
-         | First v0 ->
-           let v0 = _of_f v0  in
-           Sexplib.Sexp.List [Sexplib.Sexp.Atom "First"; v0]
-         | Second v0 ->
-           let v0 = _of_s v0  in
-           Sexplib.Sexp.List [Sexplib.Sexp.Atom "Second"; v0] : (f ->
-                                                                 Sexplib.Sexp.t)
-         ->
-           (s ->
-            Sexplib.Sexp.t)
-         ->
-           (f,
-            s) t ->
-         Sexplib.Sexp.t)
+let sexp_of_t : type f
+                       s.(f -> Sexplib.Sexp.t) ->
+  (s -> Sexplib.Sexp.t) -> (f,s) t -> Sexplib.Sexp.t
+  =
+  fun _of_f  ->
+  fun _of_s  ->
+    function
+    | First v0 ->
+      let v0 = _of_f v0  in
+      Sexplib.Sexp.List [Sexplib.Sexp.Atom "First"; v0]
+    | Second v0 ->
+      let v0 = _of_s v0  in
+      Sexplib.Sexp.List [Sexplib.Sexp.Atom "Second"; v0]
 
-let hash_fold_t :
-  'f 's .
-       (Ppx_hash_lib.Std.Hash.state -> 'f -> Ppx_hash_lib.Std.Hash.state) ->
-  (Ppx_hash_lib.Std.Hash.state -> 's -> Ppx_hash_lib.Std.Hash.state) ->
-  Ppx_hash_lib.Std.Hash.state ->
-  ('f,'s) t -> Ppx_hash_lib.Std.Hash.state
-  = fun (type f) -> fun (type s) ->
-    (fun _hash_fold_f  ->
-       fun _hash_fold_s  ->
-       fun hsv  ->
-       fun arg  ->
-         match arg with
-         | First _a0 ->
-           _hash_fold_f (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
-         | Second _a0 ->
-           _hash_fold_s (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0 :
-             (Ppx_hash_lib.Std.Hash.state -> f -> Ppx_hash_lib.Std.Hash.state) ->
-         (Ppx_hash_lib.Std.Hash.state -> s -> Ppx_hash_lib.Std.Hash.state) ->
-         Ppx_hash_lib.Std.Hash.state -> (f,s) t -> Ppx_hash_lib.Std.Hash.state)
+let hash_fold_t : type f
+                         s.(Ppx_hash_lib.Std.Hash.state -> f -> Ppx_hash_lib.Std.Hash.state) ->
+  (Ppx_hash_lib.Std.Hash.state -> s -> Ppx_hash_lib.Std.Hash.state) ->
+  Ppx_hash_lib.Std.Hash.state -> (f,s) t -> Ppx_hash_lib.Std.Hash.state
+  =
+  fun _hash_fold_f  ->
+  fun _hash_fold_s  ->
+  fun hsv  ->
+  fun arg  ->
+    match arg with
+    | First _a0 ->
+      _hash_fold_f (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+    | Second _a0 ->
+      _hash_fold_s (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
 
 let compare :
   'f 's .

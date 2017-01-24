@@ -434,3 +434,6 @@ let () =
           | _ -> assert false)
       );
     ]
+
+external ignore : _ -> unit = "%ignore"
+external ( = ) : 'a -> 'a -> bool = "%equal"

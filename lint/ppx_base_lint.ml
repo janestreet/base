@@ -1,8 +1,4 @@
-open StdLabels
-open MoreLabels
-open Ppx_core.Std
-
-module String_set = Set.Make(String)
+open Ppx_core
 
 let error ~loc fmt =
   Location.raise_errorf ~loc ("ppx_base_lint:" ^^ fmt)
@@ -13,7 +9,7 @@ type suspicious_id =
 let rec iter_suspicious (id : Longident.t) ~f =
   match id with
   | Ldot (Lident "Caml", s) when
-      s <> "" &&
+      String.(<>) s "" &&
       match s.[0] with
       | 'A'..'Z' -> true
       | _ -> false
@@ -26,13 +22,13 @@ let rec iter_suspicious (id : Longident.t) ~f =
   | Lident _ -> ()
 
 let zero_modules () =
-  Sys.readdir "."
+  Caml.Sys.readdir "."
   |> Array.to_list
   |> List.filter ~f:(fun fn ->
-    Filename.check_suffix fn "0.ml")
+    Caml.Filename.check_suffix fn "0.ml")
   |> List.map ~f:(fun fn ->
     String.capitalize (String.sub fn ~pos:0 ~len:(String.length fn - 4)))
-  |> String_set.of_list
+  |> Set.of_list (module String)
 
 let check_open (id : Longident.t Asttypes.loc) =
   match id.txt with
@@ -57,9 +53,9 @@ let check current_module =
          not a problem. *)
       iter_suspicious id ~f:(function
         | Caml_submodule m ->
-          if not (String_set.mem m zero_modules) then
+          if not (Set.mem zero_modules m) then
             () (* We are allowed to use Caml modules that don't have a Foo0 version *)
-          else if m ^ "0" = current_module then
+          else if String.equal (m ^ "0") current_module then
             () (* Foo0 is allowed to use Caml.Foo *)
           else
             match current_module with
@@ -91,7 +87,8 @@ let check current_module =
   end
 
 let module_of_loc (loc : Location.t) =
-  String.capitalize (Filename.chop_extension (Filename.basename loc.loc_start.pos_fname))
+  String.capitalize (Caml.Filename.chop_extension
+                       (Caml.Filename.basename loc.loc_start.pos_fname))
 
 let () =
   Ppx_driver.register_transformation "base_lint"
