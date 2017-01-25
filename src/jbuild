@@ -6,6 +6,13 @@
             -arch-sixtyfour ${ARCH_SIXTYFOUR}
             -o ${@}))))
 
+(rule
+ ((targets (string_set_primitives.ml))
+  (deps    (select-string-set-primitives/select.ml))
+  (action  (run ${OCAML} ${<}
+            -ocaml-version ${ocaml_version}
+            -o ${@}))))
+
 ;; Create the target atomically to avoid having a window where the file is truncated but
 ;; not yet written to, which is problematic because the file is committed.
 (rule

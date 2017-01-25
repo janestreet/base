@@ -12,12 +12,10 @@
 open! Import0
 
 module String = struct
-  external create     : int           -> string       = "caml_create_string"
   external get        : string -> int -> char         = "%string_safe_get"
   external length     : string        -> int          = "%string_length"
-  external set        : string -> int -> char -> unit = "%string_safe_set"
   external unsafe_get : string -> int -> char         = "%string_unsafe_get"
-  external unsafe_set : string -> int -> char -> unit = "%string_unsafe_set"
+  include String_set_primitives
 end
 
 include String
@@ -30,6 +28,7 @@ let blit            = Caml.String.blit
 let capitalize      = Caml.String.capitalize
 let compare         = Caml.String.compare
 let copy            = Caml.String.copy
+let create          = Caml.String.create
 let escaped         = Caml.String.escaped
 let fill            = Caml.String.fill
 let index_exn       = Caml.String.index

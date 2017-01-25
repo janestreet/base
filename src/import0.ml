@@ -137,13 +137,12 @@ let ( =.  ) (x : float) y = Poly.( =  ) x y
 let ( >.  ) (x : float) y = Poly.( >  ) x y
 let ( >=. ) (x : float) y = Poly.( >= ) x y
 
-(* Not polymorphic, but specialized as direct set or caml_modify *)
-(* let ( :=  ) = Caml.( :=  ) *)
+(* This needs to be defined as an external so that the compiler can specialize it as a
+   direct set or caml_modify *)
 external ( := ) : 'a ref -> 'a -> unit = "%setfield0"
 
-(* Not polymorphic, but allow unboxing of references *)
-(* let ( ! ) = Caml.( ! ) *)
-(* let ref   = Caml.ref   *)
+(* These need to be defined as an external otherwise the compiler won't unbox
+   references *)
 external ( ! ) : 'a ref -> 'a = "%field0"
 external ref : 'a -> 'a ref = "%makemutable"
 
@@ -154,6 +153,7 @@ let ( ~-. ) = Caml.( ~-. )
 
 let ( asr  ) = Caml.( asr  )
 let ( land ) = Caml.( land )
+let   lnot   = Caml.lnot
 let ( lor  ) = Caml.( lor  )
 let ( lsl  ) = Caml.( lsl  )
 let ( lsr  ) = Caml.( lsr  )
@@ -170,7 +170,6 @@ let fst             = Caml.fst
 let incr            = Caml.incr
 let int_of_float    = Caml.int_of_float
 let invalid_arg     = Caml.invalid_arg
-let lnot            = Caml.lnot
 let max_int         = Caml.max_int
 let min_int         = Caml.min_int
 let raise           = Caml.raise

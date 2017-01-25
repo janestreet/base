@@ -28,10 +28,10 @@
         (alloc (), alloc ())
     ]}
 
-    both stage and unstage functions are available in Common.
+    both [stage] and [unstage] functions are available in the toplevel namespace.
 
     (Note that in many cases, including perhaps the one above, it's preferable to create a
-    custom type rather than use Staged.) *)
+    custom type rather than use [Staged].) *)
 
 open! Import
 
