@@ -7,7 +7,7 @@
       val pp : Format.formatter -> t -> unit
     ]}
 
-    The names are actually OCaml identifier names, e.g. "Core.Std.Date.pp".  Code for
+    The names are actually OCaml identifier names, e.g. "Core.Date.pp".  Code for
     building toplevels (this code is not in Core) evaluates the strings to yield the
     pretty printers and register them with OCaml runtime. *)
 

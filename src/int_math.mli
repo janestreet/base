@@ -1,4 +1,4 @@
-(** This module is not exposed in Core.Std.  Instead, these functions are accessed and
+(** This module is not exposed in Core.  Instead, these functions are accessed and
     commented in the various Core modules implementing [Int_intf.S]. *)
 
 open! Import

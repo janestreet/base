@@ -9,7 +9,7 @@
     to use shared random state.
 
     The fact that we construct our own default random state means that code using
-    Core.Std.Random and code using OCaml's Random will not share the default state. *)
+    Core.Random and code using OCaml's Random will not share the default state. *)
 
 (*_
   (***********************************************************************)
