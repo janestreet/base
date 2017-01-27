@@ -38,6 +38,7 @@ module Applicative               = Applicative
 module Applicative_intf          = Applicative_intf
 module Array                     = Array
 module Avltree                   = Avltree
+module Backtrace                 = Backtrace
 module Binary_search             = Binary_search
 module Binary_searchable         = Binary_searchable
 module Binary_searchable_intf    = Binary_searchable_intf
@@ -409,3 +410,12 @@ module Not_exposed_properly = struct
   module Pow_overflow_bounds = Pow_overflow_bounds
   module Sexp_conv           = Sexp_conv
 end
+
+(* We perform these side effects here because we want them to run for any code that uses
+   [Base].  If this were in another module in [Base] that was not used in some program,
+   then the side effects might not be run in that program.  This will run as long as the
+   program refers to at least one value directly in [Base]; referring to values in
+   [Base.Bool], for example, is not sufficient. *)
+let () =
+  Backtrace.initialize_module ();
+;;
