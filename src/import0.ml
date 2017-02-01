@@ -179,9 +179,9 @@ let string_of_int   = Caml.string_of_int
 
 let phys_equal = Caml.( == )
 
-(* Copy&pasted from ppx_inline_test to avoid depending on it *)
-let am_testing =
-  match Caml.Array.to_list Caml.Sys.argv with
-  | _name :: "inline-test-runner" :: _lib :: _rest -> true
-  | _ -> false
-;;
+(* [am_testing] is used in a few places to behave differently when in testing mode, such
+   as in [random.ml].  [am_testing] is implemented using [Base_am_testing], a weak C/js
+   primitive that returns [false], but when linking an inline-test-runner executable, is
+   overridden by another primitive that returns [true]. *)
+external am_testing : unit -> bool = "Base_am_testing"
+let am_testing = am_testing ()

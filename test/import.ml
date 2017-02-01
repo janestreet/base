@@ -18,7 +18,7 @@ let check_hash_coherence (type t) here (module T : Hash with type t = t) ts =
   List.iter ts ~f:(fun t ->
     let hash1 = T.hash t in
     let hash2 = [%hash: T.t] t in
-    require here (hash1 = hash2) ~cr:"CR-soon"
+    require here (hash1 = hash2) ~cr:CR_soon
       ~if_false_then_print_s:
         (lazy [%message "" ~value:(t : T.t) (hash1 : int) (hash2 : int)]));
 ;;

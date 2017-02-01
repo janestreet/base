@@ -131,6 +131,7 @@ module Exported_for_specific_uses = struct
   module Sexplib         = Sexplib
   module Variantslib     = Variantslib
   module Ppx_compare_lib = Ppx_compare_lib
+  let am_testing = am_testing
 end
 (**/**)
 
