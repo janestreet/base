@@ -1,6 +1,6 @@
 open! Import
 
-module C = Core_kernel.Std
+module C = Core_kernel
 
 let%expect_test _ =
   C.Quickcheck.test (C.String.Set.gen C.String.gen)
