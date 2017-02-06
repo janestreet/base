@@ -27,9 +27,8 @@ module type S0 = sig
   type t
   type elt
 
-  (** Checks whether the provided element is there using the default equality test, using
-      the provided [equal] function if it is not *)
-  val mem : ?equal:(elt -> elt -> bool) -> t -> elt -> bool
+  (** Checks whether the provided element is there, using equality on [elt]s. *)
+  val mem : t -> elt -> bool
 
   val length   : t -> int
 
@@ -99,9 +98,8 @@ module type S0_phantom = sig
   type elt
   type 'a t
 
-  (** Checks whether the provided element is there using the default equality test, using
-      the provided [equal] function if it is not *)
-  val mem : ?equal:(elt -> elt -> bool) -> _ t -> elt -> bool
+  (** Checks whether the provided element is there, using equality on [elt]s. *)
+  val mem : _ t -> elt -> bool
 
   val length   : _ t -> int
 
@@ -168,9 +166,8 @@ end
 module type S1 = sig
   type 'a t
 
-  (** Checks whether the provided element is there, using polymorphic compare if [equal]
-      is not provided  *)
-  val mem : ?equal:('a -> 'a -> bool) -> 'a t -> 'a -> bool
+  (** Checks whether the provided element is there, using [equal]. *)
+  val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 
   val length   : 'a t -> int
 
@@ -237,9 +234,8 @@ end
 module type S1_phantom_invariant = sig
   type ('a, 'phantom) t
 
-  (** Checks whether the provided element is there, using polymorphic compare if [equal]
-      is not provided  *)
-  val mem : ?equal:('a -> 'a -> bool) -> ('a, _) t -> 'a -> bool
+  (** Checks whether the provided element is there, using [equal]. *)
+  val mem :  ('a, _) t -> 'a -> equal:('a -> 'a -> bool) -> bool
 
   val length   : (_, _) t -> int
   val is_empty : (_, _) t -> bool
@@ -309,7 +305,6 @@ end
 module type Generic = sig
   type 'a t
   type 'a elt
-  val mem : ?equal:('a elt -> 'a elt -> bool) -> 'a t -> 'a elt -> bool
   val length   : _  t -> int
   val is_empty : _  t -> bool
   val iter     : 'a t -> f:('a elt -> unit) -> unit
@@ -343,7 +338,6 @@ end
 module type Generic_phantom = sig
   type ('a, 'phantom) t
   type 'a elt
-  val mem : ?equal:('a elt -> 'a elt -> bool) -> ('a, _) t -> 'a elt -> bool
   val length   : (_, _) t -> int
   val is_empty : (_, _) t -> bool
   val iter     : ('a, _) t -> f:('a elt -> unit) -> unit
@@ -397,12 +391,16 @@ end
 module type Make_arg = Make_gen_arg with type 'a elt := 'a Monad.Ident.t
 
 module type Make0_arg = sig
-  type t
-  type elt
+  module Elt : sig
+    type t
+    val equal :  t -> t -> bool
+  end
 
-  val fold : t -> init:'accum -> f:('accum -> elt -> 'accum) -> 'accum
+  type t
+
+  val fold : t -> init:'accum -> f:('accum -> Elt.t -> 'accum) -> 'accum
   val iter : [ `Define_using_fold
-             | `Custom of t -> f:(elt -> unit) -> unit
+             | `Custom of t -> f:(Elt.t -> unit) -> unit
              ]
 end
 
@@ -478,5 +476,5 @@ module type Container = sig
       [Container.Make0] is like [Container.Make], but for monomorphic containers like
       [string]. *)
   module Make  (T : Make_arg)  : S1 with type 'a t := 'a T.t
-  module Make0 (T : Make0_arg) : S0 with type    t :=    T.t and type elt := T.elt
+  module Make0 (T : Make0_arg) : S0 with type    t :=    T.t and type elt := T.Elt.t
 end

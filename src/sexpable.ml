@@ -102,6 +102,22 @@ struct
     Sexpable.sexp_of_t sexp_of_a sexp_of_b (M.to_sexpable t)
 end
 
+module Of_sexpable3 (Sexpable : S3)
+    (M : sig
+       type ('a, 'b, 'c) t
+       val to_sexpable : ('a, 'b, 'c) t -> ('a, 'b, 'c) Sexpable.t
+       val of_sexpable : ('a, 'b, 'c) Sexpable.t -> ('a, 'b, 'c) t
+     end)
+  : S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t =
+struct
+  let t_of_sexp a_of_sexp b_of_sexp c_of_sexp sexp =
+    let s = Sexpable.t_of_sexp a_of_sexp b_of_sexp c_of_sexp sexp in
+    (try M.of_sexpable s with exn -> of_sexp_error_exn exn sexp)
+
+  let sexp_of_t sexp_of_a sexp_of_b sexp_of_c t =
+    Sexpable.sexp_of_t sexp_of_a sexp_of_b sexp_of_c (M.to_sexpable t)
+end
+
 module Of_stringable (M : Stringable.S) : S with type t := M.t = struct
   let t_of_sexp sexp =
     match sexp with

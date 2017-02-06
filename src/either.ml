@@ -257,7 +257,7 @@ module Make_focused (M : sig
       false)
   ;;
 
-  let mem ?(equal = Poly.equal) t a = exists t ~f:(equal a)
+  let mem t a ~equal = exists t ~f:(equal a)
   ;;
 
   let for_all c ~f =

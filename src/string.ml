@@ -618,8 +618,8 @@ let max_elt t = Container.max_elt ~fold t
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until  t ~init ~f = Container.fold_until  ~fold ~init ~f t
 
-let mem ?(equal = Char.(=)) t c =
-  let rec loop i = i < length t && (equal c t.[i] || loop (i + 1)) in
+let mem t c =
+  let rec loop i = i < length t && (Char.equal c t.[i] || loop (i + 1)) in
   loop 0
 ;;
 

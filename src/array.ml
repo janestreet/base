@@ -425,7 +425,7 @@ let existsi t ~f =
   in
   loop (length t - 1)
 
-let mem ?(equal = Poly.equal) t a = exists t ~f:(equal a)
+let mem t a ~equal = exists t ~f:(equal a)
 
 let for_all t ~f =
   let rec loop i =

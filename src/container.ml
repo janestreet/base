@@ -62,8 +62,6 @@ let exists ~iter c ~f =
     false)
 ;;
 
-let mem ~iter ?(equal = Poly.equal) t a = exists ~iter t ~f:(equal a)
-
 let for_all ~iter c ~f =
   with_return (fun r ->
     iter c ~f:(fun x -> if not (f x) then r.return false);
@@ -107,23 +105,32 @@ end = struct
   let find t ~f      = find     ~iter t ~f
   let to_list t      = to_list  ~fold t
   let to_array t     = to_array ~fold t
-  let mem ?equal t a = mem      ~iter ?equal t a
   let min_elt t ~cmp = min_elt  ~fold t ~cmp
   let max_elt t ~cmp = max_elt  ~fold t ~cmp
   let fold_result t ~init ~f = fold_result t ~fold ~init ~f
   let fold_until t ~init ~f = fold_until t ~fold ~init ~f
 end
 
-module Make (T : Make_arg) = Make_gen (struct
-    include T
-    type 'a elt = 'a
-  end)
+module Make (T : Make_arg) = struct
+  include
+    Make_gen (struct
+      include T
+      type 'a elt = 'a
+    end)
 
-module Make0 (T : Make0_arg) = Make_gen (struct
-    include (T : Make0_arg with type t := T.t and type elt := T.elt)
-    type 'a t   = T.t
-    type 'a elt = T.elt
-  end)
+  let mem t a ~equal = exists t ~f:(equal a)
+end
+
+module Make0 (T : Make0_arg) = struct
+  include
+    Make_gen (struct
+      include (T : Make0_arg with type t := T.t with module Elt := T.Elt)
+      type 'a t   = T.t
+      type 'a elt = T.Elt.t
+    end)
+
+  let mem t elt = exists t ~f:(T.Elt.equal elt)
+end
 
 open T
 

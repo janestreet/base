@@ -63,7 +63,7 @@ let exists t ~f = f !t
 
 let for_all t ~f = f !t
 
-let mem ?(equal = Poly.equal) t a = equal a !t
+let mem t a ~equal = equal a !t
 
 let find t ~f = let a = !t in if f a then Some a else None
 

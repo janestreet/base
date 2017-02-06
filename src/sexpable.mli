@@ -75,4 +75,13 @@ module Of_sexpable2
      end)
   : S2 with type ('a, 'b) t := ('a, 'b) M.t
 
+module Of_sexpable3
+    (Sexpable : S3)
+    (M : sig
+       type ('a, 'b, 'c) t
+       val to_sexpable : ('a, 'b, 'c) t -> ('a, 'b, 'c) Sexpable.t
+       val of_sexpable : ('a, 'b, 'c) Sexpable.t -> ('a, 'b, 'c) t
+     end)
+  : S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t
+
 module Of_stringable (M : Stringable.S) : S with type t := M.t

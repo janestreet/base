@@ -109,7 +109,7 @@ let exists t ~f =
   | Some x -> f x
 ;;
 
-let mem ?(equal = Poly.equal) t a =
+let mem t a ~equal =
   match t with
   | None -> false
   | Some a' -> equal a a'

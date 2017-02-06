@@ -324,7 +324,7 @@ let is_empty t =
   match t with
   | Sequence(seed, next) -> loop seed next
 
-let mem ?(equal = (=)) t a =
+let mem t a ~equal =
   let rec loop s next a =
     match next s with
     | Done -> false

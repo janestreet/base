@@ -185,7 +185,7 @@ let exists2_exn l1 l2 ~f =
   exists2_ok l1 l2 ~f;
 ;;
 
-let mem ?(equal = Poly.equal) t a =
+let mem t a ~equal =
   let rec loop equal a = function
     | [] -> false
     | b :: bs -> equal a b || loop equal a bs

@@ -182,8 +182,8 @@ let%test _ =
 let%test _ = is_empty sempty
 let%test _ = not (is_empty (of_list [1]))
 
-let%test _ = mem s12345 1
-let%test _ = not (mem s12345 6)
+let%test _ = mem s12345 1 ~equal:Int.equal
+let%test _ = not (mem s12345 6 ~equal:Int.equal)
 
 let%test _ = to_list empty = []
 
