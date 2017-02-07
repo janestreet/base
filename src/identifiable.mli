@@ -1,4 +1,12 @@
-(** a signature for identifier types. *)
+(** A signature combining functionality that is commonly used for types that are intended
+    to act as names or identifiers.
+
+    Modules that satisfy [Identifiable] can be printed and parsed (both through string and
+    s-expression converters), can can be used in hash-based and comparison-based
+    containers (e.g., hashtables and maps)
+
+    Also, this module provides functors for conveniently constructing identifiable
+    modules. *)
 
 open! Import
 
