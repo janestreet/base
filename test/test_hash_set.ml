@@ -44,3 +44,14 @@ let%test_module "Set Intersection" =
     let%test_unit "No intersection" =
       run_test ~expect:[] ["a";"b";"c";"d"] ["1";"2";"3";"4"]
   end)
+
+let%expect_test "sexp" =
+  let ints = List.init 20 ~f:(fun x -> x * x) in
+  let int_hash_set = Hash_set.of_list (module Int) ints in
+  print_s [%sexp (int_hash_set : int Hash_set.t)];
+  [%expect {| (0 1 4 9 16 25 36 49 64 81 100 121 144 169 196 225 256 289 324 361) |}];
+  let strs = List.init 20 ~f:(fun x -> Int.to_string x) in
+  let str_hash_set = Hash_set.of_list (module String) strs in
+  print_s [%sexp (str_hash_set : string Hash_set.t)];
+  [%expect {| (0 1 10 11 12 13 14 15 16 17 18 19 2 3 4 5 6 7 8 9) |}];
+;;

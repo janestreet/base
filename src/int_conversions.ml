@@ -1,125 +1,225 @@
 open! Import
 
-type 'a int_spec = {
-  name : string;
-  num_bits : int;
-  max : 'a;
-  min : 'a;
-  to_string : 'a -> string;
-  compare : 'a -> 'a -> int;
-}
+let [@inline never] convert_failure x a b to_string =
+  Printf.failwithf
+    "conversion from %s to %s failed: %s is out of range"
+    a
+    b
+    (to_string x)
+    ()
 
-let convert a b a_to_b b_to_a =
-  if a.num_bits <= b.num_bits then
-    ((fun i -> Some (a_to_b i)), a_to_b)
+let num_bits_int       = Caml.Sys.int_size
+let num_bits_int32     = 32
+let num_bits_int64     = 64
+let num_bits_nativeint = Word_size.num_bits Word_size.word_size
+
+let () =
+  assert (num_bits_int = 63
+          || num_bits_int = 31
+          || num_bits_int = 32)
+
+let min_int32     = Caml.Int32.min_int
+let max_int32     = Caml.Int32.max_int
+let min_int64     = Caml.Int64.min_int
+let max_int64     = Caml.Int64.max_int
+let min_nativeint = Caml.Nativeint.min_int
+let max_nativeint = Caml.Nativeint.max_int
+
+let int_to_string       = Caml.string_of_int
+let int32_to_string     = Caml.Int32.to_string
+let int64_to_string     = Caml.Int64.to_string
+let nativeint_to_string = Caml.Nativeint.to_string
+
+(* int <-> int32 *)
+
+let int_to_int32_failure x = convert_failure x "int" "int32" int_to_string
+let int32_to_int_failure x = convert_failure x "int32" "int" int32_to_string
+
+let int32_to_int_trunc = Caml.Int32.to_int
+let int_to_int32_trunc = Caml.Int32.of_int
+
+let int_is_representable_as_int32 =
+  if num_bits_int <= num_bits_int32
+  then (fun _ -> true)
   else
-    let { min = b_min; max = b_max; name = b_name; num_bits=_; to_string=_; compare=_ } = b in
-    let min = b_to_a b_min in
-    let max = b_to_a b_max in
-    let compare = a.compare in
-    let is_in_range i = compare min i <= 0 && compare i max <= 0 in
-    let convert i = if is_in_range i then Some (a_to_b i) else None in
-    let { name = a_name; to_string = a_to_string; num_bits=_; max=_; min=_; compare=_ } = a in
-    let convert_exn i =
-      if is_in_range i then
-        a_to_b i
-      else
-        Printf.failwithf
-          "conversion from %s to %s failed: %s is out of range"
-          a_name b_name (a_to_string i) ()
-    in
-    (convert, convert_exn)
-;;
+    let min = int32_to_int_trunc min_int32 in
+    let max = int32_to_int_trunc max_int32 in
+    (fun x -> compare_int min x <= 0 && compare_int x max <= 0)
 
-let compare_int (x : int) y = compare x y
+let int32_is_representable_as_int =
+  if num_bits_int32 <= num_bits_int
+  then (fun _ -> true)
+  else
+    let min = int_to_int32_trunc min_int in
+    let max = int_to_int32_trunc max_int in
+    (fun x -> compare_int32 min x <= 0 && compare_int32 x max <= 0)
 
-let int_num_bits = Caml.Sys.int_size
+let int_to_int32 x =
+  if int_is_representable_as_int32 x
+  then Some (int_to_int32_trunc x)
+  else None
 
-let () = assert(   int_num_bits = 63
-                   || int_num_bits = 31
-                   || int_num_bits = 32 )
+let int32_to_int x =
+  if int32_is_representable_as_int x
+  then Some (int32_to_int_trunc x)
+  else None
 
-let int = {
-  name = "int";
-  num_bits = int_num_bits;
-  max = max_int;
-  min = min_int;
-  to_string = string_of_int;
-  compare = compare_int;
-}
+let int_to_int32_exn x =
+  if int_is_representable_as_int32 x
+  then int_to_int32_trunc   x
+  else int_to_int32_failure x
 
-let int32 = {
-  name = "int32";
-  num_bits = 32;
-  max = Caml.Int32.max_int;
-  min = Caml.Int32.min_int;
-  to_string = Caml.Int32.to_string;
-  compare = Caml.Int32.compare;
-}
+let int32_to_int_exn x =
+  if int32_is_representable_as_int x
+  then int32_to_int_trunc   x
+  else int32_to_int_failure x
 
-let int63 = {
-  name = "int63";
-  num_bits = 63;
-  max = Caml.Int64.shift_right Caml.Int64.max_int 1;
-  min = Caml.Int64.shift_right Caml.Int64.min_int 1;
-  to_string = Caml.Int64.to_string;
-  compare = Caml.Int64.compare;
-}
+(* int <-> int64 *)
 
-let int64 = {
-  name = "int64";
-  num_bits = 64;
-  max = Caml.Int64.max_int;
-  min = Caml.Int64.min_int;
-  to_string = Caml.Int64.to_string;
-  compare = Caml.Int64.compare;
-}
+let int64_to_int_failure x = convert_failure x "int64" "int" int64_to_string
 
-let nativeint = {
-  name = "nativeint";
-  num_bits = Word_size.num_bits Word_size.word_size;
-  max = Caml.Nativeint.max_int;
-  min = Caml.Nativeint.min_int;
-  to_string = Caml.Nativeint.to_string;
-  compare = Caml.Nativeint.compare;
-}
+let () = assert (num_bits_int < num_bits_int64)
 
-let (int_to_int32, int_to_int32_exn) =
-  convert int int32 Caml.Int32.of_int Caml.Int32.to_int
-let (int32_to_int, int32_to_int_exn) =
-  convert int32 int Caml.Int32.to_int Caml.Int32.of_int
+let int_to_int64       = Caml.Int64.of_int
+let int64_to_int_trunc = Caml.Int64.to_int
 
-let int_to_int64 = Caml.Int64.of_int
-let (int64_to_int, int64_to_int_exn) =
-  convert int64 int Caml.Int64.to_int Caml.Int64.of_int
+let int64_is_representable_as_int =
+  let min = int_to_int64 min_int in
+  let max = int_to_int64 max_int in
+  (fun x -> compare_int64 min x <= 0 && compare_int64 x max <= 0)
 
-let int_to_nativeint = Caml.Nativeint.of_int
-let (nativeint_to_int, nativeint_to_int_exn) =
-  convert nativeint int Caml.Nativeint.to_int Caml.Nativeint.of_int
+let int64_to_int x =
+  if int64_is_representable_as_int x
+  then Some (int64_to_int_trunc x)
+  else None
 
-let int32_to_int64 = Caml.Int64.of_int32
-let (int64_to_int32, int64_to_int32_exn) =
-  convert int64 int32 Caml.Int64.to_int32 Caml.Int64.of_int32
+let int64_to_int_exn x =
+  if int64_is_representable_as_int x
+  then int64_to_int_trunc   x
+  else int64_to_int_failure x
 
-let int32_to_nativeint = Caml.Nativeint.of_int32
-let (nativeint_to_int32, nativeint_to_int32_exn) =
-  convert nativeint int32 Caml.Nativeint.to_int32 Caml.Nativeint.of_int32
-;;
+(* int <-> nativeint *)
 
-let (int64_to_nativeint, int64_to_nativeint_exn) =
-  convert int64 nativeint Caml.Int64.to_nativeint Caml.Int64.of_nativeint
-;;
-let nativeint_to_int64 = Caml.Int64.of_nativeint
+let nativeint_to_int_failure x = convert_failure x "nativeint" "int" nativeint_to_string
 
-let int64_fit_on_int63_exn =
-  let (_, int64_to_int63_exn) = convert int64 int63 Fn.id Fn.id in
-  fun x -> ignore (int64_to_int63_exn x : int64)
-;;
+let () = assert (num_bits_int <= num_bits_nativeint)
 
-let num_bits_int       = int.num_bits
-let num_bits_int32     = int32.num_bits
-let num_bits_int64     = int64.num_bits
-let num_bits_nativeint = nativeint.num_bits
+let int_to_nativeint       = Caml.Nativeint.of_int
+let nativeint_to_int_trunc = Caml.Nativeint.to_int
+
+let nativeint_is_representable_as_int =
+  if num_bits_nativeint <= num_bits_int
+  then (fun _ -> true)
+  else
+    let min = int_to_nativeint min_int in
+    let max = int_to_nativeint max_int in
+    (fun x -> compare_nativeint min x <= 0 && compare_nativeint x max <= 0)
+
+let nativeint_to_int x =
+  if nativeint_is_representable_as_int x
+  then Some (nativeint_to_int_trunc x)
+  else None
+
+let nativeint_to_int_exn x =
+  if nativeint_is_representable_as_int x
+  then nativeint_to_int_trunc   x
+  else nativeint_to_int_failure x
+
+(* int32 <-> int64 *)
+
+let int64_to_int32_failure x = convert_failure x "int64" "int32" int64_to_string
+
+let () = assert (num_bits_int32 < num_bits_int64)
+
+let int32_to_int64       = Caml.Int64.of_int32
+let int64_to_int32_trunc = Caml.Int64.to_int32
+
+let int64_is_representable_as_int32 =
+  let min = int32_to_int64 min_int32 in
+  let max = int32_to_int64 max_int32 in
+  (fun x -> compare_int64 min x <= 0 && compare_int64 x max <= 0)
+
+let int64_to_int32 x =
+  if int64_is_representable_as_int32 x
+  then Some (int64_to_int32_trunc x)
+  else None
+
+let int64_to_int32_exn x =
+  if int64_is_representable_as_int32 x
+  then int64_to_int32_trunc   x
+  else int64_to_int32_failure x
+
+(* int32 <-> nativeint *)
+
+let nativeint_to_int32_failure x =
+  convert_failure x "nativeint" "int32" nativeint_to_string
+
+let () = assert (num_bits_int32 <= num_bits_nativeint)
+
+let int32_to_nativeint       = Caml.Nativeint.of_int32
+let nativeint_to_int32_trunc = Caml.Nativeint.to_int32
+
+let nativeint_is_representable_as_int32 =
+  if num_bits_nativeint <= num_bits_int32
+  then (fun _ -> true)
+  else
+    let min = int32_to_nativeint min_int32 in
+    let max = int32_to_nativeint max_int32 in
+    (fun x -> compare_nativeint min x <= 0 && compare_nativeint x max <= 0)
+
+let nativeint_to_int32 x =
+  if nativeint_is_representable_as_int32 x
+  then Some (nativeint_to_int32_trunc x)
+  else None
+
+let nativeint_to_int32_exn x =
+  if nativeint_is_representable_as_int32 x
+  then nativeint_to_int32_trunc   x
+  else nativeint_to_int32_failure x
+
+
+(* int64 <-> nativeint *)
+
+let int64_to_nativeint_failure x = convert_failure x "int64" "nativeint" int64_to_string
+
+let () = assert (num_bits_int64 >= num_bits_nativeint)
+
+let int64_to_nativeint_trunc = Caml.Int64.to_nativeint
+let nativeint_to_int64       = Caml.Int64.of_nativeint
+
+let int64_is_representable_as_nativeint =
+  if num_bits_int64 <= num_bits_nativeint
+  then (fun _ -> true)
+  else
+    let min = nativeint_to_int64 min_nativeint in
+    let max = nativeint_to_int64 max_nativeint in
+    (fun x -> compare_int64 min x <= 0 && compare_int64 x max <= 0)
+
+let int64_to_nativeint x =
+  if int64_is_representable_as_nativeint x
+  then Some (int64_to_nativeint_trunc x)
+  else None
+
+let int64_to_nativeint_exn x =
+  if int64_is_representable_as_nativeint x
+  then int64_to_nativeint_trunc   x
+  else int64_to_nativeint_failure x
+
+(* int64 <-> int63 *)
+
+let int64_to_int63_failure x = convert_failure x "int64" "int63" int64_to_string
+
+let int64_is_representable_as_int63 =
+  let min = Caml.Int64.shift_right min_int64 1 in
+  let max = Caml.Int64.shift_right max_int64 1 in
+  (fun x -> compare_int64 min x <= 0 && compare_int64 x max <= 0)
+
+let int64_fit_on_int63_exn x =
+  if int64_is_representable_as_int63 x
+  then ()
+  else int64_to_int63_failure x
+
+(* string conversions *)
 
 let insert_delimiter_every input ~delimiter ~chars_per_delimiter =
   let input_length = String.length input in

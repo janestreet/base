@@ -69,7 +69,8 @@ module Accessors = struct
 
   let to_list = Hashtbl.keys
 
-  let sexp_of_t sexp_of_e t = sexp_of_list sexp_of_e (to_list t)
+  let sexp_of_t sexp_of_e t =
+    sexp_of_list sexp_of_e (to_list t |> List.sort ~cmp:(hashable t).compare)
 
   let to_array t = Array.of_list (to_list t)
 
