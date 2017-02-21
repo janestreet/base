@@ -1,4 +1,3 @@
-
 open! Import
 
 module type Infix               = Polymorphic_compare_intf.Infix

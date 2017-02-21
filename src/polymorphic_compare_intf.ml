@@ -17,7 +17,11 @@ module type S = sig
   include Infix
 
   val equal   : t -> t -> bool
+
+  (** -1 means "less than", 0 means "equal", 1 means "greater than", and other values
+      should not be returned *)
   val compare : t -> t -> int
+
   val min     : t -> t -> t
   val max     : t -> t -> t
 end

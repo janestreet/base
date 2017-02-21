@@ -429,7 +429,7 @@ let iteri l ~f =
   ignore (fold l ~init:0 ~f:(fun i x -> f i x; i + 1));
 ;;
 
-let foldi t ~f ~init =
+let foldi t ~init ~f =
   snd (fold t ~init:(0, init) ~f:(fun (i, acc) v -> (i + 1, f i acc v)))
 ;;
 

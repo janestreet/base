@@ -31,14 +31,9 @@ end
 
 include T
 
-include Identifiable.Make (struct
-    include T
-    let module_name = "Base.Char"
-  end)
-
+(* [Replace_polymorphic_compare] should come before functor instantiations so it doesn't
+   pick up definitions that cannot be inlined. *)
 module Replace_polymorphic_compare = struct
-  let min (x : t) y = Poly.min x y
-  let max (x : t) y = Poly.max x y
   let compare = compare
   let ascending = compare
   let descending x y = compare y x
@@ -49,8 +44,17 @@ module Replace_polymorphic_compare = struct
   let ( >  ) (x : t) y = Poly.(>)   x y
   let ( <  ) (x : t) y = Poly.(<)   x y
   let ( <> ) (x : t) y = Poly.(<>)  x y
+  let min (x : t) y = if x < y then x else y
+  let max (x : t) y = if x > y then x else y
 end
 
+include Identifiable.Make (struct
+    include T
+    let module_name = "Base.Char"
+  end)
+
+(* Include [Replace_polymorphic_compare] after functor instantiations so they do not
+   shadow its definitions. *)
 include Replace_polymorphic_compare
 
 let all =

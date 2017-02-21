@@ -1,7 +1,7 @@
 open! Import
 
 module T = struct
-  type t = unit [@@deriving_inline hash, sexp]
+  type t = unit [@@deriving_inline enumerate, hash, sexp]
   let t_of_sexp : Sexplib.Sexp.t -> t =
     let _tp_loc = "src/unit.ml.T.t"  in fun t  -> unit_of_sexp t
   let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> sexp_of_unit v
@@ -13,6 +13,7 @@ module T = struct
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
+  let all : t list = [()]
   [@@@end]
 
   let compare _ _ = 0

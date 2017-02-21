@@ -42,6 +42,14 @@ val zero : t
 val one : t
 val minus_one : t
 
+val pi : t        (** The constant pi. *)
+
+val sqrt_pi : t   (** The constant sqrt(pi). *)
+
+val sqrt_2pi : t  (** The constant sqrt(2 * pi). *)
+
+val euler : t     (** Euler-Mascheroni constant (γ). *)
+
 (** The difference between 1.0 and the smallest exactly representable floating-point
     number greater than 1.0.  That is:
 

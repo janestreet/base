@@ -1,6 +1,6 @@
 open! Import
 
-type t = bool [@@deriving_inline hash, sexp]
+type t = bool [@@deriving_inline enumerate, hash, sexp]
 include
 sig
   [@@@ocaml.warning "-32"]
@@ -9,6 +9,7 @@ sig
   val hash_fold_t :
     Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+  val all : t list
 end
 [@@@end]
 

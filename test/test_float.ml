@@ -970,3 +970,18 @@ let%test_module "Hexadecimal syntax" =
 
   end)
 ;;
+
+let%expect_test "mathematical constants" =
+  (* Compare to the from-string conversion of numbers from Wolfram Alpha *)
+  let eq x s = assert (x = of_string s) in
+  eq pi       "3.141592653589793238462643383279502884197169399375105820974";
+  eq sqrt_pi  "1.772453850905516027298167483341145182797549456122387128213";
+  eq sqrt_2pi "2.506628274631000502415765284811045253006986740609938316629";
+  eq euler    "0.577215664901532860606512090082402431042159335939923598805";
+  (* Check size of diff from  ordinary computation. *)
+  printf "sqrt pi diff  : %.20f\n" (sqrt_pi - sqrt pi);
+  printf "sqrt 2pi diff : %.20f\n" (sqrt_2pi - sqrt (2. * pi));
+  [%expect {|
+    sqrt pi diff  : 0.00000000000000022204
+    sqrt 2pi diff : 0.00000000000000044409 |}]
+

@@ -3,7 +3,7 @@ open! Import
 let invalid_argf = Printf.invalid_argf
 
 module T = struct
-  type t = bool [@@deriving_inline compare, hash, sexp]
+  type t = bool [@@deriving_inline compare, enumerate, hash, sexp]
   let t_of_sexp : Sexplib.Sexp.t -> t =
     let _tp_loc = "src/bool.ml.T.t"  in fun t  -> bool_of_sexp t
   let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> sexp_of_bool v
@@ -15,6 +15,7 @@ module T = struct
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
+  let all : t list = [false; true]
   let compare : t -> t -> int =
     fun a__001_  -> fun b__002_  -> compare_bool a__001_ b__002_
   [@@@end]

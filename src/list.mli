@@ -241,7 +241,7 @@ val iteri : 'a t ->  f:(int -> 'a -> unit) -> unit
 
 (** foldi is just like fold, but it also passes in the index of each
     element as the first argument to the folded function.  Tail-recursive. *)
-val foldi : 'a t -> f:(int -> 'b -> 'a -> 'b) -> init:'b -> 'b
+val foldi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b) -> 'b
 
 (** [reduce_exn [a1; ...; an] ~f] is [f (... (f (f a1 a2) a3) ...) an].  It fails on the
     empty list.  Tail recursive. *)
