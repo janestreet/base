@@ -17,3 +17,5 @@
   (action  (run ${<} -stdlib ${ocaml_where}/stdlib.cma -o ${@}))))
 
 (enforce_style ())
+
+(jbuild_version jane_street)

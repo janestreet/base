@@ -16,3 +16,5 @@
 
 (enforce_style
  ((exceptions (shadow_stdlib.mli))))
+
+(jbuild_version jane_street)

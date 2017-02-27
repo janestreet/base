@@ -768,9 +768,6 @@ let of_char_list l =
   t
 
 module Escaping = struct
-
-  module Char_set = Caml.Set.Make(Char)
-
   (* If this is changed, make sure to update [escape], which attempts to ensure all the
      invariants checked here.  *)
   let build_and_validate_escapeworthy_map escapeworthy_map escape_char func =
@@ -787,7 +784,7 @@ module Escaping = struct
           | `Escape -> Char.to_int c_from, c_to
           | `Unescape -> Char.to_int c_to, c_from
         in
-        if arr.(k) <> -1 || Char_set.mem v vals then
+        if arr.(k) <> -1 || Set.mem vals v then
           Or_error.error_s
             (Sexp.message "escapeworthy_map not one-to-one"
                [ "c_from", sexp_of_char c_from
@@ -796,9 +793,9 @@ module Escaping = struct
                  sexp_of_list (sexp_of_pair sexp_of_char sexp_of_char)
                    escapeworthy_map
                ])
-        else (arr.(k) <- Char.to_int v; loop (Char_set.add v vals) l)
+        else (arr.(k) <- Char.to_int v; loop (Set.add vals v) l)
     in
-    loop Char_set.empty escapeworthy_map
+    loop Set.(empty (module Char)) escapeworthy_map
   ;;
 
   let escape_gen ~escapeworthy_map ~escape_char =
@@ -883,7 +880,7 @@ module Escaping = struct
        function easier to use.  *)
     let escapeworthy_map =
       List.map ~f:(fun c -> (c, c))
-        (Char_set.elements (Char_set.remove escape_char (Char_set.of_list escapeworthy)))
+        (Set.elements (Set.remove (Set.of_list (module Char) escapeworthy) escape_char))
     in
     escape_gen_exn ~escapeworthy_map ~escape_char
   ;;

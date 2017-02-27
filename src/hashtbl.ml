@@ -102,7 +102,7 @@ let maybe_resize_table t =
     let new_array_length = Int.min (len * 2) max_table_length in
     if new_array_length > len then begin
       let new_table =
-        Array.init new_array_length ~f:(fun _ -> Avltree.empty)
+        Array.create ~len:new_array_length Avltree.empty
       in
       let old_table = t.table in
       t.table <- new_table;

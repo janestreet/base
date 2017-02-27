@@ -62,3 +62,5 @@
  ((exceptions
    (hex_lexer.ml
     pow_overflow_bounds.ml))))
+
+(jbuild_version jane_street)
