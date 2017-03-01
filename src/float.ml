@@ -253,8 +253,6 @@ let ldexp = ldexp
 
 let epsilon_float = Pervasives.epsilon_float
 
-include Hashable.Make (T)
-
 let of_int = Int.to_float
 let to_int = Int.of_float
 

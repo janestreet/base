@@ -1,3 +1,6 @@
+(** This module exposes popcount functions for the various integer types.  Functions are
+    exposed in their respective modules. *)
+
 open! Import
 
 val int_popcount       : int       -> int

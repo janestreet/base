@@ -78,10 +78,6 @@ end
 
 include Replace_polymorphic_compare
 
-(* Making bool hashable may seem frivolous, but consider an aggregate type with
-   a bool in it that needs a custom hash function. *)
-include Hashable.Make (T)
-
 include Comparable.Validate (T)
 
 (* We use [Obj.magic] here as other implementations generate a conditional jump and the

@@ -1,5 +1,7 @@
 open! Import
 
+module Sys = Sys0
+
 let [@inline never] convert_failure x a b to_string =
   Printf.failwithf
     "conversion from %s to %s failed: %s is out of range"
@@ -8,7 +10,7 @@ let [@inline never] convert_failure x a b to_string =
     (to_string x)
     ()
 
-let num_bits_int       = Caml.Sys.int_size
+let num_bits_int       = Sys.int_size_in_bits
 let num_bits_int32     = 32
 let num_bits_int64     = 64
 let num_bits_nativeint = Word_size.num_bits Word_size.word_size

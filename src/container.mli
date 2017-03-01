@@ -1,1 +1,1 @@
-include Container_intf.Container
+include Container_intf.Container (** @inline *)

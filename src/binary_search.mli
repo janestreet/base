@@ -4,7 +4,7 @@
    a data structure using the functors supplied in [Binary_searchable] and described
    in [Binary_searchable_intf].
 
-   {0:Examples}
+   {3:examples Examples}
 
    Below we assume that the function [get], [length] and [compare] are in scope:
 

@@ -96,8 +96,6 @@ end
 
 include Replace_polymorphic_compare
 
-include Hashable.Make (T)
-
 let ( / ) = div
 let ( * ) = mul
 let ( - ) = sub

@@ -34,7 +34,6 @@ module Caseless : sig
   end
   [@@@end]
   include Comparable.S with type t := t
-  include Hashable.  S with type t := t
 
   val is_suffix : t -> suffix:t -> bool
   val is_prefix : t -> prefix:t -> bool

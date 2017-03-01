@@ -1,1 +1,1 @@
-include Buffer_intf.Buffer
+include Buffer_intf.Buffer (** @inline *)

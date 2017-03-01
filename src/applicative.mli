@@ -1,6 +1,6 @@
 open! Import
 
-include module type of Applicative_intf
+include module type of Applicative_intf (** @inline *)
 
 module Make  (X : Basic ) : S  with type  'a      t :=  'a      X.t
 module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t

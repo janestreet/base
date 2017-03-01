@@ -4,9 +4,9 @@
     other data structures. The interface is somewhat ugly, and it's that way for a
     reason. The goal of this module is minimum memory overhead, and maximum performance.
 
- ***************** Points of Ugliness *****************
+    {2 Points of Ugliness}
 
- * compare is passed in to every function where it is used. If you pass a different
+    - compare is passed in to every function where it is used. If you pass a different
     compare to functions on the same tree, then all bets are off as far as what it does,
     and it's all your fault. Why? Because otherwise we'd need a top level record to store
     compare, and when building a hash table, or other structure, that little t is a block
@@ -15,13 +15,13 @@
     that holds it. That's the first secret of how Hashtbl's memory overhead isn't
     higher than INRIA's, even though it uses a tree instead of a list for buckets.
 
- * But you said it's mutable, why do all the 'mutators' return t. Answer, it is
+    - But you said it's mutable, why do all the 'mutators' return t. Answer, it is
     mutable, but the root node might change due to balancing. Since we have no top level
     record to hold the current root node (see point 1), you have to do it. If you fail to
     do it, and use an old root node, you're responsible for the (sure to be nasty)
     consequences.
 
- * What on earth is up with the ~removed argument to some functions. See point 1, since
+    - What on earth is up with the ~removed argument to some functions. See point 1, since
     there is no top level node, it isn't possible to keep track of how many nodes are in
     the tree unless each mutator tells you whether or not it added or removed a node, vs
     replacing an existing one. If you intend to keep a count (as you must in a hash

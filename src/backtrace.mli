@@ -2,8 +2,8 @@
 
     The [Backtrace] module deals with two different kinds of backtraces:
 
-    1. snapshots of the stack obtained on demand ([Backtrace.get])
-    2. the stack frames unwound when an exception is raised ([Backtrace.Exn])
+    + snapshots of the stack obtained on demand ([Backtrace.get])
+    + the stack frames unwound when an exception is raised ([Backtrace.Exn])
 *)
 
 open! Import

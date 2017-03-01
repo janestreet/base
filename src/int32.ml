@@ -100,8 +100,6 @@ end
 
 include Compare
 
-include Hashable.Make (T)
-
 let ( / ) = div
 let ( * ) = mul
 let ( - ) = sub

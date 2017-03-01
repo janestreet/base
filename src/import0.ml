@@ -25,39 +25,96 @@ include
        with module Random    := Caml.Random
        with module Set       := Caml.Set
        with module String    := Caml.String
+       with module Sys       := Caml.Sys
+       with module Uchar     := Caml.Uchar
      ))
 
 type 'a ref = 'a Caml.ref = { mutable contents: 'a }
 
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)
 module Caml = struct
+
+  (** @canonical Caml.Arg *)
   module Arg       = Caml.Arg
+
+  (** @canonical Caml.StdLabels.Array *)
   module Array     = Caml.StdLabels.Array
+
+  (** @canonical Caml.Buffer *)
   module Buffer    = Caml.Buffer
+
+  (** @canonical Caml.Char *)
   module Char      = Caml.Char
+
+  (** @canonical Caml.Ephemeron *)
   module Ephemeron = Caml.Ephemeron
+
+  (** @canonical Caml.Format *)
   module Format    = Caml.Format
+
+  (** @canonical Caml.Gc *)
   module Gc        = Caml.Gc
+
+  (** @canonical Caml.MoreLabels.Hashtbl *)
   module Hashtbl   = Caml.MoreLabels.Hashtbl
+
+  (** @canonical Caml.Int32 *)
   module Int32     = Caml.Int32
+
+  (** @canonical Caml.Int64 *)
   module Int64     = Caml.Int64
+
+  (** @canonical Caml.Lazy *)
   module Lazy      = Caml.Lazy
+
+  (** @canonical Caml.Lexing *)
   module Lexing    = Caml.Lexing
+
+  (** @canonical Caml.StdLabels.List *)
   module List      = Caml.StdLabels.List
+
+  (** @canonical Caml.MoreLabels.Map *)
   module Map       = Caml.MoreLabels.Map
+
+  (** @canonical Caml.Nativeint *)
   module Nativeint = Caml.Nativeint
+
+  (** @canonical Caml.Obj *)
   module Obj       = Caml.Obj
+
+  (** @canonical Caml.Parsing *)
   module Parsing   = Caml.Parsing
+
+  (** @canonical Caml.Printexc *)
   module Printexc  = Caml.Printexc
+
+  (** @canonical Caml.Printf *)
   module Printf    = Caml.Printf
+
+  (** @canonical Caml.Queue *)
   module Queue     = Caml.Queue
+
+  (** @canonical Caml.Random *)
   module Random    = Caml.Random
+
+  (** @canonical Caml.Scanf *)
   module Scanf     = Caml.Scanf
+
+  (** @canonical Caml.MoreLabels.Set *)
   module Set       = Caml.MoreLabels.Set
+
+  (** @canonical Caml.Stack *)
   module Stack     = Caml.Stack
+
+  (** @canonical Caml.Stream *)
   module Stream    = Caml.Stream
+
+  (** @canonical Caml.StdLabels.Bytes *)
   module String    = Caml.StdLabels.Bytes
+
+  (** @canonical Caml.Sys *)
   module Sys       = Caml.Sys
+  module Uchar     = Caml.Uchar
 
   include Caml.Pervasives
 end
@@ -83,6 +140,7 @@ let ( -.  ) = Caml.( -.  )
 let ( /   ) = Caml.( /   )
 let ( /.  ) = Caml.( /.  )
 
+(** @canonical Base.Polymorphic_compare *)
 module Polymorphic_compare = struct
   (* Polymorphic compiler primitives can't be aliases as this doesn't play well with
      inlining.  When aliased without a type annotation, the compiler will implement them
@@ -111,6 +169,7 @@ module Polymorphic_compare = struct
   let min = Pervasives.min
 end
 
+(** @canonical Base.Poly *)
 module Poly = Polymorphic_compare
 
 module Int_replace_polymorphic_compare = struct

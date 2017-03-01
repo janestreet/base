@@ -1,9 +1,8 @@
 open! Import
 
-(** Signatures required of types which can be used in [@@deriving_inline hash][@@@end].
+(** Signatures required of types which can be used in [[@@deriving_inline hash][@@@end]].
 
-    For a more in-depth discussion, see documentation in ppx/ppx_hash/README.md and
-    ppx/ppx_hash/doc/design.notes.
+    For a more in-depth discussion, see documentation of ppx_hash.
 *)
 
 module type S = sig

@@ -1,3 +1,3 @@
 open! Import
 
-include Monad_intf.Monad
+include Monad_intf.Monad (** @inline *)

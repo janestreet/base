@@ -434,7 +434,7 @@ module type S_poly = sig
 end
 
 module type Hashtbl = sig
-  include S_without_submodules
+  include S_without_submodules (** @inline *)
 
   module Using_hashable : S_using_hashable
     with type ('a, 'b) t = ('a, 'b) t

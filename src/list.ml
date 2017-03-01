@@ -786,26 +786,26 @@ module Assoc = struct
 
   [@@@end]
 
-  let find t ?(equal = Poly.equal) key =
+  let find t ~equal key =
     match find t ~f:(fun (key', _) -> equal key key') with
     | None -> None
     | Some x -> Some (snd x)
 
-  let find_exn t ?(equal = Poly.equal) key =
+  let find_exn t ~equal key =
     match find t key ~equal with
     | None -> raise Not_found
     | Some value -> value
 
-  let mem t ?(equal = Poly.equal) key =
+  let mem t ~equal key =
     match find t ~equal key with
     | None   -> false
     | Some _ -> true
   ;;
 
-  let remove t ?(equal = Poly.equal) key =
+  let remove t ~equal key =
     filter t ~f:(fun (key', _) -> not (equal key key'))
 
-  let add t ?(equal = Poly.equal) key value =
+  let add t ~equal key value =
     (* the remove doesn't change the map semantics, but keeps the list small *)
     (key, value) :: remove t ~equal key
 

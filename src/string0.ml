@@ -11,6 +11,8 @@
 
 open! Import0
 
+module Sys = Sys0
+
 module String = struct
   external get        : string -> int -> char         = "%string_safe_get"
   external length     : string        -> int          = "%string_length"
@@ -20,7 +22,7 @@ end
 
 include String
 
-let max_length = Caml.Sys.max_string_length
+let max_length = Sys.max_string_length
 
 let (^) = (^)
 

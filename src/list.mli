@@ -132,9 +132,9 @@ val partition3_map
     is (trues, falses). *)
 val partition_tf : 'a t -> f:('a -> bool) -> 'a t * 'a t
 
-(** [split_n n \[e1; ...; em\]] is [(\[e1; ...; en\], \[en+1; ...; em\])].  If [n > m],
-    [(\[e1; ...; em\], \[\])] is returned.  If [n < 0], [(\[\], \[e1; ...; em\])] is
-    returned. *)
+(** [split_n \[e1; ...; em\] n] is [(\[e1; ...; en\], \[en+1; ...; em\])].
+    - If [n > m], [(\[e1; ...; em\], \[\])] is returned.
+    - If [n < 0], [(\[\], \[e1; ...; em\])] is returned. *)
 val split_n : 'a t -> int -> 'a t * 'a t
 
 (** Sort a list in increasing order according to a comparison function.  The comparison
@@ -402,11 +402,11 @@ module Assoc : sig
   end
   [@@@end]
 
-  val add      : ('a, 'b) t -> ?equal:('a -> 'a -> bool) -> 'a -> 'b -> ('a, 'b) t
-  val find     : ('a, 'b) t -> ?equal:('a -> 'a -> bool) -> 'a -> 'b option
-  val find_exn : ('a, 'b) t -> ?equal:('a -> 'a -> bool) -> 'a -> 'b
-  val mem      : ('a, 'b) t -> ?equal:('a -> 'a -> bool) -> 'a -> bool
-  val remove   : ('a, 'b) t -> ?equal:('a -> 'a -> bool) -> 'a -> ('a, 'b) t
+  val add      : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b -> ('a, 'b) t
+  val find     : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b option
+  val find_exn : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b
+  val mem      : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> bool
+  val remove   : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> ('a, 'b) t
   val map      : ('a, 'b) t -> f:('b -> 'c) -> ('a, 'c) t
 
   (** Bijectivity is not guaranteed because we allow a key to appear more than once. *)
@@ -422,9 +422,12 @@ val sub : 'a t -> pos:int -> len:int -> 'a t
     [l.(stop-1)], normalized python-style. *)
 val slice : 'a t -> int -> int -> 'a t
 
-(** [take l n] is [fst (split_n n l)].
-    [drop l n] is [snd (split_n n l)]. *)
+(** [take l n] returns the first [n] elements of [l], or all of [l] if [n > length l].
+    [take l n = fst (split_n l n)]. *)
 val take : 'a t -> int -> 'a t
+
+(** [drop l n] returns [l] without the first [n] elements, or the empty list if
+    [n > length l].  [drop l n = snd (split_n l n)]. *)
 val drop : 'a t -> int -> 'a t
 
 (** [take_while l ~f] returns the longest prefix of [l] for which [f] is [true]. *)

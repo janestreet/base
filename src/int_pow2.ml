@@ -4,6 +4,8 @@
 open! Import
 open! Sexplib.Conv
 
+module Sys = Sys0
+
 
 let raise_s = Error.raise_s
 
@@ -48,7 +50,7 @@ let floor_log2 i =
   if i <= 0 then
     raise_s (Sexp.message "[Int.floor_log2] got invalid input"
                ["", sexp_of_int i]);
-  (Caml.Sys.word_size - 1) - int_clz i
+  (Sys.word_size_in_bits - 1) - int_clz i
 ;;
 
 let ceil_log2 i =

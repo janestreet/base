@@ -24,7 +24,6 @@ module type S = sig
   [@@@end]
   include Stringable.S     with type t := t
   include Comparable.S     with type t := t
-  include Hashable.S       with type t := t
   include Pretty_printer.S with type t := t
 end
 

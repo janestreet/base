@@ -20,13 +20,12 @@ val sexp_of_t : t -> t
 
 val equal : t -> t -> bool
 
-exception Of_sexp_error of exn * t
 (** [Of_sexp_error (exn, sexp)] the exception raised when an S-expression could not be
     successfully converted to an OCaml-value. *)
+exception Of_sexp_error of exn * t
 
 (** {1 Helpers} *)
 
-val message : string -> (string * t) list -> t
 (** Helper to build nice s-expressions for error messages.  It imitates the behavior of
     [[%message ...]] from the ppx_sexp_message rewriter.
 
@@ -48,52 +47,52 @@ val message : string -> (string * t) list -> t
     {[
       (error (x 42) Exit)
     ]} *)
+val message : string -> (string * t) list -> t
 
 (** {1 Defaults} *)
 
-val default_indent : int ref
 (** [default_indent] reference to default indentation level for human-readable
     conversions.
 
     Initialisation value: 2. *)
+val default_indent : int ref
 
 (** {1 Pretty printing of S-expressions} *)
 
-val pp_hum : Caml.Format.formatter -> t -> unit
 (** [pp_hum ppf sexp] outputs S-expression [sexp] to formatter [ppf] in human readable
     form. *)
+val pp_hum : Caml.Format.formatter -> t -> unit
 
-val pp_hum_indent : int -> Caml.Format.formatter -> t -> unit
 (** [pp_hum_indent n ppf sexp] outputs S-expression [sexp] to formatter [ppf] in human
     readable form and indentation level [n]. *)
+val pp_hum_indent : int -> Caml.Format.formatter -> t -> unit
 
-val pp_mach : Caml.Format.formatter -> t -> unit
 (** [pp_mach ppf sexp] outputs S-expression [sexp] to formatter [ppf] in machine readable
     (i.e. most compact) form. *)
+val pp_mach : Caml.Format.formatter -> t -> unit
 
-val pp : Caml.Format.formatter -> t -> unit
 (** Same as [pp_mach]. *)
+val pp : Caml.Format.formatter -> t -> unit
 
 (** {1 Conversion to strings} *)
 
-val to_string_hum : ?indent : int -> t -> string
 (** [to_string_hum ?indent sexp] converts S-expression [sexp] to a
     string in human readable form with indentation level [indent].
 
     @param indent default = [!default_indent] *)
+val to_string_hum : ?indent : int -> t -> string
 
-val to_string_mach : t -> string
 (** [to_string_mach sexp] converts S-expression [sexp] to a string in
     machine readable (i.e. most compact) form. *)
+val to_string_mach : t -> string
 
-val to_string : t -> string
 (** Same as [to_string_mach]. *)
+val to_string : t -> string
 
 (** {1 Styles} *)
 
 val of_float_style : [ `Underscores | `No_underscores ] ref
 val of_int_style   : [ `Underscores | `No_underscores ] ref
-
 
 module Private : sig
   (*_ Exported for sexplib *)

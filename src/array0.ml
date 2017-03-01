@@ -10,6 +10,8 @@
 
 open! Import0
 
+module Sys = Sys0
+
 let invalid_argf = Printf.invalid_argf
 
 module Array = struct
@@ -23,7 +25,7 @@ end
 
 include Array
 
-let max_length = Caml.Sys.max_array_length
+let max_length = Sys.max_array_length
 
 let create ~len x =
   try create len x

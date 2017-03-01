@@ -21,6 +21,8 @@ include (Shadow_stdlib
          with module Random    := Caml.Random
          with module Set       := Caml.Set
          with module String    := Caml.String
+         with module Sys       := Caml.Sys
+         with module Uchar     := Caml.Uchar
 
          (* Support for generated lexers *)
          with module Lexing    := Caml.Lexing
@@ -66,7 +68,6 @@ module Hash                      = Hash
 module Hash_intf                 = Hash_intf
 module Hash_set                  = Hash_set
 module Hash_set_intf             = Hash_set_intf
-module Hashable                  = Hashable
 module Hasher                    = Hasher
 module Hashtbl                   = Hashtbl
 module Hashtbl_intf              = Hashtbl_intf
@@ -99,13 +100,14 @@ module Polymorphic_compare_intf  = Polymorphic_compare_intf
 module Popcount                  = Popcount
 module Pretty_printer            = Pretty_printer
 module Printf                    = Printf
+module Linked_queue              = Linked_queue
+module Queue_intf                = Queue_intf
 module Random                    = Random
 module Ref                       = Ref
 module Result                    = Result
 module Sequence                  = Sequence
 module Set                       = Set
 module Set_intf                  = Set_intf
-module Sexp                      = Sexp_with_comparable
 module Sexpable                  = Sexpable
 module Sign                      = Sign
 module Source_code_position      = Source_code_position
@@ -113,15 +115,20 @@ module Staged                    = Staged
 module String                    = String
 module Stringable                = Stringable
 module String_dict               = String_dict
+module Sys                       = Sys
 module T                         = T
 module Type_equal                = Type_equal
 module Unit                      = Unit
+module Uchar                     = Uchar
 module Validate                  = Validate
 module Variant                   = Variant
 module With_return               = With_return
 module Word_size                 = Word_size
 
-
+(* This is a hack so that odoc creates better documentation. *)
+module Sexp = struct
+  include Sexp_with_comparable (** @inline *)
+end
 
 
 (**/**)

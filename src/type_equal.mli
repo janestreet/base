@@ -191,7 +191,6 @@ module Id : sig
     [@@@end]
     include Sexpable.S   with type t := t
     include Comparable.S with type t := t
-    include Hashable.S   with type t := t
   end
 
   val uid : _ t -> Uid.t

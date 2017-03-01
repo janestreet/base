@@ -14,7 +14,6 @@ module type S = sig
   [@@@end]
   include Stringable    .S with type t := t
   include Comparable    .S with type t := t
-  include Hashable      .S with type t := t
   include Pretty_printer.S with type t := t
 end
 
@@ -36,7 +35,6 @@ module Make (T : sig
   end) = struct
   include T
   include Comparable    .Make     (T)
-  include Hashable      .Make     (T)
   include Pretty_printer.Register (T)
 end
 
@@ -59,6 +57,5 @@ module Make_using_comparator (T : sig
   end) = struct
   include T
   include Comparable    .Make_using_comparator (T)
-  include Hashable      .Make                  (T)
   include Pretty_printer.Register              (T)
 end

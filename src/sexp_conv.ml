@@ -7,6 +7,7 @@ open  Sexp
 module Array  = Array0
 module List   = List0
 module String = String0
+module Sys    = Sys0
 
 type sexp_bool = bool
 type 'a sexp_option = 'a option
@@ -422,9 +423,9 @@ let () =
           | Caml.Stream.Error arg -> List [Atom "Stream.Error"; Atom arg ]
           | _ -> assert false)
       );(
-        [%extension_constructor Caml.Sys.Break],
+        [%extension_constructor Sys.Break],
         (function
-          | Caml.Sys.Break -> Atom "Sys.Break"
+          | Sys.Break -> Atom "Sys.Break"
           | _ -> assert false)
       );(
         [%extension_constructor Of_sexp_error],

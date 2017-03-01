@@ -91,9 +91,9 @@ val unimplemented : string -> _ t
 (** [combine_errors ts] returns [Ok] if every element in [ts] is [Ok], else it returns
     [Error] with all the errors in [ts].  More precisely:
 
-    | combine_errors [Ok a1; ...; Ok an] = Ok [a1; ...; an]
-    | combine_errors [...; Error e1; ...; Error en; ...]
-    |   = Error (Error.of_list [e1; ...; en]) *)
+    - [combine_errors [Ok a1; ...; Ok an] = Ok [a1; ...; an]]
+    - {[ combine_errors [...; Error e1; ...; Error en; ...]
+         = Error (Error.of_list [e1; ...; en]) ]} *)
 val combine_errors : 'a t list -> 'a list t
 
 (** [combine_errors_unit] returns [Ok] if every element in [ts] is [Ok ()], else it

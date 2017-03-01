@@ -1,5 +1,7 @@
 open! Import
 
+module Sys = Sys0
+
 type t = Caml.Printexc.raw_backtrace
 
 let get ?(at_most_num_frames = Int.max_value) () =
@@ -28,7 +30,7 @@ module Exn = struct
 
   (* We turn on backtraces by default if OCAMLRUNPARAM isn't set. *)
   let maybe_set_recording () =
-    match Caml.Sys.getenv "OCAMLRUNPARAM" with
+    match Sys.getenv "OCAMLRUNPARAM" with
     | exception _ -> set_recording true
     | _ -> ()  (* the caller set something, they are responsible *)
   ;;

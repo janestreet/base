@@ -13,4 +13,3 @@ end
 
 include M
 include Comparable.Make_using_comparator(M)
-include Hashable  .Make(M)

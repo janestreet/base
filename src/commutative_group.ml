@@ -2,10 +2,10 @@
 
     An implementation of this interface should have the following properties:
 
-    1: associativity: (a+b)+c = a+(b+c) for all elt's a,b,c
-    2: identity: zero+a = a+zero = a for all elt's a
-    3: inverses: given any elt a there exists a (unique) elt b such that a+b=b+a=zero
-    4: commutativity: a+b = b+a *)
+    + associativity: [(a+b)+c = a+(b+c)] for all elt's [a,b,c]
+    + identity: [zero+a = a+zero = a] for all elt's [a]
+    + inverses: given any elt [a] there exists a (unique) elt [b] such that [a+b=b+a=zero]
+    + commutativity: [a+b = b+a] *)
 
 open! Import
 

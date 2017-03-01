@@ -1,5 +1,5 @@
 (** This is a slightly modified version of the OCaml standard library's random.mli.  We
-    want Core's [Random] module to be different from OCaml's standard one:
+    want Base's [Random] module to be different from OCaml's standard one:
 
     - We expose [Random.State.default], so that user code can easily share the default
     random state if it wants.
