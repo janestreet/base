@@ -7,10 +7,9 @@
               num
               expect_test_helpers_kernel
               stdio))
-  (js_of_ocaml ())))
+  (preprocess (pps (ppx_jane)))
+))
 
-(toplevel_expect_tests ((libraries (base))))
 
-(enforce_style ())
 
 (jbuild_version jane_street)

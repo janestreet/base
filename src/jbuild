@@ -22,7 +22,6 @@
 
 (library
  ((name base)
-  (inline_tests ((javascript build_and_run)))
   (public_name base)
   (libraries
    (caml
@@ -52,15 +51,9 @@
                     ;; mode is released as it will disable these
                     ;; extensions
                     -apply=js_style,base_lint,type_conv)))
-  (js_of_ocaml (
-    (javascript_files (runtime.js))
-    ))))
+))
 
 (ocamllex (hex_lexer))
 
-(enforce_style
- ((exceptions
-   (hex_lexer.ml
-    pow_overflow_bounds.ml))))
 
 (jbuild_version jane_street)

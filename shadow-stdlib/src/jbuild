@@ -2,7 +2,6 @@
  ((name        shadow_stdlib)
   (public_name base.shadow_stdlib)
   (libraries (caml))
-  (js_of_ocaml ())
   (preprocess no_preprocessing)))
 
 ;; Generate a file containing:
@@ -14,7 +13,5 @@
   (deps    (../gen/gen.exe ../../compiler-stdlib/src/caml.cmi))
   (action  (run ${<} -caml-cmi ../../compiler-stdlib/src/caml.cmi -o ${@}))))
 
-(enforce_style
- ((exceptions (shadow_stdlib.mli))))
 
 (jbuild_version jane_street)

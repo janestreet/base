@@ -6,8 +6,5 @@
 
 (ocamllex (mapper))
 
-(enforce_style
- ((exceptions
-   (mapper.ml))))
 
 (jbuild_version jane_street)

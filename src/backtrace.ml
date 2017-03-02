@@ -20,8 +20,8 @@ module Exn = struct
   let set_recording = Caml.Printexc.record_backtrace
   let am_recording  = Caml.Printexc.backtrace_status
 
-  let most_recent () =
-    if am_testing
+  let most_recent ?(elide=am_testing) () =
+    if elide
     then "<backtrace elided in test>"
     else if not (am_recording ())
     then ""

@@ -57,9 +57,13 @@ module Exn : sig
 
   val with_recording : bool -> f:(unit -> 'a) -> 'a
 
-  (** [most_recent ()] returns a string containing the stack that was unwound by the
-      most recently raised exception. *)
-  val most_recent : unit -> string
+  (** [most_recent ?elide ()] returns a string containing the stack that was unwound by
+      the most recently raised exception.  If [elide = true], it returns ["<backtrace
+      elided in test>"]. *)
+  val most_recent
+    :  ?elide:bool (** default is [Import.am_testing] *)
+    -> unit
+    -> string
 end
 
 (** User code never calls this.  It is called only in [std_kernel.ml], as a top-level side
