@@ -7,7 +7,7 @@
               num
               expect_test_helpers_kernel
               stdio))
-  (preprocess (pps (ppx_jane)))
+  (preprocess (pps (ppx_jane ppx_driver.runner)))
 ))
 
 

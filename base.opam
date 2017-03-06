@@ -9,7 +9,7 @@ build: [
   ["jbuilder" "build" "--only-packages" "base" "--root" "." "-j" jobs "@install"]
 ]
 depends: [
-  "jbuilder"
+  "jbuilder" {build}
 ]
 available: [ ocaml-version >= "4.03.0" ]
 descr: "

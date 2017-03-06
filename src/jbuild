@@ -50,7 +50,7 @@
                     ;; This argument won't be needed once the expect
                     ;; mode is released as it will disable these
                     ;; extensions
-                    -apply=js_style,base_lint,type_conv)))
+                    -apply=js_style,base_lint,type_conv ppx_driver.runner)))
 ))
 
 (ocamllex (hex_lexer))
