@@ -14,4 +14,4 @@
   (action  (run ${<} -caml-cmi ../../compiler-stdlib/src/caml.cmi -o ${@}))))
 
 
-(jbuild_version jane_street)
+(jbuild_version 1)

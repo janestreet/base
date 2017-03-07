@@ -16,4 +16,4 @@
   (action  (run ${<} -stdlib ${ocaml_where}/stdlib.cma -o ${@}))))
 
 
-(jbuild_version jane_street)
+(jbuild_version 1)
