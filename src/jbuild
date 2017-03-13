@@ -56,4 +56,6 @@
 (ocamllex (hex_lexer))
 
 
+(install ((section lib) (files (runtime.js))))
+
 (jbuild_version 1)
