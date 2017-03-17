@@ -109,8 +109,8 @@ module Caml = struct
   (** @canonical Caml.Stream *)
   module Stream    = Caml.Stream
 
-  (** @canonical Caml.StdLabels.Bytes *)
-  module String    = Caml.StdLabels.Bytes
+  (** @canonical Caml.StdLabels.String *)
+  module String    = Caml.StdLabels.String
 
   (** @canonical Caml.Sys *)
   module Sys       = Caml.Sys
