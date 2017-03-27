@@ -1,6 +1,7 @@
 # v0.9.1 (27/03/2017)
 
-- Split out the code imported from sexplib into `base.sexplib0`
+- Split out the code imported from sexplib into `sexplib.0` and depend
+  on `sexplib`
 
 # v0.9.0
 
