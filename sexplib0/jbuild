@@ -1,0 +1,5 @@
+(jbuild_version 1)
+
+(library
+ ((name sexplib0)
+  (public_name base.sexplib0)))

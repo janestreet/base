@@ -25,7 +25,8 @@
   (public_name base)
   (libraries
    (caml
-    shadow_stdlib))
+    shadow_stdlib
+    sexplib0))
   (install_c_headers (internalhash))
   (c_flags (:standard -D_LARGEFILE64_SOURCE -mpopcnt))
   (c_names

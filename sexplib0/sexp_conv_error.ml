@@ -1,12 +1,9 @@
 (* Conv_error: Module for Handling Errors during Automated S-expression
    Conversions *)
 
-open! Import0
-open  Printf
-open  Sexp_conv
-
-module List   = List0
-module String = String0
+open StdLabels
+open Printf
+open Sexp_conv
 
 (* Errors concerning tuples *)
 

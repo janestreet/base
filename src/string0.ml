@@ -11,6 +11,8 @@
 
 open! Import0
 
+[@@@ocaml.warning "-3"]
+
 module Sys = Sys0
 
 module String = struct
