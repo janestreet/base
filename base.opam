@@ -3,7 +3,7 @@ maintainer: "opensource@janestreet.com"
 authors: ["Jane Street Group, LLC <opensource@janestreet.com>"]
 homepage: "https://github.com/janestreet/base"
 bug-reports: "https://github.com/janestreet/base/issues"
-dev-repo: "https://github.com/janestreet/base.git"
+dev-repo: "git+https://github.com/janestreet/base.git"
 license: "Apache-2.0"
 build: [
   ["jbuilder" "build" "--only-packages" "base" "--root" "." "-j" jobs "@install"]
