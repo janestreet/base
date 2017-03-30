@@ -107,6 +107,10 @@ module type Accessors = sig
       removed. *)
   val remove_multi : ('a, _ list) t -> 'a key -> unit
 
+  (** [find_multi t key] returns the empty list if [key] is not present in the table,
+      returns [t]'s values for [key] otherwise *)
+  val find_multi : ('a, 'b list) t -> 'a key -> 'b list
+
   (** [map t f] returns new table with bound values replaced by
       [f] applied to the bound values *)
   val map : ('a, 'b) t -> f:('b -> 'c) -> ('a, 'c) t

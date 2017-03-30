@@ -185,6 +185,12 @@ module type Accessors_generic = sig
        -> ('k, 'v list, 'cmp) t
       ) options
 
+  val find_multi
+    : ('k, 'cmp,
+       ('k, 'v list, 'cmp) t
+       -> 'k key -> 'v list
+      ) options
+
   val change
     : ('k, 'cmp,
        ('k, 'v, 'cmp) t
@@ -456,6 +462,7 @@ module type Accessors1 = sig
   val add            : 'a t -> key:key -> data:'a -> 'a t
   val add_multi      : 'a list t -> key:key -> data:'a -> 'a list t
   val remove_multi   : 'a list t -> key -> 'a list t
+  val find_multi     : 'a list t -> key -> 'a list
   val change         : 'a t -> key -> f:('a option -> 'a option) -> 'a t
   val update         : 'a t -> key -> f:('a option -> 'a) -> 'a t
   val find           : 'a t -> key -> 'a option
@@ -575,6 +582,7 @@ module type Accessors2 = sig
   val add            : ('a, 'b) t -> key:'a -> data:'b -> ('a, 'b) t
   val add_multi      : ('a, 'b list) t -> key:'a -> data:'b -> ('a, 'b list) t
   val remove_multi   : ('a, 'b list) t -> 'a -> ('a, 'b list) t
+  val find_multi     : ('a, 'b list) t -> 'a -> 'b list
   val change         : ('a, 'b) t -> 'a -> f:('b option -> 'b option) -> ('a, 'b) t
   val update         : ('a, 'b) t -> 'a -> f:('b option -> 'b) -> ('a, 'b) t
   val find           : ('a, 'b) t -> 'a -> 'b option
@@ -690,6 +698,7 @@ module type Accessors3 = sig
   val add            : ('a, 'b,      'cmp) t -> key:'a -> data:'b -> ('a, 'b     , 'cmp) t
   val add_multi      : ('a, 'b list, 'cmp) t -> key:'a -> data:'b -> ('a, 'b list, 'cmp) t
   val remove_multi   : ('a, 'b list, 'cmp) t -> 'a -> ('a, 'b list, 'cmp) t
+  val find_multi     : ('a, 'b list, 'cmp) t -> 'a -> 'b list
   val change         : ('a, 'b, 'cmp) t -> 'a -> f:('b option -> 'b option) -> ('a, 'b, 'cmp) t
   val update         : ('a, 'b, 'cmp) t -> 'a -> f:('b option -> 'b) -> ('a, 'b, 'cmp) t
   val find           : ('a, 'b, 'cmp) t -> 'a -> 'b option
@@ -819,6 +828,9 @@ module type Accessors3_with_comparator = sig
   val remove_multi
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b list, 'cmp) t -> 'a -> ('a, 'b list, 'cmp) t
+  val find_multi
+    : comparator:('a, 'cmp) Comparator.t
+    -> ('a, 'b list, 'cmp) t -> 'a -> 'b list
   val change
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t -> 'a -> f:('b option -> 'b option) -> ('a, 'b, 'cmp) t

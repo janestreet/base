@@ -285,6 +285,12 @@ module Tree0 = struct
     add ~length ~key ~data t ~compare_key
   ;;
 
+  let find_multi t x ~compare_key =
+    match find t x ~compare_key with
+    | None -> []
+    | Some l -> l
+  ;;
+
   let find_exn t x ~compare_key =
     match find t x ~compare_key with
     | Some data -> data
@@ -1111,6 +1117,7 @@ module Accessors = struct
   let remove_multi t key =
     like t (Tree0.remove_multi t.tree ~length:t.length key ~compare_key:(compare_key t))
   ;;
+  let find_multi t key = Tree0.find_multi t.tree key ~compare_key:(compare_key t)
   let change t key ~f =
     like t (Tree0.change t.tree key ~f ~length:t.length ~compare_key:(compare_key t))
   ;;
@@ -1294,6 +1301,9 @@ module Tree = struct
   let remove_multi ~comparator t key =
     Tree0.remove_multi t key ~length:0 ~compare_key:comparator.Comparator.compare
     |> fst
+  ;;
+  let find_multi ~comparator t key =
+    Tree0.find_multi t key ~compare_key:comparator.Comparator.compare
   ;;
   let change ~comparator t key ~f =
     fst (Tree0.change t key ~f ~length:0 ~compare_key:comparator.Comparator.compare)
