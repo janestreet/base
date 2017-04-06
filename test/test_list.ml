@@ -470,3 +470,24 @@ let%test _ = intersperse [1;2;3] ~sep:0 = [1;0;2;0;3]
 let%test _ = intersperse [1;2]   ~sep:0 = [1;0;2]
 let%test _ = intersperse [1]     ~sep:0 = [1]
 let%test _ = intersperse []      ~sep:0 = []
+
+let test_fold_map list ~init ~f ~expect =
+  folding_map list ~init ~f = snd expect &&
+  fold_map    list ~init ~f = expect
+
+let test_fold_mapi list ~init ~f ~expect =
+  folding_mapi list ~init ~f = snd expect &&
+  fold_mapi    list ~init ~f = expect
+
+let%test _ = test_fold_map [1;2;3;4] ~init:0
+               ~f:(fun acc x -> let y = acc+x in y,y)
+               ~expect:(10, [1;3;6;10])
+let%test _ = test_fold_map [] ~init:0
+               ~f:(fun acc x -> let y = acc+x in y,y)
+               ~expect:(0, [])
+let%test _ = test_fold_mapi [1;2;3;4] ~init:0
+               ~f:(fun i acc x -> let y = acc+i*x in y,y)
+               ~expect:(20, [0;2;8;20])
+let%test _ = test_fold_mapi [] ~init:0
+               ~f:(fun i acc x -> let y = acc+i*x in y,y)
+               ~expect:(0, [])

@@ -1,20 +1,18 @@
 open! Import
 
-module type Key_common = sig
-  type t [@@deriving_inline compare]
-  include sig [@@@ocaml.warning "-32"] val compare : t -> t -> int end
+module type Key = sig
+  type t [@@deriving_inline compare, sexp_of]
+  include
+  sig
+    [@@@ocaml.warning "-32"]
+    val sexp_of_t : t -> Sexplib.Sexp.t
+    val compare : t -> t -> int
+  end
   [@@@end]
 
   (** Values returned by [hash] must be non-negative.  An exception will be raised in the
       case that [hash] returns a negative value. *)
   val hash : t -> int
-end
-
-module type Key_plain = sig
-  type t [@@deriving_inline sexp_of]
-  include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
-  [@@@end]
-  include Key_common with type t := t
 end
 
 module Hashable = struct
@@ -32,7 +30,7 @@ module Hashable = struct
                sexp_of_t = (fun _ -> Sexp.Atom "_");
              }
 
-  let of_key (type a) (module Key : Key_plain with type t = a) =
+  let of_key (type a) (module Key : Key with type t = a) =
     { hash = Key.hash;
       compare = Key.compare;
       sexp_of_t = Key.sexp_of_t;
@@ -50,7 +48,7 @@ module type Hashable = sig
 
   val poly : 'a t
 
-  val of_key : (module Key_plain with type t = 'a) -> 'a t
+  val of_key : (module Key with type t = 'a) -> 'a t
 
   val hash_param : int -> int -> 'a -> int
 
@@ -64,6 +62,9 @@ module type Accessors = sig
   val sexp_of_key : ('a, _) t -> 'a key -> Sexp.t
   val clear : (_, _) t -> unit
   val copy : ('a, 'b) t -> ('a, 'b) t
+
+  (** Attempting to modify ([set], [remove], etc.) the hashtable during iteration ([fold],
+      [iter], [iter_keys], [iteri]) will raise an exception. *)
   val fold : ('a, 'b) t -> init:'c -> f:(key:'a key -> data:'b -> 'c -> 'c) -> 'c
 
   val iter_keys : ('a,  _) t -> f:(    'a key            -> unit) -> unit
@@ -89,7 +90,6 @@ module type Accessors = sig
   [@@deprecated "[since 2015-10] Use set instead"]
   val set          : ('a, 'b) t -> key:'a key -> data:'b -> unit
   val add          : ('a, 'b) t -> key:'a key -> data:'b -> [ `Ok | `Duplicate ]
-  val add_or_error : ('a, 'b) t -> key:'a key -> data:'b -> unit Or_error.t
   val add_exn      : ('a, 'b) t -> key:'a key -> data:'b -> unit
 
   (** [change t key ~f] changes [t]'s value for [key] to be [f (find t key)]. *)
@@ -264,7 +264,7 @@ type ('key, 'data, 'z) create_options_with_hashable =
   -> 'z
 
 type ('key, 'data, 'z) create_options_with_first_class_module =
-  (module Key_plain with type t = 'key)
+  (module Key with type t = 'key)
   -> ?growth_allowed:bool (** defaults to [true] *)
   -> ?size:int (** initial size -- default 128 *)
   -> 'z
@@ -477,7 +477,7 @@ module type Hashtbl = sig
   module type M_of_sexp = sig
     type t [@@deriving_inline of_sexp]
     include sig [@@@ocaml.warning "-32"] val t_of_sexp : Sexplib.Sexp.t -> t end
-    [@@@end] include Key_plain with type t := t
+    [@@@end] include Key with type t := t
   end
   val sexp_of_m__t
     :  (module Sexp_of_m with type t = 'k)

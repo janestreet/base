@@ -177,6 +177,16 @@ let mapi t ~f =
                | Skip s -> Skip (i,s)
                | Yield(a,s) -> Yield(f i a,(i+1,s)))
 
+let folding_map t ~init ~f =
+  unfold_with t ~init ~f:(fun acc x ->
+    let acc, x = f acc x in
+    Yield (x, acc))
+
+let folding_mapi t ~init ~f =
+  unfold_with t ~init:(0, init) ~f:(fun (i, acc) x ->
+    let acc, x = f i acc x in
+    Yield (x, (i+1, acc)))
+
 let filter t ~f =
   match t with
   | Sequence(seed, next) ->
@@ -703,7 +713,7 @@ let iteri s ~f =
   iter (mapi s ~f:(fun i s -> (i, s)))
     ~f:(fun (i, s) -> f i s)
 
-let foldi s ~f ~init =
+let foldi s ~init ~f =
   fold ~init (mapi s ~f:(fun i s -> (i,s)))
     ~f:(fun acc (i, s) -> f i acc s)
 
@@ -738,6 +748,9 @@ let remove_consecutive_duplicates s ~equal =
 
 let count s ~f =
   length (filter s ~f)
+
+let counti t ~f =
+  length (filteri t ~f)
 
 let sum m t ~f = Container.sum ~fold m t ~f
 let min_elt t ~cmp = Container.min_elt ~fold t ~cmp

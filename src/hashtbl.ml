@@ -133,16 +133,13 @@ let add t ~key ~data =
     `Duplicate
 ;;
 
-let add_or_error t ~key ~data =
+let add_exn t ~key ~data =
   match add t ~key ~data with
-  | `Ok -> Result.Ok ()
+  | `Ok -> ()
   | `Duplicate ->
     let sexp_of_key = sexp_of_key t in
-    Or_error.error "Hashtbl.add_exn got key already present" key sexp_of_key
-;;
-
-let add_exn t ~key ~data =
-  Or_error.ok_exn (add_or_error t ~key ~data)
+    let error = Error.create "Hashtbl.add_exn got key already present" key sexp_of_key in
+    Error.raise error
 ;;
 
 let clear t =
@@ -679,7 +676,6 @@ module Accessors = struct
   let replace             = replace
   let set                 = set
   let add                 = add
-  let add_or_error        = add_or_error
   let add_exn             = add_exn
   let change              = change
   let update              = update
@@ -879,7 +875,7 @@ module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
   include sig [@@@ocaml.warning "-32"] val t_of_sexp : Sexplib.Sexp.t -> t end
-  [@@@end] include Key_plain with type t := t
+  [@@@end] include Key with type t := t
 end
 
 let sexp_of_m__t (type k) (module K : Sexp_of_m with type t = k) sexp_of_v t =

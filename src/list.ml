@@ -345,6 +345,25 @@ let rec count_map ~f l ctr =
 
 let map l ~f = count_map ~f l 0
 
+let folding_map t ~init ~f =
+  let acc = ref init in
+  map t ~f:(fun x ->
+    let new_acc, y = f !acc x in
+    acc := new_acc;
+    y)
+;;
+
+let fold_map t ~init ~f =
+  let acc = ref init in
+  let result =
+    map t ~f:(fun x ->
+      let new_acc, y = f !acc x in
+      acc := new_acc;
+      y)
+  in
+  !acc, result
+;;
+
 let (>>|) l f = map l ~f
 
 let map2_ok l1 l2 ~f = rev (rev_map2_ok l1 l2 ~f)
@@ -424,6 +443,25 @@ let rev_mapi l ~f =
   loop 0 [] l
 
 let mapi l ~f = rev (rev_mapi l ~f)
+
+let folding_mapi t ~init ~f =
+  let acc = ref init in
+  mapi t ~f:(fun i x ->
+    let new_acc, y = f i !acc x in
+    acc := new_acc;
+    y)
+;;
+
+let fold_mapi t ~init ~f =
+  let acc = ref init in
+  let result =
+    mapi t ~f:(fun i x ->
+      let new_acc, y = f i !acc x in
+      acc := new_acc;
+      y)
+  in
+  !acc, result
+;;
 
 let iteri l ~f =
   ignore (fold l ~init:0 ~f:(fun i x -> f i x; i + 1));

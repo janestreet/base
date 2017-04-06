@@ -45,7 +45,6 @@ include Monad.S2 with type ('a,'err) t := ('a,'err) t
 
 val ignore : (_, 'err) t -> (unit, 'err) t
 
-
 val fail : 'err -> (_, 'err) t
 
 (** e.g. [failf "Couldn't find bloogle %s" (Bloogle.to_string b)] *)

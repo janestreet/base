@@ -39,19 +39,20 @@ let concat      = Caml.Array.concat
 let copy        = Caml.Array.copy
 let fill        = Caml.Array.fill
 let init        = Caml.Array.init
-let iteri       = Caml.Array.iteri
 let make_matrix = Caml.Array.make_matrix
-let map         = Caml.Array.map
-let mapi        = Caml.Array.mapi
 let of_list     = Caml.Array.of_list
 let sub         = Caml.Array.sub
 let to_list     = Caml.Array.to_list
+
 
 (* These are eta expanded in order to permute parameter order to follow Base
    conventions. *)
 let fold        t ~init ~f = Caml.Array.fold_left   t ~init ~f
 let fold_right  t ~f ~init = Caml.Array.fold_right  t ~f ~init
 let iter        t ~f       = Caml.Array.iter        t ~f
+let iteri       t ~f       = Caml.Array.iteri       t ~f
+let map         t ~f       = Caml.Array.map         t ~f
+let mapi        t ~f       = Caml.Array.mapi        t ~f
 let stable_sort t ~cmp     = Caml.Array.stable_sort t ~cmp
 
 let swap t i j =

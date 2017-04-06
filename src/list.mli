@@ -190,6 +190,16 @@ val append : 'a t -> 'a t -> 'a t
     and builds the list [[f a1; ...; f an]] with the results returned by [f]. *)
 val map : 'a t -> f:('a -> 'b) -> 'b t
 
+(** [folding_map] is a version of [map] that threads an accumulator through calls to
+    [f]. *)
+val folding_map  : 'a t -> init:'b -> f:(       'b -> 'a -> 'b * 'c) -> 'c t
+val folding_mapi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b * 'c) -> 'c t
+
+(** [fold_map] is a combination of [fold] and [map] that threads an accumulator through
+    calls to [f]. *)
+val fold_map  : 'a t -> init:'b -> f:(       'b -> 'a -> 'b * 'c) -> 'b * 'c t
+val fold_mapi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b * 'c) -> 'b * 'c t
+
 (** [concat_map t ~f] is [concat (map t ~f)], except that there is no guarantee about the
     order in which [f] is applied to the elements of [t]. *)
 val concat_map : 'a t -> f:('a -> 'b t) -> 'b t

@@ -27,7 +27,7 @@
   - [ ] Label one of the arguments of `Hashtbl_intf.merge_into` to indicate the
     flow of data.
 
-  - [ ] Merge `Hashtbl_intf.Key_common` and `Hashtbl_intf.Key_plain`.
+  - [X] Merge `Hashtbl_intf.Key_common` and `Hashtbl_intf.Key_plain`.
 
   - [ ] Eliminate the `bit_*` functions from the `Int_intf` module. They are
     redundant with the infix bit twiddling operators.
@@ -48,10 +48,15 @@
     exception that's more descriptive.
 
   - [ ] Make the various comparision functions return an `Ordering.t`
-    instead of an `int`
+    instead of an `int`.
 
   - [ ] Move the various private modules to `Base.Base_private`
     instead of `Base.Exported_for_specific_uses` and `Base.Not_exposed_properly`
+
+  - [ ] Rename arguments of `between` to be explicit about inclusive/exclusive
+
+  - [ ] Use `compare` rather than `cmp` as the label for comparison functions
+    throughout.
 
 # Implementation Cleanup
 
@@ -69,6 +74,25 @@
   - [ ] Refactor common blit code in `String.replace_all` and `String.replace_first`.
 
   - [ ] Delete unused function aliases in `Import0`
+
+  - [ ] Put `Sexp_conv.Exn_converter` into its own file, with only an
+        alias in Sexp_conv, so that it doesn't get pulled unless used
+
+  - [ ] Create a file with all the basic types and their associated
+        combinators (`sexp_of_t`, `compare`, `hash`), and expose the
+        declaration
+
+  - [ ] Put all the exported private modules from
+    `Base.Exported_for_specific_uses` and `Base.Not_exposed_properly`
+    in `Base.Base_private`
+
+  - [ ] Decide on a better name for `Polymorphic_compare`.
+        `Polymorphic_compare_intf` contains interface for comparison
+        of non-polymorphic types, which is weird. Get rid of it and
+        inline things in `Comparable_intf`
+
+  - [X] `hashtbl_of_sexp` shouldn't live in Base.Sexp_conv since we
+    have our own hash tables. Move it to sexplib
 
 # Performance Improvements
 
@@ -94,3 +118,5 @@
     related to the `Hash` module.
 
   - [ ] Add documentation to the `Ref` toplevel module.
+
+  - [ ] Document properly how `String.unescape_gen` handles malformed strings

@@ -93,8 +93,6 @@ include Pretty_printer.Register_pp (struct
     let module_name = "Base.Exn"
   end)
 
-let backtrace = Caml.Printexc.get_backtrace
-
 let print_with_backtrace exc raw_backtrace =
   Caml.Format.eprintf "@[<2>Uncaught exception:@\n@\n@[%a@]@]@\n@." pp exc;
   if Caml.Printexc.backtrace_status ()

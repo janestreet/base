@@ -78,9 +78,6 @@ val reraise_uncaught : string -> (unit -> 'a) -> 'a
     tests. *)
 val does_raise : (unit -> _) -> bool
 
-(** The same as {!Printexc.get_backtrace} *)
-val backtrace : unit -> string
-
 (** User code never calls this.  It is called in [std_kernel.ml], as a top-level side
     effect, to change the display of exceptions and install an uncaught-exception
     printer. *)

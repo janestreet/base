@@ -18,8 +18,8 @@ module type S = sig
 
   val equal   : t -> t -> bool
 
-  (** -1 means "less than", 0 means "equal", 1 means "greater than", and other values
-      should not be returned *)
+  (** [compare t1 t2] returns 0 if [t1] is equal to [t2], a negative integer if [t1] is
+      less than [t2], and a positive integer if [t1] is greater than [t2]. *)
   val compare : t -> t -> int
 
   val min     : t -> t -> t

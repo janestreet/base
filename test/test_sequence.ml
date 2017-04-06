@@ -314,6 +314,15 @@ let%test _ =
          compare Int.compare (of_list l1) (of_list l2) = expected_res)
        compare_tests)
 
+let%test _ = folding_map (of_list [1;2;3;4]) ~init:0
+               ~f:(fun acc x -> let y = acc+x in y,y) |> to_list = [1;3;6;10]
+let%test _ = folding_map empty ~init:0
+               ~f:(fun acc x -> let y = acc+x in y,y) |> is_empty
+let%test _ = folding_mapi (of_list [1;2;3;4]) ~init:0
+               ~f:(fun i acc x -> let y = acc+i*x in y,y) |> to_list = [0;2;8;20]
+let%test _ = folding_mapi empty ~init:0
+               ~f:(fun i acc x -> let y = acc+i*x in y,y) |> is_empty
+
 let%expect_test _ =
   let xs = init 3 ~f:Fn.id |> Generator.of_sequence in
   let ( @ ) xs ys = Generator.bind xs ~f:(fun () -> ys) in

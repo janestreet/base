@@ -21,11 +21,11 @@ module type Indexable1 = sig
   val length : _ t -> int
 end
 
-type ('t, 'elt) binary_search =
+type ('t, 'elt, 'key) binary_search =
   ?pos:int
   -> ?len:int
   -> 't
-  -> compare:('elt -> 'elt -> int)
+  -> compare:('elt -> 'key -> int)
   -> [ `Last_strictly_less_than         (** {v | < elt X |                       v} *)
      | `Last_less_than_or_equal_to      (** {v |      <= elt       X |           v} *)
      | `Last_equal_to                   (** {v           |   = elt X |           v} *)
@@ -33,7 +33,7 @@ type ('t, 'elt) binary_search =
      | `First_greater_than_or_equal_to  (** {v           | X       >= elt      | v} *)
      | `First_strictly_greater_than     (** {v                       | X > elt | v} *)
      ]
-  -> 'elt
+  -> 'key
   -> int option
 
 type ('t, 'elt) binary_search_segmented =
@@ -49,7 +49,7 @@ module type S = sig
   type t
 
   (** See [Binary_search.binary_search] in binary_search.ml *)
-  val binary_search : (t, elt) binary_search
+  val binary_search : (t, elt, 'key) binary_search
 
   (** See [Binary_search.binary_search_segmented] in binary_search.ml *)
   val binary_search_segmented : (t, elt) binary_search_segmented
@@ -58,7 +58,7 @@ end
 module type S1 = sig
   type 'a t
 
-  val binary_search           : ('a t, 'a) binary_search
+  val binary_search           : ('a t, 'a, 'key) binary_search
   val binary_search_segmented : ('a t, 'a) binary_search_segmented
 end
 

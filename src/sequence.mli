@@ -41,8 +41,8 @@ end
 [@@@end]
 type 'a sequence = 'a t
 
-include Container.S1 with type 'a t := 'a t
-include Monad.S      with type 'a t := 'a t
+include Indexed_container.S1 with type 'a t := 'a t
+include Monad.S              with type 'a t := 'a t
 
 (** [empty] is a sequence with no elements. *)
 val empty : _ t
@@ -105,6 +105,11 @@ val unfold_with_and_finish
 val nth     : 'a t -> int -> 'a option
 val nth_exn : 'a t -> int -> 'a
 
+(** [folding_map] is a version of [map] that threads an accumulator through calls to
+    [f]. *)
+val folding_map  : 'a t -> init:'b -> f:(       'b -> 'a -> 'b * 'c) -> 'c t
+val folding_mapi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b * 'c) -> 'c t
+
 val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 
 val filteri : 'a t -> f: (int -> 'a -> bool) -> 'a t
@@ -159,18 +164,12 @@ val hd_exn : 'a t -> 'a
 val tl             : 'a t -> 'a t option
 val tl_eagerly_exn : 'a t -> 'a t
 
-val find_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b         option
-val findi     : 'a t -> f:(int -> 'a -> bool)      -> (int * 'a) option
-
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f]. It raises if
     there is no such element. *)
 val find_exn : 'a t -> f:('a -> bool) -> 'a
 
 (** Like [for_all], but passes the index as an argument. *)
 val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
-
-(** Like [exists], but passes the index as an argument. *)
-val existsi : 'a t -> f:(int -> 'a -> bool) -> bool
 
 (** [append t1 t2] first produces the elements of [t1], then produces the elements of
     [t2]. *)
@@ -204,14 +203,6 @@ val zip : 'a t -> 'b t -> ('a * 'b) t
 (** [zip_full] is like [zip], but if one sequence ends before the other, then it keeps
     producing elements from the other sequence until it has ended as well. *)
 val zip_full: 'a t -> 'b t -> [ `Left of 'a | `Both of 'a * 'b | `Right of 'b ] t
-
-(** [iteri] is just like [iter], but it also passes in the index of each element to
-    [f]. *)
-val iteri : 'a t ->  f:(int -> 'a -> unit) -> unit
-
-(** [foldi] is just like [fold], but it also passes in the index of each element to
-    [f]. *)
-val foldi : 'a t -> f:(int -> 'b -> 'a -> 'b) -> init:'b -> 'b
 
 (** [reduce_exn f [a1; ...; an]] is [f (... (f (f a1 a2) a3) ...) an]. It fails on the
     empty sequence. *)
@@ -367,8 +358,6 @@ val delayed_fold
   -> f:('s -> 'a -> k:('s -> 'r) -> 'r) (** [k] stands for "continuation" *)
   -> finish:('s -> 'r)
   -> 'r
-
-val to_list : 'a t -> 'a list
 
 (** [to_list_rev t] returns a list of the elements of [t], in reverse order. It is faster
     than [to_list]. *)

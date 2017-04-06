@@ -279,6 +279,25 @@ let is_sorted_strictly t ~cmp =
   loop (length t - 1)
 ;;
 
+let folding_map t ~init ~f =
+  let acc = ref init in
+  map t ~f:(fun x ->
+    let new_acc, y = f !acc x in
+    acc := new_acc;
+    y)
+;;
+
+let fold_map t ~init ~f =
+  let acc = ref init in
+  let result =
+    map t ~f:(fun x ->
+      let new_acc, y = f !acc x in
+      acc := new_acc;
+      y)
+  in
+  !acc, result
+;;
+
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until  t ~init ~f = Container.fold_until  ~fold ~init ~f t
 let count t ~f = Container.count ~fold t ~f
@@ -293,6 +312,25 @@ let foldi t ~init ~f =
     else loop (i + 1) (f i ac t.(i))
   in
   loop 0 init
+;;
+
+let folding_mapi t ~init ~f =
+  let acc = ref init in
+  mapi t ~f:(fun i x ->
+    let new_acc, y = f i !acc x in
+    acc := new_acc;
+    y)
+;;
+
+let fold_mapi t ~init ~f =
+  let acc = ref init in
+  let result =
+    mapi t ~f:(fun i x ->
+      let new_acc, y = f i !acc x in
+      acc := new_acc;
+      y)
+  in
+  !acc, result
 ;;
 
 let counti t ~f = foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count)
@@ -405,9 +443,9 @@ let fold2_exn t1 t2 ~init ~f =
   foldi t1 ~init ~f:(fun i ac x -> f ac x t2.(i))
 ;;
 
-let filter ~f = filter_map ~f:(fun x -> if f x then Some x else None)
+let filter t ~f = filter_map t ~f:(fun x -> if f x then Some x else None)
 
-let filteri ~f = filter_mapi ~f:(fun i x -> if f i x then Some x else None)
+let filteri t ~f = filter_mapi t ~f:(fun i x -> if f i x then Some x else None)
 
 let exists t ~f =
   let rec loop i =

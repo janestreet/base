@@ -99,18 +99,28 @@ include Blit.S1 with type 'a t := 'a t
 (** [Array.of_list l] returns a fresh array containing the elements of [l]. *)
 val of_list : 'a list -> 'a t
 
-(** [Array.map ~f a] applies function [f] to all the elements of [a],
+(** [Array.map t ~f] applies function [f] to all the elements of [t],
     and builds an array with the results returned by [f]:
-    [[| f a.(0); f a.(1); ...; f a.(Array.length a - 1) |]]. *)
-val map : f:('a -> 'b) -> 'a t -> 'b t
+    [[| f t.(0); f t.(1); ...; f t.(Array.length t - 1) |]]. *)
+val map : 'a t -> f:('a -> 'b) -> 'b t
+
+(** [folding_map] is a version of [map] that threads an accumulator through calls to
+    [f]. *)
+val folding_map  : 'a t -> init:'b -> f:(       'b -> 'a -> 'b * 'c) -> 'c t
+val folding_mapi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b * 'c) -> 'c t
+
+(** [Array.fold_map] is a combination of [Array.fold] and [Array.map] that threads an
+    accumulator through calls to [f]. *)
+val fold_map  : 'a t -> init:'b -> f:(       'b -> 'a -> 'b * 'c) -> 'b * 'c t
+val fold_mapi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b * 'c) -> 'b * 'c t
 
 (** Like {!Array.iter}, but the function is applied to the index of the element as first
     argument, and the element itself as second argument. *)
-val iteri : f:(int -> 'a -> unit) -> 'a t -> unit
+val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
 
 (** Like {!Array.map}, but the function is applied to the index of the element as first
     argument, and the element itself as second argument. *)
-val mapi : f:(int -> 'a -> 'b) -> 'a t -> 'b t
+val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 
 val foldi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b) -> 'b
 
@@ -203,11 +213,11 @@ val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
 (** [exists2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
 val exists2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
 
-(** [filter ~f array] removes the elements for which [f] returns false.  *)
-val filter : f:('a -> bool) -> 'a t -> 'a t
+(** [filter t ~f] removes the elements for which [f] returns false.  *)
+val filter : 'a t -> f:('a -> bool) -> 'a t
 
 (** Like [filter] except [f] also receives the index. *)
-val filteri : f:(int -> 'a -> bool) -> 'a t -> 'a t
+val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 
 (** [swap arr i j] swaps the value at index [i] with that at index [j]. *)
 val swap : 'a t -> int -> int -> unit
