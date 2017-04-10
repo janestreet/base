@@ -51,7 +51,7 @@ external format_float : string -> float -> string = "caml_format_float"
 (* Stolen from [pervasives.ml].  Adds a "." at the end if needed.  It is in
    [pervasives.mli], but it also says not to use it directly, so we copy and paste the
    code. It makes the assumption on the string passed in argument that it was returned by
-   [format_float] *)
+   [format_float]. *)
 let valid_float_lexem s =
   let l = String.length s in
   let rec loop i =
@@ -62,10 +62,6 @@ let valid_float_lexem s =
   in
   loop 0
 ;;
-
-(* Standard 12 significant digits, exponential notation used as necessary, guaranteed to
-   be a valid OCaml float lexem, not to look like an int.  *)
-let to_string x = valid_float_lexem (format_float "%.12g" x);;
 
 (* Let [y] be a power of 2.  Then the next representable float is:
    [z = y * (1 + 2 ** -52)]
@@ -172,7 +168,7 @@ let to_string x = valid_float_lexem (format_float "%.12g" x);;
      - : string = "9.9920000000000009"
    v}
 *)
-let to_string_round_trippable x =
+let to_string x =
   valid_float_lexem (
     let y = format_float "%.15g" x in
     if float_of_string y = x then

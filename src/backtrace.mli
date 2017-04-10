@@ -20,6 +20,8 @@ val get : ?at_most_num_frames:int -> unit -> t
 
 val to_string : t -> string
 
+val to_string_list : t -> string list
+
 (** [Backtrace.Exn] has functions for controlling and printing the backtrace of the most
     recently raised exception.
 
@@ -30,9 +32,9 @@ val to_string : t -> string
     next handler.
 
     If [am_recording () = true], then the runtime, while it is unwinding the stack, keeps
-    track of the part of the stack that is unwound.  This is available as a human-readable
-    string via [most_recent ()].  Calling [most_recent] if [am_recording () = false] will
-    yield the empty string.
+    track of the part of the stack that is unwound.  This is available as a backtrace via
+    [most_recent ()].  Calling [most_recent] if [am_recording () = false] will yield the
+    empty backtrace.
 
     With [am_recording () = true], OCaml keeps only a backtrace for the most recently
     raised exception.  When one raises an exception, OCaml checks if it is physically
@@ -51,19 +53,14 @@ val to_string : t -> string
     This is the same functionality as provided by the OCaml stdlib [Printexc] functions
     [backtrace_status], [record_backtraces], [get_backtrace]. *)
 module Exn : sig
-
   val am_recording  : unit -> bool
   val set_recording : bool -> unit
 
   val with_recording : bool -> f:(unit -> 'a) -> 'a
 
-  (** [most_recent ?elide ()] returns a string containing the stack that was unwound by
-      the most recently raised exception.  If [elide = true], it returns ["<backtrace
-      elided in test>"]. *)
-  val most_recent
-    :  ?elide:bool (** default is [Import.am_testing] *)
-    -> unit
-    -> string
+  (** [most_recent ()] returns a backtrace containing the stack that was unwound by the
+      most recently raised exception. *)
+  val most_recent : unit -> t
 end
 
 (** User code never calls this.  It is called only in [std_kernel.ml], as a top-level side

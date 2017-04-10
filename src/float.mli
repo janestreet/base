@@ -232,13 +232,14 @@ module O_dot : sig
   val ( ~-. ) : t -> t
 end
 
-(** Like [to_string], but guaranteed to be round-trippable.
+(** [to_string x] builds a string [s] representing the float [x] that
+    guarantees the round trip, that is such that [Float.equal x (Float.of_string s)].
 
     It usually yields as few significant digits as possible.  That is, it won't print
     [3.14] as [3.1400000000000001243].  The only exception is that occasionally it will
     output 17 significant digits when the number can be represented with just 16 (but
     not 15 or less) of them. *)
-val to_string_round_trippable : t -> string
+val to_string : t -> string
 
 (** Pretty print float, for example [to_string_hum ~decimals:3 1234.1999 = "1_234.200"]
     [to_string_hum ~decimals:3 ~strip_zero:true 1234.1999 = "1_234.2" ].  No delimiters

@@ -163,7 +163,7 @@ let%test_module "IEEE" =
        whereas [x = x'] returns [false].  This is the case regardless of whether or not
        [x] and [x'] are bit-identical values of nan.)  *)
     let f (t : t) (negative : bool) (exponent : int) (mantissa : Int63.t) : unit =
-      let str = to_string_round_trippable t in
+      let str = to_string t in
       let is_nan = is_nan t in
       (* the sign doesn't matter when nan *)
       if not is_nan then
@@ -818,19 +818,19 @@ let%test_module "Int63_emul" = (module Test_bounds(Base.Not_exposed_properly.Int
 let%test_module "Int64"      = (module Test_bounds(Int64))
 let%test_module "Nativeint"  = (module Test_bounds(Nativeint))
 
-let%test _ = to_string_round_trippable 3.14                             = "3.14"
-let%test _ = to_string_round_trippable 3.1400000000000001               = "3.14"
-let%test _ = to_string_round_trippable 3.1400000000000004               = "3.1400000000000006"
-let%test _ = to_string_round_trippable 8.000000000000002                = "8.0000000000000018"
-let%test _ = to_string_round_trippable 9.992                            = "9.992"
-let%test _ = to_string_round_trippable (2.**.63. *. (1. +. 2.**. (-52.))) = "9.2233720368547779e+18"
-let%test _ = to_string_round_trippable (-3.)                            = "-3."
-let%test _ = to_string_round_trippable nan                              = "nan"
-let%test _ = to_string_round_trippable infinity                         = "inf"
-let%test _ = to_string_round_trippable neg_infinity                     = "-inf"
-let%test _ = to_string_round_trippable 3e100                            = "3e+100"
-let%test _ = to_string_round_trippable max_finite_value                 = "1.7976931348623157e+308"
-let%test _ = to_string_round_trippable min_positive_subnormal_value     = "4.94065645841247e-324"
+let%test _ = to_string 3.14                             = "3.14"
+let%test _ = to_string 3.1400000000000001               = "3.14"
+let%test _ = to_string 3.1400000000000004               = "3.1400000000000006"
+let%test _ = to_string 8.000000000000002                = "8.0000000000000018"
+let%test _ = to_string 9.992                            = "9.992"
+let%test _ = to_string (2.**.63. *. (1. +. 2.**. (-52.))) = "9.2233720368547779e+18"
+let%test _ = to_string (-3.)                            = "-3."
+let%test _ = to_string nan                              = "nan"
+let%test _ = to_string infinity                         = "inf"
+let%test _ = to_string neg_infinity                     = "-inf"
+let%test _ = to_string 3e100                            = "3e+100"
+let%test _ = to_string max_finite_value                 = "1.7976931348623157e+308"
+let%test _ = to_string min_positive_subnormal_value     = "4.94065645841247e-324"
 
 let%test _ = epsilon_float = (one_ulp `Up 1.) -. 1.
 

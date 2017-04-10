@@ -68,3 +68,51 @@ module Make1 (M : sig
     val compare : 'a t -> 'a t -> int
     val sexp_of_t : _ t -> Sexp.t
   end) : S1 with type 'a t := 'a M.t
+
+module type Derived = sig
+  type 'a t
+  type 'cmp comparator_witness
+
+  val comparator
+    :  ('a, 'cmp) comparator
+    -> ('a t, 'cmp comparator_witness) comparator
+end
+
+(** [Derived] creates a [comparator] function that constructs a comparator for the type
+    ['a t] given a comparator for the type ['a]. *)
+module Derived (M : sig
+    type 'a t [@@deriving_inline compare, sexp_of]
+    include
+    sig
+      [@@@ocaml.warning "-32"]
+      val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+      val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+    end
+    [@@@end]
+  end) : Derived with type 'a t := 'a M.t
+
+module type Derived2 = sig
+  type ('a, 'b) t
+  type ('cmp_a, 'cmp_b) comparator_witness
+
+  val comparator
+    :  ('a, 'cmp_a) comparator
+    -> ('b, 'cmp_b) comparator
+    -> (('a, 'b) t, ('cmp_a, 'cmp_b) comparator_witness) comparator
+end
+
+(** [Derived2] creates a [comparator] function that constructs a comparator for the type
+    [('a, 'b) t] given comparators for the type ['a] and ['b]. *)
+module Derived2 (M : sig
+    type ('a, 'b) t [@@deriving_inline compare, sexp_of]
+    include
+    sig
+      [@@@ocaml.warning "-32"]
+      val sexp_of_t :
+        ('a -> Sexplib.Sexp.t) ->
+        ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+      val compare :
+        ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+    end
+    [@@@end]
+  end) : Derived2 with type ('a, 'b) t := ('a, 'b) M.t

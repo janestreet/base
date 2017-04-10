@@ -660,7 +660,10 @@ module Tree0 = struct
           let c = compare_key v1 v2 in
           if c <> 0 then c else
             let c = compare_data d1 d2 in
-            if c <> 0 then c else loop (cons r1 e1) (cons r2 e2)
+            if c <> 0 then c else
+            if Pervasives.(==) r1 r2
+            then loop e1 e2
+            else loop (cons r1 e1) (cons r2 e2)
       in
       loop t1 t2
     ;;
@@ -673,7 +676,9 @@ module Tree0 = struct
         | (More (v1, d1, r1, e1), More (v2, d2, r2, e2)) ->
           compare_key v1 v2 = 0
           && data_equal d1 d2
-          && loop (cons r1 e1) (cons r2 e2)
+          && (if Pervasives.(==) r1 r2
+              then loop e1 e2
+              else loop (cons r1 e1) (cons r2 e2))
       in
       loop t1 t2
     ;;

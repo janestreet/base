@@ -68,3 +68,57 @@ module Poly = struct
       let sexp_of_t _ = Sexp.Atom "_"
     end)
 end
+
+module type Derived = sig
+  type 'a t
+  type 'cmp comparator_witness
+
+  val comparator
+    :  ('a, 'cmp) comparator
+    -> ('a t, 'cmp comparator_witness) comparator
+end
+
+module Derived (M : sig type 'a t [@@deriving_inline compare, sexp_of]
+    include
+    sig
+      [@@@ocaml.warning "-32"]
+      val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+      val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+    end
+    [@@@end] end) = struct
+  type 'cmp comparator_witness
+
+  let comparator a = {
+    compare = M.compare a.compare;
+    sexp_of_t = M.sexp_of_t a.sexp_of_t;
+  }
+end
+
+module type Derived2 = sig
+  type ('a, 'b) t
+  type ('cmp_a, 'cmp_b) comparator_witness
+
+  val comparator
+    :  ('a, 'cmp_a) comparator
+    -> ('b, 'cmp_b) comparator
+    -> (('a, 'b) t, ('cmp_a, 'cmp_b) comparator_witness) comparator
+end
+
+module Derived2 (M : sig type ('a, 'b) t [@@deriving_inline compare, sexp_of]
+    include
+    sig
+      [@@@ocaml.warning "-32"]
+      val sexp_of_t :
+        ('a -> Sexplib.Sexp.t) ->
+        ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+      val compare :
+        ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+    end
+    [@@@end] end) = struct
+  type ('cmp_a, 'cmp_b) comparator_witness
+
+  let comparator a b = {
+    compare = M.compare a.compare b.compare;
+    sexp_of_t = M.sexp_of_t a.sexp_of_t b.sexp_of_t;
+  }
+end

@@ -83,6 +83,21 @@ let does_raise (type a) (f : unit -> a) =
     true
 ;;
 
+module Never_elide_backtrace = struct
+  type nonrec t = t
+
+  let ref_never_elide_backtrace = ref false
+
+  let never_elide_backtrace () = !ref_never_elide_backtrace
+
+  let sexp_of_t t =
+    let old = !ref_never_elide_backtrace in
+    protect ~finally:(fun () -> ref_never_elide_backtrace := old)
+      ~f:(fun () ->
+        ref_never_elide_backtrace := true;
+        sexp_of_exn t)
+end
+
 include Pretty_printer.Register_pp (struct
     type t = exn
     let pp ppf t =

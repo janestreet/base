@@ -4,28 +4,32 @@ module Sys = Sys0
 
 type t = Caml.Printexc.raw_backtrace
 
+let elided_message = "<backtrace elided in test>"
+
 let get ?(at_most_num_frames = Int.max_value) () =
   Caml.Printexc.get_callstack at_most_num_frames
 ;;
 
-let to_string = Caml.Printexc.raw_backtrace_to_string
+let to_string t =
+  if am_testing
+  && not (Exn.Never_elide_backtrace.never_elide_backtrace ())
+  then elided_message
+  else Caml.Printexc.raw_backtrace_to_string t
+;;
+
+let to_string_list t = String.split_lines (to_string t)
 
 let sexp_of_t t =
-  Sexp.List
-    (List.map (String.split (to_string t) ~on:'\n')
-       ~f:(fun x -> Sexp.Atom x))
+  Sexp.List (List.map (to_string_list t) ~f:(fun x -> Sexp.Atom x))
 ;;
 
 module Exn = struct
+
   let set_recording = Caml.Printexc.record_backtrace
   let am_recording  = Caml.Printexc.backtrace_status
 
-  let most_recent ?(elide=am_testing) () =
-    if elide
-    then "<backtrace elided in test>"
-    else if not (am_recording ())
-    then ""
-    else Caml.Printexc.get_backtrace ()
+  let most_recent () =
+    Caml.Printexc.get_raw_backtrace ()
   ;;
 
   (* We turn on backtraces by default if OCAMLRUNPARAM isn't set. *)
