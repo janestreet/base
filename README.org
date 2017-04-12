@@ -14,7 +14,7 @@ Install Base via [[https://opam.ocaml.org][OPAM]]:
 
 #+begin_src
 $ opam install base
-#end_src
+#+end_src
 
 Base has no runtime dependencies and is fast to build. Its sole build
 dependency is [[https://github.com/janestreet/jbuilder][jbuilder]], which
