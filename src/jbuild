@@ -2,7 +2,7 @@
  ((targets (int63_backend.ml))
   (deps    (select-int63-backend/select.ml))
   (action  (run ${OCAML} ${<}
-            -portable-int63 ${lib-available:base-portable-int63}
+            -native-int63 ${lib-available:base-native-int63}
             -arch-sixtyfour ${ARCH_SIXTYFOUR}
             -o ${@}))))
 

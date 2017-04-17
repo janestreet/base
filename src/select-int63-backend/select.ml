@@ -1,15 +1,15 @@
 let () =
-  let portable_int63, arch_sixtyfour, output =
+  let native_int63, arch_sixtyfour, output =
     try
       match Sys.argv with
-      | [|_; "-portable-int63"; x; "-arch-sixtyfour"; y; "-o"; fn|] ->
+      | [|_; "-native-int63"; x; "-arch-sixtyfour"; y; "-o"; fn|] ->
         (bool_of_string x, bool_of_string y, fn)
       | _ -> raise Exit
     with _ ->
       failwith "bad command line arguments"
   in
   let backend =
-    if portable_int63 then
+    if not native_int63 then
       "Dynamic"
     else if arch_sixtyfour then
       "Native"
