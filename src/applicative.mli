@@ -5,6 +5,9 @@ include module type of Applicative_intf (** @inline *)
 module Make  (X : Basic ) : S  with type  'a      t :=  'a      X.t
 module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
 
+module Make_using_map2  (X : Basic_using_map2 ) : S  with type  'a      t :=  'a      X.t
+module Make2_using_map2 (X : Basic2_using_map2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
+
 module Make_args  (X : S ) : Args  with type  'a      arg :=  'a      X.t
 module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t
 

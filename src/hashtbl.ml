@@ -827,7 +827,7 @@ module Using_hashable = struct
     'a 'b .
          ('a -> Sexplib.Sexp.t) ->
     ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
-    = fun _of_a  -> fun _of_b  -> fun v  -> (sexp_of_t _of_a _of_b) v
+    = sexp_of_t
   [@@@end]
   include Accessors
   let create = create

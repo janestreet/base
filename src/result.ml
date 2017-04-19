@@ -4,37 +4,6 @@ type ('a, 'b) t = ('a, 'b) Pervasives.result =
   | Ok of 'a
   | Error of 'b
 [@@deriving_inline sexp, compare, hash]
-let hash_fold_t : type a
-                         b.(Ppx_hash_lib.Std.Hash.state -> a -> Ppx_hash_lib.Std.Hash.state) ->
-  (Ppx_hash_lib.Std.Hash.state -> b -> Ppx_hash_lib.Std.Hash.state) ->
-  Ppx_hash_lib.Std.Hash.state -> (a,b) t -> Ppx_hash_lib.Std.Hash.state
-  =
-  fun _hash_fold_a  ->
-  fun _hash_fold_b  ->
-  fun hsv  ->
-  fun arg  ->
-    match arg with
-    | Ok _a0 -> _hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
-    | Error _a0 ->
-      _hash_fold_b (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
-
-let compare :
-  'a 'b .
-       ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
-  =
-  fun _cmp__a  ->
-  fun _cmp__b  ->
-  fun a__001_  ->
-  fun b__002_  ->
-    if Ppx_compare_lib.phys_equal a__001_ b__002_
-    then 0
-    else
-      (match (a__001_, b__002_) with
-       | (Ok _a__003_,Ok _b__004_) -> _cmp__a _a__003_ _b__004_
-       | (Ok _,_) -> (-1)
-       | (_,Ok _) -> 1
-       | (Error _a__005_,Error _b__006_) -> _cmp__b _a__005_ _b__006_)
-
 let t_of_sexp : type a
                        b.(Sexplib.Sexp.t -> a) ->
   (Sexplib.Sexp.t -> b) -> Sexplib.Sexp.t -> (a,b) t
@@ -76,6 +45,37 @@ let sexp_of_t : type a
     | Error v0 ->
       let v0 = _of_b v0  in
       Sexplib.Sexp.List [Sexplib.Sexp.Atom "Error"; v0]
+
+let compare :
+  'a 'b .
+       ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+  =
+  fun _cmp__a  ->
+  fun _cmp__b  ->
+  fun a__001_  ->
+  fun b__002_  ->
+    if Ppx_compare_lib.phys_equal a__001_ b__002_
+    then 0
+    else
+      (match (a__001_, b__002_) with
+       | (Ok _a__003_,Ok _b__004_) -> _cmp__a _a__003_ _b__004_
+       | (Ok _,_) -> (-1)
+       | (_,Ok _) -> 1
+       | (Error _a__005_,Error _b__006_) -> _cmp__b _a__005_ _b__006_)
+
+let hash_fold_t : type a
+                         b.(Ppx_hash_lib.Std.Hash.state -> a -> Ppx_hash_lib.Std.Hash.state) ->
+  (Ppx_hash_lib.Std.Hash.state -> b -> Ppx_hash_lib.Std.Hash.state) ->
+  Ppx_hash_lib.Std.Hash.state -> (a,b) t -> Ppx_hash_lib.Std.Hash.state
+  =
+  fun _hash_fold_a  ->
+  fun _hash_fold_b  ->
+  fun hsv  ->
+  fun arg  ->
+    match arg with
+    | Ok _a0 -> _hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+    | Error _a0 ->
+      _hash_fold_b (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
 
 [@@@end]
 

@@ -146,214 +146,168 @@ module Export = struct
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable.
      (string is also mutable, but we pretend it isn't for hashing purposes) *)
   type 'a array  = 'a Array.  t [@@deriving_inline compare,       sexp]
-  let array_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a array
-    =
-    let _tp_loc = "src/base.ml.Export.array"  in
-    fun _of_a  -> fun t  -> (Array.t_of_sexp _of_a) t
-  let sexp_of_array : 'a . ('a -> Sexplib.Sexp.t) -> 'a array -> Sexplib.Sexp.t
-    = fun _of_a  -> fun v  -> (Array.sexp_of_t _of_a) v
   let compare_array : 'a . ('a -> 'a -> int) -> 'a array -> 'a array -> int =
-    fun _cmp__a  ->
-    fun a__001_  -> fun b__002_  -> Array.compare _cmp__a a__001_ b__002_
-
+    Array.compare
+  let array_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a array
+    = Array.t_of_sexp
+  let sexp_of_array : 'a . ('a -> Sexplib.Sexp.t) -> 'a array -> Sexplib.Sexp.t
+    = Array.sexp_of_t
   [@@@end]
   type bool      = Bool.      t [@@deriving_inline compare, hash, sexp]
-  let bool_of_sexp : Sexplib.Sexp.t -> bool =
-    let _tp_loc = "src/base.ml.Export.bool"  in fun t  -> Bool.t_of_sexp t
-  let sexp_of_bool : bool -> Sexplib.Sexp.t = fun v  -> Bool.sexp_of_t v
+  let compare_bool : bool -> bool -> int = Bool.compare
   let (hash_fold_bool :
          Ppx_hash_lib.Std.Hash.state -> bool -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> Bool.hash_fold_t hsv arg
+    Bool.hash_fold_t
   let (hash_bool : bool -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_bool (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-  let compare_bool : bool -> bool -> int =
-    fun a__005_  -> fun b__006_  -> Bool.compare a__005_ b__006_
+  let bool_of_sexp : Sexplib.Sexp.t -> bool = Bool.t_of_sexp
+  let sexp_of_bool : bool -> Sexplib.Sexp.t = Bool.sexp_of_t
   [@@@end]
   type char      = Char.      t [@@deriving_inline compare, hash, sexp]
-  let char_of_sexp : Sexplib.Sexp.t -> char =
-    let _tp_loc = "src/base.ml.Export.char"  in fun t  -> Char.t_of_sexp t
-  let sexp_of_char : char -> Sexplib.Sexp.t = fun v  -> Char.sexp_of_t v
+  let compare_char : char -> char -> int = Char.compare
   let (hash_fold_char :
          Ppx_hash_lib.Std.Hash.state -> char -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> Char.hash_fold_t hsv arg
+    Char.hash_fold_t
   let (hash_char : char -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_char (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-  let compare_char : char -> char -> int =
-    fun a__007_  -> fun b__008_  -> Char.compare a__007_ b__008_
+  let char_of_sexp : Sexplib.Sexp.t -> char = Char.t_of_sexp
+  let sexp_of_char : char -> Sexplib.Sexp.t = Char.sexp_of_t
   [@@@end]
   type exn       = Exn.       t [@@deriving_inline                sexp_of]
-  let sexp_of_exn : exn -> Sexplib.Sexp.t = fun v  -> Exn.sexp_of_t v
+  let sexp_of_exn : exn -> Sexplib.Sexp.t = Exn.sexp_of_t
   [@@@end]
   type float     = Float.     t [@@deriving_inline compare, hash, sexp]
-  let float_of_sexp : Sexplib.Sexp.t -> float =
-    let _tp_loc = "src/base.ml.Export.float"  in fun t  -> Float.t_of_sexp t
-  let sexp_of_float : float -> Sexplib.Sexp.t = fun v  -> Float.sexp_of_t v
+  let compare_float : float -> float -> int = Float.compare
   let (hash_fold_float :
          Ppx_hash_lib.Std.Hash.state -> float -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> Float.hash_fold_t hsv arg
+    Float.hash_fold_t
   let (hash_float : float -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_float (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-  let compare_float : float -> float -> int =
-    fun a__009_  -> fun b__010_  -> Float.compare a__009_ b__010_
+  let float_of_sexp : Sexplib.Sexp.t -> float = Float.t_of_sexp
+  let sexp_of_float : float -> Sexplib.Sexp.t = Float.sexp_of_t
   [@@@end]
   type int       = Int.       t [@@deriving_inline compare, hash, sexp]
-  let int_of_sexp : Sexplib.Sexp.t -> int =
-    let _tp_loc = "src/base.ml.Export.int"  in fun t  -> Int.t_of_sexp t
-  let sexp_of_int : int -> Sexplib.Sexp.t = fun v  -> Int.sexp_of_t v
+  let compare_int : int -> int -> int = Int.compare
   let (hash_fold_int :
          Ppx_hash_lib.Std.Hash.state -> int -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> Int.hash_fold_t hsv arg
+    Int.hash_fold_t
   let (hash_int : int -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_int (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-  let compare_int : int -> int -> int =
-    fun a__011_  -> fun b__012_  -> Int.compare a__011_ b__012_
+  let int_of_sexp : Sexplib.Sexp.t -> int = Int.t_of_sexp
+  let sexp_of_int : int -> Sexplib.Sexp.t = Int.sexp_of_t
   [@@@end]
   type int32     = Int32.     t [@@deriving_inline compare, hash, sexp]
-  let int32_of_sexp : Sexplib.Sexp.t -> int32 =
-    let _tp_loc = "src/base.ml.Export.int32"  in fun t  -> Int32.t_of_sexp t
-  let sexp_of_int32 : int32 -> Sexplib.Sexp.t = fun v  -> Int32.sexp_of_t v
+  let compare_int32 : int32 -> int32 -> int = Int32.compare
   let (hash_fold_int32 :
          Ppx_hash_lib.Std.Hash.state -> int32 -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> Int32.hash_fold_t hsv arg
+    Int32.hash_fold_t
   let (hash_int32 : int32 -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_int32 (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-  let compare_int32 : int32 -> int32 -> int =
-    fun a__013_  -> fun b__014_  -> Int32.compare a__013_ b__014_
+  let int32_of_sexp : Sexplib.Sexp.t -> int32 = Int32.t_of_sexp
+  let sexp_of_int32 : int32 -> Sexplib.Sexp.t = Int32.sexp_of_t
   [@@@end]
   type int64     = Int64.     t [@@deriving_inline compare, hash, sexp]
-  let int64_of_sexp : Sexplib.Sexp.t -> int64 =
-    let _tp_loc = "src/base.ml.Export.int64"  in fun t  -> Int64.t_of_sexp t
-  let sexp_of_int64 : int64 -> Sexplib.Sexp.t = fun v  -> Int64.sexp_of_t v
+  let compare_int64 : int64 -> int64 -> int = Int64.compare
   let (hash_fold_int64 :
          Ppx_hash_lib.Std.Hash.state -> int64 -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> Int64.hash_fold_t hsv arg
+    Int64.hash_fold_t
   let (hash_int64 : int64 -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_int64 (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-  let compare_int64 : int64 -> int64 -> int =
-    fun a__015_  -> fun b__016_  -> Int64.compare a__015_ b__016_
+  let int64_of_sexp : Sexplib.Sexp.t -> int64 = Int64.t_of_sexp
+  let sexp_of_int64 : int64 -> Sexplib.Sexp.t = Int64.sexp_of_t
   [@@@end]
   type 'a list   = 'a List.   t [@@deriving_inline compare, hash, sexp]
-  let list_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a list =
-    let _tp_loc = "src/base.ml.Export.list"  in
-    fun _of_a  -> fun t  -> (List.t_of_sexp _of_a) t
-  let sexp_of_list : 'a . ('a -> Sexplib.Sexp.t) -> 'a list -> Sexplib.Sexp.t =
-    fun _of_a  -> fun v  -> (List.sexp_of_t _of_a) v
+  let compare_list : 'a . ('a -> 'a -> int) -> 'a list -> 'a list -> int =
+    List.compare
   let hash_fold_list :
     'a .
       (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
     Ppx_hash_lib.Std.Hash.state -> 'a list -> Ppx_hash_lib.Std.Hash.state
-    =
-    fun _hash_fold_a  ->
-    fun hsv  ->
-    fun arg  ->
-      List.hash_fold_t (fun hsv  -> fun arg  -> _hash_fold_a hsv arg) hsv
-        arg
-
-  let compare_list : 'a . ('a -> 'a -> int) -> 'a list -> 'a list -> int =
-    fun _cmp__a  ->
-    fun a__017_  -> fun b__018_  -> List.compare _cmp__a a__017_ b__018_
-
+    = List.hash_fold_t
+  let list_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a list =
+    List.t_of_sexp
+  let sexp_of_list : 'a . ('a -> Sexplib.Sexp.t) -> 'a list -> Sexplib.Sexp.t =
+    List.sexp_of_t
   [@@@end]
   type nativeint = Nativeint. t [@@deriving_inline compare, hash, sexp]
-  let nativeint_of_sexp : Sexplib.Sexp.t -> nativeint =
-    let _tp_loc = "src/base.ml.Export.nativeint"  in
-    fun t  -> Nativeint.t_of_sexp t
-  let sexp_of_nativeint : nativeint -> Sexplib.Sexp.t =
-    fun v  -> Nativeint.sexp_of_t v
+  let compare_nativeint : nativeint -> nativeint -> int = Nativeint.compare
   let (hash_fold_nativeint :
          Ppx_hash_lib.Std.Hash.state -> nativeint -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> Nativeint.hash_fold_t hsv arg
+    Nativeint.hash_fold_t
   let (hash_nativeint : nativeint -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_nativeint (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-  let compare_nativeint : nativeint -> nativeint -> int =
-    fun a__021_  -> fun b__022_  -> Nativeint.compare a__021_ b__022_
+  let nativeint_of_sexp : Sexplib.Sexp.t -> nativeint = Nativeint.t_of_sexp
+  let sexp_of_nativeint : nativeint -> Sexplib.Sexp.t = Nativeint.sexp_of_t
   [@@@end]
   type 'a option = 'a Option. t [@@deriving_inline compare, hash, sexp]
-  let option_of_sexp :
-    'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a option =
-    let _tp_loc = "src/base.ml.Export.option"  in
-    fun _of_a  -> fun t  -> (Option.t_of_sexp _of_a) t
-  let sexp_of_option :
-    'a . ('a -> Sexplib.Sexp.t) -> 'a option -> Sexplib.Sexp.t =
-    fun _of_a  -> fun v  -> (Option.sexp_of_t _of_a) v
+  let compare_option : 'a . ('a -> 'a -> int) -> 'a option -> 'a option -> int
+    = Option.compare
   let hash_fold_option :
     'a .
       (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
     Ppx_hash_lib.Std.Hash.state -> 'a option -> Ppx_hash_lib.Std.Hash.state
-    =
-    fun _hash_fold_a  ->
-    fun hsv  ->
-    fun arg  ->
-      Option.hash_fold_t (fun hsv  -> fun arg  -> _hash_fold_a hsv arg) hsv
-        arg
-
-  let compare_option : 'a . ('a -> 'a -> int) -> 'a option -> 'a option -> int
-    =
-    fun _cmp__a  ->
-    fun a__023_  -> fun b__024_  -> Option.compare _cmp__a a__023_ b__024_
-
+    = Option.hash_fold_t
+  let option_of_sexp :
+    'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a option =
+    Option.t_of_sexp
+  let sexp_of_option :
+    'a . ('a -> Sexplib.Sexp.t) -> 'a option -> Sexplib.Sexp.t =
+    Option.sexp_of_t
   [@@@end]
   type 'a ref    = 'a Ref.    t [@@deriving_inline compare,       sexp]
-  let ref_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a ref =
-    let _tp_loc = "src/base.ml.Export.ref"  in
-    fun _of_a  -> fun t  -> (Ref.t_of_sexp _of_a) t
-  let sexp_of_ref : 'a . ('a -> Sexplib.Sexp.t) -> 'a ref -> Sexplib.Sexp.t =
-    fun _of_a  -> fun v  -> (Ref.sexp_of_t _of_a) v
   let compare_ref : 'a . ('a -> 'a -> int) -> 'a ref -> 'a ref -> int =
-    fun _cmp__a  ->
-    fun a__027_  -> fun b__028_  -> Ref.compare _cmp__a a__027_ b__028_
-
+    Ref.compare
+  let ref_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a ref =
+    Ref.t_of_sexp
+  let sexp_of_ref : 'a . ('a -> Sexplib.Sexp.t) -> 'a ref -> Sexplib.Sexp.t =
+    Ref.sexp_of_t
   [@@@end]
   type string    = String.    t [@@deriving_inline compare, hash, sexp]
-  let string_of_sexp : Sexplib.Sexp.t -> string =
-    let _tp_loc = "src/base.ml.Export.string"  in fun t  -> String.t_of_sexp t
-  let sexp_of_string : string -> Sexplib.Sexp.t = fun v  -> String.sexp_of_t v
+  let compare_string : string -> string -> int = String.compare
   let (hash_fold_string :
          Ppx_hash_lib.Std.Hash.state -> string -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> String.hash_fold_t hsv arg
+    String.hash_fold_t
   let (hash_string : string -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_string (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-  let compare_string : string -> string -> int =
-    fun a__031_  -> fun b__032_  -> String.compare a__031_ b__032_
+  let string_of_sexp : Sexplib.Sexp.t -> string = String.t_of_sexp
+  let sexp_of_string : string -> Sexplib.Sexp.t = String.sexp_of_t
   [@@@end]
   type unit      = Unit.      t [@@deriving_inline compare, hash, sexp]
-  let unit_of_sexp : Sexplib.Sexp.t -> unit =
-    let _tp_loc = "src/base.ml.Export.unit"  in fun t  -> Unit.t_of_sexp t
-  let sexp_of_unit : unit -> Sexplib.Sexp.t = fun v  -> Unit.sexp_of_t v
+  let compare_unit : unit -> unit -> int = Unit.compare
   let (hash_fold_unit :
          Ppx_hash_lib.Std.Hash.state -> unit -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> Unit.hash_fold_t hsv arg
+    Unit.hash_fold_t
   let (hash_unit : unit -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_unit (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-  let compare_unit : unit -> unit -> int =
-    fun a__033_  -> fun b__034_  -> Unit.compare a__033_ b__034_
+  let unit_of_sexp : Sexplib.Sexp.t -> unit = Unit.t_of_sexp
+  let sexp_of_unit : unit -> Sexplib.Sexp.t = Unit.sexp_of_t
   [@@@end]
 
   (** Format stuff *)

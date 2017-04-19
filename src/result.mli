@@ -23,21 +23,21 @@ type ('ok, 'err) t = ('ok, 'err) Pervasives.result =
 include
 sig
   [@@@ocaml.warning "-32"]
-  val hash_fold_t :
-    (Ppx_hash_lib.Std.Hash.state -> 'ok -> Ppx_hash_lib.Std.Hash.state) ->
-    (Ppx_hash_lib.Std.Hash.state -> 'err -> Ppx_hash_lib.Std.Hash.state)
-    ->
-    Ppx_hash_lib.Std.Hash.state ->
-    ('ok,'err) t -> Ppx_hash_lib.Std.Hash.state
-  val compare :
-    ('ok -> 'ok -> int) ->
-    ('err -> 'err -> int) -> ('ok,'err) t -> ('ok,'err) t -> int
   val t_of_sexp :
     (Sexplib.Sexp.t -> 'ok) ->
     (Sexplib.Sexp.t -> 'err) -> Sexplib.Sexp.t -> ('ok,'err) t
   val sexp_of_t :
     ('ok -> Sexplib.Sexp.t) ->
     ('err -> Sexplib.Sexp.t) -> ('ok,'err) t -> Sexplib.Sexp.t
+  val compare :
+    ('ok -> 'ok -> int) ->
+    ('err -> 'err -> int) -> ('ok,'err) t -> ('ok,'err) t -> int
+  val hash_fold_t :
+    (Ppx_hash_lib.Std.Hash.state -> 'ok -> Ppx_hash_lib.Std.Hash.state) ->
+    (Ppx_hash_lib.Std.Hash.state -> 'err -> Ppx_hash_lib.Std.Hash.state)
+    ->
+    Ppx_hash_lib.Std.Hash.state ->
+    ('ok,'err) t -> Ppx_hash_lib.Std.Hash.state
 end
 [@@@end]
 

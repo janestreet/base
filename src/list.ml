@@ -9,10 +9,9 @@ let invalid_argf = Printf.invalid_argf
 module T = struct
   type 'a t = 'a list [@@deriving_inline sexp]
   let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
-    let _tp_loc = "src/list.ml.T.t"  in
-    fun _of_a  -> fun t  -> (list_of_sexp _of_a) t
+    list_of_sexp
   let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
-    fun _of_a  -> fun v  -> (sexp_of_list _of_a) v
+    sexp_of_list
   [@@@end]
 end
 
@@ -795,16 +794,15 @@ module Assoc = struct
     fun _of_a  ->
     fun _of_b  ->
     fun t  ->
-      (list_of_sexp
-         (function
-           | Sexplib.Sexp.List (v0::v1::[]) ->
-             let v0 = _of_a v0
+      list_of_sexp
+        (function
+          | Sexplib.Sexp.List (v0::v1::[]) ->
+            let v0 = _of_a v0
 
-             and v1 = _of_b v1
-             in (v0, v1)
-           | sexp ->
-             Sexplib.Conv_error.tuple_of_size_n_expected _tp_loc 2 sexp))
-        t
+            and v1 = _of_b v1
+            in (v0, v1)
+          | sexp ->
+            Sexplib.Conv_error.tuple_of_size_n_expected _tp_loc 2 sexp) t
 
   let sexp_of_t :
     'a 'b .
@@ -814,13 +812,13 @@ module Assoc = struct
     fun _of_a  ->
     fun _of_b  ->
     fun v  ->
-      (sexp_of_list
-         (function
-           | (v0,v1) ->
-             let v0 = _of_a v0
+      sexp_of_list
+        (function
+          | (v0,v1) ->
+            let v0 = _of_a v0
 
-             and v1 = _of_b v1
-             in Sexplib.Sexp.List [v0; v1])) v
+            and v1 = _of_b v1
+            in Sexplib.Sexp.List [v0; v1]) v
 
   [@@@end]
 

@@ -1,6 +1,39 @@
 open! Import
 
 type t = Less | Equal | Greater [@@deriving_inline compare, hash, enumerate, sexp]
+let compare : t -> t -> int =
+  fun a__001_  ->
+  fun b__002_  ->
+    if Ppx_compare_lib.phys_equal a__001_ b__002_
+    then 0
+    else
+      (match (a__001_, b__002_) with
+       | (Less ,Less ) -> 0
+       | (Less ,_) -> (-1)
+       | (_,Less ) -> 1
+       | (Equal ,Equal ) -> 0
+       | (Equal ,_) -> (-1)
+       | (_,Equal ) -> 1
+       | (Greater ,Greater ) -> 0)
+
+let (hash_fold_t :
+       Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+  (fun hsv  ->
+     fun arg  ->
+       match arg with
+       | Less  -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
+       | Equal  -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
+       | Greater  -> Ppx_hash_lib.Std.Hash.fold_int hsv 2 : Ppx_hash_lib.Std.Hash.state
+       ->
+         t ->
+       Ppx_hash_lib.Std.Hash.state)
+
+let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+  fun arg  ->
+    Ppx_hash_lib.Std.Hash.get_hash_value
+      (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
+
+let all : t list = [Less; Equal; Greater]
 let t_of_sexp : Sexplib.Sexp.t -> t =
   let _tp_loc = "src/ordering.ml.t"  in
   function
@@ -23,39 +56,6 @@ let sexp_of_t : t -> Sexplib.Sexp.t =
   | Less  -> Sexplib.Sexp.Atom "Less"
   | Equal  -> Sexplib.Sexp.Atom "Equal"
   | Greater  -> Sexplib.Sexp.Atom "Greater"
-let all : t list = [Less; Equal; Greater]
-let (hash_fold_t :
-       Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-  (fun hsv  ->
-     fun arg  ->
-       match arg with
-       | Less  -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
-       | Equal  -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
-       | Greater  -> Ppx_hash_lib.Std.Hash.fold_int hsv 2 : Ppx_hash_lib.Std.Hash.state
-       ->
-         t ->
-       Ppx_hash_lib.Std.Hash.state)
-
-let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-  fun arg  ->
-    Ppx_hash_lib.Std.Hash.get_hash_value
-      (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
-
-let compare : t -> t -> int =
-  fun a__001_  ->
-  fun b__002_  ->
-    if Ppx_compare_lib.phys_equal a__001_ b__002_
-    then 0
-    else
-      (match (a__001_, b__002_) with
-       | (Less ,Less ) -> 0
-       | (Less ,_) -> (-1)
-       | (_,Less ) -> 1
-       | (Equal ,Equal ) -> 0
-       | (Equal ,_) -> (-1)
-       | (_,Equal ) -> 1
-       | (Greater ,Greater ) -> 0)
-
 [@@@end]
 
 let equal a b = compare a b = 0

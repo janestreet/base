@@ -6,10 +6,10 @@ type t = Sign0.t = Neg | Zero | Pos [@@deriving_inline enumerate, hash]
 include
 sig
   [@@@ocaml.warning "-32"]
+  val all : t list
   val hash_fold_t :
     Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-  val all : t list
 end
 [@@@end]
 

@@ -8,24 +8,20 @@ type 'a t = 'a ref = { mutable contents : 'a }
 
 include (struct
   type 'a t = 'a ref [@@deriving_inline compare, sexp]
+  let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref
   let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
-    let _tp_loc = "src/ref.ml.t"  in
-    fun _of_a  -> fun t  -> (ref_of_sexp _of_a) t
+    ref_of_sexp
   let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
-    fun _of_a  -> fun v  -> (sexp_of_ref _of_a) v
-  let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-    fun _cmp__a  ->
-    fun a__001_  -> fun b__002_  -> compare_ref _cmp__a a__001_ b__002_
-
+    sexp_of_ref
   [@@@end]
 end : sig
            type 'a t = 'a ref [@@deriving_inline compare, sexp]
            include
            sig
              [@@@ocaml.warning "-32"]
+             val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
              val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
              val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
-             val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
            end
            [@@@end]
          end with type 'a t := 'a t)

@@ -5,11 +5,11 @@ module type S = sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val t_of_sexp : Sexplib.Sexp.t -> t
-    val sexp_of_t : t -> Sexplib.Sexp.t
     val hash_fold_t :
       Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
     val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+    val t_of_sexp : Sexplib.Sexp.t -> t
+    val sexp_of_t : t -> Sexplib.Sexp.t
   end
   [@@@end]
   include Stringable    .S with type t := t
@@ -22,12 +22,12 @@ module Make (T : sig
     include
     sig
       [@@@ocaml.warning "-32"]
-      val t_of_sexp : Sexplib.Sexp.t -> t
-      val sexp_of_t : t -> Sexplib.Sexp.t
+      val compare : t -> t -> int
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-      val compare : t -> t -> int
+      val t_of_sexp : Sexplib.Sexp.t -> t
+      val sexp_of_t : t -> Sexplib.Sexp.t
     end
     [@@@end]
     include Stringable.S with type t := t
@@ -43,12 +43,12 @@ module Make_using_comparator (T : sig
     include
     sig
       [@@@ocaml.warning "-32"]
-      val t_of_sexp : Sexplib.Sexp.t -> t
-      val sexp_of_t : t -> Sexplib.Sexp.t
+      val compare : t -> t -> int
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-      val compare : t -> t -> int
+      val t_of_sexp : Sexplib.Sexp.t -> t
+      val sexp_of_t : t -> Sexplib.Sexp.t
     end
     [@@@end]
     include Comparator.S with type t := t

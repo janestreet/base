@@ -87,10 +87,10 @@ module Make_hex (I : sig
     include
     sig
       [@@@ocaml.warning "-32"]
+      val compare : t -> t -> int
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-      val compare : t -> t -> int
     end
     [@@@end]
 

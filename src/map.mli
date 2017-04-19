@@ -281,14 +281,14 @@ module Symmetric_diff_element : sig
   include
   sig
     [@@@ocaml.warning "-32"]
+    val compare :
+      ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k,'v) t -> ('k,'v) t -> int
     val t_of_sexp :
       (Sexplib.Sexp.t -> 'k) ->
       (Sexplib.Sexp.t -> 'v) -> Sexplib.Sexp.t -> ('k,'v) t
     val sexp_of_t :
       ('k -> Sexplib.Sexp.t) ->
       ('v -> Sexplib.Sexp.t) -> ('k,'v) t -> Sexplib.Sexp.t
-    val compare :
-      ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k,'v) t -> ('k,'v) t -> int
   end
   [@@@end]
 end

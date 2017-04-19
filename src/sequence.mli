@@ -35,8 +35,8 @@ type +'a t [@@deriving_inline compare, sexp_of]
 include
 sig
   [@@@ocaml.warning "-32"]
-  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
 end
 [@@@end]
 type 'a sequence = 'a t
@@ -130,19 +130,19 @@ module Merge_with_duplicates_element : sig
   include
   sig
     [@@@ocaml.warning "-32"]
+    val compare :
+      ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+    val hash_fold_t :
+      (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
+      (Ppx_hash_lib.Std.Hash.state -> 'b -> Ppx_hash_lib.Std.Hash.state) ->
+      Ppx_hash_lib.Std.Hash.state ->
+      ('a,'b) t -> Ppx_hash_lib.Std.Hash.state
     val t_of_sexp :
       (Sexplib.Sexp.t -> 'a) ->
       (Sexplib.Sexp.t -> 'b) -> Sexplib.Sexp.t -> ('a,'b) t
     val sexp_of_t :
       ('a -> Sexplib.Sexp.t) ->
       ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
-    val hash_fold_t :
-      (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
-      (Ppx_hash_lib.Std.Hash.state -> 'b -> Ppx_hash_lib.Std.Hash.state) ->
-      Ppx_hash_lib.Std.Hash.state ->
-      ('a,'b) t -> Ppx_hash_lib.Std.Hash.state
-    val compare :
-      ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
   end
   [@@@end]
 end

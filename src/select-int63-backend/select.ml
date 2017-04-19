@@ -3,7 +3,15 @@ let () =
     try
       match Sys.argv with
       | [|_; "-portable-int63"; x; "-arch-sixtyfour"; y; "-o"; fn|] ->
-        (bool_of_string x, bool_of_string y, fn)
+        let x =
+          match x with
+          | "true" | "!false" -> true
+          | "false" | "!true" -> false
+          | _ -> failwith "invalid value for -portable-int63"
+        in
+        (x,
+         bool_of_string y,
+         fn)
       | _ -> raise Exit
     with _ ->
       failwith "bad command line arguments"

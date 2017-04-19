@@ -1,0 +1,72 @@
+{1 Base}
+
+The full API is browsable {{!Base}{b here}}.
+
+Base is a standard library for OCaml. It provides a standard set of general
+purpose modules that are well-tested, performant, and fully-portable across any
+environment that can run OCaml code. Unlike other standard library projects,
+Base is meant to be used as a wholesale replacement of the standard library
+distributed with the OCaml compiler. In particular it makes different choices
+and doesn't re-export features that are not fully portable such as I/O, which
+are left to other libraries.
+
+{2 Using the OCaml standard library with Base}
+
+Base is intended as a full stdlib replacement.  As a result, after an
+[open Base], all the modules, values, types, ... coming from the OCaml
+standard library that one normally gets in the default environment are
+deprecated.
+
+In order to access these values, one must use the [Caml] library,
+which re-exports them all through the toplevel name {!module:Caml}:
+[Caml.String], [Caml.print_string], ...
+
+The new modules (and values) made available by Base are documented
+{{!Base}here}.
+
+{2 Differences between Base and the OCaml standard library}
+
+Programmers who are used to the OCaml standard library should read
+through this section to understand major differences between the two
+libraries that one should be aware of when switching to Base.
+
+{3 Comparison operators}
+
+The comparison operators exposed by the OCaml standard library are
+polymorphic:
+
+{[
+val compare : 'a -> 'a -> int
+val ( <= ) : 'a -> 'a -> bool
+(* ... *)
+]}
+
+What they implement is structural comparison of the runtime
+representation of values. Since these are often error-prone,
+i.e. they don't correspond to what the user expects, they are not
+exposed directly by Base.
+
+To use polymorphic comparison with Base, one should use the
+{!Polymorphic_compare} module. The default comparison operators exposed
+by Base are the integer ones, just like the default arithmetic
+operators are the integer ones.
+
+The recommended way to compare arbitrary complex data structures is to
+use the specific [compare] functions. For instance:
+
+{[
+List.compare String.compare x y
+]}
+
+The [ppx_compare] rewriter offers an alternative way to write this:
+
+{[
+[%compare: string list] x y
+]}
+
+{2 Roadmap}
+
+Base is still under active development and there are several missing
+feature that are yet to be added. Consult the
+[[https://github.com/janestreet/base/ROADMAP.md][roadmap]] to see what
+is happening.

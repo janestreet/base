@@ -2,10 +2,9 @@ open! Import
 
 type 'a t = 'a lazy_t [@@deriving_inline sexp]
 let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
-  let _tp_loc = "src/lazy.ml.t"  in
-  fun _of_a  -> fun t  -> (lazy_t_of_sexp _of_a) t
+  lazy_t_of_sexp
 let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
-  fun _of_a  -> fun v  -> (sexp_of_lazy_t _of_a) v
+  sexp_of_lazy_t
 [@@@end]
 
 include (Caml.Lazy : module type of Caml.Lazy with type 'a t := 'a t)

@@ -1,26 +1,16 @@
 open! Import
 
 type 'a t = 'a option [@@deriving_inline sexp, compare, hash]
+let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
+  option_of_sexp
+let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+  sexp_of_option
+let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
 let hash_fold_t :
   'a .
     (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
   Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
-  =
-  fun _hash_fold_a  ->
-  fun hsv  ->
-  fun arg  ->
-    hash_fold_option (fun hsv  -> fun arg  -> _hash_fold_a hsv arg) hsv
-      arg
-
-let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-  fun _cmp__a  ->
-  fun a__001_  -> fun b__002_  -> compare_option _cmp__a a__001_ b__002_
-
-let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
-  let _tp_loc = "src/option.ml.t"  in
-  fun _of_a  -> fun t  -> (option_of_sexp _of_a) t
-let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
-  fun _of_a  -> fun v  -> (sexp_of_option _of_a) v
+  = hash_fold_option
 [@@@end]
 
 let is_none = function None -> true | _ -> false

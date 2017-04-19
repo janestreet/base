@@ -14,17 +14,16 @@ let raise_s = Error.raise_s
 
 module T = struct
   type t = float [@@deriving_inline hash, sexp]
-  let t_of_sexp : Sexplib.Sexp.t -> t =
-    let _tp_loc = "src/float.ml.T.t"  in fun t  -> float_of_sexp t
-  let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> sexp_of_float v
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> hash_fold_float hsv arg
+    hash_fold_float
   let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
+  let t_of_sexp : Sexplib.Sexp.t -> t = float_of_sexp
+  let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_float
   [@@@end]
   let compare (x : t) y = compare x y
   let equal (x : t) y = x = y
@@ -623,6 +622,28 @@ module Class = struct
     | Subnormal
     | Zero
   [@@deriving_inline compare, enumerate, sexp]
+  let compare : t -> t -> int =
+    fun a__001_  ->
+    fun b__002_  ->
+      if Ppx_compare_lib.phys_equal a__001_ b__002_
+      then 0
+      else
+        (match (a__001_, b__002_) with
+         | (Infinite ,Infinite ) -> 0
+         | (Infinite ,_) -> (-1)
+         | (_,Infinite ) -> 1
+         | (Nan ,Nan ) -> 0
+         | (Nan ,_) -> (-1)
+         | (_,Nan ) -> 1
+         | (Normal ,Normal ) -> 0
+         | (Normal ,_) -> (-1)
+         | (_,Normal ) -> 1
+         | (Subnormal ,Subnormal ) -> 0
+         | (Subnormal ,_) -> (-1)
+         | (_,Subnormal ) -> 1
+         | (Zero ,Zero ) -> 0)
+
+  let all : t list = [Infinite; Nan; Normal; Subnormal; Zero]
   let t_of_sexp : Sexplib.Sexp.t -> t =
     let _tp_loc = "src/float.ml.Class.t"  in
     function
@@ -653,28 +674,6 @@ module Class = struct
     | Normal  -> Sexplib.Sexp.Atom "Normal"
     | Subnormal  -> Sexplib.Sexp.Atom "Subnormal"
     | Zero  -> Sexplib.Sexp.Atom "Zero"
-  let all : t list = [Infinite; Nan; Normal; Subnormal; Zero]
-  let compare : t -> t -> int =
-    fun a__001_  ->
-    fun b__002_  ->
-      if Ppx_compare_lib.phys_equal a__001_ b__002_
-      then 0
-      else
-        (match (a__001_, b__002_) with
-         | (Infinite ,Infinite ) -> 0
-         | (Infinite ,_) -> (-1)
-         | (_,Infinite ) -> 1
-         | (Nan ,Nan ) -> 0
-         | (Nan ,_) -> (-1)
-         | (_,Nan ) -> 1
-         | (Normal ,Normal ) -> 0
-         | (Normal ,_) -> (-1)
-         | (_,Normal ) -> 1
-         | (Subnormal ,Subnormal ) -> 0
-         | (Subnormal ,_) -> (-1)
-         | (_,Subnormal ) -> 1
-         | (Zero ,Zero ) -> 0)
-
   [@@@end]
 
   let to_string t = string_of_sexp (sexp_of_t t)

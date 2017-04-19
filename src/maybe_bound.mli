@@ -6,9 +6,9 @@ type 'a t = Incl of 'a | Excl of 'a | Unbounded [@@deriving_inline enumerate, se
 include
 sig
   [@@@ocaml.warning "-32"]
+  val all : 'a list -> 'a t list
   val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
   val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
-  val all : 'a list -> 'a t list
 end
 [@@@end]
 
@@ -39,15 +39,15 @@ type interval_comparison =
 include
 sig
   [@@@ocaml.warning "-32"]
+  val interval_comparison_of_sexp : Sexplib.Sexp.t -> interval_comparison
+  val sexp_of_interval_comparison : interval_comparison -> Sexplib.Sexp.t
+  val compare_interval_comparison :
+    interval_comparison -> interval_comparison -> int
   val hash_fold_interval_comparison :
     Ppx_hash_lib.Std.Hash.state ->
     interval_comparison -> Ppx_hash_lib.Std.Hash.state
   val hash_interval_comparison :
     interval_comparison -> Ppx_hash_lib.Std.Hash.hash_value
-  val compare_interval_comparison :
-    interval_comparison -> interval_comparison -> int
-  val interval_comparison_of_sexp : Sexplib.Sexp.t -> interval_comparison
-  val sexp_of_interval_comparison : interval_comparison -> Sexplib.Sexp.t
 end
 [@@@end]
 

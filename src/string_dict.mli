@@ -9,10 +9,10 @@ type 'a t [@@deriving_inline hash, compare]
 include
 sig
   [@@@ocaml.warning "-32"]
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
   val hash_fold_t :
     (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
     Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 end
 [@@@end]
 

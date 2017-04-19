@@ -1,6 +1,21 @@
 open! Import
 
 type 'a t = Incl of 'a | Excl of 'a | Unbounded [@@deriving_inline enumerate, sexp]
+let all : 'a . 'a list -> 'a t list =
+  fun _all_of_a  ->
+    List.append
+      (let rec map l acc =
+         match l with
+         | [] -> List.rev acc
+         | enumerate__001_::l -> map l ((Incl enumerate__001_) :: acc)  in
+       map _all_of_a [])
+      (List.append
+         (let rec map l acc =
+            match l with
+            | [] -> List.rev acc
+            | enumerate__002_::l -> map l ((Excl enumerate__002_) :: acc)  in
+          map _all_of_a []) [Unbounded])
+
 let t_of_sexp : type a.(Sexplib.Sexp.t -> a) -> Sexplib.Sexp.t -> a t =
   let _tp_loc = "src/maybe_bound.ml.t"  in
   fun _of_a  ->
@@ -39,21 +54,6 @@ let sexp_of_t : type a.(a -> Sexplib.Sexp.t) -> a t -> Sexplib.Sexp.t =
       Sexplib.Sexp.List [Sexplib.Sexp.Atom "Excl"; v0]
     | Unbounded  -> Sexplib.Sexp.Atom "Unbounded"
 
-let all : 'a . 'a list -> 'a t list =
-  fun _all_of_a  ->
-    List.append
-      (let rec map l acc =
-         match l with
-         | [] -> List.rev acc
-         | enumerate__001_::l -> map l ((Incl enumerate__001_) :: acc)  in
-       map _all_of_a [])
-      (List.append
-         (let rec map l acc =
-            match l with
-            | [] -> List.rev acc
-            | enumerate__002_::l -> map l ((Excl enumerate__002_) :: acc)  in
-          map _all_of_a []) [Unbounded])
-
 [@@@end]
 
 type interval_comparison =
@@ -61,41 +61,6 @@ type interval_comparison =
   | In_range
   | Above_upper_bound
 [@@deriving_inline sexp, compare, hash]
-let (hash_fold_interval_comparison :
-       Ppx_hash_lib.Std.Hash.state ->
-     interval_comparison -> Ppx_hash_lib.Std.Hash.state)
-  =
-  (fun hsv  ->
-     fun arg  ->
-       match arg with
-       | Below_lower_bound  -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
-       | In_range  -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
-       | Above_upper_bound  -> Ppx_hash_lib.Std.Hash.fold_int hsv 2 :
-                                 Ppx_hash_lib.Std.Hash.state ->
-       interval_comparison -> Ppx_hash_lib.Std.Hash.state)
-
-let (hash_interval_comparison :
-       interval_comparison -> Ppx_hash_lib.Std.Hash.hash_value) =
-  fun arg  ->
-    Ppx_hash_lib.Std.Hash.get_hash_value
-      (hash_fold_interval_comparison (Ppx_hash_lib.Std.Hash.create ()) arg)
-
-let compare_interval_comparison :
-  interval_comparison -> interval_comparison -> int =
-  fun a__003_  ->
-  fun b__004_  ->
-    if Ppx_compare_lib.phys_equal a__003_ b__004_
-    then 0
-    else
-      (match (a__003_, b__004_) with
-       | (Below_lower_bound ,Below_lower_bound ) -> 0
-       | (Below_lower_bound ,_) -> (-1)
-       | (_,Below_lower_bound ) -> 1
-       | (In_range ,In_range ) -> 0
-       | (In_range ,_) -> (-1)
-       | (_,In_range ) -> 1
-       | (Above_upper_bound ,Above_upper_bound ) -> 0)
-
 let interval_comparison_of_sexp : Sexplib.Sexp.t -> interval_comparison =
   let _tp_loc = "src/maybe_bound.ml.interval_comparison"  in
   function
@@ -122,6 +87,41 @@ let sexp_of_interval_comparison : interval_comparison -> Sexplib.Sexp.t =
   | Below_lower_bound  -> Sexplib.Sexp.Atom "Below_lower_bound"
   | In_range  -> Sexplib.Sexp.Atom "In_range"
   | Above_upper_bound  -> Sexplib.Sexp.Atom "Above_upper_bound"
+let compare_interval_comparison :
+  interval_comparison -> interval_comparison -> int =
+  fun a__003_  ->
+  fun b__004_  ->
+    if Ppx_compare_lib.phys_equal a__003_ b__004_
+    then 0
+    else
+      (match (a__003_, b__004_) with
+       | (Below_lower_bound ,Below_lower_bound ) -> 0
+       | (Below_lower_bound ,_) -> (-1)
+       | (_,Below_lower_bound ) -> 1
+       | (In_range ,In_range ) -> 0
+       | (In_range ,_) -> (-1)
+       | (_,In_range ) -> 1
+       | (Above_upper_bound ,Above_upper_bound ) -> 0)
+
+let (hash_fold_interval_comparison :
+       Ppx_hash_lib.Std.Hash.state ->
+     interval_comparison -> Ppx_hash_lib.Std.Hash.state)
+  =
+  (fun hsv  ->
+     fun arg  ->
+       match arg with
+       | Below_lower_bound  -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
+       | In_range  -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
+       | Above_upper_bound  -> Ppx_hash_lib.Std.Hash.fold_int hsv 2 :
+                                 Ppx_hash_lib.Std.Hash.state ->
+       interval_comparison -> Ppx_hash_lib.Std.Hash.state)
+
+let (hash_interval_comparison :
+       interval_comparison -> Ppx_hash_lib.Std.Hash.hash_value) =
+  fun arg  ->
+    Ppx_hash_lib.Std.Hash.get_hash_value
+      (hash_fold_interval_comparison (Ppx_hash_lib.Std.Hash.create ()) arg)
+
 [@@@end]
 
 let map t ~f =

@@ -4,9 +4,9 @@ type 'a t = 'a array [@@deriving_inline compare, sexp]
 include
 sig
   [@@@ocaml.warning "-32"]
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
   val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
   val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 end
 [@@@end]
 

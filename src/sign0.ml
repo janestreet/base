@@ -3,39 +3,6 @@
 open! Import
 
 type t = Neg | Zero | Pos [@@deriving_inline sexp, compare, hash, enumerate]
-let all : t list = [Neg; Zero; Pos]
-let (hash_fold_t :
-       Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-  (fun hsv  ->
-     fun arg  ->
-       match arg with
-       | Neg  -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
-       | Zero  -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
-       | Pos  -> Ppx_hash_lib.Std.Hash.fold_int hsv 2 : Ppx_hash_lib.Std.Hash.state
-       ->
-         t ->
-       Ppx_hash_lib.Std.Hash.state)
-
-let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-  fun arg  ->
-    Ppx_hash_lib.Std.Hash.get_hash_value
-      (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
-
-let compare : t -> t -> int =
-  fun a__001_  ->
-  fun b__002_  ->
-    if Ppx_compare_lib.phys_equal a__001_ b__002_
-    then 0
-    else
-      (match (a__001_, b__002_) with
-       | (Neg ,Neg ) -> 0
-       | (Neg ,_) -> (-1)
-       | (_,Neg ) -> 1
-       | (Zero ,Zero ) -> 0
-       | (Zero ,_) -> (-1)
-       | (_,Zero ) -> 1
-       | (Pos ,Pos ) -> 0)
-
 let t_of_sexp : Sexplib.Sexp.t -> t =
   let _tp_loc = "src/sign0.ml.t"  in
   function
@@ -58,6 +25,39 @@ let sexp_of_t : t -> Sexplib.Sexp.t =
   | Neg  -> Sexplib.Sexp.Atom "Neg"
   | Zero  -> Sexplib.Sexp.Atom "Zero"
   | Pos  -> Sexplib.Sexp.Atom "Pos"
+let compare : t -> t -> int =
+  fun a__001_  ->
+  fun b__002_  ->
+    if Ppx_compare_lib.phys_equal a__001_ b__002_
+    then 0
+    else
+      (match (a__001_, b__002_) with
+       | (Neg ,Neg ) -> 0
+       | (Neg ,_) -> (-1)
+       | (_,Neg ) -> 1
+       | (Zero ,Zero ) -> 0
+       | (Zero ,_) -> (-1)
+       | (_,Zero ) -> 1
+       | (Pos ,Pos ) -> 0)
+
+let (hash_fold_t :
+       Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+  (fun hsv  ->
+     fun arg  ->
+       match arg with
+       | Neg  -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
+       | Zero  -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
+       | Pos  -> Ppx_hash_lib.Std.Hash.fold_int hsv 2 : Ppx_hash_lib.Std.Hash.state
+       ->
+         t ->
+       Ppx_hash_lib.Std.Hash.state)
+
+let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+  fun arg  ->
+    Ppx_hash_lib.Std.Hash.get_hash_value
+      (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
+
+let all : t list = [Neg; Zero; Pos]
 [@@@end]
 
 let of_string s = t_of_sexp (sexp_of_string s)

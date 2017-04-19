@@ -53,8 +53,8 @@ module Make (M : sig
     include
     sig
       [@@@ocaml.warning "-32"]
-      val sexp_of_t : t -> Sexplib.Sexp.t
       val compare : t -> t -> int
+      val sexp_of_t : t -> Sexplib.Sexp.t
     end
     [@@@end]
   end) : S with type t := M.t
@@ -85,8 +85,8 @@ module Derived (M : sig
     include
     sig
       [@@@ocaml.warning "-32"]
-      val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
       val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+      val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
     end
     [@@@end]
   end) : Derived with type 'a t := 'a M.t
@@ -108,11 +108,11 @@ module Derived2 (M : sig
     include
     sig
       [@@@ocaml.warning "-32"]
+      val compare :
+        ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
       val sexp_of_t :
         ('a -> Sexplib.Sexp.t) ->
         ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
-      val compare :
-        ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
     end
     [@@@end]
   end) : Derived2 with type ('a, 'b) t := ('a, 'b) M.t

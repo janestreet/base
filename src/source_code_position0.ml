@@ -8,6 +8,36 @@ module T = struct
       pos_cnum : int;
     }
   [@@deriving_inline compare, hash, sexp]
+  let compare : t -> t -> int =
+    fun a__001_  ->
+    fun b__002_  ->
+      if Ppx_compare_lib.phys_equal a__001_ b__002_
+      then 0
+      else
+        (match compare_string a__001_.pos_fname b__002_.pos_fname with
+         | 0 ->
+           (match compare_int a__001_.pos_lnum b__002_.pos_lnum with
+            | 0 ->
+              (match compare_int a__001_.pos_bol b__002_.pos_bol with
+               | 0 -> compare_int a__001_.pos_cnum b__002_.pos_cnum
+               | n -> n)
+            | n -> n)
+         | n -> n)
+
+  let (hash_fold_t :
+         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+    fun hsv  ->
+    fun arg  ->
+      hash_fold_int
+        (hash_fold_int
+           (hash_fold_int (hash_fold_string hsv arg.pos_fname) arg.pos_lnum)
+           arg.pos_bol) arg.pos_cnum
+
+  let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+    fun arg  ->
+      Ppx_hash_lib.Std.Hash.get_hash_value
+        (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
+
   let t_of_sexp : Sexplib.Sexp.t -> t =
     let _tp_loc = "src/source_code_position0.ml.T.t"  in
     function
@@ -118,36 +148,6 @@ module T = struct
       let arg = sexp_of_string v_pos_fname  in
       let bnd = Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_fname"; arg]  in
       let bnds = bnd :: bnds  in Sexplib.Sexp.List bnds
-
-  let (hash_fold_t :
-         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  ->
-    fun arg  ->
-      hash_fold_int
-        (hash_fold_int
-           (hash_fold_int (hash_fold_string hsv arg.pos_fname) arg.pos_lnum)
-           arg.pos_bol) arg.pos_cnum
-
-  let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    fun arg  ->
-      Ppx_hash_lib.Std.Hash.get_hash_value
-        (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
-
-  let compare : t -> t -> int =
-    fun a__001_  ->
-    fun b__002_  ->
-      if Ppx_compare_lib.phys_equal a__001_ b__002_
-      then 0
-      else
-        (match compare_string a__001_.pos_fname b__002_.pos_fname with
-         | 0 ->
-           (match compare_int a__001_.pos_lnum b__002_.pos_lnum with
-            | 0 ->
-              (match compare_int a__001_.pos_bol b__002_.pos_bol with
-               | 0 -> compare_int a__001_.pos_cnum b__002_.pos_cnum
-               | n -> n)
-            | n -> n)
-         | n -> n)
 
   [@@@end]
 end

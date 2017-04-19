@@ -1,11 +1,11 @@
 open! Import
 
 type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, hash, sexp]
-let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
-  let _tp_loc = "src/or_error.ml.t"  in
-  fun _of_a  -> fun t  -> (Result.t_of_sexp _of_a Error.t_of_sexp) t
-let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
-  fun _of_a  -> fun v  -> (Result.sexp_of_t _of_a Error.sexp_of_t) v
+let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
+  fun _cmp__a  ->
+  fun a__001_  ->
+  fun b__002_  -> Result.compare _cmp__a Error.compare a__001_ b__002_
+
 let hash_fold_t :
   'a .
     (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
@@ -13,15 +13,13 @@ let hash_fold_t :
   =
   fun _hash_fold_a  ->
   fun hsv  ->
-  fun arg  ->
-    Result.hash_fold_t (fun hsv  -> fun arg  -> _hash_fold_a hsv arg)
-      (fun hsv  -> fun arg  -> Error.hash_fold_t hsv arg) hsv arg
+  fun arg  -> Result.hash_fold_t _hash_fold_a Error.hash_fold_t hsv arg
 
-let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-  fun _cmp__a  ->
-  fun a__001_  ->
-  fun b__002_  -> Result.compare _cmp__a Error.compare a__001_ b__002_
-
+let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
+  let _tp_loc = "src/or_error.ml.t"  in
+  fun _of_a  -> fun t  -> Result.t_of_sexp _of_a Error.t_of_sexp t
+let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+  fun _of_a  -> fun v  -> Result.sexp_of_t _of_a Error.sexp_of_t v
 [@@@end]
 
 let invariant invariant_a t =

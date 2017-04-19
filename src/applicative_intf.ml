@@ -38,6 +38,13 @@ module type Basic = sig
   val map : [`Define_using_apply | `Custom of ('a t -> f:('a -> 'b) -> 'b t)]
 end
 
+module type Basic_using_map2 = sig
+  type 'a t
+  val return : 'a -> 'a t
+  val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
+  val map : [`Define_using_map2 | `Custom of ('a t -> f:('a -> 'b) -> 'b t)]
+end
+
 module type S = sig
 
   type 'a t
@@ -143,6 +150,13 @@ module type Basic2 = sig
   val return : 'a -> ('a, _) t
   val apply : ('a -> 'b, 'e) t -> ('a, 'e) t -> ('b, 'e) t
   val map : [`Define_using_apply | `Custom of (('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t)]
+end
+
+module type Basic2_using_map2 = sig
+  type ('a, 'e) t
+  val return : 'a -> ('a, _) t
+  val map2 : ('a, 'e) t -> ('b, 'e) t -> f:('a -> 'b -> 'c) -> ('c, 'e) t
+  val map : [`Define_using_map2 | `Custom of (('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t)]
 end
 
 module type S2 = sig

@@ -7,8 +7,8 @@ module Validate
        include
        sig
          [@@@ocaml.warning "-32"]
-         val sexp_of_t : t -> Sexplib.Sexp.t
          val compare : t -> t -> int
+         val sexp_of_t : t -> Sexplib.Sexp.t
        end
        [@@@end] end) : Validate with type t := T.t =
 struct
@@ -32,8 +32,8 @@ module With_zero
        include
        sig
          [@@@ocaml.warning "-32"]
-         val sexp_of_t : t -> Sexplib.Sexp.t
          val compare : t -> t -> int
+         val sexp_of_t : t -> Sexplib.Sexp.t
        end
        [@@@end]
        val zero : t
@@ -63,8 +63,8 @@ module Validate_with_zero
        include
        sig
          [@@@ocaml.warning "-32"]
-         val sexp_of_t : t -> Sexplib.Sexp.t
          val compare : t -> t -> int
+         val sexp_of_t : t -> Sexplib.Sexp.t
        end
        [@@@end]
        val zero : t
@@ -79,7 +79,7 @@ module Poly (T : sig type t [@@deriving_inline sexp_of]
     [@@@end] end) = struct
   module Replace_polymorphic_compare = struct
     type t = T.t [@@deriving_inline sexp_of]
-    let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> T.sexp_of_t v
+    let sexp_of_t : t -> Sexplib.Sexp.t = T.sexp_of_t
     [@@@end]
     include Polymorphic_compare
   end
@@ -110,9 +110,8 @@ module Poly (T : sig type t [@@deriving_inline sexp_of]
   end
   include C
   include Validate (struct type nonrec t = t [@@deriving_inline compare, sexp_of]
-      let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> sexp_of_t v
-      let compare : t -> t -> int =
-        fun a__001_  -> fun b__002_  -> compare a__001_ b__002_
+      let compare : t -> t -> int = compare
+      let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_t
       [@@@end] end)
 end
 
@@ -173,8 +172,8 @@ module Make (T : sig
     include
     sig
       [@@@ocaml.warning "-32"]
-      val sexp_of_t : t -> Sexplib.Sexp.t
       val compare : t -> t -> int
+      val sexp_of_t : t -> Sexplib.Sexp.t
     end
     [@@@end]
   end) = Make_using_comparator(struct
@@ -194,7 +193,7 @@ module Inherit
      end) =
   Make (struct
     type t = T.t [@@deriving_inline sexp_of]
-    let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> T.sexp_of_t v
+    let sexp_of_t : t -> Sexplib.Sexp.t = T.sexp_of_t
     [@@@end]
     let compare t t' = C.compare (T.component t) (T.component t')
   end)

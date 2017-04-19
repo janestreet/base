@@ -12,17 +12,16 @@ let stage = Staged.stage
 
 module T = struct
   type t = string [@@deriving_inline hash, sexp]
-  let t_of_sexp : Sexplib.Sexp.t -> t =
-    let _tp_loc = "src/string.ml.T.t"  in fun t  -> string_of_sexp t
-  let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> sexp_of_string v
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> hash_fold_string hsv arg
+    hash_fold_string
   let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
+  let t_of_sexp : Sexplib.Sexp.t -> t = string_of_sexp
+  let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_string
   [@@@end]
   let compare = compare
 end
@@ -60,9 +59,8 @@ let is_prefix_gen =
 module Caseless = struct
   module T = struct
     type t = string [@@deriving_inline sexp]
-    let t_of_sexp : Sexplib.Sexp.t -> t =
-      let _tp_loc = "src/string.ml.Caseless.T.t"  in fun t  -> string_of_sexp t
-    let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> sexp_of_string v
+    let t_of_sexp : Sexplib.Sexp.t -> t = string_of_sexp
+    let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_string
     [@@@end]
 
     (* This function gives the same result as [compare (lowercase s1) (lowercase s2)]. It

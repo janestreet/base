@@ -2,17 +2,16 @@ open! Import
 
 module T = struct
   type t = int [@@deriving_inline hash, sexp]
-  let t_of_sexp : Sexplib.Sexp.t -> t =
-    let _tp_loc = "src/int.ml.T.t"  in fun t  -> int_of_sexp t
-  let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> sexp_of_int v
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> hash_fold_int hsv arg
+    hash_fold_int
   let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
+  let t_of_sexp : Sexplib.Sexp.t -> t = int_of_sexp
+  let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_int
   [@@@end]
 
   let compare (x : t) y = Bool.to_int (x > y) - Bool.to_int (x < y)
@@ -123,16 +122,15 @@ include Conv.Make (T)
 include Conv.Make_hex(struct
 
     type t = int [@@deriving_inline compare, hash]
+    let compare : t -> t -> int = compare_int
     let (hash_fold_t :
            Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      fun hsv  -> fun arg  -> hash_fold_int hsv arg
+      hash_fold_int
     let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
       fun arg  ->
         Ppx_hash_lib.Std.Hash.get_hash_value
           (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-    let compare : t -> t -> int =
-      fun a__001_  -> fun b__002_  -> compare_int a__001_ b__002_
     [@@@end]
 
     let zero = zero

@@ -4,20 +4,18 @@ let invalid_argf = Printf.invalid_argf
 
 module T = struct
   type t = bool [@@deriving_inline compare, enumerate, hash, sexp]
-  let t_of_sexp : Sexplib.Sexp.t -> t =
-    let _tp_loc = "src/bool.ml.T.t"  in fun t  -> bool_of_sexp t
-  let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> sexp_of_bool v
+  let compare : t -> t -> int = compare_bool
+  let all : t list = [false; true]
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  -> fun arg  -> hash_fold_bool hsv arg
+    hash_fold_bool
   let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
         (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-  let all : t list = [false; true]
-  let compare : t -> t -> int =
-    fun a__001_  -> fun b__002_  -> compare_bool a__001_ b__002_
+  let t_of_sexp : Sexplib.Sexp.t -> t = bool_of_sexp
+  let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_bool
   [@@@end]
 
   (* we use physical equality here because for bools it is the same *)

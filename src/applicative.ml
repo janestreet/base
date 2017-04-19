@@ -35,9 +35,26 @@ module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = struct
   end
 end
 
-module Make (X : Basic) : S with type 'a t := 'a X.t = Make2 (struct
+module Make (X : Basic) : S with type 'a t := 'a X.t =
+  Make2 (struct
     type ('a, 'e) t = 'a X.t
     include (X : Basic with type 'a t := 'a X.t)
+  end)
+
+module Make2_using_map2 (X : Basic2_using_map2) =
+  Make2 (struct
+    include X
+    let apply tf tx = map2 tf tx ~f:(fun f x -> f x)
+    let map =
+      match map with
+      | `Custom map        -> `Custom map
+      | `Define_using_map2 -> `Define_using_apply
+  end)
+
+module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t =
+  Make2_using_map2 (struct
+    type ('a, 'e) t = 'a X.t
+    include (X : Basic_using_map2 with type 'a t := 'a X.t)
   end)
 
 module Make_args' (X : S2) = struct

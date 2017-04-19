@@ -20,8 +20,7 @@ module String = String0
 
 (* A block. This module only assume that we can split a string into a list of blocks. *)
 type block = nativeint [@@deriving_inline compare]
-let compare_block : block -> block -> int =
-  fun a__001_  -> fun b__002_  -> compare_nativeint a__001_ b__002_
+let compare_block : block -> block -> int = compare_nativeint
 [@@@end]
 
 (* (compact) array of blocks *)
@@ -66,8 +65,7 @@ let find_exn t key =
 
 module Bmap = Caml.Map.Make(struct
     type t = block [@@deriving_inline compare]
-    let compare : t -> t -> int =
-      fun a__003_  -> fun b__004_  -> compare_block a__003_ b__004_
+    let compare : t -> t -> int = compare_block
     [@@@end]
   end)
 
@@ -135,6 +133,19 @@ module For_conv = struct
   open Hash.Builtin
 
   type 'a t = (string * 'a) list [@@deriving_inline compare, hash]
+  let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
+    fun _cmp__a  ->
+    fun a__005_  ->
+    fun b__006_  ->
+      compare_list
+        (fun a__007_  ->
+           fun b__008_  ->
+             let (t__009_,t__010_) = a__007_  in
+             let (t__011_,t__012_) = b__008_  in
+             match compare_string t__009_ t__011_ with
+             | 0 -> _cmp__a t__010_ t__012_
+             | n -> n) a__005_ b__006_
+
   let hash_fold_t :
     'a .
       (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
@@ -148,19 +159,6 @@ module For_conv = struct
            fun arg  ->
              let (e0,e1) = arg  in
              _hash_fold_a (hash_fold_string hsv e0) e1) hsv arg
-
-  let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-    fun _cmp__a  ->
-    fun a__005_  ->
-    fun b__006_  ->
-      compare_list
-        (fun a__007_  ->
-           fun b__008_  ->
-             let (t__009_,t__010_) = a__007_  in
-             let (t__011_,t__012_) = b__008_  in
-             match compare_string t__009_ t__011_ with
-             | 0 -> _cmp__a t__010_ t__012_
-             | n -> n) a__005_ b__006_
 
   [@@@end]
 

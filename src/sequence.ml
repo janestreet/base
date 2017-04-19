@@ -404,6 +404,47 @@ module Merge_with_duplicates_element = struct
     | Right of 'b
     | Both of 'a * 'b
   [@@deriving_inline compare, hash, sexp]
+  let compare :
+    'a 'b .
+         ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+    =
+    fun _cmp__a  ->
+    fun _cmp__b  ->
+    fun a__001_  ->
+    fun b__002_  ->
+      if Ppx_compare_lib.phys_equal a__001_ b__002_
+      then 0
+      else
+        (match (a__001_, b__002_) with
+         | (Left _a__003_,Left _b__004_) -> _cmp__a _a__003_ _b__004_
+         | (Left _,_) -> (-1)
+         | (_,Left _) -> 1
+         | (Right _a__005_,Right _b__006_) -> _cmp__b _a__005_ _b__006_
+         | (Right _,_) -> (-1)
+         | (_,Right _) -> 1
+         | (Both (_a__007_,_a__009_),Both (_b__008_,_b__010_)) ->
+           (match _cmp__a _a__007_ _b__008_ with
+            | 0 -> _cmp__b _a__009_ _b__010_
+            | n -> n))
+
+  let hash_fold_t : type a
+                           b.(Ppx_hash_lib.Std.Hash.state -> a -> Ppx_hash_lib.Std.Hash.state) ->
+    (Ppx_hash_lib.Std.Hash.state -> b -> Ppx_hash_lib.Std.Hash.state) ->
+    Ppx_hash_lib.Std.Hash.state -> (a,b) t -> Ppx_hash_lib.Std.Hash.state
+    =
+    fun _hash_fold_a  ->
+    fun _hash_fold_b  ->
+    fun hsv  ->
+    fun arg  ->
+      match arg with
+      | Left _a0 ->
+        _hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+      | Right _a0 ->
+        _hash_fold_b (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
+      | Both (_a0,_a1) ->
+        _hash_fold_b
+          (_hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 2) _a0) _a1
+
   let t_of_sexp : type a
                          b.(Sexplib.Sexp.t -> a) ->
     (Sexplib.Sexp.t -> b) -> Sexplib.Sexp.t -> (a,b) t
@@ -461,47 +502,6 @@ module Merge_with_duplicates_element = struct
 
         and v1 = _of_b v1
         in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Both"; v0; v1]
-
-  let hash_fold_t : type a
-                           b.(Ppx_hash_lib.Std.Hash.state -> a -> Ppx_hash_lib.Std.Hash.state) ->
-    (Ppx_hash_lib.Std.Hash.state -> b -> Ppx_hash_lib.Std.Hash.state) ->
-    Ppx_hash_lib.Std.Hash.state -> (a,b) t -> Ppx_hash_lib.Std.Hash.state
-    =
-    fun _hash_fold_a  ->
-    fun _hash_fold_b  ->
-    fun hsv  ->
-    fun arg  ->
-      match arg with
-      | Left _a0 ->
-        _hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
-      | Right _a0 ->
-        _hash_fold_b (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
-      | Both (_a0,_a1) ->
-        _hash_fold_b
-          (_hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 2) _a0) _a1
-
-  let compare :
-    'a 'b .
-         ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
-    =
-    fun _cmp__a  ->
-    fun _cmp__b  ->
-    fun a__001_  ->
-    fun b__002_  ->
-      if Ppx_compare_lib.phys_equal a__001_ b__002_
-      then 0
-      else
-        (match (a__001_, b__002_) with
-         | (Left _a__003_,Left _b__004_) -> _cmp__a _a__003_ _b__004_
-         | (Left _,_) -> (-1)
-         | (_,Left _) -> 1
-         | (Right _a__005_,Right _b__006_) -> _cmp__b _a__005_ _b__006_
-         | (Right _,_) -> (-1)
-         | (_,Right _) -> 1
-         | (Both (_a__007_,_a__009_),Both (_b__008_,_b__010_)) ->
-           (match _cmp__a _a__007_ _b__008_ with
-            | 0 -> _cmp__b _a__009_ _b__010_
-            | n -> n))
 
   [@@@end]
 end

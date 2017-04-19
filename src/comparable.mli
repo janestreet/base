@@ -72,8 +72,8 @@ module Make (T : sig
     include
     sig
       [@@@ocaml.warning "-32"]
-      val sexp_of_t : t -> Sexplib.Sexp.t
       val compare : t -> t -> int
+      val sexp_of_t : t -> Sexplib.Sexp.t
     end
     [@@@end]
   end) : S with type t := T.t
@@ -95,8 +95,8 @@ module Validate (T : sig type t [@@deriving_inline compare, sexp_of]
     include
     sig
       [@@@ocaml.warning "-32"]
-      val sexp_of_t : t -> Sexplib.Sexp.t
       val compare : t -> t -> int
+      val sexp_of_t : t -> Sexplib.Sexp.t
     end
     [@@@end] end)
   : Validate with type t := T.t
@@ -107,8 +107,8 @@ module With_zero
        include
        sig
          [@@@ocaml.warning "-32"]
-         val sexp_of_t : t -> Sexplib.Sexp.t
          val compare : t -> t -> int
+         val sexp_of_t : t -> Sexplib.Sexp.t
        end
        [@@@end]
        val zero : t
@@ -121,8 +121,8 @@ module Validate_with_zero
        include
        sig
          [@@@ocaml.warning "-32"]
-         val sexp_of_t : t -> Sexplib.Sexp.t
          val compare : t -> t -> int
+         val sexp_of_t : t -> Sexplib.Sexp.t
        end
        [@@@end]
        val zero : t

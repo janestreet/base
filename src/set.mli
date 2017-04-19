@@ -316,14 +316,14 @@ module Merge_to_sequence_element : sig
   include
   sig
     [@@@ocaml.warning "-32"]
+    val compare :
+      ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
     val t_of_sexp :
       (Sexplib.Sexp.t -> 'a) ->
       (Sexplib.Sexp.t -> 'b) -> Sexplib.Sexp.t -> ('a,'b) t
     val sexp_of_t :
       ('a -> Sexplib.Sexp.t) ->
       ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
-    val compare :
-      ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
   end
   [@@@end]
 end

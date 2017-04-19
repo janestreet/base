@@ -5,15 +5,11 @@ include Array0
 let raise_s = Error.raise_s
 
 type 'a t = 'a array [@@deriving_inline compare, sexp]
+let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
 let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
-  let _tp_loc = "src/array.ml.t"  in
-  fun _of_a  -> fun t  -> (array_of_sexp _of_a) t
+  array_of_sexp
 let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
-  fun _of_a  -> fun v  -> (sexp_of_array _of_a) v
-let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-  fun _cmp__a  ->
-  fun a__001_  -> fun b__002_  -> compare_array _cmp__a a__001_ b__002_
-
+  sexp_of_array
 [@@@end]
 
 (* This module implements a new in-place, constant heap sorting algorithm to replace the

@@ -7,11 +7,11 @@ type t = string [@@deriving_inline hash, sexp]
 include
 sig
   [@@@ocaml.warning "-32"]
-  val t_of_sexp : Sexplib.Sexp.t -> t
-  val sexp_of_t : t -> Sexplib.Sexp.t
   val hash_fold_t :
     Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+  val t_of_sexp : Sexplib.Sexp.t -> t
+  val sexp_of_t : t -> Sexplib.Sexp.t
 end
 [@@@end]
 
@@ -26,11 +26,11 @@ module Caseless : sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val t_of_sexp : Sexplib.Sexp.t -> t
-    val sexp_of_t : t -> Sexplib.Sexp.t
     val hash_fold_t :
       Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
     val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+    val t_of_sexp : Sexplib.Sexp.t -> t
+    val sexp_of_t : t -> Sexplib.Sexp.t
   end
   [@@@end]
   include Comparable.S with type t := t

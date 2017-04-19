@@ -287,10 +287,10 @@ module Make_hex (I : sig
     include
     sig
       [@@@ocaml.warning "-32"]
+      val compare : t -> t -> int
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-      val compare : t -> t -> int
     end
     [@@@end]
     val to_string : t -> string
@@ -305,16 +305,15 @@ struct
   module T_hex = struct
 
     type t = I.t [@@deriving_inline compare, hash]
+    let compare : t -> t -> int = I.compare
     let (hash_fold_t :
            Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      fun hsv  -> fun arg  -> I.hash_fold_t hsv arg
+      I.hash_fold_t
     let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
       fun arg  ->
         Ppx_hash_lib.Std.Hash.get_hash_value
           (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
 
-    let compare : t -> t -> int =
-      fun a__001_  -> fun b__002_  -> I.compare a__001_ b__002_
     [@@@end]
 
     let chars_per_delimiter = 4

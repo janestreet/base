@@ -19,6 +19,35 @@ end
 module Symmetric_diff_element = struct
   type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
   [@@deriving_inline compare, sexp]
+  let compare :
+    'k 'v .
+         ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k,'v) t -> ('k,'v) t -> int
+    =
+    fun _cmp__k  ->
+    fun _cmp__v  ->
+    fun a__001_  ->
+    fun b__002_  ->
+      let (t__003_,t__004_) = a__001_  in
+      let (t__005_,t__006_) = b__002_  in
+      match _cmp__k t__003_ t__005_ with
+      | 0 ->
+        if Ppx_compare_lib.phys_equal t__004_ t__006_
+        then 0
+        else
+          (match (t__004_, t__006_) with
+           | (`Left _left__007_,`Left _right__008_) ->
+             _cmp__v _left__007_ _right__008_
+           | (`Right _left__009_,`Right _right__010_) ->
+             _cmp__v _left__009_ _right__010_
+           | (`Unequal _left__011_,`Unequal _right__012_) ->
+             let (t__013_,t__014_) = _left__011_  in
+             let (t__015_,t__016_) = _right__012_  in
+             (match _cmp__v t__013_ t__015_ with
+              | 0 -> _cmp__v t__014_ t__016_
+              | n -> n)
+           | (x,y) -> Ppx_compare_lib.polymorphic_compare x y)
+      | n -> n
+
   let t_of_sexp :
     'k 'v .
          (Sexplib.Sexp.t -> 'k) ->
@@ -117,35 +146,6 @@ module Symmetric_diff_element = struct
                 and v1 = _of_v v1
                 in Sexplib.Sexp.List [v0; v1])]
         in Sexplib.Sexp.List [v0; v1]
-
-  let compare :
-    'k 'v .
-         ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k,'v) t -> ('k,'v) t -> int
-    =
-    fun _cmp__k  ->
-    fun _cmp__v  ->
-    fun a__001_  ->
-    fun b__002_  ->
-      let (t__003_,t__004_) = a__001_  in
-      let (t__005_,t__006_) = b__002_  in
-      match _cmp__k t__003_ t__005_ with
-      | 0 ->
-        if Ppx_compare_lib.phys_equal t__004_ t__006_
-        then 0
-        else
-          (match (t__004_, t__006_) with
-           | (`Left _left__007_,`Left _right__008_) ->
-             _cmp__v _left__007_ _right__008_
-           | (`Right _left__009_,`Right _right__010_) ->
-             _cmp__v _left__009_ _right__010_
-           | (`Unequal _left__011_,`Unequal _right__012_) ->
-             let (t__013_,t__014_) = _left__011_  in
-             let (t__015_,t__016_) = _right__012_  in
-             (match _cmp__v t__013_ t__015_ with
-              | 0 -> _cmp__v t__014_ t__016_
-              | n -> n)
-           | (x,y) -> Ppx_compare_lib.polymorphic_compare x y)
-      | n -> n
 
   [@@@end]
 end

@@ -1,7 +1,7 @@
 open! Import
 
 type t = exn [@@deriving_inline sexp_of]
-let sexp_of_t : t -> Sexplib.Sexp.t = fun v  -> sexp_of_exn v
+let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_exn
 [@@@end]
 
 exception Finally of t * t [@@deriving_inline sexp]

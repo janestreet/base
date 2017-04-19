@@ -9,7 +9,10 @@ build: [
   ["jbuilder" "build" "--only-packages" "base" "--root" "." "-j" jobs "@install"]
 ]
 depends: [
-  "jbuilder" {build & >= "1.0+beta2"}
+  "jbuilder" {build & >= "1.0+beta8"}
+]
+depopts: [
+  "base-native-int63"
 ]
 available: [ ocaml-version >= "4.03.0" ]
 descr: "

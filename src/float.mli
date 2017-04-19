@@ -419,10 +419,10 @@ module Class : sig
   include
   sig
     [@@@ocaml.warning "-32"]
+    val compare : t -> t -> int
+    val all : t list
     val t_of_sexp : Sexplib.Sexp.t -> t
     val sexp_of_t : t -> Sexplib.Sexp.t
-    val all : t list
-    val compare : t -> t -> int
   end
   [@@@end]
 
