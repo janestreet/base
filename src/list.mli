@@ -308,9 +308,11 @@ val find_consecutive_duplicate : 'a t -> equal:('a -> 'a -> bool) -> ('a * 'a) o
     The element kept from a run of duplicates is the last one. *)
 val remove_consecutive_duplicates : 'a t -> equal:('a -> 'a -> bool) -> 'a t
 
-(** [dedup] (de-duplicate).  The same list with duplicates removed, but the
-    order is not guaranteed. *)
+(** [dedup_and_sort] The same list with duplicates removed and in sorted order. *)
+val dedup_and_sort : ?compare:('a -> 'a -> int) -> 'a t -> 'a t
+
 val dedup : ?compare:('a -> 'a -> int) -> 'a t -> 'a t
+[@@deprecated "[since 2017-04] Use [dedup_and_sort] instead"]
 
 (** [contains_dup] True if there are any two elements in the list which are the same. *)
 val contains_dup : ?compare:('a -> 'a -> int) -> 'a t -> bool

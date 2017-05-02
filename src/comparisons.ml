@@ -1,8 +1,10 @@
-(** Interfaces used for hiding and replacing polymorphic compare.  Including a module with
-    interface [S] should hide the majority of functions that use polymorphic compare.  *)
+(** Interfaces for infix comparison operators and comparison functions. *)
 
 open! Import
 
+(** [Infix] lists the typical infix comparison operators.  These functions are provided by
+    [<M>.O] modules, i.e. modules that expose monomorphic infix comparisons over some
+    [<M>.t]. *)
 module type Infix = sig
   type t
   val ( >= ) : t -> t -> bool

@@ -23,7 +23,7 @@ let%test_unit "bounds_crossed" =
   ] in
   List.iter cases ~f:(fun (lower, upper, expect) ->
     let actual = bounds_crossed ~lower ~upper ~compare in
-    assert ([%equal: bool] expect actual));
+    assert ([%compare.equal: bool] expect actual));
 ;;
 
 let%test_module "is_lower_bound" =

@@ -1,6 +1,5 @@
 open! Import
 open! Float
-open! Float.O_dot
 open! Float.Private
 
 let%expect_test "hash coherence" [@tags "64-bits-only"] =

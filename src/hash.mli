@@ -40,7 +40,9 @@ module F (Hash : Hash_intf.S) :
    OCaml hash algorithm as of 4.03) as our hash algorithm. It means that the state of the
    hash function does not need to be preallocated, and makes for simpler use in hash
    tables and other structures. *)
+
 include Hash_intf.Full
   with type state      = private int
    and type seed       = int
-   and type hash_value = int
+
+   and type hash_value = int (** @open *)

@@ -335,16 +335,7 @@ val repeat : 'a -> 'a t
 (** [singleton a] produces [a] exactly once. *)
 val singleton : 'a -> 'a t
 
-(** [delayed_fold] allows to do an on-demand fold, while maintaining a state.  This
-    function is sufficient to implement [fold_m] in any monad.
-
-    {[
-      let fold_m t ~init ~f =
-        let open M in
-        delayed_fold t ~init
-          ~f:(fun s a ~k -> f s a >>= k)
-          ~finish:return
-    ]}
+(** [delayed_fold] allows to do an on-demand fold, while maintaining a state.
 
     It is possible to exit early by not calling [k] in [f].  It is also possible to call
     [k] multiple times.  This results in the rest of the sequence being folded over
@@ -358,6 +349,25 @@ val delayed_fold
   -> f:('s -> 'a -> k:('s -> 'r) -> 'r) (** [k] stands for "continuation" *)
   -> finish:('s -> 'r)
   -> 'r
+
+(** [fold_m] is a monad-friendly version of [fold]. Supply it with the monad's [return]
+    and [bind], and it will chain them through the computation. *)
+val fold_m
+  :  bind:('acc_m -> f:('acc -> 'ret_m) -> 'ret_m)
+  -> return:('acc -> 'ret_m)
+  -> 'elt t
+  -> init:'acc
+  -> f:('acc -> 'elt -> 'acc_m)
+  -> 'ret_m
+
+(** [iter_m] is a monad-friendly version of [iter]. Supply it with the monad's [return]
+    and [bind], and it will chain them through the computation. *)
+val iter_m
+  :  bind:('unit_m -> f:(unit -> 'unit_m) -> 'unit_m)
+  -> return:(unit -> 'unit_m)
+  -> 'elt t
+  -> f:('elt -> 'unit_m)
+  -> 'unit_m
 
 (** [to_list_rev t] returns a list of the elements of [t], in reverse order. It is faster
     than [to_list]. *)

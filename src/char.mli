@@ -15,7 +15,10 @@ sig
   val sexp_of_t : t -> Sexplib.Sexp.t
 end
 [@@@end]
+
 include Identifiable.S   with type t := t
+
+module O : Comparisons.Infix with type t := t
 
 (** Return the ASCII code of the argument. *)
 val to_int : t -> int

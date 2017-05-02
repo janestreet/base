@@ -890,6 +890,20 @@ let delayed_fold s ~init ~f ~finish =
   match s with
   | Sequence(s, next) -> loop s next finish f init
 
+let fold_m ~bind ~return t ~init ~f =
+  delayed_fold t
+    ~init
+    ~f:(fun acc a ~k -> bind (f acc a) ~f:k)
+    ~finish:return
+;;
+
+let iter_m ~bind ~return t ~f =
+  delayed_fold t
+    ~init:()
+    ~f:(fun () a ~k -> bind (f a) ~f:k)
+    ~finish:return
+;;
+
 let fold_until s ~init ~f =
   let rec loop s next f =
     fun acc ->

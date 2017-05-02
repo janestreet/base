@@ -1,7 +1,7 @@
 open! Import
 
-module type Infix               = Polymorphic_compare_intf.Infix
-module type Polymorphic_compare = Polymorphic_compare_intf.S
+module type Infix               = Comparisons.Infix
+module type Polymorphic_compare = Comparisons.S
 
 module type Validate = sig
   type t

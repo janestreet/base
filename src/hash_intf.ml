@@ -100,7 +100,7 @@ end
 
 module type Full = sig
 
-  include S
+  include S (** @inline *)
 
   type 'a folder = state -> 'a -> state
 

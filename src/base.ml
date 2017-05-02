@@ -53,6 +53,7 @@ module Commutative_group         = Commutative_group
 module Comparable                = Comparable
 module Comparable_intf           = Comparable_intf
 module Comparator                = Comparator
+module Comparisons               = Comparisons
 module Container                 = Container
 module Container_intf            = Container_intf
 module Either                    = Either
@@ -96,7 +97,6 @@ module Ordered_collection_common = Ordered_collection_common
 module Ordering                  = Ordering
 module Poly                      = Poly
 module Polymorphic_compare       = Polymorphic_compare
-module Polymorphic_compare_intf  = Polymorphic_compare_intf
 module Popcount                  = Popcount
 module Pretty_printer            = Pretty_printer
 module Printf                    = Printf
@@ -322,6 +322,9 @@ module Export = struct
   include Int.O
   include Int_replace_polymorphic_compare
 
+  (** Float operators *)
+  include Float.O_dot
+
   (** Composition operator *)
   (* This need to be declared as an external to be optimized away in more contexts *)
   external ( |> ) : 'a -> ( 'a -> 'b) -> 'b = "%revapply"
@@ -357,7 +360,6 @@ module Export = struct
 
   (** Misc *)
   let phys_equal = phys_equal
-
 
 end
 

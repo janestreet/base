@@ -2,4 +2,6 @@
     Base. *)
 module Conv_error = Sexp_conv_error
 module Conv       = Sexp_conv
+
+(** @canonical Base.Sexp *)
 module Sexp       = Sexp

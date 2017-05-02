@@ -44,6 +44,7 @@ type replacement =
 let val_replacement = function
   | "( != )"              -> Repl "not (phys_equal ...)"
   | "( == )"              -> Repl "phys_equal"
+  | "( ** )"              -> Repl "**."
   | "close_in"            -> Repl "Stdio.In_channel.close"
   | "close_in_noerr"      -> Repl "Stdio.In_channel.close"
   | "close_out"           -> Repl "Stdio.Out_channel.close"

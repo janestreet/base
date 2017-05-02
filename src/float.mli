@@ -212,7 +212,7 @@ module O : sig
   val ( *  ) : t -> t -> t
   val ( /  ) : t -> t -> t
   val ( ~- ) : t -> t
-  include Polymorphic_compare_intf.Infix with type t := t
+  include Comparisons.Infix with type t := t
 
   val abs      : t -> t
   val neg      : t -> t
@@ -221,8 +221,8 @@ module O : sig
   val of_float : float -> t
 end
 
-(** Similar to [O], except that operators are suffixed with a dot, as in the OCaml
-    standard library. *)
+(** Similar to [O], except that operators are suffixed with a dot, allowing one to have
+    both int and float operators in scope simultaneously. *)
 module O_dot : sig
   val ( +.  ) : t -> t -> t
   val ( -.  ) : t -> t -> t
@@ -232,13 +232,13 @@ module O_dot : sig
   val ( ~-. ) : t -> t
 end
 
-(** [to_string x] builds a string [s] representing the float [x] that
-    guarantees the round trip, that is such that [Float.equal x (Float.of_string s)].
+(** [to_string x] builds a string [s] representing the float [x] that guarantees the round
+    trip, that is such that [Float.equal x (Float.of_string s)].
 
     It usually yields as few significant digits as possible.  That is, it won't print
     [3.14] as [3.1400000000000001243].  The only exception is that occasionally it will
-    output 17 significant digits when the number can be represented with just 16 (but
-    not 15 or less) of them. *)
+    output 17 significant digits when the number can be represented with just 16 (but not
+    15 or less) of them. *)
 val to_string : t -> string
 
 (** Pretty print float, for example [to_string_hum ~decimals:3 1234.1999 = "1_234.200"]

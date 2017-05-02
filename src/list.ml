@@ -642,7 +642,7 @@ let remove_consecutive_duplicates list ~equal =
   rev (loop list [])
 
 (** returns sorted version of list with duplicates removed *)
-let dedup ?(compare=Pervasives.compare) list =
+let dedup_and_sort ?(compare=Pervasives.compare) list =
   match list with
   | [] -> []                            (* performance hack *)
   | _ ->
@@ -650,7 +650,9 @@ let dedup ?(compare=Pervasives.compare) list =
     let sorted = sort ~cmp:compare list in
     remove_consecutive_duplicates ~equal sorted
 
-let contains_dup ?compare lst = length (dedup ?compare lst) <> length lst
+let dedup = dedup_and_sort
+
+let contains_dup ?compare lst = length (dedup_and_sort ?compare lst) <> length lst
 
 let find_a_dup ?(compare=Pervasives.compare) l =
   let sorted = sort ~cmp:compare l in

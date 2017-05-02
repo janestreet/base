@@ -61,7 +61,7 @@ module type T = sig
   val ( * ) : t -> t -> t
   val ( / ) : t -> t -> t
   val ( ~- ) : t -> t
-  include Polymorphic_compare_intf.Infix with type t := t
+  include Comparisons.Infix with type t := t
 
   val abs    : t -> t
   val neg    : t -> t

@@ -106,3 +106,12 @@ let get_digit_exn t =
 ;;
 
 let get_digit t = if is_digit t then Some (get_digit_unsafe t) else None
+
+module O = struct
+  let ( >= ) = ( >= )
+  let ( <= ) = ( <= )
+  let ( =  ) = ( =  )
+  let ( >  ) = ( >  )
+  let ( <  ) = ( <  )
+  let ( <> ) = ( <> )
+end

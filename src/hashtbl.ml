@@ -442,7 +442,7 @@ let create_mapped ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
       replace res ~key ~data);
   match !dupes with
   | [] -> `Ok res
-  | keys -> `Duplicate_keys (List.dedup ~compare:hashable.Hashable.compare keys)
+  | keys -> `Duplicate_keys (List.dedup_and_sort ~compare:hashable.Hashable.compare keys)
 ;;
 
 (*

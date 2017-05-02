@@ -1,6 +1,5 @@
 open! Import
 open! List
-open  Float.O_dot
 
 let%test_module "reduce_balanced" =
   (module struct
@@ -315,13 +314,13 @@ let%test _ = remove_consecutive_duplicates         [(0,1);(2,1);(0,2);(4,2)]
 let%test _ = remove_consecutive_duplicates         [(0,1);(2,2);(0,2);(4,1)]
                ~equal:(fun (_,a) (_,b) -> Int.(=) a b) = [(0,1);      (0,2);(4,1)]
 
-let%test _ = dedup [] = []
-let%test _ = dedup [5;5;5;5;5] = [5]
-let%test _ = length (dedup [2;1;5;3;4]) = 5
-let%test _ = length (dedup [2;3;5;3;4]) = 4
-let%test _ = length (dedup [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (a,_) (b,_) ->
+let%test _ = dedup_and_sort [] = []
+let%test _ = dedup_and_sort [5;5;5;5;5] = [5]
+let%test _ = length (dedup_and_sort [2;1;5;3;4]) = 5
+let%test _ = length (dedup_and_sort [2;3;5;3;4]) = 4
+let%test _ = length (dedup_and_sort [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (a,_) (b,_) ->
   Int.compare a b)) = 3
-let%test _ = length (dedup [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (_,a) (_,b) ->
+let%test _ = length (dedup_and_sort [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (_,a) (_,b) ->
   Int.compare a b)) = 2
 
 let%test _ = find_a_dup [] = None

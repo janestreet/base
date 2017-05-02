@@ -1,6 +1,5 @@
 open! Import
 open! Sequence
-open  Float.O_dot
 
 let%test_unit "of_lazy" =
   let t = range 0 100 in
@@ -283,6 +282,39 @@ let%test _ =
         a)
     ~finish:(fun _ -> assert false)
   = 6.0
+
+let%expect_test "fold_m" =
+  let module Simple_monad = struct
+    type 'a t =
+      | Return of 'a
+      | Step of 'a t
+    [@@deriving sexp_of]
+
+    let return a = Return a
+
+    let rec bind t ~f =
+      match t with
+      | Return a -> f a
+      | Step t -> Step (bind t ~f)
+    ;;
+
+    let step = Step (Return ())
+  end in
+  fold_m ~bind:Simple_monad.bind ~return:Simple_monad.return s12345
+    ~init:[]
+    ~f:(fun acc n ->
+      Simple_monad.bind Simple_monad.step ~f:(fun () ->
+        Simple_monad.return (n :: acc)))
+  |> printf !"%{sexp: int list Simple_monad.t}\n";
+  [%expect {| (Step (Step (Step (Step (Step (Return (5 4 3 2 1))))))) |}]
+;;
+
+let%expect_test "iter_m" =
+  iter_m ~bind:Generator.bind ~return:Generator.return s12345 ~f:Generator.yield
+  |> Generator.run
+  |> printf !"%{sexp: int t}\n";
+  [%expect {| (1 2 3 4 5) |}]
+;;
 
 let%test _ =
   let num_computations = ref 0 in
