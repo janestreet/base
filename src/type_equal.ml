@@ -123,17 +123,19 @@ module Id = struct
       function
       | { witness = v_witness; name = v_name; to_sexp = v_to_sexp } ->
         let bnds = []  in
-        let arg =
-          (fun _f  -> let open Sexplib.Conv in sexp_of_fun ignore) v_to_sexp
-        in
-        let bnd = Sexplib.Sexp.List [Sexplib.Sexp.Atom "to_sexp"; arg]  in
-        let bnds = bnd :: bnds  in
-        let arg = sexp_of_string v_name  in
-        let bnd = Sexplib.Sexp.List [Sexplib.Sexp.Atom "name"; arg]  in
-        let bnds = bnd :: bnds  in
-        let arg = Witness.sexp_of_t _of_a v_witness  in
-        let bnd = Sexplib.Sexp.List [Sexplib.Sexp.Atom "witness"; arg]  in
-        let bnds = bnd :: bnds  in Sexplib.Sexp.List bnds
+        let bnds =
+          let arg =
+            (fun _f  -> let open Sexplib.Conv in sexp_of_fun ignore)
+              v_to_sexp
+          in
+          (Sexplib.Sexp.List [Sexplib.Sexp.Atom "to_sexp"; arg]) :: bnds  in
+        let bnds =
+          let arg = sexp_of_string v_name  in
+          (Sexplib.Sexp.List [Sexplib.Sexp.Atom "name"; arg]) :: bnds  in
+        let bnds =
+          let arg = Witness.sexp_of_t _of_a v_witness  in
+          (Sexplib.Sexp.List [Sexplib.Sexp.Atom "witness"; arg]) :: bnds  in
+        Sexplib.Sexp.List bnds
 
   [@@@end]
 

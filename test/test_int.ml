@@ -18,6 +18,12 @@ let%expect_test "hash coherence" [@tags "64-bits-only"] =
      (hash2 779_219_868)) |}];
 ;;
 
+let%expect_test "[max_value_30_bits]" =
+  print_s [%sexp (max_value_30_bits : t)];
+  [%expect {|
+    1_073_741_823 |}];
+;;
+
 let%test_module "Hex" =
   (module struct
 

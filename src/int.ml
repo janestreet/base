@@ -104,6 +104,8 @@ let of_int_exn = of_int
 let max_value = Pervasives.max_int
 let min_value = Pervasives.min_int
 
+let max_value_30_bits = 0x3FFF_FFFF
+
 module Conv = Int_conversions
 let of_int32 = Conv.int32_to_int
 let of_int32_exn = Conv.int32_to_int_exn

@@ -136,18 +136,19 @@ module T = struct
     | { pos_fname = v_pos_fname; pos_lnum = v_pos_lnum; pos_bol = v_pos_bol;
         pos_cnum = v_pos_cnum } ->
       let bnds = []  in
-      let arg = sexp_of_int v_pos_cnum  in
-      let bnd = Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_cnum"; arg]  in
-      let bnds = bnd :: bnds  in
-      let arg = sexp_of_int v_pos_bol  in
-      let bnd = Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_bol"; arg]  in
-      let bnds = bnd :: bnds  in
-      let arg = sexp_of_int v_pos_lnum  in
-      let bnd = Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_lnum"; arg]  in
-      let bnds = bnd :: bnds  in
-      let arg = sexp_of_string v_pos_fname  in
-      let bnd = Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_fname"; arg]  in
-      let bnds = bnd :: bnds  in Sexplib.Sexp.List bnds
+      let bnds =
+        let arg = sexp_of_int v_pos_cnum  in
+        (Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_cnum"; arg]) :: bnds  in
+      let bnds =
+        let arg = sexp_of_int v_pos_bol  in
+        (Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_bol"; arg]) :: bnds  in
+      let bnds =
+        let arg = sexp_of_int v_pos_lnum  in
+        (Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_lnum"; arg]) :: bnds  in
+      let bnds =
+        let arg = sexp_of_string v_pos_fname  in
+        (Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_fname"; arg]) :: bnds  in
+      Sexplib.Sexp.List bnds
 
   [@@@end]
 end

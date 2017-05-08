@@ -8,6 +8,8 @@ open  Sexp_conv
 module List   = List0
 module String = String0
 
+exception Of_sexp_error = Of_sexp_error
+
 (* Errors concerning tuples *)
 
 let tuple_of_size_n_expected loc n sexp =

@@ -51,7 +51,9 @@
                     ;; mode is released as it will disable these
                     ;; extensions
                     -apply=js_style,base_lint,type_conv ppx_driver.runner)))
-))
+  (js_of_ocaml (
+    (javascript_files (runtime.js))
+    ))))
 
 (rule
  ((targets (mpopcnt.sexp))
@@ -64,7 +66,5 @@ echo '(-mpopcnt)' > ${@} || echo '()' > ${@}")))))
 
 (ocamllex (hex_lexer))
 
-
-(install ((section lib) (files (runtime.js))))
 
 (jbuild_version 1)

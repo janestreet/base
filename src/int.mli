@@ -10,6 +10,10 @@ open! Import
 
 include Int_intf.S with type t = int
 
+(** [max_value_30_bits = 2^30 - 1].  It is useful for writing tests that work on both
+    64-bit and 32-bit platforms. *)
+val max_value_30_bits : t
+
 (** [ceil_pow2 x] returns the smallest power of 2 that is greater than or equal to [x].
     The implementation may only be called for [x > 0].  Example: [ceil_pow2 17 = 32] *)
 val ceil_pow2 : int -> int
