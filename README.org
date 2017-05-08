@@ -145,7 +145,7 @@ These rules are:
 - For some modules that are both in the OCaml stdlib and Base, such as
   =String=, we define a module =String0= for common functions that
   cannot be defined directly in =Base.String= to avoid creating a
-  circular dependency.  Expect for =String= itself, other modules
+  circular dependency.  Except for =String= itself, other modules
   are not allowed to use =Caml.String= and must use either =String= or
   =String0= instead.
 - Indentation is exactly the one of =ocp-indent=.
