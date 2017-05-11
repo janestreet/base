@@ -34,7 +34,15 @@
 open! Import
 open T
 
-type ('a, 'b) t = T : ('a, 'a) t
+type ('a, 'b) t = T : ('a, 'a) t [@@deriving_inline sexp_of]
+include
+sig
+  [@@@ocaml.warning "-32"]
+  val sexp_of_t :
+    ('a -> Sexplib.Sexp.t) ->
+    ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+end
+[@@@end]
 type ('a, 'b) equal = ('a, 'b) t (** just an alias, needed when [t] gets shadowed below *)
 
 (** [refl], [sym], and [trans] construct proofs that type equality is reflexive,

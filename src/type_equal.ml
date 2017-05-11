@@ -1,6 +1,11 @@
 open! Import
 
-type ('a, 'b) t = T : ('a, 'a) t
+type ('a, 'b) t = T : ('a, 'a) t [@@deriving_inline sexp_of]
+let sexp_of_t : type a
+                       b.(a -> Sexplib.Sexp.t) ->
+  (b -> Sexplib.Sexp.t) -> (a,b) t -> Sexplib.Sexp.t
+  = fun _of_a  -> fun _of_b  -> function | T  -> Sexplib.Sexp.Atom "T"
+[@@@end]
 type ('a, 'b) equal = ('a, 'b) t
 
 let refl = T

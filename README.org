@@ -14,7 +14,7 @@ Install Base via [[https://opam.ocaml.org][OPAM]]:
 
 #+begin_src
 $ opam install base
-#end_src
+#+end_src
 
 Base has no runtime dependencies and is fast to build. Its sole build
 dependency is [[https://github.com/janestreet/jbuilder][jbuilder]], which
@@ -145,7 +145,7 @@ These rules are:
 - For some modules that are both in the OCaml stdlib and Base, such as
   =String=, we define a module =String0= for common functions that
   cannot be defined directly in =Base.String= to avoid creating a
-  circular dependency.  Expect for =String= itself, other modules
+  circular dependency.  Except for =String= itself, other modules
   are not allowed to use =Caml.String= and must use either =String= or
   =String0= instead.
 - Indentation is exactly the one of =ocp-indent=.
