@@ -110,6 +110,12 @@ val remove_multi
   -> 'k
   -> ('k, 'v list, 'cmp) t
 
+(** returns the value bound to the given key, or the empty list if there is none. *)
+val find_multi
+  : ('k, 'v list, 'cmp) t
+  -> 'k
+  -> 'v list
+
 (** [change t key ~f] returns a new map [m] that is the same as [t] on all keys except for
     [key], and whose value for [key] is defined by [f], i.e. [find m key = f (find t
     key)]. *)

@@ -429,6 +429,11 @@ let remove_multi t key =
   | Some [] | Some [_] -> remove t key
   | Some (_ :: tl) -> replace t ~key ~data:tl
 
+let find_multi t key =
+  match find t key with
+  | None -> []
+  | Some l -> l
+
 let create_mapped ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
   let size = match size with Some s -> s | None -> List.length rows in
   let res = create ?growth_allowed ~hashable ~size () in
@@ -681,6 +686,7 @@ module Accessors = struct
   let update              = update
   let add_multi           = add_multi
   let remove_multi        = remove_multi
+  let find_multi          = find_multi
   let mem                 = mem
   let iter_keys           = iter_keys
   let iter                = iter
