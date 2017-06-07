@@ -1,9 +1,15 @@
-(* This module is the toplevel of the Base library, it is what you get when you do [open
-   Base].
+(** This module is the toplevel of the Base library, it is what you get when you do [open
+    Base].
 
-   The recommended way to use Base is to build with [-open Base].  Files compiled this way
-   will have the environment described in this file as initial environment. *)
+    The recommended way to use Base is to build with [-open Base].  Files compiled this
+    way will have the environment described in this file as initial environment. *)
 
+(*_ We hide this from the web docs because the line wrapping is bad, making it
+  pretty much inscrutable. *)
+(**/**)
+
+(** The intent is to shadow all of INRIA's standard library.  Modules below would cause
+    compilation errors without being removed from [Shadow_stdlib] before inclusion. *)
 include (Shadow_stdlib
          : module type of struct include Shadow_stdlib end
          (* Modules defined in Base *)
@@ -33,6 +39,8 @@ include (Shadow_stdlib
 
          with type 'a ref := 'a ref
         )
+
+(**/**)
 
 open! Import
 
@@ -161,7 +169,7 @@ module Export = struct
   let (hash_bool : bool -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
-        (hash_fold_bool (Ppx_hash_lib.Std.Hash.create ()) arg)
+        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_bool hsv arg)
 
   let bool_of_sexp : Sexplib.Sexp.t -> bool = Bool.t_of_sexp
   let sexp_of_bool : bool -> Sexplib.Sexp.t = Bool.sexp_of_t
@@ -174,7 +182,7 @@ module Export = struct
   let (hash_char : char -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
-        (hash_fold_char (Ppx_hash_lib.Std.Hash.create ()) arg)
+        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_char hsv arg)
 
   let char_of_sexp : Sexplib.Sexp.t -> char = Char.t_of_sexp
   let sexp_of_char : char -> Sexplib.Sexp.t = Char.sexp_of_t
@@ -190,7 +198,7 @@ module Export = struct
   let (hash_float : float -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
-        (hash_fold_float (Ppx_hash_lib.Std.Hash.create ()) arg)
+        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_float hsv arg)
 
   let float_of_sexp : Sexplib.Sexp.t -> float = Float.t_of_sexp
   let sexp_of_float : float -> Sexplib.Sexp.t = Float.sexp_of_t
@@ -203,7 +211,7 @@ module Export = struct
   let (hash_int : int -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
-        (hash_fold_int (Ppx_hash_lib.Std.Hash.create ()) arg)
+        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_int hsv arg)
 
   let int_of_sexp : Sexplib.Sexp.t -> int = Int.t_of_sexp
   let sexp_of_int : int -> Sexplib.Sexp.t = Int.sexp_of_t
@@ -216,7 +224,7 @@ module Export = struct
   let (hash_int32 : int32 -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
-        (hash_fold_int32 (Ppx_hash_lib.Std.Hash.create ()) arg)
+        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_int32 hsv arg)
 
   let int32_of_sexp : Sexplib.Sexp.t -> int32 = Int32.t_of_sexp
   let sexp_of_int32 : int32 -> Sexplib.Sexp.t = Int32.sexp_of_t
@@ -229,7 +237,7 @@ module Export = struct
   let (hash_int64 : int64 -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
-        (hash_fold_int64 (Ppx_hash_lib.Std.Hash.create ()) arg)
+        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_int64 hsv arg)
 
   let int64_of_sexp : Sexplib.Sexp.t -> int64 = Int64.t_of_sexp
   let sexp_of_int64 : int64 -> Sexplib.Sexp.t = Int64.sexp_of_t
@@ -255,7 +263,8 @@ module Export = struct
   let (hash_nativeint : nativeint -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
-        (hash_fold_nativeint (Ppx_hash_lib.Std.Hash.create ()) arg)
+        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in
+         hash_fold_nativeint hsv arg)
 
   let nativeint_of_sexp : Sexplib.Sexp.t -> nativeint = Nativeint.t_of_sexp
   let sexp_of_nativeint : nativeint -> Sexplib.Sexp.t = Nativeint.sexp_of_t
@@ -291,7 +300,7 @@ module Export = struct
   let (hash_string : string -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
-        (hash_fold_string (Ppx_hash_lib.Std.Hash.create ()) arg)
+        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_string hsv arg)
 
   let string_of_sexp : Sexplib.Sexp.t -> string = String.t_of_sexp
   let sexp_of_string : string -> Sexplib.Sexp.t = String.sexp_of_t
@@ -304,7 +313,7 @@ module Export = struct
   let (hash_unit : unit -> Ppx_hash_lib.Std.Hash.hash_value) =
     fun arg  ->
       Ppx_hash_lib.Std.Hash.get_hash_value
-        (hash_fold_unit (Ppx_hash_lib.Std.Hash.create ()) arg)
+        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_unit hsv arg)
 
   let unit_of_sexp : Sexplib.Sexp.t -> unit = Unit.t_of_sexp
   let sexp_of_unit : unit -> Sexplib.Sexp.t = Unit.sexp_of_t

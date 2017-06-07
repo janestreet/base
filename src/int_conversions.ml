@@ -312,7 +312,7 @@ struct
     let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
       fun arg  ->
         Ppx_hash_lib.Std.Hash.get_hash_value
-          (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
+          (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
 
     [@@@end]
 

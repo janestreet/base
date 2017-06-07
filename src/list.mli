@@ -289,6 +289,11 @@ val group : 'a t -> break:('a -> 'a -> bool) -> 'a t t
     [['M'; 'i'; 's']; ['s'; 'i'; 's']; ['s'; 'i'; 'p']; ['p'; 'i']] *)
 val groupi : 'a t -> break:(int -> 'a -> 'a -> bool) -> 'a t t
 
+(** [chunks_of l ~length] returns a list of lists whose concatenation is equal to the
+    original list.  Every list has [length] elements, except for possibly the last list,
+    which may have fewer.  [chunks_of] raises if [length <= 0]. *)
+val chunks_of : 'a t -> length : int -> 'a t t
+
 (** The final element of a list.  The _exn version raises on the empty list. *)
 val last : 'a t -> 'a option
 val last_exn : 'a t -> 'a

@@ -438,12 +438,15 @@ module Merge_with_duplicates_element = struct
     fun arg  ->
       match arg with
       | Left _a0 ->
-        _hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+        let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 0  in
+        let hsv = hsv  in _hash_fold_a hsv _a0
       | Right _a0 ->
-        _hash_fold_b (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
+        let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1  in
+        let hsv = hsv  in _hash_fold_b hsv _a0
       | Both (_a0,_a1) ->
-        _hash_fold_b
-          (_hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 2) _a0) _a1
+        let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 2  in
+        let hsv = let hsv = hsv  in _hash_fold_a hsv _a0  in
+        _hash_fold_b hsv _a1
 
   let t_of_sexp : type a
                          b.(Sexplib.Sexp.t -> a) ->

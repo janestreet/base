@@ -158,7 +158,8 @@ module For_conv = struct
         (fun hsv  ->
            fun arg  ->
              let (e0,e1) = arg  in
-             _hash_fold_a (hash_fold_string hsv e0) e1) hsv arg
+             let hsv = hash_fold_string hsv e0  in
+             let hsv = _hash_fold_a hsv e1  in hsv) hsv arg
 
   [@@@end]
 

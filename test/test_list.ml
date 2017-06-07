@@ -273,6 +273,36 @@ let%test_module "group" =
     let%test _ = (groupi ~break:(fun i _ _ -> i % 3 = 0) mis) = every_three
   end)
 
+let%test_module "chunks_of" =
+  (module struct
+
+    let test length break_every =
+      let l = List.init length ~f:Fn.id in
+      let b = chunks_of l ~length:break_every in
+      [%test_eq: int list] (List.concat b) l;
+      List.iter b ~f:([%test_pred: int list] (fun batch ->
+        List.length batch <= break_every));
+    ;;
+
+    let expect_exn length break_every =
+      match test length break_every with
+      | exception _ -> ()
+      | () -> raise_s [%message "Didn't raise." (length : int) (break_every : int)]
+    ;;
+
+    let%test_unit _ =
+      for n = 0 to 10 do
+        for k = n + 2 downto 1 do
+          test n k
+        done
+      done;
+      expect_exn 1 0;
+      expect_exn 1 (-1);
+    ;;
+
+    let%test _ = chunks_of [] ~length:1 = []
+  end)
+
 let%test _ = last_exn [1;2;3] = 3
 let%test _ = last_exn [1] = 1
 let%test _ = last_exn (Test_values.long1 ()) = 99_999

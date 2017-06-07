@@ -305,12 +305,15 @@ val empty : unit -> 'a t
 val equal : 'a t -> 'a t -> equal:('a -> 'a -> bool) -> bool
 
 (** [unsafe_truncate t ~len] drops [length t - len] elements from the end of [t], changing
-    [t] so that [length t = len] afterwards.  [unsafe_truncate] raises if [len <= 0 || len
-    > length t].  It is not safe to do [unsafe_truncate] in the middle of a call to [map],
-    [iter], etc, or if you have given this array out to anything not under your control:
-    in general, code can rely on an array's length not changing.  One must ensure code
-    that calls [unsafe_truncate] on an array does not interfere with other code that
-    manipulates the array. *)
+    [t] so that [length t = len] afterwards.
+
+    [unsafe_truncate] raises if [len <= 0 || len > length t].
+
+    It is not safe to do [unsafe_truncate] in the middle of a call to [map],
+    [iter], etc, or if you have given this array out to anything not under your
+    control: in general, code can rely on an array's length not changing.
+    One must ensure code that calls [unsafe_truncate] on an array does not
+    interfere with other code that manipulates the array. *)
 val unsafe_truncate : _ t -> len:int -> unit
 
 

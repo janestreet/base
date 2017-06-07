@@ -86,6 +86,16 @@ val of_increasing_iterator_unchecked
   -> f:(int -> 'a * 'b)
   -> ('a, 'b, 'cmp) t
 
+(** [of_increasing_sequence c seq] behaves like [of_sorted_array c (Sequence.to_array seq)],
+    but does not allocate the intermediate array.
+
+    The sequence will be folded over once, and the additional time complexity is /O(n)/.
+*)
+val of_increasing_sequence
+  :  ('k, 'cmp) comparator
+  -> ('k * 'v) Sequence.t
+  -> ('k, 'v, 'cmp) t Or_error.t
+
 (** Test whether a map is empty or not. *)
 val is_empty : (_, _, _) t -> bool
 

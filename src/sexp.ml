@@ -32,16 +32,19 @@ let rec (hash_fold_t :
      fun arg  ->
        match arg with
        | Atom _a0 ->
-         hash_fold_string (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+         let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 0  in
+         let hsv = hsv  in hash_fold_string hsv _a0
        | List _a0 ->
-         hash_fold_list hash_fold_t (Ppx_hash_lib.Std.Hash.fold_int hsv 1)
-           _a0 : Ppx_hash_lib.Std.Hash.state ->
-       t -> Ppx_hash_lib.Std.Hash.state)
+         let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1  in
+         let hsv = hsv  in hash_fold_list hash_fold_t hsv _a0 : Ppx_hash_lib.Std.Hash.state
+       ->
+         t ->
+       Ppx_hash_lib.Std.Hash.state)
 
 let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
   fun arg  ->
     Ppx_hash_lib.Std.Hash.get_hash_value
-      (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
+      (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
 
 [@@@end]
 

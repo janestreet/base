@@ -34,9 +34,11 @@ let hash_fold_t : type f
   fun arg  ->
     match arg with
     | First _a0 ->
-      _hash_fold_f (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 0  in
+      let hsv = hsv  in _hash_fold_f hsv _a0
     | Second _a0 ->
-      _hash_fold_s (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
+      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1  in
+      let hsv = hsv  in _hash_fold_s hsv _a0
 
 let t_of_sexp : type f
                        s.(Sexplib.Sexp.t -> f) ->

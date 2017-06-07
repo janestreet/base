@@ -73,9 +73,12 @@ let hash_fold_t : type a
   fun hsv  ->
   fun arg  ->
     match arg with
-    | Ok _a0 -> _hash_fold_a (Ppx_hash_lib.Std.Hash.fold_int hsv 0) _a0
+    | Ok _a0 ->
+      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 0  in
+      let hsv = hsv  in _hash_fold_a hsv _a0
     | Error _a0 ->
-      _hash_fold_b (Ppx_hash_lib.Std.Hash.fold_int hsv 1) _a0
+      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1  in
+      let hsv = hsv  in _hash_fold_b hsv _a0
 
 [@@@end]
 

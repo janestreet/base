@@ -200,6 +200,84 @@ module Tree0 = struct
 
   let add' t key data ~compare_key = fst (add t ~length:0 ~key ~data ~compare_key)
 
+  module Build_increasing = struct
+    module Fragment = struct
+      type nonrec ('k, 'v) t = {
+        left_subtree : ('k, 'v) t;
+        key : 'k;
+        data: 'v;
+      }
+
+      let singleton_to_tree_exn = function
+        | { left_subtree = Empty; key; data; } -> singleton key data
+        | _ -> failwith "Map.singleton_to_tree_exn: not a singleton"
+      ;;
+
+      let singleton ~key ~data = { left_subtree = Empty; key; data; }
+
+      (* precondition: |height(l.left_subtree) - height(r)| <= 2,
+         max_key(l) < min_key(r)
+      *)
+      let collapse l r = create l.left_subtree l.key l.data r
+
+      (* precondition: |height(l.left_subtree) - height(r.left_subtree)| <= 2,
+         max_key(l) < min_key(r)
+      *)
+      let join l r = { r with left_subtree = collapse l r.left_subtree; }
+
+      let max_key t = t.key
+    end
+
+    (** Build trees from singletons in a balanced way by using skew binary encoding.
+        Each level contains trees of the same height, consecutive levels have consecutive
+        heights. There are no gaps. The first level are single keys.
+    *)
+    type ('k, 'v) t =
+      | Zero of unit (* [unit] to make pattern matching faster *)
+      | One  of ('k, 'v) t * ('k, 'v) Fragment.t
+      | Two  of ('k, 'v) t * ('k, 'v) Fragment.t * ('k, 'v) Fragment.t
+
+    let empty = Zero ()
+
+    let add_unchecked =
+      let rec go t x = match t with
+        | Zero () -> One (t, x)
+        | One (t, y) -> Two (t, y, x)
+        | Two (t, z, y) -> One (go t (Fragment.join z y), x)
+      in
+      fun t ~key ~data -> go t (Fragment.singleton ~key ~data)
+    ;;
+
+    let to_tree =
+      let rec go t r = match t with
+        | Zero () -> r
+        | One (t, l) -> go t (Fragment.collapse l r)
+        | Two (t, ll, l) -> go t (Fragment.collapse (Fragment.join ll l) r)
+      in
+      function
+      | Zero () -> Empty
+      | One (t, r) -> go t (Fragment.singleton_to_tree_exn r)
+      | Two (t, l, r) -> go (One (t, l)) (Fragment.singleton_to_tree_exn r)
+    ;;
+
+    let max_key = function
+      | Zero () -> None
+      | One (_, r) | Two (_, _, r) -> Some (Fragment.max_key r)
+    ;;
+  end
+
+  let of_increasing_sequence seq ~compare_key = with_return (fun { return; } ->
+    let builder, length =
+      Sequence.fold seq ~init:(Build_increasing.empty, 0)
+        ~f:(fun (builder, length) (key, data) ->
+          match Build_increasing.max_key builder with
+          | Some prev_key when compare_key prev_key key >= 0 ->
+            return (Or_error.error_string "of_increasing_sequence: non-increasing key")
+          | _ -> Build_increasing.add_unchecked builder ~key ~data, length + 1)
+    in
+    Ok (Build_increasing.to_tree builder, length))
+  ;;
+
   (* Like [bal] but allows any difference in height between [l] and [r].
 
      O(|height l - height r|) *)
@@ -1289,6 +1367,10 @@ module Tree = struct
   ;;
   let of_increasing_iterator_unchecked ~comparator:_required_by_intf ~len ~f =
     Tree0.of_increasing_iterator_unchecked ~len ~f
+  ;;
+  let of_increasing_sequence ~comparator seq =
+    Or_error.map ~f:fst (Tree0.of_increasing_sequence seq ~compare_key:comparator.Comparator.compare)
+  ;;
 
   let to_tree t = t
   let invariants ~comparator t =
@@ -1496,6 +1578,11 @@ module Using_comparator = struct
   let of_increasing_iterator_unchecked ~comparator ~len ~f =
     of_tree0 ~comparator (Tree0.of_increasing_iterator_unchecked ~len ~f, len)
 
+  let of_increasing_sequence ~comparator seq =
+    Or_error.map ~f:(of_tree0 ~comparator)
+      (Tree0.of_increasing_sequence seq ~compare_key:comparator.Comparator.compare)
+  ;;
+
   let t_of_sexp_direct ~comparator k_of_sexp v_of_sexp sexp =
     of_tree0 ~comparator (Tree0.t_of_sexp_direct k_of_sexp v_of_sexp sexp ~comparator)
   ;;
@@ -1526,6 +1613,7 @@ let of_sorted_array m a = Using_comparator.of_sorted_array ~comparator:(to_compa
 let of_iteri m ~iteri = Using_comparator.of_iteri ~iteri ~comparator:(to_comparator m)
 let of_increasing_iterator_unchecked m ~len ~f =
   Using_comparator.of_increasing_iterator_unchecked ~len ~f ~comparator:(to_comparator m)
+let of_increasing_sequence m seq = Using_comparator.of_increasing_sequence ~comparator:(to_comparator m) seq
 
 module M(K : sig type t type comparator_witness end) = struct
   type nonrec 'v t = (K.t, 'v, K.comparator_witness) t

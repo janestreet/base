@@ -1052,6 +1052,9 @@ module type Creators_generic = sig
   val of_increasing_iterator_unchecked
     : ('k, 'cmp, len:int -> f:(int -> 'k key * 'v)  -> ('k, 'v, 'cmp) t) options
 
+  val of_increasing_sequence
+    : ('k, 'cmp, ('k key * 'v) Sequence.t  -> ('k, 'v, 'cmp) t Or_error.t) options
+
   val of_alist
     : ('k,
        'cmp,
@@ -1111,6 +1114,7 @@ module type Creators1 = sig
   val of_sorted_array : (key * 'a) array -> 'a t Or_error.t
   val of_sorted_array_unchecked : (key * 'a) array -> 'a t
   val of_increasing_iterator_unchecked : len:int -> f:(int -> key * 'a) -> 'a t
+  val of_increasing_sequence : (key * 'a) Sequence.t -> 'a t Or_error.t
   val of_iteri        : iteri:(f:(key:key -> data:'v -> unit) -> unit)
     -> [ `Ok of 'v t | `Duplicate_key of key ]
   val of_tree         : 'a tree -> 'a t
@@ -1130,6 +1134,7 @@ module type Creators2 = sig
   val of_sorted_array : ('a * 'b) array -> ('a, 'b) t Or_error.t
   val of_sorted_array_unchecked : ('a * 'b) array -> ('a, 'b) t
   val of_increasing_iterator_unchecked : len:int -> f:(int -> 'a * 'b) -> ('a, 'b) t
+  val of_increasing_sequence : ('a * 'b) Sequence.t -> ('a, 'b) t Or_error.t
   val of_iteri        : iteri:(f:(key:'a -> data:'b -> unit) -> unit)
     -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a ]
   val of_tree         : ('a, 'b) tree -> ('a, 'b) t
@@ -1167,6 +1172,9 @@ module type Creators3_with_comparator = sig
   val of_increasing_iterator_unchecked
     :  comparator:('a, 'cmp) Comparator.t
     -> len:int -> f:(int -> 'a * 'b) -> ('a, 'b, 'cmp) t
+  val of_increasing_sequence
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a * 'b) Sequence.t -> ('a, 'b, 'cmp) t Or_error.t
   val of_iteri
     :  comparator:('a, 'cmp) Comparator.t
     -> iteri:(f:(key:'a -> data:'b -> unit) -> unit)

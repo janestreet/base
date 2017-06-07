@@ -120,7 +120,8 @@ let (hash_interval_comparison :
        interval_comparison -> Ppx_hash_lib.Std.Hash.hash_value) =
   fun arg  ->
     Ppx_hash_lib.Std.Hash.get_hash_value
-      (hash_fold_interval_comparison (Ppx_hash_lib.Std.Hash.create ()) arg)
+      (let hsv = Ppx_hash_lib.Std.Hash.create ()  in
+       hash_fold_interval_comparison hsv arg)
 
 [@@@end]
 

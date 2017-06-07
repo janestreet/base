@@ -13,7 +13,7 @@ sig
 end
 [@@@end]
 
-(** This provides [to_string]/[of_string], sexp/bin_io conversion, Map, Hashtbl, etc. *)
+(** This provides [to_string]/[of_string], sexp conversion, Map, Hashtbl, etc. *)
 include Identifiable.S with type t := t
 
 val of_int : int -> t

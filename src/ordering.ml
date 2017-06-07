@@ -31,7 +31,7 @@ let (hash_fold_t :
 let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
   fun arg  ->
     Ppx_hash_lib.Std.Hash.get_hash_value
-      (hash_fold_t (Ppx_hash_lib.Std.Hash.create ()) arg)
+      (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
 
 let all : t list = [Less; Equal; Greater]
 let t_of_sexp : Sexplib.Sexp.t -> t =

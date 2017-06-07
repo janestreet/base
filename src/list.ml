@@ -2,6 +2,7 @@ open! Import
 
 module Array = Array0
 
+
 include List0
 
 let invalid_argf = Printf.invalid_argf
@@ -887,6 +888,19 @@ let split_n t_orig n =
 
 let take t n = fst (split_n t n)
 let drop t n = snd (split_n t n)
+
+let chunks_of l ~length =
+  if length <= 0
+  then invalid_argf "List.group_by: Expected length > 0, got %d" length ();
+  let rec aux of_length acc l =
+    match l with
+    | [] -> rev acc
+    | _ :: _ ->
+      let sublist, l = split_n l length in
+      aux of_length (sublist :: acc) l
+  in
+  aux length [] l
+;;
 
 let split_while xs ~f =
   let rec loop acc = function
