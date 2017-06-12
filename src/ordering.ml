@@ -29,10 +29,11 @@ let (hash_fold_t :
        Ppx_hash_lib.Std.Hash.state)
 
 let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-  fun arg  ->
+  let func arg =
     Ppx_hash_lib.Std.Hash.get_hash_value
       (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
-
+  in
+  fun x  -> func x
 let all : t list = [Less; Equal; Greater]
 let t_of_sexp : Sexplib.Sexp.t -> t =
   let _tp_loc = "src/ordering.ml.t"  in

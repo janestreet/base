@@ -66,8 +66,7 @@ module type S = sig
   end
 end
 
-module type Builtin_intf = sig
-
+module type Builtin_hash_fold_intf = sig
   type state
   type 'a folder = state -> 'a -> state
 
@@ -98,6 +97,26 @@ module type Builtin_intf = sig
 
 end
 
+module type Builtin_hash_intf = sig
+  type hash_value
+
+  val hash_nativeint : nativeint -> hash_value
+  val hash_int64     : int64     -> hash_value
+  val hash_int32     : int32     -> hash_value
+  val hash_char      : char      -> hash_value
+  val hash_int       : int       -> hash_value
+  val hash_bool      : bool      -> hash_value
+  val hash_string    : string    -> hash_value
+  val hash_float     : float     -> hash_value
+  val hash_unit      : unit      -> hash_value
+
+end
+
+module type Builtin_intf = sig
+  include Builtin_hash_fold_intf
+  include Builtin_hash_intf
+end
+
 module type Full = sig
 
   include S (** @inline *)
@@ -107,9 +126,13 @@ module type Full = sig
   (** [create ?seed ()] is a convenience.  Equivalent to [reset ?seed (alloc ())] *)
   val create : ?seed:seed -> unit -> state
 
+  (** [of_fold fold] constructs a standard hash function from an existing fold function *)
+  val of_fold : (state -> 'a -> state) -> ('a -> hash_value)
+
   module Builtin : Builtin_intf
     with type state := state
      and type 'a folder := 'a folder
+     and type hash_value := hash_value
 
   (** [run ?seed folder x] runs [folder] on [x] in a newly allocated hash-state,
       initialized using optional [seed] or a default-seed.

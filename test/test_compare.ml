@@ -16,15 +16,13 @@ let test (type a) here (module T : S with type t = a) list =
           let actual = actual arg1 arg2 in
           let expect = expect arg1 arg2 in
           if not (Result.compare actual expect = 0) then begin
-            require here false
-              ~if_false_then_print_s:
-                (lazy [%message
-                  "comparison failed"
-                    (operator : string)
-                    (arg1     : T.t)
-                    (arg2     : T.t)
-                    (actual   : Result.t)
-                    (expect   : Result.t)]);
+            print_cr here [%message
+              "comparison failed"
+                (operator : string)
+                (arg1     : T.t)
+                (arg2     : T.t)
+                (actual   : Result.t)
+                (expect   : Result.t)];
             failed.return ()
           end)))
   in

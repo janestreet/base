@@ -35,11 +35,27 @@ end
 
 let () = assert (Int.(=) num_bits 63)
 
-(* Even for ARCH_SIXTYFOUR, we can't use Random.State.int, because the bound is very
-   limited in range.  We actually want a bound that spans the type. *)
-let random ?(state = Random.State.default) bound =
+let random_of_int ?(state = Random.State.default) bound =
+  of_int (Random.State.int state (to_int_exn bound))
+
+let random_of_int64 ?(state = Random.State.default) bound =
   of_int64_exn (Random.State.int64 state (to_int64 bound))
-;;
+
+let random =
+  match Word_size.word_size with
+  | W64 -> random_of_int
+  | W32 -> random_of_int64
+
+let random_incl_of_int ?(state = Random.State.default) lo hi =
+  of_int (Random.State.int_incl state (to_int_exn lo) (to_int_exn hi))
+
+let random_incl_of_int64 ?(state = Random.State.default) lo hi =
+  of_int64_exn (Random.State.int64_incl state (to_int64 lo) (to_int64 hi))
+
+let random_incl =
+  match Word_size.word_size with
+  | W64 -> random_incl_of_int
+  | W32 -> random_incl_of_int64
 
 module Private = struct
   module Repr = Repr

@@ -15,10 +15,9 @@ module T = struct
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_string
-  let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    fun arg  ->
-      Ppx_hash_lib.Std.Hash.get_hash_value
-        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
+
+  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+    let func = hash_string  in fun x  -> func x
 
   let t_of_sexp : Sexplib.Sexp.t -> t = string_of_sexp
   let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_string

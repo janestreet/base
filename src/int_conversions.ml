@@ -309,10 +309,9 @@ struct
     let (hash_fold_t :
            Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       I.hash_fold_t
-    let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      fun arg  ->
-        Ppx_hash_lib.Std.Hash.get_hash_value
-          (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
+
+    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+      let func = I.hash  in fun x  -> func x
 
     [@@@end]
 

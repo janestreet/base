@@ -1,4 +1,5 @@
 open! Import
+open  Polymorphic_compare
 open  Caml.Random
 
 module Array = Array0
@@ -76,16 +77,151 @@ module State = struct
     | W64 -> int_on_64bits
     | W32 -> State.int
   ;;
+
+  let full_range_int64 =
+    let open Caml.Int64 in
+    let bits state = of_int (bits state) in
+    fun state ->
+      logxor (bits state)
+        (logxor
+           (shift_left (bits state) 30)
+           (shift_left (bits state) 60))
+  ;;
+
+  let full_range_int32 =
+    let open Caml.Int32 in
+    let bits state = of_int (bits state) in
+    fun state ->
+      logxor (bits state)
+        (shift_left (bits state) 30)
+  ;;
+
+  let full_range_int_on_64bits state =
+    Caml.Int64.to_int (full_range_int64 state)
+  ;;
+
+  let full_range_int_on_32bits state =
+    Caml.Int32.to_int (full_range_int32 state)
+  ;;
+
+  let full_range_int =
+    match Word_size.word_size with
+    | W64 -> full_range_int_on_64bits
+    | W32 -> full_range_int_on_32bits
+  ;;
+
+  let full_range_nativeint_on_64bits state =
+    Caml.Int64.to_nativeint (full_range_int64 state)
+  ;;
+
+  let full_range_nativeint_on_32bits state =
+    Caml.Nativeint.of_int32 (full_range_int32 state)
+  ;;
+
+  let full_range_nativeint =
+    match Word_size.word_size with
+    | W64 -> full_range_nativeint_on_64bits
+    | W32 -> full_range_nativeint_on_32bits
+  ;;
+
+  let [@inline never] raise_crossed_bounds name lower_bound upper_bound string_of_bound =
+    Printf.failwithf "Random.%s: crossed bounds [%s > %s]"
+      name (string_of_bound lower_bound) (string_of_bound upper_bound) ()
+  ;;
+
+  let int_incl =
+    let rec in_range state lo hi =
+      let int = full_range_int state in
+      if int >= lo && int <= hi
+      then int
+      else in_range state lo hi
+    in
+    fun state lo hi ->
+      if lo > hi then raise_crossed_bounds "int" lo hi string_of_int;
+      let diff = hi - lo in
+      if diff = max_int
+      then lo + ((full_range_int state) land max_int)
+      else if diff >= 0
+      then lo + int state (succ diff)
+      else in_range state lo hi
+  ;;
+
+  let int32_incl =
+    let rec in_range state lo hi =
+      let int = full_range_int32 state in
+      if int >= lo && int <= hi
+      then int
+      else in_range state lo hi
+    in
+    let open Caml.Int32 in
+    fun state lo hi ->
+      if lo > hi then raise_crossed_bounds "int32" lo hi to_string;
+      let diff = sub hi lo in
+      if diff = max_int
+      then add lo (logand (full_range_int32 state) max_int)
+      else if diff >= 0l
+      then add lo (int32 state (succ diff))
+      else in_range state lo hi
+  ;;
+
+  let nativeint_incl =
+    let rec in_range state lo hi =
+      let int = full_range_nativeint state in
+      if int >= lo && int <= hi
+      then int
+      else in_range state lo hi
+    in
+    let open Caml.Nativeint in
+    fun state lo hi ->
+      if lo > hi then raise_crossed_bounds "nativeint" lo hi to_string;
+      let diff = sub hi lo in
+      if diff = max_int
+      then add lo (logand (full_range_nativeint state) max_int)
+      else if diff >= 0n
+      then add lo (nativeint state (succ diff))
+      else in_range state lo hi
+  ;;
+
+  let int64_incl =
+    let rec in_range state lo hi =
+      let int = full_range_int64 state in
+      if int >= lo && int <= hi
+      then int
+      else in_range state lo hi
+    in
+    let open Caml.Int64 in
+    fun state lo hi ->
+      if lo > hi then raise_crossed_bounds "int64" lo hi to_string;
+      let diff = sub hi lo in
+      if diff = max_int
+      then add lo (logand (full_range_int64 state) max_int)
+      else if diff >= 0L
+      then add lo (int64 state (succ diff))
+      else in_range state lo hi
+  ;;
+
+  let float_range state lo hi =
+    if lo > hi then raise_crossed_bounds "float" lo hi Caml.string_of_float;
+    lo +. float state (hi -. lo)
+  ;;
 end
 
 let default = State.default
 
 let bits () = State.bits default
-let int bound = State.int default bound
-let int32 bound = State.int32 default bound
-let nativeint bound = State.nativeint default bound
-let int64 bound = State.int64 default bound
-let float scale = State.float default scale
+
+let int       x = State.int       default x
+let int32     x = State.int32     default x
+let nativeint x = State.nativeint default x
+let int64     x = State.int64     default x
+let float     x = State.float     default x
+
+let int_incl       x y = State.int_incl       default x y
+let int32_incl     x y = State.int32_incl     default x y
+let nativeint_incl x y = State.nativeint_incl default x y
+let int64_incl     x y = State.int64_incl     default x y
+let float_range    x y = State.float_range    default x y
+
 let bool () = State.bool default
 
 let full_init seed = State.full_init default seed

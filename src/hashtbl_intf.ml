@@ -118,7 +118,7 @@ module type Accessors = sig
   (** like [map], but function takes both key and data as arguments *)
   val mapi : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'c) -> ('a, 'c) t
 
-  (** returns new map with bound values filtered by f applied to the bound
+  (** returns new table with bound values filtered by f applied to the bound
       values *)
   val filter_map : ('a, 'b) t -> f:('b -> 'c option) -> ('a, 'c) t
 
@@ -130,7 +130,7 @@ module type Accessors = sig
   val filter      : ('a, 'b) t -> f:('b -> bool) -> ('a, 'b) t
   val filteri     : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> ('a, 'b) t
 
-  (** returns new maps with bound values partitioned by f applied to the bound values *)
+  (** returns new tables with bound values partitioned by f applied to the bound values *)
   val partition_map
     :  ('a, 'b) t
     -> f:('b -> [`Fst of 'c | `Snd of 'd])
@@ -142,7 +142,12 @@ module type Accessors = sig
     -> f:(key:'a key -> data:'b -> [`Fst of 'c | `Snd of 'd])
     -> ('a, 'c) t * ('a, 'd) t
 
+  (** returns a pair of tables [(t1, t2)], where [t1] contains all the elements of the
+      initial table which satisfy the predicate [f], and [t2] contains all the elements
+      which do not satisfy [f]. *)
   val partition_tf : ('a, 'b) t -> f:('b -> bool) -> ('a, 'b) t * ('a, 'b) t
+
+  (** like [partition_tf], but function takes both key and data as arguments *)
   val partitioni_tf : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> ('a, 'b) t * ('a, 'b) t
 
   (** [find_or_add t k ~default] returns the data associated with key k if it
@@ -377,10 +382,12 @@ module type S_without_submodules = sig
     with type 'a key = 'a
     with type ('a, 'b, 'z) create_options :=
       ('a, 'b, 'z) create_options_with_first_class_module
+  (** @open *)
 
   include Accessors
     with type ('a, 'b) t := ('a, 'b) t
     with type 'a key := 'a key
+  (** @open *)
 
   val hashable : ('key, _) t -> 'key Hashable.t
 

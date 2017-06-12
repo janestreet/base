@@ -12,7 +12,7 @@
    polymorphic hashing [Hashtbl.hash] which ignores user overrides.
 
    The generator also provides a direct hash-function [hash] (named [hash_<T>] when <T> !=
-   "t") of type: [t -> Hash.hash_value] as a wrapper around the hash-fold function.
+   "t") of type: [t -> Hash.hash_value].
 
    The folding hash function can be accessed as [%hash_fold: TYPE]
    The direct hash function can be accessed as [%hash: TYPE]
@@ -26,10 +26,13 @@ module List  = List0
 
 (** Builtin folding-style hash functions, abstracted over [Hash_intf.S] *)
 module Folding (Hash : Hash_intf.S)
-  : Hash_intf.Builtin_intf with type state = Hash.state
+  : Hash_intf.Builtin_intf
+    with type state = Hash.state
+     and type hash_value = Hash.hash_value
 = struct
 
   type state = Hash.state
+  type hash_value = Hash.hash_value
   type 'a folder = state -> 'a -> state
 
   let hash_fold_unit s () = s
@@ -85,6 +88,27 @@ module Folding (Hash : Hash_intf.S)
       (* [length] must be incorporated for arrays, as it is for lists. See comment above *)
       hash_fold_elem (hash_fold_int s (Array.length array)) array 0
 
+  (* the duplication here is because we think
+     ocaml can't eliminate indirect function calls otherwise. *)
+  let hash_nativeint x =
+    Hash.get_hash_value (hash_fold_nativeint (Hash.reset (Hash.alloc ())) x)
+  let hash_int64 x =
+    Hash.get_hash_value (hash_fold_int64 (Hash.reset (Hash.alloc ())) x)
+  let hash_int32 x =
+    Hash.get_hash_value (hash_fold_int32 (Hash.reset (Hash.alloc ())) x)
+  let hash_char x =
+    Hash.get_hash_value (hash_fold_char (Hash.reset (Hash.alloc ())) x)
+  let hash_int x =
+    Hash.get_hash_value (hash_fold_int (Hash.reset (Hash.alloc ())) x)
+  let hash_bool x =
+    Hash.get_hash_value (hash_fold_bool (Hash.reset (Hash.alloc ())) x)
+  let hash_string x =
+    Hash.get_hash_value (hash_fold_string (Hash.reset (Hash.alloc ())) x)
+  let hash_float x =
+    Hash.get_hash_value (hash_fold_float (Hash.reset (Hash.alloc ())) x)
+  let hash_unit x =
+    Hash.get_hash_value (hash_fold_unit (Hash.reset (Hash.alloc ())) x)
+
 end
 
 module F (Hash : Hash_intf.S) :
@@ -99,6 +123,8 @@ module F (Hash : Hash_intf.S) :
   type 'a folder = state -> 'a -> state
 
   let create ?seed () = reset ?seed (alloc ())
+
+  let of_fold hash_fold_t = (fun t -> get_hash_value (hash_fold_t (create ()) t))
 
   module Builtin = Folding(Hash)
 
@@ -142,4 +168,61 @@ end = struct
   end
 end
 
-include F(Internalhash)
+module T = struct
+  include Internalhash
+  type 'a folder = state -> 'a -> state
+
+  let create ?seed () = reset ?seed (alloc ())
+
+  let run ?seed folder x =
+    get_hash_value (folder (reset ?seed (alloc ())) x)
+
+  let of_fold hash_fold_t = (fun t -> get_hash_value (hash_fold_t (create ()) t))
+
+  module Builtin = struct
+    module Folding = Folding(Internalhash)
+    include
+      (Folding : Hash_intf.Builtin_hash_fold_intf
+       with type state := state
+        and type 'a folder := 'a folder)
+
+    let hash_nativeint = Folding.hash_nativeint
+    let hash_int64 = Folding.hash_int64
+    let hash_int32 = Folding.hash_int32
+    let hash_string = Folding.hash_string
+
+    (* [Folding] provides some default implementations for the [hash_*] functions below,
+       but they are inefficient for some use-cases because of the use of the [hash_fold]
+       functions. At this point, the [hash_value] type has been fixed to [int], so this
+       module can provide specialized implementations. *)
+
+    let hash_char = Char0.to_int
+
+    (* This hash was chosen from here: https://gist.github.com/badboy/6267743
+
+       It attempts to fulfill the primary goals of a non-cryptographic hash function:
+
+       - a bit change in the input should change ~1/2 of the output bits
+       - the output should be uniformly distributed across the output range
+       - inputs that are close to each other shouldn't lead to outputs that are close to
+       each other.
+       - all bits of the input are used in generating the output
+
+       In our case we also want it to be fast, non-allocating, and inlinable.  *)
+    let [@inline always] hash_int (t : int) =
+      let t = (lnot t) + (t lsl 21) in
+      let t = t lxor (t lsr 24) in
+      let t = (t + (t lsl 3)) + (t lsl 8) in
+      let t = t lxor (t lsr 14) in
+      let t = (t + (t lsl 2)) + (t lsl 4) in
+      let t = t lxor (t lsr 28) in
+      t + (t lsl 31)
+    ;;
+
+    let hash_bool x = if x then 1 else 0
+    external hash_float : float -> int = "Base_hash_double" [@@noalloc]
+    let hash_unit () = 0
+  end
+end
+
+include T

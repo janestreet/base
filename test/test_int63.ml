@@ -3,19 +3,7 @@ open! Int63
 
 let%expect_test "hash coherence" [@tags "64-bits-only"] =
   check_int_hash_coherence [%here] (module Int63);
-  [%expect {|
-    ((value -4_611_686_018_427_387_904)
-     (hash1 2_158_324_264_573_792_932)
-     (hash2 923_909_958))
-    ((value 0)
-     (hash1 4_316_648_529_147_585_864)
-     (hash2 1_058_613_066))
-    ((value 37)
-     (hash1 -4_303_106_108_558_371_123)
-     (hash2 335_628_541))
-    ((value 4_611_686_018_427_387_903)
-     (hash1 -596_042_174_201_331_887)
-     (hash2 779_219_868)) |}];
+  [%expect {| |}];
 ;;
 
 let%test_unit _ = [%test_result: t] max_value ~expect:(of_int64_exn 4611686018427387903L)

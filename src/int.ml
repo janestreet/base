@@ -1,35 +1,19 @@
 open! Import
 
 module T = struct
-  type t = int [@@deriving_inline sexp]
+  type t = int [@@deriving_inline hash, sexp]
+  let (hash_fold_t :
+         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+    hash_fold_int
+
+  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+    let func = hash_int  in fun x  -> func x
+
   let t_of_sexp : Sexplib.Sexp.t -> t = int_of_sexp
   let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_int
   [@@@end]
 
   let compare (x : t) y = Bool.to_int (x > y) - Bool.to_int (x < y)
-
-  (* This hash was chosen from here: https://gist.github.com/badboy/6267743
-
-     It attempts to fulfill the primary goals of a non-cryptographic hash function:
-
-     - a bit change in the input should change ~1/2 of the output bits
-     - the output should be uniformly distributed across the output range
-     - inputs that are close to each other shouldn't lead to outputs that are close to
-     each other.
-     - all bits of the input are used in generating the output
-
-     In our case we also want it to be fast, non-allocating, and inlinable.  *)
-  let [@inline always] hash (t : t) =
-    let t = (lnot t) + (t lsl 21) in
-    let t = t lxor (t lsr 24) in
-    let t = (t + (t lsl 3)) + (t lsl 8) in
-    let t = t lxor (t lsr 14) in
-    let t = (t + (t lsl 2)) + (t lsl 4) in
-    let t = t lxor (t lsr 28) in
-    t + (t lsl 31)
-  ;;
-
-  let hash_fold_t = hash_fold_int
 
   let of_string s =
     try
@@ -136,10 +120,9 @@ include Conv.Make_hex(struct
     let (hash_fold_t :
            Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int
-    let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      fun arg  ->
-        Ppx_hash_lib.Std.Hash.get_hash_value
-          (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
+
+    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+      let func = hash_int  in fun x  -> func x
 
     [@@@end]
 

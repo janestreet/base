@@ -9,10 +9,9 @@ module T = struct
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_bool
-  let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    fun arg  ->
-      Ppx_hash_lib.Std.Hash.get_hash_value
-        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
+
+  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+    let func = hash_bool  in fun x  -> func x
 
   let t_of_sexp : Sexplib.Sexp.t -> t = bool_of_sexp
   let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_bool
@@ -20,15 +19,6 @@ module T = struct
 
   (* we use physical equality here because for bools it is the same *)
   let equal (t : t) t' = phys_equal t t'
-
-  (* This shadows the [hash] definition coming from [@@deriving_inline hash][@@@end] because that
-     function is significantly slower.
-
-     Unfortunately, this means [Bool.hash] and [%hash: Bool.t] produce different hash
-     values, but this is unavoidable if we want predictable name-based behavior from the
-     syntax extension. *)
-  let _ = hash
-  let hash x = if x then 1 else 0
 end
 
 include T

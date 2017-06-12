@@ -17,21 +17,15 @@ module T = struct
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_float
-  let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    fun arg  ->
-      Ppx_hash_lib.Std.Hash.get_hash_value
-        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
+
+  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+    let func = hash_float  in fun x  -> func x
 
   let t_of_sexp : Sexplib.Sexp.t -> t = float_of_sexp
   let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_float
   [@@@end]
   let compare (x : t) y = compare x y
   let equal (x : t) y = x = y
-
-  external specialized_hash : float -> int = "Base_hash_double" [@@noalloc]
-
-  let _ = hash
-  let hash = specialized_hash
 end
 
 include T
@@ -1041,7 +1035,7 @@ end
 module Private = struct
   let lower_bound_for_int = lower_bound_for_int
   let upper_bound_for_int = upper_bound_for_int
-  let specialized_hash = specialized_hash
+  let specialized_hash = hash_float
   let one_ulp_less_than_half = one_ulp_less_than_half
   let int63_round_nearest_portable_alloc_exn = int63_round_nearest_portable_alloc_exn
   let int63_round_nearest_arch64_noalloc_exn = int63_round_nearest_arch64_noalloc_exn

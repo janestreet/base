@@ -118,11 +118,12 @@ let (hash_fold_interval_comparison :
 
 let (hash_interval_comparison :
        interval_comparison -> Ppx_hash_lib.Std.Hash.hash_value) =
-  fun arg  ->
+  let func arg =
     Ppx_hash_lib.Std.Hash.get_hash_value
       (let hsv = Ppx_hash_lib.Std.Hash.create ()  in
        hash_fold_interval_comparison hsv arg)
-
+  in
+  fun x  -> func x
 [@@@end]
 
 let map t ~f =

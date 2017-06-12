@@ -31,7 +31,13 @@ val to_int : t -> int option
     (exclusive).  [bound] must be greater than 0.
 
     The default [~state] is [Random.State.default]. *)
-val random : ?state : Random.State.t -> t -> t
+val random : ?state:Random.State.t -> t -> t
+
+(** [random_incl ~state lo hi] returns a random integer between [lo] (inclusive) and [hi]
+    (inclusive).  Raises if [lo > hi].
+
+    The default [~state] is [Random.State.default]. *)
+val random_incl : ?state:Random.State.t -> t -> t -> t
 
 (**/**)
 module Private : sig

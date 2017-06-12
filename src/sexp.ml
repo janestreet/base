@@ -41,10 +41,12 @@ let rec (hash_fold_t :
          t ->
        Ppx_hash_lib.Std.Hash.state)
 
-let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-  fun arg  ->
+and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+  let func arg =
     Ppx_hash_lib.Std.Hash.get_hash_value
       (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
+  in
+  fun x  -> func x
 
 [@@@end]
 
