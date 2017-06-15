@@ -1,3 +1,7 @@
+# v0.9.3
+
+- Fix build when  -mpopcnt is not supported
+
 # v0.9.2
 
 - Replace `${PORTALE_INT63}` by `${lib-available:base-portable-int63}`
