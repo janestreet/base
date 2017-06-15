@@ -61,6 +61,7 @@
   (action
    (progn
     (create-file empty.c)
+    (system "echo 'int main(int argc, char ** argv) { return __builtin_popcount(argc); }' > empty.c")
     (system "${CC} -mpopcnt -c empty.c 2> ${null} && \
 echo '(-mpopcnt)' > ${@} || echo '()' > ${@}")))))
 
