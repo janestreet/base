@@ -60,10 +60,11 @@
   (deps ())
   (action
    (progn
-    (create-file empty.c)
-    (system "echo 'int main(int argc, char ** argv) { return __builtin_popcount(argc); }' > empty.c")
-    (system "${CC} -mpopcnt -c empty.c 2> ${null} && \
-echo '(-mpopcnt)' > ${@} || echo '()' > ${@}")))))
+    (progn
+     (with-stdout-to popcnt_test.c
+      (echo "int main(int argc, char ** argv) { return __builtin_popcount(argc); }"))
+     (system "${CC} -mpopcnt -c popcnt_test.c 2> ${null} && \
+echo '(-mpopcnt)' > ${@} || echo '()' > ${@}"))))))
 
 (ocamllex (hex_lexer))
 
