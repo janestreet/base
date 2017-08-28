@@ -51,7 +51,7 @@ val int64_to_int32_exn     : int64     -> int32
 val int64_to_nativeint     : int64     -> nativeint option
 val int64_to_nativeint_exn : int64     -> nativeint
 
-val int64_fit_on_int63_exn : int64     -> unit
+val int64_fit_on_int63_exn        : int64 -> unit
 
 val nativeint_to_int       : nativeint -> int option
 val nativeint_to_int_exn   : nativeint -> int

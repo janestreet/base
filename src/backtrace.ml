@@ -4,6 +4,7 @@ module Sys = Sys0
 
 type t = Caml.Printexc.raw_backtrace
 
+let elide = ref am_testing
 let elided_message = "<backtrace elided in test>"
 
 let get ?(at_most_num_frames = Int.max_value) () =
@@ -11,8 +12,7 @@ let get ?(at_most_num_frames = Int.max_value) () =
 ;;
 
 let to_string t =
-  if am_testing
-  && not (Exn.Never_elide_backtrace.never_elide_backtrace ())
+  if !elide
   then elided_message
   else Caml.Printexc.raw_backtrace_to_string t
 ;;

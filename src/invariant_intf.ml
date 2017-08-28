@@ -54,7 +54,7 @@ module type Invariant = sig
       raised by [f], as well as [sexp_of_t t].  Idiomatic usage looks like:
 
       {[
-        invariant [%here] t <:sexp_of< t >> (fun () ->
+        invariant [%here] t [%sexp_of: t] (fun () ->
           ... check t's invariants ... )
       ]}
 
@@ -62,11 +62,11 @@ module type Invariant = sig
 
       {[
         let invariant check_a t =
-          Invariant.invariant [%here] t <:sexp_of< _ t >> (fun () -> ... )
+          Invariant.invariant [%here] t [%sexp_of: _ t] (fun () -> ... )
       ]}
 
-      It's okay to use [ <:sexp_of< _ t >> ] because the exceptions raised by [check_a]
-      will show the parts that are sexp_opaque at top-level. *)
+      It's okay to use [ [%sexp_of: _ t] ] because the exceptions raised by [check_a] will
+      show the parts that are sexp_opaque at top-level. *)
   val invariant
     :  Source_code_position0.t
     -> 'a

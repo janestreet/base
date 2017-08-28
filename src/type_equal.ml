@@ -158,6 +158,8 @@ module Id = struct
 
   let hash t = uid t
 
+  let hash_fold_t s t = hash_fold_int s (uid t)
+
   let same_witness t1 t2 = Witness.same t1.witness t2.witness
 
   let same t1 t2 = Option.is_some (same_witness t1 t2)

@@ -974,30 +974,27 @@ let random_element ?(random_state = Random.State.default) list =
   with _ -> None
 ;;
 
-let compare cmp a b =
-  let rec loop a b =
-    match a, b with
-    | [], [] -> 0
-    | [], _  -> -1
-    | _ , [] -> 1
-    | x :: xs, y :: ys ->
-      let n = cmp x y in
-      if n = 0 then loop xs ys
-      else n
-  in
-  loop a b
+let rec compare cmp a b =
+  match a, b with
+  | [], [] -> 0
+  | [], _  -> -1
+  | _ , [] -> 1
+  | x :: xs, y :: ys ->
+    let n = cmp x y in
+    if n = 0 then compare cmp xs ys
+    else n
 ;;
 
 let hash_fold_t = hash_fold_list
 
 let equal t1 t2 ~equal =
-  let rec loop t1 t2 =
+  let rec loop ~equal t1 t2 =
     match t1, t2 with
     | [], [] -> true
-    | x1 :: t1, x2 :: t2 -> equal x1 x2 && loop t1 t2
+    | x1 :: t1, x2 :: t2 -> equal x1 x2 && loop ~equal t1 t2
     | _ -> false
   in
-  loop t1 t2
+  loop ~equal t1 t2
 ;;
 
 let transpose =

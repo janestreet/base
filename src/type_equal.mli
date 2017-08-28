@@ -217,6 +217,8 @@ module Id : sig
   val name    : _ t -> string
   val to_sexp : 'a t -> 'a -> Sexp.t
 
+  val hash_fold_t : Hash.state -> _ t -> Hash.state
+
   (** [same_witness t1 t2] and [same_witness_exn t1 t2] return a type equality proof iff
       the two identifiers are the same (i.e. physically equal, resulting from the same
       call to [create]).  This is a useful way to achieve a sort of dynamic typing.

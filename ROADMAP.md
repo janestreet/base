@@ -29,7 +29,7 @@
 
   - [X] Merge `Hashtbl_intf.Key_common` and `Hashtbl_intf.Key_plain`.
 
-  - [ ] Eliminate the `bit_*` functions from the `Int_intf` module. They are
+  - [ ] Eliminate the `bit_\*` functions from the `Int_intf` module. They are
     redundant with the infix bit twiddling operators.
 
   - [ ] Do not expose the type equality `Int63_emul.W.t = int64`.

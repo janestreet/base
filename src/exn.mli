@@ -83,21 +83,6 @@ val does_raise : (unit -> _) -> bool
     printer. *)
 val initialize_module : unit -> unit
 
-module Never_elide_backtrace : sig
-  (** Same as [t], except that backtraces are never elided in the S-expression
-      representation.
-
-      /!\ WARNING /!\: [sexp_of_t] is not re-entrant. Especially calling
-      [Exn.Never_elide_backtrace.sexp_of_t ...] in one thread will cause all backtraces to
-      be included by other thread converting a [Backtrace.t] to a S-expression at the same
-      time. *)
-  type nonrec t = t [@@deriving_inline sexp_of]
-  include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
-  [@@@end]
-
-  val never_elide_backtrace : unit -> bool
-end
-
 (**/**)
 module Private : sig
   val clear_backtrace : unit -> unit

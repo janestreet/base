@@ -1,6 +1,5 @@
 (** Cross-platform system configuration values. *)
 
-
 (** [interactive] is set to [true] when being executed in the [ocaml] REPL, and [false]
     otherwise. *)
 val interactive : bool ref
@@ -51,12 +50,12 @@ val runtime_parameters : unit -> string
     [[.patchlevel]] and [[+additional-info]] parts may be absent. *)
 val ocaml_version : string
 
-(** [enable_runtime_warnings bool] controls whether the OCaml runtime system should emit
-    warnings.  Runtime warnings are enabled by default. *)
+(** Control whether the OCaml runtime system can emit warnings on stderr. Currently, the
+    only supported warning is triggered when a channel created by open_* functions is
+    finalized without being closed. Runtime warnings are enabled by default. *)
 val enable_runtime_warnings : bool -> unit
 
-(** [runtime_warnings_enabled ()] returns [true] when runtime warnings are enabled and
-    [false] otherwise. *)
+(** Return whether runtime warnings are currently enabled. *)
 val runtime_warnings_enabled : unit -> bool
 
 (** For the purposes of optimization, [opaque_identity] behaves like an unknown (and thus
