@@ -18,7 +18,8 @@
 (rule
  ((targets (pow_overflow_bounds.ml))
   (deps    (../generate/generate_pow_overflow_bounds.exe))
-  (action  (run ${<} -atomic -o ${@}))))
+  (action  (run ${<} -atomic -o ${@}))
+  (fallback)))
 
 (library
  ((name base)

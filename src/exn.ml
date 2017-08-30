@@ -108,6 +108,10 @@ let handle_uncaught_aux ~do_at_exit ~exit f =
   try f ()
   with exc ->
     let raw_backtrace = Caml.Printexc.get_raw_backtrace () in
+    (* One reason to run [do_at_exit] handlers before printing out the error message is
+       that it helps curses applications bring the terminal in a good state, otherwise the
+       error message might get corrupted.  Also, the OCaml top-level uncaught exception
+       handler does the same. *)
     if do_at_exit then (try Pervasives.do_at_exit () with _ -> ());
     begin
       try

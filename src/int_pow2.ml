@@ -50,7 +50,7 @@ let floor_log2 i =
   if i <= 0 then
     raise_s (Sexp.message "[Int.floor_log2] got invalid input"
                ["", sexp_of_int i]);
-  (Sys.word_size_in_bits - 1) - int_clz i
+  Sys.word_size_in_bits - 1 - int_clz i
 ;;
 
 let ceil_log2 i =

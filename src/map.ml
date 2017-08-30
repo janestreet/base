@@ -1642,3 +1642,14 @@ let compare_m__t (module K : Compare_m) compare_v t1 t2 =
 
 let hash_fold_m__t (type k) (module K : Hash_fold_m with type t = k) hash_fold_v state =
   hash_fold_direct K.hash_fold_t hash_fold_v state
+
+let merge_skewed t1 t2 ~combine =
+  let t1, t2, combine =
+    if length t2 <= length t1
+    then t1, t2, combine
+    else t2, t1, (fun ~key v1 v2 -> combine ~key v2 v1)
+  in
+  fold t2 ~init:t1 ~f:(fun ~key ~data:v2 t1 ->
+    change t1 key ~f:(function
+      | None -> Some v2
+      | Some v1 -> Some (combine ~key v1 v2)))

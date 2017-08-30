@@ -282,7 +282,9 @@ val validate : name:('k -> string) -> 'v Validate.check -> ('k, 'v, _) t Validat
 
 (** {6 Additional operations on maps} *)
 
-(** merges two maps *)
+(** Merges two maps. The runtime is O(length(t1) + length(t2)). In particular,
+    you shouldn't use this function to merge a list of maps. Consider using
+    [merge_skewed] instead. *)
 val merge
   :  ('k, 'v1, 'cmp) t
   -> ('k, 'v2, 'cmp) t
@@ -290,6 +292,21 @@ val merge
         -> [ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
         -> 'v3 option)
   -> ('k, 'v3, 'cmp) t
+
+(** A special case of [merge], [merge_skewed t1 t2] is a map containing all the
+    bindings of [t1] and [t2]. Bindings that appear in both [t1] and [t2] are
+    combined in to a single value using the [combine] function. In a call
+    [combine ~key v1 v2] the value [v1] comes from [t1] and [v2] from [t2].
+
+    The runtime of [merge_skewed] is [O(l1 * log(l2))], where [l1] is the length
+    of the smaller map and [l2] the length of the larger map. This is likely to
+    be faster than [merge] when one of the maps is a lot smaller, or when you
+    merge a list of maps. *)
+val merge_skewed
+  :  ('k, 'v, 'cmp) t
+  -> ('k, 'v, 'cmp) t
+  -> combine:(key:'k -> 'v -> 'v -> 'v)
+  -> ('k, 'v, 'cmp) t
 
 module Symmetric_diff_element : sig
   type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]

@@ -89,6 +89,8 @@ module type Accessors = sig
   val replace      : ('a, 'b) t -> key:'a key -> data:'b -> unit
   [@@deprecated "[since 2015-10] Use set instead"]
   val set          : ('a, 'b) t -> key:'a key -> data:'b -> unit
+
+  (** [add] and [add_exn] leave the table unchanged if the key was already present. *)
   val add          : ('a, 'b) t -> key:'a key -> data:'b -> [ `Ok | `Duplicate ]
   val add_exn      : ('a, 'b) t -> key:'a key -> data:'b -> unit
 
