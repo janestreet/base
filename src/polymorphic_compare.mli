@@ -1,6 +1,6 @@
 (** A module containing the ad-hoc polymorphic comparison functions.  Useful when
     you want to use polymorphic compare in some small scope of a file within which
-    polymorphic compare has been hidden, typically by [No_polymorphic_compare]. *)
+    polymorphic compare has been hidden *)
 
 open! Import0
 

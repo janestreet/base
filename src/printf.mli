@@ -1,8 +1,8 @@
 open! Import0
 
-val ifprintf : 'a ->                   ('r, 'a, unit) format -> 'r
-val sprintf  :                     ('r, unit, string) format -> 'r
-val bprintf  :     Caml.Buffer.t -> ('r, Caml.Buffer.t, unit) format -> 'r
+val ifprintf : 'a ->            ('r, 'a, 'c, unit)        format4 -> 'r
+val sprintf  :                  ('r, unit, string)        format  -> 'r
+val bprintf  : Caml.Buffer.t -> ('r, Caml.Buffer.t, unit) format  -> 'r
 
 val ksprintf : (string -> 'a) -> ('r, unit, string, 'a) format4 -> 'r
 val kbprintf : (Caml.Buffer.t -> 'a) -> Caml.Buffer.t -> ('r, Caml.Buffer.t, unit, 'a) format4 -> 'r
