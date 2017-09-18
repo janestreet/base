@@ -321,6 +321,14 @@ let%test_module "Hash" =
 let%test _ = of_char_list ['a';'b';'c'] = "abc"
 let%test _ = of_char_list [] = ""
 
+let%expect_test "mem does not allocate" =
+  let string = Sys.opaque_identity "abracadabra" in
+  let char   = Sys.opaque_identity 'd'           in
+  require_no_allocation [%here] (fun () ->
+    ignore (String.mem string char : bool));
+  [%expect {||}];
+;;
+
 let%test_module "Escaping" =
   (module struct
     open Escaping

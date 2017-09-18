@@ -48,8 +48,8 @@
         | Foo i -> V.name "Foo" (Int.validate_positive i)
         | Bar p -> V.name "Bar" (V.pair
                                    ~fst:Float.validate_positive
-                                   ~snd:Int.validate_non_negative)
-        | Snoo floogle -> V.name "Snoo" Floogle.validate
+                                   ~snd:Int.validate_non_negative p)
+        | Snoo floogle -> V.name "Snoo" (Floogle.validate floogle)
     ]} *)
 
 open! Import
