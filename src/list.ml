@@ -309,7 +309,26 @@ let rec count_append l1 l2 count =
 
 let append l1 l2 = count_append l1 l2 0
 
-let map_slow l ~f = rev (rev_map ~f l)
+let tail_map xs ~f =
+  let rec rise ys = function
+    | [] ->
+      ys
+    | (y0, y1, y2, y3, y4, y5, y6, y7) :: bs ->
+      rise (y0 :: y1 :: y2 :: y3 :: y4 :: y5 :: y6 :: y7 :: ys) bs in
+  let rec dive bs = function
+    | x0 :: x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: xs ->
+      let y0 = f x0 in
+      let y1 = f x1 in
+      let y2 = f x2 in
+      let y3 = f x3 in
+      let y4 = f x4 in
+      let y5 = f x5 in
+      let y6 = f x6 in
+      let y7 = f x7 in
+      dive ((y0, y1, y2, y3, y4, y5, y6, y7) :: bs) xs
+    | xs ->
+      rise (nontail_map ~f xs) bs in
+  dive [] xs
 
 let rec count_map ~f l ctr =
   match l with
@@ -340,7 +359,7 @@ let rec count_map ~f l ctr =
     let f5 = f x5 in
     f1 :: f2 :: f3 :: f4 :: f5 ::
     (if ctr > 1000
-     then map_slow ~f tl
+     then tail_map ~f tl
      else count_map ~f tl (ctr + 1))
 
 let map l ~f = count_map ~f l 0
