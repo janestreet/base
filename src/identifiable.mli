@@ -2,7 +2,7 @@
     to act as names or identifiers.
 
     Modules that satisfy [Identifiable] can be printed and parsed (both through string and
-    s-expression converters), can can be used in hash-based and comparison-based
+    s-expression converters), can be used in hash-based and comparison-based
     containers (e.g., hashtables and maps)
 
     Also, this module provides functors for conveniently constructing identifiable
