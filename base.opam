@@ -1,5 +1,5 @@
 opam-version: "1.2"
-version: "v0.9.3"
+version: "v0.9.4"
 maintainer: "opensource@janestreet.com"
 authors: ["Jane Street Group, LLC <opensource@janestreet.com>"]
 homepage: "https://github.com/janestreet/base"
@@ -11,7 +11,7 @@ build: [
 ]
 depends: [
   "jbuilder" {build & >= "1.0+beta7"}
-  "sexplib" {>= "v0.9.1" & < "v0.10"}
+  "sexplib" {>= "v0.9.3" & < "v0.10"}
 ]
 depopts: [
   "base-native-int63"
