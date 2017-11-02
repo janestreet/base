@@ -6,21 +6,24 @@
 
 open! Import
 
-(** [Continue_or_stop.t] is used by the [f] argument to [fold_until] in order to
-    indicate if folding should continue, or stop early *)
-module Continue_or_stop = struct
-  type ('a, 'b) t =
-    | Continue of 'a
-    | Stop     of 'b
-end
+module Export = struct
+  (** [Continue_or_stop.t] is used by the [f] argument to [fold_until] in order to
+      indicate if folding should continue, or stop early *)
+  module Continue_or_stop = struct
+    type ('a, 'b) t =
+      | Continue of 'a
+      | Stop     of 'b
+  end
 
-(** [Finished_or_stopped_early.t] is returned by [fold_until] to indicate if
-    [f] requested the fold stop, or if the fold completed *)
-module Finished_or_stopped_early = struct
-  type ('a, 'b) t =
-    | Finished      of 'a
-    | Stopped_early of 'b
+  (** [Finished_or_stopped_early.t] is returned by [fold_until] to indicate if
+      [f] requested the fold stop, or if the fold completed *)
+  module Finished_or_stopped_early = struct
+    type ('a, 'b) t =
+      | Finished      of 'a
+      | Stopped_early of 'b
+  end
 end
+include Export
 
 (** Signature for monomorphic container, e.g., string *)
 module type S0 = sig

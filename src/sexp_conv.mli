@@ -51,6 +51,10 @@ val sexp_of_string : string -> Sexp.t
 (** [sexp_of_bool str] converts the value [str] of type [string] to an
     S-expression. *)
 
+val sexp_of_bytes : bytes -> Sexp.t
+(** [sexp_of_bool str] converts the value [str] of type [bytes] to an
+    S-expression. *)
+
 val sexp_of_char : char -> Sexp.t
 (** [sexp_of_char c] converts the value [c] of type [char] to an
     S-expression. *)
@@ -156,6 +160,10 @@ val bool_of_sexp : Sexp.t -> bool
 val string_of_sexp : Sexp.t -> string
 (** [string_of_sexp sexp] converts S-expression [sexp] to a value of type
     [string]. *)
+
+val bytes_of_sexp : Sexp.t -> bytes
+(** [bytes_of_sexp sexp] converts S-expression [sexp] to a value of type
+    [bytes]. *)
 
 val char_of_sexp : Sexp.t -> char
 (** [char_of_sexp sexp] converts S-expression [sexp] to a value of type

@@ -14,7 +14,7 @@ let () =
   in
   let oc = open_out output in
   Printf.fprintf oc {|
-external set        : string -> int -> char -> unit = "%%%s_safe_set"
-external unsafe_set : string -> int -> char -> unit = "%%%s_unsafe_set"
-|} prefix prefix;
+external set        : %s -> int -> char -> unit = "%%%s_safe_set"
+external unsafe_set : %s -> int -> char -> unit = "%%%s_unsafe_set"
+|} prefix prefix prefix prefix;
   close_out oc

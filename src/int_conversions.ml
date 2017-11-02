@@ -232,24 +232,24 @@ let insert_delimiter_every input ~delimiter ~chars_per_delimiter =
     let num_digits = if has_sign then input_length - 1 else input_length in
     let num_delimiters = (num_digits - 1) / chars_per_delimiter in
     let output_length = input_length + num_delimiters in
-    let output = String.create output_length in
+    let output = Bytes.create output_length in
     let input_pos = ref (input_length - 1) in
     let output_pos = ref (output_length - 1) in
     let num_chars_until_delimiter = ref chars_per_delimiter in
     let first_digit_pos = if has_sign then 1 else 0 in
     while !input_pos >= first_digit_pos do
       if !num_chars_until_delimiter = 0 then begin
-        output.[!output_pos] <- delimiter;
+        Bytes.set output !output_pos delimiter;
         decr output_pos;
         num_chars_until_delimiter := chars_per_delimiter;
       end;
-      output.[!output_pos] <- input.[!input_pos];
+      Bytes.set output !output_pos input.[!input_pos];
       decr input_pos;
       decr output_pos;
       decr num_chars_until_delimiter;
     done;
-    if has_sign then output.[0] <- input.[0];
-    output;
+    if has_sign then Bytes.set output 0 input.[0];
+    Bytes.unsafe_to_string output;
   end
 ;;
 

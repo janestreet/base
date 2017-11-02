@@ -169,6 +169,10 @@ module Test_values = struct
     let v = lazy (range 1 100_000) in
     fun () -> Lazy.force v
 
+  let long2 =
+    let v = lazy (range 2 100_001) in
+    fun () -> Lazy.force v
+
   let l1 = [1;2;3;4;5;6;7;8;9;10]
 end
 
@@ -185,6 +189,21 @@ let%test _ =
   let long = Test_values.long1 () in
   ignore (rev_append long long:int list);
   true
+
+let%test _ =
+  let long1 = Test_values.long1 () in
+  let long2 = Test_values.long2 () in
+  (map long1 ~f:(fun x -> x + 1)) = long2
+
+let test_ordering n =
+  let l = List.range 0 n in
+  let r = ref [] in
+  let _ : unit list = List.map l ~f:(fun x -> r := x :: !r) in
+  [%test_eq: int list] l (List.rev !r)
+
+let%test_unit _ = test_ordering 10
+let%test_unit _ = test_ordering 1000
+let%test_unit _ = test_ordering 1_000_000
 
 let%test _ = for_all2_exn [] [] ~f:(fun _ _ -> assert false)
 

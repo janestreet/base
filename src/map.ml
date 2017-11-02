@@ -996,19 +996,16 @@ module Tree0 = struct
   ;;
 
   let merge t1 t2 ~f ~compare_key =
-    let elts = Array.create ~len:(length t1 + length t2) (Caml.Obj.magic None) in
+    let elts = Obj_array.create_zero ~len:(length t1 + length t2) in
     let i = ref 0 in
     iter2 t1 t2 ~compare_key ~f:(fun ~key ~data:values ->
       match f ~key values with
-      | Some value -> elts.(!i) <- (key, value); incr i
+      | Some value -> Obj_array.set elts !i (Caml.Obj.repr (key, value)); incr i
       | None -> ());
-    (* [Array.unsafe_truncate] raises if [len = 0] *)
-    if !i = 0 then
-      (empty, 0)
-    else begin
-      Array.unsafe_truncate elts ~len:!i;
-      of_sorted_array_unchecked ~compare_key elts
-    end
+    let len = !i in
+    let get i = Caml.Obj.obj (Obj_array.get elts i) in
+    let tree = of_increasing_iterator_unchecked ~len ~f:get in
+    tree, len
   ;;
 
   module Closest_key_impl = struct

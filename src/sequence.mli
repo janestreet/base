@@ -48,7 +48,7 @@ include Monad.S              with type 'a t := 'a t
 val empty : _ t
 
 (** [next] returns the next element of a sequence and the next tail if the sequence is not
-    finished. It is the most primitive way to walk over a sequence. *)
+    finished. *)
 val next : 'a t -> ('a * 'a t) option
 
 (** A [Step] describes the next step of the sequence construction.  [Done] indicates the
@@ -353,12 +353,12 @@ val delayed_fold
 (** [fold_m] is a monad-friendly version of [fold]. Supply it with the monad's [return]
     and [bind], and it will chain them through the computation. *)
 val fold_m
-  :  bind:('acc_m -> f:('acc -> 'ret_m) -> 'ret_m)
-  -> return:('acc -> 'ret_m)
+  :  bind:('acc_m -> f:('acc -> 'acc_m) -> 'acc_m)
+  -> return:('acc -> 'acc_m)
   -> 'elt t
   -> init:'acc
   -> f:('acc -> 'elt -> 'acc_m)
-  -> 'ret_m
+  -> 'acc_m
 
 (** [iter_m] is a monad-friendly version of [iter]. Supply it with the monad's [return]
     and [bind], and it will chain them through the computation. *)
@@ -440,4 +440,38 @@ module Generator : sig
   val yield : 'elt -> (unit, 'elt) t
   val of_sequence : 'elt sequence -> (unit, 'elt) t
   val run : (unit, 'elt) t -> 'elt sequence
+end
+
+(** The functions in [Expert] expose internal structure which is normally meant to be
+    hidden. For example, at least when [f] is purely functional, it is not intended for
+    client code to distinguish between
+
+    {[
+      List.filter xs ~f
+      |> Sequence.of_list
+    ]}
+
+    and
+
+    {[
+      Sequence.of_list xs
+      |> Sequence.filter ~f
+    ]}
+
+    But sometimes for operational reasons it still makes sense to distinguish them. For
+    example, being able to handle [Skip]s explicitly allows breaking up some
+    computationally expensive sequences into smaller chunks of work. *)
+module Expert : sig
+  (** [next_step] returns the next step in a sequence's construction. It is like [next],
+      but it also allows observing [Skip] steps. *)
+  val next_step : 'a t -> ('a, 'a t) Step.t
+
+  (** [delayed_fold_step] is liked [delayed_fold], but [f] takes an option where [None]
+      represents a [Skip] step. *)
+  val delayed_fold_step
+    :  'a t
+    -> init:'s
+    -> f:('s -> 'a option -> k:('s -> 'r) -> 'r) (** [k] stands for "continuation" *)
+    -> finish:('s -> 'r)
+    -> 'r
 end

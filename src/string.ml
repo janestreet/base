@@ -1,6 +1,7 @@
 open! Import
 
 module Array = Array0
+module Bytes = Bytes0
 
 include String0
 
@@ -102,15 +103,22 @@ module Caseless = struct
   include Comparable.Make(T)
 end
 
-include
-  Blit.Make
-    (struct
-      type nonrec t = t
-      let create ~len = create len
-      let length = length
-      let unsafe_blit = unsafe_blit
-    end)
-;;
+(* This is copied/adapted from 'blit.ml'.
+   [sub], [subo] could be implemented using [Blit.Make(Bytes)] plus unsafe casts to/from
+   string but were inlined here to avoid using [Bytes.unsafe_of_string] as much as possible.
+   Also note that [blit] and [blito] will be deprected and removed in the future.
+*)
+let sub src ~pos ~len =
+  Ordered_collection_common.check_pos_len_exn ~pos ~len ~length:(length src);
+  let dst = Bytes.create len in
+  if len > 0 then Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
+  Bytes.unsafe_to_string dst
+let subo ?(pos = 0) ?len src =
+  sub src ~pos ~len:(match len with Some i -> i | None -> length src - pos)
+
+let blit = Bytes.blit_string
+let blito ~src ?(src_pos = 0) ?(src_len = length src - src_pos) ~dst ?(dst_pos = 0) () =
+  blit ~src ~src_pos ~len:src_len ~dst ~dst_pos
 
 let contains ?pos ?len t char =
   let (pos, len) =
@@ -269,11 +277,11 @@ module Search_pattern = struct
       let len_s = length s in
       let len_t = length (fst t) in
       let len_with = length with_ in
-      let dst = make (len_s + len_with - len_t) ' ' in
+      let dst = Bytes.create (len_s + len_with - len_t) in
       blit ~src:s ~src_pos:0 ~dst ~dst_pos:0 ~len:i;
       blit ~src:with_ ~src_pos:0 ~dst ~dst_pos:i ~len:len_with;
       blit ~src:s ~src_pos:(i + len_t) ~dst ~dst_pos:(i + len_with) ~len:(len_s - i - len_t);
-      dst
+      Bytes.unsafe_to_string dst
   ;;
 
 
@@ -286,7 +294,7 @@ module Search_pattern = struct
       let len_t = length (fst t) in
       let len_with = length with_ in
       let num_matches = List.length matches in
-      let dst = make (len_s + (len_with - len_t) * num_matches) ' ' in
+      let dst = Bytes.create (len_s + (len_with - len_t) * num_matches) in
       let next_dst_pos = ref 0 in
       let next_src_pos = ref 0 in
       List.iter matches ~f:(fun i ->
@@ -298,7 +306,7 @@ module Search_pattern = struct
       );
       blit ~src:s ~src_pos:!next_src_pos ~dst ~dst_pos:!next_dst_pos
         ~len:(len_s - !next_src_pos);
-      dst
+      Bytes.unsafe_to_string dst
   ;;
 end
 
@@ -332,11 +340,11 @@ let to_string = id
 
 let init n ~f =
   if n < 0 then invalid_argf "String.init %d" n ();
-  let t = create n in
+  let t = Bytes.create n in
   for i = 0 to n - 1 do
-    t.[i] <- f i;
+    Bytes.set t i (f i);
   done;
-  t
+  Bytes.unsafe_to_string t
 ;;
 
 (** See {!Array.normalize} for the following 4 functions. *)
@@ -349,8 +357,9 @@ let slice t start stop =
 
 let nget x i =
   x.[normalize x i]
+
 let nset x i v =
-  x.[normalize x i] <- v
+  Bytes.set x (normalize (Bytes.unsafe_to_string x) i) v
 
 let to_list s =
   let rec loop acc i =
@@ -373,11 +382,11 @@ let to_list_rev s =
 
 let rev t =
   let len = length t in
-  let res = create len in
+  let res = Bytes.create len in
   for i = 0 to len - 1 do
     unsafe_set res i (unsafe_get t (len - 1 - i))
   done;
-  res
+  Bytes.unsafe_to_string res
 ;;
 
 (** Efficient string splitting *)
@@ -558,20 +567,20 @@ let strip ?(drop=Char.is_whitespace) t =
 
 let mapi t ~f =
   let l = length t in
-  let t' = create l in
+  let t' = Bytes.create l in
   for i = 0 to l - 1 do
-    t'.[i] <- f i t.[i]
+    Bytes.unsafe_set t' i (f i t.[i])
   done;
-  t'
+  Bytes.unsafe_to_string t'
 
 (* repeated code to avoid requiring an extra allocation for a closure on each call. *)
 let map t ~f =
   let l = length t in
-  let t' = create l in
+  let t' = Bytes.create l in
   for i = 0 to l - 1 do
-    t'.[i] <- f t.[i]
+    Bytes.unsafe_set t' i (f t.[i])
   done;
-  t'
+  Bytes.unsafe_to_string t'
 
 let to_array s = Array.init (length s) ~f:(fun i -> s.[i])
 
@@ -580,8 +589,8 @@ let tr ~target ~replacement s =
 ;;
 
 let tr_inplace ~target ~replacement s = (* destructive version of tr *)
-  for i = 0 to length s - 1 do
-    if Char.equal s.[i] target then s.[i] <- replacement
+  for i = 0 to Bytes.length s - 1 do
+    if Char.equal (Bytes.unsafe_get s i) target then Bytes.unsafe_set s i replacement
   done
 
 let exists =
@@ -685,15 +694,16 @@ let filter t ~f =
   if !i = n then
     t
   else begin
-    let out = make (n - 1) ' ' in
+    let out = Bytes.create (n - 1) in
     blit ~src:t ~src_pos:0 ~dst:out ~dst_pos:0 ~len:!i;
     let out_pos = ref !i in
     incr i;
     while !i < n; do
       let c = t.[!i] in
-      if f c then (out.[!out_pos] <- c; incr out_pos);
+      if f c then (Bytes.set out !out_pos c; incr out_pos);
       incr i
     done;
+    let out = Bytes.unsafe_to_string out in
     if !out_pos = n - 1 then
       out
     else
@@ -754,9 +764,9 @@ let pp = Caml.Format.pp_print_string
 let of_char c = make 1 c
 
 let of_char_list l =
-  let t = create (List.length l) in
-  List.iteri l ~f:(fun i c -> t.[i] <- c);
-  t
+  let t = Bytes.create (List.length l) in
+  List.iteri l ~f:(fun i c -> Bytes.set t i c);
+  Bytes.unsafe_to_string t
 
 module Escaping = struct
   (* If this is changed, make sure to update [escape], which attempts to ensure all the
@@ -835,7 +845,7 @@ module Escaping = struct
              "000_A111_B222_C333" *)
           let src_len = length src in
           let dst_len = src_len + !to_escape_len in
-          let dst = create dst_len in
+          let dst = Bytes.create dst_len in
           let rec loop last_idx last_dst_pos = function
             | [] ->
               (* copy "000" at last *)
@@ -850,13 +860,13 @@ module Escaping = struct
               blit ~src ~src_pos:(idx + 1) ~dst ~dst_pos ~len;
               (* backoff [dst_pos] by 2 to copy '_' and 'C' *)
               let dst_pos = dst_pos - 2 in
-              dst.[dst_pos] <- escape_char;
-              dst.[dst_pos + 1] <- escaped_char;
+              Bytes.set dst dst_pos escape_char;
+              Bytes.set dst (dst_pos + 1) escaped_char;
               loop idx dst_pos to_escape
           in
           (* set [last_dst_pos] and [last_idx] to length of [dst] and [src] first *)
           loop src_len dst_len to_escape;
-          dst
+          Bytes.unsafe_to_string dst
       )
   ;;
 
@@ -929,7 +939,7 @@ module Escaping = struct
         match to_unescape with
         | [] -> src
         | idx::to_unescape' ->
-          let dst = create (length src - List.length to_unescape) in
+          let dst = Bytes.create (length src - List.length to_unescape) in
           let rec loop last_idx last_dst_pos = function
             | [] ->
               (* copy "000" at last *)
@@ -944,22 +954,21 @@ module Escaping = struct
               blit ~src ~src_pos:(idx + 2) ~dst ~dst_pos ~len;
               (* backoff [dst_pos] by 1 to copy 'c' *)
               let dst_pos = dst_pos - 1 in
-              dst.[dst_pos] <-
-                ( match escapeworthy.(Char.to_int src.[idx + 1]) with
-                  | -1 -> src.[idx + 1]
-                  | n -> Char.unsafe_of_int n);
+              Bytes.set dst dst_pos ( match escapeworthy.(Char.to_int src.[idx + 1]) with
+                | -1 -> src.[idx + 1]
+                | n -> Char.unsafe_of_int n);
               (* update [last_dst_pos] and [last_idx] *)
               loop idx dst_pos to_unescape
           in
           ( if idx < length src - 1 then
               (* set [last_dst_pos] and [last_idx] to length of [dst] and [src] *)
-              loop (length src) (length dst) to_unescape
+              loop (length src) (Bytes.length dst) to_unescape
             else
               (* for escaped string ending with an escaping char like "000_", just ignore
                  the last escaping char *)
-              loop (length src - 1) (length dst) to_unescape'
+              loop (length src - 1) (Bytes.length dst) to_unescape'
           );
-          dst
+          Bytes.unsafe_to_string dst
       )
   ;;
 
@@ -1230,3 +1239,5 @@ module Replace_polymorphic_compare = struct
 end
 
 include Replace_polymorphic_compare
+let create = Bytes.create
+let fill = Bytes.fill

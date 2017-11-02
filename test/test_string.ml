@@ -6,18 +6,6 @@ let%expect_test "hash coherence" [@tags "64-bits-only"] =
   [%expect {| |}];
 ;;
 
-let%test_module "Blit" =
-  (module Test_blit.Test
-       (struct
-         include Char
-         let of_bool b = if b then 'a' else 'b'
-       end)
-       (struct
-         include String
-         let create ~len = create len
-       end)
-       (String))
-
 let%test_module "Caseless Suffix/Prefix" =
   (module struct
     let%test _ = Caseless.is_suffix "OCaml" ~suffix:"AmL"

@@ -9,6 +9,11 @@ let%expect_test "hash coherence" [@tags "64-bits-only"] =
 let%test_unit _ = [%test_result: t] max_value ~expect:(of_int64_exn 4611686018427387903L)
 let%test_unit _ = [%test_result: t] min_value ~expect:(of_int64_exn (-4611686018427387904L))
 
+let%test_unit _ =
+  [%test_result: t] (of_int32_exn Int32.min_value) ~expect:(of_int32 Int32.min_value)
+let%test_unit _ =
+  [%test_result: t] (of_int32_exn Int32.max_value) ~expect:(of_int32 Int32.max_value)
+
 let%test "typical random 0" = Exn.does_raise (fun () -> random zero)
 
 let%test_module "Overflow_exn" =

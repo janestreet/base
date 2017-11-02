@@ -1,4 +1,5 @@
 open! Import
+open Container_intf.Export
 
 (* In the definition of [t], we do not have [[@@deriving_inline compare, sexp][@@@end]] because
    in general, syntax extensions tend to use the implementation when available rather than
@@ -47,8 +48,8 @@ let iter t ~f = f !t
 let fold t ~init ~f = f init !t
 
 let fold_result t ~init ~f = f init !t
-let fold_until  t ~init ~f : ('a, 'b) Container_intf.Finished_or_stopped_early.t =
-  match (f init !t : ('a, 'b) Container_intf.Continue_or_stop.t) with
+let fold_until  t ~init ~f : ('a, 'b) Finished_or_stopped_early.t =
+  match (f init !t : ('a, 'b) Continue_or_stop.t) with
   | Stop     x -> Stopped_early  x
   | Continue x -> Finished       x
 

@@ -1,23 +1,29 @@
 (* [String0] defines string functions that are primitives or can be simply defined in
-   terms of [Caml.String].  [String0] is intended to completely express the part of
+   terms of [Caml.String]. [String0] is intended to completely express the part of
    [Caml.String] that [Base] uses -- no other file in Base other than string0.ml should
    use [Caml.String].  [String0] has few dependencies, and so is available early in Base's
-   build order.  All Base files that need to use strings and come before [Base.String] in
-   build order should do [module String = String0].  This includes uses of subscript
-   syntax ([x.(i)], [x.(i) <- e]), which the OCaml parser desugars into calls to
-   [String.get] and [String.set].  Defining [module String = String0] is also necessary
-   because it prevents ocamldep from mistakenly causing a file to depend on
-   [Base.String]. *)
+   build order.
 
+   All Base files that need to use strings, including the subscript syntax
+   [x.(i)] or [x.(i) <- e] which the OCaml parser desugars into calls to
+   [String], and come before [Base.String] in build order should do
+
+   {[
+     module String = String0]
+   ]}
+
+   Defining [module String = String0] is also necessary because it prevents
+   ocamldep from mistakenly causing a file to depend on [Base.String]. *)
 open! Import0
 
 module Sys = Sys0
 
 module String = struct
-  external get        : string -> int -> char         = "%string_safe_get"
-  external length     : string        -> int          = "%string_length"
-  external unsafe_get : string -> int -> char         = "%string_unsafe_get"
-  include String_set_primitives
+  external get        : string -> int -> char = "%string_safe_get"
+  external length     : string        -> int  = "%string_length"
+  external unsafe_get : string -> int -> char = "%string_unsafe_get"
+
+  include Bytes_set_primitives
 end
 
 include String
@@ -30,9 +36,7 @@ let blit            = Caml.String.blit
 let capitalize      = Caml.String.capitalize
 let compare         = Caml.String.compare
 let copy            = Caml.String.copy
-let create          = Caml.String.create
 let escaped         = Caml.String.escaped
-let fill            = Caml.String.fill
 let index_exn       = Caml.String.index
 let index_from_exn  = Caml.String.index_from
 let lowercase       = Caml.String.lowercase

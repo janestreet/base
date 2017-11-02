@@ -1,5 +1,6 @@
 open! Import
 open! Polymorphic_compare
+open Container_intf.Export
 
 module Array = Array0
 
@@ -39,6 +40,26 @@ type +_ t =
   | Sequence : 's * ('s -> ('a,'s) Step.t) -> 'a t
 
 type 'a sequence = 'a t
+
+module Expert = struct
+  let next_step (Sequence (s, f)) =
+    match f s with
+    | Done         -> Done
+    | Skip      s  -> Skip     (Sequence (s, f))
+    | Yield (a, s) -> Yield (a, Sequence (s, f))
+  ;;
+
+  let delayed_fold_step s ~init ~f ~finish =
+    let rec loop s next finish f acc =
+      match next s with
+      | Done         -> finish acc
+      | Skip      s  -> f acc  None    ~k:(loop s next finish f)
+      | Yield (a, s) -> f acc (Some a) ~k:(loop s next finish f)
+    in
+    match s with
+    | Sequence(s, next) -> loop s next finish f init
+  ;;
+end
 
 let unfold_step ~init ~f =
   Sequence (init,f)
@@ -212,7 +233,6 @@ let length t =
   in
   match t with
   | Sequence (seed, next) -> loop 0 seed next
-
 
 let to_list_rev_with_length t =
   fold t ~init:([],0) ~f:(fun (l,i) x -> (x::l,i+1))
@@ -883,27 +903,28 @@ let cartesian_product sa sb =
 let singleton x = return x
 
 let delayed_fold s ~init ~f ~finish =
-  let rec loop s next finish f =
-    fun acc ->
-      match next s with
-      | Done   -> finish acc
-      | Skip s ->  loop s next finish f acc
-      | Yield(a, s) -> f acc a ~k:(loop s next finish f)
-  in
-  match s with
-  | Sequence(s, next) -> loop s next finish f init
+  Expert.delayed_fold_step s ~init ~finish ~f:(fun acc option ~k ->
+    match option with
+    | None   -> k acc
+    | Some a -> f acc a ~k)
 
 let fold_m ~bind ~return t ~init ~f =
-  delayed_fold t
+  Expert.delayed_fold_step t
     ~init
-    ~f:(fun acc a ~k -> bind (f acc a) ~f:k)
+    ~f:(fun acc option ~k ->
+      match option with
+      | None   -> bind (return acc) ~f:k
+      | Some a -> bind (f acc a)    ~f:k)
     ~finish:return
 ;;
 
 let iter_m ~bind ~return t ~f =
-  delayed_fold t
+  Expert.delayed_fold_step t
     ~init:()
-    ~f:(fun () a ~k -> bind (f a) ~f:k)
+    ~f:(fun () option ~k ->
+      match option with
+      | None   -> bind (return ()) ~f:k
+      | Some a -> bind (f a)       ~f:k)
     ~finish:return
 ;;
 
@@ -911,10 +932,10 @@ let fold_until s ~init ~f =
   let rec loop s next f =
     fun acc ->
       match next s with
-      | Done   -> Container_intf.Finished_or_stopped_early.Finished acc
+      | Done   -> Finished_or_stopped_early.Finished acc
       | Skip s ->  loop s next f acc
-      | Yield(a, s) -> match (f acc a : ('a, 'b) Container_intf.Continue_or_stop.t) with
-        | Stop x -> Container_intf.Finished_or_stopped_early.Stopped_early x
+      | Yield(a, s) -> match (f acc a : ('a, 'b) Continue_or_stop.t) with
+        | Stop x -> Finished_or_stopped_early.Stopped_early x
         | Continue acc -> loop s next f acc
   in
   match s with

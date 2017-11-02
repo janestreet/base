@@ -18,8 +18,7 @@ module Without_comparator      = Map_intf.Without_comparator
 module With_comparator         = Map_intf.With_comparator
 module With_first_class_module = Map_intf.With_first_class_module
 
-module Continue_or_stop          = Container_intf.Continue_or_stop
-module Finished_or_stopped_early = Container_intf.Finished_or_stopped_early
+include Container_intf.Export
 
 module Merge_to_sequence_element = Sequence.Merge_with_duplicates_element
 

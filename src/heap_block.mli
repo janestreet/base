@@ -12,7 +12,7 @@
     for example floating-point numbers when stored into arrays; thus they can be finalized
     and collected while another copy is still in use by the program.
 
-    The results of calling {!String.make}, {!String.create}, {!Array.make}, and
+    The results of calling {!String.make}, {!Bytes.create}, {!Bytes.make}, {!Array.make}, and
     {!Pervasives.ref} are guaranteed to be heap-allocated and non-constant except when the
     length argument is [0]. *)
 

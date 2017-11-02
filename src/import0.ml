@@ -13,6 +13,7 @@ include
        (* These modules are redefined in Base *)
        with module Array     := Caml.Array
        with module Buffer    := Caml.Buffer
+       with module Bytes     := Caml.Bytes
        with module Char      := Caml.Char
        with module Hashtbl   := Caml.Hashtbl
        with module Int32     := Caml.Int32
@@ -33,7 +34,6 @@ type 'a ref = 'a Caml.ref = { mutable contents: 'a }
 
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)
 module Caml = struct
-
   (** @canonical Caml.Arg *)
   module Arg       = Caml.Arg
 
@@ -42,6 +42,9 @@ module Caml = struct
 
   (** @canonical Caml.Buffer *)
   module Buffer    = Caml.Buffer
+
+  (** @canonical Caml.Bytes *)
+  module Bytes     = Caml.StdLabels.Bytes
 
   (** @canonical Caml.Char *)
   module Char      = Caml.Char
@@ -109,7 +112,7 @@ module Caml = struct
   (** @canonical Caml.Stream *)
   module Stream    = Caml.Stream
 
-  (** @canonical Caml.StdLabels.Bytes *)
+  (** @canonical Caml.StdLabels.String *)
   module String    = Caml.StdLabels.String
 
   (** @canonical Caml.Sys *)

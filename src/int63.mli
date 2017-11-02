@@ -27,6 +27,8 @@ end
 val of_int : int -> t
 val to_int : t -> int option
 
+val of_int32 : Int32.t -> t
+
 (** [random ~state bound] returns a random integer between 0 (inclusive) and [bound]
     (exclusive).  [bound] must be greater than 0.
 

@@ -3,6 +3,7 @@ open! Polymorphic_compare
 open! Printf
 
 
+module Bytes = Bytes0
 include Float0
 
 let ceil      = Caml.ceil
@@ -771,9 +772,11 @@ let to_padded_compact_string t =
         let x = format_float "%.1f" t in
         (* Fix the ".0" suffix *)
         if String.is_suffix x ~suffix:".0" then begin
-          let n = String.length x in
-          x.[n - 1] <- ' ';
-          x.[n - 2] <- ' ';
+          (* This is safe because [format_float] above always allocate a new string. *)
+          let x = Bytes.unsafe_of_string x in
+          let n = Bytes.length x in
+          Bytes.set x (n - 1) ' ';
+          Bytes.set x (n - 2) ' ';
         end;
         x
       in
@@ -1002,6 +1005,15 @@ include Comparable.With_zero (struct
     let zero = zero
     include V
   end)
+
+(* These are partly here as a performance hack to avoid some boxing we're getting with
+   the versions we get from [With_zero].  They also make [Float.is_negative nan] and
+   [Float.is_non_positive nan] return [false]; the versions we get from [With_zero] return
+   [true]. *)
+let is_positive t = t > 0.
+let is_non_negative t = t >= 0.
+let is_negative t = t < 0.
+let is_non_positive t = t <= 0.
 
 include Pretty_printer.Register(struct
     include T

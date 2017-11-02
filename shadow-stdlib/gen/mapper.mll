@@ -19,12 +19,15 @@ let deprecated_msg_no_equivalent what =
      so you need to use [Caml.%s] instead\"]"
     what
 
-let deprecated_msg_with_repl repl =
+let deprecated_msg_with_repl_text text =
   sprintf
     "[@@deprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
-     Use [%s] instead.\"]"
-    repl
+     %s.\"]"
+    text
+
+let deprecated_msg_with_repl repl =
+  deprecated_msg_with_repl_text (sprintf "Use [%s] instead" repl)
 
 let deprecated_msg_with_approx_repl ~id repl =
   sprintf
@@ -39,6 +42,7 @@ let deprecated_msg_with_approx_repl ~id repl =
 type replacement =
   | No_equivalent
   | Repl of string
+  | Repl_text of string
   | Approx of string
 
 let val_replacement = function
@@ -49,15 +53,19 @@ let val_replacement = function
   | "close_in_noerr"      -> Repl "Stdio.In_channel.close"
   | "close_out"           -> Repl "Stdio.Out_channel.close"
   | "close_out_noerr"     -> Repl "Stdio.Out_channel.close"
+  | "decr"                -> Repl "Int.decr"
   | "flush"               -> Repl "Stdio.Out_channel.flush"
   | "flush_all"           -> No_equivalent
   | "in_channel_length"   -> Repl "Stdio.In_channel.length"
+  | "incr"                -> Repl "Int.incr"
   | "input"               -> Repl "Stdio.In_channel.input"
   | "input_binary_int"    -> Repl "Stdio.In_channel.input_binary_int"
   | "input_byte"          -> Repl "Stdio.In_channel.input_byte"
   | "input_char"          -> Repl "Stdio.In_channel.input_char"
   | "input_line"          -> Repl "Stdio.In_channel.input_line"
   | "input_value"         -> Repl "Stdio.In_channel.unsafe_input_value"
+  | "( mod )"             -> Repl_text "Use (%), which has a sligtly different \
+                                        semantics, or Int.rem which is equivalent"
   | "open_in"             -> Repl "Stdio.In_channel.create"
   | "open_in_bin"         -> Repl "Stdio.In_channel.create"
   | "open_in_gen"         -> No_equivalent
@@ -68,21 +76,21 @@ let val_replacement = function
   | "output"              -> Repl "Stdio.Out_channel.output"
   | "output_binary_int"   -> Repl "Stdio.Out_channel.output_binary_int"
   | "output_byte"         -> Repl "Stdio.Out_channel.output_byte"
-  | "output_bytes"        -> No_equivalent
+  | "output_bytes"        -> Repl "Stdio.Out_channel.output_bytes"
   | "output_char"         -> Repl "Stdio.Out_channel.output_char"
   | "output_string"       -> Repl "Stdio.Out_channel.output_string"
   | "output_substring"    -> Repl "Stdio.Out_channel.output"
   | "output_value"        -> Repl "Stdio.Out_channel.output_value"
   | "pos_in"              -> Repl "Stdio.In_channel.pos"
   | "pos_out"             -> Repl "Stdio.Out_channel.pos"
-  | "prerr_bytes"         -> No_equivalent
+  | "prerr_bytes"         -> Repl "Stdio.Out_channel.output_bytes Stdio.stderr"
   | "prerr_char"          -> Repl "Stdio.Out_channel.output_char Stdio.stderr"
   | "prerr_endline"       -> Repl "Stdio.prerr_endline"
   | "prerr_float"         -> Repl "Stdio.eprintf \"%f\""
   | "prerr_int"           -> Repl "Stdio.eprintf \"%d\""
   | "prerr_newline"       -> Repl "Stdio.eprintf \"\n%!\""
   | "prerr_string"        -> Repl "Stdio.Out_channel.output_string Stdio.stderr"
-  | "print_bytes"         -> No_equivalent
+  | "print_bytes"         -> Repl "Stdio.Out_channel.output_bytes Stdio.stdout"
   | "print_char"          -> Repl "Stdio.Out_channel.output_char Stdio.stdout"
   | "print_endline"       -> Repl "Stdio.print_endline"
   | "print_float"         -> Repl "Stdio.eprintf \"%f\""
@@ -106,12 +114,17 @@ let val_replacement = function
   | _                     -> No_equivalent
 ;;
 
-let replace_val id line =
+let module_replacement = function
+  | "Printexc" -> Some (Repl_text "Use [Exn] or [Backtrace] instead")
+  | _ -> None
+
+let replace id replacement line =
   let msg =
-    match val_replacement id with
-    | No_equivalent -> deprecated_msg_no_equivalent id
-    | Repl repl     -> deprecated_msg_with_repl repl
-    | Approx repl   -> deprecated_msg_with_approx_repl repl ~id
+    match replacement with
+    | No_equivalent  -> deprecated_msg_no_equivalent id
+    | Repl repl      -> deprecated_msg_with_repl repl
+    | Repl_text text -> deprecated_msg_with_repl_text text
+    | Approx repl    -> deprecated_msg_with_approx_repl repl ~id
   in
   sprintf "%s\n%s" line msg
 ;;
@@ -136,10 +149,12 @@ rule line = parse
          | _ -> deprecated_msg id)
     }
 
-  | val_ (val_id as id) _* as line { replace_val id line }
+  | val_ (val_id as id) _* as line { replace id (val_replacement id) line }
 
   | "exception " (id as id) _* as line
   | "module " (id as id) _* as line
-    { sprintf "%s\n%s" line (deprecated_msg id) }
+    { match module_replacement id with
+      | Some replacement -> replace id replacement line
+      | None -> sprintf "%s\n%s" line (deprecated_msg id) }
   | _* as line
     { ksprintf failwith "cannot parse this: %s" line }

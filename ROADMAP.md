@@ -1,6 +1,6 @@
 # Stable Interface (v1.0)
 
-  - [ ] Make the entire library `-safe-string` compliant. This will involve
+  - [X] Make the entire library `-safe-string` compliant. This will involve
     introducing a `Bytes` module, removing all direct mutation on strings from
     the `String` module, and "re-typing" string values that require mutation to
     `bytes`.

@@ -76,7 +76,7 @@ val of_sorted_array_unchecked
   :  ('a, 'cmp) comparator
   -> ('a * 'b) array -> ('a, 'b, 'cmp) t
 
-(** [if_increasing_iterator_unchecked c ~len ~f] behaves like [of_sorted_array_unchecked c
+(** [of_increasing_iterator_unchecked c ~len ~f] behaves like [of_sorted_array_unchecked c
     (Array.init len ~f)], with the additional restriction that a decreasing order is not
     supported.  The advantage is not requiring you to allocate an intermediate array.  [f]
     will be called with 0, 1, ... [len - 1], in order. *)

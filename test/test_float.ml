@@ -984,3 +984,6 @@ let%expect_test "mathematical constants" =
     sqrt pi diff  : 0.00000000000000022204
     sqrt 2pi diff : 0.00000000000000044409 |}]
 
+let%test _ = is_negative Float.nan = false
+let%test _ = is_non_positive Float.nan = false
+let%test _ = is_non_negative (-0.)

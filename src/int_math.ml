@@ -1,5 +1,4 @@
 open! Import
-open Polymorphic_compare
 
 let invalid_argf = Printf.invalid_argf
 
@@ -24,28 +23,37 @@ let int_pow base exponent =
   int_math_int_pow base exponent
 ;;
 
+module Int64_with_comparisons = struct
+  include Caml.Int64
+  external ( <  ) : int64 -> int64 -> bool = "%lessthan"
+  external ( >  ) : int64 -> int64 -> bool = "%greaterthan"
+  external ( >= ) : int64 -> int64 -> bool = "%greaterequal"
+end
+
 (* we don't do [abs] in int64 case to avoid allocation *)
 let int64_pow base exponent =
+  let open Int64_with_comparisons in
   if exponent < 0L then negative_exponent ();
 
   if (base > 1L || base < (-1L)) &&
      (exponent > 63L ||
       (base >= 0L &&
-       base > Pow_overflow_bounds.int64_positive_overflow_bounds.(Caml.Int64.to_int exponent))
+       base > Pow_overflow_bounds.int64_positive_overflow_bounds.(to_int exponent))
       ||
       (base < 0L &&
-       base < Pow_overflow_bounds.int64_negative_overflow_bounds.(Caml.Int64.to_int exponent)))
+       base < Pow_overflow_bounds.int64_negative_overflow_bounds.(to_int exponent)))
   then overflow ();
 
   int_math_int64_pow base exponent
 ;;
 
 let int63_pow_on_int64 base exponent =
+  let open Int64_with_comparisons in
   if exponent < 0L then negative_exponent ();
 
-  if Caml.Int64.abs(base) > 1L &&
+  if abs(base) > 1L &&
      (exponent > 63L ||
-      Caml.Int64.abs(base) > Pow_overflow_bounds.int63_on_int64_positive_overflow_bounds.(Caml.Int64.to_int exponent))
+      abs(base) > Pow_overflow_bounds.int63_on_int64_positive_overflow_bounds.(to_int exponent))
   then overflow ();
 
   int_math_int64_pow base exponent

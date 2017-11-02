@@ -5,6 +5,8 @@ include Int_intf.S
 val of_int : int -> t
 val to_int : t -> int option
 
+val of_int32 : int32 -> t
+
 (*_ exported for Core_kernel *)
 module W : sig
   val wrap_exn : int64 -> t

@@ -68,5 +68,5 @@ The [ppx_compare] rewriter offers an alternative way to write this:
 
 Base is still under active development and there are several missing
 feature that are yet to be added. Consult the
-[[https://github.com/janestreet/base/ROADMAP.md][roadmap]] to see what
-is happening.
+{{:https://github.com/janestreet/base/blob/master/ROADMAP.md}roadmap} to
+see what is happening.

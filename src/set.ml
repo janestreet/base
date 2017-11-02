@@ -276,10 +276,10 @@ module Tree0 = struct
     | Some v -> v
   ;;
 
-  let fold_until t ~init ~f : ('a, 'b) Container_intf.Finished_or_stopped_early.t =
+  let fold_until t ~init ~f : ('a, 'b) Finished_or_stopped_early.t =
     let rec fold_until_helper ~f t acc =
       match t with
-      | Empty -> Container_intf.Continue_or_stop.Continue acc
+      | Empty -> Continue_or_stop.Continue acc
       | Leaf value -> f acc value
       | Node(left, value, right, _, _) ->
         match fold_until_helper ~f left acc with

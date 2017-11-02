@@ -309,7 +309,7 @@ let rec count_append l1 l2 count =
 
 let append l1 l2 = count_append l1 l2 0
 
-let map_slow l ~f = rev (rev_map ~f l)
+let slow_map l ~f = rev (rev_map l ~f)
 
 let rec count_map ~f l ctr =
   match l with
@@ -340,7 +340,7 @@ let rec count_map ~f l ctr =
     let f5 = f x5 in
     f1 :: f2 :: f3 :: f4 :: f5 ::
     (if ctr > 1000
-     then map_slow ~f tl
+     then slow_map ~f tl
      else count_map ~f tl (ctr + 1))
 
 let map l ~f = count_map ~f l 0

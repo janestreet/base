@@ -15,6 +15,7 @@ include (Shadow_stdlib
          (* Modules defined in Base *)
          with module Array     := Caml.Array
          with module Buffer    := Caml.Buffer
+         with module Bytes     := Caml.Bytes
          with module Char      := Caml.Char
          with module Hashtbl   := Caml.Hashtbl
          with module Int32     := Caml.Int32
@@ -56,6 +57,7 @@ module Blit                      = Blit
 module Blit_intf                 = Blit_intf
 module Bool                      = Bool
 module Buffer                    = Buffer
+module Bytes                     = Bytes
 module Char                      = Char
 module Commutative_group         = Commutative_group
 module Comparable                = Comparable
@@ -99,6 +101,7 @@ module Map_intf                  = Map_intf
 module Maybe_bound               = Maybe_bound
 module Monad                     = Monad
 module Nativeint                 = Nativeint
+module Obj_array                 = Obj_array
 module Option                    = Option
 module Or_error                  = Or_error
 module Ordered_collection_common = Ordered_collection_common
@@ -132,6 +135,9 @@ module Validate                  = Validate
 module Variant                   = Variant
 module With_return               = With_return
 module Word_size                 = Word_size
+
+(* Avoid a level of indirection for uses of the signatures defined in [T]. *)
+include T (** @inline *)
 
 (* This is a hack so that odoc creates better documentation. *)
 module Sexp = struct
@@ -296,6 +302,11 @@ module Export = struct
   let string_of_sexp : Sexplib.Sexp.t -> string = String.t_of_sexp
   let sexp_of_string : string -> Sexplib.Sexp.t = String.sexp_of_t
   [@@@end]
+  type bytes     = Bytes.     t [@@deriving_inline compare,       sexp]
+  let compare_bytes : bytes -> bytes -> int = Bytes.compare
+  let bytes_of_sexp : Sexplib.Sexp.t -> bytes = Bytes.t_of_sexp
+  let sexp_of_bytes : bytes -> Sexplib.Sexp.t = Bytes.sexp_of_t
+  [@@@end]
   type unit      = Unit.      t [@@deriving_inline compare, hash, sexp]
   let compare_unit : unit -> unit -> int = Unit.compare
   let (hash_fold_unit :
@@ -324,9 +335,12 @@ module Export = struct
   (** Float operators *)
   include Float.O_dot
 
-  (** Composition operator *)
-  (* This need to be declared as an external to be optimized away in more contexts *)
+  (** Reverse application operator. [x |> g |> f] is equivalent to [f (g (x))]. *)
+  (* This is declared as an external to be optimized away in more contexts. *)
   external ( |> ) : 'a -> ( 'a -> 'b) -> 'b = "%revapply"
+
+  (** Application operator. [g @@ f @@ x] is equivalent to [g (f (x))]. *)
+  external ( @@ ) : ('a -> 'b) -> 'a -> 'b = "%apply"
 
   (** Boolean operations *)
   (* These need to be declared as an external to get the lazy behavior *)
@@ -334,7 +348,7 @@ module Export = struct
   external ( || ) : bool -> bool -> bool = "%sequor"
   external not : bool -> bool = "%boolnot"
 
-  (* This need to be declared as an external for the warnings to work properly *)
+  (* This must be declared as an external for the warnings to work properly. *)
   external ignore : _ -> unit = "%ignore"
 
   (** Common string operations *)
@@ -363,6 +377,7 @@ module Export = struct
 end
 
 include Export
+include Container_intf.Export (** @inline *)
 
 (* Various things to cleanup that were used without going through Base. *)
 module Not_exposed_properly = struct

@@ -28,13 +28,13 @@ module type S = sig
   val contents : t -> string
 
   (** [blit ~src ~src_pos ~dst ~dst_pos ~len] copies [len] characters from the current
-      contents of the buffer [src], starting at offset [src_pos] to string [dst], starting
+      contents of the buffer [src], starting at offset [src_pos] to bytes [dst], starting
       at character [dst_pos].
 
       Raise [Invalid_argument] if [src_pos] and [len] do not designate a valid substring
       of [src], or if [dst_pos] and [len] do not designate a valid substring of [dst]. *)
 
-  include Blit.S_distinct with type src := t with type dst := string
+  include Blit.S_distinct with type src := t with type dst := bytes
 
   (** get the (zero-based) n-th character of the buffer. Raise [Invalid_argument] if index
       out of bounds *)
@@ -61,6 +61,13 @@ module type S = sig
   (** [add_substring b s pos len] takes [len] characters from offset [pos] in string [s]
       and appends them at the end of the buffer [b]. *)
   val add_substring : t -> string -> pos:int -> len:int -> unit
+
+  (** [add_bytes b s] appends the bytes [s] at the end of the buffer [b]. *)
+  val add_bytes : t -> bytes -> unit
+
+  (** [add_subbytes b s pos len] takes [len] characters from offset [pos] in bytes [s]
+      and appends them at the end of the buffer [b]. *)
+  val add_subbytes : t -> bytes -> pos:int -> len:int -> unit
 
   (** [add_buffer b1 b2] appends the current contents of buffer [b2] at the end of buffer
       [b1].  [b2] is not modified. *)

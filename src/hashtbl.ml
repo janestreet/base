@@ -267,11 +267,6 @@ let find_exn =
     find_and_call t key ~if_found ~if_not_found
 ;;
 
-(*let find_default t key ~default =
-  match find t key with
-  | None -> default ()
-  | Some a -> a*)
-
 let existsi t ~f =
   with_return (fun r ->
     iteri t ~f:(fun ~key ~data -> if f ~key ~data then r.return true);
@@ -297,19 +292,6 @@ let mapi t ~f =
   iteri t ~f:(fun ~key ~data -> replace new_t ~key ~data:(f ~key ~data));
   new_t
 
-(* How about this? *)
-(*
-   {[
-     let mapi t ~f =
-       let new_t =
-         create ~growth_allowed:t.growth_allowed
-           ~hashable:t.hashable ~size:t.length ()
-       in
-       let itfun ~key ~data = replace new_t ~key ~data:(f ~key ~data) in
-       iteri t ~f:itfun;
-       new_t
-   ]} *)
-
 let map t ~f = mapi t ~f:(fun ~key:_ ~data -> f data)
 
 let copy t = map t ~f:Fn.id
@@ -324,22 +306,6 @@ let filter_mapi t ~f =
     | Some new_data -> replace new_t ~key ~data:new_data
     | None -> ());
   new_t
-
-(* How about this? *)
-(*
-   {[
-     let filter_mapi t ~f =
-       let new_t =
-         create ~growth_allowed:t.growth_allowed
-           ~hashable:t.hashable ~size:t.length ()
-       in
-       let itfun ~key ~data = match f ~key ~data with
-         | None -> ()
-         | Some d -> replace new_t ~key ~data:d
-       in
-       iter t ~f:itfun;
-       new_t
-   ]} *)
 
 let filter_map t ~f = filter_mapi t ~f:(fun ~key:_ ~data -> f data)
 

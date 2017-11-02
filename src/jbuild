@@ -7,8 +7,8 @@
             -o ${@}))))
 
 (rule
- ((targets (string_set_primitives.ml))
-  (deps    (select-string-set-primitives/select.ml))
+ ((targets (bytes_set_primitives.ml))
+  (deps    (select-bytes-set-primitives/select.ml))
   (action  (run ${OCAML} ${<}
             -ocaml-version ${ocaml_version}
             -o ${@}))))
@@ -28,6 +28,7 @@
    (caml
     shadow_stdlib))
   (install_c_headers (internalhash))
+  (flags (:standard -safe-string))
   (c_flags (:standard -D_LARGEFILE64_SOURCE (:include mpopcnt.sexp)))
   (c_names
    ;; If you add c stubs in here, ask yourself this question: would it make sense/can it

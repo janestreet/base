@@ -5,6 +5,7 @@ open  Caml.Printf
 open  Sexp
 
 module Array  = Array0
+module Bytes  = Bytes0
 module List   = List0
 module String = String0
 module Sys    = Sys0
@@ -44,6 +45,7 @@ let list_map f l = List.rev (List.rev_map l ~f)
 let sexp_of_unit () = List []
 let sexp_of_bool b = Atom (Caml.string_of_bool b)
 let sexp_of_string str = Atom str
+let sexp_of_bytes bytes = Atom (Bytes.unsafe_to_string bytes)
 let sexp_of_char c = Atom (String.make 1 c)
 let sexp_of_int n = Atom (string_of_int n)
 let sexp_of_float n = Atom (!default_string_of_float n)
@@ -210,6 +212,11 @@ let bool_of_sexp sexp = match sexp with
 let string_of_sexp sexp = match sexp with
   | Atom str -> str
   | List _ -> of_sexp_error "string_of_sexp: atom needed" sexp
+
+let bytes_of_sexp sexp = match sexp with
+  | Atom str -> Bytes.of_string str
+  | List _ -> of_sexp_error "bytes_of_sexp: atom needed" sexp
+
 
 let char_of_sexp sexp = match sexp with
   | Atom str ->
