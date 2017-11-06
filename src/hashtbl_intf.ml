@@ -71,9 +71,6 @@ module type Accessors = sig
   val iter      : ( _, 'b) t -> f:(                   'b -> unit) -> unit
   val iteri     : ('a, 'b) t -> f:(key:'a key -> data:'b -> unit) -> unit
 
-  val iter_vals : ( _, 'b) t -> f:(                   'b -> unit) -> unit
-  [@@deprecated "[since 2016-04] Use iter instead"]
-
   val existsi  : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> bool
   val exists   : (_ , 'b) t -> f:(                   'b -> bool) -> bool
   val for_alli : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> bool
@@ -86,8 +83,6 @@ module type Accessors = sig
   val mem : ('a, _) t -> 'a key -> bool
   val remove : ('a, _) t -> 'a key -> unit
 
-  val replace      : ('a, 'b) t -> key:'a key -> data:'b -> unit
-  [@@deprecated "[since 2015-10] Use set instead"]
   val set          : ('a, 'b) t -> key:'a key -> data:'b -> unit
 
   (** [add] and [add_exn] leave the table unchanged if the key was already present. *)
@@ -235,15 +230,6 @@ module type Accessors = sig
   val filter_map_inplace  : (_,  'b) t -> f:(                   'b -> 'b option) -> unit
   val filter_mapi_inplace : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b option) -> unit
 
-  val replace_all : (_, 'b) t -> f:('b -> 'b) -> unit
-  [@@deprecated "[since 2016-02] Use map_inplace instead"]
-  val replace_alli : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b) -> unit
-  [@@deprecated "[since 2016-02] Use mapi_inplace instead"]
-  val filter_replace_all : (_, 'b) t -> f:('b -> 'b option) -> unit
-  [@@deprecated "[since 2016-02] Use filter_map_inplace instead"]
-  val filter_replace_alli : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b option) -> unit
-  [@@deprecated "[since 2016-02] Use filter_mapi_inplace instead"]
-
   (** [equal t1 t2 f] and [similar t1 t2 f] both return true iff [t1] and [t2] have the
       same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)].  [equal] and
       [similar] only differ in their types. *)
@@ -261,6 +247,26 @@ module type Accessors = sig
   (** [remove_if_zero]'s default is [false]. *)
   val incr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit
   val decr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit
+end
+
+module type Deprecated = sig
+  type ('key, 'data) t
+  type 'key key
+
+  val iter_vals : ( _, 'b) t -> f:(                   'b -> unit) -> unit
+  [@@deprecated "[since 2016-04] Use iter instead"]
+
+  val replace      : ('a, 'b) t -> key:'a key -> data:'b -> unit
+  [@@deprecated "[since 2015-10] Use set instead"]
+
+  val replace_all : (_, 'b) t -> f:('b -> 'b) -> unit
+  [@@deprecated "[since 2016-02] Use map_inplace instead"]
+  val replace_alli : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b) -> unit
+  [@@deprecated "[since 2016-02] Use mapi_inplace instead"]
+  val filter_replace_all : (_, 'b) t -> f:('b -> 'b option) -> unit
+  [@@deprecated "[since 2016-02] Use filter_map_inplace instead"]
+  val filter_replace_alli : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b option) -> unit
+  [@@deprecated "[since 2016-02] Use filter_mapi_inplace instead"]
 end
 
 type ('key, 'data, 'z) create_options_without_hashable =
@@ -391,6 +397,10 @@ module type S_without_submodules = sig
     with type 'a key := 'a key
   (** @open *)
 
+  include Deprecated
+    with type ('a, 'b) t := ('a, 'b) t
+    with type 'a key := 'a key
+
   val hashable : ('key, _) t -> 'key Hashable.t
 
 end
@@ -411,6 +421,9 @@ module type S_using_hashable = sig
     with type 'a key := 'a key
     with type ('a, 'b, 'z) create_options := ('a, 'b, 'z) create_options_with_hashable
   include Accessors
+    with type ('a, 'b) t := ('a, 'b) t
+    with type 'a key := 'a key
+  include Deprecated
     with type ('a, 'b) t := ('a, 'b) t
     with type 'a key := 'a key
 end
@@ -444,6 +457,9 @@ module type S_poly = sig
     with type ('a, 'b) t := ('a, 'b) t
     with type 'a key := 'a key
 
+  include Deprecated
+    with type ('a, 'b) t := ('a, 'b) t
+    with type 'a key := 'a key
 end
 
 module type Hashtbl = sig
