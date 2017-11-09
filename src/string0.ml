@@ -14,6 +14,12 @@
 
    Defining [module String = String0] is also necessary because it prevents
    ocamldep from mistakenly causing a file to depend on [Base.String]. *)
+
+let capitalize      = Caml.String.capitalize_ascii
+let lowercase       = Caml.String.lowercase_ascii
+let uncapitalize    = Caml.String.uncapitalize_ascii
+let uppercase       = Caml.String.uppercase_ascii
+
 open! Import0
 
 module Sys = Sys0
@@ -33,20 +39,16 @@ let max_length = Sys.max_string_length
 let (^) = (^)
 
 let blit            = Caml.String.blit
-let capitalize      = Caml.String.capitalize
 let compare         = Caml.String.compare
 let copy            = Caml.String.copy
 let escaped         = Caml.String.escaped
 let index_exn       = Caml.String.index
 let index_from_exn  = Caml.String.index_from
-let lowercase       = Caml.String.lowercase
 let make            = Caml.String.make
 let rindex_exn      = Caml.String.rindex
 let rindex_from_exn = Caml.String.rindex_from
 let sub             = Caml.String.sub
-let uncapitalize    = Caml.String.uncapitalize
 let unsafe_blit     = Caml.String.unsafe_blit
-let uppercase       = Caml.String.uppercase
 
 let concat ?(sep = "") l = Caml.String.concat ~sep l
 
