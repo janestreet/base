@@ -184,4 +184,11 @@ let combine t1 t2 ~ok ~err =
   | Error err1, Error err2 -> Error (err err1 err2)
 ;;
 
+let combine_errors l =
+  let ok, errs = List1.partition_map l ~f:ok_fst in
+  match errs with
+  | [] -> Ok ok
+  | _ :: _ -> Error errs
+;;
 
+let combine_errors_unit l = map (combine_errors l) ~f:(fun (_ : unit list) -> ())

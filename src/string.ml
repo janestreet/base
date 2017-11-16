@@ -112,7 +112,7 @@ let sub src ~pos ~len =
   Ordered_collection_common.check_pos_len_exn ~pos ~len ~length:(length src);
   let dst = Bytes.create len in
   if len > 0 then Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
-  Bytes.unsafe_to_string dst
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
 let subo ?(pos = 0) ?len src =
   sub src ~pos ~len:(match len with Some i -> i | None -> length src - pos)
 
@@ -281,7 +281,7 @@ module Search_pattern = struct
       blit ~src:s ~src_pos:0 ~dst ~dst_pos:0 ~len:i;
       blit ~src:with_ ~src_pos:0 ~dst ~dst_pos:i ~len:len_with;
       blit ~src:s ~src_pos:(i + len_t) ~dst ~dst_pos:(i + len_with) ~len:(len_s - i - len_t);
-      Bytes.unsafe_to_string dst
+      Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
   ;;
 
 
@@ -306,7 +306,7 @@ module Search_pattern = struct
       );
       blit ~src:s ~src_pos:!next_src_pos ~dst ~dst_pos:!next_dst_pos
         ~len:(len_s - !next_src_pos);
-      Bytes.unsafe_to_string dst
+      Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
   ;;
 end
 
@@ -344,7 +344,7 @@ let init n ~f =
   for i = 0 to n - 1 do
     Bytes.set t i (f i);
   done;
-  Bytes.unsafe_to_string t
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t
 ;;
 
 (** See {!Array.normalize} for the following 4 functions. *)
@@ -359,7 +359,8 @@ let nget x i =
   x.[normalize x i]
 
 let nset x i v =
-  Bytes.set x (normalize (Bytes.unsafe_to_string x) i) v
+  Bytes.set x
+    (normalize (Bytes.unsafe_to_string ~no_mutation_while_string_reachable:x) i) v
 
 let to_list s =
   let rec loop acc i =
@@ -386,7 +387,7 @@ let rev t =
   for i = 0 to len - 1 do
     unsafe_set res i (unsafe_get t (len - 1 - i))
   done;
-  Bytes.unsafe_to_string res
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res
 ;;
 
 (** Efficient string splitting *)
@@ -571,7 +572,7 @@ let mapi t ~f =
   for i = 0 to l - 1 do
     Bytes.unsafe_set t' i (f i t.[i])
   done;
-  Bytes.unsafe_to_string t'
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t'
 
 (* repeated code to avoid requiring an extra allocation for a closure on each call. *)
 let map t ~f =
@@ -580,7 +581,7 @@ let map t ~f =
   for i = 0 to l - 1 do
     Bytes.unsafe_set t' i (f t.[i])
   done;
-  Bytes.unsafe_to_string t'
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t'
 
 let to_array s = Array.init (length s) ~f:(fun i -> s.[i])
 
@@ -703,7 +704,7 @@ let filter t ~f =
       if f c then (Bytes.set out !out_pos c; incr out_pos);
       incr i
     done;
-    let out = Bytes.unsafe_to_string out in
+    let out = Bytes.unsafe_to_string ~no_mutation_while_string_reachable:out in
     if !out_pos = n - 1 then
       out
     else
@@ -766,7 +767,7 @@ let of_char c = make 1 c
 let of_char_list l =
   let t = Bytes.create (List.length l) in
   List.iteri l ~f:(fun i c -> Bytes.set t i c);
-  Bytes.unsafe_to_string t
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t
 
 module Escaping = struct
   (* If this is changed, make sure to update [escape], which attempts to ensure all the
@@ -866,7 +867,7 @@ module Escaping = struct
           in
           (* set [last_dst_pos] and [last_idx] to length of [dst] and [src] first *)
           loop src_len dst_len to_escape;
-          Bytes.unsafe_to_string dst
+          Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
       )
   ;;
 
@@ -968,7 +969,7 @@ module Escaping = struct
                  the last escaping char *)
               loop (length src - 1) (Bytes.length dst) to_unescape'
           );
-          Bytes.unsafe_to_string dst
+          Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
       )
   ;;
 

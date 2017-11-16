@@ -73,8 +73,6 @@ end
 
 module type Sequence = sig
   type t
-
-  val create : len:int -> t
   val length : t -> int
 end
 
@@ -125,6 +123,7 @@ module type Blit = sig
   module Make
       (Sequence : sig
          include Sequence
+         val create : len:int -> t
          val unsafe_blit : (t, t) blit
        end)
     : S with type t := Sequence.t
@@ -134,6 +133,7 @@ module type Blit = sig
       (Src : Sequence)
       (Dst : sig
          include Sequence
+         val create : len:int -> t
          val unsafe_blit : (Src.t, t) blit
        end)
     : S_distinct

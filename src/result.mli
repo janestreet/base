@@ -75,6 +75,17 @@ val combine
   -> err:('err -> 'err -> 'err)
   -> ('ok3, 'err) t
 
+(** [combine_errors ts] returns [Ok] if every element in [ts] is [Ok], else it returns
+    [Error] with all the errors in [ts].
+
+    This is similar to [all] from [Monad.S2], with the difference that [all] only returns
+    the first error. *)
+val combine_errors : ('ok, 'err) t list -> ('ok list, 'err list) t
+
+(** [combine_errors_unit] returns [Ok] if every element in [ts] is [Ok ()], else it
+    returns [Error] with all the errors in [ts], like [combine_errors]. *)
+val combine_errors_unit : (unit, 'err) t list -> (unit, 'err list) t
+
 (** [ok_fst] is useful with [List.partition_map].  Continuing the above example:
     {[
       let rics, errors = List.partition_map ~f:Result.ok_fst

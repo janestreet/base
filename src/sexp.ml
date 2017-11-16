@@ -115,7 +115,7 @@ module Printing = struct
         end;
         incr n
       done;
-      Bytes.unsafe_to_string s'
+      Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s'
     end
 
   let esc_str str =
@@ -125,7 +125,7 @@ module Printing = struct
     Bytes.blit_string ~src:estr ~src_pos:0 ~dst:res ~dst_pos:1 ~len:elen;
     Bytes.unsafe_set res 0          '"';
     Bytes.unsafe_set res (elen + 1) '"';
-    Bytes.unsafe_to_string res
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res
 
   let index_of_newline str start =
     try Some (String.index_from_exn str start '\n')

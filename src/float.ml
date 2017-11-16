@@ -771,14 +771,15 @@ let to_padded_compact_string t =
         assert (0. <= t && t < 999.95);
         let x = format_float "%.1f" t in
         (* Fix the ".0" suffix *)
-        if String.is_suffix x ~suffix:".0" then begin
-          (* This is safe because [format_float] above always allocate a new string. *)
-          let x = Bytes.unsafe_of_string x in
+        if String.is_suffix x ~suffix:".0"
+        then begin
+          let x = Bytes.of_string x in
           let n = Bytes.length x in
           Bytes.set x (n - 1) ' ';
           Bytes.set x (n - 2) ' ';
-        end;
-        x
+          Bytes.unsafe_to_string ~no_mutation_while_string_reachable:x
+        end
+        else x
       in
       let conv mag t denominator =
         assert (denominator  = 100.     && t >= 999.95

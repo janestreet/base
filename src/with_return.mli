@@ -37,7 +37,7 @@
 
 open! Import
 
-type -'a return = private { return : 'b. 'a -> 'b }
+type -'a return = private { return : 'b. 'a -> 'b } [@@unboxed]
 
 val with_return        : ('a return -> 'a  ) -> 'a
 

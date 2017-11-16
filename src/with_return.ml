@@ -2,7 +2,7 @@
 
 open! Import
 
-type 'a return = { return : 'b. 'a -> 'b }
+type 'a return = { return : 'b. 'a -> 'b } [@@unboxed]
 
 let with_return (type a) f =
   let module M = struct

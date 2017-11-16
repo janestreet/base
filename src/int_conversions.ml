@@ -249,7 +249,7 @@ let insert_delimiter_every input ~delimiter ~chars_per_delimiter =
       decr num_chars_until_delimiter;
     done;
     if has_sign then Bytes.set output 0 input.[0];
-    Bytes.unsafe_to_string output;
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:output;
   end
 ;;
 

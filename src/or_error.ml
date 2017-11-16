@@ -92,12 +92,7 @@ let tag_arg t message a sexp_of_a =
 
 let unimplemented s = error "unimplemented" s sexp_of_string
 
-let combine_errors l =
-  let ok, errs = List.partition_map l ~f:Result.ok_fst in
-  match errs with
-  | [] -> Ok ok
-  | _ -> Error (Error.of_list errs)
-;;
+let combine_errors l = Result.map_error (Result.combine_errors l) ~f:Error.of_list
 
 let combine_errors_unit l = Result.map (combine_errors l) ~f:(fun (_ : unit list) -> ())
 

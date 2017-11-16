@@ -37,11 +37,16 @@ module To_string = struct
   ;;
 end
 
-module From_string = struct
-  let blit = blit_string
-  let blito ~src ?(src_pos = 0) ?(src_len = String.length src - src_pos) ~dst ?(dst_pos = 0) () =
-    blit ~src ~src_pos ~len:src_len ~dst ~dst_pos
-end
+module From_string = Blit.Make_distinct(struct
+    type t = string
+    let length = String.length
+  end)
+    (struct
+      type nonrec t = t
+      let create ~len = create len
+      let length = length
+      let unsafe_blit = unsafe_blit_string
+    end)
 
 let init n ~f =
   if n < 0 then Printf.invalid_argf "Bytes.init %d" n ();
@@ -101,5 +106,14 @@ module Replace_polymorphic_compare = struct
     else
       Ok (clamp_unchecked t ~min ~max)
 end
+
+let contains ?pos ?len t char =
+  let (pos, len) =
+    Ordered_collection_common.get_pos_len_exn ?pos ?len ~length:(length t)
+  in
+  let last = pos + len in
+  let rec loop i = i < last && (Char.equal (get t i) char || loop (i + 1)) in
+  loop pos
+;;
 
 include Replace_polymorphic_compare

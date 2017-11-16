@@ -11,7 +11,6 @@ let sexp_of_t t = sexp_of_string (contents t)
 include Blit.Make_distinct
     (struct
       type nonrec t = t
-      let create ~len = create len
       let length = length
     end)
     (struct

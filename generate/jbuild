@@ -1,5 +1,6 @@
 (executables
  ((names (generate_pow_overflow_bounds))
+  (flags (:standard -safe-string))
   (libraries (num))
   (preprocess no_preprocessing)))
 

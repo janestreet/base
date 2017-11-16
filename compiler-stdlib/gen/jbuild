@@ -1,5 +1,6 @@
 (executables
  ((names (gen))
+  (flags (:standard -safe-string))
   (libraries (compiler-libs.common compiler-libs.bytecomp))
   (preprocess no_preprocessing)))
 

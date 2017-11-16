@@ -32,10 +32,7 @@ module To_string : sig
   val subo : (t, string) Blit.subo
 end
 
-module From_string : sig
-  val blit : (string, t) Blit.blit
-  val blito : (string, t) Blit.blito
-end
+module From_string : Blit.S_distinct with type src := string and type dst := t
 
 (** {1 Constructors} *)
 
@@ -89,17 +86,112 @@ val tr : target:char -> replacement:char -> t -> unit
 (** [to_list t] returns the bytes in [t] as a list of chars. *)
 val to_list : t -> char list
 
+(** [contains ?pos ?len t c] returns [true] iff [c] appears in [t] between [pos]
+    and [pos + len]. *)
+val contains : ?pos:int -> ?len:int -> t -> char -> bool
+
+
+(** {1 Constants} *)
+
 (** Maximum length of a byte sequence, which is architecture-dependent.
     Attempting to create a [Bytes] larger than this will raise an exception. *)
 val max_length : int
 
+(** {1:unsafe Unsafe conversions (for advanced users)}
 
-(**/**)
+    This section describes unsafe, low-level conversion functions between
+    [bytes] and [string]. They might not copy the internal data; used
+    improperly, they can break the immutability invariant on strings provided
+    by the [-safe-string] option. They are available for expert library
+    authors, but for most purposes you should use the always-correct
+    {!Bytes.to_string} and {!Bytes.of_string} instead.
+*)
 
-(*_ The values and types below are intentionally undocumented. Do not use any
-  of them without reading and understanding their implementation. Some are
-  compiler intrinsics, so make sure you go the distance. *)
+(** Unsafely convert a byte sequence into a string.
 
-val unsafe_to_string : t -> string
-val unsafe_of_string : string -> t
+    To reason about the use of [unsafe_to_string], it is convenient to
+    consider an "ownership" discipline. A piece of code that
+    manipulates some data "owns" it; there are several disjoint ownership
+    modes, including:
+    {ul
+    {- Unique ownership: the data may be accessed and mutated}
+    {- Shared ownership: the data has several owners, that may only
+    access it, not mutate it.}}
+    Unique ownership is linear: passing the data to another piece of
+    code means giving up ownership (we cannot access the
+    data again). A unique owner may decide to make the data shared
+    (giving up mutation rights on it), but shared data may not become
+    uniquely-owned again.
+    [unsafe_to_string s] can only be used when the caller owns the byte
+    sequence [s] -- either uniquely or as shared immutable data. The
+    caller gives up ownership of [s], and gains (the same mode of) ownership
+    of the returned string.
+    There are two valid use-cases that respect this ownership
+    discipline:
+    {ol
+    {- The first is creating a string by initializing and mutating a byte
+    sequence that is never changed after initialization is performed.
+    {[
+      let string_init len f : string =
+        let s = Bytes.create len in
+        for i = 0 to len - 1 do Bytes.set s i (f i) done;
+        Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s
+    ]}
+    This function is safe because the byte sequence [s] will never be
+    accessed or mutated after [unsafe_to_string] is called. The
+    [string_init] code gives up ownership of [s], and returns the
+    ownership of the resulting string to its caller.
 
+    Note that it would be unsafe if [s] was passed as an additional
+    parameter to the function [f] as it could escape this way and be
+    mutated in the future -- [string_init] would give up ownership of
+    [s] to pass it to [f], and could not call [unsafe_to_string]
+    safely.
+
+    We have provided the {!String.init}, {!String.map} and
+    {!String.mapi} functions to cover most cases of building
+    new strings. You should prefer those over [to_string] or
+    [unsafe_to_string] whenever applicable.}
+    {- The second is temporarily giving ownership of a byte sequence to
+    a function that expects a uniquely owned string and returns ownership
+    back, so that we can mutate the sequence again after the call ended.
+    {[
+      let bytes_length (s : bytes) =
+        String.length
+          (Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s)
+    ]}
+    In this use-case, we do not promise that [s] will never be mutated
+    after the call to [bytes_length s]. The {!String.length} function
+    temporarily borrows unique ownership of the byte sequence
+    (and sees it as a [string]), but returns this ownership back to
+    the caller, which may assume that [s] is still a valid byte
+    sequence after the call. Note that this is only correct because we
+    know that {!String.length} does not capture its argument -- it could
+    escape by a side-channel such as a memoization combinator.
+    The caller may not mutate [s] while the string is borrowed (it has
+    temporarily given up ownership). This affects concurrent programs,
+    but also higher-order functions: if {!String.length} returned
+    a closure to be called later, [s] should not be mutated until this
+    closure is fully applied and returns ownership.}}
+*)
+val unsafe_to_string : no_mutation_while_string_reachable:t -> string
+
+(** Unsafely convert a shared string to a byte sequence that should
+    not be mutated.
+
+    The same ownership discipline that makes [unsafe_to_string]
+    correct applies to [unsafe_of_string_promise_no_mutation],
+    however unique ownership of string values is extremely difficult
+    to reason about correctly in practice. As such, one should always
+    assume strings are shared, never uniquely owned (For example,
+    string literals are implicitly shared by the compiler, so you
+    never uniquely own them)
+
+    The only case we have reasonable confidence is safe is if the
+    produced [bytes] is shared -- used as an immutable byte
+    sequence. This is possibly useful for incremental migration of
+    low-level programs that manipulate immutable sequences of bytes
+    (for example {!Marshal.from_bytes}) and previously used the
+    [string] type for this purpose.
+*)
+val unsafe_of_string_promise_no_mutation : string -> t

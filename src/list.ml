@@ -3,7 +3,7 @@ open! Import
 module Array = Array0
 
 
-include List0
+include List1 (* This itself includes [List0]. *)
 
 let invalid_argf = Printf.invalid_argf
 
@@ -754,18 +754,6 @@ let rev_filter_mapi l ~f =
 let filter_mapi l ~f = rev (rev_filter_mapi l ~f)
 
 let filter_opt l = filter_map l ~f:(fun x -> x)
-
-let partition_map t ~f =
-  let rec loop t fst snd =
-    match t with
-    | [] -> (rev fst, rev snd)
-    | x :: t ->
-      match f x with
-      | `Fst y -> loop t (y :: fst) snd
-      | `Snd y -> loop t fst (y :: snd)
-  in
-  loop t [] []
-;;
 
 let partition3_map t ~f =
   let rec loop t fst snd trd =

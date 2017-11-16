@@ -66,6 +66,7 @@ module Make1_generic
 module Make
     (Sequence : sig
        include Sequence
+       val create : len:int -> t
        val unsafe_blit : (t, t) blit
      end) = struct
   module Sequence = struct
@@ -82,6 +83,7 @@ module Make_distinct
     (Src : Sequence)
     (Dst : sig
        include Sequence
+       val create : len:int -> t
        val unsafe_blit : (Src.t, t) blit
      end) =
   Make_gen

@@ -1,7 +1,16 @@
 open! Import
 open! Hashtbl_intf
 
-module Hashable = Hashtbl_intf.Hashable
+module Hashable = struct
+  include Hashtbl_intf.Hashable
+
+  let equal a b =
+    phys_equal a b
+    || (phys_equal a.hash b.hash
+        && phys_equal a.compare b.compare
+        && phys_equal a.sexp_of_t b.sexp_of_t)
+end
+
 
 let with_return = With_return.with_return
 
@@ -535,7 +544,7 @@ let merge =
       set t ~key ~data:v
   in
   fun t_left t_right ~f ->
-    if not (phys_equal t_left.hashable t_right.hashable)
+    if not (Hashable.equal t_left.hashable t_right.hashable)
     then invalid_arg "Hashtbl.merge: different 'hashable' values";
     let new_t =
       create ~growth_allowed:t_left.growth_allowed
