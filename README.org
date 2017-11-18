@@ -5,8 +5,9 @@ modules that are well-tested, performant, and fully-portable across any environm
 can run OCaml code. Unlike other standard library projects, Base is meant to be used as a
 wholesale replacement of the standard library distributed with the OCaml compiler. In
 particular it makes different choices and doesn't re-export features that are not fully
-portable such as I/O, which are left to other libraries. Documentation can be found
-[[https://ocaml.janestreet.com/ocaml-core/latest/doc/base/index.html][here]].
+portable such as I/O, which are left to other libraries. 
+
+- [[https://ocaml.janestreet.com/ocaml-core/latest/doc/base/index.html][Documentation]]
 
 ** Installation
 
