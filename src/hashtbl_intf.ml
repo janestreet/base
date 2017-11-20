@@ -95,19 +95,6 @@ module type Accessors = sig
   (** [update t key ~f] is [change t key ~f:(fun o -> Some (f o))]. *)
   val update : ('a, 'b) t -> 'a key -> f:('b option -> 'b) -> unit
 
-  (** [add_multi t ~key ~data] if [key] is present in the table then cons
-      [data] on the list, otherwise add [key] with a single element list. *)
-  val add_multi : ('a, 'b list) t -> key:'a key -> data:'b -> unit
-
-  (** [remove_multi t key] updates the table, removing the head of the list bound to
-      [key]. If the list has only one element (or is empty) then the binding is
-      removed. *)
-  val remove_multi : ('a, _ list) t -> 'a key -> unit
-
-  (** [find_multi t key] returns the empty list if [key] is not present in the table,
-      returns [t]'s values for [key] otherwise *)
-  val find_multi : ('a, 'b list) t -> 'a key -> 'b list
-
   (** [map t f] returns new table with bound values replaced by
       [f] applied to the bound values *)
   val map : ('a, 'b) t -> f:('b -> 'c) -> ('a, 'c) t
@@ -247,6 +234,24 @@ module type Accessors = sig
   (** [remove_if_zero]'s default is [false]. *)
   val incr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit
   val decr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit
+end
+
+module type Multi = sig
+  type ('a, 'b) t
+  type 'a key
+
+  (** [add_multi t ~key ~data] if [key] is present in the table then cons
+      [data] on the list, otherwise add [key] with a single element list. *)
+  val add_multi : ('a, 'b list) t -> key:'a key -> data:'b -> unit
+
+  (** [remove_multi t key] updates the table, removing the head of the list bound to
+      [key]. If the list has only one element (or is empty) then the binding is
+      removed. *)
+  val remove_multi : ('a, _ list) t -> 'a key -> unit
+
+  (** [find_multi t key] returns the empty list if [key] is not present in the table,
+      returns [t]'s values for [key] otherwise *)
+  val find_multi : ('a, 'b list) t -> 'a key -> 'b list
 end
 
 module type Deprecated = sig
@@ -397,6 +402,11 @@ module type S_without_submodules = sig
     with type 'a key := 'a key
   (** @open *)
 
+  include Multi
+    with type ('a, 'b) t := ('a, 'b) t
+    with type 'a key := 'a key
+  (** @open *)
+
   include Deprecated
     with type ('a, 'b) t := ('a, 'b) t
     with type 'a key := 'a key
@@ -421,6 +431,9 @@ module type S_using_hashable = sig
     with type 'a key := 'a key
     with type ('a, 'b, 'z) create_options := ('a, 'b, 'z) create_options_with_hashable
   include Accessors
+    with type ('a, 'b) t := ('a, 'b) t
+    with type 'a key := 'a key
+  include Multi
     with type ('a, 'b) t := ('a, 'b) t
     with type 'a key := 'a key
   include Deprecated
@@ -454,6 +467,10 @@ module type S_poly = sig
     := ('key, 'data, 'z) create_options_without_hashable
 
   include Accessors
+    with type ('a, 'b) t := ('a, 'b) t
+    with type 'a key := 'a key
+
+  include Multi
     with type ('a, 'b) t := ('a, 'b) t
     with type 'a key := 'a key
 

@@ -23,9 +23,9 @@ val to_string : t -> string
 val to_string_list : t -> string list
 
 (** The value of [elide] controls the behavior of backtrace serialization functions such
-    as {!to_string}, {!to_string_list}, and {!sexp_of_t}. When set to [true], these
+    as {!to_string}, {!to_string_list}, and {!sexp_of_t}.  When set to [false], these
     functions behave as expected, returning a faithful representation of their argument.
-    When set to [false] these functions will ignore their argument and return a message
+    When set to [true], these functions will ignore their argument and return a message
     indicating that behavior.
 
     The default value is {!am_testing}. *)
