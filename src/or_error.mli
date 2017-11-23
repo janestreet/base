@@ -26,9 +26,13 @@ end
     the combination of [e1] and [e2], whereas it would only return [e1] if it were defined
     using [bind]. *)
 include Applicative.S      with type 'a t := 'a t
-include Container.S1       with type 'a t := 'a t
 include Invariant.S1       with type 'a t := 'a t
 include Monad.S            with type 'a t := 'a t
+
+module Ok : Container.S1 with type 'a t := 'a t
+
+val is_ok    : _ t -> bool
+val is_error : _ t -> bool
 
 val ignore : _ t -> unit t
 
@@ -38,6 +42,11 @@ val ignore : _ t -> unit t
     [Result.join (try_with f)]. *)
 val try_with      : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a  ) -> 'a t
 val try_with_join : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a t) -> 'a t
+
+
+(** [ok t] returns [None] if [t] is an [Error], and otherwise returns the
+    contents of the [Ok] constructor. *)
+val ok : 'ok t -> 'ok option
 
 (** [ok_exn t] throws an exception if [t] is an [Error], and otherwise returns the
     contents of the [Ok] constructor. *)
@@ -87,6 +96,10 @@ val tag_arg : 'a t -> string -> 'b -> ('b -> Sexp.t) -> 'a t
     platforms it is defined as unimplemented.  The supplied string should be the name of
     the function that is unimplemented. *)
 val unimplemented : string -> _ t
+
+val map        : 'a t -> f:('a      -> 'b)   -> 'b t
+val iter       : 'a t -> f:('a      -> unit) -> unit
+val iter_error : _  t -> f:(Error.t -> unit) -> unit
 
 (** [combine_errors ts] returns [Ok] if every element in [ts] is [Ok], else it returns
     [Error] with all the errors in [ts].  More precisely:

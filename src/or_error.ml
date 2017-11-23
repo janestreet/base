@@ -54,6 +54,10 @@ module Let_syntax = struct
   end
 end
 
+let ok       = Result.ok
+let is_ok    = Result.is_ok
+let is_error = Result.is_error
+
 let ignore = ignore_m
 
 let try_with ?(backtrace = false) f =
@@ -120,36 +124,38 @@ let find_map_ok l ~f =
       | Error err -> err))))
 ;;
 
-let fold t ~init ~f =
-  match t with
-  | Ok v    -> f init v
-  | Error _ -> init
-;;
+let map        = Result.map
+let iter       = Result.iter
+let iter_error = Result.iter_error
 
-let iter t ~f =
-  match t with
-  | Ok v    -> f v
-  | Error _ -> ()
-;;
+module Ok = struct
+  let fold t ~init ~f =
+    match t with
+    | Ok v    -> f init v
+    | Error _ -> init
+  ;;
 
-module C = Container.Make (struct
-    type nonrec 'a t = 'a t
-    let fold = fold
-    let iter = `Custom iter
-  end)
+  let iter = iter
 
-let count       = C.count
-let exists      = C.exists
-let find        = C.find
-let find_map    = C.find_map
-let fold_result = C.fold_result
-let fold_until  = C.fold_until
-let for_all     = C.for_all
-let is_empty    = Result.is_error
-let length      = C.length
-let max_elt     = C.max_elt
-let min_elt     = C.min_elt
-let mem         = C.mem
-let sum         = C.sum
-let to_array    = C.to_array
-let to_list     = C.to_list
+  module C = Container.Make (struct
+      type nonrec 'a t = 'a t
+      let fold = fold
+      let iter = `Custom iter
+    end)
+
+  let count       = C.count
+  let exists      = C.exists
+  let find        = C.find
+  let find_map    = C.find_map
+  let fold_result = C.fold_result
+  let fold_until  = C.fold_until
+  let for_all     = C.for_all
+  let is_empty    = is_error
+  let length      = C.length
+  let max_elt     = C.max_elt
+  let min_elt     = C.min_elt
+  let mem         = C.mem
+  let sum         = C.sum
+  let to_array    = C.to_array
+  let to_list     = C.to_list
+end

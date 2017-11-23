@@ -147,7 +147,7 @@ let%test_module "clamp" =
     let%test_unit "clamp nan" =
       [%test_result: float Or_error.t] (clamp nan ~min:2. ~max:3.) ~expect:(Ok nan)
 
-    let%test "clamp bad" = Or_error.is_empty (clamp 2.5 ~min:3. ~max:2.)
+    let%test "clamp bad" = Or_error.is_error (clamp 2.5 ~min:3. ~max:2.)
   end)
 
 let%test_unit _ =

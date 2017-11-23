@@ -82,10 +82,8 @@ let hash_fold_t : type a
 
 [@@@end]
 
-type ('a, 'b) _t = ('a, 'b) t
-
 include Monad.Make2 (struct
-    type ('a, 'b) t = ('a,'b) _t
+    type nonrec ('a, 'b) t = ('a,'b) t
 
     let bind x ~f = match x with
       | Error _ as x -> x
