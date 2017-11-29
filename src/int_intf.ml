@@ -142,11 +142,13 @@ module type S_common = sig
   val succ : t -> t
   val pred : t -> t
 
+  include Round with type t := t
+
   (** Returns the absolute value of the argument.  May be negative if the input is
       [min_value] *)
   val abs : t -> t
 
-  include Round with type t := t
+  (** {9 Exponentiation } *)
 
   (** [pow base exponent] returns [base] raised to the power of [exponent].  It is OK if
       [base <= 0].  [pow] raises if [exponent < 0], or an integer overflow would occur. *)
@@ -158,6 +160,9 @@ module type S_common = sig
   val bit_or : t -> t -> t
   val bit_xor : t -> t -> t
   val bit_not : t -> t
+
+  (** returns the number of 1 bits in the binary representation of the input *)
+  val popcount : t -> int
 
   (** {9 Bit-shifting operations }
 
@@ -173,11 +178,6 @@ module type S_common = sig
 
   val decr : t ref -> unit
   val incr : t ref -> unit
-
-  (** {9 Population count} *)
-
-  (** returns the number of 1 bits in the binary representation of the input *)
-  val popcount : t -> int
 
   (** {9 Conversion functions to related integer types} *)
 
