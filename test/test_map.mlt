@@ -1,0 +1,11 @@
+open Base
+
+let _ = Map.add
+
+[%%expect {|
+Line _, characters 8-15:
+Warning 3: deprecated: Base.Map.add
+[since 2017-11] Use [set] instead
+Line _:
+Error: Some fatal warnings were triggered (1 occurrences)
+|}];;

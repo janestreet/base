@@ -71,9 +71,9 @@ let%test_module _ =
           | Add (key, data) ->
             if Map.mem map key
             then map
-            else Map.add map ~key ~data
+            else Map.set map ~key ~data
           | Replace (key, data) ->
-            Map.add map ~key ~data
+            Map.set map ~key ~data
           | Remove key ->
             Map.remove map key
 

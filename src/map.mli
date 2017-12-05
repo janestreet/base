@@ -102,9 +102,12 @@ val is_empty : (_, _, _) t -> bool
 (** [length map] @return number of elements in [map].  O(1), but [Tree.length] is O(n). *)
 val length : (_, _, _) t -> int
 
-(** returns a new map with the specified new binding;
-    if the key was already bound, its previous binding disappears. *)
+(** returns a new map with the specified new binding; if the key was already bound, its
+    previous binding disappears. *)
+val set : ('k, 'v, 'cmp) t -> key:'k -> data:'v -> ('k, 'v, 'cmp) t
+
 val add : ('k, 'v, 'cmp) t -> key:'k -> data:'v -> ('k, 'v, 'cmp) t
+[@@deprecated "[since 2017-11] Use [set] instead"]
 
 (** if key is not present then add a singleton list, otherwise, cons data on the head of
     the existing list. *)

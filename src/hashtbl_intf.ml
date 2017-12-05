@@ -22,6 +22,13 @@ module Hashable = struct
       sexp_of_t : 'a -> Sexp.t;
     }
 
+  let equal a b =
+    phys_equal a b
+    || (phys_equal a.hash b.hash
+        && phys_equal a.compare b.compare
+        && phys_equal a.sexp_of_t b.sexp_of_t)
+  ;;
+
   let hash_param = Caml.Hashtbl.hash_param
   let hash       = Caml.Hashtbl.hash
 

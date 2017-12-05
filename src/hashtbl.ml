@@ -1,16 +1,7 @@
 open! Import
 open! Hashtbl_intf
 
-module Hashable = struct
-  include Hashtbl_intf.Hashable
-
-  let equal a b =
-    phys_equal a b
-    || (phys_equal a.hash b.hash
-        && phys_equal a.compare b.compare
-        && phys_equal a.sexp_of_t b.sexp_of_t)
-end
-
+module Hashable = Hashtbl_intf.Hashable
 
 let with_return = With_return.with_return
 

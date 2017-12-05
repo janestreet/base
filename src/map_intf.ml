@@ -169,6 +169,12 @@ module type Accessors_generic = sig
     : ('k, 'cmp,
        ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t
       ) options
+  [@@deprecated "[since 2017-11] Use [set] instead"]
+
+  val set
+    : ('k, 'cmp,
+       ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t
+      ) options
 
   val add_multi
     : ('k, 'cmp,
@@ -460,6 +466,8 @@ module type Accessors1 = sig
   val is_empty       : _ t -> bool
   val length         : _ t -> int
   val add            : 'a t -> key:key -> data:'a -> 'a t
+  [@@deprecated "[since 2017-11] Use [set] instead"]
+  val set            : 'a t -> key:key -> data:'a -> 'a t
   val add_multi      : 'a list t -> key:key -> data:'a -> 'a list t
   val remove_multi   : 'a list t -> key -> 'a list t
   val find_multi     : 'a list t -> key -> 'a list
@@ -580,6 +588,8 @@ module type Accessors2 = sig
   val is_empty       : (_, _) t -> bool
   val length         : (_, _) t -> int
   val add            : ('a, 'b) t -> key:'a -> data:'b -> ('a, 'b) t
+  [@@deprecated "[since 2017-11] Use [set] instead"]
+  val set            : ('a, 'b) t -> key:'a -> data:'b -> ('a, 'b) t
   val add_multi      : ('a, 'b list) t -> key:'a -> data:'b -> ('a, 'b list) t
   val remove_multi   : ('a, 'b list) t -> 'a -> ('a, 'b list) t
   val find_multi     : ('a, 'b list) t -> 'a -> 'b list
@@ -696,6 +706,8 @@ module type Accessors3 = sig
   val is_empty       : (_, _, _) t -> bool
   val length         : (_, _, _) t -> int
   val add            : ('a, 'b,      'cmp) t -> key:'a -> data:'b -> ('a, 'b     , 'cmp) t
+  [@@deprecated "[since 2017-11] Use [set] instead"]
+  val set            : ('a, 'b,      'cmp) t -> key:'a -> data:'b -> ('a, 'b     , 'cmp) t
   val add_multi      : ('a, 'b list, 'cmp) t -> key:'a -> data:'b -> ('a, 'b list, 'cmp) t
   val remove_multi   : ('a, 'b list, 'cmp) t -> 'a -> ('a, 'b list, 'cmp) t
   val find_multi     : ('a, 'b list, 'cmp) t -> 'a -> 'b list
@@ -820,6 +832,10 @@ module type Accessors3_with_comparator = sig
   val is_empty       : ('a, 'b, 'cmp) t -> bool
   val length         : ('a, 'b, 'cmp) t -> int
   val add
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a, 'b, 'cmp) t -> key:'a -> data:'b -> ('a, 'b, 'cmp) t
+  [@@deprecated "[since 2017-11] Use [set] instead"]
+  val set
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t -> key:'a -> data:'b -> ('a, 'b, 'cmp) t
   val add_multi

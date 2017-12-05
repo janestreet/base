@@ -1187,9 +1187,10 @@ module Accessors = struct
   let invariants t = Tree0.invariants t.tree ~compare_key:(compare_key t)
   let is_empty t = Tree0.is_empty t.tree
   let length t = t.length
-  let add t ~key ~data =
+  let set t ~key ~data =
     like t (Tree0.add t.tree ~length:t.length ~key ~data ~compare_key:(compare_key t))
   ;;
+  let add = set [@@deprecated "[since 2017-11] Use [set] instead"]
   let add_multi t ~key ~data =
     like t
       (Tree0.add_multi t.tree ~length:t.length ~key ~data ~compare_key:(compare_key t))
@@ -1375,9 +1376,10 @@ module Tree = struct
   ;;
   let is_empty t = Tree0.is_empty t
   let length t = Tree0.length t
-  let add ~comparator t ~key ~data =
+  let set ~comparator t ~key ~data =
     fst (Tree0.add t ~key ~data ~length:0 ~compare_key:comparator.Comparator.compare)
   ;;
+  let add = set [@@deprecated "[since 2017-11] Use [set] instead"]
   let add_multi ~comparator t ~key ~data =
     Tree0.add_multi t ~key ~data ~length:0 ~compare_key:comparator.Comparator.compare
     |> fst

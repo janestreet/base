@@ -208,7 +208,6 @@ module type Operators_unbounded = sig
   val abs    : t -> t
   val neg    : t -> t
   val zero   : t
-  val of_int_exn : int -> t
 
   val ( % )  : t -> t -> t
   val ( /% ) : t -> t -> t
