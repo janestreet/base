@@ -1,22 +1,22 @@
 (** This file has generic signatures for container data structures, with standard
-    functions (iter, fold, exists, for_all, ...) that one would expect to find in any
-    container.  The idea is to include [Container.S0] or [Container.S1] in the signature
-    for every container-like data structure (Array, List, String, ...) to ensure a
-    consistent interface. *)
+    functions ([iter], [fold], [exists], [for_all], ...) that one would expect to find in
+    any container. The idea is to include [Container.S0] or [Container.S1] in the
+    signature for every container-like data structure ([Array], [List], [String], ...) to
+    ensure a consistent interface. *)
 
 open! Import
 
 module Export = struct
   (** [Continue_or_stop.t] is used by the [f] argument to [fold_until] in order to
-      indicate if folding should continue, or stop early *)
+      indicate whether folding should continue, or stop early. *)
   module Continue_or_stop = struct
     type ('a, 'b) t =
       | Continue of 'a
       | Stop     of 'b
   end
 
-  (** [Finished_or_stopped_early.t] is returned by [fold_until] to indicate if
-      [f] requested the fold stop, or if the fold completed *)
+  (** [Finished_or_stopped_early.t] is returned by [fold_until] to indicate whether
+      [f] requested the fold stop, or if the fold completed. *)
   module Finished_or_stopped_early = struct
     type ('a, 'b) t =
       | Finished      of 'a
@@ -25,7 +25,7 @@ module Export = struct
 end
 include Export
 
-(** Signature for monomorphic container, e.g., string *)
+(** Signature for monomorphic container, e.g., string. *)
 module type S0 = sig
   type t
   type elt
@@ -42,7 +42,7 @@ module type S0 = sig
   val iter     : t -> f:(elt -> unit) -> unit
 
   (** [fold t ~init ~f] returns [f (... f (f (f init e1) e2) e3 ...) en], where [e1..en]
-      are the elements of [t]  *)
+      are the elements of [t]. *)
   val fold     : t -> init:'accum -> f:('accum -> elt -> 'accum) -> 'accum
 
   (** [fold_result t ~init ~f] is a short-circuiting version of [fold] that runs in the
@@ -64,17 +64,17 @@ module type S0 = sig
     -> ('accum, 'stop) Finished_or_stopped_early.t
 
   (** Returns [true] if and only if there exists an element for which the provided
-      function evaluates to [true].  This is a short-circuiting operation. *)
+      function evaluates to [true]. This is a short-circuiting operation. *)
   val exists   : t -> f:(elt -> bool) -> bool
 
   (** Returns [true] if and only if the provided function evaluates to [true] for all
-      elements.  This is a short-circuiting operation. *)
+      elements. This is a short-circuiting operation. *)
   val for_all  : t -> f:(elt -> bool) -> bool
 
   (** Returns the number of elements for which the provided function evaluates to true. *)
   val count    : t -> f:(elt -> bool) -> int
 
-  (** Returns the sum of [f i] for i in the container *)
+  (** Returns the sum of [f i] for all [i] in the container. *)
   val sum
     : (module Commutative_group.S with type t = 'sum)
     -> t -> f:(elt -> 'sum) -> 'sum
@@ -89,7 +89,7 @@ module type S0 = sig
   val to_list  : t -> elt list
   val to_array : t -> elt array
 
-  (** Returns a min (resp max) element from the collection using the provided [cmp]
+  (** Returns a min (resp. max) element from the collection using the provided [cmp]
       function. In case of a tie, the first element encountered while traversing the
       collection is returned. The implementation uses [fold] so it has the same
       complexity as [fold]. Returns [None] iff the collection is empty. *)
@@ -111,7 +111,7 @@ module type S0_phantom = sig
   val iter     : _ t -> f:(elt -> unit) -> unit
 
   (** [fold t ~init ~f] returns [f (... f (f (f init e1) e2) e3 ...) en], where [e1..en]
-      are the elements of [t]  *)
+      are the elements of [t]. *)
   val fold     : _ t -> init:'accum -> f:('accum -> elt -> 'accum) -> 'accum
 
   (** [fold_result t ~init ~f] is a short-circuiting version of [fold] that runs in the
@@ -143,7 +143,7 @@ module type S0_phantom = sig
   (** Returns the number of elements for which the provided function evaluates to true. *)
   val count    : _ t -> f:(elt -> bool) -> int
 
-  (** Returns the sum of [f i] for i in the container *)
+  (** Returns the sum of [f i] for all [i] in the container. *)
   val sum
     : (module Commutative_group.S with type t = 'sum)
     -> _ t -> f:(elt -> 'sum) -> 'sum
@@ -165,7 +165,7 @@ module type S0_phantom = sig
   val max_elt : _ t -> cmp:(elt -> elt -> int) -> elt option
 end
 
-(** Signature for polymorphic container, e.g., 'a list or 'a array *)
+(** Signature for polymorphic container, e.g., ['a list] or ['a array]. *)
 module type S1 = sig
   type 'a t
 
@@ -211,7 +211,7 @@ module type S1 = sig
   (** Returns the number of elements for which the provided function evaluates to true. *)
   val count    : 'a t -> f:('a -> bool) -> int
 
-  (** Returns the sum of [f i] for i in the container *)
+  (** Returns the sum of [f i] for all [i] in the container. *)
   val sum
     : (module Commutative_group.S with type t = 'sum)
     -> 'a t -> f:('a -> 'sum) -> 'sum
@@ -245,7 +245,7 @@ module type S1_phantom_invariant = sig
   val iter     : ('a, _) t -> f:('a -> unit) -> unit
 
   (** [fold t ~init ~f] returns [f (... f (f (f init e1) e2) e3 ...) en], where [e1..en]
-      are the elements of [t]  *)
+      are the elements of [t]. *)
   val fold     : ('a, _) t -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
 
   (** [fold_result t ~init ~f] is a short-circuiting version of [fold] that runs in the
@@ -277,7 +277,7 @@ module type S1_phantom_invariant = sig
   (** Returns the number of elements for which the provided function evaluates to true. *)
   val count    : ('a, _) t -> f:('a -> bool) -> int
 
-  (** Returns the sum of [f i] for i in the container *)
+  (** Returns the sum of [f i] for all [i] in the container. *)
   val sum
     : (module Commutative_group.S with type t = 'sum)
     -> ('a, _) t -> f:('a -> 'sum) -> 'sum

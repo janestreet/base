@@ -1,15 +1,8 @@
-(** This is a slightly modified version of the OCaml standard library's random.mli.  We
-    want Base's [Random] module to be different from OCaml's standard one:
+(** Pseudo-random number generation.
 
-    - We expose [Random.State.default], so that user code can easily share the default
-    random state if it wants.
-
-    - We disallow [Random.get_state], because it misleadingly makes a copy of random
-    state.  And it is what people naturally, albeit incorrectly, grab for when they want
-    to use shared random state.
-
-    The fact that we construct our own default random state means that code using
-    Core.Random and code using OCaml's Random will not share the default state. *)
+    This is a wrapper of the standard library's [Random] library, though it does not share
+    state with that library.
+*)
 
 (*_
   (***********************************************************************)
@@ -26,8 +19,6 @@
   (***********************************************************************) *)
 
 open! Import
-
-(** Pseudo-random number generators (PRNG). *)
 
 (** {6 Basic functions} *)
 
@@ -92,11 +83,17 @@ val bool : unit -> bool
     explicitly.  This allows using one or several deterministic PRNGs, even in a
     multi-threaded program, without interference from other parts of the program.
 
+    Note that [Random.get_state] from the standard library is not exposed, because it
+    misleadingly makes a copy of random state, which is not typically the desired outcome
+    for accessing the shared state.
+
     Obtaining multiple generators with good independence properties is nontrivial; see
-    [Splittable_random]. *)
+    [Splittable_random] in [Core_kernel] for that. *)
 module State : sig
   type t
 
+  (** This gives access to the default random state, allowing user code to share (and
+      thereby mutate) the random state used by the main functions in [Random]. *)
   val default : t
 
   (** Create a new state and initialize it with the given seed. *)

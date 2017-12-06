@@ -1,14 +1,5 @@
 (** [Ordering] is intended to make code that matches on the result of a comparison
-    more concise and easier to read.  For example, one would write:
-
-    {[
-      match Ordering.of_int (compare x y) with
-      | Less -> ...
-      | Equal -> ...
-      | Greater -> ...
-    ]}
-
-    rather than:
+    more concise and easier to read. For example, instead of writing:
 
     {[
       let r = compare x y in
@@ -18,7 +9,18 @@
         ...
       else
         ...
-    ]} *)
+    ]}
+
+    you could simply write:
+
+    {[
+      match Ordering.of_int (compare x y) with
+      | Less -> ...
+      | Equal -> ...
+      | Greater -> ...
+    ]}
+
+*)
 
 open! Import
 
