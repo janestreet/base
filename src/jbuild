@@ -26,7 +26,8 @@
   (public_name base)
   (libraries
    (caml
-    shadow_stdlib))
+    shadow_stdlib
+    sexplib.0))
   (install_c_headers (internalhash))
   (flags (:standard -safe-string))
   (c_flags (:standard -D_LARGEFILE64_SOURCE (:include mpopcnt.sexp)))

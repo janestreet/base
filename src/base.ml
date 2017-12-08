@@ -411,7 +411,7 @@ module Not_exposed_properly = struct
   module Int_conversions     = Int_conversions
   module Int_math            = Int_math
   module Pow_overflow_bounds = Pow_overflow_bounds
-  module Sexp_conv           = Sexp_conv
+  module Sexp_conv           = Sexplib0.Sexp_conv
 end
 
 (* We perform these side effects here because we want them to run for any code that uses

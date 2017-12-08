@@ -10,6 +10,7 @@ build: [
 ]
 depends: [
   "jbuilder" {build & >= "1.0+beta12"}
+  "sexplib"
 ]
 depopts: [
   "base-native-int63"
