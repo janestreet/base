@@ -13,4 +13,8 @@ let raise_s sexp = raise (create_s sexp)
 let to_info t = t
 let of_info t = t
 
-let () = Pretty_printer.register "Base.Error.pp"
+include Pretty_printer.Register_pp(struct
+    type nonrec t = t
+    let module_name = "Base.Error"
+    let pp = pp
+  end)

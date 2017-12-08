@@ -397,6 +397,7 @@ module Export = struct
   (** Misc *)
   let phys_equal = phys_equal
 
+  external force : 'a Lazy.t -> 'a = "%lazy_force"
 end
 
 include Export

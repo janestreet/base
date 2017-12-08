@@ -46,3 +46,17 @@ let%expect_test _ =
   print (first_failure (fail "snoo") two_errors);
   [%expect {| ("" snoo) |}]
 ;;
+
+let%expect_test _ =
+  let v () =
+    if true
+    then
+      failwith "This unit validation raises";
+    Validate.pass
+  in
+  print (protect v ());
+  [%expect {|
+    (""
+     ("Exception raised during validation"
+      (Failure "This unit validation raises"))) |}]
+;;

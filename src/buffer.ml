@@ -4,6 +4,8 @@ include Buffer_intf
 
 include Caml.Buffer
 
+let contents_bytes = to_bytes
+
 let add_substring t s ~pos ~len = add_substring t s pos len
 let add_subbytes t s ~pos ~len = add_subbytes t s pos len
 let sexp_of_t t = sexp_of_string (contents t)

@@ -228,8 +228,11 @@ let of_exn ?backtrace exn =
   | _    , Some backtrace -> lazy (With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace))
 ;;
 
-let pp ppf t = Caml.Format.pp_print_string ppf (to_string_hum t)
-let () = Pretty_printer.register "Base.Info.pp"
+include Pretty_printer.Register_pp(struct
+    type nonrec t = t
+    let module_name = "Base.Info"
+    let pp ppf t = Caml.Format.pp_print_string ppf (to_string_hum t)
+  end)
 
 module Internal_repr = Message
 

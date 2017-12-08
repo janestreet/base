@@ -48,7 +48,7 @@ let protect f v =
   try
     f v
   with exn ->
-    Error.raise_s
+    fail_s
       (Sexp.message "Exception raised during validation" [ "", sexp_of_exn exn ])
 ;;
 

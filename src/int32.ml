@@ -1,5 +1,4 @@
 open! Import
-open! Polymorphic_compare
 open! Caml.Int32
 
 module T = struct
@@ -64,19 +63,26 @@ include Comparable.Validate_with_zero (struct
     let zero = zero
   end)
 
-module Compare = struct
-  let compare = compare
-  let ascending = compare
-  let descending x y = compare y x
-  let min (x : t) y = if x < y then x else y
-  let max (x : t) y = if x > y then x else y
-  let equal (x : t) y = x = y
+module Infix_compare = struct
+  open Polymorphic_compare
+
   let ( >= ) (x : t) y = x >= y
   let ( <= ) (x : t) y = x <= y
   let ( = ) (x : t) y = x = y
   let ( > ) (x : t) y = x > y
   let ( < ) (x : t) y = x < y
   let ( <> ) (x : t) y = x <> y
+end
+
+module Compare = struct
+  include Infix_compare
+
+  let compare = compare
+  let ascending = compare
+  let descending x y = compare y x
+  let min (x : t) y = if x < y then x else y
+  let max (x : t) y = if x > y then x else y
+  let equal (x : t) y = x = y
   let between t ~low ~high = low <= t && t <= high
   let clamp_unchecked t ~min ~max =
     if t < min then min else if t <= max then t else max

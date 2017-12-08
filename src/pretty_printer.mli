@@ -16,9 +16,6 @@ open! Import
 (** [all ()] returns all pretty printers that have been [register]ed. *)
 val all : unit -> string list
 
-(** [register name] adds [name] to the list of pretty printers. *)
-val register : string -> unit
-
 (** Modules that provide a pretty printer will match [S]. *)
 module type S = sig
   type t
@@ -41,3 +38,7 @@ module Register_pp (M : sig
     include S
     val module_name : string
   end) : S with type t := M.t
+
+(** [register name] adds [name] to the list of pretty printers.  Use the [Register]
+    functor if possible. *)
+val register : string -> unit

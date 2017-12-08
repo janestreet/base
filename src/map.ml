@@ -175,7 +175,7 @@ module Tree0 = struct
 
   let is_empty = function Empty -> true | _ -> false
 
-  let rec add t ~length ~key:x ~data ~compare_key =
+  let rec set t ~length ~key:x ~data ~compare_key =
     match t with
     | Empty -> (Leaf (x, data), length + 1)
     | Leaf(v, d) ->
@@ -191,14 +191,14 @@ module Tree0 = struct
       if c = 0 then
         (Node(l, x, data, r, h), length)
       else if c < 0 then
-        let l, length = add ~length ~key:x ~data l ~compare_key in
+        let l, length = set ~length ~key:x ~data l ~compare_key in
         (bal l v d r, length)
       else
-        let r, length = add ~length ~key:x ~data r ~compare_key in
+        let r, length = set ~length ~key:x ~data r ~compare_key in
         (bal l v d r, length)
   ;;
 
-  let add' t key data ~compare_key = fst (add t ~length:0 ~key ~data ~compare_key)
+  let set' t key data ~compare_key = fst (set t ~length:0 ~key ~data ~compare_key)
 
   module Build_increasing = struct
     module Fragment = struct
@@ -283,10 +283,10 @@ module Tree0 = struct
      O(|height l - height r|) *)
   let rec join l k d r ~compare_key =
     match l, r with
-    | Empty, _ -> add' r k d ~compare_key
-    | _, Empty -> add' l k d ~compare_key
-    | Leaf(lk, ld), _ -> add' (add' r k d ~compare_key) lk ld ~compare_key
-    | _, Leaf(rk, rd) -> add' (add' l k d ~compare_key) rk rd ~compare_key
+    | Empty, _ -> set' r k d ~compare_key
+    | _, Empty -> set' l k d ~compare_key
+    | Leaf(lk, ld), _ -> set' (set' r k d ~compare_key) lk ld ~compare_key
+    | _, Leaf(rk, rd) -> set' (set' l k d ~compare_key) rk rd ~compare_key
     | Node(ll, lk, ld, lr, lh), Node(rl, rk, rd, rr, rh) ->
       (* [bal] requires height difference <= 3. *)
       if lh > rh + 3
@@ -323,7 +323,7 @@ module Tree0 = struct
     match boundary_opt with
     | None -> left, right
     | Some (key, data) ->
-      let insert_into tree = fst (add tree ~key ~data ~length:0 ~compare_key) in
+      let insert_into tree = fst (set tree ~key ~data ~length:0 ~compare_key) in
       match into with
       | `Left -> insert_into left, right
       | `Right -> left, insert_into right
@@ -360,7 +360,7 @@ module Tree0 = struct
 
   let add_multi t ~length ~key ~data ~compare_key =
     let data = data :: Option.value (find t key ~compare_key) ~default:[] in
-    add ~length ~key ~data t ~compare_key
+    set ~length ~key ~data t ~compare_key
   ;;
 
   let find_multi t x ~compare_key =
@@ -623,21 +623,21 @@ module Tree0 = struct
   let filter_keys t ~f ~compare_key =
     fold ~init:(Empty, 0) t ~f:(fun ~key ~data (accu, length) ->
       if f key
-      then add ~length ~key ~data accu ~compare_key
+      then set ~length ~key ~data accu ~compare_key
       else (accu, length))
   ;;
 
   let filter t ~f ~compare_key =
     fold ~init:(Empty, 0) t ~f:(fun ~key ~data (accu, length) ->
       if f data
-      then add ~length ~key ~data accu ~compare_key
+      then set ~length ~key ~data accu ~compare_key
       else (accu, length))
   ;;
 
   let filteri t ~f ~compare_key =
     fold ~init:(Empty, 0) t ~f:(fun ~key ~data (accu, length) ->
       if f ~key ~data
-      then add ~length ~key ~data accu ~compare_key
+      then set ~length ~key ~data accu ~compare_key
       else (accu, length))
   ;;
 
@@ -645,14 +645,14 @@ module Tree0 = struct
     fold ~init:(Empty, 0) t ~f:(fun ~key ~data (accu, length) ->
       match f data with
       | None -> (accu, length)
-      | Some b -> add ~length ~key ~data:b accu ~compare_key)
+      | Some b -> set ~length ~key ~data:b accu ~compare_key)
   ;;
 
   let filter_mapi t ~f ~compare_key =
     fold ~init:(Empty, 0) t ~f:(fun ~key ~data (accu, length) ->
       match f ~key ~data with
       | None -> (accu, length)
-      | Some b -> add ~length ~key ~data:b accu ~compare_key)
+      | Some b -> set ~length ~key ~data:b accu ~compare_key)
   ;;
 
   let partition_mapi t ~f ~compare_key =
@@ -660,10 +660,10 @@ module Tree0 = struct
       match f ~key ~data with
       | `Fst x ->
         let t, length = pair1 in
-        (add t ~key ~data:x ~compare_key ~length, pair2)
+        (set t ~key ~data:x ~compare_key ~length, pair2)
       | `Snd y ->
         let t, length = pair2 in
-        (pair1, add t ~key ~data:y ~compare_key ~length))
+        (pair1, set t ~key ~data:y ~compare_key ~length))
   ;;
 
   let partition_map t ~f ~compare_key =
@@ -864,7 +864,7 @@ module Tree0 = struct
       let t = side (l, r) in
       match maybe with
       | None -> t
-      | Some (key, data) -> add' t key data ~compare_key
+      | Some (key, data) -> set' t key data ~compare_key
     in
     match order with
     | `Increasing_key ->
@@ -915,7 +915,7 @@ module Tree0 = struct
           | Some prev -> prev
         in
         let data = f prev_data data in
-        add accum ~length ~key ~data ~compare_key)
+        set accum ~length ~key ~data ~compare_key)
   ;;
 
   let of_alist_reduce alist ~f ~compare_key =
@@ -926,7 +926,7 @@ module Tree0 = struct
           | None -> data
           | Some prev -> f prev data
         in
-        add accum ~length ~key ~data:new_data ~compare_key)
+        set accum ~length ~key ~data:new_data ~compare_key)
   ;;
 
   let keys t = fold_right ~f:(fun ~key ~data:_ list -> key::list) t ~init:[]
@@ -936,7 +936,7 @@ module Tree0 = struct
     with_return (fun r ->
       let map =
         List.fold alist ~init:(empty, 0) ~f:(fun (t, length) (key,data) ->
-          let ((_, length') as acc) = add ~length ~key ~data t ~compare_key in
+          let ((_, length') as acc) = set ~length ~key ~data t ~compare_key in
           if length = length' then r.return (`Duplicate_key key)
           else acc)
       in
@@ -1138,7 +1138,7 @@ module Tree0 = struct
     let acc = { bad_key = None; map_length = (empty, 0) } in
     iteri ~f:(fun ~key ~data ->
       let map, length = acc.map_length in
-      let ((_, length') as pair) = add ~length ~key ~data map ~compare_key in
+      let ((_, length') as pair) = set ~length ~key ~data map ~compare_key in
       if length = length' && Option.is_none acc.bad_key
       then acc.bad_key <- Some key
       else acc.map_length <- pair);
@@ -1188,7 +1188,7 @@ module Accessors = struct
   let is_empty t = Tree0.is_empty t.tree
   let length t = t.length
   let set t ~key ~data =
-    like t (Tree0.add t.tree ~length:t.length ~key ~data ~compare_key:(compare_key t))
+    like t (Tree0.set t.tree ~length:t.length ~key ~data ~compare_key:(compare_key t))
   ;;
   let add = set [@@deprecated "[since 2017-11] Use [set] instead"]
   let add_multi t ~key ~data =
@@ -1377,7 +1377,7 @@ module Tree = struct
   let is_empty t = Tree0.is_empty t
   let length t = Tree0.length t
   let set ~comparator t ~key ~data =
-    fst (Tree0.add t ~key ~data ~length:0 ~compare_key:comparator.Comparator.compare)
+    fst (Tree0.set t ~key ~data ~length:0 ~compare_key:comparator.Comparator.compare)
   ;;
   let add = set [@@deprecated "[since 2017-11] Use [set] instead"]
   let add_multi ~comparator t ~key ~data =

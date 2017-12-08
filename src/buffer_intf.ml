@@ -25,7 +25,8 @@ module type S = sig
 
   (** Return a copy of the current contents of the buffer.  The buffer itself is
       unchanged. *)
-  val contents : t -> string
+  val contents       : t -> string
+  val contents_bytes : t -> bytes
 
   (** [blit ~src ~src_pos ~dst ~dst_pos ~len] copies [len] characters from the current
       contents of the buffer [src], starting at offset [src_pos] to bytes [dst], starting
