@@ -797,8 +797,9 @@ module Using_hashable = struct
   type nonrec ('a, 'b) t = ('a, 'b) t [@@deriving_inline sexp_of]
   let sexp_of_t :
     'a 'b .
-         ('a -> Sexplib.Sexp.t) ->
-    ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+         ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
     = sexp_of_t
   [@@@end]
   include Accessors
@@ -842,11 +843,15 @@ module M (K : T.T) = struct
   type nonrec 'v t = (K.t, 'v) t
 end
 module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
-  include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+  include
+  sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  end
   [@@@end] end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
-  include sig [@@@ocaml.warning "-32"] val t_of_sexp : Sexplib.Sexp.t -> t end
+  include
+  sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+  end
   [@@@end] include Key with type t := t
 end
 

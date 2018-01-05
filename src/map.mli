@@ -3,6 +3,8 @@ open! Map_intf
 
 type ('key, +'value, 'cmp) t
 
+module Or_duplicate = Or_duplicate
+
 type ('k, 'cmp) comparator =
   (module Comparator.S with type t = 'k and type comparator_witness = 'cmp)
 
@@ -106,8 +108,10 @@ val length : (_, _, _) t -> int
     previous binding disappears. *)
 val set : ('k, 'v, 'cmp) t -> key:'k -> data:'v -> ('k, 'v, 'cmp) t
 
-val add : ('k, 'v, 'cmp) t -> key:'k -> data:'v -> ('k, 'v, 'cmp) t
-[@@deprecated "[since 2017-11] Use [set] instead"]
+(** [add t ~key ~data] adds a new entry to [t] mapping [key] to [data] and returns [`Ok]
+    with the new map, or if [key] is already present in [t], returns [`Duplicate]. *)
+val add     : ('k, 'v, 'cmp) t -> key:'k -> data:'v -> ('k, 'v, 'cmp) t Or_duplicate.t
+val add_exn : ('k, 'v, 'cmp) t -> key:'k -> data:'v -> ('k, 'v, 'cmp) t
 
 (** if key is not present then add a singleton list, otherwise, cons data on the head of
     the existing list. *)
@@ -320,11 +324,13 @@ module Symmetric_diff_element : sig
     val compare :
       ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k,'v) t -> ('k,'v) t -> int
     val t_of_sexp :
-      (Sexplib.Sexp.t -> 'k) ->
-      (Sexplib.Sexp.t -> 'v) -> Sexplib.Sexp.t -> ('k,'v) t
+      (Ppx_sexp_conv_lib.Sexp.t -> 'k) ->
+      (Ppx_sexp_conv_lib.Sexp.t -> 'v) ->
+      Ppx_sexp_conv_lib.Sexp.t -> ('k,'v) t
     val sexp_of_t :
-      ('k -> Sexplib.Sexp.t) ->
-      ('v -> Sexplib.Sexp.t) -> ('k,'v) t -> Sexplib.Sexp.t
+      ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('k,'v) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 end
@@ -489,11 +495,15 @@ module M (K : sig type t type comparator_witness end) : sig
 end
 
 module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
-  include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+  include
+  sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  end
   [@@@end] end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
-  include sig [@@@ocaml.warning "-32"] val t_of_sexp : Sexplib.Sexp.t -> t end
+  include
+  sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+  end
   [@@@end] include Comparator.S with type t := t
 end
 module type Compare_m = sig end
@@ -532,9 +542,10 @@ module Using_comparator : sig
   sig
     [@@@ocaml.warning "-32"]
     val sexp_of_t :
-      ('k -> Sexplib.Sexp.t) ->
-      ('v -> Sexplib.Sexp.t) ->
-      ('cmp -> Sexplib.Sexp.t) -> ('k,'v,'cmp) t -> Sexplib.Sexp.t
+      ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('k,'v,'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 
@@ -551,9 +562,10 @@ module Using_comparator : sig
     sig
       [@@@ocaml.warning "-32"]
       val sexp_of_t :
-        ('k -> Sexplib.Sexp.t) ->
-        ('v -> Sexplib.Sexp.t) ->
-        ('cmp -> Sexplib.Sexp.t) -> ('k,'v,'cmp) t -> Sexplib.Sexp.t
+        ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
+        ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
+        ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
+        ('k,'v,'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end]
 

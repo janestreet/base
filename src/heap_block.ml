@@ -1,7 +1,8 @@
 open! Import
 
 type 'a t = 'a [@@deriving_inline sexp_of]
-let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+let sexp_of_t :
+  'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
   fun _of_a  -> fun v  -> _of_a v
 [@@@end]
 

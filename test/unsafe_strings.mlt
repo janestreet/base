@@ -1,0 +1,355 @@
+[%%org {|
+#+TITLE: Unsafe conversions using =Bytes.to_unsafe_string= and =Bytes.from_unsafe_string=
+
+The [[http://ocaml-docs/base/Base/Bytes/index.html][docs]] for the unsafe conversion
+functions in the Bytes module describe an "ownership discipline"
+that helps you reason about whether your use of those functions will,
+in fact, be safe. These functions also have parameter names (like
+=~no_mutation_while_string_reachable=) that nudge you to think
+about whether you're satisfying the invariants necessary to use
+them correctly.
+
+Below are some concrete examples that show how easy it is for
+well-meaning users of these functions to go astray of the required
+ownership discipline.
+
+To start, open =Base= to ensure you're using Base's version of the
+functions, not the standard library's:
+|}];;
+
+open Base;;
+#verbose true;;
+
+[%%org {|
+* =Bytes.unsafe_to_string=
+
+How can one ensure "unique ownership" over a byte sequence? One way is
+to allocate the byte sequence, never giving it to anyone else.
+
+*** Doing it the right way
+
+The following string init function is safe because the byte sequence
+~s~ will never be accessed or mutated after ~unsafe_to_string~ returns:
+|}];;
+
+let safe_string_init len f : string =
+  let s = Bytes.create len in
+  for i = 0 to len - 1 do Bytes.set s i (f i) done;
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s
+
+[%%org {|
+The ~safe_string_init~ code gives up ownership of ~s~, passing
+ownership of the resulting string to its caller. Nothing more is done
+with ~s~ while it is borrowed -- it's not, say, passed to ~f~ and
+mutated later -- and so ~string~ can be used safely:
+|}];;
+
+let string = safe_string_init 10 (fun _ -> 'c');;
+
+[%%expect{|
+val safe_string_init : int -> (int -> char) -> string = <fun>
+val string : string = "cccccccccc"
+|}];;
+
+[%%org {|
+You can go on using =string= without any fear that it'll be changed out
+from under you.
+
+*** Doing it wrong
+
+But the function would become unsafe if ~s~ were to escape its direct
+control -- say, by being passed as an additional parameter to the
+function that it uses to initialize the byte sequence. Consider the
+following:
+|}];;
+
+let unsafe_string_init len leaky_f : string =
+  let s = Bytes.create len in
+  for i = 0 to len - 1 do Bytes.set s i (leaky_f i s) done;
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s
+;;
+
+[%%expect{|
+val unsafe_string_init : int -> (int -> bytes -> char) -> string = <fun>
+|}];;
+
+[%%org {|
+Since there's no guarantee about what ~leaky_f~ will do with ~s~,
+the return value of ~unsafe_string_init~ can't be used safely -- even
+though it /looks like/ once ~leaky_f~ is called, ~unsafe_string_init~
+is done with it.
+
+But suppose ~leaky_f~ were the following ~manipulator~ function,
+which, in addition to returning the char 'w' at every index, stored
+a closure that, when called, mutates the byte string ~s~ by setting
+its first index to 'A':
+|}];;
+
+let fn = ref (fun (_ : int) -> ());;
+
+let manipulator _ s =
+  let f i = Bytes.set s i 'A' in
+  fn := f;
+  'w'
+;;
+
+[%%org {|
+If you call =unsafe_string_init=, you initially seem to get the right
+behavior; it returns "www", just as you'd expect:
+|}];;
+
+let string2 = unsafe_string_init 3 manipulator;
+
+[%%expect {|
+val fn : (int -> unit) ref = {Base.Ref.contents = <fun>}
+val manipulator : 'a -> bytes -> char = <fun>
+val string2 : string = "www"
+|}];;
+
+[%%org {|
+But suppose that somewhere out of your control, the closure that
+you'd stored earlier ends up getting called:
+|}];;
+
+!fn 0;
+
+[%%org {|
+If you then inspect the string, you'll see that it has changed out
+from under you:
+|}];;
+
+string2;
+[%%expect{|
+- : unit = ()
+- : string = "Aww"
+|}]
+
+[%%org {|
+To guarantee this won't happen you either have to not give up
+ownership of the byte sequence (as we've seen) or ensure sure that
+it's not mutated while its being borrowed (as we'll see in the
+following section).
+
+** A chain of serial, unique owners
+
+Here's another example. This time, you've got multiple owners of the byte
+sequence =s=, and when it's returned to the caller, it's still safe to
+be used and further mutated. You can do this safely so long as each
+owner along the way takes care to /actually/ give up ownership when
+it's done doing its thing.
+
+*** Doing it right
+
+Consider the following function:
+|}];;
+
+let safe_bytes_length (s : bytes) =
+  String.length (Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s);;
+
+#verbose false;;
+let s = Bytes.create 5;;
+#verbose true;;
+for i = 0 to 4 do Bytes.set s i 'a' done;
+safe_bytes_length s;;
+
+[%%expect{|
+val safe_bytes_length : bytes -> int = <fun>
+- : int = 5
+|}]
+
+[%%org {|
+This works safely because while =s= is being borrowed by
+=String.length=, the caller isn't doing anything with it. But suppose
+it was...
+
+*** Doing it wrong
+
+Suppose that instead of acting immediately, =String.length= returned a
+closure to be called later. (This might seem obviously dumb, but the
+same sort of behavior might be introduced in a much more subtle way in
+a concurrent program.)
+|}];;
+
+let length str = (fun _ -> String.length str);;
+
+let unsafe_bytes_length (s : bytes) =
+  length (Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s)
+;;
+
+[%%expect{|
+val length : string -> 'a -> int = <fun>
+val unsafe_bytes_length : bytes -> 'a -> int = <fun>
+|}]
+
+[%%org {|
+Now when you call it, it returns an uncalled function, not a value.
+|}];;
+
+#verbose false;;
+let s = Bytes.create 5;;
+#verbose true;;
+for i = 0 to 4 do Bytes.set s i 'a' done;;
+let len = (unsafe_bytes_length s);
+
+[%%expect{|
+- : unit = ()
+val len : '_a -> int = <fun>
+|}];;
+
+[%%org {|
+Suppose you then changed =s= somehow. Remember that our assumption here
+is that the =unsafe_bytes_length= function is finished with =s=, so
+that you can do what we want with it. So let's say you made it a little longer:
+|}];;
+
+#verbose false;;
+let s = Caml.Bytes.extend s 0 5;;
+for i = 5 to 9 do Caml.Bytes.set s i 'b' done;;
+#verbose true;;
+
+s;;
+Bytes.length s;;
+(len 0);;
+
+[%%expect{|
+- : bytes = "aaaaabbbbb"
+- : int = 10
+- : int = 5
+|}];;
+
+[%%org {|
+This is no longer correct! We'd expect =len= to return the actual length
+of the byte sequence, not the length of the byte sequence as it used
+to be. This is what happens when you violate the discipline of unique
+ownership.
+
+* =Base.unsafe_of_string=
+
+Although it's in theory possible to use =unsafe_of_string= safely -- by ensuring
+unique ownership of the resulting string value -- it is in practice extremely
+difficult to do this, and so =unsafe_of_string= is never used in our codebase
+and never should be.
+
+Below is an example of how it can be used in tandem with =unsafe_to_string=. But
+we'll see that it turns out to be unnecessary.
+
+* Why use these functions in the first place?
+
+Given the danger, you might wonder why you'd want these functions
+at all. But they can be useful in situations where you want to work with
+a string both as a string and as a byte sequence, without making
+copies of either. Here's a concrete example from PCRE-OCAML, the regex
+engine.
+
+#+BEGIN_SRC ocaml
+let quote s =
+  let len = String.length s in
+  let buf = Bytes.create (len * 2) in
+  let pos = ref 0 in
+  for i = 0 to len - 1 do
+    match String.unsafe_get s i with
+    | '\\' | '^' | '$' | '.' | '[' | '|'
+    | '('  | ')' | '?' | '*' | '+' | '{' as c ->
+      Bytes.unsafe_set buf !pos '\\';
+      incr pos;
+      Bytes.unsafe_set buf !pos c;
+      incr pos
+    | c -> Bytes.unsafe_set buf !pos c; incr pos
+  done;
+  string_unsafe_sub (Bytes.unsafe_to_string buf) 0 !pos
+#+END_SRC
+|}];;
+
+Pcre.quote "^(regex)+$";;
+
+[%%expect{|
+- : string = "\\^\\(regex\\)\\+\\$"
+|}]
+
+[%%org {|
+This function quotes special regex characters like "(" and "+" by
+escaping them with double backslashes. Most of the work is in the
+loop. We initialize a brand-new buffer =buf= twice the length of our
+string (for the extra escape characters we might insert. We loop over
+the bytes of =s= obtained via =String.unsafe_get= (which is like
+=String.get= just without any bounds checking), inserting new bytes
+at each =pos= if we encounter one of the special characters.
+
+We're left with =buf=, which we want to turn into a string to return
+to our caller. First we call =(Bytes.unsafe_to_string buf)= on it to
+get a string representation, then =string_unsafe_sub= on the result:
+
+#+BEGIN_SRC ocaml
+let bytes_unsafe_blit_string str str_ofs bts bts_ofs len =
+  let str_bts = Bytes.unsafe_of_string str in
+  Bytes.unsafe_blit str_bts str_ofs bts bts_ofs len
+
+let string_unsafe_sub str ofs len =
+  let res = Bytes.create len in
+  bytes_unsafe_blit_string str ofs res 0 len;
+  Bytes.unsafe_to_string res
+#+END_SRC
+
+=string_unsafe_sub= takes an offset (0 in our example), a len
+(=pos= in our example, i.e., the index of the last byte), and the
+=str=, passing them to =bytes_unsafe_blit_string=, whose job, simply,
+is to copy (to "blit") the bytes of one string (here, the =str=
+argument) into another set of bytes (=res=), undoing the doubling we'd
+done before, and returning a buffer of the correct length.
+
+When we call =quote=, then, our initial string =s= is only ever read
+from (with =String.unsafe_get=). Its bytes are written into a new
+container, =buf=. =buf= is then blit-ed into /another/ container,
+=res=, and this, finally, is returned as a string.
+
+Why do we do all this? Why not just rewrite the above as:
+
+#+BEGIN_SRC diff
+let bytes_unsafe_blit_string str str_ofs bts bts_ofs len =
+-  let str_bts = Bytes.unsafe_of_string str in
++  let str_bts = Bytes.of_string str in
+  Bytes.unsafe_blit str_bts str_ofs bts bts_ofs len
+
+let string_unsafe_sub str ofs len =
+  let res = Bytes.create len in
+  bytes_unsafe_blit_string str ofs res 0 len;
+-  Bytes.unsafe_to_string res
++  Bytes.to_string res
+
+let quote s =
+  let len = String.length s in
+  let buf = Bytes.create (len * 2) in
+  let pos = ref 0 in
+  for i = 0 to len - 1 do
+    match String.unsafe_get s i with
+    | '\\' | '^' | '$' | '.' | '[' | '|'
+    | '('  | ')' | '?' | '*' | '+' | '{' as c ->
+      Bytes.unsafe_set buf !pos '\\';
+      incr pos;
+      Bytes.unsafe_set buf !pos c;
+      incr pos
+    | c -> Bytes.unsafe_set buf !pos c; incr pos
+  done;
+-  string_unsafe_sub (Bytes.unsafe_to_string buf) 0 !pos
++  string_unsafe_sub (Bytes.to_string buf) 0 !pos
+#+END_SRC
+
+The reason is simply to avoid making extra copies of the buffer. The =safe= versions make
+an extra copy while the =unsafe= versions do not.
+
+Note that the two uses above of =unsafe_to_string= follow the documented pattern exactly:
+they are safe because each time we use them, we transfer ownership of the byte sequence.
+
+As for =unsafe_of_string=, it's being used unnecessarily, since we're in essence writing
+=(unsafe_of_string (unsafe_to_string buf))=.
+
+** Conclusions
+
+- =Bytes.unsafe_to_string= can be used to avoid extra allocations, so
+  long as you follow the ownership discipline described above.
+
+- =Bytes.unsafe_of_string= should in general never be used, and
+  indeed, it's never used in our codebase. It's just too error
+  prone. As the docs for it say, "In practice, unique ownership of
+  string values is extremely difficult to reason about correctly."
+|}]

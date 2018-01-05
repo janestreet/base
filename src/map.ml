@@ -14,6 +14,8 @@
 open! Import
 open! Map_intf
 
+module Or_duplicate = Or_duplicate
+
 module Symmetric_diff_element = Symmetric_diff_element
 
 let with_return = With_return.with_return
@@ -175,13 +177,29 @@ module Tree0 = struct
 
   let is_empty = function Empty -> true | _ -> false
 
-  let rec set t ~length ~key:x ~data ~compare_key =
+  let raise_key_already_present ~key ~sexp_of_key =
+    Error.raise_s (
+      Sexp.message
+        "[Map.add_exn] got key already present"
+        [ "key", key |> sexp_of_key ])
+  ;;
+
+  module Add_or_set = struct
+    type t =
+      | Add
+      | Set
+  end
+
+  let rec find_and_add_or_set t ~length ~key:x ~data ~compare_key ~sexp_of_key
+            ~(add_or_set : Add_or_set.t) =
     match t with
     | Empty -> (Leaf (x, data), length + 1)
     | Leaf(v, d) ->
       let c = compare_key x v in
       if c = 0 then
-        (Leaf(x, data), length)
+        (match add_or_set with
+         | Add -> raise_key_already_present ~key:x ~sexp_of_key
+         | Set -> (Leaf(x, data), length))
       else if c < 0 then
         (Node(Leaf(x, data), v, d, Empty, 2), length + 1)
       else
@@ -189,13 +207,30 @@ module Tree0 = struct
     | Node(l, v, d, r, h) ->
       let c = compare_key x v in
       if c = 0 then
-        (Node(l, x, data, r, h), length)
+        (match add_or_set with
+         | Add -> raise_key_already_present ~key:x ~sexp_of_key
+         | Set -> (Node(l, x, data, r, h), length))
       else if c < 0 then
-        let l, length = set ~length ~key:x ~data l ~compare_key in
+        let l, length =
+          find_and_add_or_set ~length ~key:x ~data l ~compare_key ~sexp_of_key ~add_or_set
+        in
         (bal l v d r, length)
       else
-        let r, length = set ~length ~key:x ~data r ~compare_key in
+        let r, length =
+          find_and_add_or_set ~length ~key:x ~data r ~compare_key ~sexp_of_key ~add_or_set
+        in
         (bal l v d r, length)
+  ;;
+
+  let add_exn t ~length ~key ~data ~compare_key ~sexp_of_key =
+    find_and_add_or_set t ~length ~key ~data ~compare_key ~sexp_of_key ~add_or_set:Add
+  ;;
+
+  let set t ~length ~key ~data ~compare_key =
+    find_and_add_or_set t ~length ~key ~data
+      ~compare_key
+      ~sexp_of_key:(fun _ -> List [])
+      ~add_or_set:Set
   ;;
 
   let set' t key data ~compare_key = fst (set t ~length:0 ~key ~data ~compare_key)
@@ -387,21 +422,23 @@ module Tree0 = struct
 
   exception Map_min_elt_exn_of_empty_map [@@deriving_inline sexp]
   let () =
-    Sexplib.Conv.Exn_converter.add
+    Ppx_sexp_conv_lib.Conv.Exn_converter.add
       ([%extension_constructor Map_min_elt_exn_of_empty_map])
       (function
         | Map_min_elt_exn_of_empty_map  ->
-          Sexplib.Sexp.Atom "src/map.ml.Tree0.Map_min_elt_exn_of_empty_map"
+          Ppx_sexp_conv_lib.Sexp.Atom
+            "src/map.ml.Tree0.Map_min_elt_exn_of_empty_map"
         | _ -> assert false)
 
   [@@@end]
   exception Map_max_elt_exn_of_empty_map [@@deriving_inline sexp]
   let () =
-    Sexplib.Conv.Exn_converter.add
+    Ppx_sexp_conv_lib.Conv.Exn_converter.add
       ([%extension_constructor Map_max_elt_exn_of_empty_map])
       (function
         | Map_max_elt_exn_of_empty_map  ->
-          Sexplib.Sexp.Atom "src/map.ml.Tree0.Map_max_elt_exn_of_empty_map"
+          Ppx_sexp_conv_lib.Sexp.Atom
+            "src/map.ml.Tree0.Map_max_elt_exn_of_empty_map"
         | _ -> assert false)
 
   [@@@end]
@@ -1190,7 +1227,16 @@ module Accessors = struct
   let set t ~key ~data =
     like t (Tree0.set t.tree ~length:t.length ~key ~data ~compare_key:(compare_key t))
   ;;
-  let add = set [@@deprecated "[since 2017-11] Use [set] instead"]
+  let add_exn t ~key ~data =
+    like t (Tree0.add_exn t.tree ~length:t.length ~key ~data ~compare_key:(compare_key t)
+              ~sexp_of_key:t.comparator.sexp_of_t)
+  ;;
+  let add t ~key ~data =
+    try
+      `Ok (add_exn t ~key ~data)
+    with _ ->
+      `Duplicate
+  ;;
   let add_multi t ~key ~data =
     like t
       (Tree0.add_multi t.tree ~length:t.length ~key ~data ~compare_key:(compare_key t))
@@ -1379,7 +1425,16 @@ module Tree = struct
   let set ~comparator t ~key ~data =
     fst (Tree0.set t ~key ~data ~length:0 ~compare_key:comparator.Comparator.compare)
   ;;
-  let add = set [@@deprecated "[since 2017-11] Use [set] instead"]
+  let add_exn ~comparator t ~key ~data =
+    fst (Tree0.add_exn t ~key ~data ~length:0 ~compare_key:comparator.Comparator.compare
+           ~sexp_of_key:comparator.sexp_of_t)
+  ;;
+  let add ~comparator t ~key ~data =
+    try
+      `Ok (add_exn t ~comparator ~key ~data)
+    with _ ->
+      `Duplicate
+  ;;
   let add_multi ~comparator t ~key ~data =
     Tree0.add_multi t ~key ~data ~length:0 ~compare_key:comparator.Comparator.compare
     |> fst
@@ -1618,11 +1673,15 @@ module M(K : sig type t type comparator_witness end) = struct
   type nonrec 'v t = (K.t, 'v, K.comparator_witness) t
 end
 module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
-  include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+  include
+  sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  end
   [@@@end] end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
-  include sig [@@@ocaml.warning "-32"] val t_of_sexp : Sexplib.Sexp.t -> t end
+  include
+  sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+  end
   [@@@end] include Comparator.S with type t := t
 end
 module type Compare_m = sig end

@@ -6,9 +6,11 @@ let raise_s = Error.raise_s
 
 type 'a t = 'a array [@@deriving_inline compare, sexp]
 let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
-let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
+let t_of_sexp :
+  'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
   array_of_sexp
-let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+let sexp_of_t :
+  'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
   sexp_of_array
 [@@@end]
 

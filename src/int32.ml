@@ -10,8 +10,8 @@ module T = struct
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = hash_int32  in fun x  -> func x
 
-  let t_of_sexp : Sexplib.Sexp.t -> t = int32_of_sexp
-  let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_int32
+  let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = int32_of_sexp
+  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_int32
   [@@@end]
   let compare (x : t) y = compare x y
 

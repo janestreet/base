@@ -20,8 +20,8 @@ module T = struct
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = hash_string  in fun x  -> func x
 
-  let t_of_sexp : Sexplib.Sexp.t -> t = string_of_sexp
-  let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_string
+  let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = string_of_sexp
+  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_string
   [@@@end]
   let compare = compare
 end
@@ -59,8 +59,8 @@ let is_prefix_gen =
 module Caseless = struct
   module T = struct
     type t = string [@@deriving_inline sexp]
-    let t_of_sexp : Sexplib.Sexp.t -> t = string_of_sexp
-    let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_string
+    let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = string_of_sexp
+    let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_string
     [@@@end]
 
     (* This function gives the same result as [compare (lowercase s1) (lowercase s2)]. It
@@ -150,13 +150,13 @@ let rindex_from t pos char =
 module Search_pattern = struct
 
   type t = string * int array [@@deriving_inline sexp_of]
-  let sexp_of_t : t -> Sexplib.Sexp.t =
+  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t =
     function
     | (v0,v1) ->
       let v0 = sexp_of_string v0
 
       and v1 = sexp_of_array sexp_of_int v1
-      in Sexplib.Sexp.List [v0; v1]
+      in Ppx_sexp_conv_lib.Sexp.List [v0; v1]
 
   [@@@end]
 

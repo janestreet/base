@@ -43,7 +43,7 @@ module Make (M : sig type t [@@deriving_inline compare, sexp_of]
     sig
       [@@@ocaml.warning "-32"]
       val compare : t -> t -> int
-      val sexp_of_t : t -> Sexplib.Sexp.t
+      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end] end) = struct
   include M
@@ -83,7 +83,8 @@ module Derived (M : sig type 'a t [@@deriving_inline compare, sexp_of]
     sig
       [@@@ocaml.warning "-32"]
       val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-      val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+      val sexp_of_t :
+        ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end] end) = struct
   type 'cmp comparator_witness
@@ -111,8 +112,9 @@ module Derived2 (M : sig type ('a, 'b) t [@@deriving_inline compare, sexp_of]
       val compare :
         ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
       val sexp_of_t :
-        ('a -> Sexplib.Sexp.t) ->
-        ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+        ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+        ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
+        ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end] end) = struct
   type ('cmp_a, 'cmp_b) comparator_witness

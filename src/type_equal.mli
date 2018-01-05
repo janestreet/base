@@ -39,8 +39,9 @@ include
 sig
   [@@@ocaml.warning "-32"]
   val sexp_of_t :
-    ('a -> Sexplib.Sexp.t) ->
-    ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
 end
 [@@@end]
 type ('a, 'b) equal = ('a, 'b) t (** just an alias, needed when [t] gets shadowed below *)
@@ -181,7 +182,8 @@ module Id : sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+    val sexp_of_t :
+      ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 

@@ -5,8 +5,8 @@ module type S = sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val t_of_sexp : Sexplib.Sexp.t -> t
-    val sexp_of_t : t -> Sexplib.Sexp.t
+    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 end
@@ -16,8 +16,10 @@ module type S1 = sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
-    val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+    val t_of_sexp :
+      (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+    val sexp_of_t :
+      ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 end
@@ -28,11 +30,13 @@ module type S2 = sig
   sig
     [@@@ocaml.warning "-32"]
     val t_of_sexp :
-      (Sexplib.Sexp.t -> 'a) ->
-      (Sexplib.Sexp.t -> 'b) -> Sexplib.Sexp.t -> ('a,'b) t
+      (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
+      (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
+      Ppx_sexp_conv_lib.Sexp.t -> ('a,'b) t
     val sexp_of_t :
-      ('a -> Sexplib.Sexp.t) ->
-      ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+      ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 end
@@ -43,13 +47,15 @@ module type S3 = sig
   sig
     [@@@ocaml.warning "-32"]
     val t_of_sexp :
-      (Sexplib.Sexp.t -> 'a) ->
-      (Sexplib.Sexp.t -> 'b) ->
-      (Sexplib.Sexp.t -> 'c) -> Sexplib.Sexp.t -> ('a,'b,'c) t
+      (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
+      (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
+      (Ppx_sexp_conv_lib.Sexp.t -> 'c) ->
+      Ppx_sexp_conv_lib.Sexp.t -> ('a,'b,'c) t
     val sexp_of_t :
-      ('a -> Sexplib.Sexp.t) ->
-      ('b -> Sexplib.Sexp.t) ->
-      ('c -> Sexplib.Sexp.t) -> ('a,'b,'c) t -> Sexplib.Sexp.t
+      ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('c -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('a,'b,'c) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 end

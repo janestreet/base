@@ -9,7 +9,7 @@ module type Elt_plain = sig
   sig
     [@@@ocaml.warning "-32"]
     val compare : t -> t -> int
-    val sexp_of_t : t -> Sexplib.Sexp.t
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 end

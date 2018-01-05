@@ -13,8 +13,8 @@ module T = struct
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = hash_bool  in fun x  -> func x
 
-  let t_of_sexp : Sexplib.Sexp.t -> t = bool_of_sexp
-  let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_bool
+  let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = bool_of_sexp
+  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_bool
   [@@@end]
 
   (* we use physical equality here because for bools it is the same *)

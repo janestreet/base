@@ -22,8 +22,8 @@ module T = struct
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = hash_float  in fun x  -> func x
 
-  let t_of_sexp : Sexplib.Sexp.t -> t = float_of_sexp
-  let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_float
+  let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = float_of_sexp
+  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_float
   [@@@end]
   let compare (x : t) y = compare x y
   let equal (x : t) y = x = y
@@ -639,36 +639,41 @@ module Class = struct
          | (Zero ,Zero ) -> 0)
 
   let all : t list = [Infinite; Nan; Normal; Subnormal; Zero]
-  let t_of_sexp : Sexplib.Sexp.t -> t =
+  let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t =
     let _tp_loc = "src/float.ml.Class.t"  in
     function
-    | Sexplib.Sexp.Atom ("infinite"|"Infinite") -> Infinite
-    | Sexplib.Sexp.Atom ("nan"|"Nan") -> Nan
-    | Sexplib.Sexp.Atom ("normal"|"Normal") -> Normal
-    | Sexplib.Sexp.Atom ("subnormal"|"Subnormal") -> Subnormal
-    | Sexplib.Sexp.Atom ("zero"|"Zero") -> Zero
-    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("infinite"|"Infinite"))::_) as
-      sexp -> Sexplib.Conv_error.stag_no_args _tp_loc sexp
-    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("nan"|"Nan"))::_) as sexp ->
-      Sexplib.Conv_error.stag_no_args _tp_loc sexp
-    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("normal"|"Normal"))::_) as sexp ->
-      Sexplib.Conv_error.stag_no_args _tp_loc sexp
-    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("subnormal"|"Subnormal"))::_) as
-      sexp -> Sexplib.Conv_error.stag_no_args _tp_loc sexp
-    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("zero"|"Zero"))::_) as sexp ->
-      Sexplib.Conv_error.stag_no_args _tp_loc sexp
-    | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
-      Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-    | Sexplib.Sexp.List [] as sexp ->
-      Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-    | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp
-  let sexp_of_t : t -> Sexplib.Sexp.t =
+    | Ppx_sexp_conv_lib.Sexp.Atom ("infinite"|"Infinite") -> Infinite
+    | Ppx_sexp_conv_lib.Sexp.Atom ("nan"|"Nan") -> Nan
+    | Ppx_sexp_conv_lib.Sexp.Atom ("normal"|"Normal") -> Normal
+    | Ppx_sexp_conv_lib.Sexp.Atom ("subnormal"|"Subnormal") -> Subnormal
+    | Ppx_sexp_conv_lib.Sexp.Atom ("zero"|"Zero") -> Zero
+    | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                      ("infinite"|"Infinite"))::_) as sexp ->
+      Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+    | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                      ("nan"|"Nan"))::_) as sexp ->
+      Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+    | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                      ("normal"|"Normal"))::_) as sexp ->
+      Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+    | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                      ("subnormal"|"Subnormal"))::_) as sexp ->
+      Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+    | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                      ("zero"|"Zero"))::_) as sexp ->
+      Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+    | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.List _)::_) as sexp
+      -> Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
+    | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
+      Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
+    | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
+  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t =
     function
-    | Infinite  -> Sexplib.Sexp.Atom "Infinite"
-    | Nan  -> Sexplib.Sexp.Atom "Nan"
-    | Normal  -> Sexplib.Sexp.Atom "Normal"
-    | Subnormal  -> Sexplib.Sexp.Atom "Subnormal"
-    | Zero  -> Sexplib.Sexp.Atom "Zero"
+    | Infinite  -> Ppx_sexp_conv_lib.Sexp.Atom "Infinite"
+    | Nan  -> Ppx_sexp_conv_lib.Sexp.Atom "Nan"
+    | Normal  -> Ppx_sexp_conv_lib.Sexp.Atom "Normal"
+    | Subnormal  -> Ppx_sexp_conv_lib.Sexp.Atom "Subnormal"
+    | Zero  -> Ppx_sexp_conv_lib.Sexp.Atom "Zero"
   [@@@end]
 
   let to_string t = string_of_sexp (sexp_of_t t)

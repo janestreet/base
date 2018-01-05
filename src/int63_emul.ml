@@ -18,8 +18,8 @@ module T0 = struct
     and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
       let func = hash_int64  in fun x  -> func x
 
-    let t_of_sexp : Sexplib.Sexp.t -> t = int64_of_sexp
-    let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_int64
+    let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = int64_of_sexp
+    let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_int64
     [@@@end]
   end
   include T
@@ -128,8 +128,8 @@ module T = struct
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = W.hash  in fun x  -> func x
 
-  let t_of_sexp : Sexplib.Sexp.t -> t = W.t_of_sexp
-  let sexp_of_t : t -> Sexplib.Sexp.t = W.sexp_of_t
+  let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = W.t_of_sexp
+  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = W.sexp_of_t
   [@@@end]
   type comparator_witness = W.comparator_witness
   let comparator = W.comparator

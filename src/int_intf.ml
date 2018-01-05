@@ -41,8 +41,8 @@ module type Hexable = sig
     include
     sig
       [@@@ocaml.warning "-32"]
-      val t_of_sexp : Sexplib.Sexp.t -> t
-      val sexp_of_t : t -> Sexplib.Sexp.t
+      val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
       val compare : t -> t -> int
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
@@ -64,8 +64,8 @@ module type S_common = sig
     val hash_fold_t :
       Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
     val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-    val t_of_sexp : Sexplib.Sexp.t -> t
-    val sexp_of_t : t -> Sexplib.Sexp.t
+    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 

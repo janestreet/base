@@ -50,11 +50,13 @@ module type Either = sig
       Ppx_hash_lib.Std.Hash.state ->
       ('f,'s) t -> Ppx_hash_lib.Std.Hash.state
     val t_of_sexp :
-      (Sexplib.Sexp.t -> 'f) ->
-      (Sexplib.Sexp.t -> 's) -> Sexplib.Sexp.t -> ('f,'s) t
+      (Ppx_sexp_conv_lib.Sexp.t -> 'f) ->
+      (Ppx_sexp_conv_lib.Sexp.t -> 's) ->
+      Ppx_sexp_conv_lib.Sexp.t -> ('f,'s) t
     val sexp_of_t :
-      ('f -> Sexplib.Sexp.t) ->
-      ('s -> Sexplib.Sexp.t) -> ('f,'s) t -> Sexplib.Sexp.t
+      ('f -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('s -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('f,'s) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 

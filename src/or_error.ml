@@ -15,10 +15,12 @@ let hash_fold_t :
   fun hsv  ->
   fun arg  -> Result.hash_fold_t _hash_fold_a Error.hash_fold_t hsv arg
 
-let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
+let t_of_sexp :
+  'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
   let _tp_loc = "src/or_error.ml.t"  in
   fun _of_a  -> fun t  -> Result.t_of_sexp _of_a Error.t_of_sexp t
-let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+let sexp_of_t :
+  'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
   fun _of_a  -> fun v  -> Result.sexp_of_t _of_a Error.sexp_of_t v
 [@@@end]
 

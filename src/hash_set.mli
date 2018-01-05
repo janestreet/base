@@ -6,7 +6,8 @@ type 'a t [@@deriving_inline sexp_of]
 include
 sig
   [@@@ocaml.warning "-32"]
-  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+  val sexp_of_t :
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 [@@@end]
 
@@ -31,8 +32,10 @@ module Poly : sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
-    val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+    val t_of_sexp :
+      (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+    val sexp_of_t :
+      ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 
@@ -65,12 +68,16 @@ module M (Elt : T.T) : sig
 end
 module type Sexp_of_m = sig
   type t [@@deriving_inline sexp_of]
-  include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+  include
+  sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  end
   [@@@end]
 end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
-  include sig [@@@ocaml.warning "-32"] val t_of_sexp : Sexplib.Sexp.t -> t end
+  include
+  sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+  end
   [@@@end]
   include Hashtbl_intf.Key with type t := t
 end

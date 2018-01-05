@@ -8,8 +8,10 @@ include
 sig
   [@@@ocaml.warning "-32"]
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
-  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+  val t_of_sexp :
+    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+  val sexp_of_t :
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 [@@@end]
 

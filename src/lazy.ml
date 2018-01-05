@@ -1,9 +1,11 @@
 open! Import
 
 type 'a t = 'a lazy_t [@@deriving_inline sexp]
-let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
+let t_of_sexp :
+  'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
   lazy_t_of_sexp
-let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+let sexp_of_t :
+  'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
   sexp_of_lazy_t
 [@@@end]
 

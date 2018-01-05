@@ -20,7 +20,9 @@ module Inherit
        [@@@end] end)
     (T : sig
        type t [@@deriving_inline sexp_of]
-       include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+       include
+       sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+       end
        [@@@end]
        val component : t -> C.t
      end) : S with type t := T.t
@@ -73,14 +75,16 @@ module Make (T : sig
     sig
       [@@@ocaml.warning "-32"]
       val compare : t -> t -> int
-      val sexp_of_t : t -> Sexplib.Sexp.t
+      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end]
   end) : S with type t := T.t
 
 module Make_using_comparator (T : sig
     type t [@@deriving_inline sexp_of]
-    include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+    include
+    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end
     [@@@end]
     include Comparator.S with type t := t
   end) : S
@@ -88,7 +92,9 @@ module Make_using_comparator (T : sig
   with type comparator_witness := T.comparator_witness
 
 module Poly (T : sig type t [@@deriving_inline sexp_of]
-    include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+    include
+    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end
     [@@@end] end) : S with type t := T.t
 
 module Validate (T : sig type t [@@deriving_inline compare, sexp_of]
@@ -96,7 +102,7 @@ module Validate (T : sig type t [@@deriving_inline compare, sexp_of]
     sig
       [@@@ocaml.warning "-32"]
       val compare : t -> t -> int
-      val sexp_of_t : t -> Sexplib.Sexp.t
+      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end] end)
   : Validate with type t := T.t
@@ -108,7 +114,7 @@ module With_zero
        sig
          [@@@ocaml.warning "-32"]
          val compare : t -> t -> int
-         val sexp_of_t : t -> Sexplib.Sexp.t
+         val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
        end
        [@@@end]
        val zero : t
@@ -122,7 +128,7 @@ module Validate_with_zero
        sig
          [@@@ocaml.warning "-32"]
          val compare : t -> t -> int
-         val sexp_of_t : t -> Sexplib.Sexp.t
+         val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
        end
        [@@@end]
        val zero : t

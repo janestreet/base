@@ -41,10 +41,10 @@ module T = struct
         (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
     in
     fun x  -> func x
-  let t_of_sexp : Sexplib.Sexp.t -> t =
+  let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t =
     let _tp_loc = "src/source_code_position0.ml.T.t"  in
     function
-    | Sexplib.Sexp.List field_sexps as sexp ->
+    | Ppx_sexp_conv_lib.Sexp.List field_sexps as sexp ->
       let pos_fname_field = ref None
 
       and pos_lnum_field = ref None
@@ -59,8 +59,8 @@ module T = struct
       in
       let rec iter =
         function
-        | (Sexplib.Sexp.List ((Sexplib.Sexp.Atom
-                                 field_name)::_field_sexp::[]))::tail ->
+        | (Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                           field_name)::_field_sexp::[]))::tail ->
           ((match field_name with
              | "pos_fname" ->
                (match !pos_fname_field with
@@ -87,28 +87,33 @@ module T = struct
                   pos_cnum_field := (Some fvalue)
                 | Some _ -> duplicates := (field_name :: (!duplicates)))
              | _ ->
-               if !Sexplib.Conv.record_check_extra_fields
+               if !Ppx_sexp_conv_lib.Conv.record_check_extra_fields
                then extra := (field_name :: (!extra))
                else ());
            iter tail)
-        | (Sexplib.Sexp.List ((Sexplib.Sexp.Atom field_name)::[]))::tail ->
+        | (Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                           field_name)::[]))::tail ->
           ((let _ = field_name  in
-            if !Sexplib.Conv.record_check_extra_fields
+            if !Ppx_sexp_conv_lib.Conv.record_check_extra_fields
             then extra := (field_name :: (!extra))
             else ());
            iter tail)
-        | (Sexplib.Sexp.Atom _|Sexplib.Sexp.List _ as sexp)::_ ->
-          Sexplib.Conv_error.record_only_pairs_expected _tp_loc sexp
+        | (Ppx_sexp_conv_lib.Sexp.Atom _|Ppx_sexp_conv_lib.Sexp.List _ as
+           sexp)::_
+          ->
+          Ppx_sexp_conv_lib.Conv_error.record_only_pairs_expected _tp_loc
+            sexp
         | [] -> ()  in
       (iter field_sexps;
        (match !duplicates with
         | _::_ ->
-          Sexplib.Conv_error.record_duplicate_fields _tp_loc (!duplicates)
-            sexp
+          Ppx_sexp_conv_lib.Conv_error.record_duplicate_fields _tp_loc
+            (!duplicates) sexp
         | [] ->
           (match !extra with
            | _::_ ->
-             Sexplib.Conv_error.record_extra_fields _tp_loc (!extra) sexp
+             Ppx_sexp_conv_lib.Conv_error.record_extra_fields _tp_loc
+               (!extra) sexp
            | [] ->
              (match ((!pos_fname_field), (!pos_lnum_field),
                      (!pos_bol_field), (!pos_cnum_field))
@@ -122,36 +127,49 @@ module T = struct
                   pos_cnum = pos_cnum_value
                 }
               | _ ->
-                Sexplib.Conv_error.record_undefined_elements _tp_loc
-                  sexp
-                  [((Sexplib.Conv.(=) (!pos_fname_field) None),
+                Ppx_sexp_conv_lib.Conv_error.record_undefined_elements
+                  _tp_loc sexp
+                  [((Ppx_sexp_conv_lib.Conv.(=) (!pos_fname_field) None),
                     "pos_fname");
-                   ((Sexplib.Conv.(=) (!pos_lnum_field) None),
+                   ((Ppx_sexp_conv_lib.Conv.(=) (!pos_lnum_field) None),
                     "pos_lnum");
-                   ((Sexplib.Conv.(=) (!pos_bol_field) None), "pos_bol");
-                   ((Sexplib.Conv.(=) (!pos_cnum_field) None),
+                   ((Ppx_sexp_conv_lib.Conv.(=) (!pos_bol_field) None),
+                    "pos_bol");
+                   ((Ppx_sexp_conv_lib.Conv.(=) (!pos_cnum_field) None),
                     "pos_cnum")]))))
-    | Sexplib.Sexp.Atom _ as sexp ->
-      Sexplib.Conv_error.record_list_instead_atom _tp_loc sexp
+    | Ppx_sexp_conv_lib.Sexp.Atom _ as sexp ->
+      Ppx_sexp_conv_lib.Conv_error.record_list_instead_atom _tp_loc sexp
 
-  let sexp_of_t : t -> Sexplib.Sexp.t =
+  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t =
     function
     | { pos_fname = v_pos_fname; pos_lnum = v_pos_lnum; pos_bol = v_pos_bol;
         pos_cnum = v_pos_cnum } ->
       let bnds = []  in
       let bnds =
         let arg = sexp_of_int v_pos_cnum  in
-        (Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_cnum"; arg]) :: bnds  in
+        (Ppx_sexp_conv_lib.Sexp.List
+           [Ppx_sexp_conv_lib.Sexp.Atom "pos_cnum"; arg])
+        :: bnds
+      in
       let bnds =
         let arg = sexp_of_int v_pos_bol  in
-        (Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_bol"; arg]) :: bnds  in
+        (Ppx_sexp_conv_lib.Sexp.List
+           [Ppx_sexp_conv_lib.Sexp.Atom "pos_bol"; arg])
+        :: bnds
+      in
       let bnds =
         let arg = sexp_of_int v_pos_lnum  in
-        (Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_lnum"; arg]) :: bnds  in
+        (Ppx_sexp_conv_lib.Sexp.List
+           [Ppx_sexp_conv_lib.Sexp.Atom "pos_lnum"; arg])
+        :: bnds
+      in
       let bnds =
         let arg = sexp_of_string v_pos_fname  in
-        (Sexplib.Sexp.List [Sexplib.Sexp.Atom "pos_fname"; arg]) :: bnds  in
-      Sexplib.Sexp.List bnds
+        (Ppx_sexp_conv_lib.Sexp.List
+           [Ppx_sexp_conv_lib.Sexp.Atom "pos_fname"; arg])
+        :: bnds
+      in
+      Ppx_sexp_conv_lib.Sexp.List bnds
 
   [@@@end]
 end

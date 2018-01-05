@@ -22,7 +22,8 @@ type +'a t = private 'a [@@deriving_inline sexp_of]
 include
 sig
   [@@@ocaml.warning "-32"]
-  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+  val sexp_of_t :
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 [@@@end]
 

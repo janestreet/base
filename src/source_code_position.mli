@@ -21,7 +21,7 @@ sig
   val hash_fold_t :
     Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-  val sexp_of_t : t -> Sexplib.Sexp.t
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 [@@@end]
 

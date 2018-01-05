@@ -1,32 +1,35 @@
 open! Import
 
 type t = exn [@@deriving_inline sexp_of]
-let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_exn
+let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_exn
 [@@@end]
 
 exception Finally of t * t [@@deriving_inline sexp]
 let () =
-  Sexplib.Conv.Exn_converter.add ([%extension_constructor Finally])
+  Ppx_sexp_conv_lib.Conv.Exn_converter.add ([%extension_constructor Finally])
     (function
       | Finally (v0,v1) ->
         let v0 = sexp_of_t v0
 
         and v1 = sexp_of_t v1
         in
-        Sexplib.Sexp.List [Sexplib.Sexp.Atom "src/exn.ml.Finally"; v0; v1]
+        Ppx_sexp_conv_lib.Sexp.List
+          [Ppx_sexp_conv_lib.Sexp.Atom "src/exn.ml.Finally"; v0; v1]
       | _ -> assert false)
 
 [@@@end]
 exception Reraised of string * t [@@deriving_inline sexp]
 let () =
-  Sexplib.Conv.Exn_converter.add ([%extension_constructor Reraised])
+  Ppx_sexp_conv_lib.Conv.Exn_converter.add
+    ([%extension_constructor Reraised])
     (function
       | Reraised (v0,v1) ->
         let v0 = sexp_of_string v0
 
         and v1 = sexp_of_t v1
         in
-        Sexplib.Sexp.List [Sexplib.Sexp.Atom "src/exn.ml.Reraised"; v0; v1]
+        Ppx_sexp_conv_lib.Sexp.List
+          [Ppx_sexp_conv_lib.Sexp.Atom "src/exn.ml.Reraised"; v0; v1]
       | _ -> assert false)
 
 [@@@end]

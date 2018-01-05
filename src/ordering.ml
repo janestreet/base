@@ -35,28 +35,31 @@ let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
   in
   fun x  -> func x
 let all : t list = [Less; Equal; Greater]
-let t_of_sexp : Sexplib.Sexp.t -> t =
+let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t =
   let _tp_loc = "src/ordering.ml.t"  in
   function
-  | Sexplib.Sexp.Atom ("less"|"Less") -> Less
-  | Sexplib.Sexp.Atom ("equal"|"Equal") -> Equal
-  | Sexplib.Sexp.Atom ("greater"|"Greater") -> Greater
-  | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("less"|"Less"))::_) as sexp ->
-    Sexplib.Conv_error.stag_no_args _tp_loc sexp
-  | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("equal"|"Equal"))::_) as sexp ->
-    Sexplib.Conv_error.stag_no_args _tp_loc sexp
-  | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("greater"|"Greater"))::_) as sexp
-    -> Sexplib.Conv_error.stag_no_args _tp_loc sexp
-  | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
-    Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-  | Sexplib.Sexp.List [] as sexp ->
-    Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-  | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp
-let sexp_of_t : t -> Sexplib.Sexp.t =
+  | Ppx_sexp_conv_lib.Sexp.Atom ("less"|"Less") -> Less
+  | Ppx_sexp_conv_lib.Sexp.Atom ("equal"|"Equal") -> Equal
+  | Ppx_sexp_conv_lib.Sexp.Atom ("greater"|"Greater") -> Greater
+  | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                    ("less"|"Less"))::_) as sexp ->
+    Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+  | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                    ("equal"|"Equal"))::_) as sexp ->
+    Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+  | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                    ("greater"|"Greater"))::_) as sexp ->
+    Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+  | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.List _)::_) as sexp
+    -> Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
+  | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
+    Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
+  | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
+let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t =
   function
-  | Less  -> Sexplib.Sexp.Atom "Less"
-  | Equal  -> Sexplib.Sexp.Atom "Equal"
-  | Greater  -> Sexplib.Sexp.Atom "Greater"
+  | Less  -> Ppx_sexp_conv_lib.Sexp.Atom "Less"
+  | Equal  -> Ppx_sexp_conv_lib.Sexp.Atom "Equal"
+  | Greater  -> Ppx_sexp_conv_lib.Sexp.Atom "Greater"
 [@@@end]
 
 let equal a b = compare a b = 0

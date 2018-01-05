@@ -3,8 +3,8 @@ open! Import
 
 module T = struct
   type t = bytes [@@deriving_inline sexp]
-  let t_of_sexp : Sexplib.Sexp.t -> t = bytes_of_sexp
-  let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_bytes
+  let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = bytes_of_sexp
+  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_bytes
   [@@@end]
   include Bytes0
 

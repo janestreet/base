@@ -421,8 +421,8 @@ module Class : sig
     [@@@ocaml.warning "-32"]
     val compare : t -> t -> int
     val all : t list
-    val t_of_sexp : Sexplib.Sexp.t -> t
-    val sexp_of_t : t -> Sexplib.Sexp.t
+    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 
@@ -480,8 +480,8 @@ module Terse : sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val t_of_sexp : Sexplib.Sexp.t -> t
-    val sexp_of_t : t -> Sexplib.Sexp.t
+    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
   include Stringable.S with type t := t

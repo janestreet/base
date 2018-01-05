@@ -8,7 +8,7 @@ module Validate
        sig
          [@@@ocaml.warning "-32"]
          val compare : t -> t -> int
-         val sexp_of_t : t -> Sexplib.Sexp.t
+         val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
        end
        [@@@end] end) : Validate with type t := T.t =
 struct
@@ -33,7 +33,7 @@ module With_zero
        sig
          [@@@ocaml.warning "-32"]
          val compare : t -> t -> int
-         val sexp_of_t : t -> Sexplib.Sexp.t
+         val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
        end
        [@@@end]
        val zero : t
@@ -64,7 +64,7 @@ module Validate_with_zero
        sig
          [@@@ocaml.warning "-32"]
          val compare : t -> t -> int
-         val sexp_of_t : t -> Sexplib.Sexp.t
+         val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
        end
        [@@@end]
        val zero : t
@@ -75,11 +75,13 @@ module Validate_with_zero
 end
 
 module Poly (T : sig type t [@@deriving_inline sexp_of]
-    include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+    include
+    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end
     [@@@end] end) = struct
   module Replace_polymorphic_compare = struct
     type t = T.t [@@deriving_inline sexp_of]
-    let sexp_of_t : t -> Sexplib.Sexp.t = T.sexp_of_t
+    let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = T.sexp_of_t
     [@@@end]
     include Polymorphic_compare
   end
@@ -111,13 +113,15 @@ module Poly (T : sig type t [@@deriving_inline sexp_of]
   include C
   include Validate (struct type nonrec t = t [@@deriving_inline compare, sexp_of]
       let compare : t -> t -> int = compare
-      let sexp_of_t : t -> Sexplib.Sexp.t = sexp_of_t
+      let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_t
       [@@@end] end)
 end
 
 module Make_using_comparator (T : sig
     type t [@@deriving_inline sexp_of]
-    include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+    include
+    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end
     [@@@end]
     include Comparator.S with type t := t
   end) : S with type t := T.t and type comparator_witness = T.comparator_witness = struct
@@ -173,7 +177,7 @@ module Make (T : sig
     sig
       [@@@ocaml.warning "-32"]
       val compare : t -> t -> int
-      val sexp_of_t : t -> Sexplib.Sexp.t
+      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end]
   end) = Make_using_comparator(struct
@@ -187,13 +191,15 @@ module Inherit
        [@@@end] end)
     (T : sig
        type t [@@deriving_inline sexp_of]
-       include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+       include
+       sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+       end
        [@@@end]
        val component : t -> C.t
      end) =
   Make (struct
     type t = T.t [@@deriving_inline sexp_of]
-    let sexp_of_t : t -> Sexplib.Sexp.t = T.sexp_of_t
+    let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = T.sexp_of_t
     [@@@end]
     let compare t t' = C.compare (T.component t) (T.component t')
   end)

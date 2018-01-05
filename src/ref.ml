@@ -10,9 +10,11 @@ type 'a t = 'a ref = { mutable contents : 'a }
 include (struct
   type 'a t = 'a ref [@@deriving_inline compare, sexp]
   let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref
-  let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
+  let t_of_sexp :
+    'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
     ref_of_sexp
-  let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+  let sexp_of_t :
+    'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
     sexp_of_ref
   [@@@end]
 end : sig
@@ -21,8 +23,10 @@ end : sig
            sig
              [@@@ocaml.warning "-32"]
              val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-             val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
-             val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+             val t_of_sexp :
+               (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+             val sexp_of_t :
+               ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
            end
            [@@@end]
          end with type 'a t := 'a t)

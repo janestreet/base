@@ -13,7 +13,9 @@ open! Import
     string at newlines and removes some of the cruft, leaving a human-friendly list of
     frames, but [to_string] does not. *)
 type t [@@deriving_inline sexp_of]
-include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+include
+sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+end
 [@@@end]
 
 val get : ?at_most_num_frames:int -> unit -> t

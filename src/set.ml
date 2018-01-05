@@ -251,21 +251,23 @@ module Tree0 = struct
 
   exception Set_min_elt_exn_of_empty_set [@@deriving_inline sexp]
   let () =
-    Sexplib.Conv.Exn_converter.add
+    Ppx_sexp_conv_lib.Conv.Exn_converter.add
       ([%extension_constructor Set_min_elt_exn_of_empty_set])
       (function
         | Set_min_elt_exn_of_empty_set  ->
-          Sexplib.Sexp.Atom "src/set.ml.Tree0.Set_min_elt_exn_of_empty_set"
+          Ppx_sexp_conv_lib.Sexp.Atom
+            "src/set.ml.Tree0.Set_min_elt_exn_of_empty_set"
         | _ -> assert false)
 
   [@@@end]
   exception Set_max_elt_exn_of_empty_set [@@deriving_inline sexp]
   let () =
-    Sexplib.Conv.Exn_converter.add
+    Ppx_sexp_conv_lib.Conv.Exn_converter.add
       ([%extension_constructor Set_max_elt_exn_of_empty_set])
       (function
         | Set_max_elt_exn_of_empty_set  ->
-          Sexplib.Sexp.Atom "src/set.ml.Tree0.Set_max_elt_exn_of_empty_set"
+          Ppx_sexp_conv_lib.Sexp.Atom
+            "src/set.ml.Tree0.Set_max_elt_exn_of_empty_set"
         | _ -> assert false)
 
   [@@@end]
@@ -1185,11 +1187,15 @@ module M (Elt : sig type t type comparator_witness end) = struct
 end
 
 module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
-  include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+  include
+  sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  end
   [@@@end] end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
-  include sig [@@@ocaml.warning "-32"] val t_of_sexp : Sexplib.Sexp.t -> t end
+  include
+  sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+  end
   [@@@end] include Comparator.S with type t := t
 end
 module type Compare_m = sig end

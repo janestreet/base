@@ -3,6 +3,21 @@
 open! Import
 open! T
 
+module Or_duplicate = struct
+  type 'a t = [ `Ok of 'a | `Duplicate ]
+  [@@deriving_inline sexp_of]
+  let sexp_of_t :
+    'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
+    fun _of_a  ->
+      function
+      | `Ok v0 ->
+        Ppx_sexp_conv_lib.Sexp.List
+          [Ppx_sexp_conv_lib.Sexp.Atom "Ok"; _of_a v0]
+      | `Duplicate -> Ppx_sexp_conv_lib.Sexp.Atom "Duplicate"
+
+  [@@@end]
+end
+
 module Without_comparator = struct
   type ('key, 'cmp, 'z) t = 'z
 end
@@ -50,80 +65,89 @@ module Symmetric_diff_element = struct
 
   let t_of_sexp :
     'k 'v .
-         (Sexplib.Sexp.t -> 'k) ->
-    (Sexplib.Sexp.t -> 'v) -> Sexplib.Sexp.t -> ('k,'v) t
+         (Ppx_sexp_conv_lib.Sexp.t -> 'k) ->
+    (Ppx_sexp_conv_lib.Sexp.t -> 'v) ->
+    Ppx_sexp_conv_lib.Sexp.t -> ('k,'v) t
     =
     let _tp_loc = "src/map_intf.ml.Symmetric_diff_element.t"  in
     fun _of_k  ->
     fun _of_v  ->
       function
-      | Sexplib.Sexp.List (v0::v1::[]) ->
+      | Ppx_sexp_conv_lib.Sexp.List (v0::v1::[]) ->
         let v0 = _of_k v0
 
         and v1 =
           (fun sexp  ->
              try
                match sexp with
-               | Sexplib.Sexp.Atom atom as _sexp ->
+               | Ppx_sexp_conv_lib.Sexp.Atom atom as _sexp ->
                  (match atom with
                   | "Left" ->
-                    Sexplib.Conv_error.ptag_takes_args _tp_loc _sexp
+                    Ppx_sexp_conv_lib.Conv_error.ptag_takes_args
+                      _tp_loc _sexp
                   | "Right" ->
-                    Sexplib.Conv_error.ptag_takes_args _tp_loc _sexp
+                    Ppx_sexp_conv_lib.Conv_error.ptag_takes_args
+                      _tp_loc _sexp
                   | "Unequal" ->
-                    Sexplib.Conv_error.ptag_takes_args _tp_loc _sexp
-                  | _ -> Sexplib.Conv_error.no_variant_match ())
-               | Sexplib.Sexp.List ((Sexplib.Sexp.Atom atom)::sexp_args) as
-                 _sexp ->
+                    Ppx_sexp_conv_lib.Conv_error.ptag_takes_args
+                      _tp_loc _sexp
+                  | _ -> Ppx_sexp_conv_lib.Conv_error.no_variant_match ())
+               | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                                 atom)::sexp_args) as _sexp ->
                  (match atom with
                   | "Left" as _tag ->
                     (match sexp_args with
                      | v0::[] -> let v0 = _of_v v0  in `Left v0
                      | _ ->
-                       Sexplib.Conv_error.ptag_incorrect_n_args
+                       Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args
                          _tp_loc _tag _sexp)
                   | "Right" as _tag ->
                     (match sexp_args with
                      | v0::[] -> let v0 = _of_v v0  in `Right v0
                      | _ ->
-                       Sexplib.Conv_error.ptag_incorrect_n_args
+                       Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args
                          _tp_loc _tag _sexp)
                   | "Unequal" as _tag ->
                     (match sexp_args with
                      | v0::[] ->
                        let v0 =
                          match v0 with
-                         | Sexplib.Sexp.List (v0::v1::[]) ->
+                         | Ppx_sexp_conv_lib.Sexp.List (v0::v1::[])
+                           ->
                            let v0 = _of_v v0
 
                            and v1 = _of_v v1
                            in (v0, v1)
                          | sexp ->
-                           Sexplib.Conv_error.tuple_of_size_n_expected
+                           Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected
                              _tp_loc 2 sexp
                        in
                        `Unequal v0
                      | _ ->
-                       Sexplib.Conv_error.ptag_incorrect_n_args
+                       Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args
                          _tp_loc _tag _sexp)
-                  | _ -> Sexplib.Conv_error.no_variant_match ())
-               | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
-                 Sexplib.Conv_error.nested_list_invalid_poly_var _tp_loc
-                   sexp
-               | Sexplib.Sexp.List [] as sexp ->
-                 Sexplib.Conv_error.empty_list_invalid_poly_var _tp_loc
-                   sexp
+                  | _ -> Ppx_sexp_conv_lib.Conv_error.no_variant_match ())
+               | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.List
+                                                 _)::_) as sexp ->
+                 Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_poly_var
+                   _tp_loc sexp
+               | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
+                 Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_poly_var
+                   _tp_loc sexp
              with
-             | Sexplib.Conv_error.No_variant_match  ->
-               Sexplib.Conv_error.no_matching_variant_found _tp_loc sexp)
-            v1
+             | Ppx_sexp_conv_lib.Conv_error.No_variant_match  ->
+               Ppx_sexp_conv_lib.Conv_error.no_matching_variant_found
+                 _tp_loc sexp) v1
         in (v0, v1)
-      | sexp -> Sexplib.Conv_error.tuple_of_size_n_expected _tp_loc 2 sexp
+      | sexp ->
+        Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected _tp_loc 2
+          sexp
 
   let sexp_of_t :
     'k 'v .
-         ('k -> Sexplib.Sexp.t) ->
-    ('v -> Sexplib.Sexp.t) -> ('k,'v) t -> Sexplib.Sexp.t
+         ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('k,'v) t -> Ppx_sexp_conv_lib.Sexp.t
     =
     fun _of_k  ->
     fun _of_v  ->
@@ -134,18 +158,20 @@ module Symmetric_diff_element = struct
         and v1 =
           match v1 with
           | `Left v0 ->
-            Sexplib.Sexp.List [Sexplib.Sexp.Atom "Left"; _of_v v0]
+            Ppx_sexp_conv_lib.Sexp.List
+              [Ppx_sexp_conv_lib.Sexp.Atom "Left"; _of_v v0]
           | `Right v0 ->
-            Sexplib.Sexp.List [Sexplib.Sexp.Atom "Right"; _of_v v0]
+            Ppx_sexp_conv_lib.Sexp.List
+              [Ppx_sexp_conv_lib.Sexp.Atom "Right"; _of_v v0]
           | `Unequal v0 ->
-            Sexplib.Sexp.List
-              [Sexplib.Sexp.Atom "Unequal";
+            Ppx_sexp_conv_lib.Sexp.List
+              [Ppx_sexp_conv_lib.Sexp.Atom "Unequal";
                (let (v0,v1) = v0  in
                 let v0 = _of_v v0
 
                 and v1 = _of_v v1
-                in Sexplib.Sexp.List [v0; v1])]
-        in Sexplib.Sexp.List [v0; v1]
+                in Ppx_sexp_conv_lib.Sexp.List [v0; v1])]
+        in Ppx_sexp_conv_lib.Sexp.List [v0; v1]
 
   [@@@end]
 end
@@ -167,9 +193,13 @@ module type Accessors_generic = sig
 
   val add
     : ('k, 'cmp,
+       ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t Or_duplicate.t
+      ) options
+
+  val add_exn
+    : ('k, 'cmp,
        ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t
       ) options
-  [@@deprecated "[since 2017-11] Use [set] instead"]
 
   val set
     : ('k, 'cmp,
@@ -465,8 +495,8 @@ module type Accessors1 = sig
   val invariants     : _ t -> bool
   val is_empty       : _ t -> bool
   val length         : _ t -> int
-  val add            : 'a t -> key:key -> data:'a -> 'a t
-  [@@deprecated "[since 2017-11] Use [set] instead"]
+  val add            : 'a t -> key:key -> data:'a -> 'a t Or_duplicate.t
+  val add_exn        : 'a t -> key:key -> data:'a -> 'a t
   val set            : 'a t -> key:key -> data:'a -> 'a t
   val add_multi      : 'a list t -> key:key -> data:'a -> 'a list t
   val remove_multi   : 'a list t -> key -> 'a list t
@@ -587,8 +617,8 @@ module type Accessors2 = sig
   val invariants     : (_, _) t -> bool
   val is_empty       : (_, _) t -> bool
   val length         : (_, _) t -> int
-  val add            : ('a, 'b) t -> key:'a -> data:'b -> ('a, 'b) t
-  [@@deprecated "[since 2017-11] Use [set] instead"]
+  val add            : ('a, 'b) t -> key:'a -> data:'b -> ('a, 'b) t Or_duplicate.t
+  val add_exn        : ('a, 'b) t -> key:'a -> data:'b -> ('a, 'b) t
   val set            : ('a, 'b) t -> key:'a -> data:'b -> ('a, 'b) t
   val add_multi      : ('a, 'b list) t -> key:'a -> data:'b -> ('a, 'b list) t
   val remove_multi   : ('a, 'b list) t -> 'a -> ('a, 'b list) t
@@ -705,8 +735,8 @@ module type Accessors3 = sig
   val invariants     : (_, _, _) t -> bool
   val is_empty       : (_, _, _) t -> bool
   val length         : (_, _, _) t -> int
-  val add            : ('a, 'b,      'cmp) t -> key:'a -> data:'b -> ('a, 'b     , 'cmp) t
-  [@@deprecated "[since 2017-11] Use [set] instead"]
+  val add            : ('a, 'b,      'cmp) t -> key:'a -> data:'b -> ('a, 'b     , 'cmp) t Or_duplicate.t
+  val add_exn        : ('a, 'b,      'cmp) t -> key:'a -> data:'b -> ('a, 'b     , 'cmp) t
   val set            : ('a, 'b,      'cmp) t -> key:'a -> data:'b -> ('a, 'b     , 'cmp) t
   val add_multi      : ('a, 'b list, 'cmp) t -> key:'a -> data:'b -> ('a, 'b list, 'cmp) t
   val remove_multi   : ('a, 'b list, 'cmp) t -> 'a -> ('a, 'b list, 'cmp) t
@@ -833,8 +863,10 @@ module type Accessors3_with_comparator = sig
   val length         : ('a, 'b, 'cmp) t -> int
   val add
     :  comparator:('a, 'cmp) Comparator.t
+    -> ('a, 'b, 'cmp) t -> key:'a -> data:'b -> ('a, 'b, 'cmp) t Or_duplicate.t
+  val add_exn
+    :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t -> key:'a -> data:'b -> ('a, 'b, 'cmp) t
-  [@@deprecated "[since 2017-11] Use [set] instead"]
   val set
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t -> key:'a -> data:'b -> ('a, 'b, 'cmp) t

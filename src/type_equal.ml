@@ -2,9 +2,12 @@ open! Import
 
 type ('a, 'b) t = T : ('a, 'a) t [@@deriving_inline sexp_of]
 let sexp_of_t : type a
-                       b.(a -> Sexplib.Sexp.t) ->
-  (b -> Sexplib.Sexp.t) -> (a,b) t -> Sexplib.Sexp.t
-  = fun _of_a  -> fun _of_b  -> function | T  -> Sexplib.Sexp.Atom "T"
+                       b.(a -> Ppx_sexp_conv_lib.Sexp.t) ->
+  (b -> Ppx_sexp_conv_lib.Sexp.t) -> (a,b) t -> Ppx_sexp_conv_lib.Sexp.t
+  =
+  fun _of_a  ->
+  fun _of_b  -> function | T  -> Ppx_sexp_conv_lib.Sexp.Atom "T"
+
 [@@@end]
 type ('a, 'b) equal = ('a, 'b) t
 
@@ -66,10 +69,11 @@ module Id = struct
       type _ t = ..
 
       type type_witness_int = [ `type_witness of int ] [@@deriving_inline sexp_of]
-      let sexp_of_type_witness_int : type_witness_int -> Sexplib.Sexp.t =
+      let sexp_of_type_witness_int : type_witness_int -> Ppx_sexp_conv_lib.Sexp.t =
         function
         | `type_witness v0 ->
-          Sexplib.Sexp.List [Sexplib.Sexp.Atom "type_witness"; sexp_of_int v0]
+          Ppx_sexp_conv_lib.Sexp.List
+            [Ppx_sexp_conv_lib.Sexp.Atom "type_witness"; sexp_of_int v0]
 
       [@@@end]
 
@@ -123,24 +127,34 @@ module Id = struct
     ; to_sexp : 'a -> Sexp.t
     }
   [@@deriving_inline sexp_of]
-  let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+  let sexp_of_t :
+    'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
     fun _of_a  ->
       function
       | { witness = v_witness; name = v_name; to_sexp = v_to_sexp } ->
         let bnds = []  in
         let bnds =
           let arg =
-            (fun _f  -> let open Sexplib.Conv in sexp_of_fun ignore)
+            (fun _f  -> let open Ppx_sexp_conv_lib.Conv in sexp_of_fun ignore)
               v_to_sexp
           in
-          (Sexplib.Sexp.List [Sexplib.Sexp.Atom "to_sexp"; arg]) :: bnds  in
+          (Ppx_sexp_conv_lib.Sexp.List
+             [Ppx_sexp_conv_lib.Sexp.Atom "to_sexp"; arg])
+          :: bnds
+        in
         let bnds =
           let arg = sexp_of_string v_name  in
-          (Sexplib.Sexp.List [Sexplib.Sexp.Atom "name"; arg]) :: bnds  in
+          (Ppx_sexp_conv_lib.Sexp.List
+             [Ppx_sexp_conv_lib.Sexp.Atom "name"; arg])
+          :: bnds
+        in
         let bnds =
           let arg = Witness.sexp_of_t _of_a v_witness  in
-          (Sexplib.Sexp.List [Sexplib.Sexp.Atom "witness"; arg]) :: bnds  in
-        Sexplib.Sexp.List bnds
+          (Ppx_sexp_conv_lib.Sexp.List
+             [Ppx_sexp_conv_lib.Sexp.Atom "witness"; arg])
+          :: bnds
+        in
+        Ppx_sexp_conv_lib.Sexp.List bnds
 
   [@@@end]
 

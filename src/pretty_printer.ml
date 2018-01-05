@@ -1,6 +1,6 @@
 open! Import
 
-let r = ref [ "Sexplib.Sexp.pp_hum" ]
+let r = ref [ "Base.Sexp.pp_hum" ]
 
 let all () = !r
 

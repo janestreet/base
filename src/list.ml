@@ -9,9 +9,11 @@ let invalid_argf = Printf.invalid_argf
 
 module T = struct
   type 'a t = 'a list [@@deriving_inline sexp]
-  let t_of_sexp : 'a . (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t =
+  let t_of_sexp :
+    'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
     list_of_sexp
-  let sexp_of_t : 'a . ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t =
+  let sexp_of_t :
+    'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
     sexp_of_list
   [@@@end]
 end
@@ -21,12 +23,14 @@ module Or_unequal_lengths = struct
     | Ok of 'a
     | Unequal_lengths
   [@@deriving_inline sexp_of]
-  let sexp_of_t : type a.(a -> Sexplib.Sexp.t) -> a t -> Sexplib.Sexp.t =
+  let sexp_of_t : type
+    a.(a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t =
     fun _of_a  ->
       function
       | Ok v0 ->
-        let v0 = _of_a v0  in Sexplib.Sexp.List [Sexplib.Sexp.Atom "Ok"; v0]
-      | Unequal_lengths  -> Sexplib.Sexp.Atom "Unequal_lengths"
+        let v0 = _of_a v0  in
+        Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Ok"; v0]
+      | Unequal_lengths  -> Ppx_sexp_conv_lib.Sexp.Atom "Unequal_lengths"
 
   [@@@end]
 end
@@ -631,16 +635,25 @@ let find_consecutive_duplicate t ~equal =
 ;;
 
 (* returns list without adjacent duplicates *)
-let remove_consecutive_duplicates list ~equal =
-  let rec loop list accum = match list with
-    | [] -> accum
-    | hd :: [] -> hd :: accum
-    | hd1 :: hd2 :: tl ->
-      if equal hd1 hd2
-      then loop (hd2 :: tl) accum
-      else loop (hd2 :: tl) (hd1 :: accum)
+let remove_consecutive_duplicates ?(which_to_keep=`Last) list ~equal =
+  let rec loop to_keep accum = function
+    | [] -> to_keep :: accum
+    | hd :: tl ->
+      if equal hd to_keep then (
+        let to_keep =
+          match which_to_keep with
+          | `First -> to_keep
+          | `Last  -> hd
+        in
+        loop to_keep accum tl
+      ) else (
+        loop hd (to_keep :: accum) tl
+      )
   in
-  rev (loop list [])
+  match list with
+  | []       -> []
+  | hd :: tl -> rev (loop hd [] tl)
+;;
 
 (** returns sorted version of list with duplicates removed *)
 let dedup_and_sort ?(compare=Pervasives.compare) list =
@@ -689,15 +702,18 @@ type sexp_thunk = unit -> Sexp.t
 let sexp_of_sexp_thunk x = x ()
 exception Duplicate_found of sexp_thunk * string [@@deriving_inline sexp]
 let () =
-  Sexplib.Conv.Exn_converter.add ([%extension_constructor Duplicate_found])
+  Ppx_sexp_conv_lib.Conv.Exn_converter.add
+    ([%extension_constructor Duplicate_found])
     (function
       | Duplicate_found (v0,v1) ->
         let v0 = sexp_of_sexp_thunk v0
 
         and v1 = sexp_of_string v1
         in
-        Sexplib.Sexp.List
-          [Sexplib.Sexp.Atom "src/list.ml.Duplicate_found"; v0; v1]
+        Ppx_sexp_conv_lib.Sexp.List
+          [Ppx_sexp_conv_lib.Sexp.Atom "src/list.ml.Duplicate_found";
+           v0;
+           v1]
       | _ -> assert false)
 
 [@@@end]
@@ -778,8 +794,9 @@ module Assoc = struct
   type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp]
   let t_of_sexp :
     'a 'b .
-         (Sexplib.Sexp.t -> 'a) ->
-    (Sexplib.Sexp.t -> 'b) -> Sexplib.Sexp.t -> ('a,'b) t
+         (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
+    (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
+    Ppx_sexp_conv_lib.Sexp.t -> ('a,'b) t
     =
     let _tp_loc = "src/list.ml.Assoc.t"  in
     fun _of_a  ->
@@ -787,18 +804,20 @@ module Assoc = struct
     fun t  ->
       list_of_sexp
         (function
-          | Sexplib.Sexp.List (v0::v1::[]) ->
+          | Ppx_sexp_conv_lib.Sexp.List (v0::v1::[]) ->
             let v0 = _of_a v0
 
             and v1 = _of_b v1
             in (v0, v1)
           | sexp ->
-            Sexplib.Conv_error.tuple_of_size_n_expected _tp_loc 2 sexp) t
+            Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected _tp_loc
+              2 sexp) t
 
   let sexp_of_t :
     'a 'b .
-         ('a -> Sexplib.Sexp.t) ->
-    ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+         ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
     =
     fun _of_a  ->
     fun _of_b  ->
@@ -809,7 +828,7 @@ module Assoc = struct
             let v0 = _of_a v0
 
             and v1 = _of_b v1
-            in Sexplib.Sexp.List [v0; v1]) v
+            in Ppx_sexp_conv_lib.Sexp.List [v0; v1]) v
 
   [@@@end]
 
@@ -879,7 +898,7 @@ let drop t n = snd (split_n t n)
 
 let chunks_of l ~length =
   if length <= 0
-  then invalid_argf "List.group_by: Expected length > 0, got %d" length ();
+  then invalid_argf "List.chunks_of: Expected length > 0, got %d" length ();
   let rec aux of_length acc l =
     match l with
     | [] -> rev acc
@@ -999,13 +1018,13 @@ let transpose =
 
 exception Transpose_got_lists_of_different_lengths of int list [@@deriving_inline sexp]
 let () =
-  Sexplib.Conv.Exn_converter.add
+  Ppx_sexp_conv_lib.Conv.Exn_converter.add
     ([%extension_constructor Transpose_got_lists_of_different_lengths])
     (function
       | Transpose_got_lists_of_different_lengths v0 ->
         let v0 = sexp_of_list sexp_of_int v0  in
-        Sexplib.Sexp.List
-          [Sexplib.Sexp.Atom
+        Ppx_sexp_conv_lib.Sexp.List
+          [Ppx_sexp_conv_lib.Sexp.Atom
              "src/list.ml.Transpose_got_lists_of_different_lengths";
            v0]
       | _ -> assert false)

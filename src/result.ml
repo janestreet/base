@@ -5,46 +5,52 @@ type ('a, 'b) t = ('a, 'b) Pervasives.result =
   | Error of 'b
 [@@deriving_inline sexp, compare, hash]
 let t_of_sexp : type a
-                       b.(Sexplib.Sexp.t -> a) ->
-  (Sexplib.Sexp.t -> b) -> Sexplib.Sexp.t -> (a,b) t
+                       b.(Ppx_sexp_conv_lib.Sexp.t -> a) ->
+  (Ppx_sexp_conv_lib.Sexp.t -> b) -> Ppx_sexp_conv_lib.Sexp.t -> (a,b) t
   =
   let _tp_loc = "src/result.ml.t"  in
   fun _of_a  ->
   fun _of_b  ->
     function
-    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
-                            ("ok"|"Ok" as _tag))::sexp_args) as _sexp ->
+    | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                      ("ok"|"Ok" as _tag))::sexp_args) as _sexp ->
       (match sexp_args with
        | v0::[] -> let v0 = _of_a v0  in Ok v0
-       | _ -> Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-    | Sexplib.Sexp.List ((Sexplib.Sexp.Atom
-                            ("error"|"Error" as _tag))::sexp_args) as _sexp ->
+       | _ ->
+         Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc
+           _tag _sexp)
+    | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                      ("error"|"Error" as _tag))::sexp_args) as _sexp ->
       (match sexp_args with
        | v0::[] -> let v0 = _of_b v0  in Error v0
-       | _ -> Sexplib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-    | Sexplib.Sexp.Atom ("ok"|"Ok") as sexp ->
-      Sexplib.Conv_error.stag_takes_args _tp_loc sexp
-    | Sexplib.Sexp.Atom ("error"|"Error") as sexp ->
-      Sexplib.Conv_error.stag_takes_args _tp_loc sexp
-    | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
-      Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-    | Sexplib.Sexp.List [] as sexp ->
-      Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-    | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp
+       | _ ->
+         Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc
+           _tag _sexp)
+    | Ppx_sexp_conv_lib.Sexp.Atom ("ok"|"Ok") as sexp ->
+      Ppx_sexp_conv_lib.Conv_error.stag_takes_args _tp_loc sexp
+    | Ppx_sexp_conv_lib.Sexp.Atom ("error"|"Error") as sexp ->
+      Ppx_sexp_conv_lib.Conv_error.stag_takes_args _tp_loc sexp
+    | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.List _)::_) as
+      sexp ->
+      Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
+    | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
+      Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
+    | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
 
 let sexp_of_t : type a
-                       b.(a -> Sexplib.Sexp.t) ->
-  (b -> Sexplib.Sexp.t) -> (a,b) t -> Sexplib.Sexp.t
+                       b.(a -> Ppx_sexp_conv_lib.Sexp.t) ->
+  (b -> Ppx_sexp_conv_lib.Sexp.t) -> (a,b) t -> Ppx_sexp_conv_lib.Sexp.t
   =
   fun _of_a  ->
   fun _of_b  ->
     function
     | Ok v0 ->
       let v0 = _of_a v0  in
-      Sexplib.Sexp.List [Sexplib.Sexp.Atom "Ok"; v0]
+      Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Ok"; v0]
     | Error v0 ->
       let v0 = _of_b v0  in
-      Sexplib.Sexp.List [Sexplib.Sexp.Atom "Error"; v0]
+      Ppx_sexp_conv_lib.Sexp.List
+        [Ppx_sexp_conv_lib.Sexp.Atom "Error"; v0]
 
 let compare :
   'a 'b .

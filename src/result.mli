@@ -24,11 +24,13 @@ include
 sig
   [@@@ocaml.warning "-32"]
   val t_of_sexp :
-    (Sexplib.Sexp.t -> 'ok) ->
-    (Sexplib.Sexp.t -> 'err) -> Sexplib.Sexp.t -> ('ok,'err) t
+    (Ppx_sexp_conv_lib.Sexp.t -> 'ok) ->
+    (Ppx_sexp_conv_lib.Sexp.t -> 'err) ->
+    Ppx_sexp_conv_lib.Sexp.t -> ('ok,'err) t
   val sexp_of_t :
-    ('ok -> Sexplib.Sexp.t) ->
-    ('err -> Sexplib.Sexp.t) -> ('ok,'err) t -> Sexplib.Sexp.t
+    ('ok -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('err -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('ok,'err) t -> Ppx_sexp_conv_lib.Sexp.t
   val compare :
     ('ok -> 'ok -> int) ->
     ('err -> 'err -> int) -> ('ok,'err) t -> ('ok,'err) t -> int

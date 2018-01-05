@@ -319,11 +319,13 @@ module Merge_to_sequence_element : sig
     val compare :
       ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
     val t_of_sexp :
-      (Sexplib.Sexp.t -> 'a) ->
-      (Sexplib.Sexp.t -> 'b) -> Sexplib.Sexp.t -> ('a,'b) t
+      (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
+      (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
+      Ppx_sexp_conv_lib.Sexp.t -> ('a,'b) t
     val sexp_of_t :
-      ('a -> Sexplib.Sexp.t) ->
-      ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+      ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 end
@@ -356,11 +358,15 @@ module M (Elt : sig type t type comparator_witness end) : sig
 end
 
 module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
-  include sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Sexplib.Sexp.t end
+  include
+  sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  end
   [@@@end] end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
-  include sig [@@@ocaml.warning "-32"] val t_of_sexp : Sexplib.Sexp.t -> t end
+  include
+  sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+  end
   [@@@end] include Comparator.S with type t := t
 end
 module type Compare_m = sig end
@@ -387,8 +393,9 @@ module Using_comparator : sig
   sig
     [@@@ocaml.warning "-32"]
     val sexp_of_t :
-      ('elt -> Sexplib.Sexp.t) ->
-      ('cmp -> Sexplib.Sexp.t) -> ('elt,'cmp) t -> Sexplib.Sexp.t
+      ('elt -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('elt,'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 
@@ -407,8 +414,9 @@ module Using_comparator : sig
     sig
       [@@@ocaml.warning "-32"]
       val sexp_of_t :
-        ('a -> Sexplib.Sexp.t) ->
-        ('cmp -> Sexplib.Sexp.t) -> ('a,'cmp) t -> Sexplib.Sexp.t
+        ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+        ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
+        ('a,'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end]
 

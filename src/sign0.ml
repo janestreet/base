@@ -3,28 +3,31 @@
 open! Import
 
 type t = Neg | Zero | Pos [@@deriving_inline sexp, compare, hash, enumerate]
-let t_of_sexp : Sexplib.Sexp.t -> t =
+let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t =
   let _tp_loc = "src/sign0.ml.t"  in
   function
-  | Sexplib.Sexp.Atom ("neg"|"Neg") -> Neg
-  | Sexplib.Sexp.Atom ("zero"|"Zero") -> Zero
-  | Sexplib.Sexp.Atom ("pos"|"Pos") -> Pos
-  | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("neg"|"Neg"))::_) as sexp ->
-    Sexplib.Conv_error.stag_no_args _tp_loc sexp
-  | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("zero"|"Zero"))::_) as sexp ->
-    Sexplib.Conv_error.stag_no_args _tp_loc sexp
-  | Sexplib.Sexp.List ((Sexplib.Sexp.Atom ("pos"|"Pos"))::_) as sexp ->
-    Sexplib.Conv_error.stag_no_args _tp_loc sexp
-  | Sexplib.Sexp.List ((Sexplib.Sexp.List _)::_) as sexp ->
-    Sexplib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-  | Sexplib.Sexp.List [] as sexp ->
-    Sexplib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-  | sexp -> Sexplib.Conv_error.unexpected_stag _tp_loc sexp
-let sexp_of_t : t -> Sexplib.Sexp.t =
+  | Ppx_sexp_conv_lib.Sexp.Atom ("neg"|"Neg") -> Neg
+  | Ppx_sexp_conv_lib.Sexp.Atom ("zero"|"Zero") -> Zero
+  | Ppx_sexp_conv_lib.Sexp.Atom ("pos"|"Pos") -> Pos
+  | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                    ("neg"|"Neg"))::_) as sexp ->
+    Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+  | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                    ("zero"|"Zero"))::_) as sexp ->
+    Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+  | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
+                                    ("pos"|"Pos"))::_) as sexp ->
+    Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+  | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.List _)::_) as sexp
+    -> Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
+  | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
+    Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
+  | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
+let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t =
   function
-  | Neg  -> Sexplib.Sexp.Atom "Neg"
-  | Zero  -> Sexplib.Sexp.Atom "Zero"
-  | Pos  -> Sexplib.Sexp.Atom "Pos"
+  | Neg  -> Ppx_sexp_conv_lib.Sexp.Atom "Neg"
+  | Zero  -> Ppx_sexp_conv_lib.Sexp.Atom "Zero"
+  | Pos  -> Ppx_sexp_conv_lib.Sexp.Atom "Pos"
 let compare : t -> t -> int =
   fun a__001_  ->
   fun b__002_  ->

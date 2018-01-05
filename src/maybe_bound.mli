@@ -7,8 +7,10 @@ include
 sig
   [@@@ocaml.warning "-32"]
   val all : 'a list -> 'a t list
-  val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
-  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+  val t_of_sexp :
+    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+  val sexp_of_t :
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 [@@@end]
 
@@ -39,8 +41,10 @@ type interval_comparison =
 include
 sig
   [@@@ocaml.warning "-32"]
-  val interval_comparison_of_sexp : Sexplib.Sexp.t -> interval_comparison
-  val sexp_of_interval_comparison : interval_comparison -> Sexplib.Sexp.t
+  val interval_comparison_of_sexp :
+    Ppx_sexp_conv_lib.Sexp.t -> interval_comparison
+  val sexp_of_interval_comparison :
+    interval_comparison -> Ppx_sexp_conv_lib.Sexp.t
   val compare_interval_comparison :
     interval_comparison -> interval_comparison -> int
   val hash_fold_interval_comparison :

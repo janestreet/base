@@ -14,8 +14,10 @@ sig
   val hash_fold_t :
     (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
     Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
-  val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
-  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+  val t_of_sexp :
+    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+  val sexp_of_t :
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
 end
 [@@@end]
 
@@ -34,7 +36,8 @@ module Or_unequal_lengths : sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+    val sexp_of_t :
+      ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 end
@@ -310,8 +313,12 @@ val find_consecutive_duplicate : 'a t -> equal:('a -> 'a -> bool) -> ('a * 'a) o
 
 (** [remove_consecutive_duplicates]. The same list with consecutive duplicates removed.
     The relative order of the other elements is unaffected.
-    The element kept from a run of duplicates is the last one. *)
-val remove_consecutive_duplicates : 'a t -> equal:('a -> 'a -> bool) -> 'a t
+    The element kept from a run of duplicates is determined by [which_to_keep]. *)
+val remove_consecutive_duplicates
+  :  ?which_to_keep:[ `First | `Last ]    (** default = `Last *)
+  -> 'a t
+  -> equal:('a -> 'a -> bool)
+  -> 'a t
 
 (** [dedup_and_sort] The same list with duplicates removed and in sorted order. *)
 val dedup_and_sort : ?compare:('a -> 'a -> int) -> 'a t -> 'a t
@@ -411,11 +418,13 @@ module Assoc : sig
   sig
     [@@@ocaml.warning "-32"]
     val t_of_sexp :
-      (Sexplib.Sexp.t -> 'a) ->
-      (Sexplib.Sexp.t -> 'b) -> Sexplib.Sexp.t -> ('a,'b) t
+      (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
+      (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
+      Ppx_sexp_conv_lib.Sexp.t -> ('a,'b) t
     val sexp_of_t :
-      ('a -> Sexplib.Sexp.t) ->
-      ('b -> Sexplib.Sexp.t) -> ('a,'b) t -> Sexplib.Sexp.t
+      ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
+      ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 
