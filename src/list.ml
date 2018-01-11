@@ -666,16 +666,21 @@ let dedup_and_sort ?(compare=Pervasives.compare) list =
 
 let dedup = dedup_and_sort
 
-let contains_dup ?compare lst = length (dedup_and_sort ?compare lst) <> length lst
-
 let find_a_dup ?(compare=Pervasives.compare) l =
   let sorted = sort ~cmp:compare l in
   let rec loop l = match l with
-      [] | [_] -> None
-    | hd1 :: hd2 :: tl ->
-      if compare hd1 hd2 = 0 then Some (hd1) else loop (hd2 :: tl)
+    | [] | [_] -> None
+    | hd1 :: (hd2 :: _ as tl) ->
+      if compare hd1 hd2 = 0 then Some hd1 else loop tl
   in
   loop sorted
+;;
+
+let contains_dup ?compare lst =
+  match find_a_dup ?compare lst with
+  | Some _ -> true
+  | None   -> false
+;;
 
 let find_all_dups ?(compare=Pervasives.compare) l =
   (* We add this reversal, so we can skip a [rev] at the end. We could skip
@@ -697,6 +702,7 @@ let find_all_dups ?(compare=Pervasives.compare) l =
   match sorted with
   | [] -> []
   | hd :: tl -> loop tl hd ~already_recorded:false []
+;;
 
 type sexp_thunk = unit -> Sexp.t
 let sexp_of_sexp_thunk x = x ()

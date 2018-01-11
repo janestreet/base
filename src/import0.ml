@@ -23,6 +23,7 @@ include
        with module Map       := Caml.Map
        with module Nativeint := Caml.Nativeint
        with module Printf    := Caml.Printf
+       with module Queue     := Caml.Queue
        with module Random    := Caml.Random
        with module Set       := Caml.Set
        with module String    := Caml.String

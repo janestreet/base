@@ -408,6 +408,8 @@ module type Make0_arg = sig
 end
 
 module type Container = sig
+  include module type of struct include Export end
+
   module type S0                   = S0
   module type S0_phantom           = S0_phantom
   module type S1                   = S1

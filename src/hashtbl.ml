@@ -1,7 +1,6 @@
 open! Import
-open! Hashtbl_intf
 
-module Hashable = Hashtbl_intf.Hashable
+include Hashtbl_intf
 
 let with_return = With_return.with_return
 

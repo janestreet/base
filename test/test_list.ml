@@ -410,6 +410,17 @@ let%test _ = let dup = find_a_dup [(0,1);(2,2);(0,2);(4,1)]
   | Some (0, _) -> true
   | _ -> false
 
+let%test _ = contains_dup [] = false
+let%test _ = contains_dup [3] = false
+let%test _ = contains_dup [3;4] = false
+let%test _ = contains_dup [3;3] = true
+let%test _ = contains_dup [3;5;4;6;12] = false
+let%test _ = contains_dup [3;5;4;5;12] = true
+let%test _ = contains_dup [3;5;12;5;12] = true
+let%test _ = contains_dup [(0,1);(2,2);(0,2);(4,1)] = false
+let%test _ = (contains_dup [(0,1);(2,2);(0,2);(4,1)]
+                ~compare:(fun (_,a) (_,b) -> Int.compare a b)) = true
+
 let%test _ = find_all_dups [] = []
 let%test _ = find_all_dups [3] = []
 let%test _ = find_all_dups [3;4] = []

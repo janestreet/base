@@ -4,6 +4,8 @@
 
 open! Import
 
+include Info_intf
+
 module String = String0
 
 module Message = struct

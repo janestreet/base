@@ -326,23 +326,24 @@ val dedup_and_sort : ?compare:('a -> 'a -> int) -> 'a t -> 'a t
 val dedup : ?compare:('a -> 'a -> int) -> 'a t -> 'a t
 [@@deprecated "[since 2017-04] Use [dedup_and_sort] instead"]
 
-(** [contains_dup] True if there are any two elements in the list which are the same. *)
-val contains_dup : ?compare:('a -> 'a -> int) -> 'a t -> bool
-
 (** [find_a_dup] returns a duplicate from the list (no guarantees about which
-    duplicate you get), or None if there are no dups. *)
+    duplicate you get), or None if there are no dups. O(n log n) time complexity. *)
 val find_a_dup : ?compare:('a -> 'a -> int) -> 'a t -> 'a option
 
+(** [contains_dup t] will return true if there are any two elements in the list which are
+    the same. O(n log n) time complexity. *)
+val contains_dup : ?compare:('a -> 'a -> int) -> 'a t -> bool
+
 (** [find_all_dups] returns a list of all elements that occur more than once, with
-    no guarantees about order. *)
+    no guarantees about order. O(n log n) time complexity. *)
 val find_all_dups : ?compare:('a -> 'a -> int) -> 'a t -> 'a list
 
 (** only raised in [exn_if_dup] below *)
 exception Duplicate_found of (unit -> Sexp.t) * string
 
-(** [exn_if_dup ?compare ?context t ~to_sexp] will run [find_a_dup] on [t], and raise
-    [Duplicate_found] if a duplicate is found.  The [context] is the second argument of
-    the exception *)
+(** [exn_if_dup ?compare ?context t ~to_sexp] raises if [t] contains a duplicate. It will
+    specifcally raise a [Duplicate_found] exception and use [context] as its second
+    argument. O(n log n) time complexity. *)
 val exn_if_dup
   :  ?compare:('a -> 'a -> int)
   -> ?context:string

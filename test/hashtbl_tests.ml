@@ -2,10 +2,10 @@ open! Base
 
 
 module type Hashtbl_for_testing = sig
-  include Hashtbl_intf.Accessors with type 'key key = 'key
+  include Hashtbl.Accessors with type 'key key = 'key
   include Invariant.S2 with type ('key, 'data) t := ('key, 'data) t
 
-  (* we don't define [module Poly : Hashtbl_intf.S_poly] because we want to require only
+  (* we don't define [module Poly : Hashtbl.S_poly] because we want to require only
      the minimal number of constructors necessary to implement the tests, and also avoid
      conflicting with any existing names. *)
   val create_poly : ?size:int -> unit -> ('key, 'data) t

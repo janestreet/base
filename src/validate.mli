@@ -96,6 +96,9 @@ val pass_unit : unit check
     them as errors. *)
 val protect : 'a check -> 'a check
 
+(** [try_with f] runs [f] catching any exceptions and returning them as errors. *)
+val try_with : (unit -> unit) -> t
+
 val result : t -> unit Or_error.t
 
 (** Returns a list of formatted error strings, which include both the error message and

@@ -60,3 +60,12 @@ let%expect_test _ =
      ("Exception raised during validation"
       (Failure "This unit validation raises"))) |}]
 ;;
+
+let%expect_test "try_with" =
+  let v () =
+    failwith "this function raises"
+  in
+  print (try_with v);
+  [%expect {|
+    ("" ("Exception raised during validation" (Failure "this function raises"))) |}]
+;;

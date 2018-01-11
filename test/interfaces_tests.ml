@@ -2,7 +2,7 @@ open Base
 
 let () =
   let module M : sig
-    open Set_intf
+    open Set
 
     type ('a, 'b) t
 
@@ -25,7 +25,7 @@ let () =
 
 let () =
   let module M : sig
-    open Map_intf
+    open Map
 
     type ('a, 'b, 'c) t
 

@@ -3,7 +3,7 @@ open  Expect_test_helpers_kernel
 
 module type S = sig
   type t [@@deriving sexp_of]
-  include Comparable_intf.Polymorphic_compare with type t := t
+  include Comparable.Polymorphic_compare with type t := t
 end
 
 (* Test the consistency of derived comparison operators with [compare] because many of

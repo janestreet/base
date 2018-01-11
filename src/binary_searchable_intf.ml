@@ -68,6 +68,9 @@ module type Binary_searchable = sig
   module type Indexable  = Indexable
   module type Indexable1 = Indexable1
 
+  type nonrec ('t, 'elt, 'key) binary_search = ('t, 'elt, 'key) binary_search
+  type nonrec ('t, 'elt) binary_search_segmented = ('t, 'elt) binary_search_segmented
+
   module Make  (T : Indexable)  : S  with type    t :=    T.t with type elt := T.elt
   module Make1 (T : Indexable1) : S1 with type 'a t := 'a T.t
 end

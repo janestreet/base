@@ -1,1 +1,1 @@
-include Info_intf.S (** @open *)
+include Info_intf.Info (** @open *)

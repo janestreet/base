@@ -52,6 +52,9 @@ let protect f v =
       (Sexp.message "Exception raised during validation" [ "", sexp_of_exn exn ])
 ;;
 
+let try_with f =
+  protect (fun () -> f (); pass) ()
+
 let path_string path = String.concat ~sep:"." path
 
 let errors t =

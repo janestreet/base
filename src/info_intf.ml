@@ -131,3 +131,9 @@ module type S = sig
     val to_info : t -> info
   end with type info := t
 end
+
+module type Info = sig
+  module type S = S
+
+  include S
+end

@@ -53,6 +53,8 @@ module type Hashable = sig
       sexp_of_t : 'a -> Sexp.t;
     }
 
+  val equal : 'a t -> 'a t -> bool
+
   val poly : 'a t
 
   val of_key : (module Key with type t = 'a) -> 'a t
@@ -492,6 +494,25 @@ end
 
 module type Hashtbl = sig
   include S_without_submodules (** @inline *)
+
+  module type Accessors            = Accessors
+  module type Creators             = Creators
+  module type Deprecated           = Deprecated
+  module type Hashable             = Hashable
+  module type Key                  = Key
+  module type Multi                = Multi
+  module type S_poly               = S_poly
+  module type S_without_submodules = S_without_submodules
+  module type S_using_hashable     = S_using_hashable
+
+  type nonrec ('key, 'data, 'z) create_options_without_hashable =
+    ('key, 'data, 'z) create_options_without_hashable
+
+  type nonrec ('key, 'data, 'z) create_options_with_hashable =
+    ('key, 'data, 'z) create_options_with_hashable
+
+  type nonrec ('key, 'data, 'z) create_options_with_first_class_module =
+    ('key, 'data, 'z) create_options_with_first_class_module
 
   module Using_hashable : S_using_hashable
     with type ('a, 'b) t = ('a, 'b) t

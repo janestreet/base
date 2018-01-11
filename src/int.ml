@@ -1,5 +1,7 @@
 open! Import
 
+include Int_intf
+
 module T = struct
   type t = int [@@deriving_inline hash, sexp]
   let (hash_fold_t :

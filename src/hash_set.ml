@@ -1,5 +1,6 @@
 open! Import
-open! Hash_set_intf
+
+include Hash_set_intf
 
 let hashable      = Hashtbl.hashable
 let poly_hashable = Hashtbl.Poly.hashable

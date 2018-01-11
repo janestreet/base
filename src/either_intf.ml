@@ -32,6 +32,7 @@ module type Focused = sig
 end
 
 module type Either = sig
+
   (** This type represents values with two possibilities.  [Either] can be seen as a
       generic sum type, the dual of [Tuple].  [First] is neither more important nor less
       important than [Second]. *)
@@ -71,6 +72,8 @@ module type Either = sig
   val map       : ('a, 'b) t -> first:('a -> 'c)   -> second:('b -> 'd)   -> ('c, 'd) t
 
   val equal : ('f -> 'f -> bool) -> ('s -> 's -> bool) -> ('f, 's) t -> ('f, 's) t -> bool
+
+  module type Focused = Focused
 
   module First  : Focused with type ('a, 'b) t = ('a, 'b) t
   module Second : Focused with type ('a, 'b) t = ('b, 'a) t

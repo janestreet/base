@@ -14,9 +14,8 @@
 (* Sets over ordered types *)
 
 open! Import
-open! Set_intf
 
-module Merge_to_sequence_element = Merge_to_sequence_element
+include Set_intf
 
 let with_return = With_return.with_return
 

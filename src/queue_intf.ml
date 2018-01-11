@@ -76,3 +76,7 @@ module type S = sig
 
 end
 
+
+module type Queue = sig
+  module type S = S
+end

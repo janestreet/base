@@ -1,7 +1,7 @@
 open! Base
 
 module type Hashtbl_for_testing = sig
-  include Hashtbl_intf.Accessors with type 'key key = 'key
+  include Hashtbl.Accessors with type 'key key = 'key
   include Invariant.S2 with type ('key, 'data) t := ('key, 'data) t
 
   val create_poly : ?size:int -> unit -> ('key, 'data) t

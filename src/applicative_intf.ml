@@ -228,3 +228,53 @@ module Args_to_Args2 (X : Args) : (
   type ('f, 'r, 'e) t = ('f, 'r) X.t
   include (X : Args with type 'a arg := 'a X.arg and type ('f, 'r) t := ('f, 'r) X.t)
 end
+
+module type Applicative = sig
+
+  module type Args              = Args
+  module type Args2             = Args2
+  module type Basic             = Basic
+  module type Basic2            = Basic2
+  module type Basic2_using_map2 = Basic2_using_map2
+  module type Basic_using_map2  = Basic_using_map2
+  module type S                 = S
+  module type S2                = S2
+
+  module Args_to_Args2 = Args_to_Args2
+  module S2_to_S       = S2_to_S
+  module S_to_S2       = S_to_S2
+
+  module Make  (X : Basic ) : S  with type  'a      t :=  'a      X.t
+  module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
+
+  module Make_using_map2  (X : Basic_using_map2 ) : S  with type  'a      t :=  'a      X.t
+  module Make2_using_map2 (X : Basic2_using_map2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
+
+  module Make_args  (X : S ) : Args  with type  'a      arg :=  'a      X.t
+  module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t
+
+  (** The following functors give a sense of what Applicatives one can define.
+
+      Of these, [Of_monad] is likely the most useful.  The others are mostly didactic. *)
+
+  (** Every monad is Applicative via:
+
+      {[
+        let apply mf mx =
+          mf >>= fun f ->
+          mx >>| fun x ->
+          f x
+      ]} *)
+  module Of_monad (M : Monad.S)   : S with type 'a t := 'a M.t
+  module Compose  (F : S) (G : S) : S with type 'a t =  'a F.t G.t
+  module Pair     (F : S) (G : S) : S with type 'a t =  'a F.t * 'a G.t
+
+  (** Every monoid gives rise to a constant Applicative. *)
+  module Const (Monoid : sig
+      type t
+      val zero : t
+      val plus : t -> t -> t
+      (** Laws: [plus] is associative and [zero] is both a left and right unit for [plus] *)
+    end)
+    : S with type 'a t = Monoid.t
+end

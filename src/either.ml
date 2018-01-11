@@ -1,5 +1,7 @@
 open! Import
 
+include Either_intf
+
 module Array = Array0
 
 type ('f, 's) t =

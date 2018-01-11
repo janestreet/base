@@ -24,6 +24,8 @@ module Array = Array0
 module Char  = Char0
 module List  = List0
 
+include Hash_intf
+
 (** Builtin folding-style hash functions, abstracted over [Hash_intf.S] *)
 module Folding (Hash : Hash_intf.S)
   : Hash_intf.Builtin_intf

@@ -12,11 +12,8 @@
 (***********************************************************************)
 
 open! Import
-open! Map_intf
 
-module Or_duplicate = Or_duplicate
-
-module Symmetric_diff_element = Symmetric_diff_element
+include Map_intf
 
 let with_return = With_return.with_return
 

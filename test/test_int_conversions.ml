@@ -26,7 +26,7 @@ let%test_module "pretty" =
 let%test_module "conversions" =
   (module struct
     module type S = sig
-      include Int_intf.S
+      include Int.S
       val module_name : string
     end
 
