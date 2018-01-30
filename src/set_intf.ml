@@ -83,6 +83,24 @@ module type Accessors_generic = sig
        ('a, 'cmp) t -> ('a, 'cmp) t -> bool
       ) options
   [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
+
+  type ('a, 'cmp) named
+  module Named : sig
+    val is_subset
+      : ('a, 'cmp,
+         ('a, 'cmp) named
+         -> of_:('a, 'cmp) named
+         -> unit Or_error.t
+        ) options
+
+    val equal
+      : ('a, 'cmp,
+         ('a, 'cmp) named
+         -> ('a, 'cmp) named
+         -> unit Or_error.t
+        ) options
+  end
+
   val fold_until
     :  ('a, _) t
     -> init:'b
@@ -182,6 +200,13 @@ module type Accessors0 = sig
   val is_subset      : t -> of_:t -> bool
   val subset         : t -> t -> bool
   [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
+
+  type named
+  module Named : sig
+    val is_subset : named -> of_:named -> unit Or_error.t
+    val equal : named -> named -> unit Or_error.t
+  end
+
   val fold_until
     : t
     -> init:'b
@@ -239,6 +264,13 @@ module type Accessors1 = sig
   val is_subset      : 'a t -> of_:'a t -> bool
   val subset         : 'a t -> 'a t -> bool
   [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
+
+  type 'a named
+  module Named : sig
+    val is_subset : 'a named -> of_:'a named -> unit Or_error.t
+    val equal : 'a named -> 'a named -> unit Or_error.t
+  end
+
   val fold_until
     : 'a t
     -> init:'b
@@ -295,6 +327,13 @@ module type Accessors2 = sig
   val is_subset      : ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool
   val subset         : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
   [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
+
+  type ('a, 'cmp) named
+  module Named : sig
+    val is_subset : ('a, 'cmp) named -> of_:('a, 'cmp) named -> unit Or_error.t
+    val equal : ('a, 'cmp) named -> ('a, 'cmp) named -> unit Or_error.t
+  end
+
   val fold_until
     : ('a, _) t
     -> init:'b
@@ -365,6 +404,21 @@ module type Accessors2_with_comparator = sig
   val subset
     : comparator:('a, 'cmp) Comparator.t -> ('a, 'cmp) t -> ('a, 'cmp) t -> bool
   [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
+
+  type ('a, 'cmp) named
+  module Named : sig
+    val is_subset
+      :  comparator:('a, 'cmp) Comparator.t
+      -> ('a, 'cmp) named
+      -> of_:('a, 'cmp) named
+      -> unit Or_error.t
+    val equal
+      :  comparator:('a, 'cmp) Comparator.t
+      -> ('a, 'cmp) named
+      -> ('a, 'cmp) named
+      -> unit Or_error.t
+  end
+
   val fold_until
     :  ('a, _) t
     -> init:'accum
@@ -422,13 +476,14 @@ module type Accessors2_with_comparator = sig
 end
 
 (** Consistency checks (same as in [Container]). *)
-module Check_accessors (T : T2) (Tree : T2) (Elt : T1) (Cmp : T1) (Options : T3)
+module Check_accessors (T : T2) (Tree : T2) (Elt : T1) (Named : T2) (Cmp : T1) (Options : T3)
     (M : Accessors_generic
      with type ('a, 'b, 'c) options := ('a, 'b, 'c) Options.t
      with type ('a, 'b) t           := ('a, 'b) T.t
      with type ('a, 'b) tree        := ('a, 'b) Tree.t
      with type 'a elt               := 'a Elt.t
-     with type 'cmp cmp             := 'cmp Cmp.t)
+     with type 'cmp cmp             := 'cmp Cmp.t
+     with type ('a, 'b) named       := ('a, 'b) Named.t)
 = struct end
 
 module Check_accessors0 (M : Accessors0) =
@@ -436,6 +491,7 @@ module Check_accessors0 (M : Accessors0) =
     (struct type ('a, 'b) t = M.t end)
     (struct type ('a, 'b) t = M.tree end)
     (struct type 'a t = M.elt end)
+    (struct type ('a, 'b) t = M.named end)
     (struct type 'a t = M.comparator_witness end)
     (Without_comparator)
     (M)
@@ -445,6 +501,7 @@ module Check_accessors1 (M : Accessors1) =
     (struct type ('a, 'b) t = 'a M.t end)
     (struct type ('a, 'b) t = 'a M.tree end)
     (struct type 'a t = 'a end)
+    (struct type ('a, 'b) t = 'a M.named end)
     (struct type 'a t = M.comparator_witness end)
     (Without_comparator)
     (M)
@@ -454,6 +511,7 @@ module Check_accessors2 (M : Accessors2) =
     (struct type ('a, 'b) t = ('a, 'b) M.t end)
     (struct type ('a, 'b) t = ('a, 'b) M.tree end)
     (struct type 'a t = 'a end)
+    (struct type ('a, 'b) t = ('a, 'b) M.named end)
     (struct type 'a t = 'a end)
     (Without_comparator)
     (M)
@@ -463,6 +521,7 @@ module Check_accessors2_with_comparator (M : Accessors2_with_comparator) =
     (struct type ('a, 'b) t = ('a, 'b) M.t end)
     (struct type ('a, 'b) t = ('a, 'b) M.tree end)
     (struct type 'a t = 'a end)
+    (struct type ('a, 'b) t = ('a, 'b) M.named end)
     (struct type 'a t = 'a end)
     (With_comparator)
     (M)
@@ -823,6 +882,40 @@ module type Set = sig
   val subset : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
   [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
 
+  (** [Named] allows the validation of subset and equality relationships between sets.  A
+      [Named.t] is a record of a set and a name, where the name is used in error messages,
+      and [Named.is_subset] and [Named.equal] validate subset and equality relationships
+      respectively.
+
+      The error message for, e.g.,
+      {[
+        Named.is_subset { set = set1; name = "set1" } ~of_:{set = set2; name = "set2" }
+      ]}
+
+      looks like
+      {v
+        ("set1 is not a subset of set2" (invalid_elements (...elements of set1 - set2...)))
+     v}
+
+      so [name] should be a noun phrase that doesn't sound awkward in the above error
+      message.  Even though it adds verbosity, choosing [name]s that start with the phrase
+      "the set of" often makes the error message sound more natural.
+  *)
+  module Named : sig
+    type nonrec ('a, 'cmp) t = {
+      set : ('a, 'cmp) t;
+      name : string;
+    }
+
+    (** [is_subset t1 ~of_:t2] returns [Ok ()] if [t1] is a subset of [t2] and a
+        human-readable error otherwise.  *)
+    val is_subset : ('a, 'cmp) t -> of_:('a, 'cmp) t -> unit Or_error.t
+
+    (** [equal t1 t2] returns [Ok ()] if [t1] is equal to [t2] and a human-readable
+        error otherwise.  *)
+    val equal : ('a, 'cmp) t -> ('a, 'cmp) t -> unit Or_error.t
+  end
+
   (** The list or array given to [of_list] and [of_array] need not be sorted. *)
   val of_list  : ('a, 'cmp) comparator -> 'a list  -> ('a, 'cmp) t
   val of_array : ('a, 'cmp) comparator -> 'a array -> ('a, 'cmp) t
@@ -1112,10 +1205,31 @@ module type Set = sig
         -> Sexp.t
         -> ('elt, 'cmp) t
 
+      module Named : sig
+        type nonrec ('a, 'cmp) t = {
+          tree : ('a, 'cmp) t;
+          name : string;
+        }
+
+        val is_subset
+          :  comparator:('a, 'cmp) Comparator.t
+          -> ('a, 'cmp) t
+          -> of_:('a, 'cmp) t
+          -> unit Or_error.t
+
+        val equal
+          :  comparator:('a, 'cmp) Comparator.t
+          -> ('a, 'cmp) t
+          -> ('a, 'cmp) t
+          -> unit Or_error.t
+      end
+
       include Creators_and_accessors2_with_comparator
         with type ('a, 'b) set  := ('a, 'b) t
         with type ('a, 'b) t    := ('a, 'b) t
         with type ('a, 'b) tree := ('a, 'b) t
+        with type ('a, 'b) named := ('a, 'b) Named.t
+        with module Named        := Named
 
       val empty_without_value_restriction : (_, _) t
     end
@@ -1123,6 +1237,8 @@ module type Set = sig
     include Accessors2
       with type ('a, 'b) t    := ('a, 'b) t
       with type ('a, 'b) tree := ('a, 'b) Tree.t
+      with type ('a, 'b) named := ('a, 'b) Named.t
+
     include Creators2_with_comparator
       with type ('a, 'b) t    := ('a, 'b) t
       with type ('a, 'b) tree := ('a, 'b) Tree.t

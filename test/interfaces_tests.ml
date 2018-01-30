@@ -9,6 +9,7 @@ let () =
     include Accessors2
       with type ('a, 'b) t    := ('a, 'b) t
       with type ('a, 'b) tree := ('a, 'b) Set.Using_comparator.Tree.t
+      with type ('a, 'b) named := ('a, 'b) Set.Named.t
 
     include Creators_generic
       with type ('a, 'b, 'c) options := ('a, 'b, 'c) With_first_class_module.t

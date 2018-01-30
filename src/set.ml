@@ -917,6 +917,32 @@ module Tree0 = struct
   let sexp_of_t sexp_of_a t =
     Sexp.List (fold_right t ~init:[] ~f:(fun el acc -> sexp_of_a el :: acc))
   ;;
+
+  module Named = struct
+    type nonrec ('a, 'cmp) t = {
+      tree : 'a t;
+      name : string;
+    }
+
+    let is_subset (subset : _ t) ~of_:(superset : _ t) ~sexp_of_elt
+          ~compare_elt =
+      let invalid_elements = diff subset.tree superset.tree ~compare_elt in
+      if is_empty invalid_elements
+      then Ok ()
+      else begin
+        let invalid_elements_sexp = sexp_of_t sexp_of_elt invalid_elements in
+        Or_error.error_s (List [
+          Atom (subset.name ^ " is not a subset of " ^ superset.name);
+          List [Atom "invalid_elements"; invalid_elements_sexp]
+        ])
+      end
+
+    let equal s1 s2 ~sexp_of_elt ~compare_elt =
+      Or_error.combine_errors_unit
+        [ is_subset s1 ~of_:s2 ~sexp_of_elt ~compare_elt
+        ; is_subset s2 ~of_:s1 ~sexp_of_elt ~compare_elt
+        ]
+  end
 end
 
 type ('a, 'comparator) t =
@@ -973,6 +999,32 @@ module Accessors = struct
   let equal t1 t2 = Tree0.equal t1.tree t2.tree ~compare_elt:(compare_elt t1)
   let is_subset t ~of_ = Tree0.is_subset t.tree ~of_:of_.tree ~compare_elt:(compare_elt t)
   let subset t1 t2 = is_subset t1 ~of_:t2
+
+  module Named = struct
+    type nonrec ('a, 'cmp) t = {
+      set : ('a, 'cmp) t;
+      name : string;
+    }
+
+    let to_named_tree { set; name } = {
+      Tree0.Named.
+      tree = set.tree;
+      name;
+    }
+
+    let is_subset (subset : (_, _) t) ~of_:(superset : (_, _) t) =
+      Tree0.Named.is_subset (to_named_tree subset)
+        ~of_:(to_named_tree superset)
+        ~compare_elt:(compare_elt subset.set)
+        ~sexp_of_elt:subset.set.comparator.sexp_of_t
+
+    let equal t1 t2 =
+      Or_error.combine_errors_unit
+        [ is_subset t1 ~of_:t2
+        ; is_subset t2 ~of_:t1
+        ]
+  end
+
   let partition_tf t ~f =
     let (tree_t, tree_f) = Tree0.partition_tf t.tree ~f ~compare_elt:(compare_elt t) in
     like t tree_t, like t tree_f
@@ -1096,6 +1148,18 @@ module Tree = struct
     Tree0.merge_to_sequence comparator ?order ?greater_or_equal_to ?less_or_equal_to t t'
 
   let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
+
+  module Named = struct
+    include Tree0.Named
+
+    let is_subset ~comparator t1 ~of_:t2 =
+      Tree0.Named.is_subset t1 ~of_:t2 ~compare_elt:(ce comparator)
+        ~sexp_of_elt:comparator.Comparator.sexp_of_t
+
+    let equal ~comparator t1 t2 =
+      Tree0.Named.equal t1 t2 ~compare_elt:(ce comparator)
+        ~sexp_of_elt:comparator.Comparator.sexp_of_t
+  end
 end
 
 module Using_comparator = struct
@@ -1213,3 +1277,4 @@ let compare_m__t (module Elt : Compare_m) t1 t2 =
 
 let hash_fold_m__t (type elt) (module Elt : Hash_fold_m with type t = elt) state =
   hash_fold_direct Elt.hash_fold_t state
+
