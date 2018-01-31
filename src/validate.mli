@@ -1,6 +1,8 @@
-(** A module for organizing validations of data structures.  Allows standardized ways of
-    checking for conditions, and keeps track of the location of errors by keeping a path
-    to each error found.  Thus, if you were validating the following datastructure:
+(** A module for organizing validations of data structures.
+
+    Allows standardized ways of checking for conditions, and keeps track of the location
+    of errors by keeping a path to each error found. Thus, if you were validating the
+    following datastructure:
 
     {[
       { foo = 3;
@@ -14,9 +16,9 @@
     {v bar.blue.Snoot : value -6 <= bound 0 v}
 
     By convention, the validations for a type defined in module [M] appear in module [M],
-    and have their name prefixed by [validate_].  E.g. [Int.validate_positive].
+    and have their name prefixed by [validate_]. E.g., [Int.validate_positive].
 
-    Here's an example of how you would use validate with a record.
+    Here's an example of how you would use [validate] with a record:
 
     {[
       type t =
@@ -57,27 +59,31 @@ open! Import
 (** The result of a validation.  This effectively contains the list of errors, qualified
     by their location path *)
 type t
-type 'a check = 'a -> t                 (** to make function signatures easier to read *)
+type 'a check = 'a -> t                 (** To make function signatures easier to read. *)
 
-val pass      : t                       (** A result containing no errors *)
+(** A result containing no errors. *)
+val pass      : t
 
-val fail      : string -> t             (** A result containing a single error *)
+(** A result containing a single error. *)
+val fail      : string -> t
 
 val fails
   :  string
   -> 'a
   -> ('a -> Sexp.t)
   -> t
-val fail_s : Sexp.t -> t     (** this can be used with the [%sexp] extension *)
+val fail_s : Sexp.t -> t     (** This can be used with the [%sexp] extension. *)
 
-(** Like [sprintf] or [failwithf] but produces a [t] instead of a string or exception *)
+(** Like [sprintf] or [failwithf] but produces a [t] instead of a string or exception. *)
 val failf     : ('a, unit, string, t) format4 -> 'a
 
 val combine : t -> t -> t
 
-val of_list   : t list -> t             (** combine multiple results, merging errors *)
+(** Combines multiple results, merging errors. *)
+val of_list   : t list -> t
 
-val name      : string -> t -> t        (** extend location path by one name *)
+(** Extends location path by one name. *)
+val name      : string -> t -> t
 
 val name_list : string -> t list -> t
 
@@ -86,10 +92,10 @@ val name_list : string -> t list -> t
     the type of the value being passed unconditionally irrespective of type.) *)
 val fail_fn : string -> _ check
 
-(** Check for unconditionally passing a bool *)
+(** Checks for unconditionally passing a bool. *)
 val pass_bool : bool check
 
-(** Check for unconditionally passing a unit *)
+(** Checks for unconditionally passing a unit. *)
 val pass_unit : unit check
 
 (** [protect f x] applies the validation [f] to [x], catching any exceptions and returning
@@ -127,26 +133,26 @@ val field_direct_folder
   -> (t list -> ([> `Read], 'record, 'a) Field.t_with_perm -> 'record -> 'a -> t list)
        Staged.t
 
-(** Combine a list of validation functions into one that does all validations. *)
+(** Combines a list of validation functions into one that does all validations. *)
 val all : 'a check list -> 'a check
 
-(** Create a validation function from a function that produces a Result.t *)
+(** Creates a validation function from a function that produces a [Result.t]. *)
 val of_result : ('a -> (unit, string) Result.t) -> 'a check
 
 val of_error : ('a -> unit Or_error.t) -> 'a check
 
-(** Create a validation function from a function that produces a bool *)
+(** Creates a validation function from a function that produces a bool. *)
 val booltest : ('a -> bool) -> if_false:string -> 'a check
 
 (** Validation functions for particular data types. *)
 val pair : fst:'a check -> snd:'b check -> ('a * 'b) check
 
 (** Validates a list, naming each element by its position in the list (where the first
-    position is 1, not 0) *)
+    position is 1, not 0). *)
 val list_indexed : 'a check -> 'a list check
 
 (** Validates a list, naming each element using a user-defined function for computing the
-    name *)
+    name. *)
 val list : name:('a -> string) -> 'a check -> 'a list check
 
 val first_failure : t -> t -> t
@@ -165,5 +171,5 @@ val bounded
   -> 'a check
 
 module Infix : sig
-  val (++) : t -> t -> t (** infix operator for [combine] above *)
+  val (++) : t -> t -> t (** Infix operator for [combine] above. *)
 end

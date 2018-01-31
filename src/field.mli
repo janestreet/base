@@ -19,7 +19,7 @@ end
 type ('perm, 'record, 'field) t_with_perm =
   | Field of ('perm, 'record, 'field) For_generated_code.t
 
-(** A record field with no restriction. *)
+(** A record field with no restrictions. *)
 type ('record, 'field) t = ([ `Read | `Set_and_create], 'record, 'field) t_with_perm
 
 (** A record that can only be read, because it belongs to a private type. *)

@@ -22,6 +22,24 @@ module Hashable = struct
       sexp_of_t : 'a -> Sexp.t;
     }
 
+  (** This function is sound but not complete, meaning that if it returns [true] then it's
+      safe to use the two interchangeably.  If it's [false], you have no guarantees.  For
+      example:
+
+      {[
+        > utop
+        open Core;;
+        let equal (a : 'a Hashtbl_intf.Hashable.t) b =
+          phys_equal a b
+          || (phys_equal a.hash b.hash
+              && phys_equal a.compare b.compare
+              && phys_equal a.sexp_of_t b.sexp_of_t)
+        ;;
+        let a = Hashtbl_intf.Hashable.{ hash; compare; sexp_of_t = Int.sexp_of_t };;
+        let b = Hashtbl_intf.Hashable.{ hash; compare; sexp_of_t = Int.sexp_of_t };;
+        equal a b;;  (* false?! *)
+      ]}
+  *)
   let equal a b =
     phys_equal a b
     || (phys_equal a.hash b.hash

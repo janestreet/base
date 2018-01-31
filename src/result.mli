@@ -49,7 +49,7 @@ val ignore : (_, 'err) t -> (unit, 'err) t
 
 val fail : 'err -> (_, 'err) t
 
-(** e.g. [failf "Couldn't find bloogle %s" (Bloogle.to_string b)] *)
+(** e.g., [failf "Couldn't find bloogle %s" (Bloogle.to_string b)]. *)
 val failf : ('a, unit, string, (_, string) t) format4 -> 'a
 
 val is_ok    : (_, _) t -> bool
@@ -94,12 +94,12 @@ val combine_errors_unit : (unit, 'err) t list -> (unit, 'err list) t
                            (List.map ~f:ric_of_ticker ["AA"; "F"; "CSCO"; "AAPL"]) ]} *)
 val ok_fst : ('ok, 'err) t -> [ `Fst of 'ok | `Snd of 'err ]
 
-(** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false *)
+(** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
 val ok_if_true : bool -> error : 'err -> (unit, 'err) t
 
 val try_with : (unit -> 'a) -> ('a, exn) t
 
-(** [ok_unit = Ok ()], used to avoid allocation as a performance hack *)
+(** [ok_unit = Ok ()], used to avoid allocation as a performance hack. *)
 val ok_unit : (unit, _) t
 
 module Export : sig

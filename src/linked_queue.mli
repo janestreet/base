@@ -1,10 +1,8 @@
-(** This module is a wrapper around OCaml's standard [Queue] module that follows Base
-    idioms and adds some functions.  See [Queue_intf] for documentation of standard queue
-    functions. *)
+(** This module is a Base-style wrapper around OCaml's standard [Queue] module. *)
 
 open! Import
 
-include Queue_intf.S with type 'a t = 'a Linked_queue0.t
+include Queue_intf.S with type 'a t = 'a Caml.Queue.t (** @inline *)
 
 (** [transfer ~src ~dst] adds all of the elements of [src] to the end of [dst], then
     clears [src].  It is equivalent to the sequence:

@@ -1,3 +1,5 @@
+(** Provides type-specific conversion functions to and from [string]. *)
+
 open! Import
 
 module type S = sig

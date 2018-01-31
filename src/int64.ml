@@ -119,14 +119,17 @@ let of_int = Conv.int_to_int64
 let of_int_exn = of_int
 let to_int = Conv.int64_to_int
 let to_int_exn = Conv.int64_to_int_exn
+let to_int_trunc = Conv.int64_to_int_trunc
 let of_int32 = Conv.int32_to_int64
 let of_int32_exn = of_int32
 let to_int32 = Conv.int64_to_int32
 let to_int32_exn = Conv.int64_to_int32_exn
+let to_int32_trunc = Conv.int64_to_int32_trunc
 let of_nativeint = Conv.nativeint_to_int64
 let of_nativeint_exn = of_nativeint
 let to_nativeint = Conv.int64_to_nativeint
 let to_nativeint_exn = Conv.int64_to_nativeint_exn
+let to_nativeint_trunc = Conv.int64_to_nativeint_trunc
 
 include Conv.Make (T)
 

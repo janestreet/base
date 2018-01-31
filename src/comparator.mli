@@ -3,7 +3,7 @@
 
     One of the type parameters is a phantom parameter used to distinguish comparators
     potentially built on different comparison functions.  In particular, we want to
-    distinguish those using polymorphic compare and those using a monomorphic compare. *)
+    distinguish those using polymorphic compare from those using a monomorphic compare. *)
 
 open! Import
 

@@ -43,3 +43,34 @@ let%test_module "Overflow_exn" =
       end)
     ;;
   end)
+
+let%expect_test "[floor_log2]" =
+  let floor_log2 t = print_s [%sexp (floor_log2 t : int)] in
+  show_raise (fun () -> floor_log2 zero);
+  [%expect {|
+    (raised ("[Int.floor_log2] got invalid input" 0)) |}];
+  floor_log2 one;
+  [%expect {|
+    0 |}];
+  for i = 1 to 8 do
+    floor_log2 (i |> of_int);
+  done;
+  [%expect {|
+    0
+    1
+    1
+    2
+    2
+    2
+    2
+    3 |}];
+  floor_log2 (one lsl 61 - one);
+  [%expect {|
+    60 |}];
+  floor_log2 (one lsl 61);
+  [%expect {|
+    61 |}];
+  floor_log2 max_value;
+  [%expect {|
+    61 |}];
+;;

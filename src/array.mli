@@ -1,3 +1,5 @@
+(** Mutable vector of elements of type ['a] with O(1) [get] and  [set] operations. *)
+
 open! Import
 
 type 'a t = 'a array [@@deriving_inline compare, sexp]
@@ -40,36 +42,35 @@ external get : 'a t -> int -> 'a = "%array_safe_get"
 external set : 'a t -> int -> 'a -> unit = "%array_safe_set"
 
 (** Unsafe version of [get].  Can cause arbitrary behavior when used for an out-of-bounds
-    array access *)
+    array access. *)
 external unsafe_get : 'a t -> int -> 'a = "%array_unsafe_get"
 
 (** Unsafe version of [set].  Can cause arbitrary behavior when used for an out-of-bounds
-    array access *)
+    array access. *)
 external unsafe_set : 'a t -> int -> 'a -> unit = "%array_unsafe_set"
 
 (** [create ~len x] creates an array of length [len] with the value [x] populated in
-    each element *)
+    each element. *)
 val create : len:int -> 'a -> 'a t
 
-(** [init n ~f] creates an array of length [n] where the [i]th element is initialized
-    with [f i] (starting at zero) *)
+(** [init n ~f] creates an array of length [n] where the [i]th element (starting at zero)
+    is initialized with [f i]. *)
 val init : int -> f:(int -> 'a) -> 'a t
 
-(** [Array.make_matrix dimx dimy e] returns a two-dimensional array
-    (an array of arrays) with first dimension [dimx] and
-    second dimension [dimy]. All the elements of this new matrix
-    are initially physically equal to [e].
-    The element ([x,y]) of a matrix [m] is accessed
-    with the notation [m.(x).(y)].
+(** [Array.make_matrix dimx dimy e] returns a two-dimensional array (an array of arrays)
+    with first dimension [dimx] and second dimension [dimy]. All the elements of this new
+    matrix are initially physically equal to [e].  The element ([x,y]) of a matrix [m] is
+    accessed with the notation [m.(x).(y)].
 
-    Raise [Invalid_argument] if [dimx] or [dimy] is negative or
-    greater than [Array.max_length].
-    If the value of [e] is a floating-point number, then the maximum
-    size is only [Array.max_length / 2]. *)
+    Raise [Invalid_argument] if [dimx] or [dimy] is negative or greater than
+    [Array.max_length].
+
+    If the value of [e] is a floating-point number, then the maximum size is only
+    [Array.max_length / 2]. *)
 val make_matrix : dimx:int -> dimy:int -> 'a -> 'a t t
 
-(** [Array.append v1 v2] returns a fresh array containing the
-    concatenation of the arrays [v1] and [v2]. *)
+(** [Array.append v1 v2] returns a fresh array containing the concatenation of the arrays
+    [v1] and [v2]. *)
 val append : 'a t -> 'a t -> 'a t
 
 (** Like [Array.append], but concatenates a list of arrays. *)
@@ -79,11 +80,11 @@ val concat : 'a t list -> 'a t
     containing the same elements as [a]. *)
 val copy : 'a t -> 'a t
 
-(** [Array.fill a ofs len x] modifies the array [a] in place,
-    storing [x] in elements number [ofs] to [ofs + len - 1].
+(** [Array.fill a ofs len x] modifies the array [a] in place, storing [x] in elements
+    number [ofs] to [ofs + len - 1].
 
-    Raise [Invalid_argument "Array.fill"] if [ofs] and [len] do not
-    designate a valid subarray of [a]. *)
+    Raise [Invalid_argument "Array.fill"] if [ofs] and [len] do not designate a valid
+    subarray of [a]. *)
 val fill : 'a t -> pos:int -> len:int -> 'a -> unit
 
 (** [Array.blit v1 o1 v2 o2 len] copies [len] elements from array [v1], starting at
@@ -101,9 +102,9 @@ include Blit.S1 with type 'a t := 'a t
 (** [Array.of_list l] returns a fresh array containing the elements of [l]. *)
 val of_list : 'a list -> 'a t
 
-(** [Array.map t ~f] applies function [f] to all the elements of [t],
-    and builds an array with the results returned by [f]:
-    [[| f t.(0); f t.(1); ...; f t.(Array.length t - 1) |]]. *)
+(** [Array.map t ~f] applies function [f] to all the elements of [t], and builds an array
+    with the results returned by [f]: [[| f t.(0); f t.(1); ...; f t.(Array.length t - 1)
+    |]]. *)
 val map : 'a t -> f:('a -> 'b) -> 'b t
 
 (** [folding_map] is a version of [map] that threads an accumulator through calls to
@@ -126,8 +127,7 @@ val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 
 val foldi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b) -> 'b
 
-(** [Array.fold_right f a ~init] computes
-    [f a.(0) (f a.(1) ( ... (f a.(n-1) init) ...))],
+(** [Array.fold_right f a ~init] computes [f a.(0) (f a.(1) ( ... (f a.(n-1) init) ...))],
     where [n] is the length of the array [a]. *)
 val fold_right : 'a t -> f:('a -> 'b -> 'b) -> init:'b -> 'b
 
@@ -143,7 +143,7 @@ val stable_sort : 'a t -> cmp:('a -> 'a -> int) -> unit
 val is_sorted : 'a t -> cmp:('a -> 'a -> int) -> bool
 
 (** [is_sorted_strictly xs ~cmp] iff [is_sorted xs ~cmp] and no two consecutive elements
-    in [xs] are equal according to [cmp] *)
+    in [xs] are equal according to [cmp]. *)
 val is_sorted_strictly : 'a t -> cmp:('a -> 'a -> int) -> bool
 
 (** Like [List.concat_map], [List.concat_mapi]. *)
@@ -162,17 +162,16 @@ val transpose     : 'a t t -> 'a t t option
 val transpose_exn : 'a t t -> 'a t t
 
 
-(** [normalize array index] returns a new index into the array such that if index is
-    less than zero, the returned index will "wrap around" -- i.e. array.(normalize array
-    (-1)) returns the last element of the array. *)
+(** [normalize array index] returns a new index into the array such that if the index is
+    less than zero, the returned index will "wrap around" -- i.e., [array.(normalize array
+    (-1))] returns the last element of the array. *)
 val normalize : 'a t -> int -> int
 
 (** [slice array start stop] returns a fresh array including elements [array.(start)]
     through [array.(stop-1)] with the small tweak that the start and stop positions are
-    normalized and a stop index of 0 means the same thing a stop index of [Array.length
-    array].  In summary, it's mostly like the slicing in Python or Matlab.  One
-    difference is that a stop value of 0 here is like not specifying a stop value in
-    Python. *)
+    normalized and a stop index of 0 means the same thing as a stop index of [Array.length
+    array].  In summary, it's mostly like the slicing in Python or Matlab.  One difference
+    is that a stop value of 0 here is like not specifying a stop value in Python. *)
 val slice : 'a t -> int -> int -> 'a t
 
 (** Array access with [normalize]d index. *)
@@ -202,7 +201,9 @@ val existsi : 'a t -> f:(int -> 'a -> bool) -> bool
 (** Like [count], but passes the index as an argument. *)
 val counti : 'a t -> f:(int -> 'a -> bool) -> int
 
-(** Functions with 2 suffix raise an exception if the lengths aren't the same. *)
+(** Functions with the 2 suffix raise an exception if the lengths of the two given arrays
+    aren't the same. *)
+
 val iter2_exn : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit
 
 val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
@@ -224,43 +225,43 @@ val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 (** [swap arr i j] swaps the value at index [i] with that at index [j]. *)
 val swap : 'a t -> int -> int -> unit
 
-(** [rev_inplace t] reverses [t] in place *)
+(** [rev_inplace t] reverses [t] in place. *)
 val rev_inplace : 'a t -> unit
 
-(** [of_list_rev l] converts from list then reverses in place *)
+(** [of_list_rev l] converts from list then reverses in place. *)
 val of_list_rev : 'a list -> 'a t
 
-(** [of_list_map l ~f] is the same as [of_list (List.map l ~f)] *)
+(** [of_list_map l ~f] is the same as [of_list (List.map l ~f)]. *)
 val of_list_map : 'a list -> f:('a -> 'b) -> 'b t
 
-(** [of_list_rev_map l ~f] is the same as [rev_inplace (of_list_map l ~f)] *)
+(** [of_list_rev_map l ~f] is the same as [rev_inplace (of_list_map l ~f)]. *)
 val of_list_rev_map : 'a list -> f:('a -> 'b) -> 'b t
 
 (** [replace t i ~f] = [t.(i) <- f (t.(i))]. *)
 val replace : 'a t -> int -> f:('a -> 'a) -> unit
 
-(** modifies an array in place -- [ar.(i)] will be set to [f(ar.(i))] *)
+(** Modifies an array in place -- [ar.(i)] will be set to [f(ar.(i))]. *)
 val replace_all : 'a t -> f:('a -> 'a) -> unit
 
-(** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true.
-    It raises [Not_found] if there is no such [a]. *)
+(** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true.  It raises
+    [Not_found] if there is no such [a]. *)
 val find_exn : 'a t -> f:('a -> bool) -> 'a
 
-(** Returns the first evaluation of [f] that returns [Some].
-    Raises [Not_found] if [f] always returns [None].  *)
+(** Returns the first evaluation of [f] that returns [Some].  Raises [Not_found] if [f]
+    always returns [None].  *)
 val find_map_exn : 'a t -> f:('a -> 'b option) -> 'b
 
 (** [findi t f] returns the first index [i] of [t] for which [f i t.(i)] is true *)
 val findi : 'a t -> f:(int -> 'a -> bool) -> (int * 'a) option
 
-(** [findi_exn t f] returns the first index [i] of [t] for which [f i t.(i)] is
-    true.  It raises [Not_found] if there is no such element. *)
+(** [findi_exn t f] returns the first index [i] of [t] for which [f i t.(i)] is true.  It
+    raises [Not_found] if there is no such element. *)
 val findi_exn : 'a t -> f:(int -> 'a -> bool) -> int * 'a
 
-(** [find_mapi t f] is the like [find_map] but passes the index as an argument. *)
+(** [find_mapi t f] is like [find_map] but passes the index as an argument. *)
 val find_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b option
 
-(** [find_mapi_exn] is the like [find_map_exn] but passes the index as an argument. *)
+(** [find_mapi_exn] is like [find_map_exn] but passes the index as an argument. *)
 val find_mapi_exn : 'a t -> f:(int -> 'a -> 'b option) -> 'b
 
 (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive elements
@@ -268,21 +269,21 @@ val find_mapi_exn : 'a t -> f:(int -> 'a -> 'b option) -> 'b
     they appear in [t]. *)
 val find_consecutive_duplicate : 'a t -> equal:('a -> 'a -> bool) -> ('a * 'a) option
 
-(** [reduce f [a1; ...; an]] is [Some (f (... (f (f a1 a2) a3) ...) an)].
-    Returns [None] on the empty array. *)
+(** [reduce f [a1; ...; an]] is [Some (f (... (f (f a1 a2) a3) ...) an)].  Returns [None]
+    on the empty array. *)
 val reduce     : 'a t -> f:('a -> 'a -> 'a) -> 'a option
 val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 
 (** [permute ?random_state t] randomly permutes [t] in place.
 
-    [permute] side affects [random_state] by repeated calls to [Random.State.int].
-    If [random_state] is not supplied, [permute] uses [Random.State.default]. *)
+    [permute] side-effects [random_state] by repeated calls to [Random.State.int].  If
+    [random_state] is not supplied, [permute] uses [Random.State.default]. *)
 val permute : ?random_state:Random.State.t -> 'a t -> unit
 
 (** [random_element ?random_state t] is [None] if [t] is empty, else it is [Some x] for
     some [x] chosen uniformly at random from [t].
 
-    [random_element] side affects [random_state] by calling [Random.State.int]. If
+    [random_element] side-effects [random_state] by calling [Random.State.int]. If
     [random_state] is not supplied, [random_element] uses [Random.State.default]. *)
 val random_element     : ?random_state:Random.State.t -> 'a t -> 'a option
 val random_element_exn : ?random_state:Random.State.t -> 'a t -> 'a
@@ -311,11 +312,11 @@ val equal : 'a t -> 'a t -> equal:('a -> 'a -> bool) -> bool
 
     [unsafe_truncate] raises if [len <= 0 || len > length t].
 
-    It is not safe to do [unsafe_truncate] in the middle of a call to [map],
-    [iter], etc, or if you have given this array out to anything not under your
-    control: in general, code can rely on an array's length not changing.
-    One must ensure code that calls [unsafe_truncate] on an array does not
-    interfere with other code that manipulates the array. *)
+    It is not safe to do [unsafe_truncate] in the middle of a call to [map], [iter], etc.,
+    or if you have given this array out to anything not under your control: in general,
+    code can rely on an array's length not changing.  One must ensure code that calls
+    [unsafe_truncate] on an array does not interfere with other code that manipulates the
+    array. *)
 val unsafe_truncate : _ t -> len:int -> unit
 
 

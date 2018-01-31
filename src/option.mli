@@ -1,3 +1,5 @@
+(** Option type. *)
+
 open! Import
 
 type 'a t = 'a option [@@deriving_inline compare, hash, sexp]
@@ -19,27 +21,26 @@ include Container.S1 with type 'a t := 'a t
 include Equal.S1     with type 'a t := 'a t
 include Invariant.S1 with type 'a t := 'a t
 
-(** Options form a monad, where [return x =  Some x],
-    [(None >>= f) = None], and [(Some x >>= f) = f x]. *)
+(** Options form a monad, where [return x = Some x], [(None >>= f) = None], and [(Some x
+    >>= f) = f x]. *)
 include Monad.S with type 'a t := 'a t
 
-(** [is_none t] returns true iff t = None. *)
+(** [is_none t] returns true iff [t = None]. *)
 val is_none : 'a t -> bool
 
-(** [is_some t] returns true iff t = Some x. *)
+(** [is_some t] returns true iff [t = Some x]. *)
 val is_some : 'a t -> bool
 
-(** [value_map ~default ~f] is the same as [function Some x -> f x | None -> default] *)
+(** [value_map ~default ~f] is the same as [function Some x -> f x | None -> default]. *)
 val value_map : 'a t -> default:'b -> f:('a -> 'b) -> 'b
 
-(** [map2 o f] map 'a option and 'b option to a 'c option using ~f *)
+(** [map2 o f] maps ['a option] and ['b option] to a ['c option] using [~f]. *)
 val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 
-(** [call x f] run optional function on argument *)
+(** [call x f] runs an optional function [~f] on the argument. *)
 val call : 'a -> f:('a -> unit) t -> unit
 
-(** [value None ~default] = [default]
-    [value (Some x) ~default] = [x] *)
+(** [value None ~default] = [default] [value (Some x) ~default] = [x] *)
 val value : 'a t -> default:'a -> 'a
 
 (** [value_exn (Some x)] = [x].  [value_exn None] raises an error whose contents contain

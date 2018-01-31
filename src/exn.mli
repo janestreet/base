@@ -1,4 +1,6 @@
-(** [sexp_of_t] uses a global table of sexp converters.  To register a converter for a new
+(** Exceptions.
+
+    [sexp_of_t] uses a global table of sexp converters.  To register a converter for a new
     exception, add [[@@deriving_inline sexp][@@@end]] to its definition. If no suitable converter is
     found, the standard converter in [Printexc] will be used to generate an atomic
     S-expression. *)
@@ -42,9 +44,9 @@ val reraise : t -> string -> _
     ]} *)
 val reraisef : t -> ('a, unit, string, unit -> _) format4 -> 'a
 
-val to_string      : t -> string (** human-readable, multi-lines *)
+val to_string      : t -> string (** Human-readable, multi-line. *)
 
-val to_string_mach : t -> string (** machine format, single-line *)
+val to_string_mach : t -> string (** Machine format, single-line. *)
 
 (** Executes [f] and afterwards executes [finally], whether [f] throws an exception or
     not. *)
@@ -53,18 +55,18 @@ val protectx : f:('a -> 'b) -> 'a -> finally:('a -> unit) -> 'b
 val protect : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
 
 (** [handle_uncaught ~exit f] catches an exception escaping [f] and prints an error
-    message to stderr.  Exits with return code 1 if [exit] is [true].  Otherwise returns
-    unit.
+    message to stderr.  Exits with return code 1 if [exit] is [true], and returns unit
+    otherwise.
 
-    Note that since OCaml 4.02.0, it is not needed to use this at the entry point of your
-    program as the OCaml runtime will do better than this function. *)
+    Note that since OCaml 4.02.0, you don't need to use this at the entry point of your
+    program, as the OCaml runtime will do better than this function. *)
 val handle_uncaught : exit:bool -> (unit -> unit) -> unit
 
 (** [handle_uncaught_and_exit f] returns [f ()], unless that raises, in which case it
     prints the exception and exits nonzero. *)
 val handle_uncaught_and_exit : (unit -> 'a) -> 'a
 
-(** Traces exceptions passing through.  Useful because in practice backtraces still don't
+(** Traces exceptions passing through.  Useful because in practice, backtraces still don't
     seem to work.
 
     Example:
@@ -80,8 +82,8 @@ val reraise_uncaught : string -> (unit -> 'a) -> 'a
     tests. *)
 val does_raise : (unit -> _) -> bool
 
-(** User code never calls this.  It is called in [std_kernel.ml], as a top-level side
-    effect, to change the display of exceptions and install an uncaught-exception
+(** User code never calls this.  It is called in [std_kernel.ml] as a top-level side
+    effect to change the display of exceptions and install an uncaught-exception
     printer. *)
 val initialize_module : unit -> unit
 

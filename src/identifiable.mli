@@ -2,10 +2,10 @@
     to act as names or identifiers.
 
     Modules that satisfy [Identifiable] can be printed and parsed (both through string and
-    s-expression converters), can be used in hash-based and comparison-based
-    containers (e.g., hashtables and maps)
+    s-expression converters) and can be used in hash-based and comparison-based
+    containers (e.g., hashtables and maps).
 
-    Also, this module provides functors for conveniently constructing identifiable
+    This module also provides functors for conveniently constructing identifiable
     modules. *)
 
 open! Import
@@ -55,7 +55,7 @@ module Make (M : sig
     end
     [@@@end]
     include Stringable.S with type t := t
-    val module_name : string  (** for registering the pretty printer *)
+    val module_name : string  (** For registering the pretty printer. *)
   end) : S
   with type t := M.t
 

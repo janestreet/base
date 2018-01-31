@@ -103,13 +103,17 @@ let max_value_30_bits = 0x3FFF_FFFF
 module Conv = Int_conversions
 let of_int32 = Conv.int32_to_int
 let of_int32_exn = Conv.int32_to_int_exn
+let of_int32_trunc = Conv.int32_to_int_trunc
 let to_int32 = Conv.int_to_int32
 let to_int32_exn = Conv.int_to_int32_exn
+let to_int32_trunc = Conv.int_to_int32_trunc
 let of_int64 = Conv.int64_to_int
 let of_int64_exn = Conv.int64_to_int_exn
+let of_int64_trunc = Conv.int64_to_int_trunc
 let to_int64 = Conv.int_to_int64
 let of_nativeint = Conv.nativeint_to_int
 let of_nativeint_exn = Conv.nativeint_to_int_exn
+let of_nativeint_trunc = Conv.nativeint_to_int_trunc
 let to_nativeint = Conv.int_to_nativeint
 let to_nativeint_exn = to_nativeint
 

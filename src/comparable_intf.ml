@@ -66,6 +66,57 @@ end
     Then use [Comparable.Make] in the struct (see comparable.mli for an example). *)
 
 module type Comparable = sig
+  (** Defines functors for making modules comparable. *)
+
+  (** Usage example:
+
+      {[
+        module Foo = struct
+          module T = struct
+            type t = ... [@@deriving_inline compare, sexp][@@@end]
+          end
+          include T
+          include Comparable.Make (T)
+        end
+      ]}
+
+      Then include [Comparable.S] in the signature
+
+      {[
+        module Foo : sig
+          type t = ...
+          include Comparable.S with type t := t
+        end
+      ]}
+
+      To add an [Infix] submodule:
+
+      {[
+        module C = Comparable.Make (T)
+        include C
+        module Infix = (C : Comparable.Infix with type t := t)
+      ]}
+
+      A common pattern is to define a module [O] with a restricted signature. It aims to be
+      (locally) opened to bring useful operators into scope without shadowing unexpected
+      variable names. E.g., in the [Date] module:
+
+      {[
+        module O = struct
+          include (C : Comparable.Infix with type t := t)
+          let to_string t = ..
+        end
+      ]}
+
+      Opening [Date] would shadow [now], but opening [Date.O] doesn't:
+
+      {[
+        let now = .. in
+        let someday = .. in
+        Date.O.(now > someday)
+      ]} *)
+
+
   module type Infix               = Infix
   module type S                   = S
   module type Polymorphic_compare = Polymorphic_compare
@@ -92,48 +143,6 @@ module type Comparable = sig
          [@@@end]
          val component : t -> C.t
        end) : S with type t := T.t
-
-  (** Usage example:
-
-      {[
-        module Foo = struct
-          module T = struct
-            type t = ... [@@deriving_inline compare, sexp][@@@end]
-          end
-          include T
-          include Comparable.Make (T)
-        end
-      ]}
-
-      Then include [Comparable.S] in the signature (see comparable_intf.mli for an
-      example).
-
-      To add an [Infix] submodule:
-
-      {[
-        module C = Comparable.Make (T)
-        include C
-        module Infix = (C : Comparable.Infix with type t := t)
-      ]}
-
-      Common pattern: Define a module [O] with a restricted signature.  It aims to be
-      (locally) opened to bring useful operators into scope without shadowing unexpected
-      variable names.  E.g. in the [Date] module:
-
-      {[
-        module O = struct
-          include (C : Comparable.Infix with type t := t)
-          let to_string t = ..
-        end
-      ]}
-
-      Opening [Date] would shadow [now], but opening [Date.O] doesn't:
-
-      {[
-        let now = .. in
-        let someday = .. in
-        Date.O.(now > someday)
-      ]} *)
 
   module Make (T : sig
       type t [@@deriving_inline compare, sexp_of]

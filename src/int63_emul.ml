@@ -59,7 +59,9 @@ module W : sig
   val max_value : t
 
   val to_int64 : t -> Caml.Int64.t
+  val of_int64 : Caml.Int64.t -> t option
   val of_int64_exn : Caml.Int64.t -> t
+  val of_int64_trunc : Caml.Int64.t -> t
 
   val compare : t -> t -> int
 end = struct
@@ -70,6 +72,10 @@ end = struct
     (* Raises if the int64 value does not fit on int63. *)
     Conv.int64_fit_on_int63_exn x;
     Caml.Int64.mul x 2L
+  let wrap x =
+    if Conv.int64_is_representable_as_int63 x
+    then Some (Caml.Int64.mul x 2L)
+    else None
   let wrap_modulo x =
     Caml.Int64.mul x 2L
   let unwrap x =
@@ -108,7 +114,9 @@ end = struct
   let popcount x = Popcount.int64_popcount x
 
   let to_int64 t = unwrap t
+  let of_int64 t = wrap t
   let of_int64_exn t = wrap_exn t
+  let of_int64_trunc t = wrap_modulo t
 
   let t_of_sexp x = wrap_exn (int64_of_sexp x)
   let sexp_of_t x = sexp_of_int64 (unwrap x)
@@ -238,7 +246,9 @@ let of_float t =
     Printf.invalid_argf "Int63.of_float: argument (%f) is out of range or NaN"
       (Float0.box t)
       ()
+let of_int64 = of_int64
 let of_int64_exn = of_int64_exn
+let of_int64_trunc = of_int64_trunc
 let to_int64 = to_int64
 
 include Comparable.Validate_with_zero (struct
@@ -294,13 +304,20 @@ let of_int x = wrap_exn (Conv.int_to_int64 x)
 let of_int_exn x = of_int x
 let to_int x = Conv.int64_to_int (unwrap x)
 let to_int_exn x = Conv.int64_to_int_exn (unwrap x)
+let to_int_trunc x = Conv.int64_to_int_trunc (unwrap x)
 
 let of_int32 x = wrap_exn (Conv.int32_to_int64 x)
 let of_int32_exn x = of_int32 x
+let to_int32 x = Conv.int64_to_int32 (unwrap x)
 let to_int32_exn x = Conv.int64_to_int32_exn (unwrap x)
+let to_int32_trunc x = Conv.int64_to_int32_trunc (unwrap x)
 
+let of_nativeint x = of_int64 (Conv.nativeint_to_int64 x)
 let of_nativeint_exn x = wrap_exn (Conv.nativeint_to_int64 x)
+let of_nativeint_trunc x = of_int64_trunc (Conv.nativeint_to_int64 x)
+let to_nativeint x = Conv.int64_to_nativeint (unwrap x)
 let to_nativeint_exn x = Conv.int64_to_nativeint_exn (unwrap x)
+let to_nativeint_trunc x = Conv.int64_to_nativeint_trunc (unwrap x)
 
 include Conv.Make (T)
 

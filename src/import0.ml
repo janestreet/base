@@ -35,6 +35,8 @@ type 'a ref = 'a Caml.ref = { mutable contents: 'a }
 
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)
 module Caml = struct
+
+
   (** @canonical Caml.Arg *)
   module Arg       = Caml.Arg
 
@@ -146,19 +148,12 @@ let ( /.  ) = Caml.( /.  )
 
 (** @canonical Base.Polymorphic_compare *)
 module Polymorphic_compare = struct
-  (* Polymorphic compiler primitives can't be aliases as this doesn't play well with
-     inlining.  When aliased without a type annotation, the compiler will implement them
-     using the generic code doing a C call.  And it is this code that will be inlined. As
-     a result we have to copy the [external ...] declaration here.
+  (** Primitives for polymorphic compare. *)
 
-     {[
-       let ( <   ) = Caml.( <   )
-       let ( <=  ) = Caml.( <=  )
-       let ( <>  ) = Caml.( <>  )
-       let ( =   ) = Caml.( =   )
-       let ( >   ) = Caml.( >   )
-       let ( >=  ) = Caml.( >=  )
-     ]} *)
+  (*_ Polymorphic compiler primitives can't be aliases as this doesn't play well with
+    inlining. (If aliased without a type annotation, the compiler would implement them
+    using the generic code doing a C call, and it's this code that would be inlined.) As a
+    result we have to copy the [external ...] declaration here. *)
   external ( < )     : 'a -> 'a -> bool = "%lessthan"
   external ( <= )    : 'a -> 'a -> bool = "%lessequal"
   external ( <> )    : 'a -> 'a -> bool = "%notequal"

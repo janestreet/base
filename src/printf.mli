@@ -1,4 +1,7 @@
+(** Functions for formatted output. *)
+
 open! Import0
+
 
 val ifprintf : 'a ->            ('r, 'a, 'c, unit)        format4 -> 'r
 val sprintf  :                  ('r, unit, string)        format  -> 'r
@@ -9,8 +12,8 @@ val kbprintf : (Caml.Buffer.t -> 'a) -> Caml.Buffer.t -> ('r, Caml.Buffer.t, uni
 
 (** {6 Formatting error and exit functions}
 
-    These functions have polymorphic return type, since they do not return.  Naively, this
-    doesn't mix well with variadic functions: if you define, say,
+    These functions have a polymorphic return type, since they do not return.  Naively,
+    this doesn't mix well with variadic functions: if you define, say,
 
     {[
       let f fmt = ksprintf (fun s -> failwith s) fmt
@@ -25,9 +28,9 @@ val kbprintf : (Caml.Buffer.t -> 'a) -> Caml.Buffer.t -> ('r, Caml.Buffer.t, uni
     in a useful way) so they serve as an effective signpost for
     "end of formatting arguments". *)
 
-(** raises Failure *)
+(** Raises [Failure]. *)
 val failwithf : ('r, unit, string, unit -> _) format4 -> 'r
 
-(** raises Invalid_arg *)
+(** Raises [Invalid_arg]. *)
 val invalid_argf : ('r, unit, string, unit -> _) format4 -> 'r
 

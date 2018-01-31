@@ -764,6 +764,21 @@ let reduce_exn s ~f =
   | None -> failwith "Sequence.reduce_exn"
   | Some res -> res
 
+let group (Sequence (s, next)) ~break =
+  unfold_step ~init:(Some ([], s)) ~f:(function
+    | None          -> Done
+    | Some (acc, s) ->
+      match acc, next s with
+      | _,                Skip s         -> Skip (Some (acc, s))
+      | [],               Done           -> Done
+      | acc,              Done           -> Yield (List.rev acc, None)
+      | [],               Yield (cur, s) -> Skip (Some ([cur], s))
+      | prev :: _ as acc, Yield (cur, s) ->
+        if break prev cur
+        then Yield (List.rev acc, Some ([cur], s))
+        else Skip (Some (cur :: acc, s)))
+;;
+
 let find_consecutive_duplicate (Sequence(s, next)) ~equal =
   let rec loop last_elt s =
     match next s with

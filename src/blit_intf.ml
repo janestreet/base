@@ -90,7 +90,6 @@ module type Sequence1 = sig
 end
 
 module type Blit = sig
-
   type nonrec ('src, 'dst) blit  = ('src, 'dst) blit
   type nonrec ('src, 'dst) blito = ('src, 'dst) blito
   type nonrec ('src, 'dst) sub   = ('src, 'dst) sub

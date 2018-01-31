@@ -1,4 +1,4 @@
-(** Character operations. *)
+(** A type for 8-bit characters. *)
 
 open! Import
 
@@ -20,27 +20,27 @@ include Identifiable.S   with type t := t
 
 module O : Comparisons.Infix with type t := t
 
-(** Return the ASCII code of the argument. *)
+(** Returns the ASCII code of the argument. *)
 val to_int : t -> int
 
-(** Return the character with the given ASCII code or [None] is the argument is outside
+(** Returns the character with the given ASCII code or [None] is the argument is outside
     the range 0 to 255. *)
 val of_int : int -> t option
 
-(** Return the character with the given ASCII code.  Raise [Failure] if the argument is
-    outside 0 to 255. *)
+(** Returns the character with the given ASCII code. Raises [Failure] if the argument is
+    outside the range 0 to 255. *)
 val of_int_exn : int -> t
 
 val unsafe_of_int : int -> t
 
-(** Return a string representing the given character, with special characters escaped
-    following the lexical conventions of Objective Caml. *)
+(** Returns a string representing the given character, with special characters escaped
+    following the lexical conventions of OCaml. *)
 val escaped : t -> string
 
-(** Convert the given character to its equivalent lowercase character. *)
+(** Converts the given character to its equivalent lowercase character. *)
 val lowercase : t -> t
 
-(** Convert the given character to its equivalent uppercase character. *)
+(** Converts the given character to its equivalent uppercase character. *)
 val uppercase : t -> t
 
 (** '0' - '9' *)
@@ -64,10 +64,10 @@ val is_print : t -> bool
 (** ' ' or '\t' or '\r' or '\n' *)
 val is_whitespace : t -> bool
 
-(** Return [Some i] if [is_digit c] and [None] otherwise. *)
+(** Returns [Some i] if [is_digit c] and [None] otherwise. *)
 val get_digit : t -> int option
 
-(** Return [i] if [is_digit c].  Raises [Failure] otherwise. *)
+(** Returns [i] if [is_digit c] and raises [Failure] otherwise. *)
 val get_digit_exn : t -> int
 
 val min_value : t

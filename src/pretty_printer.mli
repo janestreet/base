@@ -7,9 +7,9 @@
       val pp : Format.formatter -> t -> unit
     ]}
 
-    The names are actually OCaml identifier names, e.g. "Base.Int.pp".  Code for
+    The names are actually OCaml identifier names, e.g., "Base.Int.pp".  Code for
     building toplevels (this code is not in Base) evaluates the strings to yield the
-    pretty printers and register them with OCaml runtime. *)
+    pretty printers and register them with the OCaml runtime. *)
 
 open! Import
 

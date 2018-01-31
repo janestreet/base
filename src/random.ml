@@ -67,15 +67,22 @@ module State = struct
   ;;
 
   let int_on_64bits t bound =
-    if bound < (1 lsl 30)
+    if bound <= 0x3FFFFFFF (* (1 lsl 30) - 1 *)
     then int t bound
     else Caml.Int64.to_int (int64 t (Caml.Int64.of_int bound))
+  ;;
+
+  let int_on_32bits t bound =
+    (* Not always true with the JavaScript backend. *)
+    if bound <= 0x3FFFFFFF (* (1 lsl 30) - 1 *)
+    then int t bound
+    else Caml.Int32.to_int (int32 t (Caml.Int32.of_int bound))
   ;;
 
   let int =
     match Word_size.word_size with
     | W64 -> int_on_64bits
-    | W32 -> State.int
+    | W32 -> int_on_32bits
   ;;
 
   let full_range_int64 =

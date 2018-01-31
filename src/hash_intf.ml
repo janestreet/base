@@ -1,35 +1,34 @@
-(** [Hash_intf.S] is the interface which a hash-function must support
+(** [Hash_intf.S] is the interface which a hash function must support.
 
     The functions of [Hash_intf.S] are only allowed to be used in specific sequence:
 
-    alloc, reset ?seed, fold_..*, get_hash_value,
-    reset ?seed, fold_..*, get_hash_value, ...
+    [alloc], [reset ?seed], [fold_..*], [get_hash_value], [reset ?seed], [fold_..*],
+    [get_hash_value], ...
 
     (The optional [seed]s passed to each reset may differ.)
 
     The chain of applications from [reset] to [get_hash_value] must be done in a
-    single-threaded manner (you can't use fold_* on a state that's been used before)
+    single-threaded manner (you can't use [fold_*] on a state that's been used
+    before). More precisely, [alloc ()] creates a new family of states. All functions that
+    take [t] and produce [t] return a new state from the same family.
 
-    More precisely, [alloc ()] creates a new family of states. All functions that take [t]
-    and produce [t] return a new state from the same family.
+    At any point in time, at most one state in the family is "valid". The other states are
+    "invalid".
 
-    At any point in time, at most one state in the family is "valid". The other states
-    are "invalid".
-
-    The state returned by [alloc] is invalid.
-    The state returned by [reset] is valid (all of the other states become invalid).
-    The [fold_*] family of functions requres a valid state and produces a valid state
+    - The state returned by [alloc] is invalid.
+    - The state returned by [reset] is valid (all of the other states become invalid).
+    - The [fold_*] family of functions requires a valid state and produces a valid state
     (thereby making the input state invalid).
-    [get_hash_value] requires a valid state and makes it invalid.
+    - [get_hash_value] requires a valid state and makes it invalid.
 
-    These requirements are currently formally encoded in [Check_initialized_correctly]
+    These requirements are currently formally encoded in the [Check_initialized_correctly]
     module in bench/bench.ml. *)
 
 open! Import0
 
 module type S = sig
 
-  (** Name of the hash-function, e.g. "internalhash", "siphash" *)
+  (** Name of the hash-function, e.g., "internalhash", "siphash" *)
   val description : string
 
   (** [state] is the internal hash-state used by the hash function. *)
@@ -54,7 +53,7 @@ module type S = sig
       default-seed. Argument [state] may be mutated. Should not allocate. *)
   val reset : ?seed:seed -> state -> state
 
-  (** [hash_value] The type of hash values, returned by [get_hash_value] *)
+  (** [hash_value] The type of hash values, returned by [get_hash_value]. *)
   type hash_value
 
   (** [get_hash_value] extracts a hash-value from the hash-state. *)
@@ -123,10 +122,11 @@ module type Full = sig
 
   type 'a folder = state -> 'a -> state
 
-  (** [create ?seed ()] is a convenience.  Equivalent to [reset ?seed (alloc ())] *)
+  (** [create ?seed ()] is a convenience.  Equivalent to [reset ?seed (alloc ())]. *)
   val create : ?seed:seed -> unit -> state
 
-  (** [of_fold fold] constructs a standard hash function from an existing fold function *)
+  (** [of_fold fold] constructs a standard hash function from an existing fold
+      function. *)
   val of_fold : (state -> 'a -> state) -> ('a -> hash_value)
 
   module Builtin : Builtin_intf
@@ -153,40 +153,40 @@ module type Hash = sig
      and type state      = Hash.state
      and type seed       = Hash.seed
 
-  (**
-     The code of ppx_hash is agnostic to the choice of hash algorithm that is used. However,
-     it is not currently possible to mix various choices of hash algorithms in a given code
-     base.
+  (** The code of [ppx_hash] is agnostic to the choice of hash algorithm that is
+      used. However, it is not currently possible to mix various choices of hash algorithms
+      in a given code base.
 
-     We experimented with:
-     - custom hash algorithms implemented in OCaml (a) and C (b);
-     - OCaml's internal hash function (c) (which is a custom version of Murmur3, implemented
-     in C)
-     - siphash, a modern hash function implemented in C (d).
+      We experimented with:
+      - (a) custom hash algorithms implemented in OCaml and
+      - (b) in C;
+      - (c) OCaml's internal hash function (which is a custom version of Murmur3,
+      implemented in C);
+      - (d) siphash, a modern hash function implemented in C.
 
-     Our findings were as follows:
+      Our findings were as follows:
 
-     - Implementing our own custom hash algorithms in OCaml and C yielded very little
-     performance improvement over the (c) proposal, without providing the benefit of being a
-     peer-reviewed, widely used hash function.
+      - Implementing our own custom hash algorithms in OCaml and C yielded very little
+      performance improvement over the (c) proposal, without providing the benefit of being
+      a peer-reviewed, widely used hash function.
 
-     - Siphash (a modern hash function with an internal state of 32 bytes) has a worse
-     performance profile than (a,b,c) above (hashing takes more time). Since its internal
-     state is bigger than an OCaml immediate value, one must either manage allocation of
-     such state explicitly, or paying the cost of allocation each time a hash is computed.
-     While being a supposedly good hash function (with good hash quality), this quality was
-     not translated in measurable improvemenets in our macro benchmarks. (Also, based on the
-     data available at the time of writing, it's unclear that other hash algorithms in this
-     class would be more than marginally faster.)
+      - Siphash (a modern hash function with an internal state of 32 bytes) has a worse
+      performance profile than (a,b,c) above (hashing takes more time). Since its internal
+      state is bigger than an OCaml immediate value, one must either manage allocation of
+      such state explicitly, or paying the cost of allocation each time a hash is computed.
+      While being a supposedly good hash function (with good hash quality), this quality was
+      not translated in measurable improvemenets in our macro benchmarks. (Also, based on
+      the data available at the time of writing, it's unclear that other hash algorithms in
+      this class would be more than marginally faster.)
 
-     - By contrast, using the internal combinators of OCaml hash function means that we do
-     not allocate (the internal state of this hash function is 32 bit) and have the same
-     quality and performance as Hashtbl.hash.
+      - By contrast, using the internal combinators of OCaml hash function means that we do
+      not allocate (the internal state of this hash function is 32 bit) and have the same
+      quality and performance as Hashtbl.hash.
 
-     Hence, we are here making the choice of using this Internalhash (that is, Murmur3, the
-     OCaml hash algorithm as of 4.03) as our hash algorithm. It means that the state of the
-     hash function does not need to be preallocated, and makes for simpler use in hash
-     tables and other structures. *)
+      Hence, we are here making the choice of using this Internalhash (that is, Murmur3, the
+      OCaml hash algorithm as of 4.03) as our hash algorithm. It means that the state of the
+      hash function does not need to be preallocated, and makes for simpler use in hash
+      tables and other structures. *)
 
   include Full
     with type state      = private int

@@ -1,5 +1,7 @@
 (** [Ordering] is intended to make code that matches on the result of a comparison
-    more concise and easier to read. For example, instead of writing:
+    more concise and easier to read.
+
+    For example, instead of writing:
 
     {[
       let r = compare x y in

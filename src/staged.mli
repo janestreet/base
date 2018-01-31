@@ -1,6 +1,7 @@
-(** A type for making staging explicit in the type of a function.  For example, you might
-    want to have a function that creates a function for allocating unique identifiers.
-    Rather than using the type:
+(** A type for making staging explicit in the type of a function.
+
+    For example, you might want to have a function that creates a function for allocating
+    unique identifiers.  Rather than using the type:
 
     {[
       val make_id_allocator : unit -> unit -> int

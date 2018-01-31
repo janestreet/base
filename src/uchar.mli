@@ -32,7 +32,7 @@ val pred_exn : t -> t
 (** [is_char t] is [true] iff [n] is in the latin-1 character set. *)
 val is_char : t -> bool
 
-(** [to_char_exn t] is [t] as a [char] if it is in the latin-1 chacter set, and raises
+(** [to_char_exn t] is [t] as a [char] if it is in the latin-1 character set, and raises
     otherwise. *)
 val to_char     : t -> char option
 val to_char_exn : t -> char
@@ -40,11 +40,12 @@ val to_char_exn : t -> char
 (** [of_char c] is [c] as a Unicode character. *)
 val of_char : char -> t
 
-(** [int_is_scalar n] is [true] iff [n] is an Unicode scalar value (i.e. in the ranges
+(** [int_is_scalar n] is [true] iff [n] is an Unicode scalar value (i.e., in the ranges
     [0x0000]...[0xD7FF] or [0xE000]...[0x10FFFF]). *)
 val int_is_scalar : int -> bool
 
-(** [of_scalar_exn n] is [n] as a Unicode character.  Raises if [not (int_is_scalar i)]. *)
+(** [of_scalar_exn n] is [n] as a Unicode character.  Raises if [not (int_is_scalar
+    i)]. *)
 val of_scalar     : int -> t option
 val of_scalar_exn : int -> t
 

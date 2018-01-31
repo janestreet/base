@@ -16,7 +16,7 @@ sig
 end
 [@@@end]
 
-(** We don't use [@@deriving_inline sexp][@@@end] to avoid a circular dependency *)
+(** We don't use [[@@deriving_inline sexp][@@@end]], to avoid a circular dependency. *)
 val sexp_of_t : ('a -> Sexp.t) -> 'a t -> Sexp.t
 val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
 

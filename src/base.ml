@@ -1,8 +1,28 @@
-(** This module is the toplevel of the Base library, it is what you get when you do [open
-    Base].
+(** This module is the toplevel of the Base library; it's what you get when you write
+    [open Base].
 
-    The recommended way to use Base is to build with [-open Base].  Files compiled this
-    way will have the environment described in this file as initial environment. *)
+    The recommended way to use Base is to build with [-open Base]. Files compiled this
+    way will have the environment described in this file as their initial environment.
+
+    Base extends some modules and data structures from the standard library, like [Array],
+    [Buffer], [Bytes], [Char], [Hashtbl], [Int32], [Int64], [Lazy], [List], [Map],
+    [Nativeint], [Printf], [Random], [Set], [String], [Sys], and [Uchar]. One key
+    difference is that Base doesn't use exceptions as much as the standard library and
+    instead makes heavy use of the [Result] type, as in:
+
+    {[ type ('a,'b) result = Ok of 'a | Error of 'b ]}
+
+    Base also adds entirely new modules, most notably:
+
+    - [Comparable], [Comparator], and [Comparisons] in lieu of polymorphic compare.
+    - [Container], which provides a consistent interface across container-like data
+    structures (arrays, lists, strings).
+    - [Result], [Error], and [Or_error], supporting the or-error pattern.
+
+    Broadly the goal of Base is both to be a more complete standard library, with richer
+    APIs, and to be more consistent in its design. For instance, in the standard library
+    some things have modules and others don't; in Base, everything is a module.
+*)
 
 (*_ We hide this from the web docs because the line wrapping is bad, making it
   pretty much inscrutable. *)
@@ -95,7 +115,12 @@ module Option                    = Option
 module Or_error                  = Or_error
 module Ordered_collection_common = Ordered_collection_common
 module Ordering                  = Ordering
+
+(** [Poly] is a convenient shorthand for [Polymorphic_compare] in the common case that one
+    wants to use a polymorphic comparator directly in an expression, e.g., [Poly.equal a
+    b]. *)
 module Poly                      = Poly
+
 module Polymorphic_compare       = Polymorphic_compare
 module Popcount                  = Popcount
 module Pretty_printer            = Pretty_printer
@@ -125,7 +150,7 @@ module With_return               = With_return
 module Word_size                 = Word_size
 
 (* Avoid a level of indirection for uses of the signatures defined in [T]. *)
-include T (** @inline *)
+include T
 
 (* This is a hack so that odoc creates better documentation. *)
 module Sexp = struct
@@ -324,6 +349,7 @@ module Export = struct
   [@@@end]
 
   (** Format stuff *)
+
   type nonrec ('a, 'b, 'c) format = ('a, 'b, 'c) format
   type nonrec ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'd) format4
   type nonrec ('a, 'b, 'c, 'd, 'e, 'f) format6 = ('a, 'b, 'c, 'd, 'e, 'f) format6
@@ -352,13 +378,16 @@ module Export = struct
   type 'a sexp_option = 'a option
 
   (** List operators *)
+
   include List.Infix
 
   (** Int operators and comparisons *)
+
   include Int.O
   include Int_replace_polymorphic_compare
 
   (** Float operators *)
+
   include Float.O_dot
 
   (** Reverse application operator. [x |> g |> f] is equivalent to [f (g (x))]. *)
@@ -369,6 +398,7 @@ module Export = struct
   external ( @@ ) : ('a -> 'b) -> 'a -> 'b = "%apply"
 
   (** Boolean operations *)
+
   (* These need to be declared as an external to get the lazy behavior *)
   external ( && ) : bool -> bool -> bool = "%sequand"
   external ( || ) : bool -> bool -> bool = "%sequor"
@@ -381,6 +411,7 @@ module Export = struct
   let ( ^ ) = String.( ^ )
 
   (** Reference operations *)
+
   (* Declared as an externals so that the compiler skips the caml_modify when possible and
      to keep reference unboxing working *)
   external ( ! ) : 'a ref -> 'a = "%field0"
@@ -388,16 +419,19 @@ module Export = struct
   external ( := ) : 'a ref -> 'a -> unit = "%setfield0"
 
   (** Pair operations *)
+
   let fst = fst
   let snd = snd
 
   (** Exceptions stuff *)
+
   let failwith    = failwith
   let invalid_arg = invalid_arg
   let raise       = raise
   let raise_s     = Error.raise_s
 
   (** Misc *)
+
   let phys_equal = phys_equal
 
   external force : 'a Lazy.t -> 'a = "%lazy_force"

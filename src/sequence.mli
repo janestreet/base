@@ -57,7 +57,7 @@ val next : 'a t -> ('a * 'a t) option
     without producing the next element yet.  [Yield] outputs an element and introduces a
     new state.
 
-    Modifying ['s] doesn't violate any *internal* invariants, but it may violate some
+    Modifying ['s] doesn't violate any {e internal} invariants, but it may violate some
     undocumented expectations.  For example, one might expect that producing an element
     from the same point in the sequence would always give the same value, but if the state
     can mutate, that is not so. *)
@@ -91,10 +91,9 @@ val unfold : init:'s -> f:('s -> ('a * 's) option) -> 'a t
 val unfold_with : 'a t -> init:'s -> f:('s -> 'a -> ('b, 's) Step.t) -> 'b t
 
 (** [unfold_with_and_finish t ~init ~running_step ~inner_finished ~finishing_step] folds a
-    state through [t] to create a new sequence (like
-    [unfold_with t ~init ~f:running_step]), and then continues the new sequence by
-    unfolding the final state (like
-    [unfold_step ~init:(inner_finished final_state) ~f:finishing_step]). *)
+    state through [t] to create a new sequence (like [unfold_with t ~init
+    ~f:running_step]), and then continues the new sequence by unfolding the final state
+    (like [unfold_step ~init:(inner_finished final_state) ~f:finishing_step]). *)
 val unfold_with_and_finish
   :  'a t
   -> init           : 's_a
@@ -103,7 +102,7 @@ val unfold_with_and_finish
   -> finishing_step : ('s_b -> ('b, 's_b) Step.t)
   -> 'b t
 
-(** return the nth element *)
+(** Returns the nth element. *)
 val nth     : 'a t -> int -> 'a option
 val nth_exn : 'a t -> int -> 'a
 
@@ -163,8 +162,8 @@ val merge_with_duplicates
 val hd     : 'a t -> 'a option
 val hd_exn : 'a t -> 'a
 
-(** [tl t] and [tl_eagerly_exn t] immediately evaluate the first element of [t] and return
-    the unevaluated tail. *)
+(** [tl t] and [tl_eagerly_exn t] immediately evaluates the first element of [t] and
+    returns the unevaluated tail. *)
 val tl             : 'a t -> 'a t option
 val tl_eagerly_exn : 'a t -> 'a t
 
@@ -213,6 +212,18 @@ val zip_full: 'a t -> 'b t -> [ `Left of 'a | `Both of 'a * 'b | `Right of 'b ] 
 val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
 
+(** [group l ~break] returns a sequence of lists (i.e., groups) whose concatenation is
+    equal to the original sequence. Each group is broken where [break] returns true on a
+    pair of successive elements.
+
+    Example:
+
+    {[
+      group ~break:(<>) (of_list ['M';'i';'s';'s';'i';'s';'s';'i';'p';'p';'i']) ->
+
+      of_list [['M'];['i'];['s';'s'];['i'];['s';'s'];['i'];['p';'p'];['i']] ]} *)
+val group : 'a t -> break:('a -> 'a -> bool) -> 'a list t
+
 (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive elements
     [(a1, a2)] in [t] such that [equal a1 a2].  They are returned in the same order as
     they appear in [t]. *)
@@ -245,7 +256,7 @@ val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
 val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
 
 (** [filter_opt t] produces the elements of [t] which are not [None].  [filter_opt t] =
-    [filter_map t ~f:ident] *)
+    [filter_map t ~f:ident]. *)
 val filter_opt : 'a option t -> 'a t
 
 (** [sub t ~pos ~len] is the [len]-element subsequence of [t], starting at [pos].  If the
@@ -325,8 +336,8 @@ val cartesian_product : 'a t -> 'b t -> ('a * 'b) t
     [interleaved_cartesian_product] with expensive or side-effecting functions. *)
 val interleaved_cartesian_product : 'a t -> 'b t -> ('a * 'b) t
 
-(** [intersperse xs ~sep] produces [sep] between adjacent elements of [xs].
-    e.g. [intersperse [1;2;3] ~sep:0 = [1;0;2;0;3]] *)
+(** [intersperse xs ~sep] produces [sep] between adjacent elements of [xs], e.g.,
+    [intersperse [1;2;3] ~sep:0 = [1;0;2;0;3]]. *)
 val intersperse : 'a t -> sep:'a -> 'a t
 
 (** [cycle_list_exn xs] repeats the elements of [xs] forever.  If [xs] is empty, it

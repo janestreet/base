@@ -1,6 +1,11 @@
-(** Many functions in [Either] focus on just one constructor.  The [Focused] signature
+(** A type that represents values with two possibilities.
+
+    [Either] can be seen as a generic sum type, the dual of [Tuple].  [First] is neither
+    more important nor less important than [Second].
+
+    Many functions in [Either] focus on just one constructor.  The [Focused] signature
     abstracts over which constructor is the focus.  To use these functions, use the
-    [First] or [Second] modules in [S]. *)
+    [First] or [Second] modules in [S].  *)
 
 open! Import
 
@@ -33,9 +38,6 @@ end
 
 module type Either = sig
 
-  (** This type represents values with two possibilities.  [Either] can be seen as a
-      generic sum type, the dual of [Tuple].  [First] is neither more important nor less
-      important than [Second]. *)
   type ('f, 's) t =
     | First  of 'f
     | Second of 's

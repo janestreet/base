@@ -1,7 +1,3 @@
-(** This file has generic signatures for containers that support indexed iteration (iteri,
-    foldi, ...). In principle, any container that has iter can also implement iteri, but
-    the idea is that [Indexed_container_intf] should be included only for containers that
-    have a meaningful underlying ordering. *)
 
 
 type ('t, 'a, 'accum) fold  = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
@@ -41,11 +37,17 @@ module type Make_arg = sig
 end
 
 module type Indexed_container = sig
+
+  (** Provides generic signatures for containers that support indexed iteration ([iteri],
+      [foldi], ...). In principle, any container that has [iter] can also implement [iteri],
+      but the idea is that [Indexed_container_intf] should be included only for containers
+      that have a meaningful underlying ordering. *)
+
   module type S1 = S1
 
   (** Generic definitions of [foldi] and [iteri] in terms of [fold].
 
-      E.g.: [iteri ~fold t ~f = ignore (fold t ~init:0 ~f:(fun i x -> f i x; i + 1)) ]. *)
+      E.g., [iteri ~fold t ~f = ignore (fold t ~init:0 ~f:(fun i x -> f i x; i + 1))]. *)
 
   val foldi : fold:('t, 'a, 'accum) fold -> ('t, 'a, 'accum) foldi
   val iteri : fold:('t, 'a, int) fold -> ('t, 'a) iteri

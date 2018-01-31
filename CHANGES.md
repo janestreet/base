@@ -1,3 +1,22 @@
+## git version
+
+- Added missing conversions between `Int63` and other integer types,
+  specifically, the versions that return options.
+
+- Added truncating versions of integer conversions, with a suffix of
+  `_trunc`.  These allow fast conversions via bit arithmetic without
+  any conditional failure; excess bits beyond the width of the output
+  type are simply dropped.
+
+- Added `Sequence.group`, similar to `List.group`.
+
+- Reimplemented `String.Caseless.compare` so that it does not
+  allocate.
+
+- Added `String.is_substring_at string ~pos ~substring`.  Used it as
+  back-end for `is_suffix` and `is_prefix`.
+
+
 ## v0.10
 
 (Changes that can break existing programs are marked with a "\*")

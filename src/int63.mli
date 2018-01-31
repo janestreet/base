@@ -2,17 +2,18 @@
 
     The size of Int63 is always 63 bits.  On a 64-bit platform it is just an int
     (63-bits), and on a 32-bit platform it is an int64 wrapped to respect the
-    semantic of 63bit integers.
+    semantics of 63-bit integers.
 
-    Because Int63 has different representations on 32-bit and 64-bit platforms,
-    marshalling Int63 will not work between 32-bit and 64-bit platforms.
-    unmarshal will segfault. *)
+    Because [Int63] has different representations on 32-bit and 64-bit platforms,
+    marshalling [Int63] will not work between 32-bit and 64-bit platforms -- [unmarshal]
+    will segfault. *)
 
 open! Import
 
-(** In 64bit architectures, we expose [type t = private int] so that the compiler can
-    omit caml_modify when dealing with record fields holding [Int63.t].
-    Code should not explicitly make use of the [private], e.g. via [(i :> int)], since
+(** In 64-bit architectures, we expose [type t = private int] so that the compiler can
+    omit [caml_modify] when dealing with record fields holding [Int63.t].
+
+    Code should not explicitly make use of the [private], e.g., via [(i :> int)], since
     such code will not compile on 32-bit platforms. *)
 include Int_intf.S with type t = Int63_backend.t
 
@@ -26,11 +27,22 @@ end
 
 val of_int : int -> t
 val to_int : t -> int option
+val to_int_trunc : t -> int
 
 val of_int32 : Int32.t -> t
+val to_int32 : t -> Int32.t option
+val to_int32_trunc : t -> Int32.t
+
+val of_int64 : Int64.t -> t option
+val of_int64_trunc : Int64.t -> t
+
+val of_nativeint : nativeint -> t option
+val to_nativeint : t -> nativeint option
+val of_nativeint_trunc : nativeint -> t
+val to_nativeint_trunc : t -> nativeint
 
 (** [random ~state bound] returns a random integer between 0 (inclusive) and [bound]
-    (exclusive).  [bound] must be greater than 0.
+    (exclusive). [bound] must be greater than 0.
 
     The default [~state] is [Random.State.default]. *)
 val random : ?state:Random.State.t -> t -> t
@@ -41,11 +53,14 @@ val random : ?state:Random.State.t -> t -> t
     The default [~state] is [Random.State.default]. *)
 val random_incl : ?state:Random.State.t -> t -> t -> t
 
+(** [floor_log2 x] returns the floor of log-base-2 of [x], and raises if [x <= 0]. *)
+val floor_log2 : t -> int
+
 (**/**)
 module Private : sig
-  (** [val repr] states how [Int63.t] is represented, i.e. as an [int] or an [int64], and
-      can be used for building Int63 operations that behave differently depending on the
-      representation (e.g. see core_int63.ml). *)
+  (** [val repr] states how [Int63.t] is represented, i.e., as an [int] or an [int64], and
+      can be used for building [Int63] operations that behave differently depending on the
+      representation (e.g., see core_int63.ml). *)
   module Repr : sig
     type ('underlying_type, 'intermediate_type) t =
       | Int   : (int   , int         ) t

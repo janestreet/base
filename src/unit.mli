@@ -1,4 +1,4 @@
-(** Module for the type [unit] *)
+(** Module for the type [unit]. *)
 
 open! Import
 

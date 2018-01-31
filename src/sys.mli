@@ -5,16 +5,16 @@
 val interactive : bool ref
 
 (** [os_type] describes the operating system that the OCaml program is running on.  Its
-    value is one of ["Unix"], ["Win32"], or ["Cygwin"] *)
+    value is one of ["Unix"], ["Win32"], or ["Cygwin"]. *)
 val os_type : string
 
-(** [unix] is [true] if [os_type = "Unix"]*)
+(** [unix] is [true] if [os_type = "Unix"]. *)
 val unix : bool
 
-(** [win32] is [true] if [os_type = "Win32"]*)
+(** [win32] is [true] if [os_type = "Win32"]. *)
 val win32 : bool
 
-(** [cygwin] is [true] if [os_type = "Cygwin"]*)
+(** [cygwin] is [true] if [os_type = "Cygwin"]. *)
 val cygwin : bool
 
 (** [word_size_in_bits] is the number of bits in one word on the machine currently
@@ -35,12 +35,12 @@ val max_string_length : int
 (** [max_array_length] is the maximum allowed length of an ['a array]. *)
 val max_array_length : int
 
-(** Return the name of the runtime variant the program is running on.  This is normally
+(** Returns the name of the runtime variant the program is running on.  This is normally
     the argument given to [-runtime-variant] at compile time, but for byte-code it can be
     changed after compilation. *)
 val runtime_variant : unit -> string
 
-(** Return the value of the runtime parameters, in the same format as the contents of the
+(** Returns the value of the runtime parameters, in the same format as the contents of the
     [OCAMLRUNPARAM] environment variable. *)
 val runtime_parameters : unit -> string
 
@@ -50,12 +50,12 @@ val runtime_parameters : unit -> string
     [[.patchlevel]] and [[+additional-info]] parts may be absent. *)
 val ocaml_version : string
 
-(** Control whether the OCaml runtime system can emit warnings on stderr. Currently, the
-    only supported warning is triggered when a channel created by open_* functions is
+(** Controls whether the OCaml runtime system can emit warnings on stderr. Currently, the
+    only supported warning is triggered when a channel created by [open_*] functions is
     finalized without being closed. Runtime warnings are enabled by default. *)
 val enable_runtime_warnings : bool -> unit
 
-(** Return whether runtime warnings are currently enabled. *)
+(** Returns whether runtime warnings are currently enabled. *)
 val runtime_warnings_enabled : unit -> bool
 
 (** For the purposes of optimization, [opaque_identity] behaves like an unknown (and thus

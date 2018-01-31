@@ -33,27 +33,40 @@ let equal (t1 : t) t2 = compare t1 t2 = 0
 
 type elt = char
 
-let is_suffix_gen =
-  let rec loop s ~suffix ~char_equal idx_suff idx =
-    idx_suff < 0
-    || ((char_equal suffix.[idx_suff] s.[idx])
-        && loop s ~suffix ~char_equal (idx_suff - 1) (idx - 1))
+let is_substring_at_gen =
+  let rec loop ~str ~str_pos ~sub ~sub_pos ~sub_len ~char_equal =
+    if sub_pos = sub_len
+    then true
+    else if char_equal (unsafe_get str str_pos) (unsafe_get sub sub_pos)
+    then loop ~str ~str_pos:(str_pos + 1) ~sub ~sub_pos:(sub_pos + 1) ~sub_len ~char_equal
+    else false
   in
-  fun s ~suffix ~char_equal ->
-    let len = length s in
-    let len_suffix = length suffix in
-    len >= len_suffix && loop s ~suffix ~char_equal (len_suffix - 1) (len - 1)
+  fun str ~pos:str_pos ~substring:sub ~char_equal ->
+    let str_len = length str in
+    let sub_len = length sub in
+    if str_pos < 0 || str_pos > str_len
+    then begin
+      invalid_argf "String.is_substring_at: invalid index %d for string of length %d"
+        str_pos str_len ()
+    end;
+    str_pos + sub_len <= str_len
+    && loop ~str ~str_pos ~sub ~sub_pos:0 ~sub_len ~char_equal
+
+let is_suffix_gen string ~suffix ~char_equal =
+  let string_len = length string in
+  let suffix_len = length suffix in
+  string_len >= suffix_len
+  && is_substring_at_gen string
+       ~pos:(string_len - suffix_len)
+       ~substring:suffix
+       ~char_equal
 ;;
 
-let is_prefix_gen =
-  let rec loop s ~prefix ~char_equal i =
-    i < 0
-    || ((char_equal prefix.[i] s.[i])
-        && loop s ~prefix ~char_equal (i - 1))
-  in
-  fun s ~prefix ~char_equal ->
-    let prefix_len = length prefix in
-    length s >= prefix_len && loop s ~prefix ~char_equal (prefix_len - 1)
+let is_prefix_gen string ~prefix ~char_equal =
+  let string_len = length string in
+  let prefix_len = length prefix in
+  string_len >= prefix_len
+  && is_substring_at_gen string ~pos:0 ~substring:prefix ~char_equal
 ;;
 
 module Caseless = struct
@@ -63,25 +76,31 @@ module Caseless = struct
     let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_string
     [@@@end]
 
-    (* This function gives the same result as [compare (lowercase s1) (lowercase s2)]. It
-       is optimised so that it is as fast as that implementation, but uses constant memory
-       instead of O(n). It is still an order of magnitude slower than the inbuilt string
-       comparison, sadly. *)
-    let compare s1 s2 =
-      if phys_equal s1 s2
+    let char_compare_caseless c1 c2 = Char.compare (Char.lowercase c1) (Char.lowercase c2)
+    let char_equal_caseless   c1 c2 = Char.equal   (Char.lowercase c1) (Char.lowercase c2)
+
+    let rec compare_loop ~pos ~string1 ~len1 ~string2 ~len2 =
+      if pos = len1
+      then if pos = len2
+        then 0
+        else -1
+      else if pos = len2
+      then 1
+      else begin
+        let c = char_compare_caseless (unsafe_get string1 pos) (unsafe_get string2 pos) in
+        match c with
+        | 0 -> compare_loop ~pos:(pos + 1) ~string1 ~len1 ~string2 ~len2
+        | _ -> c
+      end
+
+    let compare string1 string2 =
+      if phys_equal string1 string2
       then 0
-      else With_return.with_return (fun r ->
-        for i = 0 to min (length s1) (length s2) - 1 do
-          match
-            Char.compare
-              (Char.lowercase (unsafe_get s1 i))
-              (Char.lowercase (unsafe_get s2 i))
-          with
-          | 0 -> ()
-          | other -> r.return other
-        done;
-        (* the Int module is not available here, and [compare] is string comparison *)
-        Polymorphic_compare.compare (length s1) (length s2))
+      else begin
+        compare_loop ~pos:0
+          ~string1 ~len1:(String.length string1)
+          ~string2 ~len2:(String.length string2)
+      end
 
     let hash_fold_t state t =
       let len = length t in
@@ -92,8 +111,6 @@ module Caseless = struct
       !state
 
     let hash t = Hash.run hash_fold_t t
-
-    let char_equal_caseless c1 c2 = Char.equal (Char.lowercase c1) (Char.lowercase c2)
 
     let is_suffix s ~suffix = is_suffix_gen s ~suffix ~char_equal:char_equal_caseless
     let is_prefix s ~prefix = is_prefix_gen s ~prefix ~char_equal:char_equal_caseless
@@ -473,6 +490,9 @@ let split_lines =
 (* [is_suffix s ~suff] returns [true] if the string [s] ends with the suffix [suff] *)
 let is_suffix s ~suffix = is_suffix_gen s ~suffix ~char_equal:Char.equal
 let is_prefix s ~prefix = is_prefix_gen s ~prefix ~char_equal:Char.equal
+
+let is_substring_at s ~pos ~substring =
+  is_substring_at_gen s ~pos ~substring ~char_equal:Char.equal
 
 let wrap_sub_n t n ~name ~pos ~len ~on_error =
   if n < 0 then

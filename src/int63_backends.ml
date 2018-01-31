@@ -15,7 +15,16 @@ module type Int_or_more = sig
   include Int_intf.S with type t := t
   val of_int : int -> t
   val to_int : t -> int option
+  val to_int_trunc : t -> int
   val of_int32 : int32 -> t
+  val to_int32 : t -> Int32.t option
+  val to_int32_trunc : t -> Int32.t
+  val of_int64 : Int64.t -> t option
+  val of_int64_trunc : Int64.t -> t
+  val of_nativeint : nativeint -> t option
+  val to_nativeint : t -> nativeint option
+  val of_nativeint_trunc : nativeint -> t
+  val to_nativeint_trunc : t -> nativeint
   val of_float_unchecked : float -> t
   val repr : (t, t) Int63_emul.Repr.t
 end
@@ -23,8 +32,11 @@ end
 module Native : Int_or_more with type t = private int = struct
   include Int
   let to_int x = Some x
+  let to_int_trunc x = x
   (* [of_int32_exn] is a safe operation on platforms with 64-bit word sizes. *)
   let of_int32 = of_int32_exn
+  let to_nativeint_trunc x = to_nativeint x
+  let to_nativeint x = Some (to_nativeint x)
   let repr = Int63_emul.Repr.Int
 end
 

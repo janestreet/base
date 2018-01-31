@@ -4,25 +4,26 @@
 
 Base is a standard library for OCaml. It provides a standard set of
 general-purpose modules that are well tested, performant, and fully
-portable across any environment that can run OCaml code. Unlike other
-standard library projects, Base is meant to be used as a wholesale
-replacement of the standard library distributed with the OCaml
-compiler. In particular, it makes different choices and doesn't
+portable across any environment that can run OCaml code.
+
+Unlike other standard library projects, Base is meant to be used as a
+wholesale replacement of the standard library distributed with the
+OCaml compiler. In particular, it makes different choices and doesn't
 re-export features that are not fully portable such as I/O, which are
 left to other libraries.
 
 Note that an API for OCaml's channel-based I/O can be found in the
-{!Stdio} library.
+{{!module:Stdio}[Stdio]} library.
 
 {2 Relationship to Core_kernel and Core}
 
 Base is the smallest, most self-contained version of Jane Street's
 family of three standard library replacements. It is extended by
-Core_kernel, which is in turn extended by Core.
+[Core_kernel], which is in turn extended by [Core].
 
 In sum:
 
-- {b {!Base}}: minimal stdlib replacement. Portable and lightweight and
+- {b {!Base}}: Minimal stdlib replacement. Portable and lightweight and
   intended to be highly stable.
 - {b {!Core_kernel}}: Extension of Base. More fully featured, with more
   code and dependencies, and APIs that evolve more quickly. Portable,
@@ -38,8 +39,8 @@ standard library that one normally gets in the default environment are
 deprecated.
 
 In order to access these values, one must use the [Caml] library,
-which re-exports them all through the toplevel name {!module:Caml}:
-[Caml.String], [Caml.print_string], ...
+which re-exports them all through the toplevel name
+{{!module:Caml}[Caml]}: [Caml.String], [Caml.print_string], ...
 
 The new modules and values made available by Base are documented
 {{!Base} here}.
@@ -63,41 +64,35 @@ val ( <= ) : 'a -> 'a -> bool
 
 What they implement is structural comparison of the runtime
 representation of values. Since these are often error-prone,
-i.e. they don't correspond to what the user expects, they are not
+i.e., they don't correspond to what the user expects, they are not
 exposed directly by Base.
 
 To use polymorphic comparison with Base, one should use the
-{!Polymorphic_compare} module. The default comparison operators exposed
-by Base are the integer ones, just like the default arithmetic
-operators are the integer ones.
+{{!Base.Polymorphic_compare}[Polymorphic_compare]} module. The default
+comparison operators exposed by Base are the integer ones, just like
+the default arithmetic operators are the integer ones.
 
 The recommended way to compare arbitrary complex data structures is to
 use the specific [compare] functions. For instance:
 
-{[
-List.compare String.compare x y
-]}
+{[ List.compare String.compare x y ]}
 
 The [ppx_compare] rewriter offers an alternative way to write this:
 
-{[
-[%compare: string list] x y
-]}
+{[ [%compare: string list] x y ]}
 
 {2 Base and ppx code generators}
 
 Base uses a few ppx code generators to implement:
 
-{ul
-{- reliable and customizable comparison of OCaml values;}
-{- reliable and customizable hash of OCaml values; and}
-{- conversions between OCaml values and s-expression.}
-}
+- reliable and customizable comparison of OCaml values;
+- reliable and customizable hash of OCaml values; and
+- conversions between OCaml values and s-expression.
 
 However, it doesn't need these code generators to build. Instead, it
-uses ppx as a code verification tool during development. It works in
-a very similar fashion to
-{{: https://github.com/janestreet/ppx_expect} expect tests}.
+uses ppx as a code verification tool during development. It works in a
+very similar fashion to {{: https://github.com/janestreet/ppx_expect}
+expect tests}.
 
 Whenever you see this in the code source:
 

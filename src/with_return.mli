@@ -1,10 +1,11 @@
 
-(** [with_return f] allows for something like the return statement in C within [f].  There
-    are three ways [f] can terminate:
+(** [with_return f] allows for something like the return statement in C within [f].
 
-    1. If [f] calls [r.return x], then [x] is returned by [with_return].
-    2. If [f] evaluates to a value [x], then [x] is returned by [with_return].
-    3. If [f] raises an exception, it escapes [with_return].
+    There are three ways [f] can terminate:
+
+    + If [f] calls [r.return x], then [x] is returned by [with_return].
+    + If [f] evaluates to a value [x], then [x] is returned by [with_return].
+    + If [f] raises an exception, it escapes [with_return].
 
     Here is a typical example:
 
@@ -20,8 +21,8 @@
 
     {[ val with_return : 'a. (('a -> ('b. 'b)) -> 'a) -> 'a ]}
 
-    but we can slightly increase the scope of 'b, without changing the meaning of the type
-    and then we get
+    but we can slightly increase the scope of ['b] without changing the meaning of the
+    type, and then we get:
 
     {[
       type 'a return = { return : 'b . 'a -> 'b }
@@ -41,13 +42,13 @@ type -'a return = private { return : 'b. 'a -> 'b } [@@unboxed]
 
 val with_return        : ('a return -> 'a  ) -> 'a
 
-(** Note that [with_return_option] allocates ~5 words more than equivalent [with_return]
-    call *)
+(** Note that [with_return_option] allocates ~5 words more than the equivalent
+    [with_return] call. *)
 val with_return_option : ('a return -> unit) -> 'a option
 
 (** [prepend a ~f] returns a value [x] such that each call to [x.return] first applies [f]
     before applying [a.return].  The call to [f] is "prepended" to the call to the
-    original [a.return].  A possible use case is to hand [x] over to an other function
-    which returns ['b] a subtype of ['a], or to capture a common transformation [f]
+    original [a.return].  A possible use case is to hand [x] over to another function
+    which returns ['b], a subtype of ['a], or to capture a common transformation [f]
     applied to returned values at several call sites. *)
 val prepend : 'a return -> f:('b -> 'a) -> 'b return

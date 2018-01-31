@@ -1,4 +1,3 @@
-
 open! Import
 
 module type Accessors = sig
@@ -71,11 +70,11 @@ module type Hash_set = sig
   include Creators
     with type 'a t := 'a t
     with type 'a elt = 'a
-    with type ('key, 'z) create_options := ('key, 'z) create_options_with_first_class_module
+    with type ('key, 'z) create_options := ('key, 'z) create_options_with_first_class_module (** @open *)
 
   module type Accessors = Accessors
 
-  include Accessors with type 'a t := 'a t with type 'a elt := 'a elt
+  include Accessors with type 'a t := 'a t with type 'a elt := 'a elt (** @open *)
 
   val hashable : 'key t -> 'key Hashtbl_intf.Hashable.t
 

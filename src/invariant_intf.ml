@@ -1,19 +1,3 @@
-(** This module defines signatures that are to be included in other signatures to ensure a
-    consistent interface to invariant-style functions.  There is a signature ([S], [S1],
-    [S2], [S3]) for each arity of type.  Usage looks like:
-
-    {[
-      type t
-      include Invariant.S with type t := t
-    ]}
-
-    or
-
-    {[
-      type 'a t
-      include Invariant.S1 with type 'a t := 'a t
-    ]} *)
-
 open! Import
 
 type 'a t = 'a -> unit
@@ -41,6 +25,23 @@ module type S3 = sig
 end
 
 module type Invariant = sig
+
+  (** This module defines signatures that are to be included in other signatures to ensure
+      a consistent interface to invariant-style functions.  There is a signature ([S],
+      [S1], [S2], [S3]) for each arity of type.  Usage looks like:
+
+      {[
+        type t
+        include Invariant.S with type t := t
+      ]}
+
+      or
+
+      {[
+        type 'a t
+        include Invariant.S1 with type 'a t := 'a t
+      ]}
+  *)
 
   type nonrec 'a t = 'a t
 

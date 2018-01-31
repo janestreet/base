@@ -365,3 +365,37 @@ let%expect_test _ =
   [%expect {|
     (0 1 2 0 1 2 0 1 2 0 1 2 0 1 2) |}]
 ;;
+
+let%test_module "group" =
+  (module struct
+    let%test _ =
+      of_list [1; 2; 3; 4]
+      |> group ~break:(fun _ x -> Int.equal x 3)
+      |> [%compare.equal: int list t] (of_list [[1; 2]; [3; 4]])
+    ;;
+
+    let%test _ =
+      group empty ~break:(fun _ -> assert false)
+      |> [%compare.equal: unit list t] empty
+    ;;
+
+    let mis = of_list ['M';'i';'s';'s';'i';'s';'s';'i';'p';'p';'i']
+    ;;
+
+    let equal_letters =
+      of_list [['M'];['i'];['s';'s'];['i'];['s';'s'];['i'];['p';'p'];['i']]
+    ;;
+
+    let single_letters = of_list [['M';'i';'s';'s';'i';'s';'s';'i';'p';'p';'i']]
+    ;;
+
+    let%test _ =
+      group ~break:Char.(<>) mis
+      |> [%compare.equal: char list t] equal_letters
+    ;;
+
+    let%test _ =
+      group ~break:(fun _ _ -> false) mis
+      |> [%compare.equal: char list t] single_letters
+    ;;
+  end)

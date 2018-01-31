@@ -36,13 +36,13 @@ module type Infix = sig
   val (>>|) : 'a t -> ('a -> 'b) -> 'b t
 end
 
-(** opening a module of this type allows one to use the [%bind] and [%map] syntax
-    extensions defined by ppx_let, as well as brings [return] into scope *)
+(** Opening a module of this type allows one to use the [%bind] and [%map] syntax
+    extensions defined by ppx_let, and brings [return] into scope. *)
 module type Syntax = sig
   type 'a t
   module Let_syntax : sig
 
-    (** These are convenient to have in scope when programming with a monad *)
+    (** These are convenient to have in scope when programming with a monad: *)
 
     val return : 'a -> 'a t
     include Infix with type 'a t := 'a t
@@ -58,8 +58,6 @@ module type Syntax = sig
 end
 
 module type S_without_syntax = sig
-  (** A monad is an abstraction of the concept of sequencing of computations.  A value of
-      type 'a monad represents a computation that returns a value of type 'a. *)
   type 'a t
   include Infix  with type 'a t := 'a t
 
@@ -322,6 +320,8 @@ struct
 end
 
 module type Monad = sig
+  (** A monad is an abstraction of the concept of sequencing of computations.  A value of
+      type ['a monad] represents a computation that returns a value of type ['a]. *)
 
   module type Basic            = Basic
   module type Basic2           = Basic2

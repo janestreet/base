@@ -29,7 +29,7 @@ module type S = sig
   val of_list  : 'a list  -> 'a t
   val of_array : 'a array -> 'a t
 
-  (** [init n ~f] is equivalent to [of_list (List.init n ~f)] *)
+  (** [init n ~f] is equivalent to [of_list (List.init n ~f)]. *)
   val init : int -> f:(int -> 'a) -> 'a t
 
   (** [enqueue t a] adds [a] to the end of [t].*)
@@ -55,7 +55,7 @@ module type S = sig
   val map  : 'a t -> f:(       'a -> 'b) -> 'b t
   val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 
-  (** creates a new queue with elements equal to [List.concat_map ~f (to_list t)]. *)
+  (** Creates a new queue with elements equal to [List.concat_map ~f (to_list t)]. *)
   val concat_map  : 'a t -> f:(       'a -> 'b list) -> 'b t
   val concat_mapi : 'a t -> f:(int -> 'a -> 'b list) -> 'b t
 

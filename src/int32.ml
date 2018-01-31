@@ -123,13 +123,17 @@ let popcount = Popcount.int32_popcount
 module Conv = Int_conversions
 let of_int = Conv.int_to_int32
 let of_int_exn = Conv.int_to_int32_exn
+let of_int_trunc = Conv.int_to_int32_trunc
 let to_int = Conv.int32_to_int
 let to_int_exn = Conv.int32_to_int_exn
+let to_int_trunc = Conv.int32_to_int_trunc
 let of_int64 = Conv.int64_to_int32
 let of_int64_exn = Conv.int64_to_int32_exn
+let of_int64_trunc = Conv.int64_to_int32_trunc
 let to_int64 = Conv.int32_to_int64
 let of_nativeint = Conv.nativeint_to_int32
 let of_nativeint_exn = Conv.nativeint_to_int32_exn
+let of_nativeint_trunc = Conv.nativeint_to_int32_trunc
 let to_nativeint = Conv.int32_to_nativeint
 let to_nativeint_exn = to_nativeint
 

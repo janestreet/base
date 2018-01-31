@@ -33,9 +33,9 @@ val full_init : int array -> unit
 
 (** Initialize the generator with a more-or-less random seed chosen in a system-dependent
     way.  By default, [self_init] is disallowed in inline tests, as it's often used for no
-    good reason and it just creates non deterministic failures for everyone.  Passing
+    good reason and it just creates nondeterministic failures for everyone.  Passing
     [~allow_in_tests:true] removes this restriction in case you legitimately want
-    non-deterministic values, like in [Filename.temp_dir]. *)
+    nondeterministic values, like in [Filename.temp_dir]. *)
 val self_init : ?allow_in_tests:bool -> unit -> unit
 
 (** Return 30 random bits in a nonnegative integer.  @before 3.12.0 used a different
@@ -63,14 +63,14 @@ val int64 : int64 -> int64
     [bound] is 0, the result is 0. *)
 val float : float -> float
 
-(** Produce a random value between the given inclusive bounds.  Raises if bounds are given
-    in decreasing order. *)
+(** Produces a random value between the given inclusive bounds.  Raises if bounds are
+    given in decreasing order. *)
 val int_incl       : int       -> int       -> int
 val int32_incl     : int32     -> int32     -> int32
 val nativeint_incl : nativeint -> nativeint -> nativeint
 val int64_incl     : int64     -> int64     -> int64
 
-(** Produce a value between the given bounds (inclusive and exclusive, respectively).
+(** Produces a value between the given bounds (inclusive and exclusive, respectively).
     Raises if bounds are given in decreasing order. *)
 val float_range : float -> float -> float
 
@@ -96,16 +96,17 @@ module State : sig
       thereby mutate) the random state used by the main functions in [Random]. *)
   val default : t
 
-  (** Create a new state and initialize it with the given seed. *)
+  (** Creates a new state and initializes it with the given seed. *)
   val make : int array -> t
 
-  (** Create a new state and initialize it with a system-dependent low-entropy seed. *)
+  (** Creates a new state and initializes it with a system-dependent low-entropy seed. *)
   val make_self_init : ?allow_in_tests:bool -> unit -> t
 
   val copy : t -> t
 
   (** These functions are the same as the basic functions, except that they use (and
       update) the given PRNG state instead of the default one.  *)
+
   val bits : t -> int
 
   val int       : t -> int       -> int
@@ -124,5 +125,5 @@ module State : sig
   val bool : t -> bool
 end
 
-(** Set the state of the generator used by the basic functions. *)
+(** Sets the state of the generator used by the basic functions. *)
 val set_state : State.t -> unit

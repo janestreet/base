@@ -17,6 +17,16 @@ include Map_intf
 
 let with_return = With_return.with_return
 
+exception Duplicate [@@deriving_inline sexp]
+let () =
+  Ppx_sexp_conv_lib.Conv.Exn_converter.add
+    ([%extension_constructor Duplicate])
+    (function
+      | Duplicate  -> Ppx_sexp_conv_lib.Sexp.Atom "src/map.ml.Duplicate"
+      | _ -> assert false)
+
+[@@@end]
+
 module Tree0 = struct
 
   type ('k, 'v) t =
@@ -183,7 +193,8 @@ module Tree0 = struct
 
   module Add_or_set = struct
     type t =
-      | Add
+      | Add_exn_internal
+      | Add_exn
       | Set
   end
 
@@ -195,7 +206,8 @@ module Tree0 = struct
       let c = compare_key x v in
       if c = 0 then
         (match add_or_set with
-         | Add -> raise_key_already_present ~key:x ~sexp_of_key
+         | Add_exn_internal -> Exn.raise_without_backtrace Duplicate
+         | Add_exn -> raise_key_already_present ~key:x ~sexp_of_key
          | Set -> (Leaf(x, data), length))
       else if c < 0 then
         (Node(Leaf(x, data), v, d, Empty, 2), length + 1)
@@ -205,7 +217,8 @@ module Tree0 = struct
       let c = compare_key x v in
       if c = 0 then
         (match add_or_set with
-         | Add -> raise_key_already_present ~key:x ~sexp_of_key
+         | Add_exn_internal -> Exn.raise_without_backtrace Duplicate
+         | Add_exn -> raise_key_already_present ~key:x ~sexp_of_key
          | Set -> (Node(l, x, data, r, h), length))
       else if c < 0 then
         let l, length =
@@ -220,7 +233,12 @@ module Tree0 = struct
   ;;
 
   let add_exn t ~length ~key ~data ~compare_key ~sexp_of_key =
-    find_and_add_or_set t ~length ~key ~data ~compare_key ~sexp_of_key ~add_or_set:Add
+    find_and_add_or_set t ~length ~key ~data ~compare_key ~sexp_of_key ~add_or_set:Add_exn
+  ;;
+
+  let add_exn_internal t ~length ~key ~data ~compare_key ~sexp_of_key =
+    find_and_add_or_set
+      t ~length ~key ~data ~compare_key ~sexp_of_key ~add_or_set:Add_exn_internal
   ;;
 
   let set t ~length ~key ~data ~compare_key =
@@ -1228,11 +1246,15 @@ module Accessors = struct
     like t (Tree0.add_exn t.tree ~length:t.length ~key ~data ~compare_key:(compare_key t)
               ~sexp_of_key:t.comparator.sexp_of_t)
   ;;
+  let add_exn_internal t ~key ~data =
+    like t (Tree0.add_exn_internal
+              t.tree ~length:t.length ~key ~data ~compare_key:(compare_key t)
+              ~sexp_of_key:t.comparator.sexp_of_t)
+  ;;
   let add t ~key ~data =
-    try
-      `Ok (add_exn t ~key ~data)
-    with _ ->
-      `Duplicate
+    match add_exn_internal t ~key ~data with
+    | result -> `Ok result
+    | exception Duplicate -> `Duplicate
   ;;
   let add_multi t ~key ~data =
     like t

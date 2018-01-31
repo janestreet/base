@@ -1,3 +1,5 @@
+(** Functor that adds float conversion functions to a module. *)
+
 open! Import
 
 module type S = sig

@@ -1,8 +1,10 @@
 (** Applicatives model computations in which values computed by subcomputations cannot
-    affect what subsequent computations will take place.  Relative to monads, this
-    restriction takes power away from the user of the interface and gives it to the
-    implementation.  In particular, because the structure of the entire computation is
-    known, one can augment its definition with some description of that structure.
+    affect what subsequent computations will take place.
+
+    Relative to monads, this restriction takes power away from the user of the interface
+    and gives it to the implementation.  In particular, because the structure of the
+    entire computation is known, one can augment its definition with some description of
+    that structure.
 
     For more information, see:
 
@@ -75,7 +77,7 @@ module type S = sig
   include module type of Applicative_infix
 end
 
-(** argument lists and associated N-ary map and apply functions *)
+(** Argument lists and associated N-ary map and apply functions. *)
 module type Args = sig
 
   type 'a arg (** the underlying applicative *)

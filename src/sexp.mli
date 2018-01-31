@@ -1,4 +1,4 @@
-(** Type of S-expressions *)
+(** Type of S-expressions. *)
 
 open! Import0
 

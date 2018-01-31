@@ -34,30 +34,38 @@ open! Import
       val foo_to_bar     : foo -> bar option
       val foo_to_bar_exn : foo -> bar
     ]} *)
-val int_to_int32           : int       -> int32 option
-val int_to_int32_exn       : int       -> int32
-val int_to_int64           : int       -> int64
-val int_to_nativeint       : int       -> nativeint
+val int_to_int32                    : int       -> int32 option
+val int_to_int32_exn                : int       -> int32
+val int_to_int32_trunc              : int       -> int32
+val int_to_int64                    : int       -> int64
+val int_to_nativeint                : int       -> nativeint
 
-val int32_to_int           : int32     -> int option
-val int32_to_int_exn       : int32     -> int
-val int32_to_int64         : int32     -> int64
-val int32_to_nativeint     : int32     -> nativeint
+val int32_to_int                    : int32     -> int option
+val int32_to_int_exn                : int32     -> int
+val int32_to_int_trunc              : int32     -> int
+val int32_to_int64                  : int32     -> int64
+val int32_to_nativeint              : int32     -> nativeint
 
-val int64_to_int           : int64     -> int option
-val int64_to_int_exn       : int64     -> int
-val int64_to_int32         : int64     -> int32 option
-val int64_to_int32_exn     : int64     -> int32
-val int64_to_nativeint     : int64     -> nativeint option
-val int64_to_nativeint_exn : int64     -> nativeint
+val int64_to_int                    : int64     -> int option
+val int64_to_int_exn                : int64     -> int
+val int64_to_int_trunc              : int64     -> int
+val int64_to_int32                  : int64     -> int32 option
+val int64_to_int32_exn              : int64     -> int32
+val int64_to_int32_trunc            : int64     -> int32
+val int64_to_nativeint              : int64     -> nativeint option
+val int64_to_nativeint_exn          : int64     -> nativeint
+val int64_to_nativeint_trunc        : int64     -> nativeint
 
-val int64_fit_on_int63_exn        : int64 -> unit
+val int64_fit_on_int63_exn          : int64     -> unit
+val int64_is_representable_as_int63 : int64     -> bool
 
-val nativeint_to_int       : nativeint -> int option
-val nativeint_to_int_exn   : nativeint -> int
-val nativeint_to_int32     : nativeint -> int32 option
-val nativeint_to_int32_exn : nativeint -> int32
-val nativeint_to_int64     : nativeint -> int64
+val nativeint_to_int                : nativeint -> int option
+val nativeint_to_int_exn            : nativeint -> int
+val nativeint_to_int_trunc          : nativeint -> int
+val nativeint_to_int32              : nativeint -> int32 option
+val nativeint_to_int32_exn          : nativeint -> int32
+val nativeint_to_int32_trunc        : nativeint -> int32
+val nativeint_to_int64              : nativeint -> int64
 
 val num_bits_int           : int
 val num_bits_int32         : int
@@ -124,4 +132,3 @@ val insert_delimiter : string -> delimiter:char -> string
 
 (** [insert_delimiter ~delimiter:'_'] *)
 val insert_underscores : string -> string
-

@@ -1,5 +1,6 @@
-(** New code should use the [@@deriving_inline sexp][@@@end] syntax directly.  These module types
-    (S, S1, S2, and S3) are exported for backwards compatibility only. **)
+(** Provides functors for making modules sexpable. New code should use the [[@@deriving
+    sexp]] syntax directly.  These module types ([S], [S1], [S2], and [S3]) are exported
+    for backwards compatibility only. *)
 
 open! Import
 

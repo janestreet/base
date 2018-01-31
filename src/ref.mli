@@ -1,4 +1,5 @@
-(** Module for the type [ref] *)
+(** Module for the type [ref], mutable indirection cells [r] containing a value of type
+    ['a], accessed with [!r] and set by [r := a]. *)
 
 open! Import
 

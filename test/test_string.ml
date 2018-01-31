@@ -33,6 +33,14 @@ let%test_module "Caseless Comparable" =
     let%test _ = Caseless.("XxXx" > "xXx")
 
     let%test _ = List.is_sorted ~compare:Caseless.compare ["Apples"; "bananas"; "Carrots"]
+
+    let%expect_test _ =
+      let x = Sys.opaque_identity "one string" in
+      let y = Sys.opaque_identity "another"    in
+      require_no_allocation [%here] (fun () ->
+        ignore (Sys.opaque_identity (Caseless.equal x y) : bool));
+      [%expect {||}];
+    ;;
   end)
 
 let%test_module "Caseless Hashable" =
@@ -315,6 +323,45 @@ let%expect_test "mem does not allocate" =
   require_no_allocation [%here] (fun () ->
     ignore (String.mem string char : bool));
   [%expect {||}];
+;;
+
+let%expect_test "is_substring_at" =
+  let string = "lorem ipsum dolor sit amet" in
+  let test pos substring =
+    match is_substring_at string ~pos ~substring with
+    | bool          -> print_s [%sexp (bool : bool)]
+    | exception exn -> print_s [%message "raised" ~_:(exn : exn)]
+  in
+  test 0 "lorem";
+  [%expect {| true |}];
+  test 1 "lorem";
+  [%expect {| false |}];
+  test 6 "ipsum";
+  [%expect {| true |}];
+  test 5 "ipsum";
+  [%expect {| false |}];
+  test 22 "amet";
+  [%expect {| true |}];
+  test 23 "amet";
+  [%expect {| false |}];
+  test 22 "amet and some other stuff";
+  [%expect {| false |}];
+  test 0 "";
+  [%expect {| true |}];
+  test 10 "";
+  [%expect {| true |}];
+  test 26 "";
+  [%expect {| true |}];
+  test 100 "";
+  [%expect {|
+    (raised (
+      Invalid_argument
+      "String.is_substring_at: invalid index 100 for string of length 26")) |}];
+  test (-1) "";
+  [%expect {|
+    (raised (
+      Invalid_argument
+      "String.is_substring_at: invalid index -1 for string of length 26")) |}];
 ;;
 
 let%test_module "Escaping" =

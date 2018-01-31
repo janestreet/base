@@ -57,6 +57,20 @@ let random_incl =
   | W64 -> random_incl_of_int
   | W32 -> random_incl_of_int64
 
+let floor_log2 t =
+  match Word_size.word_size with
+  | W64 -> t |> to_int_exn |> Int.floor_log2
+  | W32 ->
+    if t <= zero
+    then raise_s (Sexp.message "[Int.floor_log2] got invalid input"
+                    ["", sexp_of_t t]);
+    let floor_log2 = ref (Int.( - ) num_bits 2) in
+    while equal zero (bit_and t (shift_left one !floor_log2)) do
+      floor_log2 := Int.( - ) !floor_log2 1
+    done;
+    !floor_log2
+;;
+
 module Private = struct
   module Repr = Repr
   let repr = repr

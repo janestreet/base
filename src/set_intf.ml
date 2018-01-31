@@ -1,5 +1,3 @@
-(** See set.mli for comments. *)
-
 open! Import
 open! T
 
@@ -745,11 +743,14 @@ module type Creators_and_accessors2_with_comparator = sig
 end
 
 module type Set = sig
+  (** This module defines the [Set] module for [Base]. Functions that construct a set take
+      as an argument the comparator for the element type. *)
 
   (** The type of a set.  The first type parameter identifies the type of the element, and
-      the second identifies the comparator, which determines the comparison function that is
-      used for ordering elements in this set.  Many operations (e.g., {!union}), require
-      that they be passed sets with the same element type and the same comparator type. *)
+      the second identifies the comparator, which determines the comparison function that
+      is used for ordering elements in this set.  Many operations (e.g., {!union}),
+      require that they be passed sets with the same element type and the same comparator
+      type. *)
   type ('elt, 'cmp) t [@@deriving_inline compare]
   include
   sig

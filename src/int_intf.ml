@@ -1,3 +1,6 @@
+(** An interface to use for int-like types, e.g., {{!Base.Int}[Int]} and
+    {{!Base.Int64}[Int64]}. *)
+
 open! Import
 
 module type Round = sig
@@ -23,8 +26,8 @@ module type Round = sig
        | `Nearest | { 5 .. 14} --> 10 | {-5 ... 4} --> 0 | {-15 ... -6} --> -10 |
      v}
 
-      For convenience and performance, there are variants of [round] with [dir] hard-coded.
-      If you are writing performance-critical code you should use these. *)
+      For convenience and performance, there are variants of [round] with [dir]
+      hard-coded. If you are writing performance-critical code you should use these. *)
 
   val round : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> to_multiple_of:t -> t
 
@@ -75,10 +78,10 @@ module type S_common = sig
   include Comparable.With_zero with type t := t
   include Hexable              with type t := t
 
-  (** [delimiter] is underscore by default *)
+  (** [delimiter] is an underscore by default. *)
   val to_string_hum : ?delimiter:char -> t -> string
 
-  (** {9 Infix operators and constants } *)
+  (** {2 Infix operators and constants} *)
 
   val zero : t
   val one : t
@@ -89,6 +92,7 @@ module type S_common = sig
   val ( * ) : t -> t -> t
 
   (** Negation *)
+
   val neg : t -> t
   val ( ~- ) : t -> t
 
@@ -111,33 +115,34 @@ module type S_common = sig
       [x % y] always returns a value between 0 and [y - 1], even when [x < 0].  On the
       other hand, [rem x y] returns a negative value if and only if [x < 0]; that value
       satisfies [abs (rem x y) <= abs y - 1]. *)
+
   val ( /% ) : t -> t -> t
   val ( %  ) : t -> t -> t
   val ( / )  : t -> t -> t
   val rem    : t -> t -> t
 
-  (** float division of integers *)
+  (** Float division of integers. *)
   val ( // ) : t -> t -> float
 
-  (** Same as [bit_and] *)
+  (** Same as [bit_and]. *)
   val ( land ) : t -> t -> t
 
-  (** Same as [bit_or]  *)
+  (** Same as [bit_or]. *)
   val ( lor ) : t -> t -> t
 
-  (** Same as [bit_xor] *)
+  (** Same as [bit_xor]. *)
   val ( lxor ) : t -> t -> t
 
-  (** Same as [bit_not] *)
+  (** Same as [bit_not]. *)
   val lnot : t -> t
 
-  (** Same as [shift_left] *)
+  (** Same as [shift_left]. *)
   val ( lsl ) : t -> int -> t
 
-  (** Same as [shift_right] *)
+  (** Same as [shift_right]. *)
   val ( asr ) : t -> int -> t
 
-  (** {9 Successor and predecessor functions } *)
+  (** {2 Successor and predecessor functions} *)
 
   val succ : t -> t
   val pred : t -> t
@@ -145,41 +150,43 @@ module type S_common = sig
   include Round with type t := t
 
   (** Returns the absolute value of the argument.  May be negative if the input is
-      [min_value] *)
+      [min_value]. *)
   val abs : t -> t
 
-  (** {9 Exponentiation } *)
+  (** {2 Exponentiation} *)
 
   (** [pow base exponent] returns [base] raised to the power of [exponent].  It is OK if
       [base <= 0].  [pow] raises if [exponent < 0], or an integer overflow would occur. *)
   val pow : t -> t -> t
 
-  (** {9 Bit-wise logical operations } *)
+  (** {2 Bit-wise logical operations } *)
 
+  (** These are identical to [land], [lor], etc. except they're not infix and have
+      different names. *)
   val bit_and : t -> t -> t
   val bit_or : t -> t -> t
   val bit_xor : t -> t -> t
   val bit_not : t -> t
 
-  (** returns the number of 1 bits in the binary representation of the input *)
+  (** Returns the number of 1 bits in the binary representation of the input. *)
   val popcount : t -> int
 
-  (** {9 Bit-shifting operations }
+  (** {2 Bit-shifting operations }
 
-      The results are unspecified for negative shifts and shifts [>= num_bits] *)
+      The results are unspecified for negative shifts and shifts [>= num_bits]. *)
 
-  (** shifts left, filling in with zeroes *)
+  (** Shifts left, filling in with zeroes. *)
   val shift_left : t -> int -> t
 
-  (** shifts right, preserving the sign of the input. *)
+  (** Shifts right, preserving the sign of the input. *)
   val shift_right : t -> int -> t
 
-  (** {9 Increment and decrement functions for integer references } *)
+  (** {2 Increment and decrement functions for integer references } *)
 
   val decr : t ref -> unit
   val incr : t ref -> unit
 
-  (** {9 Conversion functions to related integer types} *)
+  (** {2 Conversion functions to related integer types} *)
 
   val of_int32_exn : int32 -> t
   val to_int32_exn : t -> int32
@@ -231,7 +238,7 @@ end
     [S_unbounded] is a restriction of [S] (below) that omits values that depend on
     fixed-size integers. *)
 module type S_unbounded = sig
-  include S_common
+  include S_common (** @inline *)
 
   (** A sub-module designed to be opened to make working with ints more convenient.  *)
   module O : Operators_unbounded with type t := t
@@ -239,23 +246,23 @@ end
 
 (** [S] is a generic interface for fixed-size integers. *)
 module type S = sig
-  include S_common
+  include S_common (** @inline *)
 
   (** The number of bits available in this integer type.  Note that the integer
-      representations are signed *)
+      representations are signed. *)
   val num_bits : int
 
-  (** The largest representable integer *)
+  (** The largest representable integer. *)
   val max_value : t
 
-  (** The smallest representable integer *)
+  (** The smallest representable integer. *)
   val min_value : t
 
-  (** Same as [shift_right_logical] *)
+  (** Same as [shift_right_logical]. *)
   val ( lsr ) : t -> int -> t
 
-  (** shifts right, filling in with zeroes, which will not preserve the sign of the
-      input *)
+  (** Shifts right, filling in with zeroes, which will not preserve the sign of the
+      input. *)
   val shift_right_logical : t -> int -> t
 
   (** A sub-module designed to be opened to make working with ints more convenient.  *)
@@ -266,6 +273,7 @@ include
   (struct
     (** Various functors whose type-correctness ensures desired relationships between
         interfaces. *)
+
     module Check_O_contained_in_S           (M : S)           = (M : module type of M.O)
     module Check_O_contained_in_S_unbounded (M : S_unbounded) = (M : module type of M.O)
     module Check_S_unbounded_in_S           (M : S)           = (M : S_unbounded)
@@ -312,6 +320,11 @@ module type Int_without_module_types = sig
   val of_int64 : int64 -> t option
   val of_nativeint : nativeint -> t option
   val to_nativeint : t -> nativeint
+
+  val of_int32_trunc : int32 -> t
+  val to_int32_trunc : t -> int32
+  val of_int64_trunc : int64 -> t
+  val of_nativeint_trunc : nativeint -> t
 
   (**/**)
   module Private : sig

@@ -1,13 +1,6 @@
 open! Import
 
 module type S = sig
-  (** Extensible character buffers.
-
-      This module implements character buffers that automatically expand as necessary.  It
-      provides accumulative concatenation of strings in quasi-linear time (instead of
-      quadratic time when strings are concatenated pairwise).
-  *)
-
   (** The abstract type of buffers. *)
   type t [@@deriving_inline sexp_of]
   include
@@ -18,8 +11,9 @@ module type S = sig
   (** [create n] returns a fresh buffer, initially empty.  The [n] parameter is the
       initial size of the internal storage medium that holds the buffer contents. That
       storage is automatically reallocated when more than [n] characters are stored in the
-      buffer, but shrinks back to [n] characters when [reset] is called.  For best
-      performance, [n] should be of the same order of magnitude as the number of
+      buffer, but shrinks back to [n] characters when [reset] is called.
+
+      For best performance, [n] should be of the same order of magnitude as the number of
       characters that are expected to be stored in the buffer (for instance, 80 for a
       buffer that holds one output line).  Nothing bad will happen if the buffer grows
       beyond that limit, however. In doubt, take [n = 16] for instance. *)
@@ -34,22 +28,22 @@ module type S = sig
       contents of the buffer [src], starting at offset [src_pos] to bytes [dst], starting
       at character [dst_pos].
 
-      Raise [Invalid_argument] if [src_pos] and [len] do not designate a valid substring
+      Raises [Invalid_argument] if [src_pos] and [len] do not designate a valid substring
       of [src], or if [dst_pos] and [len] do not designate a valid substring of [dst]. *)
 
   include Blit.S_distinct with type src := t with type dst := bytes
 
-  (** get the (zero-based) n-th character of the buffer. Raise [Invalid_argument] if index
-      out of bounds *)
+  (** Gets the (zero-based) n-th character of the buffer. Raises [Invalid_argument] if
+      index out of bounds. *)
   val nth : t -> int -> char
 
-  (** Return the number of characters currently contained in the buffer. *)
+  (** Returns the number of characters currently contained in the buffer. *)
   val length : t -> int
 
-  (** Empty the buffer. *)
+  (** Empties the buffer. *)
   val clear : t -> unit
 
-  (** Empty the buffer and deallocate the internal storage holding the buffer contents,
+  (** Empties the buffer and deallocates the internal storage holding the buffer contents,
       replacing it with the initial internal storage of length [n] that was allocated by
       [create n].  For long-lived buffers that may have grown a lot, [reset] allows faster
       reclamation of the space used by the buffer. *)
@@ -81,7 +75,7 @@ end
 module type Buffer = sig
   module type S = S
 
-  (** Buffers using strings as underlying storage medium *)
+  (** Buffers using strings as underlying storage medium: *)
 
   include S with type t = Caml.Buffer.t (** @open *)
 end

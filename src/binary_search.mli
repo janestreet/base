@@ -1,30 +1,31 @@
-(**
-   General functions for performing binary searches over ordered sequences given
-   [length] and [get] functions.  These functions can be specialized and added to
-   a data structure using the functors supplied in [Binary_searchable] and described
-   in [Binary_searchable_intf].
+(** General functions for performing binary searches over ordered sequences given
+    [length] and [get] functions.
 
-   {3:examples Examples}
+    These functions can be specialized and added to a data structure using the functors
+    supplied in {{!Base.Binary_searchable}[Binary_searchable]} and described in
+    {{!Base.Binary_searchable_intf}[Binary_searchable_intf]}.
 
-   Below we assume that the function [get], [length] and [compare] are in scope:
+    {2:examples Examples}
 
-   {[
-     (* find the index of an element [e] in [t] *)
-     binary_search t ~get ~length ~compare `First_equal_to e;
+    Below we assume that the functions [get], [length] and [compare] are in scope:
 
-     (* find the index where an element [e] should be inserted *)
-     binary_search t ~get ~length ~compare `First_greater_than_or_equal_to e;
+    {[
+      (* Find the index of an element [e] in [t] *)
+      binary_search t ~get ~length ~compare `First_equal_to e;
 
-     (* find the index in [t] where all elements to the left are less than [e] *)
-     binary_search_segmented t ~get ~length ~segment_of:(fun e' ->
-       if compare e' e <= 0 then `Left else `Right) `First_on_right
-   ]} *)
+      (* Find the index where an element [e] should be inserted *)
+      binary_search t ~get ~length ~compare `First_greater_than_or_equal_to e;
+
+      (* Find the index in [t] where all elements to the left are less than [e] *)
+      binary_search_segmented t ~get ~length ~segment_of:(fun e' ->
+        if compare e' e <= 0 then `Left else `Right) `First_on_right
+    ]} *)
 
 open! Import
 
 (** [binary_search ?pos ?len t ~length ~get ~compare which elt] takes [t] that is sorted
-    in nondecreasing order according to [compare], where [compare] and [elt] divide [t]
-    into three (possibly empty) segments:
+    in increasing order according to [compare], where [compare] and [elt] divide [t] into
+    three (possibly empty) segments:
 
     {v
       |  < elt  |  = elt  |  > elt  |

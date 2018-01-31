@@ -34,9 +34,9 @@ val nan : t
 val infinity : t
 val neg_infinity : t
 
-val max_value : t                   (** equal to [infinity] *)
+val max_value : t                   (** Equal to [infinity]. *)
 
-val min_value : t                   (** equal to [neg_infinity] *)
+val min_value : t                   (** Equal to [neg_infinity]. *)
 
 val zero : t
 val one : t
@@ -58,25 +58,28 @@ val euler : t     (** Euler-Mascheroni constant (γ). *)
     This gives the relative accuracy of type [t], in the sense that for numbers on the
     order of [x], the roundoff error is on the order of [x *. float_epsilon].
 
-    See also: http://en.wikipedia.org/wiki/Machine_epsilon
+    See also: {{:http://en.wikipedia.org/wiki/Machine_epsilon} Machine epsilon}.
 
-    (Not to be confused with {!val:robust_comparison_tolerance}.) *)
+    (Not to be confused with
+    {{!val:robust_comparison_tolerance}[robust_comparison_tolerance]}.) *)
 val epsilon_float : t
 
 val max_finite_value : t
 
-(** [min_positive_subnormal_value = 2 ** -1074]
-    [min_positive_normal_value    = 2 ** -1022] *)
+(**
+   - [min_positive_subnormal_value = 2 ** -1074]
+   - [min_positive_normal_value    = 2 ** -1022] *)
+
 val min_positive_subnormal_value : t
 val min_positive_normal_value    : t
 
-(** An order-preserving bijection between all floats except for nans, and all int64s
-    with absolute value smaller than or equal to [2**63 - 2**52].
-    Note both 0. and -0. map to 0L. *)
+(** An order-preserving bijection between all floats except for nans, and all int64s with
+    absolute value smaller than or equal to [2**63 - 2**52].  Note both 0. and -0. map to
+    0L. *)
 val to_int64_preserve_order : t -> int64 option
 val to_int64_preserve_order_exn : t -> int64
 
-(** returns [nan] if the absolute value of the argument is too large *)
+(** Returns [nan] if the absolute value of the argument is too large. *)
 val of_int64_preserve_order : int64 -> t
 
 (** The next or previous representable float.  ULP stands for "unit of least precision",
@@ -132,9 +135,9 @@ val iround_exn : ?dir:[`Zero|`Nearest|`Up|`Down] -> t -> int
 val round_towards_zero : t -> t
 val round_down         : t -> t
 val round_up           : t -> t
-val round_nearest      : t -> t  (** rounds half integers up *)
+val round_nearest      : t -> t  (** Rounds half integers up. *)
 
-val round_nearest_half_to_even : t -> t  (** rounds half integers to the even integer *)
+val round_nearest_half_to_even : t -> t  (** Rounds half integers to the even integer. *)
 
 val iround_towards_zero : t -> int option
 val iround_down         : t -> int option
@@ -158,11 +161,13 @@ val iround_ubound : t
 
 val is_nan : t -> bool
 
-(** includes positive and negative Float.infinity *)
+(** Includes positive and negative [Float.infinity]. *)
 val is_inf : t -> bool
 
-(** min and max that return the other value if one of the values is a [nan]. Returns
-    [nan] if both arguments are [nan]. *)
+(** [min_inan] and [max_inan] return, respectively, the min and max of the two given
+    values, except when one of the values is a [nan], in which case the other is
+    returned. (Returns [nan] if both arguments are [nan].) *)
+
 val min_inan : t -> t -> t
 val max_inan : t -> t -> t
 
@@ -173,7 +178,7 @@ val (/) : t -> t -> t
 
 val (~-) : t -> t
 
-(** Returns the fractional part and the whole (i.e. integer) part.  For example, [modf
+(** Returns the fractional part and the whole (i.e., integer) part. For example, [modf
     (-3.14)] returns [{ fractional = -0.14; integral = -3.; }]! *)
 module Parts : sig
   type outer
@@ -197,8 +202,8 @@ val mod_float : t -> t -> t
 
 (** {6 Ordinary functions for arithmetic operations}
 
-    These are for modules that inherit from t, since the infix operators are more
-    convenient *)
+    These are for modules that inherit from [t], since the infix operators are more
+    convenient. *)
 val add : t -> t -> t
 val sub : t -> t -> t
 val neg : t -> t
@@ -255,21 +260,22 @@ val to_string_hum
     an appropriate power of 1000 and rendered with one digit after the decimal point,
     except that the decimal point is written as '.', 'k', 'm', 'g', 't', or 'p' to
     indicate the scale factor.  (However, if the digit after the "decimal" point is 0,
-    it is suppressed.)  The smallest scale factor that allows the number to be rendered
-    with at most 3 digits to the left of the decimal is used.  If the number is too
-    large for this format (i.e., the absolute value is at least 999.95e15), scientific
-    notation is used instead. E.g.:
+    it is suppressed.)
+
+    The smallest scale factor that allows the number to be rendered with at most 3 digits
+    to the left of the decimal is used.  If the number is too large for this format (i.e.,
+    the absolute value is at least 999.95e15), scientific notation is used instead. E.g.:
 
     - [to_padded_compact_string     (-0.01) =  "-0  "]
     - [to_padded_compact_string       1.89  =   "1.9"]
     - [to_padded_compact_string 999_949.99  = "999k9"]
     - [to_padded_compact_string 999_950.    =   "1m "]
 
-    In the case where the digit after the "decimal", or the "decimal" itself are
-    omitted, the numbers are padded on the right with spaces to ensure the last two
-    columns of the string always correspond to the decimal and the digit afterward
-    (except in the case of scientific notation, where the exponent is the right-most
-    element in the string and could take up to four characters).
+    In the case where the digit after the "decimal", or the "decimal" itself is omitted,
+    the numbers are padded on the right with spaces to ensure the last two columns of the
+    string always correspond to the decimal and the digit afterward (except in the case of
+    scientific notation, where the exponent is the right-most element in the string and
+    could take up to four characters).
 
     - [to_padded_compact_string    1. =    "1  "]
     - [to_padded_compact_string  1.e6 =    "1m "]
@@ -305,42 +311,41 @@ val to_padded_compact_string : t -> string
     The error will be on the order of [|n|] ulps, essentially the same as if you
     perturbed [x] by up to a ulp and then exponentiated exactly.
 
-    Benchmarks show a factor of 5-10 speedup (relative to [**]) for exponents up to
-    about 1000 (approximately 10ns vs. 70ns).  For larger exponents the advantage is
-    smaller but persists into the trillions.  For a recent or more detailed comparison
-    run the benchmarks.
+    Benchmarks show a factor of 5-10 speedup (relative to [**]) for exponents up to about
+    1000 (approximately 10ns vs. 70ns).  For larger exponents the advantage is smaller but
+    persists into the trillions.  For a recent or more detailed comparison, run the
+    benchmarks.
 
-    Depending on context, calling this function might or might not allocate 2 minor
-    words.  Even if called in a way that causes allocation, it still appears faster than
+    Depending on context, calling this function might or might not allocate 2 minor words.
+    Even if called in a way that causes allocation, it still appears to be faster than
     [**]. *)
 val int_pow : t -> int -> t
 
 (** [ldexp x n] returns [x *. 2 ** n] *)
 val ldexp : t -> int -> t
 
-(** [frexp f] returns the pair of the significant and the exponent of f. When f is zero,
-    the significant x and the exponent n of f are equal to zero. When f is non-zero,
-    they are defined by [f = x *. 2 ** n] and [0.5 <= x < 1.0]. *)
+(** [frexp f] returns the pair of the significant and the exponent of [f]. When [f] is
+    zero, the significant [x] and the exponent [n] of [f] are equal to zero. When [f] is
+    non-zero, they are defined by [f = x *. 2 ** n] and [0.5 <= x < 1.0]. *)
 val frexp : t -> t * int
 
-(** Base 10 logarithm *)
+(** Base 10 logarithm. *)
 external log10 : t -> t = "caml_log10_float" "log10"
 [@@unboxed] [@@noalloc]
 
-(** [expm1 x] computes [exp x -. 1.0], giving numerically-accurate results
-    even if [x] is close to [0.0]. *)
+(** [expm1 x] computes [exp x -. 1.0], giving numerically-accurate results even if [x] is
+    close to [0.0]. *)
 external expm1 : t -> t = "caml_expm1_float" "caml_expm1"
 [@@unboxed] [@@noalloc]
 
-(** [log1p x] computes [log(1.0 +. x)] (natural logarithm),
-    giving numerically-accurate results even if [x] is close to [0.0]. *)
+(** [log1p x] computes [log(1.0 +. x)] (natural logarithm), giving numerically-accurate
+    results even if [x] is close to [0.0]. *)
 external log1p : t -> t = "caml_log1p_float" "caml_log1p"
 [@@unboxed] [@@noalloc]
 
-(** [copysign x y] returns a float whose absolute value is that of
-    [x] and whose sign is that of [y].  If [x] is [nan], returns
-    [nan].  If [y] is [nan], returns either [x] or [-. x], but it is
-    not specified which. *)
+(** [copysign x y] returns a float whose absolute value is that of [x] and whose sign is
+    that of [y].  If [x] is [nan], returns [nan].  If [y] is [nan], returns either [x] or
+    [-. x], but it is not specified which. *)
 external copysign : t -> t -> t = "caml_copysign_float" "caml_copysign"
 [@@unboxed] [@@noalloc]
 
@@ -356,31 +361,29 @@ external sin : t -> t = "caml_sin_float" "sin"
 external tan : t -> t = "caml_tan_float" "tan"
 [@@unboxed] [@@noalloc]
 
-(** Arc cosine.  The argument must fall within the range [[-1.0, 1.0]].
-    Result is in radians and is between [0.0] and [pi]. *)
+(** Arc cosine.  The argument must fall within the range [[-1.0, 1.0]].  Result is in
+    radians and is between [0.0] and [pi]. *)
 external acos : t -> t = "caml_acos_float" "acos"
 [@@unboxed] [@@noalloc]
 
-(** Arc sine.  The argument must fall within the range [[-1.0, 1.0]].
-    Result is in radians and is between [-pi/2] and [pi/2]. *)
+(** Arc sine.  The argument must fall within the range [[-1.0, 1.0]].  Result is in
+    radians and is between [-pi/2] and [pi/2]. *)
 external asin : t -> t = "caml_asin_float" "asin"
 [@@unboxed] [@@noalloc]
 
-(** Arc tangent.
-    Result is in radians and is between [-pi/2] and [pi/2]. *)
+(** Arc tangent.  Result is in radians and is between [-pi/2] and [pi/2]. *)
 external atan : t -> t = "caml_atan_float" "atan"
 [@@unboxed] [@@noalloc]
 
-(** [atan2 y x] returns the arc tangent of [y /. x].  The signs of [x]
-    and [y] are used to determine the quadrant of the result.
-    Result is in radians and is between [-pi] and [pi]. *)
+(** [atan2 y x] returns the arc tangent of [y /. x].  The signs of [x] and [y] are used to
+    determine the quadrant of the result.  Result is in radians and is between [-pi] and
+    [pi]. *)
 external atan2 : t -> t -> t = "caml_atan2_float" "atan2"
 [@@unboxed] [@@noalloc]
 
-(** [hypot x y] returns [sqrt(x *. x + y *. y)], that is, the length
-    of the hypotenuse of a right-angled triangle with sides of length
-    [x] and [y], or, equivalently, the distance of the point [(x,y)]
-    to origin. *)
+(** [hypot x y] returns [sqrt(x *. x + y *. y)], that is, the length of the hypotenuse of
+    a right-angled triangle with sides of length [x] and [y], or, equivalently, the
+    distance of the point [(x,y)] to origin. *)
 external hypot : t -> t -> t = "caml_hypot_float" "caml_hypot"
 [@@unboxed] [@@noalloc]
 
@@ -458,9 +461,10 @@ module Sign_or_nan : sig type t = Neg | Zero | Pos | Nan end
 val sign_or_nan : t -> Sign_or_nan.t
 
 (** These functions construct and destruct 64-bit floating point numbers based on their
-    IEEE representation with sign bit, 11-bit non-negative (biased) exponent, and 52-bit
-    non-negative mantissa (or significand).  See wikipedia for details of the encoding:
-    http://en.wikipedia.org/wiki/Double-precision_floating-point_format.
+    IEEE representation with a sign bit, an 11-bit non-negative (biased) exponent, and a
+    52-bit non-negative mantissa (or significand).  See
+    {{:http://en.wikipedia.org/wiki/Double-precision_floating-point_format} Wikipedia} for
+    details of the encoding.
 
     In particular, if 1 <= exponent <= 2046, then:
 

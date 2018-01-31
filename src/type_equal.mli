@@ -1,6 +1,4 @@
-(** For representing type equalities otherwise not known by the type-checker.
-
-    The purpose of [Type_equal] is to represent type equalities that the type checker
+(** The purpose of [Type_equal] is to represent type equalities that the type checker
     otherwise would not know, perhaps because the type equality depends on dynamic data,
     or perhaps because the type system isn't powerful enough.
 
@@ -28,7 +26,7 @@
     [Type_equal] gets its power from the ability to, in a type-safe way, prove to the type
     checker that two types are equal.  The [Type_equal.t] value that is passed is
     necessary for the type-checker's rules to be correct, but the compiler, could, in
-    principle, not pass around values of type [Type_equal.t] at run time.
+    principle, not pass around values of type [Type_equal.t] at runtime.
 *)
 
 open! Import
@@ -48,6 +46,7 @@ type ('a, 'b) equal = ('a, 'b) t (** just an alias, needed when [t] gets shadowe
 
 (** [refl], [sym], and [trans] construct proofs that type equality is reflexive,
     symmetric, and transitive. *)
+
 val refl  : ('a, 'a) t
 val sym   : ('a, 'b) t -> ('b, 'a) t
 val trans : ('a, 'b) t -> ('b, 'c) t -> ('a, 'c) t
@@ -80,7 +79,7 @@ val conv : ('a, 'b) t -> 'a -> 'b
 
 (** It is always safe to conclude that if type [a] equals [b], then for any type ['a t],
     type [a t] equals [b t].  The OCaml type checker uses this fact when it can.  However,
-    sometimes, e.g. when using [conv], one needs to explicitly use this fact to construct
+    sometimes, e.g., when using [conv], one needs to explicitly use this fact to construct
     an appropriate [Type_equal.t].  The [Lift*] functors do this. *)
 
 module Lift (X : T1) : sig
@@ -100,6 +99,7 @@ module Lift3 (X : T3) : sig
 end
 
 (** [tuple2] and [detuple2] convert between equality on a 2-tuple and its components. *)
+
 val detuple2 : ('a1 * 'a2, 'b1 * 'b2) t -> ('a1, 'b1) t * ('a2, 'b2) t
 val tuple2   : ('a1, 'b1) t -> ('a2, 'b2) t -> ('a1 * 'a2, 'b1 * 'b2) t
 
@@ -118,7 +118,7 @@ val tuple2   : ('a1, 'b1) t -> ('a2, 'b2) t -> ('a1 * 'a2, 'b1 * 'b2) t
       type 'a t = unit
     ]}
 
-    then clearly [t] isn't injective, because, e.g. [int t = bool t], but [int <> bool].
+    then clearly [t] isn't injective, because, e.g., [int t = bool t], but [int <> bool].
 
     If [module M : Injective], then [M.strip] provides a way to get a proof that two types
     are equal from a proof that both types transformed by [M.t] are equal.
@@ -137,7 +137,7 @@ val tuple2   : ('a1, 'b1) t -> ('a2, 'b2) t -> ('a1 * 'a2, 'b1 * 'b2) t
     This will not type check for all type constructors (certainly not for non-injective
     ones!), but it's always safe to try the above implementation if you are unsure.  If
     OCaml accepts this definition, then the type is injective.  On the other hand, if
-    OCaml doesn't, then type type may or may not be injective.  For example, if the
+    OCaml doesn't, then the type may or may not be injective.  For example, if the
     definition of the type depends on abstract types that match [Injective], OCaml will
     not automatically use their injectivity, and one will have to write a more complicated
     definition of [strip] that causes OCaml to use that fact.  For example:
@@ -174,7 +174,7 @@ module Composition_preserves_injectivity (M1 : Injective) (M2 : Injective)
   : Injective with type 'a t = 'a M1.t M2.t
 
 (** [Id] provides identifiers for types, and the ability to test (via [Id.same]) at
-    run-time if two identifiers are equal, and if so to get a proof of equality of their
+    runtime if two identifiers are equal, and if so to get a proof of equality of their
     types.  Unlike values of type [Type_equal.t], values of type [Id.t] do have semantic
     content and must have a nontrivial runtime representation. *)
 module Id : sig
@@ -214,7 +214,8 @@ module Id : sig
     -> ('a -> Sexp.t)
     -> 'a t
 
-  (** accessors *)
+  (** Accessors *)
+
   val hash    : _ t -> int
   val name    : _ t -> string
   val to_sexp : 'a t -> 'a -> Sexp.t
@@ -222,12 +223,13 @@ module Id : sig
   val hash_fold_t : Hash.state -> _ t -> Hash.state
 
   (** [same_witness t1 t2] and [same_witness_exn t1 t2] return a type equality proof iff
-      the two identifiers are the same (i.e. physically equal, resulting from the same
+      the two identifiers are the same (i.e., physically equal, resulting from the same
       call to [create]).  This is a useful way to achieve a sort of dynamic typing.
       [same_witness] does not allocate a [Some] every time it is called.
 
       [same t1 t2 = is_some (same_witness t1 t2)].
   *)
+
   val same             :  _ t -> _ t  -> bool
   val same_witness     : 'a t -> 'b t -> ('a, 'b) equal option
   val same_witness_exn : 'a t -> 'b t -> ('a, 'b) equal

@@ -1,13 +1,14 @@
-(** Type for tracking errors in an Error.t. This is a specialization of the Result type,
-    where the Error constructor carries an Error.t.
+(** Type for tracking errors in an [Error.t]. This is a specialization of the [Result]
+    type, where the [Error] constructor carries an [Error.t].
 
-    A common idiom is to wrap a function that is not implemented on all platforms, e.g.:
+    A common idiom is to wrap a function that is not implemented on all platforms, e.g.,
 
-    val do_something_linux_specific : (unit -> unit) Or_error.t *)
+    {[val do_something_linux_specific : (unit -> unit) Or_error.t]}
+*)
 
 open! Import
 
-(** Serialization and comparison of an [Error] force the error's lazy message. **)
+(** Serialization and comparison of an [Error] force the error's lazy message. *)
 type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, hash, sexp]
 include
 sig
@@ -38,16 +39,16 @@ val is_error : _ t -> bool
 
 val ignore : _ t -> unit t
 
-(** [try_with f] catches exceptions thrown by [f] and returns them in the Result.t as an
-    Error.t.  [try_with_join] is like [try_with], except that [f] can throw exceptions or
-    return an Error directly, without ending up with a nested error; it is equivalent to
-    [Result.join (try_with f)]. *)
+(** [try_with f] catches exceptions thrown by [f] and returns them in the [Result.t] as an
+    [Error.t].  [try_with_join] is like [try_with], except that [f] can throw exceptions
+    or return an [Error] directly, without ending up with a nested error; it is equivalent
+    to [Result.join (try_with f)]. *)
 val try_with      : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a  ) -> 'a t
 val try_with_join : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a t) -> 'a t
 
 
-(** [ok t] returns [None] if [t] is an [Error], and otherwise returns the
-    contents of the [Ok] constructor. *)
+(** [ok t] returns [None] if [t] is an [Error], and otherwise returns the contents of the
+    [Ok] constructor. *)
 val ok : 'ok t -> 'ok option
 
 (** [ok_exn t] throws an exception if [t] is an [Error], and otherwise returns the
@@ -67,7 +68,7 @@ val of_exn_result : ('a, exn) Result.t -> 'a t
       = Error (Error.create ?strict message a sexp_of_a)
     ]}
 
-    As with [Error.create], [sexp_of_a a] is lazily computed, when the info is converted
+    As with [Error.create], [sexp_of_a a] is lazily computed when the info is converted
     to a sexp.  So, if [a] is mutated in the time between the call to [create] and the
     sexp conversion, those mutations will be reflected in the sexp.  Use [~strict:()] to
     force [sexp_of_a a] to be computed immediately. *)
@@ -80,7 +81,7 @@ val error
 
 val error_s : Sexp.t -> _ t
 
-(** [error_string message] is [Error (Error.of_string message)] *)
+(** [error_string message] is [Error (Error.of_string message)]. *)
 val error_string : string -> _ t
 
 (** [errorf format arg1 arg2 ...] is [Error (sprintf format arg1 arg2 ...)].  Note that it
@@ -111,7 +112,7 @@ val iter_error : _  t -> f:(Error.t -> unit) -> unit
          = Error (Error.of_list [e1; ...; en]) ]} *)
 val combine_errors : 'a t list -> 'a list t
 
-(** [combine_errors_unit] returns [Ok] if every element in [ts] is [Ok ()], else it
+(** [combine_errors_unit ts] returns [Ok] if every element in [ts] is [Ok ()], else it
     returns [Error] with all the errors in [ts], like [combine_errors]. *)
 val combine_errors_unit : unit t list -> unit t
 

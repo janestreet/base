@@ -1,7 +1,8 @@
-open! Import
-
 (** Used for specifying a bound (either upper or lower) as inclusive, exclusive, or
     unbounded. *)
+
+open! Import
+
 type 'a t = Incl of 'a | Excl of 'a | Unbounded [@@deriving_inline enumerate, sexp]
 include
 sig
