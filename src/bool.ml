@@ -16,9 +16,6 @@ module T = struct
   let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = bool_of_sexp
   let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_bool
   [@@@end]
-
-  (* we use physical equality here because for bools it is the same *)
-  let equal (t : t) t' = phys_equal t t'
 end
 
 include T
@@ -32,39 +29,25 @@ let of_string = function
 
 let to_string = Caml.string_of_bool
 
-module Replace_polymorphic_compare = struct
-  let min (x : t) y = if Poly.( < ) x y then x else y
-  let max (x : t) y = if Poly.( > ) x y then x else y
-  let compare = compare
-  let ascending = compare
-  let descending x y = compare y x
-  let ( >= ) (x : t) y = Poly.( >= ) x y
-  let ( <= ) (x : t) y = Poly.( <= ) x y
-  let ( = ) = equal
-  let equal = equal
-  let ( > ) (x : t) y = Poly.( > ) x y
-  let ( < ) (x : t) y = Poly.( < ) x y
-  let ( <> ) (x : t) y = x != y
-  let between t ~low ~high = low <= t && t <= high
-  let clamp_unchecked t ~min ~max =
-    if t < min then min else if t <= max then t else max
+include Bool_replace_polymorphic_compare
 
-  let clamp_exn t ~min ~max =
-    assert (min <= max);
-    clamp_unchecked t ~min ~max
+let between t ~low ~high = low <= t && t <= high
+let clamp_unchecked t ~min ~max =
+  if t < min then min else if t <= max then t else max
 
-  let clamp t ~min ~max =
-    if min > max then
-      Or_error.error_s
-        (Sexp.message "clamp requires [min <= max]"
-           [ "min", T.sexp_of_t min
-           ; "max", T.sexp_of_t max
-           ])
-    else
-      Ok (clamp_unchecked t ~min ~max)
-end
+let clamp_exn t ~min ~max =
+  assert (min <= max);
+  clamp_unchecked t ~min ~max
 
-include Replace_polymorphic_compare
+let clamp t ~min ~max =
+  if min > max then
+    Or_error.error_s
+      (Sexp.message "clamp requires [min <= max]"
+         [ "min", T.sexp_of_t min
+         ; "max", T.sexp_of_t max
+         ])
+  else
+    Ok (clamp_unchecked t ~min ~max)
 
 include Comparable.Validate (T)
 

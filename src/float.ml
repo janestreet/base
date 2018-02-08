@@ -1,7 +1,5 @@
 open! Import
-open! Polymorphic_compare
 open! Printf
-
 
 module Bytes = Bytes0
 include Float0
@@ -25,8 +23,8 @@ module T = struct
   let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = float_of_sexp
   let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_float
   [@@@end]
-  let compare (x : t) y = compare x y
-  let equal (x : t) y = x = y
+  let compare = Float_replace_polymorphic_compare.compare
+  let equal   = Float_replace_polymorphic_compare.equal
 end
 
 include T
@@ -49,7 +47,7 @@ external format_float : string -> float -> string = "caml_format_float"
 let valid_float_lexem s =
   let l = String.length s in
   let rec loop i =
-    if i >= l then s ^ "." else
+    if Int_replace_polymorphic_compare.(>=) i l then s ^ "." else
       match s.[i] with
       | '0' .. '9' | '-' -> loop (i + 1)
       | _ -> s
@@ -461,7 +459,10 @@ let iround ?(dir=`Nearest) t =
   try Some (iround_exn ~dir t)
   with _ -> None
 
-let is_inf x = (Pervasives.classify_float x = Pervasives.FP_infinite);;
+let is_inf x =
+  match Pervasives.classify_float x with
+  | Pervasives.FP_infinite -> true
+  | _                      -> false
 
 let min_inan (x : t) y =
   if is_nan y then x
@@ -703,7 +704,7 @@ let insert_underscores ?(delimiter='_') ?(strip_zero=false) string =
     let left = Int_conversions.insert_delimiter left ~delimiter in
     let right =
       if strip_zero
-      then String.rstrip right ~drop:(fun c -> c = '0')
+      then String.rstrip right ~drop:(fun c -> Char.(=) c '0')
       else right
     in
     match right with
@@ -712,7 +713,7 @@ let insert_underscores ?(delimiter='_') ?(strip_zero=false) string =
 ;;
 
 let to_string_hum ?delimiter ?(decimals=3) ?strip_zero f =
-  if decimals < 0 then
+  if Int_replace_polymorphic_compare.(<) decimals 0 then
     invalid_argf "to_string_hum: invalid argument ~decimals=%d" decimals ();
   match classify f with
   | Class.Infinite -> if f > 0. then "inf" else "-inf"
@@ -764,7 +765,7 @@ let to_padded_compact_string t =
       k
     else
       (* a tie *)
-    if k mod 2 = 0 then k else k + 1
+    if Int_replace_polymorphic_compare.(=) (k mod 2) 0 then k else k + 1
   in
 
   match classify t with
@@ -795,6 +796,7 @@ let to_padded_compact_string t =
           (* [mod] is okay here because we know i >= 0. *)
           k / 10, k mod 10
         in
+        let open Int_replace_polymorphic_compare in
         assert (0 <= i && i < 1000);
         assert (0 <= d && d < 10);
         if d = 0 then
@@ -833,6 +835,7 @@ let to_padded_compact_string t =
    improvement.
 *)
 let int_pow x n =
+  let open Int_replace_polymorphic_compare in
   if n = 0 then
     1.
   else begin
@@ -870,23 +873,7 @@ let int_pow x n =
     !x *. !accum
   end
 
-module Replace_polymorphic_compare = struct
-  let equal = equal
-  let compare (x : t) y = compare x y
-  let ascending = compare
-  let descending x y = compare y x
-  let min = min
-  let max = max
-  let ( >= ) (x : t) y = x >= y
-  let ( <= ) (x : t) y = x <= y
-  let ( = ) (x : t) y = x = y
-  let ( > ) (x : t) y = x > y
-  let ( < ) (x : t) y = x < y
-  let ( <> ) (x : t) y = x <> y
-  let between t ~low ~high = low <= t && t <= high
-end
-
-include Replace_polymorphic_compare
+let between t ~low ~high = low <= t && t <= high
 
 let clamp_exn t ~min ~max =
   (* Also fails if [min] or [max] is nan *)
@@ -1033,7 +1020,7 @@ module O = struct
   let ( *  ) = ( *  )
   let ( /  ) = ( /  )
   let ( ~- ) = ( ~- )
-  include (Replace_polymorphic_compare : Comparisons.Infix with type t := t)
+  include (Float_replace_polymorphic_compare : Comparisons.Infix with type t := t)
   let abs        = abs
   let neg        = neg
   let zero       = zero

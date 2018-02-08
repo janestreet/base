@@ -29,8 +29,6 @@ end
 include T
 include Comparator.Make(T)
 
-let equal (t1 : t) t2 = compare t1 t2 = 0
-
 type elt = char
 
 let is_substring_at_gen =
@@ -1227,38 +1225,25 @@ module Escaping = struct
   ;;
 end
 
-module Replace_polymorphic_compare = struct
-  let equal = equal
-  let compare (x : t) y = compare x y
-  let ascending = compare
-  let descending x y = compare y x
-  let ( >= ) x y = Poly.( >= ) (x : t) y
-  let ( <= ) x y = Poly.( <= ) (x : t) y
-  let ( =  ) x y = Poly.( =  ) (x : t) y
-  let ( >  ) x y = Poly.( >  ) (x : t) y
-  let ( <  ) x y = Poly.( <  ) (x : t) y
-  let ( <> ) x y = Poly.( <> ) (x : t) y
-  let min (x : t) y = if x < y then x else y
-  let max (x : t) y = if x > y then x else y
-  let between t ~low ~high = low <= t && t <= high
-  let clamp_unchecked t ~min ~max =
-    if t < min then min else if t <= max then t else max
+include String_replace_polymorphic_compare
 
-  let clamp_exn t ~min ~max =
-    assert (min <= max);
-    clamp_unchecked t ~min ~max
+let between t ~low ~high = low <= t && t <= high
+let clamp_unchecked t ~min ~max =
+  if t < min then min else if t <= max then t else max
 
-  let clamp t ~min ~max =
-    if min > max then
-      Or_error.error_s
-        (Sexp.message "clamp requires [min <= max]"
-           [ "min", T.sexp_of_t min
-           ; "max", T.sexp_of_t max
-           ])
-    else
-      Ok (clamp_unchecked t ~min ~max)
-end
+let clamp_exn t ~min ~max =
+  assert (min <= max);
+  clamp_unchecked t ~min ~max
 
-include Replace_polymorphic_compare
+let clamp t ~min ~max =
+  if min > max then
+    Or_error.error_s
+      (Sexp.message "clamp requires [min <= max]"
+         [ "min", T.sexp_of_t min
+         ; "max", T.sexp_of_t max
+         ])
+  else
+    Ok (clamp_unchecked t ~min ~max)
+
 let create = Bytes.create
 let fill = Bytes.fill

@@ -4,8 +4,7 @@
    The only difference being the lowest bit (immediate bit) set to 1. *)
 
 open! Import
-open! Polymorphic_compare
-
+include Int64_replace_polymorphic_compare
 
 module T0 = struct
   module T = struct
@@ -122,7 +121,6 @@ end = struct
   let sexp_of_t x = sexp_of_int64 (unwrap x)
 
   let compare (x : t) y = compare x y
-
 end
 
 open W
@@ -143,8 +141,7 @@ module T = struct
   let comparator = W.comparator
 
   let compare = W.compare
-
-  let equal (x : t) y = x = y
+  let equal   = Int64_replace_polymorphic_compare.equal
 
   (* We don't expect [hash] to follow the behavior of int in 64bit architecture *)
   let _ = hash
@@ -170,6 +167,7 @@ module T = struct
      - [0u9812], [-0u9812] (unsigned decimal representation - available from OCaml 4.03) *)
   let sign_and_signedness x =
     let len = String.length x in
+    let open Int_replace_polymorphic_compare in
     let pos,sign =
       if 0 < len
       then match x.[0] with
@@ -197,15 +195,17 @@ module T = struct
       then of_int64_exn (Caml.Int64.of_string str)
       else
         let pos_str =
-          if sign = `Neg
-          then String.sub str ~pos:1 ~len:(String.length str - 1)
-          else str
+          match sign with
+          | `Neg -> String.sub str ~pos:1 ~len:(String.length str - 1)
+          | `Pos -> str
         in
         let int64 = Caml.Int64.of_string pos_str in
         (* unsigned 63-bit int must parse as a positive signed 64-bit int *)
-        if int64 < 0L then invalid_str str;
+        if Int64_replace_polymorphic_compare.(<) int64 0L then invalid_str str;
         let int63 = wrap_modulo int64 in
-        if sign = `Neg then neg int63 else int63
+        match sign with
+        | `Neg -> neg int63
+        | `Pos -> int63
     with _ -> invalid_str str
 
 end
@@ -240,6 +240,7 @@ let compare = compare
 let to_float x = Caml.Int64.to_float (unwrap x)
 let of_float_unchecked x = wrap_modulo (Caml.Int64.of_float x)
 let of_float t =
+  let open Float_replace_polymorphic_compare in
   if t >= float_lower_bound && t <= float_upper_bound then
     wrap_modulo (Caml.Int64.of_float t)
   else
@@ -256,39 +257,25 @@ include Comparable.Validate_with_zero (struct
     let zero = zero
   end)
 
-module Replace_polymorphic_compare = struct
-  let equal = equal
-  let compare = compare
-  let ascending = compare
-  let descending x y = compare y x
-  let min (x : t) y = if x < y then x else y
-  let max (x : t) y = if x > y then x else y
-  let ( >= ) (x : t) y = x >= y
-  let ( <= ) (x : t) y = x <= y
-  let ( = ) (x : t) y = x = y
-  let ( > ) (x : t) y = x > y
-  let ( < ) (x : t) y = x < y
-  let ( <> ) (x : t) y = x <> y
-  let between t ~low ~high = low <= t && t <= high
-  let clamp_unchecked t ~min ~max =
-    if t < min then min else if t <= max then t else max
+let min x y = if x < y then x else y
+let max x y = if x > y then x else y
+let between t ~low ~high = low <= t && t <= high
+let clamp_unchecked t ~min ~max =
+  if t < min then min else if t <= max then t else max
 
-  let clamp_exn t ~min ~max =
-    assert (min <= max);
-    clamp_unchecked t ~min ~max
+let clamp_exn t ~min ~max =
+  assert (min <= max);
+  clamp_unchecked t ~min ~max
 
-  let clamp t ~min ~max =
-    if min > max then
-      Or_error.error_s
-        (Sexp.message "clamp requires [min <= max]"
-           [ "min", T.sexp_of_t min
-           ; "max", T.sexp_of_t max
-           ])
-    else
-      Ok (clamp_unchecked t ~min ~max)
-end
-
-include Replace_polymorphic_compare
+let clamp t ~min ~max =
+  if min > max then
+    Or_error.error_s
+      (Sexp.message "clamp requires [min <= max]"
+         [ "min", T.sexp_of_t min
+         ; "max", T.sexp_of_t max
+         ])
+  else
+    Ok (clamp_unchecked t ~min ~max)
 
 let ( / ) = div
 let ( * ) = mul
@@ -357,7 +344,7 @@ module Pre_O = struct
   let ( * ) = ( * )
   let ( / ) = ( / )
   let ( ~- ) = ( ~- )
-  include (Replace_polymorphic_compare : Comparisons.Infix with type t := t)
+  include (Int64_replace_polymorphic_compare : Comparisons.Infix with type t := t)
   let abs = abs
   let neg = neg
   let zero = zero

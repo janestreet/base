@@ -1,5 +1,4 @@
 open! Import
-open! Polymorphic_compare
 open Container_intf.Export
 
 module Array = Array0

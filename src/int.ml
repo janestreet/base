@@ -44,40 +44,6 @@ let of_float f =
       (Float0.box f)
       ()
 
-module Replace_polymorphic_compare = struct
-  let min (x : t) y = if x < y then x else y
-  let max (x : t) y = if x > y then x else y
-  let compare = compare
-  let ascending = compare
-  let descending x y = compare y x
-  let equal (x : t) y = x = y
-  let ( >= ) (x : t) y = x >= y
-  let ( <= ) (x : t) y = x <= y
-  let ( =  ) (x : t) y = x =  y
-  let ( >  ) (x : t) y = x >  y
-  let ( <  ) (x : t) y = x <  y
-  let ( <> ) (x : t) y = x <> y
-  let between t ~low ~high = low <= t && t <= high
-  let clamp_unchecked t ~min ~max =
-    if t < min then min else if t <= max then t else max
-
-  let clamp_exn t ~min ~max =
-    assert (min <= max);
-    clamp_unchecked t ~min ~max
-
-  let clamp t ~min ~max =
-    if min > max then
-      Or_error.error_s
-        (Sexp.message "clamp requires [min <= max]"
-           [ "min", T.sexp_of_t min
-           ; "max", T.sexp_of_t max
-           ])
-    else
-      Ok (clamp_unchecked t ~min ~max)
-end
-
-include Replace_polymorphic_compare
-
 let zero = 0
 let one = 1
 let minus_one = -1
@@ -86,6 +52,26 @@ include Comparable.Validate_with_zero (struct
     include T
     let zero = zero
   end)
+
+include Int_replace_polymorphic_compare
+
+let between t ~low ~high = low <= t && t <= high
+let clamp_unchecked t ~min ~max =
+  if t < min then min else if t <= max then t else max
+
+let clamp_exn t ~min ~max =
+  assert (min <= max);
+  clamp_unchecked t ~min ~max
+
+let clamp t ~min ~max =
+  if min > max then
+    Or_error.error_s
+      (Sexp.message "clamp requires [min <= max]"
+         [ "min", T.sexp_of_t min
+         ; "max", T.sexp_of_t max
+         ])
+  else
+    Ok (clamp_unchecked t ~min ~max)
 
 let pred i = i - 1
 let succ i = i + 1
@@ -188,7 +174,7 @@ module Pre_O = struct
   let ( * ) = ( * )
   let ( / ) = ( / )
   let ( ~- ) = ( ~- )
-  include (Replace_polymorphic_compare : Comparisons.Infix with type t := t)
+  include (Int_replace_polymorphic_compare : Comparisons.Infix with type t := t)
   let abs = abs
   let neg = neg
   let zero = zero

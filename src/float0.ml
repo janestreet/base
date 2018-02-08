@@ -1,6 +1,5 @@
 open! Import
-open! Polymorphic_compare
-
+include Float_replace_polymorphic_compare
 
 let is_nan x = (x : float) <> x
 
@@ -33,7 +32,7 @@ let to_int64_preserve_order_exn x =
 ;;
 
 let of_int64_preserve_order x =
-  if x >= 0L then
+  if Int64_replace_polymorphic_compare.(>=) x 0L then
     Caml.Int64.float_of_bits x
   else
     ~-. (Caml.Int64.float_of_bits (Caml.Int64.neg x))
@@ -78,11 +77,13 @@ let is_x_minus_one_exact x =
      An alternative way of computing this: [x -. one_ulp `Down x <= 1.] is also prone to
      the same precision issues: you need to make sure [x] is 64-bit.
   *)
+  let open Int64_replace_polymorphic_compare in
   not (Caml.Int64.bits_of_float x = Caml.Int64.bits_of_float (x -. 1.))
 
 let lower_bound_for_int num_bits =
   let exp = Pervasives.float_of_int ( num_bits - 1 ) in
   let min_int_as_float = ~-. (2. ** exp) in
+  let open Int_replace_polymorphic_compare in
   if num_bits - 1 < 53 (* 53 = #bits in the float's mantissa with sign included *)
   then
     begin

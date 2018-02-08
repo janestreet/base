@@ -16,6 +16,9 @@
 - Added `String.is_substring_at string ~pos ~substring`.  Used it as
   back-end for `is_suffix` and `is_prefix`.
 
+- Moved all remaining `Replace_polymorphic_compare` submodules from Base
+  types and consolidated them in one place within import0.
+
 
 ## v0.10
 

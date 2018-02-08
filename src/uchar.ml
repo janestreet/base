@@ -29,22 +29,7 @@ include T
 include Pretty_printer.Register(T)
 include Comparable.Make(T)
 
-module Replace_polymorphic_compare = struct
-  let min (x : t) y = Poly.min x y
-  let max (x : t) y = Poly.max x y
-  let compare = compare
-  let ascending = compare
-  let descending x y = compare y x
-  let equal (x : t) y = phys_equal x y
-  let ( >= ) (x : t) y = Poly.(>=)  x y
-  let ( <= ) (x : t) y = Poly.(<=)  x y
-  let ( =  ) (x : t) y = phys_equal x y
-  let ( >  ) (x : t) y = Poly.(>)   x y
-  let ( <  ) (x : t) y = Poly.(<)   x y
-  let ( <> ) (x : t) y = Poly.(<>)  x y
-end
-
-include Replace_polymorphic_compare
+include Uchar_replace_polymorphic_compare
 
 let int_is_scalar = is_valid
 

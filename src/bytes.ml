@@ -11,10 +11,6 @@ module T = struct
   let module_name = "Base.Bytes"
 
   let pp fmt t = Caml.Format.fprintf fmt "%S" (to_string t)
-
-  let equal (t1 : t) (t2 : t) =
-    compare t1 t2 = 0
-
 end
 
 include T
@@ -75,45 +71,34 @@ let tr ~target ~replacement s =
     then unsafe_set s i replacement
   done
 
-module Replace_polymorphic_compare = struct
-  let equal = equal
-  let compare (x : t) y = compare x y
-  let ascending = compare
-  let descending x y = compare y x
-  let ( >= ) x y = Poly.( >= ) (x : t) y
-  let ( <= ) x y = Poly.( <= ) (x : t) y
-  let ( =  ) x y = Poly.( =  ) (x : t) y
-  let ( >  ) x y = Poly.( >  ) (x : t) y
-  let ( <  ) x y = Poly.( <  ) (x : t) y
-  let ( <> ) x y = Poly.( <> ) (x : t) y
-  let min (x : t) y = if x < y then x else y
-  let max (x : t) y = if x > y then x else y
-  let between t ~low ~high = low <= t && t <= high
-  let clamp_unchecked t ~min ~max =
-    if t < min then min else if t <= max then t else max
+include Bytes_replace_polymorphic_compare
 
-  let clamp_exn t ~min ~max =
-    assert (min <= max);
-    clamp_unchecked t ~min ~max
+let between t ~low ~high = low <= t && t <= high
+let clamp_unchecked t ~min ~max =
+  if t < min then min else if t <= max then t else max
 
-  let clamp t ~min ~max =
-    if min > max then
-      Or_error.error_s
-        (Sexp.message "clamp requires [min <= max]"
-           [ "min", T.sexp_of_t min
-           ; "max", T.sexp_of_t max
-           ])
-    else
-      Ok (clamp_unchecked t ~min ~max)
-end
+let clamp_exn t ~min ~max =
+  assert (min <= max);
+  clamp_unchecked t ~min ~max
+
+let clamp t ~min ~max =
+  if min > max then
+    Or_error.error_s
+      (Sexp.message "clamp requires [min <= max]"
+         [ "min", T.sexp_of_t min
+         ; "max", T.sexp_of_t max
+         ])
+  else
+    Ok (clamp_unchecked t ~min ~max)
 
 let contains ?pos ?len t char =
   let (pos, len) =
     Ordered_collection_common.get_pos_len_exn ?pos ?len ~length:(length t)
   in
   let last = pos + len in
-  let rec loop i = i < last && (Char.equal (get t i) char || loop (i + 1)) in
+  let rec loop i =
+    Int_replace_polymorphic_compare.(<) i last
+    && (Char.equal (get t i) char || loop (i + 1))
+  in
   loop pos
 ;;
-
-include Replace_polymorphic_compare

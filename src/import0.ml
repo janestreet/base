@@ -183,11 +183,141 @@ module Int_replace_polymorphic_compare = struct
   let descending (x : int) y = Poly.descending x y
   let compare    (x : int) y = Poly.compare    x y
   let equal      (x : int) y = Poly.equal      x y
-  let max        (x : int) y = Poly.max        x y
-  let min        (x : int) y = Poly.min        x y
+  let max        (x : int) y = if x >= y then x else y
+  let min        (x : int) y = if x <= y then x else y
 end
 
 include Int_replace_polymorphic_compare
+
+module Int64_replace_polymorphic_compare = struct
+  let ( <  ) (x : Caml.Int64.t) y = Poly.( <  ) x y
+  let ( <= ) (x : Caml.Int64.t) y = Poly.( <= ) x y
+  let ( <> ) (x : Caml.Int64.t) y = Poly.( <> ) x y
+  let ( =  ) (x : Caml.Int64.t) y = Poly.( =  ) x y
+  let ( >  ) (x : Caml.Int64.t) y = Poly.( >  ) x y
+  let ( >= ) (x : Caml.Int64.t) y = Poly.( >= ) x y
+
+  let ascending  (x : Caml.Int64.t) y = Poly.ascending  x y
+  let descending (x : Caml.Int64.t) y = Poly.descending x y
+  let compare    (x : Caml.Int64.t) y = Poly.compare    x y
+  let equal      (x : Caml.Int64.t) y = Poly.equal      x y
+  let max        (x : Caml.Int64.t) y = if x >= y then x else y
+  let min        (x : Caml.Int64.t) y = if x <= y then x else y
+end
+
+module Nativeint_replace_polymorphic_compare = struct
+  let ( <  ) (x : Caml.Nativeint.t) y = Poly.( <  ) x y
+  let ( <= ) (x : Caml.Nativeint.t) y = Poly.( <= ) x y
+  let ( <> ) (x : Caml.Nativeint.t) y = Poly.( <> ) x y
+  let ( =  ) (x : Caml.Nativeint.t) y = Poly.( =  ) x y
+  let ( >  ) (x : Caml.Nativeint.t) y = Poly.( >  ) x y
+  let ( >= ) (x : Caml.Nativeint.t) y = Poly.( >= ) x y
+
+  let ascending  (x : Caml.Nativeint.t) y = Poly.ascending  x y
+  let descending (x : Caml.Nativeint.t) y = Poly.descending x y
+  let compare    (x : Caml.Nativeint.t) y = Poly.compare    x y
+  let equal      (x : Caml.Nativeint.t) y = Poly.equal      x y
+  let max        (x : Caml.Nativeint.t) y = if x >= y then x else y
+  let min        (x : Caml.Nativeint.t) y = if x <= y then x else y
+end
+
+module Bool_replace_polymorphic_compare = struct
+  let ( <  ) (x : bool) y = Poly.( <  ) x y
+  let ( <= ) (x : bool) y = Poly.( <= ) x y
+  let ( <> ) (x : bool) y = Poly.( <> ) x y
+  let ( =  ) (x : bool) y = Poly.( =  ) x y
+  let ( >  ) (x : bool) y = Poly.( >  ) x y
+  let ( >= ) (x : bool) y = Poly.( >= ) x y
+
+  let ascending  (x : bool) y = Poly.ascending  x y
+  let descending (x : bool) y = Poly.descending x y
+  let compare    (x : bool) y = Poly.compare    x y
+  let equal      (x : bool) y = Poly.equal      x y
+  let max        (x : bool) y = if x >= y then x else y
+  let min        (x : bool) y = if x <= y then x else y
+end
+
+module Char_replace_polymorphic_compare = struct
+  let ( <  ) (x : char) y = Poly.( <  ) x y
+  let ( <= ) (x : char) y = Poly.( <= ) x y
+  let ( <> ) (x : char) y = Poly.( <> ) x y
+  let ( =  ) (x : char) y = Poly.( =  ) x y
+  let ( >  ) (x : char) y = Poly.( >  ) x y
+  let ( >= ) (x : char) y = Poly.( >= ) x y
+
+  let ascending  (x : char) y = Poly.ascending  x y
+  let descending (x : char) y = Poly.descending x y
+  let compare    (x : char) y = Poly.compare    x y
+  let equal      (x : char) y = Poly.equal      x y
+  let max        (x : char) y = if x >= y then x else y
+  let min        (x : char) y = if x <= y then x else y
+end
+
+module Uchar_replace_polymorphic_compare = struct
+  let i x = Caml.Uchar.to_int x
+
+  let ( <  ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( <  ) (i x) (i y)
+  let ( <= ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( <= ) (i x) (i y)
+  let ( <> ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( <> ) (i x) (i y)
+  let ( =  ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( =  ) (i x) (i y)
+  let ( >  ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( >  ) (i x) (i y)
+  let ( >= ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( >= ) (i x) (i y)
+
+  let ascending  (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.ascending  (i x) (i y)
+  let descending (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.descending (i x) (i y)
+  let compare    (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.compare    (i x) (i y)
+  let equal      (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.equal      (i x) (i y)
+  let max        (x : Caml.Uchar.t) y = if x >= y then x else y
+  let min        (x : Caml.Uchar.t) y = if x <= y then x else y
+end
+
+module Float_replace_polymorphic_compare = struct
+  let ( <  ) (x : float) y = Poly.( <  ) x y
+  let ( <= ) (x : float) y = Poly.( <= ) x y
+  let ( <> ) (x : float) y = Poly.( <> ) x y
+  let ( =  ) (x : float) y = Poly.( =  ) x y
+  let ( >  ) (x : float) y = Poly.( >  ) x y
+  let ( >= ) (x : float) y = Poly.( >= ) x y
+
+  let ascending  (x : float) y = Poly.ascending  x y
+  let descending (x : float) y = Poly.descending x y
+  let compare    (x : float) y = Poly.compare    x y
+  let equal      (x : float) y = Poly.equal      x y
+  let max        (x : float) y = if x >= y then x else y
+  let min        (x : float) y = if x <= y then x else y
+end
+
+module String_replace_polymorphic_compare = struct
+  let ( <  ) (x : string) y = Poly.( <  ) x y
+  let ( <= ) (x : string) y = Poly.( <= ) x y
+  let ( <> ) (x : string) y = Poly.( <> ) x y
+  let ( =  ) (x : string) y = Poly.( =  ) x y
+  let ( >  ) (x : string) y = Poly.( >  ) x y
+  let ( >= ) (x : string) y = Poly.( >= ) x y
+
+  let ascending  (x : string) y = Poly.ascending  x y
+  let descending (x : string) y = Poly.descending x y
+  let compare    (x : string) y = Poly.compare    x y
+  let equal      (x : string) y = Poly.equal      x y
+  let max        (x : string) y = if x >= y then x else y
+  let min        (x : string) y = if x <= y then x else y
+end
+
+module Bytes_replace_polymorphic_compare = struct
+  let ( <  ) (x : bytes) y = Poly.( <  ) x y
+  let ( <= ) (x : bytes) y = Poly.( <= ) x y
+  let ( <> ) (x : bytes) y = Poly.( <> ) x y
+  let ( =  ) (x : bytes) y = Poly.( =  ) x y
+  let ( >  ) (x : bytes) y = Poly.( >  ) x y
+  let ( >= ) (x : bytes) y = Poly.( >= ) x y
+
+  let ascending  (x : bytes) y = Poly.ascending  x y
+  let descending (x : bytes) y = Poly.descending x y
+  let compare    (x : bytes) y = Poly.compare    x y
+  let equal      (x : bytes) y = Poly.equal      x y
+  let max        (x : bytes) y = if x >= y then x else y
+  let min        (x : bytes) y = if x <= y then x else y
+end
 
 let ( <.  ) (x : float) y = Poly.( <  ) x y
 let ( <=. ) (x : float) y = Poly.( <= ) x y

@@ -1,6 +1,6 @@
 open! Import
-open! Polymorphic_compare
 open! Caml.Nativeint
+include Nativeint_replace_polymorphic_compare
 
 module T = struct
   type t = nativeint [@@deriving_inline hash, sexp]
@@ -14,8 +14,7 @@ module T = struct
   let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = nativeint_of_sexp
   let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_nativeint
   [@@@end]
-  let compare (x : t) y = compare x y
-  let equal (x : t) y = x = y
+  let compare = Nativeint_replace_polymorphic_compare.compare
 
   let to_string = to_string
   let of_string = of_string
@@ -60,39 +59,25 @@ include Comparable.Validate_with_zero (struct
     let zero = zero
   end)
 
-module Replace_polymorphic_compare = struct
-  let equal = equal
-  let compare = compare
-  let ascending = compare
-  let descending x y = compare y x
-  let min (x : t) y = if x < y then x else y
-  let max (x : t) y = if x > y then x else y
-  let ( >= ) (x : t) y = x >= y
-  let ( <= ) (x : t) y = x <= y
-  let ( = ) (x : t) y = x = y
-  let ( > ) (x : t) y = x > y
-  let ( < ) (x : t) y = x < y
-  let ( <> ) (x : t) y = x <> y
-  let between t ~low ~high = low <= t && t <= high
-  let clamp_unchecked t ~min ~max =
-    if t < min then min else if t <= max then t else max
+include Nativeint_replace_polymorphic_compare
 
-  let clamp_exn t ~min ~max =
-    assert (min <= max);
-    clamp_unchecked t ~min ~max
+let between t ~low ~high = low <= t && t <= high
+let clamp_unchecked t ~min ~max =
+  if t < min then min else if t <= max then t else max
 
-  let clamp t ~min ~max =
-    if min > max then
-      Or_error.error_s
-        (Sexp.message "clamp requires [min <= max]"
-           [ "min", T.sexp_of_t min
-           ; "max", T.sexp_of_t max
-           ])
-    else
-      Ok (clamp_unchecked t ~min ~max)
-end
+let clamp_exn t ~min ~max =
+  assert (min <= max);
+  clamp_unchecked t ~min ~max
 
-include Replace_polymorphic_compare
+let clamp t ~min ~max =
+  if min > max then
+    Or_error.error_s
+      (Sexp.message "clamp requires [min <= max]"
+         [ "min", T.sexp_of_t min
+         ; "max", T.sexp_of_t max
+         ])
+  else
+    Ok (clamp_unchecked t ~min ~max)
 
 let ( / ) = div
 let ( * ) = mul
@@ -165,7 +150,7 @@ module Pre_O = struct
   let ( * ) = ( * )
   let ( / ) = ( / )
   let ( ~- ) = ( ~- )
-  include (Replace_polymorphic_compare : Comparisons.Infix with type t := t)
+  include (Nativeint_replace_polymorphic_compare : Comparisons.Infix with type t := t)
   let abs = abs
   let neg = neg
   let zero = zero
