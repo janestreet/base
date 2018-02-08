@@ -1,5 +1,8 @@
 open! Import
 
+module Int    = Int0
+module String = String0
+
 module T = struct
   type t = Caml.Lexing.position =
     { pos_fname : string;
@@ -179,10 +182,10 @@ include Comparator.Make(T)
 
 (* This is the same function as Ppx_here.lift_position_as_string. *)
 let make_location_string ~pos_fname ~pos_lnum ~pos_cnum ~pos_bol =
-  String0.concat
+  String.concat
     [ pos_fname
-    ; ":"; string_of_int pos_lnum
-    ; ":"; string_of_int (pos_cnum - pos_bol)
+    ; ":"; Int.to_string pos_lnum
+    ; ":"; Int.to_string (pos_cnum - pos_bol)
     ]
 
 let to_string {Caml.Lexing.pos_fname; pos_lnum; pos_cnum; pos_bol} =

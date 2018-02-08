@@ -40,6 +40,7 @@ module type S = sig
   val ascending : t -> t -> int
   val descending : t -> t -> int
 
+  (** [between t ~low ~high] means [low <= t <= high] *)
   val between : t -> low:t -> high:t -> bool
 
   (** [clamp_exn t ~min ~max] returns [t'], the closest value to [t] such that

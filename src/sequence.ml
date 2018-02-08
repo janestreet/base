@@ -1030,6 +1030,24 @@ let compare compare_a t1 t2 =
     0);
 ;;
 
+let round_robin list =
+  let next (todo_stack, done_stack) =
+    match todo_stack with
+    | Sequence (s, f) :: todo_stack ->
+      begin
+        match f s with
+        | Yield (x, s) -> Yield (x, (todo_stack, Sequence (s, f) :: done_stack))
+        | Skip      s  -> Skip      (Sequence (s, f) :: todo_stack, done_stack)
+        | Done         -> Skip                         (todo_stack, done_stack)
+      end
+    | [] ->
+      if List.is_empty done_stack
+      then Done
+      else Skip (List.rev done_stack, [])
+  in
+  let state = list, [] in
+  Sequence (state, next)
+
 let interleave (Sequence (s1, f1)) =
   let next (todo_stack, done_stack, s1) =
     match todo_stack with

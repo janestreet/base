@@ -3,6 +3,7 @@ open  Polymorphic_compare
 open  Caml.Random
 
 module Array = Array0
+module Int   = Int0
 
 (* Unfortunately, because the standard library does not expose
    [Caml.Random.State.default], we have to construct our own.  We then build the
@@ -144,12 +145,12 @@ module State = struct
       else in_range state lo hi
     in
     fun state lo hi ->
-      if lo > hi then raise_crossed_bounds "int" lo hi string_of_int;
+      if lo > hi then raise_crossed_bounds "int" lo hi Int.to_string;
       let diff = hi - lo in
-      if diff = max_int
-      then lo + ((full_range_int state) land max_int)
+      if diff = Int.max_value
+      then lo + ((full_range_int state) land Int.max_value)
       else if diff >= 0
-      then lo + int state (succ diff)
+      then lo + int state (Int.succ diff)
       else in_range state lo hi
   ;;
 

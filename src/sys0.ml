@@ -24,6 +24,7 @@ let max_array_length          = Caml.Sys.max_array_length
 let runtime_variant           = Caml.Sys.runtime_variant
 let runtime_parameters        = Caml.Sys.runtime_parameters
 
+let argv                      = Caml.Sys.argv
 let getenv                    = Caml.Sys.getenv
 
 let ocaml_version             = Caml.Sys.ocaml_version

@@ -42,7 +42,7 @@
     string_dict_stubs
     am_testing))
   (preprocess no_preprocessing)
-  (lint (pps (ppx_base ppx_base_lint -check-doc-comments -no-optcomp
+  (lint (pps (ppx_base ppx_base_lint -check-doc-comments 
                     -type-conv-keep-w32=impl
                     ;; Specify the list explicitely to be sure we
                     ;; don't interpret [%sexp_of: ...] and other

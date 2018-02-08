@@ -319,12 +319,6 @@ module Bytes_replace_polymorphic_compare = struct
   let min        (x : bytes) y = if x <= y then x else y
 end
 
-let ( <.  ) (x : float) y = Poly.( <  ) x y
-let ( <=. ) (x : float) y = Poly.( <= ) x y
-let ( =.  ) (x : float) y = Poly.( =  ) x y
-let ( >.  ) (x : float) y = Poly.( >  ) x y
-let ( >=. ) (x : float) y = Poly.( >= ) x y
-
 (* This needs to be defined as an external so that the compiler can specialize it as a
    direct set or caml_modify *)
 external ( := ) : 'a ref -> 'a -> unit = "%setfield0"
@@ -349,23 +343,19 @@ let ( lxor ) = Caml.( lxor )
 let ( mod  ) = Caml.( mod  )
 
 let abs             = Caml.abs
-let decr            = Caml.decr
-let exit            = Caml.exit
 let failwith        = Caml.failwith
-let float_of_int    = Caml.float_of_int
-let float_of_string = Caml.float_of_string
 let fst             = Caml.fst
-let incr            = Caml.incr
-let int_of_float    = Caml.int_of_float
 let invalid_arg     = Caml.invalid_arg
-let max_int         = Caml.max_int
-let min_int         = Caml.min_int
 let raise           = Caml.raise
 let snd             = Caml.snd
-let succ            = Caml.succ
-let string_of_int   = Caml.string_of_int
 
-let phys_equal = Caml.( == )
+let phys_equal      = Caml.( == )
+
+let decr            = Caml.decr
+let incr            = Caml.incr
+
+(* used by sexp_conv, which float0 depends on through option *)
+let float_of_string = Caml.float_of_string
 
 (* [am_testing] is used in a few places to behave differently when in testing mode, such
    as in [random.ml].  [am_testing] is implemented using [Base_am_testing], a weak C/js

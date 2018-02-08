@@ -1,6 +1,8 @@
 open! Import
 
-let phys_equal = Caml.(==)
+module Int    = Int0
+module String = String0
+module Array  = Array0
 
 (* We maintain the property that all values of type [t] do not have the tag
    [double_array_tag].  Some functions below assume this in order to avoid testing the
@@ -16,7 +18,7 @@ let length = Array.length
 let sexp_of_t t =
   Sexp.Atom (String.concat ~sep:""
                [ "<Obj_array.t of length ";
-                 Caml.string_of_int (length t);
+                 Int.to_string (length t);
                  ">"
                ])
 ;;

@@ -6,6 +6,7 @@ open  Sexp
 
 module Array  = Array0
 module Bytes  = Bytes0
+module Int    = Int0
 module List   = List0
 module String = String0
 module Sys    = Sys0
@@ -31,7 +32,7 @@ external format_float : string -> float -> string = "caml_format_float"
 let default_string_of_float =
   ref (fun x ->
     let y = format_float "%.15G" x in
-    if float_of_string y =. x then
+    if Float_replace_polymorphic_compare.(=) (float_of_string y) x then
       y
     else
       format_float "%.17G" x)
@@ -47,7 +48,7 @@ let sexp_of_bool b = Atom (Caml.string_of_bool b)
 let sexp_of_string str = Atom str
 let sexp_of_bytes bytes = Atom (Bytes.to_string bytes)
 let sexp_of_char c = Atom (String.make 1 c)
-let sexp_of_int n = Atom (string_of_int n)
+let sexp_of_int n = Atom (Int.to_string n)
 let sexp_of_float n = Atom (!default_string_of_float n)
 let sexp_of_int32 n = Atom (Caml.Int32.to_string n)
 let sexp_of_int64 n = Atom (Caml.Int64.to_string n)
@@ -228,13 +229,13 @@ let char_of_sexp sexp = match sexp with
 
 let int_of_sexp sexp = match sexp with
   | Atom str ->
-    (try Caml.int_of_string str
+    (try Int.of_string str
      with exc -> of_sexp_error ("int_of_sexp: " ^ exn_to_string exc) sexp)
   | List _ -> of_sexp_error "int_of_sexp: atom needed" sexp
 
 let float_of_sexp sexp = match sexp with
   | Atom str ->
-    (try Caml.float_of_string str
+    (try float_of_string str
      with exc ->
        of_sexp_error ("float_of_sexp: " ^ exn_to_string exc) sexp)
   | List _ -> of_sexp_error "float_of_sexp: atom needed" sexp

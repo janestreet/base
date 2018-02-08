@@ -321,6 +321,11 @@ module type Int_without_module_types = sig
   val of_nativeint : nativeint -> t option
   val to_nativeint : t -> nativeint
 
+  (** {3 Truncating conversions}
+
+      These functions return the least-significant bits of the input. In cases
+      where optional conversions return [Some x], truncating conversions return [x]. *)
+
   val of_int32_trunc : int32 -> t
   val to_int32_trunc : t -> int32
   val of_int64_trunc : int64 -> t

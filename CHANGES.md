@@ -19,6 +19,9 @@
 - Moved all remaining `Replace_polymorphic_compare` submodules from Base
   types and consolidated them in one place within import0.
 
+- Removed `(<=.)` and its friends.
+
+- Added `Sys.argv`.
 
 ## v0.10
 

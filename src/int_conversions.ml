@@ -1,5 +1,6 @@
 open! Import
 
+module Int = Int0
 module Sys = Sys0
 
 let [@inline never] convert_failure x a b to_string =
@@ -52,8 +53,8 @@ let int32_is_representable_as_int =
   if num_bits_int32 <= num_bits_int
   then (fun _ -> true)
   else
-    let min = int_to_int32_trunc min_int in
-    let max = int_to_int32_trunc max_int in
+    let min = int_to_int32_trunc Int.min_value in
+    let max = int_to_int32_trunc Int.max_value in
     (fun x -> compare_int32 min x <= 0 && compare_int32 x max <= 0)
 
 let int_to_int32 x =
@@ -86,8 +87,8 @@ let int_to_int64       = Caml.Int64.of_int
 let int64_to_int_trunc = Caml.Int64.to_int
 
 let int64_is_representable_as_int =
-  let min = int_to_int64 min_int in
-  let max = int_to_int64 max_int in
+  let min = int_to_int64 Int.min_value in
+  let max = int_to_int64 Int.max_value in
   (fun x -> compare_int64 min x <= 0 && compare_int64 x max <= 0)
 
 let int64_to_int x =
@@ -113,8 +114,8 @@ let nativeint_is_representable_as_int =
   if num_bits_nativeint <= num_bits_int
   then (fun _ -> true)
   else
-    let min = int_to_nativeint min_int in
-    let max = int_to_nativeint max_int in
+    let min = int_to_nativeint Int.min_value in
+    let max = int_to_nativeint Int.max_value in
     (fun x -> compare_nativeint min x <= 0 && compare_nativeint x max <= 0)
 
 let nativeint_to_int x =

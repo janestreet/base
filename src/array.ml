@@ -1,6 +1,7 @@
 open! Import
 
 include Array0
+module Int = Int0
 
 let raise_s = Error.raise_s
 
@@ -241,7 +242,7 @@ module Sort = struct
       let len = right - left + 1 in
       let heap_sort_switch_depth =
         (* with perfect 3-way partitioning, this is the recursion depth *)
-        int_of_float (log3 (float_of_int len))
+        Int.of_float (log3 (Int.to_float len))
       in
       intro_sort arr ~max_depth:heap_sort_switch_depth ~cmp ~left ~right;
     ;;

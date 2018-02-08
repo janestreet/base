@@ -4,6 +4,8 @@ type t = exn [@@deriving_inline sexp_of]
 let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_exn
 [@@@end]
 
+let exit = Caml.exit
+
 exception Finally of t * t [@@deriving_inline sexp]
 let () =
   Ppx_sexp_conv_lib.Conv.Exn_converter.add ([%extension_constructor Finally])

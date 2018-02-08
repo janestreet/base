@@ -22,6 +22,7 @@ open! Import0
 
 module Array = Array0
 module Char  = Char0
+module Int   = Int0
 module List  = List0
 
 include Hash_intf
@@ -166,7 +167,7 @@ end = struct
 
   module For_tests = struct
     let compare_state = compare
-    let state_to_string = string_of_int
+    let state_to_string = Int.to_string
   end
 end
 

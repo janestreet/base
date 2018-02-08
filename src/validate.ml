@@ -1,5 +1,6 @@
 open! Import
 
+module Int    = Int0
 module String = String0
 
 (** Each single_error is a path indicating the location within the datastructure in
@@ -134,7 +135,7 @@ let pair ~fst ~snd (fst_value,snd_value) =
 
 let list_indexed check list =
   List.mapi list ~f:(fun i el ->
-    name (string_of_int (i+1)) (protect check el))
+    name (Int.to_string (i+1)) (protect check el))
   |> of_list
 ;;
 

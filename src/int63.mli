@@ -17,7 +17,10 @@ open! Import
     such code will not compile on 32-bit platforms. *)
 include Int_intf.S with type t = Int63_backend.t
 
-(** Unlike the usual operations, these never overflow, preferring instead to raise. *)
+(** {2 Arithmetic with overflow}
+
+    Unlike the usual operations, these never overflow, preferring instead to raise. *)
+
 module Overflow_exn : sig
   val ( + ) : t -> t -> t
   val ( - ) : t -> t -> t
@@ -25,21 +28,31 @@ module Overflow_exn : sig
   val neg : t -> t
 end
 
+(** {2 Conversion functions} *)
+
 val of_int : int -> t
 val to_int : t -> int option
-val to_int_trunc : t -> int
 
 val of_int32 : Int32.t -> t
 val to_int32 : t -> Int32.t option
-val to_int32_trunc : t -> Int32.t
 
 val of_int64 : Int64.t -> t option
-val of_int64_trunc : Int64.t -> t
 
 val of_nativeint : nativeint -> t option
 val to_nativeint : t -> nativeint option
+
+(** {3 Truncating conversions}
+
+    These functions return the least-significant bits of the input. In cases where
+    optional conversions return [Some x], truncating conversions return [x]. *)
+
+val to_int_trunc : t -> int
+val to_int32_trunc : t -> Int32.t
+val of_int64_trunc : Int64.t -> t
 val of_nativeint_trunc : nativeint -> t
 val to_nativeint_trunc : t -> nativeint
+
+(** {2 Random generation} *)
 
 (** [random ~state bound] returns a random integer between 0 (inclusive) and [bound]
     (exclusive). [bound] must be greater than 0.

@@ -268,13 +268,13 @@ let iround_up t =
   if t > 0.0 then begin
     let t' = ceil t in
     if t' <= iround_ubound then
-      Some (int_of_float t')
+      Some (Int.of_float t')
     else
       None
   end
   else begin
     if t >= iround_lbound then
-      Some (int_of_float t)
+      Some (Int.of_float t)
     else
       None
   end
@@ -283,13 +283,13 @@ let iround_up_exn t =
   if t > 0.0 then begin
     let t' = ceil t in
     if t' <= iround_ubound then
-      int_of_float t'
+      Int.of_float t'
     else
       invalid_argf "Float.iround_up_exn: argument (%f) is too large" (box t) ()
   end
   else begin
     if t >= iround_lbound then
-      int_of_float t
+      Int.of_float t
     else
       invalid_argf "Float.iround_up_exn: argument (%f) is too small or NaN" (box t) ()
   end
@@ -298,14 +298,14 @@ let iround_up_exn t =
 let iround_down t =
   if t >= 0.0 then begin
     if t <= iround_ubound then
-      Some (int_of_float t)
+      Some (Int.of_float t)
     else
       None
   end
   else begin
     let t' = floor t in
     if t' >= iround_lbound then
-      Some (int_of_float t')
+      Some (Int.of_float t')
     else
       None
   end
@@ -313,14 +313,14 @@ let iround_down t =
 let iround_down_exn t =
   if t >= 0.0 then begin
     if t <= iround_ubound then
-      int_of_float t
+      Int.of_float t
     else
       invalid_argf "Float.iround_down_exn: argument (%f) is too large" (box t) ()
   end
   else begin
     let t' = floor t in
     if t' >= iround_lbound then
-      int_of_float t'
+      Int.of_float t'
     else
       invalid_argf "Float.iround_down_exn: argument (%f) is too small or NaN" (box t) ()
   end
@@ -328,13 +328,13 @@ let iround_down_exn t =
 
 let iround_towards_zero t =
   if t >= iround_lbound && t <= iround_ubound then
-    Some (int_of_float t)
+    Some (Int.of_float t)
   else
     None
 
 let iround_towards_zero_exn t =
   if t >= iround_lbound && t <= iround_ubound then
-    int_of_float t
+    Int.of_float t
   else
     invalid_argf "Float.iround_towards_zero_exn: argument (%f) is out of range or NaN"
       (box t)
@@ -373,31 +373,31 @@ let iround_nearest_32 t =
   if t >= 0. then
     let t' = add_half_for_round_nearest t in
     if t' <= iround_ubound then
-      Some (int_of_float t')
+      Some (Int.of_float t')
     else
       None
   else
     let t' = floor (t +. 0.5) in
     if t' >= iround_lbound then
-      Some (int_of_float t')
+      Some (Int.of_float t')
     else
       None
 
 let iround_nearest_64 t =
   if t >= 0. then
     if t < round_nearest_ub then
-      Some (int_of_float (add_half_for_round_nearest t))
+      Some (Int.of_float (add_half_for_round_nearest t))
     else
     if t <= iround_ubound then
-      Some (int_of_float t)
+      Some (Int.of_float t)
     else
       None
   else
   if t > round_nearest_lb then
-    Some (int_of_float (floor (t +. 0.5)))
+    Some (Int.of_float (floor (t +. 0.5)))
   else
   if t >= iround_lbound then
-    Some (int_of_float t)
+    Some (Int.of_float t)
   else
     None
 
@@ -410,31 +410,31 @@ let iround_nearest_exn_32 t =
   if t >= 0. then
     let t' = add_half_for_round_nearest t in
     if t' <= iround_ubound then
-      int_of_float t'
+      Int.of_float t'
     else
       invalid_argf "Float.iround_nearest_exn: argument (%f) is too large" (box t) ()
   else
     let t' = floor (t +. 0.5) in
     if t' >= iround_lbound then
-      int_of_float t'
+      Int.of_float t'
     else
       invalid_argf "Float.iround_nearest_exn: argument (%f) is too small" (box t) ()
 
 let iround_nearest_exn_64 t =
   if t >= 0. then
     if t < round_nearest_ub then
-      int_of_float (add_half_for_round_nearest t)
+      Int.of_float (add_half_for_round_nearest t)
     else
     if t <= iround_ubound then
-      int_of_float t
+      Int.of_float t
     else
       invalid_argf "Float.iround_nearest_exn: argument (%f) is too large" (box t) ()
   else
   if t > round_nearest_lb then
-    int_of_float (floor (t +. 0.5))
+    Int.of_float (floor (t +. 0.5))
   else
   if t >= iround_lbound then
-    int_of_float t
+    Int.of_float t
   else
     invalid_argf "Float.iround_nearest_exn: argument (%f) is too small or NaN" (box t) ()
 [@@ocaml.inline always]
@@ -872,6 +872,64 @@ let int_pow x n =
        multiplication by x. *)
     !x *. !accum
   end
+
+let round_gen x ~how =
+  if x = 0. then 0.
+  else if not (is_finite x) then x
+  else begin
+    (* Significant digits and decimal digits. *)
+    let sd, dd =
+      match how with
+      | `significant_digits sd ->
+        let dd = sd - to_int (round_up (log10 (abs x))) in
+        sd, dd
+      | `decimal_digits dd ->
+        let sd = dd + to_int (round_up (log10 (abs x))) in
+        sd, dd
+    in
+    let open Int_replace_polymorphic_compare in
+    if sd < 0
+    then 0.
+    else if sd >= 17
+    then x
+    else
+      (* Choose the order that is exactly representable as a float. Small positive
+         integers are, but their inverses in most cases are not. *)
+      let abs_dd = Int.abs dd in
+      if abs_dd > 22 || sd >= 16
+      (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
+         path.  Similarly, if we need 16 significant digits in the result, then the integer
+         [round_nearest (x <op> order)] might not be exactly representable as a float, since
+         for some ranges we only have 15 digits of precision guaranteed.
+
+         That said, we are still rounding twice here:
+
+         1) first time when rounding [x *. order] or [x /. order] to the nearest float
+         (just the normal way floating-point multiplication or division works),
+
+         2) second time when applying [round_nearest_half_to_even] to the result of the
+         above operation
+
+         So for arguments within an ulp from a tie we might still produce an off-by-one
+         result. *)
+      then of_string (sprintf "%.*g" sd x)
+      else
+        let order = int_pow 10. abs_dd in
+        if dd >= 0
+        then round_nearest_half_to_even (x *. order) /. order
+        else round_nearest_half_to_even (x /. order) *. order
+  end
+
+let round_significant x ~significant_digits =
+  if Int_replace_polymorphic_compare.(<=) significant_digits 0 then
+    raise (Invalid_argument
+             ("Float.round_significant: invalid argument significant_digits:"
+              ^ Int.to_string significant_digits))
+  else
+    round_gen x ~how:(`significant_digits significant_digits)
+
+let round_decimal x ~decimal_digits =
+  round_gen x ~how:(`decimal_digits decimal_digits)
 
 let between t ~low ~high = low <= t && t <= high
 

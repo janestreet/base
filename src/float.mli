@@ -158,6 +158,78 @@ val int63_round_nearest_exn : t -> Int63.t
 val iround_lbound : t
 val iround_ubound : t
 
+(** [round_significant x ~significant_digits:n] rounds to the nearest number with [n]
+    significant digits.  More precisely: it returns the representable float closest to [x
+    rounded to n significant digits].  It is meant to be equivalent to [sprintf "%.*g" n x
+    |> Float.of_string] but faster (10x-15x).  Exact ties are resolved as round-to-even.
+
+    However, it might in rare cases break the contract above.
+
+
+    It might in some cases appear as if it violates the round-to-even rule:
+
+    {[
+      let x = 4.36083208835;;
+      let z = 4.3608320883;;
+      assert (z = fast_approx_round_significant x ~sf:11)
+    ]}
+
+    But in this case so does sprintf, since [x] as a float is slightly
+    under-represented:
+
+    {[
+      sprintf "%.11g" x = "4.3608320883";;
+      sprintf "%.30g" x = "4.36083208834999958014577714493"
+    ]}
+
+    More importantly, [round_significant] might sometimes give a different
+    result than [sprintf ... |> Float.of_string] because it round-trips through an
+    integer.  For example, the decimal fraction 0.009375 is slightly under-represented as
+    a float:
+
+    {[ sprintf "%.17g" 0.009375 = "0.0093749999999999997" ]}
+
+    But:
+
+    {[ 0.009375 *. 1e5 = 937.5 ]}
+
+    Therefore:
+
+    {[ round_significant 0.009375 ~significant_digits:3 = 0.00938 ]}
+
+    whereas:
+
+    {[ sprintf "%.3g" 0.009375 = "0.00937" ]}
+
+
+    In general we believe (and have tested on numerous examples) that the following
+    holds for all x:
+
+    {[
+      let s = sprintf "%.*g" significant_digits x |> Float.of_string in
+      s = round_significant ~significant_digits x
+      || s = round_significant ~significant_digits (one_ulp `Up x)
+      || s = round_significant ~significant_digits (one_ulp `Down x)
+    ]}
+
+    Also, for float representations of decimal fractions (like 0.009375),
+    [round_significant] is more likely to give the "desired" result than [sprintf ... |>
+    of_string] (that is, the result of rounding the decimal fraction, rather than its
+    float representation).  But it's not guaranteed either--see the [4.36083208835]
+    example above.
+
+*)
+val round_significant : float -> significant_digits:int -> float
+
+(** [round_decimal x ~decimal_digits:n] rounds [x] to the nearest [10**(-n)]. For positive
+    [n] it is meant to be equivalent to [sprintf "%.*f" n x |> Float.of_string], but
+    faster.
+
+    All the considerations mentioned in [round_significant] apply (both functions use the
+    same code path).
+*)
+val round_decimal : float -> decimal_digits:int -> float
+
 
 val is_nan : t -> bool
 

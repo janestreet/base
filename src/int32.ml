@@ -50,7 +50,9 @@ let compare = compare
 let to_float = to_float
 let of_float_unchecked = of_float
 let of_float f =
-  if f >=. float_lower_bound && f <=. float_upper_bound then
+  if Float_replace_polymorphic_compare.(>=) f float_lower_bound
+  && Float_replace_polymorphic_compare.(<=) f float_upper_bound
+  then
     of_float f
   else
     Printf.invalid_argf "Int32.of_float: argument (%f) is out of range or NaN"

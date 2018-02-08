@@ -21,6 +21,22 @@ let%test_unit _ =
             ; 0,3 ; 1,3 ; 2,3 ; 3,3
             ]
 
+let%expect_test "round_robin vs interleave" =
+  let list_of_lists =
+    [ [1; 10; 100; 1000]
+    ; [2; 20; 200]
+    ; [3; 30]
+    ; [4]
+    ]
+  in
+  let list_of_seqs = List.map list_of_lists ~f:of_list in
+  let seq_of_seqs = of_list list_of_seqs in
+  print_s [%sexp (to_list (round_robin list_of_seqs) : int list)];
+  [%expect {| (1 2 3 4 10 20 30 100 200 1_000) |}];
+  print_s [%sexp (to_list (interleave seq_of_seqs) : int list)];
+  [%expect {| (1 10 2 100 20 3 1_000 200 30 4) |}];
+;;
+
 let%test_unit _ =
   let evens = unfold ~init:0 ~f:(fun i -> Some (i, i + 2)) in
   let vowels = cycle_list_exn ['a';'e';'i';'o';'u'] in

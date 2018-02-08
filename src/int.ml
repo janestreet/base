@@ -1,6 +1,7 @@
 open! Import
 
 include Int_intf
+include Int0
 
 module T = struct
   type t = int [@@deriving_inline hash, sexp]
@@ -18,12 +19,10 @@ module T = struct
   let compare (x : t) y = Bool.to_int (x > y) - Bool.to_int (x < y)
 
   let of_string s =
-    try
-      Caml.int_of_string s
-    with
+    try of_string s with
     | _ -> Printf.failwithf "Int.of_string: %S" s ()
 
-  let to_string = string_of_int
+  let to_string = to_string
 end
 
 include T
@@ -37,7 +36,9 @@ let float_upper_bound = Float0.upper_bound_for_int num_bits
 let to_float = Pervasives.float_of_int
 let of_float_unchecked = Pervasives.int_of_float
 let of_float f =
-  if f >=. float_lower_bound && f <=. float_upper_bound then
+  if Float_replace_polymorphic_compare.(>=) f float_lower_bound
+  && Float_replace_polymorphic_compare.(<=) f float_upper_bound
+  then
     Pervasives.int_of_float f
   else
     Printf.invalid_argf "Int.of_float: argument (%f) is out of range or NaN"

@@ -194,6 +194,12 @@ val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
     interleaving among the separate inner sequences is deterministic but unspecified. *)
 val interleave : 'a t t -> 'a t
 
+(** [round_robin list] is like [interleave (of_list list)], except that the manner of
+    interleaving among the inner sequences is guaranteed to be round-robin. The input
+    sequences may be of different lengths; an empty sequence is dropped from subsequent
+    rounds of interleaving. *)
+val round_robin : 'a t list -> 'a t
+
 (** Transforms a pair of sequences into a sequence of pairs. The length of the returned
     sequence is the length of the shorter input. The remaining elements of the longer
     input are discarded.
