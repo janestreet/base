@@ -61,7 +61,6 @@ external get : t -> int -> char = "%string_safe_get"
     must ensure that it is a memory-safe operation. *)
 external unsafe_get : string -> int -> char = "%string_unsafe_get"
 
-
 val create : int -> bytes [@@deprecated "[since 2017-10] Use [Bytes.create] instead"]
 
 val make : int -> char -> t

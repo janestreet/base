@@ -1333,7 +1333,9 @@ module type Map = sig
     :  ('a, 'cmp) comparator
     -> ('a * 'b) list -> ('a, 'b, 'cmp) t
 
-  (** Creates map from association list with possibly repeated keys. *)
+  (** Creates map from association list with possibly repeated keys. The
+      ordering of values in the map for a given key appear in the same order as
+      they did in the association list. *)
   val of_alist_multi
     :  ('a, 'cmp) comparator
     -> ('a * 'b) list -> ('a, 'b list, 'cmp) t

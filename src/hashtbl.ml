@@ -162,6 +162,19 @@ let find_and_call t key ~if_found ~if_not_found =
     Avltree.find_and_call tree ~compare:(compare_key t) key ~if_found ~if_not_found
 ;;
 
+let findi_and_call t key ~if_found ~if_not_found =
+  (* with a good hash function these first two cases will be the overwhelming majority,
+     and Avltree.find is recursive, so it can't be inlined, so doing this avoids a
+     function call in most cases. *)
+  match t.table.(slot t key) with
+  | Avltree.Empty -> if_not_found key
+  | Avltree.Leaf { key = k; value = v } ->
+    if compare_key t k key = 0 then if_found ~key:k ~data:v
+    else if_not_found key
+  | tree ->
+    Avltree.findi_and_call tree ~compare:(compare_key t) key ~if_found ~if_not_found
+;;
+
 let find =
   let if_found v = Some v in
   let if_not_found _ = None in
@@ -344,6 +357,14 @@ let find_or_add t id ~default =
   | Some x -> x
   | None ->
     let default = default () in
+    replace t ~key:id ~data:default;
+    default
+
+let findi_or_add t id ~default =
+  match find t id with
+  | Some x -> x
+  | None ->
+    let default = default id in
     replace t ~key:id ~data:default;
     default
 
@@ -678,9 +699,11 @@ module Accessors = struct
   let partition_tf        = partition_tf
   let partitioni_tf       = partitioni_tf
   let find_or_add         = find_or_add
+  let findi_or_add        = findi_or_add
   let find                = find
   let find_exn            = find_exn
   let find_and_call       = find_and_call
+  let findi_and_call      = findi_and_call
   let find_and_remove     = find_and_remove
   let to_alist            = to_alist
   let validate            = validate

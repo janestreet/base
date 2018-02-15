@@ -163,4 +163,3 @@ module type Hash_set = sig
       with type ('key, 'z) create_options := ('key, 'z) create_options_with_hashable_required
   end
 end
-

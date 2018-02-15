@@ -205,7 +205,7 @@ let%test_module _ =
             (last t)
             ~expect:(Map.max_elt map))
 
-    let find_and_call = find_and_call
+    let find_and_call  = find_and_call
 
     let%test_unit _ =
       Quickcheck.test
@@ -220,6 +220,22 @@ let%test_module _ =
             ~expect:(match Map.find map key with
               | None      -> `Not_found key
               | Some data -> `Found     data))
+
+    let findi_and_call = findi_and_call
+
+    let%test_unit _ =
+      Quickcheck.test
+        (Quickcheck.Generator.tuple2 constructors_gen Key.gen)
+        ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
+        ~f:(fun (constructors, key) ->
+          let t, map = reify constructors in
+          [%test_result: [ `Found of (Key.t * Data.t) | `Not_found of Key.t ]]
+            (findi_and_call t key ~compare
+               ~if_found:     (fun ~key ~data -> `Found (key, data))
+               ~if_not_found: (fun key  -> `Not_found key))
+            ~expect:(match Map.find map key with
+              | None      -> `Not_found key
+              | Some data -> `Found     (key, data)))
 
     let iter = iter
 

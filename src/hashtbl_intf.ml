@@ -166,6 +166,9 @@ module type Accessors = sig
       table. *)
   val find_or_add : ('a, 'b) t -> 'a key -> default:(unit -> 'b) -> 'b
 
+  (** like [find_or_add] but [default] takes the key as an argument. *)
+  val findi_or_add : ('a, 'b) t -> 'a key -> default:('a key -> 'b) -> 'b
+
   (** [find t k] returns Some (the current binding) of k in t, or None if no
       such binding exists *)
   val find : ('a, 'b) t -> 'a key -> 'b option
@@ -185,6 +188,13 @@ module type Accessors = sig
     :  ('a, 'b) t
     -> 'a key
     -> if_found:('b -> 'c)
+    -> if_not_found:('a key -> 'c)
+    -> 'c
+
+  val findi_and_call
+    :  ('a, 'b) t
+    -> 'a key
+    -> if_found:(key:'a key -> data:'b -> 'c)
     -> if_not_found:('a key -> 'c)
     -> 'c
 

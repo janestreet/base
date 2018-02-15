@@ -31,3 +31,13 @@ let%expect_test "[add] duplicate" =
     add (add12 (empty (module Int))) ~key:1 ~data:2 : int_map Or_duplicate.t)];
   [%expect {| Duplicate |}]
 ;;
+
+let%expect_test "[Map.of_alist_multi] preserves value ordering" =
+  print_s [%sexp (
+    Map.of_alist_multi (module String) ["a", 1; "a", 2; "b", 1; "b", 3]
+    : int list Map.M(String).t)];
+  [%expect {|
+    ((a (1 2))
+     (b (1 3))) |}]
+;;
+

@@ -47,6 +47,17 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
     | _ -> false
   ;;
 
+  let%test "findi_and_call" =
+    let our_hash = Hashtbl.copy test_hash in
+    let test_string = "test string" in
+    Hashtbl.add_exn our_hash ~key:test_string ~data:10;
+    let test_string' = "test " ^ "string" in
+    assert (not (phys_equal test_string test_string'));
+    Hashtbl.findi_and_call our_hash test_string'
+      ~if_found:(fun ~key ~data -> phys_equal test_string key && data = 10)
+      ~if_not_found:(fun _ -> false)
+  ;;
+
   let%test_unit "add" =
     let our_hash = Hashtbl.copy test_hash in
     let duplicate = Hashtbl.add our_hash ~key:"a" ~data:4 in
