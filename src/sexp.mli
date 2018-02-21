@@ -89,6 +89,12 @@ val to_string_mach : t -> string
 (** Same as [to_string_mach]. *)
 val to_string : t -> string
 
+(** Base has never had an [of_string] function.  We expose a deprecated [of_string] here
+    so that people can find it (e.g. with merlin), and learn what we recommend.  This
+    [of_string] has type [unit] because we don't want it to be accidentally used. *)
+val of_string : unit
+[@@deprecated "[since 2018-02] Use [Parsexp.Single.parse_string_exn]"]
+
 (** {1 Styles} *)
 
 val of_float_style : [ `Underscores | `No_underscores ] ref

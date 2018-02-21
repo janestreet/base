@@ -123,6 +123,8 @@ module Caml = struct
   module Uchar     = Caml.Uchar
 
   include Caml.Pervasives
+
+  exception Not_found = Caml.Not_found
 end
 
 external ( |> ) : 'a -> ( 'a -> 'b) -> 'b = "%revapply"

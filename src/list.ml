@@ -221,7 +221,7 @@ let find_map t ~f =
 
 let find_map_exn t ~f =
   match find_map t ~f with
-  | None -> raise Not_found
+  | None -> raise Caml.Not_found
   | Some x -> x
 
 let find t ~f =
@@ -255,7 +255,7 @@ let find_mapi t ~f =
 
 let find_mapi_exn t ~f =
   match find_mapi t ~f with
-  | None -> raise Not_found
+  | None -> raise Caml.Not_found
   | Some x -> x
 
 let for_alli t ~f =
@@ -845,7 +845,7 @@ module Assoc = struct
 
   let find_exn t ~equal key =
     match find t key ~equal with
-    | None -> raise Not_found
+    | None -> raise Caml.Not_found
     | Some value -> value
 
   let mem t ~equal key =

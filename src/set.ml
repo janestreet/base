@@ -782,7 +782,7 @@ module Tree0 = struct
   let choose_exn t =
     match choose t with
     | None ->
-      raise Not_found
+      raise Caml.Not_found
     | Some v -> v
   ;;
 

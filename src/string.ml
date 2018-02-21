@@ -148,19 +148,19 @@ let is_empty t = length t = 0
 
 let index t char =
   try Some (index_exn t char)
-  with Not_found -> None
+  with Caml.Not_found -> None
 
 let rindex t char =
   try Some (rindex_exn t char)
-  with Not_found -> None
+  with Caml.Not_found -> None
 
 let index_from t pos char =
   try Some (index_from_exn t pos char)
-  with Not_found -> None
+  with Caml.Not_found -> None
 
 let rindex_from t pos char =
   try Some (rindex_from_exn t pos char)
-  with Not_found -> None
+  with Caml.Not_found -> None
 
 module Search_pattern = struct
 
@@ -420,10 +420,10 @@ let rsplit2_exn line ~on:delim =
   )
 
 let lsplit2 line ~on =
-  try Some (lsplit2_exn line ~on) with Not_found -> None
+  try Some (lsplit2_exn line ~on) with Caml.Not_found -> None
 
 let rsplit2 line ~on =
-  try Some (rsplit2_exn line ~on) with Not_found -> None
+  try Some (rsplit2_exn line ~on) with Caml.Not_found -> None
 
 let rec char_list_mem l (c:char) =
   match l with

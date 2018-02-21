@@ -268,13 +268,13 @@ let iround_up t =
   if t > 0.0 then begin
     let t' = ceil t in
     if t' <= iround_ubound then
-      Some (Int.of_float t')
+      Some (Int.of_float_unchecked t')
     else
       None
   end
   else begin
     if t >= iround_lbound then
-      Some (Int.of_float t)
+      Some (Int.of_float_unchecked t)
     else
       None
   end
@@ -283,13 +283,13 @@ let iround_up_exn t =
   if t > 0.0 then begin
     let t' = ceil t in
     if t' <= iround_ubound then
-      Int.of_float t'
+      Int.of_float_unchecked t'
     else
       invalid_argf "Float.iround_up_exn: argument (%f) is too large" (box t) ()
   end
   else begin
     if t >= iround_lbound then
-      Int.of_float t
+      Int.of_float_unchecked t
     else
       invalid_argf "Float.iround_up_exn: argument (%f) is too small or NaN" (box t) ()
   end
@@ -298,14 +298,14 @@ let iround_up_exn t =
 let iround_down t =
   if t >= 0.0 then begin
     if t <= iround_ubound then
-      Some (Int.of_float t)
+      Some (Int.of_float_unchecked t)
     else
       None
   end
   else begin
     let t' = floor t in
     if t' >= iround_lbound then
-      Some (Int.of_float t')
+      Some (Int.of_float_unchecked t')
     else
       None
   end
@@ -313,14 +313,14 @@ let iround_down t =
 let iround_down_exn t =
   if t >= 0.0 then begin
     if t <= iround_ubound then
-      Int.of_float t
+      Int.of_float_unchecked t
     else
       invalid_argf "Float.iround_down_exn: argument (%f) is too large" (box t) ()
   end
   else begin
     let t' = floor t in
     if t' >= iround_lbound then
-      Int.of_float t'
+      Int.of_float_unchecked t'
     else
       invalid_argf "Float.iround_down_exn: argument (%f) is too small or NaN" (box t) ()
   end
@@ -328,13 +328,13 @@ let iround_down_exn t =
 
 let iround_towards_zero t =
   if t >= iround_lbound && t <= iround_ubound then
-    Some (Int.of_float t)
+    Some (Int.of_float_unchecked t)
   else
     None
 
 let iround_towards_zero_exn t =
   if t >= iround_lbound && t <= iround_ubound then
-    Int.of_float t
+    Int.of_float_unchecked t
   else
     invalid_argf "Float.iround_towards_zero_exn: argument (%f) is out of range or NaN"
       (box t)
@@ -373,31 +373,31 @@ let iround_nearest_32 t =
   if t >= 0. then
     let t' = add_half_for_round_nearest t in
     if t' <= iround_ubound then
-      Some (Int.of_float t')
+      Some (Int.of_float_unchecked t')
     else
       None
   else
     let t' = floor (t +. 0.5) in
     if t' >= iround_lbound then
-      Some (Int.of_float t')
+      Some (Int.of_float_unchecked t')
     else
       None
 
 let iround_nearest_64 t =
   if t >= 0. then
     if t < round_nearest_ub then
-      Some (Int.of_float (add_half_for_round_nearest t))
+      Some (Int.of_float_unchecked (add_half_for_round_nearest t))
     else
     if t <= iround_ubound then
-      Some (Int.of_float t)
+      Some (Int.of_float_unchecked t)
     else
       None
   else
   if t > round_nearest_lb then
-    Some (Int.of_float (floor (t +. 0.5)))
+    Some (Int.of_float_unchecked (floor (t +. 0.5)))
   else
   if t >= iround_lbound then
-    Some (Int.of_float t)
+    Some (Int.of_float_unchecked t)
   else
     None
 
@@ -410,31 +410,31 @@ let iround_nearest_exn_32 t =
   if t >= 0. then
     let t' = add_half_for_round_nearest t in
     if t' <= iround_ubound then
-      Int.of_float t'
+      Int.of_float_unchecked t'
     else
       invalid_argf "Float.iround_nearest_exn: argument (%f) is too large" (box t) ()
   else
     let t' = floor (t +. 0.5) in
     if t' >= iround_lbound then
-      Int.of_float t'
+      Int.of_float_unchecked t'
     else
       invalid_argf "Float.iround_nearest_exn: argument (%f) is too small" (box t) ()
 
 let iround_nearest_exn_64 t =
   if t >= 0. then
     if t < round_nearest_ub then
-      Int.of_float (add_half_for_round_nearest t)
+      Int.of_float_unchecked (add_half_for_round_nearest t)
     else
     if t <= iround_ubound then
-      Int.of_float t
+      Int.of_float_unchecked t
     else
       invalid_argf "Float.iround_nearest_exn: argument (%f) is too large" (box t) ()
   else
   if t > round_nearest_lb then
-    Int.of_float (floor (t +. 0.5))
+    Int.of_float_unchecked (floor (t +. 0.5))
   else
   if t >= iround_lbound then
-    Int.of_float t
+    Int.of_float_unchecked t
   else
     invalid_argf "Float.iround_nearest_exn: argument (%f) is too small or NaN" (box t) ()
 [@@ocaml.inline always]

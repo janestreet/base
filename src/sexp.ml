@@ -129,7 +129,7 @@ module Printing = struct
 
   let index_of_newline str start =
     try Some (String.index_from_exn str start '\n')
-    with Not_found -> None
+    with Caml.Not_found -> None
 
   let get_substring str index end_pos_opt =
     let end_pos =
@@ -313,6 +313,8 @@ include Printing
 
 let of_float_style : [ `Underscores | `No_underscores ] ref = ref `No_underscores
 let of_int_style   : [ `Underscores | `No_underscores ] ref = ref `No_underscores
+
+let of_string = ()
 
 module Private = Printing
 

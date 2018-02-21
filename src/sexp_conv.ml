@@ -152,7 +152,7 @@ module Exn_converter = struct
   let find_auto exn =
     let id = Caml.Obj.extension_id (Caml.Obj.extension_constructor exn) in
     match Exn_ids.find id !exn_id_map with
-    | exception Not_found -> None
+    | exception Caml.Not_found -> None
     | ephe ->
       match Caml.Ephemeron.K1.get_data ephe with
       | None -> None
@@ -366,9 +366,9 @@ let () =
           | Failure arg -> List [Atom "Failure"; Atom arg ]
           | _ -> assert false)
       );(
-        [%extension_constructor Not_found],
+        [%extension_constructor Caml.Not_found],
         (function
-          | Not_found -> Atom "Not_found"
+          | Caml.Not_found -> Atom "Not_found"
           | _ -> assert false)
       );(
         [%extension_constructor Invalid_argument],

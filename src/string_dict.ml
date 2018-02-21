@@ -60,7 +60,7 @@ let find t key = find t.trie key
 
 let find_exn t key =
   match find t key with
-  | None -> raise Not_found
+  | None -> raise Caml.Not_found
   | Some x -> x
 
 module Bmap = Caml.Map.Make(struct
@@ -102,7 +102,7 @@ let of_alist l =
           let block = get_block blocks pos in
           let others =
             match Bmap.find block acc with
-            | exception Not_found -> []
+            | exception Caml.Not_found -> []
             | l -> l
           in
           Bmap.add acc ~key:block ~data:(entry :: others))

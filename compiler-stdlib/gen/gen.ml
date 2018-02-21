@@ -33,4 +33,6 @@ let () =
   in
   List.iter units ~f:(fun u -> pr "module %-*s = %s" max_len u u);
   pr "";
-  pr "include Pervasives"
+  pr "include Pervasives";
+  pr "";
+  pr "exception Not_found = Not_found"

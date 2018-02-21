@@ -522,13 +522,13 @@ let findi t ~f =
 
 let findi_exn t ~f =
   match findi t ~f with
-  | None -> raise Not_found
+  | None -> raise Caml.Not_found
   | Some x -> x
 ;;
 
 let find_exn t ~f =
   match findi t ~f:(fun _i x -> f x) with
-  | None -> raise Not_found
+  | None -> raise Caml.Not_found
   | Some (_i, x) -> x
 ;;
 
@@ -548,7 +548,7 @@ let find_map t ~f =
 
 let find_map_exn t ~f =
   match find_map t ~f with
-  | None -> raise Not_found
+  | None -> raise Caml.Not_found
   | Some x -> x
 
 let find_mapi t ~f =
@@ -565,7 +565,7 @@ let find_mapi t ~f =
 
 let find_mapi_exn t ~f =
   match find_mapi t ~f with
-  | None -> raise Not_found
+  | None -> raise Caml.Not_found
   | Some x -> x
 
 let find_consecutive_duplicate t ~equal =

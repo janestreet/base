@@ -423,7 +423,7 @@ module Tree0 = struct
     match find t x ~compare_key with
     | Some data -> data
     | None ->
-      raise Not_found
+      raise Caml.Not_found
   ;;
 
   let mem t x ~compare_key = Option.is_some (find t x ~compare_key)

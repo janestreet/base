@@ -162,6 +162,7 @@ let val_replacement = function
 ;;
 
 let module_replacement = function
+  | "Not_found" -> Some (Repl_text "Do not use [Not_found] with [Base]")
   | "Printexc" -> Some (Repl_text "Use [Exn] or [Backtrace] instead")
   | _ -> None
 

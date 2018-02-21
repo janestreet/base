@@ -274,7 +274,7 @@ let invariant invariant_key invariant_data t =
 
 let find_exn =
   let if_found v = v in
-  let if_not_found _ = raise Not_found in
+  let if_not_found _ = raise Caml.Not_found in
   fun t key ->
     find_and_call t key ~if_found ~if_not_found
 ;;
