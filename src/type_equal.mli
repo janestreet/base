@@ -25,7 +25,7 @@
     a constructor [Type_equal.T]; the value has no interesting semantic content.
     [Type_equal] gets its power from the ability to, in a type-safe way, prove to the type
     checker that two types are equal.  The [Type_equal.t] value that is passed is
-    necessary for the type-checker's rules to be correct, but the compiler, could, in
+    necessary for the type-checker's rules to be correct, but the compiler could, in
     principle, not pass around values of type [Type_equal.t] at runtime.
 *)
 

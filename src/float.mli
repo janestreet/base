@@ -89,6 +89,9 @@ val one_ulp : [`Up | `Down] -> t -> t
 
 val of_int : int -> t
 val to_int : t -> int
+
+val of_int63 : Int63.t -> t
+
 val of_int64 : int64 -> t
 val to_int64 : t -> int64
 
@@ -243,12 +246,13 @@ val is_inf : t -> bool
 val min_inan : t -> t -> t
 val max_inan : t -> t -> t
 
-val (+) : t -> t -> t
-val (-) : t -> t -> t
-val ( * ) : t -> t -> t
-val (/) : t -> t -> t
+val ( +  ) : t -> t -> t
+val ( -  ) : t -> t -> t
+val ( /  ) : t -> t -> t
+val ( *  ) : t -> t -> t
+val ( ** ) : t -> t -> t
 
-val (~-) : t -> t
+val ( ~- ) : t -> t
 
 (** Returns the fractional part and the whole (i.e., integer) part. For example, [modf
     (-3.14)] returns [{ fractional = -0.14; integral = -3.; }]! *)
@@ -282,12 +286,14 @@ val neg : t -> t
 val scale : t -> t -> t
 val abs : t -> t
 
+
 (** A sub-module designed to be opened to make working with floats more convenient.  *)
 module O : sig
   val ( +  ) : t -> t -> t
   val ( -  ) : t -> t -> t
   val ( *  ) : t -> t -> t
   val ( /  ) : t -> t -> t
+  val ( ** ) : t -> t -> t
   val ( ~- ) : t -> t
   include Comparisons.Infix with type t := t
 

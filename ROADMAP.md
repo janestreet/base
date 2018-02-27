@@ -5,15 +5,8 @@
     the `String` module, and "re-typing" string values that require mutation to
     `bytes`.
 
-  - [ ] Do not export the `\*\_intf` modules from Base. Instead, any signatures
+  - [X] Do not export the `\*\_intf` modules from Base. Instead, any signatures
     sould be exported by the `.ml` and `.mli`s.
-
-  - [ ] Modify the argument order of `fold_right` in the `List`, `Array`, and `Set`
-    modules in the following way.
-
-    ```ocaml
-    val fold_right : 'a t -> init:'b -> f:('b -> 'a -> 'b) -> 'b
-    ```
 
   - [ ] Only expose the first-class module interface of `Hashtbl`. Accompanying
     this should ba cleanup of `Hastbl_intf`, moving anything that's still
@@ -24,41 +17,33 @@
 
   - [ ] Remove `replace` from `Hashtbl_intf.Accessors`.
 
-  - [ ] Label one of the arguments of `Hashtbl_intf.merge_into` to indicate the
+  - [X] Label one of the arguments of `Hashtbl_intf.merge_into` to indicate the
     flow of data.
 
   - [X] Merge `Hashtbl_intf.Key_common` and `Hashtbl_intf.Key_plain`.
 
-  - [ ] Eliminate the `bit_\*` functions from the `Int_intf` module. They are
-    redundant with the infix bit twiddling operators.
-
-  - [ ] Do not expose the type equality `Int63_emul.W.t = int64`.
-
   - [ ] Use `Either.t` as the return value for `Map.partition`.
-
-  - [ ] Add `key` and `data` labels to `Map.singleton` arguments.
 
   - [ ] Rename `Monad_intf.all_ignore` to `Monad_intf.all_unit`.
 
   - [ ] Elminate all uses of `Not_found`, replacing them with descriptive error messages.
 
-  - [ ] Remove `ignore` and `(=)` from `Sexp_conv`'s public interface.
-
-  - [ ] Replace the exception thrown by `Float.of_string` with a named
-    exception that's more descriptive.
-
-  - [ ] Make the various comparision functions return an `Ordering.t`
-    instead of an `int`.
-
-  - [ ] Move the various private modules to `Base.Base_private`
+  - [X] Move the various private modules to `Base.Base_private`
     instead of `Base.Exported_for_specific_uses` and `Base.Not_exposed_properly`
-
-  - [ ] Rename arguments of `between` to be explicit about inclusive/exclusive
 
   - [ ] Use `compare` rather than `cmp` as the label for comparison functions
     throughout.
 
 # Implementation Cleanup
+
+  - [ ] Remove `ignore` and `(=)` from `Sexp_conv`'s public interface. These
+    values are hidden from the documentation so their removal won't be
+    considered a breaking API change.
+
+  - [ ] Do not expose the type equality `Int63_emul.W.t = int64`.
+
+  - [ ] Replace the exception thrown by `Float.of_string` with a named
+    exception that's more descriptive.
 
   - [X] Delete the `Hashable` toplevel module. This is a vestige of the previous
     `Map` and `Set` implementations and is no longer needed.
@@ -120,3 +105,8 @@
   - [ ] Add documentation to the `Ref` toplevel module.
 
   - [ ] Document properly how `String.unescape_gen` handles malformed strings
+
+# Changes For The Distant Future
+
+  - [ ] Make the various comparision functions return an `Ordering.t`
+    instead of an `int`.

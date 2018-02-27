@@ -76,6 +76,8 @@ module type Hash_set = sig
 
   include Accessors with type 'a t := 'a t with type 'a elt := 'a elt (** @open *)
 
+  val hashable_s : 'key t -> (module Hashtbl_intf.Key with type t = 'key)
+
   val hashable : 'key t -> 'key Hashtbl_intf.Hashable.t
 
   type nonrec ('key, 'z) create_options_without_hashable =

@@ -244,6 +244,8 @@ let epsilon_float = Pervasives.epsilon_float
 let of_int = Int.to_float
 let to_int = Int.of_float
 
+let of_int63 i = Int63.to_float i
+
 let of_int64 i = Caml.Int64.to_float i
 
 let to_int64 = Caml.Int64.of_float
@@ -953,6 +955,7 @@ let clamp t ~min ~max =
 let ( + ) = ( +. )
 let ( - ) = ( -. )
 let ( * ) = ( *. )
+let ( ** ) = Caml.( ** )
 let ( / ) = ( /. )
 let ( ~- ) = ( ~-. )
 
@@ -1078,6 +1081,7 @@ module O = struct
   let ( *  ) = ( *  )
   let ( /  ) = ( /  )
   let ( ~- ) = ( ~- )
+  let ( ** ) = Caml.( ** )
   include (Float_replace_polymorphic_compare : Comparisons.Infix with type t := t)
   let abs        = abs
   let neg        = neg

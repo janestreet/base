@@ -2,6 +2,7 @@ open! Import
 
 include Hash_set_intf
 
+let hashable_s    = Hashtbl.hashable_s
 let hashable      = Hashtbl.hashable
 let poly_hashable = Hashtbl.Poly.hashable
 

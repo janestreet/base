@@ -1,4 +1,9 @@
-(** Utility Module for S-expression Conversions *)
+(** Utility Module for S-expression Conversions
+
+    [Sexp_conv] is the runtime module used by ppx_sexp_conv, and so it must handle all the
+    types defined in OCaml's stdlib.  So, [Sexp_conv] includes functions like
+    [sexp_of_hashtbl] and [hashtbl_of_sexp] that deal with stdlib types like
+    [Caml.Hashtbl.t] rather than [Base] types like [Base.Hashtbl.t]. *)
 
 open! Import0
 

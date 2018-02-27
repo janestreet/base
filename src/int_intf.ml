@@ -91,6 +91,9 @@ module type S_common = sig
   val ( - ) : t -> t -> t
   val ( * ) : t -> t -> t
 
+  (** Integer exponentiation *)
+  val ( ** ) : t -> t -> t
+
   (** Negation *)
 
   val neg : t -> t
@@ -210,6 +213,7 @@ module type Operators_unbounded = sig
   val ( * ) : t -> t -> t
   val ( / ) : t -> t -> t
   val ( ~- ) : t -> t
+  val ( ** ) : t -> t -> t
   include Comparisons.Infix with type t := t
 
   val abs    : t -> t

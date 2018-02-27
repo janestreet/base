@@ -987,3 +987,33 @@ let%expect_test "mathematical constants" =
 let%test _ = is_negative Float.nan = false
 let%test _ = is_non_positive Float.nan = false
 let%test _ = is_non_negative (-0.)
+
+
+let%test_unit "int to float conversion consistency" =
+  let test_int63 x =
+    assert (Float.(=) (Float.of_int63 x) (Float.of_int64 (Int63.to_int64 x)))
+  in
+  let test_int x =
+    assert (Float.(=) (Float.of_int x) (Float.of_int63 (Int63.of_int x)));
+    test_int63 (Int63.of_int x)
+  in
+  test_int 0;
+  test_int 35;
+  test_int (-1);
+  test_int Int.max_value;
+  test_int Int.min_value;
+
+  test_int63 Int63.zero;
+  test_int63 Int63.min_value;
+  test_int63 Int63.max_value;
+
+  let rand = Random.State.make [| Hashtbl.hash "int to float conversion consistency" |] in
+  for _i = 0 to 100 do
+    let x = Random.State.int rand Int.max_value in
+    test_int x;
+  done;
+  ()
+;;
+
+
+

@@ -767,6 +767,10 @@ module type Set = sig
   (** Tests internal invariants of the set data structure.  Returns true on success. *)
   val invariants : (_, _) t -> bool
 
+  (** Returns a first-class module that can be used to build other map/set/etc
+      with the same notion of comparison. *)
+  val comparator_s : ('a, 'cmp) t -> ('a, 'cmp) comparator
+
   val comparator : ('a, 'cmp) t -> ('a, 'cmp) Comparator.t
 
   (** Creates an empty set based on the provided comparator. *)

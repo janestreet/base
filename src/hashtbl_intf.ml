@@ -62,6 +62,14 @@ module Hashable = struct
     }
   ;;
 
+  let to_key (type a) { hash; compare; sexp_of_t } =
+    (module struct
+      type t = a
+      let hash = hash
+      let compare = compare
+      let sexp_of_t = sexp_of_t
+    end : Key with type t = a)
+  ;;
 end
 
 module type Hashable = sig
@@ -76,6 +84,7 @@ module type Hashable = sig
   val poly : 'a t
 
   val of_key : (module Key with type t = 'a) -> 'a t
+  val to_key : 'a t -> (module Key with type t = 'a)
 
   val hash_param : int -> int -> 'a -> int
 
@@ -448,6 +457,8 @@ module type S_without_submodules = sig
   include Deprecated
     with type ('a, 'b) t := ('a, 'b) t
     with type 'a key := 'a key
+
+  val hashable_s : ('key, _) t -> (module Key with type t = 'key)
 
   val hashable : ('key, _) t -> 'key Hashable.t
 

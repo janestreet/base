@@ -59,6 +59,8 @@ let of_float f =
       (Float0.box f)
       ()
 
+let ( ** ) b e = pow b e
+
 include Comparable.Validate_with_zero (struct
     include T
     let zero = zero
@@ -153,6 +155,7 @@ module Pre_O = struct
   let ( * ) = ( * )
   let ( / ) = ( / )
   let ( ~- ) = ( ~- )
+  let ( ** ) = ( ** )
   include (Int64_replace_polymorphic_compare : Comparisons.Infix with type t := t)
   let abs = abs
   let neg = neg

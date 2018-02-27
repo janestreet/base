@@ -1230,6 +1230,13 @@ end
 type ('elt, 'cmp) comparator =
   (module Comparator.S with type t = 'elt and type comparator_witness = 'cmp)
 
+let comparator_s (type k cmp) t : (k, cmp) comparator =
+  (module struct
+    type t = k
+    type comparator_witness = cmp
+    let comparator = t.comparator
+  end)
+
 let to_comparator (type elt cmp) ((module M) : (elt, cmp) comparator) = M.comparator
 
 let empty m = Using_comparator.empty ~comparator:(to_comparator m)

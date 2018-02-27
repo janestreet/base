@@ -114,6 +114,7 @@ let of_int64_trunc = Conv.int64_to_nativeint_trunc
 let to_int64 = Conv.nativeint_to_int64
 
 let pow b e = of_int_exn (Int_math.int_pow (to_int_exn b) (to_int_exn e))
+let ( ** ) b e = pow b e
 
 include Conv.Make (T)
 
@@ -152,6 +153,7 @@ module Pre_O = struct
   let ( * ) = ( * )
   let ( / ) = ( / )
   let ( ~- ) = ( ~- )
+  let ( ** ) = ( ** )
   include (Nativeint_replace_polymorphic_compare : Comparisons.Infix with type t := t)
   let abs = abs
   let neg = neg

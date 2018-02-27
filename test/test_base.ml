@@ -10,3 +10,8 @@ let%expect_test _ =
   print_s [%sexp (f @@ g @@ 5 : int)];
   [%expect {| 16 |}];
 ;;
+
+let%expect_test "exp is present at the toplevel" =
+  print_s [%sexp (2 ** 8 : int)];
+  [%expect {| 256 |}]
+;;

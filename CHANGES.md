@@ -26,6 +26,8 @@
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its
   use isn't recommended.
 
+- Added a infix exponentation operator for int.
+
 ## v0.10
 
 (Changes that can break existing programs are marked with a "\*")

@@ -154,6 +154,7 @@ let bit_and a b = a land b
 let bit_xor a b = a lxor b
 
 let pow = Int_math.int_pow
+let ( ** ) b e = pow b e
 
 include Int_pow2
 
@@ -175,6 +176,7 @@ module Pre_O = struct
   let ( * ) = ( * )
   let ( / ) = ( / )
   let ( ~- ) = ( ~- )
+  let ( ** ) = ( ** )
   include (Int_replace_polymorphic_compare : Comparisons.Infix with type t := t)
   let abs = abs
   let neg = neg

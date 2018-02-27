@@ -121,6 +121,7 @@ end = struct
   let sexp_of_t x = sexp_of_int64 (unwrap x)
 
   let compare (x : t) y = compare x y
+
 end
 
 open W
@@ -283,6 +284,8 @@ let ( - ) = sub
 let ( + ) = add
 let ( ~- ) = neg
 
+let ( ** ) b e = pow b e
+
 let incr r = r := !r + one
 let decr r = r := !r - one
 
@@ -344,6 +347,7 @@ module Pre_O = struct
   let ( * ) = ( * )
   let ( / ) = ( / )
   let ( ~- ) = ( ~- )
+  let ( ** ) = ( ** )
   include (Int64_replace_polymorphic_compare : Comparisons.Infix with type t := t)
   let abs = abs
   let neg = neg

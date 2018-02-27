@@ -1671,6 +1671,14 @@ include Accessors
 
 type ('k, 'cmp) comparator =
   (module Comparator.S with type t = 'k and type comparator_witness = 'cmp)
+
+let comparator_s (type k cmp) t : (k, cmp) comparator =
+  (module struct
+    type t = k
+    type comparator_witness = cmp
+    let comparator = t.comparator
+  end)
+
 let to_comparator (type k cmp) ((module M) : (k, cmp) comparator) = M.comparator
 
 let empty m = Using_comparator.empty ~comparator:(to_comparator m)

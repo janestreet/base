@@ -1,6 +1,6 @@
 (* This module is trying to minimize dependencies on modules in Core, so as to allow
-   [Info], [Error], and [Or_error] to be used in is many places places as possible.
-   Please avoid adding new dependencies. *)
+   [Info], [Error], and [Or_error] to be used in as many places as possible. Please avoid
+   adding new dependencies. *)
 
 open! Import
 

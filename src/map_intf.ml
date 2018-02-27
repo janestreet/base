@@ -1307,6 +1307,10 @@ module type Map = sig
   (** Test if invariants of internal AVL search tree hold. *)
   val invariants : (_, _, _) t -> bool
 
+  (** Returns a first-class module that can be used to build other map/set/etc
+      with the same notion of comparison. *)
+  val comparator_s : ('a, _, 'cmp) t -> ('a, 'cmp) comparator
+
   val comparator : ('a, _, 'cmp) t -> ('a, 'cmp) Comparator.t
 
   (** The empty map. *)

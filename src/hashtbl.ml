@@ -861,6 +861,8 @@ let create_with_key_exn m ?growth_allowed ?size ~get_key l =
 let group m ?growth_allowed ?size ~get_key ~get_data ~combine l =
   group ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key ~get_data ~combine l
 
+let hashable_s t = Hashtbl_intf.Hashable.to_key t.hashable
+
 module M (K : T.T) = struct
   type nonrec 'v t = (K.t, 'v) t
 end
