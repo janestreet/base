@@ -61,18 +61,18 @@ val default_indent : int ref
 
 (** [pp_hum ppf sexp] outputs S-expression [sexp] to formatter [ppf] in human readable
     form. *)
-val pp_hum : Caml.Format.formatter -> t -> unit
+val pp_hum : Formatter.t -> t -> unit
 
 (** [pp_hum_indent n ppf sexp] outputs S-expression [sexp] to formatter [ppf] in human
     readable form and indentation level [n]. *)
-val pp_hum_indent : int -> Caml.Format.formatter -> t -> unit
+val pp_hum_indent : int -> Formatter.t -> t -> unit
 
 (** [pp_mach ppf sexp] outputs S-expression [sexp] to formatter [ppf] in machine readable
     (i.e. most compact) form. *)
-val pp_mach : Caml.Format.formatter -> t -> unit
+val pp_mach : Formatter.t -> t -> unit
 
 (** Same as [pp_mach]. *)
-val pp : Caml.Format.formatter -> t -> unit
+val pp : Formatter.t -> t -> unit
 
 (** {1 Conversion to strings} *)
 
@@ -121,4 +121,3 @@ module Private : sig
   val must_escape : string -> bool
   val esc_str : string -> string
 end
-

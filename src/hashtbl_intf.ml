@@ -219,13 +219,13 @@ module type Accessors = sig
 
       d(k) =
       - f ~key:k (Some d1) None
-      if [k] in [h1] is to d1, and [h2] does not map [k];
+        if [k] in [h1] is to d1, and [h2] does not map [k];
 
       - f ~key:k None (Some d2)
-      if [k] in [h2] is to d2, and [h1] does not map [k];
+        if [k] in [h2] is to d2, and [h1] does not map [k];
 
       - f ~key:k (Some d1) (Some d2)
-      otherwise, where [k] in [h1] is to [d1] and [k] in [h2] is to [d2].
+        otherwise, where [k] in [h1] is to [d1] and [k] in [h2] is to [d2].
 
       Each key [k] is mapped to a single piece of data x, where [d(k)] = Some x. *)
   val merge

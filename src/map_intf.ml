@@ -34,7 +34,7 @@ module Symmetric_diff_element = struct
   [@@deriving_inline compare, sexp]
   let compare :
     'k 'v .
-         ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k,'v) t -> ('k,'v) t -> int
+    ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k,'v) t -> ('k,'v) t -> int
     =
     fun _cmp__k  ->
     fun _cmp__v  ->
@@ -63,7 +63,7 @@ module Symmetric_diff_element = struct
 
   let t_of_sexp :
     'k 'v .
-         (Ppx_sexp_conv_lib.Sexp.t -> 'k) ->
+    (Ppx_sexp_conv_lib.Sexp.t -> 'k) ->
     (Ppx_sexp_conv_lib.Sexp.t -> 'v) ->
     Ppx_sexp_conv_lib.Sexp.t -> ('k,'v) t
     =
@@ -143,7 +143,7 @@ module Symmetric_diff_element = struct
 
   let sexp_of_t :
     'k 'v .
-         ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('k,'v) t -> Ppx_sexp_conv_lib.Sexp.t
     =
@@ -1304,10 +1304,10 @@ module type Map = sig
   type ('k, 'cmp) comparator =
     (module Comparator.S with type t = 'k and type comparator_witness = 'cmp)
 
-  (** Test if invariants of internal AVL search tree hold. *)
+  (** Test if the invariants of the internal AVL search tree hold. *)
   val invariants : (_, _, _) t -> bool
 
-  (** Returns a first-class module that can be used to build other map/set/etc
+  (** Returns a first-class module that can be used to build other map/set/etc.
       with the same notion of comparison. *)
   val comparator_s : ('a, _, 'cmp) t -> ('a, 'cmp) comparator
 
@@ -1316,30 +1316,30 @@ module type Map = sig
   (** The empty map. *)
   val empty : ('a, 'cmp) comparator -> ('a, 'b, 'cmp) t
 
-  (** Map with one (key, data) pair. *)
+  (** A map with one (key, data) pair. *)
   val singleton : ('a, 'cmp) comparator -> 'a -> 'b -> ('a, 'b, 'cmp) t
 
-  (** Creates map from association list with unique keys. *)
+  (** Creates a map from an association list with unique keys. *)
   val of_alist
     :  ('a, 'cmp) comparator
     -> ('a * 'b) list
     -> [ `Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a ]
 
-  (** Creates map from association list with unique keys, returning an error if duplicate
-      ['a] keys are found. *)
+  (** Creates a map from an association list with unique keys, returning an error if
+      duplicate ['a] keys are found. *)
   val of_alist_or_error
     :  ('a, 'cmp) comparator
     -> ('a * 'b) list -> ('a, 'b, 'cmp) t Or_error.t
 
-  (** Creates map from association list with unique keys, raising an exception if duplicate
-      ['a] keys are found. *)
+  (** Creates a map from an association list with unique keys, raising an exception if
+      duplicate ['a] keys are found. *)
   val of_alist_exn
     :  ('a, 'cmp) comparator
     -> ('a * 'b) list -> ('a, 'b, 'cmp) t
 
-  (** Creates map from association list with possibly repeated keys. The
-      ordering of values in the map for a given key appear in the same order as
-      they did in the association list. *)
+  (** Creates a map from an association list with possibly repeated keys. The values in
+      the map for a given key appear in the same order as they did in the association
+      list. *)
   val of_alist_multi
     :  ('a, 'cmp) comparator
     -> ('a * 'b) list -> ('a, 'b list, 'cmp) t
@@ -1366,16 +1366,16 @@ module type Map = sig
     -> [ `Ok of ('a, 'b, 'cmp) t
        | `Duplicate_key of 'a ]
 
-  (** Creates map from sorted array of key-data pairs. The input array must be sorted, as
-      given by the relevant comparator (either in ascending or descending order), and must
-      not contain any duplicate keys.  If either of these conditions does not hold, an error
-      is returned.  *)
+  (** Creates a map from a sorted array of key-data pairs. The input array must be sorted
+      (either in ascending or descending order), as given by the relevant comparator, and
+      must not contain duplicate keys. If either of these conditions does not hold,
+      an error is returned.  *)
   val of_sorted_array
     :  ('a, 'cmp) comparator
     -> ('a * 'b) array -> ('a, 'b, 'cmp) t Or_error.t
 
-  (** Like [of_sorted_array] except it returns a map with broken invariants when an [Error]
-      would have been returned. *)
+  (** Like [of_sorted_array] except that it returns a map with broken invariants when an
+      [Error] would have been returned. *)
   val of_sorted_array_unchecked
     :  ('a, 'cmp) comparator
     -> ('a * 'b) array -> ('a, 'b, 'cmp) t
@@ -1400,7 +1400,7 @@ module type Map = sig
     -> ('k * 'v) Sequence.t
     -> ('k, 'v, 'cmp) t Or_error.t
 
-  (** Tests whether a map is empty or not. *)
+  (** Tests whether a map is empty. *)
   val is_empty : (_, _, _) t -> bool
 
   (** [length map] returns the number of elements in [map].  O(1), but [Tree.length] is
@@ -1416,15 +1416,16 @@ module type Map = sig
   val add     : ('k, 'v, 'cmp) t -> key:'k -> data:'v -> ('k, 'v, 'cmp) t Or_duplicate.t
   val add_exn : ('k, 'v, 'cmp) t -> key:'k -> data:'v -> ('k, 'v, 'cmp) t
 
-  (** If key is not present then add a singleton list, otherwise, cons data on the head of
-      the existing list. *)
+  (** If [key] is not present then add a singleton list, otherwise, cons data onto the
+      head of the existing list. *)
   val add_multi
     :  ('k, 'v list, 'cmp) t
     -> key:'k
     -> data:'v
     -> ('k, 'v list, 'cmp) t
 
-  (** If key is present then remove its head element; if result is empty, remove the key. *)
+  (** If the key is present, then remove its head element; if the result is empty, remove
+      the key. *)
   val remove_multi
     :  ('k, 'v list, 'cmp) t
     -> 'k
@@ -1436,9 +1437,9 @@ module type Map = sig
     -> 'k
     -> 'v list
 
-  (** [change t key ~f] returns a new map [m] that is the same as [t] on all keys except for
-      [key], and whose value for [key] is defined by [f], i.e., [find m key = f (find t
-      key)]. *)
+  (** [change t key ~f] returns a new map [m] that is the same as [t] on all keys except
+      for [key], and whose value for [key] is defined by [f], i.e., [find m key = f (find
+      t key)]. *)
   val change
     :  ('k, 'v, 'cmp) t
     -> 'k
@@ -1452,7 +1453,7 @@ module type Map = sig
     -> f:('v option -> 'v)
     -> ('k, 'v, 'cmp) t
 
-  (** Returns the value bound to the given key, raising [Not_found] if none such exists *)
+  (** Returns the value bound to the given key, raising [Not_found] if none exists. *)
   val find     : ('k, 'v, 'cmp) t -> 'k -> 'v option
   val find_exn : ('k, 'v, 'cmp) t -> 'k -> 'v
 
@@ -1466,7 +1467,7 @@ module type Map = sig
   val iter      : (_, 'v, _) t -> f:('v -> unit) -> unit
   val iteri     : ('k, 'v, _) t -> f:(key:'k -> data:'v -> unit) -> unit
 
-  (** Iterates two maps side by side.  Complexity of this function is O(M + N).  If two
+  (** Iterates two maps side by side. The complexity of this function is O(M + N).  If two
       inputs are [[(0, a); (1, a)]] and [[(1, b); (2, b)]], [f] will be called with [[(0,
       `Left a); (1, `Both (a, b)); (2, `Right b)]]. *)
   val iter2
@@ -1475,19 +1476,19 @@ module type Map = sig
     -> f:(key:'k -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ] -> unit)
     -> unit
 
-  (** Returns new map with bound values replaced by [f] applied to the bound values.*)
+  (** Returns a new map with bound values replaced by [f] applied to the bound values.*)
   val map : ('k, 'v1, 'cmp) t -> f:('v1 -> 'v2) -> ('k, 'v2, 'cmp) t
 
-  (** Like [map], but function takes both key and data as arguments. *)
+  (** Like [map], but the passed function takes both [key] and [data] as arguments. *)
   val mapi
     :  ('k, 'v1, 'cmp) t
     -> f:(key:'k -> data:'v1 -> 'v2)
     -> ('k, 'v2, 'cmp) t
 
-  (** Folds over keys and data in map in increasing order of key. *)
+  (** Folds over keys and data in the map in increasing order of [key]. *)
   val fold : ('k, 'v, _) t -> init:'a -> f:(key:'k -> data:'v -> 'a -> 'a) -> 'a
 
-  (** Folds over keys and data in map in decreasing order of key. *)
+  (** Folds over keys and data in the map in decreasing order of [key]. *)
   val fold_right : ('k, 'v, _) t -> init:'a -> f:(key:'k -> data:'v -> 'a -> 'a) -> 'a
 
   (** Folds over two maps side by side, like [iter2]. *)
@@ -1498,27 +1499,28 @@ module type Map = sig
     -> f:(key:'k -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ] -> 'a -> 'a)
     -> 'a
 
-  (** [filter], [filteri], [filter_keys], [filter_map], and [filter_mapi] run in O(n * lg n)
-      time; they simply accumulate each key & data retained by [f] into a new map using
-      [add]. *)
+  (** [filter], [filteri], [filter_keys], [filter_map], and [filter_mapi] run in O(n * lg
+      n) time; they simply accumulate each key & data pair retained by [f] into a new map
+      using [add]. *)
   val filter_keys : ('k, 'v, 'cmp) t -> f:('k -> bool) -> ('k, 'v, 'cmp) t
   val filter      : ('k, 'v, 'cmp) t -> f:('v -> bool) -> ('k, 'v, 'cmp) t
   val filteri     : ('k, 'v, 'cmp) t -> f:(key:'k -> data:'v -> bool) -> ('k, 'v, 'cmp) t
 
-  (** Returns new map with bound values filtered by [f] applied to the bound values *)
+  (** Returns a new map with bound values filtered by [f] applied to the bound values. *)
   val filter_map
     :  ('k, 'v1, 'cmp) t
     -> f:('v1 -> 'v2 option)
     -> ('k, 'v2, 'cmp) t
 
-  (** Like [filter_map], but function takes both key and data as arguments. *)
+  (** Like [filter_map], but the passed function takes both [key] and [data] as
+      arguments. *)
   val filter_mapi
     :  ('k, 'v1, 'cmp) t
     -> f:(key:'k -> data:'v1 -> 'v2 option)
     -> ('k, 'v2, 'cmp) t
 
-  (** [partition_mapi t ~f] returns two new [t]s, with each key in [t] appearing in exactly
-      one of the result maps depending on its mapping in [f]. *)
+  (** [partition_mapi t ~f] returns two new [t]s, with each key in [t] appearing in
+      exactly one of the resulting maps depending on its mapping in [f]. *)
   val partition_mapi
     :  ('k, 'v1, 'cmp) t
     -> f:(key:'k -> data:'v1 -> [`Fst of 'v2 | `Snd of 'v3])
@@ -1550,8 +1552,8 @@ module type Map = sig
     -> f:('v -> bool)
     -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
 
-  (** Total ordering between maps.  The first argument is a total ordering used to compare
-      data associated with equal keys in the two maps. *)
+  (** Returns a total ordering between maps. The first argument is a total ordering used
+      to compare data associated with equal keys in the two maps. *)
   val compare_direct
     :  ('v -> 'v -> int)
     -> ('k, 'v, 'cmp) t
@@ -1568,21 +1570,21 @@ module type Map = sig
     -> ('k, 'v, 'cmp) t Hash.folder
 
   (** [equal cmp m1 m2] tests whether the maps [m1] and [m2] are equal, that is, contain
-      equal keys and associate each key with equal values.  [cmp] is the equality predicate
-      used to compare the values associated with the keys. *)
+      the same keys and associate each key with the same value.  [cmp] is the equality
+      predicate used to compare the values associated with the keys. *)
   val equal
     :  ('v -> 'v -> bool)
     -> ('k, 'v, 'cmp) t
     -> ('k, 'v, 'cmp) t
     -> bool
 
-  (** Returns list of keys in map. *)
+  (** Returns a list of the keys in the given map. *)
   val keys : ('k, _, _) t -> 'k list
 
-  (** Returns list of data in map. *)
+  (** Returns a list of the data in the given map. *)
   val data : (_, 'v, _) t -> 'v list
 
-  (** Creates association list from map. *)
+  (** Creates an association list from the given map. *)
   val to_alist
     :  ?key_order : [ `Increasing | `Decreasing ]  (** default is [`Increasing] *)
     -> ('k, 'v, _) t
@@ -1605,7 +1607,7 @@ module type Map = sig
   (** A special case of [merge], [merge_skewed t1 t2] is a map containing all the
       bindings of [t1] and [t2]. Bindings that appear in both [t1] and [t2] are
       combined into a single value using the [combine] function. In a call
-      [combine ~key v1 v2] the value [v1] comes from [t1] and [v2] from [t2].
+      [combine ~key v1 v2], the value [v1] comes from [t1] and [v2] from [t2].
 
       The runtime of [merge_skewed] is [O(l1 * log(l2))], where [l1] is the length
       of the smaller map and [l2] the length of the larger map. This is likely to
@@ -1646,17 +1648,18 @@ module type Map = sig
     -> data_equal:('v -> 'v -> bool)
     -> ('k, 'v) Symmetric_diff_element.t Sequence.t
 
-  (** [min_elt map] returns Some [(key, data)] pair corresponding to the minimum key in
-      [map], None if empty. *)
+  (** [min_elt map] returns [Some (key, data)] pair corresponding to the minimum key in
+      [map], or [None] if empty. *)
   val min_elt     : ('k, 'v, _) t -> ('k * 'v) option
   val min_elt_exn : ('k, 'v, _) t ->  'k * 'v
 
-  (** [max_elt map] returns Some [(key, data)] pair corresponding to the maximum key in
-      [map], and None if [map] is empty. *)
+  (** [max_elt map] returns [Some (key, data)] pair corresponding to the maximum key in
+      [map], or [None] if [map] is empty. *)
   val max_elt     : ('k, 'v, _) t -> ('k * 'v) option
   val max_elt_exn : ('k, 'v, _) t ->  'k * 'v
 
-  (** Same semantics as similar functions in [List]. *)
+  (** These functions have the same semantics as similar functions in [List]. *)
+
   val for_all  : ('k, 'v, _) t -> f:(               'v -> bool) -> bool
   val for_alli : ('k, 'v, _) t -> f:(key:'k -> data:'v -> bool) -> bool
   val exists   : ('k, 'v, _) t -> f:(               'v -> bool) -> bool
@@ -1667,17 +1670,18 @@ module type Map = sig
   (** [split t key] returns a map of keys strictly less than [key], the mapping of [key] if
       any, and a map of keys strictly greater than [key].
 
-      Runtime is O(m + log n) where n is the size of the input map, and m is the size of the
-      smaller of the two output maps.  The O(m) term is due to the need to calculate the
-      length of the output maps. *)
+      Runtime is O(m + log n), where n is the size of the input map and m is the size of
+      the smaller of the two output maps.  The O(m) term is due to the need to calculate
+      the length of the output maps. *)
   val split
     :  ('k, 'v, 'cmp) t
     -> 'k
     -> ('k, 'v, 'cmp) t * ('k * 'v) option * ('k, 'v, 'cmp) t
 
-  (** [append ~lower_part ~upper_part] returns [`Ok map] where [map] contains all the [(key,
-      value)] pairs from the two input maps if all the keys from [lower_part] are less than
-      all the keys from [upper_part].  Otherwise it returns [`Overlapping_key_ranges].
+  (** [append ~lower_part ~upper_part] returns [`Ok map] where [map] contains all the
+      [(key, value)] pairs from the two input maps if all the keys from [lower_part] are
+      less than all the keys from [upper_part].  Otherwise it returns
+      [`Overlapping_key_ranges].
 
       Runtime is O(log n) where n is the size of the larger input map.  This can be
       significantly faster than [Map.merge] or repeated [Map.add].
@@ -1696,21 +1700,21 @@ module type Map = sig
        | `Overlapping_key_ranges ]
 
   (** [subrange t ~lower_bound ~upper_bound] returns a map containing all the entries from
-      [t] whose keys lie inside the interval indicated by [~lower_bound] and [~upper_bound].
-      If this interval is empty, an empty map is returned.
+      [t] whose keys lie inside the interval indicated by [~lower_bound] and
+      [~upper_bound].  If this interval is empty, an empty map is returned.
 
-      Runtime is O(m + log n) where n is the size of the input map, and m is the size of the
-      output map.  The O(m) term is due to the need to calculate the length of the output
-      map. *)
+      Runtime is O(m + log n), where n is the size of the input map and m is the size of
+      the output map.  The O(m) term is due to the need to calculate the length of the
+      output map. *)
   val subrange
     :  ('k, 'v, 'cmp) t
     -> lower_bound:'k Maybe_bound.t
     -> upper_bound:'k Maybe_bound.t
     -> ('k, 'v, 'cmp) t
 
-  (** [fold_range_inclusive t ~min ~max ~init ~f] folds f (with initial value [~init]) over
-      all keys (and their associated values) that are in the range [[min, max]] (inclusive).
-  *)
+  (** [fold_range_inclusive t ~min ~max ~init ~f] folds [f] (with initial value [~init])
+      over all keys (and their associated values) that are in the range [[min, max]]
+      (inclusive).  *)
   val fold_range_inclusive
     :  ('k, 'v, 'cmp) t
     -> min:'k
@@ -1748,8 +1752,8 @@ module type Map = sig
   val nth     : ('k, 'v, _) t -> int -> ('k * 'v) option
   val nth_exn : ('k, 'v, _) t -> int -> ('k * 'v)
 
-  (** [rank t k] if [k] is in [t], returns the number of keys strictly less than [k] in [t],
-      otherwise [None]. *)
+  (** [rank t k] If [k] is in [t], returns the number of keys strictly less than [k] in
+      [t], and [None] otherwise. *)
   val rank : ('k, 'v, 'cmp) t -> 'k -> int option
 
   (** [to_sequence ?order ?keys_greater_or_equal_to ?keys_less_or_equal_to t] gives a
@@ -1777,20 +1781,20 @@ module type Map = sig
       ]}
 
       The point is that [int Map.M(String).t] supports deriving, whereas the second syntax
-      doesn't (because there is no such thing as, say, String.sexp_of_comparator_witness,
-      instead you would want to pass the comparator directly).
+      doesn't (because there is no such thing as, say, [String.sexp_of_comparator_witness]
+      -- instead you would want to pass the comparator directly).
 
-      In addition, the requirement of [@@deriving_inline][@@@end] on the key module are only what is needed
-      to satisfy what you are trying to derive on the map itself. Say you write:
+      In addition, the requirements to use [@@deriving_inline][@@@end] on the key module are only those
+      needed to satisfy what you are trying to derive on the map itself. Say you write:
 
       {[
         type t = int Map.M(X).t [@@deriving_inline hash][@@@end]
       ]}
 
-      then this will be well typed exactly if X contains at least:
-      - a type t with no parameters
+      then this will be well typed exactly if [X] contains at least:
+      - a type [t] with no parameters
       - a comparator witness
-      - a hash_fold_t function with the right type *)
+      - a [hash_fold_t] function with the right type *)
   module M (K : sig type t type comparator_witness end) : sig
     type nonrec 'v t = (K.t, 'v, K.comparator_witness) t
   end
@@ -1834,9 +1838,9 @@ module type Map = sig
     -> (Hash.state -> 'v -> Hash.state)
     -> (Hash.state -> ('k, 'v, _) t -> Hash.state)
 
-  (** Using comparator is a similar interface as the toplevel of [Map], except the functions
-      take a [~comparator:('k, 'cmp) Comparator.t] where the functions at the toplevel of
-      [Map] takes a [('k, 'cmp) comparator]. *)
+  (** [Using_comparator] is a similar interface as the toplevel of [Map], except the
+      functions take a [~comparator:('k, 'cmp) Comparator.t], whereas the functions at the
+      toplevel of [Map] take a [('k, 'cmp) comparator]. *)
   module Using_comparator : sig
     type nonrec ('k, +'v, 'cmp) t = ('k, 'v, 'cmp) t [@@deriving_inline sexp_of]
     include

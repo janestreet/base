@@ -22,8 +22,8 @@
     - It might consume an element from an input [t] before returning.
 
     - It only returns a [t] (not paired with something else, not wrapped in an [option],
-    etc.).  If it returns anything other than a [t] and it has at least one [t] input,
-    it's probably demanding elements from the input [t] anyway.
+      etc.).  If it returns anything other than a [t] and it has at least one [t] input,
+      it's probably demanding elements from the input [t] anyway.
 
     Only [*_exn] functions can raise exceptions, except if the function underlying the
     sequence (the [f] passed to [unfold]) raises, in which case the exception will

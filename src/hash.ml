@@ -208,7 +208,7 @@ module T = struct
        - a bit change in the input should change ~1/2 of the output bits
        - the output should be uniformly distributed across the output range
        - inputs that are close to each other shouldn't lead to outputs that are close to
-       each other.
+         each other.
        - all bits of the input are used in generating the output
 
        In our case we also want it to be fast, non-allocating, and inlinable.  *)

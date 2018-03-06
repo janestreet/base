@@ -10,7 +10,7 @@ type ('f, 's) t =
 [@@deriving_inline compare, hash, sexp]
 let compare :
   'f 's .
-       ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f,'s) t -> ('f,'s) t -> int
+  ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f,'s) t -> ('f,'s) t -> int
   =
   fun _cmp__f  ->
   fun _cmp__s  ->

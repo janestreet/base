@@ -819,7 +819,7 @@ module Using_hashable = struct
   type nonrec ('a, 'b) t = ('a, 'b) t [@@deriving_inline sexp_of]
   let sexp_of_t :
     'a 'b .
-         ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
     = sexp_of_t

@@ -82,6 +82,7 @@ module type S_without_syntax = sig
   val ignore_m : 'a t -> unit t
 
   val all : 'a t list -> 'a list t
+
   val all_ignore : unit t list -> unit t
 end
 

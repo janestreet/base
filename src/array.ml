@@ -33,13 +33,13 @@ let sexp_of_t :
    - during recursion there are two inflection points:
    - if the size of the current range is small, use insertion sort to sort it
    - if the stack depth is large, sort the range with heap-sort to avoid n^2 worst-case
-   behavior
+     behavior
 
    See the following for more information:
    - "Dual-Pivot Quicksort" by Vladimir Yaroslavskiy.
-   Available at http://iaroslavski.narod.ru/quicksort/DualPivotQuicksort.pdf
+     Available at http://iaroslavski.narod.ru/quicksort/DualPivotQuicksort.pdf
    - "Quicksort is Optimal" by Sedgewick and Bentley.
-   Slides at http://www.cs.princeton.edu/~rs/talks/QuicksortIsOptimal.pdf
+     Slides at http://www.cs.princeton.edu/~rs/talks/QuicksortIsOptimal.pdf
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
 
 module Sort = struct
@@ -162,11 +162,11 @@ module Sort = struct
     (* choose pivots for the array by sorting 5 elements and examining the center three
        elements.  The goal is to choose two pivots that will either:
        - break the range up into 3 even partitions
-       or
+         or
        - eliminate a commonly appearing element by sorting it into the center partition
-       by itself
-       To this end we look at the center 3 elements of the 5 and return pairs of equal
-       elements or the widest range *)
+         by itself
+         To this end we look at the center 3 elements of the 5 and return pairs of equal
+         elements or the widest range *)
     let choose_pivots arr ~cmp ~left ~right =
       let sixth = (right - left) / 6 in
       let m1 = left + sixth in

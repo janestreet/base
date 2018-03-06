@@ -18,7 +18,7 @@
     - The state returned by [alloc] is invalid.
     - The state returned by [reset] is valid (all of the other states become invalid).
     - The [fold_*] family of functions requires a valid state and produces a valid state
-    (thereby making the input state invalid).
+      (thereby making the input state invalid).
     - [get_hash_value] requires a valid state and makes it invalid.
 
     These requirements are currently formally encoded in the [Check_initialized_correctly]
@@ -161,27 +161,27 @@ module type Hash = sig
       - (a) custom hash algorithms implemented in OCaml and
       - (b) in C;
       - (c) OCaml's internal hash function (which is a custom version of Murmur3,
-      implemented in C);
+        implemented in C);
       - (d) siphash, a modern hash function implemented in C.
 
       Our findings were as follows:
 
       - Implementing our own custom hash algorithms in OCaml and C yielded very little
-      performance improvement over the (c) proposal, without providing the benefit of being
-      a peer-reviewed, widely used hash function.
+        performance improvement over the (c) proposal, without providing the benefit of being
+        a peer-reviewed, widely used hash function.
 
       - Siphash (a modern hash function with an internal state of 32 bytes) has a worse
-      performance profile than (a,b,c) above (hashing takes more time). Since its internal
-      state is bigger than an OCaml immediate value, one must either manage allocation of
-      such state explicitly, or paying the cost of allocation each time a hash is computed.
-      While being a supposedly good hash function (with good hash quality), this quality was
-      not translated in measurable improvemenets in our macro benchmarks. (Also, based on
-      the data available at the time of writing, it's unclear that other hash algorithms in
-      this class would be more than marginally faster.)
+        performance profile than (a,b,c) above (hashing takes more time). Since its internal
+        state is bigger than an OCaml immediate value, one must either manage allocation of
+        such state explicitly, or paying the cost of allocation each time a hash is computed.
+        While being a supposedly good hash function (with good hash quality), this quality was
+        not translated in measurable improvemenets in our macro benchmarks. (Also, based on
+        the data available at the time of writing, it's unclear that other hash algorithms in
+        this class would be more than marginally faster.)
 
       - By contrast, using the internal combinators of OCaml hash function means that we do
-      not allocate (the internal state of this hash function is 32 bit) and have the same
-      quality and performance as Hashtbl.hash.
+        not allocate (the internal state of this hash function is 32 bit) and have the same
+        quality and performance as Hashtbl.hash.
 
       Hence, we are here making the choice of using this Internalhash (that is, Murmur3, the
       OCaml hash algorithm as of 4.03) as our hash algorithm. It means that the state of the

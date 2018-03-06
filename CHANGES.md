@@ -28,6 +28,9 @@
 
 - Added a infix exponentation operator for int.
 
+- Added a `Formatter` module to reexport the `Format.formatter` type and updated
+  the deprecation message for `Format`.
+
 ## v0.10
 
 (Changes that can break existing programs are marked with a "\*")

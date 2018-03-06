@@ -109,7 +109,7 @@ module type S = sig
   val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> t
   val to_exn : t -> exn
 
-  val pp : Caml.Format.formatter -> t -> unit
+  val pp : Formatter.t -> t -> unit
 
   module Internal_repr : sig
     type info = t

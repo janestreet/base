@@ -800,7 +800,7 @@ module Assoc = struct
   type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp]
   let t_of_sexp :
     'a 'b .
-         (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
+    (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
     (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
     Ppx_sexp_conv_lib.Sexp.t -> ('a,'b) t
     =
@@ -821,7 +821,7 @@ module Assoc = struct
 
   let sexp_of_t :
     'a 'b .
-         ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
     =

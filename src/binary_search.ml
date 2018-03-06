@@ -22,7 +22,7 @@ let rec linear_search_first_satisfying t ~get ~lo ~hi ~pred =
    return a range (lo, hi) where:
    - lo and hi are close enough together for a linear search
    - If [pred] is not constantly [false] on [t] between [lo] and [hi], the first element
-   on which [pred] is [true] is between [lo] and [hi]. *)
+     on which [pred] is [true] is between [lo] and [hi]. *)
 (* Invariant: the first element satisfying [pred], if it exists is between [lo] and [hi] *)
 let rec find_range_near_first_satisfying t ~get ~lo ~hi ~pred =
   (* Warning: this function will not terminate if the constant (currently 8) is

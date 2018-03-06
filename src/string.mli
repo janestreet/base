@@ -134,7 +134,7 @@ module Search_pattern : sig
 
       - [index_all (create "aaa") ~may_overlap:false ~in_:"aaaaBaaaaaa" = [0; 5; 8]]
       - [index_all (create "aaa") ~may_overlap:true ~in_:"aaaaBaaaaaa" = [0; 1; 5; 6; 7;
-      8]]
+        8]]
 
       E.g., [replace_all] internally calls [index_all ~may_overlap:false]. *)
   val index_all : t -> may_overlap:bool -> in_:string -> int list

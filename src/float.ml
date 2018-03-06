@@ -120,7 +120,7 @@ let valid_float_lexem s =
    - 17 significant digits is always sufficient to represent a float without ambiguity
    - 15th significant digit can always be represented accurately
    - converting a decimal number with 16 significant digits to its nearest float and back
-   can change the last decimal digit by no more than 1
+     can change the last decimal digit by no more than 1
 
    To make sure that floats obtained by conversion from decimal fractions (e.g. "3.14")
    are printed without trailing non-zero digits, one should choose the first among the
@@ -814,9 +814,9 @@ let to_padded_compact_string t =
          [1] http://en.wikipedia.org/wiki/Metric_prefix *)
       (* The trick here is that:
          - the first boundary (999.95) as a float is slightly over-represented (so it is
-         better approximated as "1k" than as "999.9"),
+           better approximated as "1k" than as "999.9"),
          - the other boundaries are accurately represented, because they are integers.
-         That's why the strict equalities below do exactly what we want. *)
+           That's why the strict equalities below do exactly what we want. *)
       if t < 999.95E0       then conv_one t
       else if t < 999.95E3  then conv 'k' t 100.
       else if t < 999.95E6  then conv 'm' t 100_000.

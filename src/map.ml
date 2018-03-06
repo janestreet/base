@@ -1080,7 +1080,7 @@ module Tree0 = struct
     (* The type signature is explicit here to allow polymorphic recursion. *)
     let rec loop
       :  'k 'v 'k_opt 'v_opt.
-                        ('k, 'v) tree
+        ('k, 'v) tree
         -> [ `Greater_or_equal_to
            | `Greater_than
            | `Less_or_equal_to

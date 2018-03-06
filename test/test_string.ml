@@ -272,13 +272,13 @@ let%test _ = false = exists ""    ~f:(fun _ -> assert false)
 let%test _ = false = exists "abc" ~f:(Fn.const false)
 let%test _ = true  = exists "abc" ~f:(Fn.const true)
 let%test _ = true  = exists "abc" ~f:(function
-    'a' -> false | 'b' -> true | _ -> assert false)
+  'a' -> false | 'b' -> true | _ -> assert false)
 
 let%test _ = true  = for_all ""    ~f:(fun _ -> assert false)
 let%test _ = true  = for_all "abc" ~f:(Fn.const true)
 let%test _ = false = for_all "abc" ~f:(Fn.const false)
 let%test _ = false = for_all "abc" ~f:(function
-    'a' -> true | 'b' -> false | _ -> assert false)
+  'a' -> true | 'b' -> false | _ -> assert false)
 
 let%test _ = (foldi "hello" ~init:[] ~f:(fun i acc ch -> (i,ch)::acc)
               = List.rev [0,'h';1,'e';2,'l';3,'l';4,'o'])

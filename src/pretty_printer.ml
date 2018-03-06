@@ -8,7 +8,7 @@ let register p = r := p :: !r
 
 module type S = sig
   type t
-  val pp : Caml.Format.formatter -> t -> unit
+  val pp : Formatter.t -> t -> unit
 end
 
 module Register_pp (M : sig

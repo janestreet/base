@@ -164,6 +164,13 @@ let val_replacement = function
 let module_replacement = function
   | "Not_found" -> Some (Repl_text "Do not use [Not_found] with [Base]")
   | "Printexc" -> Some (Repl_text "Use [Exn] or [Backtrace] instead")
+  | "Format" ->
+    let repl_text =
+      "[Base] doesn't export a [Format] module, although the \n\
+       [Caml.Format.formatter] type is available (as [Formatter.t])\n\
+       for interaction with other libraries"
+    in
+    Some (Repl_text repl_text)
   | _ -> None
 
 let replace id replacement line =

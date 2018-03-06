@@ -126,7 +126,7 @@ val to_int64 : t -> int64
     The following properties hold:
 
     - [of_int (iround_*_exn i) = i] for any float [i] that is an integer with
-    [min_int <= i <= max_int].
+      [min_int <= i <= max_int].
 
     - [round_* i = i] for any float [i] that is an integer.
 

@@ -428,7 +428,7 @@ module Merge_with_duplicates_element = struct
   [@@deriving_inline compare, hash, sexp]
   let compare :
     'a 'b .
-         ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+    ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
     =
     fun _cmp__a  ->
     fun _cmp__b  ->

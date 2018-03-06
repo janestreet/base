@@ -19,7 +19,7 @@ val all : unit -> string list
 (** Modules that provide a pretty printer will match [S]. *)
 module type S = sig
   type t
-  val pp : Caml.Format.formatter -> t -> unit
+  val pp : Formatter.t -> t -> unit
 end
 
 (** [Register] builds a [pp] function from a [to_string] function, and adds the

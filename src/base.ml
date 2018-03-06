@@ -16,7 +16,7 @@
 
     - [Comparable], [Comparator], and [Comparisons] in lieu of polymorphic compare.
     - [Container], which provides a consistent interface across container-like data
-    structures (arrays, lists, strings).
+      structures (arrays, lists, strings).
     - [Result], [Error], and [Or_error], supporting the or-error pattern.
 
     Broadly the goal of Base is both to be a more complete standard library, with richer
@@ -90,6 +90,7 @@ module Field                     = Field
 module Float                     = Float
 module Floatable                 = Floatable
 module Fn                        = Fn
+module Formatter                 = Formatter
 module Hash                      = Hash
 module Hash_set                  = Hash_set
 module Hasher                    = Hasher
@@ -177,11 +178,11 @@ module Export = struct
     Array.compare
   let array_of_sexp :
     'a .
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a array
+    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a array
     = Array.t_of_sexp
   let sexp_of_array :
     'a .
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a array -> Ppx_sexp_conv_lib.Sexp.t
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a array -> Ppx_sexp_conv_lib.Sexp.t
     = Array.sexp_of_t
   [@@@end]
   type bool      = Bool.      t [@@deriving_inline compare, hash, sexp]
@@ -264,16 +265,16 @@ module Export = struct
     List.compare
   let hash_fold_list :
     'a .
-      (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
     Ppx_hash_lib.Std.Hash.state -> 'a list -> Ppx_hash_lib.Std.Hash.state
     = List.hash_fold_t
   let list_of_sexp :
     'a .
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a list
+    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a list
     = List.t_of_sexp
   let sexp_of_list :
     'a .
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a list -> Ppx_sexp_conv_lib.Sexp.t
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a list -> Ppx_sexp_conv_lib.Sexp.t
     = List.sexp_of_t
   [@@@end]
   type nativeint = Nativeint. t [@@deriving_inline compare, hash, sexp]
@@ -295,16 +296,16 @@ module Export = struct
     = Option.compare
   let hash_fold_option :
     'a .
-      (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
     Ppx_hash_lib.Std.Hash.state -> 'a option -> Ppx_hash_lib.Std.Hash.state
     = Option.hash_fold_t
   let option_of_sexp :
     'a .
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a option
+    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a option
     = Option.t_of_sexp
   let sexp_of_option :
     'a .
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a option -> Ppx_sexp_conv_lib.Sexp.t
+    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a option -> Ppx_sexp_conv_lib.Sexp.t
     = Option.sexp_of_t
   [@@@end]
   type 'a ref    = 'a Ref.    t [@@deriving_inline compare,       sexp]
