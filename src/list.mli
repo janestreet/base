@@ -147,16 +147,16 @@ val split_n : 'a t -> int -> 'a t * 'a t
 
     Presently, the sort is stable, meaning that two equal elements in the input will be in
     the same order in the output. *)
-val sort : cmp:('a -> 'a -> int) -> 'a t -> 'a t
+val sort : compare:('a -> 'a -> int) -> 'a t -> 'a t
 
 (** Like [sort], but guaranteed to be stable. *)
-val stable_sort : cmp:('a -> 'a -> int) -> 'a t -> 'a t
+val stable_sort : compare:('a -> 'a -> int) -> 'a t -> 'a t
 
 (** Merges two lists: assuming that [l1] and [l2] are sorted according to the comparison
-    function [cmp], [merge cmp l1 l2] will return a sorted list containing all the
+    function [compare], [merge compare l1 l2] will return a sorted list containing all the
     elements of [l1] and [l2].  If several elements compare equal, the elements of [l1]
     will be before the elements of [l2]. *)
-val merge : 'a t -> 'a t -> cmp:('a -> 'a -> int) -> 'a t
+val merge : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 val hd : 'a t -> 'a option
 
@@ -171,11 +171,11 @@ val tl_exn : 'a t -> 'a t
 val findi : 'a t -> f:(int -> 'a -> bool) -> (int * 'a) option
 
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f].  It raises
-    [Not_found] if there is no such element. *)
+    [Caml.Not_found] or [Not_found_s] if there is no such element. *)
 val find_exn : 'a t -> f:('a -> bool) -> 'a
 
-(** Returns the first evaluation of [f] that returns [Some].  Raises [Not_found] if [f]
-    always returns [None].  *)
+(** Returns the first evaluation of [f] that returns [Some].  Raises [Caml.Not_found] or
+    [Not_found_s] if [f] always returns [None].  *)
 val find_map_exn : 'a t -> f:('a -> 'b option) -> 'b
 
 (** Like [find_map] and [find_map_exn], but passes the index as an argument. *)
@@ -327,35 +327,22 @@ val remove_consecutive_duplicates
   -> 'a t
 
 (** Returns the given list with duplicates removed and in sorted order. *)
-val dedup_and_sort : ?compare:('a -> 'a -> int) -> 'a t -> 'a t
+val dedup_and_sort : compare:('a -> 'a -> int) -> 'a t -> 'a t
 
-val dedup : ?compare:('a -> 'a -> int) -> 'a t -> 'a t
+val dedup : compare:('a -> 'a -> int) -> 'a t -> 'a t
 [@@deprecated "[since 2017-04] Use [dedup_and_sort] instead"]
 
 (** [find_a_dup] returns a duplicate from the list (with no guarantees about which
     duplicate you get), or [None] if there are no dups. *)
-val find_a_dup : ?compare:('a -> 'a -> int) -> 'a t -> 'a option
+val find_a_dup : compare:('a -> 'a -> int) -> 'a t -> 'a option
 
 (** Returns true if there are any two elements in the list which are the same. O(n log n)
     time complexity. *)
-val contains_dup : ?compare:('a -> 'a -> int) -> 'a t -> bool
+val contains_dup : compare:('a -> 'a -> int) -> 'a t -> bool
 
 (** [find_all_dups] returns a list of all elements that occur more than once, with
     no guarantees about order. O(n log n) time complexity. *)
-val find_all_dups : ?compare:('a -> 'a -> int) -> 'a t -> 'a list
-
-(** Only raised in [exn_if_dup] below. *)
-exception Duplicate_found of (unit -> Sexp.t) * string
-
-(** [exn_if_dup ?compare ?context t ~to_sexp] raises if [t] contains a duplicate. It will
-    specifcally raise a [Duplicate_found] exception and use [context] as its second
-    argument. O(n log n) time complexity. *)
-val exn_if_dup
-  :  ?compare:('a -> 'a -> int)
-  -> ?context:string
-  -> 'a t
-  -> to_sexp:('a -> Sexp.t)
-  -> unit
+val find_all_dups : compare:('a -> 'a -> int) -> 'a t -> 'a list
 
 (** [count l ~f] is the number of elements in [l] that satisfy the predicate [f]. *)
 val count  : 'a t -> f:(       'a -> bool) -> int
@@ -450,10 +437,6 @@ end
 
 (** [sub pos len l] is the [len]-element sublist of [l], starting at [pos]. *)
 val sub : 'a t -> pos:int -> len:int -> 'a t
-
-(** [slice l start stop] returns a new list including elements [l.(start)] through
-    [l.(stop-1)], normalized Python-style. *)
-val slice : 'a t -> int -> int -> 'a t
 
 (** [take l n] returns the first [n] elements of [l], or all of [l] if [n > length l].
     [take l n = fst (split_n l n)]. *)

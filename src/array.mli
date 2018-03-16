@@ -137,14 +137,14 @@ val fold_right : 'a t -> f:('a -> 'b -> 'b) -> init:'b -> 'b
 
     To sort only part of the array, specify [pos] to be the index to start sorting from
     and [len] indicating how many elements to sort. *)
-val sort : ?pos:int -> ?len:int -> 'a t -> cmp:('a -> 'a -> int) -> unit
-val stable_sort : 'a t -> cmp:('a -> 'a -> int) -> unit
+val sort : ?pos:int -> ?len:int -> 'a t -> compare:('a -> 'a -> int) -> unit
+val stable_sort : 'a t -> compare:('a -> 'a -> int) -> unit
 
-val is_sorted : 'a t -> cmp:('a -> 'a -> int) -> bool
+val is_sorted : 'a t -> compare:('a -> 'a -> int) -> bool
 
-(** [is_sorted_strictly xs ~cmp] iff [is_sorted xs ~cmp] and no two consecutive elements
-    in [xs] are equal according to [cmp]. *)
-val is_sorted_strictly : 'a t -> cmp:('a -> 'a -> int) -> bool
+(** [is_sorted_strictly xs ~compare] iff [is_sorted xs ~compare] and no two
+    consecutive elements in [xs] are equal according to [compare]. *)
+val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) -> bool
 
 (** Like [List.concat_map], [List.concat_mapi]. *)
 val concat_map  : 'a t -> f:(       'a -> 'b array) -> 'b array
@@ -160,25 +160,6 @@ val cartesian_product : 'a t -> 'b t -> ('a * 'b) t
     not all the same length. *)
 val transpose     : 'a t t -> 'a t t option
 val transpose_exn : 'a t t -> 'a t t
-
-
-(** [normalize array index] returns a new index into the array such that if the index is
-    less than zero, the returned index will "wrap around" -- i.e., [array.(normalize array
-    (-1))] returns the last element of the array. *)
-val normalize : 'a t -> int -> int
-
-(** [slice array start stop] returns a fresh array including elements [array.(start)]
-    through [array.(stop-1)] with the small tweak that the start and stop positions are
-    normalized and a stop index of 0 means the same thing as a stop index of [Array.length
-    array].  In summary, it's mostly like the slicing in Python or Matlab.  One difference
-    is that a stop value of 0 here is like not specifying a stop value in Python. *)
-val slice : 'a t -> int -> int -> 'a t
-
-(** Array access with [normalize]d index. *)
-val nget : 'a t -> int -> 'a
-
-(** Array modification with [normalize]d index. *)
-val nset : 'a t -> int -> 'a -> unit
 
 (** [filter_opt array] returns a new array where [None] entries are omitted and [Some x]
     entries are replaced with [x]. Note that this changes the index at which elements
@@ -242,20 +223,24 @@ val replace : 'a t -> int -> f:('a -> 'a) -> unit
 
 (** Modifies an array in place -- [ar.(i)] will be set to [f(ar.(i))]. *)
 val replace_all : 'a t -> f:('a -> 'a) -> unit
+[@@deprecated "[since 2018-03] use [map_inplace] instead"]
+
+(** Modifies an array in place, applying [f] to every element of the array *)
+val map_inplace : 'a t -> f:('a -> 'a) -> unit
 
 (** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true.  It raises
-    [Not_found] if there is no such [a]. *)
+    [Caml.Not_found] or [Not_found_s] if there is no such [a]. *)
 val find_exn : 'a t -> f:('a -> bool) -> 'a
 
-(** Returns the first evaluation of [f] that returns [Some].  Raises [Not_found] if [f]
-    always returns [None].  *)
+(** Returns the first evaluation of [f] that returns [Some].  Raises [Caml.Not_found] or
+    [Not_found_s] if [f] always returns [None].  *)
 val find_map_exn : 'a t -> f:('a -> 'b option) -> 'b
 
 (** [findi t f] returns the first index [i] of [t] for which [f i t.(i)] is true *)
 val findi : 'a t -> f:(int -> 'a -> bool) -> (int * 'a) option
 
 (** [findi_exn t f] returns the first index [i] of [t] for which [f i t.(i)] is true.  It
-    raises [Not_found] if there is no such element. *)
+    raises [Caml.Not_found] or [Not_found_s] if there is no such element. *)
 val findi_exn : 'a t -> f:(int -> 'a -> bool) -> int * 'a
 
 (** [find_mapi t f] is like [find_map] but passes the index as an argument. *)
@@ -295,9 +280,9 @@ val zip_exn : 'a t -> 'b t -> ('a * 'b) t
 (** [unzip] is like [List.unzip], but for arrays. *)
 val unzip : ('a * 'b) t -> 'a t * 'b t
 
-(** [sorted_copy ar cmp] returns a shallow copy of [ar] that is sorted. Similar to
+(** [sorted_copy ar compare] returns a shallow copy of [ar] that is sorted. Similar to
     List.sort *)
-val sorted_copy : 'a t -> cmp:('a -> 'a -> int) -> 'a t
+val sorted_copy : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 val last : 'a t -> 'a
 
@@ -334,7 +319,7 @@ module Private : sig
     module type Sort = sig
       val sort
         :  'a t
-        -> cmp:('a -> 'a -> int)
+        -> compare:('a -> 'a -> int)
         -> left:int
         -> right:int
         -> unit
@@ -345,7 +330,7 @@ module Private : sig
     module Intro_sort : sig
       include Sort
       val five_element_sort
-        : 'a t -> cmp:('a -> 'a -> int) -> int -> int -> int -> int -> int -> unit
+        : 'a t -> compare:('a -> 'a -> int) -> int -> int -> int -> int -> int -> unit
     end
   end
 end

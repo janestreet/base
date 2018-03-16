@@ -52,10 +52,10 @@ let iter t ~f = f !t
 let fold t ~init ~f = f init !t
 
 let fold_result t ~init ~f = f init !t
-let fold_until  t ~init ~f : ('a, 'b) Finished_or_stopped_early.t =
+let fold_until  t ~init ~f ~finish =
   match (f init !t : ('a, 'b) Continue_or_stop.t) with
-  | Stop     x -> Stopped_early  x
-  | Continue x -> Finished       x
+  | Stop     x -> x
+  | Continue x -> finish x
 
 let count t ~f = if f !t then 1 else 0
 let sum _ t ~f = f !t
@@ -74,8 +74,8 @@ let to_list t = [ !t ]
 
 let to_array t = [| !t |]
 
-let min_elt t ~cmp:_ = Some !t
-let max_elt t ~cmp:_ = Some !t
+let min_elt t ~compare:_ = Some !t
+let max_elt t ~compare:_ = Some !t
 
 let set_temporarily t a ~f =
   let restore_to = !t in

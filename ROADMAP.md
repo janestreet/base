@@ -8,14 +8,14 @@
   - [X] Do not export the `\*\_intf` modules from Base. Instead, any signatures
     sould be exported by the `.ml` and `.mli`s.
 
-  - [ ] Only expose the first-class module interface of `Hashtbl`. Accompanying
+  - [X] Only expose the first-class module interface of `Hashtbl`. Accompanying
     this should ba cleanup of `Hastbl_intf`, moving anything that's still
     required in core_kernel to the appropriate files in that project.
 
-  - [ ] Replace `Hashtbl.create (module String) ()` by just
+  - [X] Replace `Hashtbl.create (module String) ()` by just
     `Hashtbl.create (module String)`
 
-  - [ ] Remove `replace` from `Hashtbl_intf.Accessors`.
+  - [X] Remove `replace` from `Hashtbl_intf.Accessors`.
 
   - [X] Label one of the arguments of `Hashtbl_intf.merge_into` to indicate the
     flow of data.
@@ -24,14 +24,14 @@
 
   - [ ] Use `Either.t` as the return value for `Map.partition`.
 
-  - [ ] Rename `Monad_intf.all_ignore` to `Monad_intf.all_unit`.
+  - [X] Rename `Monad_intf.all_ignore` to `Monad_intf.all_unit`.
 
   - [ ] Elminate all uses of `Not_found`, replacing them with descriptive error messages.
 
   - [X] Move the various private modules to `Base.Base_private`
     instead of `Base.Exported_for_specific_uses` and `Base.Not_exposed_properly`
 
-  - [ ] Use `compare` rather than `cmp` as the label for comparison functions
+  - [X] Use `compare` rather than `cmp` as the label for comparison functions
     throughout.
 
 # Implementation Cleanup

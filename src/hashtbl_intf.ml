@@ -15,82 +15,6 @@ module type Key = sig
   val hash : t -> int
 end
 
-module Hashable = struct
-  type 'a t =
-    { hash : 'a -> int;
-      compare : 'a -> 'a -> int;
-      sexp_of_t : 'a -> Sexp.t;
-    }
-
-  (** This function is sound but not complete, meaning that if it returns [true] then it's
-      safe to use the two interchangeably.  If it's [false], you have no guarantees.  For
-      example:
-
-      {[
-        > utop
-        open Core;;
-        let equal (a : 'a Hashtbl_intf.Hashable.t) b =
-          phys_equal a b
-          || (phys_equal a.hash b.hash
-              && phys_equal a.compare b.compare
-              && phys_equal a.sexp_of_t b.sexp_of_t)
-        ;;
-        let a = Hashtbl_intf.Hashable.{ hash; compare; sexp_of_t = Int.sexp_of_t };;
-        let b = Hashtbl_intf.Hashable.{ hash; compare; sexp_of_t = Int.sexp_of_t };;
-        equal a b;;  (* false?! *)
-      ]}
-  *)
-  let equal a b =
-    phys_equal a b
-    || (phys_equal a.hash b.hash
-        && phys_equal a.compare b.compare
-        && phys_equal a.sexp_of_t b.sexp_of_t)
-  ;;
-
-  let hash_param = Caml.Hashtbl.hash_param
-  let hash       = Caml.Hashtbl.hash
-
-  let poly = { hash;
-               compare = Poly.compare;
-               sexp_of_t = (fun _ -> Sexp.Atom "_");
-             }
-
-  let of_key (type a) (module Key : Key with type t = a) =
-    { hash = Key.hash;
-      compare = Key.compare;
-      sexp_of_t = Key.sexp_of_t;
-    }
-  ;;
-
-  let to_key (type a) { hash; compare; sexp_of_t } =
-    (module struct
-      type t = a
-      let hash = hash
-      let compare = compare
-      let sexp_of_t = sexp_of_t
-    end : Key with type t = a)
-  ;;
-end
-
-module type Hashable = sig
-  type 'a t = 'a Hashable.t =
-    { hash : 'a -> int;
-      compare : 'a -> 'a -> int;
-      sexp_of_t : 'a -> Sexp.t;
-    }
-
-  val equal : 'a t -> 'a t -> bool
-
-  val poly : 'a t
-
-  val of_key : (module Key with type t = 'a) -> 'a t
-  val to_key : 'a t -> (module Key with type t = 'a)
-
-  val hash_param : int -> int -> 'a -> int
-
-  val hash : 'a -> int
-end
-
 module type Accessors = sig
   type ('a, 'b) t
   type 'a key
@@ -182,8 +106,8 @@ module type Accessors = sig
       such binding exists *)
   val find : ('a, 'b) t -> 'a key -> 'b option
 
-  (** [find_exn t k] returns the current binding of k in t, or raises Not_found
-      if no such binding exists.*)
+  (** [find_exn t k] returns the current binding of k in t, or raises [Caml.Not_found] or
+      [Not_found_s] if no such binding exists.*)
   val find_exn : ('a, 'b) t -> 'a key -> 'b
 
   (** [find_and_call t k ~if_found ~if_not_found]
@@ -300,44 +224,18 @@ module type Multi = sig
   val find_multi : ('a, 'b list) t -> 'a key -> 'b list
 end
 
-module type Deprecated = sig
-  type ('key, 'data) t
-  type 'key key
+type ('key, 'data, 'z) create_options =
+  ?growth_allowed:bool (** defaults to [true] *)
+  -> ?size:int (** initial size -- default 128 *)
+  -> (module Key with type t = 'key)
+  -> 'z
 
-  val iter_vals : ( _, 'b) t -> f:(                   'b -> unit) -> unit
-  [@@deprecated "[since 2016-04] Use iter instead"]
-
-  val replace      : ('a, 'b) t -> key:'a key -> data:'b -> unit
-  [@@deprecated "[since 2015-10] Use set instead"]
-
-  val replace_all : (_, 'b) t -> f:('b -> 'b) -> unit
-  [@@deprecated "[since 2016-02] Use map_inplace instead"]
-  val replace_alli : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b) -> unit
-  [@@deprecated "[since 2016-02] Use mapi_inplace instead"]
-  val filter_replace_all : (_, 'b) t -> f:('b -> 'b option) -> unit
-  [@@deprecated "[since 2016-02] Use filter_map_inplace instead"]
-  val filter_replace_alli : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b option) -> unit
-  [@@deprecated "[since 2016-02] Use filter_mapi_inplace instead"]
-end
-
-type ('key, 'data, 'z) create_options_without_hashable =
+type ('key, 'data, 'z) create_options_without_first_class_module =
   ?growth_allowed:bool (** defaults to [true] *)
   -> ?size:int (** initial size -- default 128 *)
   -> 'z
 
-type ('key, 'data, 'z) create_options_with_hashable =
-  ?growth_allowed:bool (** defaults to [true] *)
-  -> ?size:int (** initial size -- default 128 *)
-  -> hashable:'key Hashable.t
-  -> 'z
-
-type ('key, 'data, 'z) create_options_with_first_class_module =
-  (module Key with type t = 'key)
-  -> ?growth_allowed:bool (** defaults to [true] *)
-  -> ?size:int (** initial size -- default 128 *)
-  -> 'z
-
-module type Creators = sig
+module type Creators_generic = sig
   type ('a, 'b) t
   type 'a key
   type ('key, 'data, 'z) create_options
@@ -413,9 +311,128 @@ module type Creators = sig
        -> ('a, 'b) t) create_options
 end
 
-module type S_without_submodules = sig
+module type Creators = sig
+  type ('a, 'b) t
 
-  module Hashable : Hashable
+  val create
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> ('a, 'b) t
+
+  val of_alist
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> ('a * 'b) list
+    -> [ `Ok of ('a, 'b) t
+       | `Duplicate_key of 'a
+       ]
+
+  val of_alist_report_all_dups
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> ('a * 'b) list
+    -> [ `Ok of ('a, 'b) t
+       | `Duplicate_keys of 'a list
+       ]
+
+  val of_alist_or_error
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> ('a * 'b) list
+    -> ('a, 'b) t Or_error.t
+
+  val of_alist_exn
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> ('a * 'b) list
+    -> ('a, 'b) t
+
+  val of_alist_multi
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> ('a * 'b) list
+    -> ('a, 'b list) t
+
+  (** {[ create_mapped get_key get_data [x1,...,xn]
+         = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn]
+     ]} *)
+  val create_mapped
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> get_key:('r -> 'a)
+    -> get_data:('r -> 'b)
+    -> 'r list
+    -> [ `Ok of ('a, 'b) t
+       | `Duplicate_keys of 'a list ]
+
+  (** {[ create_with_key ~get_key [x1,...,xn]
+         = of_alist [get_key x1, x1; ...; get_key xn, xn] ]} *)
+  val create_with_key
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> get_key:('r -> 'a)
+    -> 'r list
+    -> [ `Ok of ('a, 'r) t
+       | `Duplicate_keys of 'a list ]
+
+  val create_with_key_or_error
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> get_key:('r -> 'a)
+    -> 'r list
+    -> ('a, 'r) t Or_error.t
+
+  val create_with_key_exn
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> get_key:('r -> 'a)
+    -> 'r list
+    -> ('a, 'r) t
+
+  val group
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> get_key:('r -> 'a)
+    -> get_data:('r -> 'b)
+    -> combine:('b -> 'b -> 'b)
+    -> 'r list
+    -> ('a, 'b) t
+end
+
+module Check = struct
+  module Make_creators_check (Type : T.T2) (Key : T.T1) (Options : T.T3)
+      (M : Creators_generic
+       with type ('a, 'b) t := ('a, 'b) Type.t
+       with type 'a key := 'a Key.t
+       with type ('a, 'b, 'z) create_options := ('a, 'b, 'z) Options.t)
+  = struct end
+
+  module Check_creators_is_specialization_of_creators_generic (M : Creators) =
+    Make_creators_check
+      (struct type ('a, 'b) t = ('a, 'b) M.t end)
+      (struct type 'a t = 'a end)
+      (struct type ('a, 'b, 'z) t = ('a, 'b, 'z) create_options end)
+      (struct
+        include M
+
+        let create ?growth_allowed ?size m () =
+          create ?growth_allowed ?size m
+      end)
+end
+
+
+module type S_without_submodules = sig
 
   val hash : 'a -> int
   val hash_param : int -> int -> 'a -> int
@@ -439,56 +456,20 @@ module type S_without_submodules = sig
 
   include Creators
     with type ('a, 'b) t  := ('a, 'b) t
-    with type 'a key = 'a
-    with type ('a, 'b, 'z) create_options :=
-      ('a, 'b, 'z) create_options_with_first_class_module
   (** @open *)
 
   include Accessors
     with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key := 'a key
+    with type 'a key = 'a
   (** @open *)
 
   include Multi
     with type ('a, 'b) t := ('a, 'b) t
     with type 'a key := 'a key
   (** @open *)
-
-  include Deprecated
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key := 'a key
 
   val hashable_s : ('key, _) t -> (module Key with type t = 'key)
 
-  val hashable : ('key, _) t -> 'key Hashable.t
-
-end
-
-module type S_using_hashable = sig
-  type 'a key
-  type ('a, 'b) t [@@deriving_inline sexp_of]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val sexp_of_t :
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
-  end
-  [@@@end]
-  include Creators
-    with type ('a, 'b) t  := ('a, 'b) t
-    with type 'a key := 'a key
-    with type ('a, 'b, 'z) create_options := ('a, 'b, 'z) create_options_with_hashable
-  include Accessors
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key := 'a key
-  include Multi
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key := 'a key
-  include Deprecated
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key := 'a key
 end
 
 module type S_poly = sig
@@ -512,21 +493,17 @@ module type S_poly = sig
 
   include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
 
-  include Creators
+  include Creators_generic
     with type ('a, 'b) t  := ('a, 'b) t
     with type 'a key = 'a
     with type ('key, 'data, 'z) create_options
-    := ('key, 'data, 'z) create_options_without_hashable
+    := ('key, 'data, 'z) create_options_without_first_class_module
 
   include Accessors
     with type ('a, 'b) t := ('a, 'b) t
     with type 'a key := 'a key
 
   include Multi
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key := 'a key
-
-  include Deprecated
     with type ('a, 'b) t := ('a, 'b) t
     with type 'a key := 'a key
 end
@@ -536,36 +513,22 @@ module type Hashtbl = sig
 
   module type Accessors            = Accessors
   module type Creators             = Creators
-  module type Deprecated           = Deprecated
-  module type Hashable             = Hashable
   module type Key                  = Key
   module type Multi                = Multi
   module type S_poly               = S_poly
   module type S_without_submodules = S_without_submodules
-  module type S_using_hashable     = S_using_hashable
 
-  type nonrec ('key, 'data, 'z) create_options_without_hashable =
-    ('key, 'data, 'z) create_options_without_hashable
-
-  type nonrec ('key, 'data, 'z) create_options_with_hashable =
-    ('key, 'data, 'z) create_options_with_hashable
-
-  type nonrec ('key, 'data, 'z) create_options_with_first_class_module =
-    ('key, 'data, 'z) create_options_with_first_class_module
-
-  module Using_hashable : S_using_hashable
-    with type ('a, 'b) t = ('a, 'b) t
-    with type 'a key := 'a key
-    with type 'a merge_into_action = 'a merge_into_action
+  type nonrec ('key, 'data, 'z) create_options =
+    ('key, 'data, 'z) create_options
 
   module Creators (Key : sig type 'a t val hashable : 'a t Hashable.t end) : sig
     type ('a, 'b) t_ = ('a Key.t, 'b) t
     val t_of_sexp : (Sexp.t -> 'a Key.t) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t_
-    include Creators
+    include Creators_generic
       with type ('a, 'b) t := ('a, 'b) t_
       with type 'a key := 'a Key.t
       with type ('key, 'data, 'a) create_options :=
-        ('key, 'data, 'a) create_options_without_hashable
+        ('key, 'data, 'a) create_options_without_first_class_module
   end
 
   module Poly : S_poly with type ('a, 'b) t = ('a, 'b) t
@@ -610,4 +573,15 @@ module type Hashtbl = sig
     -> (Sexp.t -> 'v)
     -> Sexp.t
     -> ('k, 'v) t
+
+  (**/**)
+  module Private : sig
+
+    module type Creators_generic = Creators_generic
+
+    type nonrec ('key, 'data, 'z) create_options_without_first_class_module =
+      ('key, 'data, 'z) create_options_without_first_class_module
+
+    val hashable : ('key, _) t -> 'key Hashable.t
+  end
 end

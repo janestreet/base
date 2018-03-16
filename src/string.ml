@@ -148,19 +148,19 @@ let is_empty t = length t = 0
 
 let index t char =
   try Some (index_exn t char)
-  with Caml.Not_found -> None
+  with Not_found_s _ | Caml.Not_found -> None
 
 let rindex t char =
   try Some (rindex_exn t char)
-  with Caml.Not_found -> None
+  with Not_found_s _ | Caml.Not_found -> None
 
 let index_from t pos char =
   try Some (index_from_exn t pos char)
-  with Caml.Not_found -> None
+  with Not_found_s _ | Caml.Not_found -> None
 
 let rindex_from t pos char =
   try Some (rindex_from_exn t pos char)
-  with Caml.Not_found -> None
+  with Not_found_s _ | Caml.Not_found -> None
 
 module Search_pattern = struct
 
@@ -362,21 +362,6 @@ let init n ~f =
   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t
 ;;
 
-(** See {!Array.normalize} for the following 4 functions. *)
-let normalize t i =
-  Ordered_collection_common.normalize ~length_fun:length t i
-let slice t start stop =
-  Ordered_collection_common.slice ~length_fun:length ~sub_fun:sub
-    t start stop
-
-
-let nget x i =
-  x.[normalize x i]
-
-let nset x i v =
-  Bytes.set x
-    (normalize (Bytes.unsafe_to_string ~no_mutation_while_string_reachable:x) i) v
-
 let to_list s =
   let rec loop acc i =
     if i < 0 then
@@ -420,10 +405,10 @@ let rsplit2_exn line ~on:delim =
   )
 
 let lsplit2 line ~on =
-  try Some (lsplit2_exn line ~on) with Caml.Not_found -> None
+  try Some (lsplit2_exn line ~on) with Not_found_s _ | Caml.Not_found -> None
 
 let rsplit2 line ~on =
-  try Some (rsplit2_exn line ~on) with Caml.Not_found -> None
+  try Some (rsplit2_exn line ~on) with Not_found_s _ | Caml.Not_found -> None
 
 let rec char_list_mem l (c:char) =
   match l with

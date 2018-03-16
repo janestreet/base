@@ -150,9 +150,10 @@ let%test_module "Make" =
         [%expect {| (Error (oh no !)) |}];
       ;;
 
-      let all_ignore = A.all_ignore
+      let all_unit = A.all_unit
+      let all_ignore = all_unit
       let%expect_test _ =
-        let test list = print_s [%sexp (all_ignore list : unit Or_error.t)] in
+        let test list = print_s [%sexp (all_unit list : unit Or_error.t)] in
         test [];
         [%expect {| (Ok ()) |}];
         test [Ok ()];
@@ -331,9 +332,10 @@ let%test_module "Make_using_map2" =
         [%expect {| (Error (oh no !)) |}];
       ;;
 
-      let all_ignore = A.all_ignore
+      let all_unit = A.all_unit
+      let all_ignore = all_unit
       let%expect_test _ =
-        let test list = print_s [%sexp (all_ignore list : unit Or_error.t)] in
+        let test list = print_s [%sexp (all_unit list : unit Or_error.t)] in
         test [];
         [%expect {| (Ok ()) |}];
         test [Ok ()];

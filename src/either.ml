@@ -228,83 +228,10 @@ module Make_focused (M : sig
     fun ts ~f -> return_loop f ts
   ;;
 
-  let iter t ~f = either t ~return:f ~other:(fun _ -> ())
-  ;;
-
   let to_option t = either t ~return:Option.some ~other:(fun _ -> None)
   ;;
 
-  let fold t ~init ~f = either t ~return:(fun x -> f init x) ~other:(fun _ -> init)
-  ;;
-
-  let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
-  ;;
-
-  let fold_until  t ~init ~f = Container.fold_until  ~fold ~init ~f t
-  ;;
-
   let value t ~default = either t ~return:(fun x -> x) ~other:(fun _ -> default)
-  ;;
-
-  let count t ~f = fold t ~init:0 ~f:(fun n a -> if f a then n + 1 else n)
-  ;;
-
-  let sum (type a) (module M : Commutative_group.S with type t = a) t ~f =
-    fold t ~init:M.zero ~f:(fun n a -> M.(+) n (f a))
-  ;;
-
-  let length c = fold c ~init:0 ~f:(fun acc _ -> acc + 1)
-  ;;
-
-  let is_empty c =
-    with_return (fun r ->
-      iter c ~f:(fun _ -> r.return false);
-      true)
-  ;;
-
-  let exists c ~f =
-    with_return (fun r ->
-      iter c ~f:(fun x -> if f x then r.return true);
-      false)
-  ;;
-
-  let mem t a ~equal = exists t ~f:(equal a)
-  ;;
-
-  let for_all c ~f =
-    with_return (fun r ->
-      iter c ~f:(fun x -> if not (f x) then r.return false);
-      true)
-  ;;
-
-  let find_map t ~f =
-    with_return (fun r ->
-      iter t ~f:(fun x -> match f x with None -> () | Some _ as res -> r.return res);
-      None)
-  ;;
-
-  let find c ~f =
-    with_return (fun r ->
-      iter c ~f:(fun x -> if f x then r.return (Some x));
-      None)
-  ;;
-
-  let to_list c = List.rev (fold c ~init:[] ~f:(fun acc x -> x :: acc))
-
-  let to_array c = Array.of_list (to_list c)
-
-  let min_elt t ~cmp =
-    fold t ~init:None ~f:(fun acc elt ->
-      match acc with
-      | None -> Some elt
-      | Some min -> if cmp min elt > 0 then Some elt else acc)
-  ;;
-
-  let max_elt t ~cmp =
-    fold t ~init:None ~f:(fun acc elt ->
-      match acc with
-      | None -> Some elt
-      | Some max -> if cmp max elt < 0 then Some elt else acc)
   ;;
 
   let with_return f =

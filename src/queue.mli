@@ -1,1 +1,1 @@
-include Queue_intf.Queue
+include Queue_intf.Queue (** @inline *)

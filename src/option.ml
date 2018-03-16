@@ -81,8 +81,9 @@ let to_list t =
   | Some x -> [x]
 ;;
 
-let min_elt t ~cmp:_ = t
-let max_elt t ~cmp:_ = t
+let min_elt t ~compare:_ = t
+let max_elt t ~compare:_ = t
+
 let sum (type a) (module M : Commutative_group.S with type t = a) t ~f =
   match t with
   | None -> M.zero

@@ -63,7 +63,9 @@ module type S = sig
 
   val all : 'a t list -> 'a list t
 
-  val all_ignore : unit t list -> unit t
+  val all_unit : unit t list -> unit t
+
+  val all_ignore : unit t list -> unit t [@@deprecated "[since 2018-02] Use [all_unit]"]
 
   val both : 'a t -> 'b t -> ('a * 'b) t
 
@@ -181,7 +183,10 @@ module type S2 = sig
 
   val all : ('a, 'e) t list -> ('a list, 'e) t
 
+  val all_unit : (unit, 'e) t list -> (unit, 'e) t
+
   val all_ignore : (unit, 'e) t list -> (unit, 'e) t
+  [@@deprecated "[since 2018-02] Use [all_unit]"]
 
   val both : ('a, 'e) t -> ('b, 'e) t -> ('a * 'b, 'e) t
 

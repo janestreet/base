@@ -53,7 +53,7 @@ let iter        t ~f       = Caml.Array.iter        t ~f
 let iteri       t ~f       = Caml.Array.iteri       t ~f
 let map         t ~f       = Caml.Array.map         t ~f
 let mapi        t ~f       = Caml.Array.mapi        t ~f
-let stable_sort t ~cmp     = Caml.Array.stable_sort t ~cmp
+let stable_sort t ~compare = Caml.Array.stable_sort t ~cmp:compare
 
 let swap t i j =
   let tmp = t.(i) in

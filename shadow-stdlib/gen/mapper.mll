@@ -162,7 +162,12 @@ let val_replacement = function
 ;;
 
 let module_replacement = function
-  | "Not_found" -> Some (Repl_text "Do not use [Not_found] with [Base]")
+  | "Not_found" ->
+    Some (Repl_text "\
+Instead of raising [Not_found], consider using [raise_s] with an informative error\n\
+message.  If code needs to distinguish [Not_found] from other exceptions, please change\n\
+it to handle both [Not_found] and [Not_found_s].  Then, instead of raising [Not_found],\n\
+raise [Not_found_s] with an informative error message")
   | "Printexc" -> Some (Repl_text "Use [Exn] or [Backtrace] instead")
   | "Format" ->
     let repl_text =

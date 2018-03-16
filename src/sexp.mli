@@ -1,8 +1,6 @@
-(** Type of S-expressions. *)
-
-open! Import0
-
-type t = Atom of string | List of t list [@@deriving_inline compare, hash]
+(** Type of S-expressions *)
+type t = Sexplib0.Sexp.t = Atom of string | List of t list
+[@@deriving_inline compare, hash]
 include
 sig
   [@@@ocaml.warning "-32"]
@@ -13,111 +11,10 @@ sig
 end
 [@@@end]
 
-(*_ We don't use [@@deriving_inline sexp][@@@end] as this would generated references to [Sexplib],
-  creating a circular dependency *)
-val t_of_sexp : t -> t
-val sexp_of_t : t -> t
-
-val equal : t -> t -> bool
-
-(** [Of_sexp_error (exn, sexp)] the exception raised when an S-expression could not be
-    successfully converted to an OCaml-value. *)
-exception Of_sexp_error of exn * t
-
-(** {1 Helpers} *)
-
-(** Helper to build nice s-expressions for error messages.  It imitates the behavior of
-    [[%message ...]] from the ppx_sexp_message rewriter.
-
-    [message name key_values] produces a s-expression list starting with atom [name] and
-    followed by list of size 2 of the form [(key value)].  When the key is the empty
-    string, [value] is used directly instead as for [[%message]].
-
-    For instance the following code:
-
-    {[
-      Sexp.message "error"
-        [ "x", sexp_of_int 42
-        ; "" , sexp_of_exn Exit
-        ]
-    ]}
-
-    produces the s-expression:
-
-    {[
-      (error (x 42) Exit)
-    ]} *)
-val message : string -> (string * t) list -> t
-
-(** {1 Defaults} *)
-
-(** [default_indent] reference to default indentation level for human-readable
-    conversions.
-
-    Initialisation value: 2. *)
-val default_indent : int ref
-
-(** {1 Pretty printing of S-expressions} *)
-
-(** [pp_hum ppf sexp] outputs S-expression [sexp] to formatter [ppf] in human readable
-    form. *)
-val pp_hum : Formatter.t -> t -> unit
-
-(** [pp_hum_indent n ppf sexp] outputs S-expression [sexp] to formatter [ppf] in human
-    readable form and indentation level [n]. *)
-val pp_hum_indent : int -> Formatter.t -> t -> unit
-
-(** [pp_mach ppf sexp] outputs S-expression [sexp] to formatter [ppf] in machine readable
-    (i.e. most compact) form. *)
-val pp_mach : Formatter.t -> t -> unit
-
-(** Same as [pp_mach]. *)
-val pp : Formatter.t -> t -> unit
-
-(** {1 Conversion to strings} *)
-
-(** [to_string_hum ?indent sexp] converts S-expression [sexp] to a
-    string in human readable form with indentation level [indent].
-
-    @param indent default = [!default_indent] *)
-val to_string_hum : ?indent : int -> t -> string
-
-(** [to_string_mach sexp] converts S-expression [sexp] to a string in
-    machine readable (i.e. most compact) form. *)
-val to_string_mach : t -> string
-
-(** Same as [to_string_mach]. *)
-val to_string : t -> string
+include module type of Sexplib0.Sexp with type t := Sexplib0.Sexp.t
 
 (** Base has never had an [of_string] function.  We expose a deprecated [of_string] here
     so that people can find it (e.g. with merlin), and learn what we recommend.  This
     [of_string] has type [unit] because we don't want it to be accidentally used. *)
 val of_string : unit
 [@@deprecated "[since 2018-02] Use [Parsexp.Single.parse_string_exn]"]
-
-(** {1 Styles} *)
-
-val of_float_style : [ `Underscores | `No_underscores ] ref
-val of_int_style   : [ `Underscores | `No_underscores ] ref
-
-module Private : sig
-  (*_ Exported for sexplib *)
-
-  val size : t -> int * int
-
-  val buffer : unit -> Caml.Buffer.t
-
-  val to_buffer      : buf:Caml.Buffer.t ->                t -> unit
-  val to_buffer_hum  : buf:Caml.Buffer.t -> ?indent:int -> t -> unit
-  val to_buffer_mach : buf:Caml.Buffer.t ->                t -> unit
-  val to_buffer_gen
-    :  buf : 'buffer
-    -> add_char : ('buffer -> char -> unit)
-    -> add_string : ('buffer -> string -> unit)
-    -> t
-    -> unit
-
-  val mach_maybe_esc_str : string -> string
-  val must_escape : string -> bool
-  val esc_str : string -> string
-end

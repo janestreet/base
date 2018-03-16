@@ -23,7 +23,6 @@ type 'a key = 'a
 
 let sexp_of_key t = t.hashable.Hashable.sexp_of_t
 let compare_key t = t.hashable.Hashable.compare
-let hashable t = t.hashable
 
 let ensure_mutation_allowed t =
   if not t.mutation_allowed then failwith "Hashtbl: mutation not allowed during iteration"
@@ -257,7 +256,6 @@ let iteri t ~f =
 
 let iter t ~f = iteri t ~f:(fun ~key:_ ~data -> f data)
 let iter_keys t ~f = iteri t ~f:(fun ~key ~data:_ -> f key)
-let iter_vals = iter
 
 let invariant invariant_key invariant_data t =
   for i = 0 to Array.length t.table - 1 do
@@ -496,7 +494,7 @@ let to_alist t = fold ~f:(fun ~key ~data list -> (key, data) :: list) ~init:[] t
 let sexp_of_t sexp_of_key sexp_of_data t =
   t
   |> to_alist
-  |> List.sort ~cmp:(fun (k1, _) (k2, _) -> t.hashable.compare k1 k2)
+  |> List.sort ~compare:(fun (k1, _) (k2, _) -> t.hashable.compare k1 k2)
   |> sexp_of_list (sexp_of_pair sexp_of_key sexp_of_data)
 ;;
 
@@ -635,12 +633,6 @@ let mapi_inplace t ~f =
 let map_inplace t ~f =
   mapi_inplace t ~f:(fun ~key:_ ~data -> f data)
 
-let replace_all         = map_inplace
-let replace_alli        = mapi_inplace
-let filter_replace_all  = filter_map_inplace
-let filter_replace_alli = filter_mapi_inplace
-;;
-
 let equal t t' equal =
   length t = length t' &&
   with_return (fun r ->
@@ -664,7 +656,6 @@ module Accessors = struct
   let clear               = clear
   let copy                = copy
   let remove              = remove
-  let replace             = replace
   let set                 = set
   let add                 = add
   let add_exn             = add_exn
@@ -677,7 +668,6 @@ module Accessors = struct
   let iter_keys           = iter_keys
   let iter                = iter
   let iteri               = iteri
-  let iter_vals           = iter_vals
   let exists              = exists
   let existsi             = existsi
   let for_all             = for_all
@@ -718,10 +708,6 @@ module Accessors = struct
   let mapi_inplace        = mapi_inplace
   let filter_map_inplace  = filter_map_inplace
   let filter_mapi_inplace = filter_mapi_inplace
-  let replace_all         = replace_all
-  let replace_alli        = replace_alli
-  let filter_replace_all  = filter_replace_all
-  let filter_replace_alli = filter_replace_alli
   let equal               = equal
   let similar             = similar
   let incr                = incr
@@ -739,10 +725,11 @@ module Creators (Key : sig
 
   val t_of_sexp : (Sexp.t -> 'a Key.t) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t_
 
-  include Creators
+  include Creators_generic
     with type ('a, 'b) t := ('a, 'b) t_
     with type 'a key := 'a Key.t
-    with type ('key, 'data, 'a) create_options := ('key, 'data, 'a) create_options_without_hashable
+    with type ('key, 'data, 'a) create_options :=
+      ('key, 'data, 'a) create_options_without_first_class_module
 
 end = struct
 
@@ -815,53 +802,40 @@ module Poly = struct
   let sexp_of_t = sexp_of_t
 end
 
-module Using_hashable = struct
-  type nonrec ('a, 'b) t = ('a, 'b) t [@@deriving_inline sexp_of]
-  let sexp_of_t :
-    'a 'b .
-    ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
-    = sexp_of_t
-  [@@@end]
-  include Accessors
-  let create = create
-  let of_alist = of_alist
-  let of_alist_report_all_dups = of_alist_report_all_dups
-  let of_alist_or_error = of_alist_or_error
-  let of_alist_exn = of_alist_exn
-  let of_alist_multi = of_alist_multi
-  let create_mapped = create_mapped
-  let create_with_key = create_with_key
-  let create_with_key_or_error = create_with_key_or_error
-  let create_with_key_exn = create_with_key_exn
-  let group = group
+module Private = struct
+  module type Creators_generic = Creators_generic
+  module type Hashable = Hashable.Hashable
+
+  type nonrec ('key, 'data, 'z) create_options_without_first_class_module =
+    ('key, 'data, 'z) create_options_without_first_class_module
+
+  let hashable t = t.hashable
 end
 
-let create m ?growth_allowed ?size () =
+let create ?growth_allowed ?size m =
   create ~hashable:(Hashable.of_key m) ?growth_allowed ?size ()
-let of_alist m ?growth_allowed ?size l =
+let of_alist ?growth_allowed ?size m l =
   of_alist ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
-let of_alist_report_all_dups m ?growth_allowed ?size l =
+let of_alist_report_all_dups ?growth_allowed ?size m l =
   of_alist_report_all_dups ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
-let of_alist_or_error m ?growth_allowed ?size l =
+let of_alist_or_error ?growth_allowed ?size m l =
   of_alist_or_error ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
-let of_alist_exn m ?growth_allowed ?size l =
+let of_alist_exn ?growth_allowed ?size m l =
   of_alist_exn ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
-let of_alist_multi m ?growth_allowed ?size l =
+let of_alist_multi ?growth_allowed ?size m l =
   of_alist_multi ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
-let create_mapped m ?growth_allowed ?size ~get_key ~get_data l =
+let create_mapped ?growth_allowed ?size m ~get_key ~get_data l =
   create_mapped ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key ~get_data l
-let create_with_key m ?growth_allowed ?size ~get_key l =
+let create_with_key ?growth_allowed ?size m ~get_key l =
   create_with_key ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key l
-let create_with_key_or_error m ?growth_allowed ?size ~get_key l =
+let create_with_key_or_error ?growth_allowed ?size m ~get_key l =
   create_with_key_or_error ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key l
-let create_with_key_exn m ?growth_allowed ?size ~get_key l =
+let create_with_key_exn ?growth_allowed ?size m ~get_key l =
   create_with_key_exn ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key l
-let group m ?growth_allowed ?size ~get_key ~get_data ~combine l =
+let group ?growth_allowed ?size m ~get_key ~get_data ~combine l =
   group ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key ~get_data ~combine l
 
-let hashable_s t = Hashtbl_intf.Hashable.to_key t.hashable
+let hashable_s t = Hashable.to_key t.hashable
 
 module M (K : T.T) = struct
   type nonrec 'v t = (K.t, 'v) t

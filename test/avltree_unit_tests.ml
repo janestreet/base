@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Import
 
 let%test_module _ =
   (module (struct
@@ -20,12 +20,12 @@ let%test_module _ =
     module For_quickcheck = struct
 
       module Key  = struct
-        include Int
+        include Quickcheck.Int
         let gen = Quickcheck.Generator.small_non_negative_int
       end
       module Data = struct
-        include String
-        let gen = String.gen' Char.gen_lowercase
+        include Quickcheck.String
+        let gen = gen' Quickcheck.Char.gen_lowercase
       end
 
       let compare = Key.compare
@@ -93,9 +93,9 @@ let%test_module _ =
           match variant with
           | `Left data | `Right data -> Some data
           | `Both (data1, data2)     ->
-            failwiths "duplicate data for key" (key, data1, data2)
-              [%sexp_of: Key.t * Data.t * Data.t])
-
+            Error.raise_s (
+              [%message
+                "duplicate data for key" (key : Key.t) (data1 : Data.t) (data2 : Data.t)]))
       let rec to_map = function
         | Empty                            -> Key.Map.empty
         | Leaf { key; value = data }       -> Key.Map.singleton key data
@@ -129,7 +129,7 @@ let%test_module _ =
 
     let%test_unit _ =
       Quickcheck.test
-        (Quickcheck.Generator.tuple4 constructors_gen Key.gen Data.gen Bool.gen)
+        (Quickcheck.Generator.tuple4 constructors_gen Key.gen Data.gen Quickcheck.Bool.gen)
         ~sexp_of:[%sexp_of: Constructor.t list * Key.t * Data.t * bool]
         ~f:(fun (constructors, key, data, replace) ->
           let t, map = reify constructors in
@@ -246,7 +246,8 @@ let%test_module _ =
         ~f:(fun constructors ->
           let t, map = reify constructors in
           [%test_result: (Key.t * Data.t) list]
-            (let q = Queue.create () in
+            (let module Queue = Core_kernel_queue in
+             let q = Queue.create () in
              iter t ~f:(fun ~key ~data ->
                Queue.enqueue q (key, data));
              Queue.to_list q)

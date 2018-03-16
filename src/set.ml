@@ -277,7 +277,7 @@ module Tree0 = struct
     | Some v -> v
   ;;
 
-  let fold_until t ~init ~f : ('a, 'b) Finished_or_stopped_early.t =
+  let fold_until t ~init ~f ~finish =
     let rec fold_until_helper ~f t acc =
       match t with
       | Empty -> Continue_or_stop.Continue acc
@@ -291,8 +291,8 @@ module Tree0 = struct
           | Continue a -> fold_until_helper ~f right a
     in
     match fold_until_helper ~f t init with
-    | Continue x -> Finished       x
-    | Stop     x -> Stopped_early  x
+    | Continue x -> finish x
+    | Stop     x ->        x
   ;;
 
   let rec max_elt = function
@@ -1285,3 +1285,31 @@ let compare_m__t (module Elt : Compare_m) t1 t2 =
 let hash_fold_m__t (type elt) (module Elt : Hash_fold_m with type t = elt) state =
   hash_fold_direct Elt.hash_fold_t state
 
+module Poly = struct
+  type comparator_witness = Comparator.Poly.comparator_witness
+  type nonrec ('elt, 'cmp) set = ('elt, comparator_witness) t
+  type nonrec 'elt t           = ('elt, comparator_witness) t
+  type nonrec 'elt tree        = ('elt, comparator_witness) tree
+  type nonrec 'elt named       = ('elt, comparator_witness) Named.t
+
+  include Accessors
+
+  let comparator = Comparator.Poly.comparator
+
+  include Using_comparator.Empty_without_value_restriction(Comparator.Poly)
+
+  let singleton a = Using_comparator.singleton ~comparator a
+  let union_list a = Using_comparator.union_list ~comparator a
+  let of_sorted_array_unchecked a = Using_comparator.of_sorted_array_unchecked ~comparator a
+  let of_increasing_iterator_unchecked ~len ~f =
+    Using_comparator.of_increasing_iterator_unchecked ~comparator ~len ~f
+  let of_sorted_array a = Using_comparator.of_sorted_array ~comparator a
+  let of_list a = Using_comparator.of_list ~comparator a
+  let of_array a = Using_comparator.of_array ~comparator a
+  let stable_dedup_list a = Using_comparator.stable_dedup_list ~comparator a
+  let map a ~f = Using_comparator.map ~comparator a ~f
+  let filter_map a ~f = Using_comparator.filter_map ~comparator a ~f
+
+  let of_tree tree = { comparator; tree }
+  let to_tree t = t.tree
+end

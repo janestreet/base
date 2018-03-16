@@ -1,4 +1,6 @@
 open! Import
+
+module Obj_array = Not_exposed_properly.Obj_array
 open Obj_array
 
 let does_raise = Exn.does_raise

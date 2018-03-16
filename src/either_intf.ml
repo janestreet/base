@@ -14,7 +14,6 @@ module type Focused = sig
 
   include Monad.S2             with type ('a, 'b) t := ('a, 'b) t
   include Applicative.S2       with type ('a, 'b) t := ('a, 'b) t
-  include Container.S1_phantom with type ('a, 'b) t := ('a, 'b) t
 
   module Args : Applicative.Args2 with type ('a, 'e) arg := ('a, 'e) t
 

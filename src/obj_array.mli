@@ -9,7 +9,7 @@
     save a test for it.  We also have [set] avoid the write barrier (caml_modify) in
     certain situations.
 
-    [Core_kernel.Uniform_array] provides the same advantages for types other than
+    [Uniform_array] provides the same advantages for types other than
     [Caml.Obj.t].
 
     Just like with a regular [Array], the elements are boxed so they don't get copied by

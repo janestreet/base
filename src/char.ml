@@ -1,5 +1,6 @@
 open! Import
 
+module Array  = Array0
 module String = String0
 
 include Char0

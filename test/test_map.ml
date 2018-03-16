@@ -4,6 +4,9 @@ open! Map
 let%test _ =
   invariants (of_increasing_iterator_unchecked (module Int) ~len:20 ~f:(fun x -> x,x))
 
+let%test _ =
+  invariants (Poly.of_increasing_iterator_unchecked ~len:20 ~f:(fun x -> x,x))
+
 module M = M
 
 let add12 t = add_exn t ~key:1 ~data:2
@@ -40,4 +43,22 @@ let%expect_test "[Map.of_alist_multi] preserves value ordering" =
     ((a (1 2))
      (b (1 3))) |}]
 ;;
+
+
+module Poly = struct
+  let%test _ =
+    length Poly.empty = 0
+  ;;
+
+  let%test _ =
+    let a = Poly.of_alist_exn [] in
+    Poly.equal Polymorphic_compare.equal a Poly.empty
+  ;;
+
+  let%test _ =
+    let a = Poly.of_alist_exn [("a", 1)] in
+    let b = Poly.of_alist_exn [(1, "b")] in
+    length a = length b
+  ;;
+end
 

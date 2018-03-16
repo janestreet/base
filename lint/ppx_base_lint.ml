@@ -1,7 +1,7 @@
 open Ppx_core
 
 let error ~loc fmt =
-  Location.raise_errorf ~loc ("ppx_base_lint:" ^^ fmt)
+  Location.raise_errorf ~loc (Caml.(^^) "ppx_base_lint:" fmt)
 
 type suspicious_id =
   | Caml_submodule of string

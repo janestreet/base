@@ -63,9 +63,11 @@ module Make_general (M : Basic_general) = struct
     in
     fun ts -> loop [] ts
 
-  let rec all_ignore = function
+  let rec all_unit = function
     | [] -> return ()
-    | t :: ts -> t >>= fun () -> all_ignore ts
+    | t :: ts -> t >>= fun () -> all_unit ts
+
+  let all_ignore = all_unit
 
 end
 

@@ -26,26 +26,26 @@ let fold_result ~fold ~init ~f t =
       | Error _ as e -> return e)))
 ;;
 
-let fold_until ~fold ~init ~f t =
+let fold_until ~fold ~init ~f ~finish t =
   with_return (fun {return} ->
-    Finished_or_stopped_early.Finished (fold t ~init ~f:(fun acc item ->
+    finish (fold t ~init ~f:(fun acc item ->
       match f acc item with
       | Continue_or_stop.Continue x -> x
-      | Stop x -> return (Stopped_early x))))
+      | Stop x -> return x)))
 ;;
 
-let min_elt ~fold t ~cmp =
+let min_elt ~fold t ~compare =
   fold t ~init:None ~f:(fun acc elt ->
     match acc with
     | None -> Some elt
-    | Some min -> if cmp min elt > 0 then Some elt else acc)
+    | Some min -> if compare min elt > 0 then Some elt else acc)
 ;;
 
-let max_elt ~fold t ~cmp =
+let max_elt ~fold t ~compare =
   fold t ~init:None ~f:(fun acc elt ->
     match acc with
     | None -> Some elt
-    | Some max -> if cmp max elt < 0 then Some elt else acc)
+    | Some max -> if compare max elt < 0 then Some elt else acc)
 ;;
 
 let length ~fold c = fold c ~init:0 ~f:(fun acc _ -> acc + 1)
@@ -105,10 +105,12 @@ end = struct
   let find t ~f      = find     ~iter t ~f
   let to_list t      = to_list  ~fold t
   let to_array t     = to_array ~fold t
-  let min_elt t ~cmp = min_elt  ~fold t ~cmp
-  let max_elt t ~cmp = max_elt  ~fold t ~cmp
+
+  let min_elt t ~compare = min_elt  ~fold t ~compare
+  let max_elt t ~compare = max_elt  ~fold t ~compare
+
   let fold_result t ~init ~f = fold_result t ~fold ~init ~f
-  let fold_until t ~init ~f = fold_until t ~fold ~init ~f
+  let fold_until t ~init ~f ~finish = fold_until t ~fold ~init ~f ~finish
 end
 
 module Make (T : Make_arg) = struct

@@ -71,27 +71,27 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
   ;;
 
   let%test "iter" =
-    let predicted = List.sort ~cmp:Int.descending (
+    let predicted = List.sort ~compare:Int.descending (
       List.map test_data ~f:(fun (_,v) -> v))
     in
     let found =
       let found = ref [] in
       Hashtbl.iter test_hash ~f:(fun v -> found := v :: !found);
       !found
-      |> List.sort ~cmp:Int.descending
+      |> List.sort ~compare:Int.descending
     in
     List.equal ~equal:Int.equal predicted found
   ;;
 
   let%test "iter_keys" =
-    let predicted = List.sort ~cmp:String.descending (
+    let predicted = List.sort ~compare:String.descending (
       List.map test_data ~f:(fun (k,_) -> k))
     in
     let found =
       let found = ref [] in
       Hashtbl.iter_keys test_hash ~f:(fun k -> found := k :: !found);
       !found
-      |> List.sort ~cmp:String.descending
+      |> List.sort ~compare:String.descending
     in
     List.equal ~equal:String.equal predicted found
   ;;
@@ -108,8 +108,8 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
       let%test "right keys" =
         let predicted = List.map test_data ~f:(fun (k,_) -> k) in
         let found = Hashtbl.keys (Hashtbl.of_alist_poly_exn test_data) in
-        let sp = List.sort ~cmp:Poly.ascending predicted in
-        let sf = List.sort ~cmp:Poly.ascending found in
+        let sp = List.sort ~compare:Poly.ascending predicted in
+        let sf = List.sort ~compare:Poly.ascending found in
         sp = sf
       ;;
     end)
@@ -128,29 +128,29 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
   let%test "size and right keys" =
     let predicted = List.map test_data ~f:(fun (k,_) -> k) in
     let found = Hashtbl.keys test_hash in
-    let sp = List.sort ~cmp:Poly.ascending predicted in
-    let sf = List.sort ~cmp:Poly.ascending found in
+    let sp = List.sort ~compare:Poly.ascending predicted in
+    let sf = List.sort ~compare:Poly.ascending found in
     sp = sf
   ;;
 
   let%test "size and right data" =
     let predicted = List.map test_data ~f:(fun (_,v) -> v) in
     let found = Hashtbl.data test_hash in
-    let sp = List.sort ~cmp:Poly.ascending predicted in
-    let sf = List.sort ~cmp:Poly.ascending found in
+    let sp = List.sort ~compare:Poly.ascending predicted in
+    let sf = List.sort ~compare:Poly.ascending found in
     sp = sf
   ;;
 
   let%test "map" =
     let add1 x = x + 1 in
     let predicted_data =
-      List.sort ~cmp:Poly.ascending
+      List.sort ~compare:Poly.ascending
         (List.map test_data ~f:(fun (k,v) -> (k,add1 v)))
     in
     let found_alist =
       Hashtbl.map test_hash ~f:add1
       |> Hashtbl.to_alist
-      |> List.sort ~cmp:Poly.ascending
+      |> List.sort ~compare:Poly.ascending
     in
     List.equal predicted_data found_alist ~equal:Poly.equal
   ;;
@@ -166,7 +166,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
     in
     let found = Hashtbl.filter_map test_hash ~f:add1_to_even in
     let found_alist =
-      List.sort ~cmp:Poly.ascending (Hashtbl.to_alist found)
+      List.sort ~compare:Poly.ascending (Hashtbl.to_alist found)
     in
     assert (List.equal predicted_data found_alist ~equal:Poly.equal)
   ;;
@@ -174,14 +174,14 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
   let%test "filter_inplace" =
     let f x = x <> 2 in
     let predicted_data =
-      List.sort ~cmp:Poly.ascending
+      List.sort ~compare:Poly.ascending
         (List.filter test_data ~f:(fun (_,v) -> f v))
     in
     let test_hash = Hashtbl.copy test_hash in
     Hashtbl.filter_inplace test_hash ~f;
     let found_alist =
       Hashtbl.to_alist test_hash
-      |> List.sort ~cmp:Poly.ascending
+      |> List.sort ~compare:Poly.ascending
     in
     List.equal predicted_data found_alist ~equal:Poly.equal
   ;;
@@ -189,14 +189,14 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
   let%test "filter_keys_inplace" =
     let f x = x = "c" in
     let predicted_data =
-      List.sort ~cmp:Poly.ascending
+      List.sort ~compare:Poly.ascending
         (List.filter test_data ~f:(fun (k,_) -> f k))
     in
     let test_hash = Hashtbl.copy test_hash in
     Hashtbl.filter_keys_inplace test_hash ~f;
     let found_alist =
       Hashtbl.to_alist test_hash
-      |> List.sort ~cmp:Poly.ascending
+      |> List.sort ~compare:Poly.ascending
     in
     List.equal predicted_data found_alist ~equal:Poly.equal
   ;;
@@ -204,14 +204,14 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
   let%test "filter_map_inplace" =
     let f x = if x = 1 then None else Some (x * 2) in
     let predicted_data =
-      List.sort ~cmp:Poly.ascending
+      List.sort ~compare:Poly.ascending
         (List.filter_map test_data ~f:(fun (k,v) -> Option.map (f v) ~f:(fun x -> (k,x))))
     in
     let test_hash = Hashtbl.copy test_hash in
     Hashtbl.filter_map_inplace test_hash ~f;
     let found_alist =
       Hashtbl.to_alist test_hash
-      |> List.sort ~cmp:Poly.ascending
+      |> List.sort ~compare:Poly.ascending
     in
     List.equal predicted_data found_alist ~equal:Poly.equal
   ;;
@@ -219,14 +219,14 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
   let%test "map_inplace" =
     let f x = x + 3 in
     let predicted_data =
-      List.sort ~cmp:Poly.ascending
+      List.sort ~compare:Poly.ascending
         (List.map test_data ~f:(fun (k,v) -> (k,f v)))
     in
     let test_hash = Hashtbl.copy test_hash in
     Hashtbl.map_inplace test_hash ~f;
     let found_alist =
       Hashtbl.to_alist test_hash
-      |> List.sort ~cmp:Poly.ascending
+      |> List.sort ~compare:Poly.ascending
     in
     List.equal predicted_data found_alist ~equal:Poly.equal
   ;;
@@ -355,6 +355,6 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
          | `Right    y  -> Some (`Right y)
          | `Both (x, y) -> if x=y then None else Some (`Both (x, y)))
        |> Hashtbl.to_alist
-       |> List.sort ~cmp:(fun (x,_) (y,_) -> Int.compare x y))
+       |> List.sort ~compare:(fun (x,_) (y,_) -> Int.compare x y))
       ~expect:[ 1, `Both (111,123) ; 3, `Left 333 ; 4, `Right 444 ]
 end

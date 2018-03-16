@@ -384,23 +384,23 @@ let%test _ = remove_consecutive_duplicates ~which_to_keep:`First [(0,1);(2,1);(0
 let%test _ = remove_consecutive_duplicates ~which_to_keep:`First [(0,1);(2,2);(0,2);(4,1)]
                ~equal:(fun (_,a) (_,b) -> Int.(=) a b)         = [(0,1);(2,2);      (4,1)]
 
-let%test _ = dedup_and_sort [] = []
-let%test _ = dedup_and_sort [5;5;5;5;5] = [5]
-let%test _ = length (dedup_and_sort [2;1;5;3;4]) = 5
-let%test _ = length (dedup_and_sort [2;3;5;3;4]) = 4
+let%test _ = dedup_and_sort ~compare [] = []
+let%test _ = dedup_and_sort ~compare [5;5;5;5;5] = [5]
+let%test _ = length (dedup_and_sort ~compare [2;1;5;3;4]) = 5
+let%test _ = length (dedup_and_sort ~compare [2;3;5;3;4]) = 4
 let%test _ = length (dedup_and_sort [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (a,_) (b,_) ->
   Int.compare a b)) = 3
 let%test _ = length (dedup_and_sort [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (_,a) (_,b) ->
   Int.compare a b)) = 2
 
-let%test _ = find_a_dup [] = None
-let%test _ = find_a_dup [3] = None
-let%test _ = find_a_dup [3;4] = None
-let%test _ = find_a_dup [3;3] = Some 3
-let%test _ = find_a_dup [3;5;4;6;12] = None
-let%test _ = find_a_dup [3;5;4;5;12] = Some 5
-let%test _ = find_a_dup [3;5;12;5;12] = Some 5
-let%test _ = find_a_dup [(0,1);(2,2);(0,2);(4,1)] = None
+let%test _ = find_a_dup ~compare [] = None
+let%test _ = find_a_dup ~compare [3] = None
+let%test _ = find_a_dup ~compare [3;4] = None
+let%test _ = find_a_dup ~compare [3;3] = Some 3
+let%test _ = find_a_dup ~compare [3;5;4;6;12] = None
+let%test _ = find_a_dup ~compare [3;5;4;5;12] = Some 5
+let%test _ = find_a_dup ~compare [3;5;12;5;12] = Some 5
+let%test _ = find_a_dup ~compare:Poly.compare [(0,1);(2,2);(0,2);(4,1)] = None
 let%test _ = (find_a_dup [(0,1);(2,2);(0,2);(4,1)]
                 ~compare:(fun (_,a) (_,b) -> Int.compare a b)) <> None
 let%test _ = let dup = find_a_dup [(0,1);(2,2);(0,2);(4,1)]
@@ -410,25 +410,25 @@ let%test _ = let dup = find_a_dup [(0,1);(2,2);(0,2);(4,1)]
   | Some (0, _) -> true
   | _ -> false
 
-let%test _ = contains_dup [] = false
-let%test _ = contains_dup [3] = false
-let%test _ = contains_dup [3;4] = false
-let%test _ = contains_dup [3;3] = true
-let%test _ = contains_dup [3;5;4;6;12] = false
-let%test _ = contains_dup [3;5;4;5;12] = true
-let%test _ = contains_dup [3;5;12;5;12] = true
-let%test _ = contains_dup [(0,1);(2,2);(0,2);(4,1)] = false
+let%test _ = contains_dup ~compare [] = false
+let%test _ = contains_dup ~compare [3] = false
+let%test _ = contains_dup ~compare [3;4] = false
+let%test _ = contains_dup ~compare [3;3] = true
+let%test _ = contains_dup ~compare [3;5;4;6;12] = false
+let%test _ = contains_dup ~compare [3;5;4;5;12] = true
+let%test _ = contains_dup ~compare [3;5;12;5;12] = true
+let%test _ = contains_dup ~compare:Poly.compare [(0,1);(2,2);(0,2);(4,1)] = false
 let%test _ = (contains_dup [(0,1);(2,2);(0,2);(4,1)]
                 ~compare:(fun (_,a) (_,b) -> Int.compare a b)) = true
 
-let%test _ = find_all_dups [] = []
-let%test _ = find_all_dups [3] = []
-let%test _ = find_all_dups [3;4] = []
-let%test _ = find_all_dups [3;3] = [3]
-let%test _ = find_all_dups [3;5;4;6;12] = []
-let%test _ = find_all_dups [3;5;4;5;12] = [5]
-let%test _ = find_all_dups [3;5;12;5;12] = [5;12]
-let%test _ = find_all_dups [(0,1);(2,2);(0,2);(4,1)] = []
+let%test _ = find_all_dups ~compare [] = []
+let%test _ = find_all_dups ~compare [3] = []
+let%test _ = find_all_dups ~compare [3;4] = []
+let%test _ = find_all_dups ~compare [3;3] = [3]
+let%test _ = find_all_dups ~compare [3;5;4;6;12] = []
+let%test _ = find_all_dups ~compare [3;5;4;5;12] = [5]
+let%test _ = find_all_dups ~compare [3;5;12;5;12] = [5;12]
+let%test _ = find_all_dups ~compare:Poly.compare [(0,1);(2,2);(0,2);(4,1)] = []
 let%test _ = length (find_all_dups [(0,1);(2,2);(0,2);(4,1)]
                        ~compare:(fun (_,a) (_,b) -> Int.compare a b)) = 2
 let%test _ = length (find_all_dups [(0,1);(2,2);(0,2);(4,1)]

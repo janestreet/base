@@ -169,21 +169,11 @@ val is_substring : t -> substring:t -> bool
 (** [is_substring_at "foo bar baz" ~pos:4 ~substring:"bar"] is true. *)
 val is_substring_at : t -> pos:int -> substring:t -> bool
 
-(** [slice s start stop] gets a slice of [s] between [start] and [stop].  [start] and
-    [stop] will be normalized (as in [Array.normalize]) before the access. *)
-val slice : t -> int -> int -> t
-
 (** Returns the reversed list of characters contained in a list. *)
 val to_list_rev : t -> char list
 
 (** [rev t] returns [t] in reverse order. *)
 val rev : t -> t
-
-(** [nget s i] gets the char at normalized position [i] in [s]. *)
-val nget : t -> int -> char
-
-(** [nset s i c] sets the char at normalized position [i] to [c]. *)
-val nset : bytes -> int -> char -> unit [@@deprecated "[since 2017-10]"]
 
 (** [is_suffix s ~suffix] returns [true] if [s] ends with [suffix]. *)
 val is_suffix : t -> suffix:t -> bool
@@ -193,12 +183,12 @@ val is_prefix : t -> prefix:t -> bool
 
 (** If the string [s] contains the character [on], then [lsplit2_exn s ~on] returns a pair
     containing [s] split around the first appearance of [on] (from the left). Raises
-    [Not_found] when [on] cannot be found in [s]. *)
+    [Caml.Not_found] or [Not_found_s] when [on] cannot be found in [s]. *)
 val lsplit2_exn : t -> on:char -> t * t
 
 (** If the string [s] contains the character [on], then [rsplit2_exn s ~on] returns a pair
     containing [s] split around the first appearance of [on] (from the right). Raises
-    [Not_found] when [on] cannot be found in [s]. *)
+    [Caml.Not_found] or [Not_found_s] when [on] cannot be found in [s]. *)
 val rsplit2_exn : t -> on:char -> t * t
 
 (** [lsplit2 s ~on] optionally returns [s] split into two strings around the

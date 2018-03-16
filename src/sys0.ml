@@ -10,6 +10,13 @@
 
 open! Import0
 
+type backend_type = Caml.Sys.backend_type =
+  | Native
+  | Bytecode
+  | Other of string
+
+let backend_type = Caml.Sys.backend_type
+
 let interactive               = Caml.Sys.interactive
 let os_type                   = Caml.Sys.os_type
 let unix                      = Caml.Sys.unix

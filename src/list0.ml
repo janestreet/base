@@ -11,8 +11,6 @@ open! Import0
 let hd_exn      = Caml.List.hd
 let length      = Caml.List.length
 let rev_append  = Caml.List.rev_append
-let sort        = Caml.List.sort
-let stable_sort = Caml.List.stable_sort
 let tl_exn      = Caml.List.tl
 let unzip       = Caml.List.split
 
@@ -32,6 +30,9 @@ let nontail_mapi t                 ~f = Caml.List.mapi       t           ~f
 let partition    t                 ~f = Caml.List.partition  t           ~f
 let rev_map      t                 ~f = Caml.List.rev_map    t           ~f
 let rev_map2_ok  l1 l2             ~f = Caml.List.rev_map2   l1 l2       ~f
+
+let sort         ~compare l           = Caml.List.sort        l ~cmp:compare
+let stable_sort  ~compare l           = Caml.List.stable_sort l ~cmp:compare
 
 let rev = function
   | [] | [_] as res -> res

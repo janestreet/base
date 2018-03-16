@@ -26,7 +26,8 @@ module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = struct
   let ( *> ) u v = return (fun () y -> y) <*> u <*> v
   let ( <* ) u v = return (fun x () -> x) <*> u <*> v
 
-  let all_ignore ts = List.fold ts ~init:(return ()) ~f:( *> )
+  let all_unit ts = List.fold ts ~init:(return ()) ~f:( *> )
+  let all_ignore = all_unit
 
   module Applicative_infix = struct
     let ( <*> ) = ( <*> )

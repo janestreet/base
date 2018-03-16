@@ -2,17 +2,6 @@ open! Import
 
 let invalid_argf = Printf.invalid_argf
 
-let normalize ~length_fun t i =
-  if i < 0
-  then i + length_fun t
-  else i
-
-let slice ~length_fun ~sub_fun t start stop =
-  let stop = if stop = 0 then length_fun t else stop in
-  let pos = normalize ~length_fun t start in
-  let len = (normalize ~length_fun t stop) - pos in
-  sub_fun t ~pos ~len
-
 let [@inline never] slow_check_pos_len_exn ~pos ~len ~length =
   if pos < 0
   then invalid_argf "Negative position: %d" pos ();

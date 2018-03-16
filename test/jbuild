@@ -8,7 +8,7 @@
               expect_test_helpers_kernel
               stdio))
   (flags (:standard -safe-string))
-  (preprocess (pps (ppx_jane ppx_driver.runner)))
+  (preprocess (pps (ppx_jane ppxlib.runner)))
 ))
 
 

@@ -52,7 +52,7 @@ let%test_module "Caseless Hashable" =
     let%test _ = Int.(<>) (Caseless.hash "aaa") (Caseless.hash "aaaa")
     let%test _ = Int.(<>) (Caseless.hash "aaa") (Caseless.hash "aab")
     let%test _ =
-      let tbl = Hashtbl.create (module Caseless) () in
+      let tbl = Hashtbl.create (module Caseless) in
       Hashtbl.add_exn tbl ~key:"x" ~data:7;
       [%compare.equal: int option] (Hashtbl.find tbl "X") (Some 7)
   end)
@@ -189,19 +189,6 @@ let%test_module "Search_pattern" =
     (* a doc comment in core_string.mli gives this as an example *)
     let%test _ = replace_all (create "bc") ~in_:"aabbcc" ~with_:"cb" = "aabcbc"
   end)
-
-(*TEST = slice "hey" 0 0 = ""*) (* This is what I would expect *)
-let%test _ = slice "hey" 0 0 = "hey" (* But this is what we get! *)
-
-let%test _ = slice "hey" 0 1 = "h"
-let%test _ = slice "hey" 0 2 = "he"
-let%test _ = slice "hey" 0 3 = "hey"
-let%test _ = slice "hey" 1 1 = ""
-let%test _ = slice "hey" 1 2 = "e"
-let%test _ = slice "hey" 1 3 = "ey"
-let%test _ = slice "hey" 2 2 = ""
-let%test _ = slice "hey" 2 3 = "y"
-let%test _ = slice "hey" 3 3 = ""
 
 let%test _ = rev "" = "";;
 let%test _ = rev "a" = "a";;

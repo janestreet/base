@@ -26,6 +26,7 @@
   (public_name base)
   (libraries
    (caml
+    sexplib0
     shadow_stdlib))
   (install_c_headers (internalhash))
   (flags (:standard -safe-string))
@@ -39,7 +40,6 @@
     internalhash_stubs
     heap_block_stubs
     hash_stubs
-    string_dict_stubs
     am_testing))
   (preprocess no_preprocessing)
   (lint (pps (ppx_base ppx_base_lint -check-doc-comments 
@@ -52,7 +52,7 @@
                     ;; This argument won't be needed once the expect
                     ;; mode is released as it will disable these
                     ;; extensions
-                    -apply=js_style,base_lint,type_conv ppx_driver.runner)))
+                    -apply=js_style,base_lint,type_conv ppxlib.runner)))
   (js_of_ocaml (
     (javascript_files (runtime.js))
     ))))

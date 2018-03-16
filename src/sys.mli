@@ -22,6 +22,17 @@ val win32 : bool
 (** [cygwin] is [true] if [os_type = "Cygwin"]. *)
 val cygwin : bool
 
+(** Currently, the official distribution only supports [Native] and [Bytecode],
+    but it can be other backends with alternative compilers, for example,
+    JavaScript. *)
+type backend_type = Sys0.backend_type =
+  | Native
+  | Bytecode
+  | Other of string
+
+(** Backend type currently executing the OCaml program. *)
+val backend_type : backend_type
+
 (** [word_size_in_bits] is the number of bits in one word on the machine currently
     executing the OCaml program.  Generally speaking it will be either [32] or [64]. *)
 val word_size_in_bits : int
@@ -74,4 +85,3 @@ val runtime_warnings_enabled : unit -> bool
       done
     ]} *)
 val opaque_identity : 'a -> 'a
-

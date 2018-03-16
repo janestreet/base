@@ -2,6 +2,7 @@ open! Import
 open Container_intf.Export
 
 module Array = Array0
+module List  = List0
 
 module Step = struct
   (* 'a is an item in the sequence, 's is the state that will produce the remainder of
@@ -804,8 +805,8 @@ let counti t ~f =
   length (filteri t ~f)
 
 let sum m t ~f = Container.sum ~fold m t ~f
-let min_elt t ~cmp = Container.min_elt ~fold t ~cmp
-let max_elt t ~cmp = Container.max_elt ~fold t ~cmp
+let min_elt t ~compare = Container.min_elt ~fold t ~compare
+let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
 let init n ~f =
   unfold_step ~init:0
@@ -956,14 +957,14 @@ let iter_m ~bind ~return t ~f =
     ~finish:return
 ;;
 
-let fold_until s ~init ~f =
+let fold_until s ~init ~f ~finish =
   let rec loop s next f =
     fun acc ->
       match next s with
-      | Done   -> Finished_or_stopped_early.Finished acc
+      | Done   -> finish acc
       | Skip s ->  loop s next f acc
       | Yield(a, s) -> match (f acc a : ('a, 'b) Continue_or_stop.t) with
-        | Stop x -> Finished_or_stopped_early.Stopped_early x
+        | Stop x -> x
         | Continue acc -> loop s next f acc
   in
   match s with

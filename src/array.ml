@@ -57,7 +57,7 @@ module Sort = struct
   module type Sort = sig
     val sort
       :  'a t
-      -> cmp:('a -> 'a -> int)
+      -> compare:('a -> 'a -> int)
       -> left:int (* leftmost index of sub-array to sort *)
       -> right:int (* rightmost index of sub-array to sort *)
       -> unit
@@ -65,7 +65,7 @@ module Sort = struct
 
   (* http://en.wikipedia.org/wiki/Insertion_sort *)
   module Insertion_sort : Sort = struct
-    let sort arr ~cmp ~left ~right =
+    let sort arr ~compare ~left ~right =
       let insert pos v =
         (* loop invariants:
            1.  the subarray arr[left .. i-1] is sorted
@@ -73,7 +73,7 @@ module Sort = struct
            3.  arr[i] may be thought of as containing v *)
         let rec loop i =
           let i_next = i - 1 in
-          if i_next >= left && cmp (get arr i_next) v > 0 then begin
+          if i_next >= left && compare (get arr i_next) v > 0 then begin
             set arr i (get arr i_next);
             loop i_next
           end else
@@ -94,44 +94,44 @@ module Sort = struct
   module Heap_sort : Sort = struct
     (* loop invariant:
        root's children are both either roots of max-heaps or > right *)
-    let rec heapify arr ~cmp root ~left ~right =
+    let rec heapify arr ~compare root ~left ~right =
       let relative_root = root - left in
       let left_child    = (2 * relative_root) + left + 1 in
       let right_child   = (2 * relative_root) + left + 2 in
       let largest =
-        if left_child <= right && cmp (get arr left_child) (get arr root) > 0
+        if left_child <= right && compare (get arr left_child) (get arr root) > 0
         then left_child
         else root
       in
       let largest =
-        if right_child <= right && cmp (get arr right_child) (get arr largest) > 0
+        if right_child <= right && compare (get arr right_child) (get arr largest) > 0
         then right_child
         else largest
       in
       if largest <> root then begin
         swap arr root largest;
-        heapify arr ~cmp largest ~left ~right
+        heapify arr ~compare largest ~left ~right
       end;
     ;;
 
-    let build_heap arr ~cmp ~left ~right =
+    let build_heap arr ~compare ~left ~right =
       (* Elements in the second half of the array are already heaps of size 1.  We move
          through the first half of the array from back to front examining the element at
          hand, and the left and right children, fixing the heap property as we go. *)
       for i = (left + right) / 2 downto left do
-        heapify arr ~cmp i ~left ~right;
+        heapify arr ~compare i ~left ~right;
       done;
     ;;
 
-    let sort arr ~cmp ~left ~right =
-      build_heap arr ~cmp ~left ~right;
+    let sort arr ~compare ~left ~right =
+      build_heap arr ~compare ~left ~right;
       (* loop invariants:
          1.  the subarray arr[left ... i] is a max-heap H
          2.  the subarray arr[i+1 ... right] is sorted (call it S)
          3.  every element of H is less than every element of S *)
       for i = right downto left + 1 do
         swap arr left i;
-        heapify arr ~cmp left ~left ~right:(i - 1);
+        heapify arr ~compare left ~left ~right:(i - 1);
       done;
     ;;
   end
@@ -140,12 +140,12 @@ module Sort = struct
   module Intro_sort : sig
     include Sort
     val five_element_sort
-      : 'a t -> cmp:('a -> 'a -> int) -> int -> int -> int -> int -> int -> unit
+      : 'a t -> compare:('a -> 'a -> int) -> int -> int -> int -> int -> int -> unit
   end = struct
 
-    let five_element_sort arr ~cmp m1 m2 m3 m4 m5 =
+    let five_element_sort arr ~compare m1 m2 m3 m4 m5 =
       let compare_and_swap i j =
-        if cmp (get arr i) (get arr j) > 0 then swap arr i j
+        if compare (get arr i) (get arr j) > 0 then swap arr i j
       in
       (* optimal 5-element sorting network *)
       compare_and_swap m1 m2;  (* 1--o-----o-----o--------------1 *)
@@ -167,24 +167,24 @@ module Sort = struct
          by itself
          To this end we look at the center 3 elements of the 5 and return pairs of equal
          elements or the widest range *)
-    let choose_pivots arr ~cmp ~left ~right =
+    let choose_pivots arr ~compare ~left ~right =
       let sixth = (right - left) / 6 in
       let m1 = left + sixth in
       let m2 = m1 + sixth in
       let m3 = m2 + sixth in
       let m4 = m3 + sixth in
       let m5 = m4 + sixth in
-      five_element_sort arr ~cmp m1 m2 m3 m4 m5;
+      five_element_sort arr ~compare m1 m2 m3 m4 m5;
       let m2_val = get arr m2 in
       let m3_val = get arr m3 in
       let m4_val = get arr m4 in
-      if cmp m2_val m3_val = 0      then (m2_val, m3_val, true)
-      else if cmp m3_val m4_val = 0 then (m3_val, m4_val, true)
-      else                               (m2_val, m4_val, false)
+      if compare m2_val m3_val = 0      then (m2_val, m3_val, true)
+      else if compare m3_val m4_val = 0 then (m3_val, m4_val, true)
+      else                                   (m2_val, m4_val, false)
     ;;
 
-    let dual_pivot_partition arr ~cmp ~left ~right =
-      let pivot1, pivot2, pivots_equal = choose_pivots arr ~cmp ~left ~right in
+    let dual_pivot_partition arr ~compare ~left ~right =
+      let pivot1, pivot2, pivots_equal = choose_pivots arr ~compare ~left ~right in
       (* loop invariants:
          1.  left <= l < r <= right
          2.  l <= p <= r
@@ -194,13 +194,13 @@ module Sort = struct
          5.  r < x <= right implies arr[x] > pivot2 *)
       let rec loop l p r =
         let pv = get arr p in
-        if cmp pv pivot1 < 0 then begin
+        if compare pv pivot1 < 0 then begin
           swap arr p l;
           cont (l + 1) (p + 1) r
-        end else if cmp pv pivot2 > 0 then begin
+        end else if compare pv pivot2 > 0 then begin
           (* loop invariants:  same as those of the outer loop *)
           let rec scan_backwards r =
-            if r > p && cmp (get arr r) pivot2 > 0
+            if r > p && compare (get arr r) pivot2 > 0
             then scan_backwards (r - 1)
             else r
           in
@@ -216,21 +216,21 @@ module Sort = struct
       (l, r, pivots_equal)
     ;;
 
-    let rec intro_sort arr ~max_depth ~cmp ~left ~right =
+    let rec intro_sort arr ~max_depth ~compare ~left ~right =
       let len = right - left + 1 in
       (* This takes care of some edge cases, such as left > right or very short arrays,
          since Insertion_sort.sort handles these cases properly.  Thus we don't need to
          make sure that left and right are valid in recursive calls. *)
       if len <= 32 then begin
-        Insertion_sort.sort arr ~cmp ~left ~right
+        Insertion_sort.sort arr ~compare ~left ~right
       end else if max_depth < 0 then begin
-        Heap_sort.sort arr ~cmp ~left ~right;
+        Heap_sort.sort arr ~compare ~left ~right;
       end else begin
         let max_depth = max_depth - 1 in
-        let (l, r, middle_sorted) = dual_pivot_partition arr ~cmp ~left ~right in
-        intro_sort arr ~max_depth ~cmp ~left ~right:(l - 1);
-        if not middle_sorted then intro_sort arr ~max_depth ~cmp ~left:l ~right:r;
-        intro_sort arr ~max_depth ~cmp ~left:(r + 1) ~right;
+        let (l, r, middle_sorted) = dual_pivot_partition arr ~compare ~left ~right in
+        intro_sort arr ~max_depth ~compare ~left ~right:(l - 1);
+        if not middle_sorted then intro_sort arr ~max_depth ~compare ~left:l ~right:r;
+        intro_sort arr ~max_depth ~compare ~left:(r + 1) ~right;
       end
     ;;
 
@@ -238,42 +238,42 @@ module Sort = struct
 
     let log3 x = Caml.log10 x /. log10_of_3
 
-    let sort arr ~cmp ~left ~right =
+    let sort arr ~compare ~left ~right =
       let len = right - left + 1 in
       let heap_sort_switch_depth =
         (* with perfect 3-way partitioning, this is the recursion depth *)
         Int.of_float (log3 (Int.to_float len))
       in
-      intro_sort arr ~max_depth:heap_sort_switch_depth ~cmp ~left ~right;
+      intro_sort arr ~max_depth:heap_sort_switch_depth ~compare ~left ~right;
     ;;
   end
 end
 
-let sort ?pos ?len arr ~cmp =
+let sort ?pos ?len arr ~compare =
   let pos, len =
     Ordered_collection_common.get_pos_len_exn ?pos ?len ~length:(length arr)
   in
-  Sort.Intro_sort.sort arr ~cmp ~left:pos ~right:(pos + len - 1)
+  Sort.Intro_sort.sort arr ~compare ~left:pos ~right:(pos + len - 1)
 
 let to_array t = t
 
 let is_empty t = length t = 0
 
-let is_sorted t ~cmp =
+let is_sorted t ~compare =
   let rec loop i =
     if i < 1 then
       true
     else
-      cmp t.(i - 1) t.(i) <= 0 && loop (i - 1)
+      compare t.(i - 1) t.(i) <= 0 && loop (i - 1)
   in
   loop (length t - 1)
 
-let is_sorted_strictly t ~cmp =
+let is_sorted_strictly t ~compare =
   let rec loop i =
     if i < 1 then
       true
     else
-      cmp t.(i - 1) t.(i) < 0 && loop (i - 1)
+      compare t.(i - 1) t.(i) < 0 && loop (i - 1)
   in
   loop (length t - 1)
 ;;
@@ -301,8 +301,8 @@ let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until  t ~init ~f = Container.fold_until  ~fold ~init ~f t
 let count t ~f = Container.count ~fold t ~f
 let sum m t ~f = Container.sum ~fold m t ~f
-let min_elt t ~cmp = Container.min_elt ~fold t ~cmp
-let max_elt t ~cmp = Container.max_elt ~fold t ~cmp
+let min_elt t ~compare = Container.min_elt ~fold t ~compare
+let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
 let foldi t ~init ~f =
   let rec loop i ac =
@@ -336,19 +336,6 @@ let counti t ~f = foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count +
 
 let concat_map  t ~f = concat (to_list (map  ~f t))
 let concat_mapi t ~f = concat (to_list (mapi ~f t))
-
-let normalize t i =
-  Ordered_collection_common.normalize ~length_fun:length t i
-
-let slice t start stop =
-  Ordered_collection_common.slice ~length_fun:length ~sub_fun:sub
-    t start stop
-
-let nget t i =
-  t.(normalize t i)
-
-let nset t i v =
-  t.(normalize t i) <- v
 
 let rev_inplace t =
   let i = ref 0 in
@@ -504,11 +491,12 @@ let equal t1 t2 ~equal = length t1 = length t2 && for_all2_exn t1 t2 ~f:equal
 
 let replace t i ~f = t.(i) <- f t.(i)
 
-(** modifies an array in place -- [t.(i)] will be set to [f(t.(i))] *)
-let replace_all t ~f =
+let map_inplace t ~f =
   for i = 0 to length t - 1 do
     t.(i) <- f t.(i)
   done
+
+let replace_all = map_inplace
 
 let findi t ~f =
   let length = length t in
@@ -634,9 +622,9 @@ let unzip t =
     done;
     res1, res2
 
-let sorted_copy t ~cmp =
+let sorted_copy t ~compare =
   let t1 = copy t in
-  sort t1 ~cmp;
+  sort t1 ~compare;
   t1
 
 let partitioni_tf t ~f =

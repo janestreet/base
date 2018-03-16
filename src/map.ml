@@ -13,6 +13,8 @@
 
 open! Import
 
+module List = List0
+
 include Map_intf
 
 let with_return = With_return.with_return
@@ -1738,3 +1740,30 @@ let merge_skewed t1 t2 ~combine =
     change t1 key ~f:(function
       | None -> Some v2
       | Some v1 -> Some (combine ~key v1 v2)))
+
+module Poly = struct
+  type nonrec ('k, 'v) t = ('k, 'v, Comparator.Poly.comparator_witness) t
+  type nonrec ('k, 'v) tree = ('k, 'v) Tree0.t
+
+  include Accessors
+
+  let comparator = Comparator.Poly.comparator
+
+  let of_tree tree = { tree; comparator; length = Tree0.length tree}
+
+  include Using_comparator.Empty_without_value_restriction(Comparator.Poly)
+
+  let singleton a = Using_comparator.singleton ~comparator a
+  let of_alist a = Using_comparator.of_alist ~comparator a
+  let of_alist_or_error a = Using_comparator.of_alist_or_error ~comparator a
+  let of_alist_exn a = Using_comparator.of_alist_exn ~comparator a
+  let of_alist_multi a = Using_comparator.of_alist_multi ~comparator a
+  let of_alist_fold a ~init ~f = Using_comparator.of_alist_fold ~comparator a ~init ~f
+  let of_alist_reduce a ~f = Using_comparator.of_alist_reduce ~comparator a ~f
+  let of_sorted_array_unchecked a = Using_comparator.of_sorted_array_unchecked ~comparator a
+  let of_sorted_array a = Using_comparator.of_sorted_array ~comparator a
+  let of_iteri ~iteri = Using_comparator.of_iteri ~iteri ~comparator
+  let of_increasing_iterator_unchecked ~len ~f =
+    Using_comparator.of_increasing_iterator_unchecked ~len ~f ~comparator
+  let of_increasing_sequence seq = Using_comparator.of_increasing_sequence ~comparator seq
+end

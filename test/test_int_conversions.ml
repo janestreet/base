@@ -47,8 +47,8 @@ let%test_module "conversions" =
         ; B.max_value |> b_to_a_trunc
         ]
         |> List.concat_map ~f:(fun a -> [ A.pred a; a; A.succ a ])
-        |> List.dedup_and_sort ~compare: A.compare
-        |> List.sort  ~cmp:     A.compare
+        |> List.dedup_and_sort ~compare:A.compare
+        |> List.sort  ~compare:A.compare
       in
       List.iter examples ~f:(fun a ->
         let b' = a_to_b_trunc a  in

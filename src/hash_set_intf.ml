@@ -1,5 +1,7 @@
 open! Import
 
+module type Key = Hashtbl_intf.Key
+
 module type Accessors = sig
   include Container.Generic
 
@@ -28,22 +30,56 @@ module type Accessors = sig
   val to_hashtbl : 'key t -> f:('key -> 'data) -> ('key, 'data) Hashtbl.t
 end
 
-type ('key, 'z) create_options_without_hashable =
-  ('key, unit, 'z) Hashtbl_intf.create_options_without_hashable
+type ('key, 'z) create_options =
+  ('key, unit, 'z) Hashtbl_intf.create_options
 
-type ('key, 'z) create_options_with_hashable_required =
-  ('key, unit, 'z) Hashtbl_intf.create_options_with_hashable
-
-type ('key, 'z) create_options_with_first_class_module =
-  ('key, unit, 'z) Hashtbl_intf.create_options_with_first_class_module
+type ('key, 'z) create_options_without_first_class_module =
+  ('key, unit, 'z) Hashtbl_intf.create_options_without_first_class_module
 
 module type Creators = sig
+  type 'a t
+
+  val create
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> 'a t
+  val of_list
+    :  ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 128 *)
+    -> (module Key with type t = 'a)
+    -> 'a list
+    -> 'a t
+end
+
+module type Creators_generic = sig
   type 'a t
   type 'a elt
   type ('a, 'z) create_options
 
   val create  : ('a, unit        -> 'a t) create_options
   val of_list : ('a, 'a elt list -> 'a t) create_options
+end
+
+module Check = struct
+  module Make_creators_check (Type : T.T1) (Elt : T.T1) (Options : T.T2)
+      (M : Creators_generic
+       with type 'a t := 'a Type.t
+       with type 'a elt := 'a Elt.t
+       with type ('a, 'z) create_options := ('a, 'z) Options.t)
+  = struct end
+
+  module Check_creators_is_specialization_of_creators_generic (M : Creators) =
+    Make_creators_check
+      (struct type 'a t = 'a M.t end)
+      (struct type 'a t = 'a end)
+      (struct type ('a, 'z) t = ('a, 'z) create_options end)
+      (struct
+        include M
+
+        let create ?growth_allowed ?size m () =
+          create ?growth_allowed ?size m
+      end)
 end
 
 module type Hash_set = sig
@@ -63,25 +99,22 @@ module type Hash_set = sig
       comparison and hashing. *)
 
   module type Creators = Creators
+  module type Creators_generic = Creators_generic
 
-  type nonrec ('key, 'z) create_options_with_first_class_module =
-    ('key, 'z) create_options_with_first_class_module
+  type nonrec ('key, 'z) create_options =
+    ('key, 'z) create_options
 
   include Creators
-    with type 'a t := 'a t
-    with type 'a elt = 'a
-    with type ('key, 'z) create_options := ('key, 'z) create_options_with_first_class_module (** @open *)
+    with type 'a t := 'a t (** @open *)
 
   module type Accessors = Accessors
 
-  include Accessors with type 'a t := 'a t with type 'a elt := 'a elt (** @open *)
+  include Accessors with type 'a t := 'a t with type 'a elt = 'a (** @open *)
 
   val hashable_s : 'key t -> (module Hashtbl_intf.Key with type t = 'key)
 
-  val hashable : 'key t -> 'key Hashtbl_intf.Hashable.t
-
-  type nonrec ('key, 'z) create_options_without_hashable =
-    ('key, 'z) create_options_without_hashable
+  type nonrec ('key, 'z) create_options_without_first_class_module =
+    ('key, 'z) create_options_without_first_class_module
 
   (** A hash set that uses polymorphic comparison *)
   module Poly : sig
@@ -97,10 +130,11 @@ module type Hash_set = sig
     end
     [@@@end]
 
-    include Creators
+    include Creators_generic
       with type 'a t := 'a t
       with type 'a elt = 'a
-      with type ('key, 'z) create_options := ('key, 'z) create_options_without_hashable
+      with type ('key, 'z) create_options :=
+        ('key, 'z) create_options_without_first_class_module
 
     include Accessors with type 'a t := 'a t with type 'a elt := 'a elt
 
@@ -144,24 +178,19 @@ module type Hash_set = sig
 
   module Creators (Elt : sig
       type 'a t
-      val hashable : 'a t Hashtbl_intf.Hashable.t
+      val hashable : 'a t Hashable.t
     end) : sig
     type 'a t_ = 'a Elt.t t
     val t_of_sexp : (Sexp.t -> 'a Elt.t) -> Sexp.t -> 'a t_
-    include Creators
+    include Creators_generic
       with type 'a t := 'a t_
       with type 'a elt := 'a Elt.t
-      with type ('elt, 'z) create_options := ('elt, 'z) create_options_without_hashable
+      with type ('elt, 'z) create_options :=
+        ('elt, 'z) create_options_without_first_class_module
   end
 
-  type nonrec ('key, 'z) create_options_with_hashable_required =
-    ('key, 'z) create_options_with_hashable_required
-
-  module Using_hashable : sig
-    include Accessors with type 'a t = 'a t with type 'a elt := 'a elt
-    include Creators
-      with type 'a t := 'a t
-      with type 'a elt = 'a
-      with type ('key, 'z) create_options := ('key, 'z) create_options_with_hashable_required
+  (**/**)
+  module Private : sig
+    val hashable : 'a t -> 'a Hashable.t
   end
 end

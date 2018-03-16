@@ -47,7 +47,7 @@ let%test_module "Sort" =
         let%test _ =
           List.for_all all_perms ~f:(fun l ->
             let arr = Array.of_list l in
-            Intro_sort.five_element_sort arr ~cmp:[%compare: int] 0 1 2 3 4;
+            Intro_sort.five_element_sort arr ~compare:[%compare: int] 0 1 2 3 4;
             [%compare.equal: int t] arr [|1;2;3;4;5|])
       end)
 
@@ -61,7 +61,7 @@ let%test_module "Sort" =
       ;;
 
       let assert_sorted arr =
-        M.sort arr ~left:0 ~right:(Array.length arr - 1) ~cmp:[%compare: int];
+        M.sort arr ~left:0 ~right:(Array.length arr - 1) ~compare:[%compare: int];
         let len = Array.length arr in
         let rec loop i prev =
           if i = len then true
@@ -84,15 +84,15 @@ let%test_module "Sort" =
     let%test_module _ = (module Test (Intro_sort))
   end)
 
-let%test _ = is_sorted [||] ~cmp:[%compare: int]
-let%test _ = is_sorted [|0|] ~cmp:[%compare: int]
-let%test _ = is_sorted [|0;1;2;2;4|] ~cmp:[%compare: int]
-let%test _ = not (is_sorted [|0;1;2;3;2|] ~cmp:[%compare: int])
+let%test _ = is_sorted [||] ~compare:[%compare: int]
+let%test _ = is_sorted [|0|] ~compare:[%compare: int]
+let%test _ = is_sorted [|0;1;2;2;4|] ~compare:[%compare: int]
+let%test _ = not (is_sorted [|0;1;2;3;2|] ~compare:[%compare: int])
 
 let%test_unit _ =
   List.iter
     ~f:(fun (t, expect) ->
-      assert (Bool.equal expect (is_sorted_strictly (of_list t) ~cmp:[%compare: int])))
+      assert (Bool.equal expect (is_sorted_strictly (of_list t) ~compare:[%compare: int])))
     [ []         , true;
       [ 1 ]      , true;
       [ 1; 2 ]   , true;

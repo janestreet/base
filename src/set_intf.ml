@@ -102,8 +102,9 @@ module type Accessors_generic = sig
   val fold_until
     :  ('a, _) t
     -> init:'b
-    -> f:('b -> 'a elt -> ('b, 'stop) Continue_or_stop.t)
-    -> ('b, 'stop) Finished_or_stopped_early.t
+    -> f:('b -> 'a elt -> ('b, 'final) Continue_or_stop.t)
+    -> finish:('b -> 'final)
+    -> 'final
   val fold_right
     :  ('a, _) t
     -> init:'b
@@ -208,8 +209,9 @@ module type Accessors0 = sig
   val fold_until
     : t
     -> init:'b
-    -> f:('b -> elt -> ('b, 'stop) Continue_or_stop.t)
-    -> ('b, 'stop) Finished_or_stopped_early.t
+    -> f:('b -> elt -> ('b, 'final) Continue_or_stop.t)
+    -> finish:('b -> 'final)
+    -> 'final
   val fold_right     : t -> init:'b -> f:(elt -> 'b -> 'b) -> 'b
   val iter2
     :  t -> t -> f:([ `Left of elt | `Right of elt | `Both of elt * elt ] -> unit) -> unit
@@ -272,8 +274,9 @@ module type Accessors1 = sig
   val fold_until
     : 'a t
     -> init:'b
-    -> f:('b -> 'a -> ('b, 'stop) Continue_or_stop.t)
-    -> ('b, 'stop) Finished_or_stopped_early.t
+    -> f:('b -> 'a -> ('b, 'final) Continue_or_stop.t)
+    -> finish:('b -> 'final)
+    -> 'final
   val fold_right     :  'a t -> init:'b -> f:('a -> 'b -> 'b) -> 'b
   val iter2
     : 'a t -> 'a t -> f:([ `Left of 'a | `Right of 'a | `Both of 'a * 'a ] -> unit) -> unit
@@ -335,8 +338,9 @@ module type Accessors2 = sig
   val fold_until
     : ('a, _) t
     -> init:'b
-    -> f:('b -> 'a -> ('b, 'stop) Continue_or_stop.t)
-    -> ('b, 'stop) Finished_or_stopped_early.t
+    -> f:('b -> 'a -> ('b, 'final) Continue_or_stop.t)
+    -> finish:('b -> 'final)
+    -> 'final
 
   val fold_right     : ('a, _) t -> init:'b -> f:('a -> 'b -> 'b) -> 'b
   val iter2
@@ -420,8 +424,9 @@ module type Accessors2_with_comparator = sig
   val fold_until
     :  ('a, _) t
     -> init:'accum
-    -> f:('accum -> 'a -> ('accum, 'stop) Continue_or_stop.t)
-    -> ('accum, 'stop) Finished_or_stopped_early.t
+    -> f:('accum -> 'a -> ('accum, 'final) Continue_or_stop.t)
+    -> finish:('accum -> 'final)
+    -> 'final
 
   val fold_right : ('a, _) t -> init:'accum -> f:('a -> 'accum -> 'accum) -> 'accum
   val iter2
@@ -742,6 +747,8 @@ module type Creators_and_accessors2_with_comparator = sig
     with type ('a, 'b) tree := ('a, 'b) tree
 end
 
+module type S_poly = Creators_and_accessors1
+
 module type Set = sig
   (** This module defines the [Set] module for [Base]. Functions that construct a set take
       as an argument the comparator for the element type. *)
@@ -1000,8 +1007,9 @@ module type Set = sig
   val fold_until
     :  ('a, _) t
     -> init:'accum
-    -> f:('accum -> 'a -> ('accum, 'stop) Continue_or_stop.t)
-    -> ('accum, 'stop) Finished_or_stopped_early.t
+    -> f:('accum -> 'a -> ('accum, 'final) Continue_or_stop.t)
+    -> finish:('accum -> 'final)
+    -> 'final
 
   (** Like {!fold}, except that it goes from the largest to the smallest element. *)
   val fold_right
@@ -1168,6 +1176,9 @@ module type Set = sig
   val hash_fold_m__t
     :  (module Hash_fold_m with type t = 'elt) -> (Hash.state -> ('elt, _) t -> Hash.state)
 
+  (** A polymorphic Set. *)
+  module Poly : S_poly with type 'elt t = ('elt, Comparator.Poly.comparator_witness) t
+
   (** Using comparator is a similar interface as the toplevel of [Set], except the functions
       take a [~comparator:('elt, 'cmp) Comparator.t] where the functions at the toplevel of
       [Set] takes a [('elt, 'cmp) comparator]. *)
@@ -1268,6 +1279,7 @@ module type Set = sig
   module With_first_class_module = With_first_class_module
   module Without_comparator      = Without_comparator
 
+  module type S_poly                                  = S_poly
   module type Accessors0                              = Accessors0
   module type Accessors1                              = Accessors1
   module type Accessors2                              = Accessors2

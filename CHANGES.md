@@ -1,5 +1,81 @@
 ## git version
 
+- Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its
+  use isn't recommended.
+
+- Added the `Sexp.Not_found_s` exception which will replace `Caml.Not_found` as
+  the default exception in a future release.
+
+- Document that `Array.find_exn`, `Array.find_map_exn`, and `Array.findi_exn`
+  may throw `Caml.Not_found` _or_ `Not_found_s`.
+
+- Document that `Hashtbl.find_exn` may throw `Caml.Not_found` _or_
+  `Not_found_s`.
+
+- Document that `List.find_exn`, and `List.find_map_exn` may throw
+  `Caml.Not_found` _or_ `Not_found_s`.
+
+- Document that `List.find_exn` may throw `Caml.Not_found` _or_ `Not_found_s`.
+
+- Document that `String.lsplit2_exn`, and `String.rsplit2_exn` may throw
+  `Caml.Not_found` _or_ `Not_found_s`.
+
+- Added `Sys.backend_type`.
+
+- Removed unnecessary unit argument from `Hashtbl.create`.
+
+- Removed deprecated operations from `Hashtbl`.
+
+- Removed `Hashable.t` constructors from `Hashtbl` and `Hash_set`, instead
+  favoring the first-class module constructors.
+
+- Removed `Container` operations from `Either.First` and `Either.Second`.
+
+- Changed the type of `fold_until` in the `Container` interfaces. Rather than
+  returning a `Finished_or_stopped_early.t` (which has also been removed), the
+  function now takes a `finish` function that will be applied the result if `f`
+  never returned a `Stop _`.
+
+- Removed the `String_dict` module.
+
+- Added a `Queue` module that is backed by an `Option_array` for efficient and
+  (non-allocating) implementations of most operations.
+
+- Added a `Poly` submodule to `Map` and `Set` that exposes constructors that
+  use polymorphic compare.
+
+- Deprecated `all_ignore` in the `Monad` and `Applicative` interfaces in favor
+  of `all_unit`.
+
+- Deprecated `Array.replace_all` in favor of `Array.map_inplace`, which is the
+  standard name for that sort of operation within Base.
+
+- Document that `List.find_exn`, and `List.find_map_exn` may throw
+  `Caml.Not_found` _or_ `Not_found_s`.
+
+- Make `~compare` a required argument to `List.dedup_and_sort`, `List.dedup`,
+  `List.find_a_dup`, `List.contains_dup`, and `List.find_all_dups`.
+
+- Removed `List.exn_if_dup`. It is still available in core_kernel.
+
+- Removed "normalized" index operation `List.slice`. It is still available in
+  core_kernel.
+
+- Remove "normalized" index operations from `Array`, which incluced
+  `Array.normalize`, `Array.slice`, `Array.nget` and `Array.nset`. These
+  operations are still available in core_kernel.
+
+- Added `Uniform_array` module that is just like an `Array` except guarantees
+  that the representation array is not tagged with `Double_array_tag`, the tag
+  for float arrays.
+
+- Added `Option_array` module that allows for a compact representation of `'a
+  optoin array`, which avoids allocating heap objects representing `Some a`.
+
+- Remove "normalized" index operations from `String`, which incluced
+  `String.normalize`, `String.slice`, `String.nget` and `String.nset`. These
+  operations are still available in core_kernel.
+
 - Added missing conversions between `Int63` and other integer types,
   specifically, the versions that return options.
 
@@ -17,14 +93,11 @@
   back-end for `is_suffix` and `is_prefix`.
 
 - Moved all remaining `Replace_polymorphic_compare` submodules from Base
-  types and consolidated them in one place within import0.
+  types and consolidated them in one place within `Import0`.
 
 - Removed `(<=.)` and its friends.
 
 - Added `Sys.argv`.
-
-- Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its
-  use isn't recommended.
 
 - Added a infix exponentation operator for int.
 

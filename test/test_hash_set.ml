@@ -3,17 +3,9 @@ open! Hash_set
 
 let%test_module "Set Intersection" =
   (module struct
-    let hashable = {
-      Hashtbl.Hashable.
-      hash = [%hash: string];
-      compare = String.compare;
-      sexp_of_t = fun t -> Atom t;
-    }
-    ;;
-
     let run_test first_contents second_contents ~expect =
       let of_list lst =
-        let s = Using_hashable.create ~hashable () in
+        let s = create (module String) in
         List.iter lst ~f:(add s);
         s
       in

@@ -1293,6 +1293,8 @@ module type Creators_and_accessors3_with_comparator = sig
     with type ('a, 'b, 'c) tree := ('a, 'b, 'c) tree
 end
 
+module type S_poly = Creators_and_accessors2
+
 module type Map = sig
   (** [Map] is a functional data structure (balanced binary tree) implementing finite maps
       over a totally-ordered domain, called a "key". *)
@@ -1453,7 +1455,8 @@ module type Map = sig
     -> f:('v option -> 'v)
     -> ('k, 'v, 'cmp) t
 
-  (** Returns the value bound to the given key, raising [Not_found] if none exists. *)
+  (** Returns the value bound to the given key, raising [Caml.Not_found] of [Not_found_s]
+      if none exists. *)
   val find     : ('k, 'v, 'cmp) t -> 'k -> 'v option
   val find_exn : ('k, 'v, 'cmp) t -> 'k -> 'v
 
@@ -1838,6 +1841,10 @@ module type Map = sig
     -> (Hash.state -> 'v -> Hash.state)
     -> (Hash.state -> ('k, 'v, _) t -> Hash.state)
 
+  (** A polymorphic Map. *)
+  module Poly : S_poly
+    with type ('key, +'value) t = ('key, 'value, Comparator.Poly.comparator_witness) t
+
   (** [Using_comparator] is a similar interface as the toplevel of [Map], except the
       functions take a [~comparator:('k, 'cmp) Comparator.t], whereas the functions at the
       toplevel of [Map] take a [('k, 'cmp) comparator]. *)
@@ -1902,6 +1909,8 @@ module type Map = sig
       -> 'v Hash.folder
       -> ('k, 'v, 'cmp) t Hash.folder
 
+    (** To get around the value restriction, apply the functor and include it. You
+        can see an example of this in the [Poly] submodule below. *)
     module Empty_without_value_restriction (K : Comparator.S1) : sig
       val empty : ('a K.t, 'v, K.comparator_witness) t
     end
@@ -1916,6 +1925,7 @@ module type Map = sig
   module With_first_class_module = With_first_class_module
   module Without_comparator      = Without_comparator
 
+  module type S_poly                                  = S_poly
   module type Accessors1                              = Accessors1
   module type Accessors2                              = Accessors2
   module type Accessors3                              = Accessors3

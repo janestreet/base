@@ -93,6 +93,7 @@ module Fn                        = Fn
 module Formatter                 = Formatter
 module Hash                      = Hash
 module Hash_set                  = Hash_set
+module Hashable                  = Hashable
 module Hasher                    = Hasher
 module Hashtbl                   = Hashtbl
 module Heap_block                = Heap_block
@@ -111,8 +112,8 @@ module Map                       = Map
 module Maybe_bound               = Maybe_bound
 module Monad                     = Monad
 module Nativeint                 = Nativeint
-module Obj_array                 = Obj_array
 module Option                    = Option
+module Option_array              = Option_array
 module Or_error                  = Or_error
 module Ordered_collection_common = Ordered_collection_common
 module Ordering                  = Ordering
@@ -139,10 +140,10 @@ module Source_code_position      = Source_code_position
 module Staged                    = Staged
 module String                    = String
 module Stringable                = Stringable
-module String_dict               = String_dict
 module Sys                       = Sys
 module T                         = T
 module Type_equal                = Type_equal
+module Uniform_array             = Uniform_array
 module Unit                      = Unit
 module Uchar                     = Uchar
 module Validate                  = Validate
@@ -440,6 +441,8 @@ end
 include Export
 include Container_intf.Export (** @inline *)
 
+exception Not_found_s = Not_found_s
+
 (* Various things to cleanup that were used without going through Base. *)
 module Not_exposed_properly = struct
   module Int63_emul          = Int63_emul
@@ -448,7 +451,8 @@ module Not_exposed_properly = struct
   module Int_conversions     = Int_conversions
   module Int_math            = Int_math
   module Pow_overflow_bounds = Pow_overflow_bounds
-  module Sexp_conv           = Sexp_conv
+  module Sexp_conv           = Sexplib0.Sexp_conv
+  module Obj_array           = Obj_array
 end
 
 (* We perform these side effects here because we want them to run for any code that uses
@@ -459,3 +463,4 @@ end
 let () =
   Backtrace.initialize_module ();
 ;;
+

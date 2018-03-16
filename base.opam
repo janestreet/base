@@ -9,7 +9,8 @@ build: [
   ["jbuilder" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "jbuilder" {build & >= "1.0+beta12"}
+  "sexplib0"
+  "jbuilder" {build & >= "1.0+beta18.1"}
 ]
 depopts: [
   "base-native-int63"

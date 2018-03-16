@@ -565,13 +565,13 @@ let concat_mapi l ~f =
   in
   aux 0 [] l
 
-let merge l1 l2 ~cmp =
+let merge l1 l2 ~compare =
   let rec loop acc l1 l2 =
     match l1,l2 with
     | [], l2 -> rev_append acc l2
     | l1, [] -> rev_append acc l1
     | h1 :: t1, h2 :: t2 ->
-      if cmp h1 h2 <= 0
+      if compare h1 h2 <= 0
       then loop (h1 :: acc) t1 l2
       else loop (h2 :: acc) l1 t2
   in
@@ -597,7 +597,8 @@ include struct
   let (>>=) t f = bind t ~f
   let return = return
   let all = all
-  let all_ignore = all_ignore
+  let all_unit = all_unit
+  let all_ignore = all_unit
 end
 
 (** returns final element of list *)
@@ -656,18 +657,18 @@ let remove_consecutive_duplicates ?(which_to_keep=`Last) list ~equal =
 ;;
 
 (** returns sorted version of list with duplicates removed *)
-let dedup_and_sort ?(compare=Pervasives.compare) list =
+let dedup_and_sort ~compare list =
   match list with
   | [] -> []                            (* performance hack *)
   | _ ->
     let equal x x' = compare x x' = 0 in
-    let sorted = sort ~cmp:compare list in
+    let sorted = sort ~compare list in
     remove_consecutive_duplicates ~equal sorted
 
 let dedup = dedup_and_sort
 
-let find_a_dup ?(compare=Pervasives.compare) l =
-  let sorted = sort ~cmp:compare l in
+let find_a_dup ~compare l =
+  let sorted = sort ~compare l in
   let rec loop l = match l with
     | [] | [_] -> None
     | hd1 :: (hd2 :: _ as tl) ->
@@ -676,18 +677,18 @@ let find_a_dup ?(compare=Pervasives.compare) l =
   loop sorted
 ;;
 
-let contains_dup ?compare lst =
-  match find_a_dup ?compare lst with
+let contains_dup ~compare lst =
+  match find_a_dup ~compare lst with
   | Some _ -> true
   | None   -> false
 ;;
 
-let find_all_dups ?(compare=Pervasives.compare) l =
+let find_all_dups ~compare l =
   (* We add this reversal, so we can skip a [rev] at the end. We could skip
      [rev] anyway since we don not give any ordering guarantees, but it is
      nice to get results in natural order. *)
   let compare a b = (-1) * compare a b in
-  let sorted = sort ~cmp:compare l in
+  let sorted = sort ~compare l in
   (* Walk the list and record the first of each consecutive run of identical elements *)
   let rec loop sorted prev ~already_recorded acc =
     match sorted with
@@ -704,36 +705,10 @@ let find_all_dups ?(compare=Pervasives.compare) l =
   | hd :: tl -> loop tl hd ~already_recorded:false []
 ;;
 
-type sexp_thunk = unit -> Sexp.t
-let sexp_of_sexp_thunk x = x ()
-exception Duplicate_found of sexp_thunk * string [@@deriving_inline sexp]
-let () =
-  Ppx_sexp_conv_lib.Conv.Exn_converter.add
-    ([%extension_constructor Duplicate_found])
-    (function
-      | Duplicate_found (v0,v1) ->
-        let v0 = sexp_of_sexp_thunk v0
-
-        and v1 = sexp_of_string v1
-        in
-        Ppx_sexp_conv_lib.Sexp.List
-          [Ppx_sexp_conv_lib.Sexp.Atom "src/list.ml.Duplicate_found";
-           v0;
-           v1]
-      | _ -> assert false)
-
-[@@@end]
-
-let exn_if_dup ?compare ?(context="exn_if_dup") t ~to_sexp =
-  match find_a_dup ?compare t with
-  | None -> ()
-  | Some dup ->
-    raise (Duplicate_found ((fun () -> to_sexp dup),context))
-
 let count t ~f = Container.count ~fold t ~f
 let sum m t ~f = Container.sum ~fold m t ~f
-let min_elt t ~cmp = Container.min_elt ~fold t ~cmp
-let max_elt t ~cmp = Container.max_elt ~fold t ~cmp
+let min_elt t ~compare = Container.min_elt ~fold t ~compare
+let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
 let counti t ~f = foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count)
 
@@ -880,10 +855,6 @@ let sub l ~pos ~len =
        )
     )
 ;;
-
-let slice a start stop =
-  Ordered_collection_common.slice ~length_fun:length ~sub_fun:sub
-    a start stop
 
 let split_n t_orig n =
   if n <= 0 then

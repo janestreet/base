@@ -15,14 +15,6 @@ module Export = struct
       | Continue of 'a
       | Stop     of 'b
   end
-
-  (** [Finished_or_stopped_early.t] is returned by [fold_until] to indicate whether
-      [f] requested the fold stop, or if the fold completed. *)
-  module Finished_or_stopped_early = struct
-    type ('a, 'b) t =
-      | Finished      of 'a
-      | Stopped_early of 'b
-  end
 end
 include Export
 
@@ -55,14 +47,16 @@ module type S0 = sig
     -> f:('accum -> elt -> ('accum, 'e) Result.t)
     -> ('accum, 'e) Result.t
 
-  (** [fold_until t ~init ~f] is a short-circuiting version of [fold]. If [f]
+  (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
       returns [Stop _] the computation ceases and results in that value. If [f] returns
-      [Continue _], the fold will proceed. *)
+      [Continue _], the fold will proceed. If [f] never returns [Stop _], the final result
+      is computed by [finish]. *)
   val fold_until
     :  t
     -> init:'accum
-    -> f:('accum -> elt -> ('accum, 'stop) Continue_or_stop.t)
-    -> ('accum, 'stop) Finished_or_stopped_early.t
+    -> f:('accum -> elt -> ('accum, 'final) Continue_or_stop.t)
+    -> finish:('accum -> 'final)
+    -> 'final
 
   (** Returns [true] if and only if there exists an element for which the provided
       function evaluates to [true]. This is a short-circuiting operation. *)
@@ -90,12 +84,12 @@ module type S0 = sig
   val to_list  : t -> elt list
   val to_array : t -> elt array
 
-  (** Returns a min (resp. max) element from the collection using the provided [cmp]
+  (** Returns a min (resp. max) element from the collection using the provided [compare]
       function. In case of a tie, the first element encountered while traversing the
       collection is returned. The implementation uses [fold] so it has the same
       complexity as [fold]. Returns [None] iff the collection is empty. *)
-  val min_elt : t -> cmp:(elt -> elt -> int) -> elt option
-  val max_elt : t -> cmp:(elt -> elt -> int) -> elt option
+  val min_elt : t -> compare:(elt -> elt -> int) -> elt option
+  val max_elt : t -> compare:(elt -> elt -> int) -> elt option
 end
 
 module type S0_phantom = sig
@@ -124,14 +118,16 @@ module type S0_phantom = sig
     -> f:('accum -> elt -> ('accum, 'e) Result.t)
     -> ('accum, 'e) Result.t
 
-  (** [fold_until t ~init ~f] is a short-circuiting version of [fold]. If [f]
+  (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
       returns [Stop _] the computation ceases and results in that value. If [f] returns
-      [Continue _], the fold will proceed. *)
+      [Continue _], the fold will proceed. If [f] never returns [Stop _], the final result
+      is computed by [finish]. *)
   val fold_until
     :  _ t
     -> init:'accum
-    -> f:('accum -> elt -> ('accum, 'stop) Continue_or_stop.t)
-    -> ('accum, 'stop) Finished_or_stopped_early.t
+    -> f:('accum -> elt -> ('accum, 'final) Continue_or_stop.t)
+    -> finish:('accum -> 'final)
+    -> 'final
 
   (** Returns [true] if and only if there exists an element for which the provided
       function evaluates to [true].  This is a short-circuiting operation. *)
@@ -159,11 +155,11 @@ module type S0_phantom = sig
   val to_list  : _ t -> elt list
   val to_array : _ t -> elt array
 
-  (** Returns a min (resp max) element from the collection using the provided [cmp]
+  (** Returns a min (resp max) element from the collection using the provided [compare]
       function, or [None] if the collection is empty.  In case of a tie, the first element
       encountered while traversing the collection is returned. *)
-  val min_elt : _ t -> cmp:(elt -> elt -> int) -> elt option
-  val max_elt : _ t -> cmp:(elt -> elt -> int) -> elt option
+  val min_elt : _ t -> compare:(elt -> elt -> int) -> elt option
+  val max_elt : _ t -> compare:(elt -> elt -> int) -> elt option
 end
 
 (** Signature for polymorphic container, e.g., ['a list] or ['a array]. *)
@@ -192,14 +188,16 @@ module type S1 = sig
     -> f:('accum -> 'a -> ('accum, 'e) Result.t)
     -> ('accum, 'e) Result.t
 
-  (** [fold_until t ~init ~f] is a short-circuiting version of [fold]. If [f]
+  (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
       returns [Stop _] the computation ceases and results in that value. If [f] returns
-      [Continue _], the fold will proceed. *)
+      [Continue _], the fold will proceed. If [f] never returns [Stop _], the final result
+      is computed by [finish]. *)
   val fold_until
     :  'a t
     -> init:'accum
-    -> f:('accum -> 'a -> ('accum, 'stop) Continue_or_stop.t)
-    -> ('accum, 'stop) Finished_or_stopped_early.t
+    -> f:('accum -> 'a -> ('accum, 'final) Continue_or_stop.t)
+    -> finish:('accum -> 'final)
+    -> 'final
 
   (** Returns [true] if and only if there exists an element for which the provided
       function evaluates to [true].  This is a short-circuiting operation. *)
@@ -228,11 +226,11 @@ module type S1 = sig
   val to_array : 'a t -> 'a array
 
   (** Returns a minimum (resp maximum) element from the collection using the provided
-      [cmp] function, or [None] if the collection is empty. In case of a tie, the first
+      [compare] function, or [None] if the collection is empty. In case of a tie, the first
       element encountered while traversing the collection is returned. The implementation
       uses [fold] so it has the same complexity as [fold]. *)
-  val min_elt : 'a t -> cmp:('a -> 'a -> int) -> 'a option
-  val max_elt : 'a t -> cmp:('a -> 'a -> int) -> 'a option
+  val min_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+  val max_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
 end
 
 module type S1_phantom_invariant = sig
@@ -258,14 +256,16 @@ module type S1_phantom_invariant = sig
     -> f:('accum -> 'a -> ('accum, 'e) Result.t)
     -> ('accum, 'e) Result.t
 
-  (** [fold_until t ~init ~f] is a short-circuiting version of [fold]. If [f]
+  (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
       returns [Stop _] the computation ceases and results in that value. If [f] returns
-      [Continue _], the fold will proceed. *)
+      [Continue _], the fold will proceed. If [f] never returns [Stop _], the final result
+      is computed by [finish]. *)
   val fold_until
     :  ('a, _) t
     -> init:'accum
-    -> f:('accum -> 'a -> ('accum, 'stop) Continue_or_stop.t)
-    -> ('accum, 'stop) Finished_or_stopped_early.t
+    -> f:('accum -> 'a -> ('accum, 'final) Continue_or_stop.t)
+    -> finish:('accum -> 'final)
+    -> 'final
 
   (** Returns [true] if and only if there exists an element for which the provided
       function evaluates to [true].  This is a short-circuiting operation. *)
@@ -293,12 +293,12 @@ module type S1_phantom_invariant = sig
   val to_list  : ('a, _) t -> 'a list
   val to_array : ('a, _) t -> 'a array
 
-  (** Returns a min (resp max) element from the collection using the provided [cmp]
+  (** Returns a min (resp max) element from the collection using the provided [compare]
       function. In case of a tie, the first element encountered while traversing the
       collection is returned. The implementation uses [fold] so it has the same complexity
       as [fold]. Returns [None] iff the collection is empty. *)
-  val min_elt : ('a, _) t -> cmp:('a -> 'a -> int) -> 'a option
-  val max_elt : ('a, _) t -> cmp:('a -> 'a -> int) -> 'a option
+  val min_elt : ('a, _) t -> compare:('a -> 'a -> int) -> 'a option
+  val max_elt : ('a, _) t -> compare:('a -> 'a -> int) -> 'a option
 end
 
 module type S1_phantom = sig
@@ -322,8 +322,9 @@ module type Generic = sig
   val fold_until
     :  'a t
     -> init:'accum
-    -> f:('accum -> 'a elt -> ('accum, 'stop) Continue_or_stop.t)
-    -> ('accum, 'stop) Finished_or_stopped_early.t
+    -> f:('accum -> 'a elt -> ('accum, 'final) Continue_or_stop.t)
+    -> finish:('accum -> 'final)
+    -> 'final
 
   val exists   : 'a t -> f:('a elt -> bool) -> bool
   val for_all  : 'a t -> f:('a elt -> bool) -> bool
@@ -335,8 +336,8 @@ module type Generic = sig
   val find_map : 'a t -> f:('a elt -> 'b option) -> 'b option
   val to_list  : 'a t -> 'a elt list
   val to_array : 'a t -> 'a elt array
-  val min_elt  : 'a t -> cmp:('a elt -> 'a elt -> int) -> 'a elt option
-  val max_elt  : 'a t -> cmp:('a elt -> 'a elt -> int) -> 'a elt option
+  val min_elt  : 'a t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
+  val max_elt  : 'a t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
 end
 
 module type Generic_phantom = sig
@@ -354,8 +355,9 @@ module type Generic_phantom = sig
   val fold_until
     :  ('a, _) t
     -> init:'accum
-    -> f:('accum -> 'a elt -> ('accum, 'stop) Continue_or_stop.t)
-    -> ('accum, 'stop) Finished_or_stopped_early.t
+    -> f:('accum -> 'a elt -> ('accum, 'final) Continue_or_stop.t)
+    -> finish:('accum -> 'final)
+    -> 'final
   val exists   : ('a, _) t -> f:('a elt -> bool) -> bool
   val for_all  : ('a, _) t -> f:('a elt -> bool) -> bool
   val count    : ('a, _) t -> f:('a elt -> bool) -> int
@@ -366,8 +368,8 @@ module type Generic_phantom = sig
   val find_map : ('a, _) t -> f:('a elt -> 'b option) -> 'b option
   val to_list  : ('a, _) t -> 'a elt list
   val to_array : ('a, _) t -> 'a elt array
-  val min_elt  : ('a, _) t -> cmp:('a elt -> 'a elt -> int) -> 'a elt option
-  val max_elt  : ('a, _) t -> cmp:('a elt -> 'a elt -> int) -> 'a elt option
+  val min_elt  : ('a, _) t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
+  val max_elt  : ('a, _) t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
 end
 
 module type Make_gen_arg = sig
@@ -428,8 +430,8 @@ module type Container = sig
 
   val iter     : fold:('t, 'a, unit     ) fold -> ('t, 'a) iter
   val count    : fold:('t, 'a, int      ) fold -> 't -> f:('a -> bool) -> int
-  val min_elt  : fold:('t, 'a, 'a option) fold -> 't -> cmp:('a -> 'a -> int) -> 'a option
-  val max_elt  : fold:('t, 'a, 'a option) fold -> 't -> cmp:('a -> 'a -> int) -> 'a option
+  val min_elt  : fold:('t, 'a, 'a option) fold -> 't -> compare:('a -> 'a -> int) -> 'a option
+  val max_elt  : fold:('t, 'a, 'a option) fold -> 't -> compare:('a -> 'a -> int) -> 'a option
   val length   : fold:('t,  _, int      ) fold -> 't -> int
   val to_list  : fold:('t, 'a, 'a list  ) fold -> 't -> 'a list
   val to_array : fold:('t, 'a, 'a list  ) fold -> 't -> 'a array
@@ -448,9 +450,10 @@ module type Container = sig
   val fold_until
     :  fold:('t, 'a, 'b) fold
     -> init:'b
-    -> f:('b -> 'a -> ('b, 'stop) Continue_or_stop.t)
+    -> f:('b -> 'a -> ('b, 'final) Continue_or_stop.t)
+    -> finish:('b -> 'final)
     -> 't
-    -> ('b, 'stop) Finished_or_stopped_early.t
+    -> 'final
 
   (** Generic definitions of container operations in terms of [iter]. *)
   val is_empty : iter:('t, 'a) iter -> 't -> bool

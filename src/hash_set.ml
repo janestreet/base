@@ -3,11 +3,8 @@ open! Import
 include Hash_set_intf
 
 let hashable_s    = Hashtbl.hashable_s
-let hashable      = Hashtbl.hashable
+let hashable      = Hashtbl.Private.hashable
 let poly_hashable = Hashtbl.Poly.hashable
-
-module Hashable = Hashtbl.Hashable
-module Hashtbl  = Hashtbl.Using_hashable
 
 let with_return = With_return.with_return
 
@@ -64,15 +61,15 @@ module Accessors = struct
 
   let count t ~f = Container.count ~fold t ~f
   let sum m t ~f = Container.sum ~fold m t ~f
-  let min_elt t ~cmp = Container.min_elt ~fold t ~cmp
-  let max_elt t ~cmp = Container.max_elt ~fold t ~cmp
+  let min_elt t ~compare = Container.min_elt ~fold t ~compare
+  let max_elt t ~compare = Container.max_elt ~fold t ~compare
   let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
   let fold_until  t ~init ~f = Container.fold_until  ~fold ~init ~f t
 
   let to_list = Hashtbl.keys
 
   let sexp_of_t sexp_of_e t =
-    sexp_of_list sexp_of_e (to_list t |> List.sort ~cmp:(hashable t).compare)
+    sexp_of_list sexp_of_e (to_list t |> List.sort ~compare:(hashable t).compare)
 
   let to_array t = Array.of_list (to_list t)
 
@@ -106,48 +103,35 @@ end
 
 include Accessors
 
-module Using_hashable = struct
-  type nonrec 'a t = 'a t
-  type 'a elt = 'a
+let create ?growth_allowed ?size m =
+  Hashtbl.create ?growth_allowed ?size m
+;;
 
-  include Accessors
+let of_list ?growth_allowed ?size m l =
+  let size = match size with Some x -> x | None -> List.length l in
+  let t = Hashtbl.create ?growth_allowed ~size m in
+  List.iter l ~f:(fun k -> add t k);
+  t
+;;
 
-  let create ?growth_allowed ?size ~hashable () =
-    Hashtbl.create ?growth_allowed ?size ~hashable ()
-  ;;
-
-  let of_list ?growth_allowed ?size ~hashable l =
-    let size = match size with Some x -> x | None -> List.length l in
-    let t = Hashtbl.create ?growth_allowed ~size ~hashable () in
-    List.iter l ~f:(fun k -> add t k);
+let t_of_sexp m e_of_sexp sexp =
+  match sexp with
+  | Sexp.Atom _ ->
+    raise (Of_sexp_error (Failure "Hash_set.t_of_sexp requires a list", sexp))
+  | Sexp.List list ->
+    let t = create m ~size:(List.length list) in
+    List.iter list ~f:(fun sexp ->
+      let e = e_of_sexp sexp in
+      match strict_add t e with
+      | Ok () -> ()
+      | Error _ ->
+        raise (Of_sexp_error
+                 (Error.to_exn
+                    (Error.create "Hash_set.t_of_sexp got a duplicate element"
+                       sexp Fn.id),
+                  sexp)));
     t
-  ;;
-
-  let t_of_sexp ~hashable e_of_sexp sexp =
-    match sexp with
-    | Sexp.Atom _ ->
-      raise (Of_sexp_error (Failure "Hash_set.t_of_sexp requires a list", sexp))
-    | Sexp.List list ->
-      let t = create ~hashable ~size:(List.length list) () in
-      List.iter list ~f:(fun sexp ->
-        let e = e_of_sexp sexp in
-        match strict_add t e with
-        | Ok () -> ()
-        | Error _ ->
-          raise (Of_sexp_error
-                   (Error.to_exn
-                      (Error.create "Hash_set.t_of_sexp got a duplicate element"
-                         sexp Fn.id),
-                    sexp)));
-      t
-  ;;
-end
-
-let create m ?growth_allowed ?size () =
-  Using_hashable.create ~hashable:(Hashable.of_key m) ?growth_allowed ?size ()
-
-let of_list m ?growth_allowed ?size l =
-  Using_hashable.of_list ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
+;;
 
 module Creators (Elt : sig
     type 'a t
@@ -159,25 +143,23 @@ module Creators (Elt : sig
 
   val t_of_sexp : (Sexp.t -> 'a Elt.t) -> Sexp.t -> 'a t_
 
-  include Creators
+  include Creators_generic
     with type 'a t := 'a t_
     with type 'a elt := 'a Elt.t
-    with type ('elt, 'z) create_options := ('elt, 'z) create_options_without_hashable
+    with type ('elt, 'z) create_options := ('elt, 'z) create_options_without_first_class_module
 
 end = struct
 
   type 'a t_ = 'a Elt.t t
 
-  let hashable = Elt.hashable
-
   let create ?growth_allowed ?size () =
-    Using_hashable.create ?growth_allowed ?size ~hashable ()
+    create ?growth_allowed ?size (Hashable.to_key Elt.hashable)
 
   let of_list ?growth_allowed ?size l =
-    Using_hashable.of_list ?growth_allowed ?size ~hashable l
+    of_list ?growth_allowed ?size (Hashable.to_key Elt.hashable) l
 
   let t_of_sexp e_of_sexp sexp =
-    Using_hashable.t_of_sexp e_of_sexp sexp ~hashable
+    t_of_sexp (Hashable.to_key Elt.hashable) e_of_sexp sexp
 end
 
 module Poly = struct
@@ -222,4 +204,8 @@ let sexp_of_m__t (type elt) (module Elt : Sexp_of_m with type t = elt) t =
   sexp_of_t Elt.sexp_of_t t
 
 let m__t_of_sexp (type elt) (module Elt : M_of_sexp with type t = elt) sexp =
-  Using_hashable.t_of_sexp ~hashable:(Hashable.of_key (module Elt)) Elt.t_of_sexp sexp
+  t_of_sexp (module Elt) Elt.t_of_sexp sexp
+
+module Private = struct
+  let hashable = Hashtbl.Private.hashable
+end
