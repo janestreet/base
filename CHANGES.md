@@ -1,4 +1,4 @@
-## git version
+## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its
   use isn't recommended.
