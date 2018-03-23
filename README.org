@@ -21,7 +21,7 @@ $ opam install base
 
 Base has no runtime dependencies and is fast to build. Its sole build
 dependency is [[https://github.com/janestreet/jbuilder][jbuilder]], which
-itself does not requires nothing more than the compiler.
+itself requires nothing more than the compiler.
 
 ** Using the OCaml standard library with Base
 
