@@ -57,7 +57,7 @@ let%test_module "Sequence.merge*" =
               (of_list [ 1; 2; ])
               (of_list [ 2; 3; ])
               (* Can't use Core_int.compare because it would be a dependency cycle. *)
-              ~cmp:Int.compare))
+              ~compare:Int.compare))
         [ Left 1; Both (2, 2); Right 3; ]
 
     let%test_unit _ =
@@ -66,7 +66,7 @@ let%test_module "Sequence.merge*" =
            (merge_with_duplicates
               (of_list [ 2; 1; ])
               (of_list [ 2; 3; ])
-              ~cmp:Int.compare))
+              ~compare:Int.compare))
         [ Both (2, 2); Left 1; Right 3; ]
 
     let%test_unit _ =
@@ -75,7 +75,7 @@ let%test_module "Sequence.merge*" =
            (merge
               (of_list [ (0, "A"); (1, "A"); ])
               (of_list [ (1, "B"); (2, "B"); ])
-              ~cmp:(fun a b -> [%compare: int] (fst a) (fst b))))
+              ~compare:(fun a b -> [%compare: int] (fst a) (fst b))))
         [ (0, "A"); (1, "A"); (2, "B"); ]
   end)
 

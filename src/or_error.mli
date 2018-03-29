@@ -32,8 +32,6 @@ include Applicative.S      with type 'a t := 'a t
 include Invariant.S1       with type 'a t := 'a t
 include Monad.S            with type 'a t := 'a t
 
-module Ok : Container.S1 with type 'a t := 'a t
-
 val is_ok    : _ t -> bool
 val is_error : _ t -> bool
 

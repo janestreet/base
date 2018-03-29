@@ -93,8 +93,24 @@ val contains : ?pos:int -> ?len:int -> t -> char -> bool
 val uppercase : t -> t
 val lowercase : t -> t
 
+(** Returns a copy of the string with the first character set to uppercase, using the
+    US-ASCII character set. E.g., "foo" becomes "Foo". *)
 val capitalize   : t -> t
+
+(** Returns a copy of the string with the first character set to lowercase, using the
+    US-ASCII character set. E.g., "Foo" becomes "foo". *)
 val uncapitalize : t -> t
+
+(** [index] gives the index of the first appearance of [char] in the string when
+    searching from left to right, or [None] if it's not found. [rindex] does the same but
+    searches from the right.
+
+    For example, [String.index "Foo" 'o'] is [Some 1] while [String.rindex "Foo" 'o'] is
+    [Some 2].
+
+    The [_exn] versions return the actual index (instead of an option) when [char] is
+    found, and throw an exception otherwise.
+*)
 
 val index      : t -> char -> int option
 val index_exn  : t -> char -> int

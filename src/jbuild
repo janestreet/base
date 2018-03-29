@@ -29,7 +29,6 @@
     sexplib0
     shadow_stdlib))
   (install_c_headers (internalhash))
-  (flags (:standard -safe-string))
   (c_flags (:standard -D_LARGEFILE64_SOURCE (:include mpopcnt.sexp)))
   (c_names
    ;; If you add c stubs in here, ask yourself this question: would it make sense/can it

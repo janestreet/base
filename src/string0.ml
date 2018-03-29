@@ -40,7 +40,7 @@ let (^) = (^)
 
 let blit            = Caml.String.blit
 let compare         = Caml.String.compare
-let copy            = Caml.String.copy
+let copy            = Caml.String.copy [@@warning "-3"]
 let escaped         = Caml.String.escaped
 let index_exn       = Caml.String.index
 let index_from_exn  = Caml.String.index_from

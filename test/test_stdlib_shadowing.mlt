@@ -5,45 +5,37 @@ open Base
 let () = seek_in stdin 0
 [%%expect{|
 Line _, characters 9-16:
-Warning 3: deprecated: Base.seek_in
+Error (Warning 3): deprecated: Base.seek_in
 [2016-09] this element comes from the stdlib distributed with OCaml.
 Use [Stdio.In_channel.seek] instead.
 Line _, characters 17-22:
-Warning 3: deprecated: Base.stdin
+Error (Warning 3): deprecated: Base.stdin
 [2016-09] this element comes from the stdlib distributed with OCaml.
 Use [Stdio.stdin] instead.
-Line _:
-Error: Some fatal warnings were triggered (2 occurrences)
 |}]
 
 let _ = StringLabels.make 10 'x'
 [%%expect{|
 Line _, characters 8-25:
-Warning 3: deprecated: module Base.StringLabels
+Error (Warning 3): deprecated: module Base.StringLabels
 [2016-09] this element comes from the stdlib distributed with OCaml.
 Refering to the stdlib directly is discouraged by Base. You should either
 use the equivalent functionality offered by Base, or if you really want to
 refer to the stdlib, use Caml.StringLabels instead
-Line _:
-Error: Some fatal warnings were triggered (1 occurrences)
 |}]
 
 let _ = ( == )
 [%%expect{|
 Line _, characters 8-14:
-Warning 3: deprecated: Base.==
+Error (Warning 3): deprecated: Base.==
 [2016-09] this element comes from the stdlib distributed with OCaml.
 Use [phys_equal] instead.
-Line _:
-Error: Some fatal warnings were triggered (1 occurrences)
 |}]
 
 let _ = ( != )
 [%%expect{|
 Line _, characters 8-14:
-Warning 3: deprecated: Base.!=
+Error (Warning 3): deprecated: Base.!=
 [2016-09] this element comes from the stdlib distributed with OCaml.
 Use [not (phys_equal ...)] instead.
-Line _:
-Error: Some fatal warnings were triggered (1 occurrences)
 |}]

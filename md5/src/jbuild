@@ -3,7 +3,6 @@
   (public_name base.md5)
   (preprocess no_preprocessing)
   (libraries ())
-  (flags (:standard -safe-string))
   (js_of_ocaml (
     (javascript_files ())
     ))

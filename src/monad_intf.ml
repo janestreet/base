@@ -81,8 +81,11 @@ module type S_without_syntax = sig
       reasons. *)
   val ignore_m : 'a t -> unit t
 
+
   val all : 'a t list -> 'a list t
 
+  (** Like [all], but ensures that every monadic value in the list produces a unit value,
+      all of which are discarded rather than being collected into a list. *)
   val all_unit : unit t list -> unit t
 
   val all_ignore : unit t list -> unit t [@@deprecated "[since 2018-02] Use [all_unit]"]

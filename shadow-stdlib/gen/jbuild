@@ -1,6 +1,5 @@
 (executables
  ((names (gen))
-  (flags (:standard -safe-string))
   (libraries (str compiler-libs.common caml))
   (link_flags (-linkall))
   (preprocess no_preprocessing)))

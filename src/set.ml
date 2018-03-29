@@ -639,7 +639,7 @@ module Tree0 = struct
     Sequence.merge_with_duplicates
       (to_sequence comparator ~order ?greater_or_equal_to ?less_or_equal_to t)
       (to_sequence comparator ~order ?greater_or_equal_to ?less_or_equal_to t')
-      ~cmp:begin
+      ~compare:begin
         match order with
         | `Increasing -> comparator.compare
         | `Decreasing -> Fn.flip comparator.compare

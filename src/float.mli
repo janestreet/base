@@ -399,6 +399,9 @@ val to_padded_compact_string : t -> string
     [**]. *)
 val int_pow : t -> int -> t
 
+(** [square x] returns [x *. x]. *)
+val square : t -> t
+
 (** [ldexp x n] returns [x *. 2 ** n] *)
 val ldexp : t -> int -> t
 

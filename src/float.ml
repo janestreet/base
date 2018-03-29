@@ -490,6 +490,8 @@ let max (x : t) y =
   if is_nan x || is_nan y then nan
   else if x > y then x else y
 
+let square x = x *. x
+
 module Parts : sig
   type t
 

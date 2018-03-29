@@ -16,8 +16,6 @@ sig
 end
 [@@@end]
 
-include Container.S1 with type 'a t := 'a t
-
 (*_ defined as externals to avoid breaking the inliner *)
 external create : 'a   -> 'a t       = "%makemutable"
 external ( ! )  : 'a t -> 'a         = "%field0"

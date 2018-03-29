@@ -16,6 +16,9 @@
 
 let blit_string = Caml.Bytes.blit_string
 
+let sub_string t ~pos ~len =
+  Caml.Bytes.sub_string t pos len
+
 open! Import0
 
 module Sys = Sys0
@@ -54,6 +57,5 @@ let unsafe_of_string_promise_no_mutation = Caml.Bytes.unsafe_of_string
 
 (* These are eta expanded in order to label arguments, following the
    Base conventions. *)
-let sub_string t ~pos ~len = Caml.Bytes.sub_string t pos len
 let blit_string ~src ~src_pos ~dst ~dst_pos ~len =
   blit_string src src_pos dst dst_pos len

@@ -55,6 +55,18 @@ include Comparable.Validate (T)
    performance difference is noticeable. *)
 let to_int (x : bool) = (Caml.Obj.magic x : int)
 
+module Non_short_circuiting = struct
+  (* We don't expose this, since we don't want to break the invariant mentioned below of
+     (to_int true = 1) and (to_int false = 0). *)
+  let unsafe_of_int (x : int) = (Caml.Obj.magic x : bool)
+
+  let (||) a b =
+    unsafe_of_int (to_int a lor to_int b)
+
+  let (&&) a b =
+    unsafe_of_int (to_int a land to_int b)
+end
+
 (* We do this as a direct assert on the theory that it's a cheap thing to test and a
    really core invariant that we never expect to break, and we should be happy for a
    program to fail immediately if this is violated. *)

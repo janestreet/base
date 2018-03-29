@@ -2,7 +2,6 @@
  ((name        shadow_stdlib)
   (public_name base.shadow_stdlib)
   (libraries (caml))
-  (flags (:standard -safe-string))
   (preprocess no_preprocessing)))
 
 ;; Generate a file containing:

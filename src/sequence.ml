@@ -543,13 +543,14 @@ module Merge_with_duplicates_element = struct
   [@@@end]
 end
 
-let merge_with_duplicates (Sequence (s1, next1)) (Sequence (s2, next2)) ~cmp =
+let merge_with_duplicates (Sequence (s1, next1)) (Sequence (s2, next2)) ~compare =
+  let unshadowed_compare = compare in
   let open Merge_with_duplicates_element in
-  let next = function
+  let next  = function
     | Skip s1, s2 -> Skip (next1 s1, s2)
     | s1, Skip s2 -> Skip (s1, next2 s2)
     | (Yield (a, s1') as s1), (Yield (b, s2') as s2) ->
-      let comparison = cmp a b in
+      let comparison = unshadowed_compare a b in
       if comparison < 0
       then Yield (Left a, (Skip s1', s2))
       else if comparison = 0
@@ -561,8 +562,8 @@ let merge_with_duplicates (Sequence (s1, next1)) (Sequence (s2, next2)) ~cmp =
   in
   Sequence((Skip s1, Skip s2), next)
 
-let merge s1 s2 ~cmp =
-  map (merge_with_duplicates s1 s2 ~cmp)
+let merge s1 s2 ~compare =
+  map (merge_with_duplicates s1 s2 ~compare)
     ~f:(function Left x | Right x | Both (x, _) -> x)
 
 let hd s =

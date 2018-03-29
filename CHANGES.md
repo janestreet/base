@@ -1,3 +1,15 @@
+## git version
+
+- Added `Bool.Non_short_circuiting`.
+
+- Added `Float.square`.
+
+- Remove module `Or_error.Ok`.
+
+- module `Ref` doesn't implement `Container.S1` anymore.
+
+- Rename parameter of `Sequence.merge` from `cmp` to `compare`.
+
 ## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its

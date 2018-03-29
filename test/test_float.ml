@@ -970,6 +970,14 @@ let%test_module "Hexadecimal syntax" =
   end)
 ;;
 
+let%expect_test "square" =
+  printf "%f\n" (square 1.5);
+  printf "%f\n" (square (-2.5));
+  [%expect {|
+    2.250000
+    6.250000 |}]
+;;
+
 let%expect_test "mathematical constants" =
   (* Compare to the from-string conversion of numbers from Wolfram Alpha *)
   let eq x s = assert (x = of_string s) in

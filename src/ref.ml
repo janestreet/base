@@ -1,5 +1,4 @@
 open! Import
-open Container_intf.Export
 
 (* In the definition of [t], we do not have [[@@deriving_inline compare, sexp][@@@end]] because
    in general, syntax extensions tend to use the implementation when available rather than
@@ -41,41 +40,6 @@ let swap t1 t2 =
   t2 := tmp
 
 let replace t f = t := f !t
-
-(* container functions below *)
-let length _ = 1
-
-let is_empty _ = false
-
-let iter t ~f = f !t
-
-let fold t ~init ~f = f init !t
-
-let fold_result t ~init ~f = f init !t
-let fold_until  t ~init ~f ~finish =
-  match (f init !t : ('a, 'b) Continue_or_stop.t) with
-  | Stop     x -> x
-  | Continue x -> finish x
-
-let count t ~f = if f !t then 1 else 0
-let sum _ t ~f = f !t
-
-let exists t ~f = f !t
-
-let for_all t ~f = f !t
-
-let mem t a ~equal = equal a !t
-
-let find t ~f = let a = !t in if f a then Some a else None
-
-let find_map t ~f = f !t
-
-let to_list t = [ !t ]
-
-let to_array t = [| !t |]
-
-let min_elt t ~compare:_ = Some !t
-let max_elt t ~compare:_ = Some !t
 
 let set_temporarily t a ~f =
   let restore_to = !t in
