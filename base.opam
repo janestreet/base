@@ -15,7 +15,7 @@ depends: [
 depopts: [
   "base-native-int63"
 ]
-available: [ ocaml-version >= "4.04.1" ]
+available: [ ocaml-version >= "4.04.2" ]
 descr: "
 Full standard library replacement for OCaml
 

@@ -191,10 +191,8 @@ module Export = struct
   let (hash_fold_bool :
          Ppx_hash_lib.Std.Hash.state -> bool -> Ppx_hash_lib.Std.Hash.state) =
     Bool.hash_fold_t
-
   and (hash_bool : bool -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Bool.hash  in fun x  -> func x
-
+    let func = Bool.hash in fun x -> func x
   let bool_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bool = Bool.t_of_sexp
   let sexp_of_bool : bool -> Ppx_sexp_conv_lib.Sexp.t = Bool.sexp_of_t
   [@@@end]
@@ -203,10 +201,8 @@ module Export = struct
   let (hash_fold_char :
          Ppx_hash_lib.Std.Hash.state -> char -> Ppx_hash_lib.Std.Hash.state) =
     Char.hash_fold_t
-
   and (hash_char : char -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Char.hash  in fun x  -> func x
-
+    let func = Char.hash in fun x -> func x
   let char_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> char = Char.t_of_sexp
   let sexp_of_char : char -> Ppx_sexp_conv_lib.Sexp.t = Char.sexp_of_t
   [@@@end]
@@ -218,10 +214,8 @@ module Export = struct
   let (hash_fold_float :
          Ppx_hash_lib.Std.Hash.state -> float -> Ppx_hash_lib.Std.Hash.state) =
     Float.hash_fold_t
-
   and (hash_float : float -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Float.hash  in fun x  -> func x
-
+    let func = Float.hash in fun x -> func x
   let float_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> float = Float.t_of_sexp
   let sexp_of_float : float -> Ppx_sexp_conv_lib.Sexp.t = Float.sexp_of_t
   [@@@end]
@@ -230,10 +224,8 @@ module Export = struct
   let (hash_fold_int :
          Ppx_hash_lib.Std.Hash.state -> int -> Ppx_hash_lib.Std.Hash.state) =
     Int.hash_fold_t
-
   and (hash_int : int -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Int.hash  in fun x  -> func x
-
+    let func = Int.hash in fun x -> func x
   let int_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int = Int.t_of_sexp
   let sexp_of_int : int -> Ppx_sexp_conv_lib.Sexp.t = Int.sexp_of_t
   [@@@end]
@@ -242,10 +234,8 @@ module Export = struct
   let (hash_fold_int32 :
          Ppx_hash_lib.Std.Hash.state -> int32 -> Ppx_hash_lib.Std.Hash.state) =
     Int32.hash_fold_t
-
   and (hash_int32 : int32 -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Int32.hash  in fun x  -> func x
-
+    let func = Int32.hash in fun x -> func x
   let int32_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int32 = Int32.t_of_sexp
   let sexp_of_int32 : int32 -> Ppx_sexp_conv_lib.Sexp.t = Int32.sexp_of_t
   [@@@end]
@@ -254,10 +244,8 @@ module Export = struct
   let (hash_fold_int64 :
          Ppx_hash_lib.Std.Hash.state -> int64 -> Ppx_hash_lib.Std.Hash.state) =
     Int64.hash_fold_t
-
   and (hash_int64 : int64 -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Int64.hash  in fun x  -> func x
-
+    let func = Int64.hash in fun x -> func x
   let int64_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int64 = Int64.t_of_sexp
   let sexp_of_int64 : int64 -> Ppx_sexp_conv_lib.Sexp.t = Int64.sexp_of_t
   [@@@end]
@@ -283,10 +271,8 @@ module Export = struct
   let (hash_fold_nativeint :
          Ppx_hash_lib.Std.Hash.state -> nativeint -> Ppx_hash_lib.Std.Hash.state) =
     Nativeint.hash_fold_t
-
   and (hash_nativeint : nativeint -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Nativeint.hash  in fun x  -> func x
-
+    let func = Nativeint.hash in fun x -> func x
   let nativeint_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> nativeint =
     Nativeint.t_of_sexp
   let sexp_of_nativeint : nativeint -> Ppx_sexp_conv_lib.Sexp.t =
@@ -324,10 +310,8 @@ module Export = struct
   let (hash_fold_string :
          Ppx_hash_lib.Std.Hash.state -> string -> Ppx_hash_lib.Std.Hash.state) =
     String.hash_fold_t
-
   and (hash_string : string -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = String.hash  in fun x  -> func x
-
+    let func = String.hash in fun x -> func x
   let string_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> string = String.t_of_sexp
   let sexp_of_string : string -> Ppx_sexp_conv_lib.Sexp.t = String.sexp_of_t
   [@@@end]
@@ -341,10 +325,8 @@ module Export = struct
   let (hash_fold_unit :
          Ppx_hash_lib.Std.Hash.state -> unit -> Ppx_hash_lib.Std.Hash.state) =
     Unit.hash_fold_t
-
   and (hash_unit : unit -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Unit.hash  in fun x  -> func x
-
+    let func = Unit.hash in fun x -> func x
   let unit_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> unit = Unit.t_of_sexp
   let sexp_of_unit : unit -> Ppx_sexp_conv_lib.Sexp.t = Unit.sexp_of_t
   [@@@end]

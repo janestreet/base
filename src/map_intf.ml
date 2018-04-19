@@ -6,13 +6,12 @@ module Or_duplicate = struct
   [@@deriving_inline sexp_of]
   let sexp_of_t :
     'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
-    fun _of_a  ->
+    fun _of_a ->
       function
       | `Ok v0 ->
         Ppx_sexp_conv_lib.Sexp.List
           [Ppx_sexp_conv_lib.Sexp.Atom "Ok"; _of_a v0]
       | `Duplicate -> Ppx_sexp_conv_lib.Sexp.Atom "Duplicate"
-
   [@@@end]
 end
 
@@ -34,48 +33,46 @@ module Symmetric_diff_element = struct
   [@@deriving_inline compare, sexp]
   let compare :
     'k 'v .
-    ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k,'v) t -> ('k,'v) t -> int
+    ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
     =
-    fun _cmp__k  ->
-    fun _cmp__v  ->
-    fun a__001_  ->
-    fun b__002_  ->
-      let (t__003_,t__004_) = a__001_  in
-      let (t__005_,t__006_) = b__002_  in
+    fun _cmp__k ->
+    fun _cmp__v ->
+    fun a__001_ ->
+    fun b__002_ ->
+      let (t__003_, t__004_) = a__001_ in
+      let (t__005_, t__006_) = b__002_ in
       match _cmp__k t__003_ t__005_ with
       | 0 ->
         if Ppx_compare_lib.phys_equal t__004_ t__006_
         then 0
         else
           (match (t__004_, t__006_) with
-           | (`Left _left__007_,`Left _right__008_) ->
+           | (`Left _left__007_, `Left _right__008_) ->
              _cmp__v _left__007_ _right__008_
-           | (`Right _left__009_,`Right _right__010_) ->
+           | (`Right _left__009_, `Right _right__010_) ->
              _cmp__v _left__009_ _right__010_
-           | (`Unequal _left__011_,`Unequal _right__012_) ->
-             let (t__013_,t__014_) = _left__011_  in
-             let (t__015_,t__016_) = _right__012_  in
+           | (`Unequal _left__011_, `Unequal _right__012_) ->
+             let (t__013_, t__014_) = _left__011_ in
+             let (t__015_, t__016_) = _right__012_ in
              (match _cmp__v t__013_ t__015_ with
               | 0 -> _cmp__v t__014_ t__016_
               | n -> n)
-           | (x,y) -> Ppx_compare_lib.polymorphic_compare x y)
+           | (x, y) -> Ppx_compare_lib.polymorphic_compare x y)
       | n -> n
-
   let t_of_sexp :
     'k 'v .
     (Ppx_sexp_conv_lib.Sexp.t -> 'k) ->
     (Ppx_sexp_conv_lib.Sexp.t -> 'v) ->
-    Ppx_sexp_conv_lib.Sexp.t -> ('k,'v) t
+    Ppx_sexp_conv_lib.Sexp.t -> ('k, 'v) t
     =
-    let _tp_loc = "src/map_intf.ml.Symmetric_diff_element.t"  in
-    fun _of_k  ->
-    fun _of_v  ->
+    let _tp_loc = "src/map_intf.ml.Symmetric_diff_element.t" in
+    fun _of_k ->
+    fun _of_v ->
       function
       | Ppx_sexp_conv_lib.Sexp.List (v0::v1::[]) ->
         let v0 = _of_k v0
-
         and v1 =
-          (fun sexp  ->
+          (fun sexp ->
              try
                match sexp with
                | Ppx_sexp_conv_lib.Sexp.Atom atom as _sexp ->
@@ -95,13 +92,13 @@ module Symmetric_diff_element = struct
                  (match atom with
                   | "Left" as _tag ->
                     (match sexp_args with
-                     | v0::[] -> let v0 = _of_v v0  in `Left v0
+                     | v0::[] -> let v0 = _of_v v0 in `Left v0
                      | _ ->
                        Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args
                          _tp_loc _tag _sexp)
                   | "Right" as _tag ->
                     (match sexp_args with
-                     | v0::[] -> let v0 = _of_v v0  in `Right v0
+                     | v0::[] -> let v0 = _of_v v0 in `Right v0
                      | _ ->
                        Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args
                          _tp_loc _tag _sexp)
@@ -113,13 +110,10 @@ module Symmetric_diff_element = struct
                          | Ppx_sexp_conv_lib.Sexp.List (v0::v1::[])
                            ->
                            let v0 = _of_v v0
-
-                           and v1 = _of_v v1
-                           in (v0, v1)
+                           and v1 = _of_v v1 in (v0, v1)
                          | sexp ->
                            Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected
-                             _tp_loc 2 sexp
-                       in
+                             _tp_loc 2 sexp in
                        `Unequal v0
                      | _ ->
                        Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args
@@ -133,26 +127,24 @@ module Symmetric_diff_element = struct
                  Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_poly_var
                    _tp_loc sexp
              with
-             | Ppx_sexp_conv_lib.Conv_error.No_variant_match  ->
+             | Ppx_sexp_conv_lib.Conv_error.No_variant_match ->
                Ppx_sexp_conv_lib.Conv_error.no_matching_variant_found
-                 _tp_loc sexp) v1
-        in (v0, v1)
+                 _tp_loc sexp) v1 in
+        (v0, v1)
       | sexp ->
         Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected _tp_loc 2
           sexp
-
   let sexp_of_t :
     'k 'v .
     ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('k,'v) t -> Ppx_sexp_conv_lib.Sexp.t
+    ('k, 'v) t -> Ppx_sexp_conv_lib.Sexp.t
     =
-    fun _of_k  ->
-    fun _of_v  ->
+    fun _of_k ->
+    fun _of_v ->
       function
-      | (v0,v1) ->
+      | (v0, v1) ->
         let v0 = _of_k v0
-
         and v1 =
           match v1 with
           | `Left v0 ->
@@ -164,13 +156,10 @@ module Symmetric_diff_element = struct
           | `Unequal v0 ->
             Ppx_sexp_conv_lib.Sexp.List
               [Ppx_sexp_conv_lib.Sexp.Atom "Unequal";
-               (let (v0,v1) = v0  in
+               (let (v0, v1) = v0 in
                 let v0 = _of_v v0
-
-                and v1 = _of_v v1
-                in Ppx_sexp_conv_lib.Sexp.List [v0; v1])]
-        in Ppx_sexp_conv_lib.Sexp.List [v0; v1]
-
+                and v1 = _of_v v1 in Ppx_sexp_conv_lib.Sexp.List [v0; v1])] in
+        Ppx_sexp_conv_lib.Sexp.List [v0; v1]
   [@@@end]
 end
 
@@ -1629,15 +1618,16 @@ module type Map = sig
     sig
       [@@@ocaml.warning "-32"]
       val compare :
-        ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k,'v) t -> ('k,'v) t -> int
+        ('k -> 'k -> int) ->
+        ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
       val t_of_sexp :
         (Ppx_sexp_conv_lib.Sexp.t -> 'k) ->
         (Ppx_sexp_conv_lib.Sexp.t -> 'v) ->
-        Ppx_sexp_conv_lib.Sexp.t -> ('k,'v) t
+        Ppx_sexp_conv_lib.Sexp.t -> ('k, 'v) t
       val sexp_of_t :
         ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
         ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('k,'v) t -> Ppx_sexp_conv_lib.Sexp.t
+        ('k, 'v) t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end]
   end
@@ -1857,7 +1847,7 @@ module type Map = sig
         ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
         ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
         ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('k,'v,'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
+        ('k, 'v, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end]
 
@@ -1877,7 +1867,7 @@ module type Map = sig
           ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
           ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
           ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('k,'v,'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
+          ('k, 'v, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
       end
       [@@@end]
 

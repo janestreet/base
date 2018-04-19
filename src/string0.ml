@@ -50,7 +50,12 @@ let rindex_from_exn = Caml.String.rindex_from
 let sub             = Caml.String.sub
 let unsafe_blit     = Caml.String.unsafe_blit
 
-let concat ?(sep = "") l = Caml.String.concat ~sep l
+let concat ?(sep = "") l =
+  match l with
+  | [] -> ""
+  (* The stdlib does not specialize this case because it could break existing projects. *)
+  | [x] -> x
+  | l -> Caml.String.concat ~sep l
 
 (* These are eta expanded in order to permute parameter order to follow Base
    conventions. *)

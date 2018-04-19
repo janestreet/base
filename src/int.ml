@@ -8,10 +8,8 @@ module T = struct
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_int
-
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_int  in fun x  -> func x
-
+    let func = hash_int in fun x -> func x
   let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = int_of_sexp
   let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_int
   [@@@end]
@@ -113,10 +111,8 @@ include Conv.Make_hex(struct
     let (hash_fold_t :
            Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int
-
     and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_int  in fun x  -> func x
-
+      let func = hash_int in fun x -> func x
     [@@@end]
 
     let zero = zero

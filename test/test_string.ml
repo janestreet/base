@@ -235,6 +235,15 @@ let%test_unit _ =
   loop 3 [] []
 ;;
 
+let%test_unit _ =
+  let s = init 10 ~f:(Char.of_int_exn) in
+  assert (phys_equal s (sub s ~pos:0 ~len:(String.length s)));
+  assert (phys_equal s (prefix s (String.length s)));
+  assert (phys_equal s (suffix s (String.length s)));
+  assert (phys_equal s (concat [s]));
+  assert (phys_equal s (tr s ~target:'\255' ~replacement:'\000'))
+
+
 open Polymorphic_compare
 
 let%test _ = lfindi "bob" ~f:(fun _ c -> 'b' = c) = Some 0

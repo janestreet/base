@@ -45,20 +45,21 @@ module type Either = sig
   sig
     [@@@ocaml.warning "-32"]
     val compare :
-      ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f,'s) t -> ('f,'s) t -> int
+      ('f -> 'f -> int) ->
+      ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
     val hash_fold_t :
       (Ppx_hash_lib.Std.Hash.state -> 'f -> Ppx_hash_lib.Std.Hash.state) ->
       (Ppx_hash_lib.Std.Hash.state -> 's -> Ppx_hash_lib.Std.Hash.state) ->
       Ppx_hash_lib.Std.Hash.state ->
-      ('f,'s) t -> Ppx_hash_lib.Std.Hash.state
+      ('f, 's) t -> Ppx_hash_lib.Std.Hash.state
     val t_of_sexp :
       (Ppx_sexp_conv_lib.Sexp.t -> 'f) ->
       (Ppx_sexp_conv_lib.Sexp.t -> 's) ->
-      Ppx_sexp_conv_lib.Sexp.t -> ('f,'s) t
+      Ppx_sexp_conv_lib.Sexp.t -> ('f, 's) t
     val sexp_of_t :
       ('f -> Ppx_sexp_conv_lib.Sexp.t) ->
       ('s -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('f,'s) t -> Ppx_sexp_conv_lib.Sexp.t
+      ('f, 's) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 

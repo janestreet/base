@@ -12,8 +12,8 @@ module T = struct
     }
   [@@deriving_inline compare, hash, sexp]
   let compare : t -> t -> int =
-    fun a__001_  ->
-    fun b__002_  ->
+    fun a__001_ ->
+    fun b__002_ ->
       if Ppx_compare_lib.phys_equal a__001_ b__002_
       then 0
       else
@@ -26,40 +26,31 @@ module T = struct
                | n -> n)
             | n -> n)
          | n -> n)
-
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    fun hsv  ->
-    fun arg  ->
+    fun hsv ->
+    fun arg ->
       let hsv =
         let hsv =
-          let hsv = let hsv = hsv  in hash_fold_string hsv arg.pos_fname  in
-          hash_fold_int hsv arg.pos_lnum  in
-        hash_fold_int hsv arg.pos_bol  in
+          let hsv = let hsv = hsv in hash_fold_string hsv arg.pos_fname in
+          hash_fold_int hsv arg.pos_lnum in
+        hash_fold_int hsv arg.pos_bol in
       hash_fold_int hsv arg.pos_cnum
-
   let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func arg =
       Ppx_hash_lib.Std.Hash.get_hash_value
-        (let hsv = Ppx_hash_lib.Std.Hash.create ()  in hash_fold_t hsv arg)
-    in
-    fun x  -> func x
+        (let hsv = Ppx_hash_lib.Std.Hash.create () in hash_fold_t hsv arg) in
+    fun x -> func x
   let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t =
-    let _tp_loc = "src/source_code_position0.ml.T.t"  in
+    let _tp_loc = "src/source_code_position0.ml.T.t" in
     function
     | Ppx_sexp_conv_lib.Sexp.List field_sexps as sexp ->
       let pos_fname_field = ref None
-
       and pos_lnum_field = ref None
-
       and pos_bol_field = ref None
-
       and pos_cnum_field = ref None
-
       and duplicates = ref []
-
-      and extra = ref []
-      in
+      and extra = ref [] in
       let rec iter =
         function
         | (Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
@@ -67,26 +58,26 @@ module T = struct
           ((match field_name with
              | "pos_fname" ->
                (match !pos_fname_field with
-                | None  ->
-                  let fvalue = string_of_sexp _field_sexp  in
+                | None ->
+                  let fvalue = string_of_sexp _field_sexp in
                   pos_fname_field := (Some fvalue)
                 | Some _ -> duplicates := (field_name :: (!duplicates)))
              | "pos_lnum" ->
                (match !pos_lnum_field with
-                | None  ->
-                  let fvalue = int_of_sexp _field_sexp  in
+                | None ->
+                  let fvalue = int_of_sexp _field_sexp in
                   pos_lnum_field := (Some fvalue)
                 | Some _ -> duplicates := (field_name :: (!duplicates)))
              | "pos_bol" ->
                (match !pos_bol_field with
-                | None  ->
-                  let fvalue = int_of_sexp _field_sexp  in
+                | None ->
+                  let fvalue = int_of_sexp _field_sexp in
                   pos_bol_field := (Some fvalue)
                 | Some _ -> duplicates := (field_name :: (!duplicates)))
              | "pos_cnum" ->
                (match !pos_cnum_field with
-                | None  ->
-                  let fvalue = int_of_sexp _field_sexp  in
+                | None ->
+                  let fvalue = int_of_sexp _field_sexp in
                   pos_cnum_field := (Some fvalue)
                 | Some _ -> duplicates := (field_name :: (!duplicates)))
              | _ ->
@@ -96,7 +87,7 @@ module T = struct
            iter tail)
         | (Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
                                            field_name)::[]))::tail ->
-          ((let _ = field_name  in
+          ((let _ = field_name in
             if !Ppx_sexp_conv_lib.Conv.record_check_extra_fields
             then extra := (field_name :: (!extra))
             else ());
@@ -106,7 +97,7 @@ module T = struct
           ->
           Ppx_sexp_conv_lib.Conv_error.record_only_pairs_expected _tp_loc
             sexp
-        | [] -> ()  in
+        | [] -> () in
       (iter field_sexps;
        (match !duplicates with
         | _::_ ->
@@ -121,8 +112,8 @@ module T = struct
              (match ((!pos_fname_field), (!pos_lnum_field),
                      (!pos_bol_field), (!pos_cnum_field))
               with
-              | (Some pos_fname_value,Some pos_lnum_value,Some
-                                                            pos_bol_value,Some pos_cnum_value) ->
+              | (Some pos_fname_value, Some pos_lnum_value, Some
+                                                              pos_bol_value, Some pos_cnum_value) ->
                 {
                   pos_fname = pos_fname_value;
                   pos_lnum = pos_lnum_value;
@@ -142,38 +133,32 @@ module T = struct
                     "pos_cnum")]))))
     | Ppx_sexp_conv_lib.Sexp.Atom _ as sexp ->
       Ppx_sexp_conv_lib.Conv_error.record_list_instead_atom _tp_loc sexp
-
   let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t =
     function
     | { pos_fname = v_pos_fname; pos_lnum = v_pos_lnum; pos_bol = v_pos_bol;
         pos_cnum = v_pos_cnum } ->
-      let bnds = []  in
+      let bnds = [] in
       let bnds =
-        let arg = sexp_of_int v_pos_cnum  in
+        let arg = sexp_of_int v_pos_cnum in
         (Ppx_sexp_conv_lib.Sexp.List
            [Ppx_sexp_conv_lib.Sexp.Atom "pos_cnum"; arg])
-        :: bnds
-      in
+        :: bnds in
       let bnds =
-        let arg = sexp_of_int v_pos_bol  in
+        let arg = sexp_of_int v_pos_bol in
         (Ppx_sexp_conv_lib.Sexp.List
            [Ppx_sexp_conv_lib.Sexp.Atom "pos_bol"; arg])
-        :: bnds
-      in
+        :: bnds in
       let bnds =
-        let arg = sexp_of_int v_pos_lnum  in
+        let arg = sexp_of_int v_pos_lnum in
         (Ppx_sexp_conv_lib.Sexp.List
            [Ppx_sexp_conv_lib.Sexp.Atom "pos_lnum"; arg])
-        :: bnds
-      in
+        :: bnds in
       let bnds =
-        let arg = sexp_of_string v_pos_fname  in
+        let arg = sexp_of_string v_pos_fname in
         (Ppx_sexp_conv_lib.Sexp.List
            [Ppx_sexp_conv_lib.Sexp.Atom "pos_fname"; arg])
-        :: bnds
-      in
+        :: bnds in
       Ppx_sexp_conv_lib.Sexp.List bnds
-
   [@@@end]
 end
 

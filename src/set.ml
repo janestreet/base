@@ -253,22 +253,20 @@ module Tree0 = struct
     Ppx_sexp_conv_lib.Conv.Exn_converter.add
       ([%extension_constructor Set_min_elt_exn_of_empty_set])
       (function
-        | Set_min_elt_exn_of_empty_set  ->
+        | Set_min_elt_exn_of_empty_set ->
           Ppx_sexp_conv_lib.Sexp.Atom
             "src/set.ml.Tree0.Set_min_elt_exn_of_empty_set"
         | _ -> assert false)
-
   [@@@end]
   exception Set_max_elt_exn_of_empty_set [@@deriving_inline sexp]
   let () =
     Ppx_sexp_conv_lib.Conv.Exn_converter.add
       ([%extension_constructor Set_max_elt_exn_of_empty_set])
       (function
-        | Set_max_elt_exn_of_empty_set  ->
+        | Set_max_elt_exn_of_empty_set ->
           Ppx_sexp_conv_lib.Sexp.Atom
             "src/set.ml.Tree0.Set_max_elt_exn_of_empty_set"
         | _ -> assert false)
-
   [@@@end]
 
   let min_elt_exn t =

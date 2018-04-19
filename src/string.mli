@@ -15,6 +15,78 @@ sig
 end
 [@@@end]
 
+
+val blit        : (t, bytes) Blit.blit [@@deprecated "[since 2017-10] Use [Bytes.blit] instead"]
+val blito       : (t, bytes) Blit.blito [@@deprecated "[since 2017-10] Use [Bytes.blito] instead"]
+val unsafe_blit : (t, bytes) Blit.blit [@@deprecated "[since 2017-10] Use [Bytes.unsafe_blit] instead"]
+
+val sub         : (t, t) Blit.sub
+val subo        : (t, t) Blit.subo
+
+include Container.S0     with type t := t with type elt = char
+include Identifiable.S   with type t := t
+
+(** Maximum length of a string. *)
+val max_length : int
+
+external length : t -> int = "%string_length"
+external get : t -> int -> char = "%string_safe_get"
+
+(** [unsafe_get t i] is like [get t i] but does not perform bounds checking. The caller
+    must ensure that it is a memory-safe operation. *)
+external unsafe_get : string -> int -> char = "%string_unsafe_get"
+
+val create : int -> bytes [@@deprecated "[since 2017-10] Use [Bytes.create] instead"]
+
+val make : int -> char -> t
+
+(** Assuming you haven't passed -unsafe-string to the compiler, strings are immutable, so
+    there'd be no motivation to make a copy. *)
+val copy : t -> t [@@deprecated "[since 2018-03] Use [Bytes.copy] instead"]
+
+val init : int -> f:(int -> char) -> t
+
+val fill : bytes -> pos:int -> len:int -> char -> unit [@@deprecated "[since 2017-10] Use [Bytes.fill] instead"]
+
+(** String append. Also available unqualified, but re-exported here for documentation
+    purposes.
+
+    Note that [a ^ b] must copy both [a] and [b] into a newly-allocated result string, so
+    [a ^ b ^ c ^ ... ^ z] is quadratic in the number of strings.  [String.concat] does not
+    have this problem -- it allocates the result buffer only once. *)
+val ( ^ ) : t -> t -> t
+
+(** Concatanates all strings in the list using separator [sep] (with a default separator
+    [""]). *)
+val concat : ?sep:t -> t list -> t
+
+(** Special characters are represented by escape sequences, following the lexical
+    conventions of OCaml. *)
+val escaped : t -> t
+
+val contains : ?pos:int -> ?len:int -> t -> char -> bool
+
+(** Operates on the whole string using the US-ASCII character set,
+    e.g. [uppercase "foo" = "FOO"]. *)
+val uppercase : t -> t
+val lowercase : t -> t
+
+(** Operates on just the first character using the US-ASCII character set,
+    e.g. [capitalize "foo" = "Foo"]. *)
+val capitalize   : t -> t
+val uncapitalize : t -> t
+
+(** [index] gives the index of the first appearance of [char] in the string when
+    searching from left to right, or [None] if it's not found. [rindex] does the same but
+    searches from the right.
+
+    For example, [String.index "Foo" 'o'] is [Some 1] while [String.rindex "Foo" 'o'] is
+    [Some 2].
+
+    The [_exn] versions return the actual index (instead of an option) when [char] is
+    found, and throw an exception otherwise.
+*)
+
 (** [Caseless] compares and hashes strings ignoring case, so that for example
     [Caseless.equal "OCaml" "ocaml"] and [Caseless.("apple" < "Banana")] are [true], and
     [Caseless.Map], [Caseless.Table] lookup and [Caseless.Set] membership is
@@ -41,84 +113,17 @@ module Caseless : sig
   val is_prefix : t -> prefix:t -> bool
 end
 
-val blit        : (t, bytes) Blit.blit [@@deprecated "[since 2017-10] Use [Bytes.blit] instead"]
-val blito       : (t, bytes) Blit.blito [@@deprecated "[since 2017-10] Use [Bytes.blito] instead"]
-val unsafe_blit : (t, bytes) Blit.blit [@@deprecated "[since 2017-10] Use [Bytes.unsafe_blit] instead"]
-
-val sub         : (t, t) Blit.sub
-val subo        : (t, t) Blit.subo
-
-include Container.S0     with type t := t with type elt = char
-include Identifiable.S   with type t := t
-
-(** Maximum length of a string. *)
-val max_length : int
-
-external length : t -> int = "%string_length"
-external get : t -> int -> char = "%string_safe_get"
-
-(** [unsafe_get t i] is like [get t i] but does not perform bounds checking. The caller
-    must ensure that it is a memory-safe operation. *)
-external unsafe_get : string -> int -> char = "%string_unsafe_get"
-
-val create : int -> bytes [@@deprecated "[since 2017-10] Use [Bytes.create] instead"]
-
-val make : int -> char -> t
-
-val copy : t -> t
-val init : int -> f:(int -> char) -> t
-
-val fill : bytes -> pos:int -> len:int -> char -> unit [@@deprecated "[since 2017-10] Use [Bytes.fill] instead"]
-
-(** String append. Also available unqualified, but re-exported here for documentation
-    purposes.
-
-    Note that [a ^ b] must copy both [a] and [b] into a newly-allocated result string, so
-    [a ^ b ^ c ^ ... ^ z] is quadratic in the number of strings.  [String.concat] does not
-    have this problem -- it allocates the result buffer only once.  The [Rope] module
-    provides a data structure which uses a similar trick to achieve fast concatenation at
-    either end of a string. *)
-val ( ^ ) : t -> t -> t
-
-(** Concatanates all strings in the list using separator [sep] (with a default separator
-    [""]). *)
-val concat : ?sep:t -> t list -> t
-
-(** Warning: Only returns a copy if changes are necessary!  Special characters are
-    represented by escape sequences, following the lexical conventions of OCaml. *)
-val escaped : t -> t
-
-val contains : ?pos:int -> ?len:int -> t -> char -> bool
-
-val uppercase : t -> t
-val lowercase : t -> t
-
-(** Returns a copy of the string with the first character set to uppercase, using the
-    US-ASCII character set. E.g., "foo" becomes "Foo". *)
-val capitalize   : t -> t
-
-(** Returns a copy of the string with the first character set to lowercase, using the
-    US-ASCII character set. E.g., "Foo" becomes "foo". *)
-val uncapitalize : t -> t
-
-(** [index] gives the index of the first appearance of [char] in the string when
-    searching from left to right, or [None] if it's not found. [rindex] does the same but
-    searches from the right.
-
-    For example, [String.index "Foo" 'o'] is [Some 1] while [String.rindex "Foo" 'o'] is
-    [Some 2].
-
-    The [_exn] versions return the actual index (instead of an option) when [char] is
-    found, and throw an exception otherwise.
-*)
-
-val index      : t -> char -> int option
-val index_exn  : t -> char -> int
-val rindex     : t -> char -> int option
-val rindex_exn : t -> char -> int
-
+(** [index_exn] and [index_from_exn] raise [Caml.Not_found] or [Not_found_s] when [char]
+    cannot be found in [s]. *)
+val index           : t -> char -> int option
+val index_exn       : t -> char -> int
 val index_from      : t -> int -> char -> int option
 val index_from_exn  : t -> int -> char -> int
+
+(** [rindex_exn] and [rindex_from_exn] raise [Caml.Not_found] or [Not_found_s] when [char]
+    cannot be found in [s]. *)
+val rindex     : t -> char -> int option
+val rindex_exn : t -> char -> int
 val rindex_from     : t -> int -> char -> int option
 val rindex_from_exn : t -> int -> char -> int
 
@@ -237,8 +242,6 @@ val lfindi : ?pos : int -> t -> f:(int -> char -> bool) -> int option
     such an [i].  By default [pos = length t - 1]. *)
 val rfindi : ?pos : int -> t -> f:(int -> char -> bool) -> int option
 
-(** Warning: the following strip functions may return the same string passed in. *)
-
 (** [lstrip ?drop s] returns a string with consecutive chars satisfying [drop] (by default
     white space, e.g. tabs, spaces, newlines, and carriage returns) stripped from the
     beginning of [s]. *)
@@ -279,11 +282,11 @@ val tr : target : char -> replacement : char -> t -> t
 val tr_inplace : target : char -> replacement : char -> bytes -> unit
 [@@deprecated "[since 2017-10] Use [Bytes.tr] instead"]
 
-(** [chop_suffix_exn s ~suffix] returns a copy of [s] without the trailing [suffix],
+(** [chop_suffix_exn s ~suffix] returns [s] without the trailing [suffix],
     raising [Invalid_argument] if [suffix] is not a suffix of [s]. *)
 val chop_suffix_exn : t -> suffix:t -> t
 
-(** [chop_prefix_exn s ~prefix] returns a copy of [s] without the leading [prefix],
+(** [chop_prefix_exn s ~prefix] returns [s] without the leading [prefix],
     raising [Invalid_argument] if [prefix] is not a prefix of [s]. *)
 val chop_prefix_exn : t -> prefix:t -> t
 
@@ -313,8 +316,6 @@ external hash : t -> int = "Base_hash_string" [@@noalloc]
 
 (** Fast equality function on strings, doesn't use [compare_val]. *)
 val equal : t -> t -> bool
-
-val is_empty : t -> bool
 
 val of_char : char -> t
 
@@ -444,4 +445,3 @@ end
 
 val set : bytes -> int -> char -> unit [@@deprecated "[since 2017-10] Use [Bytes.set] instead"]
 val unsafe_set : bytes -> int -> char -> unit [@@deprecated "[since 2017-10] Use [Bytes.unsafe_set] instead"]
-

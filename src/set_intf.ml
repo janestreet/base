@@ -764,7 +764,7 @@ module type Set = sig
     [@@@ocaml.warning "-32"]
     val compare :
       ('elt -> 'elt -> int) ->
-      ('cmp -> 'cmp -> int) -> ('elt,'cmp) t -> ('elt,'cmp) t -> int
+      ('cmp -> 'cmp -> int) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
   end
   [@@@end]
 
@@ -1109,15 +1109,16 @@ module type Set = sig
     sig
       [@@@ocaml.warning "-32"]
       val compare :
-        ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+        ('a -> 'a -> int) ->
+        ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
       val t_of_sexp :
         (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
         (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
-        Ppx_sexp_conv_lib.Sexp.t -> ('a,'b) t
+        Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b) t
       val sexp_of_t :
         ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
         ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
+        ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end]
   end
@@ -1190,7 +1191,7 @@ module type Set = sig
       val sexp_of_t :
         ('elt -> Ppx_sexp_conv_lib.Sexp.t) ->
         ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('elt,'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
+        ('elt, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end]
 
@@ -1211,7 +1212,7 @@ module type Set = sig
         val sexp_of_t :
           ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
           ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('a,'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
+          ('a, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
       end
       [@@@end]
 

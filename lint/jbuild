@@ -1,7 +1,7 @@
 (library
  ((name ppx_base_lint)
   (kind ppx_rewriter)
-  (libraries (compiler-libs.common ppx_core ppx_driver))
+  (libraries (compiler-libs.common base ppxlib))
   (preprocess no_preprocessing)))
 
 

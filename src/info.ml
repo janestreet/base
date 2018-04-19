@@ -23,58 +23,45 @@ module Message = struct
   let rec sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t =
     function
     | Could_not_construct v0 ->
-      let v0 = Sexp.sexp_of_t v0  in
+      let v0 = Sexp.sexp_of_t v0 in
       Ppx_sexp_conv_lib.Sexp.List
         [Ppx_sexp_conv_lib.Sexp.Atom "Could_not_construct"; v0]
     | String v0 ->
-      let v0 = sexp_of_string v0  in
+      let v0 = sexp_of_string v0 in
       Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "String"; v0]
     | Exn v0 ->
-      let v0 = sexp_of_exn v0  in
+      let v0 = sexp_of_exn v0 in
       Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Exn"; v0]
     | Sexp v0 ->
-      let v0 = Sexp.sexp_of_t v0  in
+      let v0 = Sexp.sexp_of_t v0 in
       Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Sexp"; v0]
-    | Tag_sexp (v0,v1,v2) ->
+    | Tag_sexp (v0, v1, v2) ->
       let v0 = sexp_of_string v0
-
       and v1 = Sexp.sexp_of_t v1
-
-      and v2 = sexp_of_option Source_code_position0.sexp_of_t v2
-      in
+      and v2 = sexp_of_option Source_code_position0.sexp_of_t v2 in
       Ppx_sexp_conv_lib.Sexp.List
         [Ppx_sexp_conv_lib.Sexp.Atom "Tag_sexp"; v0; v1; v2]
-    | Tag_t (v0,v1) ->
+    | Tag_t (v0, v1) ->
       let v0 = sexp_of_string v0
-
-      and v1 = sexp_of_t v1
-      in
+      and v1 = sexp_of_t v1 in
       Ppx_sexp_conv_lib.Sexp.List
         [Ppx_sexp_conv_lib.Sexp.Atom "Tag_t"; v0; v1]
-    | Tag_arg (v0,v1,v2) ->
+    | Tag_arg (v0, v1, v2) ->
       let v0 = sexp_of_string v0
-
       and v1 = Sexp.sexp_of_t v1
-
-      and v2 = sexp_of_t v2
-      in
+      and v2 = sexp_of_t v2 in
       Ppx_sexp_conv_lib.Sexp.List
         [Ppx_sexp_conv_lib.Sexp.Atom "Tag_arg"; v0; v1; v2]
-    | Of_list (v0,v1) ->
+    | Of_list (v0, v1) ->
       let v0 = sexp_of_option sexp_of_int v0
-
-      and v1 = sexp_of_list sexp_of_t v1
-      in
+      and v1 = sexp_of_list sexp_of_t v1 in
       Ppx_sexp_conv_lib.Sexp.List
         [Ppx_sexp_conv_lib.Sexp.Atom "Of_list"; v0; v1]
-    | With_backtrace (v0,v1) ->
+    | With_backtrace (v0, v1) ->
       let v0 = sexp_of_t v0
-
-      and v1 = sexp_of_string v1
-      in
+      and v1 = sexp_of_string v1 in
       Ppx_sexp_conv_lib.Sexp.List
         [Ppx_sexp_conv_lib.Sexp.Atom "With_backtrace"; v0; v1]
-
   [@@@end]
 
   let rec to_strings_hum t ac =

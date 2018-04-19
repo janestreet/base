@@ -29,11 +29,11 @@ module type S2 = sig type ('a, 'b)     t [@@deriving_inline sexp]
     val t_of_sexp :
       (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
       (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
-      Ppx_sexp_conv_lib.Sexp.t -> ('a,'b) t
+      Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b) t
     val sexp_of_t :
       ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
       ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
+      ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end] end
 module type S3 = sig type ('a, 'b, 'c) t [@@deriving_inline sexp]
@@ -44,12 +44,12 @@ module type S3 = sig type ('a, 'b, 'c) t [@@deriving_inline sexp]
       (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
       (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
       (Ppx_sexp_conv_lib.Sexp.t -> 'c) ->
-      Ppx_sexp_conv_lib.Sexp.t -> ('a,'b,'c) t
+      Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b, 'c) t
     val sexp_of_t :
       ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
       ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
       ('c -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('a,'b,'c) t -> Ppx_sexp_conv_lib.Sexp.t
+      ('a, 'b, 'c) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end] end
 

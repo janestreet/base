@@ -2,36 +2,35 @@ open! Import
 
 type 'a t = Incl of 'a | Excl of 'a | Unbounded [@@deriving_inline enumerate, sexp]
 let all : 'a . 'a list -> 'a t list =
-  fun _all_of_a  ->
+  fun _all_of_a ->
     List.append
       (let rec map l acc =
          match l with
          | [] -> List.rev acc
-         | enumerate__001_::l -> map l ((Incl enumerate__001_) :: acc)  in
+         | enumerate__001_::l -> map l ((Incl enumerate__001_) :: acc) in
        map _all_of_a [])
       (List.append
          (let rec map l acc =
             match l with
             | [] -> List.rev acc
-            | enumerate__002_::l -> map l ((Excl enumerate__002_) :: acc)  in
+            | enumerate__002_::l -> map l ((Excl enumerate__002_) :: acc) in
           map _all_of_a []) [Unbounded])
-
-let t_of_sexp : type
-  a.(Ppx_sexp_conv_lib.Sexp.t -> a) -> Ppx_sexp_conv_lib.Sexp.t -> a t =
-  let _tp_loc = "src/maybe_bound.ml.t"  in
-  fun _of_a  ->
+let t_of_sexp : type a.
+  (Ppx_sexp_conv_lib.Sexp.t -> a) -> Ppx_sexp_conv_lib.Sexp.t -> a t =
+  let _tp_loc = "src/maybe_bound.ml.t" in
+  fun _of_a ->
     function
     | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
                                       ("incl"|"Incl" as _tag))::sexp_args) as _sexp ->
       (match sexp_args with
-       | v0::[] -> let v0 = _of_a v0  in Incl v0
+       | v0::[] -> let v0 = _of_a v0 in Incl v0
        | _ ->
          Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc _tag
            _sexp)
     | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
                                       ("excl"|"Excl" as _tag))::sexp_args) as _sexp ->
       (match sexp_args with
-       | v0::[] -> let v0 = _of_a v0  in Excl v0
+       | v0::[] -> let v0 = _of_a v0 in Excl v0
        | _ ->
          Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc _tag
            _sexp)
@@ -49,19 +48,17 @@ let t_of_sexp : type
     | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
       Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
     | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
-
-let sexp_of_t : type
-  a.(a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t =
-  fun _of_a  ->
+let sexp_of_t : type a.
+  (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t =
+  fun _of_a ->
     function
     | Incl v0 ->
-      let v0 = _of_a v0  in
+      let v0 = _of_a v0 in
       Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Incl"; v0]
     | Excl v0 ->
-      let v0 = _of_a v0  in
+      let v0 = _of_a v0 in
       Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Excl"; v0]
-    | Unbounded  -> Ppx_sexp_conv_lib.Sexp.Atom "Unbounded"
-
+    | Unbounded -> Ppx_sexp_conv_lib.Sexp.Atom "Unbounded"
 [@@@end]
 
 type interval_comparison =
@@ -71,7 +68,7 @@ type interval_comparison =
 [@@deriving_inline sexp, compare, hash]
 let interval_comparison_of_sexp :
   Ppx_sexp_conv_lib.Sexp.t -> interval_comparison =
-  let _tp_loc = "src/maybe_bound.ml.interval_comparison"  in
+  let _tp_loc = "src/maybe_bound.ml.interval_comparison" in
   function
   | Ppx_sexp_conv_lib.Sexp.Atom ("below_lower_bound"|"Below_lower_bound") ->
     Below_lower_bound
@@ -95,46 +92,43 @@ let interval_comparison_of_sexp :
 let sexp_of_interval_comparison :
   interval_comparison -> Ppx_sexp_conv_lib.Sexp.t =
   function
-  | Below_lower_bound  -> Ppx_sexp_conv_lib.Sexp.Atom "Below_lower_bound"
-  | In_range  -> Ppx_sexp_conv_lib.Sexp.Atom "In_range"
-  | Above_upper_bound  -> Ppx_sexp_conv_lib.Sexp.Atom "Above_upper_bound"
+  | Below_lower_bound -> Ppx_sexp_conv_lib.Sexp.Atom "Below_lower_bound"
+  | In_range -> Ppx_sexp_conv_lib.Sexp.Atom "In_range"
+  | Above_upper_bound -> Ppx_sexp_conv_lib.Sexp.Atom "Above_upper_bound"
 let compare_interval_comparison :
   interval_comparison -> interval_comparison -> int =
-  fun a__003_  ->
-  fun b__004_  ->
+  fun a__003_ ->
+  fun b__004_ ->
     if Ppx_compare_lib.phys_equal a__003_ b__004_
     then 0
     else
       (match (a__003_, b__004_) with
-       | (Below_lower_bound ,Below_lower_bound ) -> 0
-       | (Below_lower_bound ,_) -> (-1)
-       | (_,Below_lower_bound ) -> 1
-       | (In_range ,In_range ) -> 0
-       | (In_range ,_) -> (-1)
-       | (_,In_range ) -> 1
-       | (Above_upper_bound ,Above_upper_bound ) -> 0)
-
+       | (Below_lower_bound, Below_lower_bound) -> 0
+       | (Below_lower_bound, _) -> (-1)
+       | (_, Below_lower_bound) -> 1
+       | (In_range, In_range) -> 0
+       | (In_range, _) -> (-1)
+       | (_, In_range) -> 1
+       | (Above_upper_bound, Above_upper_bound) -> 0)
 let (hash_fold_interval_comparison :
        Ppx_hash_lib.Std.Hash.state ->
      interval_comparison -> Ppx_hash_lib.Std.Hash.state)
   =
-  (fun hsv  ->
-     fun arg  ->
+  (fun hsv ->
+     fun arg ->
        match arg with
-       | Below_lower_bound  -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
-       | In_range  -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
-       | Above_upper_bound  -> Ppx_hash_lib.Std.Hash.fold_int hsv 2 :
-                                 Ppx_hash_lib.Std.Hash.state ->
+       | Below_lower_bound -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
+       | In_range -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
+       | Above_upper_bound -> Ppx_hash_lib.Std.Hash.fold_int hsv 2 :
+                                Ppx_hash_lib.Std.Hash.state ->
        interval_comparison -> Ppx_hash_lib.Std.Hash.state)
-
 let (hash_interval_comparison :
        interval_comparison -> Ppx_hash_lib.Std.Hash.hash_value) =
   let func arg =
     Ppx_hash_lib.Std.Hash.get_hash_value
-      (let hsv = Ppx_hash_lib.Std.Hash.create ()  in
-       hash_fold_interval_comparison hsv arg)
-  in
-  fun x  -> func x
+      (let hsv = Ppx_hash_lib.Std.Hash.create () in
+       hash_fold_interval_comparison hsv arg) in
+  fun x -> func x
 [@@@end]
 
 let map t ~f =

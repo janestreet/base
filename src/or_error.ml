@@ -2,26 +2,24 @@ open! Import
 
 type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, hash, sexp]
 let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-  fun _cmp__a  ->
-  fun a__001_  ->
-  fun b__002_  -> Result.compare _cmp__a Error.compare a__001_ b__002_
-
+  fun _cmp__a ->
+  fun a__001_ ->
+  fun b__002_ -> Result.compare _cmp__a Error.compare a__001_ b__002_
 let hash_fold_t :
   'a .
   (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
   Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
   =
-  fun _hash_fold_a  ->
-  fun hsv  ->
-  fun arg  -> Result.hash_fold_t _hash_fold_a Error.hash_fold_t hsv arg
-
+  fun _hash_fold_a ->
+  fun hsv ->
+  fun arg -> Result.hash_fold_t _hash_fold_a Error.hash_fold_t hsv arg
 let t_of_sexp :
   'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
-  let _tp_loc = "src/or_error.ml.t"  in
-  fun _of_a  -> fun t  -> Result.t_of_sexp _of_a Error.t_of_sexp t
+  let _tp_loc = "src/or_error.ml.t" in
+  fun _of_a -> fun t -> Result.t_of_sexp _of_a Error.t_of_sexp t
 let sexp_of_t :
   'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
-  fun _of_a  -> fun v  -> Result.sexp_of_t _of_a Error.sexp_of_t v
+  fun _of_a -> fun v -> Result.sexp_of_t _of_a Error.sexp_of_t v
 [@@@end]
 
 let invariant invariant_a t =

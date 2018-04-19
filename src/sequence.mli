@@ -73,7 +73,7 @@ module Step : sig
     val sexp_of_t :
       ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
       ('s -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('a,'s) t -> Ppx_sexp_conv_lib.Sexp.t
+      ('a, 's) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 end
@@ -132,20 +132,21 @@ module Merge_with_duplicates_element : sig
   sig
     [@@@ocaml.warning "-32"]
     val compare :
-      ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+      ('a -> 'a -> int) ->
+      ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
     val hash_fold_t :
       (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
       (Ppx_hash_lib.Std.Hash.state -> 'b -> Ppx_hash_lib.Std.Hash.state) ->
       Ppx_hash_lib.Std.Hash.state ->
-      ('a,'b) t -> Ppx_hash_lib.Std.Hash.state
+      ('a, 'b) t -> Ppx_hash_lib.Std.Hash.state
     val t_of_sexp :
       (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
       (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
-      Ppx_sexp_conv_lib.Sexp.t -> ('a,'b) t
+      Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b) t
     val sexp_of_t :
       ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
       ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
+      ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
   end
   [@@@end]
 end

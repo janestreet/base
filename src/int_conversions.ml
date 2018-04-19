@@ -310,10 +310,8 @@ struct
     let (hash_fold_t :
            Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       I.hash_fold_t
-
     and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = I.hash  in fun x  -> func x
-
+      let func = I.hash in fun x -> func x
     [@@@end]
 
     let chars_per_delimiter = 4

@@ -39,7 +39,7 @@ sig
   val sexp_of_t :
     ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
+    ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
 end
 [@@@end]
 type ('a, 'b) equal = ('a, 'b) t (** just an alias, needed when [t] gets shadowed below *)

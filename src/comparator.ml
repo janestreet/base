@@ -110,11 +110,12 @@ module Derived2 (M : sig type ('a, 'b) t [@@deriving_inline compare, sexp_of]
     sig
       [@@@ocaml.warning "-32"]
       val compare :
-        ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a,'b) t -> ('a,'b) t -> int
+        ('a -> 'a -> int) ->
+        ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
       val sexp_of_t :
         ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
         ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('a,'b) t -> Ppx_sexp_conv_lib.Sexp.t
+        ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
     end
     [@@@end] end) = struct
   type ('cmp_a, 'cmp_b) comparator_witness

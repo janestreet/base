@@ -26,20 +26,20 @@ sig
   val t_of_sexp :
     (Ppx_sexp_conv_lib.Sexp.t -> 'ok) ->
     (Ppx_sexp_conv_lib.Sexp.t -> 'err) ->
-    Ppx_sexp_conv_lib.Sexp.t -> ('ok,'err) t
+    Ppx_sexp_conv_lib.Sexp.t -> ('ok, 'err) t
   val sexp_of_t :
     ('ok -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('err -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('ok,'err) t -> Ppx_sexp_conv_lib.Sexp.t
+    ('ok, 'err) t -> Ppx_sexp_conv_lib.Sexp.t
   val compare :
     ('ok -> 'ok -> int) ->
-    ('err -> 'err -> int) -> ('ok,'err) t -> ('ok,'err) t -> int
+    ('err -> 'err -> int) -> ('ok, 'err) t -> ('ok, 'err) t -> int
   val hash_fold_t :
     (Ppx_hash_lib.Std.Hash.state -> 'ok -> Ppx_hash_lib.Std.Hash.state) ->
     (Ppx_hash_lib.Std.Hash.state -> 'err -> Ppx_hash_lib.Std.Hash.state)
     ->
     Ppx_hash_lib.Std.Hash.state ->
-    ('ok,'err) t -> Ppx_hash_lib.Std.Hash.state
+    ('ok, 'err) t -> Ppx_hash_lib.Std.Hash.state
 end
 [@@@end]
 

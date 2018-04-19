@@ -3,7 +3,7 @@ open! Import
 type 'a t = 'a [@@deriving_inline sexp_of]
 let sexp_of_t :
   'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
-  fun _of_a  -> fun v  -> _of_a v
+  fun _of_a -> fun v -> _of_a v
 [@@@end]
 
 external is_heap_block : Caml.Obj.t -> bool = "Base_heap_block_is_heap_block" [@@noalloc]

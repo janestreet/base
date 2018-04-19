@@ -16,10 +16,8 @@ module T = struct
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_string
-
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_string  in fun x  -> func x
-
+    let func = hash_string in fun x -> func x
   let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = string_of_sexp
   let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_string
   [@@@end]
@@ -124,10 +122,15 @@ end
    Also note that [blit] and [blito] will be deprected and removed in the future.
 *)
 let sub src ~pos ~len =
-  Ordered_collection_common.check_pos_len_exn ~pos ~len ~length:(length src);
-  let dst = Bytes.create len in
-  if len > 0 then Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
-  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
+  if pos = 0 && len = String.length src
+  then src
+  else begin
+    Ordered_collection_common.check_pos_len_exn ~pos ~len ~length:(length src);
+    let dst = Bytes.create len in
+    if len > 0 then Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
+  end
+
 let subo ?(pos = 0) ?len src =
   sub src ~pos ~len:(match len with Some i -> i | None -> length src - pos)
 
@@ -167,12 +170,10 @@ module Search_pattern = struct
   type t = string * int array [@@deriving_inline sexp_of]
   let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t =
     function
-    | (v0,v1) ->
+    | (v0, v1) ->
       let v0 = sexp_of_string v0
-
-      and v1 = sexp_of_array sexp_of_int v1
-      in Ppx_sexp_conv_lib.Sexp.List [v0; v1]
-
+      and v1 = sexp_of_array sexp_of_int v1 in
+      Ppx_sexp_conv_lib.Sexp.List [v0; v1]
   [@@@end]
 
   (* Find max number of matched characters at [next_text_char], given the current
@@ -588,15 +589,6 @@ let map t ~f =
 
 let to_array s = Array.init (length s) ~f:(fun i -> s.[i])
 
-let tr ~target ~replacement s =
-  map ~f:(fun c -> if Char.equal c target then replacement else c) s
-;;
-
-let tr_inplace ~target ~replacement s = (* destructive version of tr *)
-  for i = 0 to Bytes.length s - 1 do
-    if Char.equal (Bytes.unsafe_get s i) target then Bytes.unsafe_set s i replacement
-  done
-
 let exists =
   let rec loop s i ~len ~f = i < len && (f s.[i] || loop s (i + 1) ~len ~f) in
   fun s ~f -> loop s 0 ~len:(length s) ~f
@@ -634,6 +626,17 @@ let mem =
   fun t c ->
     loop t c ~pos:0 ~len:(length t)
 ;;
+
+let tr ~target ~replacement s =
+  if mem s target
+  then map ~f:(fun c -> if Char.equal c target then replacement else c) s
+  else s
+;;
+
+let tr_inplace ~target ~replacement s = (* destructive version of tr *)
+  for i = 0 to Bytes.length s - 1 do
+    if Char.equal (Bytes.unsafe_get s i) target then Bytes.unsafe_set s i replacement
+  done
 
 (* fast version, if we ever need it:
    {[

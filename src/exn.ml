@@ -10,30 +10,24 @@ exception Finally of t * t [@@deriving_inline sexp]
 let () =
   Ppx_sexp_conv_lib.Conv.Exn_converter.add ([%extension_constructor Finally])
     (function
-      | Finally (v0,v1) ->
+      | Finally (v0, v1) ->
         let v0 = sexp_of_t v0
-
-        and v1 = sexp_of_t v1
-        in
+        and v1 = sexp_of_t v1 in
         Ppx_sexp_conv_lib.Sexp.List
           [Ppx_sexp_conv_lib.Sexp.Atom "src/exn.ml.Finally"; v0; v1]
       | _ -> assert false)
-
 [@@@end]
 exception Reraised of string * t [@@deriving_inline sexp]
 let () =
   Ppx_sexp_conv_lib.Conv.Exn_converter.add
     ([%extension_constructor Reraised])
     (function
-      | Reraised (v0,v1) ->
+      | Reraised (v0, v1) ->
         let v0 = sexp_of_string v0
-
-        and v1 = sexp_of_t v1
-        in
+        and v1 = sexp_of_t v1 in
         Ppx_sexp_conv_lib.Sexp.List
           [Ppx_sexp_conv_lib.Sexp.Atom "src/exn.ml.Reraised"; v0; v1]
       | _ -> assert false)
-
 [@@@end]
 
 exception Sexp of Sexp.t

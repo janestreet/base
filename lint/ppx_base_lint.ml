@@ -1,4 +1,5 @@
-open Ppx_core
+open Ppxlib
+open Base
 
 let error ~loc fmt =
   Location.raise_errorf ~loc (Caml.(^^) "ppx_base_lint:" fmt)
@@ -91,7 +92,7 @@ let module_of_loc (loc : Location.t) =
                        (Caml.Filename.basename loc.loc_start.pos_fname))
 
 let () =
-  Ppx_driver.register_transformation "base_lint"
+  Ppxlib.Driver.register_transformation "base_lint"
     ~impl:(function
       | [] -> []
       | { pstr_loc = loc; _ } :: _ as st ->

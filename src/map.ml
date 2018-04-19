@@ -24,9 +24,8 @@ let () =
   Ppx_sexp_conv_lib.Conv.Exn_converter.add
     ([%extension_constructor Duplicate])
     (function
-      | Duplicate  -> Ppx_sexp_conv_lib.Sexp.Atom "src/map.ml.Duplicate"
+      | Duplicate -> Ppx_sexp_conv_lib.Sexp.Atom "src/map.ml.Duplicate"
       | _ -> assert false)
-
 [@@@end]
 
 module Tree0 = struct
@@ -442,22 +441,20 @@ module Tree0 = struct
     Ppx_sexp_conv_lib.Conv.Exn_converter.add
       ([%extension_constructor Map_min_elt_exn_of_empty_map])
       (function
-        | Map_min_elt_exn_of_empty_map  ->
+        | Map_min_elt_exn_of_empty_map ->
           Ppx_sexp_conv_lib.Sexp.Atom
             "src/map.ml.Tree0.Map_min_elt_exn_of_empty_map"
         | _ -> assert false)
-
   [@@@end]
   exception Map_max_elt_exn_of_empty_map [@@deriving_inline sexp]
   let () =
     Ppx_sexp_conv_lib.Conv.Exn_converter.add
       ([%extension_constructor Map_max_elt_exn_of_empty_map])
       (function
-        | Map_max_elt_exn_of_empty_map  ->
+        | Map_max_elt_exn_of_empty_map ->
           Ppx_sexp_conv_lib.Sexp.Atom
             "src/map.ml.Tree0.Map_max_elt_exn_of_empty_map"
         | _ -> assert false)
-
   [@@@end]
 
   let min_elt_exn t =
