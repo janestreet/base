@@ -1444,9 +1444,11 @@ module type Map = sig
     -> f:('v option -> 'v)
     -> ('k, 'v, 'cmp) t
 
+  (** Returns [Some value] bound to the given key, or [None] if none exists. *)
+  val find     : ('k, 'v, 'cmp) t -> 'k -> 'v option
+
   (** Returns the value bound to the given key, raising [Caml.Not_found] of [Not_found_s]
       if none exists. *)
-  val find     : ('k, 'v, 'cmp) t -> 'k -> 'v option
   val find_exn : ('k, 'v, 'cmp) t -> 'k -> 'v
 
   (** Returns a new map with any binding for the key in question removed. *)

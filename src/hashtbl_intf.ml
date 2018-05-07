@@ -10,8 +10,8 @@ module type Key = sig
   end
   [@@@end]
 
-  (** Values returned by [hash] must be non-negative.  An exception will be raised in the
-      case that [hash] returns a negative value. *)
+  (** Two [t]s that [compare] equal must have equal hashes for the hashtable
+      to behave properly. *)
   val hash : t -> int
 end
 
