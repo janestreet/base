@@ -769,6 +769,14 @@ let partition_tf t ~f =
   partition_map t ~f
 ;;
 
+let partition_result t =
+  let f x =
+    match x with
+    | Ok v -> `Fst v
+    | Error e -> `Snd e
+  in
+  partition_map t ~f
+
 module Assoc = struct
 
   type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp]

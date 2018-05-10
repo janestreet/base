@@ -130,6 +130,12 @@ val partition3_map
     is (trues, falses). *)
 val partition_tf : 'a t -> f:('a -> bool) -> 'a t * 'a t
 
+(** [partition_result l] returns a pair of lists [(l1, l2)], where [l1] is the
+    list of all [Ok] elements in [l] and [l2] is the list of all [Error]
+    elements.
+    The order of elements in the input list is preserved. *)
+val partition_result : ('ok, 'error) Result.t t -> 'ok t * 'error t
+
 (** [split_n \[e1; ...; em\] n] is [(\[e1; ...; en\], \[en+1; ...; em\])].
 
     - If [n > m], [(\[e1; ...; em\], \[\])] is returned.
