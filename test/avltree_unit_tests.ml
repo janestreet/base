@@ -246,8 +246,7 @@ let%test_module _ =
         ~f:(fun constructors ->
           let t, map = reify constructors in
           [%test_result: (Key.t * Data.t) list]
-            (let module Queue = Core_kernel_queue in
-             let q = Queue.create () in
+            (let q = Queue.create () in
              iter t ~f:(fun ~key ~data ->
                Queue.enqueue q (key, data));
              Queue.to_list q)

@@ -13,17 +13,16 @@ module Quickcheck = struct
   module String = Core_kernel.String
 end
 
-module Core_kernel_queue = Core_kernel.Queue
-
 module Core_kernel = struct
 end [@@deprecated "[since 1970-01] Don't use Core_kernel in Base tests. Use Base."]
 
 let () = Base.Not_exposed_properly.Int_conversions.sexp_of_int_style := `Underscores
 
+let is_none = Option.is_none
+let is_some = Option.is_some
+let ok_exn  = Or_error.ok_exn
 let stage   = Staged.stage
 let unstage = Staged.unstage
-
-let ok_exn = Or_error.ok_exn
 
 module type Hash = sig
   type t [@@deriving hash, sexp_of]
