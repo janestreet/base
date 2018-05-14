@@ -67,6 +67,12 @@ module type S_distinct = sig
   val subo        : (src, dst) subo
 end
 
+module type S_to_string = sig
+  type t
+  val sub  : (t, string) sub
+  val subo : (t, string) subo
+end
+
 (** Users of modules matching the blit signatures [S], [S1], and [S1_distinct] only need
     to understand the code above.  The code below is only for those that need to implement
     modules that match those signatures. *)
@@ -95,11 +101,12 @@ module type Blit = sig
   type nonrec ('src, 'dst) sub   = ('src, 'dst) sub
   type nonrec ('src, 'dst) subo  = ('src, 'dst) subo
 
-  module type S          = S
-  module type S1         = S1
-  module type S_distinct = S_distinct
-  module type Sequence   = Sequence
-  module type Sequence1  = Sequence1
+  module type S           = S
+  module type S1          = S1
+  module type S_distinct  = S_distinct
+  module type S_to_string = S_to_string
+  module type Sequence    = Sequence
+  module type Sequence1   = Sequence1
 
   (** There are various [Make*] functors that turn an [unsafe_blit] function into a [blit]
       function.  The functors differ in whether the sequence type is monomorphic or
@@ -138,6 +145,11 @@ module type Blit = sig
     : S_distinct
       with type src := Src.t
       with type dst := Dst.t
+
+  module Make_to_string
+      (T : sig type t end)
+      (To_bytes : S_distinct with type src := T.t with type dst := bytes)
+    : S_to_string with type t := T.t
 
   (** [Make1] is for blitting between two values of the same polymorphic type. *)
   module Make1

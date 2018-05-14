@@ -15,23 +15,20 @@ end
 
 include T
 
-include
-  Blit.Make(struct
-    include T
-    let create ~len = create len
-  end)
+module To_bytes =
+  Blit.Make
+    (struct
+      include T
+      let create ~len = create len
+    end)
+include To_bytes
 
 include Comparator.Make(T)
 include Comparable.Validate(T)
 
 include Pretty_printer.Register_pp(T)
 
-module To_string = struct
-  let sub = sub_string
-  let subo ?(pos = 0) ?len src =
-    sub src ~pos ~len:(match len with Some i -> i | None -> length src - pos)
-  ;;
-end
+module To_string = Blit.Make_to_string (T) (To_bytes)
 
 module From_string = Blit.Make_distinct(struct
     type t = string

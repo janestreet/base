@@ -32,6 +32,7 @@ module type S = sig
       of [src], or if [dst_pos] and [len] do not designate a valid substring of [dst]. *)
 
   include Blit.S_distinct with type src := t with type dst := bytes
+  module To_string : Blit.S_to_string with type t := t
 
   (** Gets the (zero-based) n-th character of the buffer. Raises [Invalid_argument] if
       index out of bounds. *)

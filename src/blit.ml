@@ -99,3 +99,14 @@ module Make_distinct
       let create_like ~len _ = create ~len
       let unsafe_blit = unsafe_blit
     end)
+
+module Make_to_string
+    (T : sig type t end)
+    (To_bytes : S_distinct with type src := T.t with type dst := bytes)
+= struct
+  open To_bytes
+  let sub src ~pos ~len =
+    Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:(sub src ~pos ~len)
+  let subo ?pos ?len src =
+    Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:(subo ?pos ?len src)
+end
