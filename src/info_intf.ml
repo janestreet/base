@@ -74,8 +74,9 @@ module type S = sig
   (** Be careful that the body of the lazy or thunk does not access mutable data, since it
       will only be called at an undetermined later point. *)
 
-  val of_lazy  : string Lazy.t    -> t
-  val of_thunk : (unit -> string) -> t
+  val of_lazy   : string Lazy.t    -> t
+  val of_thunk  : (unit -> string) -> t
+  val of_lazy_t : t Lazy.t         -> t
 
   (** For [create message a sexp_of_a], [sexp_of_a a] is lazily computed, when the info is
       converted to a sexp.  So if [a] is mutated in the time between the call to [create]

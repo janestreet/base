@@ -10,6 +10,8 @@
 
 - Rename parameter of `Sequence.merge` from `cmp` to `compare`.
 
+- Added `Info.of_lazy_t`
+
 ## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its
