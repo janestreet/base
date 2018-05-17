@@ -28,6 +28,11 @@ include Comparable.Validate(T)
 
 include Pretty_printer.Register_pp(T)
 
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
+open! Bytes_replace_polymorphic_compare
+
 module To_string = Blit.Make_to_string (T) (To_bytes)
 
 module From_string = Blit.Make_distinct(struct
@@ -42,7 +47,7 @@ module From_string = Blit.Make_distinct(struct
     end)
 
 let init n ~f =
-  if n < 0 then Printf.invalid_argf "Bytes.init %d" n ();
+  if Int_replace_polymorphic_compare.(<) n 0 then Printf.invalid_argf "Bytes.init %d" n ();
   let t = create n in
   for i = 0 to n - 1 do
     unsafe_set t i (f i)
@@ -56,7 +61,7 @@ let of_char_list l =
 
 let to_list t =
   let rec loop t i acc =
-    if i < 0
+    if Int_replace_polymorphic_compare.(<) i 0
     then acc
     else loop t (i - 1) (unsafe_get t i :: acc)
   in
@@ -67,8 +72,6 @@ let tr ~target ~replacement s =
     if Char.equal (unsafe_get s i) target
     then unsafe_set s i replacement
   done
-
-include Bytes_replace_polymorphic_compare
 
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max =
@@ -99,3 +102,8 @@ let contains ?pos ?len t char =
   in
   loop pos
 ;;
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include Bytes_replace_polymorphic_compare

@@ -15,6 +15,8 @@ module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = struct
     | `Define_using_apply -> derived_map
     | `Custom x -> x
 
+  let ( >>|) t f = map t ~f
+
   let map2 ta tb ~f = map ~f ta <*> tb
 
   let map3 ta tb tc ~f = map ~f ta <*> tb <*> tc
@@ -33,6 +35,7 @@ module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = struct
     let ( <*> ) = ( <*> )
     let (  *> ) = (  *> )
     let ( <*  ) = ( <*  )
+    let ( >>| ) = ( >>| )
   end
 end
 

@@ -22,11 +22,15 @@ module T = struct
   let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_float
   [@@@end]
   let compare = Float_replace_polymorphic_compare.compare
-  let equal   = Float_replace_polymorphic_compare.equal
 end
 
 include T
 include Comparator.Make(T)
+
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
+open Float_replace_polymorphic_compare
 
 let to_float x = x
 let of_float x = x
@@ -479,14 +483,6 @@ let sub = (-.)
 let neg = (~-.)
 let abs = Pervasives.abs_float
 let scale = ( *. )
-
-let min (x : t) y =
-  if is_nan x || is_nan y then nan
-  else if x < y then x else y
-
-let max (x : t) y =
-  if is_nan x || is_nan y then nan
-  else if x > y then x else y
 
 let square x = x *. x
 
@@ -1107,3 +1103,17 @@ module Private = struct
   let int63_round_nearest_arch64_noalloc_exn = int63_round_nearest_arch64_noalloc_exn
   let iround_nearest_exn_64 = iround_nearest_exn_64
 end
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include Float_replace_polymorphic_compare
+
+(* These functions specifically replace defaults in replace_polymorphic_compare *)
+let min (x : t) y =
+  if is_nan x || is_nan y then nan
+  else if x < y then x else y
+
+let max (x : t) y =
+  if is_nan x || is_nan y then nan
+  else if x > y then x else y

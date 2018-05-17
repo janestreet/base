@@ -1,5 +1,9 @@
 open! Import
-include Float_replace_polymorphic_compare
+
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
+open! Float_replace_polymorphic_compare
 
 let is_nan x = (x : float) <> x
 
@@ -113,3 +117,8 @@ let box =
   (* Prevent potential constant folding of [+. 0.] in the near ocamlopt future. *)
   let x = if Random.bool () then 0. else 0. in
   (fun f -> f +. x)
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include Float_replace_polymorphic_compare

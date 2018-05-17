@@ -29,7 +29,10 @@ include T
 include Pretty_printer.Register(T)
 include Comparable.Make(T)
 
-include Uchar_replace_polymorphic_compare
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
+open! Uchar_replace_polymorphic_compare
 
 let int_is_scalar = is_valid
 
@@ -70,3 +73,8 @@ let to_char_exn c =
   if is_char c
   then unsafe_to_char c
   else failwithf "Uchar.to_char_exn got a non latin-1 character: U+%04X"  (to_int c) ()
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include Uchar_replace_polymorphic_compare

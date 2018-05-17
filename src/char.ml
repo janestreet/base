@@ -32,9 +32,10 @@ include Identifiable.Make (struct
     let module_name = "Base.Char"
   end)
 
-(* Include [Char_replace_polymorphic_compare] after functor instantiations so they do not
-   shadow its definitions. *)
-include Char_replace_polymorphic_compare
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
+open! Char_replace_polymorphic_compare
 
 let all =
   Array.init 256 ~f:unsafe_of_int
@@ -96,3 +97,8 @@ module O = struct
   let ( <  ) = ( <  )
   let ( <> ) = ( <> )
 end
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include Char_replace_polymorphic_compare

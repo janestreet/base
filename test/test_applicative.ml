@@ -93,6 +93,15 @@ let%test_module "Make" =
         [%expect {| (Error "not okay") |}];
       ;;
 
+      let ( >>| ) = A.( >>| )
+      let%expect_test _ =
+        let test x = print_s [%sexp (x >>| String.capitalize : string Or_error.t)] in
+        test (Ok "okay");
+        [%expect {| (Ok Okay) |}];
+        test (error "not okay");
+        [%expect {| (Error "not okay") |}];
+      ;;
+
       let map2 = A.map2
       let%expect_test _ =
         let test x y = print_s [%sexp (map2 x y ~f:(^) : string Or_error.t)] in
@@ -269,6 +278,15 @@ let%test_module "Make_using_map2" =
       let map = A.map
       let%expect_test _ =
         let test x = print_s [%sexp (map x ~f:String.capitalize : string Or_error.t)] in
+        test (Ok "okay");
+        [%expect {| (Ok Okay) |}];
+        test (error "not okay");
+        [%expect {| (Error "not okay") |}];
+      ;;
+
+      let ( >>| ) = A.( >>| )
+      let%expect_test _ =
+        let test x = print_s [%sexp (x >>| String.capitalize : string Or_error.t)] in
         test (Ok "okay");
         [%expect {| (Ok Okay) |}];
         test (error "not okay");

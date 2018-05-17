@@ -23,9 +23,6 @@ module T = struct
   let to_string = to_string
 end
 
-include T
-include Comparator.Make(T)
-
 let num_bits = Int_conversions.num_bits_int
 
 let float_lower_bound = Float0.lower_bound_for_int num_bits
@@ -47,12 +44,45 @@ let zero = 0
 let one = 1
 let minus_one = -1
 
+include T
+include Comparator.Make(T)
 include Comparable.Validate_with_zero (struct
     include T
     let zero = zero
   end)
 
-include Int_replace_polymorphic_compare
+module Conv = Int_conversions
+include Conv.Make (T)
+include Conv.Make_hex(struct
+    open Int_replace_polymorphic_compare
+    type t = int [@@deriving_inline compare, hash]
+    let compare : t -> t -> int = compare_int
+    let (hash_fold_t :
+           Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+      hash_fold_int
+    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+      let func = hash_int in fun x -> func x
+    [@@@end]
+
+    let zero = zero
+    let neg = (~-)
+    let (<) = (<)
+    let to_string i = Printf.sprintf "%x" i
+    let of_string s = Caml.Scanf.sscanf s "%x" Fn.id
+
+    let module_name = "Base.Int.Hex"
+  end)
+
+include Pretty_printer.Register (struct
+    type nonrec t = t
+    let to_string = to_string
+    let module_name = "Base.Int"
+  end)
+
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
+open! Int_replace_polymorphic_compare
 
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max =
@@ -85,7 +115,6 @@ let min_value = Pervasives.min_int
 
 let max_value_30_bits = 0x3FFF_FFFF
 
-module Conv = Int_conversions
 let of_int32 = Conv.int32_to_int
 let of_int32_exn = Conv.int32_to_int_exn
 let of_int32_trunc = Conv.int32_to_int_trunc
@@ -101,29 +130,6 @@ let of_nativeint_exn = Conv.nativeint_to_int_exn
 let of_nativeint_trunc = Conv.nativeint_to_int_trunc
 let to_nativeint = Conv.int_to_nativeint
 let to_nativeint_exn = to_nativeint
-
-include Conv.Make (T)
-
-include Conv.Make_hex(struct
-
-    type t = int [@@deriving_inline compare, hash]
-    let compare : t -> t -> int = compare_int
-    let (hash_fold_t :
-           Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      hash_fold_int
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_int in fun x -> func x
-    [@@@end]
-
-    let zero = zero
-    let neg = (~-)
-    let (<) = (<)
-    let to_string i = Printf.sprintf "%x" i
-    let of_string s = Caml.Scanf.sscanf s "%x" Fn.id
-
-    let module_name = "Base.Int.Hex"
-
-  end)
 
 let abs x = abs x
 
@@ -159,12 +165,6 @@ include Int_pow2
 let sign = Sign.of_int
 
 let popcount = Popcount.int_popcount
-
-include Pretty_printer.Register (struct
-    type nonrec t = t
-    let to_string = to_string
-    let module_name = "Base.Int"
-  end)
 
 module Pre_O = struct
   let ( + ) = ( + )
@@ -241,3 +241,8 @@ include O (* [Int] and [Int.O] agree value-wise *)
 module Private = struct
   module O_F = O.F
 end
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include Int_replace_polymorphic_compare

@@ -1213,7 +1213,10 @@ module Escaping = struct
   ;;
 end
 
-include String_replace_polymorphic_compare
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
+open! String_replace_polymorphic_compare
 
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max =
@@ -1235,3 +1238,8 @@ let clamp t ~min ~max =
 
 let create = Bytes.create
 let fill = Bytes.fill
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include String_replace_polymorphic_compare

@@ -74,6 +74,8 @@ module type S = sig
 
     val ( <*  ) : 'a t -> unit t -> 'a t
     val (  *> ) : unit t -> 'a t -> 'a t
+
+    val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
   end
 
   include module type of Applicative_infix
@@ -194,6 +196,7 @@ module type S2 = sig
     val ( <*> ) : ('a -> 'b, 'e) t -> ('a, 'e) t -> ('b, 'e) t
     val ( <*  ) : ('a, 'e) t -> (unit, 'e) t -> ('a, 'e) t
     val (  *> ) : (unit, 'e) t -> ('a, 'e) t -> ('a, 'e) t
+    val ( >>| ) : ('a, 'e) t -> ('a -> 'b) -> ('b, 'e) t
   end
 
   include module type of Applicative_infix

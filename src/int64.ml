@@ -64,7 +64,10 @@ include Comparable.Validate_with_zero (struct
     let zero = zero
   end)
 
-include Int64_replace_polymorphic_compare
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
+open Int64_replace_polymorphic_compare
 
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max =
@@ -181,3 +184,8 @@ module O = struct
 end
 
 include O (* [Int64] and [Int64.O] agree value-wise *)
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include Int64_replace_polymorphic_compare

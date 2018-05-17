@@ -20,6 +20,44 @@ end
 
 include T
 include Comparator.Make(T)
+include Comparable.Validate_with_zero (struct
+    include T
+    let zero = zero
+  end)
+
+
+module Conv = Int_conversions
+include Conv.Make (T)
+include Conv.Make_hex(struct
+    open Nativeint_replace_polymorphic_compare
+    type t = nativeint [@@deriving_inline compare, hash]
+    let compare : t -> t -> int = compare_nativeint
+    let (hash_fold_t :
+           Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+      hash_fold_nativeint
+    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+      let func = hash_nativeint in fun x -> func x
+    [@@@end]
+
+    let zero = zero
+    let neg = neg
+    let (<) = (<)
+    let to_string i = Printf.sprintf "%nx" i
+    let of_string s = Caml.Scanf.sscanf s "%nx" Fn.id
+
+    let module_name = "Base.Nativeint.Hex"
+  end)
+
+include Pretty_printer.Register (struct
+    type nonrec t = t
+    let to_string = to_string
+    let module_name = "Base.Nativeint"
+  end)
+
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
+open! Nativeint_replace_polymorphic_compare
 
 let num_bits = Word_size.num_bits Word_size.word_size
 let float_lower_bound = Float0.lower_bound_for_int num_bits
@@ -53,13 +91,6 @@ let of_float f =
     Printf.invalid_argf "Nativeint.of_float: argument (%f) is out of range or NaN"
       (Float0.box f)
       ()
-
-include Comparable.Validate_with_zero (struct
-    include T
-    let zero = zero
-  end)
-
-include Nativeint_replace_polymorphic_compare
 
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max =
@@ -95,7 +126,6 @@ let to_nativeint_exn = to_nativeint
 
 let popcount = Popcount.nativeint_popcount
 
-module Conv = Int_conversions
 let of_int = Conv.int_to_nativeint
 let of_int_exn = of_int
 let to_int = Conv.nativeint_to_int
@@ -113,35 +143,6 @@ let to_int64 = Conv.nativeint_to_int64
 
 let pow b e = of_int_exn (Int_math.int_pow (to_int_exn b) (to_int_exn e))
 let ( ** ) b e = pow b e
-
-include Conv.Make (T)
-
-include Conv.Make_hex(struct
-
-    type t = nativeint [@@deriving_inline compare, hash]
-    let compare : t -> t -> int = compare_nativeint
-    let (hash_fold_t :
-           Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      hash_fold_nativeint
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_nativeint in fun x -> func x
-    [@@@end]
-
-    let zero = zero
-    let neg = (~-)
-    let (<) = (<)
-    let to_string i = Printf.sprintf "%nx" i
-    let of_string s = Caml.Scanf.sscanf s "%nx" Fn.id
-
-    let module_name = "Base.Nativeint.Hex"
-
-  end)
-
-include Pretty_printer.Register (struct
-    type nonrec t = t
-    let to_string = to_string
-    let module_name = "Base.Nativeint"
-  end)
 
 module Pre_O = struct
   let ( + ) = ( + )
@@ -179,3 +180,8 @@ module O = struct
 end
 
 include O (* [Nativeint] and [Nativeint.O] agree value-wise *)
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include Nativeint_replace_polymorphic_compare

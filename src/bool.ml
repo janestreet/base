@@ -18,6 +18,12 @@ end
 
 include T
 include Comparator.Make(T)
+include Comparable.Validate(T)
+
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
+open! Bool_replace_polymorphic_compare
 
 let of_string = function
   | "true" -> true
@@ -26,8 +32,6 @@ let of_string = function
 ;;
 
 let to_string = Caml.string_of_bool
-
-include Bool_replace_polymorphic_compare
 
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max =
@@ -46,8 +50,6 @@ let clamp t ~min ~max =
          ])
   else
     Ok (clamp_unchecked t ~min ~max)
-
-include Comparable.Validate (T)
 
 (* We use [Obj.magic] here as other implementations generate a conditional jump and the
    performance difference is noticeable. *)
@@ -72,3 +74,8 @@ let () =
   assert (Pervasives.(=) (to_int true ) 1 &&
           Pervasives.(=) (to_int false) 0);
 ;;
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include Bool_replace_polymorphic_compare

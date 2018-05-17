@@ -138,7 +138,6 @@ module T = struct
   let comparator = W.comparator
 
   let compare = W.compare
-  let equal   = Int64_replace_polymorphic_compare.equal
 
   (* We don't expect [hash] to follow the behavior of int in 64bit architecture *)
   let _ = hash
@@ -233,7 +232,6 @@ let min_value = min_value
 let minus_one = wrap_exn Caml.Int64.minus_one
 let one = wrap_exn Caml.Int64.one
 let zero = wrap_exn Caml.Int64.zero
-let compare = compare
 let to_float x = Caml.Int64.to_float (unwrap x)
 let of_float_unchecked x = wrap_modulo (Caml.Int64.of_float x)
 let of_float t =
@@ -254,8 +252,6 @@ include Comparable.Validate_with_zero (struct
     let zero = zero
   end)
 
-let min x y = if x < y then x else y
-let max x y = if x > y then x else y
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max =
   if t < min then min else if t <= max then t else max
@@ -380,3 +376,8 @@ module Repr = struct
 end
 
 let repr = Repr.Int64
+
+(* Include replace_polymorphic_compare at the end, after any functor instantiations that
+   could shadow its definitions. This is here so that efficient versions of the comparison
+   functions are exported by this module. *)
+include Int64_replace_polymorphic_compare
