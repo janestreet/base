@@ -314,6 +314,9 @@ val to_sequence : 'a t -> 'a Sequence.t
 val to_sequence_mutable : 'a t -> 'a Sequence.t
 
 (**/**)
+(*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+  https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   module Sort : sig
     module type Sort = sig

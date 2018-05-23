@@ -573,6 +573,9 @@ module Terse : sig
 end
 
 (**/**)
+(*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+  https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   val lower_bound_for_int : int -> t
   val upper_bound_for_int : int -> t

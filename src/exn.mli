@@ -88,6 +88,9 @@ val does_raise : (unit -> _) -> bool
 val initialize_module : unit -> unit
 
 (**/**)
+(*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+  https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   val clear_backtrace : unit -> unit
 end

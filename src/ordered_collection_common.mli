@@ -32,6 +32,9 @@ val get_pos_len_exn : ?pos:int -> ?len:int -> length:int -> int * int
     <= length]. *)
 val check_pos_len_exn : pos:int -> len:int -> length:int -> unit
 
+(*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+  https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   val slow_check_pos_len_exn : pos:int -> len:int -> length:int -> unit
 end

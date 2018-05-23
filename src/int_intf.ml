@@ -336,6 +336,9 @@ module type Int_without_module_types = sig
   val of_nativeint_trunc : nativeint -> t
 
   (**/**)
+  (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+    https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     (*_ For ../bench/bench_int.ml *)
     module O_F : sig

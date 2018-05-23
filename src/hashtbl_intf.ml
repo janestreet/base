@@ -782,6 +782,9 @@ module type Hashtbl = sig
     -> ('k, 'v) t
 
   (**/**)
+  (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+    https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
 
     module type Creators_generic = Creators_generic
