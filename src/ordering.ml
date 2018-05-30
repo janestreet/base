@@ -1,20 +1,7 @@
 open! Import
 
 type t = Less | Equal | Greater [@@deriving_inline compare, hash, enumerate, sexp]
-let compare : t -> t -> int =
-  fun a__001_ ->
-  fun b__002_ ->
-    if Ppx_compare_lib.phys_equal a__001_ b__002_
-    then 0
-    else
-      (match (a__001_, b__002_) with
-       | (Less, Less) -> 0
-       | (Less, _) -> (-1)
-       | (_, Less) -> 1
-       | (Equal, Equal) -> 0
-       | (Equal, _) -> (-1)
-       | (_, Equal) -> 1
-       | (Greater, Greater) -> 0)
+let compare : t -> t -> int = Ppx_compare_lib.polymorphic_compare
 let (hash_fold_t :
        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
   (fun hsv ->

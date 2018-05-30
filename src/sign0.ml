@@ -28,20 +28,7 @@ let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t =
   | Neg -> Ppx_sexp_conv_lib.Sexp.Atom "Neg"
   | Zero -> Ppx_sexp_conv_lib.Sexp.Atom "Zero"
   | Pos -> Ppx_sexp_conv_lib.Sexp.Atom "Pos"
-let compare : t -> t -> int =
-  fun a__001_ ->
-  fun b__002_ ->
-    if Ppx_compare_lib.phys_equal a__001_ b__002_
-    then 0
-    else
-      (match (a__001_, b__002_) with
-       | (Neg, Neg) -> 0
-       | (Neg, _) -> (-1)
-       | (_, Neg) -> 1
-       | (Zero, Zero) -> 0
-       | (Zero, _) -> (-1)
-       | (_, Zero) -> 1
-       | (Pos, Pos) -> 0)
+let compare : t -> t -> int = Ppx_compare_lib.polymorphic_compare
 let (hash_fold_t :
        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
   (fun hsv ->

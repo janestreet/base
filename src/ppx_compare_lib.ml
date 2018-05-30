@@ -62,4 +62,5 @@ module Builtin = struct
     | Some a, Some b -> compare_elt a b
 
   let compare_ref compare_elt a b = compare_elt !a !b
+
 end

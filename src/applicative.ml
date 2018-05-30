@@ -45,6 +45,16 @@ module Make (X : Basic) : S with type 'a t := 'a X.t =
     include (X : Basic with type 'a t := 'a X.t)
   end)
 
+module Make_let_syntax (X : For_let_syntax) (Intf : sig module type S end) (Impl : Intf.S) = struct
+  module Let_syntax = struct
+    include X
+    module Let_syntax = struct
+      include X
+      module Open_on_rhs = Impl
+    end
+  end
+end
+
 module Make2_using_map2 (X : Basic2_using_map2) =
   Make2 (struct
     include X

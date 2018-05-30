@@ -616,26 +616,7 @@ module Class = struct
     | Subnormal
     | Zero
   [@@deriving_inline compare, enumerate, sexp]
-  let compare : t -> t -> int =
-    fun a__001_ ->
-    fun b__002_ ->
-      if Ppx_compare_lib.phys_equal a__001_ b__002_
-      then 0
-      else
-        (match (a__001_, b__002_) with
-         | (Infinite, Infinite) -> 0
-         | (Infinite, _) -> (-1)
-         | (_, Infinite) -> 1
-         | (Nan, Nan) -> 0
-         | (Nan, _) -> (-1)
-         | (_, Nan) -> 1
-         | (Normal, Normal) -> 0
-         | (Normal, _) -> (-1)
-         | (_, Normal) -> 1
-         | (Subnormal, Subnormal) -> 0
-         | (Subnormal, _) -> (-1)
-         | (_, Subnormal) -> 1
-         | (Zero, Zero) -> 0)
+  let compare : t -> t -> int = Ppx_compare_lib.polymorphic_compare
   let all : t list = [Infinite; Nan; Normal; Subnormal; Zero]
   let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t =
     let _tp_loc = "src/float.ml.Class.t" in

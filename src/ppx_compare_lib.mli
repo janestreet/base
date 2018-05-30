@@ -26,4 +26,5 @@ module Builtin : sig
   val compare_list   : 'a t -> 'a list   t
   val compare_option : 'a t -> 'a option t
   val compare_ref    : 'a t -> 'a ref    t
+
 end with type 'a t := 'a compare

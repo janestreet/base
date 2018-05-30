@@ -47,15 +47,35 @@ module type Basic_using_map2 = sig
   val map : [`Define_using_map2 | `Custom of ('a t -> f:('a -> 'b) -> 'b t)]
 end
 
-module type S = sig
+module type Applicative_infix = sig
+  type 'a t
 
+  val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t (** same as [apply] *)
+
+  val ( <*  ) : 'a t -> unit t -> 'a t
+  val (  *> ) : unit t -> 'a t -> 'a t
+
+  val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
+end
+
+module type For_let_syntax = sig
   type 'a t
 
   val return : 'a -> 'a t
 
-  val apply : ('a -> 'b) t -> 'a t -> 'b t
-
   val map : 'a t -> f:('a -> 'b) -> 'b t
+
+  val both : 'a t -> 'b t -> ('a * 'b) t
+
+  include Applicative_infix with type 'a t := 'a t
+
+end
+
+module type S = sig
+
+  include For_let_syntax
+
+  val apply : ('a -> 'b) t -> 'a t -> 'b t
 
   val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 
@@ -67,18 +87,32 @@ module type S = sig
 
   val all_ignore : unit t list -> unit t [@@deprecated "[since 2018-02] Use [all_unit]"]
 
-  val both : 'a t -> 'b t -> ('a * 'b) t
+  module Applicative_infix : Applicative_infix with type 'a t := 'a t
+end
 
-  module Applicative_infix : sig
-    val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t (** same as [apply] *)
+module type Let_syntax = sig
+  type 'a t
 
-    val ( <*  ) : 'a t -> unit t -> 'a t
-    val (  *> ) : unit t -> 'a t -> 'a t
-
-    val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
+  module Open_on_rhs_intf : sig
+    module type S
   end
 
-  include module type of Applicative_infix
+  module Let_syntax : sig
+
+    val return : 'a -> 'a t
+    include Applicative_infix with type 'a t := 'a t
+
+    module Let_syntax : sig
+
+      val return : 'a -> 'a t
+
+      val map : 'a t -> f:('a -> 'b) -> 'b t
+
+      val both : 'a t -> 'b t -> ('a * 'b) t
+
+      module Open_on_rhs : Open_on_rhs_intf.S
+    end
+  end
 end
 
 (** Argument lists and associated N-ary map and apply functions. *)
@@ -241,12 +275,14 @@ end
 
 module type Applicative = sig
 
+  module type Applicative_infix = Applicative_infix
   module type Args              = Args
   module type Args2             = Args2
   module type Basic             = Basic
   module type Basic2            = Basic2
   module type Basic2_using_map2 = Basic2_using_map2
   module type Basic_using_map2  = Basic_using_map2
+  module type Let_syntax        = Let_syntax
   module type S                 = S
   module type S2                = S2
 
@@ -256,6 +292,13 @@ module type Applicative = sig
 
   module Make  (X : Basic ) : S  with type  'a      t :=  'a      X.t
   module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
+
+  module Make_let_syntax
+      (X : For_let_syntax)
+      (Intf : sig module type S end)
+      (Impl : Intf.S)
+    : Let_syntax with type 'a t := 'a X.t
+      with module Open_on_rhs_intf := Intf
 
   module Make_using_map2  (X : Basic_using_map2 ) : S  with type  'a      t :=  'a      X.t
   module Make2_using_map2 (X : Basic2_using_map2) : S2 with type ('a, 'e) t := ('a, 'e) X.t

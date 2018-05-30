@@ -97,19 +97,7 @@ let sexp_of_interval_comparison :
   | Above_upper_bound -> Ppx_sexp_conv_lib.Sexp.Atom "Above_upper_bound"
 let compare_interval_comparison :
   interval_comparison -> interval_comparison -> int =
-  fun a__003_ ->
-  fun b__004_ ->
-    if Ppx_compare_lib.phys_equal a__003_ b__004_
-    then 0
-    else
-      (match (a__003_, b__004_) with
-       | (Below_lower_bound, Below_lower_bound) -> 0
-       | (Below_lower_bound, _) -> (-1)
-       | (_, Below_lower_bound) -> 1
-       | (In_range, In_range) -> 0
-       | (In_range, _) -> (-1)
-       | (_, In_range) -> 1
-       | (Above_upper_bound, Above_upper_bound) -> 0)
+  Ppx_compare_lib.polymorphic_compare
 let (hash_fold_interval_comparison :
        Ppx_hash_lib.Std.Hash.state ->
      interval_comparison -> Ppx_hash_lib.Std.Hash.state)
