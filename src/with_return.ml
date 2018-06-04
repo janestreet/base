@@ -4,8 +4,6 @@ open! Import
 
 type 'a return = { return : 'b. 'a -> 'b } [@@unboxed]
 
-external reraise : exn -> _ = "%reraise"
-
 let with_return (type a) f =
   let module M = struct
     (* Raised to indicate ~return was called.  Local so that the exception is tied to a
@@ -26,9 +24,7 @@ let with_return (type a) f =
     is_alive := false;
     match exn with
     | M.Return a -> a
-    | _ ->
-      (* https://github.com/janestreet/base/issues/44 *)
-      reraise exn
+    | _ -> raise exn
 ;;
 
 let with_return_option f =
