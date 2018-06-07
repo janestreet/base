@@ -749,6 +749,45 @@ end
 
 module type S_poly = Creators_and_accessors1
 
+module type For_deriving = sig
+  type ('a, 'b) t
+
+  module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
+    include
+    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end
+    [@@@end] end
+  module type M_of_sexp = sig
+    type t [@@deriving_inline of_sexp]
+    include
+    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+    end
+    [@@@end] include Comparator.S with type t := t
+  end
+  module type Compare_m = sig end
+  module type Hash_fold_m = Hasher.S
+
+  val sexp_of_m__t
+    :  (module Sexp_of_m with type t = 'elt)
+    -> ('elt, 'cmp) t
+    -> Sexp.t
+
+  val m__t_of_sexp
+    :  (module M_of_sexp with type t = 'elt and type comparator_witness = 'cmp)
+    -> Sexp.t
+    -> ('elt, 'cmp) t
+
+  val compare_m__t :  (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
+
+  val hash_fold_m__t
+    :  (module Hash_fold_m with type t = 'elt)
+    -> (Hash.state -> ('elt, _) t -> Hash.state)
+
+  val hash_m__t
+    :  (module Hash_fold_m with type t = 'elt)
+    -> (('elt, _) t -> int)
+end
+
 module type Set = sig
   (** This module defines the [Set] module for [Base]. Functions that construct a set take
       as an argument the comparator for the element type. *)
@@ -1150,32 +1189,7 @@ module type Set = sig
     type nonrec t = (Elt.t, Elt.comparator_witness) t
   end
 
-  module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
-    include
-    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end
-    [@@@end] end
-  module type M_of_sexp = sig
-    type t [@@deriving_inline of_sexp]
-    include
-    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    end
-    [@@@end] include Comparator.S with type t := t
-  end
-  module type Compare_m = sig end
-  module type Hash_fold_m = Hasher.S
-
-  val sexp_of_m__t : (module Sexp_of_m with type t = 'elt) -> ('elt, 'cmp) t -> Sexp.t
-
-  val m__t_of_sexp
-    :  (module M_of_sexp with type t = 'elt and type comparator_witness = 'cmp)
-    -> Sexp.t
-    -> ('elt, 'cmp) t
-
-  val compare_m__t :  (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
-
-  val hash_fold_m__t
-    :  (module Hash_fold_m with type t = 'elt) -> (Hash.state -> ('elt, _) t -> Hash.state)
+  include For_deriving with type ('a, 'b) t := ('a, 'b) t
 
   (** A polymorphic Set. *)
   module Poly : S_poly with type 'elt t = ('elt, Comparator.Poly.comparator_witness) t
@@ -1279,6 +1293,8 @@ module type Set = sig
   module With_comparator         = With_comparator
   module With_first_class_module = With_first_class_module
   module Without_comparator      = Without_comparator
+
+  module type For_deriving = For_deriving
 
   module type S_poly                                  = S_poly
   module type Accessors0                              = Accessors0

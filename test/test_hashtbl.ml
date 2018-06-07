@@ -1,5 +1,7 @@
 open! Base
 
+type int_hashtbl = int Hashtbl.M(Int).t [@@deriving sexp]
+
 let%test "Hashtbl.merge succeeds with first-class-module interface" =
   let t1 = Hashtbl.create (module Int) in
   let t2 = Hashtbl.create (module Int) in

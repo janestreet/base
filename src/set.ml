@@ -1283,6 +1283,10 @@ let compare_m__t (module Elt : Compare_m) t1 t2 =
 let hash_fold_m__t (type elt) (module Elt : Hash_fold_m with type t = elt) state =
   hash_fold_direct Elt.hash_fold_t state
 
+let hash_m__t folder t =
+  let state = hash_fold_m__t folder (Hash.create ()) t in
+  Hash.get_hash_value state
+
 module Poly = struct
   type comparator_witness = Comparator.Poly.comparator_witness
   type nonrec ('elt, 'cmp) set = ('elt, comparator_witness) t

@@ -639,6 +639,33 @@ module type S_poly = sig
     with type 'a key := 'a key
 end
 
+module type For_deriving = sig
+  type ('k, 'v) t
+
+  module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
+    include
+    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end
+    [@@@end] end
+  module type M_of_sexp = sig
+    type t [@@deriving_inline of_sexp]
+    include
+    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+    end
+    [@@@end] include Key with type t := t
+  end
+  val sexp_of_m__t
+    :  (module Sexp_of_m with type t = 'k)
+    -> ('v -> Sexp.t)
+    -> ('k, 'v) t
+    -> Sexp.t
+  val m__t_of_sexp
+    :  (module M_of_sexp with type t = 'k)
+    -> (Sexp.t -> 'v)
+    -> Sexp.t
+    -> ('k, 'v) t
+end
+
 module type Hashtbl = sig
 
   (** A hash table is a mutable data structure implementing a map between keys and values.
@@ -725,6 +752,8 @@ module type Hashtbl = sig
   module type S_poly               = S_poly
   module type S_without_submodules = S_without_submodules
 
+  module type For_deriving = For_deriving
+
   type nonrec ('key, 'data, 'z) create_options =
     ('key, 'data, 'z) create_options
 
@@ -758,28 +787,8 @@ module type Hashtbl = sig
   module M (K : T.T) : sig
     type nonrec 'v t = (K.t, 'v) t
   end
-  module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
-    include
-    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end
-    [@@@end] end
-  module type M_of_sexp = sig
-    type t [@@deriving_inline of_sexp]
-    include
-    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    end
-    [@@@end] include Key with type t := t
-  end
-  val sexp_of_m__t
-    :  (module Sexp_of_m with type t = 'k)
-    -> ('v -> Sexp.t)
-    -> ('k, 'v) t
-    -> Sexp.t
-  val m__t_of_sexp
-    :  (module M_of_sexp with type t = 'k)
-    -> (Sexp.t -> 'v)
-    -> Sexp.t
-    -> ('k, 'v) t
+
+  include For_deriving with type ('a, 'b) t := ('a, 'b) t
 
   (**/**)
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:

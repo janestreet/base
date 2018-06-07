@@ -11,7 +11,7 @@ module M = M
 
 let add12 t = add_exn t ~key:1 ~data:2
 
-type int_map = int Map.M(Int).t [@@deriving sexp_of]
+type int_map = int Map.M(Int).t [@@deriving compare, hash, sexp]
 
 let%expect_test "[add_exn] success" =
   print_s [%sexp (add12 (empty (module Int)) : int_map)];

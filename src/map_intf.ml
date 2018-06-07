@@ -1284,6 +1284,49 @@ end
 
 module type S_poly = Creators_and_accessors2
 
+module type For_deriving = sig
+  type ('a, 'b, 'c) t
+
+  module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
+    include
+    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end
+    [@@@end] end
+  module type M_of_sexp = sig
+    type t [@@deriving_inline of_sexp]
+    include
+    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+    end
+    [@@@end] include Comparator.S with type t := t
+  end
+  module type Compare_m = sig end
+  module type Hash_fold_m = Hasher.S
+
+  val sexp_of_m__t
+    :  (module Sexp_of_m with type t = 'k)
+    -> ('v -> Sexp.t)
+    -> ('k, 'v, 'cmp) t
+    -> Sexp.t
+
+  val m__t_of_sexp
+    :  (module M_of_sexp with type t = 'k and type comparator_witness = 'cmp)
+    -> (Sexp.t -> 'v)
+    -> Sexp.t
+    -> ('k, 'v, 'cmp) t
+
+  val compare_m__t
+    :  (module Compare_m)
+    -> ('v -> 'v -> int)
+    -> ('k, 'v, 'cmp) t
+    -> ('k, 'v, 'cmp) t
+    -> int
+
+  val hash_fold_m__t
+    :  (module Hash_fold_m with type t = 'k)
+    -> (Hash.state -> 'v -> Hash.state)
+    -> (Hash.state -> ('k, 'v, _) t -> Hash.state)
+end
+
 module type Map = sig
   (** [Map] is a functional data structure (balanced binary tree) implementing finite maps
       over a totally-ordered domain, called a "key". *)
@@ -1794,44 +1837,8 @@ module type Map = sig
     type nonrec 'v t = (K.t, 'v, K.comparator_witness) t
   end
 
-  module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
-    include
-    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end
-    [@@@end] end
-  module type M_of_sexp = sig
-    type t [@@deriving_inline of_sexp]
-    include
-    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    end
-    [@@@end] include Comparator.S with type t := t
-  end
-  module type Compare_m = sig end
-  module type Hash_fold_m = Hasher.S
-
-  val sexp_of_m__t
-    :  (module Sexp_of_m with type t = 'k)
-    -> ('v -> Sexp.t)
-    -> ('k, 'v, 'cmp) t
-    -> Sexp.t
-
-  val m__t_of_sexp
-    :  (module M_of_sexp with type t = 'k and type comparator_witness = 'cmp)
-    -> (Sexp.t -> 'v)
-    -> Sexp.t
-    -> ('k, 'v, 'cmp) t
-
-  val compare_m__t
-    :  (module Compare_m)
-    -> ('v -> 'v -> int)
-    -> ('k, 'v, 'cmp) t
-    -> ('k, 'v, 'cmp) t
-    -> int
-
-  val hash_fold_m__t
-    :  (module Hash_fold_m with type t = 'k)
-    -> (Hash.state -> 'v -> Hash.state)
-    -> (Hash.state -> ('k, 'v, _) t -> Hash.state)
+  include For_deriving
+    with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) t
 
   (** A polymorphic Map. *)
   module Poly : S_poly
@@ -1916,6 +1923,8 @@ module type Map = sig
   module With_comparator         = With_comparator
   module With_first_class_module = With_first_class_module
   module Without_comparator      = Without_comparator
+
+  module type For_deriving = For_deriving
 
   module type S_poly                                  = S_poly
   module type Accessors1                              = Accessors1

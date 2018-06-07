@@ -1,6 +1,8 @@
 open! Import
 open! Set
 
+type int_set = Set.M(Int).t [@@deriving compare, hash, sexp]
+
 let%test _ =
   invariants
     (of_increasing_iterator_unchecked (module Int) ~len:20 ~f:Fn.id)
