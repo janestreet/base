@@ -351,8 +351,11 @@ let abs             = Caml.abs
 let failwith        = Caml.failwith
 let fst             = Caml.fst
 let invalid_arg     = Caml.invalid_arg
-let raise           = Caml.raise
 let snd             = Caml.snd
+
+(* [raise] needs to be defined as an external as the compiler automatically replaces
+   '%raise' by '%reraise' when appropriate. *)
+external raise : exn -> _ = "%raise"
 
 let phys_equal      = Caml.( == )
 

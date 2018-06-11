@@ -427,9 +427,11 @@ module Export = struct
 
   (** Exceptions stuff *)
 
+  (* Declared as an external so that the compiler may rewrite '%raise' as '%reraise'. *)
+  external raise : exn -> _ = "%raise"
+
   let failwith    = failwith
   let invalid_arg = invalid_arg
-  let raise       = raise
   let raise_s     = Error.raise_s
 
   (** Misc *)
