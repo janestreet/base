@@ -872,7 +872,11 @@ let split_n t_orig n =
     loop n t_orig []
 
 let take t n = fst (split_n t n)
-let drop t n = snd (split_n t n)
+
+let rec drop t n =
+  match t with
+  | _ :: tl when n > 0 -> drop tl (n - 1)
+  | t -> t
 
 let chunks_of l ~length =
   if length <= 0
@@ -896,7 +900,11 @@ let split_while xs ~f =
 ;;
 
 let take_while t ~f = fst (split_while t ~f)
-let drop_while t ~f = snd (split_while t ~f)
+
+let rec drop_while t ~f =
+  match t with
+  | hd :: tl when f hd -> drop_while tl ~f
+  | t -> t
 
 let cartesian_product list1 list2 =
   if is_empty list2 then [] else
