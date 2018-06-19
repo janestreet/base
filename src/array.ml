@@ -376,8 +376,23 @@ let of_list_map xs ~f =
       | hd::tl -> unsafe_set a i (f hd); fill (i+1) tl in
     fill 1 tl
 
+let of_list_mapi xs ~f =
+  match xs with
+  | [] -> [||]
+  | hd::tl ->
+    let a = create ~len:(1 + List.length tl) (f 0 hd) in
+    let rec fill i = function
+      | [] -> a
+      | hd::tl -> unsafe_set a i (f i hd); fill (i+1) tl in
+    fill 1 tl
+
 let of_list_rev_map xs ~f =
   let t = of_list_map xs ~f in
+  rev_inplace t;
+  t
+
+let of_list_rev_mapi xs ~f =
+  let t = of_list_mapi xs ~f in
   rev_inplace t;
   t
 
