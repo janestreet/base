@@ -16,8 +16,8 @@ function Base_clear_caml_backtrace_pos(x) {
   return 0
 }
 
-//Provides: Base_int_math_int_clz
-function Base_int_math_int_clz(x){
+//Provides: Base_int_math_int32_clz
+function Base_int_math_int32_clz(x){
   var n = 32;
   var y;
   y = x >>16; if (y != 0) { n = n -16; x = y; }
@@ -26,6 +26,34 @@ function Base_int_math_int_clz(x){
   y = x >> 2; if (y != 0) { n = n - 2; x = y; }
   y = x >> 1; if (y != 0) return n - 2;
   return n - x;
+}
+
+//Provides: Base_int_math_int_clz
+//Requires: Base_int_math_int32_clz
+function Base_int_math_int_clz(x){ return Base_int_math_int32_clz(x); }
+
+//Provides: Base_int_math_nativeint_clz
+//Requires: Base_int_math_int32_clz
+function Base_int_math_nativeint_clz(x){ return Base_int_math_int32_clz(x); }
+
+//Provides: Base_int_math_int64_clz
+//Requires: caml_int64_shift_right_unsigned, caml_int64_is_zero, caml_int64_to_int32
+function Base_int_math_int64_clz(x){
+  var n = 64;
+  var y;
+  y = caml_int64_shift_right_unsigned(x, 32);
+  if (!caml_int64_is_zero(y)) { n = n -32; x = y; }
+  y = caml_int64_shift_right_unsigned(x, 16);
+  if (!caml_int64_is_zero(y)) { n = n -16; x = y; }
+  y = caml_int64_shift_right_unsigned(x, 8); 
+  if (!caml_int64_is_zero(y)) { n = n - 8; x = y; }
+  y = caml_int64_shift_right_unsigned(x, 4);
+  if (!caml_int64_is_zero(y)) { n = n - 4; x = y; }
+  y = caml_int64_shift_right_unsigned(x, 2);
+  if (!caml_int64_is_zero(y)) { n = n - 2; x = y; }
+  y = caml_int64_shift_right_unsigned(x, 1);
+  if (!caml_int64_is_zero(y)) return n - 2;
+  return n - caml_int64_to_int32(x);
 }
 
 //Provides: Base_int_math_int_pow_stub

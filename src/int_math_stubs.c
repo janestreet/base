@@ -43,10 +43,27 @@ CAMLprim value Base_int_math_int_popcount(value v) {
 #endif
 }
 
+/* The specification of all below [clz] functions is undefined for [v = 0]. */
 CAMLprim value Base_int_math_int_clz(value v) {
 #ifdef ARCH_SIXTYFOUR
   return Val_int (__builtin_clzll (Long_val(v)));
 #else
   return Val_int (__builtin_clz   (Int_val (v)));
+#endif
+}
+
+CAMLprim value Base_int_math_int32_clz(value v) {
+  return Val_int (__builtin_clz   (Int32_val(v)));
+}
+
+CAMLprim value Base_int_math_int64_clz(value v) {
+  return Val_int (__builtin_clzll (Int64_val(v)));
+}
+
+CAMLprim value Base_int_math_nativeint_clz(value v) {
+#ifdef ARCH_SIXTYFOUR
+  return Val_int (__builtin_clzll (Nativeint_val(v)));
+#else
+  return Val_int (__builtin_clz   (Nativeint_val(v)));
 #endif
 }

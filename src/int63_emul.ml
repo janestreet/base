@@ -61,6 +61,12 @@ module W : sig
   val of_int64_trunc : Caml.Int64.t -> t
 
   val compare : t -> t -> int
+
+  val ceil_pow2 : t -> t
+  val floor_pow2 : t -> t
+  val ceil_log2 : t -> int
+  val floor_log2 : t -> int
+  val is_pow2 : t -> bool
 end = struct
   type t = int64
   include (T0 : module type of struct include T0 end with type t := t)
@@ -120,6 +126,11 @@ end = struct
 
   let compare (x : t) y = compare x y
 
+  let is_pow2    x = Int64.is_pow2    (unwrap x)
+  let floor_pow2 x = Int64.floor_pow2 (unwrap x) |> wrap_exn
+  let ceil_pow2  x = Int64.floor_pow2 (unwrap x) |> wrap_exn
+  let floor_log2 x = Int64.floor_log2 (unwrap x)
+  let ceil_log2  x = Int64.ceil_log2  (unwrap x)
 end
 
 open W
@@ -203,7 +214,6 @@ module T = struct
         | `Neg -> neg int63
         | `Pos -> int63
     with _ -> invalid_str str
-
 end
 
 include T
@@ -232,6 +242,11 @@ let min_value = min_value
 let minus_one = wrap_exn Caml.Int64.minus_one
 let one = wrap_exn Caml.Int64.one
 let zero = wrap_exn Caml.Int64.zero
+let is_pow2 = is_pow2
+let floor_pow2 = floor_pow2
+let ceil_pow2 = ceil_pow2
+let floor_log2 = floor_log2
+let ceil_log2 = ceil_log2
 let to_float x = Caml.Int64.to_float (unwrap x)
 let of_float_unchecked x = wrap_modulo (Caml.Int64.of_float x)
 let of_float t =

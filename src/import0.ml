@@ -191,6 +191,22 @@ end
 
 include Int_replace_polymorphic_compare
 
+module Int32_replace_polymorphic_compare = struct
+  let ( <  ) (x : Caml.Int32.t) y = Poly.( <  ) x y
+  let ( <= ) (x : Caml.Int32.t) y = Poly.( <= ) x y
+  let ( <> ) (x : Caml.Int32.t) y = Poly.( <> ) x y
+  let ( =  ) (x : Caml.Int32.t) y = Poly.( =  ) x y
+  let ( >  ) (x : Caml.Int32.t) y = Poly.( >  ) x y
+  let ( >= ) (x : Caml.Int32.t) y = Poly.( >= ) x y
+
+  let ascending  (x : Caml.Int32.t) y = Poly.ascending  x y
+  let descending (x : Caml.Int32.t) y = Poly.descending x y
+  let compare    (x : Caml.Int32.t) y = Poly.compare    x y
+  let equal      (x : Caml.Int32.t) y = Poly.equal      x y
+  let max        (x : Caml.Int32.t) y = if x >= y then x else y
+  let min        (x : Caml.Int32.t) y = if x <= y then x else y
+end
+
 module Int64_replace_polymorphic_compare = struct
   let ( <  ) (x : Caml.Int64.t) y = Poly.( <  ) x y
   let ( <= ) (x : Caml.Int64.t) y = Poly.( <= ) x y

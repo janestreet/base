@@ -160,9 +160,17 @@ let%test _ = filter [| 0; 1 |] ~f:(fun n -> n < 2) = [| 0; 1 |]
 let%test _ = filter [| 0; 1 |] ~f:(fun n -> n < 1) = [| 0 |]
 let%test _ = filter [| 0; 1 |] ~f:(fun n -> n < 0) = [||]
 
+let%test _ = exists [||] ~f:(fun _ -> true) = false
+let%test _ = exists [|0;1;2;3|] ~f:(fun x -> 4 = x) = false
+let%test _ = exists [|0;1;2;3|] ~f:(fun x -> 2 = x) = true
+
 let%test _ = existsi [||] ~f:(fun _ _ -> true) = false
 let%test _ = existsi [|0;1;2;3|] ~f:(fun i x -> i <> x) = false
 let%test _ = existsi [|0;1;3;3|] ~f:(fun i x -> i <> x) = true
+
+let%test _ = for_all [||]        ~f:(fun _ -> false) = true
+let%test _ = for_all [|1;2;3|]   ~f:Int.is_positive  = true
+let%test _ = for_all [|0;1;3;3|] ~f:Int.is_positive  = false
 
 let%test _ = for_alli [||] ~f:(fun _ _ -> false) = true
 let%test _ = for_alli [|0;1;2;3|] ~f:(fun i x -> i = x) = true
@@ -184,6 +192,9 @@ let%test _ = not (equal [||] [| 1 |] ~equal:(=))
 let%test _ = not (equal [| 1 |] [||] ~equal:(=))
 let%test _ = not (equal [| 1 |] [| 1; 2 |] ~equal:(=))
 let%test _ = not (equal [| 1; 2 |] [| 1; 3 |] ~equal:(=))
+
+let%test _ = findi [|1;2;3;4|] ~f:(fun i x -> i = 2*x) = None
+let%test _ = findi [|1;2;1;4|] ~f:(fun i x -> i = 2*x) = Some (2, 1)
 
 let%test _ = find_mapi [|0;5;2;1;4|] ~f:(fun i x -> if i = x then Some (i+x) else None) = Some 0
 let%test _ = find_mapi [|3;5;2;1;4|] ~f:(fun i x -> if i = x then Some (i+x) else None) = Some 4
@@ -238,3 +249,15 @@ let%test _ = test_fold_mapi [|1;2;3;4|] ~init:0
 let%test _ = test_fold_mapi [||] ~init:0
                ~f:(fun i acc x -> let y = acc+i*x in y,y)
                ~expect:(0, [||])
+
+let%test "equal does not allocate" =
+  let arr1 = [|1;2;3;4|] in
+  let arr2 = [|1;2;4;3|] in
+  Expect_test_helpers_kernel.require_no_allocation [%here] (fun () ->
+    not (equal ~equal:Int.equal arr1 arr2))
+
+let%test "foldi does not allocate" =
+  let arr = [|1;2;3;4|] in
+  let f = fun i x y -> i + x + y in
+  Expect_test_helpers_kernel.require_no_allocation [%here] (fun () ->
+    16 = (foldi ~init:0 ~f arr))

@@ -140,6 +140,73 @@ let to_nativeint_exn = to_nativeint
 let pow b e = of_int_exn (Int_math.int_pow (to_int_exn b) (to_int_exn e))
 let ( ** ) b e = pow b e
 
+module Pow2 = struct
+  open! Import
+  open Int32_replace_polymorphic_compare
+
+  module Sys = Sys0
+
+  let raise_s = Error.raise_s
+
+  let non_positive_argument () =
+    Printf.invalid_argf "argument must be strictly positive" ()
+
+  let ( lor ) = Caml.Int32.logor;;
+  let ( lsr ) = Caml.Int32.shift_right_logical;;
+  let ( land ) = Caml.Int32.logand;;
+
+  (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
+  let ceil_pow2 x =
+    if x <= Caml.Int32.zero then non_positive_argument ();
+    let x = Caml.Int32.pred x in
+    let x = x lor (x lsr 1) in
+    let x = x lor (x lsr 2) in
+    let x = x lor (x lsr 4) in
+    let x = x lor (x lsr 8) in
+    let x = x lor (x lsr 16) in
+    Caml.Int32.succ x
+  ;;
+
+  (** "floor power of 2" - Largest power of 2 less than or equal to x. *)
+  let floor_pow2 x =
+    if x <= Caml.Int32.zero then non_positive_argument ();
+    let x = x lor (x lsr 1) in
+    let x = x lor (x lsr 2) in
+    let x = x lor (x lsr 4) in
+    let x = x lor (x lsr 8) in
+    let x = x lor (x lsr 16) in
+    Caml.Int32.sub x (x lsr 1)
+  ;;
+
+  let is_pow2 x =
+    if x <= Caml.Int32.zero then non_positive_argument ();
+    (x land (Caml.Int32.pred x)) = Caml.Int32.zero
+  ;;
+
+  (* C stub for int clz to use the CLZ/BSR instruction where possible. *)
+  external int32_clz : int32 -> int = "Base_int_math_int32_clz" [@@noalloc]
+
+  (** Hacker's Delight Second Edition p106 *)
+  let floor_log2 i =
+    if i <= Caml.Int32.zero then
+      raise_s (Sexp.message "[Int32.floor_log2] got invalid input"
+                 ["", sexp_of_int32 i]);
+    num_bits - 1 - int32_clz i
+  ;;
+
+  (** Hacker's Delight Second Edition p106 *)
+  let ceil_log2 i =
+    if i <= Caml.Int32.zero then
+      raise_s (Sexp.message "[Int32.ceil_log2] got invalid input"
+                 ["", sexp_of_int32 i]);
+    (* The [i = 1] check is needed because clz(0) is undefined *)
+    if Caml.Int32.equal i Caml.Int32.one
+    then 0
+    else num_bits - int32_clz (Caml.Int32.pred i)
+  ;;
+end
+include Pow2
+
 include Conv.Make (T)
 
 include Conv.Make_hex(struct

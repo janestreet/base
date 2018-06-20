@@ -92,6 +92,76 @@ let of_float f =
       (Float0.box f)
       ()
 
+module Pow2 = struct
+  open! Import
+  open Nativeint_replace_polymorphic_compare
+
+  module Sys = Sys0
+
+  let raise_s = Error.raise_s
+
+  let non_positive_argument () =
+    Printf.invalid_argf "argument must be strictly positive" ()
+
+  let ( lor ) = Caml.Nativeint.logor;;
+  let ( lsr ) = Caml.Nativeint.shift_right_logical;;
+  let ( land ) = Caml.Nativeint.logand;;
+
+  (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
+  let ceil_pow2 (x : nativeint) =
+    if x <= 0n then non_positive_argument ();
+    let x = Caml.Nativeint.pred x in
+    let x = x lor (x lsr 1) in
+    let x = x lor (x lsr 2) in
+    let x = x lor (x lsr 4) in
+    let x = x lor (x lsr 8) in
+    let x = x lor (x lsr 16) in
+    (* The next line is superfluous on 32-bit architectures, but it's faster to do it
+       anyway than to branch *)
+    let x = x lor (x lsr 32) in
+    Caml.Nativeint.succ x
+  ;;
+
+  (** "floor power of 2" - Largest power of 2 less than or equal to x. *)
+  let floor_pow2 x =
+    if x <= 0n then non_positive_argument ();
+    let x = x lor (x lsr 1) in
+    let x = x lor (x lsr 2) in
+    let x = x lor (x lsr 4) in
+    let x = x lor (x lsr 8) in
+    let x = x lor (x lsr 16) in
+    let x = x lor (x lsr 32) in
+    Caml.Nativeint.sub x (x lsr 1)
+  ;;
+
+  let is_pow2 x =
+    if x <= 0n then non_positive_argument ();
+    (x land (Caml.Nativeint.pred x)) = 0n
+  ;;
+
+  (* C stub for nativeint clz to use the CLZ/BSR instruction where possible *)
+  external nativeint_clz : nativeint -> int = "Base_int_math_nativeint_clz" [@@noalloc]
+
+  (** Hacker's Delight Second Edition p106 *)
+  let floor_log2 i =
+    if Pervasives.( <= ) i Caml.Nativeint.zero then
+      raise_s (Sexp.message "[Nativeint.floor_log2] got invalid input"
+                 ["", sexp_of_nativeint i]);
+    Sys.word_size_in_bits - 1 - nativeint_clz i
+  ;;
+
+  (** Hacker's Delight Second Edition p106 *)
+  let ceil_log2 i =
+    if Pervasives.( <= ) i Caml.Nativeint.zero then
+      raise_s (Sexp.message "[Nativeint.ceil_log2] got invalid input"
+                 ["", sexp_of_nativeint i]);
+    if Caml.Nativeint.equal i Caml.Nativeint.one
+    then 0
+    else Sys.word_size_in_bits - nativeint_clz (Caml.Nativeint.pred i)
+  ;;
+end
+include Pow2
+
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max =
   if t < min then min else if t <= max then t else max

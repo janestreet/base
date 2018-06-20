@@ -260,22 +260,25 @@ let to_array t = t
 let is_empty t = length t = 0
 
 let is_sorted t ~compare =
-  let rec loop i =
-    if i < 1 then
-      true
+  let rec is_sorted_loop t ~compare i =
+    if i < 1
+    then true
     else
-      compare t.(i - 1) t.(i) <= 0 && loop (i - 1)
+      compare t.(i - 1) t.(i) <= 0
+      && is_sorted_loop t ~compare (i - 1)
   in
-  loop (length t - 1)
+  is_sorted_loop t ~compare (length t - 1)
+;;
 
 let is_sorted_strictly t ~compare =
-  let rec loop i =
-    if i < 1 then
-      true
+  let rec is_sorted_strictly_loop t ~compare i =
+    if i < 1
+    then true
     else
-      compare t.(i - 1) t.(i) < 0 && loop (i - 1)
+      compare t.(i - 1) t.(i) < 0
+      && is_sorted_strictly_loop t ~compare (i - 1)
   in
-  loop (length t - 1)
+  is_sorted_strictly_loop t ~compare (length t - 1)
 ;;
 
 let folding_map t ~init ~f =
@@ -305,12 +308,12 @@ let min_elt t ~compare = Container.min_elt ~fold t ~compare
 let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
 let foldi t ~init ~f =
-  let rec loop i ac =
-    if i = length t then
-      ac
-    else loop (i + 1) (f i ac t.(i))
+  let rec foldi_loop t i ac ~f =
+    if i = length t
+    then ac
+    else foldi_loop t (i + 1) (f i ac t.(i)) ~f
   in
-  loop 0 init
+  foldi_loop t 0 init ~f
 ;;
 
 let folding_mapi t ~init ~f =
@@ -376,8 +379,26 @@ let of_list_map xs ~f =
       | hd::tl -> unsafe_set a i (f hd); fill (i+1) tl in
     fill 1 tl
 
+let of_list_mapi xs ~f =
+  match xs with
+  | [] -> [||]
+  | hd::tl ->
+    let a = create ~len:(1 + List.length tl) (f 0 hd) in
+    let rec fill a i = function
+      | []     -> a
+      | hd::tl ->
+        unsafe_set a i (f i hd);
+        fill a (i+1) tl
+    in
+    fill a 1 tl
+
 let of_list_rev_map xs ~f =
   let t = of_list_map xs ~f in
+  rev_inplace t;
+  t
+
+let of_list_rev_mapi xs ~f =
+  let t = of_list_mapi xs ~f in
   rev_inplace t;
   t
 
@@ -434,58 +455,58 @@ let filter t ~f = filter_map t ~f:(fun x -> if f x then Some x else None)
 let filteri t ~f = filter_mapi t ~f:(fun i x -> if f i x then Some x else None)
 
 let exists t ~f =
-  let rec loop i =
+  let rec exists_loop t ~f i =
     if i < 0
     then false
-    else f t.(i) || loop (i - 1)
+    else f t.(i) || exists_loop t ~f (i - 1)
   in
-  loop (length t - 1)
+  exists_loop t ~f (length t - 1)
 
 let existsi t ~f =
-  let rec loop i =
+  let rec existsi_loop t ~f i =
     if i < 0
     then false
-    else f i t.(i) || loop (i - 1)
+    else f i t.(i) || existsi_loop t ~f (i - 1)
   in
-  loop (length t - 1)
+  existsi_loop t ~f (length t - 1)
 
 let mem t a ~equal = exists t ~f:(equal a)
 
 let for_all t ~f =
-  let rec loop i =
+  let rec for_all_loop t ~f i =
     if i < 0
     then true
-    else f t.(i) && loop (i - 1)
+    else f t.(i) && for_all_loop t ~f (i - 1)
   in
-  loop (length t - 1)
+  for_all_loop t ~f (length t - 1)
 
 let for_alli t ~f =
-  let rec loop i =
+  let rec for_alli_loop t ~f i =
     if i < 0
     then true
-    else f i t.(i) && loop (i - 1)
+    else f i t.(i) && for_alli_loop t ~f (i - 1)
   in
-  loop (length t - 1)
+  for_alli_loop t ~f (length t - 1)
 
 let exists2_exn t1 t2 ~f =
-  let len = length t1 in
-  if length t2 <> len then invalid_arg "Array.exists2_exn";
-  let rec loop i =
+  let rec exitsts2_exn_loop t1 t2 ~f i =
     if i < 0
     then false
-    else f t1.(i) t2.(i) || loop (i - 1)
+    else f t1.(i) t2.(i) || exitsts2_exn_loop t1 t2 ~f (i - 1)
   in
-  loop (len - 1)
+  let len = length t1 in
+  if length t2 <> len then invalid_arg "Array.exists2_exn";
+  exitsts2_exn_loop t1 t2 ~f (len - 1)
 
 let for_all2_exn t1 t2 ~f =
-  let len = length t1 in
-  if length t2 <> len then invalid_arg "Array.for_all2_exn";
-  let rec loop i =
+  let rec for_all2_loop t1 t2 ~f i =
     if i < 0
     then true
-    else f t1.(i) t2.(i) && loop (i - 1)
+    else f t1.(i) t2.(i) && for_all2_loop t1 t2 ~f (i - 1)
   in
-  loop (len - 1)
+  let len = length t1 in
+  if length t2 <> len then invalid_arg "Array.for_all2_exn";
+  for_all2_loop t1 t2 ~f (len - 1)
 
 let equal t1 t2 ~equal = length t1 = length t2 && for_all2_exn t1 t2 ~f:equal
 
@@ -499,13 +520,13 @@ let map_inplace t ~f =
 let replace_all = map_inplace
 
 let findi t ~f =
-  let length = length t in
-  let rec loop i =
+  let rec findi_loop t ~f ~length i =
     if i >= length then None
     else if f i t.(i) then Some (i, t.(i))
-    else loop (i + 1)
+    else findi_loop t ~f ~length (i + 1)
   in
-  loop 0
+  let length = length t in
+  findi_loop t ~f ~length 0
 ;;
 
 let findi_exn t ~f =
@@ -523,15 +544,15 @@ let find_exn t ~f =
 let find t ~f = Option.map (findi t ~f:(fun _i x -> f x)) ~f:(fun (_i, x) -> x)
 
 let find_map t ~f =
-  let length = length t in
-  let rec loop i =
+  let rec find_map_loop t ~f ~length i =
     if i >= length then None
     else
       match f t.(i) with
-      | None -> loop (i + 1)
+      | None -> find_map_loop t ~f ~length (i + 1)
       | Some _ as res -> res
   in
-  loop 0
+  let length = length t in
+  find_map_loop t ~f ~length 0
 ;;
 
 let find_map_exn t ~f =
@@ -540,15 +561,15 @@ let find_map_exn t ~f =
   | Some x -> x
 
 let find_mapi t ~f =
-  let length = length t in
-  let rec loop i =
+  let rec find_mapi_loop t ~f ~length i =
     if i >= length then None
     else
       match f i t.(i) with
-      | None -> loop (i + 1)
+      | None -> find_mapi_loop t ~f ~length (i + 1)
       | Some _ as res -> res
   in
-  loop 0
+  let length = length t in
+  find_mapi_loop t ~f ~length 0
 ;;
 
 let find_mapi_exn t ~f =

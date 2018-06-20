@@ -269,6 +269,23 @@ module type S = sig
       input. *)
   val shift_right_logical : t -> int -> t
 
+  (** [ceil_pow2 x] returns the smallest power of 2 that is greater than or equal to [x].
+      The implementation may only be called for [x > 0].  Example: [ceil_pow2 17 = 32] *)
+  val ceil_pow2 : t -> t
+
+  (** [floor_pow2 x] returns the largest power of 2 that is less than or equal to [x]. The
+      implementation may only be called for [x > 0].  Example: [floor_pow2 17 = 16] *)
+  val floor_pow2 : t -> t
+
+  (** [ceil_log2 x] returns the ceiling of log-base-2 of [x], and raises if [x <= 0]. *)
+  val ceil_log2 : t -> int
+
+  (** [floor_log2 x] returns the floor of log-base-2 of [x], and raises if [x <= 0]. *)
+  val floor_log2 : t -> int
+
+  (** [is_pow2 x] returns true iff [x] is a power of 2.  [is_pow2] raises if [x <= 0]. *)
+  val is_pow2 : t -> bool
+
   (** A sub-module designed to be opened to make working with ints more convenient.  *)
   module O : Operators with type t := t
 end
@@ -283,37 +300,12 @@ include
     module Check_S_unbounded_in_S           (M : S)           = (M : S_unbounded)
   end : sig end)
 
-(** OCaml's native integer type.
-
-    The number of bits in an integer is platform dependent, being 31-bits on a 32-bit
-    platform, and 63-bits on a 64-bit platform.  [int] is a signed integer type.  [int]s
-    are also subject to overflow, meaning that [Int.max_value + 1 = Int.min_value].
-
-    [int]s always fit in a machine word. *)
 module type Int_without_module_types = sig
-
   include S with type t = int
 
   (** [max_value_30_bits = 2^30 - 1].  It is useful for writing tests that work on both
       64-bit and 32-bit platforms. *)
   val max_value_30_bits : t
-
-  (** [ceil_pow2 x] returns the smallest power of 2 that is greater than or equal to [x].
-      The implementation may only be called for [x > 0].  Example: [ceil_pow2 17 = 32] *)
-  val ceil_pow2 : int -> int
-
-  (** [floor_pow2 x] returns the largest power of 2 that is less than or equal to [x]. The
-      implementation may only be called for [x > 0].  Example: [floor_pow2 17 = 16] *)
-  val floor_pow2 : int -> int
-
-  (** [ceil_log2 x] returns the ceiling of log-base-2 of [x], and raises if [x <= 0]. *)
-  val ceil_log2 : int -> int
-
-  (** [floor_log2 x] returns the floor of log-base-2 of [x], and raises if [x <= 0]. *)
-  val floor_log2 : int -> int
-
-  (** [is_pow2 x] returns true iff [x] is a power of 2.  [is_pow2] raises if [x <= 0]. *)
-  val is_pow2 : int -> bool
 
   (** {2 Conversion functions} *)
 
@@ -349,6 +341,13 @@ module type Int_without_module_types = sig
   end
 end
 
+(** OCaml's native integer type.
+
+    The number of bits in an integer is platform dependent, being 31-bits on a 32-bit
+    platform, and 63-bits on a 64-bit platform.  [int] is a signed integer type.  [int]s
+    are also subject to overflow, meaning that [Int.max_value + 1 = Int.min_value].
+
+    [int]s always fit in a machine word. *)
 module type Int = sig
   include Int_without_module_types
 
