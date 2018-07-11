@@ -201,6 +201,9 @@ rule line = parse
   | "module Camlinternal" _*
     { "" (* We can't deprecate these *) }
 
+  | "module Bigarray" _*
+    { "" (* Don't deprecate it yet *) }
+
   | "type " (params? (id as id) _* as def)
     { sprintf "type nonrec %s\n%s" def
         (match id with
@@ -210,6 +213,13 @@ rule line = parse
     }
 
   | val_ (val_id as id) _* as line { replace id (val_replacement id) line }
+
+  | "module " (id as id) " = Stdlib__" (id as id2) (_* as line)
+      {
+        let line = Printf.sprintf "module %s = Stdlib.%s %s" id (String.capitalize_ascii id2) line in
+      match module_replacement id with
+      | Some replacement -> replace id replacement line
+      | None -> sprintf "%s\n%s" line (deprecated_msg id) }
 
   | "exception " (id as id) _* as line
   | "module " (id as id) _* as line
