@@ -1,4 +1,10 @@
-## v0.11
+## v0.11.1
+
+- Fix 4.07 build (#52, fixes #47)
+
+- Fix backtrace truncation problem (fix #44)
+
+## v0.11.0
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its
   use isn't recommended.
