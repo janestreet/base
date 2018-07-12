@@ -201,6 +201,9 @@ rule line = parse
   | "module Camlinternal" _*
     { "" (* We can't deprecate these *) }
 
+  | "module Bigarray" _*
+    { "" (* Don't deprecate it yet *) }
+
   | "type " (params? (id as id) _* as def)
     { sprintf "type nonrec %s\n%s" def
         (match id with
@@ -212,6 +215,10 @@ rule line = parse
   | val_ (val_id as id) _* as line { replace id (val_replacement id) line }
 
   | "exception " (id as id) _* as line
+  | "module Stdlib__" (id as id) _* as line
+    { match module_replacement id with
+      | Some replacement -> replace id replacement line
+      | None -> sprintf "%s\n%s" line (deprecated_msg id) }
   | "module " (id as id) _* as line
     { match module_replacement id with
       | Some replacement -> replace id replacement line

@@ -15,6 +15,7 @@ include
        with module Buffer    := Caml.Buffer
        with module Bytes     := Caml.Bytes
        with module Char      := Caml.Char
+       with module Float     := Caml.Float
        with module Hashtbl   := Caml.Hashtbl
        with module Int32     := Caml.Int32
        with module Int64     := Caml.Int64
