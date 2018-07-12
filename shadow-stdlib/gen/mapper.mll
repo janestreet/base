@@ -2,6 +2,15 @@
 open StdLabels
 open Printf
 
+module String = struct
+  [@@@warning "-32-3"]
+  let capitalize_ascii   = String.capitalize
+  let uncapitalize_ascii = String.uncapitalize
+  let uppercase_ascii    = String.uppercase
+  let lowercase_ascii    = String.lowercase
+  include String
+end
+
 let deprecated_msg what =
   sprintf
     "[@@deprecated \"\\\n\
@@ -216,7 +225,7 @@ rule line = parse
 
   | "module " (id as id) " = Stdlib__" (id as id2) (_* as line)
       {
-        let line = Printf.sprintf "module %s = Stdlib.%s %s" id (String.capitalize_ascii id2) line in
+        let line = Printf.sprintf "module %s = Stdlib.%s %s" id (String.capitalize id2) line in
       match module_replacement id with
       | Some replacement -> replace id replacement line
       | None -> sprintf "%s\n%s" line (deprecated_msg id) }
