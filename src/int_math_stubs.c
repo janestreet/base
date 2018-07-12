@@ -5,6 +5,29 @@
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 
+#ifdef _MSC_VER
+
+#include <intrin.h>
+
+#define __builtin_popcountll __popcnt64
+#define __builtin_popcount   __popcnt
+
+static uint32_t __inline __builtin_clz(uint32_t x)
+{
+  int r = 0;
+  _BitScanForward(&r, x);
+  return r;
+}
+
+static uint64_t __inline __builtin_clzll(uint64_t x)
+{
+  int r = 0;
+  _BitScanForward64(&r, x);
+  return r;
+}
+
+#endif
+
 static int64_t int_pow(int64_t base, int64_t exponent) {
   int64_t ret = 1;
   int64_t mul[4];

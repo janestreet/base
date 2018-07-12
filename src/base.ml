@@ -96,7 +96,6 @@ module Hash_set                  = Hash_set
 module Hashable                  = Hashable
 module Hasher                    = Hasher
 module Hashtbl                   = Hashtbl
-module Heap_block                = Heap_block
 module Identifiable              = Identifiable
 module Indexed_container         = Indexed_container
 module Info                      = Info

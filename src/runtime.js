@@ -6,11 +6,6 @@ function Base_int_math_int_popcount(v) {
   return ((v + (v >>> 4) & 0xF0F0F0F) * 0x1010101) >>> 24;
 }
 
-//Provides: Base_heap_block_is_heap_block
-function Base_heap_block_is_heap_block(x){
-  return +(x instanceof Array);
-}
-
 //Provides: Base_clear_caml_backtrace_pos
 function Base_clear_caml_backtrace_pos(x) {
   return 0

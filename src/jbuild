@@ -37,7 +37,6 @@
    (exn_stubs
     int_math_stubs
     internalhash_stubs
-    heap_block_stubs
     hash_stubs
     am_testing))
   (preprocess no_preprocessing)
