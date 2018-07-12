@@ -449,7 +449,7 @@ val sub : 'a t -> pos:int -> len:int -> 'a t
 val take : 'a t -> int -> 'a t
 
 (** [drop l n] returns [l] without the first [n] elements, or the empty list if [n >
-    length l].  [drop l n = snd (split_n l n)]. *)
+    length l].  [drop l n] is equivalent to [snd (split_n l n)]. *)
 val drop : 'a t -> int -> 'a t
 
 (** [take_while l ~f] returns the longest prefix of [l] for which [f] is [true]. *)
