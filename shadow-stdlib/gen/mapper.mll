@@ -225,7 +225,7 @@ rule line = parse
 
   | "module " (id as id) " = Stdlib__" (id as id2) (_* as line)
       {
-        let line = Printf.sprintf "module %s = Stdlib.%s %s" id (String.capitalize id2) line in
+        let line = Printf.sprintf "module %s = Stdlib.%s %s" id (String.capitalize_ascii id2) line in
       match module_replacement id with
       | Some replacement -> replace id replacement line
       | None -> sprintf "%s\n%s" line (deprecated_msg id) }
