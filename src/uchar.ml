@@ -74,7 +74,8 @@ let to_char_exn c =
   then unsafe_to_char c
   else failwithf "Uchar.to_char_exn got a non latin-1 character: U+%04X"  (to_int c) ()
 
-(* Include replace_polymorphic_compare at the end, after any functor instantiations that
-   could shadow its definitions. This is here so that efficient versions of the comparison
-   functions are exported by this module. *)
+(* Include type-specific [Replace_polymorphic_compare] at the end, after
+   including functor application that could shadow its definitions. This is
+   here so that efficient versions of the comparison functions are exported by
+   this module. *)
 include Uchar_replace_polymorphic_compare

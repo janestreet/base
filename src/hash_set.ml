@@ -71,7 +71,16 @@ module Accessors = struct
   let sexp_of_t sexp_of_e t =
     sexp_of_list sexp_of_e (to_list t |> List.sort ~compare:(hashable t).compare)
 
-  let to_array t = Array.of_list (to_list t)
+  let to_array t =
+    let len   = length t in
+    let index = ref (len - 1) in
+    fold t ~init:[||] ~f:(fun acc key ->
+      if Array.length acc = 0 then Array.create ~len key
+      else begin
+        index := !index - 1;
+        Array.set acc (!index) key;
+        acc
+      end)
 
   let exists  t ~f =      Hashtbl.existsi t ~f:(fun ~key ~data:() ->      f key)
   let for_all t ~f = not (Hashtbl.existsi t ~f:(fun ~key ~data:() -> not (f key)))

@@ -236,18 +236,6 @@ module type S2 = sig
   include module type of Applicative_infix
 end
 
-(** This module serves mostly as a partial check that [S2] and [S] are in sync, but
-    actually calling it is occasionally useful. *)
-module S_to_S2 (X : S) : (S2 with type ('a, 'e) t = 'a X.t) = struct
-  type ('a, 'e) t = 'a X.t
-  include (X : S with type 'a t := 'a X.t)
-end
-
-module S2_to_S (X : S2) : (S with type 'a t = ('a, unit) X.t) = struct
-  type 'a t = ('a, unit) X.t
-  include (X : S2 with type ('a, 'e) t := ('a, 'e) X.t)
-end
-
 module type Args2 = sig
   type ('a, 'e) arg
 
@@ -264,15 +252,6 @@ module type Args2 = sig
   val applyN : ('f, 'e) arg -> ('f, 'r, 'e) t -> ('r, 'e) arg
 end
 
-module Args_to_Args2 (X : Args) : (
-  Args2 with type ('a, 'e) arg = 'a X.arg
-  with type ('f, 'r, 'e) t = ('f, 'r) X.t
-) = struct
-  type ('a, 'e) arg = 'a X.arg
-  type ('f, 'r, 'e) t = ('f, 'r) X.t
-  include (X : Args with type 'a arg := 'a X.arg and type ('f, 'r) t := ('f, 'r) X.t)
-end
-
 module type Applicative = sig
 
   module type Applicative_infix = Applicative_infix
@@ -286,9 +265,14 @@ module type Applicative = sig
   module type S                 = S
   module type S2                = S2
 
-  module Args_to_Args2 = Args_to_Args2
-  module S2_to_S       = S2_to_S
-  module S_to_S2       = S_to_S2
+  module Args_to_Args2 (X : Args) :
+    Args2
+    with type ('a, 'e) arg = 'a X.arg
+    with type ('f, 'r, 'e) t = ('f, 'r) X.t
+
+  module S2_to_S (X : S2) : S with type 'a t = ('a, unit) X.t
+
+  module S_to_S2 (X : S) : S2 with type ('a, 'e) t = 'a X.t
 
   module Make  (X : Basic ) : S  with type  'a      t :=  'a      X.t
   module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t

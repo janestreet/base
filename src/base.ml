@@ -135,6 +135,7 @@ module Sequence                  = Sequence
 module Set                       = Set
 module Sexpable                  = Sexpable
 module Sign                      = Sign
+module Sign_or_nan               = Sign_or_nan
 module Source_code_position      = Source_code_position
 module Staged                    = Staged
 module String                    = String

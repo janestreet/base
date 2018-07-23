@@ -2,6 +2,27 @@ open! Import
 
 include Applicative_intf
 
+(** This module serves mostly as a partial check that [S2] and [S] are in sync, but
+    actually calling it is occasionally useful. *)
+module S_to_S2 (X : S) : (S2 with type ('a, 'e) t = 'a X.t) = struct
+  type ('a, 'e) t = 'a X.t
+  include (X : S with type 'a t := 'a X.t)
+end
+
+module S2_to_S (X : S2) : (S with type 'a t = ('a, unit) X.t) = struct
+  type 'a t = ('a, unit) X.t
+  include (X : S2 with type ('a, 'e) t := ('a, 'e) X.t)
+end
+
+module Args_to_Args2 (X : Args) : (
+  Args2 with type ('a, 'e) arg = 'a X.arg
+  with type ('f, 'r, 'e) t = ('f, 'r) X.t
+) = struct
+  type ('a, 'e) arg = 'a X.arg
+  type ('f, 'r, 'e) t = ('f, 'r) X.t
+  include (X : Args with type 'a arg := 'a X.arg and type ('f, 'r) t := ('f, 'r) X.t)
+end
+
 module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = struct
 
   include X

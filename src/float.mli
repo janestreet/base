@@ -538,7 +538,8 @@ val sign : t -> Sign.t
     values map to [Neg] or [Pos]. *)
 val sign_exn : t -> Sign.t
 
-module Sign_or_nan : sig type t = Neg | Zero | Pos | Nan end
+(** The sign of a float, with support for NaN. Both [-0.] and [0.] map to [Zero].  All NaN
+    values map to [Nan]. All other values map to [Neg] or [Pos]. *)
 val sign_or_nan : t -> Sign_or_nan.t
 
 (** These functions construct and destruct 64-bit floating point numbers based on their

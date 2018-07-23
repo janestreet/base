@@ -547,28 +547,6 @@ module type Creators = sig
     -> ('a, 'b) t
 end
 
-module Check = struct
-  module Make_creators_check (Type : T.T2) (Key : T.T1) (Options : T.T3)
-      (M : Creators_generic
-       with type ('a, 'b) t := ('a, 'b) Type.t
-       with type 'a key := 'a Key.t
-       with type ('a, 'b, 'z) create_options := ('a, 'b, 'z) Options.t)
-  = struct end
-
-  module Check_creators_is_specialization_of_creators_generic (M : Creators) =
-    Make_creators_check
-      (struct type ('a, 'b) t = ('a, 'b) M.t end)
-      (struct type 'a t = 'a end)
-      (struct type ('a, 'b, 'z) t = ('a, 'b, 'z) create_options end)
-      (struct
-        include M
-
-        let create ?growth_allowed ?size m () =
-          create ?growth_allowed ?size m
-      end)
-end
-
-
 module type S_without_submodules = sig
 
   val hash : 'a -> int

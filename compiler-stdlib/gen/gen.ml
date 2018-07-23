@@ -1,16 +1,20 @@
 open StdLabels
 
 let () =
-  let archive_fn, oc =
+  let ocaml_where, oc =
     match Sys.argv with
-    | [|_; "-stdlib"; archive_fn; "-o"; fn|] ->
-      (archive_fn, open_out fn)
+    | [|_; "-ocaml-where"; ocaml_where; "-o"; fn|] ->
+      (ocaml_where, open_out fn)
     | _ ->
       failwith "bad command line arguments"
   in
 
   (* The cma format is documented in typing/cmo_format.mli in the compiler sources *)
-  let ic = open_in_bin archive_fn in
+  let ic =
+    let (^/) = Filename.concat in
+    try open_in_bin (ocaml_where ^/ "stdlib" ^/ "stdlib.cma")
+    with Sys_error _ -> open_in_bin (ocaml_where ^/ "stdlib.cma")
+  in
   let len_magic_number = String.length Config.cma_magic_number in
   let magic_number = really_input_string ic len_magic_number in
   assert (magic_number = Config.cma_magic_number);

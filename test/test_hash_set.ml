@@ -47,3 +47,18 @@ let%expect_test "sexp" =
   print_s [%sexp (str_hash_set : string Hash_set.t)];
   [%expect {| (0 1 10 11 12 13 14 15 16 17 18 19 2 3 4 5 6 7 8 9) |}];
 ;;
+
+let%expect_test "to_array" =
+  let empty_array = to_array (Hash_set.of_list (module Int) []) in
+  print_s [%sexp (empty_array : int Array.t)];
+  [%expect {| () |}];
+  let array_from_to_array = to_array (Hash_set.of_list (module Int) [1; 2; 3; 4; 5;]) in
+  print_s [%sexp (array_from_to_array : int Array.t)];
+  [%expect {| (1 3 2 4 5) |}];
+  let array_via_to_list =
+    to_list (Hash_set.of_list (module Int) [1; 2; 3; 4; 5;]) |> Array.of_list
+  in
+  print_s [%sexp (array_via_to_list : int Array.t)];
+  [%expect {| (1 3 2 4 5) |}];
+;;
+

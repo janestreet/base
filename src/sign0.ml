@@ -48,6 +48,22 @@ let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
 let all : t list = [Neg; Zero; Pos]
 [@@@end]
 
+module Replace_polymorphic_compare = struct
+  let ( <  ) (x : t) y = Poly.( <  ) x y
+  let ( <= ) (x : t) y = Poly.( <= ) x y
+  let ( <> ) (x : t) y = Poly.( <> ) x y
+  let ( =  ) (x : t) y = Poly.( =  ) x y
+  let ( >  ) (x : t) y = Poly.( >  ) x y
+  let ( >= ) (x : t) y = Poly.( >= ) x y
+
+  let ascending  (x : t) y = Poly.ascending  x y
+  let descending (x : t) y = Poly.descending x y
+  let compare    (x : t) y = Poly.compare    x y
+  let equal      (x : t) y = Poly.equal      x y
+  let max        (x : t) y = if x >= y then x else y
+  let min        (x : t) y = if x <= y then x else y
+end
+
 let of_string s = t_of_sexp (sexp_of_string s)
 let to_string t = string_of_sexp (sexp_of_t t)
 

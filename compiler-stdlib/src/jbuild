@@ -13,7 +13,7 @@
 (rule
  ((targets (caml.ml))
   (deps    (../gen/gen.exe))
-  (action  (run ${<} -stdlib ${ocaml_where}/stdlib.cma -o ${@}))))
+  (action  (run ${<} -ocaml-where ${ocaml_where} -o ${@}))))
 
 
 (jbuild_version 1)

@@ -945,8 +945,6 @@ let sign_exn t : Sign.t =
   else Error.raise_s (Sexp.message "Float.sign_exn of NAN"
                         ["", sexp_of_t t])
 
-module Sign_or_nan = struct type t = Neg | Zero | Pos | Nan end
-
 let sign_or_nan t : Sign_or_nan.t =
   if t > 0.
   then Pos
@@ -1085,9 +1083,11 @@ module Private = struct
   let iround_nearest_exn_64 = iround_nearest_exn_64
 end
 
-(* Include replace_polymorphic_compare at the end, after any functor instantiations that
-   could shadow its definitions. This is here so that efficient versions of the comparison
-   functions are exported by this module. *)
+
+(* Include type-specific [Replace_polymorphic_compare] at the end, after
+   including functor application that could shadow its definitions. This is
+   here so that efficient versions of the comparison functions are exported by
+   this module. *)
 include Float_replace_polymorphic_compare
 
 (* These functions specifically replace defaults in replace_polymorphic_compare *)

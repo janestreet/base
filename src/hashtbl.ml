@@ -858,3 +858,27 @@ let sexp_of_m__t (type k) (module K : Sexp_of_m with type t = k) sexp_of_v t =
 
 let m__t_of_sexp (type k) (module K : M_of_sexp with type t = k) v_of_sexp sexp =
   t_of_sexp ~hashable:(Hashable.of_key (module K)) K.t_of_sexp v_of_sexp sexp
+
+(* typechecking this code is a compile-time test that [Creators] is a specialization of
+   [Creators_generic].  *)
+module Check : sig end = struct
+  module Make_creators_check (Type : T.T2) (Key : T.T1) (Options : T.T3)
+      (M : Creators_generic
+       with type ('a, 'b) t := ('a, 'b) Type.t
+       with type 'a key := 'a Key.t
+       with type ('a, 'b, 'z) create_options := ('a, 'b, 'z) Options.t)
+  = struct end
+
+  module Check_creators_is_specialization_of_creators_generic (M : Creators) =
+    Make_creators_check
+      (struct type ('a, 'b) t = ('a, 'b) M.t end)
+      (struct type 'a t = 'a end)
+      (struct type ('a, 'b, 'z) t = ('a, 'b, 'z) create_options end)
+      (struct
+        include M
+
+        let create ?growth_allowed ?size m () =
+          create ?growth_allowed ?size m
+      end)
+end
+

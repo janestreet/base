@@ -103,7 +103,8 @@ let contains ?pos ?len t char =
   loop pos
 ;;
 
-(* Include replace_polymorphic_compare at the end, after any functor instantiations that
-   could shadow its definitions. This is here so that efficient versions of the comparison
-   functions are exported by this module. *)
+(* Include type-specific [Replace_polymorphic_compare] at the end, after
+   including functor application that could shadow its definitions. This is
+   here so that efficient versions of the comparison functions are exported by
+   this module. *)
 include Bytes_replace_polymorphic_compare

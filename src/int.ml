@@ -79,9 +79,9 @@ include Pretty_printer.Register (struct
     let module_name = "Base.Int"
   end)
 
-(* Open replace_polymorphic_compare after including functor instantiations so they do not
-   shadow its definitions. This is here so that efficient versions of the comparison
-   functions are available within this module. *)
+(* Open replace_polymorphic_compare after including functor instantiations so
+   they do not shadow its definitions. This is here so that efficient versions
+   of the comparison functions are available within this module. *)
 open! Int_replace_polymorphic_compare
 
 let between t ~low ~high = low <= t && t <= high
@@ -304,7 +304,7 @@ module Private = struct
   module O_F = O.F
 end
 
-(* Include replace_polymorphic_compare at the end, after any functor instantiations that
-   could shadow its definitions. This is here so that efficient versions of the comparison
-   functions are exported by this module. *)
+(* Include type-specific [Replace_polymorphic_compare] at the end, after including functor
+   application that could shadow its definitions. This is here so that efficient versions
+   of the comparison functions are exported by this module. *)
 include Int_replace_polymorphic_compare
