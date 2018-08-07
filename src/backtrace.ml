@@ -36,7 +36,7 @@ module Exn = struct
   let maybe_set_recording () =
     match Sys.getenv "OCAMLRUNPARAM" with
     | exception _ -> set_recording true
-    | _ -> ()  (* the caller set something, they are responsible *)
+    | (_ : string) -> ()  (* the caller set something, they are responsible *)
   ;;
 
   let with_recording b ~f =

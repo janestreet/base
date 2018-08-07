@@ -21,11 +21,11 @@ let%test_module _ =
 
       module Key  = struct
         include Quickcheck.Int
-        let gen = Quickcheck.Generator.small_non_negative_int
+        let quickcheck_generator = Quickcheck.Generator.small_non_negative_int
       end
       module Data = struct
         include Quickcheck.String
-        let gen = gen' Quickcheck.Char.gen_lowercase
+        let quickcheck_generator = gen' Quickcheck.Char.gen_lowercase
       end
 
       let compare = Key.compare
@@ -42,20 +42,20 @@ let%test_module _ =
         [@@deriving sexp_of]
 
         let add_gen =
-          Key.gen  >>= fun key  ->
-          Data.gen >>| fun data ->
+          Key.quickcheck_generator  >>= fun key  ->
+          Data.quickcheck_generator >>| fun data ->
           Add (key, data)
 
         let replace_gen =
-          Key.gen  >>= fun key  ->
-          Data.gen >>| fun data ->
+          Key.quickcheck_generator  >>= fun key  ->
+          Data.quickcheck_generator >>| fun data ->
           Replace (key, data)
 
         let remove_gen =
-          Key.gen >>| fun key ->
+          Key.quickcheck_generator >>| fun key ->
           Remove key
 
-        let gen = union [ add_gen ; replace_gen ; remove_gen ]
+        let quickcheck_generator = union [ add_gen ; replace_gen ; remove_gen ]
 
         let apply_to_tree t tree =
           match t with
@@ -79,7 +79,7 @@ let%test_module _ =
 
       end
 
-      let constructors_gen = List.gen Constructor.gen
+      let constructors_gen = List.quickcheck_generator Constructor.quickcheck_generator
 
       let reify constructors =
         List.fold constructors
@@ -129,7 +129,7 @@ let%test_module _ =
 
     let%test_unit _ =
       Quickcheck.test
-        (Quickcheck.Generator.tuple4 constructors_gen Key.gen Data.gen Quickcheck.Bool.gen)
+        (Quickcheck.Generator.tuple4 constructors_gen Key.quickcheck_generator Data.quickcheck_generator Quickcheck.Bool.quickcheck_generator)
         ~sexp_of:[%sexp_of: Constructor.t list * Key.t * Data.t * bool]
         ~f:(fun (constructors, key, data, replace) ->
           let t, map = reify constructors in
@@ -145,7 +145,7 @@ let%test_module _ =
 
     let%test_unit _ =
       Quickcheck.test
-        (Quickcheck.Generator.tuple2 constructors_gen Key.gen)
+        (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
         ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
         ~f:(fun (constructors, key) ->
           let t, map = reify constructors in
@@ -161,7 +161,7 @@ let%test_module _ =
 
     let%test_unit _ =
       Quickcheck.test
-        (Quickcheck.Generator.tuple2 constructors_gen Key.gen)
+        (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
         ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
         ~f:(fun (constructors, key) ->
           let t, map = reify constructors in
@@ -173,7 +173,7 @@ let%test_module _ =
 
     let%test_unit _ =
       Quickcheck.test
-        (Quickcheck.Generator.tuple2 constructors_gen Key.gen)
+        (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
         ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
         ~f:(fun (constructors, key) ->
           let t, map = reify constructors in
@@ -209,7 +209,7 @@ let%test_module _ =
 
     let%test_unit _ =
       Quickcheck.test
-        (Quickcheck.Generator.tuple2 constructors_gen Key.gen)
+        (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
         ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
         ~f:(fun (constructors, key) ->
           let t, map = reify constructors in
@@ -225,7 +225,7 @@ let%test_module _ =
 
     let%test_unit _ =
       Quickcheck.test
-        (Quickcheck.Generator.tuple2 constructors_gen Key.gen)
+        (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
         ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
         ~f:(fun (constructors, key) ->
           let t, map = reify constructors in

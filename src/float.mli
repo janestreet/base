@@ -59,9 +59,7 @@ val euler : t     (** Euler-Mascheroni constant (γ). *)
     order of [x], the roundoff error is on the order of [x *. float_epsilon].
 
     See also: {{:http://en.wikipedia.org/wiki/Machine_epsilon} Machine epsilon}.
-
-    (Not to be confused with
-    {{!val:robust_comparison_tolerance}[robust_comparison_tolerance]}.) *)
+*)
 val epsilon_float : t
 
 val max_finite_value : t

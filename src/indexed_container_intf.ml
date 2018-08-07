@@ -1,5 +1,4 @@
 
-
 type ('t, 'a, 'accum) fold  = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
 type ('t, 'a, 'accum) foldi =
   't -> init:'accum -> f:(int -> 'accum -> 'a -> 'accum) -> 'accum
