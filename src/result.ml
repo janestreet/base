@@ -105,12 +105,6 @@ let ignore = ignore_m
 let fail x = Error x;;
 let failf format = Printf.ksprintf fail format
 
-(* This definition shadows the version created by the functor application above, but it
-   is much more efficient. *)
-let map t ~f = match t with
-  | Ok x -> Ok (f x)
-  | Error _ as x -> x
-
 let map_error t ~f = match t with
   | Ok _ as x -> x
   | Error x -> Error (f x)

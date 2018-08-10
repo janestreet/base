@@ -38,6 +38,6 @@ let ocaml_version             = Caml.Sys.ocaml_version
 let enable_runtime_warnings   = Caml.Sys.enable_runtime_warnings
 let runtime_warnings_enabled  = Caml.Sys.runtime_warnings_enabled
 
-let opaque_identity           = Caml.Sys.opaque_identity
+external opaque_identity : 'a -> 'a = "%opaque"
 
 exception Break = Caml.Sys.Break

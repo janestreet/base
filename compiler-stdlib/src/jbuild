@@ -3,17 +3,9 @@
   (public_name base.caml)
   (preprocess no_preprocessing)))
 
-;; Generate a file containing:
-;;
-;; module Array = Array
-;; module List  = List
-;; ...
-;;
-;; include Pervasives
 (rule
  ((targets (caml.ml))
   (deps    (../gen/gen.exe))
   (action  (run ${<} -ocaml-where ${ocaml_where} -o ${@}))))
-
 
 (jbuild_version 1)

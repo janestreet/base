@@ -16,8 +16,7 @@ sig
 end
 [@@@end]
 
-include Comparable.S with type t := t
-include Stringable.S with type t := t
+include Identifiable.S with type t := t
 
 (**
    - [to_int true = 1]

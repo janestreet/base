@@ -18,6 +18,17 @@ module Export = struct
 end
 include Export
 
+module type Summable = sig
+  type t
+
+  (** The result of summing no values. *)
+  val zero : t
+
+  (** An operation that combines two [t]'s and handles [zero + x] by just returning [x],
+      as well as in the symmetric case. *)
+  val (+) : t -> t -> t
+end
+
 (** Signature for monomorphic container, e.g., string. *)
 module type S0 = sig
   type t
@@ -71,7 +82,7 @@ module type S0 = sig
 
   (** Returns the sum of [f i] for all [i] in the container. *)
   val sum
-    : (module Commutative_group.S with type t = 'sum)
+    : (module Summable with type t = 'sum)
     -> t -> f:(elt -> 'sum) -> 'sum
 
   (** Returns as an [option] the first element for which [f] evaluates to true. *)
@@ -140,9 +151,10 @@ module type S0_phantom = sig
   (** Returns the number of elements for which the provided function evaluates to true. *)
   val count    : _ t -> f:(elt -> bool) -> int
 
-  (** Returns the sum of [f i] for all [i] in the container. *)
+  (** Returns the sum of [f i] for all [i] in the container. The order in which the
+      elements will be summed is unspecified. *)
   val sum
-    : (module Commutative_group.S with type t = 'sum)
+    : (module Summable with type t = 'sum)
     -> _ t -> f:(elt -> 'sum) -> 'sum
 
   (** Returns as an [option] the first element for which [f] evaluates to true. *)
@@ -212,7 +224,7 @@ module type S1 = sig
 
   (** Returns the sum of [f i] for all [i] in the container. *)
   val sum
-    : (module Commutative_group.S with type t = 'sum)
+    : (module Summable with type t = 'sum)
     -> 'a t -> f:('a -> 'sum) -> 'sum
 
   (** Returns as an [option] the first element for which [f] evaluates to true. *)
@@ -280,7 +292,7 @@ module type S1_phantom_invariant = sig
 
   (** Returns the sum of [f i] for all [i] in the container. *)
   val sum
-    : (module Commutative_group.S with type t = 'sum)
+    : (module Summable with type t = 'sum)
     -> ('a, _) t -> f:('a -> 'sum) -> 'sum
 
   (** Returns as an [option] the first element for which [f] evaluates to true. *)
@@ -330,7 +342,7 @@ module type Generic = sig
   val for_all  : 'a t -> f:('a elt -> bool) -> bool
   val count    : 'a t -> f:('a elt -> bool) -> int
   val sum
-    : (module Commutative_group.S with type t = 'sum)
+    : (module Summable with type t = 'sum)
     -> 'a t -> f:('a elt -> 'sum) -> 'sum
   val find     : 'a t -> f:('a elt -> bool) -> 'a elt option
   val find_map : 'a t -> f:('a elt -> 'b option) -> 'b option
@@ -362,7 +374,7 @@ module type Generic_phantom = sig
   val for_all  : ('a, _) t -> f:('a elt -> bool) -> bool
   val count    : ('a, _) t -> f:('a elt -> bool) -> int
   val sum
-    : (module Commutative_group.S with type t = 'sum)
+    : (module Summable with type t = 'sum)
     -> ('a, _) t -> f:('a elt -> 'sum) -> 'sum
   val find     : ('a, _) t -> f:('a elt -> bool) -> 'a elt option
   val find_map : ('a, _) t -> f:('a elt -> 'b option) -> 'b option
@@ -421,6 +433,8 @@ module type Container = sig
   module type Generic              = Generic
   module type Generic_phantom      = Generic_phantom
 
+  module type Summable = Summable
+
   (** Generic definitions of container operations in terms of [fold].
 
       E.g.: [iter ~fold t ~f = fold t ~init:() ~f:(fun () a -> f a)]. *)
@@ -437,7 +451,7 @@ module type Container = sig
   val to_array : fold:('t, 'a, 'a list  ) fold -> 't -> 'a array
   val sum
     :  fold : ('t, 'a, 'sum) fold
-    -> (module Commutative_group.S with type t = 'sum)
+    -> (module Summable with type t = 'sum)
     -> 't -> f:('a -> 'sum) -> 'sum
 
   val fold_result

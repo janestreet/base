@@ -14,24 +14,31 @@ module T = struct
   let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = bool_of_sexp
   let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_bool
   [@@@end]
+
+  let of_string = function
+    | "true" -> true
+    | "false" -> false
+    | s -> invalid_argf "Bool.of_string: expected true or false but got %s" s ()
+  ;;
+
+  let to_string = Caml.string_of_bool
 end
 
 include T
 include Comparator.Make(T)
 include Comparable.Validate(T)
 
+include Pretty_printer.Register (struct
+    type nonrec t = t
+    let to_string = to_string
+    let module_name = "Base.Bool"
+  end)
+
 (* Open replace_polymorphic_compare after including functor instantiations so they do not
    shadow its definitions. This is here so that efficient versions of the comparison
    functions are available within this module. *)
 open! Bool_replace_polymorphic_compare
 
-let of_string = function
-  | "true" -> true
-  | "false" -> false
-  | s -> invalid_argf "Bool.of_string: expected true or false but got %s" s ()
-;;
-
-let to_string = Caml.string_of_bool
 
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max =

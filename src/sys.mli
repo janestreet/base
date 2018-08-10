@@ -37,18 +37,21 @@ val backend_type : backend_type
     executing the OCaml program.  Generally speaking it will be either [32] or [64]. *)
 val word_size_in_bits : int
 
-(** [int_size_in_bits] is the number of bits in the [int] type.  Generally, on 32-bit
-    platforms, its value will be [31], and on 64 bit platforms its value will be [63].
-    When running in JavaScript, it will be [32]. *)
+(** [int_size_in_bits] is the number of bits in the [int] type.  Generally, on
+    32-bit platforms, its value will be [31], and on 64 bit platforms its value
+    will be [63]. When running in JavaScript, it will be [32]. {!Int.num_bits}
+    is the same as this value. *)
 val int_size_in_bits : int
 
 (** [big_endian] is true when the program is running on a big-endian architecture. *)
 val big_endian : bool
 
-(** [max_string_length] is the maximum allowed length of a [string] or [Bytes.t]. *)
+(** [max_string_length] is the maximum allowed length of a [string] or [Bytes.t].
+    {!String.max_length} is the same as this value. *)
 val max_string_length : int
 
-(** [max_array_length] is the maximum allowed length of an ['a array]. *)
+(** [max_array_length] is the maximum allowed length of an ['a array].
+    {!Array.max_length} is the same as this value. *)
 val max_array_length : int
 
 (** Returns the name of the runtime variant the program is running on.  This is normally
@@ -84,4 +87,4 @@ val runtime_warnings_enabled : unit -> bool
         ignore (Sys.opaque_identity (my_pure_computation ()))
       done
     ]} *)
-val opaque_identity : 'a -> 'a
+external opaque_identity : 'a -> 'a = "%opaque"

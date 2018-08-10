@@ -88,7 +88,7 @@ val bool : unit -> bool
     for accessing the shared state.
 
     Obtaining multiple generators with good independence properties is nontrivial; see
-    [Splittable_random] in [Core_kernel] for that. *)
+    the [Splittable_random] library for that. *)
 module State : sig
   type t
 

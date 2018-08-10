@@ -37,6 +37,7 @@ include (Shadow_stdlib
          with module Buffer    := Caml.Buffer
          with module Bytes     := Caml.Bytes
          with module Char      := Caml.Char
+         with module Float     := Caml.Float
          with module Hashtbl   := Caml.Hashtbl
          with module Int32     := Caml.Int32
          with module Int64     := Caml.Int64
@@ -45,8 +46,8 @@ include (Shadow_stdlib
          with module Map       := Caml.Map
          with module Nativeint := Caml.Nativeint
          with module Printf    := Caml.Printf
-         with module Random    := Caml.Random
          with module Queue     := Caml.Queue
+         with module Random    := Caml.Random
          with module Set       := Caml.Set
          with module String    := Caml.String
          with module Sys       := Caml.Sys
@@ -77,7 +78,6 @@ module Bool                      = Bool
 module Buffer                    = Buffer
 module Bytes                     = Bytes
 module Char                      = Char
-module Commutative_group         = Commutative_group
 module Comparable                = Comparable
 module Comparator                = Comparator
 module Comparisons               = Comparisons
@@ -447,3 +447,4 @@ end
 let () =
   Backtrace.initialize_module ();
 ;;
+

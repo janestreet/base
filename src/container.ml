@@ -14,7 +14,7 @@ let iter ~fold t ~f = fold t ~init:() ~f:(fun () a -> f a)
 
 let count ~fold t ~f = fold t ~init:0 ~f:(fun n a -> if f a then n + 1 else n)
 
-let sum (type a) ~fold (module M : Commutative_group.S with type t = a) t ~f =
+let sum (type a) ~fold (module M : Summable with type t = a) t ~f =
   fold t ~init:M.zero ~f:(fun n a -> M.(+) n (f a))
 ;;
 

@@ -899,7 +899,7 @@ module type Set = sig
   (** [sum t] returns the sum of [f t] for each [t] in the set.
       [O(n)]. *)
   val sum
-    : (module Commutative_group.S with type t = 'sum)
+    : (module Container.Summable with type t = 'sum)
     -> ('a, _) t -> f:('a -> 'sum) -> 'sum
 
   (** [find t f] returns an element of [t] for which [f] returns true, with no guarantee as

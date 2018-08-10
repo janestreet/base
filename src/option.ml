@@ -84,7 +84,7 @@ let to_list t =
 let min_elt t ~compare:_ = t
 let max_elt t ~compare:_ = t
 
-let sum (type a) (module M : Commutative_group.S with type t = a) t ~f =
+let sum (type a) (module M : Container.Summable with type t = a) t ~f =
   match t with
   | None -> M.zero
   | Some x -> f x

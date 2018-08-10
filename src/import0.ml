@@ -15,6 +15,7 @@ include
        with module Buffer    := Caml.Buffer
        with module Bytes     := Caml.Bytes
        with module Char      := Caml.Char
+       with module Float     := Caml.Float
        with module Hashtbl   := Caml.Hashtbl
        with module Int32     := Caml.Int32
        with module Int64     := Caml.Int64
@@ -30,7 +31,6 @@ include
        with module Sys       := Caml.Sys
        with module Uchar     := Caml.Uchar
      ))
-
 type 'a ref = 'a Caml.ref = { mutable contents: 'a }
 
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)
@@ -122,7 +122,8 @@ module Caml = struct
   module Sys       = Caml.Sys
   module Uchar     = Caml.Uchar
 
-  include Caml.Pervasives
+  module Pervasives = Caml.Pervasives
+  include Pervasives
 
   exception Not_found = Caml.Not_found
 end

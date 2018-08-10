@@ -2,6 +2,15 @@
 open StdLabels
 open Printf
 
+module String = struct
+  [@@@warning "-32-3"]
+  let capitalize_ascii   = String.capitalize
+  let uncapitalize_ascii = String.uncapitalize
+  let uppercase_ascii    = String.uppercase
+  let lowercase_ascii    = String.lowercase
+  include String
+end
+
 let deprecated_msg what =
   sprintf
     "[@@deprecated \"\\\n\
@@ -200,7 +209,7 @@ let val_ = "val " | "external "
 rule line = parse
   | "module Camlinternal" _*
     { "" (* We can't deprecate these *) }
-
+  | "module Bigarray" _* { "" (* Don't deprecate it yet *) }
   | "type " (params? (id as id) _* as def)
     { sprintf "type nonrec %s\n%s" def
         (match id with
@@ -210,6 +219,15 @@ rule line = parse
     }
 
   | val_ (val_id as id) _* as line { replace id (val_replacement id) line }
+
+  | "module " (id as id) " = Stdlib__" (id as id2) (_* as line)
+      {
+        let line =
+          Printf.sprintf "module %s = Stdlib.%s %s"
+            id (String.capitalize_ascii id2) line in
+        match module_replacement id with
+        | Some replacement -> replace id replacement line
+        | None -> sprintf "%s\n%s" line (deprecated_msg id) }
 
   | "exception " (id as id) _* as line
   | "module " (id as id) _* as line
