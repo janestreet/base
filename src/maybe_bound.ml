@@ -3,16 +3,16 @@ open! Import
 type 'a t = Incl of 'a | Excl of 'a | Unbounded [@@deriving_inline enumerate, sexp]
 let all : 'a . 'a list -> 'a t list =
   fun _all_of_a ->
-    List.append
+    Ppx_enumerate_lib.List.append
       (let rec map l acc =
          match l with
-         | [] -> List.rev acc
+         | [] -> Ppx_enumerate_lib.List.rev acc
          | enumerate__001_::l -> map l ((Incl enumerate__001_) :: acc) in
        map _all_of_a [])
-      (List.append
+      (Ppx_enumerate_lib.List.append
          (let rec map l acc =
             match l with
-            | [] -> List.rev acc
+            | [] -> Ppx_enumerate_lib.List.rev acc
             | enumerate__002_::l -> map l ((Excl enumerate__002_) :: acc) in
           map _all_of_a []) [Unbounded])
 let t_of_sexp : type a.
