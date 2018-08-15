@@ -122,32 +122,13 @@ module Id = struct
     ; name    : string
     ; to_sexp : 'a -> Sexp.t
     }
-  [@@deriving_inline sexp_of]
-  let sexp_of_t :
-    'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
-    fun _of_a ->
-      function
-      | { witness = v_witness; name = v_name; to_sexp = v_to_sexp } ->
-        let bnds = [] in
-        let bnds =
-          let arg =
-            (fun _f -> let open Ppx_sexp_conv_lib.Conv in sexp_of_fun ignore)
-              v_to_sexp in
-          (Ppx_sexp_conv_lib.Sexp.List
-             [Ppx_sexp_conv_lib.Sexp.Atom "to_sexp"; arg])
-          :: bnds in
-        let bnds =
-          let arg = sexp_of_string v_name in
-          (Ppx_sexp_conv_lib.Sexp.List
-             [Ppx_sexp_conv_lib.Sexp.Atom "name"; arg])
-          :: bnds in
-        let bnds =
-          let arg = Witness.sexp_of_t _of_a v_witness in
-          (Ppx_sexp_conv_lib.Sexp.List
-             [Ppx_sexp_conv_lib.Sexp.Atom "witness"; arg])
-          :: bnds in
-        Ppx_sexp_conv_lib.Sexp.List bnds
-  [@@@end]
+
+  let sexp_of_t _ { witness; name; to_sexp } : Sexp.t =
+    if am_testing
+    then Atom name
+    else List [ List [ Atom "name"; Atom name ]
+              ; List [ Atom "witness"; witness |> Witness.sexp_of_t to_sexp ]]
+  ;;
 
   let to_sexp t x = t.to_sexp x
   let name t = t.name

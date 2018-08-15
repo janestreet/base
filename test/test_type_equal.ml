@@ -1,4 +1,12 @@
-open Base
+open! Import
+open! Type_equal
+
+let%expect_test "[Id.sexp_of_t]" =
+  let id = Id.create ~name:"some-type-id" [%sexp_of: unit] in
+  print_s [%sexp (id : _ Id.t)];
+  [%expect {|
+    some-type-id |}];
+;;
 
 let%test_module "Type_equal.Id" =
   (module struct
