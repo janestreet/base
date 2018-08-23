@@ -80,7 +80,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
       !found
       |> List.sort ~compare:Int.descending
     in
-    List.equal ~equal:Int.equal predicted found
+    List.equal Int.equal  predicted found
   ;;
 
   let%test "iter_keys" =
@@ -93,7 +93,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
       !found
       |> List.sort ~compare:String.descending
     in
-    List.equal ~equal:String.equal predicted found
+    List.equal String.equal  predicted found
   ;;
 
   let%test_module "of_alist" =
@@ -152,7 +152,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
       |> Hashtbl.to_alist
       |> List.sort ~compare:Poly.ascending
     in
-    List.equal predicted_data found_alist ~equal:Poly.equal
+    List.equal Poly.equal predicted_data found_alist 
   ;;
 
   let%test_unit "filter_map" =
@@ -168,7 +168,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
     let found_alist =
       List.sort ~compare:Poly.ascending (Hashtbl.to_alist found)
     in
-    assert (List.equal predicted_data found_alist ~equal:Poly.equal)
+    assert (List.equal Poly.equal predicted_data found_alist )
   ;;
 
   let%test "filter_inplace" =
@@ -183,7 +183,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
       Hashtbl.to_alist test_hash
       |> List.sort ~compare:Poly.ascending
     in
-    List.equal predicted_data found_alist ~equal:Poly.equal
+    List.equal Poly.equal predicted_data found_alist 
   ;;
 
   let%test "filter_keys_inplace" =
@@ -198,7 +198,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
       Hashtbl.to_alist test_hash
       |> List.sort ~compare:Poly.ascending
     in
-    List.equal predicted_data found_alist ~equal:Poly.equal
+    List.equal Poly.equal predicted_data found_alist 
   ;;
 
   let%test "filter_map_inplace" =
@@ -213,7 +213,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
       Hashtbl.to_alist test_hash
       |> List.sort ~compare:Poly.ascending
     in
-    List.equal predicted_data found_alist ~equal:Poly.equal
+    List.equal Poly.equal predicted_data found_alist 
   ;;
 
   let%test "map_inplace" =
@@ -228,7 +228,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
       Hashtbl.to_alist test_hash
       |> List.sort ~compare:Poly.ascending
     in
-    List.equal predicted_data found_alist ~equal:Poly.equal
+    List.equal Poly.equal predicted_data found_alist 
   ;;
 
   let%test_unit "insert-find-remove" =

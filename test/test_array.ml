@@ -185,13 +185,13 @@ let%test _ = for_all2_exn [|0;2;4;6|] [|0;2;4;6|] ~f:(fun x y -> x = y) = true
 let%test _ = for_all2_exn [|0;2;4;8|] [|0;2;4;6|] ~f:(fun x y -> x = y) = false
 let%test _ = for_all2_exn [|2;2;4;6|] [|0;2;4;6|] ~f:(fun x y -> x = y) = false
 
-let%test _ = equal [||] [||] ~equal:(=)
-let%test _ = equal [| 1 |] [| 1 |] ~equal:(=)
-let%test _ = equal [| 1; 2 |] [| 1; 2 |] ~equal:(=)
-let%test _ = not (equal [||] [| 1 |] ~equal:(=))
-let%test _ = not (equal [| 1 |] [||] ~equal:(=))
-let%test _ = not (equal [| 1 |] [| 1; 2 |] ~equal:(=))
-let%test _ = not (equal [| 1; 2 |] [| 1; 3 |] ~equal:(=))
+let%test _ = equal (=) [||] [||]
+let%test _ = equal (=) [| 1 |] [| 1 |]
+let%test _ = equal (=) [| 1; 2 |] [| 1; 2 |]
+let%test _ = not (equal (=) [||] [| 1 |])
+let%test _ = not (equal (=) [| 1 |] [||])
+let%test _ = not (equal (=) [| 1 |] [| 1; 2 |])
+let%test _ = not (equal (=) [| 1; 2 |] [| 1; 3 |])
 
 let%test _ = findi [|1;2;3;4|] ~f:(fun i x -> i = 2*x) = None
 let%test _ = findi [|1;2;1;4|] ~f:(fun i x -> i = 2*x) = Some (2, 1)
@@ -254,7 +254,7 @@ let%test "equal does not allocate" =
   let arr1 = [|1;2;3;4|] in
   let arr2 = [|1;2;4;3|] in
   Expect_test_helpers_kernel.require_no_allocation [%here] (fun () ->
-    not (equal ~equal:Int.equal arr1 arr2))
+    not (equal Int.equal arr1 arr2))
 
 let%test "foldi does not allocate" =
   let arr = [|1;2;3;4|] in

@@ -12,7 +12,7 @@ let%test "Hashtbl.merge succeeds with first-class-module interface" =
       | `Both _ -> assert false)
     |> Hashtbl.to_alist
   in
-  List.equal ~equal:Poly.equal result []
+  List.equal Poly.equal  result []
 
 let%test_module _ = (module Hashtbl_tests.Make(struct
     include Hashtbl

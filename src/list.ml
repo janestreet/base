@@ -980,7 +980,7 @@ let rec compare cmp a b =
 
 let hash_fold_t = hash_fold_list
 
-let equal t1 t2 ~equal =
+let equal equal t1 t2 =
   let rec loop ~equal t1 t2 =
     match t1, t2 with
     | [], [] -> true

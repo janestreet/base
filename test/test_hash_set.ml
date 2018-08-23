@@ -16,7 +16,7 @@ let%test_module "Set Intersection" =
       iter result ~f:(fun x -> assert (mem expect x));
       iter expect ~f:(fun x -> assert (mem result x));
       let equal x y = 0 = String.compare x y in
-      assert (List.equal ~equal (to_list result) (to_list expect));
+      assert (List.equal equal  (to_list result) (to_list expect));
       assert ((length result) = (length expect));
       (* Make sure the sets are unmodified by the inter *)
       assert ((List.length first_contents)  = length s1);

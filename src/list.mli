@@ -497,7 +497,7 @@ val random_element_exn : ?random_state:Random.State.t -> 'a t -> 'a
 val is_sorted          : 'a t -> compare:('a -> 'a -> int) -> bool
 val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) -> bool
 
-val equal : 'a t -> 'a t -> equal:('a -> 'a -> bool) -> bool
+val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
 module Infix : sig
   val ( @ ) : 'a t -> 'a t -> 'a t

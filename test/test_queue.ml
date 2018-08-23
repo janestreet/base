@@ -242,7 +242,7 @@ let%test_module _ =
         let test t1 t2 =
           [%test_result: bool]
             (equal Int.equal t1 t2)
-            ~expect:(List.equal ~equal:Int.equal (to_list t1) (to_list t2));
+            ~expect:(List.equal Int.equal  (to_list t1) (to_list t2));
           [%test_result: int]
             (sign (compare Int.compare t1 t2))
             ~expect:(sign (List.compare Int.compare (to_list t1) (to_list t2)))

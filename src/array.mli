@@ -296,7 +296,7 @@ val last : 'a t -> 'a
 val empty : unit -> 'a t
 [@@deprecated "[since 2016-04] Use [ [||] ]"]
 
-val equal : 'a t -> 'a t -> equal:('a -> 'a -> bool) -> bool
+val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
 (** [unsafe_truncate t ~len] drops [length t - len] elements from the end of [t], changing
     [t] so that [length t = len] afterwards.

@@ -508,7 +508,7 @@ let for_all2_exn t1 t2 ~f =
   if length t2 <> len then invalid_arg "Array.for_all2_exn";
   for_all2_loop t1 t2 ~f (len - 1)
 
-let equal t1 t2 ~equal = length t1 = length t2 && for_all2_exn t1 t2 ~f:equal
+let equal equal t1 t2 = length t1 = length t2 && for_all2_exn t1 t2 ~f:equal
 
 let replace t i ~f = t.(i) <- f t.(i)
 

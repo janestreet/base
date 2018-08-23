@@ -15,6 +15,9 @@
 - Added `List.partition_result` function, to partition a list of `Result.t`
   values
 
+- Changed the signature of `equal` from `'a t -> 'a t -> equal:('a -> 'a ->
+  bool) -> bool` to `('a -> 'a -> bool) -> 'a t -> 'a t -> bool`.
+
 ## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its
