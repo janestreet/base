@@ -85,6 +85,8 @@ val of_int64_preserve_order : int64 -> t
     [one_ulp `Down neg_infinity] return a nan. *)
 val one_ulp : [`Up | `Down] -> t -> t
 
+(** Note that this doesn't round trip in either direction.  For example, [Float.to_int
+    (Float.of_int max_int) <> max_int]. *)
 val of_int : int -> t
 val to_int : t -> int
 
@@ -490,6 +492,18 @@ external exp : t -> t = "caml_exp_float" "exp"
 external log : t -> t = "caml_log_float" "log"
 [@@unboxed] [@@noalloc]
 
+
+(** Excluding nan the floating-point "number line" looks like:
+    {v
+             t                Class.t    example
+           ^ neg_infinity     Infinite   neg_infinity
+           | neg normals      Normal     -3.14
+           | neg subnormals   Subnormal  -.2. ** -1023.
+           | (-/+) zero       Zero       0.
+           | pos subnormals   Subnormal  2. ** -1023.
+           | pos normals      Normal     3.14
+           v infinity         Infinite   infinity
+    v} *)
 module Class : sig
   type t =
     | Infinite
@@ -511,17 +525,6 @@ module Class : sig
   include Stringable.S with type t := t
 end
 
-(** return the Class.t.  Excluding nan the floating-point "number line" looks like:
-    {v
-             t                Class.t    example
-           ^ neg_infinity     Infinite   neg_infinity
-           | neg normals      Normal     -3.14
-           | neg subnormals   Subnormal  -.2. ** -1023.
-           | (-/+) zero       Zero       0.
-           | pos subnormals   Subnormal  2. ** -1023.
-           | pos normals      Normal     3.14
-           v infinity         Infinite   infinity
-    v} *)
 val classify : t -> Class.t
 
 (** [is_finite t] returns [true] iff [classify t] is in [Normal; Subnormal; Zero;]. *)
