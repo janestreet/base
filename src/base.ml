@@ -49,6 +49,7 @@ include (Shadow_stdlib
          with module Queue     := Caml.Queue
          with module Random    := Caml.Random
          with module Set       := Caml.Set
+         with module Stack     := Caml.Stack
          with module String    := Caml.String
          with module Sys       := Caml.Sys
          with module Uchar     := Caml.Uchar
@@ -137,6 +138,7 @@ module Sexpable                  = Sexpable
 module Sign                      = Sign
 module Sign_or_nan               = Sign_or_nan
 module Source_code_position      = Source_code_position
+module Stack                     = Stack
 module Staged                    = Staged
 module String                    = String
 module Stringable                = Stringable

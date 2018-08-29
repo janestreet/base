@@ -27,6 +27,7 @@ include
        with module Queue     := Caml.Queue
        with module Random    := Caml.Random
        with module Set       := Caml.Set
+       with module Stack     := Caml.Stack
        with module String    := Caml.String
        with module Sys       := Caml.Sys
        with module Uchar     := Caml.Uchar
