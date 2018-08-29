@@ -59,3 +59,8 @@ let unsafe_of_string_promise_no_mutation = Caml.Bytes.unsafe_of_string
    Base conventions. *)
 let blit_string ~src ~src_pos ~dst ~dst_pos ~len =
   blit_string src src_pos dst dst_pos len
+
+(* These are changed because OCaml stdlib order of arguments is different *)
+let map t ~f = Caml.Bytes.map ~f t
+let mapi t ~f = Caml.Bytes.mapi ~f t
+

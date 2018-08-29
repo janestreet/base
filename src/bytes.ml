@@ -1,5 +1,6 @@
 open! Import
 
+module Array = Array0
 
 module T = struct
   type t = bytes [@@deriving_inline sexp]
@@ -66,6 +67,18 @@ let to_list t =
     else loop t (i - 1) (unsafe_get t i :: acc)
   in
   loop t (length t - 1) []
+
+let to_array t = Array.init (length t) ~f:(fun i -> (unsafe_get t i))
+
+let fold t ~init ~f =
+  let n = length t in
+  let rec loop i ac = if Int.equal i n then ac else loop (i + 1) (f ac (unsafe_get t i)) in
+  loop 0 init
+
+let foldi t ~init ~f =
+  let n = length t in
+  let rec loop i ac = if Int.equal i n then ac else loop (i + 1) (f i ac (unsafe_get t i)) in
+  loop 0 init
 
 let tr ~target ~replacement s =
   for i = 0 to length s - 1 do
