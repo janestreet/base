@@ -145,16 +145,18 @@ module type S_common = sig
   (** Same as [shift_right]. *)
   val ( asr ) : t -> int -> t
 
-  (** {2 Successor and predecessor functions} *)
-
-  val succ : t -> t
-  val pred : t -> t
+  (** {2 Other common functions} *)
 
   include Round with type t := t
 
   (** Returns the absolute value of the argument.  May be negative if the input is
       [min_value]. *)
   val abs : t -> t
+
+  (** {2 Successor and predecessor functions} *)
+
+  val succ : t -> t
+  val pred : t -> t
 
   (** {2 Exponentiation} *)
 

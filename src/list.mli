@@ -153,10 +153,10 @@ val split_n : 'a t -> int -> 'a t * 'a t
 
     Presently, the sort is stable, meaning that two equal elements in the input will be in
     the same order in the output. *)
-val sort : compare:('a -> 'a -> int) -> 'a t -> 'a t
+val sort : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 (** Like [sort], but guaranteed to be stable. *)
-val stable_sort : compare:('a -> 'a -> int) -> 'a t -> 'a t
+val stable_sort : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 (** Merges two lists: assuming that [l1] and [l2] are sorted according to the comparison
     function [compare], [merge compare l1 l2] will return a sorted list containing all the

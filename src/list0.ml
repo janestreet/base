@@ -31,8 +31,8 @@ let partition    t                 ~f = Caml.List.partition  t           ~f
 let rev_map      t                 ~f = Caml.List.rev_map    t           ~f
 let rev_map2_ok  l1 l2             ~f = Caml.List.rev_map2   l1 l2       ~f
 
-let sort         ~compare l           = Caml.List.sort        l ~cmp:compare
-let stable_sort  ~compare l           = Caml.List.stable_sort l ~cmp:compare
+let sort         l ~compare           = Caml.List.sort        l ~cmp:compare
+let stable_sort  l ~compare           = Caml.List.stable_sort l ~cmp:compare
 
 let rev = function
   | [] | [_] as res -> res

@@ -1,5 +1,6 @@
 (library
  ((name base_test)
+  (preprocess (pps (ppx_jane -dont-check-doc-comments-attachment ppxlib.runner)))
   (libraries (base
               core_kernel.base_for_tests
               caml
@@ -7,7 +8,6 @@
               num
               expect_test_helpers_kernel
               stdio))
-  (preprocess (pps (ppx_jane ppxlib.runner)))
 ))
 
 
