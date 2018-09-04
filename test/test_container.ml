@@ -13,7 +13,7 @@ module Test_generic
          with type 'a t := 'a t
          with type 'a elt := 'a Elt.t
        val mem : 'a t -> 'a Elt.t -> bool
-       val of_list : 'a Elt.t list -> 'a t
+       val of_list : 'a Elt.t list -> [`Ok of 'a t | `Skip_test ]
      end)
   (* This signature constraint reminds us to add unit tests when functions are added to
      [Generic]. *)
@@ -47,52 +47,54 @@ module Test_generic
     let compare = Poly.compare in
     List.iter [ 0; 1; 2; 3; 4; 8; 1024 ] ~f:(fun n ->
       let list = List.init n ~f:Elt.of_int in
-      let c = Container.of_list list in
-      let sort l = List.sort l ~compare in
-      let sorts_are_equal l1 l2 = sort l1 = sort l2 in
-      assert (n = Container.length c);
-      assert ((n = 0) = Container.is_empty c);
-      assert (sorts_are_equal list
-                (Container.fold c ~init:[] ~f:(fun ac e -> e :: ac)));
-      assert (sorts_are_equal list (Container.to_list c));
-      assert (sorts_are_equal list (Array.to_list (Container.to_array c)));
-      assert (n > 0 = is_some (Container.find c ~f:(fun e -> Elt.to_int e = 0)));
-      assert (n > 0 = is_some (Container.find c ~f:(fun e -> Elt.to_int e = n - 1)));
-      assert (is_none (Container.find c ~f:(fun e -> Elt.to_int e = n)));
-      assert (n > 0 = Container.mem c (Elt.of_int 0));
-      assert (n > 0 = Container.mem c (Elt.of_int (n - 1)));
-      assert (not (Container.mem c (Elt.of_int n)));
-      assert (n > 0 = is_some (Container.find_map c ~f:(fun e ->
-        if Elt.to_int e = 0 then Some () else None)));
-      assert (n > 0 = is_some (Container.find_map c ~f:(fun e ->
-        if Elt.to_int e = n - 1 then Some () else None)));
-      assert (is_none (Container.find_map c ~f:(fun e ->
-        if Elt.to_int e = n then Some () else None)));
-      let r = ref 0 in
-      Container.iter c ~f:(fun e -> r := !r + Elt.to_int e);
-      assert (!r = List.fold list ~init:0 ~f:(fun n e -> n + Elt.to_int e));
-      assert (!r = sum (module Int) c ~f:Elt.to_int);
-      let c2 = [%of_sexp: int Container.t] ([%sexp_of: int Container.t] c) in
-      assert (sorts_are_equal list (Container.to_list c2));
-      let compare_elt a b = Int.compare (Elt.to_int a) (Elt.to_int b) in
-      if n = 0 then begin
-        assert (!r = 0);
-        assert (min_elt ~compare:compare_elt c = None);
-        assert (max_elt ~compare:compare_elt c = None);
-      end else begin
-        assert (!r = (n * (n-1) / 2));
-        assert (Option.map ~f:Elt.to_int (min_elt ~compare:compare_elt c) = Some 0);
-        assert (Option.map ~f:Elt.to_int (max_elt ~compare:compare_elt c) = Some (Int.pred n));
-      end;
-      let mid = Container.length c / 2 in
-      match
-        Container.fold_result c
-          ~init:0
-          ~f:(fun count _elt -> if count = mid then Error count else Ok (count + 1))
-      with
-      | Ok 0 -> assert (Container.length c = 0)
-      | Ok _ -> failwith "Expected fold to stop early"
-      | Error x -> assert (mid = x)
+      match Container.of_list list with
+      | `Skip_test -> ()
+      | `Ok c ->
+        let sort l = List.sort l ~compare in
+        let sorts_are_equal l1 l2 = sort l1 = sort l2 in
+        assert (n = Container.length c);
+        assert ((n = 0) = Container.is_empty c);
+        assert (sorts_are_equal list
+                  (Container.fold c ~init:[] ~f:(fun ac e -> e :: ac)));
+        assert (sorts_are_equal list (Container.to_list c));
+        assert (sorts_are_equal list (Array.to_list (Container.to_array c)));
+        assert (n > 0 = is_some (Container.find c ~f:(fun e -> Elt.to_int e = 0)));
+        assert (n > 0 = is_some (Container.find c ~f:(fun e -> Elt.to_int e = n - 1)));
+        assert (is_none (Container.find c ~f:(fun e -> Elt.to_int e = n)));
+        assert (n > 0 = Container.mem c (Elt.of_int 0));
+        assert (n > 0 = Container.mem c (Elt.of_int (n - 1)));
+        assert (not (Container.mem c (Elt.of_int n)));
+        assert (n > 0 = is_some (Container.find_map c ~f:(fun e ->
+          if Elt.to_int e = 0 then Some () else None)));
+        assert (n > 0 = is_some (Container.find_map c ~f:(fun e ->
+          if Elt.to_int e = n - 1 then Some () else None)));
+        assert (is_none (Container.find_map c ~f:(fun e ->
+          if Elt.to_int e = n then Some () else None)));
+        let r = ref 0 in
+        Container.iter c ~f:(fun e -> r := !r + Elt.to_int e);
+        assert (!r = List.fold list ~init:0 ~f:(fun n e -> n + Elt.to_int e));
+        assert (!r = sum (module Int) c ~f:Elt.to_int);
+        let c2 = [%of_sexp: int Container.t] ([%sexp_of: int Container.t] c) in
+        assert (sorts_are_equal list (Container.to_list c2));
+        let compare_elt a b = Int.compare (Elt.to_int a) (Elt.to_int b) in
+        if n = 0 then begin
+          assert (!r = 0);
+          assert (min_elt ~compare:compare_elt c = None);
+          assert (max_elt ~compare:compare_elt c = None);
+        end else begin
+          assert (!r = (n * (n-1) / 2));
+          assert (Option.map ~f:Elt.to_int (min_elt ~compare:compare_elt c) = Some 0);
+          assert (Option.map ~f:Elt.to_int (max_elt ~compare:compare_elt c) = Some (Int.pred n));
+        end;
+        let mid = Container.length c / 2 in
+        match
+          Container.fold_result c
+            ~init:0
+            ~f:(fun count _elt -> if count = mid then Error count else Ok (count + 1))
+        with
+        | Ok 0 -> assert (Container.length c = 0)
+        | Ok _ -> failwith "Expected fold to stop early"
+        | Error x -> assert (mid = x)
     )
   ;;
 
@@ -119,25 +121,27 @@ module Test_generic
         in
         let forall_should_be = List.fold bools ~init:true  ~f:(fun ac b -> b && ac) in
         let exists_should_be = List.fold bools ~init:false ~f:(fun ac b -> b || ac) in
-        let container =
+        match
           Container.of_list
             (List.map bools ~f:(fun b -> Elt.of_int (if b then 1 else 0)))
-        in
-        let is_one e = Elt.to_int e = 1 in
-        let ( = ) = Poly.equal in
-        assert (forall_should_be = Container.for_all container ~f:is_one);
-        assert (exists_should_be = Container.exists  container ~f:is_one);
-        assert (count_should_be = Container.count container ~f:is_one);
+        with
+        | `Skip_test -> ()
+        | `Ok container ->
+          let is_one e = Elt.to_int e = 1 in
+          let ( = ) = Poly.equal in
+          assert (forall_should_be = Container.for_all container ~f:is_one);
+          assert (exists_should_be = Container.exists  container ~f:is_one);
+          assert (count_should_be = Container.count container ~f:is_one);
       )
   ;;
 
 end
 
-module Test_S1
+module Test_S1_allow_skipping_tests
     (Container : sig
        type 'a t [@@deriving sexp]
        include Container.S1 with type 'a t := 'a t
-       val of_list : 'a list -> 'a t
+       val of_list : 'a list -> [`Ok of 'a t | `Skip_test]
      end) = struct
 
   include
@@ -154,6 +158,16 @@ module Test_S1
 
   let mem = Container.mem
 end
+
+module Test_S1
+    (Container : sig
+       type 'a t [@@deriving sexp]
+       include Container.S1 with type 'a t := 'a t
+       val of_list : 'a list -> 'a t
+     end) = Test_S1_allow_skipping_tests (struct
+    include Container
+    let of_list l = `Ok (of_list l)
+  end)
 
 include (Test_S1 (Array) : sig end)
 include (Test_S1 (List)  : sig end)
