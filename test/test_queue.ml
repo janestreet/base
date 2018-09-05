@@ -899,6 +899,6 @@ let%test_module _ =
         end)
     end
   end
-           (** This signature is here to remind us to update the unit tests whenever we
-               change [Core_queue]. *)
+           (* This signature is here to remind us to update the unit tests whenever we
+              change [Core_queue]. *)
            : module type of Queue))
