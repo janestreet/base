@@ -306,12 +306,4 @@ module type Applicative = sig
   module Compose  (F : S) (G : S) : S with type 'a t =  'a F.t G.t
   module Pair     (F : S) (G : S) : S with type 'a t =  'a F.t * 'a G.t
 
-  (** Every monoid gives rise to a constant Applicative. *)
-  module Const (Monoid : sig
-      type t
-      val zero : t
-      val plus : t -> t -> t
-      (** Laws: [plus] is associative and [zero] is both a left and right unit for [plus] *)
-    end)
-    : S with type 'a t = Monoid.t
 end

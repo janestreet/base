@@ -155,17 +155,3 @@ module Pair (F : S) (G : S) : S with type 'a t = 'a F.t * 'a G.t = struct
     end)
 end
 
-module Const (Monoid : sig
-    type t
-    val zero : t
-    val plus : t -> t -> t
-  end) : S with type 'a t = Monoid.t = struct
-  type _ t = Monoid.t
-  include Make (struct
-      type nonrec 'a t = 'a t
-      let return _a = Monoid.zero
-      let apply tf tx = Monoid.plus tf tx
-      let custom_map t ~f:_ = t
-      let map = `Custom custom_map
-    end)
-end
