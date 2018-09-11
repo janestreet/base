@@ -40,7 +40,9 @@ val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 (** [call x f] runs an optional function [~f] on the argument. *)
 val call : 'a -> f:('a -> unit) t -> unit
 
-(** [value None ~default] = [default] [value (Some x) ~default] = [x] *)
+(** [value None ~default] = [default]
+
+    [value (Some x) ~default] = [x] *)
 val value : 'a t -> default:'a -> 'a
 
 (** [value_exn (Some x)] = [x].  [value_exn None] raises an error whose contents contain

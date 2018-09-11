@@ -57,35 +57,30 @@ val nth_exn : 'a t -> int -> 'a
 (** List reversal. *)
 val rev : 'a t -> 'a t
 
-(** [List.rev_append l1 l2] reverses [l1] and concatenates it to [l2].  This is equivalent
+(** [rev_append l1 l2] reverses [l1] and concatenates it to [l2].  This is equivalent
     to [(]{!List.rev}[ l1) @ l2], but [rev_append] is more efficient. *)
 val rev_append : 'a t -> 'a t -> 'a t
 
-(** [List.unordered_append l1 l2] has the same elements as [l1 @ l2], but in some
+(** [unordered_append l1 l2] has the same elements as [l1 @ l2], but in some
     unspecified order.  Generally takes time proportional to length of first list, but is
     O(1) if either list is empty. *)
 val unordered_append : 'a t -> 'a t -> 'a t
 
-(** [List.rev_map l ~f] gives the same result as {!List.rev}[ (]{!ListLabels.map}[ f l)],
+(** [rev_map l ~f] gives the same result as {!List.rev}[ (]{!ListLabels.map}[ f l)],
     but is more efficient. *)
 val rev_map : 'a t -> f:('a -> 'b) -> 'b t
 
-(** [fold_left] is the same as [fold], and one should always use [fold] rather than
-    [fold_left], except in functors that are parameterized over a more general signature
-    where this equivalence does not hold. *)
-val fold_left : 'a t -> init:'b -> f:('b -> 'a -> 'b) -> 'b
-
-(** [List.iter2 [a1; ...; an] [b1; ...; bn] ~f] calls in turn [f a1 b1; ...; f an bn].
+(** [iter2 [a1; ...; an] [b1; ...; bn] ~f] calls in turn [f a1 b1; ...; f an bn].
     The exn version will raise if the two lists have different lengths. *)
 val iter2_exn : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit
 val iter2     : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit Or_unequal_lengths.t
 
-(** [List.rev_map2_exn l1 l2 ~f] gives the same result as [List.rev (List.map2_exn l1 l2
+(** [rev_map2_exn l1 l2 ~f] gives the same result as [List.rev (List.map2_exn l1 l2
     ~f)], but is more efficient. *)
 val rev_map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 val rev_map2     : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t Or_unequal_lengths.t
 
-(** [List.fold2 ~f ~init:a [b1; ...; bn] [c1; ...; cn]] is [f (... (f (f a b1 c1) b2 c2)
+(** [fold2 ~f ~init:a [b1; ...; bn] [c1; ...; cn]] is [f (... (f (f a b1 c1) b2 c2)
     ...) bn cn].  The exn version will raise if the two lists have different lengths. *)
 val fold2_exn : 'a t -> 'b t -> init:'c -> f:('c -> 'a -> 'b -> 'c) -> 'c
 val fold2     : 'a t -> 'b t -> init:'c -> f:('c -> 'a -> 'b -> 'c) -> 'c Or_unequal_lengths.t
@@ -192,7 +187,7 @@ val find_mapi_exn : 'a t -> f:(int -> 'a -> 'b option) -> 'b
 (** E.g., [append [1; 2] [3; 4; 5]] is [[1; 2; 3; 4; 5]] *)
 val append : 'a t -> 'a t -> 'a t
 
-(** [List.map f [a1; ...; an]] applies function [f] to [a1], [a2], ..., [an], in order,
+(** [map f [a1; ...; an]] applies function [f] to [a1], [a2], ..., [an], in order,
     and builds the list [[f a1; ...; f an]] with the results returned by [f]. *)
 val map : 'a t -> f:('a -> 'b) -> 'b t
 
@@ -215,9 +210,8 @@ val concat_map : 'a t -> f:('a -> 'b t) -> 'b t
 (** [concat_mapi t ~f] is like concat_map, but passes the index as an argument *)
 val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
 
-(** [List.map2 [a1; ...; an] [b1; ...; bn] ~f] is [[f a1 b1; ...; f an bn]].  The exn
+(** [map2 [a1; ...; an] [b1; ...; bn] ~f] is [[f a1 b1; ...; f an bn]].  The exn
     version will raise if the two lists have different lengths. *)
-
 val map2_exn :'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 val map2     :'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t Or_unequal_lengths.t
 
@@ -235,8 +229,13 @@ val map3     : 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t Or_unequ
     result to the front of [l2]. *)
 val rev_map_append : 'a t -> 'b t -> f:('a -> 'b) -> 'b t
 
-(** [List.fold_right [a1; ...; an] ~f ~init:b] is [f a1 (f a2 (... (f an b) ...))]. *)
+(** [fold_right [a1; ...; an] ~f ~init:b] is [f a1 (f a2 (... (f an b) ...))]. *)
 val fold_right : 'a t -> f:('a -> 'b -> 'b) -> init:'b -> 'b
+
+(** [fold_left] is the same as {!Container.S1.fold}, and one should always use
+    [fold] rather than [fold_left], except in functors that are parameterized
+    over a more general signature where this equivalence does not hold. *)
+val fold_left : 'a t -> init:'b -> f:('b -> 'a -> 'b) -> 'b
 
 (** Transform a list of pairs into a pair of lists: [unzip [(a1,b1); ...; (an,bn)]] is
     [([a1; ...; an], [b1; ...; bn])]. *)
@@ -379,7 +378,7 @@ val range'
   -> 'a t
 
 (** [init n ~f] is [[(f 0); (f 1); ...; (f (n-1))]].  It is an error if [n < 0].
-    [List.init] applies [f] to values in decreasing order; starting with [n - 1], and
+    [init] applies [f] to values in decreasing order; starting with [n - 1], and
     ending with [0]. This is the opposite order to [Array.init]. *)
 val init : int -> f:(int -> 'a) -> 'a t
 
