@@ -1,24 +1,8 @@
-(** An array of [Caml.Obj.t]s.
+(** This module is deprecated for external use.  Users should replace occurences of
+    [Obj_array.t] in their code with [Obj.t Uniform_array.t].
 
-    This is useful because in general it is unsafe to put [Caml.Obj.t]s into a normal
-    array due to the [float array] optimisation. It is implemented by using normal arrays
-    in a way that prevents the [float array] optimisation from applying.
-
-    Avoiding the [float array] optimisation also allows faster implementations of the
-    [get] and [set] functions that know that they aren't dealing with float arrays and
-    save a test for it.  We also have [set] avoid the write barrier (caml_modify) in
-    certain situations.
-
-    [Uniform_array] provides the same advantages for types other than
-    [Caml.Obj.t].
-
-    Just like with a regular [Array], the elements are boxed so they don't get copied by
-    [sub], [get], [set], [blit], etc.
-
-    The dynamic check this array module implements is something we hope to have
-    implemented at a lower level (as part of the native compiler's code generation).
-    Given that, the interface is somewhat spartan and intended for use within internal
-    data structures.
+    This module is here for the implementing [Uniform_array] internally, and exposed
+    through [Not_exposed_properly] to ease the transition for users.
 *)
 
 open! Import

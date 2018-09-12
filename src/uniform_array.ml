@@ -9,15 +9,22 @@ module Trusted : sig
   type 'a t
   val empty : 'a t
   val unsafe_create_uninitialized : len:int -> 'a t
+  val create_obj_array : len:int -> 'a t
   val create : len:int -> 'a -> 'a t
+  val singleton : 'a -> 'a t
   val get : 'a t -> int -> 'a
   val set : 'a t -> int -> 'a -> unit
   val unsafe_get : 'a t -> int -> 'a
   val unsafe_set : 'a t -> int -> 'a -> unit
+  val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
+  val unsafe_set_int : 'a t -> int -> int -> unit
+  val unsafe_set_int_assuming_currently_int : 'a t -> int -> int -> unit
+  val unsafe_set_assuming_currently_int : 'a t -> int -> 'a -> unit
   val length : 'a t -> int
   val unsafe_blit : ('a t, 'a t) Blit.blit
   val copy : 'a t -> 'a t
-
+  val unsafe_truncate : 'a t -> len:int -> unit
+  val unsafe_clear_if_pointer : _ t -> int -> unit
 end = struct
 
   type 'a t = Obj_array.t
@@ -25,12 +32,22 @@ end = struct
   let empty = Obj_array.empty
 
   let unsafe_create_uninitialized ~len = Obj_array.create_zero ~len
+  let create_obj_array ~len = Obj_array.create_zero ~len
   let create ~len x = Obj_array.create ~len (Caml.Obj.repr x)
+  let singleton x = Obj_array.singleton (Caml.Obj.repr x)
+
 
   let get arr i = Caml.Obj.obj (Obj_array.get arr i)
   let set arr i x = Obj_array.set arr i (Caml.Obj.repr x)
   let unsafe_get arr i = Caml.Obj.obj (Obj_array.unsafe_get arr i)
-  let unsafe_set arr i x = Obj_array.unsafe_set arr i (Caml.Obj.repr x)
+  let unsafe_set arr i x =
+    Obj_array.unsafe_set arr i (Caml.Obj.repr x)
+  let unsafe_set_int arr i x =
+    Obj_array.unsafe_set_int arr i x
+  let unsafe_set_int_assuming_currently_int arr i x =
+    Obj_array.unsafe_set_int_assuming_currently_int arr i x
+  let unsafe_set_assuming_currently_int arr i x =
+    Obj_array.unsafe_set_assuming_currently_int arr i (Caml.Obj.repr x)
 
   let length = Obj_array.length
 
@@ -38,6 +55,12 @@ end = struct
 
   let copy = Obj_array.copy
 
+  let unsafe_truncate = Obj_array.truncate
+
+  let unsafe_set_omit_phys_equal_check t i x =
+    Obj_array.unsafe_set_omit_phys_equal_check t i (Caml.Obj.repr x)
+
+  let unsafe_clear_if_pointer = Obj_array.unsafe_clear_if_pointer
 end
 
 include Trusted
@@ -90,3 +113,5 @@ include
       ;;
       let unsafe_blit = unsafe_blit
     end)
+
+
