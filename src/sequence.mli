@@ -271,18 +271,18 @@ val filter_opt : 'a option t -> 'a t
     the length of the sequence. *)
 val sub : 'a t -> pos:int -> len:int -> 'a t
 
-(** [take t n] produces the first [n] elements of [t]. *)
-val take : 'a t -> int -> 'a t
+(** [take t ~n] produces the first [n] elements of [t]. *)
+val take : 'a t -> n:int -> 'a t
 
-(** [drop t n] produces all elements of [t] except the first [n] elements.  If there are
+(** [drop t ~n] produces all elements of [t] except the first [n] elements.  If there are
     fewer than [n] elements in [t], there is no error; the resulting sequence simply
     produces no elements.  Usually you will probably want to use [drop_eagerly] because it
     can be significantly cheaper. *)
-val drop : 'a t -> int -> 'a t
+val drop : 'a t -> n:int -> 'a t
 
-(** [drop_eagerly t n] immediately consumes the first [n] elements of [t] and returns the
+(** [drop_eagerly t ~n] immediately consumes the first [n] elements of [t] and returns the
     unevaluated tail of [t]. *)
-val drop_eagerly : 'a t -> int -> 'a t
+val drop_eagerly : 'a t -> n:int -> 'a t
 
 (** [take_while t ~f] produces the longest prefix of [t] for which [f] applied to each
     element is [true]. *)
@@ -324,8 +324,8 @@ val shift_right : 'a t -> 'a -> 'a t
     latter O(n) work per element produced. *)
 val shift_right_with_list : 'a t -> 'a list -> 'a t
 
-(** [shift_left t n] is a synonym for [drop t n].*)
-val shift_left : 'a t -> int -> 'a t
+(** [shift_left t ~n] is a synonym for [drop t ~n].*)
+val shift_left : 'a t -> n:int -> 'a t
 
 module Infix : sig
   val ( @ ) : 'a t -> 'a t -> 'a t

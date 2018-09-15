@@ -818,21 +818,21 @@ let sub s ~pos ~len =
                   | Yield(a, s) when i >= pos -> Yield (a,(i + 1, s))
                   | Yield(_, s) -> Skip(i + 1, s)))
 
-let take s len =
-  if len < 0 then failwith "Sequence.take";
+let take s ~n =
+  if n < 0 then failwith "Sequence.take";
   match s with
   | Sequence(s, next) ->
     Sequence((0,s),
              (fun (i, s) ->
-                if i >= len then Done
+                if i >= n then Done
                 else
                   match next s with
                   | Done -> Done
                   | Skip s -> Skip (i, s)
                   | Yield(a, s) -> Yield (a,(i + 1, s))))
 
-let drop s len =
-  if len < 0 then failwith "Sequence.drop";
+let drop s ~n =
+  if n < 0 then failwith "Sequence.drop";
   match s with
   | Sequence(s, next) ->
     Sequence((0,s),
@@ -840,7 +840,7 @@ let drop s len =
                 match next s with
                 | Done -> Done
                 | Skip s -> Skip (i, s)
-                | Yield(a, s) when i >= len -> Yield (a,(i + 1, s))
+                | Yield(a, s) when i >= n -> Yield (a,(i + 1, s))
                 | Yield(_, s) -> Skip (i+1, s)))
 
 let take_while s ~f =
@@ -988,17 +988,17 @@ let memoize (type a) (Sequence (s, next)) =
   in
   Sequence (memoize s, (fun (M.T l) -> Lazy.force l))
 
-let drop_eagerly s len =
-  let rec loop i ~len s next =
-    if i >= len then Sequence(s, next)
+let drop_eagerly s ~n =
+  let rec loop i ~n s next =
+    if i >= n then Sequence(s, next)
     else
       match next s with
       | Done -> empty
-      | Skip s -> loop i ~len s next
-      | Yield(_,s) -> loop (i+1) ~len s  next
+      | Skip s -> loop i ~n s next
+      | Yield(_,s) -> loop (i+1) ~n s  next
   in
   match s with
-  | Sequence(s, next) -> loop 0 ~len s next
+  | Sequence(s, next) -> loop 0 ~n s next
 
 let drop_while_option (Sequence (s, next)) ~f =
   let rec loop s =
