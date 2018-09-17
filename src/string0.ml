@@ -47,6 +47,7 @@ let index_from_exn  = Caml.String.index_from
 let make            = Caml.String.make
 let rindex_exn      = Caml.String.rindex
 let rindex_from_exn = Caml.String.rindex_from
+let trim            = Caml.String.trim
 let sub             = Caml.String.sub
 let unsafe_blit     = Caml.String.unsafe_blit
 
