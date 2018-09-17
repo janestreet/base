@@ -6,10 +6,10 @@
     `bytes`.
 
   - [X] Do not export the `\*\_intf` modules from Base. Instead, any signatures
-    sould be exported by the `.ml` and `.mli`s.
+    should be exported by the `.ml` and `.mli`s.
 
   - [X] Only expose the first-class module interface of `Hashtbl`. Accompanying
-    this should ba cleanup of `Hastbl_intf`, moving anything that's still
+    this should be cleanup of `Hashtbl_intf`, moving anything that's still
     required in core_kernel to the appropriate files in that project.
 
   - [X] Replace `Hashtbl.create (module String) ()` by just
@@ -26,7 +26,7 @@
 
   - [X] Rename `Monad_intf.all_ignore` to `Monad_intf.all_unit`.
 
-  - [ ] Elminate all uses of `Not_found`, replacing them with descriptive error messages.
+  - [ ] Eliminate all uses of `Not_found`, replacing them with descriptive error messages.
 
   - [X] Move the various private modules to `Base.Base_private`
     instead of `Base.Exported_for_specific_uses` and `Base.Not_exposed_properly`
@@ -85,7 +85,7 @@
     over.
 
   - [ ] Ensure that the correct `compare` function and other related functions are
-    exported by all modules. These functios should not be derived from
+    exported by all modules. These functions should not be derived from
     a functor application, in order to ensure proper inlining. Implementing
     this change should also include benchmarks to verify the initial result,
     and to maintain it on an ongoing basis. See `bench/bench_int.ml` for
@@ -108,5 +108,5 @@
 
 # Changes For The Distant Future
 
-  - [ ] Make the various comparision functions return an `Ordering.t`
+  - [ ] Make the various comparison functions return an `Ordering.t`
     instead of an `int`.
