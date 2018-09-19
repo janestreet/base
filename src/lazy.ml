@@ -13,7 +13,11 @@ include (Caml.Lazy : module type of Caml.Lazy with type 'a t := 'a t)
 
 let map t ~f = lazy (f (force t))
 
-let compare compare_a t1 t2 = compare_a (force t1) (force t2)
+let compare compare_a t1 t2 =
+  if phys_equal t1 t2
+  then 0
+  else compare_a (force t1) (force t2)
+;;
 
 let hash_fold_t = Hash.Builtin.hash_fold_lazy_t
 

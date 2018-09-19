@@ -16,6 +16,8 @@ module type Focused = sig
   include Applicative.S2       with type ('a, 'b) t := ('a, 'b) t
 
   module Args : Applicative.Args2 with type ('a, 'e) arg := ('a, 'e) t
+    [@@warning "-3"]
+  [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
 
   val value : ('a, _) t -> default:'a -> 'a
 

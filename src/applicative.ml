@@ -22,6 +22,7 @@ module Args_to_Args2 (X : Args) : (
   type ('f, 'r, 'e) t = ('f, 'r) X.t
   include (X : Args with type 'a arg := 'a X.arg and type ('f, 'r) t := ('f, 'r) X.t)
 end
+[@@warning "-3"]
 
 module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = struct
 
@@ -118,12 +119,14 @@ module Make_args (X : S) : Args with type 'a arg := 'a X.t = struct
 
   type ('f, 'r) t = ('f, 'r, unit) t_
 end
+[@@warning "-3"]
 
 module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t = struct
   include Make_args' (X)
 
   type ('f, 'r, 'e) t = ('f, 'r, 'e) t_
 end
+[@@warning "-3"]
 
 module Of_monad (M : Monad.S) : S with type 'a t := 'a M.t =
   Make (struct
@@ -154,4 +157,3 @@ module Pair (F : S) (G : S) : S with type 'a t = 'a F.t * 'a G.t = struct
       let map = `Custom custom_map
     end)
 end
-

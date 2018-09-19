@@ -184,6 +184,7 @@ module type Args = sig
   val applyN : 'f arg -> ('f, 'r) t -> 'r arg
 
 end
+[@@deprecated "[since 2018-09] Use [ppx_let] instead."]
 
 module type Basic2 = sig
   type ('a, 'e) t
@@ -251,12 +252,17 @@ module type Args2 = sig
   val mapN : f:'f -> ('f, 'r, 'e) t -> ('r, 'e) arg
   val applyN : ('f, 'e) arg -> ('f, 'r, 'e) t -> ('r, 'e) arg
 end
+[@@deprecated "[since 2018-09] Use [ppx_let] instead."]
 
 module type Applicative = sig
 
   module type Applicative_infix = Applicative_infix
   module type Args              = Args
+  [@@warning "-3"]
+  [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
   module type Args2             = Args2
+  [@@warning "-3"]
+  [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
   module type Basic             = Basic
   module type Basic2            = Basic2
   module type Basic2_using_map2 = Basic2_using_map2
@@ -269,6 +275,7 @@ module type Applicative = sig
     Args2
     with type ('a, 'e) arg = 'a X.arg
     with type ('f, 'r, 'e) t = ('f, 'r) X.t
+      [@@warning "-3"]
 
   module S2_to_S (X : S2) : S with type 'a t = ('a, unit) X.t
 
@@ -287,8 +294,10 @@ module type Applicative = sig
   module Make_using_map2  (X : Basic_using_map2 ) : S  with type  'a      t :=  'a      X.t
   module Make2_using_map2 (X : Basic2_using_map2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
 
-  module Make_args  (X : S ) : Args  with type  'a      arg :=  'a      X.t
-  module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t
+  module Make_args  (X : S ) : Args  with type  'a      arg :=  'a      X.t [@@warning "-3"]
+  [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
+  module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t [@@warning "-3"]
+  [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
 
   (** The following functors give a sense of what Applicatives one can define.
 

@@ -18,6 +18,11 @@
 - Changed the signature of `equal` from `'a t -> 'a t -> equal:('a -> 'a ->
   bool) -> bool` to `('a -> 'a -> bool) -> 'a t -> 'a t -> bool`.
 
+- Optimized `Lazy.compare` to check physical equality before forcing the lazy
+  values.
+
+- Deprecated `Args` in the `Applicative` interface in favor of using `ppx_let`.
+
 ## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its

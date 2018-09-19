@@ -192,6 +192,7 @@ module Make_focused (M : sig
       type nonrec ('a, 'b) t = ('a, 'b) t
       include App
     end)
+  [@@warning "-3"]
 
   let combine_all =
     let rec other_loop f acc = function
