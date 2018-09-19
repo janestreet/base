@@ -64,6 +64,12 @@ val concat : ?sep:t -> t list -> t
     conventions of OCaml. *)
 val escaped : t -> t
 
+(** Return a copy of the argument, without leading and trailing whitespace.
+    The characters regarded as whitespace are: [' '], ['\012'], '[\n]', '[\r]', and
+    '[\t]'. If there is neither leading nor trailing whitespace character in the
+    argument, return the original string itself, not a copy. *)
+val trim : t -> t
+
 val contains : ?pos:int -> ?len:int -> t -> char -> bool
 
 (** Operates on the whole string using the US-ASCII character set,
