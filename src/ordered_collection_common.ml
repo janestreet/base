@@ -35,7 +35,7 @@ let get_pos_len_exn ?(pos = 0) ?len ~length =
 
 let get_pos_len ?pos ?len ~length =
   try Result.Ok (get_pos_len_exn ?pos ?len ~length)
-  with Invalid_argument s -> Result.Error s
+  with Invalid_argument s -> Or_error.error_string s
 ;;
 
 module Private = struct

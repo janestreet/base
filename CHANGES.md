@@ -1,5 +1,7 @@
 ## git version
 
+- `Ordered_collection_common.get_pos_len` now returns an `Or_error.t`
+
 - Added `Bool.Non_short_circuiting`.
 
 - Added `Float.square`.
