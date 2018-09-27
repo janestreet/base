@@ -25,6 +25,10 @@
 
 - Deprecated `Args` in the `Applicative` interface in favor of using `ppx_let`.
 
+- Rename collection length parameter of `Ordered_collection_common` functions
+  from `length` to `total_length`, and add a unit argument to `get_pos_len` and
+  `get_pos_len_exn`.
+
 ## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its

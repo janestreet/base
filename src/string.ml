@@ -125,7 +125,7 @@ let sub src ~pos ~len =
   if pos = 0 && len = String.length src
   then src
   else begin
-    Ordered_collection_common.check_pos_len_exn ~pos ~len ~length:(length src);
+    Ordered_collection_common.check_pos_len_exn ~pos ~len ~total_length:(length src);
     let dst = Bytes.create len in
     if len > 0 then Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
     Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
@@ -140,7 +140,7 @@ let blito ~src ?(src_pos = 0) ?(src_len = length src - src_pos) ~dst ?(dst_pos =
 
 let contains ?pos ?len t char =
   let (pos, len) =
-    Ordered_collection_common.get_pos_len_exn ?pos ?len ~length:(length t)
+    Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length t)
   in
   let last = pos + len in
   let rec loop i = i < last && (Char.equal t.[i] char || loop (i + 1)) in

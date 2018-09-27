@@ -12,29 +12,28 @@ open! Import
     It should be the case that:
 
     {[
-      pos >= 0 && len >= 0 && pos + len <= length
+      pos >= 0 && len >= 0 && pos + len <= total_length
     ]}
 
-    Note that this allows [pos = length] and [len = 0], i.e., an empty subrange
+    Note that this allows [pos = total_length] and [len = 0], i.e., an empty subrange
     at the end of the sequence.
 
     [get_pos_len] returns [(pos', len')] specifying a subrange where:
 
     {v
       pos' = match pos with None -> 0 | Some i -> i
-      len' = match len with None -> length - pos | Some i -> i
+      len' = match len with None -> total_length - pos' | Some i -> i
     v} *)
+val get_pos_len     : ?pos:int -> ?len:int -> unit -> total_length:int -> (int * int) Or_error.t
+val get_pos_len_exn : ?pos:int -> ?len:int -> unit -> total_length:int -> int * int
 
-val get_pos_len     : ?pos:int -> ?len:int -> length:int -> (int * int) Or_error.t
-val get_pos_len_exn : ?pos:int -> ?len:int -> length:int -> int * int
-
-(** [check_pos_len_exn ~pos ~len ~length] raises unless [pos >= 0 && len >= 0 && pos + len
-    <= length]. *)
-val check_pos_len_exn : pos:int -> len:int -> length:int -> unit
+(** [check_pos_len_exn ~pos ~len ~total_length] raises unless [pos >= 0 && len >= 0 &&
+    pos + len <= total_length]. *)
+val check_pos_len_exn : pos:int -> len:int -> total_length:int -> unit
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
   https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
-  val slow_check_pos_len_exn : pos:int -> len:int -> length:int -> unit
+  val slow_check_pos_len_exn : pos:int -> len:int -> total_length:int -> unit
 end

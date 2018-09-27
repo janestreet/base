@@ -41,7 +41,7 @@ let rec find_range_near_first_satisfying t ~get ~lo ~hi ~pred =
 
 let find_first_satisfying ?pos ?len t ~get ~length ~pred =
   let pos, len =
-    Ordered_collection_common.get_pos_len_exn ?pos ?len ~length:(length t)
+    Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length t)
   in
   let lo     = pos in
   let hi     = pos + len - 1 in
@@ -54,7 +54,7 @@ let find_first_satisfying ?pos ?len t ~get ~length ~pred =
    true*)
 let find_last_satisfying ?pos ?len t ~pred ~get ~length =
   let pos, len =
-    Ordered_collection_common.get_pos_len_exn ?pos ?len ~length:(length t)
+    Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length t)
   in
   if len = 0
   then None

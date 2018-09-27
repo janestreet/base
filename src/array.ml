@@ -251,7 +251,7 @@ end
 
 let sort ?pos ?len arr ~compare =
   let pos, len =
-    Ordered_collection_common.get_pos_len_exn ?pos ?len ~length:(length arr)
+    Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length arr)
   in
   Sort.Intro_sort.sort arr ~compare ~left:pos ~right:(pos + len - 1)
 

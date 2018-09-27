@@ -20,9 +20,9 @@ module Make_gen
 
   let blit ~src ~src_pos ~dst ~dst_pos ~len =
     Ordered_collection_common.check_pos_len_exn
-      ~pos:src_pos ~len ~length:(Src.length src);
+      ~pos:src_pos ~len ~total_length:(Src.length src);
     Ordered_collection_common.check_pos_len_exn
-      ~pos:dst_pos ~len ~length:(Dst.length dst);
+      ~pos:dst_pos ~len ~total_length:(Dst.length dst);
     if len > 0 then unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len;
   ;;
 
@@ -36,7 +36,8 @@ module Make_gen
      an element of the source array.  Thus every element of [dst] below is well
      defined. *)
   let sub src ~pos ~len =
-    Ordered_collection_common.check_pos_len_exn ~pos ~len ~length:(Src.length src);
+    Ordered_collection_common.check_pos_len_exn ~pos ~len
+      ~total_length:(Src.length src);
     let dst = Dst.create_like ~len src in
     if len > 0 then unsafe_blit ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
     dst

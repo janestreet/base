@@ -70,7 +70,6 @@ module type S = sig
   (** [add_buffer b1 b2] appends the current contents of buffer [b2] at the end of buffer
       [b1].  [b2] is not modified. *)
   val add_buffer : t -> t -> unit
-
 end
 
 module type Buffer = sig

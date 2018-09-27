@@ -93,7 +93,7 @@ let clamp t ~min ~max =
 
 let contains ?pos ?len t char =
   let (pos, len) =
-    Ordered_collection_common.get_pos_len_exn ?pos ?len ~length:(length t)
+    Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length t)
   in
   let last = pos + len in
   let rec loop i =
