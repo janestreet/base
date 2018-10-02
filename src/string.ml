@@ -138,13 +138,16 @@ let blit = Bytes.blit_string
 let blito ~src ?(src_pos = 0) ?(src_len = length src - src_pos) ~dst ?(dst_pos = 0) () =
   blit ~src ~src_pos ~len:src_len ~dst ~dst_pos
 
-let contains ?pos ?len t char =
-  let (pos, len) =
-    Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length t)
-  in
-  let last = pos + len in
-  let rec loop i = i < last && (Char.equal t.[i] char || loop (i + 1)) in
-  loop pos
+let rec contains_unsafe t ~pos ~end_ char =
+  pos < end_
+  && (Char.equal (unsafe_get t pos) char
+      || contains_unsafe t ~pos:(pos + 1) ~end_ char)
+
+let contains ?(pos = 0) ?len t char =
+  let total_length = String.length t in
+  let len = Option.value len ~default:(total_length - pos) in
+  Ordered_collection_common.check_pos_len_exn ~pos ~len ~total_length;
+  contains_unsafe t ~pos ~end_:(pos + len) char
 ;;
 
 let is_empty t = length t = 0
