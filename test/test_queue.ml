@@ -366,9 +366,7 @@ let%test_module _ =
           val copy : 'a t -> 'a t
         end
 
-        module That_queue : Queue_intf = struct
-          include Linked_queue
-        end
+        module That_queue : Queue_intf = Linked_queue
 
         module This_queue : Queue_intf = struct
           include Queue
