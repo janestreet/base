@@ -39,6 +39,9 @@ type ('src, 'dst) subo
   -> 'src
   -> 'dst
 
+(*_ These are not implemented less-general-in-terms-of-more-general because odoc produces
+  unreadable documentation in that case, with or without [inline] on [include]. *)
+
 module type S = sig
   type t
   val blit        : (t, t) blit

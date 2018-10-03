@@ -25,6 +25,8 @@
 
 - Deprecated `Args` in the `Applicative` interface in favor of using `ppx_let`.
 
+- Deprecated `Array.replace arr i ~f` in favor of using `arr.(i) <- (f (arr.(i)))`
+
 - Rename collection length parameter of `Ordered_collection_common` functions
   from `length` to `total_length`, and add a unit argument to `get_pos_len` and
   `get_pos_len_exn`.

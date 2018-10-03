@@ -48,13 +48,20 @@ type ('perm, 'record, 'field) t_with_perm =
 type ('record, 'field) t = ([ `Read | `Set_and_create], 'record, 'field) t_with_perm
 type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
-let name (Field f) = f.For_generated_code.name
+let name (Field field) = field.name
 
-let get (Field f) r = f.For_generated_code.getter r
+let get (Field field) r = field.getter r
 
-let fset (Field f) r v = f.For_generated_code.fset r v
+let fset (Field field) r v = field.fset r v
 
-let setter (Field f) = f.For_generated_code.setter
+let setter (Field field) = field.setter
 
 type ('perm, 'record, 'result) user =
   { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }
+
+let map (Field field) r ~f = field.fset r (f (field.getter r))
+
+let updater (Field field) =
+  match field.setter with
+  | None -> None
+  | Some setter -> Some (fun r ~f -> setter r (f (field.getter r)))

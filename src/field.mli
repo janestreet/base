@@ -30,5 +30,10 @@ val get  : (_, 'r, 'a) t_with_perm -> 'r -> 'a
 val fset : ([> `Set_and_create], 'r, 'a) t_with_perm -> 'r -> 'a -> 'r
 val setter : ([> `Set_and_create], 'r, 'a) t_with_perm -> ('r -> 'a -> unit) option
 
+val map : ([> `Set_and_create], 'r, 'a) t_with_perm -> 'r -> f:('a -> 'a) -> 'r
+val updater
+  :  ([> `Set_and_create], 'r, 'a) t_with_perm
+  -> ('r -> f:('a -> 'a) -> unit) option
+
 type ('perm, 'record, 'result) user =
   { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }

@@ -226,6 +226,7 @@ val of_list_rev_mapi : 'a list -> f:(int -> 'a -> 'b) -> 'b t
 
 (** [replace t i ~f] = [t.(i) <- f (t.(i))]. *)
 val replace : 'a t -> int -> f:('a -> 'a) -> unit
+[@@deprecated "[since 2018-09] use [t.(i) <- f (t.(i))] instead"]
 
 (** Modifies an array in place -- [ar.(i)] will be set to [f(ar.(i))]. *)
 val replace_all : 'a t -> f:('a -> 'a) -> unit
