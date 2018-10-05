@@ -944,8 +944,10 @@ module Tree0 = struct
 end
 
 type ('a, 'comparator) t =
-  { (* [comparator] is the first field so that polymorphic comparisons fail on a map due
-       to the functional value in the comparator. *)
+  { (* [comparator] is the first field so that polymorphic equality fails on a map due
+       to the functional value in the comparator.
+       Note that this does not affect polymorphic [compare]: that still produces
+       nonsense. *)
     comparator : ('a, 'comparator) Comparator.t;
     tree : 'a Tree0.t;
   }
