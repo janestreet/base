@@ -144,6 +144,9 @@ module Search_pattern : sig
       length [length pattern].  All inputs are valid. *)
   val create : string -> t
 
+  (** [matches pat str] returns true if [str] matches [pat] *)
+  val matches : t -> string -> bool
+
   (** [pos < 0] or [pos >= length string] result in no match (hence [index] returns
       [None] and [index_exn] raises). *)
   val index     : ?pos:int -> t -> in_:string -> int option

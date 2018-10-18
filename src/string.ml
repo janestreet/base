@@ -242,6 +242,8 @@ module Search_pattern = struct
     end
   ;;
 
+  let matches t str = index_internal t ~in_:str >= 0
+
   let index ?pos t ~in_ =
     let p = index_internal ?pos t ~in_ in
     if p < 0 then

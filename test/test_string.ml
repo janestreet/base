@@ -160,6 +160,16 @@ let%test_module "Search_pattern" =
     let%test _ = index ~pos:2 (create "c") ~in_:"abc" = Some 2
     let%test _ = index ~pos:3 (create "c") ~in_:"abc" = None
 
+    let (=) = [%compare.equal: bool]
+    let%test _ = matches (create "") "abababac" = true
+    let%test _ = matches (create "abababaca") "abababac" = false
+    let%test _ = matches (create "abababac") "abababac" = true
+    let%test _ = matches (create "abac") "abababac" = true
+    let%test _ = matches (create "abac") "abababaca" = true
+    let%test _ = matches (create "baca") "abababaca" = true
+    let%test _ = matches (create "a") "abc" = true
+    let%test _ = matches (create "c") "abc" = true
+
     let (=) = [%compare.equal: int list]
     let%test _ = index_all (create "") ~may_overlap:false ~in_:"abcd" = [0; 1; 2; 3; 4]
     let%test _ = index_all (create "") ~may_overlap:true ~in_:"abcd" = [0; 1; 2; 3; 4]
