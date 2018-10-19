@@ -15,6 +15,8 @@ let invariant t =
 
 let length = Array.length
 
+let swap t i j = Array.swap t i j
+
 let sexp_of_t t =
   Sexp.Atom (String.concat ~sep:""
                [ "<Obj_array.t of length ";

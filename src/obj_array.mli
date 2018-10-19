@@ -41,6 +41,8 @@ val unsafe_get : t -> int -> Caml.Obj.t
 val set        : t -> int -> Caml.Obj.t -> unit
 val unsafe_set : t -> int -> Caml.Obj.t -> unit
 
+val swap : t -> int -> int -> unit
+
 (** [unsafe_set_assuming_currently_int t i obj] sets index [i] of [t] to [obj], but only
     works correctly if [Caml.Obj.is_int (get t i)].  This precondition saves a dynamic
     check.

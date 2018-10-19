@@ -252,6 +252,20 @@ let%test_module _ =
              Queue.to_list q)
             ~expect:(Map.to_alist map))
 
+    let mapi_inplace = mapi_inplace
+
+    let%test_unit _ =
+      Quickcheck.test
+        constructors_gen
+        ~sexp_of:[%sexp_of: Constructor.t list]
+        ~f:(fun constructors ->
+          let t, map = reify constructors in
+          [%test_result: (Key.t * Data.t) list]
+            (mapi_inplace t ~f:(fun ~key:_ ~data -> data ^ data);
+             (fold t ~init:[] ~f:(fun ~key ~data acc -> (key, data) :: acc)))
+            ~expect:(Map.map map ~f:(fun data -> data ^ data)
+                     |> Map.to_alist |> List.rev))
+
     let fold = fold
 
     let%test_unit _ =

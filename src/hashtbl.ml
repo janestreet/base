@@ -624,11 +624,8 @@ let filter_map_inplace t ~f =
   filter_mapi_inplace t ~f:(fun ~key:_ ~data -> f data)
 
 let mapi_inplace t ~f =
-  let map_results =
-    fold t ~init:[] ~f:(fun ~key ~data ac -> (key, f ~key ~data) :: ac)
-  in
-  List.iter map_results ~f:(fun (key,data) -> set t ~key ~data);
-;;
+  ensure_mutation_allowed t;
+  without_mutating t (fun () -> Array.iter t.table ~f:(Avltree.mapi_inplace ~f))
 
 let map_inplace t ~f =
   mapi_inplace t ~f:(fun ~key:_ ~data -> f data)

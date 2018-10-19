@@ -399,3 +399,13 @@ let rec iter t ~f =
     iter left ~f;
     f ~key ~data;
     iter right ~f
+
+let rec mapi_inplace t ~f =
+  match t with
+  | Empty -> ()
+  | Leaf ({ key ; value } as t) ->
+    t.value <- f ~key ~data:value
+  | Node ({ left ; key ; value ; height = _ ; right } as t) ->
+    mapi_inplace ~f left;
+    t.value <- f ~key ~data:value;
+    mapi_inplace ~f right

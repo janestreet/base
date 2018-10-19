@@ -52,6 +52,8 @@ val set      : 'a t -> int -> 'a option -> unit
 val set_some : 'a t -> int -> 'a ->        unit
 val set_none : _  t -> int ->              unit
 
+val swap : _ t -> int -> int -> unit
+
 (** Replaces all the elements of the array with [None]. *)
 val clear : _ t -> unit
 

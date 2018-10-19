@@ -124,3 +124,6 @@ val fold : ('k, 'v) t -> init:'a -> f:(key:'k -> data:'v -> 'a -> 'a) -> 'a
 
 (** Iterates over the tree. *)
 val iter : ('k, 'v) t -> f:(key:'k -> data:'v -> unit) -> unit
+
+(** Map over the the tree, changing the data in place. *)
+val mapi_inplace : ('k, 'v) t -> f:(key:'k -> data:'v -> 'v) -> unit

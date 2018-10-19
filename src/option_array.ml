@@ -135,6 +135,8 @@ let set_some t i x = Uniform_array.set t i (Cheap_option.some x)
 
 let set_none t i = Uniform_array.set t i Cheap_option.none
 
+let swap t i j = Uniform_array.swap t i j
+
 let unsafe_get t i = Cheap_option.to_option (Uniform_array.unsafe_get t i)
 
 let unsafe_get_some_exn t i = Cheap_option.value_exn (Uniform_array.unsafe_get t i)

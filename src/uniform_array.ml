@@ -14,6 +14,7 @@ module Trusted : sig
   val singleton : 'a -> 'a t
   val get : 'a t -> int -> 'a
   val set : 'a t -> int -> 'a -> unit
+  val swap : _ t -> int -> int -> unit
   val unsafe_get : 'a t -> int -> 'a
   val unsafe_set : 'a t -> int -> 'a -> unit
   val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
@@ -36,6 +37,7 @@ end = struct
   let create ~len x = Obj_array.create ~len (Caml.Obj.repr x)
   let singleton x = Obj_array.singleton (Caml.Obj.repr x)
 
+  let swap t i j = Obj_array.swap t i j
 
   let get arr i = Caml.Obj.obj (Obj_array.get arr i)
   let set arr i x = Obj_array.set arr i (Caml.Obj.repr x)
