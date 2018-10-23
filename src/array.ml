@@ -669,10 +669,6 @@ let to_sequence_mutable t =
 
 let to_sequence t = to_sequence_mutable (copy t)
 
-(* As far as I can tell, all empty arrays are physically equal in recent versions of the
-   OCaml compiler, whether created with [ [||] ] or with [init 0]. *)
-let empty () = [||]
-
 let cartesian_product t1 t2 =
   if is_empty t1 || is_empty t2 then
     [||]

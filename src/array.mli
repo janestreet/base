@@ -293,10 +293,6 @@ val sorted_copy : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 val last : 'a t -> 'a
 
-(** [empty ()] creates an empty array, physically equal to [ [||] ]. *)
-val empty : unit -> 'a t
-[@@deprecated "[since 2016-04] Use [ [||] ]"]
-
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
 (** [unsafe_truncate t ~len] drops [length t - len] elements from the end of [t], changing

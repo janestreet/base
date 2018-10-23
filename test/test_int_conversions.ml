@@ -99,7 +99,7 @@ let%test_module "conversions" =
     module Nativeint = struct include Nativeint let module_name = "Nativeint" end
 
     let with_exn f x = Or_error.try_with (fun () -> f x)
-    let optional f x = Or_error.try_with (fun () -> f x |> Option.value_exn)
+    let optional f x = Or_error.try_with (fun () -> Option.value_exn (f x))
     let alwaysok f x = Ok (f x)
 
     let%expect_test "int <-> int32" =

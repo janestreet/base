@@ -200,7 +200,7 @@ let replace id replacement line =
 }
 
 let id_trail = ['a'-'z' 'A'-'Z' '_' '0'-'9']*
-let id = ['a'-'z' 'A'-'Z' '_' '0'-'9'] id_trail
+               let id = ['a'-'z' 'A'-'Z' '_' '0'-'9'] id_trail
 let val_id = id | '(' [^ ')']* ')'
 let params = ('(' [^')']* ')' | ['+' '-']? '\'' id) " "
 
@@ -211,12 +211,12 @@ rule line = parse
     { "" (* We can't deprecate these *) }
   | "module Bigarray" _* { "" (* Don't deprecate it yet *) }
   | "type " (params? (id as id) _* as def)
-    { sprintf "type nonrec %s\n%s" def
-        (match id with
-         | "in_channel"  -> deprecated_msg_with_repl "Stdio.In_channel.t"
-         | "out_channel" -> deprecated_msg_with_repl "Stdio.Out_channel.t"
-         | _ -> deprecated_msg id)
-    }
+      { sprintf "type nonrec %s\n%s" def
+          (match id with
+           | "in_channel"  -> deprecated_msg_with_repl "Stdio.In_channel.t"
+           | "out_channel" -> deprecated_msg_with_repl "Stdio.Out_channel.t"
+           | _ -> deprecated_msg id)
+      }
 
   | val_ (val_id as id) _* as line { replace id (val_replacement id) line }
 

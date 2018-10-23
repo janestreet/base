@@ -1,5 +1,4 @@
 open! Import
-open  Polymorphic_compare
 open  Caml.Random
 
 module Array = Array0
@@ -155,6 +154,7 @@ module State = struct
   ;;
 
   let int32_incl =
+    let open Int32_replace_polymorphic_compare in
     let rec in_range state lo hi =
       let int = full_range_int32 state in
       if int >= lo && int <= hi
@@ -173,6 +173,7 @@ module State = struct
   ;;
 
   let nativeint_incl =
+    let open Nativeint_replace_polymorphic_compare in
     let rec in_range state lo hi =
       let int = full_range_nativeint state in
       if int >= lo && int <= hi
@@ -191,6 +192,7 @@ module State = struct
   ;;
 
   let int64_incl =
+    let open Int64_replace_polymorphic_compare in
     let rec in_range state lo hi =
       let int = full_range_int64 state in
       if int >= lo && int <= hi
@@ -209,6 +211,7 @@ module State = struct
   ;;
 
   let float_range state lo hi =
+    let open Float_replace_polymorphic_compare in
     if lo > hi then raise_crossed_bounds "float" lo hi Caml.string_of_float;
     lo +. float state (hi -. lo)
   ;;

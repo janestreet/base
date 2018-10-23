@@ -31,6 +31,9 @@
   from `length` to `total_length`, and add a unit argument to `get_pos_len` and
   `get_pos_len_exn`.
 
+- Removed functions that were deprecated in 2016 from the `Array` and `Set`
+  modules.
+
 ## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its

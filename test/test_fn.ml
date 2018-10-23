@@ -1,6 +1,9 @@
 open! Import
 open! Fn
 
+(* enforce that we're testing [Fn.(|>)] and not ppx_pipebang. *)
+let (_ : 'a -> ('a -> 'b) -> 'b) = (|>)
+
 let%test _ = 1 |> fun x -> x = 1
 let%test _ = 1 |> fun x -> x + 1 |> fun y -> y = 2
 

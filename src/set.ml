@@ -998,7 +998,6 @@ module Accessors = struct
   let compare_direct t1 t2 = Tree0.compare (compare_elt t1) t1.tree t2.tree
   let equal t1 t2 = Tree0.equal t1.tree t2.tree ~compare_elt:(compare_elt t1)
   let is_subset t ~of_ = Tree0.is_subset t.tree ~of_:of_.tree ~compare_elt:(compare_elt t)
-  let subset t1 t2 = is_subset t1 ~of_:t2
 
   module Named = struct
     type nonrec ('a, 'cmp) t = {
@@ -1037,7 +1036,6 @@ module Accessors = struct
     List.map (Tree0.group_by t.tree ~equiv ~compare_elt:(compare_elt t)) ~f:(like t)
   ;;
   let nth t i = Tree0.nth t.tree i
-  let find_index = nth
   let remove_index t i = like t (Tree0.remove_index t.tree i ~compare_elt:(compare_elt t))
   let sexp_of_t sexp_of_a _ t = Tree0.sexp_of_t sexp_of_a t.tree
   let to_sequence ?order ?greater_or_equal_to ?less_or_equal_to t =
@@ -1116,7 +1114,6 @@ module Tree = struct
   let equal   ~comparator t1 t2 = Tree0.equal   t1 t2 ~compare_elt:(ce comparator)
 
   let is_subset ~comparator t ~of_ = Tree0.is_subset  t ~of_ ~compare_elt:(ce comparator)
-  let subset ~comparator t1 t2 = is_subset ~comparator t1 ~of_:t2
 
   let of_list  ~comparator l = Tree0.of_list  l ~compare_elt:(ce comparator)
   let of_array ~comparator a = Tree0.of_array a ~compare_elt:(ce comparator)
@@ -1134,7 +1131,6 @@ module Tree = struct
   let group_by ~comparator t ~equiv = Tree0.group_by t ~equiv ~compare_elt:(ce comparator)
   let split ~comparator        t a = Tree0.split        t a ~compare_elt:(ce comparator)
   let nth               t i = Tree0.nth   t i
-  let find_index = nth
   let remove_index ~comparator t i = Tree0.remove_index t i ~compare_elt:(ce comparator)
   let sexp_of_t sexp_of_a _ t = Tree0.sexp_of_t sexp_of_a t
 

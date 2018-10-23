@@ -145,61 +145,71 @@ let%test_unit _ =
   done
 ;;
 
-let (=) = Polymorphic_compare.(=)
+let%test_unit _ = [%test_result: int array] (filter_opt [|Some 1; None; Some 2; None; Some 3|]) ~expect:[|1; 2; 3|]
+let%test_unit _ = [%test_result: int array] (filter_opt [|Some 1; None; Some 2|]) ~expect:[|1; 2|]
+let%test_unit _ = [%test_result: int array] (filter_opt [|Some 1|]) ~expect:[|1|]
+let%test_unit _ = [%test_result: int array] (filter_opt [|None|]) ~expect:[||]
+let%test_unit _ = [%test_result: int array] (filter_opt [||]) ~expect:[||]
 
-let%test _ = filter_opt [|Some 1; None; Some 2; None; Some 3|] = [|1; 2; 3|]
-let%test _ = filter_opt [|Some 1; None; Some 2|] = [|1; 2|]
-let%test _ = filter_opt [|Some 1|] = [|1|]
-let%test _ = filter_opt [|None|] = [||]
-let%test _ = filter_opt [||] = [||]
+let%test_unit _ =
+  [%test_result: int]
+    (fold2_exn [||] [||] ~init:13 ~f:(fun _ -> failwith "fail"))
+    ~expect:13
+let%test_unit _ =
+  [%test_result: (int * string) list]
+    (fold2_exn [| 1 |] [| "1" |] ~init:[] ~f:(fun ac a b -> (a, b) :: ac))
+    ~expect:[ 1, "1" ]
 
-let%test _ = fold2_exn [||] [||] ~init:13 ~f:(fun _ -> failwith "fail") = 13
-let%test _ = fold2_exn [| 1 |] [| "1" |] ~init:[] ~f:(fun ac a b -> (a, b) :: ac) = [ 1, "1" ]
+let%test_unit _ = [%test_result: int array] (filter [| 0; 1 |] ~f:(fun n -> n < 2)) ~expect:[| 0; 1 |]
+let%test_unit _ = [%test_result: int array] (filter [| 0; 1 |] ~f:(fun n -> n < 1)) ~expect:[| 0 |]
+let%test_unit _ = [%test_result: int array] (filter [| 0; 1 |] ~f:(fun n -> n < 0)) ~expect:[||]
 
-let%test _ = filter [| 0; 1 |] ~f:(fun n -> n < 2) = [| 0; 1 |]
-let%test _ = filter [| 0; 1 |] ~f:(fun n -> n < 1) = [| 0 |]
-let%test _ = filter [| 0; 1 |] ~f:(fun n -> n < 0) = [||]
+let%test_unit _ = [%test_result: bool] (exists [||] ~f:(fun _ -> true)) ~expect:false
+let%test_unit _ = [%test_result: bool] (exists [|0;1;2;3|] ~f:(fun x -> 4 = x)) ~expect:false
+let%test_unit _ = [%test_result: bool] (exists [|0;1;2;3|] ~f:(fun x -> 2 = x)) ~expect:true
 
-let%test _ = exists [||] ~f:(fun _ -> true) = false
-let%test _ = exists [|0;1;2;3|] ~f:(fun x -> 4 = x) = false
-let%test _ = exists [|0;1;2;3|] ~f:(fun x -> 2 = x) = true
+let%test_unit _ = [%test_result: bool] (existsi [||] ~f:(fun _ _ -> true)) ~expect:false
+let%test_unit _ = [%test_result: bool] (existsi [|0;1;2;3|] ~f:(fun i x -> i <> x)) ~expect:false
+let%test_unit _ = [%test_result: bool] (existsi [|0;1;3;3|] ~f:(fun i x -> i <> x)) ~expect:true
 
-let%test _ = existsi [||] ~f:(fun _ _ -> true) = false
-let%test _ = existsi [|0;1;2;3|] ~f:(fun i x -> i <> x) = false
-let%test _ = existsi [|0;1;3;3|] ~f:(fun i x -> i <> x) = true
+let%test_unit _ = [%test_result: bool] (for_all [||]        ~f:(fun _ -> false)) ~expect:true
+let%test_unit _ = [%test_result: bool] (for_all [|1;2;3|]   ~f:Int.is_positive ) ~expect:true
+let%test_unit _ = [%test_result: bool] (for_all [|0;1;3;3|] ~f:Int.is_positive ) ~expect:false
 
-let%test _ = for_all [||]        ~f:(fun _ -> false) = true
-let%test _ = for_all [|1;2;3|]   ~f:Int.is_positive  = true
-let%test _ = for_all [|0;1;3;3|] ~f:Int.is_positive  = false
+let%test_unit _ = [%test_result: bool] (for_alli [||] ~f:(fun _ _ -> false)) ~expect:true
+let%test_unit _ = [%test_result: bool] (for_alli [|0;1;2;3|] ~f:(fun i x -> i = x)) ~expect:true
+let%test_unit _ = [%test_result: bool] (for_alli [|0;1;3;3|] ~f:(fun i x -> i = x)) ~expect:false
 
-let%test _ = for_alli [||] ~f:(fun _ _ -> false) = true
-let%test _ = for_alli [|0;1;2;3|] ~f:(fun i x -> i = x) = true
-let%test _ = for_alli [|0;1;3;3|] ~f:(fun i x -> i = x) = false
+let%test_unit _ = [%test_result: bool] (exists2_exn [||] [||] ~f:(fun _ _ -> true)) ~expect:false
+let%test_unit _ = [%test_result: bool] (exists2_exn [|0;2;4;6|] [|0;2;4;6|] ~f:(fun x y -> x <> y)) ~expect:false
+let%test_unit _ = [%test_result: bool] (exists2_exn [|0;2;4;8|] [|0;2;4;6|] ~f:(fun x y -> x <> y)) ~expect:true
+let%test_unit _ = [%test_result: bool] (exists2_exn [|2;2;4;6|] [|0;2;4;6|] ~f:(fun x y -> x <> y)) ~expect:true
+let%test_unit _ = [%test_result: bool] (for_all2_exn [||] [||] ~f:(fun _ _ -> false)) ~expect:true
+let%test_unit _ = [%test_result: bool] (for_all2_exn [|0;2;4;6|] [|0;2;4;6|] ~f:(fun x y -> x = y)) ~expect:true
+let%test_unit _ = [%test_result: bool] (for_all2_exn [|0;2;4;8|] [|0;2;4;6|] ~f:(fun x y -> x = y)) ~expect:false
+let%test_unit _ = [%test_result: bool] (for_all2_exn [|2;2;4;6|] [|0;2;4;6|] ~f:(fun x y -> x = y)) ~expect:false
 
-let%test _ = exists2_exn [||] [||] ~f:(fun _ _ -> true) = false
-let%test _ = exists2_exn [|0;2;4;6|] [|0;2;4;6|] ~f:(fun x y -> x <> y) = false
-let%test _ = exists2_exn [|0;2;4;8|] [|0;2;4;6|] ~f:(fun x y -> x <> y) = true
-let%test _ = exists2_exn [|2;2;4;6|] [|0;2;4;6|] ~f:(fun x y -> x <> y) = true
-let%test _ = for_all2_exn [||] [||] ~f:(fun _ _ -> false) = true
-let%test _ = for_all2_exn [|0;2;4;6|] [|0;2;4;6|] ~f:(fun x y -> x = y) = true
-let%test _ = for_all2_exn [|0;2;4;8|] [|0;2;4;6|] ~f:(fun x y -> x = y) = false
-let%test _ = for_all2_exn [|2;2;4;6|] [|0;2;4;6|] ~f:(fun x y -> x = y) = false
+let%test_unit _ = [%test_result: bool] (equal (=) [||] [||]) ~expect:true
+let%test_unit _ = [%test_result: bool] (equal (=) [| 1 |] [| 1 |]) ~expect:true
+let%test_unit _ = [%test_result: bool] (equal (=) [| 1; 2 |] [| 1; 2 |]) ~expect:true
+let%test_unit _ = [%test_result: bool] (equal (=) [||] [| 1 |]) ~expect:false
+let%test_unit _ = [%test_result: bool] (equal (=) [| 1 |] [||]) ~expect:false
+let%test_unit _ = [%test_result: bool] (equal (=) [| 1 |] [| 1; 2 |]) ~expect:false
+let%test_unit _ = [%test_result: bool] (equal (=) [| 1; 2 |] [| 1; 3 |]) ~expect:false
 
-let%test _ = equal (=) [||] [||]
-let%test _ = equal (=) [| 1 |] [| 1 |]
-let%test _ = equal (=) [| 1; 2 |] [| 1; 2 |]
-let%test _ = not (equal (=) [||] [| 1 |])
-let%test _ = not (equal (=) [| 1 |] [||])
-let%test _ = not (equal (=) [| 1 |] [| 1; 2 |])
-let%test _ = not (equal (=) [| 1; 2 |] [| 1; 3 |])
+let%test_unit _ =
+  [%test_result: (int * int) option]
+    (findi [|1;2;3;4|] ~f:(fun i x -> i = 2*x))
+    ~expect:None
+let%test_unit _ =
+  [%test_result: (int * int) option]
+    (findi [|1;2;1;4|] ~f:(fun i x -> i = 2*x))
+    ~expect:(Some (2, 1))
 
-let%test _ = findi [|1;2;3;4|] ~f:(fun i x -> i = 2*x) = None
-let%test _ = findi [|1;2;1;4|] ~f:(fun i x -> i = 2*x) = Some (2, 1)
-
-let%test _ = find_mapi [|0;5;2;1;4|] ~f:(fun i x -> if i = x then Some (i+x) else None) = Some 0
-let%test _ = find_mapi [|3;5;2;1;4|] ~f:(fun i x -> if i = x then Some (i+x) else None) = Some 4
-let%test _ = find_mapi [|3;5;1;1;4|] ~f:(fun i x -> if i = x then Some (i+x) else None) = Some 8
-let%test _ = find_mapi [|3;5;1;1;2|] ~f:(fun i x -> if i = x then Some (i+x) else None) = None
+let%test_unit _ = [%test_result: int option] (find_mapi [|0;5;2;1;4|] ~f:(fun i x -> if i = x then Some (i+x) else None)) ~expect:(Some 0)
+let%test_unit _ = [%test_result: int option] (find_mapi [|3;5;2;1;4|] ~f:(fun i x -> if i = x then Some (i+x) else None)) ~expect:(Some 4)
+let%test_unit _ = [%test_result: int option] (find_mapi [|3;5;1;1;4|] ~f:(fun i x -> if i = x then Some (i+x) else None)) ~expect:(Some 8)
+let%test_unit _ = [%test_result: int option] (find_mapi [|3;5;1;1;2|] ~f:(fun i x -> if i = x then Some (i+x) else None)) ~expect:None
 
 let%test_unit _ =
   List.iter
@@ -216,8 +226,8 @@ let%test_unit _ =
     ]
 ;;
 
-let%test _ = random_element [| |] = None
-let%test _ = random_element [| 0 |] = Some 0
+let%test_unit _ = [%test_result: int option] (random_element [| |]) ~expect:None
+let%test_unit _ = [%test_result: int option] (random_element [| 0 |]) ~expect:(Some 0)
 
 let%test_unit _ =
   List.iter
@@ -226,38 +236,40 @@ let%test_unit _ =
     ; [| 1; 2; 3; 4; 5 |]
     ]
     ~f:(fun t ->
-      assert (Sequence.to_array (to_sequence t) = t))
+      [%test_result: int array]
+        (Sequence.to_array (to_sequence t))
+        ~expect:t)
 ;;
 
 let test_fold_map array ~init ~f ~expect =
-  folding_map array ~init ~f = snd expect &&
-  fold_map    array ~init ~f = expect
+  [%test_result: int array]       (folding_map array ~init ~f) ~expect:(snd expect);
+  [%test_result: int * int array] (fold_map    array ~init ~f) ~expect
 
 let test_fold_mapi array ~init ~f ~expect =
-  folding_mapi array ~init ~f = snd expect &&
-  fold_mapi    array ~init ~f = expect
+  [%test_result: int array]       (folding_mapi array ~init ~f) ~expect:(snd expect);
+  [%test_result: int * int array] (fold_mapi    array ~init ~f) ~expect
 
-let%test _ = test_fold_map [|1;2;3;4|] ~init:0
-               ~f:(fun acc x -> let y = acc+x in y,y)
-               ~expect:(10, [|1;3;6;10|])
-let%test _ = test_fold_map [||] ~init:0
-               ~f:(fun acc x -> let y = acc+x in y,y)
-               ~expect:(0, [||])
-let%test _ = test_fold_mapi [|1;2;3;4|] ~init:0
-               ~f:(fun i acc x -> let y = acc+i*x in y,y)
-               ~expect:(20, [|0;2;8;20|])
-let%test _ = test_fold_mapi [||] ~init:0
-               ~f:(fun i acc x -> let y = acc+i*x in y,y)
-               ~expect:(0, [||])
+let%test_unit _ = test_fold_map [|1;2;3;4|] ~init:0
+                    ~f:(fun acc x -> let y = acc+x in y,y)
+                    ~expect:(10, [|1;3;6;10|])
+let%test_unit _ = test_fold_map [||] ~init:0
+                    ~f:(fun acc x -> let y = acc+x in y,y)
+                    ~expect:(0, [||])
+let%test_unit _ = test_fold_mapi [|1;2;3;4|] ~init:0
+                    ~f:(fun i acc x -> let y = acc+i*x in y,y)
+                    ~expect:(20, [|0;2;8;20|])
+let%test_unit _ = test_fold_mapi [||] ~init:0
+                    ~f:(fun i acc x -> let y = acc+i*x in y,y)
+                    ~expect:(0, [||])
 
 let%test "equal does not allocate" =
   let arr1 = [|1;2;3;4|] in
   let arr2 = [|1;2;4;3|] in
-  Expect_test_helpers_kernel.require_no_allocation [%here] (fun () ->
+  require_no_allocation [%here] (fun () ->
     not (equal Int.equal arr1 arr2))
 
 let%test "foldi does not allocate" =
   let arr = [|1;2;3;4|] in
   let f = fun i x y -> i + x + y in
-  Expect_test_helpers_kernel.require_no_allocation [%here] (fun () ->
+  require_no_allocation [%here] (fun () ->
     16 = (foldi ~init:0 ~f arr))

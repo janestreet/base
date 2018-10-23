@@ -76,11 +76,6 @@ module type Accessors_generic = sig
     : ('a, 'cmp,
        ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool
       ) options
-  val subset
-    : ('a, 'cmp,
-       ('a, 'cmp) t -> ('a, 'cmp) t -> bool
-      ) options
-  [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
 
   type ('a, 'cmp) named
   module Named : sig
@@ -152,8 +147,6 @@ module type Accessors_generic = sig
       ) options
 
   val find_exn : ('a, _) t -> f:('a elt -> bool) -> 'a elt
-  val find_index : ('a, _) t -> int -> 'a elt option
-  [@@deprecated "[since 2016-10] Use [nth]"]
   val nth : ('a, _) t -> int -> 'a elt option
   val remove_index
     : ('a, 'cmp,
@@ -197,8 +190,6 @@ module type Accessors0 = sig
   val compare_direct : t -> t -> int
   val equal          : t -> t -> bool
   val is_subset      : t -> of_:t -> bool
-  val subset         : t -> t -> bool
-  [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
 
   type named
   module Named : sig
@@ -227,8 +218,6 @@ module type Accessors0 = sig
   val split          : t -> elt -> t * elt option * t
   val group_by       : t -> equiv:(elt -> elt -> bool) -> t list
   val find_exn       : t -> f:(elt -> bool) -> elt
-  val find_index     : t -> int -> elt option
-  [@@deprecated "[since 2016-10] Use [nth]"]
   val nth            : t -> int -> elt option
   val remove_index   : t -> int -> t
   val to_tree        : t -> tree
@@ -262,8 +251,6 @@ module type Accessors1 = sig
   val compare_direct : 'a t -> 'a t -> int
   val equal          : 'a t -> 'a t -> bool
   val is_subset      : 'a t -> of_:'a t -> bool
-  val subset         : 'a t -> 'a t -> bool
-  [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
 
   type 'a named
   module Named : sig
@@ -292,8 +279,6 @@ module type Accessors1 = sig
   val split          : 'a t -> 'a -> 'a t * 'a option * 'a t
   val group_by       : 'a t -> equiv:('a -> 'a -> bool) -> 'a t list
   val find_exn       : 'a t -> f:('a -> bool) -> 'a
-  val find_index     : 'a t -> int -> 'a option
-  [@@deprecated "[since 2016-10] Use [nth]"]
   val nth            : 'a t -> int -> 'a option
   val remove_index   : 'a t -> int -> 'a t
   val to_tree        : 'a t -> 'a tree
@@ -326,8 +311,6 @@ module type Accessors2 = sig
   val compare_direct : ('a, 'cmp) t -> ('a, 'cmp) t -> int
   val equal          : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
   val is_subset      : ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool
-  val subset         : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
-  [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
 
   type ('a, 'cmp) named
   module Named : sig
@@ -359,8 +342,6 @@ module type Accessors2 = sig
   val split          : ('a, 'cmp) t -> 'a -> ('a, 'cmp) t * 'a option * ('a, 'cmp) t
   val group_by       : ('a, 'cmp) t -> equiv:('a -> 'a -> bool) -> ('a, 'cmp) t list
   val find_exn       : ('a, _) t -> f:('a -> bool) -> 'a
-  val find_index     : ('a, _) t -> int -> 'a option
-  [@@deprecated "[since 2016-10] Use [nth]"]
   val nth            : ('a, _) t -> int -> 'a option
   val remove_index   : ('a, 'cmp) t -> int -> ('a, 'cmp) t
   val to_tree        : ('a, 'cmp) t -> ('a, 'cmp) tree
@@ -403,9 +384,6 @@ module type Accessors2_with_comparator = sig
     : comparator:('a, 'cmp) Comparator.t -> ('a, 'cmp) t -> ('a, 'cmp) t -> bool
   val is_subset
     : comparator:('a, 'cmp) Comparator.t -> ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool
-  val subset
-    : comparator:('a, 'cmp) Comparator.t -> ('a, 'cmp) t -> ('a, 'cmp) t -> bool
-  [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
 
   type ('a, 'cmp) named
   module Named : sig
@@ -454,8 +432,6 @@ module type Accessors2_with_comparator = sig
     : comparator:('a, 'cmp) Comparator.t
     -> ('a, 'cmp) t -> equiv:('a -> 'a -> bool) -> ('a, 'cmp) t list
   val find_exn       : ('a, _) t -> f:('a -> bool) -> 'a
-  val find_index     : ('a, _) t -> int -> 'a option
-  [@@deprecated "[since 2016-10] Use [nth]"]
   val nth            : ('a, _) t -> int -> 'a option
 
   val remove_index
@@ -918,8 +894,6 @@ module type Set = sig
   (** [nth t i] returns the [i]th smallest element of [t], in [O(log n)] time.  The
       smallest element has [i = 0].  Returns [None] if [i < 0] or [i >= length t]. *)
   val nth        : ('a, _) t -> int -> 'a option
-  val find_index : ('a, _) t -> int -> 'a option
-  [@@deprecated "[since 2016-10] Use [nth]"]
 
   (** [remove_index t i] returns a version of [t] with the [i]th smallest element removed,
       in [O(log n)] time.  The smallest element has [i = 0].  Returns [t] if [i < 0] or
@@ -928,10 +902,6 @@ module type Set = sig
 
   (** [is_subset t1 ~of_:t2] returns true iff [t1] is a subset of [t2]. *)
   val is_subset : ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool
-
-  (** [subset] is a synonym for [is_subset]. *)
-  val subset : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
-  [@@deprecated "[since 2016-09] Replace [Set.subset t1 t2] with [Set.is_subset t1 ~of_:t2]"]
 
   (** [Named] allows the validation of subset and equality relationships between sets.  A
       [Named.t] is a record of a set and a name, where the name is used in error messages,

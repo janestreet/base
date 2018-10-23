@@ -7,8 +7,7 @@
               num
               expect_test_helpers_kernel
               stdio))
-  (preprocess (pps (ppx_jane ppxlib.runner)))
-))
+  (preprocess (pps (ppx_jane -dont-apply=pipebang ppxlib.runner)))))
 
 
 
