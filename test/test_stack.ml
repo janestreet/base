@@ -1,7 +1,6 @@
 open! Base
 open! Import
 open! Stack
-open! Polymorphic_compare
 
 module Debug (Stack : S) : S with type 'a t = 'a Stack.t = struct
 
@@ -82,14 +81,14 @@ module Test (Stack : S)
     let t = create () in
     push t 0;
     assert (not (is_empty t));
-    assert (try ignore (top_exn empty); false with _ -> true);
+    assert (Exn.does_raise (fun () -> top_exn empty));
     let t = create () in
     push t 0;
-    assert (top_exn t = 0);
-    assert (try ignore (pop_exn empty); false with _ -> true);
+    [%test_result: int] (top_exn t) ~expect:0;
+    assert (Exn.does_raise (fun () -> pop_exn empty));
     let t = create () in
     push t 0;
-    assert (pop_exn t = 0);
+    [%test_result: int] (pop_exn t) ~expect:0;
     assert (is_none (pop empty));
     assert (is_some (pop (of_list [0])));
     assert (is_none (top empty));
@@ -106,9 +105,9 @@ module Test (Stack : S)
 
   let%test_unit _ =
     let empty = create () in
-    assert (min_elt ~compare:Int.compare empty = None);
-    assert (max_elt ~compare:Int.compare empty = None);
-    assert (sum (module Int) ~f:Fn.id empty = 0)
+    [%test_result: _ option] (min_elt ~compare:Int.compare empty) ~expect:None;
+    [%test_result: _ option] (max_elt ~compare:Int.compare empty) ~expect:None;
+    [%test_result: int] (sum (module Int) ~f:Fn.id empty) ~expect:0
   ;;
 
   let push = push
@@ -123,65 +122,65 @@ module Test (Stack : S)
       push t 2;
       t
     in
-    assert (not (is_empty t));
-    assert (length t = 3);
-    assert (top t = Some 2);
-    assert (top_exn t = 2);
-    assert (min_elt ~compare:Int.compare t = Some 0);
-    assert (max_elt ~compare:Int.compare t = Some 2);
-    assert (sum (module Int) ~f:Fn.id t = 3);
+    [%test_result: bool] (is_empty t) ~expect:false;
+    [%test_result: int] (length t) ~expect:3;
+    [%test_result: int option] (top t) ~expect:(Some 2);
+    [%test_result: int] (top_exn t) ~expect:2;
+    [%test_result: int option] (min_elt ~compare:Int.compare t) ~expect:(Some 0);
+    [%test_result: int option] (max_elt ~compare:Int.compare t) ~expect:(Some 2);
+    [%test_result: int] (sum (module Int) ~f:Fn.id t) ~expect:3;
     let t' = copy t in
-    assert (pop_exn t' = 2);
-    assert (pop_exn t' = 1);
-    assert (pop_exn t' = 0);
-    assert (length t' = 0);
-    assert (is_empty t');
+    [%test_result: int] (pop_exn t') ~expect:2;
+    [%test_result: int] (pop_exn t') ~expect:1;
+    [%test_result: int] (pop_exn t') ~expect:0;
+    [%test_result: int] (length t') ~expect:0;
+    [%test_result: bool] (is_empty t') ~expect:true;
     let t' = copy t in
-    assert (pop t' = Some 2);
-    assert (pop t' = Some 1);
-    assert (pop t' = Some 0);
-    assert (length t' = 0);
-    assert (is_empty t');
+    [%test_result: int option] (pop t') ~expect:(Some 2);
+    [%test_result: int option] (pop t') ~expect:(Some 1);
+    [%test_result: int option] (pop t') ~expect:(Some 0);
+    [%test_result: int] (length t') ~expect:0;
+    [%test_result: bool] (is_empty t') ~expect:true;
     (* test that t was not modified by pops applied to copies *)
-    assert (length t = 3);
-    assert (top_exn t = 2);
-    assert (to_list t = [2; 1; 0]);
-    assert (to_array t = [|2; 1; 0|]);
-    assert (length t = 3);
-    assert (top_exn t = 2);
+    [%test_result: int] (length t) ~expect:3;
+    [%test_result: int] (top_exn t) ~expect:2;
+    [%test_result: int list] (to_list t) ~expect:[2; 1; 0];
+    [%test_result: int array] (to_array t) ~expect:[|2; 1; 0|];
+    [%test_result: int] (length t) ~expect:3;
+    [%test_result: int] (top_exn t) ~expect:2;
     let t' = copy t in
     let n = ref 0 in
     until_empty t' (fun x -> n := !n + x);
-    assert (!n = 3);
-    assert (is_empty t');
-    assert (length t' = 0)
+    [%test_result: int] !n ~expect:3;
+    [%test_result: bool] (is_empty t') ~expect:true;
+    [%test_result: int] (length t') ~expect:0
   ;;
 
   let%test_unit _ =
     let t = create () in
-    assert (is_empty t);
-    assert (length t = 0);
-    assert (to_list t = []);
-    assert (is_none (pop t));
+    [%test_result: bool] (is_empty t) ~expect:true;
+    [%test_result: int] (length t) ~expect:0;
+    [%test_result: _ list] (to_list t) ~expect:[];
+    [%test_result: _ option] (pop t) ~expect:None;
     push t 13;
-    assert (not (is_empty t));
-    assert (length t = 1);
-    assert (min_elt ~compare:Int.compare t = Some 13);
-    assert (max_elt ~compare:Int.compare t = Some 13);
-    assert (sum (module Int) ~f:Fn.id t = 13);
-    assert (pop_exn t = 13);
-    assert (is_empty t);
-    assert (length t = 0);
+    [%test_result: bool] (is_empty t) ~expect:false;
+    [%test_result: int] (length t) ~expect:1;
+    [%test_result: int option] (min_elt ~compare:Int.compare t) ~expect:(Some 13);
+    [%test_result: int option] (max_elt ~compare:Int.compare t) ~expect:(Some 13);
+    [%test_result: int] (sum (module Int) ~f:Fn.id t) ~expect:13;
+    [%test_result: int] (pop_exn t) ~expect:13;
+    [%test_result: bool] (is_empty t) ~expect:true;
+    [%test_result: int] (length t) ~expect:0;
     push t 13;
     push t 14;
-    assert (not (is_empty t));
-    assert (length t = 2);
-    assert (to_list t = [ 14; 13 ]);
-    assert (min_elt ~compare:Int.compare t = Some 13);
-    assert (max_elt ~compare:Int.compare t = Some 14);
-    assert (sum (module Int) ~f:Fn.id t = 27);
-    assert (is_some (pop t));
-    assert (is_some (pop t))
+    [%test_result: bool] (is_empty t) ~expect:false;
+    [%test_result: int] (length t) ~expect:2;
+    [%test_result: int list] (to_list t) ~expect:[14; 13];
+    [%test_result: int option] (min_elt ~compare:Int.compare t) ~expect:(Some 13);
+    [%test_result: int option] (max_elt ~compare:Int.compare t) ~expect:(Some 14);
+    [%test_result: int] (sum (module Int) ~f:Fn.id t) ~expect:27;
+    [%test_result: bool] (is_some (pop t)) ~expect:true;
+    [%test_result: bool] (is_some (pop t)) ~expect:true
   ;;
 
   let of_list = of_list
@@ -189,7 +188,7 @@ module Test (Stack : S)
   let%test_unit _ =
     for n = 0 to 5 do
       let l = List.init n ~f:Fn.id in
-      assert (l = to_list (of_list l));
+      [%test_result: int list] (to_list (of_list l)) ~expect:l
     done
   ;;
 
@@ -201,7 +200,7 @@ module Test (Stack : S)
       clear t;
       assert (is_empty t);
       push t 13;
-      assert (length t = 1);
+      [%test_result: int] (length t) ~expect:1
     done
   ;;
 
@@ -222,15 +221,15 @@ let set_capacity = set_capacity
 
 let%test_unit _ =
   let t = create () in
-  assert (capacity t = 0);
+  [%test_result: int] (capacity t) ~expect:0;
   set_capacity t (-1);
-  assert (capacity t = 0);
+  [%test_result: int] (capacity t) ~expect:0;
   set_capacity t 10;
-  assert (capacity t = 10);
+  [%test_result: int] (capacity t) ~expect:10;
   set_capacity t 0;
-  assert (capacity t = 0);
+  [%test_result: int] (capacity t) ~expect:0;
   push t ();
   set_capacity t 0;
-  assert (length t = 1);
-  assert (capacity t >= 1)
+  [%test_result: int] (length t) ~expect:1;
+  [%test_pred: int] (fun c -> c >= 1) (capacity t)
 ;;

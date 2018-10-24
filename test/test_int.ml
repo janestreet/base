@@ -12,6 +12,23 @@ let%expect_test "[max_value_30_bits]" =
     1_073_741_823 |}];
 ;;
 
+let%expect_test "hex" =
+  let test x =
+    let n = Or_error.try_with (fun () -> Int.Hex.of_string x) in
+    print_s [%message (n : int Or_error.t)]
+  in
+  test "0x1c5f";
+  [%expect {|
+    (n (Ok 7_263))
+  |}];
+  test "0x1c5f NON-HEX-GARBAGE";
+  [%expect {|
+    (n (
+      Error (
+        Failure
+        "Base.Int.Hex.of_string: invalid input \"0x1c5f NON-HEX-GARBAGE\"")))
+  |}]
+
 let%test_module "Hex" =
   (module struct
 

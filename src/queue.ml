@@ -137,21 +137,20 @@ let equal =
 
 let invariant invariant_a t =
   let
-    { num_mutations = _
+    { num_mutations
     ; mask = _
-    ; elts = _
+    ; elts
     ; front
     ; length } = t
   in
   assert (front >= 0);
   assert (front < capacity t);
   let capacity = capacity t in
-  assert (capacity = Option_array.length t.elts);
+  assert (capacity = Option_array.length elts);
   assert (capacity >= 1);
   assert (Int.is_pow2 capacity);
   assert (length >= 0);
   assert (length <= capacity);
-  let num_mutations = t.num_mutations in
   for i = 0 to capacity- 1 do
     if i < t.length
     then (invariant_a (unsafe_get t i); ensure_no_mutation t num_mutations)
@@ -467,16 +466,7 @@ let init len ~f =
   t
 ;;
 
-let of_array a =
-  let len = Array.length a in
-  let t = create ~capacity:len () in
-  assert (Option_array.length t.elts >= len);
-  for i = 0 to len - 1 do
-    Option_array.unsafe_set_some t.elts i (Array.unsafe_get a i);
-  done;
-  t.length <- len;
-  t
-;;
+let of_array a = init (Array.length a) ~f:(Array.unsafe_get a)
 
 let to_array t = Array.init t.length ~f:(fun i -> unsafe_get t i)
 

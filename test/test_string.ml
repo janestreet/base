@@ -254,51 +254,54 @@ let%test_unit _ =
   assert (phys_equal s (tr s ~target:'\255' ~replacement:'\000'))
 
 
-open Polymorphic_compare
+let%test_unit _ = [%test_result: int option] (lfindi        "bob" ~f:(fun _ -> Char.(=) 'b')) ~expect:(Some 0)
+let%test_unit _ = [%test_result: int option] (lfindi ~pos:0 "bob" ~f:(fun _ -> Char.(=) 'b')) ~expect:(Some 0)
+let%test_unit _ = [%test_result: int option] (lfindi ~pos:1 "bob" ~f:(fun _ -> Char.(=) 'b')) ~expect:(Some 2)
+let%test_unit _ = [%test_result: int option] (lfindi        "bob" ~f:(fun _ -> Char.(=) 'x')) ~expect:None
 
-let%test _ = lfindi "bob" ~f:(fun _ c -> 'b' = c) = Some 0
-let%test _ = lfindi ~pos:0 "bob" ~f:(fun _ c -> 'b' = c) = Some 0
-let%test _ = lfindi ~pos:1 "bob" ~f:(fun _ c -> 'b' = c) = Some 2
-let%test _ = lfindi "bob" ~f:(fun _ c -> 'x' = c) = None
+let%test_unit _ = [%test_result: char option]
+                    (find_map "fop" ~f:(fun c -> if Char.(c >= 'o') then Some c else None))
+                    ~expect:(Some 'o')
+let%test_unit _ = [%test_result: _ option] (find_map "bar" ~f:(fun _ -> None)) ~expect:None
+let%test_unit _ = [%test_result: _ option] (find_map "" ~f:(fun _ -> assert false)) ~expect:None
 
-let%test _ = find_map "fop" ~f:(fun c -> if c >= 'o' then Some c else None) = Some 'o'
-let%test _ = find_map "bar" ~f:(fun _ -> None) = None
-let%test _ = find_map "" ~f:(fun _ -> assert false) = None
+let%test_unit _ = [%test_result: int option] (rfindi        "bob" ~f:(fun _ -> Char.(=) 'b')) ~expect:(Some 2)
+let%test_unit _ = [%test_result: int option] (rfindi ~pos:2 "bob" ~f:(fun _ -> Char.(=) 'b')) ~expect:(Some 2)
+let%test_unit _ = [%test_result: int option] (rfindi ~pos:1 "bob" ~f:(fun _ -> Char.(=) 'b')) ~expect:(Some 0)
+let%test_unit _ = [%test_result: int option] (rfindi        "bob" ~f:(fun _ -> Char.(=) 'x')) ~expect:None
 
-let%test _ = rfindi "bob" ~f:(fun _ c -> 'b' = c) = Some 2
-let%test _ = rfindi ~pos:2 "bob" ~f:(fun _ c -> 'b' = c) = Some 2
-let%test _ = rfindi ~pos:1 "bob" ~f:(fun _ c -> 'b' = c) = Some 0
-let%test _ = rfindi "bob" ~f:(fun _ c -> 'x' = c) = None
+let%test_unit _ = [%test_result: string] (strip " foo bar \n") ~expect:"foo bar"
+let%test_unit _ = [%test_result: string] (strip ~drop:(Char.(=) '"') "\" foo bar ") ~expect:" foo bar "
+let%test_unit _ = [%test_result: string] (strip ~drop:(Char.(=) '"') " \" foo bar ") ~expect:" \" foo bar "
 
-let%test _ = strip " foo bar \n" = "foo bar"
-let%test _ = strip ~drop:(fun c -> c = '"') "\" foo bar " = " foo bar "
-let%test _ = strip ~drop:(fun c -> c = '"') " \" foo bar " = " \" foo bar "
+let%test_unit _ = [%test_result: bool] ~expect:false (exists ""    ~f:(fun _ -> assert false))
+let%test_unit _ = [%test_result: bool] ~expect:false (exists "abc" ~f:(Fn.const false))
+let%test_unit _ = [%test_result: bool] ~expect:true  (exists "abc" ~f:(Fn.const true))
+let%test_unit _ = [%test_result: bool] ~expect:true  (exists "abc" ~f:(function
+  'a' -> false | 'b' -> true | _ -> assert false))
 
-let%test _ = false = exists ""    ~f:(fun _ -> assert false)
-let%test _ = false = exists "abc" ~f:(Fn.const false)
-let%test _ = true  = exists "abc" ~f:(Fn.const true)
-let%test _ = true  = exists "abc" ~f:(function
-  'a' -> false | 'b' -> true | _ -> assert false)
+let%test_unit _ = [%test_result: bool] ~expect:true  (for_all ""    ~f:(fun _ -> assert false))
+let%test_unit _ = [%test_result: bool] ~expect:true  (for_all "abc" ~f:(Fn.const true))
+let%test_unit _ = [%test_result: bool] ~expect:false (for_all "abc" ~f:(Fn.const false))
+let%test_unit _ = [%test_result: bool] ~expect:false (for_all "abc" ~f:(function
+  'a' -> true | 'b' -> false | _ -> assert false))
 
-let%test _ = true  = for_all ""    ~f:(fun _ -> assert false)
-let%test _ = true  = for_all "abc" ~f:(Fn.const true)
-let%test _ = false = for_all "abc" ~f:(Fn.const false)
-let%test _ = false = for_all "abc" ~f:(function
-  'a' -> true | 'b' -> false | _ -> assert false)
+let%test_unit _ = [%test_result: (int * char) list]
+                    (foldi "hello" ~init:[] ~f:(fun i acc ch -> (i,ch)::acc))
+                    ~expect:(List.rev [0,'h';1,'e';2,'l';3,'l';4,'o'])
 
-let%test _ = (foldi "hello" ~init:[] ~f:(fun i acc ch -> (i,ch)::acc)
-              = List.rev [0,'h';1,'e';2,'l';3,'l';4,'o'])
-
-let%test _ = filter "hello" ~f:(fun c -> c <> 'h') = "ello"
-let%test _ = filter "hello" ~f:(fun c -> c <> 'l') = "heo"
-let%test _ = filter "hello" ~f:(fun _ -> false) = ""
-let%test _ = filter "hello" ~f:(fun _ -> true) = "hello"
-let%test _ = let s = "hello" in phys_equal (filter s ~f:(fun _ -> true)) s
+let%test_unit _ = [%test_result: t] (filter "hello" ~f:(Char.(<>) 'h')) ~expect:"ello"
+let%test_unit _ = [%test_result: t] (filter "hello" ~f:(Char.(<>) 'l')) ~expect:"heo"
+let%test_unit _ = [%test_result: t] (filter "hello" ~f:(fun _ -> false))  ~expect:""
+let%test_unit _ = [%test_result: t] (filter "hello" ~f:(fun _ -> true))   ~expect:"hello"
+let%test_unit _ =
+  let s = "hello" in
+  [%test_result: bool] ~expect:true (phys_equal (filter s ~f:(fun _ -> true)) s)
 let%test_unit _ =
   let s = "abc" in
   let r = ref 0 in
   assert (phys_equal s (filter s ~f:(fun _ -> Int.incr r; true)));
-  assert (!r = String.length s)
+  assert (Int.(=) !r (String.length s))
 ;;
 
 let%test_module "Hash" =
@@ -307,11 +310,11 @@ let%test_module "Hash" =
 
     let%test_unit _ =
       List.iter ~f:(fun string ->
-        assert (hash string = Caml.Hashtbl.hash string);
+        assert (Int.(=) (hash string) (Caml.Hashtbl.hash string));
         (* with 31-bit integers, the hash computed by ppx_hash overflows so it doesn't match
            polymorphic hash exactly. *)
-        if Int.num_bits > 31 then
-          assert (hash string = [%hash: string] string)
+        if Int.(>) Int.num_bits 31 then
+          assert (Int.(=) (hash string) ([%hash: string] string))
       )
         [ "Oh Gloria inmarcesible! Oh jubilo inmortal!"
         ; "Oh say can you see, by the dawn's early light"
@@ -465,9 +468,9 @@ let%test_module "Escaping" =
               let str =
                 List.init (Random.int 50) ~f:(fun _ ->
                   let p = Random.int 100 in
-                  if p < 10 then
+                  if Int.(p < 10) then
                     escape_char
-                  else if p < 25 then
+                  else if Int.(p < 25) then
                     Array.random_element_exn escapeworthy_chars
                   else
                     random_char ()
@@ -496,96 +499,97 @@ let%test_module "Escaping" =
     let%test_module "is_char_escaping" =
       (module struct
         let is = is_char_escaping ~escape_char:'_'
-        let%test _ = is "___" 0 = true
-        let%test _ = is "___" 1 = false
-        let%test _ = is "___" 2 = true (* considered escaping, though there's nothing to escape *)
+        let%test_unit _ = [%test_result: bool] (is "___" 0) ~expect:true
+        let%test_unit _ = [%test_result: bool] (is "___" 1) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is "___" 2) ~expect:true
+        (* considered escaping, though there's nothing to escape *)
 
-        let%test _ = is "a_b__c" 0 = false
-        let%test _ = is "a_b__c" 1 = true
-        let%test _ = is "a_b__c" 2 = false
-        let%test _ = is "a_b__c" 3 = true
-        let%test _ = is "a_b__c" 4 = false
-        let%test _ = is "a_b__c" 5 = false
+        let%test_unit _ = [%test_result: bool] (is "a_b__c" 0) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is "a_b__c" 1) ~expect:true
+        let%test_unit _ = [%test_result: bool] (is "a_b__c" 2) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is "a_b__c" 3) ~expect:true
+        let%test_unit _ = [%test_result: bool] (is "a_b__c" 4) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is "a_b__c" 5) ~expect:false
       end)
 
     let%test_module "is_char_escaped" =
       (module struct
         let is = is_char_escaped ~escape_char:'_'
-        let%test _ = is "___" 2 = false
-        let%test _ = is "x" 0 = false
-        let%test _ = is "_x" 1 = true
-        let%test _ = is "sadflkas____sfff" 12 = false
-        let%test _ = is "s_____s" 6 = true
+        let%test_unit _ = [%test_result: bool] (is "___" 2) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is "x" 0) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is "_x" 1) ~expect:true
+        let%test_unit _ = [%test_result: bool] (is "sadflkas____sfff" 12) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is "s_____s" 6) ~expect:true
       end)
 
     let%test_module "is_char_literal" =
       (module struct
         let is_char_literal = is_char_literal ~escape_char:'_'
-        let%test _ = is_char_literal "123456" 4 = true
-        let%test _ = is_char_literal "12345_6" 6 = false
-        let%test _ = is_char_literal "12345_6" 5 = false
-        let%test _ = is_char_literal "123__456" 4 = false
-        let%test _ = is_char_literal "123456__" 7 = false
-        let%test _ = is_char_literal "__123456" 1 = false
-        let%test _ = is_char_literal "__123456" 0 = false
-        let%test _ = is_char_literal "__123456" 2 = true
+        let%test_unit _ = [%test_result: bool] (is_char_literal "123456" 4) ~expect:true
+        let%test_unit _ = [%test_result: bool] (is_char_literal "12345_6" 6) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is_char_literal "12345_6" 5) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is_char_literal "123__456" 4) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is_char_literal "123456__" 7) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is_char_literal "__123456" 1) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is_char_literal "__123456" 0) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is_char_literal "__123456" 2) ~expect:true
       end)
 
     let%test_module "index_from" =
       (module struct
         let f = index_from ~escape_char:'_'
-        let%test _ = f "__" 0 '_' = None
-        let%test _ = f "_.." 0 '.' = Some 2
-        let%test _ = f "1273456_7789" 3 '7' = Some 9
-        let%test _ = f "1273_7456_7789" 3 '7' = Some 11
-        let%test _ = f "1273_7456_7789" 3 'z' = None
+        let%test_unit _ = [%test_result: int option] (f "__" 0 '_') ~expect:None
+        let%test_unit _ = [%test_result: int option] (f "_.." 0 '.') ~expect:(Some 2)
+        let%test_unit _ = [%test_result: int option] (f "1273456_7789" 3 '7') ~expect:(Some 9)
+        let%test_unit _ = [%test_result: int option] (f "1273_7456_7789" 3 '7') ~expect:(Some 11)
+        let%test_unit _ = [%test_result: int option] (f "1273_7456_7789" 3 'z') ~expect:None
       end)
 
     let%test_module "rindex" =
       (module struct
         let f = rindex_from ~escape_char:'_'
-        let%test _ = f "__" 0 '_' = None
-        let%test _ = f "123456_37839" 9 '3' = Some 2
-        let%test _ = f "123_2321" 6 '2' = Some 6
-        let%test _ = f "123_2321" 5 '2' = Some 1
+        let%test_unit _ = [%test_result: int option] (f "__" 0 '_') ~expect:None
+        let%test_unit _ = [%test_result: int option] (f "123456_37839" 9 '3') ~expect:(Some 2)
+        let%test_unit _ = [%test_result: int option] (f "123_2321" 6 '2') ~expect:(Some 6)
+        let%test_unit _ = [%test_result: int option] (f "123_2321" 5 '2') ~expect:(Some 1)
 
-        let%test _ = rindex "" ~escape_char:'_' 'x' = None
-        let%test _ = rindex "a_a" ~escape_char:'_' 'a' = Some 0
+        let%test_unit _ = [%test_result: int option] (rindex "" ~escape_char:'_' 'x') ~expect:None
+        let%test_unit _ = [%test_result: int option] (rindex "a_a" ~escape_char:'_' 'a') ~expect:(Some 0)
       end)
 
     let%test_module "split" =
       (module struct
         let split = split ~escape_char:'_' ~on:','
-        let%test _ = split "foo,bar,baz" = ["foo"; "bar"; "baz"]
-        let%test _ = split "foo_,bar,baz" = ["foo_,bar"; "baz"]
-        let%test _ = split "foo_,bar_,baz" = ["foo_,bar_,baz"]
-        let%test _ = split "foo__,bar,baz" = ["foo__"; "bar"; "baz"]
-        let%test _ = split "foo,bar,baz_," = ["foo"; "bar"; "baz_,"]
-        let%test _ = split "foo,bar_,baz_,," = ["foo"; "bar_,baz_,"; ""]
+        let%test_unit _ = [%test_result: string list] (split "foo,bar,baz") ~expect:["foo"; "bar"; "baz"]
+        let%test_unit _ = [%test_result: string list] (split "foo_,bar,baz") ~expect:["foo_,bar"; "baz"]
+        let%test_unit _ = [%test_result: string list] (split "foo_,bar_,baz") ~expect:["foo_,bar_,baz"]
+        let%test_unit _ = [%test_result: string list] (split "foo__,bar,baz") ~expect:["foo__"; "bar"; "baz"]
+        let%test_unit _ = [%test_result: string list] (split "foo,bar,baz_,") ~expect:["foo"; "bar"; "baz_,"]
+        let%test_unit _ = [%test_result: string list] (split "foo,bar_,baz_,,") ~expect:["foo"; "bar_,baz_,"; ""]
       end)
 
     let%test_module "split_on_chars" =
       (module struct
         let split = split_on_chars ~escape_char:'_' ~on:[',';':']
-        let%test _ = split "foo,bar:baz" = ["foo"; "bar"; "baz"]
-        let%test _ = split "foo_,bar,baz" = ["foo_,bar"; "baz"]
-        let%test _ = split "foo_:bar_,baz" = ["foo_:bar_,baz"]
-        let%test _ = split "foo,bar,baz_," = ["foo"; "bar"; "baz_,"]
-        let%test _ = split "foo:bar_,baz_,," = ["foo"; "bar_,baz_,"; ""]
+        let%test_unit _ = [%test_result: string list] (split "foo,bar:baz") ~expect:["foo"; "bar"; "baz"]
+        let%test_unit _ = [%test_result: string list] (split "foo_,bar,baz") ~expect:["foo_,bar"; "baz"]
+        let%test_unit _ = [%test_result: string list] (split "foo_:bar_,baz") ~expect:["foo_:bar_,baz"]
+        let%test_unit _ = [%test_result: string list] (split "foo,bar,baz_,") ~expect:["foo"; "bar"; "baz_,"]
+        let%test_unit _ = [%test_result: string list] (split "foo:bar_,baz_,,") ~expect:["foo"; "bar_,baz_,"; ""]
       end)
 
     let%test_module "split2" =
       (module struct
         let escape_char = '_'
         let on = ','
-        let%test _ = lsplit2 ~escape_char ~on "foo_,bar,baz_,0" = Some ("foo_,bar", "baz_,0")
-        let%test _ = rsplit2 ~escape_char ~on "foo_,bar,baz_,0" = Some ("foo_,bar", "baz_,0")
-        let%test _ = lsplit2_exn ~escape_char ~on "foo_,bar,baz_,0" = ("foo_,bar", "baz_,0")
-        let%test _ = rsplit2_exn ~escape_char ~on "foo_,bar,baz_,0" = ("foo_,bar", "baz_,0")
-        let%test _ = lsplit2 ~escape_char ~on "foo_,bar" = None
-        let%test _ = rsplit2 ~escape_char ~on "foo_,bar" = None
-        let%test _ = try lsplit2_exn ~escape_char ~on "foo_,bar" |> Fn.const false with _ -> true
-        let%test _ = try rsplit2_exn ~escape_char ~on "foo_,bar" |> Fn.const false with _ -> true
+        let%test_unit _ = [%test_result: (string * string) option] (lsplit2 ~escape_char ~on "foo_,bar,baz_,0") ~expect:(Some ("foo_,bar", "baz_,0"))
+        let%test_unit _ = [%test_result: (string * string) option] (rsplit2 ~escape_char ~on "foo_,bar,baz_,0") ~expect:(Some ("foo_,bar", "baz_,0"))
+        let%test_unit _ = [%test_result: string * string] (lsplit2_exn ~escape_char ~on "foo_,bar,baz_,0") ~expect:("foo_,bar", "baz_,0")
+        let%test_unit _ = [%test_result: string * string] (rsplit2_exn ~escape_char ~on "foo_,bar,baz_,0") ~expect:("foo_,bar", "baz_,0")
+        let%test_unit _ = [%test_result: (string * string) option] (lsplit2 ~escape_char ~on "foo_,bar") ~expect:None
+        let%test_unit _ = [%test_result: (string * string) option] (rsplit2 ~escape_char ~on "foo_,bar") ~expect:None
+        let%test _ = Exn.does_raise (fun () -> lsplit2_exn ~escape_char ~on "foo_,bar")
+        let%test _ = Exn.does_raise (fun () -> rsplit2_exn ~escape_char ~on "foo_,bar")
       end)
 
     let%test _ = strip_literal ~escape_char:' ' " foo bar \n" = " foo bar \n"

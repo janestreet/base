@@ -53,7 +53,7 @@ val ok : 'ok t -> 'ok option
     contents of the [Ok] constructor. *)
 val ok_exn : 'a t -> 'a
 
-(** [of_exn exn] is [Error (Error.of_exn exn)]. *)
+(** [of_exn ?backtrace exn] is [Error (Error.of_exn ?backtrace exn)]. *)
 val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> _ t
 
 (** [of_exn_result (Ok a) = Ok a], [of_exn_result (Error exn) = of_exn exn] *)

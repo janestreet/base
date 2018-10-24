@@ -106,7 +106,11 @@ module type S = sig
   val of_list : ?trunc_after:int -> t list -> t
 
   (** [of_exn] and [to_exn] are primarily used with [Error], but their definitions have to
-      be here because they refer to the underlying representation. *)
+      be here because they refer to the underlying representation.
+
+      [~backtrace:`Get] attaches the backtrace for the most recent exception.  The same
+      caveats as for [Printexc.print_backtrace] apply.  [~backtrace:(`This s)] attaches
+      the backtrace [s].  The default is no backtrace. *)
   val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> t
   val to_exn : t -> exn
 

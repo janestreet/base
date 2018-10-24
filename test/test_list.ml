@@ -176,24 +176,19 @@ module Test_values = struct
   let l1 = [1;2;3;4;5;6;7;8;9;10]
 end
 
-let (=) = Polymorphic_compare.(=)
-let (<>) = Polymorphic_compare.(<>)
-let compare = Polymorphic_compare.compare
-
-let%test _ = rev_append [1;2;3] [4;5;6] = [3;2;1;4;5;6]
-let%test _ = rev_append [] [4;5;6] = [4;5;6]
-let%test _ = rev_append [1;2;3] [] = [3;2;1]
-let%test _ = rev_append [1] [2;3] = [1;2;3]
-let%test _ = rev_append [1;2] [3] = [2;1;3]
-let%test _ =
+let%test_unit _ = [%test_result: int list] (rev_append [1;2;3] [4;5;6]) ~expect:[3;2;1;4;5;6]
+let%test_unit _ = [%test_result: int list] (rev_append [] [4;5;6]) ~expect:[4;5;6]
+let%test_unit _ = [%test_result: int list] (rev_append [1;2;3] []) ~expect:[3;2;1]
+let%test_unit _ = [%test_result: int list] (rev_append [1] [2;3]) ~expect:[1;2;3]
+let%test_unit _ = [%test_result: int list] (rev_append [1;2] [3]) ~expect:[2;1;3]
+let%test_unit _ =
   let long = Test_values.long1 () in
-  ignore (rev_append long long:int list);
-  true
+  ignore (rev_append long long:int list)
 
-let%test _ =
+let%test_unit _ =
   let long1 = Test_values.long1 () in
   let long2 = Test_values.long2 () in
-  (map long1 ~f:(fun x -> x + 1)) = long2
+  [%test_result: int list] (map long1 ~f:(fun x -> x + 1)) ~expect:long2
 
 let test_ordering n =
   let l = List.range 0 n in
@@ -207,55 +202,59 @@ let%test_unit _ = test_ordering 1_000_000
 
 let%test _ = for_all2_exn [] [] ~f:(fun _ _ -> assert false)
 
-let%test _ = find_mapi [0;5;2;1;4] ~f:(fun i x -> if i = x then Some (i+x) else None) = Some 0
-let%test _ = find_mapi [3;5;2;1;4] ~f:(fun i x -> if i = x then Some (i+x) else None) = Some 4
-let%test _ = find_mapi [3;5;1;1;4] ~f:(fun i x -> if i = x then Some (i+x) else None) = Some 8
-let%test _ = find_mapi [3;5;1;1;2] ~f:(fun i x -> if i = x then Some (i+x) else None) = None
+let%test_unit _ = [%test_result: int option] (find_mapi [0;5;2;1;4] ~f:(fun i x -> if i = x then Some (i+x) else None)) ~expect:(Some 0)
+let%test_unit _ = [%test_result: int option] (find_mapi [3;5;2;1;4] ~f:(fun i x -> if i = x then Some (i+x) else None)) ~expect:(Some 4)
+let%test_unit _ = [%test_result: int option] (find_mapi [3;5;1;1;4] ~f:(fun i x -> if i = x then Some (i+x) else None)) ~expect:(Some 8)
+let%test_unit _ = [%test_result: int option] (find_mapi [3;5;1;1;2] ~f:(fun i x -> if i = x then Some (i+x) else None)) ~expect:None
 
-let%test _ = for_alli [] ~f:(fun _ _ -> false) = true
-let%test _ = for_alli [0;1;2;3] ~f:(fun i x -> i = x) = true
-let%test _ = for_alli [0;1;3;3] ~f:(fun i x -> i = x) = false
-let%test _ = existsi [] ~f:(fun _ _ -> true) = false
-let%test _ = existsi [0;1;2;3] ~f:(fun i x -> i <> x) = false
-let%test _ = existsi [0;1;3;3] ~f:(fun i x -> i <> x) = true
+let%test_unit _ = [%test_result: bool] (for_alli [] ~f:(fun _ _ -> false)) ~expect:true
+let%test_unit _ = [%test_result: bool] (for_alli [0;1;2;3] ~f:(fun i x -> i = x)) ~expect:true
+let%test_unit _ = [%test_result: bool] (for_alli [0;1;3;3] ~f:(fun i x -> i = x)) ~expect:false
+let%test_unit _ = [%test_result: bool] (existsi [] ~f:(fun _ _ -> true)) ~expect:false
+let%test_unit _ = [%test_result: bool] (existsi [0;1;2;3] ~f:(fun i x -> i <> x)) ~expect:false
+let%test_unit _ = [%test_result: bool] (existsi [0;1;3;3] ~f:(fun i x -> i <> x)) ~expect:true
 
-let%test _ = append [1;2;3] [4;5;6] = [1;2;3;4;5;6]
-let%test _ = append [] [4;5;6] = [4;5;6]
-let%test _ = append [1;2;3] [] = [1;2;3]
-let%test _ = append [1] [2;3] = [1;2;3]
-let%test _ = append [1;2] [3] = [1;2;3]
+let%test_unit _ = [%test_result: int list] (append [1;2;3] [4;5;6]) ~expect:[1;2;3;4;5;6]
+let%test_unit _ = [%test_result: int list] (append [] [4;5;6]) ~expect:[4;5;6]
+let%test_unit _ = [%test_result: int list] (append [1;2;3] []) ~expect:[1;2;3]
+let%test_unit _ = [%test_result: int list] (append [1] [2;3]) ~expect:[1;2;3]
+let%test_unit _ = [%test_result: int list] (append [1;2] [3]) ~expect:[1;2;3]
 let%test_unit _ =
   let long = Test_values.long1 () in
   ignore (append long long:int list)
 
-let%test _ = map ~f:(fun x -> x) Test_values.l1 = Test_values.l1
-let%test _ = map ~f:(fun x -> x) [] = []
-let%test _ = map ~f:(fun x -> x +. 5.) [1.;2.;3.] = [6.;7.;8.]
+let%test_unit _ = [%test_result: int list] (map ~f:(fun x -> x) Test_values.l1) ~expect:Test_values.l1
+let%test_unit _ = [%test_result: int list] (map ~f:(fun x -> x) []) ~expect:[]
+let%test_unit _ = [%test_result: float list] (map ~f:(fun x -> x +. 5.) [1.;2.;3.]) ~expect:[6.;7.;8.]
 let%test_unit _ =
   ignore (map ~f:(fun x -> x) (Test_values.long1 ()):int list)
 
-let%test _ = map2_exn ~f:(fun a b -> a, b) [1;2;3] ['a';'b';'c']
-             = [(1,'a'); (2,'b'); (3,'c')]
-let%test _ = map2_exn ~f:(fun _ _ -> ()) [] [] = []
+let%test_unit _ =
+  [%test_result: (int * char) list]
+    (map2_exn ~f:(fun a b -> a, b) [1;2;3] ['a';'b';'c'])
+    ~expect:[(1,'a'); (2,'b'); (3,'c')]
+let%test_unit _ = [%test_result: _ list] (map2_exn ~f:(fun _ _ -> ()) [] []) ~expect:[]
 let%test_unit _ =
   let long = Test_values.long1 () in
   ignore (map2_exn ~f:(fun _ _ -> ()) long long:unit list)
 
-let%test _ = rev_map_append [1;2;3;4;5] [6] ~f:(fun x -> x) = [5;4;3;2;1;6]
-let%test _ = rev_map_append [1;2;3;4;5] [6] ~f:(fun x -> 2 * x) = [10;8;6;4;2;6]
-let%test _ = rev_map_append [] [6] ~f:(fun _ -> failwith "bug!") = [6]
+let%test_unit _ = [%test_result: int list] (rev_map_append [1;2;3;4;5] [6] ~f:(fun x -> x)) ~expect:[5;4;3;2;1;6]
+let%test_unit _ = [%test_result: int list] (rev_map_append [1;2;3;4;5] [6] ~f:(fun x -> 2 * x)) ~expect:[10;8;6;4;2;6]
+let%test_unit _ = [%test_result: int list] (rev_map_append [] [6] ~f:(fun _ -> failwith "bug!")) ~expect:[6]
 
-let%test _ = fold_right ~f:(fun e acc -> e :: acc) Test_values.l1 ~init:[] =
-             Test_values.l1
-let%test _ = fold_right ~f:(fun e acc -> e ^ acc) ["1";"2"] ~init:"3" = "123"
-let%test _ = fold_right ~f:(fun _ _ -> ()) [] ~init:() = ()
+let%test_unit _ =
+  [%test_result: int list]
+    (fold_right ~f:(fun e acc -> e :: acc) Test_values.l1 ~init:[])
+    ~expect:Test_values.l1
+let%test_unit _ = [%test_result: string] (fold_right ~f:(fun e acc -> e ^ acc) ["1";"2"] ~init:"3") ~expect:"123"
+let%test_unit _ = [%test_result: unit]   (fold_right ~f:(fun _ _ -> ()) [] ~init:()) ~expect:()
 let%test_unit _ =
   let long = Test_values.long1 () in
   ignore (fold_right ~f:(fun e acc -> e :: acc) long ~init:[])
 
-let%test  _ =
+let%test_unit _ =
   let l1 = Test_values.l1 in
-  unzip (zip_exn l1 (List.rev l1)) = (l1, List.rev l1)
+  [%test_result: int list * int list] (unzip (zip_exn l1 (List.rev l1))) ~expect:(l1, List.rev l1)
 ;;
 
 let%test_unit _ =
@@ -263,21 +262,23 @@ let%test_unit _ =
   ignore (unzip (zip_exn long long))
 ;;
 
-let%test _ = unzip  [(1,2)  ; (4,5)  ] = ([1; 4], [2; 5]        )
-let%test _ = unzip3 [(1,2,3); (4,5,6)] = ([1; 4], [2; 5], [3; 6])
+let%test_unit _ = [%test_result: int list * int list]            (unzip  [(1,2)  ; (4,5)  ]) ~expect:([1; 4], [2; 5]        )
+let%test_unit _ = [%test_result: int list * int list * int list] (unzip3 [(1,2,3); (4,5,6)]) ~expect:([1; 4], [2; 5], [3; 6])
 
-let%test _ = zip [1;2;3] [4;5;6] = Some [1,4;2,5;3,6]
-let%test _ = zip [1] [4;5;6]     = None
+let%test_unit _ = [%test_result: (int * int) list option] (zip [1;2;3] [4;5;6]) ~expect:(Some [1,4;2,5;3,6])
+let%test_unit _ = [%test_result: (int * int) list option] (zip [1] [4;5;6]    ) ~expect:None
 
-let%test _ = mapi ~f:(fun i x -> (i,x))
-               ["one";"two";"three";"four"] = [0,"one";1,"two";2,"three";3,"four"]
-let%test _ = mapi ~f:(fun i x -> (i,x)) [] = []
+let%test_unit _ =
+  [%test_result: (int * string) list]
+    (mapi ~f:(fun i x -> (i,x)) ["one";"two";"three";"four"])
+    ~expect:[0,"one";1,"two";2,"three";3,"four"]
+let%test_unit _ = [%test_result: (int * _) list] (mapi ~f:(fun i x -> (i,x)) []) ~expect:[]
 
 let%test_module "group" =
   (module struct
-    let%test _ = (group [1;2;3;4] ~break:(fun _ x -> x = 3) = [[1;2];[3;4]])
+    let%test_unit _ = [%test_result: int list list] (group [1;2;3;4] ~break:(fun _ x -> x = 3)) ~expect:[[1;2];[3;4]]
 
-    let%test _ = (group [] ~break:(fun _ -> assert false)) = []
+    let%test_unit _ = [%test_result: int list list] (group [] ~break:(fun _ -> assert false)) ~expect:[]
 
     let mis = ['M';'i';'s';'s';'i';'s';'s';'i';'p';'p';'i']
     let equal_letters =
@@ -287,9 +288,9 @@ let%test_module "group" =
     let every_three =
       [['M'; 'i'; 's']; ['s'; 'i'; 's']; ['s'; 'i'; 'p']; ['p'; 'i' ]]
 
-    let%test _ = (group ~break:(<>) mis) = equal_letters
-    let%test _ = (group ~break:(fun _ _ -> false) mis) = single_letters
-    let%test _ = (groupi ~break:(fun i _ _ -> i % 3 = 0) mis) = every_three
+    let%test_unit _ = [%test_result: char list list] (group ~break:Char.(<>) mis) ~expect:equal_letters
+    let%test_unit _ = [%test_result: char list list] (group ~break:(fun _ _ -> false) mis) ~expect:single_letters
+    let%test_unit _ = [%test_result: char list list] (groupi ~break:(fun i _ _ -> i % 3 = 0) mis) ~expect:every_three
   end)
 
 let%test_module "chunks_of" =
@@ -319,7 +320,7 @@ let%test_module "chunks_of" =
       expect_exn 1 (-1);
     ;;
 
-    let%test _ = chunks_of [] ~length:1 = []
+    let%test_unit _ = [%test_result: _ list list] (chunks_of [] ~length:1) ~expect:[]
   end)
 
 let%test _ = last_exn [1;2;3] = 3
@@ -346,63 +347,84 @@ let%test_unit _ =
     ]
 ;;
 
-let%test _ = find_consecutive_duplicate [(0,'a');(1,'b');(2,'b')]
-               ~equal:(fun (_, a) (_, b) -> Char.(=) a b) = Some ((1, 'b'), (2, 'b'))
+let%test_unit _ =
+  [%test_result: ((int * char) * (int * char)) option]
+    (find_consecutive_duplicate [(0,'a');(1,'b');(2,'b')]
+       ~equal:(fun (_, a) (_, b) -> Char.(=) a b))
+    ~expect:(Some ((1, 'b'), (2, 'b')))
 ;;
 
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`Last []
-               ~equal:Int.(=)                                 = []
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`Last [5;5;5;5;5]
-               ~equal:Int.(=)                                 = [5]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`Last [5;6;5;6;5;6]
-               ~equal:Int.(=)                                 = [5;6;5;6;5;6]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`Last [5;5;6;6;5;5;8;8]
-               ~equal:Int.(=)                                 = [5;6;5;8]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`Last [(0,1);(0,2);(2,2);(4,1)]
-               ~equal:(fun (a,_) (b,_) -> Int.(=) a b)        = [      (0,2);(2,2);(4,1)]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`Last [(0,1);(2,2);(0,2);(4,1)]
-               ~equal:(fun (a,_) (b,_) -> Int.(=) a b)        = [(0,1);(2,2);(0,2);(4,1)]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`Last [(0,1);(2,1);(0,2);(4,2)]
-               ~equal:(fun (_,a) (_,b) -> Int.(=) a b)        = [      (2,1);      (4,2)]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`Last [(0,1);(2,2);(0,2);(4,1)]
-               ~equal:(fun (_,a) (_,b) -> Int.(=) a b)        = [(0,1);      (0,2);(4,1)]
+let%test_unit _ = [%test_result: int list]
+                    (remove_consecutive_duplicates ~which_to_keep:`Last []
+                       ~equal:Int.(=))                          ~expect:[]
+let%test_unit _ = [%test_result: int list]
+                    (remove_consecutive_duplicates ~which_to_keep:`Last [5;5;5;5;5]
+                       ~equal:Int.(=))                          ~expect:[5]
+let%test_unit _ = [%test_result: int list]
+                    (remove_consecutive_duplicates ~which_to_keep:`Last [5;6;5;6;5;6]
+                       ~equal:Int.(=))                          ~expect:[5;6;5;6;5;6]
+let%test_unit _ = [%test_result: int list]
+                    (remove_consecutive_duplicates ~which_to_keep:`Last [5;5;6;6;5;5;8;8]
+                       ~equal:Int.(=))                          ~expect:[5;6;5;8]
+let%test_unit _ = [%test_result: (int * int) list]
+                    (remove_consecutive_duplicates ~which_to_keep:`Last [(0,1);(0,2);(2,2);(4,1)]
+                       ~equal:(fun (a,_) (b,_) -> Int.(=) a b))    ~expect:[      (0,2);(2,2);(4,1)]
+let%test_unit _ = [%test_result: (int * int) list]
+                    (remove_consecutive_duplicates ~which_to_keep:`Last [(0,1);(2,2);(0,2);(4,1)]
+                       ~equal:(fun (a,_) (b,_) -> Int.(=) a b))    ~expect:[(0,1);(2,2);(0,2);(4,1)]
+let%test_unit _ = [%test_result: (int * int) list]
+                    (remove_consecutive_duplicates ~which_to_keep:`Last [(0,1);(2,1);(0,2);(4,2)]
+                       ~equal:(fun (_,a) (_,b) -> Int.(=) a b))    ~expect:[      (2,1);      (4,2)]
+let%test_unit _ = [%test_result: (int * int) list]
+                    (remove_consecutive_duplicates ~which_to_keep:`Last [(0,1);(2,2);(0,2);(4,1)]
+                       ~equal:(fun (_,a) (_,b) -> Int.(=) a b))    ~expect:[(0,1);      (0,2);(4,1)]
 
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`First []
-               ~equal:Int.(=)                                  = []
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`First [5;5;5;5;5]
-               ~equal:Int.(=)                                  = [5]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`First [5;6;5;6;5;6]
-               ~equal:Int.(=)                                  = [5;6;5;6;5;6]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`First [5;5;6;6;5;5;8;8]
-               ~equal:Int.(=)                                  = [5;6;5;8]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`First [(0,1);(0,2);(2,2);(4,1)]
-               ~equal:(fun (a,_) (b,_) -> Int.(=) a b)         = [(0,1);      (2,2);(4,1)]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`First [(0,1);(2,2);(0,2);(4,1)]
-               ~equal:(fun (a,_) (b,_) -> Int.(=) a b)         = [(0,1);(2,2);(0,2);(4,1)]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`First [(0,1);(2,1);(0,2);(4,2)]
-               ~equal:(fun (_,a) (_,b) -> Int.(=) a b)         = [(0,1);      (0,2);     ]
-let%test _ = remove_consecutive_duplicates ~which_to_keep:`First [(0,1);(2,2);(0,2);(4,1)]
-               ~equal:(fun (_,a) (_,b) -> Int.(=) a b)         = [(0,1);(2,2);      (4,1)]
+let%test_unit _ = [%test_result: int list]
+                    (remove_consecutive_duplicates ~which_to_keep:`First []
+                       ~equal:Int.(=))                           ~expect:[]
+let%test_unit _ = [%test_result: int list]
+                    (remove_consecutive_duplicates ~which_to_keep:`First [5;5;5;5;5]
+                       ~equal:Int.(=))                           ~expect:[5]
+let%test_unit _ = [%test_result: int list]
+                    (remove_consecutive_duplicates ~which_to_keep:`First [5;6;5;6;5;6]
+                       ~equal:Int.(=))                           ~expect:[5;6;5;6;5;6]
+let%test_unit _ = [%test_result: int list]
+                    (remove_consecutive_duplicates ~which_to_keep:`First [5;5;6;6;5;5;8;8]
+                       ~equal:Int.(=))                           ~expect:[5;6;5;8]
+let%test_unit _ = [%test_result: (int * int) list]
+                    (remove_consecutive_duplicates ~which_to_keep:`First [(0,1);(0,2);(2,2);(4,1)]
+                       ~equal:(fun (a,_) (b,_) -> Int.(=) a b))     ~expect:[(0,1);      (2,2);(4,1)]
+let%test_unit _ = [%test_result: (int * int) list]
+                    (remove_consecutive_duplicates ~which_to_keep:`First [(0,1);(2,2);(0,2);(4,1)]
+                       ~equal:(fun (a,_) (b,_) -> Int.(=) a b))     ~expect:[(0,1);(2,2);(0,2);(4,1)]
+let%test_unit _ = [%test_result: (int * int) list]
+                    (remove_consecutive_duplicates ~which_to_keep:`First [(0,1);(2,1);(0,2);(4,2)]
+                       ~equal:(fun (_,a) (_,b) -> Int.(=) a b))     ~expect:[(0,1);      (0,2);     ]
+let%test_unit _ = [%test_result: (int * int) list]
+                    (remove_consecutive_duplicates ~which_to_keep:`First [(0,1);(2,2);(0,2);(4,1)]
+                       ~equal:(fun (_,a) (_,b) -> Int.(=) a b))     ~expect:[(0,1);(2,2);      (4,1)]
 
-let%test _ = dedup_and_sort ~compare [] = []
-let%test _ = dedup_and_sort ~compare [5;5;5;5;5] = [5]
-let%test _ = length (dedup_and_sort ~compare [2;1;5;3;4]) = 5
-let%test _ = length (dedup_and_sort ~compare [2;3;5;3;4]) = 4
-let%test _ = length (dedup_and_sort [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (a,_) (b,_) ->
-  Int.compare a b)) = 3
-let%test _ = length (dedup_and_sort [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (_,a) (_,b) ->
-  Int.compare a b)) = 2
+let%test_unit _ = [%test_result: int list] (dedup_and_sort ~compare:Int.compare []) ~expect:[]
+let%test_unit _ = [%test_result: int list] (dedup_and_sort ~compare:Int.compare [5;5;5;5;5]) ~expect:[5]
+let%test_unit _ = [%test_result: int] (length (dedup_and_sort ~compare:Int.compare [2;1;5;3;4])) ~expect:5
+let%test_unit _ = [%test_result: int] (length (dedup_and_sort ~compare:Int.compare [2;3;5;3;4])) ~expect:4
+let%test_unit _ = [%test_result: int] (length (dedup_and_sort [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (a,_) (b,_) -> Int.compare a b))) ~expect:3
+let%test_unit _ = [%test_result: int] (length (dedup_and_sort [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (_,a) (_,b) -> Int.compare a b))) ~expect:2
 
-let%test _ = find_a_dup ~compare [] = None
-let%test _ = find_a_dup ~compare [3] = None
-let%test _ = find_a_dup ~compare [3;4] = None
-let%test _ = find_a_dup ~compare [3;3] = Some 3
-let%test _ = find_a_dup ~compare [3;5;4;6;12] = None
-let%test _ = find_a_dup ~compare [3;5;4;5;12] = Some 5
-let%test _ = find_a_dup ~compare [3;5;12;5;12] = Some 5
-let%test _ = find_a_dup ~compare:Poly.compare [(0,1);(2,2);(0,2);(4,1)] = None
+let%test_unit _ = [%test_result: int option] (find_a_dup ~compare:Int.compare []) ~expect:None
+let%test_unit _ = [%test_result: int option] (find_a_dup ~compare:Int.compare [3]) ~expect:None
+let%test_unit _ = [%test_result: int option] (find_a_dup ~compare:Int.compare [3;4]) ~expect:None
+let%test_unit _ = [%test_result: int option] (find_a_dup ~compare:Int.compare [3;3]) ~expect:(Some 3)
+let%test_unit _ = [%test_result: int option] (find_a_dup ~compare:Int.compare [3;5;4;6;12]) ~expect:None
+let%test_unit _ = [%test_result: int option] (find_a_dup ~compare:Int.compare [3;5;4;5;12]) ~expect:(Some 5)
+let%test_unit _ = [%test_result: int option] (find_a_dup ~compare:Int.compare [3;5;12;5;12]) ~expect:(Some 5)
+let%test_unit _ =
+  [%test_result: (int * int) option]
+    (find_a_dup ~compare:[%compare: int * int] [(0,1);(2,2);(0,2);(4,1)])
+    ~expect:None
 let%test _ = (find_a_dup [(0,1);(2,2);(0,2);(4,1)]
-                ~compare:(fun (_,a) (_,b) -> Int.compare a b)) <> None
+                ~compare:(fun (_,a) (_,b) -> Int.compare a b))
+             |> Option.is_some
 let%test _ = let dup = find_a_dup [(0,1);(2,2);(0,2);(4,1)]
                          ~compare:(fun (a,_) (b,_) -> Int.compare a b)
   in
@@ -410,51 +432,45 @@ let%test _ = let dup = find_a_dup [(0,1);(2,2);(0,2);(4,1)]
   | Some (0, _) -> true
   | _ -> false
 
-let%test _ = contains_dup ~compare [] = false
-let%test _ = contains_dup ~compare [3] = false
-let%test _ = contains_dup ~compare [3;4] = false
-let%test _ = contains_dup ~compare [3;3] = true
-let%test _ = contains_dup ~compare [3;5;4;6;12] = false
-let%test _ = contains_dup ~compare [3;5;4;5;12] = true
-let%test _ = contains_dup ~compare [3;5;12;5;12] = true
-let%test _ = contains_dup ~compare:Poly.compare [(0,1);(2,2);(0,2);(4,1)] = false
-let%test _ = (contains_dup [(0,1);(2,2);(0,2);(4,1)]
-                ~compare:(fun (_,a) (_,b) -> Int.compare a b)) = true
+let%test_unit _ = [%test_result: bool] (contains_dup ~compare:Int.compare []) ~expect:false
+let%test_unit _ = [%test_result: bool] (contains_dup ~compare:Int.compare [3]) ~expect:false
+let%test_unit _ = [%test_result: bool] (contains_dup ~compare:Int.compare [3;4]) ~expect:false
+let%test_unit _ = [%test_result: bool] (contains_dup ~compare:Int.compare [3;3]) ~expect:true
+let%test_unit _ = [%test_result: bool] (contains_dup ~compare:Int.compare [3;5;4;6;12]) ~expect:false
+let%test_unit _ = [%test_result: bool] (contains_dup ~compare:Int.compare [3;5;4;5;12]) ~expect:true
+let%test_unit _ = [%test_result: bool] (contains_dup ~compare:Int.compare [3;5;12;5;12]) ~expect:true
+let%test_unit _ = [%test_result: bool] (contains_dup ~compare:[%compare: int * int] [(0,1);(2,2);(0,2);(4,1)]) ~expect:false
+let%test_unit _ = [%test_result: bool] (contains_dup [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (_,a) (_,b) -> Int.compare a b)) ~expect:true
 
-let%test _ = find_all_dups ~compare [] = []
-let%test _ = find_all_dups ~compare [3] = []
-let%test _ = find_all_dups ~compare [3;4] = []
-let%test _ = find_all_dups ~compare [3;3] = [3]
-let%test _ = find_all_dups ~compare [3;5;4;6;12] = []
-let%test _ = find_all_dups ~compare [3;5;4;5;12] = [5]
-let%test _ = find_all_dups ~compare [3;5;12;5;12] = [5;12]
-let%test _ = find_all_dups ~compare:Poly.compare [(0,1);(2,2);(0,2);(4,1)] = []
-let%test _ = length (find_all_dups [(0,1);(2,2);(0,2);(4,1)]
-                       ~compare:(fun (_,a) (_,b) -> Int.compare a b)) = 2
-let%test _ = length (find_all_dups [(0,1);(2,2);(0,2);(4,1)]
-                       ~compare:(fun (a,_) (b,_) -> Int.compare a b)) = 1
+let%test_unit _ = [%test_result: int list] (find_all_dups ~compare:Int.compare []) ~expect:[]
+let%test_unit _ = [%test_result: int list] (find_all_dups ~compare:Int.compare [3]) ~expect:[]
+let%test_unit _ = [%test_result: int list] (find_all_dups ~compare:Int.compare [3;4]) ~expect:[]
+let%test_unit _ = [%test_result: int list] (find_all_dups ~compare:Int.compare [3;3]) ~expect:[3]
+let%test_unit _ = [%test_result: int list] (find_all_dups ~compare:Int.compare [3;5;4;6;12]) ~expect:[]
+let%test_unit _ = [%test_result: int list] (find_all_dups ~compare:Int.compare [3;5;4;5;12]) ~expect:[5]
+let%test_unit _ = [%test_result: int list] (find_all_dups ~compare:Int.compare [3;5;12;5;12]) ~expect:[5;12]
+let%test_unit _ = [%test_result: (int * int) list] (find_all_dups ~compare:[%compare: int * int] [(0,1);(2,2);(0,2);(4,1)]) ~expect:[]
+let%test_unit _ = [%test_result: int] (length (find_all_dups [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (_,a) (_,b) -> Int.compare a b))) ~expect:2
+let%test_unit _ = [%test_result: int] (length (find_all_dups [(0,1);(2,2);(0,2);(4,1)] ~compare:(fun (a,_) (b,_) -> Int.compare a b))) ~expect:1
 
-let%test _ = counti [0;1;2;3;4] ~f:(fun idx x -> idx = x) = 5
-let%test _ = counti [0;1;2;3;4] ~f:(fun idx x -> idx = 4-x) = 1
+let%test_unit _ = [%test_result: int] (counti [0;1;2;3;4] ~f:(fun idx x -> idx = x)) ~expect:5
+let%test_unit _ = [%test_result: int] (counti [0;1;2;3;4] ~f:(fun idx x -> idx = 4-x)) ~expect:1
 
-let%test _ = filter_map ~f:(fun x -> Some x) Test_values.l1 = Test_values.l1
-let%test _ = filter_map ~f:(fun x -> Some x) [] = []
-let%test _ = filter_map ~f:(fun _x -> None) [1.;2.;3.] = []
-let%test _ = filter_map
-               ~f:(fun x -> if (x > 0) then Some x else None) [1;-1;3] = [1;3]
+let%test_unit _ = [%test_result: int list] (filter_map ~f:(fun x -> Some x) Test_values.l1) ~expect:Test_values.l1
+let%test_unit _ = [%test_result: int list] (filter_map ~f:(fun x -> Some x) []) ~expect:[]
+let%test_unit _ = [%test_result: int list] (filter_map ~f:(fun _x -> None) [1.;2.;3.]) ~expect:[]
+let%test_unit _ = [%test_result: int list] (filter_map ~f:(fun x -> if (x > 0) then Some x else None) [1;-1;3]) ~expect:[1;3]
 
-let%test _ = filter_mapi ~f:(fun _i x -> Some x) Test_values.l1 = Test_values.l1
-let%test _ = filter_mapi ~f:(fun _i x -> Some x) [] = []
-let%test _ = filter_mapi ~f:(fun _i _x -> None) [1.;2.;3.] = []
-let%test _ = filter_mapi ~f:(fun _i x -> if (x > 0) then Some x else None) [1;-1;3]
-             = [1;3]
-let%test _ = filter_mapi ~f:(fun i x -> if (i % 2=0) then Some x else None)
-               [1;-1;3] = [1;3]
+let%test_unit _ = [%test_result: int list] (filter_mapi ~f:(fun _i x -> Some x) Test_values.l1) ~expect:Test_values.l1
+let%test_unit _ = [%test_result: int list] (filter_mapi ~f:(fun _i x -> Some x) []) ~expect:[]
+let%test_unit _ = [%test_result: int list] (filter_mapi ~f:(fun _i _x -> None) [1.;2.;3.]) ~expect:[]
+let%test_unit _ = [%test_result: int list] (filter_mapi ~f:(fun _i x -> if (x > 0) then Some x else None) [1;-1;3]) ~expect:[1;3]
+let%test_unit _ = [%test_result: int list] (filter_mapi ~f:(fun i x -> if (i % 2=0) then Some x else None) [1;-1;3]) ~expect:[1;3]
 
-let%test _ = split_n [1;2;3;4;5;6] 3 = ([1;2;3],[4;5;6])
-let%test _ = split_n [1;2;3;4;5;6] 100 = ([1;2;3;4;5;6],[])
-let%test _ = split_n [1;2;3;4;5;6] 0 = ([],[1;2;3;4;5;6])
-let%test _ = split_n [1;2;3;4;5;6] (-5) = ([],[1;2;3;4;5;6])
+let%test_unit _ = [%test_result: (int list * int list)] (split_n [1;2;3;4;5;6] 3) ~expect:([1;2;3],[4;5;6])
+let%test_unit _ = [%test_result: (int list * int list)] (split_n [1;2;3;4;5;6] 100) ~expect:([1;2;3;4;5;6],[])
+let%test_unit _ = [%test_result: (int list * int list)] (split_n [1;2;3;4;5;6] 0) ~expect:([],[1;2;3;4;5;6])
+let%test_unit _ = [%test_result: (int list * int list)] (split_n [1;2;3;4;5;6] (-5)) ~expect:([],[1;2;3;4;5;6])
 
 let%test_module "{take,drop,split}_while" =
   (module struct
@@ -467,36 +483,38 @@ let%test_module "{take,drop,split}_while" =
       let (prefix1, suffix1) = split_while ~f:pred xs in
       let prefix2 = take_while xs ~f:pred in
       let suffix2 = drop_while xs ~f:pred in
-      xs = prefix @ suffix
-      && prefix = prefix1 && prefix = prefix2
-      && suffix = suffix1 && suffix = suffix2
+      [%test_eq: char list] xs (prefix @ suffix);
+      [%test_result: char list] ~expect:prefix prefix1;
+      [%test_result: char list] ~expect:prefix prefix2;
+      [%test_result: char list] ~expect:suffix suffix1;
+      [%test_result: char list] ~expect:suffix suffix2
 
-    let%test _ = test ['1';'2';'3';'a';'b';'c'] ['1';'2';'3'] ['a';'b';'c']
-    let%test _ = test ['1';'2';    'a';'b';'c'] ['1';'2'    ] ['a';'b';'c']
-    let%test _ = test ['1';        'a';'b';'c'] ['1'        ] ['a';'b';'c']
-    let%test _ = test [            'a';'b';'c'] [           ] ['a';'b';'c']
-    let%test _ = test ['1';'2';'3'            ] ['1';'2';'3'] [           ]
-    let%test _ = test [                       ] [           ] [           ]
+    let%test_unit _ = test ['1';'2';'3';'a';'b';'c'] ['1';'2';'3'] ['a';'b';'c']
+    let%test_unit _ = test ['1';'2';    'a';'b';'c'] ['1';'2'    ] ['a';'b';'c']
+    let%test_unit _ = test ['1';        'a';'b';'c'] ['1'        ] ['a';'b';'c']
+    let%test_unit _ = test [            'a';'b';'c'] [           ] ['a';'b';'c']
+    let%test_unit _ = test ['1';'2';'3'            ] ['1';'2';'3'] [           ]
+    let%test_unit _ = test [                       ] [           ] [           ]
 
   end)
 
-let%test _ = concat [] = []
-let%test _ = concat [[]] = []
-let%test _ = concat [[3]] = [3]
-let%test _ = concat [[1;2;3;4]] = [1;2;3;4]
-let%test _ = concat
-               [[1;2;3;4];[5;6;7];[8;9;10];[];[11;12]]
-             = [1;2;3;4;5;6;7;8;9;10;11;12]
+let%test_unit _ = [%test_result: int list] (concat []) ~expect:[]
+let%test_unit _ = [%test_result: int list] (concat [[]]) ~expect:[]
+let%test_unit _ = [%test_result: int list] (concat [[3]]) ~expect:[3]
+let%test_unit _ = [%test_result: int list] (concat [[1;2;3;4]]) ~expect:[1;2;3;4]
+let%test_unit _ = [%test_result: int list]
+                    (concat [[1;2;3;4];[5;6;7];[8;9;10];[];[11;12]])
+                    ~expect:[1;2;3;4;5;6;7;8;9;10;11;12]
 
-let%test _ = is_sorted [] ~compare
-let%test _ = is_sorted [1] ~compare
-let%test _ = is_sorted [1; 2; 3; 4] ~compare
-let%test _ = not (is_sorted [2; 1] ~compare)
-let%test _ = not (is_sorted [1; 3; 2] ~compare)
+let%test_unit _ = [%test_result: bool] (is_sorted []           ~compare:Int.compare) ~expect:true
+let%test_unit _ = [%test_result: bool] (is_sorted [1]          ~compare:Int.compare) ~expect:true
+let%test_unit _ = [%test_result: bool] (is_sorted [1; 2; 3; 4] ~compare:Int.compare) ~expect:true
+let%test_unit _ = [%test_result: bool] (is_sorted [2; 1]       ~compare:Int.compare) ~expect:false
+let%test_unit _ = [%test_result: bool] (is_sorted [1; 3; 2]    ~compare:Int.compare) ~expect:false
 
 let%test_unit _ =
   List.iter
-    ~f:(fun (t, expect) -> assert (expect = is_sorted_strictly t ~compare))
+    ~f:(fun (t, expect) -> [%test_result: bool] ~expect (is_sorted_strictly t ~compare:Int.compare))
     [ []         , true;
       [ 1 ]      , true;
       [ 1; 2 ]   , true;
@@ -508,66 +526,68 @@ let%test_unit _ =
     ]
 ;;
 
-let%test _ = random_element [] = None
-let%test _ = random_element [0] = Some 0
+let%test_unit _ = [%test_result: int option] (random_element []) ~expect:None
+let%test_unit _ = [%test_result: int option] (random_element [0]) ~expect:(Some 0)
 
 let%test_module "transpose" =
   (module struct
 
-    let round_trip a b = transpose a = Some b && transpose b = Some a
+    let round_trip a b =
+      [%test_result: int list list option] (transpose a) ~expect:(Some b);
+      [%test_result: int list list option] (transpose b) ~expect:(Some a)
 
-    let%test _ = round_trip [] []
+    let%test_unit _ = round_trip [] []
 
-    let%test _ = transpose [[]] = Some []
-    let%test _ = transpose [[]; []] = Some []
-    let%test _ = transpose [[]; []; []] = Some []
+    let%test_unit _ = [%test_result: int list list option] (transpose [[]]) ~expect:(Some [])
+    let%test_unit _ = [%test_result: int list list option] (transpose [[]; []]) ~expect:(Some [])
+    let%test_unit _ = [%test_result: int list list option] (transpose [[]; []; []]) ~expect:(Some [])
 
-    let%test _ = round_trip [[1]] [[1]]
+    let%test_unit _ = round_trip [[1]] [[1]]
 
-    let%test _ = round_trip [[1];
-                             [2]] [[1; 2]]
+    let%test_unit _ = round_trip [[1];
+                                  [2]] [[1; 2]]
 
-    let%test _ = round_trip [[1];
-                             [2];
-                             [3]] [[1; 2; 3]]
+    let%test_unit _ = round_trip [[1];
+                                  [2];
+                                  [3]] [[1; 2; 3]]
 
-    let%test _ = round_trip [[1; 2];
-                             [3; 4]] [[1; 3];
-                                      [2; 4]]
+    let%test_unit _ = round_trip [[1; 2];
+                                  [3; 4]] [[1; 3];
+                                           [2; 4]]
 
-    let%test _ = round_trip [[1; 2; 3];
-                             [4; 5; 6]] [[1; 4];
-                                         [2; 5];
-                                         [3; 6]]
+    let%test_unit _ = round_trip [[1; 2; 3];
+                                  [4; 5; 6]] [[1; 4];
+                                              [2; 5];
+                                              [3; 6]]
 
-    let%test _ = transpose [[]; [1]] = None
+    let%test_unit _ = [%test_result: int list list option] (transpose [[]; [1]]) ~expect:None
 
-    let%test _ = transpose [[1;2];[3]] = None
+    let%test_unit _ = [%test_result: int list list option] (transpose [[1;2];[3]]) ~expect:None
 
   end)
 
-let%test _ = intersperse [1;2;3] ~sep:0 = [1;0;2;0;3]
-let%test _ = intersperse [1;2]   ~sep:0 = [1;0;2]
-let%test _ = intersperse [1]     ~sep:0 = [1]
-let%test _ = intersperse []      ~sep:0 = []
+let%test_unit _ = [%test_result: int list] (intersperse [1;2;3] ~sep:0) ~expect:[1;0;2;0;3]
+let%test_unit _ = [%test_result: int list] (intersperse [1;2]   ~sep:0) ~expect:[1;0;2]
+let%test_unit _ = [%test_result: int list] (intersperse [1]     ~sep:0) ~expect:[1]
+let%test_unit _ = [%test_result: int list] (intersperse []      ~sep:0) ~expect:[]
 
 let test_fold_map list ~init ~f ~expect =
-  folding_map list ~init ~f = snd expect &&
-  fold_map    list ~init ~f = expect
+  [%test_result:     int list] (folding_map list ~init ~f) ~expect:(snd expect);
+  [%test_result: _ * int list] (fold_map    list ~init ~f) ~expect
 
 let test_fold_mapi list ~init ~f ~expect =
-  folding_mapi list ~init ~f = snd expect &&
-  fold_mapi    list ~init ~f = expect
+  [%test_result:     int list] (folding_mapi list ~init ~f) ~expect:(snd expect);
+  [%test_result: _ * int list] (fold_mapi    list ~init ~f) ~expect
 
-let%test _ = test_fold_map [1;2;3;4] ~init:0
-               ~f:(fun acc x -> let y = acc+x in y,y)
-               ~expect:(10, [1;3;6;10])
-let%test _ = test_fold_map [] ~init:0
-               ~f:(fun acc x -> let y = acc+x in y,y)
-               ~expect:(0, [])
-let%test _ = test_fold_mapi [1;2;3;4] ~init:0
-               ~f:(fun i acc x -> let y = acc+i*x in y,y)
-               ~expect:(20, [0;2;8;20])
-let%test _ = test_fold_mapi [] ~init:0
-               ~f:(fun i acc x -> let y = acc+i*x in y,y)
-               ~expect:(0, [])
+let%test_unit _ = test_fold_map [1;2;3;4] ~init:0
+                    ~f:(fun acc x -> let y = acc+x in y,y)
+                    ~expect:(10, [1;3;6;10])
+let%test_unit _ = test_fold_map [] ~init:0
+                    ~f:(fun acc x -> let y = acc+x in y,y)
+                    ~expect:(0, [])
+let%test_unit _ = test_fold_mapi [1;2;3;4] ~init:0
+                    ~f:(fun i acc x -> let y = acc+i*x in y,y)
+                    ~expect:(20, [0;2;8;20])
+let%test_unit _ = test_fold_mapi [] ~init:0
+                    ~f:(fun i acc x -> let y = acc+i*x in y,y)
+                    ~expect:(0, [])

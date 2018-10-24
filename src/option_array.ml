@@ -77,7 +77,7 @@ module Cheap_option = struct
     let value_exn x =
       if is_some x
       then value_unsafe x
-      else Error.raise (Error.of_string "Option_array.get_some_exn: the element is [None]")
+      else failwith "Option_array.get_some_exn: the element is [None]"
 
   end
 

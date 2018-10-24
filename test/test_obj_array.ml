@@ -43,7 +43,9 @@ let%test_unit _ =
   let t = create ~len:2 float in
   assert (Caml.Obj.tag (Caml.Obj.repr t) = 0); (* not a double array *)
   assert (phys_equal (get t 0) float);
-  assert (phys_equal (get t 1) float)
+  assert (phys_equal (get t 1) float);
+  set t 1 (Caml.Obj.repr 4.);
+  assert (Float.(=) (Caml.Obj.obj (get t 1)) 4.);
 ;;
 
 (* [empty] *)

@@ -34,6 +34,9 @@
 - Removed functions that were deprecated in 2016 from the `Array` and `Set`
   modules.
 
+- [Int.Hex.of_string] and friends no longer silently ignore a suffix
+  of non-hexadecimal garbage.
+
 ## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its

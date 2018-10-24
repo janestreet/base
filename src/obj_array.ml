@@ -64,6 +64,17 @@ let [@inline always] unsafe_get t i =
      if [t] is tagged with [Double_array_tag]. *)
   Caml.Obj.repr
     (Array.unsafe_get (Caml.Obj.magic (t : t) : not_a_float array) i : not_a_float)
+
+let [@inline always] unsafe_set_with_caml_modify t i obj =
+  (* Same comment as [unsafe_get]. Sys.opaque_identity prevents the compiler from
+     potentially wrongly guessing the type of the array based on the type of element, that
+     is prevent the implication: (Obj.tag obj = Obj.double_tag) => (Obj.tag t =
+     Obj.double_array_tag) which flambda has tried in the past (at least that's assuming
+     the compiler respects Sys.opaque_identity, which is not always the case). *)
+  Array.unsafe_set
+    (Caml.Obj.magic (t : t) : not_a_float array)
+    i
+    (Caml.Obj.obj (Sys.opaque_identity obj) : not_a_float)
 ;;
 
 let [@inline always] unsafe_set_int_assuming_currently_int t i int =
@@ -84,8 +95,7 @@ let set t i obj =
   if Caml.Obj.is_int old_obj && Caml.Obj.is_int obj
   then unsafe_set_int_assuming_currently_int t i (Caml.Obj.obj obj : int)
   else if not (phys_equal old_obj obj)
-  then
-    Array.unsafe_set t i (Sys.opaque_identity obj)
+  then unsafe_set_with_caml_modify t i obj
 ;;
 
 let [@inline always] unsafe_set t i obj =
@@ -93,14 +103,14 @@ let [@inline always] unsafe_set t i obj =
   if Caml.Obj.is_int old_obj && Caml.Obj.is_int obj
   then unsafe_set_int_assuming_currently_int t i (Caml.Obj.obj obj : int)
   else if not (phys_equal old_obj obj)
-  then Array.unsafe_set t i (Sys.opaque_identity obj)
+  then unsafe_set_with_caml_modify t i obj
 ;;
 
 let [@inline always] unsafe_set_omit_phys_equal_check t i obj =
   let old_obj = unsafe_get t i in
   if Caml.Obj.is_int old_obj && Caml.Obj.is_int obj
   then unsafe_set_int_assuming_currently_int t i (Caml.Obj.obj obj : int)
-  else Array.unsafe_set t i (Sys.opaque_identity obj)
+  else unsafe_set_with_caml_modify t i obj
 ;;
 
 let singleton obj =
@@ -114,19 +124,19 @@ let unsafe_set_assuming_currently_int t i obj =
   else
     (* [t.(i)] is an integer and [obj] is not, so we do not need to check if they are
        equal. *)
-    Array.unsafe_set t i (Sys.opaque_identity obj)
+    unsafe_set_with_caml_modify t i obj
 ;;
 
 let unsafe_set_int t i int =
   let old_obj = unsafe_get t i in
   if Caml.Obj.is_int old_obj
   then unsafe_set_int_assuming_currently_int t i int
-  else Array.unsafe_set t i (Caml.Obj.repr (Sys.opaque_identity int))
+  else unsafe_set_with_caml_modify t i (Caml.Obj.repr int)
 ;;
 
 let unsafe_clear_if_pointer t i =
   let old_obj = unsafe_get t i in
-  if not (Caml.Obj.is_int old_obj) then Array.unsafe_set t i (Caml.Obj.repr 0);
+  if not (Caml.Obj.is_int old_obj) then unsafe_set_with_caml_modify t i (Caml.Obj.repr 0);
 ;;
 
 (** [unsafe_blit] is like [Array.blit], except it uses our own for-loop to avoid

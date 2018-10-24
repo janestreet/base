@@ -340,10 +340,15 @@ struct
 
     let of_string str =
       let module L = Hex_lexer in
-      match Option.try_with (fun () -> L.parse_hex (Caml.Lexing.from_string str)) with
-      | None -> invalid str
-      | Some (Neg body) -> I.neg (of_string_with_delimiter body)
-      | Some (Pos body) -> of_string_with_delimiter body
+      let lex = Caml.Lexing.from_string str in
+      let result = Option.try_with (fun () -> L.parse_hex lex) in
+      if lex.lex_curr_pos = lex.lex_buffer_len then (
+        match result with
+        | None -> invalid str
+        | Some (Neg body) -> I.neg (of_string_with_delimiter body)
+        | Some (Pos body) -> of_string_with_delimiter body
+      ) else
+        invalid str
   end
 
   module Hex = struct
