@@ -2,29 +2,49 @@
     module directly. *)
 
 val phys_equal : 'a -> 'a -> bool
+
+(*_ /!\ WARNING /!\ all these functions need to declared "external" in order to get the
+  lazy behavior for ( && ) (relied upon by [@@deriving_inline equal][@@@end]) and the type-based
+  specialization for equal/compare. *)
 external polymorphic_compare : 'a -> 'a -> int  = "%compare"
+external polymorphic_equal : 'a -> 'a -> bool  = "%equal"
+external ( && ) : bool -> bool -> bool = "%sequand"
 
 type 'a compare = 'a -> 'a -> int
+type 'a equal = 'a -> 'a -> bool
 
 (** Raise when fully applied *)
 val compare_abstract : type_name:string -> _ compare
+val equal_abstract : type_name:string -> _ equal
 
 module Builtin : sig
-  type 'a t = 'a -> 'a -> int
+  val compare_bool      : bool      compare
+  val compare_char      : char      compare
+  val compare_float     : float     compare
+  val compare_int       : int       compare
+  val compare_int32     : int32     compare
+  val compare_int64     : int64     compare
+  val compare_nativeint : nativeint compare
+  val compare_string    : string    compare
+  val compare_unit      : unit      compare
 
-  val compare_bool      : bool      t
-  val compare_char      : char      t
-  val compare_float     : float     t
-  val compare_int       : int       t
-  val compare_int32     : int32     t
-  val compare_int64     : int64     t
-  val compare_nativeint : nativeint t
-  val compare_string    : string    t
-  val compare_unit      : unit      t
+  val compare_array  : 'a compare -> 'a array  compare
+  val compare_list   : 'a compare -> 'a list   compare
+  val compare_option : 'a compare -> 'a option compare
+  val compare_ref    : 'a compare -> 'a ref    compare
 
-  val compare_array  : 'a t -> 'a array  t
-  val compare_list   : 'a t -> 'a list   t
-  val compare_option : 'a t -> 'a option t
-  val compare_ref    : 'a t -> 'a ref    t
+  val equal_bool      : bool      equal
+  val equal_char      : char      equal
+  val equal_float     : float     equal
+  val equal_int       : int       equal
+  val equal_int32     : int32     equal
+  val equal_int64     : int64     equal
+  val equal_nativeint : nativeint equal
+  val equal_string    : string    equal
+  val equal_unit      : unit      equal
 
-end with type 'a t := 'a compare
+  val equal_array  : 'a equal -> 'a array  equal
+  val equal_list   : 'a equal -> 'a list   equal
+  val equal_option : 'a equal -> 'a option equal
+  val equal_ref    : 'a equal -> 'a ref    equal
+end

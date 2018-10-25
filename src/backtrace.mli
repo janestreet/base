@@ -58,8 +58,8 @@ val elide : bool ref
 
     The initial value of [am_recording ()] is determined by the setting of the environment
     variable OCAMLRUNPARAM. If OCAMLRUNPARAM is set, then [am_recording () = true] iff the
-    character "b" occurs in OCAMLRUNPARAM. If OCAMLRUNPARAM is not set, then [am_recording
-    ()] is initially true.
+    character "b" occurs in OCAMLRUNPARAM. If OCAMLRUNPARAM is not set (as is always the
+    case when running in a web browser), then [am_recording ()] is initially true.
 
     This is the same functionality as provided by the OCaml stdlib [Printexc] functions
     [backtrace_status], [record_backtraces], [get_backtrace]. *)
