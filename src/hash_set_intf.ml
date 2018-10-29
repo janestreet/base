@@ -10,11 +10,19 @@ module type Accessors = sig
   val copy : 'a t -> 'a t      (** preserves the equality function *)
 
   val add               : 'a t -> 'a -> unit
+
+  (** [strict_add t x] returns [Ok ()] if the [x] was not in [t], or an [Error] if it
+      was. *)
   val strict_add        : 'a t -> 'a -> unit Or_error.t
   val strict_add_exn    : 'a t -> 'a -> unit
+
   val remove            : 'a t -> 'a -> unit
+
+  (** [strict_remove t x] returns [Ok ()] if the [x] was in [t], or an [Error] if it
+      was not. *)
   val strict_remove     : 'a t -> 'a -> unit Or_error.t
   val strict_remove_exn : 'a t -> 'a -> unit
+
   val clear : 'a t -> unit
   val equal : 'a t -> 'a t -> bool
   val filter : 'a t -> f:('a -> bool) -> 'a t

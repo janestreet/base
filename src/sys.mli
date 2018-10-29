@@ -2,7 +2,9 @@
 
 (** The command line arguments given to the process.
     The first element is the command name used to invoke the program.
-    The following elements are the command-line arguments given to the program. *)
+    The following elements are the command-line arguments given to the program.
+
+    When running in JavaScript in the browser, it is [[| "a.out" |]]. *)
 val argv : string array
 
 (** [interactive] is set to [true] when being executed in the [ocaml] REPL, and [false]
@@ -10,7 +12,8 @@ val argv : string array
 val interactive : bool ref
 
 (** [os_type] describes the operating system that the OCaml program is running on.  Its
-    value is one of ["Unix"], ["Win32"], or ["Cygwin"]. *)
+    value is one of ["Unix"], ["Win32"], or ["Cygwin"]. When running in JavaScript, it is
+    ["Unix"]. *)
 val os_type : string
 
 (** [unix] is [true] if [os_type = "Unix"]. *)
@@ -34,7 +37,8 @@ type backend_type = Sys0.backend_type =
 val backend_type : backend_type
 
 (** [word_size_in_bits] is the number of bits in one word on the machine currently
-    executing the OCaml program.  Generally speaking it will be either [32] or [64]. *)
+    executing the OCaml program.  Generally speaking it will be either [32] or [64].  When
+    running in JavaScript, it will be [32]. *)
 val word_size_in_bits : int
 
 (** [int_size_in_bits] is the number of bits in the [int] type.  Generally, on
@@ -43,7 +47,8 @@ val word_size_in_bits : int
     is the same as this value. *)
 val int_size_in_bits : int
 
-(** [big_endian] is true when the program is running on a big-endian architecture. *)
+(** [big_endian] is true when the program is running on a big-endian
+    architecture.  When running in JavaScript, it will be [false]. *)
 val big_endian : bool
 
 (** [max_string_length] is the maximum allowed length of a [string] or [Bytes.t].
@@ -56,11 +61,11 @@ val max_array_length : int
 
 (** Returns the name of the runtime variant the program is running on.  This is normally
     the argument given to [-runtime-variant] at compile time, but for byte-code it can be
-    changed after compilation. *)
+    changed after compilation.  When running in JavaScript, it will be [""]. *)
 val runtime_variant : unit -> string
 
 (** Returns the value of the runtime parameters, in the same format as the contents of the
-    [OCAMLRUNPARAM] environment variable. *)
+    [OCAMLRUNPARAM] environment variable.  When running in JavaScript, it will be [""]. *)
 val runtime_parameters : unit -> string
 
 (** [ocaml_version] is the OCaml version with which the program was compiled.  It is a
