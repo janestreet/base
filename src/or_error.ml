@@ -74,9 +74,9 @@ let ok_exn = function
 
 let of_exn ?backtrace exn = Error (Error.of_exn ?backtrace exn)
 
-let of_exn_result = function
+let of_exn_result ?backtrace = function
   | Ok _ as z -> z
-  | Error exn -> of_exn exn
+  | Error exn -> of_exn ?backtrace exn
 ;;
 
 let error ?strict message a sexp_of_a =

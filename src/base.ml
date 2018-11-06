@@ -125,6 +125,7 @@ module Poly                      = Poly
 
 module Polymorphic_compare       = Polymorphic_compare
 module Popcount                  = Popcount
+[@@deprecated "[since 2018-10] use [popcount] functions in the individual int modules"]
 module Pretty_printer            = Pretty_printer
 module Printf                    = Printf
 module Linked_queue              = Linked_queue
@@ -449,4 +450,3 @@ end
 let () =
   Backtrace.initialize_module ();
 ;;
-
