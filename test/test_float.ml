@@ -53,9 +53,6 @@ let%test_unit "upper/lower_bound_for_int" =
       ])
 ;;
 
-let (=) = Polymorphic_compare.(=)
-let (<>) = Polymorphic_compare.(<>)
-
 let%test_unit _ =
   (* on 64-bit platform ppx_hash hashes floats exactly the same as polymorphic hash *)
   match Word_size.word_size with
@@ -65,7 +62,7 @@ let%test_unit _ =
       let hash1 = Caml.Hashtbl.hash float in
       let hash2 = [%hash: float] float in
       let hash3 = specialized_hash float in
-      if (not (hash1 = hash2 && hash1 = hash3))
+      if (not Int.(hash1 = hash2 && hash1 = hash3))
       then raise_s [%message "bad"
                                (hash1 : Int.Hex.t)
                                (hash2 : Int.Hex.t)
@@ -213,7 +210,7 @@ let%test_module _ =
   (module struct
     let test f expect =
       let actual = to_padded_compact_string f  in
-      if actual <> expect
+      if String.(actual <> expect)
       then raise_s
              [%message "failure"
                          (f      : t     )
@@ -255,6 +252,7 @@ let%test_module _ =
           let spot = String.index_exn x '.' in
           (* the following condition is only meant to work for small multiples of 0.05 *)
           let (+) = Int.(+) in
+          let (=) = Char.(=) in
           if x.[spot + 2] = '4' && x.[spot + 3] = '9' && x.[spot + 4] = '9' then
             (* something like 0.94999999999999995559 *)
             incr f
@@ -420,12 +418,6 @@ let%test_module _ =
 
     let () = Random.init 137
 
-    let (=)   = Caml.(=)
-    let (>=)  = Caml.(>=)
-    let ( + ) = Int.( + )
-    let ( - ) = Int.( - )
-    let ( * ) = Int.( * )
-
     (* round:
        ...  <-)[-><-)[-><-)[-><-)[-><-)[-><-)[->   ...
        ... -+-----+-----+-----+-----+-----+-----+- ...
@@ -444,7 +436,7 @@ let%test_module _ =
           1
       in
       match iround_up x, iround_down x with
-      | Some x, Some y -> x - y = expected_difference
+      | Some x, Some y -> Int.(x - y = expected_difference)
       | _, _ -> true
 
     let test_all_six x
@@ -529,158 +521,160 @@ let%test_module _ =
           | Some y ->
             let x = abs x in
             let y = abs (of_int y) in
-            0. <= x -. y && x -. y < 1. && (sign_exn x = sign_exn y || y = 0.0))
+            0. <= x -. y && x -. y < 1. && (Sign.(sign_exn x = sign_exn y) || y = 0.0))
 
     (* Easy cases that used to live inline with the code above. *)
-    let%test _ = iround_up (-3.4) = Some (-3)
-    let%test _ = iround_up   0.0  = Some   0
-    let%test _ = iround_up   3.4  = Some   4
+    let%test_unit _ = [%test_result: int option] (iround_up (-3.4)) ~expect:(Some (-3))
+    let%test_unit _ = [%test_result: int option] (iround_up   0.0)  ~expect:(Some   0)
+    let%test_unit _ = [%test_result: int option] (iround_up   3.4)  ~expect:(Some   4)
 
-    let%test _ = iround_up_exn (-3.4) = -3
-    let%test _ = iround_up_exn   0.0  =  0
-    let%test _ = iround_up_exn   3.4  =  4
+    let%test_unit _ = [%test_result: int] (iround_up_exn (-3.4)) ~expect:(-3)
+    let%test_unit _ = [%test_result: int] (iround_up_exn   0.0)  ~expect:0
+    let%test_unit _ = [%test_result: int] (iround_up_exn   3.4)  ~expect:4
 
-    let%test _ = iround_down (-3.4) = Some (-4)
-    let%test _ = iround_down   0.0  = Some   0
-    let%test _ = iround_down   3.4  = Some   3
+    let%test_unit _ = [%test_result: int option] (iround_down (-3.4)) ~expect:(Some (-4))
+    let%test_unit _ = [%test_result: int option] (iround_down   0.0)  ~expect:(Some   0)
+    let%test_unit _ = [%test_result: int option] (iround_down   3.4)  ~expect:(Some   3)
 
-    let%test _ = iround_down_exn (-3.4) = -4
-    let%test _ = iround_down_exn   0.0  =  0
-    let%test _ = iround_down_exn   3.4  =  3
+    let%test_unit _ = [%test_result: int] (iround_down_exn (-3.4)) ~expect:(-4)
+    let%test_unit _ = [%test_result: int] (iround_down_exn   0.0)  ~expect:0
+    let%test_unit _ = [%test_result: int] (iround_down_exn   3.4)  ~expect:3
 
-    let%test _ = iround_towards_zero (-3.4) = Some (-3)
-    let%test _ = iround_towards_zero   0.0  = Some   0
-    let%test _ = iround_towards_zero   3.4  = Some   3
+    let%test_unit _ = [%test_result: int option] (iround_towards_zero (-3.4)) ~expect:(Some (-3))
+    let%test_unit _ = [%test_result: int option] (iround_towards_zero   0.0)  ~expect:(Some   0)
+    let%test_unit _ = [%test_result: int option] (iround_towards_zero   3.4)  ~expect:(Some   3)
 
-    let%test _ = iround_towards_zero_exn (-3.4) = -3
-    let%test _ = iround_towards_zero_exn   0.0  =  0
-    let%test _ = iround_towards_zero_exn   3.4  =  3
+    let%test_unit _ = [%test_result: int] (iround_towards_zero_exn (-3.4)) ~expect:(-3)
+    let%test_unit _ = [%test_result: int] (iround_towards_zero_exn   0.0)  ~expect:0
+    let%test_unit _ = [%test_result: int] (iround_towards_zero_exn   3.4)  ~expect:3
 
-    let%test _ = iround_nearest (-3.6) = Some (-4)
-    let%test _ = iround_nearest (-3.5) = Some (-3)
-    let%test _ = iround_nearest (-3.4) = Some (-3)
-    let%test _ = iround_nearest   0.0  = Some   0
-    let%test _ = iround_nearest   3.4  = Some   3
-    let%test _ = iround_nearest   3.5  = Some   4
-    let%test _ = iround_nearest   3.6  = Some   4
+    let%test_unit _ = [%test_result: int option] (iround_nearest (-3.6)) ~expect:(Some (-4))
+    let%test_unit _ = [%test_result: int option] (iround_nearest (-3.5)) ~expect:(Some (-3))
+    let%test_unit _ = [%test_result: int option] (iround_nearest (-3.4)) ~expect:(Some (-3))
+    let%test_unit _ = [%test_result: int option] (iround_nearest   0.0)  ~expect:(Some   0)
+    let%test_unit _ = [%test_result: int option] (iround_nearest   3.4)  ~expect:(Some   3)
+    let%test_unit _ = [%test_result: int option] (iround_nearest   3.5)  ~expect:(Some   4)
+    let%test_unit _ = [%test_result: int option] (iround_nearest   3.6)  ~expect:(Some   4)
 
-    let%test _ = iround_nearest_exn (-3.6) = -4
-    let%test _ = iround_nearest_exn (-3.5) = -3
-    let%test _ = iround_nearest_exn (-3.4) = -3
-    let%test _ = iround_nearest_exn   0.0  =  0
-    let%test _ = iround_nearest_exn   3.4  =  3
-    let%test _ = iround_nearest_exn   3.5  =  4
-    let%test _ = iround_nearest_exn   3.6  =  4
+    let%test_unit _ = [%test_result: int] (iround_nearest_exn (-3.6)) ~expect:(-4)
+    let%test_unit _ = [%test_result: int] (iround_nearest_exn (-3.5)) ~expect:(-3)
+    let%test_unit _ = [%test_result: int] (iround_nearest_exn (-3.4)) ~expect:(-3)
+    let%test_unit _ = [%test_result: int] (iround_nearest_exn   0.0 ) ~expect:0
+    let%test_unit _ = [%test_result: int] (iround_nearest_exn   3.4 ) ~expect:3
+    let%test_unit _ = [%test_result: int] (iround_nearest_exn   3.5 ) ~expect:4
+    let%test_unit _ = [%test_result: int] (iround_nearest_exn   3.6 ) ~expect:4
 
     let special_values_test () =
-      round (-.1.50001) = -.2. &&
-      round (-.1.5) = -.1. &&
-      round (-.0.50001) = -.1. &&
-      round (-.0.5) = 0. &&
-      round 0.49999 = 0. &&
-      round 0.5 = 1. &&
-      round 1.49999 = 1. &&
-      round 1.5 = 2. &&
-      iround_exn ~dir:`Up (-.2.) = -2 &&
-      iround_exn ~dir:`Up (-.1.9999) = -1 &&
-      iround_exn ~dir:`Up (-.1.) = -1 &&
-      iround_exn ~dir:`Up (-.0.9999) = 0 &&
-      iround_exn ~dir:`Up 0. = 0 &&
-      iround_exn ~dir:`Up 0.00001 = 1 &&
-      iround_exn ~dir:`Up 1. = 1 &&
-      iround_exn ~dir:`Up 1.00001 = 2 &&
-      iround_up_exn (-.2.) = -2 &&
-      iround_up_exn (-.1.9999) = -1 &&
-      iround_up_exn (-.1.) = -1 &&
-      iround_up_exn (-.0.9999) = 0 &&
-      iround_up_exn 0. = 0 &&
-      iround_up_exn 0.00001 = 1 &&
-      iround_up_exn 1. = 1 &&
-      iround_up_exn 1.00001 = 2 &&
-      iround_exn ~dir:`Down (-.1.00001) = -2 &&
-      iround_exn ~dir:`Down (-.1.) = -1 &&
-      iround_exn ~dir:`Down (-.0.00001) = -1 &&
-      iround_exn ~dir:`Down 0. = 0 &&
-      iround_exn ~dir:`Down 0.99999 = 0 &&
-      iround_exn ~dir:`Down 1. = 1 &&
-      iround_exn ~dir:`Down 1.99999 = 1 &&
-      iround_exn ~dir:`Down 2. = 2 &&
-      iround_down_exn (-.1.00001) = -2 &&
-      iround_down_exn (-.1.) = -1 &&
-      iround_down_exn (-.0.00001) = -1 &&
-      iround_down_exn 0. = 0 &&
-      iround_down_exn 0.99999 = 0 &&
-      iround_down_exn 1. = 1 &&
-      iround_down_exn 1.99999 = 1 &&
-      iround_down_exn 2. = 2 &&
-      iround_exn ~dir:`Zero (-.2.) = -2 &&
-      iround_exn ~dir:`Zero (-.1.99999) = -1 &&
-      iround_exn ~dir:`Zero (-.1.) = -1 &&
-      iround_exn ~dir:`Zero (-.0.99999) = 0 &&
-      iround_exn ~dir:`Zero 0.99999 = 0 &&
-      iround_exn ~dir:`Zero 1. = 1 &&
-      iround_exn ~dir:`Zero 1.99999 = 1 &&
-      iround_exn ~dir:`Zero 2. = 2
+      [%test_result: float] (round (-.1.50001)) ~expect:(-.2.);
+      [%test_result: float] (round (-.1.5)) ~expect:(-.1.);
+      [%test_result: float] (round (-.0.50001)) ~expect:(-.1.);
+      [%test_result: float] (round (-.0.5)) ~expect:0.;
+      [%test_result: float] (round 0.49999) ~expect:0.;
+      [%test_result: float] (round 0.5) ~expect:1.;
+      [%test_result: float] (round 1.49999) ~expect:1.;
+      [%test_result: float] (round 1.5) ~expect:2.;
+      [%test_result: int] (iround_exn ~dir:`Up (-.2.)) ~expect:(-2);
+      [%test_result: int] (iround_exn ~dir:`Up (-.1.9999)) ~expect:(-1);
+      [%test_result: int] (iround_exn ~dir:`Up (-.1.)) ~expect:(-1);
+      [%test_result: int] (iround_exn ~dir:`Up (-.0.9999)) ~expect:0;
+      [%test_result: int] (iround_exn ~dir:`Up 0.) ~expect:0;
+      [%test_result: int] (iround_exn ~dir:`Up 0.00001) ~expect:1;
+      [%test_result: int] (iround_exn ~dir:`Up 1.) ~expect:1;
+      [%test_result: int] (iround_exn ~dir:`Up 1.00001) ~expect:2;
+      [%test_result: int] (iround_up_exn (-.2.)) ~expect:(-2);
+      [%test_result: int] (iround_up_exn (-.1.9999)) ~expect:(-1);
+      [%test_result: int] (iround_up_exn (-.1.)) ~expect:(-1);
+      [%test_result: int] (iround_up_exn (-.0.9999)) ~expect:0;
+      [%test_result: int] (iround_up_exn 0.) ~expect:0;
+      [%test_result: int] (iround_up_exn 0.00001) ~expect:1;
+      [%test_result: int] (iround_up_exn 1.) ~expect:1;
+      [%test_result: int] (iround_up_exn 1.00001) ~expect:2;
+      [%test_result: int] (iround_exn ~dir:`Down (-.1.00001)) ~expect:(-2);
+      [%test_result: int] (iround_exn ~dir:`Down (-.1.)) ~expect:(-1);
+      [%test_result: int] (iround_exn ~dir:`Down (-.0.00001)) ~expect:(-1);
+      [%test_result: int] (iround_exn ~dir:`Down 0.) ~expect:0;
+      [%test_result: int] (iround_exn ~dir:`Down 0.99999) ~expect:0;
+      [%test_result: int] (iround_exn ~dir:`Down 1.) ~expect:1;
+      [%test_result: int] (iround_exn ~dir:`Down 1.99999) ~expect:1;
+      [%test_result: int] (iround_exn ~dir:`Down 2.) ~expect:2;
+      [%test_result: int] (iround_down_exn (-.1.00001)) ~expect:(-2);
+      [%test_result: int] (iround_down_exn (-.1.)) ~expect:(-1);
+      [%test_result: int] (iround_down_exn (-.0.00001)) ~expect:(-1);
+      [%test_result: int] (iround_down_exn 0.) ~expect:0;
+      [%test_result: int] (iround_down_exn 0.99999) ~expect:0;
+      [%test_result: int] (iround_down_exn 1.) ~expect:1;
+      [%test_result: int] (iround_down_exn 1.99999) ~expect:1;
+      [%test_result: int] (iround_down_exn 2.) ~expect:2;
+      [%test_result: int] (iround_exn ~dir:`Zero (-.2.)) ~expect:(-2);
+      [%test_result: int] (iround_exn ~dir:`Zero (-.1.99999)) ~expect:(-1);
+      [%test_result: int] (iround_exn ~dir:`Zero (-.1.)) ~expect:(-1);
+      [%test_result: int] (iround_exn ~dir:`Zero (-.0.99999)) ~expect:0;
+      [%test_result: int] (iround_exn ~dir:`Zero 0.99999) ~expect:0;
+      [%test_result: int] (iround_exn ~dir:`Zero 1.) ~expect:1;
+      [%test_result: int] (iround_exn ~dir:`Zero 1.99999) ~expect:1;
+      [%test_result: int] (iround_exn ~dir:`Zero 2.) ~expect:2
 
     let is_64_bit_platform = of_int Int.max_value >= 2. **. 60.
 
     (* Tests for values close to [iround_lbound] and [iround_ubound]. *)
     let extremities_test ~round =
-      if is_64_bit_platform then
+      let (+) = Int.(+) in
+      let (-) = Int.(-) in
+      if is_64_bit_platform then (
         (* 64 bits *)
-        round (2.0 **. 62. -. 512.) = Some (Int.max_value - 511)
-        && round (2.0 **. 62. -. 1024.) = Some (Int.max_value - 1023)
-        && round (-. (2.0 **. 62.)) = Some Int.min_value
-        && round (-. (2.0 **. 62. -. 512.)) = Some (Int.min_value + 512)
-        && round (2.0 **. 62.) = None
-        && round (-. (2.0 **. 62. +. 1024.)) = None
-      else
+        [%test_result: int option] (round (2.0 **. 62. -. 512.)) ~expect:(Some (Int.max_value - 511));
+        [%test_result: int option] (round (2.0 **. 62. -. 1024.)) ~expect:(Some (Int.max_value - 1023));
+        [%test_result: int option] (round (-. (2.0 **. 62.))) ~expect:(Some Int.min_value);
+        [%test_result: int option] (round (-. (2.0 **. 62. -. 512.))) ~expect:(Some (Int.min_value + 512));
+        [%test_result: int option] (round (2.0 **. 62.)) ~expect:None;
+        [%test_result: int option] (round (-. (2.0 **. 62. +. 1024.))) ~expect:None)
+      else (
         let int_size_minus_one = of_int (Int.num_bits - 1) in
         (* 32 bits *)
-        round (2.0 **. int_size_minus_one -. 1.) = Some Int.max_value
-        && round (2.0 **. int_size_minus_one -. 2.) = Some (Int.max_value - 1)
-        && round (-. (2.0 **. int_size_minus_one)) = Some Int.min_value
-        && round (-. (2.0 **. int_size_minus_one -. 1.)) = Some (Int.min_value + 1)
-        && round (2.0 **. int_size_minus_one) = None
-        && round (-. (2.0 **. int_size_minus_one +. 1.)) = None
+        [%test_result: int option] (round (2.0 **. int_size_minus_one -. 1.)) ~expect:(Some Int.max_value);
+        [%test_result: int option] (round (2.0 **. int_size_minus_one -. 2.)) ~expect:(Some (Int.max_value - 1));
+        [%test_result: int option] (round (-. (2.0 **. int_size_minus_one))) ~expect:(Some Int.min_value);
+        [%test_result: int option] (round (-. (2.0 **. int_size_minus_one -. 1.))) ~expect:(Some (Int.min_value + 1));
+        [%test_result: int option] (round (2.0 **. int_size_minus_one)) ~expect:None;
+        [%test_result: int option] (round (-. (2.0 **. int_size_minus_one +. 1.))) ~expect:None)
 
-    let%test _ = extremities_test ~round:iround_down
-    let%test _ = extremities_test ~round:iround_up
-    let%test _ = extremities_test ~round:iround_nearest
-    let%test _ = extremities_test ~round:iround_towards_zero
+    let%test_unit _ = extremities_test ~round:iround_down
+    let%test_unit _ = extremities_test ~round:iround_up
+    let%test_unit _ = extremities_test ~round:iround_nearest
+    let%test_unit _ = extremities_test ~round:iround_towards_zero
 
     (* test values beyond the integers range *)
     let large_value_test x =
-      true
+      [%test_result: int option] (iround_down x) ~expect:None;
+      [%test_result: int option] (iround ~dir:`Down x) ~expect:None;
+      [%test_result: int option] (iround_up x) ~expect:None;
+      [%test_result: int option] (iround ~dir:`Up x) ~expect:None;
+      [%test_result: int option] (iround_towards_zero x) ~expect:None;
+      [%test_result: int option] (iround ~dir:`Zero x) ~expect:None;
+      [%test_result: int option] (iround_nearest x) ~expect:None;
+      [%test_result: int option] (iround ~dir:`Nearest x) ~expect:None;
 
-      && iround_down x = None
-      && iround ~dir:`Down x = None
-      && iround_up x = None
-      && iround ~dir:`Up x = None
-      && iround_towards_zero x = None
-      && iround ~dir:`Zero x = None
-      && iround_nearest x = None
-      && iround ~dir:`Nearest x = None
+      assert (Exn.does_raise (fun () -> iround_down_exn x));
+      assert (Exn.does_raise (fun () -> iround_exn ~dir:`Down x));
+      assert (Exn.does_raise (fun () -> iround_up_exn x));
+      assert (Exn.does_raise (fun () -> iround_exn ~dir:`Up x));
+      assert (Exn.does_raise (fun () -> iround_towards_zero_exn x));
+      assert (Exn.does_raise (fun () -> iround_exn ~dir:`Zero x));
+      assert (Exn.does_raise (fun () -> iround_nearest_exn x));
+      assert (Exn.does_raise (fun () -> iround_exn ~dir:`Nearest x));
 
-      && (try ignore (iround_down_exn x); false with _ -> true)
-      && (try ignore (iround_exn ~dir:`Down x); false with _ -> true)
-      && (try ignore (iround_up_exn x); false with _ -> true)
-      && (try ignore (iround_exn ~dir:`Up x); false with _ -> true)
-      && (try ignore (iround_towards_zero_exn x); false with _ -> true)
-      && (try ignore (iround_exn ~dir:`Zero x); false with _ -> true)
-      && (try ignore (iround_nearest_exn x); false with _ -> true)
-      && (try ignore (iround_exn ~dir:`Nearest x); false with _ -> true)
-
-      && round_down x = x
-      && round ~dir:`Down x = x
-      && round_up x = x
-      && round ~dir:`Up x = x
-      && round_towards_zero x = x
-      && round ~dir:`Zero x = x
-      && round_nearest x = x
-      && round ~dir:`Nearest x = x
+      [%test_result: float] (round_down x) ~expect:x;
+      [%test_result: float] (round ~dir:`Down x) ~expect:x;
+      [%test_result: float] (round_up x) ~expect:x;
+      [%test_result: float] (round ~dir:`Up x) ~expect:x;
+      [%test_result: float] (round_towards_zero x) ~expect:x;
+      [%test_result: float] (round ~dir:`Zero x) ~expect:x;
+      [%test_result: float] (round_nearest x) ~expect:x;
+      [%test_result: float] (round ~dir:`Nearest x) ~expect:x
 
     let large_numbers =
+      let (+) = Int.(+) in
+      let (-) = Int.(-) in
       List.concat (
         List.init (1024 - 64) ~f:(fun x ->
           let x = of_int (x + 64) in
@@ -694,7 +688,7 @@ let%test_module _ =
       [infinity;
        neg_infinity]
 
-    let%test _ = List.for_all large_numbers ~f:large_value_test
+    let%test_unit _ = List.iter large_numbers ~f:large_value_test
 
     let numbers_near_powers_of_two =
       List.concat (
@@ -727,6 +721,7 @@ let%test_module _ =
 
     (* code for generating random floats on which to test functions *)
     let rec absirand () =
+      let open Int.O in
       let rec aux acc cnt =
         if cnt = 0 then
           acc
@@ -761,7 +756,7 @@ let%test_module _ =
     let%test _ = List.for_all randoms ~f:iround_up_test
     let%test _ = List.for_all randoms ~f:iround_towards_zero_test
     let%test _ = List.for_all randoms ~f:round_test
-    let%test _ = special_values_test ()
+    let%test_unit _ = special_values_test ()
     let%test _ = iround_nearest_test (of_int Int.max_value)
     let%test _ = iround_nearest_test (of_int Int.min_value)
   end)
@@ -791,9 +786,12 @@ module Test_bounds (
   let%test "bigger than upper bound is not valid" =
     does_raise of_float (one_ulp `Up float_upper_bound)
 
+  (* We use [Caml.Int64.of_float] in the next two tests because [Int64.of_float] rejects
+     out-of-range inputs, whereas [Caml.Int.of_float] simply overflows (returns
+     [Int64.min_int]). *)
 
   let%test "smaller than lower bound overflows" =
-    let lower_bound = Caml.Int64.of_float float_lower_bound in
+    let lower_bound = Int64.of_float float_lower_bound in
     let lower_bound_minus_epsilon = Caml.Int64.of_float (one_ulp `Down float_lower_bound) in
     let min_value = to_int64 min_value in
     if Int.(=) num_bits 64
@@ -806,7 +804,7 @@ module Test_bounds (
     end
 
   let%test "bigger than upper bound overflows" =
-    let upper_bound = Caml.Int64.of_float float_upper_bound in
+    let upper_bound = Int64.of_float float_upper_bound in
     let upper_bound_plus_epsilon = Caml.Int64.of_float (one_ulp `Up float_upper_bound) in
     let max_value = to_int64 max_value in
     if Int.(=) num_bits 64
@@ -826,19 +824,19 @@ let%test_module "Int63_emul" = (module Test_bounds(Base.Not_exposed_properly.Int
 let%test_module "Int64"      = (module Test_bounds(Int64))
 let%test_module "Nativeint"  = (module Test_bounds(Nativeint))
 
-let%test _ = to_string 3.14                             = "3.14"
-let%test _ = to_string 3.1400000000000001               = "3.14"
-let%test _ = to_string 3.1400000000000004               = "3.1400000000000006"
-let%test _ = to_string 8.000000000000002                = "8.0000000000000018"
-let%test _ = to_string 9.992                            = "9.992"
-let%test _ = to_string (2.**.63. *. (1. +. 2.**. (-52.))) = "9.2233720368547779e+18"
-let%test _ = to_string (-3.)                            = "-3."
-let%test _ = to_string nan                              = "nan"
-let%test _ = to_string infinity                         = "inf"
-let%test _ = to_string neg_infinity                     = "-inf"
-let%test _ = to_string 3e100                            = "3e+100"
-let%test _ = to_string max_finite_value                 = "1.7976931348623157e+308"
-let%test _ = to_string min_positive_subnormal_value     = "4.94065645841247e-324"
+let%test_unit _ = [%test_result: string] (to_string 3.14)                               ~expect:"3.14"
+let%test_unit _ = [%test_result: string] (to_string 3.1400000000000001)                 ~expect:"3.14"
+let%test_unit _ = [%test_result: string] (to_string 3.1400000000000004)                 ~expect:"3.1400000000000006"
+let%test_unit _ = [%test_result: string] (to_string 8.000000000000002)                  ~expect:"8.0000000000000018"
+let%test_unit _ = [%test_result: string] (to_string 9.992)                              ~expect:"9.992"
+let%test_unit _ = [%test_result: string] (to_string (2.**.63. *. (1. +. 2.**. (-52.)))) ~expect:"9.2233720368547779e+18"
+let%test_unit _ = [%test_result: string] (to_string (-3.))                              ~expect:"-3."
+let%test_unit _ = [%test_result: string] (to_string nan)                                ~expect:"nan"
+let%test_unit _ = [%test_result: string] (to_string infinity)                           ~expect:"inf"
+let%test_unit _ = [%test_result: string] (to_string neg_infinity)                       ~expect:"-inf"
+let%test_unit _ = [%test_result: string] (to_string 3e100)                              ~expect:"3e+100"
+let%test_unit _ = [%test_result: string] (to_string max_finite_value)                   ~expect:"1.7976931348623157e+308"
+let%test_unit _ = [%test_result: string] (to_string min_positive_subnormal_value)       ~expect:"4.94065645841247e-324"
 
 let%test _ = epsilon_float = (one_ulp `Up 1.) -. 1.
 
@@ -894,13 +892,13 @@ let%test _ =
 
 (* The redefinition of [sexp_of_t] in float.ml assumes sexp conversion uses E rather than
    e. *)
-let%test "e vs E" = [%sexp (1.4e100 : t)] = Atom "1.4E+100"
+let%test_unit "e vs E" = [%test_result: Sexp.t] [%sexp (1.4e100 : t)] ~expect:(Atom "1.4E+100")
 
 let%test_module _ =
   (module struct
     let test ?delimiter ~decimals f s s_strip_zero =
       let s' = to_string_hum ?delimiter ~decimals ~strip_zero:false f in
-      if s' <> s then
+      if String.(s' <> s) then
         raise_s
           [%message
             "to_string_hum ~strip_zero:false"
@@ -910,7 +908,7 @@ let%test_module _ =
               ~expected:(s : string)
           ];
       let s_strip_zero' = to_string_hum ?delimiter ~decimals ~strip_zero:true f in
-      if s_strip_zero' <> s_strip_zero then
+      if String.(s_strip_zero' <> s_strip_zero) then
         raise_s
           [%message
             "to_string_hum ~strip_zero:true"
@@ -942,7 +940,7 @@ let%test_module _ =
         let f = Random.float 1_000_000.0 -. 500_000.0 in
         let repeatable to_str =
           let s = to_str f in
-          if (String.split s ~on:',' |> String.concat |> of_string |> to_str) <> s
+          if String.(<>) (String.split s ~on:',' |> String.concat |> of_string |> to_str) s
           then raise_s [%message "failed" (f : t)]
         in
         repeatable (to_string_hum ~decimals:3 ~strip_zero:false);
@@ -1001,17 +999,17 @@ let%expect_test "mathematical constants" =
     sqrt pi diff  : 0.00000000000000022204
     sqrt 2pi diff : 0.00000000000000044409 |}]
 
-let%test _ = is_negative Float.nan = false
-let%test _ = is_non_positive Float.nan = false
+let%test _ = not (is_negative Float.nan)
+let%test _ = not (is_non_positive Float.nan)
 let%test _ = is_non_negative (-0.)
 
 
 let%test_unit "int to float conversion consistency" =
   let test_int63 x =
-    assert (Float.(=) (Float.of_int63 x) (Float.of_int64 (Int63.to_int64 x)))
+    [%test_result: float] (Float.of_int63 x) ~expect:(Float.of_int64 (Int63.to_int64 x))
   in
   let test_int x =
-    assert (Float.(=) (Float.of_int x) (Float.of_int63 (Int63.of_int x)));
+    [%test_result: float] (Float.of_int x) ~expect:(Float.of_int63 (Int63.of_int x));
     test_int63 (Int63.of_int x)
   in
   test_int 0;

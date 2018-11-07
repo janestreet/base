@@ -489,14 +489,14 @@ let for_alli t ~f =
   for_alli_loop t ~f (length t - 1)
 
 let exists2_exn t1 t2 ~f =
-  let rec exitsts2_exn_loop t1 t2 ~f i =
+  let rec exists2_exn_loop t1 t2 ~f i =
     if i < 0
     then false
-    else f t1.(i) t2.(i) || exitsts2_exn_loop t1 t2 ~f (i - 1)
+    else f t1.(i) t2.(i) || exists2_exn_loop t1 t2 ~f (i - 1)
   in
   let len = length t1 in
   if length t2 <> len then invalid_arg "Array.exists2_exn";
-  exitsts2_exn_loop t1 t2 ~f (len - 1)
+  exists2_exn_loop t1 t2 ~f (len - 1)
 
 let for_all2_exn t1 t2 ~f =
   let rec for_all2_loop t1 t2 ~f i =

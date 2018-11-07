@@ -39,6 +39,8 @@
 
 - Added `?backtrace` argument to `Or_error.of_exn_result`.
 
+- `List.zip` now returns a `List.Or_unequal_lengths.t` instead of an `option`.
+
 ## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its

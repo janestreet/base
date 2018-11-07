@@ -13,10 +13,7 @@ module This_list : S = struct
            end))
 end
 
-module That_list : S = struct
-  include List
-  let foldi t ~init ~f = List.foldi t ~f ~init
-end
+module That_list : S = List
 
 let examples =
   [ []

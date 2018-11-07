@@ -22,7 +22,19 @@ module Or_unequal_lengths = struct
   type 'a t =
     | Ok of 'a
     | Unequal_lengths
-  [@@deriving_inline sexp_of]
+  [@@deriving_inline compare, sexp_of]
+  let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
+    fun _cmp__a ->
+    fun a__001_ ->
+    fun b__002_ ->
+      if Ppx_compare_lib.phys_equal a__001_ b__002_
+      then 0
+      else
+        (match (a__001_, b__002_) with
+         | (Ok _a__003_, Ok _b__004_) -> _cmp__a _a__003_ _b__004_
+         | (Ok _, _) -> (-1)
+         | (_, Ok _) -> 1
+         | (Unequal_lengths, Unequal_lengths) -> 0)
   let sexp_of_t : type a.
     (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t =
     fun _of_a ->
@@ -432,9 +444,11 @@ let unzip3 list =
   in
   loop list [] [] []
 
-let zip_exn l1 l2 = map2_exn ~f:(fun a b -> (a, b)) l1 l2
+let zip_exn l1 l2 =
+  check_length2_exn "zip_exn" l1 l2;
+  map2_ok ~f:(fun a b -> (a, b)) l1 l2
 
-let zip l1 l2 = try Some (zip_exn l1 l2) with _ -> None
+let zip l1 l2 = map2 ~f:(fun a b -> (a, b)) l1 l2
 
 (** Additional list operations *)
 
@@ -871,7 +885,20 @@ let split_n t_orig n =
     in
     loop n t_orig []
 
-let take t n = fst (split_n t n)
+(* copied from [split_n] to avoid allocating a tuple *)
+let take t_orig n =
+  if n <= 0 then
+    []
+  else
+    let rec loop n t accum =
+      if n = 0 then
+        rev accum
+      else
+        match t with
+        | [] -> t_orig
+        | hd :: tl -> loop (n - 1) tl (hd :: accum)
+    in
+    loop n t_orig []
 
 let rec drop t n =
   match t with
@@ -899,7 +926,14 @@ let split_while xs ~f =
   loop [] xs
 ;;
 
-let take_while t ~f = fst (split_while t ~f)
+(* copied from [split_while] to avoid allocating a tuple *)
+let take_while xs ~f =
+  let rec loop acc = function
+    | hd :: tl when f hd -> loop (hd :: acc) tl
+    | _ -> rev acc
+  in
+  loop [] xs
+;;
 
 let rec drop_while t ~f =
   match t with

@@ -30,10 +30,11 @@ module Or_unequal_lengths : sig
   type 'a t =
     | Ok of 'a
     | Unequal_lengths
-  [@@deriving_inline sexp_of]
+  [@@deriving_inline compare, sexp_of]
   include
   sig
     [@@@ocaml.warning "-32"]
+    val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
     val sexp_of_t :
       ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
   end
@@ -244,10 +245,10 @@ val unzip  : ('a * 'b     ) t -> 'a t * 'b t
 val unzip3 : ('a * 'b * 'c) t -> 'a t * 'b t * 'c t
 
 (** Transform a pair of lists into an (optional) list of pairs: [zip [a1; ...; an] [b1;
-    ...; bn]] is [[(a1,b1); ...; (an,bn)]].  Returns [None] if the two lists have
-    different lengths. *)
+    ...; bn]] is [[(a1,b1); ...; (an,bn)]].  Returns [Unequal_lengths] if the two lists
+    have different lengths. *)
 
-val zip     : 'a t -> 'b t -> ('a * 'b) t option
+val zip     : 'a t -> 'b t -> ('a * 'b) t Or_unequal_lengths.t
 val zip_exn : 'a t -> 'b t -> ('a * 'b) t
 
 (** [mapi] is just like map, but it also passes in the index of each element as the first

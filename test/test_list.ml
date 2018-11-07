@@ -265,8 +265,15 @@ let%test_unit _ =
 let%test_unit _ = [%test_result: int list * int list]            (unzip  [(1,2)  ; (4,5)  ]) ~expect:([1; 4], [2; 5]        )
 let%test_unit _ = [%test_result: int list * int list * int list] (unzip3 [(1,2,3); (4,5,6)]) ~expect:([1; 4], [2; 5], [3; 6])
 
-let%test_unit _ = [%test_result: (int * int) list option] (zip [1;2;3] [4;5;6]) ~expect:(Some [1,4;2,5;3,6])
-let%test_unit _ = [%test_result: (int * int) list option] (zip [1] [4;5;6]    ) ~expect:None
+let%test_unit _ = [%test_result: (int * int) list Or_unequal_lengths.t] (zip [1;2;3] [4;5;6]) ~expect:(Ok [1,4;2,5;3,6])
+let%test_unit _ = [%test_result: (int * int) list Or_unequal_lengths.t] (zip [1] [4;5;6]    ) ~expect:Unequal_lengths
+
+let%test_unit _ = [%test_result: (int * int) list] (zip_exn [1;2;3] [4;5;6]) ~expect:[1,4;2,5;3,6]
+
+let%expect_test _ =
+  show_raise (fun () -> zip_exn [1] [4;5;6]);
+  [%expect {| (raised (Invalid_argument "length mismatch in zip_exn: 1 <> 3 ")) |}]
+;;
 
 let%test_unit _ =
   [%test_result: (int * string) list]
@@ -471,6 +478,16 @@ let%test_unit _ = [%test_result: (int list * int list)] (split_n [1;2;3;4;5;6] 3
 let%test_unit _ = [%test_result: (int list * int list)] (split_n [1;2;3;4;5;6] 100) ~expect:([1;2;3;4;5;6],[])
 let%test_unit _ = [%test_result: (int list * int list)] (split_n [1;2;3;4;5;6] 0) ~expect:([],[1;2;3;4;5;6])
 let%test_unit _ = [%test_result: (int list * int list)] (split_n [1;2;3;4;5;6] (-5)) ~expect:([],[1;2;3;4;5;6])
+
+let%test_unit _ = [%test_result: int list] (take [1;2;3;4;5;6] 3) ~expect:[1;2;3]
+let%test_unit _ = [%test_result: int list] (take [1;2;3;4;5;6] 100) ~expect:[1;2;3;4;5;6]
+let%test_unit _ = [%test_result: int list] (take [1;2;3;4;5;6] 0) ~expect:[]
+let%test_unit _ = [%test_result: int list] (take [1;2;3;4;5;6] (-5)) ~expect:[]
+
+let%test_unit _ = [%test_result: int list] (drop [1;2;3;4;5;6] 3) ~expect:[4;5;6]
+let%test_unit _ = [%test_result: int list] (drop [1;2;3;4;5;6] 100) ~expect:[]
+let%test_unit _ = [%test_result: int list] (drop [1;2;3;4;5;6] 0) ~expect:[1;2;3;4;5;6]
+let%test_unit _ = [%test_result: int list] (drop [1;2;3;4;5;6] (-5)) ~expect:[1;2;3;4;5;6]
 
 let%test_module "{take,drop,split}_while" =
   (module struct
