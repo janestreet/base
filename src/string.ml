@@ -790,14 +790,15 @@ module Escaping = struct
       else (escape_char, escape_char) :: escapeworthy_map
     in
     let arr = Array.create ~len:256 (-1) in
-    let rec loop vals = function
+    let vals = Array.create ~len:256 false in
+    let rec loop = function
       | [] -> Ok arr
       | (c_from, c_to) :: l ->
         let k, v = match func with
           | `Escape -> Char.to_int c_from, c_to
           | `Unescape -> Char.to_int c_to, c_from
         in
-        if arr.(k) <> -1 || Set.mem vals v then
+        if arr.(k) <> -1 || vals.(Char.to_int v) then
           Or_error.error_s
             (Sexp.message "escapeworthy_map not one-to-one"
                [ "c_from", sexp_of_char c_from
@@ -806,9 +807,9 @@ module Escaping = struct
                  sexp_of_list (sexp_of_pair sexp_of_char sexp_of_char)
                    escapeworthy_map
                ])
-        else (arr.(k) <- Char.to_int v; loop (Set.add vals v) l)
+        else (arr.(k) <- Char.to_int v; vals.(Char.to_int v) <- true; loop l)
     in
-    loop Set.(empty (module Char)) escapeworthy_map
+    loop escapeworthy_map
   ;;
 
   let escape_gen ~escapeworthy_map ~escape_char =
@@ -892,8 +893,9 @@ module Escaping = struct
        escapeworthy list, so we just fix it instead of raising exception to make this
        function easier to use.  *)
     let escapeworthy_map =
-      List.map ~f:(fun c -> (c, c))
-        (Set.elements (Set.remove (Set.of_list (module Char) escapeworthy) escape_char))
+      escapeworthy
+      |> List.dedup_and_sort ~compare:Char.compare
+      |> List.map ~f:(fun c -> (c, c))
     in
     escape_gen_exn ~escapeworthy_map ~escape_char
   ;;

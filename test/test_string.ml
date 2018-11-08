@@ -487,6 +487,15 @@ let%test_module "Escaping" =
         let%test _ = random_test 1000 ~escapeworthy_map:['_','.';'%','p';'^','c'] ~escape_char:'_'
       end)
 
+    let%test_module "escape" =
+      (module struct
+        let escape = unstage (escape ~escape_char:'_' ~escapeworthy:['_'; '%'; '^'])
+        let%test _ = escape "foo" = "foo"
+        let%test _ = escape "_" = "__"
+        let%test _ = escape "foo%bar" = "foo_%bar"
+        let%test _ = escape "^foo%" = "_^foo_%"
+      end)
+
     let%test_module "unescape" =
       (module struct
         let unescape = unstage (unescape ~escape_char:'_')
