@@ -3,8 +3,7 @@ open! Import
 let min_int = Int.min_value
 let max_int = Int.max_value
 
-let raises f v =
-  try ignore (f v); false with Failure _ -> true
+let raises f v = Exn.does_raise (fun () -> f v)
 
 let%test_module "test_constants" =
   (module struct

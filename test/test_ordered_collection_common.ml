@@ -29,14 +29,13 @@ let%test_unit "fast check_pos_len_exn is correct" =
     ; -1
     ] @ n_vals
   in
-  let does_raise f = try f (); false with _ -> true in
   List.iter z_vals ~f:(fun pos ->
     List.iter z_vals ~f:(fun len ->
       List.iter n_vals ~f:(fun total_length ->
         assert
           (Bool.equal
-             (does_raise (fun () -> Private.slow_check_pos_len_exn ~pos ~len ~total_length))
-             (does_raise (fun () ->              check_pos_len_exn ~pos ~len ~total_length))))))
+             (Exn.does_raise (fun () -> Private.slow_check_pos_len_exn ~pos ~len ~total_length))
+             (Exn.does_raise (fun () ->              check_pos_len_exn ~pos ~len ~total_length))))))
 ;;
 
 let%test_unit _ =

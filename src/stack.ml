@@ -96,11 +96,14 @@ let sum      = C.sum
 let find     = C.find
 let find_map = C.find_map
 let to_list  = C.to_list
-let to_array = C.to_array
 let min_elt  = C.min_elt
 let max_elt  = C.max_elt
 let fold_result = C.fold_result
 let fold_until = C.fold_until
+
+let to_array t =
+  Array.init t.length ~f:(fun i -> Option_array.get_some_exn t.elts (t.length - i - 1))
+;;
 
 let of_list (type a) (l : a list) =
   if List.is_empty l then

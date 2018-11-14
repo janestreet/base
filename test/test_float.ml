@@ -443,11 +443,11 @@ let%test_module _ =
           ~specialized_iround ~specialized_iround_exn ~float_rounding
           ~dir ~validate =
       let result1 = iround x ~dir in
-      let result2 = try Some (iround_exn x ~dir) with _exn -> None in
+      let result2 = Option.try_with (fun () -> iround_exn x ~dir) in
       let result3 = specialized_iround x in
-      let result4 = try Some (specialized_iround_exn x) with _exn -> None in
-      let result5 = try Some (Int.of_float (float_rounding x)) with _exn -> None in
-      let result6 = try Some (Int.of_float (round ~dir x)) with _exn -> None in
+      let result4 = Option.try_with (fun () -> specialized_iround_exn x) in
+      let result5 = Option.try_with (fun () -> Int.of_float (float_rounding x)) in
+      let result6 = Option.try_with (fun () -> Int.of_float (round ~dir x)) in
       let (=) = Caml.(=) in
       if result1 = result2 && result2 = result3 && result3 = result4
          && result4 = result5 && result5 = result6 then
@@ -779,12 +779,10 @@ module Test_bounds (
   let%test_unit "lower bound is valid" = ignore (of_float float_lower_bound : t)
   let%test_unit "upper bound is valid" = ignore (of_float float_upper_bound : t)
 
-  let does_raise f x = try ignore (f x : t); false with _ -> true
-
   let%test "smaller than lower bound is not valid" =
-    does_raise of_float (one_ulp `Down float_lower_bound)
+    Exn.does_raise (fun () -> of_float (one_ulp `Down float_lower_bound))
   let%test "bigger than upper bound is not valid" =
-    does_raise of_float (one_ulp `Up float_upper_bound)
+    Exn.does_raise (fun () -> of_float (one_ulp `Up float_upper_bound))
 
   (* We use [Caml.Int64.of_float] in the next two tests because [Int64.of_float] rejects
      out-of-range inputs, whereas [Caml.Int.of_float] simply overflows (returns
@@ -872,7 +870,7 @@ let%test _ = round_nearest              (one_ulp `Up (-. (2. **. 52.))) = 1. -. 
 let%test_module _ =
   (module struct
     (* check we raise on invalid input *)
-    let must_fail f x = try ignore (f x); false with _ -> true
+    let must_fail f x = Exn.does_raise (fun () -> f x)
     let must_succeed f x = ignore (f x); true
     let%test _ = must_fail int63_round_nearest_portable_alloc_exn nan
     let%test _ = must_fail int63_round_nearest_portable_alloc_exn max_value
@@ -961,18 +959,14 @@ let%test_module _ =
 let%test_module "Hexadecimal syntax" =
   (module struct
 
-    let should_fail str =
-      try ignore(Caml.float_of_string str : float); false
-      with _ -> true
-
-    let is_4_03 = String.is_prefix ~prefix:"4.03" Caml.Sys.ocaml_version
+    let should_fail str = Exn.does_raise (fun () -> Caml.float_of_string str)
 
     let test_equal str g = Caml.float_of_string str = g
-    let%test _ = is_4_03 || should_fail "0x"
-    let%test _ = is_4_03 || should_fail "0x.p0"
-    let%test _ = test_equal  "0x0" 0.
-    let%test _ = test_equal  "0x1.b7p-1" 0.857421875
-    let%test _ = test_equal  "0x1.999999999999ap-4" 0.1
+    let%test _ = should_fail "0x"
+    let%test _ = should_fail "0x.p0"
+    let%test _ = test_equal "0x0" 0.
+    let%test _ = test_equal "0x1.b7p-1" 0.857421875
+    let%test _ = test_equal "0x1.999999999999ap-4" 0.1
 
   end)
 ;;

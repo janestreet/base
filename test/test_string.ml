@@ -399,10 +399,7 @@ let%test_module "Escaping" =
         let%test _ = escape2 "_foo%" = "_.foo_p"
 
         let checks_for_one_to_one escapeworthy_map =
-          try
-            let _escape = escape_gen_exn ~escapeworthy_map ~escape_char:'_' in
-            false
-          with _ -> true
+          Exn.does_raise (fun () -> escape_gen_exn ~escapeworthy_map ~escape_char:'_')
 
         let%test _ = checks_for_one_to_one [('%','p');('^','c');('$','c')]
         let%test _ = checks_for_one_to_one [('%','p');('^','c');('%','d')]

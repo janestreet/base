@@ -177,7 +177,7 @@ let%test_module "pow" =
     let%test _ = int64_pow 2L  10L = 1_024L
     let%test _ = int64_pow 5L  27L = 7450580596923828125L
 
-    let exception_thrown pow b e = try let _ = pow b e in false with _ -> true;;
+    let exception_thrown pow b e = Exn.does_raise (fun () -> pow b e)
 
     let%test _ = exception_thrown int_pow 10 60
     let%test _ = exception_thrown int64_pow 10L 60L
