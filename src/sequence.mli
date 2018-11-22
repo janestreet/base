@@ -305,11 +305,6 @@ val drop_while_option : 'a t -> f : ('a -> bool) -> ('a * 'a t) option
     consumed prefix, as a list, along with the unevaluated tail of [t]. *)
 val split_n : 'a t -> int -> 'a list * 'a t
 
-(** [split_n_eagerly t n] behaves as [split_n t n], but converts the prefix into a
-    sequence. *)
-val split_n_eagerly : 'a t -> int -> 'a t * 'a t
-[@@deprecated "[since 2015-11] Use {!Sequence.split_n} instead."]
-
 (** [chunks_exn t n] produces lists of elements of [t], up to [n] elements at a time. The
     last list may contain fewer than [n] elements. No list contains zero elements. If [n]
     is not positive, it raises. *)

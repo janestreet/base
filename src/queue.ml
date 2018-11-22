@@ -81,6 +81,8 @@ let set t i a =
 
 let is_empty t = t.length = 0
 
+let length { length; _ } = length
+
 let ensure_no_mutation t num_mutations =
   if t.num_mutations <> num_mutations
   then Error.raise_s
@@ -352,6 +354,7 @@ module C =
     type nonrec 'a t = 'a t
     let fold = fold
     let iter = `Custom iter
+    let length = `Custom length
     let foldi = `Custom foldi
     let iteri = `Custom iteri
   end)
@@ -495,8 +498,6 @@ let singleton x =
   enqueue t x;
   t
 ;;
-
-let length { length; _ } = length
 
 let sexp_of_t sexp_of_a t = to_list t |> List.sexp_of_t sexp_of_a
 let t_of_sexp a_of_sexp sexp = List.t_of_sexp a_of_sexp sexp |> of_list

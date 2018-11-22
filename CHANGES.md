@@ -41,6 +41,13 @@
 
 - `List.zip` now returns a `List.Or_unequal_lengths.t` instead of an `option`.
 
+- Remove functions from the `Sequence` module that were deprecated in 2015.
+
+- `Container.Make` and `Container.Make0` now require callers to either provide a
+  custom `length` function or request that one be derived from `fold`.
+  `Container.to_array`'s signature is also changed to accept `length` and `iter`
+  instead of `fold`.
+
 ## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its

@@ -390,8 +390,9 @@ module type Make_gen_arg = sig
 
   val fold : 'a t -> init:'accum -> f:('accum -> 'a elt -> 'accum) -> 'accum
 
-  (** The [iter] argument to [Container.Make] says how to implement the container's [iter]
-      function.  [`Define_using_fold] means to define [iter] via:
+  (** The [iter] argument to [Container.Make] specifies how to implement the
+      container's [iter] function.  [`Define_using_fold] means to define [iter]
+      via:
 
       {[
         iter t ~f = Container.iter ~fold t ~f
@@ -404,6 +405,22 @@ module type Make_gen_arg = sig
   val iter : [ `Define_using_fold
              | `Custom of 'a t -> f:('a elt -> unit) -> unit
              ]
+
+  (** The [length] argument to [Container.Make] specifies how to implement the
+      container's [length] function.  [`Define_using_fold] means to define
+      [length] via:
+
+      {[
+        length t ~f = Container.length ~fold t ~f
+      ]}
+
+      [`Custom] overrides the default implementation, presumably with something more
+      efficient.  Several other functions returned by [Container.Make] are defined in
+      terms of [length], so passing in a more efficient [length] will improve their
+      efficiency as well. *)
+  val length : [ `Define_using_fold
+               | `Custom of 'a t -> int
+               ]
 end
 
 module type Make_arg = Make_gen_arg with type 'a elt := 'a Monad.Ident.t
@@ -420,6 +437,9 @@ module type Make0_arg = sig
   val iter : [ `Define_using_fold
              | `Custom of t -> f:(Elt.t -> unit) -> unit
              ]
+  val length : [ `Define_using_fold
+               | `Custom of t -> int
+               ]
 end
 
 module type Container = sig
@@ -441,6 +461,7 @@ module type Container = sig
 
   type ('t, 'a, 'accum) fold = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
   type ('t, 'a) iter = 't -> f:('a -> unit) -> unit
+  type 't length = 't -> int
 
   val iter     : fold:('t, 'a, unit     ) fold -> ('t, 'a) iter
   val count    : fold:('t, 'a, int      ) fold -> 't -> f:('a -> bool) -> int
@@ -448,7 +469,6 @@ module type Container = sig
   val max_elt  : fold:('t, 'a, 'a option) fold -> 't -> compare:('a -> 'a -> int) -> 'a option
   val length   : fold:('t,  _, int      ) fold -> 't -> int
   val to_list  : fold:('t, 'a, 'a list  ) fold -> 't -> 'a list
-  val to_array : fold:('t, 'a, 'a list  ) fold -> 't -> 'a array
   val sum
     :  fold : ('t, 'a, 'sum) fold
     -> (module Summable with type t = 'sum)
@@ -469,12 +489,13 @@ module type Container = sig
     -> 't
     -> 'final
 
-  (** Generic definitions of container operations in terms of [iter]. *)
+  (** Generic definitions of container operations in terms of [iter] and [length]. *)
   val is_empty : iter:('t, 'a) iter -> 't -> bool
   val exists   : iter:('t, 'a) iter -> 't -> f:('a -> bool) -> bool
   val for_all  : iter:('t, 'a) iter -> 't -> f:('a -> bool) -> bool
   val find     : iter:('t, 'a) iter -> 't -> f:('a -> bool) -> 'a option
   val find_map : iter:('t, 'a) iter -> 't -> f:('a -> 'b option) -> 'b option
+  val to_array : length:'t length -> iter:('t, 'a) iter -> 't -> 'a array
 
   (** The idiom for using [Container.Make] is to bind the resulting module and to
       explicitly import each of the functions that one wants:

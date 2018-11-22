@@ -17,6 +17,7 @@ module C =
     type nonrec 'a t = 'a t
     let fold = fold
     let iter = `Custom iter
+    let length = `Custom length
     let foldi = `Define_using_fold
     let iteri = `Define_using_fold
   end)

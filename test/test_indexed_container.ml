@@ -8,6 +8,7 @@ module This_list : S = struct
              type 'a t = 'a list
              let fold = List.fold
              let iter = `Custom List.iter
+             let length = `Custom List.length
              let foldi = `Define_using_fold
              let iteri = `Define_using_fold
            end))

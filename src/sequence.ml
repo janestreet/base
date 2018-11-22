@@ -635,10 +635,6 @@ let split_n s n =
   match s with
   | Sequence(s, next) -> loop s n [] next
 
-let split_n_eagerly s n =
-  let pre, suf = split_n s n in
-  of_list pre, suf
-
 let chunks_exn t n =
   if n <= 0
   then raise (Invalid_argument "Sequence.chunks_exn")
