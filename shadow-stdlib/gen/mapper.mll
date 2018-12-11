@@ -58,7 +58,7 @@ let val_replacement = function
   | "( != )"              -> Repl "not (phys_equal ...)"
   | "( == )"              -> Repl "phys_equal"
   | "( ** )"              -> Repl "**."
-  | "( mod )"             -> Repl_text "Use (%), which has a sligtly different \
+  | "( mod )"             -> Repl_text "Use (%), which has slightly different \
                                         semantics, or Int.rem which is equivalent"
   | "acos"                -> Repl "Float.acos"
   | "asin"                -> Repl "Float.asin"
