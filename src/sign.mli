@@ -1,4 +1,4 @@
-(** A simple type for representing the sign of a numeric value. *)
+(** A type for representing the sign of a numeric value. *)
 
 open! Import
 

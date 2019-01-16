@@ -123,7 +123,7 @@ module Message = struct
     | sexps -> Sexp.List sexps
   ;;
 
-  (* We use [protect] to guard against exceptions raised by user-supplied functons, so
+  (* We use [protect] to guard against exceptions raised by user-supplied functions, so
      that failure to produce one part of an info doesn't interfere with other parts. *)
   let protect f =
     try f () with exn -> Could_not_construct (Exn.sexp_of_t exn)

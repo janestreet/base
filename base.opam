@@ -1,24 +1,24 @@
-opam-version: "1.2"
+opam-version: "2.0"
 maintainer: "opensource@janestreet.com"
 authors: ["Jane Street Group, LLC <opensource@janestreet.com>"]
 homepage: "https://github.com/janestreet/base"
 bug-reports: "https://github.com/janestreet/base/issues"
 dev-repo: "git+https://github.com/janestreet/base.git"
+doc: "https://ocaml.janestreet.com/ocaml-core/latest/doc/base/index.html"
 license: "MIT"
 build: [
-  ["jbuilder" "build" "-p" name "-j" jobs]
+  ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
+  "ocaml" {>= "4.04.2"}
   "sexplib0"
-  "jbuilder" {build & >= "1.0+beta18.1"}
+  "dune"     {build & >= "1.5.1"}
 ]
 depopts: [
   "base-native-int63"
 ]
-available: [ ocaml-version >= "4.04.2" ]
-descr: "
-Full standard library replacement for OCaml
-
+synopsis: "Full standard library replacement for OCaml"
+description: "
 Full standard library replacement for OCaml
 
 Base is a complete and portable alternative to the OCaml standard

@@ -56,7 +56,7 @@ module State = struct
   let default =
     (* We define Core's default random state as a copy of OCaml's default random state.
        This means that programs that use Core.Random will see the same sequence of random
-       bits as if they had used OCaml.Caml.Random.  However, because [get_state] returns a
+       bits as if they had used Caml.Random.  However, because [get_state] returns a
        copy, Core.Random and OCaml.Random are not using the same state.  If a program used
        both, each of them would go through the same sequence of random bits.  To avoid
        that, we reset OCaml's random state to a different seed, giving it a different

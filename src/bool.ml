@@ -78,8 +78,8 @@ end
    really core invariant that we never expect to break, and we should be happy for a
    program to fail immediately if this is violated. *)
 let () =
-  assert (Pervasives.(=) (to_int true ) 1 &&
-          Pervasives.(=) (to_int false) 0);
+  assert (Poly.(=) (to_int true ) 1 &&
+          Poly.(=) (to_int false) 0);
 ;;
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after

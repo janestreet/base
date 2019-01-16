@@ -763,7 +763,7 @@ let rev_filter_mapi l ~f =
 
 let filter_mapi l ~f = rev (rev_filter_mapi l ~f)
 
-let filter_opt l = filter_map l ~f:(fun x -> x)
+let filter_opt l = filter_map l ~f:Fn.id
 
 let partition3_map t ~f =
   let rec loop t fst snd trd =

@@ -28,7 +28,7 @@ module type Accessors = sig
   val filter : 'a t -> f:('a -> bool) -> 'a t
   val filter_inplace : 'a t -> f:('a -> bool) -> unit
 
-  (** [inter t1 t2] computes the set intersection of [t1] and [t2].  Runs in O(max(length
+  (** [inter t1 t2] computes the set intersection of [t1] and [t2].  Runs in O(min(length
       t1, length t2)).  Behavior is undefined if [t1] and [t2] don't have the same
       equality function. *)
   val inter : 'key t -> 'key t -> 'key t

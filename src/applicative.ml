@@ -98,7 +98,7 @@ module Make_args' (X : S2) = struct
 
   type ('f, 'r, 'e) t_ = { applyN : ('f, 'e) X.t -> ('r, 'e) X.t }
 
-  let nil = { applyN = fun x -> x }
+  let nil = { applyN = Fn.id }
 
   let cons arg t = { applyN = fun d -> t.applyN (apply d arg) }
 

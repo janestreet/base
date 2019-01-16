@@ -52,7 +52,7 @@ module Poly = struct
 
   let%test _ =
     let a = Poly.of_alist_exn [] in
-    Poly.equal Polymorphic_compare.equal a Poly.empty
+    Poly.equal Base.Poly.equal a Poly.empty
   ;;
 
   let%test _ =

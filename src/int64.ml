@@ -177,7 +177,7 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if Pervasives.( <= ) i Caml.Int64.zero then
+    if Poly.( <= ) i Caml.Int64.zero then
       raise_s (Sexp.message "[Int64.ceil_log2] got invalid input"
                  ["", sexp_of_int64 i]);
     if Caml.Int64.equal i Caml.Int64.one

@@ -43,8 +43,7 @@ module type Accessors = sig
       1-4
       5-6
       - : unit = ()
-      v}
-  *)
+      v} *)
   val iteri     : ('a, 'b) t -> f:(key:'a key -> data:'b -> unit) -> unit
 
   val existsi  : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> bool
@@ -82,8 +81,7 @@ module type Accessors = sig
       let h' = Hashtbl.map h ~f:(fun x -> x * 2) in
       Hashtbl.to_alist h';;
       - : (int * int) list = [(5, 12); (1, 8)]
-      v}
-  *)
+      v} *)
   val map : ('a, 'b) t -> f:('b -> 'c) -> ('a, 'c) t
 
   (** Like [map], but the function [f] takes both key and data as arguments. *)
@@ -100,8 +98,7 @@ module type Accessors = sig
       Hashtbl.filter_map h ~f:(fun x -> if x > 5 then Some x else None)
       |> Hashtbl.to_alist;;
       - : (int * int) list = [(5, 6)]
-      v}
-  *)
+      v} *)
   val filter_map : ('a, 'b) t -> f:('b -> 'c option) -> ('a, 'c) t
 
   (** Like [filter_map], but the function [f] takes both key and data as arguments. *)
@@ -130,17 +127,18 @@ module type Accessors = sig
   val partition_tf : ('a, 'b) t -> f:('b -> bool) -> ('a, 'b) t * ('a, 'b) t
 
   (** Like [partition_tf], but the function [f] takes both key and data as arguments. *)
-  val partitioni_tf : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> ('a, 'b) t * ('a, 'b) t
+  val partitioni_tf
+    : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> ('a, 'b) t * ('a, 'b) t
 
   (** [find_or_add t k ~default] returns the data associated with key [k] if it is in the
-      table [t], and otherwise assigns [k] the value returned by [default ()] *)
+      table [t], and otherwise assigns [k] the value returned by [default ()]. *)
   val find_or_add : ('a, 'b) t -> 'a key -> default:(unit -> 'b) -> 'b
 
   (** Like [find_or_add] but [default] takes the key as an argument. *)
   val findi_or_add : ('a, 'b) t -> 'a key -> default:('a key -> 'b) -> 'b
 
-  (** [find t k] returns [Some] (the current binding) of [k] in [t], or [None] if no
-      such binding exists *)
+  (** [find t k] returns [Some] (the current binding) of [k] in [t], or [None] if no such
+      binding exists. *)
   val find : ('a, 'b) t -> 'a key -> 'b option
 
   (** [find_exn t k] returns the current binding of [k] in [t], or raises [Caml.Not_found]
@@ -168,15 +166,14 @@ module type Accessors = sig
     -> if_not_found:('a key -> 'c)
     -> 'c
 
-  (** [find_and_remove t k] returns Some (the current binding) of k in t and removes
-      it, or None is no such binding exists *)
+  (** [find_and_remove t k] returns Some (the current binding) of k in t and removes it,
+      or None is no such binding exists. *)
   val find_and_remove : ('a, 'b) t -> 'a key -> 'b option
 
   (** Merges two hashtables.
 
-      The result of [merge f h1 h2] has as keys the set of all [k] in the
-      union of the sets of keys of [h1] and [h2] for which [d(k)] is not
-      None, where:
+      The result of [merge f h1 h2] has as keys the set of all [k] in the union of the
+      sets of keys of [h1] and [h2] for which [d(k)] is not None, where:
 
       d(k) =
       - [f ~key:k (Some d1) None]
@@ -188,7 +185,7 @@ module type Accessors = sig
       - [f ~key:k (Some d1) (Some d2)]
         otherwise, where [k] in [h1] maps to [d1] and [k] in [h2] maps to [d2].
 
-      Each key [k] is mapped to a single piece of data x, where [d(k)] = Some x.
+      Each key [k] is mapped to a single piece of data [x], where [d(k) = Some x].
 
       Example:
 
@@ -202,8 +199,7 @@ module type Accessors = sig
       ) |> Hashtbl.to_alist;;
       - : (int * [> `Both of int * int | `Left of int | `Right of int ]) list =
       [(2, `Left 3232); (1, `Both (5, 3))]
-      v}
-  *)
+      v} *)
   val merge
     :  ('k, 'a) t
     -> ('k, 'b) t
@@ -231,7 +227,8 @@ module type Accessors = sig
   val filter_inplace      : ( _, 'b) t -> f:('b -> bool) -> unit
   val filteri_inplace     : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> unit
 
-  (** [map_inplace t ~f] applies [f] to all elements in [t], transforming them in place. *)
+  (** [map_inplace t ~f] applies [f] to all elements in [t], transforming them in
+      place. *)
   val map_inplace  : (_,  'b) t -> f:(                   'b -> 'b) -> unit
   val mapi_inplace : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b) -> unit
 
@@ -272,7 +269,7 @@ module type Multi = sig
   val remove_multi : ('a, _ list) t -> 'a key -> unit
 
   (** [find_multi t key] returns the empty list if [key] is not present in the table,
-      returns [t]'s values for [key] otherwise *)
+      returns [t]'s values for [key] otherwise. *)
   val find_multi : ('a, 'b list) t -> 'a key -> 'b list
 end
 
@@ -310,16 +307,17 @@ module type Creators_generic = sig
           | `Duplicate_keys of 'a key list
           ]) create_options
 
-  val of_alist_or_error : ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t Or_error.t) create_options
+  val of_alist_or_error
+    : ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t Or_error.t) create_options
 
   val of_alist_exn : ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t) create_options
 
-  val of_alist_multi : ('a key, 'b list, ('a key * 'b) list -> ('a, 'b list) t) create_options
+  val of_alist_multi
+    : ('a key, 'b list, ('a key * 'b) list -> ('a, 'b list) t) create_options
 
 
   (** {[ create_mapped get_key get_data [x1,...,xn]
-         = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn]
-     ]} *)
+         = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn] ]} *)
   val create_mapped
     : ('a key,
        'b,
@@ -376,7 +374,6 @@ module type Creators = sig
       {v
         Hashtbl.create (module Int);;
         - : (int, '_a) Hashtbl.t = <abstr>;;
-
       v} *)
   val create
     :  ?growth_allowed:bool (** defaults to [true] *)
@@ -389,8 +386,7 @@ module type Creators = sig
       {v
          Hashtbl.of_alist (module Int) [(3, "something"); (2, "whatever")]
          - : [ `Duplicate_key of int | `Ok of (int, string) Hashtbl.t ] = `Ok <abstr>
-      v}
-  *)
+      v} *)
   val of_alist
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
@@ -411,8 +407,7 @@ module type Creators = sig
 
         Hashtbl.of_alist_report_all_dups (module Int) [(1, "foo"); (1, "bar"); (2, "foo"); (2, "bar")];;
         - : [ `Duplicate_keys of int list | `Ok of (int, string) Hashtbl.t ] = `Duplicate_keys [1; 2]
-      v}
-  *)
+      v} *)
   val of_alist_report_all_dups
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
@@ -479,8 +474,7 @@ module type Creators = sig
         in
         Hashtbl.find_exn h 1;;
         - : int = 2
-      v}
-  *)
+      v} *)
   val create_mapped
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
@@ -534,8 +528,7 @@ module type Creators = sig
             [ 1; 2; 3; 4]
          |> Hashtbl.to_alist;;
          - : (int * int) list = [(2, 4); (1, 6); (0, 1)]
-       v}
-  *)
+       v} *)
   val group
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
@@ -718,8 +711,7 @@ module type Hashtbl = sig
       [(2, `Left 3232); (1, `Both (5, 3))]
       v}
 
-      {1 Interface}
-  *)
+      {1 Interface} *)
 
   include S_without_submodules (** @inline *)
 

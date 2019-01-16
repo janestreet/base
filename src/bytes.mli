@@ -51,7 +51,7 @@ val copy : t -> t
     index [i] in the sequence being initialized with the result of [f i]. *)
 val init : int -> f:(int -> char) -> t
 
-(** [of_char_list l] returns a newly-alloated byte sequence where each byte in
+(** [of_char_list l] returns a newly-allocated byte sequence where each byte in
     the sequence corresponds to the byte in [l] at the same index. *)
 val of_char_list : char list -> t
 

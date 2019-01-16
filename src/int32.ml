@@ -64,7 +64,7 @@ include Comparable.Validate_with_zero (struct
   end)
 
 module Infix_compare = struct
-  open Polymorphic_compare
+  open Poly
 
   let ( >= ) (x : t) y = x >= y
   let ( <= ) (x : t) y = x <= y

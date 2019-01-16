@@ -1,7 +1,7 @@
 let%test_module "overflow_bounds" =
   (module struct
     module Pow_overflow_bounds = Base.Not_exposed_properly.Pow_overflow_bounds
-    let%test _ = Pow_overflow_bounds.overflow_bound_max_int_value = Pervasives.max_int
+    let%test _ = Pow_overflow_bounds.overflow_bound_max_int_value = Caml.max_int
     let%test _ = Pow_overflow_bounds.overflow_bound_max_int64_value = Int64.max_int
 
     module Big_int = struct
@@ -32,7 +32,7 @@ let%test_module "overflow_bounds" =
     ;;
 
     let%test_unit _ = test_overflow_table Pow_overflow_bounds.int_positive_overflow_bounds
-                        Big_int.big_int_of_int Pervasives.max_int
+                        Big_int.big_int_of_int Caml.max_int
 
     let%test_unit _ = test_overflow_table Pow_overflow_bounds.int64_positive_overflow_bounds
                         Big_int.big_int_of_int64 Int64.max_int

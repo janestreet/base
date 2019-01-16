@@ -2,7 +2,7 @@ open! Import
 
 let const c _ = c
 
-external ignore : _ -> unit = "%ignore" (* this has the same behavior as [Pervasives.ignore] *)
+external ignore : _ -> unit = "%ignore" (* this has the same behavior as [Caml.ignore] *)
 
 let non f x = not (f x)
 

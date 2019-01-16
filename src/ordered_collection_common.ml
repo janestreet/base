@@ -7,6 +7,8 @@ let [@inline never] slow_check_pos_len_exn ~pos ~len ~total_length =
   then invalid_argf "Negative position: %d" pos ();
   if len < 0
   then invalid_argf "Negative length: %d" len ();
+  (* We use [pos > total_length - len] rather than [pos + len > total_length] to avoid the
+     possibility of overflow. *)
   if pos > total_length - len
   then invalid_argf "pos + len past end: %d + %d > %d" pos len total_length ()
 ;;

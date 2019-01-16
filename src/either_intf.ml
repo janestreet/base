@@ -89,6 +89,8 @@ module type Either = sig
   val first     : 'f -> ('f, _) t
   val second    : 's -> (_, 's) t
 
+  (**/**)
+
   module Export : sig
     type ('f, 's) _either
       = ('f, 's) t

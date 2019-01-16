@@ -1,4 +1,4 @@
-(** This module is deprecated for external use.  Users should replace occurences of
+(** This module is deprecated for external use.  Users should replace occurrences of
     [Obj_array.t] in their code with [Obj.t Uniform_array.t].
 
     This module is here for the implementing [Uniform_array] internally, and exposed

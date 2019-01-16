@@ -415,7 +415,7 @@ let compare_tests =
 (* this test has to use base OCaml library functions to avoid circular dependencies *)
 let%test _ =
   List.for_all
-    ~f:(fun b -> b)
+    ~f:Fn.id
     (List.map
        ~f:(fun (l1, l2, expected_res) ->
          compare Int.compare (of_list l1) (of_list l2) = expected_res)

@@ -36,7 +36,7 @@ let to_float x = x
 let of_float x = x
 
 let of_string s =
-  try Pervasives.float_of_string s with
+  try Caml.float_of_string s with
   | _ -> invalid_argf "Float.of_string %s" s ()
 ;;
 
@@ -171,15 +171,15 @@ let to_string x =
       format_float "%.17g" x)
 ;;
 
-let nan = Pervasives.nan
+let nan = Caml.nan
 
-let infinity = Pervasives.infinity
-let neg_infinity = Pervasives.neg_infinity
+let infinity = Caml.infinity
+let neg_infinity = Caml.neg_infinity
 
 let max_value = infinity
 let min_value = neg_infinity
 
-let max_finite_value = Pervasives.max_float
+let max_finite_value = Caml.max_float
 
 let min_positive_subnormal_value = 2. ** -1074.
 let min_positive_normal_value = 2. ** -1022.
@@ -196,7 +196,7 @@ let euler = 0x0.93C467E37DB0C7A4D1BE3F810152CB
 (* The bits of INRIA's [Pervasives] that we just want to expose in
    [Float]. Most are already deprecated in [Pervasives], and
    eventually all of them should be. *)
-include (Pervasives : sig
+include (Caml : sig
            external frexp : float -> float * int = "caml_frexp_float"
            external ldexp : (float [@unboxed]) -> (int [@untagged]) -> (float [@unboxed]) = "caml_ldexp_float" "caml_ldexp_float_unboxed" [@@noalloc]
            external log10 : float -> float = "caml_log10_float" "log10"
@@ -241,7 +241,7 @@ include (Pervasives : sig
 let frexp = frexp
 let ldexp = ldexp
 
-let epsilon_float = Pervasives.epsilon_float
+let epsilon_float = Caml.epsilon_float
 
 let of_int = Int.to_float
 let to_int = Int.of_float
@@ -464,9 +464,9 @@ let iround ?(dir=`Nearest) t =
   with _ -> None
 
 let is_inf x =
-  match Pervasives.classify_float x with
-  | Pervasives.FP_infinite -> true
-  | _                      -> false
+  match Caml.classify_float x with
+  | FP_infinite -> true
+  | _           -> false
 
 let min_inan (x : t) y =
   if is_nan y then x
@@ -481,7 +481,7 @@ let max_inan (x : t) y =
 let add = (+.)
 let sub = (-.)
 let neg = (~-.)
-let abs = Pervasives.abs_float
+let abs = Caml.abs_float
 let scale = ( *. )
 
 let square x = x *. x
@@ -661,13 +661,12 @@ end
 
 let classify t =
   let module C = Class in
-  let module P = Pervasives in
-  match P.classify_float t with
-  | P.FP_normal    -> C.Normal
-  | P.FP_subnormal -> C.Subnormal
-  | P.FP_zero      -> C.Zero
-  | P.FP_infinite  -> C.Infinite
-  | P.FP_nan       -> C.Nan
+  match Caml.classify_float t with
+  | FP_normal    -> C.Normal
+  | FP_subnormal -> C.Subnormal
+  | FP_zero      -> C.Zero
+  | FP_infinite  -> C.Infinite
+  | FP_nan       -> C.Nan
 ;;
 
 let is_finite t =
@@ -956,7 +955,7 @@ let sign_or_nan t : Sign_or_nan.t =
 
 let ieee_negative t =
   let bits = Caml.Int64.bits_of_float t in
-  Pervasives.(bits < Caml.Int64.zero)
+  Poly.(bits < Caml.Int64.zero)
 
 let exponent_bits = 11
 let mantissa_bits = 52

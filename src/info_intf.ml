@@ -28,7 +28,7 @@
         [%sexp_of: float * [`Max of float]]
     ]}
 
-    Note that an [Info.t] can be created from any arbritrary sexp with [Info.t_of_sexp].
+    Note that an [Info.t] can be created from any arbitrary sexp with [Info.t_of_sexp].
 *)
 
 open! Import

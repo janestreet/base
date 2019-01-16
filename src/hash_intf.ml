@@ -175,7 +175,7 @@ module type Hash = sig
         state is bigger than an OCaml immediate value, one must either manage allocation of
         such state explicitly, or paying the cost of allocation each time a hash is computed.
         While being a supposedly good hash function (with good hash quality), this quality was
-        not translated in measurable improvemenets in our macro benchmarks. (Also, based on
+        not translated in measurable improvements in our macro benchmarks. (Also, based on
         the data available at the time of writing, it's unclear that other hash algorithms in
         this class would be more than marginally faster.)
 

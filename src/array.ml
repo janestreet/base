@@ -66,11 +66,14 @@ module Sort = struct
   (* http://en.wikipedia.org/wiki/Insertion_sort *)
   module Insertion_sort : Sort = struct
     let sort arr ~compare ~left ~right =
-      let insert pos v =
+      (* loop invariant:
+         [arr] is sorted from [left] to [pos - 1], inclusive *)
+      for pos = left + 1 to right do
         (* loop invariants:
            1.  the subarray arr[left .. i-1] is sorted
            2.  the subarray arr[i+1 .. pos] is sorted and contains only elements > v
            3.  arr[i] may be thought of as containing v *)
+        let v = get arr pos in
         let rec loop i =
           let i_next = i - 1 in
           if i_next >= left && compare (get arr i_next) v > 0 then begin
@@ -81,11 +84,6 @@ module Sort = struct
         in
         let final_pos = loop pos in
         set arr final_pos v
-      in
-      (* loop invariant:
-         arr is sorted from left to i-1, inclusive *)
-      for i = left + 1 to right do
-        insert i (get arr i)
       done
     ;;
   end
