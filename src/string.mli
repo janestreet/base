@@ -56,7 +56,7 @@ val fill : bytes -> pos:int -> len:int -> char -> unit [@@deprecated "[since 201
     have this problem -- it allocates the result buffer only once. *)
 val ( ^ ) : t -> t -> t
 
-(** Concatanates all strings in the list using separator [sep] (with a default separator
+(** Concatenates all strings in the list using separator [sep] (with a default separator
     [""]). *)
 val concat : ?sep:t -> t list -> t
 
@@ -329,8 +329,8 @@ val of_char_list : char list -> t
     using Pcre. Benchmark code can be found in core/benchmarks/string_escaping.ml. *)
 module Escaping : sig
   (** [escape_gen_exn escapeworthy_map escape_char] returns a function that will escape a
-      string [s] as follows: if [(c1,c2)] is in [escapeworthy_map], then all occurences of
-      [c1] are replaced by [escape_char] concatenated to [c2].
+      string [s] as follows: if [(c1,c2)] is in [escapeworthy_map], then all occurrences
+      of [c1] are replaced by [escape_char] concatenated to [c2].
 
       Raises an exception if [escapeworthy_map] is not one-to-one.  If [escape_char] is
       not in [escapeworthy_map], then it will be escaped to itself.*)

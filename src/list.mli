@@ -141,7 +141,7 @@ val split_n : 'a t -> int -> 'a t * 'a t
 (** Sort a list in increasing order according to a comparison function.  The comparison
     function must return 0 if its arguments compare as equal, a positive integer if the
     first is greater, and a negative integer if the first is smaller (see [Array.sort] for
-    a complete specification).  For example, {!Pervasives.compare} is a suitable
+    a complete specification).  For example, {!Poly.compare} is a suitable
     comparison function.
 
     The current implementation uses Merge Sort. It runs in linear heap space and

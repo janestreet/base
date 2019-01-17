@@ -124,9 +124,9 @@ val kbprintf : (Caml.Buffer.t -> 'a) -> Caml.Buffer.t -> ('r, Caml.Buffer.t, uni
     in a useful way) so they serve as an effective signpost for
     "end of formatting arguments". *)
 
+
 (** Raises [Failure]. *)
 val failwithf : ('r, unit, string, unit -> _) format4 -> 'r
 
 (** Raises [Invalid_arg]. *)
 val invalid_argf : ('r, unit, string, unit -> _) format4 -> 'r
-

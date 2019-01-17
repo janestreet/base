@@ -7,12 +7,12 @@ external ( && ) : bool -> bool -> bool = "%sequand"
 
 let compare_abstract ~type_name _ _ =
   Printf.ksprintf failwith
-    "Compare called on the type %s, which is abtract in an implementation."
+    "Compare called on the type %s, which is abstract in an implementation."
     type_name
 
 let equal_abstract ~type_name _ _ =
   Printf.ksprintf failwith
-    "Equal called on the type %s, which is abtract in an implementation."
+    "Equal called on the type %s, which is abstract in an implementation."
     type_name
 
 type 'a compare = 'a -> 'a -> int

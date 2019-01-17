@@ -91,7 +91,7 @@
     and to maintain it on an ongoing basis. See `bench/bench_int.ml` for
     examples.
 
-  - [ ] Optimize `Lazy.compare` by performing a `phys_equal` check before
+  - [X] Optimize `Lazy.compare` by performing a `phys_equal` check before
     forcing the lazy value. Note that this will also change the semantics of
     `compare` and should be documented and rolled out with care.
 

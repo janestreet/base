@@ -144,7 +144,7 @@ module Tree0 = struct
           match compare_elt array.(i) array.(i+1) with
           | 0 -> r.return (Or_error.error_string "of_sorted_array: duplicated elements")
           | i ->
-            if Pervasives.(<>) (i < 0) increasing then
+            if Poly.(<>) (i < 0) increasing then
               r.return (Or_error.error_string "of_sorted_array: elements are not ordered")
         done;
         Result.Ok (of_sorted_array_unchecked array ~compare_elt)
@@ -395,7 +395,7 @@ module Tree0 = struct
       | Leaf _ -> if i = 0 then Empty else raise Same
       | Node (l, v, r, _, _) ->
         let l_size = length l in
-        let c = Pervasives.compare i l_size in
+        let c = Poly.compare i l_size in
         if c = 0 then
           merge l r
         else if c < 0 then
@@ -569,7 +569,7 @@ module Tree0 = struct
           let compare_result = compare_elt a1 a2 in
           if compare_result = 0 then begin
             let next_state =
-              if Pervasives.(==) tree1 tree2
+              if phys_equal tree1 tree2
               then (enum1, enum2)
               else (cons tree1 enum1, cons tree2 enum2)
             in
@@ -876,7 +876,7 @@ module Tree0 = struct
       if i >= s then None
       else begin
         let l_size = length l in
-        let c = Pervasives.compare i l_size in
+        let c = Poly.compare i l_size in
         if c < 0 then nth l i
         else if c = 0 then Some v
         else nth r (i - l_size - 1)
@@ -929,10 +929,9 @@ module Tree0 = struct
       then Ok ()
       else begin
         let invalid_elements_sexp = sexp_of_t sexp_of_elt invalid_elements in
-        Or_error.error_s (List [
-          Atom (subset.name ^ " is not a subset of " ^ superset.name);
-          List [Atom "invalid_elements"; invalid_elements_sexp]
-        ])
+        Or_error.error_s (
+          Sexp.message (subset.name ^ " is not a subset of " ^ superset.name)
+            [ "invalid_elements", invalid_elements_sexp ])
       end
 
     let equal s1 s2 ~sexp_of_elt ~compare_elt =

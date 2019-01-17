@@ -64,7 +64,7 @@ module Poly = struct
   type 'a t = 'a
   include Make1 (struct
       type 'a t = 'a
-      let compare = Pervasives.compare
+      let compare = Poly.compare
       let sexp_of_t _ = Sexp.Atom "_"
     end)
 end

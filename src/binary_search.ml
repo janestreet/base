@@ -4,7 +4,7 @@ open! Import
    satisfying a predicate, assuming that the predicate is increasing on
    the container, meaning that, if the container is [u1...un], there exists a
    k such that p(u1)=....=p(uk) = false and p(uk+1)=....=p(un)= true.
-   If this k = 1 (resp n), find_last_not_satisfaying (resp find_first_satisfying)
+   If this k = 1 (resp n), find_last_not_satisfying (resp find_first_satisfying)
    will return None. *)
 
 let rec linear_search_first_satisfying t ~get ~lo ~hi ~pred =

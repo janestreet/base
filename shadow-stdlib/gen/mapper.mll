@@ -15,7 +15,7 @@ let deprecated_msg what =
   sprintf
     "[@@deprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
-     Refering to the stdlib directly is discouraged by Base. You should either\n\
+     Referring to the stdlib directly is discouraged by Base. You should either\n\
      use the equivalent functionality offered by Base, or if you really want to\n\
      refer to the stdlib, use Caml.%s instead\"]"
     what
@@ -58,7 +58,7 @@ let val_replacement = function
   | "( != )"              -> Repl "not (phys_equal ...)"
   | "( == )"              -> Repl "phys_equal"
   | "( ** )"              -> Repl "**."
-  | "( mod )"             -> Repl_text "Use (%), which has a sligtly different \
+  | "( mod )"             -> Repl_text "Use (%), which has slightly different \
                                         semantics, or Int.rem which is equivalent"
   | "acos"                -> Repl "Float.acos"
   | "asin"                -> Repl "Float.asin"

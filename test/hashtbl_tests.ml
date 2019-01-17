@@ -15,7 +15,7 @@ module type Hashtbl_for_testing = sig
 end
 
 module Make (Hashtbl : Hashtbl_for_testing) = struct
-  open Polymorphic_compare
+  open Poly
 
   let test_data = [("a",1);("b",2);("c",3)]
 

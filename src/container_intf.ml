@@ -61,7 +61,32 @@ module type S0 = sig
   (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
       returns [Stop _] the computation ceases and results in that value. If [f] returns
       [Continue _], the fold will proceed. If [f] never returns [Stop _], the final result
-      is computed by [finish]. *)
+      is computed by [finish].
+
+      Example:
+
+      {[
+        type maybe_negative =
+          | Found_negative of int
+          | All_nonnegative of { sum : int }
+
+        (** [first_neg_or_sum list] returns the first negative number in [list], if any,
+            otherwise returns the sum of the list. *)
+        let first_neg_or_sum =
+          List.fold_until ~init:0
+            ~f:(fun sum x ->
+              if x < 0
+              then Stop (Found_negative x)
+              else Continue (sum + x))
+            ~finish:(fun sum -> All_nonnegative { sum })
+        ;;
+
+        let x = first_neg_or_sum [1; 2; 3; 4; 5]
+        val x : maybe_negative = All_nonnegative {sum = 15}
+
+        let y = first_neg_or_sum [1; 2; -3; 4; 5]
+        val y : maybe_negative = Found_negative -3
+      ]} *)
   val fold_until
     :  t
     -> init:'accum
@@ -132,7 +157,32 @@ module type S0_phantom = sig
   (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
       returns [Stop _] the computation ceases and results in that value. If [f] returns
       [Continue _], the fold will proceed. If [f] never returns [Stop _], the final result
-      is computed by [finish]. *)
+      is computed by [finish].
+
+      Example:
+
+      {[
+        type maybe_negative =
+          | Found_negative of int
+          | All_nonnegative of { sum : int }
+
+        (** [first_neg_or_sum list] returns the first negative number in [list], if any,
+            otherwise returns the sum of the list. *)
+        let first_neg_or_sum =
+          List.fold_until ~init:0
+            ~f:(fun sum x ->
+              if x < 0
+              then Stop (Found_negative x)
+              else Continue (sum + x))
+            ~finish:(fun sum -> All_nonnegative { sum })
+        ;;
+
+        let x = first_neg_or_sum [1; 2; 3; 4; 5]
+        val x : maybe_negative = All_nonnegative {sum = 15}
+
+        let y = first_neg_or_sum [1; 2; -3; 4; 5]
+        val y : maybe_negative = Found_negative -3
+      ]} *)
   val fold_until
     :  _ t
     -> init:'accum
@@ -203,7 +253,32 @@ module type S1 = sig
   (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
       returns [Stop _] the computation ceases and results in that value. If [f] returns
       [Continue _], the fold will proceed. If [f] never returns [Stop _], the final result
-      is computed by [finish]. *)
+      is computed by [finish].
+
+      Example:
+
+      {[
+        type maybe_negative =
+          | Found_negative of int
+          | All_nonnegative of { sum : int }
+
+        (** [first_neg_or_sum list] returns the first negative number in [list], if any,
+            otherwise returns the sum of the list. *)
+        let first_neg_or_sum =
+          List.fold_until ~init:0
+            ~f:(fun sum x ->
+              if x < 0
+              then Stop (Found_negative x)
+              else Continue (sum + x))
+            ~finish:(fun sum -> All_nonnegative { sum })
+        ;;
+
+        let x = first_neg_or_sum [1; 2; 3; 4; 5]
+        val x : maybe_negative = All_nonnegative {sum = 15}
+
+        let y = first_neg_or_sum [1; 2; -3; 4; 5]
+        val y : maybe_negative = Found_negative -3
+      ]} *)
   val fold_until
     :  'a t
     -> init:'accum
@@ -271,7 +346,32 @@ module type S1_phantom_invariant = sig
   (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
       returns [Stop _] the computation ceases and results in that value. If [f] returns
       [Continue _], the fold will proceed. If [f] never returns [Stop _], the final result
-      is computed by [finish]. *)
+      is computed by [finish].
+
+      Example:
+
+      {[
+        type maybe_negative =
+          | Found_negative of int
+          | All_nonnegative of { sum : int }
+
+        (** [first_neg_or_sum list] returns the first negative number in [list], if any,
+            otherwise returns the sum of the list. *)
+        let first_neg_or_sum =
+          List.fold_until ~init:0
+            ~f:(fun sum x ->
+              if x < 0
+              then Stop (Found_negative x)
+              else Continue (sum + x))
+            ~finish:(fun sum -> All_nonnegative { sum })
+        ;;
+
+        let x = first_neg_or_sum [1; 2; 3; 4; 5]
+        val x : maybe_negative = All_nonnegative {sum = 15}
+
+        let y = first_neg_or_sum [1; 2; -3; 4; 5]
+        val y : maybe_negative = Found_negative -3
+      ]} *)
   val fold_until
     :  ('a, _) t
     -> init:'accum

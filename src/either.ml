@@ -229,7 +229,7 @@ module Make_focused (M : sig
   let to_option t = either t ~return:Option.some ~other:(fun _ -> None)
   ;;
 
-  let value t ~default = either t ~return:(fun x -> x) ~other:(fun _ -> default)
+  let value t ~default = either t ~return:Fn.id ~other:(fun _ -> default)
   ;;
 
   let with_return f =

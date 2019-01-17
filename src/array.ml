@@ -37,7 +37,8 @@ let sexp_of_t :
 
    See the following for more information:
    - "Dual-Pivot Quicksort" by Vladimir Yaroslavskiy.
-     Available at http://iaroslavski.narod.ru/quicksort/DualPivotQuicksort.pdf
+     Available at
+     http://www.kriche.com.ar/root/programming/spaceTimeComplexity/DualPivotQuicksort.pdf
    - "Quicksort is Optimal" by Sedgewick and Bentley.
      Slides at http://www.cs.princeton.edu/~rs/talks/QuicksortIsOptimal.pdf
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
@@ -66,26 +67,27 @@ module Sort = struct
   (* http://en.wikipedia.org/wiki/Insertion_sort *)
   module Insertion_sort : Sort = struct
     let sort arr ~compare ~left ~right =
-      let insert pos v =
+      (* loop invariant:
+         [arr] is sorted from [left] to [pos - 1], inclusive *)
+      for pos = left + 1 to right do
         (* loop invariants:
            1.  the subarray arr[left .. i-1] is sorted
            2.  the subarray arr[i+1 .. pos] is sorted and contains only elements > v
-           3.  arr[i] may be thought of as containing v *)
-        let rec loop i =
+           3.  arr[i] may be thought of as containing v
+
+           Note that this does not allocate a closure, but is left in the for
+           loop for the readability of the documentation. *)
+        let rec loop arr ~left ~compare i v =
           let i_next = i - 1 in
           if i_next >= left && compare (get arr i_next) v > 0 then begin
             set arr i (get arr i_next);
-            loop i_next
+            loop arr ~left ~compare i_next v
           end else
             i
         in
-        let final_pos = loop pos in
+        let v = get arr pos in
+        let final_pos = loop arr ~left ~compare pos v in
         set arr final_pos v
-      in
-      (* loop invariant:
-         arr is sorted from left to i-1, inclusive *)
-      for i = left + 1 to right do
-        insert i (get arr i)
       done
     ;;
   end

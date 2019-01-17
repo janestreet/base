@@ -82,6 +82,19 @@ let%test_module "Sort" =
     let%test_module _ = (module Test (Insertion_sort))
     let%test_module _ = (module Test (Heap_sort))
     let%test_module _ = (module Test (Intro_sort))
+
+    let%expect_test "Array.sort [||] only allocates when computing bounds" =
+      require_allocation_does_not_exceed (Minor_words 3) [%here]
+        (fun () -> Array.sort ~compare:Int.compare [||]);
+      [%expect {||}]
+    ;;
+
+    let%expect_test "Array.sort [| 5; 2; 3; 4; 1 |] only allocates when computing bounds" =
+      let arr = [| 5; 2; 3; 4; 1 |] in
+      require_allocation_does_not_exceed (Minor_words 3) [%here]
+        (fun () -> Array.sort ~compare:Int.compare arr);
+      [%expect {||}]
+    ;;
   end)
 
 let%test _ = is_sorted [||] ~compare:[%compare: int]

@@ -119,7 +119,7 @@ end
 (* This is copied/adapted from 'blit.ml'.
    [sub], [subo] could be implemented using [Blit.Make(Bytes)] plus unsafe casts to/from
    string but were inlined here to avoid using [Bytes.unsafe_of_string] as much as possible.
-   Also note that [blit] and [blito] will be deprected and removed in the future.
+   Also note that [blit] and [blito] will be deprecated and removed in the future.
 *)
 let sub src ~pos ~len =
   if pos = 0 && len = String.length src
@@ -355,9 +355,8 @@ let is_substring t ~substring =
   Option.is_some (substr_index t ~pattern:substring)
 ;;
 
-let id x = x
-let of_string = id
-let to_string = id
+let of_string = Fn.id
+let to_string = Fn.id
 
 let init n ~f =
   if n < 0 then invalid_argf "String.init %d" n ();
@@ -468,7 +467,7 @@ let split_lines =
         if Char.( <> ) t.[!pos] '\n'
         then decr pos
         else
-          (* Becuase [pos < eol], we know that [start <= eol]. *)
+          (* Because [pos < eol], we know that [start <= eol]. *)
           let start = !pos + 1 in
           ac := sub t ~pos:start ~len:(!eol - start) :: !ac;
           back_up_at_newline ~t ~pos ~eol
@@ -476,7 +475,6 @@ let split_lines =
       sub t ~pos:0 ~len:!eol :: !ac
 ;;
 
-(* [is_suffix s ~suff] returns [true] if the string [s] ends with the suffix [suff] *)
 let is_suffix s ~suffix = is_suffix_gen s ~suffix ~char_equal:Char.equal
 let is_prefix s ~prefix = is_prefix_gen s ~prefix ~char_equal:Char.equal
 

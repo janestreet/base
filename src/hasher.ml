@@ -33,17 +33,19 @@ module type S = sig
       violating the requirement. This creates large families of collisions: all of the
       following collections would hash the same:
 
+      {v
       [[]; [1;2;3]]
       [[1]; [2;3]]
       [[1; 2]; [3]]
       [[1; 2; 3]; []]
       [[1]; [2]; []; [3];]
       ...
+      v}
 
       A good way to avoid this is to mix in the size of the collection to the beginning
       ([fold ~init:(hash_fold_int state length) ~f:hash_fold_elem]). The default in our
       libraries is to mix the length of the structure before folding. To prevent the
-      afforementioned collisions, one should respect this ordering.
+      aforementioned collisions, one should respect this ordering.
   *)
   val hash_fold_t : Hash.state -> t -> Hash.state
 end

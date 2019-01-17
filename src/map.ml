@@ -137,7 +137,7 @@ module Tree0 = struct
           match compare_key (fst array.(i)) (fst array.(i+1)) with
           | 0 -> r.return (Or_error.error_string "of_sorted_array: duplicated elements")
           | i ->
-            if Pervasives.(<>) (i < 0) increasing then
+            if Poly.(<>) (i < 0) increasing then
               r.return (Or_error.error_string "of_sorted_array: elements are not ordered")
         done;
         Result.Ok (of_sorted_array_unchecked array ~compare_key)
@@ -796,7 +796,7 @@ module Tree0 = struct
           if c <> 0 then c else
             let c = compare_data d1 d2 in
             if c <> 0 then c else
-            if Pervasives.(==) r1 r2
+            if phys_equal r1 r2
             then loop e1 e2
             else loop (cons r1 e1) (cons r2 e2)
       in
@@ -811,7 +811,7 @@ module Tree0 = struct
         | (More (v1, d1, r1, e1), More (v2, d2, r2, e2)) ->
           compare_key v1 v2 = 0
           && data_equal d1 d2
-          && (if Pervasives.(==) r1 r2
+          && (if phys_equal r1 r2
               then loop e1 e2
               else loop (cons r1 e1) (cons r2 e2))
       in
@@ -862,7 +862,7 @@ module Tree0 = struct
           let compare_result = compare_key k1 k2 in
           if compare_result = 0 then begin
             let next_state =
-              if Pervasives.(==) tree1 tree2
+              if phys_equal tree1 tree2
               then (enum1, enum2)
               else (cons tree1 enum1, cons tree2 enum2)
             in

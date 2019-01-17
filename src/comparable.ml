@@ -83,9 +83,9 @@ module Poly (T : sig type t [@@deriving_inline sexp_of]
     type t = T.t [@@deriving_inline sexp_of]
     let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = T.sexp_of_t
     [@@@end]
-    include Polymorphic_compare
+    include Poly
   end
-  include Polymorphic_compare
+  include Poly
 
   let between t ~low ~high = low <= t && t <= high
 

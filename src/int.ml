@@ -28,13 +28,13 @@ let num_bits = Int_conversions.num_bits_int
 let float_lower_bound = Float0.lower_bound_for_int num_bits
 let float_upper_bound = Float0.upper_bound_for_int num_bits
 
-let to_float = Pervasives.float_of_int
-let of_float_unchecked = Pervasives.int_of_float
+let to_float = Caml.float_of_int
+let of_float_unchecked = Caml.int_of_float
 let of_float f =
   if Float_replace_polymorphic_compare.(>=) f float_lower_bound
   && Float_replace_polymorphic_compare.(<=) f float_upper_bound
   then
-    Pervasives.int_of_float f
+    Caml.int_of_float f
   else
     Printf.invalid_argf "Int.of_float: argument (%f) is out of range or NaN"
       (Float0.box f)
@@ -110,8 +110,8 @@ let to_int_exn = to_int
 let of_int i = i
 let of_int_exn = of_int
 
-let max_value = Pervasives.max_int
-let min_value = Pervasives.min_int
+let max_value = Caml.max_int
+let min_value = Caml.min_int
 
 let max_value_30_bits = 0x3FFF_FFFF
 
@@ -144,8 +144,8 @@ let ( ~- ) = neg
 (* note that rem is not same as % *)
 let rem a b = a mod b
 
-let incr = Pervasives.incr
-let decr = Pervasives.decr
+let incr = Caml.incr
+let decr = Caml.decr
 
 let shift_right a b = a asr b
 let shift_right_logical a b = a lsr b

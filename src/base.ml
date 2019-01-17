@@ -117,13 +117,9 @@ module Option_array              = Option_array
 module Or_error                  = Or_error
 module Ordered_collection_common = Ordered_collection_common
 module Ordering                  = Ordering
-
-(** [Poly] is a convenient shorthand for [Polymorphic_compare] in the common case that one
-    wants to use a polymorphic comparator directly in an expression, e.g., [Poly.equal a
-    b]. *)
 module Poly                      = Poly
-
-module Polymorphic_compare       = Polymorphic_compare
+module Polymorphic_compare       = Poly
+[@@deprecated "[since 2018-11] use [Poly] instead"]
 module Popcount                  = Popcount
 [@@deprecated "[since 2018-10] use [popcount] functions in the individual int modules"]
 module Pretty_printer            = Pretty_printer
@@ -177,9 +173,11 @@ end
 module Export = struct
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable.
      (string is also mutable, but we pretend it isn't for hashing purposes) *)
-  type 'a array  = 'a Array.  t [@@deriving_inline compare,       sexp]
+  type 'a array  = 'a Array.  t [@@deriving_inline compare, equal,       sexp]
   let compare_array : 'a . ('a -> 'a -> int) -> 'a array -> 'a array -> int =
     Array.compare
+  let equal_array : 'a . ('a -> 'a -> bool) -> 'a array -> 'a array -> bool =
+    Array.equal
   let array_of_sexp :
     'a .
     (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a array
@@ -189,8 +187,9 @@ module Export = struct
     ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a array -> Ppx_sexp_conv_lib.Sexp.t
     = Array.sexp_of_t
   [@@@end]
-  type bool      = Bool.      t [@@deriving_inline compare, hash, sexp]
+  type bool      = Bool.      t [@@deriving_inline compare, equal, hash, sexp]
   let compare_bool : bool -> bool -> int = Bool.compare
+  let equal_bool : bool -> bool -> bool = Bool.equal
   let (hash_fold_bool :
          Ppx_hash_lib.Std.Hash.state -> bool -> Ppx_hash_lib.Std.Hash.state) =
     Bool.hash_fold_t
@@ -199,8 +198,9 @@ module Export = struct
   let bool_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bool = Bool.t_of_sexp
   let sexp_of_bool : bool -> Ppx_sexp_conv_lib.Sexp.t = Bool.sexp_of_t
   [@@@end]
-  type char      = Char.      t [@@deriving_inline compare, hash, sexp]
+  type char      = Char.      t [@@deriving_inline compare, equal, hash, sexp]
   let compare_char : char -> char -> int = Char.compare
+  let equal_char : char -> char -> bool = Char.equal
   let (hash_fold_char :
          Ppx_hash_lib.Std.Hash.state -> char -> Ppx_hash_lib.Std.Hash.state) =
     Char.hash_fold_t
@@ -209,11 +209,12 @@ module Export = struct
   let char_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> char = Char.t_of_sexp
   let sexp_of_char : char -> Ppx_sexp_conv_lib.Sexp.t = Char.sexp_of_t
   [@@@end]
-  type exn       = Exn.       t [@@deriving_inline                sexp_of]
+  type exn       = Exn.       t [@@deriving_inline                       sexp_of]
   let sexp_of_exn : exn -> Ppx_sexp_conv_lib.Sexp.t = Exn.sexp_of_t
   [@@@end]
-  type float     = Float.     t [@@deriving_inline compare, hash, sexp]
+  type float     = Float.     t [@@deriving_inline compare, equal, hash, sexp]
   let compare_float : float -> float -> int = Float.compare
+  let equal_float : float -> float -> bool = Float.equal
   let (hash_fold_float :
          Ppx_hash_lib.Std.Hash.state -> float -> Ppx_hash_lib.Std.Hash.state) =
     Float.hash_fold_t
@@ -222,8 +223,9 @@ module Export = struct
   let float_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> float = Float.t_of_sexp
   let sexp_of_float : float -> Ppx_sexp_conv_lib.Sexp.t = Float.sexp_of_t
   [@@@end]
-  type int       = Int.       t [@@deriving_inline compare, hash, sexp]
+  type int       = Int.       t [@@deriving_inline compare, equal, hash, sexp]
   let compare_int : int -> int -> int = Int.compare
+  let equal_int : int -> int -> bool = Int.equal
   let (hash_fold_int :
          Ppx_hash_lib.Std.Hash.state -> int -> Ppx_hash_lib.Std.Hash.state) =
     Int.hash_fold_t
@@ -232,8 +234,9 @@ module Export = struct
   let int_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int = Int.t_of_sexp
   let sexp_of_int : int -> Ppx_sexp_conv_lib.Sexp.t = Int.sexp_of_t
   [@@@end]
-  type int32     = Int32.     t [@@deriving_inline compare, hash, sexp]
+  type int32     = Int32.     t [@@deriving_inline compare, equal, hash, sexp]
   let compare_int32 : int32 -> int32 -> int = Int32.compare
+  let equal_int32 : int32 -> int32 -> bool = Int32.equal
   let (hash_fold_int32 :
          Ppx_hash_lib.Std.Hash.state -> int32 -> Ppx_hash_lib.Std.Hash.state) =
     Int32.hash_fold_t
@@ -242,8 +245,9 @@ module Export = struct
   let int32_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int32 = Int32.t_of_sexp
   let sexp_of_int32 : int32 -> Ppx_sexp_conv_lib.Sexp.t = Int32.sexp_of_t
   [@@@end]
-  type int64     = Int64.     t [@@deriving_inline compare, hash, sexp]
+  type int64     = Int64.     t [@@deriving_inline compare, equal, hash, sexp]
   let compare_int64 : int64 -> int64 -> int = Int64.compare
+  let equal_int64 : int64 -> int64 -> bool = Int64.equal
   let (hash_fold_int64 :
          Ppx_hash_lib.Std.Hash.state -> int64 -> Ppx_hash_lib.Std.Hash.state) =
     Int64.hash_fold_t
@@ -252,9 +256,11 @@ module Export = struct
   let int64_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int64 = Int64.t_of_sexp
   let sexp_of_int64 : int64 -> Ppx_sexp_conv_lib.Sexp.t = Int64.sexp_of_t
   [@@@end]
-  type 'a list   = 'a List.   t [@@deriving_inline compare, hash, sexp]
+  type 'a list   = 'a List.   t [@@deriving_inline compare, equal, hash, sexp]
   let compare_list : 'a . ('a -> 'a -> int) -> 'a list -> 'a list -> int =
     List.compare
+  let equal_list : 'a . ('a -> 'a -> bool) -> 'a list -> 'a list -> bool =
+    List.equal
   let hash_fold_list :
     'a .
     (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
@@ -269,8 +275,9 @@ module Export = struct
     ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a list -> Ppx_sexp_conv_lib.Sexp.t
     = List.sexp_of_t
   [@@@end]
-  type nativeint = Nativeint. t [@@deriving_inline compare, hash, sexp]
+  type nativeint = Nativeint. t [@@deriving_inline compare, equal, hash, sexp]
   let compare_nativeint : nativeint -> nativeint -> int = Nativeint.compare
+  let equal_nativeint : nativeint -> nativeint -> bool = Nativeint.equal
   let (hash_fold_nativeint :
          Ppx_hash_lib.Std.Hash.state -> nativeint -> Ppx_hash_lib.Std.Hash.state) =
     Nativeint.hash_fold_t
@@ -281,9 +288,11 @@ module Export = struct
   let sexp_of_nativeint : nativeint -> Ppx_sexp_conv_lib.Sexp.t =
     Nativeint.sexp_of_t
   [@@@end]
-  type 'a option = 'a Option. t [@@deriving_inline compare, hash, sexp]
+  type 'a option = 'a Option. t [@@deriving_inline compare, equal, hash, sexp]
   let compare_option : 'a . ('a -> 'a -> int) -> 'a option -> 'a option -> int
     = Option.compare
+  let equal_option : 'a . ('a -> 'a -> bool) -> 'a option -> 'a option -> bool
+    = Option.equal
   let hash_fold_option :
     'a .
     (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
@@ -298,9 +307,11 @@ module Export = struct
     ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a option -> Ppx_sexp_conv_lib.Sexp.t
     = Option.sexp_of_t
   [@@@end]
-  type 'a ref    = 'a Ref.    t [@@deriving_inline compare,       sexp]
+  type 'a ref    = 'a Ref.    t [@@deriving_inline compare, equal,       sexp]
   let compare_ref : 'a . ('a -> 'a -> int) -> 'a ref -> 'a ref -> int =
     Ref.compare
+  let equal_ref : 'a . ('a -> 'a -> bool) -> 'a ref -> 'a ref -> bool =
+    Ref.equal
   let ref_of_sexp :
     'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a ref
     = Ref.t_of_sexp
@@ -308,8 +319,9 @@ module Export = struct
     'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a ref -> Ppx_sexp_conv_lib.Sexp.t
     = Ref.sexp_of_t
   [@@@end]
-  type string    = String.    t [@@deriving_inline compare, hash, sexp]
+  type string    = String.    t [@@deriving_inline compare, equal, hash, sexp]
   let compare_string : string -> string -> int = String.compare
+  let equal_string : string -> string -> bool = String.equal
   let (hash_fold_string :
          Ppx_hash_lib.Std.Hash.state -> string -> Ppx_hash_lib.Std.Hash.state) =
     String.hash_fold_t
@@ -318,13 +330,15 @@ module Export = struct
   let string_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> string = String.t_of_sexp
   let sexp_of_string : string -> Ppx_sexp_conv_lib.Sexp.t = String.sexp_of_t
   [@@@end]
-  type bytes     = Bytes.     t [@@deriving_inline compare,       sexp]
+  type bytes     = Bytes.     t [@@deriving_inline compare, equal,       sexp]
   let compare_bytes : bytes -> bytes -> int = Bytes.compare
+  let equal_bytes : bytes -> bytes -> bool = Bytes.equal
   let bytes_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bytes = Bytes.t_of_sexp
   let sexp_of_bytes : bytes -> Ppx_sexp_conv_lib.Sexp.t = Bytes.sexp_of_t
   [@@@end]
-  type unit      = Unit.      t [@@deriving_inline compare, hash, sexp]
+  type unit      = Unit.      t [@@deriving_inline compare, equal, hash, sexp]
   let compare_unit : unit -> unit -> int = Unit.compare
+  let equal_unit : unit -> unit -> bool = Unit.equal
   let (hash_fold_unit :
          Ppx_hash_lib.Std.Hash.state -> unit -> Ppx_hash_lib.Std.Hash.state) =
     Unit.hash_fold_t

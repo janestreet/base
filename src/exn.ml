@@ -111,7 +111,7 @@ let handle_uncaught_aux ~do_at_exit ~exit f =
        that it helps curses applications bring the terminal in a good state, otherwise the
        error message might get corrupted.  Also, the OCaml top-level uncaught exception
        handler does the same. *)
-    if do_at_exit then (try Pervasives.do_at_exit () with _ -> ());
+    if do_at_exit then (try Caml.do_at_exit () with _ -> ());
     begin
       try
         print_with_backtrace exc raw_backtrace

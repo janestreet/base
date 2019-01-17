@@ -1391,7 +1391,7 @@ module type Map = sig
     -> ('a * 'b) list -> f:('b -> 'b -> 'b) -> ('a, 'b, 'cmp) t
 
   (** [of_iteri ~iteri] behaves like [of_alist], except that instead of taking a concrete
-      datastruture, it takes an iteration function.  For instance, to convert a string table
+      data structure, it takes an iteration function.  For instance, to convert a string table
       into a map: [of_iteri (module String) ~f:(Hashtbl.iteri table)].  It is faster than
       adding the elements one by one. *)
   val of_iteri
@@ -1727,8 +1727,8 @@ module type Map = sig
       {[
         assert (match Map.append ~lower_part ~upper_part with
           | `Ok whole_map ->
-            whole_map
-            = Map.(of_alist_exn (List.append (to_alist lower_part) (to_alist upper_part)))
+            Map.to_alist whole_map
+            = List.append (to_alist lower_part) (to_alist upper_part)
           | `Overlapping_key_ranges -> true);
       ]} *)
   val append

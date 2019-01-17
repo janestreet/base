@@ -144,7 +144,7 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if Pervasives.( <= ) i Caml.Nativeint.zero then
+    if Poly.( <= ) i Caml.Nativeint.zero then
       raise_s (Sexp.message "[Nativeint.floor_log2] got invalid input"
                  ["", sexp_of_nativeint i]);
     Sys.word_size_in_bits - 1 - nativeint_clz i
@@ -152,7 +152,7 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if Pervasives.( <= ) i Caml.Nativeint.zero then
+    if Poly.( <= ) i Caml.Nativeint.zero then
       raise_s (Sexp.message "[Nativeint.ceil_log2] got invalid input"
                  ["", sexp_of_nativeint i]);
     if Caml.Nativeint.equal i Caml.Nativeint.one

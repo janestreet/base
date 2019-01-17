@@ -17,7 +17,7 @@ let unsafe_of_int = Caml.Char.unsafe_chr
 let uppercase     = Caml.Char.uppercase_ascii
 
 (* We use our own range test when converting integers to chars rather than
-   calling [Caml.Caml.Char.chr] because it's simple and it saves us a function call
+   calling [Caml.Char.chr] because it's simple and it saves us a function call
    and the try-with (exceptions cost, especially in the world with backtraces). *)
 let int_is_ok i = 0 <= i && i <= 255
 

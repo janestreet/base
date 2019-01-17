@@ -528,7 +528,7 @@ let group ?growth_allowed ?size ~hashable ~get_key ~get_data ~combine rows =
 ;;
 
 let create_with_key ?growth_allowed ?size ~hashable ~get_key rows =
-  create_mapped ?growth_allowed ?size ~hashable ~get_key ~get_data:(fun x -> x) rows
+  create_mapped ?growth_allowed ?size ~hashable ~get_key ~get_data:Fn.id rows
 ;;
 
 let create_with_key_or_error ?growth_allowed ?size ~hashable ~get_key rows =
@@ -878,4 +878,3 @@ module Check : sig end = struct
           create ?growth_allowed ?size m
       end)
 end
-

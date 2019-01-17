@@ -223,11 +223,11 @@ let%test_unit _ =
   let long = Test_values.long1 () in
   ignore (append long long:int list)
 
-let%test_unit _ = [%test_result: int list] (map ~f:(fun x -> x) Test_values.l1) ~expect:Test_values.l1
-let%test_unit _ = [%test_result: int list] (map ~f:(fun x -> x) []) ~expect:[]
+let%test_unit _ = [%test_result: int list] (map ~f:Fn.id Test_values.l1) ~expect:Test_values.l1
+let%test_unit _ = [%test_result: int list] (map ~f:Fn.id []) ~expect:[]
 let%test_unit _ = [%test_result: float list] (map ~f:(fun x -> x +. 5.) [1.;2.;3.]) ~expect:[6.;7.;8.]
 let%test_unit _ =
-  ignore (map ~f:(fun x -> x) (Test_values.long1 ()):int list)
+  ignore (map ~f:Fn.id (Test_values.long1 ()):int list)
 
 let%test_unit _ =
   [%test_result: (int * char) list]
@@ -238,7 +238,7 @@ let%test_unit _ =
   let long = Test_values.long1 () in
   ignore (map2_exn ~f:(fun _ _ -> ()) long long:unit list)
 
-let%test_unit _ = [%test_result: int list] (rev_map_append [1;2;3;4;5] [6] ~f:(fun x -> x)) ~expect:[5;4;3;2;1;6]
+let%test_unit _ = [%test_result: int list] (rev_map_append [1;2;3;4;5] [6] ~f:Fn.id) ~expect:[5;4;3;2;1;6]
 let%test_unit _ = [%test_result: int list] (rev_map_append [1;2;3;4;5] [6] ~f:(fun x -> 2 * x)) ~expect:[10;8;6;4;2;6]
 let%test_unit _ = [%test_result: int list] (rev_map_append [] [6] ~f:(fun _ -> failwith "bug!")) ~expect:[6]
 

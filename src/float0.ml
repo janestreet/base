@@ -71,7 +71,7 @@ let one_ulp dir t =
    [upper_bound_for_int x  <    2 ** (1-x) ]
 *)
 let upper_bound_for_int num_bits =
-  let exp = Pervasives.float_of_int ( num_bits - 1 ) in
+  let exp = Caml.float_of_int ( num_bits - 1 ) in
   one_ulp `Down (2. ** exp)
 
 let is_x_minus_one_exact x =
@@ -85,7 +85,7 @@ let is_x_minus_one_exact x =
   not (Caml.Int64.bits_of_float x = Caml.Int64.bits_of_float (x -. 1.))
 
 let lower_bound_for_int num_bits =
-  let exp = Pervasives.float_of_int ( num_bits - 1 ) in
+  let exp = Caml.float_of_int ( num_bits - 1 ) in
   let min_int_as_float = ~-. (2. ** exp) in
   let open Int_replace_polymorphic_compare in
   if num_bits - 1 < 53 (* 53 = #bits in the float's mantissa with sign included *)

@@ -99,7 +99,7 @@ let test_partial (type a) (type b)
       require [%here] (Int64.( > ) (A.to_int64 a) (B.to_int64 B.max_value) ||
                        Int64.( < ) (A.to_int64 a) (B.to_int64 B.min_value))
         ~if_false_then_print_s:(lazy [%message "failed to convert" ~_:(a : A.t)]));
-  (* Make sure we stress the conversion a nontrival number of times. This makes sure the
+  (* Make sure we stress the conversion a nontrivial number of times. This makes sure the
      random generation is useful and we aren't just testing the hard-coded examples. *)
   require [%here] (!convertible_count > 100)
     ~if_false_then_print_s:

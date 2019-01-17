@@ -15,7 +15,6 @@ end
 
 include Pretty_printer.S with type t := t
 
-
 (** Raised when finalization after an exception failed, too.
     The first exception argument is the one raised by the initial
     function, the second exception the one raised by the finalizer. *)

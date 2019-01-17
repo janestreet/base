@@ -64,7 +64,7 @@ let%test_unit _ =
   let f = 13. in
   let t = singleton (Caml.Obj.repr f) in
   invariant t;
-  assert (Polymorphic_compare.equal (Caml.Obj.repr f) (get t 0))
+  assert (Poly.equal (Caml.Obj.repr f) (get t 0))
 ;;
 
 (* [get], [unsafe_get], [set], [unsafe_set], [unsafe_set_assuming_currently_int] *)

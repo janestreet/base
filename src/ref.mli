@@ -4,11 +4,12 @@
 open! Import
 
 type 'a t = 'a Caml.ref = { mutable contents : 'a }
-[@@deriving_inline compare, sexp]
+[@@deriving_inline compare, equal, sexp]
 include
 sig
   [@@@ocaml.warning "-32"]
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val t_of_sexp :
     (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
   val sexp_of_t :
