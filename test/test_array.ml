@@ -88,6 +88,13 @@ let%test_module "Sort" =
         (fun () -> Array.sort ~compare:Int.compare [||]);
       [%expect {||}]
     ;;
+
+    let%expect_test "Array.sort [| 5; 2; 3; 4; 1 |] only allocates when computing bounds" =
+      let arr = [| 5; 2; 3; 4; 1 |] in
+      require_allocation_does_not_exceed (Minor_words 3) [%here]
+        (fun () -> Array.sort ~compare:Int.compare arr);
+      [%expect {||}]
+    ;;
   end)
 
 let%test _ = is_sorted [||] ~compare:[%compare: int]
