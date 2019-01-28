@@ -8,7 +8,7 @@ sig
   val hash_fold_t :
     Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-end
+end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include module type of Sexplib0.Sexp with type t := Sexplib0.Sexp.t

@@ -12,11 +12,8 @@ sig
   val hash_fold_t :
     (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
     Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
-  val t_of_sexp :
-    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
-  val sexp_of_t :
-    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-end
+  include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
+end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include Container.S1 with type 'a t := 'a t
@@ -37,7 +34,7 @@ module Or_unequal_lengths : sig
     val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
     val sexp_of_t :
       ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 end
 
@@ -417,15 +414,8 @@ module Assoc : sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val t_of_sexp :
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
-      (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
-      Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b) t
-    val sexp_of_t :
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+    include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a,'b) t :=  ('a, 'b) t
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 
   val add      : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b -> ('a, 'b) t

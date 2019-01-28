@@ -15,7 +15,7 @@ sig
   val hash_fold_t :
     Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-end
+end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include Floatable.S with type t := t
@@ -517,9 +517,8 @@ module Class : sig
     [@@@ocaml.warning "-32"]
     val compare : t -> t -> int
     val all : t list
-    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+    include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 
   include Stringable.S with type t := t
@@ -567,9 +566,8 @@ module Terse : sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+    include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+  end[@@ocaml.doc "@inline"]
   [@@@end]
   include Stringable.S with type t := t
 end

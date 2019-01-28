@@ -99,7 +99,7 @@ module Make_hex (I : sig
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-    end
+    end[@@ocaml.doc "@inline"]
     [@@@end]
 
     (** [to_string] and [of_string] convert between [t] and unsigned,

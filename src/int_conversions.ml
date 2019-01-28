@@ -292,7 +292,7 @@ module Make_hex (I : sig
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-    end
+    end[@@ocaml.doc "@inline"]
     [@@@end]
     val to_string : t -> string
     val of_string : string -> t

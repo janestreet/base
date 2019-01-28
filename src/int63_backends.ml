@@ -10,7 +10,7 @@ module type Int_or_more = sig
     val hash_fold_t :
       Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
     val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-  end
+  end[@@ocaml.doc "@inline"]
   [@@@end]
   include Int_intf.S with type t := t
   val of_int : int -> t

@@ -197,14 +197,14 @@ module type Sexp_of_m = sig
   type t [@@deriving_inline sexp_of]
   include
   sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
   include
   sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-  end
+  end[@@ocaml.doc "@inline"]
   [@@@end]
   include Hashtbl_intf.Key with type t := t
 end

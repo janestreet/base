@@ -7,11 +7,8 @@ include
 sig
   [@@@ocaml.warning "-32"]
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  val t_of_sexp :
-    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
-  val sexp_of_t :
-    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-end
+  include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
+end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include Binary_searchable.S1 with type 'a t := 'a t

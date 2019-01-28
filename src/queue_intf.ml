@@ -7,11 +7,8 @@ module type S = sig
   include
   sig
     [@@@ocaml.warning "-32"]
-    val t_of_sexp :
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
-    val sexp_of_t :
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+    include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 
   include Indexed_container.S1 with type 'a t := 'a t
@@ -92,7 +89,7 @@ module type Queue = sig
   sig
     [@@@ocaml.warning "-32"]
     val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  end
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 
   include S with type 'a t := 'a t

@@ -23,14 +23,8 @@ type ('ok, 'err) t = ('ok, 'err) Pervasives.result =
 include
 sig
   [@@@ocaml.warning "-32"]
-  val t_of_sexp :
-    (Ppx_sexp_conv_lib.Sexp.t -> 'ok) ->
-    (Ppx_sexp_conv_lib.Sexp.t -> 'err) ->
-    Ppx_sexp_conv_lib.Sexp.t -> ('ok, 'err) t
-  val sexp_of_t :
-    ('ok -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('err -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('ok, 'err) t -> Ppx_sexp_conv_lib.Sexp.t
+  include
+    Ppx_sexp_conv_lib.Sexpable.S2 with type ('ok,'err) t :=  ('ok, 'err) t
   val compare :
     ('ok -> 'ok -> int) ->
     ('err -> 'err -> int) -> ('ok, 'err) t -> ('ok, 'err) t -> int
@@ -40,7 +34,7 @@ sig
     ->
     Ppx_hash_lib.Std.Hash.state ->
     ('ok, 'err) t -> Ppx_hash_lib.Std.Hash.state
-end
+end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include Monad.S2 with type ('a,'err) t := ('a,'err) t

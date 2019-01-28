@@ -40,7 +40,7 @@ sig
     ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
     ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
-end
+end[@@ocaml.doc "@inline"]
 [@@@end]
 type ('a, 'b) equal = ('a, 'b) t (** just an alias, needed when [t] gets shadowed below *)
 
@@ -184,7 +184,7 @@ module Id : sig
     [@@@ocaml.warning "-32"]
     val sexp_of_t :
       ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 
   (** Every [Id.t] contains a unique id that is distinct from the [Uid.t] in any other
@@ -197,7 +197,7 @@ module Id : sig
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-    end
+    end[@@ocaml.doc "@inline"]
     [@@@end]
     include Sexpable.S   with type t := t
     include Comparable.S with type t := t

@@ -18,9 +18,8 @@ module type S = sig
     val hash_fold_t :
       Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
     val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+    include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+  end[@@ocaml.doc "@inline"]
   [@@@end]
   include Stringable.S     with type t := t
   include Comparable.S     with type t := t
@@ -50,9 +49,8 @@ module Make (M : sig
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-      val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end
+      include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+    end[@@ocaml.doc "@inline"]
     [@@@end]
     include Stringable.S with type t := t
     val module_name : string  (** For registering the pretty printer. *)
@@ -68,9 +66,8 @@ module Make_using_comparator (M : sig
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-      val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end
+      include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+    end[@@ocaml.doc "@inline"]
     [@@@end]
     include Comparator.S with type t := t
     include Stringable.S with type t := t

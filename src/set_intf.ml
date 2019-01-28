@@ -8,7 +8,7 @@ module type Elt_plain = sig
     [@@@ocaml.warning "-32"]
     val compare : t -> t -> int
     val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 end
 
@@ -731,13 +731,13 @@ module type For_deriving = sig
   module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
     include
     sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end
+    end[@@ocaml.doc "@inline"]
     [@@@end] end
   module type M_of_sexp = sig
     type t [@@deriving_inline of_sexp]
     include
     sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    end
+    end[@@ocaml.doc "@inline"]
     [@@@end] include Comparator.S with type t := t
   end
   module type Compare_m = sig end
@@ -780,7 +780,7 @@ module type Set = sig
     val compare :
       ('elt -> 'elt -> int) ->
       ('cmp -> 'cmp -> int) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
-  end
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 
   type ('k, 'cmp) comparator =
@@ -1120,15 +1120,8 @@ module type Set = sig
       val compare :
         ('a -> 'a -> int) ->
         ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
-      val t_of_sexp :
-        (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
-        (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
-        Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b) t
-      val sexp_of_t :
-        ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
-    end
+      include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a,'b) t :=  ('a, 'b) t
+    end[@@ocaml.doc "@inline"]
     [@@@end]
   end
 
@@ -1176,7 +1169,7 @@ module type Set = sig
         ('elt -> Ppx_sexp_conv_lib.Sexp.t) ->
         ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
         ('elt, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-    end
+    end[@@ocaml.doc "@inline"]
     [@@@end]
 
     val t_of_sexp_direct
@@ -1197,7 +1190,7 @@ module type Set = sig
           ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
           ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
           ('a, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-      end
+      end[@@ocaml.doc "@inline"]
       [@@@end]
 
       val t_of_sexp_direct
