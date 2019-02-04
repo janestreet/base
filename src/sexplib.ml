@@ -5,3 +5,6 @@ module Conv       = Sexplib0.Sexp_conv
 
 (** @canonical Base.Sexp *)
 module Sexp       = Sexp
+
+(** @canonical Base.Sexpable *)
+module Sexpable   = Sexpable

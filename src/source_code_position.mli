@@ -22,7 +22,7 @@ sig
     Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-end
+end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include Comparable.S with type t := t

@@ -1,64 +1,6 @@
 open! Import
 
-module type S = sig
-  type t [@@deriving_inline sexp]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end
-  [@@@end]
-end
-
-module type S1 = sig
-  type 'a t [@@deriving_inline sexp]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val t_of_sexp :
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
-    val sexp_of_t :
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-  end
-  [@@@end]
-end
-
-module type S2 = sig
-  type ('a, 'b) t [@@deriving_inline sexp]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val t_of_sexp :
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
-      (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
-      Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b) t
-    val sexp_of_t :
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
-  end
-  [@@@end]
-end
-
-module type S3 = sig
-  type ('a, 'b, 'c) t [@@deriving_inline sexp]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val t_of_sexp :
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
-      (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
-      (Ppx_sexp_conv_lib.Sexp.t -> 'c) ->
-      Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b, 'c) t
-    val sexp_of_t :
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('c -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('a, 'b, 'c) t -> Ppx_sexp_conv_lib.Sexp.t
-  end
-  [@@@end]
-end
+include Sexplib0.Sexpable
 
 module Of_sexpable
     (Sexpable : S)

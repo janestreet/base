@@ -5,7 +5,7 @@ module type S = sig
   type t [@@deriving_inline sexp_of]
   include
   sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 
   (** [create n] returns a fresh buffer, initially empty.  The [n] parameter is the

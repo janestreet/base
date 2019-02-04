@@ -4,54 +4,38 @@
 
 open! Import
 
-module type S  = sig type              t [@@deriving_inline sexp]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end
-  [@@@end] end
-module type S1 = sig type 'a           t [@@deriving_inline sexp]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val t_of_sexp :
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
-    val sexp_of_t :
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-  end
-  [@@@end] end
-module type S2 = sig type ('a, 'b)     t [@@deriving_inline sexp]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val t_of_sexp :
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
-      (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
-      Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b) t
-    val sexp_of_t :
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
-  end
-  [@@@end] end
-module type S3 = sig type ('a, 'b, 'c) t [@@deriving_inline sexp]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val t_of_sexp :
-      (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
-      (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
-      (Ppx_sexp_conv_lib.Sexp.t -> 'c) ->
-      Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b, 'c) t
-    val sexp_of_t :
-      ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('c -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('a, 'b, 'c) t -> Ppx_sexp_conv_lib.Sexp.t
-  end
-  [@@@end] end
+module type S = sig
+  type t
+
+  val t_of_sexp : Sexp.t -> t
+  val sexp_of_t : t -> Sexp.t
+end
+
+module type S1 = sig
+  type 'a t
+
+  val t_of_sexp : (Sexp.t -> 'a) -> Sexp.t -> 'a t
+  val sexp_of_t : ('a -> Sexp.t) -> 'a t -> Sexp.t
+end
+
+module type S2 = sig
+  type ('a, 'b) t
+
+  val t_of_sexp : (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t
+  val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
+end
+
+module type S3 = sig
+  type ('a, 'b, 'c) t
+
+  val t_of_sexp
+    : (Sexp.t -> 'a) -> (Sexp.t -> 'b) -> (Sexp.t -> 'c) -> Sexp.t
+    -> ('a, 'b, 'c) t
+
+  val sexp_of_t
+    : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('c -> Sexp.t) -> ('a, 'b, 'c) t
+    -> Sexp.t
+end
 
 (** For when you want the sexp representation of one type to be the same as that for
     some other isomorphic type. *)

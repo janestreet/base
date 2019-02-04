@@ -39,9 +39,8 @@ sig
   val hash_fold_t :
     Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-  val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-end
+  include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include Equal.S with type t := t

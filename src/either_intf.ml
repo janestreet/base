@@ -54,15 +54,8 @@ module type Either = sig
       (Ppx_hash_lib.Std.Hash.state -> 's -> Ppx_hash_lib.Std.Hash.state) ->
       Ppx_hash_lib.Std.Hash.state ->
       ('f, 's) t -> Ppx_hash_lib.Std.Hash.state
-    val t_of_sexp :
-      (Ppx_sexp_conv_lib.Sexp.t -> 'f) ->
-      (Ppx_sexp_conv_lib.Sexp.t -> 's) ->
-      Ppx_sexp_conv_lib.Sexp.t -> ('f, 's) t
-    val sexp_of_t :
-      ('f -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('s -> Ppx_sexp_conv_lib.Sexp.t) ->
-      ('f, 's) t -> Ppx_sexp_conv_lib.Sexp.t
-  end
+    include Ppx_sexp_conv_lib.Sexpable.S2 with type ('f,'s) t :=  ('f, 's) t
+  end[@@ocaml.doc "@inline"]
   [@@@end]
 
   include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t

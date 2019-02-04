@@ -1290,13 +1290,13 @@ module type For_deriving = sig
   module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
     include
     sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end
+    end[@@ocaml.doc "@inline"]
     [@@@end] end
   module type M_of_sexp = sig
     type t [@@deriving_inline of_sexp]
     include
     sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    end
+    end[@@ocaml.doc "@inline"]
     [@@@end] include Comparator.S with type t := t
   end
   module type Compare_m = sig end
@@ -1665,15 +1665,8 @@ module type Map = sig
       val compare :
         ('k -> 'k -> int) ->
         ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
-      val t_of_sexp :
-        (Ppx_sexp_conv_lib.Sexp.t -> 'k) ->
-        (Ppx_sexp_conv_lib.Sexp.t -> 'v) ->
-        Ppx_sexp_conv_lib.Sexp.t -> ('k, 'v) t
-      val sexp_of_t :
-        ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('k, 'v) t -> Ppx_sexp_conv_lib.Sexp.t
-    end
+      include Ppx_sexp_conv_lib.Sexpable.S2 with type ('k,'v) t :=  ('k, 'v) t
+    end[@@ocaml.doc "@inline"]
     [@@@end]
   end
 
@@ -1857,7 +1850,7 @@ module type Map = sig
         ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
         ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
         ('k, 'v, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-    end
+    end[@@ocaml.doc "@inline"]
     [@@@end]
 
     val t_of_sexp_direct
@@ -1877,7 +1870,7 @@ module type Map = sig
           ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
           ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
           ('k, 'v, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-      end
+      end[@@ocaml.doc "@inline"]
       [@@@end]
 
       val t_of_sexp_direct
