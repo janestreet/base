@@ -1,5 +1,6 @@
 open! Import
 
+let stage = Staged.stage
 
 module T = struct
   type t = bytes [@@deriving_inline sexp]
@@ -72,6 +73,20 @@ let tr ~target ~replacement s =
     if Char.equal (unsafe_get s i) target
     then unsafe_set s i replacement
   done
+
+let tr_multi ~target ~replacement =
+  if Int_replace_polymorphic_compare.(=) (String.length target) 0
+  then stage ignore
+  else if Int_replace_polymorphic_compare.(=) (String.length replacement) 0
+  then invalid_arg "tr_multi: replacement is the empty string"
+  else
+    match Bytes_tr.tr_create_map ~target ~replacement with
+    | None        -> stage ignore
+    | Some tr_map ->
+      stage (fun s ->
+        for i = 0 to length s - 1 do
+          unsafe_set s i (String.unsafe_get tr_map (Char.to_int (unsafe_get s i)))
+        done)
 
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max =

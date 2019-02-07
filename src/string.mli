@@ -274,14 +274,27 @@ val concat_map : ?sep:t -> t -> f : (char -> t) -> t
 (** [filter s ~f:predicate] discards characters not satisfying [predicate]. *)
 val filter : t -> f : (char -> bool) -> t
 
-(** [tr target replacement s] replaces every instance of [target] in [s] with
+(** [tr ~target ~replacement s] replaces every instance of [target] in [s] with
     [replacement]. *)
-val tr : target : char -> replacement : char -> t -> t
+val tr : target:char -> replacement:char -> t -> t
 
-(** [tr_inplace target replacement s] destructively modifies [s] (in place!), replacing
+(** [tr_inplace ~target ~replacement s] destructively modifies [s] (in place!), replacing
     every instance of [target] in [s] with [replacement]. *)
-val tr_inplace : target : char -> replacement : char -> bytes -> unit
+val tr_inplace : target:char -> replacement:char -> bytes -> unit
 [@@deprecated "[since 2017-10] Use [Bytes.tr] instead"]
+
+(** [tr_multi ~target ~replacement] returns a function that replaces every
+    instance of a character in [target] with the corresponding character in
+    [replacement].
+
+    If [replacement] is shorter than [target], it is lengthened by repeating
+    its last character. Empty [replacement] is illegal unless [target] also is.
+
+    If [target] contains multiple copies of the same character, the last
+    corresponding [replacement] character is used. Note that character ranges
+    are {b not} supported, so [~target:"a-z"] means the literal characters ['a'],
+    ['-'], and ['z']. *)
+val tr_multi : target:t -> replacement:t -> (t -> t) Staged.t
 
 (** [chop_suffix_exn s ~suffix] returns [s] without the trailing [suffix],
     raising [Invalid_argument] if [suffix] is not a suffix of [s]. *)

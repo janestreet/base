@@ -73,6 +73,19 @@ val fill : t -> pos:int -> len:int -> char -> unit
     of [target] in [s] with [replacement]. *)
 val tr : target:char -> replacement:char -> t -> unit
 
+(** [tr_multi ~target ~replacement] returns an in-place function that replaces
+    every instance of a character in [target] with the corresponding character
+    in [replacement].
+
+    If [replacement] is shorter than [target], it is lengthened by repeating
+    its last character. Empty [replacement] is illegal unless [target] also is.
+
+    If [target] contains multiple copies of the same character, the last
+    corresponding [replacement] character is used. Note that character ranges
+    are {b not} supported, so [~target:"a-z"] means the literal characters ['a'],
+    ['-'], and ['z']. *)
+val tr_multi : target:string -> replacement:string -> (t -> unit) Staged.t
+
 (** [to_list t] returns the bytes in [t] as a list of chars. *)
 val to_list : t -> char list
 

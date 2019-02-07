@@ -253,6 +253,64 @@ let%test_unit _ =
   assert (phys_equal s (concat [s]));
   assert (phys_equal s (tr s ~target:'\255' ~replacement:'\000'))
 
+let%test_module "tr_multi" = (module struct
+  let gold_standard ~target ~replacement string =
+    map string ~f:(fun char ->
+      match rindex target char with
+      | None   -> char
+      | Some i -> get replacement (Int.min i (length replacement - 1)))
+
+  module Test = struct
+    type nonrec t =
+      { target      : t
+      ; replacement : t
+      ; string      : t
+      ; expected    : t sexp_option }
+    [@@deriving sexp_of]
+
+    let quickcheck_generator =
+      let open Base_quickcheck.Generator in
+      let open Base_quickcheck.Generator.Let_syntax in
+      let%bind size = size in
+      let%bind target_len = int_log_uniform_inclusive 1 255 in
+      let%bind target = string_with_length ~length:target_len in
+      let%bind replacement_len = int_inclusive 1 target_len in
+      let%bind replacement = string_with_length ~length:replacement_len in
+      let%bind string_length = int_inclusive 0 size in
+      let%map string = string_with_length ~length:string_length in
+      { target; replacement; string; expected = None }
+
+    let quickcheck_shrinker = Base_quickcheck.Shrinker.atomic
+  end
+
+  let examples =
+    [ ""    , ""    , "abcdefg", "abcdefg"
+    ; ""    , "a"   , "abcdefg", "abcdefg"
+    ; "aaaa", "abcd", "abcdefg", "dbcdefg"
+    ; "abcd", "bcde", "abcdefg", "bcdeefg"
+    ; "abcd", "bcde", ""       , ""
+    ; "abcd", "_"   , "abcdefg", "____efg"
+    ; "abcd", "b_"  , "abcdefg", "b___efg"
+    ; "a"   , "dcba", "abcdefg", "dbcdefg"
+    ; "ab"  , "dcba", "abcdefg", "dccdefg"
+    ]
+    |> List.map ~f:(fun (target, replacement, string, expected) ->
+      { Test.target; replacement; string; expected = Some expected })
+
+  let%test_unit _ =
+    Base_quickcheck.Test.run_exn (module Test) ~examples
+      ~f:(fun ({ target; replacement; string; expected } : Test.t) ->
+        (* test implementation behavior against gold standard *)
+        let impl_result = unstage (tr_multi ~target ~replacement) string in
+        let gold_result = gold_standard ~target ~replacement string in
+        [%test_result:t] ~expect:gold_result impl_result;
+        (* test against expected result, if one is provided (non-random examples) *)
+        Option.iter expected ~f:(fun expected ->
+          [%test_result:t] ~expect:expected impl_result);
+        (* test for returning input if the string is unchanged *)
+        if equal string impl_result
+        then assert (phys_equal string impl_result))
+end)
 
 let%test_unit _ = [%test_result: int option] (lfindi        "bob" ~f:(fun _ -> Char.(=) 'b')) ~expect:(Some 0)
 let%test_unit _ = [%test_result: int option] (lfindi ~pos:0 "bob" ~f:(fun _ -> Char.(=) 'b')) ~expect:(Some 0)

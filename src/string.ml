@@ -631,8 +631,10 @@ let mem =
 ;;
 
 let tr ~target ~replacement s =
-  if mem s target
-  then map ~f:(fun c -> if Char.equal c target then replacement else c) s
+  if Char.equal target replacement
+  then s
+  else if mem s target
+  then map s ~f:(fun c -> if Char.equal c target then replacement else c)
   else s
 ;;
 
@@ -640,6 +642,20 @@ let tr_inplace ~target ~replacement s = (* destructive version of tr *)
   for i = 0 to Bytes.length s - 1 do
     if Char.equal (Bytes.unsafe_get s i) target then Bytes.unsafe_set s i replacement
   done
+
+let tr_multi ~target ~replacement =
+  if is_empty target
+  then stage Fn.id
+  else if is_empty replacement
+  then invalid_arg "tr_multi replacement is empty string"
+  else
+    match Bytes_tr.tr_create_map ~target ~replacement with
+    | None        -> stage Fn.id
+    | Some tr_map ->
+      stage (fun s ->
+        if exists s ~f:(fun c -> Char.(<>) c (unsafe_get tr_map (Char.to_int c)))
+        then map s ~f:(fun c -> unsafe_get tr_map (Char.to_int c))
+        else s)
 
 (* fast version, if we ever need it:
    {[
