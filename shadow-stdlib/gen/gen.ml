@@ -5,6 +5,14 @@ let () =
     match Sys.argv with
     | [|_; "-caml-cmi"; cmi_fn; "-o"; fn|] ->
       (cmi_fn, open_out fn)
+    | [|_; "-caml-cmi"; cmi_fn1; cmi_fn2; "-o"; fn|] ->
+      let cmi_fn =
+        if Sys.file_exists cmi_fn1 then
+          cmi_fn1
+        else
+          cmi_fn2
+      in
+      (cmi_fn, open_out fn)
     | _ ->
       failwith "bad command line arguments"
   in
