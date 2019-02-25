@@ -2,7 +2,7 @@
  (deps (:first_dep select-int63-backend/select.ml))
  (action
   (run %{ocaml} %{first_dep} -portable-int63
-   %{lib-available:base-native-int63} -arch-sixtyfour %{arch_sixtyfour} -o
+   !%{lib-available:base-native-int63} -arch-sixtyfour %{arch_sixtyfour} -o
    %{targets})))
 
 (rule (targets bytes_set_primitives.ml)
