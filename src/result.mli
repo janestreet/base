@@ -40,6 +40,7 @@ end[@@ocaml.doc "@inline"]
 include Monad.S2 with type ('a,'err) t := ('a,'err) t
 
 val ignore : (_, 'err) t -> (unit, 'err) t
+[@@deprecated "[since 2019-02] Use [ignore_m] instead"]
 
 val fail : 'err -> (_, 'err) t
 

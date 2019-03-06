@@ -14,7 +14,7 @@ module T = struct
   let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_int
   [@@@end]
 
-  let compare (x : t) y = Bool.to_int (x > y) - Bool.to_int (x < y)
+  let compare x y = Int_replace_polymorphic_compare.compare x y
 
   let of_string s =
     try of_string s with

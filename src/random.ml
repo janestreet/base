@@ -210,6 +210,22 @@ module State = struct
       else in_range state lo hi
   ;;
 
+  (* Return a uniformly random float in [0, 1). *)
+  let rec rawfloat state =
+    let open Float_replace_polymorphic_compare in
+    let scale = 0x1p-30 in  (* 2^-30 *)
+    let r1 = Caml.float_of_int (bits state) in
+    let r2 = Caml.float_of_int (bits state) in
+    let result = (r1 *. scale +. r2) *. scale in
+    (* With very small probability, result can round up to 1.0, so in that case, we just
+       try again. *)
+    if result < 1.0
+    then result
+    else rawfloat state
+  ;;
+
+  let float state hi = rawfloat state *. hi
+
   let float_range state lo hi =
     let open Float_replace_polymorphic_compare in
     if lo > hi then raise_crossed_bounds "float" lo hi Caml.string_of_float;

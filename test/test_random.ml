@@ -183,3 +183,59 @@ let%expect_test "int63_incl" =
                   Int63.( / ) Int63.max_value (i 100));
   [%expect {||}];
 ;;
+
+let%test_module "float upper bound is inclusive despite docs" =
+  (module struct
+    (* The fact that this test passes doesn't demonstrate that the bug has gone away,
+       since the test was explicitly contrived to provoke the bug. *)
+
+    let%expect_test _ =
+      (* No choice but to use magic, since trying to brute-force a seed that causes this
+         behavior takes too long.
+
+         Hack random_state so that the next 60 bits produced by [bits] are all 1s. *)
+      let random_state =
+        let st = Array.create 0 ~len:55 in
+        st.(1) <- 0b11111_11111_11111_11111_11111_00000;
+        st.(2) <- 0b11111_11111_11111_11111_11111_00000;
+        (Caml.Obj.magic (st, 0) : Random.State.t)
+      in
+      require [%here] ~cr:CR_someday
+        (Float.(<) (Random.State.float random_state 1.) 1.);
+      [%expect {| |}]
+    ;;
+
+    (* This bug is more clearly illustrated by copying the implementation of
+       [Random.float] from the stdlib (which is just re-exported by Base).
+
+       Basically, when [r1 /. scale +. r2] requires more than 53 bits of precision, and
+       [bits2] consists of all 1s, rounding causes [rawfloat] to return 1. *)
+
+    let rawfloat bits1 bits2 =
+      let scale = 1073741824.0
+      and r1 = Caml.float bits1
+      and r2 = Caml.float bits2 in
+      ((r1 /. scale) +. r2) /. scale
+    ;;
+
+    let%expect_test "likelihood of failure" =
+      (* test 256 states of the random number generator, highest as 60-bit numbers, out of
+         which 64 would have yield a float exactly equal to 1 if [Random.State.float] was
+         not recursive. *)
+      let lbound = 1 lsl 30 - (1 lsl 8) in
+      let ubound = 1 lsl 30 - 1 in
+      let bits2 = ubound in
+      let failures = ref 0 in
+      for bits1 = lbound to ubound do
+        let open Float.O in
+        if rawfloat bits1 bits2 >= 1.
+        then (Int.incr failures)
+      done;
+      let prob = Caml.float !failures *. 0x1p-60 in
+      print_s [%message "likelihood of failure" (failures : int ref) (prob : float)];
+      [%expect {|
+        ("likelihood of failure"
+          (failures 64)
+          (prob     5.5511151231257827E-17)) |}]
+    ;;
+  end)

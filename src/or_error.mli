@@ -33,6 +33,7 @@ val is_ok    : _ t -> bool
 val is_error : _ t -> bool
 
 val ignore : _ t -> unit t
+[@@deprecated "[since 2019-02] Use [ignore_m] instead"]
 
 (** [try_with f] catches exceptions thrown by [f] and returns them in the [Result.t] as an
     [Error.t].  [try_with_join] is like [try_with], except that [f] can throw exceptions

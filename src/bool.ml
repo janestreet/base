@@ -58,9 +58,7 @@ let clamp t ~min ~max =
   else
     Ok (clamp_unchecked t ~min ~max)
 
-(* We use [Obj.magic] here as other implementations generate a conditional jump and the
-   performance difference is noticeable. *)
-let to_int (x : bool) = (Caml.Obj.magic x : int)
+let to_int x = bool_to_int x
 
 module Non_short_circuiting = struct
   (* We don't expose this, since we don't want to break the invariant mentioned below of

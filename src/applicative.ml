@@ -87,6 +87,7 @@ module Make2_using_map2 (X : Basic2_using_map2) =
       | `Define_using_map2 -> `Define_using_apply
   end)
 
+
 module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t =
   Make2_using_map2 (struct
     type ('a, 'e) t = 'a X.t
