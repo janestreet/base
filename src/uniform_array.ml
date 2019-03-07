@@ -67,6 +67,10 @@ end
 
 include Trusted
 
+let invariant t =
+  assert (Caml.Obj.tag (Caml.Obj.repr t) <> Caml.Obj.double_array_tag);
+;;
+
 let init l ~f =
   if l < 0 then invalid_arg "Uniform_array.init"
   else
@@ -115,5 +119,3 @@ include
       ;;
       let unsafe_blit = unsafe_blit
     end)
-
-

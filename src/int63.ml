@@ -74,4 +74,6 @@ let floor_log2 t =
 module Private = struct
   module Repr = Repr
   let repr = repr
+
+  module Emul = Int63_emul
 end

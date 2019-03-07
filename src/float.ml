@@ -1073,6 +1073,8 @@ module O_dot = struct
 end
 
 module Private = struct
+  let box = box
+  let clamp_unchecked = clamp_unchecked
   let lower_bound_for_int = lower_bound_for_int
   let upper_bound_for_int = upper_bound_for_int
   let specialized_hash = hash_float

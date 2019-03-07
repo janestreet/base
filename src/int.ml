@@ -155,7 +155,7 @@ let bit_or a b = a lor b
 let bit_and a b = a land b
 let bit_xor a b = a lxor b
 
-let pow = Int_math.int_pow
+let pow = Int_math.Private.int_pow
 let ( ** ) b e = pow b e
 
 module Pow2 = struct

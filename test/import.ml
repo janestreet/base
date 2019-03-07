@@ -19,7 +19,7 @@ end
 module Core_kernel = struct
 end [@@deprecated "[since 1970-01] Don't use Core_kernel in Base tests. Use Base."]
 
-let () = Base.Not_exposed_properly.Int_conversions.sexp_of_int_style := `Underscores
+let () = Int_conversions.sexp_of_int_style := `Underscores
 
 let is_none = Option.is_none
 let is_some = Option.is_some

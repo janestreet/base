@@ -1,5 +1,5 @@
 open! Import
-open! Base.Not_exposed_properly.Int_conversions
+open! Int_conversions
 
 let%test_module "pretty" =
   (module struct

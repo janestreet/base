@@ -60,7 +60,7 @@ let int63_pow_on_int64 base exponent =
   int_math_int64_pow base exponent
 ;;
 
-module type T = sig
+module type Make_arg = sig
   type t
   include Floatable.S  with type t := t
   include Stringable.S with type t := t
@@ -79,7 +79,7 @@ module type T = sig
   val rem : t -> t -> t
 end
 
-module Make (X : T) = struct
+module Make (X : Make_arg) = struct
   open X
 
   let ( % ) x y =
@@ -141,4 +141,12 @@ module Make (X : T) = struct
     | `Up      -> round_up           i ~to_multiple_of
     | `Zero    -> round_towards_zero i ~to_multiple_of
   ;;
+end
+
+module Private = struct
+  let int_pow            = int_pow
+  let int64_pow          = int64_pow
+  let int63_pow_on_int64 = int63_pow_on_int64
+
+  module Pow_overflow_bounds = Pow_overflow_bounds
 end

@@ -48,6 +48,8 @@
   `Container.to_array`'s signature is also changed to accept `length` and `iter`
   instead of `fold`.
 
+- Exposed module `Int_math`.
+
 ## v0.11
 
 - Deprecated `Not_found`, people who need it can use `Caml.Not_found`, but its

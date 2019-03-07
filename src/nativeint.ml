@@ -211,7 +211,7 @@ let of_int64_exn = Conv.int64_to_nativeint_exn
 let of_int64_trunc = Conv.int64_to_nativeint_trunc
 let to_int64 = Conv.nativeint_to_int64
 
-let pow b e = of_int_exn (Int_math.int_pow (to_int_exn b) (to_int_exn e))
+let pow b e = of_int_exn (Int_math.Private.int_pow (to_int_exn b) (to_int_exn e))
 let ( ** ) b e = pow b e
 
 module Pre_O = struct

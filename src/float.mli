@@ -577,6 +577,8 @@ end
 
   https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
+  val box : t -> t
+  val clamp_unchecked : t -> min:t -> max:t -> t
   val lower_bound_for_int : int -> t
   val upper_bound_for_int : int -> t
   val specialized_hash : t -> int

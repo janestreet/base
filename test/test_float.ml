@@ -818,7 +818,7 @@ end
 let%test_module "Int"        = (module Test_bounds(Int))
 let%test_module "Int32"      = (module Test_bounds(Int32))
 let%test_module "Int63"      = (module Test_bounds(Int63))
-let%test_module "Int63_emul" = (module Test_bounds(Base.Not_exposed_properly.Int63_emul))
+let%test_module "Int63_emul" = (module Test_bounds(Base.Int63.Private.Emul))
 let%test_module "Int64"      = (module Test_bounds(Int64))
 let%test_module "Nativeint"  = (module Test_bounds(Nativeint))
 

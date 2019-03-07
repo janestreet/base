@@ -1,6 +1,6 @@
 let%test_module "overflow_bounds" =
   (module struct
-    module Pow_overflow_bounds = Base.Not_exposed_properly.Pow_overflow_bounds
+    module Pow_overflow_bounds = Base.Int_math.Private.Pow_overflow_bounds
     let%test _ = Pow_overflow_bounds.overflow_bound_max_int_value = Caml.max_int
     let%test _ = Pow_overflow_bounds.overflow_bound_max_int64_value = Int64.max_int
 

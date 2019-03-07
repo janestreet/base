@@ -93,7 +93,7 @@ let%test_module "Search_pattern" =
           (pattern, kmp_arr)
         ;;
 
-        let sexp_of_int = Base.Not_exposed_properly.Sexp_conv.sexp_of_int
+        let sexp_of_int = Sexplib.Conv.sexp_of_int
 
         let test_both (s, a) =
           let create_s      = create s      |> [%sexp_of: t                 ] in

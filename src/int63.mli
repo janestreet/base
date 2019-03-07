@@ -83,4 +83,6 @@ module Private : sig
       | Int64 : (int64 , Int63_emul.t) t
   end
   val repr : (t, t) Repr.t
+
+  module Emul = Int63_emul
 end

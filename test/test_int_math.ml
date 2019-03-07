@@ -1,5 +1,6 @@
 open! Import
-open! Base.Not_exposed_properly.Int_math
+open! Base.Int_math
+open! Base.Int_math.Private
 
 let%test_unit _ =
   let x = match Word_size.word_size with W32 -> 9 | W64 -> 10 in
@@ -10,7 +11,7 @@ let%test_unit _ =
     done
   done
 
-module Make (X : T) : sig end = struct
+module Make (X : Make_arg) : sig end = struct
   open X
   include Make(X)
 

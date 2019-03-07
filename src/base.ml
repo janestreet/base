@@ -101,10 +101,12 @@ module Identifiable              = Identifiable
 module Indexed_container         = Indexed_container
 module Info                      = Info
 module Int                       = Int
+module Int_conversions           = Int_conversions
 module Int32                     = Int32
 module Int63                     = Int63
 module Int64                     = Int64
 module Intable                   = Intable
+module Int_math                  = Int_math
 module Invariant                 = Invariant
 module Lazy                      = Lazy
 module List                      = List
@@ -443,18 +445,6 @@ include Export
 include Container_intf.Export (** @inline *)
 
 exception Not_found_s = Not_found_s
-
-(* Various things to cleanup that were used without going through Base. *)
-module Not_exposed_properly = struct
-  module Int63_emul          = Int63_emul
-  module Float0              = Float0
-  module Import              = Import
-  module Int_conversions     = Int_conversions
-  module Int_math            = Int_math
-  module Pow_overflow_bounds = Pow_overflow_bounds
-  module Sexp_conv           = Sexplib0.Sexp_conv
-  module Obj_array           = Obj_array
-end
 
 (* We perform these side effects here because we want them to run for any code that uses
    [Base].  If this were in another module in [Base] that was not used in some program,

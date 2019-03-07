@@ -18,6 +18,8 @@ sig
 end[@@ocaml.doc "@inline"]
 [@@@end]
 
+val invariant : _ t -> unit
+
 
 val empty : _ t
 
@@ -57,8 +59,8 @@ include Blit.S1 with type 'a t := 'a t
 
 val copy : 'a t -> 'a t
 
-(** [truncate t ~len] shortens [t]'s length to [len].  It is an error if [len <= 0] or
-    [len > length t].  It's unsafe to truncate in the middle of iteration. *)
+(** [unsafe_truncate t ~len] shortens [t]'s length to [len].  It is an error if [len <= 0]
+    or [len > length t].  It's unsafe to truncate in the middle of iteration. *)
 val unsafe_truncate : _ t -> len:int -> unit
 
 (** {2 Extra lowlevel and unsafe functions} *)
