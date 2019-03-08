@@ -1,3 +1,6 @@
+(** [Int63_emul] implements 63-bit integers using the [int64] type.  It is is used to
+    implement [Int63] on 32-bit platforms; see [Int63_backends.Emulated]. *)
+
 open! Import
 
 include Int_intf.S
