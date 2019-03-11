@@ -154,11 +154,13 @@ module Make_focused (M : sig
       -> f:('a -> 'b -> 'c)
       -> other:('d -> 'd -> 'd)
       -> ('c, 'd) t
+
+    val bind : ('a, 'b) t -> f:('a -> ('c, 'b) t) -> ('c, 'b) t
   end) = struct
   include M
   open With_return
 
-  let map t ~f = either t ~return:(fun x -> return (f x)) ~other
+  let map t ~f = bind t ~f:(fun x -> return (f x))
 
   include Monad.Make2 (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
@@ -166,7 +168,7 @@ module Make_focused (M : sig
       let return = return
       ;;
 
-      let bind t ~f = either t ~return:f ~other
+      let bind = bind
       ;;
 
       let map = `Custom map
@@ -179,8 +181,9 @@ module Make_focused (M : sig
       ;;
 
       let apply t1 t2 =
-        let return f = either t2 ~return:(fun x -> return (f x)) ~other in
-        either t1 ~return ~other
+        bind t1 ~f:(fun f ->
+          bind t2 ~f:(fun x ->
+            return (f x)))
       ;;
 
       let map = `Custom map
@@ -258,6 +261,12 @@ module First = Make_focused (struct
       | Second x, Second y -> Second (other x y)
       | Second x, _
       | _, Second x -> Second x
+
+    let bind t ~f =
+      match t with
+      | First x -> f x
+      (* Reuse the value in order to avoid allocation. *)
+      | (Second _) as y -> y
   end)
 
 module Second = Make_focused (struct
@@ -279,6 +288,12 @@ module Second = Make_focused (struct
       | First x, First y -> First (other x y)
       | First x, _
       | _, First x -> First x
+
+    let bind t ~f =
+      match t with
+      | Second x -> f x
+      (* Reuse the value in order to avoid allocation, like [First.bind] above. *)
+      | (First _) as y -> y
   end)
 
 module Export = struct
