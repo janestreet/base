@@ -78,7 +78,10 @@ module Message = struct
     | Tag_sexp (tag, sexp, _) -> tag :: ": " :: Sexp.to_string_mach sexp :: ac
     | Tag_t (tag, t) -> tag :: ": " :: to_strings_hum t ac
     | Tag_arg (tag, sexp, t) ->
-      tag :: ": " :: Sexp.to_string_mach sexp :: ": " :: to_strings_hum t ac
+      let body = Sexp.to_string_mach sexp :: ": " :: to_strings_hum t ac in
+      if String.length tag = 0
+      then body
+      else tag :: ": " :: body
     | With_backtrace (t, backtrace) ->
       to_strings_hum t ("\nBacktrace:\n" :: backtrace :: ac)
     | Of_list (trunc_after, ts) ->
@@ -112,7 +115,11 @@ module Message = struct
                | Some here -> [ Source_code_position0.sexp_of_t here ]))
       :: ac
     | Tag_t (tag, t) -> List (Atom tag :: to_sexps_hum t []) :: ac
-    | Tag_arg (tag, sexp, t) -> List (Atom tag :: sexp :: to_sexps_hum t []) :: ac
+    | Tag_arg (tag, sexp, t) ->
+      let body = sexp :: to_sexps_hum t [] in
+      if String.length tag = 0
+      then List body :: ac
+      else List (Atom tag :: body) :: ac
     | With_backtrace (t, backtrace) ->
       Sexp.List [ to_sexp_hum t; Sexp.Atom backtrace ] :: ac
     | Of_list (_, ts) ->

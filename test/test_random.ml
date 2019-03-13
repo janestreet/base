@@ -196,8 +196,8 @@ let%test_module "float upper bound is inclusive despite docs" =
          Hack random_state so that the next 60 bits produced by [bits] are all 1s. *)
       let random_state =
         let st = Array.create 0 ~len:55 in
-        st.(1) <- 0b11111_11111_11111_11111_11111_00000;
-        st.(2) <- 0b11111_11111_11111_11111_11111_00000;
+        st.(1) <- 0b11111__11111__11111__11111__11111__00000;
+        st.(2) <- 0b11111__11111__11111__11111__11111__00000;
         (Caml.Obj.magic (st, 0) : Random.State.t)
       in
       require [%here] ~cr:CR_someday

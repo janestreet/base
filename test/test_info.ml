@@ -50,11 +50,25 @@ let round t =
   Sexp.(=) sexp (sexp_of_t (t_of_sexp sexp))
 ;;
 
+let%expect_test "non-empty tag" =
+  tag_arg (of_string "hello") "tag" 13 [%sexp_of: int]
+  |> sexp_of_t
+  |> print_s;
+  [%expect {| (tag 13 hello) |}]
+
+let%expect_test "empty tag" =
+  tag_arg (of_string "hello") "" 13 [%sexp_of: int]
+  |> sexp_of_t
+  |> print_s;
+  [%expect {| (13 hello) |}]
+
 let%test _ = round (of_string "hello")
 let%test _ = round (of_thunk (fun () -> "hello"))
 let%test _ = round (create "tag" 13 [%sexp_of: int])
 let%test _ = round (tag (of_string "hello") ~tag:"tag")
 let%test _ = round (tag_arg (of_string "hello") "tag" 13
+                      [%sexp_of: int])
+let%test _ = round (tag_arg (of_string "hello") "" 13
                       [%sexp_of: int])
 let%test _ = round (of_list [ of_string "hello"; of_string "goodbye" ])
 let%test _ = round (t_of_sexp (Sexplib.Sexp.of_string "((random sexp 1)(b 2)((c (1 2 3))))"))

@@ -672,7 +672,7 @@ let remove_consecutive_duplicates ?(which_to_keep=`Last) list ~equal =
 (** returns sorted version of list with duplicates removed *)
 let dedup_and_sort ~compare list =
   match list with
-  | [] -> []                            (* performance hack *)
+  | [] | [ _ ]-> list (* performance hack *)
   | _ ->
     let equal x x' = compare x x' = 0 in
     let sorted = sort ~compare list in
