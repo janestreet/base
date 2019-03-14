@@ -189,8 +189,8 @@ module type Hash = sig
       tables and other structures. *)
 
   include Full
-    with type state      = private int
-     and type seed       = int
+    with type state      = Base_internalhash_types.state
+     and type seed       = Base_internalhash_types.seed
 
-     and type hash_value = int (** @open *)
+     and type hash_value = Base_internalhash_types.hash_value (** @open *)
 end

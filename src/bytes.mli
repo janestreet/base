@@ -42,6 +42,13 @@ val create : int -> t
     with the byte [c]. *)
 val make : int -> char -> t
 
+(** [map f t] applies function [f] to every byte, in order, and builds the byte
+    sequence with the results returned by [f]. *)
+val map : t -> f : (char -> char) -> t
+
+(** Like [map], but passes each character's index to [f] along with the char. *)
+val mapi : t -> f : (int -> char -> char) -> t
+
 (** [copy t] returns a newly-allocated byte sequence that contains the same
     bytes as [t]. *)
 val copy : t -> t
@@ -88,6 +95,16 @@ val tr_multi : target:string -> replacement:string -> (t -> unit) Staged.t
 
 (** [to_list t] returns the bytes in [t] as a list of chars. *)
 val to_list : t -> char list
+
+(** [to_array t] returns the bytes in [t] as an array of chars. *)
+val to_array : t -> char array
+
+(** [fold a ~f ~init:b] is [f a1 (f a2 (...))] *)
+val fold : t -> init : 'a -> f : ('a -> char -> 'a) -> 'a
+
+(** [foldi] works similarly to [fold], but also passes the index of each character to
+    [f]. *)
+val foldi : t -> init : 'a -> f : (int -> 'a -> char -> 'a) -> 'a
 
 (** [contains ?pos ?len t c] returns [true] iff [c] appears in [t] between [pos]
     and [pos + len]. *)

@@ -45,6 +45,8 @@ let copy            = Caml.Bytes.copy
 let create          = Caml.Bytes.create
 let fill            = Caml.Bytes.fill
 let make            = Caml.Bytes.make
+let map             = Caml.Bytes.map
+let mapi            = Caml.Bytes.mapi
 let sub             = Caml.Bytes.sub
 let unsafe_blit     = Caml.Bytes.unsafe_blit
 

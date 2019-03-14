@@ -1,0 +1,4 @@
+(library (name base_internalhash_types_test)
+ (libraries base base_boot expect_test_helpers_kernel
+  replace_caml_modify_for_testing stdio)
+ (preprocess (pps ppx_jane)))

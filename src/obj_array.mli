@@ -1,9 +1,6 @@
-(** This module is deprecated for external use.  Users should replace occurrences of
-    [Obj_array.t] in their code with [Obj.t Uniform_array.t].
-
-    This module is here for the implementing [Uniform_array] internally, and exposed
-    through [Not_exposed_properly] to ease the transition for users.
-*)
+(** This module is not exposed for external use, and is only here for the implementation
+    of [Uniform_array] internally.  [Obj.t Uniform_array.t] should be used in place of
+    [Obj_array.t].  *)
 
 open! Import
 
@@ -69,4 +66,3 @@ val unsafe_clear_if_pointer : t -> int -> unit
 (** [truncate t ~len] shortens [t]'s length to [len].  It is an error if [len <= 0] or
     [len > length t].*)
 val truncate : t -> len:int -> unit
-

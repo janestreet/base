@@ -1,5 +1,6 @@
 open! Import
 
+module Array = Array0
 let stage = Staged.stage
 
 module T = struct
@@ -67,6 +68,29 @@ let to_list t =
     else loop t (i - 1) (unsafe_get t i :: acc)
   in
   loop t (length t - 1) []
+
+let to_array t = Array.init (length t) ~f:(fun i -> (unsafe_get t i))
+
+let map t ~f = map t ~f
+let mapi t ~f = mapi t ~f
+
+let fold =
+  let rec loop t ~f ~len ~pos acc =
+    if Int_replace_polymorphic_compare.equal pos len
+    then acc
+    else loop t ~f ~len ~pos:(pos + 1) (f acc (unsafe_get t pos))
+  in
+  fun t ~init ~f ->
+    loop t ~f ~len:(length t) ~pos:0 init
+
+let foldi =
+  let rec loop t ~f ~len ~pos acc =
+    if Int_replace_polymorphic_compare.equal pos len
+    then acc
+    else loop t ~f ~len ~pos:(pos + 1) (f pos acc (unsafe_get t pos))
+  in
+  fun t ~init ~f ->
+    loop t ~f ~len:(length t) ~pos:0 init
 
 let tr ~target ~replacement s =
   for i = 0 to length s - 1 do

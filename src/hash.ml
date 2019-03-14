@@ -138,9 +138,12 @@ end
 
 module Internalhash : sig
   include Hash_intf.S
-    with type state      = private int (* allow optimizations for immediate type *)
-     and type seed       = int
-     and type hash_value = int
+    with type state      = Base_internalhash_types.state
+     (* We give a concrete type for [state], albeit only partially exposed (see
+        Base_internalhash_types), so that it unifies with the same type in [Base_boot],
+        and to allow optimizations for the immediate type. *)
+     and type seed       = Base_internalhash_types.seed
+     and type hash_value = Base_internalhash_types.hash_value
 
   external fold_int64     : state -> int64  -> state = "Base_internalhash_fold_int64"  [@@noalloc]
   external fold_int       : state -> int    -> state = "Base_internalhash_fold_int"    [@@noalloc]
@@ -150,24 +153,15 @@ module Internalhash : sig
 end = struct
   let description = "internalhash"
 
-  type state = int
-  type hash_value = int
-  type seed = int
-
-  external create_seeded  : seed            -> state = "%identity"                   [@@noalloc]
-  external fold_int64     : state -> int64  -> state = "Base_internalhash_fold_int64"     [@@noalloc]
-  external fold_int       : state -> int    -> state = "Base_internalhash_fold_int"       [@@noalloc]
-  external fold_float     : state -> float  -> state = "Base_internalhash_fold_float"     [@@noalloc]
-  external fold_string    : state -> string -> state = "Base_internalhash_fold_string"    [@@noalloc]
-  external get_hash_value : state -> hash_value      = "Base_internalhash_get_hash_value" [@@noalloc]
+  include Base_internalhash_types
 
   let alloc () = create_seeded 0
 
   let reset ?(seed=0) _t = create_seeded seed
 
   module For_tests = struct
-    let compare_state = compare
-    let state_to_string = Int.to_string
+    let compare_state (a : state) (b : state) = compare (a :> int) (b :> int)
+    let state_to_string (state : state) = Int.to_string (state :> int)
   end
 end
 

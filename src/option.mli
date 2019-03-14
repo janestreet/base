@@ -2,7 +2,10 @@
 
 open! Import
 
-type 'a t = 'a option [@@deriving_inline compare, hash, sexp]
+type 'a t = 'a option =
+  | None
+  | Some of 'a
+[@@deriving_inline compare, hash, sexp]
 include
 sig
   [@@@ocaml.warning "-32"]
