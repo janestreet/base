@@ -30,7 +30,9 @@
    (with-stdout-to popcnt_test.c
     (echo
      "int main(int argc, char ** argv) { return __builtin_popcount(argc); }"))
-   (system
-    "%{cc} -mpopcnt -c popcnt_test.c 2> ${null} && echo '(-mpopcnt)' > %{targets} || echo '()' > %{targets}"))))
+   (with-stdout-to %{targets}
+    (progn (echo "(")
+    (system "%{cc} -mpopcnt -c popcnt_test.c 2> %{null} && echo -mpopcnt || true 2> %{null} || ver > %{null}")
+    (echo ")"))))))
 
 (ocamllex hex_lexer)
