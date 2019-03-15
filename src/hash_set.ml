@@ -206,7 +206,7 @@ module type M_of_sexp = sig
   sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
   end[@@ocaml.doc "@inline"]
   [@@@end]
-  include Hashtbl_intf.Key with type t := t
+  include Hashtbl_intf.Key.S with type t := t
 end
 
 let sexp_of_m__t (type elt) (module Elt : Sexp_of_m with type t = elt) t =

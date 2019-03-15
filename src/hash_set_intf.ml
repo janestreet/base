@@ -1,6 +1,6 @@
 open! Import
 
-module type Key = Hashtbl_intf.Key
+module Key = Hashtbl_intf.Key
 
 module type Accessors = sig
   include Container.Generic
@@ -50,12 +50,12 @@ module type Creators = sig
   val create
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> 'a t
   val of_list
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> 'a list
     -> 'a t
 end
@@ -106,6 +106,8 @@ module type Hash_set = sig
       can use [Hash_set.Poly.t], which does have [[@@deriving_inline sexp][@@@end]], to use polymorphic
       comparison and hashing. *)
 
+  module Key = Key
+
   module type Creators = Creators
   module type Creators_generic = Creators_generic
 
@@ -119,7 +121,7 @@ module type Hash_set = sig
 
   include Accessors with type 'a t := 'a t with type 'a elt = 'a (** @open *)
 
-  val hashable_s : 'key t -> (module Hashtbl_intf.Key with type t = 'key)
+  val hashable_s : 'key t -> 'key Key.t
 
   type nonrec ('key, 'z) create_options_without_first_class_module =
     ('key, 'z) create_options_without_first_class_module
@@ -176,7 +178,7 @@ module type Hash_set = sig
     sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
     end[@@ocaml.doc "@inline"]
     [@@@end]
-    include Hashtbl_intf.Key with type t := t
+    include Hashtbl_intf.Key.S with type t := t
   end
   val sexp_of_m__t : (module Sexp_of_m with type t = 'elt) -> 'elt t -> Sexp.t
   val m__t_of_sexp : (module M_of_sexp with type t = 'elt) -> Sexp.t -> 'elt t

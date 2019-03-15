@@ -2,11 +2,12 @@ open! Import
 
 include Hashtbl_intf
 
+module type Key = Key.S
+
 let with_return = With_return.with_return
 
 let hash_param = Hashable.hash_param
 let hash       = Hashable.hash
-
 
 type ('k, 'v) t =
   { mutable table            : ('k, 'v) Avltree.t array
@@ -847,7 +848,8 @@ module type M_of_sexp = sig
   include
   sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
   end[@@ocaml.doc "@inline"]
-  [@@@end] include Key with type t := t
+  [@@@end]
+  include Key.S with type t := t
 end
 
 let sexp_of_m__t (type k) (module K : Sexp_of_m with type t = k) sexp_of_v t =

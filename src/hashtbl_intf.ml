@@ -1,18 +1,22 @@
 open! Import
 
-module type Key = sig
-  type t [@@deriving_inline compare, sexp_of]
-  include
-  sig
-    [@@@ocaml.warning "-32"]
-    val compare : t -> t -> int
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end[@@ocaml.doc "@inline"]
-  [@@@end]
+module Key = struct
+  module type S = sig
+    type t [@@deriving_inline compare, sexp_of]
+    include
+    sig
+      [@@@ocaml.warning "-32"]
+      val compare : t -> t -> int
+      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end[@@ocaml.doc "@inline"]
+    [@@@end]
 
-  (** Two [t]s that [compare] equal must have equal hashes for the hashtable
-      to behave properly. *)
-  val hash : t -> int
+    (** Two [t]s that [compare] equal must have equal hashes for the hashtable
+        to behave properly. *)
+    val hash : t -> int
+  end
+
+  type 'a t = (module S with type t = 'a)
 end
 
 module type Accessors = sig
@@ -276,7 +280,7 @@ end
 type ('key, 'data, 'z) create_options =
   ?growth_allowed:bool (** defaults to [true] *)
   -> ?size:int (** initial size -- default 128 *)
-  -> (module Key with type t = 'key)
+  -> 'key Key.t
   -> 'z
 
 type ('key, 'data, 'z) create_options_without_first_class_module =
@@ -378,7 +382,7 @@ module type Creators = sig
   val create
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> ('a, 'b) t
 
   (** Example:
@@ -390,7 +394,7 @@ module type Creators = sig
   val of_alist
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> ('a * 'b) list
     -> [ `Ok of ('a, 'b) t
        | `Duplicate_key of 'a
@@ -411,7 +415,7 @@ module type Creators = sig
   val of_alist_report_all_dups
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> ('a * 'b) list
     -> [ `Ok of ('a, 'b) t
        | `Duplicate_keys of 'a list
@@ -420,14 +424,14 @@ module type Creators = sig
   val of_alist_or_error
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> ('a * 'b) list
     -> ('a, 'b) t Or_error.t
 
   val of_alist_exn
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> ('a * 'b) list
     -> ('a, 'b) t
 
@@ -446,7 +450,7 @@ module type Creators = sig
   val of_alist_multi
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> ('a * 'b) list
     -> ('a, 'b list) t
 
@@ -478,7 +482,7 @@ module type Creators = sig
   val create_mapped
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> get_key:('r -> 'a)
     -> get_data:('r -> 'b)
     -> 'r list
@@ -490,7 +494,7 @@ module type Creators = sig
   val create_with_key
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> get_key:('r -> 'a)
     -> 'r list
     -> [ `Ok of ('a, 'r) t
@@ -499,7 +503,7 @@ module type Creators = sig
   val create_with_key_or_error
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> get_key:('r -> 'a)
     -> 'r list
     -> ('a, 'r) t Or_error.t
@@ -507,7 +511,7 @@ module type Creators = sig
   val create_with_key_exn
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> get_key:('r -> 'a)
     -> 'r list
     -> ('a, 'r) t
@@ -532,7 +536,7 @@ module type Creators = sig
   val group
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 128 *)
-    -> (module Key with type t = 'a)
+    -> 'a Key.t
     -> get_key:('r -> 'a)
     -> get_data:('r -> 'b)
     -> combine:('b -> 'b -> 'b)
@@ -568,7 +572,7 @@ module type S_without_submodules = sig
     with type 'a key := 'a key
   (** @inline *)
 
-  val hashable_s : ('key, _) t -> (module Key with type t = 'key)
+  val hashable_s : ('key, _) t -> 'key Key.t
 
   include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
 
@@ -616,7 +620,8 @@ module type For_deriving = sig
     include
     sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
     end[@@ocaml.doc "@inline"]
-    [@@@end] include Key with type t := t
+    [@@@end]
+    include Key.S with type t := t
   end
   val sexp_of_m__t
     :  (module Sexp_of_m with type t = 'k)
@@ -710,12 +715,14 @@ module type Hashtbl = sig
 
   module type Accessors            = Accessors
   module type Creators             = Creators
-  module type Key                  = Key
+  module type Key                  = Key.S [@@deprecated "[since 2019-03] Use [Hashtbl.Key.S]"]
   module type Multi                = Multi
   module type S_poly               = S_poly
   module type S_without_submodules = S_without_submodules
 
   module type For_deriving = For_deriving
+
+  module Key = Key
 
   type nonrec ('key, 'data, 'z) create_options =
     ('key, 'data, 'z) create_options
