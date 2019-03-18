@@ -38,19 +38,19 @@ let int_is_scalar = is_valid
 
 let succ_exn c =
   try Uchar0.succ c
-  with Invalid_argument msg -> failwithf "Uchar.succ_exn: %s" msg ()
+  with Caml.Invalid_argument msg -> failwithf "Uchar.succ_exn: %s" msg ()
 
 let succ c =
   try Some (Uchar0.succ c)
-  with Invalid_argument _ -> None
+  with Caml.Invalid_argument _ -> None
 
 let pred_exn c =
   try Uchar0.pred c
-  with Invalid_argument msg -> failwithf "Uchar.pred_exn: %s" msg ()
+  with Caml.Invalid_argument msg -> failwithf "Uchar.pred_exn: %s" msg ()
 
 let pred c =
   try Some (Uchar0.pred c)
-  with Invalid_argument _ -> None
+  with Caml.Invalid_argument _ -> None
 
 let of_scalar i =
   if int_is_scalar i

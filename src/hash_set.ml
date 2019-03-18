@@ -126,7 +126,7 @@ let of_list ?growth_allowed ?size m l =
 let t_of_sexp m e_of_sexp sexp =
   match sexp with
   | Sexp.Atom _ ->
-    raise (Of_sexp_error (Failure "Hash_set.t_of_sexp requires a list", sexp))
+    raise (Of_sexp_error (Caml.Failure "Hash_set.t_of_sexp requires a list", sexp))
   | Sexp.List list ->
     let t = create m ~size:(List.length list) in
     List.iter list ~f:(fun sexp ->

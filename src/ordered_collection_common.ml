@@ -38,7 +38,7 @@ let get_pos_len_exn ?(pos = 0) ?len () ~total_length =
 
 let get_pos_len ?pos ?len () ~total_length =
   try Result.Ok (get_pos_len_exn () ?pos ?len ~total_length)
-  with Invalid_argument s -> Or_error.error_string s
+  with Caml.Invalid_argument s -> Or_error.error_string s
 ;;
 
 module Private = struct

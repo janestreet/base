@@ -16,7 +16,7 @@ open! Import
 
     The return type of ric_of_ticker could be [string option], but [(string, string)
     Result.t] gives more control over the error message. *)
-type ('ok, 'err) t = ('ok, 'err) Pervasives.result =
+type ('ok, 'err) t = ('ok, 'err) Caml.result =
   | Ok of 'ok
   | Error of 'err
 [@@deriving_inline sexp, compare, hash]
@@ -106,4 +106,3 @@ module Export : sig
   val is_ok    : (_, _) t -> bool
   val is_error : (_, _) t -> bool
 end
-

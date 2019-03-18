@@ -34,20 +34,24 @@ include (Shadow_stdlib
          : module type of struct include Shadow_stdlib end
          (* Modules defined in Base *)
          with module Array     := Caml.Array
+         with module Bool      := Caml.Bool
          with module Buffer    := Caml.Buffer
          with module Bytes     := Caml.Bytes
          with module Char      := Caml.Char
          with module Float     := Caml.Float
          with module Hashtbl   := Caml.Hashtbl
+         with module Int       := Caml.Int
          with module Int32     := Caml.Int32
          with module Int64     := Caml.Int64
          with module Lazy      := Caml.Lazy
          with module List      := Caml.List
          with module Map       := Caml.Map
          with module Nativeint := Caml.Nativeint
+         with module Option    := Caml.Option
          with module Printf    := Caml.Printf
          with module Queue     := Caml.Queue
          with module Random    := Caml.Random
+         with module Result    := Caml.Result
          with module Set       := Caml.Set
          with module Stack     := Caml.Stack
          with module String    := Caml.String

@@ -74,7 +74,8 @@ module Id = struct
       [@@@end]
 
       let sexp_of_t _sexp_of_a t =
-        (`type_witness (Caml.Obj.extension_id (Caml.Obj.extension_constructor t)))
+        (`type_witness (Caml.Obj.extension_id (Caml.Obj.extension_constructor t))
+           [@ocaml.alert "-deprecated"])
         |> sexp_of_type_witness_int
       ;;
     end
@@ -99,7 +100,7 @@ module Id = struct
     ;;
 
     let uid (type a) (module M : S with type t = a) =
-      Caml.Obj.extension_id (Caml.Obj.extension_constructor M.Key)
+      Caml.Obj.extension_id (Caml.Obj.extension_constructor M.Key) [@ocaml.alert "-deprecated"]
 
     (* We want a constant allocated once that [same] can return whenever it gets the same
        witnesses.  If we write the constant inside the body of [same], the native-code
@@ -161,4 +162,3 @@ module Id = struct
            ])
   ;;
 end
-

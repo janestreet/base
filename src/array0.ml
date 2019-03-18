@@ -29,7 +29,7 @@ let max_length = Sys.max_array_length
 
 let create ~len x =
   try create len x
-  with Invalid_argument _ ->
+  with Caml.Invalid_argument _ ->
     invalid_argf "Array.create ~len:%d: invalid length" len ()
 ;;
 

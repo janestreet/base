@@ -500,7 +500,7 @@ let reduce l ~f = match l with
 
 let reduce_exn l ~f =
   match reduce l ~f with
-  | None -> raise (Invalid_argument "List.reduce_exn")
+  | None -> raise (Caml.Invalid_argument "List.reduce_exn")
   | Some v -> v
 
 let reduce_balanced l ~f =
@@ -544,7 +544,7 @@ let reduce_balanced l ~f =
 
 let reduce_balanced_exn l ~f =
   match reduce_balanced l ~f with
-  | None -> raise (Invalid_argument "List.reduce_balanced_exn")
+  | None -> raise (Caml.Invalid_argument "List.reduce_balanced_exn")
   | Some v -> v
 
 let groupi l ~break =
@@ -618,7 +618,7 @@ end
 let rec last_exn list = match list with
   | [x] -> x
   | _ :: tl -> last_exn tl
-  | [] -> raise (Invalid_argument "List.last")
+  | [] -> raise (Caml.Invalid_argument "List.last")
 
 (** optionally returns final element of list *)
 let rec last list = match list with

@@ -899,7 +899,7 @@ let round_gen x ~how =
 
 let round_significant x ~significant_digits =
   if Int_replace_polymorphic_compare.(<=) significant_digits 0 then
-    raise (Invalid_argument
+    raise (Caml.Invalid_argument
              ("Float.round_significant: invalid argument significant_digits:"
               ^ Int.to_string significant_digits))
   else

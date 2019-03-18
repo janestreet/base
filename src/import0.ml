@@ -9,23 +9,26 @@ include
        with type ('a, 'b, 'c) format              := ('a, 'b, 'c) format
        with type ('a, 'b, 'c, 'd) format4         := ('a, 'b, 'c, 'd) format4
        with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
-       with module Pervasives := Pervasives
        (* These modules are redefined in Base *)
        with module Array     := Caml.Array
+       with module Bool      := Caml.Bool
        with module Buffer    := Caml.Buffer
        with module Bytes     := Caml.Bytes
        with module Char      := Caml.Char
        with module Float     := Caml.Float
        with module Hashtbl   := Caml.Hashtbl
+       with module Int       := Caml.Int
        with module Int32     := Caml.Int32
        with module Int64     := Caml.Int64
        with module Lazy      := Caml.Lazy
        with module List      := Caml.List
        with module Map       := Caml.Map
        with module Nativeint := Caml.Nativeint
+       with module Option    := Caml.Option
        with module Printf    := Caml.Printf
        with module Queue     := Caml.Queue
        with module Random    := Caml.Random
+       with module Result    := Caml.Result
        with module Set       := Caml.Set
        with module Stack     := Caml.Stack
        with module String    := Caml.String
@@ -36,7 +39,7 @@ type 'a ref = 'a Caml.ref = { mutable contents: 'a }
 
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)
 module Caml = struct
-
+  include Caml
 
   (** @canonical Caml.Arg *)
   module Arg       = Caml.Arg
@@ -122,9 +125,6 @@ module Caml = struct
   (** @canonical Caml.Sys *)
   module Sys       = Caml.Sys
   module Uchar     = Caml.Uchar
-
-  module Pervasives = Caml.Pervasives
-  include Pervasives
 
   exception Not_found = Caml.Not_found
 end

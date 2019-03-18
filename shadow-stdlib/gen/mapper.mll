@@ -11,41 +11,45 @@ module String = struct
   include String
 end
 
-let deprecated_msg what =
+let deprecated_msg ~ext what =
   sprintf
-    "[@@deprecated \"\\\n\
+    "[%sdeprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
      Referring to the stdlib directly is discouraged by Base. You should either\n\
      use the equivalent functionality offered by Base, or if you really want to\n\
      refer to the stdlib, use Caml.%s instead\"]"
+    (if ext then "@" else "@@")
     what
 
-let deprecated_msg_no_equivalent what =
+let deprecated_msg_no_equivalent ~ext what =
   sprintf
-    "[@@deprecated \"\\\n\
+    "[%sdeprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
      There is not equivalent functionality in Base or Stdio at the moment,\n\
      so you need to use [Caml.%s] instead\"]"
+    (if ext then "@" else "@@")
     what
 
-let deprecated_msg_with_repl_text text =
+let deprecated_msg_with_repl_text ~ext text =
   sprintf
-    "[@@deprecated \"\\\n\
+    "[%sdeprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
      %s.\"]"
+    (if ext then "@" else "@@")
     text
 
-let deprecated_msg_with_repl repl =
-  deprecated_msg_with_repl_text (sprintf "Use [%s] instead" repl)
+let deprecated_msg_with_repl ~ext repl =
+  deprecated_msg_with_repl_text ~ext (sprintf "Use [%s] instead" repl)
 
-let deprecated_msg_with_approx_repl ~id repl =
+let deprecated_msg_with_approx_repl ~ext ~id repl =
   sprintf
-    "[@@deprecated \"\\\n\
+    "[%sdeprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
      There is no equivalent functionality in Base or Stdio but you can use\n\
      [%s] instead.\n\
      Alternatively, if you really want to refer the stdlib function you can\n\
      use [Caml.%s].\"]"
+    (if ext then "@" else "@@")
     repl id
 
 type replacement =
@@ -187,13 +191,13 @@ raise [Not_found_s] with an informative error message")
     Some (Repl_text repl_text)
   | _ -> None
 
-let replace id replacement line =
+let replace ~ext id replacement line =
   let msg =
     match replacement with
-    | No_equivalent  -> deprecated_msg_no_equivalent id
-    | Repl repl      -> deprecated_msg_with_repl repl
-    | Repl_text text -> deprecated_msg_with_repl_text text
-    | Approx repl    -> deprecated_msg_with_approx_repl repl ~id
+    | No_equivalent  -> deprecated_msg_no_equivalent ~ext id
+    | Repl repl      -> deprecated_msg_with_repl ~ext repl
+    | Repl_text text -> deprecated_msg_with_repl_text ~ext text
+    | Approx repl    -> deprecated_msg_with_approx_repl ~ext repl ~id
   in
   sprintf "%s\n%s" line msg
 ;;
@@ -213,12 +217,12 @@ rule line = parse
   | "type " (params? (id as id) _* as def)
       { sprintf "type nonrec %s\n%s" def
           (match id with
-           | "in_channel"  -> deprecated_msg_with_repl "Stdio.In_channel.t"
-           | "out_channel" -> deprecated_msg_with_repl "Stdio.Out_channel.t"
-           | _ -> deprecated_msg id)
+           | "in_channel"  -> deprecated_msg_with_repl ~ext:false "Stdio.In_channel.t"
+           | "out_channel" -> deprecated_msg_with_repl ~ext:false "Stdio.Out_channel.t"
+           | _ -> deprecated_msg ~ext:false id)
       }
 
-  | val_ (val_id as id) _* as line { replace id (val_replacement id) line }
+  | val_ (val_id as id) _* as line { replace ~ext:false id (val_replacement id) line }
 
   | "module " (id as id) " = Stdlib__" (id as id2) (_* as line)
       {
@@ -226,13 +230,16 @@ rule line = parse
           Printf.sprintf "module %s = Stdlib.%s %s"
             id (String.capitalize_ascii id2) line in
         match module_replacement id with
-        | Some replacement -> replace id replacement line
-        | None -> sprintf "%s\n%s" line (deprecated_msg id) }
+        | Some replacement -> replace ~ext:false id replacement line
+        | None -> sprintf "%s\n%s" line (deprecated_msg ~ext:false id) }
 
   | "exception " (id as id) _* as line
+    { match module_replacement id with
+      | Some replacement -> replace ~ext:true id replacement line
+      | None -> sprintf "%s\n%s" line (deprecated_msg ~ext:true id) }
   | "module " (id as id) _* as line
     { match module_replacement id with
-      | Some replacement -> replace id replacement line
-      | None -> sprintf "%s\n%s" line (deprecated_msg id) }
+      | Some replacement -> replace ~ext:false id replacement line
+      | None -> sprintf "%s\n%s" line (deprecated_msg ~ext:false id) }
   | _* as line
     { ksprintf failwith "cannot parse this: %s" line }
