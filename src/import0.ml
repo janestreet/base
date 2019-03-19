@@ -10,75 +10,52 @@ include
        with type ('a, 'b, 'c, 'd) format4         := ('a, 'b, 'c, 'd) format4
        with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
        (* These modules are redefined in Base *)
-       with module Array     := Caml.Array
-       with module Bool      := Caml.Bool
-       with module Buffer    := Caml.Buffer
-       with module Bytes     := Caml.Bytes
-       with module Char      := Caml.Char
-       with module Float     := Caml.Float
-       with module Hashtbl   := Caml.Hashtbl
-       with module Int       := Caml.Int
-       with module Int32     := Caml.Int32
-       with module Int64     := Caml.Int64
-       with module Lazy      := Caml.Lazy
-       with module List      := Caml.List
-       with module Map       := Caml.Map
-       with module Nativeint := Caml.Nativeint
-       with module Option    := Caml.Option
-       with module Printf    := Caml.Printf
-       with module Queue     := Caml.Queue
-       with module Random    := Caml.Random
-       with module Result    := Caml.Result
-       with module Set       := Caml.Set
-       with module Stack     := Caml.Stack
-       with module String    := Caml.String
-       with module Sys       := Caml.Sys
-       with module Uchar     := Caml.Uchar
-     ))
+       with module Array     := Shadow_stdlib.Array
+       with module Bool      := Shadow_stdlib.Bool
+       with module Buffer    := Shadow_stdlib.Buffer
+       with module Bytes     := Shadow_stdlib.Bytes
+       with module Char      := Shadow_stdlib.Char
+       with module Float     := Shadow_stdlib.Float
+       with module Hashtbl   := Shadow_stdlib.Hashtbl
+       with module Int       := Shadow_stdlib.Int
+       with module Int32     := Shadow_stdlib.Int32
+       with module Int64     := Shadow_stdlib.Int64
+       with module Lazy      := Shadow_stdlib.Lazy
+       with module List      := Shadow_stdlib.List
+       with module Map       := Shadow_stdlib.Map
+       with module Nativeint := Shadow_stdlib.Nativeint
+       with module Option    := Shadow_stdlib.Option
+       with module Printf    := Shadow_stdlib.Printf
+       with module Queue     := Shadow_stdlib.Queue
+       with module Random    := Shadow_stdlib.Random
+       with module Result    := Shadow_stdlib.Result
+       with module Set       := Shadow_stdlib.Set
+       with module Stack     := Shadow_stdlib.Stack
+       with module String    := Shadow_stdlib.String
+       with module Sys       := Shadow_stdlib.Sys
+       with module Uchar     := Shadow_stdlib.Uchar
+     )) [@ocaml.warning "-3"]
 type 'a ref = 'a Caml.ref = { mutable contents: 'a }
 
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)
 module Caml = struct
-  include Caml
-
-  (** @canonical Caml.Arg *)
-  module Arg       = Caml.Arg
+  include (Caml : (module type of struct include Caml end
+                   with module Array := Caml.Array
+                    and module Bytes := Caml.Bytes
+                    and module Hashtbl := Caml.Hashtbl
+                    and module List := Caml.List
+                    and module Map := Caml.Map
+                    and module Set := Caml.Set
+                    and module String := Caml.String))
 
   (** @canonical Caml.StdLabels.Array *)
   module Array     = Caml.StdLabels.Array
 
-  (** @canonical Caml.Buffer *)
-  module Buffer    = Caml.Buffer
-
   (** @canonical Caml.Bytes *)
   module Bytes     = Caml.StdLabels.Bytes
 
-  (** @canonical Caml.Char *)
-  module Char      = Caml.Char
-
-  (** @canonical Caml.Ephemeron *)
-  module Ephemeron = Caml.Ephemeron
-
-  (** @canonical Caml.Format *)
-  module Format    = Caml.Format
-
-  (** @canonical Caml.Gc *)
-  module Gc        = Caml.Gc
-
   (** @canonical Caml.MoreLabels.Hashtbl *)
   module Hashtbl   = Caml.MoreLabels.Hashtbl
-
-  (** @canonical Caml.Int32 *)
-  module Int32     = Caml.Int32
-
-  (** @canonical Caml.Int64 *)
-  module Int64     = Caml.Int64
-
-  (** @canonical Caml.Lazy *)
-  module Lazy      = Caml.Lazy
-
-  (** @canonical Caml.Lexing *)
-  module Lexing    = Caml.Lexing
 
   (** @canonical Caml.StdLabels.List *)
   module List      = Caml.StdLabels.List
@@ -86,47 +63,11 @@ module Caml = struct
   (** @canonical Caml.MoreLabels.Map *)
   module Map       = Caml.MoreLabels.Map
 
-  (** @canonical Caml.Nativeint *)
-  module Nativeint = Caml.Nativeint
-
-  (** @canonical Caml.Obj *)
-  module Obj       = Caml.Obj
-
-  (** @canonical Caml.Parsing *)
-  module Parsing   = Caml.Parsing
-
-  (** @canonical Caml.Printexc *)
-  module Printexc  = Caml.Printexc
-
-  (** @canonical Caml.Printf *)
-  module Printf    = Caml.Printf
-
-  (** @canonical Caml.Queue *)
-  module Queue     = Caml.Queue
-
-  (** @canonical Caml.Random *)
-  module Random    = Caml.Random
-
-  (** @canonical Caml.Scanf *)
-  module Scanf     = Caml.Scanf
-
   (** @canonical Caml.MoreLabels.Set *)
   module Set       = Caml.MoreLabels.Set
 
-  (** @canonical Caml.Stack *)
-  module Stack     = Caml.Stack
-
-  (** @canonical Caml.Stream *)
-  module Stream    = Caml.Stream
-
   (** @canonical Caml.StdLabels.String *)
   module String    = Caml.StdLabels.String
-
-  (** @canonical Caml.Sys *)
-  module Sys       = Caml.Sys
-  module Uchar     = Caml.Uchar
-
-  exception Not_found = Caml.Not_found
 end
 
 external ( |> ) : 'a -> ( 'a -> 'b) -> 'b = "%revapply"
