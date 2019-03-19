@@ -173,8 +173,7 @@ end
 (**/**)
 
 module Export = struct
-  (* [deriving hash] is missing for [array] and [ref] since these types are mutable.
-     (string is also mutable, but we pretend it isn't for hashing purposes) *)
+  (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
   type 'a array  = 'a Array.  t [@@deriving_inline compare, equal,       sexp]
   let compare_array : 'a . ('a -> 'a -> int) -> 'a array -> 'a array -> int =
     Array.compare
