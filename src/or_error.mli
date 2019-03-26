@@ -90,6 +90,7 @@ val errorf : ('a, unit, string, _ t) format4 -> 'a
 (** [tag t ~tag] is [Result.map_error t ~f:(Error.tag ~tag)].
     [tag_arg] is similar. *)
 val tag : 'a t -> tag:string -> 'a t
+val tag_s : 'a t -> tag:Sexp.t -> 'a t
 val tag_arg : 'a t -> string -> 'b -> ('b -> Sexp.t) -> 'a t
 
 (** For marking a given value as unimplemented.  Typically combined with conditional

@@ -265,7 +265,7 @@ let%test_module "tr_multi" = (module struct
       { target      : t
       ; replacement : t
       ; string      : t
-      ; expected    : t sexp_option }
+      ; expected    : t option [@sexp.option] }
     [@@deriving sexp_of]
 
     let quickcheck_generator =

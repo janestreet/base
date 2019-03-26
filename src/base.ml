@@ -374,9 +374,13 @@ module Export = struct
       For more documentation, see sexplib/README.md. *)
 
   type 'a sexp_array  = 'a array
+  [@@deprecated "[since 2019-03] use [@sexp.array] instead"]
   type 'a sexp_list   = 'a list
+  [@@deprecated "[since 2019-03] use [@sexp.list] instead"]
   type 'a sexp_opaque = 'a
+  [@@deprecated "[since 2019-03] use [@sexp.opaque] instead"]
   type 'a sexp_option = 'a option
+  [@@deprecated "[since 2019-03] use [@sexp.option] instead"]
 
   (** List operators *)
 

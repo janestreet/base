@@ -1,6 +1,7 @@
 open! Import
 open! Info
 
+
 let%test_unit _ =
   [%test_result: string] (to_string_hum (of_exn (Failure "foo")))
     ~expect:"(Failure foo)"
@@ -15,6 +16,12 @@ let%test_unit _ =
   [%test_result: string]
     (to_string_hum (of_list (List.map ~f:of_string [ "a"; "b"; "c" ])))
     ~expect:"(a b c)"
+;;
+
+let%expect_test _ =
+  print_endline
+    (to_string_hum (tag_s ~tag:[%message "tag"] (create_s [%message "info"])));
+  [%expect {| (tag info) |}]
 ;;
 
 let of_strings strings = of_list (List.map ~f:of_string strings)
