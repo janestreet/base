@@ -34,7 +34,8 @@ include
        with module String    := Shadow_stdlib.String
        with module Sys       := Shadow_stdlib.Sys
        with module Uchar     := Shadow_stdlib.Uchar
-     )) [@ocaml.warning "-3"]
+       with module Unit      := Shadow_stdlib.Unit
+  )) [@ocaml.warning "-3"]
 type 'a ref = 'a Caml.ref = { mutable contents: 'a }
 
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)

@@ -236,7 +236,7 @@ rule line = parse
   | "exception " (id as id) _* as line
     { match module_replacement id with
       | Some replacement -> replace ~ext:true id replacement line
-      | None -> sprintf "%s\n%s" line (deprecated_msg ~ext:true id) }
+      | None -> "" }
   | "module " (id as id) _* as line
     { match module_replacement id with
       | Some replacement -> replace ~ext:false id replacement line

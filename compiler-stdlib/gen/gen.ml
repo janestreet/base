@@ -79,7 +79,8 @@ let () =
      pr "module Bool = struct end";
      pr "module Int = struct end";
      pr "module Option = struct end";
-     pr "module Result = struct end"
+     pr "module Result = struct end";
+     pr "module Unit = struct end"
    end
   );
   pr "";

@@ -57,6 +57,7 @@ include (Shadow_stdlib
          with module String    := Shadow_stdlib.String
          with module Sys       := Shadow_stdlib.Sys
          with module Uchar     := Shadow_stdlib.Uchar
+         with module Unit      := Shadow_stdlib.Unit
 
          (* Support for generated lexers *)
          with module Lexing    := Shadow_stdlib.Lexing
