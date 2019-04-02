@@ -24,13 +24,7 @@
    -apply=js_style,base_lint,type_conv))
  (js_of_ocaml (javascript_files runtime.js)))
 
-(rule (targets mpopcnt.sexp) (deps)
- (action
-  (progn
-   (with-stdout-to popcnt_test.c
-    (echo
-     "int main(int argc, char ** argv) { return __builtin_popcount(argc); }"))
-   (system
-    "%{cc} -mpopcnt -c popcnt_test.c 2> ${null} && echo '(-mpopcnt)' > %{targets} || echo '()' > %{targets}"))))
+(rule (targets mpopcnt.sexp) (deps discover/discover.exe)
+ (action (run ./discover/discover.exe -o %{targets})))
 
 (ocamllex hex_lexer)
