@@ -44,7 +44,6 @@ let%expect_test "[Map.of_alist_multi] preserves value ordering" =
      (b (1 3))) |}]
 ;;
 
-
 module Poly = struct
   let%test _ =
     length Poly.empty = 0
@@ -61,4 +60,3 @@ module Poly = struct
     length a = length b
   ;;
 end
-
