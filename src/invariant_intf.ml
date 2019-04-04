@@ -67,7 +67,7 @@ module type Invariant = sig
       ]}
 
       It's okay to use [ [%sexp_of: _ t] ] because the exceptions raised by [check_a] will
-      show the parts that are sexp_opaque at top-level. *)
+      show the parts that are opaque at top-level. *)
   val invariant
     :  Source_code_position0.t
     -> 'a
