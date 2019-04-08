@@ -1,4 +1,5 @@
 open! Core_kernel
+open Poly
 
 let%test_module _ =
   (module (struct
