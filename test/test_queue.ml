@@ -1,5 +1,4 @@
 open! Core_kernel
-open Poly
 
 let%test_module _ =
   (module (struct
@@ -42,7 +41,7 @@ let%test_module _ =
     let round_trip_sexp t =
       let sexp = sexp_of_t Int.sexp_of_t t in
       let t'   = t_of_sexp Int.t_of_sexp sexp in
-      assert (to_list t = to_list t')
+      assert ([%equal: int list] (to_list t) (to_list t'))
     ;;
     let%test_unit _ = round_trip_sexp (of_list [1; 2; 3; 4])
     let%test_unit _ = round_trip_sexp (create ())
@@ -75,8 +74,8 @@ let%test_module _ =
       let t = singleton 7 in
       assert (length t = 1);
       assert (capacity t = 1);
-      assert (dequeue t = Some 7);
-      assert (dequeue t = None)
+      assert ([%equal: int option] (dequeue t) (Some 7));
+      assert ([%equal: int option] (dequeue t) None)
     ;;
 
     let init = init
@@ -84,16 +83,16 @@ let%test_module _ =
       let t = init 0 ~f:(fun _ -> assert false) in
       assert (length t = 0);
       assert (capacity t = 1);
-      assert (dequeue t = None);
+      assert ([%equal: int option] (dequeue t) None);
     ;;
     let%test_unit _ =
       let t = init 3 ~f:(fun i -> i * 2) in
       assert (length t = 3);
       assert (capacity t = 4);
-      assert (dequeue t = Some 0);
-      assert (dequeue t = Some 2);
-      assert (dequeue t = Some 4);
-      assert (dequeue t = None);
+      assert ([%equal: int option] (dequeue t) (Some 0));
+      assert ([%equal: int option] (dequeue t) (Some 2));
+      assert ([%equal: int option] (dequeue t) (Some 4));
+      assert ([%equal: int option] (dequeue t) None);
     ;;
     let%test_unit _ =
       assert (does_raise (fun () -> (init (-1) ~f:(fun _ -> ()) : unit Queue.t)))
@@ -104,6 +103,7 @@ let%test_module _ =
     let%test_unit _ =
       let t = create () in
       let get_opt t i = Option.try_with (fun () -> get t i) in
+      let ( = ) = [%equal: int option] in
       assert (get_opt t 0 = None);
       assert (get_opt t (-1) = None);
       assert (get_opt t 10 = None);
@@ -132,7 +132,7 @@ let%test_module _ =
         let t = of_list l in
         let f x = x * 2 in
         let t' = map t ~f in
-        assert (to_list t' = List.map l ~f);
+        assert ([%equal: int list] (to_list t') (List.map l ~f));
       done
     ;;
 
@@ -141,7 +141,7 @@ let%test_module _ =
       let t' = map t ~f:(fun x -> x * 2) in
       assert (length t' = length t);
       assert (length t' = 0);
-      assert (to_list t' = [])
+      assert ([%equal: int list] (to_list t') [])
     ;;
 
     let mapi = mapi
@@ -151,7 +151,7 @@ let%test_module _ =
         let t = of_list l in
         let f i x = (i, x * 2) in
         let t' = mapi t ~f in
-        assert (to_list t' = List.mapi l ~f);
+        assert ([%equal: (int * int) list] (to_list t') (List.mapi l ~f));
       done
 
     let%test_unit _ =
@@ -159,7 +159,7 @@ let%test_module _ =
       let t' = mapi t ~f:(fun i x -> (i, x * 2)) in
       assert (length t' = length t);
       assert (length t' = 0);
-      assert (to_list t' = [])
+      assert ([%equal: (int * int) list] (to_list t') [])
     ;;
 
     include Test_container.Test_S1 (Queue)
@@ -176,9 +176,9 @@ let%test_module _ =
       assert (is_none (last t));
       enqueue t 1;
       enqueue t 2;
-      assert (peek t = Some 1);
+      assert ([%equal: int option] (peek t) (Some 1));
       assert (peek_exn t = 1);
-      assert (last t = Some 2);
+      assert ([%equal: int option] (last t) (Some 2));
       assert (last_exn t = 2);
       assert (dequeue_exn t = 1);
       assert (dequeue_exn t = 2);
@@ -193,9 +193,9 @@ let%test_module _ =
       enqueue_all t [1; 2; 3];
       assert (dequeue_exn t = 1);
       assert (dequeue_exn t = 2);
-      assert (last t = Some 3);
+      assert ([%equal: int option] (last t) (Some 3));
       enqueue_all t [4; 5];
-      assert (last t = Some 5);
+      assert ([%equal: int option] (last t) (Some 5));
       assert (dequeue_exn t = 3);
       assert (dequeue_exn t = 4);
       assert (dequeue_exn t = 5);
@@ -216,10 +216,10 @@ let%test_module _ =
 
     let%test _ =
       let t = create () in
-      begin
-        for i = 1 to 5 do enqueue t i done;
-        to_list t = [1;2;3;4;5]
-      end
+      for i = 1 to 5 do
+        enqueue t i
+      done;
+      [%equal: int list] (to_list t) [1;2;3;4;5]
     ;;
 
     let of_array = of_array
@@ -286,6 +286,7 @@ let%test_module _ =
       let q = of_list q_list in
       let q' = create () in
       blit_transfer ~src:q ~dst:q' ();
+      let ( = ) = [%equal: int list] in
       assert (to_list q' = q_list);
       assert (to_list q = [])
     ;;
@@ -294,6 +295,7 @@ let%test_module _ =
       let q = of_list [1; 2; 3; 4] in
       let q' = create () in
       blit_transfer ~src:q ~dst:q' ~len:2 ();
+      let ( = ) = [%equal: int list] in
       assert (to_list q' = [1; 2]);
       assert (to_list q  = [3; 4])
     ;;
@@ -310,6 +312,7 @@ let%test_module _ =
       enqueue q 5;
       enqueue q 6;
       blit_transfer ~src:q ~dst:q' ~len:3 ();
+      let ( = ) = [%equal: int list] in
       assert (to_list q' = [4; 3; 4; 5]);
       assert (to_list q = [6])
     ;;
@@ -397,7 +400,7 @@ let%test_module _ =
           That_queue.enqueue t_b v;
           let end_a = This_queue.to_array t_a in
           let end_b = That_queue.to_array t_b in
-          if end_a <> end_b
+          if not ([%equal: int array] end_a end_b)
           then failwithf "enqueue transition failure of: %s -> %s vs. %s -> %s"
                  (array_string start_a)
                  (array_string end_a)
@@ -438,7 +441,7 @@ let%test_module _ =
           let a, b = This_queue.dequeue t_a, That_queue.dequeue t_b in
           let end_a = This_queue.to_array t_a in
           let end_b = That_queue.to_array t_b in
-          if a <> b || end_a <> end_b
+          if not ([%equal: int option] a b) || not ([%equal: int array] end_a end_b)
           then failwithf "error in dequeue: %s (%s -> %s) <> %s (%s -> %s)"
                  (Option.value ~default:"None" (Option.map a ~f:Int.to_string))
                  (array_string start_a)
@@ -459,7 +462,7 @@ let%test_module _ =
         let filter (t_a, t_b) =
           let t_a' = This_queue.filter t_a ~f:is_even in
           let t_b' = That_queue.filter t_b ~f:is_even in
-          if This_queue.to_array t_a' <> That_queue.to_array t_b'
+          if not ([%equal: int array] (This_queue.to_array t_a') (That_queue.to_array t_b'))
           then failwithf "error in filter: %s -> %s vs. %s -> %s"
                  (this_to_string t_a)
                  (this_to_string t_a')
@@ -469,9 +472,9 @@ let%test_module _ =
         ;;
 
         let filteri (t_a, t_b) =
-          let t_a' = This_queue.filteri t_a ~f:(fun i j -> is_even i = is_even j) in
-          let t_b' = That_queue.filteri t_b ~f:(fun i j -> is_even i = is_even j) in
-          if This_queue.to_array t_a' <> That_queue.to_array t_b'
+          let t_a' = This_queue.filteri t_a ~f:(fun i j -> [%equal: bool] (is_even i) (is_even j)) in
+          let t_b' = That_queue.filteri t_b ~f:(fun i j -> [%equal: bool] (is_even i) (is_even j)) in
+          if not ([%equal: int array] (This_queue.to_array t_a') (That_queue.to_array t_b'))
           then failwithf "error in filteri: %s -> %s vs. %s -> %s"
                  (this_to_string t_a)
                  (this_to_string t_a')
@@ -487,7 +490,7 @@ let%test_module _ =
           That_queue.filter_inplace t_b ~f:is_even;
           let end_a = This_queue.to_array t_a in
           let end_b = That_queue.to_array t_b in
-          if end_a <> end_b
+          if not ([%equal: int array] end_a end_b)
           then failwithf "error in filter_inplace: %s -> %s vs. %s -> %s"
                  (array_string start_a)
                  (array_string end_a)
@@ -499,12 +502,12 @@ let%test_module _ =
         let filteri_inplace (t_a, t_b) =
           let start_a = This_queue.to_array t_a in
           let start_b = That_queue.to_array t_b in
-          let f i x = is_even i = is_even x in
+          let f i x = [%equal: bool] (is_even i) (is_even x) in
           This_queue.filteri_inplace t_a ~f;
           That_queue.filteri_inplace t_b ~f;
           let end_a = This_queue.to_array t_a in
           let end_b = That_queue.to_array t_b in
-          if end_a <> end_b
+          if not ([%equal: int array] end_a end_b)
           then failwithf "error in filteri_inplace: %s -> %s vs. %s -> %s"
                  (array_string start_a)
                  (array_string end_a)
@@ -517,7 +520,7 @@ let%test_module _ =
           let f x = [x; x + 1; x + 2] in
           let t_a' = This_queue.concat_map t_a ~f in
           let t_b' = That_queue.concat_map t_b ~f in
-          if (This_queue.to_array t_a') <> (That_queue.to_array t_b')
+          if not ([%equal: int array] (This_queue.to_array t_a') (That_queue.to_array t_b'))
           then failwithf "error in concat_map: %s (for %s) <> %s (for %s)"
                  (this_to_string t_a')
                  (this_to_string t_a)
@@ -530,7 +533,7 @@ let%test_module _ =
           let f i x = [x; x + 1; x + 2; x + i] in
           let t_a' = This_queue.concat_mapi t_a ~f in
           let t_b' = That_queue.concat_mapi t_b ~f in
-          if (This_queue.to_array t_a') <> (That_queue.to_array t_b')
+          if not ([%equal: int array] (This_queue.to_array t_a') (That_queue.to_array t_b'))
           then failwithf "error in concat_mapi: %s (for %s) <> %s (for %s)"
                  (this_to_string t_a')
                  (this_to_string t_a)
@@ -543,7 +546,7 @@ let%test_module _ =
           let f x = if is_even x then None else Some (x + 1) in
           let t_a' = This_queue.filter_map t_a ~f in
           let t_b' = That_queue.filter_map t_b ~f in
-          if (This_queue.to_array t_a') <> (That_queue.to_array t_b')
+          if not ([%equal: int array] (This_queue.to_array t_a') (That_queue.to_array t_b'))
           then failwithf "error in filter_map: %s (for %s) <> %s (for %s)"
                  (this_to_string t_a')
                  (this_to_string t_a)
@@ -553,10 +556,10 @@ let%test_module _ =
         ;;
 
         let filter_mapi (t_a, t_b) =
-          let f i x = if is_even i = is_even x then None else Some (x + 1 + i) in
+          let f i x = if [%equal: bool] (is_even i) (is_even x) then None else Some (x + 1 + i) in
           let t_a' = This_queue.filter_mapi t_a ~f in
           let t_b' = That_queue.filter_mapi t_b ~f in
-          if (This_queue.to_array t_a') <> (That_queue.to_array t_b')
+          if not ([%equal: int array] (This_queue.to_array t_a') (That_queue.to_array t_b'))
           then failwithf "error in filter_mapi: %s (for %s) <> %s (for %s)"
                  (this_to_string t_a')
                  (this_to_string t_a)
@@ -569,7 +572,7 @@ let%test_module _ =
           let f x = x * 7 in
           let t_a' = This_queue.map t_a ~f in
           let t_b' = That_queue.map t_b ~f in
-          if (This_queue.to_array t_a') <> (That_queue.to_array t_b')
+          if not ([%equal: int array] (This_queue.to_array t_a') (That_queue.to_array t_b'))
           then failwithf "error in map: %s (for %s) <> %s (for %s)"
                  (this_to_string t_a')
                  (this_to_string t_a)
@@ -582,7 +585,7 @@ let%test_module _ =
           let f i x = (x + 3) lxor i in
           let t_a' = This_queue.mapi t_a ~f in
           let t_b' = That_queue.mapi t_b ~f in
-          if (This_queue.to_array t_a') <> (That_queue.to_array t_b')
+          if not ([%equal: int array] (This_queue.to_array t_a') (That_queue.to_array t_b'))
           then failwithf "error in mapi: %s (for %s) <> %s (for %s)"
                  (this_to_string t_a')
                  (this_to_string t_a)
@@ -608,7 +611,7 @@ let%test_module _ =
           let f i x = i < 7 && (i % 7 = x % 7) in
           let a' = This_queue.existsi t_a ~f in
           let b' = That_queue.existsi t_b ~f in
-          if a' <> b'
+          if not ([%equal: bool] a' b')
           then failwithf "error in existsi: %b (for %s) <> %b (for %s)"
                  (a')
                  (this_to_string t_a)
@@ -621,7 +624,7 @@ let%test_module _ =
           let f i x = i >= 7 || (i % 7 <> x % 7) in
           let a' = This_queue.for_alli t_a ~f in
           let b' = That_queue.for_alli t_b ~f in
-          if a' <> b'
+          if not ([%equal: bool] a' b')
           then failwithf "error in for_alli: %b (for %s) <> %b (for %s)"
                  (a')
                  (this_to_string t_a)
@@ -634,7 +637,7 @@ let%test_module _ =
           let f i x = i < 7 && (i % 7 = x % 7) in
           let a' = This_queue.findi t_a ~f in
           let b' = That_queue.findi t_b ~f in
-          if a' <> b'
+          if not ([%equal: (int * int) option] a' b')
           then failwithf "error in findi: %s (for %s) <> %s (for %s)"
                  (Sexp.to_string ([%sexp_of: (int * int) option] a'))
                  (this_to_string t_a)
@@ -647,7 +650,7 @@ let%test_module _ =
           let f i x = if i < 7 && (i % 7 = x % 7) then Some (i + x) else None in
           let a' = This_queue.find_mapi t_a ~f in
           let b' = That_queue.find_mapi t_b ~f in
-          if a' <> b'
+          if not ([%equal: int option] a' b')
           then failwithf "error in find_mapi: %s (for %s) <> %s (for %s)"
                  (Sexp.to_string ([%sexp_of: int option] a'))
                  (this_to_string t_a)
@@ -663,7 +666,7 @@ let%test_module _ =
           let start_b = That_queue.to_array t_b in
           let end_a = This_queue.to_array copy_a in
           let end_b = That_queue.to_array copy_b in
-          if end_a <> end_b
+          if not ([%equal: int array] end_a end_b)
           then failwithf "error in copy: %s -> %s vs. %s -> %s"
                  (array_string start_a)
                  (array_string end_a)
@@ -690,7 +693,7 @@ let%test_module _ =
           let end_b  = That_queue.to_array t_b in
           let end_a' = This_queue.to_array dst_a in
           let end_b' = That_queue.to_array dst_b in
-          if end_a' <> end_b' || end_a <> end_b
+          if not ([%equal: int array] end_a' end_b') || not ([%equal: int array] end_a end_b)
           then failwithf "error in transfer: %s -> (%s, %s) vs. %s -> (%s, %s)"
                  (array_string start_a)
                  (array_string end_a)
@@ -707,7 +710,7 @@ let%test_module _ =
           in
           let this_l = make_list This_queue.fold t_a in
           let that_l = make_list That_queue.fold t_b in
-          if this_l <> that_l
+          if not ([%equal: int list] this_l that_l)
           then failwithf "error in fold:  %s (from %s) <> %s (from %s)"
                  (Sexp.to_string (this_l |> [%sexp_of: int list]))
                  (this_to_string t_a)
@@ -722,7 +725,7 @@ let%test_module _ =
           in
           let this_l = make_list This_queue.foldi t_a in
           let that_l = make_list That_queue.foldi t_b in
-          if this_l <> that_l
+          if not ([%equal: (int * int) list] this_l that_l)
           then failwithf "error in foldi:  %s (from %s) <> %s (from %s)"
                  (Sexp.to_string (this_l |> [%sexp_of: (int * int) list]))
                  (this_to_string t_a)
@@ -749,7 +752,7 @@ let%test_module _ =
               let (t_a, t_b) = t in
               let arr_a = This_queue.to_array t_a in
               let arr_b = That_queue.to_array t_b in
-              if arr_a <> arr_b
+              if not ([%equal: int array] arr_a arr_b)
               then failwithf "queue final states not equal: %s vs. %s"
                      (array_string arr_a)
                      (array_string arr_b)
@@ -865,7 +868,11 @@ let%test_module _ =
       assert (does_raise (fun () -> filter_inplace t ~f));
       (* even though we said to drop the first element, the aborted call to [filter_inplace]
          shouldn't have made that change *)
-      assert (peek_exn t = `drop_this);
+      (match peek_exn t with
+       | `drop_this -> ()
+       | `new_element
+       | `enqueue_new_element
+       | `unreachable -> failwith "Expected the first element to be `drop_this");
       assert (not !reached_unreachable)
     ;;
 
