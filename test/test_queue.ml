@@ -16,32 +16,32 @@ let%test_module _ =
 
     let%test_unit _ =
       let t = create () in
-      assert (capacity t = 1);
+      [%test_result: int] (capacity t) ~expect:1;
       enqueue t 1;
-      assert (capacity t = 1);
+      [%test_result: int] (capacity t) ~expect:1;
       enqueue t 2;
-      assert (capacity t = 2);
+      [%test_result: int] (capacity t) ~expect:2;
       enqueue t 3;
-      assert (capacity t = 4);
+      [%test_result: int] (capacity t) ~expect:4;
       set_capacity t 0;
-      assert (capacity t = 4);
+      [%test_result: int] (capacity t) ~expect:4;
       set_capacity t 3;
-      assert (capacity t = 4);
+      [%test_result: int] (capacity t) ~expect:4;
       set_capacity t 100;
-      assert (capacity t = 128);
+      [%test_result: int] (capacity t) ~expect:128;
       enqueue t 4;
       enqueue t 5;
       set_capacity t 0;
-      assert (capacity t = 8);
+      [%test_result: int] (capacity t) ~expect:8;
       set_capacity t (-1);
-      assert (capacity t = 8);
+      [%test_result: int] (capacity t) ~expect:8;
     ;;
 
 
     let round_trip_sexp t =
       let sexp = sexp_of_t Int.sexp_of_t t in
       let t'   = t_of_sexp Int.t_of_sexp sexp in
-      assert ([%equal: int list] (to_list t) (to_list t'))
+      [%test_result: int list] ~expect:(to_list t) (to_list t')
     ;;
     let%test_unit _ = round_trip_sexp (of_list [1; 2; 3; 4])
     let%test_unit _ = round_trip_sexp (create ())
@@ -52,18 +52,18 @@ let%test_module _ =
     let create = create
     let%test_unit _ =
       let t = create () in
-      assert (length t = 0);
-      assert (capacity t = 1);
+      [%test_result: int] (length t) ~expect:0;
+      [%test_result: int] (capacity t) ~expect:1;
     ;;
     let%test_unit _ =
       let t = create ~capacity:0 () in
-      assert (length t = 0);
-      assert (capacity t = 1);
+      [%test_result: int] (length t) ~expect:0;
+      [%test_result: int] (capacity t) ~expect:1;
     ;;
     let%test_unit _ =
       let t = create ~capacity:6 () in
-      assert (length t = 0);
-      assert (capacity t = 8);
+      [%test_result: int] (length t) ~expect:0;
+      [%test_result: int] (capacity t) ~expect:8;
     ;;
     let%test_unit _ =
       assert (does_raise (fun () -> (create ~capacity:(-1) () : _ Queue.t)))
@@ -72,27 +72,27 @@ let%test_module _ =
     let singleton = singleton
     let%test_unit _ =
       let t = singleton 7 in
-      assert (length t = 1);
-      assert (capacity t = 1);
-      assert ([%equal: int option] (dequeue t) (Some 7));
-      assert ([%equal: int option] (dequeue t) None)
+      [%test_result: int] (length t) ~expect:1;
+      [%test_result: int] (capacity t) ~expect:1;
+      [%test_result: int option] (dequeue t) ~expect:(Some 7);
+      [%test_result: int option] (dequeue t) ~expect:None;
     ;;
 
     let init = init
     let%test_unit _ =
       let t = init 0 ~f:(fun _ -> assert false) in
-      assert (length t = 0);
-      assert (capacity t = 1);
-      assert ([%equal: int option] (dequeue t) None);
+      [%test_result: int] (length t) ~expect:0;
+      [%test_result: int] (capacity t) ~expect:1;
+      [%test_result: int option] (dequeue t) ~expect:None;
     ;;
     let%test_unit _ =
       let t = init 3 ~f:(fun i -> i * 2) in
-      assert (length t = 3);
-      assert (capacity t = 4);
-      assert ([%equal: int option] (dequeue t) (Some 0));
-      assert ([%equal: int option] (dequeue t) (Some 2));
-      assert ([%equal: int option] (dequeue t) (Some 4));
-      assert ([%equal: int option] (dequeue t) None);
+      [%test_result: int] (length t) ~expect:3;
+      [%test_result: int] (capacity t) ~expect:4;
+      [%test_result: int option] (dequeue t) ~expect:(Some 0);
+      [%test_result: int option] (dequeue t) ~expect:(Some 2);
+      [%test_result: int option] (dequeue t) ~expect:(Some 4);
+      [%test_result: int option] (dequeue t) ~expect:None;
     ;;
     let%test_unit _ =
       assert (does_raise (fun () -> (init (-1) ~f:(fun _ -> ()) : unit Queue.t)))
@@ -103,25 +103,24 @@ let%test_module _ =
     let%test_unit _ =
       let t = create () in
       let get_opt t i = Option.try_with (fun () -> get t i) in
-      let ( = ) = [%equal: int option] in
-      assert (get_opt t 0 = None);
-      assert (get_opt t (-1) = None);
-      assert (get_opt t 10 = None);
+      [%test_result: int option] (get_opt t 0) ~expect:None;
+      [%test_result: int option] (get_opt t (-1)) ~expect:None;
+      [%test_result: int option] (get_opt t 10) ~expect:None;
       List.iter [ -1; 0; 1 ] ~f:(fun i -> assert (does_raise (fun () -> set t i 0)));
       enqueue t 0;
       enqueue t 1;
       enqueue t 2;
-      assert (get_opt t 0 = Some 0);
-      assert (get_opt t 1 = Some 1);
-      assert (get_opt t 2 = Some 2);
-      assert (get_opt t 3 = None);
+      [%test_result: int option] (get_opt t 0) ~expect:(Some 0);
+      [%test_result: int option] (get_opt t 1) ~expect:(Some 1);
+      [%test_result: int option] (get_opt t 2) ~expect:(Some 2);
+      [%test_result: int option] (get_opt t 3) ~expect:None;
       ignore (dequeue_exn t);
-      assert (get_opt t 0 = Some 1);
-      assert (get_opt t 1 = Some 2);
-      assert (get_opt t 2 = None);
+      [%test_result: int option] (get_opt t 0) ~expect:(Some 1);
+      [%test_result: int option] (get_opt t 1) ~expect:(Some 2);
+      [%test_result: int option] (get_opt t 2) ~expect:None;
       set t 0 3;
-      assert (get_opt t 0 = Some 3);
-      assert (get_opt t 1 = Some 2);
+      [%test_result: int option] (get_opt t 0) ~expect:(Some 3);
+      [%test_result: int option] (get_opt t 1) ~expect:(Some 2);
       List.iter [ -1; 2 ] ~f:(fun i -> assert (does_raise (fun () -> set t i 0)))
     ;;
 
@@ -132,16 +131,16 @@ let%test_module _ =
         let t = of_list l in
         let f x = x * 2 in
         let t' = map t ~f in
-        assert ([%equal: int list] (to_list t') (List.map l ~f));
+        [%test_result: int list] (to_list t') ~expect:(List.map l ~f);
       done
     ;;
 
     let%test_unit _ =
       let t = create () in
       let t' = map t ~f:(fun x -> x * 2) in
-      assert (length t' = length t);
-      assert (length t' = 0);
-      assert ([%equal: int list] (to_list t') [])
+      [%test_result: int] (length t') ~expect:(length t);
+      [%test_result: int] (length t') ~expect:0;
+      [%test_result: int list] (to_list t') ~expect:[]
     ;;
 
     let mapi = mapi
@@ -151,15 +150,15 @@ let%test_module _ =
         let t = of_list l in
         let f i x = (i, x * 2) in
         let t' = mapi t ~f in
-        assert ([%equal: (int * int) list] (to_list t') (List.mapi l ~f));
+        [%test_result: (int * int) list] (to_list t') ~expect:(List.mapi l ~f);
       done
 
     let%test_unit _ =
       let t = create () in
       let t' = mapi t ~f:(fun i x -> (i, x * 2)) in
-      assert (length t' = length t);
-      assert (length t' = 0);
-      assert ([%equal: (int * int) list] (to_list t') [])
+      [%test_result: int] (length t') ~expect:(length t);
+      [%test_result: int] (length t') ~expect:0;
+      [%test_result: (int * int) list] (to_list t') ~expect:[]
     ;;
 
     include Test_container.Test_S1 (Queue)
@@ -172,16 +171,16 @@ let%test_module _ =
     let last_exn    = last_exn
     let%test_unit _ =
       let t = create () in
-      assert (is_none (peek t));
-      assert (is_none (last t));
+      [%test_result: int option] (peek t) ~expect:None;
+      [%test_result: int option] (last t) ~expect:None;
       enqueue t 1;
       enqueue t 2;
-      assert ([%equal: int option] (peek t) (Some 1));
-      assert (peek_exn t = 1);
-      assert ([%equal: int option] (last t) (Some 2));
-      assert (last_exn t = 2);
-      assert (dequeue_exn t = 1);
-      assert (dequeue_exn t = 2);
+      [%test_result: int option] (peek t) ~expect:(Some 1);
+      [%test_result: int] (peek_exn t) ~expect:1;
+      [%test_result: int option] (last t) ~expect:(Some 2);
+      [%test_result: int] (last_exn t) ~expect:2;
+      [%test_result: int] (dequeue_exn t) ~expect:1;
+      [%test_result: int] (dequeue_exn t) ~expect:2;
       assert (does_raise (fun () -> dequeue_exn t));
       assert (does_raise (fun () -> peek_exn t));
       assert (does_raise (fun () -> last_exn t))
@@ -191,14 +190,14 @@ let%test_module _ =
     let%test_unit _ =
       let t = create () in
       enqueue_all t [1; 2; 3];
-      assert (dequeue_exn t = 1);
-      assert (dequeue_exn t = 2);
-      assert ([%equal: int option] (last t) (Some 3));
+      [%test_result: int] (dequeue_exn t) ~expect:1;
+      [%test_result: int] (dequeue_exn t) ~expect:2;
+      [%test_result: int option] (last t) ~expect:(Some 3);
       enqueue_all t [4; 5];
-      assert ([%equal: int option] (last t) (Some 5));
-      assert (dequeue_exn t = 3);
-      assert (dequeue_exn t = 4);
-      assert (dequeue_exn t = 5);
+      [%test_result: int option] (last t) ~expect:(Some 5);
+      [%test_result: int] (dequeue_exn t) ~expect:3;
+      [%test_result: int] (dequeue_exn t) ~expect:4;
+      [%test_result: int] (dequeue_exn t) ~expect:5;
       assert (does_raise (fun () -> dequeue_exn t));
       enqueue_all t [];
       assert (does_raise (fun () -> dequeue_exn t));
@@ -210,7 +209,7 @@ let%test_module _ =
     let%test_unit _ =
       for i = 0 to 4 do
         let list = List.init i ~f:Fn.id in
-        assert (Poly.equal (to_list (of_list list)) list);
+        [%test_result: int list] (to_list (of_list list)) ~expect:list;
       done
     ;;
 
@@ -228,7 +227,7 @@ let%test_module _ =
     let%test_unit _ =
       for len = 0 to 4 do
         let array = Array.init len ~f:Fn.id in
-        assert (Poly.equal (to_array (of_array array)) array);
+        [%test_result: int array] (to_array (of_array array)) ~expect:array;
       done
     ;;
 
@@ -286,18 +285,16 @@ let%test_module _ =
       let q = of_list q_list in
       let q' = create () in
       blit_transfer ~src:q ~dst:q' ();
-      let ( = ) = [%equal: int list] in
-      assert (to_list q' = q_list);
-      assert (to_list q = [])
+      [%test_result: int list] (to_list q') ~expect:q_list;
+      [%test_result: int list] (to_list q)  ~expect:[];
     ;;
 
     let%test_unit _ =
       let q = of_list [1; 2; 3; 4] in
       let q' = create () in
       blit_transfer ~src:q ~dst:q' ~len:2 ();
-      let ( = ) = [%equal: int list] in
-      assert (to_list q' = [1; 2]);
-      assert (to_list q  = [3; 4])
+      [%test_result: int list] (to_list q') ~expect:[1; 2];
+      [%test_result: int list] (to_list q)  ~expect:[3; 4];
     ;;
 
     let%test_unit "blit_transfer on wrapped queues" =
@@ -312,9 +309,8 @@ let%test_module _ =
       enqueue q 5;
       enqueue q 6;
       blit_transfer ~src:q ~dst:q' ~len:3 ();
-      let ( = ) = [%equal: int list] in
-      assert (to_list q' = [4; 3; 4; 5]);
-      assert (to_list q = [6])
+      [%test_result: int list] (to_list q') ~expect:[4; 3; 4; 5];
+      [%test_result: int list] (to_list q)  ~expect:[6];
     ;;
 
     let copy            = copy

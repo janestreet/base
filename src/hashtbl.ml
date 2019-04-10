@@ -273,9 +273,13 @@ let invariant invariant_key invariant_data t =
 
 let find_exn =
   let if_found v = v in
-  let if_not_found _ = raise Caml.Not_found in
-  fun t key ->
+  let not_found = Not_found_s (Atom "Hashtbl.find_exn: not found") in
+  let if_not_found _ = raise not_found in
+  let find_exn t key =
     find_and_call t key ~if_found ~if_not_found
+  in
+  (* named to preserve symbol in compiled binary *)
+  find_exn
 ;;
 
 let existsi t ~f =

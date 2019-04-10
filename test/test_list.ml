@@ -1,6 +1,21 @@
 open! Import
 open! List
 
+let%expect_test "find_exn" =
+  let show f sexp_of_ok = print_s [%sexp (Result.try_with f : (ok, exn) Result.t)] in
+  let test list =
+    show (fun () -> List.find_exn list ~f:Int.is_negative) [%sexp_of: int]
+  in
+  test [];
+  [%expect {| (Error (Not_found_s "List.find_exn: not found")) |}];
+  test [1; 2; 3];
+  [%expect {| (Error (Not_found_s "List.find_exn: not found")) |}];
+  test [-1; -2; -3];
+  [%expect {| (Ok -1) |}];
+  test [1; -2; -3];
+  [%expect {| (Ok -2) |}];
+;;
+
 let%test_module "reduce_balanced" =
   (module struct
     let test expect list =

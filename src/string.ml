@@ -152,6 +152,69 @@ let contains ?(pos = 0) ?len t char =
 
 let is_empty t = length t = 0
 
+let rec index_from_exn_internal string ~pos ~len ~not_found char =
+  if pos >= len
+  then raise not_found
+  else if Char.equal (unsafe_get string pos) char
+  then pos
+  else index_from_exn_internal string ~pos:(pos + 1) ~len ~not_found char
+;;
+
+let index_exn_internal t ~not_found char =
+  index_from_exn_internal t ~pos:0 ~len:(length t) ~not_found char
+;;
+
+let index_exn =
+  let not_found = Not_found_s (Atom "String.index_exn: not found") in
+  let index_exn t char = index_exn_internal t ~not_found char in
+  (* named to preserve symbol in compiled binary *)
+  index_exn
+;;
+
+let index_from_exn =
+  let not_found = Not_found_s (Atom "String.index_from_exn: not found") in
+  let index_from_exn t pos char =
+    let len = length t in
+    if pos < 0 || pos > len
+    then invalid_arg "String.index_from_exn"
+    else index_from_exn_internal t ~pos ~len ~not_found char
+  in
+  (* named to preserve symbol in compiled binary *)
+  index_from_exn
+;;
+
+let rec rindex_from_exn_internal string ~pos ~len ~not_found char =
+  if pos < 0
+  then raise not_found
+  else if Char.equal (unsafe_get string pos) char
+  then pos
+  else rindex_from_exn_internal string ~pos:(pos - 1) ~len ~not_found char
+;;
+
+let rindex_exn_internal t ~not_found char =
+  let len = length t in
+  rindex_from_exn_internal t ~pos:(len - 1) ~len ~not_found char
+;;
+
+let rindex_exn =
+  let not_found = Not_found_s (Atom "String.rindex_exn: not found") in
+  let rindex_exn t char = rindex_exn_internal t ~not_found char in
+  (* named to preserve symbol in compiled binary *)
+  rindex_exn
+;;
+
+let rindex_from_exn =
+  let not_found = Not_found_s (Atom "String.rindex_from_exn: not found") in
+  let rindex_from_exn t pos char =
+    let len = length t in
+    if pos < -1 || pos >= len
+    then invalid_arg "String.rindex_from_exn"
+    else rindex_from_exn_internal t ~pos ~len ~not_found char
+  in
+  (* named to preserve symbol in compiled binary *)
+  rindex_from_exn
+;;
+
 let index t char =
   try Some (index_exn t char)
   with Not_found_s _ | Caml.Not_found -> None
@@ -397,17 +460,29 @@ let rev t =
 
 (** Efficient string splitting *)
 
-let lsplit2_exn line ~on:delim =
-  let pos = index_exn line delim in
-  (sub line ~pos:0 ~len:pos,
-   sub line ~pos:(pos+1) ~len:(length line - pos - 1)
-  )
+let lsplit2_exn =
+  let not_found = Not_found_s (Atom "String.lsplit2_exn: not found") in
+  let lsplit2_exn line ~on:delim =
+    let pos = index_exn_internal line ~not_found delim in
+    (sub line ~pos:0 ~len:pos,
+     sub line ~pos:(pos+1) ~len:(length line - pos - 1)
+    )
+  in
+  (* named to preserve symbol in compiled binary *)
+  lsplit2_exn
+;;
 
-let rsplit2_exn line ~on:delim =
-  let pos = rindex_exn line delim in
-  (sub line ~pos:0 ~len:pos,
-   sub line ~pos:(pos+1) ~len:(length line - pos - 1)
-  )
+let rsplit2_exn =
+  let not_found = Not_found_s (Atom "String.rsplit2_exn: not found") in
+  let rsplit2_exn line ~on:delim =
+    let pos = rindex_exn_internal line ~not_found delim in
+    (sub line ~pos:0 ~len:pos,
+     sub line ~pos:(pos+1) ~len:(length line - pos - 1)
+    )
+  in
+  (* named to preserve symbol in compiled binary *)
+  rsplit2_exn
+;;
 
 let lsplit2 line ~on =
   try Some (lsplit2_exn line ~on) with Not_found_s _ | Caml.Not_found -> None

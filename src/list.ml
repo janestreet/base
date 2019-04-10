@@ -230,10 +230,16 @@ let find_map t ~f =
   loop t
 ;;
 
-let find_map_exn t ~f =
-  match find_map t ~f with
-  | None -> raise Caml.Not_found
-  | Some x -> x
+let find_map_exn =
+  let not_found = Not_found_s (Atom "List.find_map_exn: not found") in
+  let find_map_exn t ~f =
+    match find_map t ~f with
+    | None -> raise not_found
+    | Some x -> x
+  in
+  (* named to preserve symbol in compiled binary *)
+  find_map_exn
+;;
 
 let find t ~f =
   let rec loop = function
@@ -241,6 +247,17 @@ let find t ~f =
     | x :: l -> if f x then Some x else loop l
   in
   loop t
+;;
+
+let find_exn =
+  let not_found = Not_found_s (Atom "List.find_exn: not found") in
+  let rec find_exn t ~f =
+    match t with
+    | [] -> raise not_found
+    | x :: t -> if f x then x else find_exn t ~f
+  in
+  (* named to preserve symbol in compiled binary *)
+  find_exn
 ;;
 
 let findi t ~f =
@@ -264,10 +281,17 @@ let find_mapi t ~f =
   loop 0 t
 ;;
 
-let find_mapi_exn t ~f =
-  match find_mapi t ~f with
-  | None -> raise Caml.Not_found
-  | Some x -> x
+
+let find_mapi_exn =
+  let not_found = Not_found_s (Atom "List.find_mapi_exn: not found") in
+  let find_mapi_exn t ~f =
+    match find_mapi t ~f with
+    | None -> raise not_found
+    | Some x -> x
+  in
+  (* named to preserve symbol in compiled binary *)
+  find_mapi_exn
+;;
 
 let for_alli t ~f =
   let rec loop i t =
@@ -833,10 +857,16 @@ module Assoc = struct
     | None -> None
     | Some x -> Some (snd x)
 
-  let find_exn t ~equal key =
-    match find t key ~equal with
-    | None -> raise Caml.Not_found
-    | Some value -> value
+  let find_exn =
+    let not_found = Not_found_s (Atom "List.Assoc.find_exn: not found") in
+    let find_exn t ~equal key =
+      match find t key ~equal with
+      | None -> raise not_found
+      | Some value -> value
+    in
+    (* named to preserve symbol in compiled binary *)
+    find_exn
+  ;;
 
   let mem t ~equal key =
     match find t ~equal key with

@@ -777,11 +777,15 @@ module Tree0 = struct
     | Node (_, v, _, _, _) -> Some v
   ;;
 
-  let choose_exn t =
-    match choose t with
-    | None ->
-      raise Caml.Not_found
-    | Some v -> v
+  let choose_exn =
+    let not_found = Not_found_s (Atom "Set.choose_exn: empty set") in
+    let choose_exn t =
+      match choose t with
+      | None -> raise not_found
+      | Some v -> v
+    in
+    (* named to preserve symbol in compiled binary *)
+    choose_exn
   ;;
 
   let of_list lst ~compare_elt =

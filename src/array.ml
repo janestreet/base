@@ -531,16 +531,26 @@ let findi t ~f =
   findi_loop t ~f ~length 0
 ;;
 
-let findi_exn t ~f =
-  match findi t ~f with
-  | None -> raise Caml.Not_found
-  | Some x -> x
+let findi_exn =
+  let not_found = Not_found_s (Atom "Array.findi_exn: not found") in
+  let findi_exn t ~f =
+    match findi t ~f with
+    | None -> raise not_found
+    | Some x -> x
+  in
+  (* named to preserve symbol in compiled binary *)
+  findi_exn
 ;;
 
-let find_exn t ~f =
-  match findi t ~f:(fun _i x -> f x) with
-  | None -> raise Caml.Not_found
-  | Some (_i, x) -> x
+let find_exn =
+  let not_found = Not_found_s (Atom "Array.find_exn: not found") in
+  let find_exn t ~f =
+    match findi t ~f:(fun _i x -> f x) with
+    | None -> raise not_found
+    | Some (_i, x) -> x
+  in
+  (* named to preserve symbol in compiled binary *)
+  find_exn
 ;;
 
 let find t ~f = Option.map (findi t ~f:(fun _i x -> f x)) ~f:(fun (_i, x) -> x)
@@ -557,10 +567,16 @@ let find_map t ~f =
   find_map_loop t ~f ~length 0
 ;;
 
-let find_map_exn t ~f =
-  match find_map t ~f with
-  | None -> raise Caml.Not_found
-  | Some x -> x
+let find_map_exn =
+  let not_found = Not_found_s (Atom "Array.find_map_exn: not found") in
+  let find_map_exn t ~f =
+    match find_map t ~f with
+    | None -> raise not_found
+    | Some x -> x
+  in
+  (* named to preserve symbol in compiled binary *)
+  find_map_exn
+;;
 
 let find_mapi t ~f =
   let rec find_mapi_loop t ~f ~length i =
@@ -574,10 +590,16 @@ let find_mapi t ~f =
   find_mapi_loop t ~f ~length 0
 ;;
 
-let find_mapi_exn t ~f =
-  match find_mapi t ~f with
-  | None -> raise Caml.Not_found
-  | Some x -> x
+let find_mapi_exn =
+  let not_found = Not_found_s (Atom "Array.find_mapi_exn: not found") in
+  let find_mapi_exn t ~f =
+    match find_mapi t ~f with
+    | None -> raise not_found
+    | Some x -> x
+  in
+  (* named to preserve symbol in compiled binary *)
+  find_mapi_exn
+;;
 
 let find_consecutive_duplicate t ~equal =
   let n = length t in

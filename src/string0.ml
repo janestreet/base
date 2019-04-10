@@ -42,11 +42,7 @@ let blit            = Caml.String.blit
 let compare         = Caml.String.compare
 let copy            = Caml.String.copy [@@warning "-3"]
 let escaped         = Caml.String.escaped
-let index_exn       = Caml.String.index
-let index_from_exn  = Caml.String.index_from
 let make            = Caml.String.make
-let rindex_exn      = Caml.String.rindex
-let rindex_from_exn = Caml.String.rindex_from
 let sub             = Caml.String.sub
 let unsafe_blit     = Caml.String.unsafe_blit
 

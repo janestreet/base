@@ -420,11 +420,16 @@ module Tree0 = struct
     | Some l -> l
   ;;
 
-  let find_exn t x ~compare_key =
-    match find t x ~compare_key with
-    | Some data -> data
-    | None ->
-      raise Caml.Not_found
+  let find_exn =
+    let not_found = Not_found_s (Atom "Map.find_exn: not found") in
+    let find_exn t x ~compare_key =
+      match find t x ~compare_key with
+      | Some data -> data
+      | None ->
+        raise not_found
+    in
+    (* named to preserve symbol in compiled binary *)
+    find_exn
   ;;
 
   let mem t x ~compare_key = Option.is_some (find t x ~compare_key)

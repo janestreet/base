@@ -18,7 +18,6 @@ let unzip       = Caml.List.split
    conventions. *)
 let exists       t                 ~f = Caml.List.exists     t           ~f
 let exists2_ok   l1 l2             ~f = Caml.List.exists2    l1 l2       ~f
-let find_exn     t                 ~f = Caml.List.find       t           ~f
 let fold         t           ~init ~f = Caml.List.fold_left  t           ~f ~init
 let fold2_ok     l1 l2 ~init       ~f = Caml.List.fold_left2 l1 l2 ~init ~f
 let for_all      t                 ~f = Caml.List.for_all    t           ~f

@@ -431,6 +431,128 @@ let%expect_test "is_substring_at" =
       "String.is_substring_at: invalid index -1 for string of length 26")) |}];
 ;;
 
+let%test_module "functions that raise Not_found_s" =
+  (module struct
+    let show f sexp_of_ok =
+      print_s [%sexp (Result.try_with f : (ok, exn) Result.t)]
+    ;;
+
+    let%expect_test "index_exn" =
+      let test s = show (fun () -> index_exn s ':') [%sexp_of: int] in
+      test "";
+      [%expect {| (Error (Not_found_s "String.index_exn: not found")) |}];
+      test "abc";
+      [%expect {| (Error (Not_found_s "String.index_exn: not found")) |}];
+      test ":abc";
+      [%expect {| (Ok 0) |}];
+      test "abc:";
+      [%expect {| (Ok 3) |}];
+      test "ab:cd:ef";
+      [%expect {| (Ok 2) |}];
+    ;;
+
+    let%expect_test "index_from_exn" =
+      let test_at s i = show (fun () -> index_from_exn s i ':') [%sexp_of: int] in
+      let test s = for i = 0 to length s do test_at s i done in
+      test "";
+      [%expect {| (Error (Not_found_s "String.index_from_exn: not found")) |}];
+      test "abc";
+      [%expect {|
+        (Error (Not_found_s "String.index_from_exn: not found"))
+        (Error (Not_found_s "String.index_from_exn: not found"))
+        (Error (Not_found_s "String.index_from_exn: not found"))
+        (Error (Not_found_s "String.index_from_exn: not found")) |}];
+      test "a:b:c";
+      [%expect {|
+        (Ok 1)
+        (Ok 1)
+        (Ok 3)
+        (Ok 3)
+        (Error (Not_found_s "String.index_from_exn: not found"))
+        (Error (Not_found_s "String.index_from_exn: not found")) |}];
+      let test_bounds s =
+        test_at s (-1);
+        test_at s (length s + 1);
+      in
+      test_bounds "abc";
+      [%expect {|
+        (Error (Invalid_argument String.index_from_exn))
+        (Error (Invalid_argument String.index_from_exn)) |}];
+    ;;
+
+    let%expect_test "rindex_exn" =
+      let test s = show (fun () -> rindex_exn s ':') [%sexp_of: int] in
+      test "";
+      [%expect {| (Error (Not_found_s "String.rindex_exn: not found")) |}];
+      test "abc";
+      [%expect {| (Error (Not_found_s "String.rindex_exn: not found")) |}];
+      test ":abc";
+      [%expect {| (Ok 0) |}];
+      test "abc:";
+      [%expect {| (Ok 3) |}];
+      test "ab:cd:ef";
+      [%expect {| (Ok 5) |}];
+    ;;
+
+    let%expect_test "rindex_from_exn" =
+      let test_at s i = show (fun () -> rindex_from_exn s i ':') [%sexp_of: int] in
+      let test s = for i = length s - 1 downto -1 do test_at s i done in
+      test "";
+      [%expect {| (Error (Not_found_s "String.rindex_from_exn: not found")) |}];
+      test "abc";
+      [%expect {|
+        (Error (Not_found_s "String.rindex_from_exn: not found"))
+        (Error (Not_found_s "String.rindex_from_exn: not found"))
+        (Error (Not_found_s "String.rindex_from_exn: not found"))
+        (Error (Not_found_s "String.rindex_from_exn: not found")) |}];
+      test "a:b:c";
+      [%expect {|
+        (Ok 3)
+        (Ok 3)
+        (Ok 1)
+        (Ok 1)
+        (Error (Not_found_s "String.rindex_from_exn: not found"))
+        (Error (Not_found_s "String.rindex_from_exn: not found")) |}];
+      let test_bounds s =
+        test_at s (-2);
+        test_at s (length s);
+      in
+      test_bounds "abc";
+      [%expect {|
+        (Error (Invalid_argument String.rindex_from_exn))
+        (Error (Invalid_argument String.rindex_from_exn)) |}];
+    ;;
+
+    let%expect_test "lsplit2_exn" =
+      let test s = show (fun () -> lsplit2_exn s ~on:':') [%sexp_of: string * string] in
+      test "";
+      [%expect {| (Error (Not_found_s "String.lsplit2_exn: not found")) |}];
+      test "abc";
+      [%expect {| (Error (Not_found_s "String.lsplit2_exn: not found")) |}];
+      test ":abc";
+      [%expect {| (Ok ("" abc)) |}];
+      test "abc:";
+      [%expect {| (Ok (abc "")) |}];
+      test "ab:cd:ef";
+      [%expect {| (Ok (ab cd:ef)) |}];
+    ;;
+
+    let%expect_test "rsplit2_exn" =
+      let test s = show (fun () -> rsplit2_exn s ~on:':') [%sexp_of: string * string] in
+      test "";
+      [%expect {| (Error (Not_found_s "String.rsplit2_exn: not found")) |}];
+      test "abc";
+      [%expect {| (Error (Not_found_s "String.rsplit2_exn: not found")) |}];
+      test ":abc";
+      [%expect {| (Ok ("" abc)) |}];
+      test "abc:";
+      [%expect {| (Ok (abc "")) |}];
+      test "ab:cd:ef";
+      [%expect {| (Ok (ab:cd ef)) |}];
+    ;;
+  end)
+;;
+
 let%test_module "Escaping" =
   (module struct
     open Escaping
