@@ -237,6 +237,25 @@ let%test_module _ =
               | None      -> `Not_found key
               | Some data -> `Found     (key, data)))
 
+    let find_and_call1 = find_and_call1
+
+    let%test_unit _ =
+      Quickcheck.test
+        (Quickcheck.Generator.tuple3
+           constructors_gen
+           Key.quickcheck_generator
+           Base_quickcheck.Generator.int)
+        ~sexp_of:[%sexp_of: Constructor.t list * Key.t * int]
+        ~f:(fun (constructors, key, arg) ->
+          let t, map = reify constructors in
+          [%test_result: [ `Found of Data.t * int | `Not_found of Key.t * int ]]
+            (find_and_call1 t key ~compare arg
+               ~if_found: (fun data arg -> `Found (data, arg))
+               ~if_not_found: (fun key arg -> `Not_found (key, arg)))
+            ~expect:(match Map.find map key with
+              | None -> `Not_found (key, arg)
+              | Some data -> `Found (data, arg)))
+
     let iter = iter
 
     let%test_unit _ =

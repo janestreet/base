@@ -403,7 +403,7 @@ module Tree0 = struct
     match t with
     | Empty -> None
     | Leaf (v, d) -> if compare_key x v = 0 then Some d else None
-    | Node(l, v, d, r, _) ->
+    | Node (l, v, d, r, _) ->
       let c = compare_key x v in
       if c = 0 then Some d
       else find (if c < 0 then l else r) x ~compare_key
@@ -421,12 +421,18 @@ module Tree0 = struct
   ;;
 
   let find_exn =
-    let not_found = Not_found_s (Atom "Map.find_exn: not found") in
-    let find_exn t x ~compare_key =
-      match find t x ~compare_key with
-      | Some data -> data
-      | None ->
-        raise not_found
+    let if_not_found key ~sexp_of_key =
+      raise (Not_found_s (List [Atom "Map.find_exn: not found"; sexp_of_key key]))
+    in
+    let rec find_exn t x ~compare_key ~sexp_of_key =
+      match t with
+      | Empty -> if_not_found x ~sexp_of_key
+      | Leaf (v, d) -> if compare_key x v = 0 then d else if_not_found x ~sexp_of_key
+      | Node (l, v, d, r, _) ->
+        let c = compare_key x v in
+        if c = 0
+        then d
+        else find_exn (if c < 0 then l else r) x ~compare_key ~sexp_of_key
     in
     (* named to preserve symbol in compiled binary *)
     find_exn
@@ -1276,7 +1282,11 @@ module Accessors = struct
     like t (Tree0.change t.tree key ~f ~length:t.length ~compare_key:(compare_key t))
   ;;
   let update t key ~f = change t key ~f:(fun data -> Some (f data))
-  let find_exn t key = Tree0.find_exn t.tree key ~compare_key:(compare_key t)
+  let find_exn t key =
+    Tree0.find_exn t.tree key
+      ~compare_key:(compare_key t)
+      ~sexp_of_key:t.comparator.sexp_of_t
+  ;;
   let find t key = Tree0.find t.tree key ~compare_key:(compare_key t)
   let remove t key =
     like t (Tree0.remove t.tree key ~length:t.length ~compare_key:(compare_key t))
@@ -1478,7 +1488,9 @@ module Tree = struct
   ;;
   let update ~comparator t key ~f = change ~comparator t key ~f:(fun data -> Some (f data))
   let find_exn ~comparator t key =
-    Tree0.find_exn t key ~compare_key:comparator.Comparator.compare
+    Tree0.find_exn t key
+      ~compare_key:comparator.Comparator.compare
+      ~sexp_of_key:comparator.Comparator.sexp_of_t
   ;;
   let find ~comparator t key =
     Tree0.find t key ~compare_key:comparator.Comparator.compare

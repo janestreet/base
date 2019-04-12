@@ -242,51 +242,74 @@ let rec last t =
 ;;
 
 
-let[@inline always] rec findi_and_call_impl t ~compare k ~call_if_found ~if_found ~if_not_found =
+let[@inline always] rec findi_and_call_impl t ~compare k arg
+     ~call_if_found
+     ~call_if_not_found
+     ~if_found
+     ~if_not_found
+  =
   (* A little manual unrolling of the recursion.
      This is really worth 5% on average *)
   match t with
-  | Empty -> if_not_found k
+  | Empty -> call_if_not_found ~if_not_found k arg
   | Leaf { key = k'; value = v } ->
-    if compare k k' = 0 then call_if_found ~if_found ~key:k' ~data:v
-    else if_not_found k
+    if compare k k' = 0
+    then call_if_found ~if_found ~key:k' ~data:v arg
+    else call_if_not_found ~if_not_found k arg
   | Node { left; key = k'; value = v; height = _; right } ->
     let c = compare k k' in
-    if c = 0 then call_if_found ~if_found ~key:k' ~data:v
+    if c = 0
+    then call_if_found ~if_found ~key:k' ~data:v arg
     else if c < 0 then begin
       match left with
-      | Empty -> if_not_found k
+      | Empty -> call_if_not_found ~if_not_found k arg
       | Leaf { key = k'; value = v }->
-        if compare k k' = 0 then call_if_found ~if_found ~key:k' ~data:v
-        else if_not_found k
+        if compare k k' = 0
+        then call_if_found ~if_found ~key:k' ~data:v arg
+        else call_if_not_found ~if_not_found k arg
       | Node { left; key = k'; value = v; height = _; right } ->
         let c = compare k k' in
-        if c = 0 then call_if_found ~if_found ~key:k' ~data:v
+        if c = 0 then call_if_found ~if_found ~key:k' ~data:v arg
         else
-          findi_and_call_impl (if c < 0 then left else right) ~compare k ~call_if_found ~if_found ~if_not_found
+          findi_and_call_impl (if c < 0 then left else right) ~compare k arg
+            ~call_if_found ~call_if_not_found ~if_found ~if_not_found
     end else begin
       match right with
-      | Empty -> if_not_found k
+      | Empty -> call_if_not_found ~if_not_found k arg
       | Leaf { key = k'; value = v } ->
-        if compare k k' = 0 then call_if_found ~if_found ~key:k' ~data:v
-        else if_not_found k
+        if compare k k' = 0
+        then call_if_found ~if_found ~key:k' ~data:v arg
+        else call_if_not_found ~if_not_found k arg
       | Node { left; key = k'; value = v; height = _; right } ->
         let c = compare k k' in
-        if c = 0 then call_if_found ~if_found ~key:k' ~data:v
+        if c = 0
+        then call_if_found ~if_found ~key:k' ~data:v arg
         else
-          findi_and_call_impl (if c < 0 then left else right) ~compare k ~call_if_found ~if_found ~if_not_found
+          findi_and_call_impl (if c < 0 then left else right) ~compare k arg
+            ~call_if_found ~call_if_not_found ~if_found ~if_not_found
     end
 ;;
 
 let find_and_call =
-  let call_if_found ~if_found ~key:_ ~data = if_found data in
+  let call_if_found ~if_found ~key:_ ~data () = if_found data in
+  let call_if_not_found ~if_not_found key () = if_not_found key in
   fun t ~compare k ~if_found ~if_not_found ->
-    findi_and_call_impl t ~compare k ~call_if_found ~if_found ~if_not_found
+    findi_and_call_impl t ~compare k ()
+      ~call_if_found ~call_if_not_found ~if_found ~if_not_found
 
 let findi_and_call =
-  let call_if_found ~if_found ~key ~data = if_found ~key ~data in
+  let call_if_found ~if_found ~key ~data () = if_found ~key ~data in
+  let call_if_not_found ~if_not_found key () = if_not_found key in
   fun t ~compare k ~if_found ~if_not_found ->
-    findi_and_call_impl t ~compare k ~call_if_found ~if_found ~if_not_found
+    findi_and_call_impl t ~compare k ()
+      ~call_if_found ~call_if_not_found ~if_found ~if_not_found
+
+let find_and_call1 =
+  let call_if_found ~if_found ~key:_ ~data arg = if_found data arg in
+  let call_if_not_found ~if_not_found key arg = if_not_found key arg in
+  fun t ~compare k arg ~if_found ~if_not_found ->
+    findi_and_call_impl t ~compare k arg
+      ~call_if_found ~call_if_not_found ~if_found ~if_not_found
 
 let find =
   let if_found v = Some v in

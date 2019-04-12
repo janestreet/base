@@ -156,10 +156,22 @@ let find_and_call t key ~if_found ~if_not_found =
   match t.table.(slot t key) with
   | Avltree.Empty -> if_not_found key
   | Avltree.Leaf { key = k; value = v } ->
-    if compare_key t k key = 0 then if_found v
+    if compare_key t k key = 0
+    then if_found v
     else if_not_found key
   | tree ->
     Avltree.find_and_call tree ~compare:(compare_key t) key ~if_found ~if_not_found
+;;
+
+let find_and_call1 t key arg ~if_found ~if_not_found =
+  match t.table.(slot t key) with
+  | Avltree.Empty -> if_not_found key arg
+  | Avltree.Leaf { key = k; value = v } ->
+    if compare_key t k key = 0
+    then if_found v arg
+    else if_not_found key arg
+  | tree ->
+    Avltree.find_and_call1 tree ~compare:(compare_key t) key arg ~if_found ~if_not_found
 ;;
 
 let findi_and_call t key ~if_found ~if_not_found =
@@ -272,11 +284,16 @@ let invariant invariant_key invariant_data t =
 ;;
 
 let find_exn =
-  let if_found v = v in
-  let not_found = Not_found_s (Atom "Hashtbl.find_exn: not found") in
-  let if_not_found _ = raise not_found in
+  let if_found v _ = v in
+  let if_not_found k t =
+    raise
+      (Not_found_s
+         (List [ Atom "Hashtbl.find_exn: not found"
+               ; t.hashable.sexp_of_t k
+               ]))
+  in
   let find_exn t key =
-    find_and_call t key ~if_found ~if_not_found
+    find_and_call1 t key t ~if_found ~if_not_found
   in
   (* named to preserve symbol in compiled binary *)
   find_exn

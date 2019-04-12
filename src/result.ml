@@ -1,6 +1,6 @@
 open! Import
 
-type ('a, 'b) t = ('a, 'b) Pervasives.result =
+type ('a, 'b) t = ('a, 'b) Caml.result =
   | Ok of 'a
   | Error of 'b
 [@@deriving_inline sexp, compare, hash]

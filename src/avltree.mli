@@ -98,6 +98,15 @@ val find_and_call
   -> if_not_found:('k -> 'a)
   -> 'a
 
+val find_and_call1
+  :  ('k, 'v) t
+  -> compare:('k -> 'k -> int)
+  -> 'k
+  -> 'a
+  -> if_found:('v -> 'a -> 'b)
+  -> if_not_found:('k -> 'a -> 'b)
+  -> 'b
+
 val findi_and_call
   :  ('k, 'v) t
   -> compare:('k -> 'k -> int)
