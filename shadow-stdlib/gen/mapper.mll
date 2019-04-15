@@ -11,41 +11,45 @@ module String = struct
   include String
 end
 
-let deprecated_msg what =
+let deprecated_msg ~is_exn what =
   sprintf
-    "[@@deprecated \"\\\n\
+    "[%sdeprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
      Referring to the stdlib directly is discouraged by Base. You should either\n\
      use the equivalent functionality offered by Base, or if you really want to\n\
      refer to the stdlib, use Caml.%s instead\"]"
+    (if is_exn then "@" else "@@")
     what
 
-let deprecated_msg_no_equivalent what =
+let deprecated_msg_no_equivalent ~is_exn what =
   sprintf
-    "[@@deprecated \"\\\n\
+    "[%sdeprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
      There is not equivalent functionality in Base or Stdio at the moment,\n\
      so you need to use [Caml.%s] instead\"]"
+    (if is_exn then "@" else "@@")
     what
 
-let deprecated_msg_with_repl_text text =
+let deprecated_msg_with_repl_text ~is_exn text =
   sprintf
-    "[@@deprecated \"\\\n\
+    "[%sdeprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
      %s.\"]"
+    (if is_exn then "@" else "@@")
     text
 
-let deprecated_msg_with_repl repl =
-  deprecated_msg_with_repl_text (sprintf "Use [%s] instead" repl)
+let deprecated_msg_with_repl ~is_exn repl =
+  deprecated_msg_with_repl_text ~is_exn (sprintf "Use [%s] instead" repl)
 
-let deprecated_msg_with_approx_repl ~id repl =
+let deprecated_msg_with_approx_repl ~is_exn ~id repl =
   sprintf
-    "[@@deprecated \"\\\n\
+    "[%sdeprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
      There is no equivalent functionality in Base or Stdio but you can use\n\
      [%s] instead.\n\
      Alternatively, if you really want to refer the stdlib function you can\n\
      use [Caml.%s].\"]"
+    (if is_exn then "@" else "@@")
     repl id
 
 type replacement =
@@ -170,13 +174,16 @@ let val_replacement = function
   | _                     -> No_equivalent
 ;;
 
-let module_replacement = function
+let exception_replacement = function
   | "Not_found" ->
     Some (Repl_text "\
 Instead of raising [Not_found], consider using [raise_s] with an informative error\n\
 message.  If code needs to distinguish [Not_found] from other exceptions, please change\n\
 it to handle both [Not_found] and [Not_found_s].  Then, instead of raising [Not_found],\n\
 raise [Not_found_s] with an informative error message")
+  | _ -> None
+
+let module_replacement = function
   | "Printexc" -> Some (Repl_text "Use [Exn] or [Backtrace] instead")
   | "Format" ->
     let repl_text =
@@ -185,15 +192,16 @@ raise [Not_found_s] with an informative error message")
        for interaction with other libraries"
     in
     Some (Repl_text repl_text)
+  | "Fun" -> Some (Repl_text "Use [Fn] instead")
   | _ -> None
 
-let replace id replacement line =
+let replace ~is_exn id replacement line =
   let msg =
     match replacement with
-    | No_equivalent  -> deprecated_msg_no_equivalent id
-    | Repl repl      -> deprecated_msg_with_repl repl
-    | Repl_text text -> deprecated_msg_with_repl_text text
-    | Approx repl    -> deprecated_msg_with_approx_repl repl ~id
+    | No_equivalent  -> deprecated_msg_no_equivalent ~is_exn id
+    | Repl repl      -> deprecated_msg_with_repl ~is_exn repl
+    | Repl_text text -> deprecated_msg_with_repl_text ~is_exn text
+    | Approx repl    -> deprecated_msg_with_approx_repl ~is_exn repl ~id
   in
   sprintf "%s\n%s" line msg
 ;;
@@ -213,12 +221,12 @@ rule line = parse
   | "type " (params? (id as id) _* as def)
       { sprintf "type nonrec %s\n%s" def
           (match id with
-           | "in_channel"  -> deprecated_msg_with_repl "Stdio.In_channel.t"
-           | "out_channel" -> deprecated_msg_with_repl "Stdio.Out_channel.t"
-           | _ -> deprecated_msg id)
+           | "in_channel"  -> deprecated_msg_with_repl ~is_exn:false "Stdio.In_channel.t"
+           | "out_channel" -> deprecated_msg_with_repl ~is_exn:false "Stdio.Out_channel.t"
+           | _ -> deprecated_msg ~is_exn:false id)
       }
 
-  | val_ (val_id as id) _* as line { replace id (val_replacement id) line }
+  | val_ (val_id as id) _* as line { replace ~is_exn:false id (val_replacement id) line }
 
   | "module " (id as id) " = Stdlib__" (id as id2) (_* as line)
       {
@@ -226,13 +234,34 @@ rule line = parse
           Printf.sprintf "module %s = Stdlib.%s %s"
             id (String.capitalize_ascii id2) line in
         match module_replacement id with
-        | Some replacement -> replace id replacement line
-        | None -> sprintf "%s\n%s" line (deprecated_msg id) }
+        | Some replacement -> replace ~is_exn:false id replacement line
+        | None -> sprintf "%s\n%s" line (deprecated_msg ~is_exn:false id) }
 
   | "exception " (id as id) _* as line
+    { match exception_replacement id with
+      | Some replacement -> replace ~is_exn:true id replacement line
+      | None ->
+        let predefined_exceptions =
+          [ "Out_of_memory"
+          ; "Sys_error"
+          ; "Failure"
+          ; "Invalid_argument"
+          ; "End_of_file"
+          ; "Division_by_zero"
+          ; "Not_found"
+          ; "Match_failure"
+          ; "Stack_overflow"
+          ; "Sys_blocked_io"
+          ; "Assert_failure"
+          ; "Undefined_recursive_module" ]
+        in
+        if List.mem id ~set:predefined_exceptions
+        then ""
+        else sprintf "%s\n%s" line (deprecated_msg ~is_exn:true id)
+    }
   | "module " (id as id) _* as line
     { match module_replacement id with
-      | Some replacement -> replace id replacement line
-      | None -> sprintf "%s\n%s" line (deprecated_msg id) }
+      | Some replacement -> replace ~is_exn:false id replacement line
+      | None -> sprintf "%s\n%s" line (deprecated_msg ~is_exn:false id) }
   | _* as line
     { ksprintf failwith "cannot parse this: %s" line }
