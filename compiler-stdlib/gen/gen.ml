@@ -5,6 +5,7 @@ module Ocaml_version : sig
   type t
   val parse : string -> t
   val v407 : t
+  val v408 : t
   val current : t
   val compare : t -> t -> int
 end = struct
@@ -20,6 +21,8 @@ end = struct
     with _ -> failwith (Printf.sprintf "Invalid ocaml version %S" s)
 
   let v407 = parse "4.07"
+  let v408 = parse "4.08"
+
   let current = parse Sys.ocaml_version
 
   let compare ((a1,b1): t) ((a2,b2):t) =
@@ -65,10 +68,21 @@ let () =
      in
      List.iter units ~f:(fun u -> pr "module %-*s = %s" max_len u u);
      pr "";
-     pr "module Float = struct end";
-     pr "";
      pr "include Pervasives";
    end);
   pr "";
-  pr "exception Not_found = Not_found"
+  (if Ocaml_version.(compare current v407) < 0
+   then
+     pr "module Float  = struct end");
+  (if Ocaml_version.(compare current v408) < 0
+   then begin
+     pr "module Bool   = struct end";
+     pr "module Int    = struct end";
+     pr "module Option = struct end";
+     pr "module Result = struct end";
+     pr "module Unit   = struct end";
+     pr "module Fun    = struct end"
+   end;
+   pr "";
+   pr "exception Not_found = Not_found")
 

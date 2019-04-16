@@ -9,29 +9,33 @@ include
        with type ('a, 'b, 'c) format              := ('a, 'b, 'c) format
        with type ('a, 'b, 'c, 'd) format4         := ('a, 'b, 'c, 'd) format4
        with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
-       with module Pervasives := Pervasives
        (* These modules are redefined in Base *)
-       with module Array     := Caml.Array
-       with module Buffer    := Caml.Buffer
-       with module Bytes     := Caml.Bytes
-       with module Char      := Caml.Char
-       with module Float     := Caml.Float
-       with module Hashtbl   := Caml.Hashtbl
-       with module Int32     := Caml.Int32
-       with module Int64     := Caml.Int64
-       with module Lazy      := Caml.Lazy
-       with module List      := Caml.List
-       with module Map       := Caml.Map
-       with module Nativeint := Caml.Nativeint
-       with module Printf    := Caml.Printf
-       with module Queue     := Caml.Queue
-       with module Random    := Caml.Random
-       with module Set       := Caml.Set
-       with module Stack     := Caml.Stack
-       with module String    := Caml.String
-       with module Sys       := Caml.Sys
-       with module Uchar     := Caml.Uchar
-     ))
+       with module Array     := Shadow_stdlib.Array
+       with module Bool      := Shadow_stdlib.Bool
+       with module Buffer    := Shadow_stdlib.Buffer
+       with module Bytes     := Shadow_stdlib.Bytes
+       with module Char      := Shadow_stdlib.Char
+       with module Float     := Shadow_stdlib.Float
+       with module Hashtbl   := Shadow_stdlib.Hashtbl
+       with module Int       := Shadow_stdlib.Int
+       with module Int32     := Shadow_stdlib.Int32
+       with module Int64     := Shadow_stdlib.Int64
+       with module Lazy      := Shadow_stdlib.Lazy
+       with module List      := Shadow_stdlib.List
+       with module Map       := Shadow_stdlib.Map
+       with module Nativeint := Shadow_stdlib.Nativeint
+       with module Option    := Shadow_stdlib.Option
+       with module Printf    := Shadow_stdlib.Printf
+       with module Queue     := Shadow_stdlib.Queue
+       with module Random    := Shadow_stdlib.Random
+       with module Result    := Shadow_stdlib.Result
+       with module Set       := Shadow_stdlib.Set
+       with module Stack     := Shadow_stdlib.Stack
+       with module String    := Shadow_stdlib.String
+       with module Sys       := Shadow_stdlib.Sys
+       with module Uchar     := Shadow_stdlib.Uchar
+       with module Unit      := Shadow_stdlib.Unit
+     )) [@ocaml.warning "-3"]
 type 'a ref = 'a Caml.ref = { mutable contents: 'a }
 
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)
@@ -44,10 +48,13 @@ module Caml = struct
   (** @canonical Caml.StdLabels.Array *)
   module Array     = Caml.StdLabels.Array
 
+  (** @canonical Caml.Bool *)
+  module Bool      = Caml.Bool
+
   (** @canonical Caml.Buffer *)
   module Buffer    = Caml.Buffer
 
-  (** @canonical Caml.Bytes *)
+  (** @canonical Caml.StdLabels.Bytes *)
   module Bytes     = Caml.StdLabels.Bytes
 
   (** @canonical Caml.Char *)
@@ -56,8 +63,14 @@ module Caml = struct
   (** @canonical Caml.Ephemeron *)
   module Ephemeron = Caml.Ephemeron
 
+  (** @canonical Caml.Float *)
+  module Float     = Caml.Float
+
   (** @canonical Caml.Format *)
   module Format    = Caml.Format
+
+  (** @canonical Caml.Fun *)
+  module Fun       = Caml.Fun
 
   (** @canonical Caml.Gc *)
   module Gc        = Caml.Gc
@@ -67,6 +80,9 @@ module Caml = struct
 
   (** @canonical Caml.Int32 *)
   module Int32     = Caml.Int32
+
+  (** @canonical Caml.Int *)
+  module Int       = Caml.Int
 
   (** @canonical Caml.Int64 *)
   module Int64     = Caml.Int64
@@ -89,6 +105,9 @@ module Caml = struct
   (** @canonical Caml.Obj *)
   module Obj       = Caml.Obj
 
+  (** @canonical Caml.Option *)
+  module Option    = Caml.Option
+
   (** @canonical Caml.Parsing *)
   module Parsing   = Caml.Parsing
 
@@ -103,6 +122,9 @@ module Caml = struct
 
   (** @canonical Caml.Random *)
   module Random    = Caml.Random
+
+  (** @canonical Caml.Result *)
+  module Result    = Caml.Result
 
   (** @canonical Caml.Scanf *)
   module Scanf     = Caml.Scanf
@@ -121,10 +143,14 @@ module Caml = struct
 
   (** @canonical Caml.Sys *)
   module Sys       = Caml.Sys
+
+  (** @canonical Caml.Uchar *)
   module Uchar     = Caml.Uchar
 
-  module Pervasives = Caml.Pervasives
-  include Pervasives
+  (** @canonical Caml.Unit *)
+  module Unit      = Caml.Unit
+
+  include Pervasives [@ocaml.warning "-3"]
 
   exception Not_found = Caml.Not_found
 end
