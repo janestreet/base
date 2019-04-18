@@ -618,6 +618,39 @@ module Tree0 = struct
     try change_core t key f with Change_no_op -> (t, length)
   ;;
 
+  let update t key ~f ~length ~compare_key =
+    let rec update_core t key f =
+      match t with
+      | Empty ->
+        let data = f None in
+        (Leaf(key, data), length + 1)
+      | Leaf(v, d) ->
+        let c = compare_key key v in
+        if c = 0 then
+          let d' = f (Some d) in
+          (Leaf(v, d'), length)
+        else if c < 0 then
+          let l, length = update_core Empty key f in
+          (bal l v d Empty, length)
+        else
+          let r, length = update_core Empty key f in
+          (bal Empty v d r, length)
+      | Node(l, v, d, r, h) ->
+        let c = compare_key key v in
+        if c = 0 then
+          let data = f (Some d) in
+          (Node(l, key, data, r, h), length)
+        else
+        if c < 0 then
+          let l, length = update_core l key f in
+          (bal l v d r, length)
+        else
+          let r, length = update_core r key f in
+          (bal l v d r, length)
+    in
+    update_core t key f
+  ;;
+
   let remove_multi t key ~length ~compare_key =
     change t key ~length ~compare_key ~f:(function
       | None | Some ([] | [_])                   -> None
@@ -1281,7 +1314,9 @@ module Accessors = struct
   let change t key ~f =
     like t (Tree0.change t.tree key ~f ~length:t.length ~compare_key:(compare_key t))
   ;;
-  let update t key ~f = change t key ~f:(fun data -> Some (f data))
+  let update t key ~f =
+    like t (Tree0.update t.tree key ~f ~length:t.length ~compare_key:(compare_key t))
+  ;;
   let find_exn t key =
     Tree0.find_exn t.tree key
       ~compare_key:(compare_key t)
