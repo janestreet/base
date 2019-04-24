@@ -16,15 +16,15 @@ let compare :
   fun _cmp__s ->
   fun a__001_ ->
   fun b__002_ ->
-    if Ppx_compare_lib.phys_equal a__001_ b__002_
-    then 0
-    else
-      (match (a__001_, b__002_) with
-       | (First _a__003_, First _b__004_) -> _cmp__f _a__003_ _b__004_
-       | (First _, _) -> (-1)
-       | (_, First _) -> 1
-       | (Second _a__005_, Second _b__006_) ->
-         _cmp__s _a__005_ _b__006_)
+  if Ppx_compare_lib.phys_equal a__001_ b__002_
+  then 0
+  else
+    (match (a__001_, b__002_) with
+     | (First _a__003_, First _b__004_) -> _cmp__f _a__003_ _b__004_
+     | (First _, _) -> (-1)
+     | (_, First _) -> 1
+     | (Second _a__005_, Second _b__006_) ->
+       _cmp__s _a__005_ _b__006_)
 let hash_fold_t : type f s.
   (Ppx_hash_lib.Std.Hash.state -> f -> Ppx_hash_lib.Std.Hash.state) ->
   (Ppx_hash_lib.Std.Hash.state -> s -> Ppx_hash_lib.Std.Hash.state) ->
@@ -34,13 +34,13 @@ let hash_fold_t : type f s.
   fun _hash_fold_s ->
   fun hsv ->
   fun arg ->
-    match arg with
-    | First _a0 ->
-      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 0 in
-      let hsv = hsv in _hash_fold_f hsv _a0
-    | Second _a0 ->
-      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1 in
-      let hsv = hsv in _hash_fold_s hsv _a0
+  match arg with
+  | First _a0 ->
+    let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 0 in
+    let hsv = hsv in _hash_fold_f hsv _a0
+  | Second _a0 ->
+    let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1 in
+    let hsv = hsv in _hash_fold_s hsv _a0
 let t_of_sexp : type f s.
   (Ppx_sexp_conv_lib.Sexp.t -> f) ->
   (Ppx_sexp_conv_lib.Sexp.t -> s) -> Ppx_sexp_conv_lib.Sexp.t -> (f, s) t
@@ -79,15 +79,15 @@ let sexp_of_t : type f s.
   =
   fun _of_f ->
   fun _of_s ->
-    function
-    | First v0 ->
-      let v0 = _of_f v0 in
-      Ppx_sexp_conv_lib.Sexp.List
-        [Ppx_sexp_conv_lib.Sexp.Atom "First"; v0]
-    | Second v0 ->
-      let v0 = _of_s v0 in
-      Ppx_sexp_conv_lib.Sexp.List
-        [Ppx_sexp_conv_lib.Sexp.Atom "Second"; v0]
+  function
+  | First v0 ->
+    let v0 = _of_f v0 in
+    Ppx_sexp_conv_lib.Sexp.List
+      [Ppx_sexp_conv_lib.Sexp.Atom "First"; v0]
+  | Second v0 ->
+    let v0 = _of_s v0 in
+    Ppx_sexp_conv_lib.Sexp.List
+      [Ppx_sexp_conv_lib.Sexp.Atom "Second"; v0]
 [@@@end]
 
 let swap = function

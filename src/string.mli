@@ -5,13 +5,13 @@ open! Import
 
 type t = string [@@deriving_inline hash, sexp]
 include
-sig
-  [@@@ocaml.warning "-32"]
-  val hash_fold_t :
-    Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-  include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-end[@@ocaml.doc "@inline"]
+  sig
+    [@@@ocaml.warning "-32"]
+    val hash_fold_t :
+      Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+    val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+    include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+  end[@@ocaml.doc "@inline"]
 [@@@end]
 
 
@@ -97,13 +97,13 @@ val uncapitalize : t -> t
 module Caseless : sig
   type nonrec t = t [@@deriving_inline hash, sexp]
   include
-  sig
-    [@@@ocaml.warning "-32"]
-    val hash_fold_t :
-      Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-    val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-    include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-  end[@@ocaml.doc "@inline"]
+    sig
+      [@@@ocaml.warning "-32"]
+      val hash_fold_t :
+        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+      val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+      include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+    end[@@ocaml.doc "@inline"]
   [@@@end]
   include Comparable.S with type t := t
 
@@ -134,8 +134,8 @@ module Search_pattern : sig
 
   type t [@@deriving_inline sexp_of]
   include
-  sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end[@@ocaml.doc "@inline"]
+    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end[@@ocaml.doc "@inline"]
   [@@@end]
 
   (** [create pattern] preprocesses [pattern] as per KMP, building an [int array] of

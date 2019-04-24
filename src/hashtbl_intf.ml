@@ -4,11 +4,11 @@ module Key = struct
   module type S = sig
     type t [@@deriving_inline compare, sexp_of]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare : t -> t -> int
-      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val compare : t -> t -> int
+        val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
 
     (** Two [t]s that [compare] equal must have equal hashes for the hashtable
@@ -582,10 +582,10 @@ module type S_poly = sig
 
   type ('a, 'b) t [@@deriving_inline sexp]
   include
-  sig
-    [@@@ocaml.warning "-32"]
-    include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a,'b) t :=  ('a, 'b) t
-  end[@@ocaml.doc "@inline"]
+    sig
+      [@@@ocaml.warning "-32"]
+      include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a,'b) t :=  ('a, 'b) t
+    end[@@ocaml.doc "@inline"]
   [@@@end]
 
   val hashable : 'a Hashable.t
@@ -612,14 +612,14 @@ module type For_deriving = sig
 
   module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
     include
-    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+      sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+      end[@@ocaml.doc "@inline"]
     [@@@end] end
   module type M_of_sexp = sig
     type t [@@deriving_inline of_sexp]
     include
-    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    end[@@ocaml.doc "@inline"]
+      sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
     include Key.S with type t := t
   end

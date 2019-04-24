@@ -1132,8 +1132,8 @@ module Tree0 = struct
            | `Less_than
            ]
         -> 'k -> compare_key:('k -> 'k -> int)
-      -> ('k, 'v, 'k_opt, 'v_opt) marker -> 'k_opt -> 'v_opt
-      -> ('k * 'v) option
+        -> ('k, 'v, 'k_opt, 'v_opt) marker -> 'k_opt -> 'v_opt
+        -> ('k * 'v) option
       = fun t dir k ~compare_key found_marker found_key found_value ->
         match t with
         | Empty ->
@@ -1756,14 +1756,14 @@ module M(K : sig type t type comparator_witness end) = struct
 end
 module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
   include
-  sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end[@@ocaml.doc "@inline"]
+    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end[@@ocaml.doc "@inline"]
   [@@@end] end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
   include
-  sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-  end[@@ocaml.doc "@inline"]
+    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+    end[@@ocaml.doc "@inline"]
   [@@@end] include Comparator.S with type t := t
 end
 module type Compare_m = sig end

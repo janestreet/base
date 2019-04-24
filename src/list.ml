@@ -27,22 +27,22 @@ module Or_unequal_lengths = struct
     fun _cmp__a ->
     fun a__001_ ->
     fun b__002_ ->
-      if Ppx_compare_lib.phys_equal a__001_ b__002_
-      then 0
-      else
-        (match (a__001_, b__002_) with
-         | (Ok _a__003_, Ok _b__004_) -> _cmp__a _a__003_ _b__004_
-         | (Ok _, _) -> (-1)
-         | (_, Ok _) -> 1
-         | (Unequal_lengths, Unequal_lengths) -> 0)
+    if Ppx_compare_lib.phys_equal a__001_ b__002_
+    then 0
+    else
+      (match (a__001_, b__002_) with
+       | (Ok _a__003_, Ok _b__004_) -> _cmp__a _a__003_ _b__004_
+       | (Ok _, _) -> (-1)
+       | (_, Ok _) -> 1
+       | (Unequal_lengths, Unequal_lengths) -> 0)
   let sexp_of_t : type a.
     (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t =
     fun _of_a ->
-      function
-      | Ok v0 ->
-        let v0 = _of_a v0 in
-        Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Ok"; v0]
-      | Unequal_lengths -> Ppx_sexp_conv_lib.Sexp.Atom "Unequal_lengths"
+    function
+    | Ok v0 ->
+      let v0 = _of_a v0 in
+      Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Ok"; v0]
+    | Unequal_lengths -> Ppx_sexp_conv_lib.Sexp.Atom "Unequal_lengths"
   [@@@end]
 end
 
@@ -845,11 +845,11 @@ module Assoc = struct
     fun _of_a ->
     fun _of_b ->
     fun v ->
-      sexp_of_list
-        (function
-          | (v0, v1) ->
-            let v0 = _of_a v0
-            and v1 = _of_b v1 in Ppx_sexp_conv_lib.Sexp.List [v0; v1]) v
+    sexp_of_list
+      (function
+        | (v0, v1) ->
+          let v0 = _of_a v0
+          and v1 = _of_b v1 in Ppx_sexp_conv_lib.Sexp.List [v0; v1]) v
   [@@@end]
 
   let find t ~equal key =

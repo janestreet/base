@@ -295,9 +295,9 @@ module type Applicative = sig
   module Make2_using_map2 (X : Basic2_using_map2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
 
   module Make_args  (X : S ) : Args  with type  'a      arg :=  'a      X.t [@@warning "-3"]
-  [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
+    [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
   module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t [@@warning "-3"]
-  [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
+    [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
 
   (** The following functors give a sense of what Applicatives one can define.
 

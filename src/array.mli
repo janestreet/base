@@ -4,11 +4,11 @@ open! Import
 
 type 'a t = 'a array [@@deriving_inline compare, sexp]
 include
-sig
-  [@@@ocaml.warning "-32"]
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
-end[@@ocaml.doc "@inline"]
+  sig
+    [@@@ocaml.warning "-32"]
+    val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+    include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
+  end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include Binary_searchable.S1 with type 'a t := 'a t

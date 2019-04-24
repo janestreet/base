@@ -4,14 +4,14 @@ open! Import
 
 type t = Uchar0.t [@@deriving_inline compare, hash, sexp]
 include
-sig
-  [@@@ocaml.warning "-32"]
-  val compare : t -> t -> int
-  val hash_fold_t :
-    Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-  include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-end[@@ocaml.doc "@inline"]
+  sig
+    [@@@ocaml.warning "-32"]
+    val compare : t -> t -> int
+    val hash_fold_t :
+      Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+    val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+    include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+  end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include Comparable.S     with type t := t

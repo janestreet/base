@@ -14,28 +14,28 @@ module T = struct
   let compare : t -> t -> int =
     fun a__001_ ->
     fun b__002_ ->
-      if Ppx_compare_lib.phys_equal a__001_ b__002_
-      then 0
-      else
-        (match compare_string a__001_.pos_fname b__002_.pos_fname with
-         | 0 ->
-           (match compare_int a__001_.pos_lnum b__002_.pos_lnum with
-            | 0 ->
-              (match compare_int a__001_.pos_bol b__002_.pos_bol with
-               | 0 -> compare_int a__001_.pos_cnum b__002_.pos_cnum
-               | n -> n)
-            | n -> n)
-         | n -> n)
+    if Ppx_compare_lib.phys_equal a__001_ b__002_
+    then 0
+    else
+      (match compare_string a__001_.pos_fname b__002_.pos_fname with
+       | 0 ->
+         (match compare_int a__001_.pos_lnum b__002_.pos_lnum with
+          | 0 ->
+            (match compare_int a__001_.pos_bol b__002_.pos_bol with
+             | 0 -> compare_int a__001_.pos_cnum b__002_.pos_cnum
+             | n -> n)
+          | n -> n)
+       | n -> n)
   let (hash_fold_t :
          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     fun hsv ->
     fun arg ->
+    let hsv =
       let hsv =
-        let hsv =
-          let hsv = let hsv = hsv in hash_fold_string hsv arg.pos_fname in
-          hash_fold_int hsv arg.pos_lnum in
-        hash_fold_int hsv arg.pos_bol in
-      hash_fold_int hsv arg.pos_cnum
+        let hsv = let hsv = hsv in hash_fold_string hsv arg.pos_fname in
+        hash_fold_int hsv arg.pos_lnum in
+      hash_fold_int hsv arg.pos_bol in
+    hash_fold_int hsv arg.pos_cnum
   let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func arg =
       Ppx_hash_lib.Std.Hash.get_hash_value

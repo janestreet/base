@@ -51,11 +51,11 @@ module S_to_S1 (S : S) : S1
 module Make (M : sig
     type t [@@deriving_inline compare, sexp_of]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare : t -> t -> int
-      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val compare : t -> t -> int
+        val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
   end) : S with type t := M.t
 
@@ -83,12 +83,12 @@ end
 module Derived (M : sig
     type 'a t [@@deriving_inline compare, sexp_of]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-      val sexp_of_t :
-        ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+        val sexp_of_t :
+          ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
   end) : Derived with type 'a t := 'a M.t
 
@@ -107,15 +107,15 @@ end
 module Derived2 (M : sig
     type ('a, 'b) t [@@deriving_inline compare, sexp_of]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare :
-        ('a -> 'a -> int) ->
-        ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
-      val sexp_of_t :
-        ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val compare :
+          ('a -> 'a -> int) ->
+          ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+        val sexp_of_t :
+          ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+          ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
+          ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
   end) : Derived2 with type ('a, 'b) t := ('a, 'b) M.t

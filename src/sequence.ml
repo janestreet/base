@@ -18,17 +18,17 @@ module Step = struct
     =
     fun _of_a ->
     fun _of_s ->
-      function
-      | Done -> Ppx_sexp_conv_lib.Sexp.Atom "Done"
-      | Skip v0 ->
-        let v0 = _of_s v0 in
-        Ppx_sexp_conv_lib.Sexp.List
-          [Ppx_sexp_conv_lib.Sexp.Atom "Skip"; v0]
-      | Yield (v0, v1) ->
-        let v0 = _of_a v0
-        and v1 = _of_s v1 in
-        Ppx_sexp_conv_lib.Sexp.List
-          [Ppx_sexp_conv_lib.Sexp.Atom "Yield"; v0; v1]
+    function
+    | Done -> Ppx_sexp_conv_lib.Sexp.Atom "Done"
+    | Skip v0 ->
+      let v0 = _of_s v0 in
+      Ppx_sexp_conv_lib.Sexp.List
+        [Ppx_sexp_conv_lib.Sexp.Atom "Skip"; v0]
+    | Yield (v0, v1) ->
+      let v0 = _of_a v0
+      and v1 = _of_s v1 in
+      Ppx_sexp_conv_lib.Sexp.List
+        [Ppx_sexp_conv_lib.Sexp.Atom "Yield"; v0; v1]
   [@@@end]
 end
 
@@ -432,20 +432,20 @@ module Merge_with_duplicates_element = struct
     fun _cmp__b ->
     fun a__001_ ->
     fun b__002_ ->
-      if Ppx_compare_lib.phys_equal a__001_ b__002_
-      then 0
-      else
-        (match (a__001_, b__002_) with
-         | (Left _a__003_, Left _b__004_) -> _cmp__a _a__003_ _b__004_
-         | (Left _, _) -> (-1)
-         | (_, Left _) -> 1
-         | (Right _a__005_, Right _b__006_) -> _cmp__b _a__005_ _b__006_
-         | (Right _, _) -> (-1)
-         | (_, Right _) -> 1
-         | (Both (_a__007_, _a__009_), Both (_b__008_, _b__010_)) ->
-           (match _cmp__a _a__007_ _b__008_ with
-            | 0 -> _cmp__b _a__009_ _b__010_
-            | n -> n))
+    if Ppx_compare_lib.phys_equal a__001_ b__002_
+    then 0
+    else
+      (match (a__001_, b__002_) with
+       | (Left _a__003_, Left _b__004_) -> _cmp__a _a__003_ _b__004_
+       | (Left _, _) -> (-1)
+       | (_, Left _) -> 1
+       | (Right _a__005_, Right _b__006_) -> _cmp__b _a__005_ _b__006_
+       | (Right _, _) -> (-1)
+       | (_, Right _) -> 1
+       | (Both (_a__007_, _a__009_), Both (_b__008_, _b__010_)) ->
+         (match _cmp__a _a__007_ _b__008_ with
+          | 0 -> _cmp__b _a__009_ _b__010_
+          | n -> n))
   let hash_fold_t : type a b.
     (Ppx_hash_lib.Std.Hash.state -> a -> Ppx_hash_lib.Std.Hash.state) ->
     (Ppx_hash_lib.Std.Hash.state -> b -> Ppx_hash_lib.Std.Hash.state) ->
@@ -455,17 +455,17 @@ module Merge_with_duplicates_element = struct
     fun _hash_fold_b ->
     fun hsv ->
     fun arg ->
-      match arg with
-      | Left _a0 ->
-        let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 0 in
-        let hsv = hsv in _hash_fold_a hsv _a0
-      | Right _a0 ->
-        let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1 in
-        let hsv = hsv in _hash_fold_b hsv _a0
-      | Both (_a0, _a1) ->
-        let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 2 in
-        let hsv = let hsv = hsv in _hash_fold_a hsv _a0 in
-        _hash_fold_b hsv _a1
+    match arg with
+    | Left _a0 ->
+      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 0 in
+      let hsv = hsv in _hash_fold_a hsv _a0
+    | Right _a0 ->
+      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1 in
+      let hsv = hsv in _hash_fold_b hsv _a0
+    | Both (_a0, _a1) ->
+      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 2 in
+      let hsv = let hsv = hsv in _hash_fold_a hsv _a0 in
+      _hash_fold_b hsv _a1
   let t_of_sexp : type a b.
     (Ppx_sexp_conv_lib.Sexp.t -> a) ->
     (Ppx_sexp_conv_lib.Sexp.t -> b) -> Ppx_sexp_conv_lib.Sexp.t -> (a, b) t
@@ -515,20 +515,20 @@ module Merge_with_duplicates_element = struct
     =
     fun _of_a ->
     fun _of_b ->
-      function
-      | Left v0 ->
-        let v0 = _of_a v0 in
-        Ppx_sexp_conv_lib.Sexp.List
-          [Ppx_sexp_conv_lib.Sexp.Atom "Left"; v0]
-      | Right v0 ->
-        let v0 = _of_b v0 in
-        Ppx_sexp_conv_lib.Sexp.List
-          [Ppx_sexp_conv_lib.Sexp.Atom "Right"; v0]
-      | Both (v0, v1) ->
-        let v0 = _of_a v0
-        and v1 = _of_b v1 in
-        Ppx_sexp_conv_lib.Sexp.List
-          [Ppx_sexp_conv_lib.Sexp.Atom "Both"; v0; v1]
+    function
+    | Left v0 ->
+      let v0 = _of_a v0 in
+      Ppx_sexp_conv_lib.Sexp.List
+        [Ppx_sexp_conv_lib.Sexp.Atom "Left"; v0]
+    | Right v0 ->
+      let v0 = _of_b v0 in
+      Ppx_sexp_conv_lib.Sexp.List
+        [Ppx_sexp_conv_lib.Sexp.Atom "Right"; v0]
+    | Both (v0, v1) ->
+      let v0 = _of_a v0
+      and v1 = _of_b v1 in
+      Ppx_sexp_conv_lib.Sexp.List
+        [Ppx_sexp_conv_lib.Sexp.Atom "Both"; v0; v1]
   [@@@end]
 end
 

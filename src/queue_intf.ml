@@ -5,10 +5,10 @@ open! Import
 module type S = sig
   type 'a t [@@deriving_inline sexp]
   include
-  sig
-    [@@@ocaml.warning "-32"]
-    include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
-  end[@@ocaml.doc "@inline"]
+    sig
+      [@@@ocaml.warning "-32"]
+      include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
+    end[@@ocaml.doc "@inline"]
   [@@@end]
 
   include Indexed_container.S1 with type 'a t := 'a t
@@ -86,10 +86,10 @@ module type Queue = sig
 
   type 'a t [@@deriving_inline compare]
   include
-  sig
-    [@@@ocaml.warning "-32"]
-    val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  end[@@ocaml.doc "@inline"]
+    sig
+      [@@@ocaml.warning "-32"]
+      val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+    end[@@ocaml.doc "@inline"]
   [@@@end]
 
   include S with type 'a t := 'a t

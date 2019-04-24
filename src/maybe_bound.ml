@@ -3,18 +3,18 @@ open! Import
 type 'a t = Incl of 'a | Excl of 'a | Unbounded [@@deriving_inline enumerate, sexp]
 let all : 'a . 'a list -> 'a t list =
   fun _all_of_a ->
-    Ppx_enumerate_lib.List.append
-      (let rec map l acc =
-         match l with
-         | [] -> Ppx_enumerate_lib.List.rev acc
-         | enumerate__001_::l -> map l ((Incl enumerate__001_) :: acc) in
-       map _all_of_a [])
-      (Ppx_enumerate_lib.List.append
-         (let rec map l acc =
-            match l with
-            | [] -> Ppx_enumerate_lib.List.rev acc
-            | enumerate__002_::l -> map l ((Excl enumerate__002_) :: acc) in
-          map _all_of_a []) [Unbounded])
+  Ppx_enumerate_lib.List.append
+    (let rec map l acc =
+       match l with
+       | [] -> Ppx_enumerate_lib.List.rev acc
+       | enumerate__001_::l -> map l ((Incl enumerate__001_) :: acc) in
+     map _all_of_a [])
+    (Ppx_enumerate_lib.List.append
+       (let rec map l acc =
+          match l with
+          | [] -> Ppx_enumerate_lib.List.rev acc
+          | enumerate__002_::l -> map l ((Excl enumerate__002_) :: acc) in
+        map _all_of_a []) [Unbounded])
 let t_of_sexp : type a.
   (Ppx_sexp_conv_lib.Sexp.t -> a) -> Ppx_sexp_conv_lib.Sexp.t -> a t =
   let _tp_loc = "src/maybe_bound.ml.t" in
@@ -51,14 +51,14 @@ let t_of_sexp : type a.
 let sexp_of_t : type a.
   (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t =
   fun _of_a ->
-    function
-    | Incl v0 ->
-      let v0 = _of_a v0 in
-      Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Incl"; v0]
-    | Excl v0 ->
-      let v0 = _of_a v0 in
-      Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Excl"; v0]
-    | Unbounded -> Ppx_sexp_conv_lib.Sexp.Atom "Unbounded"
+  function
+  | Incl v0 ->
+    let v0 = _of_a v0 in
+    Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Incl"; v0]
+  | Excl v0 ->
+    let v0 = _of_a v0 in
+    Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Excl"; v0]
+  | Unbounded -> Ppx_sexp_conv_lib.Sexp.Atom "Unbounded"
 [@@@end]
 
 type interval_comparison =

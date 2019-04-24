@@ -16,13 +16,13 @@ type t
     }
 [@@deriving_inline hash, sexp_of]
 include
-sig
-  [@@@ocaml.warning "-32"]
-  val hash_fold_t :
-    Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-end[@@ocaml.doc "@inline"]
+  sig
+    [@@@ocaml.warning "-32"]
+    val hash_fold_t :
+      Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+    val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include Comparable.S with type t := t

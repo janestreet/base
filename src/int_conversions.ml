@@ -286,13 +286,13 @@ end
 module Make_hex (I : sig
     type t [@@deriving_inline compare, hash]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare : t -> t -> int
-      val hash_fold_t :
-        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-      val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val compare : t -> t -> int
+        val hash_fold_t :
+          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+        val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+      end[@@ocaml.doc "@inline"]
     [@@@end]
     val to_string : t -> string
     val of_string : string -> t

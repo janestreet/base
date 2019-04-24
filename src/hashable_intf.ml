@@ -3,11 +3,11 @@ open! Import
 module type Key = sig
   type t [@@deriving_inline compare, sexp_of]
   include
-  sig
-    [@@@ocaml.warning "-32"]
-    val compare : t -> t -> int
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end[@@ocaml.doc "@inline"]
+    sig
+      [@@@ocaml.warning "-32"]
+      val compare : t -> t -> int
+      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end[@@ocaml.doc "@inline"]
   [@@@end]
 
   (** Values returned by [hash] must be non-negative.  An exception will be raised in the

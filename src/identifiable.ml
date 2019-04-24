@@ -3,13 +3,13 @@ open! Import
 module type S = sig
   type t [@@deriving_inline hash, sexp]
   include
-  sig
-    [@@@ocaml.warning "-32"]
-    val hash_fold_t :
-      Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-    val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-    include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-  end[@@ocaml.doc "@inline"]
+    sig
+      [@@@ocaml.warning "-32"]
+      val hash_fold_t :
+        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+      val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+      include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+    end[@@ocaml.doc "@inline"]
   [@@@end]
   include Stringable    .S with type t := t
   include Comparable    .S with type t := t
@@ -19,14 +19,14 @@ end
 module Make (T : sig
     type t [@@deriving_inline compare, hash, sexp]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare : t -> t -> int
-      val hash_fold_t :
-        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-      val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-      include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val compare : t -> t -> int
+        val hash_fold_t :
+          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+        val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+        include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
     include Stringable.S with type t := t
     val module_name : string
@@ -39,14 +39,14 @@ end
 module Make_using_comparator (T : sig
     type t [@@deriving_inline compare, hash, sexp]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare : t -> t -> int
-      val hash_fold_t :
-        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-      val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-      include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val compare : t -> t -> int
+        val hash_fold_t :
+          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+        val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+        include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
     include Comparator.S with type t := t
     include Stringable.S with type t := t

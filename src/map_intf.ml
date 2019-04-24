@@ -7,11 +7,11 @@ module Or_duplicate = struct
   let sexp_of_t :
     'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
     fun _of_a ->
-      function
-      | `Ok v0 ->
-        Ppx_sexp_conv_lib.Sexp.List
-          [Ppx_sexp_conv_lib.Sexp.Atom "Ok"; _of_a v0]
-      | `Duplicate -> Ppx_sexp_conv_lib.Sexp.Atom "Duplicate"
+    function
+    | `Ok v0 ->
+      Ppx_sexp_conv_lib.Sexp.List
+        [Ppx_sexp_conv_lib.Sexp.Atom "Ok"; _of_a v0]
+    | `Duplicate -> Ppx_sexp_conv_lib.Sexp.Atom "Duplicate"
   [@@@end]
 end
 
@@ -39,26 +39,26 @@ module Symmetric_diff_element = struct
     fun _cmp__v ->
     fun a__001_ ->
     fun b__002_ ->
-      let (t__003_, t__004_) = a__001_ in
-      let (t__005_, t__006_) = b__002_ in
-      match _cmp__k t__003_ t__005_ with
-      | 0 ->
-        if Ppx_compare_lib.phys_equal t__004_ t__006_
-        then 0
-        else
-          (match (t__004_, t__006_) with
-           | (`Left _left__007_, `Left _right__008_) ->
-             _cmp__v _left__007_ _right__008_
-           | (`Right _left__009_, `Right _right__010_) ->
-             _cmp__v _left__009_ _right__010_
-           | (`Unequal _left__011_, `Unequal _right__012_) ->
-             let (t__013_, t__014_) = _left__011_ in
-             let (t__015_, t__016_) = _right__012_ in
-             (match _cmp__v t__013_ t__015_ with
-              | 0 -> _cmp__v t__014_ t__016_
-              | n -> n)
-           | (x, y) -> Ppx_compare_lib.polymorphic_compare x y)
-      | n -> n
+    let (t__003_, t__004_) = a__001_ in
+    let (t__005_, t__006_) = b__002_ in
+    match _cmp__k t__003_ t__005_ with
+    | 0 ->
+      if Ppx_compare_lib.phys_equal t__004_ t__006_
+      then 0
+      else
+        (match (t__004_, t__006_) with
+         | (`Left _left__007_, `Left _right__008_) ->
+           _cmp__v _left__007_ _right__008_
+         | (`Right _left__009_, `Right _right__010_) ->
+           _cmp__v _left__009_ _right__010_
+         | (`Unequal _left__011_, `Unequal _right__012_) ->
+           let (t__013_, t__014_) = _left__011_ in
+           let (t__015_, t__016_) = _right__012_ in
+           (match _cmp__v t__013_ t__015_ with
+            | 0 -> _cmp__v t__014_ t__016_
+            | n -> n)
+         | (x, y) -> Ppx_compare_lib.polymorphic_compare x y)
+    | n -> n
   let t_of_sexp :
     'k 'v .
     (Ppx_sexp_conv_lib.Sexp.t -> 'k) ->
@@ -142,24 +142,24 @@ module Symmetric_diff_element = struct
     =
     fun _of_k ->
     fun _of_v ->
-      function
-      | (v0, v1) ->
-        let v0 = _of_k v0
-        and v1 =
-          match v1 with
-          | `Left v0 ->
-            Ppx_sexp_conv_lib.Sexp.List
-              [Ppx_sexp_conv_lib.Sexp.Atom "Left"; _of_v v0]
-          | `Right v0 ->
-            Ppx_sexp_conv_lib.Sexp.List
-              [Ppx_sexp_conv_lib.Sexp.Atom "Right"; _of_v v0]
-          | `Unequal v0 ->
-            Ppx_sexp_conv_lib.Sexp.List
-              [Ppx_sexp_conv_lib.Sexp.Atom "Unequal";
-               (let (v0, v1) = v0 in
-                let v0 = _of_v v0
-                and v1 = _of_v v1 in Ppx_sexp_conv_lib.Sexp.List [v0; v1])] in
-        Ppx_sexp_conv_lib.Sexp.List [v0; v1]
+    function
+    | (v0, v1) ->
+      let v0 = _of_k v0
+      and v1 =
+        match v1 with
+        | `Left v0 ->
+          Ppx_sexp_conv_lib.Sexp.List
+            [Ppx_sexp_conv_lib.Sexp.Atom "Left"; _of_v v0]
+        | `Right v0 ->
+          Ppx_sexp_conv_lib.Sexp.List
+            [Ppx_sexp_conv_lib.Sexp.Atom "Right"; _of_v v0]
+        | `Unequal v0 ->
+          Ppx_sexp_conv_lib.Sexp.List
+            [Ppx_sexp_conv_lib.Sexp.Atom "Unequal";
+             (let (v0, v1) = v0 in
+              let v0 = _of_v v0
+              and v1 = _of_v v1 in Ppx_sexp_conv_lib.Sexp.List [v0; v1])] in
+      Ppx_sexp_conv_lib.Sexp.List [v0; v1]
   [@@@end]
 end
 
@@ -1289,14 +1289,14 @@ module type For_deriving = sig
 
   module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
     include
-    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+      sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+      end[@@ocaml.doc "@inline"]
     [@@@end] end
   module type M_of_sexp = sig
     type t [@@deriving_inline of_sexp]
     include
-    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    end[@@ocaml.doc "@inline"]
+      sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+      end[@@ocaml.doc "@inline"]
     [@@@end] include Comparator.S with type t := t
   end
   module type Compare_m = sig end
@@ -1660,13 +1660,13 @@ module type Map = sig
     type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
     [@@deriving_inline compare, sexp]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare :
-        ('k -> 'k -> int) ->
-        ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
-      include Ppx_sexp_conv_lib.Sexpable.S2 with type ('k,'v) t :=  ('k, 'v) t
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val compare :
+          ('k -> 'k -> int) ->
+          ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
+        include Ppx_sexp_conv_lib.Sexpable.S2 with type ('k,'v) t :=  ('k, 'v) t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
   end
 
@@ -1843,14 +1843,14 @@ module type Map = sig
   module Using_comparator : sig
     type nonrec ('k, +'v, 'cmp) t = ('k, 'v, 'cmp) t [@@deriving_inline sexp_of]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val sexp_of_t :
-        ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('k, 'v, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val sexp_of_t :
+          ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
+          ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
+          ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
+          ('k, 'v, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
 
     val t_of_sexp_direct
@@ -1863,14 +1863,14 @@ module type Map = sig
     module Tree : sig
       type ('k, +'v, 'cmp) t [@@deriving_inline sexp_of]
       include
-      sig
-        [@@@ocaml.warning "-32"]
-        val sexp_of_t :
-          ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('k, 'v, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+        sig
+          [@@@ocaml.warning "-32"]
+          val sexp_of_t :
+            ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
+            ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
+            ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
+            ('k, 'v, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
+        end[@@ocaml.doc "@inline"]
       [@@@end]
 
       val t_of_sexp_direct

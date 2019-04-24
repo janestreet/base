@@ -4,11 +4,11 @@ open! T
 module type Elt_plain = sig
   type t [@@deriving_inline compare, sexp_of]
   include
-  sig
-    [@@@ocaml.warning "-32"]
-    val compare : t -> t -> int
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  end[@@ocaml.doc "@inline"]
+    sig
+      [@@@ocaml.warning "-32"]
+      val compare : t -> t -> int
+      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    end[@@ocaml.doc "@inline"]
   [@@@end]
 end
 
@@ -730,14 +730,14 @@ module type For_deriving = sig
 
   module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
     include
-    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+      sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+      end[@@ocaml.doc "@inline"]
     [@@@end] end
   module type M_of_sexp = sig
     type t [@@deriving_inline of_sexp]
     include
-    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    end[@@ocaml.doc "@inline"]
+      sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+      end[@@ocaml.doc "@inline"]
     [@@@end] include Comparator.S with type t := t
   end
   module type Compare_m = sig end
@@ -775,12 +775,12 @@ module type Set = sig
       type. *)
   type ('elt, 'cmp) t [@@deriving_inline compare]
   include
-  sig
-    [@@@ocaml.warning "-32"]
-    val compare :
-      ('elt -> 'elt -> int) ->
-      ('cmp -> 'cmp -> int) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
-  end[@@ocaml.doc "@inline"]
+    sig
+      [@@@ocaml.warning "-32"]
+      val compare :
+        ('elt -> 'elt -> int) ->
+        ('cmp -> 'cmp -> int) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
+    end[@@ocaml.doc "@inline"]
   [@@@end]
 
   type ('k, 'cmp) comparator =
@@ -1115,13 +1115,13 @@ module type Set = sig
       | Both of 'a * 'b
     [@@deriving_inline compare, sexp]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare :
-        ('a -> 'a -> int) ->
-        ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
-      include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a,'b) t :=  ('a, 'b) t
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val compare :
+          ('a -> 'a -> int) ->
+          ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+        include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a,'b) t :=  ('a, 'b) t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
   end
 
@@ -1163,13 +1163,13 @@ module type Set = sig
   module Using_comparator : sig
     type nonrec ('elt, 'cmp) t = ('elt, 'cmp) t [@@deriving_inline sexp_of]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      val sexp_of_t :
-        ('elt -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-        ('elt, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        val sexp_of_t :
+          ('elt -> Ppx_sexp_conv_lib.Sexp.t) ->
+          ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
+          ('elt, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
+      end[@@ocaml.doc "@inline"]
     [@@@end]
 
     val t_of_sexp_direct
@@ -1184,13 +1184,13 @@ module type Set = sig
           as an argument the corresponding comparator. *)
       type ('a, 'cmp) t [@@deriving_inline sexp_of]
       include
-      sig
-        [@@@ocaml.warning "-32"]
-        val sexp_of_t :
-          ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('a, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+        sig
+          [@@@ocaml.warning "-32"]
+          val sexp_of_t :
+            ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
+            ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
+            ('a, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
+        end[@@ocaml.doc "@inline"]
       [@@@end]
 
       val t_of_sexp_direct

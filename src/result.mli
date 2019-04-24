@@ -21,20 +21,20 @@ type ('ok, 'err) t = ('ok, 'err) Caml.result =
   | Error of 'err
 [@@deriving_inline sexp, compare, hash]
 include
-sig
-  [@@@ocaml.warning "-32"]
-  include
-    Ppx_sexp_conv_lib.Sexpable.S2 with type ('ok,'err) t :=  ('ok, 'err) t
-  val compare :
-    ('ok -> 'ok -> int) ->
-    ('err -> 'err -> int) -> ('ok, 'err) t -> ('ok, 'err) t -> int
-  val hash_fold_t :
-    (Ppx_hash_lib.Std.Hash.state -> 'ok -> Ppx_hash_lib.Std.Hash.state) ->
-    (Ppx_hash_lib.Std.Hash.state -> 'err -> Ppx_hash_lib.Std.Hash.state)
-    ->
-    Ppx_hash_lib.Std.Hash.state ->
-    ('ok, 'err) t -> Ppx_hash_lib.Std.Hash.state
-end[@@ocaml.doc "@inline"]
+  sig
+    [@@@ocaml.warning "-32"]
+    include
+      Ppx_sexp_conv_lib.Sexpable.S2 with type ('ok,'err) t :=  ('ok, 'err) t
+    val compare :
+      ('ok -> 'ok -> int) ->
+      ('err -> 'err -> int) -> ('ok, 'err) t -> ('ok, 'err) t -> int
+    val hash_fold_t :
+      (Ppx_hash_lib.Std.Hash.state -> 'ok -> Ppx_hash_lib.Std.Hash.state) ->
+      (Ppx_hash_lib.Std.Hash.state -> 'err -> Ppx_hash_lib.Std.Hash.state)
+      ->
+      Ppx_hash_lib.Std.Hash.state ->
+      ('ok, 'err) t -> Ppx_hash_lib.Std.Hash.state
+  end[@@ocaml.doc "@inline"]
 [@@@end]
 
 include Monad.S2 with type ('a,'err) t := ('a,'err) t

@@ -243,10 +243,10 @@ let rec last t =
 
 
 let[@inline always] rec findi_and_call_impl t ~compare k arg
-     ~call_if_found
-     ~call_if_not_found
-     ~if_found
-     ~if_not_found
+                          ~call_if_found
+                          ~call_if_not_found
+                          ~if_found
+                          ~if_not_found
   =
   (* A little manual unrolling of the recursion.
      This is really worth 5% on average *)

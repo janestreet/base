@@ -12,10 +12,10 @@ open! Import
 (** See [Base.Array] for comments. *)
 type 'a t [@@deriving_inline sexp]
 include
-sig
-  [@@@ocaml.warning "-32"]
-  include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
-end[@@ocaml.doc "@inline"]
+  sig
+    [@@@ocaml.warning "-32"]
+    include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
+  end[@@ocaml.doc "@inline"]
 [@@@end]
 
 val invariant : _ t -> unit

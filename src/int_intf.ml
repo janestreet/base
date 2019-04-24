@@ -42,14 +42,14 @@ module type Hexable = sig
   module Hex : sig
     type nonrec t = t [@@deriving_inline sexp, compare, hash]
     include
-    sig
-      [@@@ocaml.warning "-32"]
-      include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-      val compare : t -> t -> int
-      val hash_fold_t :
-        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-      val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-    end[@@ocaml.doc "@inline"]
+      sig
+        [@@@ocaml.warning "-32"]
+        include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+        val compare : t -> t -> int
+        val hash_fold_t :
+          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+        val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+      end[@@ocaml.doc "@inline"]
     [@@@end]
 
     include Stringable.S with type t := t
@@ -61,13 +61,13 @@ end
 module type S_common = sig
   type t [@@deriving_inline hash, sexp]
   include
-  sig
-    [@@@ocaml.warning "-32"]
-    val hash_fold_t :
-      Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-    val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-    include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-  end[@@ocaml.doc "@inline"]
+    sig
+      [@@@ocaml.warning "-32"]
+      val hash_fold_t :
+        Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+      val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+      include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
+    end[@@ocaml.doc "@inline"]
   [@@@end]
 
   include Floatable.S          with type t := t

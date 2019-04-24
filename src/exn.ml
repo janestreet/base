@@ -62,14 +62,15 @@ let to_string_mach exc = Sexp.to_string_mach (sexp_of_exn exc)
 let sexp_of_t = sexp_of_exn
 
 let protectx ~f x ~(finally : _ -> unit) =
-  let res =
-    try f x
-    with exn ->
-      (try finally x with final_exn -> raise (Finally (exn, final_exn)));
-      raise exn
-  in
-  finally x;
-  res
+  match f x with
+  | res ->
+    finally x;
+    res
+  | exception exn ->
+    raise
+      (match finally x with
+       | () -> exn
+       | exception final_exn -> Finally (exn, final_exn))
 ;;
 
 let protect ~f ~finally = protectx ~f () ~finally

@@ -5,36 +5,36 @@
 include
   (Shadow_stdlib
    : (module type of struct include Shadow_stdlib end
-       with type 'a ref                           := 'a ref
-       with type ('a, 'b, 'c) format              := ('a, 'b, 'c) format
-       with type ('a, 'b, 'c, 'd) format4         := ('a, 'b, 'c, 'd) format4
-       with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
-       (* These modules are redefined in Base *)
-       with module Array     := Shadow_stdlib.Array
-       with module Bool      := Shadow_stdlib.Bool
-       with module Buffer    := Shadow_stdlib.Buffer
-       with module Bytes     := Shadow_stdlib.Bytes
-       with module Char      := Shadow_stdlib.Char
-       with module Float     := Shadow_stdlib.Float
-       with module Hashtbl   := Shadow_stdlib.Hashtbl
-       with module Int       := Shadow_stdlib.Int
-       with module Int32     := Shadow_stdlib.Int32
-       with module Int64     := Shadow_stdlib.Int64
-       with module Lazy      := Shadow_stdlib.Lazy
-       with module List      := Shadow_stdlib.List
-       with module Map       := Shadow_stdlib.Map
-       with module Nativeint := Shadow_stdlib.Nativeint
-       with module Option    := Shadow_stdlib.Option
-       with module Printf    := Shadow_stdlib.Printf
-       with module Queue     := Shadow_stdlib.Queue
-       with module Random    := Shadow_stdlib.Random
-       with module Result    := Shadow_stdlib.Result
-       with module Set       := Shadow_stdlib.Set
-       with module Stack     := Shadow_stdlib.Stack
-       with module String    := Shadow_stdlib.String
-       with module Sys       := Shadow_stdlib.Sys
-       with module Uchar     := Shadow_stdlib.Uchar
-       with module Unit      := Shadow_stdlib.Unit
+     with type 'a ref                           := 'a ref
+     with type ('a, 'b, 'c) format              := ('a, 'b, 'c) format
+     with type ('a, 'b, 'c, 'd) format4         := ('a, 'b, 'c, 'd) format4
+     with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
+     (* These modules are redefined in Base *)
+     with module Array     := Shadow_stdlib.Array
+     with module Bool      := Shadow_stdlib.Bool
+     with module Buffer    := Shadow_stdlib.Buffer
+     with module Bytes     := Shadow_stdlib.Bytes
+     with module Char      := Shadow_stdlib.Char
+     with module Float     := Shadow_stdlib.Float
+     with module Hashtbl   := Shadow_stdlib.Hashtbl
+     with module Int       := Shadow_stdlib.Int
+     with module Int32     := Shadow_stdlib.Int32
+     with module Int64     := Shadow_stdlib.Int64
+     with module Lazy      := Shadow_stdlib.Lazy
+     with module List      := Shadow_stdlib.List
+     with module Map       := Shadow_stdlib.Map
+     with module Nativeint := Shadow_stdlib.Nativeint
+     with module Option    := Shadow_stdlib.Option
+     with module Printf    := Shadow_stdlib.Printf
+     with module Queue     := Shadow_stdlib.Queue
+     with module Random    := Shadow_stdlib.Random
+     with module Result    := Shadow_stdlib.Result
+     with module Set       := Shadow_stdlib.Set
+     with module Stack     := Shadow_stdlib.Stack
+     with module String    := Shadow_stdlib.String
+     with module Sys       := Shadow_stdlib.Sys
+     with module Uchar     := Shadow_stdlib.Uchar
+     with module Unit      := Shadow_stdlib.Unit
      )) [@ocaml.warning "-3"]
 type 'a ref = 'a Caml.ref = { mutable contents: 'a }
 

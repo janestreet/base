@@ -140,8 +140,8 @@ module type Comparable = sig
       (T : sig
          type t [@@deriving_inline sexp_of]
          include
-         sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-         end[@@ocaml.doc "@inline"]
+           sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+           end[@@ocaml.doc "@inline"]
          [@@@end]
          val component : t -> C.t
        end) : S with type t := T.t
@@ -149,19 +149,19 @@ module type Comparable = sig
   module Make (T : sig
       type t [@@deriving_inline compare, sexp_of]
       include
-      sig
-        [@@@ocaml.warning "-32"]
-        val compare : t -> t -> int
-        val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+        sig
+          [@@@ocaml.warning "-32"]
+          val compare : t -> t -> int
+          val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+        end[@@ocaml.doc "@inline"]
       [@@@end]
     end) : S with type t := T.t
 
   module Make_using_comparator (T : sig
       type t [@@deriving_inline sexp_of]
       include
-      sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+        sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+        end[@@ocaml.doc "@inline"]
       [@@@end]
       include Comparator.S with type t := t
     end) : S
@@ -170,17 +170,17 @@ module type Comparable = sig
 
   module Poly (T : sig type t [@@deriving_inline sexp_of]
       include
-      sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+        sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+        end[@@ocaml.doc "@inline"]
       [@@@end] end) : S with type t := T.t
 
   module Validate (T : sig type t [@@deriving_inline compare, sexp_of]
       include
-      sig
-        [@@@ocaml.warning "-32"]
-        val compare : t -> t -> int
-        val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+        sig
+          [@@@ocaml.warning "-32"]
+          val compare : t -> t -> int
+          val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+        end[@@ocaml.doc "@inline"]
       [@@@end] end)
     : Validate with type t := T.t
 
@@ -188,11 +188,11 @@ module type Comparable = sig
       (T : sig
          type t [@@deriving_inline compare, sexp_of]
          include
-         sig
-           [@@@ocaml.warning "-32"]
-           val compare : t -> t -> int
-           val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-         end[@@ocaml.doc "@inline"]
+           sig
+             [@@@ocaml.warning "-32"]
+             val compare : t -> t -> int
+             val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+           end[@@ocaml.doc "@inline"]
          [@@@end]
          val zero : t
          include Validate with type t := t
@@ -202,11 +202,11 @@ module type Comparable = sig
       (T : sig
          type t [@@deriving_inline compare, sexp_of]
          include
-         sig
-           [@@@ocaml.warning "-32"]
-           val compare : t -> t -> int
-           val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-         end[@@ocaml.doc "@inline"]
+           sig
+             [@@@ocaml.warning "-32"]
+             val compare : t -> t -> int
+             val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+           end[@@ocaml.doc "@inline"]
          [@@@end]
          val zero : t
        end)

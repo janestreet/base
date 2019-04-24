@@ -16,20 +16,20 @@ type 'a t =
 let sexp_of_t :
   'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
   fun _of_a ->
-    function
-    | { length = v_length; elts = v_elts } ->
-      let bnds = [] in
-      let bnds =
-        let arg = Option_array.sexp_of_t _of_a v_elts in
-        (Ppx_sexp_conv_lib.Sexp.List
-           [Ppx_sexp_conv_lib.Sexp.Atom "elts"; arg])
-        :: bnds in
-      let bnds =
-        let arg = sexp_of_int v_length in
-        (Ppx_sexp_conv_lib.Sexp.List
-           [Ppx_sexp_conv_lib.Sexp.Atom "length"; arg])
-        :: bnds in
-      Ppx_sexp_conv_lib.Sexp.List bnds
+  function
+  | { length = v_length; elts = v_elts } ->
+    let bnds = [] in
+    let bnds =
+      let arg = Option_array.sexp_of_t _of_a v_elts in
+      (Ppx_sexp_conv_lib.Sexp.List
+         [Ppx_sexp_conv_lib.Sexp.Atom "elts"; arg])
+      :: bnds in
+    let bnds =
+      let arg = sexp_of_int v_length in
+      (Ppx_sexp_conv_lib.Sexp.List
+         [Ppx_sexp_conv_lib.Sexp.Atom "length"; arg])
+      :: bnds in
+    Ppx_sexp_conv_lib.Sexp.List bnds
 [@@@end]
 
 let sexp_of_t_internal = sexp_of_t
