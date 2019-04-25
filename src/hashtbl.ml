@@ -120,8 +120,6 @@ let set t ~key ~data =
   maybe_resize_table t
 ;;
 
-let replace = set
-
 let add t ~key ~data =
   ensure_mutation_allowed t;
   add_worker ~replace:false t ~key ~data;
@@ -321,7 +319,7 @@ let mapi t ~f =
     create ~growth_allowed:t.growth_allowed
       ~hashable:t.hashable ~size:t.length ()
   in
-  iteri t ~f:(fun ~key ~data -> replace new_t ~key ~data:(f ~key ~data));
+  iteri t ~f:(fun ~key ~data -> set new_t ~key ~data:(f ~key ~data));
   new_t
 
 let map t ~f = mapi t ~f:(fun ~key:_ ~data -> f data)
@@ -335,7 +333,7 @@ let filter_mapi t ~f =
   in
   iteri t ~f:(fun ~key ~data ->
     match f ~key ~data with
-    | Some new_data -> replace new_t ~key ~data:new_data
+    | Some new_data -> set new_t ~key ~data:new_data
     | None -> ());
   new_t
 
@@ -359,8 +357,8 @@ let partition_mapi t ~f =
   in
   iteri t ~f:(fun ~key ~data ->
     match f ~key ~data with
-    | `Fst new_data -> replace t0 ~key ~data:new_data
-    | `Snd new_data -> replace t1 ~key ~data:new_data);
+    | `Fst new_data -> set t0 ~key ~data:new_data
+    | `Snd new_data -> set t1 ~key ~data:new_data);
   (t0, t1)
 ;;
 
@@ -377,7 +375,7 @@ let find_or_add t id ~default =
   | Some x -> x
   | None ->
     let default = default () in
-    replace t ~key:id ~data:default;
+    set t ~key:id ~data:default;
     default
 
 let findi_or_add t id ~default =
@@ -385,7 +383,7 @@ let findi_or_add t id ~default =
   | Some x -> x
   | None ->
     let default = default id in
-    replace t ~key:id ~data:default;
+    set t ~key:id ~data:default;
     default
 
 (* Some hashtbl implementations may be able to perform this more efficiently than two
@@ -399,7 +397,7 @@ let find_and_remove t id =
 let change t id ~f =
   match f (find t id) with
   | None -> remove t id
-  | Some data -> replace t ~key:id ~data
+  | Some data -> set t ~key:id ~data
 ;;
 
 let update t id ~f =
@@ -433,7 +431,7 @@ let remove_multi t key =
   match find t key with
   | None -> ()
   | Some [] | Some [_] -> remove t key
-  | Some (_ :: tl) -> replace t ~key ~data:tl
+  | Some (_ :: tl) -> set t ~key ~data:tl
 
 let find_multi t key =
   match find t key with
@@ -450,7 +448,7 @@ let create_mapped ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
     if mem res key then
       dupes := key :: !dupes
     else
-      replace res ~key ~data);
+      set res ~key ~data);
   match !dupes with
   | [] -> `Ok res
   | keys -> `Duplicate_keys (List.dedup_and_sort ~compare:hashable.Hashable.compare keys)
@@ -540,7 +538,7 @@ let add_to_groups groups ~get_key ~get_data ~combine ~rows =
       | None -> data
       | Some old -> combine old data
     in
-    replace groups ~key ~data)
+    set groups ~key ~data)
 ;;
 
 let group ?growth_allowed ?size ~hashable ~get_key ~get_data ~combine rows =
@@ -609,10 +607,10 @@ let merge_into ~src ~dst ~f =
     | Remove   -> remove dst key
     | Set_to data ->
       match dst_data with
-      | None -> replace dst ~key ~data
+      | None -> set dst ~key ~data
       | Some dst_data ->
         if not (phys_equal dst_data data)
-        then replace dst ~key ~data)
+        then set dst ~key ~data)
 ;;
 
 let filteri_inplace t ~f =
