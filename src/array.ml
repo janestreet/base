@@ -512,14 +512,11 @@ let for_all2_exn t1 t2 ~f =
 
 let equal equal t1 t2 = length t1 = length t2 && for_all2_exn t1 t2 ~f:equal
 
-let replace t i ~f = t.(i) <- f t.(i)
 
 let map_inplace t ~f =
   for i = 0 to length t - 1 do
     t.(i) <- f t.(i)
   done
-
-let replace_all = map_inplace
 
 let findi t ~f =
   let rec findi_loop t ~f ~length i =

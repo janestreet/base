@@ -66,9 +66,6 @@ module Make_general (M : Basic_general) = struct
   let rec all_unit = function
     | [] -> return ()
     | t :: ts -> t >>= fun () -> all_unit ts
-
-  let all_ignore = all_unit
-
 end
 
 module Make_indexed (M : Basic_indexed)

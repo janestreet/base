@@ -160,7 +160,6 @@ let%test_module "Make" =
       ;;
 
       let all_unit = A.all_unit
-      let all_ignore = all_unit
       let%expect_test _ =
         let test list = print_s [%sexp (all_unit list : unit Or_error.t)] in
         test [];
@@ -351,7 +350,6 @@ let%test_module "Make_using_map2" =
       ;;
 
       let all_unit = A.all_unit
-      let all_ignore = all_unit
       let%expect_test _ =
         let test list = print_s [%sexp (all_unit list : unit Or_error.t)] in
         test [];

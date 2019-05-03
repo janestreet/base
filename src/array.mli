@@ -221,14 +221,6 @@ val of_list_rev_map : 'a list -> f:('a -> 'b) -> 'b t
 (** [of_list_rev_mapi l ~f] is the same as [of_list (List.rev_mapi l ~f)]. *)
 val of_list_rev_mapi : 'a list -> f:(int -> 'a -> 'b) -> 'b t
 
-(** [replace t i ~f] = [t.(i) <- f (t.(i))]. *)
-val replace : 'a t -> int -> f:('a -> 'a) -> unit
-[@@deprecated "[since 2018-09] use [t.(i) <- f (t.(i))] instead"]
-
-(** Modifies an array in place -- [ar.(i)] will be set to [f(ar.(i))]. *)
-val replace_all : 'a t -> f:('a -> 'a) -> unit
-[@@deprecated "[since 2018-03] use [map_inplace] instead"]
-
 (** Modifies an array in place, applying [f] to every element of the array *)
 val map_inplace : 'a t -> f:('a -> 'a) -> unit
 

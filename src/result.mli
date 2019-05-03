@@ -96,6 +96,7 @@ val try_with : (unit -> 'a) -> ('a, exn) t
 
 (** [ok_unit = Ok ()], used to avoid allocation as a performance hack. *)
 val ok_unit : (unit, _) t
+[@@deprecated "[since 2019-04] Use [Ok ()], which is also statically allocated, instead."]
 
 module Export : sig
   type ('ok, 'err) _result
