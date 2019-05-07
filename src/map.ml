@@ -922,7 +922,32 @@ module Tree0 = struct
       Sequence.unfold_step ~init:(of_tree t1, of_tree t2) ~f:step
     ;;
 
-
+    let fold_symmetric_diff t1 t2 ~compare_key ~data_equal ~init ~f =
+      let add acc k v = f acc (k, `Right v) in
+      let remove acc k v = f acc (k, `Left v) in
+      let rec loop left right acc  =
+        match left, right with
+        | End, enum -> fold enum ~init:acc ~f:(fun ~key ~data acc -> add acc key data)
+        | enum, End -> fold enum ~init:acc ~f:(fun ~key ~data acc -> remove acc key data)
+        | (More (k1, v1, tree1, enum1) as left), (More (k2, v2, tree2, enum2) as right) ->
+          let compare_result = compare_key k1 k2 in
+          if compare_result = 0 then begin
+            let acc =
+              if data_equal v1 v2 then acc else (f acc (k1, `Unequal (v1, v2)))
+            in
+            if phys_equal tree1 tree2
+            then loop enum1 enum2 acc
+            else loop (cons tree1 enum1) (cons tree2 enum2) acc
+          end else if compare_result < 0 then begin
+            let acc = remove acc k1 v1 in
+            loop (cons tree1 enum1) right acc
+          end else begin
+            let acc = add acc k2 v2 in
+            loop left (cons tree2 enum2) acc
+          end
+      in
+      loop (of_tree t1) (of_tree t2) init
+    ;;
   end
 
   let to_sequence_increasing comparator ~from_key t =
@@ -991,6 +1016,54 @@ module Tree0 = struct
   ;;
 
   let symmetric_diff = Enum.symmetric_diff
+
+  let fold_symmetric_diff t1 t2 ~compare_key ~data_equal ~init ~f =
+    (* [Enum.fold_diffs] is a correct implementation of this function, but is considerably
+       slower, as we have to allocate quite a lot of state to track enumeration of a tree.
+       Avoid if we can.
+    *)
+    let slow x y ~init = Enum.fold_symmetric_diff x y ~compare_key ~data_equal ~f ~init in
+    let add acc k v = f acc (k, `Right v) in
+    let remove acc k v = f acc (k, `Left v) in
+    let delta acc k v v' =
+      if data_equal v v' then acc else (f acc (k, (`Unequal (v,v'))))
+    in
+    (* If two trees have the same structure at the root (and the same key, if they're
+       [Node]s) we can trivially diff each subpart in obvious ways. *)
+    let rec loop t t' acc =
+      if phys_equal t t'
+      then acc
+      else (
+        match t, t' with
+        | Empty, new_vals ->
+          fold new_vals ~init:acc ~f:(fun ~key ~data acc ->
+            add acc key data)
+        | old_vals, Empty ->
+          fold old_vals ~init:acc ~f:(fun ~key ~data acc ->
+            remove acc key data)
+        | Leaf (k, v), Leaf (k', v') ->
+          (match compare_key k k' with
+           | x when x = 0 -> delta acc k v v'
+           | x when x < 0 ->
+             let acc = remove acc k v in
+             add acc k' v'
+           | _ (* when x > 0 *) ->
+             let acc = add acc k' v' in
+             remove acc k v)
+        | Node (l, k, v, r, _), Node (l', k', v', r', _)
+          when compare_key k k' = 0 ->
+          let acc = loop l l' acc in
+          let acc = delta acc k v v' in
+          loop r r' acc
+        (* Our roots aren't the same key. Fallback to the slow mode. Trees with small
+           diffs will only do this on very small parts of the tree (hopefully - if the
+           overall root is rebalanced, we'll eat the whole cost, unfortunately.) *)
+        | Node _, Node _
+        | Node _, Leaf _
+        | Leaf _, Node _ -> slow t t' ~init:acc
+      )
+    in
+    loop t1 t2 init
 
   let rec length = function
     | Empty -> 0
@@ -1372,6 +1445,9 @@ module Accessors = struct
   let symmetric_diff t1 t2 ~data_equal =
     Tree0.symmetric_diff t1.tree t2.tree ~compare_key:(compare_key t1) ~data_equal
   ;;
+  let fold_symmetric_diff t1 t2 ~data_equal ~init ~f =
+    Tree0.fold_symmetric_diff t1.tree t2.tree ~compare_key:(compare_key t1) ~data_equal ~init ~f
+  ;;
   let merge t1 t2 ~f =
     like t1 (Tree0.merge t1.tree t2.tree ~f ~compare_key:(compare_key t1))
   ;;
@@ -1595,6 +1671,10 @@ module Tree = struct
   let validate ~name f t = Validate.alist ~name f (to_alist t)
   let symmetric_diff ~comparator t1 t2 ~data_equal =
     Tree0.symmetric_diff t1 t2 ~compare_key:comparator.Comparator.compare ~data_equal
+  ;;
+  let fold_symmetric_diff ~comparator t1 t2 ~data_equal ~init ~f =
+    Tree0.fold_symmetric_diff t1 t2 ~compare_key:comparator.Comparator.compare
+      ~data_equal ~init ~f
   ;;
   let merge ~comparator t1 t2 ~f =
     fst (Tree0.merge t1 t2 ~f ~compare_key:comparator.Comparator.compare)

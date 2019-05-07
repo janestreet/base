@@ -386,6 +386,15 @@ module type Accessors_generic = sig
         -> ('k key, 'v) Symmetric_diff_element.t Sequence.t
        ) options
 
+  val fold_symmetric_diff
+    : ('k, 'cmp,
+       ('k, 'v, 'cmp) t
+       -> ('k, 'v, 'cmp) t
+       -> data_equal:('v -> 'v -> bool)
+       -> init:'a
+       -> f:('a -> ('k key, 'v) Symmetric_diff_element.t -> 'a)
+       -> 'a) options
+
   val min_elt     : ('k, 'v, _) t -> ('k key * 'v) option
   val min_elt_exn : ('k, 'v, _) t ->  'k key * 'v
 
@@ -551,6 +560,14 @@ module type Accessors1 = sig
     -> 'a t
     -> data_equal:('a -> 'a -> bool)
     -> (key, 'a) Symmetric_diff_element.t Sequence.t
+  val fold_symmetric_diff
+    :  'a t
+    -> 'a t
+    -> data_equal:('a -> 'a -> bool)
+    -> init:'c
+    -> f:('c -> (key, 'a) Symmetric_diff_element.t -> 'c)
+    -> 'c
+
   val min_elt        : 'a t -> (key * 'a) option
   val min_elt_exn    : 'a t -> key * 'a
   val max_elt        : 'a t -> (key * 'a) option
@@ -674,6 +691,15 @@ module type Accessors2 = sig
     -> ('a, 'b) t
     -> data_equal:('b -> 'b -> bool)
     -> ('a, 'b) Symmetric_diff_element.t Sequence.t
+  val fold_symmetric_diff
+    :  ('a, 'b) t
+    -> ('a, 'b) t
+    -> data_equal:('b -> 'b -> bool)
+    -> init:'c
+    -> f:('c -> ('a, 'b) Symmetric_diff_element.t -> 'c)
+    -> 'c
+
+
   val min_elt        : ('a, 'b) t -> ('a * 'b) option
   val min_elt_exn    : ('a, 'b) t -> 'a * 'b
   val max_elt        : ('a, 'b) t -> ('a * 'b) option
@@ -792,6 +818,13 @@ module type Accessors3 = sig
     -> ('a, 'b, 'cmp) t
     -> data_equal:('b -> 'b -> bool)
     -> ('a, 'b) Symmetric_diff_element.t Sequence.t
+  val fold_symmetric_diff
+    :  ('a, 'b, 'cmp) t
+    -> ('a, 'b, 'cmp) t
+    -> data_equal:('b -> 'b -> bool)
+    -> init:'c
+    -> f:('c -> ('a, 'b) Symmetric_diff_element.t -> 'c)
+    -> 'c
   val min_elt        : ('a, 'b, 'cmp) t -> ('a * 'b) option
   val min_elt_exn    : ('a, 'b, 'cmp) t -> 'a * 'b
   val max_elt        : ('a, 'b, 'cmp) t -> ('a * 'b) option
@@ -966,6 +999,14 @@ module type Accessors3_with_comparator = sig
     -> ('a, 'b, 'cmp) t
     -> data_equal:('b -> 'b -> bool)
     -> ('a, 'b) Symmetric_diff_element.t Sequence.t
+  val fold_symmetric_diff
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a, 'b, 'cmp) t
+    -> ('a, 'b, 'cmp) t
+    -> data_equal:('b -> 'b -> bool)
+    -> init:'c
+    -> f:('c -> ('a, 'b) Symmetric_diff_element.t -> 'c)
+    -> 'c
   val min_elt        : ('a, 'b, 'cmp) t -> ('a * 'b) option
   val min_elt_exn    : ('a, 'b, 'cmp) t -> 'a * 'b
   val max_elt        : ('a, 'b, 'cmp) t -> ('a * 'b) option
@@ -1671,13 +1712,24 @@ module type Map = sig
   end
 
   (** [symmetric_diff t1 t2 ~data_equal] returns a list of changes between [t1] and [t2].
-      It is intended to be efficient in the case where [t1] and [t2] share a large amount of
-      structure.  The keys in the output sequence will be in sorted order. *)
+      It is intended to be efficient in the case where [t1] and [t2] share a large amount
+      of structure. The keys in the output sequence will be in sorted order. *)
   val symmetric_diff
     :  ('k, 'v, 'cmp) t
     -> ('k, 'v, 'cmp) t
     -> data_equal:('v -> 'v -> bool)
     -> ('k, 'v) Symmetric_diff_element.t Sequence.t
+
+  (** [fold_symmetric_diff t1 t2 ~data_equal] folds across an implicit sequence of changes
+      between [t1] and [t2], in sorted order by keys. Equivalent to
+      [Sequence.fold (symmetric_diff t1 t2 ~data_equal)], and more efficient. *)
+  val fold_symmetric_diff
+    : ('k, 'v, 'cmp) t
+    -> ('k, 'v, 'cmp) t
+    -> data_equal:('v -> 'v -> bool)
+    -> init:'a
+    -> f:('a -> ('k, 'v) Symmetric_diff_element.t -> 'a)
+    -> 'a
 
   (** [min_elt map] returns [Some (key, data)] pair corresponding to the minimum key in
       [map], or [None] if empty. *)

@@ -82,3 +82,95 @@ module Poly = struct
     length a = length b
   ;;
 end
+
+let%test_module "[symmetric_diff]" =
+  (module struct
+    let%expect_test "examples" =
+      let test alist1 alist2 =
+        Map.symmetric_diff
+          ~data_equal:Int.equal
+          (Map.of_alist_exn (module String) alist1)
+          (Map.of_alist_exn (module String) alist2)
+        |> Sequence.to_list
+        |> [%sexp_of: (string, int) Symmetric_diff_element.t list]
+        |> print_s
+      in
+      test [] [];
+      [%expect {| () |}];
+      test ["one", 1] [];
+      [%expect {| ((one (Left 1))) |}];
+      test [] ["two", 2];
+      [%expect {| ((two (Right 2))) |}];
+      test ["one", 1; "two", 2] ["one", 1; "two", 2];
+      [%expect {| () |}];
+      test ["one", 1; "two", 2] ["one", 1; "two", 3];
+      [%expect {| ((two (Unequal (2 3)))) |}];
+    ;;
+
+    module String_to_int_map = struct
+      type t = int Map.M(String).t [@@deriving sexp_of]
+
+      let equal = Map.equal Int.equal
+
+      open Base_quickcheck
+
+      let quickcheck_generator =
+        Generator.map_t_m (module String) Generator.string Generator.int
+      let quickcheck_observer = Observer.map_t Observer.string Observer.int
+      let quickcheck_shrinker = Shrinker.map_t Shrinker.string Shrinker.int
+    end
+
+    let apply_diff_left_to_right map (key, elt) =
+      match elt with
+      | `Right data | `Unequal (_, data) -> Map.set map ~key ~data
+      | `Left _ -> Map.remove map key
+    ;;
+
+    let apply_diff_right_to_left map (key, elt) =
+      match elt with
+      | `Left data | `Unequal (data, _) -> Map.set map ~key ~data
+      | `Right _ -> Map.remove map key
+    ;;
+
+    let%expect_test "reconstructing in both directions" =
+      let test (map1, map2) =
+        let diff = Map.symmetric_diff map1 map2 ~data_equal:Int.equal in
+        require_equal
+          [%here]
+          (module String_to_int_map)
+          (Sequence.fold diff ~init:map1 ~f:apply_diff_left_to_right)
+          map2;
+        require_equal
+          [%here]
+          (module String_to_int_map)
+          map1
+          (Sequence.fold diff ~init:map2 ~f:apply_diff_right_to_left)
+      in
+      Base_quickcheck.Test.run_exn
+        ~f:test
+        (module struct
+          type t = String_to_int_map.t * String_to_int_map.t
+          [@@deriving quickcheck, sexp_of]
+        end)
+    ;;
+
+    let%expect_test "vs [fold_symmetric_diff]" =
+      let test (map1, map2) =
+        require_compare_equal
+          [%here]
+          (module struct
+            type t = (string, int) Symmetric_diff_element.t list
+            [@@deriving compare, sexp_of]
+          end)
+          (Map.symmetric_diff map1 map2 ~data_equal:Int.equal
+           |> Sequence.fold ~init:[] ~f:(Fn.flip List.cons))
+          (Map.fold_symmetric_diff map1 map2 ~data_equal:Int.equal
+             ~init:[] ~f:(Fn.flip List.cons))
+      in
+      Base_quickcheck.Test.run_exn
+        ~f:test
+        (module struct
+          type t = String_to_int_map.t * String_to_int_map.t
+          [@@deriving quickcheck, sexp_of]
+        end)
+  end)

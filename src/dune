@@ -21,7 +21,7 @@
  (preprocess no_preprocessing)
   (lint 
   (pps ppx_base ppx_base_lint -check-doc-comments -type-conv-keep-w32=impl
-   -apply=js_style,base_lint,type_conv))
+   -apply=js_style,base_lint,type_conv,cold))
  (js_of_ocaml (javascript_files runtime.js)))
 
 (rule (targets mpopcnt.sexp) (deps discover/discover.exe)
