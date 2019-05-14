@@ -13,19 +13,21 @@ let%test "Hashtbl.merge succeeds with first-class-module interface" =
       | `Both _ -> assert false)
     |> Hashtbl.to_alist
   in
-  List.equal Poly.equal  result []
+  List.equal Poly.equal result []
+;;
 
-let%test_module _ = (module Hashtbl_tests.Make(struct
-    include Hashtbl
+let%test_module _ =
+  (module Hashtbl_tests.Make (struct
+       include Hashtbl
 
-    let create_poly ?size () = Poly.create ?size ()
-
-    let of_alist_poly_exn l = Poly.of_alist_exn l
-    let of_alist_poly_or_error l = Poly.of_alist_or_error l
-  end))
+       let create_poly ?size () = Poly.create ?size ()
+       let of_alist_poly_exn l = Poly.of_alist_exn l
+       let of_alist_poly_or_error l = Poly.of_alist_or_error l
+     end))
+;;
 
 let%expect_test "Hashtbl.find_exn" =
-  let table = Hashtbl.of_alist_exn (module String) ["one", 1; "two", 2; "three", 3] in
+  let table = Hashtbl.of_alist_exn (module String) [ "one", 1; "two", 2; "three", 3 ] in
   let test_success key =
     require_does_not_raise [%here] (fun () ->
       print_s [%sexp (Hashtbl.find_exn table key : int)])
@@ -37,11 +39,10 @@ let%expect_test "Hashtbl.find_exn" =
   test_success "three";
   [%expect {| 3 |}];
   let test_failure key =
-    require_does_raise [%here] (fun () ->
-      Hashtbl.find_exn table key)
+    require_does_raise [%here] (fun () -> Hashtbl.find_exn table key)
   in
   test_failure "zero";
   [%expect {| (Not_found_s ("Hashtbl.find_exn: not found" zero)) |}];
   test_failure "four";
-  [%expect {| (Not_found_s ("Hashtbl.find_exn: not found" four)) |}];
+  [%expect {| (Not_found_s ("Hashtbl.find_exn: not found" four)) |}]
 ;;

@@ -9,26 +9,19 @@
 open! Import0
 
 let failwithf = Printf.failwithf
-
-let escaped       = Caml.Char.escaped
-let lowercase     = Caml.Char.lowercase_ascii
-let to_int        = Caml.Char.code
+let escaped = Caml.Char.escaped
+let lowercase = Caml.Char.lowercase_ascii
+let to_int = Caml.Char.code
 let unsafe_of_int = Caml.Char.unsafe_chr
-let uppercase     = Caml.Char.uppercase_ascii
+let uppercase = Caml.Char.uppercase_ascii
 
 (* We use our own range test when converting integers to chars rather than
    calling [Caml.Char.chr] because it's simple and it saves us a function call
    and the try-with (exceptions cost, especially in the world with backtraces). *)
 let int_is_ok i = 0 <= i && i <= 255
-
 let min_value = unsafe_of_int 0
 let max_value = unsafe_of_int 255
-
-let of_int i =
-  if int_is_ok i
-  then Some (unsafe_of_int i)
-  else None
-;;
+let of_int i = if int_is_ok i then Some (unsafe_of_int i) else None
 
 let of_int_exn i =
   if int_is_ok i

@@ -8,23 +8,21 @@ module T = struct
     hash_fold_int64
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = hash_int64 in fun x -> func x
-  let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = int64_of_sexp
-  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_int64
+  let t_of_sexp = (int64_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
+  let sexp_of_t = (sexp_of_int64 : t -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
 
   let compare = Int64_replace_polymorphic_compare.compare
-
   let to_string = to_string
   let of_string = of_string
 end
 
 include T
-include Comparator.Make(T)
+include Comparator.Make (T)
 
 let num_bits = 64
 let float_lower_bound = Float0.lower_bound_for_int num_bits
 let float_upper_bound = Float0.upper_bound_for_int num_bits
-
 let float_of_bits = float_of_bits
 let bits_of_float = bits_of_float
 let shift_right_logical = shift_right_logical
@@ -47,20 +45,23 @@ let one = one
 let zero = zero
 let to_float = to_float
 let of_float_unchecked = Caml.Int64.of_float
+
 let of_float f =
-  if Float_replace_polymorphic_compare.(>=) f float_lower_bound
-  && Float_replace_polymorphic_compare.(<=) f float_upper_bound
-  then
-    Caml.Int64.of_float f
+  if Float_replace_polymorphic_compare.( >= ) f float_lower_bound
+  && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
+  then Caml.Int64.of_float f
   else
-    Printf.invalid_argf "Int64.of_float: argument (%f) is out of range or NaN"
+    Printf.invalid_argf
+      "Int64.of_float: argument (%f) is out of range or NaN"
       (Float0.box f)
       ()
+;;
 
 let ( ** ) b e = pow b e
 
 include Comparable.Validate_with_zero (struct
     include T
+
     let zero = zero
   end)
 
@@ -70,39 +71,37 @@ include Comparable.Validate_with_zero (struct
 open Int64_replace_polymorphic_compare
 
 let between t ~low ~high = low <= t && t <= high
-let clamp_unchecked t ~min ~max =
-  if t < min then min else if t <= max then t else max
+let clamp_unchecked t ~min ~max = if t < min then min else if t <= max then t else max
 
 let clamp_exn t ~min ~max =
   assert (min <= max);
   clamp_unchecked t ~min ~max
+;;
 
 let clamp t ~min ~max =
-  if min > max then
+  if min > max
+  then
     Or_error.error_s
-      (Sexp.message "clamp requires [min <= max]"
-         [ "min", T.sexp_of_t min
-         ; "max", T.sexp_of_t max
-         ])
-  else
-    Ok (clamp_unchecked t ~min ~max)
+      (Sexp.message
+         "clamp requires [min <= max]"
+         [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ])
+  else Ok (clamp_unchecked t ~min ~max)
+;;
 
 let ( / ) = div
 let ( * ) = mul
 let ( - ) = sub
 let ( + ) = add
 let ( ~- ) = neg
-
 let incr r = r := !r + one
 let decr r = r := !r - one
-
 let of_int64 t = t
 let of_int64_exn = of_int64
 let to_int64 t = t
-
 let popcount = Popcount.int64_popcount
 
 module Conv = Int_conversions
+
 let of_int = Conv.int_to_int64
 let of_int_exn = of_int
 let to_int = Conv.int64_to_int
@@ -122,17 +121,17 @@ let to_nativeint_trunc = Conv.int64_to_nativeint_trunc
 module Pow2 = struct
   open! Import
   open Int64_replace_polymorphic_compare
-
   module Sys = Sys0
 
   let raise_s = Error.raise_s
 
   let non_positive_argument () =
     Printf.invalid_argf "argument must be strictly positive" ()
+  ;;
 
-  let ( lor ) = Caml.Int64.logor;;
-  let ( lsr ) = Caml.Int64.shift_right_logical;;
-  let ( land ) = Caml.Int64.logand;;
+  let ( lor ) = Caml.Int64.logor
+  let ( lsr ) = Caml.Int64.shift_right_logical
+  let ( land ) = Caml.Int64.logand
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 x =
@@ -161,7 +160,7 @@ module Pow2 = struct
 
   let is_pow2 x =
     if x <= Caml.Int64.zero then non_positive_argument ();
-    (x land (Caml.Int64.pred x)) = Caml.Int64.zero
+    x land Caml.Int64.pred x = Caml.Int64.zero
   ;;
 
   (* C stub for int clz to use the CLZ/BSR instruction where possible *)
@@ -169,30 +168,31 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if i <= Caml.Int64.zero then
-      raise_s (Sexp.message "[Int64.floor_log2] got invalid input"
-                 ["", sexp_of_int64 i]);
+    if i <= Caml.Int64.zero
+    then
+      raise_s
+        (Sexp.message "[Int64.floor_log2] got invalid input" [ "", sexp_of_int64 i ]);
     num_bits - 1 - int64_clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if Poly.( <= ) i Caml.Int64.zero then
-      raise_s (Sexp.message "[Int64.ceil_log2] got invalid input"
-                 ["", sexp_of_int64 i]);
+    if Poly.( <= ) i Caml.Int64.zero
+    then
+      raise_s
+        (Sexp.message "[Int64.ceil_log2] got invalid input" [ "", sexp_of_int64 i ]);
     if Caml.Int64.equal i Caml.Int64.one
     then 0
     else num_bits - int64_clz (Caml.Int64.pred i)
   ;;
 end
-include Pow2
 
+include Pow2
 include Conv.Make (T)
 
-include Conv.Make_hex(struct
-
+include Conv.Make_hex (struct
     type t = int64 [@@deriving_inline compare, hash]
-    let compare : t -> t -> int = compare_int64
+    let compare = (compare_int64 : t -> t -> int)
     let (hash_fold_t :
            Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int64
@@ -201,17 +201,16 @@ include Conv.Make_hex(struct
     [@@@end]
 
     let zero = zero
-    let neg = (~-)
-    let (<) = (<)
+    let neg = ( ~- )
+    let ( < ) = ( < )
     let to_string i = Printf.sprintf "%Lx" i
     let of_string s = Caml.Scanf.sscanf s "%Lx" Fn.id
-
     let module_name = "Base.Int64.Hex"
-
   end)
 
 include Pretty_printer.Register (struct
     type nonrec t = t
+
     let to_string = to_string
     let module_name = "Base.Int64"
   end)
@@ -223,7 +222,9 @@ module Pre_O = struct
   let ( / ) = ( / )
   let ( ~- ) = ( ~- )
   let ( ** ) = ( ** )
+
   include (Int64_replace_polymorphic_compare : Comparisons.Infix with type t := t)
+
   let abs = abs
   let neg = neg
   let zero = zero
@@ -232,9 +233,12 @@ end
 
 module O = struct
   include Pre_O
+
   include Int_math.Make (struct
       type nonrec t = t
+
       include Pre_O
+
       let rem = rem
       let to_float = to_float
       let of_float = of_float
@@ -243,15 +247,17 @@ module O = struct
     end)
 
   let ( land ) = bit_and
-  let ( lor  ) = bit_or
+  let ( lor ) = bit_or
   let ( lxor ) = bit_xor
-  let ( lnot ) = bit_not
-  let ( lsl  ) = shift_left
-  let ( asr  ) = shift_right
-  let ( lsr  ) = shift_right_logical
+  let lnot = bit_not
+  let ( lsl ) = shift_left
+  let ( asr ) = shift_right
+  let ( lsr ) = shift_right_logical
 end
 
-include O (* [Int64] and [Int64.O] agree value-wise *)
+include O
+
+(* [Int64] and [Int64.O] agree value-wise *)
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after
    including functor application that could shadow its definitions. This is

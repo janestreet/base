@@ -19,6 +19,7 @@ val all : unit -> string list
 (** Modules that provide a pretty printer will match [S]. *)
 module type S = sig
   type t
+
   val pp : Formatter.t -> t -> unit
 end
 
@@ -28,6 +29,7 @@ end
     added. *)
 module Register (M : sig
     type t
+
     val module_name : string
     val to_string : t -> string
   end) : S with type t := M.t
@@ -36,6 +38,7 @@ module Register (M : sig
     [to_string]. *)
 module Register_pp (M : sig
     include S
+
     val module_name : string
   end) : S with type t := M.t
 

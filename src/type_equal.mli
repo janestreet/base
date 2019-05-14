@@ -42,13 +42,15 @@ include
       ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
   end[@@ocaml.doc "@inline"]
 [@@@end]
-type ('a, 'b) equal = ('a, 'b) t (** just an alias, needed when [t] gets shadowed below *)
+
+(** just an alias, needed when [t] gets shadowed below *)
+type ('a, 'b) equal = ('a, 'b) t
 
 (** [refl], [sym], and [trans] construct proofs that type equality is reflexive,
     symmetric, and transitive. *)
 
-val refl  : ('a, 'a) t
-val sym   : ('a, 'b) t -> ('b, 'a) t
+val refl : ('a, 'a) t
+val sym : ('a, 'b) t -> ('b, 'a) t
 val trans : ('a, 'b) t -> ('b, 'c) t -> ('a, 'c) t
 
 (** [conv t x] uses the type equality [t : (a, b) t] as evidence to safely cast [x]
@@ -101,7 +103,7 @@ end
 (** [tuple2] and [detuple2] convert between equality on a 2-tuple and its components. *)
 
 val detuple2 : ('a1 * 'a2, 'b1 * 'b2) t -> ('a1, 'b1) t * ('a2, 'b2) t
-val tuple2   : ('a1, 'b1) t -> ('a2, 'b2) t -> ('a1 * 'a2, 'b1 * 'b2) t
+val tuple2 : ('a1, 'b1) t -> ('a2, 'b2) t -> ('a1 * 'a2, 'b1 * 'b2) t
 
 (** [Injective] is an interface that states that a type is injective, where the type is
     viewed as a function from types to other types.  The typical usage is:
@@ -159,19 +161,21 @@ val tuple2   : ('a1, 'b1) t -> ('a2, 'b2) t -> ('a1 * 'a2, 'b1 * 'b2) t
 *)
 module type Injective = sig
   type 'a t
+
   val strip : ('a t, 'b t) equal -> ('a, 'b) equal
 end
 
 (** [Injective2] is for a binary type that is injective in both type arguments. *)
 module type Injective2 = sig
-  type ('a1, 'a2)  t
+  type ('a1, 'a2) t
+
   val strip : (('a1, 'a2) t, ('b1, 'b2) t) equal -> ('a1, 'b1) equal * ('a2, 'b2) equal
 end
 
 (** [Composition_preserves_injectivity] is a functor that proves that composition of
     injective types is injective. *)
-module Composition_preserves_injectivity (M1 : Injective) (M2 : Injective)
-  : Injective with type 'a t = 'a M1.t M2.t
+module Composition_preserves_injectivity (M1 : Injective) (M2 : Injective) :
+  Injective with type 'a t = 'a M1.t M2.t
 
 (** [Id] provides identifiers for types, and the ability to test (via [Id.same]) at
     runtime if two identifiers are equal, and if so to get a proof of equality of their
@@ -199,7 +203,8 @@ module Id : sig
         val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
       end[@@ocaml.doc "@inline"]
     [@@@end]
-    include Sexpable.S   with type t := t
+
+    include Sexpable.S with type t := t
     include Comparable.S with type t := t
   end
 
@@ -209,17 +214,13 @@ module Id : sig
       two distinct identifiers, even for the same arguments with the same type.  If the
       type ['a] doesn't support sexp conversion, then a good practice is to have the
       converter be [<:sexp_of< _ >>], (or [sexp_of_opaque], if not using pa_sexp). *)
-  val create
-    :  name:string
-    -> ('a -> Sexp.t)
-    -> 'a t
+  val create : name:string -> ('a -> Sexp.t) -> 'a t
 
   (** Accessors *)
 
-  val hash    : _ t -> int
-  val name    : _ t -> string
+  val hash : _ t -> int
+  val name : _ t -> string
   val to_sexp : 'a t -> 'a -> Sexp.t
-
   val hash_fold_t : Hash.state -> _ t -> Hash.state
 
   (** [same_witness t1 t2] and [same_witness_exn t1 t2] return a type equality proof iff
@@ -230,7 +231,7 @@ module Id : sig
       [same t1 t2 = is_some (same_witness t1 t2)].
   *)
 
-  val same             :  _ t -> _ t  -> bool
-  val same_witness     : 'a t -> 'b t -> ('a, 'b) equal option
+  val same : _ t -> _ t -> bool
+  val same_witness : 'a t -> 'b t -> ('a, 'b) equal option
   val same_witness_exn : 'a t -> 'b t -> ('a, 'b) equal
 end

@@ -1,11 +1,11 @@
 open! Import
 
 (** Signatures required of types which can be used in [[@@deriving_inline hash][@@@end]]. *)
+
 (*_ JS-only: For a more in-depth discussion, see documentation of ppx_hash, available in
   ppx/ppx_hash/README.md and ppx/ppx_hash/doc/design.notes. *)
 
 module type S = sig
-
   (** The type that is hashed.  *)
   type t
 
@@ -52,5 +52,6 @@ end
 
 module type S1 = sig
   type 'a t
+
   val hash_fold_t : (Hash.state -> 'a -> Hash.state) -> Hash.state -> 'a t -> Hash.state
 end

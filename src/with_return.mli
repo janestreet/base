@@ -40,7 +40,7 @@ open! Import
 
 type -'a return = private { return : 'b. 'a -> 'b } [@@unboxed]
 
-val with_return        : ('a return -> 'a  ) -> 'a
+val with_return : ('a return -> 'a) -> 'a
 
 (** Note that [with_return_option] allocates ~5 words more than the equivalent
     [with_return] call. *)

@@ -1,1 +1,2 @@
-include Int_intf.Int (** @inline *)
+(** @inline *)
+include Int_intf.Int

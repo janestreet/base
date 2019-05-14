@@ -27,7 +27,6 @@
 open! Import0
 
 module type S = sig
-
   (** Name of the hash-function, e.g., "internalhash", "siphash" *)
   val description : string
 
@@ -38,9 +37,10 @@ module type S = sig
       returning a modified hash-state.  Implementations of the [fold_<T>] functions may
       mutate the [state] argument in place, and return a reference to it.  Implementations
       of the fold_<T> functions should not allocate. *)
-  val fold_int    : state -> int    -> state
-  val fold_int64  : state -> int64  -> state
-  val fold_float  : state -> float  -> state
+  val fold_int : state -> int -> state
+
+  val fold_int64 : state -> int64 -> state
+  val fold_float : state -> float -> state
   val fold_string : state -> string -> state
 
   (** [seed] is the type used to seed the initial hash-state. *)
@@ -70,17 +70,16 @@ module type Builtin_hash_fold_intf = sig
   type 'a folder = state -> 'a -> state
 
   val hash_fold_nativeint : nativeint folder
-  val hash_fold_int64     : int64     folder
-  val hash_fold_int32     : int32     folder
-  val hash_fold_char      : char      folder
-  val hash_fold_int       : int       folder
-  val hash_fold_bool      : bool      folder
-  val hash_fold_string    : string    folder
-  val hash_fold_float     : float     folder
-  val hash_fold_unit      : unit      folder
-
+  val hash_fold_int64 : int64 folder
+  val hash_fold_int32 : int32 folder
+  val hash_fold_char : char folder
+  val hash_fold_int : int folder
+  val hash_fold_bool : bool folder
+  val hash_fold_string : string folder
+  val hash_fold_float : float folder
+  val hash_fold_unit : unit folder
   val hash_fold_option : 'a folder -> 'a option folder
-  val hash_fold_list   : 'a folder -> 'a list   folder
+  val hash_fold_list : 'a folder -> 'a list folder
   val hash_fold_lazy_t : 'a folder -> 'a lazy_t folder
 
   (** Hash support for [array] and [ref] is provided, but is potentially DANGEROUS, since
@@ -91,24 +90,23 @@ module type Builtin_hash_fold_intf = sig
       less often, so we don't append [_frozen] to it.
 
       Also note that we don't support [bytes]. *)
-  val hash_fold_ref_frozen   : 'a folder -> 'a ref   folder
-  val hash_fold_array_frozen : 'a folder -> 'a array folder
+  val hash_fold_ref_frozen : 'a folder -> 'a ref folder
 
+  val hash_fold_array_frozen : 'a folder -> 'a array folder
 end
 
 module type Builtin_hash_intf = sig
   type hash_value
 
   val hash_nativeint : nativeint -> hash_value
-  val hash_int64     : int64     -> hash_value
-  val hash_int32     : int32     -> hash_value
-  val hash_char      : char      -> hash_value
-  val hash_int       : int       -> hash_value
-  val hash_bool      : bool      -> hash_value
-  val hash_string    : string    -> hash_value
-  val hash_float     : float     -> hash_value
-  val hash_unit      : unit      -> hash_value
-
+  val hash_int64 : int64 -> hash_value
+  val hash_int32 : int32 -> hash_value
+  val hash_char : char -> hash_value
+  val hash_int : int -> hash_value
+  val hash_bool : bool -> hash_value
+  val hash_string : string -> hash_value
+  val hash_float : float -> hash_value
+  val hash_unit : unit -> hash_value
 end
 
 module type Builtin_intf = sig
@@ -117,8 +115,8 @@ module type Builtin_intf = sig
 end
 
 module type Full = sig
-
-  include S (** @inline *)
+  (** @inline *)
+  include S
 
   type 'a folder = state -> 'a -> state
 
@@ -127,9 +125,10 @@ module type Full = sig
 
   (** [of_fold fold] constructs a standard hash function from an existing fold
       function. *)
-  val of_fold : (state -> 'a -> state) -> ('a -> hash_value)
+  val of_fold : (state -> 'a -> state) -> 'a -> hash_value
 
-  module Builtin : Builtin_intf
+  module Builtin :
+    Builtin_intf
     with type state := state
      and type 'a folder := 'a folder
      and type hash_value := hash_value
@@ -141,17 +140,17 @@ module type Full = sig
 
       [run] can be used if we wish to run a hash-folder with a non-default seed. *)
   val run : ?seed:seed -> 'a folder -> 'a -> hash_value
-
 end
 
 module type Hash = sig
   module type Full = Full
-  module type S    = S
+  module type S = S
 
-  module F (Hash : S) : Full
+  module F (Hash : S) :
+    Full
     with type hash_value = Hash.hash_value
-     and type state      = Hash.state
-     and type seed       = Hash.seed
+     and type state = Hash.state
+     and type seed = Hash.seed
 
   (** The code of [ppx_hash] is agnostic to the choice of hash algorithm that is
       used. However, it is not currently possible to mix various choices of hash algorithms
@@ -188,9 +187,10 @@ module type Hash = sig
       hash function does not need to be preallocated, and makes for simpler use in hash
       tables and other structures. *)
 
-  include Full
-    with type state      = Base_internalhash_types.state
-     and type seed       = Base_internalhash_types.seed
-
-     and type hash_value = Base_internalhash_types.hash_value (** @open *)
+  (** @open *)
+  include
+    Full
+    with type state = Base_internalhash_types.state
+     and type seed = Base_internalhash_types.seed
+     and type hash_value = Base_internalhash_types.hash_value
 end

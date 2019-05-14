@@ -28,158 +28,161 @@
   pretty much inscrutable. *)
 (**/**)
 
-(** The intent is to shadow all of INRIA's standard library.  Modules below would cause
-    compilation errors without being removed from [Shadow_stdlib] before inclusion. *)
-include (Shadow_stdlib
-         : module type of struct include Shadow_stdlib end
-         (* Modules defined in Base *)
-         with module Array     := Shadow_stdlib.Array
-         with module Bool      := Shadow_stdlib.Bool
-         with module Buffer    := Shadow_stdlib.Buffer
-         with module Bytes     := Shadow_stdlib.Bytes
-         with module Char      := Shadow_stdlib.Char
-         with module Float     := Shadow_stdlib.Float
-         with module Hashtbl   := Shadow_stdlib.Hashtbl
-         with module Int       := Shadow_stdlib.Int
-         with module Int32     := Shadow_stdlib.Int32
-         with module Int64     := Shadow_stdlib.Int64
-         with module Lazy      := Shadow_stdlib.Lazy
-         with module List      := Shadow_stdlib.List
-         with module Map       := Shadow_stdlib.Map
-         with module Nativeint := Shadow_stdlib.Nativeint
-         with module Option    := Shadow_stdlib.Option
-         with module Printf    := Shadow_stdlib.Printf
-         with module Queue     := Shadow_stdlib.Queue
-         with module Random    := Shadow_stdlib.Random
-         with module Result    := Shadow_stdlib.Result
-         with module Set       := Shadow_stdlib.Set
-         with module Stack     := Shadow_stdlib.Stack
-         with module String    := Shadow_stdlib.String
-         with module Sys       := Shadow_stdlib.Sys
-         with module Uchar     := Shadow_stdlib.Uchar
-         with module Unit      := Shadow_stdlib.Unit
+(* The intent is to shadow all of INRIA's standard library.  Modules below would cause
+   compilation errors without being removed from [Shadow_stdlib] before inclusion. *)
 
-         (* Support for generated lexers *)
-         with module Lexing    := Shadow_stdlib.Lexing
-
-         with type ('a, 'b, 'c) format              := ('a, 'b, 'c) format
-         with type ('a, 'b, 'c, 'd) format4         := ('a, 'b, 'c, 'd) format4
-         with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
-
-         with type 'a ref := 'a ref
-        ) [@ocaml.warning "-3"]
+include (
+  Shadow_stdlib :
+    module type of struct
+    include Shadow_stdlib
+  end
+  (* Modules defined in Base *)
+  with module Array := Shadow_stdlib.Array
+  with module Bool := Shadow_stdlib.Bool
+  with module Buffer := Shadow_stdlib.Buffer
+  with module Bytes := Shadow_stdlib.Bytes
+  with module Char := Shadow_stdlib.Char
+  with module Float := Shadow_stdlib.Float
+  with module Hashtbl := Shadow_stdlib.Hashtbl
+  with module Int := Shadow_stdlib.Int
+  with module Int32 := Shadow_stdlib.Int32
+  with module Int64 := Shadow_stdlib.Int64
+  with module Lazy := Shadow_stdlib.Lazy
+  with module List := Shadow_stdlib.List
+  with module Map := Shadow_stdlib.Map
+  with module Nativeint := Shadow_stdlib.Nativeint
+  with module Option := Shadow_stdlib.Option
+  with module Printf := Shadow_stdlib.Printf
+  with module Queue := Shadow_stdlib.Queue
+  with module Random := Shadow_stdlib.Random
+  with module Result := Shadow_stdlib.Result
+  with module Set := Shadow_stdlib.Set
+  with module Stack := Shadow_stdlib.Stack
+  with module String := Shadow_stdlib.String
+  with module Sys := Shadow_stdlib.Sys
+  with module Uchar := Shadow_stdlib.Uchar
+  with module Unit := Shadow_stdlib.Unit
+  (* Support for generated lexers *)
+  with module Lexing := Shadow_stdlib.Lexing
+  with type ('a, 'b, 'c) format := ('a, 'b, 'c) format
+  with type ('a, 'b, 'c, 'd) format4 := ('a, 'b, 'c, 'd) format4
+  with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
+  with type 'a ref := 'a ref) [@ocaml.warning "-3"]
 
 (**/**)
 
 open! Import
-
-module Applicative               = Applicative
-module Array                     = Array
-module Avltree                   = Avltree
-module Backtrace                 = Backtrace
-module Binary_search             = Binary_search
-module Binary_searchable         = Binary_searchable
-module Blit                      = Blit
-module Bool                      = Bool
-module Buffer                    = Buffer
-module Bytes                     = Bytes
-module Char                      = Char
-module Comparable                = Comparable
-module Comparator                = Comparator
-module Comparisons               = Comparisons
-module Container                 = Container
-module Either                    = Either
-module Equal                     = Equal
-module Error                     = Error
-module Exn                       = Exn
-module Field                     = Field
-module Float                     = Float
-module Floatable                 = Floatable
-module Fn                        = Fn
-module Formatter                 = Formatter
-module Hash                      = Hash
-module Hash_set                  = Hash_set
-module Hashable                  = Hashable
-module Hasher                    = Hasher
-module Hashtbl                   = Hashtbl
-module Identifiable              = Identifiable
-module Indexed_container         = Indexed_container
-module Info                      = Info
-module Int                       = Int
-module Int_conversions           = Int_conversions
-module Int32                     = Int32
-module Int63                     = Int63
-module Int64                     = Int64
-module Intable                   = Intable
-module Int_math                  = Int_math
-module Invariant                 = Invariant
-module Lazy                      = Lazy
-module List                      = List
-module Map                       = Map
-module Maybe_bound               = Maybe_bound
-module Monad                     = Monad
-module Nativeint                 = Nativeint
-module Option                    = Option
-module Option_array              = Option_array
-module Or_error                  = Or_error
+module Applicative = Applicative
+module Array = Array
+module Avltree = Avltree
+module Backtrace = Backtrace
+module Binary_search = Binary_search
+module Binary_searchable = Binary_searchable
+module Blit = Blit
+module Bool = Bool
+module Buffer = Buffer
+module Bytes = Bytes
+module Char = Char
+module Comparable = Comparable
+module Comparator = Comparator
+module Comparisons = Comparisons
+module Container = Container
+module Either = Either
+module Equal = Equal
+module Error = Error
+module Exn = Exn
+module Field = Field
+module Float = Float
+module Floatable = Floatable
+module Fn = Fn
+module Formatter = Formatter
+module Hash = Hash
+module Hash_set = Hash_set
+module Hashable = Hashable
+module Hasher = Hasher
+module Hashtbl = Hashtbl
+module Identifiable = Identifiable
+module Indexed_container = Indexed_container
+module Info = Info
+module Int = Int
+module Int_conversions = Int_conversions
+module Int32 = Int32
+module Int63 = Int63
+module Int64 = Int64
+module Intable = Intable
+module Int_math = Int_math
+module Invariant = Invariant
+module Lazy = Lazy
+module List = List
+module Map = Map
+module Maybe_bound = Maybe_bound
+module Monad = Monad
+module Nativeint = Nativeint
+module Option = Option
+module Option_array = Option_array
+module Or_error = Or_error
 module Ordered_collection_common = Ordered_collection_common
-module Ordering                  = Ordering
-module Poly                      = Poly
-module Polymorphic_compare       = Poly
-[@@deprecated "[since 2018-11] use [Poly] instead"]
-module Popcount                  = Popcount
+module Ordering = Ordering
+module Poly = Poly
+module Polymorphic_compare = Poly [@@deprecated "[since 2018-11] use [Poly] instead"]
+
+module Popcount = Popcount
 [@@deprecated "[since 2018-10] use [popcount] functions in the individual int modules"]
-module Pretty_printer            = Pretty_printer
-module Printf                    = Printf
-module Linked_queue              = Linked_queue
-module Queue                     = Queue
-module Random                    = Random
-module Ref                       = Ref
-module Result                    = Result
-module Sequence                  = Sequence
-module Set                       = Set
-module Sexpable                  = Sexpable
-module Sign                      = Sign
-module Sign_or_nan               = Sign_or_nan
-module Source_code_position      = Source_code_position
-module Stack                     = Stack
-module Staged                    = Staged
-module String                    = String
-module Stringable                = Stringable
-module Sys                       = Sys
-module T                         = T
-module Type_equal                = Type_equal
-module Uniform_array             = Uniform_array
-module Unit                      = Unit
-module Uchar                     = Uchar
-module Validate                  = Validate
-module Variant                   = Variant
-module With_return               = With_return
-module Word_size                 = Word_size
+
+module Pretty_printer = Pretty_printer
+module Printf = Printf
+module Linked_queue = Linked_queue
+module Queue = Queue
+module Random = Random
+module Ref = Ref
+module Result = Result
+module Sequence = Sequence
+module Set = Set
+module Sexpable = Sexpable
+module Sign = Sign
+module Sign_or_nan = Sign_or_nan
+module Source_code_position = Source_code_position
+module Stack = Stack
+module Staged = Staged
+module String = String
+module Stringable = Stringable
+module Sys = Sys
+module T = T
+module Type_equal = Type_equal
+module Uniform_array = Uniform_array
+module Unit = Unit
+module Uchar = Uchar
+module Validate = Validate
+module Variant = Variant
+module With_return = With_return
+module Word_size = Word_size
 
 (* Avoid a level of indirection for uses of the signatures defined in [T]. *)
 include T
 
 (* This is a hack so that odoc creates better documentation. *)
 module Sexp = struct
-  include Sexp_with_comparable (** @inline *)
+  include Sexp_with_comparable  (** @inline *)
 end
 
 (**/**)
+
 module Exported_for_specific_uses = struct
-  module Fieldslib         = Fieldslib
-  module Ppx_hash_lib      = Ppx_hash_lib
-  module Sexplib           = Sexplib
-  module Variantslib       = Variantslib
-  module Ppx_compare_lib   = Ppx_compare_lib
+  module Fieldslib = Fieldslib
+  module Ppx_hash_lib = Ppx_hash_lib
+  module Sexplib = Sexplib
+  module Variantslib = Variantslib
+  module Ppx_compare_lib = Ppx_compare_lib
   module Ppx_sexp_conv_lib = Ppx_sexp_conv_lib
+
   let am_testing = am_testing
 end
+
 (**/**)
 
 module Export = struct
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
-  type 'a array  = 'a Array.  t [@@deriving_inline compare, equal,       sexp]
+  type 'a array = 'a Array.t [@@deriving_inline compare, equal, sexp]
   let compare_array : 'a . ('a -> 'a -> int) -> 'a array -> 'a array -> int =
     Array.compare
   let equal_array : 'a . ('a -> 'a -> bool) -> 'a array -> 'a array -> bool =
@@ -193,76 +196,76 @@ module Export = struct
     ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a array -> Ppx_sexp_conv_lib.Sexp.t
     = Array.sexp_of_t
   [@@@end]
-  type bool      = Bool.      t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_bool : bool -> bool -> int = Bool.compare
-  let equal_bool : bool -> bool -> bool = Bool.equal
+  type bool = Bool.t [@@deriving_inline compare, equal, hash, sexp]
+  let compare_bool = (Bool.compare : bool -> bool -> int)
+  let equal_bool = (Bool.equal : bool -> bool -> bool)
   let (hash_fold_bool :
          Ppx_hash_lib.Std.Hash.state -> bool -> Ppx_hash_lib.Std.Hash.state) =
     Bool.hash_fold_t
   and (hash_bool : bool -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = Bool.hash in fun x -> func x
-  let bool_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bool = Bool.t_of_sexp
-  let sexp_of_bool : bool -> Ppx_sexp_conv_lib.Sexp.t = Bool.sexp_of_t
+  let bool_of_sexp = (Bool.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bool)
+  let sexp_of_bool = (Bool.sexp_of_t : bool -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
-  type char      = Char.      t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_char : char -> char -> int = Char.compare
-  let equal_char : char -> char -> bool = Char.equal
+  type char = Char.t [@@deriving_inline compare, equal, hash, sexp]
+  let compare_char = (Char.compare : char -> char -> int)
+  let equal_char = (Char.equal : char -> char -> bool)
   let (hash_fold_char :
          Ppx_hash_lib.Std.Hash.state -> char -> Ppx_hash_lib.Std.Hash.state) =
     Char.hash_fold_t
   and (hash_char : char -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = Char.hash in fun x -> func x
-  let char_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> char = Char.t_of_sexp
-  let sexp_of_char : char -> Ppx_sexp_conv_lib.Sexp.t = Char.sexp_of_t
+  let char_of_sexp = (Char.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> char)
+  let sexp_of_char = (Char.sexp_of_t : char -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
-  type exn       = Exn.       t [@@deriving_inline                       sexp_of]
-  let sexp_of_exn : exn -> Ppx_sexp_conv_lib.Sexp.t = Exn.sexp_of_t
+  type exn = Exn.t [@@deriving_inline sexp_of]
+  let sexp_of_exn = (Exn.sexp_of_t : exn -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
-  type float     = Float.     t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_float : float -> float -> int = Float.compare
-  let equal_float : float -> float -> bool = Float.equal
+  type float = Float.t [@@deriving_inline compare, equal, hash, sexp]
+  let compare_float = (Float.compare : float -> float -> int)
+  let equal_float = (Float.equal : float -> float -> bool)
   let (hash_fold_float :
          Ppx_hash_lib.Std.Hash.state -> float -> Ppx_hash_lib.Std.Hash.state) =
     Float.hash_fold_t
   and (hash_float : float -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = Float.hash in fun x -> func x
-  let float_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> float = Float.t_of_sexp
-  let sexp_of_float : float -> Ppx_sexp_conv_lib.Sexp.t = Float.sexp_of_t
+  let float_of_sexp = (Float.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> float)
+  let sexp_of_float = (Float.sexp_of_t : float -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
-  type int       = Int.       t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_int : int -> int -> int = Int.compare
-  let equal_int : int -> int -> bool = Int.equal
+  type int = Int.t [@@deriving_inline compare, equal, hash, sexp]
+  let compare_int = (Int.compare : int -> int -> int)
+  let equal_int = (Int.equal : int -> int -> bool)
   let (hash_fold_int :
          Ppx_hash_lib.Std.Hash.state -> int -> Ppx_hash_lib.Std.Hash.state) =
     Int.hash_fold_t
   and (hash_int : int -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = Int.hash in fun x -> func x
-  let int_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int = Int.t_of_sexp
-  let sexp_of_int : int -> Ppx_sexp_conv_lib.Sexp.t = Int.sexp_of_t
+  let int_of_sexp = (Int.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int)
+  let sexp_of_int = (Int.sexp_of_t : int -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
-  type int32     = Int32.     t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_int32 : int32 -> int32 -> int = Int32.compare
-  let equal_int32 : int32 -> int32 -> bool = Int32.equal
+  type int32 = Int32.t [@@deriving_inline compare, equal, hash, sexp]
+  let compare_int32 = (Int32.compare : int32 -> int32 -> int)
+  let equal_int32 = (Int32.equal : int32 -> int32 -> bool)
   let (hash_fold_int32 :
          Ppx_hash_lib.Std.Hash.state -> int32 -> Ppx_hash_lib.Std.Hash.state) =
     Int32.hash_fold_t
   and (hash_int32 : int32 -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = Int32.hash in fun x -> func x
-  let int32_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int32 = Int32.t_of_sexp
-  let sexp_of_int32 : int32 -> Ppx_sexp_conv_lib.Sexp.t = Int32.sexp_of_t
+  let int32_of_sexp = (Int32.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int32)
+  let sexp_of_int32 = (Int32.sexp_of_t : int32 -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
-  type int64     = Int64.     t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_int64 : int64 -> int64 -> int = Int64.compare
-  let equal_int64 : int64 -> int64 -> bool = Int64.equal
+  type int64 = Int64.t [@@deriving_inline compare, equal, hash, sexp]
+  let compare_int64 = (Int64.compare : int64 -> int64 -> int)
+  let equal_int64 = (Int64.equal : int64 -> int64 -> bool)
   let (hash_fold_int64 :
          Ppx_hash_lib.Std.Hash.state -> int64 -> Ppx_hash_lib.Std.Hash.state) =
     Int64.hash_fold_t
   and (hash_int64 : int64 -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = Int64.hash in fun x -> func x
-  let int64_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int64 = Int64.t_of_sexp
-  let sexp_of_int64 : int64 -> Ppx_sexp_conv_lib.Sexp.t = Int64.sexp_of_t
+  let int64_of_sexp = (Int64.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int64)
+  let sexp_of_int64 = (Int64.sexp_of_t : int64 -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
-  type 'a list   = 'a List.   t [@@deriving_inline compare, equal, hash, sexp]
+  type 'a list = 'a List.t [@@deriving_inline compare, equal, hash, sexp]
   let compare_list : 'a . ('a -> 'a -> int) -> 'a list -> 'a list -> int =
     List.compare
   let equal_list : 'a . ('a -> 'a -> bool) -> 'a list -> 'a list -> bool =
@@ -281,20 +284,20 @@ module Export = struct
     ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a list -> Ppx_sexp_conv_lib.Sexp.t
     = List.sexp_of_t
   [@@@end]
-  type nativeint = Nativeint. t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_nativeint : nativeint -> nativeint -> int = Nativeint.compare
-  let equal_nativeint : nativeint -> nativeint -> bool = Nativeint.equal
+  type nativeint = Nativeint.t [@@deriving_inline compare, equal, hash, sexp]
+  let compare_nativeint = (Nativeint.compare : nativeint -> nativeint -> int)
+  let equal_nativeint = (Nativeint.equal : nativeint -> nativeint -> bool)
   let (hash_fold_nativeint :
          Ppx_hash_lib.Std.Hash.state -> nativeint -> Ppx_hash_lib.Std.Hash.state) =
     Nativeint.hash_fold_t
   and (hash_nativeint : nativeint -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = Nativeint.hash in fun x -> func x
-  let nativeint_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> nativeint =
-    Nativeint.t_of_sexp
-  let sexp_of_nativeint : nativeint -> Ppx_sexp_conv_lib.Sexp.t =
-    Nativeint.sexp_of_t
+  let nativeint_of_sexp =
+    (Nativeint.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> nativeint)
+  let sexp_of_nativeint =
+    (Nativeint.sexp_of_t : nativeint -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
-  type 'a option = 'a Option. t [@@deriving_inline compare, equal, hash, sexp]
+  type 'a option = 'a Option.t [@@deriving_inline compare, equal, hash, sexp]
   let compare_option : 'a . ('a -> 'a -> int) -> 'a option -> 'a option -> int
     = Option.compare
   let equal_option : 'a . ('a -> 'a -> bool) -> 'a option -> 'a option -> bool
@@ -313,7 +316,7 @@ module Export = struct
     ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a option -> Ppx_sexp_conv_lib.Sexp.t
     = Option.sexp_of_t
   [@@@end]
-  type 'a ref    = 'a Ref.    t [@@deriving_inline compare, equal,       sexp]
+  type 'a ref = 'a Ref.t [@@deriving_inline compare, equal, sexp]
   let compare_ref : 'a . ('a -> 'a -> int) -> 'a ref -> 'a ref -> int =
     Ref.compare
   let equal_ref : 'a . ('a -> 'a -> bool) -> 'a ref -> 'a ref -> bool =
@@ -325,33 +328,33 @@ module Export = struct
     'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a ref -> Ppx_sexp_conv_lib.Sexp.t
     = Ref.sexp_of_t
   [@@@end]
-  type string    = String.    t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_string : string -> string -> int = String.compare
-  let equal_string : string -> string -> bool = String.equal
+  type string = String.t [@@deriving_inline compare, equal, hash, sexp]
+  let compare_string = (String.compare : string -> string -> int)
+  let equal_string = (String.equal : string -> string -> bool)
   let (hash_fold_string :
          Ppx_hash_lib.Std.Hash.state -> string -> Ppx_hash_lib.Std.Hash.state) =
     String.hash_fold_t
   and (hash_string : string -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = String.hash in fun x -> func x
-  let string_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> string = String.t_of_sexp
-  let sexp_of_string : string -> Ppx_sexp_conv_lib.Sexp.t = String.sexp_of_t
+  let string_of_sexp = (String.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> string)
+  let sexp_of_string = (String.sexp_of_t : string -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
-  type bytes     = Bytes.     t [@@deriving_inline compare, equal,       sexp]
-  let compare_bytes : bytes -> bytes -> int = Bytes.compare
-  let equal_bytes : bytes -> bytes -> bool = Bytes.equal
-  let bytes_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bytes = Bytes.t_of_sexp
-  let sexp_of_bytes : bytes -> Ppx_sexp_conv_lib.Sexp.t = Bytes.sexp_of_t
+  type bytes = Bytes.t [@@deriving_inline compare, equal, sexp]
+  let compare_bytes = (Bytes.compare : bytes -> bytes -> int)
+  let equal_bytes = (Bytes.equal : bytes -> bytes -> bool)
+  let bytes_of_sexp = (Bytes.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bytes)
+  let sexp_of_bytes = (Bytes.sexp_of_t : bytes -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
-  type unit      = Unit.      t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_unit : unit -> unit -> int = Unit.compare
-  let equal_unit : unit -> unit -> bool = Unit.equal
+  type unit = Unit.t [@@deriving_inline compare, equal, hash, sexp]
+  let compare_unit = (Unit.compare : unit -> unit -> int)
+  let equal_unit = (Unit.equal : unit -> unit -> bool)
   let (hash_fold_unit :
          Ppx_hash_lib.Std.Hash.state -> unit -> Ppx_hash_lib.Std.Hash.state) =
     Unit.hash_fold_t
   and (hash_unit : unit -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = Unit.hash in fun x -> func x
-  let unit_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> unit = Unit.t_of_sexp
-  let sexp_of_unit : unit -> Ppx_sexp_conv_lib.Sexp.t = Unit.sexp_of_t
+  let unit_of_sexp = (Unit.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> unit)
+  let sexp_of_unit = (Unit.sexp_of_t : unit -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
 
   (** Format stuff *)
@@ -378,12 +381,12 @@ module Export = struct
 
       For more documentation, see sexplib/README.md. *)
 
-  type 'a sexp_array  = 'a array
+  type 'a sexp_array = 'a array
   [@@deprecated "[since 2019-03] use [@sexp.array] instead"]
-  type 'a sexp_list   = 'a list
-  [@@deprecated "[since 2019-03] use [@sexp.list] instead"]
-  type 'a sexp_opaque = 'a
-  [@@deprecated "[since 2019-03] use [@sexp.opaque] instead"]
+
+  type 'a sexp_list = 'a list [@@deprecated "[since 2019-03] use [@sexp.list] instead"]
+  type 'a sexp_opaque = 'a [@@deprecated "[since 2019-03] use [@sexp.opaque] instead"]
+
   type 'a sexp_option = 'a option
   [@@deprecated "[since 2019-03] use [@sexp.option] instead"]
 
@@ -400,9 +403,10 @@ module Export = struct
 
   include Float.O_dot
 
-  (** Reverse application operator. [x |> g |> f] is equivalent to [f (g (x))]. *)
   (* This is declared as an external to be optimized away in more contexts. *)
-  external ( |> ) : 'a -> ( 'a -> 'b) -> 'b = "%revapply"
+
+  (** Reverse application operator. [x |> g |> f] is equivalent to [f (g (x))]. *)
+  external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
 
   (** Application operator. [g @@ f @@ x] is equivalent to [g (f (x))]. *)
   external ( @@ ) : ('a -> 'b) -> 'a -> 'b = "%apply"
@@ -438,9 +442,9 @@ module Export = struct
   (* Declared as an external so that the compiler may rewrite '%raise' as '%reraise'. *)
   external raise : exn -> _ = "%raise"
 
-  let failwith    = failwith
+  let failwith = failwith
   let invalid_arg = invalid_arg
-  let raise_s     = Error.raise_s
+  let raise_s = Error.raise_s
 
   (** Misc *)
 
@@ -450,7 +454,8 @@ module Export = struct
 end
 
 include Export
-include Container_intf.Export (** @inline *)
+
+include Container_intf.Export  (** @inline *)
 
 exception Not_found_s = Not_found_s
 
@@ -459,6 +464,4 @@ exception Not_found_s = Not_found_s
    then the side effects might not be run in that program.  This will run as long as the
    program refers to at least one value directly in [Base]; referring to values in
    [Base.Bool], for example, is not sufficient. *)
-let () =
-  Backtrace.initialize_module ();
-;;
+let () = Backtrace.initialize_module ()

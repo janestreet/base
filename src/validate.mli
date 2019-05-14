@@ -59,31 +59,31 @@ open! Import
 (** The result of a validation.  This effectively contains the list of errors, qualified
     by their location path *)
 type t
-type 'a check = 'a -> t                 (** To make function signatures easier to read. *)
+
+(** To make function signatures easier to read. *)
+type 'a check = 'a -> t
 
 (** A result containing no errors. *)
-val pass      : t
+val pass : t
 
 (** A result containing a single error. *)
-val fail      : string -> t
+val fail : string -> t
 
-val fails
-  :  string
-  -> 'a
-  -> ('a -> Sexp.t)
-  -> t
-val fail_s : Sexp.t -> t     (** This can be used with the [%sexp] extension. *)
+val fails : string -> 'a -> ('a -> Sexp.t) -> t
+
+(** This can be used with the [%sexp] extension. *)
+val fail_s : Sexp.t -> t
 
 (** Like [sprintf] or [failwithf] but produces a [t] instead of a string or exception. *)
-val failf     : ('a, unit, string, t) format4 -> 'a
+val failf : ('a, unit, string, t) format4 -> 'a
 
 val combine : t -> t -> t
 
 (** Combines multiple results, merging errors. *)
-val of_list   : t list -> t
+val of_list : t list -> t
 
 (** Extends location path by one name. *)
-val name      : string -> t -> t
+val name : string -> t -> t
 
 val name_list : string -> t list -> t
 
@@ -125,7 +125,9 @@ val field : 'record -> ([> `Read], 'record, 'a) Field.t_with_perm -> 'a check ->
 val field_folder
   :  'record
   -> 'a check
-  -> (t list -> ([> `Read], 'record, 'a) Field.t_with_perm -> t list)
+  -> t list
+  -> ([> `Read], 'record, 'a) Field.t_with_perm
+  -> t list
 
 (** Creates a function for use in a [Fields.Direct.fold]. *)
 val field_direct_folder
@@ -156,7 +158,6 @@ val list_indexed : 'a check -> 'a list check
 val list : name:('a -> string) -> 'a check -> 'a list check
 
 val first_failure : t -> t -> t
-
 val of_error_opt : string option -> t
 
 (** Validates an association list, naming each element using a user-defined function for
@@ -164,12 +165,13 @@ val of_error_opt : string option -> t
 val alist : name:('a -> string) -> 'b check -> ('a * 'b) list check
 
 val bounded
-  :  name    : ('a -> string)
-  -> lower   : 'a Maybe_bound.t
-  -> upper   : 'a Maybe_bound.t
-  -> compare : ('a -> 'a -> int)
+  :  name:('a -> string)
+  -> lower:'a Maybe_bound.t
+  -> upper:'a Maybe_bound.t
+  -> compare:('a -> 'a -> int)
   -> 'a check
 
 module Infix : sig
-  val (++) : t -> t -> t (** Infix operator for [combine] above. *)
+  (** Infix operator for [combine] above. *)
+  val ( ++ ) : t -> t -> t
 end

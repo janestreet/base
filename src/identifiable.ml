@@ -11,8 +11,9 @@ module type S = sig
       include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
     end[@@ocaml.doc "@inline"]
   [@@@end]
-  include Stringable    .S with type t := t
-  include Comparable    .S with type t := t
+
+  include Stringable.S with type t := t
+  include Comparable.S with type t := t
   include Pretty_printer.S with type t := t
 end
 
@@ -28,11 +29,14 @@ module Make (T : sig
         include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
       end[@@ocaml.doc "@inline"]
     [@@@end]
+
     include Stringable.S with type t := t
+
     val module_name : string
-  end) = struct
+  end) =
+struct
   include T
-  include Comparable    .Make     (T)
+  include Comparable.Make (T)
   include Pretty_printer.Register (T)
 end
 
@@ -48,11 +52,14 @@ module Make_using_comparator (T : sig
         include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
       end[@@ocaml.doc "@inline"]
     [@@@end]
+
     include Comparator.S with type t := t
     include Stringable.S with type t := t
+
     val module_name : string
-  end) = struct
+  end) =
+struct
   include T
-  include Comparable    .Make_using_comparator (T)
-  include Pretty_printer.Register              (T)
+  include Comparable.Make_using_comparator (T)
+  include Pretty_printer.Register (T)
 end

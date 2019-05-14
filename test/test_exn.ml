@@ -11,7 +11,7 @@ let%expect_test "[create_s]" =
   let sexp = [%message "foo"] in
   print_s [%sexp (phys_equal sexp (sexp_of_t (create_s sexp)) : bool)];
   [%expect {|
-    true |}];
+    true |}]
 ;;
 
 let%test _ = not (does_raise Fn.ignore)

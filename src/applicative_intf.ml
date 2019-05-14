@@ -19,8 +19,10 @@ open! Import
 
 module type Basic = sig
   type 'a t
+
   val return : 'a -> 'a t
   val apply : ('a -> 'b) t -> 'a t -> 'b t
+
   (** The following identities ought to hold for every Applicative (for some value of =):
 
       - identity:     [return Fn.id <*> t = t]
@@ -37,24 +39,25 @@ module type Basic = sig
 
       Some other functions returned by [Applicative.Make] are defined in terms of [map],
       so passing in a more efficient [map] will improve their efficiency as well. *)
-  val map : [`Define_using_apply | `Custom of ('a t -> f:('a -> 'b) -> 'b t)]
+  val map : [`Define_using_apply | `Custom of 'a t -> f:('a -> 'b) -> 'b t]
 end
 
 module type Basic_using_map2 = sig
   type 'a t
+
   val return : 'a -> 'a t
   val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
-  val map : [`Define_using_map2 | `Custom of ('a t -> f:('a -> 'b) -> 'b t)]
+  val map : [`Define_using_map2 | `Custom of 'a t -> f:('a -> 'b) -> 'b t]
 end
 
 module type Applicative_infix = sig
   type 'a t
 
-  val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t (** same as [apply] *)
+  (** same as [apply] *)
+  val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
 
-  val ( <*  ) : 'a t -> unit t -> 'a t
-  val (  *> ) : unit t -> 'a t -> 'a t
-
+  val ( <* ) : 'a t -> unit t -> 'a t
+  val ( *> ) : unit t -> 'a t -> 'a t
   val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
 end
 
@@ -62,27 +65,19 @@ module type For_let_syntax = sig
   type 'a t
 
   val return : 'a -> 'a t
-
   val map : 'a t -> f:('a -> 'b) -> 'b t
-
   val both : 'a t -> 'b t -> ('a * 'b) t
 
   include Applicative_infix with type 'a t := 'a t
-
 end
 
 module type S = sig
-
   include For_let_syntax
 
   val apply : ('a -> 'b) t -> 'a t -> 'b t
-
   val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
-
   val map3 : 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t
-
   val all : 'a t list -> 'a list t
-
   val all_unit : unit t list -> unit t
 
   module Applicative_infix : Applicative_infix with type 'a t := 'a t
@@ -96,16 +91,13 @@ module type Let_syntax = sig
   end
 
   module Let_syntax : sig
-
     val return : 'a -> 'a t
+
     include Applicative_infix with type 'a t := 'a t
 
     module Let_syntax : sig
-
       val return : 'a -> 'a t
-
       val map : 'a t -> f:('a -> 'b) -> 'b t
-
       val both : 'a t -> 'b t -> ('a * 'b) t
 
       module Open_on_rhs : Open_on_rhs_intf.S
@@ -115,8 +107,8 @@ end
 
 (** Argument lists and associated N-ary map and apply functions. *)
 module type Args = sig
-
-  type 'a arg (** the underlying applicative *)
+  (** the underlying applicative *)
+  type 'a arg
 
   (** ['f] is the type of a function that consumes the list of arguments and returns an
       ['r]. *)
@@ -129,7 +121,7 @@ module type Args = sig
   val cons : 'a arg -> ('f, 'r) t -> ('a -> 'f, 'r) t
 
   (** infix operator for [cons] *)
-  val (@>) : 'a arg -> ('f, 'r) t -> ('a -> 'f, 'r) t
+  val ( @> ) : 'a arg -> ('f, 'r) t -> ('a -> 'f, 'r) t
 
   (** Transform argument values in some way.  For example, one can label a function
       argument like so:
@@ -178,35 +170,32 @@ module type Args = sig
       ]} *)
 
   val mapN : f:'f -> ('f, 'r) t -> 'r arg
-
   val applyN : 'f arg -> ('f, 'r) t -> 'r arg
-
 end
 [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
 
 module type Basic2 = sig
   type ('a, 'e) t
+
   val return : 'a -> ('a, _) t
   val apply : ('a -> 'b, 'e) t -> ('a, 'e) t -> ('b, 'e) t
-  val map : [`Define_using_apply | `Custom of (('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t)]
+  val map : [`Define_using_apply | `Custom of ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t]
 end
 
 module type Basic2_using_map2 = sig
   type ('a, 'e) t
+
   val return : 'a -> ('a, _) t
   val map2 : ('a, 'e) t -> ('b, 'e) t -> f:('a -> 'b -> 'c) -> ('c, 'e) t
-  val map : [`Define_using_map2 | `Custom of (('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t)]
+  val map : [`Define_using_map2 | `Custom of ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t]
 end
 
 module type S2 = sig
   type ('a, 'e) t
 
   val return : 'a -> ('a, _) t
-
   val apply : ('a -> 'b, 'e) t -> ('a, 'e) t -> ('b, 'e) t
-
   val map : ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t
-
   val map2 : ('a, 'e) t -> ('b, 'e) t -> f:('a -> 'b -> 'c) -> ('c, 'e) t
 
   val map3
@@ -217,15 +206,13 @@ module type S2 = sig
     -> ('d, 'e) t
 
   val all : ('a, 'e) t list -> ('a list, 'e) t
-
   val all_unit : (unit, 'e) t list -> (unit, 'e) t
-
   val both : ('a, 'e) t -> ('b, 'e) t -> ('a * 'b, 'e) t
 
   module Applicative_infix : sig
     val ( <*> ) : ('a -> 'b, 'e) t -> ('a, 'e) t -> ('b, 'e) t
-    val ( <*  ) : ('a, 'e) t -> (unit, 'e) t -> ('a, 'e) t
-    val (  *> ) : (unit, 'e) t -> ('a, 'e) t -> ('a, 'e) t
+    val ( <* ) : ('a, 'e) t -> (unit, 'e) t -> ('a, 'e) t
+    val ( *> ) : (unit, 'e) t -> ('a, 'e) t -> ('a, 'e) t
     val ( >>| ) : ('a, 'e) t -> ('a -> 'b) -> ('b, 'e) t
   end
 
@@ -234,65 +221,60 @@ end
 
 module type Args2 = sig
   type ('a, 'e) arg
-
   type ('f, 'r, 'e) t
 
   val nil : ('r, 'r, _) t
-
   val cons : ('a, 'e) arg -> ('f, 'r, 'e) t -> ('a -> 'f, 'r, 'e) t
-  val (@>) : ('a, 'e) arg -> ('f, 'r, 'e) t -> ('a -> 'f, 'r, 'e) t
-
+  val ( @> ) : ('a, 'e) arg -> ('f, 'r, 'e) t -> ('a -> 'f, 'r, 'e) t
   val step : ('f1, 'r, 'e) t -> f:('f2 -> 'f1) -> ('f2, 'r, 'e) t
-
   val mapN : f:'f -> ('f, 'r, 'e) t -> ('r, 'e) arg
   val applyN : ('f, 'e) arg -> ('f, 'r, 'e) t -> ('r, 'e) arg
 end
 [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
 
 module type Applicative = sig
-
   module type Applicative_infix = Applicative_infix
-  module type Args              = Args
-  [@@warning "-3"]
-  [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
-  module type Args2             = Args2
-  [@@warning "-3"]
-  [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
-  module type Basic             = Basic
-  module type Basic2            = Basic2
+
+  module type Args = Args
+  [@@warning "-3"] [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
+
+  module type Args2 = Args2
+  [@@warning "-3"] [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
+
+  module type Basic = Basic
+  module type Basic2 = Basic2
   module type Basic2_using_map2 = Basic2_using_map2
-  module type Basic_using_map2  = Basic_using_map2
-  module type Let_syntax        = Let_syntax
-  module type S                 = S
-  module type S2                = S2
+  module type Basic_using_map2 = Basic_using_map2
+  module type Let_syntax = Let_syntax
+  module type S = S
+  module type S2 = S2
 
   module Args_to_Args2 (X : Args) :
-    Args2
-    with type ('a, 'e) arg = 'a X.arg
-    with type ('f, 'r, 'e) t = ('f, 'r) X.t
-      [@@warning "-3"]
+    Args2 with type ('a, 'e) arg = 'a X.arg with type ('f, 'r, 'e) t = ('f, 'r) X.t
+    [@@warning "-3"]
 
   module S2_to_S (X : S2) : S with type 'a t = ('a, unit) X.t
-
   module S_to_S2 (X : S) : S2 with type ('a, 'e) t = 'a X.t
-
-  module Make  (X : Basic ) : S  with type  'a      t :=  'a      X.t
+  module Make (X : Basic) : S with type 'a t := 'a X.t
   module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
 
   module Make_let_syntax
-      (X : For_let_syntax)
-      (Intf : sig module type S end)
-      (Impl : Intf.S)
-    : Let_syntax with type 'a t := 'a X.t
-      with module Open_on_rhs_intf := Intf
+      (X : For_let_syntax) (Intf : sig
+                              module type S
+                            end)
+      (Impl : Intf.S) :
+    Let_syntax with type 'a t := 'a X.t with module Open_on_rhs_intf := Intf
 
-  module Make_using_map2  (X : Basic_using_map2 ) : S  with type  'a      t :=  'a      X.t
-  module Make2_using_map2 (X : Basic2_using_map2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
+  module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t
 
-  module Make_args  (X : S ) : Args  with type  'a      arg :=  'a      X.t [@@warning "-3"]
-    [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
-  module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t [@@warning "-3"]
-    [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
+  module Make2_using_map2 (X : Basic2_using_map2) :
+    S2 with type ('a, 'e) t := ('a, 'e) X.t
+
+  module Make_args (X : S) : Args with type 'a arg := 'a X.t
+    [@@warning "-3"] [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
+
+  module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t
+    [@@warning "-3"] [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
 
   (** The following functors give a sense of what Applicatives one can define.
 
@@ -306,8 +288,8 @@ module type Applicative = sig
           mx >>| fun x ->
           f x
       ]} *)
-  module Of_monad (M : Monad.S)   : S with type 'a t := 'a M.t
-  module Compose  (F : S) (G : S) : S with type 'a t =  'a F.t G.t
-  module Pair     (F : S) (G : S) : S with type 'a t =  'a F.t * 'a G.t
+  module Of_monad (M : Monad.S) : S with type 'a t := 'a M.t
 
+  module Compose (F : S) (G : S) : S with type 'a t = 'a F.t G.t
+  module Pair (F : S) (G : S) : S with type 'a t = 'a F.t * 'a G.t
 end

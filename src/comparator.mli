@@ -7,9 +7,8 @@
 
 open! Import
 
-type ('a, 'witness) t =
-  private
-  { compare   : 'a -> 'a -> int
+type ('a, 'witness) t = private
+  { compare : 'a -> 'a -> int
   ; sexp_of_t : 'a -> Sexp.t
   }
 
@@ -18,17 +17,21 @@ type ('a, 'b) comparator = ('a, 'b) t
 module type S = sig
   type t
   type comparator_witness
+
   val comparator : (t, comparator_witness) comparator
 end
 
 module type S1 = sig
   type 'a t
   type comparator_witness
+
   val comparator : ('a t, comparator_witness) comparator
 end
 
+
 module type S_fc = sig
   type comparable_t
+
   include S with type t := comparable_t
 end
 
@@ -42,9 +45,8 @@ val make
 
 module Poly : S1 with type 'a t = 'a
 
-module S_to_S1 (S : S) : S1
-  with type 'a t = S.t
-  with type comparator_witness = S.comparator_witness
+module S_to_S1 (S : S) :
+  S1 with type 'a t = S.t with type comparator_witness = S.comparator_witness
 
 (** [Make] creates a [comparator] value and its phantom [comparator_witness] type for a
     nullary type. *)
@@ -65,6 +67,7 @@ module Make (M : sig
     additional values for the type argument. *)
 module Make1 (M : sig
     type 'a t
+
     val compare : 'a t -> 'a t -> int
     val sexp_of_t : _ t -> Sexp.t
   end) : S1 with type 'a t := 'a M.t
@@ -73,9 +76,7 @@ module type Derived = sig
   type 'a t
   type 'cmp comparator_witness
 
-  val comparator
-    :  ('a, 'cmp) comparator
-    -> ('a t, 'cmp comparator_witness) comparator
+  val comparator : ('a, 'cmp) comparator -> ('a t, 'cmp comparator_witness) comparator
 end
 
 (** [Derived] creates a [comparator] function that constructs a comparator for the type

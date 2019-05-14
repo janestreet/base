@@ -1,34 +1,47 @@
 open! Import
 open! Char
 
-let%test _ = not (is_whitespace '\008') (* backspace *)
-let%test _ =      is_whitespace '\009'  (* '\t': horizontal tab *)
-let%test _ =      is_whitespace '\010'  (* '\n': line feed *)
-let%test _ =      is_whitespace '\011'  (* '\v': vertical tab *)
-let%test _ =      is_whitespace '\012'  (* '\f': form feed *)
-let%test _ =      is_whitespace '\013'  (* '\r': carriage return *)
-let%test _ = not (is_whitespace '\014') (* shift out *)
-let%test _ =      is_whitespace '\032'  (* space *)
+let%test _ = not (is_whitespace '\008')
+
+(* backspace *)
+let%test _ = is_whitespace '\009'
+
+(* '\t': horizontal tab *)
+let%test _ = is_whitespace '\010'
+
+(* '\n': line feed *)
+let%test _ = is_whitespace '\011'
+
+(* '\v': vertical tab *)
+let%test _ = is_whitespace '\012'
+
+(* '\f': form feed *)
+let%test _ = is_whitespace '\013'
+
+(* '\r': carriage return *)
+let%test _ = not (is_whitespace '\014')
+
+(* shift out *)
+let%test _ = is_whitespace '\032'
+
+(* space *)
 
 let%expect_test "hash coherence" =
   check_hash_coherence [%here] (module Char) [ min_value; 'a'; max_value ];
-  [%expect {| |}];
+  [%expect {| |}]
 ;;
 
 let%test_module "int to char conversion" =
   (module struct
-
     let%test_unit "of_int bounds" =
       let bounds_check i =
-        [%test_result: t option]
-          (of_int i)
-          ~expect:None
-          ~message:(Int.to_string i)
+        [%test_result: t option] (of_int i) ~expect:None ~message:(Int.to_string i)
       in
       for i = 1 to 100 do
         bounds_check (-i);
-        bounds_check (255 + i);
+        bounds_check (255 + i)
       done
+    ;;
 
     let%test_unit "of_int_exn vs of_int" =
       for i = -100 to 300 do
@@ -37,20 +50,20 @@ let%test_module "int to char conversion" =
           (Option.try_with (fun () -> of_int_exn i))
           ~message:(Int.to_string i)
       done
+    ;;
 
     let%test_unit "unsafe_of_int vs of_int_exn" =
       for i = 0 to 255 do
-        [%test_eq: t]
-          (unsafe_of_int i)
-          (of_int_exn    i)
-          ~message:(Int.to_string i)
+        [%test_eq: t] (unsafe_of_int i) (of_int_exn i) ~message:(Int.to_string i)
       done
-
+    ;;
   end)
+;;
 
 let%expect_test "all" =
   print_s [%sexp (all : t list)];
-  [%expect {|
+  [%expect
+    {|
     ("\000"
      "\001"
      "\002"
@@ -307,6 +320,7 @@ let%expect_test "all" =
      "\253"
      "\254"
      "\255") |}]
+;;
 
 let%expect_test "predicates" =
   print_s [%sexp (List.filter all ~f:is_digit : t list)];
@@ -316,7 +330,8 @@ let%expect_test "predicates" =
   print_s [%sexp (List.filter all ~f:is_uppercase : t list)];
   [%expect {| (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) |}];
   print_s [%sexp (List.filter all ~f:is_alpha : t list)];
-  [%expect {|
+  [%expect
+    {|
     (A
      B
      C
@@ -370,7 +385,8 @@ let%expect_test "predicates" =
      y
      z) |}];
   print_s [%sexp (List.filter all ~f:is_alphanum : t list)];
-  [%expect {|
+  [%expect
+    {|
     (0
      1
      2
@@ -434,7 +450,8 @@ let%expect_test "predicates" =
      y
      z) |}];
   print_s [%sexp (List.filter all ~f:is_print : t list)];
-  [%expect {|
+  [%expect
+    {|
     (" "
      !
      "\""
@@ -531,4 +548,5 @@ let%expect_test "predicates" =
      }
      ~) |}];
   print_s [%sexp (List.filter all ~f:is_whitespace : t list)];
-  [%expect {| ("\t" "\n" "\011" "\012" "\r" " ") |}];
+  [%expect {| ("\t" "\n" "\011" "\012" "\r" " ") |}]
+;;

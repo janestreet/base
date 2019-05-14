@@ -8,7 +8,7 @@ let%expect_test _ =
   print_s [%sexp (g @@ f @@ 5 : int)];
   [%expect {| 13 |}];
   print_s [%sexp (f @@ g @@ 5 : int)];
-  [%expect {| 16 |}];
+  [%expect {| 16 |}]
 ;;
 
 let%expect_test "exp is present at the toplevel" =

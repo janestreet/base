@@ -33,8 +33,8 @@ module type Accessors = sig
       [iter], [iter_keys], [iteri]) will raise an exception. *)
   val fold : ('a, 'b) t -> init:'c -> f:(key:'a key -> data:'b -> 'c -> 'c) -> 'c
 
-  val iter_keys : ('a,  _) t -> f:(    'a key            -> unit) -> unit
-  val iter      : ( _, 'b) t -> f:(                   'b -> unit) -> unit
+  val iter_keys : ('a, _) t -> f:('a key -> unit) -> unit
+  val iter : (_, 'b) t -> f:('b -> unit) -> unit
 
   (** Iterates over both keys and values.
 
@@ -48,26 +48,26 @@ module type Accessors = sig
       5-6
       - : unit = ()
       v} *)
-  val iteri     : ('a, 'b) t -> f:(key:'a key -> data:'b -> unit) -> unit
+  val iteri : ('a, 'b) t -> f:(key:'a key -> data:'b -> unit) -> unit
 
-  val existsi  : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> bool
-  val exists   : (_ , 'b) t -> f:(                   'b -> bool) -> bool
+  val existsi : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> bool
+  val exists : (_, 'b) t -> f:('b -> bool) -> bool
   val for_alli : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> bool
-  val for_all  : (_ , 'b) t -> f:(                   'b -> bool) -> bool
-  val counti   : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> int
-  val count    : (_ , 'b) t -> f:(                   'b -> bool) -> int
-
+  val for_all : (_, 'b) t -> f:('b -> bool) -> bool
+  val counti : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> int
+  val count : (_, 'b) t -> f:('b -> bool) -> int
   val length : (_, _) t -> int
   val is_empty : (_, _) t -> bool
   val mem : ('a, _) t -> 'a key -> bool
   val remove : ('a, _) t -> 'a key -> unit
 
   (** Sets the given [key] to [data]. *)
-  val set          : ('a, 'b) t -> key:'a key -> data:'b -> unit
+  val set : ('a, 'b) t -> key:'a key -> data:'b -> unit
 
   (** [add] and [add_exn] leave the table unchanged if the key was already present. *)
-  val add          : ('a, 'b) t -> key:'a key -> data:'b -> [ `Ok | `Duplicate ]
-  val add_exn      : ('a, 'b) t -> key:'a key -> data:'b -> unit
+  val add : ('a, 'b) t -> key:'a key -> data:'b -> [`Ok | `Duplicate]
+
+  val add_exn : ('a, 'b) t -> key:'a key -> data:'b -> unit
 
   (** [change t key ~f] changes [t]'s value for [key] to be [f (find t key)]. *)
   val change : ('a, 'b) t -> 'a key -> f:('b option -> 'b option) -> unit
@@ -106,12 +106,11 @@ module type Accessors = sig
   val filter_map : ('a, 'b) t -> f:('b -> 'c option) -> ('a, 'c) t
 
   (** Like [filter_map], but the function [f] takes both key and data as arguments. *)
-  val filter_mapi
-    : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'c option) -> ('a, 'c) t
+  val filter_mapi : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'c option) -> ('a, 'c) t
 
   val filter_keys : ('a, 'b) t -> f:('a key -> bool) -> ('a, 'b) t
-  val filter      : ('a, 'b) t -> f:('b -> bool) -> ('a, 'b) t
-  val filteri     : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> ('a, 'b) t
+  val filter : ('a, 'b) t -> f:('b -> bool) -> ('a, 'b) t
+  val filteri : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> ('a, 'b) t
 
   (** Returns new tables with bound values partitioned by [f] applied to the bound
       values. *)
@@ -132,7 +131,9 @@ module type Accessors = sig
 
   (** Like [partition_tf], but the function [f] takes both key and data as arguments. *)
   val partitioni_tf
-    : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> ('a, 'b) t * ('a, 'b) t
+    :  ('a, 'b) t
+    -> f:(key:'a key -> data:'b -> bool)
+    -> ('a, 'b) t * ('a, 'b) t
 
   (** [find_or_add t k ~default] returns the data associated with key [k] if it is in the
       table [t], and otherwise assigns [k] the value returned by [default ()]. *)
@@ -207,12 +208,15 @@ module type Accessors = sig
   val merge
     :  ('k, 'a) t
     -> ('k, 'b) t
-    -> f:(key:'k key -> [ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> 'c option)
+    -> f:(key:'k key -> [`Left of 'a | `Right of 'b | `Both of 'a * 'b] -> 'c option)
     -> ('k, 'c) t
 
   (** Every [key] in [src] will be removed or set in [dst] according to the return value
       of [f]. *)
-  type 'a merge_into_action = Remove | Set_to of 'a
+  type 'a merge_into_action =
+    | Remove
+    | Set_to of 'a
+
 
   val merge_into
     :  src:('k, 'a) t
@@ -227,23 +231,27 @@ module type Accessors = sig
   val data : (_, 'b) t -> 'b list
 
   (** [filter_inplace t ~f] removes all the elements from [t] that don't satisfy [f]. *)
-  val filter_keys_inplace : ('a,  _) t -> f:('a key -> bool) -> unit
-  val filter_inplace      : ( _, 'b) t -> f:('b -> bool) -> unit
-  val filteri_inplace     : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> unit
+  val filter_keys_inplace : ('a, _) t -> f:('a key -> bool) -> unit
+
+  val filter_inplace : (_, 'b) t -> f:('b -> bool) -> unit
+  val filteri_inplace : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> unit
 
   (** [map_inplace t ~f] applies [f] to all elements in [t], transforming them in
       place. *)
-  val map_inplace  : (_,  'b) t -> f:(                   'b -> 'b) -> unit
+  val map_inplace : (_, 'b) t -> f:('b -> 'b) -> unit
+
   val mapi_inplace : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b) -> unit
 
   (** [filter_map_inplace] combines the effects of [map_inplace] and [filter_inplace]. *)
-  val filter_map_inplace  : (_,  'b) t -> f:(                   'b -> 'b option) -> unit
+  val filter_map_inplace : (_, 'b) t -> f:('b -> 'b option) -> unit
+
   val filter_mapi_inplace : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b option) -> unit
 
   (** [equal t1 t2 f] and [similar t1 t2 f] both return true iff [t1] and [t2] have the
       same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)].  [equal] and
       [similar] only differ in their types. *)
-  val equal   : ('a, 'b ) t -> ('a, 'b ) t -> ('b  -> 'b  -> bool) -> bool
+  val equal : ('a, 'b) t -> ('a, 'b) t -> ('b -> 'b -> bool) -> bool
+
   val similar : ('a, 'b1) t -> ('a, 'b2) t -> ('b1 -> 'b2 -> bool) -> bool
 
   (** Returns the list of all (key, data) pairs for given hashtable. *)
@@ -256,6 +264,7 @@ module type Accessors = sig
 
   (** [remove_if_zero]'s default is [false]. *)
   val incr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit
+
   val decr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit
 end
 
@@ -295,74 +304,67 @@ module type Creators_generic = sig
 
   val create : ('a key, 'b, unit -> ('a, 'b) t) create_options
 
-  val of_alist
-    :  ('a key,
-        'b,
-        ('a key * 'b) list
-        -> [ `Ok of ('a, 'b) t
-           | `Duplicate_key of 'a key
-           ]) create_options
 
-  val of_alist_report_all_dups
-    : ('a key,
-       'b,
-       ('a key * 'b) list
-       -> [ `Ok of ('a, 'b) t
-          | `Duplicate_keys of 'a key list
-          ]) create_options
+  val of_alist :
+    ( 'a key
+    , 'b
+    , ('a key * 'b) list -> [`Ok of ('a, 'b) t | `Duplicate_key of 'a key] )
+      create_options
 
-  val of_alist_or_error
-    : ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t Or_error.t) create_options
+  val of_alist_report_all_dups :
+    ( 'a key
+    , 'b
+    , ('a key * 'b) list -> [`Ok of ('a, 'b) t | `Duplicate_keys of 'a key list] )
+      create_options
+
+  val of_alist_or_error :
+    ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t Or_error.t) create_options
 
   val of_alist_exn : ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t) create_options
 
-  val of_alist_multi
-    : ('a key, 'b list, ('a key * 'b) list -> ('a, 'b list) t) create_options
-
+  val of_alist_multi :
+    ('a key, 'b list, ('a key * 'b) list -> ('a, 'b list) t) create_options
 
   (** {[ create_mapped get_key get_data [x1,...,xn]
          = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn] ]} *)
-  val create_mapped
-    : ('a key,
-       'b,
-       get_key:('r -> 'a key)
-       -> get_data:('r -> 'b)
-       -> 'r list
-       -> [ `Ok of ('a, 'b) t
-          | `Duplicate_keys of 'a key list ]) create_options
+  val create_mapped :
+    ( 'a key
+    , 'b
+    , get_key:('r -> 'a key)
+      -> get_data:('r -> 'b)
+      -> 'r list
+      -> [`Ok of ('a, 'b) t | `Duplicate_keys of 'a key list] )
+      create_options
 
   (** {[ create_with_key ~get_key [x1,...,xn]
          = of_alist [get_key x1, x1; ...; get_key xn, xn] ]} *)
-  val create_with_key
-    : ('a key,
-       'r,
-       get_key:('r -> 'a key)
-       -> 'r list
-       -> [ `Ok of ('a, 'r) t
-          | `Duplicate_keys of 'a key list ]) create_options
+  val create_with_key :
+    ( 'a key
+    , 'r
+    , get_key:('r -> 'a key)
+      -> 'r list
+      -> [`Ok of ('a, 'r) t | `Duplicate_keys of 'a key list] )
+      create_options
 
-  val create_with_key_or_error
-    : ('a key,
-       'r,
-       get_key:('r -> 'a key)
-       -> 'r list
-       -> ('a, 'r) t Or_error.t) create_options
+  val create_with_key_or_error :
+    ( 'a key
+    , 'r
+    , get_key:('r -> 'a key) -> 'r list -> ('a, 'r) t Or_error.t )
+      create_options
 
-  val create_with_key_exn
-    : ('a key,
-       'r,
-       get_key:('r -> 'a key)
-       -> 'r list
-       -> ('a, 'r) t) create_options
+  val create_with_key_exn :
+    ('a key, 'r, get_key:('r -> 'a key) -> 'r list -> ('a, 'r) t) create_options
 
-  val group
-    : ('a key,
-       'b,
-       get_key:('r -> 'a key)
-       -> get_data:('r -> 'b)
-       -> combine:('b -> 'b -> 'b)
-       -> 'r list
-       -> ('a, 'b) t) create_options
+
+  val group :
+    ( 'a key
+    , 'b
+    , get_key:('r -> 'a key)
+      -> get_data:('r -> 'b)
+      -> combine:('b -> 'b -> 'b)
+      -> 'r list
+      -> ('a, 'b) t )
+      create_options
 end
 
 module type Creators = sig
@@ -396,9 +398,7 @@ module type Creators = sig
     -> ?size:int (** initial size -- default 128 *)
     -> 'a Key.t
     -> ('a * 'b) list
-    -> [ `Ok of ('a, 'b) t
-       | `Duplicate_key of 'a
-       ]
+    -> [`Ok of ('a, 'b) t | `Duplicate_key of 'a]
 
   (** Whereas [of_alist] will report [Duplicate_key] no matter how many dups there are in
       your list, [of_alist_report_all_dups] will report each and every duplicate entry.
@@ -417,9 +417,7 @@ module type Creators = sig
     -> ?size:int (** initial size -- default 128 *)
     -> 'a Key.t
     -> ('a * 'b) list
-    -> [ `Ok of ('a, 'b) t
-       | `Duplicate_keys of 'a list
-       ]
+    -> [`Ok of ('a, 'b) t | `Duplicate_keys of 'a list]
 
   val of_alist_or_error
     :  ?growth_allowed:bool (** defaults to [true] *)
@@ -486,8 +484,7 @@ module type Creators = sig
     -> get_key:('r -> 'a)
     -> get_data:('r -> 'b)
     -> 'r list
-    -> [ `Ok of ('a, 'b) t
-       | `Duplicate_keys of 'a list ]
+    -> [`Ok of ('a, 'b) t | `Duplicate_keys of 'a list]
 
   (** {[ create_with_key ~get_key [x1;...;xn]
          = of_alist [get_key x1, x1; ...; get_key xn, xn] ]} *)
@@ -497,8 +494,7 @@ module type Creators = sig
     -> 'a Key.t
     -> get_key:('r -> 'a)
     -> 'r list
-    -> [ `Ok of ('a, 'r) t
-       | `Duplicate_keys of 'a list ]
+    -> [`Ok of ('a, 'r) t | `Duplicate_keys of 'a list]
 
   val create_with_key_or_error
     :  ?growth_allowed:bool (** defaults to [true] *)
@@ -545,10 +541,8 @@ module type Creators = sig
 end
 
 module type S_without_submodules = sig
-
   val hash : 'a -> int
   val hash_param : int -> int -> 'a -> int
-
 
   type ('a, 'b) t
 
@@ -558,28 +552,21 @@ module type S_without_submodules = sig
       polymorphic comparison and and polymorphic hashing. *)
   val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
 
-  include Creators
-    with type ('a, 'b) t  := ('a, 'b) t
   (** @inline *)
+  include Creators with type ('a, 'b) t := ('a, 'b) t
 
-  include Accessors
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key = 'a
   (** @inline *)
+  include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
 
-  include Multi
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key := 'a key
   (** @inline *)
+  include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
 
   val hashable_s : ('key, _) t -> 'key Key.t
 
   include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
-
 end
 
 module type S_poly = sig
-
   type ('a, 'b) t [@@deriving_inline sexp]
   include
     sig
@@ -592,42 +579,44 @@ module type S_poly = sig
 
   include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
 
-  include Creators_generic
-    with type ('a, 'b) t  := ('a, 'b) t
+  include
+    Creators_generic
+    with type ('a, 'b) t := ('a, 'b) t
     with type 'a key = 'a
-    with type ('key, 'data, 'z) create_options
-    := ('key, 'data, 'z) create_options_without_first_class_module
+    with type ('key, 'data, 'z) create_options :=
+      ('key, 'data, 'z) create_options_without_first_class_module
 
-  include Accessors
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key := 'a key
-
-  include Multi
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key := 'a key
+  include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
+  include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
 end
 
 module type For_deriving = sig
   type ('k, 'v) t
 
-  module type Sexp_of_m = sig type t [@@deriving_inline sexp_of]
+  module type Sexp_of_m = sig
+    type t [@@deriving_inline sexp_of]
     include
       sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
       end[@@ocaml.doc "@inline"]
-    [@@@end] end
+    [@@@end]
+  end
+
   module type M_of_sexp = sig
     type t [@@deriving_inline of_sexp]
     include
       sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
       end[@@ocaml.doc "@inline"]
     [@@@end]
+
     include Key.S with type t := t
   end
+
   val sexp_of_m__t
     :  (module Sexp_of_m with type t = 'k)
     -> ('v -> Sexp.t)
     -> ('k, 'v) t
     -> Sexp.t
+
   val m__t_of_sexp
     :  (module M_of_sexp with type t = 'k)
     -> (Sexp.t -> 'v)
@@ -636,7 +625,6 @@ module type For_deriving = sig
 end
 
 module type Hashtbl = sig
-
   (** A hash table is a mutable data structure implementing a map between keys and values.
       It supports constant-time lookup and in-place modification.
 
@@ -711,26 +699,32 @@ module type Hashtbl = sig
 
       {1 Interface} *)
 
-  include S_without_submodules (** @inline *)
+  (** @inline *)
+  include S_without_submodules
 
-  module type Accessors            = Accessors
-  module type Creators             = Creators
-  module type Key                  = Key.S [@@deprecated "[since 2019-03] Use [Hashtbl.Key.S]"]
-  module type Multi                = Multi
-  module type S_poly               = S_poly
+  module type Accessors = Accessors
+  module type Creators = Creators
+  module type Key = Key.S [@@deprecated "[since 2019-03] Use [Hashtbl.Key.S]"]
+  module type Multi = Multi
+  module type S_poly = S_poly
   module type S_without_submodules = S_without_submodules
-
   module type For_deriving = For_deriving
 
   module Key = Key
 
-  type nonrec ('key, 'data, 'z) create_options =
-    ('key, 'data, 'z) create_options
+  type nonrec ('key, 'data, 'z) create_options = ('key, 'data, 'z) create_options
 
-  module Creators (Key : sig type 'a t val hashable : 'a t Hashable.t end) : sig
+  module Creators (Key : sig
+      type 'a t
+
+      val hashable : 'a t Hashable.t
+    end) : sig
     type ('a, 'b) t_ = ('a Key.t, 'b) t
+
     val t_of_sexp : (Sexp.t -> 'a Key.t) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t_
-    include Creators_generic
+
+    include
+      Creators_generic
       with type ('a, 'b) t := ('a, 'b) t_
       with type 'a key := 'a Key.t
       with type ('key, 'data, 'a) create_options :=
@@ -761,11 +755,11 @@ module type Hashtbl = sig
   include For_deriving with type ('a, 'b) t := ('a, 'b) t
 
   (**/**)
+
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
     https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
-
     module type Creators_generic = Creators_generic
 
     type nonrec ('key, 'data, 'z) create_options_without_first_class_module =

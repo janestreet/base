@@ -1,1 +1,2 @@
-include Indexed_container_intf.Indexed_container (** @inline *)
+(** @inline *)
+include Indexed_container_intf.Indexed_container

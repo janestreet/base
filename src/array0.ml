@@ -9,18 +9,17 @@
    mistakenly causing a file to depend on [Base.Array]. *)
 
 open! Import0
-
 module Sys = Sys0
 
 let invalid_argf = Printf.invalid_argf
 
 module Array = struct
-  external create     :             int -> 'a -> 'a array = "caml_make_vect"
-  external get        : 'a array -> int -> 'a             = "%array_safe_get"
-  external length     : 'a array -> int                   = "%array_length"
-  external set        : 'a array -> int -> 'a -> unit     = "%array_safe_set"
-  external unsafe_get : 'a array -> int -> 'a             = "%array_unsafe_get"
-  external unsafe_set : 'a array -> int -> 'a -> unit     = "%array_unsafe_set"
+  external create : int -> 'a -> 'a array = "caml_make_vect"
+  external get : 'a array -> int -> 'a = "%array_safe_get"
+  external length : 'a array -> int = "%array_length"
+  external set : 'a array -> int -> 'a -> unit = "%array_safe_set"
+  external unsafe_get : 'a array -> int -> 'a = "%array_unsafe_get"
+  external unsafe_set : 'a array -> int -> 'a -> unit = "%array_unsafe_set"
 end
 
 include Array
@@ -28,35 +27,33 @@ include Array
 let max_length = Sys.max_array_length
 
 let create ~len x =
-  try create len x
-  with Invalid_argument _ ->
-    invalid_argf "Array.create ~len:%d: invalid length" len ()
+  try create len x with
+  | Invalid_argument _ -> invalid_argf "Array.create ~len:%d: invalid length" len ()
 ;;
 
-let append      = Caml.Array.append
-let blit        = Caml.Array.blit
-let concat      = Caml.Array.concat
-let copy        = Caml.Array.copy
-let fill        = Caml.Array.fill
-let init        = Caml.Array.init
+let append = Caml.Array.append
+let blit = Caml.Array.blit
+let concat = Caml.Array.concat
+let copy = Caml.Array.copy
+let fill = Caml.Array.fill
+let init = Caml.Array.init
 let make_matrix = Caml.Array.make_matrix
-let of_list     = Caml.Array.of_list
-let sub         = Caml.Array.sub
-let to_list     = Caml.Array.to_list
-
+let of_list = Caml.Array.of_list
+let sub = Caml.Array.sub
+let to_list = Caml.Array.to_list
 
 (* These are eta expanded in order to permute parameter order to follow Base
    conventions. *)
-let fold        t ~init ~f = Caml.Array.fold_left   t ~init ~f
-let fold_right  t ~f ~init = Caml.Array.fold_right  t ~f ~init
-let iter        t ~f       = Caml.Array.iter        t ~f
-let iteri       t ~f       = Caml.Array.iteri       t ~f
-let map         t ~f       = Caml.Array.map         t ~f
-let mapi        t ~f       = Caml.Array.mapi        t ~f
+let fold t ~init ~f = Caml.Array.fold_left t ~init ~f
+let fold_right t ~f ~init = Caml.Array.fold_right t ~f ~init
+let iter t ~f = Caml.Array.iter t ~f
+let iteri t ~f = Caml.Array.iteri t ~f
+let map t ~f = Caml.Array.map t ~f
+let mapi t ~f = Caml.Array.mapi t ~f
 let stable_sort t ~compare = Caml.Array.stable_sort t ~cmp:compare
 
 let swap t i j =
   let tmp = t.(i) in
   t.(i) <- t.(j);
-  t.(j) <- tmp;
+  t.(j) <- tmp
 ;;

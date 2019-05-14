@@ -18,7 +18,7 @@ include
 [@@@end]
 
 include Container.S1 with type 'a t := 'a t
-include Equal.S1     with type 'a t := 'a t
+include Equal.S1 with type 'a t := 'a t
 include Invariant.S1 with type 'a t := 'a t
 
 (** Options form a monad, where [return x = Some x], [(None >>= f) = None], and [(Some x
@@ -56,11 +56,8 @@ val value_exn
   -> 'a
 
 val some : 'a -> 'a t
-
 val both : 'a t -> 'b t -> ('a * 'b) t
-
 val first_some : 'a t -> 'a t -> 'a t
-
 val some_if : bool -> 'a -> 'a t
 
 (** [merge a b ~f] merges together the values from [a] and [b] using [f].  If both [a] and

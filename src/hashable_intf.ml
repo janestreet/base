@@ -17,9 +17,9 @@ end
 
 module Hashable = struct
   type 'a t =
-    { hash : 'a -> int;
-      compare : 'a -> 'a -> int;
-      sexp_of_t : 'a -> Sexp.t;
+    { hash : 'a -> int
+    ; compare : 'a -> 'a -> int
+    ; sexp_of_t : 'a -> Sexp.t
     }
 
   (** This function is sound but not complete, meaning that if it returns [true] then it's
@@ -48,46 +48,39 @@ module Hashable = struct
   ;;
 
   let hash_param = Caml.Hashtbl.hash_param
-  let hash       = Caml.Hashtbl.hash
-
-  let poly = { hash;
-               compare = Poly.compare;
-               sexp_of_t = (fun _ -> Sexp.Atom "_");
-             }
+  let hash = Caml.Hashtbl.hash
+  let poly = { hash; compare = Poly.compare; sexp_of_t = (fun _ -> Sexp.Atom "_") }
 
   let of_key (type a) (module Key : Key with type t = a) =
-    { hash = Key.hash;
-      compare = Key.compare;
-      sexp_of_t = Key.sexp_of_t;
-    }
+    { hash = Key.hash; compare = Key.compare; sexp_of_t = Key.sexp_of_t }
   ;;
 
   let to_key (type a) { hash; compare; sexp_of_t } =
-    (module struct
+    ( module struct
       type t = a
+
       let hash = hash
       let compare = compare
       let sexp_of_t = sexp_of_t
-    end : Key with type t = a)
+    end
+    : Key
+      with type t = a )
   ;;
 end
+
 include Hashable
 
 module type Hashable = sig
   type 'a t = 'a Hashable.t =
-    { hash : 'a -> int;
-      compare : 'a -> 'a -> int;
-      sexp_of_t : 'a -> Sexp.t;
+    { hash : 'a -> int
+    ; compare : 'a -> 'a -> int
+    ; sexp_of_t : 'a -> Sexp.t
     }
 
   val equal : 'a t -> 'a t -> bool
-
   val poly : 'a t
-
   val of_key : (module Key with type t = 'a) -> 'a t
   val to_key : 'a t -> (module Key with type t = 'a)
-
   val hash_param : int -> int -> 'a -> int
-
   val hash : 'a -> int
 end

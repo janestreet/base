@@ -29,16 +29,16 @@ module type Round = sig
       For convenience and performance, there are variants of [round] with [dir]
       hard-coded. If you are writing performance-critical code you should use these. *)
 
-  val round : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> to_multiple_of:t -> t
-
+  val round : ?dir:[`Zero | `Nearest | `Up | `Down] -> t -> to_multiple_of:t -> t
   val round_towards_zero : t -> to_multiple_of:t -> t
-  val round_down         : t -> to_multiple_of:t -> t
-  val round_up           : t -> to_multiple_of:t -> t
-  val round_nearest      : t -> to_multiple_of:t -> t
+  val round_down : t -> to_multiple_of:t -> t
+  val round_up : t -> to_multiple_of:t -> t
+  val round_nearest : t -> to_multiple_of:t -> t
 end
 
 module type Hexable = sig
   type t
+
   module Hex : sig
     type nonrec t = t [@@deriving_inline sexp, compare, hash]
     include
@@ -70,11 +70,11 @@ module type S_common = sig
     end[@@ocaml.doc "@inline"]
   [@@@end]
 
-  include Floatable.S          with type t := t
-  include Intable.S            with type t := t
-  include Identifiable.S       with type t := t
+  include Floatable.S with type t := t
+  include Intable.S with type t := t
+  include Identifiable.S with type t := t
   include Comparable.With_zero with type t := t
-  include Hexable              with type t := t
+  include Hexable with type t := t
 
   (** [delimiter] is an underscore by default. *)
   val to_string_hum : ?delimiter:char -> t -> string
@@ -84,7 +84,6 @@ module type S_common = sig
   val zero : t
   val one : t
   val minus_one : t
-
   val ( + ) : t -> t -> t
   val ( - ) : t -> t -> t
   val ( * ) : t -> t -> t
@@ -118,9 +117,9 @@ module type S_common = sig
       satisfies [abs (rem x y) <= abs y - 1]. *)
 
   val ( /% ) : t -> t -> t
-  val ( %  ) : t -> t -> t
-  val ( / )  : t -> t -> t
-  val rem    : t -> t -> t
+  val ( % ) : t -> t -> t
+  val ( / ) : t -> t -> t
+  val rem : t -> t -> t
 
   (** Float division of integers. *)
   val ( // ) : t -> t -> float
@@ -167,6 +166,7 @@ module type S_common = sig
   (** These are identical to [land], [lor], etc. except they're not infix and have
       different names. *)
   val bit_and : t -> t -> t
+
   val bit_or : t -> t -> t
   val bit_xor : t -> t -> t
   val bit_not : t -> t
@@ -214,27 +214,26 @@ module type Operators_unbounded = sig
   val ( / ) : t -> t -> t
   val ( ~- ) : t -> t
   val ( ** ) : t -> t -> t
+
   include Comparisons.Infix with type t := t
 
-  val abs    : t -> t
-  val neg    : t -> t
-  val zero   : t
-
-  val ( % )  : t -> t -> t
+  val abs : t -> t
+  val neg : t -> t
+  val zero : t
+  val ( % ) : t -> t -> t
   val ( /% ) : t -> t -> t
   val ( // ) : t -> t -> float
-
   val ( land ) : t -> t -> t
-  val ( lor  ) : t -> t -> t
+  val ( lor ) : t -> t -> t
   val ( lxor ) : t -> t -> t
-  val lnot     : t -> t
-
+  val lnot : t -> t
   val ( lsl ) : t -> int -> t
   val ( asr ) : t -> int -> t
 end
 
 module type Operators = sig
   include Operators_unbounded
+
   val ( lsr ) : t -> int -> t
 end
 
@@ -242,7 +241,8 @@ end
     [S_unbounded] is a restriction of [S] (below) that omits values that depend on
     fixed-size integers. *)
 module type S_unbounded = sig
-  include S_common (** @inline *)
+  (** @inline *)
+  include S_common
 
   (** A sub-module designed to be opened to make working with ints more convenient.  *)
   module O : Operators_unbounded with type t := t
@@ -250,7 +250,8 @@ end
 
 (** [S] is a generic interface for fixed-size integers. *)
 module type S = sig
-  include S_common (** @inline *)
+  (** @inline *)
+  include S_common
 
   (** The number of bits available in this integer type.  Note that the integer
       representations are signed. *)
@@ -290,15 +291,16 @@ module type S = sig
   module O : Operators with type t := t
 end
 
-include
-  (struct
-    (** Various functors whose type-correctness ensures desired relationships between
-        interfaces. *)
+include (
+struct
+  (** Various functors whose type-correctness ensures desired relationships between
+      interfaces. *)
 
-    module Check_O_contained_in_S           (M : S)           = (M : module type of M.O)
-    module Check_O_contained_in_S_unbounded (M : S_unbounded) = (M : module type of M.O)
-    module Check_S_unbounded_in_S           (M : S)           = (M : S_unbounded)
-  end : sig end)
+  module Check_O_contained_in_S (M : S) : module type of M.O = M
+  module Check_O_contained_in_S_unbounded (M : S_unbounded) : module type of M.O = M
+  module Check_S_unbounded_in_S (M : S) : S_unbounded = M
+end :
+sig end)
 
 module type Int_without_module_types = sig
   include S with type t = int
@@ -328,13 +330,14 @@ module type Int_without_module_types = sig
   val of_nativeint_trunc : nativeint -> t
 
   (**/**)
+
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
     https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     (*_ For ../bench/bench_int.ml *)
     module O_F : sig
-      val ( %  ) : int -> int -> int
+      val ( % ) : int -> int -> int
       val ( /% ) : int -> int -> int
       val ( // ) : int -> int -> float
     end
@@ -352,12 +355,13 @@ module type Int = sig
   include Int_without_module_types
 
   (** {2 Module types specifying integer operations.} *)
-  module type Hexable                  = Hexable
+  module type Hexable = Hexable
+
   module type Int_without_module_types = Int_without_module_types
-  module type Operators                = Operators
-  module type Operators_unbounded      = Operators_unbounded
-  module type Round                    = Round
-  module type S                        = S
-  module type S_common                 = S_common
-  module type S_unbounded              = S_unbounded
+  module type Operators = Operators
+  module type Operators_unbounded = Operators_unbounded
+  module type Round = Round
+  module type S = S
+  module type S_common = S_common
+  module type S_unbounded = S_unbounded
 end

@@ -39,15 +39,14 @@ open! Import
     violate avltree invariants. *)
 type ('k, 'v) t = private
   | Empty
-  | Node of { mutable left   : ('k, 'v) t
-            ;         key    : 'k
-            ; mutable value  : 'v
-            ; mutable height : int
-            ; mutable right  : ('k, 'v) t
-            }
-  | Leaf of {         key    : 'k
-            ; mutable value  : 'v
-            }
+  | Node of
+      { mutable left : ('k, 'v) t
+      ; key : 'k
+      ; mutable value : 'v
+      ; mutable height : int
+      ; mutable right : ('k, 'v) t
+      }
+  | Leaf of { key : 'k; mutable value : 'v }
 
 val empty : ('k, 'v) t
 
@@ -77,7 +76,7 @@ val add
 (** Returns the first (leftmost) or last (rightmost) element in the tree. *)
 
 val first : ('k, 'v) t -> ('k * 'v) option
-val last  : ('k, 'v) t -> ('k * 'v) option
+val last : ('k, 'v) t -> ('k * 'v) option
 
 (** If the specified key exists in the tree, returns the corresponding value.  O(log(N))
     time and O(1) space. *)

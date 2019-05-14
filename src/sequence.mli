@@ -43,7 +43,7 @@ include
 type 'a sequence = 'a t
 
 include Indexed_container.S1 with type 'a t := 'a t
-include Monad.S              with type 'a t := 'a t
+include Monad.S with type 'a t := 'a t
 
 (** [empty] is a sequence with no elements. *)
 val empty : _ t
@@ -96,26 +96,25 @@ val unfold_with : 'a t -> init:'s -> f:('s -> 'a -> ('b, 's) Step.t) -> 'b t
     (like [unfold_step ~init:(inner_finished final_state) ~f:finishing_step]). *)
 val unfold_with_and_finish
   :  'a t
-  -> init           : 's_a
-  -> running_step   : ('s_a -> 'a -> ('b, 's_a) Step.t)
-  -> inner_finished : ('s_a -> 's_b)
-  -> finishing_step : ('s_b -> ('b, 's_b) Step.t)
+  -> init:'s_a
+  -> running_step:('s_a -> 'a -> ('b, 's_a) Step.t)
+  -> inner_finished:('s_a -> 's_b)
+  -> finishing_step:('s_b -> ('b, 's_b) Step.t)
   -> 'b t
 
 (** Returns the nth element. *)
-val nth     : 'a t -> int -> 'a option
+val nth : 'a t -> int -> 'a option
+
 val nth_exn : 'a t -> int -> 'a
 
 (** [folding_map] is a version of [map] that threads an accumulator through calls to
     [f]. *)
-val folding_map  : 'a t -> init:'b -> f:(       'b -> 'a -> 'b * 'c) -> 'c t
+val folding_map : 'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) -> 'c t
+
 val folding_mapi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b * 'c) -> 'c t
-
 val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
-
-val filteri : 'a t -> f: (int -> 'a -> bool) -> 'a t
-
-val filter : 'a t -> f: ('a -> bool) -> 'a t
+val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
+val filter : 'a t -> f:('a -> bool) -> 'a t
 
 (** [merge t1 t2 ~compare] merges two sorted sequences [t1] and [t2], returning a sorted
     sequence, all according to [compare].  If two elements are equal, the one from [t1] is
@@ -153,12 +152,13 @@ val merge_with_duplicates
   -> compare:('a -> 'b -> int)
   -> ('a, 'b) Merge_with_duplicates_element.t t
 
-val hd     : 'a t -> 'a option
+val hd : 'a t -> 'a option
 val hd_exn : 'a t -> 'a
 
 (** [tl t] and [tl_eagerly_exn t] immediately evaluates the first element of [t] and
     returns the unevaluated tail. *)
-val tl             : 'a t -> 'a t option
+val tl : 'a t -> 'a t option
+
 val tl_eagerly_exn : 'a t -> 'a t
 
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f]. It raises if
@@ -205,11 +205,12 @@ val zip : 'a t -> 'b t -> ('a * 'b) t
 
 (** [zip_full] is like [zip], but if one sequence ends before the other, then it keeps
     producing elements from the other sequence until it has ended as well. *)
-val zip_full: 'a t -> 'b t -> [ `Left of 'a | `Both of 'a * 'b | `Right of 'b ] t
+val zip_full : 'a t -> 'b t -> [`Left of 'a | `Both of 'a * 'b | `Right of 'b] t
 
 (** [reduce_exn f [a1; ...; an]] is [f (... (f (f a1 a2) a3) ...) an]. It fails on the
     empty sequence. *)
 val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
+
 val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
 
 (** [group l ~break] returns a sequence of lists (i.e., groups) whose concatenation is
@@ -238,9 +239,9 @@ val remove_consecutive_duplicates : 'a t -> equal:('a -> 'a -> bool) -> 'a t
     for the result to be nonempty (or [start_i] >= [stop_i] in the case where both bounds
     are inclusive). *)
 val range
-  :  ?stride:int                            (** default is [1] *)
-  -> ?start:[`inclusive|`exclusive]         (** default is [`inclusive] *)
-  -> ?stop:[`inclusive|`exclusive]          (** default is [`exclusive] *)
+  :  ?stride:int (** default is [1] *)
+  -> ?start:[`inclusive | `exclusive] (** default is [`inclusive] *)
+  -> ?stop:[`inclusive | `exclusive] (** default is [`exclusive] *)
   -> int
   -> int
   -> int t
@@ -279,12 +280,12 @@ val drop_eagerly : 'a t -> int -> 'a t
 
 (** [take_while t ~f] produces the longest prefix of [t] for which [f] applied to each
     element is [true]. *)
-val take_while : 'a t -> f : ('a -> bool) -> 'a t
+val take_while : 'a t -> f:('a -> bool) -> 'a t
 
 (** [drop_while t ~f] produces the suffix of [t] beginning with the first element of [t]
     for which [f] is [false].  Usually you will probably want to use [drop_while_option]
     because it can be significantly cheaper. *)
-val drop_while : 'a t -> f : ('a -> bool) -> 'a t
+val drop_while : 'a t -> f:('a -> bool) -> 'a t
 
 (** [drop_while_option t ~f] immediately consumes the elements from [t] until the
     predicate [f] fails and returns the first element that failed along with the
@@ -292,7 +293,7 @@ val drop_while : 'a t -> f : ('a -> bool) -> 'a t
     alternatives would mean forcing the consumer to evaluate the first element again (if
     the previous state of the sequence is returned) or take on extra cost for each element
     (if the element is added to the final state of the sequence using [shift_right]). *)
-val drop_while_option : 'a t -> f : ('a -> bool) -> ('a * 'a t) option
+val drop_while_option : 'a t -> f:('a -> bool) -> ('a * 'a t) option
 
 (** [split_n t n] immediately consumes the first [n] elements of [t] and returns the
     consumed prefix, as a list, along with the unevaluated tail of [t]. *)
@@ -402,12 +403,12 @@ val force_eagerly : 'a t -> 'a t
 (** [bounded_length ~at_most t] returns [`Is len] if [len = length t <= at_most], and
     otherwise returns [`Greater].  Walks through only as much of the sequence as
     necessary.  Always returns [`Greater] if [at_most < 0]. *)
-val bounded_length : _ t -> at_most:int -> [ `Is of int | `Greater ]
+val bounded_length : _ t -> at_most:int -> [`Is of int | `Greater]
 
 (** [length_is_bounded_by ~min ~max t] returns true if [min <= length t] and [length t <=
     max] When [min] or [max] are not provided, the check for that bound is omitted.  Walks
     through only as much of the sequence as necessary. *)
-val length_is_bounded_by: ?min:int -> ?max:int -> _ t -> bool
+val length_is_bounded_by : ?min:int -> ?max:int -> _ t -> bool
 
 (** [Generator] is a monadic interface to generate sequences in a direct style, similar to
     Python's generators.
@@ -447,6 +448,7 @@ val length_is_bounded_by: ?min:int -> ?max:int -> _ t -> bool
 
 module Generator : sig
   include Monad.S2
+
   val yield : 'elt -> (unit, 'elt) t
   val of_sequence : 'elt sequence -> (unit, 'elt) t
   val run : (unit, 'elt) t -> 'elt sequence

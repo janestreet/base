@@ -14,16 +14,19 @@ include
   end[@@ocaml.doc "@inline"]
 [@@@end]
 
+val blit : (t, bytes) Blit.blit [@@deprecated "[since 2017-10] Use [Bytes.blit] instead"]
 
-val blit        : (t, bytes) Blit.blit [@@deprecated "[since 2017-10] Use [Bytes.blit] instead"]
-val blito       : (t, bytes) Blit.blito [@@deprecated "[since 2017-10] Use [Bytes.blito] instead"]
-val unsafe_blit : (t, bytes) Blit.blit [@@deprecated "[since 2017-10] Use [Bytes.unsafe_blit] instead"]
+val blito : (t, bytes) Blit.blito
+[@@deprecated "[since 2017-10] Use [Bytes.blito] instead"]
 
-val sub         : (t, t) Blit.sub
-val subo        : (t, t) Blit.subo
+val unsafe_blit : (t, bytes) Blit.blit
+[@@deprecated "[since 2017-10] Use [Bytes.unsafe_blit] instead"]
 
-include Container.S0     with type t := t with type elt = char
-include Identifiable.S   with type t := t
+val sub : (t, t) Blit.sub
+val subo : (t, t) Blit.subo
+
+include Container.S0 with type t := t with type elt = char
+include Identifiable.S with type t := t
 
 (** Maximum length of a string. *)
 val max_length : int
@@ -36,16 +39,17 @@ external get : t -> int -> char = "%string_safe_get"
 external unsafe_get : string -> int -> char = "%string_unsafe_get"
 
 val create : int -> bytes [@@deprecated "[since 2017-10] Use [Bytes.create] instead"]
-
 val make : int -> char -> t
 
 (** Assuming you haven't passed -unsafe-string to the compiler, strings are immutable, so
     there'd be no motivation to make a copy. *)
-val copy : t -> t [@@deprecated "[since 2018-03] Use [Bytes.copy] instead"]
+val copy : t -> t
+[@@deprecated "[since 2018-03] Use [Bytes.copy] instead"]
 
 val init : int -> f:(int -> char) -> t
 
-val fill : bytes -> pos:int -> len:int -> char -> unit [@@deprecated "[since 2017-10] Use [Bytes.fill] instead"]
+val fill : bytes -> pos:int -> len:int -> char -> unit
+[@@deprecated "[since 2017-10] Use [Bytes.fill] instead"]
 
 (** String append. Also available unqualified, but re-exported here for documentation
     purposes.
@@ -68,11 +72,13 @@ val contains : ?pos:int -> ?len:int -> t -> char -> bool
 (** Operates on the whole string using the US-ASCII character set,
     e.g. [uppercase "foo" = "FOO"]. *)
 val uppercase : t -> t
+
 val lowercase : t -> t
 
 (** Operates on just the first character using the US-ASCII character set,
     e.g. [capitalize "foo" = "Foo"]. *)
-val capitalize   : t -> t
+val capitalize : t -> t
+
 val uncapitalize : t -> t
 
 (** [index] gives the index of the first appearance of [char] in the string when
@@ -105,6 +111,7 @@ module Caseless : sig
       include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
     end[@@ocaml.doc "@inline"]
   [@@@end]
+
   include Comparable.S with type t := t
 
   val is_suffix : t -> suffix:t -> bool
@@ -113,16 +120,18 @@ end
 
 (** [index_exn] and [index_from_exn] raise [Caml.Not_found] or [Not_found_s] when [char]
     cannot be found in [s]. *)
-val index           : t -> char -> int option
-val index_exn       : t -> char -> int
-val index_from      : t -> int -> char -> int option
-val index_from_exn  : t -> int -> char -> int
+val index : t -> char -> int option
+
+val index_exn : t -> char -> int
+val index_from : t -> int -> char -> int option
+val index_from_exn : t -> int -> char -> int
 
 (** [rindex_exn] and [rindex_from_exn] raise [Caml.Not_found] or [Not_found_s] when [char]
     cannot be found in [s]. *)
-val rindex     : t -> char -> int option
+val rindex : t -> char -> int option
+
 val rindex_exn : t -> char -> int
-val rindex_from     : t -> int -> char -> int option
+val rindex_from : t -> int -> char -> int option
 val rindex_from_exn : t -> int -> char -> int
 
 (** Substring search and replace functions.  They use the Knuth-Morris-Pratt algorithm
@@ -131,7 +140,6 @@ val rindex_from_exn : t -> int -> char -> int
     The functions in the [Search_pattern] module allow the program to preprocess the
     searched pattern once and then use it many times without further allocations. *)
 module Search_pattern : sig
-
   type t [@@deriving_inline sexp_of]
   include
     sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
@@ -147,7 +155,8 @@ module Search_pattern : sig
 
   (** [pos < 0] or [pos >= length string] result in no match (hence [index] returns
       [None] and [index_exn] raises). *)
-  val index     : ?pos:int -> t -> in_:string -> int option
+  val index : ?pos:int -> t -> in_:string -> int option
+
   val index_exn : ?pos:int -> t -> in_:string -> int
 
   (** [may_overlap] determines whether after a successful match, [index_all] should start
@@ -168,7 +177,8 @@ module Search_pattern : sig
         replace_all (create "bc") ~in_:"aabbcc" ~with_:"cb" = "aabcbc"
       ]} *)
   val replace_first : ?pos:int -> t -> in_:string -> with_:string -> string
-  val replace_all   :             t -> in_:string -> with_:string -> string
+
+  val replace_all : t -> in_:string -> with_:string -> string
 end
 
 (** Substring search and replace convenience functions.  They call [Search_pattern.create]
@@ -176,14 +186,14 @@ end
     [pos >= length t] result in no match (hence [substr_index] returns [None] and
     [substr_index_exn] raises).  [may_overlap] indicates whether to report overlapping
     matches, see [Search_pattern.index_all]. *)
-val substr_index     : ?pos:int -> t -> pattern:t -> int option
+val substr_index : ?pos:int -> t -> pattern:t -> int option
+
 val substr_index_exn : ?pos:int -> t -> pattern:t -> int
 val substr_index_all : t -> may_overlap:bool -> pattern:t -> int list
-
 val substr_replace_first : ?pos:int -> t -> pattern:t -> with_:t -> t
 
 (** As with [Search_pattern.replace_all], the result may still contain [pattern]. *)
-val substr_replace_all   :             t -> pattern:t -> with_:t -> t
+val substr_replace_all : t -> pattern:t -> with_:t -> t
 
 (** [is_substring ~substring:"bar" "foo bar baz"] is true. *)
 val is_substring : t -> substring:t -> bool
@@ -237,11 +247,11 @@ val split_lines : t -> t list
 
 (** [lfindi ?pos t ~f] returns the smallest [i >= pos] such that [f i t.[i]], if there is
     such an [i].  By default, [pos = 0]. *)
-val lfindi : ?pos : int -> t -> f:(int -> char -> bool) -> int option
+val lfindi : ?pos:int -> t -> f:(int -> char -> bool) -> int option
 
 (** [rfindi ?pos t ~f] returns the largest [i <= pos] such that [f i t.[i]], if there is
     such an [i].  By default [pos = length t - 1]. *)
-val rfindi : ?pos : int -> t -> f:(int -> char -> bool) -> int option
+val rfindi : ?pos:int -> t -> f:(int -> char -> bool) -> int option
 
 (** [lstrip ?drop s] returns a string with consecutive chars satisfying [drop] (by default
     white space, e.g. tabs, spaces, newlines, and carriage returns) stripped from the
@@ -258,21 +268,21 @@ val rstrip : ?drop:(char -> bool) -> t -> t
     beginning and end of [s]. *)
 val strip : ?drop:(char -> bool) -> t -> t
 
-val map : t -> f : (char -> char) -> t
+val map : t -> f:(char -> char) -> t
 
 (** Like [map], but passes each character's index to [f] along with the char. *)
-val mapi : t -> f : (int -> char -> char) -> t
+val mapi : t -> f:(int -> char -> char) -> t
 
 (** [foldi] works similarly to [fold], but also passes the index of each character to
     [f]. *)
-val foldi : t -> init : 'a -> f : (int -> 'a -> char -> 'a) -> 'a
+val foldi : t -> init:'a -> f:(int -> 'a -> char -> 'a) -> 'a
 
 (** Like [map], but allows the replacement of a single character with zero or two or more
     characters. *)
-val concat_map : ?sep:t -> t -> f : (char -> t) -> t
+val concat_map : ?sep:t -> t -> f:(char -> t) -> t
 
 (** [filter s ~f:predicate] discards characters not satisfying [predicate]. *)
-val filter : t -> f : (char -> bool) -> t
+val filter : t -> f:(char -> bool) -> t
 
 (** [tr ~target ~replacement s] replaces every instance of [target] in [s] with
     [replacement]. *)
@@ -305,7 +315,6 @@ val chop_suffix_exn : t -> suffix:t -> t
 val chop_prefix_exn : t -> prefix:t -> t
 
 val chop_suffix : t -> suffix:t -> t option
-
 val chop_prefix : t -> prefix:t -> t option
 
 (** [suffix s n] returns the longest suffix of [s] of length less than or equal to [n]. *)
@@ -323,16 +332,16 @@ val drop_suffix : t -> int -> t
 val drop_prefix : t -> int -> t
 
 (** [concat_array sep ar] like {!String.concat}, but operates on arrays. *)
-val concat_array : ?sep : t -> t array -> t
+val concat_array : ?sep:t -> t array -> t
 
 (** Slightly faster hash function on strings. *)
-external hash : t -> int = "Base_hash_string" [@@noalloc]
+external hash : t -> int = "Base_hash_string"
+[@@noalloc]
 
 (** Fast equality function on strings, doesn't use [compare_val]. *)
 val equal : t -> t -> bool
 
 val of_char : char -> t
-
 val of_char_list : char list -> t
 
 (** Operations for escaping and unescaping strings, with parameterized escape and
@@ -402,22 +411,26 @@ module Escaping : sig
 
   (** [index s ~escape_char char] finds the first literal (not escaped) instance of [char]
       in s starting from 0. *)
-  val index     : string -> escape_char:char -> char -> int option
+  val index : string -> escape_char:char -> char -> int option
+
   val index_exn : string -> escape_char:char -> char -> int
 
   (** [rindex s ~escape_char char] finds the first literal (not escaped) instance of
       [char] in [s] starting from the end of [s] and proceeding towards 0. *)
-  val rindex     : string -> escape_char:char -> char -> int option
+  val rindex : string -> escape_char:char -> char -> int option
+
   val rindex_exn : string -> escape_char:char -> char -> int
 
   (** [index_from s ~escape_char pos char] finds the first literal (not escaped) instance
       of [char] in [s] starting from [pos] and proceeding towards the end of [s]. *)
-  val index_from     : string -> escape_char:char -> int -> char -> int option
+  val index_from : string -> escape_char:char -> int -> char -> int option
+
   val index_from_exn : string -> escape_char:char -> int -> char -> int
 
   (** [rindex_from s ~escape_char pos char] finds the first literal (not escaped)
       instance of [char] in [s] starting from [pos] and towards 0. *)
-  val rindex_from     : string -> escape_char:char -> int -> char -> int option
+  val rindex_from : string -> escape_char:char -> int -> char -> int option
+
   val rindex_from_exn : string -> escape_char:char -> int -> char -> int
 
   (** [split s ~escape_char ~on] returns a list of substrings of [s] that are separated by
@@ -438,14 +451,16 @@ module Escaping : sig
 
   (** [lsplit2 s ~on ~escape_char] splits s into a pair on the first literal instance of
       [on] (meaning the first unescaped instance) starting from the left. *)
-  val lsplit2     : string -> on:char -> escape_char:char -> (string * string) option
-  val lsplit2_exn : string -> on:char -> escape_char:char -> (string * string)
+  val lsplit2 : string -> on:char -> escape_char:char -> (string * string) option
+
+  val lsplit2_exn : string -> on:char -> escape_char:char -> string * string
 
   (** [rsplit2 s ~on ~escape_char] splits [s] into a pair on the first literal
       instance of [on] (meaning the first unescaped instance) starting from the
       right. *)
-  val rsplit2     : string -> on:char -> escape_char:char -> (string * string) option
-  val rsplit2_exn : string -> on:char -> escape_char:char -> (string * string)
+  val rsplit2 : string -> on:char -> escape_char:char -> (string * string) option
+
+  val rsplit2_exn : string -> on:char -> escape_char:char -> string * string
 
   (** These are the same as [lstrip], [rstrip], and [strip] for generic strings, except
       that they only drop literal characters -- they do not drop characters that are
@@ -453,9 +468,13 @@ module Escaping : sig
       whitespace (for example), because escaped whitespace seems more likely to be
       deliberate and not junk. *)
   val lstrip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
+
   val rstrip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
-  val strip_literal  : ?drop:(char -> bool) -> t -> escape_char:char -> t
+  val strip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
 end
 
-val set : bytes -> int -> char -> unit [@@deprecated "[since 2017-10] Use [Bytes.set] instead"]
-val unsafe_set : bytes -> int -> char -> unit [@@deprecated "[since 2017-10] Use [Bytes.unsafe_set] instead"]
+val set : bytes -> int -> char -> unit
+[@@deprecated "[since 2017-10] Use [Bytes.set] instead"]
+
+val unsafe_set : bytes -> int -> char -> unit
+[@@deprecated "[since 2017-10] Use [Bytes.unsafe_set] instead"]

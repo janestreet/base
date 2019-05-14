@@ -2,10 +2,12 @@ open! Import
 open! Map
 
 let%test _ =
-  invariants (of_increasing_iterator_unchecked (module Int) ~len:20 ~f:(fun x -> x,x))
+  invariants (of_increasing_iterator_unchecked (module Int) ~len:20 ~f:(fun x -> x, x))
+;;
 
 let%test _ =
-  invariants (Poly.of_increasing_iterator_unchecked ~len:20 ~f:(fun x -> x,x))
+  invariants (Poly.of_increasing_iterator_unchecked ~len:20 ~f:(fun x -> x, x))
+;;
 
 module M = M
 
@@ -24,28 +26,28 @@ let%expect_test "[add_exn] failure" =
 ;;
 
 let%expect_test "[add] success" =
-  print_s [%sexp (
-    add (empty (module Int)) ~key:1 ~data:2 : int_map Or_duplicate.t)];
+  print_s [%sexp (add (empty (module Int)) ~key:1 ~data:2 : int_map Or_duplicate.t)];
   [%expect {| (Ok ((1 2))) |}]
 ;;
 
 let%expect_test "[add] duplicate" =
-  print_s [%sexp (
-    add (add12 (empty (module Int))) ~key:1 ~data:2 : int_map Or_duplicate.t)];
+  print_s
+    [%sexp (add (add12 (empty (module Int))) ~key:1 ~data:2 : int_map Or_duplicate.t)];
   [%expect {| Duplicate |}]
 ;;
 
 let%expect_test "[Map.of_alist_multi] preserves value ordering" =
-  print_s [%sexp (
-    Map.of_alist_multi (module String) ["a", 1; "a", 2; "b", 1; "b", 3]
-    : int list Map.M(String).t)];
+  print_s
+    [%sexp
+      ( Map.of_alist_multi (module String) [ "a", 1; "a", 2; "b", 1; "b", 3 ]
+        : int list Map.M(String).t )];
   [%expect {|
     ((a (1 2))
      (b (1 3))) |}]
 ;;
 
 let%expect_test "find_exn" =
-  let map = Map.of_alist_exn (module String) ["one", 1; "two", 2; "three", 3] in
+  let map = Map.of_alist_exn (module String) [ "one", 1; "two", 2; "three", 3 ] in
   let test_success key =
     require_does_not_raise [%here] (fun () ->
       print_s [%sexp (Map.find_exn map key : int)])
@@ -56,20 +58,15 @@ let%expect_test "find_exn" =
   [%expect {| 2 |}];
   test_success "three";
   [%expect {| 3 |}];
-  let test_failure key =
-    require_does_raise [%here] (fun () ->
-      Map.find_exn map key)
-  in
+  let test_failure key = require_does_raise [%here] (fun () -> Map.find_exn map key) in
   test_failure "zero";
   [%expect {| (Not_found_s ("Map.find_exn: not found" zero)) |}];
   test_failure "four";
-  [%expect {| (Not_found_s ("Map.find_exn: not found" four)) |}];
+  [%expect {| (Not_found_s ("Map.find_exn: not found" four)) |}]
 ;;
 
 module Poly = struct
-  let%test _ =
-    length Poly.empty = 0
-  ;;
+  let%test _ = length Poly.empty = 0
 
   let%test _ =
     let a = Poly.of_alist_exn [] in
@@ -77,8 +74,8 @@ module Poly = struct
   ;;
 
   let%test _ =
-    let a = Poly.of_alist_exn [("a", 1)] in
-    let b = Poly.of_alist_exn [(1, "b")] in
+    let a = Poly.of_alist_exn [ "a", 1 ] in
+    let b = Poly.of_alist_exn [ 1, "b" ] in
     length a = length b
   ;;
 end
@@ -97,14 +94,14 @@ let%test_module "[symmetric_diff]" =
       in
       test [] [];
       [%expect {| () |}];
-      test ["one", 1] [];
+      test [ "one", 1 ] [];
       [%expect {| ((one (Left 1))) |}];
-      test [] ["two", 2];
+      test [] [ "two", 2 ];
       [%expect {| ((two (Right 2))) |}];
-      test ["one", 1; "two", 2] ["one", 1; "two", 2];
+      test [ "one", 1; "two", 2 ] [ "one", 1; "two", 2 ];
       [%expect {| () |}];
-      test ["one", 1; "two", 2] ["one", 1; "two", 3];
-      [%expect {| ((two (Unequal (2 3)))) |}];
+      test [ "one", 1; "two", 2 ] [ "one", 1; "two", 3 ];
+      [%expect {| ((two (Unequal (2 3)))) |}]
     ;;
 
     module String_to_int_map = struct
@@ -116,19 +113,23 @@ let%test_module "[symmetric_diff]" =
 
       let quickcheck_generator =
         Generator.map_t_m (module String) Generator.string Generator.int
+      ;;
+
       let quickcheck_observer = Observer.map_t Observer.string Observer.int
       let quickcheck_shrinker = Shrinker.map_t Shrinker.string Shrinker.int
     end
 
     let apply_diff_left_to_right map (key, elt) =
       match elt with
-      | `Right data | `Unequal (_, data) -> Map.set map ~key ~data
+      | `Right data
+      | `Unequal (_, data) -> Map.set map ~key ~data
       | `Left _ -> Map.remove map key
     ;;
 
     let apply_diff_right_to_left map (key, elt) =
       match elt with
-      | `Left data | `Unequal (data, _) -> Map.set map ~key ~data
+      | `Left data
+      | `Unequal (data, _) -> Map.set map ~key ~data
       | `Right _ -> Map.remove map key
     ;;
 
@@ -164,8 +165,12 @@ let%test_module "[symmetric_diff]" =
           end)
           (Map.symmetric_diff map1 map2 ~data_equal:Int.equal
            |> Sequence.fold ~init:[] ~f:(Fn.flip List.cons))
-          (Map.fold_symmetric_diff map1 map2 ~data_equal:Int.equal
-             ~init:[] ~f:(Fn.flip List.cons))
+          (Map.fold_symmetric_diff
+             map1
+             map2
+             ~data_equal:Int.equal
+             ~init:[]
+             ~f:(Fn.flip List.cons))
       in
       Base_quickcheck.Test.run_exn
         ~f:test
@@ -173,4 +178,6 @@ let%test_module "[symmetric_diff]" =
           type t = String_to_int_map.t * String_to_int_map.t
           [@@deriving quickcheck, sexp_of]
         end)
+    ;;
   end)
+;;

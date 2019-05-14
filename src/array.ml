@@ -1,5 +1,4 @@
 open! Import
-
 include Array0
 module Int = Int0
 
@@ -79,11 +78,11 @@ module Sort = struct
            loop for the readability of the documentation. *)
         let rec loop arr ~left ~compare i v =
           let i_next = i - 1 in
-          if i_next >= left && compare (get arr i_next) v > 0 then begin
+          if i_next >= left && compare (get arr i_next) v > 0
+          then (
             set arr i (get arr i_next);
-            loop arr ~left ~compare i_next v
-          end else
-            i
+            loop arr ~left ~compare i_next v)
+          else i
         in
         let v = get arr pos in
         let final_pos = loop arr ~left ~compare pos v in
@@ -98,8 +97,8 @@ module Sort = struct
        root's children are both either roots of max-heaps or > right *)
     let rec heapify arr ~compare root ~left ~right =
       let relative_root = root - left in
-      let left_child    = (2 * relative_root) + left + 1 in
-      let right_child   = (2 * relative_root) + left + 2 in
+      let left_child = (2 * relative_root) + left + 1 in
+      let right_child = (2 * relative_root) + left + 2 in
       let largest =
         if left_child <= right && compare (get arr left_child) (get arr root) > 0
         then left_child
@@ -110,10 +109,10 @@ module Sort = struct
         then right_child
         else largest
       in
-      if largest <> root then begin
+      if largest <> root
+      then (
         swap arr root largest;
-        heapify arr ~compare largest ~left ~right
-      end;
+        heapify arr ~compare largest ~left ~right)
     ;;
 
     let build_heap arr ~compare ~left ~right =
@@ -121,8 +120,8 @@ module Sort = struct
          through the first half of the array from back to front examining the element at
          hand, and the left and right children, fixing the heap property as we go. *)
       for i = (left + right) / 2 downto left do
-        heapify arr ~compare i ~left ~right;
-      done;
+        heapify arr ~compare i ~left ~right
+      done
     ;;
 
     let sort arr ~compare ~left ~right =
@@ -133,32 +132,51 @@ module Sort = struct
          3.  every element of H is less than every element of S *)
       for i = right downto left + 1 do
         swap arr left i;
-        heapify arr ~compare left ~left ~right:(i - 1);
-      done;
+        heapify arr ~compare left ~left ~right:(i - 1)
+      done
     ;;
   end
 
   (* http://en.wikipedia.org/wiki/Introsort *)
   module Intro_sort : sig
     include Sort
-    val five_element_sort
-      : 'a t -> compare:('a -> 'a -> int) -> int -> int -> int -> int -> int -> unit
-  end = struct
 
+    val five_element_sort
+      :  'a t
+      -> compare:('a -> 'a -> int)
+      -> int
+      -> int
+      -> int
+      -> int
+      -> int
+      -> unit
+  end = struct
     let five_element_sort arr ~compare m1 m2 m3 m4 m5 =
       let compare_and_swap i j =
         if compare (get arr i) (get arr j) > 0 then swap arr i j
       in
-      (* optimal 5-element sorting network *)
-      compare_and_swap m1 m2;  (* 1--o-----o-----o--------------1 *)
-      compare_and_swap m4 m5;  (*    |     |     |                *)
-      compare_and_swap m1 m3;  (* 2--o-----|--o--|-----o--o-----2 *)
-      compare_and_swap m2 m3;  (*          |  |  |     |  |       *)
-      compare_and_swap m1 m4;  (* 3--------o--o--|--o--|--o-----3 *)
-      compare_and_swap m3 m4;  (*                |  |  |          *)
-      compare_and_swap m2 m5;  (* 4-----o--------o--o--|-----o--4 *)
-      compare_and_swap m2 m3;  (*       |              |     |    *)
-      compare_and_swap m4 m5;  (* 5-----o--------------o-----o--5 *)
+      (* Optimal 5-element sorting network:
+
+         {v
+            1--o-----o-----o--------------1
+               |     |     |
+            2--o-----|--o--|-----o--o-----2
+                     |  |  |     |  |
+            3--------o--o--|--o--|--o-----3
+                           |  |  |
+            4-----o--------o--o--|-----o--4
+                  |              |     |
+            5-----o--------------o-----o--5
+          v} *)
+      compare_and_swap m1 m2;
+      compare_and_swap m4 m5;
+      compare_and_swap m1 m3;
+      compare_and_swap m2 m3;
+      compare_and_swap m1 m4;
+      compare_and_swap m3 m4;
+      compare_and_swap m2 m5;
+      compare_and_swap m2 m3;
+      compare_and_swap m4 m5
     ;;
 
     (* choose pivots for the array by sorting 5 elements and examining the center three
@@ -180,9 +198,11 @@ module Sort = struct
       let m2_val = get arr m2 in
       let m3_val = get arr m3 in
       let m4_val = get arr m4 in
-      if compare m2_val m3_val = 0      then (m2_val, m3_val, true)
-      else if compare m3_val m4_val = 0 then (m3_val, m4_val, true)
-      else                                   (m2_val, m4_val, false)
+      if compare m2_val m3_val = 0
+      then m2_val, m3_val, true
+      else if compare m3_val m4_val = 0
+      then m3_val, m4_val, true
+      else m2_val, m4_val, false
     ;;
 
     let dual_pivot_partition arr ~compare ~left ~right =
@@ -196,26 +216,23 @@ module Sort = struct
          5.  r < x <= right implies arr[x] > pivot2 *)
       let rec loop l p r =
         let pv = get arr p in
-        if compare pv pivot1 < 0 then begin
+        if compare pv pivot1 < 0
+        then (
           swap arr p l;
-          cont (l + 1) (p + 1) r
-        end else if compare pv pivot2 > 0 then begin
+          cont (l + 1) (p + 1) r)
+        else if compare pv pivot2 > 0
+        then (
           (* loop invariants:  same as those of the outer loop *)
           let rec scan_backwards r =
-            if r > p && compare (get arr r) pivot2 > 0
-            then scan_backwards (r - 1)
-            else r
+            if r > p && compare (get arr r) pivot2 > 0 then scan_backwards (r - 1) else r
           in
           let r = scan_backwards r in
           swap arr r p;
-          cont l p (r - 1)
-        end else
-          cont l (p + 1) r
-      and cont l p r =
-        if p > r then (l, r) else loop l p r
-      in
-      let (l, r) = cont left left right in
-      (l, r, pivots_equal)
+          cont l p (r - 1))
+        else cont l (p + 1) r
+      and cont l p r = if p > r then l, r else loop l p r in
+      let l, r = cont left left right in
+      l, r, pivots_equal
     ;;
 
     let rec intro_sort arr ~max_depth ~compare ~left ~right =
@@ -223,21 +240,19 @@ module Sort = struct
       (* This takes care of some edge cases, such as left > right or very short arrays,
          since Insertion_sort.sort handles these cases properly.  Thus we don't need to
          make sure that left and right are valid in recursive calls. *)
-      if len <= 32 then begin
-        Insertion_sort.sort arr ~compare ~left ~right
-      end else if max_depth < 0 then begin
-        Heap_sort.sort arr ~compare ~left ~right;
-      end else begin
+      if len <= 32
+      then Insertion_sort.sort arr ~compare ~left ~right
+      else if max_depth < 0
+      then Heap_sort.sort arr ~compare ~left ~right
+      else (
         let max_depth = max_depth - 1 in
-        let (l, r, middle_sorted) = dual_pivot_partition arr ~compare ~left ~right in
+        let l, r, middle_sorted = dual_pivot_partition arr ~compare ~left ~right in
         intro_sort arr ~max_depth ~compare ~left ~right:(l - 1);
         if not middle_sorted then intro_sort arr ~max_depth ~compare ~left:l ~right:r;
-        intro_sort arr ~max_depth ~compare ~left:(r + 1) ~right;
-      end
+        intro_sort arr ~max_depth ~compare ~left:(r + 1) ~right)
     ;;
 
     let log10_of_3 = Caml.log10 3.
-
     let log3 x = Caml.log10 x /. log10_of_3
 
     let sort arr ~compare ~left ~right =
@@ -246,7 +261,7 @@ module Sort = struct
         (* with perfect 3-way partitioning, this is the recursion depth *)
         Int.of_float (log3 (Int.to_float len))
       in
-      intro_sort arr ~max_depth:heap_sort_switch_depth ~compare ~left ~right;
+      intro_sort arr ~max_depth:heap_sort_switch_depth ~compare ~left ~right
     ;;
   end
 end
@@ -256,18 +271,16 @@ let sort ?pos ?len arr ~compare =
     Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length arr)
   in
   Sort.Intro_sort.sort arr ~compare ~left:pos ~right:(pos + len - 1)
+;;
 
 let to_array t = t
-
 let is_empty t = length t = 0
 
 let is_sorted t ~compare =
   let rec is_sorted_loop t ~compare i =
     if i < 1
     then true
-    else
-      compare t.(i - 1) t.(i) <= 0
-      && is_sorted_loop t ~compare (i - 1)
+    else compare t.(i - 1) t.(i) <= 0 && is_sorted_loop t ~compare (i - 1)
   in
   is_sorted_loop t ~compare (length t - 1)
 ;;
@@ -276,9 +289,7 @@ let is_sorted_strictly t ~compare =
   let rec is_sorted_strictly_loop t ~compare i =
     if i < 1
     then true
-    else
-      compare t.(i - 1) t.(i) < 0
-      && is_sorted_strictly_loop t ~compare (i - 1)
+    else compare t.(i - 1) t.(i) < 0 && is_sorted_strictly_loop t ~compare (i - 1)
   in
   is_sorted_strictly_loop t ~compare (length t - 1)
 ;;
@@ -303,7 +314,7 @@ let fold_map t ~init ~f =
 ;;
 
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
-let fold_until  t ~init ~f = Container.fold_until  ~fold ~init ~f t
+let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
 let count t ~f = Container.count ~fold t ~f
 let sum m t ~f = Container.sum ~fold m t ~f
 let min_elt t ~compare = Container.min_elt ~fold t ~compare
@@ -311,9 +322,7 @@ let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
 let foldi t ~init ~f =
   let rec foldi_loop t i ac ~f =
-    if i = length t
-    then ac
-    else foldi_loop t (i + 1) (f i ac t.(i)) ~f
+    if i = length t then ac else foldi_loop t (i + 1) (f i ac t.(i)) ~f
   in
   foldi_loop t 0 init ~f
 ;;
@@ -337,18 +346,20 @@ let fold_mapi t ~init ~f =
   !acc, result
 ;;
 
-let counti t ~f = foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count)
+let counti t ~f =
+  foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count)
+;;
 
-let concat_map  t ~f = concat (to_list (map  ~f t))
+let concat_map t ~f = concat (to_list (map ~f t))
 let concat_mapi t ~f = concat (to_list (mapi ~f t))
 
 let rev_inplace t =
   let i = ref 0 in
   let j = ref (length t - 1) in
-  while !i < !j; do
+  while !i < !j do
     swap t !i !j;
     incr i;
-    decr j;
+    decr j
   done
 ;;
 
@@ -363,7 +374,9 @@ let of_list_rev l =
     for i = len - 2 downto 0 do
       match !r with
       | [] -> assert false
-      | a :: l -> t.(i) <- a; r := l
+      | a :: l ->
+        t.(i) <- a;
+        r := l
     done;
     t
 ;;
@@ -374,43 +387,51 @@ let of_list_rev l =
 let of_list_map xs ~f =
   match xs with
   | [] -> [||]
-  | hd::tl ->
+  | hd :: tl ->
     let a = create ~len:(1 + List.length tl) (f hd) in
     let rec fill i = function
       | [] -> a
-      | hd::tl -> unsafe_set a i (f hd); fill (i+1) tl in
+      | hd :: tl ->
+        unsafe_set a i (f hd);
+        fill (i + 1) tl
+    in
     fill 1 tl
+;;
 
 let of_list_mapi xs ~f =
   match xs with
   | [] -> [||]
-  | hd::tl ->
+  | hd :: tl ->
     let a = create ~len:(1 + List.length tl) (f 0 hd) in
     let rec fill a i = function
-      | []     -> a
-      | hd::tl ->
+      | [] -> a
+      | hd :: tl ->
         unsafe_set a i (f i hd);
-        fill a (i+1) tl
+        fill a (i + 1) tl
     in
     fill a 1 tl
+;;
 
 let of_list_rev_map xs ~f =
   let t = of_list_map xs ~f in
   rev_inplace t;
   t
+;;
 
 let of_list_rev_mapi xs ~f =
   let t = of_list_mapi xs ~f in
   rev_inplace t;
   t
+;;
 
 (* [Obj.truncate] reduces the size of a block on the ocaml heap.  For arrays, the block
    size is the array length. This holds even for float arrays. *)
 let unsafe_truncate t ~len =
-  if len <= 0 || len > length t then
-    raise_s (Sexp.message "Array.unsafe_truncate got invalid len"
-               ["len", sexp_of_int len]);
-  if len < length t then Caml.Obj.truncate (Caml.Obj.repr t) len;
+  if len <= 0 || len > length t
+  then
+    raise_s
+      (Sexp.message "Array.unsafe_truncate got invalid len" [ "len", sexp_of_int len ]);
+  if len < length t then Caml.Obj.truncate (Caml.Obj.repr t) len
 ;;
 
 let filter_mapi t ~f =
@@ -420,32 +441,30 @@ let filter_mapi t ~f =
     match f i (unsafe_get t i) with
     | None -> ()
     | Some a ->
-      if !k = 0 then begin
-        r := create ~len:(length t) a
-      end;
+      if !k = 0 then r := create ~len:(length t) a;
       unsafe_set !r !k a;
-      incr k;
+      incr k
   done;
-  if !k > 0 then begin
+  if !k > 0
+  then (
     unsafe_truncate !r ~len:!k;
-    !r
-  end else
-    [||]
+    !r)
+  else [||]
+;;
 
-let filter_map t ~f =
-  filter_mapi t ~f:(fun _i a -> f a)
-
-let filter_opt t =
-  filter_map t ~f:Fn.id
+let filter_map t ~f = filter_mapi t ~f:(fun _i a -> f a)
+let filter_opt t = filter_map t ~f:Fn.id
 
 let iter2_exn t1 t2 ~f =
   if length t1 <> length t2 then invalid_arg "Array.iter2_exn";
   iteri t1 ~f:(fun i x1 -> f x1 t2.(i))
+;;
 
 let map2_exn t1 t2 ~f =
   let len = length t1 in
   if length t2 <> len then invalid_arg "Array.map2_exn";
   init len ~f:(fun i -> f t1.(i) t2.(i))
+;;
 
 let fold2_exn t1 t2 ~init ~f =
   if length t1 <> length t2 then invalid_arg "Array.fold2_exn";
@@ -453,62 +472,55 @@ let fold2_exn t1 t2 ~init ~f =
 ;;
 
 let filter t ~f = filter_map t ~f:(fun x -> if f x then Some x else None)
-
 let filteri t ~f = filter_mapi t ~f:(fun i x -> if f i x then Some x else None)
 
 let exists t ~f =
   let rec exists_loop t ~f i =
-    if i < 0
-    then false
-    else f t.(i) || exists_loop t ~f (i - 1)
+    if i < 0 then false else f t.(i) || exists_loop t ~f (i - 1)
   in
   exists_loop t ~f (length t - 1)
+;;
 
 let existsi t ~f =
   let rec existsi_loop t ~f i =
-    if i < 0
-    then false
-    else f i t.(i) || existsi_loop t ~f (i - 1)
+    if i < 0 then false else f i t.(i) || existsi_loop t ~f (i - 1)
   in
   existsi_loop t ~f (length t - 1)
+;;
 
 let mem t a ~equal = exists t ~f:(equal a)
 
 let for_all t ~f =
   let rec for_all_loop t ~f i =
-    if i < 0
-    then true
-    else f t.(i) && for_all_loop t ~f (i - 1)
+    if i < 0 then true else f t.(i) && for_all_loop t ~f (i - 1)
   in
   for_all_loop t ~f (length t - 1)
+;;
 
 let for_alli t ~f =
   let rec for_alli_loop t ~f i =
-    if i < 0
-    then true
-    else f i t.(i) && for_alli_loop t ~f (i - 1)
+    if i < 0 then true else f i t.(i) && for_alli_loop t ~f (i - 1)
   in
   for_alli_loop t ~f (length t - 1)
+;;
 
 let exists2_exn t1 t2 ~f =
   let rec exists2_exn_loop t1 t2 ~f i =
-    if i < 0
-    then false
-    else f t1.(i) t2.(i) || exists2_exn_loop t1 t2 ~f (i - 1)
+    if i < 0 then false else f t1.(i) t2.(i) || exists2_exn_loop t1 t2 ~f (i - 1)
   in
   let len = length t1 in
   if length t2 <> len then invalid_arg "Array.exists2_exn";
   exists2_exn_loop t1 t2 ~f (len - 1)
+;;
 
 let for_all2_exn t1 t2 ~f =
   let rec for_all2_loop t1 t2 ~f i =
-    if i < 0
-    then true
-    else f t1.(i) t2.(i) && for_all2_loop t1 t2 ~f (i - 1)
+    if i < 0 then true else f t1.(i) t2.(i) && for_all2_loop t1 t2 ~f (i - 1)
   in
   let len = length t1 in
   if length t2 <> len then invalid_arg "Array.for_all2_exn";
   for_all2_loop t1 t2 ~f (len - 1)
+;;
 
 let equal equal t1 t2 = length t1 = length t2 && for_all2_exn t1 t2 ~f:equal
 
@@ -517,11 +529,14 @@ let map_inplace t ~f =
   for i = 0 to length t - 1 do
     t.(i) <- f t.(i)
   done
+;;
 
 let findi t ~f =
   let rec findi_loop t ~f ~length i =
-    if i >= length then None
-    else if f i t.(i) then Some (i, t.(i))
+    if i >= length
+    then None
+    else if f i t.(i)
+    then Some (i, t.(i))
     else findi_loop t ~f ~length (i + 1)
   in
   let length = length t in
@@ -554,11 +569,12 @@ let find t ~f = Option.map (findi t ~f:(fun _i x -> f x)) ~f:(fun (_i, x) -> x)
 
 let find_map t ~f =
   let rec find_map_loop t ~f ~length i =
-    if i >= length then None
-    else
+    if i >= length
+    then None
+    else (
       match f t.(i) with
       | None -> find_map_loop t ~f ~length (i + 1)
-      | Some _ as res -> res
+      | Some _ as res -> res)
   in
   let length = length t in
   find_map_loop t ~f ~length 0
@@ -577,11 +593,12 @@ let find_map_exn =
 
 let find_mapi t ~f =
   let rec find_mapi_loop t ~f ~length i =
-    if i >= length then None
-    else
+    if i >= length
+    then None
+    else (
       match f i t.(i) with
       | None -> find_mapi_loop t ~f ~length (i + 1)
-      | Some _ as res -> res
+      | Some _ as res -> res)
   in
   let length = length t in
   find_mapi_loop t ~f ~length 0
@@ -602,34 +619,39 @@ let find_consecutive_duplicate t ~equal =
   let n = length t in
   if n <= 1
   then None
-  else begin
+  else (
     let result = ref None in
     let i = ref 1 in
     let prev = ref t.(0) in
     while !i < n do
       let cur = t.(!i) in
       if equal cur !prev
-      then (result := Some (!prev, cur); i := n)
-      else (prev := cur; incr i)
+      then (
+        result := Some (!prev, cur);
+        i := n)
+      else (
+        prev := cur;
+        incr i)
     done;
-    !result
-  end
+    !result)
 ;;
 
 let reduce t ~f =
-  if length t = 0 then None
-  else begin
+  if length t = 0
+  then None
+  else (
     let r = ref t.(0) in
     for i = 1 to length t - 1 do
       r := f !r t.(i)
     done;
-    Some !r
-  end
+    Some !r)
+;;
 
 let reduce_exn t ~f =
   match reduce t ~f with
   | None -> invalid_arg "Array.reduce_exn"
   | Some v -> v
+;;
 
 let permute = Array_permute.permute
 
@@ -637,63 +659,76 @@ let random_element_exn ?(random_state = Random.State.default) t =
   if is_empty t
   then failwith "Array.random_element_exn: empty array"
   else t.(Random.State.int random_state (length t))
+;;
 
 let random_element ?(random_state = Random.State.default) t =
-  try Some (random_element_exn ~random_state t)
-  with _ -> None
+  try Some (random_element_exn ~random_state t) with
+  | _ -> None
+;;
 
 let zip t1 t2 =
-  if length t1 <> length t2 then None
-  else Some (map2_exn t1 t2 ~f:(fun x1 x2 -> x1, x2))
+  if length t1 <> length t2 then None else Some (map2_exn t1 t2 ~f:(fun x1 x2 -> x1, x2))
+;;
 
 let zip_exn t1 t2 =
-  if length t1 <> length t2 then failwith "Array.zip_exn"
+  if length t1 <> length t2
+  then failwith "Array.zip_exn"
   else map2_exn t1 t2 ~f:(fun x1 x2 -> x1, x2)
+;;
 
 let unzip t =
   let n = length t in
-  if n = 0 then [||], [||]
-  else
+  if n = 0
+  then [||], [||]
+  else (
     let x, y = t.(0) in
     let res1 = create ~len:n x in
     let res2 = create ~len:n y in
     for i = 1 to n - 1 do
       let x, y = t.(i) in
       res1.(i) <- x;
-      res2.(i) <- y;
+      res2.(i) <- y
     done;
-    res1, res2
+    res1, res2)
+;;
 
 let sorted_copy t ~compare =
   let t1 = copy t in
   sort t1 ~compare;
   t1
+;;
 
 let partitioni_tf t ~f =
   let both = mapi t ~f:(fun i x -> if f i x then Either.First x else Either.Second x) in
-  let trues = filter_map both ~f:(function First x -> Some x | Second _ -> None) in
-  let falses = filter_map both ~f:(function First _ -> None | Second x -> Some x) in
-  (trues, falses)
+  let trues =
+    filter_map both ~f:(function
+      | First x -> Some x
+      | Second _ -> None)
+  in
+  let falses =
+    filter_map both ~f:(function
+      | First _ -> None
+      | Second x -> Some x)
+  in
+  trues, falses
+;;
 
-let partition_tf t ~f =
-  partitioni_tf t ~f:(fun _i x -> f x)
-
+let partition_tf t ~f = partitioni_tf t ~f:(fun _i x -> f x)
 let last t = t.(length t - 1)
 
 (* Convert to a sequence but does not attempt to protect against modification
    in the array. *)
 let to_sequence_mutable t =
   Sequence.unfold_step ~init:0 ~f:(fun i ->
-    if i >= length t
-    then Sequence.Step.Done
-    else Sequence.Step.Yield (t.(i), i+1))
+    if i >= length t then Sequence.Step.Done else Sequence.Step.Yield (t.(i), i + 1))
+;;
 
 let to_sequence t = to_sequence_mutable (copy t)
 
 let cartesian_product t1 t2 =
-  if is_empty t1 || is_empty t2 then
-    [||]
-  else
+  if is_empty t1 || is_empty t2
+  then [||]
+  else (
     let n1 = length t1 in
     let n2 = length t2 in
     let t = create ~len:(n1 * n2) (t1.(0), t2.(0)) in
@@ -701,26 +736,28 @@ let cartesian_product t1 t2 =
     for i1 = 0 to n1 - 1 do
       for i2 = 0 to n2 - 1 do
         t.(!r) <- (t1.(i1), t2.(i2));
-        incr r;
+        incr r
       done
     done;
-    t
+    t)
 ;;
 
 let transpose tt =
   if length tt = 0
   then Some [||]
-  else
+  else (
     let width = length tt in
     let depth = length tt.(0) in
     if exists tt ~f:(fun t -> length t <> depth)
     then None
-    else Some (init depth ~f:(fun d -> init width ~f:(fun w -> tt.(w).(d))))
+    else Some (init depth ~f:(fun d -> init width ~f:(fun w -> tt.(w).(d)))))
+;;
 
 let transpose_exn tt =
   match transpose tt with
-  | None -> invalid_arg "Array.transpose_exn";
+  | None -> invalid_arg "Array.transpose_exn"
   | Some tt' -> tt'
+;;
 
 include Binary_searchable.Make1 (struct
     type nonrec 'a t = 'a t
@@ -729,19 +766,21 @@ include Binary_searchable.Make1 (struct
     let length = length
   end)
 
-include
-  Blit.Make1
-    (struct
-      type nonrec 'a t = 'a t
-      let length = length
-      let create_like ~len t =
-        if len = 0
-        then [||]
-        else (assert (length t > 0); create ~len t.(0))
-      ;;
-      let unsafe_blit = blit
-    end)
-;;
+include Blit.Make1 (struct
+    type nonrec 'a t = 'a t
+
+    let length = length
+
+    let create_like ~len t =
+      if len = 0
+      then [||]
+      else (
+        assert (length t > 0);
+        create ~len t.(0))
+    ;;
+
+    let unsafe_blit = blit
+  end)
 
 let invariant invariant_a t = iter t ~f:invariant_a
 

@@ -16,4 +16,4 @@ include
 [@@@end]
 
 include Identifiable.S with type t := t
-include Invariant.S    with type t := t
+include Invariant.S with type t := t

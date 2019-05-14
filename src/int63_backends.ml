@@ -12,7 +12,9 @@ module type Int_or_more = sig
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
     end[@@ocaml.doc "@inline"]
   [@@@end]
+
   include Int_intf.S with type t := t
+
   val of_int : int -> t
   val to_int : t -> int option
   val to_int_trunc : t -> int
@@ -31,8 +33,10 @@ end
 
 module Native : Int_or_more with type t = private int = struct
   include Int
+
   let to_int x = Some x
   let to_int_trunc x = x
+
   (* [of_int32_exn] is a safe operation on platforms with 64-bit word sizes. *)
   let of_int32 = of_int32_exn
   let to_nativeint_trunc x = to_nativeint x
@@ -44,7 +48,8 @@ module Emulated : Int_or_more with type t = Int63_emul.t = Int63_emul
 
 let dynamic : (module Int_or_more) =
   match Word_size.word_size with
-  | W64 -> (module Native   : Int_or_more)
+  | W64 -> (module Native : Int_or_more)
   | W32 -> (module Emulated : Int_or_more)
+;;
 
 module Dynamic = (val dynamic)

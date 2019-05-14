@@ -1,1 +1,2 @@
-include Invariant_intf.Invariant (** @inline *)
+(** @inline *)
+include Invariant_intf.Invariant

@@ -24,31 +24,37 @@ include Floatable.S with type t := t
 
     The [validate_*] functions always fail if class is [Nan] or [Infinite]. *)
 include Identifiable.S with type t := t
+
 include Comparable.With_zero with type t := t
 
 (** [validate_ordinary] fails if class is [Nan] or [Infinite]. *)
 val validate_ordinary : t Validate.check
 
 val nan : t
-
 val infinity : t
 val neg_infinity : t
 
-val max_value : t                   (** Equal to [infinity]. *)
+(** Equal to [infinity]. *)
+val max_value : t
 
-val min_value : t                   (** Equal to [neg_infinity]. *)
+(** Equal to [neg_infinity]. *)
+val min_value : t
 
 val zero : t
 val one : t
 val minus_one : t
 
-val pi : t        (** The constant pi. *)
+(** The constant pi. *)
+val pi : t
 
-val sqrt_pi : t   (** The constant sqrt(pi). *)
+(** The constant sqrt(pi). *)
+val sqrt_pi : t
 
-val sqrt_2pi : t  (** The constant sqrt(2 * pi). *)
+(** The constant sqrt(2 * pi). *)
+val sqrt_2pi : t
 
-val euler : t     (** Euler-Mascheroni constant (γ). *)
+(** Euler-Mascheroni constant (γ). *)
+val euler : t
 
 (** The difference between 1.0 and the smallest exactly representable floating-point
     number greater than 1.0.  That is:
@@ -69,12 +75,13 @@ val max_finite_value : t
    - [min_positive_normal_value    = 2 ** -1022] *)
 
 val min_positive_subnormal_value : t
-val min_positive_normal_value    : t
+val min_positive_normal_value : t
 
 (** An order-preserving bijection between all floats except for nans, and all int64s with
     absolute value smaller than or equal to [2**63 - 2**52].  Note both 0. and -0. map to
     0L. *)
 val to_int64_preserve_order : t -> int64 option
+
 val to_int64_preserve_order_exn : t -> int64
 
 (** Returns [nan] if the absolute value of the argument is too large. *)
@@ -88,10 +95,9 @@ val one_ulp : [`Up | `Down] -> t -> t
 (** Note that this doesn't round trip in either direction.  For example, [Float.to_int
     (Float.of_int max_int) <> max_int]. *)
 val of_int : int -> t
+
 val to_int : t -> int
-
 val of_int63 : Int63.t -> t
-
 val of_int64 : int64 -> t
 val to_int64 : t -> int64
 
@@ -131,34 +137,36 @@ val to_int64 : t -> int64
     - [round_* i = i] for any float [i] that is an integer.
 
     - [iround_*_exn (of_int i) = i] for any int [i] with [-2**52 <= i <= 2**52]. *)
-val round      : ?dir:[`Zero|`Nearest|`Up|`Down] -> t -> t
-val iround     : ?dir:[`Zero|`Nearest|`Up|`Down] -> t -> int option
-val iround_exn : ?dir:[`Zero|`Nearest|`Up|`Down] -> t -> int
+val round : ?dir:[`Zero | `Nearest | `Up | `Down] -> t -> t
 
+val iround : ?dir:[`Zero | `Nearest | `Up | `Down] -> t -> int option
+val iround_exn : ?dir:[`Zero | `Nearest | `Up | `Down] -> t -> int
 val round_towards_zero : t -> t
-val round_down         : t -> t
-val round_up           : t -> t
-val round_nearest      : t -> t  (** Rounds half integers up. *)
+val round_down : t -> t
+val round_up : t -> t
 
-val round_nearest_half_to_even : t -> t  (** Rounds half integers to the even integer. *)
+(** Rounds half integers up. *)
+val round_nearest : t -> t
+
+(** Rounds half integers to the even integer. *)
+val round_nearest_half_to_even : t -> t
 
 val iround_towards_zero : t -> int option
-val iround_down         : t -> int option
-val iround_up           : t -> int option
-val iround_nearest      : t -> int option
-
+val iround_down : t -> int option
+val iround_up : t -> int option
+val iround_nearest : t -> int option
 val iround_towards_zero_exn : t -> int
-val iround_down_exn         : t -> int
-val iround_up_exn           : t -> int
-val iround_nearest_exn      : t -> int
-
-val int63_round_down_exn    : t -> Int63.t
-val int63_round_up_exn      : t -> Int63.t
+val iround_down_exn : t -> int
+val iround_up_exn : t -> int
+val iround_nearest_exn : t -> int
+val int63_round_down_exn : t -> Int63.t
+val int63_round_up_exn : t -> Int63.t
 val int63_round_nearest_exn : t -> Int63.t
 
 (** If [f <= iround_lbound || f >= iround_ubound], then [iround*] functions will refuse
     to round [f], returning [None] or raising as appropriate. *)
 val iround_lbound : t
+
 val iround_ubound : t
 
 (** [round_significant x ~significant_digits:n] rounds to the nearest number with [n]
@@ -245,23 +253,25 @@ val is_inf : t -> bool
 
 val min_inan : t -> t -> t
 val max_inan : t -> t -> t
-
-val ( +  ) : t -> t -> t
-val ( -  ) : t -> t -> t
-val ( /  ) : t -> t -> t
-val ( *  ) : t -> t -> t
+val ( + ) : t -> t -> t
+val ( - ) : t -> t -> t
+val ( / ) : t -> t -> t
+val ( * ) : t -> t -> t
 val ( ** ) : t -> t -> t
-
 val ( ~- ) : t -> t
 
 (** Returns the fractional part and the whole (i.e., integer) part. For example, [modf
     (-3.14)] returns [{ fractional = -0.14; integral = -3.; }]! *)
-module Parts : sig
+module Parts :
+sig
   type outer
   type t
+
   val fractional : t -> outer
   val integral : t -> outer
-end with type outer := t
+end
+with type outer := t
+
 val modf : t -> Parts.t
 
 (** [mod_float x y] returns a result with the same sign as [x].  It returns [nan] if [y]
@@ -281,36 +291,37 @@ val mod_float : t -> t -> t
     These are for modules that inherit from [t], since the infix operators are more
     convenient. *)
 val add : t -> t -> t
+
 val sub : t -> t -> t
 val neg : t -> t
 val scale : t -> t -> t
 val abs : t -> t
 
-
 (** A sub-module designed to be opened to make working with floats more convenient.  *)
 module O : sig
-  val ( +  ) : t -> t -> t
-  val ( -  ) : t -> t -> t
-  val ( *  ) : t -> t -> t
-  val ( /  ) : t -> t -> t
+  val ( + ) : t -> t -> t
+  val ( - ) : t -> t -> t
+  val ( * ) : t -> t -> t
+  val ( / ) : t -> t -> t
   val ( ** ) : t -> t -> t
   val ( ~- ) : t -> t
+
   include Comparisons.Infix with type t := t
 
-  val abs      : t -> t
-  val neg      : t -> t
-  val zero     : t
-  val of_int   : int -> t
+  val abs : t -> t
+  val neg : t -> t
+  val zero : t
+  val of_int : int -> t
   val of_float : float -> t
 end
 
 (** Similar to [O], except that operators are suffixed with a dot, allowing one to have
     both int and float operators in scope simultaneously. *)
 module O_dot : sig
-  val ( +.  ) : t -> t -> t
-  val ( -.  ) : t -> t -> t
-  val ( *.  ) : t -> t -> t
-  val ( /.  ) : t -> t -> t
+  val ( +. ) : t -> t -> t
+  val ( -. ) : t -> t -> t
+  val ( *. ) : t -> t -> t
+  val ( /. ) : t -> t -> t
   val ( **. ) : t -> t -> t
   val ( ~-. ) : t -> t
 end
@@ -328,8 +339,8 @@ val to_string : t -> string
     [to_string_hum ~decimals:3 ~strip_zero:true 1234.1999 = "1_234.2" ].  No delimiters
     are inserted to the right of the decimal. *)
 val to_string_hum
-  :  ?delimiter:char  (** defaults to ['_'] *)
-  -> ?decimals:int    (** defaults to [3] *)
+  :  ?delimiter:char (** defaults to ['_'] *)
+  -> ?decimals:int (** defaults to [3] *)
   -> ?strip_zero:bool (** defaults to [false] *)
   -> t
   -> string
@@ -485,13 +496,11 @@ external sqrt : t -> t = "caml_sqrt_float" "sqrt"
 [@@unboxed] [@@noalloc]
 
 (** Exponential. *)
-external exp : t -> t = "caml_exp_float" "exp"
-[@@unboxed] [@@noalloc]
+external exp : t -> t = "caml_exp_float" "exp" [@@unboxed] [@@noalloc]
 
 (** Natural logarithm. *)
 external log : t -> t = "caml_log_float" "log"
 [@@unboxed] [@@noalloc]
-
 
 (** Excluding nan the floating-point "number line" looks like:
     {v
@@ -531,6 +540,7 @@ val is_finite : t -> bool
 
 (*_ Caution: If we remove this sig item, [sign] will still be present from
   [Comparable.With_zero]. *)
+
 val sign : t -> Sign.t
 [@@deprecated "[since 2016-01] Replace [sign] with [robust_sign] or [sign_exn]"]
 
@@ -554,7 +564,8 @@ val sign_or_nan : t -> Sign_or_nan.t
       create_ieee_exn ~negative:false ~exponent ~mantissa
       = 2 ** (exponent - 1023) * (1 + (2 ** -52) * mantissa)
     ]} *)
-val create_ieee     : negative:bool -> exponent:int -> mantissa:Int63.t -> t Or_error.t
+val create_ieee : negative:bool -> exponent:int -> mantissa:Int63.t -> t Or_error.t
+
 val create_ieee_exn : negative:bool -> exponent:int -> mantissa:Int63.t -> t
 val ieee_negative : t -> bool
 val ieee_exponent : t -> int
@@ -569,10 +580,12 @@ module Terse : sig
       include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
     end[@@ocaml.doc "@inline"]
   [@@@end]
+
   include Stringable.S with type t := t
 end
 
 (**/**)
+
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
   https://opensource.janestreet.com/standards/#private-submodules *)

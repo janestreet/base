@@ -7,5 +7,5 @@ let%expect_test _ =
     (W32 W32) |}];
   print_s [%message (W64 : t)];
   [%expect {|
-    (W64 W64) |}];
+    (W64 W64) |}]
 ;;

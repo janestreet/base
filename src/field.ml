@@ -32,28 +32,26 @@
    every single fold.) *)
 
 module For_generated_code = struct
-  type ('perm, 'record, 'field) t = {
-    force_variance : 'perm -> unit;
-    (* force [t] to be contravariant in ['perm], because phantom type variables on
-       concrete types don't work that well otherwise (using :> can remove them easily) *)
-    name : string;
-    setter : ('record -> 'field -> unit) option;
-    getter : ('record -> 'field);
-    fset   : ('record -> 'field -> 'record);
-  }
+  type ('perm, 'record, 'field) t =
+    { force_variance : 'perm -> unit
+    ; (* force [t] to be contravariant in ['perm], because phantom type variables on
+         concrete types don't work that well otherwise (using :> can remove them easily) *)
+      name : string
+    ; setter : ('record -> 'field -> unit) option
+    ; getter : 'record -> 'field
+    ; fset : 'record -> 'field -> 'record
+    }
 end
 
 type ('perm, 'record, 'field) t_with_perm =
   | Field of ('perm, 'record, 'field) For_generated_code.t
-type ('record, 'field) t = ([ `Read | `Set_and_create], 'record, 'field) t_with_perm
-type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
+
+type ('record, 'field) t = ([`Read | `Set_and_create], 'record, 'field) t_with_perm
+type ('record, 'field) readonly_t = ([`Read], 'record, 'field) t_with_perm
 
 let name (Field field) = field.name
-
 let get (Field field) r = field.getter r
-
 let fset (Field field) r v = field.fset r v
-
 let setter (Field field) = field.setter
 
 type ('perm, 'record, 'result) user =
@@ -65,3 +63,4 @@ let updater (Field field) =
   match field.setter with
   | None -> None
   | Some setter -> Some (fun r ~f -> setter r (f (field.getter r)))
+;;

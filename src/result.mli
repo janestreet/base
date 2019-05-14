@@ -37,38 +37,34 @@ include
   end[@@ocaml.doc "@inline"]
 [@@@end]
 
-include Monad.S2 with type ('a,'err) t := ('a,'err) t
+include Monad.S2 with type ('a, 'err) t := ('a, 'err) t
 
 val ignore : (_, 'err) t -> (unit, 'err) t
 [@@deprecated "[since 2019-02] Use [ignore_m] instead"]
+
 
 val fail : 'err -> (_, 'err) t
 
 (** e.g., [failf "Couldn't find bloogle %s" (Bloogle.to_string b)]. *)
 val failf : ('a, unit, string, (_, string) t) format4 -> 'a
 
-val is_ok    : (_, _) t -> bool
+val is_ok : (_, _) t -> bool
 val is_error : (_, _) t -> bool
-
-val ok             : ('ok, _     ) t -> 'ok option
-val ok_exn         : ('ok, exn   ) t -> 'ok
+val ok : ('ok, _) t -> 'ok option
+val ok_exn : ('ok, exn) t -> 'ok
 val ok_or_failwith : ('ok, string) t -> 'ok
-
-val error : (_  , 'err) t -> 'err option
-
+val error : (_, 'err) t -> 'err option
 val of_option : 'ok option -> error:'err -> ('ok, 'err) t
-
-val iter       : ('ok, _   ) t -> f:('ok  -> unit) -> unit
-val iter_error : (_  , 'err) t -> f:('err -> unit) -> unit
-
-val map       : ('ok, 'err) t -> f:('ok  -> 'c) -> ('c , 'err) t
-val map_error : ('ok, 'err) t -> f:('err -> 'c) -> ('ok, 'c  ) t
+val iter : ('ok, _) t -> f:('ok -> unit) -> unit
+val iter_error : (_, 'err) t -> f:('err -> unit) -> unit
+val map : ('ok, 'err) t -> f:('ok -> 'c) -> ('c, 'err) t
+val map_error : ('ok, 'err) t -> f:('err -> 'c) -> ('ok, 'c) t
 
 (** Returns [Ok] if both are [Ok] and [Error] otherwise. *)
 val combine
   :  ('ok1, 'err) t
   -> ('ok2, 'err) t
-  -> ok: ('ok1 -> 'ok2 -> 'ok3)
+  -> ok:('ok1 -> 'ok2 -> 'ok3)
   -> err:('err -> 'err -> 'err)
   -> ('ok3, 'err) t
 
@@ -87,24 +83,23 @@ val combine_errors_unit : (unit, 'err) t list -> (unit, 'err list) t
     {[
       let rics, errors = List.partition_map ~f:Result.ok_fst
                            (List.map ~f:ric_of_ticker ["AA"; "F"; "CSCO"; "AAPL"]) ]} *)
-val ok_fst : ('ok, 'err) t -> [ `Fst of 'ok | `Snd of 'err ]
+val ok_fst : ('ok, 'err) t -> [`Fst of 'ok | `Snd of 'err]
 
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
-val ok_if_true : bool -> error : 'err -> (unit, 'err) t
+val ok_if_true : bool -> error:'err -> (unit, 'err) t
 
 val try_with : (unit -> 'a) -> ('a, exn) t
 
 (** [ok_unit = Ok ()], used to avoid allocation as a performance hack. *)
 val ok_unit : (unit, _) t
-[@@deprecated "[since 2019-04] Use [Ok ()], which is also statically allocated, instead."]
+[@@deprecated
+  "[since 2019-04] Use [Ok ()], which is also statically allocated, instead."]
 
 module Export : sig
-  type ('ok, 'err) _result
-    = ('ok, 'err) t
-    = Ok of 'ok
+  type ('ok, 'err) _result = ('ok, 'err) t =
+    | Ok of 'ok
     | Error of 'err
 
-  val is_ok    : (_, _) t -> bool
+  val is_ok : (_, _) t -> bool
   val is_error : (_, _) t -> bool
 end
-

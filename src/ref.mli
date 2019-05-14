@@ -3,8 +3,7 @@
 
 open! Import
 
-type 'a t = 'a Caml.ref = { mutable contents : 'a }
-[@@deriving_inline compare, equal, sexp]
+type 'a t = 'a Caml.ref = { mutable contents : 'a } [@@deriving_inline compare, equal, sexp]
 include
   sig
     [@@@ocaml.warning "-32"]
@@ -15,8 +14,9 @@ include
 [@@@end]
 
 (*_ defined as externals to avoid breaking the inliner *)
-external create : 'a   -> 'a t       = "%makemutable"
-external ( ! )  : 'a t -> 'a         = "%field0"
+
+external create : 'a -> 'a t = "%makemutable"
+external ( ! ) : 'a t -> 'a = "%field0"
 external ( := ) : 'a t -> 'a -> unit = "%setfield0"
 
 (** [swap t1 t2] swaps the values in [t1] and [t2]. *)

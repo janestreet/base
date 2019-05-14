@@ -13,8 +13,8 @@ include
 
 include Binary_searchable.S1 with type 'a t := 'a t
 
-include Container.S1 with type 'a t := 'a t
 
+include Container.S1 with type 'a t := 'a t
 include Invariant.S1 with type 'a t := 'a t
 
 (** Maximum length of a normal array.  The maximum length of a float array is
@@ -106,12 +106,14 @@ val map : 'a t -> f:('a -> 'b) -> 'b t
 
 (** [folding_map] is a version of [map] that threads an accumulator through calls to
     [f]. *)
-val folding_map  : 'a t -> init:'b -> f:(       'b -> 'a -> 'b * 'c) -> 'c t
+val folding_map : 'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) -> 'c t
+
 val folding_mapi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b * 'c) -> 'c t
 
 (** [Array.fold_map] is a combination of [Array.fold] and [Array.map] that threads an
     accumulator through calls to [f]. *)
-val fold_map  : 'a t -> init:'b -> f:(       'b -> 'a -> 'b * 'c) -> 'b * 'c t
+val fold_map : 'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) -> 'b * 'c t
+
 val fold_mapi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b * 'c) -> 'b * 'c t
 
 (** Like {!Array.iter}, but the function is applied to the index of the element as first
@@ -128,6 +130,7 @@ val foldi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b) -> 'b
     where [n] is the length of the array [a]. *)
 val fold_right : 'a t -> f:('a -> 'b -> 'b) -> init:'b -> 'b
 
+
 (** All sort functions in this module sort in increasing order by default.  *)
 
 (** [sort] uses constant heap space. [stable_sort] uses linear heap space.
@@ -135,8 +138,8 @@ val fold_right : 'a t -> f:('a -> 'b -> 'b) -> init:'b -> 'b
     To sort only part of the array, specify [pos] to be the index to start sorting from
     and [len] indicating how many elements to sort. *)
 val sort : ?pos:int -> ?len:int -> 'a t -> compare:('a -> 'a -> int) -> unit
-val stable_sort : 'a t -> compare:('a -> 'a -> int) -> unit
 
+val stable_sort : 'a t -> compare:('a -> 'a -> int) -> unit
 val is_sorted : 'a t -> compare:('a -> 'a -> int) -> bool
 
 (** [is_sorted_strictly xs ~compare] iff [is_sorted xs ~compare] and no two
@@ -144,18 +147,17 @@ val is_sorted : 'a t -> compare:('a -> 'a -> int) -> bool
 val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) -> bool
 
 (** Like [List.concat_map], [List.concat_mapi]. *)
-val concat_map  : 'a t -> f:(       'a -> 'b array) -> 'b array
+val concat_map : 'a t -> f:('a -> 'b array) -> 'b array
+
 val concat_mapi : 'a t -> f:(int -> 'a -> 'b array) -> 'b array
-
 val partition_tf : 'a t -> f:('a -> bool) -> 'a t * 'a t
-
 val partitioni_tf : 'a t -> f:(int -> 'a -> bool) -> 'a t * 'a t
-
 val cartesian_product : 'a t -> 'b t -> ('a * 'b) t
 
 (** [transpose] in the sense of a matrix transpose.  It returns [None] if the arrays are
     not all the same length. *)
-val transpose     : 'a t t -> 'a t t option
+val transpose : 'a t t -> 'a t t option
+
 val transpose_exn : 'a t t -> 'a t t
 
 (** [filter_opt array] returns a new array where [None] entries are omitted and [Some x]
@@ -183,9 +185,7 @@ val counti : 'a t -> f:(int -> 'a -> bool) -> int
     aren't the same. *)
 
 val iter2_exn : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit
-
 val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
-
 val fold2_exn : 'a t -> 'b t -> init:'c -> f:('c -> 'a -> 'b -> 'c) -> 'c
 
 (** [for_all2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
@@ -252,7 +252,8 @@ val find_consecutive_duplicate : 'a t -> equal:('a -> 'a -> bool) -> ('a * 'a) o
 
 (** [reduce f [a1; ...; an]] is [Some (f (... (f (f a1 a2) a3) ...) an)].  Returns [None]
     on the empty array. *)
-val reduce     : 'a t -> f:('a -> 'a -> 'a) -> 'a option
+val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
+
 val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 
 (** [permute ?random_state t] randomly permutes [t] in place.
@@ -266,11 +267,13 @@ val permute : ?random_state:Random.State.t -> 'a t -> unit
 
     [random_element] side-effects [random_state] by calling [Random.State.int]. If
     [random_state] is not supplied, [random_element] uses [Random.State.default]. *)
-val random_element     : ?random_state:Random.State.t -> 'a t -> 'a option
+val random_element : ?random_state:Random.State.t -> 'a t -> 'a option
+
 val random_element_exn : ?random_state:Random.State.t -> 'a t -> 'a
 
 (** [zip] is like [List.zip], but for arrays. *)
-val zip     : 'a t -> 'b t -> ('a * 'b) t option
+val zip : 'a t -> 'b t -> ('a * 'b) t option
+
 val zip_exn : 'a t -> 'b t -> ('a * 'b) t
 
 (** [unzip] is like [List.unzip], but for arrays. *)
@@ -281,7 +284,6 @@ val unzip : ('a * 'b) t -> 'a t * 'b t
 val sorted_copy : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 val last : 'a t -> 'a
-
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
 (** [unsafe_truncate t ~len] drops [length t - len] elements from the end of [t], changing
@@ -296,7 +298,6 @@ val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
     array. *)
 val unsafe_truncate : _ t -> len:int -> unit
 
-
 (** The input array is copied internally so that future modifications of it do not change
     the sequence. *)
 val to_sequence : 'a t -> 'a Sequence.t
@@ -306,26 +307,31 @@ val to_sequence : 'a t -> 'a Sequence.t
 val to_sequence_mutable : 'a t -> 'a Sequence.t
 
 (**/**)
+
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
   https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   module Sort : sig
     module type Sort = sig
-      val sort
-        :  'a t
-        -> compare:('a -> 'a -> int)
-        -> left:int
-        -> right:int
-        -> unit
+      val sort : 'a t -> compare:('a -> 'a -> int) -> left:int -> right:int -> unit
     end
 
     module Insertion_sort : Sort
     module Heap_sort : Sort
+
     module Intro_sort : sig
       include Sort
+
       val five_element_sort
-        : 'a t -> compare:('a -> 'a -> int) -> int -> int -> int -> int -> int -> unit
+        :  'a t
+        -> compare:('a -> 'a -> int)
+        -> int
+        -> int
+        -> int
+        -> int
+        -> int
+        -> unit
     end
   end
 end

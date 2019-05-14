@@ -25,5 +25,5 @@ let () =
       "Emulated"
   in
   let oc = open_out output in
-  Printf.fprintf oc "include Int63_backends.%s" backend;
+  Printf.fprintf oc "include Int63_backends.%s\n" backend;
   close_out oc

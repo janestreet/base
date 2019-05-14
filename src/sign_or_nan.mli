@@ -3,7 +3,12 @@
 
 open! Import
 
-type t = Neg | Zero | Pos | Nan [@@deriving_inline enumerate, hash]
+type t =
+  | Neg
+  | Zero
+  | Pos
+  | Nan
+[@@deriving_inline enumerate, hash]
 include
   sig
     [@@@ocaml.warning "-32"]

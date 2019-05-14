@@ -32,12 +32,9 @@ end
 
 val of_int : int -> t
 val to_int : t -> int option
-
 val of_int32 : Int32.t -> t
 val to_int32 : t -> Int32.t option
-
 val of_int64 : Int64.t -> t option
-
 val of_nativeint : nativeint -> t option
 val to_nativeint : t -> nativeint option
 
@@ -70,6 +67,7 @@ val random_incl : ?state:Random.State.t -> t -> t -> t
 val floor_log2 : t -> int
 
 (**/**)
+
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
   https://opensource.janestreet.com/standards/#private-submodules *)
@@ -79,9 +77,10 @@ module Private : sig
       representation (e.g., see core_int63.ml). *)
   module Repr : sig
     type ('underlying_type, 'intermediate_type) t =
-      | Int   : (int   , int         ) t
-      | Int64 : (int64 , Int63_emul.t) t
+      | Int : (int, int) t
+      | Int64 : (int64, Int63_emul.t) t
   end
+
   val repr : (t, t) Repr.t
 
   module Emul = Int63_emul

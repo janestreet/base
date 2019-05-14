@@ -29,6 +29,6 @@ module Non_short_circuiting : sig
       requires branching instructions to implement. The operators below are
       instead branch-free, and therefore not short-circuiting. *)
 
-  val (&&) : t -> t -> t
-  val (||) : t -> t -> t
+  val ( && ) : t -> t -> t
+  val ( || ) : t -> t -> t
 end

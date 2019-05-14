@@ -2,11 +2,9 @@ open! Import
 
 let invalid_argf = Printf.invalid_argf
 
-let [@inline never] slow_check_pos_len_exn ~pos ~len ~total_length =
-  if pos < 0
-  then invalid_argf "Negative position: %d" pos ();
-  if len < 0
-  then invalid_argf "Negative length: %d" len ();
+let[@inline never] slow_check_pos_len_exn ~pos ~len ~total_length =
+  if pos < 0 then invalid_argf "Negative position: %d" pos ();
+  if len < 0 then invalid_argf "Negative length: %d" len ();
   (* We use [pos > total_length - len] rather than [pos + len > total_length] to avoid the
      possibility of overflow. *)
   if pos > total_length - len
@@ -26,19 +24,23 @@ let check_pos_len_exn ~pos ~len ~total_length =
      [total_length - len - pos < 0], we need to test for [pos + len] overflow as
      well. *)
   let stop = pos + len in
-  if pos lor len lor stop lor (total_length - stop) < 0 then
-    slow_check_pos_len_exn ~pos ~len ~total_length
+  if pos lor len lor stop lor (total_length - stop) < 0
+  then slow_check_pos_len_exn ~pos ~len ~total_length
 ;;
 
 let get_pos_len_exn ?(pos = 0) ?len () ~total_length =
-  let len = match len with Some i -> i | None -> total_length - pos in
+  let len =
+    match len with
+    | Some i -> i
+    | None -> total_length - pos
+  in
   check_pos_len_exn ~pos ~len ~total_length;
   pos, len
 ;;
 
 let get_pos_len ?pos ?len () ~total_length =
-  try Result.Ok (get_pos_len_exn () ?pos ?len ~total_length)
-  with Invalid_argument s -> Or_error.error_string s
+  try Result.Ok (get_pos_len_exn () ?pos ?len ~total_length) with
+  | Invalid_argument s -> Or_error.error_string s
 ;;
 
 module Private = struct

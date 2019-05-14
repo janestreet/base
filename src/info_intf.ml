@@ -34,7 +34,6 @@
 open! Import
 
 module type S = sig
-
   (** Serialization and comparison force the lazy message. *)
   type t [@@deriving_inline compare, hash, sexp]
   include
@@ -68,22 +67,23 @@ module type S = sig
       backslashes. *)
   val to_string_hum_deprecated : t -> string
 
+
   val of_string : string -> t
 
   (** Be careful that the body of the lazy or thunk does not access mutable data, since it
       will only be called at an undetermined later point. *)
 
-  val of_lazy   : string Lazy.t    -> t
-  val of_thunk  : (unit -> string) -> t
-  val of_lazy_t : t Lazy.t         -> t
+  val of_lazy : string Lazy.t -> t
+  val of_thunk : (unit -> string) -> t
+  val of_lazy_t : t Lazy.t -> t
 
   (** For [create message a sexp_of_a], [sexp_of_a a] is lazily computed, when the info is
       converted to a sexp.  So if [a] is mutated in the time between the call to [create]
       and the sexp conversion, those mutations will be reflected in the sexp.  Use
       [~strict:()] to force [sexp_of_a a] to be computed immediately. *)
   val create
-    :  ?here   : Source_code_position0.t
-    -> ?strict : unit
+    :  ?here:Source_code_position0.t
+    -> ?strict:unit
     -> string
     -> 'a
     -> ('a -> Sexp.t)
@@ -113,26 +113,27 @@ module type S = sig
       [~backtrace:`Get] attaches the backtrace for the most recent exception.  The same
       caveats as for [Printexc.print_backtrace] apply.  [~backtrace:(`This s)] attaches
       the backtrace [s].  The default is no backtrace. *)
-  val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> t
-  val to_exn : t -> exn
+  val of_exn : ?backtrace:[`Get | `This of string] -> exn -> t
 
+  val to_exn : t -> exn
   val pp : Formatter.t -> t -> unit
 
-  module Internal_repr : sig
+  module Internal_repr :
+  sig
     type info = t
 
     (** The internal representation.  It is exposed so that we can write efficient
         serializers outside of this module. *)
     type t =
       | Could_not_construct of Sexp.t
-      | String              of string
-      | Exn                 of exn
-      | Sexp                of Sexp.t
-      | Tag_sexp            of string * Sexp.t * Source_code_position0.t option
-      | Tag_t               of string * t
-      | Tag_arg             of string * Sexp.t * t
-      | Of_list             of int option * t list
-      | With_backtrace      of t * string (** The second argument is the backtrace *)
+      | String of string
+      | Exn of exn
+      | Sexp of Sexp.t
+      | Tag_sexp of string * Sexp.t * Source_code_position0.t option
+      | Tag_t of string * t
+      | Tag_arg of string * Sexp.t * t
+      | Of_list of int option * t list
+      | With_backtrace of t * string  (** The second argument is the backtrace *)
     [@@deriving_inline sexp_of]
     include
       sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
@@ -141,7 +142,8 @@ module type S = sig
 
     val of_info : info -> t
     val to_info : t -> info
-  end with type info := t
+  end
+  with type info := t
 end
 
 module type Info = sig

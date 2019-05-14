@@ -25,23 +25,22 @@ include
     [Applicative.of_Monad(Or_error)] would give -- [apply (Error e1) (Error e2)] returns
     the combination of [e1] and [e2], whereas it would only return [e1] if it were defined
     using [bind]. *)
-include Applicative.S      with type 'a t := 'a t
-include Invariant.S1       with type 'a t := 'a t
-include Monad.S            with type 'a t := 'a t
+include Applicative.S with type 'a t := 'a t
 
-val is_ok    : _ t -> bool
+include Invariant.S1 with type 'a t := 'a t
+include Monad.S with type 'a t := 'a t
+
+val is_ok : _ t -> bool
 val is_error : _ t -> bool
-
-val ignore : _ t -> unit t
-[@@deprecated "[since 2019-02] Use [ignore_m] instead"]
+val ignore : _ t -> unit t [@@deprecated "[since 2019-02] Use [ignore_m] instead"]
 
 (** [try_with f] catches exceptions thrown by [f] and returns them in the [Result.t] as an
     [Error.t].  [try_with_join] is like [try_with], except that [f] can throw exceptions
     or return an [Error] directly, without ending up with a nested error; it is equivalent
     to [Result.join (try_with f)]. *)
-val try_with      : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a  ) -> 'a t
-val try_with_join : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a t) -> 'a t
+val try_with : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a) -> 'a t
 
+val try_with_join : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a t) -> 'a t
 
 (** [ok t] returns [None] if [t] is an [Error], and otherwise returns the contents of the
     [Ok] constructor. *)
@@ -52,12 +51,12 @@ val ok : 'ok t -> 'ok option
 val ok_exn : 'a t -> 'a
 
 (** [of_exn ?backtrace exn] is [Error (Error.of_exn ?backtrace exn)]. *)
-val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> _ t
+val of_exn : ?backtrace:[`Get | `This of string] -> exn -> _ t
 
 (** [of_exn_result ?backtrace (Ok a) = Ok a]
 
     [of_exn_result ?backtrace (Error exn) = of_exn ?backtrace exn] *)
-val of_exn_result : ?backtrace:[ `Get | `This of string ] -> ('a, exn) Result.t -> 'a t
+val of_exn_result : ?backtrace:[`Get | `This of string] -> ('a, exn) Result.t -> 'a t
 
 (** [error] is a wrapper around [Error.create]:
 
@@ -70,12 +69,7 @@ val of_exn_result : ?backtrace:[ `Get | `This of string ] -> ('a, exn) Result.t 
     to a sexp.  So, if [a] is mutated in the time between the call to [create] and the
     sexp conversion, those mutations will be reflected in the sexp.  Use [~strict:()] to
     force [sexp_of_a a] to be computed immediately. *)
-val error
-  :  ?strict : unit
-  -> string
-  -> 'a
-  -> ('a -> Sexp.t)
-  -> _ t
+val error : ?strict:unit -> string -> 'a -> ('a -> Sexp.t) -> _ t
 
 val error_s : Sexp.t -> _ t
 
@@ -90,6 +84,7 @@ val errorf : ('a, unit, string, _ t) format4 -> 'a
 (** [tag t ~tag] is [Result.map_error t ~f:(Error.tag ~tag)].
     [tag_arg] is similar. *)
 val tag : 'a t -> tag:string -> 'a t
+
 val tag_s : 'a t -> tag:Sexp.t -> 'a t
 val tag_arg : 'a t -> string -> 'b -> ('b -> Sexp.t) -> 'a t
 
@@ -99,9 +94,9 @@ val tag_arg : 'a t -> string -> 'b -> ('b -> Sexp.t) -> 'a t
     the function that is unimplemented. *)
 val unimplemented : string -> _ t
 
-val map        : 'a t -> f:('a      -> 'b)   -> 'b t
-val iter       : 'a t -> f:('a      -> unit) -> unit
-val iter_error : _  t -> f:(Error.t -> unit) -> unit
+val map : 'a t -> f:('a -> 'b) -> 'b t
+val iter : 'a t -> f:('a -> unit) -> unit
+val iter_error : _ t -> f:(Error.t -> unit) -> unit
 
 (** [combine_errors ts] returns [Ok] if every element in [ts] is [Ok], else it returns
     [Error] with all the errors in [ts].  More precisely:

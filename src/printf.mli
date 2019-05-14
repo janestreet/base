@@ -89,14 +89,14 @@ open! Import0
 
 (** Same as [fprintf], but does not print anything. Useful for ignoring some material when
     conditionally printing. *)
-val ifprintf : 'a ->            ('r, 'a, 'c, unit)        format4 -> 'r
+val ifprintf : 'a -> ('r, 'a, 'c, unit) format4 -> 'r
 
 (** Same as [fprintf], but instead of printing on an output channel, returns a string. *)
-val sprintf  :                  ('r, unit, string)        format  -> 'r
+val sprintf : ('r, unit, string) format -> 'r
 
 (** Same as [fprintf], but instead of printing on an output channel, appends the formatted
     arguments to the given extensible buffer. *)
-val bprintf  : Caml.Buffer.t -> ('r, Caml.Buffer.t, unit) format  -> 'r
+val bprintf : Caml.Buffer.t -> ('r, Caml.Buffer.t, unit) format -> 'r
 
 (** Same as [sprintf], but instead of returning the string, passes it to the first
     argument. *)
@@ -104,7 +104,11 @@ val ksprintf : (string -> 'a) -> ('r, unit, string, 'a) format4 -> 'r
 
 (** Same as [bprintf], but instead of returning immediately, passes the buffer, after
     printing, to its first argument. *)
-val kbprintf : (Caml.Buffer.t -> 'a) -> Caml.Buffer.t -> ('r, Caml.Buffer.t, unit, 'a) format4 -> 'r
+val kbprintf
+  :  (Caml.Buffer.t -> 'a)
+  -> Caml.Buffer.t
+  -> ('r, Caml.Buffer.t, unit, 'a) format4
+  -> 'r
 
 (** {6 Formatting error and exit functions}
 
@@ -123,7 +127,6 @@ val kbprintf : (Caml.Buffer.t -> 'a) -> Caml.Buffer.t -> ('r, Caml.Buffer.t, uni
     rarely arise as formatting positional parameters (they can do with e.g. "%a", but not
     in a useful way) so they serve as an effective signpost for
     "end of formatting arguments". *)
-
 
 (** Raises [Failure]. *)
 val failwithf : ('r, unit, string, unit -> _) format4 -> 'r

@@ -21,8 +21,9 @@ module type S = sig
       include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
     end[@@ocaml.doc "@inline"]
   [@@@end]
-  include Stringable.S     with type t := t
-  include Comparable.S     with type t := t
+
+  include Stringable.S with type t := t
+  include Comparable.S with type t := t
   include Pretty_printer.S with type t := t
 end
 
@@ -52,10 +53,12 @@ module Make (M : sig
         include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
       end[@@ocaml.doc "@inline"]
     [@@@end]
+
     include Stringable.S with type t := t
-    val module_name : string  (** For registering the pretty printer. *)
-  end) : S
-  with type t := M.t
+
+    (** For registering the pretty printer. *)
+    val module_name : string
+  end) : S with type t := M.t
 
 module Make_using_comparator (M : sig
     type t [@@deriving_inline compare, hash, sexp]
@@ -69,9 +72,9 @@ module Make_using_comparator (M : sig
         include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
       end[@@ocaml.doc "@inline"]
     [@@@end]
+
     include Comparator.S with type t := t
     include Stringable.S with type t := t
+
     val module_name : string
-  end) : S
-  with type t := M.t
-  with type comparator_witness := M.comparator_witness
+  end) : S with type t := M.t with type comparator_witness := M.comparator_witness

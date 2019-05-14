@@ -2,7 +2,10 @@
 
 open! Import
 
-type t = W32 | W64 [@@deriving_inline sexp_of]
+type t =
+  | W32
+  | W64
+[@@deriving_inline sexp_of]
 include
   sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   end[@@ocaml.doc "@inline"]

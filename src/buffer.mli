@@ -5,4 +5,5 @@
     quadratic time when strings are concatenated pairwise).
 *)
 
-include Buffer_intf.Buffer (** @inline *)
+(** @inline *)
+include Buffer_intf.Buffer

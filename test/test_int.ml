@@ -1,15 +1,15 @@
 open! Import
 open! Int
 
-let%expect_test "hash coherence" [@tags "64-bits-only"] =
+let%expect_test ("hash coherence"[@tags "64-bits-only"]) =
   check_int_hash_coherence [%here] (module Int);
-  [%expect {| |}];
+  [%expect {| |}]
 ;;
 
 let%expect_test "[max_value_30_bits]" =
   print_s [%sexp (max_value_30_bits : t)];
   [%expect {|
-    1_073_741_823 |}];
+    1_073_741_823 |}]
 ;;
 
 let%expect_test "hex" =
@@ -22,17 +22,18 @@ let%expect_test "hex" =
     (n (Ok 7_263))
   |}];
   test "0x1c5f NON-HEX-GARBAGE";
-  [%expect {|
+  [%expect
+    {|
     (n (
       Error (
         Failure
         "Base.Int.Hex.of_string: invalid input \"0x1c5f NON-HEX-GARBAGE\"")))
   |}]
+;;
 
 let%test_module "Hex" =
   (module struct
-
-    let f (i,s_hum) =
+    let f (i, s_hum) =
       let s = String.filter s_hum ~f:(fun c -> not (Char.equal c '_')) in
       let sexp_hum = Sexp.Atom s_hum in
       let sexp = Sexp.Atom s in
@@ -42,11 +43,12 @@ let%test_module "Hex" =
       [%test_result: string] ~message:"to_string" ~expect:s (Hex.to_string i);
       [%test_result: string] ~message:"to_string_hum" ~expect:s_hum (Hex.to_string_hum i);
       [%test_result: int] ~message:"of_string" ~expect:i (Hex.of_string s);
-      [%test_result: int] ~message:"of_string[human]" ~expect:i (Hex.of_string s_hum);
+      [%test_result: int] ~message:"of_string[human]" ~expect:i (Hex.of_string s_hum)
     ;;
 
     let%test_unit _ =
-      List.iter ~f
+      List.iter
+        ~f
         [ 0, "0x0"
         ; 1, "0x1"
         ; 2, "0x2"
@@ -60,37 +62,38 @@ let%test_module "Hex" =
         ; -1, "-0x1"
         ; -2, "-0x2"
         ; -1_000_000, "-0xf_4240"
-        ; max_value,
-          (match num_bits with
-           | 31 -> "0x3fff_ffff"
-           | 32 -> "0x7fff_ffff"
-           | 63 -> "0x3fff_ffff_ffff_ffff"
-           | _  -> assert false)
-        ; min_value,
-          (match num_bits with
-           | 31 -> "-0x4000_0000"
-           | 32 -> "-0x8000_0000"
-           | 63 -> "-0x4000_0000_0000_0000"
-           | _  -> assert false)
+        ; ( max_value
+          , match num_bits with
+          | 31 -> "0x3fff_ffff"
+          | 32 -> "0x7fff_ffff"
+          | 63 -> "0x3fff_ffff_ffff_ffff"
+          | _ -> assert false )
+        ; ( min_value
+          , match num_bits with
+          | 31 -> "-0x4000_0000"
+          | 32 -> "-0x8000_0000"
+          | 63 -> "-0x4000_0000_0000_0000"
+          | _ -> assert false )
         ]
+    ;;
 
-    let%test_unit _ =
-      [%test_result: int] (Hex.of_string "0XA") ~expect:10
+    let%test_unit _ = [%test_result: int] (Hex.of_string "0XA") ~expect:10
 
     let%test_unit _ =
       match Option.try_with (fun () -> Hex.of_string "0") with
       | None -> ()
       | Some _ -> failwith "Hex must always have a 0x prefix."
+    ;;
 
     let%test_unit _ =
       match Option.try_with (fun () -> Hex.of_string "0x_0") with
       | None -> ()
       | Some _ -> failwith "Hex may not have '_' before the first digit."
-
+    ;;
   end)
+;;
 
-let%test _ = (neg 5 + 5 = 0)
-
+let%test _ = neg 5 + 5 = 0
 let%test _ = pow min_value 1 = min_value
 let%test _ = pow max_value 1 = max_value
 
@@ -99,19 +102,19 @@ let%test "comparisons" =
   let valid_compare x y =
     let result = compare x y in
     let expect = original_compare x y in
-    assert (Bool.(=) (result < 0) (expect < 0));
-    assert (Bool.(=) (result > 0) (expect > 0));
-    assert (Bool.(=) (result = 0) (expect = 0));
-    assert (result = expect);
+    assert (Bool.( = ) (result < 0) (expect < 0));
+    assert (Bool.( = ) (result > 0) (expect > 0));
+    assert (Bool.( = ) (result = 0) (expect = 0));
+    assert (result = expect)
   in
-  (valid_compare min_value min_value);
-  (valid_compare min_value (-1));
-  (valid_compare (-1) min_value);
-  (valid_compare min_value 0);
-  (valid_compare 0    min_value);
-  (valid_compare max_value (-1));
-  (valid_compare (-1) max_value);
-  (valid_compare max_value min_value);
-  (valid_compare max_value max_value);
+  valid_compare min_value min_value;
+  valid_compare min_value (-1);
+  valid_compare (-1) min_value;
+  valid_compare min_value 0;
+  valid_compare 0 min_value;
+  valid_compare max_value (-1);
+  valid_compare (-1) max_value;
+  valid_compare max_value min_value;
+  valid_compare max_value max_value;
   true
 ;;

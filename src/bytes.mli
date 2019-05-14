@@ -15,12 +15,11 @@ include
   end[@@ocaml.doc "@inline"]
 [@@@end]
 
-
 (** {1 Common Interfaces} *)
 
-include Blit          .S with type t := t
-include Comparable    .S with type t := t
-include Stringable    .S with type t := t
+include Blit.S with type t := t
+include Comparable.S with type t := t
+include Stringable.S with type t := t
 
 (** Note that [pp] allocates in order to preserve the state of the byte
     sequence it was initially called with. *)
@@ -44,10 +43,10 @@ val make : int -> char -> t
 
 (** [map f t] applies function [f] to every byte, in order, and builds the byte
     sequence with the results returned by [f]. *)
-val map : t -> f : (char -> char) -> t
+val map : t -> f:(char -> char) -> t
 
 (** Like [map], but passes each character's index to [f] along with the char. *)
-val mapi : t -> f : (int -> char -> char) -> t
+val mapi : t -> f:(int -> char -> char) -> t
 
 (** [copy t] returns a newly-allocated byte sequence that contains the same
     bytes as [t]. *)
@@ -65,11 +64,13 @@ val of_char_list : char list -> t
 val length : t -> int
 
 (** [get t i] returns the [i]th byte of [t]. *)
-val             get : t -> int -> char
-external unsafe_get : t -> int -> char         = "%bytes_unsafe_get"
+val get : t -> int -> char
+
+external unsafe_get : t -> int -> char = "%bytes_unsafe_get"
 
 (** [set t i c] sets the [i]th byte of [t] to [c]. *)
-val             set : t -> int -> char -> unit
+val set : t -> int -> char -> unit
+
 external unsafe_set : t -> int -> char -> unit = "%bytes_unsafe_set"
 
 (** [fill t ~pos ~len c] modifies [t] in place, replacing all the bytes from
@@ -100,11 +101,11 @@ val to_list : t -> char list
 val to_array : t -> char array
 
 (** [fold a ~f ~init:b] is [f a1 (f a2 (...))] *)
-val fold : t -> init : 'a -> f : ('a -> char -> 'a) -> 'a
+val fold : t -> init:'a -> f:('a -> char -> 'a) -> 'a
 
 (** [foldi] works similarly to [fold], but also passes the index of each character to
     [f]. *)
-val foldi : t -> init : 'a -> f : (int -> 'a -> char -> 'a) -> 'a
+val foldi : t -> init:'a -> f:(int -> 'a -> char -> 'a) -> 'a
 
 (** [contains ?pos ?len t c] returns [true] iff [c] appears in [t] between [pos]
     and [pos + len]. *)

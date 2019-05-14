@@ -1,1 +1,2 @@
-include Either_intf.Either (** @inline *)
+(** @inline *)
+include Either_intf.Either

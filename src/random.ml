@@ -1,8 +1,7 @@
 open! Import
-open  Caml.Random
-
+open Caml.Random
 module Array = Array0
-module Int   = Int0
+module Int = Int0
 
 (* Unfortunately, because the standard library does not expose
    [Caml.Random.State.default], we have to construct our own.  We then build the
@@ -19,15 +18,18 @@ module Int   = Int0
    failure may instead happen because the test runner got unlucky and uncovered an
    existing bug in the code supposedly being "protected" by the test in question. *)
 let forbid_nondeterminism_in_tests ~allow_in_tests =
-  if am_testing then
+  if am_testing
+  then (
     match allow_in_tests with
     | Some true -> ()
-    | None | Some false ->
-      failwith "\
-initializing Random with a nondeterministic seed is forbidden in inline tests"
+    | None
+    | Some false ->
+      failwith
+        "initializing Random with a nondeterministic seed is forbidden in inline tests")
 ;;
 
-external random_seed: unit -> int array = "caml_sys_random_seed";;
+external random_seed : unit -> int array = "caml_sys_random_seed"
+
 let random_seed ?allow_in_tests () =
   forbid_nondeterminism_in_tests ~allow_in_tests;
   random_seed ()
@@ -41,14 +43,16 @@ module State = struct
     make_self_init ()
   ;;
 
-  type repr = { st : int array; mutable idx : int }
+  type repr =
+    { st : int array
+    ; mutable idx : int
+    }
 
   let assign t1 t2 =
-    let t1 = (Caml.Obj.magic t1 : repr) in
-    let t2 = (Caml.Obj.magic t2 : repr) in
-    Array.blit ~src:t2.st ~src_pos:0 ~dst:t1.st ~dst_pos:0
-      ~len:(Array.length t1.st);
-    t1.idx <- t2.idx;
+    let t1 : repr = Caml.Obj.magic t1 in
+    let t2 : repr = Caml.Obj.magic t2 in
+    Array.blit ~src:t2.st ~src_pos:0 ~dst:t1.st ~dst_pos:0 ~len:(Array.length t1.st);
+    t1.idx <- t2.idx
   ;;
 
   let full_init t seed = assign t (make seed)
@@ -89,27 +93,19 @@ module State = struct
     let open Caml.Int64 in
     let bits state = of_int (bits state) in
     fun state ->
-      logxor (bits state)
-        (logxor
-           (shift_left (bits state) 30)
-           (shift_left (bits state) 60))
+      logxor
+        (bits state)
+        (logxor (shift_left (bits state) 30) (shift_left (bits state) 60))
   ;;
 
   let full_range_int32 =
     let open Caml.Int32 in
     let bits state = of_int (bits state) in
-    fun state ->
-      logxor (bits state)
-        (shift_left (bits state) 30)
+    fun state -> logxor (bits state) (shift_left (bits state) 30)
   ;;
 
-  let full_range_int_on_64bits state =
-    Caml.Int64.to_int (full_range_int64 state)
-  ;;
-
-  let full_range_int_on_32bits state =
-    Caml.Int32.to_int (full_range_int32 state)
-  ;;
+  let full_range_int_on_64bits state = Caml.Int64.to_int (full_range_int64 state)
+  let full_range_int_on_32bits state = Caml.Int32.to_int (full_range_int32 state)
 
   let full_range_int =
     match Word_size.word_size with
@@ -131,23 +127,25 @@ module State = struct
     | W32 -> full_range_nativeint_on_32bits
   ;;
 
-  let [@inline never] raise_crossed_bounds name lower_bound upper_bound string_of_bound =
-    Printf.failwithf "Random.%s: crossed bounds [%s > %s]"
-      name (string_of_bound lower_bound) (string_of_bound upper_bound) ()
+  let[@inline never] raise_crossed_bounds name lower_bound upper_bound string_of_bound =
+    Printf.failwithf
+      "Random.%s: crossed bounds [%s > %s]"
+      name
+      (string_of_bound lower_bound)
+      (string_of_bound upper_bound)
+      ()
   ;;
 
   let int_incl =
     let rec in_range state lo hi =
       let int = full_range_int state in
-      if int >= lo && int <= hi
-      then int
-      else in_range state lo hi
+      if int >= lo && int <= hi then int else in_range state lo hi
     in
     fun state lo hi ->
       if lo > hi then raise_crossed_bounds "int" lo hi Int.to_string;
       let diff = hi - lo in
       if diff = Int.max_value
-      then lo + ((full_range_int state) land Int.max_value)
+      then lo + (full_range_int state land Int.max_value)
       else if diff >= 0
       then lo + int state (Int.succ diff)
       else in_range state lo hi
@@ -157,9 +155,7 @@ module State = struct
     let open Int32_replace_polymorphic_compare in
     let rec in_range state lo hi =
       let int = full_range_int32 state in
-      if int >= lo && int <= hi
-      then int
-      else in_range state lo hi
+      if int >= lo && int <= hi then int else in_range state lo hi
     in
     let open Caml.Int32 in
     fun state lo hi ->
@@ -176,9 +172,7 @@ module State = struct
     let open Nativeint_replace_polymorphic_compare in
     let rec in_range state lo hi =
       let int = full_range_nativeint state in
-      if int >= lo && int <= hi
-      then int
-      else in_range state lo hi
+      if int >= lo && int <= hi then int else in_range state lo hi
     in
     let open Caml.Nativeint in
     fun state lo hi ->
@@ -195,9 +189,7 @@ module State = struct
     let open Int64_replace_polymorphic_compare in
     let rec in_range state lo hi =
       let int = full_range_int64 state in
-      if int >= lo && int <= hi
-      then int
-      else in_range state lo hi
+      if int >= lo && int <= hi then int else in_range state lo hi
     in
     let open Caml.Int64 in
     fun state lo hi ->
@@ -213,15 +205,14 @@ module State = struct
   (* Return a uniformly random float in [0, 1). *)
   let rec rawfloat state =
     let open Float_replace_polymorphic_compare in
-    let scale = 0x1p-30 in  (* 2^-30 *)
+    let scale = 0x1p-30 in
+    (* 2^-30 *)
     let r1 = Caml.float_of_int (bits state) in
     let r2 = Caml.float_of_int (bits state) in
-    let result = (r1 *. scale +. r2) *. scale in
+    let result = ((r1 *. scale) +. r2) *. scale in
     (* With very small probability, result can round up to 1.0, so in that case, we just
        try again. *)
-    if result < 1.0
-    then result
-    else rawfloat state
+    if result < 1.0 then result else rawfloat state
   ;;
 
   let float state hi = rawfloat state *. hi
@@ -234,25 +225,19 @@ module State = struct
 end
 
 let default = State.default
-
 let bits () = State.bits default
-
-let int       x = State.int       default x
-let int32     x = State.int32     default x
+let int x = State.int default x
+let int32 x = State.int32 default x
 let nativeint x = State.nativeint default x
-let int64     x = State.int64     default x
-let float     x = State.float     default x
-
-let int_incl       x y = State.int_incl       default x y
-let int32_incl     x y = State.int32_incl     default x y
+let int64 x = State.int64 default x
+let float x = State.float default x
+let int_incl x y = State.int_incl default x y
+let int32_incl x y = State.int32_incl default x y
 let nativeint_incl x y = State.nativeint_incl default x y
-let int64_incl     x y = State.int64_incl     default x y
-let float_range    x y = State.float_range    default x y
-
+let int64_incl x y = State.int64_incl default x y
+let float_range x y = State.float_range default x y
 let bool () = State.bool default
-
 let full_init seed = State.full_init default seed
 let init seed = full_init [| seed |]
 let self_init ?allow_in_tests () = full_init (random_seed ?allow_in_tests ())
-
 let set_state s = State.assign default s

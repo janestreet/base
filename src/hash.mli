@@ -1,1 +1,2 @@
-include Hash_intf.Hash (** @inline *)
+(** @inline *)
+include Hash_intf.Hash

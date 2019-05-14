@@ -1,1 +1,2 @@
-include Monad_intf.Monad (** @inline *)
+(** @inline *)
+include Monad_intf.Monad

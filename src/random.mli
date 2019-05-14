@@ -65,10 +65,11 @@ val float : float -> float
 
 (** Produces a random value between the given inclusive bounds.  Raises if bounds are
     given in decreasing order. *)
-val int_incl       : int       -> int       -> int
-val int32_incl     : int32     -> int32     -> int32
+val int_incl : int -> int -> int
+
+val int32_incl : int32 -> int32 -> int32
 val nativeint_incl : nativeint -> nativeint -> nativeint
-val int64_incl     : int64     -> int64     -> int64
+val int64_incl : int64 -> int64 -> int64
 
 (** Produces a value between the given bounds (inclusive and exclusive, respectively).
     Raises if bounds are given in decreasing order. *)
@@ -108,20 +109,16 @@ module State : sig
       update) the given PRNG state instead of the default one.  *)
 
   val bits : t -> int
-
-  val int       : t -> int       -> int
-  val int32     : t -> int32     -> int32
+  val int : t -> int -> int
+  val int32 : t -> int32 -> int32
   val nativeint : t -> nativeint -> nativeint
-  val int64     : t -> int64     -> int64
-  val float     : t -> float     -> float
-
-  val int_incl       : t -> int       -> int       -> int
-  val int32_incl     : t -> int32     -> int32     -> int32
+  val int64 : t -> int64 -> int64
+  val float : t -> float -> float
+  val int_incl : t -> int -> int -> int
+  val int32_incl : t -> int32 -> int32 -> int32
   val nativeint_incl : t -> nativeint -> nativeint -> nativeint
-  val int64_incl     : t -> int64     -> int64     -> int64
-
-  val float_range : t -> float     -> float     -> float
-
+  val int64_incl : t -> int64 -> int64 -> int64
+  val float_range : t -> float -> float -> float
   val bool : t -> bool
 end
 

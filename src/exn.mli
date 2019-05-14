@@ -43,9 +43,11 @@ val reraise : t -> string -> _
     ]} *)
 val reraisef : t -> ('a, unit, string, unit -> _) format4 -> 'a
 
-val to_string      : t -> string (** Human-readable, multi-line. *)
+(** Human-readable, multi-line. *)
+val to_string : t -> string
 
-val to_string_mach : t -> string (** Machine format, single-line. *)
+(** Machine format, single-line. *)
+val to_string_mach : t -> string
 
 (** Executes [f] and afterwards executes [finally], whether [f] throws an exception or
     not. *)
@@ -87,6 +89,7 @@ val does_raise : (unit -> _) -> bool
 val initialize_module : unit -> unit
 
 (**/**)
+
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
   https://opensource.janestreet.com/standards/#private-submodules *)

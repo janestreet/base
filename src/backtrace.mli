@@ -19,9 +19,7 @@ include
 [@@@end]
 
 val get : ?at_most_num_frames:int -> unit -> t
-
 val to_string : t -> string
-
 val to_string_list : t -> string list
 
 (** The value of [elide] controls the behavior of backtrace serialization functions such
@@ -64,9 +62,8 @@ val elide : bool ref
     This is the same functionality as provided by the OCaml stdlib [Printexc] functions
     [backtrace_status], [record_backtraces], [get_backtrace]. *)
 module Exn : sig
-  val am_recording  : unit -> bool
+  val am_recording : unit -> bool
   val set_recording : bool -> unit
-
   val with_recording : bool -> f:(unit -> 'a) -> 'a
 
   (** [most_recent ()] returns a backtrace containing the stack that was unwound by the

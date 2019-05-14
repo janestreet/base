@@ -1,1 +1,2 @@
-include Binary_searchable_intf.Binary_searchable (** @inline *)
+(** @inline *)
+include Binary_searchable_intf.Binary_searchable

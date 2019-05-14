@@ -2,7 +2,6 @@ open! Import
 open Uniform_array
 
 let does_raise = Exn.does_raise
-
 let zero_obj = Caml.Obj.repr (0 : int)
 
 (* [create_obj_array] *)
@@ -22,23 +21,21 @@ let%test_unit _ =
 let%test_unit _ =
   let float = Caml.Obj.repr 3.5 in
   let t = create ~len:2 float in
-  assert (Caml.Obj.tag (Caml.Obj.repr t) = 0); (* not a double array *)
+  assert (Caml.Obj.tag (Caml.Obj.repr t) = 0);
+  (* not a double array *)
   assert (phys_equal (get t 0) float);
   assert (phys_equal (get t 1) float);
   set t 1 (Caml.Obj.repr 4.);
-  assert (Float.(=) (Caml.Obj.obj (get t 1)) 4.);
+  assert (Float.( = ) (Caml.Obj.obj (get t 1)) 4.)
 ;;
 
 (* [empty] *)
 let%test _ = length empty = 0
-
 let%test _ = does_raise (fun () -> get empty 0)
 
 (* [singleton] *)
 let%test _ = length (singleton zero_obj) = 1
-
 let%test _ = phys_equal (get (singleton zero_obj) 0) zero_obj
-
 let%test _ = does_raise (fun () -> get (singleton zero_obj) 1)
 
 let%test_unit _ =
@@ -57,7 +54,7 @@ let%test_unit _ =
   let one_obj = Caml.Obj.repr (1 : int) in
   let check_get expect =
     assert (phys_equal (get t 0) expect);
-    assert (phys_equal (unsafe_get t 0) expect);
+    assert (phys_equal (unsafe_get t 0) expect)
   in
   set t 0 one_obj;
   check_get one_obj;
@@ -91,10 +88,11 @@ let%test_unit _ =
 module Sequence = struct
   type nonrec 'a t = 'a t
   type 'a z = 'a
+
   let length = length
   let get = get
   let set = set
   let create_bool ~len = create ~len false
 end
 
-include Base_for_tests.Test_blit.Test1(Sequence)(Uniform_array)
+include Base_for_tests.Test_blit.Test1 (Sequence) (Uniform_array)

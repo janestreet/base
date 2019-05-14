@@ -16,8 +16,8 @@
 
 let to_string = Caml.string_of_int
 let of_string = Caml.int_of_string
-let to_float  = Caml.float_of_int
-let of_float  = Caml.int_of_float
+let to_float = Caml.float_of_int
+let of_float = Caml.int_of_float
 let max_value = Caml.max_int
 let min_value = Caml.min_int
-let succ      = Caml.succ
+let succ = Caml.succ

@@ -3,7 +3,9 @@
 open Base
 
 let () = seek_in stdin 0
-[%%expect{|
+
+[%%expect
+  {|
 Line _, characters 9-16:
 Error (Warning 3): deprecated: Base.seek_in
 [2016-09] this element comes from the stdlib distributed with OCaml.
@@ -15,7 +17,9 @@ Use [Stdio.stdin] instead.
 |}]
 
 let _ = StringLabels.make 10 'x'
-[%%expect{|
+
+[%%expect
+  {|
 Line _, characters 8-25:
 Error (Warning 3): deprecated: module Base.StringLabels
 [2016-09] this element comes from the stdlib distributed with OCaml.
@@ -25,7 +29,9 @@ refer to the stdlib, use Caml.StringLabels instead
 |}]
 
 let _ = ( == )
-[%%expect{|
+
+[%%expect
+  {|
 Line _, characters 8-14:
 Error (Warning 3): deprecated: Base.==
 [2016-09] this element comes from the stdlib distributed with OCaml.
@@ -33,7 +39,9 @@ Use [phys_equal] instead.
 |}]
 
 let _ = ( != )
-[%%expect{|
+
+[%%expect
+  {|
 Line _, characters 8-14:
 Error (Warning 3): deprecated: Base.!=
 [2016-09] this element comes from the stdlib distributed with OCaml.

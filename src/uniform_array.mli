@@ -7,6 +7,7 @@
     It can often be faster than [Array] if you use it with non-floats.
 *)
 
+
 open! Import
 
 (** See [Base.Array] for comments. *)
@@ -22,21 +23,14 @@ val invariant : _ t -> unit
 
 
 val empty : _ t
-
 val create : len:int -> 'a -> 'a t
-
 val singleton : 'a -> 'a t
-
 val init : int -> f:(int -> 'a) -> 'a t
-
 val length : 'a t -> int
-
-val get        : 'a t -> int -> 'a
+val get : 'a t -> int -> 'a
 val unsafe_get : 'a t -> int -> 'a
-
-val set        : 'a t -> int -> 'a -> unit
+val set : 'a t -> int -> 'a -> unit
 val unsafe_set : 'a t -> int -> 'a -> unit
-
 val swap : _ t -> int -> int -> unit
 
 (** [unsafe_set_omit_phys_equal_check] is like [unsafe_set], except it doesn't do a
@@ -50,8 +44,8 @@ val iter : 'a t -> f:('a -> unit) -> unit
 (** [of_array] and [to_array] return fresh arrays with the same contents rather than
     returning a reference to the underlying array. *)
 val of_array : 'a array -> 'a t
-val to_array : 'a t -> 'a array
 
+val to_array : 'a t -> 'a array
 val of_list : 'a list -> 'a t
 val to_list : 'a t -> 'a list
 
@@ -79,9 +73,10 @@ val create_obj_array : len:int -> Caml.Obj.t t
     int.
 
     [unsafe_set_int] is similar but does not assume anything about the target. *)
-val unsafe_set_assuming_currently_int     : Caml.Obj.t t -> int -> Caml.Obj.t -> unit
-val unsafe_set_int_assuming_currently_int : Caml.Obj.t t -> int -> int        -> unit
-val unsafe_set_int                        : Caml.Obj.t t -> int -> int        -> unit
+val unsafe_set_assuming_currently_int : Caml.Obj.t t -> int -> Caml.Obj.t -> unit
+
+val unsafe_set_int_assuming_currently_int : Caml.Obj.t t -> int -> int -> unit
+val unsafe_set_int : Caml.Obj.t t -> int -> int -> unit
 
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
     space leaks.  It does this by setting [t.(i)] to [Caml.Obj.repr 0].  As a performance

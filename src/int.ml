@@ -1,5 +1,4 @@
 open! Import
-
 include Int_intf
 include Int0
 
@@ -10,8 +9,8 @@ module T = struct
     hash_fold_int
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
     let func = hash_int in fun x -> func x
-  let t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t = int_of_sexp
-  let sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t = sexp_of_int
+  let t_of_sexp = (int_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
+  let sexp_of_t = (sexp_of_int : t -> Ppx_sexp_conv_lib.Sexp.t)
   [@@@end]
 
   let compare x y = Int_replace_polymorphic_compare.compare x y
@@ -19,44 +18,49 @@ module T = struct
   let of_string s =
     try of_string s with
     | _ -> Printf.failwithf "Int.of_string: %S" s ()
+  ;;
 
   let to_string = to_string
 end
 
 let num_bits = Int_conversions.num_bits_int
-
 let float_lower_bound = Float0.lower_bound_for_int num_bits
 let float_upper_bound = Float0.upper_bound_for_int num_bits
-
 let to_float = Caml.float_of_int
 let of_float_unchecked = Caml.int_of_float
+
 let of_float f =
-  if Float_replace_polymorphic_compare.(>=) f float_lower_bound
-  && Float_replace_polymorphic_compare.(<=) f float_upper_bound
-  then
-    Caml.int_of_float f
+  if Float_replace_polymorphic_compare.( >= ) f float_lower_bound
+  && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
+  then Caml.int_of_float f
   else
-    Printf.invalid_argf "Int.of_float: argument (%f) is out of range or NaN"
+    Printf.invalid_argf
+      "Int.of_float: argument (%f) is out of range or NaN"
       (Float0.box f)
       ()
+;;
 
 let zero = 0
 let one = 1
 let minus_one = -1
 
 include T
-include Comparator.Make(T)
+include Comparator.Make (T)
+
 include Comparable.Validate_with_zero (struct
     include T
+
     let zero = zero
   end)
 
 module Conv = Int_conversions
 include Conv.Make (T)
-include Conv.Make_hex(struct
+
+include Conv.Make_hex (struct
     open Int_replace_polymorphic_compare
+
     type t = int [@@deriving_inline compare, hash]
-    let compare : t -> t -> int = compare_int
+    let compare = (compare_int : t -> t -> int)
     let (hash_fold_t :
            Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int
@@ -65,16 +69,16 @@ include Conv.Make_hex(struct
     [@@@end]
 
     let zero = zero
-    let neg = (~-)
-    let (<) = (<)
+    let neg = ( ~- )
+    let ( < ) = ( < )
     let to_string i = Printf.sprintf "%x" i
     let of_string s = Caml.Scanf.sscanf s "%x" Fn.id
-
     let module_name = "Base.Int.Hex"
   end)
 
 include Pretty_printer.Register (struct
     type nonrec t = t
+
     let to_string = to_string
     let module_name = "Base.Int"
   end)
@@ -85,36 +89,32 @@ include Pretty_printer.Register (struct
 open! Int_replace_polymorphic_compare
 
 let between t ~low ~high = low <= t && t <= high
-let clamp_unchecked t ~min ~max =
-  if t < min then min else if t <= max then t else max
+let clamp_unchecked t ~min ~max = if t < min then min else if t <= max then t else max
 
 let clamp_exn t ~min ~max =
   assert (min <= max);
   clamp_unchecked t ~min ~max
+;;
 
 let clamp t ~min ~max =
-  if min > max then
+  if min > max
+  then
     Or_error.error_s
-      (Sexp.message "clamp requires [min <= max]"
-         [ "min", T.sexp_of_t min
-         ; "max", T.sexp_of_t max
-         ])
-  else
-    Ok (clamp_unchecked t ~min ~max)
+      (Sexp.message
+         "clamp requires [min <= max]"
+         [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ])
+  else Ok (clamp_unchecked t ~min ~max)
+;;
 
 let pred i = i - 1
 let succ i = i + 1
-
 let to_int i = i
 let to_int_exn = to_int
 let of_int i = i
 let of_int_exn = of_int
-
 let max_value = Caml.max_int
 let min_value = Caml.min_int
-
 let max_value_30_bits = 0x3FFF_FFFF
-
 let of_int32 = Conv.int32_to_int
 let of_int32_exn = Conv.int32_to_int_exn
 let of_int32_trunc = Conv.int32_to_int_trunc
@@ -130,23 +130,18 @@ let of_nativeint_exn = Conv.nativeint_to_int_exn
 let of_nativeint_trunc = Conv.nativeint_to_int_trunc
 let to_nativeint = Conv.int_to_nativeint
 let to_nativeint_exn = to_nativeint
-
 let abs x = abs x
-
-let ( + ) x y = ( + ) x y
-let ( - ) x y = ( - ) x y
-let ( * ) x y = ( * ) x y
-let ( / ) x y = ( / ) x y
-
+let ( + ) x y = x + y
+let ( - ) x y = x - y
+let ( * ) x y = x * y
+let ( / ) x y = x / y
 let neg x = -x
 let ( ~- ) = neg
 
 (* note that rem is not same as % *)
 let rem a b = a mod b
-
 let incr = Caml.incr
 let decr = Caml.decr
-
 let shift_right a b = a asr b
 let shift_right_logical a b = a lsr b
 let shift_left a b = a lsl b
@@ -154,19 +149,19 @@ let bit_not a = lnot a
 let bit_or a b = a lor b
 let bit_and a b = a land b
 let bit_xor a b = a lxor b
-
 let pow = Int_math.Private.int_pow
 let ( ** ) b e = pow b e
 
 module Pow2 = struct
   open! Import
-
   module Sys = Sys0
 
   let raise_s = Error.raise_s
 
   let non_positive_argument () =
     Printf.invalid_argf "argument must be strictly positive" ()
+  ;;
+
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 x =
@@ -181,6 +176,7 @@ module Pow2 = struct
        anyway than to branch *)
     let x = x lor (x lsr 32) in
     x + 1
+  ;;
 
   (** "floor power of 2" - Largest power of 2 less than or equal to x. *)
   let floor_pow2 x =
@@ -194,10 +190,11 @@ module Pow2 = struct
        anyway than to branch *)
     let x = x lor (x lsr 32) in
     x - (x lsr 1)
+  ;;
 
   let is_pow2 x =
     if x <= 0 then non_positive_argument ();
-    (x land (x-1)) = 0
+    x land (x - 1) = 0
   ;;
 
   (* C stub for int clz to use the CLZ/BSR instruction where possible *)
@@ -205,27 +202,24 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if i <= 0 then
-      raise_s (Sexp.message "[Int.floor_log2] got invalid input"
-                 ["", sexp_of_int i]);
+    if i <= 0
+    then
+      raise_s (Sexp.message "[Int.floor_log2] got invalid input" [ "", sexp_of_int i ]);
     Sys.word_size_in_bits - 1 - int_clz i
   ;;
 
   let ceil_log2 i =
-    if i <= 0 then
-      raise_s (Sexp.message "[Int.ceil_log2] got invalid input"
-                 ["", sexp_of_int i]);
-    if i = 1
-    then 0
-    else Sys.word_size_in_bits - int_clz (i - 1)
+    if i <= 0
+    then raise_s (Sexp.message "[Int.ceil_log2] got invalid input" [ "", sexp_of_int i ]);
+    if i = 1 then 0 else Sys.word_size_in_bits - int_clz (i - 1)
   ;;
 end
+
 include Pow2
 
 (* This is already defined by Comparable.Validate_with_zero, but Sign.of_int is
    more direct. *)
 let sign = Sign.of_int
-
 let popcount = Popcount.int_popcount
 
 module Pre_O = struct
@@ -235,7 +229,9 @@ module Pre_O = struct
   let ( / ) = ( / )
   let ( ~- ) = ( ~- )
   let ( ** ) = ( ** )
+
   include (Int_replace_polymorphic_compare : Comparisons.Infix with type t := t)
+
   let abs = abs
   let neg = neg
   let zero = zero
@@ -244,15 +240,19 @@ end
 
 module O = struct
   include Pre_O
+
   module F = Int_math.Make (struct
       type nonrec t = t
+
       include Pre_O
+
       let rem = rem
       let to_float = to_float
       let of_float = of_float
       let of_string = T.of_string
       let to_string = T.to_string
     end)
+
   include F
 
   (* These inlined versions of (%), (/%), and (//) perform better than their functorized
@@ -266,39 +266,41 @@ module O = struct
      by case fashion.  *)
 
   let ( % ) x y =
-    if y <= zero then
+    if y <= zero
+    then
       Printf.invalid_argf
         "%s %% %s in core_int.ml: modulus should be positive"
-        (to_string x) (to_string y) ();
+        (to_string x)
+        (to_string y)
+        ();
     let rval = rem x y in
-    if rval < zero
-    then rval + y
-    else rval
+    if rval < zero then rval + y else rval
   ;;
 
   let ( /% ) x y =
-    if y <= zero then
+    if y <= zero
+    then
       Printf.invalid_argf
         "%s /%% %s in core_int.ml: divisor should be positive"
-        (to_string x) (to_string y) ();
-    if x < zero
-    then (x + one) / y - one
-    else x / y
+        (to_string x)
+        (to_string y)
+        ();
+    if x < zero then ((x + one) / y) - one else x / y
   ;;
 
-  let (//) x y = to_float x /. to_float y
-  ;;
-
+  let ( // ) x y = to_float x /. to_float y
   let ( land ) = ( land )
-  let ( lor  ) = ( lor  )
+  let ( lor ) = ( lor )
   let ( lxor ) = ( lxor )
-  let ( lnot ) = ( lnot )
-  let ( lsl  ) = ( lsl  )
-  let ( asr  ) = ( asr  )
-  let ( lsr  ) = ( lsr  )
+  let lnot = lnot
+  let ( lsl ) = ( lsl )
+  let ( asr ) = ( asr )
+  let ( lsr ) = ( lsr )
 end
 
-include O (* [Int] and [Int.O] agree value-wise *)
+include O
+
+(* [Int] and [Int.O] agree value-wise *)
 
 module Private = struct
   module O_F = O.F

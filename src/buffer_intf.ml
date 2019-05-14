@@ -21,7 +21,8 @@ module type S = sig
 
   (** Return a copy of the current contents of the buffer.  The buffer itself is
       unchanged. *)
-  val contents       : t -> string
+  val contents : t -> string
+
   val contents_bytes : t -> bytes
 
   (** [blit ~src ~src_pos ~dst ~dst_pos ~len] copies [len] characters from the current
@@ -77,5 +78,6 @@ module type Buffer = sig
 
   (** Buffers using strings as underlying storage medium: *)
 
-  include S with type t = Caml.Buffer.t (** @open *)
+  (** @open *)
+  include S with type t = Caml.Buffer.t
 end

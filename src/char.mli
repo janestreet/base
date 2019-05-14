@@ -15,8 +15,7 @@ include
   end[@@ocaml.doc "@inline"]
 [@@@end]
 
-include Identifiable.S   with type t := t
-
+include Identifiable.S with type t := t
 module O : Comparisons.Infix with type t := t
 
 (** Returns the ASCII code of the argument. *)

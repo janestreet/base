@@ -2,7 +2,11 @@
 
 open! Import
 
-type t = Sign0.t = Neg | Zero | Pos [@@deriving_inline enumerate, hash]
+type t = Sign0.t =
+  | Neg
+  | Zero
+  | Pos
+[@@deriving_inline enumerate, hash]
 include
   sig
     [@@@ocaml.warning "-32"]

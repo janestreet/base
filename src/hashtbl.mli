@@ -1,1 +1,2 @@
-include Hashtbl_intf.Hashtbl (** @inline *)
+(** @inline *)
+include Hashtbl_intf.Hashtbl

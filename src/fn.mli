@@ -3,7 +3,7 @@
 open! Import
 
 (** A "pipe" operator. *)
-external ( |> ) : 'a -> ( 'a -> 'b) -> 'b = "%revapply"
+external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
 
 (** Produces a function that just returns its first argument. *)
 val const : 'a -> _ -> 'a
@@ -20,13 +20,13 @@ val non : ('a -> bool) -> 'a -> bool
 val forever : (unit -> unit) -> exn
 
 (** [apply_n_times ~n f x] is the [n]-fold application of [f] to [x]. *)
-val apply_n_times : n:int -> ('a -> 'a) -> ('a -> 'a)
+val apply_n_times : n:int -> ('a -> 'a) -> 'a -> 'a
 
 (** The identity function.  Also see [Sys.opaque_identity]. *)
 external id : 'a -> 'a = "%identity"
 
 (** [compose f g x] is [f (g x)]. *)
-val compose : ('b -> 'c) -> ('a -> 'b) -> ('a -> 'c)
+val compose : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
 
 (** Reverses the order of arguments for a binary function. *)
-val flip : ('a -> 'b -> 'c) -> ('b -> 'a -> 'c)
+val flip : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c

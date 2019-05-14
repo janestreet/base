@@ -7,13 +7,12 @@ open! Import
 
     [sexp_of_t] uses the form ["FILE:LINE:COL"], and does not have a corresponding
     [of_sexp]. *)
-type t
-  = Caml.Lexing.position
-  = { pos_fname : string
-    ; pos_lnum  : int
-    ; pos_bol   : int
-    ; pos_cnum  : int
-    }
+type t = Caml.Lexing.position =
+  { pos_fname : string
+  ; pos_lnum : int
+  ; pos_bol : int
+  ; pos_cnum : int
+  }
 [@@deriving_inline hash, sexp_of]
 include
   sig
@@ -29,4 +28,3 @@ include Comparable.S with type t := t
 
 (** [to_string t] converts [t] to the form ["FILE:LINE:COL"]. *)
 val to_string : t -> string
-

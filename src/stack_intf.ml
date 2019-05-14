@@ -4,7 +4,6 @@
 open! Import
 
 module type S = sig
-
   type 'a t [@@deriving_inline sexp]
   include
     sig
@@ -40,12 +39,14 @@ module type S = sig
 
   (** [pop t] removes and returns the top element of [t] as [Some a], or returns [None] if
       [t] is empty. *)
-  val pop     : 'a t -> 'a option
+  val pop : 'a t -> 'a option
+
   val pop_exn : 'a t -> 'a
 
   (** [top t] returns [Some a], where [a] is the top of [t], unless [is_empty t], in which
       case [top] returns [None]. *)
-  val top     : 'a t -> 'a option
+  val top : 'a t -> 'a option
+
   val top_exn : 'a t -> 'a
 
   (** [clear t] discards all elements from [t]. *)
@@ -67,7 +68,8 @@ end
 module type Stack = sig
   module type S = S
 
-  include S (** @open *)
+  (** @open *)
+  include S
 
   (** [capacity t] returns the length of the array backing [t]. *)
   val capacity : _ t -> int
@@ -76,4 +78,3 @@ module type Stack = sig
       (length t)].  To shrink as much as possible, do [set_capacity t 0]. *)
   val set_capacity : _ t -> int -> unit
 end
-
