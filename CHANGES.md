@@ -1,5 +1,11 @@
 ## git version
 
+- Removed deprecated function `Monad.all_ignore` in favor of
+  `Monad.all_unit`.
+
+- Deprecated `Or_error.ignore` and `Result.ignore` in favor of
+  `Or_error.ignore_m` and `Result.ignore_m`.
+
 - `Ordered_collection_common.get_pos_len` now returns an `Or_error.t`
 
 - Added `Bool.Non_short_circuiting`.
@@ -34,7 +40,7 @@
 - Removed functions that were deprecated in 2016 from the `Array` and `Set`
   modules.
 
-- [Int.Hex.of_string] and friends no longer silently ignore a suffix
+- `Int.Hex.of_string` and friends no longer silently ignore a suffix
   of non-hexadecimal garbage.
 
 - Added `?backtrace` argument to `Or_error.of_exn_result`.
@@ -177,8 +183,8 @@
 - Renamed `Map.add` as `set`, and deprecated `add`. A later feature will add
   `add` and `add_exn` in the style of `Hashtbl`.
 
-- A different hash function is used to implement [Base.Int.hash].
-  The old implementation was [Int.abs] but collision resistance is not enough,
+- A different hash function is used to implement `Base.Int.hash`.
+  The old implementation was `Int.abs` but collision resistance is not enough,
   we want avalanching as well.
   The new function is an adaptation of one of the
   [Thomas Wang](http://web.archive.org/web/20071223173210/http://www.concentric.net/~Ttwang/tech/inthash.htm)
