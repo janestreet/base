@@ -35,7 +35,6 @@ include String
 
 let max_length = Sys.max_string_length
 let ( ^ ) = ( ^ )
-let blit = Caml.String.blit
 let compare = Caml.String.compare
 let[@warning "-3"] copy = Caml.String.copy
 let escaped = Caml.String.escaped

@@ -721,8 +721,6 @@ let dedup_and_sort ~compare list =
     remove_consecutive_duplicates ~equal sorted
 ;;
 
-let dedup = dedup_and_sort
-
 let find_a_dup ~compare l =
   let sorted = sort ~compare l in
   let rec loop l =

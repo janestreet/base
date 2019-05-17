@@ -352,9 +352,6 @@ val remove_consecutive_duplicates
 (** Returns the given list with duplicates removed and in sorted order. *)
 val dedup_and_sort : compare:('a -> 'a -> int) -> 'a t -> 'a t
 
-val dedup : compare:('a -> 'a -> int) -> 'a t -> 'a t
-[@@deprecated "[since 2017-04] Use [dedup_and_sort] instead"]
-
 (** [find_a_dup] returns a duplicate from the list (with no guarantees about which
     duplicate you get), or [None] if there are no dups. *)
 val find_a_dup : compare:('a -> 'a -> int) -> 'a t -> 'a option

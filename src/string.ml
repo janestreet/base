@@ -127,7 +127,6 @@ end
 (* This is copied/adapted from 'blit.ml'.
    [sub], [subo] could be implemented using [Blit.Make(Bytes)] plus unsafe casts to/from
    string but were inlined here to avoid using [Bytes.unsafe_of_string] as much as possible.
-   Also note that [blit] and [blito] will be deprecated and removed in the future.
 *)
 let sub src ~pos ~len =
   if pos = 0 && len = String.length src
@@ -147,12 +146,6 @@ let subo ?(pos = 0) ?len src =
       (match len with
        | Some i -> i
        | None -> length src - pos)
-;;
-
-let blit = Bytes.blit_string
-
-let blito ~src ?(src_pos = 0) ?(src_len = length src - src_pos) ~dst ?(dst_pos = 0) () =
-  blit ~src ~src_pos ~len:src_len ~dst ~dst_pos
 ;;
 
 let rec contains_unsafe t ~pos ~end_ char =
@@ -376,9 +369,9 @@ module Search_pattern = struct
       let len_t = length (fst t) in
       let len_with = length with_ in
       let dst = Bytes.create (len_s + len_with - len_t) in
-      blit ~src:s ~src_pos:0 ~dst ~dst_pos:0 ~len:i;
-      blit ~src:with_ ~src_pos:0 ~dst ~dst_pos:i ~len:len_with;
-      blit
+      Bytes.blit_string ~src:s ~src_pos:0 ~dst ~dst_pos:0 ~len:i;
+      Bytes.blit_string ~src:with_ ~src_pos:0 ~dst ~dst_pos:i ~len:len_with;
+      Bytes.blit_string
         ~src:s
         ~src_pos:(i + len_t)
         ~dst
@@ -402,11 +395,21 @@ module Search_pattern = struct
       let next_src_pos = ref 0 in
       List.iter matches ~f:(fun i ->
         let len = i - !next_src_pos in
-        blit ~src:s ~src_pos:!next_src_pos ~dst ~dst_pos:!next_dst_pos ~len;
-        blit ~src:with_ ~src_pos:0 ~dst ~dst_pos:(!next_dst_pos + len) ~len:len_with;
+        Bytes.blit_string
+          ~src:s
+          ~src_pos:!next_src_pos
+          ~dst
+          ~dst_pos:!next_dst_pos
+          ~len;
+        Bytes.blit_string
+          ~src:with_
+          ~src_pos:0
+          ~dst
+          ~dst_pos:(!next_dst_pos + len)
+          ~len:len_with;
         next_dst_pos := !next_dst_pos + len + len_with;
         next_src_pos := !next_src_pos + len + len_t);
-      blit
+      Bytes.blit_string
         ~src:s
         ~src_pos:!next_src_pos
         ~dst
@@ -718,13 +721,6 @@ let tr ~target ~replacement s =
   else s
 ;;
 
-let tr_inplace ~target ~replacement s =
-  (* destructive version of tr *)
-  for i = 0 to Bytes.length s - 1 do
-    if Char.equal (Bytes.unsafe_get s i) target then Bytes.unsafe_set s i replacement
-  done
-;;
-
 let tr_multi ~target ~replacement =
   if is_empty target
   then stage Fn.id
@@ -803,7 +799,7 @@ let filter t ~f =
   then t
   else (
     let out = Bytes.create (n - 1) in
-    blit ~src:t ~src_pos:0 ~dst:out ~dst_pos:0 ~len:!i;
+    Bytes.blit_string ~src:t ~src_pos:0 ~dst:out ~dst_pos:0 ~len:!i;
     let out_pos = ref !i in
     incr i;
     while !i < n do
@@ -958,7 +954,7 @@ module Escaping = struct
              let rec loop last_idx last_dst_pos = function
                | [] ->
                  (* copy "000" at last *)
-                 blit ~src ~src_pos:0 ~dst ~dst_pos:0 ~len:last_idx
+                 Bytes.blit_string ~src ~src_pos:0 ~dst ~dst_pos:0 ~len:last_idx
                | (idx, escaped_char) :: to_escape ->
                  (*[idx] = the char to escape*)
                  (* take first iteration for example *)
@@ -967,7 +963,7 @@ module Escaping = struct
                  (* set the dst_pos to copy to *)
                  let dst_pos = last_dst_pos - len in
                  (* copy "333", set [src_pos] to [idx + 1] to skip 'c' *)
-                 blit ~src ~src_pos:(idx + 1) ~dst ~dst_pos ~len;
+                 Bytes.blit_string ~src ~src_pos:(idx + 1) ~dst ~dst_pos ~len;
                  (* backoff [dst_pos] by 2 to copy '_' and 'C' *)
                  let dst_pos = dst_pos - 2 in
                  Bytes.set dst dst_pos escape_char;
@@ -1055,7 +1051,7 @@ module Escaping = struct
              let rec loop last_idx last_dst_pos = function
                | [] ->
                  (* copy "000" at last *)
-                 blit ~src ~src_pos:0 ~dst ~dst_pos:0 ~len:last_idx
+                 Bytes.blit_string ~src ~src_pos:0 ~dst ~dst_pos:0 ~len:last_idx
                | idx :: to_unescape ->
                  (* [idx] = index of escaping char *)
                  (* take 1st iteration as example, calculate the length of "333", minus 2 to
@@ -1064,7 +1060,7 @@ module Escaping = struct
                  (* point [dst_pos] to the position to copy "333" to *)
                  let dst_pos = last_dst_pos - len in
                  (* copy "333" *)
-                 blit ~src ~src_pos:(idx + 2) ~dst ~dst_pos ~len;
+                 Bytes.blit_string ~src ~src_pos:(idx + 2) ~dst ~dst_pos ~len;
                  (* backoff [dst_pos] by 1 to copy 'c' *)
                  let dst_pos = dst_pos - 1 in
                  Bytes.set
@@ -1340,9 +1336,6 @@ let clamp t ~min ~max =
          [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ])
   else Ok (clamp_unchecked t ~min ~max)
 ;;
-
-let create = Bytes.create
-let fill = Bytes.fill
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after
    including functor application that could shadow its definitions. This is

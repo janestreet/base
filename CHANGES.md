@@ -1,5 +1,9 @@
 ## git version
 
+- Remove deprecated function `List.dedup`.
+
+- Remove deprecated string mutation functions from the `String` module.
+
 - Removed deprecated function `Monad.all_ignore` in favor of
   `Monad.all_unit`.
 

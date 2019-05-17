@@ -14,14 +14,6 @@ include
   end[@@ocaml.doc "@inline"]
 [@@@end]
 
-val blit : (t, bytes) Blit.blit [@@deprecated "[since 2017-10] Use [Bytes.blit] instead"]
-
-val blito : (t, bytes) Blit.blito
-[@@deprecated "[since 2017-10] Use [Bytes.blito] instead"]
-
-val unsafe_blit : (t, bytes) Blit.blit
-[@@deprecated "[since 2017-10] Use [Bytes.unsafe_blit] instead"]
-
 val sub : (t, t) Blit.sub
 val subo : (t, t) Blit.subo
 
@@ -38,7 +30,6 @@ external get : t -> int -> char = "%string_safe_get"
     must ensure that it is a memory-safe operation. *)
 external unsafe_get : string -> int -> char = "%string_unsafe_get"
 
-val create : int -> bytes [@@deprecated "[since 2017-10] Use [Bytes.create] instead"]
 val make : int -> char -> t
 
 (** Assuming you haven't passed -unsafe-string to the compiler, strings are immutable, so
@@ -47,9 +38,6 @@ val copy : t -> t
 [@@deprecated "[since 2018-03] Use [Bytes.copy] instead"]
 
 val init : int -> f:(int -> char) -> t
-
-val fill : bytes -> pos:int -> len:int -> char -> unit
-[@@deprecated "[since 2017-10] Use [Bytes.fill] instead"]
 
 (** String append. Also available unqualified, but re-exported here for documentation
     purposes.
@@ -288,11 +276,6 @@ val filter : t -> f:(char -> bool) -> t
     [replacement]. *)
 val tr : target:char -> replacement:char -> t -> t
 
-(** [tr_inplace ~target ~replacement s] destructively modifies [s] (in place!), replacing
-    every instance of [target] in [s] with [replacement]. *)
-val tr_inplace : target:char -> replacement:char -> bytes -> unit
-[@@deprecated "[since 2017-10] Use [Bytes.tr] instead"]
-
 (** [tr_multi ~target ~replacement] returns a function that replaces every
     instance of a character in [target] with the corresponding character in
     [replacement].
@@ -472,9 +455,3 @@ module Escaping : sig
   val rstrip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
   val strip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
 end
-
-val set : bytes -> int -> char -> unit
-[@@deprecated "[since 2017-10] Use [Bytes.set] instead"]
-
-val unsafe_set : bytes -> int -> char -> unit
-[@@deprecated "[since 2017-10] Use [Bytes.unsafe_set] instead"]
