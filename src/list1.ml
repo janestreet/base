@@ -1,6 +1,11 @@
 open! Import
 include List0
 
+let is_empty = function
+  | [] -> true
+  | _ -> false
+;;
+
 let partition_map t ~f =
   let rec loop t fst snd =
     match t with

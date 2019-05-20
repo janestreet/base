@@ -36,8 +36,3 @@ let rev = function
   | ([] | [ _ ]) as res -> res
   | x :: y :: rest -> rev_append rest [ y; x ]
 ;;
-
-let is_empty = function
-  | [] -> true
-  | _ -> false
-;;
