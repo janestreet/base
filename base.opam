@@ -14,9 +14,6 @@ depends: [
   "sexplib0"
   "dune"     {build & >= "1.5.1"}
 ]
-depopts: [
-  "base-native-int63"
-]
 synopsis: "Full standard library replacement for OCaml"
 description: "
 Full standard library replacement for OCaml

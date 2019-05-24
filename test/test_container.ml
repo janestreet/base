@@ -11,7 +11,7 @@ module Test_generic (Elt : sig
 
           include Generic with type 'a t := 'a t with type 'a elt := 'a Elt.t
 
-          val mem : 'a t -> 'a Elt.t -> bool
+          val mem : 'a t -> 'a Elt.t -> equal:('a Elt.t -> 'a Elt.t -> bool) -> bool
           val of_list : 'a Elt.t list -> [`Ok of 'a t | `Skip_test]
         end) :
 sig
@@ -19,7 +19,7 @@ sig
 
   include Generic with type 'a t := 'a t
 
-  val mem : 'a t -> 'a Elt.t -> bool
+  val mem : 'a t -> 'a Elt.t -> equal:('a Elt.t -> 'a Elt.t -> bool) -> bool
 end
 with type 'a t := 'a Container.t
 with type 'a elt := 'a Elt.t =
@@ -61,9 +61,9 @@ struct
         assert (n > 0 = is_some (Container.find c ~f:(fun e -> Elt.to_int e = 0)));
         assert (n > 0 = is_some (Container.find c ~f:(fun e -> Elt.to_int e = n - 1)));
         assert (is_none (Container.find c ~f:(fun e -> Elt.to_int e = n)));
-        assert (n > 0 = Container.mem c (Elt.of_int 0));
-        assert (n > 0 = Container.mem c (Elt.of_int (n - 1)));
-        assert (not (Container.mem c (Elt.of_int n)));
+        assert (n > 0 = Container.mem c (Elt.of_int 0) ~equal:( = ));
+        assert (n > 0 = Container.mem c (Elt.of_int (n - 1)) ~equal:( = ));
+        assert (not (Container.mem c (Elt.of_int n) ~equal:( = )));
         assert (
           n
           > 0
@@ -159,13 +159,7 @@ struct
       let of_int = Fn.id
       let to_int = Fn.id
     end)
-      (struct
-        include Container
-
-        let mem t a = mem t a ~equal:Poly.equal
-      end)
-
-  let mem = Container.mem
+      (Container)
 end
 
 module Test_S1 (Container : sig

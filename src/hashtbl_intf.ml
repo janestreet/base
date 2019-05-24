@@ -288,13 +288,13 @@ end
 
 type ('key, 'data, 'z) create_options =
   ?growth_allowed:bool (** defaults to [true] *)
-  -> ?size:int (** initial size -- default 128 *)
+  -> ?size:int (** initial size -- default 0 *)
   -> 'key Key.t
   -> 'z
 
 type ('key, 'data, 'z) create_options_without_first_class_module =
   ?growth_allowed:bool (** defaults to [true] *)
-  -> ?size:int (** initial size -- default 128 *)
+  -> ?size:int (** initial size -- default 0 *)
   -> 'z
 
 module type Creators_generic = sig
@@ -383,7 +383,7 @@ module type Creators = sig
       v} *)
   val create
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> ('a, 'b) t
 
@@ -395,7 +395,7 @@ module type Creators = sig
       v} *)
   val of_alist
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> ('a * 'b) list
     -> [`Ok of ('a, 'b) t | `Duplicate_key of 'a]
@@ -414,21 +414,21 @@ module type Creators = sig
       v} *)
   val of_alist_report_all_dups
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> ('a * 'b) list
     -> [`Ok of ('a, 'b) t | `Duplicate_keys of 'a list]
 
   val of_alist_or_error
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> ('a * 'b) list
     -> ('a, 'b) t Or_error.t
 
   val of_alist_exn
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> ('a * 'b) list
     -> ('a, 'b) t
@@ -447,7 +447,7 @@ module type Creators = sig
       v} *)
   val of_alist_multi
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> ('a * 'b) list
     -> ('a, 'b list) t
@@ -479,7 +479,7 @@ module type Creators = sig
       v} *)
   val create_mapped
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> get_key:('r -> 'a)
     -> get_data:('r -> 'b)
@@ -490,7 +490,7 @@ module type Creators = sig
          = of_alist [get_key x1, x1; ...; get_key xn, xn] ]} *)
   val create_with_key
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> get_key:('r -> 'a)
     -> 'r list
@@ -498,7 +498,7 @@ module type Creators = sig
 
   val create_with_key_or_error
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> get_key:('r -> 'a)
     -> 'r list
@@ -506,7 +506,7 @@ module type Creators = sig
 
   val create_with_key_exn
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> get_key:('r -> 'a)
     -> 'r list
@@ -531,7 +531,7 @@ module type Creators = sig
        v} *)
   val group
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> get_key:('r -> 'a)
     -> get_data:('r -> 'b)

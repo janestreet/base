@@ -1093,6 +1093,14 @@ let%test _ = not (is_negative Float.nan)
 let%test _ = not (is_non_positive Float.nan)
 let%test _ = is_non_negative (-0.)
 
+let%expect_test "iround_nearest_exn noalloc" =
+  let t = Sys.opaque_identity 205.414 in
+  Expect_test_helpers_kernel.require_no_allocation [%here] (fun () ->
+    iround_nearest_exn t)
+  |> printf "%d\n";
+  [%expect {| 205 |}]
+;;
+
 let%test_unit "int to float conversion consistency" =
   let test_int63 x =
     [%test_result: float] (Float.of_int63 x) ~expect:(Float.of_int64 (Int63.to_int64 x))

@@ -10,12 +10,13 @@
 
 open! Import
 
-(** In 64-bit architectures, we expose [type t = private int] so that the compiler can
-    omit [caml_modify] when dealing with record fields holding [Int63.t].
+(** The [@@immediate64] attribute is to indicate that [t] is implemented by a type that is
+    immediate only on 64 bit platforms.  It is currently ignored by the compiler, however
+    we are hoping that one day it will be taken into account so that the compiler can omit
+    [caml_modify] when dealing with mutable data structures holding [Int63.t] values. *)
+type t [@@immediate64]
 
-    Code should not explicitly make use of the [private], e.g., via [(i :> int)], since
-    such code will not compile on 32-bit platforms. *)
-include Int_intf.S with type t = Int63_backend.t
+include Int_intf.S with type t := t
 
 (** {2 Arithmetic with overflow}
 

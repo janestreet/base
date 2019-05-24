@@ -48,7 +48,16 @@ let without_mutating t f =
     floor power of 2 below the system max array length *)
 let max_table_length = Int.floor_pow2 Array.max_length
 
-let create ?(growth_allowed = true) ?(size = 128) ~hashable () =
+(* The default size is chosen to be 0 (as opposed to 128 as it was before) because:
+   - 128 can create substantial memory overhead (x10) when creating many tables, most
+     of which are not big (say, if you have a hashtbl of hashtbl). And memory overhead is
+     not that easy to profile.
+   - if a hashtbl is going to grow, it's not clear why 128 is markedly better than other
+     sizes (if you going to stick 1000 elements, you're going to grow the hashtable once
+     or twice anyway)
+   - in other languages (like rust, python, and apparently go), the default is also a
+     small size. *)
+let create ?(growth_allowed = true) ?(size = 0) ~hashable () =
   let size = Int.min (Int.max 1 size) max_table_length in
   let size = Int.ceil_pow2 size in
   { table = Array.create ~len:size Avltree.empty

@@ -3,7 +3,106 @@ open! Import
 let raise_s = Error.raise_s
 
 module Repr = Int63_emul.Repr
-include Int63_backend
+
+(* In a world where the compiler would understand [@@immediate64] attributes on type
+   declarations, this module is how one would produce a [type t] with this attribute. *)
+module Immediate64 : sig
+  module type Non_immediate = sig
+    type t
+  end
+
+  module type Immediate = sig
+    type t [@@immediate]
+  end
+
+  module Make (Immediate : Immediate) (Non_immediate : Non_immediate) : sig
+    type t [@@immediate64]
+
+    type 'a repr =
+      | Immediate : Immediate.t repr
+      | Non_immediate : Non_immediate.t repr
+
+    val repr : t repr
+  end
+end = struct
+  module type Non_immediate = sig
+    type t
+  end
+
+  module type Immediate = sig
+    type t [@@immediate]
+  end
+
+  module Make (Immediate : Immediate) (Non_immediate : Non_immediate) = struct
+    type t [@@immediate64]
+
+    type 'a repr =
+      | Immediate : Immediate.t repr
+      | Non_immediate : Non_immediate.t repr
+
+    let repr =
+      match Word_size.word_size with
+      | W64 -> (Caml.Obj.magic Immediate : t repr)
+      | W32 -> (Caml.Obj.magic Non_immediate : t repr)
+    ;;
+  end
+end
+
+include Immediate64.Make (Int) (Int63_emul)
+
+module Backend = struct
+  module type S =
+  sig
+    type t [@@deriving_inline hash]
+    include
+      sig
+        [@@@ocaml.warning "-32"]
+        val hash_fold_t :
+          Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+        val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+      end[@@ocaml.doc "@inline"]
+    [@@@end]
+
+    include Int_intf.S with type t := t
+
+    val of_int : int -> t
+    val to_int : t -> int option
+    val to_int_trunc : t -> int
+    val of_int32 : int32 -> t
+    val to_int32 : t -> Int32.t option
+    val to_int32_trunc : t -> Int32.t
+    val of_int64 : Int64.t -> t option
+    val of_int64_trunc : Int64.t -> t
+    val of_nativeint : nativeint -> t option
+    val to_nativeint : t -> nativeint option
+    val of_nativeint_trunc : nativeint -> t
+    val to_nativeint_trunc : t -> nativeint
+    val of_float_unchecked : float -> t
+    val repr : (t, t) Int63_emul.Repr.t
+  end
+  with type t := t
+
+  module Native = struct
+    include Int
+
+    let to_int x = Some x
+    let to_int_trunc x = x
+
+    (* [of_int32_exn] is a safe operation on platforms with 64-bit word sizes. *)
+    let of_int32 = of_int32_exn
+    let to_nativeint_trunc x = to_nativeint x
+    let to_nativeint x = Some (to_nativeint x)
+    let repr = Int63_emul.Repr.Int
+  end
+
+  let impl : (module S) =
+    match repr with
+    | Immediate -> (module Native : S)
+    | Non_immediate -> (module Int63_emul : S)
+  ;;
+end
+
+include (val Backend.impl : Backend.S)
 
 module Overflow_exn = struct
   let ( + ) t u =

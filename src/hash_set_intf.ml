@@ -49,13 +49,13 @@ module type Creators = sig
 
   val create
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> 'a t
 
   val of_list
     :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 128 *)
+    -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> 'a list
     -> 'a t

@@ -169,6 +169,38 @@ module Symmetric_diff_element = struct
   [@@@end]
 end
 
+module Continue_or_stop = struct
+  type t =
+    | Continue
+    | Stop
+  [@@deriving_inline compare, enumerate, equal, sexp_of]
+  let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
+  let all = ([Continue; Stop] : t list)
+  let equal = (Ppx_compare_lib.polymorphic_equal : t -> t -> bool)
+  let sexp_of_t =
+    (function
+      | Continue -> Ppx_sexp_conv_lib.Sexp.Atom "Continue"
+      | Stop -> Ppx_sexp_conv_lib.Sexp.Atom "Stop" : t ->
+        Ppx_sexp_conv_lib.Sexp.t)
+  [@@@end]
+end
+
+module Finished_or_unfinished = struct
+  type t =
+    | Finished
+    | Unfinished
+  [@@deriving_inline compare, enumerate, equal, sexp_of]
+  let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
+  let all = ([Finished; Unfinished] : t list)
+  let equal = (Ppx_compare_lib.polymorphic_equal : t -> t -> bool)
+  let sexp_of_t =
+    (function
+      | Finished -> Ppx_sexp_conv_lib.Sexp.Atom "Finished"
+      | Unfinished -> Ppx_sexp_conv_lib.Sexp.Atom "Unfinished" : t ->
+        Ppx_sexp_conv_lib.Sexp.t)
+  [@@@end]
+end
+
 module type Accessors_generic = sig
   type ('a, 'b, 'cmp) t
   type ('a, 'b, 'cmp) tree
@@ -221,6 +253,11 @@ module type Accessors_generic = sig
   val iter_keys : ('k, _, _) t -> f:('k key -> unit) -> unit
   val iter : (_, 'v, _) t -> f:('v -> unit) -> unit
   val iteri : ('k, 'v, _) t -> f:(key:'k key -> data:'v -> unit) -> unit
+
+  val iteri_until
+    :  ('k, 'v, _) t
+    -> f:(key:'k key -> data:'v -> Continue_or_stop.t)
+    -> Finished_or_unfinished.t
 
   val iter2 :
     ( 'k
@@ -462,6 +499,11 @@ module type Accessors1 = sig
   val iter : 'a t -> f:('a -> unit) -> unit
   val iteri : 'a t -> f:(key:key -> data:'a -> unit) -> unit
 
+  val iteri_until
+    :  'a t
+    -> f:(key:key -> data:'a -> Continue_or_stop.t)
+    -> Finished_or_unfinished.t
+
   val iter2
     :  'a t
     -> 'b t
@@ -595,6 +637,11 @@ module type Accessors2 = sig
   val iter_keys : ('a, _) t -> f:('a -> unit) -> unit
   val iter : (_, 'b) t -> f:('b -> unit) -> unit
   val iteri : ('a, 'b) t -> f:(key:'a -> data:'b -> unit) -> unit
+
+  val iteri_until
+    :  ('a, 'b) t
+    -> f:(key:'a -> data:'b -> Continue_or_stop.t)
+    -> Finished_or_unfinished.t
 
   val iter2
     :  ('a, 'b) t
@@ -737,6 +784,11 @@ module type Accessors3 = sig
   val iter_keys : ('a, _, 'cmp) t -> f:('a -> unit) -> unit
   val iter : (_, 'b, 'cmp) t -> f:('b -> unit) -> unit
   val iteri : ('a, 'b, 'cmp) t -> f:(key:'a -> data:'b -> unit) -> unit
+
+  val iteri_until
+    :  ('a, 'b, 'cmp) t
+    -> f:(key:'a -> data:'b -> Continue_or_stop.t)
+    -> Finished_or_unfinished.t
 
   val iter2
     :  ('a, 'b, 'cmp) t
@@ -949,6 +1001,11 @@ module type Accessors3_with_comparator = sig
   val iter_keys : ('a, _, 'cmp) t -> f:('a -> unit) -> unit
   val iter : (_, 'b, 'cmp) t -> f:('b -> unit) -> unit
   val iteri : ('a, 'b, 'cmp) t -> f:(key:'a -> data:'b -> unit) -> unit
+
+  val iteri_until
+    :  ('a, 'b, 'cmp) t
+    -> f:(key:'a -> data:'b -> Continue_or_stop.t)
+    -> Finished_or_unfinished.t
 
   val iter2
     :  comparator:('a, 'cmp) Comparator.t
@@ -1531,6 +1588,29 @@ module type Map = sig
   type ('key, +'value, 'cmp) t
 
   module Or_duplicate = Or_duplicate
+  module Continue_or_stop = Continue_or_stop
+
+  module Finished_or_unfinished : sig
+    type t = Finished_or_unfinished.t =
+      | Finished
+      | Unfinished
+    [@@deriving_inline compare, enumerate, equal, sexp_of]
+    include
+      sig
+        [@@@ocaml.warning "-32"]
+        val compare : t -> t -> int
+        val all : t list
+        val equal : t -> t -> bool
+        val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+      end[@@ocaml.doc "@inline"]
+    [@@@end]
+
+    (** Maps [Continue] to [Finished] and [Stop] to [Unfinished]. *)
+    val of_continue_or_stop : Continue_or_stop.t -> t
+
+    (** Maps [Finished] to [Continue] and [Unfinished] to [Stop]. *)
+    val to_continue_or_stop : t -> Continue_or_stop.t
+  end
 
   type ('k, 'cmp) comparator =
     (module
@@ -1689,6 +1769,13 @@ module type Map = sig
   val iter_keys : ('k, _, _) t -> f:('k -> unit) -> unit
   val iter : (_, 'v, _) t -> f:('v -> unit) -> unit
   val iteri : ('k, 'v, _) t -> f:(key:'k -> data:'v -> unit) -> unit
+
+  (** Iterates until the first time [f] returns [Stop]. If [f] returns [Stop], the final
+      result is [Unfinished]. Otherwise, the final result is [Finished]. *)
+  val iteri_until
+    :  ('k, 'v, _) t
+    -> f:(key:'k -> data:'v -> Continue_or_stop.t)
+    -> Finished_or_unfinished.t
 
   (** Iterates two maps side by side. The complexity of this function is O(M + N).  If two
       inputs are [[(0, a); (1, a)]] and [[(1, b); (2, b)]], [f] will be called with [[(0,

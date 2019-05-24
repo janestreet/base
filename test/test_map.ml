@@ -1,6 +1,26 @@
 open! Import
 open! Map
 
+let%expect_test "Finished_or_unfinished <-> Continue_or_stop" =
+  (* These functions are implemented using [Caml.Obj.magic]. It is important to test them
+     comprehensively. *)
+  List.iter2_exn Continue_or_stop.all Finished_or_unfinished.all ~f:(fun c_or_s f_or_u ->
+    print_s [%sexp (c_or_s : Continue_or_stop.t), (f_or_u : Finished_or_unfinished.t)];
+    require_equal
+      [%here]
+      (module Continue_or_stop)
+      c_or_s
+      (Finished_or_unfinished.to_continue_or_stop f_or_u);
+    require_equal
+      [%here]
+      (module Finished_or_unfinished)
+      f_or_u
+      (Finished_or_unfinished.of_continue_or_stop c_or_s));
+  [%expect {|
+    (Continue Finished)
+    (Stop Unfinished) |}]
+;;
+
 let%test _ =
   invariants (of_increasing_iterator_unchecked (module Int) ~len:20 ~f:(fun x -> x, x))
 ;;

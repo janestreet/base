@@ -446,8 +446,6 @@ module Assoc : sig
   val inverse : ('a, 'b) t -> ('b, 'a) t
 end
 
-(** Note that [sub], unlike [slice], doesn't use Python-style indices! *)
-
 (** [sub pos len l] is the [len]-element sublist of [l], starting at [pos]. *)
 val sub : 'a t -> pos:int -> len:int -> 'a t
 

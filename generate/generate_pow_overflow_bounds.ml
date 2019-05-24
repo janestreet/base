@@ -29,8 +29,6 @@ let oc, mode =
 module Big_int = struct
   include Big_int
 
-  type t = big_int
-
   let ( > ) = gt_big_int
   let ( <= ) = le_big_int
   let ( ^ ) = power_big_int_positive_int

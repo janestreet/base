@@ -13,7 +13,36 @@
 
 open! Import
 module List = List0
-include Map_intf
+
+include (
+  Map_intf :
+  sig
+    module Or_duplicate = Map_intf.Or_duplicate
+    module Continue_or_stop = Map_intf.Continue_or_stop
+    module With_comparator = Map_intf.With_comparator
+    module With_first_class_module = Map_intf.With_first_class_module
+    module Without_comparator = Map_intf.Without_comparator
+
+    include
+      module type of struct
+        include Map_intf
+      end
+      with module Finished_or_unfinished := Map_intf.Finished_or_unfinished
+       and module Or_duplicate := Or_duplicate
+       and module Continue_or_stop := Continue_or_stop
+       and module With_comparator := With_comparator
+       and module With_first_class_module := With_first_class_module
+       and module Without_comparator := Without_comparator
+  end)
+
+module Finished_or_unfinished = struct
+  include Map_intf.Finished_or_unfinished
+
+  (* These two functions are tested in [test_map.ml] to make sure our use of
+     [Caml.Obj.magic] is correct and safe. *)
+  let of_continue_or_stop : Continue_or_stop.t -> t = Caml.Obj.magic
+  let to_continue_or_stop : t -> Continue_or_stop.t = Caml.Obj.magic
+end
 
 let with_return = With_return.with_return
 
@@ -756,6 +785,22 @@ module Tree0 = struct
       iteri ~f l;
       f ~key:v ~data:d;
       iteri ~f r
+  ;;
+
+  let iteri_until =
+    let rec iteri_until_loop t ~f : Continue_or_stop.t =
+      match t with
+      | Empty -> Continue
+      | Leaf (v, d) -> f ~key:v ~data:d
+      | Node (l, v, d, r, _) ->
+        (match iteri_until_loop ~f l with
+         | Stop -> Stop
+         | Continue ->
+           (match f ~key:v ~data:d with
+            | Stop -> Stop
+            | Continue -> iteri_until_loop ~f r))
+    in
+    fun t ~f -> Finished_or_unfinished.of_continue_or_stop (iteri_until_loop t ~f)
   ;;
 
   let rec map t ~f =
@@ -1515,6 +1560,7 @@ module Accessors = struct
   let iter_keys t ~f = Tree0.iter_keys t.tree ~f
   let iter t ~f = Tree0.iter t.tree ~f
   let iteri t ~f = Tree0.iteri t.tree ~f
+  let iteri_until t ~f = Tree0.iteri_until t.tree ~f
   let iter2 t1 t2 ~f = Tree0.iter2 t1.tree t2.tree ~f ~compare_key:(compare_key t1)
   let map t ~f = with_same_length t (Tree0.map t.tree ~f)
   let mapi t ~f = with_same_length t (Tree0.mapi t.tree ~f)
@@ -1805,6 +1851,7 @@ module Tree = struct
   let iter_keys t ~f = Tree0.iter_keys t ~f
   let iter t ~f = Tree0.iter t ~f
   let iteri t ~f = Tree0.iteri t ~f
+  let iteri_until t ~f = Tree0.iteri_until t ~f
 
   let iter2 ~comparator t1 t2 ~f =
     Tree0.iter2 t1 t2 ~f ~compare_key:comparator.Comparator.compare

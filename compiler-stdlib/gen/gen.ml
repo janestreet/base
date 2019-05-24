@@ -3,7 +3,6 @@ open StdLabels
 module Ocaml_version : sig
   type t
 
-  val parse : string -> t
   val v407 : t
   val v408 : t
   val current : t
