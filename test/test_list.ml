@@ -1129,3 +1129,21 @@ let%test_unit _ =
       y, y)
     ~expect:(0, [])
 ;;
+
+let%expect_test "drop_last" =
+  let print_drop_last x = print_s [%sexp (List.drop_last x : int list option)] in
+  print_drop_last [];
+  [%expect {| () |}];
+  print_drop_last [ 1 ];
+  [%expect {| (()) |}];
+  print_drop_last [ 1; 2; 3 ];
+  [%expect {| ((1 2)) |}]
+;;
+
+let%expect_test "drop_last_exn" =
+  let print_drop_last_exn x = print_s [%sexp (List.drop_last_exn x : int list)] in
+  require_does_raise [%here] (fun () -> print_drop_last_exn []);
+  [%expect {| (Failure "List.drop_last_exn: empty list") |}];
+  require_does_not_raise [%here] (fun () -> print_drop_last_exn [ 1 ]);
+  [%expect {| () |}]
+;;

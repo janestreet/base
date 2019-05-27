@@ -990,6 +990,18 @@ let rec drop_while t ~f =
   | t -> t
 ;;
 
+let drop_last t =
+  match rev t with
+  | [] -> None
+  | _ :: lst -> Some (rev lst)
+;;
+
+let drop_last_exn t =
+  match drop_last t with
+  | None -> failwith "List.drop_last_exn: empty list"
+  | Some lst -> lst
+;;
+
 let cartesian_product list1 list2 =
   if is_empty list2
   then []

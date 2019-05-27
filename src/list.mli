@@ -466,6 +466,11 @@ val drop_while : 'a t -> f:('a -> bool) -> 'a t
 (** [split_while xs ~f = (take_while xs ~f, drop_while xs ~f)]. *)
 val split_while : 'a t -> f:('a -> bool) -> 'a t * 'a t
 
+(** [drop_last l] drops the last element of [l], returning [None] if [l] is [empty]. *)
+val drop_last : 'a t -> 'a t option
+
+val drop_last_exn : 'a t -> 'a t
+
 (** Concatenates a list of lists.  The elements of the argument are all concatenated
     together (in the same order) to give the result.  Tail recursive over outer and inner
     lists. *)

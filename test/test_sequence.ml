@@ -519,6 +519,47 @@ let%test _ =
        compare_tests)
 ;;
 
+let%expect_test "[equal]" =
+  let equal l1 l2 =
+    let t1 = of_list l1 in
+    let t2 = of_list l2 in
+    let b = equal Int.equal t1 t2 in
+    print_s [%sexp (b : bool)];
+    require [%here] (Bool.equal b (equal Int.equal t2 t1))
+  in
+  equal [] [];
+  [%expect {| true |}];
+  equal [] [ 1 ];
+  [%expect {| false |}];
+  equal [ 1 ] [ 1 ];
+  [%expect {| true |}];
+  equal [ 1 ] [ 1; 2 ];
+  [%expect {| false |}]
+;;
+
+let%test_unit "[equal] randomised test" =
+  let with_gen ?examples gen =
+    Quickcheck.test
+      ?examples
+      gen
+      ~sexp_of:[%sexp_of: int list * int list]
+      ~f:(fun (left, right) ->
+        [%test_result: bool]
+          ~expect:(List.equal Int.equal left right)
+          (Comparable.lift (Sequence.equal Int.equal) ~f:Sequence.of_list left right))
+  in
+  let list_gen = Quickcheck.Generator.list Quickcheck.Int.quickcheck_generator in
+  (* certainly equal. *)
+  with_gen
+    ~examples:
+      (List.map ~f:(fun x -> x, x) [ []; [ 1 ]; [ Int.max_value ]; [ 5; 4; 3; 2; 1 ] ])
+    (Quickcheck.Generator.map list_gen ~f:(fun x -> x, x));
+  (* Probably not equal. *)
+  with_gen
+    ~examples:[ [], []; [], [ 1 ]; [ 1 ], []; [ Int.min_value ], [ Int.max_value ] ]
+    (Quickcheck.Generator.tuple2 list_gen list_gen)
+;;
+
 let%test_unit _ =
   [%test_result: int list]
     (folding_map

@@ -1072,6 +1072,12 @@ let compare compare_a t1 t2 =
     0)
 ;;
 
+let equal equal_a t1 t2 =
+  for_all (zip_full t1 t2) ~f:(function
+    | `Both (a1, a2) -> equal_a a1 a2
+    | `Left _ | `Right _ -> false)
+;;
+
 let round_robin list =
   let next (todo_stack, done_stack) =
     match todo_stack with

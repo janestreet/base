@@ -31,11 +31,12 @@
 
 open! Import
 
-type +'a t [@@deriving_inline compare, sexp_of]
+type +'a t [@@deriving_inline compare, equal, sexp_of]
 include
   sig
     [@@@ocaml.warning "-32"]
     val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+    val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
     val sexp_of_t :
       ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
   end[@@ocaml.doc "@inline"]
