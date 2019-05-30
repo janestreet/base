@@ -15,6 +15,39 @@ module S2_to_S (X : S2) : S with type 'a t = ('a, unit) X.t = struct
   include (X : S2 with type ('a, 'e) t := ('a, 'e) X.t)
 end
 
+(* These functors serve only to check that the signatures for various Foo and Foo2 module
+   types don't drift apart over time.
+*)
+module Check_compatibility = struct
+  module Applicative_infix_to_Applicative_infix2 (X : Applicative_infix) :
+    Applicative_infix2 with type ('a, 'e) t = 'a X.t = struct
+    type ('a, 'e) t = 'a X.t
+
+    include (X : Applicative_infix with type 'a t := 'a X.t)
+  end
+
+  module Applicative_infix2_to_Applicative_infix (X : Applicative_infix2) :
+    Applicative_infix with type 'a t = ('a, unit) X.t = struct
+    type 'a t = ('a, unit) X.t
+
+    include (X : Applicative_infix2 with type ('a, 'e) t := ('a, 'e) X.t)
+  end
+
+  module Let_syntax_to_Let_syntax2 (X : Let_syntax) :
+    Let_syntax2 with type ('a, 'e) t = 'a X.t = struct
+    type ('a, 'e) t = 'a X.t
+
+    include (X : Let_syntax with type 'a t := 'a X.t)
+  end
+
+  module Let_syntax2_to_Let_syntax (X : Let_syntax2) :
+    Let_syntax with type 'a t = ('a, unit) X.t = struct
+    type 'a t = ('a, unit) X.t
+
+    include (X : Let_syntax2 with type ('a, 'e) t := ('a, 'e) X.t)
+  end
+end
+
 module Args_to_Args2 (X : Args) :
   Args2 with type ('a, 'e) arg = 'a X.arg with type ('f, 'r, 'e) t = ('f, 'r) X.t =
 struct
@@ -60,10 +93,10 @@ module Make (X : Basic) : S with type 'a t := 'a X.t = Make2 (struct
     include (X : Basic with type 'a t := 'a X.t)
   end)
 
-module Make_let_syntax
-    (X : For_let_syntax) (Intf : sig
-                            module type S
-                          end)
+module Make_let_syntax2
+    (X : For_let_syntax2) (Intf : sig
+                             module type S
+                           end)
     (Impl : Intf.S) =
 struct
   module Let_syntax = struct
@@ -75,6 +108,19 @@ struct
     end
   end
 end
+
+module Make_let_syntax
+    (X : For_let_syntax) (Intf : sig
+                            module type S
+                          end)
+    (Impl : Intf.S) =
+  Make_let_syntax2 (struct
+    type ('a, _) t = 'a X.t
+
+    include (X : For_let_syntax with type 'a t := 'a X.t)
+  end)
+    (Intf)
+    (Impl)
 
 module Make2_using_map2 (X : Basic2_using_map2) = Make2 (struct
     include X
@@ -126,12 +172,18 @@ module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t = stru
 end
 [@@warning "-3"]
 
-module Of_monad (M : Monad.S) : S with type 'a t := 'a M.t = Make (struct
-    type 'a t = 'a M.t
+module Of_monad2 (M : Monad.S2) : S2 with type ('a, 'e) t := ('a, 'e) M.t = Make2 (struct
+    type ('a, 'e) t = ('a, 'e) M.t
 
     let return = M.return
     let apply mf mx = M.bind mf ~f:(fun f -> M.map mx ~f)
     let map = `Custom M.map
+  end)
+
+module Of_monad (M : Monad.S) : S with type 'a t := 'a M.t = Of_monad2 (struct
+    type ('a, _) t = 'a M.t
+
+    include (M : Monad.S with type 'a t := 'a M.t)
   end)
 
 module Compose (F : S) (G : S) : S with type 'a t = 'a F.t G.t = struct

@@ -3,10 +3,6 @@ open! Printf
 module Bytes = Bytes0
 include Float0
 
-let ceil = Caml.ceil
-let floor = Caml.floor
-let mod_float = Caml.mod_float
-let modf = Caml.modf
 let raise_s = Error.raise_s
 
 module T = struct
@@ -35,7 +31,7 @@ let to_float x = x
 let of_float x = x
 
 let of_string s =
-  try Caml.float_of_string s with
+  try float_of_string s with
   | _ -> invalid_argf "Float.of_string %s" s ()
 ;;
 
@@ -170,12 +166,8 @@ let to_string x =
      if float_of_string y = x then y else format_float "%.17g" x)
 ;;
 
-let nan = Caml.nan
-let infinity = Caml.infinity
-let neg_infinity = Caml.neg_infinity
 let max_value = infinity
 let min_value = neg_infinity
-let max_finite_value = Caml.max_float
 let min_positive_subnormal_value = 2. ** -1074.
 let min_positive_normal_value = 2. ** -1022.
 let zero = 0.
@@ -185,59 +177,6 @@ let pi = 0x3.243F6A8885A308D313198A2E037073
 let sqrt_pi = 0x1.C5BF891B4EF6AA79C3B0520D5DB938
 let sqrt_2pi = 0x2.81B263FEC4E0B2CAF9483F5CE459DC
 let euler = 0x0.93C467E37DB0C7A4D1BE3F810152CB
-
-(* The bits of INRIA's [Pervasives] that we just want to expose in
-   [Float]. Most are already deprecated in [Pervasives], and
-   eventually all of them should be. *)
-include (
-  Caml :
-  sig
-    external frexp : float -> float * int = "caml_frexp_float"
-
-    external ldexp
-      :  (float[@unboxed])
-      -> (int[@untagged])
-      -> (float[@unboxed])
-      = "caml_ldexp_float" "caml_ldexp_float_unboxed"
-    [@@noalloc]
-
-    external log10 : float -> float = "caml_log10_float" "log10"
-    [@@unboxed] [@@noalloc]
-
-    external expm1 : float -> float = "caml_expm1_float" "caml_expm1"
-    [@@unboxed] [@@noalloc]
-
-    external log1p : float -> float = "caml_log1p_float" "caml_log1p"
-    [@@unboxed] [@@noalloc]
-
-    external copysign : float -> float -> float = "caml_copysign_float" "caml_copysign"
-    [@@unboxed] [@@noalloc]
-
-    external cos : float -> float = "caml_cos_float" "cos" [@@unboxed] [@@noalloc]
-    external sin : float -> float = "caml_sin_float" "sin" [@@unboxed] [@@noalloc]
-    external tan : float -> float = "caml_tan_float" "tan" [@@unboxed] [@@noalloc]
-    external acos : float -> float = "caml_acos_float" "acos" [@@unboxed] [@@noalloc]
-    external asin : float -> float = "caml_asin_float" "asin" [@@unboxed] [@@noalloc]
-    external atan : float -> float = "caml_atan_float" "atan" [@@unboxed] [@@noalloc]
-
-    external atan2 : float -> float -> float = "caml_atan2_float" "atan2"
-    [@@unboxed] [@@noalloc]
-
-    external hypot : float -> float -> float = "caml_hypot_float" "caml_hypot"
-    [@@unboxed] [@@noalloc]
-
-    external cosh : float -> float = "caml_cosh_float" "cosh" [@@unboxed] [@@noalloc]
-    external sinh : float -> float = "caml_sinh_float" "sinh" [@@unboxed] [@@noalloc]
-    external tanh : float -> float = "caml_tanh_float" "tanh" [@@unboxed] [@@noalloc]
-    external sqrt : float -> float = "caml_sqrt_float" "sqrt" [@@unboxed] [@@noalloc]
-    external exp : float -> float = "caml_exp_float" "exp" [@@unboxed] [@@noalloc]
-    external log : float -> float = "caml_log_float" "log" [@@unboxed] [@@noalloc]
-  end)
-
-(* We need this indirection because these are exposed as "val" instead of "external" *)
-let frexp = frexp
-let ldexp = ldexp
-let epsilon_float = Caml.epsilon_float
 let of_int = Int.to_float
 let to_int = Int.of_float
 let of_int63 i = Int63.to_float i
@@ -434,7 +373,7 @@ let iround ?(dir = `Nearest) t =
 ;;
 
 let is_inf x =
-  match Caml.classify_float x with
+  match classify_float x with
   | FP_infinite -> true
   | _ -> false
 ;;
@@ -450,7 +389,7 @@ let max_inan (x : t) y =
 let add = ( +. )
 let sub = ( -. )
 let neg = ( ~-. )
-let abs = Caml.abs_float
+let abs = abs_float
 let scale = ( *. )
 let square x = x *. x
 
@@ -634,7 +573,7 @@ end
 
 let classify t =
   let module C = Class in
-  match Caml.classify_float t with
+  match classify_float t with
   | FP_normal -> C.Normal
   | FP_subnormal -> C.Subnormal
   | FP_zero -> C.Zero
@@ -902,7 +841,7 @@ let clamp t ~min ~max =
 let ( + ) = ( +. )
 let ( - ) = ( -. )
 let ( * ) = ( *. )
-let ( ** ) = Caml.( ** )
+let ( ** ) = ( ** )
 let ( / ) = ( /. )
 let ( ~- ) = ( ~-. )
 
@@ -1031,7 +970,7 @@ module O = struct
   let ( * ) = ( * )
   let ( / ) = ( / )
   let ( ~- ) = ( ~- )
-  let ( ** ) = Caml.( ** )
+  let ( ** ) = ( ** )
 
   include (Float_replace_polymorphic_compare : Comparisons.Infix with type t := t)
 
@@ -1048,7 +987,7 @@ module O_dot = struct
   let ( -. ) = ( - )
   let ( /. ) = ( / )
   let ( ~-. ) = ( ~- )
-  let ( **. ) = Caml.( ** )
+  let ( **. ) = ( ** )
 end
 
 module Private = struct
