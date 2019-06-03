@@ -23,6 +23,10 @@ include (
     module With_first_class_module = Map_intf.With_first_class_module
     module Without_comparator = Map_intf.Without_comparator
 
+    (* The module susbstitutions below are needed for older versions of OCaml
+       (before 4.07), because back then [module type of] did not keep module
+       aliases. *)
+
     include
       module type of struct
         include Map_intf

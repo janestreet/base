@@ -181,13 +181,13 @@ module type Accessors = sig
       sets of keys of [h1] and [h2] for which [d(k)] is not None, where:
 
       d(k) =
-      - [f ~key:k (Some d1) None]
+      - [f ~key:k (`Left d1)]
         if [k] in [h1] maps to d1, and [h2] does not have data for [k];
 
-      - [f ~key:k None (Some d2)]
+      - [f ~key:k (`Right d2)]
         if [k] in [h2] maps to d2, and [h1] does not have data for [k];
 
-      - [f ~key:k (Some d1) (Some d2)]
+      - [f ~key:k (`Both (d1, d2))]
         otherwise, where [k] in [h1] maps to [d1] and [k] in [h2] maps to [d2].
 
       Each key [k] is mapped to a single piece of data [x], where [d(k) = Some x].
