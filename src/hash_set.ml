@@ -80,6 +80,7 @@ module Accessors = struct
   let equal t1 t2 = Hashtbl.equal t1 t2 (fun () () -> true)
   let copy t = Hashtbl.copy t
   let filter t ~f = Hashtbl.filteri t ~f:(fun ~key ~data:() -> f key)
+  let union t1 t2 = Hashtbl.merge t1 t2 ~f:(fun ~key:_ _ -> Some ())
   let diff t1 t2 = filter t1 ~f:(fun key -> not (Hashtbl.mem t2 key))
 
   let inter t1 t2 =

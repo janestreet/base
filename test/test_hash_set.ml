@@ -61,3 +61,15 @@ let%expect_test "to_array" =
   print_s [%sexp (array_via_to_list : int Array.t)];
   [%expect {| (1 3 2 4 5) |}]
 ;;
+
+let%expect_test "union" =
+  let print_union s1 s2 =
+    let s1 = Hash_set.of_list (module Int) s1 in
+    let s2 = Hash_set.of_list (module Int) s2 in
+    print_s [%sexp (Hash_set.union s1 s2 : int Hash_set.t)]
+  in
+  print_union [ 0; 1; 2 ] [ 3; 4; 5 ];
+  [%expect {| (0 1 2 3 4 5) |}];
+  print_union [ 0; 1; 2 ] [ 1; 2; 3 ];
+  [%expect {| (0 1 2 3) |}]
+;;

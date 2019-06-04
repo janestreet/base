@@ -34,6 +34,7 @@ module type Accessors = sig
       equality function. *)
   val inter : 'key t -> 'key t -> 'key t
 
+  val union : 'a t -> 'a t -> 'a t
   val diff : 'a t -> 'a t -> 'a t
   val of_hashtbl_keys : ('a, _) Hashtbl.t -> 'a t
   val to_hashtbl : 'key t -> f:('key -> 'data) -> ('key, 'data) Hashtbl.t
