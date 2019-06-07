@@ -1382,6 +1382,7 @@ module type M_of_sexp = sig
 end
 
 module type Compare_m = sig end
+module type Equal_m = sig end
 module type Hash_fold_m = Hasher.S
 
 let sexp_of_m__t (type elt) (module Elt : Sexp_of_m with type t = elt) t =
@@ -1399,6 +1400,7 @@ let m__t_of_sexp
 ;;
 
 let compare_m__t (module Elt : Compare_m) t1 t2 = compare_direct t1 t2
+let equal_m__t (module Elt : Equal_m) t1 t2 = equal t1 t2
 
 let hash_fold_m__t (type elt) (module Elt : Hash_fold_m with type t = elt) state =
   hash_fold_direct Elt.hash_fold_t state

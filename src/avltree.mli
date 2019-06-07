@@ -49,6 +49,7 @@ type ('k, 'v) t = private
   | Leaf of { key : 'k; mutable value : 'v }
 
 val empty : ('k, 'v) t
+val is_empty : _ t -> bool
 
 (** Checks invariants, raising an exception if any invariants fail. *)
 val invariant : ('k, 'v) t -> compare:('k -> 'k -> int) -> unit
@@ -135,3 +136,5 @@ val iter : ('k, 'v) t -> f:(key:'k -> data:'v -> unit) -> unit
 
 (** Map over the the tree, changing the data in place. *)
 val mapi_inplace : ('k, 'v) t -> f:(key:'k -> data:'v -> 'v) -> unit
+
+val choose_exn : ('k, 'v) t -> 'k * 'v

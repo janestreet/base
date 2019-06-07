@@ -117,6 +117,19 @@ let%test_module _ =
        | _ -> assert false
      ;;
 
+     let is_empty = is_empty
+
+     let%test _ = is_empty empty
+
+     let%test_unit _ =
+       Quickcheck.test
+         constructors_gen
+         ~sexp_of:[%sexp_of: Constructor.t list]
+         ~f:(fun constructors ->
+           let t, map = reify constructors in
+           [%test_result: bool] (is_empty t) ~expect:(Map.is_empty map))
+     ;;
+
      let invariant = invariant
 
      let%test_unit _ =
@@ -317,6 +330,19 @@ let%test_module _ =
            [%test_result: (Key.t * Data.t) list]
              (fold t ~init:[] ~f:(fun ~key ~data acc -> (key, data) :: acc))
              ~expect:(Map.to_alist map |> List.rev))
+     ;;
+
+     let choose_exn = choose_exn
+
+     let%test_unit _ =
+       Quickcheck.test
+         constructors_gen
+         ~sexp_of:[%sexp_of: Constructor.t list]
+         ~f:(fun constructors ->
+           let t, map = reify constructors in
+           [%test_result: bool]
+             (is_some (Option.try_with (fun () -> choose_exn t)))
+             ~expect:(not (Map.is_empty map)))
      ;;
    end :
      module type of Avltree))

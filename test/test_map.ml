@@ -125,9 +125,7 @@ let%test_module "[symmetric_diff]" =
     ;;
 
     module String_to_int_map = struct
-      type t = int Map.M(String).t [@@deriving sexp_of]
-
-      let equal = Map.equal Int.equal
+      type t = int Map.M(String).t [@@deriving equal, sexp_of]
 
       open Base_quickcheck
 

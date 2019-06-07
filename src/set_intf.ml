@@ -877,6 +877,7 @@ module type For_deriving = sig
   end
 
   module type Compare_m = sig end
+  module type Equal_m = sig end
   module type Hash_fold_m = Hasher.S
 
   val sexp_of_m__t : (module Sexp_of_m with type t = 'elt) -> ('elt, 'cmp) t -> Sexp.t
@@ -890,6 +891,7 @@ module type For_deriving = sig
     -> ('elt, 'cmp) t
 
   val compare_m__t : (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
+  val equal_m__t : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
 
   val hash_fold_m__t
     :  (module Hash_fold_m with type t = 'elt)

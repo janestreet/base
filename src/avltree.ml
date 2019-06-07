@@ -3,6 +3,8 @@
 
 open! Import
 
+let raise_s = Error.raise_s
+
 module Int = struct
   type t = int
 
@@ -25,6 +27,11 @@ type ('k, 'v) t =
   | Leaf of { key : 'k; mutable value : 'v }
 
 let empty = Empty
+
+let is_empty = function
+  | Empty -> true
+  | Leaf _ | Node _ -> false
+;;
 
 let height = function
   | Empty -> 0
@@ -510,4 +517,10 @@ let rec mapi_inplace t ~f =
     mapi_inplace ~f left;
     t.value <- f ~key ~data:value;
     mapi_inplace ~f right
+;;
+
+let choose_exn = function
+  | Empty -> raise_s (Sexp.message "[Avltree.choose_exn] of empty hashtbl" [])
+  | Leaf { key; value; _ }
+  | Node { key; value; _ } -> key, value
 ;;

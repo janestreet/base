@@ -60,6 +60,8 @@ module type Accessors = sig
   val is_empty : (_, _) t -> bool
   val mem : ('a, _) t -> 'a key -> bool
   val remove : ('a, _) t -> 'a key -> unit
+  val choose : ('a, 'b) t -> ('a key * 'b) option
+  val choose_exn : ('a, 'b) t -> 'a key * 'b
 
   (** Sets the given [key] to [data]. *)
   val set : ('a, 'b) t -> key:'a key -> data:'b -> unit

@@ -46,3 +46,58 @@ let%expect_test "Hashtbl.find_exn" =
   test_failure "four";
   [%expect {| (Not_found_s ("Hashtbl.find_exn: not found" four)) |}]
 ;;
+
+let%expect_test "[choose], [choose_exn]" =
+  let test ?size l =
+    let t =
+      l |> List.map ~f:(fun i -> i, i) |> Hashtbl.of_alist_exn ?size (module Int)
+    in
+    print_s
+      [%message
+        ""
+          ~input:(t : int_hashtbl)
+          ~choose:(Hashtbl.choose t : (_ * _) option)
+          ~choose_exn:
+            (Or_error.try_with (fun () -> Hashtbl.choose_exn t) : (_ * _) Or_error.t)]
+  in
+  test [];
+  [%expect
+    {|
+    ((input  ())
+     (choose ())
+     (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))) |}];
+  test [] ~size:100;
+  [%expect
+    {|
+    ((input  ())
+     (choose ())
+     (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))) |}];
+  test [ 1 ];
+  [%expect
+    {|
+    ((input  ((1 1)))
+     (choose ((_ _)))
+     (choose_exn (Ok (_ _)))) |}];
+  test [ 1 ] ~size:100;
+  [%expect
+    {|
+    ((input  ((1 1)))
+     (choose ((_ _)))
+     (choose_exn (Ok (_ _)))) |}];
+  test [ 1; 2 ];
+  [%expect
+    {|
+    ((input (
+       (1 1)
+       (2 2)))
+     (choose ((_ _)))
+     (choose_exn (Ok (_ _)))) |}];
+  test [ 1; 2 ] ~size:100;
+  [%expect
+    {|
+    ((input (
+       (1 1)
+       (2 2)))
+     (choose ((_ _)))
+     (choose_exn (Ok (_ _)))) |}]
+;;

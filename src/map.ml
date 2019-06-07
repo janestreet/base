@@ -2182,6 +2182,7 @@ module type M_of_sexp = sig
 end
 
 module type Compare_m = sig end
+module type Equal_m = sig end
 module type Hash_fold_m = Hasher.S
 
 let sexp_of_m__t (type k) (module K : Sexp_of_m with type t = k) sexp_of_v t =
@@ -2200,6 +2201,7 @@ let m__t_of_sexp
 ;;
 
 let compare_m__t (module K : Compare_m) compare_v t1 t2 = compare_direct compare_v t1 t2
+let equal_m__t (module K : Equal_m) equal_v t1 t2 = equal equal_v t1 t2
 
 let hash_fold_m__t (type k) (module K : Hash_fold_m with type t = k) hash_fold_v state =
   hash_fold_direct K.hash_fold_t hash_fold_v state

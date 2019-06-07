@@ -6,6 +6,7 @@ module type Key = Key.S
 let with_return = With_return.with_return
 let hash_param = Hashable.hash_param
 let hash = Hashable.hash
+let raise_s = Error.raise_s
 
 type ('k, 'v) t =
   { mutable table : ('k, 'v) Avltree.t array
@@ -263,6 +264,20 @@ let iteri t ~f =
 
 let iter t ~f = iteri t ~f:(fun ~key:_ ~data -> f data)
 let iter_keys t ~f = iteri t ~f:(fun ~key ~data:_ -> f key)
+
+let rec choose_nonempty table i =
+  let avltree = table.(i) in
+  if Avltree.is_empty avltree
+  then choose_nonempty table (i + 1)
+  else Avltree.choose_exn avltree
+;;
+
+let choose_exn t =
+  if t.length = 0 then raise_s (Sexp.message "[Hashtbl.choose_exn] of empty hashtbl" []);
+  choose_nonempty t.table 0
+;;
+
+let choose t = if is_empty t then None else Some (choose_nonempty t.table 0)
 
 let invariant invariant_key invariant_data t =
   for i = 0 to Array.length t.table - 1 do
@@ -656,6 +671,8 @@ module Accessors = struct
     | Set_to of 'a
 
   let invariant = invariant
+  let choose = choose
+  let choose_exn = choose_exn
   let clear = clear
   let copy = copy
   let remove = remove
