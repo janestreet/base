@@ -2087,8 +2087,9 @@ module type Map = sig
       doesn't (because there is no such thing as, say, [String.sexp_of_comparator_witness]
       -- instead you would want to pass the comparator directly).
 
-      In addition, the requirements to use [@@deriving_inline][@@@end] on the key module are only those
-      needed to satisfy what you are trying to derive on the map itself. Say you write:
+      In addition, when using [@@deriving_inline][@@@end], the requirements on the key module are only
+      those needed to satisfy what you are trying to derive on the map itself. Say you
+      write:
 
       {[
         type t = int Map.M(X).t [@@deriving_inline hash][@@@end]
