@@ -22,7 +22,7 @@ include
 [@@@end]
 
 (** [Applicative] functions don't have quite the same semantics as
-    [Applicative.of_Monad(Or_error)] would give -- [apply (Error e1) (Error e2)] returns
+    [Applicative.Of_Monad(Or_error)] would give -- [apply (Error e1) (Error e2)] returns
     the combination of [e1] and [e2], whereas it would only return [e1] if it were defined
     using [bind]. *)
 include Applicative.S with type 'a t := 'a t
