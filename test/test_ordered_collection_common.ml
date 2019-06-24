@@ -37,7 +37,8 @@ let%test_unit "fast check_pos_len_exn is correct" =
           Bool.equal
             (Exn.does_raise (fun () ->
                Private.slow_check_pos_len_exn ~pos ~len ~total_length))
-            (Exn.does_raise (fun () -> check_pos_len_exn ~pos ~len ~total_length))))))
+            (Exn.does_raise (fun () -> check_pos_len_exn ~pos ~len ~total_length))
+        ))))
 ;;
 
 let%test_unit _ =

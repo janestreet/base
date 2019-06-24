@@ -7,7 +7,8 @@ let%test "Hashtbl.merge succeeds with first-class-module interface" =
   let t1 = Hashtbl.create (module Int) in
   let t2 = Hashtbl.create (module Int) in
   let result =
-    Hashtbl.merge t1 t2 ~f:(fun ~key:_ -> function
+    Hashtbl.merge t1 t2 ~f:(fun ~key:_ ->
+      function
       | `Left x -> x
       | `Right x -> x
       | `Both _ -> assert false)

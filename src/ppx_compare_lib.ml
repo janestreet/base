@@ -107,16 +107,14 @@ module Builtin = struct
   let rec equal_list equal_elt a b =
     match a, b with
     | [], [] -> true
-    | [], _
-    | _, [] -> false
+    | [], _ | _, [] -> false
     | x :: xs, y :: ys -> equal_elt x y && equal_list equal_elt xs ys
   ;;
 
   let equal_option equal_elt a b =
     match a, b with
     | None, None -> true
-    | None, Some _
-    | Some _, None -> false
+    | None, Some _ | Some _, None -> false
     | Some a, Some b -> equal_elt a b
   ;;
 

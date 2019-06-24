@@ -23,19 +23,19 @@ type ('perm, 'record, 'field) t_with_perm =
   | Field of ('perm, 'record, 'field) For_generated_code.t
 
 (** A record field with no restrictions. *)
-type ('record, 'field) t = ([`Read | `Set_and_create], 'record, 'field) t_with_perm
+type ('record, 'field) t = ([ `Read | `Set_and_create ], 'record, 'field) t_with_perm
 
 (** A record that can only be read, because it belongs to a private type. *)
-type ('record, 'field) readonly_t = ([`Read], 'record, 'field) t_with_perm
+type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
 val name : (_, _, _) t_with_perm -> string
 val get : (_, 'r, 'a) t_with_perm -> 'r -> 'a
-val fset : ([> `Set_and_create], 'r, 'a) t_with_perm -> 'r -> 'a -> 'r
-val setter : ([> `Set_and_create], 'r, 'a) t_with_perm -> ('r -> 'a -> unit) option
-val map : ([> `Set_and_create], 'r, 'a) t_with_perm -> 'r -> f:('a -> 'a) -> 'r
+val fset : ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> 'a -> 'r
+val setter : ([> `Set_and_create ], 'r, 'a) t_with_perm -> ('r -> 'a -> unit) option
+val map : ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> f:('a -> 'a) -> 'r
 
 val updater
-  :  ([> `Set_and_create], 'r, 'a) t_with_perm
+  :  ([> `Set_and_create ], 'r, 'a) t_with_perm
   -> ('r -> f:('a -> 'a) -> unit) option
 
 type ('perm, 'record, 'result) user =

@@ -4,10 +4,10 @@ let with_return = With_return.with_return
 
 let iteri ~fold t ~f =
   ignore
-    ( fold t ~init:0 ~f:(fun i x ->
-        f i x;
-        i + 1)
-      : int )
+    (fold t ~init:0 ~f:(fun i x ->
+       f i x;
+       i + 1)
+     : int)
 ;;
 
 let foldi ~fold t ~init ~f =

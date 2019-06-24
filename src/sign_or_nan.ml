@@ -112,8 +112,7 @@ let flip = function
 
 let ( * ) t t' =
   match t, t' with
-  | Nan, _
-  | _, Nan -> Nan
+  | Nan, _ | _, Nan -> Nan
   | _ -> of_sign (Sign.( * ) (to_sign_exn t) (to_sign_exn t'))
 ;;
 

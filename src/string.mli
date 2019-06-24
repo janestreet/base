@@ -114,6 +114,7 @@ val index_exn : t -> char -> int
 val index_from : t -> int -> char -> int option
 val index_from_exn : t -> int -> char -> int
 
+
 (** [rindex_exn] and [rindex_from_exn] raise [Caml.Not_found] or [Not_found_s] when [char]
     cannot be found in [s]. *)
 val rindex : t -> char -> int option
@@ -261,6 +262,7 @@ val map : t -> f:(char -> char) -> t
 (** Like [map], but passes each character's index to [f] along with the char. *)
 val mapi : t -> f:(int -> char -> char) -> t
 
+
 (** [foldi] works similarly to [fold], but also passes the index of each character to
     [f]. *)
 val foldi : t -> init:'a -> f:(int -> 'a -> char -> 'a) -> 'a
@@ -404,6 +406,7 @@ module Escaping : sig
 
   val rindex_exn : string -> escape_char:char -> char -> int
 
+
   (** [index_from s ~escape_char pos char] finds the first literal (not escaped) instance
       of [char] in [s] starting from [pos] and proceeding towards the end of [s]. *)
   val index_from : string -> escape_char:char -> int -> char -> int option
@@ -431,6 +434,7 @@ module Escaping : sig
       E.g., [split_on_chars ~escape_char:'_' ~on:[',';'|'] "foo_|bar,baz|0" ->
       ["foo_|bar"; "baz"; "0"]]. *)
   val split_on_chars : string -> on:char list -> escape_char:char -> string list
+
 
   (** [lsplit2 s ~on ~escape_char] splits s into a pair on the first literal instance of
       [on] (meaning the first unescaped instance) starting from the left. *)

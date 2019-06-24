@@ -16,8 +16,7 @@ module Message = struct
     | Tag_t of string * t
     | Tag_arg of string * Sexp.t * t
     | Of_list of int option * t list
-    | With_backtrace of t * string
-    (* backtrace *)
+    | With_backtrace of t * string (* backtrace *)
   [@@deriving_inline sexp_of]
   let rec sexp_of_t =
     (function
@@ -193,7 +192,8 @@ let () =
      "(Exn ...)". *)
   Sexplib.Conv.Exn_converter.add [%extension_constructor Exn] (function
     | Exn t -> sexp_of_t t
-    | _ -> (* Reaching this branch indicates a bug in sexplib. *)
+    | _ ->
+      (* Reaching this branch indicates a bug in sexplib. *)
       assert false)
 ;;
 

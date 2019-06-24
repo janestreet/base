@@ -59,15 +59,12 @@ let find_last_satisfying ?pos ?len t ~pred ~get ~length =
   if len = 0
   then None
   else (
-    match
-      (* The last satisfying is the one just before the first not satisfying *)
-      find_first_satisfying ~pos ~len t ~get ~length ~pred:(Fn.non pred)
-    with
+    (* The last satisfying is the one just before the first not satisfying *)
+    match find_first_satisfying ~pos ~len t ~get ~length ~pred:(Fn.non pred) with
     | None -> Some (pos + len - 1)
     (* This means that all elements satisfy pred.
        There is at least an element as (len > 0) *)
-    | Some i
-      when i = pos -> None (* no element satisfies pred *)
+    | Some i when i = pos -> None (* no element satisfies pred *)
     | Some i -> Some (i - 1))
 ;;
 
@@ -81,15 +78,13 @@ let binary_search ?pos ?len t ~length ~get ~compare how v =
     (match
        find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v >= 0)
      with
-     | Some x
-       when compare (get t x) v = 0 -> Some x
+     | Some x when compare (get t x) v = 0 -> Some x
      | None | Some _ -> None)
   | `Last_equal_to ->
     (match
        find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v <= 0)
      with
-     | Some x
-       when compare (get t x) v = 0 -> Some x
+     | Some x when compare (get t x) v = 0 -> Some x
      | None | Some _ -> None)
   | `First_greater_than_or_equal_to ->
     find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v >= 0)

@@ -114,11 +114,12 @@ module Make_let_syntax
                             module type S
                           end)
     (Impl : Intf.S) =
-  Make_let_syntax2 (struct
-    type ('a, _) t = 'a X.t
+  Make_let_syntax2
+    (struct
+      type ('a, _) t = 'a X.t
 
-    include (X : For_let_syntax with type 'a t := 'a X.t)
-  end)
+      include (X : For_let_syntax with type 'a t := 'a X.t)
+    end)
     (Intf)
     (Impl)
 

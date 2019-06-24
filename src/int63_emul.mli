@@ -23,8 +23,7 @@ module W : sig
   val unwrap : t -> int64
 end
 
-module Repr :
-sig
+module Repr : sig
   type emulated = t
 
   type ('underlying_type, 'intermediate_type) t =

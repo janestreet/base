@@ -23,7 +23,8 @@ include Invariant.S1 with type 'a t := 'a t
 
 (** Options form a monad, where [return x = Some x], [(None >>= f) = None], and [(Some x
     >>= f) = f x]. *)
-include Monad.S with type 'a t := 'a t
+include
+  Monad.S with type 'a t := 'a t
 
 (** [is_none t] returns true iff [t = None]. *)
 val is_none : 'a t -> bool

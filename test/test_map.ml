@@ -59,8 +59,8 @@ let%expect_test "[add] duplicate" =
 let%expect_test "[Map.of_alist_multi] preserves value ordering" =
   print_s
     [%sexp
-      ( Map.of_alist_multi (module String) [ "a", 1; "a", 2; "b", 1; "b", 3 ]
-        : int list Map.M(String).t )];
+      (Map.of_alist_multi (module String) [ "a", 1; "a", 2; "b", 1; "b", 3 ]
+       : int list Map.M(String).t)];
   [%expect {|
     ((a (1 2))
      (b (1 3))) |}]
@@ -139,15 +139,13 @@ let%test_module "[symmetric_diff]" =
 
     let apply_diff_left_to_right map (key, elt) =
       match elt with
-      | `Right data
-      | `Unequal (_, data) -> Map.set map ~key ~data
+      | `Right data | `Unequal (_, data) -> Map.set map ~key ~data
       | `Left _ -> Map.remove map key
     ;;
 
     let apply_diff_right_to_left map (key, elt) =
       match elt with
-      | `Left data
-      | `Unequal (data, _) -> Map.set map ~key ~data
+      | `Left data | `Unequal (data, _) -> Map.set map ~key ~data
       | `Right _ -> Map.remove map key
     ;;
 

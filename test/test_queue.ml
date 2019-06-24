@@ -103,7 +103,8 @@ let%test_module _ =
      ;;
 
      let%test_unit _ =
-       assert (does_raise (fun () -> (init (-1) ~f:(fun _ -> ()) : unit Queue.t)))
+       assert (
+         does_raise (fun () -> (init (-1) ~f:(fun _ -> ()) : unit Queue.t)))
      ;;
 
      let get = get
@@ -115,7 +116,8 @@ let%test_module _ =
        [%test_result: int option] (get_opt t 0) ~expect:None;
        [%test_result: int option] (get_opt t (-1)) ~expect:None;
        [%test_result: int option] (get_opt t 10) ~expect:None;
-       List.iter [ -1; 0; 1 ] ~f:(fun i -> assert (does_raise (fun () -> set t i 0)));
+       List.iter [ -1; 0; 1 ] ~f:(fun i ->
+         assert (does_raise (fun () -> set t i 0)));
        enqueue t 0;
        enqueue t 1;
        enqueue t 2;
@@ -130,7 +132,8 @@ let%test_module _ =
        set t 0 3;
        [%test_result: int option] (get_opt t 0) ~expect:(Some 3);
        [%test_result: int option] (get_opt t 1) ~expect:(Some 2);
-       List.iter [ -1; 2 ] ~f:(fun i -> assert (does_raise (fun () -> set t i 0)))
+       List.iter [ -1; 2 ] ~f:(fun i ->
+         assert (does_raise (fun () -> set t i 0)))
      ;;
 
      let map = map
@@ -161,7 +164,9 @@ let%test_module _ =
          let t = of_list l in
          let f i x = i, x * 2 in
          let t' = mapi t ~f in
-         [%test_result: (int * int) list] (to_list t') ~expect:(List.mapi l ~f)
+         [%test_result: (int * int) list]
+           (to_list t')
+           ~expect:(List.mapi l ~f)
        done
      ;;
 
@@ -258,7 +263,8 @@ let%test_module _ =
              ~expect:(List.equal Int.equal (to_list t1) (to_list t2));
            [%test_result: int]
              (sign (compare Int.compare t1 t2))
-             ~expect:(sign (List.compare Int.compare (to_list t1) (to_list t2)))
+             ~expect:
+               (sign (List.compare Int.compare (to_list t1) (to_list t2)))
          ;;
 
          let lists =
@@ -285,7 +291,8 @@ let%test_module _ =
 
          let%test_unit _ =
            List.iter lists ~f:(fun list1 ->
-             List.iter lists ~f:(fun list2 -> test (of_list list1) (of_list list2)))
+             List.iter lists ~f:(fun list2 ->
+               test (of_list list1) (of_list list2)))
          ;;
        end)
      ;;
@@ -454,7 +461,8 @@ let%test_module _ =
            let a, b = This_queue.dequeue t_a, That_queue.dequeue t_b in
            let end_a = This_queue.to_array t_a in
            let end_b = That_queue.to_array t_b in
-           if not ([%equal: int option] a b) || not ([%equal: int array] end_a end_b)
+           if (not ([%equal: int option] a b))
+           || not ([%equal: int array] end_a end_b)
            then
              failwithf
                "error in dequeue: %s (%s -> %s) <> %s (%s -> %s)"
@@ -607,7 +615,9 @@ let%test_module _ =
 
          let filter_mapi (t_a, t_b) =
            let f i x =
-             if [%equal: bool] (is_even i) (is_even x) then None else Some (x + 1 + i)
+             if [%equal: bool] (is_even i) (is_even x)
+             then None
+             else Some (x + 1 + i)
            in
            let t_a' = This_queue.filter_mapi t_a ~f in
            let t_b' = That_queue.filter_mapi t_b ~f in
@@ -722,7 +732,9 @@ let%test_module _ =
          ;;
 
          let find_mapi (t_a, t_b) =
-           let f i x = if i < 7 && i % 7 = x % 7 then Some (i + x) else None in
+           let f i x =
+             if i < 7 && i % 7 = x % 7 then Some (i + x) else None
+           in
            let a' = This_queue.find_mapi t_a ~f in
            let b' = That_queue.find_mapi t_b ~f in
            if not ([%equal: int option] a' b')
@@ -771,7 +783,7 @@ let%test_module _ =
            let end_b = That_queue.to_array t_b in
            let end_a' = This_queue.to_array dst_a in
            let end_b' = That_queue.to_array dst_b in
-           if not ([%equal: int array] end_a' end_b')
+           if (not ([%equal: int array] end_a' end_b'))
            || not ([%equal: int array] end_a end_b)
            then
              failwithf
@@ -786,7 +798,9 @@ let%test_module _ =
          ;;
 
          let fold_check (t_a, t_b) =
-           let make_list fold t = fold t ~init:[] ~f:(fun acc x -> x :: acc) in
+           let make_list fold t =
+             fold t ~init:[] ~f:(fun acc x -> x :: acc)
+           in
            let this_l = make_list This_queue.fold t_a in
            let that_l = make_list That_queue.fold t_b in
            if not ([%equal: int list] this_l that_l)
@@ -903,7 +917,9 @@ let%test_module _ =
                loop
                  ~all_ops:(all_ops - 1)
                  ~non_empty_ops:
-                   (if queue_was_empty then non_empty_ops else non_empty_ops - 1))
+                   (if queue_was_empty
+                    then non_empty_ops
+                    else non_empty_ops - 1))
            in
            loop ~all_ops:30_000 ~non_empty_ops:20_000
          ;;
@@ -998,7 +1014,9 @@ let%test_module _ =
              ignore (Queue.dequeue_exn manipulated : int);
              Queue.enqueue manipulated 4;
              [ Queue.of_list [], "()", "\000"
-             ; Queue.of_list [ 1; 2; 6; 4 ], "(1 2 6 4)", "\004\001\002\006\004"
+             ; ( Queue.of_list [ 1; 2; 6; 4 ]
+               , "(1 2 6 4)"
+               , "\004\001\002\006\004" )
              ; manipulated, "(6 1 4)", "\003\006\001\004"
              ]
            ;;

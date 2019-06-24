@@ -92,6 +92,7 @@ module Make_hex (I : sig
       end[@@ocaml.doc "@inline"]
     [@@@end]
 
+
     (** [to_string] and [of_string] convert between [t] and unsigned,
         unprefixed hexadecimal.
         They must be able to handle all non-negative values and also
@@ -108,7 +109,7 @@ module Make_hex (I : sig
 
 (** global ref affecting whether the [sexp_of_t] returned by [Make]
     is consistent with the [to_string] input or the [to_string_hum] output *)
-val sexp_of_int_style : [`No_underscores | `Underscores] ref
+val sexp_of_int_style : [ `No_underscores | `Underscores ] ref
 
 (** utility for defining to_string_hum on numeric types -- takes a string matching
     (-|+)?[0-9a-fA-F]+ and puts [delimiter] every [chars_per_delimiter] characters

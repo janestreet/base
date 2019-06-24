@@ -12,8 +12,7 @@ type mode =
 let oc, mode =
   match Sys.argv with
   | [| _ |] -> stdout, Normal
-  | [| _; "-o"; out_fn |]
-  | [| _; "-atomic"; "-o"; out_fn |] ->
+  | [| _; "-o"; out_fn |] | [| _; "-atomic"; "-o"; out_fn |] ->
     (* Always produce the file atomically, we just have this option to remember that we
        need to do it *)
     let tmp_fn, oc =

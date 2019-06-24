@@ -29,7 +29,7 @@ module type Round = sig
       For convenience and performance, there are variants of [round] with [dir]
       hard-coded. If you are writing performance-critical code you should use these. *)
 
-  val round : ?dir:[`Zero | `Nearest | `Up | `Down] -> t -> to_multiple_of:t -> t
+  val round : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> to_multiple_of:t -> t
   val round_towards_zero : t -> to_multiple_of:t -> t
   val round_down : t -> to_multiple_of:t -> t
   val round_up : t -> to_multiple_of:t -> t
@@ -241,8 +241,7 @@ end
     [S_unbounded] is a restriction of [S] (below) that omits values that depend on
     fixed-size integers. *)
 module type S_unbounded = sig
-  (** @inline *)
-  include S_common
+  include S_common (** @inline *)
 
   (** A sub-module designed to be opened to make working with ints more convenient.  *)
   module O : Operators_unbounded with type t := t
@@ -250,8 +249,7 @@ end
 
 (** [S] is a generic interface for fixed-size integers. *)
 module type S = sig
-  (** @inline *)
-  include S_common
+  include S_common (** @inline *)
 
   (** The number of bits available in this integer type.  Note that the integer
       representations are signed. *)

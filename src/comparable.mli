@@ -1,2 +1,1 @@
-(** @inline *)
-include Comparable_intf.Comparable
+include Comparable_intf.Comparable (** @inline *)

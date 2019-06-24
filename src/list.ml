@@ -66,19 +66,16 @@ let range' ~compare ~stride ?(start = `inclusive) ?(stop = `exclusive) start_i s
   let rec loop i accum =
     let i_to_stop_order = order i stop_i in
     match i_to_stop_order, initial_stride_order with
-    | Less, `Less
-    | Greater, `Greater ->
+    | Less, `Less | Greater, `Greater ->
       (* haven't yet reached [stop_i]. Continue. *)
       let next_i = stride i in
       (match order i next_i, initial_stride_order with
        | Equal, _ -> raise_stride_cannot_return_same_value ()
-       | Less, `Greater
-       | Greater, `Less ->
+       | Less, `Greater | Greater, `Less ->
          invalid_arg "List.range': stride function cannot change direction"
-       | Less, `Less
-       | Greater, `Greater -> loop next_i (i :: accum))
-    | Less, `Greater
-    | Greater, `Less -> (* stepped past [stop_i].  Finished. *)
+       | Less, `Less | Greater, `Greater -> loop next_i (i :: accum))
+    | Less, `Greater | Greater, `Less ->
+      (* stepped past [stop_i].  Finished. *)
       accum
     | Equal, _ ->
       (* reached [stop_i].  Finished. *)
@@ -131,8 +128,7 @@ let nth_exn t n =
 
 let unordered_append l1 l2 =
   match l1, l2 with
-  | [], l
-  | l, [] -> l
+  | [], l | l, [] -> l
   | _ -> rev_append l1 l2
 ;;
 
@@ -713,8 +709,7 @@ let remove_consecutive_duplicates ?(which_to_keep = `Last) list ~equal =
 (** returns sorted version of list with duplicates removed *)
 let dedup_and_sort ~compare list =
   match list with
-  | []
-  | [ _ ] -> list (* performance hack *)
+  | [] | [ _ ] -> list (* performance hack *)
   | _ ->
     let equal x x' = compare x x' = 0 in
     let sorted = sort ~compare list in
@@ -725,8 +720,7 @@ let find_a_dup ~compare l =
   let sorted = sort ~compare l in
   let rec loop l =
     match l with
-    | []
-    | [ _ ] -> None
+    | [] | [ _ ] -> None
     | hd1 :: (hd2 :: _ as tl) -> if compare hd1 hd2 = 0 then Some hd1 else loop tl
   in
   loop sorted
@@ -946,8 +940,7 @@ let take t_orig n =
 
 let rec drop t n =
   match t with
-  | _ :: tl
-    when n > 0 -> drop tl (n - 1)
+  | _ :: tl when n > 0 -> drop tl (n - 1)
   | t -> t
 ;;
 
@@ -966,8 +959,7 @@ let chunks_of l ~length =
 
 let split_while xs ~f =
   let rec loop acc = function
-    | hd :: tl
-      when f hd -> loop (hd :: acc) tl
+    | hd :: tl when f hd -> loop (hd :: acc) tl
     | t -> rev acc, t
   in
   loop [] xs
@@ -976,8 +968,7 @@ let split_while xs ~f =
 (* copied from [split_while] to avoid allocating a tuple *)
 let take_while xs ~f =
   let rec loop acc = function
-    | hd :: tl
-      when f hd -> loop (hd :: acc) tl
+    | hd :: tl when f hd -> loop (hd :: acc) tl
     | _ -> rev acc
   in
   loop [] xs
@@ -985,8 +976,7 @@ let take_while xs ~f =
 
 let rec drop_while t ~f =
   match t with
-  | hd :: tl
-    when f hd -> drop_while tl ~f
+  | hd :: tl when f hd -> drop_while tl ~f
   | t -> t
 ;;
 
@@ -1021,8 +1011,7 @@ let cons x l = x :: l
 let is_sorted l ~compare =
   let rec loop l =
     match l with
-    | []
-    | [ _ ] -> true
+    | [] | [ _ ] -> true
     | x1 :: (x2 :: _ as rest) -> compare x1 x2 <= 0 && loop rest
   in
   loop l
@@ -1031,8 +1020,7 @@ let is_sorted l ~compare =
 let is_sorted_strictly l ~compare =
   let rec loop l =
     match l with
-    | []
-    | [ _ ] -> true
+    | [] | [ _ ] -> true
     | x1 :: (x2 :: _ as rest) -> compare x1 x2 < 0 && loop rest
   in
   loop l
@@ -1045,8 +1033,7 @@ end
 let permute ?(random_state = Random.State.default) list =
   match list with
   (* special cases to speed things up in trivial cases *)
-  | []
-  | [ _ ] -> list
+  | [] | [ _ ] -> list
   | [ x; y ] -> if Random.State.bool random_state then [ y; x ] else list
   | _ ->
     let arr = Array.of_list list in

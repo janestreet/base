@@ -8,11 +8,12 @@ let add_subbytes t s ~pos ~len = add_subbytes t s pos len
 let sexp_of_t t = sexp_of_string (contents t)
 
 module To_bytes =
-  Blit.Make_distinct (struct
-    type nonrec t = t
+  Blit.Make_distinct
+    (struct
+      type nonrec t = t
 
-    let length = length
-  end)
+      let length = length
+    end)
     (struct
       type t = Bytes.t
 

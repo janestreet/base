@@ -22,8 +22,7 @@ let forbid_nondeterminism_in_tests ~allow_in_tests =
   then (
     match allow_in_tests with
     | Some true -> ()
-    | None
-    | Some false ->
+    | None | Some false ->
       failwith
         "initializing Random with a nondeterministic seed is forbidden in inline tests")
 ;;

@@ -35,11 +35,12 @@ open! Bytes_replace_polymorphic_compare
 module To_string = Blit.Make_to_string (T) (To_bytes)
 
 module From_string =
-  Blit.Make_distinct (struct
-    type t = string
+  Blit.Make_distinct
+    (struct
+      type t = string
 
-    let length = String.length
-  end)
+      let length = String.length
+    end)
     (struct
       type nonrec t = t
 

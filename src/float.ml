@@ -48,8 +48,7 @@ let valid_float_lexem s =
     then s ^ "."
     else (
       match s.[i] with
-      | '0' .. '9'
-      | '-' -> loop (i + 1)
+      | '0' .. '9' | '-' -> loop (i + 1)
       | _ -> s)
   in
   loop 0

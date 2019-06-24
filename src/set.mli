@@ -1,2 +1,1 @@
-(** @inline *)
-include Set_intf.Set
+include Set_intf.Set (** @inline *)

@@ -313,7 +313,7 @@ let%test_unit _ =
       loop (n - 1) expect to_concat;
       List.iter lines ~f:(fun t ->
         let loop to_concat = loop (n - 1) (t :: expect) (t :: to_concat) in
-        if not (is_empty t) && List.is_empty to_concat then loop [];
+        if (not (is_empty t)) && List.is_empty to_concat then loop [];
         List.iter newlines ~f:(fun newline -> loop (newline :: to_concat))))
   in
   loop 3 [] []

@@ -155,8 +155,7 @@ module Tree0 = struct
 
   let of_sorted_array array ~compare_elt =
     match array with
-    | [|  |]
-    | [| _ |] -> Result.Ok (of_sorted_array_unchecked array ~compare_elt)
+    | [||] | [| _ |] -> Result.Ok (of_sorted_array_unchecked array ~compare_elt)
     | _ ->
       with_return (fun r ->
         let increasing =
@@ -284,8 +283,7 @@ module Tree0 = struct
   (* Smallest and greatest element of a set *)
   let rec min_elt = function
     | Empty -> None
-    | Leaf v
-    | Node (Empty, v, _, _, _) -> Some v
+    | Leaf v | Node (Empty, v, _, _, _) -> Some v
     | Node (l, _, _, _, _) -> min_elt l
   ;;
 
@@ -336,8 +334,7 @@ module Tree0 = struct
 
   let rec max_elt = function
     | Empty -> None
-    | Leaf v
-    | Node (_, v, Empty, _, _) -> Some v
+    | Leaf v | Node (_, v, Empty, _, _) -> Some v
     | Node (_, _, r, _, _) -> max_elt r
   ;;
 
@@ -369,8 +366,7 @@ module Tree0 = struct
      No assumption on the heights of l and r. *)
   let concat t1 t2 ~compare_elt =
     match t1, t2 with
-    | Empty, t
-    | t, Empty -> t
+    | Empty, t | t, Empty -> t
     | _, _ -> join t1 (min_elt_exn t2) (remove_min_elt t2) ~compare_elt
   ;;
 
@@ -451,8 +447,7 @@ module Tree0 = struct
   let union s1 s2 ~compare_elt =
     let rec union s1 s2 =
       match s1, s2 with
-      | Empty, t
-      | t, Empty -> t
+      | Empty, t | t, Empty -> t
       | Leaf v1, _ -> union (Node (Empty, v1, Empty, 1, 1)) s2
       | _, Leaf v2 -> union s1 (Node (Empty, v2, Empty, 1, 1))
       | Node (l1, v1, r1, h1, _), Node (l2, v2, r2, h2, _) ->
@@ -480,10 +475,8 @@ module Tree0 = struct
   let inter s1 s2 ~compare_elt =
     let rec inter s1 s2 =
       match s1, s2 with
-      | Empty, _
-      | _, Empty -> Empty
-      | (Leaf elt as singleton), other_set
-      | other_set, (Leaf elt as singleton) ->
+      | Empty, _ | _, Empty -> Empty
+      | (Leaf elt as singleton), other_set | other_set, (Leaf elt as singleton) ->
         if mem other_set elt ~compare_elt then singleton else Empty
       | Node (l1, v1, r1, _, _), t2 ->
         (match split t2 v1 ~compare_elt with
@@ -537,8 +530,7 @@ module Tree0 = struct
         match t with
         | Empty -> e
         | Leaf v -> loop (Node (Empty, v, Empty, 1, 1)) e
-        | Node (_, v, r, _, _)
-          when compare v key < 0 -> loop r e
+        | Node (_, v, r, _, _) when compare v key < 0 -> loop r e
         | Node (l, v, r, _, _) -> loop l (More (v, r, e))
       in
       loop t End
@@ -549,8 +541,7 @@ module Tree0 = struct
         match t with
         | Empty -> e
         | Leaf v -> loop (Node (Empty, v, Empty, 1, 1)) e
-        | Node (l, v, _, _, _)
-          when compare v key > 0 -> loop l e
+        | Node (l, v, _, _, _) when compare v key > 0 -> loop l e
         | Node (l, v, r, _, _) -> loop r (More (v, l, e))
       in
       loop t End
@@ -1314,10 +1305,7 @@ module Using_comparator = struct
 end
 
 type ('elt, 'cmp) comparator =
-  (module
-    Comparator.S
-    with type t = 'elt
-     and type comparator_witness = 'cmp)
+  (module Comparator.S with type t = 'elt and type comparator_witness = 'cmp)
 
 let comparator_s (type k cmp) t : (k, cmp) comparator =
   (module struct
@@ -1391,9 +1379,7 @@ let sexp_of_m__t (type elt) (module Elt : Sexp_of_m with type t = elt) t =
 
 let m__t_of_sexp
       (type elt cmp)
-      (module Elt : M_of_sexp
-        with type t = elt
-         and type comparator_witness = cmp)
+      (module Elt : M_of_sexp with type t = elt and type comparator_witness = cmp)
       sexp
   =
   Using_comparator.t_of_sexp_direct ~comparator:Elt.comparator Elt.t_of_sexp sexp

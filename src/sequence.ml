@@ -146,11 +146,11 @@ let sexp_of_t sexp_of_a t = sexp_of_list sexp_of_a (to_list t)
 let range ?(stride = 1) ?(start = `inclusive) ?(stop = `exclusive) start_v stop_v =
   let step =
     match stop with
-    | `inclusive
-      when stride >= 0 -> fun i -> if i > stop_v then Done else Yield (i, i + stride)
+    | `inclusive when stride >= 0 ->
+      fun i -> if i > stop_v then Done else Yield (i, i + stride)
     | `inclusive -> fun i -> if i < stop_v then Done else Yield (i, i + stride)
-    | `exclusive
-      when stride >= 0 -> fun i -> if i >= stop_v then Done else Yield (i, i + stride)
+    | `exclusive when stride >= 0 ->
+      fun i -> if i >= stop_v then Done else Yield (i, i + stride)
     | `exclusive -> fun i -> if i <= stop_v then Done else Yield (i, i + stride)
   in
   let init =
@@ -222,8 +222,7 @@ let filter t ~f =
         match next seed with
         | Done -> Done
         | Skip s -> Skip s
-        | Yield (a, s)
-          when f a -> Yield (a, s)
+        | Yield (a, s) when f a -> Yield (a, s)
         | Yield (_, s) -> Skip s )
 ;;
 
@@ -265,10 +264,8 @@ let find t ~f =
   let rec loop s next f =
     match next s with
     | Done -> None
-    | Yield (a, _)
-      when f a -> Some a
-    | Yield (_, s)
-    | Skip s -> loop s next f
+    | Yield (a, _) when f a -> Some a
+    | Yield (_, s) | Skip s -> loop s next f
   in
   match t with
   | Sequence (seed, next) -> loop seed next f
@@ -307,10 +304,8 @@ let for_all t ~f =
   let rec loop s next f =
     match next s with
     | Done -> true
-    | Yield (a, _)
-      when not (f a) -> false
-    | Yield (_, s)
-    | Skip s -> loop s next f
+    | Yield (a, _) when not (f a) -> false
+    | Yield (_, s) | Skip s -> loop s next f
   in
   match t with
   | Sequence (seed, next) -> loop seed next f
@@ -320,8 +315,7 @@ let for_alli t ~f =
   let rec loop s next f i =
     match next s with
     | Done -> true
-    | Yield (a, _)
-      when not (f i a) -> false
+    | Yield (a, _) when not (f i a) -> false
     | Yield (_, s) -> loop s next f (i + 1)
     | Skip s -> loop s next f i
   in
@@ -333,10 +327,8 @@ let exists t ~f =
   let rec loop s next f =
     match next s with
     | Done -> false
-    | Yield (a, _)
-      when f a -> true
-    | Yield (_, s)
-    | Skip s -> loop s next f
+    | Yield (a, _) when f a -> true
+    | Yield (_, s) | Skip s -> loop s next f
   in
   match t with
   | Sequence (seed, next) -> loop seed next f
@@ -346,8 +338,7 @@ let existsi t ~f =
   let rec loop s next f i =
     match next s with
     | Done -> false
-    | Yield (a, _)
-      when f i a -> true
+    | Yield (a, _) when f i a -> true
     | Yield (_, s) -> loop s next f (i + 1)
     | Skip s -> loop s next f i
   in
@@ -383,10 +374,8 @@ let mem t a ~equal =
   let rec loop s next a =
     match next s with
     | Done -> false
-    | Yield (b, _)
-      when equal a b -> true
-    | Yield (_, s)
-    | Skip s -> loop s next a
+    | Yield (b, _) when equal a b -> true
+    | Yield (_, s) | Skip s -> loop s next a
   in
   match t with
   | Sequence (seed, next) -> loop seed next a
@@ -715,8 +704,7 @@ let concat_mapi s ~f = concat_map (mapi s ~f:(fun i s -> i, s)) ~f:(fun (i, s) -
 let zip (Sequence (s1, next1)) (Sequence (s2, next2)) =
   let next = function
     | Yield (a, s1), Yield (b, s2) -> Yield ((a, b), (Skip s1, Skip s2))
-    | Done, _
-    | _, Done -> Done
+    | Done, _ | _, Done -> Done
     | Skip s1, s2 -> Skip (next1 s1, s2)
     | s1, Skip s2 -> Skip (s1, next2 s2)
   in
@@ -765,8 +753,7 @@ let length_is_bounded_by ?(min = -1) ?max t =
   | None -> length_is_at_least t
   | Some max ->
     (match bounded_length t ~at_most:max with
-     | `Is len
-       when len >= min -> true
+     | `Is len when len >= min -> true
      | _ -> false)
 ;;
 
@@ -812,8 +799,7 @@ let find_consecutive_duplicate (Sequence (s, next)) ~equal =
     | Skip s -> loop last_elt s
     | Yield (a, s) ->
       (match last_elt with
-       | Some b
-         when equal a b -> Some (b, a)
+       | Some b when equal a b -> Some (b, a)
        | None | Some _ -> loop (Some a) s)
   in
   loop None s
@@ -822,8 +808,7 @@ let find_consecutive_duplicate (Sequence (s, next)) ~equal =
 let remove_consecutive_duplicates s ~equal =
   unfold_with s ~init:None ~f:(fun prev a ->
     match prev with
-    | Some b
-      when equal a b -> Skip (Some a)
+    | Some b when equal a b -> Skip (Some a)
     | None | Some _ -> Yield (a, Some a))
 ;;
 
@@ -850,8 +835,7 @@ let sub s ~pos ~len =
           match next s with
           | Done -> Done
           | Skip s -> Skip (i, s)
-          | Yield (a, s)
-            when i >= pos -> Yield (a, (i + 1, s))
+          | Yield (a, s) when i >= pos -> Yield (a, (i + 1, s))
           | Yield (_, s) -> Skip (i + 1, s)) )
 ;;
 
@@ -881,8 +865,7 @@ let drop s len =
         match next s with
         | Done -> Done
         | Skip s -> Skip (i, s)
-        | Yield (a, s)
-          when i >= len -> Yield (a, (i + 1, s))
+        | Yield (a, s) when i >= len -> Yield (a, (i + 1, s))
         | Yield (_, s) -> Skip (i + 1, s) )
 ;;
 
@@ -895,8 +878,7 @@ let take_while s ~f =
         match next s with
         | Done -> Done
         | Skip s -> Skip s
-        | Yield (a, s)
-          when f a -> Yield (a, s)
+        | Yield (a, s) when f a -> Yield (a, s)
         | Yield (_, _) -> Done )
 ;;
 
@@ -910,8 +892,7 @@ let drop_while s ~f =
           (match next s with
            | Done -> Done
            | Skip s -> Skip (`Dropping s)
-           | Yield (a, s)
-             when f a -> Skip (`Dropping s)
+           | Yield (a, s) when f a -> Skip (`Dropping s)
            | Yield (a, s) -> Yield (a, `Identity s))
         | `Identity s -> lift_identity next s )
 ;;

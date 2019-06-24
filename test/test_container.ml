@@ -12,9 +12,8 @@ module Test_generic (Elt : sig
           include Generic with type 'a t := 'a t with type 'a elt := 'a Elt.t
 
           val mem : 'a t -> 'a Elt.t -> equal:('a Elt.t -> 'a Elt.t -> bool) -> bool
-          val of_list : 'a Elt.t list -> [`Ok of 'a t | `Skip_test]
-        end) :
-sig
+          val of_list : 'a Elt.t list -> [ `Ok of 'a t | `Skip_test ]
+        end) : sig
   type 'a t [@@deriving sexp]
 
   include Generic with type 'a t := 'a t
@@ -150,15 +149,16 @@ module Test_S1_allow_skipping_tests (Container : sig
 
     include Container.S1 with type 'a t := 'a t
 
-    val of_list : 'a list -> [`Ok of 'a t | `Skip_test]
+    val of_list : 'a list -> [ `Ok of 'a t | `Skip_test ]
   end) =
 struct
-  include Test_generic (struct
-      type 'a t = 'a
+  include Test_generic
+      (struct
+        type 'a t = 'a
 
-      let of_int = Fn.id
-      let to_int = Fn.id
-    end)
+        let of_int = Fn.id
+        let to_int = Fn.id
+      end)
       (Container)
 end
 

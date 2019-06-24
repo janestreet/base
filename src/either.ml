@@ -126,8 +126,7 @@ let equal eq1 eq2 t1 t2 =
   match t1, t2 with
   | First x, First y -> eq1 x y
   | Second x, Second y -> eq2 x y
-  | First _, Second _
-  | Second _, First _ -> false
+  | First _, Second _ | Second _, First _ -> false
 ;;
 
 let invariant f s = function
@@ -243,8 +242,7 @@ module First = Make_focused (struct
       match t1, t2 with
       | First x, First y -> First (f x y)
       | Second x, Second y -> Second (other x y)
-      | Second x, _
-      | _, Second x -> Second x
+      | Second x, _ | _, Second x -> Second x
     ;;
 
     let bind t ~f =
@@ -271,8 +269,7 @@ module Second = Make_focused (struct
       match t1, t2 with
       | Second x, Second y -> Second (f x y)
       | First x, First y -> First (other x y)
-      | First x, _
-      | _, First x -> First x
+      | First x, _ | _, First x -> First x
     ;;
 
     let bind t ~f =

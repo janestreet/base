@@ -1,2 +1,1 @@
-(** @inline *)
-include Blit_intf.Blit
+include Blit_intf.Blit (** @inline *)

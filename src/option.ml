@@ -196,15 +196,13 @@ let some_if cond x = if cond then Some x else None
 
 let merge a b ~f =
   match a, b with
-  | None, x
-  | x, None -> x
+  | None, x | x, None -> x
   | Some a, Some b -> Some (f a b)
 ;;
 
 let filter t ~f =
   match t with
-  | Some v as o
-    when f v -> o
+  | Some v as o when f v -> o
   | _ -> None
 ;;
 

@@ -1,2 +1,1 @@
-(** @inline *)
-include Map_intf.Map
+include Map_intf.Map (** @inline *)

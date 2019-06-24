@@ -28,3 +28,4 @@ include Comparable.S with type t := t
 
 (** [to_string t] converts [t] to the form ["FILE:LINE:COL"]. *)
 val to_string : t -> string
+

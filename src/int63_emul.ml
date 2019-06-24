@@ -31,11 +31,10 @@ module W : sig
 
   type t = int64
 
-  include
-    module type of struct
-      include T0
-    end
-    with type t := t
+  include module type of struct
+    include T0
+  end
+  with type t := t
 
   val wrap_exn : Caml.Int64.t -> t
   val wrap_modulo : Caml.Int64.t -> t

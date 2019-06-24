@@ -40,11 +40,11 @@ module type Accessors_generic = sig
   val inter : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> ('a, 'cmp) t) options
   val diff : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> ('a, 'cmp) t) options
 
-  val symmetric_diff :
-    ( 'a
-    , 'cmp
-    , ('a, 'cmp) t -> ('a, 'cmp) t -> ('a elt, 'a elt) Either.t Sequence.t )
-      options
+  val symmetric_diff
+    : ( 'a
+      , 'cmp
+      , ('a, 'cmp) t -> ('a, 'cmp) t -> ('a elt, 'a elt) Either.t Sequence.t )
+        options
 
   val compare_direct : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> int) options
   val equal : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) options
@@ -53,11 +53,11 @@ module type Accessors_generic = sig
   type ('a, 'cmp) named
 
   module Named : sig
-    val is_subset :
-      ('a, 'cmp, ('a, 'cmp) named -> of_:('a, 'cmp) named -> unit Or_error.t) options
+    val is_subset
+      : ('a, 'cmp, ('a, 'cmp) named -> of_:('a, 'cmp) named -> unit Or_error.t) options
 
-    val equal :
-      ('a, 'cmp, ('a, 'cmp) named -> ('a, 'cmp) named -> unit Or_error.t) options
+    val equal
+      : ('a, 'cmp, ('a, 'cmp) named -> ('a, 'cmp) named -> unit Or_error.t) options
   end
 
   val fold_until
@@ -69,19 +69,22 @@ module type Accessors_generic = sig
 
   val fold_right : ('a, _) t -> init:'b -> f:('a elt -> 'b -> 'b) -> 'b
 
-  val iter2 :
-    ( 'a
-    , 'cmp
-    , ('a, 'cmp) t
-    -> ('a, 'cmp) t
-    -> f:([`Left of 'a elt | `Right of 'a elt | `Both of 'a elt * 'a elt] -> unit)
-    -> unit )
-      options
+  val iter2
+    : ( 'a
+      , 'cmp
+      , ('a, 'cmp) t
+      -> ('a, 'cmp) t
+      -> f:([ `Left of 'a elt | `Right of 'a elt | `Both of 'a elt * 'a elt ] -> unit)
+      -> unit )
+        options
 
   val filter : ('a, 'cmp, ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t) options
 
-  val partition_tf :
-    ('a, 'cmp, ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t * ('a, 'cmp) t) options
+  val partition_tf
+    : ( 'a
+      , 'cmp
+      , ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t * ('a, 'cmp) t )
+        options
 
   val elements : ('a, _) t -> 'a elt list
   val min_elt : ('a, _) t -> 'a elt option
@@ -91,43 +94,43 @@ module type Accessors_generic = sig
   val choose : ('a, _) t -> 'a elt option
   val choose_exn : ('a, _) t -> 'a elt
 
-  val split :
-    ( 'a
-    , 'cmp
-    , ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * 'a elt option * ('a, 'cmp) t )
-      options
+  val split
+    : ( 'a
+      , 'cmp
+      , ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * 'a elt option * ('a, 'cmp) t )
+        options
 
-  val group_by :
-    ( 'a
-    , 'cmp
-    , ('a, 'cmp) t -> equiv:('a elt -> 'a elt -> bool) -> ('a, 'cmp) t list )
-      options
+  val group_by
+    : ( 'a
+      , 'cmp
+      , ('a, 'cmp) t -> equiv:('a elt -> 'a elt -> bool) -> ('a, 'cmp) t list )
+        options
 
   val find_exn : ('a, _) t -> f:('a elt -> bool) -> 'a elt
   val nth : ('a, _) t -> int -> 'a elt option
   val remove_index : ('a, 'cmp, ('a, 'cmp) t -> int -> ('a, 'cmp) t) options
   val to_tree : ('a, 'cmp) t -> ('a elt, 'cmp) tree
 
-  val to_sequence :
-    ( 'a
-    , 'cmp
-    , ?order:[`Increasing | `Decreasing]
-    -> ?greater_or_equal_to:'a elt
-    -> ?less_or_equal_to:'a elt
-    -> ('a, 'cmp) t
-    -> 'a elt Sequence.t )
-      options
+  val to_sequence
+    : ( 'a
+      , 'cmp
+      , ?order:[ `Increasing | `Decreasing ]
+      -> ?greater_or_equal_to:'a elt
+      -> ?less_or_equal_to:'a elt
+      -> ('a, 'cmp) t
+      -> 'a elt Sequence.t )
+        options
 
-  val merge_to_sequence :
-    ( 'a
-    , 'cmp
-    , ?order:[`Increasing | `Decreasing]
-    -> ?greater_or_equal_to:'a elt
-    -> ?less_or_equal_to:'a elt
-    -> ('a, 'cmp) t
-    -> ('a, 'cmp) t
-    -> ('a elt, 'a elt) Merge_to_sequence_element.t Sequence.t )
-      options
+  val merge_to_sequence
+    : ( 'a
+      , 'cmp
+      , ?order:[ `Increasing | `Decreasing ]
+      -> ?greater_or_equal_to:'a elt
+      -> ?less_or_equal_to:'a elt
+      -> ('a, 'cmp) t
+      -> ('a, 'cmp) t
+      -> ('a elt, 'a elt) Merge_to_sequence_element.t Sequence.t )
+        options
 end
 
 module type Accessors0 = sig
@@ -167,7 +170,7 @@ module type Accessors0 = sig
   val iter2
     :  t
     -> t
-    -> f:([`Left of elt | `Right of elt | `Both of elt * elt] -> unit)
+    -> f:([ `Left of elt | `Right of elt | `Both of elt * elt ] -> unit)
     -> unit
 
   val filter : t -> f:(elt -> bool) -> t
@@ -187,14 +190,14 @@ module type Accessors0 = sig
   val to_tree : t -> tree
 
   val to_sequence
-    :  ?order:[`Increasing | `Decreasing]
+    :  ?order:[ `Increasing | `Decreasing ]
     -> ?greater_or_equal_to:elt
     -> ?less_or_equal_to:elt
     -> t
     -> elt Sequence.t
 
   val merge_to_sequence
-    :  ?order:[`Increasing | `Decreasing]
+    :  ?order:[ `Increasing | `Decreasing ]
     -> ?greater_or_equal_to:elt
     -> ?less_or_equal_to:elt
     -> t
@@ -239,7 +242,7 @@ module type Accessors1 = sig
   val iter2
     :  'a t
     -> 'a t
-    -> f:([`Left of 'a | `Right of 'a | `Both of 'a * 'a] -> unit)
+    -> f:([ `Left of 'a | `Right of 'a | `Both of 'a * 'a ] -> unit)
     -> unit
 
   val filter : 'a t -> f:('a -> bool) -> 'a t
@@ -259,14 +262,14 @@ module type Accessors1 = sig
   val to_tree : 'a t -> 'a tree
 
   val to_sequence
-    :  ?order:[`Increasing | `Decreasing]
+    :  ?order:[ `Increasing | `Decreasing ]
     -> ?greater_or_equal_to:'a
     -> ?less_or_equal_to:'a
     -> 'a t
     -> 'a Sequence.t
 
   val merge_to_sequence
-    :  ?order:[`Increasing | `Decreasing]
+    :  ?order:[ `Increasing | `Decreasing ]
     -> ?greater_or_equal_to:'a
     -> ?less_or_equal_to:'a
     -> 'a t
@@ -310,7 +313,7 @@ module type Accessors2 = sig
   val iter2
     :  ('a, 'cmp) t
     -> ('a, 'cmp) t
-    -> f:([`Left of 'a | `Right of 'a | `Both of 'a * 'a] -> unit)
+    -> f:([ `Left of 'a | `Right of 'a | `Both of 'a * 'a ] -> unit)
     -> unit
 
   val filter : ('a, 'cmp) t -> f:('a -> bool) -> ('a, 'cmp) t
@@ -330,14 +333,14 @@ module type Accessors2 = sig
   val to_tree : ('a, 'cmp) t -> ('a, 'cmp) tree
 
   val to_sequence
-    :  ?order:[`Increasing | `Decreasing]
+    :  ?order:[ `Increasing | `Decreasing ]
     -> ?greater_or_equal_to:'a
     -> ?less_or_equal_to:'a
     -> ('a, 'cmp) t
     -> 'a Sequence.t
 
   val merge_to_sequence
-    :  ?order:[`Increasing | `Decreasing]
+    :  ?order:[ `Increasing | `Decreasing ]
     -> ?greater_or_equal_to:'a
     -> ?less_or_equal_to:'a
     -> ('a, 'cmp) t
@@ -422,7 +425,7 @@ module type Accessors2_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'cmp) t
     -> ('a, 'cmp) t
-    -> f:([`Left of 'a | `Right of 'a | `Both of 'a * 'a] -> unit)
+    -> f:([ `Left of 'a | `Right of 'a | `Both of 'a * 'a ] -> unit)
     -> unit
 
   val filter
@@ -470,7 +473,7 @@ module type Accessors2_with_comparator = sig
 
   val to_sequence
     :  comparator:('a, 'cmp) Comparator.t
-    -> ?order:[`Increasing | `Decreasing]
+    -> ?order:[ `Increasing | `Decreasing ]
     -> ?greater_or_equal_to:'a
     -> ?less_or_equal_to:'a
     -> ('a, 'cmp) t
@@ -478,7 +481,7 @@ module type Accessors2_with_comparator = sig
 
   val merge_to_sequence
     :  comparator:('a, 'cmp) Comparator.t
-    -> ?order:[`Increasing | `Decreasing]
+    -> ?order:[ `Increasing | `Decreasing ]
     -> ?greater_or_equal_to:'a
     -> ?less_or_equal_to:'a
     -> ('a, 'cmp) t
@@ -504,9 +507,10 @@ module Check_accessors
 struct end
 
 module Check_accessors0 (M : Accessors0) =
-  Check_accessors (struct
-    type ('a, 'b) t = M.t
-  end)
+  Check_accessors
+    (struct
+      type ('a, 'b) t = M.t
+    end)
     (struct
       type ('a, 'b) t = M.tree
     end)
@@ -523,9 +527,10 @@ module Check_accessors0 (M : Accessors0) =
     (M)
 
 module Check_accessors1 (M : Accessors1) =
-  Check_accessors (struct
-    type ('a, 'b) t = 'a M.t
-  end)
+  Check_accessors
+    (struct
+      type ('a, 'b) t = 'a M.t
+    end)
     (struct
       type ('a, 'b) t = 'a M.tree
     end)
@@ -542,9 +547,10 @@ module Check_accessors1 (M : Accessors1) =
     (M)
 
 module Check_accessors2 (M : Accessors2) =
-  Check_accessors (struct
-    type ('a, 'b) t = ('a, 'b) M.t
-  end)
+  Check_accessors
+    (struct
+      type ('a, 'b) t = ('a, 'b) M.t
+    end)
     (struct
       type ('a, 'b) t = ('a, 'b) M.tree
     end)
@@ -561,9 +567,10 @@ module Check_accessors2 (M : Accessors2) =
     (M)
 
 module Check_accessors2_with_comparator (M : Accessors2_with_comparator) =
-  Check_accessors (struct
-    type ('a, 'b) t = ('a, 'b) M.t
-  end)
+  Check_accessors
+    (struct
+      type ('a, 'b) t = ('a, 'b) M.t
+    end)
     (struct
       type ('a, 'b) t = ('a, 'b) M.tree
     end)
@@ -595,8 +602,8 @@ module type Creators_generic = sig
   val of_sorted_array : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t Or_error.t) options
   val of_sorted_array_unchecked : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t) options
 
-  val of_increasing_iterator_unchecked :
-    ('a, 'cmp, len:int -> f:(int -> 'a elt) -> ('a, 'cmp) t) options
+  val of_increasing_iterator_unchecked
+    : ('a, 'cmp, len:int -> f:(int -> 'a elt) -> ('a, 'cmp) t) options
 
   val stable_dedup_list : ('a, _, 'a elt list -> 'a elt list) options
 
@@ -611,8 +618,8 @@ module type Creators_generic = sig
       - [Foo.Set.map] -- comparator is [Foo.comparator] *)
   val map : ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt) -> ('b, 'cmp) t) options
 
-  val filter_map :
-    ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt option) -> ('b, 'cmp) t) options
+  val filter_map
+    : ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt option) -> ('b, 'cmp) t) options
 
   val of_tree : ('a, 'cmp, ('a elt, 'cmp) tree -> ('a, 'cmp) t) options
 end
@@ -741,9 +748,10 @@ module Check_creators
 struct end
 
 module Check_creators0 (M : Creators0) =
-  Check_creators (struct
-    type ('a, 'b) t = M.t
-  end)
+  Check_creators
+    (struct
+      type ('a, 'b) t = M.t
+    end)
     (struct
       type ('a, 'b) t = M.tree
     end)
@@ -757,9 +765,10 @@ module Check_creators0 (M : Creators0) =
     (M)
 
 module Check_creators1 (M : Creators1) =
-  Check_creators (struct
-    type ('a, 'b) t = 'a M.t
-  end)
+  Check_creators
+    (struct
+      type ('a, 'b) t = 'a M.t
+    end)
     (struct
       type ('a, 'b) t = 'a M.tree
     end)
@@ -773,9 +782,10 @@ module Check_creators1 (M : Creators1) =
     (M)
 
 module Check_creators2 (M : Creators2) =
-  Check_creators (struct
-    type ('a, 'b) t = ('a, 'b) M.t
-  end)
+  Check_creators
+    (struct
+      type ('a, 'b) t = ('a, 'b) M.t
+    end)
     (struct
       type ('a, 'b) t = ('a, 'b) M.tree
     end)
@@ -789,9 +799,10 @@ module Check_creators2 (M : Creators2) =
     (M)
 
 module Check_creators2_with_comparator (M : Creators2_with_comparator) =
-  Check_creators (struct
-    type ('a, 'b) t = ('a, 'b) M.t
-  end)
+  Check_creators
+    (struct
+      type ('a, 'b) t = ('a, 'b) M.t
+    end)
     (struct
       type ('a, 'b) t = ('a, 'b) M.tree
     end)
@@ -883,10 +894,7 @@ module type For_deriving = sig
   val sexp_of_m__t : (module Sexp_of_m with type t = 'elt) -> ('elt, 'cmp) t -> Sexp.t
 
   val m__t_of_sexp
-    :  (module
-         M_of_sexp
-         with type t = 'elt
-          and type comparator_witness = 'cmp)
+    :  (module M_of_sexp with type t = 'elt and type comparator_witness = 'cmp)
     -> Sexp.t
     -> ('elt, 'cmp) t
 
@@ -922,10 +930,7 @@ module type Set = sig
   [@@@end]
 
   type ('k, 'cmp) comparator =
-    (module
-      Comparator.S
-      with type t = 'k
-       and type comparator_witness = 'cmp)
+    (module Comparator.S with type t = 'k and type comparator_witness = 'cmp)
 
   (** Tests internal invariants of the set data structure.  Returns true on success. *)
   val invariants : (_, _) t -> bool
@@ -1146,6 +1151,7 @@ module type Set = sig
     -> finish:('accum -> 'final)
     -> 'final
 
+
   (** Like {!fold}, except that it goes from the largest to the smallest element. *)
   val fold_right : ('a, _) t -> init:'accum -> f:('a -> 'accum -> 'accum) -> 'accum
 
@@ -1159,7 +1165,7 @@ module type Set = sig
   val iter2
     :  ('a, 'cmp) t
     -> ('a, 'cmp) t
-    -> f:([`Left of 'a | `Right of 'a | `Both of 'a * 'a] -> unit)
+    -> f:([ `Left of 'a | `Right of 'a | `Both of 'a * 'a ] -> unit)
     -> unit
 
   (** if [a, b = partition_tf set ~f] then [a] is the elements on which [f] produced [true],
@@ -1216,7 +1222,7 @@ module type Set = sig
       [order].  If [greater_or_equal_to > less_or_equal_to] the sequence is empty.  Cost is
       O(log n) up front and amortized O(1) for each element produced. *)
   val to_sequence
-    :  ?order:[`Increasing  (** default *) | `Decreasing]
+    :  ?order:[ `Increasing (** default *) | `Decreasing ]
     -> ?greater_or_equal_to:'a
     -> ?less_or_equal_to:'a
     -> ('a, 'cmp) t
@@ -1245,7 +1251,7 @@ module type Set = sig
   end
 
   val merge_to_sequence
-    :  ?order:[`Increasing  (** default *) | `Decreasing]
+    :  ?order:[ `Increasing (** default *) | `Decreasing ]
     -> ?greater_or_equal_to:'a
     -> ?less_or_equal_to:'a
     -> ('a, 'cmp) t

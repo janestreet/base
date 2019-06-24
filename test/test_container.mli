@@ -6,9 +6,8 @@ module Test_S1_allow_skipping_tests (Container : sig
 
     include Container.S1 with type 'a t := 'a t
 
-    val of_list : 'a list -> [`Ok of 'a t | `Skip_test]
-  end) :
-sig
+    val of_list : 'a list -> [ `Ok of 'a t | `Skip_test ]
+  end) : sig
   type 'a t [@@deriving sexp]
 
   include Generic with type 'a t := 'a t
@@ -24,8 +23,7 @@ module Test_S1 (Container : sig
     include Container.S1 with type 'a t := 'a t
 
     val of_list : 'a list -> 'a t
-  end) :
-sig
+  end) : sig
   type 'a t [@@deriving sexp]
 
   include Generic with type 'a t := 'a t

@@ -2,6 +2,7 @@
 
 open! Import
 
+
 (** ['ok] is a function's expected return type, and ['err] is often an error message
     string.
 
@@ -83,7 +84,7 @@ val combine_errors_unit : (unit, 'err) t list -> (unit, 'err list) t
     {[
       let rics, errors = List.partition_map ~f:Result.ok_fst
                            (List.map ~f:ric_of_ticker ["AA"; "F"; "CSCO"; "AAPL"]) ]} *)
-val ok_fst : ('ok, 'err) t -> [`Fst of 'ok | `Snd of 'err]
+val ok_fst : ('ok, 'err) t -> [ `Fst of 'ok | `Snd of 'err ]
 
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
 val ok_if_true : bool -> error:'err -> (unit, 'err) t
@@ -103,3 +104,4 @@ module Export : sig
   val is_ok : (_, _) t -> bool
   val is_error : (_, _) t -> bool
 end
+

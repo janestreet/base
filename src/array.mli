@@ -94,7 +94,8 @@ val fill : 'a t -> pos:int -> len:int -> 'a -> unit
 
     [int_blit] and [float_blit] provide fast bound-checked blits for immediate
     data types.  The unsafe versions do not bound-check the arguments. *)
-include Blit.S1 with type 'a t := 'a t
+include
+  Blit.S1 with type 'a t := 'a t
 
 (** [Array.of_list l] returns a fresh array containing the elements of [l]. *)
 val of_list : 'a list -> 'a t
@@ -224,6 +225,7 @@ val of_list_rev_mapi : 'a list -> f:(int -> 'a -> 'b) -> 'b t
 (** Modifies an array in place, applying [f] to every element of the array *)
 val map_inplace : 'a t -> f:('a -> 'a) -> unit
 
+
 (** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true.  It raises
     [Caml.Not_found] or [Not_found_s] if there is no such [a]. *)
 val find_exn : 'a t -> f:('a -> bool) -> 'a
@@ -297,6 +299,7 @@ val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
     [unsafe_truncate] on an array does not interfere with other code that manipulates the
     array. *)
 val unsafe_truncate : _ t -> len:int -> unit
+
 
 (** The input array is copied internally so that future modifications of it do not change
     the sequence. *)

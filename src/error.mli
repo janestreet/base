@@ -3,8 +3,7 @@
 
 open! Import
 
-(** @open *)
-include Info_intf.S with type t = private Info.t
+include Info_intf.S with type t = private Info.t (** @open *)
 
 (** Note that the exception raised by this function maintains a reference to the [t]
     passed in. *)

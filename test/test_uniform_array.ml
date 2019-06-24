@@ -32,7 +32,6 @@ let%test_unit _ =
 (* [empty] *)
 let%test _ = length empty = 0
 let%test _ = does_raise (fun () -> get empty 0)
-
 (* [singleton] *)
 let%test _ = length (singleton zero_obj) = 1
 let%test _ = phys_equal (get (singleton zero_obj) 0) zero_obj

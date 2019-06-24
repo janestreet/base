@@ -1,2 +1,1 @@
-(** @inline *)
-include Stack_intf.Stack
+include Stack_intf.Stack (** @inline *)

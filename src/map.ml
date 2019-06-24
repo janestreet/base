@@ -27,16 +27,15 @@ include (
        (before 4.07), because back then [module type of] did not keep module
        aliases. *)
 
-    include
-      module type of struct
-        include Map_intf
-      end
-      with module Finished_or_unfinished := Map_intf.Finished_or_unfinished
-       and module Or_duplicate := Or_duplicate
-       and module Continue_or_stop := Continue_or_stop
-       and module With_comparator := With_comparator
-       and module With_first_class_module := With_first_class_module
-       and module Without_comparator := Without_comparator
+    include module type of struct
+      include Map_intf
+    end
+    with module Finished_or_unfinished := Map_intf.Finished_or_unfinished
+     and module Or_duplicate := Or_duplicate
+     and module Continue_or_stop := Continue_or_stop
+     and module With_comparator := With_comparator
+     and module With_first_class_module := With_first_class_module
+     and module Without_comparator := Without_comparator
   end)
 
 module Finished_or_unfinished = struct
@@ -155,8 +154,7 @@ module Tree0 = struct
 
   let of_sorted_array array ~compare_key =
     match array with
-    | [|  |]
-    | [| _ |] -> Result.Ok (of_sorted_array_unchecked array ~compare_key)
+    | [||] | [| _ |] -> Result.Ok (of_sorted_array_unchecked array ~compare_key)
     | _ ->
       with_return (fun r ->
         let increasing =
@@ -390,8 +388,7 @@ module Tree0 = struct
 
     let max_key = function
       | Zero () -> None
-      | One (_, r)
-      | Two (_, _, r) -> Some (Fragment.max_key r)
+      | One (_, r) | Two (_, _, r) -> Some (Fragment.max_key r)
     ;;
   end
 
@@ -403,8 +400,7 @@ module Tree0 = struct
           ~init:(Build_increasing.empty, 0)
           ~f:(fun (builder, length) (key, data) ->
             match Build_increasing.max_key builder with
-            | Some prev_key
-              when compare_key prev_key key >= 0 ->
+            | Some prev_key when compare_key prev_key key >= 0 ->
               return
                 (Or_error.error_string "of_increasing_sequence: non-increasing key")
             | _ -> Build_increasing.add_unchecked builder ~key ~data, length + 1)
@@ -595,8 +591,8 @@ module Tree0 = struct
     match max_elt lower_part, min_elt upper_part with
     | None, _ -> `Ok upper_part
     | _, None -> `Ok lower_part
-    | Some (max_lower, _), Some (min_upper, v)
-      when compare_key max_lower min_upper < 0 ->
+    | Some (max_lower, _), Some (min_upper, v) when compare_key max_lower min_upper < 0
+      ->
       let upper_part_without_min = remove_min_elt upper_part in
       `Ok (join ~compare_key lower_part min_upper v upper_part_without_min)
     | _ -> `Overlapping_key_ranges
@@ -756,8 +752,7 @@ module Tree0 = struct
 
   let remove_multi t key ~length ~compare_key =
     change t key ~length ~compare_key ~f:(function
-      | None
-      | Some ([] | [ _ ]) -> None
+      | None | Some ([] | [ _ ]) -> None
       | Some (_ :: (_ :: _ as non_empty_tail)) -> Some non_empty_tail)
   ;;
 
@@ -931,8 +926,7 @@ module Tree0 = struct
         match t with
         | Empty -> e
         | Leaf (v, d) -> loop (Node (Empty, v, d, Empty, 1)) e
-        | Node (_, v, _, r, _)
-          when compare v key < 0 -> loop r e
+        | Node (_, v, _, r, _) when compare v key < 0 -> loop r e
         | Node (l, v, d, r, _) -> loop l (More (v, d, r, e))
       in
       loop t End
@@ -943,8 +937,7 @@ module Tree0 = struct
         match t with
         | Empty -> e
         | Leaf (v, d) -> loop (Node (Empty, v, d, Empty, 1)) e
-        | Node (l, v, _, _, _)
-          when compare v key > 0 -> loop l e
+        | Node (l, v, _, _, _) when compare v key > 0 -> loop l e
         | Node (l, v, d, r, _) -> loop r (More (v, d, l, e))
       in
       loop t End
@@ -975,8 +968,7 @@ module Tree0 = struct
       let rec loop t1 t2 =
         match t1, t2 with
         | End, End -> true
-        | End, _
-        | _, End -> false
+        | End, _ | _, End -> false
         | More (v1, d1, r1, e1), More (v2, d2, r2, e2) ->
           compare_key v1 v2 = 0
           && data_equal d1 d2
@@ -1174,27 +1166,21 @@ module Tree0 = struct
           fold old_vals ~init:acc ~f:(fun ~key ~data acc -> remove acc key data)
         | Leaf (k, v), Leaf (k', v') ->
           (match compare_key k k' with
-           | x
-             when x = 0 -> delta acc k v v'
-           | x
-             when x < 0 ->
+           | x when x = 0 -> delta acc k v v'
+           | x when x < 0 ->
              let acc = remove acc k v in
              add acc k' v'
-           | _
-             (* when x > 0 *) ->
+           | _ (* when x > 0 *) ->
              let acc = add acc k' v' in
              remove acc k v)
-        | Node (l, k, v, r, _), Node (l', k', v', r', _)
-          when compare_key k k' = 0 ->
+        | Node (l, k, v, r, _), Node (l', k', v', r', _) when compare_key k k' = 0 ->
           let acc = loop l l' acc in
           let acc = delta acc k v v' in
           loop r r' acc
         (* Our roots aren't the same key. Fallback to the slow mode. Trees with small
            diffs will only do this on very small parts of the tree (hopefully - if the
            overall root is rebalanced, we'll eat the whole cost, unfortunately.) *)
-        | Node _, Node _
-        | Node _, Leaf _
-        | Leaf _, Node _ -> slow t t' ~init:acc)
+        | Node _, Node _ | Node _, Leaf _ | Leaf _, Node _ -> slow t t' ~init:acc)
     in
     loop t1 t2 init
   ;;
@@ -1333,7 +1319,8 @@ module Tree0 = struct
           (marker : (k, v, k_opt, v_opt) marker)
           (k : k_opt)
           (v : v_opt)
-      : (k * v) option =
+      : (k * v) option
+      =
       match marker with
       | Missing -> None
       | Found -> Some (k, v)
@@ -1342,7 +1329,7 @@ module Tree0 = struct
     (* The type signature is explicit here to allow polymorphic recursion. *)
     let rec loop :
       'k 'v 'k_opt 'v_opt. ('k, 'v) tree
-      -> [`Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than]
+      -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
       -> 'k -> compare_key:('k -> 'k -> int) -> ('k, 'v, 'k_opt, 'v_opt) marker
       -> 'k_opt -> 'v_opt -> ('k * 'v) option
       =
@@ -1362,8 +1349,8 @@ module Tree0 = struct
           let c = compare_key k' k in
           if c = 0
           then (
-            match (* This is a base case (no recursive call). *)
-              dir with
+            (* This is a base case (no recursive call). *)
+            match dir with
             | `Greater_or_equal_to | `Less_or_equal_to -> Some (k', v')
             | `Greater_than ->
               if is_empty r
@@ -1374,11 +1361,9 @@ module Tree0 = struct
               then repackage found_marker found_key found_value
               else max_elt l)
           else (
-            match
-              (* We are guaranteed here that k' <> k. *)
-              (* This is the only recursive case. *)
-              dir
-            with
+            (* We are guaranteed here that k' <> k. *)
+            (* This is the only recursive case. *)
+            match dir with
             | `Greater_or_equal_to | `Greater_than ->
               if c > 0
               then loop l dir k ~compare_key Found k' v'
@@ -2103,10 +2088,7 @@ end
 include Accessors
 
 type ('k, 'cmp) comparator =
-  (module
-    Comparator.S
-    with type t = 'k
-     and type comparator_witness = 'cmp)
+  (module Comparator.S with type t = 'k and type comparator_witness = 'cmp)
 
 let comparator_s (type k cmp) t : (k, cmp) comparator =
   (module struct
@@ -2191,9 +2173,7 @@ let sexp_of_m__t (type k) (module K : Sexp_of_m with type t = k) sexp_of_v t =
 
 let m__t_of_sexp
       (type k cmp)
-      (module K : M_of_sexp
-        with type t = k
-         and type comparator_witness = cmp)
+      (module K : M_of_sexp with type t = k and type comparator_witness = cmp)
       v_of_sexp
       sexp
   =

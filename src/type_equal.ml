@@ -25,7 +25,8 @@ module Lift2 (X : sig
   end) =
 struct
   let lift (type a1 b1 a2 b2) (T : (a1, b1) t) (T : (a2, b2) t)
-    : ((a1, a2) X.t, (b1, b2) X.t) t =
+    : ((a1, a2) X.t, (b1, b2) X.t) t
+    =
     T
   ;;
 end
@@ -35,7 +36,8 @@ module Lift3 (X : sig
   end) =
 struct
   let lift (type a1 b1 a2 b2 a3 b3) (T : (a1, b1) t) (T : (a2, b2) t) (T : (a3, b3) t)
-    : ((a1, a2, a3) X.t, (b1, b2, b3) X.t) t =
+    : ((a1, a2, a3) X.t, (b1, b2, b3) X.t) t
+    =
     T
   ;;
 end
@@ -81,7 +83,7 @@ module Id = struct
   module Witness = struct
     module Key = struct
       type _ t = ..
-      type type_witness_int = [`type_witness of int] [@@deriving_inline sexp_of]
+      type type_witness_int = [ `type_witness of int ] [@@deriving_inline sexp_of]
       let sexp_of_type_witness_int =
         (function
           | `type_witness v0 ->

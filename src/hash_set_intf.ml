@@ -83,9 +83,10 @@ module Check = struct
   struct end
 
   module Check_creators_is_specialization_of_creators_generic (M : Creators) =
-    Make_creators_check (struct
-      type 'a t = 'a M.t
-    end)
+    Make_creators_check
+      (struct
+        type 'a t = 'a M.t
+      end)
       (struct
         type 'a t = 'a
       end)
@@ -121,13 +122,11 @@ module type Hash_set = sig
 
   type nonrec ('key, 'z) create_options = ('key, 'z) create_options
 
-  (** @open *)
-  include Creators with type 'a t := 'a t
+  include Creators with type 'a t := 'a t (** @open *)
 
   module type Accessors = Accessors
 
-  (** @open *)
-  include Accessors with type 'a t := 'a t with type 'a elt = 'a
+  include Accessors with type 'a t := 'a t with type 'a elt = 'a (** @open *)
 
   val hashable_s : 'key t -> 'key Key.t
 

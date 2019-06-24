@@ -135,4 +135,5 @@ module type Queue = sig
       copying the queue elements over.  [set_capacity] may decrease the capacity of [t], if
       [c < capacity t]. *)
   val set_capacity : _ t -> int -> unit
+
 end

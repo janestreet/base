@@ -20,7 +20,9 @@ let%test_module _ =
        module Key = struct
          include Quickcheck.Int
 
-         let quickcheck_generator = Quickcheck.Generator.small_non_negative_int
+         let quickcheck_generator =
+           Quickcheck.Generator.small_non_negative_int
+         ;;
        end
 
        module Data = struct
@@ -43,12 +45,14 @@ let%test_module _ =
 
          let add_gen =
            Key.quickcheck_generator
-           >>= fun key -> Data.quickcheck_generator >>| fun data -> Add (key, data)
+           >>= fun key ->
+           Data.quickcheck_generator >>| fun data -> Add (key, data)
          ;;
 
          let replace_gen =
            Key.quickcheck_generator
-           >>= fun key -> Data.quickcheck_generator >>| fun data -> Replace (key, data)
+           >>= fun key ->
+           Data.quickcheck_generator >>| fun data -> Replace (key, data)
          ;;
 
          let remove_gen = Key.quickcheck_generator >>| fun key -> Remove key
@@ -88,8 +92,7 @@ let%test_module _ =
        let merge map1 map2 =
          Map.merge map1 map2 ~f:(fun ~key variant ->
            match variant with
-           | `Left data
-           | `Right data -> Some data
+           | `Left data | `Right data -> Some data
            | `Both (data1, data2) ->
              Error.raise_s
                [%message
@@ -103,7 +106,9 @@ let%test_module _ =
          | Empty -> Key.Map.empty
          | Leaf { key; value = data } -> Key.Map.singleton key data
          | Node { left; key; value = data; height = _; right } ->
-           merge (Key.Map.singleton key data) (merge (to_map left) (to_map right))
+           merge
+             (Key.Map.singleton key data)
+             (merge (to_map left) (to_map right))
        ;;
      end
 
@@ -165,7 +170,9 @@ let%test_module _ =
 
      let%test_unit _ =
        Quickcheck.test
-         (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
+         (Quickcheck.Generator.tuple2
+            constructors_gen
+            Key.quickcheck_generator)
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
          ~f:(fun (constructors, key) ->
            let t, map = reify constructors in
@@ -180,7 +187,9 @@ let%test_module _ =
 
      let%test_unit _ =
        Quickcheck.test
-         (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
+         (Quickcheck.Generator.tuple2
+            constructors_gen
+            Key.quickcheck_generator)
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
          ~f:(fun (constructors, key) ->
            let t, map = reify constructors in
@@ -193,11 +202,15 @@ let%test_module _ =
 
      let%test_unit _ =
        Quickcheck.test
-         (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
+         (Quickcheck.Generator.tuple2
+            constructors_gen
+            Key.quickcheck_generator)
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
          ~f:(fun (constructors, key) ->
            let t, map = reify constructors in
-           [%test_result: bool] (mem t key ~compare) ~expect:(Map.mem map key))
+           [%test_result: bool]
+             (mem t key ~compare)
+             ~expect:(Map.mem map key))
      ;;
 
      let first = first
@@ -208,7 +221,9 @@ let%test_module _ =
          ~sexp_of:[%sexp_of: Constructor.t list]
          ~f:(fun constructors ->
            let t, map = reify constructors in
-           [%test_result: (Key.t * Data.t) option] (first t) ~expect:(Map.min_elt map))
+           [%test_result: (Key.t * Data.t) option]
+             (first t)
+             ~expect:(Map.min_elt map))
      ;;
 
      let last = last
@@ -219,18 +234,22 @@ let%test_module _ =
          ~sexp_of:[%sexp_of: Constructor.t list]
          ~f:(fun constructors ->
            let t, map = reify constructors in
-           [%test_result: (Key.t * Data.t) option] (last t) ~expect:(Map.max_elt map))
+           [%test_result: (Key.t * Data.t) option]
+             (last t)
+             ~expect:(Map.max_elt map))
      ;;
 
      let find_and_call = find_and_call
 
      let%test_unit _ =
        Quickcheck.test
-         (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
+         (Quickcheck.Generator.tuple2
+            constructors_gen
+            Key.quickcheck_generator)
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
          ~f:(fun (constructors, key) ->
            let t, map = reify constructors in
-           [%test_result: [`Found of Data.t | `Not_found of Key.t]]
+           [%test_result: [ `Found of Data.t | `Not_found of Key.t ]]
              (find_and_call
                 t
                 key
@@ -247,11 +266,13 @@ let%test_module _ =
 
      let%test_unit _ =
        Quickcheck.test
-         (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
+         (Quickcheck.Generator.tuple2
+            constructors_gen
+            Key.quickcheck_generator)
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
          ~f:(fun (constructors, key) ->
            let t, map = reify constructors in
-           [%test_result: [`Found of Key.t * Data.t | `Not_found of Key.t]]
+           [%test_result: [ `Found of Key.t * Data.t | `Not_found of Key.t ]]
              (findi_and_call
                 t
                 key
@@ -275,7 +296,8 @@ let%test_module _ =
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t * int]
          ~f:(fun (constructors, key, arg) ->
            let t, map = reify constructors in
-           [%test_result: [`Found of Data.t * int | `Not_found of Key.t * int]]
+           [%test_result:
+             [ `Found of Data.t * int | `Not_found of Key.t * int ]]
              (find_and_call1
                 t
                 key
@@ -316,7 +338,9 @@ let%test_module _ =
              (mapi_inplace t ~f:(fun ~key:_ ~data -> data ^ data);
               fold t ~init:[] ~f:(fun ~key ~data acc -> (key, data) :: acc))
              ~expect:
-               (Map.map map ~f:(fun data -> data ^ data) |> Map.to_alist |> List.rev))
+               (Map.map map ~f:(fun data -> data ^ data)
+                |> Map.to_alist
+                |> List.rev))
      ;;
 
      let fold = fold

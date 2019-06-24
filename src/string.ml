@@ -227,22 +227,22 @@ let rindex_from_exn =
 
 let index t char =
   try Some (index_exn t char) with
-  | ( Not_found_s _ | Caml.Not_found ) -> None
+  | Not_found_s _ | Caml.Not_found -> None
 ;;
 
 let rindex t char =
   try Some (rindex_exn t char) with
-  | ( Not_found_s _ | Caml.Not_found ) -> None
+  | Not_found_s _ | Caml.Not_found -> None
 ;;
 
 let index_from t pos char =
   try Some (index_from_exn t pos char) with
-  | ( Not_found_s _ | Caml.Not_found ) -> None
+  | Not_found_s _ | Caml.Not_found -> None
 ;;
 
 let rindex_from t pos char =
   try Some (rindex_from_exn t pos char) with
-  | ( Not_found_s _ | Caml.Not_found ) -> None
+  | Not_found_s _ | Caml.Not_found -> None
 ;;
 
 module Search_pattern = struct
@@ -282,12 +282,12 @@ module Search_pattern = struct
       Array.unsafe_set kmp_arr 0 0;
       let matched_chars = ref 0 in
       for i = 1 to n - 1 do
-        matched_chars :=
-          kmp_internal_loop
-            ~matched_chars:!matched_chars
-            ~next_text_char:(unsafe_get pattern i)
-            ~pattern
-            ~kmp_arr;
+        matched_chars
+        := kmp_internal_loop
+             ~matched_chars:!matched_chars
+             ~next_text_char:(unsafe_get pattern i)
+             ~pattern
+             ~kmp_arr;
         Array.unsafe_set kmp_arr i !matched_chars
       done);
     pattern, kmp_arr
@@ -305,12 +305,12 @@ module Search_pattern = struct
       let n = length text in
       while !j < n && !matched_chars < k do
         let next_text_char = unsafe_get text !j in
-        matched_chars :=
-          kmp_internal_loop
-            ~matched_chars:!matched_chars
-            ~next_text_char
-            ~pattern
-            ~kmp_arr;
+        matched_chars
+        := kmp_internal_loop
+             ~matched_chars:!matched_chars
+             ~next_text_char
+             ~pattern
+             ~kmp_arr;
         j := !j + 1
       done;
       if !matched_chars = k then !j - k else -1)
@@ -351,12 +351,12 @@ module Search_pattern = struct
         if j < n
         then (
           let next_text_char = unsafe_get text j in
-          matched_chars :=
-            kmp_internal_loop
-              ~matched_chars:!matched_chars
-              ~next_text_char
-              ~pattern
-              ~kmp_arr)
+          matched_chars
+          := kmp_internal_loop
+               ~matched_chars:!matched_chars
+               ~next_text_char
+               ~pattern
+               ~kmp_arr)
       done;
       List.rev !found)
   ;;
@@ -496,12 +496,12 @@ let rsplit2_exn =
 
 let lsplit2 line ~on =
   try Some (lsplit2_exn line ~on) with
-  | ( Not_found_s _ | Caml.Not_found ) -> None
+  | Not_found_s _ | Caml.Not_found -> None
 ;;
 
 let rsplit2 line ~on =
   try Some (rsplit2_exn line ~on) with
-  | ( Not_found_s _ | Caml.Not_found ) -> None
+  | Not_found_s _ | Caml.Not_found -> None
 ;;
 
 let rec char_list_mem l (c : char) =
@@ -1271,14 +1271,14 @@ module Escaping = struct
      [Some]. If [Some], then the former is >= the latter. *)
   let last_non_drop_literal ~drop ~escape_char t =
     rfindi t ~f:(fun i c ->
-      not (drop c)
+      (not (drop c))
       || is_char_escaping t ~escape_char i
       || is_char_escaped t ~escape_char i)
   ;;
 
   let first_non_drop_literal ~drop ~escape_char t =
     lfindi t ~f:(fun i c ->
-      not (drop c)
+      (not (drop c))
       || is_char_escaping t ~escape_char i
       || is_char_escaped t ~escape_char i)
   ;;

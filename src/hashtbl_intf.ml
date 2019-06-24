@@ -67,7 +67,7 @@ module type Accessors = sig
   val set : ('a, 'b) t -> key:'a key -> data:'b -> unit
 
   (** [add] and [add_exn] leave the table unchanged if the key was already present. *)
-  val add : ('a, 'b) t -> key:'a key -> data:'b -> [`Ok | `Duplicate]
+  val add : ('a, 'b) t -> key:'a key -> data:'b -> [ `Ok | `Duplicate ]
 
   val add_exn : ('a, 'b) t -> key:'a key -> data:'b -> unit
 
@@ -118,13 +118,13 @@ module type Accessors = sig
       values. *)
   val partition_map
     :  ('a, 'b) t
-    -> f:('b -> [`Fst of 'c | `Snd of 'd])
+    -> f:('b -> [ `Fst of 'c | `Snd of 'd ])
     -> ('a, 'c) t * ('a, 'd) t
 
   (** Like [partition_map], but the function [f] takes both key and data as arguments. *)
   val partition_mapi
     :  ('a, 'b) t
-    -> f:(key:'a key -> data:'b -> [`Fst of 'c | `Snd of 'd])
+    -> f:(key:'a key -> data:'b -> [ `Fst of 'c | `Snd of 'd ])
     -> ('a, 'c) t * ('a, 'd) t
 
   (** Returns a pair of tables [(t1, t2)], where [t1] contains all the elements of the
@@ -210,7 +210,7 @@ module type Accessors = sig
   val merge
     :  ('k, 'a) t
     -> ('k, 'b) t
-    -> f:(key:'k key -> [`Left of 'a | `Right of 'b | `Both of 'a * 'b] -> 'c option)
+    -> f:(key:'k key -> [ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> 'c option)
     -> ('k, 'c) t
 
   (** Every [key] in [src] will be removed or set in [dst] according to the return value
@@ -264,6 +264,7 @@ module type Accessors = sig
     -> 'b Validate.check
     -> ('a, 'b) t Validate.check
 
+
   (** [remove_if_zero]'s default is [false]. *)
   val incr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit
 
@@ -307,66 +308,68 @@ module type Creators_generic = sig
   val create : ('a key, 'b, unit -> ('a, 'b) t) create_options
 
 
-  val of_alist :
-    ( 'a key
-    , 'b
-    , ('a key * 'b) list -> [`Ok of ('a, 'b) t | `Duplicate_key of 'a key] )
-      create_options
+  val of_alist
+    : ( 'a key
+      , 'b
+      , ('a key * 'b) list -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a key ] )
+        create_options
 
-  val of_alist_report_all_dups :
-    ( 'a key
-    , 'b
-    , ('a key * 'b) list -> [`Ok of ('a, 'b) t | `Duplicate_keys of 'a key list] )
-      create_options
+  val of_alist_report_all_dups
+    : ( 'a key
+      , 'b
+      , ('a key * 'b) list -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a key list ] )
+        create_options
 
-  val of_alist_or_error :
-    ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t Or_error.t) create_options
+  val of_alist_or_error
+    : ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t Or_error.t) create_options
 
   val of_alist_exn : ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t) create_options
 
-  val of_alist_multi :
-    ('a key, 'b list, ('a key * 'b) list -> ('a, 'b list) t) create_options
+  val of_alist_multi
+    : ('a key, 'b list, ('a key * 'b) list -> ('a, 'b list) t) create_options
+
 
   (** {[ create_mapped get_key get_data [x1,...,xn]
          = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn] ]} *)
-  val create_mapped :
-    ( 'a key
-    , 'b
-    , get_key:('r -> 'a key)
-      -> get_data:('r -> 'b)
-      -> 'r list
-      -> [`Ok of ('a, 'b) t | `Duplicate_keys of 'a key list] )
-      create_options
+  val create_mapped
+    : ( 'a key
+      , 'b
+      , get_key:('r -> 'a key)
+        -> get_data:('r -> 'b)
+        -> 'r list
+        -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a key list ] )
+        create_options
+
 
   (** {[ create_with_key ~get_key [x1,...,xn]
          = of_alist [get_key x1, x1; ...; get_key xn, xn] ]} *)
-  val create_with_key :
-    ( 'a key
-    , 'r
-    , get_key:('r -> 'a key)
-      -> 'r list
-      -> [`Ok of ('a, 'r) t | `Duplicate_keys of 'a key list] )
-      create_options
+  val create_with_key
+    : ( 'a key
+      , 'r
+      , get_key:('r -> 'a key)
+        -> 'r list
+        -> [ `Ok of ('a, 'r) t | `Duplicate_keys of 'a key list ] )
+        create_options
 
-  val create_with_key_or_error :
-    ( 'a key
-    , 'r
-    , get_key:('r -> 'a key) -> 'r list -> ('a, 'r) t Or_error.t )
-      create_options
+  val create_with_key_or_error
+    : ( 'a key
+      , 'r
+      , get_key:('r -> 'a key) -> 'r list -> ('a, 'r) t Or_error.t )
+        create_options
 
-  val create_with_key_exn :
-    ('a key, 'r, get_key:('r -> 'a key) -> 'r list -> ('a, 'r) t) create_options
+  val create_with_key_exn
+    : ('a key, 'r, get_key:('r -> 'a key) -> 'r list -> ('a, 'r) t) create_options
 
 
-  val group :
-    ( 'a key
-    , 'b
-    , get_key:('r -> 'a key)
-      -> get_data:('r -> 'b)
-      -> combine:('b -> 'b -> 'b)
-      -> 'r list
-      -> ('a, 'b) t )
-      create_options
+  val group
+    : ( 'a key
+      , 'b
+      , get_key:('r -> 'a key)
+        -> get_data:('r -> 'b)
+        -> combine:('b -> 'b -> 'b)
+        -> 'r list
+        -> ('a, 'b) t )
+        create_options
 end
 
 module type Creators = sig
@@ -400,7 +403,7 @@ module type Creators = sig
     -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> ('a * 'b) list
-    -> [`Ok of ('a, 'b) t | `Duplicate_key of 'a]
+    -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a ]
 
   (** Whereas [of_alist] will report [Duplicate_key] no matter how many dups there are in
       your list, [of_alist_report_all_dups] will report each and every duplicate entry.
@@ -419,7 +422,7 @@ module type Creators = sig
     -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
     -> ('a * 'b) list
-    -> [`Ok of ('a, 'b) t | `Duplicate_keys of 'a list]
+    -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a list ]
 
   val of_alist_or_error
     :  ?growth_allowed:bool (** defaults to [true] *)
@@ -486,7 +489,7 @@ module type Creators = sig
     -> get_key:('r -> 'a)
     -> get_data:('r -> 'b)
     -> 'r list
-    -> [`Ok of ('a, 'b) t | `Duplicate_keys of 'a list]
+    -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a list ]
 
   (** {[ create_with_key ~get_key [x1;...;xn]
          = of_alist [get_key x1, x1; ...; get_key xn, xn] ]} *)
@@ -496,7 +499,7 @@ module type Creators = sig
     -> 'a Key.t
     -> get_key:('r -> 'a)
     -> 'r list
-    -> [`Ok of ('a, 'r) t | `Duplicate_keys of 'a list]
+    -> [ `Ok of ('a, 'r) t | `Duplicate_keys of 'a list ]
 
   val create_with_key_or_error
     :  ?growth_allowed:bool (** defaults to [true] *)
@@ -554,14 +557,16 @@ module type S_without_submodules = sig
       polymorphic comparison and and polymorphic hashing. *)
   val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
 
-  (** @inline *)
-  include Creators with type ('a, 'b) t := ('a, 'b) t
+  include Creators with type ('a, 'b) t := ('a, 'b) t (** @inline *)
 
+  include
+    Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
   (** @inline *)
-  include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
 
+
+  include
+    Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
   (** @inline *)
-  include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
 
   val hashable_s : ('key, _) t -> 'key Key.t
 
@@ -701,8 +706,7 @@ module type Hashtbl = sig
 
       {1 Interface} *)
 
-  (** @inline *)
-  include S_without_submodules
+  include S_without_submodules (** @inline *)
 
   module type Accessors = Accessors
   module type Creators = Creators

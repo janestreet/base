@@ -4,7 +4,8 @@ open! T
 module Or_duplicate = struct
   type 'a t =
     [ `Ok of 'a
-    | `Duplicate ]
+    | `Duplicate
+    ]
   [@@deriving_inline sexp_of]
   let sexp_of_t :
     'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
@@ -27,15 +28,12 @@ end
 
 module With_first_class_module = struct
   type ('key, 'cmp, 'z) t =
-    (module
-      Comparator.S
-      with type t = 'key
-       and type comparator_witness = 'cmp)
+    (module Comparator.S with type t = 'key and type comparator_witness = 'cmp)
     -> 'z
 end
 
 module Symmetric_diff_element = struct
-  type ('k, 'v) t = 'k * [`Left of 'v | `Right of 'v | `Unequal of 'v * 'v]
+  type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
   [@@deriving_inline compare, sexp]
   let compare :
     'k 'v .
@@ -211,40 +209,40 @@ module type Accessors_generic = sig
   val is_empty : (_, _, _) t -> bool
   val length : (_, _, _) t -> int
 
-  val add :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t Or_duplicate.t )
-      options
+  val add
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t Or_duplicate.t )
+        options
 
-  val add_exn :
-    ('k, 'cmp, ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t) options
+  val add_exn
+    : ('k, 'cmp, ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t) options
 
-  val set :
-    ('k, 'cmp, ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t) options
+  val set
+    : ('k, 'cmp, ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t) options
 
-  val add_multi :
-    ( 'k
-    , 'cmp
-    , ('k, 'v list, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v list, 'cmp) t )
-      options
+  val add_multi
+    : ( 'k
+      , 'cmp
+      , ('k, 'v list, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v list, 'cmp) t )
+        options
 
-  val remove_multi :
-    ('k, 'cmp, ('k, 'v list, 'cmp) t -> 'k key -> ('k, 'v list, 'cmp) t) options
+  val remove_multi
+    : ('k, 'cmp, ('k, 'v list, 'cmp) t -> 'k key -> ('k, 'v list, 'cmp) t) options
 
   val find_multi : ('k, 'cmp, ('k, 'v list, 'cmp) t -> 'k key -> 'v list) options
 
-  val change :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t -> 'k key -> f:('v option -> 'v option) -> ('k, 'v, 'cmp) t )
-      options
+  val change
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t -> 'k key -> f:('v option -> 'v option) -> ('k, 'v, 'cmp) t )
+        options
 
-  val update :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t -> 'k key -> f:('v option -> 'v) -> ('k, 'v, 'cmp) t )
-      options
+  val update
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t -> 'k key -> f:('v option -> 'v) -> ('k, 'v, 'cmp) t )
+        options
 
   val find : ('k, 'cmp, ('k, 'v, 'cmp) t -> 'k key -> 'v option) options
   val find_exn : ('k, 'cmp, ('k, 'v, 'cmp) t -> 'k key -> 'v) options
@@ -259,16 +257,16 @@ module type Accessors_generic = sig
     -> f:(key:'k key -> data:'v -> Continue_or_stop.t)
     -> Finished_or_unfinished.t
 
-  val iter2 :
-    ( 'k
-    , 'cmp
-    , ('k, 'v1, 'cmp) t
-    -> ('k, 'v2, 'cmp) t
-    -> f:(key:'k key
-          -> data:[`Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2]
-          -> unit)
-    -> unit )
-      options
+  val iter2
+    : ( 'k
+      , 'cmp
+      , ('k, 'v1, 'cmp) t
+      -> ('k, 'v2, 'cmp) t
+      -> f:(key:'k key
+            -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
+            -> unit)
+      -> unit )
+        options
 
   val map : ('k, 'v1, 'cmp) t -> f:('v1 -> 'v2) -> ('k, 'v2, 'cmp) t
   val mapi : ('k, 'v1, 'cmp) t -> f:(key:'k key -> data:'v1 -> 'v2) -> ('k, 'v2, 'cmp) t
@@ -280,84 +278,88 @@ module type Accessors_generic = sig
     -> f:(key:'k key -> data:'v -> 'a -> 'a)
     -> 'a
 
-  val fold2 :
-    ( 'k
-    , 'cmp
-    , ('k, 'v1, 'cmp) t
-    -> ('k, 'v2, 'cmp) t
-    -> init:'a
-    -> f:(key:'k key
-          -> data:[`Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2]
-          -> 'a
-          -> 'a)
-    -> 'a )
-      options
+  val fold2
+    : ( 'k
+      , 'cmp
+      , ('k, 'v1, 'cmp) t
+      -> ('k, 'v2, 'cmp) t
+      -> init:'a
+      -> f:(key:'k key
+            -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
+            -> 'a
+            -> 'a)
+      -> 'a )
+        options
 
-  val filter_keys :
-    ('k, 'cmp, ('k, 'v, 'cmp) t -> f:('k key -> bool) -> ('k, 'v, 'cmp) t) options
+  val filter_keys
+    : ('k, 'cmp, ('k, 'v, 'cmp) t -> f:('k key -> bool) -> ('k, 'v, 'cmp) t) options
 
   val filter : ('k, 'cmp, ('k, 'v, 'cmp) t -> f:('v -> bool) -> ('k, 'v, 'cmp) t) options
 
-  val filteri :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t -> f:(key:'k key -> data:'v -> bool) -> ('k, 'v, 'cmp) t )
-      options
+  val filteri
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t -> f:(key:'k key -> data:'v -> bool) -> ('k, 'v, 'cmp) t )
+        options
 
-  val filter_map :
-    ('k, 'cmp, ('k, 'v1, 'cmp) t -> f:('v1 -> 'v2 option) -> ('k, 'v2, 'cmp) t) options
+  val filter_map
+    : ('k, 'cmp, ('k, 'v1, 'cmp) t -> f:('v1 -> 'v2 option) -> ('k, 'v2, 'cmp) t) options
 
-  val filter_mapi :
-    ( 'k
-    , 'cmp
-    , ('k, 'v1, 'cmp) t -> f:(key:'k key -> data:'v1 -> 'v2 option) -> ('k, 'v2, 'cmp) t
-    )
-      options
+  val filter_mapi
+    : ( 'k
+      , 'cmp
+      , ('k, 'v1, 'cmp) t
+      -> f:(key:'k key -> data:'v1 -> 'v2 option)
+      -> ('k, 'v2, 'cmp) t )
+        options
 
-  val partition_mapi :
-    ( 'k
-    , 'cmp
-    , ('k, 'v1, 'cmp) t
-    -> f:(key:'k key -> data:'v1 -> [`Fst of 'v2 | `Snd of 'v3])
-    -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t )
-      options
+  val partition_mapi
+    : ( 'k
+      , 'cmp
+      , ('k, 'v1, 'cmp) t
+      -> f:(key:'k key -> data:'v1 -> [ `Fst of 'v2 | `Snd of 'v3 ])
+      -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t )
+        options
 
-  val partition_map :
-    ( 'k
-    , 'cmp
-    , ('k, 'v1, 'cmp) t
-    -> f:('v1 -> [`Fst of 'v2 | `Snd of 'v3])
-    -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t )
-      options
+  val partition_map
+    : ( 'k
+      , 'cmp
+      , ('k, 'v1, 'cmp) t
+      -> f:('v1 -> [ `Fst of 'v2 | `Snd of 'v3 ])
+      -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t )
+        options
 
-  val partitioni_tf :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t
-    -> f:(key:'k key -> data:'v -> bool)
-    -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
-      options
+  val partitioni_tf
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> f:(key:'k key -> data:'v -> bool)
+      -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
+        options
 
-  val partition_tf :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t -> f:('v -> bool) -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
-      options
+  val partition_tf
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t -> f:('v -> bool) -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
+        options
 
-  val compare_direct :
-    ('k, 'cmp, ('v -> 'v -> int) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> int) options
+  val compare_direct
+    : ( 'k
+      , 'cmp
+      , ('v -> 'v -> int) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> int )
+        options
 
-  val equal :
-    ( 'k
-    , 'cmp
-    , ('v -> 'v -> bool) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> bool )
-      options
+  val equal
+    : ( 'k
+      , 'cmp
+      , ('v -> 'v -> bool) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> bool )
+        options
 
   val keys : ('k, _, _) t -> 'k key list
   val data : (_, 'v, _) t -> 'v list
 
   val to_alist
-    :  ?key_order:[`Increasing | `Decreasing]
+    :  ?key_order:[ `Increasing | `Decreasing ]
     -> ('k, 'v, _) t
     -> ('k key * 'v) list
 
@@ -366,36 +368,36 @@ module type Accessors_generic = sig
     -> 'v Validate.check
     -> ('k, 'v, _) t Validate.check
 
-  val merge :
-    ( 'k
-    , 'cmp
-    , ('k, 'v1, 'cmp) t
-    -> ('k, 'v2, 'cmp) t
-    -> f:(key:'k key
-          -> [`Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2]
-          -> 'v3 option)
-    -> ('k, 'v3, 'cmp) t )
-      options
+  val merge
+    : ( 'k
+      , 'cmp
+      , ('k, 'v1, 'cmp) t
+      -> ('k, 'v2, 'cmp) t
+      -> f:(key:'k key
+            -> [ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
+            -> 'v3 option)
+      -> ('k, 'v3, 'cmp) t )
+        options
 
-  val symmetric_diff :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t
-    -> ('k, 'v, 'cmp) t
-    -> data_equal:('v -> 'v -> bool)
-    -> ('k key, 'v) Symmetric_diff_element.t Sequence.t )
-      options
+  val symmetric_diff
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> ('k, 'v, 'cmp) t
+      -> data_equal:('v -> 'v -> bool)
+      -> ('k key, 'v) Symmetric_diff_element.t Sequence.t )
+        options
 
-  val fold_symmetric_diff :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t
-    -> ('k, 'v, 'cmp) t
-    -> data_equal:('v -> 'v -> bool)
-    -> init:'a
-    -> f:('a -> ('k key, 'v) Symmetric_diff_element.t -> 'a)
-    -> 'a )
-      options
+  val fold_symmetric_diff
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> ('k, 'v, 'cmp) t
+      -> data_equal:('v -> 'v -> bool)
+      -> init:'a
+      -> f:('a -> ('k key, 'v) Symmetric_diff_element.t -> 'a)
+      -> 'a )
+        options
 
   val min_elt : ('k, 'v, _) t -> ('k key * 'v) option
   val min_elt_exn : ('k, 'v, _) t -> 'k key * 'v
@@ -408,71 +410,71 @@ module type Accessors_generic = sig
   val count : ('k, 'v, _) t -> f:('v -> bool) -> int
   val counti : ('k, 'v, _) t -> f:(key:'k key -> data:'v -> bool) -> int
 
-  val split :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t
-    -> 'k key
-    -> ('k, 'v, 'cmp) t * ('k key * 'v) option * ('k, 'v, 'cmp) t )
-      options
+  val split
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> 'k key
+      -> ('k, 'v, 'cmp) t * ('k key * 'v) option * ('k, 'v, 'cmp) t )
+        options
 
-  val append :
-    ( 'k
-    , 'cmp
-    , lower_part:('k, 'v, 'cmp) t
-    -> upper_part:('k, 'v, 'cmp) t
-    -> [`Ok of ('k, 'v, 'cmp) t | `Overlapping_key_ranges] )
-      options
+  val append
+    : ( 'k
+      , 'cmp
+      , lower_part:('k, 'v, 'cmp) t
+      -> upper_part:('k, 'v, 'cmp) t
+      -> [ `Ok of ('k, 'v, 'cmp) t | `Overlapping_key_ranges ] )
+        options
 
-  val subrange :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t
-    -> lower_bound:'k key Maybe_bound.t
-    -> upper_bound:'k key Maybe_bound.t
-    -> ('k, 'v, 'cmp) t )
-      options
+  val subrange
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> lower_bound:'k key Maybe_bound.t
+      -> upper_bound:'k key Maybe_bound.t
+      -> ('k, 'v, 'cmp) t )
+        options
 
-  val fold_range_inclusive :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t
-    -> min:'k key
-    -> max:'k key
-    -> init:'a
-    -> f:(key:'k key -> data:'v -> 'a -> 'a)
-    -> 'a )
-      options
+  val fold_range_inclusive
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> min:'k key
+      -> max:'k key
+      -> init:'a
+      -> f:(key:'k key -> data:'v -> 'a -> 'a)
+      -> 'a )
+        options
 
-  val range_to_alist :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t -> min:'k key -> max:'k key -> ('k key * 'v) list )
-      options
+  val range_to_alist
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t -> min:'k key -> max:'k key -> ('k key * 'v) list )
+        options
 
-  val closest_key :
-    ( 'k
-    , 'cmp
-    , ('k, 'v, 'cmp) t
-    -> [`Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than]
-    -> 'k key
-    -> ('k key * 'v) option )
-      options
+  val closest_key
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
+      -> 'k key
+      -> ('k key * 'v) option )
+        options
 
   val nth : ('k, 'cmp, ('k, 'v, 'cmp) t -> int -> ('k key * 'v) option) options
   val nth_exn : ('k, 'cmp, ('k, 'v, 'cmp) t -> int -> 'k key * 'v) options
   val rank : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int option) options
   val to_tree : ('k, 'v, 'cmp) t -> ('k key, 'v, 'cmp) tree
 
-  val to_sequence :
-    ( 'k
-    , 'cmp
-    , ?order:[`Increasing_key | `Decreasing_key]
-    -> ?keys_greater_or_equal_to:'k key
-    -> ?keys_less_or_equal_to:'k key
-    -> ('k, 'v, 'cmp) t
-    -> ('k key * 'v) Sequence.t )
-      options
+  val to_sequence
+    : ( 'k
+      , 'cmp
+      , ?order:[ `Increasing_key | `Decreasing_key ]
+      -> ?keys_greater_or_equal_to:'k key
+      -> ?keys_less_or_equal_to:'k key
+      -> ('k, 'v, 'cmp) t
+      -> ('k key * 'v) Sequence.t )
+        options
 end
 
 module type Accessors1 = sig
@@ -507,7 +509,7 @@ module type Accessors1 = sig
   val iter2
     :  'a t
     -> 'b t
-    -> f:(key:key -> data:[`Left of 'a | `Right of 'b | `Both of 'a * 'b] -> unit)
+    -> f:(key:key -> data:[ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> unit)
     -> unit
 
   val map : 'a t -> f:('a -> 'b) -> 'b t
@@ -519,7 +521,7 @@ module type Accessors1 = sig
     :  'a t
     -> 'b t
     -> init:'c
-    -> f:(key:key -> data:[`Left of 'a | `Right of 'b | `Both of 'a * 'b] -> 'c -> 'c)
+    -> f:(key:key -> data:[ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> 'c -> 'c)
     -> 'c
 
   val filter_keys : 'a t -> f:(key -> bool) -> 'a t
@@ -530,23 +532,23 @@ module type Accessors1 = sig
 
   val partition_mapi
     :  'a t
-    -> f:(key:key -> data:'a -> [`Fst of 'b | `Snd of 'c])
+    -> f:(key:key -> data:'a -> [ `Fst of 'b | `Snd of 'c ])
     -> 'b t * 'c t
 
-  val partition_map : 'a t -> f:('a -> [`Fst of 'b | `Snd of 'c]) -> 'b t * 'c t
+  val partition_map : 'a t -> f:('a -> [ `Fst of 'b | `Snd of 'c ]) -> 'b t * 'c t
   val partitioni_tf : 'a t -> f:(key:key -> data:'a -> bool) -> 'a t * 'a t
   val partition_tf : 'a t -> f:('a -> bool) -> 'a t * 'a t
   val compare_direct : ('a -> 'a -> int) -> 'a t -> 'a t -> int
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val keys : _ t -> key list
   val data : 'a t -> 'a list
-  val to_alist : ?key_order:[`Increasing | `Decreasing] -> 'a t -> (key * 'a) list
+  val to_alist : ?key_order:[ `Increasing | `Decreasing ] -> 'a t -> (key * 'a) list
   val validate : name:(key -> string) -> 'a Validate.check -> 'a t Validate.check
 
   val merge
     :  'a t
     -> 'b t
-    -> f:(key:key -> [`Left of 'a | `Right of 'b | `Both of 'a * 'b] -> 'c option)
+    -> f:(key:key -> [ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> 'c option)
     -> 'c t
 
   val symmetric_diff
@@ -578,7 +580,7 @@ module type Accessors1 = sig
   val append
     :  lower_part:'a t
     -> upper_part:'a t
-    -> [`Ok of 'a t | `Overlapping_key_ranges]
+    -> [ `Ok of 'a t | `Overlapping_key_ranges ]
 
   val subrange
     :  'a t
@@ -598,7 +600,7 @@ module type Accessors1 = sig
 
   val closest_key
     :  'a t
-    -> [`Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than]
+    -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
     -> key
     -> (key * 'a) option
 
@@ -608,7 +610,7 @@ module type Accessors1 = sig
   val to_tree : 'a t -> 'a tree
 
   val to_sequence
-    :  ?order:[`Increasing_key | `Decreasing_key]
+    :  ?order:[ `Increasing_key | `Decreasing_key ]
     -> ?keys_greater_or_equal_to:key
     -> ?keys_less_or_equal_to:key
     -> 'a t
@@ -646,7 +648,7 @@ module type Accessors2 = sig
   val iter2
     :  ('a, 'b) t
     -> ('a, 'c) t
-    -> f:(key:'a -> data:[`Left of 'b | `Right of 'c | `Both of 'b * 'c] -> unit)
+    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> unit)
     -> unit
 
   val map : ('a, 'b) t -> f:('b -> 'c) -> ('a, 'c) t
@@ -658,7 +660,7 @@ module type Accessors2 = sig
     :  ('a, 'b) t
     -> ('a, 'c) t
     -> init:'d
-    -> f:(key:'a -> data:[`Left of 'b | `Right of 'c | `Both of 'b * 'c] -> 'd -> 'd)
+    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd -> 'd)
     -> 'd
 
   val filter_keys : ('a, 'b) t -> f:('a -> bool) -> ('a, 'b) t
@@ -669,12 +671,12 @@ module type Accessors2 = sig
 
   val partition_mapi
     :  ('a, 'b) t
-    -> f:(key:'a -> data:'b -> [`Fst of 'c | `Snd of 'd])
+    -> f:(key:'a -> data:'b -> [ `Fst of 'c | `Snd of 'd ])
     -> ('a, 'c) t * ('a, 'd) t
 
   val partition_map
     :  ('a, 'b) t
-    -> f:('b -> [`Fst of 'c | `Snd of 'd])
+    -> f:('b -> [ `Fst of 'c | `Snd of 'd ])
     -> ('a, 'c) t * ('a, 'd) t
 
   val partitioni_tf
@@ -687,13 +689,13 @@ module type Accessors2 = sig
   val equal : ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
   val keys : ('a, _) t -> 'a list
   val data : (_, 'b) t -> 'b list
-  val to_alist : ?key_order:[`Increasing | `Decreasing] -> ('a, 'b) t -> ('a * 'b) list
+  val to_alist : ?key_order:[ `Increasing | `Decreasing ] -> ('a, 'b) t -> ('a * 'b) list
   val validate : name:('a -> string) -> 'b Validate.check -> ('a, 'b) t Validate.check
 
   val merge
     :  ('a, 'b) t
     -> ('a, 'c) t
-    -> f:(key:'a -> [`Left of 'b | `Right of 'c | `Both of 'b * 'c] -> 'd option)
+    -> f:(key:'a -> [ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd option)
     -> ('a, 'd) t
 
   val symmetric_diff
@@ -725,7 +727,7 @@ module type Accessors2 = sig
   val append
     :  lower_part:('a, 'b) t
     -> upper_part:('a, 'b) t
-    -> [`Ok of ('a, 'b) t | `Overlapping_key_ranges]
+    -> [ `Ok of ('a, 'b) t | `Overlapping_key_ranges ]
 
   val subrange
     :  ('a, 'b) t
@@ -745,7 +747,7 @@ module type Accessors2 = sig
 
   val closest_key
     :  ('a, 'b) t
-    -> [`Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than]
+    -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
     -> 'a
     -> ('a * 'b) option
 
@@ -755,7 +757,7 @@ module type Accessors2 = sig
   val to_tree : ('a, 'b) t -> ('a, 'b) tree
 
   val to_sequence
-    :  ?order:[`Increasing_key | `Decreasing_key]
+    :  ?order:[ `Increasing_key | `Decreasing_key ]
     -> ?keys_greater_or_equal_to:'a
     -> ?keys_less_or_equal_to:'a
     -> ('a, 'b) t
@@ -793,7 +795,7 @@ module type Accessors3 = sig
   val iter2
     :  ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
-    -> f:(key:'a -> data:[`Left of 'b | `Right of 'c | `Both of 'b * 'c] -> unit)
+    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> unit)
     -> unit
 
   val map : ('a, 'b, 'cmp) t -> f:('b -> 'c) -> ('a, 'c, 'cmp) t
@@ -805,7 +807,7 @@ module type Accessors3 = sig
     :  ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
     -> init:'d
-    -> f:(key:'a -> data:[`Left of 'b | `Right of 'c | `Both of 'b * 'c] -> 'd -> 'd)
+    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd -> 'd)
     -> 'd
 
   val filter_keys : ('a, 'b, 'cmp) t -> f:('a -> bool) -> ('a, 'b, 'cmp) t
@@ -820,12 +822,12 @@ module type Accessors3 = sig
 
   val partition_mapi
     :  ('a, 'b, 'cmp) t
-    -> f:(key:'a -> data:'b -> [`Fst of 'c | `Snd of 'd])
+    -> f:(key:'a -> data:'b -> [ `Fst of 'c | `Snd of 'd ])
     -> ('a, 'c, 'cmp) t * ('a, 'd, 'cmp) t
 
   val partition_map
     :  ('a, 'b, 'cmp) t
-    -> f:('b -> [`Fst of 'c | `Snd of 'd])
+    -> f:('b -> [ `Fst of 'c | `Snd of 'd ])
     -> ('a, 'c, 'cmp) t * ('a, 'd, 'cmp) t
 
   val partitioni_tf
@@ -844,7 +846,7 @@ module type Accessors3 = sig
   val data : (_, 'b, _) t -> 'b list
 
   val to_alist
-    :  ?key_order:[`Increasing | `Decreasing]
+    :  ?key_order:[ `Increasing | `Decreasing ]
     -> ('a, 'b, _) t
     -> ('a * 'b) list
 
@@ -853,7 +855,7 @@ module type Accessors3 = sig
   val merge
     :  ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
-    -> f:(key:'a -> [`Left of 'b | `Right of 'c | `Both of 'b * 'c] -> 'd option)
+    -> f:(key:'a -> [ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd option)
     -> ('a, 'd, 'cmp) t
 
   val symmetric_diff
@@ -889,7 +891,7 @@ module type Accessors3 = sig
   val append
     :  lower_part:('k, 'v, 'cmp) t
     -> upper_part:('k, 'v, 'cmp) t
-    -> [`Ok of ('k, 'v, 'cmp) t | `Overlapping_key_ranges]
+    -> [ `Ok of ('k, 'v, 'cmp) t | `Overlapping_key_ranges ]
 
   val subrange
     :  ('k, 'v, 'cmp) t
@@ -909,7 +911,7 @@ module type Accessors3 = sig
 
   val closest_key
     :  ('a, 'b, _) t
-    -> [`Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than]
+    -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
     -> 'a
     -> ('a * 'b) option
 
@@ -919,7 +921,7 @@ module type Accessors3 = sig
   val to_tree : ('a, 'b, 'cmp) t -> ('a, 'b, 'cmp) tree
 
   val to_sequence
-    :  ?order:[`Increasing_key | `Decreasing_key]
+    :  ?order:[ `Increasing_key | `Decreasing_key ]
     -> ?keys_greater_or_equal_to:'a
     -> ?keys_less_or_equal_to:'a
     -> ('a, 'b, _) t
@@ -1011,7 +1013,7 @@ module type Accessors3_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
-    -> f:(key:'a -> data:[`Left of 'b | `Right of 'c | `Both of 'b * 'c] -> unit)
+    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> unit)
     -> unit
 
   val map : ('a, 'b, 'cmp) t -> f:('b -> 'c) -> ('a, 'c, 'cmp) t
@@ -1024,7 +1026,7 @@ module type Accessors3_with_comparator = sig
     -> ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
     -> init:'d
-    -> f:(key:'a -> data:[`Left of 'b | `Right of 'c | `Both of 'b * 'c] -> 'd -> 'd)
+    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd -> 'd)
     -> 'd
 
   val filter_keys
@@ -1060,13 +1062,13 @@ module type Accessors3_with_comparator = sig
   val partition_mapi
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t
-    -> f:(key:'a -> data:'b -> [`Fst of 'c | `Snd of 'd])
+    -> f:(key:'a -> data:'b -> [ `Fst of 'c | `Snd of 'd ])
     -> ('a, 'c, 'cmp) t * ('a, 'd, 'cmp) t
 
   val partition_map
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t
-    -> f:('b -> [`Fst of 'c | `Snd of 'd])
+    -> f:('b -> [ `Fst of 'c | `Snd of 'd ])
     -> ('a, 'c, 'cmp) t * ('a, 'd, 'cmp) t
 
   val partitioni_tf
@@ -1099,7 +1101,7 @@ module type Accessors3_with_comparator = sig
   val data : (_, 'b, _) t -> 'b list
 
   val to_alist
-    :  ?key_order:[`Increasing | `Decreasing]
+    :  ?key_order:[ `Increasing | `Decreasing ]
     -> ('a, 'b, _) t
     -> ('a * 'b) list
 
@@ -1109,7 +1111,7 @@ module type Accessors3_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
-    -> f:(key:'a -> [`Left of 'b | `Right of 'c | `Both of 'b * 'c] -> 'd option)
+    -> f:(key:'a -> [ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd option)
     -> ('a, 'd, 'cmp) t
 
   val symmetric_diff
@@ -1149,7 +1151,7 @@ module type Accessors3_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> lower_part:('a, 'b, 'cmp) t
     -> upper_part:('a, 'b, 'cmp) t
-    -> [`Ok of ('a, 'b, 'cmp) t | `Overlapping_key_ranges]
+    -> [ `Ok of ('a, 'b, 'cmp) t | `Overlapping_key_ranges ]
 
   val subrange
     :  comparator:('a, 'cmp) Comparator.t
@@ -1177,7 +1179,7 @@ module type Accessors3_with_comparator = sig
   val closest_key
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t
-    -> [`Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than]
+    -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
     -> 'a
     -> ('a * 'b) option
 
@@ -1193,7 +1195,7 @@ module type Accessors3_with_comparator = sig
 
   val to_sequence
     :  comparator:('a, 'cmp) Comparator.t
-    -> ?order:[`Increasing_key | `Decreasing_key]
+    -> ?order:[ `Increasing_key | `Decreasing_key ]
     -> ?keys_greater_or_equal_to:'a
     -> ?keys_less_or_equal_to:'a
     -> ('a, 'b, 'cmp) t
@@ -1214,9 +1216,10 @@ module Check_accessors
 struct end
 
 module Check_accessors1 (M : Accessors1) =
-  Check_accessors (struct
-    type ('a, 'b, 'c) t = 'b M.t
-  end)
+  Check_accessors
+    (struct
+      type ('a, 'b, 'c) t = 'b M.t
+    end)
     (struct
       type ('a, 'b, 'c) t = 'b M.tree
     end)
@@ -1227,9 +1230,10 @@ module Check_accessors1 (M : Accessors1) =
     (M)
 
 module Check_accessors2 (M : Accessors2) =
-  Check_accessors (struct
-    type ('a, 'b, 'c) t = ('a, 'b) M.t
-  end)
+  Check_accessors
+    (struct
+      type ('a, 'b, 'c) t = ('a, 'b) M.t
+    end)
     (struct
       type ('a, 'b, 'c) t = ('a, 'b) M.tree
     end)
@@ -1240,9 +1244,10 @@ module Check_accessors2 (M : Accessors2) =
     (M)
 
 module Check_accessors3 (M : Accessors3) =
-  Check_accessors (struct
-    type ('a, 'b, 'c) t = ('a, 'b, 'c) M.t
-  end)
+  Check_accessors
+    (struct
+      type ('a, 'b, 'c) t = ('a, 'b, 'c) M.t
+    end)
     (struct
       type ('a, 'b, 'c) t = ('a, 'b, 'c) M.tree
     end)
@@ -1253,9 +1258,10 @@ module Check_accessors3 (M : Accessors3) =
     (M)
 
 module Check_accessors3_with_comparator (M : Accessors3_with_comparator) =
-  Check_accessors (struct
-    type ('a, 'b, 'c) t = ('a, 'b, 'c) M.t
-  end)
+  Check_accessors
+    (struct
+      type ('a, 'b, 'c) t = ('a, 'b, 'c) M.t
+    end)
     (struct
       type ('a, 'b, 'c) t = ('a, 'b, 'c) M.tree
     end)
@@ -1274,45 +1280,45 @@ module type Creators_generic = sig
   val empty : ('k, 'cmp, ('k, _, 'cmp) t) options
   val singleton : ('k, 'cmp, 'k key -> 'v -> ('k, 'v, 'cmp) t) options
 
-  val of_sorted_array :
-    ('k, 'cmp, ('k key * 'v) array -> ('k, 'v, 'cmp) t Or_error.t) options
+  val of_sorted_array
+    : ('k, 'cmp, ('k key * 'v) array -> ('k, 'v, 'cmp) t Or_error.t) options
 
-  val of_sorted_array_unchecked :
-    ('k, 'cmp, ('k key * 'v) array -> ('k, 'v, 'cmp) t) options
+  val of_sorted_array_unchecked
+    : ('k, 'cmp, ('k key * 'v) array -> ('k, 'v, 'cmp) t) options
 
-  val of_increasing_iterator_unchecked :
-    ('k, 'cmp, len:int -> f:(int -> 'k key * 'v) -> ('k, 'v, 'cmp) t) options
+  val of_increasing_iterator_unchecked
+    : ('k, 'cmp, len:int -> f:(int -> 'k key * 'v) -> ('k, 'v, 'cmp) t) options
 
-  val of_increasing_sequence :
-    ('k, 'cmp, ('k key * 'v) Sequence.t -> ('k, 'v, 'cmp) t Or_error.t) options
+  val of_increasing_sequence
+    : ('k, 'cmp, ('k key * 'v) Sequence.t -> ('k, 'v, 'cmp) t Or_error.t) options
 
-  val of_alist :
-    ( 'k
-    , 'cmp
-    , ('k key * 'v) list -> [`Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key] )
-      options
+  val of_alist
+    : ( 'k
+      , 'cmp
+      , ('k key * 'v) list -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ] )
+        options
 
-  val of_alist_or_error :
-    ('k, 'cmp, ('k key * 'v) list -> ('k, 'v, 'cmp) t Or_error.t) options
+  val of_alist_or_error
+    : ('k, 'cmp, ('k key * 'v) list -> ('k, 'v, 'cmp) t Or_error.t) options
 
   val of_alist_exn : ('k, 'cmp, ('k key * 'v) list -> ('k, 'v, 'cmp) t) options
   val of_alist_multi : ('k, 'cmp, ('k key * 'v) list -> ('k, 'v list, 'cmp) t) options
 
-  val of_alist_fold :
-    ( 'k
-    , 'cmp
-    , ('k key * 'v1) list -> init:'v2 -> f:('v2 -> 'v1 -> 'v2) -> ('k, 'v2, 'cmp) t )
-      options
+  val of_alist_fold
+    : ( 'k
+      , 'cmp
+      , ('k key * 'v1) list -> init:'v2 -> f:('v2 -> 'v1 -> 'v2) -> ('k, 'v2, 'cmp) t )
+        options
 
-  val of_alist_reduce :
-    ('k, 'cmp, ('k key * 'v) list -> f:('v -> 'v -> 'v) -> ('k, 'v, 'cmp) t) options
+  val of_alist_reduce
+    : ('k, 'cmp, ('k key * 'v) list -> f:('v -> 'v -> 'v) -> ('k, 'v, 'cmp) t) options
 
-  val of_iteri :
-    ( 'k
-    , 'cmp
-    , iteri:(f:(key:'k key -> data:'v -> unit) -> unit)
-    -> [`Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key] )
-      options
+  val of_iteri
+    : ( 'k
+      , 'cmp
+      , iteri:(f:(key:'k key -> data:'v -> unit) -> unit)
+      -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ] )
+        options
 
   val of_tree : ('k, 'cmp, ('k key, 'v, 'cmp) tree -> ('k, 'v, 'cmp) t) options
 end
@@ -1324,7 +1330,7 @@ module type Creators1 = sig
 
   val empty : _ t
   val singleton : key -> 'a -> 'a t
-  val of_alist : (key * 'a) list -> [`Ok of 'a t | `Duplicate_key of key]
+  val of_alist : (key * 'a) list -> [ `Ok of 'a t | `Duplicate_key of key ]
   val of_alist_or_error : (key * 'a) list -> 'a t Or_error.t
   val of_alist_exn : (key * 'a) list -> 'a t
   val of_alist_multi : (key * 'a) list -> 'a list t
@@ -1337,7 +1343,7 @@ module type Creators1 = sig
 
   val of_iteri
     :  iteri:(f:(key:key -> data:'v -> unit) -> unit)
-    -> [`Ok of 'v t | `Duplicate_key of key]
+    -> [ `Ok of 'v t | `Duplicate_key of key ]
 
   val of_tree : 'a tree -> 'a t
 end
@@ -1348,7 +1354,7 @@ module type Creators2 = sig
 
   val empty : (_, _) t
   val singleton : 'a -> 'b -> ('a, 'b) t
-  val of_alist : ('a * 'b) list -> [`Ok of ('a, 'b) t | `Duplicate_key of 'a]
+  val of_alist : ('a * 'b) list -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a ]
   val of_alist_or_error : ('a * 'b) list -> ('a, 'b) t Or_error.t
   val of_alist_exn : ('a * 'b) list -> ('a, 'b) t
   val of_alist_multi : ('a * 'b) list -> ('a, 'b list) t
@@ -1361,7 +1367,7 @@ module type Creators2 = sig
 
   val of_iteri
     :  iteri:(f:(key:'a -> data:'b -> unit) -> unit)
-    -> [`Ok of ('a, 'b) t | `Duplicate_key of 'a]
+    -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a ]
 
   val of_tree : ('a, 'b) tree -> ('a, 'b) t
 end
@@ -1376,7 +1382,7 @@ module type Creators3_with_comparator = sig
   val of_alist
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a * 'b) list
-    -> [`Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a]
+    -> [ `Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a ]
 
   val of_alist_or_error
     :  comparator:('a, 'cmp) Comparator.t
@@ -1430,7 +1436,7 @@ module type Creators3_with_comparator = sig
   val of_iteri
     :  comparator:('a, 'cmp) Comparator.t
     -> iteri:(f:(key:'a -> data:'b -> unit) -> unit)
-    -> [`Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a]
+    -> [ `Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a ]
 
   val of_tree
     :  comparator:('a, 'cmp) Comparator.t
@@ -1451,9 +1457,10 @@ module Check_creators
 struct end
 
 module Check_creators1 (M : Creators1) =
-  Check_creators (struct
-    type ('a, 'b, 'c) t = 'b M.t
-  end)
+  Check_creators
+    (struct
+      type ('a, 'b, 'c) t = 'b M.t
+    end)
     (struct
       type ('a, 'b, 'c) t = 'b M.tree
     end)
@@ -1464,9 +1471,10 @@ module Check_creators1 (M : Creators1) =
     (M)
 
 module Check_creators2 (M : Creators2) =
-  Check_creators (struct
-    type ('a, 'b, 'c) t = ('a, 'b) M.t
-  end)
+  Check_creators
+    (struct
+      type ('a, 'b, 'c) t = ('a, 'b) M.t
+    end)
     (struct
       type ('a, 'b, 'c) t = ('a, 'b) M.tree
     end)
@@ -1477,9 +1485,10 @@ module Check_creators2 (M : Creators2) =
     (M)
 
 module Check_creators3_with_comparator (M : Creators3_with_comparator) =
-  Check_creators (struct
-    type ('a, 'b, 'c) t = ('a, 'b, 'c) M.t
-  end)
+  Check_creators
+    (struct
+      type ('a, 'b, 'c) t = ('a, 'b, 'c) M.t
+    end)
     (struct
       type ('a, 'b, 'c) t = ('a, 'b, 'c) M.tree
     end)
@@ -1559,10 +1568,7 @@ module type For_deriving = sig
     -> Sexp.t
 
   val m__t_of_sexp
-    :  (module
-         M_of_sexp
-         with type t = 'k
-          and type comparator_witness = 'cmp)
+    :  (module M_of_sexp with type t = 'k and type comparator_witness = 'cmp)
     -> (Sexp.t -> 'v)
     -> Sexp.t
     -> ('k, 'v, 'cmp) t
@@ -1621,10 +1627,7 @@ module type Map = sig
   end
 
   type ('k, 'cmp) comparator =
-    (module
-      Comparator.S
-      with type t = 'k
-       and type comparator_witness = 'cmp)
+    (module Comparator.S with type t = 'k and type comparator_witness = 'cmp)
 
   (** Test if the invariants of the internal AVL search tree hold. *)
   val invariants : (_, _, _) t -> bool
@@ -1645,7 +1648,7 @@ module type Map = sig
   val of_alist
     :  ('a, 'cmp) comparator
     -> ('a * 'b) list
-    -> [`Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a]
+    -> [ `Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a ]
 
   (** Creates a map from an association list with unique keys, returning an error if
       duplicate ['a] keys are found. *)
@@ -1687,7 +1690,7 @@ module type Map = sig
   val of_iteri
     :  ('a, 'cmp) comparator
     -> iteri:(f:(key:'a -> data:'b -> unit) -> unit)
-    -> [`Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a]
+    -> [ `Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a ]
 
   (** Creates a map from a sorted array of key-data pairs. The input array must be sorted
       (either in ascending or descending order), as given by the relevant comparator, and
@@ -1761,6 +1764,7 @@ module type Map = sig
   (** [update t key ~f] is [change t key ~f:(fun o -> Some (f o))]. *)
   val update : ('k, 'v, 'cmp) t -> 'k -> f:('v option -> 'v) -> ('k, 'v, 'cmp) t
 
+
   (** Returns [Some value] bound to the given key, or [None] if none exists. *)
   val find : ('k, 'v, 'cmp) t -> 'k -> 'v option
 
@@ -1791,7 +1795,7 @@ module type Map = sig
   val iter2
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
-    -> f:(key:'k -> data:[`Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2] -> unit)
+    -> f:(key:'k -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ] -> unit)
     -> unit
 
   (** Returns a new map with bound values replaced by [f] applied to the bound values.*)
@@ -1811,7 +1815,10 @@ module type Map = sig
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
     -> init:'a
-    -> f:(key:'k -> data:[`Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2] -> 'a -> 'a)
+    -> f:(key:'k
+          -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
+          -> 'a
+          -> 'a)
     -> 'a
 
   (** [filter], [filteri], [filter_keys], [filter_map], and [filter_mapi] run in O(n * lg
@@ -1832,17 +1839,18 @@ module type Map = sig
     -> f:(key:'k -> data:'v1 -> 'v2 option)
     -> ('k, 'v2, 'cmp) t
 
+
   (** [partition_mapi t ~f] returns two new [t]s, with each key in [t] appearing in
       exactly one of the resulting maps depending on its mapping in [f]. *)
   val partition_mapi
     :  ('k, 'v1, 'cmp) t
-    -> f:(key:'k -> data:'v1 -> [`Fst of 'v2 | `Snd of 'v3])
+    -> f:(key:'k -> data:'v1 -> [ `Fst of 'v2 | `Snd of 'v3 ])
     -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t
 
   (** [partition_map t ~f = partition_mapi t ~f:(fun ~key:_ ~data -> f data)] *)
   val partition_map
     :  ('k, 'v1, 'cmp) t
-    -> f:('v1 -> [`Fst of 'v2 | `Snd of 'v3])
+    -> f:('v1 -> [ `Fst of 'v2 | `Snd of 'v3 ])
     -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t
 
   (**
@@ -1888,7 +1896,7 @@ module type Map = sig
 
   (** Creates an association list from the given map. *)
   val to_alist
-    :  ?key_order:[`Increasing | `Decreasing] (** default is [`Increasing] *)
+    :  ?key_order:[ `Increasing | `Decreasing ] (** default is [`Increasing] *)
     -> ('k, 'v, _) t
     -> ('k * 'v) list
 
@@ -1901,7 +1909,7 @@ module type Map = sig
   val merge
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
-    -> f:(key:'k -> [`Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2] -> 'v3 option)
+    -> f:(key:'k -> [ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ] -> 'v3 option)
     -> ('k, 'v3, 'cmp) t
 
   (** A special case of [merge], [merge_skewed t1 t2] is a map containing all the
@@ -1920,7 +1928,7 @@ module type Map = sig
     -> ('k, 'v, 'cmp) t
 
   module Symmetric_diff_element : sig
-    type ('k, 'v) t = 'k * [`Left of 'v | `Right of 'v | `Unequal of 'v * 'v]
+    type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
     [@@deriving_inline compare, sexp]
     include
       sig
@@ -2003,7 +2011,7 @@ module type Map = sig
   val append
     :  lower_part:('k, 'v, 'cmp) t
     -> upper_part:('k, 'v, 'cmp) t
-    -> [`Ok of ('k, 'v, 'cmp) t | `Overlapping_key_ranges]
+    -> [ `Ok of ('k, 'v, 'cmp) t | `Overlapping_key_ranges ]
 
   (** [subrange t ~lower_bound ~upper_bound] returns a map containing all the entries from
       [t] whose keys lie inside the interval indicated by [~lower_bound] and
@@ -2045,7 +2053,7 @@ module type Map = sig
       at some value. *)
   val closest_key
     :  ('k, 'v, 'cmp) t
-    -> [`Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than]
+    -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
     -> 'k
     -> ('k * 'v) option
 
@@ -2065,7 +2073,7 @@ module type Map = sig
       [keys_greater_or_equal_to > keys_less_or_equal_to], the sequence is empty.  Cost is
       O(log n) up front and amortized O(1) to produce each element. *)
   val to_sequence
-    :  ?order:[`Increasing_key  (** default *) | `Decreasing_key]
+    :  ?order:[ `Increasing_key (** default *) | `Decreasing_key ]
     -> ?keys_greater_or_equal_to:'k
     -> ?keys_less_or_equal_to:'k
     -> ('k, 'v, 'cmp) t

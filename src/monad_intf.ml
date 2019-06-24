@@ -21,7 +21,7 @@ module type Basic = sig
 
       Some other functions returned by [Monad.Make] are defined in terms of [map], so
       passing in a more efficient [map] will improve their efficiency as well. *)
-  val map : [`Define_using_bind | `Custom of 'a t -> f:('a -> 'b) -> 'b t]
+  val map : [ `Define_using_bind | `Custom of 'a t -> f:('a -> 'b) -> 'b t ]
 end
 
 module type Infix = sig
@@ -104,7 +104,7 @@ module type Basic2 = sig
   type ('a, 'e) t
 
   val bind : ('a, 'e) t -> f:('a -> ('b, 'e) t) -> ('b, 'e) t
-  val map : [`Define_using_bind | `Custom of ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t]
+  val map : [ `Define_using_bind | `Custom of ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t ]
   val return : 'a -> ('a, _) t
 end
 
@@ -161,8 +161,8 @@ module type Basic3 = sig
 
   val bind : ('a, 'd, 'e) t -> f:('a -> ('b, 'd, 'e) t) -> ('b, 'd, 'e) t
 
-  val map :
-    [`Define_using_bind | `Custom of ('a, 'd, 'e) t -> f:('a -> 'b) -> ('b, 'd, 'e) t]
+  val map
+    : [ `Define_using_bind | `Custom of ('a, 'd, 'e) t -> f:('a -> 'b) -> ('b, 'd, 'e) t ]
 
   val return : 'a -> ('a, _, _) t
 end
@@ -239,8 +239,8 @@ module type Basic_indexed = sig
 
   val bind : ('a, 'i, 'j) t -> f:('a -> ('b, 'j, 'k) t) -> ('b, 'i, 'k) t
 
-  val map :
-    [`Define_using_bind | `Custom of ('a, 'i, 'j) t -> f:('a -> 'b) -> ('b, 'i, 'j) t]
+  val map
+    : [ `Define_using_bind | `Custom of ('a, 'i, 'j) t -> f:('a -> 'b) -> ('b, 'i, 'j) t ]
 
   val return : 'a -> ('a, 'i, 'i) t
 end

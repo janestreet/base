@@ -98,13 +98,14 @@ module Make_distinct
                         val create : len:int -> t
                         val unsafe_blit : (Src.t, t) blit
                       end) =
-  Make_gen (struct
-    type 'a t = Src.t
+  Make_gen
+    (struct
+      type 'a t = Src.t
 
-    open Src
+      open Src
 
-    let length = length
-  end)
+      let length = length
+    end)
     (struct
       type 'a t = Dst.t
 

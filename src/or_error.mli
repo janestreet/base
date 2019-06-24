@@ -25,7 +25,8 @@ include
     [Applicative.Of_Monad(Or_error)] would give -- [apply (Error e1) (Error e2)] returns
     the combination of [e1] and [e2], whereas it would only return [e1] if it were defined
     using [bind]. *)
-include Applicative.S with type 'a t := 'a t
+include
+  Applicative.S with type 'a t := 'a t
 
 include Invariant.S1 with type 'a t := 'a t
 include Monad.S with type 'a t := 'a t
@@ -51,12 +52,12 @@ val ok : 'ok t -> 'ok option
 val ok_exn : 'a t -> 'a
 
 (** [of_exn ?backtrace exn] is [Error (Error.of_exn ?backtrace exn)]. *)
-val of_exn : ?backtrace:[`Get | `This of string] -> exn -> _ t
+val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> _ t
 
 (** [of_exn_result ?backtrace (Ok a) = Ok a]
 
     [of_exn_result ?backtrace (Error exn) = of_exn ?backtrace exn] *)
-val of_exn_result : ?backtrace:[`Get | `This of string] -> ('a, exn) Result.t -> 'a t
+val of_exn_result : ?backtrace:[ `Get | `This of string ] -> ('a, exn) Result.t -> 'a t
 
 (** [error] is a wrapper around [Error.create]:
 

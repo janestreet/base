@@ -51,8 +51,7 @@ end
 include Immediate64.Make (Int) (Int63_emul)
 
 module Backend = struct
-  module type S =
-  sig
+  module type S = sig
     type t [@@deriving_inline hash]
     include
       sig

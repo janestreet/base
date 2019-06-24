@@ -503,7 +503,7 @@ module type Make_gen_arg = sig
       efficient.  Several other functions returned by [Container.Make] are defined in
       terms of [iter], so passing in a more efficient [iter] will improve their efficiency
       as well. *)
-  val iter : [`Define_using_fold | `Custom of 'a t -> f:('a elt -> unit) -> unit]
+  val iter : [ `Define_using_fold | `Custom of 'a t -> f:('a elt -> unit) -> unit ]
 
   (** The [length] argument to [Container.Make] specifies how to implement the
       container's [length] function.  [`Define_using_fold] means to define
@@ -517,7 +517,7 @@ module type Make_gen_arg = sig
       efficient.  Several other functions returned by [Container.Make] are defined in
       terms of [length], so passing in a more efficient [length] will improve their
       efficiency as well. *)
-  val length : [`Define_using_fold | `Custom of 'a t -> int]
+  val length : [ `Define_using_fold | `Custom of 'a t -> int ]
 end
 
 module type Make_arg = Make_gen_arg with type 'a elt := 'a Monad.Ident.t
@@ -532,8 +532,8 @@ module type Make0_arg = sig
   type t
 
   val fold : t -> init:'accum -> f:('accum -> Elt.t -> 'accum) -> 'accum
-  val iter : [`Define_using_fold | `Custom of t -> f:(Elt.t -> unit) -> unit]
-  val length : [`Define_using_fold | `Custom of t -> int]
+  val iter : [ `Define_using_fold | `Custom of t -> f:(Elt.t -> unit) -> unit ]
+  val length : [ `Define_using_fold | `Custom of t -> int ]
 end
 
 module type Container = sig

@@ -113,13 +113,12 @@ module type S = sig
       [~backtrace:`Get] attaches the backtrace for the most recent exception.  The same
       caveats as for [Printexc.print_backtrace] apply.  [~backtrace:(`This s)] attaches
       the backtrace [s].  The default is no backtrace. *)
-  val of_exn : ?backtrace:[`Get | `This of string] -> exn -> t
+  val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> t
 
   val to_exn : t -> exn
   val pp : Formatter.t -> t -> unit
 
-  module Internal_repr :
-  sig
+  module Internal_repr : sig
     type info = t
 
     (** The internal representation.  It is exposed so that we can write efficient
@@ -133,7 +132,7 @@ module type S = sig
       | Tag_t of string * t
       | Tag_arg of string * Sexp.t * t
       | Of_list of int option * t list
-      | With_backtrace of t * string  (** The second argument is the backtrace *)
+      | With_backtrace of t * string (** The second argument is the backtrace *)
     [@@deriving_inline sexp_of]
     include
       sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t

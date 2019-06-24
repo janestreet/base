@@ -23,7 +23,8 @@ include Floatable.S with type t := t
 (** [max] and [min] will return nan if either argument is nan.
 
     The [validate_*] functions always fail if class is [Nan] or [Infinite]. *)
-include Identifiable.S with type t := t
+include
+  Identifiable.S with type t := t
 
 include Comparable.With_zero with type t := t
 
@@ -90,7 +91,7 @@ val of_int64_preserve_order : int64 -> t
 (** The next or previous representable float.  ULP stands for "unit of least precision",
     and is the spacing between floating point numbers.  Both [one_ulp `Up infinity] and
     [one_ulp `Down neg_infinity] return a nan. *)
-val one_ulp : [`Up | `Down] -> t -> t
+val one_ulp : [ `Up | `Down ] -> t -> t
 
 (** Note that this doesn't round trip in either direction.  For example, [Float.to_int
     (Float.of_int max_int) <> max_int]. *)
@@ -137,10 +138,10 @@ val to_int64 : t -> int64
     - [round_* i = i] for any float [i] that is an integer.
 
     - [iround_*_exn (of_int i) = i] for any int [i] with [-2**52 <= i <= 2**52]. *)
-val round : ?dir:[`Zero | `Nearest | `Up | `Down] -> t -> t
+val round : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> t
 
-val iround : ?dir:[`Zero | `Nearest | `Up | `Down] -> t -> int option
-val iround_exn : ?dir:[`Zero | `Nearest | `Up | `Down] -> t -> int
+val iround : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> int option
+val iround_exn : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> int
 val round_towards_zero : t -> t
 val round_down : t -> t
 val round_up : t -> t
@@ -262,8 +263,7 @@ val ( ~- ) : t -> t
 
 (** Returns the fractional part and the whole (i.e., integer) part. For example, [modf
     (-3.14)] returns [{ fractional = -0.14; integral = -3.; }]! *)
-module Parts :
-sig
+module Parts : sig
   type outer
   type t
 
@@ -296,6 +296,7 @@ val sub : t -> t -> t
 val neg : t -> t
 val scale : t -> t -> t
 val abs : t -> t
+
 
 (** A sub-module designed to be opened to make working with floats more convenient.  *)
 module O : sig

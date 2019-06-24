@@ -24,8 +24,8 @@ end
 module type Make_arg = sig
   include Container_intf.Make_arg
 
-  val iteri : [`Define_using_fold | `Custom of ('a t, 'a) iteri]
-  val foldi : [`Define_using_fold | `Custom of ('a t, 'a, _) foldi]
+  val iteri : [ `Define_using_fold | `Custom of ('a t, 'a) iteri ]
+  val foldi : [ `Define_using_fold | `Custom of ('a t, 'a, _) foldi ]
 end
 
 module type Indexed_container = sig

@@ -41,7 +41,8 @@ exception Sexp of Sexp.t
 let () =
   Sexplib.Conv.Exn_converter.add [%extension_constructor Sexp] (function
     | Sexp t -> t
-    | _ -> (* Reaching this branch indicates a bug in sexplib. *)
+    | _ ->
+      (* Reaching this branch indicates a bug in sexplib. *)
       assert false)
 ;;
 

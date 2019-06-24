@@ -35,12 +35,13 @@ module Sequence = struct
   let set = set
 end
 
-include Base_for_tests.Test_blit.Test1_generic (struct
-    include Option
+include Base_for_tests.Test_blit.Test1_generic
+    (struct
+      include Option
 
-    let equal a b = Option.equal Bool.equal a b
-    let of_bool b = Some b
-  end)
+      let equal a b = Option.equal Bool.equal a b
+      let of_bool b = Some b
+    end)
     (struct
       type nonrec 'a t = 'a t [@@deriving sexp]
       type 'a z = 'a

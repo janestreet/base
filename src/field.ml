@@ -46,8 +46,8 @@ end
 type ('perm, 'record, 'field) t_with_perm =
   | Field of ('perm, 'record, 'field) For_generated_code.t
 
-type ('record, 'field) t = ([`Read | `Set_and_create], 'record, 'field) t_with_perm
-type ('record, 'field) readonly_t = ([`Read], 'record, 'field) t_with_perm
+type ('record, 'field) t = ([ `Read | `Set_and_create ], 'record, 'field) t_with_perm
+type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
 let name (Field field) = field.name
 let get (Field field) r = field.getter r

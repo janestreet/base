@@ -23,7 +23,8 @@ include Stringable.S with type t := t
 
 (** Note that [pp] allocates in order to preserve the state of the byte
     sequence it was initially called with. *)
-include Pretty_printer.S with type t := t
+include
+  Pretty_printer.S with type t := t
 
 module To_string : sig
   val sub : (t, string) Blit.sub

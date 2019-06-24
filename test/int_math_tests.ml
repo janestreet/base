@@ -25,7 +25,7 @@ let%test_module "overflow_bounds" =
         let is_ok =
           if i = 0
           then Big_int.(max_base = max_val)
-          else not (overflows max_base) && overflows Big_int.(max_base + one)
+          else (not (overflows max_base)) && overflows Big_int.(max_base + one)
         in
         if not is_ok
         then

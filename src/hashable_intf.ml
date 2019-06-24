@@ -56,15 +56,14 @@ module Hashable = struct
   ;;
 
   let to_key (type a) { hash; compare; sexp_of_t } =
-    ( module struct
+    (module struct
       type t = a
 
       let hash = hash
       let compare = compare
       let sexp_of_t = sexp_of_t
-    end
-    : Key
-      with type t = a )
+    end : Key
+      with type t = a)
   ;;
 end
 

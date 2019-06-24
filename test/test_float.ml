@@ -409,10 +409,9 @@ let%test_module _ =
   (module struct
     let check v expect =
       match Validate.result v, expect with
-      | Ok (), `Ok
-      | Error _, `Error -> ()
+      | Ok (), `Ok | Error _, `Error -> ()
       | r, expect ->
-        raise_s [%message "mismatch" (r : unit Or_error.t) (expect : [`Ok | `Error])]
+        raise_s [%message "mismatch" (r : unit Or_error.t) (expect : [ `Ok | `Error ])]
     ;;
 
     let%test_unit _ = check (validate_lbound ~min:(Incl 0.) nan) `Error

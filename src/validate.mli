@@ -119,20 +119,20 @@ val maybe_raise : t -> unit
 val valid_or_error : 'a -> 'a check -> 'a Or_error.t
 
 (** Used for validating an individual field. *)
-val field : 'record -> ([> `Read], 'record, 'a) Field.t_with_perm -> 'a check -> t
+val field : 'record -> ([> `Read ], 'record, 'a) Field.t_with_perm -> 'a check -> t
 
 (** Creates a function for use in a [Fields.fold]. *)
 val field_folder
   :  'record
   -> 'a check
   -> t list
-  -> ([> `Read], 'record, 'a) Field.t_with_perm
+  -> ([> `Read ], 'record, 'a) Field.t_with_perm
   -> t list
 
 (** Creates a function for use in a [Fields.Direct.fold]. *)
 val field_direct_folder
   :  'a check
-  -> (t list -> ([> `Read], 'record, 'a) Field.t_with_perm -> 'record -> 'a -> t list)
+  -> (t list -> ([> `Read ], 'record, 'a) Field.t_with_perm -> 'record -> 'a -> t list)
        Staged.t
 
 (** Combines a list of validation functions into one that does all validations. *)

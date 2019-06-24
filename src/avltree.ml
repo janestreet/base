@@ -120,11 +120,9 @@ let balance tree =
           update_height left;
           left)
         else (
-          match
-            (* if right is a leaf, then left must be empty. That means
-               height is 2. Even if hr is empty we still can't get here. *)
-            left_node_right
-          with
+          (* if right is a leaf, then left must be empty. That means
+             height is 2. Even if hr is empty we still can't get here. *)
+          match left_node_right with
           | Empty | Leaf _ -> assert false
           | Node
               ({ left = lr_left; key = _; value = _; height = _; right = lr_right } as
@@ -139,8 +137,8 @@ let balance tree =
             left_node_right))
     else if hr > hl + 2
     then (
-      match (* see above for an explanation of why right cannot be a leaf *)
-        right with
+      (* see above for an explanation of why right cannot be a leaf *)
+      match right with
       | Empty | Leaf _ -> assert false
       | Node
           ({ left = right_node_left
@@ -157,10 +155,8 @@ let balance tree =
           update_height right;
           right)
         else (
-          match
-            (* see above for an explanation of why this cannot be a leaf *)
-            right_node_left
-          with
+          (* see above for an explanation of why this cannot be a leaf *)
+          match right_node_left with
           | Empty | Leaf _ -> assert false
           | Node
               ({ left = rl_left; key = _; value = _; height = _; right = rl_right } as
@@ -471,24 +467,21 @@ let rec fold t ~init ~f =
       ; value = data
       ; height = _
       ; right = Leaf { key = rkey; value = rdata }
-      } ->
-    f ~key:rkey ~data:rdata (f ~key ~data (f ~key:lkey ~data:ldata init))
+      } -> f ~key:rkey ~data:rdata (f ~key ~data (f ~key:lkey ~data:ldata init))
   | Node
       { left = Leaf { key = lkey; value = ldata }
       ; key
       ; value = data
       ; height = _
       ; right = Empty
-      } ->
-    f ~key ~data (f ~key:lkey ~data:ldata init)
+      } -> f ~key ~data (f ~key:lkey ~data:ldata init)
   | Node
       { left = Empty
       ; key
       ; value = data
       ; height = _
       ; right = Leaf { key = rkey; value = rdata }
-      } ->
-    f ~key:rkey ~data:rdata (f ~key ~data init)
+      } -> f ~key:rkey ~data:rdata (f ~key ~data init)
   | Node
       { left; key; value = data; height = _; right = Leaf { key = rkey; value = rdata } }
     -> f ~key:rkey ~data:rdata (f ~key ~data (fold left ~init ~f))
@@ -521,6 +514,5 @@ let rec mapi_inplace t ~f =
 
 let choose_exn = function
   | Empty -> raise_s (Sexp.message "[Avltree.choose_exn] of empty hashtbl" [])
-  | Leaf { key; value; _ }
-  | Node { key; value; _ } -> key, value
+  | Leaf { key; value; _ } | Node { key; value; _ } -> key, value
 ;;

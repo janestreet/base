@@ -80,7 +80,8 @@ let%expect_test "typical use of Validate.field_direct_folder doesn't allocate on
 
 let%expect_test "Validate.all doesn't allocate on success" =
   let checks = List.init 5 ~f:(Fn.const Validate.pass_bool) in
-  require_no_allocation [%here] (fun () -> ignore (Validate.all checks true : Validate.t))
+  require_no_allocation [%here] (fun () ->
+    ignore (Validate.all checks true : Validate.t))
 ;;
 
 let%expect_test "Validate.combine doesn't allocate on success" =

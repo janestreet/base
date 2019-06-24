@@ -43,113 +43,77 @@ type 'a ref = 'a Caml.ref = { mutable contents : 'a }
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)
 module Caml = struct
 
-  (** @canonical Caml.Arg *)
-  module Arg = Caml.Arg
+  module Arg = Caml.Arg (** @canonical Caml.Arg *)
 
-  (** @canonical Caml.StdLabels.Array *)
-  module Array = Caml.StdLabels.Array
+  module Array = Caml.StdLabels.Array (** @canonical Caml.StdLabels.Array *)
 
-  (** @canonical Caml.Bool *)
-  module Bool = Caml.Bool
+  module Bool = Caml.Bool (** @canonical Caml.Bool *)
 
-  (** @canonical Caml.Buffer *)
-  module Buffer = Caml.Buffer
+  module Buffer = Caml.Buffer (** @canonical Caml.Buffer *)
 
-  (** @canonical Caml.StdLabels.Bytes *)
-  module Bytes = Caml.StdLabels.Bytes
+  module Bytes = Caml.StdLabels.Bytes (** @canonical Caml.StdLabels.Bytes *)
 
-  (** @canonical Caml.Char *)
-  module Char = Caml.Char
+  module Char = Caml.Char (** @canonical Caml.Char *)
 
-  (** @canonical Caml.Ephemeron *)
-  module Ephemeron = Caml.Ephemeron
+  module Ephemeron = Caml.Ephemeron (** @canonical Caml.Ephemeron *)
 
-  (** @canonical Caml.Float *)
-  module Float = Caml.Float
+  module Float = Caml.Float (** @canonical Caml.Float *)
 
-  (** @canonical Caml.Format *)
-  module Format = Caml.Format
+  module Format = Caml.Format (** @canonical Caml.Format *)
 
-  (** @canonical Caml.Fun *)
-  module Fun = Caml.Fun
+  module Fun = Caml.Fun (** @canonical Caml.Fun *)
 
-  (** @canonical Caml.Gc *)
-  module Gc = Caml.Gc
+  module Gc = Caml.Gc (** @canonical Caml.Gc *)
 
-  (** @canonical Caml.MoreLabels.Hashtbl *)
-  module Hashtbl = Caml.MoreLabels.Hashtbl
+  module Hashtbl = Caml.MoreLabels.Hashtbl (** @canonical Caml.MoreLabels.Hashtbl *)
 
-  (** @canonical Caml.Int32 *)
-  module Int32 = Caml.Int32
+  module Int32 = Caml.Int32 (** @canonical Caml.Int32 *)
 
-  (** @canonical Caml.Int *)
-  module Int = Caml.Int
+  module Int = Caml.Int (** @canonical Caml.Int *)
 
-  (** @canonical Caml.Int64 *)
-  module Int64 = Caml.Int64
+  module Int64 = Caml.Int64 (** @canonical Caml.Int64 *)
 
-  (** @canonical Caml.Lazy *)
-  module Lazy = Caml.Lazy
+  module Lazy = Caml.Lazy (** @canonical Caml.Lazy *)
 
-  (** @canonical Caml.Lexing *)
-  module Lexing = Caml.Lexing
+  module Lexing = Caml.Lexing (** @canonical Caml.Lexing *)
 
-  (** @canonical Caml.StdLabels.List *)
-  module List = Caml.StdLabels.List
+  module List = Caml.StdLabels.List (** @canonical Caml.StdLabels.List *)
 
-  (** @canonical Caml.MoreLabels.Map *)
-  module Map = Caml.MoreLabels.Map
+  module Map = Caml.MoreLabels.Map (** @canonical Caml.MoreLabels.Map *)
 
-  (** @canonical Caml.Nativeint *)
-  module Nativeint = Caml.Nativeint
+  module Nativeint = Caml.Nativeint (** @canonical Caml.Nativeint *)
 
-  (** @canonical Caml.Obj *)
-  module Obj = Caml.Obj
+  module Obj = Caml.Obj (** @canonical Caml.Obj *)
 
-  (** @canonical Caml.Option *)
-  module Option = Caml.Option
+  module Option = Caml.Option (** @canonical Caml.Option *)
 
-  (** @canonical Caml.Parsing *)
-  module Parsing = Caml.Parsing
+  module Parsing = Caml.Parsing (** @canonical Caml.Parsing *)
 
-  (** @canonical Caml.Printexc *)
-  module Printexc = Caml.Printexc
+  module Printexc = Caml.Printexc (** @canonical Caml.Printexc *)
 
-  (** @canonical Caml.Printf *)
-  module Printf = Caml.Printf
+  module Printf = Caml.Printf (** @canonical Caml.Printf *)
 
-  (** @canonical Caml.Queue *)
-  module Queue = Caml.Queue
+  module Queue = Caml.Queue (** @canonical Caml.Queue *)
 
-  (** @canonical Caml.Random *)
-  module Random = Caml.Random
+  module Random = Caml.Random (** @canonical Caml.Random *)
 
-  (** @canonical Caml.Result *)
-  module Result = Caml.Result
+  module Result = Caml.Result (** @canonical Caml.Result *)
 
-  (** @canonical Caml.Scanf *)
-  module Scanf = Caml.Scanf
+  module Scanf = Caml.Scanf (** @canonical Caml.Scanf *)
 
-  (** @canonical Caml.MoreLabels.Set *)
-  module Set = Caml.MoreLabels.Set
+  module Set = Caml.MoreLabels.Set (** @canonical Caml.MoreLabels.Set *)
 
-  (** @canonical Caml.Stack *)
-  module Stack = Caml.Stack
+  module Stack = Caml.Stack (** @canonical Caml.Stack *)
 
-  (** @canonical Caml.Stream *)
-  module Stream = Caml.Stream
+  module Stream = Caml.Stream (** @canonical Caml.Stream *)
 
-  (** @canonical Caml.StdLabels.String *)
-  module String = Caml.StdLabels.String
+  module String = Caml.StdLabels.String (** @canonical Caml.StdLabels.String *)
 
-  (** @canonical Caml.Sys *)
-  module Sys = Caml.Sys
+  module Sys = Caml.Sys (** @canonical Caml.Sys *)
 
-  (** @canonical Caml.Uchar *)
-  module Uchar = Caml.Uchar
+  module Uchar = Caml.Uchar (** @canonical Caml.Uchar *)
 
-  (** @canonical Caml.Unit *)
-  module Unit = Caml.Unit
+  module Unit = Caml.Unit (** @canonical Caml.Unit *)
 
   include Pervasives [@ocaml.warning "-3"]
 
@@ -181,8 +145,7 @@ let ( -. ) = Caml.( -. )
 let ( / ) = Caml.( / )
 let ( /. ) = Caml.( /. )
 
-(** @canonical Base.Poly *)
-module Poly = Poly0
+module Poly = Poly0 (** @canonical Base.Poly *)
 
 module Int_replace_polymorphic_compare = struct
   let ( < ) (x : int) y = Poly.( < ) x y

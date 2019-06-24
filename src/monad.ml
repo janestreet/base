@@ -10,9 +10,10 @@ module type Basic_general = sig
     -> f:('a -> ('b, 'j, 'k, 'd, 'e) t)
     -> ('b, 'i, 'k, 'd, 'e) t
 
-  val map :
-    [ `Define_using_bind
-    | `Custom of ('a, 'i, 'j, 'd, 'e) t -> f:('a -> 'b) -> ('b, 'i, 'j, 'd, 'e) t ]
+  val map
+    : [ `Define_using_bind
+      | `Custom of ('a, 'i, 'j, 'd, 'e) t -> f:('a -> 'b) -> ('b, 'i, 'j, 'd, 'e) t
+      ]
 
   val return : 'a -> ('a, 'i, 'i, 'd, 'e) t
 end

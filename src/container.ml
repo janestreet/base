@@ -161,27 +161,30 @@ module Check
 struct end
 
 module Check_S0 (M : S0) =
-  Check (struct
-    type 'a t = M.t
-  end)
+  Check
+    (struct
+      type 'a t = M.t
+    end)
     (struct
       type 'a t = M.elt
     end)
     (M)
 
 module Check_S0_phantom (M : S0_phantom) =
-  Check (struct
-    type 'a t = 'a M.t
-  end)
+  Check
+    (struct
+      type 'a t = 'a M.t
+    end)
     (struct
       type 'a t = M.elt
     end)
     (M)
 
 module Check_S1 (M : S1) =
-  Check (struct
-    type 'a t = 'a M.t
-  end)
+  Check
+    (struct
+      type 'a t = 'a M.t
+    end)
     (struct
       type 'a t = 'a
     end)
@@ -190,18 +193,20 @@ module Check_S1 (M : S1) =
 type phantom
 
 module Check_S1_phantom (M : S1_phantom) =
-  Check (struct
-    type 'a t = ('a, phantom) M.t
-  end)
+  Check
+    (struct
+      type 'a t = ('a, phantom) M.t
+    end)
     (struct
       type 'a t = 'a
     end)
     (M)
 
 module Check_S1_phantom_invariant (M : S1_phantom_invariant) =
-  Check (struct
-    type 'a t = ('a, phantom) M.t
-  end)
+  Check
+    (struct
+      type 'a t = ('a, phantom) M.t
+    end)
     (struct
       type 'a t = 'a
     end)

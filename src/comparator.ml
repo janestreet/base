@@ -28,14 +28,13 @@ module type S_fc = sig
 end
 
 let make (type t) ~compare ~sexp_of_t =
-  ( module struct
+  (module struct
     type comparable_t = t
     type comparator_witness
 
     let comparator = { compare; sexp_of_t }
-  end
-  : S_fc
-    with type comparable_t = t )
+  end : S_fc
+    with type comparable_t = t)
 ;;
 
 module S_to_S1 (S : S) = struct

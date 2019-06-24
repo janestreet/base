@@ -206,7 +206,7 @@ val zip : 'a t -> 'b t -> ('a * 'b) t
 
 (** [zip_full] is like [zip], but if one sequence ends before the other, then it keeps
     producing elements from the other sequence until it has ended as well. *)
-val zip_full : 'a t -> 'b t -> [`Left of 'a | `Both of 'a * 'b | `Right of 'b] t
+val zip_full : 'a t -> 'b t -> [ `Left of 'a | `Both of 'a * 'b | `Right of 'b ] t
 
 (** [reduce_exn f [a1; ...; an]] is [f (... (f (f a1 a2) a3) ...) an]. It fails on the
     empty sequence. *)
@@ -241,8 +241,8 @@ val remove_consecutive_duplicates : 'a t -> equal:('a -> 'a -> bool) -> 'a t
     are inclusive). *)
 val range
   :  ?stride:int (** default is [1] *)
-  -> ?start:[`inclusive | `exclusive] (** default is [`inclusive] *)
-  -> ?stop:[`inclusive | `exclusive] (** default is [`exclusive] *)
+  -> ?start:[ `inclusive | `exclusive ] (** default is [`inclusive] *)
+  -> ?stop:[ `inclusive | `exclusive ] (** default is [`exclusive] *)
   -> int
   -> int
   -> int t
@@ -304,6 +304,7 @@ val split_n : 'a t -> int -> 'a list * 'a t
     last list may contain fewer than [n] elements. No list contains zero elements. If [n]
     is not positive, it raises. *)
 val chunks_exn : 'a t -> int -> 'a list t
+
 
 (** [shift_right t a] produces [a] and then produces each element of [t]. *)
 val shift_right : 'a t -> 'a -> 'a t
@@ -404,7 +405,7 @@ val force_eagerly : 'a t -> 'a t
 (** [bounded_length ~at_most t] returns [`Is len] if [len = length t <= at_most], and
     otherwise returns [`Greater].  Walks through only as much of the sequence as
     necessary.  Always returns [`Greater] if [at_most < 0]. *)
-val bounded_length : _ t -> at_most:int -> [`Is of int | `Greater]
+val bounded_length : _ t -> at_most:int -> [ `Is of int | `Greater ]
 
 (** [length_is_bounded_by ~min ~max t] returns true if [min <= length t] and [length t <=
     max] When [min] or [max] are not provided, the check for that bound is omitted.  Walks

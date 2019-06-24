@@ -115,8 +115,7 @@ module type Builtin_intf = sig
 end
 
 module type Full = sig
-  (** @inline *)
-  include S
+  include S (** @inline *)
 
   type 'a folder = state -> 'a -> state
 

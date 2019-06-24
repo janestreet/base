@@ -147,12 +147,10 @@ let is_upper_bound t ~of_:a ~compare =
 let bounds_crossed ~lower ~upper ~compare =
   match lower with
   | Unbounded -> false
-  | Incl lower
-  | Excl lower ->
+  | Incl lower | Excl lower ->
     (match upper with
      | Unbounded -> false
-     | Incl upper
-     | Excl upper -> compare lower upper > 0)
+     | Incl upper | Excl upper -> compare lower upper > 0)
 ;;
 
 let check_interval_exn ~lower ~upper ~compare =

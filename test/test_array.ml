@@ -12,13 +12,14 @@ let%test_module "Binary_searchable" =
 ;;
 
 let%test_module "Blit" =
-  (module Test_blit.Test1 (struct
-       type 'a z = 'a
+  (module Test_blit.Test1
+       (struct
+         type 'a z = 'a
 
-       include Array
+         include Array
 
-       let create_bool ~len = create ~len false
-     end)
+         let create_bool ~len = create ~len false
+       end)
        (Array))
 ;;
 

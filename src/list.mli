@@ -119,13 +119,14 @@ val rev_filter : 'a t -> f:('a -> bool) -> 'a t
 
 val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 
+
 (** [partition_map t ~f] partitions [t] according to [f]. *)
-val partition_map : 'a t -> f:('a -> [`Fst of 'b | `Snd of 'c]) -> 'b t * 'c t
+val partition_map : 'a t -> f:('a -> [ `Fst of 'b | `Snd of 'c ]) -> 'b t * 'c t
 
 
 val partition3_map
   :  'a t
-  -> f:('a -> [`Fst of 'b | `Snd of 'c | `Trd of 'd])
+  -> f:('a -> [ `Fst of 'b | `Snd of 'c | `Trd of 'd ])
   -> 'b t * 'c t * 'd t
 
 (** [partition_tf l ~f] returns a pair of lists [(l1, l2)], where [l1] is the list of all
@@ -245,6 +246,7 @@ val map3 : 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t Or_unequal_l
     result to the front of [l2]. *)
 val rev_map_append : 'a t -> 'b t -> f:('a -> 'b) -> 'b t
 
+
 (** [fold_right [a1; ...; an] ~f ~init:b] is [f a1 (f a2 (... (f an b) ...))]. *)
 val fold_right : 'a t -> f:('a -> 'b -> 'b) -> init:'b -> 'b
 
@@ -334,6 +336,7 @@ val last_exn : 'a t -> 'a
 (** [is_prefix xs ~prefix] returns [true] if [xs] starts with [prefix]. *)
 val is_prefix : 'a t -> prefix:'a t -> equal:('a -> 'a -> bool) -> bool
 
+
 (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive elements
     [(a1, a2)] in [t] such that [equal a1 a2].  They are returned in the same order as
     they appear in [t].  [equal] need not be an equivalence relation; it is simply used as
@@ -344,7 +347,7 @@ val find_consecutive_duplicate : 'a t -> equal:('a -> 'a -> bool) -> ('a * 'a) o
     other elements is unaffected.  The element kept from a run of duplicates is determined
     by [which_to_keep]. *)
 val remove_consecutive_duplicates
-  :  ?which_to_keep:[`First | `Last] (** default = `Last *)
+  :  ?which_to_keep:[ `First | `Last ] (** default = `Last *)
   -> 'a t
   -> equal:('a -> 'a -> bool)
   -> 'a t
@@ -375,8 +378,8 @@ val counti : 'a t -> f:(int -> 'a -> bool) -> int
     inclusive). *)
 val range
   :  ?stride:int (** default = 1 *)
-  -> ?start:[`inclusive | `exclusive] (** default = `inclusive *)
-  -> ?stop:[`inclusive | `exclusive] (** default = `exclusive *)
+  -> ?start:[ `inclusive | `exclusive ] (** default = `inclusive *)
+  -> ?stop:[ `inclusive | `exclusive ] (** default = `exclusive *)
   -> int
   -> int
   -> int t
@@ -387,8 +390,8 @@ val range
 val range'
   :  compare:('a -> 'a -> int)
   -> stride:('a -> 'a)
-  -> ?start:[`inclusive | `exclusive] (** default = `inclusive *)
-  -> ?stop:[`inclusive | `exclusive] (** default = `exclusive *)
+  -> ?start:[ `inclusive | `exclusive ] (** default = `inclusive *)
+  -> ?stop:[ `inclusive | `exclusive ] (** default = `exclusive *)
   -> 'a
   -> 'a
   -> 'a t

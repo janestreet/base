@@ -65,17 +65,14 @@ let is_digit = function
 ;;
 
 let is_alpha = function
-  | 'a' .. 'z'
-  | 'A' .. 'Z' -> true
+  | 'a' .. 'z' | 'A' .. 'Z' -> true
   | _ -> false
 ;;
 
 (* Writing these out, instead of calling [is_alpha] and [is_digit], reduces
    runtime by approx. 30% *)
 let is_alphanum = function
-  | 'a' .. 'z'
-  | 'A' .. 'Z'
-  | '0' .. '9' -> true
+  | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' -> true
   | _ -> false
 ;;
 

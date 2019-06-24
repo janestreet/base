@@ -12,8 +12,7 @@ let rec iter_suspicious (id : Longident.t) ~f =
          &&
          match s.[0] with
          | 'A' .. 'Z' -> true
-         | _ -> false ->
-    f (Caml_submodule s)
+         | _ -> false -> f (Caml_submodule s)
   | Ldot (x, _) -> iter_suspicious x ~f
   | Lapply (a, b) ->
     iter_suspicious a ~f;
@@ -77,8 +76,7 @@ let check current_module =
       | "Import0" -> ()
       | _ ->
         (match mb.pmb_expr.pmod_desc with
-         | Pmod_ident { txt = id; _ }
-           when is_caml_dot_something id ->
+         | Pmod_ident { txt = id; _ } when is_caml_dot_something id ->
            error ~loc:mb.pmb_loc "you cannot alias [Caml] sub-modules, use them directly"
          | _ -> ())
   end

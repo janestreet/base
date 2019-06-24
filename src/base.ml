@@ -162,7 +162,7 @@ include T
 
 (* This is a hack so that odoc creates better documentation. *)
 module Sexp = struct
-  include Sexp_with_comparable  (** @inline *)
+  include Sexp_with_comparable (** @inline *)
 end
 
 (**/**)
@@ -455,7 +455,7 @@ end
 
 include Export
 
-include Container_intf.Export  (** @inline *)
+include Container_intf.Export (** @inline *)
 
 exception Not_found_s = Not_found_s
 

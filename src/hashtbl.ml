@@ -10,15 +10,13 @@ let raise_s = Error.raise_s
 
 type ('k, 'v) t =
   { mutable table : ('k, 'v) Avltree.t array
-  ; mutable length :
-      int
+  ; mutable length : int
   (* [recently_added] is the reference passed to [Avltree.add]. We put it in the hash
      table to avoid allocating it at every [set]. *)
   ; recently_added : bool ref
   ; growth_allowed : bool
   ; hashable : 'k Hashable.t
-  ; mutable mutation_allowed : bool
-  (* Set during all iteration operations *)
+  ; mutable mutation_allowed : bool (* Set during all iteration operations *)
   }
 
 type 'a key = 'a
@@ -434,8 +432,7 @@ let add_multi t ~key ~data =
 let remove_multi t key =
   match find t key with
   | None -> ()
-  | Some []
-  | Some [ _ ] -> remove t key
+  | Some [] | Some [ _ ] -> remove t key
   | Some (_ :: tl) -> set t ~key ~data:tl
 ;;
 
@@ -914,9 +911,10 @@ module Check : sig end = struct
   struct end
 
   module Check_creators_is_specialization_of_creators_generic (M : Creators) =
-    Make_creators_check (struct
-      type ('a, 'b) t = ('a, 'b) M.t
-    end)
+    Make_creators_check
+      (struct
+        type ('a, 'b) t = ('a, 'b) M.t
+      end)
       (struct
         type 'a t = 'a
       end)

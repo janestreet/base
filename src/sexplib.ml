@@ -4,8 +4,6 @@ module Conv_error = Sexplib0.Sexp_conv_error
 
 module Conv = Sexplib0.Sexp_conv
 
-(** @canonical Base.Sexp *)
-module Sexp = Sexp
+module Sexp = Sexp (** @canonical Base.Sexp *)
 
-(** @canonical Base.Sexpable *)
-module Sexpable = Sexpable
+module Sexpable = Sexpable (** @canonical Base.Sexpable *)

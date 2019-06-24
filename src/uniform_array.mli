@@ -78,6 +78,7 @@ val unsafe_set_assuming_currently_int : Caml.Obj.t t -> int -> Caml.Obj.t -> uni
 val unsafe_set_int_assuming_currently_int : Caml.Obj.t t -> int -> int -> unit
 val unsafe_set_int : Caml.Obj.t t -> int -> int -> unit
 
+
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
     space leaks.  It does this by setting [t.(i)] to [Caml.Obj.repr 0].  As a performance
     hack, it only does this when [not (Caml.Obj.is_int t.(i))].  It is an error to access

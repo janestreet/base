@@ -1,2 +1,1 @@
-(** @inline *)
-include Applicative_intf.Applicative
+include Applicative_intf.Applicative (** @inline *)
