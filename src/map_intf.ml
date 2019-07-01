@@ -475,6 +475,31 @@ module type Accessors_generic = sig
       -> ('k, 'v, 'cmp) t
       -> ('k key * 'v) Sequence.t )
         options
+
+  val binary_search
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> compare:(key:'k key -> data:'v -> 'key -> int)
+      -> [ `Last_strictly_less_than
+         | `Last_less_than_or_equal_to
+         | `Last_equal_to
+         | `First_equal_to
+         | `First_greater_than_or_equal_to
+         | `First_strictly_greater_than
+         ]
+      -> 'key
+      -> ('k key * 'v) option )
+        options
+
+  val binary_search_segmented
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> segment_of:(key:'k key -> data:'v -> [ `Left | `Right ])
+      -> [ `Last_on_left | `First_on_right ]
+      -> ('k key * 'v) option )
+        options
 end
 
 module type Accessors1 = sig
@@ -615,6 +640,25 @@ module type Accessors1 = sig
     -> ?keys_less_or_equal_to:key
     -> 'a t
     -> (key * 'a) Sequence.t
+
+  val binary_search
+    :  'a t
+    -> compare:(key:key -> data:'a -> 'key -> int)
+    -> [ `Last_strictly_less_than
+       | `Last_less_than_or_equal_to
+       | `Last_equal_to
+       | `First_equal_to
+       | `First_greater_than_or_equal_to
+       | `First_strictly_greater_than
+       ]
+    -> 'key
+    -> (key * 'a) option
+
+  val binary_search_segmented
+    :  'a t
+    -> segment_of:(key:key -> data:'a -> [ `Left | `Right ])
+    -> [ `Last_on_left | `First_on_right ]
+    -> (key * 'a) option
 end
 
 module type Accessors2 = sig
@@ -762,6 +806,25 @@ module type Accessors2 = sig
     -> ?keys_less_or_equal_to:'a
     -> ('a, 'b) t
     -> ('a * 'b) Sequence.t
+
+  val binary_search
+    :  ('k, 'v) t
+    -> compare:(key:'k -> data:'v -> 'key -> int)
+    -> [ `Last_strictly_less_than
+       | `Last_less_than_or_equal_to
+       | `Last_equal_to
+       | `First_equal_to
+       | `First_greater_than_or_equal_to
+       | `First_strictly_greater_than
+       ]
+    -> 'key
+    -> ('k * 'v) option
+
+  val binary_search_segmented
+    :  ('k, 'v) t
+    -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
+    -> [ `Last_on_left | `First_on_right ]
+    -> ('k * 'v) option
 end
 
 module type Accessors3 = sig
@@ -926,6 +989,25 @@ module type Accessors3 = sig
     -> ?keys_less_or_equal_to:'a
     -> ('a, 'b, _) t
     -> ('a * 'b) Sequence.t
+
+  val binary_search
+    :  ('k, 'v, _) t
+    -> compare:(key:'k -> data:'v -> 'key -> int)
+    -> [ `Last_strictly_less_than
+       | `Last_less_than_or_equal_to
+       | `Last_equal_to
+       | `First_equal_to
+       | `First_greater_than_or_equal_to
+       | `First_strictly_greater_than
+       ]
+    -> 'key
+    -> ('k * 'v) option
+
+  val binary_search_segmented
+    :  ('k, 'v, _) t
+    -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
+    -> [ `Last_on_left | `First_on_right ]
+    -> ('k * 'v) option
 end
 
 module type Accessors3_with_comparator = sig
@@ -1200,6 +1282,27 @@ module type Accessors3_with_comparator = sig
     -> ?keys_less_or_equal_to:'a
     -> ('a, 'b, 'cmp) t
     -> ('a * 'b) Sequence.t
+
+  val binary_search
+    :  comparator:('k, 'cmp) Comparator.t
+    -> ('k, 'v, 'cmp) t
+    -> compare:(key:'k -> data:'v -> 'key -> int)
+    -> [ `Last_strictly_less_than
+       | `Last_less_than_or_equal_to
+       | `Last_equal_to
+       | `First_equal_to
+       | `First_greater_than_or_equal_to
+       | `First_strictly_greater_than
+       ]
+    -> 'key
+    -> ('k * 'v) option
+
+  val binary_search_segmented
+    :  comparator:('k, 'cmp) Comparator.t
+    -> ('k, 'v, 'cmp) t
+    -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
+    -> [ `Last_on_left | `First_on_right ]
+    -> ('k * 'v) option
 end
 
 (** Consistency checks (same as in [Container]). *)
@@ -2078,6 +2181,56 @@ module type Map = sig
     -> ?keys_less_or_equal_to:'k
     -> ('k, 'v, 'cmp) t
     -> ('k * 'v) Sequence.t
+
+  (** [binary_search t ~compare which elt] returns the [(key, value)] pair in [t]
+      specified by [compare] and [which], if one exists.
+
+      [t] must be sorted in increasing order according to [compare], where [compare] and
+      [elt] divide [t] into three (possibly empty) segments:
+
+      {v
+        |  < elt  |  = elt  |  > elt  |
+      v}
+
+      [binary_search] returns an element on the boundary of segments as specified by
+      [which].  See the diagram below next to the [which] variants.
+
+      [binary_search] does not check that [compare] orders [t], and behavior is
+      unspecified if [compare] doesn't order [t].  Behavior is also unspecified if
+      [compare] mutates [t]. *)
+  val binary_search
+    :  ('k, 'v, 'cmp) t
+    -> compare:(key:'k -> data:'v -> 'key -> int)
+    -> [ `Last_strictly_less_than (**        {v | < elt X |                       v} *)
+       | `Last_less_than_or_equal_to (**     {v |      <= elt       X |           v} *)
+       | `Last_equal_to (**                  {v           |   = elt X |           v} *)
+       | `First_equal_to (**                 {v           | X = elt   |           v} *)
+       | `First_greater_than_or_equal_to (** {v           | X       >= elt      | v} *)
+       | `First_strictly_greater_than (**    {v                       | X > elt | v} *)
+       ]
+    -> 'key
+    -> ('k * 'v) option
+
+  (** [binary_search_segmented t ~segment_of which] takes a [segment_of] function that
+      divides [t] into two (possibly empty) segments:
+
+      {v
+        | segment_of elt = `Left | segment_of elt = `Right |
+      v}
+
+      [binary_search_segmented] returns the [(key, value)] pair on the boundary of the
+      segments as specified by [which]: [`Last_on_left] yields the last element of the
+      left segment, while [`First_on_right] yields the first element of the right segment.
+      It returns [None] if the segment is empty.
+
+      [binary_search_segmented] does not check that [segment_of] segments [t] as in the
+      diagram, and behavior is unspecified if [segment_of] doesn't segment [t].  Behavior
+      is also unspecified if [segment_of] mutates [t]. *)
+  val binary_search_segmented
+    :  ('k, 'v, 'cmp) t
+    -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
+    -> [ `Last_on_left | `First_on_right ]
+    -> ('k * 'v) option
 
   (** [M] is meant to be used in combination with OCaml applicative functor types:
 

@@ -26,12 +26,12 @@ type ('t, 'elt, 'key) binary_search =
   -> ?len:int
   -> 't
   -> compare:('elt -> 'key -> int)
-  -> [ `Last_strictly_less_than (** {v | < elt X |                       v} *)
-     | `Last_less_than_or_equal_to (** {v |      <= elt       X |           v} *)
-     | `Last_equal_to (** {v           |   = elt X |           v} *)
-     | `First_equal_to (** {v           | X = elt   |           v} *)
+  -> [ `Last_strictly_less_than (**        {v | < elt X |                       v} *)
+     | `Last_less_than_or_equal_to (**     {v |      <= elt       X |           v} *)
+     | `Last_equal_to (**                  {v           |   = elt X |           v} *)
+     | `First_equal_to (**                 {v           | X = elt   |           v} *)
      | `First_greater_than_or_equal_to (** {v           | X       >= elt      | v} *)
-     | `First_strictly_greater_than (** {v                       | X > elt | v} *)
+     | `First_strictly_greater_than (**    {v                       | X > elt | v} *)
      ]
   -> 'key
   -> int option

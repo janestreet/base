@@ -666,6 +666,64 @@ module Tree0 = struct
       to_sequence_decreasing comparator ~from_elt:less_or_equal_to t
   ;;
 
+
+  let rec find_first_satisfying t ~f =
+    match t with
+    | Empty -> None
+    | Leaf v -> if f v then Some v else None
+    | Node (l, v, r, _, _) ->
+      if f v
+      then (
+        match find_first_satisfying l ~f with
+        | None -> Some v
+        | Some _ as x -> x)
+      else find_first_satisfying r ~f
+  ;;
+
+  let rec find_last_satisfying t ~f =
+    match t with
+    | Empty -> None
+    | Leaf v -> if f v then Some v else None
+    | Node (l, v, r, _, _) ->
+      if f v
+      then (
+        match find_last_satisfying r ~f with
+        | None -> Some v
+        | Some _ as x -> x)
+      else find_last_satisfying l ~f
+  ;;
+
+  let binary_search t ~compare how v =
+    match how with
+    | `Last_strictly_less_than -> find_last_satisfying t ~f:(fun x -> compare x v < 0)
+    | `Last_less_than_or_equal_to ->
+      find_last_satisfying t ~f:(fun x -> compare x v <= 0)
+    | `First_equal_to ->
+      (match find_first_satisfying t ~f:(fun x -> compare x v >= 0) with
+       | Some x as elt when compare x v = 0 -> elt
+       | None | Some _ -> None)
+    | `Last_equal_to ->
+      (match find_last_satisfying t ~f:(fun x -> compare x v <= 0) with
+       | Some x as elt when compare x v = 0 -> elt
+       | None | Some _ -> None)
+    | `First_greater_than_or_equal_to ->
+      find_first_satisfying t ~f:(fun x -> compare x v >= 0)
+    | `First_strictly_greater_than ->
+      find_first_satisfying t ~f:(fun x -> compare x v > 0)
+  ;;
+
+  let binary_search_segmented t ~segment_of how =
+    let is_left x =
+      match segment_of x with
+      | `Left -> true
+      | `Right -> false
+    in
+    let is_right x = not (is_left x) in
+    match how with
+    | `Last_on_left -> find_last_satisfying t ~f:is_left
+    | `First_on_right -> find_first_satisfying t ~f:is_right
+  ;;
+
   let merge_to_sequence
         comparator
         ?(order = `Increasing)
@@ -1096,6 +1154,12 @@ module Accessors = struct
     Tree0.to_sequence t.comparator ?order ?greater_or_equal_to ?less_or_equal_to t.tree
   ;;
 
+  let binary_search t ~compare how v = Tree0.binary_search t.tree ~compare how v
+
+  let binary_search_segmented t ~segment_of how =
+    Tree0.binary_search_segmented t.tree ~segment_of how
+  ;;
+
   let merge_to_sequence ?order ?greater_or_equal_to ?less_or_equal_to t t' =
     Tree0.merge_to_sequence
       t.comparator
@@ -1207,6 +1271,12 @@ module Tree = struct
 
   let to_sequence ~comparator ?order ?greater_or_equal_to ?less_or_equal_to t =
     Tree0.to_sequence comparator ?order ?greater_or_equal_to ?less_or_equal_to t
+  ;;
+
+  let binary_search ~comparator:_ t ~compare how v = Tree0.binary_search t ~compare how v
+
+  let binary_search_segmented ~comparator:_ t ~segment_of how =
+    Tree0.binary_search_segmented t ~segment_of how
   ;;
 
   let merge_to_sequence ~comparator ?order ?greater_or_equal_to ?less_or_equal_to t t' =

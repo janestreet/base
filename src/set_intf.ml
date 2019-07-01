@@ -121,6 +121,31 @@ module type Accessors_generic = sig
       -> 'a elt Sequence.t )
         options
 
+  val binary_search
+    : ( 'a
+      , 'cmp
+      , ('a, 'cmp) t
+      -> compare:('a elt -> 'key -> int)
+      -> [ `Last_strictly_less_than
+         | `Last_less_than_or_equal_to
+         | `Last_equal_to
+         | `First_equal_to
+         | `First_greater_than_or_equal_to
+         | `First_strictly_greater_than
+         ]
+      -> 'key
+      -> 'a elt option )
+        options
+
+  val binary_search_segmented
+    : ( 'a
+      , 'cmp
+      , ('a, 'cmp) t
+      -> segment_of:('a elt -> [ `Left | `Right ])
+      -> [ `Last_on_left | `First_on_right ]
+      -> 'a elt option )
+        options
+
   val merge_to_sequence
     : ( 'a
       , 'cmp
@@ -196,6 +221,25 @@ module type Accessors0 = sig
     -> t
     -> elt Sequence.t
 
+  val binary_search
+    :  t
+    -> compare:(elt -> 'key -> int)
+    -> [ `Last_strictly_less_than
+       | `Last_less_than_or_equal_to
+       | `Last_equal_to
+       | `First_equal_to
+       | `First_greater_than_or_equal_to
+       | `First_strictly_greater_than
+       ]
+    -> 'key
+    -> elt option
+
+  val binary_search_segmented
+    :  t
+    -> segment_of:(elt -> [ `Left | `Right ])
+    -> [ `Last_on_left | `First_on_right ]
+    -> elt option
+
   val merge_to_sequence
     :  ?order:[ `Increasing | `Decreasing ]
     -> ?greater_or_equal_to:elt
@@ -268,6 +312,25 @@ module type Accessors1 = sig
     -> 'a t
     -> 'a Sequence.t
 
+  val binary_search
+    :  'a t
+    -> compare:('a -> 'key -> int)
+    -> [ `Last_strictly_less_than
+       | `Last_less_than_or_equal_to
+       | `Last_equal_to
+       | `First_equal_to
+       | `First_greater_than_or_equal_to
+       | `First_strictly_greater_than
+       ]
+    -> 'key
+    -> 'a option
+
+  val binary_search_segmented
+    :  'a t
+    -> segment_of:('a -> [ `Left | `Right ])
+    -> [ `Last_on_left | `First_on_right ]
+    -> 'a option
+
   val merge_to_sequence
     :  ?order:[ `Increasing | `Decreasing ]
     -> ?greater_or_equal_to:'a
@@ -338,6 +401,25 @@ module type Accessors2 = sig
     -> ?less_or_equal_to:'a
     -> ('a, 'cmp) t
     -> 'a Sequence.t
+
+  val binary_search
+    :  ('a, 'cmp) t
+    -> compare:('a -> 'key -> int)
+    -> [ `Last_strictly_less_than
+       | `Last_less_than_or_equal_to
+       | `Last_equal_to
+       | `First_equal_to
+       | `First_greater_than_or_equal_to
+       | `First_strictly_greater_than
+       ]
+    -> 'key
+    -> 'a option
+
+  val binary_search_segmented
+    :  ('a, 'cmp) t
+    -> segment_of:('a -> [ `Left | `Right ])
+    -> [ `Last_on_left | `First_on_right ]
+    -> 'a option
 
   val merge_to_sequence
     :  ?order:[ `Increasing | `Decreasing ]
@@ -478,6 +560,27 @@ module type Accessors2_with_comparator = sig
     -> ?less_or_equal_to:'a
     -> ('a, 'cmp) t
     -> 'a Sequence.t
+
+  val binary_search
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a, 'cmp) t
+    -> compare:('a -> 'key -> int)
+    -> [ `Last_strictly_less_than
+       | `Last_less_than_or_equal_to
+       | `Last_equal_to
+       | `First_equal_to
+       | `First_greater_than_or_equal_to
+       | `First_strictly_greater_than
+       ]
+    -> 'key
+    -> 'a option
+
+  val binary_search_segmented
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a, 'cmp) t
+    -> segment_of:('a -> [ `Left | `Right ])
+    -> [ `Last_on_left | `First_on_right ]
+    -> 'a option
 
   val merge_to_sequence
     :  comparator:('a, 'cmp) Comparator.t
@@ -1227,6 +1330,56 @@ module type Set = sig
     -> ?less_or_equal_to:'a
     -> ('a, 'cmp) t
     -> 'a Sequence.t
+
+  (** [binary_search t ~compare which elt] returns the element in [t] specified by
+      [compare] and [which], if one exists.
+
+      [t] must be sorted in increasing order according to [compare], where [compare] and
+      [elt] divide [t] into three (possibly empty) segments:
+
+      {v
+        |  < elt  |  = elt  |  > elt  |
+      v}
+
+      [binary_search] returns an element on the boundary of segments as specified by
+      [which].  See the diagram below next to the [which] variants.
+
+      [binary_search] does not check that [compare] orders [t], and behavior is
+      unspecified if [compare] doesn't order [t].  Behavior is also unspecified if
+      [compare] mutates [t]. *)
+  val binary_search
+    :  ('a, 'cmp) t
+    -> compare:('a -> 'key -> int)
+    -> [ `Last_strictly_less_than (**        {v | < elt X |                       v} *)
+       | `Last_less_than_or_equal_to (**     {v |      <= elt       X |           v} *)
+       | `Last_equal_to (**                  {v           |   = elt X |           v} *)
+       | `First_equal_to (**                 {v           | X = elt   |           v} *)
+       | `First_greater_than_or_equal_to (** {v           | X       >= elt      | v} *)
+       | `First_strictly_greater_than (**    {v                       | X > elt | v} *)
+       ]
+    -> 'key
+    -> 'a option
+
+  (** [binary_search_segmented t ~segment_of which] takes a [segment_of] function that
+      divides [t] into two (possibly empty) segments:
+
+      {v
+        | segment_of elt = `Left | segment_of elt = `Right |
+      v}
+
+      [binary_search_segmented] returns the element on the boundary of the segments as
+      specified by [which]: [`Last_on_left] yields the last element of the left segment,
+      while [`First_on_right] yields the first element of the right segment.  It returns
+      [None] if the segment is empty.
+
+      [binary_search_segmented] does not check that [segment_of] segments [t] as in the
+      diagram, and behavior is unspecified if [segment_of] doesn't segment [t].  Behavior
+      is also unspecified if [segment_of] mutates [t]. *)
+  val binary_search_segmented
+    :  ('a, 'cmp) t
+    -> segment_of:('a -> [ `Left | `Right ])
+    -> [ `Last_on_left | `First_on_right ]
+    -> 'a option
 
   (** Produces the elements of the two sets between [greater_or_equal_to] and
       [less_or_equal_to] in [order], noting whether each element appears in the left set,

@@ -1415,6 +1415,67 @@ module Tree0 = struct
 
   let nth t n = nth' (ref n) t
 
+
+  let rec find_first_satisfying t ~f =
+    match t with
+    | Empty -> None
+    | Leaf (k, v) -> if f ~key:k ~data:v then Some (k, v) else None
+    | Node (l, k, v, r, _) ->
+      if f ~key:k ~data:v
+      then (
+        match find_first_satisfying l ~f with
+        | None -> Some (k, v)
+        | Some _ as x -> x)
+      else find_first_satisfying r ~f
+  ;;
+
+  let rec find_last_satisfying t ~f =
+    match t with
+    | Empty -> None
+    | Leaf (k, v) -> if f ~key:k ~data:v then Some (k, v) else None
+    | Node (l, k, v, r, _) ->
+      if f ~key:k ~data:v
+      then (
+        match find_last_satisfying r ~f with
+        | None -> Some (k, v)
+        | Some _ as x -> x)
+      else find_last_satisfying l ~f
+  ;;
+
+  let binary_search t ~compare how v =
+    match how with
+    | `Last_strictly_less_than ->
+      find_last_satisfying t ~f:(fun ~key ~data -> compare ~key ~data v < 0)
+    | `Last_less_than_or_equal_to ->
+      find_last_satisfying t ~f:(fun ~key ~data -> compare ~key ~data v <= 0)
+    | `First_equal_to ->
+      (match
+         find_first_satisfying t ~f:(fun ~key ~data -> compare ~key ~data v >= 0)
+       with
+       | Some (key, data) as pair when compare ~key ~data v = 0 -> pair
+       | None | Some _ -> None)
+    | `Last_equal_to ->
+      (match find_last_satisfying t ~f:(fun ~key ~data -> compare ~key ~data v <= 0) with
+       | Some (key, data) as pair when compare ~key ~data v = 0 -> pair
+       | None | Some _ -> None)
+    | `First_greater_than_or_equal_to ->
+      find_first_satisfying t ~f:(fun ~key ~data -> compare ~key ~data v >= 0)
+    | `First_strictly_greater_than ->
+      find_first_satisfying t ~f:(fun ~key ~data -> compare ~key ~data v > 0)
+  ;;
+
+  let binary_search_segmented t ~segment_of how =
+    let is_left ~key ~data =
+      match segment_of ~key ~data with
+      | `Left -> true
+      | `Right -> false
+    in
+    let is_right ~key ~data = not (is_left ~key ~data) in
+    match how with
+    | `Last_on_left -> find_last_satisfying t ~f:is_left
+    | `First_on_right -> find_first_satisfying t ~f:is_right
+  ;;
+
   type ('k, 'v) acc =
     { mutable bad_key : 'k option
     ; mutable map_length : ('k, 'v) t * int
@@ -1703,6 +1764,12 @@ module Accessors = struct
       ?keys_greater_or_equal_to
       ?keys_less_or_equal_to
       t.tree
+  ;;
+
+  let binary_search t ~compare how v = Tree0.binary_search t.tree ~compare how v
+
+  let binary_search_segmented t ~segment_of how =
+    Tree0.binary_search_segmented t.tree ~segment_of how
   ;;
 
   let hash_fold_direct hash_fold_key hash_fold_data state t =
@@ -1999,6 +2066,12 @@ module Tree = struct
       ?keys_greater_or_equal_to
       ?keys_less_or_equal_to
       t
+  ;;
+
+  let binary_search ~comparator:_ t ~compare how v = Tree0.binary_search t ~compare how v
+
+  let binary_search_segmented ~comparator:_ t ~segment_of how =
+    Tree0.binary_search_segmented t ~segment_of how
   ;;
 end
 
