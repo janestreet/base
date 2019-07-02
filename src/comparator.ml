@@ -147,3 +147,26 @@ struct
     }
   ;;
 end
+
+module type Derived_phantom = sig
+  type ('a, 'b) t
+  type 'cmp comparator_witness
+
+  val comparator
+    :  ('a, 'cmp) comparator
+    -> (('a, _) t, 'cmp comparator_witness) comparator
+end
+
+module Derived_phantom (M : sig
+    type ('a, 'b) t
+
+    val compare : ('a -> 'a -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+    val sexp_of_t : ('a -> Sexp.t) -> ('a, _) t -> Sexp.t
+  end) =
+struct
+  type 'cmp_a comparator_witness
+
+  let comparator a =
+    { compare = M.compare a.compare; sexp_of_t = M.sexp_of_t a.sexp_of_t }
+  ;;
+end

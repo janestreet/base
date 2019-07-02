@@ -120,3 +120,21 @@ module Derived2 (M : sig
       end[@@ocaml.doc "@inline"]
     [@@@end]
   end) : Derived2 with type ('a, 'b) t := ('a, 'b) M.t
+
+module type Derived_phantom = sig
+  type ('a, 'b) t
+  type 'cmp comparator_witness
+
+  val comparator
+    :  ('a, 'cmp) comparator
+    -> (('a, _) t, 'cmp comparator_witness) comparator
+end
+
+(** [Derived_phantom] creates a [comparator] function that constructs a comparator for the
+    type [('a, 'b) t] given a comparator for the type ['a]. *)
+module Derived_phantom (M : sig
+    type ('a, 'b) t
+
+    val compare : ('a -> 'a -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+    val sexp_of_t : ('a -> Sexp.t) -> ('a, _) t -> Sexp.t
+  end) : Derived_phantom with type ('a, 'b) t := ('a, 'b) M.t

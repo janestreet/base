@@ -1,4 +1,4 @@
-(** Functor that adds float conversion functions to a module. *)
+(** Module type with float conversion functions. *)
 
 open! Import
 
