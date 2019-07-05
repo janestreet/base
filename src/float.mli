@@ -385,8 +385,33 @@ val to_string_hum
     - [to_padded_compact_string      3.25 =  "3.2"]
     - [to_padded_compact_string      3.75 =  "3.8"]
     - [to_padded_compact_string 33_250.   = "33k2"]
-    - [to_padded_compact_string 33_350.   = "33k4"] *)
+    - [to_padded_compact_string 33_350.   = "33k4"]
+
+    [to_padded_compact_string] is defined in terms of [to_padded_compact_string_custom]
+    below as
+    {[
+      let to_padded_compact_string t =
+        to_padded_compact_string_custom t ?prefix:None
+          ~kilo:"k" ~mega:"m" ~giga:"g" ~tera:"t" ~peta:"p"
+          ()
+    ]}
+*)
 val to_padded_compact_string : t -> string
+
+(** Similar to [to_padded_compact_string] but allows the user to provide different
+    abbreviations. This can be useful to display currency values, e.g. $1mm3, where
+    prefix="$", mega="mm".
+*)
+val to_padded_compact_string_custom
+  :  t
+  -> ?prefix:string
+  -> kilo:string
+  -> mega:string
+  -> giga:string
+  -> tera:string
+  -> ?peta:string
+  -> unit
+  -> string
 
 (** [int_pow x n] computes [x ** float n] via repeated squaring.  It is generally much
     faster than [**].

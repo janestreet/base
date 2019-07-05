@@ -620,7 +620,7 @@ let sexp_of_t t =
        if String.contains string 'E' then sexp else Atom (insert_underscores string))
 ;;
 
-let to_padded_compact_string t =
+let to_padded_compact_string_custom t ?(prefix = "") ~kilo ~mega ~giga ~tera ?peta () =
   (* Round a ratio toward the nearest integer, resolving ties toward the nearest even
      number.  For sane inputs (in particular, when [denominator] is an integer and
      [abs numerator < 2e52]) this should be accurate.  Otherwise, the result might be a
@@ -657,7 +657,7 @@ let to_padded_compact_string t =
     let go t =
       let conv_one t =
         assert (0. <= t && t < 999.95);
-        let x = format_float "%.1f" t in
+        let x = prefix ^ format_float "%.1f" t in
         (* Fix the ".0" suffix *)
         if String.is_suffix x ~suffix:".0"
         then (
@@ -681,7 +681,9 @@ let to_padded_compact_string t =
         let open Int_replace_polymorphic_compare in
         assert (0 <= i && i < 1000);
         assert (0 <= d && d < 10);
-        if d = 0 then sprintf "%d%c " i mag else sprintf "%d%c%d" i mag d
+        if d = 0
+        then sprintf "%s%d%s " prefix i mag
+        else sprintf "%s%d%s%d" prefix i mag d
       in
       (* While the standard metric prefixes (e.g. capital "M" rather than "m", [1]) are
          nominally more correct, this hinders readability in our case.  E.g., 10G6 and
@@ -697,18 +699,26 @@ let to_padded_compact_string t =
       if t < 999.95E0
       then conv_one t
       else if t < 999.95E3
-      then conv 'k' t 100.
+      then conv kilo t 100.
       else if t < 999.95E6
-      then conv 'm' t 100_000.
+      then conv mega t 100_000.
       else if t < 999.95E9
-      then conv 'g' t 100_000_000.
+      then conv giga t 100_000_000.
       else if t < 999.95E12
-      then conv 't' t 100_000_000_000.
-      else if t < 999.95E15
-      then conv 'p' t 100_000_000_000_000.
-      else sprintf "%.1e" t
+      then conv tera t 100_000_000_000.
+      else (
+        match peta with
+        | None -> sprintf "%s%.1e" prefix t
+        | Some peta ->
+          if t < 999.95E15
+          then conv peta t 100_000_000_000_000.
+          else sprintf "%s%.1e" prefix t)
     in
     if t >= 0. then go t else "-" ^ go ~-.t
+;;
+
+let to_padded_compact_string t =
+  to_padded_compact_string_custom t ~kilo:"k" ~mega:"m" ~giga:"g" ~tera:"t" ~peta:"p" ()
 ;;
 
 (* Performance note: Initializing the accumulator to 1 results in one extra
