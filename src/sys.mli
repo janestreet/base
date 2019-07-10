@@ -83,6 +83,10 @@ val enable_runtime_warnings : bool -> unit
 (** Returns whether runtime warnings are currently enabled. *)
 val runtime_warnings_enabled : unit -> bool
 
+(** Return the value associated to a variable in the process
+   environment. Raise [Not_found] if the variable is unbound. *)
+val getenv : string -> string
+
 (** For the purposes of optimization, [opaque_identity] behaves like an unknown (and thus
     possibly side-effecting) function.  At runtime, [opaque_identity] disappears
     altogether.  A typical use of this function is to prevent pure computations from being
