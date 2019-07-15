@@ -24,7 +24,10 @@ module Trusted : sig
   val length : 'a t -> int
   val unsafe_blit : ('a t, 'a t) Blit.blit
   val copy : 'a t -> 'a t
+
   val unsafe_truncate : 'a t -> len:int -> unit
+  [@@deprecated "[since 2019-07] It will be removed in the future"]
+
   val unsafe_clear_if_pointer : _ t -> int -> unit
 end = struct
   type 'a t = Obj_array.t
@@ -52,13 +55,15 @@ end = struct
   let length = Obj_array.length
   let unsafe_blit = Obj_array.unsafe_blit
   let copy = Obj_array.copy
-  let unsafe_truncate = Obj_array.truncate
 
   let unsafe_set_omit_phys_equal_check t i x =
     Obj_array.unsafe_set_omit_phys_equal_check t i (Caml.Obj.repr x)
   ;;
 
   let unsafe_clear_if_pointer = Obj_array.unsafe_clear_if_pointer
+
+  (* deprecated *)
+  let unsafe_truncate = (Obj_array.truncate [@ocaml.warning "-3"])
 end
 
 include Trusted

@@ -299,6 +299,7 @@ val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
     [unsafe_truncate] on an array does not interfere with other code that manipulates the
     array. *)
 val unsafe_truncate : _ t -> len:int -> unit
+[@@deprecated "[since 2019-07] It will be removed in the future"]
 
 
 (** The input array is copied internally so that future modifications of it do not change

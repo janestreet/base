@@ -24,7 +24,10 @@ type ('k, 'v) t =
       ; mutable height : int
       ; mutable right : ('k, 'v) t
       }
-  | Leaf of { key : 'k; mutable value : 'v }
+  | Leaf of
+      { key : 'k
+      ; mutable value : 'v
+      }
 
 let empty = Empty
 

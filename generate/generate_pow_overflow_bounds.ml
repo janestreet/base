@@ -7,7 +7,10 @@
 
 type mode =
   | Normal
-  | Atomic of { out_fn : string; tmp_fn : string }
+  | Atomic of
+      { out_fn : string
+      ; tmp_fn : string
+      }
 
 let oc, mode =
   match Sys.argv with

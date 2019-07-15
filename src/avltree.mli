@@ -46,7 +46,10 @@ type ('k, 'v) t = private
       ; mutable height : int
       ; mutable right : ('k, 'v) t
       }
-  | Leaf of { key : 'k; mutable value : 'v }
+  | Leaf of
+      { key : 'k
+      ; mutable value : 'v
+      }
 
 val empty : ('k, 'v) t
 val is_empty : _ t -> bool

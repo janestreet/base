@@ -14,15 +14,16 @@ let%test_module _ =
            ; mutable height : int
            ; mutable right : ('k, 'v) t
            }
-       | Leaf of { key : 'k; mutable value : 'v }
+       | Leaf of
+           { key : 'k
+           ; mutable value : 'v
+           }
 
      module For_quickcheck = struct
        module Key = struct
          include Quickcheck.Int
 
-         let quickcheck_generator =
-           Quickcheck.Generator.small_non_negative_int
-         ;;
+         let quickcheck_generator = Quickcheck.Generator.small_non_negative_int
        end
 
        module Data = struct
@@ -170,9 +171,7 @@ let%test_module _ =
 
      let%test_unit _ =
        Quickcheck.test
-         (Quickcheck.Generator.tuple2
-            constructors_gen
-            Key.quickcheck_generator)
+         (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
          ~f:(fun (constructors, key) ->
            let t, map = reify constructors in
@@ -187,9 +186,7 @@ let%test_module _ =
 
      let%test_unit _ =
        Quickcheck.test
-         (Quickcheck.Generator.tuple2
-            constructors_gen
-            Key.quickcheck_generator)
+         (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
          ~f:(fun (constructors, key) ->
            let t, map = reify constructors in
@@ -202,15 +199,11 @@ let%test_module _ =
 
      let%test_unit _ =
        Quickcheck.test
-         (Quickcheck.Generator.tuple2
-            constructors_gen
-            Key.quickcheck_generator)
+         (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
          ~f:(fun (constructors, key) ->
            let t, map = reify constructors in
-           [%test_result: bool]
-             (mem t key ~compare)
-             ~expect:(Map.mem map key))
+           [%test_result: bool] (mem t key ~compare) ~expect:(Map.mem map key))
      ;;
 
      let first = first
@@ -243,9 +236,7 @@ let%test_module _ =
 
      let%test_unit _ =
        Quickcheck.test
-         (Quickcheck.Generator.tuple2
-            constructors_gen
-            Key.quickcheck_generator)
+         (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
          ~f:(fun (constructors, key) ->
            let t, map = reify constructors in
@@ -266,9 +257,7 @@ let%test_module _ =
 
      let%test_unit _ =
        Quickcheck.test
-         (Quickcheck.Generator.tuple2
-            constructors_gen
-            Key.quickcheck_generator)
+         (Quickcheck.Generator.tuple2 constructors_gen Key.quickcheck_generator)
          ~sexp_of:[%sexp_of: Constructor.t list * Key.t]
          ~f:(fun (constructors, key) ->
            let t, map = reify constructors in

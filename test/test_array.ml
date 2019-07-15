@@ -144,25 +144,6 @@ let%test_unit _ =
 ;;
 
 let%test_unit _ =
-  List.iter
-    ~f:(fun (t, len) -> assert (Exn.does_raise (fun () -> unsafe_truncate t ~len)))
-    [ [||], -1; [||], 0; [||], 1; [| 1 |], -1; [| 1 |], 0; [| 1 |], 2 ]
-;;
-
-let%test_unit _ =
-  for orig_len = 1 to 5 do
-    for new_len = 1 to orig_len do
-      let t = init orig_len ~f:Fn.id in
-      unsafe_truncate t ~len:new_len;
-      assert (length t = new_len);
-      for i = 0 to new_len - 1 do
-        assert (t.(i) = i)
-      done
-    done
-  done
-;;
-
-let%test_unit _ =
   [%test_result: int array]
     (filter_opt [| Some 1; None; Some 2; None; Some 3 |])
     ~expect:[| 1; 2; 3 |]

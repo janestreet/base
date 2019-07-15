@@ -164,9 +164,7 @@ let%test_module _ =
          let t = of_list l in
          let f i x = i, x * 2 in
          let t' = mapi t ~f in
-         [%test_result: (int * int) list]
-           (to_list t')
-           ~expect:(List.mapi l ~f)
+         [%test_result: (int * int) list] (to_list t') ~expect:(List.mapi l ~f)
        done
      ;;
 
@@ -732,9 +730,7 @@ let%test_module _ =
          ;;
 
          let find_mapi (t_a, t_b) =
-           let f i x =
-             if i < 7 && i % 7 = x % 7 then Some (i + x) else None
-           in
+           let f i x = if i < 7 && i % 7 = x % 7 then Some (i + x) else None in
            let a' = This_queue.find_mapi t_a ~f in
            let b' = That_queue.find_mapi t_b ~f in
            if not ([%equal: int option] a' b')
@@ -798,9 +794,7 @@ let%test_module _ =
          ;;
 
          let fold_check (t_a, t_b) =
-           let make_list fold t =
-             fold t ~init:[] ~f:(fun acc x -> x :: acc)
-           in
+           let make_list fold t = fold t ~init:[] ~f:(fun acc x -> x :: acc) in
            let this_l = make_list This_queue.fold t_a in
            let that_l = make_list That_queue.fold t_b in
            if not ([%equal: int list] this_l that_l)
@@ -1014,9 +1008,7 @@ let%test_module _ =
              ignore (Queue.dequeue_exn manipulated : int);
              Queue.enqueue manipulated 4;
              [ Queue.of_list [], "()", "\000"
-             ; ( Queue.of_list [ 1; 2; 6; 4 ]
-               , "(1 2 6 4)"
-               , "\004\001\002\006\004" )
+             ; Queue.of_list [ 1; 2; 6; 4 ], "(1 2 6 4)", "\004\001\002\006\004"
              ; manipulated, "(6 1 4)", "\003\006\001\004"
              ]
            ;;

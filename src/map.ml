@@ -2275,6 +2275,7 @@ let merge_skewed t1 t2 ~combine =
 module Poly = struct
   type nonrec ('k, 'v) t = ('k, 'v, Comparator.Poly.comparator_witness) t
   type nonrec ('k, 'v) tree = ('k, 'v) Tree0.t
+  type comparator_witness = Comparator.Poly.comparator_witness
 
   include Accessors
 

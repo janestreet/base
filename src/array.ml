@@ -424,16 +424,6 @@ let of_list_rev_mapi xs ~f =
   t
 ;;
 
-(* [Obj.truncate] reduces the size of a block on the ocaml heap.  For arrays, the block
-   size is the array length. This holds even for float arrays. *)
-let unsafe_truncate t ~len =
-  if len <= 0 || len > length t
-  then
-    raise_s
-      (Sexp.message "Array.unsafe_truncate got invalid len" [ "len", sexp_of_int len ]);
-  if len < length t then Caml.Obj.truncate (Caml.Obj.repr t) len
-;;
-
 let filter_mapi t ~f =
   let r = ref [||] in
   let k = ref 0 in
@@ -445,11 +435,7 @@ let filter_mapi t ~f =
       unsafe_set !r !k a;
       incr k
   done;
-  if !k > 0
-  then (
-    unsafe_truncate !r ~len:!k;
-    !r)
-  else [||]
+  if !k = length t then !r else if !k > 0 then sub ~pos:0 ~len:!k !r else [||]
 ;;
 
 let filter_map t ~f = filter_mapi t ~f:(fun _i a -> f a)
@@ -783,6 +769,17 @@ include Blit.Make1 (struct
   end)
 
 let invariant invariant_a t = iter t ~f:invariant_a
+
+(* Deprecated. [Obj.truncate] reduces the size of a block on the ocaml heap.  For arrays, the block
+   size is the array length. This holds even for float arrays. *)
+let unsafe_truncate t ~len =
+  if len <= 0 || len > length t
+  then
+    raise_s
+      (Sexp.message "Array.unsafe_truncate got invalid len" [ "len", sexp_of_int len ]);
+  if len < length t
+  then (Caml.Obj.truncate [@ocaml.alert "-deprecated"]) (Caml.Obj.repr t) len
+;;
 
 module Private = struct
   module Sort = Sort

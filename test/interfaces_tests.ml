@@ -49,6 +49,7 @@ let () =
       with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Map.Using_comparator.Tree.t
   end = struct
     type 'a key = 'a
+    type 'a cmp = 'a
 
     include Map
 

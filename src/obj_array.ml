@@ -168,4 +168,6 @@ let copy src =
   dst
 ;;
 
-let truncate t ~len = Caml.Obj.truncate (Caml.Obj.repr (t : t)) len
+let truncate t ~len =
+  (Caml.Obj.truncate [@ocaml.alert "-deprecated"]) (Caml.Obj.repr (t : t)) len
+;;

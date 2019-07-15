@@ -63,27 +63,6 @@ let%test_unit _ =
   check_get one_obj
 ;;
 
-(* [unsafe_truncate] *)
-let%test _ = does_raise (fun () -> unsafe_truncate empty ~len:0)
-let%test _ = does_raise (fun () -> unsafe_truncate empty ~len:1)
-let%test _ = does_raise (fun () -> unsafe_truncate empty ~len:(-1))
-let%test _ = does_raise (fun () -> unsafe_truncate (create_obj_array ~len:1) ~len:0)
-let%test _ = does_raise (fun () -> unsafe_truncate (create_obj_array ~len:1) ~len:2)
-
-let%test_unit _ =
-  let t = create_obj_array ~len:1 in
-  unsafe_truncate t ~len:1;
-  assert (length t = 1)
-;;
-
-let%test_unit _ =
-  let t = create_obj_array ~len:3 in
-  unsafe_truncate t ~len:2;
-  assert (length t = 2);
-  unsafe_truncate t ~len:1;
-  assert (length t = 1)
-;;
-
 module Sequence = struct
   type nonrec 'a t = 'a t
   type 'a z = 'a

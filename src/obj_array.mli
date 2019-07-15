@@ -65,3 +65,4 @@ val unsafe_clear_if_pointer : t -> int -> unit
 (** [truncate t ~len] shortens [t]'s length to [len].  It is an error if [len <= 0] or
     [len > length t].*)
 val truncate : t -> len:int -> unit
+[@@deprecated "[since 2019-07] It will be removed in the future"]

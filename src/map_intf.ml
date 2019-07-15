@@ -28,8 +28,7 @@ end
 
 module With_first_class_module = struct
   type ('key, 'cmp, 'z) t =
-    (module Comparator.S with type t = 'key and type comparator_witness = 'cmp)
-    -> 'z
+    (module Comparator.S with type t = 'key and type comparator_witness = 'cmp) -> 'z
 end
 
 module Symmetric_diff_element = struct
@@ -203,6 +202,7 @@ module type Accessors_generic = sig
   type ('a, 'b, 'cmp) t
   type ('a, 'b, 'cmp) tree
   type 'a key
+  type 'cmp cmp
   type ('a, 'cmp, 'z) options
 
   val invariants : ('k, 'cmp, ('k, 'v, 'cmp) t -> bool) options
@@ -506,6 +506,7 @@ module type Accessors1 = sig
   type 'a t
   type 'a tree
   type key
+  type comparator_witness
 
   val invariants : _ t -> bool
   val is_empty : _ t -> bool
@@ -664,6 +665,7 @@ end
 module type Accessors2 = sig
   type ('a, 'b) t
   type ('a, 'b) tree
+  type comparator_witness
 
   val invariants : (_, _) t -> bool
   val is_empty : (_, _) t -> bool
@@ -1310,12 +1312,14 @@ module Check_accessors
     (T : T3)
     (Tree : T3)
     (Key : T1)
+    (Cmp : T1)
     (Options : T3)
     (M : Accessors_generic
      with type ('a, 'b, 'c) options := ('a, 'b, 'c) Options.t
      with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t
      with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Tree.t
-     with type 'a key := 'a Key.t) =
+     with type 'a key := 'a Key.t
+     with type 'cmp cmp := 'cmp Cmp.t) =
 struct end
 
 module Check_accessors1 (M : Accessors1) =
@@ -1328,6 +1332,9 @@ module Check_accessors1 (M : Accessors1) =
     end)
     (struct
       type 'a t = M.key
+    end)
+    (struct
+      type 'a t = M.comparator_witness
     end)
     (Without_comparator)
     (M)
@@ -1343,6 +1350,9 @@ module Check_accessors2 (M : Accessors2) =
     (struct
       type 'a t = 'a
     end)
+    (struct
+      type 'a t = M.comparator_witness
+    end)
     (Without_comparator)
     (M)
 
@@ -1353,6 +1363,9 @@ module Check_accessors3 (M : Accessors3) =
     end)
     (struct
       type ('a, 'b, 'c) t = ('a, 'b, 'c) M.tree
+    end)
+    (struct
+      type 'a t = 'a
     end)
     (struct
       type 'a t = 'a
@@ -1371,6 +1384,9 @@ module Check_accessors3_with_comparator (M : Accessors3_with_comparator) =
     (struct
       type 'a t = 'a
     end)
+    (struct
+      type 'a t = 'a
+    end)
     (With_comparator)
     (M)
 
@@ -1379,6 +1395,7 @@ module type Creators_generic = sig
   type ('k, 'v, 'cmp) tree
   type 'k key
   type ('a, 'cmp, 'z) options
+  type 'cmp cmp
 
   val empty : ('k, 'cmp, ('k, _, 'cmp) t) options
   val singleton : ('k, 'cmp, 'k key -> 'v -> ('k, 'v, 'cmp) t) options
@@ -1430,6 +1447,7 @@ module type Creators1 = sig
   type 'a t
   type 'a tree
   type key
+  type comparator_witness
 
   val empty : _ t
   val singleton : key -> 'a -> 'a t
@@ -1454,6 +1472,7 @@ end
 module type Creators2 = sig
   type ('a, 'b) t
   type ('a, 'b) tree
+  type comparator_witness
 
   val empty : (_, _) t
   val singleton : 'a -> 'b -> ('a, 'b) t
@@ -1551,12 +1570,14 @@ module Check_creators
     (T : T3)
     (Tree : T3)
     (Key : T1)
+    (Cmp : T1)
     (Options : T3)
     (M : Creators_generic
      with type ('a, 'b, 'c) options := ('a, 'b, 'c) Options.t
      with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t
      with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Tree.t
-     with type 'a key := 'a Key.t) =
+     with type 'a key := 'a Key.t
+     with type 'a cmp := 'a Cmp.t) =
 struct end
 
 module Check_creators1 (M : Creators1) =
@@ -1569,6 +1590,9 @@ module Check_creators1 (M : Creators1) =
     end)
     (struct
       type 'a t = M.key
+    end)
+    (struct
+      type 'a t = M.comparator_witness
     end)
     (Without_comparator)
     (M)
@@ -1584,6 +1608,9 @@ module Check_creators2 (M : Creators2) =
     (struct
       type 'a t = 'a
     end)
+    (struct
+      type 'a t = M.comparator_witness
+    end)
     (Without_comparator)
     (M)
 
@@ -1594,6 +1621,9 @@ module Check_creators3_with_comparator (M : Creators3_with_comparator) =
     end)
     (struct
       type ('a, 'b, 'c) t = ('a, 'b, 'c) M.tree
+    end)
+    (struct
+      type 'a t = 'a
     end)
     (struct
       type 'a t = 'a
@@ -1609,6 +1639,7 @@ module type Creators_and_accessors_generic = sig
     with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
     with type ('a, 'b, 'c) tree := ('a, 'b, 'c) tree
     with type 'a key := 'a key
+    with type 'a cmp := 'a cmp
     with type ('a, 'b, 'c) options := ('a, 'b, 'c) options
 end
 
@@ -1616,7 +1647,11 @@ module type Creators_and_accessors1 = sig
   include Creators1
 
   include
-    Accessors1 with type 'a t := 'a t with type 'a tree := 'a tree with type key := key
+    Accessors1
+    with type 'a t := 'a t
+    with type 'a tree := 'a tree
+    with type key := key
+    with type comparator_witness := comparator_witness
 end
 
 module type Creators_and_accessors2 = sig
@@ -1626,6 +1661,7 @@ module type Creators_and_accessors2 = sig
     Accessors2
     with type ('a, 'b) t := ('a, 'b) t
     with type ('a, 'b) tree := ('a, 'b) tree
+    with type comparator_witness := comparator_witness
 end
 
 module type Creators_and_accessors3_with_comparator = sig
