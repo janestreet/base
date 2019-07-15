@@ -28,10 +28,21 @@ let max_array_length = Caml.Sys.max_array_length
 let runtime_variant = Caml.Sys.runtime_variant
 let runtime_parameters = Caml.Sys.runtime_parameters
 let argv = Caml.Sys.argv
-let getenv = Caml.Sys.getenv
 let ocaml_version = Caml.Sys.ocaml_version
 let enable_runtime_warnings = Caml.Sys.enable_runtime_warnings
 let runtime_warnings_enabled = Caml.Sys.runtime_warnings_enabled
+
+let getenv_exn var =
+  try Caml.Sys.getenv var with
+  | Caml.Not_found ->
+    Printf.failwithf "Sys.getenv_exn: environment variable %s is not set" var ()
+;;
+
+let getenv var =
+  match Caml.Sys.getenv var with
+  | x -> Some x
+  | exception Caml.Not_found -> None
+;;
 
 external opaque_identity : 'a -> 'a = "%opaque"
 
