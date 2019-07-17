@@ -149,7 +149,7 @@ let%expect_test "all" =
      Y
      Z
      [
-     "\\"
+     \
      ]
      ^
      _
@@ -505,7 +505,7 @@ let%expect_test "predicates" =
      Y
      Z
      [
-     "\\"
+     \
      ]
      ^
      _

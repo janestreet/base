@@ -12,6 +12,8 @@ module For_generated_code : sig
     ; getter : 'record -> 'field
     ; fset : 'record -> 'field -> 'record
     }
+
+  val opaque_identity : 'a -> 'a
 end
 
 (**/**)
@@ -21,6 +23,7 @@ end
     of restricting the operations that can be used. *)
 type ('perm, 'record, 'field) t_with_perm =
   | Field of ('perm, 'record, 'field) For_generated_code.t
+[@@unboxed]
 
 (** A record field with no restrictions. *)
 type ('record, 'field) t = ([ `Read | `Set_and_create ], 'record, 'field) t_with_perm

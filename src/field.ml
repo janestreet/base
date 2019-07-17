@@ -41,10 +41,13 @@ module For_generated_code = struct
     ; getter : 'record -> 'field
     ; fset : 'record -> 'field -> 'record
     }
+
+  let opaque_identity = Sys0.opaque_identity
 end
 
 type ('perm, 'record, 'field) t_with_perm =
   | Field of ('perm, 'record, 'field) For_generated_code.t
+[@@unboxed]
 
 type ('record, 'field) t = ([ `Read | `Set_and_create ], 'record, 'field) t_with_perm
 type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
