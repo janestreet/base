@@ -25,8 +25,8 @@ module Exn = struct
   (* We turn on backtraces by default if OCAMLRUNPARAM isn't set. *)
   let maybe_set_recording () =
     match Sys.getenv "OCAMLRUNPARAM" with
-    | exception _ -> set_recording true
-    | (_ : string) -> ()
+    | None -> set_recording true
+    | Some (_ : string) -> ()
   ;;
 
   (* the caller set something, they are responsible *)
