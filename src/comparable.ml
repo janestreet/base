@@ -237,3 +237,4 @@ let lexicographic cmps x y =
 ;;
 
 let lift cmp ~f x y = cmp (f x) (f y)
+let reverse cmp x y = cmp y x
