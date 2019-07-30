@@ -57,10 +57,10 @@ module State = struct
   let full_init t seed = assign t (make seed)
 
   let default =
-    (* We define Core's default random state as a copy of OCaml's default random state.
-       This means that programs that use Core.Random will see the same sequence of random
+    (* We define Base's default random state as a copy of OCaml's default random state.
+       This means that programs that use Base.Random will see the same sequence of random
        bits as if they had used Caml.Random.  However, because [get_state] returns a
-       copy, Core.Random and OCaml.Random are not using the same state.  If a program used
+       copy, Base.Random and OCaml.Random are not using the same state.  If a program used
        both, each of them would go through the same sequence of random bits.  To avoid
        that, we reset OCaml's random state to a different seed, giving it a different
        sequence. *)
@@ -126,7 +126,7 @@ module State = struct
     | W32 -> full_range_nativeint_on_32bits
   ;;
 
-  let[@inline never] raise_crossed_bounds name lower_bound upper_bound string_of_bound =
+  let[@cold] raise_crossed_bounds name lower_bound upper_bound string_of_bound =
     Printf.failwithf
       "Random.%s: crossed bounds [%s > %s]"
       name

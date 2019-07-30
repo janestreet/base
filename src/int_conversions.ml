@@ -2,7 +2,7 @@ open! Import
 module Int = Int0
 module Sys = Sys0
 
-let[@inline never] convert_failure x a b to_string =
+let[@cold] convert_failure x a b to_string =
   Printf.failwithf
     "conversion from %s to %s failed: %s is out of range"
     a

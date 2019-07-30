@@ -56,7 +56,7 @@ let errors t =
     Error.to_string_hum (Error.tag error ~tag:(path_string path)))
 ;;
 
-let[@inline never] result_fail t =
+let[@cold] result_fail t =
   Or_error.error
     "validation errors"
     (List.map t ~f:(fun { path; error } -> path_string path, error))

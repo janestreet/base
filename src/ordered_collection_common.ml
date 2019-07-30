@@ -2,7 +2,7 @@ open! Import
 
 let invalid_argf = Printf.invalid_argf
 
-let[@inline never] slow_check_pos_len_exn ~pos ~len ~total_length =
+let[@cold] slow_check_pos_len_exn ~pos ~len ~total_length =
   if pos < 0 then invalid_argf "Negative position: %d" pos ();
   if len < 0 then invalid_argf "Negative length: %d" len ();
   (* We use [pos > total_length - len] rather than [pos + len > total_length] to avoid the
