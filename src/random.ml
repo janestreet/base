@@ -1,5 +1,4 @@
 open! Import
-open Caml.Random
 module Array = Array0
 module Int = Int0
 
@@ -35,21 +34,36 @@ let random_seed ?allow_in_tests () =
 ;;
 
 module State = struct
-  include State
+  (* We allow laziness only for the definition of [default], below, which may lazily call
+     [make_self_init]. For all other purposes, we create and use [t] eagerly. *)
+  type t = Caml.Random.State.t Lazy.t
+
+  let bits t = Caml.Random.State.bits (Lazy.force t)
+  let bool t = Caml.Random.State.bool (Lazy.force t)
+  let int t x = Caml.Random.State.int (Lazy.force t) x
+  let int32 t x = Caml.Random.State.int32 (Lazy.force t) x
+  let int64 t x = Caml.Random.State.int64 (Lazy.force t) x
+  let nativeint t x = Caml.Random.State.nativeint (Lazy.force t) x
+  let make seed = Lazy.from_val (Caml.Random.State.make seed)
+  let copy t = Lazy.from_val (Caml.Random.State.copy (Lazy.force t))
 
   let make_self_init ?allow_in_tests () =
     forbid_nondeterminism_in_tests ~allow_in_tests;
-    make_self_init ()
+    Lazy.from_val (Caml.Random.State.make_self_init ())
   ;;
 
-  type repr =
-    { st : int array
-    ; mutable idx : int
-    }
+  module Repr = struct
+    type t =
+      { st : int array
+      ; mutable idx : int
+      }
+
+    let of_state : Caml.Random.State.t -> t = Caml.Obj.magic
+  end
 
   let assign t1 t2 =
-    let t1 : repr = Caml.Obj.magic t1 in
-    let t2 : repr = Caml.Obj.magic t2 in
+    let t1 = Repr.of_state (Lazy.force t1) in
+    let t2 = Repr.of_state (Lazy.force t2) in
     Array.blit ~src:t2.st ~src_pos:0 ~dst:t1.st ~dst_pos:0 ~len:(Array.length t1.st);
     t1.idx <- t2.idx
   ;;
@@ -57,16 +71,24 @@ module State = struct
   let full_init t seed = assign t (make seed)
 
   let default =
-    (* We define Base's default random state as a copy of OCaml's default random state.
-       This means that programs that use Base.Random will see the same sequence of random
-       bits as if they had used Caml.Random.  However, because [get_state] returns a
-       copy, Base.Random and OCaml.Random are not using the same state.  If a program used
-       both, each of them would go through the same sequence of random bits.  To avoid
-       that, we reset OCaml's random state to a different seed, giving it a different
-       sequence. *)
-    let t = Caml.Random.get_state () in
-    Caml.Random.init 137;
-    t
+    if am_testing
+    then (
+      (* We define Base's default random state as a copy of OCaml's default random state.
+         This means that programs that use Base.Random will see the same sequence of
+         random bits as if they had used Caml.Random. However, because [get_state] returns
+         a copy, Base.Random and OCaml.Random are not using the same state. If a program
+         used both, each of them would go through the same sequence of random bits. To
+         avoid that, we reset OCaml's random state to a different seed, giving it a
+         different sequence. *)
+      let t = Caml.Random.get_state () in
+      Caml.Random.init 137;
+      Lazy.from_val t)
+    else
+      lazy
+        (* Outside of tests, we initialize random state nondeterministically and lazily.
+           We force the random initialization to be lazy so that we do not pay any cost
+           for it in programs that do not use randomness. *)
+        (Lazy.force (make_self_init ()))
   ;;
 
   let int_on_64bits t bound =
