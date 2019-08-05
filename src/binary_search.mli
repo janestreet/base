@@ -1,4 +1,4 @@
-(** General functions for performing binary searches over ordered sequences given
+(** Functions for performing binary searches over ordered sequences given
     [length] and [get] functions.
 
     These functions can be specialized and added to a data structure using the functors

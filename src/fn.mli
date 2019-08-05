@@ -12,7 +12,7 @@ val const : 'a -> _ -> 'a
     that rebinds [ignore] can still refer to [Fn.ignore]. *)
 external ignore : _ -> unit = "%ignore"
 
-(** Negates a function. *)
+(** Negates a boolean function. *)
 val non : ('a -> bool) -> 'a -> bool
 
 (** [forever f] runs [f ()] until it throws an exception and returns the
@@ -22,7 +22,9 @@ val forever : (unit -> unit) -> exn
 (** [apply_n_times ~n f x] is the [n]-fold application of [f] to [x]. *)
 val apply_n_times : n:int -> ('a -> 'a) -> 'a -> 'a
 
-(** The identity function.  Also see [Sys.opaque_identity]. *)
+(** The identity function.
+
+    See also: {!Sys.opaque_identity}. *)
 external id : 'a -> 'a = "%identity"
 
 (** [compose f g x] is [f (g x)]. *)

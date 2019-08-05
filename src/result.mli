@@ -2,20 +2,17 @@
 
 open! Import
 
-
-(** ['ok] is a function's expected return type, and ['err] is often an error message
-    string.
+(** ['ok] is the return type, and ['err] is often an error message string.
 
     {[
-      let ric_of_ticker = function
-        | "IBM" -> Ok "IBM.N"
-        | "MSFT" -> Ok "MSFT.OQ"
-        | "AA" -> Ok "AA.N"
-        | "CSCO" -> Ok "CSCO.OQ"
-        | _ as ticker -> Error (sprintf "can't find ric of %s" ticker)
+      type nat = Zero | Succ of nat
+
+      let pred = function
+        | Succ n -> Ok n
+        | Zero -> Error "Zero does not have a predecessor"
     ]}
 
-    The return type of ric_of_ticker could be [string option], but [(string, string)
+    The return type of [pred] could be [nat option], but [(nat, string)
     Result.t] gives more control over the error message. *)
 type ('ok, 'err) t = ('ok, 'err) Caml.result =
   | Ok of 'ok
@@ -104,4 +101,3 @@ module Export : sig
   val is_ok : (_, _) t -> bool
   val is_error : (_, _) t -> bool
 end
-

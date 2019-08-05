@@ -1,4 +1,4 @@
-(** Mutable vector of elements of type ['a] with O(1) [get] and  [set] operations. *)
+(** Mutable vector of elements with O(1) [get] and [set] operations. *)
 
 open! Import
 

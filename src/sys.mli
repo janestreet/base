@@ -1,5 +1,6 @@
 (** Cross-platform system configuration values. *)
 
+
 (** The command line arguments given to the process.
     The first element is the command name used to invoke the program.
     The following elements are the command-line arguments given to the program.
@@ -59,10 +60,13 @@ val max_string_length : int
     {!Array.max_length} is the same as this value. *)
 val max_array_length : int
 
-
 (** Returns the name of the runtime variant the program is running on.  This is normally
     the argument given to [-runtime-variant] at compile time, but for byte-code it can be
-    changed after compilation.  When running in JavaScript, it will be [""]. *)
+    changed after compilation.
+
+    When running in JavaScript or utop it will be [""], while if compiled with DEBUG
+    (debugging of the runtime) it will be ["d"], and if compiled with CAML_INSTR
+    (instrumentation of the runtime) it will be ["i"]. *)
 val runtime_variant : unit -> string
 
 (** Returns the value of the runtime parameters, in the same format as the contents of the
