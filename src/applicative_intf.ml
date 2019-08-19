@@ -106,75 +106,6 @@ module type Let_syntax = sig
   end
 end
 
-(** Argument lists and associated N-ary map and apply functions. *)
-module type Args = sig
-  (** the underlying applicative *)
-  type 'a arg
-
-  (** ['f] is the type of a function that consumes the list of arguments and returns an
-      ['r]. *)
-  type ('f, 'r) t
-
-  (** the empty argument list **)
-  val nil : ('r, 'r) t
-
-  (** prepend an argument *)
-  val cons : 'a arg -> ('f, 'r) t -> ('a -> 'f, 'r) t
-
-  (** infix operator for [cons] *)
-  val ( @> ) : 'a arg -> ('f, 'r) t -> ('a -> 'f, 'r) t
-
-  (** Transform argument values in some way.  For example, one can label a function
-      argument like so:
-
-      {[
-        step ~f:(fun f x -> f ~foo:x) : ('a -> 'r1, 'r2) t -> (foo:'a -> 'r1, 'r2) t
-      ]} *)
-  val step : ('f1, 'r) t -> f:('f2 -> 'f1) -> ('f2, 'r) t
-
-  (** The preferred way to factor out an [Args] sub-sequence:
-
-      {[
-        let args =
-          Foo.Args.(
-            bar "A"
-            (* TODO: factor out the common baz qux sub-sequence *)
-            @> baz "B"
-            @> qux "C"
-            @> zap "D"
-            @> nil
-          )
-      ]}
-
-      is to write a function that prepends the sub-sequence:
-
-      {[
-        let baz_qux remaining_args =
-          Foo.Args.(
-            baz "B"
-            @> qux "C"
-            @> remaining_args
-          )
-      ]}
-
-      and splice it back into the original sequence using [@@] so that things line up
-      nicely:
-
-      {[
-        let args =
-          Foo.Args.(
-            bar "A"
-            @> baz_qux
-            @@ zap "D"
-            @> nil
-          )
-      ]} *)
-
-  val mapN : f:'f -> ('f, 'r) t -> 'r arg
-  val applyN : 'f arg -> ('f, 'r) t -> 'r arg
-end
-[@@deprecated "[since 2018-09] Use [ppx_let] instead."]
-
 module type Basic2 = sig
   type ('a, 'e) t
 
@@ -251,29 +182,9 @@ module type Let_syntax2 = sig
   end
 end
 
-module type Args2 = sig
-  type ('a, 'e) arg
-  type ('f, 'r, 'e) t
-
-  val nil : ('r, 'r, _) t
-  val cons : ('a, 'e) arg -> ('f, 'r, 'e) t -> ('a -> 'f, 'r, 'e) t
-  val ( @> ) : ('a, 'e) arg -> ('f, 'r, 'e) t -> ('a -> 'f, 'r, 'e) t
-  val step : ('f1, 'r, 'e) t -> f:('f2 -> 'f1) -> ('f2, 'r, 'e) t
-  val mapN : f:'f -> ('f, 'r, 'e) t -> ('r, 'e) arg
-  val applyN : ('f, 'e) arg -> ('f, 'r, 'e) t -> ('r, 'e) arg
-end
-[@@deprecated "[since 2018-09] Use [ppx_let] instead."]
-
 module type Applicative = sig
   module type Applicative_infix = Applicative_infix
   module type Applicative_infix2 = Applicative_infix2
-
-  module type Args = Args
-  [@@warning "-3"] [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
-
-  module type Args2 = Args2
-  [@@warning "-3"] [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
-
   module type Basic = Basic
   module type Basic2 = Basic2
   module type Basic_using_map2 = Basic_using_map2
@@ -282,10 +193,6 @@ module type Applicative = sig
   module type Let_syntax2 = Let_syntax2
   module type S = S
   module type S2 = S2
-
-  module Args_to_Args2 (X : Args) :
-    Args2 with type ('a, 'e) arg = 'a X.arg with type ('f, 'r, 'e) t = ('f, 'r) X.t
-    [@@warning "-3"]
 
   module S2_to_S (X : S2) : S with type 'a t = ('a, unit) X.t
   module S_to_S2 (X : S) : S2 with type ('a, 'e) t = 'a X.t
@@ -310,12 +217,6 @@ module type Applicative = sig
 
   module Make2_using_map2 (X : Basic2_using_map2) :
     S2 with type ('a, 'e) t := ('a, 'e) X.t
-
-  module Make_args (X : S) : Args with type 'a arg := 'a X.t
-    [@@warning "-3"] [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
-
-  module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t
-    [@@warning "-3"] [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
 
   (** The following functors give a sense of what Applicatives one can define.
 

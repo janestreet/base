@@ -78,6 +78,12 @@ val float_range : float -> float -> float
 (** [Random.bool ()] returns [true] or [false] with probability 0.5 each. *)
 val bool : unit -> bool
 
+(** Return a uniformly-chosen {!char}. *)
+val char : unit -> char
+
+(** Return a uniformly-chosen {!char} in the ASCII range. *)
+val ascii : unit -> char
+
 (** {6 Advanced functions} *)
 
 (** The functions from module [State] manipulate the current state of the random generator
@@ -120,6 +126,8 @@ module State : sig
   val int64_incl : t -> int64 -> int64 -> int64
   val float_range : t -> float -> float -> float
   val bool : t -> bool
+  val char : t -> char
+  val ascii : t -> char
 end
 
 (** Sets the state of the generator used by the basic functions. *)

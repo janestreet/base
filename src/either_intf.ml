@@ -15,9 +15,6 @@ module type Focused = sig
   include Monad.S2 with type ('a, 'b) t := ('a, 'b) t
   include Applicative.S2 with type ('a, 'b) t := ('a, 'b) t
 
-  module Args : Applicative.Args2 with type ('a, 'e) arg := ('a, 'e) t
-    [@@warning "-3"] [@@deprecated "[since 2018-09] Use [ppx_let] instead."]
-
   val value : ('a, _) t -> default:'a -> 'a
   val to_option : ('a, _) t -> 'a option
   val with_return : ('a With_return.return -> 'b) -> ('a, 'b) t

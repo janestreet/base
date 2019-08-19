@@ -299,6 +299,30 @@ let%expect_test "int63_incl" =
   [%expect {||}]
 ;;
 
+let%expect_test "ascii" =
+  test
+    [%here]
+    (module Char)
+    1_000
+    ascii
+    ~min:Char.min_value
+    ~max:(Char.of_int_exn 127)
+    ~check_range:('a', 'z');
+  [%expect {||}]
+;;
+
+let%expect_test "char" =
+  test
+    [%here]
+    (module Char)
+    1_000
+    char
+    ~min:Char.min_value
+    ~max:Char.max_value
+    ~check_range:('\128', '\255');
+  [%expect {||}]
+;;
+
 let%test_module "float upper bound is inclusive despite docs" =
   (module struct
     (* The fact that this test passes doesn't demonstrate that the bug has gone away,

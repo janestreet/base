@@ -48,16 +48,6 @@ module Check_compatibility = struct
   end
 end
 
-module Args_to_Args2 (X : Args) :
-  Args2 with type ('a, 'e) arg = 'a X.arg with type ('f, 'r, 'e) t = ('f, 'r) X.t =
-struct
-  type ('a, 'e) arg = 'a X.arg
-  type ('f, 'r, 'e) t = ('f, 'r) X.t
-
-  include (X : Args with type 'a arg := 'a X.arg and type ('f, 'r) t := ('f, 'r) X.t)
-end
-[@@warning "-3"]
-
 module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = struct
   include X
 
@@ -141,37 +131,6 @@ module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t =
 
     include (X : Basic_using_map2 with type 'a t := 'a X.t)
   end)
-
-module Make_args' (X : S2) = struct
-  open X
-
-  type ('f, 'r, 'e) t_ = { applyN : ('f, 'e) X.t -> ('r, 'e) X.t }
-
-  let nil = { applyN = Fn.id }
-  let cons arg t = { applyN = (fun d -> t.applyN (apply d arg)) }
-  let step t ~f = { applyN = (fun d -> t.applyN (map ~f d)) }
-  let ( @> ) = cons
-  let applyN arg t = t.applyN arg
-  let mapN ~f t = applyN (return f) t
-end
-
-module Make_args (X : S) : Args with type 'a arg := 'a X.t = struct
-  include Make_args' (struct
-      type ('a, 'e) t = 'a X.t
-
-      include (X : S with type 'a t := 'a X.t)
-    end)
-
-  type ('f, 'r) t = ('f, 'r, unit) t_
-end
-[@@warning "-3"]
-
-module Make_args2 (X : S2) : Args2 with type ('a, 'e) arg := ('a, 'e) X.t = struct
-  include Make_args' (X)
-
-  type ('f, 'r, 'e) t = ('f, 'r, 'e) t_
-end
-[@@warning "-3"]
 
 module Of_monad2 (M : Monad.S2) : S2 with type ('a, 'e) t := ('a, 'e) M.t = Make2 (struct
     type ('a, 'e) t = ('a, 'e) M.t

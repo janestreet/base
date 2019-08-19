@@ -63,12 +63,13 @@ let check current_module =
     method! expression e =
       super#expression e;
       match e.pexp_desc with
-      | Pexp_open (_, id, _) -> check_open id
+      | Pexp_open ({ popen_expr = { pmod_desc = Pmod_ident id; _ }; _ }, _) ->
+        check_open id
       | _ -> ()
 
     method! open_description op =
       super#open_description op;
-      check_open op.popen_lid
+      check_open op.popen_expr
 
     method! module_binding mb =
       super#module_binding mb;

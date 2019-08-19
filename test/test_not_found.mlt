@@ -13,7 +13,7 @@ Not_found
 [%%expect
   {|
 Line _, characters 0-9:
-Error (Warning 3): deprecated: Not_found
+Error (alert deprecated): Not_found
 [2016-09] this element comes from the stdlib distributed with OCaml.
 Instead of raising [Not_found], consider using [raise_s] with an informative error
 message.  If code needs to distinguish [Not_found] from other exceptions, please change

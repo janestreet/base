@@ -5,8 +5,17 @@
     The first element is the command name used to invoke the program.
     The following elements are the command-line arguments given to the program.
 
-    When running in JavaScript in the browser, it is [[| "a.out" |]]. *)
+    When running in JavaScript in the browser, it is [[| "a.out" |]].
+
+    [get_argv] is a function because the external function [caml_sys_modify_argv] can
+    replace the array starting in OCaml 4.09. *)
+val get_argv : unit -> string array
+
+(** A single result from [get_argv ()]. *)
 val argv : string array
+[@@deprecated
+  "[since 2019-08] Use [Sys.get_argv] instead, which has the correct behavior when \
+   [caml_sys_modify_argv] is called."]
 
 (** [interactive] is set to [true] when being executed in the [ocaml] REPL, and [false]
     otherwise. *)

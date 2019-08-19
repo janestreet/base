@@ -174,13 +174,6 @@ struct
 
   include App
 
-  module Args = Applicative.Make_args2 (struct
-      type nonrec ('a, 'b) t = ('a, 'b) t
-
-      include App
-    end)
-  [@@warning "-3"]
-
   let combine_all =
     let rec other_loop f acc = function
       | [] -> other acc

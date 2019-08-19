@@ -1,6 +1,7 @@
 open! Import
 module Array = Array0
 module Int = Int0
+module Char = Char0
 
 (* Unfortunately, because the standard library does not expose
    [Caml.Random.State.default], we have to construct our own.  We then build the
@@ -46,6 +47,8 @@ module State = struct
   let nativeint t x = Caml.Random.State.nativeint (Lazy.force t) x
   let make seed = Lazy.from_val (Caml.Random.State.make seed)
   let copy t = Lazy.from_val (Caml.Random.State.copy (Lazy.force t))
+  let char t = int t 256 |> Char.unsafe_of_int
+  let ascii t = int t 128 |> Char.unsafe_of_int
 
   let make_self_init ?allow_in_tests () =
     forbid_nondeterminism_in_tests ~allow_in_tests;
@@ -258,6 +261,8 @@ let nativeint_incl x y = State.nativeint_incl default x y
 let int64_incl x y = State.int64_incl default x y
 let float_range x y = State.float_range default x y
 let bool () = State.bool default
+let char () = State.char default
+let ascii () = State.ascii default
 let full_init seed = State.full_init default seed
 let init seed = full_init [| seed |]
 let self_init ?allow_in_tests () = full_init (random_seed ?allow_in_tests ())

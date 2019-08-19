@@ -1,4 +1,4 @@
-{1 Base}
+{0 Base}
 
 {b {{!Base} The full API is browsable here}}.
 
@@ -15,7 +15,7 @@ left to other libraries.
 Note that an API for OCaml's channel-based I/O can be found in the
 {{!module:Stdio}[Stdio]} library.
 
-{2 Relationship to Core_kernel and Core}
+{1 Relationship to Core_kernel and Core}
 
 Base is the smallest, most self-contained version of Jane Street's
 family of three standard library replacements. It is extended by
@@ -31,7 +31,7 @@ In sum:
 - {b {!Core}}: Core_kernel extended with UNIX APIs.
 
 
-{2 Using the OCaml standard library with Base}
+{1 Using the OCaml standard library with Base}
 
 Base is intended as a full stdlib replacement.  As a result, after an
 [open Base], all the modules, values, types, etc., coming from the OCaml
@@ -45,13 +45,13 @@ which re-exports them all through the toplevel name
 The new modules and values made available by Base are documented
 {{!Base} here}.
 
-{2 Differences between Base and the OCaml standard library}
+{1 Differences between Base and the OCaml standard library}
 
 Programmers who are used to the OCaml standard library should read
 through this section to understand major differences between the two
 libraries that one should be aware of when switching to Base.
 
-{3 Comparison operators}
+{2 Comparison operators}
 
 The comparison operators exposed by the OCaml standard library are
 polymorphic:
@@ -81,7 +81,7 @@ The [ppx_compare] rewriter offers an alternative way to write this:
 
 {[ [%compare: string list] x y ]}
 
-{2 Base and ppx code generators}
+{1 Base and ppx code generators}
 
 Base uses a few ppx code generators to implement:
 
@@ -131,7 +131,7 @@ Things are not yet set up in the git repository to make it convenient
 to change types and update the generated code, but they will be set up
 soon.
 
-{2 Base coding rules}
+{1 Base coding rules}
 
 There are a few coding rules across the code base that are enforced by
 lint tools.
@@ -165,7 +165,7 @@ The Base specific coding rules are checked by [ppx_base_lint], in the
 These checks are currently not run by [jbuilder], but it will soon get
 a [-dev] flag to run them automatically.
 
-{2 Roadmap}
+{1 Roadmap}
 
 Base is still under active development and there are several missing
 feature that are yet to be added. Consult the
