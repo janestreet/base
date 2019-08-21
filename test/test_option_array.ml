@@ -23,7 +23,7 @@ let%test_module "Cheap_option" =
       Caml.Gc.minor ();
       let x = value_unsafe (some (make_list ())) in
       Caml.Gc.minor ();
-      let _ = List.init ~f:(fun i -> Some (i * 100)) 10000 in
+      let (_ : int option list) = List.init ~f:(fun i -> Some (i * 100)) 10000 in
       [%test_result: Int.t Option.t List.t] ~expect:(make_list ()) x
     ;;
   end)

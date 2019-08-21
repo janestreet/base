@@ -163,7 +163,9 @@ let%test_module _ =
            (* test [added], other aspects of [add] are tested via [reify] in the
               [invariant] test above *)
            let added = ref false in
-           let _ = add t ~key ~data ~compare ~added ~replace in
+           let (_ : (Key.t, Data.t) t) =
+             add t ~key ~data ~compare ~added ~replace
+           in
            [%test_result: bool] !added ~expect:(not (Map.mem map key)))
      ;;
 
@@ -178,7 +180,7 @@ let%test_module _ =
            (* test [removed], other aspects of [remove] are tested via [reify] in the
               [invariant] test above *)
            let removed = ref false in
-           let _ = remove t key ~compare ~removed in
+           let (_ : (Key.t, Data.t) t) = remove t key ~compare ~removed in
            [%test_result: bool] !removed ~expect:(Map.mem map key))
      ;;
 

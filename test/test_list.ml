@@ -343,7 +343,7 @@ let%test_unit _ =
 
 let%test_unit _ =
   let long = Test_values.long1 () in
-  ignore (fold_right ~f:(fun e acc -> e :: acc) long ~init:[])
+  ignore (fold_right ~f:(fun e acc -> e :: acc) long ~init:[] : int list)
 ;;
 
 let%test_unit _ =
@@ -355,7 +355,7 @@ let%test_unit _ =
 
 let%test_unit _ =
   let long = Test_values.long1 () in
-  ignore (unzip (zip_exn long long))
+  ignore (unzip (zip_exn long long) : int list * int list)
 ;;
 
 let%test_unit _ =

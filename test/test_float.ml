@@ -946,7 +946,7 @@ let%test_module _ =
     let must_fail f x = Exn.does_raise (fun () -> f x)
 
     let must_succeed f x =
-      ignore (f x);
+      ignore (f x : _);
       true
     ;;
 

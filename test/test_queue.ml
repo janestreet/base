@@ -125,7 +125,7 @@ let%test_module _ =
        [%test_result: int option] (get_opt t 1) ~expect:(Some 1);
        [%test_result: int option] (get_opt t 2) ~expect:(Some 2);
        [%test_result: int option] (get_opt t 3) ~expect:None;
-       ignore (dequeue_exn t);
+       ignore (dequeue_exn t : int);
        [%test_result: int option] (get_opt t 0) ~expect:(Some 1);
        [%test_result: int option] (get_opt t 1) ~expect:(Some 2);
        [%test_result: int option] (get_opt t 2) ~expect:None;
@@ -319,11 +319,11 @@ let%test_module _ =
        let list = [ 1; 2; 3; 4 ] in
        let q = of_list list in
        let q' = copy q in
-       ignore (dequeue_exn q);
-       ignore (dequeue_exn q);
-       ignore (dequeue_exn q');
-       ignore (dequeue_exn q');
-       ignore (dequeue_exn q');
+       ignore (dequeue_exn q : int);
+       ignore (dequeue_exn q : int);
+       ignore (dequeue_exn q' : int);
+       ignore (dequeue_exn q' : int);
+       ignore (dequeue_exn q' : int);
        enqueue q 5;
        enqueue q 6;
        blit_transfer ~src:q ~dst:q' ~len:3 ();

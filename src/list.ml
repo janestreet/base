@@ -511,7 +511,8 @@ let iteri l ~f =
   ignore
     (fold l ~init:0 ~f:(fun i x ->
        f i x;
-       i + 1))
+       i + 1)
+     : int)
 ;;
 
 let foldi t ~init ~f =
