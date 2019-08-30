@@ -1409,9 +1409,6 @@ module type Creators_generic = sig
   val of_increasing_iterator_unchecked
     : ('k, 'cmp, len:int -> f:(int -> 'k key * 'v) -> ('k, 'v, 'cmp) t) options
 
-  val of_increasing_sequence
-    : ('k, 'cmp, ('k key * 'v) Sequence.t -> ('k, 'v, 'cmp) t Or_error.t) options
-
   val of_alist
     : ( 'k
       , 'cmp
@@ -1432,6 +1429,39 @@ module type Creators_generic = sig
 
   val of_alist_reduce
     : ('k, 'cmp, ('k key * 'v) list -> f:('v -> 'v -> 'v) -> ('k, 'v, 'cmp) t) options
+
+  val of_increasing_sequence
+    : ('k, 'cmp, ('k key * 'v) Sequence.t -> ('k, 'v, 'cmp) t Or_error.t) options
+
+  val of_sequence
+    : ( 'k
+      , 'cmp
+      , ('k key * 'v) Sequence.t -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ]
+      )
+        options
+
+  val of_sequence_or_error
+    : ('k, 'cmp, ('k key * 'v) Sequence.t -> ('k, 'v, 'cmp) t Or_error.t) options
+
+  val of_sequence_exn : ('k, 'cmp, ('k key * 'v) Sequence.t -> ('k, 'v, 'cmp) t) options
+
+  val of_sequence_multi
+    : ('k, 'cmp, ('k key * 'v) Sequence.t -> ('k, 'v list, 'cmp) t) options
+
+  val of_sequence_fold
+    : ( 'k
+      , 'cmp
+      , ('k key * 'v1) Sequence.t
+      -> init:'v2
+      -> f:('v2 -> 'v1 -> 'v2)
+      -> ('k, 'v2, 'cmp) t )
+        options
+
+  val of_sequence_reduce
+    : ( 'k
+      , 'cmp
+      , ('k key * 'v) Sequence.t -> f:('v -> 'v -> 'v) -> ('k, 'v, 'cmp) t )
+        options
 
   val of_iteri
     : ( 'k
@@ -1461,6 +1491,12 @@ module type Creators1 = sig
   val of_sorted_array_unchecked : (key * 'a) array -> 'a t
   val of_increasing_iterator_unchecked : len:int -> f:(int -> key * 'a) -> 'a t
   val of_increasing_sequence : (key * 'a) Sequence.t -> 'a t Or_error.t
+  val of_sequence : (key * 'a) Sequence.t -> [ `Ok of 'a t | `Duplicate_key of key ]
+  val of_sequence_or_error : (key * 'a) Sequence.t -> 'a t Or_error.t
+  val of_sequence_exn : (key * 'a) Sequence.t -> 'a t
+  val of_sequence_multi : (key * 'a) Sequence.t -> 'a list t
+  val of_sequence_fold : (key * 'a) Sequence.t -> init:'b -> f:('b -> 'a -> 'b) -> 'b t
+  val of_sequence_reduce : (key * 'a) Sequence.t -> f:('a -> 'a -> 'a) -> 'a t
 
   val of_iteri
     :  iteri:(f:(key:key -> data:'v -> unit) -> unit)
@@ -1486,6 +1522,18 @@ module type Creators2 = sig
   val of_sorted_array_unchecked : ('a * 'b) array -> ('a, 'b) t
   val of_increasing_iterator_unchecked : len:int -> f:(int -> 'a * 'b) -> ('a, 'b) t
   val of_increasing_sequence : ('a * 'b) Sequence.t -> ('a, 'b) t Or_error.t
+  val of_sequence : ('a * 'b) Sequence.t -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a ]
+  val of_sequence_or_error : ('a * 'b) Sequence.t -> ('a, 'b) t Or_error.t
+  val of_sequence_exn : ('a * 'b) Sequence.t -> ('a, 'b) t
+  val of_sequence_multi : ('a * 'b) Sequence.t -> ('a, 'b list) t
+
+  val of_sequence_fold
+    :  ('a * 'b) Sequence.t
+    -> init:'c
+    -> f:('c -> 'b -> 'c)
+    -> ('a, 'c) t
+
+  val of_sequence_reduce : ('a * 'b) Sequence.t -> f:('b -> 'b -> 'b) -> ('a, 'b) t
 
   val of_iteri
     :  iteri:(f:(key:'a -> data:'b -> unit) -> unit)
@@ -1554,6 +1602,39 @@ module type Creators3_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a * 'b) Sequence.t
     -> ('a, 'b, 'cmp) t Or_error.t
+
+  val of_sequence
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a * 'b) Sequence.t
+    -> [ `Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a ]
+
+  val of_sequence_or_error
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a * 'b) Sequence.t
+    -> ('a, 'b, 'cmp) t Or_error.t
+
+  val of_sequence_exn
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a * 'b) Sequence.t
+    -> ('a, 'b, 'cmp) t
+
+  val of_sequence_multi
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a * 'b) Sequence.t
+    -> ('a, 'b list, 'cmp) t
+
+  val of_sequence_fold
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a * 'b) Sequence.t
+    -> init:'c
+    -> f:('c -> 'b -> 'c)
+    -> ('a, 'c, 'cmp) t
+
+  val of_sequence_reduce
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a * 'b) Sequence.t
+    -> f:('b -> 'b -> 'b)
+    -> ('a, 'b, 'cmp) t
 
   val of_iteri
     :  comparator:('a, 'cmp) Comparator.t
@@ -1866,6 +1947,73 @@ module type Map = sig
     :  ('k, 'cmp) comparator
     -> ('k * 'v) Sequence.t
     -> ('k, 'v, 'cmp) t Or_error.t
+
+  (** Creates a map from an association sequence with unique keys.
+
+      [of_sequence c seq] behaves like [of_alist c (Sequence.to_list seq)] but
+      does not allocate the intermediate list.
+
+      If your sequence is increasing, use [of_increasing_sequence].
+  *)
+  val of_sequence
+    :  ('k, 'cmp) comparator
+    -> ('k * 'v) Sequence.t
+    -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k ]
+
+  (** Creates a map from an association sequence with unique keys, returning an error if
+      duplicate ['a] keys are found.
+
+      [of_sequence_or_error c seq] behaves like [of_alist_or_error c (Sequence.to_list seq)]
+      but does not allocate the intermediate list.
+  *)
+  val of_sequence_or_error
+    :  ('a, 'cmp) comparator
+    -> ('a * 'b) Sequence.t
+    -> ('a, 'b, 'cmp) t Or_error.t
+
+  (** Creates a map from an association sequence with unique keys, raising an exception if
+      duplicate ['a] keys are found.
+
+      [of_sequence_exn c seq] behaves like [of_alist_exn c (Sequence.to_list seq)] but
+      does not allocate the intermediate list.
+  *)
+  val of_sequence_exn : ('a, 'cmp) comparator -> ('a * 'b) Sequence.t -> ('a, 'b, 'cmp) t
+
+  (** Creates a map from an association sequence with possibly repeated keys. The values in
+      the map for a given key appear in the same order as they did in the association
+      list.
+
+      [of_sequence_multi c seq] behaves like [of_alist_exn c (Sequence.to_list seq)] but
+      does not allocate the intermediate list.
+  *)
+  val of_sequence_multi
+    :  ('a, 'cmp) comparator
+    -> ('a * 'b) Sequence.t
+    -> ('a, 'b list, 'cmp) t
+
+  (** Combines an association sequence into a map, folding together bound values with common
+      keys.
+
+      [of_sequence_fold c seq ~init ~f] behaves like [of_alist_fold c (Sequence.to_list seq) ~init ~f]
+      but does not allocate the intermediate list.
+  *)
+  val of_sequence_fold
+    :  ('a, 'cmp) comparator
+    -> ('a * 'b) Sequence.t
+    -> init:'c
+    -> f:('c -> 'b -> 'c)
+    -> ('a, 'c, 'cmp) t
+
+  (** Combines an association sequence into a map, reducing together bound values with common
+      keys.
+
+      [of_sequence_reduce c seq ~f] behaves like [of_alist_reduce c (Sequence.to_list seq) ~f]
+      but does not allocate the intermediate list.  *)
+  val of_sequence_reduce
+    :  ('a, 'cmp) comparator
+    -> ('a * 'b) Sequence.t
+    -> f:('b -> 'b -> 'b)
+    -> ('a, 'b, 'cmp) t
 
   (** Tests whether a map is empty. *)
   val is_empty : (_, _, _) t -> bool

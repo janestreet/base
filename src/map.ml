@@ -1198,38 +1198,113 @@ module Tree0 = struct
       ~f:(fun ~key ~data state -> hash_fold_data (hash_fold_key state key) data)
   ;;
 
-  let of_alist_fold alist ~init ~f ~compare_key =
-    List.fold alist ~init:(empty, 0) ~f:(fun (accum, length) (key, data) ->
-      let prev_data =
-        match find accum key ~compare_key with
-        | None -> init
-        | Some prev -> prev
-      in
-      let data = f prev_data data in
-      set accum ~length ~key ~data ~compare_key)
-  ;;
-
-  let of_alist_reduce alist ~f ~compare_key =
-    List.fold alist ~init:(empty, 0) ~f:(fun (accum, length) (key, data) ->
-      let new_data =
-        match find accum key ~compare_key with
-        | None -> data
-        | Some prev -> f prev data
-      in
-      set accum ~length ~key ~data:new_data ~compare_key)
-  ;;
-
   let keys t = fold_right ~f:(fun ~key ~data:_ list -> key :: list) t ~init:[]
   let data t = fold_right ~f:(fun ~key:_ ~data list -> data :: list) t ~init:[]
 
-  let of_alist alist ~compare_key =
-    with_return (fun r ->
-      let map =
-        List.fold alist ~init:(empty, 0) ~f:(fun (t, length) (key, data) ->
-          let ((_, length') as acc) = set ~length ~key ~data t ~compare_key in
-          if length = length' then r.return (`Duplicate_key key) else acc)
-      in
-      `Ok map)
+  module type Foldable = sig
+    val name : string
+
+    type 'a t
+
+    val fold : 'a t -> init:'b -> f:('b -> 'a -> 'b) -> 'b
+  end
+
+  module Of_foldable (M : Foldable) = struct
+    let of_foldable_fold foldable ~init ~f ~compare_key =
+      M.fold foldable ~init:(empty, 0) ~f:(fun (accum, length) (key, data) ->
+        let prev_data =
+          match find accum key ~compare_key with
+          | None -> init
+          | Some prev -> prev
+        in
+        let data = f prev_data data in
+        set accum ~length ~key ~data ~compare_key)
+    ;;
+
+    let of_foldable_reduce foldable ~f ~compare_key =
+      M.fold foldable ~init:(empty, 0) ~f:(fun (accum, length) (key, data) ->
+        let new_data =
+          match find accum key ~compare_key with
+          | None -> data
+          | Some prev -> f prev data
+        in
+        set accum ~length ~key ~data:new_data ~compare_key)
+    ;;
+
+    let of_foldable foldable ~compare_key =
+      with_return (fun r ->
+        let map =
+          M.fold foldable ~init:(empty, 0) ~f:(fun (t, length) (key, data) ->
+            let ((_, length') as acc) = set ~length ~key ~data t ~compare_key in
+            if length = length' then r.return (`Duplicate_key key) else acc)
+        in
+        `Ok map)
+    ;;
+
+    let of_foldable_or_error foldable ~comparator =
+      match of_foldable foldable ~compare_key:comparator.Comparator.compare with
+      | `Ok x -> Result.Ok x
+      | `Duplicate_key key ->
+        Or_error.error
+          ("Map.of_" ^ M.name ^ "_or_error: duplicate key")
+          key
+          comparator.sexp_of_t
+    ;;
+
+    let of_foldable_exn foldable ~comparator =
+      match of_foldable foldable ~compare_key:comparator.Comparator.compare with
+      | `Ok x -> x
+      | `Duplicate_key key ->
+        Error.create
+          ("Map.of_" ^ M.name ^ "_exn: duplicate key")
+          key
+          comparator.sexp_of_t
+        |> Error.raise
+    ;;
+  end
+
+  module Of_alist = Of_foldable (struct
+      let name = "alist"
+
+      type 'a t = 'a list
+
+      let fold = List.fold
+    end)
+
+  let of_alist_fold = Of_alist.of_foldable_fold
+  let of_alist_reduce = Of_alist.of_foldable_reduce
+  let of_alist = Of_alist.of_foldable
+  let of_alist_or_error = Of_alist.of_foldable_or_error
+  let of_alist_exn = Of_alist.of_foldable_exn
+
+  (* Reverse the input, then fold from left to right. The resulting map uses the first
+     instance of each key from the input list. The relative ordering of elements in each
+     output list is the same as in the input list. *)
+  let of_foldable_multi foldable ~fold ~compare_key =
+    let alist = fold foldable ~init:[] ~f:(fun l x -> x :: l) in
+    of_alist_fold alist ~init:[] ~f:(fun l x -> x :: l) ~compare_key
+  ;;
+
+  let of_alist_multi alist ~compare_key =
+    of_foldable_multi alist ~fold:List.fold ~compare_key
+  ;;
+
+  module Of_sequence = Of_foldable (struct
+      let name = "sequence"
+
+      type 'a t = 'a Sequence.t
+
+      let fold = Sequence.fold
+    end)
+
+  let of_sequence_fold = Of_sequence.of_foldable_fold
+  let of_sequence_reduce = Of_sequence.of_foldable_reduce
+  let of_sequence = Of_sequence.of_foldable
+  let of_sequence_or_error = Of_sequence.of_foldable_or_error
+  let of_sequence_exn = Of_sequence.of_foldable_exn
+
+  let of_sequence_multi sequence ~compare_key =
+    of_foldable_multi sequence ~fold:Sequence.fold ~compare_key
   ;;
 
   let for_all t ~f =
@@ -1262,26 +1337,6 @@ module Tree0 = struct
 
   let counti t ~f =
     fold t ~init:0 ~f:(fun ~key ~data acc -> if f ~key ~data then acc + 1 else acc)
-  ;;
-
-  let of_alist_or_error alist ~comparator =
-    match of_alist alist ~compare_key:comparator.Comparator.compare with
-    | `Ok x -> Result.Ok x
-    | `Duplicate_key key ->
-      Or_error.error "Map.of_alist_or_error: duplicate key" key comparator.sexp_of_t
-  ;;
-
-  let of_alist_exn alist ~comparator =
-    match of_alist alist ~compare_key:comparator.Comparator.compare with
-    | `Ok x -> x
-    | `Duplicate_key key ->
-      Error.create "Map.of_alist_exn: duplicate key" key comparator.sexp_of_t
-      |> Error.raise
-  ;;
-
-  let of_alist_multi alist ~compare_key =
-    let alist = List.rev alist in
-    of_alist_fold alist ~init:[] ~f:(fun l x -> x :: l) ~compare_key
   ;;
 
   let to_alist ?(key_order = `Increasing) t =
@@ -1837,6 +1892,30 @@ module Tree = struct
       (Tree0.of_increasing_sequence seq ~compare_key:comparator.Comparator.compare)
   ;;
 
+  let of_sequence ~comparator seq =
+    match Tree0.of_sequence seq ~compare_key:comparator.Comparator.compare with
+    | `Duplicate_key _ as d -> d
+    | `Ok (tree, _size) -> `Ok tree
+  ;;
+
+  let of_sequence_or_error ~comparator seq =
+    Tree0.of_sequence_or_error seq ~comparator |> Or_error.map ~f:fst
+  ;;
+
+  let of_sequence_exn ~comparator seq = fst (Tree0.of_sequence_exn seq ~comparator)
+
+  let of_sequence_multi ~comparator seq =
+    fst (Tree0.of_sequence_multi seq ~compare_key:comparator.Comparator.compare)
+  ;;
+
+  let of_sequence_fold ~comparator seq ~init ~f =
+    fst (Tree0.of_sequence_fold seq ~init ~f ~compare_key:comparator.Comparator.compare)
+  ;;
+
+  let of_sequence_reduce ~comparator seq ~f =
+    fst (Tree0.of_sequence_reduce seq ~f ~compare_key:comparator.Comparator.compare)
+  ;;
+
   let to_tree t = t
 
   let invariants ~comparator t =
@@ -2147,6 +2226,39 @@ module Using_comparator = struct
       (Tree0.of_increasing_sequence seq ~compare_key:comparator.Comparator.compare)
   ;;
 
+  let of_sequence ~comparator seq =
+    match Tree0.of_sequence seq ~compare_key:comparator.Comparator.compare with
+    | `Ok (tree, length) -> `Ok { comparator; tree; length }
+    | `Duplicate_key _ as z -> z
+  ;;
+
+  let of_sequence_or_error ~comparator seq =
+    Result.map (Tree0.of_sequence_or_error seq ~comparator) ~f:(fun tree ->
+      of_tree0 ~comparator tree)
+  ;;
+
+  let of_sequence_exn ~comparator seq =
+    of_tree0 ~comparator (Tree0.of_sequence_exn seq ~comparator)
+  ;;
+
+  let of_sequence_multi ~comparator seq =
+    of_tree0
+      ~comparator
+      (Tree0.of_sequence_multi seq ~compare_key:comparator.Comparator.compare)
+  ;;
+
+  let of_sequence_fold ~comparator seq ~init ~f =
+    of_tree0
+      ~comparator
+      (Tree0.of_sequence_fold seq ~init ~f ~compare_key:comparator.Comparator.compare)
+  ;;
+
+  let of_sequence_reduce ~comparator seq ~f =
+    of_tree0
+      ~comparator
+      (Tree0.of_sequence_reduce seq ~f ~compare_key:comparator.Comparator.compare)
+  ;;
+
   let t_of_sexp_direct ~comparator k_of_sexp v_of_sexp sexp =
     of_tree0 ~comparator (Tree0.t_of_sexp_direct k_of_sexp v_of_sexp sexp ~comparator)
   ;;
@@ -2208,6 +2320,28 @@ let of_increasing_iterator_unchecked m ~len ~f =
 
 let of_increasing_sequence m seq =
   Using_comparator.of_increasing_sequence ~comparator:(to_comparator m) seq
+;;
+
+let of_sequence m s = Using_comparator.of_sequence ~comparator:(to_comparator m) s
+
+let of_sequence_or_error m s =
+  Using_comparator.of_sequence_or_error ~comparator:(to_comparator m) s
+;;
+
+let of_sequence_exn m s =
+  Using_comparator.of_sequence_exn ~comparator:(to_comparator m) s
+;;
+
+let of_sequence_multi m s =
+  Using_comparator.of_sequence_multi ~comparator:(to_comparator m) s
+;;
+
+let of_sequence_fold m s ~init ~f =
+  Using_comparator.of_sequence_fold ~comparator:(to_comparator m) s ~init ~f
+;;
+
+let of_sequence_reduce m s ~f =
+  Using_comparator.of_sequence_reduce ~comparator:(to_comparator m) s ~f
 ;;
 
 module M (K : sig
@@ -2306,4 +2440,15 @@ module Poly = struct
   let of_increasing_sequence seq =
     Using_comparator.of_increasing_sequence ~comparator seq
   ;;
+
+  let of_sequence s = Using_comparator.of_sequence ~comparator s
+  let of_sequence_or_error s = Using_comparator.of_sequence_or_error ~comparator s
+  let of_sequence_exn s = Using_comparator.of_sequence_exn ~comparator s
+  let of_sequence_multi s = Using_comparator.of_sequence_multi ~comparator s
+
+  let of_sequence_fold s ~init ~f =
+    Using_comparator.of_sequence_fold ~comparator s ~init ~f
+  ;;
+
+  let of_sequence_reduce s ~f = Using_comparator.of_sequence_reduce ~comparator s ~f
 end

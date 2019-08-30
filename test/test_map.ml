@@ -197,3 +197,31 @@ let%test_module "[symmetric_diff]" =
     ;;
   end)
 ;;
+
+let%test_module "of_alist_multi key equality" =
+  (module struct
+    module Key = struct
+      module T = struct
+        type t = string * int [@@deriving sexp_of]
+
+        let compare = [%compare: string * _]
+      end
+
+      include T
+      include Comparator.Make (T)
+    end
+
+    let alist = [ ("a", 1), 1; ("a", 2), 3; ("b", 0), 0; ("a", 3), 2 ]
+
+    let%expect_test "of_alist_multi chooses the first key" =
+      print_s [%sexp (Map.of_alist_multi (module Key) alist : int list Map.M(Key).t)];
+      [%expect {| (((a 1) (1 3 2)) ((b 0) (0))) |}]
+    ;;
+
+    let%test_unit "of_{alist,sequence}_multi have the same behaviour" =
+      [%test_result: int list Map.M(Key).t]
+        ~expect:(Map.of_alist_multi (module Key) alist)
+        (Map.of_sequence_multi (module Key) (Sequence.of_list alist))
+    ;;
+  end)
+;;
