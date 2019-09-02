@@ -20,9 +20,8 @@ $ opam install base
 #+end_src
 
 Base has no runtime dependencies and is fast to build. Its sole build
-dependencies are [[https://github.com/ocaml/dune][dune]], which
-itself requires nothing more than the compiler, and
-[[https://github.com/janestreet/sexplib0][sexplib0]].
+dependency is [[https://github.com/ocaml/dune][dune]], which itself requires nothing more than the
+compiler.
 
 ** Using the OCaml standard library with Base
 

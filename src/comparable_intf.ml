@@ -136,6 +136,13 @@ module type Comparable = sig
       comparisons, so in most cases, it's better to use those. *)
   val reverse : ('a -> 'a -> 'int_or_bool) -> 'a -> 'a -> 'int_or_bool
 
+  (** The functions below are analogues of the type-specific functions exported by the
+      [Comparable.S] interface. *)
+
+  val equal : ('a -> 'a -> int) -> 'a -> 'a -> bool
+  val max : ('a -> 'a -> int) -> 'a -> 'a -> 'a
+  val min : ('a -> 'a -> int) -> 'a -> 'a -> 'a
+
   (** Inherit comparability from a component. *)
   module Inherit (C : sig
       type t [@@deriving_inline compare]

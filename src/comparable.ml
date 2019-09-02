@@ -129,6 +129,15 @@ struct
     end)
 end
 
+let gt cmp a b = cmp a b > 0
+let lt cmp a b = cmp a b < 0
+let geq cmp a b = cmp a b >= 0
+let leq cmp a b = cmp a b <= 0
+let equal cmp a b = cmp a b = 0
+let not_equal cmp a b = cmp a b <> 0
+let min cmp t t' = if leq cmp t t' then t else t'
+let max cmp t t' = if geq cmp t t' then t else t'
+
 module Make_using_comparator (T : sig
     type t [@@deriving_inline sexp_of]
     include
@@ -149,15 +158,15 @@ module Make_using_comparator (T : sig
   module Replace_polymorphic_compare = struct
     module Without_squelch = struct
       let compare = T.compare
-      let ( > ) a b = compare a b > 0
-      let ( < ) a b = compare a b < 0
-      let ( >= ) a b = compare a b >= 0
-      let ( <= ) a b = compare a b <= 0
-      let ( = ) a b = compare a b = 0
-      let ( <> ) a b = compare a b <> 0
+      let ( > ) a b = gt compare a b
+      let ( < ) a b = lt compare a b
+      let ( >= ) a b = geq compare a b
+      let ( <= ) a b = leq compare a b
+      let ( = ) a b = equal compare a b
+      let ( <> ) a b = not_equal compare a b
       let equal = ( = )
-      let min t t' = if t <= t' then t else t'
-      let max t t' = if t >= t' then t else t'
+      let min t t' = min compare t t'
+      let max t t' = max compare t t'
     end
 
     include Without_squelch

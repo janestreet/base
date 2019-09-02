@@ -176,7 +176,7 @@ let clamp_unchecked (t : float) ~min ~max =
 
 let box =
   (* Prevent potential constant folding of [+. 0.] in the near ocamlopt future. *)
-  let x = if Random.bool () then 0. else 0. in
+  let x = Sys0.opaque_identity 0. in
   fun f -> f +. x
 ;;
 
