@@ -128,13 +128,18 @@ module type Comparable = sig
   val lexicographic : ('a -> 'a -> int) list -> 'a -> 'a -> int
 
   (** [lift cmp ~f x y] compares [x] and [y] by comparing [f x] and [f y] via [cmp]. *)
-  val lift : ('a -> 'a -> 'int_or_bool) -> f:('b -> 'a) -> 'b -> 'b -> 'int_or_bool
+  val lift : ('a -> 'a -> 'result) -> f:('b -> 'a) -> 'b -> 'b -> 'result
 
   (** [reverse cmp x y = cmp y x]
 
-      Note: The [Comparable.S] interface exports both [ascending] and [descending]
-      comparisons, so in most cases, it's better to use those. *)
-  val reverse : ('a -> 'a -> 'int_or_bool) -> 'a -> 'a -> 'int_or_bool
+      Reverses the direction of asymmetric relations by swapping their arguments. Useful,
+      e.g., for relations implementing "is a subset of" or "is a descendant of".
+
+      Where reversed relations are already provided, use them directly. For example,
+      [Comparable.S] provides [ascending] and [descending], which are more readable as a
+      pair than [compare] and [reverse compare]. Similarly, [<=] is more idiomatic than
+      [reverse (>=)]. *)
+  val reverse : ('a -> 'a -> 'result) -> 'a -> 'a -> 'result
 
   (** The functions below are analogues of the type-specific functions exported by the
       [Comparable.S] interface. *)
