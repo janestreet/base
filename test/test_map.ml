@@ -85,6 +85,15 @@ let%expect_test "find_exn" =
   [%expect {| (Not_found_s ("Map.find_exn: not found" four)) |}]
 ;;
 
+let%expect_test "[t_of_sexp] error on duplicate" =
+  let sexp = Sexplib.Sexp.of_string "((0 a)(1 b)(2 c)(1 d))" in
+  (match [%of_sexp: string Map.M(String).t] sexp with
+   | t -> print_cr [%here] [%message "did not raise" (t : string Map.M(String).t)]
+   | exception (Sexp.Of_sexp_error _ as exn) -> print_s (sexp_of_exn exn)
+   | exception exn -> print_cr [%here] [%message "wrong kind of exception" (exn : exn)]);
+  [%expect {| (Of_sexp_error "Map.t_of_sexp_direct: duplicate key" (invalid_sexp 1)) |}]
+;;
+
 module Poly = struct
   let%test _ = length Poly.empty = 0
 

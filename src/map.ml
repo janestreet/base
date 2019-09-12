@@ -1549,9 +1549,23 @@ module Tree0 = struct
     | Some key -> `Duplicate_key key
   ;;
 
-  let t_of_sexp_direct key_of_sexp value_of_sexp sexp ~comparator =
+  let t_of_sexp_direct key_of_sexp value_of_sexp sexp ~(comparator : _ Comparator.t) =
     let alist = list_of_sexp (pair_of_sexp key_of_sexp value_of_sexp) sexp in
-    of_alist_exn alist ~comparator
+    let compare_key = comparator.compare in
+    match of_alist alist ~compare_key with
+    | `Ok v -> v
+    | `Duplicate_key k ->
+      (* find the sexp of a duplicate key, so the error is narrowed to a key and not
+         the whole map *)
+      let alist_sexps = list_of_sexp (pair_of_sexp Fn.id Fn.id) sexp in
+      let found_first_k = ref false in
+      List.iter2_ok alist alist_sexps ~f:(fun (k2, _) (k2_sexp, _) ->
+        if compare_key k k2 = 0
+        then
+          if !found_first_k
+          then of_sexp_error "Map.t_of_sexp_direct: duplicate key" k2_sexp
+          else found_first_k := true);
+      assert false
   ;;
 
   let sexp_of_t sexp_of_key sexp_of_value t =

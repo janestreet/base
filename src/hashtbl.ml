@@ -529,7 +529,20 @@ let sexp_of_t sexp_of_key sexp_of_data t =
 
 let t_of_sexp ~hashable k_of_sexp d_of_sexp sexp =
   let alist = list_of_sexp (pair_of_sexp k_of_sexp d_of_sexp) sexp in
-  of_alist_exn ~hashable alist ~size:(List.length alist)
+  match of_alist ~hashable alist ~size:(List.length alist) with
+  | `Ok v -> v
+  | `Duplicate_key k ->
+    (* find the sexp of a duplicate key, so the error is narrowed to a key and not
+       the whole map *)
+    let alist_sexps = list_of_sexp (pair_of_sexp Fn.id Fn.id) sexp in
+    let found_first_k = ref false in
+    List.iter2_exn alist alist_sexps ~f:(fun (k2, _) (k2_sexp, _) ->
+      if hashable.compare k k2 = 0
+      then
+        if !found_first_k
+        then of_sexp_error "Hashtbl.t_of_sexp: duplicate key" k2_sexp
+        else found_first_k := true);
+    assert false
 ;;
 
 let validate ~name f t = Validate.alist ~name f (to_alist t)

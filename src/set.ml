@@ -1008,11 +1008,12 @@ module Tree0 = struct
       if length set = List.length lst
       then set
       else (
-        let compare (_, e) (_, e') = compare_elt e e' in
-        match List.find_a_dup (List.zip_exn lst elt_lst) ~compare with
-        | None -> assert false
-        | Some (el_sexp, _) ->
-          of_sexp_error "Set.t_of_sexp: duplicate element in set" el_sexp)
+        let set = ref empty in
+        List.iter2_exn lst elt_lst ~f:(fun el_sexp el ->
+          if mem !set el ~compare_elt
+          then of_sexp_error "Set.t_of_sexp: duplicate element in set" el_sexp
+          else set := add !set el ~compare_elt);
+        assert false)
     | sexp -> of_sexp_error "Set.t_of_sexp: list needed" sexp
   ;;
 

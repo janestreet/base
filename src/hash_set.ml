@@ -114,20 +114,14 @@ let of_list ?growth_allowed ?size m l =
 
 let t_of_sexp m e_of_sexp sexp =
   match sexp with
-  | Sexp.Atom _ ->
-    raise (Of_sexp_error (Failure "Hash_set.t_of_sexp requires a list", sexp))
+  | Sexp.Atom _ -> of_sexp_error "Hash_set.t_of_sexp requires a list" sexp
   | Sexp.List list ->
     let t = create m ~size:(List.length list) in
     List.iter list ~f:(fun sexp ->
       let e = e_of_sexp sexp in
       match strict_add t e with
       | Ok () -> ()
-      | Error _ ->
-        raise
-          (Of_sexp_error
-             ( Error.to_exn
-                 (Error.create "Hash_set.t_of_sexp got a duplicate element" sexp Fn.id)
-             , sexp )));
+      | Error _ -> of_sexp_error "Hash_set.t_of_sexp got a duplicate element" sexp);
     t
 ;;
 

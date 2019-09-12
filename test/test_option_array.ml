@@ -59,7 +59,8 @@ let%test_unit "floats are not re-boxed" =
 ;;
 
 let%test_unit "segfault does not happen" =
-  (* if [Core_array] is used instead of [Uniform_array], this dies with a segfault *)
+  (* if [Option_array] is implemented with [Core_array] instead of [Uniform_array], this
+     dies with a segfault *)
   let _array = init 2 ~f:(fun i -> if i = 0 then Some 1.0 else None) in
   ()
 ;;
