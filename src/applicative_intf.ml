@@ -182,22 +182,113 @@ module type Let_syntax2 = sig
   end
 end
 
+module type Basic3 = sig
+  type ('a, 'd, 'e) t
+
+  val return : 'a -> ('a, _, _) t
+  val apply : ('a -> 'b, 'd, 'e) t -> ('a, 'd, 'e) t -> ('b, 'd, 'e) t
+
+  val map
+    : [ `Define_using_apply
+      | `Custom of ('a, 'd, 'e) t -> f:('a -> 'b) -> ('b, 'd, 'e) t
+      ]
+end
+
+module type Basic3_using_map2 = sig
+  type ('a, 'd, 'e) t
+
+  val return : 'a -> ('a, _, _) t
+  val map2 : ('a, 'd, 'e) t -> ('b, 'd, 'e) t -> f:('a -> 'b -> 'c) -> ('c, 'd, 'e) t
+
+  val map
+    : [ `Define_using_map2 | `Custom of ('a, 'd, 'e) t -> f:('a -> 'b) -> ('b, 'd, 'e) t ]
+end
+
+module type Applicative_infix3 = sig
+  type ('a, 'd, 'e) t
+
+  val ( <*> ) : ('a -> 'b, 'd, 'e) t -> ('a, 'd, 'e) t -> ('b, 'd, 'e) t
+  val ( <* ) : ('a, 'd, 'e) t -> (unit, 'd, 'e) t -> ('a, 'd, 'e) t
+  val ( *> ) : (unit, 'd, 'e) t -> ('a, 'd, 'e) t -> ('a, 'd, 'e) t
+  val ( >>| ) : ('a, 'd, 'e) t -> ('a -> 'b) -> ('b, 'd, 'e) t
+end
+
+module type For_let_syntax3 = sig
+  type ('a, 'd, 'e) t
+
+  val return : 'a -> ('a, _, _) t
+  val map : ('a, 'd, 'e) t -> f:('a -> 'b) -> ('b, 'd, 'e) t
+  val both : ('a, 'd, 'e) t -> ('b, 'd, 'e) t -> ('a * 'b, 'd, 'e) t
+
+  include Applicative_infix3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) t
+end
+
+module type S3 = sig
+  include For_let_syntax3
+
+  val apply : ('a -> 'b, 'd, 'e) t -> ('a, 'd, 'e) t -> ('b, 'd, 'e) t
+  val map2 : ('a, 'd, 'e) t -> ('b, 'd, 'e) t -> f:('a -> 'b -> 'c) -> ('c, 'd, 'e) t
+
+  val map3
+    :  ('a, 'd, 'e) t
+    -> ('b, 'd, 'e) t
+    -> ('c, 'd, 'e) t
+    -> f:('a -> 'b -> 'c -> 'result)
+    -> ('result, 'd, 'e) t
+
+  val all : ('a, 'd, 'e) t list -> ('a list, 'd, 'e) t
+  val all_unit : (unit, 'd, 'e) t list -> (unit, 'd, 'e) t
+
+  module Applicative_infix :
+    Applicative_infix3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) t
+end
+
+module type Let_syntax3 = sig
+  type ('a, 'd, 'e) t
+
+  module Open_on_rhs_intf : sig
+    module type S
+  end
+
+  module Let_syntax : sig
+    val return : 'a -> ('a, _, _) t
+
+    include Applicative_infix3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) t
+
+    module Let_syntax : sig
+      val return : 'a -> ('a, _, _) t
+      val map : ('a, 'd, 'e) t -> f:('a -> 'b) -> ('b, 'd, 'e) t
+      val both : ('a, 'd, 'e) t -> ('b, 'd, 'e) t -> ('a * 'b, 'd, 'e) t
+
+      module Open_on_rhs : Open_on_rhs_intf.S
+    end
+  end
+end
+
 module type Applicative = sig
   module type Applicative_infix = Applicative_infix
   module type Applicative_infix2 = Applicative_infix2
+  module type Applicative_infix3 = Applicative_infix3
   module type Basic = Basic
   module type Basic2 = Basic2
+  module type Basic3 = Basic3
   module type Basic_using_map2 = Basic_using_map2
   module type Basic2_using_map2 = Basic2_using_map2
+  module type Basic3_using_map2 = Basic3_using_map2
   module type Let_syntax = Let_syntax
   module type Let_syntax2 = Let_syntax2
+  module type Let_syntax3 = Let_syntax3
   module type S = S
   module type S2 = S2
+  module type S3 = S3
 
   module S2_to_S (X : S2) : S with type 'a t = ('a, unit) X.t
   module S_to_S2 (X : S) : S2 with type ('a, 'e) t = 'a X.t
+  module S3_to_S2 (X : S3) : S2 with type ('a, 'd) t = ('a, 'd, unit) X.t
+  module S2_to_S3 (X : S2) : S3 with type ('a, 'd, 'e) t = ('a, 'd) X.t
   module Make (X : Basic) : S with type 'a t := 'a X.t
   module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
+  module Make3 (X : Basic3) : S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t
 
   module Make_let_syntax
       (X : For_let_syntax) (Intf : sig
@@ -213,10 +304,22 @@ module type Applicative = sig
       (Impl : Intf.S) :
     Let_syntax2 with type ('a, 'e) t := ('a, 'e) X.t with module Open_on_rhs_intf := Intf
 
+  module Make_let_syntax3
+      (X : For_let_syntax3) (Intf : sig
+                               module type S
+                             end)
+      (Impl : Intf.S) :
+    Let_syntax3
+    with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t
+    with module Open_on_rhs_intf := Intf
+
   module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t
 
   module Make2_using_map2 (X : Basic2_using_map2) :
     S2 with type ('a, 'e) t := ('a, 'e) X.t
+
+  module Make3_using_map2 (X : Basic3_using_map2) :
+    S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t
 
   (** The following functors give a sense of what Applicatives one can define.
 

@@ -15,6 +15,18 @@ module S2_to_S (X : S2) : S with type 'a t = ('a, unit) X.t = struct
   include (X : S2 with type ('a, 'e) t := ('a, 'e) X.t)
 end
 
+module S2_to_S3 (X : S2) : S3 with type ('a, 'd, 'e) t = ('a, 'd) X.t = struct
+  type ('a, 'd, 'e) t = ('a, 'd) X.t
+
+  include (X : S2 with type ('a, 'd) t := ('a, 'd) X.t)
+end
+
+module S3_to_S2 (X : S3) : S2 with type ('a, 'd) t = ('a, 'd, unit) X.t = struct
+  type ('a, 'd) t = ('a, 'd, unit) X.t
+
+  include (X : S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t)
+end
+
 (* These functors serve only to check that the signatures for various Foo and Foo2 module
    types don't drift apart over time.
 *)
@@ -33,6 +45,20 @@ module Check_compatibility = struct
     include (X : Applicative_infix2 with type ('a, 'e) t := ('a, 'e) X.t)
   end
 
+  module Applicative_infix2_to_Applicative_infix3 (X : Applicative_infix2) :
+    Applicative_infix3 with type ('a, 'd, 'e) t = ('a, 'd) X.t = struct
+    type ('a, 'd, 'e) t = ('a, 'd) X.t
+
+    include (X : Applicative_infix2 with type ('a, 'd) t := ('a, 'd) X.t)
+  end
+
+  module Applicative_infix3_to_Applicative_infix2 (X : Applicative_infix3) :
+    Applicative_infix2 with type ('a, 'd) t = ('a, 'd, unit) X.t = struct
+    type ('a, 'd) t = ('a, 'd, unit) X.t
+
+    include (X : Applicative_infix3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t)
+  end
+
   module Let_syntax_to_Let_syntax2 (X : Let_syntax) :
     Let_syntax2 with type ('a, 'e) t = 'a X.t = struct
     type ('a, 'e) t = 'a X.t
@@ -46,9 +72,23 @@ module Check_compatibility = struct
 
     include (X : Let_syntax2 with type ('a, 'e) t := ('a, 'e) X.t)
   end
+
+  module Let_syntax2_to_Let_syntax3 (X : Let_syntax2) :
+    Let_syntax3 with type ('a, 'd, 'e) t = ('a, 'd) X.t = struct
+    type ('a, 'd, 'e) t = ('a, 'd) X.t
+
+    include (X : Let_syntax2 with type ('a, 'd) t := ('a, 'd) X.t)
+  end
+
+  module Let_syntax3_to_Let_syntax2 (X : Let_syntax3) :
+    Let_syntax2 with type ('a, 'd) t = ('a, 'd, unit) X.t = struct
+    type ('a, 'd) t = ('a, 'd, unit) X.t
+
+    include (X : Let_syntax3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t)
+  end
 end
 
-module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = struct
+module Make3 (X : Basic3) : S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t = struct
   include X
 
   let ( <*> ) = apply
@@ -77,14 +117,20 @@ module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = struct
   end
 end
 
+module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = Make3 (struct
+    type ('a, 'd, 'e) t = ('a, 'd) X.t
+
+    include (X : Basic2 with type ('a, 'e) t := ('a, 'e) X.t)
+  end)
+
 module Make (X : Basic) : S with type 'a t := 'a X.t = Make2 (struct
     type ('a, 'e) t = 'a X.t
 
     include (X : Basic with type 'a t := 'a X.t)
   end)
 
-module Make_let_syntax2
-    (X : For_let_syntax2) (Intf : sig
+module Make_let_syntax3
+    (X : For_let_syntax3) (Intf : sig
                              module type S
                            end)
     (Impl : Intf.S) =
@@ -98,6 +144,20 @@ struct
     end
   end
 end
+
+module Make_let_syntax2
+    (X : For_let_syntax2) (Intf : sig
+                             module type S
+                           end)
+    (Impl : Intf.S) =
+  Make_let_syntax3
+    (struct
+      type ('a, 'd, _) t = ('a, 'd) X.t
+
+      include (X : For_let_syntax2 with type ('a, 'e) t := ('a, 'e) X.t)
+    end)
+    (Intf)
+    (Impl)
 
 module Make_let_syntax
     (X : For_let_syntax) (Intf : sig
@@ -113,7 +173,7 @@ module Make_let_syntax
     (Intf)
     (Impl)
 
-module Make2_using_map2 (X : Basic2_using_map2) = Make2 (struct
+module Make3_using_map2 (X : Basic3_using_map2) = Make3 (struct
     include X
 
     let apply tf tx = map2 tf tx ~f:(fun f x -> f x)
@@ -123,6 +183,13 @@ module Make2_using_map2 (X : Basic2_using_map2) = Make2 (struct
       | `Custom map -> `Custom map
       | `Define_using_map2 -> `Define_using_apply
     ;;
+  end)
+
+module Make2_using_map2 (X : Basic2_using_map2) :
+  S2 with type ('a, 'e) t := ('a, 'e) X.t = Make3_using_map2 (struct
+    type ('a, 'd, 'e) t = ('a, 'd) X.t
+
+    include (X : Basic2_using_map2 with type ('a, 'e) t := ('a, 'e) X.t)
   end)
 
 module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t =
