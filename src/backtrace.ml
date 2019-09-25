@@ -22,11 +22,14 @@ module Exn = struct
   let am_recording = Caml.Printexc.backtrace_status
   let most_recent () = Caml.Printexc.get_raw_backtrace ()
 
-  (* We turn on backtraces by default if OCAMLRUNPARAM isn't set. *)
+  (* We turn on backtraces by default if OCAMLRUNPARAM doesn't explicitly mention them. *)
   let maybe_set_recording () =
-    match Sys.getenv "OCAMLRUNPARAM" with
-    | None -> set_recording true
-    | Some (_ : string) -> ()
+    let ocamlrunparam_mentions_backtraces =
+      match Sys.getenv "OCAMLRUNPARAM" with
+      | None -> false
+      | Some x -> List.exists (String.split x ~on:',') ~f:(String.is_prefix ~prefix:"b")
+    in
+    if not ocamlrunparam_mentions_backtraces then set_recording true
   ;;
 
   (* the caller set something, they are responsible *)

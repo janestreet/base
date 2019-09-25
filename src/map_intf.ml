@@ -2230,7 +2230,16 @@ module type Map = sig
 
   (** [symmetric_diff t1 t2 ~data_equal] returns a list of changes between [t1] and [t2].
       It is intended to be efficient in the case where [t1] and [t2] share a large amount
-      of structure. The keys in the output sequence will be in sorted order. *)
+      of structure. The keys in the output sequence will be in sorted order.
+
+      It is assumed that [data_equal] is at least as equating as physical equality: that
+      [phys_equal x y] implies [data_equal x y]. Otherwise, [symmetric_diff] may behave in
+      unexpected ways. For example, with [~data_equal:(fun _ _ -> false)] it is NOT
+      necessarily the case the resulting change sequence will contain an element
+      [(k, `Unequal _)] for every key [k] shared by both maps.
+
+      Warning: Float equality violates this property! [phys_equal Float.nan Float.nan] is
+      true, but [Float.(=) Float.nan Float.nan] is false. *)
   val symmetric_diff
     :  ('k, 'v, 'cmp) t
     -> ('k, 'v, 'cmp) t
