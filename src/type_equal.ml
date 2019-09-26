@@ -154,7 +154,7 @@ module Id = struct
         ]
   ;;
 
-  let to_sexp t x = t.to_sexp x
+  let to_sexp t = t.to_sexp
   let name t = t.name
   let create ~name to_sexp = { witness = Witness.create (); name; to_sexp }
   let uid t = Witness.uid t.witness
