@@ -3,7 +3,7 @@ open! Import
 type ('a, 'b) t = ('a, 'b) Caml.result =
   | Ok of 'a
   | Error of 'b
-[@@deriving_inline sexp, compare, hash]
+[@@deriving_inline sexp, compare, equal, hash]
 let t_of_sexp : type a b.
   (Ppx_sexp_conv_lib.Sexp.t -> a) ->
   (Ppx_sexp_conv_lib.Sexp.t -> b) -> Ppx_sexp_conv_lib.Sexp.t -> (a, b) t
@@ -66,6 +66,23 @@ let compare :
      | (Ok _, _) -> (-1)
      | (_, Ok _) -> 1
      | (Error _a__005_, Error _b__006_) -> _cmp__b _a__005_ _b__006_)
+let equal :
+  'a 'b .
+  ('a -> 'a -> bool) ->
+  ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
+  =
+  fun _cmp__a ->
+  fun _cmp__b ->
+  fun a__007_ ->
+  fun b__008_ ->
+  if Ppx_compare_lib.phys_equal a__007_ b__008_
+  then true
+  else
+    (match (a__007_, b__008_) with
+     | (Ok _a__009_, Ok _b__010_) -> _cmp__a _a__009_ _b__010_
+     | (Ok _, _) -> false
+     | (_, Ok _) -> false
+     | (Error _a__011_, Error _b__012_) -> _cmp__b _a__011_ _b__012_)
 let hash_fold_t : type a b.
   (Ppx_hash_lib.Std.Hash.state -> a -> Ppx_hash_lib.Std.Hash.state) ->
   (Ppx_hash_lib.Std.Hash.state -> b -> Ppx_hash_lib.Std.Hash.state) ->

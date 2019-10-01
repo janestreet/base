@@ -35,11 +35,12 @@ open! Import
 
 module type S = sig
   (** Serialization and comparison force the lazy message. *)
-  type t [@@deriving_inline compare, hash, sexp]
+  type t [@@deriving_inline compare, equal, hash, sexp]
   include
     sig
       [@@@ocaml.warning "-32"]
       val compare : t -> t -> int
+      val equal : t -> t -> bool
       val hash_fold_t :
         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
       val hash : t -> Ppx_hash_lib.Std.Hash.hash_value

@@ -1,10 +1,14 @@
 open! Import
 
-type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, hash, sexp]
+type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, equal, hash, sexp]
 let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
   fun _cmp__a ->
   fun a__001_ ->
   fun b__002_ -> Result.compare _cmp__a Error.compare a__001_ b__002_
+let equal : 'a . ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
+  fun _cmp__a ->
+  fun a__007_ ->
+  fun b__008_ -> Result.equal _cmp__a Error.equal a__007_ b__008_
 let hash_fold_t :
   'a .
   (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->

@@ -17,7 +17,7 @@ open! Import
 type ('ok, 'err) t = ('ok, 'err) Caml.result =
   | Ok of 'ok
   | Error of 'err
-[@@deriving_inline sexp, compare, hash]
+[@@deriving_inline sexp, compare, equal, hash]
 include
   sig
     [@@@ocaml.warning "-32"]
@@ -26,6 +26,9 @@ include
     val compare :
       ('ok -> 'ok -> int) ->
       ('err -> 'err -> int) -> ('ok, 'err) t -> ('ok, 'err) t -> int
+    val equal :
+      ('ok -> 'ok -> bool) ->
+      ('err -> 'err -> bool) -> ('ok, 'err) t -> ('ok, 'err) t -> bool
     val hash_fold_t :
       (Ppx_hash_lib.Std.Hash.state -> 'ok -> Ppx_hash_lib.Std.Hash.state) ->
       (Ppx_hash_lib.Std.Hash.state -> 'err -> Ppx_hash_lib.Std.Hash.state)
