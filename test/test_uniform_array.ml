@@ -63,6 +63,17 @@ let%test_unit _ =
   check_get one_obj
 ;;
 
+let%expect_test "exists" =
+  let test arr f = of_list arr |> exists ~f in
+  let r here = require_equal here (module Bool) in
+  r [%here] false (test [] Fn.id);
+  r [%here] true (test [ true ] Fn.id);
+  r [%here] true (test [ false; false; false; false; true ] Fn.id);
+  r [%here] true (test [ 0; 1; 2; 3; 4 ] (fun i -> i % 2 = 1));
+  r [%here] false (test [ 0; 2; 4; 6; 8 ] (fun i -> i % 2 = 1));
+  [%expect {| |}]
+;;
+
 module Sequence = struct
   type nonrec 'a t = 'a t
   type 'a z = 'a

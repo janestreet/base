@@ -110,7 +110,7 @@ val exists2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
 
 val exists2 : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool Or_unequal_lengths.t
 
-(** [filter l ~f] returns all the elements of the list [l] that satisfy the predicate [p].
+(** [filter l ~f] returns all the elements of the list [l] that satisfy the predicate [f].
     The order of the elements in the input list is preserved. *)
 val filter : 'a t -> f:('a -> bool) -> 'a t
 

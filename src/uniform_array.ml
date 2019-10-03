@@ -103,6 +103,13 @@ let of_list l =
    relies on [float array]s being unboxed, for example in [bin_write_array]. *)
 let to_array t = Array.init (length t) ~f:(fun i -> unsafe_get t i)
 
+let exists t ~f =
+  let rec loop t ~f i =
+    if i < 0 then false else f (unsafe_get t i) || loop t ~f (i - 1)
+  in
+  loop t ~f (length t - 1)
+;;
+
 include Sexpable.Of_sexpable1
     (Array)
     (struct

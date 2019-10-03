@@ -85,3 +85,6 @@ val unsafe_set_int : Caml.Obj.t t -> int -> int -> unit
     hack, it only does this when [not (Caml.Obj.is_int t.(i))].  It is an error to access
     the cleared index before setting it again. *)
 val unsafe_clear_if_pointer : Caml.Obj.t t -> int -> unit
+
+(** As [Array.exists]. *)
+val exists : 'a t -> f:('a -> bool) -> bool
