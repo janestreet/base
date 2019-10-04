@@ -39,7 +39,17 @@ val is_some : _ t -> int -> bool
 (** These can cause arbitrary behavior when used for an out-of-bounds array access. *)
 
 val unsafe_get : 'a t -> int -> 'a option
+
+(** [unsafe_get_some_exn t i] is unsafe because it does not bounds check [i].  It does,
+    however check whether the value at index [i] is none or some, and raises if it
+    is none. *)
 val unsafe_get_some_exn : 'a t -> int -> 'a
+
+(** [unsafe_get_some_assuming_some t i] is unsafe both because it does not bounds check
+    [i] and because it does not check whether the value at index [i] is none or some,
+    assuming that it is some. *)
+val unsafe_get_some_assuming_some : 'a t -> int -> 'a
+
 val unsafe_is_some : _ t -> int -> bool
 
 (** [set t i x] modifies array [t] in place, replacing element number [i] with [x],

@@ -64,3 +64,30 @@ let%test_unit "segfault does not happen" =
   let _array = init 2 ~f:(fun i -> if i = 0 then Some 1.0 else None) in
   ()
 ;;
+
+module X = struct
+  type t =
+    [ `x6e8ee3478e1d7449
+    | `some_other_value
+    ]
+  [@@deriving sexp_of]
+
+  let magic_value : t = `x6e8ee3478e1d7449
+  let some_other_value : t = `some_other_value
+
+  let%expect_test _ =
+    assert (
+      phys_equal magic_value (Caml.Obj.magic For_testing.Unsafe_cheap_option.none : t))
+  ;;
+end
+
+let%expect_test _ =
+  let t = create ~len:1 in
+  let check x =
+    set t 0 (Some x);
+    require [%here] (phys_equal x (unsafe_get_some_exn t 0));
+    require [%here] (phys_equal x (unsafe_get_some_assuming_some t 0))
+  in
+  check X.magic_value;
+  check X.some_other_value
+;;
