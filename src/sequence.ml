@@ -1104,35 +1104,22 @@ module Generator = struct
   module T = struct
     type ('a, 'elt) t = ('a -> 'elt steps) -> 'elt steps
 
-    let return x =
-      ();
-      fun k -> k x
+    let return x k = k x
+
+    let bind m ~f k =
+      m (fun a ->
+        let m' = f a in
+        m' k)
     ;;
 
-    let bind m ~f =
-      ();
-      fun k ->
-        m (fun a ->
-          let m' = f a in
-          m' k)
-    ;;
-
-    let map m ~f =
-      ();
-      fun k -> m (fun a -> k (f a))
-    ;;
-
+    let map m ~f k = m (fun a -> k (f a))
     let map = `Custom map
   end
 
   include T
   include Monad.Make2 (T)
 
-  let yield e =
-    ();
-    fun k -> Wrap (Yield (e, k))
-  ;;
-
+  let yield e k = Wrap (Yield (e, k))
   let to_steps t = t (fun () -> Wrap Done)
 
   let of_sequence sequence =
