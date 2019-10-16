@@ -85,3 +85,16 @@ module Sequence = struct
 end
 
 include Base_for_tests.Test_blit.Test1 (Sequence) (Uniform_array)
+
+let%expect_test "map2_exn" =
+  let test a1 a2 f =
+    let result = map2_exn ~f (of_list a1) (of_list a2) in
+    print_s [%message (result : int Uniform_array.t)]
+  in
+  test [] [] (fun _ -> failwith "don't call me");
+  [%expect {| (result ()) |}];
+  test [ 1; 2; 3 ] [ 100; 200; 300 ] ( + );
+  [%expect {| (result (101 202 303)) |}];
+  require_does_raise [%here] (fun () -> test [ 1 ] [] (fun _ _ -> 0));
+  [%expect {| (Invalid_argument Array.map2_exn) |}]
+;;

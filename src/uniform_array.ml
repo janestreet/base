@@ -110,6 +110,12 @@ let exists t ~f =
   loop t ~f (length t - 1)
 ;;
 
+let map2_exn t1 t2 ~f =
+  let len = length t1 in
+  if length t2 <> len then invalid_arg "Array.map2_exn";
+  init len ~f:(fun i -> f (unsafe_get t1 i) (unsafe_get t2 i))
+;;
+
 include Sexpable.Of_sexpable1
     (Array)
     (struct
@@ -134,3 +140,14 @@ include Blit.Make1 (struct
 
     let unsafe_blit = unsafe_blit
   end)
+
+let fold t ~init ~f =
+  let r = ref init in
+  for i = 0 to length t - 1 do
+    r := f !r (unsafe_get t i)
+  done;
+  !r
+;;
+
+let min_elt t ~compare = Container.min_elt ~fold t ~compare
+let max_elt t ~compare = Container.max_elt ~fold t ~compare

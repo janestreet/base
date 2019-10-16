@@ -4,8 +4,7 @@
     This means it's safer to use in the presence of [Obj.magic], but it's slower than
     normal [Array] if you use it with floats.
 
-    It can often be faster than [Array] if you use it with non-floats.
-*)
+    It can often be faster than [Array] if you use it with non-floats. *)
 
 
 open! Import
@@ -88,3 +87,10 @@ val unsafe_clear_if_pointer : Caml.Obj.t t -> int -> unit
 
 (** As [Array.exists]. *)
 val exists : 'a t -> f:('a -> bool) -> bool
+
+(** Functions with the 2 suffix raise an exception if the lengths of the two given arrays
+    aren't the same. *)
+val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
+
+val min_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+val max_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
