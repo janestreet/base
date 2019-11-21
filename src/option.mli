@@ -73,4 +73,8 @@ val filter : 'a t -> f:('a -> bool) -> 'a t
     exception.  See [Result.try_with] if you'd like to know which exception. *)
 val try_with : (unit -> 'a) -> 'a t
 
+(** [with_default def opt] returns [def] if [opt] is [None], otherwise returns
+    the value wrapped in the [Some]. *)
+val with_default : 'a -> 'a t -> 'a
+
 val validate : none:unit Validate.check -> some:'a Validate.check -> 'a t Validate.check

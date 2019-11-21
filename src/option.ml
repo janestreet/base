@@ -211,6 +211,11 @@ let try_with f =
   | _ -> None
 ;;
 
+let with_default def = function
+  | None -> def
+  | Some v -> v
+;;
+
 include Monad.Make (struct
     type 'a t = 'a option
 
