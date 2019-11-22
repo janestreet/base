@@ -16,6 +16,7 @@ include
 
 include Comparable.S with type t := t
 include Pretty_printer.S with type t := t
+include Invariant.S with type t := t
 
 (** [succ_exn t] is the scalar value after [t] in the set of Unicode scalar values, and
     raises if [t = max_value]. *)

@@ -26,6 +26,8 @@ include Comparator.Make (T)
 
 type elt = char
 
+let invariant (_ : t) = ()
+
 let is_substring_at_gen =
   let rec loop ~str ~str_pos ~sub ~sub_pos ~sub_len ~char_equal =
     if sub_pos = sub_len

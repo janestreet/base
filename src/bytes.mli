@@ -26,6 +26,8 @@ include Stringable.S with type t := t
 include
   Pretty_printer.S with type t := t
 
+include Invariant.S with type t := t
+
 module To_string : sig
   val sub : (t, string) Blit.sub
   val subo : (t, string) Blit.subo

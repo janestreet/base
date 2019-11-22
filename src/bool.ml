@@ -40,6 +40,7 @@ include Pretty_printer.Register (struct
    functions are available within this module. *)
 open! Bool_replace_polymorphic_compare
 
+let invariant (_ : t) = ()
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min ~max = if t < min then min else if t <= max then t else max
 

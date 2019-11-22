@@ -49,6 +49,8 @@ module From_string =
       let unsafe_blit = unsafe_blit_string
     end)
 
+let invariant (_ : t) = ()
+
 let init n ~f =
   if Int_replace_polymorphic_compare.( < ) n 0
   then Printf.invalid_argf "Bytes.init %d" n ();

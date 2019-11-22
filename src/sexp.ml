@@ -42,3 +42,4 @@ and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
 [@@@end]
 
 let of_string = ()
+let invariant (_ : t) = ()

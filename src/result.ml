@@ -120,6 +120,12 @@ include Monad.Make2 (struct
     let return x = Ok x
   end)
 
+let invariant check_ok check_error t =
+  match t with
+  | Ok ok -> check_ok ok
+  | Error error -> check_error error
+;;
+
 let ignore = ignore_m
 let fail x = Error x
 let failf format = Printf.ksprintf fail format

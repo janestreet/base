@@ -27,6 +27,7 @@ include
   Identifiable.S with type t := t
 
 include Comparable.With_zero with type t := t
+include Invariant.S with type t := t
 
 (** [validate_ordinary] fails if class is [Nan] or [Infinite]. *)
 val validate_ordinary : t Validate.check

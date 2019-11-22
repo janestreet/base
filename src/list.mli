@@ -18,6 +18,8 @@ include
 
 
 include Container.S1 with type 'a t := 'a t
+
+include Invariant_intf.S1 with type 'a t := 'a t
 include Monad.S with type 'a t := 'a t
 
 (** [Or_unequal_lengths] is used for functions that take multiple lists and that only make

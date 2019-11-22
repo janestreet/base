@@ -7,8 +7,9 @@ module type Round = sig
   type t
 
   (** [round] rounds an int to a multiple of a given [to_multiple_of] argument, according
-      to a direction [dir], with default [dir] being [`Nearest].  [round] will raise if
-      [to_multiple_of <= 0].
+      to a direction [dir], with default [dir] being [`Nearest]. [round] will raise if
+      [to_multiple_of <= 0]. If the result overflows (too far positive or too far
+      negative), [round] returns an incorrect result.
 
       {v
        | `Down    | rounds toward Int.neg_infinity                          |
@@ -74,6 +75,7 @@ module type S_common = sig
   include Intable.S with type t := t
   include Identifiable.S with type t := t
   include Comparable.With_zero with type t := t
+  include Invariant.S with type t := t
   include Hexable with type t := t
 
   (** [delimiter] is an underscore by default. *)

@@ -27,6 +27,7 @@ include Comparator.Make (T)
    functions are available within this module. *)
 open Float_replace_polymorphic_compare
 
+let invariant (_ : t) = ()
 let to_float x = x
 let of_float x = x
 

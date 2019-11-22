@@ -62,6 +62,7 @@ include Pretty_printer.Register (struct
    functions are available within this module. *)
 open! Nativeint_replace_polymorphic_compare
 
+let invariant (_ : t) = ()
 let num_bits = Word_size.num_bits Word_size.word_size
 let float_lower_bound = Float0.lower_bound_for_int num_bits
 let float_upper_bound = Float0.upper_bound_for_int num_bits

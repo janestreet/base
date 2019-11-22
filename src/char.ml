@@ -37,6 +37,7 @@ include Identifiable.Make (struct
    functions are available within this module. *)
 open! Char_replace_polymorphic_compare
 
+let invariant (_ : t) = ()
 let all = Array.init 256 ~f:unsafe_of_int |> Array.to_list
 
 let is_lowercase = function

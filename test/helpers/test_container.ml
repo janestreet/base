@@ -1,4 +1,4 @@
-open! Import
+open! Base
 open! Container
 
 module Test_generic (Elt : sig
@@ -57,26 +57,29 @@ struct
           sorts_are_equal list (Container.fold c ~init:[] ~f:(fun ac e -> e :: ac)));
         assert (sorts_are_equal list (Container.to_list c));
         assert (sorts_are_equal list (Array.to_list (Container.to_array c)));
-        assert (n > 0 = is_some (Container.find c ~f:(fun e -> Elt.to_int e = 0)));
-        assert (n > 0 = is_some (Container.find c ~f:(fun e -> Elt.to_int e = n - 1)));
-        assert (is_none (Container.find c ~f:(fun e -> Elt.to_int e = n)));
+        assert (
+          n > 0 = Option.is_some (Container.find c ~f:(fun e -> Elt.to_int e = 0)));
+        assert (
+          n > 0 = Option.is_some (Container.find c ~f:(fun e -> Elt.to_int e = n - 1))
+        );
+        assert (Option.is_none (Container.find c ~f:(fun e -> Elt.to_int e = n)));
         assert (n > 0 = Container.mem c (Elt.of_int 0) ~equal:( = ));
         assert (n > 0 = Container.mem c (Elt.of_int (n - 1)) ~equal:( = ));
         assert (not (Container.mem c (Elt.of_int n) ~equal:( = )));
         assert (
           n
           > 0
-          = is_some
+          = Option.is_some
               (Container.find_map c ~f:(fun e ->
                  if Elt.to_int e = 0 then Some () else None)));
         assert (
           n
           > 0
-          = is_some
+          = Option.is_some
               (Container.find_map c ~f:(fun e ->
                  if Elt.to_int e = n - 1 then Some () else None)));
         assert (
-          is_none
+          Option.is_none
             (Container.find_map c ~f:(fun e ->
                if Elt.to_int e = n then Some () else None)));
         let r = ref 0 in
@@ -174,7 +177,3 @@ module Test_S1 (Container : sig
 
     let of_list l = `Ok (of_list l)
   end)
-
-include (Test_S1 (Array) : sig end)
-include (Test_S1 (List) : sig end)
-include (Test_S1 (Queue) : sig end)

@@ -49,6 +49,7 @@ end
 
 include T
 
+let invariant f t = iter t ~f
 let of_list t = t
 
 let range' ~compare ~stride ?(start = `inclusive) ?(stop = `exclusive) start_i stop_i =

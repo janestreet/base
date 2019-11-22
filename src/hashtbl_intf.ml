@@ -19,6 +19,12 @@ module Key = struct
   type 'a t = (module S with type t = 'a)
 end
 
+module Merge_into_action = struct
+  type 'a t =
+    | Remove
+    | Set_to of 'a
+end
+
 module type Accessors = sig
   (** {2 Accessors} *)
 
@@ -213,17 +219,13 @@ module type Accessors = sig
     -> f:(key:'k key -> [ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> 'c option)
     -> ('k, 'c) t
 
+
   (** Every [key] in [src] will be removed or set in [dst] according to the return value
       of [f]. *)
-  type 'a merge_into_action =
-    | Remove
-    | Set_to of 'a
-
-
   val merge_into
     :  src:('k, 'a) t
     -> dst:('k, 'b) t
-    -> f:(key:'k key -> 'a -> 'b option -> 'b merge_into_action)
+    -> f:(key:'k key -> 'a -> 'b option -> 'b Merge_into_action.t)
     -> unit
 
   (** Returns the list of all keys for given hashtable. *)
@@ -249,12 +251,12 @@ module type Accessors = sig
 
   val filter_mapi_inplace : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b option) -> unit
 
-  (** [equal t1 t2 f] and [similar t1 t2 f] both return true iff [t1] and [t2] have the
+  (** [equal f t1 t2] and [similar f t1 t2] both return true iff [t1] and [t2] have the
       same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)].  [equal] and
       [similar] only differ in their types. *)
-  val equal : ('a, 'b) t -> ('a, 'b) t -> ('b -> 'b -> bool) -> bool
+  val equal : ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
 
-  val similar : ('a, 'b1) t -> ('a, 'b2) t -> ('b1 -> 'b2 -> bool) -> bool
+  val similar : ('b1 -> 'b2 -> bool) -> ('a, 'b1) t -> ('a, 'b2) t -> bool
 
   (** Returns the list of all (key, data) pairs for given hashtable. *)
   val to_alist : ('a, 'b) t -> ('a key * 'b) list
@@ -717,6 +719,7 @@ module type Hashtbl = sig
   module type For_deriving = For_deriving
 
   module Key = Key
+  module Merge_into_action = Merge_into_action
 
   type nonrec ('key, 'data, 'z) create_options = ('key, 'data, 'z) create_options
 

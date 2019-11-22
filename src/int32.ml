@@ -104,6 +104,7 @@ end
 
 include Compare
 
+let invariant (_ : t) = ()
 let ( / ) = div
 let ( * ) = mul
 let ( - ) = sub

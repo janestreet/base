@@ -1,5 +1,8 @@
 ## git version
 
+- Changed the signature of `Hashtbl.equal` to take the data equality
+  function first, allowing it to be used with `[%equal: t]`.
+
 - Remove deprecated function `List.dedup`.
 
 - Remove deprecated string mutation functions from the `String` module.

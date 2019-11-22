@@ -1,4 +1,4 @@
-open! Import
+open! Base
 open! Container
 
 module Test_S1_allow_skipping_tests (Container : sig

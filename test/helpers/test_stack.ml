@@ -1,5 +1,4 @@
 open! Base
-open! Import
 open! Stack
 
 module Debug (Stack : S) : S with type 'a t = 'a Stack.t = struct
@@ -90,16 +89,16 @@ struct
     let t = create () in
     push t 0;
     [%test_result: int] (pop_exn t) ~expect:0;
-    assert (is_none (pop empty));
-    assert (is_some (pop (of_list [ 0 ])));
-    assert (is_none (top empty));
-    assert (is_some (top (of_list [ 0 ])));
-    assert (is_some (top (singleton 0)));
-    assert (is_some (pop (singleton 0)));
+    assert (Option.is_none (pop empty));
+    assert (Option.is_some (pop (of_list [ 0 ])));
+    assert (Option.is_none (top empty));
+    assert (Option.is_some (top (of_list [ 0 ])));
+    assert (Option.is_some (top (singleton 0)));
+    assert (Option.is_some (pop (singleton 0)));
     assert (
       let t = singleton 0 in
       ignore (pop_exn t : int);
-      is_none (top t))
+      Option.is_none (top t))
   ;;
 
   let min_elt = min_elt
@@ -181,8 +180,8 @@ struct
     [%test_result: int option] (min_elt ~compare:Int.compare t) ~expect:(Some 13);
     [%test_result: int option] (max_elt ~compare:Int.compare t) ~expect:(Some 14);
     [%test_result: int] (sum (module Int) ~f:Fn.id t) ~expect:27;
-    [%test_result: bool] (is_some (pop t)) ~expect:true;
-    [%test_result: bool] (is_some (pop t)) ~expect:true
+    [%test_result: bool] (Option.is_some (pop t)) ~expect:true;
+    [%test_result: bool] (Option.is_some (pop t)) ~expect:true
   ;;
 
   let of_list = of_list
@@ -213,24 +212,3 @@ struct
     push s 3.0
   ;;
 end
-
-include Test_container.Test_S1 (Stack)
-include Test (Debug (Stack))
-
-let capacity = capacity
-let set_capacity = set_capacity
-
-let%test_unit _ =
-  let t = create () in
-  [%test_result: int] (capacity t) ~expect:0;
-  set_capacity t (-1);
-  [%test_result: int] (capacity t) ~expect:0;
-  set_capacity t 10;
-  [%test_result: int] (capacity t) ~expect:10;
-  set_capacity t 0;
-  [%test_result: int] (capacity t) ~expect:0;
-  push t ();
-  set_capacity t 0;
-  [%test_result: int] (length t) ~expect:1;
-  [%test_pred: int] (fun c -> c >= 1) (capacity t)
-;;

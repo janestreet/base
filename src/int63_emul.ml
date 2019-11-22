@@ -43,6 +43,7 @@ module W : sig
   (** Returns a non-negative int64 that is equal to the input int63 modulo 2^63. *)
   val unwrap_unsigned : t -> Caml.Int64.t
 
+  val invariant : t -> unit
   val add : t -> t -> t
   val sub : t -> t -> t
   val neg : t -> t
@@ -105,6 +106,7 @@ end = struct
 
   let mask = 0xffff_ffff_ffff_fffeL
   let m x = Caml.Int64.logand x mask
+  let invariant t = assert (m t = t)
   let add x y = Caml.Int64.add x y
   let sub x y = Caml.Int64.sub x y
   let neg x = Caml.Int64.neg x
@@ -156,6 +158,7 @@ module T = struct
 
   let comparator = W.comparator
   let compare = W.compare
+  let invariant = W.invariant
 
   (* We don't expect [hash] to follow the behavior of int in 64bit architecture *)
   let _ = hash

@@ -19,6 +19,7 @@ val subo : (t, t) Blit.subo
 
 include Container.S0 with type t := t with type elt = char
 include Identifiable.S with type t := t
+include Invariant.S with type t := t
 
 (** Maximum length of a string. *)
 val max_length : int
