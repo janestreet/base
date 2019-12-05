@@ -10,14 +10,20 @@ include Int64_replace_polymorphic_compare
 module T0 = struct
   module T = struct
     type t = int64 [@@deriving_inline compare, hash, sexp]
+
     let compare = (compare_int64 : t -> t -> int)
-    let (hash_fold_t :
-           Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+
+    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int64
+
     and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_int64 in fun x -> func x
+      let func = hash_int64 in
+      fun x -> func x
+    ;;
+
     let t_of_sexp = (int64_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
     let sexp_of_t = (sexp_of_int64 : t -> Ppx_sexp_conv_lib.Sexp.t)
+
     [@@@end]
   end
 
@@ -146,14 +152,20 @@ open W
 
 module T = struct
   type t = W.t [@@deriving_inline hash, sexp]
-  let (hash_fold_t :
-         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+
+  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     W.hash_fold_t
+
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = W.hash in fun x -> func x
+    let func = W.hash in
+    fun x -> func x
+  ;;
+
   let t_of_sexp = (W.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (W.sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type comparator_witness = W.comparator_witness
 
   let comparator = W.comparator
@@ -332,12 +344,17 @@ include Conv.Make (T)
 
 include Conv.Make_hex (struct
     type t = T.t [@@deriving_inline compare, hash]
+
     let compare = (T.compare : t -> t -> int)
-    let (hash_fold_t :
-           Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+
+    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       T.hash_fold_t
+
     and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = T.hash in fun x -> func x
+      let func = T.hash in
+      fun x -> func x
+    ;;
+
     [@@@end]
 
     let zero = zero

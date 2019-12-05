@@ -50,12 +50,13 @@ end
 let with_return = With_return.with_return
 
 exception Duplicate [@@deriving_inline sexp]
+
 let () =
-  Ppx_sexp_conv_lib.Conv.Exn_converter.add
-    ([%extension_constructor Duplicate])
-    (function
-      | Duplicate -> Ppx_sexp_conv_lib.Sexp.Atom "src/map.ml.Duplicate"
-      | _ -> assert false)
+  Ppx_sexp_conv_lib.Conv.Exn_converter.add [%extension_constructor Duplicate] (function
+    | Duplicate -> Ppx_sexp_conv_lib.Sexp.Atom "map.ml.Duplicate"
+    | _ -> assert false)
+;;
+
 [@@@end]
 
 module Tree0 = struct
@@ -540,24 +541,29 @@ module Tree0 = struct
   ;;
 
   exception Map_min_elt_exn_of_empty_map [@@deriving_inline sexp]
+
   let () =
     Ppx_sexp_conv_lib.Conv.Exn_converter.add
-      ([%extension_constructor Map_min_elt_exn_of_empty_map])
+      [%extension_constructor Map_min_elt_exn_of_empty_map]
       (function
         | Map_min_elt_exn_of_empty_map ->
-          Ppx_sexp_conv_lib.Sexp.Atom
-            "src/map.ml.Tree0.Map_min_elt_exn_of_empty_map"
+          Ppx_sexp_conv_lib.Sexp.Atom "map.ml.Tree0.Map_min_elt_exn_of_empty_map"
         | _ -> assert false)
+  ;;
+
   [@@@end]
+
   exception Map_max_elt_exn_of_empty_map [@@deriving_inline sexp]
+
   let () =
     Ppx_sexp_conv_lib.Conv.Exn_converter.add
-      ([%extension_constructor Map_max_elt_exn_of_empty_map])
+      [%extension_constructor Map_max_elt_exn_of_empty_map]
       (function
         | Map_max_elt_exn_of_empty_map ->
-          Ppx_sexp_conv_lib.Sexp.Atom
-            "src/map.ml.Tree0.Map_max_elt_exn_of_empty_map"
+          Ppx_sexp_conv_lib.Sexp.Atom "map.ml.Tree0.Map_max_elt_exn_of_empty_map"
         | _ -> assert false)
+  ;;
+
   [@@@end]
 
   let min_elt_exn t =
@@ -2368,17 +2374,17 @@ end
 
 module type Sexp_of_m = sig
   type t [@@deriving_inline sexp_of]
-  include
-    sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
   [@@@end]
 end
 
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
-  include
-    sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    end[@@ocaml.doc "@inline"]
+
+  val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+
   [@@@end]
 
   include Comparator.S with type t := t

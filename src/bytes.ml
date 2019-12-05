@@ -5,8 +5,10 @@ let stage = Staged.stage
 
 module T = struct
   type t = bytes [@@deriving_inline sexp]
+
   let t_of_sexp = (bytes_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_bytes : t -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
 
   include Bytes0

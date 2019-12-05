@@ -8,15 +8,7 @@
 
 open! Import
 
-type t = float [@@deriving_inline hash]
-include
-  sig
-    [@@@ocaml.warning "-32"]
-    val hash_fold_t :
-      Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-    val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-  end[@@ocaml.doc "@inline"]
-[@@@end]
+type t = float
 
 include Floatable.S with type t := t
 
@@ -548,13 +540,12 @@ module Class : sig
     | Subnormal
     | Zero
   [@@deriving_inline compare, enumerate, sexp]
-  include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare : t -> t -> int
-      val all : t list
-      include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-    end[@@ocaml.doc "@inline"]
+
+  val compare : t -> t -> int
+  val all : t list
+
+  include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
   [@@@end]
 
   include Stringable.S with type t := t
@@ -601,11 +592,9 @@ val ieee_mantissa : t -> Int63.t
 (** S-expressions contain at most 8 significant digits. *)
 module Terse : sig
   type nonrec t = t [@@deriving_inline sexp]
-  include
-    sig
-      [@@@ocaml.warning "-32"]
-      include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-    end[@@ocaml.doc "@inline"]
+
+  include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
   [@@@end]
 
   include Stringable.S with type t := t

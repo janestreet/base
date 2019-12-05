@@ -7,31 +7,43 @@ type 'a t = 'a option =
 include (
 struct
   type 'a t = 'a option [@@deriving_inline compare, hash, sexp]
-  let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
+
+  let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
+
   let hash_fold_t :
-    'a .
-    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
-    Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
-    = hash_fold_option
+    'a. (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+    -> Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
+    =
+    hash_fold_option
+  ;;
+
   let t_of_sexp :
-    'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
+    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+    =
     option_of_sexp
+  ;;
+
   let sexp_of_t :
-    'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
+    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+    =
     sexp_of_option
+  ;;
+
   [@@@end]
 end :
 sig
   type 'a t = 'a option [@@deriving_inline compare, hash, sexp]
-  include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-      val hash_fold_t :
-        (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
-        Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
-      include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
-    end[@@ocaml.doc "@inline"]
+
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+
+  val hash_fold_t
+    :  (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+    -> Ppx_hash_lib.Std.Hash.state
+    -> 'a t
+    -> Ppx_hash_lib.Std.Hash.state
+
+  include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+
   [@@@end]
 end
 with type 'a t := 'a t)

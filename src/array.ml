@@ -2,16 +2,18 @@ open! Import
 include Array0
 module Int = Int0
 
-let raise_s = Error.raise_s
-
 type 'a t = 'a array [@@deriving_inline compare, sexp]
-let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
-let t_of_sexp :
-  'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
+
+let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
+
+let t_of_sexp : 'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
   array_of_sexp
-let sexp_of_t :
-  'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
+;;
+
+let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
   sexp_of_array
+;;
+
 [@@@end]
 
 (* This module implements a new in-place, constant heap sorting algorithm to replace the
@@ -769,17 +771,6 @@ include Blit.Make1 (struct
   end)
 
 let invariant invariant_a t = iter t ~f:invariant_a
-
-(* Deprecated. [Obj.truncate] reduces the size of a block on the ocaml heap.  For arrays, the block
-   size is the array length. This holds even for float arrays. *)
-let unsafe_truncate t ~len =
-  if len <= 0 || len > length t
-  then
-    raise_s
-      (Sexp.message "Array.unsafe_truncate got invalid len" [ "len", sexp_of_int len ]);
-  if len < length t
-  then (Caml.Obj.truncate [@ocaml.alert "-deprecated"]) (Caml.Obj.repr t) len
-;;
 
 module Private = struct
   module Sort = Sort

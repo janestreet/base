@@ -23,15 +23,17 @@
 open! Import
 
 type 'a t = 'a lazy_t [@@deriving_inline compare, hash, sexp]
-include
-  sig
-    [@@@ocaml.warning "-32"]
-    val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-    val hash_fold_t :
-      (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
-      Ppx_hash_lib.Std.Hash.state -> 'a t -> Ppx_hash_lib.Std.Hash.state
-    include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
-  end[@@ocaml.doc "@inline"]
+
+val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+
+val hash_fold_t
+  :  (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+  -> Ppx_hash_lib.Std.Hash.state
+  -> 'a t
+  -> Ppx_hash_lib.Std.Hash.state
+
+include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+
 [@@@end]
 
 include Monad.S with type 'a t := 'a t
@@ -71,11 +73,8 @@ val is_val : 'a t -> bool
     etc. *)
 module T_unforcing : sig
   type nonrec 'a t = 'a t [@@deriving_inline sexp_of]
-  include
-    sig
-      [@@@ocaml.warning "-32"]
-      val sexp_of_t :
-        ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+
+  val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+
   [@@@end]
 end

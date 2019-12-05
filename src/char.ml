@@ -5,14 +5,20 @@ include Char0
 
 module T = struct
   type t = char [@@deriving_inline compare, hash, sexp]
+
   let compare = (compare_char : t -> t -> int)
-  let (hash_fold_t :
-         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+
+  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_char
+
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_char in fun x -> func x
+    let func = hash_char in
+    fun x -> func x
+  ;;
+
   let t_of_sexp = (char_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_char : t -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
 
   let to_string t = String.make 1 t

@@ -1,6 +1,6 @@
 open! Import
 
-(* In the definition of [t], we do not have [[@@deriving_inline compare, sexp][@@@end]] because
+(* In the definition of [t], we do not have [[@@deriving compare, sexp]] because
    in general, syntax extensions tend to use the implementation when available rather than
    using the alias.  Here that would lead to use the record representation [ { mutable
    contents : 'a } ] which would result in different (and unwanted) behavior.  *)
@@ -9,25 +9,32 @@ type 'a t = 'a ref = { mutable contents : 'a }
 include (
 struct
   type 'a t = 'a ref [@@deriving_inline compare, equal, sexp]
-  let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref
-  let equal : 'a . ('a -> 'a -> bool) -> 'a t -> 'a t -> bool = equal_ref
+
+  let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref
+  let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool = equal_ref
+
   let t_of_sexp :
-    'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
+    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+    =
     ref_of_sexp
+  ;;
+
   let sexp_of_t :
-    'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
+    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+    =
     sexp_of_ref
+  ;;
+
   [@@@end]
 end :
 sig
   type 'a t = 'a ref [@@deriving_inline compare, equal, sexp]
-  include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-      val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-      include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t :=  'a t
-    end[@@ocaml.doc "@inline"]
+
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+
+  include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+
   [@@@end]
 end
 with type 'a t := 'a t)

@@ -9,13 +9,18 @@ let stage = Staged.stage
 
 module T = struct
   type t = string [@@deriving_inline hash, sexp]
-  let (hash_fold_t :
-         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+
+  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_string
+
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_string in fun x -> func x
+    let func = hash_string in
+    fun x -> func x
+  ;;
+
   let t_of_sexp = (string_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_string : t -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
 
   let compare = compare
@@ -72,8 +77,10 @@ let is_prefix_gen string ~prefix ~char_equal =
 module Caseless = struct
   module T = struct
     type t = string [@@deriving_inline sexp]
+
     let t_of_sexp = (string_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
     let sexp_of_t = (sexp_of_string : t -> Ppx_sexp_conv_lib.Sexp.t)
+
     [@@@end]
 
     let char_compare_caseless c1 c2 =
@@ -249,12 +256,16 @@ let rindex_from t pos char =
 
 module Search_pattern = struct
   type t = string * int array [@@deriving_inline sexp_of]
+
   let sexp_of_t =
     (function
-      | (v0, v1) ->
+      | v0, v1 ->
         let v0 = sexp_of_string v0
         and v1 = sexp_of_array sexp_of_int v1 in
-        Ppx_sexp_conv_lib.Sexp.List [v0; v1] : t -> Ppx_sexp_conv_lib.Sexp.t)
+        Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ]
+        : t -> Ppx_sexp_conv_lib.Sexp.t)
+  ;;
+
   [@@@end]
 
   (* Find max number of matched characters at [next_text_char], given the current

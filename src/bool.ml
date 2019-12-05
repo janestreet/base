@@ -4,15 +4,21 @@ let invalid_argf = Printf.invalid_argf
 
 module T = struct
   type t = bool [@@deriving_inline compare, enumerate, hash, sexp]
+
   let compare = (compare_bool : t -> t -> int)
-  let all = ([false; true] : t list)
-  let (hash_fold_t :
-         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+  let all = ([ false; true ] : t list)
+
+  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_bool
+
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_bool in fun x -> func x
+    let func = hash_bool in
+    fun x -> func x
+  ;;
+
   let t_of_sexp = (bool_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_bool : t -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
 
   let of_string = function

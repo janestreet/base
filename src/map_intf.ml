@@ -7,14 +7,15 @@ module Or_duplicate = struct
     | `Duplicate
     ]
   [@@deriving_inline sexp_of]
+
   let sexp_of_t :
-    'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
-    fun _of_a ->
-    function
-    | `Ok v0 ->
-      Ppx_sexp_conv_lib.Sexp.List
-        [Ppx_sexp_conv_lib.Sexp.Atom "Ok"; _of_a v0]
-    | `Duplicate -> Ppx_sexp_conv_lib.Sexp.Atom "Duplicate"
+    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+    =
+    fun _of_a -> function
+      | `Ok v0 -> Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Ok"; _of_a v0 ]
+      | `Duplicate -> Ppx_sexp_conv_lib.Sexp.Atom "Duplicate"
+  ;;
+
   [@@@end]
 end
 
@@ -34,45 +35,38 @@ end
 module Symmetric_diff_element = struct
   type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
   [@@deriving_inline compare, sexp]
+
   let compare :
-    'k 'v .
-    ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
+    'k 'v. ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
     =
-    fun _cmp__k ->
-    fun _cmp__v ->
-    fun a__001_ ->
-    fun b__002_ ->
-    let (t__003_, t__004_) = a__001_ in
-    let (t__005_, t__006_) = b__002_ in
+    fun _cmp__k _cmp__v a__001_ b__002_ ->
+    let t__003_, t__004_ = a__001_ in
+    let t__005_, t__006_ = b__002_ in
     match _cmp__k t__003_ t__005_ with
     | 0 ->
       if Ppx_compare_lib.phys_equal t__004_ t__006_
       then 0
-      else
-        (match (t__004_, t__006_) with
-         | (`Left _left__007_, `Left _right__008_) ->
-           _cmp__v _left__007_ _right__008_
-         | (`Right _left__009_, `Right _right__010_) ->
-           _cmp__v _left__009_ _right__010_
-         | (`Unequal _left__011_, `Unequal _right__012_) ->
-           let (t__013_, t__014_) = _left__011_ in
-           let (t__015_, t__016_) = _right__012_ in
-           (match _cmp__v t__013_ t__015_ with
-            | 0 -> _cmp__v t__014_ t__016_
-            | n -> n)
-         | (x, y) -> Ppx_compare_lib.polymorphic_compare x y)
+      else (
+        match t__004_, t__006_ with
+        | `Left _left__007_, `Left _right__008_ -> _cmp__v _left__007_ _right__008_
+        | `Right _left__009_, `Right _right__010_ -> _cmp__v _left__009_ _right__010_
+        | `Unequal _left__011_, `Unequal _right__012_ ->
+          let t__013_, t__014_ = _left__011_ in
+          let t__015_, t__016_ = _right__012_ in
+          (match _cmp__v t__013_ t__015_ with
+           | 0 -> _cmp__v t__014_ t__016_
+           | n -> n)
+        | x, y -> Ppx_compare_lib.polymorphic_compare x y)
     | n -> n
+  ;;
+
   let t_of_sexp :
-    'k 'v .
-    (Ppx_sexp_conv_lib.Sexp.t -> 'k) ->
-    (Ppx_sexp_conv_lib.Sexp.t -> 'v) ->
-    Ppx_sexp_conv_lib.Sexp.t -> ('k, 'v) t
+    'k 'v. (Ppx_sexp_conv_lib.Sexp.t -> 'k) -> (Ppx_sexp_conv_lib.Sexp.t -> 'v)
+    -> Ppx_sexp_conv_lib.Sexp.t -> ('k, 'v) t
     =
-    let _tp_loc = "src/map_intf.ml.Symmetric_diff_element.t" in
-    fun _of_k ->
-    fun _of_v ->
-      function
-      | Ppx_sexp_conv_lib.Sexp.List (v0::v1::[]) ->
+    let _tp_loc = "map_intf.ml.Symmetric_diff_element.t" in
+    fun _of_k _of_v -> function
+      | Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ] ->
         let v0 = _of_k v0
         and v1 =
           (fun sexp ->
@@ -80,89 +74,84 @@ module Symmetric_diff_element = struct
                match sexp with
                | Ppx_sexp_conv_lib.Sexp.Atom atom as _sexp ->
                  (match atom with
-                  | "Left" ->
-                    Ppx_sexp_conv_lib.Conv_error.ptag_takes_args
-                      _tp_loc _sexp
-                  | "Right" ->
-                    Ppx_sexp_conv_lib.Conv_error.ptag_takes_args
-                      _tp_loc _sexp
-                  | "Unequal" ->
-                    Ppx_sexp_conv_lib.Conv_error.ptag_takes_args
-                      _tp_loc _sexp
+                  | "Left" -> Ppx_sexp_conv_lib.Conv_error.ptag_takes_args _tp_loc _sexp
+                  | "Right" -> Ppx_sexp_conv_lib.Conv_error.ptag_takes_args _tp_loc _sexp
+                  | "Unequal" -> Ppx_sexp_conv_lib.Conv_error.ptag_takes_args _tp_loc _sexp
                   | _ -> Ppx_sexp_conv_lib.Conv_error.no_variant_match ())
-               | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.Atom
-                                                 atom)::sexp_args) as _sexp ->
+               | Ppx_sexp_conv_lib.Sexp.List
+                   (Ppx_sexp_conv_lib.Sexp.Atom atom :: sexp_args) as _sexp ->
                  (match atom with
                   | "Left" as _tag ->
                     (match sexp_args with
-                     | v0::[] -> let v0 = _of_v v0 in `Left v0
+                     | [ v0 ] ->
+                       let v0 = _of_v v0 in
+                       `Left v0
                      | _ ->
-                       Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args
-                         _tp_loc _tag _sexp)
+                       Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args _tp_loc _tag _sexp)
                   | "Right" as _tag ->
                     (match sexp_args with
-                     | v0::[] -> let v0 = _of_v v0 in `Right v0
+                     | [ v0 ] ->
+                       let v0 = _of_v v0 in
+                       `Right v0
                      | _ ->
-                       Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args
-                         _tp_loc _tag _sexp)
+                       Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args _tp_loc _tag _sexp)
                   | "Unequal" as _tag ->
                     (match sexp_args with
-                     | v0::[] ->
+                     | [ v0 ] ->
                        let v0 =
                          match v0 with
-                         | Ppx_sexp_conv_lib.Sexp.List (v0::v1::[])
-                           ->
+                         | Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ] ->
                            let v0 = _of_v v0
-                           and v1 = _of_v v1 in (v0, v1)
+                           and v1 = _of_v v1 in
+                           v0, v1
                          | sexp ->
                            Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected
-                             _tp_loc 2 sexp in
+                             _tp_loc
+                             2
+                             sexp
+                       in
                        `Unequal v0
                      | _ ->
-                       Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args
-                         _tp_loc _tag _sexp)
+                       Ppx_sexp_conv_lib.Conv_error.ptag_incorrect_n_args _tp_loc _tag _sexp)
                   | _ -> Ppx_sexp_conv_lib.Conv_error.no_variant_match ())
-               | Ppx_sexp_conv_lib.Sexp.List ((Ppx_sexp_conv_lib.Sexp.List
-                                                 _)::_) as sexp ->
-                 Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_poly_var
-                   _tp_loc sexp
+               | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.List _ :: _) as sexp
+                 -> Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_poly_var _tp_loc sexp
                | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
-                 Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_poly_var
-                   _tp_loc sexp
+                 Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_poly_var _tp_loc sexp
              with
              | Ppx_sexp_conv_lib.Conv_error.No_variant_match ->
-               Ppx_sexp_conv_lib.Conv_error.no_matching_variant_found
-                 _tp_loc sexp) v1 in
-        (v0, v1)
-      | sexp ->
-        Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected _tp_loc 2
-          sexp
+               Ppx_sexp_conv_lib.Conv_error.no_matching_variant_found _tp_loc sexp)
+            v1
+        in
+        v0, v1
+      | sexp -> Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected _tp_loc 2 sexp
+  ;;
+
   let sexp_of_t :
-    'k 'v .
-    ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('k, 'v) t -> Ppx_sexp_conv_lib.Sexp.t
+    'k 'v. ('k -> Ppx_sexp_conv_lib.Sexp.t) -> ('v -> Ppx_sexp_conv_lib.Sexp.t)
+    -> ('k, 'v) t -> Ppx_sexp_conv_lib.Sexp.t
     =
-    fun _of_k ->
-    fun _of_v ->
-    function
-    | (v0, v1) ->
-      let v0 = _of_k v0
-      and v1 =
-        match v1 with
-        | `Left v0 ->
-          Ppx_sexp_conv_lib.Sexp.List
-            [Ppx_sexp_conv_lib.Sexp.Atom "Left"; _of_v v0]
-        | `Right v0 ->
-          Ppx_sexp_conv_lib.Sexp.List
-            [Ppx_sexp_conv_lib.Sexp.Atom "Right"; _of_v v0]
-        | `Unequal v0 ->
-          Ppx_sexp_conv_lib.Sexp.List
-            [Ppx_sexp_conv_lib.Sexp.Atom "Unequal";
-             (let (v0, v1) = v0 in
-              let v0 = _of_v v0
-              and v1 = _of_v v1 in Ppx_sexp_conv_lib.Sexp.List [v0; v1])] in
-      Ppx_sexp_conv_lib.Sexp.List [v0; v1]
+    fun _of_k _of_v -> function
+      | v0, v1 ->
+        let v0 = _of_k v0
+        and v1 =
+          match v1 with
+          | `Left v0 ->
+            Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Left"; _of_v v0 ]
+          | `Right v0 ->
+            Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Right"; _of_v v0 ]
+          | `Unequal v0 ->
+            Ppx_sexp_conv_lib.Sexp.List
+              [ Ppx_sexp_conv_lib.Sexp.Atom "Unequal"
+              ; (let v0, v1 = v0 in
+                 let v0 = _of_v v0
+                 and v1 = _of_v v1 in
+                 Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ])
+              ]
+        in
+        Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ]
+  ;;
+
   [@@@end]
 end
 
@@ -171,14 +160,18 @@ module Continue_or_stop = struct
     | Continue
     | Stop
   [@@deriving_inline compare, enumerate, equal, sexp_of]
+
   let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
-  let all = ([Continue; Stop] : t list)
+  let all = ([ Continue; Stop ] : t list)
   let equal = (Ppx_compare_lib.polymorphic_equal : t -> t -> bool)
+
   let sexp_of_t =
     (function
       | Continue -> Ppx_sexp_conv_lib.Sexp.Atom "Continue"
-      | Stop -> Ppx_sexp_conv_lib.Sexp.Atom "Stop" : t ->
-        Ppx_sexp_conv_lib.Sexp.t)
+      | Stop -> Ppx_sexp_conv_lib.Sexp.Atom "Stop"
+                : t -> Ppx_sexp_conv_lib.Sexp.t)
+  ;;
+
   [@@@end]
 end
 
@@ -187,14 +180,18 @@ module Finished_or_unfinished = struct
     | Finished
     | Unfinished
   [@@deriving_inline compare, enumerate, equal, sexp_of]
+
   let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
-  let all = ([Finished; Unfinished] : t list)
+  let all = ([ Finished; Unfinished ] : t list)
   let equal = (Ppx_compare_lib.polymorphic_equal : t -> t -> bool)
+
   let sexp_of_t =
     (function
       | Finished -> Ppx_sexp_conv_lib.Sexp.Atom "Finished"
-      | Unfinished -> Ppx_sexp_conv_lib.Sexp.Atom "Unfinished" : t ->
-        Ppx_sexp_conv_lib.Sexp.t)
+      | Unfinished -> Ppx_sexp_conv_lib.Sexp.Atom "Unfinished"
+                      : t -> Ppx_sexp_conv_lib.Sexp.t)
+  ;;
+
   [@@@end]
 end
 
@@ -1761,17 +1758,17 @@ module type For_deriving = sig
 
   module type Sexp_of_m = sig
     type t [@@deriving_inline sexp_of]
-    include
-      sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
     [@@@end]
   end
 
   module type M_of_sexp = sig
     type t [@@deriving_inline of_sexp]
-    include
-      sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-      end[@@ocaml.doc "@inline"]
+
+    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+
     [@@@end]
 
     include Comparator.S with type t := t
@@ -1829,14 +1826,12 @@ module type Map = sig
       | Finished
       | Unfinished
     [@@deriving_inline compare, enumerate, equal, sexp_of]
-    include
-      sig
-        [@@@ocaml.warning "-32"]
-        val compare : t -> t -> int
-        val all : t list
-        val equal : t -> t -> bool
-        val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+
+    val compare : t -> t -> int
+    val all : t list
+    val equal : t -> t -> bool
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
     [@@@end]
 
     (** Maps [Continue] to [Finished] and [Stop] to [Unfinished]. *)
@@ -2217,14 +2212,16 @@ module type Map = sig
   module Symmetric_diff_element : sig
     type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
     [@@deriving_inline compare, sexp]
-    include
-      sig
-        [@@@ocaml.warning "-32"]
-        val compare :
-          ('k -> 'k -> int) ->
-          ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
-        include Ppx_sexp_conv_lib.Sexpable.S2 with type ('k,'v) t :=  ('k, 'v) t
-      end[@@ocaml.doc "@inline"]
+
+    val compare
+      :  ('k -> 'k -> int)
+      -> ('v -> 'v -> int)
+      -> ('k, 'v) t
+      -> ('k, 'v) t
+      -> int
+
+    include Ppx_sexp_conv_lib.Sexpable.S2 with type ('k, 'v) t := ('k, 'v) t
+
     [@@@end]
   end
 
@@ -2441,12 +2438,12 @@ module type Map = sig
       doesn't (because there is no such thing as, say, [String.sexp_of_comparator_witness]
       -- instead you would want to pass the comparator directly).
 
-      In addition, when using [@@deriving_inline][@@@end], the requirements on the key module are only
+      In addition, when using [@@deriving], the requirements on the key module are only
       those needed to satisfy what you are trying to derive on the map itself. Say you
       write:
 
       {[
-        type t = int Map.M(X).t [@@deriving_inline hash][@@@end]
+        type t = int Map.M(X).t [@@deriving hash]
       ]}
 
       then this will be well typed exactly if [X] contains at least:
@@ -2472,15 +2469,14 @@ module type Map = sig
       toplevel of [Map] take a [('k, 'cmp) comparator]. *)
   module Using_comparator : sig
     type nonrec ('k, +'v, 'cmp) t = ('k, 'v, 'cmp) t [@@deriving_inline sexp_of]
-    include
-      sig
-        [@@@ocaml.warning "-32"]
-        val sexp_of_t :
-          ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('k, 'v, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+
+    val sexp_of_t
+      :  ('k -> Ppx_sexp_conv_lib.Sexp.t)
+      -> ('v -> Ppx_sexp_conv_lib.Sexp.t)
+      -> ('cmp -> Ppx_sexp_conv_lib.Sexp.t)
+      -> ('k, 'v, 'cmp) t
+      -> Ppx_sexp_conv_lib.Sexp.t
+
     [@@@end]
 
     val t_of_sexp_direct
@@ -2492,15 +2488,14 @@ module type Map = sig
 
     module Tree : sig
       type ('k, +'v, 'cmp) t [@@deriving_inline sexp_of]
-      include
-        sig
-          [@@@ocaml.warning "-32"]
-          val sexp_of_t :
-            ('k -> Ppx_sexp_conv_lib.Sexp.t) ->
-            ('v -> Ppx_sexp_conv_lib.Sexp.t) ->
-            ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-            ('k, 'v, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-        end[@@ocaml.doc "@inline"]
+
+      val sexp_of_t
+        :  ('k -> Ppx_sexp_conv_lib.Sexp.t)
+        -> ('v -> Ppx_sexp_conv_lib.Sexp.t)
+        -> ('cmp -> Ppx_sexp_conv_lib.Sexp.t)
+        -> ('k, 'v, 'cmp) t
+        -> Ppx_sexp_conv_lib.Sexp.t
+
       [@@@end]
 
       val t_of_sexp_direct

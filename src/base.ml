@@ -184,178 +184,295 @@ end
 module Export = struct
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
   type 'a array = 'a Array.t [@@deriving_inline compare, equal, sexp]
-  let compare_array : 'a . ('a -> 'a -> int) -> 'a array -> 'a array -> int =
+
+  let compare_array : 'a. ('a -> 'a -> int) -> 'a array -> 'a array -> int =
     Array.compare
-  let equal_array : 'a . ('a -> 'a -> bool) -> 'a array -> 'a array -> bool =
-    Array.equal
+  ;;
+
+  let equal_array : 'a. ('a -> 'a -> bool) -> 'a array -> 'a array -> bool = Array.equal
+
   let array_of_sexp :
-    'a .
-    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a array
-    = Array.t_of_sexp
+    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a array
+    =
+    Array.t_of_sexp
+  ;;
+
   let sexp_of_array :
-    'a .
-    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a array -> Ppx_sexp_conv_lib.Sexp.t
-    = Array.sexp_of_t
+    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a array -> Ppx_sexp_conv_lib.Sexp.t
+    =
+    Array.sexp_of_t
+  ;;
+
   [@@@end]
+
   type bool = Bool.t [@@deriving_inline compare, equal, hash, sexp]
+
   let compare_bool = (Bool.compare : bool -> bool -> int)
   let equal_bool = (Bool.equal : bool -> bool -> bool)
+
   let (hash_fold_bool :
-         Ppx_hash_lib.Std.Hash.state -> bool -> Ppx_hash_lib.Std.Hash.state) =
+         Ppx_hash_lib.Std.Hash.state -> bool -> Ppx_hash_lib.Std.Hash.state)
+    =
     Bool.hash_fold_t
+
   and (hash_bool : bool -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Bool.hash in fun x -> func x
+    let func = Bool.hash in
+    fun x -> func x
+  ;;
+
   let bool_of_sexp = (Bool.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bool)
   let sexp_of_bool = (Bool.sexp_of_t : bool -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type char = Char.t [@@deriving_inline compare, equal, hash, sexp]
+
   let compare_char = (Char.compare : char -> char -> int)
   let equal_char = (Char.equal : char -> char -> bool)
+
   let (hash_fold_char :
-         Ppx_hash_lib.Std.Hash.state -> char -> Ppx_hash_lib.Std.Hash.state) =
+         Ppx_hash_lib.Std.Hash.state -> char -> Ppx_hash_lib.Std.Hash.state)
+    =
     Char.hash_fold_t
+
   and (hash_char : char -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Char.hash in fun x -> func x
+    let func = Char.hash in
+    fun x -> func x
+  ;;
+
   let char_of_sexp = (Char.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> char)
   let sexp_of_char = (Char.sexp_of_t : char -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type exn = Exn.t [@@deriving_inline sexp_of]
+
   let sexp_of_exn = (Exn.sexp_of_t : exn -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type float = Float.t [@@deriving_inline compare, equal, hash, sexp]
+
   let compare_float = (Float.compare : float -> float -> int)
   let equal_float = (Float.equal : float -> float -> bool)
+
   let (hash_fold_float :
-         Ppx_hash_lib.Std.Hash.state -> float -> Ppx_hash_lib.Std.Hash.state) =
+         Ppx_hash_lib.Std.Hash.state -> float -> Ppx_hash_lib.Std.Hash.state)
+    =
     Float.hash_fold_t
+
   and (hash_float : float -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Float.hash in fun x -> func x
+    let func = Float.hash in
+    fun x -> func x
+  ;;
+
   let float_of_sexp = (Float.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> float)
   let sexp_of_float = (Float.sexp_of_t : float -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type int = Int.t [@@deriving_inline compare, equal, hash, sexp]
+
   let compare_int = (Int.compare : int -> int -> int)
   let equal_int = (Int.equal : int -> int -> bool)
-  let (hash_fold_int :
-         Ppx_hash_lib.Std.Hash.state -> int -> Ppx_hash_lib.Std.Hash.state) =
+
+  let (hash_fold_int : Ppx_hash_lib.Std.Hash.state -> int -> Ppx_hash_lib.Std.Hash.state)
+    =
     Int.hash_fold_t
+
   and (hash_int : int -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Int.hash in fun x -> func x
+    let func = Int.hash in
+    fun x -> func x
+  ;;
+
   let int_of_sexp = (Int.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int)
   let sexp_of_int = (Int.sexp_of_t : int -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type int32 = Int32.t [@@deriving_inline compare, equal, hash, sexp]
+
   let compare_int32 = (Int32.compare : int32 -> int32 -> int)
   let equal_int32 = (Int32.equal : int32 -> int32 -> bool)
+
   let (hash_fold_int32 :
-         Ppx_hash_lib.Std.Hash.state -> int32 -> Ppx_hash_lib.Std.Hash.state) =
+         Ppx_hash_lib.Std.Hash.state -> int32 -> Ppx_hash_lib.Std.Hash.state)
+    =
     Int32.hash_fold_t
+
   and (hash_int32 : int32 -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Int32.hash in fun x -> func x
+    let func = Int32.hash in
+    fun x -> func x
+  ;;
+
   let int32_of_sexp = (Int32.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int32)
   let sexp_of_int32 = (Int32.sexp_of_t : int32 -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type int64 = Int64.t [@@deriving_inline compare, equal, hash, sexp]
+
   let compare_int64 = (Int64.compare : int64 -> int64 -> int)
   let equal_int64 = (Int64.equal : int64 -> int64 -> bool)
+
   let (hash_fold_int64 :
-         Ppx_hash_lib.Std.Hash.state -> int64 -> Ppx_hash_lib.Std.Hash.state) =
+         Ppx_hash_lib.Std.Hash.state -> int64 -> Ppx_hash_lib.Std.Hash.state)
+    =
     Int64.hash_fold_t
+
   and (hash_int64 : int64 -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Int64.hash in fun x -> func x
+    let func = Int64.hash in
+    fun x -> func x
+  ;;
+
   let int64_of_sexp = (Int64.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int64)
   let sexp_of_int64 = (Int64.sexp_of_t : int64 -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type 'a list = 'a List.t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_list : 'a . ('a -> 'a -> int) -> 'a list -> 'a list -> int =
-    List.compare
-  let equal_list : 'a . ('a -> 'a -> bool) -> 'a list -> 'a list -> bool =
-    List.equal
+
+  let compare_list : 'a. ('a -> 'a -> int) -> 'a list -> 'a list -> int = List.compare
+  let equal_list : 'a. ('a -> 'a -> bool) -> 'a list -> 'a list -> bool = List.equal
+
   let hash_fold_list :
-    'a .
-    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
-    Ppx_hash_lib.Std.Hash.state -> 'a list -> Ppx_hash_lib.Std.Hash.state
-    = List.hash_fold_t
+    'a. (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+    -> Ppx_hash_lib.Std.Hash.state -> 'a list -> Ppx_hash_lib.Std.Hash.state
+    =
+    List.hash_fold_t
+  ;;
+
   let list_of_sexp :
-    'a .
-    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a list
-    = List.t_of_sexp
+    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a list
+    =
+    List.t_of_sexp
+  ;;
+
   let sexp_of_list :
-    'a .
-    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a list -> Ppx_sexp_conv_lib.Sexp.t
-    = List.sexp_of_t
+    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a list -> Ppx_sexp_conv_lib.Sexp.t
+    =
+    List.sexp_of_t
+  ;;
+
   [@@@end]
+
   type nativeint = Nativeint.t [@@deriving_inline compare, equal, hash, sexp]
+
   let compare_nativeint = (Nativeint.compare : nativeint -> nativeint -> int)
   let equal_nativeint = (Nativeint.equal : nativeint -> nativeint -> bool)
+
   let (hash_fold_nativeint :
-         Ppx_hash_lib.Std.Hash.state -> nativeint -> Ppx_hash_lib.Std.Hash.state) =
+         Ppx_hash_lib.Std.Hash.state -> nativeint -> Ppx_hash_lib.Std.Hash.state)
+    =
     Nativeint.hash_fold_t
+
   and (hash_nativeint : nativeint -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Nativeint.hash in fun x -> func x
-  let nativeint_of_sexp =
-    (Nativeint.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> nativeint)
-  let sexp_of_nativeint =
-    (Nativeint.sexp_of_t : nativeint -> Ppx_sexp_conv_lib.Sexp.t)
+    let func = Nativeint.hash in
+    fun x -> func x
+  ;;
+
+  let nativeint_of_sexp = (Nativeint.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> nativeint)
+  let sexp_of_nativeint = (Nativeint.sexp_of_t : nativeint -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type 'a option = 'a Option.t [@@deriving_inline compare, equal, hash, sexp]
-  let compare_option : 'a . ('a -> 'a -> int) -> 'a option -> 'a option -> int
-    = Option.compare
-  let equal_option : 'a . ('a -> 'a -> bool) -> 'a option -> 'a option -> bool
-    = Option.equal
+
+  let compare_option : 'a. ('a -> 'a -> int) -> 'a option -> 'a option -> int =
+    Option.compare
+  ;;
+
+  let equal_option : 'a. ('a -> 'a -> bool) -> 'a option -> 'a option -> bool =
+    Option.equal
+  ;;
+
   let hash_fold_option :
-    'a .
-    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state) ->
-    Ppx_hash_lib.Std.Hash.state -> 'a option -> Ppx_hash_lib.Std.Hash.state
-    = Option.hash_fold_t
+    'a. (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+    -> Ppx_hash_lib.Std.Hash.state -> 'a option -> Ppx_hash_lib.Std.Hash.state
+    =
+    Option.hash_fold_t
+  ;;
+
   let option_of_sexp :
-    'a .
-    (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a option
-    = Option.t_of_sexp
+    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a option
+    =
+    Option.t_of_sexp
+  ;;
+
   let sexp_of_option :
-    'a .
-    ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a option -> Ppx_sexp_conv_lib.Sexp.t
-    = Option.sexp_of_t
+    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a option -> Ppx_sexp_conv_lib.Sexp.t
+    =
+    Option.sexp_of_t
+  ;;
+
   [@@@end]
+
   type 'a ref = 'a Ref.t [@@deriving_inline compare, equal, sexp]
-  let compare_ref : 'a . ('a -> 'a -> int) -> 'a ref -> 'a ref -> int =
-    Ref.compare
-  let equal_ref : 'a . ('a -> 'a -> bool) -> 'a ref -> 'a ref -> bool =
-    Ref.equal
+
+  let compare_ref : 'a. ('a -> 'a -> int) -> 'a ref -> 'a ref -> int = Ref.compare
+  let equal_ref : 'a. ('a -> 'a -> bool) -> 'a ref -> 'a ref -> bool = Ref.equal
+
   let ref_of_sexp :
-    'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a ref
-    = Ref.t_of_sexp
+    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a ref
+    =
+    Ref.t_of_sexp
+  ;;
+
   let sexp_of_ref :
-    'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a ref -> Ppx_sexp_conv_lib.Sexp.t
-    = Ref.sexp_of_t
+    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a ref -> Ppx_sexp_conv_lib.Sexp.t
+    =
+    Ref.sexp_of_t
+  ;;
+
   [@@@end]
+
   type string = String.t [@@deriving_inline compare, equal, hash, sexp]
+
   let compare_string = (String.compare : string -> string -> int)
   let equal_string = (String.equal : string -> string -> bool)
+
   let (hash_fold_string :
-         Ppx_hash_lib.Std.Hash.state -> string -> Ppx_hash_lib.Std.Hash.state) =
+         Ppx_hash_lib.Std.Hash.state -> string -> Ppx_hash_lib.Std.Hash.state)
+    =
     String.hash_fold_t
+
   and (hash_string : string -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = String.hash in fun x -> func x
+    let func = String.hash in
+    fun x -> func x
+  ;;
+
   let string_of_sexp = (String.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> string)
   let sexp_of_string = (String.sexp_of_t : string -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type bytes = Bytes.t [@@deriving_inline compare, equal, sexp]
+
   let compare_bytes = (Bytes.compare : bytes -> bytes -> int)
   let equal_bytes = (Bytes.equal : bytes -> bytes -> bool)
   let bytes_of_sexp = (Bytes.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bytes)
   let sexp_of_bytes = (Bytes.sexp_of_t : bytes -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
+
   type unit = Unit.t [@@deriving_inline compare, equal, hash, sexp]
+
   let compare_unit = (Unit.compare : unit -> unit -> int)
   let equal_unit = (Unit.equal : unit -> unit -> bool)
+
   let (hash_fold_unit :
-         Ppx_hash_lib.Std.Hash.state -> unit -> Ppx_hash_lib.Std.Hash.state) =
+         Ppx_hash_lib.Std.Hash.state -> unit -> Ppx_hash_lib.Std.Hash.state)
+    =
     Unit.hash_fold_t
+
   and (hash_unit : unit -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Unit.hash in fun x -> func x
+    let func = Unit.hash in
+    fun x -> func x
+  ;;
+
   let unit_of_sexp = (Unit.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> unit)
   let sexp_of_unit = (Unit.sexp_of_t : unit -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
 
   (** Format stuff *)

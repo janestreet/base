@@ -10,12 +10,19 @@ let invalid_argf = Printf.invalid_argf
 
 module T = struct
   type 'a t = 'a list [@@deriving_inline sexp]
+
   let t_of_sexp :
-    'a . (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
+    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+    =
     list_of_sexp
+  ;;
+
   let sexp_of_t :
-    'a . ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
+    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+    =
     sexp_of_list
+  ;;
+
   [@@@end]
 end
 
@@ -24,26 +31,29 @@ module Or_unequal_lengths = struct
     | Ok of 'a
     | Unequal_lengths
   [@@deriving_inline compare, sexp_of]
-  let compare : 'a . ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-    fun _cmp__a ->
-    fun a__001_ ->
-    fun b__002_ ->
+
+  let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
+    fun _cmp__a a__001_ b__002_ ->
     if Ppx_compare_lib.phys_equal a__001_ b__002_
     then 0
-    else
-      (match (a__001_, b__002_) with
-       | (Ok _a__003_, Ok _b__004_) -> _cmp__a _a__003_ _b__004_
-       | (Ok _, _) -> (-1)
-       | (_, Ok _) -> 1
-       | (Unequal_lengths, Unequal_lengths) -> 0)
-  let sexp_of_t : type a.
-    (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t =
-    fun _of_a ->
-    function
-    | Ok v0 ->
-      let v0 = _of_a v0 in
-      Ppx_sexp_conv_lib.Sexp.List [Ppx_sexp_conv_lib.Sexp.Atom "Ok"; v0]
-    | Unequal_lengths -> Ppx_sexp_conv_lib.Sexp.Atom "Unequal_lengths"
+    else (
+      match a__001_, b__002_ with
+      | Ok _a__003_, Ok _b__004_ -> _cmp__a _a__003_ _b__004_
+      | Ok _, _ -> -1
+      | _, Ok _ -> 1
+      | Unequal_lengths, Unequal_lengths -> 0)
+  ;;
+
+  let sexp_of_t
+    : type a. (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t
+    =
+    fun _of_a -> function
+      | Ok v0 ->
+        let v0 = _of_a v0 in
+        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Ok"; v0 ]
+      | Unequal_lengths -> Ppx_sexp_conv_lib.Sexp.Atom "Unequal_lengths"
+  ;;
+
   [@@@end]
 end
 
@@ -832,38 +842,37 @@ let partition_result t =
 
 module Assoc = struct
   type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp]
+
   let t_of_sexp :
-    'a 'b .
-    (Ppx_sexp_conv_lib.Sexp.t -> 'a) ->
-    (Ppx_sexp_conv_lib.Sexp.t -> 'b) ->
-    Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b) t
+    'a 'b. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> (Ppx_sexp_conv_lib.Sexp.t -> 'b)
+    -> Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b) t
     =
-    let _tp_loc = "src/list.ml.Assoc.t" in
-    fun _of_a ->
-    fun _of_b ->
-    fun t ->
+    let _tp_loc = "list.ml.Assoc.t" in
+    fun _of_a _of_b t ->
       list_of_sexp
         (function
-          | Ppx_sexp_conv_lib.Sexp.List (v0::v1::[]) ->
+          | Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ] ->
             let v0 = _of_a v0
-            and v1 = _of_b v1 in (v0, v1)
-          | sexp ->
-            Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected _tp_loc
-              2 sexp) t
+            and v1 = _of_b v1 in
+            v0, v1
+          | sexp -> Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected _tp_loc 2 sexp)
+        t
+  ;;
+
   let sexp_of_t :
-    'a 'b .
-    ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('b -> Ppx_sexp_conv_lib.Sexp.t) ->
-    ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
+    'a 'b. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> ('b -> Ppx_sexp_conv_lib.Sexp.t)
+    -> ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
     =
-    fun _of_a ->
-    fun _of_b ->
-    fun v ->
-    sexp_of_list
-      (function
-        | (v0, v1) ->
-          let v0 = _of_a v0
-          and v1 = _of_b v1 in Ppx_sexp_conv_lib.Sexp.List [v0; v1]) v
+    fun _of_a _of_b v ->
+      sexp_of_list
+        (function
+          | v0, v1 ->
+            let v0 = _of_a v0
+            and v1 = _of_b v1 in
+            Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ])
+        v
+  ;;
+
   [@@@end]
 
   let find t ~equal key =
@@ -1093,17 +1102,21 @@ let transpose =
 ;;
 
 exception Transpose_got_lists_of_different_lengths of int list [@@deriving_inline sexp]
+
 let () =
   Ppx_sexp_conv_lib.Conv.Exn_converter.add
-    ([%extension_constructor Transpose_got_lists_of_different_lengths])
+    [%extension_constructor Transpose_got_lists_of_different_lengths]
     (function
       | Transpose_got_lists_of_different_lengths v0 ->
         let v0 = sexp_of_list sexp_of_int v0 in
         Ppx_sexp_conv_lib.Sexp.List
-          [Ppx_sexp_conv_lib.Sexp.Atom
-             "src/list.ml.Transpose_got_lists_of_different_lengths";
-           v0]
+          [ Ppx_sexp_conv_lib.Sexp.Atom
+              "list.ml.Transpose_got_lists_of_different_lengths"
+          ; v0
+          ]
       | _ -> assert false)
+;;
+
 [@@@end]
 
 let transpose_exn l =

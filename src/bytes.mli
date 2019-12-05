@@ -8,11 +8,9 @@
 open! Import
 
 type t = bytes [@@deriving_inline sexp]
-include
-  sig
-    [@@@ocaml.warning "-32"]
-    include Ppx_sexp_conv_lib.Sexpable.S with type  t :=  t
-  end[@@ocaml.doc "@inline"]
+
+include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
 [@@@end]
 
 (** {1 Common Interfaces} *)

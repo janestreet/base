@@ -3,12 +3,10 @@ open! T
 
 module type Elt_plain = sig
   type t [@@deriving_inline compare, sexp_of]
-  include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare : t -> t -> int
-      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    end[@@ocaml.doc "@inline"]
+
+  val compare : t -> t -> int
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
   [@@@end]
 end
 
@@ -974,17 +972,17 @@ module type For_deriving = sig
 
   module type Sexp_of_m = sig
     type t [@@deriving_inline sexp_of]
-    include
-      sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
     [@@@end]
   end
 
   module type M_of_sexp = sig
     type t [@@deriving_inline of_sexp]
-    include
-      sig [@@@ocaml.warning "-32"] val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-      end[@@ocaml.doc "@inline"]
+
+    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+
     [@@@end]
 
     include Comparator.S with type t := t
@@ -1023,13 +1021,14 @@ module type Set = sig
       require that they be passed sets with the same element type and the same comparator
       type. *)
   type ('elt, 'cmp) t [@@deriving_inline compare]
-  include
-    sig
-      [@@@ocaml.warning "-32"]
-      val compare :
-        ('elt -> 'elt -> int) ->
-        ('cmp -> 'cmp -> int) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
-    end[@@ocaml.doc "@inline"]
+
+  val compare
+    :  ('elt -> 'elt -> int)
+    -> ('cmp -> 'cmp -> int)
+    -> ('elt, 'cmp) t
+    -> ('elt, 'cmp) t
+    -> int
+
   [@@@end]
 
   type ('k, 'cmp) comparator =
@@ -1392,14 +1391,16 @@ module type Set = sig
       | Right of 'b
       | Both of 'a * 'b
     [@@deriving_inline compare, sexp]
-    include
-      sig
-        [@@@ocaml.warning "-32"]
-        val compare :
-          ('a -> 'a -> int) ->
-          ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
-        include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a,'b) t :=  ('a, 'b) t
-      end[@@ocaml.doc "@inline"]
+
+    val compare
+      :  ('a -> 'a -> int)
+      -> ('b -> 'b -> int)
+      -> ('a, 'b) t
+      -> ('a, 'b) t
+      -> int
+
+    include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
+
     [@@@end]
   end
 
@@ -1443,14 +1444,13 @@ module type Set = sig
       [Set] takes a [('elt, 'cmp) comparator]. *)
   module Using_comparator : sig
     type nonrec ('elt, 'cmp) t = ('elt, 'cmp) t [@@deriving_inline sexp_of]
-    include
-      sig
-        [@@@ocaml.warning "-32"]
-        val sexp_of_t :
-          ('elt -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-          ('elt, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+
+    val sexp_of_t
+      :  ('elt -> Ppx_sexp_conv_lib.Sexp.t)
+      -> ('cmp -> Ppx_sexp_conv_lib.Sexp.t)
+      -> ('elt, 'cmp) t
+      -> Ppx_sexp_conv_lib.Sexp.t
+
     [@@@end]
 
     val t_of_sexp_direct
@@ -1464,14 +1464,13 @@ module type Set = sig
           including the comparator.  Accordingly, any operation on a [Tree.t] must also take
           as an argument the corresponding comparator. *)
       type ('a, 'cmp) t [@@deriving_inline sexp_of]
-      include
-        sig
-          [@@@ocaml.warning "-32"]
-          val sexp_of_t :
-            ('a -> Ppx_sexp_conv_lib.Sexp.t) ->
-            ('cmp -> Ppx_sexp_conv_lib.Sexp.t) ->
-            ('a, 'cmp) t -> Ppx_sexp_conv_lib.Sexp.t
-        end[@@ocaml.doc "@inline"]
+
+      val sexp_of_t
+        :  ('a -> Ppx_sexp_conv_lib.Sexp.t)
+        -> ('cmp -> Ppx_sexp_conv_lib.Sexp.t)
+        -> ('a, 'cmp) t
+        -> Ppx_sexp_conv_lib.Sexp.t
+
       [@@@end]
 
       val t_of_sexp_direct

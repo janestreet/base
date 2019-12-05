@@ -4,13 +4,18 @@ include Nativeint_replace_polymorphic_compare
 
 module T = struct
   type t = nativeint [@@deriving_inline hash, sexp]
-  let (hash_fold_t :
-         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+
+  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_nativeint
+
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_nativeint in fun x -> func x
+    let func = hash_nativeint in
+    fun x -> func x
+  ;;
+
   let t_of_sexp = (nativeint_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_nativeint : t -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
 
   let compare = Nativeint_replace_polymorphic_compare.compare
@@ -34,12 +39,17 @@ include Conv.Make_hex (struct
     open Nativeint_replace_polymorphic_compare
 
     type t = nativeint [@@deriving_inline compare, hash]
+
     let compare = (compare_nativeint : t -> t -> int)
-    let (hash_fold_t :
-           Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+
+    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_nativeint
+
     and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_nativeint in fun x -> func x
+      let func = hash_nativeint in
+      fun x -> func x
+    ;;
+
     [@@@end]
 
     let zero = zero

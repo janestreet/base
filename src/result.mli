@@ -18,30 +18,33 @@ type ('ok, 'err) t = ('ok, 'err) Caml.result =
   | Ok of 'ok
   | Error of 'err
 [@@deriving_inline sexp, compare, equal, hash]
-include
-  sig
-    [@@@ocaml.warning "-32"]
-    include
-      Ppx_sexp_conv_lib.Sexpable.S2 with type ('ok,'err) t :=  ('ok, 'err) t
-    val compare :
-      ('ok -> 'ok -> int) ->
-      ('err -> 'err -> int) -> ('ok, 'err) t -> ('ok, 'err) t -> int
-    val equal :
-      ('ok -> 'ok -> bool) ->
-      ('err -> 'err -> bool) -> ('ok, 'err) t -> ('ok, 'err) t -> bool
-    val hash_fold_t :
-      (Ppx_hash_lib.Std.Hash.state -> 'ok -> Ppx_hash_lib.Std.Hash.state) ->
-      (Ppx_hash_lib.Std.Hash.state -> 'err -> Ppx_hash_lib.Std.Hash.state)
-      ->
-      Ppx_hash_lib.Std.Hash.state ->
-      ('ok, 'err) t -> Ppx_hash_lib.Std.Hash.state
-  end[@@ocaml.doc "@inline"]
+
+include Ppx_sexp_conv_lib.Sexpable.S2 with type ('ok, 'err) t := ('ok, 'err) t
+
+val compare
+  :  ('ok -> 'ok -> int)
+  -> ('err -> 'err -> int)
+  -> ('ok, 'err) t
+  -> ('ok, 'err) t
+  -> int
+
+val equal
+  :  ('ok -> 'ok -> bool)
+  -> ('err -> 'err -> bool)
+  -> ('ok, 'err) t
+  -> ('ok, 'err) t
+  -> bool
+
+val hash_fold_t
+  :  (Ppx_hash_lib.Std.Hash.state -> 'ok -> Ppx_hash_lib.Std.Hash.state)
+  -> (Ppx_hash_lib.Std.Hash.state -> 'err -> Ppx_hash_lib.Std.Hash.state)
+  -> Ppx_hash_lib.Std.Hash.state
+  -> ('ok, 'err) t
+  -> Ppx_hash_lib.Std.Hash.state
+
 [@@@end]
 
 include Monad.S2 with type ('a, 'err) t := ('a, 'err) t
-
-val ignore : (_, 'err) t -> (unit, 'err) t
-[@@deprecated "[since 2019-02] Use [ignore_m] instead"]
 
 include Invariant_intf.S2 with type ('ok, 'err) t := ('ok, 'err) t
 
@@ -92,11 +95,6 @@ val ok_fst : ('ok, 'err) t -> [ `Fst of 'ok | `Snd of 'err ]
 val ok_if_true : bool -> error:'err -> (unit, 'err) t
 
 val try_with : (unit -> 'a) -> ('a, exn) t
-
-(** [ok_unit = Ok ()], used to avoid allocation as a performance hack. *)
-val ok_unit : (unit, _) t
-[@@deprecated
-  "[since 2019-04] Use [Ok ()], which is also statically allocated, instead."]
 
 module Export : sig
   type ('ok, 'err) _result = ('ok, 'err) t =

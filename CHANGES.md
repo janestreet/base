@@ -1,5 +1,9 @@
 ## git version
 
+- Removed deprecated values `Array.truncate`, `{Obj_array,
+  Uniform_array}.unsafe_truncate`, `Result.ok_unit`, `{Result,
+  Or_error}.ignore`.
+
 - Changed the signature of `Hashtbl.equal` to take the data equality
   function first, allowing it to be used with `[%equal: t]`.
 

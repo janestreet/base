@@ -3,12 +3,10 @@ include Comparable_intf
 
 module Validate (T : sig
     type t [@@deriving_inline compare, sexp_of]
-    include
-      sig
-        [@@@ocaml.warning "-32"]
-        val compare : t -> t -> int
-        val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+
+    val compare : t -> t -> int
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
     [@@@end]
   end) : Validate with type t := T.t = struct
   module V = Validate
@@ -25,13 +23,10 @@ module Validate (T : sig
 end
 
 module With_zero (T : sig
-    type t [@@deriving_inline compare, sexp_of]
-    include
-      sig
-        [@@@ocaml.warning "-32"]
-        val compare : t -> t -> int
-        val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+    type t [@@deriving_inline compare]
+
+    val compare : t -> t -> int
+
     [@@@end]
 
     val zero : t
@@ -58,12 +53,10 @@ end
 
 module Validate_with_zero (T : sig
     type t [@@deriving_inline compare, sexp_of]
-    include
-      sig
-        [@@@ocaml.warning "-32"]
-        val compare : t -> t -> int
-        val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+
+    val compare : t -> t -> int
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
     [@@@end]
 
     val zero : t
@@ -80,15 +73,17 @@ end
 
 module Poly (T : sig
     type t [@@deriving_inline sexp_of]
-    include
-      sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
     [@@@end]
   end) =
 struct
   module Replace_polymorphic_compare = struct
     type t = T.t [@@deriving_inline sexp_of]
+
     let sexp_of_t = (T.sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t)
+
     [@@@end]
 
     include Poly
@@ -123,8 +118,10 @@ struct
 
   include Validate (struct
       type nonrec t = t [@@deriving_inline compare, sexp_of]
+
       let compare = (compare : t -> t -> int)
       let sexp_of_t = (sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t)
+
       [@@@end]
     end)
 end
@@ -140,9 +137,9 @@ let max cmp t t' = if geq cmp t t' then t else t'
 
 module Make_using_comparator (T : sig
     type t [@@deriving_inline sexp_of]
-    include
-      sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
     [@@@end]
 
     include Comparator.S with type t := t
@@ -199,12 +196,10 @@ end
 
 module Make (T : sig
     type t [@@deriving_inline compare, sexp_of]
-    include
-      sig
-        [@@@ocaml.warning "-32"]
-        val compare : t -> t -> int
-        val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-      end[@@ocaml.doc "@inline"]
+
+    val compare : t -> t -> int
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
     [@@@end]
   end) =
   Make_using_comparator (struct
@@ -214,21 +209,24 @@ module Make (T : sig
 
 module Inherit (C : sig
     type t [@@deriving_inline compare]
-    include sig [@@@ocaml.warning "-32"] val compare : t -> t -> int end[@@ocaml.doc
-    "@inline"]
+
+    val compare : t -> t -> int
+
     [@@@end]
   end) (T : sig
           type t [@@deriving_inline sexp_of]
-          include
-            sig [@@@ocaml.warning "-32"] val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-            end[@@ocaml.doc "@inline"]
+
+          val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
           [@@@end]
 
           val component : t -> C.t
         end) =
   Make (struct
     type t = T.t [@@deriving_inline sexp_of]
+
     let sexp_of_t = (T.sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t)
+
     [@@@end]
 
     let compare t t' = C.compare (T.component t) (T.component t')

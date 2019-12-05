@@ -3,13 +3,18 @@ open! Caml.Int32
 
 module T = struct
   type t = int32 [@@deriving_inline hash, sexp]
-  let (hash_fold_t :
-         Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+
+  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_int32
+
   and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_int32 in fun x -> func x
+    let func = hash_int32 in
+    fun x -> func x
+  ;;
+
   let t_of_sexp = (int32_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_int32 : t -> Ppx_sexp_conv_lib.Sexp.t)
+
   [@@@end]
 
   let compare (x : t) y = compare x y
@@ -211,12 +216,17 @@ include Conv.Make (T)
 
 include Conv.Make_hex (struct
     type t = int32 [@@deriving_inline compare, hash]
+
     let compare = (compare_int32 : t -> t -> int)
-    let (hash_fold_t :
-           Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+
+    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int32
+
     and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_int32 in fun x -> func x
+      let func = hash_int32 in
+      fun x -> func x
+    ;;
+
     [@@@end]
 
     let zero = zero
