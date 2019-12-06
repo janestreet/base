@@ -122,13 +122,13 @@ module type Accessors = sig
       values. *)
   val partition_map
     :  ('a, 'b) t
-    -> f:('b -> [ `Fst of 'c | `Snd of 'd ])
+    -> f:('b -> ('c, 'd) Either.t)
     -> ('a, 'c) t * ('a, 'd) t
 
   (** Like [partition_map], but the function [f] takes both key and data as arguments. *)
   val partition_mapi
     :  ('a, 'b) t
-    -> f:(key:'a key -> data:'b -> [ `Fst of 'c | `Snd of 'd ])
+    -> f:(key:'a key -> data:'b -> ('c, 'd) Either.t)
     -> ('a, 'c) t * ('a, 'd) t
 
   (** Returns a pair of tables [(t1, t2)], where [t1] contains all the elements of the

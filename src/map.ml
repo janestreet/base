@@ -879,11 +879,11 @@ module Tree0 = struct
       t
       ~init:((Empty, 0), (Empty, 0))
       ~f:(fun ~key ~data (pair1, pair2) ->
-        match f ~key ~data with
-        | `Fst x ->
+        match (f ~key ~data : _ Either.t) with
+        | First x ->
           let t, length = pair1 in
           set t ~key ~data:x ~compare_key ~length, pair2
-        | `Snd y ->
+        | Second y ->
           let t, length = pair2 in
           pair1, set t ~key ~data:y ~compare_key ~length)
   ;;
@@ -894,12 +894,12 @@ module Tree0 = struct
 
   let partitioni_tf t ~f ~compare_key =
     partition_mapi t ~compare_key ~f:(fun ~key ~data ->
-      if f ~key ~data then `Fst data else `Snd data)
+      if f ~key ~data then First data else Second data)
   ;;
 
   let partition_tf t ~f ~compare_key =
     partition_mapi t ~compare_key ~f:(fun ~key:_ ~data ->
-      if f data then `Fst data else `Snd data)
+      if f data then First data else Second data)
   ;;
 
   module Enum = struct

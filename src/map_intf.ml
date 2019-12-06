@@ -314,7 +314,7 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v1, 'cmp) t
-      -> f:(key:'k key -> data:'v1 -> [ `Fst of 'v2 | `Snd of 'v3 ])
+      -> f:(key:'k key -> data:'v1 -> ('v2, 'v3) Either.t)
       -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t )
         options
 
@@ -322,7 +322,7 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v1, 'cmp) t
-      -> f:('v1 -> [ `Fst of 'v2 | `Snd of 'v3 ])
+      -> f:('v1 -> ('v2, 'v3) Either.t)
       -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t )
         options
 
@@ -552,13 +552,8 @@ module type Accessors1 = sig
   val filteri : 'a t -> f:(key:key -> data:'a -> bool) -> 'a t
   val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
   val filter_mapi : 'a t -> f:(key:key -> data:'a -> 'b option) -> 'b t
-
-  val partition_mapi
-    :  'a t
-    -> f:(key:key -> data:'a -> [ `Fst of 'b | `Snd of 'c ])
-    -> 'b t * 'c t
-
-  val partition_map : 'a t -> f:('a -> [ `Fst of 'b | `Snd of 'c ]) -> 'b t * 'c t
+  val partition_mapi : 'a t -> f:(key:key -> data:'a -> ('b, 'c) Either.t) -> 'b t * 'c t
+  val partition_map : 'a t -> f:('a -> ('b, 'c) Either.t) -> 'b t * 'c t
   val partitioni_tf : 'a t -> f:(key:key -> data:'a -> bool) -> 'a t * 'a t
   val partition_tf : 'a t -> f:('a -> bool) -> 'a t * 'a t
   val compare_direct : ('a -> 'a -> int) -> 'a t -> 'a t -> int
@@ -714,12 +709,12 @@ module type Accessors2 = sig
 
   val partition_mapi
     :  ('a, 'b) t
-    -> f:(key:'a -> data:'b -> [ `Fst of 'c | `Snd of 'd ])
+    -> f:(key:'a -> data:'b -> ('c, 'd) Either.t)
     -> ('a, 'c) t * ('a, 'd) t
 
   val partition_map
     :  ('a, 'b) t
-    -> f:('b -> [ `Fst of 'c | `Snd of 'd ])
+    -> f:('b -> ('c, 'd) Either.t)
     -> ('a, 'c) t * ('a, 'd) t
 
   val partitioni_tf
@@ -884,12 +879,12 @@ module type Accessors3 = sig
 
   val partition_mapi
     :  ('a, 'b, 'cmp) t
-    -> f:(key:'a -> data:'b -> [ `Fst of 'c | `Snd of 'd ])
+    -> f:(key:'a -> data:'b -> ('c, 'd) Either.t)
     -> ('a, 'c, 'cmp) t * ('a, 'd, 'cmp) t
 
   val partition_map
     :  ('a, 'b, 'cmp) t
-    -> f:('b -> [ `Fst of 'c | `Snd of 'd ])
+    -> f:('b -> ('c, 'd) Either.t)
     -> ('a, 'c, 'cmp) t * ('a, 'd, 'cmp) t
 
   val partitioni_tf
@@ -1143,13 +1138,13 @@ module type Accessors3_with_comparator = sig
   val partition_mapi
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t
-    -> f:(key:'a -> data:'b -> [ `Fst of 'c | `Snd of 'd ])
+    -> f:(key:'a -> data:'b -> ('c, 'd) Either.t)
     -> ('a, 'c, 'cmp) t * ('a, 'd, 'cmp) t
 
   val partition_map
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t
-    -> f:('b -> [ `Fst of 'c | `Snd of 'd ])
+    -> f:('b -> ('c, 'd) Either.t)
     -> ('a, 'c, 'cmp) t * ('a, 'd, 'cmp) t
 
   val partitioni_tf
@@ -2121,18 +2116,17 @@ module type Map = sig
     -> f:(key:'k -> data:'v1 -> 'v2 option)
     -> ('k, 'v2, 'cmp) t
 
-
   (** [partition_mapi t ~f] returns two new [t]s, with each key in [t] appearing in
       exactly one of the resulting maps depending on its mapping in [f]. *)
   val partition_mapi
     :  ('k, 'v1, 'cmp) t
-    -> f:(key:'k -> data:'v1 -> [ `Fst of 'v2 | `Snd of 'v3 ])
+    -> f:(key:'k -> data:'v1 -> ('v2, 'v3) Either.t)
     -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t
 
   (** [partition_map t ~f = partition_mapi t ~f:(fun ~key:_ ~data -> f data)] *)
   val partition_map
     :  ('k, 'v1, 'cmp) t
-    -> f:('v1 -> [ `Fst of 'v2 | `Snd of 'v3 ])
+    -> f:('v1 -> ('v2, 'v3) Either.t)
     -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t
 
   (**
@@ -2141,8 +2135,8 @@ module type Map = sig
        =
        partition_mapi t ~f:(fun ~key ~data ->
          if f ~key ~data
-         then `Fst data
-         else `Snd data)
+         then First data
+         else Second data)
      ]} *)
   val partitioni_tf
     :  ('k, 'v, 'cmp) t

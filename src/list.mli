@@ -120,9 +120,8 @@ val rev_filter : 'a t -> f:('a -> bool) -> 'a t
 
 val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 
-
 (** [partition_map t ~f] partitions [t] according to [f]. *)
-val partition_map : 'a t -> f:('a -> [ `Fst of 'b | `Snd of 'c ]) -> 'b t * 'c t
+val partition_map : 'a t -> f:('a -> ('b, 'c) Either0.t) -> 'b t * 'c t
 
 
 val partition3_map

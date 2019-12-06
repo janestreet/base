@@ -85,11 +85,12 @@ val combine_errors : ('ok, 'err) t list -> ('ok list, 'err list) t
     returns [Error] with all the errors in [ts], like [combine_errors]. *)
 val combine_errors_unit : (unit, 'err) t list -> (unit, 'err list) t
 
+
 (** [ok_fst] is useful with [List.partition_map].  Continuing the above example:
     {[
       let rics, errors = List.partition_map ~f:Result.ok_fst
                            (List.map ~f:ric_of_ticker ["AA"; "F"; "CSCO"; "AAPL"]) ]} *)
-val ok_fst : ('ok, 'err) t -> [ `Fst of 'ok | `Snd of 'err ]
+val ok_fst : ('ok, 'err) t -> ('ok, 'err) Either0.t
 
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
 val ok_if_true : bool -> error:'err -> (unit, 'err) t

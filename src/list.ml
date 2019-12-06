@@ -1,5 +1,6 @@
 open! Import
 module Array = Array0
+module Either = Either0
 
 
 include List1
@@ -827,15 +828,15 @@ let partition3_map t ~f =
 ;;
 
 let partition_tf t ~f =
-  let f x = if f x then `Fst x else `Snd x in
+  let f x : _ Either.t = if f x then First x else Second x in
   partition_map t ~f
 ;;
 
 let partition_result t =
-  let f x =
+  let f x : _ Either.t =
     match x with
-    | Ok v -> `Fst v
-    | Error e -> `Snd e
+    | Ok v -> First v
+    | Error e -> Second e
   in
   partition_map t ~f
 ;;
@@ -1089,8 +1090,8 @@ let transpose =
   let rec transpose_aux t rev_columns =
     match
       partition_map t ~f:(function
-        | [] -> `Snd ()
-        | x :: xs -> `Fst (x, xs))
+        | [] -> Second ()
+        | x :: xs -> First (x, xs))
     with
     | _ :: _, _ :: _ -> None
     | [], _ -> Some (rev_append rev_columns [])

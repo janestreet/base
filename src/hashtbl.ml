@@ -358,16 +358,17 @@ let partition_mapi t ~f =
     create ~growth_allowed:t.growth_allowed ~hashable:t.hashable ~size:t.length ()
   in
   iteri t ~f:(fun ~key ~data ->
-    match f ~key ~data with
-    | `Fst new_data -> set t0 ~key ~data:new_data
-    | `Snd new_data -> set t1 ~key ~data:new_data);
+    match (f ~key ~data : _ Either.t) with
+    | First new_data -> set t0 ~key ~data:new_data
+    | Second new_data -> set t1 ~key ~data:new_data);
   t0, t1
 ;;
 
 let partition_map t ~f = partition_mapi t ~f:(fun ~key:_ ~data -> f data)
 
 let partitioni_tf t ~f =
-  partition_mapi t ~f:(fun ~key ~data -> if f ~key ~data then `Fst data else `Snd data)
+  partition_mapi t ~f:(fun ~key ~data ->
+    if f ~key ~data then First data else Second data)
 ;;
 
 let partition_tf t ~f = partitioni_tf t ~f:(fun ~key:_ ~data -> f data)

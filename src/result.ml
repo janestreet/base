@@ -1,4 +1,5 @@
 open! Import
+module Either = Either0
 
 type ('a, 'b) t = ('a, 'b) Caml.result =
   | Ok of 'a
@@ -178,9 +179,9 @@ let iter_error v ~f =
   | Error x -> f x
 ;;
 
-let ok_fst = function
-  | Ok x -> `Fst x
-  | Error x -> `Snd x
+let ok_fst : _ t -> _ Either.t = function
+  | Ok x -> First x
+  | Error x -> Second x
 ;;
 
 let ok_if_true bool ~error = if bool then Ok () else Error error

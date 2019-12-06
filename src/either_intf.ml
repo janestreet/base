@@ -31,7 +31,7 @@ module type Focused = sig
 end
 
 module type Either = sig
-  type ('f, 's) t =
+  type ('f, 's) t = ('f, 's) Either0.t =
     | First of 'f
     | Second of 's
   [@@deriving_inline compare, hash, sexp]
