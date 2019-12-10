@@ -3,11 +3,13 @@
 open! Import
 
 (** An alias for the type of characters. *)
-type t = char [@@deriving_inline enumerate, sexp]
+type t = char [@@deriving_inline enumerate, sexp, sexp_grammar]
 
 val all : t list
 
 include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t
 
 [@@@end]
 

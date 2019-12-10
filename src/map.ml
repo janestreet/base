@@ -2407,6 +2407,18 @@ let m__t_of_sexp
   Using_comparator.t_of_sexp_direct ~comparator:K.comparator K.t_of_sexp v_of_sexp sexp
 ;;
 
+let m__t_sexp_grammar : Sexp.Grammar.t =
+  Inline
+    (Explicit_bind
+       ( [ "'k"; "'v" ]
+       , Apply
+           ( Grammar Ppx_sexp_conv_lib.Sexp.Grammar.Builtin.list_sexp_grammar
+           , [ Apply
+                 ( Grammar Ppx_sexp_conv_lib.Sexp.Grammar.tuple2_sexp_grammar
+                 , [ Explicit_var 0; Explicit_var 1 ] )
+             ] ) ))
+;;
+
 let compare_m__t (module K : Compare_m) compare_v t1 t2 = compare_direct compare_v t1 t2
 let equal_m__t (module K : Equal_m) equal_v t1 t2 = equal equal_v t1 t2
 

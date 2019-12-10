@@ -6,7 +6,7 @@ type 'a t = 'a option =
 
 include (
 struct
-  type 'a t = 'a option [@@deriving_inline compare, hash, sexp]
+  type 'a t = 'a option [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
   let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
 
@@ -29,10 +29,28 @@ struct
     sexp_of_option
   ;;
 
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+      { implicit_vars = [ "option" ]
+      ; ggid = "j\132);\135qH\158\135\222H\001\007\004\158\218"
+      ; types =
+          [ "t", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
+      }
+    in
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+      ; apply_implicit = [ option_sexp_grammar ]
+      ; generic_group = _the_generic_group
+      }
+    in
+    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) = Ref ("t", _the_group) in
+    t_sexp_grammar
+  ;;
+
   [@@@end]
 end :
 sig
-  type 'a t = 'a option [@@deriving_inline compare, hash, sexp]
+  type 'a t = 'a option [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 
@@ -43,6 +61,8 @@ sig
     -> Ppx_hash_lib.Std.Hash.state
 
   include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+
+  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t
 
   [@@@end]
 end

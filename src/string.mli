@@ -3,9 +3,11 @@
 
 open! Import
 
-type t = string [@@deriving_inline sexp]
+type t = string [@@deriving_inline sexp, sexp_grammar]
 
 include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t
 
 [@@@end]
 

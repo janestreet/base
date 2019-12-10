@@ -4,12 +4,14 @@
 open! Import
 
 type 'a t = 'a Caml.ref = { mutable contents : 'a }
-[@@deriving_inline compare, equal, sexp]
+[@@deriving_inline compare, equal, sexp, sexp_grammar]
 
 val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
 include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+
+val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t
 
 [@@@end]
 

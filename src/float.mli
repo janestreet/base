@@ -8,7 +8,11 @@
 
 open! Import
 
-type t = float
+type t = float [@@deriving_inline sexp_grammar]
+
+val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t
+
+[@@@end]
 
 include Floatable.S with type t := t
 

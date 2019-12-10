@@ -6,7 +6,7 @@ include Float0
 let raise_s = Error.raise_s
 
 module T = struct
-  type t = float [@@deriving_inline hash, sexp]
+  type t = float [@@deriving_inline hash, sexp, sexp_grammar]
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_float
@@ -18,6 +18,23 @@ module T = struct
 
   let t_of_sexp = (float_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_float : t -> Ppx_sexp_conv_lib.Sexp.t)
+
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+      { implicit_vars = [ "float" ]
+      ; ggid = "\146e\023\249\235eE\139c\132W\195\137\129\235\025"
+      ; types = [ "t", Implicit_var 0 ]
+      }
+    in
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+      ; apply_implicit = [ float_sexp_grammar ]
+      ; generic_group = _the_generic_group
+      }
+    in
+    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) = Ref ("t", _the_group) in
+    t_sexp_grammar
+  ;;
 
   [@@@end]
 
