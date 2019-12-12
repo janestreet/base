@@ -33,7 +33,7 @@ end
           type t = A | B [@@deriving compare, hash, sexp]
           let of_string s = t_of_sexp (sexp_of_string s)
           let to_string t = string_of_sexp (sexp_of_t t)
-          let module_name = "My_library.Std.Id"
+          let module_name = "My_library.Id"
         end
         include T
         include Identifiable.Make (T)
