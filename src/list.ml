@@ -1152,3 +1152,9 @@ let intersperse t ~sep =
 
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
+
+let is_suffix list ~suffix ~equal:equal_elt =
+  let list_len = length list in
+  let suffix_len = length suffix in
+  list_len >= suffix_len && equal equal_elt (drop list (list_len - suffix_len)) suffix
+;;

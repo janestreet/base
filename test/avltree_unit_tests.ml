@@ -274,7 +274,7 @@ let%test_module _ =
            type t = Constructors.t * Key.t * int
            [@@deriving quickcheck, sexp_of]
          end)
-         ~f:(fun (constructors, key, arg) ->
+         ~f:(fun (constructors, key, a) ->
            let t, map = reify constructors in
            [%test_result:
              [ `Found of Data.t * int | `Not_found of Key.t * int ]]
@@ -282,13 +282,94 @@ let%test_module _ =
                 t
                 key
                 ~compare
-                arg
-                ~if_found:(fun data arg -> `Found (data, arg))
-                ~if_not_found:(fun key arg -> `Not_found (key, arg)))
+                ~a
+                ~if_found:(fun data a -> `Found (data, a))
+                ~if_not_found:(fun key a -> `Not_found (key, a)))
              ~expect:
                (match Map.find map key with
-                | None -> `Not_found (key, arg)
-                | Some data -> `Found (data, arg)))
+                | None -> `Not_found (key, a)
+                | Some data -> `Found (data, a)))
+     ;;
+
+     let findi_and_call1 = findi_and_call1
+
+     let%test_unit _ =
+       Base_quickcheck.Test.run_exn
+         (module struct
+           type t = Constructors.t * Key.t * int
+           [@@deriving quickcheck, sexp_of]
+         end)
+         ~f:(fun (constructors, key, a) ->
+           let t, map = reify constructors in
+           [%test_result:
+             [ `Found of Key.t * Data.t * int | `Not_found of Key.t * int ]]
+             (findi_and_call1
+                t
+                key
+                ~compare
+                ~a
+                ~if_found:(fun ~key ~data a -> `Found (key, data, a))
+                ~if_not_found:(fun key a -> `Not_found (key, a)))
+             ~expect:
+               (match Map.find map key with
+                | None -> `Not_found (key, a)
+                | Some data -> `Found (key, data, a)))
+     ;;
+
+     let find_and_call2 = find_and_call2
+
+     let%test_unit _ =
+       Base_quickcheck.Test.run_exn
+         (module struct
+           type t = Constructors.t * Key.t * int * string
+           [@@deriving quickcheck, sexp_of]
+         end)
+         ~f:(fun (constructors, key, a, b) ->
+           let t, map = reify constructors in
+           [%test_result:
+             [ `Found of Data.t * int * string
+             | `Not_found of Key.t * int * string
+             ]]
+             (find_and_call2
+                t
+                key
+                ~compare
+                ~a
+                ~b
+                ~if_found:(fun data a b -> `Found (data, a, b))
+                ~if_not_found:(fun key a b -> `Not_found (key, a, b)))
+             ~expect:
+               (match Map.find map key with
+                | None -> `Not_found (key, a, b)
+                | Some data -> `Found (data, a, b)))
+     ;;
+
+     let findi_and_call2 = findi_and_call2
+
+     let%test_unit _ =
+       Base_quickcheck.Test.run_exn
+         (module struct
+           type t = Constructors.t * Key.t * int * string
+           [@@deriving quickcheck, sexp_of]
+         end)
+         ~f:(fun (constructors, key, a, b) ->
+           let t, map = reify constructors in
+           [%test_result:
+             [ `Found of Key.t * Data.t * int * string
+             | `Not_found of Key.t * int * string
+             ]]
+             (findi_and_call2
+                t
+                key
+                ~compare
+                ~a
+                ~b
+                ~if_found:(fun ~key ~data a b -> `Found (key, data, a, b))
+                ~if_not_found:(fun key a b -> `Not_found (key, a, b)))
+             ~expect:
+               (match Map.find map key with
+                | None -> `Not_found (key, a, b)
+                | Some data -> `Found (key, data, a, b)))
      ;;
 
      let iter = iter

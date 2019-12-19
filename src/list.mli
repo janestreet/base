@@ -338,6 +338,9 @@ val last_exn : 'a t -> 'a
 (** [is_prefix xs ~prefix] returns [true] if [xs] starts with [prefix]. *)
 val is_prefix : 'a t -> prefix:'a t -> equal:('a -> 'a -> bool) -> bool
 
+(** [is_suffix xs ~suffix] returns [true] if [xs] ends with [suffix]. *)
+val is_suffix : 'a t -> suffix:'a t -> equal:('a -> 'a -> bool) -> bool
+
 
 (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive elements
     [(a1, a2)] in [t] such that [equal a1 a2].  They are returned in the same order as

@@ -165,13 +165,29 @@ let find_and_call t key ~if_found ~if_not_found =
     Avltree.find_and_call tree ~compare:(compare_key t) key ~if_found ~if_not_found
 ;;
 
-let find_and_call1 t key arg ~if_found ~if_not_found =
+let find_and_call1 t key ~a ~if_found ~if_not_found =
   match t.table.(slot t key) with
-  | Avltree.Empty -> if_not_found key arg
+  | Avltree.Empty -> if_not_found key a
   | Avltree.Leaf { key = k; value = v } ->
-    if compare_key t k key = 0 then if_found v arg else if_not_found key arg
+    if compare_key t k key = 0 then if_found v a else if_not_found key a
   | tree ->
-    Avltree.find_and_call1 tree ~compare:(compare_key t) key arg ~if_found ~if_not_found
+    Avltree.find_and_call1 tree ~compare:(compare_key t) key ~a ~if_found ~if_not_found
+;;
+
+let find_and_call2 t key ~a ~b ~if_found ~if_not_found =
+  match t.table.(slot t key) with
+  | Avltree.Empty -> if_not_found key a b
+  | Avltree.Leaf { key = k; value = v } ->
+    if compare_key t k key = 0 then if_found v a b else if_not_found key a b
+  | tree ->
+    Avltree.find_and_call2
+      tree
+      ~compare:(compare_key t)
+      key
+      ~a
+      ~b
+      ~if_found
+      ~if_not_found
 ;;
 
 let findi_and_call t key ~if_found ~if_not_found =
@@ -184,6 +200,31 @@ let findi_and_call t key ~if_found ~if_not_found =
     if compare_key t k key = 0 then if_found ~key:k ~data:v else if_not_found key
   | tree ->
     Avltree.findi_and_call tree ~compare:(compare_key t) key ~if_found ~if_not_found
+;;
+
+let findi_and_call1 t key ~a ~if_found ~if_not_found =
+  match t.table.(slot t key) with
+  | Avltree.Empty -> if_not_found key a
+  | Avltree.Leaf { key = k; value = v } ->
+    if compare_key t k key = 0 then if_found ~key:k ~data:v a else if_not_found key a
+  | tree ->
+    Avltree.findi_and_call1 tree ~compare:(compare_key t) key ~a ~if_found ~if_not_found
+;;
+
+let findi_and_call2 t key ~a ~b ~if_found ~if_not_found =
+  match t.table.(slot t key) with
+  | Avltree.Empty -> if_not_found key a b
+  | Avltree.Leaf { key = k; value = v } ->
+    if compare_key t k key = 0 then if_found ~key:k ~data:v a b else if_not_found key a b
+  | tree ->
+    Avltree.findi_and_call2
+      tree
+      ~compare:(compare_key t)
+      key
+      ~a
+      ~b
+      ~if_found
+      ~if_not_found
 ;;
 
 let find =
@@ -296,7 +337,7 @@ let find_exn =
     raise
       (Not_found_s (List [ Atom "Hashtbl.find_exn: not found"; t.hashable.sexp_of_t k ]))
   in
-  let find_exn t key = find_and_call1 t key t ~if_found ~if_not_found in
+  let find_exn t key = find_and_call1 t key ~a:t ~if_found ~if_not_found in
   (* named to preserve symbol in compiled binary *)
   find_exn
 ;;
@@ -716,7 +757,11 @@ module Accessors = struct
   let find = find
   let find_exn = find_exn
   let find_and_call = find_and_call
+  let find_and_call1 = find_and_call1
+  let find_and_call2 = find_and_call2
   let findi_and_call = findi_and_call
+  let findi_and_call1 = findi_and_call1
+  let findi_and_call2 = findi_and_call2
   let find_and_remove = find_and_remove
   let to_alist = to_alist
   let validate = validate

@@ -170,11 +170,49 @@ module type Accessors = sig
     -> if_not_found:('a key -> 'c)
     -> 'c
 
+  (** Just like [find_and_call], but takes an extra argument which is passed to [if_found]
+      and [if_not_found], so that the client code can avoid allocating closures or using
+      refs to pass this additional information.  This function is only useful in code
+      which tries to minimize heap allocation. *)
+  val find_and_call1
+    :  ('a, 'b) t
+    -> 'a key
+    -> a:'d
+    -> if_found:('b -> 'd -> 'c)
+    -> if_not_found:('a key -> 'd -> 'c)
+    -> 'c
+
+  val find_and_call2
+    :  ('a, 'b) t
+    -> 'a key
+    -> a:'d
+    -> b:'e
+    -> if_found:('b -> 'd -> 'e -> 'c)
+    -> if_not_found:('a key -> 'd -> 'e -> 'c)
+    -> 'c
+
   val findi_and_call
     :  ('a, 'b) t
     -> 'a key
     -> if_found:(key:'a key -> data:'b -> 'c)
     -> if_not_found:('a key -> 'c)
+    -> 'c
+
+  val findi_and_call1
+    :  ('a, 'b) t
+    -> 'a key
+    -> a:'d
+    -> if_found:(key:'a key -> data:'b -> 'd -> 'c)
+    -> if_not_found:('a key -> 'd -> 'c)
+    -> 'c
+
+  val findi_and_call2
+    :  ('a, 'b) t
+    -> 'a key
+    -> a:'d
+    -> b:'e
+    -> if_found:(key:'a key -> data:'b -> 'd -> 'e -> 'c)
+    -> if_not_found:('a key -> 'd -> 'e -> 'c)
     -> 'c
 
   (** [find_and_remove t k] returns Some (the current binding) of k in t and removes it,
