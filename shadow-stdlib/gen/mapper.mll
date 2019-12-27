@@ -193,6 +193,7 @@ let module_replacement = function
     in
     Some (Repl_text repl_text)
   | "Fun" -> Some (Repl_text "Use [Fn] instead")
+  | "Gc" -> Some No_equivalent
   | _ -> None
 
 let replace ~is_exn id replacement line =
