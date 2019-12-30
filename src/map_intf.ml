@@ -2271,6 +2271,7 @@ module type Map = sig
   val count : ('k, 'v, _) t -> f:('v -> bool) -> int
   val counti : ('k, 'v, _) t -> f:(key:'k -> data:'v -> bool) -> int
 
+
   (** [split t key] returns a map of keys strictly less than [key], the mapping of [key] if
       any, and a map of keys strictly greater than [key].
 
@@ -2356,11 +2357,19 @@ module type Map = sig
       [t], and [None] otherwise. *)
   val rank : ('k, 'v, 'cmp) t -> 'k -> int option
 
-  (** [to_sequence ?order ?keys_greater_or_equal_to ?keys_less_or_equal_to t] gives a
-      sequence of key-value pairs between [keys_less_or_equal_to] and
+
+
+  (** [to_sequence ?order ?keys_greater_or_equal_to ?keys_less_or_equal_to t]
+      gives a sequence of key-value pairs between [keys_less_or_equal_to] and
       [keys_greater_or_equal_to] inclusive, presented in [order].  If
-      [keys_greater_or_equal_to > keys_less_or_equal_to], the sequence is empty.  Cost is
-      O(log n) up front and amortized O(1) to produce each element. *)
+      [keys_greater_or_equal_to > keys_less_or_equal_to], the sequence is
+      empty.
+
+      When neither [keys_greater_or_equal_to] nor [keys_less_or_equal_to] are
+      provided, the cost is O(log n) up front and amortized O(1) to produce
+      each element. If either is provided (and is used by the order parameter
+      provided), then the the cost is O(n) up front, and amortized O(1) to
+      produce each element. *)
   val to_sequence
     :  ?order:[ `Increasing_key (** default *) | `Decreasing_key ]
     -> ?keys_greater_or_equal_to:'k
