@@ -340,6 +340,9 @@ module type Accessors_generic = sig
       , ('k, 'v, 'cmp) t -> f:('v -> bool) -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
         options
 
+  val combine_errors
+    : ('k, 'cmp, ('k, 'v Or_error.t, 'cmp) t -> ('k, 'v, 'cmp) t Or_error.t) options
+
   val compare_direct
     : ( 'k
       , 'cmp
@@ -556,6 +559,7 @@ module type Accessors1 = sig
   val partition_map : 'a t -> f:('a -> ('b, 'c) Either.t) -> 'b t * 'c t
   val partitioni_tf : 'a t -> f:(key:key -> data:'a -> bool) -> 'a t * 'a t
   val partition_tf : 'a t -> f:('a -> bool) -> 'a t * 'a t
+  val combine_errors : 'a Or_error.t t -> 'a t Or_error.t
   val compare_direct : ('a -> 'a -> int) -> 'a t -> 'a t -> int
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val keys : _ t -> key list
@@ -723,6 +727,7 @@ module type Accessors2 = sig
     -> ('a, 'b) t * ('a, 'b) t
 
   val partition_tf : ('a, 'b) t -> f:('b -> bool) -> ('a, 'b) t * ('a, 'b) t
+  val combine_errors : ('a, 'b Or_error.t) t -> ('a, 'b) t Or_error.t
   val compare_direct : ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
   val equal : ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
   val keys : ('a, _) t -> 'a list
@@ -897,6 +902,7 @@ module type Accessors3 = sig
     -> f:('b -> bool)
     -> ('a, 'b, 'cmp) t * ('a, 'b, 'cmp) t
 
+  val combine_errors : ('a, 'b Or_error.t, 'cmp) t -> ('a, 'b, 'cmp) t Or_error.t
   val compare_direct : ('b -> 'b -> int) -> ('a, 'b, 'cmp) t -> ('a, 'b, 'cmp) t -> int
   val equal : ('b -> 'b -> bool) -> ('a, 'b, 'cmp) t -> ('a, 'b, 'cmp) t -> bool
   val keys : ('a, _, _) t -> 'a list
@@ -1158,6 +1164,11 @@ module type Accessors3_with_comparator = sig
     -> ('a, 'b, 'cmp) t
     -> f:('b -> bool)
     -> ('a, 'b, 'cmp) t * ('a, 'b, 'cmp) t
+
+  val combine_errors
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a, 'b Or_error.t, 'cmp) t
+    -> ('a, 'b, 'cmp) t Or_error.t
 
   val compare_direct
     :  comparator:('a, 'cmp) Comparator.t
@@ -2150,6 +2161,10 @@ module type Map = sig
     :  ('k, 'v, 'cmp) t
     -> f:('v -> bool)
     -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
+
+  (** Produces [Ok] of a map including all keys if all data is [Ok], or an [Error]
+      including all errors otherwise. *)
+  val combine_errors : ('k, 'v Or_error.t, 'cmp) t -> ('k, 'v, 'cmp) t Or_error.t
 
   (** Returns a total ordering between maps. The first argument is a total ordering used
       to compare data associated with equal keys in the two maps. *)

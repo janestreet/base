@@ -27,6 +27,7 @@ module T = struct
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ unit_sexp_grammar ]
       ; generic_group = _the_generic_group
+      ; origin = "unit.ml.T"
       }
     in
     let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) = Ref ("t", _the_group) in

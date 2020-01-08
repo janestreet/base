@@ -1578,6 +1578,17 @@ module Tree0 = struct
     let f ~key ~data acc = Sexp.List [ sexp_of_key key; sexp_of_value data ] :: acc in
     Sexp.List (fold_right ~f t ~init:[])
   ;;
+
+  let combine_errors t ~compare_key ~sexp_of_key =
+    let oks, (error_tree, _) =
+      partition_map t ~compare_key ~f:(function
+        | Ok x -> First x
+        | Error x -> Second x)
+    in
+    if is_empty error_tree
+    then Ok oks
+    else Or_error.error_s (sexp_of_t sexp_of_key Error.sexp_of_t error_tree)
+  ;;
 end
 
 type ('k, 'v, 'comparator) t =
@@ -1722,6 +1733,15 @@ module Accessors = struct
 
   let partition_tf t ~f =
     like2 t (Tree0.partition_tf t.tree ~f ~compare_key:(compare_key t))
+  ;;
+
+  let combine_errors t =
+    Or_error.map
+      ~f:(like t)
+      (Tree0.combine_errors
+         t.tree
+         ~compare_key:(compare_key t)
+         ~sexp_of_key:t.comparator.sexp_of_t)
   ;;
 
   let compare_direct compare_data t1 t2 =
@@ -2067,6 +2087,15 @@ module Tree = struct
       Tree0.partition_tf t ~f ~compare_key:comparator.Comparator.compare
     in
     a, b
+  ;;
+
+  let combine_errors ~comparator t =
+    Or_error.map
+      ~f:fst
+      (Tree0.combine_errors
+         t
+         ~compare_key:comparator.Comparator.compare
+         ~sexp_of_key:comparator.Comparator.sexp_of_t)
   ;;
 
   let compare_direct ~comparator compare_data t1 t2 =

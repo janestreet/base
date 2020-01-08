@@ -67,7 +67,7 @@ function Base_int_math_int_pow_stub(base, exponent) {
 
 //Provides: Base_int_math_int64_pow_stub const
 //Requires: caml_int64_mul, caml_int64_is_zero, caml_int64_shift_right_unsigned
-//Requires: caml_int64_create_lo_hi
+//Requires: caml_int64_create_lo_hi, caml_int64_lo32
 function Base_int_math_int64_pow_stub(base, exponent) {
   var one = caml_int64_create_lo_hi(1,0);
   var mul = [one, base, one, one];
@@ -76,7 +76,7 @@ function Base_int_math_int64_pow_stub(base, exponent) {
     mul[1] = caml_int64_mul(mul[1], mul[3]);
     mul[2] = caml_int64_mul(mul[1], mul[1]);
     mul[3] = caml_int64_mul(mul[2], mul[1]);
-    res = caml_int64_mul(res, mul[exponent[1] & 3]);
+    res = caml_int64_mul(res, mul[caml_int64_lo32(exponent) & 3]);
     exponent = caml_int64_shift_right_unsigned(exponent, 2);
   }
   return res;
