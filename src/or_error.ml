@@ -107,7 +107,7 @@ let combine_errors l = Result.map_error (Result.combine_errors l) ~f:Error.of_li
 let combine_errors_unit l = Result.map (combine_errors l) ~f:(fun (_ : unit list) -> ())
 
 let filter_ok_at_least_one l =
-  let ok, errs = List.partition_map l ~f:Result.ok_fst in
+  let ok, errs = List.partition_map l ~f:Result.to_either in
   match ok with
   | [] -> Error (Error.of_list errs)
   | _ -> Ok ok

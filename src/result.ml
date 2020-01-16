@@ -179,9 +179,14 @@ let iter_error v ~f =
   | Error x -> f x
 ;;
 
-let ok_fst : _ t -> _ Either.t = function
+let to_either : _ t -> _ Either.t = function
   | Ok x -> First x
   | Error x -> Second x
+;;
+
+let of_either : _ Either.t -> _ t = function
+  | First x -> Ok x
+  | Second x -> Error x
 ;;
 
 let ok_if_true bool ~error = if bool then Ok () else Error error
@@ -218,10 +223,13 @@ let combine t1 t2 ~ok ~err =
 ;;
 
 let combine_errors l =
-  let ok, errs = List1.partition_map l ~f:ok_fst in
+  let ok, errs = List1.partition_map l ~f:to_either in
   match errs with
   | [] -> Ok ok
   | _ :: _ -> Error errs
 ;;
 
 let combine_errors_unit l = map (combine_errors l) ~f:(fun (_ : unit list) -> ())
+
+(* deprecated binding for export only *)
+let ok_fst = to_either

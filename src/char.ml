@@ -120,6 +120,24 @@ module O = struct
   let ( <> ) = ( <> )
 end
 
+module Caseless = struct
+  module T = struct
+    type t = char [@@deriving_inline sexp]
+
+    let t_of_sexp = (char_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
+    let sexp_of_t = (sexp_of_char : t -> Ppx_sexp_conv_lib.Sexp.t)
+
+    [@@@end]
+
+    let compare c1 c2 = compare (lowercase c1) (lowercase c2)
+    let hash_fold_t state t = hash_fold_char state (lowercase t)
+    let hash t = Hash.run hash_fold_t t
+  end
+
+  include T
+  include Comparable.Make (T)
+end
+
 (* Include type-specific [Replace_polymorphic_compare] at the end, after
    including functor application that could shadow its definitions. This is
    here so that efficient versions of the comparison functions are exported by

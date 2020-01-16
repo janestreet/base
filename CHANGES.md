@@ -1,5 +1,8 @@
 ## git version
 
+- Renamed `Result.ok_fst` to `Result.to_either` (old name remains as
+  deprecated alias).  Added analogous `Result.of_either` function.
+
 - Removed deprecated values `Array.truncate`, `{Obj_array,
   Uniform_array}.unsafe_truncate`, `Result.ok_unit`, `{Result,
   Or_error}.ignore`.

@@ -1580,11 +1580,7 @@ module Tree0 = struct
   ;;
 
   let combine_errors t ~compare_key ~sexp_of_key =
-    let oks, (error_tree, _) =
-      partition_map t ~compare_key ~f:(function
-        | Ok x -> First x
-        | Error x -> Second x)
-    in
+    let oks, (error_tree, _) = partition_map t ~compare_key ~f:Result.to_either in
     if is_empty error_tree
     then Ok oks
     else Or_error.error_s (sexp_of_t sexp_of_key Error.sexp_of_t error_tree)

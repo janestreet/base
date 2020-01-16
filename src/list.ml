@@ -851,14 +851,7 @@ let partition_tf t ~f =
   partition_map t ~f
 ;;
 
-let partition_result t =
-  let f x : _ Either.t =
-    match x with
-    | Ok v -> First v
-    | Error e -> Second e
-  in
-  partition_map t ~f
-;;
+let partition_result t = partition_map t ~f:Result.to_either
 
 module Assoc = struct
   type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp]

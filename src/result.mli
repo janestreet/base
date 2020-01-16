@@ -85,12 +85,19 @@ val combine_errors : ('ok, 'err) t list -> ('ok list, 'err list) t
     returns [Error] with all the errors in [ts], like [combine_errors]. *)
 val combine_errors_unit : (unit, 'err) t list -> (unit, 'err list) t
 
+(** [to_either] is useful with [List.partition_map].  For example:
 
-(** [ok_fst] is useful with [List.partition_map].  Continuing the above example:
     {[
-      let rics, errors = List.partition_map ~f:Result.ok_fst
-                           (List.map ~f:ric_of_ticker ["AA"; "F"; "CSCO"; "AAPL"]) ]} *)
+      let ints, exns =
+        List.partition_map ["1"; "two"; "three"; "4"] ~f:(fun string ->
+          Result.to_either (Result.try_with (fun () -> Int.of_string string)))
+    ]} *)
+val to_either : ('ok, 'err) t -> ('ok, 'err) Either0.t
+
+val of_either : ('ok, 'err) Either0.t -> ('ok, 'err) t
+
 val ok_fst : ('ok, 'err) t -> ('ok, 'err) Either0.t
+[@@deprecated "[since 2020-01] Use [to_either] instead."]
 
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
 val ok_if_true : bool -> error:'err -> (unit, 'err) t

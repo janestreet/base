@@ -69,3 +69,18 @@ val get_digit_exn : t -> int
 
 val min_value : t
 val max_value : t
+
+(** [Caseless] compares and hashes characters ignoring case, so that for example
+    [Caseless.equal 'A' 'a'] and [Caseless.('a' < 'B')] are [true]. *)
+module Caseless : sig
+  type nonrec t = t [@@deriving_inline hash, sexp]
+
+  val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
+  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+
+  include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+  [@@@end]
+
+  include Comparable.S with type t := t
+end
