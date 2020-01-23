@@ -233,6 +233,7 @@ module Tree0 = struct
       | Set
   end
 
+
   let rec find_and_add_or_set
             t
             ~length
@@ -849,6 +850,7 @@ module Tree0 = struct
     fold ~init:(Empty, 0) t ~f:(fun ~key ~data (accu, length) ->
       if f key then set ~length ~key ~data accu ~compare_key else accu, length)
   ;;
+
 
   let filter t ~f ~compare_key =
     fold ~init:(Empty, 0) t ~f:(fun ~key ~data (accu, length) ->
@@ -1600,6 +1602,7 @@ type ('k, 'v, 'comparator) t =
 type ('k, 'v, 'comparator) tree = ('k, 'v) Tree0.t
 
 let compare_key t = t.comparator.Comparator.compare
+
 
 let like { tree = _; length = _; comparator } (tree, length) =
   { tree; length; comparator }
