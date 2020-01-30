@@ -77,3 +77,18 @@ let set_temporarily t a ~f =
   t := a;
   Exn.protect ~f ~finally:(fun () -> t := restore_to)
 ;;
+
+module And_value = struct
+  type t = T : 'a ref * 'a -> t [@@deriving sexp_of]
+
+  let set (T (r, a)) = r := a
+  let sets ts = List.iter ts ~f:set
+end
+
+let sets_temporarily (and_values : And_value.t list) ~f =
+  let restore_to =
+    List.map and_values ~f:(fun (And_value.T (r, _)) -> And_value.T (r, !r))
+  in
+  And_value.sets and_values;
+  Exn.protect ~f ~finally:(fun () -> And_value.sets restore_to)
+;;
