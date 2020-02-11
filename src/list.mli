@@ -423,7 +423,7 @@ val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
 val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
 
 (** [filter_opt l] is the sublist of [l] containing only elements which are [Some e].  In
-    other words, [filter_opt l] = [filter_map ~f:ident l]. *)
+    other words, [filter_opt l] = [filter_map ~f:Fn.id l]. *)
 val filter_opt : 'a option t -> 'a t
 
 (** Interpret a list of (key, value) pairs as a map in which only the first occurrence of

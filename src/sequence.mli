@@ -254,7 +254,7 @@ val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
 val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
 
 (** [filter_opt t] produces the elements of [t] which are not [None].  [filter_opt t] =
-    [filter_map t ~f:ident]. *)
+    [filter_map t ~f:Fn.id]. *)
 val filter_opt : 'a option t -> 'a t
 
 (** [sub t ~pos ~len] is the [len]-element subsequence of [t], starting at [pos].  If the
