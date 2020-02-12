@@ -77,4 +77,8 @@ val filter : 'a t -> f:('a -> bool) -> 'a t
     exception.  See [Result.try_with] if you'd like to know which exception. *)
 val try_with : (unit -> 'a) -> 'a t
 
+(** [try_with_join f] returns the optional value returned by [f] if it exits normally, and
+    [None] if [f] raises an exception. *)
+val try_with_join : (unit -> 'a t) -> 'a t
+
 val validate : none:unit Validate.check -> some:'a Validate.check -> 'a t Validate.check

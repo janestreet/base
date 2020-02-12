@@ -240,8 +240,15 @@ let filter t ~f =
 ;;
 
 let try_with f =
-  try Some (f ()) with
-  | _ -> None
+  match f () with
+  | x -> Some x
+  | exception _ -> None
+;;
+
+let try_with_join f =
+  match f () with
+  | x -> x
+  | exception _ -> None
 ;;
 
 include Monad.Make (struct
