@@ -419,7 +419,10 @@ let%test_unit _ =
     ~expect:[ 1; 2; 3; 4; 5; 1; 2 ]
 ;;
 
-let%test_unit _ = require_does_raise [%here] (fun () -> cycle_list_exn [])
+let%expect_test _ =
+  require_does_raise [%here] (fun () -> cycle_list_exn []);
+  [%expect {| (Invalid_argument Sequence.cycle_list_exn) |}]
+;;
 
 let%test_unit _ =
   [%test_result: (char * int) list]
