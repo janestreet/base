@@ -1,6 +1,6 @@
+#define CAML_INTERNALS
 #include <caml/mlvalues.h>
-
-extern int caml_backtrace_pos;
+#include <caml/backtrace.h>
 
 CAMLprim value Base_clear_caml_backtrace_pos () {
   caml_backtrace_pos = 0;
