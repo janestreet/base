@@ -1045,6 +1045,34 @@ end
    this module. *)
 include Float_replace_polymorphic_compare
 
-(* These functions specifically replace defaults in replace_polymorphic_compare *)
-let min (x : t) y = if is_nan x || is_nan y then nan else if x < y then x else y
-let max (x : t) y = if is_nan x || is_nan y then nan else if x > y then x else y
+(* These functions specifically replace defaults in replace_polymorphic_compare.
+
+   The desired behavior here is to propagate a nan if either argument is nan. Because the
+   first comparison will always return false if either argument is nan, it suffices to
+   check if x is nan. Then, when x is nan or both x and y are nan, we return x = nan; and
+   when y is nan but not x, we return y = nan.
+
+   There are various ways to implement these functions.  The benchmark below shows a few
+   different versions.  This benchmark was run over an array of random floats (none of
+   which are nan).
+
+   ┌────────────────────────────────────────────────┬──────────┐
+   │ Name                                           │ Time/Run │
+   ├────────────────────────────────────────────────┼──────────┤
+   │ if is_nan x then x else if x < y then x else y │   2.42us │
+   │ if is_nan x || x < y then x else y             │   2.02us │
+   │ if x < y || is_nan x then x else y             │   1.88us │
+   └────────────────────────────────────────────────┴──────────┘
+
+   The benchmark below was run when x > y is always true (again, no nan values).
+
+   ┌────────────────────────────────────────────────┬──────────┐
+   │ Name                                           │ Time/Run │
+   ├────────────────────────────────────────────────┼──────────┤
+   │ if is_nan x then x else if x < y then x else y │   2.83us │
+   │ if is_nan x || x < y then x else y             │   1.97us │
+   │ if x < y || is_nan x then x else y             │   1.56us │
+   └────────────────────────────────────────────────┴──────────┘
+*)
+let min (x : t) y = if x < y || is_nan x then x else y
+let max (x : t) y = if x > y || is_nan x then x else y

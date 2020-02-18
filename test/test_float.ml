@@ -1125,3 +1125,31 @@ let%test_unit "int to float conversion consistency" =
   done;
   ()
 ;;
+
+let%expect_test "min and max" =
+  let nan = Float.nan in
+  let inf = Float.infinity in
+  let ninf = Float.neg_infinity in
+  List.iter
+    [ 0.1, 0.3; 71., -7.; nan, 0.3; nan, ninf; nan, inf; nan, nan; ninf, inf; 0., -0. ]
+    ~f:(fun (a, b) ->
+      printf
+        "%5g%5g%5g%5g%5g%5g\n"
+        a
+        b
+        (Float.min a b)
+        (Float.min b a)
+        (Float.max a b)
+        (Float.max b a));
+  [%expect
+    {|
+     0.1  0.3  0.1  0.1  0.3  0.3
+      71   -7   -7   -7   71   71
+     nan  0.3  nan  nan  nan  nan
+     nan -inf  nan  nan  nan  nan
+     nan  inf  nan  nan  nan  nan
+     nan  nan  nan  nan  nan  nan
+    -inf  inf -inf -inf  inf  inf
+       0   -0   -0    0   -0    0
+    |}]
+;;
