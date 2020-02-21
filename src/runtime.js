@@ -50,6 +50,52 @@ function Base_int_math_int64_clz(x) {
   return n - caml_int64_to_int32(x);
 }
 
+//Provides: Base_int_math_int32_ctz const
+function Base_int_math_int32_ctz(x) {
+  if (x === 0) { return 32; }
+  var n = 1;
+  if ( (x & 0x0000FFFF) === 0) { n = n + 16; x = x >> 16; }
+  if ( (x & 0x000000FF) === 0) { n = n +  8; x = x >>  8; }
+  if ( (x & 0x0000000F) === 0) { n = n +  4; x = x >>  4; }
+  if ( (x & 0x00000003) === 0) { n = n +  2; x = x >>  2; }
+  return n - (x & 1);
+}
+
+//Provides: Base_int_math_int_ctz const
+//Requires: Base_int_math_int32_ctz
+function Base_int_math_int_ctz(x) { return Base_int_math_int32_ctz(x); }
+
+//Provides: Base_int_math_nativeint_ctz const
+//Requires: Base_int_math_int32_ctz
+function Base_int_math_nativeint_ctz(x) { return Base_int_math_int32_ctz(x); }
+
+//Provides: Base_int_math_int64_ctz const
+//Requires: caml_int64_shift_right_unsigned, caml_int64_is_zero, caml_int64_to_int32
+//Requires: caml_int64_and, caml_int64_of_int32, caml_int64_create_lo_mi_hi
+function Base_int_math_int64_ctz(x) {
+  if (caml_int64_is_zero(x)) { return 64; }
+  var n = 1;
+  function is_zero (x)    { return caml_int64_is_zero(x); }
+  function land (x,y)     { return caml_int64_and(x, y); }
+  function small_int64(x) { return caml_int64_create_lo_mi_hi(x,0,0); }
+  if (is_zero(land(x, caml_int64_create_lo_mi_hi(0xFFFFFF, 0x0000FF, 0x0000)))) {
+    n = n + 32; x = caml_int64_shift_right_unsigned(x, 32);
+  }
+  if (is_zero(land(x, small_int64(0x00FFFF)))) {
+    n = n + 16; x = caml_int64_shift_right_unsigned(x, 16);
+  }
+  if (is_zero(land(x, small_int64(0x0000FF)))) {
+    n = n +  8; x = caml_int64_shift_right_unsigned(x, 8);
+  }
+  if (is_zero(land(x, small_int64(0x00000F)))) {
+    n = n +  4; x = caml_int64_shift_right_unsigned(x, 4);
+  }
+  if (is_zero(land(x, small_int64(0x000003)))) {
+    n = n +  2; x = caml_int64_shift_right_unsigned(x, 2);
+  }
+  return n - (caml_int64_to_int32(caml_int64_and(x, small_int64(0x000001))));
+}
+
 //Provides: Base_int_math_int_pow_stub const
 function Base_int_math_int_pow_stub(base, exponent) {
   var one = 1;

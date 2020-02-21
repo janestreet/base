@@ -172,8 +172,18 @@ module Pow2 = struct
     x land Caml.Nativeint.pred x = 0n
   ;;
 
-  (* C stub for nativeint clz to use the CLZ/BSR instruction where possible *)
-  external nativeint_clz : nativeint -> int = "Base_int_math_nativeint_clz" [@@noalloc]
+  (* C stubs for nativeint clz and ctz to use the CLZ/BSR/CTZ/BSF instruction where possible *)
+  external clz
+    :  (nativeint[@unboxed])
+    -> (int[@untagged])
+    = "Base_int_math_nativeint_clz" "Base_int_math_nativeint_clz_unboxed"
+  [@@noalloc]
+
+  external ctz
+    :  (nativeint[@unboxed])
+    -> (int[@untagged])
+    = "Base_int_math_nativeint_ctz" "Base_int_math_nativeint_ctz_unboxed"
+  [@@noalloc]
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
@@ -183,7 +193,7 @@ module Pow2 = struct
         (Sexp.message
            "[Nativeint.floor_log2] got invalid input"
            [ "", sexp_of_nativeint i ]);
-    Sys.word_size_in_bits - 1 - nativeint_clz i
+    num_bits - 1 - clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
@@ -196,7 +206,7 @@ module Pow2 = struct
            [ "", sexp_of_nativeint i ]);
     if Caml.Nativeint.equal i Caml.Nativeint.one
     then 0
-    else Sys.word_size_in_bits - nativeint_clz (Caml.Nativeint.pred i)
+    else num_bits - clz (Caml.Nativeint.pred i)
   ;;
 end
 

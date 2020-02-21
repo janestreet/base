@@ -204,8 +204,18 @@ module Pow2 = struct
     x land Caml.Int32.pred x = Caml.Int32.zero
   ;;
 
-  (* C stub for int clz to use the CLZ/BSR instruction where possible. *)
-  external int32_clz : int32 -> int = "Base_int_math_int32_clz" [@@noalloc]
+  (* C stubs for int32 clz and ctz to use the CLZ/BSR/CTZ/BSF instruction where possible *)
+  external clz
+    :  (int32[@unboxed])
+    -> (int[@untagged])
+    = "Base_int_math_int32_clz" "Base_int_math_int32_clz_unboxed"
+  [@@noalloc]
+
+  external ctz
+    :  (int32[@unboxed])
+    -> (int[@untagged])
+    = "Base_int_math_int32_ctz" "Base_int_math_int32_ctz_unboxed"
+  [@@noalloc]
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
@@ -213,7 +223,7 @@ module Pow2 = struct
     then
       raise_s
         (Sexp.message "[Int32.floor_log2] got invalid input" [ "", sexp_of_int32 i ]);
-    num_bits - 1 - int32_clz i
+    num_bits - 1 - clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
@@ -223,9 +233,7 @@ module Pow2 = struct
       raise_s
         (Sexp.message "[Int32.ceil_log2] got invalid input" [ "", sexp_of_int32 i ]);
     (* The [i = 1] check is needed because clz(0) is undefined *)
-    if Caml.Int32.equal i Caml.Int32.one
-    then 0
-    else num_bits - int32_clz (Caml.Int32.pred i)
+    if Caml.Int32.equal i Caml.Int32.one then 0 else num_bits - clz (Caml.Int32.pred i)
   ;;
 end
 

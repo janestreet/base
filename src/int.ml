@@ -226,21 +226,33 @@ module Pow2 = struct
     x land (x - 1) = 0
   ;;
 
-  (* C stub for int clz to use the CLZ/BSR instruction where possible *)
-  external int_clz : int -> int = "Base_int_math_int_clz" [@@noalloc]
+  (* C stubs for int clz and ctz to use the CLZ/BSR/CTZ/BSF instruction where possible *)
+  external clz
+    :  (* Note that we pass the tagged int here. See int_math_stubs.c for details on why
+          this is correct. *)
+    int
+    -> (int[@untagged])
+    = "Base_int_math_int_clz" "Base_int_math_int_clz_untagged"
+  [@@noalloc]
+
+  external ctz
+    :  (int[@untagged])
+    -> (int[@untagged])
+    = "Base_int_math_int_ctz" "Base_int_math_int_ctz_untagged"
+  [@@noalloc]
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
     if i <= 0
     then
       raise_s (Sexp.message "[Int.floor_log2] got invalid input" [ "", sexp_of_int i ]);
-    Sys.word_size_in_bits - 1 - int_clz i
+    num_bits - 1 - clz i
   ;;
 
   let ceil_log2 i =
     if i <= 0
     then raise_s (Sexp.message "[Int.ceil_log2] got invalid input" [ "", sexp_of_int i ]);
-    if i = 1 then 0 else Sys.word_size_in_bits - int_clz (i - 1)
+    if i = 1 then 0 else num_bits - clz (i - 1)
   ;;
 end
 

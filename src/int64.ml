@@ -187,8 +187,18 @@ module Pow2 = struct
     x land Caml.Int64.pred x = Caml.Int64.zero
   ;;
 
-  (* C stub for int clz to use the CLZ/BSR instruction where possible *)
-  external int64_clz : int64 -> int = "Base_int_math_int64_clz" [@@noalloc]
+  (* C stubs for int clz and ctz to use the CLZ/BSR/CTZ/BSF instruction where possible *)
+  external clz
+    :  (int64[@unboxed])
+    -> (int[@untagged])
+    = "Base_int_math_int64_clz" "Base_int_math_int64_clz_unboxed"
+  [@@noalloc]
+
+  external ctz
+    :  (int64[@unboxed])
+    -> (int[@untagged])
+    = "Base_int_math_int64_ctz" "Base_int_math_int64_ctz_unboxed"
+  [@@noalloc]
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
@@ -196,7 +206,7 @@ module Pow2 = struct
     then
       raise_s
         (Sexp.message "[Int64.floor_log2] got invalid input" [ "", sexp_of_int64 i ]);
-    num_bits - 1 - int64_clz i
+    num_bits - 1 - clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
@@ -205,9 +215,7 @@ module Pow2 = struct
     then
       raise_s
         (Sexp.message "[Int64.ceil_log2] got invalid input" [ "", sexp_of_int64 i ]);
-    if Caml.Int64.equal i Caml.Int64.one
-    then 0
-    else num_bits - int64_clz (Caml.Int64.pred i)
+    if Caml.Int64.equal i Caml.Int64.one then 0 else num_bits - clz (Caml.Int64.pred i)
   ;;
 end
 

@@ -282,6 +282,18 @@ module type S = sig
   (** [is_pow2 x] returns true iff [x] is a power of 2.  [is_pow2] raises if [x <= 0]. *)
   val is_pow2 : t -> bool
 
+  (** Returns the number of leading zeros in the binary representation of the input, as an
+      integer between 0 and one less than [num_bits].
+
+      The results are unspecified for [t = 0]. *)
+  val clz : t -> int
+
+  (** Returns the number of trailing zeros in the binary representation of the input, as
+      an integer between 0 and one less than [num_bits].
+
+      The results are unspecified for [t = 0]. *)
+  val ctz : t -> int
+
   (** A sub-module designed to be opened to make working with ints more convenient.  *)
   module O : Operators with type t := t
 end

@@ -98,6 +98,8 @@ module W : sig
   val ceil_log2 : t -> int
   val floor_log2 : t -> int
   val is_pow2 : t -> bool
+  val clz : t -> int
+  val ctz : t -> int
 end = struct
   type t = int64
 
@@ -160,6 +162,14 @@ end = struct
   let sexp_of_t x = sexp_of_int64 (unwrap x)
   let compare (x : t) y = compare x y
   let is_pow2 x = Int64.is_pow2 (unwrap x)
+
+  let clz x =
+    (* We run Int64.clz directly on the wrapped int63 value. This is correct because the
+       bits of the int63_emul are left-aligned in the Int64. *)
+    Int64.clz x
+  ;;
+
+  let ctz x = Int64.ctz (unwrap x)
   let floor_pow2 x = Int64.floor_pow2 (unwrap x) |> wrap_exn
   let ceil_pow2 x = Int64.floor_pow2 (unwrap x) |> wrap_exn
   let floor_log2 x = Int64.floor_log2 (unwrap x)
@@ -306,6 +316,8 @@ let floor_pow2 = floor_pow2
 let ceil_pow2 = ceil_pow2
 let floor_log2 = floor_log2
 let ceil_log2 = ceil_log2
+let clz = clz
+let ctz = ctz
 let to_float x = Caml.Int64.to_float (unwrap x)
 let of_float_unchecked x = wrap_modulo (Caml.Int64.of_float x)
 
