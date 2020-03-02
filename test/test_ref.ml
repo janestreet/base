@@ -1,5 +1,3 @@
-let never_returns = Core_kernel.never_returns
-
 open! Import
 open Ref
 
@@ -11,7 +9,7 @@ let%test_unit "[set_temporarily] without raise" =
 
 let%test_unit "[set_temporarily] with raise" =
   let r = ref 0 in
-  try never_returns (set_temporarily r 1 ~f:(fun () -> failwith "")) with
+  try Nothing.unreachable_code (set_temporarily r 1 ~f:(fun () -> failwith "")) with
   | _ -> [%test_result: int] ~expect:0 !r
 ;;
 
@@ -57,7 +55,9 @@ let%expect_test "[sets_temporarily] without raise" =
 
 let%expect_test "[sets_temporarily] with raise" =
   let r = ref 0 in
-  (try never_returns (sets_temporarily [ T (r, 1) ] ~f:(fun () -> failwith "")) with
+  (try
+     Nothing.unreachable_code (sets_temporarily [ T (r, 1) ] ~f:(fun () -> failwith ""))
+   with
    | _ -> print_s [%message (r : int ref)]);
   [%expect {| (r 0) |}]
 ;;

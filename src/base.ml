@@ -119,6 +119,7 @@ module Map = Map
 module Maybe_bound = Maybe_bound
 module Monad = Monad
 module Nativeint = Nativeint
+module Nothing = Nothing
 module Option = Option
 module Option_array = Option_array
 module Or_error = Or_error
