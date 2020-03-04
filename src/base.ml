@@ -183,7 +183,7 @@ end
 (**/**)
 
 module Export = struct
-  include Sexplib.Sexp.Grammar.Builtin
+  include Sexplib.Sexp.Raw_grammar.Builtin
 
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
   type 'a array = 'a Array.t [@@deriving_inline compare, equal, sexp, sexp_grammar]
@@ -206,22 +206,22 @@ module Export = struct
     Array.sexp_of_t
   ;;
 
-  let (array_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (array_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Array.t" ]
       ; ggid = "r\177A\255~\129%\178\226\196g\165\t\232\204\001"
       ; types =
           [ "array", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Array.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (array_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (array_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("array", _the_group)
     in
     array_sexp_grammar
@@ -247,21 +247,21 @@ module Export = struct
   let bool_of_sexp = (Bool.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bool)
   let sexp_of_bool = (Bool.sexp_of_t : bool -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (bool_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (bool_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Bool.t" ]
       ; ggid = "{\171\239\166\219\128\005\201\192$\149\202\251?\186\164"
       ; types = [ "bool", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Bool.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (bool_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (bool_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("bool", _the_group)
     in
     bool_sexp_grammar
@@ -287,21 +287,21 @@ module Export = struct
   let char_of_sexp = (Char.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> char)
   let sexp_of_char = (Char.sexp_of_t : char -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (char_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (char_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Char.t" ]
       ; ggid = "H\140\243\204Y\222\191d\000@\024Md\028\147>"
       ; types = [ "char", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Char.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (char_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (char_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("char", _the_group)
     in
     char_sexp_grammar
@@ -333,21 +333,21 @@ module Export = struct
   let float_of_sexp = (Float.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> float)
   let sexp_of_float = (Float.sexp_of_t : float -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (float_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (float_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Float.t" ]
       ; ggid = "\190E\020\242\249\135C\240+\214\226\143Ip\217\223"
       ; types = [ "float", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Float.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (float_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (float_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("float", _the_group)
     in
     float_sexp_grammar
@@ -372,21 +372,21 @@ module Export = struct
   let int_of_sexp = (Int.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int)
   let sexp_of_int = (Int.sexp_of_t : int -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (int_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (int_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Int.t" ]
       ; ggid = "\159\159\197^\165]\236\165\229\165R8\169\225H\020"
       ; types = [ "int", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Int.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (int_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (int_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("int", _the_group)
     in
     int_sexp_grammar
@@ -412,21 +412,21 @@ module Export = struct
   let int32_of_sexp = (Int32.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int32)
   let sexp_of_int32 = (Int32.sexp_of_t : int32 -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (int32_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (int32_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Int32.t" ]
       ; ggid = "9\153\000*L5O+l\018\179b\198\248\026\177"
       ; types = [ "int32", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Int32.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (int32_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (int32_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("int32", _the_group)
     in
     int32_sexp_grammar
@@ -452,21 +452,21 @@ module Export = struct
   let int64_of_sexp = (Int64.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int64)
   let sexp_of_int64 = (Int64.sexp_of_t : int64 -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (int64_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (int64_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Int64.t" ]
       ; ggid = "r\153\022\135\131L\155\236\235CKa\197o\248^"
       ; types = [ "int64", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Int64.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (int64_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (int64_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("int64", _the_group)
     in
     int64_sexp_grammar
@@ -498,22 +498,22 @@ module Export = struct
     List.sexp_of_t
   ;;
 
-  let (list_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (list_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "List.t" ]
       ; ggid = "\144\022<Z\014\198\014\175\025\218\004\199\252~\031="
       ; types =
           [ "list", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ List.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (list_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (list_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("list", _the_group)
     in
     list_sexp_grammar
@@ -540,21 +540,21 @@ module Export = struct
   let nativeint_of_sexp = (Nativeint.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> nativeint)
   let sexp_of_nativeint = (Nativeint.sexp_of_t : nativeint -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (nativeint_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (nativeint_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Nativeint.t" ]
       ; ggid = "\019\184AE\023\\->1fcm\002\254\196\129"
       ; types = [ "nativeint", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Nativeint.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (nativeint_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (nativeint_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("nativeint", _the_group)
     in
     nativeint_sexp_grammar
@@ -592,8 +592,8 @@ module Export = struct
     Option.sexp_of_t
   ;;
 
-  let (option_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (option_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Option.t" ]
       ; ggid = "\242@\255j`*d\203\161\182\021\175\236\146x\217"
       ; types =
@@ -601,14 +601,14 @@ module Export = struct
           ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Option.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (option_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (option_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("option", _the_group)
     in
     option_sexp_grammar
@@ -633,22 +633,22 @@ module Export = struct
     Ref.sexp_of_t
   ;;
 
-  let (ref_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (ref_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Ref.t" ]
       ; ggid = "\185\246\012[\001\197\230\192y=\b\199\141\248\020\012"
       ; types =
           [ "ref", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Ref.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (ref_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (ref_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("ref", _the_group)
     in
     ref_sexp_grammar
@@ -674,21 +674,21 @@ module Export = struct
   let string_of_sexp = (String.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> string)
   let sexp_of_string = (String.sexp_of_t : string -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (string_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (string_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "String.t" ]
       ; ggid = "\141\195]\143\139/M\t\159\t\152\214g\198\023\176"
       ; types = [ "string", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ String.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (string_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (string_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("string", _the_group)
     in
     string_sexp_grammar
@@ -703,21 +703,21 @@ module Export = struct
   let bytes_of_sexp = (Bytes.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bytes)
   let sexp_of_bytes = (Bytes.sexp_of_t : bytes -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (bytes_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (bytes_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Bytes.t" ]
       ; ggid = "\015\153L1\012\241\015\252\150\000\191\127Jb#3"
       ; types = [ "bytes", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Bytes.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (bytes_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (bytes_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("bytes", _the_group)
     in
     bytes_sexp_grammar
@@ -743,21 +743,21 @@ module Export = struct
   let unit_of_sexp = (Unit.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> unit)
   let sexp_of_unit = (Unit.sexp_of_t : unit -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (unit_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Grammar.generic_group) =
+  let (unit_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
       { implicit_vars = [ "Unit.t" ]
       ; ggid = "=\005 \134\187\"64\197S\19256,\031l"
       ; types = [ "unit", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ Unit.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
     in
-    let (unit_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t) =
+    let (unit_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
       Ref ("unit", _the_group)
     in
     unit_sexp_grammar

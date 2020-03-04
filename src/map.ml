@@ -2435,14 +2435,14 @@ let m__t_of_sexp
   Using_comparator.t_of_sexp_direct ~comparator:K.comparator K.t_of_sexp v_of_sexp sexp
 ;;
 
-let m__t_sexp_grammar : Sexp.Grammar.t =
+let m__t_sexp_grammar : Sexp.Raw_grammar.t =
   Inline
     (Explicit_bind
        ( [ "'k"; "'v" ]
        , Apply
-           ( Grammar Ppx_sexp_conv_lib.Sexp.Grammar.Builtin.list_sexp_grammar
+           ( Grammar Ppx_sexp_conv_lib.Sexp.Raw_grammar.Builtin.list_sexp_grammar
            , [ Apply
-                 ( Grammar Ppx_sexp_conv_lib.Sexp.Grammar.tuple2_sexp_grammar
+                 ( Grammar Ppx_sexp_conv_lib.Sexp.Raw_grammar.tuple2_sexp_grammar
                  , [ Explicit_var 0; Explicit_var 1 ] )
              ] ) ))
 ;;

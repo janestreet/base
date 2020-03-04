@@ -62,7 +62,7 @@ module type S_common = sig
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
-  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t
+  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t
 
   [@@@end]
 

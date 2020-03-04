@@ -10,7 +10,7 @@ open! Import
 
 type t = float [@@deriving_inline sexp_grammar]
 
-val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Grammar.t
+val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t
 
 [@@@end]
 

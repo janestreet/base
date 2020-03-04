@@ -1796,7 +1796,7 @@ module type For_deriving = sig
     -> Sexp.t
     -> ('k, 'v, 'cmp) t
 
-  val m__t_sexp_grammar : Sexp.Grammar.t
+  val m__t_sexp_grammar : Sexp.Raw_grammar.t
 
   val compare_m__t
     :  (module Compare_m)
