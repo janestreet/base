@@ -33,6 +33,15 @@ val set_temporarily : 'a t -> 'a -> f:(unit -> 'b) -> 'b
 
 module And_value : sig
   type t = T : 'a ref * 'a -> t [@@deriving sexp_of]
+
+  (** [set (T (r, x))] is equivalent to [r := x]. *)
+  val set : t -> unit
+
+  (** [sets ts = List.iter ts ~f:set] *)
+  val sets : t list -> unit
+
+  (** [snapshot (T (r, _))] returns [T (r, !r)]. *)
+  val snapshot : t -> t
 end
 
 (** [sets_temporarily [ ...; T (ti, ai); ... ] ~f] sets each [ti] to [ai], calls [f ()],
