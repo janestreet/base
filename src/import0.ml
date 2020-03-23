@@ -101,6 +101,8 @@ module Caml = struct
 
   module Scanf = Caml.Scanf (** @canonical Caml.Scanf *)
 
+  module Seq = Caml.Seq (** @canonical Caml.Seq *)
+
   module Set = Caml.MoreLabels.Set (** @canonical Caml.MoreLabels.Set *)
 
   module Stack = Caml.Stack (** @canonical Caml.Stack *)

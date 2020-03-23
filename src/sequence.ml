@@ -1108,6 +1108,23 @@ let interleaved_cartesian_product s1 s2 =
   map s1 ~f:(fun x1 -> map s2 ~f:(fun x2 -> x1, x2)) |> interleave
 ;;
 
+let of_seq (seq : _ Caml.Seq.t) =
+  unfold_step ~init:seq ~f:(fun seq ->
+    match seq () with
+    | Nil -> Done
+    | Cons (hd, tl) -> Yield (hd, tl))
+;;
+
+let to_seq (Sequence (state, next)) =
+  let rec loop state =
+    match next state with
+    | Done -> Caml.Seq.Nil
+    | Skip state -> loop state
+    | Yield (hd, state) -> Caml.Seq.Cons (hd, fun () -> loop state)
+  in
+  fun () -> loop state
+;;
+
 module Generator = struct
   type 'elt steps = Wrap of ('elt, unit -> 'elt steps) Step.t
 

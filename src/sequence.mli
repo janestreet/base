@@ -408,6 +408,9 @@ val bounded_length : _ t -> at_most:int -> [ `Is of int | `Greater ]
     through only as much of the sequence as necessary. *)
 val length_is_bounded_by : ?min:int -> ?max:int -> _ t -> bool
 
+val of_seq : 'a Caml.Seq.t -> 'a t
+val to_seq : 'a t -> 'a Caml.Seq.t
+
 (** [Generator] is a monadic interface to generate sequences in a direct style, similar to
     Python's generators.
 
