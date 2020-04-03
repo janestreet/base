@@ -206,7 +206,7 @@ module Id : sig
   (** [create ~name] defines a new type identity.  Two calls to [create] will result in
       two distinct identifiers, even for the same arguments with the same type.  If the
       type ['a] doesn't support sexp conversion, then a good practice is to have the
-      converter be [<:sexp_of< _ >>], (or [sexp_of_opaque], if not using pa_sexp). *)
+      converter be [[%sexp_of: _]], (or [sexp_of_opaque], if not using ppx_sexp_conv). *)
   val create : name:string -> ('a -> Sexp.t) -> 'a t
 
   (** Accessors *)
