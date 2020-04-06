@@ -336,6 +336,22 @@ module type Int_without_module_types = sig
   val of_int64_trunc : int64 -> t
   val of_nativeint_trunc : nativeint -> t
 
+  (** {2 Byte swap operations}
+
+      Byte swap operations reverse the order of bytes in an integer. For
+      example, {!Int32.bswap32} reorders the bottom 32 bits (or 4 bytes),
+      turning [0x1122_3344] to [0x4433_2211]. Byte swap functions exposed by
+      Base use OCaml primitives to generate assembly instructions to perform
+      the relevant byte swaps.
+
+      For a more extensive list of byteswap functions, see {!Int32} and
+      {!Int64}.
+  *)
+
+  (** Byte swaps bottom 16 bits (2 bytes). The values of the remaining bytes
+      are undefined. *)
+  val bswap16 : t -> t
+
   (**/**)
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:

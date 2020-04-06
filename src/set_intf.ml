@@ -47,6 +47,7 @@ module type Accessors_generic = sig
   val compare_direct : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> int) options
   val equal : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) options
   val is_subset : ('a, 'cmp, ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool) options
+  val are_disjoint : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) options
 
   type ('a, 'cmp) named
 
@@ -173,6 +174,7 @@ module type Accessors0 = sig
   val compare_direct : t -> t -> int
   val equal : t -> t -> bool
   val is_subset : t -> of_:t -> bool
+  val are_disjoint : t -> t -> bool
 
   type named
 
@@ -264,6 +266,7 @@ module type Accessors1 = sig
   val compare_direct : 'a t -> 'a t -> int
   val equal : 'a t -> 'a t -> bool
   val is_subset : 'a t -> of_:'a t -> bool
+  val are_disjoint : 'a t -> 'a t -> bool
 
   type 'a named
 
@@ -354,6 +357,7 @@ module type Accessors2 = sig
   val compare_direct : ('a, 'cmp) t -> ('a, 'cmp) t -> int
   val equal : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
   val is_subset : ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool
+  val are_disjoint : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
 
   type ('a, 'cmp) named
 
@@ -474,6 +478,12 @@ module type Accessors2_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'cmp) t
     -> of_:('a, 'cmp) t
+    -> bool
+
+  val are_disjoint
+    :  comparator:('a, 'cmp) Comparator.t
+    -> ('a, 'cmp) t
+    -> ('a, 'cmp) t
     -> bool
 
   type ('a, 'cmp) named
@@ -1147,6 +1157,10 @@ module type Set = sig
 
   (** [is_subset t1 ~of_:t2] returns true iff [t1] is a subset of [t2]. *)
   val is_subset : ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool
+
+  (** [are_disjoint t1 t2] returns [true] iff [is_empty (inter t1 t2)], but is more
+      efficient. *)
+  val are_disjoint : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
 
   (** [Named] allows the validation of subset and equality relationships between sets.  A
       [Named.t] is a record of a set and a name, where the name is used in error messages,

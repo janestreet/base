@@ -163,6 +163,10 @@ let to_nativeint_exn = to_nativeint
 let pow b e = of_int_exn (Int_math.Private.int_pow (to_int_exn b) (to_int_exn e))
 let ( ** ) b e = pow b e
 
+external bswap32 : t -> t = "%bswap_int32"
+
+let bswap16 x = Caml.Int32.shift_right_logical (bswap32 x) 16
+
 module Pow2 = struct
   open! Import
   open Int32_replace_polymorphic_compare

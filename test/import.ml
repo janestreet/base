@@ -45,3 +45,5 @@ let check_int_hash_coherence (type t) here (module I : Int_hash with type t = t)
     (module I)
     [ I.min_value; I.of_int_exn 0; I.of_int_exn 37; I.max_value ]
 ;;
+
+let test_conversion ~to_string f x = printf "%s --> %s\n" (to_string x) (to_string (f x))

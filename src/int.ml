@@ -298,6 +298,8 @@ module O = struct
 
   include F
 
+  external bswap16 : int -> int = "%bswap16"
+
   (* These inlined versions of (%), (/%), and (//) perform better than their functorized
      counterparts in [F] (see benchmarks below).
 

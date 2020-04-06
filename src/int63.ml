@@ -70,6 +70,9 @@ module Backend = struct
     val to_nativeint_trunc : t -> nativeint
     val of_float_unchecked : float -> t
     val repr : (t, t) Int63_emul.Repr.t
+    val bswap16 : t -> t
+    val bswap32 : t -> t
+    val bswap48 : t -> t
   end
   with type t := t
 
@@ -84,6 +87,8 @@ module Backend = struct
     let to_nativeint_trunc x = to_nativeint x
     let to_nativeint x = Some (to_nativeint x)
     let repr = Int63_emul.Repr.Int
+    let bswap32 t = Int64.to_int_trunc (Int64.bswap32 (Int64.of_int t))
+    let bswap48 t = Int64.to_int_trunc (Int64.bswap48 (Int64.of_int t))
   end
 
   let impl : (module S) =

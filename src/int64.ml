@@ -84,6 +84,20 @@ let of_float f =
 
 let ( ** ) b e = pow b e
 
+external bswap64 : t -> t = "%bswap_int64"
+
+let[@inline always] bswap16 x = Caml.Int64.shift_right_logical (bswap64 x) 48
+
+let[@inline always] bswap32 x =
+  (* This is strictly better than coercing to an int32 to perform byteswap. Coercing
+     from an int32 will add unnecessary shift operations to sign extend the number
+     appropriately.
+  *)
+  Caml.Int64.shift_right_logical (bswap64 x) 32
+;;
+
+let[@inline always] bswap48 x = Caml.Int64.shift_right_logical (bswap64 x) 16
+
 include Comparable.Validate_with_zero (struct
     include T
 

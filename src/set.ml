@@ -779,6 +779,17 @@ module Tree0 = struct
     is_subset s1 ~of_:s2
   ;;
 
+  let rec are_disjoint s1 s2 ~compare_elt =
+    match s1, s2 with
+    | Empty, _ | _, Empty -> true
+    | Leaf elt, other_set | other_set, Leaf elt -> not (mem other_set elt ~compare_elt)
+    | Node (l1, v1, r1, _, _), t2 ->
+      (match split t2 v1 ~compare_elt with
+       | l2, None, r2 ->
+         are_disjoint l1 l2 ~compare_elt && are_disjoint r1 r2 ~compare_elt
+       | _, Some _, _ -> false)
+  ;;
+
   let iter t ~f =
     let rec iter = function
       | Empty -> ()
@@ -1113,6 +1124,10 @@ module Accessors = struct
     Tree0.is_subset t.tree ~of_:of_.tree ~compare_elt:(compare_elt t)
   ;;
 
+  let are_disjoint t1 t2 =
+    Tree0.are_disjoint t1.tree t2.tree ~compare_elt:(compare_elt t1)
+  ;;
+
   module Named = struct
     type nonrec ('a, 'cmp) t =
       { set : ('a, 'cmp) t
@@ -1243,6 +1258,11 @@ module Tree = struct
   let compare_direct ~comparator t1 t2 = Tree0.compare (ce comparator) t1 t2
   let equal ~comparator t1 t2 = Tree0.equal t1 t2 ~compare_elt:(ce comparator)
   let is_subset ~comparator t ~of_ = Tree0.is_subset t ~of_ ~compare_elt:(ce comparator)
+
+  let are_disjoint ~comparator t1 t2 =
+    Tree0.are_disjoint t1 t2 ~compare_elt:(ce comparator)
+  ;;
+
   let of_list ~comparator l = Tree0.of_list l ~compare_elt:(ce comparator)
   let of_array ~comparator a = Tree0.of_array a ~compare_elt:(ce comparator)
 
