@@ -140,6 +140,12 @@ module Search_pattern : sig
       length [length pattern].  All inputs are valid. *)
   val create : ?case_sensitive:bool (** default = true *) -> string -> t
 
+  (** [pattern t] returns the string pattern used to create [t]. *)
+  val pattern : t -> string
+
+  (** [case_sensitive t] returns whether [t] matches strings case-sensitively. *)
+  val case_sensitive : t -> bool
+
   (** [matches pat str] returns true if [str] matches [pat] *)
   val matches : t -> string -> bool
 

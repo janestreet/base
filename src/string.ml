@@ -188,6 +188,9 @@ module Search_pattern0 = struct
       ]
   ;;
 
+  let pattern t = t.pattern
+  let case_sensitive t = t.case_sensitive
+
   (* Find max number of matched characters at [next_text_char], given the current
      [matched_chars]. Try to extend the current match, if chars don't match, try to match
      fewer chars. If chars match then extend the match. *)
