@@ -948,6 +948,10 @@ let chop_prefix s ~prefix =
   if is_prefix s ~prefix then Some (drop_prefix s (length prefix)) else None
 ;;
 
+let chop_prefix_if_exists s ~prefix =
+  if is_prefix s ~prefix then drop_prefix s (length prefix) else s
+;;
+
 let chop_prefix_exn s ~prefix =
   match chop_prefix s ~prefix with
   | Some str -> str
@@ -957,6 +961,10 @@ let chop_prefix_exn s ~prefix =
 
 let chop_suffix s ~suffix =
   if is_suffix s ~suffix then Some (drop_suffix s (length suffix)) else None
+;;
+
+let chop_suffix_if_exists s ~suffix =
+  if is_suffix s ~suffix then drop_suffix s (length suffix) else s
 ;;
 
 let chop_suffix_exn s ~suffix =

@@ -332,6 +332,20 @@ val chop_prefix_exn : t -> prefix:t -> t
 val chop_suffix : t -> suffix:t -> t option
 val chop_prefix : t -> prefix:t -> t option
 
+(** [chop_suffix_if_exists s ~suffix] returns [s] without the trailing [suffix], or just
+    [s] if [suffix] isn't a suffix of [s].
+
+    Equivalent to [chop_suffix s ~suffix |> Option.value ~default:s], but avoids
+    allocating the intermediate option. *)
+val chop_suffix_if_exists : t -> suffix:t -> t
+
+(** [chop_prefix_if_exists s ~prefix] returns [s] without the leading [prefix], or just
+    [s] if [prefix] isn't a prefix of [s].
+
+    Equivalent to [chop_prefix s ~prefix |> Option.value ~default:s], but avoids
+    allocating the intermediate option. *)
+val chop_prefix_if_exists : t -> prefix:t -> t
+
 (** [suffix s n] returns the longest suffix of [s] of length less than or equal to [n]. *)
 val suffix : t -> int -> t
 

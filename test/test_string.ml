@@ -683,6 +683,26 @@ let%expect_test "is_substring_at" =
       "String.is_substring_at: invalid index -1 for string of length 26")) |}]
 ;;
 
+let%expect_test "chopping prefixes and suffixes" =
+  let s = "__x__" in
+  print_s [%sexp (String.chop_suffix s ~suffix:"__" : string option)];
+  [%expect {| (__x) |}];
+  print_s [%sexp (String.chop_prefix s ~prefix:"__" : string option)];
+  [%expect {| (x__) |}];
+  print_s [%sexp (String.chop_suffix s ~suffix:"==" : string option)];
+  [%expect {| () |}];
+  print_s [%sexp (String.chop_prefix s ~prefix:"==" : string option)];
+  [%expect {| () |}];
+  print_endline (String.chop_suffix_if_exists s ~suffix:"__");
+  [%expect {| __x |}];
+  print_endline (String.chop_prefix_if_exists s ~prefix:"__");
+  [%expect {| x__ |}];
+  print_endline (String.chop_suffix_if_exists s ~suffix:"==");
+  [%expect {| __x__ |}];
+  print_endline (String.chop_prefix_if_exists s ~prefix:"==");
+  [%expect {| __x__ |}]
+;;
+
 let%test_module "functions that raise Not_found_s" =
   (module struct
     let show f sexp_of_ok = print_s [%sexp (Result.try_with f : (ok, exn) Result.t)]
