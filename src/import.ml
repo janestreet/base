@@ -1,6 +1,6 @@
 include Import0
 include Sexplib0.Sexp_conv
-include Sexp.Raw_grammar.Builtin
+include Sexp.Private.Raw_grammar.Builtin
 include Hash.Builtin
 include Ppx_compare_lib.Builtin
 include Int_replace_polymorphic_compare

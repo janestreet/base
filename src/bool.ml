@@ -19,21 +19,21 @@ module T = struct
   let t_of_sexp = (bool_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_bool : t -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
       { implicit_vars = [ "bool" ]
       ; ggid = "\146e\023\249\235eE\139c\132W\195\137\129\235\025"
       ; types = [ "t", Implicit_var 0 ]
       }
     in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
       ; apply_implicit = [ bool_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "bool.ml.T"
       }
     in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
+    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
       Ref ("t", _the_group)
     in
     t_sexp_grammar

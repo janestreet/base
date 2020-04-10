@@ -14,21 +14,23 @@ let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_li
   sexp_of_array
 ;;
 
-let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) =
-  let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.generic_group) =
+let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+  let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
     { implicit_vars = [ "array" ]
     ; ggid = "j\132);\135qH\158\135\222H\001\007\004\158\218"
     ; types = [ "t", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
     }
   in
-  let (_the_group : Ppx_sexp_conv_lib.Sexp.Raw_grammar.group) =
+  let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
     { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
     ; apply_implicit = [ array_sexp_grammar ]
     ; generic_group = _the_generic_group
     ; origin = "array.ml"
     }
   in
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t) = Ref ("t", _the_group) in
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    Ref ("t", _the_group)
+  in
   t_sexp_grammar
 ;;
 

@@ -11,7 +11,7 @@ val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
 include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
 
-val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Raw_grammar.t
+val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
 [@@@end]
 

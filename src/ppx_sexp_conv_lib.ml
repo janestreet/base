@@ -1,5 +1,5 @@
 include Sexplib
-module Lazy_group_id = Sexplib0.Lazy_group_id
+module Lazy_group_id = Sexplib0.Private.Lazy_group_id
 
 module Option = struct
   type 'a t = 'a option =
