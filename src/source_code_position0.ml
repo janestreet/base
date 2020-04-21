@@ -64,30 +64,40 @@ module T = struct
        and extra = ref [] in
        let rec iter = function
          | Ppx_sexp_conv_lib.Sexp.List
-             [ Ppx_sexp_conv_lib.Sexp.Atom field_name; _field_sexp ]
+             (Ppx_sexp_conv_lib.Sexp.Atom field_name :: (([] | [ _ ]) as _field_sexps))
            :: tail ->
+           let _field_sexp () =
+             match _field_sexps with
+             | [ x ] -> x
+             | [] -> Ppx_sexp_conv_lib.Conv_error.record_only_pairs_expected _tp_loc sexp
+             | _ -> assert false
+           in
            (match field_name with
             | "pos_fname" ->
               (match !pos_fname_field with
                | Ppx_sexp_conv_lib.Option.None ->
+                 let _field_sexp = _field_sexp () in
                  let fvalue = string_of_sexp _field_sexp in
                  pos_fname_field := Ppx_sexp_conv_lib.Option.Some fvalue
                | Ppx_sexp_conv_lib.Option.Some _ -> duplicates := field_name :: !duplicates)
             | "pos_lnum" ->
               (match !pos_lnum_field with
                | Ppx_sexp_conv_lib.Option.None ->
+                 let _field_sexp = _field_sexp () in
                  let fvalue = int_of_sexp _field_sexp in
                  pos_lnum_field := Ppx_sexp_conv_lib.Option.Some fvalue
                | Ppx_sexp_conv_lib.Option.Some _ -> duplicates := field_name :: !duplicates)
             | "pos_bol" ->
               (match !pos_bol_field with
                | Ppx_sexp_conv_lib.Option.None ->
+                 let _field_sexp = _field_sexp () in
                  let fvalue = int_of_sexp _field_sexp in
                  pos_bol_field := Ppx_sexp_conv_lib.Option.Some fvalue
                | Ppx_sexp_conv_lib.Option.Some _ -> duplicates := field_name :: !duplicates)
             | "pos_cnum" ->
               (match !pos_cnum_field with
                | Ppx_sexp_conv_lib.Option.None ->
+                 let _field_sexp = _field_sexp () in
                  let fvalue = int_of_sexp _field_sexp in
                  pos_cnum_field := Ppx_sexp_conv_lib.Option.Some fvalue
                | Ppx_sexp_conv_lib.Option.Some _ -> duplicates := field_name :: !duplicates)
@@ -95,13 +105,6 @@ module T = struct
               if !Ppx_sexp_conv_lib.Conv.record_check_extra_fields
               then extra := field_name :: !extra
               else ());
-           iter tail
-         | Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom field_name ] :: tail
-           ->
-           (let _ = field_name in
-            if !Ppx_sexp_conv_lib.Conv.record_check_extra_fields
-            then extra := field_name :: !extra
-            else ());
            iter tail
          | ((Ppx_sexp_conv_lib.Sexp.Atom _ | Ppx_sexp_conv_lib.Sexp.List _) as sexp) :: _
            -> Ppx_sexp_conv_lib.Conv_error.record_only_pairs_expected _tp_loc sexp

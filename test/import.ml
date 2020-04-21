@@ -3,7 +3,7 @@ include Stdio
 include Base_for_tests
 include Base_test_helpers
 include Base_quickcheck.Export
-include Expect_test_helpers_kernel
+include Expect_test_helpers_core
 
 module Core_kernel = struct end
 [@@deprecated "[since 1970-01] Don't use Core_kernel in Base tests. Use Base."]
