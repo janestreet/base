@@ -226,6 +226,14 @@ val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
     version will raise if the two lists have different lengths. *)
 val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 
+(**
+    Example:
+
+    {[
+      let summed_list =
+        match List.map2 [ 1; 2; 3 ] [ 4; 5; 6 ] ~f:(+) with
+        | List.Or_unequal_lengths.Ok l -> l
+        | List.Or_unequal_lengths.Unequal_lengths -> [] ]} *)
 val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t Or_unequal_lengths.t
 
 (** Analogous to [rev_map2]. *)
