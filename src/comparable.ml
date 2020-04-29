@@ -135,6 +135,36 @@ let not_equal cmp a b = cmp a b <> 0
 let min cmp t t' = if leq cmp t t' then t else t'
 let max cmp t t' = if geq cmp t t' then t else t'
 
+module Infix (T : sig
+    type t [@@deriving_inline compare]
+
+    val compare : t -> t -> int
+
+    [@@@end]
+  end) : Infix with type t := T.t = struct
+  let ( > ) a b = gt T.compare a b
+  let ( < ) a b = lt T.compare a b
+  let ( >= ) a b = geq T.compare a b
+  let ( <= ) a b = leq T.compare a b
+  let ( = ) a b = equal T.compare a b
+  let ( <> ) a b = not_equal T.compare a b
+end
+
+module Polymorphic_compare (T : sig
+    type t [@@deriving_inline compare]
+
+    val compare : t -> t -> int
+
+    [@@@end]
+  end) : Polymorphic_compare with type t := T.t = struct
+  include Infix (T)
+
+  let compare = T.compare
+  let equal = ( = )
+  let min t t' = min compare t t'
+  let max t t' = max compare t t'
+end
+
 module Make_using_comparator (T : sig
     type t [@@deriving_inline sexp_of]
 
@@ -151,25 +181,8 @@ module Make_using_comparator (T : sig
   end
 
   include T
-
-  module Replace_polymorphic_compare = struct
-    module Without_squelch = struct
-      let compare = T.compare
-      let ( > ) a b = gt compare a b
-      let ( < ) a b = lt compare a b
-      let ( >= ) a b = geq compare a b
-      let ( <= ) a b = leq compare a b
-      let ( = ) a b = equal compare a b
-      let ( <> ) a b = not_equal compare a b
-      let equal = ( = )
-      let min t t' = min compare t t'
-      let max t t' = max compare t t'
-    end
-
-    include Without_squelch
-  end
-
-  include Replace_polymorphic_compare.Without_squelch
+  module Replace_polymorphic_compare = Polymorphic_compare (T)
+  include Replace_polymorphic_compare
 
   let ascending = compare
   let descending t t' = compare t' t

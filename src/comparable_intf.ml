@@ -148,6 +148,25 @@ module type Comparable = sig
   val max : ('a -> 'a -> int) -> 'a -> 'a -> 'a
   val min : ('a -> 'a -> int) -> 'a -> 'a -> 'a
 
+  (** Derive [Infix] or [Polymorphic_compare] functions from just [[@@deriving compare]],
+      without need for the [sexp_of_t] required by [Make*] (see below). *)
+
+  module Infix (T : sig
+      type t [@@deriving_inline compare]
+
+      val compare : t -> t -> int
+
+      [@@@end]
+    end) : Infix with type t := T.t
+
+  module Polymorphic_compare (T : sig
+      type t [@@deriving_inline compare]
+
+      val compare : t -> t -> int
+
+      [@@@end]
+    end) : Polymorphic_compare with type t := T.t
+
   (** Inherit comparability from a component. *)
   module Inherit (C : sig
       type t [@@deriving_inline compare]
