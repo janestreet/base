@@ -17,7 +17,7 @@
    -apply=js_style,base_lint,type_conv,cold))
  (js_of_ocaml (javascript_files runtime.js)))
 
-(rule (targets mpopcnt.sexp) (deps discover/discover.exe)
+(rule (targets mpopcnt.sexp)
  (action (run ./discover/discover.exe -o %{targets})))
 
 (ocamllex hex_lexer)
