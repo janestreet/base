@@ -83,6 +83,12 @@ let iter a ~f =
   done
 ;;
 
+let iteri a ~f =
+  for i = 0 to length a - 1 do
+    f i (unsafe_get a i)
+  done
+;;
+
 let to_list t = List.init ~f:(get t) (length t)
 
 let of_list l =

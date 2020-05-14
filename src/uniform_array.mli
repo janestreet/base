@@ -38,6 +38,10 @@ val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
 val map : 'a t -> f:('a -> 'b) -> 'b t
 val iter : 'a t -> f:('a -> unit) -> unit
 
+(** Like {!iter}, but the function is applied to the index of the element as first
+    argument, and the element itself as second argument. *)
+val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
+
 (** [of_array] and [to_array] return fresh arrays with the same contents rather than
     returning a reference to the underlying array. *)
 val of_array : 'a array -> 'a t
