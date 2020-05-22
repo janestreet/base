@@ -463,19 +463,25 @@ let filter_mapi t ~f =
 let filter_map t ~f = filter_mapi t ~f:(fun _i a -> f a)
 let filter_opt t = filter_map t ~f:Fn.id
 
+let check_length2_exn name l1 l2 =
+  let n1 = length l1
+  and n2 = length l2 in
+  if n1 <> n2 then
+    raise (invalid_argf "length mismatch in %s: %d <> %d " name n1 n2 ())
+;;
+
 let iter2_exn t1 t2 ~f =
-  if length t1 <> length t2 then invalid_arg "Array.iter2_exn";
+  check_length2_exn "Array.iter2_exn" t1 t2;
   iteri t1 ~f:(fun i x1 -> f x1 t2.(i))
 ;;
 
 let map2_exn t1 t2 ~f =
-  let len = length t1 in
-  if length t2 <> len then invalid_arg "Array.map2_exn";
-  init len ~f:(fun i -> f t1.(i) t2.(i))
+  check_length2_exn "Array.map2_exn" t1 t2;
+  init (length t1) (fun i -> f t1.(i) t2.(i))
 ;;
 
 let fold2_exn t1 t2 ~init ~f =
-  if length t1 <> length t2 then invalid_arg "Array.fold2_exn";
+  check_length2_exn "Array.fold2_exn" t1 t2;
   foldi t1 ~init ~f:(fun i ac x -> f ac x t2.(i))
 ;;
 
@@ -516,18 +522,16 @@ let exists2_exn t1 t2 ~f =
   let rec exists2_exn_loop t1 t2 ~f i =
     if i < 0 then false else f t1.(i) t2.(i) || exists2_exn_loop t1 t2 ~f (i - 1)
   in
-  let len = length t1 in
-  if length t2 <> len then invalid_arg "Array.exists2_exn";
-  exists2_exn_loop t1 t2 ~f (len - 1)
+  check_length2_exn "Array.exists2_exn" t1 t2;
+  exists2_exn_loop t1 t2 ~f ((length t1) - 1)
 ;;
 
 let for_all2_exn t1 t2 ~f =
   let rec for_all2_loop t1 t2 ~f i =
     if i < 0 then true else f t1.(i) t2.(i) && for_all2_loop t1 t2 ~f (i - 1)
   in
-  let len = length t1 in
-  if length t2 <> len then invalid_arg "Array.for_all2_exn";
-  for_all2_loop t1 t2 ~f (len - 1)
+  check_length2_exn "Array.for_all2_exn" t1 t2;
+  for_all2_loop t1 t2 ~f ((length t1) - 1)
 ;;
 
 let equal equal t1 t2 = length t1 = length t2 && for_all2_exn t1 t2 ~f:equal
