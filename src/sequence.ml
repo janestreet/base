@@ -432,7 +432,7 @@ let nth s n =
 
 let nth_exn s n =
   if n < 0
-  then raise (Invalid_argument "Sequence.nth")
+  then invalid_arg "Sequence.nth"
   else (
     match nth s n with
     | None -> failwith "Sequence.nth"
@@ -675,7 +675,7 @@ let split_n s n =
 
 let chunks_exn t n =
   if n <= 0
-  then raise (Invalid_argument "Sequence.chunks_exn")
+  then invalid_arg "Sequence.chunks_exn"
   else
     unfold_step ~init:t ~f:(fun t ->
       match split_n t n with
@@ -948,7 +948,7 @@ let intersperse s ~sep =
 let repeat x = unfold_step ~init:x ~f:(fun x -> Yield (x, x))
 
 let cycle_list_exn xs =
-  if List.is_empty xs then raise (Invalid_argument "Sequence.cycle_list_exn");
+  if List.is_empty xs then invalid_arg "Sequence.cycle_list_exn";
   let s = of_list xs in
   concat_map ~f:(fun () -> s) (repeat ())
 ;;

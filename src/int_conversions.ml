@@ -331,7 +331,7 @@ struct
     let to_string_hum ?(delimiter = '_') t = to_string' t ~delimiter
 
     let invalid str =
-      failwith (Printf.sprintf "%s.of_string: invalid input %S" I.module_name str)
+      Printf.failwithf "%s.of_string: invalid input %S" I.module_name str ()
     ;;
 
     let of_string_with_delimiter str =

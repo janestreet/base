@@ -168,7 +168,7 @@ let unordered_append l1 l2 =
 let check_length2_exn name l1 l2 =
   let n1 = length l1 in
   let n2 = length l2 in
-  if n1 <> n2 then raise (invalid_argf "length mismatch in %s: %d <> %d " name n1 n2 ())
+  if n1 <> n2 then invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
 ;;
 
 let check_length3_exn name l1 l2 l3 =
@@ -176,9 +176,7 @@ let check_length3_exn name l1 l2 l3 =
   let n2 = length l2 in
   let n3 = length l3 in
   if n1 <> n2 || n2 <> n3
-  then
-    raise
-      (invalid_argf "length mismatch in %s: %d <> %d || %d <> %d" name n1 n2 n2 n3 ())
+  then invalid_argf "length mismatch in %s: %d <> %d || %d <> %d" name n1 n2 n2 n3 ()
 ;;
 
 let check_length2 l1 l2 ~f =
@@ -564,7 +562,7 @@ let reduce l ~f =
 
 let reduce_exn l ~f =
   match reduce l ~f with
-  | None -> raise (Invalid_argument "List.reduce_exn")
+  | None -> invalid_arg "List.reduce_exn"
   | Some v -> v
 ;;
 
@@ -610,7 +608,7 @@ let reduce_balanced l ~f =
 
 let reduce_balanced_exn l ~f =
   match reduce_balanced l ~f with
-  | None -> raise (Invalid_argument "List.reduce_balanced_exn")
+  | None -> invalid_arg "List.reduce_balanced_exn"
   | Some v -> v
 ;;
 
@@ -688,7 +686,7 @@ let rec last_exn list =
   match list with
   | [ x ] -> x
   | _ :: tl -> last_exn tl
-  | [] -> raise (Invalid_argument "List.last")
+  | [] -> invalid_arg "List.last"
 ;;
 
 (** optionally returns final element of list *)

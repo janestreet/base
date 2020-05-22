@@ -388,7 +388,7 @@ let%test_unit _ =
 
 let%expect_test _ =
   show_raise (fun () -> zip_exn [ 1 ] [ 4; 5; 6 ]);
-  [%expect {| (raised (Invalid_argument "length mismatch in zip_exn: 1 <> 3 ")) |}]
+  [%expect {| (raised (Invalid_argument "length mismatch in zip_exn: 1 <> 3")) |}]
 ;;
 
 let%test_unit _ =

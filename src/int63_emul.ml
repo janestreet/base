@@ -226,7 +226,7 @@ module T = struct
   (* We don't expect [hash] to follow the behavior of int in 64bit architecture *)
   let _ = hash
   let hash (x : t) = Caml.Hashtbl.hash x
-  let invalid_str x = failwith (Printf.sprintf "Int63.of_string: invalid input %S" x)
+  let invalid_str x = Printf.failwithf "Int63.of_string: invalid input %S" x ()
 
   (*
      "sign" refers to whether the number starts with a '-'

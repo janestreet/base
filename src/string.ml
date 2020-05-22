@@ -955,8 +955,7 @@ let chop_prefix_if_exists s ~prefix =
 let chop_prefix_exn s ~prefix =
   match chop_prefix s ~prefix with
   | Some str -> str
-  | None ->
-    raise (Invalid_argument (Printf.sprintf "String.chop_prefix_exn %S %S" s prefix))
+  | None -> invalid_argf "String.chop_prefix_exn %S %S" s prefix ()
 ;;
 
 let chop_suffix s ~suffix =
@@ -970,8 +969,7 @@ let chop_suffix_if_exists s ~suffix =
 let chop_suffix_exn s ~suffix =
   match chop_suffix s ~suffix with
   | Some str -> str
-  | None ->
-    raise (Invalid_argument (Printf.sprintf "String.chop_suffix_exn %S %S" s suffix))
+  | None -> invalid_argf "String.chop_suffix_exn %S %S" s suffix ()
 ;;
 
 (* There used to be a custom implementation that was faster for very short strings
