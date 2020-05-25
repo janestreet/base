@@ -501,23 +501,6 @@ let create_mapped ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
   | keys -> `Duplicate_keys (List.dedup_and_sort ~compare:hashable.Hashable.compare keys)
 ;;
 
-(*
-   {[
-     let create_mapped_exn ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
-       let size = match size with Some s -> s | None -> List.length rows in
-       let res = create ?growth_allowed ~size ~hashable () in
-       List.iter rows ~f:(fun r ->
-         let key = get_key r in
-         let data = get_data r in
-         if mem res key then
-           let sexp_of_key = hashable.Hashable.sexp_of_t in
-           failwiths "Hashtbl.create_mapped_exn: duplicate key" key <:sexp_of< key >>
-         else
-           replace res ~key ~data);
-       res
-     ;;
-   ]} *)
-
 let create_mapped_multi ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
   let size =
     match size with
