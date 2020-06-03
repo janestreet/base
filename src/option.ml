@@ -136,6 +136,12 @@ let value_exn ?here ?error ?message t =
     Error.raise error
 ;;
 
+let value_lazy t ~default =
+  match t with
+  | None -> Lazy.force default
+  | Some x -> x
+
+
 let to_array t =
   match t with
   | None -> [||]

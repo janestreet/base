@@ -60,6 +60,11 @@ val value_exn
   -> 'a t
   -> 'a
 
+(** [value_lazy None ~default] = [Lazy.force default]
+
+    [value_lazy (Some x) ~default] = [x] *)
+val value_lazy : 'a t -> default:'a Lazy.t -> 'a
+
 val some : 'a -> 'a t
 val both : 'a t -> 'b t -> ('a * 'b) t
 val first_some : 'a t -> 'a t -> 'a t
