@@ -96,12 +96,6 @@ let iter o ~f =
 
 let invariant f t = iter t ~f
 
-let map2 o1 o2 ~f =
-  match o1, o2 with
-  | Some a1, Some a2 -> Some (f a1 a2)
-  | _ -> None
-;;
-
 let call x ~f =
   match f with
   | None -> ()
@@ -152,9 +146,7 @@ let min_elt t ~compare:_ = t
 let max_elt t ~compare:_ = t
 
 let sum (type a) (module M : Container.Summable with type t = a) t ~f =
-  match t with
-  | None -> M.zero
-  | Some x -> f x
+  value_map t ~default:M.zero ~f
 ;;
 
 let for_all t ~f =
@@ -216,12 +208,6 @@ let equal f t t' =
 
 let some x = Some x
 
-let both x y =
-  match x, y with
-  | Some a, Some b -> Some (a, b)
-  | _ -> None
-;;
-
 let first_some x y =
   match x with
   | Some _ -> x
@@ -254,25 +240,34 @@ let try_with_join f =
   | exception _ -> None
 ;;
 
-include Monad.Make (struct
-    type 'a t = 'a option
+let map t ~f =
+  match t with
+  | None -> None
+  | Some a -> Some (f a)
+;;
 
-    let return x = Some x
+let apply f x =
+  match f with
+  | None -> None
+  | Some f -> map ~f x
+;;
 
-    let map t ~f =
-      match t with
-      | None -> None
-      | Some a -> Some (f a)
-    ;;
+module Monad_arg = struct
+  type 'a t = 'a option
 
-    let map = `Custom map
+  let return x = Some x
+  let apply = apply
+  let map = `Custom map
 
-    let bind o ~f =
-      match o with
-      | None -> None
-      | Some x -> f x
-    ;;
-  end)
+  let bind o ~f =
+    match o with
+    | None -> None
+    | Some x -> f x
+  ;;
+end
+
+include Monad.Make (Monad_arg)
+include Applicative.Make (Monad_arg)
 
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
