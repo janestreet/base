@@ -570,7 +570,6 @@ let t_of_sexp ~hashable k_of_sexp d_of_sexp sexp =
     assert false
 ;;
 
-let validate ~name f t = Validate.alist ~name f (to_alist t)
 let keys t = fold t ~init:[] ~f:(fun ~key ~data:_ acc -> key :: acc)
 let data t = fold ~f:(fun ~key:_ ~data list -> data :: list) ~init:[] t
 
@@ -747,7 +746,6 @@ module Accessors = struct
   let findi_and_call2 = findi_and_call2
   let find_and_remove = find_and_remove
   let to_alist = to_alist
-  let validate = validate
   let merge = merge
   let merge_into = merge_into
   let keys = keys

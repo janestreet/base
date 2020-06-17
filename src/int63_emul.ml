@@ -346,7 +346,7 @@ let of_int64_exn = of_int64_exn
 let of_int64_trunc = of_int64_trunc
 let to_int64 = to_int64
 
-include Comparable.Validate_with_zero (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero

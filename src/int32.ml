@@ -82,7 +82,7 @@ let of_float f =
       ()
 ;;
 
-include Comparable.Validate_with_zero (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero

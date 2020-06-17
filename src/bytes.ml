@@ -47,7 +47,6 @@ module To_bytes = Blit.Make (struct
 
 include To_bytes
 include Comparator.Make (T)
-include Comparable.Validate (T)
 include Pretty_printer.Register_pp (T)
 
 (* Open replace_polymorphic_compare after including functor instantiations so they do not

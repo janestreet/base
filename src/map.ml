@@ -1754,8 +1754,6 @@ module Accessors = struct
   let keys t = Tree0.keys t.tree
   let data t = Tree0.data t.tree
   let to_alist ?key_order t = Tree0.to_alist ?key_order t.tree
-  let validate ~name f t = Validate.alist ~name f (to_alist t)
-  let validatei ~name f t = Validate.list ~name:(Fn.compose name fst) f (to_alist t)
 
   let symmetric_diff t1 t2 ~data_equal =
     Tree0.symmetric_diff t1.tree t2.tree ~compare_key:(compare_key t1) ~data_equal
@@ -2109,8 +2107,6 @@ module Tree = struct
   let keys t = Tree0.keys t
   let data t = Tree0.data t
   let to_alist ?key_order t = Tree0.to_alist ?key_order t
-  let validate ~name f t = Validate.alist ~name f (to_alist t)
-  let validatei ~name f t = Validate.list ~name:(Fn.compose name fst) f (to_alist t)
 
   let symmetric_diff ~comparator t1 t2 ~data_equal =
     Tree0.symmetric_diff t1 t2 ~compare_key:comparator.Comparator.compare ~data_equal

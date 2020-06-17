@@ -46,7 +46,7 @@ end
 include T
 include Comparator.Make (T)
 
-include Comparable.Validate_with_zero (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero

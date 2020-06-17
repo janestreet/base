@@ -72,7 +72,7 @@ let minus_one = -1
 include T
 include Comparator.Make (T)
 
-include Comparable.Validate_with_zero (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero
@@ -260,8 +260,6 @@ end
 
 include Pow2
 
-(* This is already defined by Comparable.Validate_with_zero, but Sign.of_int is
-   more direct. *)
 let sign = Sign.of_int
 let popcount = Popcount.int_popcount
 

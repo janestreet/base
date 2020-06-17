@@ -297,11 +297,6 @@ module type Accessors = sig
   (** Returns the list of all (key, data) pairs for given hashtable. *)
   val to_alist : ('a, 'b) t -> ('a key * 'b) list
 
-  val validate
-    :  name:('a key -> string)
-    -> 'b Validate.check
-    -> ('a, 'b) t Validate.check
-
 
   (** [remove_if_zero]'s default is [false]. *)
   val incr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit

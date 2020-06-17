@@ -952,39 +952,10 @@ module Terse = struct
   let of_string x = of_string x
 end
 
-let validate_ordinary t =
-  Validate.of_error_opt
-    (let module C = Class in
-     match classify t with
-     | C.Normal | C.Subnormal | C.Zero -> None
-     | C.Infinite -> Some "value is infinite"
-     | C.Nan -> Some "value is NaN")
-;;
-
-module V = struct
-  module ZZ = Comparable.Validate (T)
-
-  let validate_bound ~min ~max t =
-    Validate.first_failure (validate_ordinary t) (ZZ.validate_bound t ~min ~max)
-  ;;
-
-  let validate_lbound ~min t =
-    Validate.first_failure (validate_ordinary t) (ZZ.validate_lbound t ~min)
-  ;;
-
-  let validate_ubound ~max t =
-    Validate.first_failure (validate_ordinary t) (ZZ.validate_ubound t ~max)
-  ;;
-end
-
-include V
-
 include Comparable.With_zero (struct
     include T
 
     let zero = zero
-
-    include V
   end)
 
 (* These are partly here as a performance hack to avoid some boxing we're getting with

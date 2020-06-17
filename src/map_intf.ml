@@ -363,16 +363,6 @@ module type Accessors_generic = sig
     -> ('k, 'v, _) t
     -> ('k key * 'v) list
 
-  val validate
-    :  name:('k key -> string)
-    -> 'v Validate.check
-    -> ('k, 'v, _) t Validate.check
-
-  val validatei
-    :  name:('k key -> string)
-    -> ('k key * 'v) Validate.check
-    -> ('k, 'v, _) t Validate.check
-
   val merge
     : ( 'k
       , 'cmp
@@ -570,12 +560,6 @@ module type Accessors1 = sig
   val keys : _ t -> key list
   val data : 'a t -> 'a list
   val to_alist : ?key_order:[ `Increasing | `Decreasing ] -> 'a t -> (key * 'a) list
-  val validate : name:(key -> string) -> 'a Validate.check -> 'a t Validate.check
-
-  val validatei
-    :  name:(key -> string)
-    -> (key * 'a) Validate.check
-    -> 'a t Validate.check
 
   val merge
     :  'a t
@@ -743,12 +727,6 @@ module type Accessors2 = sig
   val keys : ('a, _) t -> 'a list
   val data : (_, 'b) t -> 'b list
   val to_alist : ?key_order:[ `Increasing | `Decreasing ] -> ('a, 'b) t -> ('a * 'b) list
-  val validate : name:('a -> string) -> 'b Validate.check -> ('a, 'b) t Validate.check
-
-  val validatei
-    :  name:('a -> string)
-    -> ('a * 'b) Validate.check
-    -> ('a, 'b) t Validate.check
 
   val merge
     :  ('a, 'b) t
@@ -927,13 +905,6 @@ module type Accessors3 = sig
     :  ?key_order:[ `Increasing | `Decreasing ]
     -> ('a, 'b, _) t
     -> ('a * 'b) list
-
-  val validate : name:('a -> string) -> 'b Validate.check -> ('a, 'b, _) t Validate.check
-
-  val validatei
-    :  name:('a -> string)
-    -> ('a * 'b) Validate.check
-    -> ('a, 'b, _) t Validate.check
 
   val merge
     :  ('a, 'b, 'cmp) t
@@ -1211,13 +1182,6 @@ module type Accessors3_with_comparator = sig
     :  ?key_order:[ `Increasing | `Decreasing ]
     -> ('a, 'b, _) t
     -> ('a * 'b) list
-
-  val validate : name:('a -> string) -> 'b Validate.check -> ('a, 'b, _) t Validate.check
-
-  val validatei
-    :  name:('a -> string)
-    -> ('a * 'b) Validate.check
-    -> ('a, 'b, _) t Validate.check
 
   val merge
     :  comparator:('a, 'cmp) Comparator.t
@@ -2217,13 +2181,6 @@ module type Map = sig
     :  ?key_order:[ `Increasing | `Decreasing ] (** default is [`Increasing] *)
     -> ('k, 'v, _) t
     -> ('k * 'v) list
-
-  val validate : name:('k -> string) -> 'v Validate.check -> ('k, 'v, _) t Validate.check
-
-  val validatei
-    :  name:('k -> string)
-    -> ('k * 'v) Validate.check
-    -> ('k, 'v, _) t Validate.check
 
   (** {2 Additional operations on maps} *)
 

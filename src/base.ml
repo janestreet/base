@@ -154,7 +154,6 @@ module Type_equal = Type_equal
 module Uniform_array = Uniform_array
 module Unit = Unit
 module Uchar = Uchar
-module Validate = Validate
 module Variant = Variant
 module With_return = With_return
 module Word_size = Word_size

@@ -98,7 +98,7 @@ let[@inline always] bswap32 x =
 
 let[@inline always] bswap48 x = Caml.Int64.shift_right_logical (bswap64 x) 16
 
-include Comparable.Validate_with_zero (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero

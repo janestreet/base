@@ -52,7 +52,6 @@ end
 
 include T
 include Comparator.Make (T)
-include Comparable.Validate (T)
 
 include Pretty_printer.Register (struct
     type nonrec t = t

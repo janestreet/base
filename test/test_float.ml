@@ -407,26 +407,6 @@ let%test_unit "sign_or_nan" =
 
 let%test_module _ =
   (module struct
-    let check v expect =
-      match Validate.result v, expect with
-      | Ok (), `Ok | Error _, `Error -> ()
-      | r, expect ->
-        raise_s [%message "mismatch" (r : unit Or_error.t) (expect : [ `Ok | `Error ])]
-    ;;
-
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) nan) `Error
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) infinity) `Error
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) neg_infinity) `Error
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) (-1.)) `Error
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) 0.) `Ok
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) 1.) `Ok
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) nan) `Error
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) infinity) `Error
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) neg_infinity) `Error
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) (-1.)) `Ok
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) 0.) `Ok
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) 1.) `Error
-
     (* Some of the following tests used to live in lib_test/core_float_test.ml. *)
 
     let () = Random.init 137

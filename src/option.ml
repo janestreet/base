@@ -271,10 +271,3 @@ include Applicative.Make (Monad_arg)
 
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
-
-let validate ~none ~some t =
-  let module V = Validate in
-  match t with
-  | None -> V.name "none" (V.protect none ())
-  | Some x -> V.name "some" (V.protect some x)
-;;

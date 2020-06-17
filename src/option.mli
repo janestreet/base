@@ -153,10 +153,6 @@ val is_none : 'a t -> bool
 (** [is_some t] returns true iff [t = Some x]. *)
 val is_some : 'a t -> bool
 
-(** {2 Validation} *)
-
-val validate : none:unit Validate.check -> some:'a Validate.check -> 'a t Validate.check
-
 (**/**)
 
 val is_empty : 'a t -> bool [@@deprecated "[since 2019-07] Use [is_none] instead"]

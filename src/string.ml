@@ -990,7 +990,6 @@ end
 let _ = hash
 
 include Hash
-include Comparable.Validate (T)
 
 (* for interactive top-levels -- modules deriving from String should have String's pretty
    printer. *)
