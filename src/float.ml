@@ -306,7 +306,7 @@ let round_nearest_ub = 2. ** 52.
    and it gets rounded up to [1.] due to the round-ties-to-even rule. *)
 let one_ulp_less_than_half = one_ulp `Down 0.5
 
-let add_half_for_round_nearest t =
+let[@ocaml.inline always] add_half_for_round_nearest t =
   t
   +.
   if t = one_ulp_less_than_half
@@ -508,7 +508,7 @@ let int63_round_down_exn t =
 ;;
 
 let int63_round_nearest_portable_alloc_exn t0 =
-  let t = round_nearest t0 in
+  let t = (round_nearest [@ocaml.inlined always]) t0 in
   if t > 0.
   then
     if t <= int63_round_ubound
