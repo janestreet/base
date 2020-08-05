@@ -342,9 +342,18 @@ let fold_left = fold
 let to_array = Array.of_list
 let to_list t = t
 
+let max_non_tailcall =
+  match Sys.backend_type with
+  | Sys.Native | Sys.Bytecode -> 1_000
+  (* We don't know the size of the stack, better be safe and assume it's small. This
+     number was taken from ocaml#stdlib/list.ml which is also equal to the default limit
+     of recursive call in the js_of_ocaml compiler before switching to trampoline. *)
+  | Sys.Other _ -> 50
+;;
+
 (** Tail recursive versions of standard [List] module *)
 
-let slow_append l1 l2 = rev_append (rev l1) l2
+let tail_append l1 l2 = rev_append (rev l1) l2
 
 (* There are a few optimized list operations here, including append and map.  There are
    basically two optimizations in play: loop unrolling, and dynamic switching between
@@ -374,11 +383,41 @@ let rec count_append l1 l2 count =
        :: x3
        :: x4
        :: x5
-       :: (if count > 1000 then slow_append tl l2 else count_append tl l2 (count + 1)))
+       ::
+       (if count > max_non_tailcall
+        then tail_append tl l2
+        else count_append tl l2 (count + 1)))
 ;;
 
 let append l1 l2 = count_append l1 l2 0
-let slow_map l ~f = rev (rev_map l ~f)
+
+(* An ordinary tail recursive map builds up an intermediate (reversed) representation,
+   with one heap allocated object per element. The following implementation instead chunks
+   9 objects into one heap allocated object, reducing allocation and performance costs
+   accordingly. Note that the very end of the list is done by the stdlib's map
+   function. *)
+let tail_map xs ~f =
+  let rec rise ys = function
+    | [] -> ys
+    | (y0, y1, y2, y3, y4, y5, y6, y7, y8) :: bs ->
+      rise (y0 :: y1 :: y2 :: y3 :: y4 :: y5 :: y6 :: y7 :: y8 :: ys) bs
+  in
+  let rec dive bs = function
+    | x0 :: x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: x8 :: xs ->
+      let y0 = f x0 in
+      let y1 = f x1 in
+      let y2 = f x2 in
+      let y3 = f x3 in
+      let y4 = f x4 in
+      let y5 = f x5 in
+      let y6 = f x6 in
+      let y7 = f x7 in
+      let y8 = f x8 in
+      dive ((y0, y1, y2, y3, y4, y5, y6, y7, y8) :: bs) xs
+    | xs -> rise (nontail_map ~f xs) bs
+  in
+  dive [] xs
+;;
 
 let rec count_map ~f l ctr =
   match l with
@@ -412,7 +451,7 @@ let rec count_map ~f l ctr =
     :: f3
     :: f4
     :: f5
-    :: (if ctr > 1000 then slow_map ~f tl else count_map ~f tl (ctr + 1))
+    :: (if ctr > max_non_tailcall then tail_map ~f tl else count_map ~f tl (ctr + 1))
 ;;
 
 let map l ~f = count_map ~f l 0
