@@ -246,8 +246,7 @@ module Pow2 = struct
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
     if i <= 0
-    then
-      raise_s (Sexp.message "[Int.floor_log2] got invalid input" [ "", sexp_of_int i ]);
+    then raise_s (Sexp.message "[Int.floor_log2] got invalid input" [ "", sexp_of_int i ]);
     num_bits - 1 - clz i
   ;;
 

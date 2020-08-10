@@ -28,8 +28,7 @@ include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
     [Applicative.Of_Monad(Or_error)] would give -- [apply (Error e1) (Error e2)] returns
     the combination of [e1] and [e2], whereas it would only return [e1] if it were defined
     using [bind]. *)
-include
-  Applicative.S with type 'a t := 'a t
+include Applicative.S with type 'a t := 'a t
 
 include Invariant.S1 with type 'a t := 'a t
 include Monad.S with type 'a t := 'a t

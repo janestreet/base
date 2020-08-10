@@ -802,12 +802,7 @@ module type Creators2_with_comparator = sig
 
   val empty : comparator:('a, 'cmp) Comparator.t -> ('a, 'cmp) t
   val singleton : comparator:('a, 'cmp) Comparator.t -> 'a -> ('a, 'cmp) t
-
-  val union_list
-    :  comparator:('a, 'cmp) Comparator.t
-    -> ('a, 'cmp) t list
-    -> ('a, 'cmp) t
-
+  val union_list : comparator:('a, 'cmp) Comparator.t -> ('a, 'cmp) t list -> ('a, 'cmp) t
   val of_list : comparator:('a, 'cmp) Comparator.t -> 'a list -> ('a, 'cmp) t
   val of_array : comparator:('a, 'cmp) Comparator.t -> 'a array -> ('a, 'cmp) t
 

@@ -25,8 +25,7 @@ module T0 = struct
     let sexp_of_t = (sexp_of_int64 : t -> Ppx_sexp_conv_lib.Sexp.t)
 
     let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group)
-        =
+      let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
         { implicit_vars = [ "int64" ]
         ; ggid = "\146e\023\249\235eE\139c\132W\195\137\129\235\025"
         ; types = [ "t", Implicit_var 0 ]

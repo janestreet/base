@@ -343,12 +343,7 @@ module Search_pattern0 = struct
       let next_src_pos = ref 0 in
       List.iter matches ~f:(fun i ->
         let len = i - !next_src_pos in
-        Bytes.blit_string
-          ~src:s
-          ~src_pos:!next_src_pos
-          ~dst
-          ~dst_pos:!next_dst_pos
-          ~len;
+        Bytes.blit_string ~src:s ~src_pos:!next_src_pos ~dst ~dst_pos:!next_dst_pos ~len;
         Bytes.blit_string
           ~src:with_
           ~src_pos:0
@@ -444,10 +439,7 @@ let substr_index_all_gen ~case_sensitive t ~may_overlap ~pattern =
 ;;
 
 let substr_replace_first_gen ~case_sensitive ?pos t ~pattern =
-  Search_pattern.replace_first
-    ?pos
-    (Search_pattern.create ~case_sensitive pattern)
-    ~in_:t
+  Search_pattern.replace_first ?pos (Search_pattern.create ~case_sensitive pattern) ~in_:t
 ;;
 
 let substr_replace_all_gen ~case_sensitive t ~pattern =
@@ -470,8 +462,7 @@ let is_substring_at_gen =
     if sub_pos = sub_len
     then true
     else if char_equal (unsafe_get str str_pos) (unsafe_get sub sub_pos)
-    then
-      loop ~str ~str_pos:(str_pos + 1) ~sub ~sub_pos:(sub_pos + 1) ~sub_len ~char_equal
+    then loop ~str ~str_pos:(str_pos + 1) ~sub ~sub_pos:(sub_pos + 1) ~sub_len ~char_equal
     else false
   in
   fun str ~pos:str_pos ~substring:sub ~char_equal ->
@@ -515,9 +506,7 @@ module Caseless = struct
 
     [@@@end]
 
-    let char_compare_caseless c1 c2 =
-      Char.compare (Char.lowercase c1) (Char.lowercase c2)
-    ;;
+    let char_compare_caseless c1 c2 = Char.compare (Char.lowercase c1) (Char.lowercase c2)
 
     let rec compare_loop ~pos ~string1 ~len1 ~string2 ~len2 =
       if pos = len1
@@ -525,9 +514,7 @@ module Caseless = struct
       else if pos = len2
       then 1
       else (
-        let c =
-          char_compare_caseless (unsafe_get string1 pos) (unsafe_get string2 pos)
-        in
+        let c = char_compare_caseless (unsafe_get string1 pos) (unsafe_get string2 pos) in
         match c with
         | 0 -> compare_loop ~pos:(pos + 1) ~string1 ~len1 ~string2 ~len2
         | _ -> c)
@@ -1257,8 +1244,7 @@ module Escaping = struct
   ;;
 
   let check_bound str pos function_name =
-    if pos >= length str || pos < 0
-    then invalid_argf "%s: out of bounds" function_name ()
+    if pos >= length str || pos < 0 then invalid_argf "%s: out of bounds" function_name ()
   ;;
 
   let is_char_escaping str ~escape_char pos =

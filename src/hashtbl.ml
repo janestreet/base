@@ -25,8 +25,7 @@ let sexp_of_key t = t.hashable.Hashable.sexp_of_t
 let compare_key t = t.hashable.Hashable.compare
 
 let ensure_mutation_allowed t =
-  if not t.mutation_allowed
-  then failwith "Hashtbl: mutation not allowed during iteration"
+  if not t.mutation_allowed then failwith "Hashtbl: mutation not allowed during iteration"
 ;;
 
 let without_mutating t f =
@@ -180,14 +179,7 @@ let find_and_call2 t key ~a ~b ~if_found ~if_not_found =
   | Avltree.Leaf { key = k; value = v } ->
     if compare_key t k key = 0 then if_found v a b else if_not_found key a b
   | tree ->
-    Avltree.find_and_call2
-      tree
-      ~compare:(compare_key t)
-      key
-      ~a
-      ~b
-      ~if_found
-      ~if_not_found
+    Avltree.find_and_call2 tree ~compare:(compare_key t) key ~a ~b ~if_found ~if_not_found
 ;;
 
 let findi_and_call t key ~if_found ~if_not_found =
@@ -408,8 +400,7 @@ let partition_mapi t ~f =
 let partition_map t ~f = partition_mapi t ~f:(fun ~key:_ ~data -> f data)
 
 let partitioni_tf t ~f =
-  partition_mapi t ~f:(fun ~key ~data ->
-    if f ~key ~data then First data else Second data)
+  partition_mapi t ~f:(fun ~key ~data -> if f ~key ~data then First data else Second data)
 ;;
 
 let partition_tf t ~f = partitioni_tf t ~f:(fun ~key:_ ~data -> f data)
@@ -607,8 +598,7 @@ let create_with_key_or_error ?growth_allowed ?size ~hashable ~get_key rows =
 ;;
 
 let create_with_key_exn ?growth_allowed ?size ~hashable ~get_key rows =
-  Or_error.ok_exn
-    (create_with_key_or_error ?growth_allowed ?size ~hashable ~get_key rows)
+  Or_error.ok_exn (create_with_key_or_error ?growth_allowed ?size ~hashable ~get_key rows)
 ;;
 
 let merge =
@@ -664,9 +654,7 @@ let filter_inplace t ~f = filteri_inplace t ~f:(fun ~key:_ ~data -> f data)
 let filter_keys_inplace t ~f = filteri_inplace t ~f:(fun ~key ~data:_ -> f key)
 
 let filter_mapi_inplace t ~f =
-  let map_results =
-    fold t ~init:[] ~f:(fun ~key ~data ac -> (key, f ~key ~data) :: ac)
-  in
+  let map_results = fold t ~init:[] ~f:(fun ~key ~data ac -> (key, f ~key ~data) :: ac) in
   List.iter map_results ~f:(fun (key, result) ->
     match result with
     | None -> remove t key

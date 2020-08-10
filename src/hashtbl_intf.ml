@@ -120,10 +120,7 @@ module type Accessors = sig
 
   (** Returns new tables with bound values partitioned by [f] applied to the bound
       values. *)
-  val partition_map
-    :  ('a, 'b) t
-    -> f:('b -> ('c, 'd) Either.t)
-    -> ('a, 'c) t * ('a, 'd) t
+  val partition_map : ('a, 'b) t -> f:('b -> ('c, 'd) Either.t) -> ('a, 'c) t * ('a, 'd) t
 
   (** Like [partition_map], but the function [f] takes both key and data as arguments. *)
   val partition_mapi
@@ -592,13 +589,11 @@ module type S_without_submodules = sig
 
   include Creators with type ('a, 'b) t := ('a, 'b) t (** @inline *)
 
-  include
-    Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
+  include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
   (** @inline *)
 
 
-  include
-    Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
+  include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
   (** @inline *)
 
   val hashable_s : ('key, _) t -> 'key Key.t

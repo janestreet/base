@@ -17,8 +17,8 @@ module T = struct
      | Ppx_sexp_conv_lib.Sexp.Atom ("nan" | "Nan") -> Nan
      | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("neg" | "Neg") :: _) as
        sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") :: _)
-       as sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") :: _) as
+       sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
      | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("pos" | "Pos") :: _) as
        sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
      | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("nan" | "Nan") :: _) as

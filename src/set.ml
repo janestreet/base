@@ -160,14 +160,12 @@ module Tree0 = struct
       with_return (fun r ->
         let increasing =
           match compare_elt array.(0) array.(1) with
-          | 0 ->
-            r.return (Or_error.error_string "of_sorted_array: duplicated elements")
+          | 0 -> r.return (Or_error.error_string "of_sorted_array: duplicated elements")
           | i -> i < 0
         in
         for i = 1 to Array.length array - 2 do
           match compare_elt array.(i) array.(i + 1) with
-          | 0 ->
-            r.return (Or_error.error_string "of_sorted_array: duplicated elements")
+          | 0 -> r.return (Or_error.error_string "of_sorted_array: duplicated elements")
           | i ->
             if Poly.( <> ) (i < 0) increasing
             then
@@ -714,8 +712,7 @@ module Tree0 = struct
   let binary_search t ~compare how v =
     match how with
     | `Last_strictly_less_than -> find_last_satisfying t ~f:(fun x -> compare x v < 0)
-    | `Last_less_than_or_equal_to ->
-      find_last_satisfying t ~f:(fun x -> compare x v <= 0)
+    | `Last_less_than_or_equal_to -> find_last_satisfying t ~f:(fun x -> compare x v <= 0)
     | `First_equal_to ->
       (match find_first_satisfying t ~f:(fun x -> compare x v >= 0) with
        | Some x as elt when compare x v = 0 -> elt
@@ -889,9 +886,7 @@ module Tree0 = struct
       | Empty -> accu
       | Leaf v -> if p v then add t v ~compare_elt, f else t, add f v ~compare_elt
       | Node (l, v, r, _, _) ->
-        part
-          (part (if p v then add t v ~compare_elt, f else t, add f v ~compare_elt) l)
-          r
+        part (part (if p v then add t v ~compare_elt, f else t, add f v ~compare_elt) l) r
     in
     part (Empty, Empty) s
   ;;
@@ -1135,10 +1130,7 @@ module Accessors = struct
 
   let compare_direct t1 t2 = Tree0.compare (compare_elt t1) t1.tree t2.tree
   let equal t1 t2 = Tree0.equal t1.tree t2.tree ~compare_elt:(compare_elt t1)
-
-  let is_subset t ~of_ =
-    Tree0.is_subset t.tree ~of_:of_.tree ~compare_elt:(compare_elt t)
-  ;;
+  let is_subset t ~of_ = Tree0.is_subset t.tree ~of_:of_.tree ~compare_elt:(compare_elt t)
 
   let are_disjoint t1 t2 =
     Tree0.are_disjoint t1.tree t2.tree ~compare_elt:(compare_elt t1)
@@ -1180,11 +1172,7 @@ module Accessors = struct
   ;;
 
   let nth t i = Tree0.nth t.tree i
-
-  let remove_index t i =
-    like t (Tree0.remove_index t.tree i ~compare_elt:(compare_elt t))
-  ;;
-
+  let remove_index t i = like t (Tree0.remove_index t.tree i ~compare_elt:(compare_elt t))
   let sexp_of_t sexp_of_a _ t = Tree0.sexp_of_t sexp_of_a t.tree
 
   let to_sequence ?order ?greater_or_equal_to ?less_or_equal_to t =
@@ -1254,11 +1242,7 @@ module Tree = struct
   let map ~comparator t ~f = Tree0.map t ~f ~compare_elt:(ce comparator)
   let filter ~comparator t ~f = Tree0.filter t ~f ~compare_elt:(ce comparator)
   let filter_map ~comparator t ~f = Tree0.filter_map t ~f ~compare_elt:(ce comparator)
-
-  let partition_tf ~comparator t ~f =
-    Tree0.partition_tf t ~f ~compare_elt:(ce comparator)
-  ;;
-
+  let partition_tf ~comparator t ~f = Tree0.partition_tf t ~f ~compare_elt:(ce comparator)
   let iter2 ~comparator a b ~f = Tree0.iter2 a b ~f ~compare_elt:(ce comparator)
   let mem ~comparator t a = Tree0.mem t a ~compare_elt:(ce comparator)
   let add ~comparator t a = Tree0.add t a ~compare_elt:(ce comparator)
@@ -1290,20 +1274,14 @@ module Tree = struct
     Tree0.of_increasing_iterator_unchecked ~len ~f
   ;;
 
-  let of_sorted_array ~comparator a =
-    Tree0.of_sorted_array a ~compare_elt:(ce comparator)
-  ;;
-
+  let of_sorted_array ~comparator a = Tree0.of_sorted_array a ~compare_elt:(ce comparator)
   let union_list ~comparator l = Tree0.union_list l ~to_tree:Fn.id ~comparator
 
   let stable_dedup_list ~comparator xs =
     Tree0.stable_dedup_list xs ~compare_elt:(ce comparator)
   ;;
 
-  let group_by ~comparator t ~equiv =
-    Tree0.group_by t ~equiv ~compare_elt:(ce comparator)
-  ;;
-
+  let group_by ~comparator t ~equiv = Tree0.group_by t ~equiv ~compare_elt:(ce comparator)
   let split ~comparator t a = Tree0.split t a ~compare_elt:(ce comparator)
   let nth t i = Tree0.nth t i
   let remove_index ~comparator t i = Tree0.remove_index t i ~compare_elt:(ce comparator)
@@ -1441,10 +1419,7 @@ let of_increasing_iterator_unchecked m ~len ~f =
   Using_comparator.of_increasing_iterator_unchecked ~comparator:(to_comparator m) ~len ~f
 ;;
 
-let of_sorted_array m a =
-  Using_comparator.of_sorted_array ~comparator:(to_comparator m) a
-;;
-
+let of_sorted_array m a = Using_comparator.of_sorted_array ~comparator:(to_comparator m) a
 let of_list m a = Using_comparator.of_list ~comparator:(to_comparator m) a
 let of_array m a = Using_comparator.of_array ~comparator:(to_comparator m) a
 

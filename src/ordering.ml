@@ -36,8 +36,8 @@ let t_of_sexp =
    | Ppx_sexp_conv_lib.Sexp.Atom ("greater" | "Greater") -> Greater
    | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("less" | "Less") :: _) as
      sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("equal" | "Equal") :: _)
-     as sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("equal" | "Equal") :: _) as
+     sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
    | Ppx_sexp_conv_lib.Sexp.List
        (Ppx_sexp_conv_lib.Sexp.Atom ("greater" | "Greater") :: _) as sexp ->
      Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp

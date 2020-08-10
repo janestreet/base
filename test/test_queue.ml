@@ -71,7 +71,7 @@ let%test_module _ =
      ;;
 
      let%test_unit _ =
-       assert (does_raise (fun () -> (create ~capacity:(-1) () : _ Queue.t)))
+       assert (does_raise (fun () : _ Queue.t -> create ~capacity:(-1) ()))
      ;;
 
      let singleton = singleton
@@ -104,8 +104,7 @@ let%test_module _ =
      ;;
 
      let%test_unit _ =
-       assert (
-         does_raise (fun () -> (init (-1) ~f:(fun _ -> ()) : unit Queue.t)))
+       assert (does_raise (fun () : unit Queue.t -> init (-1) ~f:(fun _ -> ())))
      ;;
 
      let get = get
@@ -262,8 +261,7 @@ let%test_module _ =
              ~expect:(List.equal Int.equal (to_list t1) (to_list t2));
            [%test_result: int]
              (sign (compare Int.compare t1 t2))
-             ~expect:
-               (sign (List.compare Int.compare (to_list t1) (to_list t2)))
+             ~expect:(sign (List.compare Int.compare (to_list t1) (to_list t2)))
          ;;
 
          let lists =

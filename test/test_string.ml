@@ -51,11 +51,7 @@ let%test_module "Caseless Comparable" =
     let%test _ = Caseless.equal "OCaml" "ocaml"
     let%test _ = Caseless.("apple" < "Banana")
     let%test _ = Caseless.("aa" < "aaa")
-
-    let%test _ =
-      Int.( <> ) (Caseless.compare "apple" "Banana") (compare "apple" "Banana")
-    ;;
-
+    let%test _ = Int.( <> ) (Caseless.compare "apple" "Banana") (compare "apple" "Banana")
     let%test _ = Caseless.equal "XxX" "xXx"
     let%test _ = Caseless.("XxX" < "xXxX")
     let%test _ = Caseless.("XxXx" > "xXx")
@@ -131,8 +127,7 @@ let%test_module "Search_pattern" =
           ({ pattern; kmp_array; case_sensitive } : Private.t)
         ;;
 
-        let test_both
-              ({ pattern; case_sensitive; kmp_array = _ } as expected : Private.t)
+        let test_both ({ pattern; case_sensitive; kmp_array = _ } as expected : Private.t)
           =
           let create_repr = Private.representation (create pattern ~case_sensitive) in
           let slow_create_repr = slow_create pattern ~case_sensitive in
@@ -154,10 +149,7 @@ let%test_module "Search_pattern" =
         let%expect_test _ =
           List.iter [%all: bool] ~f:(fun case_sensitive ->
             test_both
-              { pattern = "ababab"
-              ; case_sensitive
-              ; kmp_array = [| 0; 0; 1; 2; 3; 4 |]
-              })
+              { pattern = "ababab"; case_sensitive; kmp_array = [| 0; 0; 1; 2; 3; 4 |] })
         ;;
 
         let%expect_test _ =
@@ -216,8 +208,7 @@ let%test_module "Search_pattern" =
         ;;
 
         let%expect_test _ =
-          test_both
-            { pattern = "aaA"; case_sensitive = false; kmp_array = [| 0; 1; 2 |] }
+          test_both { pattern = "aaA"; case_sensitive = false; kmp_array = [| 0; 1; 2 |] }
         ;;
 
         let%expect_test _ =
@@ -1019,14 +1010,8 @@ let%test_module "Escaping" =
         let is_char_literal = is_char_literal ~escape_char:'_'
 
         let%test_unit _ = [%test_result: bool] (is_char_literal "123456" 4) ~expect:true
-
-        let%test_unit _ =
-          [%test_result: bool] (is_char_literal "12345_6" 6) ~expect:false
-        ;;
-
-        let%test_unit _ =
-          [%test_result: bool] (is_char_literal "12345_6" 5) ~expect:false
-        ;;
+        let%test_unit _ = [%test_result: bool] (is_char_literal "12345_6" 6) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is_char_literal "12345_6" 5) ~expect:false
 
         let%test_unit _ =
           [%test_result: bool] (is_char_literal "123__456" 4) ~expect:false
@@ -1044,9 +1029,7 @@ let%test_module "Escaping" =
           [%test_result: bool] (is_char_literal "__123456" 0) ~expect:false
         ;;
 
-        let%test_unit _ =
-          [%test_result: bool] (is_char_literal "__123456" 2) ~expect:true
-        ;;
+        let%test_unit _ = [%test_result: bool] (is_char_literal "__123456" 2) ~expect:true
       end)
     ;;
 
@@ -1081,13 +1064,8 @@ let%test_module "Escaping" =
           [%test_result: int option] (f "123456_37839" 9 '3') ~expect:(Some 2)
         ;;
 
-        let%test_unit _ =
-          [%test_result: int option] (f "123_2321" 6 '2') ~expect:(Some 6)
-        ;;
-
-        let%test_unit _ =
-          [%test_result: int option] (f "123_2321" 5 '2') ~expect:(Some 1)
-        ;;
+        let%test_unit _ = [%test_result: int option] (f "123_2321" 6 '2') ~expect:(Some 6)
+        let%test_unit _ = [%test_result: int option] (f "123_2321" 5 '2') ~expect:(Some 1)
 
         let%test_unit _ =
           [%test_result: int option] (rindex "" ~escape_char:'_' 'x') ~expect:None
@@ -1237,9 +1215,6 @@ let%test_module "Escaping" =
     ;;
 
     let%test _ = lstrip_literal ~drop:Char.is_alpha ~escape_char:'b' "foo boar" = " boar"
-
-    let%test _ =
-      rstrip_literal ~drop:Char.is_alpha ~escape_char:'b' "foo boar" = "foo bo"
-    ;;
+    let%test _ = rstrip_literal ~drop:Char.is_alpha ~escape_char:'b' "foo boar" = "foo bo"
   end)
 ;;

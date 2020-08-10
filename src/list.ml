@@ -12,14 +12,12 @@ let invalid_argf = Printf.invalid_argf
 module T = struct
   type 'a t = 'a list [@@deriving_inline sexp, sexp_grammar]
 
-  let t_of_sexp :
-    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+  let t_of_sexp : 'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
     =
     list_of_sexp
   ;;
 
-  let sexp_of_t :
-    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+  let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
     =
     sexp_of_list
   ;;
@@ -669,6 +667,10 @@ let groupi l ~break =
 
 let group l ~break = groupi l ~break:(fun _ x y -> break x y)
 
+let sort_and_group ~compare l =
+  l |> stable_sort ~compare |> group ~break:(fun x y -> compare x y <> 0)
+;;
+
 let concat_map l ~f =
   let rec aux acc = function
     | [] -> rev acc
@@ -1008,8 +1010,7 @@ let rec drop t n =
 ;;
 
 let chunks_of l ~length =
-  if length <= 0
-  then invalid_argf "List.chunks_of: Expected length > 0, got %d" length ();
+  if length <= 0 then invalid_argf "List.chunks_of: Expected length > 0, got %d" length ();
   let rec aux of_length acc l =
     match l with
     | [] -> rev acc
@@ -1162,8 +1163,7 @@ let () =
       | Transpose_got_lists_of_different_lengths v0 ->
         let v0 = sexp_of_list sexp_of_int v0 in
         Ppx_sexp_conv_lib.Sexp.List
-          [ Ppx_sexp_conv_lib.Sexp.Atom
-              "list.ml.Transpose_got_lists_of_different_lengths"
+          [ Ppx_sexp_conv_lib.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"
           ; v0
           ]
       | _ -> assert false)

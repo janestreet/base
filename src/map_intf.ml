@@ -8,8 +8,7 @@ module Or_duplicate = struct
     ]
   [@@deriving_inline sexp_of]
 
-  let sexp_of_t :
-    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+  let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
     =
     fun _of_a -> function
       | `Ok v0 -> Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Ok"; _of_a v0 ]
@@ -259,7 +258,8 @@ module type Accessors_generic = sig
       , 'cmp
       , ('k, 'v1, 'cmp) t
       -> ('k, 'v2, 'cmp) t
-      -> f:(key:'k key
+      -> f:
+           (key:'k key
             -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
             -> unit)
       -> unit )
@@ -268,12 +268,7 @@ module type Accessors_generic = sig
   val map : ('k, 'v1, 'cmp) t -> f:('v1 -> 'v2) -> ('k, 'v2, 'cmp) t
   val mapi : ('k, 'v1, 'cmp) t -> f:(key:'k key -> data:'v1 -> 'v2) -> ('k, 'v2, 'cmp) t
   val fold : ('k, 'v, _) t -> init:'a -> f:(key:'k key -> data:'v -> 'a -> 'a) -> 'a
-
-  val fold_right
-    :  ('k, 'v, _) t
-    -> init:'a
-    -> f:(key:'k key -> data:'v -> 'a -> 'a)
-    -> 'a
+  val fold_right : ('k, 'v, _) t -> init:'a -> f:(key:'k key -> data:'v -> 'a -> 'a) -> 'a
 
   val fold2
     : ( 'k
@@ -281,7 +276,8 @@ module type Accessors_generic = sig
       , ('k, 'v1, 'cmp) t
       -> ('k, 'v2, 'cmp) t
       -> init:'a
-      -> f:(key:'k key
+      -> f:
+           (key:'k key
             -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
             -> 'a
             -> 'a)
@@ -305,9 +301,8 @@ module type Accessors_generic = sig
   val filter_mapi
     : ( 'k
       , 'cmp
-      , ('k, 'v1, 'cmp) t
-      -> f:(key:'k key -> data:'v1 -> 'v2 option)
-      -> ('k, 'v2, 'cmp) t )
+      , ('k, 'v1, 'cmp) t -> f:(key:'k key -> data:'v1 -> 'v2 option) -> ('k, 'v2, 'cmp) t
+      )
         options
 
   val partition_mapi
@@ -344,10 +339,7 @@ module type Accessors_generic = sig
     : ('k, 'cmp, ('k, 'v Or_error.t, 'cmp) t -> ('k, 'v, 'cmp) t Or_error.t) options
 
   val compare_direct
-    : ( 'k
-      , 'cmp
-      , ('v -> 'v -> int) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> int )
-        options
+    : ('k, 'cmp, ('v -> 'v -> int) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> int) options
 
   val equal
     : ( 'k
@@ -368,7 +360,8 @@ module type Accessors_generic = sig
       , 'cmp
       , ('k, 'v1, 'cmp) t
       -> ('k, 'v2, 'cmp) t
-      -> f:(key:'k key
+      -> f:
+           (key:'k key
             -> [ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
             -> 'v3 option)
       -> ('k, 'v3, 'cmp) t )
@@ -710,10 +703,7 @@ module type Accessors2 = sig
     -> f:(key:'a -> data:'b -> ('c, 'd) Either.t)
     -> ('a, 'c) t * ('a, 'd) t
 
-  val partition_map
-    :  ('a, 'b) t
-    -> f:('b -> ('c, 'd) Either.t)
-    -> ('a, 'c) t * ('a, 'd) t
+  val partition_map : ('a, 'b) t -> f:('b -> ('c, 'd) Either.t) -> ('a, 'c) t * ('a, 'd) t
 
   val partitioni_tf
     :  ('a, 'b) t
@@ -2094,7 +2084,8 @@ module type Map = sig
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
     -> init:'a
-    -> f:(key:'k
+    -> f:
+         (key:'k
           -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
           -> 'a
           -> 'a)

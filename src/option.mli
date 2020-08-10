@@ -181,9 +181,5 @@ val max_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
 val count : 'a t -> f:('a -> bool) -> int
 [@@deprecated "[since 2019-07] Use pattern matching instead"]
 
-val sum
-  :  (module Container.Summable with type t = 'sum)
-  -> 'a t
-  -> f:('a -> 'sum)
-  -> 'sum
+val sum : (module Container.Summable with type t = 'sum) -> 'a t -> f:('a -> 'sum) -> 'sum
 [@@deprecated "[since 2019-07] Use [value_map ~default:Summable.zero ~f] instead"]

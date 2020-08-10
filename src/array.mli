@@ -95,8 +95,7 @@ val fill : 'a t -> pos:int -> len:int -> 'a -> unit
 
     [int_blit] and [float_blit] provide fast bound-checked blits for immediate
     data types.  The unsafe versions do not bound-check the arguments. *)
-include
-  Blit.S1 with type 'a t := 'a t
+include Blit.S1 with type 'a t := 'a t
 
 (** [Array.of_list l] returns a fresh array containing the elements of [l]. *)
 val of_list : 'a list -> 'a t
@@ -259,11 +258,14 @@ val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
 
 val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 
-(** [permute ?random_state t] randomly permutes [t] in place.
+(** [permute ?random_state ?pos ?len t] randomly permutes [t] in place.
+
+    To permute only part of the array, specify [pos] to be the index to start permuting
+    from and [len] indicating how many elements to permute.
 
     [permute] side-effects [random_state] by repeated calls to [Random.State.int].  If
     [random_state] is not supplied, [permute] uses [Random.State.default]. *)
-val permute : ?random_state:Random.State.t -> 'a t -> unit
+val permute : ?random_state:Random.State.t -> ?pos:int -> ?len:int -> 'a t -> unit
 
 (** [random_element ?random_state t] is [None] if [t] is empty, else it is [Some x] for
     some [x] chosen uniformly at random from [t].

@@ -21,8 +21,7 @@ module type S = sig
       should still be memory-safe) when the stack is mutated while they are running (e.g.
       by having the passed-in function call [push] or [pop] on the stack).
   *)
-  include
-    Container.S1 with type 'a t := 'a t
+  include Container.S1 with type 'a t := 'a t
 
   (** [of_list l] returns a stack whose top is the first element of [l] and bottom is the
       last element of [l]. *)

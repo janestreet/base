@@ -187,10 +187,7 @@ module Export = struct
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
   type 'a array = 'a Array.t [@@deriving_inline compare, equal, sexp, sexp_grammar]
 
-  let compare_array : 'a. ('a -> 'a -> int) -> 'a array -> 'a array -> int =
-    Array.compare
-  ;;
-
+  let compare_array : 'a. ('a -> 'a -> int) -> 'a array -> 'a array -> int = Array.compare
   let equal_array : 'a. ('a -> 'a -> bool) -> 'a array -> 'a array -> bool = Array.equal
 
   let array_of_sexp :
@@ -359,8 +356,7 @@ module Export = struct
   let compare_int = (Int.compare : int -> int -> int)
   let equal_int = (Int.equal : int -> int -> bool)
 
-  let (hash_fold_int : Ppx_hash_lib.Std.Hash.state -> int -> Ppx_hash_lib.Std.Hash.state)
-    =
+  let (hash_fold_int : Ppx_hash_lib.Std.Hash.state -> int -> Ppx_hash_lib.Std.Hash.state) =
     Int.hash_fold_t
 
   and (hash_int : int -> Ppx_hash_lib.Std.Hash.hash_value) =
@@ -788,8 +784,7 @@ module Export = struct
 
       For more documentation, see sexplib/README.md. *)
 
-  type 'a sexp_array = 'a array
-  [@@deprecated "[since 2019-03] use [@sexp.array] instead"]
+  type 'a sexp_array = 'a array [@@deprecated "[since 2019-03] use [@sexp.array] instead"]
 
   type 'a sexp_list = 'a list [@@deprecated "[since 2019-03] use [@sexp.list] instead"]
   type 'a sexp_opaque = 'a [@@deprecated "[since 2019-03] use [@sexp.opaque] instead"]

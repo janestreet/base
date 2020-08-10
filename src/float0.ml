@@ -33,8 +33,7 @@ include (
       = "caml_ldexp_float" "caml_ldexp_float_unboxed"
     [@@noalloc]
 
-    external log10 : float -> float = "caml_log10_float" "log10"
-    [@@unboxed] [@@noalloc]
+    external log10 : float -> float = "caml_log10_float" "log10" [@@unboxed] [@@noalloc]
 
     external expm1 : float -> float = "caml_expm1_float" "caml_expm1"
     [@@unboxed] [@@noalloc]

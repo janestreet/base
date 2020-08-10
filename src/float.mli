@@ -19,8 +19,7 @@ include Floatable.S with type t := t
 (** [max] and [min] will return nan if either argument is nan.
 
     The [validate_*] functions always fail if class is [Nan] or [Infinite]. *)
-include
-  Identifiable.S with type t := t
+include Identifiable.S with type t := t
 
 include Comparable.With_zero with type t := t
 include Invariant.S with type t := t

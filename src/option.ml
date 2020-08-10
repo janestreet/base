@@ -30,8 +30,7 @@ struct
   ;;
 
   let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group)
-      =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
       { implicit_vars = [ "option" ]
       ; ggid = "j\132);\135qH\158\135\222H\001\007\004\158\218"
       ; types =

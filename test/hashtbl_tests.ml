@@ -331,8 +331,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
     let t1 = make [ 1, 111; 2, 222; 3, 333 ] in
     let t2 = make [ 1, 123; 2, 222; 4, 444 ] in
     [%test_result: (int * [ `Left of int | `Right of int | `Both of int * int ]) List.t]
-      (Hashtbl.merge t1 t2 ~f:(fun ~key:_ ->
-         function
+      (Hashtbl.merge t1 t2 ~f:(fun ~key:_ -> function
          | `Left x -> Some (`Left x)
          | `Right y -> Some (`Right y)
          | `Both (x, y) -> if x = y then None else Some (`Both (x, y)))

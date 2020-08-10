@@ -236,8 +236,7 @@ module Pow2 = struct
   let ceil_log2 i =
     if i <= Caml.Int32.zero
     then
-      raise_s
-        (Sexp.message "[Int32.ceil_log2] got invalid input" [ "", sexp_of_int32 i ]);
+      raise_s (Sexp.message "[Int32.ceil_log2] got invalid input" [ "", sexp_of_int32 i ]);
     (* The [i = 1] check is needed because clz(0) is undefined *)
     if Caml.Int32.equal i Caml.Int32.one then 0 else num_bits - clz (Caml.Int32.pred i)
   ;;

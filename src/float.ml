@@ -574,8 +574,8 @@ module Class = struct
      | Ppx_sexp_conv_lib.Sexp.List
          (Ppx_sexp_conv_lib.Sexp.Atom ("subnormal" | "Subnormal") :: _) as sexp ->
        Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") :: _)
-       as sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") :: _) as
+       sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
      | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.List _ :: _) as sexp ->
        Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
      | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->

@@ -111,11 +111,7 @@ val sexp_of_int_style : [ `No_underscores | `Underscores ] ref
 (** utility for defining to_string_hum on numeric types -- takes a string matching
     (-|+)?[0-9a-fA-F]+ and puts [delimiter] every [chars_per_delimiter] characters
     starting from the right. *)
-val insert_delimiter_every
-  :  string
-  -> delimiter:char
-  -> chars_per_delimiter:int
-  -> string
+val insert_delimiter_every : string -> delimiter:char -> chars_per_delimiter:int -> string
 
 (** [insert_delimiter_every ~chars_per_delimiter:3] *)
 val insert_delimiter : string -> delimiter:char -> string

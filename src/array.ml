@@ -751,7 +751,7 @@ let cartesian_product t1 t2 =
     let r = ref 0 in
     for i1 = 0 to n1 - 1 do
       for i2 = 0 to n2 - 1 do
-        t.(!r) <- (t1.(i1), t2.(i2));
+        t.(!r) <- t1.(i1), t2.(i2);
         incr r
       done
     done;

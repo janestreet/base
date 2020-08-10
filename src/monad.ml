@@ -82,8 +82,7 @@ module Make3 (M : Basic3) : S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) M.t =
     include (M : Basic3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t)
   end)
 
-module Make2 (M : Basic2) : S2 with type ('a, 'd) t := ('a, 'd) M.t =
-  Make_general (struct
+module Make2 (M : Basic2) : S2 with type ('a, 'd) t := ('a, 'd) M.t = Make_general (struct
     type ('a, 'i, 'j, 'd, 'e) t = ('a, 'd) M.t
 
     include (M : Basic2 with type ('a, 'b) t := ('a, 'b) M.t)

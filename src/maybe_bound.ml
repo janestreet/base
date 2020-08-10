@@ -25,22 +25,19 @@ let all : 'a. 'a list -> 'a t list =
        [ Unbounded ])
 ;;
 
-let t_of_sexp
-  : type a. (Ppx_sexp_conv_lib.Sexp.t -> a) -> Ppx_sexp_conv_lib.Sexp.t -> a t
+let t_of_sexp : type a. (Ppx_sexp_conv_lib.Sexp.t -> a) -> Ppx_sexp_conv_lib.Sexp.t -> a t
   =
   let _tp_loc = "maybe_bound.ml.t" in
   fun _of_a -> function
     | Ppx_sexp_conv_lib.Sexp.List
-        (Ppx_sexp_conv_lib.Sexp.Atom (("incl" | "Incl") as _tag) :: sexp_args) as _sexp
-      ->
+        (Ppx_sexp_conv_lib.Sexp.Atom (("incl" | "Incl") as _tag) :: sexp_args) as _sexp ->
       (match sexp_args with
        | [ v0 ] ->
          let v0 = _of_a v0 in
          Incl v0
        | _ -> Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
     | Ppx_sexp_conv_lib.Sexp.List
-        (Ppx_sexp_conv_lib.Sexp.Atom (("excl" | "Excl") as _tag) :: sexp_args) as _sexp
-      ->
+        (Ppx_sexp_conv_lib.Sexp.Atom (("excl" | "Excl") as _tag) :: sexp_args) as _sexp ->
       (match sexp_args with
        | [ v0 ] ->
          let v0 = _of_a v0 in
@@ -61,8 +58,7 @@ let t_of_sexp
     | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
 ;;
 
-let sexp_of_t
-  : type a. (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t
+let sexp_of_t : type a. (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t
   =
   fun _of_a -> function
     | Incl v0 ->

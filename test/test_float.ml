@@ -935,11 +935,7 @@ let%test_module _ =
     let%test _ = must_fail int63_round_nearest_portable_alloc_exn min_value
     let%test _ = must_fail int63_round_nearest_portable_alloc_exn (2. **. 63.)
     let%test _ = must_fail int63_round_nearest_portable_alloc_exn ~-.(2. **. 63.)
-
-    let%test _ =
-      must_succeed int63_round_nearest_portable_alloc_exn ((2. **. 62.) -. 512.)
-    ;;
-
+    let%test _ = must_succeed int63_round_nearest_portable_alloc_exn ((2. **. 62.) -. 512.)
     let%test _ = must_fail int63_round_nearest_portable_alloc_exn (2. **. 62.)
 
     let%test _ =
@@ -987,11 +983,7 @@ let%test_module _ =
     let%test_unit _ = test ~decimals:3 0.99999 "1.000" "1"
     let%test_unit _ = test ~decimals:3 0.00001 "0.000" "0"
     let%test_unit _ = test ~decimals:3 ~-.12345.1 "-12_345.100" "-12_345.1"
-
-    let%test_unit _ =
-      test ~delimiter:',' ~decimals:3 ~-.12345.1 "-12,345.100" "-12,345.1"
-    ;;
-
+    let%test_unit _ = test ~delimiter:',' ~decimals:3 ~-.12345.1 "-12,345.100" "-12,345.1"
     let%test_unit _ = test ~decimals:0 0.99999 "1" "1"
     let%test_unit _ = test ~decimals:0 0.00001 "0" "0"
     let%test_unit _ = test ~decimals:0 ~-.12345.1 "-12_345" "-12_345"
@@ -1095,9 +1087,7 @@ let%test_unit "int to float conversion consistency" =
   test_int63 Int63.zero;
   test_int63 Int63.min_value;
   test_int63 Int63.max_value;
-  let rand =
-    Random.State.make [| Hashtbl.hash "int to float conversion consistency" |]
-  in
+  let rand = Random.State.make [| Hashtbl.hash "int to float conversion consistency" |] in
   for _i = 0 to 100 do
     let x = Random.State.int rand Int.max_value in
     test_int x

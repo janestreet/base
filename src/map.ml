@@ -160,14 +160,12 @@ module Tree0 = struct
       with_return (fun r ->
         let increasing =
           match compare_key (fst array.(0)) (fst array.(1)) with
-          | 0 ->
-            r.return (Or_error.error_string "of_sorted_array: duplicated elements")
+          | 0 -> r.return (Or_error.error_string "of_sorted_array: duplicated elements")
           | i -> i < 0
         in
         for i = 1 to Array.length array - 2 do
           match compare_key (fst array.(i)) (fst array.(i + 1)) with
-          | 0 ->
-            r.return (Or_error.error_string "of_sorted_array: duplicated elements")
+          | 0 -> r.return (Or_error.error_string "of_sorted_array: duplicated elements")
           | i ->
             if Poly.( <> ) (i < 0) increasing
             then
@@ -192,8 +190,7 @@ module Tree0 = struct
         else (
           match lr with
           | Empty -> invalid_arg "Map.bal"
-          | Leaf (lrv, lrd) ->
-            create (create ll lv ld Empty) lrv lrd (create Empty x d r)
+          | Leaf (lrv, lrd) -> create (create ll lv ld Empty) lrv lrd (create Empty x d r)
           | Node (lrl, lrv, lrd, lrr, _) ->
             create (create ll lv ld lrl) lrv lrd (create lrr x d r)))
     else if hr > hl + 2
@@ -207,8 +204,7 @@ module Tree0 = struct
         else (
           match rl with
           | Empty -> invalid_arg "Map.bal"
-          | Leaf (rlv, rld) ->
-            create (create l x d Empty) rlv rld (create Empty rv rd rr)
+          | Leaf (rlv, rld) -> create (create l x d Empty) rlv rld (create Empty rv rd rr)
           | Node (rll, rlv, rld, rlr, _) ->
             create (create l x d rll) rlv rld (create rlr rv rd rr)))
     else create l x d r
@@ -267,39 +263,18 @@ module Tree0 = struct
       else if c < 0
       then (
         let l, length =
-          find_and_add_or_set
-            ~length
-            ~key:x
-            ~data
-            l
-            ~compare_key
-            ~sexp_of_key
-            ~add_or_set
+          find_and_add_or_set ~length ~key:x ~data l ~compare_key ~sexp_of_key ~add_or_set
         in
         bal l v d r, length)
       else (
         let r, length =
-          find_and_add_or_set
-            ~length
-            ~key:x
-            ~data
-            r
-            ~compare_key
-            ~sexp_of_key
-            ~add_or_set
+          find_and_add_or_set ~length ~key:x ~data r ~compare_key ~sexp_of_key ~add_or_set
         in
         bal l v d r, length)
   ;;
 
   let add_exn t ~length ~key ~data ~compare_key ~sexp_of_key =
-    find_and_add_or_set
-      t
-      ~length
-      ~key
-      ~data
-      ~compare_key
-      ~sexp_of_key
-      ~add_or_set:Add_exn
+    find_and_add_or_set t ~length ~key ~data ~compare_key ~sexp_of_key ~add_or_set:Add_exn
   ;;
 
   let add_exn_internal t ~length ~key ~data ~compare_key ~sexp_of_key =
@@ -486,8 +461,7 @@ module Tree0 = struct
       let mid, right =
         match upper_bound with
         | Unbounded -> mid_and_right, empty
-        | Incl lb ->
-          split_and_reinsert_boundary ~into:`Left mid_and_right lb ~compare_key
+        | Incl lb -> split_and_reinsert_boundary ~into:`Left mid_and_right lb ~compare_key
         | Excl lb ->
           split_and_reinsert_boundary ~into:`Right mid_and_right lb ~compare_key
       in
@@ -524,9 +498,7 @@ module Tree0 = struct
       | Leaf (v, d) -> if compare_key x v = 0 then d else if_not_found x ~sexp_of_key
       | Node (l, v, d, r, _) ->
         let c = compare_key x v in
-        if c = 0
-        then d
-        else find_exn (if c < 0 then l else r) x ~compare_key ~sexp_of_key
+        if c = 0 then d else find_exn (if c < 0 then l else r) x ~compare_key ~sexp_of_key
     in
     (* named to preserve symbol in compiled binary *)
     find_exn
@@ -598,8 +570,7 @@ module Tree0 = struct
     match max_elt lower_part, min_elt upper_part with
     | None, _ -> `Ok upper_part
     | _, None -> `Ok lower_part
-    | Some (max_lower, _), Some (min_upper, v) when compare_key max_lower min_upper < 0
-      ->
+    | Some (max_lower, _), Some (min_upper, v) when compare_key max_lower min_upper < 0 ->
       let upper_part_without_min = remove_min_elt upper_part in
       `Ok (join ~compare_key lower_part min_upper v upper_part_without_min)
     | _ -> `Overlapping_key_ranges
@@ -1025,8 +996,7 @@ module Tree0 = struct
           Sequence.Step.Yield ((key, `Right data), (End, cons tree enum))
         | More (key, data, tree, enum), End ->
           Sequence.Step.Yield ((key, `Left data), (cons tree enum, End))
-        | (More (k1, v1, tree1, enum1) as left), (More (k2, v2, tree2, enum2) as right)
-          ->
+        | (More (k1, v1, tree1, enum1) as left), (More (k2, v2, tree2, enum2) as right) ->
           let compare_result = compare_key k1 k2 in
           if compare_result = 0
           then (
@@ -1052,8 +1022,7 @@ module Tree0 = struct
         match left, right with
         | End, enum -> fold enum ~init:acc ~f:(fun ~key ~data acc -> add acc key data)
         | enum, End -> fold enum ~init:acc ~f:(fun ~key ~data acc -> remove acc key data)
-        | (More (k1, v1, tree1, enum1) as left), (More (k2, v2, tree2, enum2) as right)
-          ->
+        | (More (k1, v1, tree1, enum1) as left), (More (k2, v2, tree2, enum2) as right) ->
           let compare_result = compare_key k1 k2 in
           if compare_result = 0
           then (
@@ -1153,14 +1122,10 @@ module Tree0 = struct
        slower, as we have to allocate quite a lot of state to track enumeration of a tree.
        Avoid if we can.
     *)
-    let slow x y ~init =
-      Enum.fold_symmetric_diff x y ~compare_key ~data_equal ~f ~init
-    in
+    let slow x y ~init = Enum.fold_symmetric_diff x y ~compare_key ~data_equal ~f ~init in
     let add acc k v = f acc (k, `Right v) in
     let remove acc k v = f acc (k, `Left v) in
-    let delta acc k v v' =
-      if data_equal v v' then acc else f acc (k, `Unequal (v, v'))
-    in
+    let delta acc k v v' = if data_equal v v' then acc else f acc (k, `Unequal (v, v')) in
     (* If two trees have the same structure at the root (and the same key, if they're
        [Node]s) we can trivially diff each subpart in obvious ways. *)
     let rec loop t t' acc =
@@ -1263,10 +1228,7 @@ module Tree0 = struct
       match of_foldable foldable ~compare_key:comparator.Comparator.compare with
       | `Ok x -> x
       | `Duplicate_key key ->
-        Error.create
-          ("Map.of_" ^ M.name ^ "_exn: duplicate key")
-          key
-          comparator.sexp_of_t
+        Error.create ("Map.of_" ^ M.name ^ "_exn: duplicate key") key comparator.sexp_of_t
         |> Error.raise
     ;;
   end
@@ -1416,13 +1378,9 @@ module Tree0 = struct
             match dir with
             | `Greater_or_equal_to | `Less_or_equal_to -> Some (k', v')
             | `Greater_than ->
-              if is_empty r
-              then repackage found_marker found_key found_value
-              else min_elt r
+              if is_empty r then repackage found_marker found_key found_value else min_elt r
             | `Less_than ->
-              if is_empty l
-              then repackage found_marker found_key found_value
-              else max_elt l)
+              if is_empty l then repackage found_marker found_key found_value else max_elt l)
           else (
             (* We are guaranteed here that k' <> k. *)
             (* This is the only recursive case. *)
@@ -1512,9 +1470,7 @@ module Tree0 = struct
     | `Last_less_than_or_equal_to ->
       find_last_satisfying t ~f:(fun ~key ~data -> compare ~key ~data v <= 0)
     | `First_equal_to ->
-      (match
-         find_first_satisfying t ~f:(fun ~key ~data -> compare ~key ~data v >= 0)
-       with
+      (match find_first_satisfying t ~f:(fun ~key ~data -> compare ~key ~data v >= 0) with
        | Some (key, data) as pair when compare ~key ~data v = 0 -> pair
        | None | Some _ -> None)
     | `Last_equal_to ->
@@ -1706,17 +1662,11 @@ module Accessors = struct
     Tree0.fold2 t1.tree t2.tree ~init ~f ~compare_key:(compare_key t1)
   ;;
 
-  let filter_keys t ~f =
-    like t (Tree0.filter_keys t.tree ~f ~compare_key:(compare_key t))
-  ;;
-
+  let filter_keys t ~f = like t (Tree0.filter_keys t.tree ~f ~compare_key:(compare_key t))
   let filter t ~f = like t (Tree0.filter t.tree ~f ~compare_key:(compare_key t))
   let filteri t ~f = like t (Tree0.filteri t.tree ~f ~compare_key:(compare_key t))
   let filter_map t ~f = like t (Tree0.filter_map t.tree ~f ~compare_key:(compare_key t))
-
-  let filter_mapi t ~f =
-    like t (Tree0.filter_mapi t.tree ~f ~compare_key:(compare_key t))
-  ;;
+  let filter_mapi t ~f = like t (Tree0.filter_mapi t.tree ~f ~compare_key:(compare_key t))
 
   let partition_mapi t ~f =
     like2 t (Tree0.partition_mapi t.tree ~f ~compare_key:(compare_key t))
@@ -1747,10 +1697,7 @@ module Accessors = struct
     Tree0.compare (compare_key t1) compare_data t1.tree t2.tree
   ;;
 
-  let equal compare_data t1 t2 =
-    Tree0.equal (compare_key t1) compare_data t1.tree t2.tree
-  ;;
-
+  let equal compare_data t1 t2 = Tree0.equal (compare_key t1) compare_data t1.tree t2.tree
   let keys t = Tree0.keys t.tree
   let data t = Tree0.data t.tree
   let to_alist ?key_order t = Tree0.to_alist ?key_order t.tree
@@ -1881,8 +1828,7 @@ module Tree = struct
   let singleton ~comparator:_ k v = Tree0.singleton k v
 
   let of_sorted_array_unchecked ~comparator array =
-    fst
-      (Tree0.of_sorted_array_unchecked array ~compare_key:comparator.Comparator.compare)
+    fst (Tree0.of_sorted_array_unchecked array ~compare_key:comparator.Comparator.compare)
   ;;
 
   let of_sorted_array ~comparator array =
@@ -2012,9 +1958,7 @@ module Tree = struct
       ~sexp_of_key:comparator.Comparator.sexp_of_t
   ;;
 
-  let find ~comparator t key =
-    Tree0.find t key ~compare_key:comparator.Comparator.compare
-  ;;
+  let find ~comparator t key = Tree0.find t key ~compare_key:comparator.Comparator.compare
 
   let remove ~comparator t key =
     fst (Tree0.remove t key ~length:0 ~compare_key:comparator.Comparator.compare)
@@ -2173,11 +2117,7 @@ module Tree = struct
 
   let nth ~comparator:_ t n = Tree0.nth t n
   let nth_exn ~comparator t n = Option.value_exn (nth ~comparator t n)
-
-  let rank ~comparator t key =
-    Tree0.rank t key ~compare_key:comparator.Comparator.compare
-  ;;
-
+  let rank ~comparator t key = Tree0.rank t key ~compare_key:comparator.Comparator.compare
   let sexp_of_t sexp_of_k sexp_of_v _ t = Tree0.sexp_of_t sexp_of_k sexp_of_v t
 
   let t_of_sexp_direct ~comparator k_of_sexp v_of_sexp sexp =
@@ -2185,12 +2125,7 @@ module Tree = struct
   ;;
 
   let to_sequence ~comparator ?order ?keys_greater_or_equal_to ?keys_less_or_equal_to t =
-    Tree0.to_sequence
-      comparator
-      ?order
-      ?keys_greater_or_equal_to
-      ?keys_less_or_equal_to
-      t
+    Tree0.to_sequence comparator ?order ?keys_greater_or_equal_to ?keys_less_or_equal_to t
   ;;
 
   let binary_search ~comparator:_ t ~compare how v = Tree0.binary_search t ~compare how v
@@ -2354,10 +2289,7 @@ let of_sorted_array_unchecked m a =
   Using_comparator.of_sorted_array_unchecked ~comparator:(to_comparator m) a
 ;;
 
-let of_sorted_array m a =
-  Using_comparator.of_sorted_array ~comparator:(to_comparator m) a
-;;
-
+let of_sorted_array m a = Using_comparator.of_sorted_array ~comparator:(to_comparator m) a
 let of_iteri m ~iteri = Using_comparator.of_iteri ~iteri ~comparator:(to_comparator m)
 
 let of_increasing_iterator_unchecked m ~len ~f =
@@ -2374,9 +2306,7 @@ let of_sequence_or_error m s =
   Using_comparator.of_sequence_or_error ~comparator:(to_comparator m) s
 ;;
 
-let of_sequence_exn m s =
-  Using_comparator.of_sequence_exn ~comparator:(to_comparator m) s
-;;
+let of_sequence_exn m s = Using_comparator.of_sequence_exn ~comparator:(to_comparator m) s
 
 let of_sequence_multi m s =
   Using_comparator.of_sequence_multi ~comparator:(to_comparator m) s
@@ -2495,10 +2425,7 @@ module Poly = struct
     Using_comparator.of_increasing_iterator_unchecked ~len ~f ~comparator
   ;;
 
-  let of_increasing_sequence seq =
-    Using_comparator.of_increasing_sequence ~comparator seq
-  ;;
-
+  let of_increasing_sequence seq = Using_comparator.of_increasing_sequence ~comparator seq
   let of_sequence s = Using_comparator.of_sequence ~comparator s
   let of_sequence_or_error s = Using_comparator.of_sequence_or_error ~comparator s
   let of_sequence_exn s = Using_comparator.of_sequence_exn ~comparator s

@@ -56,13 +56,7 @@ module type Either = sig
   val iter : ('a, 'b) t -> first:('a -> unit) -> second:('b -> unit) -> unit
   val value_map : ('a, 'b) t -> first:('a -> 'c) -> second:('b -> 'c) -> 'c
   val map : ('a, 'b) t -> first:('a -> 'c) -> second:('b -> 'd) -> ('c, 'd) t
-
-  val equal
-    :  ('f -> 'f -> bool)
-    -> ('s -> 's -> bool)
-    -> ('f, 's) t
-    -> ('f, 's) t
-    -> bool
+  val equal : ('f -> 'f -> bool) -> ('s -> 's -> bool) -> ('f, 's) t -> ('f, 's) t -> bool
 
   module type Focused = Focused
 

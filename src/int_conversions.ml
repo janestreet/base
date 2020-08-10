@@ -62,15 +62,11 @@ let int32_to_int x =
 ;;
 
 let int_to_int32_exn x =
-  if int_is_representable_as_int32 x
-  then int_to_int32_trunc x
-  else int_to_int32_failure x
+  if int_is_representable_as_int32 x then int_to_int32_trunc x else int_to_int32_failure x
 ;;
 
 let int32_to_int_exn x =
-  if int32_is_representable_as_int x
-  then int32_to_int_trunc x
-  else int32_to_int_failure x
+  if int32_is_representable_as_int x then int32_to_int_trunc x else int32_to_int_failure x
 ;;
 
 (* int <-> int64 *)
@@ -91,9 +87,7 @@ let int64_to_int x =
 ;;
 
 let int64_to_int_exn x =
-  if int64_is_representable_as_int x
-  then int64_to_int_trunc x
-  else int64_to_int_failure x
+  if int64_is_representable_as_int x then int64_to_int_trunc x else int64_to_int_failure x
 ;;
 
 (* int <-> nativeint *)

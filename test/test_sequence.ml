@@ -352,10 +352,7 @@ let%test_unit _ =
   [%test_result: int list] (to_list (sub s12345 ~pos:1 ~len:2)) ~expect:[ 2; 3 ]
 ;;
 
-let%test_unit _ =
-  [%test_result: int list] (to_list (sub s12345 ~pos:0 ~len:0)) ~expect:[]
-;;
-
+let%test_unit _ = [%test_result: int list] (to_list (sub s12345 ~pos:0 ~len:0)) ~expect:[]
 let%test_unit _ = [%test_result: int list] (to_list (take s12345 2)) ~expect:[ 1; 2 ]
 let%test_unit _ = [%test_result: int list] (to_list (take s12345 0)) ~expect:[]
 
