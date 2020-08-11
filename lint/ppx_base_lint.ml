@@ -60,10 +60,6 @@ let remove_loc =
   end
 ;;
 
-(* Disable this check given that in base we replace [@cold] by [@cold] [@inline never]
-   ... in the source code *)
-let () = Ppx_js_style.cold_instead_of_inline_never := false
-
 let check current_module =
   let zero_modules = zero_modules () in
   object

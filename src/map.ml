@@ -1575,7 +1575,11 @@ let of_tree_unsafe ~comparator ~length tree = { tree; comparator; length }
 module Accessors = struct
   let comparator t = t.comparator
   let to_tree t = t.tree
-  let invariants t = Tree0.invariants t.tree ~compare_key:(compare_key t)
+
+  let invariants t =
+    Tree0.invariants t.tree ~compare_key:(compare_key t) && Tree0.length t.tree = t.length
+  ;;
+
   let is_empty t = Tree0.is_empty t.tree
   let length t = t.length
 
