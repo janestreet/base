@@ -462,6 +462,36 @@ let%test_module "sort_and_group" =
   end)
 ;;
 
+let%test_module "Assoc.sort_and_group" =
+  (module struct
+    let%expect_test _ =
+      let test alist =
+        let multi = Assoc.sort_and_group alist ~compare:String.Caseless.compare in
+        print_s [%sexp (multi : (string * int list) list)];
+        require_equal
+          [%here]
+          (module struct
+            type t = (string * int list) list [@@deriving equal, sexp_of]
+          end)
+          multi
+          (Map.to_alist (Map.of_alist_multi (module String.Caseless) alist))
+      in
+      test [];
+      [%expect {| () |}];
+      test [ "a", 1; "A", 2 ];
+      [%expect {| ((a (1 2))) |}];
+      test [ "a", 1; "b", 2 ];
+      [%expect {|
+        ((a (1))
+         (b (2))) |}];
+      test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
+      [%expect {|
+        ((even (2 4 6))
+         (odd  (1 3 5))) |}]
+    ;;
+  end)
+;;
+
 let%test_module "chunks_of" =
   (module struct
     let test length break_every =

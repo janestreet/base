@@ -448,6 +448,10 @@ module Assoc : sig
 
   (** Bijectivity is not guaranteed because we allow a key to appear more than once. *)
   val inverse : ('a, 'b) t -> ('b, 'a) t
+
+  (** Converts an association list with potential duplicate keys into an association list
+      of (non-empty) lists with no duplicate keys. *)
+  val sort_and_group : ('a * 'b) list -> compare:('a -> 'a -> int) -> ('a, 'b list) t
 end
 
 (** [sub pos len l] is the [len]-element sublist of [l], starting at [pos]. *)

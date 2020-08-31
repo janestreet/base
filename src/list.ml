@@ -929,6 +929,13 @@ module Assoc = struct
 
   [@@@end]
 
+  let sort_and_group alist ~compare =
+    sort_and_group alist ~compare:(fun (x, _) (y, _) -> compare x y)
+    |> map ~f:(function
+      | [] -> assert false
+      | (k, _) :: _ as list -> k, map list ~f:snd)
+  ;;
+
   let find t ~equal key =
     match find t ~f:(fun (key', _) -> equal key key') with
     | None -> None
