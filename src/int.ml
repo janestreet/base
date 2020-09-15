@@ -38,6 +38,7 @@ module T = struct
 
   [@@@end]
 
+  let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare x y = Int_replace_polymorphic_compare.compare x y
 
   let of_string s =

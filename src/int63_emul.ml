@@ -45,6 +45,8 @@ module T0 = struct
     ;;
 
     [@@@end]
+
+    let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   end
 
   include T
@@ -225,6 +227,7 @@ module T = struct
   (* We don't expect [hash] to follow the behavior of int in 64bit architecture *)
   let _ = hash
   let hash (x : t) = Caml.Hashtbl.hash x
+  let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let invalid_str x = Printf.failwithf "Int63.of_string: invalid input %S" x ()
 
   (*
