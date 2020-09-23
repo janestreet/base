@@ -632,21 +632,30 @@ module Tree0 = struct
       bal t1 x d (remove_min_elt t2)
   ;;
 
-  let rec remove t x ~length ~compare_key =
-    match t with
-    | Empty -> Empty, length
-    | Leaf (v, _) -> if compare_key x v = 0 then Empty, length - 1 else t, length
-    | Node (l, v, d, r, _) ->
-      let c = compare_key x v in
-      if c = 0
-      then concat_unchecked l r, length - 1
-      else if c < 0
-      then (
-        let l, length = remove l x ~length ~compare_key in
-        bal l v d r, length)
-      else (
-        let r, length = remove r x ~length ~compare_key in
-        bal l v d r, length)
+  exception Remove_no_op
+
+  let remove t x ~length ~compare_key =
+    let rec remove_loop t x ~length ~compare_key =
+      match t with
+      | Empty -> Exn.raise_without_backtrace Remove_no_op
+      | Leaf (v, _) ->
+        if compare_key x v = 0
+        then Empty, length - 1
+        else Exn.raise_without_backtrace Remove_no_op
+      | Node (l, v, d, r, _) ->
+        let c = compare_key x v in
+        if c = 0
+        then concat_unchecked l r, length - 1
+        else if c < 0
+        then (
+          let l, length = remove_loop l x ~length ~compare_key in
+          bal l v d r, length)
+        else (
+          let r, length = remove_loop r x ~length ~compare_key in
+          bal l v d r, length)
+    in
+    try remove_loop t x ~length ~compare_key with
+    | Remove_no_op -> t, length
   ;;
 
   (* Use exception to avoid tree-rebuild in no-op case *)
@@ -1565,6 +1574,12 @@ let like { tree = _; length = _; comparator } (tree, length) =
 ;;
 
 let like2 x (y, z) = like x y, like x z
+
+let like_maybe_no_op ({ tree = old_tree; length = _; comparator } as old_t) (tree, length)
+  =
+  if phys_equal old_tree tree then old_t else { tree; length; comparator }
+;;
+
 let with_same_length { tree = _; comparator; length } tree = { tree; comparator; length }
 let of_tree ~comparator tree = { tree; comparator; length = Tree0.length tree }
 
@@ -1648,7 +1663,9 @@ module Accessors = struct
   let find t key = Tree0.find t.tree key ~compare_key:(compare_key t)
 
   let remove t key =
-    like t (Tree0.remove t.tree key ~length:t.length ~compare_key:(compare_key t))
+    like_maybe_no_op
+      t
+      (Tree0.remove t.tree key ~length:t.length ~compare_key:(compare_key t))
   ;;
 
   let mem t key = Tree0.mem t.tree key ~compare_key:(compare_key t)

@@ -291,3 +291,9 @@ let%test_module "of_alist_multi key equality" =
     ;;
   end)
 ;;
+
+let%expect_test "remove returns the same object if there's nothing to do" =
+  let map1 = Map.of_alist_exn (module Int) [ 1, "one"; 3, "three" ] in
+  let map2 = Map.remove map1 2 in
+  require [%here] (phys_equal map1 map2)
+;;
