@@ -30,7 +30,9 @@ module type Summable = sig
   val ( + ) : t -> t -> t
 end
 
-(** Signature for monomorphic container, e.g., string. *)
+(** Signature for monomorphic container - a container for a specific element type, e.g.,
+    string, which is a container of characters ([type elt = char]) and never of anything
+    else. *)
 module type S0 = sig
   type t
   type elt

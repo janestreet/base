@@ -1869,7 +1869,21 @@ module type Map = sig
   val of_alist_multi : ('a, 'cmp) comparator -> ('a * 'b) list -> ('a, 'b list, 'cmp) t
 
   (** Combines an association list into a map, folding together bound values with common
-      keys. *)
+      keys. The accumulator is per-key.
+
+      Example:
+
+      {[
+        # let map = String.Map.of_alist_fold
+                      [ "a", 1; "a", 10; "b", 2; "b", 20; "b", 200 ]
+                      ~init:Int.Set.empty
+                      ~f:Set.add
+          in
+          print_s [%sexp (map : Int.Set.t String.Map.t)];;
+        ((a (1 10)) (b (2 20 200)))
+        - : unit = ()
+      ]}
+  *)
   val of_alist_fold
     :  ('a, 'cmp) comparator
     -> ('a * 'b) list
