@@ -2,7 +2,7 @@ open Hash.Builtin
 open Ppx_compare_lib.Builtin
 module List = List0
 module String = String0
-include (Sexplib0.Sexp : module type of Sexplib0.Sexp with type t := Sexplib0.Sexp.t)
+include Sexplib0.Sexp
 
 (** Type of S-expressions *)
 type t = Sexplib0.Sexp.t =

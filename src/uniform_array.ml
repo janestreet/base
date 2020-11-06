@@ -21,6 +21,7 @@ module Trusted : sig
   val unsafe_set_int : 'a t -> int -> int -> unit
   val unsafe_set_int_assuming_currently_int : 'a t -> int -> int -> unit
   val unsafe_set_assuming_currently_int : 'a t -> int -> 'a -> unit
+  val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
   val length : 'a t -> int
   val unsafe_blit : ('a t, 'a t) Blit.blit
   val copy : 'a t -> 'a t
@@ -54,6 +55,10 @@ end = struct
 
   let unsafe_set_omit_phys_equal_check t i x =
     Obj_array.unsafe_set_omit_phys_equal_check t i (Caml.Obj.repr x)
+  ;;
+
+  let unsafe_set_with_caml_modify t i x =
+    Obj_array.unsafe_set_with_caml_modify t i (Caml.Obj.repr x)
   ;;
 
   let unsafe_clear_if_pointer = Obj_array.unsafe_clear_if_pointer

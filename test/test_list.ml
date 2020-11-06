@@ -391,6 +391,13 @@ let%expect_test _ =
   [%expect {| (raised (Invalid_argument "length mismatch in zip_exn: 1 <> 3")) |}]
 ;;
 
+let%expect_test _ =
+  show_raise (fun () ->
+    rev_map3_exn [ 1 ] [ 4; 5; 6 ] [ 2; 3 ] ~f:(fun a b c -> a + b + c));
+  [%expect
+    {| (raised (Invalid_argument "length mismatch in rev_map3_exn: 1 <> 3 || 3 <> 2")) |}]
+;;
+
 let%test_unit _ =
   [%test_result: (int * string) list]
     (mapi ~f:(fun i x -> i, x) [ "one"; "two"; "three"; "four" ])

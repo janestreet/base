@@ -70,28 +70,28 @@ end
 
 module Make_indexed (M : Basic_indexed) :
   S_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t = Make_general (struct
-    type ('a, 'i, 'j, 'd, 'e) t = ('a, 'i, 'j) M.t
+    include M
 
-    include (M : Basic_indexed with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t)
+    type ('a, 'i, 'j, 'd, 'e) t = ('a, 'i, 'j) M.t
   end)
 
 module Make3 (M : Basic3) : S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) M.t =
   Make_general (struct
-    type ('a, 'i, 'j, 'd, 'e) t = ('a, 'd, 'e) M.t
+    include M
 
-    include (M : Basic3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t)
+    type ('a, 'i, 'j, 'd, 'e) t = ('a, 'd, 'e) M.t
   end)
 
 module Make2 (M : Basic2) : S2 with type ('a, 'd) t := ('a, 'd) M.t = Make_general (struct
-    type ('a, 'i, 'j, 'd, 'e) t = ('a, 'd) M.t
+    include M
 
-    include (M : Basic2 with type ('a, 'b) t := ('a, 'b) M.t)
+    type ('a, 'i, 'j, 'd, 'e) t = ('a, 'd) M.t
   end)
 
 module Make (M : Basic) : S with type 'a t := 'a M.t = Make_general (struct
-    type ('a, 'i, 'j, 'd, 'e) t = 'a M.t
+    include M
 
-    include (M : Basic with type 'a t := 'a M.t)
+    type ('a, 'i, 'j, 'd, 'e) t = 'a M.t
   end)
 
 module Ident = struct

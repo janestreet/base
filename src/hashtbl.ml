@@ -917,6 +917,18 @@ let m__t_of_sexp (type k) (module K : M_of_sexp with type t = k) v_of_sexp sexp 
   t_of_sexp ~hashable:(Hashable.of_key (module K)) K.t_of_sexp v_of_sexp sexp
 ;;
 
+let m__t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t =
+  Inline
+    (Tyvar_parameterize
+       ( [ "'k"; "'v" ]
+       , Tyvar_instantiate
+           ( Grammar list_sexp_grammar
+           , [ Tyvar_instantiate
+                 ( Grammar Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.tuple2_sexp_grammar
+                 , [ Tyvar_index 0; Tyvar_index 1 ] )
+             ] ) ))
+;;
+
 (* typechecking this code is a compile-time test that [Creators] is a specialization of
    [Creators_generic].  *)
 module Check : sig end = struct

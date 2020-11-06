@@ -24,15 +24,18 @@ module T = struct
 
   let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "list" ]
+      { tycon_names = [ "list" ]
       ; ggid = "j\132);\135qH\158\135\222H\001\007\004\158\218"
       ; types =
-          [ "t", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
+          [ ( "t"
+            , Tyvar_parameterize
+                ([ "a" ], Tyvar_instantiate (Tycon_index 0, [ Tyvar_index 0 ])) )
+          ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ list_sexp_grammar ]
+      ; instantiate_tycons = [ list_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "list.ml.T"
       }
@@ -163,29 +166,82 @@ let unordered_append l1 l2 =
   | _ -> rev_append l1 l2
 ;;
 
-let check_length2_exn name l1 l2 =
-  let n1 = length l1 in
-  let n2 = length l2 in
-  if n1 <> n2 then invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
-;;
+module Check_length2 = struct
+  type ('a, 'b) t =
+    | Same_length of int
+    | Unequal_lengths of
+        { shared_length : int
+        ; tail_of_a : 'a list
+        ; tail_of_b : 'b list
+        }
 
-let check_length3_exn name l1 l2 l3 =
-  let n1 = length l1 in
-  let n2 = length l2 in
-  let n3 = length l3 in
-  if n1 <> n2 || n2 <> n3
-  then invalid_argf "length mismatch in %s: %d <> %d || %d <> %d" name n1 n2 n2 n3 ()
+  (* In the [Unequal_lengths] case, at least one of the tails will be non-empty. *)
+  let of_lists l1 l2 =
+    let rec loop a b shared_length =
+      match a, b with
+      | [], [] -> Same_length shared_length
+      | _ :: a, _ :: b -> loop a b (shared_length + 1)
+      | [], _ | _, [] -> Unequal_lengths { shared_length; tail_of_a = a; tail_of_b = b }
+    in
+    loop l1 l2 0
+  ;;
+end
+
+let check_length2_exn name l1 l2 =
+  match Check_length2.of_lists l1 l2 with
+  | Same_length _ -> ()
+  | Unequal_lengths { shared_length; tail_of_a; tail_of_b } ->
+    invalid_argf
+      "length mismatch in %s: %d <> %d"
+      name
+      (shared_length + length tail_of_a)
+      (shared_length + length tail_of_b)
+      ()
 ;;
 
 let check_length2 l1 l2 ~f =
-  if length l1 <> length l2 then Or_unequal_lengths.Unequal_lengths else Ok (f l1 l2)
+  match Check_length2.of_lists l1 l2 with
+  | Same_length _ -> Or_unequal_lengths.Ok (f l1 l2)
+  | Unequal_lengths _ -> Unequal_lengths
+;;
+
+module Check_length3 = struct
+  type ('a, 'b, 'c) t =
+    | Same_length of int
+    | Unequal_lengths of
+        { shared_length : int
+        ; tail_of_a : 'a list
+        ; tail_of_b : 'b list
+        ; tail_of_c : 'c list
+        }
+
+  (* In the [Unequal_lengths] case, at least one of the tails will be non-empty. *)
+  let of_lists l1 l2 l3 =
+    let rec loop a b c shared_length =
+      match a, b, c with
+      | [], [], [] -> Same_length shared_length
+      | _ :: a, _ :: b, _ :: c -> loop a b c (shared_length + 1)
+      | [], _, _ | _, [], _ | _, _, [] ->
+        Unequal_lengths { shared_length; tail_of_a = a; tail_of_b = b; tail_of_c = c }
+    in
+    loop l1 l2 l3 0
+  ;;
+end
+
+let check_length3_exn name l1 l2 l3 =
+  match Check_length3.of_lists l1 l2 l3 with
+  | Same_length _ -> ()
+  | Unequal_lengths { shared_length; tail_of_a; tail_of_b; tail_of_c } ->
+    let n1 = shared_length + length tail_of_a in
+    let n2 = shared_length + length tail_of_b in
+    let n3 = shared_length + length tail_of_c in
+    invalid_argf "length mismatch in %s: %d <> %d || %d <> %d" name n1 n2 n2 n3 ()
 ;;
 
 let check_length3 l1 l2 l3 ~f =
-  let n1 = length l1 in
-  let n2 = length l2 in
-  let n3 = length l3 in
-  if n1 <> n2 || n2 <> n3 then Or_unequal_lengths.Unequal_lengths else Ok (f l1 l2 l3)
+  match Check_length3.of_lists l1 l2 l3 with
+  | Same_length _ -> Or_unequal_lengths.Ok (f l1 l2 l3)
+  | Unequal_lengths _ -> Unequal_lengths
 ;;
 
 let iter2 l1 l2 ~f = check_length2 l1 l2 ~f:(iter2_ok ~f)
@@ -522,24 +578,24 @@ let fold_right l ~f ~init =
 let unzip list =
   let rec loop list l1 l2 =
     match list with
-    | [] -> rev l1, rev l2
+    | [] -> l1, l2
     | (x, y) :: tl -> loop tl (x :: l1) (y :: l2)
   in
-  loop list [] []
+  loop (rev list) [] []
 ;;
 
 let unzip3 list =
   let rec loop list l1 l2 l3 =
     match list with
-    | [] -> rev l1, rev l2, rev l3
+    | [] -> l1, l2, l3
     | (x, y, z) :: tl -> loop tl (x :: l1) (y :: l2) (z :: l3)
   in
-  loop list [] [] []
+  loop (rev list) [] [] []
 ;;
 
 let zip_exn l1 l2 =
-  check_length2_exn "zip_exn" l1 l2;
-  map2_ok ~f:(fun a b -> a, b) l1 l2
+  try map2_ok ~f:(fun a b -> a, b) l1 l2 with
+  | _ -> invalid_argf "length mismatch in zip_exn: %d <> %d" (length l1) (length l2) ()
 ;;
 
 let zip l1 l2 = map2 ~f:(fun a b -> a, b) l1 l2

@@ -73,3 +73,13 @@ let%expect_test "union" =
   print_union [ 0; 1; 2 ] [ 1; 2; 3 ];
   [%expect {| (0 1 2 3) |}]
 ;;
+
+module I_compile_if_creators_is_specialization_of_creators_generic (M : Creators) :
+  Creators_generic
+  with type 'a t := 'a M.t
+  with type 'a elt := 'a
+  with type ('a, 'z) create_options := ('a, 'z) create_options = struct
+  include M
+
+  let create ?growth_allowed ?size m () = create ?growth_allowed ?size m
+end

@@ -35,6 +35,12 @@ val swap : _ t -> int -> int -> unit
     values are [phys_equal]. *)
 val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
 
+(** [unsafe_set_with_caml_modify] always calls [caml_modify] before setting and never gets
+    the old value.  This is like [unsafe_set_omit_phys_equal_check] except it doesn't
+    check whether the old value and the value being set are integers to try to skip
+    [caml_modify]. *)
+val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
+
 val map : 'a t -> f:('a -> 'b) -> 'b t
 val iter : 'a t -> f:('a -> unit) -> unit
 

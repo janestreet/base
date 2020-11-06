@@ -26,14 +26,14 @@ module T0 = struct
 
     let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
       let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-        { implicit_vars = [ "int64" ]
+        { tycon_names = [ "int64" ]
         ; ggid = "\146e\023\249\235eE\139c\132W\195\137\129\235\025"
-        ; types = [ "t", Implicit_var 0 ]
+        ; types = [ "t", Tycon_index 0 ]
         }
       in
       let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
         { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-        ; apply_implicit = [ int64_sexp_grammar ]
+        ; instantiate_tycons = [ int64_sexp_grammar ]
         ; generic_group = _the_generic_group
         ; origin = "int63_emul.ml.T0.T"
         }
@@ -57,12 +57,11 @@ module Conv = Int_conversions
 
 module W : sig
 
-  type t = int64
-
   include module type of struct
     include T0
   end
-  with type t := t
+
+  type t = int64
 
   val wrap_exn : Caml.Int64.t -> t
   val wrap_modulo : Caml.Int64.t -> t
@@ -105,14 +104,9 @@ module W : sig
   val clz : t -> int
   val ctz : t -> int
 end = struct
-  type t = int64
+  include T0
 
-  include (
-    T0 :
-      module type of struct
-      include T0
-    end
-    with type t := t)
+  type t = int64
 
   let wrap_exn x =
     (* Raises if the int64 value does not fit on int63. *)
@@ -198,14 +192,14 @@ module T = struct
 
   let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "W.t" ]
+      { tycon_names = [ "W.t" ]
       ; ggid = "\146e\023\249\235eE\139c\132W\195\137\129\235\025"
-      ; types = [ "t", Implicit_var 0 ]
+      ; types = [ "t", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ W.t_sexp_grammar ]
+      ; instantiate_tycons = [ W.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "int63_emul.ml.T"
       }

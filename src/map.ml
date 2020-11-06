@@ -13,30 +13,7 @@
 
 open! Import
 module List = List0
-
-include (
-  Map_intf :
-  sig
-    module Or_duplicate = Map_intf.Or_duplicate
-    module Continue_or_stop = Map_intf.Continue_or_stop
-    module With_comparator = Map_intf.With_comparator
-    module With_first_class_module = Map_intf.With_first_class_module
-    module Without_comparator = Map_intf.Without_comparator
-
-    (* The module susbstitutions below are needed for older versions of OCaml
-       (before 4.07), because back then [module type of] did not keep module
-       aliases. *)
-
-    include module type of struct
-      include Map_intf
-    end
-    with module Finished_or_unfinished := Map_intf.Finished_or_unfinished
-     and module Or_duplicate := Or_duplicate
-     and module Continue_or_stop := Continue_or_stop
-     and module With_comparator := With_comparator
-     and module With_first_class_module := With_first_class_module
-     and module Without_comparator := Without_comparator
-  end)
+include Map_intf
 
 module Finished_or_unfinished = struct
   include Map_intf.Finished_or_unfinished
@@ -2386,13 +2363,13 @@ let m__t_of_sexp
 
 let m__t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t =
   Inline
-    (Explicit_bind
+    (Tyvar_parameterize
        ( [ "'k"; "'v" ]
-       , Apply
+       , Tyvar_instantiate
            ( Grammar list_sexp_grammar
-           , [ Apply
+           , [ Tyvar_instantiate
                  ( Grammar Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.tuple2_sexp_grammar
-                 , [ Explicit_var 0; Explicit_var 1 ] )
+                 , [ Tyvar_index 0; Tyvar_index 1 ] )
              ] ) ))
 ;;
 

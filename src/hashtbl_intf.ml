@@ -655,6 +655,8 @@ module type For_deriving = sig
     -> (Sexp.t -> 'v)
     -> Sexp.t
     -> ('k, 'v) t
+
+  val m__t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 end
 
 module type Hashtbl = sig

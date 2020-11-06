@@ -204,15 +204,18 @@ module Export = struct
 
   let (array_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Array.t" ]
+      { tycon_names = [ "Array.t" ]
       ; ggid = "r\177A\255~\129%\178\226\196g\165\t\232\204\001"
       ; types =
-          [ "array", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
+          [ ( "array"
+            , Tyvar_parameterize
+                ([ "a" ], Tyvar_instantiate (Tycon_index 0, [ Tyvar_index 0 ])) )
+          ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Array.t_sexp_grammar ]
+      ; instantiate_tycons = [ Array.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -245,14 +248,14 @@ module Export = struct
 
   let (bool_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Bool.t" ]
+      { tycon_names = [ "Bool.t" ]
       ; ggid = "{\171\239\166\219\128\005\201\192$\149\202\251?\186\164"
-      ; types = [ "bool", Implicit_var 0 ]
+      ; types = [ "bool", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Bool.t_sexp_grammar ]
+      ; instantiate_tycons = [ Bool.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -285,14 +288,14 @@ module Export = struct
 
   let (char_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Char.t" ]
+      { tycon_names = [ "Char.t" ]
       ; ggid = "H\140\243\204Y\222\191d\000@\024Md\028\147>"
-      ; types = [ "char", Implicit_var 0 ]
+      ; types = [ "char", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Char.t_sexp_grammar ]
+      ; instantiate_tycons = [ Char.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -331,14 +334,14 @@ module Export = struct
 
   let (float_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Float.t" ]
+      { tycon_names = [ "Float.t" ]
       ; ggid = "\190E\020\242\249\135C\240+\214\226\143Ip\217\223"
-      ; types = [ "float", Implicit_var 0 ]
+      ; types = [ "float", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Float.t_sexp_grammar ]
+      ; instantiate_tycons = [ Float.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -369,14 +372,14 @@ module Export = struct
 
   let (int_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Int.t" ]
+      { tycon_names = [ "Int.t" ]
       ; ggid = "\159\159\197^\165]\236\165\229\165R8\169\225H\020"
-      ; types = [ "int", Implicit_var 0 ]
+      ; types = [ "int", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Int.t_sexp_grammar ]
+      ; instantiate_tycons = [ Int.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -409,14 +412,14 @@ module Export = struct
 
   let (int32_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Int32.t" ]
+      { tycon_names = [ "Int32.t" ]
       ; ggid = "9\153\000*L5O+l\018\179b\198\248\026\177"
-      ; types = [ "int32", Implicit_var 0 ]
+      ; types = [ "int32", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Int32.t_sexp_grammar ]
+      ; instantiate_tycons = [ Int32.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -449,14 +452,14 @@ module Export = struct
 
   let (int64_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Int64.t" ]
+      { tycon_names = [ "Int64.t" ]
       ; ggid = "r\153\022\135\131L\155\236\235CKa\197o\248^"
-      ; types = [ "int64", Implicit_var 0 ]
+      ; types = [ "int64", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Int64.t_sexp_grammar ]
+      ; instantiate_tycons = [ Int64.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -495,15 +498,18 @@ module Export = struct
 
   let (list_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "List.t" ]
+      { tycon_names = [ "List.t" ]
       ; ggid = "\144\022<Z\014\198\014\175\025\218\004\199\252~\031="
       ; types =
-          [ "list", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
+          [ ( "list"
+            , Tyvar_parameterize
+                ([ "a" ], Tyvar_instantiate (Tycon_index 0, [ Tyvar_index 0 ])) )
+          ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ List.t_sexp_grammar ]
+      ; instantiate_tycons = [ List.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -537,14 +543,14 @@ module Export = struct
 
   let (nativeint_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Nativeint.t" ]
+      { tycon_names = [ "Nativeint.t" ]
       ; ggid = "\019\184AE\023\\->1fcm\002\254\196\129"
-      ; types = [ "nativeint", Implicit_var 0 ]
+      ; types = [ "nativeint", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Nativeint.t_sexp_grammar ]
+      ; instantiate_tycons = [ Nativeint.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -589,16 +595,18 @@ module Export = struct
 
   let (option_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Option.t" ]
+      { tycon_names = [ "Option.t" ]
       ; ggid = "\242@\255j`*d\203\161\182\021\175\236\146x\217"
       ; types =
-          [ "option", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ]))
+          [ ( "option"
+            , Tyvar_parameterize
+                ([ "a" ], Tyvar_instantiate (Tycon_index 0, [ Tyvar_index 0 ])) )
           ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Option.t_sexp_grammar ]
+      ; instantiate_tycons = [ Option.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -630,15 +638,18 @@ module Export = struct
 
   let (ref_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Ref.t" ]
+      { tycon_names = [ "Ref.t" ]
       ; ggid = "\185\246\012[\001\197\230\192y=\b\199\141\248\020\012"
       ; types =
-          [ "ref", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
+          [ ( "ref"
+            , Tyvar_parameterize
+                ([ "a" ], Tyvar_instantiate (Tycon_index 0, [ Tyvar_index 0 ])) )
+          ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Ref.t_sexp_grammar ]
+      ; instantiate_tycons = [ Ref.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -671,14 +682,14 @@ module Export = struct
 
   let (string_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "String.t" ]
+      { tycon_names = [ "String.t" ]
       ; ggid = "\141\195]\143\139/M\t\159\t\152\214g\198\023\176"
-      ; types = [ "string", Implicit_var 0 ]
+      ; types = [ "string", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ String.t_sexp_grammar ]
+      ; instantiate_tycons = [ String.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -700,14 +711,14 @@ module Export = struct
 
   let (bytes_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Bytes.t" ]
+      { tycon_names = [ "Bytes.t" ]
       ; ggid = "\015\153L1\012\241\015\252\150\000\191\127Jb#3"
-      ; types = [ "bytes", Implicit_var 0 ]
+      ; types = [ "bytes", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Bytes.t_sexp_grammar ]
+      ; instantiate_tycons = [ Bytes.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }
@@ -740,14 +751,14 @@ module Export = struct
 
   let (unit_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "Unit.t" ]
+      { tycon_names = [ "Unit.t" ]
       ; ggid = "=\005 \134\187\"64\197S\19256,\031l"
-      ; types = [ "unit", Implicit_var 0 ]
+      ; types = [ "unit", Tycon_index 0 ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ Unit.t_sexp_grammar ]
+      ; instantiate_tycons = [ Unit.t_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "base.ml.Export"
       }

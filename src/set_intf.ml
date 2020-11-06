@@ -709,6 +709,7 @@ module type Creators_generic = sig
   val singleton : ('a, 'cmp, 'a elt -> ('a, 'cmp) t) options
   val union_list : ('a, 'cmp, ('a, 'cmp) t list -> ('a, 'cmp) t) options
   val of_list : ('a, 'cmp, 'a elt list -> ('a, 'cmp) t) options
+  val of_sequence : ('a, 'cmp, 'a elt Sequence.t -> ('a, 'cmp) t) options
   val of_array : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t) options
   val of_sorted_array : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t Or_error.t) options
   val of_sorted_array_unchecked : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t) options
@@ -746,6 +747,7 @@ module type Creators0 = sig
   val singleton : elt -> t
   val union_list : t list -> t
   val of_list : elt list -> t
+  val of_sequence : elt Sequence.t -> t
   val of_array : elt array -> t
   val of_sorted_array : elt array -> t Or_error.t
   val of_sorted_array_unchecked : elt array -> t
@@ -766,6 +768,7 @@ module type Creators1 = sig
   val singleton : 'a -> 'a t
   val union_list : 'a t list -> 'a t
   val of_list : 'a list -> 'a t
+  val of_sequence : 'a Sequence.t -> 'a t
   val of_array : 'a array -> 'a t
   val of_sorted_array : 'a array -> 'a t Or_error.t
   val of_sorted_array_unchecked : 'a array -> 'a t
@@ -785,6 +788,7 @@ module type Creators2 = sig
   val singleton : 'a -> ('a, 'cmp) t
   val union_list : ('a, 'cmp) t list -> ('a, 'cmp) t
   val of_list : 'a list -> ('a, 'cmp) t
+  val of_sequence : 'a Sequence.t -> ('a, 'cmp) t
   val of_array : 'a array -> ('a, 'cmp) t
   val of_sorted_array : 'a array -> ('a, 'cmp) t Or_error.t
   val of_sorted_array_unchecked : 'a array -> ('a, 'cmp) t
@@ -804,6 +808,7 @@ module type Creators2_with_comparator = sig
   val singleton : comparator:('a, 'cmp) Comparator.t -> 'a -> ('a, 'cmp) t
   val union_list : comparator:('a, 'cmp) Comparator.t -> ('a, 'cmp) t list -> ('a, 'cmp) t
   val of_list : comparator:('a, 'cmp) Comparator.t -> 'a list -> ('a, 'cmp) t
+  val of_sequence : comparator:('a, 'cmp) Comparator.t -> 'a Sequence.t -> ('a, 'cmp) t
   val of_array : comparator:('a, 'cmp) Comparator.t -> 'a array -> ('a, 'cmp) t
 
   val of_sorted_array
@@ -1004,6 +1009,7 @@ module type For_deriving = sig
     -> Sexp.t
     -> ('elt, 'cmp) t
 
+  val m__t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
   val compare_m__t : (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
   val equal_m__t : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
 
@@ -1194,6 +1200,7 @@ module type Set = sig
   (** The list or array given to [of_list] and [of_array] need not be sorted. *)
   val of_list : ('a, 'cmp) comparator -> 'a list -> ('a, 'cmp) t
 
+  val of_sequence : ('a, 'cmp) comparator -> 'a Sequence.t -> ('a, 'cmp) t
   val of_array : ('a, 'cmp) comparator -> 'a array -> ('a, 'cmp) t
 
   (** [to_list] and [to_array] produce sequences sorted in ascending order according to the

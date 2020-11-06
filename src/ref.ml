@@ -1,11 +1,5 @@
 open! Import
 
-(* In the definition of [t], we do not have [[@@deriving compare, sexp]] because
-   in general, syntax extensions tend to use the implementation when available rather than
-   using the alias.  Here that would lead to use the record representation [ { mutable
-   contents : 'a } ] which would result in different (and unwanted) behavior.  *)
-type 'a t = 'a ref = { mutable contents : 'a }
-
 include (
 struct
   type 'a t = 'a ref [@@deriving_inline compare, equal, sexp, sexp_grammar]
@@ -27,15 +21,18 @@ struct
 
   let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
     let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "ref" ]
+      { tycon_names = [ "ref" ]
       ; ggid = "j\132);\135qH\158\135\222H\001\007\004\158\218"
       ; types =
-          [ "t", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
+          [ ( "t"
+            , Tyvar_parameterize
+                ([ "a" ], Tyvar_instantiate (Tycon_index 0, [ Tyvar_index 0 ])) )
+          ]
       }
     in
     let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
       { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ ref_sexp_grammar ]
+      ; instantiate_tycons = [ ref_sexp_grammar ]
       ; generic_group = _the_generic_group
       ; origin = "ref.ml"
       }
@@ -59,8 +56,13 @@ sig
   val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
-end
-with type 'a t := 'a t)
+end)
+
+(* In the definition of [t], we do not have [[@@deriving compare, sexp]] because
+   in general, syntax extensions tend to use the implementation when available rather than
+   using the alias.  Here that would lead to use the record representation [ { mutable
+   contents : 'a } ] which would result in different (and unwanted) behavior.  *)
+type 'a t = 'a ref = { mutable contents : 'a }
 
 external create : 'a -> 'a t = "%makemutable"
 external ( ! ) : 'a t -> 'a = "%field0"

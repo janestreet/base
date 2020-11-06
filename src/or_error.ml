@@ -1,4 +1,5 @@
 open! Import
+include Result
 
 type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, equal, hash, sexp]
 
@@ -33,12 +34,6 @@ let invariant invariant_a t =
   | Ok a -> invariant_a a
   | Error error -> Error.invariant error
 ;;
-
-include (
-  Result :
-    Monad.S2
-  with type ('a, 'b) t := ('a, 'b) Result.t
-  with module Let_syntax := Result.Let_syntax)
 
 include Applicative.Make (struct
     type nonrec 'a t = 'a t

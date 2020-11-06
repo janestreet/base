@@ -921,6 +921,10 @@ module Tree0 = struct
     List.fold lst ~init:empty ~f:(fun t x -> add t x ~compare_elt)
   ;;
 
+  let of_sequence sequence ~compare_elt =
+    Sequence.fold sequence ~init:empty ~f:(fun t x -> add t x ~compare_elt)
+  ;;
+
   let to_list s = elements s
 
   let of_array a ~compare_elt =
@@ -1264,6 +1268,7 @@ module Tree = struct
   ;;
 
   let of_list ~comparator l = Tree0.of_list l ~compare_elt:(ce comparator)
+  let of_sequence ~comparator s = Tree0.of_sequence s ~compare_elt:(ce comparator)
   let of_array ~comparator a = Tree0.of_array a ~compare_elt:(ce comparator)
 
   let of_sorted_array_unchecked ~comparator a =
@@ -1373,6 +1378,10 @@ module Using_comparator = struct
     { comparator; tree = Tree0.of_list l ~compare_elt:comparator.Comparator.compare }
   ;;
 
+  let of_sequence ~comparator s =
+    { comparator; tree = Tree0.of_sequence s ~compare_elt:comparator.Comparator.compare }
+  ;;
+
   let of_array ~comparator a =
     { comparator; tree = Tree0.of_array a ~compare_elt:comparator.Comparator.compare }
   ;;
@@ -1421,6 +1430,7 @@ let of_increasing_iterator_unchecked m ~len ~f =
 
 let of_sorted_array m a = Using_comparator.of_sorted_array ~comparator:(to_comparator m) a
 let of_list m a = Using_comparator.of_list ~comparator:(to_comparator m) a
+let of_sequence m a = Using_comparator.of_sequence ~comparator:(to_comparator m) a
 let of_array m a = Using_comparator.of_array ~comparator:(to_comparator m) a
 
 let stable_dedup_list m a =
@@ -1472,6 +1482,7 @@ let m__t_of_sexp
   Using_comparator.t_of_sexp_direct ~comparator:Elt.comparator Elt.t_of_sexp sexp
 ;;
 
+let m__t_sexp_grammar = list_sexp_grammar
 let compare_m__t (module Elt : Compare_m) t1 t2 = compare_direct t1 t2
 let equal_m__t (module Elt : Equal_m) t1 t2 = equal t1 t2
 
@@ -1510,6 +1521,7 @@ module Poly = struct
 
   let of_sorted_array a = Using_comparator.of_sorted_array ~comparator a
   let of_list a = Using_comparator.of_list ~comparator a
+  let of_sequence a = Using_comparator.of_sequence ~comparator a
   let of_array a = Using_comparator.of_array ~comparator a
   let stable_dedup_list a = Using_comparator.stable_dedup_list ~comparator a
   let map a ~f = Using_comparator.map ~comparator a ~f
