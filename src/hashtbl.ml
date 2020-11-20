@@ -561,6 +561,7 @@ let t_of_sexp ~hashable k_of_sexp d_of_sexp sexp =
     assert false
 ;;
 
+let t_sexp_grammar = List.Assoc.t_sexp_grammar
 let keys t = fold t ~init:[] ~f:(fun ~key ~data:_ acc -> key :: acc)
 let data t = fold ~f:(fun ~key:_ ~data list -> data :: list) ~init:[] t
 
@@ -829,6 +830,7 @@ module Poly = struct
   include Accessors
 
   let sexp_of_t = sexp_of_t
+  let t_sexp_grammar = t_sexp_grammar
 end
 
 module Private = struct

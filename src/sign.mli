@@ -6,9 +6,10 @@ type t = Sign0.t =
   | Neg
   | Zero
   | Pos
-[@@deriving_inline enumerate]
+[@@deriving_inline enumerate, sexp_grammar]
 
 val all : t list
+val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
 [@@@end]
 

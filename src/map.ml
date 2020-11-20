@@ -2242,6 +2242,15 @@ module Using_comparator = struct
     of_tree0 ~comparator (Tree0.t_of_sexp_direct k_of_sexp v_of_sexp sexp ~comparator)
   ;;
 
+  let map_keys
+        (comparator2 : ('k2, 'cmp2) Comparator.t)
+        ~(f : 'k1 -> 'k2)
+        (t : ('k1, 'v, 'cmp1) t)
+    =
+    let x = to_sequence t in
+    x |> Sequence.map ~f:(fun (k, v) -> f k, v) |> of_sequence ~comparator:comparator2
+  ;;
+
   module Empty_without_value_restriction (K : Comparator.S1) = struct
     let empty = { tree = Tree0.empty; comparator = K.comparator; length = 0 }
   end
@@ -2316,6 +2325,14 @@ let of_sequence_fold m s ~init ~f =
 
 let of_sequence_reduce m s ~f =
   Using_comparator.of_sequence_reduce ~comparator:(to_comparator m) s ~f
+;;
+
+let map_keys
+      (comparator2 : ('k2, 'cmp2) Comparator.t)
+      ~(f : 'k1 -> 'k2)
+      (t : ('k1, 'v, 'cmp1) t)
+  =
+  Using_comparator.map_keys comparator2 t ~f
 ;;
 
 module M (K : sig

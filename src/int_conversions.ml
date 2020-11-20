@@ -344,6 +344,8 @@ struct
         | Some (Pos body) -> of_string_with_delimiter body)
       else invalid str
     ;;
+
+    let t_sexp_grammar = String.t_sexp_grammar
   end
 
   module Hex = struct

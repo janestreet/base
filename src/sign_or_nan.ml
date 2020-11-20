@@ -6,7 +6,7 @@ module T = struct
     | Zero
     | Pos
     | Nan
-  [@@deriving_inline sexp, compare, hash, enumerate]
+  [@@deriving_inline sexp, sexp_grammar, compare, hash, enumerate]
 
   let t_of_sexp =
     (let _tp_loc = "sign_or_nan.ml.T.t" in
@@ -38,6 +38,32 @@ module T = struct
       | Pos -> Ppx_sexp_conv_lib.Sexp.Atom "Pos"
       | Nan -> Ppx_sexp_conv_lib.Sexp.Atom "Nan"
                : t -> Ppx_sexp_conv_lib.Sexp.t)
+  ;;
+
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
+      { tycon_names = []
+      ; ggid = "\145_/\130\rT\136j{\183\001\011\225\172\149\197"
+      ; types =
+          [ ( "t"
+            , Variant
+                { ignore_capitalization = true
+                ; alts = [ "Neg", []; "Zero", []; "Pos", []; "Nan", [] ]
+                } )
+          ]
+      }
+    in
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
+      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+      ; instantiate_tycons = []
+      ; generic_group = _the_generic_group
+      ; origin = "sign_or_nan.ml.T"
+      }
+    in
+    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+      Ref ("t", _the_group)
+    in
+    t_sexp_grammar
   ;;
 
   let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)

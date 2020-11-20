@@ -4,7 +4,7 @@ type 'a t =
   | Incl of 'a
   | Excl of 'a
   | Unbounded
-[@@deriving_inline enumerate, sexp]
+[@@deriving_inline enumerate, sexp, sexp_grammar]
 
 let all : 'a. 'a list -> 'a t list =
   fun _all_of_a ->
@@ -70,13 +70,45 @@ let sexp_of_t : type a. (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_
     | Unbounded -> Ppx_sexp_conv_lib.Sexp.Atom "Unbounded"
 ;;
 
+let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+  let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
+    { tycon_names = []
+    ; ggid = "\128fS>\217\225\181m\196~\202D\2319\016\""
+    ; types =
+        [ ( "t"
+          , Tyvar_parameterize
+              ( [ "a" ]
+              , Variant
+                  { ignore_capitalization = true
+                  ; alts =
+                      [ "Incl", [ One (Tyvar_index 0) ]
+                      ; "Excl", [ One (Tyvar_index 0) ]
+                      ; "Unbounded", []
+                      ]
+                  } ) )
+        ]
+    }
+  in
+  let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
+    { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+    ; instantiate_tycons = []
+    ; generic_group = _the_generic_group
+    ; origin = "maybe_bound.ml"
+    }
+  in
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    Ref ("t", _the_group)
+  in
+  t_sexp_grammar
+;;
+
 [@@@end]
 
 type interval_comparison =
   | Below_lower_bound
   | In_range
   | Above_upper_bound
-[@@deriving_inline sexp, compare, hash]
+[@@deriving_inline sexp, sexp_grammar, compare, hash]
 
 let interval_comparison_of_sexp =
   (let _tp_loc = "maybe_bound.ml.interval_comparison" in
@@ -109,6 +141,33 @@ let sexp_of_interval_comparison =
     | In_range -> Ppx_sexp_conv_lib.Sexp.Atom "In_range"
     | Above_upper_bound -> Ppx_sexp_conv_lib.Sexp.Atom "Above_upper_bound"
                            : interval_comparison -> Ppx_sexp_conv_lib.Sexp.t)
+;;
+
+let (interval_comparison_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+  let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
+    { tycon_names = []
+    ; ggid = "\152\227's\1785\221\213w9\189\029\237\194o\163"
+    ; types =
+        [ ( "interval_comparison"
+          , Variant
+              { ignore_capitalization = true
+              ; alts =
+                  [ "Below_lower_bound", []; "In_range", []; "Above_upper_bound", [] ]
+              } )
+        ]
+    }
+  in
+  let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
+    { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+    ; instantiate_tycons = []
+    ; generic_group = _the_generic_group
+    ; origin = "maybe_bound.ml"
+    }
+  in
+  let (interval_comparison_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    Ref ("interval_comparison", _the_group)
+  in
+  interval_comparison_sexp_grammar
 ;;
 
 let compare_interval_comparison =

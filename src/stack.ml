@@ -115,6 +115,7 @@ let of_list (type a) (l : a list) =
 
 let sexp_of_t sexp_of_a t = List.sexp_of_t sexp_of_a (to_list t)
 let t_of_sexp a_of_sexp sexp = of_list (List.t_of_sexp a_of_sexp sexp)
+let t_sexp_grammar = List.t_sexp_grammar
 
 let resize t size =
   let arr = Option_array.create ~len:size in

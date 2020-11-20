@@ -551,7 +551,7 @@ module Class = struct
     | Normal
     | Subnormal
     | Zero
-  [@@deriving_inline compare, enumerate, sexp]
+  [@@deriving_inline compare, enumerate, sexp, sexp_grammar]
 
   let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
   let all = ([ Infinite; Nan; Normal; Subnormal; Zero ] : t list)
@@ -593,6 +593,38 @@ module Class = struct
       | Subnormal -> Ppx_sexp_conv_lib.Sexp.Atom "Subnormal"
       | Zero -> Ppx_sexp_conv_lib.Sexp.Atom "Zero"
                 : t -> Ppx_sexp_conv_lib.Sexp.t)
+  ;;
+
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
+      { tycon_names = []
+      ; ggid = "\218\022\207\021\220A(\005\238\003L\161A\167=\133"
+      ; types =
+          [ ( "t"
+            , Variant
+                { ignore_capitalization = true
+                ; alts =
+                    [ "Infinite", []
+                    ; "Nan", []
+                    ; "Normal", []
+                    ; "Subnormal", []
+                    ; "Zero", []
+                    ]
+                } )
+          ]
+      }
+    in
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
+      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+      ; instantiate_tycons = []
+      ; generic_group = _the_generic_group
+      ; origin = "float.ml.Class"
+      }
+    in
+    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+      Ref ("t", _the_group)
+    in
+    t_sexp_grammar
   ;;
 
   [@@@end]
@@ -951,6 +983,7 @@ module Terse = struct
   let to_string x = Printf.sprintf "%.8G" x
   let sexp_of_t x = Sexp.Atom (to_string x)
   let of_string x = of_string x
+  let t_sexp_grammar = t_sexp_grammar
 end
 
 include Comparable.With_zero (struct

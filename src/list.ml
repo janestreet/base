@@ -951,7 +951,7 @@ let partition_tf t ~f =
 let partition_result t = partition_map t ~f:Result.to_either
 
 module Assoc = struct
-  type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp]
+  type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp, sexp_grammar]
 
   let t_of_sexp :
     'a 'b. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> (Ppx_sexp_conv_lib.Sexp.t -> 'b)
@@ -981,6 +981,33 @@ module Assoc = struct
             and v1 = _of_b v1 in
             Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ])
         v
+  ;;
+
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
+      { tycon_names = [ "list" ]
+      ; ggid = "\168\145\146\\\236\200N\205\140\146\t\200r6\216y"
+      ; types =
+          [ ( "t"
+            , Tyvar_parameterize
+                ( [ "a"; "b" ]
+                , Tyvar_instantiate
+                    (Tycon_index 0, [ List [ One (Tyvar_index 0); One (Tyvar_index 1) ] ])
+                ) )
+          ]
+      }
+    in
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
+      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+      ; instantiate_tycons = [ list_sexp_grammar ]
+      ; generic_group = _the_generic_group
+      ; origin = "list.ml.Assoc"
+      }
+    in
+    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+      Ref ("t", _the_group)
+    in
+    t_sexp_grammar
   ;;
 
   [@@@end]

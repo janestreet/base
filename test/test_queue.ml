@@ -10,7 +10,7 @@ let%test_module _ =
 
      let does_raise = Exn.does_raise
 
-     type nonrec 'a t = 'a t [@@deriving bin_io, sexp]
+     type nonrec 'a t = 'a t [@@deriving bin_io, sexp, sexp_grammar]
 
      let capacity = capacity
      let set_capacity = set_capacity

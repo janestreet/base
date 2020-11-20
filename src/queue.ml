@@ -481,3 +481,4 @@ let singleton x =
 
 let sexp_of_t sexp_of_a t = to_list t |> List.sexp_of_t sexp_of_a
 let t_of_sexp a_of_sexp sexp = List.t_of_sexp a_of_sexp sexp |> of_list
+let t_sexp_grammar = List.t_sexp_grammar

@@ -35,7 +35,7 @@ open! Import
 
 module type S = sig
   (** Serialization and comparison force the lazy message. *)
-  type t [@@deriving_inline compare, equal, hash, sexp]
+  type t [@@deriving_inline compare, equal, hash, sexp, sexp_grammar]
 
   val compare : t -> t -> int
   val equal : t -> t -> bool
@@ -43,6 +43,8 @@ module type S = sig
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 

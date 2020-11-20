@@ -433,9 +433,11 @@ val filter_opt : 'a option t -> 'a t
 
     {[ Map.xxx (alist |> Map.of_alist_multi |> Map.map ~f:List.hd) ...args... ]} *)
 module Assoc : sig
-  type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp]
+  type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp, sexp_grammar]
 
   include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
+
+  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 

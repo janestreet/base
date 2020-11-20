@@ -4,7 +4,7 @@ type t =
   | Less
   | Equal
   | Greater
-[@@deriving_inline compare, hash, enumerate, sexp]
+[@@deriving_inline compare, hash, enumerate, sexp, sexp_grammar]
 
 let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
 
@@ -55,6 +55,32 @@ let sexp_of_t =
     | Equal -> Ppx_sexp_conv_lib.Sexp.Atom "Equal"
     | Greater -> Ppx_sexp_conv_lib.Sexp.Atom "Greater"
                  : t -> Ppx_sexp_conv_lib.Sexp.t)
+;;
+
+let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+  let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
+    { tycon_names = []
+    ; ggid = "c\148\242\213_wjU\222+(9\220R\203Y"
+    ; types =
+        [ ( "t"
+          , Variant
+              { ignore_capitalization = true
+              ; alts = [ "Less", []; "Equal", []; "Greater", [] ]
+              } )
+        ]
+    }
+  in
+  let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
+    { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+    ; instantiate_tycons = []
+    ; generic_group = _the_generic_group
+    ; origin = "ordering.ml"
+    }
+  in
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    Ref ("t", _the_group)
+  in
+  t_sexp_grammar
 ;;
 
 [@@@end]

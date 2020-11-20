@@ -140,6 +140,7 @@ let to_array t =
 
 let t_of_sexp a_of_sexp sexp = of_list (list_of_sexp a_of_sexp sexp)
 let sexp_of_t sexp_of_a t = sexp_of_list sexp_of_a (to_list t)
+let t_sexp_grammar = List.t_sexp_grammar
 
 let singleton a =
   let t = create () in

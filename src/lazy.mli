@@ -21,7 +21,7 @@
 
 open! Import
 
-type 'a t = 'a lazy_t [@@deriving_inline compare, hash, sexp]
+type 'a t = 'a lazy_t [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
 val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 
@@ -32,6 +32,8 @@ val hash_fold_t
   -> Ppx_hash_lib.Std.Hash.state
 
 include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+
+val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
 [@@@end]
 

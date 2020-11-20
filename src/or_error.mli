@@ -9,7 +9,8 @@
 open! Import
 
 (** Serialization and comparison of an [Error] force the error's lazy message. *)
-type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, equal, hash, sexp]
+type 'a t = ('a, Error.t) Result.t
+[@@deriving_inline compare, equal, hash, sexp, sexp_grammar]
 
 val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
@@ -21,6 +22,8 @@ val hash_fold_t
   -> Ppx_hash_lib.Std.Hash.state
 
 include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+
+val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
 [@@@end]
 

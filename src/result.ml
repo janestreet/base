@@ -4,7 +4,7 @@ module Either = Either0
 type ('a, 'b) t = ('a, 'b) Caml.result =
   | Ok of 'a
   | Error of 'b
-[@@deriving_inline sexp, compare, equal, hash]
+[@@deriving_inline sexp, sexp_grammar, compare, equal, hash]
 
 let t_of_sexp
   : type a b.
@@ -55,6 +55,35 @@ let sexp_of_t
     | Error v0 ->
       let v0 = _of_b v0 in
       Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Error"; v0 ]
+;;
+
+let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+  let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
+    { tycon_names = []
+    ; ggid = "yI\151s;\129\t\142\199(\173=\149\251\176E"
+    ; types =
+        [ ( "t"
+          , Tyvar_parameterize
+              ( [ "a"; "b" ]
+              , Variant
+                  { ignore_capitalization = true
+                  ; alts =
+                      [ "Ok", [ One (Tyvar_index 0) ]; "Error", [ One (Tyvar_index 1) ] ]
+                  } ) )
+        ]
+    }
+  in
+  let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
+    { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+    ; instantiate_tycons = []
+    ; generic_group = _the_generic_group
+    ; origin = "result.ml"
+    }
+  in
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    Ref ("t", _the_group)
+  in
+  t_sexp_grammar
 ;;
 
 let compare :

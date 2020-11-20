@@ -34,7 +34,7 @@ module type Either = sig
   type ('f, 's) t = ('f, 's) Either0.t =
     | First of 'f
     | Second of 's
-  [@@deriving_inline compare, hash, sexp]
+  [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
   val compare : ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
 
@@ -46,6 +46,8 @@ module type Either = sig
     -> Ppx_hash_lib.Std.Hash.state
 
   include Ppx_sexp_conv_lib.Sexpable.S2 with type ('f, 's) t := ('f, 's) t
+
+  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 

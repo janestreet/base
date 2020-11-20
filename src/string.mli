@@ -85,12 +85,14 @@ val uncapitalize : t -> t
     that for example [Caseless.is_suffix "OCaml" ~suffix:"AmL"] and [Caseless.is_prefix
     "OCaml" ~prefix:"oc"] are [true]. *)
 module Caseless : sig
-  type nonrec t = t [@@deriving_inline hash, sexp]
+  type nonrec t = t [@@deriving_inline hash, sexp, sexp_grammar]
 
   val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 

@@ -152,9 +152,11 @@ module type Hash_set = sig
 
   (** A hash set that uses polymorphic comparison *)
   module Poly : sig
-    type nonrec 'a t = 'a t [@@deriving_inline sexp]
+    type nonrec 'a t = 'a t [@@deriving_inline sexp, sexp_grammar]
 
     include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+
+    val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
     [@@@end]
 

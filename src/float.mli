@@ -539,12 +539,14 @@ module Class : sig
     | Normal
     | Subnormal
     | Zero
-  [@@deriving_inline compare, enumerate, sexp]
+  [@@deriving_inline compare, enumerate, sexp, sexp_grammar]
 
   val compare : t -> t -> int
   val all : t list
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 
@@ -591,9 +593,11 @@ val ieee_mantissa : t -> Int63.t
 
 (** S-expressions contain at most 8 significant digits. *)
 module Terse : sig
-  type nonrec t = t [@@deriving_inline sexp]
+  type nonrec t = t [@@deriving_inline sexp, sexp_grammar]
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 

@@ -41,10 +41,11 @@ module type Hexable = sig
   type t
 
   module Hex : sig
-    type nonrec t = t [@@deriving_inline sexp, compare, hash]
+    type nonrec t = t [@@deriving_inline sexp, sexp_grammar, compare, hash]
 
     include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
+    val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
     val compare : t -> t -> int
     val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
     val hash : t -> Ppx_hash_lib.Std.Hash.hash_value

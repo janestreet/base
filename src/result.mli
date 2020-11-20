@@ -17,9 +17,11 @@ open! Import
 type ('ok, 'err) t = ('ok, 'err) Caml.result =
   | Ok of 'ok
   | Error of 'err
-[@@deriving_inline sexp, compare, equal, hash]
+[@@deriving_inline sexp, sexp_grammar, compare, equal, hash]
 
 include Ppx_sexp_conv_lib.Sexpable.S2 with type ('ok, 'err) t := ('ok, 'err) t
+
+val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
 val compare
   :  ('ok -> 'ok -> int)

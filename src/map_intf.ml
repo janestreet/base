@@ -33,7 +33,7 @@ end
 
 module Symmetric_diff_element = struct
   type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
-  [@@deriving_inline compare, sexp]
+  [@@deriving_inline compare, sexp, sexp_grammar]
 
   let compare :
     'k 'v. ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
@@ -149,6 +149,45 @@ module Symmetric_diff_element = struct
               ]
         in
         Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ]
+  ;;
+
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
+      { tycon_names = []
+      ; ggid = "py\246\208\003j\239\004\174\170\158<\236\226aA"
+      ; types =
+          [ ( "t"
+            , Tyvar_parameterize
+                ( [ "k"; "v" ]
+                , List
+                    [ One (Tyvar_index 0)
+                    ; One
+                        (Variant
+                           { ignore_capitalization = false
+                           ; alts =
+                               [ "Left", [ One (Tyvar_index 1) ]
+                               ; "Right", [ One (Tyvar_index 1) ]
+                               ; ( "Unequal"
+                                 , [ One
+                                       (List [ One (Tyvar_index 1); One (Tyvar_index 1) ])
+                                   ] )
+                               ]
+                           })
+                    ] ) )
+          ]
+      }
+    in
+    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
+      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+      ; instantiate_tycons = []
+      ; generic_group = _the_generic_group
+      ; origin = "map_intf.ml.Symmetric_diff_element"
+      }
+    in
+    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+      Ref ("t", _the_group)
+    in
+    t_sexp_grammar
   ;;
 
   [@@@end]
@@ -845,6 +884,13 @@ module type Accessors3 = sig
 
   val map : ('a, 'b, 'cmp) t -> f:('b -> 'c) -> ('a, 'c, 'cmp) t
   val mapi : ('a, 'b, 'cmp) t -> f:(key:'a -> data:'b -> 'c) -> ('a, 'c, 'cmp) t
+
+  val map_keys
+    :  ('k2, 'cmp2) Comparator.t
+    -> f:('k1 -> 'k2)
+    -> ('k1, 'v, 'cmp1) t
+    -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 ]
+
   val fold : ('a, 'b, _) t -> init:'c -> f:(key:'a -> data:'b -> 'c -> 'c) -> 'c
   val fold_right : ('a, 'b, _) t -> init:'c -> f:(key:'a -> data:'b -> 'c -> 'c) -> 'c
 
@@ -2087,6 +2133,13 @@ module type Map = sig
   (** Like [map], but the passed function takes both [key] and [data] as arguments. *)
   val mapi : ('k, 'v1, 'cmp) t -> f:(key:'k -> data:'v1 -> 'v2) -> ('k, 'v2, 'cmp) t
 
+  (** Convert map with keys of type ['k2] to a map with keys of type ['k2] using [f]. *)
+  val map_keys
+    :  ('k2, 'cmp2) Comparator.t
+    -> f:('k1 -> 'k2)
+    -> ('k1, 'v, 'cmp1) t
+    -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 ]
+
   (** Folds over keys and data in the map in increasing order of [key]. *)
   val fold : ('k, 'v, _) t -> init:'a -> f:(key:'k -> data:'v -> 'a -> 'a) -> 'a
 
@@ -2214,7 +2267,7 @@ module type Map = sig
 
   module Symmetric_diff_element : sig
     type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
-    [@@deriving_inline compare, sexp]
+    [@@deriving_inline compare, sexp, sexp_grammar]
 
     val compare
       :  ('k -> 'k -> int)
@@ -2224,6 +2277,8 @@ module type Map = sig
       -> int
 
     include Ppx_sexp_conv_lib.Sexpable.S2 with type ('k, 'v) t := ('k, 'v) t
+
+    val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
     [@@@end]
   end

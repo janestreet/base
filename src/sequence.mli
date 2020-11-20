@@ -124,7 +124,7 @@ module Merge_with_duplicates_element : sig
     | Left of 'a
     | Right of 'b
     | Both of 'a * 'b
-  [@@deriving_inline compare, hash, sexp]
+  [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
   val compare : ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
 
@@ -136,6 +136,8 @@ module Merge_with_duplicates_element : sig
     -> Ppx_hash_lib.Std.Hash.state
 
   include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
+
+  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 end

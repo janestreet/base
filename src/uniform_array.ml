@@ -120,6 +120,8 @@ let map2_exn t1 t2 ~f =
   init len ~f:(fun i -> f (unsafe_get t1 i) (unsafe_get t2 i))
 ;;
 
+let t_sexp_grammar = Array.t_sexp_grammar
+
 include Sexpable.Of_sexpable1
     (Array)
     (struct

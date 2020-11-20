@@ -6,7 +6,7 @@ type t =
   | Neg
   | Zero
   | Pos
-[@@deriving_inline sexp, compare, hash, enumerate]
+[@@deriving_inline sexp, sexp_grammar, compare, hash, enumerate]
 
 let t_of_sexp =
   (let _tp_loc = "sign0.ml.t" in
@@ -34,6 +34,32 @@ let sexp_of_t =
     | Zero -> Ppx_sexp_conv_lib.Sexp.Atom "Zero"
     | Pos -> Ppx_sexp_conv_lib.Sexp.Atom "Pos"
              : t -> Ppx_sexp_conv_lib.Sexp.t)
+;;
+
+let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+  let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
+    { tycon_names = []
+    ; ggid = "7m\236\154\162\001\130\007d\023\245yC\181\184C"
+    ; types =
+        [ ( "t"
+          , Variant
+              { ignore_capitalization = true
+              ; alts = [ "Neg", []; "Zero", []; "Pos", [] ]
+              } )
+        ]
+    }
+  in
+  let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
+    { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
+    ; instantiate_tycons = []
+    ; generic_group = _the_generic_group
+    ; origin = "sign0.ml"
+    }
+  in
+  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    Ref ("t", _the_group)
+  in
+  t_sexp_grammar
 ;;
 
 let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)

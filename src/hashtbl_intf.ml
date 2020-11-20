@@ -602,9 +602,11 @@ module type S_without_submodules = sig
 end
 
 module type S_poly = sig
-  type ('a, 'b) t [@@deriving_inline sexp]
+  type ('a, 'b) t [@@deriving_inline sexp, sexp_grammar]
 
   include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
+
+  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 

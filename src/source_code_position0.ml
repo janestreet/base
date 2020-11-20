@@ -9,7 +9,7 @@ module T = struct
     ; pos_bol : int
     ; pos_cnum : int
     }
-  [@@deriving_inline compare, hash, sexp]
+  [@@deriving_inline compare, hash, sexp_of]
 
   let compare =
     (fun a__001_ b__002_ ->
@@ -50,108 +50,6 @@ module T = struct
          hash_fold_t hsv arg)
     in
     fun x -> func x
-  ;;
-
-  let t_of_sexp =
-    (let _tp_loc = "source_code_position0.ml.T.t" in
-     function
-     | Ppx_sexp_conv_lib.Sexp.List field_sexps as sexp ->
-       let pos_fname_field = ref Ppx_sexp_conv_lib.Option.None
-       and pos_lnum_field = ref Ppx_sexp_conv_lib.Option.None
-       and pos_bol_field = ref Ppx_sexp_conv_lib.Option.None
-       and pos_cnum_field = ref Ppx_sexp_conv_lib.Option.None
-       and duplicates = ref []
-       and extra = ref [] in
-       let rec iter = function
-         | Ppx_sexp_conv_lib.Sexp.List
-             (Ppx_sexp_conv_lib.Sexp.Atom field_name :: (([] | [ _ ]) as _field_sexps))
-           :: tail ->
-           let _field_sexp () =
-             match _field_sexps with
-             | [ x ] -> x
-             | [] -> Ppx_sexp_conv_lib.Conv_error.record_only_pairs_expected _tp_loc sexp
-             | _ -> assert false
-           in
-           (match field_name with
-            | "pos_fname" ->
-              (match !pos_fname_field with
-               | Ppx_sexp_conv_lib.Option.None ->
-                 let _field_sexp = _field_sexp () in
-                 let fvalue = string_of_sexp _field_sexp in
-                 pos_fname_field := Ppx_sexp_conv_lib.Option.Some fvalue
-               | Ppx_sexp_conv_lib.Option.Some _ -> duplicates := field_name :: !duplicates)
-            | "pos_lnum" ->
-              (match !pos_lnum_field with
-               | Ppx_sexp_conv_lib.Option.None ->
-                 let _field_sexp = _field_sexp () in
-                 let fvalue = int_of_sexp _field_sexp in
-                 pos_lnum_field := Ppx_sexp_conv_lib.Option.Some fvalue
-               | Ppx_sexp_conv_lib.Option.Some _ -> duplicates := field_name :: !duplicates)
-            | "pos_bol" ->
-              (match !pos_bol_field with
-               | Ppx_sexp_conv_lib.Option.None ->
-                 let _field_sexp = _field_sexp () in
-                 let fvalue = int_of_sexp _field_sexp in
-                 pos_bol_field := Ppx_sexp_conv_lib.Option.Some fvalue
-               | Ppx_sexp_conv_lib.Option.Some _ -> duplicates := field_name :: !duplicates)
-            | "pos_cnum" ->
-              (match !pos_cnum_field with
-               | Ppx_sexp_conv_lib.Option.None ->
-                 let _field_sexp = _field_sexp () in
-                 let fvalue = int_of_sexp _field_sexp in
-                 pos_cnum_field := Ppx_sexp_conv_lib.Option.Some fvalue
-               | Ppx_sexp_conv_lib.Option.Some _ -> duplicates := field_name :: !duplicates)
-            | _ ->
-              if !Ppx_sexp_conv_lib.Conv.record_check_extra_fields
-              then extra := field_name :: !extra
-              else ());
-           iter tail
-         | ((Ppx_sexp_conv_lib.Sexp.Atom _ | Ppx_sexp_conv_lib.Sexp.List _) as sexp) :: _
-           -> Ppx_sexp_conv_lib.Conv_error.record_only_pairs_expected _tp_loc sexp
-         | [] -> ()
-       in
-       iter field_sexps;
-       (match !duplicates with
-        | _ :: _ ->
-          Ppx_sexp_conv_lib.Conv_error.record_duplicate_fields _tp_loc !duplicates sexp
-        | [] ->
-          (match !extra with
-           | _ :: _ -> Ppx_sexp_conv_lib.Conv_error.record_extra_fields _tp_loc !extra sexp
-           | [] ->
-             (match !pos_fname_field, !pos_lnum_field, !pos_bol_field, !pos_cnum_field with
-              | ( Ppx_sexp_conv_lib.Option.Some pos_fname_value
-                , Ppx_sexp_conv_lib.Option.Some pos_lnum_value
-                , Ppx_sexp_conv_lib.Option.Some pos_bol_value
-                , Ppx_sexp_conv_lib.Option.Some pos_cnum_value ) ->
-                { pos_fname = pos_fname_value
-                ; pos_lnum = pos_lnum_value
-                ; pos_bol = pos_bol_value
-                ; pos_cnum = pos_cnum_value
-                }
-              | _ ->
-                Ppx_sexp_conv_lib.Conv_error.record_undefined_elements
-                  _tp_loc
-                  sexp
-                  [ ( Ppx_sexp_conv_lib.Conv.( = )
-                        !pos_fname_field
-                        Ppx_sexp_conv_lib.Option.None
-                    , "pos_fname" )
-                  ; ( Ppx_sexp_conv_lib.Conv.( = )
-                        !pos_lnum_field
-                        Ppx_sexp_conv_lib.Option.None
-                    , "pos_lnum" )
-                  ; ( Ppx_sexp_conv_lib.Conv.( = )
-                        !pos_bol_field
-                        Ppx_sexp_conv_lib.Option.None
-                    , "pos_bol" )
-                  ; ( Ppx_sexp_conv_lib.Conv.( = )
-                        !pos_cnum_field
-                        Ppx_sexp_conv_lib.Option.None
-                    , "pos_cnum" )
-                  ])))
-     | Ppx_sexp_conv_lib.Sexp.Atom _ as sexp ->
-       Ppx_sexp_conv_lib.Conv_error.record_list_instead_atom _tp_loc sexp
-       : Ppx_sexp_conv_lib.Sexp.t -> t)
   ;;
 
   let sexp_of_t =
