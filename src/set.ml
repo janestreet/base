@@ -212,7 +212,7 @@ module Tree0 = struct
     then (
       match r with
       | Empty -> assert false
-      | Leaf rv -> create (create l v Empty) rv Empty
+      | Leaf _ -> assert false (* because h(r)>h(l)+2 and h(leaf)=1 *)
       | Node (rl, rv, rr, _, _) ->
         if height rr >= height rl
         then create (create l v rl) rv rr
