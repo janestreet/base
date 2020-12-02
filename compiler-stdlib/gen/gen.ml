@@ -5,7 +5,6 @@ module Ocaml_version : sig
 
   val v407 : t
   val v408 : t
-  val v412 : t
   val current : t
   val compare : t -> t -> int
 end = struct
@@ -27,7 +26,6 @@ end = struct
 
   let v407 = parse "4.07"
   let v408 = parse "4.08"
-  let v412 = parse "4.12"
   let current = parse Sys.ocaml_version
 
   let compare ((a1, b1) : t) ((a2, b2) : t) =
@@ -82,10 +80,6 @@ let () =
     pr "module Result = struct end";
     pr "module Unit   = struct end";
     pr "module Fun    = struct end");
-  if Ocaml_version.(compare current v412) < 0
-  then (
-    pr "module Atomic = struct end";
-    pr "module Either = struct end");
   pr "";
   pr "exception Not_found = Not_found"
 ;;
