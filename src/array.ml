@@ -303,21 +303,27 @@ let to_array t = t
 let is_empty t = length t = 0
 
 let is_sorted t ~compare =
-  let rec is_sorted_loop t ~compare i =
-    if i < 1
-    then true
-    else compare t.(i - 1) t.(i) <= 0 && is_sorted_loop t ~compare (i - 1)
-  in
-  is_sorted_loop t ~compare (length t - 1)
+  let i = ref (length t - 1) in
+  let result = ref true in
+  while !i > 0 && !result do
+    let elt_i = unsafe_get t !i in
+    let elt_i_minus_1 = unsafe_get t (!i - 1) in
+    if compare elt_i_minus_1 elt_i > 0 then result := false;
+    decr i
+  done;
+  !result
 ;;
 
 let is_sorted_strictly t ~compare =
-  let rec is_sorted_strictly_loop t ~compare i =
-    if i < 1
-    then true
-    else compare t.(i - 1) t.(i) < 0 && is_sorted_strictly_loop t ~compare (i - 1)
-  in
-  is_sorted_strictly_loop t ~compare (length t - 1)
+  let i = ref (length t - 1) in
+  let result = ref true in
+  while !i > 0 && !result do
+    let elt_i = unsafe_get t !i in
+    let elt_i_minus_1 = unsafe_get t (!i - 1) in
+    if compare elt_i_minus_1 elt_i >= 0 then result := false;
+    decr i
+  done;
+  !result
 ;;
 
 let folding_map t ~init ~f =
@@ -347,10 +353,11 @@ let min_elt t ~compare = Container.min_elt ~fold t ~compare
 let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
 let foldi t ~init ~f =
-  let rec foldi_loop t i ac ~f =
-    if i = length t then ac else foldi_loop t (i + 1) (f i ac t.(i)) ~f
-  in
-  foldi_loop t 0 init ~f
+  let acc = ref init in
+  for i = 0 to length t - 1 do
+    acc := f i !acc (unsafe_get t i)
+  done;
+  !acc
 ;;
 
 let folding_mapi t ~init ~f =
@@ -480,66 +487,80 @@ let check_length2_exn name t1 t2 =
 
 let iter2_exn t1 t2 ~f =
   check_length2_exn "Array.iter2_exn" t1 t2;
-  iteri t1 ~f:(fun i x1 -> f x1 t2.(i))
+  iteri t1 ~f:(fun i x1 -> f x1 (unsafe_get t2 i))
 ;;
 
 let map2_exn t1 t2 ~f =
   check_length2_exn "Array.map2_exn" t1 t2;
-  init (length t1) ~f:(fun i -> f t1.(i) t2.(i))
+  init (length t1) ~f:(fun i -> f (unsafe_get t1 i) (unsafe_get t2 i))
 ;;
 
 let fold2_exn t1 t2 ~init ~f =
   check_length2_exn "Array.fold2_exn" t1 t2;
-  foldi t1 ~init ~f:(fun i ac x -> f ac x t2.(i))
+  foldi t1 ~init ~f:(fun i ac x -> f ac x (unsafe_get t2 i))
 ;;
 
 let filter t ~f = filter_map t ~f:(fun x -> if f x then Some x else None)
 let filteri t ~f = filter_mapi t ~f:(fun i x -> if f i x then Some x else None)
 
+
 let exists t ~f =
-  let rec exists_loop t ~f i =
-    if i < 0 then false else f t.(i) || exists_loop t ~f (i - 1)
-  in
-  exists_loop t ~f (length t - 1)
+  let i = ref (length t - 1) in
+  let result = ref false in
+  while !i >= 0 && not !result do
+    if f (unsafe_get t !i) then result := true else decr i
+  done;
+  !result
 ;;
 
 let existsi t ~f =
-  let rec existsi_loop t ~f i =
-    if i < 0 then false else f i t.(i) || existsi_loop t ~f (i - 1)
-  in
-  existsi_loop t ~f (length t - 1)
+  let i = ref (length t - 1) in
+  let result = ref false in
+  while !i >= 0 && not !result do
+    if f !i (unsafe_get t !i) then result := true else decr i
+  done;
+  !result
 ;;
 
 let mem t a ~equal = exists t ~f:(equal a)
 
 let for_all t ~f =
-  let rec for_all_loop t ~f i =
-    if i < 0 then true else f t.(i) && for_all_loop t ~f (i - 1)
-  in
-  for_all_loop t ~f (length t - 1)
+  let i = ref (length t - 1) in
+  let result = ref true in
+  while !i >= 0 && !result do
+    if not (f (unsafe_get t !i)) then result := false else decr i
+  done;
+  !result
 ;;
 
 let for_alli t ~f =
-  let rec for_alli_loop t ~f i =
-    if i < 0 then true else f i t.(i) && for_alli_loop t ~f (i - 1)
-  in
-  for_alli_loop t ~f (length t - 1)
+  let length = length t in
+  let i = ref (length - 1) in
+  let result = ref true in
+  while !i >= 0 && !result do
+    if not (f !i (unsafe_get t !i)) then result := false else decr i
+  done;
+  !result
 ;;
 
 let exists2_exn t1 t2 ~f =
-  let rec exists2_exn_loop t1 t2 ~f i =
-    if i < 0 then false else f t1.(i) t2.(i) || exists2_exn_loop t1 t2 ~f (i - 1)
-  in
   check_length2_exn "Array.exists2_exn" t1 t2;
-  exists2_exn_loop t1 t2 ~f (length t1 - 1)
+  let i = ref (length t1 - 1) in
+  let result = ref false in
+  while !i >= 0 && not !result do
+    if f (unsafe_get t1 !i) (unsafe_get t2 !i) then result := true else decr i
+  done;
+  !result
 ;;
 
 let for_all2_exn t1 t2 ~f =
-  let rec for_all2_loop t1 t2 ~f i =
-    if i < 0 then true else f t1.(i) t2.(i) && for_all2_loop t1 t2 ~f (i - 1)
-  in
   check_length2_exn "Array.for_all2_exn" t1 t2;
-  for_all2_loop t1 t2 ~f (length t1 - 1)
+  let i = ref (length t1 - 1) in
+  let result = ref true in
+  while !i >= 0 && !result do
+    if not (f (unsafe_get t1 !i) (unsafe_get t2 !i)) then result := false else decr i
+  done;
+  !result
 ;;
 
 let equal equal t1 t2 = length t1 = length t2 && for_all2_exn t1 t2 ~f:equal
@@ -547,57 +568,68 @@ let equal equal t1 t2 = length t1 = length t2 && for_all2_exn t1 t2 ~f:equal
 
 let map_inplace t ~f =
   for i = 0 to length t - 1 do
-    t.(i) <- f t.(i)
+    unsafe_set t i (f (unsafe_get t i))
   done
 ;;
 
-let findi t ~f =
-  let rec findi_loop t ~f ~length i =
-    if i >= length
-    then None
-    else if f i t.(i)
-    then Some (i, t.(i))
-    else findi_loop t ~f ~length (i + 1)
-  in
+let[@inline always] findi_internal t ~f ~if_found ~if_not_found =
   let length = length t in
-  findi_loop t ~f ~length 0
+  if length = 0
+  then if_not_found ()
+  else (
+    let i = ref 0 in
+    let found = ref false in
+    let value_found = ref (unsafe_get t 0) in
+    while (not !found) && !i < length do
+      let value = unsafe_get t !i in
+      if f !i value
+      then (
+        value_found := value;
+        found := true)
+      else incr i
+    done;
+    if !found then if_found ~i:!i ~value:!value_found else if_not_found ())
 ;;
 
-let findi_exn =
-  let not_found = Not_found_s (Atom "Array.findi_exn: not found") in
-  let findi_exn t ~f =
-    match findi t ~f with
-    | None -> raise not_found
-    | Some x -> x
-  in
-  (* named to preserve symbol in compiled binary *)
-  findi_exn
+let findi t ~f =
+  findi_internal
+    t
+    ~f
+    ~if_found:(fun ~i ~value -> Some (i, value))
+    ~if_not_found:(fun () -> None)
 ;;
 
-let find_exn =
-  let not_found = Not_found_s (Atom "Array.find_exn: not found") in
-  let find_exn t ~f =
-    match findi t ~f:(fun _i x -> f x) with
-    | None -> raise not_found
-    | Some (_i, x) -> x
-  in
-  (* named to preserve symbol in compiled binary *)
-  find_exn
+let findi_exn t ~f =
+  findi_internal
+    t
+    ~f
+    ~if_found:(fun ~i ~value -> i, value)
+    ~if_not_found:(fun () -> raise (Not_found_s (Atom "Array.findi_exn: not found")))
+;;
+
+let find_exn t ~f =
+  findi_internal
+    t
+    ~f:(fun _i x -> f x)
+    ~if_found:(fun ~i:_ ~value -> value)
+    ~if_not_found:(fun () -> raise (Not_found_s (Atom "Array.find_exn: not found")))
 ;;
 
 let find t ~f = Option.map (findi t ~f:(fun _i x -> f x)) ~f:(fun (_i, x) -> x)
 
 let find_map t ~f =
-  let rec find_map_loop t ~f ~length i =
-    if i >= length
-    then None
-    else (
-      match f t.(i) with
-      | None -> find_map_loop t ~f ~length (i + 1)
-      | Some _ as res -> res)
-  in
   let length = length t in
-  find_map_loop t ~f ~length 0
+  if length = 0
+  then None
+  else (
+    let i = ref 0 in
+    let value_found = ref None in
+    while Option.is_none !value_found && !i < length do
+      let value = unsafe_get t !i in
+      value_found := f value;
+      incr i
+    done;
+    !value_found)
 ;;
 
 let find_map_exn =
@@ -612,16 +644,18 @@ let find_map_exn =
 ;;
 
 let find_mapi t ~f =
-  let rec find_mapi_loop t ~f ~length i =
-    if i >= length
-    then None
-    else (
-      match f i t.(i) with
-      | None -> find_mapi_loop t ~f ~length (i + 1)
-      | Some _ as res -> res)
-  in
   let length = length t in
-  find_mapi_loop t ~f ~length 0
+  if length = 0
+  then None
+  else (
+    let i = ref 0 in
+    let value_found = ref None in
+    while Option.is_none !value_found && !i < length do
+      let value = unsafe_get t !i in
+      value_found := f !i value;
+      incr i
+    done;
+    !value_found)
 ;;
 
 let find_mapi_exn =
@@ -642,9 +676,9 @@ let find_consecutive_duplicate t ~equal =
   else (
     let result = ref None in
     let i = ref 1 in
-    let prev = ref t.(0) in
+    let prev = ref (unsafe_get t 0) in
     while !i < n do
-      let cur = t.(!i) in
+      let cur = unsafe_get t !i in
       if equal cur !prev
       then (
         result := Some (!prev, cur);
@@ -660,9 +694,9 @@ let reduce t ~f =
   if length t = 0
   then None
   else (
-    let r = ref t.(0) in
+    let r = ref (unsafe_get t 0) in
     for i = 1 to length t - 1 do
-      r := f !r t.(i)
+      r := f !r (unsafe_get t i)
     done;
     Some !r)
 ;;

@@ -53,7 +53,8 @@ let mapi t ~f = Caml.Array.mapi t ~f
 let stable_sort t ~compare = Caml.Array.stable_sort t ~cmp:compare
 
 let swap t i j =
-  let tmp = t.(i) in
-  t.(i) <- t.(j);
-  t.(j) <- tmp
+  let elt_i = t.(i) in
+  let elt_j = t.(j) in
+  unsafe_set t i elt_j;
+  unsafe_set t j elt_i
 ;;

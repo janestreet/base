@@ -980,6 +980,114 @@ let chop_suffix_exn s ~suffix =
   | None -> invalid_argf "String.chop_suffix_exn %S %S" s suffix ()
 ;;
 
+module For_common_prefix_and_suffix = struct
+  (* When taking a string prefix or suffix, we extract from the shortest input available
+     in case we can just return one of our inputs without allocating a new string. *)
+
+  let shorter a b = if length a <= length b then a else b
+
+  let shortest list =
+    match list with
+    | [] -> ""
+    | first :: rest -> List.fold rest ~init:first ~f:shorter
+  ;;
+
+  (* Our generic accessors for common prefix/suffix abstract over [get_pos], which is
+     either [pos_from_left] or [pos_from_right]. *)
+
+  let pos_from_left (_ : t) (i : int) = i
+  let pos_from_right t i = length t - i - 1
+
+  let rec common_generic2_length_loop a b ~get_pos ~max_len ~len_so_far =
+    if len_so_far >= max_len
+    then max_len
+    else if Char.equal
+              (unsafe_get a (get_pos a len_so_far))
+              (unsafe_get b (get_pos b len_so_far))
+    then common_generic2_length_loop a b ~get_pos ~max_len ~len_so_far:(len_so_far + 1)
+    else len_so_far
+  ;;
+
+  let common_generic2_length a b ~get_pos =
+    let max_len = min (length a) (length b) in
+    common_generic2_length_loop a b ~get_pos ~max_len ~len_so_far:0
+  ;;
+
+  let rec common_generic_length_loop first list ~get_pos ~max_len =
+    match list with
+    | [] -> max_len
+    | second :: rest ->
+      let max_len =
+        (* We call [common_generic2_length_loop] rather than [common_generic2_length] so
+           that [max_len] limits our traversal of [first] and [second]. *)
+        common_generic2_length_loop first second ~get_pos ~max_len ~len_so_far:0
+      in
+      common_generic_length_loop second rest ~get_pos ~max_len
+  ;;
+
+  let common_generic_length list ~get_pos =
+    match list with
+    | [] -> 0
+    | first :: rest ->
+      (* Precomputing [max_len] based on [shortest list] saves us work in longer strings,
+         at the cost of an extra pass over the spine of [list].
+
+         For example, if you're looking for the longest prefix of the strings:
+
+         {v
+            let long_a = List.init 1000 ~f:(Fn.const 'a')
+            [ long_a; long_a; 'aa' ]
+         v}
+
+         the approach below will just check the first two characters of all the strings.
+      *)
+      let max_len = length (shortest list) in
+      common_generic_length_loop first rest ~get_pos ~max_len
+  ;;
+
+  (* Our generic accessors that produce a string abstract over [take], which is either
+     [prefix] or [suffix]. *)
+
+  let common_generic2 a b ~get_pos ~take =
+    let len = common_generic2_length a b ~get_pos in
+    (* Use the shorter of the two strings, so that if the shorter one is the shared
+       prefix, [take] won't allocate another string. *)
+    if len = 0 then "" else take (shorter a b) len
+  ;;
+
+  let common_generic list ~get_pos ~take =
+    match list with
+    | [] -> ""
+    | first :: rest ->
+      (* As with [common_generic_length], we base [max_len] on [shortest list]. We also
+         use this result for [take], below, to potentially avoid allocating a string. *)
+      let s = shortest list in
+      let max_len = length s in
+      if max_len = 0
+      then ""
+      else (
+        let len =
+          (* We call directly into [common_generic_length_loop] rather than
+             [common_generic_length] to avoid recomputing [shortest list]. *)
+          common_generic_length_loop first rest ~get_pos ~max_len
+        in
+        if len = 0 then "" else take s len)
+  ;;
+end
+
+include struct
+  open For_common_prefix_and_suffix
+
+  let common_prefix list = common_generic list ~take:prefix ~get_pos:pos_from_left
+  let common_suffix list = common_generic list ~take:suffix ~get_pos:pos_from_right
+  let common_prefix2 a b = common_generic2 a b ~take:prefix ~get_pos:pos_from_left
+  let common_suffix2 a b = common_generic2 a b ~take:suffix ~get_pos:pos_from_right
+  let common_prefix_length list = common_generic_length list ~get_pos:pos_from_left
+  let common_suffix_length list = common_generic_length list ~get_pos:pos_from_right
+  let common_prefix2_length a b = common_generic2_length a b ~get_pos:pos_from_left
+  let common_suffix2_length a b = common_generic2_length a b ~get_pos:pos_from_right
+end
+
 (* There used to be a custom implementation that was faster for very short strings
    (peaking at 40% faster for 4-6 char long strings).
    This new function is around 20% faster than the default hash function, but slower
