@@ -252,8 +252,8 @@ module Tree0 = struct
         if c = 0
         then raise Same
         else if c < 0
-        then bal (Leaf x) v Empty
-        else bal Empty v (Leaf x)
+        then create (Leaf x) v Empty
+        else create Empty v (Leaf x)
       | Node (l, v, r, _, _) ->
         let c = compare_elt x v in
         if c = 0 then raise Same else if c < 0 then bal (aux l) v r else bal l v (aux r)
