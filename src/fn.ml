@@ -24,4 +24,8 @@ external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
    functions as a result. *)
 let compose f g x = f (g x)
 let flip f x y = f y x
-let rec apply_n_times ~n f x = if n <= 0 then x else apply_n_times ~n:(n - 1) f (f x)
+let rec apply_n_times ~n f x =
+  if n <= 0 then x
+  else if n = 1 then f x
+  else if n mod 2 = 0 then apply_n_times ~n:(n / 2) (compose f f) x
+  else apply_n_times ~n:(n - 1) f (f x)
