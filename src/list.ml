@@ -1012,11 +1012,18 @@ module Assoc = struct
 
   [@@@end]
 
+  let pair_of_group = function
+    | [] -> assert false
+    | (k, _) :: _ as list -> k, map list ~f:snd
+  ;;
+
+  let group alist ~equal =
+    group alist ~break:(fun (x, _) (y, _) -> not (equal x y)) |> map ~f:pair_of_group
+  ;;
+
   let sort_and_group alist ~compare =
     sort_and_group alist ~compare:(fun (x, _) (y, _) -> compare x y)
-    |> map ~f:(function
-      | [] -> assert false
-      | (k, _) :: _ as list -> k, map list ~f:snd)
+    |> map ~f:pair_of_group
   ;;
 
   let find t ~equal key =

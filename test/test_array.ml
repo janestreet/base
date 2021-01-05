@@ -125,6 +125,85 @@ let%test_unit _ =
     ]
 ;;
 
+let%expect_test "merge" =
+  let test a1 a2 =
+    let res = merge a1 a2 ~compare:Int.compare in
+    print_s ([%sexp_of: int array] res);
+    require_equal
+      [%here]
+      (module struct
+        type t = int list [@@deriving equal, sexp_of]
+      end)
+      (to_list res)
+      (List.merge (to_list a1) (to_list a2) ~compare:Int.compare)
+  in
+  test [||] [||];
+  [%expect {| () |}];
+  test [| 1; 2; 3 |] [||];
+  [%expect {| (1 2 3) |}];
+  test [||] [| 1; 2; 3 |];
+  [%expect {| (1 2 3) |}];
+  test [| 1; 2; 3 |] [| 1; 2; 3 |];
+  [%expect {| (1 1 2 2 3 3) |}];
+  test [| 1; 2; 3 |] [| 4; 5; 6 |];
+  [%expect {| (1 2 3 4 5 6) |}];
+  test [| 4; 5; 6 |] [| 1; 2; 3 |];
+  [%expect {| (1 2 3 4 5 6) |}];
+  test [| 3; 5 |] [| 1; 2; 4; 6 |];
+  [%expect {| (1 2 3 4 5 6) |}];
+  test [| 1; 3; 7; 8; 9 |] [| 2; 4; 5; 6 |];
+  [%expect {| (1 2 3 4 5 6 7 8 9) |}];
+  test [| 1; 2; 2; 3 |] [| 2; 2; 3; 4 |];
+  [%expect {| (1 2 2 2 2 3 3 4) |}]
+;;
+
+let%expect_test "merge with duplicates" =
+  (* Testing that equal elements from a1 come before equal elements from a2 *)
+  let test a1 a2 =
+    let compare = Comparable.lift Int.compare ~f:fst in
+    let res = merge a1 a2 ~compare in
+    print_s ([%sexp_of: (int * string) array] res);
+    require_equal
+      [%here]
+      (module struct
+        type t = (int * string) list [@@deriving equal, sexp_of]
+      end)
+      (to_list res)
+      (List.merge (to_list a1) (to_list a2) ~compare)
+  in
+  test [| 1, "a1" |] [| 1, "a2" |];
+  [%expect {|
+    ((1 a1)
+     (1 a2)) |}];
+  test [| 1, "a1"; 2, "a1"; 3, "a1" |] [| 3, "a2"; 4, "a2"; 5, "a2" |];
+  [%expect {|
+    ((1 a1)
+     (2 a1)
+     (3 a1)
+     (3 a2)
+     (4 a2)
+     (5 a2)) |}];
+  test [| 3, "a1"; 4, "a1"; 5, "a1" |] [| 1, "a2"; 2, "a2"; 3, "a2" |];
+  [%expect {|
+    ((1 a2)
+     (2 a2)
+     (3 a1)
+     (3 a2)
+     (4 a1)
+     (5 a1)) |}];
+  test [| 1, "a1"; 3, "a1"; 3, "a1"; 5, "a1" |] [| 2, "a2"; 3, "a2"; 3, "a2"; 4, "a2" |];
+  [%expect
+    {|
+    ((1 a1)
+     (2 a2)
+     (3 a1)
+     (3 a1)
+     (3 a2)
+     (3 a2)
+     (4 a2)
+     (5 a1)) |}]
+;;
+
 let%test _ = foldi [||] ~init:13 ~f:(fun _ _ _ -> failwith "bad") = 13
 let%test _ = foldi [| 13 |] ~init:17 ~f:(fun i ac x -> ac + i + x) = 30
 let%test _ = foldi [| 13; 17 |] ~init:19 ~f:(fun i ac x -> ac + i + x) = 50

@@ -410,6 +410,20 @@ let%test_unit _ =
   assert (phys_equal s (tr s ~target:'\255' ~replacement:'\000'))
 ;;
 
+let%expect_test "empty substring" =
+  let string = init 10 ~f:Char.of_int_exn in
+  let test here f =
+    let substring = require_no_allocation here f in
+    assert (is_empty substring)
+  in
+  test [%here] (fun () -> sub string ~pos:0 ~len:0);
+  test [%here] (fun () -> prefix string 0);
+  test [%here] (fun () -> suffix string 0);
+  test [%here] (fun () -> drop_prefix string 10);
+  test [%here] (fun () -> drop_suffix string 10);
+  [%expect {| |}]
+;;
+
 let%test_module "tr_multi" =
   (module struct
     let gold_standard ~target ~replacement string =

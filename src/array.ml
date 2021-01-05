@@ -326,6 +326,41 @@ let is_sorted_strictly t ~compare =
   !result
 ;;
 
+let merge a1 a2 ~compare =
+  let l1 = Array.length a1 in
+  let l2 = Array.length a2 in
+  if l1 = 0
+  then copy a2
+  else if l2 = 0
+  then copy a1
+  else if compare (unsafe_get a2 0) (unsafe_get a1 (l1 - 1)) >= 0
+  then append a1 a2
+  else if compare (unsafe_get a1 0) (unsafe_get a2 (l2 - 1)) > 0
+  then append a2 a1
+  else (
+    let len = l1 + l2 in
+    let merged = create ~len (unsafe_get a1 0) in
+    let a1_index = ref 0 in
+    let a2_index = ref 0 in
+    for i = 0 to len - 1 do
+      let use_a1 =
+        if l1 = !a1_index
+        then false
+        else if l2 = !a2_index
+        then true
+        else compare (unsafe_get a1 !a1_index) (unsafe_get a2 !a2_index) <= 0
+      in
+      if use_a1
+      then (
+        unsafe_set merged i (unsafe_get a1 !a1_index);
+        a1_index := !a1_index + 1)
+      else (
+        unsafe_set merged i (unsafe_get a2 !a2_index);
+        a2_index := !a2_index + 1)
+    done;
+    merged)
+;;
+
 let folding_map t ~init ~f =
   let acc = ref init in
   map t ~f:(fun x ->

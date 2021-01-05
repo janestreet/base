@@ -527,6 +527,16 @@ module type Accessors_generic = sig
       -> [ `Last_on_left | `First_on_right ]
       -> ('k key * 'v) option )
         options
+
+  val binary_search_subrange
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> compare:(key:'k key -> data:'v -> 'bound -> int)
+      -> lower_bound:'bound Maybe_bound.t
+      -> upper_bound:'bound Maybe_bound.t
+      -> ('k, 'v, 'cmp) t )
+        options
 end
 
 module type Accessors1 = sig
@@ -682,6 +692,13 @@ module type Accessors1 = sig
     -> segment_of:(key:key -> data:'a -> [ `Left | `Right ])
     -> [ `Last_on_left | `First_on_right ]
     -> (key * 'a) option
+
+  val binary_search_subrange
+    :  'a t
+    -> compare:(key:key -> data:'a -> 'bound -> int)
+    -> lower_bound:'bound Maybe_bound.t
+    -> upper_bound:'bound Maybe_bound.t
+    -> 'a t
 end
 
 module type Accessors2 = sig
@@ -846,6 +863,13 @@ module type Accessors2 = sig
     -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
     -> [ `Last_on_left | `First_on_right ]
     -> ('k * 'v) option
+
+  val binary_search_subrange
+    :  ('k, 'v) t
+    -> compare:(key:'k -> data:'v -> 'bound -> int)
+    -> lower_bound:'bound Maybe_bound.t
+    -> upper_bound:'bound Maybe_bound.t
+    -> ('k, 'v) t
 end
 
 module type Accessors3 = sig
@@ -1035,6 +1059,13 @@ module type Accessors3 = sig
     -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
     -> [ `Last_on_left | `First_on_right ]
     -> ('k * 'v) option
+
+  val binary_search_subrange
+    :  ('k, 'v, 'cmp) t
+    -> compare:(key:'k -> data:'v -> 'bound -> int)
+    -> lower_bound:'bound Maybe_bound.t
+    -> upper_bound:'bound Maybe_bound.t
+    -> ('k, 'v, 'cmp) t
 end
 
 module type Accessors3_with_comparator = sig
@@ -1333,6 +1364,14 @@ module type Accessors3_with_comparator = sig
     -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
     -> [ `Last_on_left | `First_on_right ]
     -> ('k * 'v) option
+
+  val binary_search_subrange
+    :  comparator:('k, 'cmp) Comparator.t
+    -> ('k, 'v, 'cmp) t
+    -> compare:(key:'k -> data:'v -> 'bound -> int)
+    -> lower_bound:'bound Maybe_bound.t
+    -> upper_bound:'bound Maybe_bound.t
+    -> ('k, 'v, 'cmp) t
 end
 
 (** Consistency checks (same as in [Container]). *)
@@ -2488,6 +2527,27 @@ module type Map = sig
     -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
     -> [ `Last_on_left | `First_on_right ]
     -> ('k * 'v) option
+
+  (** [binary_search_subrange] takes a [compare] function that divides [t] into three
+      (possibly empty) segments with respect to [lower_bound] and [upper_bound]:
+
+      {v
+        | Below_lower_bound | In_range | Above_upper_bound |
+      v}
+
+      and returns a map of the [In_range] segment.
+
+      Runtime is O(log m + n) where [m] is the length of the input map and [n] is the
+      length of the output. The linear term in [n] is to compute the length of the output.
+
+      Behavior is undefined if [compare] does not segment [t] as shown above, or if
+      [compare] mutates its inputs. *)
+  val binary_search_subrange
+    :  ('k, 'v, 'cmp) t
+    -> compare:(key:'k -> data:'v -> 'bound -> int)
+    -> lower_bound:'bound Maybe_bound.t
+    -> upper_bound:'bound Maybe_bound.t
+    -> ('k, 'v, 'cmp) t
 
   (** [M] is meant to be used in combination with OCaml applicative functor types:
 

@@ -63,9 +63,12 @@ let sub src ~pos ~len =
   then src
   else (
     Ordered_collection_common.check_pos_len_exn ~pos ~len ~total_length:(length src);
-    let dst = Bytes.create len in
-    if len > 0 then Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
-    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
+    if len = 0
+    then ""
+    else (
+      let dst = Bytes.create len in
+      if len > 0 then Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
+      Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst))
 ;;
 
 let subo ?(pos = 0) ?len src =
@@ -1052,7 +1055,7 @@ module For_common_prefix_and_suffix = struct
     let len = common_generic2_length a b ~get_pos in
     (* Use the shorter of the two strings, so that if the shorter one is the shared
        prefix, [take] won't allocate another string. *)
-    if len = 0 then "" else take (shorter a b) len
+    take (shorter a b) len
   ;;
 
   let common_generic list ~get_pos ~take =
@@ -1071,7 +1074,7 @@ module For_common_prefix_and_suffix = struct
              [common_generic_length] to avoid recomputing [shortest list]. *)
           common_generic_length_loop first rest ~get_pos ~max_len
         in
-        if len = 0 then "" else take s len)
+        take s len)
   ;;
 end
 

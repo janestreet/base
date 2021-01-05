@@ -147,6 +147,12 @@ val is_sorted : 'a t -> compare:('a -> 'a -> int) -> bool
     consecutive elements in [xs] are equal according to [compare]. *)
 val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) -> bool
 
+(** Merges two arrays: assuming that [a1] and [a2] are sorted according to the comparison
+    function [compare], [merge a1 a2 ~compare] will return a sorted array containing all
+    the elements of [a1] and [a2]. If several elements compare equal, the elements of [a1]
+    will be before the elements of [a2]. *)
+val merge : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
+
 (** Like [List.concat_map], [List.concat_mapi]. *)
 val concat_map : 'a t -> f:('a -> 'b array) -> 'b array
 

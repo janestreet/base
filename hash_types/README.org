@@ -1,5 +1,4 @@
 #+TITLE: Base_internalhash_types
-#+UUID: b5bda62b-8c8e-395e-27c9-fe9334881f96
 
 This micro-library allows hash states, seeds, and values to be type-equal
 between ~Base~ and ~Base_boot~.

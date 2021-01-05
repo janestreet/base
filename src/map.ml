@@ -1481,6 +1481,48 @@ module Tree0 = struct
     | `First_on_right -> find_first_satisfying t ~f:is_right
   ;;
 
+  (* [binary_search_one_sided_bound] finds the key in [t] which satisfies [maybe_bound]
+     and the relevant one of [if_exclusive] or [if_inclusive], as judged by [compare]. *)
+  let binary_search_one_sided_bound t maybe_bound ~compare ~if_exclusive ~if_inclusive =
+    let find_bound t how bound ~compare : _ Maybe_bound.t option =
+      match binary_search t how bound ~compare with
+      | Some (bound, _) -> Some (Incl bound)
+      | None -> None
+    in
+    match (maybe_bound : _ Maybe_bound.t) with
+    | Excl bound -> find_bound t if_exclusive bound ~compare
+    | Incl bound -> find_bound t if_inclusive bound ~compare
+    | Unbounded -> Some Unbounded
+  ;;
+
+  (* [binary_search_two_sided_bounds] finds the (not necessarily distinct) keys in [t]
+     which most closely approach (but do not cross) [lower_bound] and [upper_bound], as
+     judged by [compare]. It returns [None] if no keys in [t] are within that range. *)
+  let binary_search_two_sided_bounds t ~compare ~lower_bound ~upper_bound =
+    let find_lower_bound t maybe_bound ~compare =
+      binary_search_one_sided_bound
+        t
+        maybe_bound
+        ~compare
+        ~if_exclusive:`First_strictly_greater_than
+        ~if_inclusive:`First_greater_than_or_equal_to
+    in
+    let find_upper_bound t maybe_bound ~compare =
+      binary_search_one_sided_bound
+        t
+        maybe_bound
+        ~compare
+        ~if_exclusive:`Last_strictly_less_than
+        ~if_inclusive:`Last_less_than_or_equal_to
+    in
+    match find_lower_bound t lower_bound ~compare with
+    | None -> None
+    | Some lower_bound ->
+      (match find_upper_bound t upper_bound ~compare with
+       | None -> None
+       | Some upper_bound -> Some (lower_bound, upper_bound))
+  ;;
+
   type ('k, 'v) acc =
     { mutable bad_key : 'k option
     ; mutable map_length : ('k, 'v) t * int
@@ -1813,6 +1855,14 @@ module Accessors = struct
   let hash_fold_direct hash_fold_key hash_fold_data state t =
     Tree0.hash_fold_t_ignoring_structure hash_fold_key hash_fold_data state t.tree
   ;;
+
+  let binary_search_subrange t ~compare ~lower_bound ~upper_bound =
+    match
+      Tree0.binary_search_two_sided_bounds t.tree ~compare ~lower_bound ~upper_bound
+    with
+    | Some (lower_bound, upper_bound) -> subrange t ~lower_bound ~upper_bound
+    | None -> like_maybe_no_op t (Empty, 0)
+  ;;
 end
 
 (* [0] is used as the [length] argument everywhere in this module, since trees do not
@@ -2130,6 +2180,12 @@ module Tree = struct
 
   let binary_search_segmented ~comparator:_ t ~segment_of how =
     Tree0.binary_search_segmented t ~segment_of how
+  ;;
+
+  let binary_search_subrange ~comparator t ~compare ~lower_bound ~upper_bound =
+    match Tree0.binary_search_two_sided_bounds t ~compare ~lower_bound ~upper_bound with
+    | Some (lower_bound, upper_bound) -> subrange ~comparator t ~lower_bound ~upper_bound
+    | None -> Empty
   ;;
 end
 

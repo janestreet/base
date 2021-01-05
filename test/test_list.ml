@@ -469,6 +469,49 @@ let%test_module "sort_and_group" =
   end)
 ;;
 
+let%test_module "Assoc.group" =
+  (module struct
+    let%expect_test _ =
+      let test alist =
+        let multi = Assoc.group alist ~equal:String.Caseless.equal in
+        print_s [%sexp (multi : (string * int list) list)];
+        let round_trip =
+          List.concat_map multi ~f:(fun (key, data) ->
+            List.map data ~f:(fun datum -> key, datum))
+        in
+        require_equal
+          [%here]
+          (module struct
+            type t = (String.Caseless.t * int) list [@@deriving equal, sexp_of]
+          end)
+          alist
+          round_trip
+      in
+      test [];
+      [%expect {| () |}];
+      test [ "a", 1; "A", 2 ];
+      [%expect {| ((a (1 2))) |}];
+      test [ "a", 1; "b", 2 ];
+      [%expect {|
+        ((a (1))
+         (b (2))) |}];
+      test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
+      [%expect
+        {|
+        ((odd  (1))
+         (even (2))
+         (Odd  (3))
+         (Even (4))
+         (ODD  (5))
+         (EVEN (6))) |}];
+      test [ "odd", 1; "Odd", 3; "ODD", 5; "even", 2; "Even", 4; "EVEN", 6 ];
+      [%expect {|
+        ((odd  (1 3 5))
+         (even (2 4 6))) |}]
+    ;;
+  end)
+;;
+
 let%test_module "Assoc.sort_and_group" =
   (module struct
     let%expect_test _ =

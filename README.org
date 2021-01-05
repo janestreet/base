@@ -1,4 +1,3 @@
-#+UUID: 3d0f5932-23a6-3898-8311-34a077948125
 * Base
 
 Base is a standard library for OCaml. It provides a standard set of
