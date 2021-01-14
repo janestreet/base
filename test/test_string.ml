@@ -595,6 +595,11 @@ let%test_unit _ =
     ~expect:(List.rev [ 0, 'h'; 1, 'e'; 2, 'l'; 3, 'l'; 4, 'o' ])
 ;;
 
+let%expect_test "iteri" =
+  iteri "hello" ~f:(fun i ch -> printf "%d%c " i ch);
+  [%expect {| 0h 1e 2l 3l 4o |}]
+;;
+
 let%test_unit _ = [%test_result: t] (filter "hello" ~f:(Char.( <> ) 'h')) ~expect:"ello"
 let%test_unit _ = [%test_result: t] (filter "hello" ~f:(Char.( <> ) 'l')) ~expect:"heo"
 let%test_unit _ = [%test_result: t] (filter "hello" ~f:(fun _ -> false)) ~expect:""

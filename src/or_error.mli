@@ -74,7 +74,13 @@ val of_exn_result : ?backtrace:[ `Get | `This of string ] -> ('a, exn) Result.t 
     to a sexp.  So, if [a] is mutated in the time between the call to [create] and the
     sexp conversion, those mutations will be reflected in the sexp.  Use [~strict:()] to
     force [sexp_of_a a] to be computed immediately. *)
-val error : ?strict:unit -> string -> 'a -> ('a -> Sexp.t) -> _ t
+val error
+  :  ?here:Source_code_position0.t
+  -> ?strict:unit
+  -> string
+  -> 'a
+  -> ('a -> Sexp.t)
+  -> _ t
 
 val error_s : Sexp.t -> _ t
 

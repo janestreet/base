@@ -3,6 +3,8 @@ open! Import
 module type Infix = Comparisons.Infix
 module type Polymorphic_compare = Comparisons.S
 
+module Sign = Sign0 (** @canonical Base.Sign *)
+
 module type With_zero = sig
   type t
 
@@ -12,7 +14,7 @@ module type With_zero = sig
   val is_non_positive : t -> bool
 
   (** Returns [Neg], [Zero], or [Pos] in a way consistent with the above functions. *)
-  val sign : t -> Sign0.t
+  val sign : t -> Sign.t
 end
 
 module type S = sig

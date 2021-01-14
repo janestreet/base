@@ -320,7 +320,7 @@ module Tree0 = struct
   let fold_until t ~init ~f ~finish =
     let rec fold_until_helper ~f t acc =
       match t with
-      | Empty -> Continue_or_stop.Continue acc
+      | Empty -> Container.Continue_or_stop.Continue acc
       | Leaf value -> f acc value
       | Node (left, value, right, _, _) ->
         (match fold_until_helper ~f left acc with

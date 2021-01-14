@@ -1,5 +1,6 @@
 open! Import
 
+(** @canonical Base.Hashtbl.Key *)
 module Key = struct
   module type S = sig
     type t [@@deriving_inline compare, sexp_of]
@@ -17,6 +18,7 @@ module Key = struct
   type 'a t = (module S with type t = 'a)
 end
 
+(** @canonical Base.Hashtbl.Merge_into_action *)
 module Merge_into_action = struct
   type 'a t =
     | Remove
@@ -740,7 +742,6 @@ module type Hashtbl = sig
 
   module type Accessors = Accessors
   module type Creators = Creators
-  module type Key = Key.S [@@deprecated "[since 2019-03] Use [Hashtbl.Key.S]"]
   module type Multi = Multi
   module type S_poly = S_poly
   module type S_without_submodules = S_without_submodules

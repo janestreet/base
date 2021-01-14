@@ -112,7 +112,10 @@ let of_exn_result ?backtrace = function
   | Error exn -> of_exn ?backtrace exn
 ;;
 
-let error ?strict message a sexp_of_a = Error (Error.create ?strict message a sexp_of_a)
+let error ?here ?strict message a sexp_of_a =
+  Error (Error.create ?here ?strict message a sexp_of_a)
+;;
+
 let error_s sexp = Error (Error.create_s sexp)
 let error_string message = Error (Error.of_string message)
 let errorf format = Printf.ksprintf error_string format

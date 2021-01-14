@@ -13,7 +13,6 @@ end
 module Without_comparator = Map_intf.Without_comparator
 module With_comparator = Map_intf.With_comparator
 module With_first_class_module = Map_intf.With_first_class_module
-include Container_intf.Export
 module Merge_to_sequence_element = Sequence.Merge_with_duplicates_element
 
 module type Accessors_generic = sig
@@ -62,7 +61,7 @@ module type Accessors_generic = sig
   val fold_until
     :  ('a, _) t
     -> init:'b
-    -> f:('b -> 'a elt -> ('b, 'final) Continue_or_stop.t)
+    -> f:('b -> 'a elt -> ('b, 'final) Container.Continue_or_stop.t)
     -> finish:('b -> 'final)
     -> 'final
 
@@ -186,7 +185,7 @@ module type Accessors0 = sig
   val fold_until
     :  t
     -> init:'b
-    -> f:('b -> elt -> ('b, 'final) Continue_or_stop.t)
+    -> f:('b -> elt -> ('b, 'final) Container.Continue_or_stop.t)
     -> finish:('b -> 'final)
     -> 'final
 
@@ -278,7 +277,7 @@ module type Accessors1 = sig
   val fold_until
     :  'a t
     -> init:'b
-    -> f:('b -> 'a -> ('b, 'final) Continue_or_stop.t)
+    -> f:('b -> 'a -> ('b, 'final) Container.Continue_or_stop.t)
     -> finish:('b -> 'final)
     -> 'final
 
@@ -369,7 +368,7 @@ module type Accessors2 = sig
   val fold_until
     :  ('a, _) t
     -> init:'b
-    -> f:('b -> 'a -> ('b, 'final) Continue_or_stop.t)
+    -> f:('b -> 'a -> ('b, 'final) Container.Continue_or_stop.t)
     -> finish:('b -> 'final)
     -> 'final
 
@@ -505,7 +504,7 @@ module type Accessors2_with_comparator = sig
   val fold_until
     :  ('a, _) t
     -> init:'accum
-    -> f:('accum -> 'a -> ('accum, 'final) Continue_or_stop.t)
+    -> f:('accum -> 'a -> ('accum, 'final) Container.Continue_or_stop.t)
     -> finish:('accum -> 'final)
     -> 'final
 
@@ -1265,7 +1264,7 @@ module type Set = sig
   val fold_until
     :  ('a, _) t
     -> init:'accum
-    -> f:('accum -> 'a -> ('accum, 'final) Continue_or_stop.t)
+    -> f:('accum -> 'a -> ('accum, 'final) Container.Continue_or_stop.t)
     -> finish:('accum -> 'final)
     -> 'final
 

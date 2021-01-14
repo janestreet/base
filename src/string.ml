@@ -67,7 +67,7 @@ let sub src ~pos ~len =
     then ""
     else (
       let dst = Bytes.create len in
-      if len > 0 then Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
+      Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
       Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst))
 ;;
 
@@ -840,12 +840,23 @@ let foldi t ~init ~f =
   loop 0 init
 ;;
 
+let iteri t ~f =
+  for i = 0 to length t - 1 do
+    f i (unsafe_get t i)
+  done
+;;
+
 let count t ~f = Container.count ~fold t ~f
 let sum m t ~f = Container.sum ~fold m t ~f
 let min_elt t = Container.min_elt ~fold t
 let max_elt t = Container.max_elt ~fold t
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
+let find_mapi t ~f = Indexed_container.find_mapi ~iteri t ~f
+let findi t ~f = Indexed_container.findi ~iteri t ~f
+let counti t ~f = Indexed_container.counti ~foldi t ~f
+let for_alli t ~f = Indexed_container.for_alli ~iteri t ~f
+let existsi t ~f = Indexed_container.existsi ~iteri t ~f
 
 let mem =
   let rec loop t c ~pos:i ~len =

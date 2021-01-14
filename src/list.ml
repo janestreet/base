@@ -1236,19 +1236,25 @@ let equal equal t1 t2 =
 ;;
 
 let transpose =
-  let rec transpose_aux t rev_columns =
-    match
-      partition_map t ~f:(function
-        | [] -> Second ()
-        | x :: xs -> First (x, xs))
-    with
-    | _ :: _, _ :: _ -> None
-    | [], _ -> Some (rev_append rev_columns [])
-    | heads_and_tails, [] ->
-      let column, trimmed_rows = unzip heads_and_tails in
-      transpose_aux trimmed_rows (column :: rev_columns)
+  let rec split_off_first_column t column_acc trimmed found_empty =
+    match t with
+    | [] -> column_acc, trimmed, found_empty
+    | [] :: tl -> split_off_first_column tl column_acc trimmed true
+    | (x :: xs) :: tl ->
+      split_off_first_column tl (x :: column_acc) (xs :: trimmed) found_empty
   in
-  fun t -> transpose_aux t []
+  let split_off_first_column rows = split_off_first_column rows [] [] false in
+  let rec loop rows columns do_rev =
+    match split_off_first_column rows with
+    | [], [], _ -> Some (rev columns)
+    | column, trimmed_rows, found_empty ->
+      if found_empty
+      then None
+      else (
+        let column = if do_rev then rev column else column in
+        loop trimmed_rows (column :: columns) (not do_rev))
+  in
+  fun t -> loop t [] true
 ;;
 
 exception Transpose_got_lists_of_different_lengths of int list [@@deriving_inline sexp]

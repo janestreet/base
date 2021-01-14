@@ -14,7 +14,7 @@ val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 val sub : (t, t) Blit.sub
 val subo : (t, t) Blit.subo
 
-include Container.S0 with type t := t with type elt = char
+include Indexed_container.S0 with type t := t with type elt = char
 include Identifiable.S with type t := t
 include Invariant.S with type t := t
 
