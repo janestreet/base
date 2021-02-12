@@ -855,22 +855,23 @@ let round_gen x ~how =
       (* Choose the order that is exactly representable as a float. Small positive
          integers are, but their inverses in most cases are not. *)
       let abs_dd = Int.abs dd in
-      if abs_dd > 22 || sd >= 16
-      (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
-         path.  Similarly, if we need 16 significant digits in the result, then the integer
-         [round_nearest (x <op> order)] might not be exactly representable as a float, since
-         for some ranges we only have 15 digits of precision guaranteed.
+      if
+        abs_dd > 22 || sd >= 16
+        (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
+           path.  Similarly, if we need 16 significant digits in the result, then the integer
+           [round_nearest (x <op> order)] might not be exactly representable as a float, since
+           for some ranges we only have 15 digits of precision guaranteed.
 
-         That said, we are still rounding twice here:
+           That said, we are still rounding twice here:
 
-         1) first time when rounding [x *. order] or [x /. order] to the nearest float
-         (just the normal way floating-point multiplication or division works),
+           1) first time when rounding [x *. order] or [x /. order] to the nearest float
+           (just the normal way floating-point multiplication or division works),
 
-         2) second time when applying [round_nearest_half_to_even] to the result of the
-         above operation
+           2) second time when applying [round_nearest_half_to_even] to the result of the
+           above operation
 
-         So for arguments within an ulp from a tie we might still produce an off-by-one
-         result. *)
+           So for arguments within an ulp from a tie we might still produce an off-by-one
+           result. *)
       then of_string (sprintf "%.*g" sd x)
       else (
         let order = int_pow 10. abs_dd in

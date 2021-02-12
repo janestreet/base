@@ -30,8 +30,9 @@ let rec find_range_near_first_satisfying t ~get ~lo ~hi ~pred =
   then lo, hi
   else (
     let mid = lo + ((hi - lo) / 2) in
-    if pred (get t mid)
-    (* INVARIANT check: it means the first satisfying element is between [lo] and [mid] *)
+    if
+      pred (get t mid)
+      (* INVARIANT check: it means the first satisfying element is between [lo] and [mid] *)
     then
       find_range_near_first_satisfying t ~get ~lo ~hi:mid ~pred
       (* INVARIANT check: it means the first satisfying element, if it exists,

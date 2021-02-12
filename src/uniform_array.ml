@@ -122,7 +122,8 @@ let map2_exn t1 t2 ~f =
 
 let t_sexp_grammar = Array.t_sexp_grammar
 
-include Sexpable.Of_sexpable1
+include
+  Sexpable.Of_sexpable1
     (Array)
     (struct
       type nonrec 'a t = 'a t

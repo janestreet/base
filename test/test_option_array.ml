@@ -35,7 +35,8 @@ module Sequence = struct
   let set = set
 end
 
-include Base_for_tests.Test_blit.Test1_generic
+include
+  Base_for_tests.Test_blit.Test1_generic
     (struct
       include Option
 

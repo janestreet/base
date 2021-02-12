@@ -926,7 +926,7 @@ let m__t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t =
        , Tyvar_instantiate
            ( Grammar list_sexp_grammar
            , [ Tyvar_instantiate
-                 ( Grammar Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.tuple2_sexp_grammar
+                 ( Grammar Ppx_sexp_conv_lib.Conv.tuple2_sexp_grammar
                  , [ Tyvar_index 0; Tyvar_index 1 ] )
              ] ) ))
 ;;

@@ -152,7 +152,8 @@ module Test_S1_allow_skipping_tests (Container : sig
     val of_list : 'a list -> [ `Ok of 'a t | `Skip_test ]
   end) =
 struct
-  include Test_generic
+  include
+    Test_generic
       (struct
         type 'a t = 'a
 

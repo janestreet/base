@@ -184,8 +184,6 @@ end
 (**/**)
 
 module Export = struct
-  include Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.Builtin
-
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
   type 'a array = 'a Array.t [@@deriving_inline compare, equal, sexp, sexp_grammar]
 

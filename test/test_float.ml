@@ -444,11 +444,12 @@ let%test_module _ =
       let result5 = Option.try_with (fun () -> Int.of_float (float_rounding x)) in
       let result6 = Option.try_with (fun () -> Int.of_float (round ~dir x)) in
       let ( = ) = Caml.( = ) in
-      if result1 = result2
-      && result2 = result3
-      && result3 = result4
-      && result4 = result5
-      && result5 = result6
+      if
+        result1 = result2
+        && result2 = result3
+        && result3 = result4
+        && result4 = result5
+        && result5 = result6
       then validate result1
       else false
     ;;
@@ -836,8 +837,9 @@ struct
       Caml.Int64.of_float (one_ulp `Down float_lower_bound)
     in
     let min_value = to_int64 min_value in
-    if Int.( = ) num_bits 64
-    (* We cannot detect overflow because on Intel overflow results in min_value. *)
+    if
+      Int.( = ) num_bits 64
+      (* We cannot detect overflow because on Intel overflow results in min_value. *)
     then true
     else (
       assert (Int64.( <= ) lower_bound_minus_epsilon lower_bound);
@@ -849,8 +851,9 @@ struct
     let upper_bound = Int64.of_float float_upper_bound in
     let upper_bound_plus_epsilon = Caml.Int64.of_float (one_ulp `Up float_upper_bound) in
     let max_value = to_int64 max_value in
-    if Int.( = ) num_bits 64
-    (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
+    if
+      Int.( = ) num_bits 64
+      (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
     then Int64.( < ) upper_bound_plus_epsilon upper_bound
     else (
       assert (Int64.( >= ) upper_bound_plus_epsilon upper_bound);
@@ -1001,9 +1004,10 @@ let%test_module _ =
         let f = Random.float 1_000_000.0 -. 500_000.0 in
         let repeatable to_str =
           let s = to_str f in
-          if String.( <> )
-               (String.split s ~on:',' |> String.concat |> of_string |> to_str)
-               s
+          if
+            String.( <> )
+              (String.split s ~on:',' |> String.concat |> of_string |> to_str)
+              s
           then raise_s [%message "failed" (f : t)]
         in
         repeatable (to_string_hum ~decimals:3 ~strip_zero:false)

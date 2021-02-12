@@ -105,7 +105,8 @@ module Message = struct
     | Tag_sexp (tag, sexp, here) ->
       List
         (Atom tag
-         :: sexp
+         ::
+         sexp
          ::
          (match here with
           | None -> []
