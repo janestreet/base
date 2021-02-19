@@ -997,6 +997,14 @@ module type For_deriving = sig
     include Comparator.S with type t := t
   end
 
+  module type M_sexp_grammar = sig
+    type t [@@deriving_inline sexp_grammar]
+
+    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+
+    [@@@end]
+  end
+
   module type Compare_m = sig end
   module type Equal_m = sig end
   module type Hash_fold_m = Hasher.S
@@ -1008,7 +1016,10 @@ module type For_deriving = sig
     -> Sexp.t
     -> ('elt, 'cmp) t
 
-  val m__t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val m__t_sexp_grammar
+    :  (module M_sexp_grammar with type t = 'elt)
+    -> ('elt, 'cmp) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+
   val compare_m__t : (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
   val equal_m__t : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
 
@@ -1022,8 +1033,10 @@ module type For_deriving = sig
 end
 
 module type Set = sig
-  (** This module defines the [Set] module for [Base]. Functions that construct a set take
-      as an argument the comparator for the element type. *)
+  (** Sets based on {!Comparator.S}.
+
+      Creators require a comparator argument to be passed in, whereas accessors use the
+      comparator provided by the input set. *)
 
   (** The type of a set.  The first type parameter identifies the type of the element, and
       the second identifies the comparator, which determines the comparison function that

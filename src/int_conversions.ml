@@ -345,7 +345,9 @@ struct
       else invalid str
     ;;
 
-    let t_sexp_grammar = String.t_sexp_grammar
+    let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+      Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.coerce String.t_sexp_grammar
+    ;;
   end
 
   module Hex = struct

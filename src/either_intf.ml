@@ -47,7 +47,10 @@ module type Either = sig
 
   include Ppx_sexp_conv_lib.Sexpable.S2 with type ('f, 's) t := ('f, 's) t
 
-  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val t_sexp_grammar
+    :  'f Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> 's Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> ('f, 's) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 

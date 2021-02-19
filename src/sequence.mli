@@ -137,7 +137,10 @@ module Merge_with_duplicates_element : sig
 
   include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
 
-  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val t_sexp_grammar
+    :  'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> 'b Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 end

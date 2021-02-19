@@ -150,7 +150,11 @@ let of_message = Message.to_info
    can handle any sexp. *)
 let sexp_of_t t = Message.to_sexp_hum (to_message t)
 let t_of_sexp sexp = lazy (Message.Sexp sexp)
-let t_sexp_grammar = Sexp.t_sexp_grammar
+
+let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+  { untyped = Any "Info.t" }
+;;
+
 let compare t1 t2 = Sexp.compare (sexp_of_t t1) (sexp_of_t t2)
 let equal t1 t2 = Sexp.equal (sexp_of_t t1) (sexp_of_t t2)
 let hash_fold_t state t = Sexp.hash_fold_t state (sexp_of_t t)

@@ -140,7 +140,12 @@ let to_array t =
 
 let t_of_sexp a_of_sexp sexp = of_list (list_of_sexp a_of_sexp sexp)
 let sexp_of_t sexp_of_a t = sexp_of_list sexp_of_a (to_list t)
-let t_sexp_grammar = List.t_sexp_grammar
+
+let t_sexp_grammar (type a) (grammar : a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+  : a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  =
+  Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.coerce (List.t_sexp_grammar grammar)
+;;
 
 let singleton a =
   let t = create () in

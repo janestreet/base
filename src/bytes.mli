@@ -11,7 +11,7 @@ type t = bytes [@@deriving_inline sexp, sexp_grammar]
 
 include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
-val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
 [@@@end]
 

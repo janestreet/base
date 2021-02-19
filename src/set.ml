@@ -1466,6 +1466,14 @@ module type M_of_sexp = sig
   include Comparator.S with type t := t
 end
 
+module type M_sexp_grammar = sig
+  type t [@@deriving_inline sexp_grammar]
+
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+
+  [@@@end]
+end
+
 module type Compare_m = sig end
 module type Equal_m = sig end
 module type Hash_fold_m = Hasher.S
@@ -1482,7 +1490,12 @@ let m__t_of_sexp
   Using_comparator.t_of_sexp_direct ~comparator:Elt.comparator Elt.t_of_sexp sexp
 ;;
 
-let m__t_sexp_grammar = list_sexp_grammar
+let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt)
+  : (elt, _) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  =
+  Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.coerce (list_sexp_grammar Elt.t_sexp_grammar)
+;;
+
 let compare_m__t (module Elt : Compare_m) t1 t2 = compare_direct t1 t2
 let equal_m__t (module Elt : Equal_m) t1 t2 = equal t1 t2
 

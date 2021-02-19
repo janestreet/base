@@ -22,28 +22,11 @@ module T = struct
     sexp_of_list
   ;;
 
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { tycon_names = [ "list" ]
-      ; ggid = "j\132);\135qH\158\135\222H\001\007\004\158\218"
-      ; types =
-          [ ( "t"
-            , Tyvar_parameterize
-                ([ "a" ], Tyvar_instantiate (Tycon_index 0, [ Tyvar_index 0 ])) )
-          ]
-      }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; instantiate_tycons = [ list_sexp_grammar ]
-      ; generic_group = _the_generic_group
-      ; origin = "list.ml.T"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
+  let (t_sexp_grammar :
+         'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+       -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+    =
+    fun _'a_sexp_grammar -> list_sexp_grammar _'a_sexp_grammar
   ;;
 
   [@@@end]
@@ -990,31 +973,16 @@ module Assoc = struct
         v
   ;;
 
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { tycon_names = [ "list" ]
-      ; ggid = "\168\145\146\\\236\200N\205\140\146\t\200r6\216y"
-      ; types =
-          [ ( "t"
-            , Tyvar_parameterize
-                ( [ "a"; "b" ]
-                , Tyvar_instantiate
-                    (Tycon_index 0, [ List [ One (Tyvar_index 0); One (Tyvar_index 1) ] ])
-                ) )
-          ]
-      }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; instantiate_tycons = [ list_sexp_grammar ]
-      ; generic_group = _the_generic_group
-      ; origin = "list.ml.Assoc"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
+  let (t_sexp_grammar :
+         'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+       -> 'b Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+       -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+    =
+    fun _'a_sexp_grammar _'b_sexp_grammar ->
+      list_sexp_grammar
+        { untyped =
+            List (Cons (_'a_sexp_grammar.untyped, Cons (_'b_sexp_grammar.untyped, Empty)))
+        }
   ;;
 
   [@@@end]

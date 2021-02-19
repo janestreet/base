@@ -45,7 +45,7 @@ module type Hexable = sig
 
     include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
-    val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
     val compare : t -> t -> int
     val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
     val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
@@ -63,7 +63,7 @@ module type S_common = sig
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
-  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 

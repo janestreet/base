@@ -561,7 +561,16 @@ let t_of_sexp ~hashable k_of_sexp d_of_sexp sexp =
     assert false
 ;;
 
-let t_sexp_grammar = List.Assoc.t_sexp_grammar
+let t_sexp_grammar
+      (type k v)
+      (k_grammar : k Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+      (v_grammar : v Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+  : (k, v) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  =
+  Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.coerce
+    (List.Assoc.t_sexp_grammar k_grammar v_grammar)
+;;
+
 let keys t = fold t ~init:[] ~f:(fun ~key ~data:_ acc -> key :: acc)
 let data t = fold ~f:(fun ~key:_ ~data list -> data :: list) ~init:[] t
 
@@ -911,6 +920,14 @@ module type M_of_sexp = sig
   include Key.S with type t := t
 end
 
+module type M_sexp_grammar = sig
+  type t [@@deriving_inline sexp_grammar]
+
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+
+  [@@@end]
+end
+
 let sexp_of_m__t (type k) (module K : Sexp_of_m with type t = k) sexp_of_v t =
   sexp_of_t K.sexp_of_t sexp_of_v t
 ;;
@@ -919,16 +936,8 @@ let m__t_of_sexp (type k) (module K : M_of_sexp with type t = k) v_of_sexp sexp 
   t_of_sexp ~hashable:(Hashable.of_key (module K)) K.t_of_sexp v_of_sexp sexp
 ;;
 
-let m__t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t =
-  Inline
-    (Tyvar_parameterize
-       ( [ "'k"; "'v" ]
-       , Tyvar_instantiate
-           ( Grammar list_sexp_grammar
-           , [ Tyvar_instantiate
-                 ( Grammar Ppx_sexp_conv_lib.Conv.tuple2_sexp_grammar
-                 , [ Tyvar_index 0; Tyvar_index 1 ] )
-             ] ) ))
+let m__t_sexp_grammar (type k) (module K : M_sexp_grammar with type t = k) v_grammar =
+  t_sexp_grammar K.t_sexp_grammar v_grammar
 ;;
 
 (* typechecking this code is a compile-time test that [Creators] is a specialization of

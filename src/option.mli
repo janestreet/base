@@ -32,7 +32,9 @@ val hash_fold_t
   -> 'a t
   -> Ppx_hash_lib.Std.Hash.state
 
-val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+val t_sexp_grammar
+  :  'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
 [@@@end]
 

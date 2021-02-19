@@ -608,7 +608,10 @@ module type S_poly = sig
 
   include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
 
-  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val t_sexp_grammar
+    :  'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> 'b Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   [@@@end]
 
@@ -648,6 +651,14 @@ module type For_deriving = sig
     include Key.S with type t := t
   end
 
+  module type M_sexp_grammar = sig
+    type t [@@deriving_inline sexp_grammar]
+
+    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+
+    [@@@end]
+  end
+
   val sexp_of_m__t
     :  (module Sexp_of_m with type t = 'k)
     -> ('v -> Sexp.t)
@@ -660,7 +671,10 @@ module type For_deriving = sig
     -> Sexp.t
     -> ('k, 'v) t
 
-  val m__t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val m__t_sexp_grammar
+    :  (module M_sexp_grammar with type t = 'k)
+    -> 'v Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> ('k, 'v) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 end
 
 module type Hashtbl = sig

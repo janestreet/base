@@ -57,30 +57,8 @@ let sexp_of_t =
                  : t -> Ppx_sexp_conv_lib.Sexp.t)
 ;;
 
-let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-  let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-    { tycon_names = []
-    ; ggid = "c\148\242\213_wjU\222+(9\220R\203Y"
-    ; types =
-        [ ( "t"
-          , Variant
-              { ignore_capitalization = true
-              ; alts = [ "Less", []; "Equal", []; "Greater", [] ]
-              } )
-        ]
-    }
-  in
-  let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-    { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-    ; instantiate_tycons = []
-    ; generic_group = _the_generic_group
-    ; origin = "ordering.ml"
-    }
-  in
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    Ref ("t", _the_group)
-  in
-  t_sexp_grammar
+let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+  { untyped = Enum { name_kind = Capitalized; names = [ "Less"; "Equal"; "Greater" ] } }
 ;;
 
 [@@@end]

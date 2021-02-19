@@ -560,36 +560,25 @@ module Merge_with_duplicates_element = struct
         Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Both"; v0; v1 ]
   ;;
 
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { tycon_names = []
-      ; ggid = "\248tVg\027\147:!\201!K\233\240\175l\151"
-      ; types =
-          [ ( "t"
-            , Tyvar_parameterize
-                ( [ "a"; "b" ]
-                , Variant
-                    { ignore_capitalization = true
-                    ; alts =
-                        [ "Left", [ One (Tyvar_index 0) ]
-                        ; "Right", [ One (Tyvar_index 1) ]
-                        ; "Both", [ One (Tyvar_index 0); One (Tyvar_index 1) ]
-                        ]
-                    } ) )
-          ]
+  let (t_sexp_grammar :
+         'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+       -> 'b Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+       -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+    =
+    fun _'a_sexp_grammar _'b_sexp_grammar ->
+      { untyped =
+          Variant
+            { name_kind = Capitalized
+            ; clauses =
+                [ { name = "Left"; args = Cons (_'a_sexp_grammar.untyped, Empty) }
+                ; { name = "Right"; args = Cons (_'b_sexp_grammar.untyped, Empty) }
+                ; { name = "Both"
+                  ; args =
+                      Cons (_'a_sexp_grammar.untyped, Cons (_'b_sexp_grammar.untyped, Empty))
+                  }
+                ]
+            }
       }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; instantiate_tycons = []
-      ; generic_group = _the_generic_group
-      ; origin = "sequence.ml.Merge_with_duplicates_element"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
   ;;
 
   [@@@end]

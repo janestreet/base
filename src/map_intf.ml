@@ -151,43 +151,39 @@ module Symmetric_diff_element = struct
         Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ]
   ;;
 
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { tycon_names = []
-      ; ggid = "py\246\208\003j\239\004\174\170\158<\236\226aA"
-      ; types =
-          [ ( "t"
-            , Tyvar_parameterize
-                ( [ "k"; "v" ]
-                , List
-                    [ One (Tyvar_index 0)
-                    ; One
-                        (Variant
-                           { ignore_capitalization = false
-                           ; alts =
-                               [ "Left", [ One (Tyvar_index 1) ]
-                               ; "Right", [ One (Tyvar_index 1) ]
-                               ; ( "Unequal"
-                                 , [ One
-                                       (List [ One (Tyvar_index 1); One (Tyvar_index 1) ])
-                                   ] )
-                               ]
-                           })
-                    ] ) )
-          ]
+  let (t_sexp_grammar :
+         'k Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+       -> 'v Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+       -> ('k, 'v) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+    =
+    fun _'k_sexp_grammar _'v_sexp_grammar ->
+      { untyped =
+          List
+            (Cons
+               ( _'k_sexp_grammar.untyped
+               , Cons
+                   ( Variant
+                       { name_kind = Any_case
+                       ; clauses =
+                           [ { name = "Left"
+                             ; args = Cons (_'v_sexp_grammar.untyped, Empty)
+                             }
+                           ; { name = "Right"
+                             ; args = Cons (_'v_sexp_grammar.untyped, Empty)
+                             }
+                           ; { name = "Unequal"
+                             ; args =
+                                 Cons
+                                   ( List
+                                       (Cons
+                                          ( _'v_sexp_grammar.untyped
+                                          , Cons (_'v_sexp_grammar.untyped, Empty) ))
+                                   , Empty )
+                             }
+                           ]
+                       }
+                   , Empty ) ))
       }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; instantiate_tycons = []
-      ; generic_group = _the_generic_group
-      ; origin = "map_intf.ml.Symmetric_diff_element"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
   ;;
 
   [@@@end]
@@ -1846,6 +1842,14 @@ module type For_deriving = sig
     include Comparator.S with type t := t
   end
 
+  module type M_sexp_grammar = sig
+    type t [@@deriving_inline sexp_grammar]
+
+    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+
+    [@@@end]
+  end
+
   module type Compare_m = sig end
   module type Equal_m = sig end
   module type Hash_fold_m = Hasher.S
@@ -1862,7 +1866,10 @@ module type For_deriving = sig
     -> Sexp.t
     -> ('k, 'v, 'cmp) t
 
-  val m__t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val m__t_sexp_grammar
+    :  (module M_sexp_grammar with type t = 'k)
+    -> 'v Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> ('k, 'v, 'cmp) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
   val compare_m__t
     :  (module Compare_m)
@@ -2319,7 +2326,10 @@ module type Map = sig
 
     include Ppx_sexp_conv_lib.Sexpable.S2 with type ('k, 'v) t := ('k, 'v) t
 
-    val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    val t_sexp_grammar
+      :  'k Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+      -> 'v Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+      -> ('k, 'v) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
     [@@@end]
   end

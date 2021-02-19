@@ -36,9 +36,10 @@ module type Infix = sig
   val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
 end
 
-(** Opening a module of this type allows one to use the [%bind] and [%map] syntax
-    extensions defined by ppx_let, and brings [return] into scope. *)
 module type Syntax = sig
+  (** Opening a module of this type allows one to use the [%bind] and [%map] syntax
+      extensions defined by ppx_let, and brings [return] into scope. *)
+
   type 'a t
 
   module Let_syntax : sig
@@ -97,10 +98,11 @@ module type S = sig
   include Syntax with type 'a t := 'a t
 end
 
-(** Multi parameter monad. The second parameter gets unified across all the computation.
-    This is used to encode monads working on a multi parameter data structure like
-    ([('a,'b) result]). *)
 module type Basic2 = sig
+  (** Multi parameter monad. The second parameter gets unified across all the computation.
+      This is used to encode monads working on a multi parameter data structure like
+      ([('a,'b) result]). *)
+
   type ('a, 'e) t
 
   val bind : ('a, 'e) t -> f:('a -> ('b, 'e) t) -> ('b, 'e) t
@@ -108,9 +110,10 @@ module type Basic2 = sig
   val return : 'a -> ('a, _) t
 end
 
-(** Same as Infix, except the monad type has two arguments. The second is always just
-    passed through. *)
 module type Infix2 = sig
+  (** Same as {!Infix}, except the monad type has two arguments. The second is always just
+      passed through. *)
+
   type ('a, 'e) t
 
   val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
@@ -136,9 +139,10 @@ module type Syntax2 = sig
   end
 end
 
-(** The same as S except the monad type has two arguments. The second is always just
-    passed through. *)
 module type S2 = sig
+  (** The same as {!S} except the monad type has two arguments. The second is always just
+      passed through. *)
+
   type ('a, 'e) t
 
   include Infix2 with type ('a, 'e) t := ('a, 'e) t
@@ -154,9 +158,10 @@ module type S2 = sig
   val all_unit : (unit, 'e) t list -> (unit, 'e) t
 end
 
-(** Multi parameter monad. The second and third parameters get unified across all the
-    computation. *)
 module type Basic3 = sig
+  (** Multi parameter monad. The second and third parameters get unified across all the
+      computation. *)
+
   type ('a, 'd, 'e) t
 
   val bind : ('a, 'd, 'e) t -> f:('a -> ('b, 'd, 'e) t) -> ('b, 'd, 'e) t
@@ -167,9 +172,10 @@ module type Basic3 = sig
   val return : 'a -> ('a, _, _) t
 end
 
-(** Same as Infix, except the monad type has three arguments. The second and third are
-    always just passed through. *)
 module type Infix3 = sig
+  (** Same as Infix, except the monad type has three arguments. The second and third are
+      always just passed through. *)
+
   type ('a, 'd, 'e) t
 
   val ( >>= ) : ('a, 'd, 'e) t -> ('a -> ('b, 'd, 'e) t) -> ('b, 'd, 'e) t
@@ -195,9 +201,10 @@ module type Syntax3 = sig
   end
 end
 
-(** The same as S except the monad type has three arguments. The second and third are
-    always just passed through. *)
 module type S3 = sig
+  (** The same as {!S} except the monad type has three arguments. The second
+      and third are always just passed through. *)
+
   type ('a, 'd, 'e) t
 
   include Infix3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) t
@@ -213,28 +220,29 @@ module type S3 = sig
   val all_unit : (unit, 'd, 'e) t list -> (unit, 'd, 'e) t
 end
 
-(** Indexed monad, in the style of Atkey. The second and third parameters are composed
-    across all computation. To see this more clearly, you can look at the type of bind:
-
-    {[
-      val bind : ('a, 'i, 'j) t -> f:('a -> ('b, 'j, 'k) t) -> ('b, 'i, 'k) t
-    ]}
-
-    and isolate some of the type variables to see their individual behaviors:
-
-    {[
-      val bind : 'a             -> f:('a ->  'b           ) ->  'b
-      val bind :      'i, 'j    ->               'j, 'k     ->     'i, 'k
-    ]}
-
-    For more information on Atkey-style indexed monads, see:
-
-    {v
-      Parameterised Notions of Computation
-      Robert Atkey
-      http://bentnib.org/paramnotions-jfp.pdf
-    v} *)
 module type Basic_indexed = sig
+  (** Indexed monad, in the style of Atkey. The second and third parameters are composed
+      across all computation. To see this more clearly, you can look at the type of bind:
+
+      {[
+        val bind : ('a, 'i, 'j) t -> f:('a -> ('b, 'j, 'k) t) -> ('b, 'i, 'k) t
+      ]}
+
+      and isolate some of the type variables to see their individual behaviors:
+
+      {[
+        val bind : 'a             -> f:('a ->  'b           ) ->  'b
+        val bind :      'i, 'j    ->               'j, 'k     ->     'i, 'k
+      ]}
+
+      For more information on Atkey-style indexed monads, see:
+
+      {v
+        Parameterised Notions of Computation
+        Robert Atkey
+        http://bentnib.org/paramnotions-jfp.pdf
+      v} *)
+
   type ('a, 'i, 'j) t
 
   val bind : ('a, 'i, 'j) t -> f:('a -> ('b, 'j, 'k) t) -> ('b, 'i, 'k) t
@@ -245,9 +253,10 @@ module type Basic_indexed = sig
   val return : 'a -> ('a, 'i, 'i) t
 end
 
-(** Same as Infix, except the monad type has three arguments. The second and third are
-    compose across all computation. *)
 module type Infix_indexed = sig
+  (** Same as {!Infix}, except the monad type has three arguments. The second and
+      third are compose across all computation. *)
+
   type ('a, 'i, 'j) t
 
   val ( >>= ) : ('a, 'i, 'j) t -> ('a -> ('b, 'j, 'k) t) -> ('b, 'i, 'k) t
@@ -273,9 +282,10 @@ module type Syntax_indexed = sig
   end
 end
 
-(** The same as S except the monad type has three arguments. The second and third are
-    composed across all computation. *)
 module type S_indexed = sig
+  (** The same as {!S} except the monad type has three arguments. The second and
+      third are composed across all computation. *)
+
   type ('a, 'i, 'j) t
 
   include Infix_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) t

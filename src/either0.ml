@@ -91,35 +91,21 @@ let sexp_of_t
       Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Second"; v0 ]
 ;;
 
-let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-  let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-    { tycon_names = []
-    ; ggid = "\143\178\012I\194}\027\245\218\n\015\012\171\184\227\254"
-    ; types =
-        [ ( "t"
-          , Tyvar_parameterize
-              ( [ "f"; "s" ]
-              , Variant
-                  { ignore_capitalization = true
-                  ; alts =
-                      [ "First", [ One (Tyvar_index 0) ]
-                      ; "Second", [ One (Tyvar_index 1) ]
-                      ]
-                  } ) )
-        ]
-    }
-  in
-  let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-    { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-    ; instantiate_tycons = []
-    ; generic_group = _the_generic_group
-    ; origin = "either0.ml"
-    }
-  in
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    Ref ("t", _the_group)
-  in
-  t_sexp_grammar
+let (t_sexp_grammar :
+       'f Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+     -> 's Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+     -> ('f, 's) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+  =
+  fun _'f_sexp_grammar _'s_sexp_grammar ->
+  { untyped =
+      Variant
+        { name_kind = Capitalized
+        ; clauses =
+            [ { name = "First"; args = Cons (_'f_sexp_grammar.untyped, Empty) }
+            ; { name = "Second"; args = Cons (_'s_sexp_grammar.untyped, Empty) }
+            ]
+        }
+  }
 ;;
 
 [@@@end]

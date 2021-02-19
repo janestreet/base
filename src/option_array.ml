@@ -87,7 +87,12 @@ module Cheap_option = struct
     let to_option x = if is_some x then Some (value_unsafe x) else None
     let to_sexpable = to_option
     let of_sexpable = of_option
-    let t_sexp_grammar = Option.t_sexp_grammar
+
+    let t_sexp_grammar (type a) (grammar : a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+      : a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+      =
+      Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.coerce (Option.t_sexp_grammar grammar)
+    ;;
   end
 
   include T1
@@ -105,31 +110,12 @@ let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_li
   fun _of_a v -> Uniform_array.sexp_of_t (Cheap_option.sexp_of_t _of_a) v
 ;;
 
-let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-  let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-    { tycon_names = [ "Cheap_option.t"; "Uniform_array.t" ]
-    ; ggid = "E\137\183\012\027\140\214(5\211\176\011aW\r\188"
-    ; types =
-        [ ( "t"
-          , Tyvar_parameterize
-              ( [ "a" ]
-              , Tyvar_instantiate
-                  (Tycon_index 1, [ Tyvar_instantiate (Tycon_index 0, [ Tyvar_index 0 ]) ])
-              ) )
-        ]
-    }
-  in
-  let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-    { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-    ; instantiate_tycons = [ Cheap_option.t_sexp_grammar; Uniform_array.t_sexp_grammar ]
-    ; generic_group = _the_generic_group
-    ; origin = "option_array.ml"
-    }
-  in
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    Ref ("t", _the_group)
-  in
-  t_sexp_grammar
+let (t_sexp_grammar :
+       'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+     -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+  =
+  fun _'a_sexp_grammar ->
+  Uniform_array.t_sexp_grammar (Cheap_option.t_sexp_grammar _'a_sexp_grammar)
 ;;
 
 [@@@end]

@@ -2421,6 +2421,14 @@ module type M_of_sexp = sig
   include Comparator.S with type t := t
 end
 
+module type M_sexp_grammar = sig
+  type t [@@deriving_inline sexp_grammar]
+
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+
+  [@@@end]
+end
+
 module type Compare_m = sig end
 module type Equal_m = sig end
 module type Hash_fold_m = Hasher.S
@@ -2438,16 +2446,16 @@ let m__t_of_sexp
   Using_comparator.t_of_sexp_direct ~comparator:K.comparator K.t_of_sexp v_of_sexp sexp
 ;;
 
-let m__t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t =
-  Inline
-    (Tyvar_parameterize
-       ( [ "'k"; "'v" ]
-       , Tyvar_instantiate
-           ( Grammar list_sexp_grammar
-           , [ Tyvar_instantiate
-                 ( Grammar Ppx_sexp_conv_lib.Conv.tuple2_sexp_grammar
-                 , [ Tyvar_index 0; Tyvar_index 1 ] )
-             ] ) ))
+let m__t_sexp_grammar
+      (type k)
+      (module K : M_sexp_grammar with type t = k)
+      (v_grammar : _ Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+  : _ Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  =
+  { untyped =
+      List
+        (Many (List (Cons (K.t_sexp_grammar.untyped, Cons (v_grammar.untyped, Empty)))))
+  }
 ;;
 
 let compare_m__t (module K : Compare_m) compare_v t1 t2 = compare_direct compare_v t1 t2

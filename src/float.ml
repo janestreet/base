@@ -19,24 +19,8 @@ module T = struct
   let t_of_sexp = (float_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_float : t -> Ppx_sexp_conv_lib.Sexp.t)
 
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { tycon_names = [ "float" ]
-      ; ggid = "\146e\023\249\235eE\139c\132W\195\137\129\235\025"
-      ; types = [ "t", Tycon_index 0 ]
-      }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; instantiate_tycons = [ float_sexp_grammar ]
-      ; generic_group = _the_generic_group
-      ; origin = "float.ml.T"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
+  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    float_sexp_grammar
   ;;
 
   [@@@end]
@@ -595,36 +579,13 @@ module Class = struct
                 : t -> Ppx_sexp_conv_lib.Sexp.t)
   ;;
 
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { tycon_names = []
-      ; ggid = "\218\022\207\021\220A(\005\238\003L\161A\167=\133"
-      ; types =
-          [ ( "t"
-            , Variant
-                { ignore_capitalization = true
-                ; alts =
-                    [ "Infinite", []
-                    ; "Nan", []
-                    ; "Normal", []
-                    ; "Subnormal", []
-                    ; "Zero", []
-                    ]
-                } )
-          ]
-      }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; instantiate_tycons = []
-      ; generic_group = _the_generic_group
-      ; origin = "float.ml.Class"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
+  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+    { untyped =
+        Enum
+          { name_kind = Capitalized
+          ; names = [ "Infinite"; "Nan"; "Normal"; "Subnormal"; "Zero" ]
+          }
+    }
   ;;
 
   [@@@end]

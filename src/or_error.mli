@@ -23,7 +23,9 @@ val hash_fold_t
 
 include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
 
-val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+val t_sexp_grammar
+  :  'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
 
 [@@@end]
 
