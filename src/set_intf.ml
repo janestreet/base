@@ -1000,7 +1000,7 @@ module type For_deriving = sig
   module type M_sexp_grammar = sig
     type t [@@deriving_inline sexp_grammar]
 
-    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
     [@@@end]
   end
@@ -1018,7 +1018,7 @@ module type For_deriving = sig
 
   val m__t_sexp_grammar
     :  (module M_sexp_grammar with type t = 'elt)
-    -> ('elt, 'cmp) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> ('elt, 'cmp) t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   val compare_m__t : (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
   val equal_m__t : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool

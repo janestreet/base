@@ -57,7 +57,7 @@ let sexp_of_t =
                  : t -> Ppx_sexp_conv_lib.Sexp.t)
 ;;
 
-let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
+let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
   { untyped = Enum { name_kind = Capitalized; names = [ "Less"; "Equal"; "Greater" ] } }
 ;;
 

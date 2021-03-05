@@ -14,8 +14,8 @@ val all : 'a list -> 'a t list
 include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar
-  :  'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-  -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
+  -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
 
 [@@@end]
 
@@ -47,7 +47,7 @@ val sexp_of_interval_comparison : interval_comparison -> Ppx_sexp_conv_lib.Sexp.
 val interval_comparison_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> interval_comparison
 
 val interval_comparison_sexp_grammar
-  : interval_comparison Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  : interval_comparison Ppx_sexp_conv_lib.Sexp_grammar.t
 
 val compare_interval_comparison : interval_comparison -> interval_comparison -> int
 

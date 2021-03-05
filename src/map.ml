@@ -2424,7 +2424,7 @@ end
 module type M_sexp_grammar = sig
   type t [@@deriving_inline sexp_grammar]
 
-  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 end
@@ -2449,8 +2449,8 @@ let m__t_of_sexp
 let m__t_sexp_grammar
       (type k)
       (module K : M_sexp_grammar with type t = k)
-      (v_grammar : _ Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
-  : _ Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+      (v_grammar : _ Ppx_sexp_conv_lib.Sexp_grammar.t)
+  : _ Ppx_sexp_conv_lib.Sexp_grammar.t
   =
   { untyped =
       List

@@ -92,7 +92,7 @@ end
 module type M_sexp_grammar = sig
   type t [@@deriving_inline sexp_grammar]
 
-  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 end
@@ -127,7 +127,7 @@ module type For_deriving = sig
 
   val m__t_sexp_grammar
     :  (module M_sexp_grammar with type t = 'elt)
-    -> 'elt t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> 'elt t Ppx_sexp_conv_lib.Sexp_grammar.t
 end
 
 module type Hash_set = sig
@@ -168,8 +168,8 @@ module type Hash_set = sig
     include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
 
     val t_sexp_grammar
-      :  'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-      -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+      :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
+      -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
 
     [@@@end]
 

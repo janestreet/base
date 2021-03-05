@@ -22,8 +22,8 @@ module T = struct
        | _ -> of_sexp_error "Uchar.t_of_sexp: atom of the form U+XXXX needed" sexp)
   ;;
 
-  let t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t =
-    Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.coerce String.t_sexp_grammar
+  let t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t =
+    Ppx_sexp_conv_lib.Sexp_grammar.coerce String.t_sexp_grammar
   ;;
 end
 

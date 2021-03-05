@@ -22,9 +22,9 @@ type ('ok, 'err) t = ('ok, 'err) Caml.result =
 include Ppx_sexp_conv_lib.Sexpable.S2 with type ('ok, 'err) t := ('ok, 'err) t
 
 val t_sexp_grammar
-  :  'ok Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-  -> 'err Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-  -> ('ok, 'err) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  :  'ok Ppx_sexp_conv_lib.Sexp_grammar.t
+  -> 'err Ppx_sexp_conv_lib.Sexp_grammar.t
+  -> ('ok, 'err) t Ppx_sexp_conv_lib.Sexp_grammar.t
 
 val compare
   :  ('ok -> 'ok -> int)

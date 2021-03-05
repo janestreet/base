@@ -29,8 +29,7 @@ let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_li
 ;;
 
 let (t_sexp_grammar :
-       'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-     -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+       'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
   =
   fun _'a_sexp_grammar -> Result.t_sexp_grammar _'a_sexp_grammar Error.t_sexp_grammar
 ;;

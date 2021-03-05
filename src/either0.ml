@@ -92,9 +92,9 @@ let sexp_of_t
 ;;
 
 let (t_sexp_grammar :
-       'f Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-     -> 's Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-     -> ('f, 's) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+       'f Ppx_sexp_conv_lib.Sexp_grammar.t
+     -> 's Ppx_sexp_conv_lib.Sexp_grammar.t
+     -> ('f, 's) t Ppx_sexp_conv_lib.Sexp_grammar.t)
   =
   fun _'f_sexp_grammar _'s_sexp_grammar ->
   { untyped =

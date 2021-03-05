@@ -563,12 +563,11 @@ let t_of_sexp ~hashable k_of_sexp d_of_sexp sexp =
 
 let t_sexp_grammar
       (type k v)
-      (k_grammar : k Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
-      (v_grammar : v Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
-  : (k, v) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+      (k_grammar : k Ppx_sexp_conv_lib.Sexp_grammar.t)
+      (v_grammar : v Ppx_sexp_conv_lib.Sexp_grammar.t)
+  : (k, v) t Ppx_sexp_conv_lib.Sexp_grammar.t
   =
-  Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.coerce
-    (List.Assoc.t_sexp_grammar k_grammar v_grammar)
+  Ppx_sexp_conv_lib.Sexp_grammar.coerce (List.Assoc.t_sexp_grammar k_grammar v_grammar)
 ;;
 
 let keys t = fold t ~init:[] ~f:(fun ~key ~data:_ acc -> key :: acc)
@@ -923,7 +922,7 @@ end
 module type M_sexp_grammar = sig
   type t [@@deriving_inline sexp_grammar]
 
-  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 end

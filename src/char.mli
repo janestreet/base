@@ -9,7 +9,7 @@ val all : t list
 
 include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
-val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
 [@@@end]
 
@@ -80,7 +80,7 @@ module Caseless : sig
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
-  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 

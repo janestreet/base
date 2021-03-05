@@ -88,10 +88,10 @@ module Cheap_option = struct
     let to_sexpable = to_option
     let of_sexpable = of_option
 
-    let t_sexp_grammar (type a) (grammar : a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
-      : a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    let t_sexp_grammar (type a) (grammar : a Ppx_sexp_conv_lib.Sexp_grammar.t)
+      : a t Ppx_sexp_conv_lib.Sexp_grammar.t
       =
-      Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.coerce (Option.t_sexp_grammar grammar)
+      Ppx_sexp_conv_lib.Sexp_grammar.coerce (Option.t_sexp_grammar grammar)
     ;;
   end
 
@@ -111,8 +111,7 @@ let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_li
 ;;
 
 let (t_sexp_grammar :
-       'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-     -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+       'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
   =
   fun _'a_sexp_grammar ->
   Uniform_array.t_sexp_grammar (Cheap_option.t_sexp_grammar _'a_sexp_grammar)

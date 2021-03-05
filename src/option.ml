@@ -26,8 +26,7 @@ struct
   ;;
 
   let (t_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-       -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+         'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
     =
     fun _'a_sexp_grammar -> option_sexp_grammar _'a_sexp_grammar
   ;;
@@ -48,8 +47,8 @@ sig
   include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
 
   val t_sexp_grammar
-    :  'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-    -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 end)

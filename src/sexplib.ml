@@ -6,4 +6,6 @@ module Conv = Sexplib0.Sexp_conv
 
 module Sexp = Sexp (** @canonical Base.Sexp *)
 
+module Sexp_grammar = Sexplib0.Sexp_grammar
+
 module Sexpable = Sexpable (** @canonical Base.Sexpable *)

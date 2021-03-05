@@ -71,8 +71,7 @@ let sexp_of_t : type a. (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_
 ;;
 
 let (t_sexp_grammar :
-       'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-     -> 'a t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+       'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
   =
   fun _'a_sexp_grammar ->
   { untyped =
@@ -131,7 +130,7 @@ let sexp_of_interval_comparison =
 ;;
 
 let (interval_comparison_sexp_grammar :
-       interval_comparison Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+       interval_comparison Ppx_sexp_conv_lib.Sexp_grammar.t)
   =
   { untyped =
       Enum

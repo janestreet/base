@@ -255,7 +255,7 @@ end
 
 module type Infix_indexed = sig
   (** Same as {!Infix}, except the monad type has three arguments. The second and
-      third are compose across all computation. *)
+      third are composed across all computation. *)
 
   type ('a, 'i, 'j) t
 
@@ -366,6 +366,50 @@ module type Monad = sig
 
   module Make_indexed (X : Basic_indexed) :
     S_indexed with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t
+
+  (** Define a monad through an isomorphism with an existing monad. For example:
+
+      {[
+        type 'a t = { value : 'a }
+
+        include Monad.Of_monad (Monad.Ident) (struct
+            type nonrec 'a t = 'a t
+
+            let to_monad { value } = value
+            let of_monad value = { value }
+          end)
+      ]} *)
+  module Of_monad
+      (Monad : S) (M : sig
+                     type 'a t
+
+                     val to_monad : 'a t -> 'a Monad.t
+                     val of_monad : 'a Monad.t -> 'a t
+                   end) : S with type 'a t := 'a M.t
+
+  module Of_monad2
+      (Monad : S2) (M : sig
+                      type ('a, 'b) t
+
+                      val to_monad : ('a, 'b) t -> ('a, 'b) Monad.t
+                      val of_monad : ('a, 'b) Monad.t -> ('a, 'b) t
+                    end) : S2 with type ('a, 'b) t := ('a, 'b) M.t
+
+  module Of_monad3
+      (Monad : S3) (M : sig
+                      type ('a, 'b, 'c) t
+
+                      val to_monad : ('a, 'b, 'c) t -> ('a, 'b, 'c) Monad.t
+                      val of_monad : ('a, 'b, 'c) Monad.t -> ('a, 'b, 'c) t
+                    end) : S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t
+
+  module Of_monad_indexed
+      (Monad : S_indexed) (M : sig
+                             type ('a, 'i, 'j) t
+
+                             val to_monad : ('a, 'i, 'j) t -> ('a, 'i, 'j) Monad.t
+                             val of_monad : ('a, 'i, 'j) Monad.t -> ('a, 'i, 'j) t
+                           end) : S_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t
 
   module Ident : S with type 'a t = 'a
 end

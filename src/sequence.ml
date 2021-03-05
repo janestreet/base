@@ -561,9 +561,9 @@ module Merge_with_duplicates_element = struct
   ;;
 
   let (t_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-       -> 'b Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-       -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+         'a Ppx_sexp_conv_lib.Sexp_grammar.t
+       -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
+       -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t)
     =
     fun _'a_sexp_grammar _'b_sexp_grammar ->
       { untyped =

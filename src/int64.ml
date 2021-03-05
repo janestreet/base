@@ -14,10 +14,7 @@ module T = struct
 
   let t_of_sexp = (int64_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_int64 : t -> Ppx_sexp_conv_lib.Sexp.t)
-
-  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    int64_sexp_grammar
-  ;;
+  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = int64_sexp_grammar
 
   [@@@end]
 

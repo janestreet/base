@@ -1469,7 +1469,7 @@ end
 module type M_sexp_grammar = sig
   type t [@@deriving_inline sexp_grammar]
 
-  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 end
@@ -1491,9 +1491,9 @@ let m__t_of_sexp
 ;;
 
 let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt)
-  : (elt, _) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  : (elt, _) t Ppx_sexp_conv_lib.Sexp_grammar.t
   =
-  Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.coerce (list_sexp_grammar Elt.t_sexp_grammar)
+  Ppx_sexp_conv_lib.Sexp_grammar.coerce (list_sexp_grammar Elt.t_sexp_grammar)
 ;;
 
 let compare_m__t (module Elt : Compare_m) t1 t2 = compare_direct t1 t2

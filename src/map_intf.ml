@@ -152,9 +152,9 @@ module Symmetric_diff_element = struct
   ;;
 
   let (t_sexp_grammar :
-         'k Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-       -> 'v Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-       -> ('k, 'v) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t)
+         'k Ppx_sexp_conv_lib.Sexp_grammar.t
+       -> 'v Ppx_sexp_conv_lib.Sexp_grammar.t
+       -> ('k, 'v) t Ppx_sexp_conv_lib.Sexp_grammar.t)
     =
     fun _'k_sexp_grammar _'v_sexp_grammar ->
       { untyped =
@@ -1845,7 +1845,7 @@ module type For_deriving = sig
   module type M_sexp_grammar = sig
     type t [@@deriving_inline sexp_grammar]
 
-    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
     [@@@end]
   end
@@ -1868,8 +1868,8 @@ module type For_deriving = sig
 
   val m__t_sexp_grammar
     :  (module M_sexp_grammar with type t = 'k)
-    -> 'v Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-    -> ('k, 'v, 'cmp) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+    -> 'v Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> ('k, 'v, 'cmp) t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   val compare_m__t
     :  (module Compare_m)
@@ -2327,9 +2327,9 @@ module type Map = sig
     include Ppx_sexp_conv_lib.Sexpable.S2 with type ('k, 'v) t := ('k, 'v) t
 
     val t_sexp_grammar
-      :  'k Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-      -> 'v Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
-      -> ('k, 'v) t Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+      :  'k Ppx_sexp_conv_lib.Sexp_grammar.t
+      -> 'v Ppx_sexp_conv_lib.Sexp_grammar.t
+      -> ('k, 'v) t Ppx_sexp_conv_lib.Sexp_grammar.t
 
     [@@@end]
   end
