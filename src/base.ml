@@ -1,7 +1,6 @@
 (** This module is the toplevel of the Base library; it's what you get when you write
     [open Base].
 
-
     The goal of Base is both to be a more complete standard library, with richer APIs,
     and to be more consistent in its design. For instance, in the standard library
     some things have modules and others don't; in Base, everything is a module.
@@ -20,9 +19,6 @@
     - [Container], which provides a consistent interface across container-like data
       structures (arrays, lists, strings).
     - [Result], [Error], and [Or_error], supporting the or-error pattern.
-
-    The recommended way to use Base is to build with [-open Base]. Files compiled this
-    way will have the environment described in this file as their initial environment.
 *)
 
 (*_ We hide this from the web docs because the line wrapping is bad, making it

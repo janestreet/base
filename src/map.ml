@@ -2311,6 +2311,15 @@ module Using_comparator = struct
     x |> Sequence.map ~f:(fun (k, v) -> f k, v) |> of_sequence ~comparator:comparator2
   ;;
 
+  let map_keys_exn comparator2 ~f t =
+    match map_keys comparator2 ~f t with
+    | `Ok result -> result
+    | `Duplicate_key key ->
+      let sexp_of_key = comparator2.Comparator.sexp_of_t in
+      Error.raise_s
+        (Sexp.message "Map.map_keys_exn: duplicate key" [ "key", key |> sexp_of_key ])
+  ;;
+
   module Empty_without_value_restriction (K : Comparator.S1) = struct
     let empty = { tree = Tree0.empty; comparator = K.comparator; length = 0 }
   end
@@ -2393,6 +2402,14 @@ let map_keys
       (t : ('k1, 'v, 'cmp1) t)
   =
   Using_comparator.map_keys comparator2 t ~f
+;;
+
+let map_keys_exn
+      (comparator2 : ('k2, 'cmp2) Comparator.t)
+      ~(f : 'k1 -> 'k2)
+      (t : ('k1, 'v, 'cmp1) t)
+  =
+  Using_comparator.map_keys_exn comparator2 t ~f
 ;;
 
 module M (K : sig

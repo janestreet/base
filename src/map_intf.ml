@@ -913,6 +913,12 @@ module type Accessors3 = sig
     -> ('k1, 'v, 'cmp1) t
     -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 ]
 
+  val map_keys_exn
+    :  ('k2, 'cmp2) Comparator.t
+    -> f:('k1 -> 'k2)
+    -> ('k1, 'v, 'cmp1) t
+    -> ('k2, 'v, 'cmp2) t
+
   val fold : ('a, 'b, _) t -> init:'c -> f:(key:'a -> data:'b -> 'c -> 'c) -> 'c
   val fold_right : ('a, 'b, _) t -> init:'c -> f:(key:'a -> data:'b -> 'c -> 'c) -> 'c
 
@@ -2187,6 +2193,13 @@ module type Map = sig
     -> f:('k1 -> 'k2)
     -> ('k1, 'v, 'cmp1) t
     -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 ]
+
+  (** Like [map_keys], but raises on duplicate key. *)
+  val map_keys_exn
+    :  ('k2, 'cmp2) Comparator.t
+    -> f:('k1 -> 'k2)
+    -> ('k1, 'v, 'cmp1) t
+    -> ('k2, 'v, 'cmp2) t
 
   (** Folds over keys and data in the map in increasing order of [key]. *)
   val fold : ('k, 'v, _) t -> init:'a -> f:(key:'k -> data:'v -> 'a -> 'a) -> 'a

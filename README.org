@@ -34,12 +34,6 @@ In order to access these values, one must use the =Caml= library,
 which re-exports them all through the toplevel name =Caml=:
 =Caml.String=, =Caml.print_string=, ...
 
-The recommended way to build code using Base is as follows:
-
-#+begin_src ocaml
-$ ocamlc -open Base
-#+end_src
-
 ** Differences between Base and the OCaml standard library
 
 Programmers who are used to the OCaml standard library should read
@@ -62,10 +56,10 @@ representation of values. Since these are often error-prone,
 i.e. they don't correspond to what the user expects, they are not
 exposed directly by Base.
 
-To use polymorphic comparison with Base, one should use the
-=Polymorphic_compare= module. The default comparison operators exposed
-by Base are the integer ones, just like the default arithmetic
-operators are the integer ones.
+To use polymorphic comparison with Base, one should use the =Poly=
+module. The default comparison operators exposed by Base are the
+integer ones, just like the default arithmetic operators are the
+integer ones.
 
 The recommended way to compare arbitrary complex data structures is to
 use the specific =compare= functions. For instance:
