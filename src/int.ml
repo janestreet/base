@@ -15,29 +15,11 @@ module T = struct
 
   let t_of_sexp = (int_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_int : t -> Ppx_sexp_conv_lib.Sexp.t)
-
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "int" ]
-      ; ggid = "\146e\023\249\235eE\139c\132W\195\137\129\235\025"
-      ; types = [ "t", Implicit_var 0 ]
-      }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ int_sexp_grammar ]
-      ; generic_group = _the_generic_group
-      ; origin = "int.ml.T"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
-  ;;
+  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = int_sexp_grammar
 
   [@@@end]
 
+  let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare x y = Int_replace_polymorphic_compare.compare x y
 
   let of_string s =
@@ -55,8 +37,9 @@ let to_float = Caml.float_of_int
 let of_float_unchecked = Caml.int_of_float
 
 let of_float f =
-  if Float_replace_polymorphic_compare.( >= ) f float_lower_bound
-  && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
+  if
+    Float_replace_polymorphic_compare.( >= ) f float_lower_bound
+    && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
   then Caml.int_of_float f
   else
     Printf.invalid_argf
@@ -72,7 +55,7 @@ let minus_one = -1
 include T
 include Comparator.Make (T)
 
-include Comparable.Validate_with_zero (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero
@@ -246,8 +229,7 @@ module Pow2 = struct
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
     if i <= 0
-    then
-      raise_s (Sexp.message "[Int.floor_log2] got invalid input" [ "", sexp_of_int i ]);
+    then raise_s (Sexp.message "[Int.floor_log2] got invalid input" [ "", sexp_of_int i ]);
     num_bits - 1 - clz i
   ;;
 
@@ -260,8 +242,6 @@ end
 
 include Pow2
 
-(* This is already defined by Comparable.Validate_with_zero, but Sign.of_int is
-   more direct. *)
 let sign = Sign.of_int
 let popcount = Popcount.int_popcount
 

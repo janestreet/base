@@ -25,9 +25,7 @@ let%test _ =
   invariants (of_increasing_iterator_unchecked (module Int) ~len:20 ~f:(fun x -> x, x))
 ;;
 
-let%test _ =
-  invariants (Poly.of_increasing_iterator_unchecked ~len:20 ~f:(fun x -> x, x))
-;;
+let%test _ = invariants (Poly.of_increasing_iterator_unchecked ~len:20 ~f:(fun x -> x, x))
 
 module M = M
 
@@ -292,4 +290,28 @@ let%test_module "of_alist_multi key equality" =
         (Map.of_sequence_multi (module Key) (Sequence.of_list alist))
     ;;
   end)
+;;
+
+let%expect_test "remove returns the same object if there's nothing to do" =
+  let map1 = Map.of_alist_exn (module Int) [ 1, "one"; 3, "three" ] in
+  let map2 = Map.remove map1 2 in
+  require [%here] (phys_equal map1 map2)
+;;
+
+let%expect_test "[map_keys]" =
+  let test m c ~f =
+    print_s
+      [%sexp
+        (Map.map_keys c ~f m
+         : [ `Duplicate_key of string | `Ok of string Map.M(String).t ])]
+  in
+  let map = Map.of_alist_exn (module Int) [ 1, "one"; 2, "two"; 3, "three" ] in
+  test map String.comparator ~f:Int.to_string;
+  [%expect {|
+    (Ok (
+      (1 one)
+      (2 two)
+      (3 three))) |}];
+  test map String.comparator ~f:(fun x -> Int.to_string (x / 2));
+  [%expect {| (Duplicate_key 1) |}]
 ;;

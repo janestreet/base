@@ -4,7 +4,7 @@ module Either = Either0
 type ('a, 'b) t = ('a, 'b) Caml.result =
   | Ok of 'a
   | Error of 'b
-[@@deriving_inline sexp, compare, equal, hash]
+[@@deriving_inline sexp, sexp_grammar, compare, equal, hash]
 
 let t_of_sexp
   : type a b.
@@ -55,6 +55,23 @@ let sexp_of_t
     | Error v0 ->
       let v0 = _of_b v0 in
       Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Error"; v0 ]
+;;
+
+let (t_sexp_grammar :
+       'a Ppx_sexp_conv_lib.Sexp_grammar.t
+     -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
+     -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t)
+  =
+  fun _'a_sexp_grammar _'b_sexp_grammar ->
+  { untyped =
+      Variant
+        { name_kind = Capitalized
+        ; clauses =
+            [ { name = "Ok"; args = Cons (_'a_sexp_grammar.untyped, Empty) }
+            ; { name = "Error"; args = Cons (_'b_sexp_grammar.untyped, Empty) }
+            ]
+        }
+  }
 ;;
 
 let compare :

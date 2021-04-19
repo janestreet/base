@@ -9,7 +9,7 @@ val all : t list
 
 include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
-val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
 [@@@end]
 
@@ -73,12 +73,14 @@ val max_value : t
 (** [Caseless] compares and hashes characters ignoring case, so that for example
     [Caseless.equal 'A' 'a'] and [Caseless.('a' < 'B')] are [true]. *)
 module Caseless : sig
-  type nonrec t = t [@@deriving_inline hash, sexp]
+  type nonrec t = t [@@deriving_inline hash, sexp, sexp_grammar]
 
   val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 

@@ -39,11 +39,7 @@ let test (type a) here (module T : S with type t = a) list =
   op (module Bool) "(<>)" ~actual:T.( <> ) ~expect:C.( <> );
   op (module Bool) "(<=)" ~actual:T.( <= ) ~expect:C.( <= );
   op (module Bool) "(>=)" ~actual:T.( >= ) ~expect:C.( >= );
-  op
-    (module Bool)
-    "Comparable.equal"
-    ~actual:(Comparable.equal T.compare)
-    ~expect:C.equal;
+  op (module Bool) "Comparable.equal" ~actual:(Comparable.equal T.compare) ~expect:C.equal;
   op (module T) "Comparable.min" ~actual:(Comparable.min T.compare) ~expect:C.min;
   op (module T) "Comparable.max" ~actual:(Comparable.max T.compare) ~expect:C.max
 ;;
@@ -96,10 +92,7 @@ let%expect_test "Int64" =
 ;;
 
 let%expect_test "Nativeint" =
-  test
-    [%here]
-    (module Nativeint)
-    Nativeint.[ min_value; minus_one; zero; one; max_value ];
+  test [%here] (module Nativeint) Nativeint.[ min_value; minus_one; zero; one; max_value ];
   [%expect {||}]
 ;;
 

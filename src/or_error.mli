@@ -9,7 +9,8 @@
 open! Import
 
 (** Serialization and comparison of an [Error] force the error's lazy message. *)
-type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, equal, hash, sexp]
+type 'a t = ('a, Error.t) Result.t
+[@@deriving_inline compare, equal, hash, sexp, sexp_grammar]
 
 val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
@@ -22,14 +23,17 @@ val hash_fold_t
 
 include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
 
+val t_sexp_grammar
+  :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
+  -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
+
 [@@@end]
 
 (** [Applicative] functions don't have quite the same semantics as
     [Applicative.Of_Monad(Or_error)] would give -- [apply (Error e1) (Error e2)] returns
     the combination of [e1] and [e2], whereas it would only return [e1] if it were defined
     using [bind]. *)
-include
-  Applicative.S with type 'a t := 'a t
+include Applicative.S with type 'a t := 'a t
 
 include Invariant.S1 with type 'a t := 'a t
 include Monad.S with type 'a t := 'a t
@@ -72,7 +76,13 @@ val of_exn_result : ?backtrace:[ `Get | `This of string ] -> ('a, exn) Result.t 
     to a sexp.  So, if [a] is mutated in the time between the call to [create] and the
     sexp conversion, those mutations will be reflected in the sexp.  Use [~strict:()] to
     force [sexp_of_a a] to be computed immediately. *)
-val error : ?strict:unit -> string -> 'a -> ('a -> Sexp.t) -> _ t
+val error
+  :  ?here:Source_code_position0.t
+  -> ?strict:unit
+  -> string
+  -> 'a
+  -> ('a -> Sexp.t)
+  -> _ t
 
 val error_s : Sexp.t -> _ t
 

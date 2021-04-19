@@ -3,7 +3,7 @@ open! Import
 type ('f, 's) t =
   | First of 'f
   | Second of 's
-[@@deriving_inline compare, hash, sexp]
+[@@deriving_inline compare, hash, sexp, sexp_grammar]
 
 let compare :
   'f 's. ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
@@ -89,6 +89,23 @@ let sexp_of_t
     | Second v0 ->
       let v0 = _of_s v0 in
       Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Second"; v0 ]
+;;
+
+let (t_sexp_grammar :
+       'f Ppx_sexp_conv_lib.Sexp_grammar.t
+     -> 's Ppx_sexp_conv_lib.Sexp_grammar.t
+     -> ('f, 's) t Ppx_sexp_conv_lib.Sexp_grammar.t)
+  =
+  fun _'f_sexp_grammar _'s_sexp_grammar ->
+  { untyped =
+      Variant
+        { name_kind = Capitalized
+        ; clauses =
+            [ { name = "First"; args = Cons (_'f_sexp_grammar.untyped, Empty) }
+            ; { name = "Second"; args = Cons (_'s_sexp_grammar.untyped, Empty) }
+            ]
+        }
+  }
 ;;
 
 [@@@end]

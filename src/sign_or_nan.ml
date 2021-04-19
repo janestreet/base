@@ -6,7 +6,7 @@ module T = struct
     | Zero
     | Pos
     | Nan
-  [@@deriving_inline sexp, compare, hash, enumerate]
+  [@@deriving_inline sexp, sexp_grammar, compare, hash, enumerate]
 
   let t_of_sexp =
     (let _tp_loc = "sign_or_nan.ml.T.t" in
@@ -17,8 +17,8 @@ module T = struct
      | Ppx_sexp_conv_lib.Sexp.Atom ("nan" | "Nan") -> Nan
      | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("neg" | "Neg") :: _) as
        sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") :: _)
-       as sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") :: _) as
+       sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
      | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("pos" | "Pos") :: _) as
        sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
      | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("nan" | "Nan") :: _) as
@@ -38,6 +38,11 @@ module T = struct
       | Pos -> Ppx_sexp_conv_lib.Sexp.Atom "Pos"
       | Nan -> Ppx_sexp_conv_lib.Sexp.Atom "Nan"
                : t -> Ppx_sexp_conv_lib.Sexp.t)
+  ;;
+
+  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
+    { untyped = Enum { name_kind = Capitalized; names = [ "Neg"; "Zero"; "Pos"; "Nan" ] }
+    }
   ;;
 
   let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)

@@ -3,9 +3,13 @@ open! Import
 (** An interface for queues that follows Base's conventions, as opposed to OCaml's
     standard [Queue] module. *)
 module type S = sig
-  type 'a t [@@deriving_inline sexp]
+  type 'a t [@@deriving_inline sexp, sexp_grammar]
 
   include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+
+  val t_sexp_grammar
+    :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 

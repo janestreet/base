@@ -22,9 +22,10 @@ open! Import
     another case where [[@deriving enumerate]] could be useful is when this type is part
     of some larger type.
 *)
-type t = | [@@deriving_inline enumerate]
+type t = | [@@deriving_inline enumerate, sexp_grammar]
 
 val all : t list
+val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
 [@@@end]
 
@@ -55,5 +56,4 @@ val unreachable_code : t -> _
     prevented for lack of [Identifiable.S] here.
 
     Obviously, [of_string] and [t_of_sexp] will raise an exception. *)
-include
-  Identifiable.S with type t := t
+include Identifiable.S with type t := t

@@ -12,37 +12,20 @@ let invalid_argf = Printf.invalid_argf
 module T = struct
   type 'a t = 'a list [@@deriving_inline sexp, sexp_grammar]
 
-  let t_of_sexp :
-    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
+  let t_of_sexp : 'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
     =
     list_of_sexp
   ;;
 
-  let sexp_of_t :
-    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+  let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
     =
     sexp_of_list
   ;;
 
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "list" ]
-      ; ggid = "j\132);\135qH\158\135\222H\001\007\004\158\218"
-      ; types =
-          [ "t", Explicit_bind ([ "a" ], Apply (Implicit_var 0, [ Explicit_var 0 ])) ]
-      }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ list_sexp_grammar ]
-      ; generic_group = _the_generic_group
-      ; origin = "list.ml.T"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
+  let (t_sexp_grammar :
+         'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
+    =
+    fun _'a_sexp_grammar -> list_sexp_grammar _'a_sexp_grammar
   ;;
 
   [@@@end]
@@ -165,29 +148,82 @@ let unordered_append l1 l2 =
   | _ -> rev_append l1 l2
 ;;
 
-let check_length2_exn name l1 l2 =
-  let n1 = length l1 in
-  let n2 = length l2 in
-  if n1 <> n2 then invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
-;;
+module Check_length2 = struct
+  type ('a, 'b) t =
+    | Same_length of int
+    | Unequal_lengths of
+        { shared_length : int
+        ; tail_of_a : 'a list
+        ; tail_of_b : 'b list
+        }
 
-let check_length3_exn name l1 l2 l3 =
-  let n1 = length l1 in
-  let n2 = length l2 in
-  let n3 = length l3 in
-  if n1 <> n2 || n2 <> n3
-  then invalid_argf "length mismatch in %s: %d <> %d || %d <> %d" name n1 n2 n2 n3 ()
+  (* In the [Unequal_lengths] case, at least one of the tails will be non-empty. *)
+  let of_lists l1 l2 =
+    let rec loop a b shared_length =
+      match a, b with
+      | [], [] -> Same_length shared_length
+      | _ :: a, _ :: b -> loop a b (shared_length + 1)
+      | [], _ | _, [] -> Unequal_lengths { shared_length; tail_of_a = a; tail_of_b = b }
+    in
+    loop l1 l2 0
+  ;;
+end
+
+let check_length2_exn name l1 l2 =
+  match Check_length2.of_lists l1 l2 with
+  | Same_length _ -> ()
+  | Unequal_lengths { shared_length; tail_of_a; tail_of_b } ->
+    invalid_argf
+      "length mismatch in %s: %d <> %d"
+      name
+      (shared_length + length tail_of_a)
+      (shared_length + length tail_of_b)
+      ()
 ;;
 
 let check_length2 l1 l2 ~f =
-  if length l1 <> length l2 then Or_unequal_lengths.Unequal_lengths else Ok (f l1 l2)
+  match Check_length2.of_lists l1 l2 with
+  | Same_length _ -> Or_unequal_lengths.Ok (f l1 l2)
+  | Unequal_lengths _ -> Unequal_lengths
+;;
+
+module Check_length3 = struct
+  type ('a, 'b, 'c) t =
+    | Same_length of int
+    | Unequal_lengths of
+        { shared_length : int
+        ; tail_of_a : 'a list
+        ; tail_of_b : 'b list
+        ; tail_of_c : 'c list
+        }
+
+  (* In the [Unequal_lengths] case, at least one of the tails will be non-empty. *)
+  let of_lists l1 l2 l3 =
+    let rec loop a b c shared_length =
+      match a, b, c with
+      | [], [], [] -> Same_length shared_length
+      | _ :: a, _ :: b, _ :: c -> loop a b c (shared_length + 1)
+      | [], _, _ | _, [], _ | _, _, [] ->
+        Unequal_lengths { shared_length; tail_of_a = a; tail_of_b = b; tail_of_c = c }
+    in
+    loop l1 l2 l3 0
+  ;;
+end
+
+let check_length3_exn name l1 l2 l3 =
+  match Check_length3.of_lists l1 l2 l3 with
+  | Same_length _ -> ()
+  | Unequal_lengths { shared_length; tail_of_a; tail_of_b; tail_of_c } ->
+    let n1 = shared_length + length tail_of_a in
+    let n2 = shared_length + length tail_of_b in
+    let n3 = shared_length + length tail_of_c in
+    invalid_argf "length mismatch in %s: %d <> %d || %d <> %d" name n1 n2 n2 n3 ()
 ;;
 
 let check_length3 l1 l2 l3 ~f =
-  let n1 = length l1 in
-  let n2 = length l2 in
-  let n3 = length l3 in
-  if n1 <> n2 || n2 <> n3 then Or_unequal_lengths.Unequal_lengths else Ok (f l1 l2 l3)
+  match Check_length3.of_lists l1 l2 l3 with
+  | Same_length _ -> Or_unequal_lengths.Ok (f l1 l2 l3)
+  | Unequal_lengths _ -> Unequal_lengths
 ;;
 
 let iter2 l1 l2 ~f = check_length2 l1 l2 ~f:(iter2_ok ~f)
@@ -342,9 +378,18 @@ let fold_left = fold
 let to_array = Array.of_list
 let to_list t = t
 
+let max_non_tailcall =
+  match Sys.backend_type with
+  | Sys.Native | Sys.Bytecode -> 1_000
+  (* We don't know the size of the stack, better be safe and assume it's small. This
+     number was taken from ocaml#stdlib/list.ml which is also equal to the default limit
+     of recursive call in the js_of_ocaml compiler before switching to trampoline. *)
+  | Sys.Other _ -> 50
+;;
+
 (** Tail recursive versions of standard [List] module *)
 
-let slow_append l1 l2 = rev_append (rev l1) l2
+let tail_append l1 l2 = rev_append (rev l1) l2
 
 (* There are a few optimized list operations here, including append and map.  There are
    basically two optimizations in play: loop unrolling, and dynamic switching between
@@ -370,15 +415,49 @@ let rec count_append l1 l2 count =
      | [ x1; x2; x3; x4 ] -> x1 :: x2 :: x3 :: x4 :: l2
      | x1 :: x2 :: x3 :: x4 :: x5 :: tl ->
        x1
-       :: x2
-       :: x3
-       :: x4
-       :: x5
-       :: (if count > 1000 then slow_append tl l2 else count_append tl l2 (count + 1)))
+       ::
+       x2
+       ::
+       x3
+       ::
+       x4
+       ::
+       x5
+       ::
+       (if count > max_non_tailcall
+        then tail_append tl l2
+        else count_append tl l2 (count + 1)))
 ;;
 
 let append l1 l2 = count_append l1 l2 0
-let slow_map l ~f = rev (rev_map l ~f)
+
+(* An ordinary tail recursive map builds up an intermediate (reversed) representation,
+   with one heap allocated object per element. The following implementation instead chunks
+   9 objects into one heap allocated object, reducing allocation and performance costs
+   accordingly. Note that the very end of the list is done by the stdlib's map
+   function. *)
+let tail_map xs ~f =
+  let rec rise ys = function
+    | [] -> ys
+    | (y0, y1, y2, y3, y4, y5, y6, y7, y8) :: bs ->
+      rise (y0 :: y1 :: y2 :: y3 :: y4 :: y5 :: y6 :: y7 :: y8 :: ys) bs
+  in
+  let rec dive bs = function
+    | x0 :: x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: x8 :: xs ->
+      let y0 = f x0 in
+      let y1 = f x1 in
+      let y2 = f x2 in
+      let y3 = f x3 in
+      let y4 = f x4 in
+      let y5 = f x5 in
+      let y6 = f x6 in
+      let y7 = f x7 in
+      let y8 = f x8 in
+      dive ((y0, y1, y2, y3, y4, y5, y6, y7, y8) :: bs) xs
+    | xs -> rise (nontail_map ~f xs) bs
+  in
+  dive [] xs
+;;
 
 let rec count_map ~f l ctr =
   match l with
@@ -408,11 +487,14 @@ let rec count_map ~f l ctr =
     let f4 = f x4 in
     let f5 = f x5 in
     f1
-    :: f2
-    :: f3
-    :: f4
-    :: f5
-    :: (if ctr > 1000 then slow_map ~f tl else count_map ~f tl (ctr + 1))
+    ::
+    f2
+    ::
+    f3
+    ::
+    f4
+    ::
+    f5 :: (if ctr > max_non_tailcall then tail_map ~f tl else count_map ~f tl (ctr + 1))
 ;;
 
 let map l ~f = count_map ~f l 0
@@ -485,24 +567,24 @@ let fold_right l ~f ~init =
 let unzip list =
   let rec loop list l1 l2 =
     match list with
-    | [] -> rev l1, rev l2
+    | [] -> l1, l2
     | (x, y) :: tl -> loop tl (x :: l1) (y :: l2)
   in
-  loop list [] []
+  loop (rev list) [] []
 ;;
 
 let unzip3 list =
   let rec loop list l1 l2 l3 =
     match list with
-    | [] -> rev l1, rev l2, rev l3
+    | [] -> l1, l2, l3
     | (x, y, z) :: tl -> loop tl (x :: l1) (y :: l2) (z :: l3)
   in
-  loop list [] [] []
+  loop (rev list) [] [] []
 ;;
 
 let zip_exn l1 l2 =
-  check_length2_exn "zip_exn" l1 l2;
-  map2_ok ~f:(fun a b -> a, b) l1 l2
+  try map2_ok ~f:(fun a b -> a, b) l1 l2 with
+  | _ -> invalid_argf "length mismatch in zip_exn: %d <> %d" (length l1) (length l2) ()
 ;;
 
 let zip l1 l2 = map2 ~f:(fun a b -> a, b) l1 l2
@@ -629,6 +711,10 @@ let groupi l ~break =
 ;;
 
 let group l ~break = groupi l ~break:(fun _ x y -> break x y)
+
+let sort_and_group ~compare l =
+  l |> stable_sort ~compare |> group ~break:(fun x y -> compare x y <> 0)
+;;
 
 let concat_map l ~f =
   let rec aux acc = function
@@ -854,7 +940,7 @@ let partition_tf t ~f =
 let partition_result t = partition_map t ~f:Result.to_either
 
 module Assoc = struct
-  type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp]
+  type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp, sexp_grammar]
 
   let t_of_sexp :
     'a 'b. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> (Ppx_sexp_conv_lib.Sexp.t -> 'b)
@@ -886,7 +972,33 @@ module Assoc = struct
         v
   ;;
 
+  let (t_sexp_grammar :
+         'a Ppx_sexp_conv_lib.Sexp_grammar.t
+       -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
+       -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t)
+    =
+    fun _'a_sexp_grammar _'b_sexp_grammar ->
+      list_sexp_grammar
+        { untyped =
+            List (Cons (_'a_sexp_grammar.untyped, Cons (_'b_sexp_grammar.untyped, Empty)))
+        }
+  ;;
+
   [@@@end]
+
+  let pair_of_group = function
+    | [] -> assert false
+    | (k, _) :: _ as list -> k, map list ~f:snd
+  ;;
+
+  let group alist ~equal =
+    group alist ~break:(fun (x, _) (y, _) -> not (equal x y)) |> map ~f:pair_of_group
+  ;;
+
+  let sort_and_group alist ~compare =
+    sort_and_group alist ~compare:(fun (x, _) (y, _) -> compare x y)
+    |> map ~f:pair_of_group
+  ;;
 
   let find t ~equal key =
     match find t ~f:(fun (key', _) -> equal key key') with
@@ -969,8 +1081,7 @@ let rec drop t n =
 ;;
 
 let chunks_of l ~length =
-  if length <= 0
-  then invalid_argf "List.chunks_of: Expected length > 0, got %d" length ();
+  if length <= 0 then invalid_argf "List.chunks_of: Expected length > 0, got %d" length ();
   let rec aux of_length acc l =
     match l with
     | [] -> rev acc
@@ -1099,19 +1210,25 @@ let equal equal t1 t2 =
 ;;
 
 let transpose =
-  let rec transpose_aux t rev_columns =
-    match
-      partition_map t ~f:(function
-        | [] -> Second ()
-        | x :: xs -> First (x, xs))
-    with
-    | _ :: _, _ :: _ -> None
-    | [], _ -> Some (rev_append rev_columns [])
-    | heads_and_tails, [] ->
-      let column, trimmed_rows = unzip heads_and_tails in
-      transpose_aux trimmed_rows (column :: rev_columns)
+  let rec split_off_first_column t column_acc trimmed found_empty =
+    match t with
+    | [] -> column_acc, trimmed, found_empty
+    | [] :: tl -> split_off_first_column tl column_acc trimmed true
+    | (x :: xs) :: tl ->
+      split_off_first_column tl (x :: column_acc) (xs :: trimmed) found_empty
   in
-  fun t -> transpose_aux t []
+  let split_off_first_column rows = split_off_first_column rows [] [] false in
+  let rec loop rows columns do_rev =
+    match split_off_first_column rows with
+    | [], [], _ -> Some (rev columns)
+    | column, trimmed_rows, found_empty ->
+      if found_empty
+      then None
+      else (
+        let column = if do_rev then rev column else column in
+        loop trimmed_rows (column :: columns) (not do_rev))
+  in
+  fun t -> loop t [] true
 ;;
 
 exception Transpose_got_lists_of_different_lengths of int list [@@deriving_inline sexp]
@@ -1123,8 +1240,7 @@ let () =
       | Transpose_got_lists_of_different_lengths v0 ->
         let v0 = sexp_of_list sexp_of_int v0 in
         Ppx_sexp_conv_lib.Sexp.List
-          [ Ppx_sexp_conv_lib.Sexp.Atom
-              "list.ml.Transpose_got_lists_of_different_lengths"
+          [ Ppx_sexp_conv_lib.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"
           ; v0
           ]
       | _ -> assert false)

@@ -20,29 +20,11 @@ module T = struct
 
   let t_of_sexp = (string_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_string : t -> Ppx_sexp_conv_lib.Sexp.t)
-
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "string" ]
-      ; ggid = "\146e\023\249\235eE\139c\132W\195\137\129\235\025"
-      ; types = [ "t", Implicit_var 0 ]
-      }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ string_sexp_grammar ]
-      ; generic_group = _the_generic_group
-      ; origin = "string.ml.T"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
-  ;;
+  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = string_sexp_grammar
 
   [@@@end]
 
+  let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = compare
 end
 
@@ -62,9 +44,12 @@ let sub src ~pos ~len =
   then src
   else (
     Ordered_collection_common.check_pos_len_exn ~pos ~len ~total_length:(length src);
-    let dst = Bytes.create len in
-    if len > 0 then Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
-    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
+    if len = 0
+    then ""
+    else (
+      let dst = Bytes.create len in
+      Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
+      Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst))
 ;;
 
 let subo ?(pos = 0) ?len src =
@@ -343,12 +328,7 @@ module Search_pattern0 = struct
       let next_src_pos = ref 0 in
       List.iter matches ~f:(fun i ->
         let len = i - !next_src_pos in
-        Bytes.blit_string
-          ~src:s
-          ~src_pos:!next_src_pos
-          ~dst
-          ~dst_pos:!next_dst_pos
-          ~len;
+        Bytes.blit_string ~src:s ~src_pos:!next_src_pos ~dst ~dst_pos:!next_dst_pos ~len;
         Bytes.blit_string
           ~src:with_
           ~src_pos:0
@@ -444,10 +424,7 @@ let substr_index_all_gen ~case_sensitive t ~may_overlap ~pattern =
 ;;
 
 let substr_replace_first_gen ~case_sensitive ?pos t ~pattern =
-  Search_pattern.replace_first
-    ?pos
-    (Search_pattern.create ~case_sensitive pattern)
-    ~in_:t
+  Search_pattern.replace_first ?pos (Search_pattern.create ~case_sensitive pattern) ~in_:t
 ;;
 
 let substr_replace_all_gen ~case_sensitive t ~pattern =
@@ -470,8 +447,7 @@ let is_substring_at_gen =
     if sub_pos = sub_len
     then true
     else if char_equal (unsafe_get str str_pos) (unsafe_get sub sub_pos)
-    then
-      loop ~str ~str_pos:(str_pos + 1) ~sub ~sub_pos:(sub_pos + 1) ~sub_len ~char_equal
+    then loop ~str ~str_pos:(str_pos + 1) ~sub ~sub_pos:(sub_pos + 1) ~sub_len ~char_equal
     else false
   in
   fun str ~pos:str_pos ~substring:sub ~char_equal ->
@@ -508,16 +484,15 @@ let is_prefix_gen string ~prefix ~char_equal =
 
 module Caseless = struct
   module T = struct
-    type t = string [@@deriving_inline sexp]
+    type t = string [@@deriving_inline sexp, sexp_grammar]
 
     let t_of_sexp = (string_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
     let sexp_of_t = (sexp_of_string : t -> Ppx_sexp_conv_lib.Sexp.t)
+    let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = string_sexp_grammar
 
     [@@@end]
 
-    let char_compare_caseless c1 c2 =
-      Char.compare (Char.lowercase c1) (Char.lowercase c2)
-    ;;
+    let char_compare_caseless c1 c2 = Char.compare (Char.lowercase c1) (Char.lowercase c2)
 
     let rec compare_loop ~pos ~string1 ~len1 ~string2 ~len2 =
       if pos = len1
@@ -525,9 +500,7 @@ module Caseless = struct
       else if pos = len2
       then 1
       else (
-        let c =
-          char_compare_caseless (unsafe_get string1 pos) (unsafe_get string2 pos)
-        in
+        let c = char_compare_caseless (unsafe_get string1 pos) (unsafe_get string2 pos) in
         match c with
         | 0 -> compare_loop ~pos:(pos + 1) ~string1 ~len1 ~string2 ~len2
         | _ -> c)
@@ -829,12 +802,23 @@ let foldi t ~init ~f =
   loop 0 init
 ;;
 
+let iteri t ~f =
+  for i = 0 to length t - 1 do
+    f i (unsafe_get t i)
+  done
+;;
+
 let count t ~f = Container.count ~fold t ~f
 let sum m t ~f = Container.sum ~fold m t ~f
 let min_elt t = Container.min_elt ~fold t
 let max_elt t = Container.max_elt ~fold t
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
+let find_mapi t ~f = Indexed_container.find_mapi ~iteri t ~f
+let findi t ~f = Indexed_container.findi ~iteri t ~f
+let counti t ~f = Indexed_container.counti ~foldi t ~f
+let for_alli t ~f = Indexed_container.for_alli ~iteri t ~f
+let existsi t ~f = Indexed_container.existsi ~iteri t ~f
 
 let mem =
   let rec loop t c ~pos:i ~len =
@@ -972,6 +956,115 @@ let chop_suffix_exn s ~suffix =
   | None -> invalid_argf "String.chop_suffix_exn %S %S" s suffix ()
 ;;
 
+module For_common_prefix_and_suffix = struct
+  (* When taking a string prefix or suffix, we extract from the shortest input available
+     in case we can just return one of our inputs without allocating a new string. *)
+
+  let shorter a b = if length a <= length b then a else b
+
+  let shortest list =
+    match list with
+    | [] -> ""
+    | first :: rest -> List.fold rest ~init:first ~f:shorter
+  ;;
+
+  (* Our generic accessors for common prefix/suffix abstract over [get_pos], which is
+     either [pos_from_left] or [pos_from_right]. *)
+
+  let pos_from_left (_ : t) (i : int) = i
+  let pos_from_right t i = length t - i - 1
+
+  let rec common_generic2_length_loop a b ~get_pos ~max_len ~len_so_far =
+    if len_so_far >= max_len
+    then max_len
+    else if
+      Char.equal
+        (unsafe_get a (get_pos a len_so_far))
+        (unsafe_get b (get_pos b len_so_far))
+    then common_generic2_length_loop a b ~get_pos ~max_len ~len_so_far:(len_so_far + 1)
+    else len_so_far
+  ;;
+
+  let common_generic2_length a b ~get_pos =
+    let max_len = min (length a) (length b) in
+    common_generic2_length_loop a b ~get_pos ~max_len ~len_so_far:0
+  ;;
+
+  let rec common_generic_length_loop first list ~get_pos ~max_len =
+    match list with
+    | [] -> max_len
+    | second :: rest ->
+      let max_len =
+        (* We call [common_generic2_length_loop] rather than [common_generic2_length] so
+           that [max_len] limits our traversal of [first] and [second]. *)
+        common_generic2_length_loop first second ~get_pos ~max_len ~len_so_far:0
+      in
+      common_generic_length_loop second rest ~get_pos ~max_len
+  ;;
+
+  let common_generic_length list ~get_pos =
+    match list with
+    | [] -> 0
+    | first :: rest ->
+      (* Precomputing [max_len] based on [shortest list] saves us work in longer strings,
+         at the cost of an extra pass over the spine of [list].
+
+         For example, if you're looking for the longest prefix of the strings:
+
+         {v
+            let long_a = List.init 1000 ~f:(Fn.const 'a')
+            [ long_a; long_a; 'aa' ]
+         v}
+
+         the approach below will just check the first two characters of all the strings.
+      *)
+      let max_len = length (shortest list) in
+      common_generic_length_loop first rest ~get_pos ~max_len
+  ;;
+
+  (* Our generic accessors that produce a string abstract over [take], which is either
+     [prefix] or [suffix]. *)
+
+  let common_generic2 a b ~get_pos ~take =
+    let len = common_generic2_length a b ~get_pos in
+    (* Use the shorter of the two strings, so that if the shorter one is the shared
+       prefix, [take] won't allocate another string. *)
+    take (shorter a b) len
+  ;;
+
+  let common_generic list ~get_pos ~take =
+    match list with
+    | [] -> ""
+    | first :: rest ->
+      (* As with [common_generic_length], we base [max_len] on [shortest list]. We also
+         use this result for [take], below, to potentially avoid allocating a string. *)
+      let s = shortest list in
+      let max_len = length s in
+      if max_len = 0
+      then ""
+      else (
+        let len =
+          (* We call directly into [common_generic_length_loop] rather than
+             [common_generic_length] to avoid recomputing [shortest list]. *)
+          common_generic_length_loop first rest ~get_pos ~max_len
+        in
+        take s len)
+  ;;
+end
+
+include struct
+  open For_common_prefix_and_suffix
+
+  let common_prefix list = common_generic list ~take:prefix ~get_pos:pos_from_left
+  let common_suffix list = common_generic list ~take:suffix ~get_pos:pos_from_right
+  let common_prefix2 a b = common_generic2 a b ~take:prefix ~get_pos:pos_from_left
+  let common_suffix2 a b = common_generic2 a b ~take:suffix ~get_pos:pos_from_right
+  let common_prefix_length list = common_generic_length list ~get_pos:pos_from_left
+  let common_suffix_length list = common_generic_length list ~get_pos:pos_from_right
+  let common_prefix2_length a b = common_generic2_length a b ~get_pos:pos_from_left
+  let common_suffix2_length a b = common_generic2_length a b ~get_pos:pos_from_right
+end
+
 (* There used to be a custom implementation that was faster for very short strings
    (peaking at 40% faster for 4-6 char long strings).
    This new function is around 20% faster than the default hash function, but slower
@@ -990,7 +1083,6 @@ end
 let _ = hash
 
 include Hash
-include Comparable.Validate (T)
 
 (* for interactive top-levels -- modules deriving from String should have String's pretty
    printer. *)
@@ -1258,8 +1350,7 @@ module Escaping = struct
   ;;
 
   let check_bound str pos function_name =
-    if pos >= length str || pos < 0
-    then invalid_argf "%s: out of bounds" function_name ()
+    if pos >= length str || pos < 0 then invalid_argf "%s: out of bounds" function_name ()
   ;;
 
   let is_char_escaping str ~escape_char pos =
@@ -1286,11 +1377,12 @@ module Escaping = struct
   let index_from str ~escape_char pos char =
     check_bound str pos "index_from";
     let rec loop i status =
-      if i >= pos
-      && (match status with
+      if
+        i >= pos
+        && (match status with
           | `Literal -> true
           | `Escaped | `Escaping -> false)
-      && Char.equal str.[i] char
+        && Char.equal str.[i] char
       then Some i
       else (
         let i = i + 1 in
@@ -1373,10 +1465,11 @@ module Escaping = struct
       then List.rev (sub str ~pos:last_pos ~len:(len - last_pos) :: acc)
       else (
         let status = update_escape_status str ~escape_char pos status in
-        if (match status with
-          | `Literal -> true
-          | `Escaped | `Escaping -> false)
-        && is_delim str.[pos]
+        if
+          (match status with
+           | `Literal -> true
+           | `Escaped | `Escaping -> false)
+          && is_delim str.[pos]
         then (
           let sub_str = sub str ~pos:last_pos ~len:(pos - last_pos) in
           loop (sub_str :: acc) status (pos + 1) (pos + 1))

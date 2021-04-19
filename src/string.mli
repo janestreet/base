@@ -7,14 +7,14 @@ type t = string [@@deriving_inline sexp, sexp_grammar]
 
 include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
-val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
 [@@@end]
 
 val sub : (t, t) Blit.sub
 val subo : (t, t) Blit.subo
 
-include Container.S0 with type t := t with type elt = char
+include Indexed_container.S0 with type t := t with type elt = char
 include Identifiable.S with type t := t
 include Invariant.S with type t := t
 
@@ -85,12 +85,14 @@ val uncapitalize : t -> t
     that for example [Caseless.is_suffix "OCaml" ~suffix:"AmL"] and [Caseless.is_prefix
     "OCaml" ~prefix:"oc"] are [true]. *)
 module Caseless : sig
-  type nonrec t = t [@@deriving_inline hash, sexp]
+  type nonrec t = t [@@deriving_inline hash, sexp, sexp_grammar]
 
   val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 
@@ -359,6 +361,30 @@ val drop_suffix : t -> int -> t
 (** [drop_prefix s n] drops the longest prefix of [s] of length less than or equal to
     [n]. *)
 val drop_prefix : t -> int -> t
+
+(** Produces the longest common suffix, or [""] if the list is empty. *)
+val common_suffix : t list -> t
+
+(** Produces the longest common prefix, or [""] if the list is empty. *)
+val common_prefix : t list -> t
+
+(** Produces the length of the longest common suffix, or 0 if the list is empty. *)
+val common_suffix_length : t list -> int
+
+(** Produces the length of the longest common prefix, or 0 if the list is empty. *)
+val common_prefix_length : t list -> int
+
+(** Produces the longest common suffix. *)
+val common_suffix2 : t -> t -> t
+
+(** Produces the longest common prefix. *)
+val common_prefix2 : t -> t -> t
+
+(** Produces the length of the longest common suffix. *)
+val common_suffix2_length : t -> t -> int
+
+(** Produces the length of the longest common prefix. *)
+val common_prefix2_length : t -> t -> int
 
 (** [concat_array sep ar] like {!String.concat}, but operates on arrays. *)
 val concat_array : ?sep:t -> t array -> t

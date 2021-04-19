@@ -34,7 +34,7 @@ module type Either = sig
   type ('f, 's) t = ('f, 's) Either0.t =
     | First of 'f
     | Second of 's
-  [@@deriving_inline compare, hash, sexp]
+  [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
   val compare : ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
 
@@ -47,6 +47,11 @@ module type Either = sig
 
   include Ppx_sexp_conv_lib.Sexpable.S2 with type ('f, 's) t := ('f, 's) t
 
+  val t_sexp_grammar
+    :  'f Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> 's Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> ('f, 's) t Ppx_sexp_conv_lib.Sexp_grammar.t
+
   [@@@end]
 
   include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
@@ -56,13 +61,7 @@ module type Either = sig
   val iter : ('a, 'b) t -> first:('a -> unit) -> second:('b -> unit) -> unit
   val value_map : ('a, 'b) t -> first:('a -> 'c) -> second:('b -> 'c) -> 'c
   val map : ('a, 'b) t -> first:('a -> 'c) -> second:('b -> 'd) -> ('c, 'd) t
-
-  val equal
-    :  ('f -> 'f -> bool)
-    -> ('s -> 's -> bool)
-    -> ('f, 's) t
-    -> ('f, 's) t
-    -> bool
+  val equal : ('f -> 'f -> bool) -> ('s -> 's -> bool) -> ('f, 's) t -> ('f, 's) t -> bool
 
   module type Focused = Focused
 

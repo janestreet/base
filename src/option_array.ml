@@ -87,13 +87,19 @@ module Cheap_option = struct
     let to_option x = if is_some x then Some (value_unsafe x) else None
     let to_sexpable = to_option
     let of_sexpable = of_option
+
+    let t_sexp_grammar (type a) (grammar : a Ppx_sexp_conv_lib.Sexp_grammar.t)
+      : a t Ppx_sexp_conv_lib.Sexp_grammar.t
+      =
+      Ppx_sexp_conv_lib.Sexp_grammar.coerce (Option.t_sexp_grammar grammar)
+    ;;
   end
 
   include T1
   include Sexpable.Of_sexpable1 (Option) (T1)
 end
 
-type 'a t = 'a Cheap_option.t Uniform_array.t [@@deriving_inline sexp]
+type 'a t = 'a Cheap_option.t Uniform_array.t [@@deriving_inline sexp, sexp_grammar]
 
 let t_of_sexp : 'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
   let _tp_loc = "option_array.ml.t" in
@@ -102,6 +108,13 @@ let t_of_sexp : 'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t
 
 let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
   fun _of_a v -> Uniform_array.sexp_of_t (Cheap_option.sexp_of_t _of_a) v
+;;
+
+let (t_sexp_grammar :
+       'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
+  =
+  fun _'a_sexp_grammar ->
+  Uniform_array.t_sexp_grammar (Cheap_option.t_sexp_grammar _'a_sexp_grammar)
 ;;
 
 [@@@end]

@@ -11,8 +11,7 @@ Error (alert deprecated): Base.sexp_array
 
 type t = sexp_bool
 
-[%%expect
-  {|
+[%%expect {|
 Line _, characters _-_:
 Error: Unbound type constructor sexp_bool
 |}]

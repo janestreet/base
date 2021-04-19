@@ -1,5 +1,6 @@
 open! Import
 
+(** @canonical Base.Hashtbl.Key *)
 module Key = struct
   module type S = sig
     type t [@@deriving_inline compare, sexp_of]
@@ -17,6 +18,7 @@ module Key = struct
   type 'a t = (module S with type t = 'a)
 end
 
+(** @canonical Base.Hashtbl.Merge_into_action *)
 module Merge_into_action = struct
   type 'a t =
     | Remove
@@ -120,10 +122,7 @@ module type Accessors = sig
 
   (** Returns new tables with bound values partitioned by [f] applied to the bound
       values. *)
-  val partition_map
-    :  ('a, 'b) t
-    -> f:('b -> ('c, 'd) Either.t)
-    -> ('a, 'c) t * ('a, 'd) t
+  val partition_map : ('a, 'b) t -> f:('b -> ('c, 'd) Either.t) -> ('a, 'c) t * ('a, 'd) t
 
   (** Like [partition_map], but the function [f] takes both key and data as arguments. *)
   val partition_mapi
@@ -296,11 +295,6 @@ module type Accessors = sig
 
   (** Returns the list of all (key, data) pairs for given hashtable. *)
   val to_alist : ('a, 'b) t -> ('a key * 'b) list
-
-  val validate
-    :  name:('a key -> string)
-    -> 'b Validate.check
-    -> ('a, 'b) t Validate.check
 
 
   (** [remove_if_zero]'s default is [false]. *)
@@ -597,13 +591,11 @@ module type S_without_submodules = sig
 
   include Creators with type ('a, 'b) t := ('a, 'b) t (** @inline *)
 
-  include
-    Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
+  include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
   (** @inline *)
 
 
-  include
-    Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
+  include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
   (** @inline *)
 
   val hashable_s : ('key, _) t -> 'key Key.t
@@ -612,9 +604,14 @@ module type S_without_submodules = sig
 end
 
 module type S_poly = sig
-  type ('a, 'b) t [@@deriving_inline sexp]
+  type ('a, 'b) t [@@deriving_inline sexp, sexp_grammar]
 
   include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
+
+  val t_sexp_grammar
+    :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 
@@ -654,6 +651,14 @@ module type For_deriving = sig
     include Key.S with type t := t
   end
 
+  module type M_sexp_grammar = sig
+    type t [@@deriving_inline sexp_grammar]
+
+    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+
+    [@@@end]
+  end
+
   val sexp_of_m__t
     :  (module Sexp_of_m with type t = 'k)
     -> ('v -> Sexp.t)
@@ -665,6 +670,11 @@ module type For_deriving = sig
     -> (Sexp.t -> 'v)
     -> Sexp.t
     -> ('k, 'v) t
+
+  val m__t_sexp_grammar
+    :  (module M_sexp_grammar with type t = 'k)
+    -> 'v Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> ('k, 'v) t Ppx_sexp_conv_lib.Sexp_grammar.t
 end
 
 module type Hashtbl = sig
@@ -746,7 +756,6 @@ module type Hashtbl = sig
 
   module type Accessors = Accessors
   module type Creators = Creators
-  module type Key = Key.S [@@deprecated "[since 2019-03] Use [Hashtbl.Key.S]"]
   module type Multi = Multi
   module type S_poly = S_poly
   module type S_without_submodules = S_without_submodules

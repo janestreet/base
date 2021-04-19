@@ -1,6 +1,8 @@
 open! Import
+include Result
 
-type 'a t = ('a, Error.t) Result.t [@@deriving_inline compare, equal, hash, sexp]
+type 'a t = ('a, Error.t) Result.t
+[@@deriving_inline compare, equal, hash, sexp, sexp_grammar]
 
 let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
   fun _cmp__a a__001_ b__002_ -> Result.compare _cmp__a Error.compare a__001_ b__002_
@@ -26,6 +28,12 @@ let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_li
   fun _of_a v -> Result.sexp_of_t _of_a Error.sexp_of_t v
 ;;
 
+let (t_sexp_grammar :
+       'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
+  =
+  fun _'a_sexp_grammar -> Result.t_sexp_grammar _'a_sexp_grammar Error.t_sexp_grammar
+;;
+
 [@@@end]
 
 let invariant invariant_a t =
@@ -33,12 +41,6 @@ let invariant invariant_a t =
   | Ok a -> invariant_a a
   | Error error -> Error.invariant error
 ;;
-
-include (
-  Result :
-    Monad.S2
-  with type ('a, 'b) t := ('a, 'b) Result.t
-  with module Let_syntax := Result.Let_syntax)
 
 include Applicative.Make (struct
     type nonrec 'a t = 'a t
@@ -91,7 +93,10 @@ let of_exn_result ?backtrace = function
   | Error exn -> of_exn ?backtrace exn
 ;;
 
-let error ?strict message a sexp_of_a = Error (Error.create ?strict message a sexp_of_a)
+let error ?here ?strict message a sexp_of_a =
+  Error (Error.create ?here ?strict message a sexp_of_a)
+;;
+
 let error_s sexp = Error (Error.create_s sexp)
 let error_string message = Error (Error.of_string message)
 let errorf format = Printf.ksprintf error_string format

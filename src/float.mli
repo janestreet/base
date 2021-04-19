@@ -10,7 +10,7 @@ open! Import
 
 type t = float [@@deriving_inline sexp_grammar]
 
-val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
 [@@@end]
 
@@ -19,14 +19,10 @@ include Floatable.S with type t := t
 (** [max] and [min] will return nan if either argument is nan.
 
     The [validate_*] functions always fail if class is [Nan] or [Infinite]. *)
-include
-  Identifiable.S with type t := t
+include Identifiable.S with type t := t
 
 include Comparable.With_zero with type t := t
 include Invariant.S with type t := t
-
-(** [validate_ordinary] fails if class is [Nan] or [Infinite]. *)
-val validate_ordinary : t Validate.check
 
 val nan : t
 val infinity : t
@@ -543,12 +539,14 @@ module Class : sig
     | Normal
     | Subnormal
     | Zero
-  [@@deriving_inline compare, enumerate, sexp]
+  [@@deriving_inline compare, enumerate, sexp, sexp_grammar]
 
   val compare : t -> t -> int
   val all : t list
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 
@@ -595,9 +593,11 @@ val ieee_mantissa : t -> Int63.t
 
 (** S-expressions contain at most 8 significant digits. *)
 module Terse : sig
-  type nonrec t = t [@@deriving_inline sexp]
+  type nonrec t = t [@@deriving_inline sexp, sexp_grammar]
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 

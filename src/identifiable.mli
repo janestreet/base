@@ -23,6 +23,8 @@ module type S = sig
   include Stringable.S with type t := t
   include Comparable.S with type t := t
   include Pretty_printer.S with type t := t
+
+  val hashable : t Hashable.t
 end
 
 (** Used for making an Identifiable module.  Here's an example.

@@ -25,8 +25,7 @@ let sexp_of_key t = t.hashable.Hashable.sexp_of_t
 let compare_key t = t.hashable.Hashable.compare
 
 let ensure_mutation_allowed t =
-  if not t.mutation_allowed
-  then failwith "Hashtbl: mutation not allowed during iteration"
+  if not t.mutation_allowed then failwith "Hashtbl: mutation not allowed during iteration"
 ;;
 
 let without_mutating t f =
@@ -180,14 +179,7 @@ let find_and_call2 t key ~a ~b ~if_found ~if_not_found =
   | Avltree.Leaf { key = k; value = v } ->
     if compare_key t k key = 0 then if_found v a b else if_not_found key a b
   | tree ->
-    Avltree.find_and_call2
-      tree
-      ~compare:(compare_key t)
-      key
-      ~a
-      ~b
-      ~if_found
-      ~if_not_found
+    Avltree.find_and_call2 tree ~compare:(compare_key t) key ~a ~b ~if_found ~if_not_found
 ;;
 
 let findi_and_call t key ~if_found ~if_not_found =
@@ -408,8 +400,7 @@ let partition_mapi t ~f =
 let partition_map t ~f = partition_mapi t ~f:(fun ~key:_ ~data -> f data)
 
 let partitioni_tf t ~f =
-  partition_mapi t ~f:(fun ~key ~data ->
-    if f ~key ~data then First data else Second data)
+  partition_mapi t ~f:(fun ~key ~data -> if f ~key ~data then First data else Second data)
 ;;
 
 let partition_tf t ~f = partitioni_tf t ~f:(fun ~key:_ ~data -> f data)
@@ -570,7 +561,15 @@ let t_of_sexp ~hashable k_of_sexp d_of_sexp sexp =
     assert false
 ;;
 
-let validate ~name f t = Validate.alist ~name f (to_alist t)
+let t_sexp_grammar
+      (type k v)
+      (k_grammar : k Ppx_sexp_conv_lib.Sexp_grammar.t)
+      (v_grammar : v Ppx_sexp_conv_lib.Sexp_grammar.t)
+  : (k, v) t Ppx_sexp_conv_lib.Sexp_grammar.t
+  =
+  Ppx_sexp_conv_lib.Sexp_grammar.coerce (List.Assoc.t_sexp_grammar k_grammar v_grammar)
+;;
+
 let keys t = fold t ~init:[] ~f:(fun ~key ~data:_ acc -> key :: acc)
 let data t = fold ~f:(fun ~key:_ ~data list -> data :: list) ~init:[] t
 
@@ -608,8 +607,7 @@ let create_with_key_or_error ?growth_allowed ?size ~hashable ~get_key rows =
 ;;
 
 let create_with_key_exn ?growth_allowed ?size ~hashable ~get_key rows =
-  Or_error.ok_exn
-    (create_with_key_or_error ?growth_allowed ?size ~hashable ~get_key rows)
+  Or_error.ok_exn (create_with_key_or_error ?growth_allowed ?size ~hashable ~get_key rows)
 ;;
 
 let merge =
@@ -665,9 +663,7 @@ let filter_inplace t ~f = filteri_inplace t ~f:(fun ~key:_ ~data -> f data)
 let filter_keys_inplace t ~f = filteri_inplace t ~f:(fun ~key ~data:_ -> f key)
 
 let filter_mapi_inplace t ~f =
-  let map_results =
-    fold t ~init:[] ~f:(fun ~key ~data ac -> (key, f ~key ~data) :: ac)
-  in
+  let map_results = fold t ~init:[] ~f:(fun ~key ~data ac -> (key, f ~key ~data) :: ac) in
   List.iter map_results ~f:(fun (key, result) ->
     match result with
     | None -> remove t key
@@ -747,7 +743,6 @@ module Accessors = struct
   let findi_and_call2 = findi_and_call2
   let find_and_remove = find_and_remove
   let to_alist = to_alist
-  let validate = validate
   let merge = merge
   let merge_into = merge_into
   let keys = keys
@@ -843,6 +838,7 @@ module Poly = struct
   include Accessors
 
   let sexp_of_t = sexp_of_t
+  let t_sexp_grammar = t_sexp_grammar
 end
 
 module Private = struct
@@ -923,12 +919,24 @@ module type M_of_sexp = sig
   include Key.S with type t := t
 end
 
+module type M_sexp_grammar = sig
+  type t [@@deriving_inline sexp_grammar]
+
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+
+  [@@@end]
+end
+
 let sexp_of_m__t (type k) (module K : Sexp_of_m with type t = k) sexp_of_v t =
   sexp_of_t K.sexp_of_t sexp_of_v t
 ;;
 
 let m__t_of_sexp (type k) (module K : M_of_sexp with type t = k) v_of_sexp sexp =
   t_of_sexp ~hashable:(Hashable.of_key (module K)) K.t_of_sexp v_of_sexp sexp
+;;
+
+let m__t_sexp_grammar (type k) (module K : M_sexp_grammar with type t = k) v_grammar =
+  t_sexp_grammar K.t_sexp_grammar v_grammar
 ;;
 
 (* typechecking this code is a compile-time test that [Creators] is a specialization of

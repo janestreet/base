@@ -13,7 +13,6 @@ end
 module Without_comparator = Map_intf.Without_comparator
 module With_comparator = Map_intf.With_comparator
 module With_first_class_module = Map_intf.With_first_class_module
-include Container_intf.Export
 module Merge_to_sequence_element = Sequence.Merge_with_duplicates_element
 
 module type Accessors_generic = sig
@@ -62,7 +61,7 @@ module type Accessors_generic = sig
   val fold_until
     :  ('a, _) t
     -> init:'b
-    -> f:('b -> 'a elt -> ('b, 'final) Continue_or_stop.t)
+    -> f:('b -> 'a elt -> ('b, 'final) Container.Continue_or_stop.t)
     -> finish:('b -> 'final)
     -> 'final
 
@@ -186,7 +185,7 @@ module type Accessors0 = sig
   val fold_until
     :  t
     -> init:'b
-    -> f:('b -> elt -> ('b, 'final) Continue_or_stop.t)
+    -> f:('b -> elt -> ('b, 'final) Container.Continue_or_stop.t)
     -> finish:('b -> 'final)
     -> 'final
 
@@ -278,7 +277,7 @@ module type Accessors1 = sig
   val fold_until
     :  'a t
     -> init:'b
-    -> f:('b -> 'a -> ('b, 'final) Continue_or_stop.t)
+    -> f:('b -> 'a -> ('b, 'final) Container.Continue_or_stop.t)
     -> finish:('b -> 'final)
     -> 'final
 
@@ -369,7 +368,7 @@ module type Accessors2 = sig
   val fold_until
     :  ('a, _) t
     -> init:'b
-    -> f:('b -> 'a -> ('b, 'final) Continue_or_stop.t)
+    -> f:('b -> 'a -> ('b, 'final) Container.Continue_or_stop.t)
     -> finish:('b -> 'final)
     -> 'final
 
@@ -505,7 +504,7 @@ module type Accessors2_with_comparator = sig
   val fold_until
     :  ('a, _) t
     -> init:'accum
-    -> f:('accum -> 'a -> ('accum, 'final) Continue_or_stop.t)
+    -> f:('accum -> 'a -> ('accum, 'final) Container.Continue_or_stop.t)
     -> finish:('accum -> 'final)
     -> 'final
 
@@ -709,6 +708,7 @@ module type Creators_generic = sig
   val singleton : ('a, 'cmp, 'a elt -> ('a, 'cmp) t) options
   val union_list : ('a, 'cmp, ('a, 'cmp) t list -> ('a, 'cmp) t) options
   val of_list : ('a, 'cmp, 'a elt list -> ('a, 'cmp) t) options
+  val of_sequence : ('a, 'cmp, 'a elt Sequence.t -> ('a, 'cmp) t) options
   val of_array : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t) options
   val of_sorted_array : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t Or_error.t) options
   val of_sorted_array_unchecked : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t) options
@@ -746,6 +746,7 @@ module type Creators0 = sig
   val singleton : elt -> t
   val union_list : t list -> t
   val of_list : elt list -> t
+  val of_sequence : elt Sequence.t -> t
   val of_array : elt array -> t
   val of_sorted_array : elt array -> t Or_error.t
   val of_sorted_array_unchecked : elt array -> t
@@ -766,6 +767,7 @@ module type Creators1 = sig
   val singleton : 'a -> 'a t
   val union_list : 'a t list -> 'a t
   val of_list : 'a list -> 'a t
+  val of_sequence : 'a Sequence.t -> 'a t
   val of_array : 'a array -> 'a t
   val of_sorted_array : 'a array -> 'a t Or_error.t
   val of_sorted_array_unchecked : 'a array -> 'a t
@@ -785,6 +787,7 @@ module type Creators2 = sig
   val singleton : 'a -> ('a, 'cmp) t
   val union_list : ('a, 'cmp) t list -> ('a, 'cmp) t
   val of_list : 'a list -> ('a, 'cmp) t
+  val of_sequence : 'a Sequence.t -> ('a, 'cmp) t
   val of_array : 'a array -> ('a, 'cmp) t
   val of_sorted_array : 'a array -> ('a, 'cmp) t Or_error.t
   val of_sorted_array_unchecked : 'a array -> ('a, 'cmp) t
@@ -802,13 +805,9 @@ module type Creators2_with_comparator = sig
 
   val empty : comparator:('a, 'cmp) Comparator.t -> ('a, 'cmp) t
   val singleton : comparator:('a, 'cmp) Comparator.t -> 'a -> ('a, 'cmp) t
-
-  val union_list
-    :  comparator:('a, 'cmp) Comparator.t
-    -> ('a, 'cmp) t list
-    -> ('a, 'cmp) t
-
+  val union_list : comparator:('a, 'cmp) Comparator.t -> ('a, 'cmp) t list -> ('a, 'cmp) t
   val of_list : comparator:('a, 'cmp) Comparator.t -> 'a list -> ('a, 'cmp) t
+  val of_sequence : comparator:('a, 'cmp) Comparator.t -> 'a Sequence.t -> ('a, 'cmp) t
   val of_array : comparator:('a, 'cmp) Comparator.t -> 'a array -> ('a, 'cmp) t
 
   val of_sorted_array
@@ -998,6 +997,14 @@ module type For_deriving = sig
     include Comparator.S with type t := t
   end
 
+  module type M_sexp_grammar = sig
+    type t [@@deriving_inline sexp_grammar]
+
+    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+
+    [@@@end]
+  end
+
   module type Compare_m = sig end
   module type Equal_m = sig end
   module type Hash_fold_m = Hasher.S
@@ -1008,6 +1015,10 @@ module type For_deriving = sig
     :  (module M_of_sexp with type t = 'elt and type comparator_witness = 'cmp)
     -> Sexp.t
     -> ('elt, 'cmp) t
+
+  val m__t_sexp_grammar
+    :  (module M_sexp_grammar with type t = 'elt)
+    -> ('elt, 'cmp) t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   val compare_m__t : (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
   val equal_m__t : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
@@ -1022,8 +1033,10 @@ module type For_deriving = sig
 end
 
 module type Set = sig
-  (** This module defines the [Set] module for [Base]. Functions that construct a set take
-      as an argument the comparator for the element type. *)
+  (** Sets based on {!Comparator.S}.
+
+      Creators require a comparator argument to be passed in, whereas accessors use the
+      comparator provided by the input set. *)
 
   (** The type of a set.  The first type parameter identifies the type of the element, and
       the second identifies the comparator, which determines the comparison function that
@@ -1199,6 +1212,7 @@ module type Set = sig
   (** The list or array given to [of_list] and [of_array] need not be sorted. *)
   val of_list : ('a, 'cmp) comparator -> 'a list -> ('a, 'cmp) t
 
+  val of_sequence : ('a, 'cmp) comparator -> 'a Sequence.t -> ('a, 'cmp) t
   val of_array : ('a, 'cmp) comparator -> 'a array -> ('a, 'cmp) t
 
   (** [to_list] and [to_array] produce sequences sorted in ascending order according to the
@@ -1263,7 +1277,7 @@ module type Set = sig
   val fold_until
     :  ('a, _) t
     -> init:'accum
-    -> f:('accum -> 'a -> ('accum, 'final) Continue_or_stop.t)
+    -> f:('accum -> 'a -> ('accum, 'final) Container.Continue_or_stop.t)
     -> finish:('accum -> 'final)
     -> 'final
 

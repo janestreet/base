@@ -14,28 +14,11 @@ module T = struct
 
   let t_of_sexp = (int64_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_int64 : t -> Ppx_sexp_conv_lib.Sexp.t)
-
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "int64" ]
-      ; ggid = "\146e\023\249\235eE\139c\132W\195\137\129\235\025"
-      ; types = [ "t", Implicit_var 0 ]
-      }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ int64_sexp_grammar ]
-      ; generic_group = _the_generic_group
-      ; origin = "int64.ml.T"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
-  ;;
+  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = int64_sexp_grammar
 
   [@@@end]
+
+  let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 
   let compare = Int64_replace_polymorphic_compare.compare
   let to_string = to_string
@@ -72,8 +55,9 @@ let to_float = to_float
 let of_float_unchecked = Caml.Int64.of_float
 
 let of_float f =
-  if Float_replace_polymorphic_compare.( >= ) f float_lower_bound
-  && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
+  if
+    Float_replace_polymorphic_compare.( >= ) f float_lower_bound
+    && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
   then Caml.Int64.of_float f
   else
     Printf.invalid_argf
@@ -98,7 +82,7 @@ let[@inline always] bswap32 x =
 
 let[@inline always] bswap48 x = Caml.Int64.shift_right_logical (bswap64 x) 16
 
-include Comparable.Validate_with_zero (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero
@@ -229,8 +213,7 @@ module Pow2 = struct
   let ceil_log2 i =
     if Poly.( <= ) i Caml.Int64.zero
     then
-      raise_s
-        (Sexp.message "[Int64.ceil_log2] got invalid input" [ "", sexp_of_int64 i ]);
+      raise_s (Sexp.message "[Int64.ceil_log2] got invalid input" [ "", sexp_of_int64 i ]);
     if Caml.Int64.equal i Caml.Int64.one then 0 else num_bits - clz (Caml.Int64.pred i)
   ;;
 end

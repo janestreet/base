@@ -4,7 +4,7 @@ type t =
   | Less
   | Equal
   | Greater
-[@@deriving_inline compare, hash, enumerate, sexp]
+[@@deriving_inline compare, hash, enumerate, sexp, sexp_grammar]
 
 let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
 
@@ -36,8 +36,8 @@ let t_of_sexp =
    | Ppx_sexp_conv_lib.Sexp.Atom ("greater" | "Greater") -> Greater
    | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("less" | "Less") :: _) as
      sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("equal" | "Equal") :: _)
-     as sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("equal" | "Equal") :: _) as
+     sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
    | Ppx_sexp_conv_lib.Sexp.List
        (Ppx_sexp_conv_lib.Sexp.Atom ("greater" | "Greater") :: _) as sexp ->
      Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
@@ -55,6 +55,10 @@ let sexp_of_t =
     | Equal -> Ppx_sexp_conv_lib.Sexp.Atom "Equal"
     | Greater -> Ppx_sexp_conv_lib.Sexp.Atom "Greater"
                  : t -> Ppx_sexp_conv_lib.Sexp.t)
+;;
+
+let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
+  { untyped = Enum { name_kind = Capitalized; names = [ "Less"; "Equal"; "Greater" ] } }
 ;;
 
 [@@@end]

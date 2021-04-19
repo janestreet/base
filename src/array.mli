@@ -1,4 +1,4 @@
-(** Mutable vector of elements with O(1) [get] and [set] operations. *)
+(** Fixed-length, mutable vector of elements with O(1) [get] and [set] operations. *)
 
 open! Import
 
@@ -8,7 +8,9 @@ val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 
 include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
 
-val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+val t_sexp_grammar
+  :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
+  -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
 
 [@@@end]
 
@@ -95,8 +97,7 @@ val fill : 'a t -> pos:int -> len:int -> 'a -> unit
 
     [int_blit] and [float_blit] provide fast bound-checked blits for immediate
     data types.  The unsafe versions do not bound-check the arguments. *)
-include
-  Blit.S1 with type 'a t := 'a t
+include Blit.S1 with type 'a t := 'a t
 
 (** [Array.of_list l] returns a fresh array containing the elements of [l]. *)
 val of_list : 'a list -> 'a t
@@ -147,6 +148,12 @@ val is_sorted : 'a t -> compare:('a -> 'a -> int) -> bool
 (** [is_sorted_strictly xs ~compare] iff [is_sorted xs ~compare] and no two
     consecutive elements in [xs] are equal according to [compare]. *)
 val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) -> bool
+
+(** Merges two arrays: assuming that [a1] and [a2] are sorted according to the comparison
+    function [compare], [merge a1 a2 ~compare] will return a sorted array containing all
+    the elements of [a1] and [a2]. If several elements compare equal, the elements of [a1]
+    will be before the elements of [a2]. *)
+val merge : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 (** Like [List.concat_map], [List.concat_mapi]. *)
 val concat_map : 'a t -> f:('a -> 'b array) -> 'b array
@@ -259,11 +266,14 @@ val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
 
 val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 
-(** [permute ?random_state t] randomly permutes [t] in place.
+(** [permute ?random_state ?pos ?len t] randomly permutes [t] in place.
+
+    To permute only part of the array, specify [pos] to be the index to start permuting
+    from and [len] indicating how many elements to permute.
 
     [permute] side-effects [random_state] by repeated calls to [Random.State.int].  If
     [random_state] is not supplied, [permute] uses [Random.State.default]. *)
-val permute : ?random_state:Random.State.t -> 'a t -> unit
+val permute : ?random_state:Random.State.t -> ?pos:int -> ?len:int -> 'a t -> unit
 
 (** [random_element ?random_state t] is [None] if [t] is empty, else it is [Some x] for
     some [x] chosen uniformly at random from [t].

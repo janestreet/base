@@ -18,29 +18,11 @@ module T = struct
 
   let t_of_sexp = (float_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
   let sexp_of_t = (sexp_of_float : t -> Ppx_sexp_conv_lib.Sexp.t)
-
-  let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-    let (_the_generic_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.generic_group) =
-      { implicit_vars = [ "float" ]
-      ; ggid = "\146e\023\249\235eE\139c\132W\195\137\129\235\025"
-      ; types = [ "t", Implicit_var 0 ]
-      }
-    in
-    let (_the_group : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.group) =
-      { gid = Ppx_sexp_conv_lib.Lazy_group_id.create ()
-      ; apply_implicit = [ float_sexp_grammar ]
-      ; generic_group = _the_generic_group
-      ; origin = "float.ml.T"
-      }
-    in
-    let (t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t) =
-      Ref ("t", _the_group)
-    in
-    t_sexp_grammar
-  ;;
+  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = float_sexp_grammar
 
   [@@@end]
 
+  let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = Float_replace_polymorphic_compare.compare
 end
 
@@ -306,7 +288,7 @@ let round_nearest_ub = 2. ** 52.
    and it gets rounded up to [1.] due to the round-ties-to-even rule. *)
 let one_ulp_less_than_half = one_ulp `Down 0.5
 
-let add_half_for_round_nearest t =
+let[@ocaml.inline always] add_half_for_round_nearest t =
   t
   +.
   if t = one_ulp_less_than_half
@@ -508,7 +490,7 @@ let int63_round_down_exn t =
 ;;
 
 let int63_round_nearest_portable_alloc_exn t0 =
-  let t = round_nearest t0 in
+  let t = (round_nearest [@ocaml.inlined always]) t0 in
   if t > 0.
   then
     if t <= int63_round_ubound
@@ -550,7 +532,7 @@ module Class = struct
     | Normal
     | Subnormal
     | Zero
-  [@@deriving_inline compare, enumerate, sexp]
+  [@@deriving_inline compare, enumerate, sexp, sexp_grammar]
 
   let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
   let all = ([ Infinite; Nan; Normal; Subnormal; Zero ] : t list)
@@ -574,8 +556,8 @@ module Class = struct
      | Ppx_sexp_conv_lib.Sexp.List
          (Ppx_sexp_conv_lib.Sexp.Atom ("subnormal" | "Subnormal") :: _) as sexp ->
        Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") :: _)
-       as sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
+     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") :: _) as
+       sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
      | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.List _ :: _) as sexp ->
        Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
      | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
@@ -592,6 +574,15 @@ module Class = struct
       | Subnormal -> Ppx_sexp_conv_lib.Sexp.Atom "Subnormal"
       | Zero -> Ppx_sexp_conv_lib.Sexp.Atom "Zero"
                 : t -> Ppx_sexp_conv_lib.Sexp.t)
+  ;;
+
+  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
+    { untyped =
+        Enum
+          { name_kind = Capitalized
+          ; names = [ "Infinite"; "Nan"; "Normal"; "Subnormal"; "Zero" ]
+          }
+    }
   ;;
 
   [@@@end]
@@ -822,22 +813,23 @@ let round_gen x ~how =
       (* Choose the order that is exactly representable as a float. Small positive
          integers are, but their inverses in most cases are not. *)
       let abs_dd = Int.abs dd in
-      if abs_dd > 22 || sd >= 16
-      (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
-         path.  Similarly, if we need 16 significant digits in the result, then the integer
-         [round_nearest (x <op> order)] might not be exactly representable as a float, since
-         for some ranges we only have 15 digits of precision guaranteed.
+      if
+        abs_dd > 22 || sd >= 16
+        (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
+           path.  Similarly, if we need 16 significant digits in the result, then the integer
+           [round_nearest (x <op> order)] might not be exactly representable as a float, since
+           for some ranges we only have 15 digits of precision guaranteed.
 
-         That said, we are still rounding twice here:
+           That said, we are still rounding twice here:
 
-         1) first time when rounding [x *. order] or [x /. order] to the nearest float
-         (just the normal way floating-point multiplication or division works),
+           1) first time when rounding [x *. order] or [x /. order] to the nearest float
+           (just the normal way floating-point multiplication or division works),
 
-         2) second time when applying [round_nearest_half_to_even] to the result of the
-         above operation
+           2) second time when applying [round_nearest_half_to_even] to the result of the
+           above operation
 
-         So for arguments within an ulp from a tie we might still produce an off-by-one
-         result. *)
+           So for arguments within an ulp from a tie we might still produce an off-by-one
+           result. *)
       then of_string (sprintf "%.*g" sd x)
       else (
         let order = int_pow 10. abs_dd in
@@ -950,41 +942,13 @@ module Terse = struct
   let to_string x = Printf.sprintf "%.8G" x
   let sexp_of_t x = Sexp.Atom (to_string x)
   let of_string x = of_string x
+  let t_sexp_grammar = t_sexp_grammar
 end
-
-let validate_ordinary t =
-  Validate.of_error_opt
-    (let module C = Class in
-     match classify t with
-     | C.Normal | C.Subnormal | C.Zero -> None
-     | C.Infinite -> Some "value is infinite"
-     | C.Nan -> Some "value is NaN")
-;;
-
-module V = struct
-  module ZZ = Comparable.Validate (T)
-
-  let validate_bound ~min ~max t =
-    Validate.first_failure (validate_ordinary t) (ZZ.validate_bound t ~min ~max)
-  ;;
-
-  let validate_lbound ~min t =
-    Validate.first_failure (validate_ordinary t) (ZZ.validate_lbound t ~min)
-  ;;
-
-  let validate_ubound ~max t =
-    Validate.first_failure (validate_ordinary t) (ZZ.validate_ubound t ~max)
-  ;;
-end
-
-include V
 
 include Comparable.With_zero (struct
     include T
 
     let zero = zero
-
-    include V
   end)
 
 (* These are partly here as a performance hack to avoid some boxing we're getting with

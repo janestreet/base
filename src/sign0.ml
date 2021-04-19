@@ -6,7 +6,7 @@ type t =
   | Neg
   | Zero
   | Pos
-[@@deriving_inline sexp, compare, hash, enumerate]
+[@@deriving_inline sexp, sexp_grammar, compare, hash, enumerate]
 
 let t_of_sexp =
   (let _tp_loc = "sign0.ml.t" in
@@ -34,6 +34,10 @@ let sexp_of_t =
     | Zero -> Ppx_sexp_conv_lib.Sexp.Atom "Zero"
     | Pos -> Ppx_sexp_conv_lib.Sexp.Atom "Pos"
              : t -> Ppx_sexp_conv_lib.Sexp.t)
+;;
+
+let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
+  { untyped = Enum { name_kind = Capitalized; names = [ "Neg"; "Zero"; "Pos" ] } }
 ;;
 
 let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)

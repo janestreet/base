@@ -116,6 +116,12 @@ let of_list (type a) (l : a list) =
 let sexp_of_t sexp_of_a t = List.sexp_of_t sexp_of_a (to_list t)
 let t_of_sexp a_of_sexp sexp = of_list (List.t_of_sexp a_of_sexp sexp)
 
+let t_sexp_grammar (type a) (grammar : a Ppx_sexp_conv_lib.Sexp_grammar.t)
+  : a t Ppx_sexp_conv_lib.Sexp_grammar.t
+  =
+  Ppx_sexp_conv_lib.Sexp_grammar.coerce (List.t_sexp_grammar grammar)
+;;
+
 let resize t size =
   let arr = Option_array.create ~len:size in
   Option_array.blit ~src:t.elts ~dst:arr ~src_pos:0 ~dst_pos:0 ~len:t.length;

@@ -71,82 +71,37 @@ module type Creators_generic = sig
   val of_list : ('a, 'a elt list -> 'a t) create_options
 end
 
-module Check = struct
-  module Make_creators_check
-      (Type : T.T1)
-      (Elt : T.T1)
-      (Options : T.T2)
-      (M : Creators_generic
-       with type 'a t := 'a Type.t
-       with type 'a elt := 'a Elt.t
-       with type ('a, 'z) create_options := ('a, 'z) Options.t) =
-  struct end
+module type Sexp_of_m = sig
+  type t [@@deriving_inline sexp_of]
 
-  module Check_creators_is_specialization_of_creators_generic (M : Creators) =
-    Make_creators_check
-      (struct
-        type 'a t = 'a M.t
-      end)
-      (struct
-        type 'a t = 'a
-      end)
-      (struct
-        type ('a, 'z) t = ('a, 'z) create_options
-      end)
-      (struct
-        include M
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
-        let create ?growth_allowed ?size m () = create ?growth_allowed ?size m
-      end)
+  [@@@end]
 end
 
-module type Hash_set = sig
-  type 'a t [@@deriving_inline sexp_of]
+module type M_of_sexp = sig
+  type t [@@deriving_inline of_sexp]
 
-  val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+  val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
 
   [@@@end]
 
-  (** We use [[@@deriving sexp_of]] but not [[@@deriving sexp]] because we want people to be
-      explicit about the hash and comparison functions used when creating hashtables.  One
-      can use [Hash_set.Poly.t], which does have [[@@deriving sexp]], to use polymorphic
-      comparison and hashing. *)
+  include Hashtbl_intf.Key.S with type t := t
+end
 
-  module Key = Key
+module type M_sexp_grammar = sig
+  type t [@@deriving_inline sexp_grammar]
 
-  module type Creators = Creators
-  module type Creators_generic = Creators_generic
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
-  type nonrec ('key, 'z) create_options = ('key, 'z) create_options
+  [@@@end]
+end
 
-  include Creators with type 'a t := 'a t (** @open *)
+module type For_deriving = sig
+  type 'a t
 
-  module type Accessors = Accessors
-
-  include Accessors with type 'a t := 'a t with type 'a elt = 'a (** @open *)
-
-  val hashable_s : 'key t -> 'key Key.t
-
-  type nonrec ('key, 'z) create_options_without_first_class_module =
-    ('key, 'z) create_options_without_first_class_module
-
-  (** A hash set that uses polymorphic comparison *)
-  module Poly : sig
-    type nonrec 'a t = 'a t [@@deriving_inline sexp]
-
-    include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
-
-    [@@@end]
-
-    include
-      Creators_generic
-      with type 'a t := 'a t
-      with type 'a elt = 'a
-      with type ('key, 'z) create_options :=
-        ('key, 'z) create_options_without_first_class_module
-
-    include Accessors with type 'a t := 'a t with type 'a elt := 'a elt
-  end
+  module type M_of_sexp = M_of_sexp
+  module type Sexp_of_m = Sexp_of_m
 
   (** [M] is meant to be used in combination with OCaml applicative functor types:
 
@@ -167,43 +122,83 @@ module type Hash_set = sig
     type nonrec t = Elt.t t
   end
 
-  module type Sexp_of_m = sig
-    type t [@@deriving_inline sexp_of]
-
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-
-    [@@@end]
-  end
-
-  module type M_of_sexp = sig
-    type t [@@deriving_inline of_sexp]
-
-    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-
-    [@@@end]
-
-    include Hashtbl_intf.Key.S with type t := t
-  end
-
   val sexp_of_m__t : (module Sexp_of_m with type t = 'elt) -> 'elt t -> Sexp.t
   val m__t_of_sexp : (module M_of_sexp with type t = 'elt) -> Sexp.t -> 'elt t
+
+  val m__t_sexp_grammar
+    :  (module M_sexp_grammar with type t = 'elt)
+    -> 'elt t Ppx_sexp_conv_lib.Sexp_grammar.t
+end
+
+module type Hash_set = sig
+  type 'a t [@@deriving_inline sexp_of]
+
+  val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+
+  [@@@end]
+
+  (** We use [[@@deriving sexp_of]] but not [[@@deriving sexp]] because we want people to be
+      explicit about the hash and comparison functions used when creating hashtables.  One
+      can use [Hash_set.Poly.t], which does have [[@@deriving sexp]], to use polymorphic
+      comparison and hashing. *)
+
+  module Key = Key
+
+  module type Creators = Creators
+  module type Creators_generic = Creators_generic
+  module type For_deriving = For_deriving
+
+  type nonrec ('key, 'z) create_options = ('key, 'z) create_options
+
+  include Creators with type 'a t := 'a t (** @open *)
+
+  module type Accessors = Accessors
+
+  include Accessors with type 'a t := 'a t with type 'a elt = 'a (** @open *)
+
+  val hashable_s : 'key t -> 'key Key.t
+
+  type nonrec ('key, 'z) create_options_without_first_class_module =
+    ('key, 'z) create_options_without_first_class_module
+
+  (** A hash set that uses polymorphic comparison *)
+  module Poly : sig
+    type nonrec 'a t = 'a t [@@deriving_inline sexp, sexp_grammar]
+
+    include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+
+    val t_sexp_grammar
+      :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
+      -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
+
+    [@@@end]
+
+    include
+      Creators_generic
+      with type 'a t := 'a t
+      with type 'a elt = 'a
+      with type ('key, 'z) create_options :=
+        ('key, 'z) create_options_without_first_class_module
+
+    include Accessors with type 'a t := 'a t with type 'a elt := 'a elt
+  end
 
   module Creators (Elt : sig
       type 'a t
 
       val hashable : 'a t Hashable.t
     end) : sig
-    type 'a t_ = 'a Elt.t t
-
-    val t_of_sexp : (Sexp.t -> 'a Elt.t) -> Sexp.t -> 'a t_
+    val t_of_sexp : (Sexp.t -> 'a Elt.t) -> Sexp.t -> 'a Elt.t t
 
     include
       Creators_generic
-      with type 'a t := 'a t_
+      with type 'a t := 'a Elt.t t
       with type 'a elt := 'a Elt.t
       with type ('elt, 'z) create_options :=
         ('elt, 'z) create_options_without_first_class_module
   end
+
+  include For_deriving with type 'a t := 'a t
 
   (**/**)
 

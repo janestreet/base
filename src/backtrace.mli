@@ -69,7 +69,13 @@ module Exn : sig
   val with_recording : bool -> f:(unit -> 'a) -> 'a
 
   (** [most_recent ()] returns a backtrace containing the stack that was unwound by the
-      most recently raised exception. *)
+      most recently raised exception.
+
+      Normally this includes just the function calls that lead from the exception handler
+      being set up to the exception being raised. However, due to inlining, the stack
+      frame that has the exception handler may correspond to a chain of multiple function
+      calls. All of those function calls are then reported in this backtrace, even though
+      they are not themselves on the path from the exception handler to the "raise". *)
   val most_recent : unit -> t
 end
 

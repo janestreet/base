@@ -10,9 +10,10 @@ external int_math_int64_pow : int64 -> int64 -> int64 = "Base_int_math_int64_pow
 
 let int_pow base exponent =
   if exponent < 0 then negative_exponent ();
-  if abs base > 1
-  && (exponent > 63
-      || abs base > Pow_overflow_bounds.int_positive_overflow_bounds.(exponent))
+  if
+    abs base > 1
+    && (exponent > 63
+        || abs base > Pow_overflow_bounds.int_positive_overflow_bounds.(exponent))
   then overflow ();
   int_math_int_pow base exponent
 ;;
@@ -29,14 +30,14 @@ end
 let int64_pow base exponent =
   let open Int64_with_comparisons in
   if exponent < 0L then negative_exponent ();
-  if (base > 1L || base < -1L)
-  && (exponent > 63L
-      || (base >= 0L
-          && base > Pow_overflow_bounds.int64_positive_overflow_bounds.(to_int exponent)
-         )
-      || (base < 0L
-          && base < Pow_overflow_bounds.int64_negative_overflow_bounds.(to_int exponent)
-         ))
+  if
+    (base > 1L || base < -1L)
+    && (exponent > 63L
+        || (base >= 0L
+            && base > Pow_overflow_bounds.int64_positive_overflow_bounds.(to_int exponent))
+        || (base < 0L
+            && base < Pow_overflow_bounds.int64_negative_overflow_bounds.(to_int exponent))
+       )
   then overflow ();
   int_math_int64_pow base exponent
 ;;
@@ -44,11 +45,12 @@ let int64_pow base exponent =
 let int63_pow_on_int64 base exponent =
   let open Int64_with_comparisons in
   if exponent < 0L then negative_exponent ();
-  if abs base > 1L
-  && (exponent > 63L
-      || abs base
-         > Pow_overflow_bounds.int63_on_int64_positive_overflow_bounds.(to_int exponent)
-     )
+  if
+    abs base > 1L
+    && (exponent > 63L
+        || abs base
+           > Pow_overflow_bounds.int63_on_int64_positive_overflow_bounds.(to_int exponent)
+       )
   then overflow ();
   int_math_int64_pow base exponent
 ;;

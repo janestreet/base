@@ -51,11 +51,7 @@ let%test_module "Caseless Comparable" =
     let%test _ = Caseless.equal "OCaml" "ocaml"
     let%test _ = Caseless.("apple" < "Banana")
     let%test _ = Caseless.("aa" < "aaa")
-
-    let%test _ =
-      Int.( <> ) (Caseless.compare "apple" "Banana") (compare "apple" "Banana")
-    ;;
-
+    let%test _ = Int.( <> ) (Caseless.compare "apple" "Banana") (compare "apple" "Banana")
     let%test _ = Caseless.equal "XxX" "xXx"
     let%test _ = Caseless.("XxX" < "xXxX")
     let%test _ = Caseless.("XxXx" > "xXx")
@@ -131,8 +127,7 @@ let%test_module "Search_pattern" =
           ({ pattern; kmp_array; case_sensitive } : Private.t)
         ;;
 
-        let test_both
-              ({ pattern; case_sensitive; kmp_array = _ } as expected : Private.t)
+        let test_both ({ pattern; case_sensitive; kmp_array = _ } as expected : Private.t)
           =
           let create_repr = Private.representation (create pattern ~case_sensitive) in
           let slow_create_repr = slow_create pattern ~case_sensitive in
@@ -154,10 +149,7 @@ let%test_module "Search_pattern" =
         let%expect_test _ =
           List.iter [%all: bool] ~f:(fun case_sensitive ->
             test_both
-              { pattern = "ababab"
-              ; case_sensitive
-              ; kmp_array = [| 0; 0; 1; 2; 3; 4 |]
-              })
+              { pattern = "ababab"; case_sensitive; kmp_array = [| 0; 0; 1; 2; 3; 4 |] })
         ;;
 
         let%expect_test _ =
@@ -216,8 +208,7 @@ let%test_module "Search_pattern" =
         ;;
 
         let%expect_test _ =
-          test_both
-            { pattern = "aaA"; case_sensitive = false; kmp_array = [| 0; 1; 2 |] }
+          test_both { pattern = "aaA"; case_sensitive = false; kmp_array = [| 0; 1; 2 |] }
         ;;
 
         let%expect_test _ =
@@ -419,6 +410,20 @@ let%test_unit _ =
   assert (phys_equal s (tr s ~target:'\255' ~replacement:'\000'))
 ;;
 
+let%expect_test "empty substring" =
+  let string = init 10 ~f:Char.of_int_exn in
+  let test here f =
+    let substring = require_no_allocation here f in
+    assert (is_empty substring)
+  in
+  test [%here] (fun () -> sub string ~pos:0 ~len:0);
+  test [%here] (fun () -> prefix string 0);
+  test [%here] (fun () -> suffix string 0);
+  test [%here] (fun () -> drop_prefix string 10);
+  test [%here] (fun () -> drop_suffix string 10);
+  [%expect {| |}]
+;;
+
 let%test_module "tr_multi" =
   (module struct
     let gold_standard ~target ~replacement string =
@@ -590,6 +595,11 @@ let%test_unit _ =
     ~expect:(List.rev [ 0, 'h'; 1, 'e'; 2, 'l'; 3, 'l'; 4, 'o' ])
 ;;
 
+let%expect_test "iteri" =
+  iteri "hello" ~f:(fun i ch -> printf "%d%c " i ch);
+  [%expect {| 0h 1e 2l 3l 4o |}]
+;;
+
 let%test_unit _ = [%test_result: t] (filter "hello" ~f:(Char.( <> ) 'h')) ~expect:"ello"
 let%test_unit _ = [%test_result: t] (filter "hello" ~f:(Char.( <> ) 'l')) ~expect:"heo"
 let%test_unit _ = [%test_result: t] (filter "hello" ~f:(fun _ -> false)) ~expect:""
@@ -701,6 +711,127 @@ let%expect_test "chopping prefixes and suffixes" =
   [%expect {| __x__ |}];
   print_endline (String.chop_prefix_if_exists s ~prefix:"==");
   [%expect {| __x__ |}]
+;;
+
+let%test_module "common prefix and suffix" =
+  (module struct
+    let require_int_equal a b ~message = require_equal [%here] (module Int) a b ~message
+
+    let require_string_equal a b ~message =
+      require_equal [%here] (module String) a b ~message
+    ;;
+
+    let simulate_common_length ~get_common2_length list =
+      let rec loop acc prev list ~get_common2_length =
+        match list with
+        | [] -> acc
+        | head :: tail ->
+          loop (Int.min acc (get_common2_length prev head)) head tail ~get_common2_length
+      in
+      match list with
+      | [] -> 0
+      | [ head ] -> length head
+      | head :: tail -> loop Int.max_value head tail ~get_common2_length
+    ;;
+
+    let get_shortest_and_longest list =
+      let compare_by_length = Comparable.lift Int.compare ~f:String.length in
+      Option.both
+        (List.min_elt list ~compare:compare_by_length)
+        (List.max_elt list ~compare:compare_by_length)
+    ;;
+
+    let test_generic get_common get_common2 get_common_length get_common2_length =
+      stage (fun list ->
+        let common = get_common list in
+        print_s [%sexp (common : string)];
+        let len = get_common_length list in
+        require_int_equal len (length common) ~message:"wrong length";
+        let common2 = List.reduce list ~f:get_common2 |> Option.value ~default:"" in
+        require_string_equal common common2 ~message:"pairwise result mismatch";
+        let len2 = simulate_common_length ~get_common2_length list in
+        require_int_equal len len2 ~message:"pairwise length mismatch";
+        if not (String.is_empty common || List.mem list common ~equal)
+        then print_endline "(may allocate)"
+        else (
+          ignore (require_no_allocation [%here] (fun () -> get_common list) : string);
+          Option.iter (get_shortest_and_longest list) ~f:(fun (shortest, longest) ->
+            ignore
+              (require_no_allocation [%here] (fun () -> get_common2 shortest longest)
+               : string);
+            ignore
+              (require_no_allocation [%here] (fun () -> get_common2 longest shortest)
+               : string))))
+    ;;
+
+    let test_prefix =
+      test_generic common_prefix common_prefix2 common_prefix_length common_prefix2_length
+      |> unstage
+    ;;
+
+    let test_suffix =
+      test_generic common_suffix common_suffix2 common_suffix_length common_suffix2_length
+      |> unstage
+    ;;
+
+    let%expect_test "empty" =
+      test_prefix [];
+      [%expect {| "" |}];
+      test_suffix [];
+      [%expect {| "" |}]
+    ;;
+
+    let%expect_test "singleton" =
+      test_prefix [ "abut" ];
+      [%expect {| abut |}];
+      test_suffix [ "tuba" ];
+      [%expect {| tuba |}]
+    ;;
+
+    let%expect_test "doubleton, alloc" =
+      test_prefix [ "hello"; "help"; "hex" ];
+      [%expect {|
+        he
+        (may allocate) |}];
+      test_suffix [ "crest"; "zest"; "1st" ];
+      [%expect {|
+        st
+        (may allocate) |}]
+    ;;
+
+    let%expect_test "doubleton, no alloc" =
+      test_prefix [ "hello"; "help"; "he" ];
+      [%expect {| he |}];
+      test_suffix [ "crest"; "zest"; "st" ];
+      [%expect {| st |}]
+    ;;
+
+    let%expect_test "many, alloc" =
+      test_prefix [ "this"; "that"; "the other"; "these"; "those"; "thy"; "thou" ];
+      [%expect {|
+        th
+        (may allocate) |}];
+      test_suffix [ "fourth"; "fifth"; "sixth"; "seventh"; "eleventh"; "twelfth" ];
+      [%expect {|
+        th
+        (may allocate) |}]
+    ;;
+
+    let%expect_test "many, no alloc" =
+      test_prefix [ "inconsequential"; "invariant"; "in"; "inner"; "increment" ];
+      [%expect {| in |}];
+      test_suffix [ "fat"; "cat"; "sat"; "at"; "bat" ];
+      [%expect {| at |}]
+    ;;
+
+    let%expect_test "many, nothing in common" =
+      let lorem_ipsum = [ "lorem"; "ipsum"; "dolor"; "sit"; "amet" ] in
+      test_prefix lorem_ipsum;
+      [%expect {| "" |}];
+      test_suffix lorem_ipsum;
+      [%expect {| "" |}]
+    ;;
+  end)
 ;;
 
 let%test_module "functions that raise Not_found_s" =
@@ -1019,14 +1150,8 @@ let%test_module "Escaping" =
         let is_char_literal = is_char_literal ~escape_char:'_'
 
         let%test_unit _ = [%test_result: bool] (is_char_literal "123456" 4) ~expect:true
-
-        let%test_unit _ =
-          [%test_result: bool] (is_char_literal "12345_6" 6) ~expect:false
-        ;;
-
-        let%test_unit _ =
-          [%test_result: bool] (is_char_literal "12345_6" 5) ~expect:false
-        ;;
+        let%test_unit _ = [%test_result: bool] (is_char_literal "12345_6" 6) ~expect:false
+        let%test_unit _ = [%test_result: bool] (is_char_literal "12345_6" 5) ~expect:false
 
         let%test_unit _ =
           [%test_result: bool] (is_char_literal "123__456" 4) ~expect:false
@@ -1044,9 +1169,7 @@ let%test_module "Escaping" =
           [%test_result: bool] (is_char_literal "__123456" 0) ~expect:false
         ;;
 
-        let%test_unit _ =
-          [%test_result: bool] (is_char_literal "__123456" 2) ~expect:true
-        ;;
+        let%test_unit _ = [%test_result: bool] (is_char_literal "__123456" 2) ~expect:true
       end)
     ;;
 
@@ -1081,13 +1204,8 @@ let%test_module "Escaping" =
           [%test_result: int option] (f "123456_37839" 9 '3') ~expect:(Some 2)
         ;;
 
-        let%test_unit _ =
-          [%test_result: int option] (f "123_2321" 6 '2') ~expect:(Some 6)
-        ;;
-
-        let%test_unit _ =
-          [%test_result: int option] (f "123_2321" 5 '2') ~expect:(Some 1)
-        ;;
+        let%test_unit _ = [%test_result: int option] (f "123_2321" 6 '2') ~expect:(Some 6)
+        let%test_unit _ = [%test_result: int option] (f "123_2321" 5 '2') ~expect:(Some 1)
 
         let%test_unit _ =
           [%test_result: int option] (rindex "" ~escape_char:'_' 'x') ~expect:None
@@ -1237,9 +1355,6 @@ let%test_module "Escaping" =
     ;;
 
     let%test _ = lstrip_literal ~drop:Char.is_alpha ~escape_char:'b' "foo boar" = " boar"
-
-    let%test _ =
-      rstrip_literal ~drop:Char.is_alpha ~escape_char:'b' "foo boar" = "foo bo"
-    ;;
+    let%test _ = rstrip_literal ~drop:Char.is_alpha ~escape_char:'b' "foo boar" = "foo bo"
   end)
 ;;

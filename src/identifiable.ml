@@ -13,6 +13,8 @@ module type S = sig
   include Stringable.S with type t := t
   include Comparable.S with type t := t
   include Pretty_printer.S with type t := t
+
+  val hashable : t Hashable.t
 end
 
 module Make (T : sig
@@ -34,6 +36,8 @@ struct
   include T
   include Comparable.Make (T)
   include Pretty_printer.Register (T)
+
+  let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 end
 
 module Make_using_comparator (T : sig
@@ -55,4 +59,6 @@ struct
   include T
   include Comparable.Make_using_comparator (T)
   include Pretty_printer.Register (T)
+
+  let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 end

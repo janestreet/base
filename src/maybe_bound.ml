@@ -4,7 +4,7 @@ type 'a t =
   | Incl of 'a
   | Excl of 'a
   | Unbounded
-[@@deriving_inline enumerate, sexp]
+[@@deriving_inline enumerate, sexp, sexp_grammar]
 
 let all : 'a. 'a list -> 'a t list =
   fun _all_of_a ->
@@ -25,22 +25,19 @@ let all : 'a. 'a list -> 'a t list =
        [ Unbounded ])
 ;;
 
-let t_of_sexp
-  : type a. (Ppx_sexp_conv_lib.Sexp.t -> a) -> Ppx_sexp_conv_lib.Sexp.t -> a t
+let t_of_sexp : type a. (Ppx_sexp_conv_lib.Sexp.t -> a) -> Ppx_sexp_conv_lib.Sexp.t -> a t
   =
   let _tp_loc = "maybe_bound.ml.t" in
   fun _of_a -> function
     | Ppx_sexp_conv_lib.Sexp.List
-        (Ppx_sexp_conv_lib.Sexp.Atom (("incl" | "Incl") as _tag) :: sexp_args) as _sexp
-      ->
+        (Ppx_sexp_conv_lib.Sexp.Atom (("incl" | "Incl") as _tag) :: sexp_args) as _sexp ->
       (match sexp_args with
        | [ v0 ] ->
          let v0 = _of_a v0 in
          Incl v0
        | _ -> Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
     | Ppx_sexp_conv_lib.Sexp.List
-        (Ppx_sexp_conv_lib.Sexp.Atom (("excl" | "Excl") as _tag) :: sexp_args) as _sexp
-      ->
+        (Ppx_sexp_conv_lib.Sexp.Atom (("excl" | "Excl") as _tag) :: sexp_args) as _sexp ->
       (match sexp_args with
        | [ v0 ] ->
          let v0 = _of_a v0 in
@@ -61,8 +58,7 @@ let t_of_sexp
     | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
 ;;
 
-let sexp_of_t
-  : type a. (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t
+let sexp_of_t : type a. (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t
   =
   fun _of_a -> function
     | Incl v0 ->
@@ -74,13 +70,31 @@ let sexp_of_t
     | Unbounded -> Ppx_sexp_conv_lib.Sexp.Atom "Unbounded"
 ;;
 
+let (t_sexp_grammar :
+       'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
+  =
+  fun _'a_sexp_grammar ->
+  { untyped =
+      Union
+        [ Enum { name_kind = Capitalized; names = [ "Unbounded" ] }
+        ; Variant
+            { name_kind = Capitalized
+            ; clauses =
+                [ { name = "Incl"; args = Cons (_'a_sexp_grammar.untyped, Empty) }
+                ; { name = "Excl"; args = Cons (_'a_sexp_grammar.untyped, Empty) }
+                ]
+            }
+        ]
+  }
+;;
+
 [@@@end]
 
 type interval_comparison =
   | Below_lower_bound
   | In_range
   | Above_upper_bound
-[@@deriving_inline sexp, compare, hash]
+[@@deriving_inline sexp, sexp_grammar, compare, hash]
 
 let interval_comparison_of_sexp =
   (let _tp_loc = "maybe_bound.ml.interval_comparison" in
@@ -113,6 +127,17 @@ let sexp_of_interval_comparison =
     | In_range -> Ppx_sexp_conv_lib.Sexp.Atom "In_range"
     | Above_upper_bound -> Ppx_sexp_conv_lib.Sexp.Atom "Above_upper_bound"
                            : interval_comparison -> Ppx_sexp_conv_lib.Sexp.t)
+;;
+
+let (interval_comparison_sexp_grammar :
+       interval_comparison Ppx_sexp_conv_lib.Sexp_grammar.t)
+  =
+  { untyped =
+      Enum
+        { name_kind = Capitalized
+        ; names = [ "Below_lower_bound"; "In_range"; "Above_upper_bound" ]
+        }
+  }
 ;;
 
 let compare_interval_comparison =

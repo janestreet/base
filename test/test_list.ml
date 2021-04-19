@@ -391,15 +391,20 @@ let%expect_test _ =
   [%expect {| (raised (Invalid_argument "length mismatch in zip_exn: 1 <> 3")) |}]
 ;;
 
+let%expect_test _ =
+  show_raise (fun () ->
+    rev_map3_exn [ 1 ] [ 4; 5; 6 ] [ 2; 3 ] ~f:(fun a b c -> a + b + c));
+  [%expect
+    {| (raised (Invalid_argument "length mismatch in rev_map3_exn: 1 <> 3 || 3 <> 2")) |}]
+;;
+
 let%test_unit _ =
   [%test_result: (int * string) list]
     (mapi ~f:(fun i x -> i, x) [ "one"; "two"; "three"; "four" ])
     ~expect:[ 0, "one"; 1, "two"; 2, "three"; 3, "four" ]
 ;;
 
-let%test_unit _ =
-  [%test_result: (int * _) list] (mapi ~f:(fun i x -> i, x) []) ~expect:[]
-;;
+let%test_unit _ = [%test_result: (int * _) list] (mapi ~f:(fun i x -> i, x) []) ~expect:[]
 
 let%test_module "group" =
   (module struct
@@ -447,6 +452,92 @@ let%test_module "group" =
       [%test_result: char list list]
         (groupi ~break:(fun i _ _ -> i % 3 = 0) mis)
         ~expect:every_three
+    ;;
+  end)
+;;
+
+let%test_module "sort_and_group" =
+  (module struct
+    let%expect_test _ =
+      let compare =
+        Comparable.lift String.compare ~f:(String.rstrip ~drop:Char.is_digit)
+      in
+      [%test_result: string list list]
+        (sort_and_group [ "b1"; "c1"; "a1"; "a2"; "b2"; "a3" ] ~compare)
+        ~expect:[ [ "a1"; "a2"; "a3" ]; [ "b1"; "b2" ]; [ "c1" ] ]
+    ;;
+  end)
+;;
+
+let%test_module "Assoc.group" =
+  (module struct
+    let%expect_test _ =
+      let test alist =
+        let multi = Assoc.group alist ~equal:String.Caseless.equal in
+        print_s [%sexp (multi : (string * int list) list)];
+        let round_trip =
+          List.concat_map multi ~f:(fun (key, data) ->
+            List.map data ~f:(fun datum -> key, datum))
+        in
+        require_equal
+          [%here]
+          (module struct
+            type t = (String.Caseless.t * int) list [@@deriving equal, sexp_of]
+          end)
+          alist
+          round_trip
+      in
+      test [];
+      [%expect {| () |}];
+      test [ "a", 1; "A", 2 ];
+      [%expect {| ((a (1 2))) |}];
+      test [ "a", 1; "b", 2 ];
+      [%expect {|
+        ((a (1))
+         (b (2))) |}];
+      test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
+      [%expect
+        {|
+        ((odd  (1))
+         (even (2))
+         (Odd  (3))
+         (Even (4))
+         (ODD  (5))
+         (EVEN (6))) |}];
+      test [ "odd", 1; "Odd", 3; "ODD", 5; "even", 2; "Even", 4; "EVEN", 6 ];
+      [%expect {|
+        ((odd  (1 3 5))
+         (even (2 4 6))) |}]
+    ;;
+  end)
+;;
+
+let%test_module "Assoc.sort_and_group" =
+  (module struct
+    let%expect_test _ =
+      let test alist =
+        let multi = Assoc.sort_and_group alist ~compare:String.Caseless.compare in
+        print_s [%sexp (multi : (string * int list) list)];
+        require_equal
+          [%here]
+          (module struct
+            type t = (string * int list) list [@@deriving equal, sexp_of]
+          end)
+          multi
+          (Map.to_alist (Map.of_alist_multi (module String.Caseless) alist))
+      in
+      test [];
+      [%expect {| () |}];
+      test [ "a", 1; "A", 2 ];
+      [%expect {| ((a (1 2))) |}];
+      test [ "a", 1; "b", 2 ];
+      [%expect {|
+        ((a (1))
+         (b (2))) |}];
+      test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
+      [%expect {|
+        ((even (2 4 6))
+         (odd  (1 3 5))) |}]
     ;;
   end)
 ;;
@@ -792,9 +883,7 @@ let%test_unit _ =
 ;;
 
 let%test_unit _ =
-  [%test_result: bool]
-    (contains_dup ~compare:Int.compare [ 3; 5; 4; 5; 12 ])
-    ~expect:true
+  [%test_result: bool] (contains_dup ~compare:Int.compare [ 3; 5; 4; 5; 12 ]) ~expect:true
 ;;
 
 let%test_unit _ =
@@ -886,9 +975,7 @@ let%test_unit _ =
     ~expect:Test_values.l1
 ;;
 
-let%test_unit _ =
-  [%test_result: int list] (filter_map ~f:(fun x -> Some x) []) ~expect:[]
-;;
+let%test_unit _ = [%test_result: int list] (filter_map ~f:(fun x -> Some x) []) ~expect:[]
 
 let%test_unit _ =
   [%test_result: int list] (filter_map ~f:(fun _x -> None) [ 1.; 2.; 3. ]) ~expect:[]
@@ -1020,10 +1107,7 @@ let%test_unit _ =
 ;;
 
 let%test_unit _ = [%test_result: bool] (is_sorted [] ~compare:Int.compare) ~expect:true
-
-let%test_unit _ =
-  [%test_result: bool] (is_sorted [ 1 ] ~compare:Int.compare) ~expect:true
-;;
+let%test_unit _ = [%test_result: bool] (is_sorted [ 1 ] ~compare:Int.compare) ~expect:true
 
 let%test_unit _ =
   [%test_result: bool] (is_sorted [ 1; 2; 3; 4 ] ~compare:Int.compare) ~expect:true
@@ -1083,6 +1167,30 @@ let%test_module "transpose" =
 
     let%test_unit _ =
       round_trip [ [ 1; 2; 3 ]; [ 4; 5; 6 ] ] [ [ 1; 4 ]; [ 2; 5 ]; [ 3; 6 ] ]
+    ;;
+
+    let%test_unit _ =
+      round_trip
+        [ [ 1; 2; 3 ]; [ 4; 5; 6 ]; [ 7; 8; 9 ] ]
+        [ [ 1; 4; 7 ]; [ 2; 5; 8 ]; [ 3; 6; 9 ] ]
+    ;;
+
+    let%test_unit _ =
+      round_trip
+        [ [ 1; 2; 3; 4 ]; [ 5; 6; 7; 8 ]; [ 9; 10; 11; 12 ] ]
+        [ [ 1; 5; 9 ]; [ 2; 6; 10 ]; [ 3; 7; 11 ]; [ 4; 8; 12 ] ]
+    ;;
+
+    let%test_unit _ =
+      round_trip
+        [ [ 1; 2; 3; 4 ]; [ 5; 6; 7; 8 ]; [ 9; 10; 11; 12 ]; [ 13; 14; 15; 16 ] ]
+        [ [ 1; 5; 9; 13 ]; [ 2; 6; 10; 14 ]; [ 3; 7; 11; 15 ]; [ 4; 8; 12; 16 ] ]
+    ;;
+
+    let%test_unit _ =
+      round_trip
+        [ [ 1; 2; 3 ]; [ 4; 5; 6 ]; [ 7; 8; 9 ]; [ 10; 11; 12 ] ]
+        [ [ 1; 4; 7; 10 ]; [ 2; 5; 8; 11 ]; [ 3; 6; 9; 12 ] ]
     ;;
 
     let%test_unit _ =

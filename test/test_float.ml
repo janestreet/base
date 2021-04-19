@@ -407,26 +407,6 @@ let%test_unit "sign_or_nan" =
 
 let%test_module _ =
   (module struct
-    let check v expect =
-      match Validate.result v, expect with
-      | Ok (), `Ok | Error _, `Error -> ()
-      | r, expect ->
-        raise_s [%message "mismatch" (r : unit Or_error.t) (expect : [ `Ok | `Error ])]
-    ;;
-
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) nan) `Error
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) infinity) `Error
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) neg_infinity) `Error
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) (-1.)) `Error
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) 0.) `Ok
-    let%test_unit _ = check (validate_lbound ~min:(Incl 0.) 1.) `Ok
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) nan) `Error
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) infinity) `Error
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) neg_infinity) `Error
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) (-1.)) `Ok
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) 0.) `Ok
-    let%test_unit _ = check (validate_ubound ~max:(Incl 0.) 1.) `Error
-
     (* Some of the following tests used to live in lib_test/core_float_test.ml. *)
 
     let () = Random.init 137
@@ -464,11 +444,12 @@ let%test_module _ =
       let result5 = Option.try_with (fun () -> Int.of_float (float_rounding x)) in
       let result6 = Option.try_with (fun () -> Int.of_float (round ~dir x)) in
       let ( = ) = Caml.( = ) in
-      if result1 = result2
-      && result2 = result3
-      && result3 = result4
-      && result4 = result5
-      && result5 = result6
+      if
+        result1 = result2
+        && result2 = result3
+        && result3 = result4
+        && result4 = result5
+        && result5 = result6
       then validate result1
       else false
     ;;
@@ -856,8 +837,9 @@ struct
       Caml.Int64.of_float (one_ulp `Down float_lower_bound)
     in
     let min_value = to_int64 min_value in
-    if Int.( = ) num_bits 64
-    (* We cannot detect overflow because on Intel overflow results in min_value. *)
+    if
+      Int.( = ) num_bits 64
+      (* We cannot detect overflow because on Intel overflow results in min_value. *)
     then true
     else (
       assert (Int64.( <= ) lower_bound_minus_epsilon lower_bound);
@@ -869,8 +851,9 @@ struct
     let upper_bound = Int64.of_float float_upper_bound in
     let upper_bound_plus_epsilon = Caml.Int64.of_float (one_ulp `Up float_upper_bound) in
     let max_value = to_int64 max_value in
-    if Int.( = ) num_bits 64
-    (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
+    if
+      Int.( = ) num_bits 64
+      (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
     then Int64.( < ) upper_bound_plus_epsilon upper_bound
     else (
       assert (Int64.( >= ) upper_bound_plus_epsilon upper_bound);
@@ -955,11 +938,7 @@ let%test_module _ =
     let%test _ = must_fail int63_round_nearest_portable_alloc_exn min_value
     let%test _ = must_fail int63_round_nearest_portable_alloc_exn (2. **. 63.)
     let%test _ = must_fail int63_round_nearest_portable_alloc_exn ~-.(2. **. 63.)
-
-    let%test _ =
-      must_succeed int63_round_nearest_portable_alloc_exn ((2. **. 62.) -. 512.)
-    ;;
-
+    let%test _ = must_succeed int63_round_nearest_portable_alloc_exn ((2. **. 62.) -. 512.)
     let%test _ = must_fail int63_round_nearest_portable_alloc_exn (2. **. 62.)
 
     let%test _ =
@@ -1007,11 +986,7 @@ let%test_module _ =
     let%test_unit _ = test ~decimals:3 0.99999 "1.000" "1"
     let%test_unit _ = test ~decimals:3 0.00001 "0.000" "0"
     let%test_unit _ = test ~decimals:3 ~-.12345.1 "-12_345.100" "-12_345.1"
-
-    let%test_unit _ =
-      test ~delimiter:',' ~decimals:3 ~-.12345.1 "-12,345.100" "-12,345.1"
-    ;;
-
+    let%test_unit _ = test ~delimiter:',' ~decimals:3 ~-.12345.1 "-12,345.100" "-12,345.1"
     let%test_unit _ = test ~decimals:0 0.99999 "1" "1"
     let%test_unit _ = test ~decimals:0 0.00001 "0" "0"
     let%test_unit _ = test ~decimals:0 ~-.12345.1 "-12_345" "-12_345"
@@ -1029,9 +1004,10 @@ let%test_module _ =
         let f = Random.float 1_000_000.0 -. 500_000.0 in
         let repeatable to_str =
           let s = to_str f in
-          if String.( <> )
-               (String.split s ~on:',' |> String.concat |> of_string |> to_str)
-               s
+          if
+            String.( <> )
+              (String.split s ~on:',' |> String.concat |> of_string |> to_str)
+              s
           then raise_s [%message "failed" (f : t)]
         in
         repeatable (to_string_hum ~decimals:3 ~strip_zero:false)
@@ -1115,9 +1091,7 @@ let%test_unit "int to float conversion consistency" =
   test_int63 Int63.zero;
   test_int63 Int63.min_value;
   test_int63 Int63.max_value;
-  let rand =
-    Random.State.make [| Hashtbl.hash "int to float conversion consistency" |]
-  in
+  let rand = Random.State.make [| Hashtbl.hash "int to float conversion consistency" |] in
   for _i = 0 to 100 do
     let x = Random.State.int rand Int.max_value in
     test_int x

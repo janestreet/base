@@ -16,7 +16,9 @@ val hash_fold_t
 
 include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
 
-val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+val t_sexp_grammar
+  :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
+  -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
 
 [@@@end]
 
@@ -88,12 +90,7 @@ val rev_map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t Or_unequal_lengths.t
     ...) bn cn].  The exn version will raise if the two lists have different lengths. *)
 val fold2_exn : 'a t -> 'b t -> init:'c -> f:('c -> 'a -> 'b -> 'c) -> 'c
 
-val fold2
-  :  'a t
-  -> 'b t
-  -> init:'c
-  -> f:('c -> 'a -> 'b -> 'c)
-  -> 'c Or_unequal_lengths.t
+val fold2 : 'a t -> 'b t -> init:'c -> f:('c -> 'a -> 'b -> 'c) -> 'c Or_unequal_lengths.t
 
 (** Like {!List.for_all}, but passes the index as an argument. *)
 val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
@@ -325,6 +322,9 @@ val group : 'a t -> break:('a -> 'a -> bool) -> 'a t t
 *)
 val groupi : 'a t -> break:(int -> 'a -> 'a -> bool) -> 'a t t
 
+(** Group equal elements into the same buckets. *)
+val sort_and_group : compare:('a -> 'a -> int) -> 'a t -> 'a t t
+
 (** [chunks_of l ~length] returns a list of lists whose concatenation is equal to the
     original list.  Every list has [length] elements, except for possibly the last list,
     which may have fewer.  [chunks_of] raises if [length <= 0]. *)
@@ -435,9 +435,14 @@ val filter_opt : 'a option t -> 'a t
 
     {[ Map.xxx (alist |> Map.of_alist_multi |> Map.map ~f:List.hd) ...args... ]} *)
 module Assoc : sig
-  type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp]
+  type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp, sexp_grammar]
 
   include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
+
+  val t_sexp_grammar
+    :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 
@@ -450,6 +455,15 @@ module Assoc : sig
 
   (** Bijectivity is not guaranteed because we allow a key to appear more than once. *)
   val inverse : ('a, 'b) t -> ('b, 'a) t
+
+  (** Converts an association list with potential consecutive duplicate keys into an
+      association list of (non-empty) lists with no (consecutive) duplicate keys. Any
+      non-consecutive duplicate keys in the input will remain in the output. *)
+  val group : ('a * 'b) list -> equal:('a -> 'a -> bool) -> ('a, 'b list) t
+
+  (** Converts an association list with potential duplicate keys into an association list
+      of (non-empty) lists with no duplicate keys. *)
+  val sort_and_group : ('a * 'b) list -> compare:('a -> 'a -> int) -> ('a, 'b list) t
 end
 
 (** [sub pos len l] is the [len]-element sublist of [l], starting at [pos]. *)

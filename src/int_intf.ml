@@ -41,10 +41,11 @@ module type Hexable = sig
   type t
 
   module Hex : sig
-    type nonrec t = t [@@deriving_inline sexp, compare, hash]
+    type nonrec t = t [@@deriving_inline sexp, sexp_grammar, compare, hash]
 
     include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
+    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
     val compare : t -> t -> int
     val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
     val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
@@ -62,7 +63,7 @@ module type S_common = sig
 
   include Ppx_sexp_conv_lib.Sexpable.S with type t := t
 
-  val t_sexp_grammar : Ppx_sexp_conv_lib.Sexp.Private.Raw_grammar.t
+  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
 
   [@@@end]
 
@@ -310,7 +311,15 @@ end :
 sig end)
 
 module type Int_without_module_types = sig
-  include S with type t = int
+  (** OCaml's native integer type.
+
+      The number of bits in an integer is platform dependent, being 31-bits on a 32-bit
+      platform, and 63-bits on a 64-bit platform.  [int] is a signed integer type.  [int]s
+      are also subject to overflow, meaning that [Int.max_value + 1 = Int.min_value].
+
+      [int]s always fit in a machine word. *)
+
+  include S with type t = int (** @inline *)
 
   (** [max_value_30_bits = 2^30 - 1].  It is useful for writing tests that work on both
       64-bit and 32-bit platforms. *)
@@ -367,15 +376,8 @@ module type Int_without_module_types = sig
   end
 end
 
-(** OCaml's native integer type.
-
-    The number of bits in an integer is platform dependent, being 31-bits on a 32-bit
-    platform, and 63-bits on a 64-bit platform.  [int] is a signed integer type.  [int]s
-    are also subject to overflow, meaning that [Int.max_value + 1 = Int.min_value].
-
-    [int]s always fit in a machine word. *)
 module type Int = sig
-  include Int_without_module_types
+  include Int_without_module_types (** @inline *)
 
   (** {2 Module types specifying integer operations.} *)
   module type Hexable = Hexable

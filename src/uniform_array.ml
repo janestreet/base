@@ -21,6 +21,7 @@ module Trusted : sig
   val unsafe_set_int : 'a t -> int -> int -> unit
   val unsafe_set_int_assuming_currently_int : 'a t -> int -> int -> unit
   val unsafe_set_assuming_currently_int : 'a t -> int -> 'a -> unit
+  val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
   val length : 'a t -> int
   val unsafe_blit : ('a t, 'a t) Blit.blit
   val copy : 'a t -> 'a t
@@ -54,6 +55,10 @@ end = struct
 
   let unsafe_set_omit_phys_equal_check t i x =
     Obj_array.unsafe_set_omit_phys_equal_check t i (Caml.Obj.repr x)
+  ;;
+
+  let unsafe_set_with_caml_modify t i x =
+    Obj_array.unsafe_set_with_caml_modify t i (Caml.Obj.repr x)
   ;;
 
   let unsafe_clear_if_pointer = Obj_array.unsafe_clear_if_pointer
@@ -115,7 +120,14 @@ let map2_exn t1 t2 ~f =
   init len ~f:(fun i -> f (unsafe_get t1 i) (unsafe_get t2 i))
 ;;
 
-include Sexpable.Of_sexpable1
+let t_sexp_grammar (type elt) (grammar : elt Ppx_sexp_conv_lib.Sexp_grammar.t)
+  : elt t Ppx_sexp_conv_lib.Sexp_grammar.t
+  =
+  Ppx_sexp_conv_lib.Sexp_grammar.coerce (Array.t_sexp_grammar grammar)
+;;
+
+include
+  Sexpable.Of_sexpable1
     (Array)
     (struct
       type nonrec 'a t = 'a t

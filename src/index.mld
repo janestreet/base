@@ -162,8 +162,8 @@ The Base specific coding rules are checked by [ppx_base_lint], in the
 [lint] subfolder. The indentation rules are checked by a wrapper around
 [ocp-indent] and the coding style rules are checked by [ppx_js_style].
 
-These checks are currently not run by [jbuilder], but it will soon get
-a [-dev] flag to run them automatically.
+These checks are currently not run by [dune], but it will soon get a [-dev] flag
+to run them automatically.
 
 {1 Roadmap}
 

@@ -1,12 +1,11 @@
-(** A type-indexed value that allows one to compare (and for generating error messages,
-    serialize) values of the type in question.
-
-    One of the type parameters is a phantom parameter used to distinguish comparators
-    potentially built on different comparison functions.  In particular, we want to
-    distinguish those using polymorphic compare from those using a monomorphic compare. *)
+(** Comparison and serialization for a type, using a witness type to distinguish between
+    comparison functions with different behavior. *)
 
 open! Import
 
+(** [('a, 'witness) t] contains a comparison function for values of type ['a].  Two values
+    of type [t] with the same ['witness] are guaranteed to have the same comparison
+    function. *)
 type ('a, 'witness) t = private
   { compare : 'a -> 'a -> int
   ; sexp_of_t : 'a -> Sexp.t
@@ -37,7 +36,11 @@ end
 
 (** [make] creates a comparator witness for the given comparison. It is intended as a
     lightweight alternative to the functors below, to be used like so:
-    [include (val Comparator.make ~compare ~sexp_of_t)] *)
+
+    {[
+      include (val Comparator.make ~compare ~sexp_of_t)
+    ]}
+*)
 val make
   :  compare:('a -> 'a -> int)
   -> sexp_of_t:('a -> Sexp.t)
@@ -58,6 +61,7 @@ module Make (M : sig
 
     [@@@end]
   end) : S with type t := M.t
+
 
 (** [Make1] creates a [comparator] value and its phantom [comparator_witness] type for a
     unary type.  It takes a [compare] and [sexp_of_t] that have

@@ -21,6 +21,10 @@ module T = struct
       (try Caml.Scanf.sscanf s "U+%X" (fun i -> Uchar0.of_int i) with
        | _ -> of_sexp_error "Uchar.t_of_sexp: atom of the form U+XXXX needed" sexp)
   ;;
+
+  let t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t =
+    Ppx_sexp_conv_lib.Sexp_grammar.coerce String.t_sexp_grammar
+  ;;
 end
 
 include T

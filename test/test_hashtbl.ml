@@ -7,8 +7,7 @@ let%test "Hashtbl.merge succeeds with first-class-module interface" =
   let t1 = Hashtbl.create (module Int) in
   let t2 = Hashtbl.create (module Int) in
   let result =
-    Hashtbl.merge t1 t2 ~f:(fun ~key:_ ->
-      function
+    Hashtbl.merge t1 t2 ~f:(fun ~key:_ -> function
       | `Left x -> x
       | `Right x -> x
       | `Both _ -> assert false)
@@ -59,9 +58,7 @@ let%expect_test "[t_of_sexp] error on duplicate" =
 
 let%expect_test "[choose], [choose_exn]" =
   let test ?size l =
-    let t =
-      l |> List.map ~f:(fun i -> i, i) |> Hashtbl.of_alist_exn ?size (module Int)
-    in
+    let t = l |> List.map ~f:(fun i -> i, i) |> Hashtbl.of_alist_exn ?size (module Int) in
     print_s
       [%message
         ""

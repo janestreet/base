@@ -444,7 +444,7 @@ module Merge_with_duplicates_element = struct
     | Left of 'a
     | Right of 'b
     | Both of 'a * 'b
-  [@@deriving_inline compare, hash, sexp]
+  [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
   let compare :
     'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
@@ -558,6 +558,27 @@ module Merge_with_duplicates_element = struct
         let v0 = _of_a v0
         and v1 = _of_b v1 in
         Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Both"; v0; v1 ]
+  ;;
+
+  let (t_sexp_grammar :
+         'a Ppx_sexp_conv_lib.Sexp_grammar.t
+       -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
+       -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t)
+    =
+    fun _'a_sexp_grammar _'b_sexp_grammar ->
+      { untyped =
+          Variant
+            { name_kind = Capitalized
+            ; clauses =
+                [ { name = "Left"; args = Cons (_'a_sexp_grammar.untyped, Empty) }
+                ; { name = "Right"; args = Cons (_'b_sexp_grammar.untyped, Empty) }
+                ; { name = "Both"
+                  ; args =
+                      Cons (_'a_sexp_grammar.untyped, Cons (_'b_sexp_grammar.untyped, Empty))
+                  }
+                ]
+            }
+      }
   ;;
 
   [@@@end]

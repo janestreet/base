@@ -1,6 +1,7 @@
 open! Import
+include Caml.Lazy
 
-type 'a t = 'a lazy_t [@@deriving_inline sexp]
+type 'a t = 'a lazy_t [@@deriving_inline sexp, sexp_grammar]
 
 let t_of_sexp : 'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
   lazy_t_of_sexp
@@ -10,9 +11,13 @@ let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_li
   sexp_of_lazy_t
 ;;
 
-[@@@end]
+let (t_sexp_grammar :
+       'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
+  =
+  fun _'a_sexp_grammar -> lazy_t_sexp_grammar _'a_sexp_grammar
+;;
 
-include (Caml.Lazy : module type of Caml.Lazy with type 'a t := 'a t)
+[@@@end]
 
 let map t ~f = lazy (f (force t))
 

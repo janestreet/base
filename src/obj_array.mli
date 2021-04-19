@@ -57,6 +57,12 @@ val unsafe_set_int : t -> int -> int -> unit
     values are [phys_equal]. *)
 val unsafe_set_omit_phys_equal_check : t -> int -> Caml.Obj.t -> unit
 
+(** [unsafe_set_with_caml_modify] always calls [caml_modify] before setting and never gets
+    the old value.  This is like [unsafe_set_omit_phys_equal_check] except it doesn't
+    check whether the old value and the value being set are integers to try to skip
+    [caml_modify]. *)
+val unsafe_set_with_caml_modify : t -> int -> Caml.Obj.t -> unit
+
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
     space leaks.  It does this by setting [t.(i)] to [Caml.Obj.repr 0].  As a performance hack,
     it only does this when [not (Caml.Obj.is_int t.(i))]. *)
