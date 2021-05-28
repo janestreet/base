@@ -158,6 +158,19 @@ let map_error t ~f =
   | Error x -> Error (f x)
 ;;
 
+module Error = Monad.Make2 (struct
+    type nonrec ('a, 'b) t = ('b, 'a) t
+
+    let bind x ~f =
+      match x with
+      | Ok _ as ok -> ok
+      | Error e -> f e
+    ;;
+
+    let map = `Custom map_error
+    let return e = Error e
+  end)
+
 let is_ok = function
   | Ok _ -> true
   | Error _ -> false

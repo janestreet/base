@@ -1,5 +1,11 @@
 open! Import
-include Result
+
+include (
+  Result :
+    module type of struct
+    include Result
+  end
+  with module Error := Result.Error)
 
 type 'a t = ('a, Error.t) Result.t
 [@@deriving_inline compare, equal, hash, sexp, sexp_grammar]

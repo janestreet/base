@@ -74,6 +74,17 @@ let%expect_test "exists" =
   [%expect {| |}]
 ;;
 
+let%expect_test "for_all" =
+  let test arr f = of_list arr |> for_all ~f in
+  let r here = require_equal here (module Bool) in
+  r [%here] true (test [] Fn.id);
+  r [%here] true (test [ true ] Fn.id);
+  r [%here] false (test [ false; false; false; false; true ] Fn.id);
+  r [%here] false (test [ 0; 1; 2; 3; 4 ] (fun i -> i % 2 = 1));
+  r [%here] true (test [ 0; 2; 4; 6; 8 ] (fun i -> i % 2 = 0));
+  [%expect {| |}]
+;;
+
 let%expect_test "iteri" =
   let test arr = of_list arr |> iteri ~f:(printf "(%d %c)") in
   test [];
@@ -107,4 +118,17 @@ let%expect_test "map2_exn" =
   [%expect {| (result (101 202 303)) |}];
   require_does_raise [%here] (fun () -> test [ 1 ] [] (fun _ _ -> 0));
   [%expect {| (Invalid_argument Array.map2_exn) |}]
+;;
+
+let%expect_test "mapi" =
+  let test arr =
+    let mapped = of_list arr |> mapi ~f:(fun i str -> i, String.capitalize str) in
+    print_s [%sexp (mapped : (int * string) t)]
+  in
+  test [];
+  [%expect {| () |}];
+  test [ "foo"; "bar" ];
+  [%expect {|
+    ((0 Foo)
+     (1 Bar)) |}]
 ;;

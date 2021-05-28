@@ -81,6 +81,7 @@ let init l ~f =
 
 let of_array arr = init ~f:(Array.unsafe_get arr) (Array.length arr)
 let map a ~f = init ~f:(fun i -> f (unsafe_get a i)) (length a)
+let mapi a ~f = init ~f:(fun i -> f i (unsafe_get a i)) (length a)
 
 let iter a ~f =
   for i = 0 to length a - 1 do
@@ -111,6 +112,11 @@ let exists t ~f =
   let rec loop t ~f i =
     if i < 0 then false else f (unsafe_get t i) || loop t ~f (i - 1)
   in
+  loop t ~f (length t - 1)
+;;
+
+let for_all t ~f =
+  let rec loop t ~f i = if i < 0 then true else f (unsafe_get t i) && loop t ~f (i - 1) in
   loop t ~f (length t - 1)
 ;;
 

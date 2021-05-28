@@ -406,21 +406,29 @@ let partitioni_tf t ~f =
 let partition_tf t ~f = partitioni_tf t ~f:(fun ~key:_ ~data -> f data)
 
 let find_or_add t id ~default =
-  match find t id with
-  | Some x -> x
-  | None ->
-    let default = default () in
-    set t ~key:id ~data:default;
-    default
+  find_and_call2
+    t
+    id
+    ~a:t
+    ~b:default
+    ~if_found:(fun data _ _ -> data)
+    ~if_not_found:(fun key t default ->
+      let default = default () in
+      set t ~key ~data:default;
+      default)
 ;;
 
 let findi_or_add t id ~default =
-  match find t id with
-  | Some x -> x
-  | None ->
-    let default = default id in
-    set t ~key:id ~data:default;
-    default
+  find_and_call2
+    t
+    id
+    ~a:t
+    ~b:default
+    ~if_found:(fun data _ _ -> data)
+    ~if_not_found:(fun key t default ->
+      let default = default key in
+      set t ~key ~data:default;
+      default)
 ;;
 
 (* Some hashtbl implementations may be able to perform this more efficiently than two

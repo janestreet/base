@@ -92,3 +92,30 @@ let%expect_test _ =
   check X.magic_value;
   check X.some_other_value
 ;;
+
+let%test _ = foldi (of_array_some [||]) ~init:13 ~f:(fun _ _ _ -> failwith "bad") = 13
+
+let%test _ =
+  foldi (of_array_some [| 13 |]) ~init:17 ~f:(fun i ac x -> ac + i + Option.value_exn x)
+  = 30
+;;
+
+let%test _ =
+  foldi
+    (of_array_some [| 13; 17 |])
+    ~init:19
+    ~f:(fun i ac x -> ac + i + Option.value_exn x)
+  = 50
+;;
+
+let%test _ =
+  counti (of_array_some [| 0; 1; 2; 3; 4 |]) ~f:(fun idx x -> idx = Option.value_exn x)
+  = 5
+;;
+
+let%test _ =
+  counti
+    (of_array_some [| 0; 1; 2; 3; 4 |])
+    ~f:(fun idx x -> idx = 4 - Option.value_exn x)
+  = 1
+;;

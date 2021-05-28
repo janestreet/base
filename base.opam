@@ -12,7 +12,8 @@ build: [
 depends: [
   "ocaml" {>= "4.08.0"}
   "sexplib0"
-  "dune"     {>= "2.0.0"}
+  "dune"              {>= "2.0.0"}
+  "dune-configurator"
 ]
 synopsis: "Full standard library replacement for OCaml"
 description: "

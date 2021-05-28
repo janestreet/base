@@ -22,6 +22,7 @@ end
 
 include Export
 
+(** @canonical Base.Container.Summable *)
 module type Summable = sig
   type t
 

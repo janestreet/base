@@ -51,18 +51,18 @@ module type Generic = sig
   val find_mapi : 'a t -> f:(int -> 'a elt -> 'b option) -> 'b option
 end
 
-module type Make_arg = sig
-  include Container_intf.Make_arg
+module type Make_gen_arg = sig
+  include Container_intf.Make_gen_arg
 
-  val iteri : [ `Define_using_fold | `Custom of ('a t, 'a) iteri ]
-  val foldi : [ `Define_using_fold | `Custom of ('a t, 'a, _) foldi ]
+  val iteri : [ `Define_using_fold | `Custom of ('a t, 'a elt) iteri ]
+  val foldi : [ `Define_using_fold | `Custom of ('a t, 'a elt, _) foldi ]
 end
+
+module type Make_arg = Make_gen_arg with type 'a elt := 'a Monad.Ident.t
 
 module type Make0_arg = sig
   include Container_intf.Make0_arg
-
-  val iteri : [ `Define_using_fold | `Custom of (t, Elt.t) iteri ]
-  val foldi : [ `Define_using_fold | `Custom of (t, Elt.t, _) foldi ]
+  include Make_gen_arg with type 'a t := t and type 'a elt := Elt.t
 end
 
 module type Indexed_container = sig
@@ -95,4 +95,7 @@ module type Indexed_container = sig
 
   module Make (T : Make_arg) : S1 with type 'a t := 'a T.t
   module Make0 (T : Make0_arg) : S0 with type t := T.t and type elt := T.Elt.t
+
+  module Make_gen (T : Make_gen_arg) :
+    Generic with type 'a t := 'a T.t and type 'a elt := 'a T.elt
 end

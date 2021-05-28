@@ -29,6 +29,7 @@ module Cheap_option = struct
     val is_some : _ t -> bool
     val value_exn : 'a t -> 'a
     val value_unsafe : 'a t -> 'a
+    val iter_some : 'a t -> f:('a -> unit) -> unit
   end = struct
     type +'a t
 
@@ -74,6 +75,8 @@ module Cheap_option = struct
       then value_unsafe x
       else failwith "Option_array.get_some_exn: the element is [None]"
     ;;
+
+    let iter_some t ~f = if is_some t then f (value_unsafe t)
   end
 
   module T1 = struct
@@ -149,6 +152,61 @@ let clear t =
     unsafe_set_none t i
   done
 ;;
+
+let iteri input ~f =
+  for i = 0 to length input - 1 do
+    f i (unsafe_get input i)
+  done
+;;
+
+let iter input ~f = iteri input ~f:(fun (_ : int) x -> f x)
+
+let foldi input ~init ~f =
+  let acc = ref init in
+  iteri input ~f:(fun i elem -> acc := f i !acc elem);
+  !acc
+;;
+
+let fold input ~init ~f = foldi input ~init ~f:(fun (_ : int) acc x -> f acc x)
+
+include Indexed_container.Make_gen (struct
+    type nonrec 'a t = 'a t
+    type 'a elt = 'a option
+
+    let fold = fold
+    let foldi = `Custom foldi
+    let iter = `Custom iter
+    let iteri = `Custom iteri
+    let length = `Custom length
+  end)
+
+let mapi input ~f =
+  let output = create ~len:(length input) in
+  iteri input ~f:(fun i elem -> unsafe_set output i (f i elem));
+  output
+;;
+
+let map input ~f = mapi input ~f:(fun (_ : int) elem -> f elem)
+
+let map_some input ~f =
+  let len = length input in
+  let output = create ~len in
+  let () =
+    for i = 0 to len - 1 do
+      let opt = Uniform_array.unsafe_get input i in
+      Cheap_option.iter_some opt ~f:(fun x -> unsafe_set_some output i (f x))
+    done
+  in
+  output
+;;
+
+let of_array array = init (Array.length array) ~f:(fun i -> Array.unsafe_get array i)
+
+let of_array_some array =
+  init_some (Array.length array) ~f:(fun i -> Array.unsafe_get array i)
+;;
+
+let to_array t = Array.init (length t) ~f:(fun i -> unsafe_get t i)
 
 include Blit.Make1_generic (struct
     type nonrec 'a t = 'a t

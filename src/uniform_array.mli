@@ -46,6 +46,7 @@ val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
 val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
 
 val map : 'a t -> f:('a -> 'b) -> 'b t
+val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 val iter : 'a t -> f:('a -> unit) -> unit
 
 (** Like {!iter}, but the function is applied to the index of the element as first
@@ -94,6 +95,9 @@ val unsafe_clear_if_pointer : Caml.Obj.t t -> int -> unit
 
 (** As [Array.exists]. *)
 val exists : 'a t -> f:('a -> bool) -> bool
+
+(** As [Array.for_all]. *)
+val for_all : 'a t -> f:('a -> bool) -> bool
 
 (** Functions with the 2 suffix raise an exception if the lengths of the two given arrays
     aren't the same. *)

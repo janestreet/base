@@ -215,6 +215,9 @@ val swap : 'a t -> int -> int -> unit
 (** [rev_inplace t] reverses [t] in place. *)
 val rev_inplace : 'a t -> unit
 
+(** [rev t] returns a reversed copy of [t] *)
+val rev : 'a t -> 'a t
+
 (** [of_list_rev l] converts from list then reverses in place. *)
 val of_list_rev : 'a list -> 'a t
 

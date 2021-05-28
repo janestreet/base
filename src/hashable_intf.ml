@@ -1,5 +1,6 @@
 open! Import
 
+(** @canonical Base.Hashable.Key *)
 module type Key = sig
   type t [@@deriving_inline compare, sexp_of]
 

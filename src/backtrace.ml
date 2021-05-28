@@ -3,7 +3,7 @@ module Sys = Sys0
 
 type t = Caml.Printexc.raw_backtrace
 
-let elide = ref am_testing
+let elide = ref false
 let elided_message = "<backtrace elided in test>"
 
 let get ?(at_most_num_frames = Int.max_value) () =

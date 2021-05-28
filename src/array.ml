@@ -413,6 +413,12 @@ let rev_inplace t =
   done
 ;;
 
+let rev t =
+  let t = copy t in
+  rev_inplace t;
+  t
+;;
+
 let of_list_rev l =
   match l with
   | [] -> [||]
@@ -850,7 +856,7 @@ include Blit.Make1 (struct
         create ~len t.(0))
     ;;
 
-    let unsafe_blit = blit
+    let unsafe_blit = unsafe_blit
   end)
 
 let invariant invariant_a t = iter t ~f:invariant_a

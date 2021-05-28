@@ -28,7 +28,7 @@ val to_string_list : t -> string list
     When set to [true], these functions will ignore their argument and return a message
     indicating that behavior.
 
-    The default value is {!am_testing}. *)
+    The default value is [false]. *)
 val elide : bool ref
 
 (** [Backtrace.Exn] has functions for controlling and printing the backtrace of the most

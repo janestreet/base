@@ -50,6 +50,7 @@ val hash_fold_t
 [@@@end]
 
 include Monad.S2 with type ('a, 'err) t := ('a, 'err) t
+module Error : Monad.S2 with type ('err, 'a) t := ('a, 'err) t
 
 include Invariant_intf.S2 with type ('ok, 'err) t := ('ok, 'err) t
 

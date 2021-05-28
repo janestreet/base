@@ -185,3 +185,11 @@ let%expect_test "find_and_call_1_and_2" =
     33
     3_133 |}]
 ;;
+
+let%expect_test ("find_or_add shouldn't allocate"[@tags "no-js"]) =
+  let default = Fn.const () in
+  let t = Hashtbl.create (module Int) ~size:16 ~growth_allowed:false in
+  Hashtbl.add_exn t ~key:100 ~data:();
+  require_no_allocation [%here] (fun () -> Hashtbl.find_or_add t 100 ~default);
+  [%expect {| |}]
+;;
