@@ -166,19 +166,26 @@ module Symmetric_diff_element = struct
                        { name_kind = Any_case
                        ; clauses =
                            [ { name = "Left"
-                             ; args = Cons (_'v_sexp_grammar.untyped, Empty)
+                             ; clause_kind =
+                                 List_clause
+                                   { args = Cons (_'v_sexp_grammar.untyped, Empty) }
                              }
                            ; { name = "Right"
-                             ; args = Cons (_'v_sexp_grammar.untyped, Empty)
+                             ; clause_kind =
+                                 List_clause
+                                   { args = Cons (_'v_sexp_grammar.untyped, Empty) }
                              }
                            ; { name = "Unequal"
-                             ; args =
-                                 Cons
-                                   ( List
-                                       (Cons
-                                          ( _'v_sexp_grammar.untyped
-                                          , Cons (_'v_sexp_grammar.untyped, Empty) ))
-                                   , Empty )
+                             ; clause_kind =
+                                 List_clause
+                                   { args =
+                                       Cons
+                                         ( List
+                                             (Cons
+                                                ( _'v_sexp_grammar.untyped
+                                                , Cons (_'v_sexp_grammar.untyped, Empty) ))
+                                         , Empty )
+                                   }
                              }
                            ]
                        }
@@ -2663,6 +2670,34 @@ module type Map = sig
         with type ('a, 'b, 'c) tree := ('a, 'b, 'c) t
 
       val empty_without_value_restriction : (_, _, _) t
+
+      (** [Build_increasing] can be used to construct a map incrementally from a
+          sequence that is known to be increasing.
+
+          The total time complexity of constructing a map this way is O(n), which is more
+          efficient than using [Map.add] by a logarithmic factor.
+
+          This interface can be thought of as a dual of [to_sequence], but we don't have
+          an equally neat idiom for the duals of sequences ([of_sequence] is much less
+          general because it does not allow the sequence to be produced asynchronously). *)
+      module Build_increasing : sig
+        type ('a, 'b, 'c) tree := ('a, 'b, 'c) t
+        type ('k, 'v, 'w) t
+
+        val empty : ('k, 'v, 'w) t
+
+        (** Time complexity of [add_exn] is amortized constant-time (if [t] is used
+            linearly), with a worst-case O(log(n)) time. *)
+        val add_exn
+          :  ('k, 'v, 'w) t
+          -> comparator:('k, 'w) Comparator.t
+          -> key:'k
+          -> data:'v
+          -> ('k, 'v, 'w) t
+
+        (** Time complexity is O(log(n)). *)
+        val to_tree : ('k, 'v, 'w) t -> ('k, 'v, 'w) tree
+      end
     end
 
     include
@@ -2692,7 +2727,7 @@ module type Map = sig
 
   (** {2 Modules and module types for extending [Map]}
 
-      For use in extensions of Base, like [Core_kernel]. *)
+      For use in extensions of Base, like [Core]. *)
 
   module With_comparator = With_comparator
   module With_first_class_module = With_first_class_module

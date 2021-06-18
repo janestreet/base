@@ -1559,7 +1559,7 @@ module type Set = sig
 
   (** {2 Modules and module types for extending [Set]}
 
-      For use in extensions of Base, like [Core_kernel]. *)
+      For use in extensions of Base, like [Core]. *)
 
   module With_comparator = With_comparator
   module With_first_class_module = With_first_class_module

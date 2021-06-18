@@ -16,8 +16,8 @@ open! Import
       through the module signature then it could decide to construct a float
       array instead. *)
 module Cheap_option = struct
-  (* This is taken from core_kernel. Rather than expose it in the public
-     interface of base, just keep a copy around here. *)
+  (* This is taken from core. Rather than expose it in the public interface of base, just
+     keep a copy around here. *)
   let phys_same (type a b) (a : a) (b : b) = phys_equal a (Caml.Obj.magic b : a)
 
   module T0 : sig

@@ -331,6 +331,16 @@ let findi t ~f =
   loop 0 t
 ;;
 
+let findi_exn =
+  let not_found = Not_found_s (Atom "List.findi_exn: not found") in
+  let findi_exn t ~f =
+    match findi t ~f with
+    | None -> raise not_found
+    | Some x -> x
+  in
+  findi_exn
+;;
+
 let find_mapi t ~f =
   let rec loop i t =
     match t with

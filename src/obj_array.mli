@@ -38,6 +38,13 @@ val set : t -> int -> Caml.Obj.t -> unit
 val unsafe_set : t -> int -> Caml.Obj.t -> unit
 val swap : t -> int -> int -> unit
 
+(** [set_with_caml_modify] simply sets the value in the array with no bells and whistles,
+    unlike [set] which first reads the value to optimize immediate values and setting the
+    index to its current value. This can be used when these optimizations are not useful,
+    but the noise in generated code is annoying (and might have an impact on performance,
+    although this is pure speculation). *)
+val set_with_caml_modify : t -> int -> Caml.Obj.t -> unit
+
 (** [unsafe_set_assuming_currently_int t i obj] sets index [i] of [t] to [obj], but only
     works correctly if [Caml.Obj.is_int (get t i)].  This precondition saves a dynamic
     check.
@@ -57,10 +64,9 @@ val unsafe_set_int : t -> int -> int -> unit
     values are [phys_equal]. *)
 val unsafe_set_omit_phys_equal_check : t -> int -> Caml.Obj.t -> unit
 
-(** [unsafe_set_with_caml_modify] always calls [caml_modify] before setting and never gets
-    the old value.  This is like [unsafe_set_omit_phys_equal_check] except it doesn't
-    check whether the old value and the value being set are integers to try to skip
-    [caml_modify]. *)
+(** Same as [set_with_caml_modify], but without bounds checks. This is like
+    [unsafe_set_omit_phys_equal_check] except it doesn't check whether the old value and
+    the value being set are integers to try to skip [caml_modify]. *)
 val unsafe_set_with_caml_modify : t -> int -> Caml.Obj.t -> unit
 
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent

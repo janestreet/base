@@ -180,6 +180,9 @@ val tl_exn : 'a t -> 'a t
 
 val findi : 'a t -> f:(int -> 'a -> bool) -> (int * 'a) option
 
+(** Like [find_exn], but passes the index as an argument. *)
+val findi_exn : 'a t -> f:(int -> 'a -> bool) -> int * 'a
+
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f].  It raises
     [Caml.Not_found] or [Not_found_s] if there is no such element. *)
 val find_exn : 'a t -> f:('a -> bool) -> 'a
@@ -221,8 +224,8 @@ val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
 
 (** [map2 [a1; ...; an] [b1; ...; bn] ~f] is [[f a1 b1; ...; f an bn]].  The exn
     version will raise if the two lists have different lengths. *)
-val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 
+val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t Or_unequal_lengths.t
 
 (** Analogous to [rev_map2]. *)
@@ -322,7 +325,7 @@ val group : 'a t -> break:('a -> 'a -> bool) -> 'a t t
 *)
 val groupi : 'a t -> break:(int -> 'a -> 'a -> bool) -> 'a t t
 
-(** Group equal elements into the same buckets. *)
+(** Group equal elements into the same buckets. Sorting is stable. *)
 val sort_and_group : compare:('a -> 'a -> int) -> 'a t -> 'a t t
 
 (** [chunks_of l ~length] returns a list of lists whose concatenation is equal to the

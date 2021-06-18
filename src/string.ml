@@ -346,6 +346,15 @@ module Search_pattern0 = struct
       Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
   ;;
 
+  let split_on t s =
+    let pattern_len = String.length t.pattern in
+    let matches = index_all t ~may_overlap:false ~in_:s in
+    List.map2_exn
+      (-pattern_len :: matches)
+      (matches @ [ String.length s ])
+      ~f:(fun i j -> sub s ~pos:(i + pattern_len) ~len:(j - i - pattern_len))
+  ;;
+
   module Private = struct
     type public = t
 
@@ -1086,7 +1095,7 @@ include Hash
 
 (* for interactive top-levels -- modules deriving from String should have String's pretty
    printer. *)
-let pp = Caml.Format.pp_print_string
+let pp ppf string = Caml.Format.fprintf ppf "%S" string
 let of_char c = make 1 c
 
 let of_char_list l =

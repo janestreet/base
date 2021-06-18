@@ -238,8 +238,11 @@ val round_decimal : float -> decimal_digits:int -> float
 
 val is_nan : t -> bool
 
-(** Includes positive and negative [Float.infinity]. *)
+(** A float is infinite when it is either [infinity] or [neg_infinity]. *)
 val is_inf : t -> bool
+
+(** A float is finite when neither [is_nan] nor [is_inf] is true. *)
+val is_finite : t -> bool
 
 (** [min_inan] and [max_inan] return, respectively, the min and max of the two given
     values, except when one of the values is a [nan], in which case the other is
@@ -554,9 +557,6 @@ module Class : sig
 end
 
 val classify : t -> Class.t
-
-(** [is_finite t] returns [true] iff [classify t] is in [Normal; Subnormal; Zero;]. *)
-val is_finite : t -> bool
 
 (*_ Caution: If we remove this sig item, [sign] will still be present from
   [Comparable.With_zero]. *)

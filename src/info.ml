@@ -165,6 +165,7 @@ let to_string_hum t =
 let to_string_hum_deprecated t = Message.to_string_hum_deprecated (to_message t)
 let to_string_mach t = Sexp.to_string_mach (sexp_of_t t)
 let of_lazy l = lazy (protect (fun () -> String (Lazy.force l)))
+let of_lazy_sexp l = lazy (protect (fun () -> Sexp (Lazy.force l)))
 let of_lazy_t lazy_t = Lazy.join lazy_t
 let of_string message = Lazy.from_val (String message)
 let createf format = Printf.ksprintf of_string format

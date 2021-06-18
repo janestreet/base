@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open Base_test_helpers
 
 let%test_module _ =

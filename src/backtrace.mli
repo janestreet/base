@@ -12,7 +12,7 @@ open! Import
     represented as a string with newlines separating the frames.  [sexp_of_t] splits the
     string at newlines and removes some of the cruft, leaving a human-friendly list of
     frames, but [to_string] does not. *)
-type t [@@deriving_inline sexp_of]
+type t = Caml.Printexc.raw_backtrace [@@deriving_inline sexp_of]
 
 val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
@@ -79,6 +79,6 @@ module Exn : sig
   val most_recent : unit -> t
 end
 
-(** User code never calls this.  It is called only in [std_kernel.ml], as a top-level side
+(** User code never calls this.  It is called only in [base.ml], as a top-level side
     effect, to initialize [am_recording ()] as specified above. *)
 val initialize_module : unit -> unit

@@ -67,8 +67,14 @@ let (t_sexp_grammar :
       Variant
         { name_kind = Capitalized
         ; clauses =
-            [ { name = "Ok"; args = Cons (_'a_sexp_grammar.untyped, Empty) }
-            ; { name = "Error"; args = Cons (_'b_sexp_grammar.untyped, Empty) }
+            [ { name = "Ok"
+              ; clause_kind =
+                  List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
+              }
+            ; { name = "Error"
+              ; clause_kind =
+                  List_clause { args = Cons (_'b_sexp_grammar.untyped, Empty) }
+              }
             ]
         }
   }

@@ -113,7 +113,7 @@ module Tree0 = struct
   ;;
 
   (* We must call [f] with increasing indexes, because the bin_prot reader in
-     Core_kernel.Set needs it. *)
+     Core.Set needs it. *)
   let of_increasing_iterator_unchecked ~len ~f =
     let rec loop n ~f i =
       match n with
@@ -212,7 +212,7 @@ module Tree0 = struct
     then (
       match r with
       | Empty -> assert false
-      | Leaf rv -> create (create l v Empty) rv Empty
+      | Leaf _ -> assert false (* because h(r)>h(l)+2 and h(leaf)=1 *)
       | Node (rl, rv, rr, _, _) ->
         if height rr >= height rl
         then create (create l v rl) rv rr
@@ -252,8 +252,8 @@ module Tree0 = struct
         if c = 0
         then raise Same
         else if c < 0
-        then bal (Leaf x) v Empty
-        else bal Empty v (Leaf x)
+        then create (Leaf x) v Empty
+        else create Empty v (Leaf x)
       | Node (l, v, r, _, _) ->
         let c = compare_elt x v in
         if c = 0 then raise Same else if c < 0 then bal (aux l) v r else bal l v (aux r)

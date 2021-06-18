@@ -67,17 +67,6 @@ val capitalize : t -> t
 
 val uncapitalize : t -> t
 
-(** [index] gives the index of the first appearance of [char] in the string when
-    searching from left to right, or [None] if it's not found. [rindex] does the same but
-    searches from the right.
-
-    For example, [String.index "Foo" 'o'] is [Some 1] while [String.rindex "Foo" 'o'] is
-    [Some 2].
-
-    The [_exn] versions return the actual index (instead of an option) when [char] is
-    found, and throw an exception otherwise.
-*)
-
 (** [Caseless] compares and hashes strings ignoring case, so that for example
     [Caseless.equal "OCaml" "ocaml"] and [Caseless.("apple" < "Banana")] are [true].
 
@@ -109,19 +98,24 @@ module Caseless : sig
   val substr_replace_all : t -> pattern:t -> with_:t -> t
 end
 
-(** [index_exn] and [index_from_exn] raise [Caml.Not_found] or [Not_found_s] when [char]
-    cannot be found in [s]. *)
-val index : t -> char -> int option
+(** [index] gives the index of the first appearance of [char] in the string when
+    searching from left to right, or [None] if it's not found. [rindex] does the same but
+    searches from the right.
 
+    For example, [String.index "Foo" 'o'] is [Some 1] while [String.rindex "Foo" 'o'] is
+    [Some 2].
+
+    The [_exn] versions return the actual index (instead of an option) when [char] is
+    found, and raise [Caml.Not_found] or [Not_found_s] otherwise.
+*)
+
+val index : t -> char -> int option
 val index_exn : t -> char -> int
 val index_from : t -> int -> char -> int option
 val index_from_exn : t -> int -> char -> int
 
 
-(** [rindex_exn] and [rindex_from_exn] raise [Caml.Not_found] or [Not_found_s] when [char]
-    cannot be found in [s]. *)
 val rindex : t -> char -> int option
-
 val rindex_exn : t -> char -> int
 val rindex_from : t -> int -> char -> int option
 val rindex_from_exn : t -> int -> char -> int
@@ -177,6 +171,10 @@ module Search_pattern : sig
   val replace_first : ?pos:int -> t -> in_:string -> with_:string -> string
 
   val replace_all : t -> in_:string -> with_:string -> string
+
+  (** Similar to [String.split] or [String.split_on_chars], but instead uses a given
+      search pattern as the separator.  Separators are non-overlapping.  *)
+  val split_on : t -> string -> string list
 
   (**/**)
 

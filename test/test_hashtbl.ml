@@ -186,6 +186,22 @@ let%expect_test "find_and_call_1_and_2" =
     3_133 |}]
 ;;
 
+let%expect_test "update_and_return" =
+  let t = Hashtbl.create (module String) in
+  let update_and_return str ~f =
+    let x = Hashtbl.update_and_return t str ~f in
+    print_s [%message (t : (string, int) Hashtbl.t) (x : int)]
+  in
+  update_and_return "foo" ~f:(function
+    | None -> 1
+    | Some _ -> failwith "no");
+  [%expect {| ((t ((foo 1))) (x 1)) |}];
+  update_and_return "foo" ~f:(function
+    | Some 1 -> 2
+    | _ -> failwith "no");
+  [%expect {| ((t ((foo 2))) (x 2)) |}]
+;;
+
 let%expect_test ("find_or_add shouldn't allocate"[@tags "no-js"]) =
   let default = Fn.const () in
   let t = Hashtbl.create (module Int) ~size:16 ~growth_allowed:false in

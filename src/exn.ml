@@ -56,6 +56,11 @@ let () =
 ;;
 
 let create_s sexp = Sexp sexp
+
+let raise_with_original_backtrace t backtrace =
+  Caml.Printexc.raise_with_backtrace t backtrace
+;;
+
 let reraise exc str = raise (Reraised (str, exc))
 let reraisef exc format = Printf.ksprintf (fun str () -> reraise exc str) format
 let to_string exc = Sexp.to_string_hum ~indent:2 (sexp_of_exn exc)
@@ -68,10 +73,12 @@ let protectx ~f x ~(finally : _ -> unit) =
     finally x;
     res
   | exception exn ->
-    raise
-      (match finally x with
-       | () -> exn
-       | exception final_exn -> Finally (exn, final_exn))
+    let bt = Caml.Printexc.get_raw_backtrace () in
+    (match finally x with
+     | () -> raise_with_original_backtrace exn bt
+     | exception final_exn ->
+       (* Unfortunately, the backtrace of the [final_exn] is discarded here. *)
+       raise_with_original_backtrace (Finally (exn, final_exn)) bt)
 ;;
 
 let protect ~f ~finally = protectx ~f () ~finally
@@ -136,7 +143,9 @@ let handle_uncaught ~exit:must_exit f =
 
 let reraise_uncaught str func =
   try func () with
-  | exn -> raise (Reraised (str, exn))
+  | exn ->
+    let bt = Caml.Printexc.get_raw_backtrace () in
+    raise_with_original_backtrace (Reraised (str, exn)) bt
 ;;
 
 external clear_backtrace : unit -> unit = "Base_clear_caml_backtrace_pos" [@@noalloc]

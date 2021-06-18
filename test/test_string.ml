@@ -352,6 +352,33 @@ let%test_module "Search_pattern" =
 
     (* a doc comment in core_string.mli gives this as an example *)
     let%test _ = replace_all (create "bc") ~in_:"aabbcc" ~with_:"cb" = "aabcbc"
+
+    let%test _ =
+      [%compare.equal: string list]
+        (split_on (create "====") "aa====bbb====c=====d======e========fff")
+        [ "aa"; "bbb"; "c"; "=d"; "==e"; ""; "fff" ]
+    ;;
+
+    let%test _ =
+      [%compare.equal: string list]
+        (split_on (create "XYXYX") "XYXYXaaXYXYXYXbbXYXYXYXYXYX")
+        [ ""; "aa"; "YXbb"; "Y"; "" ]
+    ;;
+
+    let%test _ =
+      [%compare.equal: string list]
+        (split_on (create "") "abcd")
+        (* [index_all (create "")] includes the occurrences at index 0 and at the end of
+           the string, and the result of [split_on (create "")] is a consequence of this
+        *)
+        [ ""; "a"; "b"; "c"; "d"; "" ]
+    ;;
+
+    let%test _ =
+      [%compare.equal: string list]
+        (split_on (create "not present") "here is a string with no matches")
+        [ "here is a string with no matches" ]
+    ;;
   end)
 ;;
 
