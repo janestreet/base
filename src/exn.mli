@@ -30,6 +30,11 @@ val create_s : Sexp.t -> t
 (** Same as [raise], except that the backtrace is not recorded. *)
 val raise_without_backtrace : t -> _
 
+(** [raise_with_original_backtrace t bt] raises the exception [exn], recording [bt]
+    as the backtrace it was originally raised at. This is useful to re-raise
+    exceptions annotated with extra information. *)
+val raise_with_original_backtrace : t -> Caml.Printexc.raw_backtrace -> _
+
 val reraise : t -> string -> _
 
 (** Types with [format4] are hard to read, so here's an example.

@@ -1126,3 +1126,39 @@ let%expect_test "min and max" =
        0   -0   -0    0   -0    0
     |}]
 ;;
+
+let%expect_test "is_nan, is_inf, and is_finite" =
+  List.iter
+    ~f:(fun x ->
+      printf
+        !"%24s %5s %5s %5s\n"
+        (to_string x)
+        (Bool.to_string (is_nan x))
+        (Bool.to_string (is_inf x))
+        (Bool.to_string (is_finite x)))
+    [ nan
+    ; neg_infinity
+    ; -.max_finite_value
+    ; -1.
+    ; -.min_positive_subnormal_value
+    ; -0.
+    ; 0.
+    ; min_positive_subnormal_value
+    ; 1.
+    ; max_finite_value
+    ; infinity
+    ];
+  [%expect
+    {|
+                         nan  true false false
+                        -inf false  true false
+    -1.7976931348623157e+308 false false  true
+                         -1. false false  true
+      -4.94065645841247e-324 false false  true
+                         -0. false false  true
+                          0. false false  true
+       4.94065645841247e-324 false false  true
+                          1. false false  true
+     1.7976931348623157e+308 false false  true
+                         inf false  true false |}]
+;;

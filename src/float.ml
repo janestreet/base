@@ -379,11 +379,8 @@ let iround ?(dir = `Nearest) t =
   | _ -> None
 ;;
 
-let is_inf x =
-  match classify_float x with
-  | FP_infinite -> true
-  | _ -> false
-;;
+let is_inf t = 1. /. t = 0.
+let is_finite t = t -. t = 0.
 
 let min_inan (x : t) y =
   if is_nan y then x else if is_nan x then y else if x < y then x else y
@@ -578,9 +575,15 @@ module Class = struct
 
   let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
     { untyped =
-        Enum
+        Variant
           { name_kind = Capitalized
-          ; names = [ "Infinite"; "Nan"; "Normal"; "Subnormal"; "Zero" ]
+          ; clauses =
+              [ { name = "Infinite"; clause_kind = Atom_clause }
+              ; { name = "Nan"; clause_kind = Atom_clause }
+              ; { name = "Normal"; clause_kind = Atom_clause }
+              ; { name = "Subnormal"; clause_kind = Atom_clause }
+              ; { name = "Zero"; clause_kind = Atom_clause }
+              ]
           }
     }
   ;;
@@ -600,8 +603,6 @@ let classify t =
   | FP_infinite -> C.Infinite
   | FP_nan -> C.Nan
 ;;
-
-let is_finite t = not (t = infinity || t = neg_infinity || is_nan t)
 
 let insert_underscores ?(delimiter = '_') ?(strip_zero = false) string =
   match String.lsplit2 string ~on:'.' with

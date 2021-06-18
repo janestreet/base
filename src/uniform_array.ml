@@ -22,6 +22,7 @@ module Trusted : sig
   val unsafe_set_int_assuming_currently_int : 'a t -> int -> int -> unit
   val unsafe_set_assuming_currently_int : 'a t -> int -> 'a -> unit
   val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
+  val set_with_caml_modify : 'a t -> int -> 'a -> unit
   val length : 'a t -> int
   val unsafe_blit : ('a t, 'a t) Blit.blit
   val copy : 'a t -> 'a t
@@ -61,6 +62,7 @@ end = struct
     Obj_array.unsafe_set_with_caml_modify t i (Caml.Obj.repr x)
   ;;
 
+  let set_with_caml_modify t i x = Obj_array.set_with_caml_modify t i (Caml.Obj.repr x)
   let unsafe_clear_if_pointer = Obj_array.unsafe_clear_if_pointer
 end
 
@@ -168,3 +170,26 @@ let fold t ~init ~f =
 
 let min_elt t ~compare = Container.min_elt ~fold t ~compare
 let max_elt t ~compare = Container.max_elt ~fold t ~compare
+
+(* This is the same as the ppx_compare [compare_array] but uses our [unsafe_get] and [length]. *)
+let compare compare_elt a b =
+  if phys_equal a b
+  then 0
+  else (
+    let len_a = length a in
+    let len_b = length b in
+    let ret = compare len_a len_b in
+    if ret <> 0
+    then ret
+    else (
+      let rec loop i =
+        if i = len_a
+        then 0
+        else (
+          let l = unsafe_get a i
+          and r = unsafe_get b i in
+          let res = compare_elt l r in
+          if res <> 0 then res else loop (i + 1))
+      in
+      loop 0))
+;;

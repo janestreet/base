@@ -39,6 +39,8 @@ include Identifiable.Make (struct
     let module_name = "Base.Char"
   end)
 
+let pp fmt c = Caml.Format.fprintf fmt "%C" c
+
 (* Open replace_polymorphic_compare after including functor instantiations so they do not
    shadow its definitions. This is here so that efficient versions of the comparison
    functions are available within this module. *)

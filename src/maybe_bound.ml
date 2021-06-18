@@ -75,16 +75,20 @@ let (t_sexp_grammar :
   =
   fun _'a_sexp_grammar ->
   { untyped =
-      Union
-        [ Enum { name_kind = Capitalized; names = [ "Unbounded" ] }
-        ; Variant
-            { name_kind = Capitalized
-            ; clauses =
-                [ { name = "Incl"; args = Cons (_'a_sexp_grammar.untyped, Empty) }
-                ; { name = "Excl"; args = Cons (_'a_sexp_grammar.untyped, Empty) }
-                ]
-            }
-        ]
+      Variant
+        { name_kind = Capitalized
+        ; clauses =
+            [ { name = "Incl"
+              ; clause_kind =
+                  List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
+              }
+            ; { name = "Excl"
+              ; clause_kind =
+                  List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
+              }
+            ; { name = "Unbounded"; clause_kind = Atom_clause }
+            ]
+        }
   }
 ;;
 
@@ -133,9 +137,13 @@ let (interval_comparison_sexp_grammar :
        interval_comparison Ppx_sexp_conv_lib.Sexp_grammar.t)
   =
   { untyped =
-      Enum
+      Variant
         { name_kind = Capitalized
-        ; names = [ "Below_lower_bound"; "In_range"; "Above_upper_bound" ]
+        ; clauses =
+            [ { name = "Below_lower_bound"; clause_kind = Atom_clause }
+            ; { name = "In_range"; clause_kind = Atom_clause }
+            ; { name = "Above_upper_bound"; clause_kind = Atom_clause }
+            ]
         }
   }
 ;;

@@ -75,6 +75,7 @@ module type S = sig
       will only be called at an undetermined later point. *)
 
   val of_lazy : string Lazy.t -> t
+  val of_lazy_sexp : Sexp.t Lazy.t -> t
   val of_thunk : (unit -> string) -> t
   val of_lazy_t : t Lazy.t -> t
 

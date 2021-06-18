@@ -570,11 +570,22 @@ module Merge_with_duplicates_element = struct
           Variant
             { name_kind = Capitalized
             ; clauses =
-                [ { name = "Left"; args = Cons (_'a_sexp_grammar.untyped, Empty) }
-                ; { name = "Right"; args = Cons (_'b_sexp_grammar.untyped, Empty) }
+                [ { name = "Left"
+                  ; clause_kind =
+                      List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
+                  }
+                ; { name = "Right"
+                  ; clause_kind =
+                      List_clause { args = Cons (_'b_sexp_grammar.untyped, Empty) }
+                  }
                 ; { name = "Both"
-                  ; args =
-                      Cons (_'a_sexp_grammar.untyped, Cons (_'b_sexp_grammar.untyped, Empty))
+                  ; clause_kind =
+                      List_clause
+                        { args =
+                            Cons
+                              ( _'a_sexp_grammar.untyped
+                              , Cons (_'b_sexp_grammar.untyped, Empty) )
+                        }
                   }
                 ]
             }

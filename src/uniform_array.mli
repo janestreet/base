@@ -10,13 +10,15 @@
 open! Import
 
 (** See [Base.Array] for comments. *)
-type 'a t [@@deriving_inline sexp, sexp_grammar]
+type 'a t [@@deriving_inline sexp, sexp_grammar, compare]
 
 include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar
   :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
   -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
+
+val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 
 [@@@end]
 
@@ -44,6 +46,9 @@ val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
     check whether the old value and the value being set are integers to try to skip
     [caml_modify]. *)
 val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
+
+(** Same as [unsafe_set_with_caml_modify], but with bounds check. *)
+val set_with_caml_modify : 'a t -> int -> 'a -> unit
 
 val map : 'a t -> f:('a -> 'b) -> 'b t
 val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t

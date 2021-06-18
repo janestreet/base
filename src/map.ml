@@ -88,7 +88,7 @@ module Tree0 = struct
   let singleton key data = Leaf (key, data)
 
   (* We must call [f] with increasing indexes, because the bin_prot reader in
-     Core_kernel.Map needs it. *)
+     Core.Map needs it. *)
   let of_increasing_iterator_unchecked ~len ~f =
     let rec loop n ~f i : (_, _) t =
       match n with
@@ -328,7 +328,7 @@ module Tree0 = struct
       fun t ~key ~data -> go t (Fragment.singleton ~key ~data)
     ;;
 
-    let to_tree =
+    let to_tree_unchecked =
       let rec go t r =
         match t with
         | Zero () -> r
@@ -360,7 +360,7 @@ module Tree0 = struct
                 (Or_error.error_string "of_increasing_sequence: non-increasing key")
             | _ -> Build_increasing.add_unchecked builder ~key ~data, length + 1)
       in
-      Ok (Build_increasing.to_tree builder, length))
+      Ok (Build_increasing.to_tree_unchecked builder, length))
   ;;
 
   (* Like [bal] but allows any difference in height between [l] and [r].
@@ -2191,6 +2191,21 @@ module Tree = struct
     | Some (lower_bound, upper_bound) -> subrange ~comparator t ~lower_bound ~upper_bound
     | None -> Empty
   ;;
+
+  module Build_increasing = struct
+    type ('k, 'v, 'w) t = ('k, 'v) Tree0.Build_increasing.t
+
+    let empty = Tree0.Build_increasing.empty
+
+    let add_exn t ~comparator ~key ~data =
+      match Tree0.Build_increasing.max_key t with
+      | Some prev_key when comparator.Comparator.compare prev_key key >= 0 ->
+        Error.raise_s (Sexp.Atom "Map.Build_increasing.add: non-increasing key")
+      | _ -> Tree0.Build_increasing.add_unchecked t ~key ~data
+    ;;
+
+    let to_tree t = Tree0.Build_increasing.to_tree_unchecked t
+  end
 end
 
 module Using_comparator = struct

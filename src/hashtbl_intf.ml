@@ -83,6 +83,9 @@ module type Accessors = sig
   (** [update t key ~f] is [change t key ~f:(fun o -> Some (f o))]. *)
   val update : ('a, 'b) t -> 'a key -> f:('b option -> 'b) -> unit
 
+  (** [update_and_return t key ~f] is [update], but returns the result of [f o]. *)
+  val update_and_return : ('a, 'b) t -> 'a key -> f:('b option -> 'b) -> 'b
+
   (** [map t f] returns a new table with values replaced by the result of applying [f]
       to the current values.
 

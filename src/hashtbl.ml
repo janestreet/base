@@ -446,7 +446,13 @@ let change t id ~f =
   | Some data -> set t ~key:id ~data
 ;;
 
-let update t id ~f = set t ~key:id ~data:(f (find t id))
+let update_and_return t id ~f =
+  let data = f (find t id) in
+  set t ~key:id ~data;
+  data
+;;
+
+let update t id ~f = ignore (update_and_return t id ~f : _)
 
 let incr_by ~remove_if_zero t key by =
   if remove_if_zero
@@ -712,6 +718,7 @@ module Accessors = struct
   let add_exn = add_exn
   let change = change
   let update = update
+  let update_and_return = update_and_return
   let add_multi = add_multi
   let remove_multi = remove_multi
   let find_multi = find_multi

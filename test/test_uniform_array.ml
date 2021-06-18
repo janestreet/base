@@ -44,7 +44,8 @@ let%test_unit _ =
   assert (Poly.equal (Caml.Obj.repr f) (get t 0))
 ;;
 
-(* [get], [unsafe_get], [set], [unsafe_set], [unsafe_set_assuming_currently_int] *)
+(* [get], [unsafe_get], [set], [unsafe_set], [unsafe_set_assuming_currently_int],
+   [set_with_caml_modify] *)
 let%test_unit _ =
   let t = create_obj_array ~len:1 in
   assert (length t = 1);
@@ -60,7 +61,9 @@ let%test_unit _ =
   unsafe_set t 0 zero_obj;
   check_get zero_obj;
   unsafe_set_assuming_currently_int t 0 one_obj;
-  check_get one_obj
+  check_get one_obj;
+  set_with_caml_modify t 0 zero_obj;
+  check_get zero_obj
 ;;
 
 let%expect_test "exists" =

@@ -58,7 +58,16 @@ let sexp_of_t =
 ;;
 
 let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
-  { untyped = Enum { name_kind = Capitalized; names = [ "Less"; "Equal"; "Greater" ] } }
+  { untyped =
+      Variant
+        { name_kind = Capitalized
+        ; clauses =
+            [ { name = "Less"; clause_kind = Atom_clause }
+            ; { name = "Equal"; clause_kind = Atom_clause }
+            ; { name = "Greater"; clause_kind = Atom_clause }
+            ]
+        }
+  }
 ;;
 
 [@@@end]

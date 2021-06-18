@@ -13,9 +13,9 @@ let vanilla_raise_unequal exn = raise (Exn.Reraised ("reraised", exn))
 
 let vanilla_raise exn = raise exn
 
-let _Caml_Printexc_raise_with_backtrace exn =
-  let backtrace = Caml.Printexc.get_raw_backtrace () in
-  Caml.Printexc.raise_with_backtrace (Exn.Reraised ("reraised", exn)) backtrace
+let raise_with_original_backtrace exn =
+  let backtrace = Backtrace.Exn.most_recent () in
+  Exn.raise_with_original_backtrace (Exn.Reraised ("reraised", exn)) backtrace
 ;;
 
 (* This ref causes [check_value] to appear in the backtrace, because the [raise_s] call is
@@ -34,13 +34,13 @@ let reraise_uncaught reraiser f =
   | exn -> reraiser exn
 ;;
 
-let callstacker reraiser =
-  let rec loop reraiser x =
-    reraise_uncaught reraiser (fun () -> check_value x);
-    loop reraiser (x - 1);
-    reraise_uncaught reraiser (fun () -> check_value x)
+let callstacker ~reraise_uncaught =
+  let rec loop reraise_uncaught x =
+    reraise_uncaught (fun () -> check_value x);
+    loop reraise_uncaught (x - 1);
+    reraise_uncaught (fun () -> check_value x)
   in
-  loop reraiser 1
+  loop reraise_uncaught 1
 ;;
 
 let with_backtraces_enabled f =
@@ -48,9 +48,13 @@ let with_backtraces_enabled f =
     Ref.set_temporarily Backtrace.elide false ~f)
 ;;
 
-let test reraiser =
+let test_reraise_uncaught ~reraise_uncaught =
   with_backtraces_enabled (fun () ->
-    Exn.handle_uncaught ~exit:false (fun () -> callstacker reraiser))
+    Exn.handle_uncaught ~exit:false (fun () -> callstacker ~reraise_uncaught))
+;;
+
+let test_reraiser reraiser =
+  test_reraise_uncaught ~reraise_uncaught:(reraise_uncaught reraiser)
 ;;
 
 (* If you want to see what the underlying backtraces look like, set this to true.
@@ -72,7 +76,7 @@ let%test_module ("Show native backtraces"[@tags "no-js"]) =
   (module struct
     (* bad, missing the backtrace before the reraise *)
     let%expect_test "Base.Exn.reraise" =
-      test _Base_Exn_reraise;
+      test_reraiser _Base_Exn_reraise;
       really_show_backtrace [%expect.output];
       [%expect {|
           Before re-raise: false
@@ -81,7 +85,7 @@ let%test_module ("Show native backtraces"[@tags "no-js"]) =
 
     (* bad, missing the backtrace before the reraise *)
     let%expect_test "%reraise unequal" =
-      test external_reraise_unequal;
+      test_reraiser external_reraise_unequal;
       really_show_backtrace [%expect.output];
       [%expect {|
           Before re-raise: false
@@ -90,7 +94,7 @@ let%test_module ("Show native backtraces"[@tags "no-js"]) =
 
     (* bad, missing the backtrace before the reraise *)
     let%expect_test "raise unequal" =
-      test vanilla_raise_unequal;
+      test_reraiser vanilla_raise_unequal;
       really_show_backtrace [%expect.output];
       [%expect {|
           Before re-raise: false
@@ -99,7 +103,7 @@ let%test_module ("Show native backtraces"[@tags "no-js"]) =
 
     (* good, but no additional info attached *)
     let%expect_test "raise equal" =
-      test vanilla_raise;
+      test_reraiser vanilla_raise;
       really_show_backtrace [%expect.output];
       [%expect {|
           Before re-raise: true
@@ -108,7 +112,16 @@ let%test_module ("Show native backtraces"[@tags "no-js"]) =
 
     (* good *)
     let%expect_test "Caml.Printexc.raise_with_backtrace" =
-      test _Caml_Printexc_raise_with_backtrace;
+      test_reraiser raise_with_original_backtrace;
+      really_show_backtrace [%expect.output];
+      [%expect {|
+          Before re-raise: true
+          After  re-raise: true |}]
+    ;;
+
+    (* good *)
+    let%expect_test "Exn.reraise_uncaught" =
+      test_reraise_uncaught ~reraise_uncaught:(Exn.reraise_uncaught "reraised");
       really_show_backtrace [%expect.output];
       [%expect {|
           Before re-raise: true

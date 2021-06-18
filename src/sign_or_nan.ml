@@ -41,7 +41,16 @@ module T = struct
   ;;
 
   let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
-    { untyped = Enum { name_kind = Capitalized; names = [ "Neg"; "Zero"; "Pos"; "Nan" ] }
+    { untyped =
+        Variant
+          { name_kind = Capitalized
+          ; clauses =
+              [ { name = "Neg"; clause_kind = Atom_clause }
+              ; { name = "Zero"; clause_kind = Atom_clause }
+              ; { name = "Pos"; clause_kind = Atom_clause }
+              ; { name = "Nan"; clause_kind = Atom_clause }
+              ]
+          }
     }
   ;;
 
