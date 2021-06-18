@@ -196,9 +196,6 @@ val find_map_exn : 'a t -> f:('a -> 'b option) -> 'b
 val find_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b option
 val find_mapi_exn : 'a t -> f:(int -> 'a -> 'b option) -> 'b
 
-(** Like [find_exn], but passes the index as an argument. *)
-val findi_exn : 'a t -> f:(int -> 'a -> bool) -> int * 'a
-
 (** E.g., [append [1; 2] [3; 4; 5]] is [[1; 2; 3; 4; 5]] *)
 val append : 'a t -> 'a t -> 'a t
 
