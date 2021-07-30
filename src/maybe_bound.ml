@@ -25,54 +25,49 @@ let all : 'a. 'a list -> 'a t list =
        [ Unbounded ])
 ;;
 
-let t_of_sexp : type a. (Ppx_sexp_conv_lib.Sexp.t -> a) -> Ppx_sexp_conv_lib.Sexp.t -> a t
-  =
+let t_of_sexp : type a. (Sexplib0.Sexp.t -> a) -> Sexplib0.Sexp.t -> a t =
   let _tp_loc = "maybe_bound.ml.t" in
   fun _of_a -> function
-    | Ppx_sexp_conv_lib.Sexp.List
-        (Ppx_sexp_conv_lib.Sexp.Atom (("incl" | "Incl") as _tag) :: sexp_args) as _sexp ->
+    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("incl" | "Incl") as _tag) :: sexp_args) as
+      _sexp ->
       (match sexp_args with
        | [ v0 ] ->
          let v0 = _of_a v0 in
          Incl v0
-       | _ -> Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-    | Ppx_sexp_conv_lib.Sexp.List
-        (Ppx_sexp_conv_lib.Sexp.Atom (("excl" | "Excl") as _tag) :: sexp_args) as _sexp ->
+       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("excl" | "Excl") as _tag) :: sexp_args) as
+      _sexp ->
       (match sexp_args with
        | [ v0 ] ->
          let v0 = _of_a v0 in
          Excl v0
-       | _ -> Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-    | Ppx_sexp_conv_lib.Sexp.Atom ("unbounded" | "Unbounded") -> Unbounded
-    | Ppx_sexp_conv_lib.Sexp.Atom ("incl" | "Incl") as sexp ->
-      Ppx_sexp_conv_lib.Conv_error.stag_takes_args _tp_loc sexp
-    | Ppx_sexp_conv_lib.Sexp.Atom ("excl" | "Excl") as sexp ->
-      Ppx_sexp_conv_lib.Conv_error.stag_takes_args _tp_loc sexp
-    | Ppx_sexp_conv_lib.Sexp.List
-        (Ppx_sexp_conv_lib.Sexp.Atom ("unbounded" | "Unbounded") :: _) as sexp ->
-      Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-    | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.List _ :: _) as sexp ->
-      Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-    | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
-      Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-    | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
+       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+    | Sexplib0.Sexp.Atom ("unbounded" | "Unbounded") -> Unbounded
+    | Sexplib0.Sexp.Atom ("incl" | "Incl") as sexp ->
+      Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+    | Sexplib0.Sexp.Atom ("excl" | "Excl") as sexp ->
+      Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("unbounded" | "Unbounded") :: _) as sexp ->
+      Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+    | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
+      Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+    | Sexplib0.Sexp.List [] as sexp ->
+      Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
+    | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
 ;;
 
-let sexp_of_t : type a. (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t
-  =
+let sexp_of_t : type a. (a -> Sexplib0.Sexp.t) -> a t -> Sexplib0.Sexp.t =
   fun _of_a -> function
     | Incl v0 ->
       let v0 = _of_a v0 in
-      Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Incl"; v0 ]
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Incl"; v0 ]
     | Excl v0 ->
       let v0 = _of_a v0 in
-      Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Excl"; v0 ]
-    | Unbounded -> Ppx_sexp_conv_lib.Sexp.Atom "Unbounded"
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Excl"; v0 ]
+    | Unbounded -> Sexplib0.Sexp.Atom "Unbounded"
 ;;
 
-let (t_sexp_grammar :
-       'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
-  =
+let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
   fun _'a_sexp_grammar ->
   { untyped =
       Variant
@@ -103,39 +98,34 @@ type interval_comparison =
 let interval_comparison_of_sexp =
   (let _tp_loc = "maybe_bound.ml.interval_comparison" in
    function
-   | Ppx_sexp_conv_lib.Sexp.Atom ("below_lower_bound" | "Below_lower_bound") ->
-     Below_lower_bound
-   | Ppx_sexp_conv_lib.Sexp.Atom ("in_range" | "In_range") -> In_range
-   | Ppx_sexp_conv_lib.Sexp.Atom ("above_upper_bound" | "Above_upper_bound") ->
-     Above_upper_bound
-   | Ppx_sexp_conv_lib.Sexp.List
-       (Ppx_sexp_conv_lib.Sexp.Atom ("below_lower_bound" | "Below_lower_bound") :: _) as
-     sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List
-       (Ppx_sexp_conv_lib.Sexp.Atom ("in_range" | "In_range") :: _) as sexp ->
-     Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List
-       (Ppx_sexp_conv_lib.Sexp.Atom ("above_upper_bound" | "Above_upper_bound") :: _) as
-     sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.List _ :: _) as sexp ->
-     Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
-     Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-   | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
-             : Ppx_sexp_conv_lib.Sexp.t -> interval_comparison)
+   | Sexplib0.Sexp.Atom ("below_lower_bound" | "Below_lower_bound") -> Below_lower_bound
+   | Sexplib0.Sexp.Atom ("in_range" | "In_range") -> In_range
+   | Sexplib0.Sexp.Atom ("above_upper_bound" | "Above_upper_bound") -> Above_upper_bound
+   | Sexplib0.Sexp.List
+       (Sexplib0.Sexp.Atom ("below_lower_bound" | "Below_lower_bound") :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("in_range" | "In_range") :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+   | Sexplib0.Sexp.List
+       (Sexplib0.Sexp.Atom ("above_upper_bound" | "Above_upper_bound") :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+   | Sexplib0.Sexp.List [] as sexp ->
+     Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
+   | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
+             : Sexplib0.Sexp.t -> interval_comparison)
 ;;
 
 let sexp_of_interval_comparison =
   (function
-    | Below_lower_bound -> Ppx_sexp_conv_lib.Sexp.Atom "Below_lower_bound"
-    | In_range -> Ppx_sexp_conv_lib.Sexp.Atom "In_range"
-    | Above_upper_bound -> Ppx_sexp_conv_lib.Sexp.Atom "Above_upper_bound"
-                           : interval_comparison -> Ppx_sexp_conv_lib.Sexp.t)
+    | Below_lower_bound -> Sexplib0.Sexp.Atom "Below_lower_bound"
+    | In_range -> Sexplib0.Sexp.Atom "In_range"
+    | Above_upper_bound -> Sexplib0.Sexp.Atom "Above_upper_bound"
+                           : interval_comparison -> Sexplib0.Sexp.t)
 ;;
 
-let (interval_comparison_sexp_grammar :
-       interval_comparison Ppx_sexp_conv_lib.Sexp_grammar.t)
-  =
+let (interval_comparison_sexp_grammar : interval_comparison Sexplib0.Sexp_grammar.t) =
   { untyped =
       Variant
         { name_kind = Capitalized

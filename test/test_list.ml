@@ -1281,3 +1281,37 @@ let%expect_test "drop_last_exn" =
   require_does_not_raise [%here] (fun () -> print_drop_last_exn [ 1 ]);
   [%expect {| () |}]
 ;;
+
+let%expect_test "[all_equal]" =
+  let test list =
+    print_s [%sexp (all_equal list ~equal:Char.Caseless.equal : char option)]
+  in
+  (* empty list *)
+  test [];
+  [%expect {| () |}];
+  (* singleton *)
+  test [ 'a' ];
+  [%expect {| (a) |}];
+  (* homogenous pairs (up to [equal]) *)
+  test [ 'a'; 'a' ];
+  [%expect {| (a) |}];
+  test [ 'a'; 'A' ];
+  [%expect {| (a) |}];
+  test [ 'A'; 'a' ];
+  [%expect {| (A) |}];
+  (* heterogenous pairs *)
+  test [ 'a'; 'b' ];
+  [%expect {| () |}];
+  test [ 'b'; 'a' ];
+  [%expect {| () |}];
+  (* heterogenous lists *)
+  test [ 'a'; 'b'; 'a'; 'b'; 'a'; 'b' ];
+  [%expect {| () |}];
+  test [ 'a'; 'b'; 'c'; 'd'; 'e'; 'f' ];
+  [%expect {| () |}];
+  (* homogenous lists (up to [equal]) *)
+  test [ 'a'; 'a'; 'a'; 'a'; 'a'; 'a' ];
+  [%expect {| (a) |}];
+  test [ 'A'; 'a'; 'A'; 'a'; 'A'; 'a' ];
+  [%expect {| (A) |}]
+;;

@@ -5,18 +5,10 @@ module Int = Int0
 type 'a t = 'a array [@@deriving_inline compare, sexp, sexp_grammar]
 
 let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
+let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = array_of_sexp
+let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_array
 
-let t_of_sexp : 'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t =
-  array_of_sexp
-;;
-
-let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
-  sexp_of_array
-;;
-
-let (t_sexp_grammar :
-       'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
-  =
+let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
   fun _'a_sexp_grammar -> array_sexp_grammar _'a_sexp_grammar
 ;;
 

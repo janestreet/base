@@ -21,9 +21,9 @@ module T0 = struct
       fun x -> func x
     ;;
 
-    let t_of_sexp = (int64_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
-    let sexp_of_t = (sexp_of_int64 : t -> Ppx_sexp_conv_lib.Sexp.t)
-    let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = int64_sexp_grammar
+    let t_of_sexp = (int64_of_sexp : Sexplib0.Sexp.t -> t)
+    let sexp_of_t = (sexp_of_int64 : t -> Sexplib0.Sexp.t)
+    let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = int64_sexp_grammar
 
     [@@@end]
 
@@ -168,9 +168,9 @@ module T = struct
     fun x -> func x
   ;;
 
-  let t_of_sexp = (W.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
-  let sexp_of_t = (W.sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t)
-  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = W.t_sexp_grammar
+  let t_of_sexp = (W.t_of_sexp : Sexplib0.Sexp.t -> t)
+  let sexp_of_t = (W.sexp_of_t : t -> Sexplib0.Sexp.t)
+  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = W.t_sexp_grammar
 
   [@@@end]
 

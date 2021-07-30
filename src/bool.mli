@@ -7,9 +7,9 @@ type t = bool [@@deriving_inline enumerate, sexp, sexp_grammar]
 
 val all : t list
 
-include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+include Sexplib0.Sexpable.S with type t := t
 
-val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 [@@@end]
 

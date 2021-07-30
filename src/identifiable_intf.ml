@@ -17,7 +17,7 @@ module type Arg = sig
   val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 
-  include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+  include Sexplib0.Sexpable.S with type t := t
 
   [@@@end]
 
@@ -38,7 +38,7 @@ module type S = sig
   val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
   val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 
-  include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+  include Sexplib0.Sexpable.S with type t := t
 
   [@@@end]
 

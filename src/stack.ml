@@ -13,19 +13,18 @@ type 'a t =
   }
 [@@deriving_inline sexp_of]
 
-let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
-  fun _of_a -> function
-    | { length = v_length; elts = v_elts } ->
-      let bnds = [] in
-      let bnds =
-        let arg = Option_array.sexp_of_t _of_a v_elts in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "elts"; arg ] :: bnds
-      in
-      let bnds =
-        let arg = sexp_of_int v_length in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "length"; arg ] :: bnds
-      in
-      Ppx_sexp_conv_lib.Sexp.List bnds
+let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
+  fun _of_a { length = v_length; elts = v_elts } ->
+  let bnds = [] in
+  let bnds =
+    let arg = Option_array.sexp_of_t _of_a v_elts in
+    Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg ] :: bnds
+  in
+  let bnds =
+    let arg = sexp_of_int v_length in
+    Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg ] :: bnds
+  in
+  Sexplib0.Sexp.List bnds
 ;;
 
 [@@@end]
@@ -116,10 +115,10 @@ let of_list (type a) (l : a list) =
 let sexp_of_t sexp_of_a t = List.sexp_of_t sexp_of_a (to_list t)
 let t_of_sexp a_of_sexp sexp = of_list (List.t_of_sexp a_of_sexp sexp)
 
-let t_sexp_grammar (type a) (grammar : a Ppx_sexp_conv_lib.Sexp_grammar.t)
-  : a t Ppx_sexp_conv_lib.Sexp_grammar.t
+let t_sexp_grammar (type a) (grammar : a Sexplib0.Sexp_grammar.t)
+  : a t Sexplib0.Sexp_grammar.t
   =
-  Ppx_sexp_conv_lib.Sexp_grammar.coerce (List.t_sexp_grammar grammar)
+  Sexplib0.Sexp_grammar.coerce (List.t_sexp_grammar grammar)
 ;;
 
 let resize t size =

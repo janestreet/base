@@ -19,12 +19,12 @@ type ('ok, 'err) t = ('ok, 'err) Caml.result =
   | Error of 'err
 [@@deriving_inline sexp, sexp_grammar, compare, equal, hash]
 
-include Ppx_sexp_conv_lib.Sexpable.S2 with type ('ok, 'err) t := ('ok, 'err) t
+include Sexplib0.Sexpable.S2 with type ('ok, 'err) t := ('ok, 'err) t
 
 val t_sexp_grammar
-  :  'ok Ppx_sexp_conv_lib.Sexp_grammar.t
-  -> 'err Ppx_sexp_conv_lib.Sexp_grammar.t
-  -> ('ok, 'err) t Ppx_sexp_conv_lib.Sexp_grammar.t
+  :  'ok Sexplib0.Sexp_grammar.t
+  -> 'err Sexplib0.Sexp_grammar.t
+  -> ('ok, 'err) t Sexplib0.Sexp_grammar.t
 
 val compare
   :  ('ok -> 'ok -> int)

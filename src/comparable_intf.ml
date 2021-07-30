@@ -165,7 +165,7 @@ module type Comparable = sig
     end) (T : sig
             type t [@@deriving_inline sexp_of]
 
-            val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+            val sexp_of_t : t -> Sexplib0.Sexp.t
 
             [@@@end]
 
@@ -176,7 +176,7 @@ module type Comparable = sig
       type t [@@deriving_inline compare, sexp_of]
 
       val compare : t -> t -> int
-      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+      val sexp_of_t : t -> Sexplib0.Sexp.t
 
       [@@@end]
     end) : S with type t := T.t
@@ -184,7 +184,7 @@ module type Comparable = sig
   module Make_using_comparator (T : sig
       type t [@@deriving_inline sexp_of]
 
-      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+      val sexp_of_t : t -> Sexplib0.Sexp.t
 
       [@@@end]
 
@@ -194,7 +194,7 @@ module type Comparable = sig
   module Poly (T : sig
       type t [@@deriving_inline sexp_of]
 
-      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+      val sexp_of_t : t -> Sexplib0.Sexp.t
 
       [@@@end]
     end) : S with type t := T.t
@@ -203,7 +203,7 @@ module type Comparable = sig
       type t [@@deriving_inline compare, sexp_of]
 
       val compare : t -> t -> int
-      val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+      val sexp_of_t : t -> Sexplib0.Sexp.t
 
       [@@@end]
 

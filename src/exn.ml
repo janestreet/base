@@ -2,7 +2,7 @@ open! Import
 
 type t = exn [@@deriving_inline sexp_of]
 
-let sexp_of_t = (sexp_of_exn : t -> Ppx_sexp_conv_lib.Sexp.t)
+let sexp_of_t = (sexp_of_exn : t -> Sexplib0.Sexp.t)
 
 [@@@end]
 
@@ -11,12 +11,11 @@ let exit = Caml.exit
 exception Finally of t * t [@@deriving_inline sexp]
 
 let () =
-  Ppx_sexp_conv_lib.Conv.Exn_converter.add [%extension_constructor Finally] (function
+  Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Finally] (function
     | Finally (v0, v1) ->
       let v0 = sexp_of_t v0
       and v1 = sexp_of_t v1 in
-      Ppx_sexp_conv_lib.Sexp.List
-        [ Ppx_sexp_conv_lib.Sexp.Atom "exn.ml.Finally"; v0; v1 ]
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "exn.ml.Finally"; v0; v1 ]
     | _ -> assert false)
 ;;
 
@@ -25,12 +24,11 @@ let () =
 exception Reraised of string * t [@@deriving_inline sexp]
 
 let () =
-  Ppx_sexp_conv_lib.Conv.Exn_converter.add [%extension_constructor Reraised] (function
+  Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Reraised] (function
     | Reraised (v0, v1) ->
       let v0 = sexp_of_string v0
       and v1 = sexp_of_t v1 in
-      Ppx_sexp_conv_lib.Sexp.List
-        [ Ppx_sexp_conv_lib.Sexp.Atom "exn.ml.Reraised"; v0; v1 ]
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "exn.ml.Reraised"; v0; v1 ]
     | _ -> assert false)
 ;;
 
@@ -48,7 +46,7 @@ exception Sexp of Sexp.t
 
    to eliminate the extra wrapping of [(Sexp ...)]. *)
 let () =
-  Sexplib.Conv.Exn_converter.add [%extension_constructor Sexp] (function
+  Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Sexp] (function
     | Sexp t -> t
     | _ ->
       (* Reaching this branch indicates a bug in sexplib. *)

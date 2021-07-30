@@ -32,9 +32,7 @@ val hash_fold_t
   -> 'a t
   -> Ppx_hash_lib.Std.Hash.state
 
-val t_sexp_grammar
-  :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
-  -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
+val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
 [@@@end]
 
@@ -85,6 +83,10 @@ val value_exn
 (** Extracts the underlying value and applies [f] to it if present, otherwise returns
     [default]. *)
 val value_map : 'a t -> default:'b -> f:('a -> 'b) -> 'b
+
+(** Extracts the underlying value if present, otherwise executes and returns the result of
+    [default]. [default] is only executed if the underlying value is absent. *)
+val value_or_thunk : 'a t -> default:(unit -> 'a) -> 'a
 
 
 (** [fold t ~init ~f] returns [f (... f (f (f init e1) e2) e3 ...) en], where [e1..en]

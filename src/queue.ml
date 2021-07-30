@@ -17,37 +17,36 @@ type 'a t =
   }
 [@@deriving_inline sexp_of]
 
-let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t =
-  fun _of_a -> function
-    | { num_mutations = v_num_mutations
-      ; front = v_front
-      ; mask = v_mask
-      ; length = v_length
-      ; elts = v_elts
-      } ->
-      let bnds = [] in
-      let bnds =
-        let arg = Option_array.sexp_of_t _of_a v_elts in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "elts"; arg ] :: bnds
-      in
-      let bnds =
-        let arg = sexp_of_int v_length in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "length"; arg ] :: bnds
-      in
-      let bnds =
-        let arg = sexp_of_int v_mask in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "mask"; arg ] :: bnds
-      in
-      let bnds =
-        let arg = sexp_of_int v_front in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "front"; arg ] :: bnds
-      in
-      let bnds =
-        let arg = sexp_of_int v_num_mutations in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "num_mutations"; arg ]
-        :: bnds
-      in
-      Ppx_sexp_conv_lib.Sexp.List bnds
+let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
+  fun _of_a
+    { num_mutations = v_num_mutations
+    ; front = v_front
+    ; mask = v_mask
+    ; length = v_length
+    ; elts = v_elts
+    } ->
+    let bnds = [] in
+    let bnds =
+      let arg = Option_array.sexp_of_t _of_a v_elts in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg ] :: bnds
+    in
+    let bnds =
+      let arg = sexp_of_int v_length in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg ] :: bnds
+    in
+    let bnds =
+      let arg = sexp_of_int v_mask in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "mask"; arg ] :: bnds
+    in
+    let bnds =
+      let arg = sexp_of_int v_front in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "front"; arg ] :: bnds
+    in
+    let bnds =
+      let arg = sexp_of_int v_num_mutations in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "num_mutations"; arg ] :: bnds
+    in
+    Sexplib0.Sexp.List bnds
 ;;
 
 [@@@end]
@@ -482,8 +481,8 @@ let singleton x =
 let sexp_of_t sexp_of_a t = to_list t |> List.sexp_of_t sexp_of_a
 let t_of_sexp a_of_sexp sexp = List.t_of_sexp a_of_sexp sexp |> of_list
 
-let t_sexp_grammar (type a) (grammar : a Ppx_sexp_conv_lib.Sexp_grammar.t)
-  : a t Ppx_sexp_conv_lib.Sexp_grammar.t
+let t_sexp_grammar (type a) (grammar : a Sexplib0.Sexp_grammar.t)
+  : a t Sexplib0.Sexp_grammar.t
   =
-  Ppx_sexp_conv_lib.Sexp_grammar.coerce (List.t_sexp_grammar grammar)
+  Sexplib0.Sexp_grammar.coerce (List.t_sexp_grammar grammar)
 ;;

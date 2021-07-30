@@ -165,7 +165,7 @@ module Poly = struct
   include Accessors
 
   let sexp_of_t = sexp_of_t
-  let t_sexp_grammar grammar = Sexplib.Sexp_grammar.coerce (List.t_sexp_grammar grammar)
+  let t_sexp_grammar grammar = Sexplib0.Sexp_grammar.coerce (List.t_sexp_grammar grammar)
 end
 
 module M (Elt : T.T) = struct
@@ -181,8 +181,10 @@ let m__t_of_sexp (type elt) (module Elt : M_of_sexp with type t = elt) sexp =
 ;;
 
 let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt) =
-  Sexplib.Sexp_grammar.coerce (list_sexp_grammar Elt.t_sexp_grammar)
+  Sexplib0.Sexp_grammar.coerce (list_sexp_grammar Elt.t_sexp_grammar)
 ;;
+
+let equal_m__t (module K : Equal_m) t1 t2 = equal t1 t2
 
 module Private = struct
   let hashable = Hashtbl.Private.hashable

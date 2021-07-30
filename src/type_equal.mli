@@ -35,10 +35,10 @@ open T
 type ('a, 'b) t = T : ('a, 'a) t [@@deriving_inline sexp_of]
 
 val sexp_of_t
-  :  ('a -> Ppx_sexp_conv_lib.Sexp.t)
-  -> ('b -> Ppx_sexp_conv_lib.Sexp.t)
+  :  ('a -> Sexplib0.Sexp.t)
+  -> ('b -> Sexplib0.Sexp.t)
   -> ('a, 'b) t
-  -> Ppx_sexp_conv_lib.Sexp.t
+  -> Sexplib0.Sexp.t
 
 [@@@end]
 
@@ -183,7 +183,7 @@ module Composition_preserves_injectivity (M1 : Injective) (M2 : Injective) :
 module Id : sig
   type 'a t [@@deriving_inline sexp_of]
 
-  val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+  val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
   [@@@end]
 

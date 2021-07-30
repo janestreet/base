@@ -25,7 +25,7 @@ open! Import
 type t = | [@@deriving_inline enumerate, sexp_grammar]
 
 val all : t list
-val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 [@@@end]
 

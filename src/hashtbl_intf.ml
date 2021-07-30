@@ -6,7 +6,7 @@ module Key = struct
     type t [@@deriving_inline compare, sexp_of]
 
     val compare : t -> t -> int
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val sexp_of_t : t -> Sexplib0.Sexp.t
 
     [@@@end]
 
@@ -609,12 +609,12 @@ end
 module type S_poly = sig
   type ('a, 'b) t [@@deriving_inline sexp, sexp_grammar]
 
-  include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
+  include Sexplib0.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
 
   val t_sexp_grammar
-    :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t
+    :  'a Sexplib0.Sexp_grammar.t
+    -> 'b Sexplib0.Sexp_grammar.t
+    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
 
   [@@@end]
 
@@ -639,7 +639,7 @@ module type For_deriving = sig
   module type Sexp_of_m = sig
     type t [@@deriving_inline sexp_of]
 
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val sexp_of_t : t -> Sexplib0.Sexp.t
 
     [@@@end]
   end
@@ -647,7 +647,7 @@ module type For_deriving = sig
   module type M_of_sexp = sig
     type t [@@deriving_inline of_sexp]
 
-    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+    val t_of_sexp : Sexplib0.Sexp.t -> t
 
     [@@@end]
 
@@ -657,10 +657,12 @@ module type For_deriving = sig
   module type M_sexp_grammar = sig
     type t [@@deriving_inline sexp_grammar]
 
-    val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+    val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
     [@@@end]
   end
+
+  module type Equal_m = sig end
 
   val sexp_of_m__t
     :  (module Sexp_of_m with type t = 'k)
@@ -676,8 +678,15 @@ module type For_deriving = sig
 
   val m__t_sexp_grammar
     :  (module M_sexp_grammar with type t = 'k)
-    -> 'v Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> ('k, 'v) t Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> 'v Sexplib0.Sexp_grammar.t
+    -> ('k, 'v) t Sexplib0.Sexp_grammar.t
+
+  val equal_m__t
+    :  (module Equal_m)
+    -> ('v -> 'v -> bool)
+    -> ('k, 'v) t
+    -> ('k, 'v) t
+    -> bool
 end
 
 module type Hashtbl = sig

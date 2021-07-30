@@ -6,22 +6,10 @@ struct
 
   let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref
   let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool = equal_ref
+  let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = ref_of_sexp
+  let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_ref
 
-  let t_of_sexp :
-    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
-    =
-    ref_of_sexp
-  ;;
-
-  let sexp_of_t :
-    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-    =
-    sexp_of_ref
-  ;;
-
-  let (t_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
-    =
+  let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
     fun _'a_sexp_grammar -> ref_sexp_grammar _'a_sexp_grammar
   ;;
 
@@ -33,11 +21,9 @@ sig
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
-  include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+  include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
-  val t_sexp_grammar
-    :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
+  val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
   [@@@end]
 end)

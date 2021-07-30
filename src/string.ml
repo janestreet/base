@@ -18,9 +18,9 @@ module T = struct
     fun x -> func x
   ;;
 
-  let t_of_sexp = (string_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
-  let sexp_of_t = (sexp_of_string : t -> Ppx_sexp_conv_lib.Sexp.t)
-  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = string_sexp_grammar
+  let t_of_sexp = (string_of_sexp : Sexplib0.Sexp.t -> t)
+  let sexp_of_t = (sexp_of_string : t -> Sexplib0.Sexp.t)
+  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = string_sexp_grammar
 
   [@@@end]
 
@@ -379,30 +379,25 @@ module Search_pattern0 = struct
     ;;
 
     let sexp_of_t =
-      (function
-        | { pattern = v_pattern
-          ; case_sensitive = v_case_sensitive
-          ; kmp_array = v_kmp_array
-          } ->
-          let bnds = [] in
-          let bnds =
-            let arg = sexp_of_array sexp_of_int v_kmp_array in
-            Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "kmp_array"; arg ]
-            :: bnds
-          in
-          let bnds =
-            let arg = sexp_of_bool v_case_sensitive in
-            Ppx_sexp_conv_lib.Sexp.List
-              [ Ppx_sexp_conv_lib.Sexp.Atom "case_sensitive"; arg ]
-            :: bnds
-          in
-          let bnds =
-            let arg = sexp_of_string v_pattern in
-            Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "pattern"; arg ]
-            :: bnds
-          in
-          Ppx_sexp_conv_lib.Sexp.List bnds
-          : t -> Ppx_sexp_conv_lib.Sexp.t)
+      (fun { pattern = v_pattern
+           ; case_sensitive = v_case_sensitive
+           ; kmp_array = v_kmp_array
+           } ->
+        let bnds = [] in
+        let bnds =
+          let arg = sexp_of_array sexp_of_int v_kmp_array in
+          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "kmp_array"; arg ] :: bnds
+        in
+        let bnds =
+          let arg = sexp_of_bool v_case_sensitive in
+          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "case_sensitive"; arg ] :: bnds
+        in
+        let bnds =
+          let arg = sexp_of_string v_pattern in
+          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pattern"; arg ] :: bnds
+        in
+        Sexplib0.Sexp.List bnds
+        : t -> Sexplib0.Sexp.t)
     ;;
 
     [@@@end]
@@ -495,9 +490,9 @@ module Caseless = struct
   module T = struct
     type t = string [@@deriving_inline sexp, sexp_grammar]
 
-    let t_of_sexp = (string_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
-    let sexp_of_t = (sexp_of_string : t -> Ppx_sexp_conv_lib.Sexp.t)
-    let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = string_sexp_grammar
+    let t_of_sexp = (string_of_sexp : Sexplib0.Sexp.t -> t)
+    let sexp_of_t = (sexp_of_string : t -> Sexplib0.Sexp.t)
+    let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = string_sexp_grammar
 
     [@@@end]
 

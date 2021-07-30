@@ -17,7 +17,7 @@ type t = Caml.Lexing.position =
 
 val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
 val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+val sexp_of_t : t -> Sexplib0.Sexp.t
 
 [@@@end]
 

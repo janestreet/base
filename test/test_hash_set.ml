@@ -74,6 +74,19 @@ let%expect_test "union" =
   [%expect {| (0 1 2 3) |}]
 ;;
 
+let%expect_test "deriving equal" =
+  let module Hs = struct
+    type t = { hs : Hash_set.M(Int).t } [@@deriving equal]
+
+    let of_list lst = { hs = Hash_set.of_list (module Int) lst }
+  end
+  in
+  require [%here] (Hs.equal (Hs.of_list []) (Hs.of_list []));
+  require [%here] (not (Hs.equal (Hs.of_list [ 1 ]) (Hs.of_list [])));
+  require [%here] (not (Hs.equal (Hs.of_list [ 1 ]) (Hs.of_list [ 2 ])));
+  require [%here] (Hs.equal (Hs.of_list [ 1 ]) (Hs.of_list [ 1 ]))
+;;
+
 module I_compile_if_creators_is_specialization_of_creators_generic (M : Creators) :
   Creators_generic
   with type 'a t := 'a M.t

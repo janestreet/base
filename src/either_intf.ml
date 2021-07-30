@@ -45,12 +45,12 @@ module type Either = sig
     -> ('f, 's) t
     -> Ppx_hash_lib.Std.Hash.state
 
-  include Ppx_sexp_conv_lib.Sexpable.S2 with type ('f, 's) t := ('f, 's) t
+  include Sexplib0.Sexpable.S2 with type ('f, 's) t := ('f, 's) t
 
   val t_sexp_grammar
-    :  'f Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> 's Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> ('f, 's) t Ppx_sexp_conv_lib.Sexp_grammar.t
+    :  'f Sexplib0.Sexp_grammar.t
+    -> 's Sexplib0.Sexp_grammar.t
+    -> ('f, 's) t Sexplib0.Sexp_grammar.t
 
   [@@@end]
 

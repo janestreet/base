@@ -405,3 +405,50 @@ let%test_module "Make_using_map2" =
     end
   end)
 ;;
+
+(* While law-abiding applicatives shouldn't be relying functions being called
+   the minimal number of times, it is good for performance that things be this
+   way. For many applicatives this will not matter very much, but for others,
+   like Bonsai, it is a little more significant, since extra calls construct
+   more Incremental nodes, yielding more strain on the Incremental stabilizer.
+
+   The point is that we should not assume that the input applicative instance
+   can be frivolous in creating nodes in the applicative call-tree.
+*)
+let%expect_test _ =
+  let module A = struct
+    type 'a t =
+      | Other of string
+      | Return : 'a -> 'a t
+      | Map : ('a -> 'b) * 'a t -> 'b t
+      | Map2 : ('a -> 'b -> 'c) * 'a t * 'b t -> 'c t
+
+    include Applicative.Make_using_map2 (struct
+        type nonrec 'a t = 'a t
+
+        let return x = Return x
+        let map2 a b ~f = Map2 (f, a, b)
+        let map = `Custom (fun a ~f -> Map (f, a))
+      end)
+
+    let rec sexp_of_t : type a. a t -> Sexp.t = function
+      | Other x -> Atom x
+      | Return _ -> Atom "Return"
+      | Map (_, a) -> List [ Atom "Map"; sexp_of_t a ]
+      | Map2 (_, a, b) -> List [ Atom "Map2"; sexp_of_t a; sexp_of_t b ]
+    ;;
+  end
+  in
+  let open A in
+  let test x = print_s [%sexp (x : A.t)] in
+  let a, b, c, d = Other "A", Other "B", Other "C", Other "D" in
+  test (map2 a b ~f:(fun a b -> a, b));
+  [%expect {| (Map2 A B) |}];
+  test (both a b);
+  [%expect {| (Map2 A B) |}];
+  test (all_unit [ a; b; c; d ]);
+  [%expect {|
+    (Map2 (Map2 (Map2 (Map2 Return A) B) C) D) |}];
+  test (a *> b);
+  [%expect {| (Map2 A B) |}]
+;;

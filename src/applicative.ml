@@ -173,17 +173,41 @@ module Make_let_syntax
     (Intf)
     (Impl)
 
-module Make3_using_map2 (X : Basic3_using_map2) = Make3 (struct
-    include X
+(** This functor closely resembles [Make3], and indeed it could be implemented
+    much shorter in terms of [Make3]. However, we implement it by hand so that
+    the resulting functions are more efficient, e.g. using [map2] directly instead of
+    defining [apply] in terms of it and then [map2] in terms of that. For most
+    applicatives this does not matter, but for some (such as Bonsai.Value.t), it has a
+    larger impact. *)
+module Make3_using_map2 (X : Basic3_using_map2) :
+  S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t = struct
+  include X
 
-    let apply tf tx = map2 tf tx ~f:(fun f x -> f x)
+  let apply tf ta = map2 tf ta ~f:(fun f a -> f a)
+  let ( <*> ) = apply
+  let derived_map t ~f = return f <*> t
 
-    let map =
-      match map with
-      | `Custom map -> `Custom map
-      | `Define_using_map2 -> `Define_using_apply
-    ;;
-  end)
+  let map =
+    match X.map with
+    | `Define_using_map2 -> derived_map
+    | `Custom x -> x
+  ;;
+
+  let ( >>| ) t f = map t ~f
+  let both ta tb = map2 ta tb ~f:(fun a b -> a, b)
+  let map3 ta tb tc ~f = map2 (map2 ta tb ~f) tc ~f:(fun fab c -> fab c)
+  let all ts = List.fold_right ts ~init:(return []) ~f:(map2 ~f:(fun x xs -> x :: xs))
+  let ( *> ) u v = map2 u v ~f:(fun () y -> y)
+  let ( <* ) u v = map2 u v ~f:(fun x () -> x)
+  let all_unit ts = List.fold ts ~init:(return ()) ~f:( *> )
+
+  module Applicative_infix = struct
+    let ( <*> ) = ( <*> )
+    let ( *> ) = ( *> )
+    let ( <* ) = ( <* )
+    let ( >>| ) = ( >>| )
+  end
+end
 
 module Make2_using_map2 (X : Basic2_using_map2) :
   S2 with type ('a, 'e) t := ('a, 'e) X.t = Make3_using_map2 (struct

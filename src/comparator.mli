@@ -57,7 +57,7 @@ module Make (M : sig
     type t [@@deriving_inline compare, sexp_of]
 
     val compare : t -> t -> int
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val sexp_of_t : t -> Sexplib0.Sexp.t
 
     [@@@end]
   end) : S with type t := M.t
@@ -87,7 +87,7 @@ module Derived (M : sig
     type 'a t [@@deriving_inline compare, sexp_of]
 
     val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-    val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+    val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
     [@@@end]
   end) : Derived with type 'a t := 'a M.t
@@ -110,10 +110,10 @@ module Derived2 (M : sig
     val compare : ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
 
     val sexp_of_t
-      :  ('a -> Ppx_sexp_conv_lib.Sexp.t)
-      -> ('b -> Ppx_sexp_conv_lib.Sexp.t)
+      :  ('a -> Sexplib0.Sexp.t)
+      -> ('b -> Sexplib0.Sexp.t)
       -> ('a, 'b) t
-      -> Ppx_sexp_conv_lib.Sexp.t
+      -> Sexplib0.Sexp.t
 
     [@@@end]
   end) : Derived2 with type ('a, 'b) t := ('a, 'b) M.t

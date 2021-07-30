@@ -29,8 +29,8 @@ let with_return = With_return.with_return
 exception Duplicate [@@deriving_inline sexp]
 
 let () =
-  Ppx_sexp_conv_lib.Conv.Exn_converter.add [%extension_constructor Duplicate] (function
-    | Duplicate -> Ppx_sexp_conv_lib.Sexp.Atom "map.ml.Duplicate"
+  Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Duplicate] (function
+    | Duplicate -> Sexplib0.Sexp.Atom "map.ml.Duplicate"
     | _ -> assert false)
 ;;
 
@@ -496,11 +496,11 @@ module Tree0 = struct
   exception Map_min_elt_exn_of_empty_map [@@deriving_inline sexp]
 
   let () =
-    Ppx_sexp_conv_lib.Conv.Exn_converter.add
+    Sexplib0.Sexp_conv.Exn_converter.add
       [%extension_constructor Map_min_elt_exn_of_empty_map]
       (function
         | Map_min_elt_exn_of_empty_map ->
-          Ppx_sexp_conv_lib.Sexp.Atom "map.ml.Tree0.Map_min_elt_exn_of_empty_map"
+          Sexplib0.Sexp.Atom "map.ml.Tree0.Map_min_elt_exn_of_empty_map"
         | _ -> assert false)
   ;;
 
@@ -509,11 +509,11 @@ module Tree0 = struct
   exception Map_max_elt_exn_of_empty_map [@@deriving_inline sexp]
 
   let () =
-    Ppx_sexp_conv_lib.Conv.Exn_converter.add
+    Sexplib0.Sexp_conv.Exn_converter.add
       [%extension_constructor Map_max_elt_exn_of_empty_map]
       (function
         | Map_max_elt_exn_of_empty_map ->
-          Ppx_sexp_conv_lib.Sexp.Atom "map.ml.Tree0.Map_max_elt_exn_of_empty_map"
+          Sexplib0.Sexp.Atom "map.ml.Tree0.Map_max_elt_exn_of_empty_map"
         | _ -> assert false)
   ;;
 
@@ -796,6 +796,24 @@ module Tree0 = struct
     | Empty -> accu
     | Leaf (v, d) -> f ~key:v ~data:d accu
     | Node (l, v, d, r, _) -> fold ~f r ~init:(f ~key:v ~data:d (fold ~f l ~init:accu))
+  ;;
+
+  let fold_until t ~init ~f ~finish =
+    let rec fold_until_loop t ~acc ~f : (_, _) Container.Continue_or_stop.t =
+      match t with
+      | Empty -> Continue acc
+      | Leaf (v, d) -> f ~key:v ~data:d acc
+      | Node (l, v, d, r, _) ->
+        (match fold_until_loop l ~acc ~f with
+         | Stop final -> Stop final
+         | Continue acc ->
+           (match f ~key:v ~data:d acc with
+            | Stop final -> Stop final
+            | Continue acc -> fold_until_loop r ~acc ~f))
+    in
+    match fold_until_loop t ~acc:init ~f with
+    | Continue acc -> finish acc
+    | Stop stop -> stop
   ;;
 
   let rec fold_right t ~init:accu ~f =
@@ -1700,6 +1718,7 @@ module Accessors = struct
   let map t ~f = with_same_length t (Tree0.map t.tree ~f)
   let mapi t ~f = with_same_length t (Tree0.mapi t.tree ~f)
   let fold t ~init ~f = Tree0.fold t.tree ~f ~init
+  let fold_until t ~init ~f = Tree0.fold_until t.tree ~f ~init
   let fold_right t ~init ~f = Tree0.fold_right t.tree ~f ~init
 
   let fold2 t1 t2 ~init ~f =
@@ -2029,6 +2048,7 @@ module Tree = struct
   let map t ~f = Tree0.map t ~f
   let mapi t ~f = Tree0.mapi t ~f
   let fold t ~init ~f = Tree0.fold t ~f ~init
+  let fold_until t ~init ~f ~finish = Tree0.fold_until t ~f ~init ~finish
   let fold_right t ~init ~f = Tree0.fold_right t ~f ~init
 
   let fold2 ~comparator t1 t2 ~init ~f =
@@ -2438,7 +2458,7 @@ end
 module type Sexp_of_m = sig
   type t [@@deriving_inline sexp_of]
 
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 
   [@@@end]
 end
@@ -2446,7 +2466,7 @@ end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
 
-  val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+  val t_of_sexp : Sexplib0.Sexp.t -> t
 
   [@@@end]
 
@@ -2456,7 +2476,7 @@ end
 module type M_sexp_grammar = sig
   type t [@@deriving_inline sexp_grammar]
 
-  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
   [@@@end]
 end
@@ -2481,8 +2501,8 @@ let m__t_of_sexp
 let m__t_sexp_grammar
       (type k)
       (module K : M_sexp_grammar with type t = k)
-      (v_grammar : _ Ppx_sexp_conv_lib.Sexp_grammar.t)
-  : _ Ppx_sexp_conv_lib.Sexp_grammar.t
+      (v_grammar : _ Sexplib0.Sexp_grammar.t)
+  : _ Sexplib0.Sexp_grammar.t
   =
   { untyped =
       List

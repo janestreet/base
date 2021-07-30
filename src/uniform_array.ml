@@ -128,10 +128,10 @@ let map2_exn t1 t2 ~f =
   init len ~f:(fun i -> f (unsafe_get t1 i) (unsafe_get t2 i))
 ;;
 
-let t_sexp_grammar (type elt) (grammar : elt Ppx_sexp_conv_lib.Sexp_grammar.t)
-  : elt t Ppx_sexp_conv_lib.Sexp_grammar.t
+let t_sexp_grammar (type elt) (grammar : elt Sexplib0.Sexp_grammar.t)
+  : elt t Sexplib0.Sexp_grammar.t
   =
-  Ppx_sexp_conv_lib.Sexp_grammar.coerce (Array.t_sexp_grammar grammar)
+  Sexplib0.Sexp_grammar.coerce (Array.t_sexp_grammar grammar)
 ;;
 
 include

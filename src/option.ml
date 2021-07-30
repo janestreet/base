@@ -13,21 +13,15 @@ struct
     hash_fold_option
   ;;
 
-  let t_of_sexp :
-    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
-    =
+  let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
     option_of_sexp
   ;;
 
-  let sexp_of_t :
-    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-    =
+  let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
     sexp_of_option
   ;;
 
-  let (t_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
-    =
+  let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
     fun _'a_sexp_grammar -> option_sexp_grammar _'a_sexp_grammar
   ;;
 
@@ -44,11 +38,9 @@ sig
     -> 'a t
     -> Ppx_hash_lib.Std.Hash.state
 
-  include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+  include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
-  val t_sexp_grammar
-    :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
+  val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
   [@@@end]
 end)
@@ -113,6 +105,12 @@ let value_exn ?here ?error ?message t =
           (sexp_of_pair Error.sexp_of_t Source_code_position0.sexp_of_t)
     in
     Error.raise error
+;;
+
+let value_or_thunk o ~default =
+  match o with
+  | Some x -> x
+  | None -> default ()
 ;;
 
 let to_array t =

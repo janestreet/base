@@ -31,11 +31,9 @@ val hash_fold_t
   -> 'a t
   -> Ppx_hash_lib.Std.Hash.state
 
-include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
-val t_sexp_grammar
-  :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
-  -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
+val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
 [@@@end]
 
@@ -77,7 +75,7 @@ val is_val : 'a t -> bool
 module T_unforcing : sig
   type nonrec 'a t = 'a t [@@deriving_inline sexp_of]
 
-  val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+  val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
   [@@@end]
 end

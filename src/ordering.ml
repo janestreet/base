@@ -31,33 +31,32 @@ let all = ([ Less; Equal; Greater ] : t list)
 let t_of_sexp =
   (let _tp_loc = "ordering.ml.t" in
    function
-   | Ppx_sexp_conv_lib.Sexp.Atom ("less" | "Less") -> Less
-   | Ppx_sexp_conv_lib.Sexp.Atom ("equal" | "Equal") -> Equal
-   | Ppx_sexp_conv_lib.Sexp.Atom ("greater" | "Greater") -> Greater
-   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("less" | "Less") :: _) as
-     sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("equal" | "Equal") :: _) as
-     sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List
-       (Ppx_sexp_conv_lib.Sexp.Atom ("greater" | "Greater") :: _) as sexp ->
-     Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.List _ :: _) as sexp ->
-     Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
-     Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-   | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
-             : Ppx_sexp_conv_lib.Sexp.t -> t)
+   | Sexplib0.Sexp.Atom ("less" | "Less") -> Less
+   | Sexplib0.Sexp.Atom ("equal" | "Equal") -> Equal
+   | Sexplib0.Sexp.Atom ("greater" | "Greater") -> Greater
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("less" | "Less") :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("equal" | "Equal") :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("greater" | "Greater") :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+   | Sexplib0.Sexp.List [] as sexp ->
+     Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
+   | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
+             : Sexplib0.Sexp.t -> t)
 ;;
 
 let sexp_of_t =
   (function
-    | Less -> Ppx_sexp_conv_lib.Sexp.Atom "Less"
-    | Equal -> Ppx_sexp_conv_lib.Sexp.Atom "Equal"
-    | Greater -> Ppx_sexp_conv_lib.Sexp.Atom "Greater"
-                 : t -> Ppx_sexp_conv_lib.Sexp.t)
+    | Less -> Sexplib0.Sexp.Atom "Less"
+    | Equal -> Sexplib0.Sexp.Atom "Equal"
+    | Greater -> Sexplib0.Sexp.Atom "Greater"
+                 : t -> Sexplib0.Sexp.t)
 ;;
 
-let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
+let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
   { untyped =
       Variant
         { name_kind = Capitalized

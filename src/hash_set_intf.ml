@@ -74,7 +74,7 @@ end
 module type Sexp_of_m = sig
   type t [@@deriving_inline sexp_of]
 
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 
   [@@@end]
 end
@@ -82,7 +82,7 @@ end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
 
-  val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+  val t_of_sexp : Sexplib0.Sexp.t -> t
 
   [@@@end]
 
@@ -92,16 +92,19 @@ end
 module type M_sexp_grammar = sig
   type t [@@deriving_inline sexp_grammar]
 
-  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
   [@@@end]
 end
+
+module type Equal_m = sig end
 
 module type For_deriving = sig
   type 'a t
 
   module type M_of_sexp = M_of_sexp
   module type Sexp_of_m = Sexp_of_m
+  module type Equal_m = Equal_m
 
   (** [M] is meant to be used in combination with OCaml applicative functor types:
 
@@ -112,7 +115,7 @@ module type For_deriving = sig
       which stands for:
 
       {[
-        type string_hash_set = (String.t, int) Hash_set.t
+        type string_hash_set = String.t Hash_set.t
       ]}
 
       The point is that [Hash_set.M(String).t] supports deriving, whereas the second
@@ -127,13 +130,15 @@ module type For_deriving = sig
 
   val m__t_sexp_grammar
     :  (module M_sexp_grammar with type t = 'elt)
-    -> 'elt t Ppx_sexp_conv_lib.Sexp_grammar.t
+    -> 'elt t Sexplib0.Sexp_grammar.t
+
+  val equal_m__t : (module Equal_m) -> 'elt t -> 'elt t -> bool
 end
 
 module type Hash_set = sig
   type 'a t [@@deriving_inline sexp_of]
 
-  val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+  val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
   [@@@end]
 
@@ -165,11 +170,9 @@ module type Hash_set = sig
   module Poly : sig
     type nonrec 'a t = 'a t [@@deriving_inline sexp, sexp_grammar]
 
-    include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+    include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
-    val t_sexp_grammar
-      :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
-      -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
+    val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
     [@@@end]
 

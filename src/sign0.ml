@@ -11,32 +11,32 @@ type t =
 let t_of_sexp =
   (let _tp_loc = "sign0.ml.t" in
    function
-   | Ppx_sexp_conv_lib.Sexp.Atom ("neg" | "Neg") -> Neg
-   | Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") -> Zero
-   | Ppx_sexp_conv_lib.Sexp.Atom ("pos" | "Pos") -> Pos
-   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("neg" | "Neg") :: _) as
-     sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") :: _) as
-     sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("pos" | "Pos") :: _) as
-     sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.List _ :: _) as sexp ->
-     Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-   | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
-     Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-   | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
-             : Ppx_sexp_conv_lib.Sexp.t -> t)
+   | Sexplib0.Sexp.Atom ("neg" | "Neg") -> Neg
+   | Sexplib0.Sexp.Atom ("zero" | "Zero") -> Zero
+   | Sexplib0.Sexp.Atom ("pos" | "Pos") -> Pos
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("neg" | "Neg") :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("pos" | "Pos") :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
+     Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+   | Sexplib0.Sexp.List [] as sexp ->
+     Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
+   | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
+             : Sexplib0.Sexp.t -> t)
 ;;
 
 let sexp_of_t =
   (function
-    | Neg -> Ppx_sexp_conv_lib.Sexp.Atom "Neg"
-    | Zero -> Ppx_sexp_conv_lib.Sexp.Atom "Zero"
-    | Pos -> Ppx_sexp_conv_lib.Sexp.Atom "Pos"
-             : t -> Ppx_sexp_conv_lib.Sexp.t)
+    | Neg -> Sexplib0.Sexp.Atom "Neg"
+    | Zero -> Sexplib0.Sexp.Atom "Zero"
+    | Pos -> Sexplib0.Sexp.Atom "Pos"
+             : t -> Sexplib0.Sexp.t)
 ;;
 
-let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
+let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
   { untyped =
       Variant
         { name_kind = Capitalized

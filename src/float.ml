@@ -16,9 +16,9 @@ module T = struct
     fun x -> func x
   ;;
 
-  let t_of_sexp = (float_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t)
-  let sexp_of_t = (sexp_of_float : t -> Ppx_sexp_conv_lib.Sexp.t)
-  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) = float_sexp_grammar
+  let t_of_sexp = (float_of_sexp : Sexplib0.Sexp.t -> t)
+  let sexp_of_t = (sexp_of_float : t -> Sexplib0.Sexp.t)
+  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = float_sexp_grammar
 
   [@@@end]
 
@@ -537,43 +537,40 @@ module Class = struct
   let t_of_sexp =
     (let _tp_loc = "float.ml.Class.t" in
      function
-     | Ppx_sexp_conv_lib.Sexp.Atom ("infinite" | "Infinite") -> Infinite
-     | Ppx_sexp_conv_lib.Sexp.Atom ("nan" | "Nan") -> Nan
-     | Ppx_sexp_conv_lib.Sexp.Atom ("normal" | "Normal") -> Normal
-     | Ppx_sexp_conv_lib.Sexp.Atom ("subnormal" | "Subnormal") -> Subnormal
-     | Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") -> Zero
-     | Ppx_sexp_conv_lib.Sexp.List
-         (Ppx_sexp_conv_lib.Sexp.Atom ("infinite" | "Infinite") :: _) as sexp ->
-       Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("nan" | "Nan") :: _) as
-       sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-     | Ppx_sexp_conv_lib.Sexp.List
-         (Ppx_sexp_conv_lib.Sexp.Atom ("normal" | "Normal") :: _) as sexp ->
-       Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-     | Ppx_sexp_conv_lib.Sexp.List
-         (Ppx_sexp_conv_lib.Sexp.Atom ("subnormal" | "Subnormal") :: _) as sexp ->
-       Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.Atom ("zero" | "Zero") :: _) as
-       sexp -> Ppx_sexp_conv_lib.Conv_error.stag_no_args _tp_loc sexp
-     | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.List _ :: _) as sexp ->
-       Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-     | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
-       Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-     | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
-               : Ppx_sexp_conv_lib.Sexp.t -> t)
+     | Sexplib0.Sexp.Atom ("infinite" | "Infinite") -> Infinite
+     | Sexplib0.Sexp.Atom ("nan" | "Nan") -> Nan
+     | Sexplib0.Sexp.Atom ("normal" | "Normal") -> Normal
+     | Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") -> Subnormal
+     | Sexplib0.Sexp.Atom ("zero" | "Zero") -> Zero
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("infinite" | "Infinite") :: _) as sexp ->
+       Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("nan" | "Nan") :: _) as sexp ->
+       Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("normal" | "Normal") :: _) as sexp ->
+       Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") :: _) as sexp ->
+       Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp ->
+       Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
+       Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+     | Sexplib0.Sexp.List [] as sexp ->
+       Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
+     | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
+               : Sexplib0.Sexp.t -> t)
   ;;
 
   let sexp_of_t =
     (function
-      | Infinite -> Ppx_sexp_conv_lib.Sexp.Atom "Infinite"
-      | Nan -> Ppx_sexp_conv_lib.Sexp.Atom "Nan"
-      | Normal -> Ppx_sexp_conv_lib.Sexp.Atom "Normal"
-      | Subnormal -> Ppx_sexp_conv_lib.Sexp.Atom "Subnormal"
-      | Zero -> Ppx_sexp_conv_lib.Sexp.Atom "Zero"
-                : t -> Ppx_sexp_conv_lib.Sexp.t)
+      | Infinite -> Sexplib0.Sexp.Atom "Infinite"
+      | Nan -> Sexplib0.Sexp.Atom "Nan"
+      | Normal -> Sexplib0.Sexp.Atom "Normal"
+      | Subnormal -> Sexplib0.Sexp.Atom "Subnormal"
+      | Zero -> Sexplib0.Sexp.Atom "Zero"
+                : t -> Sexplib0.Sexp.t)
   ;;
 
-  let (t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t) =
+  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
     { untyped =
         Variant
           { name_kind = Capitalized
@@ -617,14 +614,17 @@ let insert_underscores ?(delimiter = '_') ?(strip_zero = false) string =
      | _ -> left ^ "." ^ right)
 ;;
 
-let to_string_hum ?delimiter ?(decimals = 3) ?strip_zero f =
+let to_string_hum ?delimiter ?(decimals = 3) ?strip_zero ?(explicit_plus = false) f =
   if Int_replace_polymorphic_compare.( < ) decimals 0
   then invalid_argf "to_string_hum: invalid argument ~decimals=%d" decimals ();
   match classify f with
   | Class.Infinite -> if f > 0. then "inf" else "-inf"
   | Class.Nan -> "nan"
   | Class.Normal | Class.Subnormal | Class.Zero ->
-    insert_underscores (sprintf "%.*f" decimals f) ?delimiter ?strip_zero
+    let s =
+      if explicit_plus then sprintf "%+.*f" decimals f else sprintf "%.*f" decimals f
+    in
+    insert_underscores s ?delimiter ?strip_zero
 ;;
 
 let sexp_of_t t =

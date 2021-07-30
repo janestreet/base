@@ -14,20 +14,17 @@ module Step = struct
 
   let sexp_of_t
     : type a s.
-      (a -> Ppx_sexp_conv_lib.Sexp.t)
-      -> (s -> Ppx_sexp_conv_lib.Sexp.t)
-      -> (a, s) t
-      -> Ppx_sexp_conv_lib.Sexp.t
+      (a -> Sexplib0.Sexp.t) -> (s -> Sexplib0.Sexp.t) -> (a, s) t -> Sexplib0.Sexp.t
     =
     fun _of_a _of_s -> function
-      | Done -> Ppx_sexp_conv_lib.Sexp.Atom "Done"
+      | Done -> Sexplib0.Sexp.Atom "Done"
       | Skip v0 ->
         let v0 = _of_s v0 in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Skip"; v0 ]
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Skip"; v0 ]
       | Yield (v0, v1) ->
         let v0 = _of_a v0
         and v1 = _of_s v1 in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Yield"; v0; v1 ]
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Yield"; v0; v1 ]
   ;;
 
   [@@@end]
@@ -495,75 +492,66 @@ module Merge_with_duplicates_element = struct
 
   let t_of_sexp
     : type a b.
-      (Ppx_sexp_conv_lib.Sexp.t -> a)
-      -> (Ppx_sexp_conv_lib.Sexp.t -> b)
-      -> Ppx_sexp_conv_lib.Sexp.t
-      -> (a, b) t
+      (Sexplib0.Sexp.t -> a) -> (Sexplib0.Sexp.t -> b) -> Sexplib0.Sexp.t -> (a, b) t
     =
     let _tp_loc = "sequence.ml.Merge_with_duplicates_element.t" in
     fun _of_a _of_b -> function
-      | Ppx_sexp_conv_lib.Sexp.List
-          (Ppx_sexp_conv_lib.Sexp.Atom (("left" | "Left") as _tag) :: sexp_args) as _sexp
-        ->
+      | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("left" | "Left") as _tag) :: sexp_args)
+        as _sexp ->
         (match sexp_args with
          | [ v0 ] ->
            let v0 = _of_a v0 in
            Left v0
-         | _ -> Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-      | Ppx_sexp_conv_lib.Sexp.List
-          (Ppx_sexp_conv_lib.Sexp.Atom (("right" | "Right") as _tag) :: sexp_args) as
-        _sexp ->
+         | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+      | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("right" | "Right") as _tag) :: sexp_args)
+        as _sexp ->
         (match sexp_args with
          | [ v0 ] ->
            let v0 = _of_b v0 in
            Right v0
-         | _ -> Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-      | Ppx_sexp_conv_lib.Sexp.List
-          (Ppx_sexp_conv_lib.Sexp.Atom (("both" | "Both") as _tag) :: sexp_args) as _sexp
-        ->
+         | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+      | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("both" | "Both") as _tag) :: sexp_args)
+        as _sexp ->
         (match sexp_args with
          | [ v0; v1 ] ->
            let v0 = _of_a v0
            and v1 = _of_b v1 in
            Both (v0, v1)
-         | _ -> Ppx_sexp_conv_lib.Conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
-      | Ppx_sexp_conv_lib.Sexp.Atom ("left" | "Left") as sexp ->
-        Ppx_sexp_conv_lib.Conv_error.stag_takes_args _tp_loc sexp
-      | Ppx_sexp_conv_lib.Sexp.Atom ("right" | "Right") as sexp ->
-        Ppx_sexp_conv_lib.Conv_error.stag_takes_args _tp_loc sexp
-      | Ppx_sexp_conv_lib.Sexp.Atom ("both" | "Both") as sexp ->
-        Ppx_sexp_conv_lib.Conv_error.stag_takes_args _tp_loc sexp
-      | Ppx_sexp_conv_lib.Sexp.List (Ppx_sexp_conv_lib.Sexp.List _ :: _) as sexp ->
-        Ppx_sexp_conv_lib.Conv_error.nested_list_invalid_sum _tp_loc sexp
-      | Ppx_sexp_conv_lib.Sexp.List [] as sexp ->
-        Ppx_sexp_conv_lib.Conv_error.empty_list_invalid_sum _tp_loc sexp
-      | sexp -> Ppx_sexp_conv_lib.Conv_error.unexpected_stag _tp_loc sexp
+         | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+      | Sexplib0.Sexp.Atom ("left" | "Left") as sexp ->
+        Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+      | Sexplib0.Sexp.Atom ("right" | "Right") as sexp ->
+        Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+      | Sexplib0.Sexp.Atom ("both" | "Both") as sexp ->
+        Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+      | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
+        Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+      | Sexplib0.Sexp.List [] as sexp ->
+        Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
+      | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
   ;;
 
   let sexp_of_t
     : type a b.
-      (a -> Ppx_sexp_conv_lib.Sexp.t)
-      -> (b -> Ppx_sexp_conv_lib.Sexp.t)
-      -> (a, b) t
-      -> Ppx_sexp_conv_lib.Sexp.t
+      (a -> Sexplib0.Sexp.t) -> (b -> Sexplib0.Sexp.t) -> (a, b) t -> Sexplib0.Sexp.t
     =
     fun _of_a _of_b -> function
       | Left v0 ->
         let v0 = _of_a v0 in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Left"; v0 ]
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; v0 ]
       | Right v0 ->
         let v0 = _of_b v0 in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Right"; v0 ]
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; v0 ]
       | Both (v0, v1) ->
         let v0 = _of_a v0
         and v1 = _of_b v1 in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Both"; v0; v1 ]
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Both"; v0; v1 ]
   ;;
 
   let (t_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp_grammar.t
-       -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
-       -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t)
+         'a Sexplib0.Sexp_grammar.t
+       -> 'b Sexplib0.Sexp_grammar.t
+       -> ('a, 'b) t Sexplib0.Sexp_grammar.t)
     =
     fun _'a_sexp_grammar _'b_sexp_grammar ->
       { untyped =
@@ -615,9 +603,31 @@ let merge_with_duplicates (Sequence (s1, next1)) (Sequence (s2, next2)) ~compare
   Sequence ((Skip s1, Skip s2), next)
 ;;
 
-let merge s1 s2 ~compare =
+let merge_deduped_and_sorted s1 s2 ~compare =
   map (merge_with_duplicates s1 s2 ~compare) ~f:(function
     | Left x | Right x | Both (x, _) -> x)
+;;
+
+let (merge[@deprecated
+       "[since 2021-07] For identical behavior, use \
+        [Sequence.merge_deduped_and_sorted], but consider using \
+        [Sequence.merge_sorted] instead."])
+  =
+  merge_deduped_and_sorted
+;;
+
+let merge_sorted (Sequence (s1, next1)) (Sequence (s2, next2)) ~compare =
+  let next = function
+    | Skip s1, s2 -> Skip (next1 s1, s2)
+    | s1, Skip s2 -> Skip (s1, next2 s2)
+    | (Yield (a, s1') as s1), (Yield (b, s2') as s2) ->
+      let comparison = compare a b in
+      if comparison <= 0 then Yield (a, (Skip s1', s2)) else Yield (b, (s1, Skip s2'))
+    | Done, Done -> Done
+    | Yield (a, s1), Done -> Yield (a, (Skip s1, Done))
+    | Done, Yield (b, s2) -> Yield (b, (Done, Skip s2))
+  in
+  Sequence ((Skip s1, Skip s2), next)
 ;;
 
 let hd s =

@@ -14,11 +14,9 @@ val hash_fold_t
   -> 'a t
   -> Ppx_hash_lib.Std.Hash.state
 
-include Ppx_sexp_conv_lib.Sexpable.S1 with type 'a t := 'a t
+include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
-val t_sexp_grammar
-  :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
-  -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t
+val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
 [@@@end]
 
@@ -39,7 +37,7 @@ module Or_unequal_lengths : sig
   [@@deriving_inline compare, sexp_of]
 
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+  val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
   [@@@end]
 end
@@ -326,7 +324,7 @@ val group : 'a t -> break:('a -> 'a -> bool) -> 'a t t
 val groupi : 'a t -> break:(int -> 'a -> 'a -> bool) -> 'a t t
 
 (** Group equal elements into the same buckets. Sorting is stable. *)
-val sort_and_group : compare:('a -> 'a -> int) -> 'a t -> 'a t t
+val sort_and_group : 'a t -> compare:('a -> 'a -> int) -> 'a t t
 
 (** [chunks_of l ~length] returns a list of lists whose concatenation is equal to the
     original list.  Every list has [length] elements, except for possibly the last list,
@@ -361,19 +359,23 @@ val remove_consecutive_duplicates
   -> 'a t
 
 (** Returns the given list with duplicates removed and in sorted order. *)
-val dedup_and_sort : compare:('a -> 'a -> int) -> 'a t -> 'a t
+val dedup_and_sort : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 (** [find_a_dup] returns a duplicate from the list (with no guarantees about which
     duplicate you get), or [None] if there are no dups. *)
-val find_a_dup : compare:('a -> 'a -> int) -> 'a t -> 'a option
+val find_a_dup : 'a t -> compare:('a -> 'a -> int) -> 'a option
 
 (** Returns true if there are any two elements in the list which are the same. O(n log n)
     time complexity. *)
-val contains_dup : compare:('a -> 'a -> int) -> 'a t -> bool
+val contains_dup : 'a t -> compare:('a -> 'a -> int) -> bool
 
 (** [find_all_dups] returns a list of all elements that occur more than once, with
     no guarantees about order. O(n log n) time complexity. *)
-val find_all_dups : compare:('a -> 'a -> int) -> 'a t -> 'a list
+val find_all_dups : 'a t -> compare:('a -> 'a -> int) -> 'a list
+
+(** [all_equal] returns a single element of the list that is equal to all other elements,
+    or [None] if no such element exists. *)
+val all_equal : 'a t -> equal:('a -> 'a -> bool) -> 'a option
 
 (** [count l ~f] is the number of elements in [l] that satisfy the predicate [f]. *)
 val count : 'a t -> f:('a -> bool) -> int
@@ -440,12 +442,12 @@ val filter_opt : 'a option t -> 'a t
 module Assoc : sig
   type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp, sexp_grammar]
 
-  include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
+  include Sexplib0.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
 
   val t_sexp_grammar
-    :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t
+    :  'a Sexplib0.Sexp_grammar.t
+    -> 'b Sexplib0.Sexp_grammar.t
+    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
 
   [@@@end]
 

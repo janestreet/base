@@ -35,7 +35,7 @@ type +'a t [@@deriving_inline compare, equal, sexp_of]
 
 val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-val sexp_of_t : ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
+val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
 [@@@end]
 
@@ -68,10 +68,10 @@ module Step : sig
   [@@deriving_inline sexp_of]
 
   val sexp_of_t
-    :  ('a -> Ppx_sexp_conv_lib.Sexp.t)
-    -> ('s -> Ppx_sexp_conv_lib.Sexp.t)
+    :  ('a -> Sexplib0.Sexp.t)
+    -> ('s -> Sexplib0.Sexp.t)
     -> ('a, 's) t
-    -> Ppx_sexp_conv_lib.Sexp.t
+    -> Sexplib0.Sexp.t
 
   [@@@end]
 end
@@ -114,10 +114,23 @@ val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 val filter : 'a t -> f:('a -> bool) -> 'a t
 
-(** [merge t1 t2 ~compare] merges two sorted sequences [t1] and [t2], returning a sorted
-    sequence, all according to [compare].  If two elements are equal, the one from [t1] is
-    preferred.  The behavior is undefined if the inputs aren't sorted. *)
+(** If [t1] and [t2] are each sorted without duplicates, [merge_deduped_and_sorted t1 t2
+    ~compare] merges [t1] and [t2] into a sorted sequence without duplicates. Whenever
+    identical elements are found in both [t1] and [t2], the one from [t1] is used and the
+    one from [t2] is discarded. The behavior is undefined if the inputs aren't sorted or
+    contain duplicates. *)
+val merge_deduped_and_sorted : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
+
 val merge : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
+[@@deprecated
+  "[since 2021-07] For identical behavior, use [Sequence.merge_deduped_and_sorted], \
+   but consider using [Sequence.merge_sorted] instead."]
+
+(** If [t1] and [t2] are each sorted, [merge_sorted t1 t2 ~compare] merges [t1] and [t2]
+    into a sorted sequence. Whenever identical elements are found in both [t1] and [t2],
+    the one from [t1] is used first. The behavior is undefined if the inputs aren't
+    sorted. *)
+val merge_sorted : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 module Merge_with_duplicates_element : sig
   type ('a, 'b) t =
@@ -135,12 +148,12 @@ module Merge_with_duplicates_element : sig
     -> ('a, 'b) t
     -> Ppx_hash_lib.Std.Hash.state
 
-  include Ppx_sexp_conv_lib.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
+  include Sexplib0.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
 
   val t_sexp_grammar
-    :  'a Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
-    -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t
+    :  'a Sexplib0.Sexp_grammar.t
+    -> 'b Sexplib0.Sexp_grammar.t
+    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
 
   [@@@end]
 end

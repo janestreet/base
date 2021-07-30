@@ -37,9 +37,9 @@ val all : t list
 val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
 val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 
-include Ppx_sexp_conv_lib.Sexpable.S with type t := t
+include Sexplib0.Sexpable.S with type t := t
 
-val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 [@@@end]
 

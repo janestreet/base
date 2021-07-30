@@ -315,3 +315,22 @@ let%expect_test "[map_keys]" =
   test map String.comparator ~f:(fun x -> Int.to_string (x / 2));
   [%expect {| (Duplicate_key 1) |}]
 ;;
+
+let%expect_test "[fold_until]" =
+  let test t =
+    print_s
+      [%sexp
+        (Map.fold_until
+           t
+           ~init:0
+           ~f:(fun ~key ~data acc -> if key > 2 then Stop data else Continue (acc + key))
+           ~finish:Int.to_string
+         : string)]
+  in
+  let map = Map.of_alist_exn (module Int) [ 1, "one"; 2, "two"; 3, "three" ] in
+  test map;
+  [%expect {| three |}];
+  let map = Map.of_alist_exn (module Int) [ -1, "minus-one"; 1, "one"; 2, "two" ] in
+  test map;
+  [%expect {| 2 |}]
+;;

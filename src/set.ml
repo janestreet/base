@@ -288,11 +288,11 @@ module Tree0 = struct
   exception Set_min_elt_exn_of_empty_set [@@deriving_inline sexp]
 
   let () =
-    Ppx_sexp_conv_lib.Conv.Exn_converter.add
+    Sexplib0.Sexp_conv.Exn_converter.add
       [%extension_constructor Set_min_elt_exn_of_empty_set]
       (function
         | Set_min_elt_exn_of_empty_set ->
-          Ppx_sexp_conv_lib.Sexp.Atom "set.ml.Tree0.Set_min_elt_exn_of_empty_set"
+          Sexplib0.Sexp.Atom "set.ml.Tree0.Set_min_elt_exn_of_empty_set"
         | _ -> assert false)
   ;;
 
@@ -301,11 +301,11 @@ module Tree0 = struct
   exception Set_max_elt_exn_of_empty_set [@@deriving_inline sexp]
 
   let () =
-    Ppx_sexp_conv_lib.Conv.Exn_converter.add
+    Sexplib0.Sexp_conv.Exn_converter.add
       [%extension_constructor Set_max_elt_exn_of_empty_set]
       (function
         | Set_max_elt_exn_of_empty_set ->
-          Ppx_sexp_conv_lib.Sexp.Atom "set.ml.Tree0.Set_max_elt_exn_of_empty_set"
+          Sexplib0.Sexp.Atom "set.ml.Tree0.Set_max_elt_exn_of_empty_set"
         | _ -> assert false)
   ;;
 
@@ -1451,7 +1451,7 @@ end
 module type Sexp_of_m = sig
   type t [@@deriving_inline sexp_of]
 
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 
   [@@@end]
 end
@@ -1459,7 +1459,7 @@ end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
 
-  val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+  val t_of_sexp : Sexplib0.Sexp.t -> t
 
   [@@@end]
 
@@ -1469,7 +1469,7 @@ end
 module type M_sexp_grammar = sig
   type t [@@deriving_inline sexp_grammar]
 
-  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
   [@@@end]
 end
@@ -1491,9 +1491,9 @@ let m__t_of_sexp
 ;;
 
 let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt)
-  : (elt, _) t Ppx_sexp_conv_lib.Sexp_grammar.t
+  : (elt, _) t Sexplib0.Sexp_grammar.t
   =
-  Ppx_sexp_conv_lib.Sexp_grammar.coerce (list_sexp_grammar Elt.t_sexp_grammar)
+  Sexplib0.Sexp_grammar.coerce (list_sexp_grammar Elt.t_sexp_grammar)
 ;;
 
 let compare_m__t (module Elt : Compare_m) t1 t2 = compare_direct t1 t2

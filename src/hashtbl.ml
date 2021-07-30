@@ -577,11 +577,11 @@ let t_of_sexp ~hashable k_of_sexp d_of_sexp sexp =
 
 let t_sexp_grammar
       (type k v)
-      (k_grammar : k Ppx_sexp_conv_lib.Sexp_grammar.t)
-      (v_grammar : v Ppx_sexp_conv_lib.Sexp_grammar.t)
-  : (k, v) t Ppx_sexp_conv_lib.Sexp_grammar.t
+      (k_grammar : k Sexplib0.Sexp_grammar.t)
+      (v_grammar : v Sexplib0.Sexp_grammar.t)
+  : (k, v) t Sexplib0.Sexp_grammar.t
   =
-  Ppx_sexp_conv_lib.Sexp_grammar.coerce (List.Assoc.t_sexp_grammar k_grammar v_grammar)
+  Sexplib0.Sexp_grammar.coerce (List.Assoc.t_sexp_grammar k_grammar v_grammar)
 ;;
 
 let keys t = fold t ~init:[] ~f:(fun ~key ~data:_ acc -> key :: acc)
@@ -919,7 +919,7 @@ end
 module type Sexp_of_m = sig
   type t [@@deriving_inline sexp_of]
 
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 
   [@@@end]
 end
@@ -927,7 +927,7 @@ end
 module type M_of_sexp = sig
   type t [@@deriving_inline of_sexp]
 
-  val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
+  val t_of_sexp : Sexplib0.Sexp.t -> t
 
   [@@@end]
 
@@ -937,10 +937,12 @@ end
 module type M_sexp_grammar = sig
   type t [@@deriving_inline sexp_grammar]
 
-  val t_sexp_grammar : t Ppx_sexp_conv_lib.Sexp_grammar.t
+  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
   [@@@end]
 end
+
+module type Equal_m = sig end
 
 let sexp_of_m__t (type k) (module K : Sexp_of_m with type t = k) sexp_of_v t =
   sexp_of_t K.sexp_of_t sexp_of_v t
@@ -953,6 +955,8 @@ let m__t_of_sexp (type k) (module K : M_of_sexp with type t = k) v_of_sexp sexp 
 let m__t_sexp_grammar (type k) (module K : M_sexp_grammar with type t = k) v_grammar =
   t_sexp_grammar K.t_sexp_grammar v_grammar
 ;;
+
+let equal_m__t (module K : Equal_m) equal_v t1 t2 = equal equal_v t1 t2
 
 (* typechecking this code is a compile-time test that [Creators] is a specialization of
    [Creators_generic].  *)

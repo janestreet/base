@@ -12,19 +12,10 @@ let invalid_argf = Printf.invalid_argf
 module T = struct
   type 'a t = 'a list [@@deriving_inline sexp, sexp_grammar]
 
-  let t_of_sexp : 'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a t
-    =
-    list_of_sexp
-  ;;
+  let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = list_of_sexp
+  let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_list
 
-  let sexp_of_t : 'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a t -> Ppx_sexp_conv_lib.Sexp.t
-    =
-    sexp_of_list
-  ;;
-
-  let (t_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a t Ppx_sexp_conv_lib.Sexp_grammar.t)
-    =
+  let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
     fun _'a_sexp_grammar -> list_sexp_grammar _'a_sexp_grammar
   ;;
 
@@ -49,14 +40,12 @@ module Or_unequal_lengths = struct
       | Unequal_lengths, Unequal_lengths -> 0)
   ;;
 
-  let sexp_of_t
-    : type a. (a -> Ppx_sexp_conv_lib.Sexp.t) -> a t -> Ppx_sexp_conv_lib.Sexp.t
-    =
+  let sexp_of_t : type a. (a -> Sexplib0.Sexp.t) -> a t -> Sexplib0.Sexp.t =
     fun _of_a -> function
       | Ok v0 ->
         let v0 = _of_a v0 in
-        Ppx_sexp_conv_lib.Sexp.List [ Ppx_sexp_conv_lib.Sexp.Atom "Ok"; v0 ]
-      | Unequal_lengths -> Ppx_sexp_conv_lib.Sexp.Atom "Unequal_lengths"
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; v0 ]
+      | Unequal_lengths -> Sexplib0.Sexp.Atom "Unequal_lengths"
   ;;
 
   [@@@end]
@@ -722,7 +711,7 @@ let groupi l ~break =
 
 let group l ~break = groupi l ~break:(fun _ x y -> break x y)
 
-let sort_and_group ~compare l =
+let sort_and_group l ~compare =
   l |> stable_sort ~compare |> group ~break:(fun x y -> compare x y <> 0)
 ;;
 
@@ -835,7 +824,7 @@ let remove_consecutive_duplicates ?(which_to_keep = `Last) list ~equal =
 ;;
 
 (** returns sorted version of list with duplicates removed *)
-let dedup_and_sort ~compare list =
+let dedup_and_sort list ~compare =
   match list with
   | [] | [ _ ] -> list (* performance hack *)
   | _ ->
@@ -844,8 +833,8 @@ let dedup_and_sort ~compare list =
     remove_consecutive_duplicates ~equal sorted
 ;;
 
-let find_a_dup ~compare l =
-  let sorted = sort ~compare l in
+let find_a_dup l ~compare =
+  let sorted = sort l ~compare in
   let rec loop l =
     match l with
     | [] | [ _ ] -> None
@@ -854,13 +843,13 @@ let find_a_dup ~compare l =
   loop sorted
 ;;
 
-let contains_dup ~compare lst =
-  match find_a_dup ~compare lst with
+let contains_dup lst ~compare =
+  match find_a_dup lst ~compare with
   | Some _ -> true
   | None -> false
 ;;
 
-let find_all_dups ~compare l =
+let find_all_dups l ~compare =
   (* We add this reversal, so we can skip a [rev] at the end. We could skip
      [rev] anyway since we don not give any ordering guarantees, but it is
      nice to get results in natural order. *)
@@ -880,6 +869,18 @@ let find_all_dups ~compare l =
   match sorted with
   | [] -> []
   | hd :: tl -> loop tl hd ~already_recorded:false []
+;;
+
+let rec all_equal_to t v ~equal =
+  match t with
+  | [] -> true
+  | x :: xs -> equal x v && all_equal_to xs v ~equal
+;;
+
+let all_equal t ~equal =
+  match t with
+  | [] -> None
+  | x :: xs -> if all_equal_to xs x ~equal then Some x else None
 ;;
 
 let count t ~f = Container.count ~fold t ~f
@@ -953,39 +954,38 @@ module Assoc = struct
   type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp, sexp_grammar]
 
   let t_of_sexp :
-    'a 'b. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> (Ppx_sexp_conv_lib.Sexp.t -> 'b)
-    -> Ppx_sexp_conv_lib.Sexp.t -> ('a, 'b) t
+    'a 'b. (Sexplib0.Sexp.t -> 'a) -> (Sexplib0.Sexp.t -> 'b) -> Sexplib0.Sexp.t
+    -> ('a, 'b) t
     =
     let _tp_loc = "list.ml.Assoc.t" in
     fun _of_a _of_b t ->
       list_of_sexp
         (function
-          | Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ] ->
+          | Sexplib0.Sexp.List [ v0; v1 ] ->
             let v0 = _of_a v0
             and v1 = _of_b v1 in
             v0, v1
-          | sexp -> Ppx_sexp_conv_lib.Conv_error.tuple_of_size_n_expected _tp_loc 2 sexp)
+          | sexp -> Sexplib0.Sexp_conv_error.tuple_of_size_n_expected _tp_loc 2 sexp)
         t
   ;;
 
   let sexp_of_t :
-    'a 'b. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> ('b -> Ppx_sexp_conv_lib.Sexp.t)
-    -> ('a, 'b) t -> Ppx_sexp_conv_lib.Sexp.t
+    'a 'b. ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t
+    -> Sexplib0.Sexp.t
     =
     fun _of_a _of_b v ->
       sexp_of_list
-        (function
-          | v0, v1 ->
-            let v0 = _of_a v0
-            and v1 = _of_b v1 in
-            Ppx_sexp_conv_lib.Sexp.List [ v0; v1 ])
+        (fun (v0, v1) ->
+           let v0 = _of_a v0
+           and v1 = _of_b v1 in
+           Sexplib0.Sexp.List [ v0; v1 ])
         v
   ;;
 
   let (t_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp_grammar.t
-       -> 'b Ppx_sexp_conv_lib.Sexp_grammar.t
-       -> ('a, 'b) t Ppx_sexp_conv_lib.Sexp_grammar.t)
+         'a Sexplib0.Sexp_grammar.t
+       -> 'b Sexplib0.Sexp_grammar.t
+       -> ('a, 'b) t Sexplib0.Sexp_grammar.t)
     =
     fun _'a_sexp_grammar _'b_sexp_grammar ->
       list_sexp_grammar
@@ -1244,15 +1244,13 @@ let transpose =
 exception Transpose_got_lists_of_different_lengths of int list [@@deriving_inline sexp]
 
 let () =
-  Ppx_sexp_conv_lib.Conv.Exn_converter.add
+  Sexplib0.Sexp_conv.Exn_converter.add
     [%extension_constructor Transpose_got_lists_of_different_lengths]
     (function
       | Transpose_got_lists_of_different_lengths v0 ->
         let v0 = sexp_of_list sexp_of_int v0 in
-        Ppx_sexp_conv_lib.Sexp.List
-          [ Ppx_sexp_conv_lib.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"
-          ; v0
-          ]
+        Sexplib0.Sexp.List
+          [ Sexplib0.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"; v0 ]
       | _ -> assert false)
 ;;
 

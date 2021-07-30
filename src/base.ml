@@ -169,10 +169,8 @@ end
 module Exported_for_specific_uses = struct
   module Fieldslib = Fieldslib
   module Ppx_hash_lib = Ppx_hash_lib
-  module Sexplib = Sexplib
   module Variantslib = Variantslib
   module Ppx_compare_lib = Ppx_compare_lib
-  module Ppx_sexp_conv_lib = Ppx_sexp_conv_lib
 
   let am_testing = am_testing
 end
@@ -186,20 +184,16 @@ module Export = struct
   let compare_array : 'a. ('a -> 'a -> int) -> 'a array -> 'a array -> int = Array.compare
   let equal_array : 'a. ('a -> 'a -> bool) -> 'a array -> 'a array -> bool = Array.equal
 
-  let array_of_sexp :
-    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a array
-    =
+  let array_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a array =
     Array.t_of_sexp
   ;;
 
-  let sexp_of_array :
-    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a array -> Ppx_sexp_conv_lib.Sexp.t
-    =
+  let sexp_of_array : 'a. ('a -> Sexplib0.Sexp.t) -> 'a array -> Sexplib0.Sexp.t =
     Array.sexp_of_t
   ;;
 
   let (array_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a array Ppx_sexp_conv_lib.Sexp_grammar.t)
+         'a Sexplib0.Sexp_grammar.t -> 'a array Sexplib0.Sexp_grammar.t)
     =
     fun _'a_sexp_grammar -> Array.t_sexp_grammar _'a_sexp_grammar
   ;;
@@ -221,9 +215,9 @@ module Export = struct
     fun x -> func x
   ;;
 
-  let bool_of_sexp = (Bool.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bool)
-  let sexp_of_bool = (Bool.sexp_of_t : bool -> Ppx_sexp_conv_lib.Sexp.t)
-  let (bool_sexp_grammar : bool Ppx_sexp_conv_lib.Sexp_grammar.t) = Bool.t_sexp_grammar
+  let bool_of_sexp = (Bool.t_of_sexp : Sexplib0.Sexp.t -> bool)
+  let sexp_of_bool = (Bool.sexp_of_t : bool -> Sexplib0.Sexp.t)
+  let (bool_sexp_grammar : bool Sexplib0.Sexp_grammar.t) = Bool.t_sexp_grammar
 
   [@@@end]
 
@@ -242,15 +236,15 @@ module Export = struct
     fun x -> func x
   ;;
 
-  let char_of_sexp = (Char.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> char)
-  let sexp_of_char = (Char.sexp_of_t : char -> Ppx_sexp_conv_lib.Sexp.t)
-  let (char_sexp_grammar : char Ppx_sexp_conv_lib.Sexp_grammar.t) = Char.t_sexp_grammar
+  let char_of_sexp = (Char.t_of_sexp : Sexplib0.Sexp.t -> char)
+  let sexp_of_char = (Char.sexp_of_t : char -> Sexplib0.Sexp.t)
+  let (char_sexp_grammar : char Sexplib0.Sexp_grammar.t) = Char.t_sexp_grammar
 
   [@@@end]
 
   type exn = Exn.t [@@deriving_inline sexp_of]
 
-  let sexp_of_exn = (Exn.sexp_of_t : exn -> Ppx_sexp_conv_lib.Sexp.t)
+  let sexp_of_exn = (Exn.sexp_of_t : exn -> Sexplib0.Sexp.t)
 
   [@@@end]
 
@@ -269,9 +263,9 @@ module Export = struct
     fun x -> func x
   ;;
 
-  let float_of_sexp = (Float.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> float)
-  let sexp_of_float = (Float.sexp_of_t : float -> Ppx_sexp_conv_lib.Sexp.t)
-  let (float_sexp_grammar : float Ppx_sexp_conv_lib.Sexp_grammar.t) = Float.t_sexp_grammar
+  let float_of_sexp = (Float.t_of_sexp : Sexplib0.Sexp.t -> float)
+  let sexp_of_float = (Float.sexp_of_t : float -> Sexplib0.Sexp.t)
+  let (float_sexp_grammar : float Sexplib0.Sexp_grammar.t) = Float.t_sexp_grammar
 
   [@@@end]
 
@@ -288,9 +282,9 @@ module Export = struct
     fun x -> func x
   ;;
 
-  let int_of_sexp = (Int.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int)
-  let sexp_of_int = (Int.sexp_of_t : int -> Ppx_sexp_conv_lib.Sexp.t)
-  let (int_sexp_grammar : int Ppx_sexp_conv_lib.Sexp_grammar.t) = Int.t_sexp_grammar
+  let int_of_sexp = (Int.t_of_sexp : Sexplib0.Sexp.t -> int)
+  let sexp_of_int = (Int.sexp_of_t : int -> Sexplib0.Sexp.t)
+  let (int_sexp_grammar : int Sexplib0.Sexp_grammar.t) = Int.t_sexp_grammar
 
   [@@@end]
 
@@ -309,9 +303,9 @@ module Export = struct
     fun x -> func x
   ;;
 
-  let int32_of_sexp = (Int32.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int32)
-  let sexp_of_int32 = (Int32.sexp_of_t : int32 -> Ppx_sexp_conv_lib.Sexp.t)
-  let (int32_sexp_grammar : int32 Ppx_sexp_conv_lib.Sexp_grammar.t) = Int32.t_sexp_grammar
+  let int32_of_sexp = (Int32.t_of_sexp : Sexplib0.Sexp.t -> int32)
+  let sexp_of_int32 = (Int32.sexp_of_t : int32 -> Sexplib0.Sexp.t)
+  let (int32_sexp_grammar : int32 Sexplib0.Sexp_grammar.t) = Int32.t_sexp_grammar
 
   [@@@end]
 
@@ -330,9 +324,9 @@ module Export = struct
     fun x -> func x
   ;;
 
-  let int64_of_sexp = (Int64.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> int64)
-  let sexp_of_int64 = (Int64.sexp_of_t : int64 -> Ppx_sexp_conv_lib.Sexp.t)
-  let (int64_sexp_grammar : int64 Ppx_sexp_conv_lib.Sexp_grammar.t) = Int64.t_sexp_grammar
+  let int64_of_sexp = (Int64.t_of_sexp : Sexplib0.Sexp.t -> int64)
+  let sexp_of_int64 = (Int64.sexp_of_t : int64 -> Sexplib0.Sexp.t)
+  let (int64_sexp_grammar : int64 Sexplib0.Sexp_grammar.t) = Int64.t_sexp_grammar
 
   [@@@end]
 
@@ -348,21 +342,15 @@ module Export = struct
     List.hash_fold_t
   ;;
 
-  let list_of_sexp :
-    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a list
-    =
+  let list_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a list =
     List.t_of_sexp
   ;;
 
-  let sexp_of_list :
-    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a list -> Ppx_sexp_conv_lib.Sexp.t
-    =
+  let sexp_of_list : 'a. ('a -> Sexplib0.Sexp.t) -> 'a list -> Sexplib0.Sexp.t =
     List.sexp_of_t
   ;;
 
-  let (list_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a list Ppx_sexp_conv_lib.Sexp_grammar.t)
-    =
+  let (list_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a list Sexplib0.Sexp_grammar.t) =
     fun _'a_sexp_grammar -> List.t_sexp_grammar _'a_sexp_grammar
   ;;
 
@@ -384,10 +372,10 @@ module Export = struct
     fun x -> func x
   ;;
 
-  let nativeint_of_sexp = (Nativeint.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> nativeint)
-  let sexp_of_nativeint = (Nativeint.sexp_of_t : nativeint -> Ppx_sexp_conv_lib.Sexp.t)
+  let nativeint_of_sexp = (Nativeint.t_of_sexp : Sexplib0.Sexp.t -> nativeint)
+  let sexp_of_nativeint = (Nativeint.sexp_of_t : nativeint -> Sexplib0.Sexp.t)
 
-  let (nativeint_sexp_grammar : nativeint Ppx_sexp_conv_lib.Sexp_grammar.t) =
+  let (nativeint_sexp_grammar : nativeint Sexplib0.Sexp_grammar.t) =
     Nativeint.t_sexp_grammar
   ;;
 
@@ -411,20 +399,16 @@ module Export = struct
     Option.hash_fold_t
   ;;
 
-  let option_of_sexp :
-    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a option
-    =
+  let option_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a option =
     Option.t_of_sexp
   ;;
 
-  let sexp_of_option :
-    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a option -> Ppx_sexp_conv_lib.Sexp.t
-    =
+  let sexp_of_option : 'a. ('a -> Sexplib0.Sexp.t) -> 'a option -> Sexplib0.Sexp.t =
     Option.sexp_of_t
   ;;
 
   let (option_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a option Ppx_sexp_conv_lib.Sexp_grammar.t)
+         'a Sexplib0.Sexp_grammar.t -> 'a option Sexplib0.Sexp_grammar.t)
     =
     fun _'a_sexp_grammar -> Option.t_sexp_grammar _'a_sexp_grammar
   ;;
@@ -436,21 +420,15 @@ module Export = struct
   let compare_ref : 'a. ('a -> 'a -> int) -> 'a ref -> 'a ref -> int = Ref.compare
   let equal_ref : 'a. ('a -> 'a -> bool) -> 'a ref -> 'a ref -> bool = Ref.equal
 
-  let ref_of_sexp :
-    'a. (Ppx_sexp_conv_lib.Sexp.t -> 'a) -> Ppx_sexp_conv_lib.Sexp.t -> 'a ref
-    =
+  let ref_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a ref =
     Ref.t_of_sexp
   ;;
 
-  let sexp_of_ref :
-    'a. ('a -> Ppx_sexp_conv_lib.Sexp.t) -> 'a ref -> Ppx_sexp_conv_lib.Sexp.t
-    =
+  let sexp_of_ref : 'a. ('a -> Sexplib0.Sexp.t) -> 'a ref -> Sexplib0.Sexp.t =
     Ref.sexp_of_t
   ;;
 
-  let (ref_sexp_grammar :
-         'a Ppx_sexp_conv_lib.Sexp_grammar.t -> 'a ref Ppx_sexp_conv_lib.Sexp_grammar.t)
-    =
+  let (ref_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a ref Sexplib0.Sexp_grammar.t) =
     fun _'a_sexp_grammar -> Ref.t_sexp_grammar _'a_sexp_grammar
   ;;
 
@@ -471,12 +449,9 @@ module Export = struct
     fun x -> func x
   ;;
 
-  let string_of_sexp = (String.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> string)
-  let sexp_of_string = (String.sexp_of_t : string -> Ppx_sexp_conv_lib.Sexp.t)
-
-  let (string_sexp_grammar : string Ppx_sexp_conv_lib.Sexp_grammar.t) =
-    String.t_sexp_grammar
-  ;;
+  let string_of_sexp = (String.t_of_sexp : Sexplib0.Sexp.t -> string)
+  let sexp_of_string = (String.sexp_of_t : string -> Sexplib0.Sexp.t)
+  let (string_sexp_grammar : string Sexplib0.Sexp_grammar.t) = String.t_sexp_grammar
 
   [@@@end]
 
@@ -484,9 +459,9 @@ module Export = struct
 
   let compare_bytes = (Bytes.compare : bytes -> bytes -> int)
   let equal_bytes = (Bytes.equal : bytes -> bytes -> bool)
-  let bytes_of_sexp = (Bytes.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> bytes)
-  let sexp_of_bytes = (Bytes.sexp_of_t : bytes -> Ppx_sexp_conv_lib.Sexp.t)
-  let (bytes_sexp_grammar : bytes Ppx_sexp_conv_lib.Sexp_grammar.t) = Bytes.t_sexp_grammar
+  let bytes_of_sexp = (Bytes.t_of_sexp : Sexplib0.Sexp.t -> bytes)
+  let sexp_of_bytes = (Bytes.sexp_of_t : bytes -> Sexplib0.Sexp.t)
+  let (bytes_sexp_grammar : bytes Sexplib0.Sexp_grammar.t) = Bytes.t_sexp_grammar
 
   [@@@end]
 
@@ -505,9 +480,9 @@ module Export = struct
     fun x -> func x
   ;;
 
-  let unit_of_sexp = (Unit.t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> unit)
-  let sexp_of_unit = (Unit.sexp_of_t : unit -> Ppx_sexp_conv_lib.Sexp.t)
-  let (unit_sexp_grammar : unit Ppx_sexp_conv_lib.Sexp_grammar.t) = Unit.t_sexp_grammar
+  let unit_of_sexp = (Unit.t_of_sexp : Sexplib0.Sexp.t -> unit)
+  let sexp_of_unit = (Unit.sexp_of_t : unit -> Sexplib0.Sexp.t)
+  let (unit_sexp_grammar : unit Sexplib0.Sexp_grammar.t) = Unit.t_sexp_grammar
 
   [@@@end]
 
