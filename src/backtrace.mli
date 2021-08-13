@@ -77,6 +77,27 @@ module Exn : sig
       calls. All of those function calls are then reported in this backtrace, even though
       they are not themselves on the path from the exception handler to the "raise". *)
   val most_recent : unit -> t
+
+  (** [most_recent_for_exn exn] returns a backtrace containing the stack that was unwound
+      when raising [exn] if [exn] is the most recently raised exception.  Otherwise it
+      returns [None].
+
+      Note that this may return a misleading backtrace instead of [None] if
+      different raise events happen to raise physically equal exceptions.
+      Consider the example below. Here if [e = Not_found] and [g] usees
+      [Not_found] internally then the backtrace will correspond to the
+      internal backtrace in [g] instead of the one used in [f], which is
+      not desirable.
+
+      {[
+        try f () with
+        | e ->
+          g ();
+          let bt = Backtrace.Exn.most_recent_for_exn e in
+          ...
+      ]}
+  *)
+  val most_recent_for_exn : Exn.t -> t option
 end
 
 (** User code never calls this.  It is called only in [base.ml], as a top-level side

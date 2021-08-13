@@ -492,32 +492,6 @@ module Export = struct
   type nonrec ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'd) format4
   type nonrec ('a, 'b, 'c, 'd, 'e, 'f) format6 = ('a, 'b, 'c, 'd, 'e, 'f) format6
 
-  (** {2 Sexp}
-
-      Exporting the ad-hoc types that are recognized by [ppx_sexp_*] converters.
-      [sexp_array], [sexp_list], and [sexp_option] allow a record field to be absent when
-      converting from a sexp, and if absent, the field will take a default value of the
-      appropriate type:
-
-      {v
-        sexp_array   [||]
-        sexp_bool    false
-        sexp_list    []
-        sexp_option  None
-      v}
-
-      [sexp_opaque] causes the conversion to sexp to produce the atom [<opaque>].
-
-      For more documentation, see sexplib/README.md. *)
-
-  type 'a sexp_array = 'a array [@@deprecated "[since 2019-03] use [@sexp.array] instead"]
-
-  type 'a sexp_list = 'a list [@@deprecated "[since 2019-03] use [@sexp.list] instead"]
-  type 'a sexp_opaque = 'a [@@deprecated "[since 2019-03] use [@sexp.opaque] instead"]
-
-  type 'a sexp_option = 'a option
-  [@@deprecated "[since 2019-03] use [@sexp.option] instead"]
-
   (** List operators *)
 
   include List.Infix

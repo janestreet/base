@@ -5,6 +5,35 @@ module type Polymorphic_compare = Comparisons.S
 
 module Sign = Sign0 (** @canonical Base.Sign *)
 
+module type With_compare = sig
+  (** Various combinators for [compare] and [equal] functions. *)
+
+  (** [lexicographic cmps x y] compares [x] and [y] lexicographically using functions in the
+      list [cmps]. *)
+  val lexicographic : ('a -> 'a -> int) list -> 'a -> 'a -> int
+
+  (** [lift cmp ~f x y] compares [x] and [y] by comparing [f x] and [f y] via [cmp]. *)
+  val lift : ('a -> 'a -> 'result) -> f:('b -> 'a) -> 'b -> 'b -> 'result
+
+  (** [reverse cmp x y = cmp y x]
+
+      Reverses the direction of asymmetric relations by swapping their arguments. Useful,
+      e.g., for relations implementing "is a subset of" or "is a descendant of".
+
+      Where reversed relations are already provided, use them directly. For example,
+      [Comparable.S] provides [ascending] and [descending], which are more readable as a
+      pair than [compare] and [reverse compare]. Similarly, [<=] is more idiomatic than
+      [reverse (>=)]. *)
+  val reverse : ('a -> 'a -> 'result) -> 'a -> 'a -> 'result
+
+  (** The functions below are analogues of the type-specific functions exported by the
+      [Comparable.S] interface. *)
+
+  val equal : ('a -> 'a -> int) -> 'a -> 'a -> bool
+  val max : ('a -> 'a -> int) -> 'a -> 'a -> 'a
+  val min : ('a -> 'a -> int) -> 'a -> 'a -> 'a
+end
+
 module type With_zero = sig
   type t
 
@@ -109,32 +138,10 @@ module type Comparable = sig
   module type Infix = Infix
   module type S = S
   module type Polymorphic_compare = Polymorphic_compare
+  module type With_compare = With_compare
   module type With_zero = With_zero
 
-  (** [lexicographic cmps x y] compares [x] and [y] lexicographically using functions in the
-      list [cmps]. *)
-  val lexicographic : ('a -> 'a -> int) list -> 'a -> 'a -> int
-
-  (** [lift cmp ~f x y] compares [x] and [y] by comparing [f x] and [f y] via [cmp]. *)
-  val lift : ('a -> 'a -> 'result) -> f:('b -> 'a) -> 'b -> 'b -> 'result
-
-  (** [reverse cmp x y = cmp y x]
-
-      Reverses the direction of asymmetric relations by swapping their arguments. Useful,
-      e.g., for relations implementing "is a subset of" or "is a descendant of".
-
-      Where reversed relations are already provided, use them directly. For example,
-      [Comparable.S] provides [ascending] and [descending], which are more readable as a
-      pair than [compare] and [reverse compare]. Similarly, [<=] is more idiomatic than
-      [reverse (>=)]. *)
-  val reverse : ('a -> 'a -> 'result) -> 'a -> 'a -> 'result
-
-  (** The functions below are analogues of the type-specific functions exported by the
-      [Comparable.S] interface. *)
-
-  val equal : ('a -> 'a -> int) -> 'a -> 'a -> bool
-  val max : ('a -> 'a -> int) -> 'a -> 'a -> 'a
-  val min : ('a -> 'a -> int) -> 'a -> 'a -> 'a
+  include With_compare
 
   (** Derive [Infix] or [Polymorphic_compare] functions from just [[@@deriving compare]],
       without need for the [sexp_of_t] required by [Make*] (see below). *)

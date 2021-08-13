@@ -535,7 +535,7 @@ module Class = struct
   let all = ([ Infinite; Nan; Normal; Subnormal; Zero ] : t list)
 
   let t_of_sexp =
-    (let _tp_loc = "float.ml.Class.t" in
+    (let error_source__003_ = "float.ml.Class.t" in
      function
      | Sexplib0.Sexp.Atom ("infinite" | "Infinite") -> Infinite
      | Sexplib0.Sexp.Atom ("nan" | "Nan") -> Nan
@@ -543,20 +543,20 @@ module Class = struct
      | Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") -> Subnormal
      | Sexplib0.Sexp.Atom ("zero" | "Zero") -> Zero
      | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("infinite" | "Infinite") :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
      | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("nan" | "Nan") :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
      | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("normal" | "Normal") :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
      | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
      | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
      | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__003_ sexp
      | Sexplib0.Sexp.List [] as sexp ->
-       Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
-     | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
+       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__003_ sexp
+     | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__003_ sexp
                : Sexplib0.Sexp.t -> t)
   ;;
 

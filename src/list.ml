@@ -29,12 +29,12 @@ module Or_unequal_lengths = struct
   [@@deriving_inline compare, sexp_of]
 
   let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-    fun _cmp__a a__001_ b__002_ ->
-    if Ppx_compare_lib.phys_equal a__001_ b__002_
+    fun _cmp__a a__003_ b__004_ ->
+    if Ppx_compare_lib.phys_equal a__003_ b__004_
     then 0
     else (
-      match a__001_, b__002_ with
-      | Ok _a__003_, Ok _b__004_ -> _cmp__a _a__003_ _b__004_
+      match a__003_, b__004_ with
+      | Ok _a__005_, Ok _b__006_ -> _cmp__a _a__005_ _b__006_
       | Ok _, _ -> -1
       | _, Ok _ -> 1
       | Unequal_lengths, Unequal_lengths -> 0)
@@ -42,9 +42,9 @@ module Or_unequal_lengths = struct
 
   let sexp_of_t : type a. (a -> Sexplib0.Sexp.t) -> a t -> Sexplib0.Sexp.t =
     fun _of_a -> function
-      | Ok v0 ->
-        let v0 = _of_a v0 in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; v0 ]
+      | Ok arg0__007_ ->
+        let res0__008_ = _of_a arg0__007_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; res0__008_ ]
       | Unequal_lengths -> Sexplib0.Sexp.Atom "Unequal_lengths"
   ;;
 
@@ -957,29 +957,30 @@ module Assoc = struct
     'a 'b. (Sexplib0.Sexp.t -> 'a) -> (Sexplib0.Sexp.t -> 'b) -> Sexplib0.Sexp.t
     -> ('a, 'b) t
     =
-    let _tp_loc = "list.ml.Assoc.t" in
-    fun _of_a _of_b t ->
+    let error_source__013_ = "list.ml.Assoc.t" in
+    fun _of_a _of_b x__014_ ->
       list_of_sexp
         (function
-          | Sexplib0.Sexp.List [ v0; v1 ] ->
-            let v0 = _of_a v0
-            and v1 = _of_b v1 in
-            v0, v1
-          | sexp -> Sexplib0.Sexp_conv_error.tuple_of_size_n_expected _tp_loc 2 sexp)
-        t
+          | Sexplib0.Sexp.List [ arg0__009_; arg1__010_ ] ->
+            let res0__011_ = _of_a arg0__009_
+            and res1__012_ = _of_b arg1__010_ in
+            res0__011_, res1__012_
+          | sexp ->
+            Sexplib0.Sexp_conv_error.tuple_of_size_n_expected error_source__013_ 2 sexp)
+        x__014_
   ;;
 
   let sexp_of_t :
     'a 'b. ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t
     -> Sexplib0.Sexp.t
     =
-    fun _of_a _of_b v ->
+    fun _of_a _of_b x__019_ ->
       sexp_of_list
-        (fun (v0, v1) ->
-           let v0 = _of_a v0
-           and v1 = _of_b v1 in
-           Sexplib0.Sexp.List [ v0; v1 ])
-        v
+        (fun (arg0__015_, arg1__016_) ->
+           let res0__017_ = _of_a arg0__015_
+           and res1__018_ = _of_b arg1__016_ in
+           Sexplib0.Sexp.List [ res0__017_; res1__018_ ])
+        x__019_
   ;;
 
   let (t_sexp_grammar :
@@ -1247,10 +1248,12 @@ let () =
   Sexplib0.Sexp_conv.Exn_converter.add
     [%extension_constructor Transpose_got_lists_of_different_lengths]
     (function
-      | Transpose_got_lists_of_different_lengths v0 ->
-        let v0 = sexp_of_list sexp_of_int v0 in
+      | Transpose_got_lists_of_different_lengths arg0__020_ ->
+        let res0__021_ = sexp_of_list sexp_of_int arg0__020_ in
         Sexplib0.Sexp.List
-          [ Sexplib0.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"; v0 ]
+          [ Sexplib0.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"
+          ; res0__021_
+          ]
       | _ -> assert false)
 ;;
 

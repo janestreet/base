@@ -932,6 +932,32 @@ let filter t ~f =
     if !out_pos = n - 1 then out else sub out ~pos:0 ~len:!out_pos)
 ;;
 
+(* repeated code to avoid requiring an extra allocation for a closure on each call. *)
+let filteri t ~f =
+  let n = length t in
+  let i = ref 0 in
+  while !i < n && f !i t.[!i] do
+    incr i
+  done;
+  if !i = n
+  then t
+  else (
+    let out = Bytes.create (n - 1) in
+    Bytes.blit_string ~src:t ~src_pos:0 ~dst:out ~dst_pos:0 ~len:!i;
+    let out_pos = ref !i in
+    incr i;
+    while !i < n do
+      let c = t.[!i] in
+      if f !i c
+      then (
+        Bytes.set out !out_pos c;
+        incr out_pos);
+      incr i
+    done;
+    let out = Bytes.unsafe_to_string ~no_mutation_while_string_reachable:out in
+    if !out_pos = n - 1 then out else sub out ~pos:0 ~len:!out_pos)
+;;
+
 let chop_prefix s ~prefix =
   if is_prefix s ~prefix then Some (drop_prefix s (length prefix)) else None
 ;;

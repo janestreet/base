@@ -304,6 +304,9 @@ val concat_map : ?sep:t -> t -> f:(char -> t) -> t
 (** [filter s ~f:predicate] discards characters not satisfying [predicate]. *)
 val filter : t -> f:(char -> bool) -> t
 
+(** Like [filter], but passes each character's index to [f] along with the char. *)
+val filteri : t -> f:(int -> char -> bool) -> t
+
 (** [tr ~target ~replacement s] replaces every instance of [target] in [s] with
     [replacement]. *)
 val tr : target:char -> replacement:char -> t -> t

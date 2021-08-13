@@ -2,7 +2,17 @@ open! Import
 
 (* These methods miss part of the backtrace. *)
 
+let clobber_most_recent_backtrace () =
+  try failwith "clobbering" with
+  | _ -> ()
+;;
+
 let _Base_Exn_reraise exn = Exn.reraise exn "reraised"
+
+let _Base_Exn_reraise_after_clobbering_most_recent_backtrace exn =
+  clobber_most_recent_backtrace ();
+  Exn.reraise exn "reraised"
+;;
 
 external reraiser_raw : exn -> 'a = "%reraise"
 
@@ -74,9 +84,18 @@ let really_show_backtrace s =
 
 let%test_module ("Show native backtraces"[@tags "no-js"]) =
   (module struct
-    (* bad, missing the backtrace before the reraise *)
+    (* good *)
     let%expect_test "Base.Exn.reraise" =
       test_reraiser _Base_Exn_reraise;
+      really_show_backtrace [%expect.output];
+      [%expect {|
+          Before re-raise: true
+          After  re-raise: true |}]
+    ;;
+
+    (* bad, because the backtrace was clobbered *)
+    let%expect_test "Base.Exn.reraise" =
+      test_reraiser _Base_Exn_reraise_after_clobbering_most_recent_backtrace;
       really_show_backtrace [%expect.output];
       [%expect {|
           Before re-raise: false

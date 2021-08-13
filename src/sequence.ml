@@ -18,13 +18,13 @@ module Step = struct
     =
     fun _of_a _of_s -> function
       | Done -> Sexplib0.Sexp.Atom "Done"
-      | Skip v0 ->
-        let v0 = _of_s v0 in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Skip"; v0 ]
-      | Yield (v0, v1) ->
-        let v0 = _of_a v0
-        and v1 = _of_s v1 in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Yield"; v0; v1 ]
+      | Skip arg0__001_ ->
+        let res0__002_ = _of_s arg0__001_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Skip"; res0__002_ ]
+      | Yield (arg0__003_, arg1__004_) ->
+        let res0__005_ = _of_a arg0__003_
+        and res1__006_ = _of_s arg1__004_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Yield"; res0__005_; res1__006_ ]
   ;;
 
   [@@@end]
@@ -446,20 +446,20 @@ module Merge_with_duplicates_element = struct
   let compare :
     'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
     =
-    fun _cmp__a _cmp__b a__001_ b__002_ ->
-    if Ppx_compare_lib.phys_equal a__001_ b__002_
+    fun _cmp__a _cmp__b a__007_ b__008_ ->
+    if Ppx_compare_lib.phys_equal a__007_ b__008_
     then 0
     else (
-      match a__001_, b__002_ with
-      | Left _a__003_, Left _b__004_ -> _cmp__a _a__003_ _b__004_
+      match a__007_, b__008_ with
+      | Left _a__009_, Left _b__010_ -> _cmp__a _a__009_ _b__010_
       | Left _, _ -> -1
       | _, Left _ -> 1
-      | Right _a__005_, Right _b__006_ -> _cmp__b _a__005_ _b__006_
+      | Right _a__011_, Right _b__012_ -> _cmp__b _a__011_ _b__012_
       | Right _, _ -> -1
       | _, Right _ -> 1
-      | Both (_a__007_, _a__009_), Both (_b__008_, _b__010_) ->
-        (match _cmp__a _a__007_ _b__008_ with
-         | 0 -> _cmp__b _a__009_ _b__010_
+      | Both (_a__013_, _a__015_), Both (_b__014_, _b__016_) ->
+        (match _cmp__a _a__013_ _b__014_ with
+         | 0 -> _cmp__b _a__015_ _b__016_
          | n -> n))
   ;;
 
@@ -494,41 +494,44 @@ module Merge_with_duplicates_element = struct
     : type a b.
       (Sexplib0.Sexp.t -> a) -> (Sexplib0.Sexp.t -> b) -> Sexplib0.Sexp.t -> (a, b) t
     =
-    let _tp_loc = "sequence.ml.Merge_with_duplicates_element.t" in
+    let error_source__017_ = "sequence.ml.Merge_with_duplicates_element.t" in
     fun _of_a _of_b -> function
       | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("left" | "Left") as _tag) :: sexp_args)
         as _sexp ->
         (match sexp_args with
-         | [ v0 ] ->
-           let v0 = _of_a v0 in
-           Left v0
-         | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+         | [ arg0__018_ ] ->
+           let res0__019_ = _of_a arg0__018_ in
+           Left res0__019_
+         | _ ->
+           Sexplib0.Sexp_conv_error.stag_incorrect_n_args error_source__017_ _tag _sexp)
       | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("right" | "Right") as _tag) :: sexp_args)
         as _sexp ->
         (match sexp_args with
-         | [ v0 ] ->
-           let v0 = _of_b v0 in
-           Right v0
-         | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+         | [ arg0__020_ ] ->
+           let res0__021_ = _of_b arg0__020_ in
+           Right res0__021_
+         | _ ->
+           Sexplib0.Sexp_conv_error.stag_incorrect_n_args error_source__017_ _tag _sexp)
       | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("both" | "Both") as _tag) :: sexp_args)
         as _sexp ->
         (match sexp_args with
-         | [ v0; v1 ] ->
-           let v0 = _of_a v0
-           and v1 = _of_b v1 in
-           Both (v0, v1)
-         | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+         | [ arg0__022_; arg1__023_ ] ->
+           let res0__024_ = _of_a arg0__022_
+           and res1__025_ = _of_b arg1__023_ in
+           Both (res0__024_, res1__025_)
+         | _ ->
+           Sexplib0.Sexp_conv_error.stag_incorrect_n_args error_source__017_ _tag _sexp)
       | Sexplib0.Sexp.Atom ("left" | "Left") as sexp ->
-        Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+        Sexplib0.Sexp_conv_error.stag_takes_args error_source__017_ sexp
       | Sexplib0.Sexp.Atom ("right" | "Right") as sexp ->
-        Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+        Sexplib0.Sexp_conv_error.stag_takes_args error_source__017_ sexp
       | Sexplib0.Sexp.Atom ("both" | "Both") as sexp ->
-        Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+        Sexplib0.Sexp_conv_error.stag_takes_args error_source__017_ sexp
       | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
-        Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+        Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__017_ sexp
       | Sexplib0.Sexp.List [] as sexp ->
-        Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
-      | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
+        Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__017_ sexp
+      | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__017_ sexp
   ;;
 
   let sexp_of_t
@@ -536,16 +539,16 @@ module Merge_with_duplicates_element = struct
       (a -> Sexplib0.Sexp.t) -> (b -> Sexplib0.Sexp.t) -> (a, b) t -> Sexplib0.Sexp.t
     =
     fun _of_a _of_b -> function
-      | Left v0 ->
-        let v0 = _of_a v0 in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; v0 ]
-      | Right v0 ->
-        let v0 = _of_b v0 in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; v0 ]
-      | Both (v0, v1) ->
-        let v0 = _of_a v0
-        and v1 = _of_b v1 in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Both"; v0; v1 ]
+      | Left arg0__026_ ->
+        let res0__027_ = _of_a arg0__026_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; res0__027_ ]
+      | Right arg0__028_ ->
+        let res0__029_ = _of_b arg0__028_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; res0__029_ ]
+      | Both (arg0__030_, arg1__031_) ->
+        let res0__032_ = _of_a arg0__030_
+        and res1__033_ = _of_b arg1__031_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Both"; res0__032_; res1__033_ ]
   ;;
 
   let (t_sexp_grammar :

@@ -12,10 +12,10 @@ exception Finally of t * t [@@deriving_inline sexp]
 
 let () =
   Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Finally] (function
-    | Finally (v0, v1) ->
-      let v0 = sexp_of_t v0
-      and v1 = sexp_of_t v1 in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "exn.ml.Finally"; v0; v1 ]
+    | Finally (arg0__001_, arg1__002_) ->
+      let res0__003_ = sexp_of_t arg0__001_
+      and res1__004_ = sexp_of_t arg1__002_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "exn.ml.Finally"; res0__003_; res1__004_ ]
     | _ -> assert false)
 ;;
 
@@ -25,10 +25,11 @@ exception Reraised of string * t [@@deriving_inline sexp]
 
 let () =
   Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Reraised] (function
-    | Reraised (v0, v1) ->
-      let v0 = sexp_of_string v0
-      and v1 = sexp_of_t v1 in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "exn.ml.Reraised"; v0; v1 ]
+    | Reraised (arg0__005_, arg1__006_) ->
+      let res0__007_ = sexp_of_string arg0__005_
+      and res1__008_ = sexp_of_t arg1__006_ in
+      Sexplib0.Sexp.List
+        [ Sexplib0.Sexp.Atom "exn.ml.Reraised"; res0__007_; res1__008_ ]
     | _ -> assert false)
 ;;
 
@@ -59,7 +60,17 @@ let raise_with_original_backtrace t backtrace =
   Caml.Printexc.raise_with_backtrace t backtrace
 ;;
 
-let reraise exc str = raise (Reraised (str, exc))
+external is_phys_equal_most_recent : t -> bool = "Base_caml_exn_is_most_recent_exn"
+
+let reraise exn str =
+  let exn' = Reraised (str, exn) in
+  if is_phys_equal_most_recent exn
+  then (
+    let bt = Caml.Printexc.get_raw_backtrace () in
+    raise_with_original_backtrace exn' bt)
+  else raise exn'
+;;
+
 let reraisef exc format = Printf.ksprintf (fun str () -> reraise exc str) format
 let to_string exc = Sexp.to_string_hum ~indent:2 (sexp_of_exn exc)
 let to_string_mach exc = Sexp.to_string_mach (sexp_of_exn exc)

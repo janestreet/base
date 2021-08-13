@@ -105,12 +105,11 @@ end
 type 'a t = 'a Cheap_option.t Uniform_array.t [@@deriving_inline sexp, sexp_grammar]
 
 let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
-  let _tp_loc = "option_array.ml.t" in
-  fun _of_a t -> Uniform_array.t_of_sexp (Cheap_option.t_of_sexp _of_a) t
+  fun _of_a x__001_ -> Uniform_array.t_of_sexp (Cheap_option.t_of_sexp _of_a) x__001_
 ;;
 
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-  fun _of_a v -> Uniform_array.sexp_of_t (Cheap_option.sexp_of_t _of_a) v
+  fun _of_a x__002_ -> Uniform_array.sexp_of_t (Cheap_option.sexp_of_t _of_a) x__002_
 ;;
 
 let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =

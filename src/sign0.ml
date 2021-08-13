@@ -9,22 +9,22 @@ type t =
 [@@deriving_inline sexp, sexp_grammar, compare, hash, enumerate]
 
 let t_of_sexp =
-  (let _tp_loc = "sign0.ml.t" in
+  (let error_source__001_ = "sign0.ml.t" in
    function
    | Sexplib0.Sexp.Atom ("neg" | "Neg") -> Neg
    | Sexplib0.Sexp.Atom ("zero" | "Zero") -> Zero
    | Sexplib0.Sexp.Atom ("pos" | "Pos") -> Pos
    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("neg" | "Neg") :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     Sexplib0.Sexp_conv_error.stag_no_args error_source__001_ sexp
    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     Sexplib0.Sexp_conv_error.stag_no_args error_source__001_ sexp
    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("pos" | "Pos") :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     Sexplib0.Sexp_conv_error.stag_no_args error_source__001_ sexp
    | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+     Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__001_ sexp
    | Sexplib0.Sexp.List [] as sexp ->
-     Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
-   | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
+     Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__001_ sexp
+   | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__001_ sexp
              : Sexplib0.Sexp.t -> t)
 ;;
 

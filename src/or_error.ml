@@ -26,12 +26,11 @@ let hash_fold_t :
 ;;
 
 let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
-  let _tp_loc = "or_error.ml.t" in
-  fun _of_a t -> Result.t_of_sexp _of_a Error.t_of_sexp t
+  fun _of_a x__013_ -> Result.t_of_sexp _of_a Error.t_of_sexp x__013_
 ;;
 
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-  fun _of_a v -> Result.sexp_of_t _of_a Error.sexp_of_t v
+  fun _of_a x__014_ -> Result.sexp_of_t _of_a Error.sexp_of_t x__014_
 ;;
 
 let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =

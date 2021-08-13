@@ -43,31 +43,31 @@ let t_of_sexp
   : type f s.
     (Sexplib0.Sexp.t -> f) -> (Sexplib0.Sexp.t -> s) -> Sexplib0.Sexp.t -> (f, s) t
   =
-  let _tp_loc = "either0.ml.t" in
+  let error_source__007_ = "either0.ml.t" in
   fun _of_f _of_s -> function
     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("first" | "First") as _tag) :: sexp_args)
       as _sexp ->
       (match sexp_args with
-       | [ v0 ] ->
-         let v0 = _of_f v0 in
-         First v0
-       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+       | [ arg0__008_ ] ->
+         let res0__009_ = _of_f arg0__008_ in
+         First res0__009_
+       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args error_source__007_ _tag _sexp)
     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("second" | "Second") as _tag) :: sexp_args)
       as _sexp ->
       (match sexp_args with
-       | [ v0 ] ->
-         let v0 = _of_s v0 in
-         Second v0
-       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+       | [ arg0__010_ ] ->
+         let res0__011_ = _of_s arg0__010_ in
+         Second res0__011_
+       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args error_source__007_ _tag _sexp)
     | Sexplib0.Sexp.Atom ("first" | "First") as sexp ->
-      Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+      Sexplib0.Sexp_conv_error.stag_takes_args error_source__007_ sexp
     | Sexplib0.Sexp.Atom ("second" | "Second") as sexp ->
-      Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+      Sexplib0.Sexp_conv_error.stag_takes_args error_source__007_ sexp
     | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
-      Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+      Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__007_ sexp
     | Sexplib0.Sexp.List [] as sexp ->
-      Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
-    | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
+      Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__007_ sexp
+    | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__007_ sexp
 ;;
 
 let sexp_of_t
@@ -75,12 +75,12 @@ let sexp_of_t
     (f -> Sexplib0.Sexp.t) -> (s -> Sexplib0.Sexp.t) -> (f, s) t -> Sexplib0.Sexp.t
   =
   fun _of_f _of_s -> function
-    | First v0 ->
-      let v0 = _of_f v0 in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "First"; v0 ]
-    | Second v0 ->
-      let v0 = _of_s v0 in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Second"; v0 ]
+    | First arg0__012_ ->
+      let res0__013_ = _of_f arg0__012_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "First"; res0__013_ ]
+    | Second arg0__014_ ->
+      let res0__015_ = _of_s arg0__014_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Second"; res0__015_ ]
 ;;
 
 let (t_sexp_grammar :

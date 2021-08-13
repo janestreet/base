@@ -29,22 +29,22 @@ let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
 let all = ([ Less; Equal; Greater ] : t list)
 
 let t_of_sexp =
-  (let _tp_loc = "ordering.ml.t" in
+  (let error_source__003_ = "ordering.ml.t" in
    function
    | Sexplib0.Sexp.Atom ("less" | "Less") -> Less
    | Sexplib0.Sexp.Atom ("equal" | "Equal") -> Equal
    | Sexplib0.Sexp.Atom ("greater" | "Greater") -> Greater
    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("less" | "Less") :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("equal" | "Equal") :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("greater" | "Greater") :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.stag_no_args _tp_loc sexp
+     Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
    | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+     Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__003_ sexp
    | Sexplib0.Sexp.List [] as sexp ->
-     Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
-   | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
+     Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__003_ sexp
+   | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__003_ sexp
              : Sexplib0.Sexp.t -> t)
 ;;
 

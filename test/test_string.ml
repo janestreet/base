@@ -633,6 +633,10 @@ let%test_unit _ = [%test_result: t] (filter "hello" ~f:(fun _ -> false)) ~expect
 let%test_unit _ = [%test_result: t] (filter "hello" ~f:(fun _ -> true)) ~expect:"hello"
 
 let%test_unit _ =
+  [%test_result: t] (filteri "hello" ~f:(fun i _ -> Int.(i % 2 = 0))) ~expect:"hlo"
+;;
+
+let%test_unit _ =
   let s = "hello" in
   [%test_result: bool] ~expect:true (phys_equal (filter s ~f:(fun _ -> true)) s)
 ;;

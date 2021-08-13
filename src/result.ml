@@ -10,31 +10,31 @@ let t_of_sexp
   : type a b.
     (Sexplib0.Sexp.t -> a) -> (Sexplib0.Sexp.t -> b) -> Sexplib0.Sexp.t -> (a, b) t
   =
-  let _tp_loc = "result.ml.t" in
+  let error_source__001_ = "result.ml.t" in
   fun _of_a _of_b -> function
     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("ok" | "Ok") as _tag) :: sexp_args) as
       _sexp ->
       (match sexp_args with
-       | [ v0 ] ->
-         let v0 = _of_a v0 in
-         Ok v0
-       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+       | [ arg0__002_ ] ->
+         let res0__003_ = _of_a arg0__002_ in
+         Ok res0__003_
+       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args error_source__001_ _tag _sexp)
     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("error" | "Error") as _tag) :: sexp_args)
       as _sexp ->
       (match sexp_args with
-       | [ v0 ] ->
-         let v0 = _of_b v0 in
-         Error v0
-       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args _tp_loc _tag _sexp)
+       | [ arg0__004_ ] ->
+         let res0__005_ = _of_b arg0__004_ in
+         Error res0__005_
+       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args error_source__001_ _tag _sexp)
     | Sexplib0.Sexp.Atom ("ok" | "Ok") as sexp ->
-      Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+      Sexplib0.Sexp_conv_error.stag_takes_args error_source__001_ sexp
     | Sexplib0.Sexp.Atom ("error" | "Error") as sexp ->
-      Sexplib0.Sexp_conv_error.stag_takes_args _tp_loc sexp
+      Sexplib0.Sexp_conv_error.stag_takes_args error_source__001_ sexp
     | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
-      Sexplib0.Sexp_conv_error.nested_list_invalid_sum _tp_loc sexp
+      Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__001_ sexp
     | Sexplib0.Sexp.List [] as sexp ->
-      Sexplib0.Sexp_conv_error.empty_list_invalid_sum _tp_loc sexp
-    | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag _tp_loc sexp
+      Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__001_ sexp
+    | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__001_ sexp
 ;;
 
 let sexp_of_t
@@ -42,12 +42,12 @@ let sexp_of_t
     (a -> Sexplib0.Sexp.t) -> (b -> Sexplib0.Sexp.t) -> (a, b) t -> Sexplib0.Sexp.t
   =
   fun _of_a _of_b -> function
-    | Ok v0 ->
-      let v0 = _of_a v0 in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; v0 ]
-    | Error v0 ->
-      let v0 = _of_b v0 in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Error"; v0 ]
+    | Ok arg0__006_ ->
+      let res0__007_ = _of_a arg0__006_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; res0__007_ ]
+    | Error arg0__008_ ->
+      let res0__009_ = _of_b arg0__008_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Error"; res0__009_ ]
 ;;
 
 let (t_sexp_grammar :
@@ -76,29 +76,29 @@ let (t_sexp_grammar :
 let compare :
   'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
   =
-  fun _cmp__a _cmp__b a__001_ b__002_ ->
-  if Ppx_compare_lib.phys_equal a__001_ b__002_
+  fun _cmp__a _cmp__b a__010_ b__011_ ->
+  if Ppx_compare_lib.phys_equal a__010_ b__011_
   then 0
   else (
-    match a__001_, b__002_ with
-    | Ok _a__003_, Ok _b__004_ -> _cmp__a _a__003_ _b__004_
+    match a__010_, b__011_ with
+    | Ok _a__012_, Ok _b__013_ -> _cmp__a _a__012_ _b__013_
     | Ok _, _ -> -1
     | _, Ok _ -> 1
-    | Error _a__005_, Error _b__006_ -> _cmp__b _a__005_ _b__006_)
+    | Error _a__014_, Error _b__015_ -> _cmp__b _a__014_ _b__015_)
 ;;
 
 let equal :
   'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
   =
-  fun _cmp__a _cmp__b a__007_ b__008_ ->
-  if Ppx_compare_lib.phys_equal a__007_ b__008_
+  fun _cmp__a _cmp__b a__016_ b__017_ ->
+  if Ppx_compare_lib.phys_equal a__016_ b__017_
   then true
   else (
-    match a__007_, b__008_ with
-    | Ok _a__009_, Ok _b__010_ -> _cmp__a _a__009_ _b__010_
+    match a__016_, b__017_ with
+    | Ok _a__018_, Ok _b__019_ -> _cmp__a _a__018_ _b__019_
     | Ok _, _ -> false
     | _, Ok _ -> false
-    | Error _a__011_, Error _b__012_ -> _cmp__b _a__011_ _b__012_)
+    | Error _a__020_, Error _b__021_ -> _cmp__b _a__020_ _b__021_)
 ;;
 
 let hash_fold_t

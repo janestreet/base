@@ -62,82 +62,102 @@ module Symmetric_diff_element = struct
     'k 'v. (Sexplib0.Sexp.t -> 'k) -> (Sexplib0.Sexp.t -> 'v) -> Sexplib0.Sexp.t
     -> ('k, 'v) t
     =
-    let _tp_loc = "map_intf.ml.Symmetric_diff_element.t" in
+    let error_source__021_ = "map_intf.ml.Symmetric_diff_element.t" in
     fun _of_k _of_v -> function
-      | Sexplib0.Sexp.List [ v0; v1 ] ->
-        let v0 = _of_k v0
-        and v1 =
-          (fun sexp ->
-             try
-               match sexp with
-               | Sexplib0.Sexp.Atom atom as _sexp ->
-                 (match atom with
-                  | "Left" -> Sexplib0.Sexp_conv_error.ptag_takes_args _tp_loc _sexp
-                  | "Right" -> Sexplib0.Sexp_conv_error.ptag_takes_args _tp_loc _sexp
-                  | "Unequal" -> Sexplib0.Sexp_conv_error.ptag_takes_args _tp_loc _sexp
-                  | _ -> Sexplib0.Sexp_conv_error.no_variant_match ())
-               | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom atom :: sexp_args) as _sexp ->
-                 (match atom with
-                  | "Left" as _tag ->
-                    (match sexp_args with
-                     | [ v0 ] ->
-                       let v0 = _of_v v0 in
-                       `Left v0
-                     | _ -> Sexplib0.Sexp_conv_error.ptag_incorrect_n_args _tp_loc _tag _sexp)
-                  | "Right" as _tag ->
-                    (match sexp_args with
-                     | [ v0 ] ->
-                       let v0 = _of_v v0 in
-                       `Right v0
-                     | _ -> Sexplib0.Sexp_conv_error.ptag_incorrect_n_args _tp_loc _tag _sexp)
-                  | "Unequal" as _tag ->
-                    (match sexp_args with
-                     | [ v0 ] ->
-                       let v0 =
-                         match v0 with
-                         | Sexplib0.Sexp.List [ v0; v1 ] ->
-                           let v0 = _of_v v0
-                           and v1 = _of_v v1 in
-                           v0, v1
-                         | sexp ->
-                           Sexplib0.Sexp_conv_error.tuple_of_size_n_expected _tp_loc 2 sexp
-                       in
-                       `Unequal v0
-                     | _ -> Sexplib0.Sexp_conv_error.ptag_incorrect_n_args _tp_loc _tag _sexp)
-                  | _ -> Sexplib0.Sexp_conv_error.no_variant_match ())
-               | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
-                 Sexplib0.Sexp_conv_error.nested_list_invalid_poly_var _tp_loc sexp
-               | Sexplib0.Sexp.List [] as sexp ->
-                 Sexplib0.Sexp_conv_error.empty_list_invalid_poly_var _tp_loc sexp
-             with
-             | Sexplib0.Sexp_conv_error.No_variant_match ->
-               Sexplib0.Sexp_conv_error.no_matching_variant_found _tp_loc sexp)
-            v1
+      | Sexplib0.Sexp.List [ arg0__028_; arg1__029_ ] ->
+        let res0__030_ = _of_k arg0__028_
+        and res1__031_ =
+          let sexp = arg1__029_ in
+          try
+            match sexp with
+            | Sexplib0.Sexp.Atom atom as _sexp ->
+              (match atom with
+               | "Left" ->
+                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__021_ _sexp
+               | "Right" ->
+                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__021_ _sexp
+               | "Unequal" ->
+                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__021_ _sexp
+               | _ -> Sexplib0.Sexp_conv_error.no_variant_match ())
+            | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom atom :: sexp_args) as _sexp ->
+              (match atom with
+               | "Left" as _tag ->
+                 (match sexp_args with
+                  | [ arg0__026_ ] ->
+                    let res0__027_ = _of_v arg0__026_ in
+                    `Left res0__027_
+                  | _ ->
+                    Sexplib0.Sexp_conv_error.ptag_incorrect_n_args
+                      error_source__021_
+                      _tag
+                      _sexp)
+               | "Right" as _tag ->
+                 (match sexp_args with
+                  | [ arg0__024_ ] ->
+                    let res0__025_ = _of_v arg0__024_ in
+                    `Right res0__025_
+                  | _ ->
+                    Sexplib0.Sexp_conv_error.ptag_incorrect_n_args
+                      error_source__021_
+                      _tag
+                      _sexp)
+               | "Unequal" as _tag ->
+                 (match sexp_args with
+                  | [ arg0__022_ ] ->
+                    let res0__023_ =
+                      match arg0__022_ with
+                      | Sexplib0.Sexp.List [ arg0__017_; arg1__018_ ] ->
+                        let res0__019_ = _of_v arg0__017_
+                        and res1__020_ = _of_v arg1__018_ in
+                        res0__019_, res1__020_
+                      | sexp ->
+                        Sexplib0.Sexp_conv_error.tuple_of_size_n_expected
+                          error_source__021_
+                          2
+                          sexp
+                    in
+                    `Unequal res0__023_
+                  | _ ->
+                    Sexplib0.Sexp_conv_error.ptag_incorrect_n_args
+                      error_source__021_
+                      _tag
+                      _sexp)
+               | _ -> Sexplib0.Sexp_conv_error.no_variant_match ())
+            | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
+              Sexplib0.Sexp_conv_error.nested_list_invalid_poly_var
+                error_source__021_
+                sexp
+            | Sexplib0.Sexp.List [] as sexp ->
+              Sexplib0.Sexp_conv_error.empty_list_invalid_poly_var error_source__021_ sexp
+          with
+          | Sexplib0.Sexp_conv_error.No_variant_match ->
+            Sexplib0.Sexp_conv_error.no_matching_variant_found error_source__021_ sexp
         in
-        v0, v1
-      | sexp -> Sexplib0.Sexp_conv_error.tuple_of_size_n_expected _tp_loc 2 sexp
+        res0__030_, res1__031_
+      | sexp ->
+        Sexplib0.Sexp_conv_error.tuple_of_size_n_expected error_source__021_ 2 sexp
   ;;
 
   let sexp_of_t :
     'k 'v. ('k -> Sexplib0.Sexp.t) -> ('v -> Sexplib0.Sexp.t) -> ('k, 'v) t
     -> Sexplib0.Sexp.t
     =
-    fun _of_k _of_v (v0, v1) ->
-      let v0 = _of_k v0
-      and v1 =
-        match v1 with
+    fun _of_k _of_v (arg0__036_, arg1__037_) ->
+      let res0__038_ = _of_k arg0__036_
+      and res1__039_ =
+        match arg1__037_ with
         | `Left v0 -> Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; _of_v v0 ]
         | `Right v0 -> Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; _of_v v0 ]
         | `Unequal v0 ->
           Sexplib0.Sexp.List
             [ Sexplib0.Sexp.Atom "Unequal"
-            ; (let v0, v1 = v0 in
-               let v0 = _of_v v0
-               and v1 = _of_v v1 in
-               Sexplib0.Sexp.List [ v0; v1 ])
+            ; (let arg0__032_, arg1__033_ = v0 in
+               let res0__034_ = _of_v arg0__032_
+               and res1__035_ = _of_v arg1__033_ in
+               Sexplib0.Sexp.List [ res0__034_; res1__035_ ])
             ]
       in
-      Sexplib0.Sexp.List [ v0; v1 ]
+      Sexplib0.Sexp.List [ res0__038_; res1__039_ ]
   ;;
 
   let (t_sexp_grammar :
@@ -2363,10 +2383,9 @@ module type Map = sig
       combined into a single value using the [combine] function. In a call
       [combine ~key v1 v2], the value [v1] comes from [t1] and [v2] from [t2].
 
-      The runtime of [merge_skewed] is [O(l1 * log(l2))], where [l1] is the length
-      of the smaller map and [l2] the length of the larger map. This is likely to
-      be faster than [merge] when one of the maps is a lot smaller, or when you
-      merge a list of maps. *)
+      The runtime of [merge_skewed] is [O(min(l1, l2) * log(max(l1, l2)))], where [l1] is
+      the length of [t1] and [l2] the length of [t2]. This is likely to be faster than
+      [merge] when one of the maps is a lot smaller, or when you merge a list of maps. *)
   val merge_skewed
     :  ('k, 'v, 'cmp) t
     -> ('k, 'v, 'cmp) t

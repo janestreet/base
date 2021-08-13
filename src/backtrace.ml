@@ -22,6 +22,10 @@ module Exn = struct
   let am_recording = Caml.Printexc.backtrace_status
   let most_recent () = Caml.Printexc.get_raw_backtrace ()
 
+  let most_recent_for_exn exn =
+    if Exn.is_phys_equal_most_recent exn then Some (most_recent ()) else None
+  ;;
+
   (* We turn on backtraces by default if OCAMLRUNPARAM doesn't explicitly mention them. *)
   let maybe_set_recording () =
     let ocamlrunparam_mentions_backtraces =
