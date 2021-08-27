@@ -59,11 +59,11 @@ let sexp_of_t =
 let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
   { untyped =
       Variant
-        { name_kind = Capitalized
+        { case_sensitivity = Case_sensitive_except_first_character
         ; clauses =
-            [ { name = "Less"; clause_kind = Atom_clause }
-            ; { name = "Equal"; clause_kind = Atom_clause }
-            ; { name = "Greater"; clause_kind = Atom_clause }
+            [ No_tag { name = "Less"; clause_kind = Atom_clause }
+            ; No_tag { name = "Equal"; clause_kind = Atom_clause }
+            ; No_tag { name = "Greater"; clause_kind = Atom_clause }
             ]
         }
   }

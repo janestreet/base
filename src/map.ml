@@ -119,12 +119,11 @@ module Tree0 = struct
   let of_sorted_array_unchecked array ~compare_key =
     let array_length = Array.length array in
     let next =
-      if
-        array_length < 2
-        ||
-        let k0, _ = array.(0) in
-        let k1, _ = array.(1) in
-        compare_key k0 k1 < 0
+      if array_length < 2
+         ||
+         let k0, _ = array.(0) in
+         let k1, _ = array.(1) in
+         compare_key k0 k1 < 0
       then fun i -> array.(i)
       else fun i -> array.(array_length - 1 - i)
     in
@@ -374,11 +373,10 @@ module Tree0 = struct
     | _, Leaf (rk, rd) -> set' (set' l k d ~compare_key) rk rd ~compare_key
     | Node (ll, lk, ld, lr, lh), Node (rl, rk, rd, rr, rh) ->
       (* [bal] requires height difference <= 3. *)
-      if
-        lh > rh + 3
-        (* [height lr >= height r],
-           therefore [height (join lr k d r ...)] is [height rl + 1] or [height rl]
-           therefore the height difference with [ll] will be <= 3 *)
+      if lh > rh + 3
+      (* [height lr >= height r],
+         therefore [height (join lr k d r ...)] is [height rl + 1] or [height rl]
+         therefore the height difference with [ll] will be <= 3 *)
       then bal ll lk ld (join lr k d r ~compare_key)
       else if rh > lh + 3
       then bal (join l k d rl ~compare_key) rk rd rr
@@ -425,11 +423,10 @@ module Tree0 = struct
         ~(upper_bound : 'a Maybe_bound.t)
         ~compare_key
     =
-    if
-      Maybe_bound.bounds_crossed
-        ~compare:compare_key
-        ~lower:lower_bound
-        ~upper:upper_bound
+    if Maybe_bound.bounds_crossed
+         ~compare:compare_key
+         ~lower:lower_bound
+         ~upper:upper_bound
     then empty, empty, empty
     else (
       let left, mid_and_right =
@@ -1360,18 +1357,22 @@ module Tree0 = struct
 
     (* The type signature is explicit here to allow polymorphic recursion. *)
     let rec loop :
-      'k 'v 'k_opt 'v_opt. ('k, 'v) tree
+      'k 'v 'k_opt 'v_opt.
+      ('k, 'v) tree
       -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
-      -> 'k -> compare_key:('k -> 'k -> int) -> ('k, 'v, 'k_opt, 'v_opt) marker
-      -> 'k_opt -> 'v_opt -> ('k * 'v) option
+      -> 'k
+      -> compare_key:('k -> 'k -> int)
+      -> ('k, 'v, 'k_opt, 'v_opt) marker
+      -> 'k_opt
+      -> 'v_opt
+      -> ('k * 'v) option
       =
       fun t dir k ~compare_key found_marker found_key found_value ->
         match t with
         | Empty -> repackage found_marker found_key found_value
         | Leaf (k', v') ->
           let c = compare_key k' k in
-          if
-            match dir with
+          if match dir with
             | `Greater_or_equal_to -> c >= 0
             | `Greater_than -> c > 0
             | `Less_or_equal_to -> c <= 0

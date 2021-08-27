@@ -37,9 +37,8 @@ let to_float = Caml.float_of_int
 let of_float_unchecked = Caml.int_of_float
 
 let of_float f =
-  if
-    Float_replace_polymorphic_compare.( >= ) f float_lower_bound
-    && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
+  if Float_replace_polymorphic_compare.( >= ) f float_lower_bound
+  && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
   then Caml.int_of_float f
   else
     Printf.invalid_argf

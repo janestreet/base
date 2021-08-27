@@ -11,6 +11,8 @@ val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 
 include module type of Sexplib0.Sexp with type t := Sexplib0.Sexp.t
 
+val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
+
 val invariant : t -> unit
 
 (** Base has never had an [of_string] function.  We expose a deprecated [of_string] here

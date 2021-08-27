@@ -1007,10 +1007,9 @@ module For_common_prefix_and_suffix = struct
   let rec common_generic2_length_loop a b ~get_pos ~max_len ~len_so_far =
     if len_so_far >= max_len
     then max_len
-    else if
-      Char.equal
-        (unsafe_get a (get_pos a len_so_far))
-        (unsafe_get b (get_pos b len_so_far))
+    else if Char.equal
+              (unsafe_get a (get_pos a len_so_far))
+              (unsafe_get b (get_pos b len_so_far))
     then common_generic2_length_loop a b ~get_pos ~max_len ~len_so_far:(len_so_far + 1)
     else len_so_far
   ;;
@@ -1407,12 +1406,11 @@ module Escaping = struct
   let index_from str ~escape_char pos char =
     check_bound str pos "index_from";
     let rec loop i status =
-      if
-        i >= pos
-        && (match status with
+      if i >= pos
+      && (match status with
           | `Literal -> true
           | `Escaped | `Escaping -> false)
-        && Char.equal str.[i] char
+      && Char.equal str.[i] char
       then Some i
       else (
         let i = i + 1 in
@@ -1495,11 +1493,10 @@ module Escaping = struct
       then List.rev (sub str ~pos:last_pos ~len:(len - last_pos) :: acc)
       else (
         let status = update_escape_status str ~escape_char pos status in
-        if
-          (match status with
-           | `Literal -> true
-           | `Escaped | `Escaping -> false)
-          && is_delim str.[pos]
+        if (match status with
+          | `Literal -> true
+          | `Escaped | `Escaping -> false)
+        && is_delim str.[pos]
         then (
           let sub_str = sub str ~pos:last_pos ~len:(pos - last_pos) in
           loop (sub_str :: acc) status (pos + 1) (pos + 1))

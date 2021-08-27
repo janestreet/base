@@ -55,6 +55,8 @@ val iter : 'a t -> f:('a -> unit) -> unit
     argument, and the element itself as second argument. *)
 val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
 
+val foldi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b) -> 'b
+
 (** [of_array] and [to_array] return fresh arrays with the same contents rather than
     returning a reference to the underlying array. *)
 val of_array : 'a array -> 'a t

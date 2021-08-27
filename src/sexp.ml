@@ -47,5 +47,6 @@ and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
 
 [@@@end]
 
+let t_sexp_grammar = Sexplib0.Sexp_conv.sexp_t_sexp_grammar
 let of_string = ()
 let invariant (_ : t) = ()

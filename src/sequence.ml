@@ -559,25 +559,28 @@ module Merge_with_duplicates_element = struct
     fun _'a_sexp_grammar _'b_sexp_grammar ->
       { untyped =
           Variant
-            { name_kind = Capitalized
+            { case_sensitivity = Case_sensitive_except_first_character
             ; clauses =
-                [ { name = "Left"
-                  ; clause_kind =
-                      List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
-                  }
-                ; { name = "Right"
-                  ; clause_kind =
-                      List_clause { args = Cons (_'b_sexp_grammar.untyped, Empty) }
-                  }
-                ; { name = "Both"
-                  ; clause_kind =
-                      List_clause
-                        { args =
-                            Cons
-                              ( _'a_sexp_grammar.untyped
-                              , Cons (_'b_sexp_grammar.untyped, Empty) )
-                        }
-                  }
+                [ No_tag
+                    { name = "Left"
+                    ; clause_kind =
+                        List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
+                    }
+                ; No_tag
+                    { name = "Right"
+                    ; clause_kind =
+                        List_clause { args = Cons (_'b_sexp_grammar.untyped, Empty) }
+                    }
+                ; No_tag
+                    { name = "Both"
+                    ; clause_kind =
+                        List_clause
+                          { args =
+                              Cons
+                                ( _'a_sexp_grammar.untyped
+                                , Cons (_'b_sexp_grammar.untyped, Empty) )
+                          }
+                    }
                 ]
             }
       }
@@ -611,7 +614,7 @@ let merge_deduped_and_sorted s1 s2 ~compare =
     | Left x | Right x | Both (x, _) -> x)
 ;;
 
-let (merge[@deprecated
+let (merge [@deprecated
        "[since 2021-07] For identical behavior, use \
         [Sequence.merge_deduped_and_sorted], but consider using \
         [Sequence.merge_sorted] instead."])

@@ -58,16 +58,18 @@ let (t_sexp_grammar :
   fun _'a_sexp_grammar _'b_sexp_grammar ->
   { untyped =
       Variant
-        { name_kind = Capitalized
+        { case_sensitivity = Case_sensitive_except_first_character
         ; clauses =
-            [ { name = "Ok"
-              ; clause_kind =
-                  List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
-              }
-            ; { name = "Error"
-              ; clause_kind =
-                  List_clause { args = Cons (_'b_sexp_grammar.untyped, Empty) }
-              }
+            [ No_tag
+                { name = "Ok"
+                ; clause_kind =
+                    List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
+                }
+            ; No_tag
+                { name = "Error"
+                ; clause_kind =
+                    List_clause { args = Cons (_'b_sexp_grammar.untyped, Empty) }
+                }
             ]
         }
   }

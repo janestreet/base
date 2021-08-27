@@ -4,7 +4,7 @@ open! Random
 module State = struct
   include State
 
-  let%test_unit ("random int above 2^30"[@tags "64-bits-only"]) =
+  let%test_unit ("random int above 2^30" [@tags "64-bits-only"]) =
     let state = make [| 1; 2; 3; 4; 5 |] in
     for _ = 1 to 100 do
       let bound = Int.shift_left 1 40 in

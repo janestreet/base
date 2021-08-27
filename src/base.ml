@@ -336,8 +336,11 @@ module Export = struct
   let equal_list : 'a. ('a -> 'a -> bool) -> 'a list -> 'a list -> bool = List.equal
 
   let hash_fold_list :
-    'a. (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-    -> Ppx_hash_lib.Std.Hash.state -> 'a list -> Ppx_hash_lib.Std.Hash.state
+    'a.
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+    -> Ppx_hash_lib.Std.Hash.state
+    -> 'a list
+    -> Ppx_hash_lib.Std.Hash.state
     =
     List.hash_fold_t
   ;;
@@ -393,8 +396,11 @@ module Export = struct
   ;;
 
   let hash_fold_option :
-    'a. (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-    -> Ppx_hash_lib.Std.Hash.state -> 'a option -> Ppx_hash_lib.Std.Hash.state
+    'a.
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+    -> Ppx_hash_lib.Std.Hash.state
+    -> 'a option
+    -> Ppx_hash_lib.Std.Hash.state
     =
     Option.hash_fold_t
   ;;

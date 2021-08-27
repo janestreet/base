@@ -43,12 +43,12 @@ module T = struct
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
     { untyped =
         Variant
-          { name_kind = Capitalized
+          { case_sensitivity = Case_sensitive_except_first_character
           ; clauses =
-              [ { name = "Neg"; clause_kind = Atom_clause }
-              ; { name = "Zero"; clause_kind = Atom_clause }
-              ; { name = "Pos"; clause_kind = Atom_clause }
-              ; { name = "Nan"; clause_kind = Atom_clause }
+              [ No_tag { name = "Neg"; clause_kind = Atom_clause }
+              ; No_tag { name = "Zero"; clause_kind = Atom_clause }
+              ; No_tag { name = "Pos"; clause_kind = Atom_clause }
+              ; No_tag { name = "Nan"; clause_kind = Atom_clause }
               ]
           }
     }

@@ -1,7 +1,7 @@
 open! Import
 open! Backtrace
 
-let%test_unit (_[@tags "no-js"]) =
+let%test_unit (_ [@tags "no-js"]) =
   let t = get () in
   assert (String.length (to_string t) > 0)
 ;;

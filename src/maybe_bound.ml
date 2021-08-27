@@ -71,17 +71,19 @@ let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
   fun _'a_sexp_grammar ->
   { untyped =
       Variant
-        { name_kind = Capitalized
+        { case_sensitivity = Case_sensitive_except_first_character
         ; clauses =
-            [ { name = "Incl"
-              ; clause_kind =
-                  List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
-              }
-            ; { name = "Excl"
-              ; clause_kind =
-                  List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
-              }
-            ; { name = "Unbounded"; clause_kind = Atom_clause }
+            [ No_tag
+                { name = "Incl"
+                ; clause_kind =
+                    List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
+                }
+            ; No_tag
+                { name = "Excl"
+                ; clause_kind =
+                    List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
+                }
+            ; No_tag { name = "Unbounded"; clause_kind = Atom_clause }
             ]
         }
   }
@@ -128,11 +130,11 @@ let sexp_of_interval_comparison =
 let (interval_comparison_sexp_grammar : interval_comparison Sexplib0.Sexp_grammar.t) =
   { untyped =
       Variant
-        { name_kind = Capitalized
+        { case_sensitivity = Case_sensitive_except_first_character
         ; clauses =
-            [ { name = "Below_lower_bound"; clause_kind = Atom_clause }
-            ; { name = "In_range"; clause_kind = Atom_clause }
-            ; { name = "Above_upper_bound"; clause_kind = Atom_clause }
+            [ No_tag { name = "Below_lower_bound"; clause_kind = Atom_clause }
+            ; No_tag { name = "In_range"; clause_kind = Atom_clause }
+            ; No_tag { name = "Above_upper_bound"; clause_kind = Atom_clause }
             ]
         }
   }

@@ -2,7 +2,7 @@ open! Import
 open! Float
 open! Float.Private
 
-let%expect_test ("hash coherence"[@tags "64-bits-only"]) =
+let%expect_test ("hash coherence" [@tags "64-bits-only"]) =
   check_hash_coherence [%here] (module Float) [ min_value; 0.; 37.; max_value ];
   [%expect {| |}]
 ;;
@@ -267,11 +267,11 @@ let%test_module _ =
        http://www.exploringbinary.com/inconsistent-rounding-of-printed-floating-point-numbers/
        Ties are resolved differently in JavaScript - mark some tests as no running with JavaScript.
     *)
-    let%test_unit (_[@tags "no-js"]) =
+    let%test_unit (_ [@tags "no-js"]) =
       boundary (* tie *) 0.25 ~closer_to_zero:"0.2" ~at:"0.2"
     ;;
 
-    let%test_unit (_[@tags "no-js"]) =
+    let%test_unit (_ [@tags "no-js"]) =
       boundary (incr 0.25) ~closer_to_zero:"0.2" ~at:"0.3"
     ;;
 
@@ -285,9 +285,9 @@ let%test_module _ =
     let%test_unit _ = boundary 0.85 ~closer_to_zero:"0.8" ~at:"0.9"
     let%test_unit _ = boundary 0.95 ~closer_to_zero:"0.9" ~at:"1  "
     let%test_unit _ = boundary 1.05 ~closer_to_zero:"1  " ~at:"1.1"
-    let%test_unit (_[@tags "no-js"]) = boundary 3.25 ~closer_to_zero:"3.2" ~at:"3.2"
+    let%test_unit (_ [@tags "no-js"]) = boundary 3.25 ~closer_to_zero:"3.2" ~at:"3.2"
 
-    let%test_unit (_[@tags "no-js"]) =
+    let%test_unit (_ [@tags "no-js"]) =
       boundary (incr 3.25) ~closer_to_zero:"3.2" ~at:"3.3"
     ;;
 
@@ -296,11 +296,11 @@ let%test_module _ =
     let%test_unit _ = boundary 10.05 ~closer_to_zero:"10  " ~at:"10.1"
     let%test_unit _ = boundary 100.05 ~closer_to_zero:"100  " ~at:"100.1"
 
-    let%test_unit (_[@tags "no-js"]) =
+    let%test_unit (_ [@tags "no-js"]) =
       boundary (* tie *) 999.25 ~closer_to_zero:"999.2" ~at:"999.2"
     ;;
 
-    let%test_unit (_[@tags "no-js"]) =
+    let%test_unit (_ [@tags "no-js"]) =
       boundary (incr 999.25) ~closer_to_zero:"999.2" ~at:"999.3"
     ;;
 
@@ -374,7 +374,7 @@ let%test "int_pow misc" =
 ;;
 
 (* some ugly corner cases with extremely large exponents and some serious precision loss *)
-let%test ("int_pow bad cases"[@tags "64-bits-only"]) =
+let%test ("int_pow bad cases" [@tags "64-bits-only"]) =
   let a = one_ulp `Down 1. in
   let b = one_ulp `Up 1. in
   let large = 1 lsl 61 in
@@ -444,12 +444,11 @@ let%test_module _ =
       let result5 = Option.try_with (fun () -> Int.of_float (float_rounding x)) in
       let result6 = Option.try_with (fun () -> Int.of_float (round ~dir x)) in
       let ( = ) = Caml.( = ) in
-      if
-        result1 = result2
-        && result2 = result3
-        && result3 = result4
-        && result4 = result5
-        && result5 = result6
+      if result1 = result2
+      && result2 = result3
+      && result3 = result4
+      && result4 = result5
+      && result5 = result6
       then validate result1
       else false
     ;;
@@ -837,9 +836,8 @@ struct
       Caml.Int64.of_float (one_ulp `Down float_lower_bound)
     in
     let min_value = to_int64 min_value in
-    if
-      Int.( = ) num_bits 64
-      (* We cannot detect overflow because on Intel overflow results in min_value. *)
+    if Int.( = ) num_bits 64
+    (* We cannot detect overflow because on Intel overflow results in min_value. *)
     then true
     else (
       assert (Int64.( <= ) lower_bound_minus_epsilon lower_bound);
@@ -851,9 +849,8 @@ struct
     let upper_bound = Int64.of_float float_upper_bound in
     let upper_bound_plus_epsilon = Caml.Int64.of_float (one_ulp `Up float_upper_bound) in
     let max_value = to_int64 max_value in
-    if
-      Int.( = ) num_bits 64
-      (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
+    if Int.( = ) num_bits 64
+    (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
     then Int64.( < ) upper_bound_plus_epsilon upper_bound
     else (
       assert (Int64.( >= ) upper_bound_plus_epsilon upper_bound);
@@ -1004,10 +1001,9 @@ let%test_module _ =
         let f = Random.float 1_000_000.0 -. 500_000.0 in
         let repeatable to_str =
           let s = to_str f in
-          if
-            String.( <> )
-              (String.split s ~on:',' |> String.concat |> of_string |> to_str)
-              s
+          if String.( <> )
+               (String.split s ~on:',' |> String.concat |> of_string |> to_str)
+               s
           then raise_s [%message "failed" (f : t)]
         in
         repeatable (to_string_hum ~decimals:3 ~strip_zero:false)

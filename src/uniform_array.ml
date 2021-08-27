@@ -97,6 +97,14 @@ let iteri a ~f =
   done
 ;;
 
+let foldi a ~init ~f =
+  let acc = ref init in
+  for i = 0 to length a - 1 do
+    acc := f i !acc (unsafe_get a i)
+  done;
+  !acc
+;;
+
 let to_list t = List.init ~f:(get t) (length t)
 
 let of_list l =

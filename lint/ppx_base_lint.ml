@@ -53,9 +53,7 @@ let print_payload ppf = function
 let remove_loc =
   object
     inherit Ast_traverse.map
-
     method! location _ = Location.none
-
     method! location_stack _ = []
   end
 ;;
@@ -131,8 +129,8 @@ let check current_module =
             then []
             else [ a ])
         in
-        if
-          not (Poly.equal (remove_loc#attributes attrs) (remove_loc#attributes new_attrs))
+        if not
+             (Poly.equal (remove_loc#attributes attrs) (remove_loc#attributes new_attrs))
         then (
           (* Remove attributes written by the user that correspond to attributes in the
              expansion *)

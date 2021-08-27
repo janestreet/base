@@ -82,7 +82,7 @@ let really_show_backtrace s =
       (String.is_substring s ~substring:"handle_uncaught")
 ;;
 
-let%test_module ("Show native backtraces"[@tags "no-js"]) =
+let%test_module ("Show native backtraces" [@tags "no-js"]) =
   (module struct
     (* good *)
     let%expect_test "Base.Exn.reraise" =

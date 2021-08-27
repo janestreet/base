@@ -1,7 +1,7 @@
 open! Import
 open! String
 
-let%expect_test ("hash coherence"[@tags "64-bits-only"]) =
+let%expect_test ("hash coherence" [@tags "64-bits-only"]) =
   check_hash_coherence [%here] (module String) [ ""; "a"; "foo" ];
   [%expect {| |}]
 ;;
@@ -1154,7 +1154,6 @@ let%test_module "Escaping" =
         let%test_unit _ = [%test_result: bool] (is "___" 1) ~expect:false
         let%test_unit _ = [%test_result: bool] (is "___" 2) ~expect:true
         (* considered escaping, though there's nothing to escape *)
-
         let%test_unit _ = [%test_result: bool] (is "a_b__c" 0) ~expect:false
         let%test_unit _ = [%test_result: bool] (is "a_b__c" 1) ~expect:true
         let%test_unit _ = [%test_result: bool] (is "a_b__c" 2) ~expect:false

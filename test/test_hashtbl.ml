@@ -202,7 +202,7 @@ let%expect_test "update_and_return" =
   [%expect {| ((t ((foo 2))) (x 2)) |}]
 ;;
 
-let%expect_test ("find_or_add shouldn't allocate"[@tags "no-js"]) =
+let%expect_test ("find_or_add shouldn't allocate" [@tags "no-js"]) =
   let default = Fn.const () in
   let t = Hashtbl.create (module Int) ~size:16 ~growth_allowed:false in
   Hashtbl.add_exn t ~key:100 ~data:();

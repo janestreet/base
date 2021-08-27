@@ -59,7 +59,10 @@ module Symmetric_diff_element = struct
   ;;
 
   let t_of_sexp :
-    'k 'v. (Sexplib0.Sexp.t -> 'k) -> (Sexplib0.Sexp.t -> 'v) -> Sexplib0.Sexp.t
+    'k 'v.
+    (Sexplib0.Sexp.t -> 'k)
+    -> (Sexplib0.Sexp.t -> 'v)
+    -> Sexplib0.Sexp.t
     -> ('k, 'v) t
     =
     let error_source__021_ = "map_intf.ml.Symmetric_diff_element.t" in
@@ -139,7 +142,10 @@ module Symmetric_diff_element = struct
   ;;
 
   let sexp_of_t :
-    'k 'v. ('k -> Sexplib0.Sexp.t) -> ('v -> Sexplib0.Sexp.t) -> ('k, 'v) t
+    'k 'v.
+    ('k -> Sexplib0.Sexp.t)
+    -> ('v -> Sexplib0.Sexp.t)
+    -> ('k, 'v) t
     -> Sexplib0.Sexp.t
     =
     fun _of_k _of_v (arg0__036_, arg1__037_) ->
@@ -172,30 +178,34 @@ module Symmetric_diff_element = struct
                ( _'k_sexp_grammar.untyped
                , Cons
                    ( Variant
-                       { name_kind = Any_case
+                       { case_sensitivity = Case_sensitive
                        ; clauses =
-                           [ { name = "Left"
-                             ; clause_kind =
-                                 List_clause
-                                   { args = Cons (_'v_sexp_grammar.untyped, Empty) }
-                             }
-                           ; { name = "Right"
-                             ; clause_kind =
-                                 List_clause
-                                   { args = Cons (_'v_sexp_grammar.untyped, Empty) }
-                             }
-                           ; { name = "Unequal"
-                             ; clause_kind =
-                                 List_clause
-                                   { args =
-                                       Cons
-                                         ( List
-                                             (Cons
-                                                ( _'v_sexp_grammar.untyped
-                                                , Cons (_'v_sexp_grammar.untyped, Empty) ))
-                                         , Empty )
-                                   }
-                             }
+                           [ No_tag
+                               { name = "Left"
+                               ; clause_kind =
+                                   List_clause
+                                     { args = Cons (_'v_sexp_grammar.untyped, Empty) }
+                               }
+                           ; No_tag
+                               { name = "Right"
+                               ; clause_kind =
+                                   List_clause
+                                     { args = Cons (_'v_sexp_grammar.untyped, Empty) }
+                               }
+                           ; No_tag
+                               { name = "Unequal"
+                               ; clause_kind =
+                                   List_clause
+                                     { args =
+                                         Cons
+                                           ( List
+                                               (Cons
+                                                  ( _'v_sexp_grammar.untyped
+                                                  , Cons (_'v_sexp_grammar.untyped, Empty)
+                                                  ))
+                                           , Empty )
+                                     }
+                               }
                            ]
                        }
                    , Empty ) ))

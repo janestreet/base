@@ -458,9 +458,8 @@ let%test_module _ =
            let a, b = This_queue.dequeue t_a, That_queue.dequeue t_b in
            let end_a = This_queue.to_array t_a in
            let end_b = That_queue.to_array t_b in
-           if
-             (not ([%equal: int option] a b))
-             || not ([%equal: int array] end_a end_b)
+           if (not ([%equal: int option] a b))
+           || not ([%equal: int array] end_a end_b)
            then
              failwithf
                "error in dequeue: %s (%s -> %s) <> %s (%s -> %s)"
@@ -483,11 +482,10 @@ let%test_module _ =
          let filter (t_a, t_b) =
            let t_a' = This_queue.filter t_a ~f:is_even in
            let t_b' = That_queue.filter t_b ~f:is_even in
-           if
-             not
-               ([%equal: int array]
-                  (This_queue.to_array t_a')
-                  (That_queue.to_array t_b'))
+           if not
+                ([%equal: int array]
+                   (This_queue.to_array t_a')
+                   (That_queue.to_array t_b'))
            then
              failwithf
                "error in filter: %s -> %s vs. %s -> %s"
@@ -507,11 +505,10 @@ let%test_module _ =
              That_queue.filteri t_b ~f:(fun i j ->
                [%equal: bool] (is_even i) (is_even j))
            in
-           if
-             not
-               ([%equal: int array]
-                  (This_queue.to_array t_a')
-                  (That_queue.to_array t_b'))
+           if not
+                ([%equal: int array]
+                   (This_queue.to_array t_a')
+                   (That_queue.to_array t_b'))
            then
              failwithf
                "error in filteri: %s -> %s vs. %s -> %s"
@@ -563,11 +560,10 @@ let%test_module _ =
            let f x = [ x; x + 1; x + 2 ] in
            let t_a' = This_queue.concat_map t_a ~f in
            let t_b' = That_queue.concat_map t_b ~f in
-           if
-             not
-               ([%equal: int array]
-                  (This_queue.to_array t_a')
-                  (That_queue.to_array t_b'))
+           if not
+                ([%equal: int array]
+                   (This_queue.to_array t_a')
+                   (That_queue.to_array t_b'))
            then
              failwithf
                "error in concat_map: %s (for %s) <> %s (for %s)"
@@ -582,11 +578,10 @@ let%test_module _ =
            let f i x = [ x; x + 1; x + 2; x + i ] in
            let t_a' = This_queue.concat_mapi t_a ~f in
            let t_b' = That_queue.concat_mapi t_b ~f in
-           if
-             not
-               ([%equal: int array]
-                  (This_queue.to_array t_a')
-                  (That_queue.to_array t_b'))
+           if not
+                ([%equal: int array]
+                   (This_queue.to_array t_a')
+                   (That_queue.to_array t_b'))
            then
              failwithf
                "error in concat_mapi: %s (for %s) <> %s (for %s)"
@@ -601,11 +596,10 @@ let%test_module _ =
            let f x = if is_even x then None else Some (x + 1) in
            let t_a' = This_queue.filter_map t_a ~f in
            let t_b' = That_queue.filter_map t_b ~f in
-           if
-             not
-               ([%equal: int array]
-                  (This_queue.to_array t_a')
-                  (That_queue.to_array t_b'))
+           if not
+                ([%equal: int array]
+                   (This_queue.to_array t_a')
+                   (That_queue.to_array t_b'))
            then
              failwithf
                "error in filter_map: %s (for %s) <> %s (for %s)"
@@ -624,11 +618,10 @@ let%test_module _ =
            in
            let t_a' = This_queue.filter_mapi t_a ~f in
            let t_b' = That_queue.filter_mapi t_b ~f in
-           if
-             not
-               ([%equal: int array]
-                  (This_queue.to_array t_a')
-                  (That_queue.to_array t_b'))
+           if not
+                ([%equal: int array]
+                   (This_queue.to_array t_a')
+                   (That_queue.to_array t_b'))
            then
              failwithf
                "error in filter_mapi: %s (for %s) <> %s (for %s)"
@@ -643,11 +636,10 @@ let%test_module _ =
            let f x = x * 7 in
            let t_a' = This_queue.map t_a ~f in
            let t_b' = That_queue.map t_b ~f in
-           if
-             not
-               ([%equal: int array]
-                  (This_queue.to_array t_a')
-                  (That_queue.to_array t_b'))
+           if not
+                ([%equal: int array]
+                   (This_queue.to_array t_a')
+                   (That_queue.to_array t_b'))
            then
              failwithf
                "error in map: %s (for %s) <> %s (for %s)"
@@ -662,11 +654,10 @@ let%test_module _ =
            let f i x = (x + 3) lxor i in
            let t_a' = This_queue.mapi t_a ~f in
            let t_b' = That_queue.mapi t_b ~f in
-           if
-             not
-               ([%equal: int array]
-                  (This_queue.to_array t_a')
-                  (That_queue.to_array t_b'))
+           if not
+                ([%equal: int array]
+                   (This_queue.to_array t_a')
+                   (That_queue.to_array t_b'))
            then
              failwithf
                "error in mapi: %s (for %s) <> %s (for %s)"
@@ -787,9 +778,8 @@ let%test_module _ =
            let end_b = That_queue.to_array t_b in
            let end_a' = This_queue.to_array dst_a in
            let end_b' = That_queue.to_array dst_b in
-           if
-             (not ([%equal: int array] end_a' end_b'))
-             || not ([%equal: int array] end_a end_b)
+           if (not ([%equal: int array] end_a' end_b'))
+           || not ([%equal: int array] end_a end_b)
            then
              failwithf
                "error in transfer: %s -> (%s, %s) vs. %s -> (%s, %s)"

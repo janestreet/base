@@ -1,7 +1,7 @@
 open! Import
 open! Int
 
-let%expect_test ("hash coherence"[@tags "64-bits-only"]) =
+let%expect_test ("hash coherence" [@tags "64-bits-only"]) =
   check_int_hash_coherence [%here] (module Int);
   [%expect {| |}]
 ;;

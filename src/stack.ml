@@ -58,7 +58,7 @@ let length t = t.length
 let is_empty t = length t = 0
 
 (* The order in which elements are visited has been chosen so as to be backwards
-   compatible with both [Linked_stack] and [Caml.Stack] *)
+   compatible with [Caml.Stack] *)
 let fold t ~init ~f =
   let r = ref init in
   for i = t.length - 1 downto 0 do
