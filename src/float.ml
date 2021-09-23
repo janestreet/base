@@ -874,6 +874,7 @@ let ( - ) = ( -. )
 let ( * ) = ( *. )
 let ( ** ) = ( ** )
 let ( / ) = ( /. )
+let ( % ) = ( %. )
 let ( ~- ) = ( ~-. )
 
 let sign_exn t : Sign.t =
@@ -972,6 +973,7 @@ module O = struct
   let ( - ) = ( - )
   let ( * ) = ( * )
   let ( / ) = ( / )
+  let ( % ) = ( % )
   let ( ~- ) = ( ~- )
   let ( ** ) = ( ** )
 
@@ -989,6 +991,7 @@ module O_dot = struct
   let ( +. ) = ( + )
   let ( -. ) = ( - )
   let ( /. ) = ( / )
+  let ( %. ) = ( % )
   let ( ~-. ) = ( ~- )
   let ( **. ) = ( ** )
 end

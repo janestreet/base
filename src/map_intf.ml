@@ -215,6 +215,14 @@ module Symmetric_diff_element = struct
   [@@@end]
 end
 
+module Merge_element = struct
+  type ('left, 'right) t =
+    [ `Left of 'left
+    | `Right of 'right
+    | `Both of 'left * 'right
+    ]
+end
+
 (** @canonical Base.Map.Continue_or_stop *)
 module Continue_or_stop = struct
   type t =
@@ -321,10 +329,7 @@ module type Accessors_generic = sig
       , 'cmp
       , ('k, 'v1, 'cmp) t
       -> ('k, 'v2, 'cmp) t
-      -> f:
-           (key:'k key
-            -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
-            -> unit)
+      -> f:(key:'k key -> data:('v1, 'v2) Merge_element.t -> unit)
       -> unit )
         options
 
@@ -347,11 +352,7 @@ module type Accessors_generic = sig
       , ('k, 'v1, 'cmp) t
       -> ('k, 'v2, 'cmp) t
       -> init:'a
-      -> f:
-           (key:'k key
-            -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
-            -> 'a
-            -> 'a)
+      -> f:(key:'k key -> data:('v1, 'v2) Merge_element.t -> 'a -> 'a)
       -> 'a )
         options
 
@@ -431,10 +432,7 @@ module type Accessors_generic = sig
       , 'cmp
       , ('k, 'v1, 'cmp) t
       -> ('k, 'v2, 'cmp) t
-      -> f:
-           (key:'k key
-            -> [ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
-            -> 'v3 option)
+      -> f:(key:'k key -> ('v1, 'v2) Merge_element.t -> 'v3 option)
       -> ('k, 'v3, 'cmp) t )
         options
 
@@ -601,12 +599,7 @@ module type Accessors1 = sig
     -> f:(key:key -> data:'a -> Continue_or_stop.t)
     -> Finished_or_unfinished.t
 
-  val iter2
-    :  'a t
-    -> 'b t
-    -> f:(key:key -> data:[ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> unit)
-    -> unit
-
+  val iter2 : 'a t -> 'b t -> f:(key:key -> data:('a, 'b) Merge_element.t -> unit) -> unit
   val map : 'a t -> f:('a -> 'b) -> 'b t
   val mapi : 'a t -> f:(key:key -> data:'a -> 'b) -> 'b t
   val fold : 'a t -> init:'b -> f:(key:key -> data:'a -> 'b -> 'b) -> 'b
@@ -624,7 +617,7 @@ module type Accessors1 = sig
     :  'a t
     -> 'b t
     -> init:'c
-    -> f:(key:key -> data:[ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> 'c -> 'c)
+    -> f:(key:key -> data:('a, 'b) Merge_element.t -> 'c -> 'c)
     -> 'c
 
   val filter_keys : 'a t -> f:(key -> bool) -> 'a t
@@ -642,12 +635,7 @@ module type Accessors1 = sig
   val keys : _ t -> key list
   val data : 'a t -> 'a list
   val to_alist : ?key_order:[ `Increasing | `Decreasing ] -> 'a t -> (key * 'a) list
-
-  val merge
-    :  'a t
-    -> 'b t
-    -> f:(key:key -> [ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> 'c option)
-    -> 'c t
+  val merge : 'a t -> 'b t -> f:(key:key -> ('a, 'b) Merge_element.t -> 'c option) -> 'c t
 
   val symmetric_diff
     :  'a t
@@ -773,7 +761,7 @@ module type Accessors2 = sig
   val iter2
     :  ('a, 'b) t
     -> ('a, 'c) t
-    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> unit)
+    -> f:(key:'a -> data:('b, 'c) Merge_element.t -> unit)
     -> unit
 
   val map : ('a, 'b) t -> f:('b -> 'c) -> ('a, 'c) t
@@ -793,7 +781,7 @@ module type Accessors2 = sig
     :  ('a, 'b) t
     -> ('a, 'c) t
     -> init:'d
-    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd -> 'd)
+    -> f:(key:'a -> data:('b, 'c) Merge_element.t -> 'd -> 'd)
     -> 'd
 
   val filter_keys : ('a, 'b) t -> f:('a -> bool) -> ('a, 'b) t
@@ -825,7 +813,7 @@ module type Accessors2 = sig
   val merge
     :  ('a, 'b) t
     -> ('a, 'c) t
-    -> f:(key:'a -> [ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd option)
+    -> f:(key:'a -> ('b, 'c) Merge_element.t -> 'd option)
     -> ('a, 'd) t
 
   val symmetric_diff
@@ -951,7 +939,7 @@ module type Accessors3 = sig
   val iter2
     :  ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
-    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> unit)
+    -> f:(key:'a -> data:('b, 'c) Merge_element.t -> unit)
     -> unit
 
   val map : ('a, 'b, 'cmp) t -> f:('b -> 'c) -> ('a, 'c, 'cmp) t
@@ -984,7 +972,7 @@ module type Accessors3 = sig
     :  ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
     -> init:'d
-    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd -> 'd)
+    -> f:(key:'a -> data:('b, 'c) Merge_element.t -> 'd -> 'd)
     -> 'd
 
   val filter_keys : ('a, 'b, 'cmp) t -> f:('a -> bool) -> ('a, 'b, 'cmp) t
@@ -1031,7 +1019,7 @@ module type Accessors3 = sig
   val merge
     :  ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
-    -> f:(key:'a -> [ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd option)
+    -> f:(key:'a -> ('b, 'c) Merge_element.t -> 'd option)
     -> ('a, 'd, 'cmp) t
 
   val symmetric_diff
@@ -1215,7 +1203,7 @@ module type Accessors3_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
-    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> unit)
+    -> f:(key:'a -> data:('b, 'c) Merge_element.t -> unit)
     -> unit
 
   val map : ('a, 'b, 'cmp) t -> f:('b -> 'c) -> ('a, 'c, 'cmp) t
@@ -1236,7 +1224,7 @@ module type Accessors3_with_comparator = sig
     -> ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
     -> init:'d
-    -> f:(key:'a -> data:[ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd -> 'd)
+    -> f:(key:'a -> data:('b, 'c) Merge_element.t -> 'd -> 'd)
     -> 'd
 
   val filter_keys
@@ -1324,7 +1312,7 @@ module type Accessors3_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t
     -> ('a, 'c, 'cmp) t
-    -> f:(key:'a -> [ `Left of 'b | `Right of 'c | `Both of 'b * 'c ] -> 'd option)
+    -> f:(key:'a -> ('b, 'c) Merge_element.t -> 'd option)
     -> ('a, 'd, 'cmp) t
 
   val symmetric_diff
@@ -1994,6 +1982,19 @@ module type Map = sig
     val to_continue_or_stop : t -> Continue_or_stop.t
   end
 
+  module Merge_element : sig
+    type ('left, 'right) t =
+      [ `Left of 'left
+      | `Right of 'right
+      | `Both of 'left * 'right
+      ]
+
+    val left : ('left, _) t -> 'left option
+    val right : (_, 'right) t -> 'right option
+    val left_value : ('left, _) t -> default:'left -> 'left
+    val right_value : (_, 'right) t -> default:'right -> 'right
+  end
+
   type ('k, 'cmp) comparator =
     (module Comparator.S with type t = 'k and type comparator_witness = 'cmp)
 
@@ -2244,7 +2245,7 @@ module type Map = sig
   val iter2
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
-    -> f:(key:'k -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ] -> unit)
+    -> f:(key:'k -> data:('v1, 'v2) Merge_element.t -> unit)
     -> unit
 
   (** Returns a new map with bound values replaced by [f] applied to the bound values.*)
@@ -2289,11 +2290,7 @@ module type Map = sig
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
     -> init:'a
-    -> f:
-         (key:'k
-          -> data:[ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ]
-          -> 'a
-          -> 'a)
+    -> f:(key:'k -> data:('v1, 'v2) Merge_element.t -> 'a -> 'a)
     -> 'a
 
   (** [filter], [filteri], [filter_keys], [filter_map], and [filter_mapi] run in O(n * lg
@@ -2385,7 +2382,7 @@ module type Map = sig
   val merge
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
-    -> f:(key:'k -> [ `Left of 'v1 | `Right of 'v2 | `Both of 'v1 * 'v2 ] -> 'v3 option)
+    -> f:(key:'k -> ('v1, 'v2) Merge_element.t -> 'v3 option)
     -> ('k, 'v3, 'cmp) t
 
   (** A special case of [merge], [merge_skewed t1 t2] is a map containing all the

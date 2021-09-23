@@ -24,6 +24,32 @@ module Finished_or_unfinished = struct
   let to_continue_or_stop : t -> Continue_or_stop.t = Caml.Obj.magic
 end
 
+module Merge_element = struct
+  include Map_intf.Merge_element
+
+  let left = function
+    | `Right _ -> None
+    | `Left left | `Both (left, _) -> Some left
+  ;;
+
+  let right = function
+    | `Left _ -> None
+    | `Right right | `Both (_, right) -> Some right
+  ;;
+
+  let left_value t ~default =
+    match t with
+    | `Right _ -> default
+    | `Left left | `Both (left, _) -> left
+  ;;
+
+  let right_value t ~default =
+    match t with
+    | `Left _ -> default
+    | `Right right | `Both (_, right) -> right
+  ;;
+end
+
 let with_return = With_return.with_return
 
 exception Duplicate [@@deriving_inline sexp]

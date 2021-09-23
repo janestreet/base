@@ -253,6 +253,17 @@ val max_inan : t -> t -> t
 val ( + ) : t -> t -> t
 val ( - ) : t -> t -> t
 val ( / ) : t -> t -> t
+
+(** In analogy to Int.( % ), ( % ):
+    - always produces non-negative (or NaN) result
+    - raises when given a negative modulus.
+
+    Like the other infix operators, NaNs in mean NaNs out.
+
+    Other cases: (a % Infinity) = a when 0 <= a < Infinity, (a % Infinity) = Infinity when
+    -Infinity < a < 0, (+/- Infinity % a) = NaN, (a % 0) = NaN. *)
+val ( % ) : t -> t -> t
+
 val ( * ) : t -> t -> t
 val ( ** ) : t -> t -> t
 val ( ~- ) : t -> t
@@ -300,6 +311,7 @@ module O : sig
   val ( - ) : t -> t -> t
   val ( * ) : t -> t -> t
   val ( / ) : t -> t -> t
+  val ( % ) : t -> t -> t
   val ( ** ) : t -> t -> t
   val ( ~- ) : t -> t
 
@@ -319,6 +331,7 @@ module O_dot : sig
   val ( -. ) : t -> t -> t
   val ( *. ) : t -> t -> t
   val ( /. ) : t -> t -> t
+  val ( %. ) : t -> t -> t
   val ( **. ) : t -> t -> t
   val ( ~-. ) : t -> t
 end
