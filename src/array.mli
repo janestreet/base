@@ -67,6 +67,10 @@ val init : int -> f:(int -> 'a) -> 'a t
     [Array.max_length / 2]. *)
 val make_matrix : dimx:int -> dimy:int -> 'a -> 'a t t
 
+(** [Array.copy_matrix t] returns a fresh copy of the array of arrays [t].  This is
+    typically used when [t] is a matrix created by [Array.make_matrix]. *)
+val copy_matrix : 'a t t -> 'a t t
+
 (** [Array.append v1 v2] returns a fresh array containing the concatenation of the arrays
     [v1] and [v2]. *)
 val append : 'a t -> 'a t -> 'a t
