@@ -15,6 +15,8 @@ let invalid_argf = Printf.invalid_argf
 
 module Array = struct
   external create : int -> 'a -> 'a array = "caml_make_vect"
+  external create_float_uninitialized : int -> float array = "caml_make_float_vect"
+
   external get : 'a array -> int -> 'a = "%array_safe_get"
   external length : 'a array -> int = "%array_length"
   external set : 'a array -> int -> 'a -> unit = "%array_safe_set"
@@ -38,6 +40,11 @@ let max_length = Sys.max_array_length
 let create ~len x =
   try create len x with
   | Invalid_argument _ -> invalid_argf "Array.create ~len:%d: invalid length" len ()
+;;
+
+let create_float_uninitialized len =
+  try create_float_uninitialized len with
+  | Invalid_argument _ -> invalid_argf "Array.create_float_uninitialized ~len:%d: invalid length" len ()
 ;;
 
 let append = Caml.Array.append
