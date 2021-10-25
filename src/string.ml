@@ -366,37 +366,38 @@ module Search_pattern0 = struct
     [@@deriving_inline equal, sexp_of]
 
     let equal =
-      (fun a__001_ b__002_ ->
-         if Ppx_compare_lib.phys_equal a__001_ b__002_
+      (fun a__002_ b__003_ ->
+         if Ppx_compare_lib.phys_equal a__002_ b__003_
          then true
          else
            Ppx_compare_lib.( && )
-             (equal_string a__001_.pattern b__002_.pattern)
+             (equal_string a__002_.pattern b__003_.pattern)
              (Ppx_compare_lib.( && )
-                (equal_bool a__001_.case_sensitive b__002_.case_sensitive)
-                (equal_array equal_int a__001_.kmp_array b__002_.kmp_array))
+                (equal_bool a__002_.case_sensitive b__003_.case_sensitive)
+                (equal_array equal_int a__002_.kmp_array b__003_.kmp_array))
            : t -> t -> bool)
     ;;
 
     let sexp_of_t =
-      (fun { pattern = v_pattern
-           ; case_sensitive = v_case_sensitive
-           ; kmp_array = v_kmp_array
+      (fun { pattern = pattern__007_
+           ; case_sensitive = case_sensitive__009_
+           ; kmp_array = kmp_array__011_
            } ->
-        let bnds = [] in
-        let bnds =
-          let arg = sexp_of_array sexp_of_int v_kmp_array in
-          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "kmp_array"; arg ] :: bnds
+        let bnds__006_ = [] in
+        let bnds__006_ =
+          let arg__012_ = sexp_of_array sexp_of_int kmp_array__011_ in
+          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "kmp_array"; arg__012_ ] :: bnds__006_
         in
-        let bnds =
-          let arg = sexp_of_bool v_case_sensitive in
-          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "case_sensitive"; arg ] :: bnds
+        let bnds__006_ =
+          let arg__010_ = sexp_of_bool case_sensitive__009_ in
+          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "case_sensitive"; arg__010_ ]
+          :: bnds__006_
         in
-        let bnds =
-          let arg = sexp_of_string v_pattern in
-          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pattern"; arg ] :: bnds
+        let bnds__006_ =
+          let arg__008_ = sexp_of_string pattern__007_ in
+          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pattern"; arg__008_ ] :: bnds__006_
         in
-        Sexplib0.Sexp.List bnds
+        Sexplib0.Sexp.List bnds__006_
         : t -> Sexplib0.Sexp.t)
     ;;
 

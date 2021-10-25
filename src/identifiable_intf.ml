@@ -14,9 +14,8 @@ module type Arg = sig
   type t [@@deriving_inline compare, hash, sexp]
 
   val compare : t -> t -> int
-  val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 
+  include Ppx_hash_lib.Hashable.S with type t := t
   include Sexplib0.Sexpable.S with type t := t
 
   [@@@end]
@@ -35,9 +34,7 @@ end
 module type S = sig
   type t [@@deriving_inline hash, sexp]
 
-  val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
-
+  include Ppx_hash_lib.Hashable.S with type t := t
   include Sexplib0.Sexpable.S with type t := t
 
   [@@@end]

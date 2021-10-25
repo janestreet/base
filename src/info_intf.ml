@@ -39,9 +39,8 @@ module type S = sig
 
   val compare : t -> t -> int
   val equal : t -> t -> bool
-  val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-  val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
 
+  include Ppx_hash_lib.Hashable.S with type t := t
   include Sexplib0.Sexpable.S with type t := t
 
   val t_sexp_grammar : t Sexplib0.Sexp_grammar.t

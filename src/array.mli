@@ -22,6 +22,11 @@ include Invariant.S1 with type 'a t := 'a t
     [max_length/2] on 32-bit machines and [max_length] on 64-bit machines. *)
 val max_length : int
 
+(*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
+  compiling without cross library inlining. *)
+
+external length : 'a array -> int = "%array_length"
+
 (** [Array.get a n] returns the element number [n] of array [a].
     The first element has number 0.
     The last element has number [Array.length a - 1].

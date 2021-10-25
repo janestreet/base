@@ -29,11 +29,11 @@ let hash_fold_t :
 ;;
 
 let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
-  fun _of_a x__013_ -> Result.t_of_sexp _of_a Error.t_of_sexp x__013_
+  fun _of_a__013_ x__015_ -> Result.t_of_sexp _of_a__013_ Error.t_of_sexp x__015_
 ;;
 
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-  fun _of_a x__014_ -> Result.sexp_of_t _of_a Error.sexp_of_t x__014_
+  fun _of_a__016_ x__017_ -> Result.sexp_of_t _of_a__016_ Error.sexp_of_t x__017_
 ;;
 
 let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =

@@ -18,35 +18,35 @@ type 'a t =
 [@@deriving_inline sexp_of]
 
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-  fun _of_a
-    { num_mutations = v_num_mutations
-    ; front = v_front
-    ; mask = v_mask
-    ; length = v_length
-    ; elts = v_elts
+  fun _of_a__001_
+    { num_mutations = num_mutations__003_
+    ; front = front__005_
+    ; mask = mask__007_
+    ; length = length__009_
+    ; elts = elts__011_
     } ->
-    let bnds = [] in
-    let bnds =
-      let arg = Option_array.sexp_of_t _of_a v_elts in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg ] :: bnds
+    let bnds__002_ = [] in
+    let bnds__002_ =
+      let arg__012_ = Option_array.sexp_of_t _of_a__001_ elts__011_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg__012_ ] :: bnds__002_
     in
-    let bnds =
-      let arg = sexp_of_int v_length in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg ] :: bnds
+    let bnds__002_ =
+      let arg__010_ = sexp_of_int length__009_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg__010_ ] :: bnds__002_
     in
-    let bnds =
-      let arg = sexp_of_int v_mask in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "mask"; arg ] :: bnds
+    let bnds__002_ =
+      let arg__008_ = sexp_of_int mask__007_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "mask"; arg__008_ ] :: bnds__002_
     in
-    let bnds =
-      let arg = sexp_of_int v_front in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "front"; arg ] :: bnds
+    let bnds__002_ =
+      let arg__006_ = sexp_of_int front__005_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "front"; arg__006_ ] :: bnds__002_
     in
-    let bnds =
-      let arg = sexp_of_int v_num_mutations in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "num_mutations"; arg ] :: bnds
+    let bnds__002_ =
+      let arg__004_ = sexp_of_int num_mutations__003_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "num_mutations"; arg__004_ ] :: bnds__002_
     in
-    Sexplib0.Sexp.List bnds
+    Sexplib0.Sexp.List bnds__002_
 ;;
 
 [@@@end]

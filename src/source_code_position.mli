@@ -15,8 +15,8 @@ type t = Caml.Lexing.position =
   }
 [@@deriving_inline hash, sexp_of]
 
-val hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state
-val hash : t -> Ppx_hash_lib.Std.Hash.hash_value
+include Ppx_hash_lib.Hashable.S with type t := t
+
 val sexp_of_t : t -> Sexplib0.Sexp.t
 
 [@@@end]

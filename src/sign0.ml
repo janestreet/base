@@ -9,23 +9,23 @@ type t =
 [@@deriving_inline sexp, sexp_grammar, compare, hash, enumerate]
 
 let t_of_sexp =
-  (let error_source__001_ = "sign0.ml.t" in
+  (let error_source__003_ = "sign0.ml.t" in
    function
    | Sexplib0.Sexp.Atom ("neg" | "Neg") -> Neg
    | Sexplib0.Sexp.Atom ("zero" | "Zero") -> Zero
    | Sexplib0.Sexp.Atom ("pos" | "Pos") -> Pos
-   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("neg" | "Neg") :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.stag_no_args error_source__001_ sexp
-   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.stag_no_args error_source__001_ sexp
-   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("pos" | "Pos") :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.stag_no_args error_source__001_ sexp
-   | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
-     Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__001_ sexp
-   | Sexplib0.Sexp.List [] as sexp ->
-     Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__001_ sexp
-   | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__001_ sexp
-             : Sexplib0.Sexp.t -> t)
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("neg" | "Neg") :: _) as sexp__004_ ->
+     Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp__004_
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp__004_ ->
+     Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp__004_
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("pos" | "Pos") :: _) as sexp__004_ ->
+     Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp__004_
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__002_ ->
+     Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__003_ sexp__002_
+   | Sexplib0.Sexp.List [] as sexp__002_ ->
+     Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__003_ sexp__002_
+   | sexp__002_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__003_ sexp__002_
+                   : Sexplib0.Sexp.t -> t)
 ;;
 
 let sexp_of_t =

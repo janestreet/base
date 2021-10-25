@@ -40,12 +40,7 @@ val equal
   -> ('ok, 'err) t
   -> bool
 
-val hash_fold_t
-  :  (Ppx_hash_lib.Std.Hash.state -> 'ok -> Ppx_hash_lib.Std.Hash.state)
-  -> (Ppx_hash_lib.Std.Hash.state -> 'err -> Ppx_hash_lib.Std.Hash.state)
-  -> Ppx_hash_lib.Std.Hash.state
-  -> ('ok, 'err) t
-  -> Ppx_hash_lib.Std.Hash.state
+include Ppx_hash_lib.Hashable.S2 with type ('ok, 'err) t := ('ok, 'err) t
 
 [@@@end]
 

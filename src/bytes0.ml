@@ -34,6 +34,9 @@ module Primitives = struct
     -> unit
     = "caml_blit_string"
   [@@noalloc]
+
+  external unsafe_get_int64 : bytes -> int -> int64 = "%caml_bytes_get64u"
+  external unsafe_set_int64 : bytes -> int -> int64 -> unit = "%caml_bytes_set64u"
 end
 
 include Primitives

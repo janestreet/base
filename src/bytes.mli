@@ -63,7 +63,7 @@ val init : int -> f:(int -> char) -> t
 val of_char_list : char list -> t
 
 (** [length t] returns the number of bytes in [t]. *)
-val length : t -> int
+external length : t -> int = "%bytes_length"
 
 (** [get t i] returns the [i]th byte of [t]. *)
 val get : t -> int -> char
@@ -74,6 +74,8 @@ external unsafe_get : t -> int -> char = "%bytes_unsafe_get"
 val set : t -> int -> char -> unit
 
 external unsafe_set : t -> int -> char -> unit = "%bytes_unsafe_set"
+external unsafe_get_int64 : t -> int -> int64 = "%caml_bytes_get64u"
+external unsafe_set_int64 : t -> int -> int64 -> unit = "%caml_bytes_set64u"
 
 (** [fill t ~pos ~len c] modifies [t] in place, replacing all the bytes from
     [pos] to [pos + len] with [c]. *)

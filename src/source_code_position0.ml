@@ -53,29 +53,29 @@ module T = struct
   ;;
 
   let sexp_of_t =
-    (fun { pos_fname = v_pos_fname
-         ; pos_lnum = v_pos_lnum
-         ; pos_bol = v_pos_bol
-         ; pos_cnum = v_pos_cnum
+    (fun { pos_fname = pos_fname__004_
+         ; pos_lnum = pos_lnum__006_
+         ; pos_bol = pos_bol__008_
+         ; pos_cnum = pos_cnum__010_
          } ->
-      let bnds = [] in
-      let bnds =
-        let arg = sexp_of_int v_pos_cnum in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_cnum"; arg ] :: bnds
+      let bnds__003_ = [] in
+      let bnds__003_ =
+        let arg__011_ = sexp_of_int pos_cnum__010_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_cnum"; arg__011_ ] :: bnds__003_
       in
-      let bnds =
-        let arg = sexp_of_int v_pos_bol in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_bol"; arg ] :: bnds
+      let bnds__003_ =
+        let arg__009_ = sexp_of_int pos_bol__008_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_bol"; arg__009_ ] :: bnds__003_
       in
-      let bnds =
-        let arg = sexp_of_int v_pos_lnum in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_lnum"; arg ] :: bnds
+      let bnds__003_ =
+        let arg__007_ = sexp_of_int pos_lnum__006_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_lnum"; arg__007_ ] :: bnds__003_
       in
-      let bnds =
-        let arg = sexp_of_string v_pos_fname in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_fname"; arg ] :: bnds
+      let bnds__003_ =
+        let arg__005_ = sexp_of_string pos_fname__004_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_fname"; arg__005_ ] :: bnds__003_
       in
-      Sexplib0.Sexp.List bnds
+      Sexplib0.Sexp.List bnds__003_
       : t -> Sexplib0.Sexp.t)
   ;;
 

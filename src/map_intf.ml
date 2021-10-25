@@ -9,8 +9,8 @@ module Or_duplicate = struct
   [@@deriving_inline sexp_of]
 
   let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-    fun _of_a -> function
-      | `Ok v0 -> Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; _of_a v0 ]
+    fun _of_a__001_ -> function
+      | `Ok v__002_ -> Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; _of_a__001_ v__002_ ]
       | `Duplicate -> Sexplib0.Sexp.Atom "Duplicate"
   ;;
 
@@ -37,22 +37,22 @@ module Symmetric_diff_element = struct
   let compare :
     'k 'v. ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
     =
-    fun _cmp__k _cmp__v a__001_ b__002_ ->
-    let t__003_, t__004_ = a__001_ in
-    let t__005_, t__006_ = b__002_ in
-    match _cmp__k t__003_ t__005_ with
+    fun _cmp__k _cmp__v a__003_ b__004_ ->
+    let t__005_, t__006_ = a__003_ in
+    let t__007_, t__008_ = b__004_ in
+    match _cmp__k t__005_ t__007_ with
     | 0 ->
-      if Ppx_compare_lib.phys_equal t__004_ t__006_
+      if Ppx_compare_lib.phys_equal t__006_ t__008_
       then 0
       else (
-        match t__004_, t__006_ with
-        | `Left _left__007_, `Left _right__008_ -> _cmp__v _left__007_ _right__008_
-        | `Right _left__009_, `Right _right__010_ -> _cmp__v _left__009_ _right__010_
-        | `Unequal _left__011_, `Unequal _right__012_ ->
-          let t__013_, t__014_ = _left__011_ in
-          let t__015_, t__016_ = _right__012_ in
-          (match _cmp__v t__013_ t__015_ with
-           | 0 -> _cmp__v t__014_ t__016_
+        match t__006_, t__008_ with
+        | `Left _left__009_, `Left _right__010_ -> _cmp__v _left__009_ _right__010_
+        | `Right _left__011_, `Right _right__012_ -> _cmp__v _left__011_ _right__012_
+        | `Unequal _left__013_, `Unequal _right__014_ ->
+          let t__015_, t__016_ = _left__013_ in
+          let t__017_, t__018_ = _right__014_ in
+          (match _cmp__v t__015_ t__017_ with
+           | 0 -> _cmp__v t__016_ t__018_
            | n -> n)
         | x, y -> Ppx_compare_lib.polymorphic_compare x y)
     | n -> n
@@ -65,80 +65,85 @@ module Symmetric_diff_element = struct
     -> Sexplib0.Sexp.t
     -> ('k, 'v) t
     =
-    let error_source__021_ = "map_intf.ml.Symmetric_diff_element.t" in
-    fun _of_k _of_v -> function
-      | Sexplib0.Sexp.List [ arg0__028_; arg1__029_ ] ->
-        let res0__030_ = _of_k arg0__028_
-        and res1__031_ =
-          let sexp = arg1__029_ in
+    let error_source__033_ = "map_intf.ml.Symmetric_diff_element.t" in
+    fun _of_k__019_ _of_v__020_ -> function
+      | Sexplib0.Sexp.List [ arg0__043_; arg1__044_ ] ->
+        let res0__045_ = _of_k__019_ arg0__043_
+        and res1__046_ =
+          let sexp__042_ = arg1__044_ in
           try
-            match sexp with
-            | Sexplib0.Sexp.Atom atom as _sexp ->
-              (match atom with
+            match sexp__042_ with
+            | Sexplib0.Sexp.Atom atom__023_ as _sexp__025_ ->
+              (match atom__023_ with
                | "Left" ->
-                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__021_ _sexp
+                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__033_ _sexp__025_
                | "Right" ->
-                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__021_ _sexp
+                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__033_ _sexp__025_
                | "Unequal" ->
-                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__021_ _sexp
+                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__033_ _sexp__025_
                | _ -> Sexplib0.Sexp_conv_error.no_variant_match ())
-            | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom atom :: sexp_args) as _sexp ->
-              (match atom with
-               | "Left" as _tag ->
-                 (match sexp_args with
-                  | [ arg0__026_ ] ->
-                    let res0__027_ = _of_v arg0__026_ in
-                    `Left res0__027_
+            | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom atom__023_ :: sexp_args__026_) as
+              _sexp__025_ ->
+              (match atom__023_ with
+               | "Left" as _tag__039_ ->
+                 (match sexp_args__026_ with
+                  | [ arg0__040_ ] ->
+                    let res0__041_ = _of_v__020_ arg0__040_ in
+                    `Left res0__041_
                   | _ ->
                     Sexplib0.Sexp_conv_error.ptag_incorrect_n_args
-                      error_source__021_
-                      _tag
-                      _sexp)
-               | "Right" as _tag ->
-                 (match sexp_args with
-                  | [ arg0__024_ ] ->
-                    let res0__025_ = _of_v arg0__024_ in
-                    `Right res0__025_
+                      error_source__033_
+                      _tag__039_
+                      _sexp__025_)
+               | "Right" as _tag__036_ ->
+                 (match sexp_args__026_ with
+                  | [ arg0__037_ ] ->
+                    let res0__038_ = _of_v__020_ arg0__037_ in
+                    `Right res0__038_
                   | _ ->
                     Sexplib0.Sexp_conv_error.ptag_incorrect_n_args
-                      error_source__021_
-                      _tag
-                      _sexp)
-               | "Unequal" as _tag ->
-                 (match sexp_args with
-                  | [ arg0__022_ ] ->
-                    let res0__023_ =
-                      match arg0__022_ with
-                      | Sexplib0.Sexp.List [ arg0__017_; arg1__018_ ] ->
-                        let res0__019_ = _of_v arg0__017_
-                        and res1__020_ = _of_v arg1__018_ in
-                        res0__019_, res1__020_
-                      | sexp ->
+                      error_source__033_
+                      _tag__036_
+                      _sexp__025_)
+               | "Unequal" as _tag__027_ ->
+                 (match sexp_args__026_ with
+                  | [ arg0__034_ ] ->
+                    let res0__035_ =
+                      match arg0__034_ with
+                      | Sexplib0.Sexp.List [ arg0__028_; arg1__029_ ] ->
+                        let res0__030_ = _of_v__020_ arg0__028_
+                        and res1__031_ = _of_v__020_ arg1__029_ in
+                        res0__030_, res1__031_
+                      | sexp__032_ ->
                         Sexplib0.Sexp_conv_error.tuple_of_size_n_expected
-                          error_source__021_
+                          error_source__033_
                           2
-                          sexp
+                          sexp__032_
                     in
-                    `Unequal res0__023_
+                    `Unequal res0__035_
                   | _ ->
                     Sexplib0.Sexp_conv_error.ptag_incorrect_n_args
-                      error_source__021_
-                      _tag
-                      _sexp)
+                      error_source__033_
+                      _tag__027_
+                      _sexp__025_)
                | _ -> Sexplib0.Sexp_conv_error.no_variant_match ())
-            | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
+            | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__024_ ->
               Sexplib0.Sexp_conv_error.nested_list_invalid_poly_var
-                error_source__021_
-                sexp
-            | Sexplib0.Sexp.List [] as sexp ->
-              Sexplib0.Sexp_conv_error.empty_list_invalid_poly_var error_source__021_ sexp
+                error_source__033_
+                sexp__024_
+            | Sexplib0.Sexp.List [] as sexp__024_ ->
+              Sexplib0.Sexp_conv_error.empty_list_invalid_poly_var
+                error_source__033_
+                sexp__024_
           with
           | Sexplib0.Sexp_conv_error.No_variant_match ->
-            Sexplib0.Sexp_conv_error.no_matching_variant_found error_source__021_ sexp
+            Sexplib0.Sexp_conv_error.no_matching_variant_found
+              error_source__033_
+              sexp__042_
         in
-        res0__030_, res1__031_
-      | sexp ->
-        Sexplib0.Sexp_conv_error.tuple_of_size_n_expected error_source__021_ 2 sexp
+        res0__045_, res1__046_
+      | sexp__047_ ->
+        Sexplib0.Sexp_conv_error.tuple_of_size_n_expected error_source__033_ 2 sexp__047_
   ;;
 
   let sexp_of_t :
@@ -148,22 +153,24 @@ module Symmetric_diff_element = struct
     -> ('k, 'v) t
     -> Sexplib0.Sexp.t
     =
-    fun _of_k _of_v (arg0__036_, arg1__037_) ->
-      let res0__038_ = _of_k arg0__036_
-      and res1__039_ =
-        match arg1__037_ with
-        | `Left v0 -> Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; _of_v v0 ]
-        | `Right v0 -> Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; _of_v v0 ]
-        | `Unequal v0 ->
+    fun _of_k__048_ _of_v__049_ (arg0__057_, arg1__058_) ->
+      let res0__059_ = _of_k__048_ arg0__057_
+      and res1__060_ =
+        match arg1__058_ with
+        | `Left v__050_ ->
+          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; _of_v__049_ v__050_ ]
+        | `Right v__051_ ->
+          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; _of_v__049_ v__051_ ]
+        | `Unequal v__052_ ->
           Sexplib0.Sexp.List
             [ Sexplib0.Sexp.Atom "Unequal"
-            ; (let arg0__032_, arg1__033_ = v0 in
-               let res0__034_ = _of_v arg0__032_
-               and res1__035_ = _of_v arg1__033_ in
-               Sexplib0.Sexp.List [ res0__034_; res1__035_ ])
+            ; (let arg0__053_, arg1__054_ = v__052_ in
+               let res0__055_ = _of_v__049_ arg0__053_
+               and res1__056_ = _of_v__049_ arg1__054_ in
+               Sexplib0.Sexp.List [ res0__055_; res1__056_ ])
             ]
       in
-      Sexplib0.Sexp.List [ res0__038_; res1__039_ ]
+      Sexplib0.Sexp.List [ res0__059_; res1__060_ ]
   ;;
 
   let (t_sexp_grammar :

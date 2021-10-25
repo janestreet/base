@@ -2,11 +2,14 @@ open! Import
 
 type ('a, 'b) t = T : ('a, 'a) t [@@deriving_inline sexp_of]
 
-let sexp_of_t
-  : type a b.
-    (a -> Sexplib0.Sexp.t) -> (b -> Sexplib0.Sexp.t) -> (a, b) t -> Sexplib0.Sexp.t
+let sexp_of_t :
+  'a 'b.
+  ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
   =
-  fun _of_a _of_b T -> Sexplib0.Sexp.Atom "T"
+  fun (type a__003_ b__004_)
+      :  ((a__003_ -> Sexplib0.Sexp.t) -> (b__004_ -> Sexplib0.Sexp.t)
+          -> (a__003_, b__004_) t -> Sexplib0.Sexp.t) ->
+    fun _of_a__001_ _of_b__002_ T -> Sexplib0.Sexp.Atom "T"
 ;;
 
 [@@@end]
@@ -89,8 +92,8 @@ module Id = struct
       type type_witness_int = [ `type_witness of int ] [@@deriving_inline sexp_of]
 
       let sexp_of_type_witness_int =
-        (fun (`type_witness v0) ->
-           Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "type_witness"; sexp_of_int v0 ]
+        (fun (`type_witness v__005_) ->
+           Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "type_witness"; sexp_of_int v__005_ ]
            : type_witness_int -> Sexplib0.Sexp.t)
       ;;
 

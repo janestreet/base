@@ -38,13 +38,7 @@ module type Either = sig
 
   val compare : ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
 
-  val hash_fold_t
-    :  (Ppx_hash_lib.Std.Hash.state -> 'f -> Ppx_hash_lib.Std.Hash.state)
-    -> (Ppx_hash_lib.Std.Hash.state -> 's -> Ppx_hash_lib.Std.Hash.state)
-    -> Ppx_hash_lib.Std.Hash.state
-    -> ('f, 's) t
-    -> Ppx_hash_lib.Std.Hash.state
-
+  include Ppx_hash_lib.Hashable.S2 with type ('f, 's) t := ('f, 's) t
   include Sexplib0.Sexpable.S2 with type ('f, 's) t := ('f, 's) t
 
   val t_sexp_grammar

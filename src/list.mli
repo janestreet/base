@@ -8,12 +8,7 @@ type 'a t = 'a list [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
 val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 
-val hash_fold_t
-  :  (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-  -> Ppx_hash_lib.Std.Hash.state
-  -> 'a t
-  -> Ppx_hash_lib.Std.Hash.state
-
+include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
@@ -127,8 +122,8 @@ val partition3_map
   -> 'b t * 'c t * 'd t
 
 (** [partition_tf l ~f] returns a pair of lists [(l1, l2)], where [l1] is the list of all
-    the elements of [l] that satisfy the predicate [p], and [l2] is the list of all the
-    elements of [l] that do not satisfy [p].  The order of the elements in the input list
+    the elements of [l] that satisfy the predicate [f], and [l2] is the list of all the
+    elements of [l] that do not satisfy [f].  The order of the elements in the input list
     is preserved.  The "tf" suffix is mnemonic to remind readers at a call that the result
     is (trues, falses). *)
 val partition_tf : 'a t -> f:('a -> bool) -> 'a t * 'a t

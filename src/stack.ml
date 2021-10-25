@@ -14,17 +14,17 @@ type 'a t =
 [@@deriving_inline sexp_of]
 
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-  fun _of_a { length = v_length; elts = v_elts } ->
-  let bnds = [] in
-  let bnds =
-    let arg = Option_array.sexp_of_t _of_a v_elts in
-    Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg ] :: bnds
+  fun _of_a__001_ { length = length__003_; elts = elts__005_ } ->
+  let bnds__002_ = [] in
+  let bnds__002_ =
+    let arg__006_ = Option_array.sexp_of_t _of_a__001_ elts__005_ in
+    Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg__006_ ] :: bnds__002_
   in
-  let bnds =
-    let arg = sexp_of_int v_length in
-    Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg ] :: bnds
+  let bnds__002_ =
+    let arg__004_ = sexp_of_int length__003_ in
+    Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg__004_ ] :: bnds__002_
   in
-  Sexplib0.Sexp.List bnds
+  Sexplib0.Sexp.List bnds__002_
 ;;
 
 [@@@end]

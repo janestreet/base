@@ -535,29 +535,30 @@ module Class = struct
   let all = ([ Infinite; Nan; Normal; Subnormal; Zero ] : t list)
 
   let t_of_sexp =
-    (let error_source__003_ = "float.ml.Class.t" in
+    (let error_source__006_ = "float.ml.Class.t" in
      function
      | Sexplib0.Sexp.Atom ("infinite" | "Infinite") -> Infinite
      | Sexplib0.Sexp.Atom ("nan" | "Nan") -> Nan
      | Sexplib0.Sexp.Atom ("normal" | "Normal") -> Normal
      | Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") -> Subnormal
      | Sexplib0.Sexp.Atom ("zero" | "Zero") -> Zero
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("infinite" | "Infinite") :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("nan" | "Nan") :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("normal" | "Normal") :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
-       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__003_ sexp
-     | Sexplib0.Sexp.List [] as sexp ->
-       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__003_ sexp
-     | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__003_ sexp
-               : Sexplib0.Sexp.t -> t)
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("infinite" | "Infinite") :: _) as
+       sexp__007_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__006_ sexp__007_
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("nan" | "Nan") :: _) as sexp__007_ ->
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__006_ sexp__007_
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("normal" | "Normal") :: _) as sexp__007_ ->
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__006_ sexp__007_
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") :: _) as
+       sexp__007_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__006_ sexp__007_
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp__007_ ->
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__006_ sexp__007_
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__005_ ->
+       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__006_ sexp__005_
+     | Sexplib0.Sexp.List [] as sexp__005_ ->
+       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__006_ sexp__005_
+     | sexp__005_ ->
+       Sexplib0.Sexp_conv_error.unexpected_stag error_source__006_ sexp__005_
+       : Sexplib0.Sexp.t -> t)
   ;;
 
   let sexp_of_t =

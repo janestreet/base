@@ -119,6 +119,11 @@ let clamp t ~min ~max =
   else Ok (clamp_unchecked t ~min ~max)
 ;;
 
+external to_int32_trunc : t -> int32 = "%int32_of_int"
+external of_int32_trunc : int32 -> t = "%int32_to_int"
+external of_int64_trunc : int64 -> t = "%int64_to_int"
+external of_nativeint_trunc : nativeint -> t = "%nativeint_to_int"
+
 let pred i = i - 1
 let succ i = i + 1
 let to_int i = i
@@ -130,26 +135,16 @@ let min_value = Caml.min_int
 let max_value_30_bits = 0x3FFF_FFFF
 let of_int32 = Conv.int32_to_int
 let of_int32_exn = Conv.int32_to_int_exn
-let of_int32_trunc = Conv.int32_to_int_trunc
 let to_int32 = Conv.int_to_int32
 let to_int32_exn = Conv.int_to_int32_exn
-let to_int32_trunc = Conv.int_to_int32_trunc
 let of_int64 = Conv.int64_to_int
 let of_int64_exn = Conv.int64_to_int_exn
-let of_int64_trunc = Conv.int64_to_int_trunc
 let to_int64 = Conv.int_to_int64
 let of_nativeint = Conv.nativeint_to_int
 let of_nativeint_exn = Conv.nativeint_to_int_exn
-let of_nativeint_trunc = Conv.nativeint_to_int_trunc
 let to_nativeint = Conv.int_to_nativeint
 let to_nativeint_exn = to_nativeint
 let abs x = abs x
-let ( + ) x y = x + y
-let ( - ) x y = x - y
-let ( * ) x y = x * y
-let ( / ) x y = x / y
-let neg x = -x
-let ( ~- ) = neg
 
 (* note that rem is not same as % *)
 let rem a b = a mod b
@@ -245,17 +240,20 @@ let sign = Sign.of_int
 let popcount = Popcount.int_popcount
 
 module Pre_O = struct
-  let ( + ) = ( + )
-  let ( - ) = ( - )
-  let ( * ) = ( * )
-  let ( / ) = ( / )
-  let ( ~- ) = ( ~- )
+  external ( + ) : int -> int -> int = "%addint"
+  external ( - ) : int -> int -> int = "%subint"
+  external ( * ) : int -> int -> int = "%mulint"
+  external ( / ) : int -> int -> int = "%divint"
+  external ( ~- ) : int -> int = "%negint"
+
   let ( ** ) = ( ** )
 
-  include (Int_replace_polymorphic_compare : Comparisons.Infix with type t := t)
+  include Int_replace_polymorphic_compare
 
   let abs = abs
-  let neg = neg
+
+  external neg : t -> t = "%negint"
+
   let zero = zero
   let of_int_exn = of_int_exn
 end
@@ -313,13 +311,16 @@ module O = struct
   ;;
 
   let ( // ) x y = to_float x /. to_float y
-  let ( land ) = ( land )
-  let ( lor ) = ( lor )
-  let ( lxor ) = ( lxor )
+
+  external ( land ) : int -> int -> int = "%andint"
+  external ( lor ) : int -> int -> int = "%orint"
+  external ( lxor ) : int -> int -> int = "%xorint"
+
   let lnot = lnot
-  let ( lsl ) = ( lsl )
-  let ( asr ) = ( asr )
-  let ( lsr ) = ( lsr )
+
+  external ( lsl ) : int -> int -> int = "%lslint"
+  external ( lsr ) : int -> int -> int = "%lsrint"
+  external ( asr ) : int -> int -> int = "%asrint"
 end
 
 include O

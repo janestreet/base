@@ -15,12 +15,7 @@ type 'a t = ('a, Error.t) Result.t
 val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
-val hash_fold_t
-  :  (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-  -> Ppx_hash_lib.Std.Hash.state
-  -> 'a t
-  -> Ppx_hash_lib.Std.Hash.state
-
+include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t

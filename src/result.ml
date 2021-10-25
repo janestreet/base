@@ -6,48 +6,65 @@ type ('a, 'b) t = ('a, 'b) Caml.result =
   | Error of 'b
 [@@deriving_inline sexp, sexp_grammar, compare, equal, hash]
 
-let t_of_sexp
-  : type a b.
-    (Sexplib0.Sexp.t -> a) -> (Sexplib0.Sexp.t -> b) -> Sexplib0.Sexp.t -> (a, b) t
+let t_of_sexp :
+  'a 'b.
+  (Sexplib0.Sexp.t -> 'a) -> (Sexplib0.Sexp.t -> 'b) -> Sexplib0.Sexp.t -> ('a, 'b) t
   =
-  let error_source__001_ = "result.ml.t" in
-  fun _of_a _of_b -> function
-    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("ok" | "Ok") as _tag) :: sexp_args) as
-      _sexp ->
-      (match sexp_args with
-       | [ arg0__002_ ] ->
-         let res0__003_ = _of_a arg0__002_ in
-         Ok res0__003_
-       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args error_source__001_ _tag _sexp)
-    | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom (("error" | "Error") as _tag) :: sexp_args)
-      as _sexp ->
-      (match sexp_args with
-       | [ arg0__004_ ] ->
-         let res0__005_ = _of_b arg0__004_ in
-         Error res0__005_
-       | _ -> Sexplib0.Sexp_conv_error.stag_incorrect_n_args error_source__001_ _tag _sexp)
-    | Sexplib0.Sexp.Atom ("ok" | "Ok") as sexp ->
-      Sexplib0.Sexp_conv_error.stag_takes_args error_source__001_ sexp
-    | Sexplib0.Sexp.Atom ("error" | "Error") as sexp ->
-      Sexplib0.Sexp_conv_error.stag_takes_args error_source__001_ sexp
-    | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp ->
-      Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__001_ sexp
-    | Sexplib0.Sexp.List [] as sexp ->
-      Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__001_ sexp
-    | sexp -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__001_ sexp
+  fun (type a__017_ b__018_)
+      :  ((Sexplib0.Sexp.t -> a__017_) -> (Sexplib0.Sexp.t -> b__018_) -> Sexplib0.Sexp.t
+          -> (a__017_, b__018_) t) ->
+    let error_source__005_ = "result.ml.t" in
+    fun _of_a__001_ _of_b__002_ -> function
+      | Sexplib0.Sexp.List
+          (Sexplib0.Sexp.Atom (("ok" | "Ok") as _tag__008_) :: sexp_args__009_) as
+        _sexp__007_ ->
+        (match sexp_args__009_ with
+         | [ arg0__010_ ] ->
+           let res0__011_ = _of_a__001_ arg0__010_ in
+           Ok res0__011_
+         | _ ->
+           Sexplib0.Sexp_conv_error.stag_incorrect_n_args
+             error_source__005_
+             _tag__008_
+             _sexp__007_)
+      | Sexplib0.Sexp.List
+          (Sexplib0.Sexp.Atom (("error" | "Error") as _tag__013_) :: sexp_args__014_) as
+        _sexp__012_ ->
+        (match sexp_args__014_ with
+         | [ arg0__015_ ] ->
+           let res0__016_ = _of_b__002_ arg0__015_ in
+           Error res0__016_
+         | _ ->
+           Sexplib0.Sexp_conv_error.stag_incorrect_n_args
+             error_source__005_
+             _tag__013_
+             _sexp__012_)
+      | Sexplib0.Sexp.Atom ("ok" | "Ok") as sexp__006_ ->
+        Sexplib0.Sexp_conv_error.stag_takes_args error_source__005_ sexp__006_
+      | Sexplib0.Sexp.Atom ("error" | "Error") as sexp__006_ ->
+        Sexplib0.Sexp_conv_error.stag_takes_args error_source__005_ sexp__006_
+      | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__004_ ->
+        Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__005_ sexp__004_
+      | Sexplib0.Sexp.List [] as sexp__004_ ->
+        Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__005_ sexp__004_
+      | sexp__004_ ->
+        Sexplib0.Sexp_conv_error.unexpected_stag error_source__005_ sexp__004_
 ;;
 
-let sexp_of_t
-  : type a b.
-    (a -> Sexplib0.Sexp.t) -> (b -> Sexplib0.Sexp.t) -> (a, b) t -> Sexplib0.Sexp.t
+let sexp_of_t :
+  'a 'b.
+  ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
   =
-  fun _of_a _of_b -> function
-    | Ok arg0__006_ ->
-      let res0__007_ = _of_a arg0__006_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; res0__007_ ]
-    | Error arg0__008_ ->
-      let res0__009_ = _of_b arg0__008_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Error"; res0__009_ ]
+  fun (type a__025_ b__026_)
+      :  ((a__025_ -> Sexplib0.Sexp.t) -> (b__026_ -> Sexplib0.Sexp.t)
+          -> (a__025_, b__026_) t -> Sexplib0.Sexp.t) ->
+    fun _of_a__019_ _of_b__020_ -> function
+      | Ok arg0__021_ ->
+        let res0__022_ = _of_a__019_ arg0__021_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; res0__022_ ]
+      | Error arg0__023_ ->
+        let res0__024_ = _of_b__020_ arg0__023_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Error"; res0__024_ ]
 ;;
 
 let (t_sexp_grammar :
@@ -78,29 +95,29 @@ let (t_sexp_grammar :
 let compare :
   'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
   =
-  fun _cmp__a _cmp__b a__010_ b__011_ ->
-  if Ppx_compare_lib.phys_equal a__010_ b__011_
+  fun _cmp__a _cmp__b a__027_ b__028_ ->
+  if Ppx_compare_lib.phys_equal a__027_ b__028_
   then 0
   else (
-    match a__010_, b__011_ with
-    | Ok _a__012_, Ok _b__013_ -> _cmp__a _a__012_ _b__013_
+    match a__027_, b__028_ with
+    | Ok _a__029_, Ok _b__030_ -> _cmp__a _a__029_ _b__030_
     | Ok _, _ -> -1
     | _, Ok _ -> 1
-    | Error _a__014_, Error _b__015_ -> _cmp__b _a__014_ _b__015_)
+    | Error _a__031_, Error _b__032_ -> _cmp__b _a__031_ _b__032_)
 ;;
 
 let equal :
   'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
   =
-  fun _cmp__a _cmp__b a__016_ b__017_ ->
-  if Ppx_compare_lib.phys_equal a__016_ b__017_
+  fun _cmp__a _cmp__b a__033_ b__034_ ->
+  if Ppx_compare_lib.phys_equal a__033_ b__034_
   then true
   else (
-    match a__016_, b__017_ with
-    | Ok _a__018_, Ok _b__019_ -> _cmp__a _a__018_ _b__019_
+    match a__033_, b__034_ with
+    | Ok _a__035_, Ok _b__036_ -> _cmp__a _a__035_ _b__036_
     | Ok _, _ -> false
     | _, Ok _ -> false
-    | Error _a__020_, Error _b__021_ -> _cmp__b _a__020_ _b__021_)
+    | Error _a__037_, Error _b__038_ -> _cmp__b _a__037_ _b__038_)
 ;;
 
 let hash_fold_t
