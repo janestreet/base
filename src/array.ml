@@ -335,6 +335,10 @@ let merge a1 a2 ~compare =
     merged)
 ;;
 
+let copy_matrix =
+  map ~f:copy
+;;
+  
 let folding_map t ~init ~f =
   let acc = ref init in
   map t ~f:(fun x ->
