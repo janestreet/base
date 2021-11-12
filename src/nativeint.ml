@@ -112,7 +112,6 @@ let of_float f =
 module Pow2 = struct
   open! Import
   open Nativeint_replace_polymorphic_compare
-  module Sys = Sys0
 
   let raise_s = Error.raise_s
 

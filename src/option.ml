@@ -171,7 +171,7 @@ let count t ~f =
 let find t ~f =
   match t with
   | None -> None
-  | Some x -> if f x then Some x else None
+  | Some x -> if f x then t else None
 ;;
 
 let find_map t ~f =

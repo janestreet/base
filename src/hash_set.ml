@@ -184,7 +184,7 @@ let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt)
   Sexplib0.Sexp_grammar.coerce (list_sexp_grammar Elt.t_sexp_grammar)
 ;;
 
-let equal_m__t (module K : Equal_m) t1 t2 = equal t1 t2
+let equal_m__t (module _ : Equal_m) t1 t2 = equal t1 t2
 
 module Private = struct
   let hashable = Hashtbl.Private.hashable

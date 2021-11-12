@@ -1496,8 +1496,8 @@ let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt)
   Sexplib0.Sexp_grammar.coerce (list_sexp_grammar Elt.t_sexp_grammar)
 ;;
 
-let compare_m__t (module Elt : Compare_m) t1 t2 = compare_direct t1 t2
-let equal_m__t (module Elt : Equal_m) t1 t2 = equal t1 t2
+let compare_m__t (module _ : Compare_m) t1 t2 = compare_direct t1 t2
+let equal_m__t (module _ : Equal_m) t1 t2 = equal t1 t2
 
 let hash_fold_m__t (type elt) (module Elt : Hash_fold_m with type t = elt) state =
   hash_fold_direct Elt.hash_fold_t state

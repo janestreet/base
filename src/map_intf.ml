@@ -443,6 +443,15 @@ module type Accessors_generic = sig
       -> ('k, 'v3, 'cmp) t )
         options
 
+  val merge_skewed
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t
+      -> ('k, 'v, 'cmp) t
+      -> combine:(key:'k key -> 'v -> 'v -> 'v)
+      -> ('k, 'v, 'cmp) t )
+        options
+
   val symmetric_diff
     : ( 'k
       , 'cmp
@@ -643,6 +652,7 @@ module type Accessors1 = sig
   val data : 'a t -> 'a list
   val to_alist : ?key_order:[ `Increasing | `Decreasing ] -> 'a t -> (key * 'a) list
   val merge : 'a t -> 'b t -> f:(key:key -> ('a, 'b) Merge_element.t -> 'c option) -> 'c t
+  val merge_skewed : 'v t -> 'v t -> combine:(key:key -> 'v -> 'v -> 'v) -> 'v t
 
   val symmetric_diff
     :  'a t
@@ -823,6 +833,12 @@ module type Accessors2 = sig
     -> f:(key:'a -> ('b, 'c) Merge_element.t -> 'd option)
     -> ('a, 'd) t
 
+  val merge_skewed
+    :  ('k, 'v) t
+    -> ('k, 'v) t
+    -> combine:(key:'k -> 'v -> 'v -> 'v)
+    -> ('k, 'v) t
+
   val symmetric_diff
     :  ('a, 'b) t
     -> ('a, 'b) t
@@ -951,19 +967,6 @@ module type Accessors3 = sig
 
   val map : ('a, 'b, 'cmp) t -> f:('b -> 'c) -> ('a, 'c, 'cmp) t
   val mapi : ('a, 'b, 'cmp) t -> f:(key:'a -> data:'b -> 'c) -> ('a, 'c, 'cmp) t
-
-  val map_keys
-    :  ('k2, 'cmp2) Comparator.t
-    -> f:('k1 -> 'k2)
-    -> ('k1, 'v, 'cmp1) t
-    -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 ]
-
-  val map_keys_exn
-    :  ('k2, 'cmp2) Comparator.t
-    -> f:('k1 -> 'k2)
-    -> ('k1, 'v, 'cmp1) t
-    -> ('k2, 'v, 'cmp2) t
-
   val fold : ('a, 'b, _) t -> init:'c -> f:(key:'a -> data:'b -> 'c -> 'c) -> 'c
 
   val fold_until
@@ -1028,6 +1031,12 @@ module type Accessors3 = sig
     -> ('a, 'c, 'cmp) t
     -> f:(key:'a -> ('b, 'c) Merge_element.t -> 'd option)
     -> ('a, 'd, 'cmp) t
+
+  val merge_skewed
+    :  ('k, 'v, 'cmp) t
+    -> ('k, 'v, 'cmp) t
+    -> combine:(key:'k -> 'v -> 'v -> 'v)
+    -> ('k, 'v, 'cmp) t
 
   val symmetric_diff
     :  ('a, 'b, 'cmp) t
@@ -1322,6 +1331,13 @@ module type Accessors3_with_comparator = sig
     -> f:(key:'a -> ('b, 'c) Merge_element.t -> 'd option)
     -> ('a, 'd, 'cmp) t
 
+  val merge_skewed
+    :  comparator:('k, 'cmp) Comparator.t
+    -> ('k, 'v, 'cmp) t
+    -> ('k, 'v, 'cmp) t
+    -> combine:(key:'k -> 'v -> 'v -> 'v)
+    -> ('k, 'v, 'cmp) t
+
   val symmetric_diff
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'b, 'cmp) t
@@ -1446,7 +1462,7 @@ module Check_accessors
     (Key : T1)
     (Cmp : T1)
     (Options : T3)
-    (M : Accessors_generic
+    (_ : Accessors_generic
      with type ('a, 'b, 'c) options := ('a, 'b, 'c) Options.t
      with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t
      with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Tree.t
@@ -1532,6 +1548,20 @@ module type Creators_generic = sig
   val empty : ('k, 'cmp, ('k, _, 'cmp) t) options
   val singleton : ('k, 'cmp, 'k key -> 'v -> ('k, 'v, 'cmp) t) options
 
+  val map_keys
+    : ( 'k2
+      , 'cmp2
+      , ('k1, 'v, 'cmp1) t
+      -> f:('k1 key -> 'k2 key)
+      -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 key ] )
+        options
+
+  val map_keys_exn
+    : ( 'k2
+      , 'cmp2
+      , ('k1, 'v, 'cmp1) t -> f:('k1 key -> 'k2 key) -> ('k2, 'v, 'cmp2) t )
+        options
+
   val of_sorted_array
     : ('k, 'cmp, ('k key * 'v) array -> ('k, 'v, 'cmp) t Or_error.t) options
 
@@ -1613,6 +1643,8 @@ module type Creators1 = sig
 
   val empty : _ t
   val singleton : key -> 'a -> 'a t
+  val map_keys : 'v t -> f:(key -> key) -> [ `Ok of 'v t | `Duplicate_key of key ]
+  val map_keys_exn : 'v t -> f:(key -> key) -> 'v t
   val of_alist : (key * 'a) list -> [ `Ok of 'a t | `Duplicate_key of key ]
   val of_alist_or_error : (key * 'a) list -> 'a t Or_error.t
   val of_alist_exn : (key * 'a) list -> 'a t
@@ -1644,6 +1676,13 @@ module type Creators2 = sig
 
   val empty : (_, _) t
   val singleton : 'a -> 'b -> ('a, 'b) t
+
+  val map_keys
+    :  ('k1, 'v) t
+    -> f:('k1 -> 'k2)
+    -> [ `Ok of ('k2, 'v) t | `Duplicate_key of 'k2 ]
+
+  val map_keys_exn : ('k1, 'v) t -> f:('k1 -> 'k2) -> ('k2, 'v) t
   val of_alist : ('a * 'b) list -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a ]
   val of_alist_or_error : ('a * 'b) list -> ('a, 'b) t Or_error.t
   val of_alist_exn : ('a * 'b) list -> ('a, 'b) t
@@ -1680,6 +1719,18 @@ module type Creators3_with_comparator = sig
 
   val empty : comparator:('a, 'cmp) Comparator.t -> ('a, _, 'cmp) t
   val singleton : comparator:('a, 'cmp) Comparator.t -> 'a -> 'b -> ('a, 'b, 'cmp) t
+
+  val map_keys
+    :  comparator:('k2, 'cmp2) Comparator.t
+    -> ('k1, 'v, 'cmp1) t
+    -> f:('k1 -> 'k2)
+    -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 ]
+
+  val map_keys_exn
+    :  comparator:('k2, 'cmp2) Comparator.t
+    -> ('k1, 'v, 'cmp1) t
+    -> f:('k1 -> 'k2)
+    -> ('k2, 'v, 'cmp2) t
 
   val of_alist
     :  comparator:('a, 'cmp) Comparator.t
@@ -1785,7 +1836,7 @@ module Check_creators
     (Key : T1)
     (Cmp : T1)
     (Options : T3)
-    (M : Creators_generic
+    (_ : Creators_generic
      with type ('a, 'b, 'c) options := ('a, 'b, 'c) Options.t
      with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t
      with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Tree.t
@@ -2263,16 +2314,16 @@ module type Map = sig
 
   (** Convert map with keys of type ['k2] to a map with keys of type ['k2] using [f]. *)
   val map_keys
-    :  ('k2, 'cmp2) Comparator.t
-    -> f:('k1 -> 'k2)
+    :  ('k2, 'cmp2) comparator
     -> ('k1, 'v, 'cmp1) t
+    -> f:('k1 -> 'k2)
     -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 ]
 
   (** Like [map_keys], but raises on duplicate key. *)
   val map_keys_exn
-    :  ('k2, 'cmp2) Comparator.t
-    -> f:('k1 -> 'k2)
+    :  ('k2, 'cmp2) comparator
     -> ('k1, 'v, 'cmp1) t
+    -> f:('k1 -> 'k2)
     -> ('k2, 'v, 'cmp2) t
 
   (** Folds over keys and data in the map in increasing order of [key]. *)
@@ -2719,7 +2770,7 @@ module type Map = sig
       -> ('k, 'v, 'cmp) t
 
     module Tree : sig
-      type ('k, +'v, 'cmp) t [@@deriving_inline sexp_of]
+      type (+'k, +'v, 'cmp) t [@@deriving_inline sexp_of]
 
       val sexp_of_t
         :  ('k -> Sexplib0.Sexp.t)
@@ -2796,6 +2847,15 @@ module type Map = sig
       val empty : ('a K.t, 'v, K.comparator_witness) t
     end
   end
+
+  (** Create a map from a tree using the given comparator. *)
+  val of_tree
+    :  ('k, 'cmp) comparator
+    -> ('k, 'v, 'cmp) Using_comparator.Tree.t
+    -> ('k, 'v, 'cmp) t
+
+  (** Extract a tree from a map. *)
+  val to_tree : ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) Using_comparator.Tree.t
 
 
   (** {2 Modules and module types for extending [Map]}

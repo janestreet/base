@@ -551,12 +551,6 @@ let rec rev_map_append l1 l2 ~f =
   | h :: t -> rev_map_append ~f t (f h :: l2)
 ;;
 
-let fold_right l ~f ~init =
-  match l with
-  | [] -> init (* avoid the allocation of [~f] below *)
-  | _ -> fold ~f:(fun a b -> f b a) ~init (rev l)
-;;
-
 let unzip list =
   let rec loop list l1 l2 =
     match list with
@@ -736,29 +730,76 @@ let merge l1 l2 ~compare =
   loop [] l1 l2
 ;;
 
-include struct
-  (* We are explicit about what we import from the general Monad functor so that we don't
-     accidentally rebind more efficient list-specific functions. *)
-  module Monad = Monad.Make (struct
-      type 'a t = 'a list
+module Cartesian_product = struct
+  (* We are explicit about what we export from functors so that we don't accidentally
+     rebind more efficient list-specific functions. *)
 
-      let bind x ~f = concat_map x ~f
-      let map = `Custom map
-      let return x = [ x ]
-    end)
-
-  open Monad
-  module Monad_infix = Monad_infix
-  module Let_syntax = Let_syntax
-
-  let ignore_m = ignore_m
-  let join = join
-  let bind = bind
+  let bind = concat_map
+  let map = map
+  let map2 a b ~f = concat_map a ~f:(fun x -> map b ~f:(fun y -> f x y))
+  let return x = [ x ]
+  let ( >>| ) = ( >>| )
   let ( >>= ) t f = bind t ~f
-  let return = return
-  let all = all
-  let all_unit = all_unit
+
+  open struct
+    module Applicative = Applicative.Make_using_map2 (struct
+        type 'a t = 'a list
+
+        let return = return
+        let map = `Custom map
+        let map2 = map2
+      end)
+
+    module Monad = Monad.Make (struct
+        type 'a t = 'a list
+
+        let return = return
+        let map = `Custom map
+        let bind = bind
+      end)
+  end
+
+  let all = Monad.all
+  let all_unit = Monad.all_unit
+  let ignore_m = Monad.ignore_m
+  let join = Monad.join
+
+  module Monad_infix = struct
+    let ( >>| ) = ( >>| )
+    let ( >>= ) = ( >>= )
+  end
+
+  let apply = Applicative.apply
+  let both = Applicative.both
+  let map3 = Applicative.map3
+  let ( <*> ) = Applicative.( <*> )
+  let ( *> ) = Applicative.( *> )
+  let ( <* ) = Applicative.( <* )
+
+  module Applicative_infix = struct
+    let ( >>| ) = ( >>| )
+    let ( <*> ) = Applicative.( <*> )
+    let ( *> ) = Applicative.( *> )
+    let ( <* ) = Applicative.( <* )
+  end
+
+  module Let_syntax = struct
+    let return = return
+    let ( >>| ) = ( >>| )
+    let ( >>= ) = ( >>= )
+
+    module Let_syntax = struct
+      let return = return
+      let bind = bind
+      let map = map
+      let both = both
+
+      module Open_on_rhs = struct end
+    end
+  end
 end
+
+include (Cartesian_product : Monad.S with type 'a t := 'a t)
 
 (** returns final element of list *)
 let rec last_exn list =

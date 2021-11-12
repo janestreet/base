@@ -1,7 +1,7 @@
 open Base
 
 let () =
-  let module M : sig
+  let module _ : sig
     open Set
 
     type ('a, 'b) t
@@ -32,7 +32,7 @@ let () =
 ;;
 
 let () =
-  let module M : sig
+  let module _ : sig
     open Map
 
     type ('a, 'b, 'c) t
@@ -52,9 +52,6 @@ let () =
     type 'a cmp = 'a
 
     include Map
-
-    let of_tree _ = assert false
-    let to_tree _ = assert false
   end
   in
   ()

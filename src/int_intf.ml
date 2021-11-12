@@ -304,9 +304,11 @@ struct
   (** Various functors whose type-correctness ensures desired relationships between
       interfaces. *)
 
-  module Check_O_contained_in_S (M : S) : module type of M.O = M
-  module Check_O_contained_in_S_unbounded (M : S_unbounded) : module type of M.O = M
-  module Check_S_unbounded_in_S (M : S) : S_unbounded = M
+  module _ (M : S) : module type of M.O = M
+
+  module _ (M : S_unbounded) : module type of M.O = M
+
+  module _ (M : S) : S_unbounded = M
 end :
 sig end)
 

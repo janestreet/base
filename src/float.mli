@@ -244,6 +244,9 @@ val is_inf : t -> bool
 (** A float is finite when neither [is_nan] nor [is_inf] is true. *)
 val is_finite : t -> bool
 
+(** [is_integer x] is [true] if and only if [x] is an integer. *)
+val is_integer : t -> bool
+
 (** [min_inan] and [max_inan] return, respectively, the min and max of the two given
     values, except when one of the values is a [nan], in which case the other is
     returned. (Returns [nan] if both arguments are [nan].) *)

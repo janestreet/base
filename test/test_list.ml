@@ -589,26 +589,6 @@ let%test _ = not (is_suffix [ 1 ] ~suffix:[ 1; 2 ] ~equal:( = ))
 let%test _ = not (is_suffix [ 1; 3 ] ~suffix:[ 1; 2 ] ~equal:( = ))
 let%test _ = is_suffix [ 1; 2; 3 ] ~suffix:[ 2; 3 ] ~equal:( = )
 
-let%expect_test "is_prefix does not allocate" =
-  let list = Sys.opaque_identity [ 1; 2; 3 ] in
-  let prefix = Sys.opaque_identity [ 1; 2 ] in
-  let equal = Int.equal in
-  let (_ : bool) =
-    require_no_allocation [%here] (fun () -> is_prefix list ~equal ~prefix)
-  in
-  [%expect {| |}]
-;;
-
-let%expect_test "is_suffix does not allocate" =
-  let list = Sys.opaque_identity [ 1; 2; 3 ] in
-  let suffix = Sys.opaque_identity [ 2; 3 ] in
-  let equal = Int.equal in
-  let (_ : bool) =
-    require_no_allocation [%here] (fun () -> is_suffix list ~equal ~suffix)
-  in
-  [%expect {| |}]
-;;
-
 let%test_unit _ =
   List.iter
     ~f:(fun (t, expect) ->
@@ -1314,4 +1294,56 @@ let%expect_test "[all_equal]" =
   [%expect {| (a) |}];
   test [ 'A'; 'a'; 'A'; 'a'; 'A'; 'a' ];
   [%expect {| (A) |}]
+;;
+
+let%expect_test "[Cartesian_product.apply] identity" =
+  let test list =
+    require_equal
+      [%here]
+      (module struct
+        type t = char list [@@deriving equal, sexp_of]
+      end)
+      list
+      (List.Cartesian_product.apply (return Fn.id) list)
+  in
+  test [];
+  test [ 'a'; 'b'; 'c' ];
+  test [ 'a'; 'z'; 'd'; 'b' ]
+;;
+
+let%expect_test "[Cartesian_product]" =
+  (let%map.List.Cartesian_product letter = [ 'a'; 'b'; 'c' ]
+   and number = [ 1; 2; 3 ]
+   and solfege = [ "do"; "re"; "mi" ] in
+   [%sexp (letter : char), (number : int), (solfege : string)])
+  |> List.iter ~f:print_s;
+  [%expect
+    {|
+    (a 1 do)
+    (a 1 re)
+    (a 1 mi)
+    (a 2 do)
+    (a 2 re)
+    (a 2 mi)
+    (a 3 do)
+    (a 3 re)
+    (a 3 mi)
+    (b 1 do)
+    (b 1 re)
+    (b 1 mi)
+    (b 2 do)
+    (b 2 re)
+    (b 2 mi)
+    (b 3 do)
+    (b 3 re)
+    (b 3 mi)
+    (c 1 do)
+    (c 1 re)
+    (c 1 mi)
+    (c 2 do)
+    (c 2 re)
+    (c 2 mi)
+    (c 3 do)
+    (c 3 re)
+    (c 3 mi) |}]
 ;;

@@ -17,6 +17,7 @@ let max_finite_value = Caml.max_float
 let epsilon_float = Caml.epsilon_float
 let classify_float = Caml.classify_float
 let abs_float = Caml.abs_float
+let is_integer = Caml.Float.is_integer
 let ( ** ) = Caml.( ** )
 
 let ( %. ) a b =

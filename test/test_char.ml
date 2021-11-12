@@ -144,13 +144,5 @@ let%test_module "Caseless Comparable" =
     let%test _ = Caseless.('a' < 'B')
     let%test _ = Int.( <> ) (Caseless.compare 'a' 'B') (compare 'a' 'B')
     let%test _ = List.is_sorted ~compare:Caseless.compare [ 'A'; 'b'; 'C' ]
-
-    let%expect_test _ =
-      let x = Sys.opaque_identity 'a' in
-      let y = Sys.opaque_identity 'b' in
-      require_no_allocation [%here] (fun () ->
-        ignore (Sys.opaque_identity (Caseless.equal x y) : bool));
-      [%expect {||}]
-    ;;
   end)
 ;;

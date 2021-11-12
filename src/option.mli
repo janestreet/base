@@ -85,8 +85,7 @@ val value_map : 'a t -> default:'b -> f:('a -> 'b) -> 'b
 val value_or_thunk : 'a t -> default:(unit -> 'a) -> 'a
 
 
-(** [fold t ~init ~f] returns [f (... f (f (f init e1) e2) e3 ...) en], where [e1..en]
-    are the elements of [t]  *)
+(** On [None], returns [init]. On [Some x], returns [f init x]. *)
 val fold : 'a t -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
 
 (** Checks whether the provided element is there, using [equal]. *)
@@ -95,19 +94,17 @@ val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 val length : 'a t -> int
 val iter : 'a t -> f:('a -> unit) -> unit
 
-(** Returns [true] if and only if there exists an element for which the provided
-    function evaluates to [true].  This is a short-circuiting operation. *)
+(** On [None], returns [false]. On [Some x], returns [f x]. *)
 val exists : 'a t -> f:('a -> bool) -> bool
 
-(** Returns [true] if and only if the provided function evaluates to [true] for all
-    elements.  This is a short-circuiting operation. *)
+(** On [None], returns [true]. On [Some x], returns [f x]. *)
 val for_all : 'a t -> f:('a -> bool) -> bool
 
-(** Returns as an [option] the first element for which [f] evaluates to true. *)
+(** [find t ~f] returns [t] if [t = Some x] and [f x = true]; otherwise, [find] returns
+    [None]. *)
 val find : 'a t -> f:('a -> bool) -> 'a option
 
-(** Returns the first evaluation of [f] that returns [Some], and returns [None] if there
-    is no such element.  *)
+(** On [None], returns [None]. On [Some x], returns [f x]. *)
 val find_map : 'a t -> f:('a -> 'b option) -> 'b option
 
 val to_list : 'a t -> 'a list

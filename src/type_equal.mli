@@ -125,8 +125,8 @@ val tuple2 : ('a1, 'b1) t -> ('a2, 'b2) t -> ('a1 * 'a2, 'b1 * 'b2) t
     are equal from a proof that both types transformed by [M.t] are equal.
 
     OCaml has no built-in language feature to state that a type is injective, which is why
-    we have [module type Injective].  However, OCaml can infer that a type is injective,
-    and we can use this to match [Injective].  A typical implementation will look like
+    we have [module type Injective]. However, OCaml can infer that a type is injective,
+    and we can use this to match [Injective]. A typical implementation will look like
     this:
 
     {[

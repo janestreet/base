@@ -27,8 +27,6 @@ let%test _ =
 
 let%test _ = invariants (Poly.of_increasing_iterator_unchecked ~len:20 ~f:(fun x -> x, x))
 
-module M = M
-
 let add12 t = add_exn t ~key:1 ~data:2
 
 type int_map = int Map.M(Int).t [@@deriving compare, hash, sexp]
@@ -151,7 +149,7 @@ let%expect_test "combine_errors" =
       (2 two))) |}]
 ;;
 
-module Poly = struct
+module _ = struct
   let%test _ = length Poly.empty = 0
 
   let%test _ =
@@ -306,13 +304,13 @@ let%expect_test "[map_keys]" =
          : [ `Duplicate_key of string | `Ok of string Map.M(String).t ])]
   in
   let map = Map.of_alist_exn (module Int) [ 1, "one"; 2, "two"; 3, "three" ] in
-  test map String.comparator ~f:Int.to_string;
+  test map (module String) ~f:Int.to_string;
   [%expect {|
     (Ok (
       (1 one)
       (2 two)
       (3 three))) |}];
-  test map String.comparator ~f:(fun x -> Int.to_string (x / 2));
+  test map (module String) ~f:(fun x -> Int.to_string (x / 2));
   [%expect {| (Duplicate_key 1) |}]
 ;;
 

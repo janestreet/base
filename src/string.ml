@@ -795,16 +795,18 @@ let for_all =
   fun s ~f -> loop s 0 ~len:(length s) ~f
 ;;
 
-let fold t ~init ~f =
-  let n = length t in
-  let rec loop i ac = if i = n then ac else loop (i + 1) (f ac t.[i]) in
-  loop 0 init
+let fold =
+  let rec loop t i ac ~f ~len =
+    if i = len then ac else loop t (i + 1) (f ac t.[i]) ~f ~len
+  in
+  fun t ~init ~f -> loop t 0 init ~f ~len:(length t)
 ;;
 
-let foldi t ~init ~f =
-  let n = length t in
-  let rec loop i ac = if i = n then ac else loop (i + 1) (f i ac t.[i]) in
-  loop 0 init
+let foldi =
+  let rec loop t i ac ~f ~len =
+    if i = len then ac else loop t (i + 1) (f i ac t.[i]) ~f ~len
+  in
+  fun t ~init ~f -> loop t 0 init ~f ~len:(length t)
 ;;
 
 let iteri t ~f =

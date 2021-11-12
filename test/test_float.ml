@@ -919,6 +919,19 @@ let%test _ = round_nearest_half_to_even 5.5 = 6.
 let%test _ = round_nearest_half_to_even 6.5 = 6.
 let%test _ = round_nearest_half_to_even (one_ulp `Up (-.(2. **. 52.))) = -.(2. **. 52.)
 let%test _ = round_nearest (one_ulp `Up (-.(2. **. 52.))) = 1. -. (2. **. 52.)
+let%test _ = is_integer 1.
+let%test _ = is_integer 0.
+let%test _ = is_integer (-0.)
+let%test _ = is_integer (-1.)
+let%test _ = is_integer 8.98e307
+let%test _ = is_integer ((2. ** 53.) -. 0.5)
+let%test _ = not (is_integer ((2. ** 52.) -. 0.5))
+let%test _ = not (is_integer 0.0000000000000001)
+let%test _ = not (is_integer (-0.0000000000000001))
+let%test _ = not (is_integer 0.9999999999999999)
+let%test _ = not (is_integer nan)
+let%test _ = not (is_integer infinity)
+let%test _ = not (is_integer neg_infinity)
 
 let%test_module _ =
   (module struct
@@ -1063,13 +1076,6 @@ let%expect_test "mathematical constants" =
 let%test _ = not (is_negative Float.nan)
 let%test _ = not (is_non_positive Float.nan)
 let%test _ = is_non_negative (-0.)
-
-let%expect_test "iround_nearest_exn noalloc" =
-  let t = Sys.opaque_identity 205.414 in
-  Expect_test_helpers_core.require_no_allocation [%here] (fun () -> iround_nearest_exn t)
-  |> printf "%d\n";
-  [%expect {| 205 |}]
-;;
 
 let%test_unit "int to float conversion consistency" =
   let test_int63 x =

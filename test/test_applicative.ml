@@ -12,7 +12,7 @@ let%test_module "Make" =
 
     let error = Or_error.error_string
 
-    module Tests : module type of A = struct
+    module _ : module type of A = struct
       let return = A.return
 
       let%expect_test _ =
@@ -215,7 +215,7 @@ let%test_module "Make_using_map2" =
 
     let error = Or_error.error_string
 
-    module Tests : module type of A = struct
+    module _ : module type of A = struct
       let return = A.return
 
       let%expect_test _ =

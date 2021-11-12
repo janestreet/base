@@ -1360,6 +1360,21 @@ module Tree0 = struct
     tree, len
   ;;
 
+  let merge_skewed =
+    let merge_large_first length_large t_large t_small ~call ~combine ~compare_key =
+      fold t_small ~init:(t_large, length_large) ~f:(fun ~key ~data:data' (t, length) ->
+        update t key ~length ~compare_key ~f:(function
+          | None -> data'
+          | Some data -> call combine ~key data data'))
+    in
+    let call f ~key x y = f ~key x y in
+    let swap f ~key x y = f ~key y x in
+    fun t1 t2 ~length1 ~length2 ~combine ~compare_key ->
+      if length2 <= length1
+      then merge_large_first length1 t1 t2 ~call ~combine ~compare_key
+      else merge_large_first length2 t2 t1 ~call:swap ~combine ~compare_key
+  ;;
+
   module Closest_key_impl = struct
     (* [marker] and [repackage] allow us to create "logical" options without actually
        allocating any options. Passing [Found key value] to a function is equivalent to
@@ -1620,6 +1635,28 @@ module Tree0 = struct
     then Ok oks
     else Or_error.error_s (sexp_of_t sexp_of_key Error.sexp_of_t error_tree)
   ;;
+
+  let map_keys
+        t1
+        ~f
+        ~comparator:({ compare = compare_key; sexp_of_t = sexp_of_key } : _ Comparator.t)
+    =
+    with_return (fun { return } ->
+      `Ok
+        (fold t1 ~init:(empty, 0) ~f:(fun ~key ~data (t2, length) ->
+           let key = f key in
+           try add_exn_internal t2 ~length ~key ~data ~compare_key ~sexp_of_key with
+           | Duplicate -> return (`Duplicate_key key))))
+  ;;
+
+  let map_keys_exn t ~f ~comparator =
+    match map_keys t ~f ~comparator with
+    | `Ok result -> result
+    | `Duplicate_key key ->
+      let sexp_of_key = comparator.Comparator.sexp_of_t in
+      Error.raise_s
+        (Sexp.message "Map.map_keys_exn: duplicate key" [ "key", key |> sexp_of_key ])
+  ;;
 end
 
 type ('k, 'v, 'comparator) t =
@@ -1808,6 +1845,19 @@ module Accessors = struct
 
   let merge t1 t2 ~f =
     like t1 (Tree0.merge t1.tree t2.tree ~f ~compare_key:(compare_key t1))
+  ;;
+
+  let merge_skewed t1 t2 ~combine =
+    (* This is only a no-op in the case where at least one of the maps is empty. *)
+    like_maybe_no_op
+      (if t2.length <= t1.length then t1 else t2)
+      (Tree0.merge_skewed
+         t1.tree
+         t2.tree
+         ~length1:t1.length
+         ~length2:t2.length
+         ~combine
+         ~compare_key:(compare_key t1))
   ;;
 
   let min_elt t = Tree0.min_elt t.tree
@@ -2169,6 +2219,19 @@ module Tree = struct
     fst (Tree0.merge t1 t2 ~f ~compare_key:comparator.Comparator.compare)
   ;;
 
+  let merge_skewed ~comparator t1 t2 ~combine =
+    (* Length computation makes this significantly slower than [merge_skewed] on a map
+       with a [length] field, but does preserve amount of allocation. *)
+    fst
+      (Tree0.merge_skewed
+         t1
+         t2
+         ~length1:(length t1)
+         ~length2:(length t2)
+         ~combine
+         ~compare_key:comparator.Comparator.compare)
+  ;;
+
   let min_elt t = Tree0.min_elt t
   let min_elt_exn t = Tree0.min_elt_exn t
   let max_elt t = Tree0.max_elt t
@@ -2238,6 +2301,14 @@ module Tree = struct
     | Some (lower_bound, upper_bound) -> subrange ~comparator t ~lower_bound ~upper_bound
     | None -> Empty
   ;;
+
+  let map_keys ~comparator t ~f =
+    match Tree0.map_keys ~comparator t ~f with
+    | `Ok (t, _) -> `Ok t
+    | `Duplicate_key _ as dup -> dup
+  ;;
+
+  let map_keys_exn ~comparator t ~f = fst (Tree0.map_keys_exn ~comparator t ~f)
 
   module Build_increasing = struct
     type ('k, 'v, 'w) t = ('k, 'v) Tree0.Build_increasing.t
@@ -2364,22 +2435,14 @@ module Using_comparator = struct
     of_tree0 ~comparator (Tree0.t_of_sexp_direct k_of_sexp v_of_sexp sexp ~comparator)
   ;;
 
-  let map_keys
-        (comparator2 : ('k2, 'cmp2) Comparator.t)
-        ~(f : 'k1 -> 'k2)
-        (t : ('k1, 'v, 'cmp1) t)
-    =
-    let x = to_sequence t in
-    x |> Sequence.map ~f:(fun (k, v) -> f k, v) |> of_sequence ~comparator:comparator2
+  let map_keys ~comparator t ~f =
+    match Tree0.map_keys t.tree ~f ~comparator with
+    | `Ok pair -> `Ok (of_tree0 ~comparator pair)
+    | `Duplicate_key _ as dup -> dup
   ;;
 
-  let map_keys_exn comparator2 ~f t =
-    match map_keys comparator2 ~f t with
-    | `Ok result -> result
-    | `Duplicate_key key ->
-      let sexp_of_key = comparator2.Comparator.sexp_of_t in
-      Error.raise_s
-        (Sexp.message "Map.map_keys_exn: duplicate key" [ "key", key |> sexp_of_key ])
+  let map_keys_exn ~comparator t ~f =
+    of_tree0 ~comparator (Tree0.map_keys_exn t.tree ~f ~comparator)
   ;;
 
   module Empty_without_value_restriction (K : Comparator.S1) = struct
@@ -2404,6 +2467,11 @@ let comparator_s (type k cmp) t : (k, cmp) comparator =
 ;;
 
 let to_comparator (type k cmp) ((module M) : (k, cmp) comparator) = M.comparator
+
+let of_tree (type k cmp) ((module M) : (k, cmp) comparator) tree =
+  of_tree ~comparator:M.comparator tree
+;;
+
 let empty m = Using_comparator.empty ~comparator:(to_comparator m)
 let singleton m a = Using_comparator.singleton ~comparator:(to_comparator m) a
 let of_alist m a = Using_comparator.of_alist ~comparator:(to_comparator m) a
@@ -2458,21 +2526,8 @@ let of_sequence_reduce m s ~f =
   Using_comparator.of_sequence_reduce ~comparator:(to_comparator m) s ~f
 ;;
 
-let map_keys
-      (comparator2 : ('k2, 'cmp2) Comparator.t)
-      ~(f : 'k1 -> 'k2)
-      (t : ('k1, 'v, 'cmp1) t)
-  =
-  Using_comparator.map_keys comparator2 t ~f
-;;
-
-let map_keys_exn
-      (comparator2 : ('k2, 'cmp2) Comparator.t)
-      ~(f : 'k1 -> 'k2)
-      (t : ('k1, 'v, 'cmp1) t)
-  =
-  Using_comparator.map_keys_exn comparator2 t ~f
-;;
+let map_keys m t ~f = Using_comparator.map_keys ~comparator:(to_comparator m) t ~f
+let map_keys_exn m t ~f = Using_comparator.map_keys_exn ~comparator:(to_comparator m) t ~f
 
 module M (K : sig
     type t
@@ -2537,23 +2592,11 @@ let m__t_sexp_grammar
   }
 ;;
 
-let compare_m__t (module K : Compare_m) compare_v t1 t2 = compare_direct compare_v t1 t2
-let equal_m__t (module K : Equal_m) equal_v t1 t2 = equal equal_v t1 t2
+let compare_m__t (module _ : Compare_m) compare_v t1 t2 = compare_direct compare_v t1 t2
+let equal_m__t (module _ : Equal_m) equal_v t1 t2 = equal equal_v t1 t2
 
 let hash_fold_m__t (type k) (module K : Hash_fold_m with type t = k) hash_fold_v state =
   hash_fold_direct K.hash_fold_t hash_fold_v state
-;;
-
-let merge_skewed t1 t2 ~combine =
-  let t1, t2, combine =
-    if length t2 <= length t1
-    then t1, t2, combine
-    else t2, t1, fun ~key v1 v2 -> combine ~key v2 v1
-  in
-  fold t2 ~init:t1 ~f:(fun ~key ~data:v2 t1 ->
-    change t1 key ~f:(function
-      | None -> Some v2
-      | Some v1 -> Some (combine ~key v1 v2)))
 ;;
 
 module Poly = struct
@@ -2598,4 +2641,6 @@ module Poly = struct
   ;;
 
   let of_sequence_reduce s ~f = Using_comparator.of_sequence_reduce ~comparator s ~f
+  let map_keys t ~f = Using_comparator.map_keys ~comparator t ~f
+  let map_keys_exn t ~f = Using_comparator.map_keys_exn ~comparator t ~f
 end

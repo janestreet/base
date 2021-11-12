@@ -152,7 +152,6 @@ let bswap16 x = Caml.Int32.shift_right_logical (bswap32 x) 16
 module Pow2 = struct
   open! Import
   open Int32_replace_polymorphic_compare
-  module Sys = Sys0
 
   let raise_s = Error.raise_s
 

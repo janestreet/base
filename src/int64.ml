@@ -142,7 +142,6 @@ let to_nativeint_exn = Conv.int64_to_nativeint_exn
 module Pow2 = struct
   open! Import
   open Int64_replace_polymorphic_compare
-  module Sys = Sys0
 
   let raise_s = Error.raise_s
 

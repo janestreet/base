@@ -1,5 +1,6 @@
 open! Import
 include Applicative_intf
+module List = List0
 
 (** This module serves mostly as a partial check that [S2] and [S] are in sync, but
     actually calling it is occasionally useful. *)
@@ -30,58 +31,56 @@ end
 (* These functors serve only to check that the signatures for various Foo and Foo2 module
    types don't drift apart over time.
 *)
-module Check_compatibility = struct
-  module Applicative_infix_to_Applicative_infix2 (X : Applicative_infix) :
-    Applicative_infix2 with type ('a, 'e) t = 'a X.t = struct
+module _ = struct
+  module _ (X : Applicative_infix) : Applicative_infix2 with type ('a, 'e) t = 'a X.t =
+  struct
     include X
 
     type ('a, 'e) t = 'a X.t
   end
 
-  module Applicative_infix2_to_Applicative_infix (X : Applicative_infix2) :
-    Applicative_infix with type 'a t = ('a, unit) X.t = struct
+  module _ (X : Applicative_infix2) : Applicative_infix with type 'a t = ('a, unit) X.t =
+  struct
     include X
 
     type 'a t = ('a, unit) X.t
   end
 
-  module Applicative_infix2_to_Applicative_infix3 (X : Applicative_infix2) :
+  module _ (X : Applicative_infix2) :
     Applicative_infix3 with type ('a, 'd, 'e) t = ('a, 'd) X.t = struct
     include X
 
     type ('a, 'd, 'e) t = ('a, 'd) X.t
   end
 
-  module Applicative_infix3_to_Applicative_infix2 (X : Applicative_infix3) :
+  module _ (X : Applicative_infix3) :
     Applicative_infix2 with type ('a, 'd) t = ('a, 'd, unit) X.t = struct
     include X
 
     type ('a, 'd) t = ('a, 'd, unit) X.t
   end
 
-  module Let_syntax_to_Let_syntax2 (X : Let_syntax) :
-    Let_syntax2 with type ('a, 'e) t = 'a X.t = struct
+  module _ (X : Let_syntax) : Let_syntax2 with type ('a, 'e) t = 'a X.t = struct
     include X
 
     type ('a, 'e) t = 'a X.t
   end
 
-  module Let_syntax2_to_Let_syntax (X : Let_syntax2) :
-    Let_syntax with type 'a t = ('a, unit) X.t = struct
+  module _ (X : Let_syntax2) : Let_syntax with type 'a t = ('a, unit) X.t = struct
     include X
 
     type 'a t = ('a, unit) X.t
   end
 
-  module Let_syntax2_to_Let_syntax3 (X : Let_syntax2) :
-    Let_syntax3 with type ('a, 'd, 'e) t = ('a, 'd) X.t = struct
+  module _ (X : Let_syntax2) : Let_syntax3 with type ('a, 'd, 'e) t = ('a, 'd) X.t =
+  struct
     include X
 
     type ('a, 'd, 'e) t = ('a, 'd) X.t
   end
 
-  module Let_syntax3_to_Let_syntax2 (X : Let_syntax3) :
-    Let_syntax2 with type ('a, 'd) t = ('a, 'd, unit) X.t = struct
+  module _ (X : Let_syntax3) : Let_syntax2 with type ('a, 'd) t = ('a, 'd, unit) X.t =
+  struct
     include X
 
     type ('a, 'd) t = ('a, 'd, unit) X.t

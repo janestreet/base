@@ -56,9 +56,11 @@ external unsafe_set : 'a t -> int -> 'a -> unit = "%array_unsafe_set"
     each element. *)
 val create : len:int -> 'a -> 'a t
 
-(** [create_float_uninitialized len] creates a float array of length [len] with uninitialized
-    elements. This can be significantly faster than using [create]. *)
-val create_float_uninitialized : int -> float t
+(** [create_float_uninitialized ~len] creates a float array of length [len] with
+    uninitialized elements -- that is, they may contain arbitrary, nondeterministic float
+    values. This can be significantly faster than using [create], when unboxed float array
+    representations are enabled. *)
+val create_float_uninitialized : len:int -> float t
 
 (** [init n ~f] creates an array of length [n] where the [i]th element (starting at zero)
     is initialized with [f i]. *)

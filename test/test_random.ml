@@ -1,7 +1,7 @@
 open! Import
 open! Random
 
-module State = struct
+module _ = struct
   include State
 
   let%test_unit ("random int above 2^30" [@tags "64-bits-only"]) =

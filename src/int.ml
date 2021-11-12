@@ -162,7 +162,6 @@ let ( ** ) b e = pow b e
 
 module Pow2 = struct
   open! Import
-  module Sys = Sys0
 
   let raise_s = Error.raise_s
 

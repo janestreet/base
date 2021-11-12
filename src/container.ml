@@ -157,10 +157,10 @@ open T
 module Check
     (T : T1)
     (Elt : T1)
-    (M : Generic with type 'a t := 'a T.t with type 'a elt := 'a Elt.t) =
+    (_ : Generic with type 'a t := 'a T.t with type 'a elt := 'a Elt.t) =
 struct end
 
-module Check_S0 (M : S0) =
+module _ (M : S0) =
   Check
     (struct
       type 'a t = M.t
@@ -170,7 +170,7 @@ module Check_S0 (M : S0) =
     end)
     (M)
 
-module Check_S0_phantom (M : S0_phantom) =
+module _ (M : S0_phantom) =
   Check
     (struct
       type 'a t = 'a M.t
@@ -180,7 +180,7 @@ module Check_S0_phantom (M : S0_phantom) =
     end)
     (M)
 
-module Check_S1 (M : S1) =
+module _ (M : S1) =
   Check
     (struct
       type 'a t = 'a M.t
@@ -192,7 +192,7 @@ module Check_S1 (M : S1) =
 
 type phantom
 
-module Check_S1_phantom (M : S1_phantom) =
+module _ (M : S1_phantom) =
   Check
     (struct
       type 'a t = ('a, phantom) M.t
@@ -202,7 +202,7 @@ module Check_S1_phantom (M : S1_phantom) =
     end)
     (M)
 
-module Check_S1_phantom_invariant (M : S1_phantom_invariant) =
+module _ (M : S1_phantom_invariant) =
   Check
     (struct
       type 'a t = ('a, phantom) M.t
