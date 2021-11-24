@@ -330,6 +330,14 @@ let iteri t ~f =
   done
 ;;
 
+let to_list t =
+  let result = ref [] in
+  for i = t.length - 1 downto 0 do
+    result := unsafe_get t i :: !result
+  done;
+  !result
+;;
+
 module C = Indexed_container.Make (struct
     type nonrec 'a t = 'a t
 
@@ -351,7 +359,6 @@ let max_elt = C.max_elt
 let mem = C.mem
 let min_elt = C.min_elt
 let sum = C.sum
-let to_list = C.to_list
 let counti = C.counti
 let existsi = C.existsi
 let find_mapi = C.find_mapi

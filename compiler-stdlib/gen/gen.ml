@@ -4,6 +4,7 @@ module Ocaml_version : sig
   type t
 
   val v412 : t
+  val v414 : t
   val current : t
   val compare : t -> t -> int
 end = struct
@@ -24,6 +25,7 @@ end = struct
   ;;
 
   let v412 = parse "4.12"
+  let v414 = parse "4.14"
   let current = parse Sys.ocaml_version
 
   let compare ((a1, b1) : t) ((a2, b2) : t) =
@@ -47,5 +49,9 @@ let () =
   if Ocaml_version.(compare current v412) < 0
   then (
     pr "module Atomic = struct end";
-    pr "module Either = struct end")
+    pr "module Either = struct end");
+  if Ocaml_version.(compare current v414) < 0
+  then (
+    pr "module In_channel = struct end";
+    pr "module Out_channel = struct end")
 ;;
