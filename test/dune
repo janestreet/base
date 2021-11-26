@@ -1,4 +1,4 @@
 (library (name base_test)
- (libraries base core_kernel.base_for_tests base_test_helpers caml
+ (libraries base core.base_for_tests base_test_helpers caml
   expect_test_helpers_core.expect_test_helpers_base sexplib num stdio uutf)
  (preprocess (pps ppx_jane -dont-apply=pipebang)))
