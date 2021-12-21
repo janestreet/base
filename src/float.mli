@@ -564,8 +564,8 @@ module Class : sig
   [@@deriving_inline compare, enumerate, sexp, sexp_grammar]
 
   val compare : t -> t -> int
-  val all : t list
 
+  include Ppx_enumerate_lib.Enumerable.S with type t := t
   include Sexplib0.Sexpable.S with type t := t
 
   val t_sexp_grammar : t Sexplib0.Sexp_grammar.t

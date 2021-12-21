@@ -87,11 +87,16 @@ val error_string : string -> _ t
     instead. *)
 val errorf : ('a, unit, string, _ t) format4 -> 'a
 
-(** [tag t ~tag] is [Result.map_error t ~f:(Error.tag ~tag)].
-    [tag_arg] is similar. *)
+(** [tag t ~tag] is [Result.map_error t ~f:(Error.tag ~tag)]. *)
 val tag : 'a t -> tag:string -> 'a t
 
+(** [tag_s] is like [tag] with a sexp tag. *)
 val tag_s : 'a t -> tag:Sexp.t -> 'a t
+
+(** [tag_s_lazy] is like [tag] with a lazy sexp tag. *)
+val tag_s_lazy : 'a t -> tag:Sexp.t Lazy.t -> 'a t
+
+(** [tag_arg] is like [tag], with a tag that has a sexpable argument. *)
 val tag_arg : 'a t -> string -> 'b -> ('b -> Sexp.t) -> 'a t
 
 (** For marking a given value as unimplemented.  Typically combined with conditional

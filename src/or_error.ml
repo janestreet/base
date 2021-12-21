@@ -108,6 +108,7 @@ let error_string message = Error (Error.of_string message)
 let errorf format = Printf.ksprintf error_string format
 let tag t ~tag = Result.map_error t ~f:(Error.tag ~tag)
 let tag_s t ~tag = Result.map_error t ~f:(Error.tag_s ~tag)
+let tag_s_lazy t ~tag = Result.map_error t ~f:(Error.tag_s_lazy ~tag)
 
 let tag_arg t message a sexp_of_a =
   Result.map_error t ~f:(fun e -> Error.tag_arg e message a sexp_of_a)

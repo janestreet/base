@@ -2027,7 +2027,9 @@ module type Map = sig
     [@@deriving_inline compare, enumerate, equal, sexp_of]
 
     val compare : t -> t -> int
-    val all : t list
+
+    include Ppx_enumerate_lib.Enumerable.S with type t := t
+
     val equal : t -> t -> bool
     val sexp_of_t : t -> Sexplib0.Sexp.t
 

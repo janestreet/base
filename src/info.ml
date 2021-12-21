@@ -178,7 +178,12 @@ let create ?here ?strict tag x sexp_of_x =
 
 let create_s sexp = Lazy.from_val (Sexp sexp)
 let tag t ~tag = lazy (Tag_t (tag, to_message t))
-let tag_s t ~tag = lazy (protect (fun () -> Tag_arg ("", tag, to_message t)))
+
+let tag_s_lazy t ~tag =
+  lazy (protect (fun () -> Tag_arg ("", Lazy.force tag, to_message t)))
+;;
+
+let tag_s t ~tag = tag_s_lazy t ~tag:(Lazy.from_val tag)
 
 let tag_arg t tag x sexp_of_x =
   lazy (protect (fun () -> Tag_arg (tag, sexp_of_x x, to_message t)))

@@ -102,6 +102,9 @@ module type S = sig
   (** Adds a sexp to the front. *)
   val tag_s : t -> tag:Sexp.t -> t
 
+  (** Adds a lazy sexp to the front. *)
+  val tag_s_lazy : t -> tag:Sexp.t Lazy.t -> t
+
   (** Adds a string and some other data in the form of an s-expression at the front. *)
   val tag_arg : t -> string -> 'a -> ('a -> Sexp.t) -> t
 

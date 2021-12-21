@@ -58,6 +58,8 @@ type replacement =
   | Repl_text of string
   | Approx of string
 
+let permissive = ref false
+
 let val_replacement = function
   | "( ! )"               -> No_equivalent
   | "( != )"              -> Repl "not (phys_equal ...)"
@@ -239,7 +241,13 @@ let val_replacement = function
   | "truncate"            -> Repl "Int.of_float"
   | "unsafe_really_input" -> No_equivalent
   | "valid_float_lexem"   -> No_equivalent
-  | symbol                -> failwith (sprintf "no equivalent for symbol %S" symbol)
+  | symbol                ->
+    if !permissive then No_equivalent
+    else
+      failwith
+        (sprintf
+           "Consider adding to [Base] an equivalent for symbol %S defined in stdlib"
+           symbol)
 ;;
 
 let exception_replacement = function

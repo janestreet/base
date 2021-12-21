@@ -173,6 +173,7 @@ module Exported_for_specific_uses = struct
   module Ppx_hash_lib = Ppx_hash_lib
   module Variantslib = Variantslib
   module Ppx_compare_lib = Ppx_compare_lib
+  module Ppx_enumerate_lib = Ppx_enumerate_lib
 
   let am_testing = am_testing
 end

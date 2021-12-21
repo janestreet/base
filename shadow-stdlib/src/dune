@@ -3,5 +3,6 @@
 
 (rule (targets shadow_stdlib.mli) (deps ../../compiler-stdlib/src/caml.cma)
  (action
-  (run ../gen/gen.exe -caml-cmi ../../compiler-stdlib/src/.caml.objs/caml.cmi
+  (run ../gen/gen.exe -caml-cmi -permissive
+   ../../compiler-stdlib/src/.caml.objs/caml.cmi
    ../../compiler-stdlib/src/.caml.objs/byte/caml.cmi -o %{targets})))

@@ -9,8 +9,7 @@ type 'a t =
   | Unbounded
 [@@deriving_inline enumerate, sexp, sexp_grammar]
 
-val all : 'a list -> 'a t list
-
+include Ppx_enumerate_lib.Enumerable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t

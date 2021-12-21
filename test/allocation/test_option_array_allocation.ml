@@ -34,8 +34,9 @@ let%expect_test ("[match get] returning [Some] allocates" [@tags "no-js"]) =
      The OCaml compiler and Flambda optimizer don't handle match-in-match well, and so
      cannot eliminate the allocation of [Some].  Flambda2 is expected to eliminate the
      allocation, at which point we can [require_no_allocation] (possibly annotating the
-     test with [@tags "fast-flambda"]). *)
-  let compiler_eliminates_the_allocation = false in
+     test with [@tags "fast-flambda"]).
+  *)
+  let compiler_eliminates_the_allocation = Config.flambda2 in
   (if compiler_eliminates_the_allocation
    then assert (require_no_allocation [%here] get_some)
    else
@@ -43,6 +44,6 @@ let%expect_test ("[match get] returning [Some] allocates" [@tags "no-js"]) =
      let _, { Gc.Allocation_report.minor_words_allocated; _ } =
        Gc.measure_allocation get_some
      in
-     print_s [%message (minor_words_allocated : int)]);
-  [%expect {| (minor_words_allocated 2) |}]
+     assert (minor_words_allocated = 2));
+  [%expect {||}]
 ;;

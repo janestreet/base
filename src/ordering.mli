@@ -30,10 +30,9 @@ type t =
   | Less
   | Equal
   | Greater
-[@@deriving_inline compare, enumerate, hash, sexp, sexp_grammar]
+[@@deriving_inline compare, hash, sexp, sexp_grammar]
 
 val compare : t -> t -> int
-val all : t list
 
 include Ppx_hash_lib.Hashable.S with type t := t
 include Sexplib0.Sexpable.S with type t := t
@@ -41,6 +40,9 @@ include Sexplib0.Sexpable.S with type t := t
 val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 [@@@end]
+
+(*_ Avoid [@@deriving_inline enumerate] due to circular dependency *)
+val all : t list
 
 include Equal.S with type t := t
 

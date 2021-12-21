@@ -8,7 +8,8 @@ type t = Sign0.t =
   | Pos
 [@@deriving_inline enumerate, sexp_grammar]
 
-val all : t list
+include Ppx_enumerate_lib.Enumerable.S with type t := t
+
 val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 [@@@end]
