@@ -6,9 +6,8 @@ open! Import
 type 'a t = 'a Caml.ref = { mutable contents : 'a }
 [@@deriving_inline compare, equal, sexp, sexp_grammar]
 
-val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-
+include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t

@@ -31,13 +31,14 @@
 
 open! Import
 
-type +'a t [@@deriving_inline compare, equal, sexp_of]
+type +'a t [@@deriving_inline sexp_of]
 
-val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
 [@@@end]
+
+include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 
 type 'a sequence = 'a t
 
@@ -139,8 +140,7 @@ module Merge_with_duplicates_element : sig
     | Both of 'a * 'b
   [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
-  val compare : ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
-
+  include Ppx_compare_lib.Comparable.S2 with type ('a, 'b) t := ('a, 'b) t
   include Ppx_hash_lib.Hashable.S2 with type ('a, 'b) t := ('a, 'b) t
   include Sexplib0.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
 

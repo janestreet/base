@@ -36,8 +36,7 @@ module type Either = sig
     | Second of 's
   [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
-  val compare : ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
-
+  include Ppx_compare_lib.Comparable.S2 with type ('f, 's) t := ('f, 's) t
   include Ppx_hash_lib.Hashable.S2 with type ('f, 's) t := ('f, 's) t
   include Sexplib0.Sexpable.S2 with type ('f, 's) t := ('f, 's) t
 

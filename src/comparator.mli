@@ -48,6 +48,11 @@ val make
 
 module Poly : S1 with type 'a t = 'a
 
+module Module : sig
+  (** First-class module providing a comparator and witness type. *)
+  type ('a, 'b) t = (module S with type t = 'a and type comparator_witness = 'b)
+end
+
 module S_to_S1 (S : S) :
   S1 with type 'a t = S.t with type comparator_witness = S.comparator_witness
 
@@ -56,7 +61,8 @@ module S_to_S1 (S : S) :
 module Make (M : sig
     type t [@@deriving_inline compare, sexp_of]
 
-    val compare : t -> t -> int
+    include Ppx_compare_lib.Comparable.S with type t := t
+
     val sexp_of_t : t -> Sexplib0.Sexp.t
 
     [@@@end]
@@ -86,7 +92,8 @@ end
 module Derived (M : sig
     type 'a t [@@deriving_inline compare, sexp_of]
 
-    val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+    include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+
     val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
     [@@@end]
@@ -107,7 +114,7 @@ end
 module Derived2 (M : sig
     type ('a, 'b) t [@@deriving_inline compare, sexp_of]
 
-    val compare : ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+    include Ppx_compare_lib.Comparable.S2 with type ('a, 'b) t := ('a, 'b) t
 
     val sexp_of_t
       :  ('a -> Sexplib0.Sexp.t)

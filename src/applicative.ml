@@ -28,65 +28,6 @@ module S3_to_S2 (X : S3) : S2 with type ('a, 'd) t = ('a, 'd, unit) X.t = struct
   type ('a, 'd) t = ('a, 'd, unit) X.t
 end
 
-(* These functors serve only to check that the signatures for various Foo and Foo2 module
-   types don't drift apart over time.
-*)
-module _ = struct
-  module _ (X : Applicative_infix) : Applicative_infix2 with type ('a, 'e) t = 'a X.t =
-  struct
-    include X
-
-    type ('a, 'e) t = 'a X.t
-  end
-
-  module _ (X : Applicative_infix2) : Applicative_infix with type 'a t = ('a, unit) X.t =
-  struct
-    include X
-
-    type 'a t = ('a, unit) X.t
-  end
-
-  module _ (X : Applicative_infix2) :
-    Applicative_infix3 with type ('a, 'd, 'e) t = ('a, 'd) X.t = struct
-    include X
-
-    type ('a, 'd, 'e) t = ('a, 'd) X.t
-  end
-
-  module _ (X : Applicative_infix3) :
-    Applicative_infix2 with type ('a, 'd) t = ('a, 'd, unit) X.t = struct
-    include X
-
-    type ('a, 'd) t = ('a, 'd, unit) X.t
-  end
-
-  module _ (X : Let_syntax) : Let_syntax2 with type ('a, 'e) t = 'a X.t = struct
-    include X
-
-    type ('a, 'e) t = 'a X.t
-  end
-
-  module _ (X : Let_syntax2) : Let_syntax with type 'a t = ('a, unit) X.t = struct
-    include X
-
-    type 'a t = ('a, unit) X.t
-  end
-
-  module _ (X : Let_syntax2) : Let_syntax3 with type ('a, 'd, 'e) t = ('a, 'd) X.t =
-  struct
-    include X
-
-    type ('a, 'd, 'e) t = ('a, 'd) X.t
-  end
-
-  module _ (X : Let_syntax3) : Let_syntax2 with type ('a, 'd) t = ('a, 'd, unit) X.t =
-  struct
-    include X
-
-    type ('a, 'd) t = ('a, 'd, unit) X.t
-  end
-end
-
 module Make3 (X : Basic3) : S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t = struct
   include X
 

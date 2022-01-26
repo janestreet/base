@@ -92,7 +92,7 @@ module type Queue = sig
 
   type 'a t [@@deriving_inline compare]
 
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 
   [@@@end]
 

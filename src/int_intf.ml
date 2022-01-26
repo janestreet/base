@@ -46,8 +46,8 @@ module type Hexable = sig
     include Sexplib0.Sexpable.S with type t := t
 
     val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-    val compare : t -> t -> int
 
+    include Ppx_compare_lib.Comparable.S with type t := t
     include Ppx_hash_lib.Hashable.S with type t := t
 
     [@@@end]
@@ -298,19 +298,6 @@ module type S = sig
   (** A sub-module designed to be opened to make working with ints more convenient.  *)
   module O : Operators with type t := t
 end
-
-include (
-struct
-  (** Various functors whose type-correctness ensures desired relationships between
-      interfaces. *)
-
-  module _ (M : S) : module type of M.O = M
-
-  module _ (M : S_unbounded) : module type of M.O = M
-
-  module _ (M : S) : S_unbounded = M
-end :
-sig end)
 
 module type Int_without_module_types = sig
   (** OCaml's native integer type.

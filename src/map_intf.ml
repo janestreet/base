@@ -6,11 +6,33 @@ module Or_duplicate = struct
     [ `Ok of 'a
     | `Duplicate
     ]
-  [@@deriving_inline sexp_of]
+  [@@deriving_inline compare, equal, sexp_of]
+
+  let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
+    fun _cmp__a a__001_ b__002_ ->
+    if Ppx_compare_lib.phys_equal a__001_ b__002_
+    then 0
+    else (
+      match a__001_, b__002_ with
+      | `Ok _left__003_, `Ok _right__004_ -> _cmp__a _left__003_ _right__004_
+      | `Duplicate, `Duplicate -> 0
+      | x, y -> Ppx_compare_lib.polymorphic_compare x y)
+  ;;
+
+  let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
+    fun _cmp__a a__005_ b__006_ ->
+      if Ppx_compare_lib.phys_equal a__005_ b__006_
+      then true
+      else (
+        match a__005_, b__006_ with
+        | `Ok _left__007_, `Ok _right__008_ -> _cmp__a _left__007_ _right__008_
+        | `Duplicate, `Duplicate -> true
+        | x, y -> Ppx_compare_lib.polymorphic_equal x y)
+  ;;
 
   let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-    fun _of_a__001_ -> function
-      | `Ok v__002_ -> Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; _of_a__001_ v__002_ ]
+    fun _of_a__009_ -> function
+      | `Ok v__010_ -> Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; _of_a__009_ v__010_ ]
       | `Duplicate -> Sexplib0.Sexp.Atom "Duplicate"
   ;;
 
@@ -26,36 +48,57 @@ module With_comparator = struct
 end
 
 module With_first_class_module = struct
-  type ('key, 'cmp, 'z) t =
-    (module Comparator.S with type t = 'key and type comparator_witness = 'cmp) -> 'z
+  type ('key, 'cmp, 'z) t = ('key, 'cmp) Comparator.Module.t -> 'z
 end
 
 module Symmetric_diff_element = struct
   type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
-  [@@deriving_inline compare, sexp, sexp_grammar]
+  [@@deriving_inline compare, equal, sexp, sexp_grammar]
 
   let compare :
     'k 'v. ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
     =
-    fun _cmp__k _cmp__v a__003_ b__004_ ->
-    let t__005_, t__006_ = a__003_ in
-    let t__007_, t__008_ = b__004_ in
-    match _cmp__k t__005_ t__007_ with
+    fun _cmp__k _cmp__v a__011_ b__012_ ->
+    let t__013_, t__014_ = a__011_ in
+    let t__015_, t__016_ = b__012_ in
+    match _cmp__k t__013_ t__015_ with
     | 0 ->
-      if Ppx_compare_lib.phys_equal t__006_ t__008_
+      if Ppx_compare_lib.phys_equal t__014_ t__016_
       then 0
       else (
-        match t__006_, t__008_ with
-        | `Left _left__009_, `Left _right__010_ -> _cmp__v _left__009_ _right__010_
-        | `Right _left__011_, `Right _right__012_ -> _cmp__v _left__011_ _right__012_
-        | `Unequal _left__013_, `Unequal _right__014_ ->
-          let t__015_, t__016_ = _left__013_ in
-          let t__017_, t__018_ = _right__014_ in
-          (match _cmp__v t__015_ t__017_ with
-           | 0 -> _cmp__v t__016_ t__018_
+        match t__014_, t__016_ with
+        | `Left _left__017_, `Left _right__018_ -> _cmp__v _left__017_ _right__018_
+        | `Right _left__019_, `Right _right__020_ -> _cmp__v _left__019_ _right__020_
+        | `Unequal _left__021_, `Unequal _right__022_ ->
+          let t__023_, t__024_ = _left__021_ in
+          let t__025_, t__026_ = _right__022_ in
+          (match _cmp__v t__023_ t__025_ with
+           | 0 -> _cmp__v t__024_ t__026_
            | n -> n)
         | x, y -> Ppx_compare_lib.polymorphic_compare x y)
     | n -> n
+  ;;
+
+  let equal :
+    'k 'v.
+    ('k -> 'k -> bool) -> ('v -> 'v -> bool) -> ('k, 'v) t -> ('k, 'v) t -> bool
+    =
+    fun _cmp__k _cmp__v a__027_ b__028_ ->
+      let t__029_, t__030_ = a__027_ in
+      let t__031_, t__032_ = b__028_ in
+      Ppx_compare_lib.( && )
+        (_cmp__k t__029_ t__031_)
+        (if Ppx_compare_lib.phys_equal t__030_ t__032_
+         then true
+         else (
+           match t__030_, t__032_ with
+           | `Left _left__033_, `Left _right__034_ -> _cmp__v _left__033_ _right__034_
+           | `Right _left__035_, `Right _right__036_ -> _cmp__v _left__035_ _right__036_
+           | `Unequal _left__037_, `Unequal _right__038_ ->
+             let t__039_, t__040_ = _left__037_ in
+             let t__041_, t__042_ = _right__038_ in
+             Ppx_compare_lib.( && ) (_cmp__v t__039_ t__041_) (_cmp__v t__040_ t__042_)
+           | x, y -> Ppx_compare_lib.polymorphic_equal x y))
   ;;
 
   let t_of_sexp :
@@ -65,85 +108,85 @@ module Symmetric_diff_element = struct
     -> Sexplib0.Sexp.t
     -> ('k, 'v) t
     =
-    let error_source__033_ = "map_intf.ml.Symmetric_diff_element.t" in
-    fun _of_k__019_ _of_v__020_ -> function
-      | Sexplib0.Sexp.List [ arg0__043_; arg1__044_ ] ->
-        let res0__045_ = _of_k__019_ arg0__043_
-        and res1__046_ =
-          let sexp__042_ = arg1__044_ in
+    let error_source__057_ = "map_intf.ml.Symmetric_diff_element.t" in
+    fun _of_k__043_ _of_v__044_ -> function
+      | Sexplib0.Sexp.List [ arg0__067_; arg1__068_ ] ->
+        let res0__069_ = _of_k__043_ arg0__067_
+        and res1__070_ =
+          let sexp__066_ = arg1__068_ in
           try
-            match sexp__042_ with
-            | Sexplib0.Sexp.Atom atom__023_ as _sexp__025_ ->
-              (match atom__023_ with
+            match sexp__066_ with
+            | Sexplib0.Sexp.Atom atom__047_ as _sexp__049_ ->
+              (match atom__047_ with
                | "Left" ->
-                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__033_ _sexp__025_
+                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__057_ _sexp__049_
                | "Right" ->
-                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__033_ _sexp__025_
+                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__057_ _sexp__049_
                | "Unequal" ->
-                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__033_ _sexp__025_
+                 Sexplib0.Sexp_conv_error.ptag_takes_args error_source__057_ _sexp__049_
                | _ -> Sexplib0.Sexp_conv_error.no_variant_match ())
-            | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom atom__023_ :: sexp_args__026_) as
-              _sexp__025_ ->
-              (match atom__023_ with
-               | "Left" as _tag__039_ ->
-                 (match sexp_args__026_ with
-                  | [ arg0__040_ ] ->
-                    let res0__041_ = _of_v__020_ arg0__040_ in
-                    `Left res0__041_
+            | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom atom__047_ :: sexp_args__050_) as
+              _sexp__049_ ->
+              (match atom__047_ with
+               | "Left" as _tag__063_ ->
+                 (match sexp_args__050_ with
+                  | [ arg0__064_ ] ->
+                    let res0__065_ = _of_v__044_ arg0__064_ in
+                    `Left res0__065_
                   | _ ->
                     Sexplib0.Sexp_conv_error.ptag_incorrect_n_args
-                      error_source__033_
-                      _tag__039_
-                      _sexp__025_)
-               | "Right" as _tag__036_ ->
-                 (match sexp_args__026_ with
-                  | [ arg0__037_ ] ->
-                    let res0__038_ = _of_v__020_ arg0__037_ in
-                    `Right res0__038_
+                      error_source__057_
+                      _tag__063_
+                      _sexp__049_)
+               | "Right" as _tag__060_ ->
+                 (match sexp_args__050_ with
+                  | [ arg0__061_ ] ->
+                    let res0__062_ = _of_v__044_ arg0__061_ in
+                    `Right res0__062_
                   | _ ->
                     Sexplib0.Sexp_conv_error.ptag_incorrect_n_args
-                      error_source__033_
-                      _tag__036_
-                      _sexp__025_)
-               | "Unequal" as _tag__027_ ->
-                 (match sexp_args__026_ with
-                  | [ arg0__034_ ] ->
-                    let res0__035_ =
-                      match arg0__034_ with
-                      | Sexplib0.Sexp.List [ arg0__028_; arg1__029_ ] ->
-                        let res0__030_ = _of_v__020_ arg0__028_
-                        and res1__031_ = _of_v__020_ arg1__029_ in
-                        res0__030_, res1__031_
-                      | sexp__032_ ->
+                      error_source__057_
+                      _tag__060_
+                      _sexp__049_)
+               | "Unequal" as _tag__051_ ->
+                 (match sexp_args__050_ with
+                  | [ arg0__058_ ] ->
+                    let res0__059_ =
+                      match arg0__058_ with
+                      | Sexplib0.Sexp.List [ arg0__052_; arg1__053_ ] ->
+                        let res0__054_ = _of_v__044_ arg0__052_
+                        and res1__055_ = _of_v__044_ arg1__053_ in
+                        res0__054_, res1__055_
+                      | sexp__056_ ->
                         Sexplib0.Sexp_conv_error.tuple_of_size_n_expected
-                          error_source__033_
+                          error_source__057_
                           2
-                          sexp__032_
+                          sexp__056_
                     in
-                    `Unequal res0__035_
+                    `Unequal res0__059_
                   | _ ->
                     Sexplib0.Sexp_conv_error.ptag_incorrect_n_args
-                      error_source__033_
-                      _tag__027_
-                      _sexp__025_)
+                      error_source__057_
+                      _tag__051_
+                      _sexp__049_)
                | _ -> Sexplib0.Sexp_conv_error.no_variant_match ())
-            | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__024_ ->
+            | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__048_ ->
               Sexplib0.Sexp_conv_error.nested_list_invalid_poly_var
-                error_source__033_
-                sexp__024_
-            | Sexplib0.Sexp.List [] as sexp__024_ ->
+                error_source__057_
+                sexp__048_
+            | Sexplib0.Sexp.List [] as sexp__048_ ->
               Sexplib0.Sexp_conv_error.empty_list_invalid_poly_var
-                error_source__033_
-                sexp__024_
+                error_source__057_
+                sexp__048_
           with
           | Sexplib0.Sexp_conv_error.No_variant_match ->
             Sexplib0.Sexp_conv_error.no_matching_variant_found
-              error_source__033_
-              sexp__042_
+              error_source__057_
+              sexp__066_
         in
-        res0__045_, res1__046_
-      | sexp__047_ ->
-        Sexplib0.Sexp_conv_error.tuple_of_size_n_expected error_source__033_ 2 sexp__047_
+        res0__069_, res1__070_
+      | sexp__071_ ->
+        Sexplib0.Sexp_conv_error.tuple_of_size_n_expected error_source__057_ 2 sexp__071_
   ;;
 
   let sexp_of_t :
@@ -153,24 +196,24 @@ module Symmetric_diff_element = struct
     -> ('k, 'v) t
     -> Sexplib0.Sexp.t
     =
-    fun _of_k__048_ _of_v__049_ (arg0__057_, arg1__058_) ->
-      let res0__059_ = _of_k__048_ arg0__057_
-      and res1__060_ =
-        match arg1__058_ with
-        | `Left v__050_ ->
-          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; _of_v__049_ v__050_ ]
-        | `Right v__051_ ->
-          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; _of_v__049_ v__051_ ]
-        | `Unequal v__052_ ->
+    fun _of_k__072_ _of_v__073_ (arg0__081_, arg1__082_) ->
+      let res0__083_ = _of_k__072_ arg0__081_
+      and res1__084_ =
+        match arg1__082_ with
+        | `Left v__074_ ->
+          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; _of_v__073_ v__074_ ]
+        | `Right v__075_ ->
+          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; _of_v__073_ v__075_ ]
+        | `Unequal v__076_ ->
           Sexplib0.Sexp.List
             [ Sexplib0.Sexp.Atom "Unequal"
-            ; (let arg0__053_, arg1__054_ = v__052_ in
-               let res0__055_ = _of_v__049_ arg0__053_
-               and res1__056_ = _of_v__049_ arg1__054_ in
-               Sexplib0.Sexp.List [ res0__055_; res1__056_ ])
+            ; (let arg0__077_, arg1__078_ = v__076_ in
+               let res0__079_ = _of_v__073_ arg0__077_
+               and res1__080_ = _of_v__073_ arg1__078_ in
+               Sexplib0.Sexp.List [ res0__079_; res1__080_ ])
             ]
       in
-      Sexplib0.Sexp.List [ res0__059_; res1__060_ ]
+      Sexplib0.Sexp.List [ res0__083_; res1__084_ ]
   ;;
 
   let (t_sexp_grammar :
@@ -228,6 +271,77 @@ module Merge_element = struct
     | `Right of 'right
     | `Both of 'left * 'right
     ]
+  [@@deriving_inline compare, equal, sexp_of]
+
+  let compare :
+    'left 'right.
+    ('left -> 'left -> int)
+    -> ('right -> 'right -> int)
+    -> ('left, 'right) t
+    -> ('left, 'right) t
+    -> int
+    =
+    fun _cmp__left _cmp__right a__085_ b__086_ ->
+    if Ppx_compare_lib.phys_equal a__085_ b__086_
+    then 0
+    else (
+      match a__085_, b__086_ with
+      | `Left _left__087_, `Left _right__088_ -> _cmp__left _left__087_ _right__088_
+      | `Right _left__089_, `Right _right__090_ -> _cmp__right _left__089_ _right__090_
+      | `Both _left__091_, `Both _right__092_ ->
+        let t__093_, t__094_ = _left__091_ in
+        let t__095_, t__096_ = _right__092_ in
+        (match _cmp__left t__093_ t__095_ with
+         | 0 -> _cmp__right t__094_ t__096_
+         | n -> n)
+      | x, y -> Ppx_compare_lib.polymorphic_compare x y)
+  ;;
+
+  let equal :
+    'left 'right.
+    ('left -> 'left -> bool)
+    -> ('right -> 'right -> bool)
+    -> ('left, 'right) t
+    -> ('left, 'right) t
+    -> bool
+    =
+    fun _cmp__left _cmp__right a__097_ b__098_ ->
+      if Ppx_compare_lib.phys_equal a__097_ b__098_
+      then true
+      else (
+        match a__097_, b__098_ with
+        | `Left _left__099_, `Left _right__100_ -> _cmp__left _left__099_ _right__100_
+        | `Right _left__101_, `Right _right__102_ -> _cmp__right _left__101_ _right__102_
+        | `Both _left__103_, `Both _right__104_ ->
+          let t__105_, t__106_ = _left__103_ in
+          let t__107_, t__108_ = _right__104_ in
+          Ppx_compare_lib.( && ) (_cmp__left t__105_ t__107_) (_cmp__right t__106_ t__108_)
+        | x, y -> Ppx_compare_lib.polymorphic_equal x y)
+  ;;
+
+  let sexp_of_t :
+    'left 'right.
+    ('left -> Sexplib0.Sexp.t)
+    -> ('right -> Sexplib0.Sexp.t)
+    -> ('left, 'right) t
+    -> Sexplib0.Sexp.t
+    =
+    fun _of_left__109_ _of_right__110_ -> function
+      | `Left v__111_ ->
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; _of_left__109_ v__111_ ]
+      | `Right v__112_ ->
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; _of_right__110_ v__112_ ]
+      | `Both v__113_ ->
+        Sexplib0.Sexp.List
+          [ Sexplib0.Sexp.Atom "Both"
+          ; (let arg0__114_, arg1__115_ = v__113_ in
+             let res0__116_ = _of_left__109_ arg0__114_
+             and res1__117_ = _of_right__110_ arg1__115_ in
+             Sexplib0.Sexp.List [ res0__116_; res1__117_ ])
+          ]
+  ;;
+
+  [@@@end]
 end
 
 (** @canonical Base.Map.Continue_or_stop *)
@@ -534,8 +648,8 @@ module type Accessors_generic = sig
       -> ('k key * 'v) option )
         options
 
-  val nth : ('k, 'cmp, ('k, 'v, 'cmp) t -> int -> ('k key * 'v) option) options
-  val nth_exn : ('k, 'cmp, ('k, 'v, 'cmp) t -> int -> 'k key * 'v) options
+  val nth : ('k, 'v, 'cmp) t -> int -> ('k key * 'v) option
+  val nth_exn : ('k, 'v, 'cmp) t -> int -> 'k key * 'v
   val rank : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int option) options
   val to_tree : ('k, 'v, 'cmp) t -> ('k key, 'v, 'cmp) tree
 
@@ -554,13 +668,7 @@ module type Accessors_generic = sig
       , 'cmp
       , ('k, 'v, 'cmp) t
       -> compare:(key:'k key -> data:'v -> 'key -> int)
-      -> [ `Last_strictly_less_than
-         | `Last_less_than_or_equal_to
-         | `Last_equal_to
-         | `First_equal_to
-         | `First_greater_than_or_equal_to
-         | `First_strictly_greater_than
-         ]
+      -> Binary_searchable.Which_target_by_key.t
       -> 'key
       -> ('k key * 'v) option )
         options
@@ -570,7 +678,7 @@ module type Accessors_generic = sig
       , 'cmp
       , ('k, 'v, 'cmp) t
       -> segment_of:(key:'k key -> data:'v -> [ `Left | `Right ])
-      -> [ `Last_on_left | `First_on_right ]
+      -> Binary_searchable.Which_target_by_segment.t
       -> ('k key * 'v) option )
         options
 
@@ -722,20 +830,14 @@ module type Accessors1 = sig
   val binary_search
     :  'a t
     -> compare:(key:key -> data:'a -> 'key -> int)
-    -> [ `Last_strictly_less_than
-       | `Last_less_than_or_equal_to
-       | `Last_equal_to
-       | `First_equal_to
-       | `First_greater_than_or_equal_to
-       | `First_strictly_greater_than
-       ]
+    -> Binary_searchable.Which_target_by_key.t
     -> 'key
     -> (key * 'a) option
 
   val binary_search_segmented
     :  'a t
     -> segment_of:(key:key -> data:'a -> [ `Left | `Right ])
-    -> [ `Last_on_left | `First_on_right ]
+    -> Binary_searchable.Which_target_by_segment.t
     -> (key * 'a) option
 
   val binary_search_subrange
@@ -907,20 +1009,14 @@ module type Accessors2 = sig
   val binary_search
     :  ('k, 'v) t
     -> compare:(key:'k -> data:'v -> 'key -> int)
-    -> [ `Last_strictly_less_than
-       | `Last_less_than_or_equal_to
-       | `Last_equal_to
-       | `First_equal_to
-       | `First_greater_than_or_equal_to
-       | `First_strictly_greater_than
-       ]
+    -> Binary_searchable.Which_target_by_key.t
     -> 'key
     -> ('k * 'v) option
 
   val binary_search_segmented
     :  ('k, 'v) t
     -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
-    -> [ `Last_on_left | `First_on_right ]
+    -> Binary_searchable.Which_target_by_segment.t
     -> ('k * 'v) option
 
   val binary_search_subrange
@@ -1110,20 +1206,14 @@ module type Accessors3 = sig
   val binary_search
     :  ('k, 'v, _) t
     -> compare:(key:'k -> data:'v -> 'key -> int)
-    -> [ `Last_strictly_less_than
-       | `Last_less_than_or_equal_to
-       | `Last_equal_to
-       | `First_equal_to
-       | `First_greater_than_or_equal_to
-       | `First_strictly_greater_than
-       ]
+    -> Binary_searchable.Which_target_by_key.t
     -> 'key
     -> ('k * 'v) option
 
   val binary_search_segmented
     :  ('k, 'v, _) t
     -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
-    -> [ `Last_on_left | `First_on_right ]
+    -> Binary_searchable.Which_target_by_segment.t
     -> ('k * 'v) option
 
   val binary_search_subrange
@@ -1407,13 +1497,8 @@ module type Accessors3_with_comparator = sig
     -> 'a
     -> ('a * 'b) option
 
-  val nth
-    :  comparator:('a, 'cmp) Comparator.t
-    -> ('a, 'b, 'cmp) t
-    -> int
-    -> ('a * 'b) option
-
-  val nth_exn : comparator:('a, 'cmp) Comparator.t -> ('a, 'b, 'cmp) t -> int -> 'a * 'b
+  val nth : ('a, 'b, 'cmp) t -> int -> ('a * 'b) option
+  val nth_exn : ('a, 'b, 'cmp) t -> int -> 'a * 'b
   val rank : comparator:('a, 'cmp) Comparator.t -> ('a, 'b, 'cmp) t -> 'a -> int option
   val to_tree : ('a, 'b, 'cmp) t -> ('a, 'b, 'cmp) tree
 
@@ -1429,13 +1514,7 @@ module type Accessors3_with_comparator = sig
     :  comparator:('k, 'cmp) Comparator.t
     -> ('k, 'v, 'cmp) t
     -> compare:(key:'k -> data:'v -> 'key -> int)
-    -> [ `Last_strictly_less_than
-       | `Last_less_than_or_equal_to
-       | `Last_equal_to
-       | `First_equal_to
-       | `First_greater_than_or_equal_to
-       | `First_strictly_greater_than
-       ]
+    -> Binary_searchable.Which_target_by_key.t
     -> 'key
     -> ('k * 'v) option
 
@@ -1443,7 +1522,7 @@ module type Accessors3_with_comparator = sig
     :  comparator:('k, 'cmp) Comparator.t
     -> ('k, 'v, 'cmp) t
     -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
-    -> [ `Last_on_left | `First_on_right ]
+    -> Binary_searchable.Which_target_by_segment.t
     -> ('k * 'v) option
 
   val binary_search_subrange
@@ -1632,6 +1711,12 @@ module type Creators_generic = sig
       -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ] )
         options
 
+  val of_iteri_exn
+    : ( 'k
+      , 'cmp
+      , iteri:(f:(key:'k key -> data:'v -> unit) -> unit) -> ('k, 'v, 'cmp) t )
+        options
+
   val of_tree : ('k, 'cmp, ('k key, 'v, 'cmp) tree -> ('k, 'v, 'cmp) t) options
 end
 
@@ -1666,6 +1751,7 @@ module type Creators1 = sig
     :  iteri:(f:(key:key -> data:'v -> unit) -> unit)
     -> [ `Ok of 'v t | `Duplicate_key of key ]
 
+  val of_iteri_exn : iteri:(f:(key:key -> data:'v -> unit) -> unit) -> 'v t
   val of_tree : 'a tree -> 'a t
 end
 
@@ -1710,6 +1796,7 @@ module type Creators2 = sig
     :  iteri:(f:(key:'a -> data:'b -> unit) -> unit)
     -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a ]
 
+  val of_iteri_exn : iteri:(f:(key:'a -> data:'b -> unit) -> unit) -> ('a, 'b) t
   val of_tree : ('a, 'b) tree -> ('a, 'b) t
 end
 
@@ -1823,6 +1910,11 @@ module type Creators3_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> iteri:(f:(key:'a -> data:'b -> unit) -> unit)
     -> [ `Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a ]
+
+  val of_iteri_exn
+    :  comparator:('a, 'cmp) Comparator.t
+    -> iteri:(f:(key:'a -> data:'b -> unit) -> unit)
+    -> ('a, 'b, 'cmp) t
 
   val of_tree
     :  comparator:('a, 'cmp) Comparator.t
@@ -2026,11 +2118,10 @@ module type Map = sig
       | Unfinished
     [@@deriving_inline compare, enumerate, equal, sexp_of]
 
-    val compare : t -> t -> int
-
+    include Ppx_compare_lib.Comparable.S with type t := t
     include Ppx_enumerate_lib.Enumerable.S with type t := t
+    include Ppx_compare_lib.Equal.S with type t := t
 
-    val equal : t -> t -> bool
     val sexp_of_t : t -> Sexplib0.Sexp.t
 
     [@@@end]
@@ -2048,52 +2139,84 @@ module type Map = sig
       | `Right of 'right
       | `Both of 'left * 'right
       ]
+    [@@deriving_inline compare, equal, sexp_of]
+
+    val compare
+      :  ('left -> 'left -> int)
+      -> ('right -> 'right -> int)
+      -> ('left, 'right) t
+      -> ('left, 'right) t
+      -> int
+
+    val equal
+      :  ('left -> 'left -> bool)
+      -> ('right -> 'right -> bool)
+      -> ('left, 'right) t
+      -> ('left, 'right) t
+      -> bool
+
+    val sexp_of_t
+      :  ('left -> Sexplib0.Sexp.t)
+      -> ('right -> Sexplib0.Sexp.t)
+      -> ('left, 'right) t
+      -> Sexplib0.Sexp.t
+
+    [@@@end]
 
     val left : ('left, _) t -> 'left option
     val right : (_, 'right) t -> 'right option
     val left_value : ('left, _) t -> default:'left -> 'left
     val right_value : (_, 'right) t -> default:'right -> 'right
+
+    val values
+      :  ('left, 'right) t
+      -> left_default:'left
+      -> right_default:'right
+      -> 'left * 'right
   end
 
-  type ('k, 'cmp) comparator =
-    (module Comparator.S with type t = 'k and type comparator_witness = 'cmp)
+  type ('k, 'cmp) comparator = ('k, 'cmp) Comparator.Module.t
+  [@@deprecated "[since 2021-12] use [Comparator.Module.t] instead"]
 
   (** Test if the invariants of the internal AVL search tree hold. *)
   val invariants : (_, _, _) t -> bool
 
   (** Returns a first-class module that can be used to build other map/set/etc.
       with the same notion of comparison. *)
-  val comparator_s : ('a, _, 'cmp) t -> ('a, 'cmp) comparator
+  val comparator_s : ('a, _, 'cmp) t -> ('a, 'cmp) Comparator.Module.t
 
   val comparator : ('a, _, 'cmp) t -> ('a, 'cmp) Comparator.t
 
   (** The empty map. *)
-  val empty : ('a, 'cmp) comparator -> ('a, 'b, 'cmp) t
+  val empty : ('a, 'cmp) Comparator.Module.t -> ('a, 'b, 'cmp) t
 
   (** A map with one (key, data) pair. *)
-  val singleton : ('a, 'cmp) comparator -> 'a -> 'b -> ('a, 'b, 'cmp) t
+  val singleton : ('a, 'cmp) Comparator.Module.t -> 'a -> 'b -> ('a, 'b, 'cmp) t
 
   (** Creates a map from an association list with unique keys. *)
   val of_alist
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) list
     -> [ `Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a ]
 
   (** Creates a map from an association list with unique keys, returning an error if
       duplicate ['a] keys are found. *)
   val of_alist_or_error
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) list
     -> ('a, 'b, 'cmp) t Or_error.t
 
   (** Creates a map from an association list with unique keys, raising an exception if
       duplicate ['a] keys are found. *)
-  val of_alist_exn : ('a, 'cmp) comparator -> ('a * 'b) list -> ('a, 'b, 'cmp) t
+  val of_alist_exn : ('a, 'cmp) Comparator.Module.t -> ('a * 'b) list -> ('a, 'b, 'cmp) t
 
   (** Creates a map from an association list with possibly repeated keys. The values in
       the map for a given key appear in the same order as they did in the association
       list. *)
-  val of_alist_multi : ('a, 'cmp) comparator -> ('a * 'b) list -> ('a, 'b list, 'cmp) t
+  val of_alist_multi
+    :  ('a, 'cmp) Comparator.Module.t
+    -> ('a * 'b) list
+    -> ('a, 'b list, 'cmp) t
 
   (** Combines an association list into a map, folding together bound values with common
       keys. The accumulator is per-key.
@@ -2112,7 +2235,7 @@ module type Map = sig
       ]}
   *)
   val of_alist_fold
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) list
     -> init:'c
     -> f:('c -> 'b -> 'c)
@@ -2121,7 +2244,7 @@ module type Map = sig
   (** Combines an association list into a map, reducing together bound values with common
       keys. *)
   val of_alist_reduce
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) list
     -> f:('b -> 'b -> 'b)
     -> ('a, 'b, 'cmp) t
@@ -2131,23 +2254,29 @@ module type Map = sig
       into a map: [of_iteri (module String) ~f:(Hashtbl.iteri table)].  It is faster than
       adding the elements one by one. *)
   val of_iteri
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> iteri:(f:(key:'a -> data:'b -> unit) -> unit)
     -> [ `Ok of ('a, 'b, 'cmp) t | `Duplicate_key of 'a ]
+
+  (** Like [of_iteri] except that it raises an exception if duplicate ['a] keys are found. *)
+  val of_iteri_exn
+    :  ('a, 'cmp) Comparator.Module.t
+    -> iteri:(f:(key:'a -> data:'b -> unit) -> unit)
+    -> ('a, 'b, 'cmp) t
 
   (** Creates a map from a sorted array of key-data pairs. The input array must be sorted
       (either in ascending or descending order), as given by the relevant comparator, and
       must not contain duplicate keys. If either of these conditions does not hold,
       an error is returned.  *)
   val of_sorted_array
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) array
     -> ('a, 'b, 'cmp) t Or_error.t
 
   (** Like [of_sorted_array] except that it returns a map with broken invariants when an
       [Error] would have been returned. *)
   val of_sorted_array_unchecked
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) array
     -> ('a, 'b, 'cmp) t
 
@@ -2156,7 +2285,7 @@ module type Map = sig
       supported.  The advantage is not requiring you to allocate an intermediate array.  [f]
       will be called with 0, 1, ... [len - 1], in order. *)
   val of_increasing_iterator_unchecked
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> len:int
     -> f:(int -> 'a * 'b)
     -> ('a, 'b, 'cmp) t
@@ -2167,7 +2296,7 @@ module type Map = sig
       The sequence will be folded over once, and the additional time complexity is {e O(n)}.
   *)
   val of_increasing_sequence
-    :  ('k, 'cmp) comparator
+    :  ('k, 'cmp) Comparator.Module.t
     -> ('k * 'v) Sequence.t
     -> ('k, 'v, 'cmp) t Or_error.t
 
@@ -2179,7 +2308,7 @@ module type Map = sig
       If your sequence is increasing, use [of_increasing_sequence].
   *)
   val of_sequence
-    :  ('k, 'cmp) comparator
+    :  ('k, 'cmp) Comparator.Module.t
     -> ('k * 'v) Sequence.t
     -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k ]
 
@@ -2190,7 +2319,7 @@ module type Map = sig
       but does not allocate the intermediate list.
   *)
   val of_sequence_or_error
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) Sequence.t
     -> ('a, 'b, 'cmp) t Or_error.t
 
@@ -2200,7 +2329,10 @@ module type Map = sig
       [of_sequence_exn c seq] behaves like [of_alist_exn c (Sequence.to_list seq)] but
       does not allocate the intermediate list.
   *)
-  val of_sequence_exn : ('a, 'cmp) comparator -> ('a * 'b) Sequence.t -> ('a, 'b, 'cmp) t
+  val of_sequence_exn
+    :  ('a, 'cmp) Comparator.Module.t
+    -> ('a * 'b) Sequence.t
+    -> ('a, 'b, 'cmp) t
 
   (** Creates a map from an association sequence with possibly repeated keys. The values in
       the map for a given key appear in the same order as they did in the association
@@ -2210,7 +2342,7 @@ module type Map = sig
       does not allocate the intermediate list.
   *)
   val of_sequence_multi
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) Sequence.t
     -> ('a, 'b list, 'cmp) t
 
@@ -2221,7 +2353,7 @@ module type Map = sig
       but does not allocate the intermediate list.
   *)
   val of_sequence_fold
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) Sequence.t
     -> init:'c
     -> f:('c -> 'b -> 'c)
@@ -2233,7 +2365,7 @@ module type Map = sig
       [of_sequence_reduce c seq ~f] behaves like [of_alist_reduce c (Sequence.to_list seq) ~f]
       but does not allocate the intermediate list.  *)
   val of_sequence_reduce
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) Sequence.t
     -> f:('b -> 'b -> 'b)
     -> ('a, 'b, 'cmp) t
@@ -2316,14 +2448,14 @@ module type Map = sig
 
   (** Convert map with keys of type ['k2] to a map with keys of type ['k2] using [f]. *)
   val map_keys
-    :  ('k2, 'cmp2) comparator
+    :  ('k2, 'cmp2) Comparator.Module.t
     -> ('k1, 'v, 'cmp1) t
     -> f:('k1 -> 'k2)
     -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 ]
 
   (** Like [map_keys], but raises on duplicate key. *)
   val map_keys_exn
-    :  ('k2, 'cmp2) comparator
+    :  ('k2, 'cmp2) Comparator.Module.t
     -> ('k1, 'v, 'cmp1) t
     -> f:('k1 -> 'k2)
     -> ('k2, 'v, 'cmp2) t
@@ -2461,15 +2593,10 @@ module type Map = sig
 
   module Symmetric_diff_element : sig
     type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
-    [@@deriving_inline compare, sexp, sexp_grammar]
+    [@@deriving_inline compare, equal, sexp, sexp_grammar]
 
-    val compare
-      :  ('k -> 'k -> int)
-      -> ('v -> 'v -> int)
-      -> ('k, 'v) t
-      -> ('k, 'v) t
-      -> int
-
+    include Ppx_compare_lib.Comparable.S2 with type ('k, 'v) t := ('k, 'v) t
+    include Ppx_compare_lib.Equal.S2 with type ('k, 'v) t := ('k, 'v) t
     include Sexplib0.Sexpable.S2 with type ('k, 'v) t := ('k, 'v) t
 
     val t_sexp_grammar
@@ -2744,11 +2871,6 @@ module type Map = sig
 
   include For_deriving with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) t
 
-  (** A polymorphic Map. *)
-  module Poly :
-    S_poly
-    with type ('key, +'value) t = ('key, 'value, Comparator.Poly.comparator_witness) t
-
   (** [Using_comparator] is a similar interface as the toplevel of [Map], except the
       functions take a [~comparator:('k, 'cmp) Comparator.t], whereas the functions at the
       toplevel of [Map] take a [('k, 'cmp) comparator]. *)
@@ -2850,9 +2972,17 @@ module type Map = sig
     end
   end
 
+  (** A polymorphic Map. *)
+  module Poly :
+    S_poly
+    with type ('key, +'value) t = ('key, 'value, Comparator.Poly.comparator_witness) t
+     and type ('key, +'value) tree =
+           ('key, 'value, Comparator.Poly.comparator_witness) Using_comparator.Tree.t
+     and type comparator_witness = Comparator.Poly.comparator_witness
+
   (** Create a map from a tree using the given comparator. *)
   val of_tree
-    :  ('k, 'cmp) comparator
+    :  ('k, 'cmp) Comparator.Module.t
     -> ('k, 'v, 'cmp) Using_comparator.Tree.t
     -> ('k, 'v, 'cmp) t
 

@@ -189,7 +189,8 @@ module Search_pattern : sig
       }
     [@@deriving_inline equal, sexp_of]
 
-    val equal : t -> t -> bool
+    include Ppx_compare_lib.Equal.S with type t := t
+
     val sexp_of_t : t -> Sexplib0.Sexp.t
 
     [@@@end]

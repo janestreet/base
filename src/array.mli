@@ -4,8 +4,7 @@ open! Import
 
 type 'a t = 'a array [@@deriving_inline compare, sexp, sexp_grammar]
 
-val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-
+include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t

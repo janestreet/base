@@ -87,6 +87,8 @@ let%expect_test "deriving equal" =
   require [%here] (Hs.equal (Hs.of_list [ 1 ]) (Hs.of_list [ 1 ]))
 ;;
 
+(* This module exists to check, at compile-time, that [Creators] is a subset of
+   [Creators_generic]. *)
 module _ (M : Creators) :
   Creators_generic
   with type 'a t := 'a M.t

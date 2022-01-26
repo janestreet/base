@@ -149,20 +149,22 @@ let%expect_test "combine_errors" =
       (2 two))) |}]
 ;;
 
-module _ = struct
-  let%test _ = length Poly.empty = 0
+let%test_module "Poly" =
+  (module struct
+    let%test _ = length Poly.empty = 0
 
-  let%test _ =
-    let a = Poly.of_alist_exn [] in
-    Poly.equal Base.Poly.equal a Poly.empty
-  ;;
+    let%test _ =
+      let a = Poly.of_alist_exn [] in
+      Poly.equal Base.Poly.equal a Poly.empty
+    ;;
 
-  let%test _ =
-    let a = Poly.of_alist_exn [ "a", 1 ] in
-    let b = Poly.of_alist_exn [ 1, "b" ] in
-    length a = length b
-  ;;
-end
+    let%test _ =
+      let a = Poly.of_alist_exn [ "a", 1 ] in
+      let b = Poly.of_alist_exn [ 1, "b" ] in
+      length a = length b
+    ;;
+  end)
+;;
 
 let%test_module "[symmetric_diff]" =
   (module struct

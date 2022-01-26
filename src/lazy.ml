@@ -18,6 +18,7 @@ let compare compare_a t1 t2 =
   if phys_equal t1 t2 then 0 else compare_a (force t1) (force t2)
 ;;
 
+let equal equal_a t1 t2 = if phys_equal t1 t2 then true else equal_a (force t1) (force t2)
 let hash_fold_t = Hash.Builtin.hash_fold_lazy_t
 
 include Monad.Make (struct

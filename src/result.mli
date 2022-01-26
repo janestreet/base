@@ -26,20 +26,8 @@ val t_sexp_grammar
   -> 'err Sexplib0.Sexp_grammar.t
   -> ('ok, 'err) t Sexplib0.Sexp_grammar.t
 
-val compare
-  :  ('ok -> 'ok -> int)
-  -> ('err -> 'err -> int)
-  -> ('ok, 'err) t
-  -> ('ok, 'err) t
-  -> int
-
-val equal
-  :  ('ok -> 'ok -> bool)
-  -> ('err -> 'err -> bool)
-  -> ('ok, 'err) t
-  -> ('ok, 'err) t
-  -> bool
-
+include Ppx_compare_lib.Comparable.S2 with type ('ok, 'err) t := ('ok, 'err) t
+include Ppx_compare_lib.Equal.S2 with type ('ok, 'err) t := ('ok, 'err) t
 include Ppx_hash_lib.Hashable.S2 with type ('ok, 'err) t := ('ok, 'err) t
 
 [@@@end]

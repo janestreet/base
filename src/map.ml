@@ -48,6 +48,13 @@ module Merge_element = struct
     | `Left _ -> default
     | `Right right | `Both (_, right) -> right
   ;;
+
+  let values t ~left_default ~right_default =
+    match t with
+    | `Left left -> left, right_default
+    | `Right right -> left_default, right
+    | `Both (left, right) -> left, right
+  ;;
 end
 
 let with_return = With_return.with_return
@@ -1605,6 +1612,14 @@ module Tree0 = struct
     | Some key -> `Duplicate_key key
   ;;
 
+  let of_iteri_exn ~iteri ~(comparator : _ Comparator.t) =
+    match of_iteri ~iteri ~compare_key:comparator.compare with
+    | `Ok v -> v
+    | `Duplicate_key key ->
+      Error.create "Map.of_iteri_exn: duplicate key" key comparator.sexp_of_t
+      |> Error.raise
+  ;;
+
   let t_of_sexp_direct key_of_sexp value_of_sexp sexp ~(comparator : _ Comparator.t) =
     let alist = list_of_sexp (pair_of_sexp key_of_sexp value_of_sexp) sexp in
     let compare_key = comparator.compare in
@@ -2014,6 +2029,8 @@ module Tree = struct
     | `Duplicate_key _ as d -> d
   ;;
 
+  let of_iteri_exn ~comparator ~iteri = fst (Tree0.of_iteri_exn ~iteri ~comparator)
+
   let of_increasing_iterator_unchecked ~comparator:_required_by_intf ~len ~f =
     Tree0.of_increasing_iterator_unchecked ~len ~f
   ;;
@@ -2277,8 +2294,8 @@ module Tree = struct
     Tree0.closest_key t dir key ~compare_key:comparator.Comparator.compare
   ;;
 
-  let nth ~comparator:_ t n = Tree0.nth t n
-  let nth_exn ~comparator t n = Option.value_exn (nth ~comparator t n)
+  let nth t n = Tree0.nth t n
+  let nth_exn t n = Option.value_exn (nth t n)
   let rank ~comparator t key = Tree0.rank t key ~compare_key:comparator.Comparator.compare
   let sexp_of_t sexp_of_k sexp_of_v _ t = Tree0.sexp_of_t sexp_of_k sexp_of_v t
 
@@ -2386,6 +2403,10 @@ module Using_comparator = struct
     match Tree0.of_iteri ~compare_key:comparator.Comparator.compare ~iteri with
     | `Ok tree_length -> `Ok (of_tree0 ~comparator tree_length)
     | `Duplicate_key _ as z -> z
+  ;;
+
+  let of_iteri_exn ~comparator ~iteri =
+    of_tree0 ~comparator (Tree0.of_iteri_exn ~comparator ~iteri)
   ;;
 
   let of_increasing_iterator_unchecked ~comparator ~len ~f =
@@ -2497,6 +2518,10 @@ let of_sorted_array_unchecked m a =
 
 let of_sorted_array m a = Using_comparator.of_sorted_array ~comparator:(to_comparator m) a
 let of_iteri m ~iteri = Using_comparator.of_iteri ~iteri ~comparator:(to_comparator m)
+
+let of_iteri_exn m ~iteri =
+  Using_comparator.of_iteri_exn ~iteri ~comparator:(to_comparator m)
+;;
 
 let of_increasing_iterator_unchecked m ~len ~f =
   Using_comparator.of_increasing_iterator_unchecked ~len ~f ~comparator:(to_comparator m)
@@ -2625,6 +2650,7 @@ module Poly = struct
 
   let of_sorted_array a = Using_comparator.of_sorted_array ~comparator a
   let of_iteri ~iteri = Using_comparator.of_iteri ~iteri ~comparator
+  let of_iteri_exn ~iteri = Using_comparator.of_iteri_exn ~iteri ~comparator
 
   let of_increasing_iterator_unchecked ~len ~f =
     Using_comparator.of_increasing_iterator_unchecked ~len ~f ~comparator

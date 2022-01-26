@@ -957,34 +957,3 @@ let m__t_sexp_grammar (type k) (module K : M_sexp_grammar with type t = k) v_gra
 ;;
 
 let equal_m__t (module _ : Equal_m) equal_v t1 t2 = equal equal_v t1 t2
-
-(* typechecking this code is a compile-time test that [Creators] is a specialization of
-   [Creators_generic].  *)
-module _ : sig end = struct
-  module Make_creators_check
-      (Type : T.T2)
-      (Key : T.T1)
-      (Options : T.T3)
-      (_ : Creators_generic
-       with type ('a, 'b) t := ('a, 'b) Type.t
-       with type 'a key := 'a Key.t
-       with type ('a, 'b, 'z) create_options := ('a, 'b, 'z) Options.t) =
-  struct end
-
-  module _ (M : Creators) =
-    Make_creators_check
-      (struct
-        type ('a, 'b) t = ('a, 'b) M.t
-      end)
-      (struct
-        type 'a t = 'a
-      end)
-      (struct
-        type ('a, 'b, 'z) t = ('a, 'b, 'z) create_options
-      end)
-      (struct
-        include M
-
-        let create ?growth_allowed ?size m () = create ?growth_allowed ?size m
-      end)
-end

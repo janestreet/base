@@ -4,7 +4,8 @@ open! Import
 module type Key = sig
   type t [@@deriving_inline compare, sexp_of]
 
-  val compare : t -> t -> int
+  include Ppx_compare_lib.Comparable.S with type t := t
+
   val sexp_of_t : t -> Sexplib0.Sexp.t
 
   [@@@end]

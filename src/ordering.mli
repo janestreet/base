@@ -32,8 +32,7 @@ type t =
   | Greater
 [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
-val compare : t -> t -> int
-
+include Ppx_compare_lib.Comparable.S with type t := t
 include Ppx_hash_lib.Hashable.S with type t := t
 include Sexplib0.Sexpable.S with type t := t
 

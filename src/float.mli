@@ -157,11 +157,13 @@ val int63_round_down_exn : t -> Int63.t
 val int63_round_up_exn : t -> Int63.t
 val int63_round_nearest_exn : t -> Int63.t
 
-(** If [f <= iround_lbound || f >= iround_ubound], then [iround*] functions will refuse
-    to round [f], returning [None] or raising as appropriate. *)
+(** If [f < iround_lbound || f > iround_ubound], then [iround*] functions will refuse to
+    round [f], returning [None] or raising as appropriate. *)
 val iround_lbound : t
 
 val iround_ubound : t
+val int63_round_lbound : t
+val int63_round_ubound : t
 
 (** [round_significant x ~significant_digits:n] rounds to the nearest number with [n]
     significant digits.  More precisely: it returns the representable float closest to [x
@@ -563,8 +565,7 @@ module Class : sig
     | Zero
   [@@deriving_inline compare, enumerate, sexp, sexp_grammar]
 
-  val compare : t -> t -> int
-
+  include Ppx_compare_lib.Comparable.S with type t := t
   include Ppx_enumerate_lib.Enumerable.S with type t := t
   include Sexplib0.Sexpable.S with type t := t
 

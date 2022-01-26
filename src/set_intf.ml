@@ -4,7 +4,8 @@ open! T
 module type Elt_plain = sig
   type t [@@deriving_inline compare, sexp_of]
 
-  val compare : t -> t -> int
+  include Ppx_compare_lib.Comparable.S with type t := t
+
   val sexp_of_t : t -> Sexplib0.Sexp.t
 
   [@@@end]
@@ -124,13 +125,7 @@ module type Accessors_generic = sig
       , 'cmp
       , ('a, 'cmp) t
       -> compare:('a elt -> 'key -> int)
-      -> [ `Last_strictly_less_than
-         | `Last_less_than_or_equal_to
-         | `Last_equal_to
-         | `First_equal_to
-         | `First_greater_than_or_equal_to
-         | `First_strictly_greater_than
-         ]
+      -> Binary_searchable.Which_target_by_key.t
       -> 'key
       -> 'a elt option )
         options
@@ -140,7 +135,7 @@ module type Accessors_generic = sig
       , 'cmp
       , ('a, 'cmp) t
       -> segment_of:('a elt -> [ `Left | `Right ])
-      -> [ `Last_on_left | `First_on_right ]
+      -> Binary_searchable.Which_target_by_segment.t
       -> 'a elt option )
         options
 
@@ -223,20 +218,14 @@ module type Accessors0 = sig
   val binary_search
     :  t
     -> compare:(elt -> 'key -> int)
-    -> [ `Last_strictly_less_than
-       | `Last_less_than_or_equal_to
-       | `Last_equal_to
-       | `First_equal_to
-       | `First_greater_than_or_equal_to
-       | `First_strictly_greater_than
-       ]
+    -> Binary_searchable.Which_target_by_key.t
     -> 'key
     -> elt option
 
   val binary_search_segmented
     :  t
     -> segment_of:(elt -> [ `Left | `Right ])
-    -> [ `Last_on_left | `First_on_right ]
+    -> Binary_searchable.Which_target_by_segment.t
     -> elt option
 
   val merge_to_sequence
@@ -315,20 +304,14 @@ module type Accessors1 = sig
   val binary_search
     :  'a t
     -> compare:('a -> 'key -> int)
-    -> [ `Last_strictly_less_than
-       | `Last_less_than_or_equal_to
-       | `Last_equal_to
-       | `First_equal_to
-       | `First_greater_than_or_equal_to
-       | `First_strictly_greater_than
-       ]
+    -> Binary_searchable.Which_target_by_key.t
     -> 'key
     -> 'a option
 
   val binary_search_segmented
     :  'a t
     -> segment_of:('a -> [ `Left | `Right ])
-    -> [ `Last_on_left | `First_on_right ]
+    -> Binary_searchable.Which_target_by_segment.t
     -> 'a option
 
   val merge_to_sequence
@@ -406,20 +389,14 @@ module type Accessors2 = sig
   val binary_search
     :  ('a, 'cmp) t
     -> compare:('a -> 'key -> int)
-    -> [ `Last_strictly_less_than
-       | `Last_less_than_or_equal_to
-       | `Last_equal_to
-       | `First_equal_to
-       | `First_greater_than_or_equal_to
-       | `First_strictly_greater_than
-       ]
+    -> Binary_searchable.Which_target_by_key.t
     -> 'key
     -> 'a option
 
   val binary_search_segmented
     :  ('a, 'cmp) t
     -> segment_of:('a -> [ `Left | `Right ])
-    -> [ `Last_on_left | `First_on_right ]
+    -> Binary_searchable.Which_target_by_segment.t
     -> 'a option
 
   val merge_to_sequence
@@ -572,13 +549,7 @@ module type Accessors2_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'cmp) t
     -> compare:('a -> 'key -> int)
-    -> [ `Last_strictly_less_than
-       | `Last_less_than_or_equal_to
-       | `Last_equal_to
-       | `First_equal_to
-       | `First_greater_than_or_equal_to
-       | `First_strictly_greater_than
-       ]
+    -> Binary_searchable.Which_target_by_key.t
     -> 'key
     -> 'a option
 
@@ -586,7 +557,7 @@ module type Accessors2_with_comparator = sig
     :  comparator:('a, 'cmp) Comparator.t
     -> ('a, 'cmp) t
     -> segment_of:('a -> [ `Left | `Right ])
-    -> [ `Last_on_left | `First_on_right ]
+    -> Binary_searchable.Which_target_by_segment.t
     -> 'a option
 
   val merge_to_sequence
@@ -1045,33 +1016,28 @@ module type Set = sig
       type. *)
   type ('elt, 'cmp) t [@@deriving_inline compare]
 
-  val compare
-    :  ('elt -> 'elt -> int)
-    -> ('cmp -> 'cmp -> int)
-    -> ('elt, 'cmp) t
-    -> ('elt, 'cmp) t
-    -> int
+  include Ppx_compare_lib.Comparable.S2 with type ('elt, 'cmp) t := ('elt, 'cmp) t
 
   [@@@end]
 
-  type ('k, 'cmp) comparator =
-    (module Comparator.S with type t = 'k and type comparator_witness = 'cmp)
+  type ('k, 'cmp) comparator = ('k, 'cmp) Comparator.Module.t
+  [@@deprecated "[since 2021-12] use [Comparator.Module.t] instead"]
 
   (** Tests internal invariants of the set data structure.  Returns true on success. *)
   val invariants : (_, _) t -> bool
 
   (** Returns a first-class module that can be used to build other map/set/etc
       with the same notion of comparison. *)
-  val comparator_s : ('a, 'cmp) t -> ('a, 'cmp) comparator
+  val comparator_s : ('a, 'cmp) t -> ('a, 'cmp) Comparator.Module.t
 
   val comparator : ('a, 'cmp) t -> ('a, 'cmp) Comparator.t
 
   (** Creates an empty set based on the provided comparator. *)
-  val empty : ('a, 'cmp) comparator -> ('a, 'cmp) t
+  val empty : ('a, 'cmp) Comparator.Module.t -> ('a, 'cmp) t
 
   (** Creates a set based on the provided comparator that contains only the provided
       element. *)
-  val singleton : ('a, 'cmp) comparator -> 'a -> ('a, 'cmp) t
+  val singleton : ('a, 'cmp) Comparator.Module.t -> 'a -> ('a, 'cmp) t
 
   (** Returns the cardinality of the set. [O(1)]. *)
   val length : (_, _) t -> int
@@ -1096,7 +1062,7 @@ module type Set = sig
   (** [union c list] returns the union of all the sets in [list].  The
       [comparator] argument is required for the case where [list] is empty.
       [O(max(List.length list, n log n))], where [n] is the sum of sizes of the input sets. *)
-  val union_list : ('a, 'cmp) comparator -> ('a, 'cmp) t list -> ('a, 'cmp) t
+  val union_list : ('a, 'cmp) Comparator.Module.t -> ('a, 'cmp) t list -> ('a, 'cmp) t
 
   (** [inter t1 t2] computes the intersection of sets [t1] and [t2].  [O(length t1 +
       length t2)]. *)
@@ -1210,10 +1176,10 @@ module type Set = sig
   end
 
   (** The list or array given to [of_list] and [of_array] need not be sorted. *)
-  val of_list : ('a, 'cmp) comparator -> 'a list -> ('a, 'cmp) t
+  val of_list : ('a, 'cmp) Comparator.Module.t -> 'a list -> ('a, 'cmp) t
 
-  val of_sequence : ('a, 'cmp) comparator -> 'a Sequence.t -> ('a, 'cmp) t
-  val of_array : ('a, 'cmp) comparator -> 'a array -> ('a, 'cmp) t
+  val of_sequence : ('a, 'cmp) Comparator.Module.t -> 'a Sequence.t -> ('a, 'cmp) t
+  val of_array : ('a, 'cmp) Comparator.Module.t -> 'a array -> ('a, 'cmp) t
 
   (** [to_list] and [to_array] produce sequences sorted in ascending order according to the
       comparator. *)
@@ -1224,17 +1190,23 @@ module type Set = sig
   (** Create set from sorted array.  The input must be sorted (either in ascending or
       descending order as given by the comparator) and contain no duplicates, otherwise the
       result is an error.  The complexity of this function is [O(n)]. *)
-  val of_sorted_array : ('a, 'cmp) comparator -> 'a array -> ('a, 'cmp) t Or_error.t
+  val of_sorted_array
+    :  ('a, 'cmp) Comparator.Module.t
+    -> 'a array
+    -> ('a, 'cmp) t Or_error.t
 
   (** Similar to [of_sorted_array], but without checking the input array. *)
-  val of_sorted_array_unchecked : ('a, 'cmp) comparator -> 'a array -> ('a, 'cmp) t
+  val of_sorted_array_unchecked
+    :  ('a, 'cmp) Comparator.Module.t
+    -> 'a array
+    -> ('a, 'cmp) t
 
   (** [of_increasing_iterator_unchecked c ~len ~f] behaves like [of_sorted_array_unchecked c
       (Array.init len ~f)], with the additional restriction that a decreasing order is not
       supported.  The advantage is not requiring you to allocate an intermediate array.  [f]
       will be called with 0, 1, ... [len - 1], in order. *)
   val of_increasing_iterator_unchecked
-    :  ('a, 'cmp) comparator
+    :  ('a, 'cmp) Comparator.Module.t
     -> len:int
     -> f:(int -> 'a)
     -> ('a, 'cmp) t
@@ -1243,15 +1215,15 @@ module type Set = sig
       implementation relies crucially on sets, and because doing so allows one to avoid uses
       of polymorphic comparison by instantiating the functor at a different implementation
       of [Comparator] and using the resulting [stable_dedup_list]. *)
-  val stable_dedup_list : ('a, _) comparator -> 'a list -> 'a list
+  val stable_dedup_list : ('a, _) Comparator.Module.t -> 'a list -> 'a list
 
   (** [map c t ~f] returns a new set created by applying [f] to every element in
       [t].  The returned set is based on the provided [comparator].  [O(n log n)]. *)
-  val map : ('b, 'cmp) comparator -> ('a, _) t -> f:('a -> 'b) -> ('b, 'cmp) t
+  val map : ('b, 'cmp) Comparator.Module.t -> ('a, _) t -> f:('a -> 'b) -> ('b, 'cmp) t
 
   (** Like {!map}, except elements for which [f] returns [None] will be dropped.  *)
   val filter_map
-    :  ('b, 'cmp) comparator
+    :  ('b, 'cmp) Comparator.Module.t
     -> ('a, _) t
     -> f:('a -> 'b option)
     -> ('b, 'cmp) t
@@ -1420,13 +1392,7 @@ module type Set = sig
       | Both of 'a * 'b
     [@@deriving_inline compare, sexp]
 
-    val compare
-      :  ('a -> 'a -> int)
-      -> ('b -> 'b -> int)
-      -> ('a, 'b) t
-      -> ('a, 'b) t
-      -> int
-
+    include Ppx_compare_lib.Comparable.S2 with type ('a, 'b) t := ('a, 'b) t
     include Sexplib0.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
 
     [@@@end]

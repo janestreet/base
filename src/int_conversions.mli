@@ -83,8 +83,7 @@ end
 module Make_hex (I : sig
     type t [@@deriving_inline compare, hash]
 
-    val compare : t -> t -> int
-
+    include Ppx_compare_lib.Comparable.S with type t := t
     include Ppx_hash_lib.Hashable.S with type t := t
 
     [@@@end]

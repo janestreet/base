@@ -33,8 +33,7 @@ end :
 sig
   type 'a t = 'a option [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-
+  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
   include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
   include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 

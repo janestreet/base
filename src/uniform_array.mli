@@ -15,7 +15,8 @@ type 'a t [@@deriving_inline sexp, sexp_grammar, compare]
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+
+include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 
 [@@@end]
 

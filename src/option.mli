@@ -24,8 +24,7 @@ type 'a t = 'a option =
   | Some of 'a
 [@@deriving_inline compare, hash, sexp_grammar]
 
-val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-
+include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t

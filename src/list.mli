@@ -6,8 +6,7 @@ open! Import
 
 type 'a t = 'a list [@@deriving_inline compare, hash, sexp, sexp_grammar]
 
-val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-
+include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
@@ -39,7 +38,8 @@ module Or_unequal_lengths : sig
     | Unequal_lengths
   [@@deriving_inline compare, sexp_of]
 
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+
   val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
   [@@@end]
