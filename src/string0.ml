@@ -16,6 +16,7 @@
    ocamldep from mistakenly causing a file to depend on [Base.String]. *)
 
 open! Import0
+module Bytes = Bytes0
 module Sys = Sys0
 
 module String = struct
@@ -32,7 +33,13 @@ let max_length = Sys.max_string_length
 let ( ^ ) = ( ^ )
 let capitalize = Caml.String.capitalize_ascii
 let compare = Caml.String.compare
-let[@warning "-3"] copy = Caml.String.copy
+
+let copy x =
+  Bytes.unsafe_to_string
+    ~no_mutation_while_string_reachable:
+      (Bytes.copy (Bytes.unsafe_of_string_promise_no_mutation x))
+;;
+
 let escaped = Caml.String.escaped
 let lowercase = Caml.String.lowercase_ascii
 let make = Caml.String.make
