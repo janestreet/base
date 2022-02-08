@@ -91,7 +91,8 @@ module Id = struct
       [@@@end]
 
       let sexp_of_t _sexp_of_a t =
-        `type_witness (Caml.Obj.Extension_constructor.id (Caml.Obj.Extension_constructor.of_val t))
+        `type_witness
+          (Caml.Obj.Extension_constructor.id (Caml.Obj.Extension_constructor.of_val t))
         |> sexp_of_type_witness_int
       ;;
     end
