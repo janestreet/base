@@ -1,6 +1,5 @@
 open! Import
 include Array0
-module Int = Int0
 
 type 'a t = 'a array [@@deriving_inline compare, sexp, sexp_grammar]
 
@@ -252,14 +251,24 @@ module Sort = struct
         intro_sort arr ~max_depth ~compare ~left:(r + 1) ~right)
     ;;
 
-    let log10_of_3 = Caml.log10 3.
-    let log3 x = Caml.log10 x /. log10_of_3
-
     let sort arr ~compare ~left ~right =
-      let len = right - left + 1 in
       let heap_sort_switch_depth =
-        (* with perfect 3-way partitioning, this is the recursion depth *)
-        Int.of_float (log3 (Int.to_float len))
+        (* We bail out to heap sort at a recursion depth of 32. GNU introsort uses 2lg(n).
+           The expected recursion depth for perfect 3-way splits is log_3(n).
+
+           Using 32 means a balanced 3-way split would work up to 3^32 elements (roughly
+           2^50 or 10^15). GNU reaches a depth of 32 at 65536 elements.
+
+           For small arrays, this makes us less likely to bail out to heap sort, but the
+           32*N cost before we do is not that much.
+
+           For large arrays, this means we are more likely to bail out to heap sort at
+           some point if we get some bad splits or if the array is huge. But that's only a
+           constant factor cost in the final stages of recursion.
+
+           All in all, this seems to be a small tradeoff and avoids paying a cost to
+           compute a logarithm at the start. *)
+        32
       in
       intro_sort arr ~max_depth:heap_sort_switch_depth ~compare ~left ~right
     ;;
