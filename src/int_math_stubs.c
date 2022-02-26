@@ -33,17 +33,25 @@ static int __inline __builtin_clzll(uint64_t x)
   return r;
 }
 
-static uint32_t __inline __builtin_ctz(uint32_t x)
+static int __inline __builtin_ctz(uint32_t x)
 {
   int r = 0;
   _BitScanReverse(&r, x);
   return r;
 }
 
-static uint64_t __inline __builtin_ctzll(uint64_t x)
+static int __inline __builtin_ctzll(uint64_t x)
 {
   int r = 0;
+#ifdef _WIN64
   _BitScanReverse64(&r, x);
+#else
+  if (_BitScanReverse(&r, (uint32_t)(x>>32))) {
+    r += 32;
+  } else {
+    _BitScanReverse(&r, (uint32_t)x));
+  }
+#endif
   return r;
 }
 
