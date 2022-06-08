@@ -686,7 +686,7 @@ module Tree0 = struct
       match t with
       | Empty ->
         (match f None with
-         | None -> raise Change_no_op (* equivalent to returning: Empty *)
+         | None -> Exn.raise_without_backtrace Change_no_op (* equivalent to returning: Empty *)
          | Some data -> Leaf (key, data), length + 1)
       | Leaf (v, d) ->
         let c = compare_key key v in
