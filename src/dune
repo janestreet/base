@@ -1,8 +1,3 @@
-(rule (targets bytes_set_primitives.ml)
- (deps (:first_dep select-bytes-set-primitives/select.ml))
- (action
-  (run %{ocaml} %{first_dep} -ocaml-version %{ocaml_version} -o %{targets})))
-
 (rule (targets pow_overflow_bounds.ml)
  (deps (:first_dep ../generate/generate_pow_overflow_bounds.exe))
  (action (run %{first_dep} -atomic -o %{targets})) (mode fallback))
