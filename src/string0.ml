@@ -23,8 +23,8 @@ module String = struct
   external get : string -> int -> char = "%string_safe_get"
   external length : string -> int = "%string_length"
   external unsafe_get : string -> int -> char = "%string_unsafe_get"
-
-  include Bytes_set_primitives
+  external set        : bytes -> int -> char -> unit = "%bytes_safe_set"
+  external unsafe_set : bytes -> int -> char -> unit = "%bytes_unsafe_set"
 end
 
 include String
