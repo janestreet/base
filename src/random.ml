@@ -1,5 +1,4 @@
 open! Import
-module Array = Array0
 module Int = Int0
 module Char = Char0
 
@@ -55,19 +54,7 @@ module State = struct
     Lazy.from_val (Caml.Random.State.make_self_init ())
   ;;
 
-  module Repr = struct
-    open Caml.Bigarray
-
-    type t = (int64, int64_elt, c_layout) Array1.t
-
-    let of_state : Caml.Random.State.t -> t = Caml.Obj.magic
-  end
-
-  let assign dst src =
-    let dst = Repr.of_state (Lazy.force dst) in
-    let src = Repr.of_state (Lazy.force src) in
-    Caml.Bigarray.Array1.blit src dst
-  ;;
+  let assign = Random_repr.assign
 
   let full_init t seed = assign t (make seed)
 
@@ -247,29 +234,23 @@ module State = struct
   ;;
 end
 
-let default () = State.default
+let default = Random_repr.make_default State.default
 
-let random_key =
-  let split_from_parent v =
-    Lazy.from_val (Caml.Random.State.split (Lazy.force v))
-  in
-  Caml.Domain.DLS.new_key ~split_from_parent default
-
-let bits () = State.bits (Caml.Domain.DLS.get random_key)
-let int x = State.int (Caml.Domain.DLS.get random_key) x
-let int32 x = State.int32 (Caml.Domain.DLS.get random_key) x
-let nativeint x = State.nativeint (Caml.Domain.DLS.get random_key) x
-let int64 x = State.int64 (Caml.Domain.DLS.get random_key) x
-let float x = State.float (Caml.Domain.DLS.get random_key) x
-let int_incl x y = State.int_incl (Caml.Domain.DLS.get random_key) x y
-let int32_incl x y = State.int32_incl (Caml.Domain.DLS.get random_key) x y
-let nativeint_incl x y = State.nativeint_incl (Caml.Domain.DLS.get random_key) x y
-let int64_incl x y = State.int64_incl (Caml.Domain.DLS.get random_key) x y
-let float_range x y = State.float_range (Caml.Domain.DLS.get random_key) x y
-let bool () = State.bool (Caml.Domain.DLS.get random_key)
-let char () = State.char (Caml.Domain.DLS.get random_key)
-let ascii () = State.ascii (Caml.Domain.DLS.get random_key)
-let full_init seed = State.full_init (Caml.Domain.DLS.get random_key) seed
+let bits () = State.bits (Random_repr.get_state default)
+let int x = State.int (Random_repr.get_state default) x
+let int32 x = State.int32 (Random_repr.get_state default) x
+let nativeint x = State.nativeint (Random_repr.get_state default) x
+let int64 x = State.int64 (Random_repr.get_state default) x
+let float x = State.float (Random_repr.get_state default) x
+let int_incl x y = State.int_incl (Random_repr.get_state default) x y
+let int32_incl x y = State.int32_incl (Random_repr.get_state default) x y
+let nativeint_incl x y = State.nativeint_incl (Random_repr.get_state default) x y
+let int64_incl x y = State.int64_incl (Random_repr.get_state default) x y
+let float_range x y = State.float_range (Random_repr.get_state default) x y
+let bool () = State.bool (Random_repr.get_state default)
+let char () = State.char (Random_repr.get_state default)
+let ascii () = State.ascii (Random_repr.get_state default)
+let full_init seed = State.full_init (Random_repr.get_state default) seed
 let init seed = full_init [| seed |]
 let self_init ?allow_in_tests () = full_init (random_seed ?allow_in_tests ())
-let set_state s = State.assign (Caml.Domain.DLS.get random_key) s
+let set_state s = State.assign (Random_repr.get_state default) s
