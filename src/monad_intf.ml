@@ -93,6 +93,10 @@ module type S_without_syntax = sig
   (** [fold_list ~f ~init [v1; ...; vn]] folds over a list applying a monadic operation,
       i.e., performs [f init v1 >>= fun acc -> f acc v2 >>= ... >>= fun acc -> f acc vn]. *)
   val fold_list : f:('a -> 'b -> 'a t) -> init:'a -> 'b list -> 'a t
+
+  (** [map_list ~f [v1; ...; vn]] applies a monadic operation to each element of a list,
+      i.e., performs [f v1 >>= fun w1 -> f v2 >>= fun w2 -> ... f vn >>= fun wn -> return [w1; ...; wn]]. *)
+  val map_list : f:('a -> 'b t) -> 'a list -> 'b list t
 end
 
 module type S = sig
@@ -161,6 +165,7 @@ module type S2 = sig
   val all : ('a, 'e) t list -> ('a list, 'e) t
   val all_unit : (unit, 'e) t list -> (unit, 'e) t
   val fold_list : f:('a -> 'b -> ('a, 'e) t) -> init:'a -> 'b list -> ('a, 'e) t
+  val map_list : f:('a -> ('b, 'e) t) -> 'a list -> ('b list, 'e) t
 end
 
 module type Basic3 = sig
@@ -224,6 +229,7 @@ module type S3 = sig
   val all : ('a, 'd, 'e) t list -> ('a list, 'd, 'e) t
   val all_unit : (unit, 'd, 'e) t list -> (unit, 'd, 'e) t
   val fold_list : f:('a -> 'b -> ('a, 'd, 'e) t) -> init:'a -> 'b list -> ('a, 'd, 'e) t
+  val map_list : f:('a -> ('b, 'd, 'e) t) -> 'a list -> ('b list, 'd, 'e) t
 end
 
 module type Basic_indexed = sig
@@ -306,6 +312,7 @@ module type S_indexed = sig
   val all : ('a, 'i, 'i) t list -> ('a list, 'i, 'i) t
   val all_unit : (unit, 'i, 'i) t list -> (unit, 'i, 'i) t
   val fold_list : f:('a -> 'b -> ('a, 'i, 'i) t) -> init:'a -> 'b list -> ('a, 'i, 'i) t
+  val map_list : f:('a -> ('b, 'i, 'i) t) -> 'a list -> ('b list, 'i, 'i) t
 end
 
 module S_to_S2 (X : S) : S2 with type ('a, 'e) t = 'a X.t = struct
