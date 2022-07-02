@@ -89,6 +89,10 @@ module type S_without_syntax = sig
   (** Like [all], but ensures that every monadic value in the list produces a unit value,
       all of which are discarded rather than being collected into a list. *)
   val all_unit : unit t list -> unit t
+
+  (** [fold_list ~f ~init [v1; ...; vn]] folds over a list applying a monadic operation,
+      i.e., performs [f init v1 >>= fun acc -> f acc v2 >>= ... >>= fun acc -> f acc vn]. *)
+  val fold_list : f:('a -> 'b -> 'a t) -> init:'a -> 'b list -> 'a t
 end
 
 module type S = sig
@@ -156,6 +160,7 @@ module type S2 = sig
   val ignore_m : (_, 'e) t -> (unit, 'e) t
   val all : ('a, 'e) t list -> ('a list, 'e) t
   val all_unit : (unit, 'e) t list -> (unit, 'e) t
+  val fold_list : f:('a -> 'b -> ('a, 'e) t) -> init:'a -> 'b list -> ('a, 'e) t
 end
 
 module type Basic3 = sig
@@ -218,6 +223,7 @@ module type S3 = sig
   val ignore_m : (_, 'd, 'e) t -> (unit, 'd, 'e) t
   val all : ('a, 'd, 'e) t list -> ('a list, 'd, 'e) t
   val all_unit : (unit, 'd, 'e) t list -> (unit, 'd, 'e) t
+  val fold_list : f:('a -> 'b -> ('a, 'd, 'e) t) -> init:'a -> 'b list -> ('a, 'd, 'e) t
 end
 
 module type Basic_indexed = sig
@@ -299,6 +305,7 @@ module type S_indexed = sig
   val ignore_m : (_, 'i, 'j) t -> (unit, 'i, 'j) t
   val all : ('a, 'i, 'i) t list -> ('a list, 'i, 'i) t
   val all_unit : (unit, 'i, 'i) t list -> (unit, 'i, 'i) t
+  val fold_list : f:('a -> 'b -> ('a, 'i, 'i) t) -> init:'a -> 'b list -> ('a, 'i, 'i) t
 end
 
 module S_to_S2 (X : S) : S2 with type ('a, 'e) t = 'a X.t = struct

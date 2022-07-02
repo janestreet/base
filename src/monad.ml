@@ -66,6 +66,14 @@ module Make_general (M : Basic_general) = struct
     | [] -> return ()
     | t :: ts -> t >>= fun () -> all_unit ts
   ;;
+
+  let fold_list ~f ~init =
+    let rec loop acc = function
+      | [] -> return acc
+      | t :: ts -> f acc t >>= fun acc -> loop acc ts
+    in
+    loop init
+
 end
 
 module Make_indexed (M : Basic_indexed) :

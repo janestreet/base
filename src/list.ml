@@ -763,6 +763,7 @@ module Cartesian_product = struct
   let all_unit = Monad.all_unit
   let ignore_m = Monad.ignore_m
   let join = Monad.join
+  let fold_list = Monad.fold_list
 
   module Monad_infix = struct
     let ( >>| ) = ( >>| )
