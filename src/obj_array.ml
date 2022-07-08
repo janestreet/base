@@ -35,14 +35,18 @@ let get t i =
      if [t] is tagged with [Double_array_tag].  It is NOT ok to use [int array] since (if
      this function is inlined and the array contains in-heap boxed values) wrong register
      typing may result, leading to a failure to register necessary GC roots. *)
-  Caml.Obj.repr ((Caml.Obj.magic (t : t) : not_a_float array).(i) : not_a_float)
+  Caml.Obj.repr
+    (* [Sys.opaque_identity] is required on the array because this code breaks the usual
+       assumptions about array kinds that the Flambda 2 optimiser can see. *)
+    ((Sys.opaque_identity (Caml.Obj.magic (t : t) : not_a_float array)).(i) : not_a_float)
 ;;
 
 let[@inline always] unsafe_get t i =
   (* Make the compiler believe [t] is an array not containing floats so it does not check
      if [t] is tagged with [Double_array_tag]. *)
   Caml.Obj.repr
-    (Array.unsafe_get (Caml.Obj.magic (t : t) : not_a_float array) i : not_a_float)
+    (Array.unsafe_get (Sys.opaque_identity (Caml.Obj.magic (t : t) : not_a_float array)) i
+     : not_a_float)
 ;;
 
 let[@inline always] unsafe_set_with_caml_modify t i obj =
@@ -52,20 +56,23 @@ let[@inline always] unsafe_set_with_caml_modify t i obj =
      Obj.double_array_tag) which flambda has tried in the past (at least that's assuming
      the compiler respects Sys.opaque_identity, which is not always the case). *)
   Array.unsafe_set
-    (Caml.Obj.magic (t : t) : not_a_float array)
+    (Sys.opaque_identity (Caml.Obj.magic (t : t) : not_a_float array))
     i
     (Caml.Obj.obj (Sys.opaque_identity obj) : not_a_float)
 ;;
 
 let[@inline always] set_with_caml_modify t i obj =
   (* same as unsafe_set_with_caml_modify but safe *)
-  (Caml.Obj.magic (t : t) : not_a_float array).(i)
+  (Sys.opaque_identity (Caml.Obj.magic (t : t) : not_a_float array)).(i)
   <- (Caml.Obj.obj (Sys.opaque_identity obj) : not_a_float)
 ;;
 
 let[@inline always] unsafe_set_int_assuming_currently_int t i int =
   (* This skips [caml_modify], which is OK if both the old and new values are integers. *)
-  Array.unsafe_set (Caml.Obj.magic (t : t) : int array) i (Sys.opaque_identity int)
+  Array.unsafe_set
+    (Sys.opaque_identity (Caml.Obj.magic (t : t) : int array))
+    i
+    (Sys.opaque_identity int)
 ;;
 
 (* For [set] and [unsafe_set], if a pointer is involved, we first do a physical-equality

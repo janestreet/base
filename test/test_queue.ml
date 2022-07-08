@@ -202,6 +202,25 @@ let%test_module _ =
        assert (does_raise (fun () -> last_exn t))
      ;;
 
+     let dequeue_and_ignore_exn = dequeue_and_ignore_exn
+
+     let%test_unit _ =
+       let t = create () in
+       enqueue t 1;
+       enqueue t 2;
+       enqueue t 3;
+       [%test_result: int] (peek_exn t) ~expect:1;
+       dequeue_and_ignore_exn t;
+       [%test_result: int] (peek_exn t) ~expect:2;
+       dequeue_and_ignore_exn t;
+       [%test_result: int] (peek_exn t) ~expect:3;
+       dequeue_and_ignore_exn t;
+       [%test_result: int option] (peek t) ~expect:None;
+       assert (does_raise (fun () -> dequeue_and_ignore_exn t));
+       assert (does_raise (fun () -> dequeue_and_ignore_exn t));
+       [%test_result: int option] (peek t) ~expect:None
+     ;;
+
      let enqueue_all = enqueue_all
 
      let%test_unit _ =
@@ -295,6 +314,14 @@ let%test_module _ =
      ;;
 
      let clear = clear
+
+     let%test_unit "clear" =
+       let q = of_list [ 1; 2; 3; 4 ] in
+       [%test_result: int] (length q) ~expect:4;
+       clear q;
+       [%test_result: int] (length q) ~expect:0
+     ;;
+
      let blit_transfer = blit_transfer
 
      let%test_unit _ =
@@ -331,6 +358,16 @@ let%test_module _ =
      ;;
 
      let copy = copy
+
+     let%test_unit "copies behave independently" =
+       let q = of_list [ 1; 2; 3; 4 ] in
+       let q' = copy q in
+       enqueue q 5;
+       ignore (dequeue_exn q' : int);
+       [%test_result: int list] (to_list q) ~expect:[ 1; 2; 3; 4; 5 ];
+       [%test_result: int list] (to_list q') ~expect:[ 2; 3; 4 ]
+     ;;
+
      let dequeue = dequeue
      let filter = filter
      let filteri = filteri

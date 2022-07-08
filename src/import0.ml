@@ -38,98 +38,24 @@ include (
   with module String := Shadow_stdlib.String
   with module Sys := Shadow_stdlib.Sys
   with module Uchar := Shadow_stdlib.Uchar
-  with module Unit := Shadow_stdlib.Unit) [@ocaml.warning "-3"]
+  with module Unit := Shadow_stdlib.Unit)
+  [@ocaml.warning "-3"]
 
 type 'a ref = 'a Caml.ref = { mutable contents : 'a }
 
 (* Reshuffle [Caml] so that we choose the modules using labels when available. *)
 module Caml = struct
-
-  module Arg = Caml.Arg (** @canonical Caml.Arg *)
-
-  module Array = Caml.StdLabels.Array (** @canonical Caml.StdLabels.Array *)
-
-  module Bool = Caml.Bool (** @canonical Caml.Bool *)
-
-  module Buffer = Caml.Buffer (** @canonical Caml.Buffer *)
-
-  module Bytes = Caml.StdLabels.Bytes (** @canonical Caml.StdLabels.Bytes *)
-
-  module Char = Caml.Char (** @canonical Caml.Char *)
-
-  module Ephemeron = Caml.Ephemeron (** @canonical Caml.Ephemeron *)
-
-  module Float = Caml.Float (** @canonical Caml.Float *)
-
-  module Format = Caml.Format (** @canonical Caml.Format *)
-
-  module Fun = Caml.Fun (** @canonical Caml.Fun *)
-
-  module Gc = Caml.Gc (** @canonical Caml.Gc *)
-
-  module Hashtbl = Caml.MoreLabels.Hashtbl (** @canonical Caml.MoreLabels.Hashtbl *)
-
-  module Int32 = Caml.Int32 (** @canonical Caml.Int32 *)
-
-  module Int = Caml.Int (** @canonical Caml.Int *)
-
-  module Int64 = Caml.Int64 (** @canonical Caml.Int64 *)
-
-  module Lazy = Caml.Lazy (** @canonical Caml.Lazy *)
-
-  module Lexing = Caml.Lexing (** @canonical Caml.Lexing *)
-
-  module List = Caml.StdLabels.List (** @canonical Caml.StdLabels.List *)
-
-  module Map = Caml.MoreLabels.Map (** @canonical Caml.MoreLabels.Map *)
-
-  module Nativeint = Caml.Nativeint (** @canonical Caml.Nativeint *)
-
-  module Obj = Caml.Obj (** @canonical Caml.Obj *)
-
-  module Option = Caml.Option (** @canonical Caml.Option *)
-
-  module Parsing = Caml.Parsing (** @canonical Caml.Parsing *)
-
-  module Printexc = Caml.Printexc (** @canonical Caml.Printexc *)
-
-  module Printf = Caml.Printf (** @canonical Caml.Printf *)
-
-  module Queue = Caml.Queue (** @canonical Caml.Queue *)
-
-  module Random = Caml.Random (** @canonical Caml.Random *)
-
-  module Result = Caml.Result (** @canonical Caml.Result *)
-
-  module Scanf = Caml.Scanf (** @canonical Caml.Scanf *)
-
-  module Seq = Caml.Seq (** @canonical Caml.Seq *)
-
-  module Set = Caml.MoreLabels.Set (** @canonical Caml.MoreLabels.Set *)
-
-  module Stack = Caml.Stack (** @canonical Caml.Stack *)
-
-  module Stream = Caml.Stream [@ocaml.warning "-3"] (** @canonical Caml.Stream *)
-
-  module String = Caml.StdLabels.String (** @canonical Caml.StdLabels.String *)
-
-  module Sys = Caml.Sys (** @canonical Caml.Sys *)
-
-  module Uchar = Caml.Uchar (** @canonical Caml.Uchar *)
-
-  module Unit = Caml.Unit (** @canonical Caml.Unit *)
-
-  include Pervasives [@ocaml.warning "-3"]
-
-  exception Not_found = Caml.Not_found
+  include Caml
+  include Caml.StdLabels
+  include Caml.MoreLabels
 end
 
 external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
 
 (* These need to be declared as an external to get the lazy behavior *)
-external ( && ) : bool -> bool -> bool = "%sequand"
-external ( || ) : bool -> bool -> bool = "%sequor"
-external not : bool -> bool = "%boolnot"
+external ( && ) : (bool[@local_opt]) -> (bool[@local_opt]) -> bool = "%sequand"
+external ( || ) : (bool[@local_opt]) -> (bool[@local_opt]) -> bool = "%sequor"
+external not : (bool[@local_opt]) -> bool = "%boolnot"
 
 (* We use [Obj.magic] here as other implementations generate a conditional jump and the
    performance difference is noticeable. *)
@@ -154,14 +80,14 @@ module Poly = Poly0 (** @canonical Base.Poly *)
 module Int_replace_polymorphic_compare = struct
   (* Declared as externals so that the compiler skips the caml_apply_X wrapping even when
      compiling without cross library inlining. *)
-  external ( = ) : int -> int -> bool = "%equal"
-  external ( <> ) : int -> int -> bool = "%notequal"
-  external ( < ) : int -> int -> bool = "%lessthan"
-  external ( > ) : int -> int -> bool = "%greaterthan"
-  external ( <= ) : int -> int -> bool = "%lessequal"
-  external ( >= ) : int -> int -> bool = "%greaterequal"
-  external compare : int -> int -> int = "%compare"
-  external equal : int -> int -> bool = "%equal"
+  external ( = ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%equal"
+  external ( <> ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%notequal"
+  external ( < ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%lessthan"
+  external ( > ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%greaterthan"
+  external ( <= ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%lessequal"
+  external ( >= ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%greaterequal"
+  external compare : (int[@local_opt]) -> (int[@local_opt]) -> int = "%compare"
+  external equal : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%equal"
 
   let ascending (x : int) y = compare x y
   let descending (x : int) y = compare y x
@@ -189,14 +115,53 @@ end
 module Int64_replace_polymorphic_compare = struct
   (* Declared as externals so that the compiler skips the caml_apply_X wrapping even when
      compiling without cross library inlining. *)
-  external ( = ) : Caml.Int64.t -> Caml.Int64.t -> bool = "%equal"
-  external ( <> ) : Caml.Int64.t -> Caml.Int64.t -> bool = "%notequal"
-  external ( < ) : Caml.Int64.t -> Caml.Int64.t -> bool = "%lessthan"
-  external ( > ) : Caml.Int64.t -> Caml.Int64.t -> bool = "%greaterthan"
-  external ( <= ) : Caml.Int64.t -> Caml.Int64.t -> bool = "%lessequal"
-  external ( >= ) : Caml.Int64.t -> Caml.Int64.t -> bool = "%greaterequal"
-  external compare : Caml.Int64.t -> Caml.Int64.t -> int = "%compare"
-  external equal : Caml.Int64.t -> Caml.Int64.t -> bool = "%equal"
+  external ( = )
+    :  (Caml.Int64.t[@local_opt])
+    -> (Caml.Int64.t[@local_opt])
+    -> bool
+    = "%equal"
+
+  external ( <> )
+    :  (Caml.Int64.t[@local_opt])
+    -> (Caml.Int64.t[@local_opt])
+    -> bool
+    = "%notequal"
+
+  external ( < )
+    :  (Caml.Int64.t[@local_opt])
+    -> (Caml.Int64.t[@local_opt])
+    -> bool
+    = "%lessthan"
+
+  external ( > )
+    :  (Caml.Int64.t[@local_opt])
+    -> (Caml.Int64.t[@local_opt])
+    -> bool
+    = "%greaterthan"
+
+  external ( <= )
+    :  (Caml.Int64.t[@local_opt])
+    -> (Caml.Int64.t[@local_opt])
+    -> bool
+    = "%lessequal"
+
+  external ( >= )
+    :  (Caml.Int64.t[@local_opt])
+    -> (Caml.Int64.t[@local_opt])
+    -> bool
+    = "%greaterequal"
+
+  external compare
+    :  (Caml.Int64.t[@local_opt])
+    -> (Caml.Int64.t[@local_opt])
+    -> int
+    = "%compare"
+
+  external equal
+    :  (Caml.Int64.t[@local_opt])
+    -> (Caml.Int64.t[@local_opt])
+    -> bool
+    = "%equal"
 
   let ascending (x : Caml.Int64.t) y = Poly.ascending x y
   let descending (x : Caml.Int64.t) y = Poly.descending x y
@@ -319,12 +284,12 @@ end
 
 (* This needs to be defined as an external so that the compiler can specialize it as a
    direct set or caml_modify *)
-external ( := ) : 'a ref -> 'a -> unit = "%setfield0"
+external ( := ) : ('a ref[@local_opt]) -> 'a -> unit = "%setfield0"
 
 (* These need to be defined as an external otherwise the compiler won't unbox
    references *)
-external ( ! ) : 'a ref -> 'a = "%field0"
-external ref : 'a -> 'a ref = "%makemutable"
+external ( ! ) : ('a ref[@local_opt]) -> 'a = "%field0"
+external ref : 'a -> ('a ref[@local_opt]) = "%makemutable"
 
 let ( @ ) = Caml.( @ )
 let ( ^ ) = Caml.( ^ )
@@ -349,8 +314,9 @@ let snd = Caml.snd
 external raise : exn -> _ = "%raise"
 
 let phys_equal = Caml.( == )
-let decr = Caml.decr
-let incr = Caml.incr
+
+external decr : (int ref[@local_opt]) -> unit = "%decr"
+external incr : (int ref[@local_opt]) -> unit = "%incr"
 
 (* used by sexp_conv, which float0 depends on through option *)
 let float_of_string = Caml.float_of_string

@@ -239,11 +239,11 @@ let sign = Sign.of_int
 let popcount = Popcount.int_popcount
 
 module Pre_O = struct
-  external ( + ) : int -> int -> int = "%addint"
-  external ( - ) : int -> int -> int = "%subint"
-  external ( * ) : int -> int -> int = "%mulint"
-  external ( / ) : int -> int -> int = "%divint"
-  external ( ~- ) : int -> int = "%negint"
+  external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%addint"
+  external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%subint"
+  external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%mulint"
+  external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%divint"
+  external ( ~- ) : (t[@local_opt]) -> t = "%negint"
 
   let ( ** ) = ( ** )
 
@@ -251,7 +251,7 @@ module Pre_O = struct
 
   let abs = abs
 
-  external neg : t -> t = "%negint"
+  external neg : (t[@local_opt]) -> t = "%negint"
 
   let zero = zero
   let of_int_exn = of_int_exn
@@ -274,7 +274,7 @@ module O = struct
 
   include F
 
-  external bswap16 : int -> int = "%bswap16"
+  external bswap16 : (int[@local_opt]) -> int = "%bswap16"
 
   (* These inlined versions of (%), (/%), and (//) perform better than their functorized
      counterparts in [F] (see benchmarks below).
@@ -311,15 +311,15 @@ module O = struct
 
   let ( // ) x y = to_float x /. to_float y
 
-  external ( land ) : int -> int -> int = "%andint"
-  external ( lor ) : int -> int -> int = "%orint"
-  external ( lxor ) : int -> int -> int = "%xorint"
+  external ( land ) : (int[@local_opt]) -> (int[@local_opt]) -> int = "%andint"
+  external ( lor ) : (int[@local_opt]) -> (int[@local_opt]) -> int = "%orint"
+  external ( lxor ) : (int[@local_opt]) -> (int[@local_opt]) -> int = "%xorint"
 
   let lnot = lnot
 
-  external ( lsl ) : int -> int -> int = "%lslint"
-  external ( lsr ) : int -> int -> int = "%lsrint"
-  external ( asr ) : int -> int -> int = "%asrint"
+  external ( lsl ) : (int[@local_opt]) -> (int[@local_opt]) -> int = "%lslint"
+  external ( lsr ) : (int[@local_opt]) -> (int[@local_opt]) -> int = "%lsrint"
+  external ( asr ) : (int[@local_opt]) -> (int[@local_opt]) -> int = "%asrint"
 end
 
 include O

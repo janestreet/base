@@ -227,26 +227,34 @@ module T = struct
 
   let to_string x = Caml.Int64.to_string (unwrap x)
 
-  let of_string str =
-    try
-      let sign, signedness = sign_and_signedness str in
-      if signedness
-      then of_int64_exn (Caml.Int64.of_string str)
-      else (
-        let pos_str =
-          match sign with
-          | `Neg -> String.sub str ~pos:1 ~len:(String.length str - 1)
-          | `Pos -> str
-        in
-        let int64 = Caml.Int64.of_string pos_str in
-        (* unsigned 63-bit int must parse as a positive signed 64-bit int *)
-        if Int64_replace_polymorphic_compare.( < ) int64 0L then invalid_str str;
-        let int63 = wrap_modulo int64 in
+  let of_string_raw str =
+    let sign, signedness = sign_and_signedness str in
+    if signedness
+    then of_int64_exn (Caml.Int64.of_string str)
+    else (
+      let pos_str =
         match sign with
-        | `Neg -> neg int63
-        | `Pos -> int63)
-    with
+        | `Neg -> String.sub str ~pos:1 ~len:(String.length str - 1)
+        | `Pos -> str
+      in
+      let int64 = Caml.Int64.of_string pos_str in
+      (* unsigned 63-bit int must parse as a positive signed 64-bit int *)
+      if Int64_replace_polymorphic_compare.( < ) int64 0L then invalid_str str;
+      let int63 = wrap_modulo int64 in
+      match sign with
+      | `Neg -> neg int63
+      | `Pos -> int63)
+  ;;
+
+  let of_string str =
+    try of_string_raw str with
     | _ -> invalid_str str
+  ;;
+
+  let of_string_opt str =
+    match of_string_raw str with
+    | t -> Some t
+    | exception _ -> None
   ;;
 
   let bswap16 t = wrap_modulo (Int64.bswap16 (unwrap t))

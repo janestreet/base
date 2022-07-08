@@ -197,11 +197,37 @@ module Of_monad
 module Ident = struct
   type 'a t = 'a
 
-  include Make (struct
-      type nonrec 'a t = 'a t
+  let[@inline] bind a ~f = (f [@inlined hint]) a
+  let[@inline] map a ~f = (f [@inlined hint]) a
 
-      let bind a ~f = f a
-      let return a = a
-      let map = `Custom (fun a ~f -> f a)
-    end)
+  external return : 'a -> 'a = "%identity"
+
+  module Monad_infix = struct
+    let[@inline] ( >>| ) a f = map a ~f
+    let[@inline] ( >>= ) a f = bind a ~f
+  end
+
+  include Monad_infix
+
+  module Let_syntax = struct
+    let return = return
+
+    include Monad_infix
+
+    module Let_syntax = struct
+      let return = return
+      let bind = bind
+      let map = map
+      let[@inline] both a b = a, b
+
+      module Open_on_rhs = struct end
+    end
+
+    let return = return
+  end
+
+  external join : 'a -> 'a = "%identity"
+  external ignore_m : _ -> unit = "%ignore"
+  external all_unit : unit list -> unit = "%ignore"
+  external all : 'a list -> 'a list = "%identity"
 end

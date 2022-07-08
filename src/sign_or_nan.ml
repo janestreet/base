@@ -137,6 +137,13 @@ let ( * ) t t' =
   | _ -> of_sign (Sign.( * ) (to_sign_exn t) (to_sign_exn t'))
 ;;
 
+let to_string_hum = function
+  | Neg -> "negative"
+  | Zero -> "zero"
+  | Pos -> "positive"
+  | Nan -> "not-a-number"
+;;
+
 (* Include [Replace_polymorphic_compare] at the end, after any functor applications that
    could shadow its definitions. This is here so that efficient versions of the comparison
    functions are exported by this module. *)

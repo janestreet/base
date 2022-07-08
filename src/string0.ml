@@ -32,7 +32,6 @@ let max_length = Sys.max_string_length
 let ( ^ ) = ( ^ )
 let capitalize = Caml.String.capitalize_ascii
 let compare = Caml.String.compare
-let[@warning "-3"] copy = Caml.String.copy
 let escaped = Caml.String.escaped
 let lowercase = Caml.String.lowercase_ascii
 let make = Caml.String.make

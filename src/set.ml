@@ -256,7 +256,11 @@ module Tree0 = struct
         else create Empty v (Leaf x)
       | Node (l, v, r, _, _) ->
         let c = compare_elt x v in
-        if c = 0 then Exn.raise_without_backtrace Same else if c < 0 then bal (aux l) v r else bal l v (aux r)
+        if c = 0
+        then Exn.raise_without_backtrace Same
+        else if c < 0
+        then bal (aux l) v r
+        else bal l v (aux r)
     in
     try aux t with
     | Same -> t
@@ -1053,13 +1057,13 @@ module Tree0 = struct
   ;;
 
   module Named = struct
-    type nonrec ('a, 'cmp) t =
-      { tree : 'a t
-      ; name : string
-      }
-
-    let is_subset (subset : _ t) ~of_:(superset : _ t) ~sexp_of_elt ~compare_elt =
-      let invalid_elements = diff subset.tree superset.tree ~compare_elt in
+    let is_subset
+          (subset : _ Named.t)
+          ~of_:(superset : _ Named.t)
+          ~sexp_of_elt
+          ~compare_elt
+      =
+      let invalid_elements = diff subset.set superset.set ~compare_elt in
       if is_empty invalid_elements
       then Ok ()
       else (
@@ -1095,6 +1099,16 @@ let compare_elt t = t.comparator.Comparator.compare
 
 module Accessors = struct
   let comparator t = t.comparator
+
+  let comparator_s (type k cmp) t : (k, cmp) Comparator.Module.t =
+    (module struct
+      type t = k
+      type comparator_witness = cmp
+
+      let comparator = t.comparator
+    end)
+  ;;
+
   let invariants t = Tree0.invariants t.tree ~compare_elt:(compare_elt t)
   let length t = Tree0.length t.tree
   let is_empty t = Tree0.is_empty t.tree
@@ -1141,14 +1155,9 @@ module Accessors = struct
   ;;
 
   module Named = struct
-    type nonrec ('a, 'cmp) t =
-      { set : ('a, 'cmp) t
-      ; name : string
-      }
+    let to_named_tree (named : (_, _) t Named.t) = { named with set = named.set.tree }
 
-    let to_named_tree { set; name } = { Tree0.Named.tree = set.tree; name }
-
-    let is_subset (subset : (_, _) t) ~of_:(superset : (_, _) t) =
+    let is_subset subset ~of_:superset =
       Tree0.Named.is_subset
         (to_named_tree subset)
         ~of_:(to_named_tree superset)
@@ -1159,6 +1168,8 @@ module Accessors = struct
     let equal t1 t2 =
       Or_error.combine_errors_unit [ is_subset t1 ~of_:t2; is_subset t2 ~of_:t1 ]
     ;;
+
+    include Named
   end
 
   let partition_tf t ~f =
@@ -1406,15 +1417,6 @@ end
 type ('elt, 'cmp) comparator =
   (module Comparator.S with type t = 'elt and type comparator_witness = 'cmp)
 
-let comparator_s (type k cmp) t : (k, cmp) comparator =
-  (module struct
-    type t = k
-    type comparator_witness = cmp
-
-    let comparator = t.comparator
-  end)
-;;
-
 let to_comparator (type elt cmp) ((module M) : (elt, cmp) comparator) = M.comparator
 let empty m = Using_comparator.empty ~comparator:(to_comparator m)
 let singleton m a = Using_comparator.singleton ~comparator:(to_comparator m) a
@@ -1439,6 +1441,8 @@ let stable_dedup_list m a =
 
 let map m a ~f = Using_comparator.map ~comparator:(to_comparator m) a ~f
 let filter_map m a ~f = Using_comparator.filter_map ~comparator:(to_comparator m) a ~f
+let to_tree = Using_comparator.to_tree
+let of_tree m t = Using_comparator.of_tree ~comparator:(to_comparator m) t
 
 module M (Elt : sig
     type t
@@ -1513,7 +1517,6 @@ module Poly = struct
   type nonrec ('elt, 'cmp) set = ('elt, comparator_witness) t
   type nonrec 'elt t = ('elt, comparator_witness) t
   type nonrec 'elt tree = ('elt, comparator_witness) tree
-  type nonrec 'elt named = ('elt, comparator_witness) Named.t
 
   include Accessors
 

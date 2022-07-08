@@ -7,6 +7,12 @@ include Identifiable.Make (Sign0)
    of the comparison functions are available within this module. *)
 open! Replace_polymorphic_compare
 
+let to_string_hum = function
+  | Neg -> "negative"
+  | Zero -> "zero"
+  | Pos -> "positive"
+;;
+
 let to_float = function
   | Neg -> -1.
   | Zero -> 0.

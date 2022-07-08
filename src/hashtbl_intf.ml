@@ -67,8 +67,40 @@ module type Accessors = sig
   val is_empty : (_, _) t -> bool
   val mem : ('a, _) t -> 'a key -> bool
   val remove : ('a, _) t -> 'a key -> unit
+
+  (** Choose an arbitrary key/value pair of a hash table. Returns [None] if [t] is empty.
+
+      The choice is deterministic. Calling [choose] multiple times on the same table
+      returns the same key/value pair, so long as the table is not mutated in between.
+      Beyond determinism, no guarantees are made about how the choice is made. Expect
+      bias toward certain hash values.
+
+      This hash bias can lead to degenerate performance in some cases, such as clearing
+      a hash table using repeated [choose] and [remove]. At each iteration, finding the
+      next element may have to scan farther from its initial hash value. *)
   val choose : ('a, 'b) t -> ('a key * 'b) option
+
+  (** Like [choose]. Raises if [t] is empty. *)
   val choose_exn : ('a, 'b) t -> 'a key * 'b
+
+  (** Chooses a random key/value pair of a hash table. Returns [None] if [t] is empty.
+
+      The choice is distributed uniformly across hash values, rather than across keys
+      themselves. As a consequence, the closer the keys are to evenly spaced out in the
+      table, the closer this function will be to a uniform choice of keys.
+
+      This function may be preferable to [choose] when nondeterministic choice is
+      acceptable, and bias toward certain hash values is undesirable. *)
+  val choose_randomly
+    :  ?random_state:Random.State.t (** default: [Random.State.default] *)
+    -> ('a, 'b) t
+    -> ('a key * 'b) option
+
+  (** Like [choose_randomly]. Raises if [t] is empty. *)
+  val choose_randomly_exn
+    :  ?random_state:Random.State.t (** default: [Random.State.default] *)
+    -> ('a, 'b) t
+    -> 'a key * 'b
 
   (** Sets the given [key] to [data]. *)
   val set : ('a, 'b) t -> key:'a key -> data:'b -> unit

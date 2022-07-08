@@ -4,6 +4,7 @@ include Linked_queue0
 let enqueue t x = Linked_queue0.push x t
 let dequeue t = if is_empty t then None else Some (Linked_queue0.pop t)
 let dequeue_exn = Linked_queue0.pop
+let dequeue_and_ignore_exn (type elt) (t : elt t) = ignore (dequeue_exn t : elt)
 let peek t = if is_empty t then None else Some (Linked_queue0.peek t)
 let peek_exn = Linked_queue0.peek
 

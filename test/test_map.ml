@@ -215,6 +215,63 @@ let%test_module "[symmetric_diff]" =
       | `Right _ -> Map.remove map key
     ;;
 
+    (* This is a deterministic benchmark rather than a test, measuring the number of
+       comparisons made by fold_symmetric_diff. *)
+    let%expect_test "number of key comparisons" =
+      let count = ref 0 in
+      let measure_comparisons f =
+        let c = !count in
+        f ();
+        !count - c
+      in
+      let module Key = struct
+        module T = struct
+          type t = int [@@deriving sexp_of]
+
+          let compare x y =
+            Int.incr count;
+            compare_int x y
+          ;;
+        end
+
+        include T
+        include Comparator.Make (T)
+      end
+      in
+      let (_m : unit Map.M(Key).t), map_pairs =
+        List.fold
+          (List.init 1000 ~f:Fn.id)
+          ~init:(Map.empty (module Key), [])
+          ~f:(fun (m, acc) i ->
+            let m' = Map.add_exn m ~key:i ~data:() in
+            m', (m, m') :: acc)
+      in
+      print_s [%sexp (!count : int)];
+      [%expect {| 9_966 |}];
+      count := 0;
+      let diffs = ref 0 in
+      let counts =
+        List.map map_pairs ~f:(fun (m, m') ->
+          measure_comparisons (fun () ->
+            diffs
+            := !diffs
+               + Map.fold_symmetric_diff
+                   ~init:0
+                   ~f:(fun n _ -> n + 1)
+                   ~data_equal:(fun () () -> true)
+                   (m : unit Map.M(Key).t)
+                   m'))
+      in
+      let worst_counts =
+        List.sort counts ~compare:[%compare: int] |> List.rev |> fun l -> List.take l 20
+      in
+      (* The smaller these numbers are, the better. *)
+      print_s [%sexp (!diffs : int), (!count : int)];
+      [%expect {| (1_000 10_955) |}];
+      print_s [%sexp (worst_counts : int list)];
+      [%expect {| (12 12 12 12 12 12 12 12 12 12 12 12 12 12 12 12 12 12 12 12) |}]
+    ;;
+
     let%expect_test "reconstructing in both directions" =
       let test (map1, map2) =
         let diff = Map.symmetric_diff map1 map2 ~data_equal:Int.equal in

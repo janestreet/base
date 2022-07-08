@@ -56,7 +56,7 @@ let%expect_test "[t_of_sexp] error on duplicate" =
   [%expect {| (Of_sexp_error "Hashtbl.t_of_sexp: duplicate key" (invalid_sexp 1)) |}]
 ;;
 
-let%expect_test "[choose], [choose_exn]" =
+let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn]" =
   let test ?size l =
     let t = l |> List.map ~f:(fun i -> i, i) |> Hashtbl.of_alist_exn ?size (module Int) in
     print_s
@@ -65,32 +65,46 @@ let%expect_test "[choose], [choose_exn]" =
           ~input:(t : int_hashtbl)
           ~choose:(Hashtbl.choose t : (_ * _) option)
           ~choose_exn:
-            (Or_error.try_with (fun () -> Hashtbl.choose_exn t) : (_ * _) Or_error.t)]
+            (Or_error.try_with (fun () -> Hashtbl.choose_exn t) : (_ * _) Or_error.t)
+          ~choose_randomly:(Hashtbl.choose_randomly t : (_ * _) option)
+          ~choose_randomly_exn:
+            (Or_error.try_with (fun () -> Hashtbl.choose_randomly_exn t)
+             : (_ * _) Or_error.t)]
   in
   test [];
   [%expect
     {|
     ((input  ())
      (choose ())
-     (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))) |}];
+     (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
+     (choose_randomly ())
+     (choose_randomly_exn (
+       Error ("[Hashtbl.choose_randomly_exn] of empty hashtbl")))) |}];
   test [] ~size:100;
   [%expect
     {|
     ((input  ())
      (choose ())
-     (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))) |}];
+     (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
+     (choose_randomly ())
+     (choose_randomly_exn (
+       Error ("[Hashtbl.choose_randomly_exn] of empty hashtbl")))) |}];
   test [ 1 ];
   [%expect
     {|
     ((input  ((1 1)))
      (choose ((_ _)))
-     (choose_exn (Ok (_ _)))) |}];
+     (choose_exn (Ok (_ _)))
+     (choose_randomly ((_ _)))
+     (choose_randomly_exn (Ok (_ _)))) |}];
   test [ 1 ] ~size:100;
   [%expect
     {|
     ((input  ((1 1)))
      (choose ((_ _)))
-     (choose_exn (Ok (_ _)))) |}];
+     (choose_exn (Ok (_ _)))
+     (choose_randomly ((_ _)))
+     (choose_randomly_exn (Ok (_ _)))) |}];
   test [ 1; 2 ];
   [%expect
     {|
@@ -98,7 +112,9 @@ let%expect_test "[choose], [choose_exn]" =
        (1 1)
        (2 2)))
      (choose ((_ _)))
-     (choose_exn (Ok (_ _)))) |}];
+     (choose_exn (Ok (_ _)))
+     (choose_randomly ((_ _)))
+     (choose_randomly_exn (Ok (_ _)))) |}];
   test [ 1; 2 ] ~size:100;
   [%expect
     {|
@@ -106,7 +122,9 @@ let%expect_test "[choose], [choose_exn]" =
        (1 1)
        (2 2)))
      (choose ((_ _)))
-     (choose_exn (Ok (_ _)))) |}]
+     (choose_exn (Ok (_ _)))
+     (choose_randomly ((_ _)))
+     (choose_randomly_exn (Ok (_ _)))) |}]
 ;;
 
 let%expect_test "update_and_return" =

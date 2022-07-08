@@ -7,10 +7,12 @@ let%test_unit "[set_temporarily] without raise" =
   [%test_result: int] ~expect:0 !r
 ;;
 
-let%test_unit "[set_temporarily] with raise" =
+let%expect_test "[set_temporarily] with raise" =
   let r = ref 0 in
-  try Nothing.unreachable_code (set_temporarily r 1 ~f:(fun () -> failwith "")) with
-  | _ -> [%test_result: int] ~expect:0 !r
+  require_does_raise [%here] (fun () ->
+    Nothing.unreachable_code (set_temporarily r 1 ~f:(fun () -> failwith "")));
+  [%expect {| (Failure "") |}];
+  require_equal [%here] (module Int) !r 0
 ;;
 
 let%test_unit "[set_temporarily] where [f] sets the ref" =
@@ -55,9 +57,9 @@ let%expect_test "[sets_temporarily] without raise" =
 
 let%expect_test "[sets_temporarily] with raise" =
   let r = ref 0 in
-  (try
-     Nothing.unreachable_code (sets_temporarily [ T (r, 1) ] ~f:(fun () -> failwith ""))
-   with
-   | _ -> print_s [%message (r : int ref)]);
+  require_does_raise [%here] (fun () ->
+    Nothing.unreachable_code (sets_temporarily [ T (r, 1) ] ~f:(fun () -> failwith "")));
+  [%expect {| (Failure "") |}];
+  print_s [%message (r : int ref)];
   [%expect {| (r 0) |}]
 ;;

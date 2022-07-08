@@ -20,6 +20,7 @@ let compare compare_a t1 t2 =
 
 let equal equal_a t1 t2 = if phys_equal t1 t2 then true else equal_a (force t1) (force t2)
 let hash_fold_t = Hash.Builtin.hash_fold_lazy_t
+let peek t = if is_val t then Some (force t) else None
 
 include Monad.Make (struct
     type nonrec 'a t = 'a t

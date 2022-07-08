@@ -128,7 +128,7 @@ module Make (X : Make_arg) = struct
     else i - remainder
   ;;
 
-  let round ?(dir = `Nearest) i ~to_multiple_of =
+  let[@inline always] round ?(dir = `Nearest) i ~to_multiple_of =
     match dir with
     | `Nearest -> round_nearest i ~to_multiple_of
     | `Down -> round_down i ~to_multiple_of

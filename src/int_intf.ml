@@ -74,6 +74,8 @@ module type S_common = sig
   include Invariant.S with type t := t
   include Hexable with type t := t
 
+  val of_string_opt : string -> t option
+
   (** [delimiter] is an underscore by default. *)
   val to_string_hum : ?delimiter:char -> t -> string
 
@@ -313,31 +315,31 @@ module type Int_without_module_types = sig
   module O : sig
     (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even
       when compiling without cross library inlining. *)
-    external ( + ) : t -> t -> t = "%addint"
-    external ( - ) : t -> t -> t = "%subint"
-    external ( * ) : t -> t -> t = "%mulint"
-    external ( / ) : t -> t -> t = "%divint"
-    external ( ~- ) : t -> t = "%negint"
+    external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%addint"
+    external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%subint"
+    external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%mulint"
+    external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%divint"
+    external ( ~- ) : (t[@local_opt]) -> t = "%negint"
     val ( ** ) : t -> t -> t
-    external ( = ) : t -> t -> bool = "%equal"
-    external ( <> ) : t -> t -> bool = "%notequal"
-    external ( < ) : t -> t -> bool = "%lessthan"
-    external ( > ) : t -> t -> bool = "%greaterthan"
-    external ( <= ) : t -> t -> bool = "%lessequal"
-    external ( >= ) : t -> t -> bool = "%greaterequal"
-    external ( land ) : t -> t -> t = "%andint"
-    external ( lor ) : t -> t -> t = "%orint"
-    external ( lxor ) : t -> t -> t = "%xorint"
+    external ( = ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
+    external ( <> ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%notequal"
+    external ( < ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessthan"
+    external ( > ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterthan"
+    external ( <= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessequal"
+    external ( >= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterequal"
+    external ( land ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%andint"
+    external ( lor ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%orint"
+    external ( lxor ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%xorint"
     val lnot : t -> t
     val abs : t -> t
-    external neg : t -> t = "%negint"
+    external neg : (t[@local_opt]) -> t = "%negint"
     val zero : t
     val ( % ) : t -> t -> t
     val ( /% ) : t -> t -> t
     val ( // ) : t -> t -> float
-    external ( lsl ) : t -> int -> t = "%lslint"
-    external ( asr ) : t -> int -> t = "%asrint"
-    external ( lsr ) : t -> int -> t = "%lsrint"
+    external ( lsl ) : (t[@local_opt]) -> (int[@local_opt]) -> t = "%lslint"
+    external ( asr ) : (t[@local_opt]) -> (int[@local_opt]) -> t = "%asrint"
+    external ( lsr ) : (t[@local_opt]) -> (int[@local_opt]) -> t = "%lsrint"
   end
 
   include module type of O
@@ -382,7 +384,7 @@ module type Int_without_module_types = sig
 
   (** Byte swaps bottom 16 bits (2 bytes). The values of the remaining bytes
       are undefined. *)
-  external bswap16 : int -> int = "%bswap16"
+  external bswap16 : (int[@local_opt]) -> int = "%bswap16"
   (*_ Declared as an external so that the compiler skips the caml_apply_X wrapping even
     when compiling without cross library inlining. *)
 

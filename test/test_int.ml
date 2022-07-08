@@ -12,6 +12,28 @@ let%expect_test "[max_value_30_bits]" =
     1_073_741_823 |}]
 ;;
 
+let%expect_test "of_string_opt" =
+  print_s [%sexp (of_string_opt "1" : int option)];
+  [%expect "(1)"];
+  print_s [%sexp (of_string_opt "1a" : int option)];
+  [%expect "()"];
+  print_s [%sexp (of_string_opt "99999999999999999999999999999" : int option)];
+  [%expect "()"]
+;;
+
+let%expect_test "to_string_hum" =
+  let test_roundtrip int =
+    require_equal [%here] (module Int) (of_string (to_string_hum int)) int
+  in
+  quickcheck_m
+    [%here]
+    (module struct
+      type t = int [@@deriving quickcheck, sexp_of]
+    end)
+    ~examples:[ Int.min_value; Int.max_value ]
+    ~f:test_roundtrip
+;;
+
 let%expect_test "hex" =
   let test x =
     let n = Or_error.try_with (fun () -> Int.Hex.of_string x) in
@@ -130,6 +152,23 @@ let%expect_test "bswap16" =
     0x11_2233 --> 0x3322
     0x1122_331f --> 0x1f33
     0x1122_3344 --> 0x4433 |}]
+;;
+
+let%expect_test "% and /%" =
+  quickcheck_m
+    [%here]
+    (module struct
+      type t =
+        int
+        * (int
+           [@quickcheck.generator Base_quickcheck.Generator.small_strictly_positive_int])
+      [@@deriving quickcheck, sexp_of]
+    end)
+    ~f:(fun (a, b) ->
+      let r = a % b in
+      let q = a /% b in
+      require [%here] (r >= 0);
+      require_equal [%here] (module Int) a ((q * b) + r))
 ;;
 
 include (

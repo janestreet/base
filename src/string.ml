@@ -383,19 +383,22 @@ module Search_pattern0 = struct
            ; case_sensitive = case_sensitive__009_
            ; kmp_array = kmp_array__011_
            } ->
-        let bnds__006_ = [] in
+        let bnds__006_ = ([] : _ Stdlib.List.t) in
         let bnds__006_ =
           let arg__012_ = sexp_of_array sexp_of_int kmp_array__011_ in
-          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "kmp_array"; arg__012_ ] :: bnds__006_
+          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "kmp_array"; arg__012_ ] :: bnds__006_
+           : _ Stdlib.List.t)
         in
         let bnds__006_ =
           let arg__010_ = sexp_of_bool case_sensitive__009_ in
-          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "case_sensitive"; arg__010_ ]
-          :: bnds__006_
+          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "case_sensitive"; arg__010_ ]
+           :: bnds__006_
+           : _ Stdlib.List.t)
         in
         let bnds__006_ =
           let arg__008_ = sexp_of_string pattern__007_ in
-          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pattern"; arg__008_ ] :: bnds__006_
+          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pattern"; arg__008_ ] :: bnds__006_
+           : _ Stdlib.List.t)
         in
         Sexplib0.Sexp.List bnds__006_
         : t -> Sexplib0.Sexp.t)
@@ -887,6 +890,45 @@ let tr_multi ~target ~replacement =
 
 let concat_array ?sep ar = concat ?sep (Array.to_list ar)
 let concat_map ?sep s ~f = concat_array ?sep (Array.map (to_array s) ~f)
+
+let concat_lines =
+  let rec line_lengths ~lines ~newline_len ~sum =
+    match lines with
+    | [] -> sum
+    | line :: lines ->
+      let sum = sum + String.length line + newline_len in
+      line_lengths ~lines ~newline_len ~sum
+  in
+  let rec write_lines ~buf ~lines ~crlf ~pos =
+    match lines with
+    | [] -> pos
+    | line :: lines ->
+      Bytes.unsafe_blit_string
+        ~src:line
+        ~src_pos:0
+        ~dst:buf
+        ~dst_pos:pos
+        ~len:(String.length line);
+      let pos = pos + String.length line in
+      let pos =
+        if crlf
+        then (
+          Bytes.unsafe_set buf pos '\r';
+          pos + 1)
+        else pos
+      in
+      Bytes.unsafe_set buf pos '\n';
+      let pos = pos + 1 in
+      write_lines ~buf ~lines ~crlf ~pos
+  in
+  fun ?(crlf = false) lines ->
+    let newline_len = if crlf then 2 else 1 in
+    let len = line_lengths ~newline_len ~lines ~sum:0 in
+    let buf = Bytes.create len in
+    let written = write_lines ~buf ~lines ~crlf ~pos:0 in
+    assert (written = len);
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:buf
+;;
 
 (* [filter t f] is implemented by the following algorithm.
 

@@ -16,9 +16,9 @@ val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
 (*_ defined as externals to avoid breaking the inliner *)
 
-external create : 'a -> 'a t = "%makemutable"
-external ( ! ) : 'a t -> 'a = "%field0"
-external ( := ) : 'a t -> 'a -> unit = "%setfield0"
+external create : 'a -> ('a t[@local_opt]) = "%makemutable"
+external ( ! ) : ('a t[@local_opt]) -> 'a = "%field0"
+external ( := ) : ('a t[@local_opt]) -> 'a -> unit = "%setfield0"
 
 (** [swap t1 t2] swaps the values in [t1] and [t2]. *)
 val swap : 'a t -> 'a t -> unit

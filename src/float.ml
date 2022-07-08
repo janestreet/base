@@ -43,6 +43,8 @@ let of_string s =
   | _ -> invalid_argf "Float.of_string %s" s ()
 ;;
 
+let of_string_opt = float_of_string_opt
+
 external format_float : string -> float -> string = "caml_format_float"
 
 (* Stolen from [pervasives.ml].  Adds a "." at the end if needed.  It is in

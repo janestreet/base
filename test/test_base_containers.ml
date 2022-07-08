@@ -3,6 +3,22 @@ open Test_container
 include (Test_S1 (Array) : sig end)
 include (Test_S1 (List) : sig end)
 include (Test_S1 (Queue) : sig end)
+
+include (
+  Test_S0 (struct
+    include String
+
+    module Elt = struct
+      type t = char [@@deriving sexp]
+
+      let of_int = Char.of_int_exn
+      let to_int = Char.to_int
+    end
+
+    let of_list = of_char_list
+  end) :
+  sig end)
+
 open Container
 open T
 

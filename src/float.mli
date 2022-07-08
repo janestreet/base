@@ -21,6 +21,8 @@ include Floatable.S with type t := t
     The [validate_*] functions always fail if class is [Nan] or [Infinite]. *)
 include Identifiable.S with type t := t
 
+val of_string_opt : string -> t option
+
 include Comparable.With_zero with type t := t
 include Invariant.S with type t := t
 
