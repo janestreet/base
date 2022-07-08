@@ -250,13 +250,13 @@ module Tree0 = struct
       | Leaf v ->
         let c = compare_elt x v in
         if c = 0
-        then raise Same
+        then Exn.raise_without_backtrace Same
         else if c < 0
         then create (Leaf x) v Empty
         else create Empty v (Leaf x)
       | Node (l, v, r, _, _) ->
         let c = compare_elt x v in
-        if c = 0 then raise Same else if c < 0 then bal (aux l) v r else bal l v (aux r)
+        if c = 0 then Exn.raise_without_backtrace Same else if c < 0 then bal (aux l) v r else bal l v (aux r)
     in
     try aux t with
     | Same -> t
@@ -419,8 +419,8 @@ module Tree0 = struct
   let remove t x ~compare_elt =
     let rec aux t =
       match t with
-      | Empty -> raise Same
-      | Leaf v -> if compare_elt x v = 0 then Empty else raise Same
+      | Empty -> Exn.raise_without_backtrace Same
+      | Leaf v -> if compare_elt x v = 0 then Empty else Exn.raise_without_backtrace Same
       | Node (l, v, r, _, _) ->
         let c = compare_elt x v in
         if c = 0 then merge l r else if c < 0 then bal (aux l) v r else bal l v (aux r)
@@ -432,8 +432,8 @@ module Tree0 = struct
   let remove_index t i ~compare_elt:_ =
     let rec aux t i =
       match t with
-      | Empty -> raise Same
-      | Leaf _ -> if i = 0 then Empty else raise Same
+      | Empty -> Exn.raise_without_backtrace Same
+      | Leaf _ -> if i = 0 then Empty else Exn.raise_without_backtrace Same
       | Node (l, v, r, _, _) ->
         let l_size = length l in
         let c = Poly.compare i l_size in
