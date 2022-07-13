@@ -217,7 +217,8 @@ let of_exn ?backtrace exn =
   let backtrace =
     match backtrace with
     | None -> None
-    | Some `Get -> Some (Caml.Printexc.get_backtrace ())
+    | Some `Get ->
+      Some (Caml.Printexc.get_backtrace ())
     | Some (`This s) -> Some s
   in
   match exn, backtrace with
