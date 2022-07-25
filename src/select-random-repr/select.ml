@@ -27,7 +27,7 @@ let assign dst src =
 
 let make_default default =
   let split_from_parent v =
-    Lazy.from_val (Caml.Random.State.split (Lazy.force v))
+    Caml.Lazy.map_val Caml.Random.State.split v
   in
   Caml.Domain.DLS.new_key ~split_from_parent (fun () -> default)
 
