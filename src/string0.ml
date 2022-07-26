@@ -37,7 +37,7 @@ let compare = Caml.String.compare
 let copy x =
   Bytes.unsafe_to_string
     ~no_mutation_while_string_reachable:
-      (Bytes.copy (Bytes.unsafe_of_string_promise_no_mutation x))
+      (Bytes.of_string x)
 ;;
 
 let escaped = Caml.String.escaped
