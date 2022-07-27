@@ -23,8 +23,12 @@ jobs:
           - {os: ubuntu-latest, ocaml: 4.13.1}
           - {os: ubuntu-latest, ocaml: 4.12.1}
           - {os: ubuntu-latest, ocaml: 4.11.2}
+          - {os: ubuntu-latest, ocaml: 4.10.2, profile: release}
         exclude:
           - {os: windows-latest, ocaml: ocaml-base-compiler.5.0.0~alpha0}
+
+    env:
+      DUNE_PROFILE: ${{ matrix.profile || 'dev' }}
 
     runs-on: ${{ matrix.os }}
 
