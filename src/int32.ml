@@ -22,6 +22,7 @@ module T = struct
   let compare (x : t) y = compare x y
   let to_string = to_string
   let of_string = of_string
+  let of_string_opt = of_string_opt
 end
 
 include T

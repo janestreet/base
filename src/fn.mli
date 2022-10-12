@@ -11,7 +11,7 @@ external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
 (** Produces a function that just returns its first argument. *)
 val const : 'a -> _ -> 'a
 
-(** Ingores its argument and returns [()]. *)
+(** Ignores its argument and returns [()]. *)
 external ignore : _ -> unit = "%ignore"
 
 (** Negates a boolean function. *)

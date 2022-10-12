@@ -605,8 +605,9 @@ let%test_unit _ =
 
 let%test_unit _ =
   [%test_result: ((int * char) * (int * char)) option]
-    (find_consecutive_duplicate [ 0, 'a'; 1, 'b'; 2, 'b' ] ~equal:(fun (_, a) (_, b) ->
-       Char.( = ) a b))
+    (find_consecutive_duplicate
+       [ 0, 'a'; 1, 'b'; 2, 'b' ]
+       ~equal:(fun (_, a) (_, b) -> Char.( = ) a b))
     ~expect:(Some ((1, 'b'), (2, 'b')))
 ;;
 
@@ -773,16 +774,18 @@ let%test_unit _ =
 let%test_unit _ =
   [%test_result: int]
     (length
-       (dedup_and_sort [ 0, 1; 2, 2; 0, 2; 4, 1 ] ~compare:(fun (a, _) (b, _) ->
-          Int.compare a b)))
+       (dedup_and_sort
+          [ 0, 1; 2, 2; 0, 2; 4, 1 ]
+          ~compare:(fun (a, _) (b, _) -> Int.compare a b)))
     ~expect:3
 ;;
 
 let%test_unit _ =
   [%test_result: int]
     (length
-       (dedup_and_sort [ 0, 1; 2, 2; 0, 2; 4, 1 ] ~compare:(fun (_, a) (_, b) ->
-          Int.compare a b)))
+       (dedup_and_sort
+          [ 0, 1; 2, 2; 0, 2; 4, 1 ]
+          ~compare:(fun (_, a) (_, b) -> Int.compare a b)))
     ~expect:2
 ;;
 
@@ -880,8 +883,9 @@ let%test_unit _ =
 
 let%test_unit _ =
   [%test_result: bool]
-    (contains_dup [ 0, 1; 2, 2; 0, 2; 4, 1 ] ~compare:(fun (_, a) (_, b) ->
-       Int.compare a b))
+    (contains_dup
+       [ 0, 1; 2, 2; 0, 2; 4, 1 ]
+       ~compare:(fun (_, a) (_, b) -> Int.compare a b))
     ~expect:true
 ;;
 
@@ -928,16 +932,18 @@ let%test_unit _ =
 let%test_unit _ =
   [%test_result: int]
     (length
-       (find_all_dups [ 0, 1; 2, 2; 0, 2; 4, 1 ] ~compare:(fun (_, a) (_, b) ->
-          Int.compare a b)))
+       (find_all_dups
+          [ 0, 1; 2, 2; 0, 2; 4, 1 ]
+          ~compare:(fun (_, a) (_, b) -> Int.compare a b)))
     ~expect:2
 ;;
 
 let%test_unit _ =
   [%test_result: int]
     (length
-       (find_all_dups [ 0, 1; 2, 2; 0, 2; 4, 1 ] ~compare:(fun (a, _) (b, _) ->
-          Int.compare a b)))
+       (find_all_dups
+          [ 0, 1; 2, 2; 0, 2; 4, 1 ]
+          ~compare:(fun (a, _) (b, _) -> Int.compare a b)))
     ~expect:1
 ;;
 

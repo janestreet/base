@@ -23,6 +23,7 @@ module T = struct
   let compare = Int64_replace_polymorphic_compare.compare
   let to_string = to_string
   let of_string = of_string
+  let of_string_opt = of_string_opt
 end
 
 include T
@@ -67,7 +68,7 @@ let of_float f =
 
 let ( ** ) b e = pow b e
 
-external bswap64 : t -> t = "%bswap_int64"
+external bswap64 : (t[@local_opt]) -> (t[@local_opt]) = "%bswap_int64"
 
 let[@inline always] bswap16 x = Caml.Int64.shift_right_logical (bswap64 x) 48
 
@@ -122,10 +123,10 @@ let popcount = Popcount.int64_popcount
 
 module Conv = Int_conversions
 
-external to_int_trunc : t -> int = "%int64_to_int"
+external to_int_trunc : (t[@local_opt]) -> int = "%int64_to_int"
 external to_int32_trunc : int64 -> int32 = "%int64_to_int32"
 external to_nativeint_trunc : int64 -> nativeint = "%int64_to_nativeint"
-external of_int : int -> int64 = "%int64_of_int"
+external of_int : int -> (int64[@local_opt]) = "%int64_of_int"
 external of_int32 : int32 -> int64 = "%int64_of_int32"
 
 let of_int_exn = of_int
@@ -248,11 +249,11 @@ include Pretty_printer.Register (struct
   end)
 
 module Pre_O = struct
-  external ( + ) : t -> t -> t = "%int64_add"
-  external ( - ) : t -> t -> t = "%int64_sub"
-  external ( * ) : t -> t -> t = "%int64_mul"
-  external ( / ) : t -> t -> t = "%int64_div"
-  external ( ~- ) : t -> t = "%int64_neg"
+  external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_add"
+  external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_sub"
+  external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_mul"
+  external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_div"
+  external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) = "%int64_neg"
 
   let ( ** ) = ( ** )
 
@@ -260,7 +261,7 @@ module Pre_O = struct
 
   let abs = abs
 
-  external neg : t -> t = "%int64_neg"
+  external neg : (t[@local_opt]) -> (t[@local_opt]) = "%int64_neg"
 
   let zero = zero
   let of_int_exn = of_int_exn
@@ -281,15 +282,29 @@ module O = struct
       let to_string = T.to_string
     end)
 
-  external ( land ) : t -> t -> t = "%int64_and"
-  external ( lor ) : t -> t -> t = "%int64_or"
-  external ( lxor ) : t -> t -> t = "%int64_xor"
+  external ( land ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_and"
+  external ( lor ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_or"
+  external ( lxor ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_xor"
 
   let lnot = bit_not
 
-  external ( lsl ) : t -> int -> t = "%int64_lsl"
-  external ( asr ) : t -> int -> t = "%int64_asr"
-  external ( lsr ) : t -> int -> t = "%int64_lsr"
+  external ( lsl )
+    :  (t[@local_opt])
+    -> (int[@local_opt])
+    -> (t[@local_opt])
+    = "%int64_lsl"
+
+  external ( asr )
+    :  (t[@local_opt])
+    -> (int[@local_opt])
+    -> (t[@local_opt])
+    = "%int64_asr"
+
+  external ( lsr )
+    :  (t[@local_opt])
+    -> (int[@local_opt])
+    -> (t[@local_opt])
+    = "%int64_lsr"
 end
 
 include O

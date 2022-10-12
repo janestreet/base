@@ -26,6 +26,20 @@ let%test_unit _ =
   assert (!r = 1)
 ;;
 
+let%expect_test "peek" =
+  let t =
+    lazy
+      (print_endline "force t";
+       "forced")
+  in
+  print_s [%sexp (peek t : string option)];
+  [%expect {| () |}];
+  ignore (force t : string);
+  [%expect {| force t |}];
+  print_s [%sexp (peek t : string option)];
+  [%expect {| (forced) |}]
+;;
+
 let%test_module _ =
   (module struct
     module M1 = struct

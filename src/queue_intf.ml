@@ -37,6 +37,10 @@ module type S = sig
 
   val dequeue_exn : 'a t -> 'a
 
+  (** [dequeue_and_ignore_exn t] removes the front element of [t], or raises if the queue
+      is empty. *)
+  val dequeue_and_ignore_exn : 'a t -> unit
+
   (** [peek t] returns but does not remove the front element of [t], if any. *)
   val peek : 'a t -> 'a option
 

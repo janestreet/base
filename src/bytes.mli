@@ -76,6 +76,10 @@ val set : t -> int -> char -> unit
 external unsafe_set : t -> int -> char -> unit = "%bytes_unsafe_set"
 external unsafe_get_int64 : t -> int -> int64 = "%caml_bytes_get64u"
 external unsafe_set_int64 : t -> int -> int64 -> unit = "%caml_bytes_set64u"
+external unsafe_get_int32 : t -> int -> int32 = "%caml_bytes_get32u"
+external unsafe_set_int32 : t -> int -> int32 -> unit = "%caml_bytes_set32u"
+external unsafe_get_int16 : t -> int -> int = "%caml_bytes_get16u"
+external unsafe_set_int16 : t -> int -> int -> unit = "%caml_bytes_set16u"
 
 (** [fill t ~pos ~len c] modifies [t] in place, replacing all the bytes from
     [pos] to [pos + len] with [c]. *)

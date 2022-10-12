@@ -33,9 +33,9 @@ end)
    contents : 'a } ] which would result in different (and unwanted) behavior.  *)
 type 'a t = 'a ref = { mutable contents : 'a }
 
-external create : 'a -> 'a t = "%makemutable"
-external ( ! ) : 'a t -> 'a = "%field0"
-external ( := ) : 'a t -> 'a -> unit = "%setfield0"
+external create : 'a -> ('a t[@local_opt]) = "%makemutable"
+external ( ! ) : ('a t[@local_opt]) -> 'a = "%field0"
+external ( := ) : ('a t[@local_opt]) -> 'a -> unit = "%setfield0"
 
 let swap t1 t2 =
   let tmp = !t1 in

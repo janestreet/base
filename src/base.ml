@@ -68,7 +68,8 @@ include (
   with type ('a, 'b, 'c) format := ('a, 'b, 'c) format
   with type ('a, 'b, 'c, 'd) format4 := ('a, 'b, 'c, 'd) format4
   with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
-  with type 'a ref := 'a ref) [@ocaml.warning "-3"]
+  with type 'a ref := 'a ref)
+  [@ocaml.warning "-3"]
 
 (**/**)
 
@@ -525,9 +526,9 @@ module Export = struct
   (** Boolean operations *)
 
   (* These need to be declared as an external to get the lazy behavior *)
-  external ( && ) : bool -> bool -> bool = "%sequand"
-  external ( || ) : bool -> bool -> bool = "%sequor"
-  external not : bool -> bool = "%boolnot"
+  external ( && ) : (bool[@local_opt]) -> (bool[@local_opt]) -> bool = "%sequand"
+  external ( || ) : (bool[@local_opt]) -> (bool[@local_opt]) -> bool = "%sequor"
+  external not : (bool[@local_opt]) -> bool = "%boolnot"
 
   (* This must be declared as an external for the warnings to work properly. *)
   external ignore : _ -> unit = "%ignore"
@@ -539,9 +540,9 @@ module Export = struct
 
   (* Declared as an externals so that the compiler skips the caml_modify when possible and
      to keep reference unboxing working *)
-  external ( ! ) : 'a ref -> 'a = "%field0"
-  external ref : 'a -> 'a ref = "%makemutable"
-  external ( := ) : 'a ref -> 'a -> unit = "%setfield0"
+  external ( ! ) : ('a ref[@local_opt]) -> 'a = "%field0"
+  external ref : 'a -> ('a ref[@local_opt]) = "%makemutable"
+  external ( := ) : ('a ref[@local_opt]) -> 'a -> unit = "%setfield0"
 
   (** Pair operations *)
 

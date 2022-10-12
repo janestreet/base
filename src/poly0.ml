@@ -4,15 +4,15 @@
   inlining. (If aliased without a type annotation, the compiler would implement them
   using the generic code doing a C call, and it's this code that would be inlined.) As a
   result we have to copy the [external ...] declaration here. *)
-external ( < ) : 'a -> 'a -> bool = "%lessthan"
-external ( <= ) : 'a -> 'a -> bool = "%lessequal"
-external ( <> ) : 'a -> 'a -> bool = "%notequal"
-external ( = ) : 'a -> 'a -> bool = "%equal"
-external ( > ) : 'a -> 'a -> bool = "%greaterthan"
-external ( >= ) : 'a -> 'a -> bool = "%greaterequal"
-external ascending : 'a -> 'a -> int = "%compare"
-external compare : 'a -> 'a -> int = "%compare"
-external equal : 'a -> 'a -> bool = "%equal"
+external ( < ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%lessthan"
+external ( <= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%lessequal"
+external ( <> ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%notequal"
+external ( = ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
+external ( > ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%greaterthan"
+external ( >= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%greaterequal"
+external ascending : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
+external compare : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
+external equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
 
 let descending x y = compare y x
 let max = Caml.max

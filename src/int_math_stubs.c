@@ -1,49 +1,53 @@
-#include <stdlib.h>
+#include <caml/alloc.h>
+#include <caml/memory.h>
+#include <caml/mlvalues.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <caml/alloc.h>
-#include <caml/mlvalues.h>
-#include <caml/memory.h>
+#include <stdlib.h>
 
 #ifdef _MSC_VER
 
 #include <intrin.h>
 
 #define __builtin_popcountll __popcnt64
-#define __builtin_popcount   __popcnt
+#define __builtin_popcount __popcnt
 
-static int __inline __builtin_clz(uint32_t x)
-{
+static int __inline __builtin_clz(uint32_t x) {
   int r = 0;
-  _BitScanForward(&r, x);
+  _BitScanReverse(&r, x);
   return r;
 }
 
-static int __inline __builtin_clzll(uint64_t x)
-{
+static int __inline __builtin_clzll(uint64_t x) {
   int r = 0;
 #ifdef _WIN64
-  _BitScanForward64(&r, x);
+  _BitScanReverse64(&r, x);
 #else
-  if (!_BitScanForward(&r, (uint32_t)x) &&
-      _BitScanForward(&r, (uint32_t)(x>>32))) {
+  if (!_BitScanReverse(&r, (uint32_t)x) &&
+      _BitScanReverse(&r, (uint32_t)(x >> 32))) {
     r += 32;
   }
 #endif
   return r;
 }
 
-static uint32_t __inline __builtin_ctz(uint32_t x)
-{
+static int __inline __builtin_ctz(uint32_t x) {
   int r = 0;
-  _BitScanReverse(&r, x);
+  _BitScanForward(&r, x);
   return r;
 }
 
-static uint64_t __inline __builtin_ctzll(uint64_t x)
-{
+static int __inline __builtin_ctzll(uint64_t x) {
   int r = 0;
-  _BitScanReverse64(&r, x);
+#ifdef _WIN64
+  _BitScanForward64(&r, x);
+#else
+  if (_BitScanForward(&r, (uint32_t)(x >> 32))) {
+    r += 32;
+  } else {
+    _BitScanForward(&r, (uint32_t)x);
+  }
+#endif
   return r;
 }
 
@@ -56,7 +60,7 @@ static int64_t int_pow(int64_t base, int64_t exponent) {
   mul[1] = base;
   mul[3] = 1;
 
-  while(exponent != 0) {
+  while (exponent != 0) {
     mul[1] *= mul[3];
     mul[2] = mul[1] * mul[1];
     mul[3] = mul[2] * mul[1];
@@ -81,13 +85,14 @@ CAMLprim value Base_int_math_int64_pow_stub(value base, value exponent) {
  * [Long_val] or [Int_val]. */
 CAMLprim value Base_int_math_int_popcount(value v) {
 #ifdef ARCH_SIXTYFOUR
-  return Val_int (__builtin_popcountll (Long_val (v) & ~((uint64_t)1 << 63)));
+  return Val_int(__builtin_popcountll(Long_val(v) & ~((uint64_t)1 << 63)));
 #else
-  return Val_int (__builtin_popcount   (Int_val  (v) & ~((uint32_t)1 << 31)));
+  return Val_int(__builtin_popcount(Int_val(v) & ~((uint32_t)1 << 31)));
 #endif
 }
 
-/* The specification of all below [clz] and [ctz] functions are undefined for [v = 0]. */
+/* The specification of all below [clz] and [ctz] functions are undefined for [v
+ * = 0]. */
 
 /*
  * For an int [x] in the [2n + 1] representation:
@@ -114,80 +119,72 @@ CAMLprim value Base_int_math_int_popcount(value v) {
  */
 intnat Base_int_math_int_clz_untagged(value v) {
 #ifdef ARCH_SIXTYFOUR
-  return __builtin_clzll (v);
+  return __builtin_clzll(v);
 #else
-  return __builtin_clz   (v);
+  return __builtin_clz(v);
 #endif
 }
 
 CAMLprim value Base_int_math_int_clz(value v) {
-  return Val_int (Base_int_math_int_clz_untagged (v));
+  return Val_int(Base_int_math_int_clz_untagged(v));
 }
 
-intnat Base_int_math_int32_clz_unboxed(int32_t v) {
-  return __builtin_clz (v);
-}
+intnat Base_int_math_int32_clz_unboxed(int32_t v) { return __builtin_clz(v); }
 
 CAMLprim value Base_int_math_int32_clz(value v) {
-  return Val_int (Base_int_math_int32_clz_unboxed (Int32_val(v)));
+  return Val_int(Base_int_math_int32_clz_unboxed(Int32_val(v)));
 }
 
-intnat Base_int_math_int64_clz_unboxed(int64_t v) {
-  return __builtin_clzll (v);
-}
+intnat Base_int_math_int64_clz_unboxed(int64_t v) { return __builtin_clzll(v); }
 
 CAMLprim value Base_int_math_int64_clz(value v) {
-  return Val_int (Base_int_math_int64_clz_unboxed (Int64_val(v)));
+  return Val_int(Base_int_math_int64_clz_unboxed(Int64_val(v)));
 }
 
 intnat Base_int_math_nativeint_clz_unboxed(intnat v) {
 #ifdef ARCH_SIXTYFOUR
-  return __builtin_clzll (v);
+  return __builtin_clzll(v);
 #else
-  return __builtin_clz   (v);
+  return __builtin_clz(v);
 #endif
 }
 
 CAMLprim value Base_int_math_nativeint_clz(value v) {
-  return Val_int (Base_int_math_nativeint_clz_unboxed (Nativeint_val(v)));
+  return Val_int(Base_int_math_nativeint_clz_unboxed(Nativeint_val(v)));
 }
 
 intnat Base_int_math_int_ctz_untagged(intnat v) {
 #ifdef ARCH_SIXTYFOUR
-  return __builtin_ctzll (v);
+  return __builtin_ctzll(v);
 #else
-  return __builtin_ctz   (v);
+  return __builtin_ctz(v);
 #endif
 }
 
 CAMLprim value Base_int_math_int_ctz(value v) {
-  return Val_int (Base_int_math_int_ctz_untagged (Int_val(v)));
+  return Val_int(Base_int_math_int_ctz_untagged(Int_val(v)));
 }
 
-intnat Base_int_math_int32_ctz_unboxed(int32_t v) {
-  return __builtin_ctz (v);
-}
+intnat Base_int_math_int32_ctz_unboxed(int32_t v) { return __builtin_ctz(v); }
 
 CAMLprim value Base_int_math_int32_ctz(value v) {
-  return Val_int (Base_int_math_int32_ctz_unboxed (Int32_val(v)));
+  return Val_int(Base_int_math_int32_ctz_unboxed(Int32_val(v)));
 }
 
-intnat Base_int_math_int64_ctz_unboxed(int64_t v) {
-  return __builtin_ctzll (v);
-}
+intnat Base_int_math_int64_ctz_unboxed(int64_t v) { return __builtin_ctzll(v); }
 
 CAMLprim value Base_int_math_int64_ctz(value v) {
-  return Val_int (Base_int_math_int64_ctz_unboxed (Int64_val(v)));
+  return Val_int(Base_int_math_int64_ctz_unboxed(Int64_val(v)));
 }
 
 intnat Base_int_math_nativeint_ctz_unboxed(intnat v) {
 #ifdef ARCH_SIXTYFOUR
-  return __builtin_ctzll (v);
+  return __builtin_ctzll(v);
 #else
-  return __builtin_ctz   (v);
+  return __builtin_ctz(v);
 #endif
 }
 
 CAMLprim value Base_int_math_nativeint_ctz(value v) {
-  return Val_int (Base_int_math_nativeint_ctz_unboxed (Nativeint_val(v)));
+  return Val_int(Base_int_math_nativeint_ctz_unboxed(Nativeint_val(v)));
 }

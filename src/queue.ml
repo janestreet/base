@@ -25,26 +25,31 @@ let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
     ; length = length__009_
     ; elts = elts__011_
     } ->
-    let bnds__002_ = [] in
+    let bnds__002_ = ([] : _ Stdlib.List.t) in
     let bnds__002_ =
       let arg__012_ = Option_array.sexp_of_t _of_a__001_ elts__011_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg__012_ ] :: bnds__002_
+      (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg__012_ ] :: bnds__002_
+       : _ Stdlib.List.t)
     in
     let bnds__002_ =
       let arg__010_ = sexp_of_int length__009_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg__010_ ] :: bnds__002_
+      (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg__010_ ] :: bnds__002_
+       : _ Stdlib.List.t)
     in
     let bnds__002_ =
       let arg__008_ = sexp_of_int mask__007_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "mask"; arg__008_ ] :: bnds__002_
+      (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "mask"; arg__008_ ] :: bnds__002_
+       : _ Stdlib.List.t)
     in
     let bnds__002_ =
       let arg__006_ = sexp_of_int front__005_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "front"; arg__006_ ] :: bnds__002_
+      (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "front"; arg__006_ ] :: bnds__002_
+       : _ Stdlib.List.t)
     in
     let bnds__002_ =
       let arg__004_ = sexp_of_int num_mutations__003_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "num_mutations"; arg__004_ ] :: bnds__002_
+      (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "num_mutations"; arg__004_ ] :: bnds__002_
+       : _ Stdlib.List.t)
     in
     Sexplib0.Sexp.List bnds__002_
 ;;
@@ -231,6 +236,7 @@ let dequeue_nonempty t =
 
 let dequeue_exn t = if is_empty t then raise Caml.Queue.Empty else dequeue_nonempty t
 let dequeue t = if is_empty t then None else Some (dequeue_nonempty t)
+let dequeue_and_ignore_exn (type elt) (t : elt t) = ignore (dequeue_exn t : elt)
 let front_nonempty t = Option_array.unsafe_get_some_exn t.elts t.front
 let last_nonempty t = unsafe_get t (t.length - 1)
 let peek t = if is_empty t then None else Some (front_nonempty t)

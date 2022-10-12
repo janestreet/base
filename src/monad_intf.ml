@@ -411,5 +411,12 @@ module type Monad = sig
                              val of_monad : ('a, 'i, 'j) Monad.t -> ('a, 'i, 'j) t
                            end) : S_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t
 
+  (** An eager identity monad with functions heavily annotated with
+      [@inlined] or [@inline hint].
+
+      The implementation is manually written, rather than being
+      constructed by [Monad.Make]. This gives better inlining
+      guarantees.
+  *)
   module Ident : S with type 'a t = 'a
 end

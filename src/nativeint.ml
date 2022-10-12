@@ -23,6 +23,7 @@ module T = struct
   let compare = Nativeint_replace_polymorphic_compare.compare
   let to_string = to_string
   let of_string = of_string
+  let of_string_opt = of_string_opt
 end
 
 include T
@@ -292,4 +293,4 @@ include O
    this module. *)
 include Nativeint_replace_polymorphic_compare
 
-external bswap : t -> t = "%bswap_native"
+external bswap : (t[@local_opt]) -> t = "%bswap_native"

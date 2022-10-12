@@ -58,22 +58,26 @@ module T = struct
          ; pos_bol = pos_bol__008_
          ; pos_cnum = pos_cnum__010_
          } ->
-      let bnds__003_ = [] in
+      let bnds__003_ = ([] : _ Stdlib.List.t) in
       let bnds__003_ =
         let arg__011_ = sexp_of_int pos_cnum__010_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_cnum"; arg__011_ ] :: bnds__003_
+        (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_cnum"; arg__011_ ] :: bnds__003_
+         : _ Stdlib.List.t)
       in
       let bnds__003_ =
         let arg__009_ = sexp_of_int pos_bol__008_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_bol"; arg__009_ ] :: bnds__003_
+        (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_bol"; arg__009_ ] :: bnds__003_
+         : _ Stdlib.List.t)
       in
       let bnds__003_ =
         let arg__007_ = sexp_of_int pos_lnum__006_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_lnum"; arg__007_ ] :: bnds__003_
+        (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_lnum"; arg__007_ ] :: bnds__003_
+         : _ Stdlib.List.t)
       in
       let bnds__003_ =
         let arg__005_ = sexp_of_string pos_fname__004_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_fname"; arg__005_ ] :: bnds__003_
+        (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pos_fname"; arg__005_ ] :: bnds__003_
+         : _ Stdlib.List.t)
       in
       Sexplib0.Sexp.List bnds__003_
       : t -> Sexplib0.Sexp.t)

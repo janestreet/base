@@ -62,6 +62,10 @@ val from_val : 'a -> 'a t
     exception. *)
 val is_val : 'a t -> bool
 
+(** [peek x] returns None if [x] has never been forced or [Some v] if [x] was forced
+    to value [v] *)
+val peek : 'a t -> 'a option
+
 (** This type offers a serialization function [sexp_of_t] that won't force its argument.
     Instead, it will serialize the ['a] if it is available, or just use a custom string
     indicating it is not forced. Note that this is not a round-trippable type, thus the

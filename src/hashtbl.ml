@@ -297,9 +297,9 @@ let iter t ~f = iteri t ~f:(fun ~key:_ ~data -> f data)
 let iter_keys t ~f = iteri t ~f:(fun ~key ~data:_ -> f key)
 
 let rec choose_nonempty table i =
-  let avltree = table.(i) in
+  let avltree = Array.unsafe_get table i in
   if Avltree.is_empty avltree
-  then choose_nonempty table (i + 1)
+  then choose_nonempty table ((i + 1) land (Array.length table - 1))
   else Avltree.choose_exn avltree
 ;;
 
@@ -309,6 +309,21 @@ let choose_exn t =
 ;;
 
 let choose t = if is_empty t then None else Some (choose_nonempty t.table 0)
+
+let choose_randomly_nonempty ~random_state t =
+  let start_idx = Random.State.int random_state (Array.length t.table) in
+  choose_nonempty t.table start_idx
+;;
+
+let choose_randomly ?(random_state = Random.State.default) t =
+  if is_empty t then None else Some (choose_randomly_nonempty ~random_state t)
+;;
+
+let choose_randomly_exn ?(random_state = Random.State.default) t =
+  if t.length = 0
+  then raise_s (Sexp.message "[Hashtbl.choose_randomly_exn] of empty hashtbl" []);
+  choose_randomly_nonempty ~random_state t
+;;
 
 let invariant invariant_key invariant_data t =
   for i = 0 to Array.length t.table - 1 do
@@ -710,6 +725,8 @@ module Accessors = struct
   let invariant = invariant
   let choose = choose
   let choose_exn = choose_exn
+  let choose_randomly = choose_randomly
+  let choose_randomly_exn = choose_randomly_exn
   let clear = clear
   let copy = copy
   let remove = remove

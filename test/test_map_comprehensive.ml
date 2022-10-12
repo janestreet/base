@@ -43,20 +43,13 @@ module type S = sig
   module Types : Types
 
   include
-    Map.Creators_generic
+    Map.Creators_and_accessors_generic
     with type ('a, 'b, 'c) t := ('a, 'b, 'c) Types.t
     with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Types.tree
     with type 'a key := 'a Types.key
     with type 'a cmp := 'a Types.cmp
-    with type ('a, 'b, 'c) options := ('a, 'b, 'c) Types.create_options
-
-  include
-    Map.Accessors_generic
-    with type ('a, 'b, 'c) t := ('a, 'b, 'c) Types.t
-    with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Types.tree
-    with type 'a key := 'a Types.key
-    with type 'a cmp := 'a Types.cmp
-    with type ('a, 'b, 'c) options := ('a, 'b, 'c) Types.access_options
+    with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) Types.create_options
+    with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Types.access_options
 end
 
 (** Helpers for testing a tree or map type that is an instance of [S]. *)
@@ -255,12 +248,24 @@ struct
       type t = Inst.t * Key.t * int [@@deriving quickcheck, sexp_of]
     end
 
+    module Inst_inst = struct
+      type t = Inst.t Instance.t [@@deriving equal, quickcheck, sexp_of]
+    end
+
     module Inst_multi = struct
       type t = int list Instance.t [@@deriving equal, quickcheck, sexp_of]
     end
 
     module Key_and_data = struct
       type t = Key.t * int [@@deriving equal, sexp_of]
+    end
+
+    module Key_and_data_inst = struct
+      type t = (Key.t * int) Instance.t [@@deriving equal, sexp_of]
+    end
+
+    module Key_and_data_inst_multi = struct
+      type t = (Key.t * int) list Instance.t [@@deriving equal, sexp_of]
     end
 
     module Maybe_bound = struct
@@ -272,6 +277,11 @@ struct
         | Unbounded
       [@@deriving quickcheck, sexp_of]
     end
+
+    let ok_or_duplicate_key = function
+      | `Ok x -> Ok x
+      | `Duplicate_key key -> Or_error.error_s [%sexp (key : Key.t)]
+    ;;
   end
 
   (** creators *)
@@ -396,6 +406,40 @@ struct
     [%expect {| |}]
   ;;
 
+  let of_list_with_key = of_list_with_key
+  let of_list_with_key_or_error = of_list_with_key_or_error
+  let of_list_with_key_exn = of_list_with_key_exn
+  let of_list_with_key_multi = of_list_with_key_multi
+
+  let%expect_test _ =
+    quickcheck_m
+      [%here]
+      (module Alist)
+      ~f:(fun list ->
+        let alist = List.map list ~f:(fun (key, data) -> key, (key, data)) in
+        require_equal
+          [%here]
+          (module Ok (Key_and_data_inst))
+          (create of_list_with_key list ~get_key:fst |> ok_or_duplicate_key)
+          (create of_alist alist |> ok_or_duplicate_key);
+        require_equal
+          [%here]
+          (module Ok (Key_and_data_inst))
+          (create of_list_with_key_or_error list ~get_key:fst)
+          (create of_alist_or_error alist);
+        require_equal
+          [%here]
+          (module Ok (Key_and_data_inst))
+          (Or_error.try_with (fun () -> create of_list_with_key_exn list ~get_key:fst))
+          (Or_error.try_with (fun () -> create of_alist_exn alist));
+        require_equal
+          [%here]
+          (module Key_and_data_inst_multi)
+          (create of_list_with_key_multi list ~get_key:fst)
+          (create of_alist_multi alist));
+    [%expect {| |}]
+  ;;
+
   let of_increasing_sequence = of_increasing_sequence
 
   let%expect_test _ =
@@ -516,6 +560,25 @@ struct
         in
         require_equal [%here] (module Ok (Inst)) actual_or_duplicate expect;
         require_equal [%here] (module Ok (Inst)) actual_exn expect);
+    [%expect {| |}]
+  ;;
+
+  let transpose_keys = transpose_keys
+
+  let%expect_test _ =
+    quickcheck_m
+      [%here]
+      (module Inst_inst)
+      ~f:(fun t ->
+        let transpose_keys = create (access transpose_keys) in
+        let transposed = transpose_keys t in
+        require [%here] (access invariants transposed);
+        let round_trip = transpose_keys transposed in
+        require_equal
+          [%here]
+          (module Inst_inst)
+          (access filter t ~f:(Fn.non is_empty))
+          round_trip);
     [%expect {| |}]
   ;;
 
@@ -1479,20 +1542,7 @@ end [@ocaml.remove_aliases] = struct
 
   (** module types *)
 
-  module type Accessors1 = Accessors1
-  module type Accessors2 = Accessors2
-  module type Accessors3 = Accessors3
-  module type Accessors3_with_comparator = Accessors3_with_comparator
   module type Accessors_generic = Accessors_generic
-  module type Creators1 = Creators1
-  module type Creators2 = Creators2
-  module type Creators3_with_comparator = Creators3_with_comparator
-  module type Creators_and_accessors1 = Creators_and_accessors1
-  module type Creators_and_accessors2 = Creators_and_accessors2
-
-  module type Creators_and_accessors3_with_comparator =
-    Creators_and_accessors3_with_comparator
-
   module type Creators_and_accessors_generic = Creators_and_accessors_generic
   module type Creators_generic = Creators_generic
   module type For_deriving = For_deriving

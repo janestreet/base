@@ -10,6 +10,7 @@ let floor = Caml.floor
 let mod_float = Caml.mod_float
 let modf = Caml.modf
 let float_of_string = Caml.float_of_string
+let float_of_string_opt = Caml.float_of_string_opt
 let nan = Caml.nan
 let infinity = Caml.infinity
 let neg_infinity = Caml.neg_infinity

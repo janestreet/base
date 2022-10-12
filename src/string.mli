@@ -29,12 +29,6 @@ external get : t -> int -> char = "%string_safe_get"
 external unsafe_get : string -> int -> char = "%string_unsafe_get"
 
 val make : int -> char -> t
-
-(** Assuming you haven't passed -unsafe-string to the compiler, strings are immutable, so
-    there'd be no motivation to make a copy. *)
-val copy : t -> t
-[@@deprecated "[since 2018-03] Use [Bytes.copy] instead"]
-
 val init : int -> f:(int -> char) -> t
 
 (** String append. Also available unqualified, but re-exported here for documentation
@@ -388,6 +382,16 @@ val common_prefix2_length : t -> t -> int
 
 (** [concat_array sep ar] like {!String.concat}, but operates on arrays. *)
 val concat_array : ?sep:t -> t array -> t
+
+(** Builds a multiline text from a list of lines. Each line is terminated and then
+    concatenated. Equivalent to:
+
+    {[
+      String.concat (List.map lines ~f:(fun line ->
+        line ^ if crlf then "\r\n" else "\n"))
+    ]}
+*)
+val concat_lines : ?crlf:bool (** default [false] *) -> string list -> string
 
 (** Slightly faster hash function on strings. *)
 external hash : t -> int = "Base_hash_string"

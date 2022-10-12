@@ -7,6 +7,15 @@ let%expect_test ("hash coherence" [@tags "64-bits-only"]) =
   [%expect {| |}]
 ;;
 
+let%expect_test "of_string_opt" =
+  print_s [%sexp (of_string_opt "1." : float option)];
+  [%expect "(1)"];
+  print_s [%sexp (of_string_opt "1.a" : float option)];
+  [%expect "()"];
+  print_s [%sexp (of_string_opt "1e10000" : float option)];
+  [%expect "(INF)"]
+;;
+
 let exponent_bits = 11
 let mantissa_bits = 52
 let exponent_mask64 = Int64.(shift_left one exponent_bits - one)
@@ -1163,4 +1172,26 @@ let%expect_test "is_nan, is_inf, and is_finite" =
                           1. false false  true
      1.7976931348623157e+308 false false  true
                          inf false  true false |}]
+;;
+
+let%expect_test "nan" =
+  require [%here] (Float.is_nan (Float.min 1. Float.nan));
+  require [%here] (Float.is_nan (Float.min Float.nan 0.));
+  require [%here] (Float.is_nan (Float.min Float.nan Float.nan));
+  require [%here] (Float.is_nan (Float.max 1. Float.nan));
+  require [%here] (Float.is_nan (Float.max Float.nan 0.));
+  require [%here] (Float.is_nan (Float.max Float.nan Float.nan));
+  require_equal [%here] (module Float) 1. (Float.min_inan 1. Float.nan);
+  require_equal [%here] (module Float) 0. (Float.min_inan Float.nan 0.);
+  require [%here] (Float.is_nan (Float.min_inan Float.nan Float.nan));
+  require_equal [%here] (module Float) 1. (Float.max_inan 1. Float.nan);
+  require_equal [%here] (module Float) 0. (Float.max_inan Float.nan 0.);
+  require [%here] (Float.is_nan (Float.max_inan Float.nan Float.nan))
+;;
+
+let%expect_test "iround_exn" =
+  require_equal [%here] (module Int) 0 (Float.iround_exn ~dir:`Nearest 0.2);
+  require_equal [%here] (module Int) 0 (Float.iround_exn ~dir:`Nearest (-0.2));
+  require_equal [%here] (module Int) 3 (Float.iround_exn ~dir:`Nearest 3.4);
+  require_equal [%here] (module Int) (-3) (Float.iround_exn ~dir:`Nearest (-3.4))
 ;;

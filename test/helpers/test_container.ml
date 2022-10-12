@@ -44,7 +44,7 @@ struct
   let%test_unit _ =
     let ( = ) = Poly.equal in
     let compare = Poly.compare in
-    List.iter [ 0; 1; 2; 3; 4; 8; 1024 ] ~f:(fun n ->
+    List.iter [ 0; 1; 2; 3; 4; 8; 128 ] ~f:(fun n ->
       let list = List.init n ~f:Elt.of_int in
       match Container.of_list list with
       | `Skip_test -> ()
@@ -62,7 +62,7 @@ struct
           n > 0 = Option.is_some (Container.find c ~f:(fun e -> Elt.to_int e = n - 1)));
         assert (Option.is_none (Container.find c ~f:(fun e -> Elt.to_int e = n)));
         assert (n > 0 = Container.mem c (Elt.of_int 0) ~equal:( = ));
-        assert (n > 0 = Container.mem c (Elt.of_int (n - 1)) ~equal:( = ));
+        if n > 0 then assert (Container.mem c (Elt.of_int (n - 1)) ~equal:( = ));
         assert (not (Container.mem c (Elt.of_int n) ~equal:( = )));
         assert (
           n
@@ -175,3 +175,39 @@ module Test_S1 (Container : sig
 
     let of_list l = `Ok (of_list l)
   end)
+
+module Test_S0 (Container : sig
+    module Elt : sig
+      type t [@@deriving sexp]
+
+      val of_int : int -> t
+      val to_int : t -> int
+    end
+
+    type t [@@deriving sexp]
+
+    include Container.S0 with type t := t and type elt := Elt.t
+
+    val of_list : Elt.t list -> t
+  end) =
+struct
+  include
+    Test_generic
+      (struct
+        include Container.Elt
+
+        type 'a t = Container.Elt.t
+      end)
+      (struct
+        include Container
+
+        type 'a t = Container.t [@@deriving sexp]
+
+        let of_list l = `Ok (of_list l)
+        let mem t x ~equal:_ = Container.mem t x
+      end)
+
+  (* [mem] in the second functor argument above ignores its [~equal], so this [~equal]
+     should never be called. *)
+  let mem t x = mem t x ~equal:(fun _ _ -> assert false)
+end
