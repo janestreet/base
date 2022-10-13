@@ -42,6 +42,16 @@ module type Basic = sig
   val map : [ `Define_using_apply | `Custom of 'a t -> f:('a -> 'b) -> 'b t ]
 end
 
+(** Similar to [Basic], with the same laws, and the additional requirement that ['a t]
+    can be mapped with a local function. *)
+module type Basic_local = sig
+  type 'a t
+
+  val return : 'a -> 'a t
+  val apply : ('a -> 'b) t -> 'a t -> 'b t
+  val map : 'a t -> f:(('a -> 'b)[@local]) -> 'b t
+end
+
 module type Basic_using_map2 = sig
   type 'a t
 
@@ -50,8 +60,9 @@ module type Basic_using_map2 = sig
   val map : [ `Define_using_map2 | `Custom of 'a t -> f:('a -> 'b) -> 'b t ]
 end
 
-module type Applicative_infix = sig
+module type Applicative_infix_gen = sig
   type 'a t
+  type ('a, 'b) fn
 
 
   (** same as [apply] *)
@@ -59,21 +70,38 @@ module type Applicative_infix = sig
 
   val ( <* ) : 'a t -> unit t -> 'a t
   val ( *> ) : unit t -> 'a t -> 'a t
-  val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
+  val ( >>| ) : 'a t -> ('a -> 'b, 'b t) fn
 end
 
-module type For_let_syntax = sig
+module type Applicative_infix = Applicative_infix_gen with type ('a, 'b) fn := 'a -> 'b
+
+module type Applicative_infix_local =
+  Applicative_infix_gen with type ('a, 'b) fn := ('a[@local]) -> 'b
+
+module type For_let_syntax_gen = sig
   type 'a t
+  type ('a, 'b) fn
+  type ('a, 'b) f_labeled_fn
 
   val return : 'a -> 'a t
-  val map : 'a t -> f:('a -> 'b) -> 'b t
+  val map : 'a t -> ('a -> 'b, 'b t) f_labeled_fn
   val both : 'a t -> 'b t -> ('a * 'b) t
 
-  include Applicative_infix with type 'a t := 'a t
+  include Applicative_infix_gen with type 'a t := 'a t and type ('a, 'b) fn := ('a, 'b) fn
 end
 
-module type S = sig
-  include For_let_syntax
+module type For_let_syntax =
+  For_let_syntax_gen
+  with type ('a, 'b) fn := 'a -> 'b
+   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+
+module type For_let_syntax_local =
+  For_let_syntax_gen
+  with type ('a, 'b) fn := ('a[@local]) -> 'b
+   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+
+module type S_gen = sig
+  include For_let_syntax_gen
 
   val apply : ('a -> 'b) t -> 'a t -> 'b t
   val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
@@ -81,8 +109,17 @@ module type S = sig
   val all : 'a t list -> 'a list t
   val all_unit : unit t list -> unit t
 
-  module Applicative_infix : Applicative_infix with type 'a t := 'a t
+  module Applicative_infix :
+    Applicative_infix_gen with type 'a t := 'a t and type ('a, 'b) fn := ('a, 'b) fn
 end
+
+module type S =
+  S_gen with type ('a, 'b) fn := 'a -> 'b and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+
+module type S_local =
+  S_gen
+  with type ('a, 'b) fn := ('a[@local]) -> 'b
+   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
 
 module type Let_syntax = sig
   type 'a t
@@ -114,6 +151,14 @@ module type Basic2 = sig
   val map : [ `Define_using_apply | `Custom of ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t ]
 end
 
+module type Basic2_local = sig
+  type ('a, 'e) t
+
+  val return : 'a -> ('a, _) t
+  val apply : ('a -> 'b, 'e) t -> ('a, 'e) t -> ('b, 'e) t
+  val map : ('a, 'e) t -> f:(('a -> 'b)[@local]) -> ('b, 'e) t
+end
+
 module type Basic2_using_map2 = sig
   type ('a, 'e) t
 
@@ -122,27 +167,48 @@ module type Basic2_using_map2 = sig
   val map : [ `Define_using_map2 | `Custom of ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t ]
 end
 
-module type Applicative_infix2 = sig
+module type Applicative_infix2_gen = sig
   type ('a, 'e) t
+  type ('a, 'b) fn
 
   val ( <*> ) : ('a -> 'b, 'e) t -> ('a, 'e) t -> ('b, 'e) t
   val ( <* ) : ('a, 'e) t -> (unit, 'e) t -> ('a, 'e) t
   val ( *> ) : (unit, 'e) t -> ('a, 'e) t -> ('a, 'e) t
-  val ( >>| ) : ('a, 'e) t -> ('a -> 'b) -> ('b, 'e) t
+  val ( >>| ) : ('a, 'e) t -> ('a -> 'b, ('b, 'e) t) fn
 end
 
-module type For_let_syntax2 = sig
+module type Applicative_infix2 = Applicative_infix2_gen with type ('a, 'b) fn := 'a -> 'b
+
+module type Applicative_infix2_local =
+  Applicative_infix2_gen with type ('a, 'b) fn := ('a[@local]) -> 'b
+
+module type For_let_syntax2_gen = sig
   type ('a, 'e) t
+  type ('a, 'b) fn
+  type ('a, 'b) f_labeled_fn
 
   val return : 'a -> ('a, _) t
-  val map : ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t
+  val map : ('a, 'e) t -> ('a -> 'b, ('b, 'e) t) f_labeled_fn
   val both : ('a, 'e) t -> ('b, 'e) t -> ('a * 'b, 'e) t
 
-  include Applicative_infix2 with type ('a, 'e) t := ('a, 'e) t
+  include
+    Applicative_infix2_gen
+    with type ('a, 'e) t := ('a, 'e) t
+     and type ('a, 'b) fn := ('a, 'b) fn
 end
 
-module type S2 = sig
-  include For_let_syntax2
+module type For_let_syntax2 =
+  For_let_syntax2_gen
+  with type ('a, 'b) fn := 'a -> 'b
+   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+
+module type For_let_syntax2_local =
+  For_let_syntax2_gen
+  with type ('a, 'b) fn := ('a[@local]) -> 'b
+   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+
+module type S2_gen = sig
+  include For_let_syntax2_gen
 
   val apply : ('a -> 'b, 'e) t -> ('a, 'e) t -> ('b, 'e) t
   val map2 : ('a, 'e) t -> ('b, 'e) t -> f:('a -> 'b -> 'c) -> ('c, 'e) t
@@ -157,8 +223,19 @@ module type S2 = sig
   val all : ('a, 'e) t list -> ('a list, 'e) t
   val all_unit : (unit, 'e) t list -> (unit, 'e) t
 
-  module Applicative_infix : Applicative_infix2 with type ('a, 'e) t := ('a, 'e) t
+  module Applicative_infix :
+    Applicative_infix2_gen
+    with type ('a, 'e) t := ('a, 'e) t
+     and type ('a, 'b) fn := ('a, 'b) fn
 end
+
+module type S2 =
+  S2_gen with type ('a, 'b) fn := 'a -> 'b and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+
+module type S2_local =
+  S2_gen
+  with type ('a, 'b) fn := ('a[@local]) -> 'b
+   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
 
 module type Let_syntax2 = sig
   type ('a, 'e) t
@@ -264,13 +341,27 @@ module type Let_syntax3 = sig
   end
 end
 
+(** [Lazy_applicative] is an applicative whose structure may be computed on-demand,
+    instead of being constructed up-front. This is useful when implementing traversals
+    over large data structures, where otherwise we have to pay O(n) up-front cost both
+    in time and in memory. *)
+module type Lazy_applicative = sig
+  include S
+
+  val of_thunk : (unit -> 'a t) -> 'a t
+end
+
 module type Applicative = sig
   module type Applicative_infix = Applicative_infix
   module type Applicative_infix2 = Applicative_infix2
   module type Applicative_infix3 = Applicative_infix3
+  module type Applicative_infix_local = Applicative_infix_local
+  module type Applicative_infix2_local = Applicative_infix2_local
   module type Basic = Basic
   module type Basic2 = Basic2
   module type Basic3 = Basic3
+  module type Basic_local = Basic_local
+  module type Basic2_local = Basic2_local
   module type Basic_using_map2 = Basic_using_map2
   module type Basic2_using_map2 = Basic2_using_map2
   module type Basic3_using_map2 = Basic3_using_map2
@@ -280,10 +371,14 @@ module type Applicative = sig
   module type S = S
   module type S2 = S2
   module type S3 = S3
+  module type Lazy_applicative = Lazy_applicative
+  module type S_local = S_local
+  module type S2_local = S2_local
 
-  module S2_to_S (X : S2) : S with type 'a t = ('a, unit) X.t
+  module S2_to_S (T : T.T) (X : S2) : S with type 'a t = ('a, T.t) X.t
   module S_to_S2 (X : S) : S2 with type ('a, 'e) t = 'a X.t
-  module S3_to_S2 (X : S3) : S2 with type ('a, 'd) t = ('a, 'd, unit) X.t
+  module S3_to_S2 (T : T.T) (X : S3) : S2 with type ('a, 'd) t = ('a, 'd, T.t) X.t
+  module S3_to_S (T1 : T.T) (T2 : T.T) (X : S3) : S with type 'a t = ('a, T1.t, T2.t) X.t
   module S2_to_S3 (X : S2) : S3 with type ('a, 'd, 'e) t = ('a, 'd) X.t
   module Make (X : Basic) : S with type 'a t := 'a X.t
   module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
@@ -319,6 +414,9 @@ module type Applicative = sig
 
   module Make3_using_map2 (X : Basic3_using_map2) :
     S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t
+
+  module Make_local (X : Basic_local) : S_local with type 'a t := 'a X.t
+  module Make2_local (X : Basic2_local) : S2_local with type ('a, 'e) t := ('a, 'e) X.t
 
   (** The following functors give a sense of what Applicatives one can define.
 

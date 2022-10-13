@@ -69,7 +69,16 @@ module Of_sexpable3
   ;;
 end
 
-module Of_stringable (M : Stringable.S) : S with type t := M.t = struct
+module Of_stringable (M : Stringable.S) : sig
+  type t [@@deriving_inline sexp_grammar]
+
+  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
+
+  [@@@end]
+
+  include S with type t := t
+end
+with type t := M.t = struct
   let t_of_sexp sexp =
     match sexp with
     | Sexp.Atom s ->
@@ -82,4 +91,8 @@ module Of_stringable (M : Stringable.S) : S with type t := M.t = struct
   ;;
 
   let sexp_of_t t = Sexp.Atom (M.to_string t)
+
+  let t_sexp_grammar : M.t Sexplib0.Sexp_grammar.t =
+    Sexplib0.Sexp_grammar.coerce string_sexp_grammar
+  ;;
 end

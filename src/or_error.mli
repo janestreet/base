@@ -25,10 +25,10 @@ val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
     [Applicative.Of_Monad(Or_error)] would give -- [apply (Error e1) (Error e2)] returns
     the combination of [e1] and [e2], whereas it would only return [e1] if it were defined
     using [bind]. *)
-include Applicative.S with type 'a t := 'a t
+include Applicative.S_local with type 'a t := 'a t
 
 include Invariant.S1 with type 'a t := 'a t
-include Monad.S with type 'a t := 'a t
+include Monad.S_local with type 'a t := 'a t
 
 val is_ok : _ t -> bool
 val is_error : _ t -> bool
@@ -104,7 +104,7 @@ val tag_arg : 'a t -> string -> 'b -> ('b -> Sexp.t) -> 'a t
     the function that is unimplemented. *)
 val unimplemented : string -> _ t
 
-val map : 'a t -> f:('a -> 'b) -> 'b t
+val map : 'a t -> f:(('a -> 'b)[@local]) -> 'b t
 val iter : 'a t -> f:('a -> unit) -> unit
 val iter_error : _ t -> f:(Error.t -> unit) -> unit
 

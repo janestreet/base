@@ -201,3 +201,13 @@ let compare compare_elt a b =
       in
       loop 0))
 ;;
+
+module Sort = Array.Private.Sorter (struct
+    type nonrec 'a t = 'a t
+
+    let length = length
+    let get = unsafe_get
+    let set = unsafe_set
+  end)
+
+let sort = Sort.sort

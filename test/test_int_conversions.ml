@@ -227,3 +227,29 @@ let%test_module "conversions" =
     ;;
   end)
 ;;
+
+let%test_module "Make_hex" =
+  (module struct
+    module Hex_int = struct
+      type t = int [@@deriving quickcheck]
+
+      module M = Make_hex (struct
+          type nonrec t = int [@@deriving sexp, compare, hash, quickcheck]
+
+          let to_string = Int.Hex.to_string
+          let of_string = Int.Hex.of_string
+          let zero = 0
+          let ( < ) = ( < )
+          let neg = Int.neg
+          let module_name = "Hex_int"
+        end)
+
+      include (M.Hex : module type of M.Hex with type t := t)
+    end
+
+    let%expect_test "validate sexp grammar" =
+      require_ok [%here] (Sexp_grammar_validation.validate_grammar (module Hex_int));
+      [%expect {| String |}]
+    ;;
+  end)
+;;

@@ -15,21 +15,23 @@ let foldi ~fold t ~init ~f =
   fold t ~init ~f:(fun acc v ->
     let acc = f !i acc v in
     i := !i + 1;
-    acc)
+    acc) [@nontail]
 ;;
 
-let counti ~foldi t ~f = foldi t ~init:0 ~f:(fun i n a -> if f i a then n + 1 else n)
+let counti ~foldi t ~f =
+  foldi t ~init:0 ~f:(fun i n a -> if f i a then n + 1 else n) [@nontail]
+;;
 
 let existsi ~iteri c ~f =
   with_return (fun r ->
     iteri c ~f:(fun i x -> if f i x then r.return true);
-    false)
+    false) [@nontail]
 ;;
 
 let for_alli ~iteri c ~f =
   with_return (fun r ->
     iteri c ~f:(fun i x -> if not (f i x) then r.return false);
-    true)
+    true) [@nontail]
 ;;
 
 let find_mapi ~iteri t ~f =
@@ -38,13 +40,13 @@ let find_mapi ~iteri t ~f =
       match f i x with
       | None -> ()
       | Some _ as res -> r.return res);
-    None)
+    None) [@nontail]
 ;;
 
 let findi ~iteri c ~f =
   with_return (fun r ->
     iteri c ~f:(fun i x -> if f i x then r.return (Some (i, x)));
-    None)
+    None) [@nontail]
 ;;
 
 module Make_gen (T : sig

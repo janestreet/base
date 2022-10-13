@@ -525,7 +525,7 @@ struct
       [%here]
       (module Alist)
       ~f:(fun alist ->
-        let iteri ~f = List.iter alist ~f:(fun (key, data) -> f ~key ~data) in
+        let iteri ~f = List.iter alist ~f:(fun (key, data) -> f ~key ~data) [@nontail] in
         let actual_or_duplicate =
           match create of_iteri ~iteri with
           | `Ok t -> Ok t
@@ -577,7 +577,7 @@ struct
         require_equal
           [%here]
           (module Inst_inst)
-          (access filter t ~f:(Fn.non is_empty))
+          (filter t ~f:(Fn.non is_empty))
           round_trip);
     [%expect {| |}]
   ;;
@@ -811,6 +811,15 @@ struct
   let filter = filter
   let filteri = filteri
 
+  module Physical_equality (T : sig
+      type t [@@deriving sexp_of]
+    end) =
+  struct
+    type t = T.t [@@deriving sexp_of]
+
+    let equal a b = phys_equal a b
+  end
+
   let%expect_test _ =
     quickcheck_m
       [%here]
@@ -818,19 +827,23 @@ struct
       ~f:(fun (t, k, d) ->
         require_equal
           [%here]
+          (module Physical_equality (Inst))
+          (filter ~f:(fun _ -> true) t)
+          t;
+        require_equal
+          [%here]
           (module Alist)
-          (to_alist (access filter_keys t ~f:(fun key -> Key.( <= ) key k)))
+          (to_alist (filter_keys t ~f:(fun key -> Key.( <= ) key k)))
           (List.filter (to_alist t) ~f:(fun (key, _) -> Key.( <= ) key k));
         require_equal
           [%here]
           (module Alist)
-          (to_alist (access filter t ~f:(fun data -> data <= d)))
+          (to_alist (filter t ~f:(fun data -> data <= d)))
           (List.filter (to_alist t) ~f:(fun (_, data) -> data <= d));
         require_equal
           [%here]
           (module Alist)
-          (to_alist
-             (access filteri t ~f:(fun ~key ~data -> Key.( <= ) key k && data <= d)))
+          (to_alist (filteri t ~f:(fun ~key ~data -> Key.( <= ) key k && data <= d)))
           (List.filter (to_alist t) ~f:(fun (key, data) -> Key.( <= ) key k && data <= d)));
     [%expect {| |}]
   ;;
@@ -846,15 +859,14 @@ struct
         require_equal
           [%here]
           (module Alist)
-          (to_alist
-             (access filter_map t ~f:(fun data -> Option.some_if (data >= d) (data - d))))
+          (to_alist (filter_map t ~f:(fun data -> Option.some_if (data >= d) (data - d))))
           (List.filter_map (to_alist t) ~f:(fun (key, data) ->
              Option.some_if (data >= d) (key, data - d)));
         require_equal
           [%here]
           (module Alist)
           (to_alist
-             (access filter_mapi t ~f:(fun ~key ~data ->
+             (filter_mapi t ~f:(fun ~key ~data ->
                 Option.some_if (Key.( <= ) key k && data >= d) (data - d))))
           (List.filter_map (to_alist t) ~f:(fun (key, data) ->
              Option.some_if (Key.( <= ) key k && data >= d) (key, data - d))));
@@ -873,15 +885,20 @@ struct
       ~f:(fun (t, k, d) ->
         require_equal
           [%here]
+          (module Physical_equality (Inst))
+          (fst (partition_tf ~f:(fun _ -> true) t))
+          t;
+        require_equal
+          [%here]
           (module Pair (Alist))
-          (let a, b = access partition_tf t ~f:(fun data -> data <= d) in
+          (let a, b = partition_tf t ~f:(fun data -> data <= d) in
            to_alist a, to_alist b)
           (List.partition_tf (to_alist t) ~f:(fun (_, data) -> data <= d));
         require_equal
           [%here]
           (module Pair (Alist))
           (let a, b =
-             access partitioni_tf t ~f:(fun ~key ~data -> Key.( <= ) key k && data <= d)
+             partitioni_tf t ~f:(fun ~key ~data -> Key.( <= ) key k && data <= d)
            in
            to_alist a, to_alist b)
           (List.partition_tf (to_alist t) ~f:(fun (key, data) ->
@@ -890,7 +907,7 @@ struct
           [%here]
           (module Pair (Alist))
           (let a, b =
-             access partition_map t ~f:(fun data ->
+             partition_map t ~f:(fun data ->
                if data >= d then First (data - d) else Second d)
            in
            to_alist a, to_alist b)
@@ -900,7 +917,7 @@ struct
           [%here]
           (module Pair (Alist))
           (let a, b =
-             access partition_mapi t ~f:(fun ~key ~data ->
+             partition_mapi t ~f:(fun ~key ~data ->
                if Key.( <= ) key k && data >= d then First (data - d) else Second d)
            in
            to_alist a, to_alist b)
@@ -1512,6 +1529,40 @@ struct
     [%expect {| |}]
   ;;
 
+  module Make_applicative_traversals (A : Applicative.Lazy_applicative) = struct
+    module M = Make_applicative_traversals (A)
+
+    let mapi = M.mapi
+    let filter_mapi = M.filter_mapi
+  end
+
+  let%expect_test _ =
+    let module M =
+      Make_applicative_traversals (struct
+        module M = struct
+          type 'a t = 'a
+
+          let return x = x
+          let apply f x = f x
+          let of_thunk f = f ()
+          let map = `Define_using_apply
+        end
+
+        include M
+        include Applicative.Make (M)
+      end)
+    in
+    quickcheck_m
+      [%here]
+      (module Inst)
+      ~f:(fun t ->
+        let f1 ~key:_ ~data = (data * 2) + 1 in
+        let f2 ~key:_ ~data = if data < 0 then None else Some data in
+        require_equal [%here] (module Inst) (mapi t ~f:f1) (M.mapi t ~f:f1);
+        require_equal [%here] (module Inst) (filter_mapi t ~f:f2) (M.filter_mapi t ~f:f2));
+    [%expect {| |}]
+  ;;
+
   (** tree conversion *)
 
   let to_tree = to_tree
@@ -1601,7 +1652,21 @@ end [@ocaml.remove_aliases] = struct
 
   let%expect_test _ =
     print_s [%sexp ([%sexp_grammar: int M(Int).t] : _ Sexp_grammar.t)];
-    [%expect {| (List (Many (List (Cons Integer (Cons Integer Empty))))) |}]
+    [%expect
+      {|
+      (Tagged (
+        (key sexp_grammar.assoc)
+        (value ())
+        (grammar (
+          List (
+            Many (
+              List (
+                Cons
+                (Tagged ((key sexp_grammar.assoc.key) (value ()) (grammar Integer)))
+                (Cons
+                  (Tagged (
+                    (key sexp_grammar.assoc.value) (value ()) (grammar Integer)))
+                  Empty)))))))) |}]
   ;;
 
   (** comparisons *)

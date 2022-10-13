@@ -343,10 +343,6 @@ struct
         | Some (Pos body) -> of_string_with_delimiter body)
       else invalid str
     ;;
-
-    let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
-      Sexplib0.Sexp_grammar.coerce String.t_sexp_grammar
-    ;;
   end
 
   module Hex = struct

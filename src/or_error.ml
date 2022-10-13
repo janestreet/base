@@ -36,7 +36,7 @@ let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
   fun _of_a__016_ x__017_ -> Result.sexp_of_t _of_a__016_ Error.sexp_of_t x__017_
 ;;
 
-let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
+let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
   fun _'a_sexp_grammar -> Result.t_sexp_grammar _'a_sexp_grammar Error.t_sexp_grammar
 ;;
 
@@ -48,7 +48,7 @@ let invariant invariant_a t =
   | Error error -> Error.invariant error
 ;;
 
-include Applicative.Make (struct
+include Applicative.Make_local (struct
     type nonrec 'a t = 'a t
 
     let return = return
@@ -57,7 +57,7 @@ include Applicative.Make (struct
       Result.combine f x ~ok:(fun f x -> f x) ~err:(fun e1 e2 -> Error.of_list [ e1; e2 ])
     ;;
 
-    let map = `Custom map
+    let map = map
   end)
 
 module Let_syntax = struct

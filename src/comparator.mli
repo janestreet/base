@@ -82,7 +82,7 @@ module Make1 (M : sig
 
 module type Derived = sig
   type 'a t
-  type 'cmp comparator_witness
+  type !'cmp comparator_witness
 
   val comparator : ('a, 'cmp) comparator -> ('a t, 'cmp comparator_witness) comparator
 end
@@ -101,7 +101,7 @@ module Derived (M : sig
 
 module type Derived2 = sig
   type ('a, 'b) t
-  type ('cmp_a, 'cmp_b) comparator_witness
+  type (!'cmp_a, !'cmp_b) comparator_witness
 
   val comparator
     :  ('a, 'cmp_a) comparator
@@ -142,3 +142,28 @@ module Derived_phantom (M : sig
     val compare : ('a -> 'a -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
     val sexp_of_t : ('a -> Sexp.t) -> ('a, _) t -> Sexp.t
   end) : Derived_phantom with type ('a, 'b) t := ('a, 'b) M.t
+
+module type Derived2_phantom = sig
+  type ('a, 'b, 'c) t
+  type (!'cmp_a, !'cmp_b) comparator_witness
+
+  val comparator
+    :  ('a, 'cmp_a) comparator
+    -> ('b, 'cmp_b) comparator
+    -> (('a, 'b, _) t, ('cmp_a, 'cmp_b) comparator_witness) comparator
+end
+
+(** [Derived2_phantom] creates a [comparator] function that constructs a comparator for the
+    type [('a, 'b, 'c) t] given a comparator for the types ['a] and ['b]. *)
+module Derived2_phantom (M : sig
+    type ('a, 'b, 'c) t
+
+    val compare
+      :  ('a -> 'a -> int)
+      -> ('b -> 'b -> int)
+      -> ('a, 'b, 'c) t
+      -> ('a, 'b, 'c) t
+      -> int
+
+    val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b, _) t -> Sexp.t
+  end) : Derived2_phantom with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t

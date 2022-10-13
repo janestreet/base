@@ -110,3 +110,9 @@ val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 
 val min_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
 val max_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+
+(** [sort] uses constant heap space.
+
+    To sort only part of the array, specify [pos] to be the index to start sorting from
+    and [len] indicating how many elements to sort. *)
+val sort : ?pos:int -> ?len:int -> 'a t -> compare:('a -> 'a -> int) -> unit

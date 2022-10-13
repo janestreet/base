@@ -12,6 +12,10 @@ val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 [@@@end]
 
 val sub : (t, t) Blit.sub
+
+(** [sub] with no bounds checking *)
+val unsafe_sub : (t, t) Blit.sub
+
 val subo : (t, t) Blit.subo
 
 include Indexed_container.S0 with type t := t with type elt = char

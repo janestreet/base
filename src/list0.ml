@@ -6,6 +6,7 @@
    [module List = List0].  Defining [module List = List0] is also necessary because it
    prevents ocamldep from mistakenly causing a file to depend on [Base.List]. *)
 
+
 open! Import0
 
 let hd_exn = Caml.List.hd
@@ -14,21 +15,90 @@ let rev_append = Caml.List.rev_append
 let tl_exn = Caml.List.tl
 let unzip = Caml.List.split
 
-(* These are eta expanded in order to permute parameter order to follow Base
+(* Some of these are eta expanded in order to permute parameter order to follow Base
    conventions. *)
-let exists t ~f = Caml.List.exists t ~f
-let exists2_ok l1 l2 ~f = Caml.List.exists2 l1 l2 ~f
-let fold t ~init ~f = Caml.List.fold_left t ~f ~init
-let fold2_ok l1 l2 ~init ~f = Caml.List.fold_left2 l1 l2 ~init ~f
-let for_all t ~f = Caml.List.for_all t ~f
-let for_all2_ok l1 l2 ~f = Caml.List.for_all2 l1 l2 ~f
-let iter t ~f = Caml.List.iter t ~f
-let iter2_ok l1 l2 ~f = Caml.List.iter2 l1 l2 ~f
-let nontail_map t ~f = Caml.List.map t ~f
+
+let rec exists t ~f:(f [@local]) =
+  match t with
+  | [] -> false
+  | x :: xs -> if f x then true else exists xs ~f
+;;
+
+let rec exists2_ok l1 l2 ~f:((f : _ -> _ -> _) [@local]) =
+  match l1, l2 with
+  | [], [] -> false
+  | a1 :: l1, a2 :: l2 -> f a1 a2 || exists2_ok l1 l2 ~f
+  | _, _ -> invalid_arg "List.exists2"
+;;
+
+let rec fold t ~init ~f:((f : _ -> _ -> _) [@local]) =
+  match t with
+  | [] -> init
+  | a :: l -> fold l ~init:(f init a) ~f
+;;
+
+let rec fold2_ok l1 l2 ~init ~f:((f : _ -> _ -> _ -> _) [@local]) =
+  match l1, l2 with
+  | [], [] -> init
+  | a1 :: l1, a2 :: l2 -> fold2_ok l1 l2 ~f ~init:(f init a1 a2)
+  | _, _ -> invalid_arg "List.fold_left2"
+;;
+
+let for_all t ~f:(f [@local]) = not (exists t ~f:(fun x -> not (f x)))
+
+let rec for_all2_ok l1 l2 ~f:((f : _ -> _ -> _) [@local]) =
+  match l1, l2 with
+  | [], [] -> true
+  | a1 :: l1, a2 :: l2 -> f a1 a2 && for_all2_ok l1 l2 ~f
+  | _, _ -> invalid_arg "List.for_all2"
+;;
+
+let rec iter t ~f:((f : _ -> _) [@local]) =
+  match t with
+  | [] -> ()
+  | a :: l ->
+    f a;
+    iter l ~f
+;;
+
+let rec iter2_ok l1 l2 ~f:((f : _ -> _ -> unit) [@local]) =
+  match l1, l2 with
+  | [], [] -> ()
+  | a1 :: l1, a2 :: l2 ->
+    f a1 a2;
+    iter2_ok l1 l2 ~f
+  | _, _ -> invalid_arg "List.iter2"
+;;
+
+let rec nontail_map t ~f:(f [@local]) =
+  match t with
+  | [] -> []
+  | x :: xs ->
+    let y = f x in
+    y :: nontail_map xs ~f
+;;
+
 let nontail_mapi t ~f = Caml.List.mapi t ~f
 let partition t ~f = Caml.List.partition t ~f
-let rev_map t ~f = Caml.List.rev_map t ~f
-let rev_map2_ok l1 l2 ~f = Caml.List.rev_map2 l1 l2 ~f
+
+let rev_map =
+  let rec rmap_f f accu = function
+    | [] -> accu
+    | a :: l -> rmap_f f (f a :: accu) l
+  in
+  fun l ~f:(f [@local]) -> rmap_f f [] l
+;;
+
+let rev_map2_ok =
+  let rec rmap2_f f accu l1 l2 =
+    match l1, l2 with
+    | [], [] -> accu
+    | a1 :: l1, a2 :: l2 -> rmap2_f f (f a1 a2 :: accu) l1 l2
+    | _, _ -> invalid_arg "List.rev_map2"
+  in
+  fun l1 l2 ~f:((f : _ -> _ -> _) [@local]) -> rmap2_f f [] l1 l2
+;;
+
 let sort l ~compare = Caml.List.sort l ~cmp:compare
 let stable_sort l ~compare = Caml.List.stable_sort l ~cmp:compare
 
@@ -37,8 +107,8 @@ let rev = function
   | x :: y :: rest -> rev_append rest [ y; x ]
 ;;
 
-let fold_right l ~f ~init =
+let fold_right l ~f:((f : _ -> _ -> _) [@local]) ~init =
   match l with
   | [] -> init (* avoid the allocation of [~f] below *)
-  | _ -> fold ~f:(fun a b -> f b a) ~init (rev l)
+  | _ -> fold ~f:(fun a b -> f b a) ~init (rev l) [@nontail]
 ;;

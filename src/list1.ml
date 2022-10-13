@@ -6,7 +6,7 @@ let is_empty = function
   | _ -> false
 ;;
 
-let partition_map t ~f =
+let partition_map t ~f:(f [@local]) =
   let rec loop t fst snd =
     match t with
     | [] -> rev fst, rev snd
@@ -15,5 +15,5 @@ let partition_map t ~f =
        | First y -> loop t (y :: fst) snd
        | Second y -> loop t fst (y :: snd))
   in
-  loop t [] []
+  loop t [] [] [@nontail]
 ;;

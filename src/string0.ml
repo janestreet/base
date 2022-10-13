@@ -4,9 +4,9 @@
    use [Caml.String].  [String0] has few dependencies, and so is available early in Base's
    build order.
 
-   All Base files that need to use strings, including the subscript syntax
-   [x.(i)] or [x.(i) <- e] which the OCaml parser desugars into calls to
-   [String], and come before [Base.String] in build order should do
+   All Base files that need to use strings, including the subscript syntax [x.[i]] which
+   the OCaml parser desugars into calls to [String], and come before [Base.String] in
+   build order should do
 
    {[
      module String = String0
@@ -16,15 +16,12 @@
    ocamldep from mistakenly causing a file to depend on [Base.String]. *)
 
 open! Import0
-module Bytes = Bytes0
 module Sys = Sys0
 
 module String = struct
   external get : string -> int -> char = "%string_safe_get"
   external length : string -> int = "%string_length"
   external unsafe_get : string -> int -> char = "%string_unsafe_get"
-  external set        : bytes -> int -> char -> unit = "%bytes_safe_set"
-  external unsafe_set : bytes -> int -> char -> unit = "%bytes_unsafe_set"
 end
 
 include String
@@ -40,6 +37,7 @@ let sub = Caml.String.sub
 let uncapitalize = Caml.String.uncapitalize_ascii
 let unsafe_blit = Caml.String.unsafe_blit
 let uppercase = Caml.String.uppercase_ascii
+let split_on_char = Caml.String.split_on_char
 
 let concat ?(sep = "") l =
   match l with
@@ -49,6 +47,8 @@ let concat ?(sep = "") l =
   | l -> Caml.String.concat ~sep l
 ;;
 
-(* These are eta expanded in order to permute parameter order to follow Base
-   conventions. *)
-let iter t ~f = Caml.String.iter t ~f
+let iter t ~f:(f [@local]) =
+  for i = 0 to length t - 1 do
+    f (unsafe_get t i)
+  done
+;;

@@ -15,7 +15,7 @@ module T = struct
   let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = list_of_sexp
   let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_list
 
-  let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
+  let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
     fun _'a_sexp_grammar -> list_sexp_grammar _'a_sexp_grammar
   ;;
 
@@ -216,35 +216,35 @@ let check_length3 l1 l2 l3 ~f =
   | Unequal_lengths _ -> Unequal_lengths
 ;;
 
-let iter2 l1 l2 ~f = check_length2 l1 l2 ~f:(iter2_ok ~f)
+let iter2 l1 l2 ~f = check_length2 l1 l2 ~f:(iter2_ok ~f) [@nontail]
 
 let iter2_exn l1 l2 ~f =
   check_length2_exn "iter2_exn" l1 l2;
   iter2_ok l1 l2 ~f
 ;;
 
-let rev_map2 l1 l2 ~f = check_length2 l1 l2 ~f:(rev_map2_ok ~f)
+let rev_map2 l1 l2 ~f = check_length2 l1 l2 ~f:(rev_map2_ok ~f) [@nontail]
 
 let rev_map2_exn l1 l2 ~f =
   check_length2_exn "rev_map2_exn" l1 l2;
   rev_map2_ok l1 l2 ~f
 ;;
 
-let fold2 l1 l2 ~init ~f = check_length2 l1 l2 ~f:(fold2_ok ~init ~f)
+let fold2 l1 l2 ~init ~f = check_length2 l1 l2 ~f:(fold2_ok ~init ~f) [@nontail]
 
 let fold2_exn l1 l2 ~init ~f =
   check_length2_exn "fold2_exn" l1 l2;
   fold2_ok l1 l2 ~init ~f
 ;;
 
-let for_all2 l1 l2 ~f = check_length2 l1 l2 ~f:(for_all2_ok ~f)
+let for_all2 l1 l2 ~f = check_length2 l1 l2 ~f:(for_all2_ok ~f) [@nontail]
 
 let for_all2_exn l1 l2 ~f =
   check_length2_exn "for_all2_exn" l1 l2;
   for_all2_ok l1 l2 ~f
 ;;
 
-let exists2 l1 l2 ~f = check_length2 l1 l2 ~f:(exists2_ok ~f)
+let exists2 l1 l2 ~f = check_length2 l1 l2 ~f:(exists2_ok ~f) [@nontail]
 
 let exists2_exn l1 l2 ~f =
   check_length2_exn "exists2_exn" l1 l2;
@@ -279,7 +279,7 @@ let find_map t ~f =
        | None -> loop l
        | Some _ as r -> r)
   in
-  loop t
+  loop t [@nontail]
 ;;
 
 let find_map_exn =
@@ -298,7 +298,7 @@ let find t ~f =
     | [] -> None
     | x :: l -> if f x then Some x else loop l
   in
-  loop t
+  loop t [@nontail]
 ;;
 
 let find_exn =
@@ -318,7 +318,7 @@ let findi t ~f =
     | [] -> None
     | x :: l -> if f i x then Some (i, x) else loop (i + 1) l
   in
-  loop 0 t
+  loop 0 t [@nontail]
 ;;
 
 let findi_exn =
@@ -340,7 +340,7 @@ let find_mapi t ~f =
        | Some _ as result -> result
        | None -> loop (i + 1) l)
   in
-  loop 0 t
+  loop 0 t [@nontail]
 ;;
 
 let find_mapi_exn =
@@ -360,7 +360,7 @@ let for_alli t ~f =
     | [] -> true
     | hd :: tl -> f i hd && loop (i + 1) tl
   in
-  loop 0 t
+  loop 0 t [@nontail]
 ;;
 
 let existsi t ~f =
@@ -369,7 +369,7 @@ let existsi t ~f =
     | [] -> false
     | hd :: tl -> f i hd || loop (i + 1) tl
   in
-  loop 0 t
+  loop 0 t [@nontail]
 ;;
 
 (** For the container interface. *)
@@ -432,7 +432,7 @@ let append l1 l2 = count_append l1 l2 0
    9 objects into one heap allocated object, reducing allocation and performance costs
    accordingly. Note that the very end of the list is done by the stdlib's map
    function. *)
-let tail_map xs ~f =
+let tail_map xs ~f:(f [@local]) =
   let rec rise ys = function
     | [] -> ys
     | (y0, y1, y2, y3, y4, y5, y6, y7, y8) :: bs ->
@@ -452,10 +452,11 @@ let tail_map xs ~f =
       dive ((y0, y1, y2, y3, y4, y5, y6, y7, y8) :: bs) xs
     | xs -> rise (nontail_map ~f xs) bs
   in
-  dive [] xs
+  let res = dive [] xs in
+  res
 ;;
 
-let rec count_map ~f l ctr =
+let rec count_map ~f:(f [@local]) l ctr =
   match l with
   | [] -> []
   | [ x1 ] ->
@@ -497,7 +498,7 @@ let folding_map t ~init ~f =
   map t ~f:(fun x ->
     let new_acc, y = f !acc x in
     acc := new_acc;
-    y)
+    y) [@nontail]
 ;;
 
 let fold_map t ~init ~f =
@@ -513,7 +514,7 @@ let fold_map t ~init ~f =
 
 let ( >>| ) l f = map l ~f
 let map2_ok l1 l2 ~f = rev (rev_map2_ok l1 l2 ~f)
-let map2 l1 l2 ~f = check_length2 l1 l2 ~f:(map2_ok ~f)
+let map2 l1 l2 ~f = check_length2 l1 l2 ~f:(map2_ok ~f) [@nontail]
 
 let map2_exn l1 l2 ~f =
   check_length2_exn "map2_exn" l1 l2;
@@ -527,10 +528,10 @@ let rev_map3_ok l1 l2 l3 ~f =
     | x1 :: l1, x2 :: l2, x3 :: l3 -> loop l1 l2 l3 (f x1 x2 x3 :: ac)
     | _ -> assert false
   in
-  loop l1 l2 l3 []
+  loop l1 l2 l3 [] [@nontail]
 ;;
 
-let rev_map3 l1 l2 l3 ~f = check_length3 l1 l2 l3 ~f:(rev_map3_ok ~f)
+let rev_map3 l1 l2 l3 ~f = check_length3 l1 l2 l3 ~f:(rev_map3_ok ~f) [@nontail]
 
 let rev_map3_exn l1 l2 l3 ~f =
   check_length3_exn "rev_map3_exn" l1 l2 l3;
@@ -538,7 +539,7 @@ let rev_map3_exn l1 l2 l3 ~f =
 ;;
 
 let map3_ok l1 l2 l3 ~f = rev (rev_map3_ok l1 l2 l3 ~f)
-let map3 l1 l2 l3 ~f = check_length3 l1 l2 l3 ~f:(map3_ok ~f)
+let map3 l1 l2 l3 ~f = check_length3 l1 l2 l3 ~f:(map3_ok ~f) [@nontail]
 
 let map3_exn l1 l2 l3 ~f =
   check_length3_exn "map3_exn" l1 l2 l3;
@@ -583,7 +584,7 @@ let rev_mapi l ~f =
     | [] -> acc
     | h :: t -> loop (i + 1) (f i h :: acc) t
   in
-  loop 0 [] l
+  loop 0 [] l [@nontail]
 ;;
 
 let mapi l ~f = rev (rev_mapi l ~f)
@@ -593,7 +594,7 @@ let folding_mapi t ~init ~f =
   mapi t ~f:(fun i x ->
     let new_acc, y = f i !acc x in
     acc := new_acc;
-    y)
+    y) [@nontail]
 ;;
 
 let fold_mapi t ~init ~f =
@@ -697,18 +698,19 @@ let groupi l ~break =
   | l -> rev_map l ~f:rev
 ;;
 
-let group l ~break = groupi l ~break:(fun _ x y -> break x y)
+let group l ~break = groupi l ~break:(fun _ x y -> break x y) [@nontail]
 
 let sort_and_group l ~compare =
   l |> stable_sort ~compare |> group ~break:(fun x y -> compare x y <> 0)
 ;;
 
-let concat_map l ~f =
+let concat_map l ~f:(f [@local]) =
   let rec aux acc = function
     | [] -> rev acc
     | hd :: tl -> aux (rev_append (f hd) acc) tl
   in
-  aux [] l
+  let res = aux [] l in
+  res
 ;;
 
 let concat_mapi l ~f =
@@ -716,7 +718,7 @@ let concat_mapi l ~f =
     | [] -> rev acc
     | hd :: tl -> aux (cont + 1) (rev_append (f cont hd) acc) tl
   in
-  aux 0 [] l
+  aux 0 [] l [@nontail]
 ;;
 
 let merge l1 l2 ~compare =
@@ -727,7 +729,7 @@ let merge l1 l2 ~compare =
     | h1 :: t1, h2 :: t2 ->
       if compare h1 h2 <= 0 then loop (h1 :: acc) t1 l2 else loop (h2 :: acc) l1 t2
   in
-  loop [] l1 l2
+  loop [] l1 l2 [@nontail]
 ;;
 
 module Cartesian_product = struct
@@ -739,7 +741,7 @@ module Cartesian_product = struct
   let map2 a b ~f = concat_map a ~f:(fun x -> map b ~f:(fun y -> f x y))
   let return x = [ x ]
   let ( >>| ) = ( >>| )
-  let ( >>= ) t f = bind t ~f
+  let ( >>= ) t (f [@local]) = bind t ~f
 
   open struct
     module Applicative = Applicative.Make_using_map2 (struct
@@ -799,7 +801,7 @@ module Cartesian_product = struct
   end
 end
 
-include (Cartesian_product : Monad.S with type 'a t := 'a t)
+include (Cartesian_product : Monad.S_local with type 'a t := 'a t)
 
 (** returns final element of list *)
 let rec last_exn list =
@@ -835,7 +837,7 @@ let find_consecutive_duplicate t ~equal =
       | [] -> None
       | a2 :: t -> if equal a1 a2 then Some (a1, a2) else loop a2 t
     in
-    loop a1 t
+    loop a1 t [@nontail]
 ;;
 
 (* returns list without adjacent duplicates *)
@@ -865,7 +867,7 @@ let dedup_and_sort list ~compare =
   | _ ->
     let equal x x' = compare x x' = 0 in
     let sorted = sort ~compare list in
-    remove_consecutive_duplicates ~equal sorted
+    remove_consecutive_duplicates ~equal sorted [@nontail]
 ;;
 
 let find_a_dup l ~compare =
@@ -875,7 +877,7 @@ let find_a_dup l ~compare =
     | [] | [ _ ] -> None
     | hd1 :: (hd2 :: _ as tl) -> if compare hd1 hd2 = 0 then Some hd1 else loop tl
   in
-  loop sorted
+  loop sorted [@nontail]
 ;;
 
 let contains_dup lst ~compare =
@@ -888,7 +890,7 @@ let find_all_dups l ~compare =
   (* We add this reversal, so we can skip a [rev] at the end. We could skip
      [rev] anyway since we don not give any ordering guarantees, but it is
      nice to get results in natural order. *)
-  let compare a b = -1 * compare a b in
+  let compare a b = compare b a in
   let sorted = sort ~compare l in
   (* Walk the list and record the first of each consecutive run of identical elements *)
   let rec loop sorted prev ~already_recorded acc =
@@ -903,7 +905,7 @@ let find_all_dups l ~compare =
   in
   match sorted with
   | [] -> []
-  | hd :: tl -> loop tl hd ~already_recorded:false []
+  | hd :: tl -> loop tl hd ~already_recorded:false [] [@nontail]
 ;;
 
 let rec all_equal_to t v ~equal =
@@ -924,7 +926,7 @@ let min_elt t ~compare = Container.min_elt ~fold t ~compare
 let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
 let counti t ~f =
-  foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count)
+  foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count) [@nontail]
 ;;
 
 let init n ~f =
@@ -933,7 +935,7 @@ let init n ~f =
     assert (i >= 0);
     if i = 0 then accum else loop (i - 1) (f (i - 1) :: accum)
   in
-  loop n []
+  loop n [] [@nontail]
 ;;
 
 let rev_filter_map l ~f =
@@ -945,7 +947,7 @@ let rev_filter_map l ~f =
        | Some x -> loop tl (x :: accum)
        | None -> loop tl accum)
   in
-  loop l []
+  loop l [] [@nontail]
 ;;
 
 let filter_map l ~f = rev (rev_filter_map l ~f)
@@ -959,7 +961,7 @@ let rev_filter_mapi l ~f =
        | Some x -> loop (i + 1) tl (x :: accum)
        | None -> loop (i + 1) tl accum)
   in
-  loop 0 l []
+  loop 0 l [] [@nontail]
 ;;
 
 let filter_mapi l ~f = rev (rev_filter_mapi l ~f)
@@ -975,18 +977,70 @@ let partition3_map t ~f =
        | `Snd y -> loop t fst (y :: snd) trd
        | `Trd y -> loop t fst snd (y :: trd))
   in
-  loop t [] [] []
+  loop t [] [] [] [@nontail]
 ;;
 
 let partition_tf t ~f =
   let f x : _ Either.t = if f x then First x else Second x in
-  partition_map t ~f
+  partition_map t ~f [@nontail]
 ;;
 
 let partition_result t = partition_map t ~f:Result.to_either
 
 module Assoc = struct
-  type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp, sexp_grammar]
+  type 'a key = ('a[@tag Sexplib0.Sexp_grammar.assoc_key_tag = List []])
+  [@@deriving_inline sexp, sexp_grammar]
+
+  let key_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a key =
+    fun _of_a__014_ -> _of_a__014_
+  ;;
+
+  let sexp_of_key : 'a. ('a -> Sexplib0.Sexp.t) -> 'a key -> Sexplib0.Sexp.t =
+    fun _of_a__016_ -> _of_a__016_
+  ;;
+
+  let key_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a key Sexplib0.Sexp_grammar.t =
+    fun _'a_sexp_grammar ->
+      { untyped =
+          Tagged
+            { key = Sexplib0.Sexp_grammar.assoc_key_tag
+            ; value = List []
+            ; grammar = _'a_sexp_grammar.untyped
+            }
+      }
+  ;;
+
+  [@@@end]
+
+  type 'a value = ('a[@tag Sexplib0.Sexp_grammar.assoc_value_tag = List []])
+  [@@deriving_inline sexp, sexp_grammar]
+
+  let value_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a value =
+    fun _of_a__017_ -> _of_a__017_
+  ;;
+
+  let sexp_of_value : 'a. ('a -> Sexplib0.Sexp.t) -> 'a value -> Sexplib0.Sexp.t =
+    fun _of_a__019_ -> _of_a__019_
+  ;;
+
+  let value_sexp_grammar :
+    'a. 'a Sexplib0.Sexp_grammar.t -> 'a value Sexplib0.Sexp_grammar.t
+    =
+    fun _'a_sexp_grammar ->
+      { untyped =
+          Tagged
+            { key = Sexplib0.Sexp_grammar.assoc_value_tag
+            ; value = List []
+            ; grammar = _'a_sexp_grammar.untyped
+            }
+      }
+  ;;
+
+  [@@@end]
+
+  type ('a, 'b) t =
+    (('a key * 'b value) list[@tag Sexplib0.Sexp_grammar.assoc_tag = List []])
+  [@@deriving_inline sexp, sexp_grammar]
 
   let t_of_sexp :
     'a 'b.
@@ -995,20 +1049,20 @@ module Assoc = struct
     -> Sexplib0.Sexp.t
     -> ('a, 'b) t
     =
-    let error_source__022_ = "list.ml.Assoc.t" in
-    fun _of_a__014_ _of_b__015_ x__023_ ->
+    let error_source__028_ = "list.ml.Assoc.t" in
+    fun _of_a__020_ _of_b__021_ x__029_ ->
       list_of_sexp
         (function
-          | Sexplib0.Sexp.List [ arg0__017_; arg1__018_ ] ->
-            let res0__019_ = _of_a__014_ arg0__017_
-            and res1__020_ = _of_b__015_ arg1__018_ in
-            res0__019_, res1__020_
-          | sexp__021_ ->
+          | Sexplib0.Sexp.List [ arg0__023_; arg1__024_ ] ->
+            let res0__025_ = key_of_sexp _of_a__020_ arg0__023_
+            and res1__026_ = value_of_sexp _of_b__021_ arg1__024_ in
+            res0__025_, res1__026_
+          | sexp__027_ ->
             Sexplib0.Sexp_conv_error.tuple_of_size_n_expected
-              error_source__022_
+              error_source__028_
               2
-              sexp__021_)
-        x__023_
+              sexp__027_)
+        x__029_
   ;;
 
   let sexp_of_t :
@@ -1018,25 +1072,37 @@ module Assoc = struct
     -> ('a, 'b) t
     -> Sexplib0.Sexp.t
     =
-    fun _of_a__024_ _of_b__025_ x__030_ ->
+    fun _of_a__030_ _of_b__031_ x__036_ ->
       sexp_of_list
-        (fun (arg0__026_, arg1__027_) ->
-           let res0__028_ = _of_a__024_ arg0__026_
-           and res1__029_ = _of_b__025_ arg1__027_ in
-           Sexplib0.Sexp.List [ res0__028_; res1__029_ ])
-        x__030_
+        (fun (arg0__032_, arg1__033_) ->
+           let res0__034_ = sexp_of_key _of_a__030_ arg0__032_
+           and res1__035_ = sexp_of_value _of_b__031_ arg1__033_ in
+           Sexplib0.Sexp.List [ res0__034_; res1__035_ ])
+        x__036_
   ;;
 
-  let (t_sexp_grammar :
-         'a Sexplib0.Sexp_grammar.t
-       -> 'b Sexplib0.Sexp_grammar.t
-       -> ('a, 'b) t Sexplib0.Sexp_grammar.t)
+  let t_sexp_grammar :
+    'a 'b.
+    'a Sexplib0.Sexp_grammar.t
+    -> 'b Sexplib0.Sexp_grammar.t
+    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar _'b_sexp_grammar ->
-      list_sexp_grammar
-        { untyped =
-            List (Cons (_'a_sexp_grammar.untyped, Cons (_'b_sexp_grammar.untyped, Empty)))
-        }
+      { untyped =
+          Tagged
+            { key = Sexplib0.Sexp_grammar.assoc_tag
+            ; value = List []
+            ; grammar =
+                (list_sexp_grammar
+                   { untyped =
+                       List
+                         (Cons
+                            ( (key_sexp_grammar _'a_sexp_grammar).untyped
+                            , Cons ((value_sexp_grammar _'b_sexp_grammar).untyped, Empty) ))
+                   })
+                .untyped
+            }
+      }
   ;;
 
   [@@@end]
@@ -1078,7 +1144,7 @@ module Assoc = struct
     | Some _ -> true
   ;;
 
-  let remove t ~equal key = filter t ~f:(fun (key', _) -> not (equal key key'))
+  let remove t ~equal key = filter t ~f:(fun (key', _) -> not (equal key key')) [@nontail]
 
   let add t ~equal key value =
     (* the remove doesn't change the map semantics, but keeps the list small *)
@@ -1086,7 +1152,7 @@ module Assoc = struct
   ;;
 
   let inverse t = map t ~f:(fun (x, y) -> y, x)
-  let map t ~f = map t ~f:(fun (key, value) -> key, f value)
+  let map t ~f = map t ~f:(fun (key, value) -> key, f value) [@nontail]
 end
 
 let sub l ~pos ~len =
@@ -1152,7 +1218,7 @@ let split_while xs ~f =
     | hd :: tl when f hd -> loop (hd :: acc) tl
     | t -> rev acc, t
   in
-  loop [] xs
+  loop [] xs [@nontail]
 ;;
 
 (* copied from [split_while] to avoid allocating a tuple *)
@@ -1161,7 +1227,7 @@ let take_while xs ~f =
     | hd :: tl when f hd -> loop (hd :: acc) tl
     | _ -> rev acc
   in
-  loop [] xs
+  loop [] xs [@nontail]
 ;;
 
 let rec drop_while t ~f =
@@ -1204,7 +1270,7 @@ let is_sorted l ~compare =
     | [] | [ _ ] -> true
     | x1 :: (x2 :: _ as rest) -> compare x1 x2 <= 0 && loop rest
   in
-  loop l
+  loop l [@nontail]
 ;;
 
 let is_sorted_strictly l ~compare =
@@ -1213,7 +1279,7 @@ let is_sorted_strictly l ~compare =
     | [] | [ _ ] -> true
     | x1 :: (x2 :: _ as rest) -> compare x1 x2 < 0 && loop rest
   in
-  loop l
+  loop l [@nontail]
 ;;
 
 module Infix = struct
@@ -1254,7 +1320,7 @@ let rec compare cmp a b =
 
 let hash_fold_t = hash_fold_list
 
-let equal equal t1 t2 =
+let equal_local ((equal : _ -> _ -> _) [@local]) t1 t2 =
   let rec loop ~equal t1 t2 =
     match t1, t2 with
     | [], [] -> true
@@ -1262,6 +1328,10 @@ let equal equal t1 t2 =
     | _ -> false
   in
   loop ~equal t1 t2
+;;
+
+let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
+  fun f x y -> equal_local f x y
 ;;
 
 let transpose =
@@ -1292,11 +1362,11 @@ let () =
   Sexplib0.Sexp_conv.Exn_converter.add
     [%extension_constructor Transpose_got_lists_of_different_lengths]
     (function
-      | Transpose_got_lists_of_different_lengths arg0__031_ ->
-        let res0__032_ = sexp_of_list sexp_of_int arg0__031_ in
+      | Transpose_got_lists_of_different_lengths arg0__037_ ->
+        let res0__038_ = sexp_of_list sexp_of_int arg0__037_ in
         Sexplib0.Sexp.List
           [ Sexplib0.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"
-          ; res0__032_
+          ; res0__038_
           ]
       | _ -> assert false)
 ;;
@@ -1316,10 +1386,11 @@ let intersperse t ~sep =
 ;;
 
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
-let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
+let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
 
-let is_suffix list ~suffix ~equal:equal_elt =
+let is_suffix list ~suffix ~equal:((equal_elt : _ -> _ -> _) [@local]) =
   let list_len = length list in
   let suffix_len = length suffix in
-  list_len >= suffix_len && equal equal_elt (drop list (list_len - suffix_len)) suffix
+  list_len >= suffix_len
+  && equal_local equal_elt (drop list (list_len - suffix_len)) suffix
 ;;

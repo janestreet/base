@@ -1,9 +1,10 @@
 open! Import
 
-module type Basic = sig
+module type Basic_gen = sig
   type 'a t
+  type ('a, 'b) f_labeled_fn
 
-  val bind : 'a t -> f:('a -> 'b t) -> 'b t
+  val bind : 'a t -> ('a -> 'b t, 'b t) f_labeled_fn
   val return : 'a -> 'a t
 
   (** The following identities ought to hold (for some value of =):
@@ -21,38 +22,49 @@ module type Basic = sig
 
       Some other functions returned by [Monad.Make] are defined in terms of [map], so
       passing in a more efficient [map] will improve their efficiency as well. *)
-  val map : [ `Define_using_bind | `Custom of 'a t -> f:('a -> 'b) -> 'b t ]
+  val map : [ `Define_using_bind | `Custom of 'a t -> ('a -> 'b, 'b t) f_labeled_fn ]
 end
 
-module type Infix = sig
+module type Basic = Basic_gen with type ('a, 'b) f_labeled_fn := f:'a -> 'b
+
+module type Basic_local =
+  Basic_gen with type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+
+module type Infix_gen = sig
   type 'a t
+  type ('a, 'b) fn
 
   (** [t >>= f] returns a computation that sequences the computations represented by two
       monad elements.  The resulting computation first does [t] to yield a value [v], and
       then runs the computation returned by [f v]. *)
-  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+  val ( >>= ) : 'a t -> ('a -> 'b t, 'b t) fn
 
   (** [t >>| f] is [t >>= (fun a -> return (f a))]. *)
-  val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
+  val ( >>| ) : 'a t -> ('a -> 'b, 'b t) fn
 end
 
-module type Syntax = sig
+module type Infix = Infix_gen with type ('a, 'b) fn := 'a -> 'b
+module type Infix_local = Infix_gen with type ('a, 'b) fn := ('a[@local]) -> 'b
+
+module type Syntax_gen = sig
   (** Opening a module of this type allows one to use the [%bind] and [%map] syntax
       extensions defined by ppx_let, and brings [return] into scope. *)
 
   type 'a t
+  type ('a, 'b) fn
+  type ('a, 'b) f_labeled_fn
 
   module Let_syntax : sig
     (** These are convenient to have in scope when programming with a monad: *)
 
     val return : 'a -> 'a t
 
-    include Infix with type 'a t := 'a t
+    include Infix_gen with type 'a t := 'a t and type ('a, 'b) fn := ('a, 'b) fn
 
     module Let_syntax : sig
       val return : 'a -> 'a t
-      val bind : 'a t -> f:('a -> 'b t) -> 'b t
-      val map : 'a t -> f:('a -> 'b) -> 'b t
+      val bind : 'a t -> ('a -> 'b t, 'b t) f_labeled_fn
+      val map : 'a t -> ('a -> 'b, 'b t) f_labeled_fn
       val both : 'a t -> 'b t -> ('a * 'b) t
 
       module Open_on_rhs : sig end
@@ -60,20 +72,34 @@ module type Syntax = sig
   end
 end
 
-module type S_without_syntax = sig
-  type 'a t
+module type Syntax =
+  Syntax_gen
+  with type ('a, 'b) fn := 'a -> 'b
+   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
 
-  include Infix with type 'a t := 'a t
-  module Monad_infix : Infix with type 'a t := 'a t
+module type Syntax_local =
+  Syntax_gen
+  with type ('a, 'b) fn := ('a[@local]) -> 'b
+   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+
+module type S_without_syntax_gen = sig
+  type 'a t
+  type ('a, 'b) fn
+  type ('a, 'b) f_labeled_fn
+
+  include Infix_gen with type 'a t := 'a t and type ('a, 'b) fn := ('a, 'b) fn
+
+  module Monad_infix :
+    Infix_gen with type 'a t := 'a t and type ('a, 'b) fn := ('a, 'b) fn
 
   (** [bind t ~f] = [t >>= f] *)
-  val bind : 'a t -> f:('a -> 'b t) -> 'b t
+  val bind : 'a t -> ('a -> 'b t, 'b t) f_labeled_fn
 
   (** [return v] returns the (trivial) computation that returns v. *)
   val return : 'a -> 'a t
 
   (** [map t ~f] is t >>| f. *)
-  val map : 'a t -> f:('a -> 'b) -> 'b t
+  val map : 'a t -> ('a -> 'b, 'b t) f_labeled_fn
 
   (** [join t] is [t >>= (fun t' -> t')]. *)
   val join : 'a t t -> 'a t
@@ -91,6 +117,16 @@ module type S_without_syntax = sig
   val all_unit : unit t list -> unit t
 end
 
+module type S_without_syntax =
+  S_without_syntax_gen
+  with type ('a, 'b) f_labeled_fn := f:'a -> 'b
+   and type ('a, 'b) fn := 'a -> 'b
+
+module type S_without_syntax_local =
+  S_without_syntax_gen
+  with type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+   and type ('a, 'b) fn := ('a[@local]) -> 'b
+
 module type S = sig
   type 'a t
 
@@ -98,40 +134,65 @@ module type S = sig
   include Syntax with type 'a t := 'a t
 end
 
-module type Basic2 = sig
+module type S_local = sig
+  type 'a t
+
+  include S_without_syntax_local with type 'a t := 'a t
+  include Syntax_local with type 'a t := 'a t
+end
+
+module type Basic2_gen = sig
   (** Multi parameter monad. The second parameter gets unified across all the computation.
       This is used to encode monads working on a multi parameter data structure like
       ([('a,'b) result]). *)
 
   type ('a, 'e) t
+  type ('a, 'b) f_labeled_fn
 
-  val bind : ('a, 'e) t -> f:('a -> ('b, 'e) t) -> ('b, 'e) t
-  val map : [ `Define_using_bind | `Custom of ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t ]
+  val bind : ('a, 'e) t -> ('a -> ('b, 'e) t, ('b, 'e) t) f_labeled_fn
+
+  val map
+    : [ `Define_using_bind
+      | `Custom of ('a, 'e) t -> ('a -> 'b, ('b, 'e) t) f_labeled_fn
+      ]
+
   val return : 'a -> ('a, _) t
 end
 
-module type Infix2 = sig
+module type Basic2 = Basic2_gen with type ('a, 'b) f_labeled_fn := f:'a -> 'b
+
+module type Basic2_local =
+  Basic2_gen with type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+
+module type Infix2_gen = sig
   (** Same as {!Infix}, except the monad type has two arguments. The second is always just
       passed through. *)
 
   type ('a, 'e) t
+  type ('a, 'b) fn
 
-  val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
-  val ( >>| ) : ('a, 'e) t -> ('a -> 'b) -> ('b, 'e) t
+  val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t, ('b, 'e) t) fn
+  val ( >>| ) : ('a, 'e) t -> ('a -> 'b, ('b, 'e) t) fn
 end
 
-module type Syntax2 = sig
+module type Infix2 = Infix2_gen with type ('a, 'b) fn := 'a -> 'b
+module type Infix2_local = Infix2_gen with type ('a, 'b) fn := ('a[@local]) -> 'b
+
+module type Syntax2_gen = sig
   type ('a, 'e) t
+  type ('a, 'b) fn
+  type ('a, 'b) f_labeled_fn
 
   module Let_syntax : sig
     val return : 'a -> ('a, _) t
 
-    include Infix2 with type ('a, 'e) t := ('a, 'e) t
+    include
+      Infix2_gen with type ('a, 'e) t := ('a, 'e) t and type ('a, 'b) fn := ('a, 'b) fn
 
     module Let_syntax : sig
       val return : 'a -> ('a, _) t
-      val bind : ('a, 'e) t -> f:('a -> ('b, 'e) t) -> ('b, 'e) t
-      val map : ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t
+      val bind : ('a, 'e) t -> ('a -> ('b, 'e) t, ('b, 'e) t) f_labeled_fn
+      val map : ('a, 'e) t -> ('a -> 'b, ('b, 'e) t) f_labeled_fn
       val both : ('a, 'e) t -> ('b, 'e) t -> ('a * 'b, 'e) t
 
       module Open_on_rhs : sig end
@@ -139,24 +200,52 @@ module type Syntax2 = sig
   end
 end
 
-module type S2 = sig
+module type Syntax2 =
+  Syntax2_gen
+  with type ('a, 'b) fn := 'a -> 'b
+   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+
+module type Syntax2_local =
+  Syntax2_gen
+  with type ('a, 'b) fn := ('a[@local]) -> 'b
+   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+
+module type S2_gen = sig
   (** The same as {!S} except the monad type has two arguments. The second is always just
       passed through. *)
 
   type ('a, 'e) t
+  type ('a, 'b) fn
+  type ('a, 'b) f_labeled_fn
 
-  include Infix2 with type ('a, 'e) t := ('a, 'e) t
-  include Syntax2 with type ('a, 'e) t := ('a, 'e) t
-  module Monad_infix : Infix2 with type ('a, 'e) t := ('a, 'e) t
+  include
+    Infix2_gen with type ('a, 'e) t := ('a, 'e) t and type ('a, 'b) fn := ('a, 'b) fn
 
-  val bind : ('a, 'e) t -> f:('a -> ('b, 'e) t) -> ('b, 'e) t
+  include
+    Syntax2_gen
+    with type ('a, 'e) t := ('a, 'e) t
+     and type ('a, 'b) fn := ('a, 'b) fn
+     and type ('a, 'b) f_labeled_fn := ('a, 'b) f_labeled_fn
+
+  module Monad_infix :
+    Infix2_gen with type ('a, 'e) t := ('a, 'e) t and type ('a, 'b) fn := ('a, 'b) fn
+
+  val bind : ('a, 'e) t -> ('a -> ('b, 'e) t, ('b, 'e) t) f_labeled_fn
   val return : 'a -> ('a, _) t
-  val map : ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t
+  val map : ('a, 'e) t -> ('a -> 'b, ('b, 'e) t) f_labeled_fn
   val join : (('a, 'e) t, 'e) t -> ('a, 'e) t
   val ignore_m : (_, 'e) t -> (unit, 'e) t
   val all : ('a, 'e) t list -> ('a list, 'e) t
   val all_unit : (unit, 'e) t list -> (unit, 'e) t
 end
+
+module type S2 =
+  S2_gen with type ('a, 'b) fn := 'a -> 'b and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+
+module type S2_local =
+  S2_gen
+  with type ('a, 'b) fn := ('a[@local]) -> 'b
+   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
 
 module type Basic3 = sig
   (** Multi parameter monad. The second and third parameters get unified across all the
@@ -346,19 +435,28 @@ module type Monad = sig
   module type Basic2 = Basic2
   module type Basic3 = Basic3
   module type Basic_indexed = Basic_indexed
+  module type Basic_local = Basic_local
+  module type Basic2_local = Basic2_local
   module type Infix = Infix
   module type Infix2 = Infix2
   module type Infix3 = Infix3
   module type Infix_indexed = Infix_indexed
+  module type Infix_local = Infix_local
+  module type Infix2_local = Infix2_local
   module type Syntax = Syntax
   module type Syntax2 = Syntax2
   module type Syntax3 = Syntax3
   module type Syntax_indexed = Syntax_indexed
+  module type Syntax_local = Syntax_local
+  module type Syntax2_local = Syntax2_local
   module type S_without_syntax = S_without_syntax
+  module type S_without_syntax_local = S_without_syntax_local
   module type S = S
   module type S2 = S2
   module type S3 = S3
   module type S_indexed = S_indexed
+  module type S_local = S_local
+  module type S2_local = S2_local
 
   module Make (X : Basic) : S with type 'a t := 'a X.t
   module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t
@@ -366,6 +464,9 @@ module type Monad = sig
 
   module Make_indexed (X : Basic_indexed) :
     S_indexed with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t
+
+  module Make_local (X : Basic_local) : S_local with type 'a t := 'a X.t
+  module Make2_local (X : Basic2_local) : S2_local with type ('a, 'e) t := ('a, 'e) X.t
 
   (** Define a monad through an isomorphism with an existing monad. For example:
 
@@ -418,5 +519,5 @@ module type Monad = sig
       constructed by [Monad.Make]. This gives better inlining
       guarantees.
   *)
-  module Ident : S with type 'a t = 'a
+  module Ident : S_local with type 'a t = 'a
 end

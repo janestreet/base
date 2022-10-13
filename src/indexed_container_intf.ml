@@ -1,10 +1,11 @@
 
-type ('t, 'a, 'accum) fold = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
+type ('t, 'a, 'accum) fold =
+  't -> init:'accum -> f:(('accum -> 'a -> 'accum)[@local]) -> 'accum
 
 type ('t, 'a, 'accum) foldi =
-  't -> init:'accum -> f:(int -> 'accum -> 'a -> 'accum) -> 'accum
+  't -> init:'accum -> f:((int -> 'accum -> 'a -> 'accum)[@local]) -> 'accum
 
-type ('t, 'a) iteri = 't -> f:(int -> 'a -> unit) -> unit
+type ('t, 'a) iteri = 't -> f:((int -> 'a -> unit)[@local]) -> unit
 
 module type S0 = sig
   include Container.S0
@@ -14,11 +15,11 @@ module type S0 = sig
 
   val foldi : (t, elt, _) foldi
   val iteri : (t, elt) iteri
-  val existsi : t -> f:(int -> elt -> bool) -> bool
-  val for_alli : t -> f:(int -> elt -> bool) -> bool
-  val counti : t -> f:(int -> elt -> bool) -> int
-  val findi : t -> f:(int -> elt -> bool) -> (int * elt) option
-  val find_mapi : t -> f:(int -> elt -> 'a option) -> 'a option
+  val existsi : t -> f:((int -> elt -> bool)[@local]) -> bool
+  val for_alli : t -> f:((int -> elt -> bool)[@local]) -> bool
+  val counti : t -> f:((int -> elt -> bool)[@local]) -> int
+  val findi : t -> f:((int -> elt -> bool)[@local]) -> (int * elt) option
+  val find_mapi : t -> f:((int -> elt -> 'a option)[@local]) -> 'a option
 end
 
 module type S1 = sig
@@ -29,11 +30,11 @@ module type S1 = sig
 
   val foldi : ('a t, 'a, _) foldi
   val iteri : ('a t, 'a) iteri
-  val existsi : 'a t -> f:(int -> 'a -> bool) -> bool
-  val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
-  val counti : 'a t -> f:(int -> 'a -> bool) -> int
-  val findi : 'a t -> f:(int -> 'a -> bool) -> (int * 'a) option
-  val find_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b option
+  val existsi : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
+  val for_alli : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
+  val counti : 'a t -> f:((int -> 'a -> bool)[@local]) -> int
+  val findi : 'a t -> f:((int -> 'a -> bool)[@local]) -> (int * 'a) option
+  val find_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b option
 end
 
 module type Generic = sig
@@ -44,11 +45,11 @@ module type Generic = sig
 
   val foldi : ('a t, 'a elt, _) foldi
   val iteri : ('a t, 'a elt) iteri
-  val existsi : 'a t -> f:(int -> 'a elt -> bool) -> bool
-  val for_alli : 'a t -> f:(int -> 'a elt -> bool) -> bool
-  val counti : 'a t -> f:(int -> 'a elt -> bool) -> int
-  val findi : 'a t -> f:(int -> 'a elt -> bool) -> (int * 'a elt) option
-  val find_mapi : 'a t -> f:(int -> 'a elt -> 'b option) -> 'b option
+  val existsi : 'a t -> f:((int -> 'a elt -> bool)[@local]) -> bool
+  val for_alli : 'a t -> f:((int -> 'a elt -> bool)[@local]) -> bool
+  val counti : 'a t -> f:((int -> 'a elt -> bool)[@local]) -> int
+  val findi : 'a t -> f:((int -> 'a elt -> bool)[@local]) -> (int * 'a elt) option
+  val find_mapi : 'a t -> f:((int -> 'a elt -> 'b option)[@local]) -> 'b option
 end
 
 module type Make_gen_arg = sig
@@ -77,21 +78,31 @@ module type Indexed_container = sig
 
   (** Generic definitions of [foldi] and [iteri] in terms of [fold].
 
-      E.g., [iteri ~fold t ~f = ignore (fold t ~init:0 ~f:(fun i x -> f i x; i + 1))]. *)
+      E.g., [iteri ~fold t ~f = ignore (fold t ~init:0 ~f:((fun i x -> f i x; i + 1)[@local]))]. *)
 
   val foldi : fold:('t, 'a, 'accum) fold -> ('t, 'a, 'accum) foldi
   val iteri : fold:('t, 'a, int) fold -> ('t, 'a) iteri
 
   (** Generic definitions of indexed container operations in terms of [foldi]. *)
 
-  val counti : foldi:('t, 'a, int) foldi -> 't -> f:(int -> 'a -> bool) -> int
+  val counti : foldi:('t, 'a, int) foldi -> 't -> f:((int -> 'a -> bool)[@local]) -> int
 
   (** Generic definitions of indexed container operations in terms of [iteri]. *)
 
-  val existsi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> bool
-  val for_alli : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> bool
-  val findi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> (int * 'a) option
-  val find_mapi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> 'b option) -> 'b option
+  val existsi : iteri:('t, 'a) iteri -> 't -> f:((int -> 'a -> bool)[@local]) -> bool
+  val for_alli : iteri:('t, 'a) iteri -> 't -> f:((int -> 'a -> bool)[@local]) -> bool
+
+  val findi
+    :  iteri:('t, 'a) iteri
+    -> 't
+    -> f:((int -> 'a -> bool)[@local])
+    -> (int * 'a) option
+
+  val find_mapi
+    :  iteri:('t, 'a) iteri
+    -> 't
+    -> f:((int -> 'a -> 'b option)[@local])
+    -> 'b option
 
   module Make (T : Make_arg) : S1 with type 'a t := 'a T.t
   module Make0 (T : Make0_arg) : S0 with type t := T.t and type elt := T.Elt.t

@@ -136,7 +136,7 @@ module type For_deriving = sig
 end
 
 module type Hash_set = sig
-  type 'a t [@@deriving_inline sexp_of]
+  type !'a t [@@deriving_inline sexp_of]
 
   val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 

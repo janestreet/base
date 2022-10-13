@@ -11,5 +11,17 @@ let peek = Caml.Queue.peek
 let pop = Caml.Queue.pop
 let push = Caml.Queue.push
 let transfer = Caml.Queue.transfer
-let iter t ~f = Caml.Queue.iter f t
-let fold t ~init ~f = Caml.Queue.fold f init t
+
+let iter t ~f:((f : _ -> _) [@local]) =
+  let caml_iter : (('a -> unit)[@local]) -> 'a t -> unit =
+    Caml.Obj.magic (Caml.Queue.iter : ('a -> unit) -> 'a t -> unit)
+  in
+  caml_iter f t
+;;
+
+let fold t ~init ~f:((f : _ -> _ -> _) [@local]) =
+  let caml_fold : (('b -> 'a -> 'b)[@local]) -> 'b -> 'a t -> 'b =
+    Caml.Obj.magic (Caml.Queue.fold : ('b -> 'a -> 'b) -> 'b -> 'a t -> 'b)
+  in
+  caml_fold f init t
+;;

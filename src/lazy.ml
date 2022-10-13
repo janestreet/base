@@ -6,7 +6,7 @@ type 'a t = 'a lazy_t [@@deriving_inline sexp, sexp_grammar]
 let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = lazy_t_of_sexp
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_lazy_t
 
-let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
+let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
   fun _'a_sexp_grammar -> lazy_t_sexp_grammar _'a_sexp_grammar
 ;;
 

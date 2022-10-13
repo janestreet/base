@@ -211,6 +211,8 @@ let%test_module "Make" =
                               end)))
 ;;
 
+let%test_module "Make" = (module Test_applicative_s (Applicative.Make_local (Or_error)))
+
 (* While law-abiding applicatives shouldn't be relying functions being called
    the minimal number of times, it is good for performance that things be this
    way. For many applicatives this will not matter very much, but for others,

@@ -8,6 +8,7 @@
    Defining [module Array = Array0] is also necessary because it prevents ocamldep from
    mistakenly causing a file to depend on [Base.Array]. *)
 
+
 open! Import0
 module Sys = Sys0
 
@@ -52,20 +53,77 @@ let blit = Caml.Array.blit
 let concat = Caml.Array.concat
 let copy = Caml.Array.copy
 let fill = Caml.Array.fill
-let init = Caml.Array.init
+
+let init len ~f:((f : _ -> _) [@local]) =
+  if len = 0
+  then [||]
+  else if len < 0
+  then invalid_arg "Array.init"
+  else (
+    let res = create ~len (f 0) in
+    for i = 1 to Stdlib.Int.pred len do
+      unsafe_set res i (f i)
+    done;
+    res)
+;;
+
 let make_matrix = Caml.Array.make_matrix
 let of_list = Caml.Array.of_list
 let sub = Caml.Array.sub
 let to_list = Caml.Array.to_list
 
-(* These are eta expanded in order to permute parameter order to follow Base
-   conventions. *)
-let fold t ~init ~f = Caml.Array.fold_left t ~init ~f
-let fold_right t ~f ~init = Caml.Array.fold_right t ~f ~init
-let iter t ~f = Caml.Array.iter t ~f
-let iteri t ~f = Caml.Array.iteri t ~f
-let map t ~f = Caml.Array.map t ~f
-let mapi t ~f = Caml.Array.mapi t ~f
+let fold t ~init ~f:((f : _ -> _ -> _) [@local]) =
+  let r = ref init in
+  for i = 0 to length t - 1 do
+    r := f !r (unsafe_get t i)
+  done;
+  !r
+;;
+
+let fold_right t ~f:((f : _ -> _ -> _) [@local]) ~init =
+  let r = ref init in
+  for i = length t - 1 downto 0 do
+    r := f (unsafe_get t i) !r
+  done;
+  !r
+;;
+
+let iter t ~f:((f : _ -> _) [@local]) =
+  for i = 0 to length t - 1 do
+    f (unsafe_get t i)
+  done
+;;
+
+let iteri t ~f:((f : _ -> _ -> _) [@local]) =
+  for i = 0 to length t - 1 do
+    f i (unsafe_get t i)
+  done
+;;
+
+let map t ~f:((f : _ -> _) [@local]) =
+  let len = length t in
+  if len = 0
+  then [||]
+  else (
+    let r = create ~len (f (unsafe_get t 0)) in
+    for i = 1 to len - 1 do
+      unsafe_set r i (f (unsafe_get t i))
+    done;
+    r)
+;;
+
+let mapi t ~f:((f : _ -> _ -> _) [@local]) =
+  let len = length t in
+  if len = 0
+  then [||]
+  else (
+    let r = create ~len (f 0 (unsafe_get t 0)) in
+    for i = 1 to len - 1 do
+      unsafe_set r i (f i (unsafe_get t i))
+    done;
+    r)
+;;
+
 let stable_sort t ~compare = Caml.Array.stable_sort t ~cmp:compare
 
 let swap t i j =

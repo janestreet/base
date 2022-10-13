@@ -314,7 +314,7 @@ let foldi t ~init ~f =
   fold t ~init ~f:(fun acc a ->
     let acc = f !i acc a in
     i := !i + 1;
-    acc)
+    acc) [@nontail]
 ;;
 
 

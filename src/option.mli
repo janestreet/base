@@ -46,7 +46,7 @@ include Sexpable.S1 with type 'a t := 'a t
     {- [Some f <*> Some x = Some (f x)] }}
 *)
 
-include Applicative.S with type 'a t := 'a t
+include Applicative.S_local with type 'a t := 'a t
 
 (** {3 Monadic interface}
 
@@ -58,7 +58,7 @@ include Applicative.S with type 'a t := 'a t
     {- [(Some x >>= f) = f x]}}
 *)
 
-include Monad.S with type 'a t := 'a t
+include Monad.S_local with type 'a t := 'a t
 
 (** {2 Extracting Underlying Values} *)
 
@@ -77,58 +77,58 @@ val value_exn
 
 (** Extracts the underlying value and applies [f] to it if present, otherwise returns
     [default]. *)
-val value_map : 'a t -> default:'b -> f:('a -> 'b) -> 'b
+val value_map : 'a t -> default:'b -> f:(('a -> 'b)[@local]) -> 'b
 
 (** Extracts the underlying value if present, otherwise executes and returns the result of
     [default]. [default] is only executed if the underlying value is absent. *)
-val value_or_thunk : 'a t -> default:(unit -> 'a) -> 'a
+val value_or_thunk : 'a t -> default:((unit -> 'a)[@local]) -> 'a
 
 
 (** On [None], returns [init]. On [Some x], returns [f init x]. *)
-val fold : 'a t -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
+val fold : 'a t -> init:'accum -> f:(('accum -> 'a -> 'accum)[@local]) -> 'accum
 
 (** Checks whether the provided element is there, using [equal]. *)
-val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
+val mem : 'a t -> 'a -> equal:(('a -> 'a -> bool)[@local]) -> bool
 
 val length : 'a t -> int
-val iter : 'a t -> f:('a -> unit) -> unit
+val iter : 'a t -> f:(('a -> unit)[@local]) -> unit
 
 (** On [None], returns [false]. On [Some x], returns [f x]. *)
-val exists : 'a t -> f:('a -> bool) -> bool
+val exists : 'a t -> f:(('a -> bool)[@local]) -> bool
 
 (** On [None], returns [true]. On [Some x], returns [f x]. *)
-val for_all : 'a t -> f:('a -> bool) -> bool
+val for_all : 'a t -> f:(('a -> bool)[@local]) -> bool
 
 (** [find t ~f] returns [t] if [t = Some x] and [f x = true]; otherwise, [find] returns
     [None]. *)
-val find : 'a t -> f:('a -> bool) -> 'a option
+val find : 'a t -> f:(('a -> bool)[@local]) -> 'a option
 
 (** On [None], returns [None]. On [Some x], returns [f x]. *)
-val find_map : 'a t -> f:('a -> 'b option) -> 'b option
+val find_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b option
 
 val to_list : 'a t -> 'a list
 val to_array : 'a t -> 'a array
 
 (** [call x f] runs an optional function [~f] on the argument. *)
-val call : 'a -> f:('a -> unit) t -> unit
+val call : 'a -> f:(('a -> unit)[@local]) t -> unit
 
 (** [merge a b ~f] merges together the values from [a] and [b] using [f].  If both [a] and
     [b] are [None], returns [None].  If only one is [Some], returns that one, and if both
     are [Some], returns [Some] of the result of applying [f] to the contents of [a] and
     [b]. *)
-val merge : 'a t -> 'a t -> f:('a -> 'a -> 'a) -> 'a t
+val merge : 'a t -> 'a t -> f:(('a -> 'a -> 'a)[@local]) -> 'a t
 
-val filter : 'a t -> f:('a -> bool) -> 'a t
+val filter : 'a t -> f:(('a -> bool)[@local]) -> 'a t
 
 (** {2 Constructors} *)
 
 (** [try_with f] returns [Some x] if [f] returns [x] and [None] if [f] raises an
     exception.  See [Result.try_with] if you'd like to know which exception. *)
-val try_with : (unit -> 'a) -> 'a t
+val try_with : ((unit -> 'a)[@local]) -> 'a t
 
 (** [try_with_join f] returns the optional value returned by [f] if it exits normally, and
     [None] if [f] raises an exception. *)
-val try_with_join : (unit -> 'a t) -> 'a t
+val try_with_join : ((unit -> 'a t)[@local]) -> 'a t
 
 (** Wraps the [Some] constructor as a function. *)
 val some : 'a -> 'a t
@@ -156,26 +156,30 @@ val is_empty : 'a t -> bool [@@deprecated "[since 2019-07] Use [is_none] instead
 val fold_result
   :  'a t
   -> init:'accum
-  -> f:('accum -> 'a -> ('accum, 'e) Result.t)
+  -> f:(('accum -> 'a -> ('accum, 'e) Result.t)[@local])
   -> ('accum, 'e) Result.t
 [@@deprecated "[since 2019-07] It is not a useful function"]
 
 val fold_until
   :  'a t
   -> init:'accum
-  -> f:('accum -> 'a -> ('accum, 'final) Container.Continue_or_stop.t)
-  -> finish:('accum -> 'final)
+  -> f:(('accum -> 'a -> ('accum, 'final) Container.Continue_or_stop.t)[@local])
+  -> finish:(('accum -> 'final)[@local])
   -> 'final
 [@@deprecated "[since 2019-07] It is not a useful function"]
 
-val min_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+val min_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
 [@@deprecated "[since 2019-07] Use [Fn.id] instead"]
 
-val max_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+val max_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
 [@@deprecated "[since 2019-07] Use [Fn.id] instead"]
 
-val count : 'a t -> f:('a -> bool) -> int
+val count : 'a t -> f:(('a -> bool)[@local]) -> int
 [@@deprecated "[since 2019-07] Use pattern matching instead"]
 
-val sum : (module Container.Summable with type t = 'sum) -> 'a t -> f:('a -> 'sum) -> 'sum
+val sum
+  :  (module Container.Summable with type t = 'sum)
+  -> 'a t
+  -> f:(('a -> 'sum)[@local])
+  -> 'sum
 [@@deprecated "[since 2019-07] Use [value_map ~default:Summable.zero ~f] instead"]

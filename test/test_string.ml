@@ -55,6 +55,38 @@ let%expect_test "to_list and to_list_rev" =
   [%expect {| (b l a d d e r w r a c k) |}]
 ;;
 
+let%expect_test "sub/unsafe_sub" =
+  let test ~pos ~len =
+    let string = "0123456789" in
+    match Or_error.try_with (fun () -> sub string ~pos ~len) with
+    | Ok safe_substring ->
+      let unsafe_substring = unsafe_sub string ~pos ~len in
+      require_equal [%here] (module String) safe_substring unsafe_substring;
+      print_s [%sexp (safe_substring : t)]
+    | Error e -> print_s [%sexp (e : Error.t)]
+  in
+  test ~pos:0 ~len:0;
+  [%expect {| "" |}];
+  test ~pos:0 ~len:5;
+  [%expect {| 01234 |}];
+  test ~pos:0 ~len:10;
+  [%expect {| 0123456789 |}];
+  test ~pos:0 ~len:11;
+  [%expect {| (Invalid_argument "pos + len past end: 0 + 11 > 10") |}];
+  test ~pos:1 ~len:5;
+  [%expect {| 12345 |}];
+  test ~pos:1 ~len:10;
+  [%expect {| (Invalid_argument "pos + len past end: 1 + 10 > 10") |}];
+  test ~pos:9 ~len:1;
+  [%expect {| 9 |}];
+  test ~pos:9 ~len:2;
+  [%expect {| (Invalid_argument "pos + len past end: 9 + 2 > 10") |}];
+  test ~pos:10 ~len:0;
+  [%expect {| "" |}];
+  test ~pos:10 ~len:1;
+  [%expect {| (Invalid_argument "pos + len past end: 10 + 1 > 10") |}]
+;;
+
 let%test_module "Caseless Suffix/Prefix" =
   (module struct
     let%test _ = Caseless.is_suffix "OCaml" ~suffix:"AmL"

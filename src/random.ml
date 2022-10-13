@@ -55,7 +55,6 @@ module State = struct
   ;;
 
   let assign = Random_repr.assign
-
   let full_init t seed = assign t (make seed)
 
   let default =
@@ -235,7 +234,6 @@ module State = struct
 end
 
 let default = Random_repr.make_default State.default
-
 let bits () = State.bits (Random_repr.get_state default)
 let int x = State.int (Random_repr.get_state default) x
 let int32 x = State.int32 (Random_repr.get_state default) x

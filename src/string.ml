@@ -1,9 +1,7 @@
 open! Import
 module Array = Array0
-include String0
 module Bytes = Bytes0
-(* This alias is necessary despite [String0] defining [Bytes = Bytes0], in order to
-   convince ocamldep that this file doesn't depend on bytes.ml. *)
+include String0
 
 let invalid_argf = Printf.invalid_argf
 let raise_s = Error.raise_s
@@ -41,17 +39,21 @@ let invariant (_ : t) = ()
    [sub], [subo] could be implemented using [Blit.Make(Bytes)] plus unsafe casts to/from
    string but were inlined here to avoid using [Bytes.unsafe_of_string] as much as possible.
 *)
+let unsafe_sub src ~pos ~len =
+  if len = 0
+  then ""
+  else (
+    let dst = Bytes.create len in
+    Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
+;;
+
 let sub src ~pos ~len =
   if pos = 0 && len = String.length src
   then src
   else (
     Ordered_collection_common.check_pos_len_exn ~pos ~len ~total_length:(length src);
-    if len = 0
-    then ""
-    else (
-      let dst = Bytes.create len in
-      Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
-      Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst))
+    unsafe_sub src ~pos ~len)
 ;;
 
 let subo ?(pos = 0) ?len src =
@@ -580,7 +582,7 @@ let rev t =
   let len = length t in
   let res = Bytes.create len in
   for i = 0 to len - 1 do
-    unsafe_set res i (unsafe_get t (len - 1 - i))
+    Bytes.unsafe_set res i (unsafe_get t (len - 1 - i))
   done;
   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res
 ;;
@@ -704,7 +706,7 @@ let suffix t n = wrap_sub_n ~name:"suffix" t n ~pos:(length t - n) ~len:n ~on_er
 let lfindi ?(pos = 0) t ~f =
   let n = length t in
   let rec loop i = if i = n then None else if f i t.[i] then Some i else loop (i + 1) in
-  loop pos
+  loop pos [@nontail]
 ;;
 
 let find t ~f =
@@ -723,7 +725,7 @@ let find_map t ~f =
       | None -> loop (i + 1)
       | Some _ as res -> res)
   in
-  loop 0
+  loop 0 [@nontail]
 ;;
 
 let rfindi ?pos t ~f =
@@ -825,7 +827,7 @@ let sum m t ~f = Container.sum ~fold m t ~f
 let min_elt t = Container.min_elt ~fold t
 let max_elt t = Container.max_elt ~fold t
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
-let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
+let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
 let find_mapi t ~f = Indexed_container.find_mapi ~iteri t ~f
 let findi t ~f = Indexed_container.findi ~iteri t ~f
 let counti t ~f = Indexed_container.counti ~foldi t ~f

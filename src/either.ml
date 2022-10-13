@@ -63,15 +63,18 @@ module Make_focused (M : sig
       -> other:('d -> 'd -> 'd)
       -> ('c, 'd) t
 
-    val bind : ('a, 'b) t -> f:('a -> ('c, 'b) t) -> ('c, 'b) t
+    val bind : ('a, 'b) t -> f:(('a -> ('c, 'b) t)[@local]) -> ('c, 'b) t
   end) =
 struct
   include M
   open With_return
 
-  let map t ~f = bind t ~f:(fun x -> return (f x))
+  let map t ~f =
+    let res = bind t ~f:(fun x -> return (f x)) in
+    res
+  ;;
 
-  include Monad.Make2 (struct
+  include Monad.Make2_local (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return
@@ -79,12 +82,12 @@ struct
       let map = `Custom map
     end)
 
-  module App = Applicative.Make2 (struct
+  module App = Applicative.Make2_local (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return
       let apply t1 t2 = bind t1 ~f:(fun f -> bind t2 ~f:(fun x -> return (f x)))
-      let map = `Custom map
+      let map = map
     end)
 
   include App

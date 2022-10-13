@@ -10,10 +10,10 @@ module S_to_S2 (X : S) : S2 with type ('a, 'e) t = 'a X.t = struct
   type ('a, 'e) t = 'a X.t
 end
 
-module S2_to_S (X : S2) : S with type 'a t = ('a, unit) X.t = struct
+module S2_to_S (T : T.T) (X : S2) : S with type 'a t = ('a, T.t) X.t = struct
   include X
 
-  type 'a t = ('a, unit) X.t
+  type 'a t = ('a, T.t) X.t
 end
 
 module S2_to_S3 (X : S2) : S3 with type ('a, 'd, 'e) t = ('a, 'd) X.t = struct
@@ -22,10 +22,17 @@ module S2_to_S3 (X : S2) : S3 with type ('a, 'd, 'e) t = ('a, 'd) X.t = struct
   type ('a, 'd, 'e) t = ('a, 'd) X.t
 end
 
-module S3_to_S2 (X : S3) : S2 with type ('a, 'd) t = ('a, 'd, unit) X.t = struct
+module S3_to_S2 (T : T.T) (X : S3) : S2 with type ('a, 'd) t = ('a, 'd, T.t) X.t = struct
   include X
 
-  type ('a, 'd) t = ('a, 'd, unit) X.t
+  type ('a, 'd) t = ('a, 'd, T.t) X.t
+end
+
+module S3_to_S (T1 : T.T) (T2 : T.T) (X : S3) : S with type 'a t = ('a, T1.t, T2.t) X.t =
+struct
+  include X
+
+  type 'a t = ('a, T1.t, T2.t) X.t
 end
 
 module Make3 (X : Basic3) : S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t = struct
@@ -112,6 +119,36 @@ module Make_let_syntax
     end)
     (Intf)
     (Impl)
+
+module Make2_local (X : Basic2_local) : S2_local with type ('a, 'e) t := ('a, 'e) X.t =
+struct
+  include X
+
+  let ( <*> ) = apply
+  let ( >>| ) t f = map t ~f
+  let map2 ta tb ~f = map ~f ta <*> tb
+  let map3 ta tb tc ~f = map ~f ta <*> tb <*> tc
+  let all ts = List.fold_right ts ~init:(return []) ~f:(map2 ~f:(fun x xs -> x :: xs))
+  let both ta tb = map2 ta tb ~f:(fun a b -> a, b)
+  let ( *> ) u v = return (fun () y -> y) <*> u <*> v
+  let ( <* ) u v = return (fun x () -> x) <*> u <*> v
+  let all_unit ts = List.fold ts ~init:(return ()) ~f:( *> )
+
+
+  module Applicative_infix = struct
+    let ( <*> ) = ( <*> )
+    let ( *> ) = ( *> )
+    let ( <* ) = ( <* )
+    let ( >>| ) = ( >>| )
+  end
+end
+
+module Make_local (X : Basic_local) : S_local with type 'a t := 'a X.t =
+  Make2_local (struct
+    include X
+
+    type ('a, 'e) t = 'a X.t
+  end)
 
 (** This functor closely resembles [Make3], and indeed it could be implemented
     much shorter in terms of [Make3]. However, we implement it by hand so that

@@ -1,17 +1,16 @@
 let () =
   let ver, output =
-    try
-      match Sys.argv with
-      | [|_; "-ocaml-version"; v; "-o"; fn|] ->
-        (Scanf.sscanf v "%d.%d" (fun major minor -> (major, minor)),
-         fn)
-      | _ -> raise Exit
-    with _ ->
-      failwith "bad command line arguments"
+    match Sys.argv with
+    | [| _; "-ocaml-version"; v; "-o"; fn |] ->
+      Scanf.sscanf v "%d.%d" (fun major minor -> major, minor), fn
+    | _ -> failwith "bad command line arguments"
   in
   let oc = open_out output in
-  if ver >= (5, 0) then
-    Printf.fprintf oc {|
+  if ver >= (5, 0)
+  then
+    Printf.fprintf
+      oc
+      {|
 module Repr = struct
   open Caml.Bigarray
 
@@ -34,7 +33,9 @@ let make_default default =
 let get_state random_key = Caml.Domain.DLS.get random_key
 |}
   else
-    Printf.fprintf oc {|
+    Printf.fprintf
+      oc
+      {|
 module Array = Array0
 
 module Repr = struct
@@ -57,3 +58,4 @@ let make_default default = default
 let[@inline always] get_state state = state
 |};
   close_out oc
+;;

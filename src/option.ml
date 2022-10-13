@@ -24,7 +24,7 @@ struct
     sexp_of_option
   ;;
 
-  let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
+  let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
     fun _'a_sexp_grammar -> option_sexp_grammar _'a_sexp_grammar
   ;;
 
@@ -236,7 +236,6 @@ module Monad_arg = struct
   type 'a t = 'a option
 
   let return x = Some x
-  let apply = apply
   let map = `Custom map
 
   let bind o ~f =
@@ -246,8 +245,17 @@ module Monad_arg = struct
   ;;
 end
 
-include Monad.Make (Monad_arg)
-include Applicative.Make (Monad_arg)
+include Monad.Make_local (Monad_arg)
+
+module Applicative_arg = struct
+  type 'a t = 'a option
+
+  let return x = Some x
+  let apply = apply
+  let map = map
+end
+
+include Applicative.Make_local (Applicative_arg)
 
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
-let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
+let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish

@@ -12,8 +12,8 @@ open! Import
 module type Focused = sig
   type (+'focus, +'other) t
 
-  include Monad.S2 with type ('a, 'b) t := ('a, 'b) t
-  include Applicative.S2 with type ('a, 'b) t := ('a, 'b) t
+  include Monad.S2_local with type ('a, 'b) t := ('a, 'b) t
+  include Applicative.S2_local with type ('a, 'b) t := ('a, 'b) t
 
   val value : ('a, _) t -> default:'a -> 'a
   val to_option : ('a, _) t -> 'a option

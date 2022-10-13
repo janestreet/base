@@ -36,7 +36,16 @@ module Of_sexpable3
                        val of_sexpable : ('a, 'b, 'c) Sexpable.t -> ('a, 'b, 'c) t
                      end) : S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t
 
-module Of_stringable (M : Stringable.S) : S with type t := M.t
+module Of_stringable (M : Stringable.S) : sig
+  type t [@@deriving_inline sexp_grammar]
+
+  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
+
+  [@@@end]
+
+  include S with type t := t
+end
+with type t := M.t
 
 (** New code should use the [[@@deriving sexp]] syntax directly. These module types ([S],
     [S1], [S2], and [S3]) are exported for backwards compatibility only.

@@ -25,18 +25,18 @@ module Debug (Stack : S) : S with type 'a t = 'a Stack.t = struct
      applying the function. *)
   let clear t : unit = debug t (fun () -> clear t)
   let copy t : _ t = check_and_return (debug t (fun () -> copy t))
-  let count t ~f : int = debug t (fun () -> count t ~f)
-  let sum m t ~f = debug t (fun () -> sum m t ~f)
+  let count t ~f : int = debug t (fun () -> count t ~f) [@nontail]
+  let sum m t ~f = debug t (fun () -> sum m t ~f) [@nontail]
   let create () : _ t = check_and_return (create ())
-  let exists t ~f : bool = debug t (fun () -> exists t ~f)
-  let find t ~f : _ option = debug t (fun () -> find t ~f)
-  let find_map t ~f : _ option = debug t (fun () -> find_map t ~f)
-  let fold (type a) t ~init ~f : a = debug t (fun () -> fold t ~init ~f)
-  let for_all t ~f : bool = debug t (fun () -> for_all t ~f)
+  let exists t ~f : bool = debug t (fun () -> exists t ~f) [@nontail]
+  let find t ~f : _ option = debug t (fun () -> find t ~f) [@nontail]
+  let find_map t ~f : _ option = debug t (fun () -> find_map t ~f) [@nontail]
+  let fold (type a) t ~init ~f : a = debug t (fun () -> fold t ~init ~f) [@nontail]
+  let for_all t ~f : bool = debug t (fun () -> for_all t ~f) [@nontail]
   let is_empty t : bool = debug t (fun () -> is_empty t)
-  let iter t ~f : unit = debug t (fun () -> iter t ~f)
+  let iter t ~f : unit = debug t (fun () -> iter t ~f) [@nontail]
   let length t : int = debug t (fun () -> length t)
-  let mem t a ~equal : bool = debug t (fun () -> mem t a ~equal)
+  let mem t a ~equal : bool = debug t (fun () -> mem t a ~equal) [@nontail]
   let of_list l : _ t = check_and_return (of_list l)
   let pop t : _ option = debug t (fun () -> pop t)
   let pop_exn (type a) t : a = debug t (fun () -> pop_exn t)
@@ -49,10 +49,13 @@ module Debug (Stack : S) : S with type 'a t = 'a Stack.t = struct
   let top t : _ option = debug t (fun () -> top t)
   let top_exn (type a) t : a = debug t (fun () -> top_exn t)
   let until_empty t f : unit = debug t (fun () -> until_empty t f)
-  let min_elt t ~compare : _ option = debug t (fun () -> min_elt t ~compare)
-  let max_elt t ~compare : _ option = debug t (fun () -> max_elt t ~compare)
-  let fold_result t ~init ~f = debug t (fun () -> fold_result t ~init ~f)
-  let fold_until t ~init ~f = debug t (fun () -> fold_until t ~init ~f)
+  let min_elt t ~compare : _ option = debug t (fun () -> min_elt t ~compare) [@nontail]
+  let max_elt t ~compare : _ option = debug t (fun () -> max_elt t ~compare) [@nontail]
+  let fold_result t ~init ~f = debug t (fun () -> fold_result t ~init ~f) [@nontail]
+
+  let fold_until t ~init ~f ~finish =
+    debug t (fun () -> fold_until t ~init ~f ~finish) [@nontail]
+  ;;
 end
 
 module Test (Stack : S) : S with type 'a t = 'a Stack.t =

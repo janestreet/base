@@ -94,6 +94,79 @@ module Make (M : Basic) : S with type 'a t := 'a M.t = Make_general (struct
     type ('a, 'i, 'j, 'd, 'e) t = 'a M.t
   end)
 
+module Make2_local (M : Basic2_local) = struct
+  let bind = M.bind
+  let return = M.return
+
+  let map_via_bind ma ~f =
+    let res = M.bind ma ~f:(fun a -> M.return (f a)) in
+    res
+  ;;
+
+  let map =
+    match M.map with
+    | `Define_using_bind -> map_via_bind
+    | `Custom x -> x
+  ;;
+
+  module Monad_infix = struct
+    let ( >>= ) t f = bind t ~f
+    let ( >>| ) t f = map t ~f
+  end
+
+  include Monad_infix
+
+  module Let_syntax = struct
+    let return = return
+
+    include Monad_infix
+
+    module Let_syntax = struct
+      let return = return
+      let bind = bind
+      let map = map
+
+      let both a b =
+        let res =
+          bind a ~f:(fun a ->
+            let res = map b ~f:(fun b -> a, b) in
+            res)
+        in
+        res
+      ;;
+
+      module Open_on_rhs = struct end
+    end
+  end
+
+  let join t = t >>= Fn.id
+
+  let ignore_m t =
+    let res = map t ~f:(fun _ -> ()) in
+    res
+  ;;
+
+  let all =
+    let rec loop vs = function
+      | [] -> return (List.rev vs)
+      | t :: ts -> t >>= fun v -> loop (v :: vs) ts
+    in
+    fun ts -> loop [] ts
+  ;;
+
+  let rec all_unit = function
+    | [] -> return ()
+    | t :: ts -> t >>= fun () -> all_unit ts
+  ;;
+end
+
+module Make_local (M : Basic_local) : S_local with type 'a t := 'a M.t =
+  Make2_local (struct
+    include M
+
+    type ('a, 'e) t = 'a M.t
+  end)
+
 module Of_monad_general (Monad : sig
     type ('a, 'i, 'j, 'd, 'e) t
 

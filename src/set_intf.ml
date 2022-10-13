@@ -73,30 +73,25 @@ module type Accessors_generic = sig
   val fold_until
     :  ('a, _) t
     -> init:'b
-    -> f:('b -> 'a elt -> ('b, 'final) Container.Continue_or_stop.t)
-    -> finish:('b -> 'final)
+    -> f:(('b -> 'a elt -> ('b, 'final) Container.Continue_or_stop.t)[@local])
+    -> finish:(('b -> 'final)[@local])
     -> 'final
 
-  val fold_right : ('a, _) t -> init:'b -> f:('a elt -> 'b -> 'b) -> 'b
+  val fold_right : ('a, _) t -> init:'b -> f:(('a elt -> 'b -> 'b)[@local]) -> 'b
 
   val iter2
     : ( 'a
       , 'cmp
       , ('a, 'cmp) t
       -> ('a, 'cmp) t
-      -> f:([ `Left of 'a elt | `Right of 'a elt | `Both of 'a elt * 'a elt ] -> unit)
+      -> f:
+           (([ `Left of 'a elt | `Right of 'a elt | `Both of 'a elt * 'a elt ] -> unit)
+            [@local])
       -> unit )
         access_options
 
-  val filter
-    : ('a, 'cmp, ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t) access_options
-
-  val partition_tf
-    : ( 'a
-      , 'cmp
-      , ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t * ('a, 'cmp) t )
-        access_options
-
+  val filter : ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t
+  val partition_tf : ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t * ('a, 'cmp) t
   val elements : ('a, _) t -> 'a elt list
   val min_elt : ('a, _) t -> 'a elt option
   val min_elt_exn : ('a, _) t -> 'a elt
@@ -111,16 +106,11 @@ module type Accessors_generic = sig
       , ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * 'a elt option * ('a, 'cmp) t )
         access_options
 
-  val group_by
-    : ( 'a
-      , 'cmp
-      , ('a, 'cmp) t -> equiv:('a elt -> 'a elt -> bool) -> ('a, 'cmp) t list )
-        access_options
-
+  val group_by : ('a, 'cmp) t -> equiv:('a elt -> 'a elt -> bool) -> ('a, 'cmp) t list
   val find_exn : ('a, _) t -> f:('a elt -> bool) -> 'a elt
   val nth : ('a, _) t -> int -> 'a elt option
   val remove_index : ('a, 'cmp, ('a, 'cmp) t -> int -> ('a, 'cmp) t) access_options
-  val to_tree : ('a, 'cmp) t -> ('a elt, 'cmp) tree
+  val to_tree : ('a, 'cmp) t -> ('a elt, 'cmp cmp) tree
 
   val to_sequence
     : ( 'a
@@ -199,7 +189,7 @@ module type Creators_generic = sig
   val filter_map
     : ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt option) -> ('b, 'cmp) t) create_options
 
-  val of_tree : ('a, 'cmp, ('a elt, 'cmp) tree -> ('a, 'cmp) t) create_options
+  val of_tree : ('a, 'cmp, ('a elt, 'cmp cmp) tree -> ('a, 'cmp) t) create_options
 end
 
 module type Creators_and_accessors_generic = sig
@@ -305,9 +295,9 @@ module type Set = sig
       is used for ordering elements in this set.  Many operations (e.g., {!union}),
       require that they be passed sets with the same element type and the same comparator
       type. *)
-  type ('elt, 'cmp) t [@@deriving_inline compare]
+  type (!'elt, !'cmp) t [@@deriving_inline compare]
 
-  include Ppx_compare_lib.Comparable.S2 with type ('elt, 'cmp) t := ('elt, 'cmp) t
+  include Ppx_compare_lib.Comparable.S2 with type (!'elt, !'cmp) t := ('elt, 'cmp) t
 
   [@@@end]
 
@@ -385,33 +375,33 @@ module type Set = sig
 
   (** [exists t ~f] returns [true] iff there exists an [a] in [t] for which [f a].  [O(n)],
       but returns as soon as it finds an [a] for which [f a]. *)
-  val exists : ('a, _) t -> f:('a -> bool) -> bool
+  val exists : ('a, _) t -> f:(('a -> bool)[@local]) -> bool
 
   (** [for_all t ~f] returns [true] iff for all [a] in [t], [f a].  [O(n)], but returns as
       soon as it finds an [a] for which [not (f a)]. *)
-  val for_all : ('a, _) t -> f:('a -> bool) -> bool
+  val for_all : ('a, _) t -> f:(('a -> bool)[@local]) -> bool
 
   (** [count t] returns the number of elements of [t] for which [f] returns [true].
       [O(n)]. *)
-  val count : ('a, _) t -> f:('a -> bool) -> int
+  val count : ('a, _) t -> f:(('a -> bool)[@local]) -> int
 
   (** [sum t] returns the sum of [f t] for each [t] in the set.
       [O(n)]. *)
   val sum
     :  (module Container.Summable with type t = 'sum)
     -> ('a, _) t
-    -> f:('a -> 'sum)
+    -> f:(('a -> 'sum)[@local])
     -> 'sum
 
   (** [find t f] returns an element of [t] for which [f] returns true, with no guarantee as
       to which element is returned.  [O(n)], but returns as soon as a suitable element is
       found. *)
-  val find : ('a, _) t -> f:('a -> bool) -> 'a option
+  val find : ('a, _) t -> f:(('a -> bool)[@local]) -> 'a option
 
   (** [find_map t f] returns [b] for some [a] in [t] for which [f a = Some b].  If no such
       [a] exists, then [find] returns [None].  [O(n)], but returns as soon as a suitable
       element is found. *)
-  val find_map : ('a, _) t -> f:('a -> 'b option) -> 'b option
+  val find_map : ('a, _) t -> f:(('a -> 'b option)[@local]) -> 'b option
 
   (** Like [find], but throws an exception on failure. *)
   val find_exn : ('a, _) t -> f:('a -> bool) -> 'a
@@ -526,14 +516,14 @@ module type Set = sig
   val filter : ('a, 'cmp) t -> f:('a -> bool) -> ('a, 'cmp) t
 
   (** [fold t ~init ~f] folds over the elements of the set from smallest to largest. *)
-  val fold : ('a, _) t -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
+  val fold : ('a, _) t -> init:'accum -> f:(('accum -> 'a -> 'accum)[@local]) -> 'accum
 
   (** [fold_result ~init ~f] folds over the elements of the set from smallest to
       largest, short circuiting the fold if [f accum x] is an [Error _] *)
   val fold_result
     :  ('a, _) t
     -> init:'accum
-    -> f:('accum -> 'a -> ('accum, 'e) Result.t)
+    -> f:(('accum -> 'a -> ('accum, 'e) Result.t)[@local])
     -> ('accum, 'e) Result.t
 
   (** [fold_until t ~init ~f] is a short-circuiting version of [fold]. If [f]
@@ -542,17 +532,21 @@ module type Set = sig
   val fold_until
     :  ('a, _) t
     -> init:'accum
-    -> f:('accum -> 'a -> ('accum, 'final) Container.Continue_or_stop.t)
-    -> finish:('accum -> 'final)
+    -> f:(('accum -> 'a -> ('accum, 'final) Container.Continue_or_stop.t)[@local])
+    -> finish:(('accum -> 'final)[@local])
     -> 'final
 
 
   (** Like {!fold}, except that it goes from the largest to the smallest element. *)
-  val fold_right : ('a, _) t -> init:'accum -> f:('a -> 'accum -> 'accum) -> 'accum
+  val fold_right
+    :  ('a, _) t
+    -> init:'accum
+    -> f:(('a -> 'accum -> 'accum)[@local])
+    -> 'accum
 
   (** [iter t ~f] calls [f] on every element of [t], going in order from the smallest to
       largest.  *)
-  val iter : ('a, _) t -> f:('a -> unit) -> unit
+  val iter : ('a, _) t -> f:(('a -> unit)[@local]) -> unit
 
   (** Iterate two sets side by side.  Complexity is [O(m+n)] where [m] and [n] are the sizes
       of the two input sets.  As an example, with the inputs [0; 1] and [1; 2], [f] will be
@@ -560,7 +554,7 @@ module type Set = sig
   val iter2
     :  ('a, 'cmp) t
     -> ('a, 'cmp) t
-    -> f:([ `Left of 'a | `Right of 'a | `Both of 'a * 'a ] -> unit)
+    -> f:(([ `Left of 'a | `Right of 'a | `Both of 'a * 'a ] -> unit)[@local])
     -> unit
 
   (** if [a, b = partition_tf set ~f] then [a] is the elements on which [f] produced [true],

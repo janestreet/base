@@ -57,9 +57,9 @@ val to_string_mach : t -> string
 
 (** Executes [f] and afterwards executes [finally], whether [f] throws an exception or
     not. *)
-val protectx : f:('a -> 'b) -> 'a -> finally:('a -> unit) -> 'b
+val protectx : f:(('a -> 'b)[@local]) -> 'a -> finally:(('a -> unit)[@local]) -> 'b
 
-val protect : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
+val protect : f:((unit -> 'a)[@local]) -> finally:((unit -> unit)[@local]) -> 'a
 
 
 (** [handle_uncaught ~exit f] catches an exception escaping [f] and prints an error

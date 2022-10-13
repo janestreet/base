@@ -100,10 +100,11 @@ let sexp_of_t :
         Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Second"; res0__030_ ]
 ;;
 
-let (t_sexp_grammar :
-       'f Sexplib0.Sexp_grammar.t
-     -> 's Sexplib0.Sexp_grammar.t
-     -> ('f, 's) t Sexplib0.Sexp_grammar.t)
+let t_sexp_grammar :
+  'f 's.
+  'f Sexplib0.Sexp_grammar.t
+  -> 's Sexplib0.Sexp_grammar.t
+  -> ('f, 's) t Sexplib0.Sexp_grammar.t
   =
   fun _'f_sexp_grammar _'s_sexp_grammar ->
   { untyped =

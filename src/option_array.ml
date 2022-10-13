@@ -114,7 +114,7 @@ let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
   Uniform_array.sexp_of_t (Cheap_option.sexp_of_t _of_a__004_) x__005_
 ;;
 
-let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
+let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
   fun _'a_sexp_grammar ->
   Uniform_array.t_sexp_grammar (Cheap_option.t_sexp_grammar _'a_sexp_grammar)
 ;;
@@ -158,7 +158,7 @@ let iteri input ~f =
   done
 ;;
 
-let iter input ~f = iteri input ~f:(fun (_ : int) x -> f x)
+let iter input ~f = iteri input ~f:(fun (_ : int) x -> f x) [@nontail]
 
 let foldi input ~init ~f =
   let acc = ref init in
@@ -166,7 +166,7 @@ let foldi input ~init ~f =
   !acc
 ;;
 
-let fold input ~init ~f = foldi input ~init ~f:(fun (_ : int) acc x -> f acc x)
+let fold input ~init ~f = foldi input ~init ~f:(fun (_ : int) acc x -> f acc x) [@nontail]
 
 include Indexed_container.Make_gen (struct
     type nonrec 'a t = 'a t

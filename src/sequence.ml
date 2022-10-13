@@ -383,7 +383,7 @@ let mem t a ~equal =
     | Yield (_, s) | Skip s -> loop s next a
   in
   match t with
-  | Sequence (seed, next) -> loop seed next a
+  | Sequence (seed, next) -> loop seed next a [@nontail]
 ;;
 
 let empty = Sequence ((), fun () -> Done)
@@ -582,10 +582,11 @@ module Merge_with_duplicates_element = struct
           Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Both"; res0__054_; res1__055_ ]
   ;;
 
-  let (t_sexp_grammar :
-         'a Sexplib0.Sexp_grammar.t
-       -> 'b Sexplib0.Sexp_grammar.t
-       -> ('a, 'b) t Sexplib0.Sexp_grammar.t)
+  let t_sexp_grammar :
+    'a 'b.
+    'a Sexplib0.Sexp_grammar.t
+    -> 'b Sexplib0.Sexp_grammar.t
+    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar _'b_sexp_grammar ->
       { untyped =
@@ -762,7 +763,16 @@ let chunks_exn t n =
       | (_ :: _ as xs), t -> Yield (xs, t))
 ;;
 
-let findi s ~f = find (mapi s ~f:(fun i s -> i, s)) ~f:(fun (i, s) -> f i s)
+let findi t ~f =
+  let rec loop s next i f =
+    match next s with
+    | Done -> None
+    | Yield (a, _) when f i a -> Some (i, a)
+    | Yield (_, s) | Skip s -> loop s next (i + 1) f
+  in
+  match t with
+  | Sequence (seed, next) -> loop seed next 0 f
+;;
 
 let find_exn s ~f =
   match find s ~f with
@@ -848,10 +858,10 @@ let length_is_bounded_by ?(min = -1) ?max t =
      | _ -> false)
 ;;
 
-let iteri s ~f = iter (mapi s ~f:(fun i s -> i, s)) ~f:(fun (i, s) -> f i s)
+let iteri s ~f = iter (mapi s ~f:(fun i s -> i, s)) ~f:(fun (i, s) -> f i s) [@nontail]
 
 let foldi s ~init ~f =
-  fold ~init (mapi s ~f:(fun i s -> i, s)) ~f:(fun acc (i, s) -> f i acc s)
+  fold ~init (mapi s ~f:(fun i s -> i, s)) ~f:(fun acc (i, s) -> f i acc s) [@nontail]
 ;;
 
 let reduce s ~f =
@@ -903,8 +913,12 @@ let remove_consecutive_duplicates s ~equal =
     | None | Some _ -> Yield (a, Some a))
 ;;
 
-let count s ~f = length (filter s ~f)
-let counti t ~f = length (filteri t ~f)
+let count s ~f = fold s ~init:0 ~f:(fun acc elt -> acc + Bool.to_int (f elt)) [@nontail]
+
+let counti t ~f =
+  foldi t ~init:0 ~f:(fun i acc elt -> acc + Bool.to_int (f i elt)) [@nontail]
+;;
+
 let sum m t ~f = Container.sum ~fold m t ~f
 let min_elt t ~compare = Container.min_elt ~fold t ~compare
 let max_elt t ~compare = Container.max_elt ~fold t ~compare
@@ -1075,7 +1089,7 @@ let fold_until s ~init ~f ~finish =
        | Continue acc -> loop s next f acc)
   in
   match s with
-  | Sequence (s, next) -> loop s next f init
+  | Sequence (s, next) -> loop s next f init [@nontail]
 ;;
 
 let fold_result s ~init ~f =

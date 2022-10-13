@@ -916,7 +916,8 @@ let ieee_exponent t =
 
 let ieee_mantissa t =
   let bits = Caml.Int64.bits_of_float t in
-  Int63.of_int64_exn Caml.Int64.(logand bits mantissa_mask64)
+  (* This is safe because mantissa_mask64 < Int63.max_value *)
+  (Int63.of_int64_trunc [@inlined]) Caml.Int64.(logand bits mantissa_mask64)
 ;;
 
 let create_ieee_exn ~negative ~exponent ~mantissa =

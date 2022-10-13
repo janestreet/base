@@ -293,8 +293,8 @@ let iteri t ~f =
       raise exn)
 ;;
 
-let iter t ~f = iteri t ~f:(fun ~key:_ ~data -> f data)
-let iter_keys t ~f = iteri t ~f:(fun ~key ~data:_ -> f key)
+let iter t ~f = iteri t ~f:(fun ~key:_ ~data -> f data) [@nontail]
+let iter_keys t ~f = iteri t ~f:(fun ~key ~data:_ -> f key) [@nontail]
 
 let rec choose_nonempty table i =
   let avltree = Array.unsafe_get table i in
@@ -352,10 +352,10 @@ let find_exn =
 let existsi t ~f =
   with_return (fun r ->
     iteri t ~f:(fun ~key ~data -> if f ~key ~data then r.return true);
-    false)
+    false) [@nontail]
 ;;
 
-let exists t ~f = existsi t ~f:(fun ~key:_ ~data -> f data)
+let exists t ~f = existsi t ~f:(fun ~key:_ ~data -> f data) [@nontail]
 let for_alli t ~f = not (existsi t ~f:(fun ~key ~data -> not (f ~key ~data)))
 let for_all t ~f = not (existsi t ~f:(fun ~key:_ ~data -> not (f data)))
 

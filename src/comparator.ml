@@ -92,7 +92,7 @@ end
 
 module type Derived = sig
   type 'a t
-  type 'cmp comparator_witness
+  type !'cmp comparator_witness
 
   val comparator : ('a, 'cmp) comparator -> ('a t, 'cmp comparator_witness) comparator
 end
@@ -107,7 +107,7 @@ module Derived (M : sig
     [@@@end]
   end) =
 struct
-  type 'cmp comparator_witness
+  type !'cmp comparator_witness
 
   let comparator a =
     { compare = M.compare a.compare; sexp_of_t = M.sexp_of_t a.sexp_of_t }
@@ -116,7 +116,7 @@ end
 
 module type Derived2 = sig
   type ('a, 'b) t
-  type ('cmp_a, 'cmp_b) comparator_witness
+  type (!'cmp_a, !'cmp_b) comparator_witness
 
   val comparator
     :  ('a, 'cmp_a) comparator
@@ -138,7 +138,7 @@ module Derived2 (M : sig
     [@@@end]
   end) =
 struct
-  type ('cmp_a, 'cmp_b) comparator_witness
+  type (!'cmp_a, !'cmp_b) comparator_witness
 
   let comparator a b =
     { compare = M.compare a.compare b.compare
@@ -167,5 +167,37 @@ struct
 
   let comparator a =
     { compare = M.compare a.compare; sexp_of_t = M.sexp_of_t a.sexp_of_t }
+  ;;
+end
+
+module type Derived2_phantom = sig
+  type ('a, 'b, 'c) t
+  type (!'cmp_a, !'cmp_b) comparator_witness
+
+  val comparator
+    :  ('a, 'cmp_a) comparator
+    -> ('b, 'cmp_b) comparator
+    -> (('a, 'b, _) t, ('cmp_a, 'cmp_b) comparator_witness) comparator
+end
+
+module Derived2_phantom (M : sig
+    type ('a, 'b, 'c) t
+
+    val compare
+      :  ('a -> 'a -> int)
+      -> ('b -> 'b -> int)
+      -> ('a, 'b, 'c) t
+      -> ('a, 'b, 'c) t
+      -> int
+
+    val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b, _) t -> Sexp.t
+  end) =
+struct
+  type (!'cmp_a, !'cmp_b) comparator_witness
+
+  let comparator a b =
+    { compare = M.compare a.compare b.compare
+    ; sexp_of_t = M.sexp_of_t a.sexp_of_t b.sexp_of_t
+    }
   ;;
 end

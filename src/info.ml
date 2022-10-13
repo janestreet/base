@@ -4,6 +4,7 @@
 
 open! Import
 include Info_intf
+module Char = Char0
 module String = String0
 
 module Message = struct
@@ -96,6 +97,19 @@ module Message = struct
 
   let to_string_hum_deprecated t = String.concat (to_strings_hum t [])
 
+  (* Like [String.split_lines], but less optimized and doesn't handle [\r\n]. Avoids a
+     dependency cycle. Improves on naive [String.split_on_char] by removing empty final
+     line. *)
+  let split_lines string =
+    let string =
+      let len = String.length string in
+      if len > 0 && Char.equal '\n' (String.get string (len - 1))
+      then String.sub string ~pos:0 ~len:(len - 1)
+      else string
+    in
+    String.split_on_char string ~sep:'\n'
+  ;;
+
   let rec to_sexps_hum t ac =
     match t with
     | Could_not_construct _ as t -> sexp_of_t t :: ac
@@ -116,7 +130,8 @@ module Message = struct
       let body = sexp :: to_sexps_hum t [] in
       if String.length tag = 0 then List body :: ac else List (Atom tag :: body) :: ac
     | With_backtrace (t, backtrace) ->
-      Sexp.List [ to_sexp_hum t; Sexp.Atom backtrace ] :: ac
+      Sexp.List [ to_sexp_hum t; sexp_of_list sexp_of_string (split_lines backtrace) ]
+      :: ac
     | Of_list (_, ts) ->
       List.fold (List.rev ts) ~init:ac ~f:(fun ac t -> to_sexps_hum t ac)
 

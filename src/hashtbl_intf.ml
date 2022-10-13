@@ -38,10 +38,14 @@ module type Accessors = sig
 
   (** Attempting to modify ([set], [remove], etc.) the hashtable during iteration ([fold],
       [iter], [iter_keys], [iteri]) will raise an exception. *)
-  val fold : ('a, 'b) t -> init:'c -> f:(key:'a key -> data:'b -> 'c -> 'c) -> 'c
+  val fold
+    :  ('a, 'b) t
+    -> init:'c
+    -> f:((key:'a key -> data:'b -> 'c -> 'c)[@local])
+    -> 'c
 
-  val iter_keys : ('a, _) t -> f:('a key -> unit) -> unit
-  val iter : (_, 'b) t -> f:('b -> unit) -> unit
+  val iter_keys : ('a, _) t -> f:(('a key -> unit)[@local]) -> unit
+  val iter : (_, 'b) t -> f:(('b -> unit)[@local]) -> unit
 
   (** Iterates over both keys and values.
 
@@ -55,12 +59,12 @@ module type Accessors = sig
       5-6
       - : unit = ()
       v} *)
-  val iteri : ('a, 'b) t -> f:(key:'a key -> data:'b -> unit) -> unit
+  val iteri : ('a, 'b) t -> f:((key:'a key -> data:'b -> unit)[@local]) -> unit
 
-  val existsi : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> bool
-  val exists : (_, 'b) t -> f:('b -> bool) -> bool
+  val existsi : ('a, 'b) t -> f:((key:'a key -> data:'b -> bool)[@local]) -> bool
+  val exists : (_, 'b) t -> f:(('b -> bool)[@local]) -> bool
   val for_alli : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> bool
-  val for_all : (_, 'b) t -> f:('b -> bool) -> bool
+  val for_all : (_, 'b) t -> f:(('b -> bool)[@local]) -> bool
   val counti : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> int
   val count : (_, 'b) t -> f:('b -> bool) -> int
   val length : (_, _) t -> int
@@ -617,7 +621,7 @@ module type S_without_submodules = sig
   val hash : 'a -> int
   val hash_param : int -> int -> 'a -> int
 
-  type ('a, 'b) t
+  type (!'a, !'b) t
 
   (** We provide a [sexp_of_t] but not a [t_of_sexp] for this type because one needs to be
       explicit about the hash and comparison functions used when creating a hashtable.

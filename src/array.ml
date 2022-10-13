@@ -7,7 +7,7 @@ let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
 let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = array_of_sexp
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_array
 
-let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t) =
+let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
   fun _'a_sexp_grammar -> array_sexp_grammar _'a_sexp_grammar
 ;;
 
@@ -41,11 +41,15 @@ let (t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
      Slides at http://www.cs.princeton.edu/~rs/talks/QuicksortIsOptimal.pdf
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
 
-module Sort = struct
-  (* For the sake of speed we could use unsafe get/set throughout, but speed tests don't
-     show a significant improvement. *)
-  let get = get
-  let set = set
+module Sorter (S : sig
+    type 'a t
+
+    val get : 'a t -> int -> 'a
+    val set : 'a t -> int -> 'a -> unit
+    val length : 'a t -> int
+  end) =
+struct
+  include S
 
   let swap arr i j =
     let tmp = get arr i in
@@ -56,7 +60,7 @@ module Sort = struct
   module type Sort = sig
     val sort
       :  'a t
-      -> compare:('a -> 'a -> int)
+      -> compare:(('a -> 'a -> int)[@local])
       -> left:int (* leftmost index of sub-array to sort *)
       -> right:int (* rightmost index of sub-array to sort *)
       -> unit
@@ -64,27 +68,26 @@ module Sort = struct
 
   (* http://en.wikipedia.org/wiki/Insertion_sort *)
   module Insertion_sort : Sort = struct
+    (* loop invariants:
+       1.  the subarray arr[left .. i-1] is sorted
+       2.  the subarray arr[i+1 .. pos] is sorted and contains only elements > v
+       3.  arr[i] may be thought of as containing v
+    *)
+    let rec insert_loop arr ~left ~compare i v =
+      let i_next = i - 1 in
+      if i_next >= left && compare (get arr i_next) v > 0
+      then (
+        set arr i (get arr i_next);
+        insert_loop arr ~left ~compare i_next v)
+      else i
+    ;;
+
     let sort arr ~compare ~left ~right =
       (* loop invariant:
          [arr] is sorted from [left] to [pos - 1], inclusive *)
       for pos = left + 1 to right do
-        (* loop invariants:
-           1.  the subarray arr[left .. i-1] is sorted
-           2.  the subarray arr[i+1 .. pos] is sorted and contains only elements > v
-           3.  arr[i] may be thought of as containing v
-
-           Note that this does not allocate a closure, but is left in the for
-           loop for the readability of the documentation. *)
-        let rec loop arr ~left ~compare i v =
-          let i_next = i - 1 in
-          if i_next >= left && compare (get arr i_next) v > 0
-          then (
-            set arr i (get arr i_next);
-            loop arr ~left ~compare i_next v)
-          else i
-        in
         let v = get arr pos in
-        let final_pos = loop arr ~left ~compare pos v in
+        let final_pos = insert_loop arr ~left ~compare pos v in
         set arr final_pos v
       done
     ;;
@@ -142,7 +145,7 @@ module Sort = struct
 
     val five_element_sort
       :  'a t
-      -> compare:('a -> 'a -> int)
+      -> compare:(('a -> 'a -> int)[@local])
       -> int
       -> int
       -> int
@@ -150,7 +153,7 @@ module Sort = struct
       -> int
       -> unit
   end = struct
-    let five_element_sort arr ~compare m1 m2 m3 m4 m5 =
+    let five_element_sort arr ~compare:((compare : _ -> _ -> _) [@local]) m1 m2 m3 m4 m5 =
       let compare_and_swap i j =
         if compare (get arr i) (get arr j) > 0 then swap arr i j
       in
@@ -175,7 +178,7 @@ module Sort = struct
       compare_and_swap m3 m4;
       compare_and_swap m2 m5;
       compare_and_swap m2 m3;
-      compare_and_swap m4 m5
+      compare_and_swap m4 m5 [@nontail]
     ;;
 
     (* choose pivots for the array by sorting 5 elements and examining the center three
@@ -186,7 +189,7 @@ module Sort = struct
          by itself
          To this end we look at the center 3 elements of the 5 and return pairs of equal
          elements or the widest range *)
-    let choose_pivots arr ~compare ~left ~right =
+    let choose_pivots arr ~compare:((compare : _ -> _ -> _) [@local]) ~left ~right =
       let sixth = (right - left) / 6 in
       let m1 = left + sixth in
       let m2 = m1 + sixth in
@@ -204,7 +207,7 @@ module Sort = struct
       else m2_val, m4_val, false
     ;;
 
-    let dual_pivot_partition arr ~compare ~left ~right =
+    let dual_pivot_partition arr ~compare:((compare : _ -> _ -> _) [@local]) ~left ~right =
       let pivot1, pivot2, pivots_equal = choose_pivots arr ~compare ~left ~right in
       (* loop invariants:
          1.  left <= l < r <= right
@@ -273,15 +276,25 @@ module Sort = struct
       intro_sort arr ~max_depth:heap_sort_switch_depth ~compare ~left ~right
     ;;
   end
+
+  let sort ?pos ?len arr ~compare:((compare : _ -> _ -> _) [@local]) =
+    let pos, len =
+      Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length arr)
+    in
+    Intro_sort.sort arr ~compare ~left:pos ~right:(pos + len - 1)
+  ;;
 end
+[@@inline]
 
-let sort ?pos ?len arr ~compare =
-  let pos, len =
-    Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length arr)
-  in
-  Sort.Intro_sort.sort arr ~compare ~left:pos ~right:(pos + len - 1)
-;;
+module Sort = Sorter (struct
+    type nonrec 'a t = 'a t
 
+    let get = unsafe_get
+    let set = unsafe_set
+    let length = length
+  end)
+
+let sort = Sort.sort
 let to_array t = t
 let is_empty t = length t = 0
 
@@ -351,7 +364,7 @@ let folding_map t ~init ~f =
   map t ~f:(fun x ->
     let new_acc, y = f !acc x in
     acc := new_acc;
-    y)
+    y) [@nontail]
 ;;
 
 let fold_map t ~init ~f =
@@ -366,7 +379,7 @@ let fold_map t ~init ~f =
 ;;
 
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
-let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
+let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
 let count t ~f = Container.count ~fold t ~f
 let sum m t ~f = Container.sum ~fold m t ~f
 let min_elt t ~compare = Container.min_elt ~fold t ~compare
@@ -385,7 +398,7 @@ let folding_mapi t ~init ~f =
   mapi t ~f:(fun i x ->
     let new_acc, y = f i !acc x in
     acc := new_acc;
-    y)
+    y) [@nontail]
 ;;
 
 let fold_mapi t ~init ~f =
@@ -400,7 +413,7 @@ let fold_mapi t ~init ~f =
 ;;
 
 let counti t ~f =
-  foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count)
+  foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count) [@nontail]
 ;;
 
 let concat_map t ~f = concat (to_list (map ~f t))
@@ -454,7 +467,7 @@ let of_list_map xs ~f =
         unsafe_set a i (f hd);
         fill (i + 1) tl
     in
-    fill 1 tl
+    fill 1 tl [@nontail]
 ;;
 
 let of_list_mapi xs ~f =
@@ -468,7 +481,7 @@ let of_list_mapi xs ~f =
         unsafe_set a i (f i hd);
         fill a (i + 1) tl
     in
-    fill a 1 tl
+    fill a 1 tl [@nontail]
 ;;
 
 let of_list_rev_map xs ~f =
@@ -497,7 +510,7 @@ let filter_mapi t ~f =
   if !k = length t then !r else if !k > 0 then sub ~pos:0 ~len:!k !r else [||]
 ;;
 
-let filter_map t ~f = filter_mapi t ~f:(fun _i a -> f a)
+let filter_map t ~f = filter_mapi t ~f:(fun _i a -> f a) [@nontail]
 let filter_opt t = filter_map t ~f:Fn.id
 
 let raise_length_mismatch name n1 n2 =
@@ -513,21 +526,21 @@ let check_length2_exn name t1 t2 =
 
 let iter2_exn t1 t2 ~f =
   check_length2_exn "Array.iter2_exn" t1 t2;
-  iteri t1 ~f:(fun i x1 -> f x1 (unsafe_get t2 i))
+  iteri t1 ~f:(fun i x1 -> f x1 (unsafe_get t2 i)) [@nontail]
 ;;
 
 let map2_exn t1 t2 ~f =
   check_length2_exn "Array.map2_exn" t1 t2;
-  init (length t1) ~f:(fun i -> f (unsafe_get t1 i) (unsafe_get t2 i))
+  init (length t1) ~f:(fun i -> f (unsafe_get t1 i) (unsafe_get t2 i)) [@nontail]
 ;;
 
 let fold2_exn t1 t2 ~init ~f =
   check_length2_exn "Array.fold2_exn" t1 t2;
-  foldi t1 ~init ~f:(fun i ac x -> f ac x (unsafe_get t2 i))
+  foldi t1 ~init ~f:(fun i ac x -> f ac x (unsafe_get t2 i)) [@nontail]
 ;;
 
-let filter t ~f = filter_map t ~f:(fun x -> if f x then Some x else None)
-let filteri t ~f = filter_mapi t ~f:(fun i x -> if f i x then Some x else None)
+let filter t ~f = filter_map t ~f:(fun x -> if f x then Some x else None) [@nontail]
+let filteri t ~f = filter_mapi t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
 
 
 let exists t ~f =
@@ -548,7 +561,7 @@ let existsi t ~f =
   !result
 ;;
 
-let mem t a ~equal = exists t ~f:(equal a)
+let mem t a ~equal = exists t ~f:(equal a) [@nontail]
 
 let for_all t ~f =
   let i = ref (length t - 1) in
@@ -639,6 +652,7 @@ let find_exn t ~f =
     ~f:(fun _i x -> f x)
     ~if_found:(fun ~i:_ ~value -> value)
     ~if_not_found:(fun () -> raise (Not_found_s (Atom "Array.find_exn: not found")))
+  [@nontail]
 ;;
 
 let find t ~f = Option.map (findi t ~f:(fun _i x -> f x)) ~f:(fun (_i, x) -> x)
@@ -793,7 +807,7 @@ let partitioni_tf t ~f =
   trues, falses
 ;;
 
-let partition_tf t ~f = partitioni_tf t ~f:(fun _i x -> f x)
+let partition_tf t ~f = partitioni_tf t ~f:(fun _i x -> f x) [@nontail]
 let last t = t.(length t - 1)
 
 (* Convert to a sequence but does not attempt to protect against modification
@@ -866,4 +880,5 @@ let invariant invariant_a t = iter t ~f:invariant_a
 
 module Private = struct
   module Sort = Sort
+  module Sorter = Sorter
 end

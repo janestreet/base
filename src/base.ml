@@ -196,8 +196,8 @@ module Export = struct
     Array.sexp_of_t
   ;;
 
-  let (array_sexp_grammar :
-         'a Sexplib0.Sexp_grammar.t -> 'a array Sexplib0.Sexp_grammar.t)
+  let array_sexp_grammar :
+    'a. 'a Sexplib0.Sexp_grammar.t -> 'a array Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar -> Array.t_sexp_grammar _'a_sexp_grammar
   ;;
@@ -357,7 +357,9 @@ module Export = struct
     List.sexp_of_t
   ;;
 
-  let (list_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a list Sexplib0.Sexp_grammar.t) =
+  let list_sexp_grammar :
+    'a. 'a Sexplib0.Sexp_grammar.t -> 'a list Sexplib0.Sexp_grammar.t
+    =
     fun _'a_sexp_grammar -> List.t_sexp_grammar _'a_sexp_grammar
   ;;
 
@@ -417,8 +419,8 @@ module Export = struct
     Option.sexp_of_t
   ;;
 
-  let (option_sexp_grammar :
-         'a Sexplib0.Sexp_grammar.t -> 'a option Sexplib0.Sexp_grammar.t)
+  let option_sexp_grammar :
+    'a. 'a Sexplib0.Sexp_grammar.t -> 'a option Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar -> Option.t_sexp_grammar _'a_sexp_grammar
   ;;
@@ -438,7 +440,7 @@ module Export = struct
     Ref.sexp_of_t
   ;;
 
-  let (ref_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a ref Sexplib0.Sexp_grammar.t) =
+  let ref_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a ref Sexplib0.Sexp_grammar.t =
     fun _'a_sexp_grammar -> Ref.t_sexp_grammar _'a_sexp_grammar
   ;;
 
@@ -560,8 +562,7 @@ module Export = struct
 
   (** Misc *)
 
-  let phys_equal = phys_equal
-
+  external phys_equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%eq"
   external force : 'a Lazy.t -> 'a = "%lazy_force"
 end
 

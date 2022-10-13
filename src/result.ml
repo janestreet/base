@@ -67,10 +67,11 @@ let sexp_of_t :
         Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Error"; res0__024_ ]
 ;;
 
-let (t_sexp_grammar :
-       'a Sexplib0.Sexp_grammar.t
-     -> 'b Sexplib0.Sexp_grammar.t
-     -> ('a, 'b) t Sexplib0.Sexp_grammar.t)
+let t_sexp_grammar :
+  'a 'b.
+  'a Sexplib0.Sexp_grammar.t
+  -> 'b Sexplib0.Sexp_grammar.t
+  -> ('a, 'b) t Sexplib0.Sexp_grammar.t
   =
   fun _'a_sexp_grammar _'b_sexp_grammar ->
   { untyped =
@@ -142,7 +143,7 @@ let hash_fold_t
 
 [@@@end]
 
-include Monad.Make2 (struct
+include Monad.Make2_local (struct
     type nonrec ('a, 'b) t = ('a, 'b) t
 
     let bind x ~f =
@@ -176,7 +177,7 @@ let map_error t ~f =
   | Error x -> Error (f x)
 ;;
 
-module Error = Monad.Make2 (struct
+module Error = Monad.Make2_local (struct
     type nonrec ('a, 'b) t = ('b, 'a) t
 
     let bind x ~f =

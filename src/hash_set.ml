@@ -23,10 +23,10 @@ module Accessors = struct
         match f elt with
         | None -> ()
         | Some _ as o -> r.return o);
-      None)
+      None) [@nontail]
   ;;
 
-  let find t ~f = find_map t ~f:(fun a -> if f a then Some a else None)
+  let find t ~f = find_map t ~f:(fun a -> if f a then Some a else None) [@nontail]
   let add t k = Hashtbl.set t ~key:k ~data:()
 
   let strict_add t k =
@@ -49,14 +49,18 @@ module Accessors = struct
   ;;
 
   let strict_remove_exn t k = Or_error.ok_exn (strict_remove t k)
-  let fold t ~init ~f = Hashtbl.fold t ~init ~f:(fun ~key ~data:() acc -> f acc key)
+
+  let fold t ~init ~f =
+    Hashtbl.fold t ~init ~f:(fun ~key ~data:() acc -> f acc key) [@nontail]
+  ;;
+
   let iter t ~f = Hashtbl.iter_keys t ~f
   let count t ~f = Container.count ~fold t ~f
   let sum m t ~f = Container.sum ~fold m t ~f
   let min_elt t ~compare = Container.min_elt ~fold t ~compare
   let max_elt t ~compare = Container.max_elt ~fold t ~compare
   let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
-  let fold_until t ~init ~f = Container.fold_until ~fold ~init ~f t
+  let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
   let to_list = Hashtbl.keys
 
   let sexp_of_t sexp_of_e t =
@@ -75,7 +79,10 @@ module Accessors = struct
         acc))
   ;;
 
-  let exists t ~f = Hashtbl.existsi t ~f:(fun ~key ~data:() -> f key)
+  let exists t ~f:(f [@local]) =
+    Hashtbl.existsi t ~f:(fun ~key ~data:() -> f key) [@nontail]
+  ;;
+
   let for_all t ~f = not (Hashtbl.existsi t ~f:(fun ~key ~data:() -> not (f key)))
   let equal t1 t2 = Hashtbl.equal (fun () () -> true) t1 t2
   let copy t = Hashtbl.copy t

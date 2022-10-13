@@ -5,15 +5,17 @@ include Container_intf
 
 let with_return = With_return.with_return
 
-type ('t, 'a, 'accum) fold = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
-type ('t, 'a) iter = 't -> f:('a -> unit) -> unit
+type ('t, 'a, 'accum) fold =
+  't -> init:'accum -> f:(('accum -> 'a -> 'accum)[@local]) -> 'accum
+
+type ('t, 'a) iter = 't -> f:(('a -> unit)[@local]) -> unit
 type 't length = 't -> int
 
-let iter ~fold t ~f = fold t ~init:() ~f:(fun () a -> f a)
-let count ~fold t ~f = fold t ~init:0 ~f:(fun n a -> if f a then n + 1 else n)
+let iter ~(fold : (_, _, _) fold) t ~f = fold t ~init:() ~f:(fun () a -> f a) [@nontail]
+let count ~fold t ~f = fold t ~init:0 ~f:(fun n a -> if f a then n + 1 else n) [@nontail]
 
 let sum (type a) ~fold (module M : Summable with type t = a) t ~f =
-  fold t ~init:M.zero ~f:(fun n a -> M.( + ) n (f a))
+  fold t ~init:M.zero ~f:(fun n a -> M.( + ) n (f a)) [@nontail]
 ;;
 
 let fold_result ~fold ~init ~f t =
@@ -22,7 +24,7 @@ let fold_result ~fold ~init ~f t =
       (fold t ~init ~f:(fun acc item ->
          match f acc item with
          | Result.Ok x -> x
-         | Error _ as e -> return e)))
+         | Error _ as e -> return e))) [@nontail]
 ;;
 
 let fold_until ~fold ~init ~f ~finish t =
@@ -31,21 +33,21 @@ let fold_until ~fold ~init ~f ~finish t =
       (fold t ~init ~f:(fun acc item ->
          match f acc item with
          | Continue_or_stop.Continue x -> x
-         | Stop x -> return x)))
+         | Stop x -> return x))) [@nontail]
 ;;
 
 let min_elt ~fold t ~compare =
   fold t ~init:None ~f:(fun acc elt ->
     match acc with
     | None -> Some elt
-    | Some min -> if compare min elt > 0 then Some elt else acc)
+    | Some min -> if compare min elt > 0 then Some elt else acc) [@nontail]
 ;;
 
 let max_elt ~fold t ~compare =
   fold t ~init:None ~f:(fun acc elt ->
     match acc with
     | None -> Some elt
-    | Some max -> if compare max elt < 0 then Some elt else acc)
+    | Some max -> if compare max elt < 0 then Some elt else acc) [@nontail]
 ;;
 
 let length ~fold c = fold c ~init:0 ~f:(fun acc _ -> acc + 1)
@@ -59,13 +61,13 @@ let is_empty ~iter c =
 let exists ~iter c ~f =
   with_return (fun r ->
     iter c ~f:(fun x -> if f x then r.return true);
-    false)
+    false) [@nontail]
 ;;
 
 let for_all ~iter c ~f =
   with_return (fun r ->
     iter c ~f:(fun x -> if not (f x) then r.return false);
-    true)
+    true) [@nontail]
 ;;
 
 let find_map ~iter t ~f =
@@ -74,13 +76,13 @@ let find_map ~iter t ~f =
       match f x with
       | None -> ()
       | Some _ as res -> r.return res);
-    None)
+    None) [@nontail]
 ;;
 
 let find ~iter c ~f =
   with_return (fun r ->
     iter c ~f:(fun x -> if f x then r.return (Some x));
-    None)
+    None) [@nontail]
 ;;
 
 let to_list ~fold c = List.rev (fold c ~init:[] ~f:(fun acc x -> x :: acc))
@@ -134,7 +136,7 @@ module Make (T : Make_arg) = struct
       type 'a elt = 'a
     end)
 
-  let mem t a ~equal = exists t ~f:(equal a)
+  let mem t a ~equal = exists t ~f:(equal a) [@nontail]
 end
 
 module Make0 (T : Make0_arg) = struct
