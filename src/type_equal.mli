@@ -189,16 +189,7 @@ module Id : sig
 
   (** Every [Id.t] contains a unique id that is distinct from the [Uid.t] in any other
       [Id.t]. *)
-  module Uid : sig
-    type t [@@deriving_inline hash]
-
-    include Ppx_hash_lib.Hashable.S with type t := t
-
-    [@@@end]
-
-    include Sexpable.S with type t := t
-    include Comparable.S with type t := t
-  end
+  module Uid : Identifiable.S
 
   val uid : _ t -> Uid.t
 

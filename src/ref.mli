@@ -24,11 +24,11 @@ external ( := ) : ('a t[@local_opt]) -> 'a -> unit = "%setfield0"
 val swap : 'a t -> 'a t -> unit
 
 (** [replace t f] is [t := f !t] *)
-val replace : 'a t -> ('a -> 'a) -> unit
+val replace : 'a t -> (('a -> 'a)[@local]) -> unit
 
 (** [set_temporarily t a ~f] sets [t] to [a], calls [f ()], and then restores [t] to its
     value prior to [set_temporarily] being called, whether [f] returns or raises. *)
-val set_temporarily : 'a t -> 'a -> f:(unit -> 'b) -> 'b
+val set_temporarily : 'a t -> 'a -> f:((unit -> 'b)[@local]) -> 'b
 
 module And_value : sig
   type t = T : 'a ref * 'a -> t [@@deriving sexp_of]
@@ -46,4 +46,4 @@ end
 (** [sets_temporarily [ ...; T (ti, ai); ... ] ~f] sets each [ti] to [ai], calls [f ()],
     and then restores all [ti] to their value prior to [sets_temporarily] being called,
     whether [f] returns or raises. *)
-val sets_temporarily : And_value.t list -> f:(unit -> 'a) -> 'a
+val sets_temporarily : And_value.t list -> f:((unit -> 'a)[@local]) -> 'a

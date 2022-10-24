@@ -17,17 +17,17 @@ module type Focused = sig
 
   val value : ('a, _) t -> default:'a -> 'a
   val to_option : ('a, _) t -> 'a option
-  val with_return : ('a With_return.return -> 'b) -> ('a, 'b) t
+  val with_return : ((('a With_return.return[@local]) -> 'b)[@local]) -> ('a, 'b) t
 
   val combine
     :  ('a, 'd) t
     -> ('b, 'd) t
-    -> f:('a -> 'b -> 'c)
-    -> other:('d -> 'd -> 'd)
+    -> f:(('a -> 'b -> 'c)[@local])
+    -> other:(('d -> 'd -> 'd)[@local])
     -> ('c, 'd) t
 
-  val combine_all : ('a, 'b) t list -> f:('b -> 'b -> 'b) -> ('a list, 'b) t
-  val combine_all_unit : (unit, 'b) t list -> f:('b -> 'b -> 'b) -> (unit, 'b) t
+  val combine_all : ('a, 'b) t list -> f:(('b -> 'b -> 'b)[@local]) -> ('a list, 'b) t
+  val combine_all_unit : (unit, 'b) t list -> f:(('b -> 'b -> 'b)[@local]) -> (unit, 'b) t
 end
 
 module type Either = sig
@@ -51,9 +51,25 @@ module type Either = sig
 
   val swap : ('f, 's) t -> ('s, 'f) t
   val value : ('a, 'a) t -> 'a
-  val iter : ('a, 'b) t -> first:('a -> unit) -> second:('b -> unit) -> unit
-  val value_map : ('a, 'b) t -> first:('a -> 'c) -> second:('b -> 'c) -> 'c
-  val map : ('a, 'b) t -> first:('a -> 'c) -> second:('b -> 'd) -> ('c, 'd) t
+
+  val iter
+    :  ('a, 'b) t
+    -> first:(('a -> unit)[@local])
+    -> second:(('b -> unit)[@local])
+    -> unit
+
+  val value_map
+    :  ('a, 'b) t
+    -> first:(('a -> 'c)[@local])
+    -> second:(('b -> 'c)[@local])
+    -> 'c
+
+  val map
+    :  ('a, 'b) t
+    -> first:(('a -> 'c)[@local])
+    -> second:(('b -> 'd)[@local])
+    -> ('c, 'd) t
+
   val equal : ('f -> 'f -> bool) -> ('s -> 's -> bool) -> ('f, 's) t -> ('f, 's) t -> bool
 
   module type Focused = Focused

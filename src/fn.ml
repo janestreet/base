@@ -2,7 +2,7 @@ open! Import
 
 let const c _ = c
 
-external ignore : _ -> unit = "%ignore"
+external ignore : (_[@local_opt]) -> unit = "%ignore"
 
 (* this has the same behavior as [Caml.ignore] *)
 
@@ -18,7 +18,7 @@ let forever f =
 ;;
 
 external id : 'a -> 'a = "%identity"
-external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
+external ( |> ) : 'a -> (('a -> 'b)[@local_opt]) -> 'b = "%revapply"
 
 (* The typical use case for these functions is to pass in functional arguments and get
    functions as a result. *)

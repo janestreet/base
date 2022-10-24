@@ -49,18 +49,24 @@ let invariant f s = function
   | Second y -> s y
 ;;
 
+module Focus = struct
+  type ('a, 'b) t =
+    | Focus of { value : 'a [@global] }
+    | Other of { value : 'b [@global] }
+end
+
 module Make_focused (M : sig
     type (+'a, +'b) t
 
     val return : 'a -> ('a, _) t
     val other : 'b -> (_, 'b) t
-    val either : ('a, 'b) t -> return:('a -> 'c) -> other:('b -> 'c) -> 'c
+    val focus : ('a, 'b) t -> (('a, 'b) Focus.t[@local])
 
     val combine
       :  ('a, 'd) t
       -> ('b, 'd) t
-      -> f:('a -> 'b -> 'c)
-      -> other:('d -> 'd -> 'd)
+      -> f:(('a -> 'b -> 'c)[@local])
+      -> other:(('d -> 'd -> 'd)[@local])
       -> ('c, 'd) t
 
     val bind : ('a, 'b) t -> f:(('a -> ('c, 'b) t)[@local]) -> ('c, 'b) t
@@ -96,18 +102,16 @@ struct
     let rec other_loop f acc = function
       | [] -> other acc
       | t :: ts ->
-        either
-          t
-          ~return:(fun _ -> other_loop f acc ts)
-          ~other:(fun o -> other_loop f (f acc o) ts)
+        (match focus t with
+         | Focus _ -> other_loop f acc ts
+         | Other o -> other_loop f (f acc o.value) ts)
     in
     let rec return_loop f acc = function
       | [] -> return (List.rev acc)
       | t :: ts ->
-        either
-          t
-          ~return:(fun x -> return_loop f (x :: acc) ts)
-          ~other:(fun o -> other_loop f o ts)
+        (match focus t with
+         | Focus x -> return_loop f (x.value :: acc) ts
+         | Other o -> other_loop f o.value ts)
     in
     fun ts ~f -> return_loop f [] ts
   ;;
@@ -116,24 +120,34 @@ struct
     let rec other_loop f acc = function
       | [] -> other acc
       | t :: ts ->
-        either
-          t
-          ~return:(fun () -> other_loop f acc ts)
-          ~other:(fun o -> other_loop f (f acc o) ts)
+        (match focus t with
+         | Focus _ -> other_loop f acc ts
+         | Other o -> other_loop f (f acc o.value) ts)
     in
     let rec return_loop f = function
       | [] -> return ()
       | t :: ts ->
-        either t ~return:(fun () -> return_loop f ts) ~other:(fun o -> other_loop f o ts)
+        (match focus t with
+         | Focus { value = () } -> return_loop f ts
+         | Other { value = o } -> other_loop f o ts)
     in
     fun ts ~f -> return_loop f ts
   ;;
 
-  let to_option t = either t ~return:Option.some ~other:(fun _ -> None)
-  let value t ~default = either t ~return:Fn.id ~other:(fun _ -> default)
+  let to_option t =
+    match focus t with
+    | Focus x -> Some x.value
+    | Other _ -> None
+  ;;
+
+  let value t ~default =
+    match focus t with
+    | Focus x -> x.value
+    | Other _ -> default
+  ;;
 
   let with_return f =
-    with_return (fun ret -> other (f (With_return.prepend ret ~f:return)))
+    with_return (fun ret -> other (f (With_return.prepend ret ~f:return))) [@nontail]
   ;;
 end
 
@@ -143,10 +157,10 @@ module First = Make_focused (struct
     let return = first
     let other = second
 
-    let either t ~return ~other =
+    let focus t : _ Focus.t =
       match t with
-      | First x -> return x
-      | Second y -> other y
+      | First x -> Focus { value = x }
+      | Second y -> Other { value = y }
     ;;
 
     let combine t1 t2 ~f ~other =
@@ -170,10 +184,10 @@ module Second = Make_focused (struct
     let return = second
     let other = first
 
-    let either t ~return ~other =
+    let focus t : _ Focus.t =
       match t with
-      | Second y -> return y
-      | First x -> other x
+      | Second x -> Focus { value = x }
+      | First y -> Other { value = y }
     ;;
 
     let combine t1 t2 ~f ~other =
