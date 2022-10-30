@@ -340,7 +340,7 @@ module type Set = sig
   (** [union t1 t2] returns the union of the two sets.  [O(length t1 + length t2)]. *)
   val union : ('a, 'cmp) t -> ('a, 'cmp) t -> ('a, 'cmp) t
 
-  (** [union c list] returns the union of all the sets in [list].  The
+  (** [union_list c list] returns the union of all the sets in [list].  The
       [comparator] argument is required for the case where [list] is empty.
       [O(max(List.length list, n log n))], where [n] is the sum of sizes of the input sets. *)
   val union_list : ('a, 'cmp) Comparator.Module.t -> ('a, 'cmp) t list -> ('a, 'cmp) t
