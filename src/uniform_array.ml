@@ -81,9 +81,9 @@ let init l ~f =
     res)
 ;;
 
-let of_array arr = init ~f:(Array.unsafe_get arr) (Array.length arr)
-let map a ~f = init ~f:(fun i -> f (unsafe_get a i)) (length a)
-let mapi a ~f = init ~f:(fun i -> f i (unsafe_get a i)) (length a)
+let of_array arr = init ~f:(Array.unsafe_get arr) (Array.length arr) [@nontail]
+let map a ~f = init ~f:(fun i -> f (unsafe_get a i)) (length a) [@nontail]
+let mapi a ~f = init ~f:(fun i -> f i (unsafe_get a i)) (length a) [@nontail]
 
 let iter a ~f =
   for i = 0 to length a - 1 do
@@ -133,7 +133,7 @@ let for_all t ~f =
 let map2_exn t1 t2 ~f =
   let len = length t1 in
   if length t2 <> len then invalid_arg "Array.map2_exn";
-  init len ~f:(fun i -> f (unsafe_get t1 i) (unsafe_get t2 i))
+  init len ~f:(fun i -> f (unsafe_get t1 i) (unsafe_get t2 i)) [@nontail]
 ;;
 
 let t_sexp_grammar (type elt) (grammar : elt Sexplib0.Sexp_grammar.t)

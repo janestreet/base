@@ -27,7 +27,7 @@ val apply_n_times : n:int -> (('a -> 'a)[@local]) -> 'a -> 'a
 (** The identity function.
 
     See also: {!Sys.opaque_identity}. *)
-external id : 'a -> 'a = "%identity"
+external id : ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
 
 (** [compose f g x] is [f (g x)]. *)
 val compose : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c

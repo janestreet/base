@@ -17,7 +17,7 @@ let forever f =
   | e -> e
 ;;
 
-external id : 'a -> 'a = "%identity"
+external id : ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
 external ( |> ) : 'a -> (('a -> 'b)[@local_opt]) -> 'b = "%revapply"
 
 (* The typical use case for these functions is to pass in functional arguments and get

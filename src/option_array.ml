@@ -29,7 +29,7 @@ module Cheap_option = struct
     val is_some : _ t -> bool
     val value_exn : 'a t -> 'a
     val value_unsafe : 'a t -> 'a
-    val iter_some : 'a t -> f:('a -> unit) -> unit
+    val iter_some : 'a t -> f:(('a -> unit)[@local]) -> unit
   end = struct
     type +'a t
 
@@ -123,8 +123,8 @@ let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_gramma
 
 let empty = Uniform_array.empty
 let create ~len = Uniform_array.create ~len Cheap_option.none
-let init n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.of_option (f i))
-let init_some n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.some (f i))
+let init n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.of_option (f i)) [@nontail]
+let init_some n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.some (f i)) [@nontail]
 let length = Uniform_array.length
 let[@inline] get t i = Cheap_option.to_option (Uniform_array.get t i)
 let get_some_exn t i = Cheap_option.value_exn (Uniform_array.get t i)
@@ -185,7 +185,7 @@ let mapi input ~f =
   output
 ;;
 
-let map input ~f = mapi input ~f:(fun (_ : int) elem -> f elem)
+let map input ~f = mapi input ~f:(fun (_ : int) elem -> f elem) [@nontail]
 
 let map_some input ~f =
   let len = length input in

@@ -1,0 +1,37 @@
+open Base
+
+(* [id] can operate on global arguments *)
+
+let f : 'a. 'a -> 'a = Fn.id
+
+[%%expect {||}]
+
+(* [id] can operate on local arguments *)
+
+let f : 'a. ('a[@local]) -> ('a[@local]) = Fn.id
+
+[%%expect {||}]
+
+(* [id] cannot make a local argument global; this would be unsound *)
+
+let f : 'a. ('a[@local]) -> 'a = Fn.id
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: This expression has type local_ 'b -> local_ 'b
+       but an expression was expected of type local_ 'a -> 'a
+|}]
+
+(* [id] cannot make a global argument local; this is unexpected.
+   If this following code gets accepted, it means that the meaning of
+   [@local_opt] may have changed. However, the [f] below is not unsound. *)
+
+let f : 'a. 'a -> ('a[@local]) = Fn.id
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: This expression has type 'b -> 'b
+       but an expression was expected of type 'a -> local_ 'a
+|}]

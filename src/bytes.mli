@@ -45,10 +45,10 @@ val make : int -> char -> t
 
 (** [map f t] applies function [f] to every byte, in order, and builds the byte
     sequence with the results returned by [f]. *)
-val map : t -> f:(char -> char) -> t
+val map : t -> f:((char -> char)[@local]) -> t
 
 (** Like [map], but passes each character's index to [f] along with the char. *)
-val mapi : t -> f:(int -> char -> char) -> t
+val mapi : t -> f:((int -> char -> char)[@local]) -> t
 
 (** [copy t] returns a newly-allocated byte sequence that contains the same
     bytes as [t]. *)
@@ -56,7 +56,7 @@ val copy : t -> t
 
 (** [init len ~f] returns a newly-allocated byte sequence of length [len] with
     index [i] in the sequence being initialized with the result of [f i]. *)
-val init : int -> f:(int -> char) -> t
+val init : int -> f:((int -> char)[@local]) -> t
 
 (** [of_char_list l] returns a newly-allocated byte sequence where each byte in
     the sequence corresponds to the byte in [l] at the same index. *)
@@ -109,11 +109,11 @@ val to_list : t -> char list
 val to_array : t -> char array
 
 (** [fold a ~f ~init:b] is [f a1 (f a2 (...))] *)
-val fold : t -> init:'a -> f:('a -> char -> 'a) -> 'a
+val fold : t -> init:'a -> f:(('a -> char -> 'a)[@local]) -> 'a
 
 (** [foldi] works similarly to [fold], but also passes the index of each character to
     [f]. *)
-val foldi : t -> init:'a -> f:(int -> 'a -> char -> 'a) -> 'a
+val foldi : t -> init:'a -> f:((int -> 'a -> char -> 'a)[@local]) -> 'a
 
 (** [contains ?pos ?len t c] returns [true] iff [c] appears in [t] between [pos]
     and [pos + len]. *)

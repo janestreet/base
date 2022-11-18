@@ -20,8 +20,8 @@ val create : len:int -> _ t
 
 include Indexed_container.Generic with type 'a t := 'a t and type 'a elt := 'a option
 
-val init_some : int -> f:(int -> 'a) -> 'a t
-val init : int -> f:(int -> 'a option) -> 'a t
+val init_some : int -> f:((int -> 'a)[@local]) -> 'a t
+val init : int -> f:((int -> 'a option)[@local]) -> 'a t
 val of_array : 'a option array -> 'a t
 val of_array_some : 'a array -> 'a t
 val to_array : 'a t -> 'a option Array.t
@@ -68,11 +68,11 @@ val clear : _ t -> unit
 
 (** [map f [|a1; ...; an|]] applies function [f] to [a1], [a2], ..., [an], in order,
     and builds the option_array [[|f a1; ...; f an|]] with the results returned by [f]. *)
-val map : 'a t -> f:('a option -> 'b option) -> 'b t
+val map : 'a t -> f:(('a option -> 'b option)[@local]) -> 'b t
 
 (** [map_some t ~f] is like [map], but [None] elements always map to [None] and [Some]
     always map to [Some]. *)
-val map_some : 'a t -> f:('a -> 'b) -> 'b t
+val map_some : 'a t -> f:(('a -> 'b)[@local]) -> 'b t
 
 (** Unsafe versions of [set*]. Can cause arbitrary behaviour when used for an
     out-of-bounds array access. *)

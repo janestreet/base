@@ -53,8 +53,31 @@ let copy = Caml.Bytes.copy
 let create = Caml.Bytes.create
 let fill = Caml.Bytes.fill
 let make = Caml.Bytes.make
-let map = Caml.Bytes.map
-let mapi = Caml.Bytes.mapi
+
+let map t ~f:((f : _ -> _) [@local]) =
+  let l = length t in
+  if l = 0
+  then t
+  else (
+    let r = create l in
+    for i = 0 to l - 1 do
+      unsafe_set r i (f (unsafe_get t i))
+    done;
+    r)
+;;
+
+let mapi t ~f:((f : _ -> _ -> _) [@local]) =
+  let l = length t in
+  if l = 0
+  then t
+  else (
+    let r = create l in
+    for i = 0 to l - 1 do
+      unsafe_set r i (f i (unsafe_get t i))
+    done;
+    r)
+;;
+
 let sub = Caml.Bytes.sub
 let unsafe_blit = Caml.Bytes.unsafe_blit
 let to_string = Caml.Bytes.to_string
