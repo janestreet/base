@@ -9,6 +9,7 @@
 
 (library (name base) (public_name base)
  (libraries base_internalhash_types caml sexplib0 shadow_stdlib)
+ (flags :standard -w -55)
  (c_flags :standard -D_LARGEFILE64_SOURCE (:include mpopcnt.sexp))
  (c_names exn_stubs int_math_stubs hash_stubs am_testing)
  (preprocess no_preprocessing)
