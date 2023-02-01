@@ -61,7 +61,7 @@ external not : (bool[@local_opt]) -> bool = "%boolnot"
    performance difference is noticeable. *)
 let bool_to_int (x : bool) : int = Caml.Obj.magic x
 
-(* This need to be declared as an external for the warnings to work properly *)
+(* This need's to be declared as an external for the warnings to work properly. *)
 external ignore : _ -> unit = "%ignore"
 
 let ( != ) = Caml.( != )
@@ -283,11 +283,11 @@ module Bytes_replace_polymorphic_compare = struct
 end
 
 (* This needs to be defined as an external so that the compiler can specialize it as a
-   direct set or caml_modify *)
+   direct set or caml_modify. *)
 external ( := ) : ('a ref[@local_opt]) -> 'a -> unit = "%setfield0"
 
 (* These need to be defined as an external otherwise the compiler won't unbox
-   references *)
+   references. *)
 external ( ! ) : ('a ref[@local_opt]) -> 'a = "%field0"
 external ref : 'a -> ('a ref[@local_opt]) = "%makemutable"
 
@@ -318,7 +318,7 @@ let phys_equal = Caml.( == )
 external decr : (int ref[@local_opt]) -> unit = "%decr"
 external incr : (int ref[@local_opt]) -> unit = "%incr"
 
-(* used by sexp_conv, which float0 depends on through option *)
+(* used by sexp_conv, which float0 depends on through option. *)
 let float_of_string = Caml.float_of_string
 
 (* [am_testing] is used in a few places to behave differently when in testing mode, such
