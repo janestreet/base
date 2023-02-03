@@ -81,9 +81,9 @@ offers an alternative way to write this:
 
 Base uses a few ppx code generators to implement:
 
-- reliable and customizable comparison of OCaml values
-- reliable and customizable hash of OCaml values
-- conversions between OCaml values and s-expression
+- Reliable and customizable comparison of OCaml values.
+- Reliable and customizable hash of OCaml values.
+- Conversions between OCaml values and s-expression.
 
 However, it doesn't need these code generators to build. What it does
 instead is use ppx as a code verification tool during development. It
