@@ -460,7 +460,7 @@ let%test_module "sort_and_group" =
   (module struct
     let%expect_test _ =
       let compare =
-        Comparable.lift String.compare ~f:(String.rstrip ~drop:Char.is_digit)
+        Comparable.lift String.compare ~f:(fun s -> String.rstrip ~drop:Char.is_digit s)
       in
       [%test_result: string list list]
         (sort_and_group [ "b1"; "c1"; "a1"; "a2"; "b2"; "a3" ] ~compare)

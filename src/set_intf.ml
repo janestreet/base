@@ -90,8 +90,13 @@ module type Accessors_generic = sig
       -> unit )
         access_options
 
-  val filter : ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t
-  val partition_tf : ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t * ('a, 'cmp) t
+  val filter : ('a, 'cmp) t -> f:(('a elt -> bool)[@local]) -> ('a, 'cmp) t
+
+  val partition_tf
+    :  ('a, 'cmp) t
+    -> f:(('a elt -> bool)[@local])
+    -> ('a, 'cmp) t * ('a, 'cmp) t
+
   val elements : ('a, _) t -> 'a elt list
   val min_elt : ('a, _) t -> 'a elt option
   val min_elt_exn : ('a, _) t -> 'a elt
@@ -106,8 +111,12 @@ module type Accessors_generic = sig
       , ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * 'a elt option * ('a, 'cmp) t )
         access_options
 
-  val group_by : ('a, 'cmp) t -> equiv:('a elt -> 'a elt -> bool) -> ('a, 'cmp) t list
-  val find_exn : ('a, _) t -> f:('a elt -> bool) -> 'a elt
+  val group_by
+    :  ('a, 'cmp) t
+    -> equiv:(('a elt -> 'a elt -> bool)[@local])
+    -> ('a, 'cmp) t list
+
+  val find_exn : ('a, _) t -> f:(('a elt -> bool)[@local]) -> 'a elt
   val nth : ('a, _) t -> int -> 'a elt option
   val remove_index : ('a, 'cmp, ('a, 'cmp) t -> int -> ('a, 'cmp) t) access_options
   val to_tree : ('a, 'cmp) t -> ('a elt, 'cmp cmp) tree
@@ -126,7 +135,7 @@ module type Accessors_generic = sig
     : ( 'a
       , 'cmp
       , ('a, 'cmp) t
-      -> compare:('a elt -> 'key -> int)
+      -> compare:(('a elt -> 'key -> int)[@local])
       -> Binary_searchable.Which_target_by_key.t
       -> 'key
       -> 'a elt option )
@@ -136,7 +145,7 @@ module type Accessors_generic = sig
     : ( 'a
       , 'cmp
       , ('a, 'cmp) t
-      -> segment_of:('a elt -> [ `Left | `Right ])
+      -> segment_of:(('a elt -> [ `Left | `Right ])[@local])
       -> Binary_searchable.Which_target_by_segment.t
       -> 'a elt option )
         access_options
@@ -171,7 +180,7 @@ module type Creators_generic = sig
   val of_sorted_array_unchecked : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t) create_options
 
   val of_increasing_iterator_unchecked
-    : ('a, 'cmp, len:int -> f:(int -> 'a elt) -> ('a, 'cmp) t) create_options
+    : ('a, 'cmp, len:int -> f:((int -> 'a elt)[@local]) -> ('a, 'cmp) t) create_options
 
   val stable_dedup_list : ('a, _, 'a elt list -> 'a elt list) create_options
 
@@ -184,10 +193,14 @@ module type Creators_generic = sig
       - [Set.map] -- comparator comes as an argument
       - [Set.Poly.map] -- comparator is polymorphic comparison
       - [Foo.Set.map] -- comparator is [Foo.comparator] *)
-  val map : ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt) -> ('b, 'cmp) t) create_options
+  val map
+    : ('b, 'cmp, ('a, _) set -> f:(('a -> 'b elt)[@local]) -> ('b, 'cmp) t) create_options
 
   val filter_map
-    : ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt option) -> ('b, 'cmp) t) create_options
+    : ( 'b
+      , 'cmp
+      , ('a, _) set -> f:(('a -> 'b elt option)[@local]) -> ('b, 'cmp) t )
+        create_options
 
   val of_tree : ('a, 'cmp, ('a elt, 'cmp cmp) tree -> ('a, 'cmp) t) create_options
 end
@@ -404,7 +417,7 @@ module type Set = sig
   val find_map : ('a, _) t -> f:(('a -> 'b option)[@local]) -> 'b option
 
   (** Like [find], but throws an exception on failure. *)
-  val find_exn : ('a, _) t -> f:('a -> bool) -> 'a
+  val find_exn : ('a, _) t -> f:(('a -> bool)[@local]) -> 'a
 
   (** [nth t i] returns the [i]th smallest element of [t], in [O(log n)] time.  The
       smallest element has [i = 0].  Returns [None] if [i < 0] or [i >= length t]. *)
@@ -491,7 +504,7 @@ module type Set = sig
   val of_increasing_iterator_unchecked
     :  ('a, 'cmp) Comparator.Module.t
     -> len:int
-    -> f:(int -> 'a)
+    -> f:((int -> 'a)[@local])
     -> ('a, 'cmp) t
 
   (** [stable_dedup_list] is here rather than in the [List] module because the
@@ -502,18 +515,22 @@ module type Set = sig
 
   (** [map c t ~f] returns a new set created by applying [f] to every element in
       [t].  The returned set is based on the provided [comparator].  [O(n log n)]. *)
-  val map : ('b, 'cmp) Comparator.Module.t -> ('a, _) t -> f:('a -> 'b) -> ('b, 'cmp) t
+  val map
+    :  ('b, 'cmp) Comparator.Module.t
+    -> ('a, _) t
+    -> f:(('a -> 'b)[@local])
+    -> ('b, 'cmp) t
 
   (** Like {!map}, except elements for which [f] returns [None] will be dropped.  *)
   val filter_map
     :  ('b, 'cmp) Comparator.Module.t
     -> ('a, _) t
-    -> f:('a -> 'b option)
+    -> f:(('a -> 'b option)[@local])
     -> ('b, 'cmp) t
 
   (** [filter t ~f] returns the subset of [t] for which [f] evaluates to true.  [O(n log
       n)]. *)
-  val filter : ('a, 'cmp) t -> f:('a -> bool) -> ('a, 'cmp) t
+  val filter : ('a, 'cmp) t -> f:(('a -> bool)[@local]) -> ('a, 'cmp) t
 
   (** [fold t ~init ~f] folds over the elements of the set from smallest to largest. *)
   val fold : ('a, _) t -> init:'accum -> f:(('accum -> 'a -> 'accum)[@local]) -> 'accum
@@ -559,7 +576,10 @@ module type Set = sig
 
   (** if [a, b = partition_tf set ~f] then [a] is the elements on which [f] produced [true],
       and [b] is the elements on which [f] produces [false]. *)
-  val partition_tf : ('a, 'cmp) t -> f:('a -> bool) -> ('a, 'cmp) t * ('a, 'cmp) t
+  val partition_tf
+    :  ('a, 'cmp) t
+    -> f:(('a -> bool)[@local])
+    -> ('a, 'cmp) t * ('a, 'cmp) t
 
   (** Same as {!to_list}. *)
   val elements : ('a, _) t -> 'a list
@@ -604,7 +624,7 @@ module type Set = sig
 
       [group_by] runs in O(n^2) time, so if you have a comparison function, it's usually
       much faster to use [Set.of_list]. *)
-  val group_by : ('a, 'cmp) t -> equiv:('a -> 'a -> bool) -> ('a, 'cmp) t list
+  val group_by : ('a, 'cmp) t -> equiv:(('a -> 'a -> bool)[@local]) -> ('a, 'cmp) t list
 
   (** [to_sequence t] converts the set [t] to a sequence of the elements between
       [greater_or_equal_to] and [less_or_equal_to] inclusive in the order indicated by
@@ -635,7 +655,7 @@ module type Set = sig
       [compare] mutates [t]. *)
   val binary_search
     :  ('a, 'cmp) t
-    -> compare:('a -> 'key -> int)
+    -> compare:(('a -> 'key -> int)[@local])
     -> [ `Last_strictly_less_than (**        {v | < elt X |                       v} *)
        | `Last_less_than_or_equal_to (**     {v |      <= elt       X |           v} *)
        | `Last_equal_to (**                  {v           |   = elt X |           v} *)
@@ -663,7 +683,7 @@ module type Set = sig
       is also unspecified if [segment_of] mutates [t]. *)
   val binary_search_segmented
     :  ('a, 'cmp) t
-    -> segment_of:('a -> [ `Left | `Right ])
+    -> segment_of:(('a -> [ `Left | `Right ])[@local])
     -> [ `Last_on_left | `First_on_right ]
     -> 'a option
 

@@ -37,9 +37,15 @@ val is_error : _ t -> bool
     [Error.t].  [try_with_join] is like [try_with], except that [f] can throw exceptions
     or return an [Error] directly, without ending up with a nested error; it is equivalent
     to [Result.join (try_with f)]. *)
-val try_with : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a) -> 'a t
+val try_with
+  :  ?backtrace:bool (** defaults to [false] *)
+  -> ((unit -> 'a)[@local])
+  -> 'a t
 
-val try_with_join : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a t) -> 'a t
+val try_with_join
+  :  ?backtrace:bool (** defaults to [false] *)
+  -> ((unit -> 'a t)[@local])
+  -> 'a t
 
 (** [ok t] returns [None] if [t] is an [Error], and otherwise returns the contents of the
     [Ok] constructor. *)
@@ -105,8 +111,8 @@ val tag_arg : 'a t -> string -> 'b -> ('b -> Sexp.t) -> 'a t
 val unimplemented : string -> _ t
 
 val map : 'a t -> f:(('a -> 'b)[@local]) -> 'b t
-val iter : 'a t -> f:('a -> unit) -> unit
-val iter_error : _ t -> f:(Error.t -> unit) -> unit
+val iter : 'a t -> f:(('a -> unit)[@local]) -> unit
+val iter_error : _ t -> f:((Error.t -> unit)[@local]) -> unit
 
 (** [combine_errors ts] returns [Ok] if every element in [ts] is [Ok], else it returns
     [Error] with all the errors in [ts].  More precisely:
@@ -130,4 +136,4 @@ val find_ok : 'a t list -> 'a t
 
 (** [find_map_ok l ~f] returns the first value in [l] for which [f] returns [Ok],
     otherwise it returns the same error as [combine_errors (List.map l ~f)]. *)
-val find_map_ok : 'a list -> f:('a -> 'b t) -> 'b t
+val find_map_ok : 'a list -> f:(('a -> 'b t)[@local]) -> 'b t

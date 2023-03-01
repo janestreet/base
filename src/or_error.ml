@@ -143,7 +143,7 @@ let find_map_ok l ~f =
          (List.map l ~f:(fun elt ->
             match f elt with
             | Ok _ as x -> return x
-            | Error err -> err))))
+            | Error err -> err)))) [@nontail]
 ;;
 
 let map = Result.map

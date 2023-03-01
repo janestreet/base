@@ -430,13 +430,17 @@ module type Accessors_generic = sig
   val change
     : ( 'k
       , 'cmp
-      , ('k, 'v, 'cmp) t -> 'k key -> f:('v option -> 'v option) -> ('k, 'v, 'cmp) t )
+      , ('k, 'v, 'cmp) t
+      -> 'k key
+      -> f:(('v option -> 'v option)[@local])
+      -> ('k, 'v, 'cmp) t )
         access_options
 
   val update
     : ( 'k
       , 'cmp
-      , ('k, 'v, 'cmp) t -> 'k key -> f:('v option -> 'v) -> ('k, 'v, 'cmp) t )
+      , ('k, 'v, 'cmp) t -> 'k key -> f:(('v option -> 'v)[@local]) -> ('k, 'v, 'cmp) t
+      )
         access_options
 
   val find : ('k, 'cmp, ('k, 'v, 'cmp) t -> 'k key -> 'v option) access_options
@@ -449,7 +453,7 @@ module type Accessors_generic = sig
 
   val iteri_until
     :  ('k, 'v, _) t
-    -> f:(key:'k key -> data:'v -> Continue_or_stop.t)
+    -> f:((key:'k key -> data:'v -> Continue_or_stop.t)[@local])
     -> Finished_or_unfinished.t
 
   val iter2
@@ -457,12 +461,16 @@ module type Accessors_generic = sig
       , 'cmp
       , ('k, 'v1, 'cmp) t
       -> ('k, 'v2, 'cmp) t
-      -> f:(key:'k key -> data:('v1, 'v2) Merge_element.t -> unit)
+      -> f:((key:'k key -> data:('v1, 'v2) Merge_element.t -> unit)[@local])
       -> unit )
         access_options
 
-  val map : ('k, 'v1, 'cmp) t -> f:('v1 -> 'v2) -> ('k, 'v2, 'cmp) t
-  val mapi : ('k, 'v1, 'cmp) t -> f:(key:'k key -> data:'v1 -> 'v2) -> ('k, 'v2, 'cmp) t
+  val map : ('k, 'v1, 'cmp) t -> f:(('v1 -> 'v2)[@local]) -> ('k, 'v2, 'cmp) t
+
+  val mapi
+    :  ('k, 'v1, 'cmp) t
+    -> f:((key:'k key -> data:'v1 -> 'v2)[@local])
+    -> ('k, 'v2, 'cmp) t
 
   val fold
     :  ('k, 'v, _) t
@@ -495,34 +503,42 @@ module type Accessors_generic = sig
       -> 'a )
         access_options
 
-  val filter_keys : ('k, 'v, 'cmp) t -> f:('k key -> bool) -> ('k, 'v, 'cmp) t
-  val filter : ('k, 'v, 'cmp) t -> f:('v -> bool) -> ('k, 'v, 'cmp) t
-  val filteri : ('k, 'v, 'cmp) t -> f:(key:'k key -> data:'v -> bool) -> ('k, 'v, 'cmp) t
-  val filter_map : ('k, 'v1, 'cmp) t -> f:('v1 -> 'v2 option) -> ('k, 'v2, 'cmp) t
+  val filter_keys : ('k, 'v, 'cmp) t -> f:(('k key -> bool)[@local]) -> ('k, 'v, 'cmp) t
+  val filter : ('k, 'v, 'cmp) t -> f:(('v -> bool)[@local]) -> ('k, 'v, 'cmp) t
+
+  val filteri
+    :  ('k, 'v, 'cmp) t
+    -> f:((key:'k key -> data:'v -> bool)[@local])
+    -> ('k, 'v, 'cmp) t
+
+  val filter_map
+    :  ('k, 'v1, 'cmp) t
+    -> f:(('v1 -> 'v2 option)[@local])
+    -> ('k, 'v2, 'cmp) t
 
   val filter_mapi
     :  ('k, 'v1, 'cmp) t
-    -> f:(key:'k key -> data:'v1 -> 'v2 option)
+    -> f:((key:'k key -> data:'v1 -> 'v2 option)[@local])
     -> ('k, 'v2, 'cmp) t
 
   val partition_mapi
     :  ('k, 'v1, 'cmp) t
-    -> f:(key:'k key -> data:'v1 -> ('v2, 'v3) Either.t)
+    -> f:((key:'k key -> data:'v1 -> ('v2, 'v3) Either.t)[@local])
     -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t
 
   val partition_map
     :  ('k, 'v1, 'cmp) t
-    -> f:('v1 -> ('v2, 'v3) Either.t)
+    -> f:(('v1 -> ('v2, 'v3) Either.t)[@local])
     -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t
 
   val partitioni_tf
     :  ('k, 'v, 'cmp) t
-    -> f:(key:'k key -> data:'v -> bool)
+    -> f:((key:'k key -> data:'v -> bool)[@local])
     -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
 
   val partition_tf
     :  ('k, 'v, 'cmp) t
-    -> f:('v -> bool)
+    -> f:(('v -> bool)[@local])
     -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
 
   val combine_errors
@@ -556,7 +572,7 @@ module type Accessors_generic = sig
       , 'cmp
       , ('k, 'v1, 'cmp) t
       -> ('k, 'v2, 'cmp) t
-      -> f:(key:'k key -> ('v1, 'v2) Merge_element.t -> 'v3 option)
+      -> f:((key:'k key -> ('v1, 'v2) Merge_element.t -> 'v3 option)[@local])
       -> ('k, 'v3, 'cmp) t )
         access_options
 
@@ -565,7 +581,7 @@ module type Accessors_generic = sig
       , 'cmp
       , ('k, 'v, 'cmp) t
       -> ('k, 'v, 'cmp) t
-      -> combine:(key:'k key -> 'v -> 'v -> 'v)
+      -> combine:((key:'k key -> 'v -> 'v -> 'v)[@local])
       -> ('k, 'v, 'cmp) t )
         access_options
 
@@ -583,9 +599,9 @@ module type Accessors_generic = sig
       , 'cmp
       , ('k, 'v, 'cmp) t
       -> ('k, 'v, 'cmp) t
-      -> data_equal:('v -> 'v -> bool)
+      -> data_equal:(('v -> 'v -> bool)[@local])
       -> init:'a
-      -> f:('a -> ('k key, 'v) Symmetric_diff_element.t -> 'a)
+      -> f:(('a -> ('k key, 'v) Symmetric_diff_element.t -> 'a)[@local])
       -> 'a )
         access_options
 
@@ -594,11 +610,11 @@ module type Accessors_generic = sig
   val max_elt : ('k, 'v, _) t -> ('k key * 'v) option
   val max_elt_exn : ('k, 'v, _) t -> 'k key * 'v
   val for_all : ('k, 'v, _) t -> f:(('v -> bool)[@local]) -> bool
-  val for_alli : ('k, 'v, _) t -> f:(key:'k key -> data:'v -> bool) -> bool
+  val for_alli : ('k, 'v, _) t -> f:((key:'k key -> data:'v -> bool)[@local]) -> bool
   val exists : ('k, 'v, _) t -> f:(('v -> bool)[@local]) -> bool
-  val existsi : ('k, 'v, _) t -> f:(key:'k key -> data:'v -> bool) -> bool
-  val count : ('k, 'v, _) t -> f:('v -> bool) -> int
-  val counti : ('k, 'v, _) t -> f:(key:'k key -> data:'v -> bool) -> int
+  val existsi : ('k, 'v, _) t -> f:((key:'k key -> data:'v -> bool)[@local]) -> bool
+  val count : ('k, 'v, _) t -> f:(('v -> bool)[@local]) -> int
+  val counti : ('k, 'v, _) t -> f:((key:'k key -> data:'v -> bool)[@local]) -> int
 
   val split
     : ( 'k
@@ -632,7 +648,7 @@ module type Accessors_generic = sig
       -> min:'k key
       -> max:'k key
       -> init:'a
-      -> f:(key:'k key -> data:'v -> 'a -> 'a)
+      -> f:((key:'k key -> data:'v -> 'a -> 'a)[@local])
       -> 'a )
         access_options
 
@@ -670,7 +686,7 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> compare:(key:'k key -> data:'v -> 'key -> int)
+      -> compare:((key:'k key -> data:'v -> 'key -> int)[@local])
       -> Binary_searchable.Which_target_by_key.t
       -> 'key
       -> ('k key * 'v) option )
@@ -680,7 +696,7 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> segment_of:(key:'k key -> data:'v -> [ `Left | `Right ])
+      -> segment_of:((key:'k key -> data:'v -> [ `Left | `Right ])[@local])
       -> Binary_searchable.Which_target_by_segment.t
       -> ('k key * 'v) option )
         access_options
@@ -689,7 +705,7 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> compare:(key:'k key -> data:'v -> 'bound -> int)
+      -> compare:((key:'k key -> data:'v -> 'bound -> int)[@local])
       -> lower_bound:'bound Maybe_bound.t
       -> upper_bound:'bound Maybe_bound.t
       -> ('k, 'v, 'cmp) t )
@@ -723,14 +739,14 @@ module type Creators_generic = sig
     : ( 'k2
       , 'cmp2
       , ('k1, 'v, 'cmp1) t
-      -> f:('k1 key -> 'k2 key)
+      -> f:(('k1 key -> 'k2 key)[@local])
       -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 key ] )
         create_options
 
   val map_keys_exn
     : ( 'k2
       , 'cmp2
-      , ('k1, 'v, 'cmp1) t -> f:('k1 key -> 'k2 key) -> ('k2, 'v, 'cmp2) t )
+      , ('k1, 'v, 'cmp1) t -> f:(('k1 key -> 'k2 key)[@local]) -> ('k2, 'v, 'cmp2) t )
         create_options
 
   val transpose_keys
@@ -749,7 +765,10 @@ module type Creators_generic = sig
     : ('k, 'cmp, ('k key * 'v) array -> ('k, 'v, 'cmp) t) create_options
 
   val of_increasing_iterator_unchecked
-    : ('k, 'cmp, len:int -> f:(int -> 'k key * 'v) -> ('k, 'v, 'cmp) t) create_options
+    : ( 'k
+      , 'cmp
+      , len:int -> f:((int -> 'k key * 'v)[@local]) -> ('k, 'v, 'cmp) t )
+        create_options
 
   val of_alist
     : ( 'k
@@ -768,13 +787,16 @@ module type Creators_generic = sig
   val of_alist_fold
     : ( 'k
       , 'cmp
-      , ('k key * 'v1) list -> init:'v2 -> f:('v2 -> 'v1 -> 'v2) -> ('k, 'v2, 'cmp) t )
+      , ('k key * 'v1) list
+      -> init:'v2
+      -> f:(('v2 -> 'v1 -> 'v2)[@local])
+      -> ('k, 'v2, 'cmp) t )
         create_options
 
   val of_alist_reduce
     : ( 'k
       , 'cmp
-      , ('k key * 'v) list -> f:('v -> 'v -> 'v) -> ('k, 'v, 'cmp) t )
+      , ('k key * 'v) list -> f:(('v -> 'v -> 'v)[@local]) -> ('k, 'v, 'cmp) t )
         create_options
 
   val of_increasing_sequence
@@ -801,37 +823,40 @@ module type Creators_generic = sig
       , 'cmp
       , ('k key * 'v1) Sequence.t
       -> init:'v2
-      -> f:('v2 -> 'v1 -> 'v2)
+      -> f:(('v2 -> 'v1 -> 'v2)[@local])
       -> ('k, 'v2, 'cmp) t )
         create_options
 
   val of_sequence_reduce
     : ( 'k
       , 'cmp
-      , ('k key * 'v) Sequence.t -> f:('v -> 'v -> 'v) -> ('k, 'v, 'cmp) t )
+      , ('k key * 'v) Sequence.t -> f:(('v -> 'v -> 'v)[@local]) -> ('k, 'v, 'cmp) t )
         create_options
 
   val of_list_with_key
     : ( 'k
       , 'cmp
       , 'v list
-      -> get_key:('v -> 'k key)
+      -> get_key:(('v -> 'k key)[@local])
       -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ] )
         create_options
 
   val of_list_with_key_or_error
     : ( 'k
       , 'cmp
-      , 'v list -> get_key:('v -> 'k key) -> ('k, 'v, 'cmp) t Or_error.t )
+      , 'v list -> get_key:(('v -> 'k key)[@local]) -> ('k, 'v, 'cmp) t Or_error.t )
         create_options
 
   val of_list_with_key_exn
-    : ('k, 'cmp, 'v list -> get_key:('v -> 'k key) -> ('k, 'v, 'cmp) t) create_options
+    : ( 'k
+      , 'cmp
+      , 'v list -> get_key:(('v -> 'k key)[@local]) -> ('k, 'v, 'cmp) t )
+        create_options
 
   val of_list_with_key_multi
     : ( 'k
       , 'cmp
-      , 'v list -> get_key:('v -> 'k key) -> ('k, 'v list, 'cmp) t )
+      , 'v list -> get_key:(('v -> 'k key)[@local]) -> ('k, 'v list, 'cmp) t )
         create_options
 
   val of_iteri
@@ -1099,7 +1124,7 @@ module type Map = sig
     :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) list
     -> init:'c
-    -> f:('c -> 'b -> 'c)
+    -> f:(('c -> 'b -> 'c)[@local])
     -> ('a, 'c, 'cmp) t
 
   (** Combines an association list into a map, reducing together bound values with common
@@ -1107,7 +1132,7 @@ module type Map = sig
   val of_alist_reduce
     :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) list
-    -> f:('b -> 'b -> 'b)
+    -> f:(('b -> 'b -> 'b)[@local])
     -> ('a, 'b, 'cmp) t
 
   (** [of_iteri ~iteri] behaves like [of_alist], except that instead of taking a concrete
@@ -1148,7 +1173,7 @@ module type Map = sig
   val of_increasing_iterator_unchecked
     :  ('a, 'cmp) Comparator.Module.t
     -> len:int
-    -> f:(int -> 'a * 'b)
+    -> f:((int -> 'a * 'b)[@local])
     -> ('a, 'b, 'cmp) t
 
   (** [of_increasing_sequence c seq] behaves like [of_sorted_array c (Sequence.to_array
@@ -1217,7 +1242,7 @@ module type Map = sig
     :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) Sequence.t
     -> init:'c
-    -> f:('c -> 'b -> 'c)
+    -> f:(('c -> 'b -> 'c)[@local])
     -> ('a, 'c, 'cmp) t
 
   (** Combines an association sequence into a map, reducing together bound values with common
@@ -1228,7 +1253,7 @@ module type Map = sig
   val of_sequence_reduce
     :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) Sequence.t
-    -> f:('b -> 'b -> 'b)
+    -> f:(('b -> 'b -> 'b)[@local])
     -> ('a, 'b, 'cmp) t
 
   (** Constructs a map from a list of values, where [get_key] extracts a key from a value.
@@ -1236,28 +1261,28 @@ module type Map = sig
   val of_list_with_key
     :  ('k, 'cmp) Comparator.Module.t
     -> 'v list
-    -> get_key:('v -> 'k)
+    -> get_key:(('v -> 'k)[@local])
     -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k ]
 
   (** Like [of_list_with_key]; returns [Error] on duplicate key. *)
   val of_list_with_key_or_error
     :  ('k, 'cmp) Comparator.Module.t
     -> 'v list
-    -> get_key:('v -> 'k)
+    -> get_key:(('v -> 'k)[@local])
     -> ('k, 'v, 'cmp) t Or_error.t
 
   (** Like [of_list_with_key]; raises on duplicate key. *)
   val of_list_with_key_exn
     :  ('k, 'cmp) Comparator.Module.t
     -> 'v list
-    -> get_key:('v -> 'k)
+    -> get_key:(('v -> 'k)[@local])
     -> ('k, 'v, 'cmp) t
 
   (** Like [of_list_with_key]; produces lists of all values associated with each key. *)
   val of_list_with_key_multi
     :  ('k, 'cmp) Comparator.Module.t
     -> 'v list
-    -> get_key:('v -> 'k)
+    -> get_key:(('v -> 'k)[@local])
     -> ('k, 'v list, 'cmp) t
 
   (** Tests whether a map is empty. *)
@@ -1291,10 +1316,14 @@ module type Map = sig
   (** [change t key ~f] returns a new map [m] that is the same as [t] on all keys except
       for [key], and whose value for [key] is defined by [f], i.e., [find m key = f (find
       t key)]. *)
-  val change : ('k, 'v, 'cmp) t -> 'k -> f:('v option -> 'v option) -> ('k, 'v, 'cmp) t
+  val change
+    :  ('k, 'v, 'cmp) t
+    -> 'k
+    -> f:(('v option -> 'v option)[@local])
+    -> ('k, 'v, 'cmp) t
 
   (** [update t key ~f] is [change t key ~f:(fun o -> Some (f o))]. *)
-  val update : ('k, 'v, 'cmp) t -> 'k -> f:('v option -> 'v) -> ('k, 'v, 'cmp) t
+  val update : ('k, 'v, 'cmp) t -> 'k -> f:(('v option -> 'v)[@local]) -> ('k, 'v, 'cmp) t
 
 
   (** Returns [Some value] bound to the given key, or [None] if none exists. *)
@@ -1318,7 +1347,7 @@ module type Map = sig
       result is [Unfinished]. Otherwise, the final result is [Finished]. *)
   val iteri_until
     :  ('k, 'v, _) t
-    -> f:(key:'k -> data:'v -> Continue_or_stop.t)
+    -> f:((key:'k -> data:'v -> Continue_or_stop.t)[@local])
     -> Finished_or_unfinished.t
 
   (** Iterates two maps side by side. The complexity of this function is O(M + N).  If two
@@ -1327,27 +1356,30 @@ module type Map = sig
   val iter2
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
-    -> f:(key:'k -> data:('v1, 'v2) Merge_element.t -> unit)
+    -> f:((key:'k -> data:('v1, 'v2) Merge_element.t -> unit)[@local])
     -> unit
 
   (** Returns a new map with bound values replaced by [f] applied to the bound values.*)
-  val map : ('k, 'v1, 'cmp) t -> f:('v1 -> 'v2) -> ('k, 'v2, 'cmp) t
+  val map : ('k, 'v1, 'cmp) t -> f:(('v1 -> 'v2)[@local]) -> ('k, 'v2, 'cmp) t
 
   (** Like [map], but the passed function takes both [key] and [data] as arguments. *)
-  val mapi : ('k, 'v1, 'cmp) t -> f:(key:'k -> data:'v1 -> 'v2) -> ('k, 'v2, 'cmp) t
+  val mapi
+    :  ('k, 'v1, 'cmp) t
+    -> f:((key:'k -> data:'v1 -> 'v2)[@local])
+    -> ('k, 'v2, 'cmp) t
 
   (** Convert map with keys of type ['k2] to a map with keys of type ['k2] using [f]. *)
   val map_keys
     :  ('k2, 'cmp2) Comparator.Module.t
     -> ('k1, 'v, 'cmp1) t
-    -> f:('k1 -> 'k2)
+    -> f:(('k1 -> 'k2)[@local])
     -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 ]
 
   (** Like [map_keys], but raises on duplicate key. *)
   val map_keys_exn
     :  ('k2, 'cmp2) Comparator.Module.t
     -> ('k1, 'v, 'cmp1) t
-    -> f:('k1 -> 'k2)
+    -> f:(('k1 -> 'k2)[@local])
     -> ('k2, 'v, 'cmp2) t
 
   (** Folds over keys and data in the map in increasing order of [key]. *)
@@ -1389,32 +1421,39 @@ module type Map = sig
       [k] consecutive elements costs [O(log(k))] extra memory. Keeping the entire map
       costs no extra memory at all: [filter ~f:(fun _ -> true)] returns the original map.
   *)
-  val filter_keys : ('k, 'v, 'cmp) t -> f:('k -> bool) -> ('k, 'v, 'cmp) t
+  val filter_keys : ('k, 'v, 'cmp) t -> f:(('k -> bool)[@local]) -> ('k, 'v, 'cmp) t
 
-  val filter : ('k, 'v, 'cmp) t -> f:('v -> bool) -> ('k, 'v, 'cmp) t
-  val filteri : ('k, 'v, 'cmp) t -> f:(key:'k -> data:'v -> bool) -> ('k, 'v, 'cmp) t
+  val filter : ('k, 'v, 'cmp) t -> f:(('v -> bool)[@local]) -> ('k, 'v, 'cmp) t
+
+  val filteri
+    :  ('k, 'v, 'cmp) t
+    -> f:((key:'k -> data:'v -> bool)[@local])
+    -> ('k, 'v, 'cmp) t
 
   (** Returns a new map with bound values filtered by [f] applied to the bound values. *)
-  val filter_map : ('k, 'v1, 'cmp) t -> f:('v1 -> 'v2 option) -> ('k, 'v2, 'cmp) t
+  val filter_map
+    :  ('k, 'v1, 'cmp) t
+    -> f:(('v1 -> 'v2 option)[@local])
+    -> ('k, 'v2, 'cmp) t
 
   (** Like [filter_map], but the passed function takes both [key] and [data] as
       arguments. *)
   val filter_mapi
     :  ('k, 'v1, 'cmp) t
-    -> f:(key:'k -> data:'v1 -> 'v2 option)
+    -> f:((key:'k -> data:'v1 -> 'v2 option)[@local])
     -> ('k, 'v2, 'cmp) t
 
   (** [partition_mapi t ~f] returns two new [t]s, with each key in [t] appearing in
       exactly one of the resulting maps depending on its mapping in [f]. *)
   val partition_mapi
     :  ('k, 'v1, 'cmp) t
-    -> f:(key:'k -> data:'v1 -> ('v2, 'v3) Either.t)
+    -> f:((key:'k -> data:'v1 -> ('v2, 'v3) Either.t)[@local])
     -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t
 
   (** [partition_map t ~f = partition_mapi t ~f:(fun ~key:_ ~data -> f data)] *)
   val partition_map
     :  ('k, 'v1, 'cmp) t
-    -> f:('v1 -> ('v2, 'v3) Either.t)
+    -> f:(('v1 -> ('v2, 'v3) Either.t)[@local])
     -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t
 
   (**
@@ -1428,13 +1467,13 @@ module type Map = sig
      ]} *)
   val partitioni_tf
     :  ('k, 'v, 'cmp) t
-    -> f:(key:'k -> data:'v -> bool)
+    -> f:((key:'k -> data:'v -> bool)[@local])
     -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
 
   (** [partition_tf t ~f = partitioni_tf t ~f:(fun ~key:_ ~data -> f data)] *)
   val partition_tf
     :  ('k, 'v, 'cmp) t
-    -> f:('v -> bool)
+    -> f:(('v -> bool)[@local])
     -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
 
   (** Produces [Ok] of a map including all keys if all data is [Ok], or an [Error]
@@ -1475,7 +1514,7 @@ module type Map = sig
   val merge
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
-    -> f:(key:'k -> ('v1, 'v2) Merge_element.t -> 'v3 option)
+    -> f:((key:'k -> ('v1, 'v2) Merge_element.t -> 'v3 option)[@local])
     -> ('k, 'v3, 'cmp) t
 
   (** A special case of [merge], [merge_skewed t1 t2] is a map containing all the
@@ -1489,7 +1528,7 @@ module type Map = sig
   val merge_skewed
     :  ('k, 'v, 'cmp) t
     -> ('k, 'v, 'cmp) t
-    -> combine:(key:'k -> 'v -> 'v -> 'v)
+    -> combine:((key:'k -> 'v -> 'v -> 'v)[@local])
     -> ('k, 'v, 'cmp) t
 
   module Symmetric_diff_element : sig
@@ -1532,9 +1571,9 @@ module type Map = sig
   val fold_symmetric_diff
     :  ('k, 'v, 'cmp) t
     -> ('k, 'v, 'cmp) t
-    -> data_equal:('v -> 'v -> bool)
+    -> data_equal:(('v -> 'v -> bool)[@local])
     -> init:'a
-    -> f:('a -> ('k, 'v) Symmetric_diff_element.t -> 'a)
+    -> f:(('a -> ('k, 'v) Symmetric_diff_element.t -> 'a)[@local])
     -> 'a
 
   (** [min_elt map] returns [Some (key, data)] pair corresponding to the minimum key in
@@ -1559,11 +1598,11 @@ module type Map = sig
   (** These functions have the same semantics as similar functions in [List]. *)
 
   val for_all : ('k, 'v, _) t -> f:(('v -> bool)[@local]) -> bool
-  val for_alli : ('k, 'v, _) t -> f:(key:'k -> data:'v -> bool) -> bool
+  val for_alli : ('k, 'v, _) t -> f:((key:'k -> data:'v -> bool)[@local]) -> bool
   val exists : ('k, 'v, _) t -> f:(('v -> bool)[@local]) -> bool
-  val existsi : ('k, 'v, _) t -> f:(key:'k -> data:'v -> bool) -> bool
-  val count : ('k, 'v, _) t -> f:('v -> bool) -> int
-  val counti : ('k, 'v, _) t -> f:(key:'k -> data:'v -> bool) -> int
+  val existsi : ('k, 'v, _) t -> f:((key:'k -> data:'v -> bool)[@local]) -> bool
+  val count : ('k, 'v, _) t -> f:(('v -> bool)[@local]) -> int
+  val counti : ('k, 'v, _) t -> f:((key:'k -> data:'v -> bool)[@local]) -> int
 
 
   (** [split t key] returns a map of keys strictly less than [key], the mapping of [key] if
@@ -1618,7 +1657,7 @@ module type Map = sig
     -> min:'k
     -> max:'k
     -> init:'a
-    -> f:(key:'k -> data:'v -> 'a -> 'a)
+    -> f:((key:'k -> data:'v -> 'a -> 'a)[@local])
     -> 'a
 
   (** [range_to_alist t ~min ~max] returns an associative list of the elements whose keys
@@ -1689,7 +1728,7 @@ module type Map = sig
       [compare] mutates [t]. *)
   val binary_search
     :  ('k, 'v, 'cmp) t
-    -> compare:(key:'k -> data:'v -> 'key -> int)
+    -> compare:((key:'k -> data:'v -> 'key -> int)[@local])
     -> [ `Last_strictly_less_than (**        {v | < elt X |                       v} *)
        | `Last_less_than_or_equal_to (**     {v |      <= elt       X |           v} *)
        | `Last_equal_to (**                  {v           |   = elt X |           v} *)
@@ -1717,7 +1756,7 @@ module type Map = sig
       is also unspecified if [segment_of] mutates [t]. *)
   val binary_search_segmented
     :  ('k, 'v, 'cmp) t
-    -> segment_of:(key:'k -> data:'v -> [ `Left | `Right ])
+    -> segment_of:((key:'k -> data:'v -> [ `Left | `Right ])[@local])
     -> [ `Last_on_left | `First_on_right ]
     -> ('k * 'v) option
 
@@ -1737,7 +1776,7 @@ module type Map = sig
       [compare] mutates its inputs. *)
   val binary_search_subrange
     :  ('k, 'v, 'cmp) t
-    -> compare:(key:'k -> data:'v -> 'bound -> int)
+    -> compare:((key:'k -> data:'v -> 'bound -> int)[@local])
     -> lower_bound:'bound Maybe_bound.t
     -> upper_bound:'bound Maybe_bound.t
     -> ('k, 'v, 'cmp) t

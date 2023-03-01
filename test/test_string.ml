@@ -1059,6 +1059,44 @@ let%expect_test "String.concat_lines examples" =
   [%expect {| "foo\r\nbar\r\n" |}]
 ;;
 
+let%expect_test "pad_left and pad_right" =
+  let test ?char t ~len =
+    let padded_left = pad_left ?char t ~len in
+    require [%here] (Int.( >= ) (length padded_left) len);
+    require [%here] (String.is_suffix padded_left ~suffix:t);
+    let padded_right = pad_right ?char t ~len in
+    require [%here] (Int.( >= ) (length padded_right) len);
+    require [%here] (String.is_prefix padded_right ~prefix:t);
+    if Int.( >= ) (length t) len
+    then (
+      require [%here] (phys_equal t padded_left);
+      require [%here] (phys_equal t padded_right));
+    print_s [%message (t : string) (padded_left : string) (padded_right : string)]
+  in
+  test "" ~len:2;
+  [%expect
+    {|
+    ((t            "")
+     (padded_left  "  ")
+     (padded_right "  ")) |}];
+  test "foo" ~len:2;
+  [%expect {|
+    ((t            foo)
+     (padded_left  foo)
+     (padded_right foo)) |}];
+  test "foo" ~len:3;
+  [%expect {|
+    ((t            foo)
+     (padded_left  foo)
+     (padded_right foo)) |}];
+  test "foo" ~len:10 ~char:'_';
+  [%expect
+    {|
+    ((t            foo)
+     (padded_left  _______foo)
+     (padded_right foo_______)) |}]
+;;
+
 let%test_module "functions that raise Not_found_s" =
   (module struct
     let show f sexp_of_ok = print_s [%sexp (Result.try_with f : (ok, exn) Result.t)]

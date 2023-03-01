@@ -814,7 +814,9 @@ let last t = t.(length t - 1)
    in the array. *)
 let to_sequence_mutable t =
   Sequence.unfold_step ~init:0 ~f:(fun i ->
-    if i >= length t then Sequence.Step.Done else Sequence.Step.Yield (t.(i), i + 1))
+    if i >= length t
+    then Sequence.Step.Done
+    else Sequence.Step.Yield { value = t.(i); state = i + 1 })
 ;;
 
 let to_sequence t = to_sequence_mutable (copy t)

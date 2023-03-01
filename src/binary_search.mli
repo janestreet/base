@@ -44,9 +44,9 @@ val binary_search
   :  ?pos:int
   -> ?len:int
   -> 't
-  -> length:('t -> int)
-  -> get:('t -> int -> 'elt)
-  -> compare:('elt -> 'key -> int)
+  -> length:(('t -> int)[@local])
+  -> get:(('t -> int -> 'elt)[@local])
+  -> compare:(('elt -> 'key -> int)[@local])
   -> [ `Last_strictly_less_than (**        {v | < elt X |                       v} *)
      | `Last_less_than_or_equal_to (**     {v |      <= elt       X |           v} *)
      | `Last_equal_to (**                  {v           |   = elt X |           v} *)
@@ -79,8 +79,8 @@ val binary_search_segmented
   :  ?pos:int
   -> ?len:int
   -> 't
-  -> length:('t -> int)
-  -> get:('t -> int -> 'elt)
-  -> segment_of:('elt -> [ `Left | `Right ])
+  -> length:(('t -> int)[@local])
+  -> get:(('t -> int -> 'elt)[@local])
+  -> segment_of:(('elt -> [ `Left | `Right ])[@local])
   -> [ `Last_on_left | `First_on_right ]
   -> int option

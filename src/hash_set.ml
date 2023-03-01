@@ -86,7 +86,7 @@ module Accessors = struct
   let for_all t ~f = not (Hashtbl.existsi t ~f:(fun ~key ~data:() -> not (f key)))
   let equal t1 t2 = Hashtbl.equal (fun () () -> true) t1 t2
   let copy t = Hashtbl.copy t
-  let filter t ~f = Hashtbl.filteri t ~f:(fun ~key ~data:() -> f key)
+  let filter t ~f = Hashtbl.filteri t ~f:(fun ~key ~data:() -> f key) [@nontail]
   let union t1 t2 = Hashtbl.merge t1 t2 ~f:(fun ~key:_ _ -> Some ())
   let diff t1 t2 = filter t1 ~f:(fun key -> not (Hashtbl.mem t2 key))
 
@@ -101,7 +101,7 @@ module Accessors = struct
   ;;
 
   let of_hashtbl_keys hashtbl = Hashtbl.map hashtbl ~f:ignore
-  let to_hashtbl t ~f = Hashtbl.mapi t ~f:(fun ~key ~data:() -> f key)
+  let to_hashtbl t ~f = Hashtbl.mapi t ~f:(fun ~key ~data:() -> f key) [@nontail]
 end
 
 include Accessors

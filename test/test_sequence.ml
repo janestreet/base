@@ -157,19 +157,23 @@ let%test_unit _ =
   [%test_result: int list]
     (to_list
        (unfold_with s12345 ~init:1 ~f:(fun s _ ->
-          if s % 2 = 0 then Skip (s + 1) else if s = 5 then Done else Yield (s, s + 1))))
+          if s % 2 = 0
+          then Skip { state = s + 1 }
+          else if s = 5
+          then Done
+          else Yield { value = s; state = s + 1 })))
     ~expect:[ 1; 3 ]
 ;;
 
 let test_delay init =
   unfold_with_and_finish
     ~init
-    ~running_step:(fun prev next -> Yield (prev, next))
+    ~running_step:(fun prev next -> Yield { value = prev; state = next })
     ~inner_finished:(fun x -> Some x)
     ~finishing_step:(fun prev ->
       match prev with
       | None -> Done
-      | Some prev -> Yield (prev, None))
+      | Some prev -> Yield { value = prev; state = None })
 ;;
 
 let%test_unit _ =

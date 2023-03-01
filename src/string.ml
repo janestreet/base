@@ -735,10 +735,10 @@ let rfindi ?pos t ~f =
     | Some pos -> pos
     | None -> length t - 1
   in
-  loop pos
+  loop pos [@nontail]
 ;;
 
-let last_non_drop ~drop t = rfindi t ~f:(fun _ c -> not (drop c))
+let last_non_drop ~drop t = rfindi t ~f:(fun _ c -> not (drop c)) [@nontail]
 
 let rstrip ?(drop = Char.is_whitespace) t =
   match last_non_drop t ~drop with
@@ -746,7 +746,7 @@ let rstrip ?(drop = Char.is_whitespace) t =
   | Some i -> if i = length t - 1 then t else prefix t (i + 1)
 ;;
 
-let first_non_drop ~drop t = lfindi t ~f:(fun _ c -> not (drop c))
+let first_non_drop ~drop t = lfindi t ~f:(fun _ c -> not (drop c)) [@nontail]
 
 let lstrip ?(drop = Char.is_whitespace) t =
   match first_non_drop t ~drop with
@@ -1173,6 +1173,28 @@ let of_char_list l =
   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t
 ;;
 
+let pad_right ?(char = ' ') s ~len =
+  let src_len = length s in
+  if src_len >= len
+  then s
+  else (
+    let res = Bytes.create len in
+    Bytes.blit_string ~src:s ~dst:res ~src_pos:0 ~dst_pos:0 ~len:src_len;
+    Bytes.fill ~pos:src_len ~len:(len - src_len) res char;
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res)
+;;
+
+let pad_left ?(char = ' ') s ~len =
+  let src_len = length s in
+  if src_len >= len
+  then s
+  else (
+    let res = Bytes.create len in
+    Bytes.blit_string ~src:s ~dst:res ~src_pos:0 ~dst_pos:(len - src_len) ~len:src_len;
+    Bytes.fill ~pos:0 ~len:(len - src_len) res char;
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res)
+;;
+
 module Escaping = struct
   (* If this is changed, make sure to update [escape], which attempts to ensure all the
      invariants checked here.  *)
@@ -1578,14 +1600,14 @@ module Escaping = struct
     rfindi t ~f:(fun i c ->
       (not (drop c))
       || is_char_escaping t ~escape_char i
-      || is_char_escaped t ~escape_char i)
+      || is_char_escaped t ~escape_char i) [@nontail]
   ;;
 
   let first_non_drop_literal ~drop ~escape_char t =
     lfindi t ~f:(fun i c ->
       (not (drop c))
       || is_char_escaping t ~escape_char i
-      || is_char_escaped t ~escape_char i)
+      || is_char_escaped t ~escape_char i) [@nontail]
   ;;
 
   let rstrip_literal ?(drop = Char.is_whitespace) t ~escape_char =

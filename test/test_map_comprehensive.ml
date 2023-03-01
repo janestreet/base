@@ -343,7 +343,8 @@ struct
           create of_alist_fold alist ~init:[] ~f:(fun xs x -> x :: xs) |> map ~f:List.rev
         in
         let t_reduce =
-          create of_alist_reduce (List.Assoc.map alist ~f:List.return) ~f:( @ )
+          create of_alist_reduce (List.Assoc.map alist ~f:List.return) ~f:(fun x y ->
+            x @ y)
         in
         require_equal
           [%here]
@@ -397,7 +398,7 @@ struct
           create
             of_sequence_reduce
             (alist |> List.Assoc.map ~f:List.return |> Sequence.of_list)
-            ~f:( @ )
+            ~f:(fun x y -> x @ y)
         in
         let expect = create of_alist_multi alist in
         require_equal [%here] (module Inst_multi) t_multi expect;
@@ -1193,7 +1194,7 @@ struct
             fold_symmetric_diff
             a
             b
-            ~data_equal:Int.equal
+            ~data_equal:(fun x y -> Int.equal x y)
             ~init:[]
             ~f:(fun acc pair -> pair :: acc)
           |> List.rev

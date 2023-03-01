@@ -72,7 +72,7 @@ val add
   :  ('k, 'v) t
   -> replace:bool
   -> compare:(('k -> 'k -> int)[@local])
-  -> added:bool ref
+  -> added:(bool ref[@local])
   -> key:'k
   -> data:'v
   -> ('k, 'v) t
@@ -155,7 +155,7 @@ val mem : ('k, 'v) t -> compare:(('k -> 'k -> int)[@local]) -> 'k -> bool
     will be set to true if a node was actually removed, and false otherwise. *)
 val remove
   :  ('k, 'v) t
-  -> removed:bool ref
+  -> removed:(bool ref[@local])
   -> compare:(('k -> 'k -> int)[@local])
   -> 'k
   -> ('k, 'v) t

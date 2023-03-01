@@ -630,8 +630,10 @@ module Tree0 = struct
       let step state : ((_, _) Either.t, _) Sequence.Step.t =
         match state with
         | End, End -> Done
-        | End, More (elt, tree, enum) -> Yield (Second elt, (End, cons tree enum))
-        | More (elt, tree, enum), End -> Yield (First elt, (cons tree enum, End))
+        | End, More (elt, tree, enum) ->
+          Yield { value = Second elt; state = End, cons tree enum }
+        | More (elt, tree, enum), End ->
+          Yield { value = First elt; state = cons tree enum, End }
         | (More (a1, tree1, enum1) as left), (More (a2, tree2, enum2) as right) ->
           let compare_result = compare_elt a1 a2 in
           if compare_result = 0
@@ -641,10 +643,10 @@ module Tree0 = struct
               then enum1, enum2
               else cons tree1 enum1, cons tree2 enum2
             in
-            Skip next_state)
+            Skip { state = next_state })
           else if compare_result < 0
-          then Yield (First a1, (cons tree1 enum1, right))
-          else Yield (Second a2, (left, cons tree2 enum2))
+          then Yield { value = First a1; state = cons tree1 enum1, right }
+          else Yield { value = Second a2; state = left, cons tree2 enum2 }
       in
       Sequence.unfold_step ~init:(of_set t1, of_set t2) ~f:step
     ;;
@@ -654,7 +656,7 @@ module Tree0 = struct
     let next enum =
       match enum with
       | Enum.End -> Sequence.Step.Done
-      | Enum.More (k, t, e) -> Sequence.Step.Yield (k, Enum.cons t e)
+      | Enum.More (k, t, e) -> Sequence.Step.Yield { value = k; state = Enum.cons t e }
     in
     let init =
       match from_elt with
@@ -668,7 +670,8 @@ module Tree0 = struct
     let next enum =
       match enum with
       | Enum.End -> Sequence.Step.Done
-      | Enum.More (k, t, e) -> Sequence.Step.Yield (k, Enum.cons_right t e)
+      | Enum.More (k, t, e) ->
+        Sequence.Step.Yield { value = k; state = Enum.cons_right t e }
     in
     let init =
       match from_elt with
@@ -731,8 +734,10 @@ module Tree0 = struct
 
   let binary_search t ~compare how v =
     match how with
-    | `Last_strictly_less_than -> find_last_satisfying t ~f:(fun x -> compare x v < 0)
-    | `Last_less_than_or_equal_to -> find_last_satisfying t ~f:(fun x -> compare x v <= 0)
+    | `Last_strictly_less_than ->
+      find_last_satisfying t ~f:(fun x -> compare x v < 0) [@nontail]
+    | `Last_less_than_or_equal_to ->
+      find_last_satisfying t ~f:(fun x -> compare x v <= 0) [@nontail]
     | `First_equal_to ->
       (match find_first_satisfying t ~f:(fun x -> compare x v >= 0) with
        | Some x as elt when compare x v = 0 -> elt
@@ -742,9 +747,9 @@ module Tree0 = struct
        | Some x as elt when compare x v = 0 -> elt
        | None | Some _ -> None)
     | `First_greater_than_or_equal_to ->
-      find_first_satisfying t ~f:(fun x -> compare x v >= 0)
+      find_first_satisfying t ~f:(fun x -> compare x v >= 0) [@nontail]
     | `First_strictly_greater_than ->
-      find_first_satisfying t ~f:(fun x -> compare x v > 0)
+      find_first_satisfying t ~f:(fun x -> compare x v > 0) [@nontail]
   ;;
 
   let binary_search_segmented t ~segment_of how =
@@ -755,8 +760,8 @@ module Tree0 = struct
     in
     let is_right x = not (is_left x) in
     match how with
-    | `Last_on_left -> find_last_satisfying t ~f:is_left
-    | `First_on_right -> find_first_satisfying t ~f:is_right
+    | `Last_on_left -> find_last_satisfying t ~f:is_left [@nontail]
+    | `First_on_right -> find_first_satisfying t ~f:is_right [@nontail]
   ;;
 
   let merge_to_sequence
@@ -889,7 +894,7 @@ module Tree0 = struct
         then join l' v r'
         else concat l' r'
     in
-    filt s
+    filt s [@nontail]
   ;;
 
   let filter_map s ~f:p ~compare_elt =
@@ -908,7 +913,7 @@ module Tree0 = struct
              l)
           r
     in
-    filt Empty s
+    filt Empty s [@nontail]
   ;;
 
   let partition_tf s ~f:p =
@@ -928,7 +933,7 @@ module Tree0 = struct
         in
         mk keep_v_t l't r't, mk (not keep_v_t) l'f r'f
     in
-    loop s
+    loop s [@nontail]
   ;;
 
   let rec elements_aux accu = function
@@ -998,7 +1003,9 @@ module Tree0 = struct
       res
   ;;
 
-  let map t ~f ~compare_elt = fold t ~init:empty ~f:(fun t x -> add t (f x) ~compare_elt)
+  let map t ~f ~compare_elt =
+    fold t ~init:empty ~f:(fun t x -> add t (f x) ~compare_elt) [@nontail]
+  ;;
 
   let group_by set ~equiv =
     let rec loop set equiv_classes =
@@ -1011,7 +1018,7 @@ module Tree0 = struct
         in
         loop not_equiv_x (equiv_x :: equiv_classes))
     in
-    loop set []
+    loop set [] [@nontail]
   ;;
 
   let rec find t ~f =

@@ -37,11 +37,10 @@ val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
 [@@@end]
 
+type 'a sequence := 'a t
+
 include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-
-type 'a sequence = 'a t
-
 include Indexed_container.S1 with type 'a t := 'a t
 include Monad.S with type 'a t := 'a t
 
@@ -64,8 +63,11 @@ val next : 'a t -> ('a * 'a t) option
 module Step : sig
   type ('a, 's) t =
     | Done
-    | Skip of 's
-    | Yield of 'a * 's
+    | Skip of { state : 's }
+    | Yield of
+        { value : 'a
+        ; state : 's
+        }
   [@@deriving_inline sexp_of]
 
   val sexp_of_t
@@ -172,10 +174,10 @@ val tl_eagerly_exn : 'a t -> 'a t
 
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f]. It raises if
     there is no such element. *)
-val find_exn : 'a t -> f:('a -> bool) -> 'a
+val find_exn : 'a t -> f:(('a -> bool)[@local]) -> 'a
 
 (** Like [for_all], but passes the index as an argument. *)
-val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
+val for_alli : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
 
 (** [append t1 t2] first produces the elements of [t1], then produces the elements of
     [t2]. *)
@@ -218,9 +220,9 @@ val zip_full : 'a t -> 'b t -> [ `Left of 'a | `Both of 'a * 'b | `Right of 'b ]
 
 (** [reduce_exn f [a1; ...; an]] is [f (... (f (f a1 a2) a3) ...) an]. It fails on the
     empty sequence. *)
-val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
+val reduce_exn : 'a t -> f:(('a -> 'a -> 'a)[@local]) -> 'a
 
-val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
+val reduce : 'a t -> f:(('a -> 'a -> 'a)[@local]) -> 'a option
 
 (** [group l ~break] returns a sequence of lists (i.e., groups) whose concatenation is
     equal to the original sequence. Each group is broken where [break] returns true on a
@@ -237,7 +239,10 @@ val group : 'a t -> break:('a -> 'a -> bool) -> 'a list t
 (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive elements
     [(a1, a2)] in [t] such that [equal a1 a2].  They are returned in the same order as
     they appear in [t]. *)
-val find_consecutive_duplicate : 'a t -> equal:('a -> 'a -> bool) -> ('a * 'a) option
+val find_consecutive_duplicate
+  :  'a t
+  -> equal:(('a -> 'a -> bool)[@local])
+  -> ('a * 'a) option
 
 (** The same sequence with consecutive duplicates removed.  The relative order of the
     other elements is unaffected. *)
@@ -302,7 +307,7 @@ val drop_while : 'a t -> f:('a -> bool) -> 'a t
     alternatives would mean forcing the consumer to evaluate the first element again (if
     the previous state of the sequence is returned) or take on extra cost for each element
     (if the element is added to the final state of the sequence using [shift_right]). *)
-val drop_while_option : 'a t -> f:('a -> bool) -> ('a * 'a t) option
+val drop_while_option : 'a t -> f:(('a -> bool)[@local]) -> ('a * 'a t) option
 
 (** [split_n t n] immediately consumes the first [n] elements of [t] and returns the
     consumed prefix, as a list, along with the unevaluated tail of [t]. *)

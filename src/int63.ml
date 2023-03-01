@@ -40,12 +40,18 @@ end = struct
       | Immediate : Immediate.t repr
       | Non_immediate : Non_immediate.t repr
 
+    external transparent_magic : 'a -> 'b = "%identity"
+
     let repr =
+      (* [Obj.magic] involves opaqueness under Flambda 2 which will inhibit
+         availability of functions defined in this module for later inlining
+         (e.g. into float.ml). As such we explicitly use %identity here. *)
       match Word_size.word_size with
-      | W64 -> (Caml.Obj.magic Immediate : t repr)
-      | W32 -> (Caml.Obj.magic Non_immediate : t repr)
+      | W64 -> (transparent_magic Immediate : t repr)
+      | W32 -> (transparent_magic Non_immediate : t repr)
     ;;
   end
+  [@@inline always]
 end
 
 include Immediate64.Make (Int) (Int63_emul)

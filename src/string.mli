@@ -33,7 +33,7 @@ external get : t -> int -> char = "%string_safe_get"
 external unsafe_get : string -> int -> char = "%string_unsafe_get"
 
 val make : int -> char -> t
-val init : int -> f:(int -> char) -> t
+val init : int -> f:((int -> char)[@local]) -> t
 
 (** String append. Also available unqualified, but re-exported here for documentation
     purposes.
@@ -263,46 +263,46 @@ val split_lines : t -> t list
 
 (** [lfindi ?pos t ~f] returns the smallest [i >= pos] such that [f i t.[i]], if there is
     such an [i].  By default, [pos = 0]. *)
-val lfindi : ?pos:int -> t -> f:(int -> char -> bool) -> int option
+val lfindi : ?pos:int -> t -> f:((int -> char -> bool)[@local]) -> int option
 
 (** [rfindi ?pos t ~f] returns the largest [i <= pos] such that [f i t.[i]], if there is
     such an [i].  By default [pos = length t - 1]. *)
-val rfindi : ?pos:int -> t -> f:(int -> char -> bool) -> int option
+val rfindi : ?pos:int -> t -> f:((int -> char -> bool)[@local]) -> int option
 
 (** [lstrip ?drop s] returns a string with consecutive chars satisfying [drop] (by default
     white space, e.g. tabs, spaces, newlines, and carriage returns) stripped from the
     beginning of [s]. *)
-val lstrip : ?drop:(char -> bool) -> t -> t
+val lstrip : ?drop:((char -> bool)[@local]) -> t -> t
 
 (** [rstrip ?drop s] returns a string with consecutive chars satisfying [drop] (by default
     white space, e.g. tabs, spaces, newlines, and carriage returns) stripped from the end
     of [s]. *)
-val rstrip : ?drop:(char -> bool) -> t -> t
+val rstrip : ?drop:((char -> bool)[@local]) -> t -> t
 
 (** [strip ?drop s] returns a string with consecutive chars satisfying [drop] (by default
     white space, e.g. tabs, spaces, newlines, and carriage returns) stripped from the
     beginning and end of [s]. *)
-val strip : ?drop:(char -> bool) -> t -> t
+val strip : ?drop:((char -> bool)[@local]) -> t -> t
 
-val map : t -> f:(char -> char) -> t
+val map : t -> f:((char -> char)[@local]) -> t
 
 (** Like [map], but passes each character's index to [f] along with the char. *)
-val mapi : t -> f:(int -> char -> char) -> t
+val mapi : t -> f:((int -> char -> char)[@local]) -> t
 
 
 (** [foldi] works similarly to [fold], but also passes the index of each character to
     [f]. *)
-val foldi : t -> init:'a -> f:(int -> 'a -> char -> 'a) -> 'a
+val foldi : t -> init:'a -> f:((int -> 'a -> char -> 'a)[@local]) -> 'a
 
 (** Like [map], but allows the replacement of a single character with zero or two or more
     characters. *)
-val concat_map : ?sep:t -> t -> f:(char -> t) -> t
+val concat_map : ?sep:t -> t -> f:((char -> t)[@local]) -> t
 
 (** [filter s ~f:predicate] discards characters not satisfying [predicate]. *)
-val filter : t -> f:(char -> bool) -> t
+val filter : t -> f:((char -> bool)[@local]) -> t
 
 (** Like [filter], but passes each character's index to [f] along with the char. *)
-val filteri : t -> f:(int -> char -> bool) -> t
+val filteri : t -> f:((int -> char -> bool)[@local]) -> t
 
 (** [tr ~target ~replacement s] replaces every instance of [target] in [s] with
     [replacement]. *)
@@ -406,6 +406,16 @@ val equal : t -> t -> bool
 
 val of_char : char -> t
 val of_char_list : char list -> t
+
+(** [pad_left ?char s ~len] returns [s] padded to the length [len] by adding characters
+    [char] to the beginning of the string. If s is already longer than [len] it is
+    returned unchanged. *)
+val pad_left : ?char:char (** default is [' '] *) -> string -> len:int -> string
+
+(** [pad_right ?char ~s len] returns [s] padded to the length [len] by adding characters
+    [char] to the end of the string. If s is already longer than [len] it is returned
+    unchanged. *)
+val pad_right : ?char:char (** default is [' '] *) -> string -> len:int -> string
 
 (** Operations for escaping and unescaping strings, with parameterized escape and
     escapeworthy characters.  Escaping/unescaping using this module is more efficient than
@@ -532,8 +542,8 @@ module Escaping : sig
       escaping or escaped.  This makes sense if you're trying to get rid of junk
       whitespace (for example), because escaped whitespace seems more likely to be
       deliberate and not junk. *)
-  val lstrip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
+  val lstrip_literal : ?drop:((char -> bool)[@local]) -> t -> escape_char:char -> t
 
-  val rstrip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
-  val strip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
+  val rstrip_literal : ?drop:((char -> bool)[@local]) -> t -> escape_char:char -> t
+  val strip_literal : ?drop:((char -> bool)[@local]) -> t -> escape_char:char -> t
 end
