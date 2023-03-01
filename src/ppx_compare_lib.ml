@@ -1,11 +1,5 @@
 open Import0
 
-let phys_equal = phys_equal
-
-external polymorphic_compare : 'a -> 'a -> int = "%compare"
-external polymorphic_equal : 'a -> 'a -> bool = "%equal"
-external ( && ) : bool -> bool -> bool = "%sequand"
-
 let compare_abstract ~type_name _ _ =
   Printf.ksprintf
     failwith

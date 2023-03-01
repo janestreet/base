@@ -12,25 +12,25 @@ let () =
       oc
       {|
 module Repr = struct
-  open Caml.Bigarray
+  open Stdlib.Bigarray
 
   type t = (int64, int64_elt, c_layout) Array1.t
 
-  let of_state : Caml.Random.State.t -> t = Caml.Obj.magic
+  let of_state : Stdlib.Random.State.t -> t = Stdlib.Obj.magic
 end
 
 let assign dst src =
   let dst = Repr.of_state (Lazy.force dst) in
   let src = Repr.of_state (Lazy.force src) in
-  Caml.Bigarray.Array1.blit src dst
+  Stdlib.Bigarray.Array1.blit src dst
 
 let make_default default =
   let split_from_parent v =
-    Caml.Lazy.map_val Caml.Random.State.split v
+    Stdlib.Lazy.map_val Stdlib.Random.State.split v
   in
-  Caml.Domain.DLS.new_key ~split_from_parent (fun () -> default)
+  Stdlib.Domain.DLS.new_key ~split_from_parent (fun () -> default)
 
-let get_state random_key = Caml.Domain.DLS.get random_key
+let get_state random_key = Stdlib.Domain.DLS.get random_key
 |}
   else
     Printf.fprintf
@@ -44,7 +44,7 @@ module Repr = struct
     ; mutable idx : int
     }
 
-  let of_state : Caml.Random.State.t -> t = Caml.Obj.magic
+  let of_state : Stdlib.Random.State.t -> t = Stdlib.Obj.magic
 end
 
 let assign t1 t2 =

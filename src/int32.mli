@@ -10,7 +10,14 @@
     [Int32.t] is boxed on both 32-bit and 64-bit machines. *)
 
 open! Import
-include Int_intf.S with type t = int32
+
+type t = int32 [@@deriving_inline globalize]
+
+val globalize : (t[@ocaml.local]) -> t
+
+[@@@end]
+
+include Int_intf.S with type t := t
 
 (** {2 Conversion functions} *)
 

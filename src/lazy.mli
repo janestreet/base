@@ -40,7 +40,7 @@ exception Undefined
     forced, [Lazy.force x] returns the same value again without recomputing it. If it
     raised an exception, the same exception is raised again. Raise [Undefined] if the
     forcing of [x] tries to force [x] itself recursively. *)
-external force : 'a t -> 'a = "%lazy_force"
+external force : ('a t[@local_opt]) -> 'a = "%lazy_force"
 
 (** Like [force] except that [force_val x] does not use an exception handler, so it may be
     more efficient.  However, if the computation of [x] raises an exception, it is

@@ -1,5 +1,5 @@
 (library (name base_test)
- (libraries base core.base_for_tests base_test_helpers caml
+ (libraries base base_container_tests core.base_for_tests base_test_helpers
   expect_test_helpers_core.expect_test_helpers_base sexplib sexp_grammar
   sexp_grammar_validation num stdio uutf)
- (preprocess (pps ppx_jane -dont-apply=pipebang)))
+ (preprocess (pps ppx_jane -dont-apply=pipebang -no-check-on-extensions)))

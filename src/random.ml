@@ -3,11 +3,11 @@ module Int = Int0
 module Char = Char0
 
 (* Unfortunately, because the standard library does not expose
-   [Caml.Random.State.default], we have to construct our own.  We then build the
-   [Caml.Random.int], [Caml.Random.bool] functions and friends using that default state in
+   [Stdlib.Random.State.default], we have to construct our own.  We then build the
+   [Stdlib.Random.int], [Stdlib.Random.bool] functions and friends using that default state in
    exactly the same way as the standard library.
 
-   One other trickiness is that we need access to the unexposed [Caml.Random.State.assign]
+   One other trickiness is that we need access to the unexposed [Stdlib.Random.State.assign]
    function, which accesses the unexposed state representation.  So, we copy the
    [State.repr] type definition and [assign] function to here from the standard library,
    and use [Obj.magic] to get access to the underlying implementation. *)
@@ -36,22 +36,22 @@ let random_seed ?allow_in_tests () =
 module State = struct
   (* We allow laziness only for the definition of [default], below, which may lazily call
      [make_self_init]. For all other purposes, we create and use [t] eagerly. *)
-  type t = Caml.Random.State.t Lazy.t
+  type t = Stdlib.Random.State.t Lazy.t
 
-  let bits t = Caml.Random.State.bits (Lazy.force t)
-  let bool t = Caml.Random.State.bool (Lazy.force t)
-  let int t x = Caml.Random.State.int (Lazy.force t) x
-  let int32 t x = Caml.Random.State.int32 (Lazy.force t) x
-  let int64 t x = Caml.Random.State.int64 (Lazy.force t) x
-  let nativeint t x = Caml.Random.State.nativeint (Lazy.force t) x
-  let make seed = Lazy.from_val (Caml.Random.State.make seed)
-  let copy t = Lazy.from_val (Caml.Random.State.copy (Lazy.force t))
+  let bits t = Stdlib.Random.State.bits (Lazy.force t)
+  let bool t = Stdlib.Random.State.bool (Lazy.force t)
+  let int t x = Stdlib.Random.State.int (Lazy.force t) x
+  let int32 t x = Stdlib.Random.State.int32 (Lazy.force t) x
+  let int64 t x = Stdlib.Random.State.int64 (Lazy.force t) x
+  let nativeint t x = Stdlib.Random.State.nativeint (Lazy.force t) x
+  let make seed = Lazy.from_val (Stdlib.Random.State.make seed)
+  let copy t = Lazy.from_val (Stdlib.Random.State.copy (Lazy.force t))
   let char t = int t 256 |> Char.unsafe_of_int
   let ascii t = int t 128 |> Char.unsafe_of_int
 
   let make_self_init ?allow_in_tests () =
     forbid_nondeterminism_in_tests ~allow_in_tests;
-    Lazy.from_val (Caml.Random.State.make_self_init ())
+    Lazy.from_val (Stdlib.Random.State.make_self_init ())
   ;;
 
   let assign = Random_repr.assign
@@ -62,13 +62,13 @@ module State = struct
     then (
       (* We define Base's default random state as a copy of OCaml's default random state.
          This means that programs that use Base.Random will see the same sequence of
-         random bits as if they had used Caml.Random. However, because [get_state] returns
+         random bits as if they had used Stdlib.Random. However, because [get_state] returns
          a copy, Base.Random and OCaml.Random are not using the same state. If a program
          used both, each of them would go through the same sequence of random bits. To
          avoid that, we reset OCaml's random state to a different seed, giving it a
          different sequence. *)
-      let t = Caml.Random.get_state () in
-      Caml.Random.init 137;
+      let t = Stdlib.Random.get_state () in
+      Stdlib.Random.init 137;
       Lazy.from_val t)
     else
       lazy
@@ -81,14 +81,14 @@ module State = struct
   let int_on_64bits t bound =
     if bound <= 0x3FFFFFFF (* (1 lsl 30) - 1 *)
     then int t bound
-    else Caml.Int64.to_int (int64 t (Caml.Int64.of_int bound))
+    else Stdlib.Int64.to_int (int64 t (Stdlib.Int64.of_int bound))
   ;;
 
   let int_on_32bits t bound =
     (* Not always true with the JavaScript backend. *)
     if bound <= 0x3FFFFFFF (* (1 lsl 30) - 1 *)
     then int t bound
-    else Caml.Int32.to_int (int32 t (Caml.Int32.of_int bound))
+    else Stdlib.Int32.to_int (int32 t (Stdlib.Int32.of_int bound))
   ;;
 
   let int =
@@ -98,7 +98,7 @@ module State = struct
   ;;
 
   let full_range_int64 =
-    let open Caml.Int64 in
+    let open Stdlib.Int64 in
     let bits state = of_int (bits state) in
     fun state ->
       logxor
@@ -107,13 +107,13 @@ module State = struct
   ;;
 
   let full_range_int32 =
-    let open Caml.Int32 in
+    let open Stdlib.Int32 in
     let bits state = of_int (bits state) in
     fun state -> logxor (bits state) (shift_left (bits state) 30)
   ;;
 
-  let full_range_int_on_64bits state = Caml.Int64.to_int (full_range_int64 state)
-  let full_range_int_on_32bits state = Caml.Int32.to_int (full_range_int32 state)
+  let full_range_int_on_64bits state = Stdlib.Int64.to_int (full_range_int64 state)
+  let full_range_int_on_32bits state = Stdlib.Int32.to_int (full_range_int32 state)
 
   let full_range_int =
     match Word_size.word_size with
@@ -122,11 +122,11 @@ module State = struct
   ;;
 
   let full_range_nativeint_on_64bits state =
-    Caml.Int64.to_nativeint (full_range_int64 state)
+    Stdlib.Int64.to_nativeint (full_range_int64 state)
   ;;
 
   let full_range_nativeint_on_32bits state =
-    Caml.Nativeint.of_int32 (full_range_int32 state)
+    Stdlib.Nativeint.of_int32 (full_range_int32 state)
   ;;
 
   let full_range_nativeint =
@@ -166,7 +166,7 @@ module State = struct
       let int = full_range_int32 state in
       if int >= lo && int <= hi then int else in_range state lo hi
     in
-    let open Caml.Int32 in
+    let open Stdlib.Int32 in
     fun state lo hi ->
       if lo > hi then raise_crossed_bounds "int32" lo hi to_string;
       let diff = sub hi lo in
@@ -183,7 +183,7 @@ module State = struct
       let int = full_range_nativeint state in
       if int >= lo && int <= hi then int else in_range state lo hi
     in
-    let open Caml.Nativeint in
+    let open Stdlib.Nativeint in
     fun state lo hi ->
       if lo > hi then raise_crossed_bounds "nativeint" lo hi to_string;
       let diff = sub hi lo in
@@ -200,7 +200,7 @@ module State = struct
       let int = full_range_int64 state in
       if int >= lo && int <= hi then int else in_range state lo hi
     in
-    let open Caml.Int64 in
+    let open Stdlib.Int64 in
     fun state lo hi ->
       if lo > hi then raise_crossed_bounds "int64" lo hi to_string;
       let diff = sub hi lo in
@@ -216,8 +216,8 @@ module State = struct
     let open Float_replace_polymorphic_compare in
     let scale = 0x1p-30 in
     (* 2^-30 *)
-    let r1 = Caml.float_of_int (bits state) in
-    let r2 = Caml.float_of_int (bits state) in
+    let r1 = Stdlib.float_of_int (bits state) in
+    let r2 = Stdlib.float_of_int (bits state) in
     let result = ((r1 *. scale) +. r2) *. scale in
     (* With very small probability, result can round up to 1.0, so in that case, we just
        try again. *)
@@ -228,7 +228,7 @@ module State = struct
 
   let float_range state lo hi =
     let open Float_replace_polymorphic_compare in
-    if lo > hi then raise_crossed_bounds "float" lo hi Caml.string_of_float;
+    if lo > hi then raise_crossed_bounds "float" lo hi Stdlib.string_of_float;
     lo +. float state (hi -. lo)
   ;;
 end

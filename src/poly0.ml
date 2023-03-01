@@ -15,5 +15,5 @@ external compare : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
 external equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
 
 let descending x y = compare y x
-let max = Caml.max
-let min = Caml.min
+let max x y = Bool0.select (x >= y) x y
+let min x y = Bool0.select (x <= y) x y

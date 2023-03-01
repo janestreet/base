@@ -1,17 +1,17 @@
 open! Import0
 
-type t = Caml.Uchar.t
+type t = Stdlib.Uchar.t
 
-let succ = Caml.Uchar.succ
-let pred = Caml.Uchar.pred
-let is_valid = Caml.Uchar.is_valid
-let is_char = Caml.Uchar.is_char
-let unsafe_to_char = Caml.Uchar.unsafe_to_char
-let unsafe_of_int = Caml.Uchar.unsafe_of_int
-let of_int = Caml.Uchar.of_int
-let to_int = Caml.Uchar.to_int
-let of_char = Caml.Uchar.of_char
-let compare = Caml.Uchar.compare
-let equal = Caml.Uchar.equal
-let min_value = Caml.Uchar.min
-let max_value = Caml.Uchar.max
+let succ = Stdlib.Uchar.succ
+let pred = Stdlib.Uchar.pred
+let is_valid = Stdlib.Uchar.is_valid
+let is_char = Stdlib.Uchar.is_char
+let unsafe_to_char = Stdlib.Uchar.unsafe_to_char
+let unsafe_of_int = Stdlib.Uchar.unsafe_of_int
+let of_int = Stdlib.Uchar.of_int
+let to_int = Stdlib.Uchar.to_int
+let of_char = Stdlib.Uchar.of_char
+let compare = Stdlib.Uchar.compare
+let equal = Stdlib.Uchar.equal
+let min_value = Stdlib.Uchar.min
+let max_value = Stdlib.Uchar.max

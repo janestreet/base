@@ -1,1 +1,1 @@
-type t = Caml.Format.formatter
+type t = Stdlib.Format.formatter

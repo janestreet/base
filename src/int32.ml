@@ -1,8 +1,10 @@
 open! Import
-open! Caml.Int32
+open! Stdlib.Int32
 
 module T = struct
-  type t = int32 [@@deriving_inline hash, sexp, sexp_grammar]
+  type t = int32 [@@deriving_inline globalize, hash, sexp, sexp_grammar]
+
+  let (globalize : (t[@ocaml.local]) -> t) = (globalize_int32 : (t[@ocaml.local]) -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_int32
@@ -146,9 +148,9 @@ let to_nativeint_exn = to_nativeint
 let pow b e = of_int_exn (Int_math.Private.int_pow (to_int_exn b) (to_int_exn e))
 let ( ** ) b e = pow b e
 
-external bswap32 : t -> t = "%bswap_int32"
+external bswap32 : (t[@local_opt]) -> (t[@local_opt]) = "%bswap_int32"
 
-let bswap16 x = Caml.Int32.shift_right_logical (bswap32 x) 16
+let bswap16 x = Stdlib.Int32.shift_right_logical (bswap32 x) 16
 
 module Pow2 = struct
   open! Import
@@ -160,36 +162,36 @@ module Pow2 = struct
     Printf.invalid_argf "argument must be strictly positive" ()
   ;;
 
-  let ( lor ) = Caml.Int32.logor
-  let ( lsr ) = Caml.Int32.shift_right_logical
-  let ( land ) = Caml.Int32.logand
+  let ( lor ) = Stdlib.Int32.logor
+  let ( lsr ) = Stdlib.Int32.shift_right_logical
+  let ( land ) = Stdlib.Int32.logand
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 x =
-    if x <= Caml.Int32.zero then non_positive_argument ();
-    let x = Caml.Int32.pred x in
+    if x <= Stdlib.Int32.zero then non_positive_argument ();
+    let x = Stdlib.Int32.pred x in
     let x = x lor (x lsr 1) in
     let x = x lor (x lsr 2) in
     let x = x lor (x lsr 4) in
     let x = x lor (x lsr 8) in
     let x = x lor (x lsr 16) in
-    Caml.Int32.succ x
+    Stdlib.Int32.succ x
   ;;
 
   (** "floor power of 2" - Largest power of 2 less than or equal to x. *)
   let floor_pow2 x =
-    if x <= Caml.Int32.zero then non_positive_argument ();
+    if x <= Stdlib.Int32.zero then non_positive_argument ();
     let x = x lor (x lsr 1) in
     let x = x lor (x lsr 2) in
     let x = x lor (x lsr 4) in
     let x = x lor (x lsr 8) in
     let x = x lor (x lsr 16) in
-    Caml.Int32.sub x (x lsr 1)
+    Stdlib.Int32.sub x (x lsr 1)
   ;;
 
   let is_pow2 x =
-    if x <= Caml.Int32.zero then non_positive_argument ();
-    x land Caml.Int32.pred x = Caml.Int32.zero
+    if x <= Stdlib.Int32.zero then non_positive_argument ();
+    x land Stdlib.Int32.pred x = Stdlib.Int32.zero
   ;;
 
   (* C stubs for int32 clz and ctz to use the CLZ/BSR/CTZ/BSF instruction where possible *)
@@ -207,7 +209,7 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if i <= Caml.Int32.zero
+    if i <= Stdlib.Int32.zero
     then
       raise_s
         (Sexp.message "[Int32.floor_log2] got invalid input" [ "", sexp_of_int32 i ]);
@@ -216,11 +218,13 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if i <= Caml.Int32.zero
+    if i <= Stdlib.Int32.zero
     then
       raise_s (Sexp.message "[Int32.ceil_log2] got invalid input" [ "", sexp_of_int32 i ]);
     (* The [i = 1] check is needed because clz(0) is undefined *)
-    if Caml.Int32.equal i Caml.Int32.one then 0 else num_bits - clz (Caml.Int32.pred i)
+    if Stdlib.Int32.equal i Stdlib.Int32.one
+    then 0
+    else num_bits - clz (Stdlib.Int32.pred i)
   ;;
 end
 
@@ -246,7 +250,7 @@ include Conv.Make_hex (struct
     let neg = ( ~- )
     let ( < ) = ( < )
     let to_string i = Printf.sprintf "%lx" i
-    let of_string s = Caml.Scanf.sscanf s "%lx" Fn.id
+    let of_string s = Stdlib.Scanf.sscanf s "%lx" Fn.id
     let module_name = "Base.Int32.Hex"
   end)
 

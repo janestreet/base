@@ -3,11 +3,14 @@
 
 open! Import
 
-type 'a t = 'a Caml.ref = { mutable contents : 'a }
-[@@deriving_inline compare, equal, sexp, sexp_grammar]
+type 'a t = 'a Stdlib.ref = { mutable contents : 'a }
+[@@deriving_inline compare, equal, globalize, sexp, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+
+val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
+
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t

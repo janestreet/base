@@ -7,7 +7,7 @@ open! Import
 
     [sexp_of_t] uses the form ["FILE:LINE:COL"], and does not have a corresponding
     [of_sexp]. *)
-type t = Caml.Lexing.position =
+type t = Stdlib.Lexing.position =
   { pos_fname : string
   ; pos_lnum : int
   ; pos_bol : int
@@ -26,6 +26,6 @@ include Comparable.S with type t := t
 (** [to_string t] converts [t] to the form ["FILE:LINE:COL"]. *)
 val to_string : t -> string
 
-(** [of_pos Caml.__POS__] is like [[%here]] but without using ppx. *)
+(** [of_pos Stdlib.__POS__] is like [[%here]] but without using ppx. *)
 val of_pos : string * int * int * int -> t
 

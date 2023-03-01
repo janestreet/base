@@ -4,7 +4,7 @@ open Expect_test_helpers_base
 module type S = sig
   type t [@@deriving sexp_of]
 
-  include Comparable.Polymorphic_compare with type t := t
+  include Comparable.Comparisons with type t := t
 end
 
 (* Test the consistency of derived comparison operators with [compare] because many of
@@ -39,9 +39,21 @@ let test (type a) here (module T : S with type t = a) list =
   op (module Bool) "(<>)" ~actual:T.( <> ) ~expect:C.( <> );
   op (module Bool) "(<=)" ~actual:T.( <= ) ~expect:C.( <= );
   op (module Bool) "(>=)" ~actual:T.( >= ) ~expect:C.( >= );
-  op (module Bool) "Comparable.equal" ~actual:(Comparable.equal T.compare) ~expect:C.equal;
-  op (module T) "Comparable.min" ~actual:(Comparable.min T.compare) ~expect:C.min;
-  op (module T) "Comparable.max" ~actual:(Comparable.max T.compare) ~expect:C.max
+  op
+    (module Bool)
+    "Comparable.equal"
+    ~actual:(fun a b -> Comparable.equal T.compare a b)
+    ~expect:C.equal;
+  op
+    (module T)
+    "Comparable.min"
+    ~actual:(fun a b -> Comparable.min T.compare a b)
+    ~expect:C.min;
+  op
+    (module T)
+    "Comparable.max"
+    ~actual:(fun a b -> Comparable.max T.compare a b)
+    ~expect:C.max
 ;;
 
 let%expect_test "Base" =
@@ -124,8 +136,11 @@ let%test_module "lexicographic" =
 
     let%expect_test "three comparisons" =
       Ref.set_temporarily sexp_style To_string_hum ~f:(fun () ->
-        let compare_first_three_elts =
-          Comparable.lexicographic (List.init 3 ~f:(fun i a b -> compare a.(i) b.(i)))
+        let compare_first_three_elts a_1 b_1 =
+          Comparable.lexicographic
+            (List.init 3 ~f:(fun i a b -> compare a.(i) b.(i)))
+            a_1
+            b_1
         in
         let test a b =
           let a = Array.of_list a in
@@ -141,4 +156,19 @@ let%test_module "lexicographic" =
         [%expect {| ((a (1 2 3 4)) (b (1 1 4 9)) (ordering Greater)) |}])
     ;;
   end)
+;;
+
+let%expect_test "reversed" =
+  let list = [ 3; 1; 4; 1; 5; 9; 2; 6; 5; 3; 5; 9 ] in
+  let sort_asc1 = List.sort ~compare:[%compare: int] list in
+  let sort_desc = List.sort ~compare:[%compare: int Comparable.reversed] list in
+  let sort_asc2 =
+    List.sort ~compare:[%compare: int Comparable.reversed Comparable.reversed] list
+  in
+  print_s [%message (sort_asc1 : int list) (sort_desc : int list) (sort_asc2 : int list)];
+  [%expect
+    {|
+      ((sort_asc1 (1 1 2 3 3 4 5 5 5 6 9 9))
+       (sort_desc (9 9 6 5 5 5 4 3 3 2 1 1))
+       (sort_asc2 (1 1 2 3 3 4 5 5 5 6 9 9))) |}]
 ;;

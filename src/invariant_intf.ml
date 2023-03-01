@@ -73,8 +73,8 @@ module type Invariant = sig
   val invariant
     :  Source_code_position0.t
     -> 'a
-    -> ('a -> Sexp.t)
-    -> (unit -> unit)
+    -> (('a -> Sexp.t)[@local])
+    -> ((unit -> unit)[@local])
     -> unit
 
   (** [check_field] is used when checking invariants using [Fields.iter].  It wraps an

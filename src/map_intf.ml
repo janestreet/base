@@ -10,24 +10,24 @@ module Or_duplicate = struct
 
   let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
     fun _cmp__a a__001_ b__002_ ->
-    if Ppx_compare_lib.phys_equal a__001_ b__002_
+    if Stdlib.( == ) a__001_ b__002_
     then 0
     else (
       match a__001_, b__002_ with
       | `Ok _left__003_, `Ok _right__004_ -> _cmp__a _left__003_ _right__004_
       | `Duplicate, `Duplicate -> 0
-      | x, y -> Ppx_compare_lib.polymorphic_compare x y)
+      | x, y -> Stdlib.compare x y)
   ;;
 
   let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
     fun _cmp__a a__005_ b__006_ ->
-      if Ppx_compare_lib.phys_equal a__005_ b__006_
+      if Stdlib.( == ) a__005_ b__006_
       then true
       else (
         match a__005_, b__006_ with
         | `Ok _left__007_, `Ok _right__008_ -> _cmp__a _left__007_ _right__008_
         | `Duplicate, `Duplicate -> true
-        | x, y -> Ppx_compare_lib.polymorphic_equal x y)
+        | x, y -> Stdlib.( = ) x y)
   ;;
 
   let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
@@ -63,7 +63,7 @@ module Symmetric_diff_element = struct
     let t__015_, t__016_ = b__012_ in
     match _cmp__k t__013_ t__015_ with
     | 0 ->
-      if Ppx_compare_lib.phys_equal t__014_ t__016_
+      if Stdlib.( == ) t__014_ t__016_
       then 0
       else (
         match t__014_, t__016_ with
@@ -75,7 +75,7 @@ module Symmetric_diff_element = struct
           (match _cmp__v t__023_ t__025_ with
            | 0 -> _cmp__v t__024_ t__026_
            | n -> n)
-        | x, y -> Ppx_compare_lib.polymorphic_compare x y)
+        | x, y -> Stdlib.compare x y)
     | n -> n
   ;;
 
@@ -86,9 +86,9 @@ module Symmetric_diff_element = struct
     fun _cmp__k _cmp__v a__027_ b__028_ ->
       let t__029_, t__030_ = a__027_ in
       let t__031_, t__032_ = b__028_ in
-      Ppx_compare_lib.( && )
+      Stdlib.( && )
         (_cmp__k t__029_ t__031_)
-        (if Ppx_compare_lib.phys_equal t__030_ t__032_
+        (if Stdlib.( == ) t__030_ t__032_
          then true
          else (
            match t__030_, t__032_ with
@@ -97,8 +97,8 @@ module Symmetric_diff_element = struct
            | `Unequal _left__037_, `Unequal _right__038_ ->
              let t__039_, t__040_ = _left__037_ in
              let t__041_, t__042_ = _right__038_ in
-             Ppx_compare_lib.( && ) (_cmp__v t__039_ t__041_) (_cmp__v t__040_ t__042_)
-           | x, y -> Ppx_compare_lib.polymorphic_equal x y))
+             Stdlib.( && ) (_cmp__v t__039_ t__041_) (_cmp__v t__040_ t__042_)
+           | x, y -> Stdlib.( = ) x y))
   ;;
 
   let t_of_sexp :
@@ -283,7 +283,7 @@ module Merge_element = struct
     -> int
     =
     fun _cmp__left _cmp__right a__085_ b__086_ ->
-    if Ppx_compare_lib.phys_equal a__085_ b__086_
+    if Stdlib.( == ) a__085_ b__086_
     then 0
     else (
       match a__085_, b__086_ with
@@ -295,7 +295,7 @@ module Merge_element = struct
         (match _cmp__left t__093_ t__095_ with
          | 0 -> _cmp__right t__094_ t__096_
          | n -> n)
-      | x, y -> Ppx_compare_lib.polymorphic_compare x y)
+      | x, y -> Stdlib.compare x y)
   ;;
 
   let equal :
@@ -307,7 +307,7 @@ module Merge_element = struct
     -> bool
     =
     fun _cmp__left _cmp__right a__097_ b__098_ ->
-      if Ppx_compare_lib.phys_equal a__097_ b__098_
+      if Stdlib.( == ) a__097_ b__098_
       then true
       else (
         match a__097_, b__098_ with
@@ -316,8 +316,8 @@ module Merge_element = struct
         | `Both _left__103_, `Both _right__104_ ->
           let t__105_, t__106_ = _left__103_ in
           let t__107_, t__108_ = _right__104_ in
-          Ppx_compare_lib.( && ) (_cmp__left t__105_ t__107_) (_cmp__right t__106_ t__108_)
-        | x, y -> Ppx_compare_lib.polymorphic_equal x y)
+          Stdlib.( && ) (_cmp__left t__105_ t__107_) (_cmp__right t__106_ t__108_)
+        | x, y -> Stdlib.( = ) x y)
   ;;
 
   let sexp_of_t :
@@ -352,9 +352,9 @@ module Continue_or_stop = struct
     | Stop
   [@@deriving_inline compare, enumerate, equal, sexp_of]
 
-  let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
+  let compare = (Stdlib.compare : t -> t -> int)
   let all = ([ Continue; Stop ] : t list)
-  let equal = (Ppx_compare_lib.polymorphic_equal : t -> t -> bool)
+  let equal = (Stdlib.( = ) : t -> t -> bool)
 
   let sexp_of_t =
     (function
@@ -373,9 +373,9 @@ module Finished_or_unfinished = struct
     | Unfinished
   [@@deriving_inline compare, enumerate, equal, sexp_of]
 
-  let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
+  let compare = (Stdlib.compare : t -> t -> int)
   let all = ([ Finished; Unfinished ] : t list)
-  let equal = (Ppx_compare_lib.polymorphic_equal : t -> t -> bool)
+  let equal = (Stdlib.( = ) : t -> t -> bool)
 
   let sexp_of_t =
     (function
@@ -474,33 +474,33 @@ module type Accessors_generic = sig
 
   val fold
     :  ('k, 'v, _) t
-    -> init:'a
-    -> f:((key:'k key -> data:'v -> 'a -> 'a)[@local])
-    -> 'a
+    -> init:'acc
+    -> f:((key:'k key -> data:'v -> 'acc -> 'acc)[@local])
+    -> 'acc
 
   val fold_until
     :  ('k, 'v, _) t
-    -> init:'a
+    -> init:'acc
     -> f:
-         ((key:'k key -> data:'v -> 'a -> ('a, 'final) Container.Continue_or_stop.t)
+         ((key:'k key -> data:'v -> 'acc -> ('acc, 'final) Container.Continue_or_stop.t)
           [@local])
-    -> finish:(('a -> 'final)[@local])
+    -> finish:(('acc -> 'final)[@local])
     -> 'final
 
   val fold_right
     :  ('k, 'v, _) t
-    -> init:'a
-    -> f:((key:'k key -> data:'v -> 'a -> 'a)[@local])
-    -> 'a
+    -> init:'acc
+    -> f:((key:'k key -> data:'v -> 'acc -> 'acc)[@local])
+    -> 'acc
 
   val fold2
     : ( 'k
       , 'cmp
       , ('k, 'v1, 'cmp) t
       -> ('k, 'v2, 'cmp) t
-      -> init:'a
-      -> f:((key:'k key -> data:('v1, 'v2) Merge_element.t -> 'a -> 'a)[@local])
-      -> 'a )
+      -> init:'acc
+      -> f:((key:'k key -> data:('v1, 'v2) Merge_element.t -> 'acc -> 'acc)[@local])
+      -> 'acc )
         access_options
 
   val filter_keys : ('k, 'v, 'cmp) t -> f:(('k key -> bool)[@local]) -> ('k, 'v, 'cmp) t
@@ -600,9 +600,9 @@ module type Accessors_generic = sig
       , ('k, 'v, 'cmp) t
       -> ('k, 'v, 'cmp) t
       -> data_equal:(('v -> 'v -> bool)[@local])
-      -> init:'a
-      -> f:(('a -> ('k key, 'v) Symmetric_diff_element.t -> 'a)[@local])
-      -> 'a )
+      -> init:'acc
+      -> f:(('acc -> ('k key, 'v) Symmetric_diff_element.t -> 'acc)[@local])
+      -> 'acc )
         access_options
 
   val min_elt : ('k, 'v, _) t -> ('k key * 'v) option
@@ -622,6 +622,18 @@ module type Accessors_generic = sig
       , ('k, 'v, 'cmp) t
       -> 'k key
       -> ('k, 'v, 'cmp) t * ('k key * 'v) option * ('k, 'v, 'cmp) t )
+        access_options
+
+  val split_le_gt
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t -> 'k key -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
+        access_options
+
+  val split_lt_ge
+    : ( 'k
+      , 'cmp
+      , ('k, 'v, 'cmp) t -> 'k key -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
         access_options
 
   val append
@@ -647,9 +659,9 @@ module type Accessors_generic = sig
       , ('k, 'v, 'cmp) t
       -> min:'k key
       -> max:'k key
-      -> init:'a
-      -> f:((key:'k key -> data:'v -> 'a -> 'a)[@local])
-      -> 'a )
+      -> init:'acc
+      -> f:((key:'k key -> data:'v -> 'acc -> 'acc)[@local])
+      -> 'acc )
         access_options
 
   val range_to_alist
@@ -1329,7 +1341,7 @@ module type Map = sig
   (** Returns [Some value] bound to the given key, or [None] if none exists. *)
   val find : ('k, 'v, 'cmp) t -> 'k -> 'v option
 
-  (** Returns the value bound to the given key, raising [Caml.Not_found] or [Not_found_s]
+  (** Returns the value bound to the given key, raising [Stdlib.Not_found] or [Not_found_s]
       if none exists. *)
   val find_exn : ('k, 'v, 'cmp) t -> 'k -> 'v
 
@@ -1383,7 +1395,11 @@ module type Map = sig
     -> ('k2, 'v, 'cmp2) t
 
   (** Folds over keys and data in the map in increasing order of [key]. *)
-  val fold : ('k, 'v, _) t -> init:'a -> f:((key:'k -> data:'v -> 'a -> 'a)[@local]) -> 'a
+  val fold
+    :  ('k, 'v, _) t
+    -> init:'acc
+    -> f:((key:'k -> data:'v -> 'acc -> 'acc)[@local])
+    -> 'acc
 
   (** Folds over keys and data in the map in increasing order of [key], until the first
       time that [f] returns [Stop _]. If [f] returns [Stop final], this function returns
@@ -1401,17 +1417,17 @@ module type Map = sig
   (** Folds over keys and data in the map in decreasing order of [key]. *)
   val fold_right
     :  ('k, 'v, _) t
-    -> init:'a
-    -> f:((key:'k -> data:'v -> 'a -> 'a)[@local])
-    -> 'a
+    -> init:'acc
+    -> f:((key:'k -> data:'v -> 'acc -> 'acc)[@local])
+    -> 'acc
 
   (** Folds over two maps side by side, like [iter2]. *)
   val fold2
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
-    -> init:'a
-    -> f:((key:'k -> data:('v1, 'v2) Merge_element.t -> 'a -> 'a)[@local])
-    -> 'a
+    -> init:'acc
+    -> f:((key:'k -> data:('v1, 'v2) Merge_element.t -> 'acc -> 'acc)[@local])
+    -> 'acc
 
   (** [filter], [filteri], [filter_keys], [filter_map], and [filter_mapi] run in O(n)
       time.
@@ -1572,9 +1588,9 @@ module type Map = sig
     :  ('k, 'v, 'cmp) t
     -> ('k, 'v, 'cmp) t
     -> data_equal:(('v -> 'v -> bool)[@local])
-    -> init:'a
-    -> f:(('a -> ('k, 'v) Symmetric_diff_element.t -> 'a)[@local])
-    -> 'a
+    -> init:'acc
+    -> f:(('acc -> ('k, 'v) Symmetric_diff_element.t -> 'acc)[@local])
+    -> 'acc
 
   (** [min_elt map] returns [Some (key, data)] pair corresponding to the minimum key in
       [map], or [None] if empty. *)
@@ -1616,6 +1632,22 @@ module type Map = sig
     -> 'k
     -> ('k, 'v, 'cmp) t * ('k * 'v) option * ('k, 'v, 'cmp) t
 
+  (** [split_le_gt t key] returns a map of keys that are less or equal to [key] and a
+      map of keys strictly greater than [key].
+
+      Runtime is O(m + log n), where n is the size of the input map and m is the size of
+      the smaller of the two output maps.  The O(m) term is due to the need to calculate
+      the length of the output maps. *)
+  val split_le_gt : ('k, 'v, 'cmp) t -> 'k -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
+
+  (** [split_lt_ge t key] returns a map of keys strictly less than [key] and a map of
+      keys that are greater or equal to [key].
+
+      Runtime is O(m + log n), where n is the size of the input map and m is the size of
+      the smaller of the two output maps.  The O(m) term is due to the need to calculate
+      the length of the output maps. *)
+  val split_lt_ge : ('k, 'v, 'cmp) t -> 'k -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
+
   (** [append ~lower_part ~upper_part] returns [`Ok map] where [map] contains all the
       [(key, value)] pairs from the two input maps if all the keys from [lower_part] are
       less than all the keys from [upper_part].  Otherwise it returns
@@ -1656,9 +1688,9 @@ module type Map = sig
     :  ('k, 'v, 'cmp) t
     -> min:'k
     -> max:'k
-    -> init:'a
-    -> f:((key:'k -> data:'v -> 'a -> 'a)[@local])
-    -> 'a
+    -> init:'acc
+    -> f:((key:'k -> data:'v -> 'acc -> 'acc)[@local])
+    -> 'acc
 
   (** [range_to_alist t ~min ~max] returns an associative list of the elements whose keys
       lie in [[min, max]] (inclusive), with the smallest key being at the head of the

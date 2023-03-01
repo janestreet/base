@@ -2,7 +2,14 @@
     implement [Int63] on 32-bit platforms; see [Int63_backends.Emulated]. *)
 
 open! Import
-include Int_intf.S
+
+type t [@@deriving_inline globalize]
+
+val globalize : (t[@ocaml.local]) -> t
+
+[@@@end]
+
+include Int_intf.S with type t := t
 
 val of_int : int -> t
 val to_int : t -> int option

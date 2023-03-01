@@ -1,9 +1,16 @@
 open! Import
 include Array0
 
-type 'a t = 'a array [@@deriving_inline compare, sexp, sexp_grammar]
+type 'a t = 'a array [@@deriving_inline compare, globalize, sexp, sexp_grammar]
 
 let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
+
+let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
+  fun (type a__005_)
+      : (((a__005_[@ocaml.local]) -> a__005_) -> (a__005_ t[@ocaml.local]) -> a__005_ t) ->
+    globalize_array
+;;
+
 let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = array_of_sexp
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_array
 
@@ -295,6 +302,7 @@ module Sort = Sorter (struct
   end)
 
 let sort = Sort.sort
+let of_array t = t
 let to_array t = t
 let is_empty t = length t = 0
 
@@ -792,22 +800,27 @@ let sorted_copy t ~compare =
   t1
 ;;
 
-let partitioni_tf t ~f =
-  let both = mapi t ~f:(fun i x -> if f i x then Either.First x else Either.Second x) in
-  let trues =
+let partition_mapi t ~f =
+  let (both : _ Either.t t) = mapi t ~f in
+  let firsts =
     filter_map both ~f:(function
       | First x -> Some x
       | Second _ -> None)
   in
-  let falses =
+  let seconds =
     filter_map both ~f:(function
       | First _ -> None
       | Second x -> Some x)
   in
-  trues, falses
+  firsts, seconds
 ;;
 
-let partition_tf t ~f = partitioni_tf t ~f:(fun _i x -> f x) [@nontail]
+let partitioni_tf t ~f =
+  partition_mapi t ~f:(fun i x -> if f i x then First x else Second x) [@nontail]
+;;
+
+let partition_map t ~f = partition_mapi t ~f:(fun _ x -> f x) [@nontail]
+let partition_tf t ~f = partitioni_tf t ~f:(fun _ x -> f x) [@nontail]
 let last t = t.(length t - 1)
 
 (* Convert to a sequence but does not attempt to protect against modification

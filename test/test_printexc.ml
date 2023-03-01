@@ -1,5 +1,5 @@
 open! Import
-module Printexc = Caml.Printexc
+module Printexc = Stdlib.Printexc
 
 let%expect_test "Printexc: built-in exception" =
   print_endline (Printexc.to_string (Invalid_argument "bad"));

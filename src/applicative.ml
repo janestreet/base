@@ -120,36 +120,6 @@ module Make_let_syntax
     (Intf)
     (Impl)
 
-module Make2_local (X : Basic2_local) : S2_local with type ('a, 'e) t := ('a, 'e) X.t =
-struct
-  include X
-
-  let ( <*> ) = apply
-  let ( >>| ) t f = map t ~f
-  let map2 ta tb ~f = map ~f ta <*> tb
-  let map3 ta tb tc ~f = map ~f ta <*> tb <*> tc
-  let all ts = List.fold_right ts ~init:(return []) ~f:(map2 ~f:(fun x xs -> x :: xs))
-  let both ta tb = map2 ta tb ~f:(fun a b -> a, b)
-  let ( *> ) u v = return (fun () y -> y) <*> u <*> v
-  let ( <* ) u v = return (fun x () -> x) <*> u <*> v
-  let all_unit ts = List.fold ts ~init:(return ()) ~f:( *> )
-
-
-  module Applicative_infix = struct
-    let ( <*> ) = ( <*> )
-    let ( *> ) = ( *> )
-    let ( <* ) = ( <* )
-    let ( >>| ) = ( >>| )
-  end
-end
-
-module Make_local (X : Basic_local) : S_local with type 'a t := 'a X.t =
-  Make2_local (struct
-    include X
-
-    type ('a, 'e) t = 'a X.t
-  end)
-
 (** This functor closely resembles [Make3], and indeed it could be implemented
     much shorter in terms of [Make3]. However, we implement it by hand so that
     the resulting functions are more efficient, e.g. using [map2] directly instead of
@@ -195,6 +165,55 @@ module Make2_using_map2 (X : Basic2_using_map2) :
 
 module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t =
   Make2_using_map2 (struct
+    include X
+
+    type ('a, 'e) t = 'a X.t
+  end)
+
+module Make3_using_map2_local (X : Basic3_using_map2_local) :
+  S3_local with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t = struct
+  include X
+
+  let apply tf ta = map2 tf ta ~f:(fun f a -> f a)
+  let ( <*> ) = apply
+  let derived_map t ~f = map2 ~f:(fun () -> f) (return ()) t [@nontail]
+
+  let map =
+    match X.map with
+    | `Define_using_map2 -> derived_map
+    | `Custom map -> map
+  ;;
+
+  let ( >>| ) t f = map t ~f
+  let both ta tb = map2 ta tb ~f:(fun a b -> a, b)
+
+  let map3 ta tb tc ~f =
+    let res = map2 (both ta tb) tc ~f:(fun (a, b) c -> f a b c) in
+    res
+  ;;
+
+  let all ts = List.fold_right ts ~init:(return []) ~f:(map2 ~f:(fun x xs -> x :: xs))
+  let ( *> ) u v = map2 u v ~f:(fun () y -> y)
+  let ( <* ) u v = map2 u v ~f:(fun x () -> x)
+  let all_unit ts = List.fold ts ~init:(return ()) ~f:( *> )
+
+  module Applicative_infix = struct
+    let ( <*> ) = ( <*> )
+    let ( *> ) = ( *> )
+    let ( <* ) = ( <* )
+    let ( >>| ) = ( >>| )
+  end
+end
+
+module Make2_using_map2_local (X : Basic2_using_map2_local) :
+  S2_local with type ('a, 'e) t := ('a, 'e) X.t = Make3_using_map2_local (struct
+    include X
+
+    type ('a, 'd, 'e) t = ('a, 'd) X.t
+  end)
+
+module Make_using_map2_local (X : Basic_using_map2_local) :
+  S_local with type 'a t := 'a X.t = Make2_using_map2_local (struct
     include X
 
     type ('a, 'e) t = 'a X.t

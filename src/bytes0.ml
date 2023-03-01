@@ -1,7 +1,7 @@
 (* [Bytes0] defines string functions that are primitives or can be simply
-   defined in terms of [Caml.Bytes]. [Bytes0] is intended to completely express
-   the part of [Caml.Bytes] that [Base] uses -- no other file in Base other
-   than bytes0.ml should use [Caml.Bytes]. [Bytes0] has few dependencies, and
+   defined in terms of [Stdlib.Bytes]. [Bytes0] is intended to completely express
+   the part of [Stdlib.Bytes] that [Base] uses -- no other file in Base other
+   than bytes0.ml should use [Stdlib.Bytes]. [Bytes0] has few dependencies, and
    so is available early in Base's build order.
 
    All Base files that need to use strings and come before [Base.Bytes] in
@@ -18,41 +18,100 @@ open! Import0
 module Sys = Sys0
 
 module Primitives = struct
-  external get : bytes -> int -> char = "%bytes_safe_get"
-  external length : bytes -> int = "%bytes_length"
-  external unsafe_get : bytes -> int -> char = "%bytes_unsafe_get"
-  external set : bytes -> int -> char -> unit = "%bytes_safe_set"
-  external unsafe_set : bytes -> int -> char -> unit = "%bytes_unsafe_set"
+  external get : (bytes[@local_opt]) -> (int[@local_opt]) -> char = "%bytes_safe_get"
+  external length : (bytes[@local_opt]) -> int = "%bytes_length"
+
+  external unsafe_get
+    :  (bytes[@local_opt])
+    -> (int[@local_opt])
+    -> char
+    = "%bytes_unsafe_get"
+
+  external set
+    :  (bytes[@local_opt])
+    -> (int[@local_opt])
+    -> (char[@local_opt])
+    -> unit
+    = "%bytes_safe_set"
+
+  external unsafe_set
+    :  (bytes[@local_opt])
+    -> (int[@local_opt])
+    -> (char[@local_opt])
+    -> unit
+    = "%bytes_unsafe_set"
 
   (* [unsafe_blit_string] is not exported in the [stdlib] so we export it here *)
   external unsafe_blit_string
-    :  src:string
+    :  src:(string[@local_opt])
     -> src_pos:int
-    -> dst:bytes
+    -> dst:(bytes[@local_opt])
     -> dst_pos:int
     -> len:int
     -> unit
     = "caml_blit_string"
   [@@noalloc]
 
-  external unsafe_get_int64 : bytes -> int -> int64 = "%caml_bytes_get64u"
-  external unsafe_set_int64 : bytes -> int -> int64 -> unit = "%caml_bytes_set64u"
-  external unsafe_get_int32 : bytes -> int -> int32 = "%caml_bytes_get32u"
-  external unsafe_set_int32 : bytes -> int -> int32 -> unit = "%caml_bytes_set32u"
-  external unsafe_get_int16 : bytes -> int -> int = "%caml_bytes_get16u"
-  external unsafe_set_int16 : bytes -> int -> int -> unit = "%caml_bytes_set16u"
+  external unsafe_get_int64
+    :  (bytes[@local_opt])
+    -> (int[@local_opt])
+    -> int64
+    = "%caml_bytes_get64u"
+
+  external unsafe_set_int64
+    :  (bytes[@local_opt])
+    -> (int[@local_opt])
+    -> (int64[@local_opt])
+    -> unit
+    = "%caml_bytes_set64u"
+
+  external unsafe_get_int32
+    :  (bytes[@local_opt])
+    -> (int[@local_opt])
+    -> int32
+    = "%caml_bytes_get32u"
+
+  external unsafe_set_int32
+    :  (bytes[@local_opt])
+    -> (int[@local_opt])
+    -> (int32[@local_opt])
+    -> unit
+    = "%caml_bytes_set32u"
+
+  external unsafe_get_int16
+    :  (bytes[@local_opt])
+    -> (int[@local_opt])
+    -> int
+    = "%caml_bytes_get16u"
+
+  external unsafe_set_int16
+    :  (bytes[@local_opt])
+    -> (int[@local_opt])
+    -> (int[@local_opt])
+    -> unit
+    = "%caml_bytes_set16u"
 end
 
 include Primitives
 
 let max_length = Sys.max_string_length
-let blit = Caml.Bytes.blit
-let blit_string = Caml.Bytes.blit_string
-let compare = Caml.Bytes.compare
-let copy = Caml.Bytes.copy
-let create = Caml.Bytes.create
-let fill = Caml.Bytes.fill
-let make = Caml.Bytes.make
+let blit = Stdlib.Bytes.blit
+let blit_string = Stdlib.Bytes.blit_string
+let compare = Stdlib.Bytes.compare
+let copy = Stdlib.Bytes.copy
+let create = Stdlib.Bytes.create
+
+external unsafe_create_local : int -> (bytes[@local]) = "Base_unsafe_create_local_bytes"
+[@@noalloc]
+
+let create_local len =
+  
+    (if len > Sys0.max_string_length then invalid_arg "Bytes.create_local";
+     unsafe_create_local len)
+;;
+
+let fill = Stdlib.Bytes.fill
+let make = Stdlib.Bytes.make
 
 let map t ~f:((f : _ -> _) [@local]) =
   let l = length t in
@@ -78,9 +137,27 @@ let mapi t ~f:((f : _ -> _ -> _) [@local]) =
     r)
 ;;
 
-let sub = Caml.Bytes.sub
-let unsafe_blit = Caml.Bytes.unsafe_blit
-let to_string = Caml.Bytes.to_string
-let of_string = Caml.Bytes.of_string
-let unsafe_to_string ~no_mutation_while_string_reachable:s = Caml.Bytes.unsafe_to_string s
-let unsafe_of_string_promise_no_mutation = Caml.Bytes.unsafe_of_string
+let sub = Stdlib.Bytes.sub
+
+external unsafe_blit
+  :  src:(bytes[@local_opt])
+  -> src_pos:int
+  -> dst:(bytes[@local_opt])
+  -> dst_pos:int
+  -> len:int
+  -> unit
+  = "caml_blit_bytes"
+[@@noalloc]
+
+let to_string = Stdlib.Bytes.to_string
+let of_string = Stdlib.Bytes.of_string
+
+external unsafe_to_string
+  :  no_mutation_while_string_reachable:(bytes[@local_opt])
+  -> (string[@local_opt])
+  = "%bytes_to_string"
+
+external unsafe_of_string_promise_no_mutation
+  :  (string[@local_opt])
+  -> (bytes[@local_opt])
+  = "%bytes_of_string"

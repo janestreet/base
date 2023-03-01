@@ -60,7 +60,7 @@ let length t = t.length
 let is_empty t = length t = 0
 
 (* The order in which elements are visited has been chosen so as to be backwards
-   compatible with [Caml.Stack] *)
+   compatible with [Stdlib.Stack] *)
 let fold t ~init ~f =
   let r = ref init in
   for i = t.length - 1 downto 0 do
@@ -173,7 +173,45 @@ let until_empty t f =
       f (pop_nonempty t);
       loop ())
   in
-  loop ()
+  loop () [@nontail]
+;;
+
+let filter_map t ~f =
+  let t_result = create () in
+  for i = 0 to t.length - 1 do
+    match f (Option_array.get_some_exn t.elts i) with
+    | None -> ()
+    | Some x -> push t_result x
+  done;
+  t_result
+;;
+
+let filter t ~f =
+  let t_result = create () in
+  for i = 0 to t.length - 1 do
+    let x = Option_array.get_some_exn t.elts i in
+    if f x then push t_result x
+  done;
+  t_result
+;;
+
+let filter_inplace t ~f =
+  let write_index = ref 0 in
+  Exn.protect
+    ~f:(fun () ->
+      for read_index = 0 to t.length - 1 do
+        let x = Option_array.unsafe_get_some_assuming_some t.elts read_index in
+        if f x
+        then (
+          if !write_index < read_index
+          then Option_array.unsafe_set_some t.elts !write_index x;
+          incr write_index)
+      done)
+    ~finally:(fun () ->
+      for i = !write_index to t.length - 1 do
+        Option_array.unsafe_set_none t.elts i
+      done;
+      t.length <- !write_index) [@nontail]
 ;;
 
 let singleton x =

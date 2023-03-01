@@ -24,7 +24,7 @@ module Named = struct
 end
 
 module type Accessors_generic = sig
-  include Container.Generic_phantom
+  include Container.Generic
 
   type ('a, 'cmp) tree
 
@@ -72,12 +72,12 @@ module type Accessors_generic = sig
 
   val fold_until
     :  ('a, _) t
-    -> init:'b
-    -> f:(('b -> 'a elt -> ('b, 'final) Container.Continue_or_stop.t)[@local])
-    -> finish:(('b -> 'final)[@local])
+    -> init:'acc
+    -> f:(('acc -> 'a elt -> ('acc, 'final) Container.Continue_or_stop.t)[@local])
+    -> finish:(('acc -> 'final)[@local])
     -> 'final
 
-  val fold_right : ('a, _) t -> init:'b -> f:(('a elt -> 'b -> 'b)[@local]) -> 'b
+  val fold_right : ('a, _) t -> init:'acc -> f:(('a elt -> 'acc -> 'acc)[@local]) -> 'acc
 
   val iter2
     : ( 'a
@@ -110,6 +110,12 @@ module type Accessors_generic = sig
       , 'cmp
       , ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * 'a elt option * ('a, 'cmp) t )
         access_options
+
+  val split_le_gt
+    : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * ('a, 'cmp) t) access_options
+
+  val split_lt_ge
+    : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * ('a, 'cmp) t) access_options
 
   val group_by
     :  ('a, 'cmp) t
@@ -533,33 +539,29 @@ module type Set = sig
   val filter : ('a, 'cmp) t -> f:(('a -> bool)[@local]) -> ('a, 'cmp) t
 
   (** [fold t ~init ~f] folds over the elements of the set from smallest to largest. *)
-  val fold : ('a, _) t -> init:'accum -> f:(('accum -> 'a -> 'accum)[@local]) -> 'accum
+  val fold : ('a, _) t -> init:'acc -> f:(('acc -> 'a -> 'acc)[@local]) -> 'acc
 
   (** [fold_result ~init ~f] folds over the elements of the set from smallest to
       largest, short circuiting the fold if [f accum x] is an [Error _] *)
   val fold_result
     :  ('a, _) t
-    -> init:'accum
-    -> f:(('accum -> 'a -> ('accum, 'e) Result.t)[@local])
-    -> ('accum, 'e) Result.t
+    -> init:'acc
+    -> f:(('acc -> 'a -> ('acc, 'e) Result.t)[@local])
+    -> ('acc, 'e) Result.t
 
   (** [fold_until t ~init ~f] is a short-circuiting version of [fold]. If [f]
       returns [Stop _] the computation ceases and results in that value. If [f] returns
       [Continue _], the fold will proceed. *)
   val fold_until
     :  ('a, _) t
-    -> init:'accum
-    -> f:(('accum -> 'a -> ('accum, 'final) Container.Continue_or_stop.t)[@local])
-    -> finish:(('accum -> 'final)[@local])
+    -> init:'acc
+    -> f:(('acc -> 'a -> ('acc, 'final) Container.Continue_or_stop.t)[@local])
+    -> finish:(('acc -> 'final)[@local])
     -> 'final
 
 
   (** Like {!fold}, except that it goes from the largest to the smallest element. *)
-  val fold_right
-    :  ('a, _) t
-    -> init:'accum
-    -> f:(('a -> 'accum -> 'accum)[@local])
-    -> 'accum
+  val fold_right : ('a, _) t -> init:'acc -> f:(('a -> 'acc -> 'acc)[@local]) -> 'acc
 
   (** [iter t ~f] calls [f] on every element of [t], going in order from the smallest to
       largest.  *)
@@ -602,10 +604,24 @@ module type Set = sig
   (** Like {!choose}, but throws an exception on an empty set. *)
   val choose_exn : ('a, _) t -> 'a
 
-  (** [split t x] produces a triple [(t1, maybe_x, t2)] where [t1] is the set of elements
-      strictly less than [x], [maybe_x] is the member (if any) of [t] which compares equal
-      to [x], and [t2] is the set of elements strictly larger than [x]. *)
+  (** [split t x] produces a triple [(t1, maybe_x, t2)].
+
+      [t1] is the set of elements strictly less than [x],
+      [maybe_x] is the member (if any) of [t] which compares equal to [x],
+      [t2] is the set of elements strictly larger than [x]. *)
   val split : ('a, 'cmp) t -> 'a -> ('a, 'cmp) t * 'a option * ('a, 'cmp) t
+
+  (** [split_le_gt t x] produces a pair [(t1, t2)].
+
+      [t1] is the set of elements less than or equal to [x],
+      [t2] is the set of elements strictly greater than [x]. *)
+  val split_le_gt : ('a, 'cmp) t -> 'a -> ('a, 'cmp) t * ('a, 'cmp) t
+
+  (** [split_lt_ge t x] produces a pair [(t1, t2)].
+
+      [t1] is the set of elements strictly less than [x],
+      [t2] is the set of elements greater than or equal to [x]. *)
+  val split_lt_ge : ('a, 'cmp) t -> 'a -> ('a, 'cmp) t * ('a, 'cmp) t
 
   (** if [equiv] is an equivalence predicate, then [group_by set ~equiv] produces a list
       of equivalence classes (i.e., a set-theoretic quotient).  E.g.,

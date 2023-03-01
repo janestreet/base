@@ -17,23 +17,23 @@ let num_bits_int32 = 32
 let num_bits_int64 = 64
 let num_bits_nativeint = Word_size.num_bits Word_size.word_size
 let () = assert (num_bits_int = 63 || num_bits_int = 31 || num_bits_int = 32)
-let min_int32 = Caml.Int32.min_int
-let max_int32 = Caml.Int32.max_int
-let min_int64 = Caml.Int64.min_int
-let max_int64 = Caml.Int64.max_int
-let min_nativeint = Caml.Nativeint.min_int
-let max_nativeint = Caml.Nativeint.max_int
-let int_to_string = Caml.string_of_int
-let int32_to_string = Caml.Int32.to_string
-let int64_to_string = Caml.Int64.to_string
-let nativeint_to_string = Caml.Nativeint.to_string
+let min_int32 = Stdlib.Int32.min_int
+let max_int32 = Stdlib.Int32.max_int
+let min_int64 = Stdlib.Int64.min_int
+let max_int64 = Stdlib.Int64.max_int
+let min_nativeint = Stdlib.Nativeint.min_int
+let max_nativeint = Stdlib.Nativeint.max_int
+let int_to_string = Stdlib.string_of_int
+let int32_to_string = Stdlib.Int32.to_string
+let int64_to_string = Stdlib.Int64.to_string
+let nativeint_to_string = Stdlib.Nativeint.to_string
 
 (* int <-> int32 *)
 
 let int_to_int32_failure x = convert_failure x "int" "int32" int_to_string
 let int32_to_int_failure x = convert_failure x "int32" "int" int32_to_string
-let int32_to_int_trunc = Caml.Int32.to_int
-let int_to_int32_trunc = Caml.Int32.of_int
+let int32_to_int_trunc = Stdlib.Int32.to_int
+let int_to_int32_trunc = Stdlib.Int32.of_int
 
 let int_is_representable_as_int32 =
   if num_bits_int <= num_bits_int32
@@ -73,8 +73,8 @@ let int32_to_int_exn x =
 
 let int64_to_int_failure x = convert_failure x "int64" "int" int64_to_string
 let () = assert (num_bits_int < num_bits_int64)
-let int_to_int64 = Caml.Int64.of_int
-let int64_to_int_trunc = Caml.Int64.to_int
+let int_to_int64 = Stdlib.Int64.of_int
+let int64_to_int_trunc = Stdlib.Int64.to_int
 
 let int64_is_representable_as_int =
   let min = int_to_int64 Int.min_value in
@@ -94,8 +94,8 @@ let int64_to_int_exn x =
 
 let nativeint_to_int_failure x = convert_failure x "nativeint" "int" nativeint_to_string
 let () = assert (num_bits_int <= num_bits_nativeint)
-let int_to_nativeint = Caml.Nativeint.of_int
-let nativeint_to_int_trunc = Caml.Nativeint.to_int
+let int_to_nativeint = Stdlib.Nativeint.of_int
+let nativeint_to_int_trunc = Stdlib.Nativeint.to_int
 
 let nativeint_is_representable_as_int =
   if num_bits_nativeint <= num_bits_int
@@ -120,8 +120,8 @@ let nativeint_to_int_exn x =
 
 let int64_to_int32_failure x = convert_failure x "int64" "int32" int64_to_string
 let () = assert (num_bits_int32 < num_bits_int64)
-let int32_to_int64 = Caml.Int64.of_int32
-let int64_to_int32_trunc = Caml.Int64.to_int32
+let int32_to_int64 = Stdlib.Int64.of_int32
+let int64_to_int32_trunc = Stdlib.Int64.to_int32
 
 let int64_is_representable_as_int32 =
   let min = int32_to_int64 min_int32 in
@@ -146,8 +146,8 @@ let nativeint_to_int32_failure x =
 ;;
 
 let () = assert (num_bits_int32 <= num_bits_nativeint)
-let int32_to_nativeint = Caml.Nativeint.of_int32
-let nativeint_to_int32_trunc = Caml.Nativeint.to_int32
+let int32_to_nativeint = Stdlib.Nativeint.of_int32
+let nativeint_to_int32_trunc = Stdlib.Nativeint.to_int32
 
 let nativeint_is_representable_as_int32 =
   if num_bits_nativeint <= num_bits_int32
@@ -174,8 +174,8 @@ let nativeint_to_int32_exn x =
 
 let int64_to_nativeint_failure x = convert_failure x "int64" "nativeint" int64_to_string
 let () = assert (num_bits_int64 >= num_bits_nativeint)
-let int64_to_nativeint_trunc = Caml.Int64.to_nativeint
-let nativeint_to_int64 = Caml.Int64.of_nativeint
+let int64_to_nativeint_trunc = Stdlib.Int64.to_nativeint
+let nativeint_to_int64 = Stdlib.Int64.of_nativeint
 
 let int64_is_representable_as_nativeint =
   if num_bits_int64 <= num_bits_nativeint
@@ -203,8 +203,8 @@ let int64_to_nativeint_exn x =
 let int64_to_int63_failure x = convert_failure x "int64" "int63" int64_to_string
 
 let int64_is_representable_as_int63 =
-  let min = Caml.Int64.shift_right min_int64 1 in
-  let max = Caml.Int64.shift_right max_int64 1 in
+  let min = Stdlib.Int64.shift_right min_int64 1 in
+  let max = Stdlib.Int64.shift_right max_int64 1 in
   fun x -> compare_int64 min x <= 0 && compare_int64 x max <= 0
 ;;
 
@@ -333,7 +333,7 @@ struct
 
     let of_string str =
       let module L = Hex_lexer in
-      let lex = Caml.Lexing.from_string str in
+      let lex = Stdlib.Lexing.from_string str in
       let result = Option.try_with (fun () -> L.parse_hex lex) in
       if lex.lex_curr_pos = lex.lex_buffer_len
       then (

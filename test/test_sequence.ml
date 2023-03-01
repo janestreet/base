@@ -690,7 +690,7 @@ let%test_module "Caml.Seq" =
     let list = [ 1; 2; 3; 4 ]
 
     let%expect_test "of_seq" =
-      list |> Caml.List.to_seq |> Sequence.of_seq |> Sequence.iter ~f:(printf "%d\n");
+      list |> Stdlib.List.to_seq |> Sequence.of_seq |> Sequence.iter ~f:(printf "%d\n");
       [%expect {|
         1
         2
@@ -699,7 +699,7 @@ let%test_module "Caml.Seq" =
     ;;
 
     let%expect_test "to_seq" =
-      list |> Sequence.of_list |> Sequence.to_seq |> Caml.Seq.iter (printf "%d\n");
+      list |> Sequence.of_list |> Sequence.to_seq |> Stdlib.Seq.iter (printf "%d\n");
       [%expect {|
         1
         2

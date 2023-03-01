@@ -63,7 +63,8 @@ let safe_to_print_as_int =
 let format_entry typ b =
   let s = Big_int.to_string b in
   match typ with
-  | Int -> if safe_to_print_as_int b then s else Printf.sprintf "Caml.Int64.to_int %sL" s
+  | Int ->
+    if safe_to_print_as_int b then s else Printf.sprintf "Stdlib.Int64.to_int %sL" s
   | Int32 -> s ^ "l"
   | Int63 | Int64 -> s ^ "L"
 ;;
@@ -154,7 +155,7 @@ let gen_bounds typ =
   (match typ with
    | Int ->
      pr "  match Int_conversions.num_bits_int with";
-     pr "  | 32 -> Array.map %s ~f:Caml.Int32.to_int" (array_name Int32 Pos);
+     pr "  | 32 -> Array.map %s ~f:Stdlib.Int32.to_int" (array_name Int32 Pos);
      pr "  | 63 ->";
      gen_array ~typ ~bits:63 ~sign:Pos ~indent:4;
      pr "  | 31 ->";

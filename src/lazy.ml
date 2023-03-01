@@ -1,5 +1,5 @@
 open! Import
-include Caml.Lazy
+include Stdlib.Lazy
 
 type 'a t = 'a lazy_t [@@deriving_inline sexp, sexp_grammar]
 
@@ -11,6 +11,8 @@ let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_gramma
 ;;
 
 [@@@end]
+
+external force : ('a t[@local_opt]) -> 'a = "%lazy_force"
 
 let map t ~f = lazy (f (force t))
 

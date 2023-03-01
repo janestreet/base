@@ -320,7 +320,7 @@ struct
           [%here]
           (module Ok (Alist))
           (Or_error.map t_or_error ~f:to_alist)
-          (let compare = Comparable.lift Key.compare ~f:fst in
+          (let compare a b = Comparable.lift Key.compare ~f:fst a b in
            if List.contains_dup alist ~compare
            then Or_error.error_string "duplicate"
            else Ok (List.sort alist ~compare));
@@ -451,7 +451,8 @@ struct
         let seq = Sequence.of_list alist in
         let actual = create of_increasing_sequence seq in
         let expect =
-          if List.is_sorted alist ~compare:(Comparable.lift Key.compare ~f:fst)
+          if List.is_sorted alist ~compare:(fun a b ->
+            Comparable.lift Key.compare ~f:fst a b)
           then create of_alist_or_error alist
           else Or_error.error_string "decreasing keys"
         in
@@ -468,7 +469,7 @@ struct
       ~f:(fun alist ->
         let actual = create of_sorted_array (Array.of_list alist) in
         let expect =
-          let compare = Comparable.lift Key.compare ~f:fst in
+          let compare a b = Comparable.lift Key.compare ~f:fst a b in
           if List.is_sorted_strictly ~compare alist
           || List.is_sorted_strictly ~compare (List.rev alist)
           then create of_alist_or_error alist
@@ -486,7 +487,8 @@ struct
       (module Alist)
       ~f:(fun alist ->
         let alist =
-          List.dedup_and_sort alist ~compare:(Comparable.lift Key.compare ~f:fst)
+          List.dedup_and_sort alist ~compare:(fun a b ->
+            Comparable.lift Key.compare ~f:fst a b)
         in
         let actual_fwd = create of_sorted_array_unchecked (Array.of_list alist) in
         let actual_rev = create of_sorted_array_unchecked (Array.of_list_rev alist) in
@@ -504,7 +506,8 @@ struct
       (module Alist)
       ~f:(fun alist ->
         let alist =
-          List.dedup_and_sort alist ~compare:(Comparable.lift Key.compare ~f:fst)
+          List.dedup_and_sort alist ~compare:(fun a b ->
+            Comparable.lift Key.compare ~f:fst a b)
         in
         let actual =
           let array = Array.of_list alist in
@@ -638,7 +641,7 @@ struct
           (module Alist)
           (to_alist (access set t ~key ~data))
           (List.sort
-             ~compare:(Comparable.lift Key.compare ~f:fst)
+             ~compare:(fun a b -> Comparable.lift Key.compare ~f:fst a b)
              ((key, data) :: List.Assoc.remove (to_alist t) key ~equal:Key.equal)));
     [%expect {| |}]
   ;;
@@ -1273,7 +1276,7 @@ struct
 
   let split = split
 
-  let%expect_test _ =
+  let%expect_test "split" =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -1292,6 +1295,46 @@ struct
                | Greater -> `Trd (key, data))
            in
            create of_alist_exn before, List.hd equal, create of_alist_exn after));
+    [%expect {| |}]
+  ;;
+
+  let split_le_gt = split_le_gt
+
+  let%expect_test "split_le_gt" =
+    quickcheck_m
+      [%here]
+      (module Inst_and_key)
+      ~f:(fun (t, k) ->
+        require_equal
+          [%here]
+          (module struct
+            type t = Inst.t * Inst.t [@@deriving equal, sexp_of]
+          end)
+          (access split_le_gt t k)
+          (let before, after =
+             List.partition_tf (to_alist t) ~f:(fun (key, _) -> Key.( <= ) key k)
+           in
+           create of_alist_exn before, create of_alist_exn after));
+    [%expect {| |}]
+  ;;
+
+  let split_lt_ge = split_lt_ge
+
+  let%expect_test "split_lt_ge" =
+    quickcheck_m
+      [%here]
+      (module Inst_and_key)
+      ~f:(fun (t, k) ->
+        require_equal
+          [%here]
+          (module struct
+            type t = Inst.t * Inst.t [@@deriving equal, sexp_of]
+          end)
+          (access split_lt_ge t k)
+          (let before, after =
+             List.partition_tf (to_alist t) ~f:(fun (key, _) -> Key.( < ) key k)
+           in
+           create of_alist_exn before, create of_alist_exn after));
     [%expect {| |}]
   ;;
 

@@ -1,11 +1,11 @@
 open! Import
 
 let to_string pp v =
-  pp Caml.Format.str_formatter v;
-  Caml.Format.flush_str_formatter ()
+  pp Stdlib.Format.str_formatter v;
+  Stdlib.Format.flush_str_formatter ()
 ;;
 
-let print pp v = Caml.Printf.printf "%s\n" (to_string pp v)
+let print pp v = Stdlib.Printf.printf "%s\n" (to_string pp v)
 let print_all pp vs = List.iter ~f:(print pp) vs
 
 let%expect_test "pretty-printers" =

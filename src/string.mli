@@ -3,7 +3,9 @@
 
 open! Import
 
-type t = string [@@deriving_inline sexp, sexp_grammar]
+type t = string [@@deriving_inline globalize, sexp, sexp_grammar]
+
+val globalize : (t[@ocaml.local]) -> t
 
 include Sexplib0.Sexpable.S with type t := t
 
@@ -13,27 +15,31 @@ val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 val sub : (t, t) Blit.sub
 
-(** [sub] with no bounds checking *)
-val unsafe_sub : (t, t) Blit.sub
+(** [sub] with no bounds checking, and always returns a new copy *)
+val unsafe_sub : (t[@local]) -> pos:int -> len:int -> t
 
 val subo : (t, t) Blit.subo
 
-include Indexed_container.S0 with type t := t with type elt = char
+include Indexed_container.S0_with_creators with type t := t with type elt = char
 include Identifiable.S with type t := t
 include Invariant.S with type t := t
 
 (** Maximum length of a string. *)
 val max_length : int
 
-external length : t -> int = "%string_length"
-external get : t -> int -> char = "%string_safe_get"
+val mem : (t[@local]) -> char -> bool
+external length : (t[@local_opt]) -> int = "%string_length"
+external get : (t[@local_opt]) -> (int[@local_opt]) -> char = "%string_safe_get"
 
 (** [unsafe_get t i] is like [get t i] but does not perform bounds checking. The caller
     must ensure that it is a memory-safe operation. *)
-external unsafe_get : string -> int -> char = "%string_unsafe_get"
+external unsafe_get
+  :  (string[@local_opt])
+  -> (int[@local_opt])
+  -> char
+  = "%string_unsafe_get"
 
 val make : int -> char -> t
-val init : int -> f:((int -> char)[@local]) -> t
 
 (** String append. Also available unqualified, but re-exported here for documentation
     purposes.
@@ -102,7 +108,7 @@ end
     [Some 2].
 
     The [_exn] versions return the actual index (instead of an option) when [char] is
-    found, and raise [Caml.Not_found] or [Not_found_s] otherwise.
+    found, and raise [Stdlib.Not_found] or [Not_found_s] otherwise.
 *)
 
 val index : t -> char -> int option
@@ -231,12 +237,12 @@ val is_prefix : t -> prefix:t -> bool
 
 (** If the string [s] contains the character [on], then [lsplit2_exn s ~on] returns a pair
     containing [s] split around the first appearance of [on] (from the left). Raises
-    [Caml.Not_found] or [Not_found_s] when [on] cannot be found in [s]. *)
+    [Stdlib.Not_found] or [Not_found_s] when [on] cannot be found in [s]. *)
 val lsplit2_exn : t -> on:char -> t * t
 
 (** If the string [s] contains the character [on], then [rsplit2_exn s ~on] returns a pair
     containing [s] split around the first appearance of [on] (from the right). Raises
-    [Caml.Not_found] or [Not_found_s] when [on] cannot be found in [s]. *)
+    [Stdlib.Not_found] or [Not_found_s] when [on] cannot be found in [s]. *)
 val rsplit2_exn : t -> on:char -> t * t
 
 (** [lsplit2 s ~on] optionally returns [s] split into two strings around the
@@ -284,25 +290,11 @@ val rstrip : ?drop:((char -> bool)[@local]) -> t -> t
     beginning and end of [s]. *)
 val strip : ?drop:((char -> bool)[@local]) -> t -> t
 
-val map : t -> f:((char -> char)[@local]) -> t
-
-(** Like [map], but passes each character's index to [f] along with the char. *)
-val mapi : t -> f:((int -> char -> char)[@local]) -> t
-
-
-(** [foldi] works similarly to [fold], but also passes the index of each character to
-    [f]. *)
-val foldi : t -> init:'a -> f:((int -> 'a -> char -> 'a)[@local]) -> 'a
-
 (** Like [map], but allows the replacement of a single character with zero or two or more
     characters. *)
 val concat_map : ?sep:t -> t -> f:((char -> t)[@local]) -> t
 
-(** [filter s ~f:predicate] discards characters not satisfying [predicate]. *)
-val filter : t -> f:((char -> bool)[@local]) -> t
-
-(** Like [filter], but passes each character's index to [f] along with the char. *)
-val filteri : t -> f:((int -> char -> bool)[@local]) -> t
+val concat_mapi : ?sep:t -> t -> f:((int -> char -> t)[@local]) -> t
 
 (** [tr ~target ~replacement s] replaces every instance of [target] in [s] with
     [replacement]. *)
@@ -405,6 +397,7 @@ external hash : t -> int = "Base_hash_string"
 val equal : t -> t -> bool
 
 val of_char : char -> t
+
 val of_char_list : char list -> t
 
 (** [pad_left ?char s ~len] returns [s] padded to the length [len] by adding characters

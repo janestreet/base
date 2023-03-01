@@ -40,7 +40,7 @@ end = struct
       | Immediate : Immediate.t repr
       | Non_immediate : Non_immediate.t repr
 
-    external transparent_magic : 'a -> 'b = "%identity"
+    external transparent_magic : ('a[@local_opt]) -> ('b[@local_opt]) = "%identity"
 
     let repr =
       (* [Obj.magic] involves opaqueness under Flambda 2 which will inhibit

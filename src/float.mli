@@ -8,8 +8,9 @@
 
 open! Import
 
-type t = float [@@deriving_inline sexp_grammar]
+type t = float [@@deriving_inline globalize, sexp_grammar]
 
+val globalize : (t[@ocaml.local]) -> t
 val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 [@@@end]
@@ -534,6 +535,27 @@ external sinh : t -> t = "caml_sinh_float" "sinh"
 
 (** Hyperbolic tangent.  Argument is in radians. *)
 external tanh : t -> t = "caml_tanh_float" "tanh"
+[@@unboxed] [@@noalloc]
+
+(** Hyperbolic arc cosine.  The argument must fall within the range
+    [[1.0, inf]].
+    Result is in radians and is between [0.0] and [inf].
+*)
+external acosh : float -> float = "caml_acosh_float" "caml_acosh"
+[@@unboxed] [@@noalloc]
+
+(** Hyperbolic arc sine.  The argument and result range over the entire
+    real line.
+    Result is in radians.
+*)
+external asinh : float -> float = "caml_asinh_float" "caml_asinh"
+[@@unboxed] [@@noalloc]
+
+(** Hyperbolic arc tangent.  The argument must fall within the range
+    [[-1.0, 1.0]].
+    Result is in radians and ranges over the entire real line.
+*)
+external atanh : float -> float = "caml_atanh_float" "caml_atanh"
 [@@unboxed] [@@noalloc]
 
 (** Square root. *)

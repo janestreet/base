@@ -30,5 +30,5 @@ module Register (M : sig
   Register_pp (struct
     include M
 
-    let pp formatter t = Caml.Format.pp_print_string formatter (M.to_string t)
+    let pp formatter t = Stdlib.Format.pp_print_string formatter (M.to_string t)
   end)

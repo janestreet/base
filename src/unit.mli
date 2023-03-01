@@ -2,9 +2,12 @@
 
 open! Import
 
-type t = unit [@@deriving_inline enumerate, sexp, sexp_grammar]
+type t = unit [@@deriving_inline enumerate, globalize, sexp, sexp_grammar]
 
 include Ppx_enumerate_lib.Enumerable.S with type t := t
+
+val globalize : (t[@ocaml.local]) -> t
+
 include Sexplib0.Sexpable.S with type t := t
 
 val t_sexp_grammar : t Sexplib0.Sexp_grammar.t

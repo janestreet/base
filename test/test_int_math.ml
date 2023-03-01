@@ -10,7 +10,7 @@ let%test_unit _ =
   in
   for i = 0 to x do
     for j = 0 to x do
-      assert (int_pow i j = Caml.(int_of_float (float_of_int i ** float_of_int j)))
+      assert (int_pow i j = Stdlib.(int_of_float (float_of_int i ** float_of_int j)))
     done
   done
 ;;

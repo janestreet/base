@@ -4,7 +4,7 @@ let const c _ = c
 
 external ignore : (_[@local_opt]) -> unit = "%ignore"
 
-(* this has the same behavior as [Caml.ignore] *)
+(* this has the same behavior as [Stdlib.ignore] *)
 
 let non f x = not (f x)
 

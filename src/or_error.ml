@@ -1,12 +1,5 @@
 open! Import
 
-include (
-  Result :
-    module type of struct
-    include Result
-  end
-  with module Error := Result.Error)
-
 type 'a t = ('a, Error.t) Result.t
 [@@deriving_inline compare, equal, hash, sexp, sexp_grammar]
 
@@ -42,23 +35,45 @@ let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_gramma
 
 [@@@end]
 
+let ( >>= ) = Result.( >>= )
+let ( >>| ) = Result.( >>| )
+let bind = Result.bind
+let ignore_m = Result.ignore_m
+let join = Result.join
+let map = Result.map
+let return = Result.return
+
+module Monad_infix = Result.Monad_infix
+
 let invariant invariant_a t =
   match t with
   | Ok a -> invariant_a a
   | Error error -> Error.invariant error
 ;;
 
-include Applicative.Make_local (struct
+let map2 a b ~f =
+  match a, b with
+  | Ok x, Ok y -> Ok (f x y)
+  | Ok _, (Error _ as e) | (Error _ as e), Ok _ -> e
+  | Error e1, Error e2 -> Error (Error.of_list [ e1; e2 ])
+;;
+
+module For_applicative = Applicative.Make_using_map2_local (struct
     type nonrec 'a t = 'a t
 
     let return = return
-
-    let apply f x =
-      Result.combine f x ~ok:(fun f x -> f x) ~err:(fun e1 e2 -> Error.of_list [ e1; e2 ])
-    ;;
-
-    let map = map
+    let map = `Custom map
+    let map2 = map2
   end)
+
+let ( *> ) = For_applicative.( *> )
+let ( <* ) = For_applicative.( <* )
+let ( <*> ) = For_applicative.( <*> )
+let apply = For_applicative.apply
+let both = For_applicative.both
+let map3 = For_applicative.map3
+
+module Applicative_infix = For_applicative.Applicative_infix
 
 module Let_syntax = struct
   let return = return
@@ -115,8 +130,32 @@ let tag_arg t message a sexp_of_a =
 ;;
 
 let unimplemented s = error "unimplemented" s sexp_of_string
-let combine_errors l = Result.map_error (Result.combine_errors l) ~f:Error.of_list
-let combine_errors_unit l = Result.map (combine_errors l) ~f:(fun (_ : unit list) -> ())
+
+
+let combine_internal list ~on_ok ~on_error =
+  match Result.combine_errors list with
+  | Ok x -> Ok (on_ok x)
+  | Error errs -> Error (on_error errs)
+;;
+
+let ignore_unit_list (_ : unit list) = ()
+
+let error_of_list_if_necessary = function
+  | [ e ] -> e
+  | list -> Error.of_list list
+;;
+
+let all list = combine_internal list ~on_ok:Fn.id ~on_error:error_of_list_if_necessary
+
+let all_unit list =
+  combine_internal list ~on_ok:ignore_unit_list ~on_error:error_of_list_if_necessary
+;;
+
+let combine_errors list = combine_internal list ~on_ok:Fn.id ~on_error:Error.of_list
+
+let combine_errors_unit list =
+  combine_internal list ~on_ok:ignore_unit_list ~on_error:Error.of_list
+;;
 
 let filter_ok_at_least_one l =
   let ok, errs = List.partition_map l ~f:Result.to_either in

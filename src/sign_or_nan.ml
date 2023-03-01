@@ -55,7 +55,7 @@ module T = struct
     }
   ;;
 
-  let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
+  let compare = (Stdlib.compare : t -> t -> int)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     (fun hsv arg ->

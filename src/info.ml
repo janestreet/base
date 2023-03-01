@@ -233,7 +233,7 @@ let of_exn ?backtrace exn =
     match backtrace with
     | None -> None
     | Some `Get ->
-      Some (Caml.Printexc.get_backtrace ())
+      Some (Stdlib.Printexc.get_backtrace ())
     | Some (`This s) -> Some s
   in
   match exn, backtrace with
@@ -247,7 +247,7 @@ include Pretty_printer.Register_pp (struct
     type nonrec t = t
 
     let module_name = "Base.Info"
-    let pp ppf t = Caml.Format.pp_print_string ppf (to_string_hum t)
+    let pp ppf t = Stdlib.Format.pp_print_string ppf (to_string_hum t)
   end)
 
 module Internal_repr = Message

@@ -18,11 +18,11 @@ let%test_module "State" =
   end)
 ;;
 
-external random_seed : unit -> Caml.Obj.t = "caml_sys_random_seed"
+external random_seed : unit -> Stdlib.Obj.t = "caml_sys_random_seed"
 
 let%test_unit _ =
   (* test that the return type of "caml_sys_random_seed" is what we expect *)
-  let module Obj = Caml.Obj in
+  let module Obj = Stdlib.Obj in
   let obj = random_seed () in
   assert (Obj.is_block obj);
   assert (Obj.tag obj = Obj.tag (Obj.repr [| 13 |]));
@@ -338,7 +338,7 @@ let%test_module "float upper bound is inclusive despite docs" =
         let st = Array.create 0 ~len:55 in
         st.(1) <- 0b11111__11111__11111__11111__11111__00000;
         st.(2) <- 0b11111__11111__11111__11111__11111__00000;
-        (Caml.Obj.magic (st, 0) : Random.State.t)
+        (Stdlib.Obj.magic (st, 0) : Random.State.t)
       in
       require [%here] ~cr:CR_someday (Float.( < ) (Random.State.float random_state 1.) 1.);
       [%expect {| |}]
@@ -352,8 +352,8 @@ let%test_module "float upper bound is inclusive despite docs" =
 
     let rawfloat bits1 bits2 =
       let scale = 1073741824.0
-      and r1 = Caml.float bits1
-      and r2 = Caml.float bits2 in
+      and r1 = Stdlib.float bits1
+      and r2 = Stdlib.float bits2 in
       ((r1 /. scale) +. r2) /. scale
     ;;
 
@@ -369,7 +369,7 @@ let%test_module "float upper bound is inclusive despite docs" =
         let open Float.O in
         if rawfloat bits1 bits2 >= 1. then Int.incr failures
       done;
-      let prob = Caml.float !failures *. 0x1p-60 in
+      let prob = Stdlib.float !failures *. 0x1p-60 in
       print_s [%message "likelihood of failure" (failures : int ref) (prob : float)];
       [%expect
         {|

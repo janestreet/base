@@ -1,18 +1,18 @@
 open Ppxlib
 open Base
 
-let error ~loc fmt = Location.raise_errorf ~loc (Caml.( ^^ ) "ppx_base_lint:" fmt)
+let error ~loc fmt = Location.raise_errorf ~loc (Stdlib.( ^^ ) "ppx_base_lint:" fmt)
 
-type suspicious_id = Caml_submodule of string
+type suspicious_id = Stdlib_submodule of string
 
 let rec iter_suspicious (id : Longident.t) ~f =
   match id with
-  | Ldot (Lident "Caml", s)
+  | Ldot (Lident "Stdlib", s)
     when String.( <> ) s ""
          &&
          match s.[0] with
          | 'A' .. 'Z' -> true
-         | _ -> false -> f (Caml_submodule s)
+         | _ -> false -> f (Stdlib_submodule s)
   | Ldot (x, _) -> iter_suspicious x ~f
   | Lapply (a, b) ->
     iter_suspicious a ~f;
@@ -21,9 +21,9 @@ let rec iter_suspicious (id : Longident.t) ~f =
 ;;
 
 let zero_modules () =
-  Caml.Sys.readdir "."
+  Stdlib.Sys.readdir "."
   |> Array.to_list
-  |> List.filter ~f:(fun fn -> Caml.Filename.check_suffix fn "0.ml")
+  |> List.filter ~f:(fun fn -> Stdlib.Filename.check_suffix fn "0.ml")
   |> List.map ~f:(fun fn ->
     String.capitalize (String.sub fn ~pos:0 ~len:(String.length fn - 4)))
   |> Set.of_list (module String)
@@ -31,13 +31,13 @@ let zero_modules () =
 
 let check_open (id : Longident.t Asttypes.loc) =
   match id.txt with
-  | Lident "Caml" -> error ~loc:id.loc "you are not allowed to open Caml inside Base"
+  | Lident "Stdlib" -> error ~loc:id.loc "you are not allowed to open Stdlib inside Base"
   | _ -> ()
 ;;
 
-let rec is_caml_dot_something : Longident.t -> bool = function
-  | Ldot (Lident "Caml", _) -> true
-  | Ldot (id, _) -> is_caml_dot_something id
+let rec is_stdlib_dot_something : Longident.t -> bool = function
+  | Ldot (Lident "Stdlib", _) -> true
+  | Ldot (id, _) -> is_stdlib_dot_something id
   | _ -> false
 ;;
 
@@ -47,7 +47,7 @@ let print_payload ppf = function
   | PTyp x -> Pprintast.core_type ppf x
   | PPat (x, None) -> Pprintast.pattern ppf x
   | PPat (x, Some w) ->
-    Caml.Format.fprintf ppf "%a@ when@ %a" Pprintast.pattern x Pprintast.expression w
+    Stdlib.Format.fprintf ppf "%a@ when@ %a" Pprintast.pattern x Pprintast.expression w
 ;;
 
 let remove_loc =
@@ -64,18 +64,23 @@ let check current_module =
     inherit Ast_traverse.iter as super
 
     method! longident_loc { txt = id; loc } =
-      (* Note: we don't distinguish between module identifiers and constructors
-         names. Since there is no [Caml.String], [Caml.Array], ... constructors this is
-         not a problem. *)
-      iter_suspicious id ~f:(function Caml_submodule m ->
+      (* Note: we don't distinguish between module identifiers and constructors names.
+         Since there is no [Stdlib.String], [Stdlib.Array], ... constructors this is not a
+         problem. *)
+      iter_suspicious id ~f:(fun (Stdlib_submodule m) ->
         if not (Set.mem zero_modules m)
-        then () (* We are allowed to use Caml modules that don't have a Foo0 version *)
+        then (* We are allowed to use Stdlib modules that don't have a Foo0 version *)
+          ()
         else if String.equal (m ^ "0") current_module
-        then () (* Foo0 is allowed to use Caml.Foo *)
+        then () (* Foo0 is allowed to use Stdlib.Foo *)
         else (
           match current_module with
           | "Import0" | "Base" -> ()
-          | _ -> error ~loc "you cannot use [Caml.%s] here, use [%s0] instead" m m))
+          | _ -> error ~loc "you cannot use [Stdlib.%s] here, use [%s0] instead" m m))
+
+    (* We allow references to Stdlib in types. This is primarily to allow ppx-derived code
+       to refer to Stdlib. *)
+    method! core_type _ = ()
 
     method! expression e =
       super#expression e;
@@ -94,8 +99,8 @@ let check current_module =
       | "Import0" -> ()
       | _ ->
         (match mb.pmb_expr.pmod_desc with
-         | Pmod_ident { txt = id; _ } when is_caml_dot_something id ->
-           error ~loc:mb.pmb_loc "you cannot alias [Caml] sub-modules, use them directly"
+         | Pmod_ident { txt = id; _ } when is_stdlib_dot_something id ->
+           error ~loc:mb.pmb_loc "you cannot alias [Stdlib] sub-modules, use them directly"
          | _ -> ())
 
     method! attributes attrs =
@@ -145,10 +150,10 @@ let check current_module =
               '@'
           in
           let repl =
-            Caml.Format.asprintf
+            Stdlib.Format.asprintf
               "@[<h>%a@]"
-              (Caml.Format.pp_print_list (fun ppf x ->
-                 Caml.Format.fprintf
+              (Stdlib.Format.pp_print_list (fun ppf x ->
+                 Stdlib.Format.fprintf
                    ppf
                    "[%s%s@ %a]"
                    attribute_level
@@ -163,7 +168,7 @@ let check current_module =
 
 let module_of_loc (loc : Location.t) =
   String.capitalize
-    (Caml.Filename.chop_extension (Caml.Filename.basename loc.loc_start.pos_fname))
+    (Stdlib.Filename.chop_extension (Stdlib.Filename.basename loc.loc_start.pos_fname))
 ;;
 
 let () =

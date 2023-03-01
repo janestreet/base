@@ -24,7 +24,7 @@ module type S = sig
   val of_array : 'a array -> 'a t
 
   (** [init n ~f] is equivalent to [of_list (List.init n ~f)]. *)
-  val init : int -> f:(int -> 'a) -> 'a t
+  val init : int -> f:((int -> 'a)[@local]) -> 'a t
 
   (** [enqueue t a] adds [a] to the end of [t].*)
   val enqueue : 'a t -> 'a -> unit
@@ -52,31 +52,31 @@ module type S = sig
   (** [copy t] returns a copy of [t]. *)
   val copy : 'a t -> 'a t
 
-  val map : 'a t -> f:('a -> 'b) -> 'b t
-  val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
+  val map : 'a t -> f:(('a -> 'b)[@local]) -> 'b t
+  val mapi : 'a t -> f:((int -> 'a -> 'b)[@local]) -> 'b t
 
   (** Creates a new queue with elements equal to [List.concat_map ~f (to_list t)]. *)
-  val concat_map : 'a t -> f:('a -> 'b list) -> 'b t
+  val concat_map : 'a t -> f:(('a -> 'b list)[@local]) -> 'b t
 
-  val concat_mapi : 'a t -> f:(int -> 'a -> 'b list) -> 'b t
+  val concat_mapi : 'a t -> f:((int -> 'a -> 'b list)[@local]) -> 'b t
 
   (** [filter_map] creates a new queue with elements equal to [List.filter_map ~f (to_list
       t)]. *)
-  val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
+  val filter_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b t
 
-  val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
+  val filter_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b t
 
   (** [filter] is like [filter_map], except with [List.filter]. *)
-  val filter : 'a t -> f:('a -> bool) -> 'a t
+  val filter : 'a t -> f:(('a -> bool)[@local]) -> 'a t
 
-  val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
+  val filteri : 'a t -> f:((int -> 'a -> bool)[@local]) -> 'a t
 
   (** [filter_inplace t ~f] removes all elements of [t] that don't satisfy [f].  If [f]
       raises, [t] is unchanged.  This is inplace in that it modifies [t]; however, it uses
       space linear in the final length of [t]. *)
-  val filter_inplace : 'a t -> f:('a -> bool) -> unit
+  val filter_inplace : 'a t -> f:(('a -> bool)[@local]) -> unit
 
-  val filteri_inplace : 'a t -> f:(int -> 'a -> bool) -> unit
+  val filteri_inplace : 'a t -> f:((int -> 'a -> bool)[@local]) -> unit
 end
 
 module type Queue = sig

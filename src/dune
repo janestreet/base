@@ -8,9 +8,10 @@
  (action (run %{first_dep} -atomic -o %{targets})) (mode fallback))
 
 (library (name base) (public_name base)
- (libraries base_internalhash_types caml sexplib0 shadow_stdlib)
+ (ocamlopt_flags :standard (:include ocamlopt-flags))
+ (libraries base_internalhash_types sexplib0 shadow_stdlib)
  (c_flags :standard -D_LARGEFILE64_SOURCE (:include mpopcnt.sexp))
- (c_names exn_stubs int_math_stubs hash_stubs am_testing)
+ (c_names bytes_stubs exn_stubs int_math_stubs hash_stubs am_testing)
  (preprocess no_preprocessing)
  (lint
   (pps ppx_base ppx_base_lint -check-doc-comments -type-conv-keep-w32=both
@@ -23,3 +24,6 @@
 (ocamllex hex_lexer)
 
 (documentation)
+
+(rule (targets ocamlopt-flags) (deps)
+ (action (bash "echo '()' > ocamlopt-flags")))

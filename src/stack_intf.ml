@@ -59,7 +59,17 @@ module type S = sig
   (** [until_empty t f] repeatedly pops an element [a] off of [t] and runs [f a], until
       [t] becomes empty.  It is fine if [f] adds more elements to [t], in which case the
       most-recently-added element will be processed next. *)
-  val until_empty : 'a t -> ('a -> unit) -> unit
+  val until_empty : 'a t -> (('a -> unit)[@local]) -> unit
+
+  (** [filter_map t ~f] creates a new stack with only the elements for which [f] returns
+      [Some] *)
+  val filter_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b t
+
+  (** [filter t ~f] creates a new stack with only the elements that satisfy [f]. *)
+  val filter : 'a t -> f:(('a -> bool)[@local]) -> 'a t
+
+  (** [filter_inplace t ~f] removes all elements of [t] that don't satisfy [f]. *)
+  val filter_inplace : 'a t -> f:(('a -> bool)[@local]) -> unit
 end
 
 (** A stack implemented with an array.

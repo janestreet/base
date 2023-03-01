@@ -96,7 +96,7 @@ val sprintf : ('r, unit, string) format -> 'r
 
 (** Same as [fprintf], but instead of printing on an output channel, appends the formatted
     arguments to the given extensible buffer. *)
-val bprintf : Caml.Buffer.t -> ('r, Caml.Buffer.t, unit) format -> 'r
+val bprintf : Stdlib.Buffer.t -> ('r, Stdlib.Buffer.t, unit) format -> 'r
 
 (** Same as [sprintf], but instead of returning the string, passes it to the first
     argument. *)
@@ -105,9 +105,9 @@ val ksprintf : (string -> 'a) -> ('r, unit, string, 'a) format4 -> 'r
 (** Same as [bprintf], but instead of returning immediately, passes the buffer, after
     printing, to its first argument. *)
 val kbprintf
-  :  (Caml.Buffer.t -> 'a)
-  -> Caml.Buffer.t
-  -> ('r, Caml.Buffer.t, unit, 'a) format4
+  :  (Stdlib.Buffer.t -> 'a)
+  -> Stdlib.Buffer.t
+  -> ('r, Stdlib.Buffer.t, unit, 'a) format4
   -> 'r
 
 (** {6 Formatting error and exit functions}

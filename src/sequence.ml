@@ -496,7 +496,7 @@ module Merge_with_duplicates_element = struct
     'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
     =
     fun _cmp__a _cmp__b a__013_ b__014_ ->
-    if Ppx_compare_lib.phys_equal a__013_ b__014_
+    if Stdlib.( == ) a__013_ b__014_
     then 0
     else (
       match a__013_, b__014_ with
@@ -1305,7 +1305,7 @@ let interleaved_cartesian_product s1 s2 =
   map s1 ~f:(fun x1 -> map s2 ~f:(fun x2 -> x1, x2)) |> interleave
 ;;
 
-let of_seq (seq : _ Caml.Seq.t) =
+let of_seq (seq : _ Stdlib.Seq.t) =
   unfold_step ~init:seq ~f:(fun seq ->
     match seq () with
     | Nil -> Done
@@ -1315,9 +1315,9 @@ let of_seq (seq : _ Caml.Seq.t) =
 let to_seq (Sequence { state; next }) =
   let rec loop state =
     match next state with
-    | Done -> Caml.Seq.Nil
+    | Done -> Stdlib.Seq.Nil
     | Skip { state } -> loop state
-    | Yield { value = hd; state } -> Caml.Seq.Cons (hd, fun () -> loop state)
+    | Yield { value = hd; state } -> Stdlib.Seq.Cons (hd, fun () -> loop state)
   in
   fun () -> loop state
 ;;

@@ -18,7 +18,7 @@ module T = struct
     match sexp with
     | Sexp.List _ -> of_sexp_error "Uchar.t_of_sexp: atom needed" sexp
     | Sexp.Atom s ->
-      (try Caml.Scanf.sscanf s "U+%X" (fun i -> Uchar0.of_int i) with
+      (try Stdlib.Scanf.sscanf s "U+%X" (fun i -> Uchar0.of_int i) with
        | _ -> of_sexp_error "Uchar.t_of_sexp: atom of the form U+XXXX needed" sexp)
   ;;
 

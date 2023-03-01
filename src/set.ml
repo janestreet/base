@@ -419,6 +419,40 @@ module Tree0 = struct
     split t
   ;;
 
+  let rec split_le_gt t x ~compare_elt =
+    match t with
+    | Empty -> Empty, Empty
+    | Leaf v -> if compare_elt x v >= 0 then Leaf v, Empty else Empty, Leaf v
+    | Node (l, v, r, _, _) ->
+      let c = compare_elt x v in
+      if c = 0
+      then add_max l v, r
+      else if c < 0
+      then (
+        let ll, rl = split_le_gt l x ~compare_elt in
+        ll, join rl v r)
+      else (
+        let lr, rr = split_le_gt r x ~compare_elt in
+        join l v lr, rr)
+  ;;
+
+  let rec split_lt_ge t x ~compare_elt =
+    match t with
+    | Empty -> Empty, Empty
+    | Leaf v -> if compare_elt x v > 0 then Leaf v, Empty else Empty, Leaf v
+    | Node (l, v, r, _, _) ->
+      let c = compare_elt x v in
+      if c = 0
+      then l, add_min v r
+      else if c < 0
+      then (
+        let ll, rl = split_lt_ge l x ~compare_elt in
+        ll, join rl v r)
+      else (
+        let lr, rr = split_lt_ge r x ~compare_elt in
+        join l v lr, rr)
+  ;;
+
   (* Implementation of the set operations *)
 
   let empty = Empty
@@ -1021,6 +1055,7 @@ module Tree0 = struct
     loop set [] [@nontail]
   ;;
 
+
   let rec find t ~f =
     match t with
     | Empty -> None
@@ -1230,6 +1265,16 @@ module Accessors = struct
     like t tree1, b, like t tree2
   ;;
 
+  let split_le_gt t a =
+    let tree1, tree2 = Tree0.split_le_gt t.tree a ~compare_elt:(compare_elt t) in
+    like t tree1, like t tree2
+  ;;
+
+  let split_lt_ge t a =
+    let tree1, tree2 = Tree0.split_lt_ge t.tree a ~compare_elt:(compare_elt t) in
+    like t tree1, like t tree2
+  ;;
+
   let group_by t ~equiv = List.map (Tree0.group_by t.tree ~equiv) ~f:(like t)
   let nth t i = Tree0.nth t.tree i
   let remove_index t i = like t (Tree0.remove_index t.tree i ~compare_elt:(compare_elt t))
@@ -1344,6 +1389,8 @@ module Tree = struct
 
   let group_by t ~equiv = Tree0.group_by t ~equiv
   let split ~comparator t a = Tree0.split t a ~compare_elt:(ce comparator)
+  let split_le_gt ~comparator t a = Tree0.split_le_gt t a ~compare_elt:(ce comparator)
+  let split_lt_ge ~comparator t a = Tree0.split_lt_ge t a ~compare_elt:(ce comparator)
   let nth t i = Tree0.nth t i
   let remove_index ~comparator t i = Tree0.remove_index t i ~compare_elt:(ce comparator)
   let sexp_of_t sexp_of_a _ t = Tree0.sexp_of_t sexp_of_a t

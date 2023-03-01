@@ -1,7 +1,7 @@
 open! Import
 module Either = Either0
 
-type ('a, 'b) t = ('a, 'b) Caml.result =
+type ('a, 'b) t = ('a, 'b) Stdlib.result =
   | Ok of 'a
   | Error of 'b
 [@@deriving_inline sexp, sexp_grammar, compare, equal, hash]
@@ -97,7 +97,7 @@ let compare :
   'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
   =
   fun _cmp__a _cmp__b a__027_ b__028_ ->
-  if Ppx_compare_lib.phys_equal a__027_ b__028_
+  if Stdlib.( == ) a__027_ b__028_
   then 0
   else (
     match a__027_, b__028_ with
@@ -111,7 +111,7 @@ let equal :
   'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
   =
   fun _cmp__a _cmp__b a__033_ b__034_ ->
-  if Ppx_compare_lib.phys_equal a__033_ b__034_
+  if Stdlib.( == ) a__033_ b__034_
   then true
   else (
     match a__033_, b__034_ with

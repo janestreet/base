@@ -6,7 +6,7 @@ include Float0
 let raise_s = Error.raise_s
 
 module T = struct
-  type t = float [@@deriving_inline hash, sexp, sexp_grammar]
+  type t = float [@@deriving_inline hash, globalize, sexp, sexp_grammar]
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_float
@@ -16,6 +16,7 @@ module T = struct
     fun x -> func x
   ;;
 
+  let (globalize : (t[@ocaml.local]) -> t) = (globalize_float : (t[@ocaml.local]) -> t)
   let t_of_sexp = (float_of_sexp : Sexplib0.Sexp.t -> t)
   let sexp_of_t = (sexp_of_float : t -> Sexplib0.Sexp.t)
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = float_sexp_grammar
@@ -189,8 +190,8 @@ let euler = 0x0.93C467E37DB0C7A4D1BE3F810152CB
 let of_int = Int.to_float
 let to_int = Int.of_float
 let of_int63 i = Int63.to_float i
-let of_int64 i = Caml.Int64.to_float i
-let to_int64 = Caml.Int64.of_float
+let of_int64 i = Stdlib.Int64.to_float i
+let to_int64 = Stdlib.Int64.of_float
 let iround_lbound = lower_bound_for_int Int.num_bits
 let iround_ubound = upper_bound_for_int Int.num_bits
 
@@ -535,11 +536,11 @@ module Class = struct
     | Zero
   [@@deriving_inline compare, enumerate, sexp, sexp_grammar]
 
-  let compare = (Ppx_compare_lib.polymorphic_compare : t -> t -> int)
+  let compare = (Stdlib.compare : t -> t -> int)
   let all = ([ Infinite; Nan; Normal; Subnormal; Zero ] : t list)
 
   let t_of_sexp =
-    (let error_source__006_ = "float.ml.Class.t" in
+    (let error_source__007_ = "float.ml.Class.t" in
      function
      | Sexplib0.Sexp.Atom ("infinite" | "Infinite") -> Infinite
      | Sexplib0.Sexp.Atom ("nan" | "Nan") -> Nan
@@ -547,21 +548,21 @@ module Class = struct
      | Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") -> Subnormal
      | Sexplib0.Sexp.Atom ("zero" | "Zero") -> Zero
      | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("infinite" | "Infinite") :: _) as
-       sexp__007_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__006_ sexp__007_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("nan" | "Nan") :: _) as sexp__007_ ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__006_ sexp__007_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("normal" | "Normal") :: _) as sexp__007_ ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__006_ sexp__007_
+       sexp__008_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("nan" | "Nan") :: _) as sexp__008_ ->
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("normal" | "Normal") :: _) as sexp__008_ ->
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
      | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") :: _) as
-       sexp__007_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__006_ sexp__007_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp__007_ ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__006_ sexp__007_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__005_ ->
-       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__006_ sexp__005_
-     | Sexplib0.Sexp.List [] as sexp__005_ ->
-       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__006_ sexp__005_
-     | sexp__005_ ->
-       Sexplib0.Sexp_conv_error.unexpected_stag error_source__006_ sexp__005_
+       sexp__008_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp__008_ ->
+       Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
+     | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__006_ ->
+       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__007_ sexp__006_
+     | Sexplib0.Sexp.List [] as sexp__006_ ->
+       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__007_ sexp__006_
+     | sexp__006_ ->
+       Sexplib0.Sexp_conv_error.unexpected_stag error_source__007_ sexp__006_
        : Sexplib0.Sexp.t -> t)
   ;;
 
@@ -897,8 +898,8 @@ let sign_or_nan t : Sign_or_nan.t =
 ;;
 
 let ieee_negative t =
-  let bits = Caml.Int64.bits_of_float t in
-  Poly.(bits < Caml.Int64.zero)
+  let bits = Stdlib.Int64.bits_of_float t in
+  Poly.(bits < Stdlib.Int64.zero)
 ;;
 
 let exponent_bits = 11
@@ -909,15 +910,15 @@ let mantissa_mask = Int63.(shift_left one mantissa_bits - one)
 let mantissa_mask64 = Int63.to_int64 mantissa_mask
 
 let ieee_exponent t =
-  let bits = Caml.Int64.bits_of_float t in
+  let bits = Stdlib.Int64.bits_of_float t in
   Int64.(bit_and (shift_right_logical bits mantissa_bits) exponent_mask64)
-  |> Caml.Int64.to_int
+  |> Stdlib.Int64.to_int
 ;;
 
 let ieee_mantissa t =
-  let bits = Caml.Int64.bits_of_float t in
+  let bits = Stdlib.Int64.bits_of_float t in
   (* This is safe because mantissa_mask64 < Int63.max_value *)
-  (Int63.of_int64_trunc [@inlined]) Caml.Int64.(logand bits mantissa_mask64)
+  (Int63.of_int64_trunc [@inlined]) Stdlib.Int64.(logand bits mantissa_mask64)
 ;;
 
 let create_ieee_exn ~negative ~exponent ~mantissa =
@@ -931,11 +932,13 @@ let create_ieee_exn ~negative ~exponent ~mantissa =
       (Int63.to_string mantissa_mask)
       ()
   else (
-    let sign_bits = if negative then Caml.Int64.min_int else Caml.Int64.zero in
-    let expt_bits = Caml.Int64.shift_left (Caml.Int64.of_int exponent) mantissa_bits in
+    let sign_bits = if negative then Stdlib.Int64.min_int else Stdlib.Int64.zero in
+    let expt_bits =
+      Stdlib.Int64.shift_left (Stdlib.Int64.of_int exponent) mantissa_bits
+    in
     let mant_bits = Int63.to_int64 mantissa in
-    let bits = Caml.Int64.(logor sign_bits (logor expt_bits mant_bits)) in
-    Caml.Int64.float_of_bits bits)
+    let bits = Stdlib.Int64.(logor sign_bits (logor expt_bits mant_bits)) in
+    Stdlib.Int64.float_of_bits bits)
 ;;
 
 let create_ieee ~negative ~exponent ~mantissa =

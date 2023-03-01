@@ -22,9 +22,12 @@ open! Import
 type 'a t = 'a option =
   | None
   | Some of 'a
-[@@deriving_inline compare, hash, sexp_grammar]
+[@@deriving_inline compare, globalize, hash, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+
+val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
+
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
@@ -85,7 +88,7 @@ val value_or_thunk : 'a t -> default:((unit -> 'a)[@local]) -> 'a
 
 
 (** On [None], returns [init]. On [Some x], returns [f init x]. *)
-val fold : 'a t -> init:'accum -> f:(('accum -> 'a -> 'accum)[@local]) -> 'accum
+val fold : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc)[@local]) -> 'acc
 
 (** Checks whether the provided element is there, using [equal]. *)
 val mem : 'a t -> 'a -> equal:(('a -> 'a -> bool)[@local]) -> bool
@@ -110,7 +113,7 @@ val to_list : 'a t -> 'a list
 val to_array : 'a t -> 'a array
 
 (** [call x f] runs an optional function [~f] on the argument. *)
-val call : 'a -> f:(('a -> unit)[@local]) t -> unit
+val call : 'a -> f:(('a -> unit) t[@local]) -> unit
 
 (** [merge a b ~f] merges together the values from [a] and [b] using [f].  If both [a] and
     [b] are [None], returns [None].  If only one is [Some], returns that one, and if both
@@ -155,16 +158,16 @@ val is_empty : 'a t -> bool [@@deprecated "[since 2019-07] Use [is_none] instead
 
 val fold_result
   :  'a t
-  -> init:'accum
-  -> f:(('accum -> 'a -> ('accum, 'e) Result.t)[@local])
-  -> ('accum, 'e) Result.t
+  -> init:'acc
+  -> f:(('acc -> 'a -> ('acc, 'e) Result.t)[@local])
+  -> ('acc, 'e) Result.t
 [@@deprecated "[since 2019-07] It is not a useful function"]
 
 val fold_until
   :  'a t
-  -> init:'accum
-  -> f:(('accum -> 'a -> ('accum, 'final) Container.Continue_or_stop.t)[@local])
-  -> finish:(('accum -> 'final)[@local])
+  -> init:'acc
+  -> f:(('acc -> 'a -> ('acc, 'final) Container.Continue_or_stop.t)[@local])
+  -> finish:(('acc -> 'final)[@local])
   -> 'final
 [@@deprecated "[since 2019-07] It is not a useful function"]
 

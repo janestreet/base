@@ -70,7 +70,7 @@ let%test_module "common prefix and suffix" =
     ;;
 
     let get_shortest_and_longest list =
-      let compare_by_length = Comparable.lift Int.compare ~f:String.length in
+      let compare_by_length a b = Comparable.lift Int.compare ~f:String.length a b in
       Option.both
         (List.min_elt list ~compare:compare_by_length)
         (List.max_elt list ~compare:compare_by_length)

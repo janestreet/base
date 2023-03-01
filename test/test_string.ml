@@ -305,7 +305,7 @@ let%test_module "Search_pattern" =
           then ""
           else (
             let b = x (k - 1) in
-            b ^ make 1 (Caml.Char.unsafe_chr (65 + k)) ^ b)
+            b ^ make 1 (Stdlib.Char.unsafe_chr (65 + k)) ^ b)
         ;;
 
         let%expect_test _ =
@@ -846,7 +846,7 @@ let%test_module "Hash" =
     let%test_unit _ =
       List.iter
         ~f:(fun string ->
-          assert (Int.( = ) (hash string) (Caml.Hashtbl.hash string));
+          assert (Int.( = ) (hash string) (Stdlib.Hashtbl.hash string));
           (* with 31-bit integers, the hash computed by ppx_hash overflows so it doesn't match
              polymorphic hash exactly. *)
           if Int.( > ) Int.num_bits 31

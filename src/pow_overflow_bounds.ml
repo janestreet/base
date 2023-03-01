@@ -82,11 +82,11 @@ let overflow_bound_max_int_value : int =
 
 let int_positive_overflow_bounds : int array =
   match Int_conversions.num_bits_int with
-  | 32 -> Array.map int32_positive_overflow_bounds ~f:Caml.Int32.to_int
+  | 32 -> Array.map int32_positive_overflow_bounds ~f:Stdlib.Int32.to_int
   | 63 ->
-    [| Caml.Int64.to_int 4611686018427387903L
-    ;  Caml.Int64.to_int 4611686018427387903L
-    ;  Caml.Int64.to_int 2147483647L
+    [| Stdlib.Int64.to_int 4611686018427387903L
+    ;  Stdlib.Int64.to_int 4611686018427387903L
+    ;  Stdlib.Int64.to_int 2147483647L
     ;  1664510
     ;  46340
     ;  5404

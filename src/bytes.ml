@@ -4,8 +4,9 @@ module Array = Array0
 let stage = Staged.stage
 
 module T = struct
-  type t = bytes [@@deriving_inline sexp, sexp_grammar]
+  type t = bytes [@@deriving_inline globalize, sexp, sexp_grammar]
 
+  let (globalize : (t[@ocaml.local]) -> t) = (globalize_bytes : (t[@ocaml.local]) -> t)
   let t_of_sexp = (bytes_of_sexp : Sexplib0.Sexp.t -> t)
   let sexp_of_t = (sexp_of_bytes : t -> Sexplib0.Sexp.t)
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = bytes_sexp_grammar
@@ -15,7 +16,7 @@ module T = struct
   include Bytes0
 
   let module_name = "Base.Bytes"
-  let pp fmt t = Caml.Format.fprintf fmt "%S" (to_string t)
+  let pp fmt t = Stdlib.Format.fprintf fmt "%S" (to_string t)
 end
 
 include T

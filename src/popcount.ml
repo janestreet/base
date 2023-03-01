@@ -7,7 +7,7 @@ external int_popcount : int -> int = "Base_int_math_int_popcount" [@@noalloc]
    OCaml rather than use C stubs. Implementation adapted from:
    https://en.wikipedia.org/wiki/Hamming_weight#Efficient_implementation *)
 let int64_popcount =
-  let open Caml.Int64 in
+  let open Stdlib.Int64 in
   let ( + ) = add in
   let ( - ) = sub in
   let ( * ) = mul in
@@ -35,12 +35,12 @@ let int64_popcount =
 let int32_popcount =
   (* On 64-bit systems, this is faster than implementing using [int32] arithmetic. *)
   let mask = 0xffff_ffffL in
-  fun [@inline] x -> int64_popcount (Caml.Int64.logand (Caml.Int64.of_int32 x) mask)
+  fun [@inline] x -> int64_popcount (Stdlib.Int64.logand (Stdlib.Int64.of_int32 x) mask)
 ;;
 
 let nativeint_popcount =
-  match Caml.Nativeint.size with
-  | 32 -> fun [@inline] x -> int32_popcount (Caml.Nativeint.to_int32 x)
-  | 64 -> fun [@inline] x -> int64_popcount (Caml.Int64.of_nativeint x)
+  match Stdlib.Nativeint.size with
+  | 32 -> fun [@inline] x -> int32_popcount (Stdlib.Nativeint.to_int32 x)
+  | 64 -> fun [@inline] x -> int64_popcount (Stdlib.Int64.of_nativeint x)
   | _ -> assert false
 ;;

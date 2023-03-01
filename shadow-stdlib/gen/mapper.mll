@@ -8,7 +8,7 @@ let deprecated_msg ~is_exn what =
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
      Referring to the stdlib directly is discouraged by Base. You should either\n\
      use the equivalent functionality offered by Base, or if you really want to\n\
-     refer to the stdlib, use Caml.%s instead\"]"
+     refer to the stdlib, use Stdlib.%s instead\"]"
     (if is_exn then "@" else "@@")
     what
 
@@ -17,7 +17,7 @@ let deprecated_msg_no_equivalent ~is_exn what =
     "[%sdeprecated \"\\\n\
      [2016-09] this element comes from the stdlib distributed with OCaml.\n\
      There is not equivalent functionality in Base or Stdio at the moment,\n\
-     so you need to use [Caml.%s] instead\"]"
+     so you need to use [Stdlib.%s] instead\"]"
     (if is_exn then "@" else "@@")
     what
 
@@ -39,7 +39,7 @@ let deprecated_msg_with_approx_repl ~is_exn ~id repl =
      There is no equivalent functionality in Base or Stdio but you can use\n\
      [%s] instead.\n\
      Alternatively, if you really want to refer the stdlib you can use\n\
-     [Caml.%s].\"]"
+     [Stdlib.%s].\"]"
     (if is_exn then "@" else "@@")
     repl id
 
@@ -103,6 +103,9 @@ let val_replacement = function
   | "abs"                 -> No_equivalent
   | "abs_float"           -> No_equivalent
   | "acos"                -> Repl "Float.acos"
+  | "acosh"               -> Repl "Float.acosh"
+  | "asinh"               -> Repl "Float.asinh"
+  | "atanh"               -> Repl "Float.atanh"
   | "asin"                -> Repl "Float.asin"
   | "at_exit"             -> No_equivalent
   | "atan"                -> Repl "Float.atan"
@@ -261,7 +264,7 @@ let module_replacement = function
   | "Format" ->
     let repl_text =
       "[Base] doesn't export a [Format] module, although the \n\
-       [Caml.Format.formatter] type is available (as [Formatter.t])\n\
+       [Stdlib.Format.formatter] type is available (as [Formatter.t])\n\
        for interaction with other libraries"
     in
     Some (Repl_text repl_text)
@@ -271,20 +274,21 @@ let module_replacement = function
   | "Seq"      -> Some (Approx "Sequence")
   | _          -> None
 
-let replace ~is_exn id replacement line =
-  let msg =
-    match replacement with
-    | No_equivalent  -> deprecated_msg_no_equivalent ~is_exn id
-    | Repl repl      -> deprecated_msg_with_repl ~is_exn repl
-    | Repl_text text -> deprecated_msg_with_repl_text ~is_exn text
-    | Approx repl    -> deprecated_msg_with_approx_repl ~is_exn repl ~id
-  in
-  sprintf "%s\n%s" line msg
+let replace ~is_exn id replacement =
+  match replacement with
+  | No_equivalent  -> deprecated_msg_no_equivalent ~is_exn id
+  | Repl repl      -> deprecated_msg_with_repl ~is_exn repl
+  | Repl_text text -> deprecated_msg_with_repl_text ~is_exn text
+  | Approx repl    -> deprecated_msg_with_approx_repl ~is_exn repl ~id
 ;;
+
+let is_alias = function
+  | "format" | "format4" | "format6" -> true
+  | _ -> false
 }
 
 let id_trail = ['a'-'z' 'A'-'Z' '_' '0'-'9']*
-               let id = ['a'-'z' 'A'-'Z' '_' '0'-'9'] id_trail
+let id = ['a'-'z' 'A'-'Z' '_' '0'-'9'] id_trail
 let val_id = id | '(' [^ ')']* ')'
 let params = ('(' [^')']* ')' | ['+' '-']? '\'' id) " "
 
@@ -294,26 +298,29 @@ rule line = parse
   | "module Camlinternal" _*
     { "" (* We can't deprecate these *) }
   | "module Bigarray" _* { "" (* Don't deprecate it yet *) }
-  | "type " (params? (id as id) _* as def)
-      { sprintf "type nonrec %s"
+  | "type " (params? as params) (id as id) (_* as def)
+      { sprintf "type nonrec %s%s = %sStdlib.%s%s\n%s"
+          params id
+          params id
+          (if is_alias id then "" else def)
           (match type_replacement id with
-           | Some replacement -> replace ~is_exn:false id replacement def
-           | None -> sprintf "%s\n%s" def (deprecated_msg ~is_exn:false id)) }
+           | Some replacement -> replace ~is_exn:false id replacement
+           | None -> deprecated_msg ~is_exn:false id) }
 
-  | val_ (val_id as id) _* as line { replace ~is_exn:false id (val_replacement id) line }
+  | val_ (val_id as id) _* as line
+    { sprintf "%s\n%s" line (replace ~is_exn:false id (val_replacement id)) }
 
   | "module " (id as id) " = Stdlib__" (id as id2) (_* as line)
       {
-        let line =
-          Printf.sprintf "module %s = Stdlib.%s %s"
-            id (String.capitalize_ascii id2) line in
-        match module_replacement id with
-        | Some replacement -> replace ~is_exn:false id replacement line
-        | None -> sprintf "%s\n%s" line (deprecated_msg ~is_exn:false id) }
+        Printf.sprintf "module %s = Stdlib.%s %s\n%s"
+          id (String.capitalize_ascii id2) line
+          (match module_replacement id with
+           | Some replacement -> replace ~is_exn:false id replacement
+           | None -> deprecated_msg ~is_exn:false id) }
 
   | "exception " (id as id) _* as line
     { match exception_replacement id with
-      | Some replacement -> replace ~is_exn:true id replacement line
+      | Some replacement -> sprintf "%s\n%s" line (replace ~is_exn:true id replacement)
       | None ->
         let predefined_exceptions =
           [ "Out_of_memory"
@@ -333,9 +340,10 @@ rule line = parse
         then ""
         else sprintf "%s\n%s" line (deprecated_msg ~is_exn:true id)
     }
-  | "module " (id as id) _* as line
-    { match module_replacement id with
-      | Some replacement -> replace ~is_exn:false id replacement line
-      | None -> sprintf "%s\n%s" line (deprecated_msg ~is_exn:false id) }
+  | "module " (id as id) _*
+    { sprintf "module %s = Stdlib.%s\n%s" id id
+        (match module_replacement id with
+         | Some replacement -> replace ~is_exn:false id replacement
+         | None -> deprecated_msg ~is_exn:false id) }
   | _* as line
     { ksprintf failwith "cannot parse this: %s" line }

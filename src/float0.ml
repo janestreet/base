@@ -5,27 +5,27 @@ open! Import
    functions are available within this module. *)
 open! Float_replace_polymorphic_compare
 
-let ceil = Caml.ceil
-let floor = Caml.floor
-let mod_float = Caml.mod_float
-let modf = Caml.modf
-let float_of_string = Caml.float_of_string
-let float_of_string_opt = Caml.float_of_string_opt
-let nan = Caml.nan
-let infinity = Caml.infinity
-let neg_infinity = Caml.neg_infinity
-let max_finite_value = Caml.max_float
-let epsilon_float = Caml.epsilon_float
-let classify_float = Caml.classify_float
-let abs_float = Caml.abs_float
-let is_integer = Caml.Float.is_integer
-let ( ** ) = Caml.( ** )
+let ceil = Stdlib.ceil
+let floor = Stdlib.floor
+let mod_float = Stdlib.mod_float
+let modf = Stdlib.modf
+let float_of_string = Stdlib.float_of_string
+let float_of_string_opt = Stdlib.float_of_string_opt
+let nan = Stdlib.nan
+let infinity = Stdlib.infinity
+let neg_infinity = Stdlib.neg_infinity
+let max_finite_value = Stdlib.max_float
+let epsilon_float = Stdlib.epsilon_float
+let classify_float = Stdlib.classify_float
+let abs_float = Stdlib.abs_float
+let is_integer = Stdlib.Float.is_integer
+let ( ** ) = Stdlib.( ** )
 
 let ( %. ) a b =
   (* Raise in case of a negative modulus, as does Int.( % ). *)
   if b < 0.
   then Printf.invalid_argf "%f %% %f in float0.ml: modulus should be positive" a b ();
-  let m = Caml.mod_float a b in
+  let m = Stdlib.mod_float a b in
   (* Produce a non-negative result in analogy with Int.( % ). *)
   if m < 0. then m +. b else m
 ;;
@@ -33,7 +33,7 @@ let ( %. ) a b =
 (* The bits of INRIA's [Pervasives] that we just want to expose in [Float]. Most are
    already deprecated in [Pervasives], and eventually all of them should be. *)
 include (
-  Caml :
+  Stdlib :
   sig
     external frexp : float -> float * int = "caml_frexp_float"
 
@@ -61,6 +61,15 @@ include (
     external acos : float -> float = "caml_acos_float" "acos" [@@unboxed] [@@noalloc]
     external asin : float -> float = "caml_asin_float" "asin" [@@unboxed] [@@noalloc]
     external atan : float -> float = "caml_atan_float" "atan" [@@unboxed] [@@noalloc]
+
+    external acosh : float -> float = "caml_acosh_float" "caml_acosh"
+    [@@unboxed] [@@noalloc]
+
+    external asinh : float -> float = "caml_asinh_float" "caml_asinh"
+    [@@unboxed] [@@noalloc]
+
+    external atanh : float -> float = "caml_atanh_float" "caml_atanh"
+    [@@unboxed] [@@noalloc]
 
     external atan2 : float -> float -> float = "caml_atan2_float" "atan2"
     [@@unboxed] [@@noalloc]
@@ -99,24 +108,24 @@ let to_int64_preserve_order t =
   then (* also includes -0. *)
     Some 0L
   else if t > 0.
-  then Some (Caml.Int64.bits_of_float t)
-  else Some (Caml.Int64.neg (Caml.Int64.bits_of_float (-.t)))
+  then Some (Stdlib.Int64.bits_of_float t)
+  else Some (Stdlib.Int64.neg (Stdlib.Int64.bits_of_float (-.t)))
 ;;
 
 let to_int64_preserve_order_exn x = Option.value_exn (to_int64_preserve_order x)
 
 let of_int64_preserve_order x =
   if Int64_replace_polymorphic_compare.( >= ) x 0L
-  then Caml.Int64.float_of_bits x
-  else ~-.(Caml.Int64.float_of_bits (Caml.Int64.neg x))
+  then Stdlib.Int64.float_of_bits x
+  else ~-.(Stdlib.Int64.float_of_bits (Stdlib.Int64.neg x))
 ;;
 
 let one_ulp dir t =
   match to_int64_preserve_order t with
-  | None -> Caml.nan
+  | None -> Stdlib.nan
   | Some x ->
     of_int64_preserve_order
-      (Caml.Int64.add
+      (Stdlib.Int64.add
          x
          (match dir with
           | `Up -> 1L
@@ -145,7 +154,7 @@ let one_ulp dir t =
    [upper_bound_for_int x  <    2 ** (1-x) ]
 *)
 let upper_bound_for_int num_bits =
-  let exp = Caml.float_of_int (num_bits - 1) in
+  let exp = Stdlib.float_of_int (num_bits - 1) in
   one_ulp `Down (2. ** exp)
 ;;
 
@@ -157,11 +166,11 @@ let is_x_minus_one_exact x =
      the same precision issues: you need to make sure [x] is 64-bit.
   *)
   let open Int64_replace_polymorphic_compare in
-  not (Caml.Int64.bits_of_float x = Caml.Int64.bits_of_float (x -. 1.))
+  not (Stdlib.Int64.bits_of_float x = Stdlib.Int64.bits_of_float (x -. 1.))
 ;;
 
 let lower_bound_for_int num_bits =
-  let exp = Caml.float_of_int (num_bits - 1) in
+  let exp = Stdlib.float_of_int (num_bits - 1) in
   let min_int_as_float = ~-.(2. ** exp) in
   let open Int_replace_polymorphic_compare in
   if num_bits - 1 < 53 (* 53 = #bits in the float's mantissa with sign included *)

@@ -1,6 +1,6 @@
 (* [Char0] defines char functions that are primitives or can be simply defined in terms of
-   [Caml.Char].  [Char0] is intended to completely express the part of [Caml.Char] that
-   [Base] uses -- no other file in Base other than char0.ml should use [Caml.Char].
+   [Stdlib.Char].  [Char0] is intended to completely express the part of [Stdlib.Char] that
+   [Base] uses -- no other file in Base other than char0.ml should use [Stdlib.Char].
    [Char0] has few dependencies, and so is available early in Base's build order.  All
    Base files that need to use chars and come before [Base.Char] in build order should do
    [module Char = Char0].  Defining [module Char = Char0] is also necessary because it
@@ -9,14 +9,14 @@
 open! Import0
 
 let failwithf = Printf.failwithf
-let escaped = Caml.Char.escaped
-let lowercase = Caml.Char.lowercase_ascii
-let to_int = Caml.Char.code
-let unsafe_of_int = Caml.Char.unsafe_chr
-let uppercase = Caml.Char.uppercase_ascii
+let escaped = Stdlib.Char.escaped
+let lowercase = Stdlib.Char.lowercase_ascii
+let to_int = Stdlib.Char.code
+let unsafe_of_int = Stdlib.Char.unsafe_chr
+let uppercase = Stdlib.Char.uppercase_ascii
 
 (* We use our own range test when converting integers to chars rather than
-   calling [Caml.Char.chr] because it's simple and it saves us a function call
+   calling [Stdlib.Char.chr] because it's simple and it saves us a function call
    and the try-with (exceptions cost, especially in the world with backtraces). *)
 let int_is_ok i = 0 <= i && i <= 255
 let min_value = unsafe_of_int 0

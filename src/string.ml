@@ -1,6 +1,7 @@
 open! Import
 module Array = Array0
 module Bytes = Bytes0
+module Int = Int0
 include String0
 
 let invalid_argf = Printf.invalid_argf
@@ -8,7 +9,9 @@ let raise_s = Error.raise_s
 let stage = Staged.stage
 
 module T = struct
-  type t = string [@@deriving_inline hash, sexp, sexp_grammar]
+  type t = string [@@deriving_inline globalize, hash, sexp, sexp_grammar]
+
+  let (globalize : (t[@ocaml.local]) -> t) = (globalize_string : (t[@ocaml.local]) -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_string
@@ -145,22 +148,22 @@ let rindex_from_exn =
 
 let index t char =
   try Some (index_exn t char) with
-  | Not_found_s _ | Caml.Not_found -> None
+  | Not_found_s _ | Stdlib.Not_found -> None
 ;;
 
 let rindex t char =
   try Some (rindex_exn t char) with
-  | Not_found_s _ | Caml.Not_found -> None
+  | Not_found_s _ | Stdlib.Not_found -> None
 ;;
 
 let index_from t pos char =
   try Some (index_from_exn t pos char) with
-  | Not_found_s _ | Caml.Not_found -> None
+  | Not_found_s _ | Stdlib.Not_found -> None
 ;;
 
 let rindex_from t pos char =
   try Some (rindex_from_exn t pos char) with
-  | Not_found_s _ | Caml.Not_found -> None
+  | Not_found_s _ | Stdlib.Not_found -> None
 ;;
 
 module Search_pattern0 = struct
@@ -370,41 +373,41 @@ module Search_pattern0 = struct
     [@@deriving_inline equal, sexp_of]
 
     let equal =
-      (fun a__002_ b__003_ ->
-         if Ppx_compare_lib.phys_equal a__002_ b__003_
+      (fun a__003_ b__004_ ->
+         if Stdlib.( == ) a__003_ b__004_
          then true
          else
-           Ppx_compare_lib.( && )
-             (equal_string a__002_.pattern b__003_.pattern)
-             (Ppx_compare_lib.( && )
-                (equal_bool a__002_.case_sensitive b__003_.case_sensitive)
-                (equal_array equal_int a__002_.kmp_array b__003_.kmp_array))
+           Stdlib.( && )
+             (equal_string a__003_.pattern b__004_.pattern)
+             (Stdlib.( && )
+                (equal_bool a__003_.case_sensitive b__004_.case_sensitive)
+                (equal_array equal_int a__003_.kmp_array b__004_.kmp_array))
            : t -> t -> bool)
     ;;
 
     let sexp_of_t =
-      (fun { pattern = pattern__007_
-           ; case_sensitive = case_sensitive__009_
-           ; kmp_array = kmp_array__011_
+      (fun { pattern = pattern__008_
+           ; case_sensitive = case_sensitive__010_
+           ; kmp_array = kmp_array__012_
            } ->
-        let bnds__006_ = ([] : _ Stdlib.List.t) in
-        let bnds__006_ =
-          let arg__012_ = sexp_of_array sexp_of_int kmp_array__011_ in
-          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "kmp_array"; arg__012_ ] :: bnds__006_
+        let bnds__007_ = ([] : _ Stdlib.List.t) in
+        let bnds__007_ =
+          let arg__013_ = sexp_of_array sexp_of_int kmp_array__012_ in
+          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "kmp_array"; arg__013_ ] :: bnds__007_
            : _ Stdlib.List.t)
         in
-        let bnds__006_ =
-          let arg__010_ = sexp_of_bool case_sensitive__009_ in
-          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "case_sensitive"; arg__010_ ]
-           :: bnds__006_
+        let bnds__007_ =
+          let arg__011_ = sexp_of_bool case_sensitive__010_ in
+          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "case_sensitive"; arg__011_ ]
+           :: bnds__007_
            : _ Stdlib.List.t)
         in
-        let bnds__006_ =
-          let arg__008_ = sexp_of_string pattern__007_ in
-          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pattern"; arg__008_ ] :: bnds__006_
+        let bnds__007_ =
+          let arg__009_ = sexp_of_string pattern__008_ in
+          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pattern"; arg__009_ ] :: bnds__007_
            : _ Stdlib.List.t)
         in
-        Sexplib0.Sexp.List bnds__006_
+        Sexplib0.Sexp.List bnds__007_
         : t -> Sexplib0.Sexp.t)
     ;;
 
@@ -611,12 +614,12 @@ let rsplit2_exn =
 
 let lsplit2 line ~on =
   try Some (lsplit2_exn line ~on) with
-  | Not_found_s _ | Caml.Not_found -> None
+  | Not_found_s _ | Stdlib.Not_found -> None
 ;;
 
 let rsplit2 line ~on =
   try Some (rsplit2_exn line ~on) with
-  | Not_found_s _ | Caml.Not_found -> None
+  | Not_found_s _ | Stdlib.Not_found -> None
 ;;
 
 let rec char_list_mem l (c : char) =
@@ -894,6 +897,7 @@ let tr_multi ~target ~replacement =
 
 let concat_array ?sep ar = concat ?sep (Array.to_list ar)
 let concat_map ?sep s ~f = concat_array ?sep (Array.map (to_array s) ~f)
+let concat_mapi ?sep t ~f = concat_array ?sep (Array.mapi (to_array t) ~f)
 
 let concat_lines =
   let rec line_lengths ~lines ~newline_len ~sum =
@@ -1164,7 +1168,7 @@ include Hash
 
 (* for interactive top-levels -- modules deriving from String should have String's pretty
    printer. *)
-let pp ppf string = Caml.Format.fprintf ppf "%S" string
+let pp ppf string = Stdlib.Format.fprintf ppf "%S" string
 let of_char c = make 1 c
 
 let of_char_list l =
@@ -1172,6 +1176,10 @@ let of_char_list l =
   List.iteri l ~f:(fun i c -> Bytes.set t i c);
   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t
 ;;
+
+let of_list = of_char_list
+let of_array a = init (Array.length a) ~f:(Array.get a)
+let append = ( ^ )
 
 let pad_right ?(char = ' ') s ~len =
   let src_len = length s in
@@ -1194,6 +1202,192 @@ let pad_left ?(char = ' ') s ~len =
     Bytes.fill ~pos:0 ~len:(len - src_len) res char;
     Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res)
 ;;
+
+(* Called upon first difference generated by filtering. Allocates [buffer_len] bytes
+   for new result, and copies [prefix_len] unchanged characters from [src].
+   Always returns a local buffer. *)
+let local_copy_prefix (src [@local]) ~prefix_len ~buffer_len =
+  let dst = Bytes.create_local buffer_len in
+  Bytes.Primitives.unsafe_blit_string ~src ~dst ~src_pos:0 ~dst_pos:0 ~len:prefix_len;
+   dst
+;;
+
+(* Copies a perhaps-local buffer into a definitely-global string. *)
+let local_copy_to_string (buf [@local]) ~pos =
+  let str = Bytes.unsafe_to_string ~no_mutation_while_string_reachable:buf in
+  unsafe_sub str ~pos:0 ~len:pos [@nontail]
+;;
+
+include struct
+  open struct
+    (* filter_map helpers *)
+
+    (* Filters from string [src] into an allocated buffer [dst];
+       copies the allocated buffer to a heap-allocated result string.
+
+       Pre-conditions:
+       [src_len = length src]
+       [src != dst]
+       [0 <= src_pos < src_len]
+       [0 <= dst_pos < length dst]
+    *)
+    let filter_mapi_into src (dst [@local]) ~f ~src_pos ~dst_pos ~src_len =
+      let dst_pos =  (ref dst_pos) in
+      for src_pos = src_pos to src_len - 1 do
+        match f src_pos (unsafe_get src src_pos) with
+        | None -> ()
+        | Some c ->
+          Bytes.unsafe_set dst !dst_pos c;
+          incr dst_pos
+      done;
+      local_copy_to_string dst ~pos:!dst_pos
+    ;;
+
+    (* Filters [t]. If the result turns out to be identical to the input, returns [t]
+       directly without needing to allocate a buffer and traverse the string twice.
+
+       Pre-condition: [len == length t]
+       Pre-condition: [0 <= pos <= len] *)
+    let rec filter_mapi_maybe_id t ~f ~pos ~len =
+      if pos = len
+      then t
+      else (
+        let c1 = unsafe_get t pos in
+        let next = Int.succ pos in
+        match f pos c1 with
+        | Some c2 when Char.equal c1 c2 ->
+          (* if nothing has changed, continue *)
+          filter_mapi_maybe_id t ~f ~pos:next ~len
+        | option ->
+          (* If a character has been changed or dropped, begin an output buffer up to
+             [pos], and write the new character into it. *)
+          let copy = local_copy_prefix t ~prefix_len:pos ~buffer_len:len in
+          let dst_pos =
+            match option with
+            | None -> pos
+            | Some c ->
+              Bytes.unsafe_set copy pos c;
+              next
+          in
+          filter_mapi_into t copy ~f ~src_pos:next ~dst_pos ~src_len:len [@nontail])
+    ;;
+  end
+
+  (* filter_map functions *)
+
+  let filter_mapi t ~f = filter_mapi_maybe_id t ~f ~pos:0 ~len:(length t)
+  let filter_map t ~f = filter_mapi t ~f:(fun _ c -> f c) [@nontail]
+end
+
+include struct
+  open struct
+    (* partition helpers *)
+
+    let partition_map_into src ~fsts ~snds ~f ~len ~src_pos ~fst_pos ~snd_pos =
+      let fst_pos =  (ref fst_pos) in
+      let snd_pos =  (ref snd_pos) in
+      for src_pos = src_pos to len - 1 do
+        match  (f (unsafe_get src src_pos) : (_, _) Either.t) with
+        | First c ->
+          Bytes.unsafe_set fsts !fst_pos c;
+          incr fst_pos
+        | Second c ->
+          Bytes.unsafe_set snds !snd_pos c;
+          incr snd_pos
+      done;
+      local_copy_to_string fsts ~pos:!fst_pos, local_copy_to_string snds ~pos:!snd_pos
+    ;;
+
+    let partition_map_difference src ~f ~len ~pos:src_pos ~fst_pos ~snd_pos either =
+      let fsts = local_copy_prefix src ~prefix_len:fst_pos ~buffer_len:len in
+      let snds = local_copy_prefix src ~prefix_len:snd_pos ~buffer_len:len in
+      let fst_pos, snd_pos =
+        match (either : (_, _) Either.t) with
+        | First c ->
+          Bytes.unsafe_set fsts fst_pos c;
+           (fst_pos + 1, snd_pos)
+        | Second c ->
+          Bytes.unsafe_set snds snd_pos c;
+           (fst_pos, snd_pos + 1)
+      in
+      partition_map_into
+        src
+        ~fsts
+        ~snds
+        ~f
+        ~len
+        ~src_pos:(src_pos + 1)
+        ~fst_pos
+        ~snd_pos [@nontail]
+    ;;
+
+    let rec partition_map_first_maybe_id src ~f ~pos ~len =
+      if pos = len
+      then src, ""
+      else (
+        let c1 = unsafe_get src pos in
+        match  (f c1 : (_, _) Either.t) with
+        | First c2 when Char.equal c1 c2 ->
+          partition_map_first_maybe_id src ~f ~len ~pos:(pos + 1)
+        | either ->
+          partition_map_difference
+            src
+            ~f
+            ~len
+            ~pos
+            ~fst_pos:pos
+            ~snd_pos:0
+            either [@nontail])
+    ;;
+
+    let rec partition_map_second_maybe_id src ~f ~pos ~len =
+      if pos = len
+      then "", src
+      else (
+        let c1 = unsafe_get src pos in
+        match  (f c1 : (_, _) Either.t) with
+        | Second c2 when Char.equal c1 c2 ->
+          partition_map_second_maybe_id src ~f ~len ~pos:(pos + 1)
+        | either ->
+          partition_map_difference
+            src
+            ~f
+            ~len
+            ~pos
+            ~fst_pos:0
+            ~snd_pos:pos
+            either [@nontail])
+    ;;
+  end
+
+  (* partition functions *)
+
+  let partition_map src ~f =
+    let len = length src in
+    if len = 0
+    then "", ""
+    else (
+      let c1 = unsafe_get src 0 in
+      match  (f c1 : (_, _) Either.t) with
+      | First c2 when Char.equal c1 c2 -> partition_map_first_maybe_id src ~f ~len ~pos:1
+      | Second c2 when Char.equal c1 c2 ->
+        partition_map_second_maybe_id src ~f ~len ~pos:1
+      | either ->
+        partition_map_difference
+          src
+          ~f
+          ~len
+          ~pos:0
+          ~fst_pos:0
+          ~snd_pos:0
+          either [@nontail])
+  ;;
+
+  let partition_tf t ~f =
+    partition_map t ~f:(fun c -> if f c then  (First c) else  (Second c)) [@nontail
+    ]
+  ;;
+end
 
 module Escaping = struct
   (* If this is changed, make sure to update [escape], which attempts to ensure all the

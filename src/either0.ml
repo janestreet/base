@@ -9,7 +9,7 @@ let compare :
   'f 's. ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
   =
   fun _cmp__f _cmp__s a__001_ b__002_ ->
-  if Ppx_compare_lib.phys_equal a__001_ b__002_
+  if Stdlib.( == ) a__001_ b__002_
   then 0
   else (
     match a__001_, b__002_ with

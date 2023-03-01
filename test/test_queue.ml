@@ -17,9 +17,9 @@ let%test_module _ =
 
      let%test_unit _ =
        let t = create () in
-       [%test_result: int] (capacity t) ~expect:1;
+       [%test_result: int] (capacity t) ~expect:2;
        enqueue t 1;
-       [%test_result: int] (capacity t) ~expect:1;
+       [%test_result: int] (capacity t) ~expect:2;
        enqueue t 2;
        [%test_result: int] (capacity t) ~expect:2;
        enqueue t 3;
@@ -55,7 +55,7 @@ let%test_module _ =
      let%test_unit _ =
        let t = create () in
        [%test_result: int] (length t) ~expect:0;
-       [%test_result: int] (capacity t) ~expect:1
+       [%test_result: int] (capacity t) ~expect:2
      ;;
 
      let%test_unit _ =

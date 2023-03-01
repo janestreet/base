@@ -9,9 +9,10 @@ include Int64_replace_polymorphic_compare
 
 module T0 = struct
   module T = struct
-    type t = int64 [@@deriving_inline compare, hash, sexp, sexp_grammar]
+    type t = int64 [@@deriving_inline compare, globalize, hash, sexp, sexp_grammar]
 
     let compare = (compare_int64 : t -> t -> int)
+    let (globalize : (t[@ocaml.local]) -> t) = (globalize_int64 : (t[@ocaml.local]) -> t)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int64
@@ -44,12 +45,12 @@ module W : sig
 
   type t = int64
 
-  val wrap_exn : Caml.Int64.t -> t
-  val wrap_modulo : Caml.Int64.t -> t
-  val unwrap : t -> Caml.Int64.t
+  val wrap_exn : Stdlib.Int64.t -> t
+  val wrap_modulo : Stdlib.Int64.t -> t
+  val unwrap : t -> Stdlib.Int64.t
 
   (** Returns a non-negative int64 that is equal to the input int63 modulo 2^63. *)
-  val unwrap_unsigned : t -> Caml.Int64.t
+  val unwrap_unsigned : t -> Stdlib.Int64.t
 
   val invariant : t -> unit
   val add : t -> t -> t
@@ -72,10 +73,10 @@ module W : sig
   val shift_right_logical : t -> int -> t
   val min_value : t
   val max_value : t
-  val to_int64 : t -> Caml.Int64.t
-  val of_int64 : Caml.Int64.t -> t option
-  val of_int64_exn : Caml.Int64.t -> t
-  val of_int64_trunc : Caml.Int64.t -> t
+  val to_int64 : t -> Stdlib.Int64.t
+  val of_int64 : Stdlib.Int64.t -> t option
+  val of_int64_exn : Stdlib.Int64.t -> t
+  val of_int64_trunc : Stdlib.Int64.t -> t
   val compare : t -> t -> int
   val ceil_pow2 : t -> t
   val floor_pow2 : t -> t
@@ -92,46 +93,46 @@ end = struct
   let wrap_exn x =
     (* Raises if the int64 value does not fit on int63. *)
     Conv.int64_fit_on_int63_exn x;
-    Caml.Int64.mul x 2L
+    Stdlib.Int64.mul x 2L
   ;;
 
   let wrap x =
-    if Conv.int64_is_representable_as_int63 x then Some (Caml.Int64.mul x 2L) else None
+    if Conv.int64_is_representable_as_int63 x then Some (Stdlib.Int64.mul x 2L) else None
   ;;
 
-  let wrap_modulo x = Caml.Int64.mul x 2L
-  let unwrap x = Caml.Int64.shift_right x 1
-  let unwrap_unsigned x = Caml.Int64.shift_right_logical x 1
+  let wrap_modulo x = Stdlib.Int64.mul x 2L
+  let unwrap x = Stdlib.Int64.shift_right x 1
+  let unwrap_unsigned x = Stdlib.Int64.shift_right_logical x 1
 
   (* This does not use wrap or unwrap to avoid generating exceptions in the case of
      overflows. This is to preserve the semantics of int type on 64 bit architecture. *)
   let f2 f a b =
-    Caml.Int64.mul (f (Caml.Int64.shift_right a 1) (Caml.Int64.shift_right b 1)) 2L
+    Stdlib.Int64.mul (f (Stdlib.Int64.shift_right a 1) (Stdlib.Int64.shift_right b 1)) 2L
   ;;
 
   let mask = 0xffff_ffff_ffff_fffeL
-  let m x = Caml.Int64.logand x mask
+  let m x = Stdlib.Int64.logand x mask
   let invariant t = assert (m t = t)
-  let add x y = Caml.Int64.add x y
-  let sub x y = Caml.Int64.sub x y
-  let neg x = Caml.Int64.neg x
-  let abs x = Caml.Int64.abs x
+  let add x y = Stdlib.Int64.add x y
+  let sub x y = Stdlib.Int64.sub x y
+  let neg x = Stdlib.Int64.neg x
+  let abs x = Stdlib.Int64.abs x
   let one = wrap_exn 1L
   let succ a = add a one
   let pred a = sub a one
-  let min_value = m Caml.Int64.min_int
-  let max_value = m Caml.Int64.max_int
-  let bit_not x = m (Caml.Int64.lognot x)
-  let bit_and = Caml.Int64.logand
-  let bit_xor = Caml.Int64.logxor
-  let bit_or = Caml.Int64.logor
-  let shift_left x i = Caml.Int64.shift_left x i
-  let shift_right x i = m (Caml.Int64.shift_right x i)
-  let shift_right_logical x i = m (Caml.Int64.shift_right_logical x i)
+  let min_value = m Stdlib.Int64.min_int
+  let max_value = m Stdlib.Int64.max_int
+  let bit_not x = m (Stdlib.Int64.lognot x)
+  let bit_and = Stdlib.Int64.logand
+  let bit_xor = Stdlib.Int64.logxor
+  let bit_or = Stdlib.Int64.logor
+  let shift_left x i = Stdlib.Int64.shift_left x i
+  let shift_right x i = m (Stdlib.Int64.shift_right x i)
+  let shift_right_logical x i = m (Stdlib.Int64.shift_right_logical x i)
   let pow = f2 Int_math.Private.int63_pow_on_int64
-  let mul a b = Caml.Int64.mul a (Caml.Int64.shift_right b 1)
-  let div a b = wrap_modulo (Caml.Int64.div a b)
-  let rem a b = Caml.Int64.rem a b
+  let mul a b = Stdlib.Int64.mul a (Stdlib.Int64.shift_right b 1)
+  let div a b = wrap_modulo (Stdlib.Int64.div a b)
+  let rem a b = Stdlib.Int64.rem a b
   let popcount x = Popcount.int64_popcount x
   let to_int64 t = unwrap t
   let of_int64 t = wrap t
@@ -158,7 +159,9 @@ end
 open W
 
 module T = struct
-  type t = W.t [@@deriving_inline hash, sexp, sexp_grammar]
+  type t = W.t [@@deriving_inline globalize, hash, sexp, sexp_grammar]
+
+  let (globalize : (t[@ocaml.local]) -> t) = (W.globalize : (t[@ocaml.local]) -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     W.hash_fold_t
@@ -182,7 +185,7 @@ module T = struct
 
   (* We don't expect [hash] to follow the behavior of int in 64bit architecture *)
   let _ = hash
-  let hash (x : t) = Caml.Hashtbl.hash x
+  let hash (x : t) = Stdlib.Hashtbl.hash x
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let invalid_str x = Printf.failwithf "Int63.of_string: invalid input %S" x ()
 
@@ -225,19 +228,19 @@ module T = struct
     else sign, true
   ;;
 
-  let to_string x = Caml.Int64.to_string (unwrap x)
+  let to_string x = Stdlib.Int64.to_string (unwrap x)
 
   let of_string_raw str =
     let sign, signedness = sign_and_signedness str in
     if signedness
-    then of_int64_exn (Caml.Int64.of_string str)
+    then of_int64_exn (Stdlib.Int64.of_string str)
     else (
       let pos_str =
         match sign with
         | `Neg -> String.sub str ~pos:1 ~len:(String.length str - 1)
         | `Pos -> str
       in
-      let int64 = Caml.Int64.of_string pos_str in
+      let int64 = Stdlib.Int64.of_string pos_str in
       (* unsigned 63-bit int must parse as a positive signed 64-bit int *)
       if Int64_replace_polymorphic_compare.( < ) int64 0L then invalid_str str;
       let int63 = wrap_modulo int64 in
@@ -283,9 +286,9 @@ let rem = rem
 let neg = neg
 let max_value = max_value
 let min_value = min_value
-let minus_one = wrap_exn Caml.Int64.minus_one
-let one = wrap_exn Caml.Int64.one
-let zero = wrap_exn Caml.Int64.zero
+let minus_one = wrap_exn Stdlib.Int64.minus_one
+let one = wrap_exn Stdlib.Int64.one
+let zero = wrap_exn Stdlib.Int64.zero
 let is_pow2 = is_pow2
 let floor_pow2 = floor_pow2
 let ceil_pow2 = ceil_pow2
@@ -293,13 +296,13 @@ let floor_log2 = floor_log2
 let ceil_log2 = ceil_log2
 let clz = clz
 let ctz = ctz
-let to_float x = Caml.Int64.to_float (unwrap x)
-let of_float_unchecked x = wrap_modulo (Caml.Int64.of_float x)
+let to_float x = Stdlib.Int64.to_float (unwrap x)
+let of_float_unchecked x = wrap_modulo (Stdlib.Int64.of_float x)
 
 let of_float t =
   let open Float_replace_polymorphic_compare in
   if t >= float_lower_bound && t <= float_upper_bound
-  then wrap_modulo (Caml.Int64.of_float t)
+  then wrap_modulo (Stdlib.Int64.of_float t)
   else
     Printf.invalid_argf
       "Int63.of_float: argument (%f) is out of range or NaN"

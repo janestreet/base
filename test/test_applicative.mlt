@@ -1,0 +1,13 @@
+open Base
+open Expect_test_helpers_base
+
+let () =
+  let z = 3 in
+  let f =  (fun x y -> x + y + z) in
+  let r = Option.map2 (Some 3) (Some 4) ~f in
+  print_s [%sexp (r : int option)]
+;;
+
+[%%expect {|
+(10)
+|}]

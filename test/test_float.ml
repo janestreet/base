@@ -48,7 +48,7 @@ let%test_unit _ =
   | W64 ->
     List.iter
       ~f:(fun float ->
-        let hash1 = Caml.Hashtbl.hash float in
+        let hash1 = Stdlib.Hashtbl.hash float in
         let hash2 = [%hash: float] float in
         let hash3 = specialized_hash float in
         if not Int.(hash1 = hash2 && hash1 = hash3)
@@ -452,7 +452,7 @@ let%test_module _ =
       let result4 = Option.try_with (fun () -> specialized_iround_exn x) in
       let result5 = Option.try_with (fun () -> Int.of_float (float_rounding x)) in
       let result6 = Option.try_with (fun () -> Int.of_float (round ~dir x)) in
-      let ( = ) = Caml.( = ) in
+      let ( = ) = Stdlib.( = ) in
       if result1 = result2
       && result2 = result3
       && result3 = result4
@@ -842,7 +842,7 @@ struct
   let%test "smaller than lower bound overflows" =
     let lower_bound = Int64.of_float float_lower_bound in
     let lower_bound_minus_epsilon =
-      Caml.Int64.of_float (one_ulp `Down float_lower_bound)
+      Stdlib.Int64.of_float (one_ulp `Down float_lower_bound)
     in
     let min_value = to_int64 min_value in
     if Int.( = ) num_bits 64
@@ -856,7 +856,9 @@ struct
 
   let%test "bigger than upper bound overflows" =
     let upper_bound = Int64.of_float float_upper_bound in
-    let upper_bound_plus_epsilon = Caml.Int64.of_float (one_ulp `Up float_upper_bound) in
+    let upper_bound_plus_epsilon =
+      Stdlib.Int64.of_float (one_ulp `Up float_upper_bound)
+    in
     let max_value = to_int64 max_value in
     if Int.( = ) num_bits 64
     (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
@@ -1047,8 +1049,8 @@ let%test_module _ =
 
 let%test_module "Hexadecimal syntax" =
   (module struct
-    let should_fail str = Exn.does_raise (fun () -> Caml.float_of_string str)
-    let test_equal str g = Caml.float_of_string str = g
+    let should_fail str = Exn.does_raise (fun () -> Stdlib.float_of_string str)
+    let test_equal str g = Stdlib.float_of_string str = g
 
     let%test _ = should_fail "0x"
     let%test _ = should_fail "0x.p0"

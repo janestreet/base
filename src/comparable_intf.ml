@@ -1,7 +1,7 @@
 open! Import
 
 module type Infix = Comparisons.Infix
-module type Polymorphic_compare = Comparisons.S
+module type Comparisons = Comparisons.S
 
 module Sign = Sign0 (** @canonical Base.Sign *)
 
@@ -10,10 +10,15 @@ module type With_compare = sig
 
   (** [lexicographic cmps x y] compares [x] and [y] lexicographically using functions in the
       list [cmps]. *)
-  val lexicographic : ('a -> 'a -> int) list -> 'a -> 'a -> int
+  val lexicographic : (('a -> 'a -> int) list[@local]) -> 'a -> 'a -> int
 
   (** [lift cmp ~f x y] compares [x] and [y] by comparing [f x] and [f y] via [cmp]. *)
-  val lift : ('a -> 'a -> 'result) -> f:('b -> 'a) -> 'b -> 'b -> 'result
+  val lift
+    :  (('a -> 'a -> 'result)[@local])
+    -> f:(('b -> 'a)[@local])
+    -> 'b
+    -> 'b
+    -> 'result
 
   (** [reverse cmp x y = cmp y x]
 
@@ -24,14 +29,22 @@ module type With_compare = sig
       [Comparable.S] provides [ascending] and [descending], which are more readable as a
       pair than [compare] and [reverse compare]. Similarly, [<=] is more idiomatic than
       [reverse (>=)]. *)
-  val reverse : ('a -> 'a -> 'result) -> 'a -> 'a -> 'result
+  val reverse : (('a -> 'a -> 'result)[@local]) -> 'a -> 'a -> 'result
+
+  (** {!reversed} is the identity type but its associated compare function is the same as
+      the {!reverse} function above. It allows you to get reversed comparisons with
+      [ppx_compare], writing, for example, [[%compare: string Comparable.reversed]] to
+      have strings ordered in the reverse order. *)
+  type 'a reversed = 'a
+
+  val compare_reversed : (('a -> 'a -> int)[@local]) -> 'a reversed -> 'a reversed -> int
 
   (** The functions below are analogues of the type-specific functions exported by the
       [Comparable.S] interface. *)
 
-  val equal : ('a -> 'a -> int) -> 'a -> 'a -> bool
-  val max : ('a -> 'a -> int) -> 'a -> 'a -> 'a
-  val min : ('a -> 'a -> int) -> 'a -> 'a -> 'a
+  val equal : (('a -> 'a -> int)[@local]) -> 'a -> 'a -> bool
+  val max : (('a -> 'a -> int)[@local]) -> 'a -> 'a -> 'a
+  val min : (('a -> 'a -> int)[@local]) -> 'a -> 'a -> 'a
 end
 
 module type With_zero = sig
@@ -47,7 +60,7 @@ module type With_zero = sig
 end
 
 module type S = sig
-  include Polymorphic_compare
+  include Comparisons
 
 
   (** [ascending] is identical to [compare]. [descending x y = ascending y x].  These are
@@ -137,13 +150,13 @@ module type Comparable = sig
 
   module type Infix = Infix
   module type S = S
-  module type Polymorphic_compare = Polymorphic_compare
+  module type Comparisons = Comparisons
   module type With_compare = With_compare
   module type With_zero = With_zero
 
   include With_compare
 
-  (** Derive [Infix] or [Polymorphic_compare] functions from just [[@@deriving compare]],
+  (** Derive [Infix] or [Comparisons] functions from just [[@@deriving compare]],
       without need for the [sexp_of_t] required by [Make*] (see below). *)
 
   module Infix (T : sig
@@ -154,13 +167,13 @@ module type Comparable = sig
       [@@@end]
     end) : Infix with type t := T.t
 
-  module Polymorphic_compare (T : sig
+  module Comparisons (T : sig
       type t [@@deriving_inline compare]
 
       include Ppx_compare_lib.Comparable.S with type t := t
 
       [@@@end]
-    end) : Polymorphic_compare with type t := T.t
+    end) : Comparisons with type t := T.t
 
   (** Inherit comparability from a component. *)
   module Inherit (C : sig

@@ -27,7 +27,7 @@ val empty : _ t
 val create : len:int -> 'a -> 'a t
 val singleton : 'a -> 'a t
 val init : int -> f:((int -> 'a)[@local]) -> 'a t
-val length : 'a t -> int
+val length : ('a t[@local]) -> int
 val get : 'a t -> int -> 'a
 val unsafe_get : 'a t -> int -> 'a
 val set : 'a t -> int -> 'a -> unit
@@ -56,7 +56,7 @@ val iter : 'a t -> f:(('a -> unit)[@local]) -> unit
     argument, and the element itself as second argument. *)
 val iteri : 'a t -> f:((int -> 'a -> unit)[@local]) -> unit
 
-val foldi : 'a t -> init:'b -> f:((int -> 'b -> 'a -> 'b)[@local]) -> 'b
+val foldi : 'a t -> init:'acc -> f:((int -> 'acc -> 'a -> 'acc)[@local]) -> 'acc
 
 (** [of_array] and [to_array] return fresh arrays with the same contents rather than
     returning a reference to the underlying array. *)
@@ -76,27 +76,27 @@ val copy : 'a t -> 'a t
 val unsafe_create_uninitialized : len:int -> _ t
 
 (** New obj array filled with [Obj.repr 0] *)
-val create_obj_array : len:int -> Caml.Obj.t t
+val create_obj_array : len:int -> Stdlib.Obj.t t
 
 (** [unsafe_set_assuming_currently_int t i obj] sets index [i] of [t] to [obj], but only
-    works correctly if the value there is an immediate, i.e. [Caml.Obj.is_int (get t i)].
+    works correctly if the value there is an immediate, i.e. [Stdlib.Obj.is_int (get t i)].
     This precondition saves a dynamic check.
 
     [unsafe_set_int_assuming_currently_int] is similar, except the value being set is an
     int.
 
     [unsafe_set_int] is similar but does not assume anything about the target. *)
-val unsafe_set_assuming_currently_int : Caml.Obj.t t -> int -> Caml.Obj.t -> unit
+val unsafe_set_assuming_currently_int : Stdlib.Obj.t t -> int -> Stdlib.Obj.t -> unit
 
-val unsafe_set_int_assuming_currently_int : Caml.Obj.t t -> int -> int -> unit
-val unsafe_set_int : Caml.Obj.t t -> int -> int -> unit
+val unsafe_set_int_assuming_currently_int : Stdlib.Obj.t t -> int -> int -> unit
+val unsafe_set_int : Stdlib.Obj.t t -> int -> int -> unit
 
 
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
-    space leaks.  It does this by setting [t.(i)] to [Caml.Obj.repr 0].  As a performance
-    hack, it only does this when [not (Caml.Obj.is_int t.(i))].  It is an error to access
+    space leaks.  It does this by setting [t.(i)] to [Stdlib.Obj.repr 0].  As a performance
+    hack, it only does this when [not (Stdlib.Obj.is_int t.(i))].  It is an error to access
     the cleared index before setting it again. *)
-val unsafe_clear_if_pointer : Caml.Obj.t t -> int -> unit
+val unsafe_clear_if_pointer : Stdlib.Obj.t t -> int -> unit
 
 (** As [Array.exists]. *)
 val exists : 'a t -> f:(('a -> bool)[@local]) -> bool

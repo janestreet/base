@@ -147,7 +147,7 @@ let%expect_test "merge" =
 let%expect_test "merge with duplicates" =
   (* Testing that equal elements from a1 come before equal elements from a2 *)
   let test a1 a2 =
-    let compare = Comparable.lift Int.compare ~f:fst in
+    let compare a b = Comparable.lift Int.compare ~f:fst a b in
     let res = merge a1 a2 ~compare in
     print_s ([%sexp_of: (int * string) array] res);
     require_equal

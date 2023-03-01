@@ -41,16 +41,16 @@ include (
   with module Unit := Shadow_stdlib.Unit)
   [@ocaml.warning "-3"]
 
-type 'a ref = 'a Caml.ref = { mutable contents : 'a }
+type 'a ref = 'a Stdlib.ref = { mutable contents : 'a }
 
-(* Reshuffle [Caml] so that we choose the modules using labels when available. *)
-module Caml = struct
-  include Caml
-  include Caml.StdLabels
-  include Caml.MoreLabels
+(* Reshuffle [Stdlib] so that we choose the modules using labels when available. *)
+module Stdlib = struct
+  include Stdlib
+  include Stdlib.StdLabels
+  include Stdlib.MoreLabels
 end
 
-external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
+external ( |> ) : 'a -> (('a -> 'b)[@local_opt]) -> 'b = "%revapply"
 
 (* These need to be declared as an external to get the lazy behavior *)
 external ( && ) : (bool[@local_opt]) -> (bool[@local_opt]) -> bool = "%sequand"
@@ -59,21 +59,21 @@ external not : (bool[@local_opt]) -> bool = "%boolnot"
 
 (* We use [Obj.magic] here as other implementations generate a conditional jump and the
    performance difference is noticeable. *)
-let bool_to_int (x : bool) : int = Caml.Obj.magic x
+let bool_to_int (x : bool) : int = Stdlib.Obj.magic x
 
 (* This need to be declared as an external for the warnings to work properly *)
 external ignore : _ -> unit = "%ignore"
 
-let ( != ) = Caml.( != )
-let ( * ) = Caml.( * )
-let ( ** ) = Caml.( ** )
-let ( *. ) = Caml.( *. )
-let ( + ) = Caml.( + )
-let ( +. ) = Caml.( +. )
-let ( - ) = Caml.( - )
-let ( -. ) = Caml.( -. )
-let ( / ) = Caml.( / )
-let ( /. ) = Caml.( /. )
+let ( != ) = Stdlib.( != )
+let ( * ) = Stdlib.( * )
+let ( ** ) = Stdlib.( ** )
+let ( *. ) = Stdlib.( *. )
+let ( + ) = Stdlib.( + )
+let ( +. ) = Stdlib.( +. )
+let ( - ) = Stdlib.( - )
+let ( -. ) = Stdlib.( -. )
+let ( / ) = Stdlib.( / )
+let ( /. ) = Stdlib.( /. )
 
 module Poly = Poly0 (** @canonical Base.Poly *)
 
@@ -91,97 +91,97 @@ module Int_replace_polymorphic_compare = struct
 
   let ascending (x : int) y = compare x y
   let descending (x : int) y = compare y x
-  let max (x : int) y = if x >= y then x else y
-  let min (x : int) y = if x <= y then x else y
+  let max (x : int) y = Bool0.select (x >= y) x y
+  let min (x : int) y = Bool0.select (x <= y) x y
 end
 
 include Int_replace_polymorphic_compare
 
 module Int32_replace_polymorphic_compare = struct
-  let ( < ) (x : Caml.Int32.t) y = Poly.( < ) x y
-  let ( <= ) (x : Caml.Int32.t) y = Poly.( <= ) x y
-  let ( <> ) (x : Caml.Int32.t) y = Poly.( <> ) x y
-  let ( = ) (x : Caml.Int32.t) y = Poly.( = ) x y
-  let ( > ) (x : Caml.Int32.t) y = Poly.( > ) x y
-  let ( >= ) (x : Caml.Int32.t) y = Poly.( >= ) x y
-  let ascending (x : Caml.Int32.t) y = Poly.ascending x y
-  let descending (x : Caml.Int32.t) y = Poly.descending x y
-  let compare (x : Caml.Int32.t) y = Poly.compare x y
-  let equal (x : Caml.Int32.t) y = Poly.equal x y
-  let max (x : Caml.Int32.t) y = if x >= y then x else y
-  let min (x : Caml.Int32.t) y = if x <= y then x else y
+  let ( < ) (x : Stdlib.Int32.t) y = Poly.( < ) x y
+  let ( <= ) (x : Stdlib.Int32.t) y = Poly.( <= ) x y
+  let ( <> ) (x : Stdlib.Int32.t) y = Poly.( <> ) x y
+  let ( = ) (x : Stdlib.Int32.t) y = Poly.( = ) x y
+  let ( > ) (x : Stdlib.Int32.t) y = Poly.( > ) x y
+  let ( >= ) (x : Stdlib.Int32.t) y = Poly.( >= ) x y
+  let ascending (x : Stdlib.Int32.t) y = Poly.ascending x y
+  let descending (x : Stdlib.Int32.t) y = Poly.descending x y
+  let compare (x : Stdlib.Int32.t) y = Poly.compare x y
+  let equal (x : Stdlib.Int32.t) y = Poly.equal x y
+  let max (x : Stdlib.Int32.t) y = Bool0.select (x >= y) x y
+  let min (x : Stdlib.Int32.t) y = Bool0.select (x <= y) x y
 end
 
 module Int64_replace_polymorphic_compare = struct
   (* Declared as externals so that the compiler skips the caml_apply_X wrapping even when
      compiling without cross library inlining. *)
   external ( = )
-    :  (Caml.Int64.t[@local_opt])
-    -> (Caml.Int64.t[@local_opt])
+    :  (Stdlib.Int64.t[@local_opt])
+    -> (Stdlib.Int64.t[@local_opt])
     -> bool
     = "%equal"
 
   external ( <> )
-    :  (Caml.Int64.t[@local_opt])
-    -> (Caml.Int64.t[@local_opt])
+    :  (Stdlib.Int64.t[@local_opt])
+    -> (Stdlib.Int64.t[@local_opt])
     -> bool
     = "%notequal"
 
   external ( < )
-    :  (Caml.Int64.t[@local_opt])
-    -> (Caml.Int64.t[@local_opt])
+    :  (Stdlib.Int64.t[@local_opt])
+    -> (Stdlib.Int64.t[@local_opt])
     -> bool
     = "%lessthan"
 
   external ( > )
-    :  (Caml.Int64.t[@local_opt])
-    -> (Caml.Int64.t[@local_opt])
+    :  (Stdlib.Int64.t[@local_opt])
+    -> (Stdlib.Int64.t[@local_opt])
     -> bool
     = "%greaterthan"
 
   external ( <= )
-    :  (Caml.Int64.t[@local_opt])
-    -> (Caml.Int64.t[@local_opt])
+    :  (Stdlib.Int64.t[@local_opt])
+    -> (Stdlib.Int64.t[@local_opt])
     -> bool
     = "%lessequal"
 
   external ( >= )
-    :  (Caml.Int64.t[@local_opt])
-    -> (Caml.Int64.t[@local_opt])
+    :  (Stdlib.Int64.t[@local_opt])
+    -> (Stdlib.Int64.t[@local_opt])
     -> bool
     = "%greaterequal"
 
   external compare
-    :  (Caml.Int64.t[@local_opt])
-    -> (Caml.Int64.t[@local_opt])
+    :  (Stdlib.Int64.t[@local_opt])
+    -> (Stdlib.Int64.t[@local_opt])
     -> int
     = "%compare"
 
   external equal
-    :  (Caml.Int64.t[@local_opt])
-    -> (Caml.Int64.t[@local_opt])
+    :  (Stdlib.Int64.t[@local_opt])
+    -> (Stdlib.Int64.t[@local_opt])
     -> bool
     = "%equal"
 
-  let ascending (x : Caml.Int64.t) y = Poly.ascending x y
-  let descending (x : Caml.Int64.t) y = Poly.descending x y
-  let max (x : Caml.Int64.t) y = if x >= y then x else y
-  let min (x : Caml.Int64.t) y = if x <= y then x else y
+  let ascending (x : Stdlib.Int64.t) y = Poly.ascending x y
+  let descending (x : Stdlib.Int64.t) y = Poly.descending x y
+  let max (x : Stdlib.Int64.t) y = Bool0.select (x >= y) x y
+  let min (x : Stdlib.Int64.t) y = Bool0.select (x <= y) x y
 end
 
 module Nativeint_replace_polymorphic_compare = struct
-  let ( < ) (x : Caml.Nativeint.t) y = Poly.( < ) x y
-  let ( <= ) (x : Caml.Nativeint.t) y = Poly.( <= ) x y
-  let ( <> ) (x : Caml.Nativeint.t) y = Poly.( <> ) x y
-  let ( = ) (x : Caml.Nativeint.t) y = Poly.( = ) x y
-  let ( > ) (x : Caml.Nativeint.t) y = Poly.( > ) x y
-  let ( >= ) (x : Caml.Nativeint.t) y = Poly.( >= ) x y
-  let ascending (x : Caml.Nativeint.t) y = Poly.ascending x y
-  let descending (x : Caml.Nativeint.t) y = Poly.descending x y
-  let compare (x : Caml.Nativeint.t) y = Poly.compare x y
-  let equal (x : Caml.Nativeint.t) y = Poly.equal x y
-  let max (x : Caml.Nativeint.t) y = if x >= y then x else y
-  let min (x : Caml.Nativeint.t) y = if x <= y then x else y
+  let ( < ) (x : Stdlib.Nativeint.t) y = Poly.( < ) x y
+  let ( <= ) (x : Stdlib.Nativeint.t) y = Poly.( <= ) x y
+  let ( <> ) (x : Stdlib.Nativeint.t) y = Poly.( <> ) x y
+  let ( = ) (x : Stdlib.Nativeint.t) y = Poly.( = ) x y
+  let ( > ) (x : Stdlib.Nativeint.t) y = Poly.( > ) x y
+  let ( >= ) (x : Stdlib.Nativeint.t) y = Poly.( >= ) x y
+  let ascending (x : Stdlib.Nativeint.t) y = Poly.ascending x y
+  let descending (x : Stdlib.Nativeint.t) y = Poly.descending x y
+  let compare (x : Stdlib.Nativeint.t) y = Poly.compare x y
+  let equal (x : Stdlib.Nativeint.t) y = Poly.equal x y
+  let max (x : Stdlib.Nativeint.t) y = Bool0.select (x >= y) x y
+  let min (x : Stdlib.Nativeint.t) y = Bool0.select (x <= y) x y
 end
 
 module Bool_replace_polymorphic_compare = struct
@@ -195,8 +195,8 @@ module Bool_replace_polymorphic_compare = struct
   let descending (x : bool) y = Poly.descending x y
   let compare (x : bool) y = Poly.compare x y
   let equal (x : bool) y = Poly.equal x y
-  let max (x : bool) y = if x >= y then x else y
-  let min (x : bool) y = if x <= y then x else y
+  let max (x : bool) y = Bool0.select (x >= y) x y
+  let min (x : bool) y = Bool0.select (x <= y) x y
 end
 
 module Char_replace_polymorphic_compare = struct
@@ -210,31 +210,31 @@ module Char_replace_polymorphic_compare = struct
   let descending (x : char) y = Poly.descending x y
   let compare (x : char) y = Poly.compare x y
   let equal (x : char) y = Poly.equal x y
-  let max (x : char) y = if x >= y then x else y
-  let min (x : char) y = if x <= y then x else y
+  let max (x : char) y = Bool0.select (x >= y) x y
+  let min (x : char) y = Bool0.select (x <= y) x y
 end
 
 module Uchar_replace_polymorphic_compare = struct
-  let i x = Caml.Uchar.to_int x
-  let ( < ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( < ) (i x) (i y)
-  let ( <= ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( <= ) (i x) (i y)
-  let ( <> ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( <> ) (i x) (i y)
-  let ( = ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( = ) (i x) (i y)
-  let ( > ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( > ) (i x) (i y)
-  let ( >= ) (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.( >= ) (i x) (i y)
+  let i x = Stdlib.Uchar.to_int x
+  let ( < ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( < ) (i x) (i y)
+  let ( <= ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( <= ) (i x) (i y)
+  let ( <> ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( <> ) (i x) (i y)
+  let ( = ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( = ) (i x) (i y)
+  let ( > ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( > ) (i x) (i y)
+  let ( >= ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( >= ) (i x) (i y)
 
-  let ascending (x : Caml.Uchar.t) y =
+  let ascending (x : Stdlib.Uchar.t) y =
     Int_replace_polymorphic_compare.ascending (i x) (i y)
   ;;
 
-  let descending (x : Caml.Uchar.t) y =
+  let descending (x : Stdlib.Uchar.t) y =
     Int_replace_polymorphic_compare.descending (i x) (i y)
   ;;
 
-  let compare (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.compare (i x) (i y)
-  let equal (x : Caml.Uchar.t) y = Int_replace_polymorphic_compare.equal (i x) (i y)
-  let max (x : Caml.Uchar.t) y = if x >= y then x else y
-  let min (x : Caml.Uchar.t) y = if x <= y then x else y
+  let compare (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.compare (i x) (i y)
+  let equal (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.equal (i x) (i y)
+  let max (x : Stdlib.Uchar.t) y = Bool0.select (x >= y) x y
+  let min (x : Stdlib.Uchar.t) y = Bool0.select (x <= y) x y
 end
 
 module Float_replace_polymorphic_compare = struct
@@ -248,8 +248,8 @@ module Float_replace_polymorphic_compare = struct
   let descending (x : float) y = Poly.descending x y
   let compare (x : float) y = Poly.compare x y
   let equal (x : float) y = Poly.equal x y
-  let max (x : float) y = if x >= y then x else y
-  let min (x : float) y = if x <= y then x else y
+  let max (x : float) y = Bool0.select (x >= y) x y
+  let min (x : float) y = Bool0.select (x <= y) x y
 end
 
 module String_replace_polymorphic_compare = struct
@@ -263,8 +263,8 @@ module String_replace_polymorphic_compare = struct
   let descending (x : string) y = Poly.descending x y
   let compare (x : string) y = Poly.compare x y
   let equal (x : string) y = Poly.equal x y
-  let max (x : string) y = if x >= y then x else y
-  let min (x : string) y = if x <= y then x else y
+  let max (x : string) y = Bool0.select (x >= y) x y
+  let min (x : string) y = Bool0.select (x <= y) x y
 end
 
 module Bytes_replace_polymorphic_compare = struct
@@ -278,8 +278,8 @@ module Bytes_replace_polymorphic_compare = struct
   let descending (x : bytes) y = Poly.descending x y
   let compare (x : bytes) y = Poly.compare x y
   let equal (x : bytes) y = Poly.equal x y
-  let max (x : bytes) y = if x >= y then x else y
-  let min (x : bytes) y = if x <= y then x else y
+  let max (x : bytes) y = Bool0.select (x >= y) x y
+  let min (x : bytes) y = Bool0.select (x <= y) x y
 end
 
 (* This needs to be defined as an external so that the compiler can specialize it as a
@@ -291,35 +291,35 @@ external ( := ) : ('a ref[@local_opt]) -> 'a -> unit = "%setfield0"
 external ( ! ) : ('a ref[@local_opt]) -> 'a = "%field0"
 external ref : 'a -> ('a ref[@local_opt]) = "%makemutable"
 
-let ( @ ) = Caml.( @ )
-let ( ^ ) = Caml.( ^ )
-let ( ~- ) = Caml.( ~- )
-let ( ~-. ) = Caml.( ~-. )
-let ( asr ) = Caml.( asr )
-let ( land ) = Caml.( land )
-let lnot = Caml.lnot
-let ( lor ) = Caml.( lor )
-let ( lsl ) = Caml.( lsl )
-let ( lsr ) = Caml.( lsr )
-let ( lxor ) = Caml.( lxor )
-let ( mod ) = Caml.( mod )
-let abs = Caml.abs
-let failwith = Caml.failwith
-let fst = Caml.fst
-let invalid_arg = Caml.invalid_arg
-let snd = Caml.snd
+let ( @ ) = Stdlib.( @ )
+let ( ^ ) = Stdlib.( ^ )
+let ( ~- ) = Stdlib.( ~- )
+let ( ~-. ) = Stdlib.( ~-. )
+let ( asr ) = Stdlib.( asr )
+let ( land ) = Stdlib.( land )
+let lnot = Stdlib.lnot
+let ( lor ) = Stdlib.( lor )
+let ( lsl ) = Stdlib.( lsl )
+let ( lsr ) = Stdlib.( lsr )
+let ( lxor ) = Stdlib.( lxor )
+let ( mod ) = Stdlib.( mod )
+let abs = Stdlib.abs
+let failwith = Stdlib.failwith
+let fst = Stdlib.fst
+let invalid_arg = Stdlib.invalid_arg
+let snd = Stdlib.snd
 
 (* [raise] needs to be defined as an external as the compiler automatically replaces
    '%raise' by '%reraise' when appropriate. *)
 external raise : exn -> _ = "%raise"
 
-let phys_equal = Caml.( == )
+let phys_equal = Stdlib.( == )
 
 external decr : (int ref[@local_opt]) -> unit = "%decr"
 external incr : (int ref[@local_opt]) -> unit = "%incr"
 
 (* used by sexp_conv, which float0 depends on through option *)
-let float_of_string = Caml.float_of_string
+let float_of_string = Stdlib.float_of_string
 
 (* [am_testing] is used in a few places to behave differently when in testing mode, such
    as in [random.ml].  [am_testing] is implemented using [Base_am_testing], a weak C/js

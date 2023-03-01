@@ -18,11 +18,11 @@ let int_pow base exponent =
 ;;
 
 module Int64_with_comparisons = struct
-  include Caml.Int64
+  include Stdlib.Int64
 
-  external ( < ) : int64 -> int64 -> bool = "%lessthan"
-  external ( > ) : int64 -> int64 -> bool = "%greaterthan"
-  external ( >= ) : int64 -> int64 -> bool = "%greaterequal"
+  external ( < ) : (int64[@local_opt]) -> (int64[@local_opt]) -> bool = "%lessthan"
+  external ( > ) : (int64[@local_opt]) -> (int64[@local_opt]) -> bool = "%greaterthan"
+  external ( >= ) : (int64[@local_opt]) -> (int64[@local_opt]) -> bool = "%greaterequal"
 end
 
 (* we don't do [abs] in int64 case to avoid allocation *)

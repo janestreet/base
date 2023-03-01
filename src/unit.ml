@@ -1,9 +1,10 @@
 open! Import
 
 module T = struct
-  type t = unit [@@deriving_inline enumerate, hash, sexp, sexp_grammar]
+  type t = unit [@@deriving_inline enumerate, globalize, hash, sexp, sexp_grammar]
 
   let all = ([ () ] : t list)
+  let (globalize : (t[@ocaml.local]) -> t) = (globalize_unit : (t[@ocaml.local]) -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_unit

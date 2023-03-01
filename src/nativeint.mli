@@ -1,7 +1,14 @@
 (** Processor-native integers. *)
 
 open! Import
-include Int_intf.S with type t = nativeint
+
+type t = nativeint [@@deriving_inline globalize]
+
+val globalize : (t[@ocaml.local]) -> t
+
+[@@@end]
+
+include Int_intf.S with type t := t
 
 (** {2 Conversion functions} *)
 

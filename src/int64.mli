@@ -1,10 +1,18 @@
 (** 64-bit integers. *)
 
 open! Import
-include Int_intf.S with type t = int64
+
+type t = int64 [@@deriving_inline globalize]
+
+val globalize : (t[@ocaml.local]) -> t
+
+[@@@end]
+
+include Int_intf.S with type t := t
 
 module O : sig
-  (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
+  (*_ Declared as externals
+    so that the compiler skips the caml_apply_X wrapping even when
     compiling without cross library inlining. *)
   external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_add"
   external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_sub"
@@ -54,9 +62,9 @@ include module type of O
 
 (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
   compiling without cross library inlining. *)
-external of_int : int -> t = "%int64_of_int"
-external of_int32 : int32 -> t = "%int64_of_int32"
-external of_int64 : t -> t = "%identity"
+external of_int : (int[@local_opt]) -> (t[@local_opt]) = "%int64_of_int"
+external of_int32 : (int32[@local_opt]) -> (t[@local_opt]) = "%int64_of_int32"
+external of_int64 : (t[@local_opt]) -> (t[@local_opt]) = "%identity"
 val to_int : t -> int option
 val to_int32 : t -> int32 option
 val of_nativeint : nativeint -> t
@@ -69,9 +77,13 @@ val to_nativeint : t -> nativeint option
 
 (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
   compiling without cross library inlining. *)
-external to_int_trunc : t -> int = "%int64_to_int"
-external to_int32_trunc : int64 -> int32 = "%int64_to_int32"
-external to_nativeint_trunc : int64 -> nativeint = "%int64_to_nativeint"
+external to_int_trunc : (t[@local_opt]) -> int = "%int64_to_int"
+external to_int32_trunc : (int64[@local_opt]) -> (int32[@local_opt]) = "%int64_to_int32"
+
+external to_nativeint_trunc
+  :  (int64[@local_opt])
+  -> (nativeint[@local_opt])
+  = "%int64_to_nativeint"
 
 (** {3 Low-level float conversions} *)
 

@@ -16,9 +16,9 @@ val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
 [@@@end]
 
-val map : 'a t -> f:('a -> 'b) -> 'b t
-val is_lower_bound : 'a t -> of_:'a -> compare:('a -> 'a -> int) -> bool
-val is_upper_bound : 'a t -> of_:'a -> compare:('a -> 'a -> int) -> bool
+val map : 'a t -> f:(('a -> 'b)[@local]) -> 'b t
+val is_lower_bound : 'a t -> of_:'a -> compare:(('a -> 'a -> int)[@local]) -> bool
+val is_upper_bound : 'a t -> of_:'a -> compare:(('a -> 'a -> int)[@local]) -> bool
 
 (** [interval_contains_exn ~lower ~upper x ~compare] raises if [lower] and [upper] are
     crossed. *)
@@ -26,13 +26,17 @@ val interval_contains_exn
   :  lower:'a t
   -> upper:'a t
   -> 'a
-  -> compare:('a -> 'a -> int)
+  -> compare:(('a -> 'a -> int)[@local])
   -> bool
 
 (** [bounds_crossed ~lower ~upper ~compare] returns true if [lower > upper].
 
     It ignores whether the bounds are [Incl] or [Excl]. *)
-val bounds_crossed : lower:'a t -> upper:'a t -> compare:('a -> 'a -> int) -> bool
+val bounds_crossed
+  :  lower:'a t
+  -> upper:'a t
+  -> compare:(('a -> 'a -> int)[@local])
+  -> bool
 
 type interval_comparison =
   | Below_lower_bound
@@ -60,5 +64,5 @@ val compare_to_interval_exn
   :  lower:'a t
   -> upper:'a t
   -> 'a
-  -> compare:('a -> 'a -> int)
+  -> compare:(('a -> 'a -> int)[@local])
   -> interval_comparison

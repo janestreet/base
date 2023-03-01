@@ -20,9 +20,9 @@ let%test_module "Cheap_option" =
 
     let%test_unit "memory corruption" =
       let make_list () = List.init ~f:(fun i -> Some i) 5 in
-      Caml.Gc.minor ();
+      Stdlib.Gc.minor ();
       let x = value_unsafe (some (make_list ())) in
-      Caml.Gc.minor ();
+      Stdlib.Gc.minor ();
       let (_ : int option list) = List.init ~f:(fun i -> Some (i * 100)) 10000 in
       [%test_result: Int.t Option.t List.t] ~expect:(make_list ()) x
     ;;
@@ -78,7 +78,7 @@ module X = struct
 
   let%expect_test _ =
     assert (
-      phys_equal magic_value (Caml.Obj.magic For_testing.Unsafe_cheap_option.none : t))
+      phys_equal magic_value (Stdlib.Obj.magic For_testing.Unsafe_cheap_option.none : t))
   ;;
 end
 

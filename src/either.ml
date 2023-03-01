@@ -88,12 +88,16 @@ struct
       let map = `Custom map
     end)
 
-  module App = Applicative.Make2_local (struct
+  module App = Applicative.Make2_using_map2_local (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return
-      let apply t1 t2 = bind t1 ~f:(fun f -> bind t2 ~f:(fun x -> return (f x)))
-      let map = map
+      let map = `Custom map
+
+      let map2 : ('a, 'x) t -> ('b, 'x) t -> f:(('a -> 'b -> 'c)[@local]) -> ('c, 'x) t =
+        fun t1 t2 ~f ->
+        bind t1 ~f:(fun x -> bind t2 ~f:(fun y -> return (f x y)) [@nontail]) [@nontail]
+      ;;
     end)
 
   include App

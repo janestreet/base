@@ -273,7 +273,7 @@ module Ident = struct
   let[@inline] bind a ~f = (f [@inlined hint]) a
   let[@inline] map a ~f = (f [@inlined hint]) a
 
-  external return : 'a -> 'a = "%identity"
+  external return : ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
 
   module Monad_infix = struct
     let[@inline] ( >>| ) a f = map a ~f
@@ -299,8 +299,8 @@ module Ident = struct
     let return = return
   end
 
-  external join : 'a -> 'a = "%identity"
-  external ignore_m : _ -> unit = "%ignore"
-  external all_unit : unit list -> unit = "%ignore"
-  external all : 'a list -> 'a list = "%identity"
+  external join : ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
+  external ignore_m : (_[@local_opt]) -> unit = "%ignore"
+  external all_unit : (unit list[@local_opt]) -> unit = "%ignore"
+  external all : ('a list[@local_opt]) -> ('a list[@local_opt]) = "%identity"
 end

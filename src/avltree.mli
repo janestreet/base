@@ -161,7 +161,11 @@ val remove
   -> ('k, 'v) t
 
 (** Folds over the tree. *)
-val fold : ('k, 'v) t -> init:'a -> f:((key:'k -> data:'v -> 'a -> 'a)[@local]) -> 'a
+val fold
+  :  ('k, 'v) t
+  -> init:'acc
+  -> f:((key:'k -> data:'v -> 'acc -> 'acc)[@local])
+  -> 'acc
 
 (** Iterates over the tree. *)
 val iter : ('k, 'v) t -> f:((key:'k -> data:'v -> unit)[@local]) -> unit

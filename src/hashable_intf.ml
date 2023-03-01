@@ -47,8 +47,8 @@ module Hashable = struct
         && phys_equal a.sexp_of_t b.sexp_of_t)
   ;;
 
-  let hash_param = Caml.Hashtbl.hash_param
-  let hash = Caml.Hashtbl.hash
+  let hash_param = Stdlib.Hashtbl.hash_param
+  let hash = Stdlib.Hashtbl.hash
   let poly = { hash; compare = Poly.compare; sexp_of_t = (fun _ -> Sexp.Atom "_") }
 
   let of_key (type a) (module Key : Key with type t = a) =

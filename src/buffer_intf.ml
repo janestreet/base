@@ -78,5 +78,5 @@ module type Buffer = sig
 
   (** Buffers using strings as underlying storage medium: *)
 
-  include S with type t = Caml.Buffer.t (** @open *)
+  include S with type t = Stdlib.Buffer.t (** @open *)
 end

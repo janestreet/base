@@ -6,9 +6,12 @@ module Array = Array0
 (* We maintain the property that all values of type [t] do not have the tag
    [double_array_tag].  Some functions below assume this in order to avoid testing the
    tag, and will segfault if this property doesn't hold. *)
-type t = Caml.Obj.t array
+type t = Stdlib.Obj.t array
 
-let invariant t = assert (Caml.Obj.tag (Caml.Obj.repr t) <> Caml.Obj.double_array_tag)
+let invariant t =
+  assert (Stdlib.Obj.tag (Stdlib.Obj.repr t) <> Stdlib.Obj.double_array_tag)
+;;
+
 let length = Array.length (* would check for float arrays in 32 bit, but whatever *)
 
 let sexp_of_t t =
@@ -16,7 +19,7 @@ let sexp_of_t t =
     (String.concat ~sep:"" [ "<Obj_array.t of length "; Int.to_string (length t); ">" ])
 ;;
 
-let zero_obj = Caml.Obj.repr (0 : int)
+let zero_obj = Stdlib.Obj.repr (0 : int)
 
 (* We call [Array.create] with a value that is not a float so that the array doesn't get
    tagged with [Double_array_tag]. *)
@@ -35,17 +38,20 @@ let get t i =
      if [t] is tagged with [Double_array_tag].  It is NOT ok to use [int array] since (if
      this function is inlined and the array contains in-heap boxed values) wrong register
      typing may result, leading to a failure to register necessary GC roots. *)
-  Caml.Obj.repr
+  Stdlib.Obj.repr
     (* [Sys.opaque_identity] is required on the array because this code breaks the usual
        assumptions about array kinds that the Flambda 2 optimiser can see. *)
-    ((Sys.opaque_identity (Caml.Obj.magic (t : t) : not_a_float array)).(i) : not_a_float)
+    ((Sys.opaque_identity (Stdlib.Obj.magic (t : t) : not_a_float array)).(i)
+     : not_a_float)
 ;;
 
 let[@inline always] unsafe_get t i =
   (* Make the compiler believe [t] is an array not containing floats so it does not check
      if [t] is tagged with [Double_array_tag]. *)
-  Caml.Obj.repr
-    (Array.unsafe_get (Sys.opaque_identity (Caml.Obj.magic (t : t) : not_a_float array)) i
+  Stdlib.Obj.repr
+    (Array.unsafe_get
+       (Sys.opaque_identity (Obj_local.magic (t : t) : not_a_float array))
+       i
      : not_a_float)
 ;;
 
@@ -56,21 +62,21 @@ let[@inline always] unsafe_set_with_caml_modify t i obj =
      Obj.double_array_tag) which flambda has tried in the past (at least that's assuming
      the compiler respects Sys.opaque_identity, which is not always the case). *)
   Array.unsafe_set
-    (Sys.opaque_identity (Caml.Obj.magic (t : t) : not_a_float array))
+    (Sys.opaque_identity (Obj_local.magic (t : t) : not_a_float array))
     i
-    (Caml.Obj.obj (Sys.opaque_identity obj) : not_a_float)
+    (Stdlib.Obj.obj (Sys.opaque_identity obj) : not_a_float)
 ;;
 
 let[@inline always] set_with_caml_modify t i obj =
   (* same as unsafe_set_with_caml_modify but safe *)
-  (Sys.opaque_identity (Caml.Obj.magic (t : t) : not_a_float array)).(i)
-  <- (Caml.Obj.obj (Sys.opaque_identity obj) : not_a_float)
+  (Sys.opaque_identity (Stdlib.Obj.magic (t : t) : not_a_float array)).(i)
+  <- (Stdlib.Obj.obj (Sys.opaque_identity obj) : not_a_float)
 ;;
 
 let[@inline always] unsafe_set_int_assuming_currently_int t i int =
   (* This skips [caml_modify], which is OK if both the old and new values are integers. *)
   Array.unsafe_set
-    (Sys.opaque_identity (Caml.Obj.magic (t : t) : int array))
+    (Sys.opaque_identity (Obj_local.magic (t : t) : int array))
     i
     (Sys.opaque_identity int)
 ;;
@@ -85,24 +91,24 @@ let set t i obj =
   (* We use [get] first but then we use [Array.unsafe_set] since we know that [i] is
      valid. *)
   let old_obj = get t i in
-  if Caml.Obj.is_int old_obj && Caml.Obj.is_int obj
-  then unsafe_set_int_assuming_currently_int t i (Caml.Obj.obj obj : int)
+  if Stdlib.Obj.is_int old_obj && Stdlib.Obj.is_int obj
+  then unsafe_set_int_assuming_currently_int t i (Stdlib.Obj.obj obj : int)
   else if not (phys_equal old_obj obj)
   then unsafe_set_with_caml_modify t i obj
 ;;
 
 let[@inline always] unsafe_set t i obj =
   let old_obj = unsafe_get t i in
-  if Caml.Obj.is_int old_obj && Caml.Obj.is_int obj
-  then unsafe_set_int_assuming_currently_int t i (Caml.Obj.obj obj : int)
+  if Stdlib.Obj.is_int old_obj && Stdlib.Obj.is_int obj
+  then unsafe_set_int_assuming_currently_int t i (Stdlib.Obj.obj obj : int)
   else if not (phys_equal old_obj obj)
   then unsafe_set_with_caml_modify t i obj
 ;;
 
 let[@inline always] unsafe_set_omit_phys_equal_check t i obj =
   let old_obj = unsafe_get t i in
-  if Caml.Obj.is_int old_obj && Caml.Obj.is_int obj
-  then unsafe_set_int_assuming_currently_int t i (Caml.Obj.obj obj : int)
+  if Stdlib.Obj.is_int old_obj && Stdlib.Obj.is_int obj
+  then unsafe_set_int_assuming_currently_int t i (Stdlib.Obj.obj obj : int)
   else unsafe_set_with_caml_modify t i obj
 ;;
 
@@ -115,7 +121,7 @@ let swap t i j =
 
 let create ~len x =
   (* If we can, use [Array.create] directly. *)
-  if Caml.Obj.tag x <> Caml.Obj.double_tag
+  if Stdlib.Obj.tag x <> Stdlib.Obj.double_tag
   then Array.create ~len x
   else (
     (* Otherwise use [create_zero] and set the contents *)
@@ -131,8 +137,8 @@ let singleton obj = create ~len:1 obj
 
 (* Pre-condition: t.(i) is an integer. *)
 let unsafe_set_assuming_currently_int t i obj =
-  if Caml.Obj.is_int obj
-  then unsafe_set_int_assuming_currently_int t i (Caml.Obj.obj obj : int)
+  if Stdlib.Obj.is_int obj
+  then unsafe_set_int_assuming_currently_int t i (Stdlib.Obj.obj obj : int)
   else
     (* [t.(i)] is an integer and [obj] is not, so we do not need to check if they are
        equal. *)
@@ -141,14 +147,15 @@ let unsafe_set_assuming_currently_int t i obj =
 
 let unsafe_set_int t i int =
   let old_obj = unsafe_get t i in
-  if Caml.Obj.is_int old_obj
+  if Stdlib.Obj.is_int old_obj
   then unsafe_set_int_assuming_currently_int t i int
-  else unsafe_set_with_caml_modify t i (Caml.Obj.repr int)
+  else unsafe_set_with_caml_modify t i (Stdlib.Obj.repr int)
 ;;
 
 let unsafe_clear_if_pointer t i =
   let old_obj = unsafe_get t i in
-  if not (Caml.Obj.is_int old_obj) then unsafe_set_with_caml_modify t i (Caml.Obj.repr 0)
+  if not (Stdlib.Obj.is_int old_obj)
+  then unsafe_set_with_caml_modify t i (Stdlib.Obj.repr 0)
 ;;
 
 (** [unsafe_blit] is like [Array.blit], except it uses our own for-loop to avoid

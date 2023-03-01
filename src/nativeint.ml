@@ -1,9 +1,13 @@
 open! Import
-open! Caml.Nativeint
+open! Stdlib.Nativeint
 include Nativeint_replace_polymorphic_compare
 
 module T = struct
-  type t = nativeint [@@deriving_inline hash, sexp, sexp_grammar]
+  type t = nativeint [@@deriving_inline globalize, hash, sexp, sexp_grammar]
+
+  let (globalize : (t[@ocaml.local]) -> t) =
+    (globalize_nativeint : (t[@ocaml.local]) -> t)
+  ;;
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_nativeint
@@ -59,7 +63,7 @@ include Conv.Make_hex (struct
     let neg = neg
     let ( < ) = ( < )
     let to_string i = Printf.sprintf "%nx" i
-    let of_string s = Caml.Scanf.sscanf s "%nx" Fn.id
+    let of_string s = Stdlib.Scanf.sscanf s "%nx" Fn.id
     let module_name = "Base.Nativeint.Hex"
   end)
 
@@ -120,14 +124,14 @@ module Pow2 = struct
     Printf.invalid_argf "argument must be strictly positive" ()
   ;;
 
-  let ( lor ) = Caml.Nativeint.logor
-  let ( lsr ) = Caml.Nativeint.shift_right_logical
-  let ( land ) = Caml.Nativeint.logand
+  let ( lor ) = Stdlib.Nativeint.logor
+  let ( lsr ) = Stdlib.Nativeint.shift_right_logical
+  let ( land ) = Stdlib.Nativeint.logand
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 (x : nativeint) =
     if x <= 0n then non_positive_argument ();
-    let x = Caml.Nativeint.pred x in
+    let x = Stdlib.Nativeint.pred x in
     let x = x lor (x lsr 1) in
     let x = x lor (x lsr 2) in
     let x = x lor (x lsr 4) in
@@ -136,7 +140,7 @@ module Pow2 = struct
     (* The next line is superfluous on 32-bit architectures, but it's faster to do it
        anyway than to branch *)
     let x = x lor (x lsr 32) in
-    Caml.Nativeint.succ x
+    Stdlib.Nativeint.succ x
   ;;
 
   (** "floor power of 2" - Largest power of 2 less than or equal to x. *)
@@ -148,12 +152,12 @@ module Pow2 = struct
     let x = x lor (x lsr 8) in
     let x = x lor (x lsr 16) in
     let x = x lor (x lsr 32) in
-    Caml.Nativeint.sub x (x lsr 1)
+    Stdlib.Nativeint.sub x (x lsr 1)
   ;;
 
   let is_pow2 x =
     if x <= 0n then non_positive_argument ();
-    x land Caml.Nativeint.pred x = 0n
+    x land Stdlib.Nativeint.pred x = 0n
   ;;
 
   (* C stubs for nativeint clz and ctz to use the CLZ/BSR/CTZ/BSF instruction where possible *)
@@ -171,7 +175,7 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if Poly.( <= ) i Caml.Nativeint.zero
+    if Poly.( <= ) i Stdlib.Nativeint.zero
     then
       raise_s
         (Sexp.message
@@ -182,15 +186,15 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if Poly.( <= ) i Caml.Nativeint.zero
+    if Poly.( <= ) i Stdlib.Nativeint.zero
     then
       raise_s
         (Sexp.message
            "[Nativeint.ceil_log2] got invalid input"
            [ "", sexp_of_nativeint i ]);
-    if Caml.Nativeint.equal i Caml.Nativeint.one
+    if Stdlib.Nativeint.equal i Stdlib.Nativeint.one
     then 0
-    else num_bits - clz (Caml.Nativeint.pred i)
+    else num_bits - clz (Stdlib.Nativeint.pred i)
   ;;
 end
 
@@ -293,4 +297,4 @@ include O
    this module. *)
 include Nativeint_replace_polymorphic_compare
 
-external bswap : (t[@local_opt]) -> t = "%bswap_native"
+external bswap : (t[@local_opt]) -> (t[@local_opt]) = "%bswap_native"

@@ -120,7 +120,7 @@ let%test _ = pow min_value 1 = min_value
 let%test _ = pow max_value 1 = max_value
 
 let%test "comparisons" =
-  let original_compare (x : int) y = Caml.compare x y in
+  let original_compare (x : int) y = Stdlib.compare x y in
   let valid_compare x y =
     let result = compare x y in
     let expect = original_compare x y in

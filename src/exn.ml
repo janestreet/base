@@ -6,7 +6,7 @@ let sexp_of_t = (sexp_of_exn : t -> Sexplib0.Sexp.t)
 
 [@@@end]
 
-let exit = Caml.exit
+let exit = Stdlib.exit
 
 exception Finally of t * t [@@deriving_inline sexp]
 
@@ -57,7 +57,7 @@ let () =
 let create_s sexp = Sexp sexp
 
 let raise_with_original_backtrace t backtrace =
-  Caml.Printexc.raise_with_backtrace t backtrace
+  Stdlib.Printexc.raise_with_backtrace t backtrace
 ;;
 
 external is_phys_equal_most_recent : t -> bool = "Base_caml_exn_is_most_recent_exn"
@@ -66,7 +66,7 @@ let reraise exn str =
   let exn' = Reraised (str, exn) in
   if is_phys_equal_most_recent exn
   then (
-    let bt = Caml.Printexc.get_raw_backtrace () in
+    let bt = Stdlib.Printexc.get_raw_backtrace () in
     raise_with_original_backtrace exn' bt)
   else raise exn'
 ;;
@@ -82,7 +82,7 @@ let protectx ~f x ~(finally : _ -> unit) =
     finally x;
     res
   | exception exn ->
-    let bt = Caml.Printexc.get_raw_backtrace () in
+    let bt = Stdlib.Printexc.get_raw_backtrace () in
     (match finally x with
      | () -> raise_with_original_backtrace exn bt
      | exception final_exn ->
@@ -106,39 +106,39 @@ include Pretty_printer.Register_pp (struct
     let pp ppf t =
       match sexp_of_exn_opt t with
       | Some sexp -> Sexp.pp_hum ppf sexp
-      | None -> Caml.Format.pp_print_string ppf (Caml.Printexc.to_string t)
+      | None -> Stdlib.Format.pp_print_string ppf (Stdlib.Printexc.to_string t)
     ;;
 
     let module_name = "Base.Exn"
   end)
 
 let print_with_backtrace exc raw_backtrace =
-  Caml.Format.eprintf "@[<2>Uncaught exception:@\n@\n@[%a@]@]@\n@." pp exc;
-  if Caml.Printexc.backtrace_status ()
-  then Caml.Printexc.print_raw_backtrace Caml.stderr raw_backtrace;
-  Caml.flush Caml.stderr
+  Stdlib.Format.eprintf "@[<2>Uncaught exception:@\n@\n@[%a@]@]@\n@." pp exc;
+  if Stdlib.Printexc.backtrace_status ()
+  then Stdlib.Printexc.print_raw_backtrace Stdlib.stderr raw_backtrace;
+  Stdlib.flush Stdlib.stderr
 ;;
 
 let set_uncaught_exception_handler () =
-  Caml.Printexc.set_uncaught_exception_handler print_with_backtrace
+  Stdlib.Printexc.set_uncaught_exception_handler print_with_backtrace
 ;;
 
 let handle_uncaught_aux ~do_at_exit ~exit f =
   try f () with
   | exc ->
-    let raw_backtrace = Caml.Printexc.get_raw_backtrace () in
+    let raw_backtrace = Stdlib.Printexc.get_raw_backtrace () in
     (* One reason to run [do_at_exit] handlers before printing out the error message is
        that it helps curses applications bring the terminal in a good state, otherwise the
        error message might get corrupted.  Also, the OCaml top-level uncaught exception
        handler does the same. *)
     if do_at_exit
     then (
-      try Caml.do_at_exit () with
+      try Stdlib.do_at_exit () with
       | _ -> ());
     (try print_with_backtrace exc raw_backtrace with
      | _ ->
        (try
-          Caml.Printf.eprintf "Exn.handle_uncaught could not print; exiting anyway\n%!"
+          Stdlib.Printf.eprintf "Exn.handle_uncaught could not print; exiting anyway\n%!"
         with
         | _ -> ()));
     exit 1
@@ -153,7 +153,7 @@ let handle_uncaught ~exit:must_exit f =
 let reraise_uncaught str func =
   try func () with
   | exn ->
-    let bt = Caml.Printexc.get_raw_backtrace () in
+    let bt = Stdlib.Printexc.get_raw_backtrace () in
     raise_with_original_backtrace (Reraised (str, exn)) bt
 ;;
 
@@ -163,7 +163,7 @@ let raise_without_backtrace e =
   (* We clear the backtrace to reduce confusion, so that people don't think whatever
      is stored corresponds to this raise. *)
   clear_backtrace ();
-  Caml.raise_notrace e
+  Stdlib.raise_notrace e
 ;;
 
 let initialize_module () = set_uncaught_exception_handler ()

@@ -16,6 +16,23 @@ let%test_module "Blit" =
        (Bytes))
 ;;
 
+let%expect_test "local" =
+  let bytes = Bytes.create_local 10 in
+  printf "%d\n" (Bytes.length bytes);
+  [%expect {| 10 |}];
+  for i = 0 to 9 do
+    Bytes.set bytes i (Int.to_string i).[0]
+  done;
+  let string = Bytes.unsafe_to_string ~no_mutation_while_string_reachable:bytes in
+  for i = 0 to 9 do
+    printf "%c" string.[i]
+  done;
+  [%expect {| 0123456789 |}];
+  Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+    ignore (Bytes.create_local (Sys.max_string_length + 1) : Bytes.t));
+  [%expect {| (Invalid_argument Bytes.create_local) |}]
+;;
+
 let%test_module "Unsafe primitives" =
   (module struct
     let%expect_test "16-bit primitives" =

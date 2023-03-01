@@ -11,7 +11,7 @@
 val get_argv : unit -> string array
 
 (** A single result from [get_argv ()]. This value is indefinitely deprecated. It is kept
-    for compatibility with {!Caml.Sys}. *)
+    for compatibility with {!Stdlib.Sys}. *)
 val argv : string array
 [@@deprecated
   "[since 2019-08] Use [Sys.get_argv] instead, which has the correct behavior when \
@@ -119,4 +119,7 @@ val getenv_exn : string -> string
         ignore (Sys.opaque_identity (my_pure_computation ()))
       done
     ]} *)
-external opaque_identity : 'a -> 'a = "%opaque"
+external opaque_identity : ('a[@local_opt]) -> ('a[@local_opt]) = "%opaque"
+
+(** Like [opaque_identity]. Forces its argument to be globally allocated. *)
+external opaque_identity_global : 'a -> 'a = "%opaque"

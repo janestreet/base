@@ -18,7 +18,7 @@ open! Import
 module Cheap_option = struct
   (* This is taken from core. Rather than expose it in the public interface of base, just
      keep a copy around here. *)
-  let phys_same (type a b) (a : a) (b : b) = phys_equal a (Caml.Obj.magic b : a)
+  let phys_same (type a b) (a : a) (b : b) = phys_equal a (Stdlib.Obj.magic b : a)
 
   module T0 : sig
     type 'a t
@@ -42,7 +42,9 @@ module Cheap_option = struct
 
        this code is duplicated in Moption, and if we find yet another place where we want
        it we should reconsider making it shared. *)
-    let none_substitute : _ t = Caml.Obj.obj (Caml.Obj.new_block Caml.Obj.abstract_tag 1)
+    let none_substitute : _ t =
+      Stdlib.Obj.obj (Stdlib.Obj.new_block Stdlib.Obj.abstract_tag 1)
+    ;;
 
     let none : _ t =
       (* The number was produced by
@@ -56,18 +58,18 @@ module Cheap_option = struct
          y] is not a pointer if [c] is an integer compile-time constant.  This is being
          fixed in https://github.com/ocaml/ocaml/pull/555.  The "memory corruption" test
          below demonstrates the issue.  *)
-      Caml.Obj.magic `x6e8ee3478e1d7449
+      Stdlib.Obj.magic `x6e8ee3478e1d7449
     ;;
 
     let is_none x = phys_equal x none
     let is_some x = not (phys_equal x none)
 
     let some (type a) (x : a) : a t =
-      if phys_same x none then none_substitute else Caml.Obj.magic x
+      if phys_same x none then none_substitute else Stdlib.Obj.magic x
     ;;
 
     let value_unsafe (type a) (x : a t) : a =
-      if phys_equal x none_substitute then Caml.Obj.magic none else Caml.Obj.magic x
+      if phys_equal x none_substitute then Stdlib.Obj.magic none else Stdlib.Obj.magic x
     ;;
 
     let value_exn x =
@@ -169,7 +171,7 @@ let foldi input ~init ~f =
 let fold input ~init ~f = foldi input ~init ~f:(fun (_ : int) acc x -> f acc x) [@nontail]
 
 include Indexed_container.Make_gen (struct
-    type nonrec 'a t = 'a t
+    type nonrec ('a, _) t = 'a t
     type 'a elt = 'a option
 
     let fold = fold
@@ -178,6 +180,8 @@ include Indexed_container.Make_gen (struct
     let iteri = `Custom iteri
     let length = `Custom length
   end)
+
+let length = Uniform_array.length
 
 let mapi input ~f =
   let output = create ~len:(length input) in

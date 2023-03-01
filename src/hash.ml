@@ -43,7 +43,7 @@ module Folding (Hash : Hash_intf.S) :
 
   (* This ignores the sign bit on 32-bit architectures, but it's unlikely to lead to
      frequent collisions (min_value colliding with 0 is the most likely one).  *)
-  let hash_fold_int32 = as_int Caml.Int32.to_int
+  let hash_fold_int32 = as_int Stdlib.Int32.to_int
   let hash_fold_char = as_int Char.to_int
 
   let hash_fold_bool =
@@ -52,7 +52,7 @@ module Folding (Hash : Hash_intf.S) :
       | false -> 0)
   ;;
 
-  let hash_fold_nativeint s x = hash_fold_int64 s (Caml.Int64.of_nativeint x)
+  let hash_fold_nativeint s x = hash_fold_int64 s (Stdlib.Int64.of_nativeint x)
 
   let hash_fold_option hash_fold_elem s = function
     | None -> hash_fold_int s 0
@@ -75,7 +75,7 @@ module Folding (Hash : Hash_intf.S) :
     s
   ;;
 
-  let hash_fold_lazy_t hash_fold_elem s x = hash_fold_elem s (Caml.Lazy.force x)
+  let hash_fold_lazy_t hash_fold_elem s x = hash_fold_elem s (Stdlib.Lazy.force x)
   let hash_fold_ref_frozen hash_fold_elem s x = hash_fold_elem s !x
 
   let rec hash_fold_array_frozen_i hash_fold_elem s array i =

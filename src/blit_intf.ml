@@ -8,17 +8,22 @@ open! Import
     Furthermore, [blit] raises if [src_pos], [len], and [dst_pos] don't specify valid
     slices of [src] and [dst]. *)
 type ('src, 'dst) blit =
-  src:'src -> src_pos:int -> dst:'dst -> dst_pos:int -> len:int -> unit
+  src:('src[@local])
+  -> src_pos:int
+  -> dst:('dst[@local])
+  -> dst_pos:int
+  -> len:int
+  -> unit
 
 (** [blito] is like [blit], except that the [src_pos], [src_len], and [dst_pos] are
     optional (hence the "o" in "blito").  Also, we use [src_len] rather than [len] as a
     reminder that if [src_len] isn't supplied, then the default is to take the slice
     running from [src_pos] to the end of [src]. *)
 type ('src, 'dst) blito =
-  src:'src
+  src:('src[@local])
   -> ?src_pos:int (** default is [0] *)
   -> ?src_len:int (** default is [length src - src_pos] *)
-  -> dst:'dst
+  -> dst:('dst[@local])
   -> ?dst_pos:int (** default is [0] *)
   -> unit
   -> unit
@@ -94,7 +99,7 @@ end
 module type Sequence = sig
   type t
 
-  val length : t -> int
+  val length : (t[@local]) -> int
 end
 
 type 'a poly = 'a
@@ -106,7 +111,7 @@ module type Sequence1 = sig
       0]. *)
   val create_like : len:int -> 'a t -> 'a t
 
-  val length : _ t -> int
+  val length : (_ t[@local]) -> int
   val unsafe_blit : ('a t, 'a t) blit
 end
 

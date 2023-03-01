@@ -106,7 +106,7 @@ module type S_without_syntax_gen = sig
 
   (** [ignore_m t] is [map t ~f:(fun _ -> ())].  [ignore_m] used to be called [ignore],
       but we decided that was a bad name, because it shadowed the widely used
-      [Caml.ignore].  Some monads still do [let ignore = ignore_m] for historical
+      [Stdlib.ignore].  Some monads still do [let ignore = ignore_m] for historical
       reasons. *)
   val ignore_m : 'a t -> unit t
 

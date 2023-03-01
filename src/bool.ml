@@ -1,12 +1,15 @@
 open! Import
+include Bool0
 
 let invalid_argf = Printf.invalid_argf
 
 module T = struct
-  type t = bool [@@deriving_inline compare, enumerate, hash, sexp, sexp_grammar]
+  type t = bool
+  [@@deriving_inline compare, enumerate, globalize, hash, sexp, sexp_grammar]
 
   let compare = (compare_bool : t -> t -> int)
   let all = ([ false; true ] : t list)
+  let (globalize : (t[@ocaml.local]) -> t) = (globalize_bool : (t[@ocaml.local]) -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_bool
@@ -30,7 +33,7 @@ module T = struct
     | s -> invalid_argf "Bool.of_string: expected true or false but got %s" s ()
   ;;
 
-  let to_string = Caml.string_of_bool
+  let to_string = Stdlib.string_of_bool
 end
 
 include T
@@ -72,7 +75,7 @@ let to_int x = bool_to_int x
 module Non_short_circuiting = struct
   (* We don't expose this, since we don't want to break the invariant mentioned below of
      (to_int true = 1) and (to_int false = 0). *)
-  let unsafe_of_int (x : int) : bool = Caml.Obj.magic x
+  let unsafe_of_int (x : int) : bool = Stdlib.Obj.magic x
   let ( || ) a b = unsafe_of_int (to_int a lor to_int b)
   let ( && ) a b = unsafe_of_int (to_int a land to_int b)
 end

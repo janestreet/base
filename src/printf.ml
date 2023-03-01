@@ -1,5 +1,5 @@
 open! Import0
-include Caml.Printf
+include Stdlib.Printf
 
 (** failwith, invalid_arg, and exit accepting printf's format. *)
 

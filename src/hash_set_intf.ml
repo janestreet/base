@@ -2,7 +2,9 @@ open! Import
 module Key = Hashtbl_intf.Key
 
 module type Accessors = sig
-  include Container.Generic
+  type 'a t
+
+  include Container.Generic with type ('a, _) t := 'a t
 
   (** override [Container.Generic.mem] *)
   val mem : 'a t -> 'a -> bool

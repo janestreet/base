@@ -92,7 +92,8 @@ module Id = struct
 
       let sexp_of_t _sexp_of_a t =
         `type_witness
-          (Caml.Obj.Extension_constructor.id (Caml.Obj.Extension_constructor.of_val t))
+          (Stdlib.Obj.Extension_constructor.id
+             (Stdlib.Obj.Extension_constructor.of_val t))
         |> sexp_of_type_witness_int
       ;;
     end
@@ -118,7 +119,7 @@ module Id = struct
     ;;
 
     let uid (type a) (module M : S with type t = a) =
-      Caml.Obj.Extension_constructor.id (Caml.Obj.Extension_constructor.of_val M.Key)
+      Stdlib.Obj.Extension_constructor.id (Stdlib.Obj.Extension_constructor.of_val M.Key)
     ;;
 
     (* We want a constant allocated once that [same] can return whenever it gets the same

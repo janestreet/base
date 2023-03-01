@@ -3,7 +3,7 @@ module Int = Int0
 module String = String0
 
 module T = struct
-  type t = Caml.Lexing.position =
+  type t = Stdlib.Lexing.position =
     { pos_fname : string
     ; pos_lnum : int
     ; pos_bol : int
@@ -13,7 +13,7 @@ module T = struct
 
   let compare =
     (fun a__001_ b__002_ ->
-       if Ppx_compare_lib.phys_equal a__001_ b__002_
+       if Stdlib.( == ) a__001_ b__002_
        then 0
        else (
          match compare_string a__001_.pos_fname b__002_.pos_fname with
@@ -95,7 +95,7 @@ let make_location_string ~pos_fname ~pos_lnum ~pos_cnum ~pos_bol =
     [ pos_fname; ":"; Int.to_string pos_lnum; ":"; Int.to_string (pos_cnum - pos_bol) ]
 ;;
 
-let to_string { Caml.Lexing.pos_fname; pos_lnum; pos_cnum; pos_bol } =
+let to_string { Stdlib.Lexing.pos_fname; pos_lnum; pos_cnum; pos_bol } =
   make_location_string ~pos_fname ~pos_lnum ~pos_cnum ~pos_bol
 ;;
 

@@ -18,8 +18,9 @@ val empty : _ t
 (** Initially filled with all [None] *)
 val create : len:int -> _ t
 
-include Indexed_container.Generic with type 'a t := 'a t and type 'a elt := 'a option
+include Indexed_container.Generic with type ('a, _) t := 'a t and type 'a elt := 'a option
 
+val length : (_ t[@local]) -> int
 val init_some : int -> f:((int -> 'a)[@local]) -> 'a t
 val init : int -> f:((int -> 'a option)[@local]) -> 'a t
 val of_array : 'a option array -> 'a t

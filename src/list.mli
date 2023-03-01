@@ -4,9 +4,12 @@
 
 open! Import
 
-type 'a t = 'a list [@@deriving_inline compare, hash, sexp, sexp_grammar]
+type 'a t = 'a list [@@deriving_inline compare, globalize, hash, sexp, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+
+val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
+
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
@@ -14,8 +17,7 @@ val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
 [@@@end]
 
-
-include Container.S1 with type 'a t := 'a t
+include Indexed_container.S1_with_creators with type 'a t := 'a t
 
 include Invariant_intf.S1 with type 'a t := 'a t
 
@@ -44,14 +46,6 @@ module Or_unequal_lengths : sig
 
   [@@@end]
 end
-
-(** [of_list] is the identity function.  It is useful so that the [List] module matches
-    the same signature that other container modules do, namely:
-
-    {[
-      val of_list : 'a List.t -> 'a t
-    ]} *)
-val of_list : 'a t -> 'a t
 
 val nth : 'a t -> int -> 'a option
 
@@ -89,17 +83,19 @@ val rev_map2 : 'a t -> 'b t -> f:(('a -> 'b -> 'c)[@local]) -> 'c t Or_unequal_l
 
 (** [fold2 ~f ~init:a [b1; ...; bn] [c1; ...; cn]] is [f (... (f (f a b1 c1) b2 c2)
     ...) bn cn].  The exn version will raise if the two lists have different lengths. *)
-val fold2_exn : 'a t -> 'b t -> init:'c -> f:(('c -> 'a -> 'b -> 'c)[@local]) -> 'c
+val fold2_exn
+  :  'a t
+  -> 'b t
+  -> init:'acc
+  -> f:(('acc -> 'a -> 'b -> 'acc)[@local])
+  -> 'acc
 
 val fold2
   :  'a t
   -> 'b t
-  -> init:'c
-  -> f:(('c -> 'a -> 'b -> 'c)[@local])
-  -> 'c Or_unequal_lengths.t
-
-(** Like {!List.for_all}, but passes the index as an argument. *)
-val for_alli : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
+  -> init:'acc
+  -> f:(('acc -> 'a -> 'b -> 'acc)[@local])
+  -> 'acc Or_unequal_lengths.t
 
 (** Like {!List.for_all}, but for a two-argument predicate.  The exn version will raise if
     the two lists have different lengths. *)
@@ -107,39 +103,20 @@ val for_all2_exn : 'a t -> 'b t -> f:(('a -> 'b -> bool)[@local]) -> bool
 
 val for_all2 : 'a t -> 'b t -> f:(('a -> 'b -> bool)[@local]) -> bool Or_unequal_lengths.t
 
-(** Like {!List.exists}, but passes the index as an argument. *)
-val existsi : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
-
 (** Like {!List.exists}, but for a two-argument predicate.  The exn version will raise if
     the two lists have different lengths. *)
 val exists2_exn : 'a t -> 'b t -> f:(('a -> 'b -> bool)[@local]) -> bool
 
 val exists2 : 'a t -> 'b t -> f:(('a -> 'b -> bool)[@local]) -> bool Or_unequal_lengths.t
 
-(** [filter l ~f] returns all the elements of the list [l] that satisfy the predicate [f].
-    The order of the elements in the input list is preserved. *)
-val filter : 'a t -> f:(('a -> bool)[@local]) -> 'a t
-
 (** Like [filter], but reverses the order of the input list. *)
 val rev_filter : 'a t -> f:(('a -> bool)[@local]) -> 'a t
-
-val filteri : 'a t -> f:((int -> 'a -> bool)[@local]) -> 'a t
-
-(** [partition_map t ~f] partitions [t] according to [f]. *)
-val partition_map : 'a t -> f:(('a -> ('b, 'c) Either0.t)[@local]) -> 'b t * 'c t
 
 
 val partition3_map
   :  'a t
   -> f:(('a -> [ `Fst of 'b | `Snd of 'c | `Trd of 'd ])[@local])
   -> 'b t * 'c t * 'd t
-
-(** [partition_tf l ~f] returns a pair of lists [(l1, l2)], where [l1] is the list of all
-    the elements of [l] that satisfy the predicate [f], and [l2] is the list of all the
-    elements of [l] that do not satisfy [f].  The order of the elements in the input list
-    is preserved.  The "tf" suffix is mnemonic to remind readers at a call that the result
-    is (trues, falses). *)
-val partition_tf : 'a t -> f:(('a -> bool)[@local]) -> 'a t * 'a t
 
 (** [partition_result l] returns a pair of lists [(l1, l2)], where [l1] is the
     list of all [Ok] elements in [l] and [l2] is the list of all [Error]
@@ -184,49 +161,41 @@ val hd_exn : 'a t -> 'a
 (** Returns the given list without its first element. Raises if the list is empty. *)
 val tl_exn : 'a t -> 'a t
 
-val findi : 'a t -> f:((int -> 'a -> bool)[@local]) -> (int * 'a) option
-
 (** Like [find_exn], but passes the index as an argument. *)
 val findi_exn : 'a t -> f:((int -> 'a -> bool)[@local]) -> int * 'a
 
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f].  It raises
-    [Caml.Not_found] or [Not_found_s] if there is no such element. *)
+    [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)
 val find_exn : 'a t -> f:(('a -> bool)[@local]) -> 'a
 
-(** Returns the first evaluation of [f] that returns [Some].  Raises [Caml.Not_found] or
+(** Returns the first evaluation of [f] that returns [Some].  Raises [Stdlib.Not_found] or
     [Not_found_s] if [f] always returns [None].  *)
 val find_map_exn : 'a t -> f:(('a -> 'b option)[@local]) -> 'b
 
-(** Like [find_map] and [find_map_exn], but passes the index as an argument. *)
-
-val find_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b option
+(** Like [find_map_exn], but passes the index as an argument. *)
 val find_mapi_exn : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b
-
-(** E.g., [append [1; 2] [3; 4; 5]] is [[1; 2; 3; 4; 5]] *)
-val append : 'a t -> 'a t -> 'a t
-
-(** [map f [a1; ...; an]] applies function [f] to [a1], [a2], ..., [an], in order,
-    and builds the list [[f a1; ...; f an]] with the results returned by [f]. *)
-val map : 'a t -> f:(('a -> 'b)[@local]) -> 'b t
 
 (** [folding_map] is a version of [map] that threads an accumulator through calls to
     [f]. *)
 
-val folding_map : 'a t -> init:'b -> f:(('b -> 'a -> 'b * 'c)[@local]) -> 'c t
-val folding_mapi : 'a t -> init:'b -> f:((int -> 'b -> 'a -> 'b * 'c)[@local]) -> 'c t
+val folding_map : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc * 'b)[@local]) -> 'b t
+
+val folding_mapi
+  :  'a t
+  -> init:'acc
+  -> f:((int -> 'acc -> 'a -> 'acc * 'b)[@local])
+  -> 'b t
 
 (** [fold_map] is a combination of [fold] and [map] that threads an accumulator through
     calls to [f]. *)
 
-val fold_map : 'a t -> init:'b -> f:(('b -> 'a -> 'b * 'c)[@local]) -> 'b * 'c t
-val fold_mapi : 'a t -> init:'b -> f:((int -> 'b -> 'a -> 'b * 'c)[@local]) -> 'b * 'c t
+val fold_map : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc * 'b)[@local]) -> 'acc * 'b t
 
-(** [concat_map t ~f] is [concat (map t ~f)], except that there is no guarantee about the
-    order in which [f] is applied to the elements of [t]. *)
-val concat_map : 'a t -> f:(('a -> 'b t)[@local]) -> 'b t
-
-(** [concat_mapi t ~f] is like concat_map, but passes the index as an argument *)
-val concat_mapi : 'a t -> f:((int -> 'a -> 'b t)[@local]) -> 'b t
+val fold_mapi
+  :  'a t
+  -> init:'acc
+  -> f:((int -> 'acc -> 'a -> 'acc * 'b)[@local])
+  -> 'acc * 'b t
 
 (** [map2 [a1; ...; an] [b1; ...; bn] ~f] is [[f a1 b1; ...; f an bn]].  The exn
     version will raise if the two lists have different lengths. *)
@@ -262,12 +231,12 @@ val rev_map_append : 'a t -> 'b t -> f:(('a -> 'b)[@local]) -> 'b t
 
 
 (** [fold_right [a1; ...; an] ~f ~init:b] is [f a1 (f a2 (... (f an b) ...))]. *)
-val fold_right : 'a t -> f:(('a -> 'b -> 'b)[@local]) -> init:'b -> 'b
+val fold_right : 'a t -> f:(('a -> 'acc -> 'acc)[@local]) -> init:'acc -> 'acc
 
 (** [fold_left] is the same as {!Container.S1.fold}, and one should always use
     [fold] rather than [fold_left], except in functors that are parameterized
     over a more general signature where this equivalence does not hold. *)
-val fold_left : 'a t -> init:'b -> f:(('b -> 'a -> 'b)[@local]) -> 'b
+val fold_left : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc)[@local]) -> 'acc
 
 (** Transform a list of pairs into a pair of lists: [unzip [(a1,b1); ...; (an,bn)]] is
     [([a1; ...; an], [b1; ...; bn])]. *)
@@ -281,20 +250,7 @@ val unzip3 : ('a * 'b * 'c) t -> 'a t * 'b t * 'c t
 
 val zip : 'a t -> 'b t -> ('a * 'b) t Or_unequal_lengths.t
 val zip_exn : 'a t -> 'b t -> ('a * 'b) t
-
-(** [mapi] is just like map, but it also passes in the index of each element as the first
-    argument to the mapped function. Tail-recursive. *)
-val mapi : 'a t -> f:((int -> 'a -> 'b)[@local]) -> 'b t
-
 val rev_mapi : 'a t -> f:((int -> 'a -> 'b)[@local]) -> 'b t
-
-(** [iteri] is just like [iter], but it also passes in the index of each element as the
-    first argument to the iter'd function. Tail-recursive. *)
-val iteri : 'a t -> f:((int -> 'a -> unit)[@local]) -> unit
-
-(** [foldi] is just like [fold], but it also passes in the index of each element as the
-    first argument to the folded function. Tail-recursive. *)
-val foldi : 'a t -> init:'b -> f:((int -> 'b -> 'a -> 'b)[@local]) -> 'b
 
 (** [reduce_exn [a1; ...; an] ~f] is [f (... (f (f a1 a2) a3) ...) an].  It fails on the
     empty list.  Tail recursive. *)
@@ -394,11 +350,6 @@ val find_all_dups : 'a t -> compare:('a -> 'a -> int) -> 'a list
     or [None] if no such element exists. *)
 val all_equal : 'a t -> equal:(('a -> 'a -> bool)[@local]) -> 'a option
 
-(** [count l ~f] is the number of elements in [l] that satisfy the predicate [f]. *)
-val count : 'a t -> f:(('a -> bool)[@local]) -> int
-
-val counti : 'a t -> f:((int -> 'a -> bool)[@local]) -> int
-
 (** [range ?stride ?start ?stop start_i stop_i] is the list of integers from [start_i] to
     [stop_i], stepping by [stride].  If [stride] < 0 then we need [start_i] > [stop_i] for
     the result to be nonempty (or [start_i] = [stop_i] in the case where both bounds are
@@ -423,11 +374,6 @@ val range'
   -> 'a
   -> 'a t
 
-(** [init n ~f] is [[(f 0); (f 1); ...; (f (n-1))]].  It is an error if [n < 0].
-    [init] applies [f] to values in decreasing order; starting with [n - 1], and
-    ending with [0]. This is the opposite order to [Array.init]. *)
-val init : int -> f:((int -> 'a)[@local]) -> 'a t
-
 (** [rev_filter_map l ~f] is the reversed sublist of [l] containing only elements for
     which [f] returns [Some e]. *)
 val rev_filter_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b t
@@ -435,14 +381,6 @@ val rev_filter_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b t
 (** rev_filter_mapi is just like [rev_filter_map], but it also passes in the index of each
     element as the first argument to the mapped function. Tail-recursive. *)
 val rev_filter_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b t
-
-(** [filter_map l ~f] is the sublist of [l] containing only elements for which [f] returns
-    [Some e].  *)
-val filter_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b t
-
-(** filter_mapi is just like [filter_map], but it also passes in the index of each element
-    as the first argument to the mapped function. Tail-recursive. *)
-val filter_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b t
 
 (** [filter_opt l] is the sublist of [l] containing only elements which are [Some e].  In
     other words, [filter_opt l] = [filter_map ~f:Fn.id l]. *)
@@ -512,11 +450,6 @@ val split_while : 'a t -> f:(('a -> bool)[@local]) -> 'a t * 'a t
 val drop_last : 'a t -> 'a t option
 
 val drop_last_exn : 'a t -> 'a t
-
-(** Concatenates a list of lists.  The elements of the argument are all concatenated
-    together (in the same order) to give the result.  Tail recursive over outer and inner
-    lists. *)
-val concat : 'a t t -> 'a t
 
 (** Like [concat], but faster and without preserving any ordering (i.e., for lists that
     are essentially viewed as multi-sets). *)

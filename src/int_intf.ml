@@ -310,7 +310,13 @@ module type Int_without_module_types = sig
 
       [int]s always fit in a machine word. *)
 
-  include S with type t = int (** @inline *)
+  type t = int [@@deriving_inline globalize]
+
+  val globalize : (t[@ocaml.local]) -> t
+
+  [@@@end]
+
+  include S with type t := t (** @inline *)
 
   module O : sig
     (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even
@@ -365,10 +371,10 @@ module type Int_without_module_types = sig
 
   (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
     compiling without cross library inlining. *)
-  external to_int32_trunc : t -> int32 = "%int32_of_int"
-  external of_int32_trunc : int32 -> t = "%int32_to_int"
-  external of_int64_trunc : int64 -> t = "%int64_to_int"
-  external of_nativeint_trunc : nativeint -> t = "%nativeint_to_int"
+  external to_int32_trunc : (t[@local_opt]) -> (int32[@local_opt]) = "%int32_of_int"
+  external of_int32_trunc : (int32[@local_opt]) -> t = "%int32_to_int"
+  external of_int64_trunc : (int64[@local_opt]) -> t = "%int64_to_int"
+  external of_nativeint_trunc : (nativeint[@local_opt]) -> t = "%nativeint_to_int"
 
   (** {2 Byte swap operations}
 

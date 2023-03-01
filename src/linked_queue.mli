@@ -2,7 +2,7 @@
 
 open! Import
 
-include Queue_intf.S with type 'a t = 'a Caml.Queue.t (** @inline *)
+include Queue_intf.S with type 'a t = 'a Stdlib.Queue.t (** @inline *)
 
 (** [create ()] returns an empty queue. *)
 val create : unit -> _ t

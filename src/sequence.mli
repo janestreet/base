@@ -110,9 +110,9 @@ val nth_exn : 'a t -> int -> 'a
 
 (** [folding_map] is a version of [map] that threads an accumulator through calls to
     [f]. *)
-val folding_map : 'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) -> 'c t
+val folding_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'b t
 
-val folding_mapi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b * 'c) -> 'c t
+val folding_mapi : 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc * 'b) -> 'b t
 val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 val filter : 'a t -> f:('a -> bool) -> 'a t
@@ -425,8 +425,8 @@ val bounded_length : _ t -> at_most:int -> [ `Is of int | `Greater ]
     through only as much of the sequence as necessary. *)
 val length_is_bounded_by : ?min:int -> ?max:int -> _ t -> bool
 
-val of_seq : 'a Caml.Seq.t -> 'a t
-val to_seq : 'a t -> 'a Caml.Seq.t
+val of_seq : 'a Stdlib.Seq.t -> 'a t
+val to_seq : 'a t -> 'a Stdlib.Seq.t
 
 (** [Generator] is a monadic interface to generate sequences in a direct style, similar to
     Python's generators.

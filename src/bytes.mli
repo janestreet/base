@@ -7,7 +7,9 @@
 
 open! Import
 
-type t = bytes [@@deriving_inline sexp, sexp_grammar]
+type t = bytes [@@deriving_inline globalize, sexp, sexp_grammar]
+
+val globalize : (t[@ocaml.local]) -> t
 
 include Sexplib0.Sexpable.S with type t := t
 
@@ -39,6 +41,9 @@ module From_string : Blit.S_distinct with type src := string and type dst := t
     value. *)
 val create : int -> t
 
+(** [create_local] is like [create], but returns a stack-allocated [Bytes.t]. *)
+val create_local : int -> (t[@local])
+
 (** [make len c] returns a newly-allocated byte sequence of length [len] filled
     with the byte [c]. *)
 val make : int -> char -> t
@@ -63,23 +68,66 @@ val init : int -> f:((int -> char)[@local]) -> t
 val of_char_list : char list -> t
 
 (** [length t] returns the number of bytes in [t]. *)
-external length : t -> int = "%bytes_length"
+external length : (t[@local_opt]) -> int = "%bytes_length"
 
 (** [get t i] returns the [i]th byte of [t]. *)
 val get : t -> int -> char
 
-external unsafe_get : t -> int -> char = "%bytes_unsafe_get"
+external unsafe_get : (t[@local_opt]) -> (int[@local_opt]) -> char = "%bytes_unsafe_get"
 
 (** [set t i c] sets the [i]th byte of [t] to [c]. *)
-val set : t -> int -> char -> unit
+external set
+  :  (t[@local_opt])
+  -> (int[@local_opt])
+  -> (char[@local_opt])
+  -> unit
+  = "%bytes_safe_set"
 
-external unsafe_set : t -> int -> char -> unit = "%bytes_unsafe_set"
-external unsafe_get_int64 : t -> int -> int64 = "%caml_bytes_get64u"
-external unsafe_set_int64 : t -> int -> int64 -> unit = "%caml_bytes_set64u"
-external unsafe_get_int32 : t -> int -> int32 = "%caml_bytes_get32u"
-external unsafe_set_int32 : t -> int -> int32 -> unit = "%caml_bytes_set32u"
-external unsafe_get_int16 : t -> int -> int = "%caml_bytes_get16u"
-external unsafe_set_int16 : t -> int -> int -> unit = "%caml_bytes_set16u"
+external unsafe_set
+  :  (t[@local_opt])
+  -> (int[@local_opt])
+  -> (char[@local_opt])
+  -> unit
+  = "%bytes_unsafe_set"
+
+external unsafe_get_int64
+  :  (t[@local_opt])
+  -> (int[@local_opt])
+  -> int64
+  = "%caml_bytes_get64u"
+
+external unsafe_set_int64
+  :  (t[@local_opt])
+  -> (int[@local_opt])
+  -> (int64[@local_opt])
+  -> unit
+  = "%caml_bytes_set64u"
+
+external unsafe_get_int32
+  :  (t[@local_opt])
+  -> (int[@local_opt])
+  -> int32
+  = "%caml_bytes_get32u"
+
+external unsafe_set_int32
+  :  (t[@local_opt])
+  -> (int[@local_opt])
+  -> (int32[@local_opt])
+  -> unit
+  = "%caml_bytes_set32u"
+
+external unsafe_get_int16
+  :  (t[@local_opt])
+  -> (int[@local_opt])
+  -> int
+  = "%caml_bytes_get16u"
+
+external unsafe_set_int16
+  :  (t[@local_opt])
+  -> (int[@local_opt])
+  -> (int[@local_opt])
+  -> unit
+  = "%caml_bytes_set16u"
 
 (** [fill t ~pos ~len c] modifies [t] in place, replacing all the bytes from
     [pos] to [pos + len] with [c]. *)
@@ -109,11 +157,11 @@ val to_list : t -> char list
 val to_array : t -> char array
 
 (** [fold a ~f ~init:b] is [f a1 (f a2 (...))] *)
-val fold : t -> init:'a -> f:(('a -> char -> 'a)[@local]) -> 'a
+val fold : t -> init:'acc -> f:(('acc -> char -> 'acc)[@local]) -> 'acc
 
 (** [foldi] works similarly to [fold], but also passes the index of each character to
     [f]. *)
-val foldi : t -> init:'a -> f:((int -> 'a -> char -> 'a)[@local]) -> 'a
+val foldi : t -> init:'acc -> f:((int -> 'acc -> char -> 'acc)[@local]) -> 'acc
 
 (** [contains ?pos ?len t c] returns [true] iff [c] appears in [t] between [pos]
     and [pos + len]. *)
@@ -200,7 +248,10 @@ val max_length : int
     a closure to be called later, [s] should not be mutated until this
     closure is fully applied and returns ownership.}}
 *)
-val unsafe_to_string : no_mutation_while_string_reachable:t -> string
+external unsafe_to_string
+  :  no_mutation_while_string_reachable:(t[@local_opt])
+  -> (string[@local_opt])
+  = "%bytes_to_string"
 
 (** Unsafely convert a shared string to a byte sequence that should
     not be mutated.
@@ -220,4 +271,7 @@ val unsafe_to_string : no_mutation_while_string_reachable:t -> string
     (for example {!Marshal.from_bytes}) and previously used the
     [string] type for this purpose.
 *)
-val unsafe_of_string_promise_no_mutation : string -> t
+external unsafe_of_string_promise_no_mutation
+  :  (string[@local_opt])
+  -> (t[@local_opt])
+  = "%bytes_of_string"

@@ -12,7 +12,7 @@ open! Import
     represented as a string with newlines separating the frames.  [sexp_of_t] splits the
     string at newlines and removes some of the cruft, leaving a human-friendly list of
     frames, but [to_string] does not. *)
-type t = Caml.Printexc.raw_backtrace [@@deriving_inline sexp_of]
+type t = Stdlib.Printexc.raw_backtrace [@@deriving_inline sexp_of]
 
 val sexp_of_t : t -> Sexplib0.Sexp.t
 
@@ -66,7 +66,7 @@ val elide : bool ref
 module Exn : sig
   val am_recording : unit -> bool
   val set_recording : bool -> unit
-  val with_recording : bool -> f:(unit -> 'a) -> 'a
+  val with_recording : bool -> f:((unit -> 'a)[@local]) -> 'a
 
   (** [most_recent ()] returns a backtrace containing the stack that was unwound by the
       most recently raised exception.

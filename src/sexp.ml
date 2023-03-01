@@ -10,7 +10,7 @@ type t = Sexplib0.Sexp.t =
 
 let rec compare =
   (fun a__001_ b__002_ ->
-     if Ppx_compare_lib.phys_equal a__001_ b__002_
+     if Stdlib.( == ) a__001_ b__002_
      then 0
      else (
        match a__001_, b__002_ with

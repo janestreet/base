@@ -129,15 +129,15 @@ let%test_module "conversions" =
         [%here]
         (module Int)
         (module Int32)
-        (Caml.Int32.of_int, with_exn int_to_int32_exn)
-        (Caml.Int32.to_int, with_exn int32_to_int_exn);
+        (Stdlib.Int32.of_int, with_exn int_to_int32_exn)
+        (Stdlib.Int32.to_int, with_exn int32_to_int_exn);
       [%expect {| |}];
       test
         [%here]
         (module Int)
         (module Int32)
-        (Caml.Int32.of_int, optional int_to_int32)
-        (Caml.Int32.to_int, optional int32_to_int);
+        (Stdlib.Int32.of_int, optional int_to_int32)
+        (Stdlib.Int32.to_int, optional int32_to_int);
       [%expect {| |}]
     ;;
 
@@ -146,15 +146,15 @@ let%test_module "conversions" =
         [%here]
         (module Int)
         (module Int64)
-        (Caml.Int64.of_int, alwaysok int_to_int64)
-        (Caml.Int64.to_int, with_exn int64_to_int_exn);
+        (Stdlib.Int64.of_int, alwaysok int_to_int64)
+        (Stdlib.Int64.to_int, with_exn int64_to_int_exn);
       [%expect {| |}];
       test
         [%here]
         (module Int)
         (module Int64)
-        (Caml.Int64.of_int, alwaysok int_to_int64)
-        (Caml.Int64.to_int, optional int64_to_int);
+        (Stdlib.Int64.of_int, alwaysok int_to_int64)
+        (Stdlib.Int64.to_int, optional int64_to_int);
       [%expect {| |}]
     ;;
 
@@ -163,15 +163,15 @@ let%test_module "conversions" =
         [%here]
         (module Int)
         (module Nativeint)
-        (Caml.Nativeint.of_int, alwaysok int_to_nativeint)
-        (Caml.Nativeint.to_int, with_exn nativeint_to_int_exn);
+        (Stdlib.Nativeint.of_int, alwaysok int_to_nativeint)
+        (Stdlib.Nativeint.to_int, with_exn nativeint_to_int_exn);
       [%expect {| |}];
       test
         [%here]
         (module Int)
         (module Nativeint)
-        (Caml.Nativeint.of_int, alwaysok int_to_nativeint)
-        (Caml.Nativeint.to_int, optional nativeint_to_int);
+        (Stdlib.Nativeint.of_int, alwaysok int_to_nativeint)
+        (Stdlib.Nativeint.to_int, optional nativeint_to_int);
       [%expect {| |}]
     ;;
 
@@ -180,15 +180,15 @@ let%test_module "conversions" =
         [%here]
         (module Int32)
         (module Int64)
-        (Caml.Int64.of_int32, alwaysok int32_to_int64)
-        (Caml.Int64.to_int32, with_exn int64_to_int32_exn);
+        (Stdlib.Int64.of_int32, alwaysok int32_to_int64)
+        (Stdlib.Int64.to_int32, with_exn int64_to_int32_exn);
       [%expect {| |}];
       test
         [%here]
         (module Int32)
         (module Int64)
-        (Caml.Int64.of_int32, alwaysok int32_to_int64)
-        (Caml.Int64.to_int32, optional int64_to_int32);
+        (Stdlib.Int64.of_int32, alwaysok int32_to_int64)
+        (Stdlib.Int64.to_int32, optional int64_to_int32);
       [%expect {| |}]
     ;;
 
@@ -197,15 +197,15 @@ let%test_module "conversions" =
         [%here]
         (module Int32)
         (module Nativeint)
-        (Caml.Nativeint.of_int32, alwaysok int32_to_nativeint)
-        (Caml.Nativeint.to_int32, with_exn nativeint_to_int32_exn);
+        (Stdlib.Nativeint.of_int32, alwaysok int32_to_nativeint)
+        (Stdlib.Nativeint.to_int32, with_exn nativeint_to_int32_exn);
       [%expect {| |}];
       test
         [%here]
         (module Int32)
         (module Nativeint)
-        (Caml.Nativeint.of_int32, alwaysok int32_to_nativeint)
-        (Caml.Nativeint.to_int32, optional nativeint_to_int32);
+        (Stdlib.Nativeint.of_int32, alwaysok int32_to_nativeint)
+        (Stdlib.Nativeint.to_int32, optional nativeint_to_int32);
       [%expect {| |}]
     ;;
 
@@ -214,15 +214,15 @@ let%test_module "conversions" =
         [%here]
         (module Int64)
         (module Nativeint)
-        (Caml.Int64.to_nativeint, with_exn int64_to_nativeint_exn)
-        (Caml.Int64.of_nativeint, alwaysok nativeint_to_int64);
+        (Stdlib.Int64.to_nativeint, with_exn int64_to_nativeint_exn)
+        (Stdlib.Int64.of_nativeint, alwaysok nativeint_to_int64);
       [%expect {| |}];
       test
         [%here]
         (module Int64)
         (module Nativeint)
-        (Caml.Int64.to_nativeint, optional int64_to_nativeint)
-        (Caml.Int64.of_nativeint, alwaysok nativeint_to_int64);
+        (Stdlib.Int64.to_nativeint, optional int64_to_nativeint)
+        (Stdlib.Int64.of_nativeint, alwaysok nativeint_to_int64);
       [%expect {| |}]
     ;;
   end)

@@ -14,7 +14,7 @@ open! Import
 
     The return type of [pred] could be [nat option], but [(nat, string)
     Result.t] gives more control over the error message. *)
-type ('ok, 'err) t = ('ok, 'err) Caml.result =
+type ('ok, 'err) t = ('ok, 'err) Stdlib.result =
   | Ok of 'ok
   | Error of 'err
 [@@deriving_inline sexp, sexp_grammar, compare, equal, hash]

@@ -2,7 +2,7 @@ open! Import
 open Uniform_array
 
 let does_raise = Exn.does_raise
-let zero_obj = Caml.Obj.repr (0 : int)
+let zero_obj = Stdlib.Obj.repr (0 : int)
 
 (* [create_obj_array] *)
 let%test_unit _ =
@@ -12,21 +12,21 @@ let%test_unit _ =
 
 (* [create] *)
 let%test_unit _ =
-  let str = Caml.Obj.repr "foo" in
+  let str = Stdlib.Obj.repr "foo" in
   let t = create ~len:2 str in
   assert (phys_equal (get t 0) str);
   assert (phys_equal (get t 1) str)
 ;;
 
 let%test_unit _ =
-  let float = Caml.Obj.repr 3.5 in
+  let float = Stdlib.Obj.repr 3.5 in
   let t = create ~len:2 float in
-  assert (Caml.Obj.tag (Caml.Obj.repr t) = 0);
+  assert (Stdlib.Obj.tag (Stdlib.Obj.repr t) = 0);
   (* not a double array *)
   assert (phys_equal (get t 0) float);
   assert (phys_equal (get t 1) float);
-  set t 1 (Caml.Obj.repr 4.);
-  assert (Float.( = ) (Caml.Obj.obj (get t 1)) 4.)
+  set t 1 (Stdlib.Obj.repr 4.);
+  assert (Float.( = ) (Stdlib.Obj.obj (get t 1)) 4.)
 ;;
 
 (* [empty] *)
@@ -39,9 +39,9 @@ let%test _ = does_raise (fun () -> get (singleton zero_obj) 1)
 
 let%test_unit _ =
   let f = 13. in
-  let t = singleton (Caml.Obj.repr f) in
+  let t = singleton (Stdlib.Obj.repr f) in
   invariant t;
-  assert (Poly.equal (Caml.Obj.repr f) (get t 0))
+  assert (Poly.equal (Stdlib.Obj.repr f) (get t 0))
 ;;
 
 (* [get], [unsafe_get], [set], [unsafe_set], [unsafe_set_assuming_currently_int],
@@ -51,7 +51,7 @@ let%test_unit _ =
   assert (length t = 1);
   assert (phys_equal (get t 0) zero_obj);
   assert (phys_equal (unsafe_get t 0) zero_obj);
-  let one_obj = Caml.Obj.repr (1 : int) in
+  let one_obj = Stdlib.Obj.repr (1 : int) in
   let check_get expect =
     assert (phys_equal (get t 0) expect);
     assert (phys_equal (unsafe_get t 0) expect)

@@ -4,7 +4,7 @@ module String = String0
 include Char0
 
 module T = struct
-  type t = char [@@deriving_inline compare, hash, sexp, sexp_grammar]
+  type t = char [@@deriving_inline compare, hash, globalize, sexp, sexp_grammar]
 
   let compare = (compare_char : t -> t -> int)
 
@@ -16,6 +16,7 @@ module T = struct
     fun x -> func x
   ;;
 
+  let (globalize : (t[@ocaml.local]) -> t) = (globalize_char : (t[@ocaml.local]) -> t)
   let t_of_sexp = (char_of_sexp : Sexplib0.Sexp.t -> t)
   let sexp_of_t = (sexp_of_char : t -> Sexplib0.Sexp.t)
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = char_sexp_grammar
@@ -39,7 +40,7 @@ include Identifiable.Make (struct
     let module_name = "Base.Char"
   end)
 
-let pp fmt c = Caml.Format.fprintf fmt "%C" c
+let pp fmt c = Stdlib.Format.fprintf fmt "%C" c
 
 (* Open replace_polymorphic_compare after including functor instantiations so they do not
    shadow its definitions. This is here so that efficient versions of the comparison

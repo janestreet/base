@@ -1,6 +1,6 @@
 (* [List0] defines list functions that are primitives or can be simply defined in terms of
-   [Caml.List].  [List0] is intended to completely express the part of [Caml.List] that
-   [Base] uses -- no other file in Base other than list0.ml should use [Caml.List].
+   [Stdlib.List].  [List0] is intended to completely express the part of [Stdlib.List] that
+   [Base] uses -- no other file in Base other than list0.ml should use [Stdlib.List].
    [List0] has few dependencies, and so is available early in Base's build order.  All
    Base files that need to use lists and come before [Base.List] in build order should do
    [module List = List0].  Defining [module List = List0] is also necessary because it
@@ -9,11 +9,11 @@
 
 open! Import0
 
-let hd_exn = Caml.List.hd
-let length = Caml.List.length
-let rev_append = Caml.List.rev_append
-let tl_exn = Caml.List.tl
-let unzip = Caml.List.split
+let hd_exn = Stdlib.List.hd
+let length = Stdlib.List.length
+let rev_append = Stdlib.List.rev_append
+let tl_exn = Stdlib.List.tl
+let unzip = Stdlib.List.split
 
 (* Some of these are eta expanded in order to permute parameter order to follow Base
    conventions. *)
@@ -78,8 +78,8 @@ let rec nontail_map t ~f:(f [@local]) =
     y :: nontail_map xs ~f
 ;;
 
-let nontail_mapi t ~f = Caml.List.mapi t ~f
-let partition t ~f = Caml.List.partition t ~f
+let nontail_mapi t ~f = Stdlib.List.mapi t ~f
+let partition t ~f = Stdlib.List.partition t ~f
 
 let rev_map =
   let rec rmap_f f accu = function
@@ -99,8 +99,8 @@ let rev_map2_ok =
   fun l1 l2 ~f:((f : _ -> _ -> _) [@local]) -> rmap2_f f [] l1 l2
 ;;
 
-let sort l ~compare = Caml.List.sort l ~cmp:compare
-let stable_sort l ~compare = Caml.List.stable_sort l ~cmp:compare
+let sort l ~compare = Stdlib.List.sort l ~cmp:compare
+let stable_sort l ~compare = Stdlib.List.stable_sort l ~cmp:compare
 
 let rev = function
   | ([] | [ _ ]) as res -> res

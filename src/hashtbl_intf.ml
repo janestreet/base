@@ -40,9 +40,9 @@ module type Accessors = sig
       [iter], [iter_keys], [iteri]) will raise an exception. *)
   val fold
     :  ('a, 'b) t
-    -> init:'c
-    -> f:((key:'a key -> data:'b -> 'c -> 'c)[@local])
-    -> 'c
+    -> init:'acc
+    -> f:((key:'a key -> data:'b -> 'acc -> 'acc)[@local])
+    -> 'acc
 
   val iter_keys : ('a, _) t -> f:(('a key -> unit)[@local]) -> unit
   val iter : (_, 'b) t -> f:(('b -> unit)[@local]) -> unit
@@ -197,7 +197,7 @@ module type Accessors = sig
       binding exists. *)
   val find : ('a, 'b) t -> 'a key -> 'b option
 
-  (** [find_exn t k] returns the current binding of [k] in [t], or raises [Caml.Not_found]
+  (** [find_exn t k] returns the current binding of [k] in [t], or raises [Stdlib.Not_found]
       or [Not_found_s] if no such binding exists. *)
   val find_exn : ('a, 'b) t -> 'a key -> 'b
 

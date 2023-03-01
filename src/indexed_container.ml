@@ -1,3 +1,5 @@
+open! Import
+module Array = Array0
 include Indexed_container_intf
 
 let with_return = With_return.with_return
@@ -49,13 +51,16 @@ let findi ~iteri c ~f =
     None) [@nontail]
 ;;
 
-module Make_gen (T : sig
-    include Container_intf.Make_gen_arg
-
-    val iteri : [ `Define_using_fold | `Custom of ('a t, 'a elt) iteri ]
-    val foldi : [ `Define_using_fold | `Custom of ('a t, 'a elt, _) foldi ]
-  end) : Generic with type 'a t := 'a T.t with type 'a elt := 'a T.elt = struct
-  include Container.Make_gen (T)
+(* Allows [Make_gen] to share a [Container.Generic] implementation with, e.g.,
+   [Container.Make_gen_with_creators]. *)
+module Make_gen_with_container
+    (T : Make_gen_arg)
+    (C : Container.Generic
+     with type ('a, 'phantom) t := ('a, 'phantom) T.t
+      and type 'a elt := 'a T.elt) :
+  Generic with type ('a, 'phantom) t := ('a, 'phantom) T.t and type 'a elt := 'a T.elt =
+struct
+  include C
 
   let iteri =
     match T.iteri with
@@ -76,30 +81,95 @@ module Make_gen (T : sig
   let findi t ~f = findi ~iteri t ~f
 end
 
+module Make_gen (T : Make_gen_arg) :
+  Generic with type ('a, 'phantom) t := ('a, 'phantom) T.t and type 'a elt := 'a T.elt =
+struct
+  module C = Container.Make_gen (T)
+  include C
+  include Make_gen_with_container (T) (C)
+end
+
 module Make (T : Make_arg) = struct
-  module C = Container.Make (T)
-
-  (* Not part of [Container.Generic]. *)
-  let mem = C.mem
-
   include Make_gen (struct
       include T
 
-      type 'a t = 'a T.t
+      type ('a, _) t = 'a T.t
       type 'a elt = 'a
     end)
 end
 
 module Make0 (T : Make0_arg) = struct
-  module C = Container.Make0 (T)
-
-  (* Not part of [Container.Generic]. *)
-  let mem = C.mem
-
   include Make_gen (struct
       include T
 
-      type 'a t = T.t
+      type (_, _) t = T.t
       type 'a elt = T.Elt.t
     end)
+
+  let mem t x = mem t x ~equal:T.Elt.equal
+end
+
+module Make_gen_with_creators (T : Make_gen_with_creators_arg) :
+  Generic_with_creators
+  with type ('a, 'phantom) t := ('a, 'phantom) T.t
+   and type 'a elt := 'a T.elt
+   and type ('a, 'phantom) concat := ('a, 'phantom) T.concat = struct
+  module C = Container.Make_gen_with_creators (T)
+  include C
+  include Make_gen_with_container (T) (C)
+
+  let derived_init n ~f = of_array (Array.init n ~f)
+
+  let init =
+    match T.init with
+    | `Custom init -> init
+    | `Define_using_of_array -> derived_init
+  ;;
+
+  let derived_concat_mapi t ~f = concat (T.concat_of_array (Array.mapi (to_array t) ~f))
+
+  let concat_mapi =
+    match T.concat_mapi with
+    | `Custom concat_mapi -> concat_mapi
+    | `Define_using_concat -> derived_concat_mapi
+  ;;
+
+  let filter_mapi t ~f =
+    concat_mapi t ~f:(fun i x ->
+      match f i x with
+      | None -> of_array [||]
+      | Some y -> of_array [| y |]) [@nontail]
+  ;;
+
+  let mapi t ~f = filter_mapi t ~f:(fun i x -> Some (f i x)) [@nontail]
+
+  let filteri t ~f =
+    filter_mapi t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
+  ;;
+end
+
+module Make_with_creators (T : Make_with_creators_arg) = struct
+  include Make_gen_with_creators (struct
+      include T
+
+      type ('a, _) t = 'a T.t
+      type 'a elt = 'a
+      type ('a, _) concat = 'a T.t
+
+      let concat_of_array = of_array
+    end)
+end
+
+module Make0_with_creators (T : Make0_with_creators_arg) = struct
+  include Make_gen_with_creators (struct
+      include T
+
+      type (_, _) t = T.t
+      type 'a elt = T.Elt.t
+      type ('a, _) concat = 'a list
+
+      let concat_of_array = Array.to_list
+    end)
+
+  let mem t x = mem t x ~equal:T.Elt.equal
 end

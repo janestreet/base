@@ -154,8 +154,7 @@ let (interval_comparison_sexp_grammar : interval_comparison Sexplib0.Sexp_gramma
 ;;
 
 let compare_interval_comparison =
-  (Ppx_compare_lib.polymorphic_compare
-   : interval_comparison -> interval_comparison -> int)
+  (Stdlib.compare : interval_comparison -> interval_comparison -> int)
 ;;
 
 let (hash_fold_interval_comparison :
