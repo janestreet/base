@@ -64,8 +64,7 @@ let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__006_ sexp__005_
     | Sexplib0.Sexp.List [] as sexp__005_ ->
       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__006_ sexp__005_
-    | sexp__005_ ->
-      Sexplib0.Sexp_conv_error.unexpected_stag error_source__006_ sexp__005_
+    | sexp__005_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__006_ sexp__005_
 ;;
 
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =

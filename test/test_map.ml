@@ -26,7 +26,6 @@ let%test _ =
 ;;
 
 let%test _ = invariants (Poly.of_increasing_iterator_unchecked ~len:20 ~f:(fun x -> x, x))
-
 let add12 t = add_exn t ~key:1 ~data:2
 
 type int_map = int Map.M(Int).t [@@deriving compare, hash, sexp]

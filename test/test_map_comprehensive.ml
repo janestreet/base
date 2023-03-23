@@ -212,8 +212,7 @@ end
 module Test_creators_and_accessors
     (Types : Types)
     (Impl : S with module Types := Types)
-    (Instance : Instance with module Types := Types) : S with module Types := Types =
-struct
+    (Instance : Instance with module Types := Types) : S with module Types := Types = struct
   open Instance
   open Impl
 
@@ -995,9 +994,7 @@ struct
       ~f:(fun (t, threshold) ->
         let t =
           mapi t ~f:(fun ~key ~data ->
-            if Key.( <= ) key threshold
-            then Ok data
-            else Or_error.error_string "too big")
+            if Key.( <= ) key threshold then Ok data else Or_error.error_string "too big")
         in
         require_equal
           [%here]
@@ -1501,11 +1498,7 @@ struct
                t
                ~compare:(fun ~key ~data k' ->
                  require_equal [%here] (module Key) k' k;
-                 require_equal
-                   [%here]
-                   (module Opt (Int))
-                   (access find t key)
-                   (Some data);
+                 require_equal [%here] (module Opt (Int)) (access find t key) (Some data);
                  [%expect {| |}];
                  compare (key, data) k')
                which_target
@@ -1533,11 +1526,7 @@ struct
                binary_search_segmented
                t
                ~segment_of:(fun ~key ~data ->
-                 require_equal
-                   [%here]
-                   (module Opt (Int))
-                   (access find t key)
-                   (Some data);
+                 require_equal [%here] (module Opt (Int)) (access find t key) (Some data);
                  [%expect {| |}];
                  segment_of (key, data))
                which_target)

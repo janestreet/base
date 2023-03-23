@@ -9,8 +9,7 @@ struct
 
   let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
     fun (type a__009_)
-        :  (((a__009_[@ocaml.local]) -> a__009_) -> (a__009_ t[@ocaml.local])
-            -> a__009_ t) ->
+        : (((a__009_[@ocaml.local]) -> a__009_) -> (a__009_ t[@ocaml.local]) -> a__009_ t) ->
       globalize_ref
   ;;
 

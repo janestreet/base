@@ -165,3 +165,10 @@ function Base_unsafe_create_local_bytes(v_len) {
     // javascript) doesn't allocate locally, but that's fine.
     return caml_create_bytes(v_len);
 }
+
+//Provides: caml_make_local_vect
+//Requires: caml_make_vect
+function caml_make_local_vect(v_len, v_elt) {
+    // In javascript there's no local allocation.
+    return caml_make_vect (v_len, v_elt);
+}

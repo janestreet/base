@@ -78,27 +78,20 @@ let%test _ = one_ulp `Up neg_infinity = ~-.max_finite_value
    numbers at runtime accurately. *)
 let x () = min_positive_subnormal_value
 let y () = min_positive_normal_value
-
 let%test _ = test_both_ways (x ()) 1L
 let%test _ = test_both_ways (y ()) Int64.(shift_left 1L 52)
 let%test _ = x () > 0.
 let%test_unit _ = [%test_result: float] (x () /. 2.) ~expect:0.
 let%test _ = one_ulp `Up 0. = x ()
 let%test _ = one_ulp `Down 0. = ~-.(x ())
-
 let are_one_ulp_apart a b = one_ulp `Up a = b
-
 let%test _ = are_one_ulp_apart (x ()) (2. *. x ())
 let%test _ = are_one_ulp_apart (2. *. x ()) (3. *. x ())
-
 let one_ulp_below_y () = y () -. x ()
-
 let%test _ = one_ulp_below_y () < y ()
 let%test _ = y () -. one_ulp_below_y () = x ()
 let%test _ = are_one_ulp_apart (one_ulp_below_y ()) (y ())
-
 let one_ulp_above_y () = y () +. x ()
-
 let%test _ = y () < one_ulp_above_y ()
 let%test _ = one_ulp_above_y () -. y () = x ()
 let%test _ = are_one_ulp_apart (y ()) (one_ulp_above_y ())
@@ -107,13 +100,10 @@ let%test _ = not (are_one_ulp_apart (one_ulp_below_y ()) (one_ulp_above_y ()))
 (* [2 * min_positive_normal_value] is where the ulp increases for the first time. *)
 let z () = 2. *. y ()
 let one_ulp_below_z () = z () -. x ()
-
 let%test _ = one_ulp_below_z () < z ()
 let%test _ = z () -. one_ulp_below_z () = x ()
 let%test _ = are_one_ulp_apart (one_ulp_below_z ()) (z ())
-
 let one_ulp_above_z () = z () +. (2. *. x ())
-
 let%test _ = z () < one_ulp_above_z ()
 let%test _ = one_ulp_above_z () -. z () = 2. *. x ()
 let%test _ = are_one_ulp_apart (z ()) (one_ulp_above_z ())
@@ -289,6 +279,7 @@ let%test_module _ =
     let%test_unit _ = both 0.50 "0.5"
     let%test_unit _ = boundary 0.55 ~closer_to_zero:"0.5" ~at:"0.6"
     let%test_unit _ = boundary 0.65 ~closer_to_zero:"0.6" ~at:"0.7"
+
     (* this time tie-to-even means round away from 0 *)
     let%test_unit _ = boundary (* tie *) 0.75 ~closer_to_zero:"0.7" ~at:"0.8"
     let%test_unit _ = boundary 0.85 ~closer_to_zero:"0.8" ~at:"0.9"
@@ -316,6 +307,7 @@ let%test_module _ =
     let%test_unit _ = boundary 999.75 ~closer_to_zero:"999.7" ~at:"999.8"
     let%test_unit _ = boundary 999.95 ~closer_to_zero:"999.9" ~at:"1k "
     let%test_unit _ = both 1000. "1k "
+
     (* some ties which we resolve manually in [iround_ratio_exn] *)
     let%test_unit _ = boundary 1050. ~closer_to_zero:"1k " ~at:"1k "
     let%test_unit _ = boundary (incr 1050.) ~closer_to_zero:"1k " ~at:"1k1"
@@ -796,7 +788,6 @@ let%test_module _ =
     ;;
 
     let randoms = List.init ~f:(fun _ -> frand ()) 10_000
-
     let%test _ = List.for_all randoms ~f:iround_up_vs_down_test
     let%test _ = List.for_all randoms ~f:iround_nearest_test
     let%test _ = List.for_all randoms ~f:iround_down_test
@@ -823,7 +814,6 @@ struct
 
   let float_lower_bound = lower_bound_for_int num_bits
   let float_upper_bound = upper_bound_for_int num_bits
-
   let%test_unit "lower bound is valid" = ignore (of_float float_lower_bound : t)
   let%test_unit "upper bound is valid" = ignore (of_float float_upper_bound : t)
 
@@ -1051,7 +1041,6 @@ let%test_module "Hexadecimal syntax" =
   (module struct
     let should_fail str = Exn.does_raise (fun () -> Stdlib.float_of_string str)
     let test_equal str g = Stdlib.float_of_string str = g
-
     let%test _ = should_fail "0x"
     let%test _ = should_fail "0x.p0"
     let%test _ = test_equal "0x0" 0.

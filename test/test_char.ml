@@ -2,18 +2,25 @@ open! Import
 open! Char
 
 let%test _ = not (is_whitespace '\008')
+
 (* backspace *)
 let%test _ = is_whitespace '\009'
+
 (* '\t': horizontal tab *)
 let%test _ = is_whitespace '\010'
+
 (* '\n': line feed *)
 let%test _ = is_whitespace '\011'
+
 (* '\v': vertical tab *)
 let%test _ = is_whitespace '\012'
+
 (* '\f': form feed *)
 let%test _ = is_whitespace '\013'
+
 (* '\r': carriage return *)
 let%test _ = not (is_whitespace '\014')
+
 (* shift out *)
 let%test _ = is_whitespace '\032'
 

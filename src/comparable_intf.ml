@@ -10,15 +10,10 @@ module type With_compare = sig
 
   (** [lexicographic cmps x y] compares [x] and [y] lexicographically using functions in the
       list [cmps]. *)
-  val lexicographic : (('a -> 'a -> int) list[@local]) -> 'a -> 'a -> int
+  val lexicographic : ('a -> 'a -> int) list -> 'a -> 'a -> int
 
   (** [lift cmp ~f x y] compares [x] and [y] by comparing [f x] and [f y] via [cmp]. *)
-  val lift
-    :  (('a -> 'a -> 'result)[@local])
-    -> f:(('b -> 'a)[@local])
-    -> 'b
-    -> 'b
-    -> 'result
+  val lift : ('a -> 'a -> 'result) -> f:('b -> 'a) -> 'b -> 'b -> 'result
 
   (** [reverse cmp x y = cmp y x]
 
@@ -29,7 +24,7 @@ module type With_compare = sig
       [Comparable.S] provides [ascending] and [descending], which are more readable as a
       pair than [compare] and [reverse compare]. Similarly, [<=] is more idiomatic than
       [reverse (>=)]. *)
-  val reverse : (('a -> 'a -> 'result)[@local]) -> 'a -> 'a -> 'result
+  val reverse : ('a -> 'a -> 'result) -> 'a -> 'a -> 'result
 
   (** {!reversed} is the identity type but its associated compare function is the same as
       the {!reverse} function above. It allows you to get reversed comparisons with
@@ -37,14 +32,14 @@ module type With_compare = sig
       have strings ordered in the reverse order. *)
   type 'a reversed = 'a
 
-  val compare_reversed : (('a -> 'a -> int)[@local]) -> 'a reversed -> 'a reversed -> int
+  val compare_reversed : ('a -> 'a -> int) -> 'a reversed -> 'a reversed -> int
 
   (** The functions below are analogues of the type-specific functions exported by the
       [Comparable.S] interface. *)
 
-  val equal : (('a -> 'a -> int)[@local]) -> 'a -> 'a -> bool
-  val max : (('a -> 'a -> int)[@local]) -> 'a -> 'a -> 'a
-  val min : (('a -> 'a -> int)[@local]) -> 'a -> 'a -> 'a
+  val equal : ('a -> 'a -> int) -> 'a -> 'a -> bool
+  val max : ('a -> 'a -> int) -> 'a -> 'a -> 'a
+  val min : ('a -> 'a -> int) -> 'a -> 'a -> 'a
 end
 
 module type With_zero = sig

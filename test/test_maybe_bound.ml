@@ -30,7 +30,6 @@ let%test_unit "bounds_crossed" =
 let%test_module "is_lower_bound" =
   (module struct
     let compare = Int.compare
-
     let%test _ = is_lower_bound Unbounded ~of_:Int.min_value ~compare
     let%test _ = not (is_lower_bound (Incl 2) ~of_:1 ~compare)
     let%test _ = is_lower_bound (Incl 2) ~of_:2 ~compare
@@ -44,7 +43,6 @@ let%test_module "is_lower_bound" =
 let%test_module "is_upper_bound" =
   (module struct
     let compare = Int.compare
-
     let%test _ = is_upper_bound Unbounded ~of_:Int.max_value ~compare
     let%test _ = is_upper_bound (Incl 2) ~of_:1 ~compare
     let%test _ = is_upper_bound (Incl 2) ~of_:2 ~compare

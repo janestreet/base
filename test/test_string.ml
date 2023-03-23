@@ -315,9 +315,7 @@ let%test_module "Search_pattern" =
 
         let%expect_test _ =
           List.iter [%all: bool] ~f:(fun case_sensitive ->
-            cmp_both
-              ~case_sensitive
-              (x 5 ^ "E" ^ x 4 ^ "D" ^ x 3 ^ "B" ^ x 2 ^ "C" ^ x 3))
+            cmp_both ~case_sensitive (x 5 ^ "E" ^ x 4 ^ "D" ^ x 3 ^ "B" ^ x 2 ^ "C" ^ x 3))
         ;;
 
         let%test_unit _ =
@@ -343,7 +341,6 @@ let%test_module "Search_pattern" =
     ;;
 
     let ( = ) = [%compare.equal: int option]
-
     let%test _ = index (create "") ~in_:"abababac" = Some 0
     let%test _ = index ~pos:(-1) (create "") ~in_:"abababac" = None
     let%test _ = index ~pos:1 (create "") ~in_:"abababac" = Some 1
@@ -362,9 +359,7 @@ let%test_module "Search_pattern" =
     let%test _ = index ~pos:2 (create "a") ~in_:"abc" = None
     let%test _ = index ~pos:2 (create "c") ~in_:"abc" = Some 2
     let%test _ = index ~pos:3 (create "c") ~in_:"abc" = None
-
     let ( = ) = [%compare.equal: bool]
-
     let%test _ = matches (create "") "abababac" = true
     let%test _ = matches (create "abababaca") "abababac" = false
     let%test _ = matches (create "abababac") "abababac" = true
@@ -373,9 +368,7 @@ let%test_module "Search_pattern" =
     let%test _ = matches (create "baca") "abababaca" = true
     let%test _ = matches (create "a") "abc" = true
     let%test _ = matches (create "c") "abc" = true
-
     let ( = ) = [%compare.equal: int list]
-
     let%test _ = index_all (create "") ~may_overlap:false ~in_:"abcd" = [ 0; 1; 2; 3; 4 ]
     let%test _ = index_all (create "") ~may_overlap:true ~in_:"abcd" = [ 0; 1; 2; 3; 4 ]
     let%test _ = index_all (create "abab") ~may_overlap:false ~in_:"abababab" = [ 0; 4 ]
@@ -395,7 +388,6 @@ let%test_module "Search_pattern" =
     ;;
 
     let ( = ) = [%compare.equal: string]
-
     let%test _ = replace_first (create "abab") ~in_:"abababab" ~with_:"" = "abab"
     let%test _ = replace_first (create "abab") ~in_:"abacabab" ~with_:"" = "abac"
     let%test _ = replace_first (create "abab") ~in_:"ababacab" ~with_:"A" = "Aacab"
@@ -1381,7 +1373,6 @@ let%test_module "Escaping" =
     let%test_module "escape" =
       (module struct
         let escape = unstage (escape ~escape_char:'_' ~escapeworthy:[ '_'; '%'; '^' ])
-
         let%test _ = escape "foo" = "foo"
         let%test _ = escape "_" = "__"
         let%test _ = escape "foo%bar" = "foo_%bar"
@@ -1392,7 +1383,6 @@ let%test_module "Escaping" =
     let%test_module "unescape" =
       (module struct
         let unescape = unstage (unescape ~escape_char:'_')
-
         let%test _ = unescape "foo" = "foo"
         let%test _ = unescape "__" = "_"
         let%test _ = unescape "foo_%bar" = "foo%bar"
@@ -1403,10 +1393,10 @@ let%test_module "Escaping" =
     let%test_module "is_char_escaping" =
       (module struct
         let is = is_char_escaping ~escape_char:'_'
-
         let%test_unit _ = [%test_result: bool] (is "___" 0) ~expect:true
         let%test_unit _ = [%test_result: bool] (is "___" 1) ~expect:false
         let%test_unit _ = [%test_result: bool] (is "___" 2) ~expect:true
+
         (* considered escaping, though there's nothing to escape *)
         let%test_unit _ = [%test_result: bool] (is "a_b__c" 0) ~expect:false
         let%test_unit _ = [%test_result: bool] (is "a_b__c" 1) ~expect:true
@@ -1420,7 +1410,6 @@ let%test_module "Escaping" =
     let%test_module "is_char_escaped" =
       (module struct
         let is = is_char_escaped ~escape_char:'_'
-
         let%test_unit _ = [%test_result: bool] (is "___" 2) ~expect:false
         let%test_unit _ = [%test_result: bool] (is "x" 0) ~expect:false
         let%test_unit _ = [%test_result: bool] (is "_x" 1) ~expect:true
@@ -1432,7 +1421,6 @@ let%test_module "Escaping" =
     let%test_module "is_char_literal" =
       (module struct
         let is_char_literal = is_char_literal ~escape_char:'_'
-
         let%test_unit _ = [%test_result: bool] (is_char_literal "123456" 4) ~expect:true
         let%test_unit _ = [%test_result: bool] (is_char_literal "12345_6" 6) ~expect:false
         let%test_unit _ = [%test_result: bool] (is_char_literal "12345_6" 5) ~expect:false
@@ -1460,7 +1448,6 @@ let%test_module "Escaping" =
     let%test_module "index_from" =
       (module struct
         let f = index_from ~escape_char:'_'
-
         let%test_unit _ = [%test_result: int option] (f "__" 0 '_') ~expect:None
         let%test_unit _ = [%test_result: int option] (f "_.." 0 '.') ~expect:(Some 2)
 
@@ -1481,7 +1468,6 @@ let%test_module "Escaping" =
     let%test_module "rindex" =
       (module struct
         let f = rindex_from ~escape_char:'_'
-
         let%test_unit _ = [%test_result: int option] (f "__" 0 '_') ~expect:None
 
         let%test_unit _ =

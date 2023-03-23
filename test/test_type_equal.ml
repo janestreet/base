@@ -14,7 +14,6 @@ let%test_module "Type_equal.Id" =
 
     let t1 = create ~name:"t1" [%sexp_of: _]
     let t2 = create ~name:"t2" [%sexp_of: _]
-
     let%test _ = same t1 t1
     let%test _ = not (same t1 t2)
     let%test _ = Option.is_some (same_witness t1 t1)

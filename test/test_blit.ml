@@ -71,10 +71,7 @@ let%test_module _ =
                       ());
                   check (fun () ->
                     ignore
-                      (B.subo
-                         (Array.create ~len:src false)
-                         ?pos:src_pos
-                         ?len:src_len
+                      (B.subo (Array.create ~len:src false) ?pos:src_pos ?len:src_len
                        : bool array))
                 with
                 | exn ->

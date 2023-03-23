@@ -47,7 +47,6 @@ let%test_module "Sort" =
         (* run [five_element_sort] on all permutations of an array of five elements *)
 
         let all_perms = List_helpers.permutations [ 1; 2; 3; 4; 5 ]
-
         let%test _ = List.length all_perms = 120
         let%test _ = not (List.contains_dup ~compare:[%compare: int list] all_perms)
 
@@ -605,4 +604,16 @@ let%expect_test "cartesian_product" =
      (2 b)
      (3 a)
      (3 b)) |}]
+;;
+
+let%expect_test "create_local" =
+  let len = 10 in
+  let array = create_local ~len (-1) in
+  for i = 0 to len - 1 do
+    assert (get array i = -1);
+    set array i i
+  done;
+  let array = init len ~f:(fun i -> get array i) in
+  print_s (sexp_of_t sexp_of_int array);
+  [%expect {| (0 1 2 3 4 5 6 7 8 9) |}]
 ;;

@@ -32,11 +32,11 @@ let int64_pow base exponent =
   if (base > 1L || base < -1L)
   && (exponent > 63L
       || (base >= 0L
-          && base > Pow_overflow_bounds.int64_positive_overflow_bounds.(to_int exponent)
-         )
+          && base
+             > Pow_overflow_bounds.int64_positive_overflow_bounds.(to_int exponent))
       || (base < 0L
-          && base < Pow_overflow_bounds.int64_negative_overflow_bounds.(to_int exponent)
-         ))
+          && base
+             < Pow_overflow_bounds.int64_negative_overflow_bounds.(to_int exponent)))
   then overflow ();
   int_math_int64_pow base exponent
 ;;

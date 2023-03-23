@@ -4,7 +4,7 @@ module Either = Either0
 type ('a, 'b) t = ('a, 'b) Stdlib.result =
   | Ok of 'a
   | Error of 'b
-[@@deriving_inline sexp, sexp_grammar, compare, equal, hash]
+[@@deriving_inline sexp, sexp_grammar, compare, equal, globalize, hash]
 
 let t_of_sexp :
   'a 'b.
@@ -47,8 +47,7 @@ let t_of_sexp :
         Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__005_ sexp__004_
       | Sexplib0.Sexp.List [] as sexp__004_ ->
         Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__005_ sexp__004_
-      | sexp__004_ ->
-        Sexplib0.Sexp_conv_error.unexpected_stag error_source__005_ sexp__004_
+      | sexp__004_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__005_ sexp__004_
 ;;
 
 let sexp_of_t :
@@ -119,6 +118,22 @@ let equal :
     | Ok _, _ -> false
     | _, Ok _ -> false
     | Error _a__037_, Error _b__038_ -> _cmp__b _a__037_ _b__038_)
+;;
+
+let globalize :
+  'a 'b.
+  (('a[@ocaml.local]) -> 'a)
+  -> (('b[@ocaml.local]) -> 'b)
+  -> (('a, 'b) t[@ocaml.local])
+  -> ('a, 'b) t
+  =
+  fun (type a__039_ b__040_)
+      :  (((a__039_[@ocaml.local]) -> a__039_) -> ((b__040_[@ocaml.local]) -> b__040_)
+          -> ((a__039_, b__040_) t[@ocaml.local]) -> (a__039_, b__040_) t) ->
+    fun _globalize_a__042_ _globalize_b__041_ x__043_ ->
+      match x__043_ with
+      | Ok arg__044_ -> Ok (_globalize_a__042_ arg__044_)
+      | Error arg__045_ -> Error (_globalize_b__041_ arg__045_)
 ;;
 
 let hash_fold_t

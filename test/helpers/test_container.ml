@@ -53,8 +53,7 @@ struct
         let sorts_are_equal l1 l2 = sort l1 = sort l2 in
         assert (n = Container.length c);
         assert (n = 0 = Container.is_empty c);
-        assert (
-          sorts_are_equal list (Container.fold c ~init:[] ~f:(fun ac e -> e :: ac)));
+        assert (sorts_are_equal list (Container.fold c ~init:[] ~f:(fun ac e -> e :: ac)));
         assert (sorts_are_equal list (Container.to_list c));
         assert (sorts_are_equal list (Array.to_list (Container.to_array c)));
         assert (n > 0 = Option.is_some (Container.find c ~f:(fun e -> Elt.to_int e = 0)));
@@ -78,8 +77,7 @@ struct
                  if Elt.to_int e = n - 1 then Some () else None)));
         assert (
           Option.is_none
-            (Container.find_map c ~f:(fun e ->
-               if Elt.to_int e = n then Some () else None)));
+            (Container.find_map c ~f:(fun e -> if Elt.to_int e = n then Some () else None)));
         let r = ref 0 in
         Container.iter c ~f:(fun e -> r := !r + Elt.to_int e);
         assert (!r = List.fold list ~init:0 ~f:(fun n e -> n + Elt.to_int e));
@@ -96,8 +94,7 @@ struct
           assert (!r = n * (n - 1) / 2);
           assert (Option.map ~f:Elt.to_int (min_elt ~compare:compare_elt c) = Some 0);
           assert (
-            Option.map ~f:Elt.to_int (max_elt ~compare:compare_elt c)
-            = Some (Int.pred n)));
+            Option.map ~f:Elt.to_int (max_elt ~compare:compare_elt c) = Some (Int.pred n)));
         let mid = Container.length c / 2 in
         (match
            Container.fold_result c ~init:0 ~f:(fun count _elt ->

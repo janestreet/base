@@ -399,9 +399,7 @@ let%test_module "pow" =
     let%test _ = int_pow 1 1_000_000 = 1
     let%test _ = int_pow (-1) 1_000_000 = 1
     let%test _ = int_pow (-1) 1_000_001 = -1
-
     let ( = ) = Int64.( = )
-
     let%test _ = int64_pow 0L 0L = 1L
     let%test _ = int64_pow 0L 1_000_000L = 0L
     let%test _ = int64_pow 1L 1_000_000L = 1L
@@ -414,9 +412,7 @@ let%test_module "pow" =
     let%test _ = int64_pow 10L 5L = 100_000L
     let%test _ = int64_pow 2L 10L = 1_024L
     let%test _ = int64_pow 5L 27L = 7450580596923828125L
-
     let exception_thrown pow b e = Exn.does_raise (fun () -> pow b e)
-
     let%test _ = exception_thrown int_pow 10 60
     let%test _ = exception_thrown int64_pow 10L 60L
     let%test _ = exception_thrown int_pow 10 (-1)

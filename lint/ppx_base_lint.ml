@@ -100,7 +100,9 @@ let check current_module =
       | _ ->
         (match mb.pmb_expr.pmod_desc with
          | Pmod_ident { txt = id; _ } when is_stdlib_dot_something id ->
-           error ~loc:mb.pmb_loc "you cannot alias [Stdlib] sub-modules, use them directly"
+           error
+             ~loc:mb.pmb_loc
+             "you cannot alias [Stdlib] sub-modules, use them directly"
          | _ -> ())
 
     method! attributes attrs =

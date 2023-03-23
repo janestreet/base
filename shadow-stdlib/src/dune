@@ -3,4 +3,5 @@
 
 (rule (targets shadow_stdlib.mli) (deps %{ocaml_where}/stdlib.cma)
  (action
-  (run ../gen/gen.exe -caml-cmi %{ocaml_where}/stdlib.cmi -o %{targets})))
+  (run ../gen/gen.exe -caml-cmi -permissive %{ocaml_where}/stdlib.cmi
+   %{ocaml_where}/stdlib.cma -o %{targets})))

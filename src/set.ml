@@ -169,8 +169,7 @@ module Tree0 = struct
           | i ->
             if Poly.( <> ) (i < 0) increasing
             then
-              r.return
-                (Or_error.error_string "of_sorted_array: elements are not ordered")
+              r.return (Or_error.error_string "of_sorted_array: elements are not ordered")
         done;
         Result.Ok (of_sorted_array_unchecked array ~compare_elt))
   ;;

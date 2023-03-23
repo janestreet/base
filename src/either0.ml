@@ -80,8 +80,7 @@ let t_of_sexp :
         Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__011_ sexp__010_
       | Sexplib0.Sexp.List [] as sexp__010_ ->
         Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__011_ sexp__010_
-      | sexp__010_ ->
-        Sexplib0.Sexp_conv_error.unexpected_stag error_source__011_ sexp__010_
+      | sexp__010_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__011_ sexp__010_
 ;;
 
 let sexp_of_t :

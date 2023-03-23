@@ -208,8 +208,7 @@ module Tree0 = struct
           | i ->
             if Poly.( <> ) (i < 0) increasing
             then
-              r.return
-                (Or_error.error_string "of_sorted_array: elements are not ordered")
+              r.return (Or_error.error_string "of_sorted_array: elements are not ordered")
         done;
         Result.Ok (of_sorted_array_unchecked array ~compare_key |> globalize))
   ;;
@@ -448,8 +447,7 @@ module Tree0 = struct
           ~f:(fun { tree = builder; length } (key, data) ->
             match Build_increasing.max_key builder with
             | Some prev_key when compare_key prev_key key >= 0 ->
-              return
-                (Or_error.error_string "of_increasing_sequence: non-increasing key")
+              return (Or_error.error_string "of_increasing_sequence: non-increasing key")
             | _ ->
               with_length_global
                 (Build_increasing.add_unchecked builder ~key ~data)
@@ -1897,8 +1895,7 @@ module Tree0 = struct
            ~f:(fun ~key ~data { tree = t2; length } ->
              let key = f key in
              try
-               add_exn_internal t2 ~length ~key ~data ~compare_key ~sexp_of_key
-               |> globalize
+               add_exn_internal t2 ~length ~key ~data ~compare_key ~sexp_of_key |> globalize
              with
              | Duplicate -> return (`Duplicate_key key)))) [@nontail]
   ;;
@@ -1969,12 +1966,13 @@ module Tree0 = struct
             (f ~key:v ~data:d)
             (A.of_thunk (fun () -> tree_filter_mapi r ~f))
             ~f:
-              (fun { tree = l'; length = l_len } new_data { tree = r'; length = r_len } ->
-                 match new_data with
-                 | Some new_data ->
-                   with_length_global (join l' v new_data r') (l_len + r_len + 1)
-                 | None ->
-                   with_length_global (concat_and_balance_unchecked l' r') (l_len + r_len))
+              (fun
+                { tree = l'; length = l_len } new_data { tree = r'; length = r_len } ->
+                match new_data with
+                | Some new_data ->
+                  with_length_global (join l' v new_data r') (l_len + r_len + 1)
+                | None ->
+                  with_length_global (concat_and_balance_unchecked l' r') (l_len + r_len))
       in
       tree_filter_mapi t ~f
     ;;

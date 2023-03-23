@@ -5,7 +5,6 @@ type int_set = Set.M(Int).t [@@deriving compare, equal, hash, sexp]
 
 let%test _ = invariants (of_increasing_iterator_unchecked (module Int) ~len:20 ~f:Fn.id)
 let%test _ = invariants (Poly.of_increasing_iterator_unchecked ~len:20 ~f:Fn.id)
-
 let of_list = of_list (module Int)
 
 let%expect_test "split_le_gt" =

@@ -120,8 +120,9 @@ let swap t i j =
 ;;
 
 let create ~len x =
-  (* If we can, use [Array.create] directly. *)
-  if Stdlib.Obj.tag x <> Stdlib.Obj.double_tag
+  (* If we can, use [Array.create] directly. Even though [is_int] check is subsumed by
+     the tag check, checking it is much faster, since it avoids a C function call.  *)
+  if Stdlib.Obj.is_int x || Stdlib.Obj.tag x <> Stdlib.Obj.double_tag
   then Array.create ~len x
   else (
     (* Otherwise use [create_zero] and set the contents *)

@@ -115,7 +115,6 @@ let%test_module _ =
      ;;
 
      let is_empty = is_empty
-
      let%test _ = is_empty empty
 
      let%test_unit _ =

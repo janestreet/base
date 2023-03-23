@@ -8,8 +8,7 @@ struct
 
   let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
     fun (type a__005_)
-        :  (((a__005_[@ocaml.local]) -> a__005_) -> (a__005_ t[@ocaml.local])
-            -> a__005_ t) ->
+        : (((a__005_[@ocaml.local]) -> a__005_) -> (a__005_ t[@ocaml.local]) -> a__005_ t) ->
       globalize_option
   ;;
 

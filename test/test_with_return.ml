@@ -10,7 +10,6 @@ let test_loop loop_limit jump_out =
 ;;
 
 let ( = ) = Poly.equal
-
 let%test _ = test_loop 5 10 = `Normal
 let%test _ = test_loop 10 5 = `Jumped_out 5
 let%test _ = test_loop 5 5 = `Jumped_out 5
@@ -46,7 +45,6 @@ let test_loop loop_limit jump_out =
 ;;
 
 let ( = ) = Poly.equal
-
 let%test _ = test_loop 5 10 = None
 let%test _ = test_loop 10 5 = Some (`Jumped_out 5)
 let%test _ = test_loop 5 5 = Some (`Jumped_out 5)

@@ -14,9 +14,7 @@ let%test_unit _ =
 
 let%test _ = Result.is_error (combine_errors [ error_string "" ])
 let%test _ = Result.is_error (combine_errors [ Ok (); error_string "" ])
-
 let ( = ) = [%compare.equal: unit t]
-
 let%test _ = combine_errors_unit [ Ok (); Ok () ] = Ok ()
 let%test _ = combine_errors_unit [] = Ok ()
 

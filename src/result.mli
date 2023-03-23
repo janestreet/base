@@ -17,7 +17,7 @@ open! Import
 type ('ok, 'err) t = ('ok, 'err) Stdlib.result =
   | Ok of 'ok
   | Error of 'err
-[@@deriving_inline sexp, sexp_grammar, compare, equal, hash]
+[@@deriving_inline sexp, sexp_grammar, compare, equal, globalize, hash]
 
 include Sexplib0.Sexpable.S2 with type ('ok, 'err) t := ('ok, 'err) t
 
@@ -28,6 +28,13 @@ val t_sexp_grammar
 
 include Ppx_compare_lib.Comparable.S2 with type ('ok, 'err) t := ('ok, 'err) t
 include Ppx_compare_lib.Equal.S2 with type ('ok, 'err) t := ('ok, 'err) t
+
+val globalize
+  :  (('ok[@ocaml.local]) -> 'ok)
+  -> (('err[@ocaml.local]) -> 'err)
+  -> (('ok, 'err) t[@ocaml.local])
+  -> ('ok, 'err) t
+
 include Ppx_hash_lib.Hashable.S2 with type ('ok, 'err) t := ('ok, 'err) t
 
 [@@@end]

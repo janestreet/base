@@ -48,7 +48,6 @@ let%test_module _ =
      let%test_unit _ = round_trip_sexp (of_list [ 1; 2; 3; 4 ])
      let%test_unit _ = round_trip_sexp (create ())
      let%test_unit _ = round_trip_sexp (of_list [])
-
      let invariant = invariant
      let create = create
 
@@ -947,9 +946,7 @@ let%test_module _ =
                loop
                  ~all_ops:(all_ops - 1)
                  ~non_empty_ops:
-                   (if queue_was_empty
-                    then non_empty_ops
-                    else non_empty_ops - 1))
+                   (if queue_was_empty then non_empty_ops else non_empty_ops - 1))
            in
            loop ~all_ops:30_000 ~non_empty_ops:20_000
          ;;

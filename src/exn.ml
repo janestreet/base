@@ -28,8 +28,7 @@ let () =
     | Reraised (arg0__005_, arg1__006_) ->
       let res0__007_ = sexp_of_string arg0__005_
       and res1__008_ = sexp_of_t arg1__006_ in
-      Sexplib0.Sexp.List
-        [ Sexplib0.Sexp.Atom "exn.ml.Reraised"; res0__007_; res1__008_ ]
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "exn.ml.Reraised"; res0__007_; res1__008_ ]
     | _ -> assert false)
 ;;
 

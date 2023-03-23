@@ -438,7 +438,8 @@ let bind t ~f =
             | Sequence { state = seed; next } ->
               (match next seed with
                | Done -> Done
-               | Skip { state = s } -> Skip { state = empty, Sequence { state = s; next } }
+               | Skip { state = s } ->
+                 Skip { state = empty, Sequence { state = s; next } }
                | Yield { value = a; state = s } ->
                  Skip { state = f a, Sequence { state = s; next } }))
          | Skip { state = s } -> Skip { state = Sequence { state = s; next }, rest }
@@ -547,8 +548,8 @@ module Merge_with_duplicates_element = struct
     -> ('a, 'b) t
     =
     fun (type a__046_ b__047_)
-        :  ((Sexplib0.Sexp.t -> a__046_) -> (Sexplib0.Sexp.t -> b__047_)
-            -> Sexplib0.Sexp.t -> (a__046_, b__047_) t) ->
+        :  ((Sexplib0.Sexp.t -> a__046_) -> (Sexplib0.Sexp.t -> b__047_) -> Sexplib0.Sexp.t
+            -> (a__046_, b__047_) t) ->
       let error_source__027_ = "sequence.ml.Merge_with_duplicates_element.t" in
       fun _of_a__023_ _of_b__024_ -> function
         | Sexplib0.Sexp.List

@@ -8,8 +8,7 @@ let examples_64_bit = [ min_value; succ min_value; pred max_value; max_value ]
 let print_for ints f =
   List.iter ints ~f:(fun i ->
     print_s
-      [%message
-        "" ~_:(i : int32) ~_:(Or_error.try_with (fun () -> f i) : int Or_error.t)])
+      [%message "" ~_:(i : int32) ~_:(Or_error.try_with (fun () -> f i) : int Or_error.t)])
 ;;
 
 let%expect_test "[floor_log2]" =

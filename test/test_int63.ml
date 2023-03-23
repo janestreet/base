@@ -29,7 +29,6 @@ let%test_module "Overflow_exn" =
     let%test_module "( + )" =
       (module struct
         let test t = Exn.does_raise (fun () -> t + t)
-
         let%test "max_value / 2 + 1" = test (succ (max_value / of_int 2))
         let%test "min_value / 2 - 1" = test (pred (min_value / of_int 2))
         let%test "min_value + min_value" = test min_value
