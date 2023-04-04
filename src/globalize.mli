@@ -22,4 +22,11 @@ val globalize_unit : (unit[@local]) -> unit
 val globalize_array : (('a[@local]) -> 'b) -> ('a array[@local]) -> 'a array
 val globalize_list : (('a[@local]) -> 'b) -> ('a list[@local]) -> 'b list
 val globalize_option : (('a[@local]) -> 'b) -> ('a option[@local]) -> 'b option
+
+val globalize_result
+  :  (('ok[@ocaml.local]) -> 'ok)
+  -> (('err[@ocaml.local]) -> 'err)
+  -> (('ok, 'err) result[@ocaml.local])
+  -> ('ok, 'err) result
+
 val globalize_ref : (('a[@local]) -> 'b) -> ('a ref[@local]) -> 'a ref

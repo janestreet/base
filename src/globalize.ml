@@ -35,5 +35,11 @@ let globalize_option f = function
   | Some x -> Some (f x)
 ;;
 
+let globalize_result globalize_a globalize_b t =
+  match t with
+  | Ok a -> Ok (globalize_a a)
+  | Error b -> Error (globalize_b b)
+;;
+
 let globalize_ref' r = ref !r
 let globalize_ref _ r = globalize_ref' r

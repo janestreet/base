@@ -347,6 +347,26 @@ let%test_unit _ =
 ;;
 
 let%test_unit _ =
+  [%test_result: string]
+    (fold_right2_exn
+       ~f:(fun e1 e2 acc -> e1 ^ e2 ^ acc)
+       [ "1"; "2" ]
+       [ "a"; "b" ]
+       ~init:"3c")
+    ~expect:"1a2b3c"
+;;
+
+let%test_unit _ =
+  [%test_result: string Or_unequal_lengths.t]
+    (fold_right2
+       ~f:(fun e1 e2 acc -> e1 ^ e2 ^ acc)
+       [ "1"; "2" ]
+       [ "a"; "b"; "c" ]
+       ~init:"#")
+    ~expect:Or_unequal_lengths.Unequal_lengths
+;;
+
+let%test_unit _ =
   let l1 = Test_values.l1 in
   [%test_result: int list * int list]
     (unzip (zip_exn l1 (List.rev l1)))

@@ -243,6 +243,15 @@ let fold2_exn l1 l2 ~init ~f =
   fold2_ok l1 l2 ~init ~f
 ;;
 
+let fold_right2 l1 l2 ~f ~init =
+  check_length2 l1 l2 ~f:(fold_right2_ok ~f ~init) [@nontail]
+;;
+
+let fold_right2_exn l1 l2 ~f ~init =
+  check_length2_exn "fold_right2_exn" l1 l2;
+  fold_right2_ok l1 l2 ~f ~init
+;;
+
 let for_all2 l1 l2 ~f = check_length2 l1 l2 ~f:(for_all2_ok ~f) [@nontail]
 
 let for_all2_exn l1 l2 ~f =

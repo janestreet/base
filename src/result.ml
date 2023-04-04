@@ -4,7 +4,7 @@ module Either = Either0
 type ('a, 'b) t = ('a, 'b) Stdlib.result =
   | Ok of 'a
   | Error of 'b
-[@@deriving_inline sexp, sexp_grammar, compare, equal, globalize, hash]
+[@@deriving_inline sexp, sexp_grammar, compare, equal, hash]
 
 let t_of_sexp :
   'a 'b.
@@ -120,22 +120,6 @@ let equal :
     | Error _a__037_, Error _b__038_ -> _cmp__b _a__037_ _b__038_)
 ;;
 
-let globalize :
-  'a 'b.
-  (('a[@ocaml.local]) -> 'a)
-  -> (('b[@ocaml.local]) -> 'b)
-  -> (('a, 'b) t[@ocaml.local])
-  -> ('a, 'b) t
-  =
-  fun (type a__039_ b__040_)
-      :  (((a__039_[@ocaml.local]) -> a__039_) -> ((b__040_[@ocaml.local]) -> b__040_)
-          -> ((a__039_, b__040_) t[@ocaml.local]) -> (a__039_, b__040_) t) ->
-    fun _globalize_a__042_ _globalize_b__041_ x__043_ ->
-      match x__043_ with
-      | Ok arg__044_ -> Ok (_globalize_a__042_ arg__044_)
-      | Error arg__045_ -> Error (_globalize_b__041_ arg__045_)
-;;
-
 let hash_fold_t
   : type a b.
     (Ppx_hash_lib.Std.Hash.state -> a -> Ppx_hash_lib.Std.Hash.state)
@@ -157,6 +141,8 @@ let hash_fold_t
 ;;
 
 [@@@end]
+
+let globalize = globalize_result
 
 include Monad.Make2_local (struct
     type nonrec ('a, 'b) t = ('a, 'b) t

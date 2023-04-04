@@ -97,6 +97,23 @@ val fold2
   -> f:(('acc -> 'a -> 'b -> 'acc)[@local])
   -> 'acc Or_unequal_lengths.t
 
+(** [fold_right2 ~f [a1; ...; an] [b1; ...; bn] ~init:c] is
+    [f a1 b1 (f a2 b2 (... (f an bn c) ...))].
+    The exn version will raise if the two lists have different lengths. *)
+val fold_right2_exn
+  :  'a t
+  -> 'b t
+  -> f:(('a -> 'b -> 'acc -> 'acc)[@local])
+  -> init:'acc
+  -> 'acc
+
+val fold_right2
+  :  'a t
+  -> 'b t
+  -> f:(('a -> 'b -> 'acc -> 'acc)[@local])
+  -> init:'acc
+  -> 'acc Or_unequal_lengths.t
+
 (** Like {!List.for_all}, but for a two-argument predicate.  The exn version will raise if
     the two lists have different lengths. *)
 val for_all2_exn : 'a t -> 'b t -> f:(('a -> 'b -> bool)[@local]) -> bool

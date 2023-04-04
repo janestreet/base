@@ -112,3 +112,9 @@ let fold_right l ~f:((f : _ -> _ -> _) [@local]) ~init =
   | [] -> init (* avoid the allocation of [~f] below *)
   | _ -> fold ~f:(fun a b -> f b a) ~init (rev l) [@nontail]
 ;;
+
+let fold_right2_ok l1 l2 ~f:((f : _ -> _ -> _ -> _) [@local]) ~init =
+  match l1, l2 with
+  | [], [] -> init (* avoid the allocation of [~f] below *)
+  | _, _ -> fold2_ok ~f:(fun a b c -> f b c a) ~init (rev l1) (rev l2) [@nontail]
+;;
