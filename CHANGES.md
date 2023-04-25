@@ -1,3 +1,99 @@
+## Release v0.16.0
+
+Changes across many modules:
+
+* Replaced `Caml` with `Stdlib`. The `Caml` module predated `Stdlib` and has been
+  redundant for some time.
+
+* Added support for local allocations. This is a nonstandard OCaml extension available at
+  <https://github.com/ocaml-flambda/ocaml-jst>.
+
+  Support includes:
+  - updating functions to accept `[@local]` arguments, especially closures
+  - local constructors, like `Array.create_local` and `Bytes.create_local`
+  - new versions of interfaces supporting `local` values, such as `Applicative.S_local`
+  - `[@@deriving globalize]` on some types, for converting local values to global values
+
+* Rename `Polymorphic_compare` submodules to `Comparisons`. The former was a misnomer.
+  While the comparisons for a given type are meant to replace polymorphic compare
+  operators, they are not polymorphic themselves.
+
+* Added `Container.S_with_creators` and `Indexed_container.S_with_creators`. Used these in
+  container modules such as `Array`, `List`, and `String`. These interfaces standardize
+  functions like `map` and `filter`. Along the way, refactored module types in `Container`
+  and `Indexed_container`.
+
+* In signatures for `fold*` functions, renamed accumulator type variables to `'acc` for
+  improved readability.
+
+* Added `of_string_opt` to `Int_intf.S`.
+
+* Added `dequeue_and_ignore_exn` to `Queue_intf.S`.
+
+Changes to individual modules:
+
+* `Bool`: added `select`, a primitive using `CMOV` on architectures that support it.
+
+* `Comparable`:
+  * Added `'a reversed` and `compare_reversed`, to support deriving inverted comparisons,
+    e.g.: `[%compare: My_type.t Comparable.reversed]`
+  * Added `Derived2_phantom`, similar to `Derived_phantom`.
+  * Made `Derived*.comparator_witness` types injective.
+
+* `Float`:
+  * Added hyperbolic trig functions `acosh`, `asinh`, and `atanh` to `Float`.
+  * Added `Float.of_string_opt`.
+
+* `Hash_set`: Made `t` injective.
+
+* `Hashtbl`:
+  * Added `choose_randomly` and `choose_randomly_exn`.
+  * Made `Hashtbl.t` injective.
+
+* `Lazy`: Added `peek`, extracting an already-forced value if present.
+
+* `Map`:
+  * Added `split_le_gt`, `split_lt_ge`, and `transpose_keys`.
+  * Added `Make_applicative_traversals`, allowing some applicatives to improve performance
+    when operating on maps.
+  * Corrected documentation of performance for `filter*` functions.
+  * Refactored module types in `map_intf.ml`. Among other changes, propagated
+    `~comparator` argument slightly differently to allow expressing type of
+    `transpose_keys` properly.
+
+* `Monad`: Documented performance characteristics of `Ident`.
+
+* `Option`: Deprecated functions from `Container` but not particularly useful for options.
+
+* `Ppx_compare_lib`: Removed primitive functions; `ppx_compare` now explicitly refers to
+  these via `Stdlib`.
+
+* `Sequence`: Changed `Step.t` variant type to use inlined records.
+
+* `Set`:
+  * Added `of_tree`, `to_tree`, `split_le_gt`, and `split_lt_ge`.
+  * Created a single shared `'a Named.t` type to `set_intf.ml`, rather than using a new type
+    in every instance of `Accessors`.
+  * Made `Set.t` injective in both type arguments.
+  * Refactored module types in `set_intf.ml`.
+
+* `Sexpable`: `Of_stringable` now provides `t_sexp_grammar`.
+
+* `Sign` and `Sign_or_nan`: Added `to_string_hum`.
+
+* `Stack`: added `filter`, `filter_inplace`, and `filter_map`.
+
+* `String`: added `concat_lines`, `pad_left`, `pad_right`, and `unsafe_sub`
+
+* `Sys`: added `opaque_identity_global`, which forces its argument to be globally
+  allocated.
+
+* `Type_equal`: `Id.Uid` now implements `Identifiable.S`
+
+* `Uniform_array`: add `sort`
+
+## Old pre-v0.15 changelogs (very likely stale and incomplete)
+
 ## git version
 
 - Renamed `Result.ok_fst` to `Result.to_either` (old name remains as

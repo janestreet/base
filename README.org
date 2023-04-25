@@ -32,9 +32,9 @@ Base is intended as a full stdlib replacement.  As a result, after an
 standard library that one normally gets in the default environment are
 deprecated.
 
-In order to access these values, one must use the =Caml= library,
-which re-exports them all through the toplevel name =Caml=:
-=Caml.String=, =Caml.print_string=, ...
+In order to access these values, one must use the =Stdlib= library,
+which re-exports them all through the toplevel name =Stdlib=:
+=Stdlib.String=, =Stdlib.print_string=, ...
 
 ** Differences between Base and the OCaml standard library
 
@@ -127,12 +127,6 @@ Things are not yet setup in the git repository to make it convenient
 to change types and update the generated code, but they will be setup
 soon.
 
-** OCaml Version Support
-
-Base will maintain compatibility with the latest OCaml release, and the three
-prior minor version releases. Because of this, there will be a lag of four
-minor versions before features introduced in the Stdlib will reach Base.
-
 ** Base coding rules
 
 There are a few coding rules across the code base that are enforced by
@@ -140,18 +134,18 @@ lint tools.
 
 These rules are:
 
-- Opening the =Caml= module is not allowed. Inside Base, the OCaml
-  stdlib is shadowed and accessible through the =Caml= module. We
-  forbid opening =Caml= so that we know exactly where things come
+- Opening the =Stdlib= module is not allowed. Inside Base, the OCaml
+  stdlib is shadowed and accessible through the =Stdlib= module. We
+  forbid opening =Stdlib= so that we know exactly where things come
   from.
-- =Caml.Foo= modules cannot be aliased, one must use =Caml.Foo=
+- =Stdlib.Foo= modules cannot be aliased, one must use =Stdlib.Foo=
   explicitly. This is to avoid having to remember a list of aliases
   at the beginning of each file.
 - For some modules that are both in the OCaml stdlib and Base, such as
   =String=, we define a module =String0= for common functions that
   cannot be defined directly in =Base.String= to avoid creating a
   circular dependency.  Except for =String= itself, other modules
-  are not allowed to use =Caml.String= and must use either =String= or
+  are not allowed to use =Stdlib.String= and must use either =String= or
   =String0= instead.
 - Indentation is exactly the one of =ocp-indent=.
 - A few other coding style rules enforced by
