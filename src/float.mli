@@ -471,6 +471,10 @@ val frexp : t -> t * int
 external log10 : t -> t = "caml_log10_float" "log10"
 [@@unboxed] [@@noalloc]
 
+(** Base 2 logarithm. *)
+external log2 : t -> t = "caml_log2_float" "log2"
+[@@unboxed] [@@noalloc]
+
 (** [expm1 x] computes [exp x -. 1.0], giving numerically-accurate results even if [x] is
     close to [0.0]. *)
 external expm1 : t -> t = "caml_expm1_float" "caml_expm1"
