@@ -30,6 +30,8 @@ let ( %. ) a b =
   if m < 0. then m +. b else m
 ;;
 
+external log2 : float -> float = "caml_log2_float" "log2" [@@unboxed] [@@noalloc]
+
 (* The bits of INRIA's [Pervasives] that we just want to expose in [Float]. Most are
    already deprecated in [Pervasives], and eventually all of them should be. *)
 include (
