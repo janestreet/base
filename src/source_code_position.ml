@@ -18,6 +18,8 @@ end
 include M
 include Comparable.Make_using_comparator (M)
 
+let equal__local a b = equal_int (compare__local a b) 0
+
 let of_pos (pos_fname, pos_lnum, pos_cnum, _) =
   { pos_fname; pos_lnum; pos_cnum; pos_bol = 0 }
 ;;

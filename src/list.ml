@@ -32,7 +32,25 @@ module Or_unequal_lengths = struct
   type 'a t =
     | Ok of 'a
     | Unequal_lengths
-  [@@deriving_inline compare, sexp_of]
+  [@@deriving_inline compare ~localize, sexp_of]
+
+  let compare__local :
+    'a.
+    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+    -> ('a t[@ocaml.local])
+    -> ('a t[@ocaml.local])
+    -> int
+    =
+    fun _cmp__a a__014_ b__015_ ->
+    if Stdlib.( == ) a__014_ b__015_
+    then 0
+    else (
+      match a__014_, b__015_ with
+      | Ok _a__016_, Ok _b__017_ -> _cmp__a _a__016_ _b__017_
+      | Ok _, _ -> -1
+      | _, Ok _ -> 1
+      | Unequal_lengths, Unequal_lengths -> 0)
+  ;;
 
   let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
     fun _cmp__a a__010_ b__011_ ->
@@ -47,11 +65,11 @@ module Or_unequal_lengths = struct
   ;;
 
   let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-    fun (type a__017_) : ((a__017_ -> Sexplib0.Sexp.t) -> a__017_ t -> Sexplib0.Sexp.t) ->
-    fun _of_a__014_ -> function
-      | Ok arg0__015_ ->
-        let res0__016_ = _of_a__014_ arg0__015_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; res0__016_ ]
+    fun (type a__021_) : ((a__021_ -> Sexplib0.Sexp.t) -> a__021_ t -> Sexplib0.Sexp.t) ->
+    fun _of_a__018_ -> function
+      | Ok arg0__019_ ->
+        let res0__020_ = _of_a__018_ arg0__019_ in
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; res0__020_ ]
       | Unequal_lengths -> Sexplib0.Sexp.Atom "Unequal_lengths"
   ;;
 
@@ -716,8 +734,222 @@ let groupi l ~break =
 
 let group l ~break = groupi l ~break:(fun _ x y -> break x y) [@nontail]
 
+let stable_sort l ~compare:cmp =
+  let rec rev_merge cmp l1 l2 accu =
+    match l1, l2 with
+    | [], l2 -> rev_append l2 accu
+    | l1, [] -> rev_append l1 accu
+    | h1 :: t1, h2 :: t2 ->
+      if cmp h1 h2 <= 0
+      then rev_merge cmp t1 l2 (h1 :: accu)
+      else rev_merge cmp l1 t2 (h2 :: accu)
+  in
+  let rec rev_merge_rev cmp l1 l2 accu =
+    match l1, l2 with
+    | [], l2 -> rev_append l2 accu
+    | l1, [] -> rev_append l1 accu
+    | h1 :: t1, h2 :: t2 ->
+      if cmp h1 h2 > 0
+      then rev_merge_rev cmp t1 l2 (h1 :: accu)
+      else rev_merge_rev cmp l1 t2 (h2 :: accu)
+  in
+  let rec sort n l =
+    match n, l with
+    | 2, x1 :: x2 :: tl ->
+      let s = if cmp x1 x2 <= 0 then [ x1; x2 ] else [ x2; x1 ] in
+      s, tl
+    | 3, x1 :: x2 :: x3 :: tl ->
+      let s =
+        if cmp x1 x2 <= 0
+        then
+          if cmp x2 x3 <= 0
+          then [ x1; x2; x3 ]
+          else if cmp x1 x3 <= 0
+          then [ x1; x3; x2 ]
+          else [ x3; x1; x2 ]
+        else if cmp x1 x3 <= 0
+        then [ x2; x1; x3 ]
+        else if cmp x2 x3 <= 0
+        then [ x2; x3; x1 ]
+        else [ x3; x2; x1 ]
+      in
+      s, tl
+    | n, l ->
+      let n1 = n asr 1 in
+      let n2 = n - n1 in
+      let s1, l2 = rev_sort n1 l in
+      let s2, tl = rev_sort n2 l2 in
+      rev_merge_rev cmp s1 s2 [], tl
+  and rev_sort n l =
+    match n, l with
+    | 2, x1 :: x2 :: tl ->
+      let s = if cmp x1 x2 > 0 then [ x1; x2 ] else [ x2; x1 ] in
+      s, tl
+    | 3, x1 :: x2 :: x3 :: tl ->
+      let s =
+        if cmp x1 x2 > 0
+        then
+          if cmp x2 x3 > 0
+          then [ x1; x2; x3 ]
+          else if cmp x1 x3 > 0
+          then [ x1; x3; x2 ]
+          else [ x3; x1; x2 ]
+        else if cmp x1 x3 > 0
+        then [ x2; x1; x3 ]
+        else if cmp x2 x3 > 0
+        then [ x2; x3; x1 ]
+        else [ x3; x2; x1 ]
+      in
+      s, tl
+    | n, l ->
+      let n1 = n asr 1 in
+      let n2 = n - n1 in
+      let s1, l2 = sort n1 l in
+      let s2, tl = sort n2 l2 in
+      rev_merge cmp s1 s2 [], tl
+  in
+  let len = length l in
+  if len < 2 then l else fst (sort len l)
+;;
+
+let sort = stable_sort
+
 let sort_and_group l ~compare =
-  l |> stable_sort ~compare |> group ~break:(fun x y -> compare x y <> 0)
+  (l |> stable_sort ~compare |> group ~break:(fun x y -> compare x y <> 0)) [@nontail]
+;;
+
+let dedup_and_sort l ~compare:cmp =
+  let rec rev_merge cmp l1 l2 accu =
+    match l1, l2 with
+    | [], l2 -> rev_append l2 accu
+    | l1, [] -> rev_append l1 accu
+    | h1 :: t1, h2 :: t2 ->
+      (match cmp h1 h2 with
+       | c when c < 0 -> rev_merge cmp t1 l2 (h1 :: accu)
+       | c when c > 0 -> rev_merge cmp l1 t2 (h2 :: accu)
+       | _ -> rev_merge cmp t1 l2 accu)
+  in
+  let rec rev_merge_rev cmp l1 l2 accu =
+    match l1, l2 with
+    | [], l2 -> rev_append l2 accu
+    | l1, [] -> rev_append l1 accu
+    | h1 :: t1, h2 :: t2 ->
+      (match cmp h1 h2 with
+       | c when c > 0 -> rev_merge_rev cmp t1 l2 (h1 :: accu)
+       | c when c < 0 -> rev_merge_rev cmp l1 t2 (h2 :: accu)
+       | _ -> rev_merge_rev cmp t1 l2 accu)
+  in
+  let rec sort n l =
+    match n, l with
+    | 2, x1 :: x2 :: tl ->
+      let s =
+        match cmp x1 x2 with
+        | c when c < 0 -> [ x1; x2 ]
+        | c when c > 0 -> [ x2; x1 ]
+        | _ -> [ x2 ]
+      in
+      s, tl
+    | 3, x1 :: x2 :: x3 :: tl ->
+      let s =
+        match cmp x1 x2 with
+        | c when c < 0 ->
+          (match cmp x2 x3 with
+           | c when c < 0 -> [ x1; x2; x3 ]
+           | c when c > 0 ->
+             (match cmp x1 x3 with
+              | c when c < 0 -> [ x1; x3; x2 ]
+              | c when c > 0 -> [ x3; x1; x2 ]
+              | _ -> [ x3; x2 ])
+           | _ -> [ x1; x3 ])
+        | c when c > 0 ->
+          (match cmp x1 x3 with
+           | c when c < 0 -> [ x2; x1; x3 ]
+           | c when c > 0 ->
+             (match cmp x2 x3 with
+              | c when c < 0 -> [ x2; x3; x1 ]
+              | c when c > 0 -> [ x3; x2; x1 ]
+              | _ -> [ x3; x1 ])
+           | _ -> [ x2; x3 ])
+        | _ ->
+          (match cmp x2 x3 with
+           | c when c < 0 -> [ x2; x3 ]
+           | c when c > 0 -> [ x3; x2 ]
+           | _ -> [ x3 ])
+      in
+      s, tl
+    | n, l ->
+      let n1 = n asr 1 in
+      let n2 = n - n1 in
+      let s1, l2 = rev_sort n1 l in
+      let s2, tl = rev_sort n2 l2 in
+      rev_merge_rev cmp s1 s2 [], tl
+  and rev_sort n l =
+    match n, l with
+    | 2, x1 :: x2 :: tl ->
+      let s =
+        match cmp x1 x2 with
+        | c when c > 0 -> [ x1; x2 ]
+        | c when c < 0 -> [ x2; x1 ]
+        | _ -> [ x2 ]
+      in
+      s, tl
+    | 3, x1 :: x2 :: x3 :: tl ->
+      let s =
+        match cmp x1 x2 with
+        | c when c > 0 ->
+          (match cmp x2 x3 with
+           | c when c > 0 -> [ x1; x2; x3 ]
+           | c when c < 0 ->
+             (match cmp x1 x3 with
+              | c when c > 0 -> [ x1; x3; x2 ]
+              | c when c < 0 -> [ x3; x1; x2 ]
+              | _ -> [ x3; x2 ])
+           | _ -> [ x1; x3 ])
+        | c when c < 0 ->
+          (match cmp x1 x3 with
+           | c when c > 0 -> [ x2; x1; x3 ]
+           | c when c < 0 ->
+             (match cmp x2 x3 with
+              | c when c > 0 -> [ x2; x3; x1 ]
+              | c when c < 0 -> [ x3; x2; x1 ]
+              | _ -> [ x3; x1 ])
+           | _ -> [ x2; x3 ])
+        | _ ->
+          (match cmp x2 x3 with
+           | c when c > 0 -> [ x2; x3 ]
+           | c when c < 0 -> [ x3; x2 ]
+           | _ -> [ x3 ])
+      in
+      s, tl
+    | n, l ->
+      let n1 = n asr 1 in
+      let n2 = n - n1 in
+      let s1, l2 = sort n1 l in
+      let s2, tl = sort n2 l2 in
+      rev_merge cmp s1 s2 [], tl
+  in
+  let len = length l in
+  if len < 2 then l else fst (sort len l)
+;;
+
+let stable_dedup list ~compare =
+  match list with
+  | [] | [ _ ] -> list (* special case for performance *)
+  | _ :: _ :: _ ->
+    let open struct
+      type 'a dedup =
+        { elt : 'a
+        ; mutable dup : bool
+        }
+    end in
+    (* [stable_dedup] keeps the first of each set of duplicates. [dedup_and_sort] keeps
+       the last. We define one in terms of the other by passing the values in reverse
+       order, hence the [rev_map] in the definition of [dedups]. We restore the order in
+       the final [fold]. *)
+    let dedups = rev_map list ~f:(fun elt -> { elt; dup = true }) in
+    let unique = dedup_and_sort dedups ~compare:(fun x y -> compare x.elt y.elt) in
+    iter unique ~f:(fun dedup -> dedup.dup <- false);
+    fold dedups ~init:[] ~f:(fun acc dedup -> if dedup.dup then acc else dedup.elt :: acc)
 ;;
 
 let concat_map l ~f:(f [@local]) =
@@ -876,16 +1108,6 @@ let remove_consecutive_duplicates ?(which_to_keep = `Last) list ~equal =
   | hd :: tl -> rev (loop hd [] tl)
 ;;
 
-(** returns sorted version of list with duplicates removed *)
-let dedup_and_sort list ~compare =
-  match list with
-  | [] | [ _ ] -> list (* performance hack *)
-  | _ ->
-    let equal x x' = compare x x' = 0 in
-    let sorted = sort ~compare list in
-    remove_consecutive_duplicates ~equal sorted [@nontail]
-;;
-
 let find_a_dup l ~compare =
   let sorted = sort l ~compare in
   let rec loop l =
@@ -1008,22 +1230,22 @@ module Assoc = struct
   [@@deriving_inline sexp, sexp_grammar]
 
   let key_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a key =
-    fun _of_a__018_ -> _of_a__018_
+    fun _of_a__022_ -> _of_a__022_
   ;;
 
   let sexp_of_key : 'a. ('a -> Sexplib0.Sexp.t) -> 'a key -> Sexplib0.Sexp.t =
-    fun _of_a__020_ -> _of_a__020_
+    fun _of_a__024_ -> _of_a__024_
   ;;
 
   let key_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a key Sexplib0.Sexp_grammar.t =
     fun _'a_sexp_grammar ->
-      { untyped =
-          Tagged
-            { key = Sexplib0.Sexp_grammar.assoc_key_tag
-            ; value = List []
-            ; grammar = _'a_sexp_grammar.untyped
-            }
-      }
+    { untyped =
+        Tagged
+          { key = Sexplib0.Sexp_grammar.assoc_key_tag
+          ; value = List []
+          ; grammar = _'a_sexp_grammar.untyped
+          }
+    }
   ;;
 
   [@@@end]
@@ -1032,24 +1254,24 @@ module Assoc = struct
   [@@deriving_inline sexp, sexp_grammar]
 
   let value_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a value =
-    fun _of_a__021_ -> _of_a__021_
+    fun _of_a__025_ -> _of_a__025_
   ;;
 
   let sexp_of_value : 'a. ('a -> Sexplib0.Sexp.t) -> 'a value -> Sexplib0.Sexp.t =
-    fun _of_a__023_ -> _of_a__023_
+    fun _of_a__027_ -> _of_a__027_
   ;;
 
   let value_sexp_grammar :
     'a. 'a Sexplib0.Sexp_grammar.t -> 'a value Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar ->
-      { untyped =
-          Tagged
-            { key = Sexplib0.Sexp_grammar.assoc_value_tag
-            ; value = List []
-            ; grammar = _'a_sexp_grammar.untyped
-            }
-      }
+    { untyped =
+        Tagged
+          { key = Sexplib0.Sexp_grammar.assoc_value_tag
+          ; value = List []
+          ; grammar = _'a_sexp_grammar.untyped
+          }
+    }
   ;;
 
   [@@@end]
@@ -1065,20 +1287,20 @@ module Assoc = struct
     -> Sexplib0.Sexp.t
     -> ('a, 'b) t
     =
-    let error_source__032_ = "list.ml.Assoc.t" in
-    fun _of_a__024_ _of_b__025_ x__033_ ->
+    let error_source__036_ = "list.ml.Assoc.t" in
+    fun _of_a__028_ _of_b__029_ x__037_ ->
       list_of_sexp
         (function
-          | Sexplib0.Sexp.List [ arg0__027_; arg1__028_ ] ->
-            let res0__029_ = key_of_sexp _of_a__024_ arg0__027_
-            and res1__030_ = value_of_sexp _of_b__025_ arg1__028_ in
-            res0__029_, res1__030_
-          | sexp__031_ ->
+          | Sexplib0.Sexp.List [ arg0__031_; arg1__032_ ] ->
+            let res0__033_ = key_of_sexp _of_a__028_ arg0__031_
+            and res1__034_ = value_of_sexp _of_b__029_ arg1__032_ in
+            res0__033_, res1__034_
+          | sexp__035_ ->
             Sexplib0.Sexp_conv_error.tuple_of_size_n_expected
-              error_source__032_
+              error_source__036_
               2
-              sexp__031_)
-        x__033_
+              sexp__035_)
+        x__037_
   ;;
 
   let sexp_of_t :
@@ -1088,13 +1310,13 @@ module Assoc = struct
     -> ('a, 'b) t
     -> Sexplib0.Sexp.t
     =
-    fun _of_a__034_ _of_b__035_ x__040_ ->
-      sexp_of_list
-        (fun (arg0__036_, arg1__037_) ->
-           let res0__038_ = sexp_of_key _of_a__034_ arg0__036_
-           and res1__039_ = sexp_of_value _of_b__035_ arg1__037_ in
-           Sexplib0.Sexp.List [ res0__038_; res1__039_ ])
-        x__040_
+    fun _of_a__038_ _of_b__039_ x__044_ ->
+    sexp_of_list
+      (fun (arg0__040_, arg1__041_) ->
+         let res0__042_ = sexp_of_key _of_a__038_ arg0__040_
+         and res1__043_ = sexp_of_value _of_b__039_ arg1__041_ in
+         Sexplib0.Sexp.List [ res0__042_; res1__043_ ])
+      x__044_
   ;;
 
   let t_sexp_grammar :
@@ -1104,21 +1326,21 @@ module Assoc = struct
     -> ('a, 'b) t Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar _'b_sexp_grammar ->
-      { untyped =
-          Tagged
-            { key = Sexplib0.Sexp_grammar.assoc_tag
-            ; value = List []
-            ; grammar =
-                (list_sexp_grammar
-                   { untyped =
-                       List
-                         (Cons
-                            ( (key_sexp_grammar _'a_sexp_grammar).untyped
-                            , Cons ((value_sexp_grammar _'b_sexp_grammar).untyped, Empty) ))
-                   })
-                .untyped
-            }
-      }
+    { untyped =
+        Tagged
+          { key = Sexplib0.Sexp_grammar.assoc_tag
+          ; value = List []
+          ; grammar =
+              (list_sexp_grammar
+                 { untyped =
+                     List
+                       (Cons
+                          ( (key_sexp_grammar _'a_sexp_grammar).untyped
+                          , Cons ((value_sexp_grammar _'b_sexp_grammar).untyped, Empty) ))
+                 })
+              .untyped
+          }
+    }
   ;;
 
   [@@@end]
@@ -1219,12 +1441,12 @@ let rec drop t n =
 
 let chunks_of l ~length =
   if length <= 0 then invalid_argf "List.chunks_of: Expected length > 0, got %d" length ();
-  let rec aux of_length acc l =
+  let rec aux length acc l =
     match l with
     | [] -> rev acc
     | _ :: _ ->
       let sublist, l = split_n l length in
-      aux of_length (sublist :: acc) l
+      aux length (sublist :: acc) l
   in
   aux length [] l
 ;;
@@ -1334,9 +1556,19 @@ let rec compare cmp a b =
     if n = 0 then compare cmp xs ys else n
 ;;
 
+let rec compare__local cmp a b =
+  match a, b with
+  | [], [] -> 0
+  | [], _ -> -1
+  | _, [] -> 1
+  | x :: xs, y :: ys ->
+    let n = cmp x y in
+    if n = 0 then compare__local cmp xs ys else n
+;;
+
 let hash_fold_t = hash_fold_list
 
-let equal_local ((equal : _ -> _ -> _) [@local]) t1 t2 =
+let equal_with_local_closure ((equal : _ -> _ -> _) [@local]) t1 t2 =
   let rec loop ~equal t1 t2 =
     match t1, t2 with
     | [], [] -> true
@@ -1347,7 +1579,17 @@ let equal_local ((equal : _ -> _ -> _) [@local]) t1 t2 =
 ;;
 
 let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
-  fun f x y -> equal_local f x y
+  fun f x y -> equal_with_local_closure f x y
+;;
+
+let equal__local equal_a__local t1 t2 =
+  let rec loop ~equal_a__local t1 t2 =
+    match t1, t2 with
+    | [], [] -> true
+    | x1 :: t1, x2 :: t2 -> equal_a__local x1 x2 && loop ~equal_a__local t1 t2
+    | _ -> false
+  in
+  loop ~equal_a__local t1 t2 [@nontail]
 ;;
 
 let transpose =
@@ -1378,11 +1620,11 @@ let () =
   Sexplib0.Sexp_conv.Exn_converter.add
     [%extension_constructor Transpose_got_lists_of_different_lengths]
     (function
-      | Transpose_got_lists_of_different_lengths arg0__041_ ->
-        let res0__042_ = sexp_of_list sexp_of_int arg0__041_ in
+      | Transpose_got_lists_of_different_lengths arg0__045_ ->
+        let res0__046_ = sexp_of_list sexp_of_int arg0__045_ in
         Sexplib0.Sexp.List
           [ Sexplib0.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"
-          ; res0__042_
+          ; res0__046_
           ]
       | _ -> assert false)
 ;;
@@ -1408,5 +1650,5 @@ let is_suffix list ~suffix ~equal:((equal_elt : _ -> _ -> _) [@local]) =
   let list_len = length list in
   let suffix_len = length suffix in
   list_len >= suffix_len
-  && equal_local equal_elt (drop list (list_len - suffix_len)) suffix
+  && equal_with_local_closure equal_elt (drop list (list_len - suffix_len)) suffix
 ;;

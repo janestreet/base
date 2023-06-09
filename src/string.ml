@@ -370,20 +370,22 @@ module Search_pattern0 = struct
       ; case_sensitive : bool
       ; kmp_array : int array
       }
-    [@@deriving_inline equal, sexp_of]
+    [@@deriving_inline equal ~localize, sexp_of]
 
-    let equal =
+    let equal__local =
       (fun a__003_ b__004_ ->
          if Stdlib.( == ) a__003_ b__004_
          then true
          else
            Stdlib.( && )
-             (equal_string a__003_.pattern b__004_.pattern)
+             (equal_string__local a__003_.pattern b__004_.pattern)
              (Stdlib.( && )
-                (equal_bool a__003_.case_sensitive b__004_.case_sensitive)
-                (equal_array equal_int a__003_.kmp_array b__004_.kmp_array))
-           : t -> t -> bool)
+                (equal_bool__local a__003_.case_sensitive b__004_.case_sensitive)
+                (equal_array__local equal_int__local a__003_.kmp_array b__004_.kmp_array))
+           : (t[@ocaml.local]) -> (t[@ocaml.local]) -> bool)
     ;;
+
+    let equal = (fun a b -> equal__local a b : t -> t -> bool)
 
     let sexp_of_t =
       (fun { pattern = pattern__008_
@@ -521,7 +523,7 @@ module Caseless = struct
         | _ -> c)
     ;;
 
-    let compare string1 string2 =
+    let compare__local string1 string2 =
       if phys_equal string1 string2
       then 0
       else
@@ -532,6 +534,8 @@ module Caseless = struct
           ~string2
           ~len2:(String.length string2)
     ;;
+
+    let compare a b = compare__local a b
 
     let hash_fold_t state t =
       let len = length t in
@@ -1388,6 +1392,36 @@ include struct
     ]
   ;;
 end
+
+let edit_distance s1 s2 =
+  (* We maintain a table of edit distance between all indices of the shorter string, and
+     the current and previous indices of the longer string. *)
+  let s1, s2 = if String.length s1 <= String.length s2 then s1, s2 else s2, s1 in
+  let table = Array.create_local ~len:(2 * (1 + String.length s1)) 0 in
+  let at i j = (i * 2) + (j mod 2) in
+  for i = 1 to String.length s1 do
+    (* Insert [i] characters when [j=0]. *)
+    table.(at i 0) <- i
+  done;
+  for j = 1 to String.length s2 do
+    (* Insert [j] characters when [i=0]. *)
+    table.(at 0 j) <- j;
+    for i = 1 to String.length s1 do
+      if Char.equal s1.[i - 1] s2.[j - 1]
+      then
+        (* Nothing to edit for the current character. *)
+        table.(at i j) <- table.(at (i - 1) (j - 1))
+      else (
+        (* Edit the current character by substitution, addition, or deletion. *)
+        let sub = table.(at (i - 1) (j - 1)) in
+        let add = table.(at (i - 1) j) in
+        let del = table.(at i (j - 1)) in
+        table.(at i j) <- 1 + min sub (min add del))
+    done
+  done;
+  (* Return the final result. *)
+  table.(at (String.length s1) (String.length s2))
+;;
 
 module Escaping = struct
   (* If this is changed, make sure to update [escape], which attempts to ensure all the

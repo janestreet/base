@@ -4,9 +4,10 @@ type t =
   | Less
   | Equal
   | Greater
-[@@deriving_inline compare, hash, enumerate, sexp, sexp_grammar]
+[@@deriving_inline compare ~localize, hash, enumerate, sexp, sexp_grammar]
 
-let compare = (Stdlib.compare : t -> t -> int)
+let compare__local = (Stdlib.compare : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+let compare = (fun a b -> compare__local a b : t -> t -> int)
 
 let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
   (fun hsv arg ->
@@ -72,6 +73,7 @@ let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
 [@@@end]
 
 let equal a b = compare a b = 0
+let equal__local a b = compare__local a b = 0
 
 module Export = struct
   type _ordering = t =

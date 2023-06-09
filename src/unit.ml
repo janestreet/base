@@ -21,6 +21,8 @@ module T = struct
   [@@@end]
 
   let compare _ _ = 0
+  let compare__local _ _ = 0
+  let equal__local _ _ = true
 
   let of_string = function
     | "()" -> ()

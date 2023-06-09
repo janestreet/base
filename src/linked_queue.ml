@@ -8,6 +8,12 @@ let dequeue_and_ignore_exn (type elt) (t : elt t) = ignore (dequeue_exn t : elt)
 let peek t = if is_empty t then None else Some (Linked_queue0.peek t)
 let peek_exn = Linked_queue0.peek
 
+let drain t ~f ~while_ =
+  while (not (is_empty t)) && while_ (peek_exn t) do
+    f (dequeue_exn t)
+  done
+;;
+
 module C = Indexed_container.Make (struct
     type nonrec 'a t = 'a t
 

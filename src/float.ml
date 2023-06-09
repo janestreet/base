@@ -511,7 +511,9 @@ let int63_round_nearest_portable_alloc_exn t0 =
       ()
 ;;
 
-let int63_round_nearest_arch64_noalloc_exn f = Int63.of_int (iround_nearest_exn f)
+let[@inline] int63_round_nearest_arch64_noalloc_exn f =
+  Int63.of_int (iround_nearest_exn f)
+;;
 
 let int63_round_nearest_exn =
   match Word_size.word_size with
@@ -534,9 +536,10 @@ module Class = struct
     | Normal
     | Subnormal
     | Zero
-  [@@deriving_inline compare, enumerate, sexp, sexp_grammar]
+  [@@deriving_inline compare ~localize, enumerate, sexp, sexp_grammar]
 
-  let compare = (Stdlib.compare : t -> t -> int)
+  let compare__local = (Stdlib.compare : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+  let compare = (fun a b -> compare__local a b : t -> t -> int)
   let all = ([ Infinite; Nan; Normal; Subnormal; Zero ] : t list)
 
   let t_of_sexp =
@@ -918,7 +921,7 @@ let ieee_exponent t =
 let ieee_mantissa t =
   let bits = Stdlib.Int64.bits_of_float t in
   (* This is safe because mantissa_mask64 < Int63.max_value *)
-  (Int63.of_int64_trunc) Stdlib.Int64.(logand bits mantissa_mask64)
+  (Int63.of_int64_trunc [@inlined]) Stdlib.Int64.(logand bits mantissa_mask64)
 ;;
 
 let create_ieee_exn ~negative ~exponent ~mantissa =

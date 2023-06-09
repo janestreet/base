@@ -12,6 +12,30 @@ let%test_module _ =
 
      type nonrec 'a t = 'a t [@@deriving sexp, sexp_grammar]
 
+     let globalize = globalize
+
+     let%expect_test _ =
+       let open Expect_test_helpers_base in
+       let check t =
+         require_does_not_raise [%here] (fun () ->
+           invariant ignore t;
+           print_s [%sexp (t : int t)])
+       in
+       let a = of_list [ 1; 2; 3 ] in
+       check a;
+       [%expect {| (1 2 3) |}];
+       let b = globalize globalize_int a in
+       check b;
+       [%expect {| (1 2 3) |}];
+       enqueue b 4;
+       print_s [%sexp (dequeue a : int option)];
+       [%expect {| (1) |}];
+       check a;
+       [%expect {| (2 3) |}];
+       check b;
+       [%expect {| (1 2 3 4) |}]
+     ;;
+
      let capacity = capacity
      let set_capacity = set_capacity
 
@@ -179,8 +203,13 @@ let%test_module _ =
 
      let dequeue_exn = dequeue_exn
      let enqueue = enqueue
+     let enqueue_front = enqueue_front
+     let dequeue_back = dequeue_back
+     let dequeue_back_exn = dequeue_back_exn
      let peek = peek
      let peek_exn = peek_exn
+     let peek_back = peek_back
+     let peek_back_exn = peek_back_exn
      let last = last
      let last_exn = last_exn
 
@@ -198,7 +227,22 @@ let%test_module _ =
        [%test_result: int] (dequeue_exn t) ~expect:2;
        assert (does_raise (fun () -> dequeue_exn t));
        assert (does_raise (fun () -> peek_exn t));
-       assert (does_raise (fun () -> last_exn t))
+       assert (does_raise (fun () -> peek_back_exn t));
+       assert (does_raise (fun () -> last_exn t));
+       enqueue_front t 1;
+       enqueue t 2;
+       enqueue_front t 0;
+       enqueue t 3;
+       enqueue t 4;
+       enqueue t 5;
+       [%test_result: int option] (peek_back t) ~expect:(Some 5);
+       [%test_result: int] (peek_back_exn t) ~expect:5;
+       [%test_result: int] (dequeue_exn t) ~expect:0;
+       [%test_result: int] (dequeue_exn t) ~expect:1;
+       [%test_result: int] (dequeue_exn t) ~expect:2;
+       [%test_result: int] (dequeue_back_exn t) ~expect:5;
+       [%test_result: int] (dequeue_back_exn t) ~expect:4;
+       [%test_result: int] (dequeue_back_exn t) ~expect:3
      ;;
 
      let dequeue_and_ignore_exn = dequeue_and_ignore_exn
@@ -218,6 +262,31 @@ let%test_module _ =
        assert (does_raise (fun () -> dequeue_and_ignore_exn t));
        assert (does_raise (fun () -> dequeue_and_ignore_exn t));
        [%test_result: int option] (peek t) ~expect:None
+     ;;
+
+     let drain = drain
+
+     let%test_unit _ =
+       let t = create () in
+       for i = 0 to 10 do
+         enqueue t i
+       done;
+       [%test_result: int] (peek_exn t) ~expect:0;
+       [%test_result: int] (length t) ~expect:11;
+       let r = ref 0 in
+       let add i = r := !r + i in
+       drain t ~f:add ~while_:(fun i -> i < 7);
+       [%test_result: int] (peek_exn t) ~expect:7;
+       [%test_result: int] (length t) ~expect:4;
+       [%test_result: int] !r ~expect:21;
+       drain t ~f:add ~while_:(fun i -> i > 7);
+       [%test_result: int] (peek_exn t) ~expect:7;
+       [%test_result: int] (length t) ~expect:4;
+       [%test_result: int] !r ~expect:21;
+       drain t ~f:add ~while_:(fun i -> i > 0);
+       [%test_result: int option] (peek t) ~expect:None;
+       [%test_result: int] (length t) ~expect:0;
+       [%test_result: int] !r ~expect:55
      ;;
 
      let enqueue_all = enqueue_all
@@ -267,7 +336,9 @@ let%test_module _ =
      ;;
 
      let compare = compare
+     let compare__local = compare__local
      let equal = equal
+     let equal__local = equal__local
 
      let%test_module "comparisons" =
        (module struct
@@ -279,7 +350,19 @@ let%test_module _ =
              ~expect:(List.equal Int.equal (to_list t1) (to_list t2));
            [%test_result: int]
              (sign (compare Int.compare t1 t2))
-             ~expect:(sign (List.compare Int.compare (to_list t1) (to_list t2)))
+             ~expect:(sign (List.compare Int.compare (to_list t1) (to_list t2)));
+           [%test_result: bool]
+             (equal__local Int.equal__local t1 t2)
+             ~expect:
+               (List.equal__local Int.equal__local (to_list t1) (to_list t2));
+           [%test_result: int]
+             (sign (compare__local Int.compare__local t1 t2))
+             ~expect:
+               (sign
+                  (List.compare__local
+                     Int.compare__local
+                     (to_list t1)
+                     (to_list t2)))
          ;;
 
          let lists =
@@ -393,6 +476,13 @@ let%test_module _ =
            val create : unit -> 'a t
            val enqueue : 'a t -> 'a -> unit
            val dequeue : 'a t -> 'a option
+
+           val drain
+             :  'a t
+             -> f:(('a -> unit)[@local])
+             -> while_:(('a -> bool)[@local])
+             -> unit
+
            val to_array : 'a t -> 'a array
            val fold : 'a t -> init:'b -> f:('b -> 'a -> 'b) -> 'b
            val foldi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b) -> 'b
@@ -508,12 +598,37 @@ let%test_module _ =
                ()
          ;;
 
+         let is_even x = x land 1 = 0
+
+         let drain (t_a, t_b) =
+           let orig_a = This_queue.to_array t_a in
+           let orig_b = That_queue.to_array t_b in
+           let r_a = ref 0 in
+           let r_b = ref 0 in
+           let add r i = r := !r + i in
+           This_queue.drain t_a ~f:(fun i -> add r_a i) ~while_:is_even;
+           That_queue.drain t_b ~f:(fun i -> add r_b i) ~while_:is_even;
+           if not
+                ([%equal: int array]
+                   (This_queue.to_array t_a)
+                   (That_queue.to_array t_b)
+                 && !r_a = !r_b)
+           then
+             Printf.failwithf
+               "error in drain: %s -> %s, %d vs. %s -> %s, %d"
+               (array_string orig_a)
+               (this_to_string t_a)
+               !r_a
+               (array_string orig_b)
+               (that_to_string t_b)
+               !r_b
+               ()
+         ;;
+
          let clear (t_a, t_b) =
            This_queue.clear t_a;
            That_queue.clear t_b
          ;;
-
-         let is_even x = x land 1 = 0
 
          let filter (t_a, t_b) =
            let t_a' = This_queue.filter t_a ~f:is_even in
@@ -891,7 +1006,7 @@ let%test_module _ =
                    ())
              else (
                let queue_was_empty = This_queue.length (fst t) = 0 in
-               let r = Random.int 195 in
+               let r = Random.int 200 in
                if r < 60
                then enqueue t (Random.int 10_000)
                else if r < 65
@@ -942,7 +1057,9 @@ let%test_module _ =
                then filteri_inplace t
                else if r < 195
                then length_check t
-               else failwith "Impossible: We did [Random.int 195] above";
+               else if r < 200
+               then drain t
+               else failwith "Impossible: We did [Random.int 200] above";
                loop
                  ~all_ops:(all_ops - 1)
                  ~non_empty_ops:

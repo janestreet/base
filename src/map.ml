@@ -1644,40 +1644,40 @@ module Tree0 = struct
       -> ('k * 'v) option
       =
       fun t dir k ~compare_key found_marker found_key found_value ->
-        match t with
-        | Empty -> repackage found_marker found_key found_value
-        | Leaf (k', v') ->
-          let c = compare_key k' k in
-          if match dir with
-            | `Greater_or_equal_to -> c >= 0
-            | `Greater_than -> c > 0
-            | `Less_or_equal_to -> c <= 0
-            | `Less_than -> c < 0
-          then Some (k', v')
-          else repackage found_marker found_key found_value
-        | Node (l, k', v', r, _) ->
-          let c = compare_key k' k in
-          if c = 0
-          then (
-            (* This is a base case (no recursive call). *)
-            match dir with
-            | `Greater_or_equal_to | `Less_or_equal_to -> Some (k', v')
-            | `Greater_than ->
-              if is_empty r then repackage found_marker found_key found_value else min_elt r
-            | `Less_than ->
-              if is_empty l then repackage found_marker found_key found_value else max_elt l)
-          else (
-            (* We are guaranteed here that k' <> k. *)
-            (* This is the only recursive case. *)
-            match dir with
-            | `Greater_or_equal_to | `Greater_than ->
-              if c > 0
-              then loop l dir k ~compare_key Found k' v'
-              else loop r dir k ~compare_key found_marker found_key found_value
-            | `Less_or_equal_to | `Less_than ->
-              if c < 0
-              then loop r dir k ~compare_key Found k' v'
-              else loop l dir k ~compare_key found_marker found_key found_value)
+      match t with
+      | Empty -> repackage found_marker found_key found_value
+      | Leaf (k', v') ->
+        let c = compare_key k' k in
+        if match dir with
+          | `Greater_or_equal_to -> c >= 0
+          | `Greater_than -> c > 0
+          | `Less_or_equal_to -> c <= 0
+          | `Less_than -> c < 0
+        then Some (k', v')
+        else repackage found_marker found_key found_value
+      | Node (l, k', v', r, _) ->
+        let c = compare_key k' k in
+        if c = 0
+        then (
+          (* This is a base case (no recursive call). *)
+          match dir with
+          | `Greater_or_equal_to | `Less_or_equal_to -> Some (k', v')
+          | `Greater_than ->
+            if is_empty r then repackage found_marker found_key found_value else min_elt r
+          | `Less_than ->
+            if is_empty l then repackage found_marker found_key found_value else max_elt l)
+        else (
+          (* We are guaranteed here that k' <> k. *)
+          (* This is the only recursive case. *)
+          match dir with
+          | `Greater_or_equal_to | `Greater_than ->
+            if c > 0
+            then loop l dir k ~compare_key Found k' v'
+            else loop r dir k ~compare_key found_marker found_key found_value
+          | `Less_or_equal_to | `Less_than ->
+            if c < 0
+            then loop r dir k ~compare_key Found k' v'
+            else loop l dir k ~compare_key found_marker found_key found_value)
     ;;
 
     let closest_key t dir k ~compare_key = loop t dir k ~compare_key Missing () ()
@@ -1830,14 +1830,16 @@ module Tree0 = struct
 
   let of_iteri ~iteri ~compare_key =
     let acc = { bad_key = None; map_length = with_length_global empty 0 } in
-    iteri ~f:(fun ~key ~data ->
-      let { tree = map; length } = acc.map_length in
-      let ({ tree = _; length = length' } as pair) =
-        set ~length ~key ~data map ~compare_key
-      in
-      if length = length' && Option.is_none acc.bad_key
-      then acc.bad_key <- Some key
-      else acc.map_length <- globalize pair);
+    iteri
+      ~f:
+        ( (fun ~key ~data ->
+           let { tree = map; length } = acc.map_length in
+           let ({ tree = _; length = length' } as pair) =
+             set ~length ~key ~data map ~compare_key
+           in
+           if length = length' && Option.is_none acc.bad_key
+           then acc.bad_key <- Some key
+           else acc.map_length <- globalize pair));
     match acc.bad_key with
     | None -> `Ok acc.map_length
     | Some key -> `Duplicate_key key

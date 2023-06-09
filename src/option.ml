@@ -2,13 +2,24 @@ open! Import
 
 include (
 struct
-  type 'a t = 'a option [@@deriving_inline compare, globalize, hash, sexp, sexp_grammar]
+  type 'a t = 'a option
+  [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
+
+  let compare__local :
+    'a.
+    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+    -> ('a t[@ocaml.local])
+    -> ('a t[@ocaml.local])
+    -> int
+    =
+    compare_option__local
+  ;;
 
   let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
 
   let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
-    fun (type a__005_)
-        : (((a__005_[@ocaml.local]) -> a__005_) -> (a__005_ t[@ocaml.local]) -> a__005_ t) ->
+    fun (type a__009_)
+        : (((a__009_[@ocaml.local]) -> a__009_) -> (a__009_ t[@ocaml.local]) -> a__009_ t) ->
       globalize_option
   ;;
 
@@ -38,9 +49,10 @@ struct
 end :
 sig
   type 'a t = 'a option
-  [@@deriving_inline compare, globalize, hash, sexp, sexp_grammar]
+  [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
   include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+  include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
   val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
 
@@ -190,6 +202,13 @@ let find_map t ~f =
 ;;
 
 let equal f t t' =
+  match t, t' with
+  | None, None -> true
+  | Some x, Some x' -> f x x'
+  | _ -> false
+;;
+
+let equal__local f t t' =
   match t, t' with
   | None, None -> true
   | Some x, Some x' -> f x x'

@@ -278,9 +278,10 @@ struct
 end
 
 module Make_hex (I : sig
-    type t [@@deriving_inline compare, hash]
+    type t [@@deriving_inline compare ~localize, hash]
 
     include Ppx_compare_lib.Comparable.S with type t := t
+    include Ppx_compare_lib.Comparable.S_local with type t := t
     include Ppx_hash_lib.Hashable.S with type t := t
 
     [@@@end]
@@ -294,9 +295,13 @@ module Make_hex (I : sig
   end) =
 struct
   module T_hex = struct
-    type t = I.t [@@deriving_inline compare, hash]
+    type t = I.t [@@deriving_inline compare ~localize, hash]
 
-    let compare = (I.compare : t -> t -> int)
+    let compare__local =
+      (I.compare__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+    ;;
+
+    let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       I.hash_fold_t

@@ -22,9 +22,10 @@ open! Import
 type 'a t = 'a option =
   | None
   | Some of 'a
-[@@deriving_inline compare, globalize, hash, sexp_grammar]
+[@@deriving_inline compare ~localize, globalize, hash, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
 val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
 
@@ -35,6 +36,7 @@ val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 [@@@end]
 
 include Equal.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 include Invariant.S1 with type 'a t := 'a t
 include Sexpable.S1 with type 'a t := 'a t
 

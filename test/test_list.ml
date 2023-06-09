@@ -1377,3 +1377,126 @@ let%expect_test "[Cartesian_product]" =
     (c 3 re)
     (c 3 mi) |}]
 ;;
+
+let%expect_test "[compare__local] is the same as [compare]" =
+  Base_quickcheck.Test.run_exn
+    (module struct
+      type t = int list * int list [@@deriving sexp_of, quickcheck]
+    end)
+    ~f:(fun (l1, l2) ->
+      require_equal
+        [%here]
+        (module Int)
+        (compare Int.compare l1 l2)
+        (compare__local Int.compare__local l1 l2));
+  [%expect]
+;;
+
+let%expect_test "[equal__local] is the same as [equal]" =
+  Base_quickcheck.Test.run_exn
+    (module struct
+      type t = int list * int list [@@deriving sexp_of, quickcheck]
+    end)
+    ~f:(fun (l1, l2) ->
+      require_equal
+        [%here]
+        (module Bool)
+        (equal Int.equal l1 l2)
+        (equal__local Int.equal__local l1 l2));
+  [%expect]
+;;
+
+let%expect_test "list sort, dedup" =
+  let slow_stable_sort list ~compare =
+    let rec insert elt list =
+      match list with
+      | [] -> [ elt ]
+      | head :: tail ->
+        (match compare elt head with
+         | c when c <= 0 -> elt :: list
+         | _ -> head :: insert elt tail)
+    in
+    List.fold_right list ~init:[] ~f:insert
+  in
+  let slow_sort list ~compare =
+    (* sort happens to behave the same as stable_sort *)
+    let rec insert elt list =
+      match list with
+      | [] -> [ elt ]
+      | head :: tail ->
+        (match compare elt head with
+         | c when c <= 0 -> elt :: list
+         | _ -> head :: insert elt tail)
+    in
+    List.fold_right list ~init:[] ~f:insert
+  in
+  let slow_dedup_and_sort list ~compare =
+    (* dedup_and_sort keeps the last element among duplicates *)
+    let rec insert elt list =
+      match list with
+      | [] -> [ elt ]
+      | head :: tail ->
+        (match compare elt head with
+         | 0 -> list
+         | c when c < 0 -> elt :: list
+         | _ -> head :: insert elt tail)
+    in
+    List.fold_right list ~init:[] ~f:insert
+  in
+  let slow_stable_dedup list ~compare =
+    (* stable_dedup keeps the first element among duplicates *)
+    let insert elt list =
+      elt :: List.filter list ~f:(fun other -> compare elt other <> 0)
+    in
+    List.fold_right list ~init:[] ~f:insert
+  in
+  let module Char_list = struct
+    open Base_quickcheck
+
+    type t = char list [@@deriving equal, sexp_of]
+
+    let quickcheck_generator = Generator.list_non_empty Generator.char_alpha
+
+    let quickcheck_shrinker =
+      let prev char = Char.of_int_exn (Int.pred (Char.to_int char)) in
+      Shrinker.list
+        (Shrinker.create (function
+           | 'a' -> Sequence.empty
+           | 'b' .. 'z' as char -> Sequence.singleton (prev char)
+           | 'A' -> Sequence.singleton 'a'
+           | 'B' .. 'Z' as char -> Sequence.of_list [ Char.lowercase char; prev char ]
+           | _ -> Sequence.empty))
+    ;;
+  end
+  in
+  let compare = Char.Caseless.compare in
+  quickcheck_m
+    [%here]
+    ~examples:[ []; [ 'a'; 'a' ]; [ 'a'; 'A' ]; [ 'A'; 'a' ]; [ 'A'; 'A' ] ]
+    (module Char_list)
+    ~f:(fun list ->
+      require_equal
+        [%here]
+        (module Char_list)
+        ~message:"sort mismatch"
+        (List.sort list ~compare)
+        (slow_sort list ~compare);
+      require_equal
+        [%here]
+        (module Char_list)
+        ~message:"stable_sort mismatch"
+        (List.stable_sort list ~compare)
+        (slow_stable_sort list ~compare);
+      require_equal
+        [%here]
+        (module Char_list)
+        ~message:"dedup_and_sort mismatch"
+        (List.dedup_and_sort list ~compare)
+        (slow_dedup_and_sort list ~compare);
+      require_equal
+        [%here]
+        (module Char_list)
+        ~message:"stable_dedup mismatch"
+        (List.stable_dedup list ~compare)
+        (slow_stable_dedup list ~compare))
+;;

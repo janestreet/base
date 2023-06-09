@@ -1,13 +1,23 @@
 open! Import
 include Array0
 
-type 'a t = 'a array [@@deriving_inline compare, globalize, sexp, sexp_grammar]
+type 'a t = 'a array [@@deriving_inline compare ~localize, globalize, sexp, sexp_grammar]
+
+let compare__local :
+  'a.
+  (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+  -> ('a t[@ocaml.local])
+  -> ('a t[@ocaml.local])
+  -> int
+  =
+  compare_array__local
+;;
 
 let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
 
 let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
-  fun (type a__005_)
-      : (((a__005_[@ocaml.local]) -> a__005_) -> (a__005_ t[@ocaml.local]) -> a__005_ t) ->
+  fun (type a__009_)
+      : (((a__009_[@ocaml.local]) -> a__009_) -> (a__009_ t[@ocaml.local]) -> a__009_ t) ->
     globalize_array
 ;;
 
@@ -600,7 +610,7 @@ let exists2_exn t1 t2 ~f =
   !result
 ;;
 
-let for_all2_exn t1 t2 ~f =
+let for_all2_local_exn t1 t2 ~f =
   check_length2_exn "Array.for_all2_exn" t1 t2;
   let i = ref (length t1 - 1) in
   let result = ref true in
@@ -610,7 +620,9 @@ let for_all2_exn t1 t2 ~f =
   !result
 ;;
 
-let equal equal t1 t2 = length t1 = length t2 && for_all2_exn t1 t2 ~f:equal
+let for_all2_exn t1 t2 ~f = for_all2_local_exn t1 t2 ~f
+let equal__local equal t1 t2 = length t1 = length t2 && for_all2_local_exn t1 t2 ~f:equal
+let equal equal t1 t2 = equal__local (fun a b -> equal a b) t1 t2
 
 
 let map_inplace t ~f =

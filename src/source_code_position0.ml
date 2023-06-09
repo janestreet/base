@@ -9,38 +9,40 @@ module T = struct
     ; pos_bol : int
     ; pos_cnum : int
     }
-  [@@deriving_inline compare, hash, sexp_of]
+  [@@deriving_inline compare ~localize, hash, sexp_of]
 
-  let compare =
+  let compare__local =
     (fun a__001_ b__002_ ->
        if Stdlib.( == ) a__001_ b__002_
        then 0
        else (
-         match compare_string a__001_.pos_fname b__002_.pos_fname with
+         match compare_string__local a__001_.pos_fname b__002_.pos_fname with
          | 0 ->
-           (match compare_int a__001_.pos_lnum b__002_.pos_lnum with
+           (match compare_int__local a__001_.pos_lnum b__002_.pos_lnum with
             | 0 ->
-              (match compare_int a__001_.pos_bol b__002_.pos_bol with
-               | 0 -> compare_int a__001_.pos_cnum b__002_.pos_cnum
+              (match compare_int__local a__001_.pos_bol b__002_.pos_bol with
+               | 0 -> compare_int__local a__001_.pos_cnum b__002_.pos_cnum
                | n -> n)
             | n -> n)
          | n -> n)
-         : t -> t -> int)
+         : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
   ;;
+
+  let compare = (fun a b -> compare__local a b : t -> t -> int)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     fun hsv arg ->
+    let hsv =
       let hsv =
         let hsv =
-          let hsv =
-            let hsv = hsv in
-            hash_fold_string hsv arg.pos_fname
-          in
-          hash_fold_int hsv arg.pos_lnum
+          let hsv = hsv in
+          hash_fold_string hsv arg.pos_fname
         in
-        hash_fold_int hsv arg.pos_bol
+        hash_fold_int hsv arg.pos_lnum
       in
-      hash_fold_int hsv arg.pos_cnum
+      hash_fold_int hsv arg.pos_bol
+    in
+    hash_fold_int hsv arg.pos_cnum
   ;;
 
   let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =

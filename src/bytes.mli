@@ -21,6 +21,8 @@ val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 include Blit.S with type t := t
 include Comparable.S with type t := t
+include Ppx_compare_lib.Comparable.S_local with type t := t
+include Ppx_compare_lib.Equal.S_local with type t := t
 include Stringable.S with type t := t
 
 (** Note that [pp] allocates in order to preserve the state of the byte

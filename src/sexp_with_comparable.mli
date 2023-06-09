@@ -7,3 +7,5 @@ include module type of struct
 end
 
 include Comparable.S with type t := t
+include Ppx_compare_lib.Comparable.S_local with type t := t
+include Ppx_compare_lib.Equal.S_local with type t := t

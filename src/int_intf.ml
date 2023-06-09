@@ -41,13 +41,14 @@ module type Hexable = sig
   type t
 
   module Hex : sig
-    type nonrec t = t [@@deriving_inline sexp, sexp_grammar, compare, hash]
+    type nonrec t = t [@@deriving_inline sexp, sexp_grammar, compare ~localize, hash]
 
     include Sexplib0.Sexpable.S with type t := t
 
     val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
     include Ppx_compare_lib.Comparable.S with type t := t
+    include Ppx_compare_lib.Comparable.S_local with type t := t
     include Ppx_hash_lib.Hashable.S with type t := t
 
     [@@@end]
@@ -71,6 +72,8 @@ module type S_common = sig
   include Intable.S with type t := t
   include Identifiable.S with type t := t
   include Comparable.With_zero with type t := t
+  include Ppx_compare_lib.Comparable.S_local with type t := t
+  include Ppx_compare_lib.Equal.S_local with type t := t
   include Invariant.S with type t := t
   include Hexable with type t := t
 

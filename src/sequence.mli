@@ -31,8 +31,9 @@
 
 open! Import
 
-type +'a t [@@deriving_inline sexp_of]
+type +'a t [@@deriving_inline globalize, sexp_of]
 
+val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
 val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
 [@@@end]
@@ -40,7 +41,9 @@ val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 type 'a sequence := 'a t
 
 include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 include Indexed_container.S1 with type 'a t := 'a t
 include Monad.S with type 'a t := 'a t
 
@@ -140,9 +143,10 @@ module Merge_with_duplicates_element : sig
     | Left of 'a
     | Right of 'b
     | Both of 'a * 'b
-  [@@deriving_inline compare, hash, sexp, sexp_grammar]
+  [@@deriving_inline compare ~localize, hash, sexp, sexp_grammar]
 
   include Ppx_compare_lib.Comparable.S2 with type ('a, 'b) t := ('a, 'b) t
+  include Ppx_compare_lib.Comparable.S_local2 with type ('a, 'b) t := ('a, 'b) t
   include Ppx_hash_lib.Hashable.S2 with type ('a, 'b) t := ('a, 'b) t
   include Sexplib0.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
 

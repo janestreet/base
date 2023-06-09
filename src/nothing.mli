@@ -58,3 +58,6 @@ val unreachable_code : t -> _
 
     Obviously, [of_string] and [t_of_sexp] will raise an exception. *)
 include Identifiable.S with type t := t
+
+include Ppx_compare_lib.Equal.S_local with type t := t
+include Ppx_compare_lib.Comparable.S_local with type t := t

@@ -10,13 +10,14 @@
 open! Import
 
 (** See [Base.Array] for comments. *)
-type 'a t [@@deriving_inline sexp, sexp_grammar, compare]
+type 'a t [@@deriving_inline sexp, sexp_grammar, compare ~localize]
 
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
 [@@@end]
 

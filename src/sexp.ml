@@ -6,20 +6,23 @@ include Sexplib0.Sexp
 type t = Sexplib0.Sexp.t =
   | Atom of string
   | List of t list
-[@@deriving_inline compare, hash]
+[@@deriving_inline compare ~localize, hash]
 
-let rec compare =
+let rec compare__local =
   (fun a__001_ b__002_ ->
      if Stdlib.( == ) a__001_ b__002_
      then 0
      else (
        match a__001_, b__002_ with
-       | Atom _a__003_, Atom _b__004_ -> compare_string _a__003_ _b__004_
+       | Atom _a__003_, Atom _b__004_ -> compare_string__local _a__003_ _b__004_
        | Atom _, _ -> -1
        | _, Atom _ -> 1
-       | List _a__005_, List _b__006_ -> compare_list compare _a__005_ _b__006_)
-       : t -> t -> int)
+       | List _a__005_, List _b__006_ ->
+         compare_list__local compare__local _a__005_ _b__006_)
+       : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
 ;;
+
+let compare = (fun a b -> compare__local a b : t -> t -> int)
 
 let rec (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
   (fun hsv arg ->
@@ -48,3 +51,4 @@ and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
 let t_sexp_grammar = Sexplib0.Sexp_conv.sexp_t_sexp_grammar
 let of_string = ()
 let invariant (_ : t) = ()
+let equal__local a b = compare__local a b = 0

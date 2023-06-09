@@ -53,6 +53,7 @@ let minus_one = minus_one
 let one = one
 let zero = zero
 let compare = compare
+let compare__local = Stdlib.compare
 let to_float = to_float
 let of_float_unchecked = of_float
 
@@ -88,11 +89,13 @@ module Compare = struct
   include Infix_compare
 
   let compare = compare
+  let compare__local = compare__local
   let ascending = compare
   let descending x y = compare y x
   let min (x : t) y = if x < y then x else y
   let max (x : t) y = if x > y then x else y
   let equal (x : t) y = x = y
+  let equal__local ((x : t) [@local]) (y [@local]) = Poly.equal x y
   let between t ~low ~high = low <= t && t <= high
   let clamp_unchecked t ~min ~max = if t < min then min else if t <= max then t else max
 
@@ -232,9 +235,13 @@ include Pow2
 include Conv.Make (T)
 
 include Conv.Make_hex (struct
-    type t = int32 [@@deriving_inline compare, hash]
+    type t = int32 [@@deriving_inline compare ~localize, hash]
 
-    let compare = (compare_int32 : t -> t -> int)
+    let compare__local =
+      (compare_int32__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+    ;;
+
+    let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int32

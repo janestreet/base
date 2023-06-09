@@ -45,9 +45,13 @@ include Conv.Make (T)
 include Conv.Make_hex (struct
     open Nativeint_replace_polymorphic_compare
 
-    type t = nativeint [@@deriving_inline compare, hash]
+    type t = nativeint [@@deriving_inline compare ~localize, hash]
 
-    let compare = (compare_nativeint : t -> t -> int)
+    let compare__local =
+      (compare_nativeint__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+    ;;
+
+    let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_nativeint

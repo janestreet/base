@@ -6,6 +6,50 @@ let%expect_test ("hash coherence" [@tags "64-bits-only"]) =
   [%expect {| |}]
 ;;
 
+let%expect_test "edit distance" =
+  let strings = [ "catch"; "patch"; "pitch"; "pith"; "pits"; "spits"; "spots" ] in
+  List.iteri strings ~f:(fun i a ->
+    List.iteri strings ~f:(fun j b ->
+      if Int.( >= ) i j
+      then (
+        let d = edit_distance a b in
+        print_s [%sexp (d : int), (a : string), (b : string)];
+        if a = b && Int.( <> ) d 0 then print_cr [%here] [%message "non-zero"];
+        let d' = edit_distance b a in
+        if Int.( <> ) d d'
+        then print_cr [%here] [%message "non-symmetric" ~_:(d : int) ~_:(d' : int)])));
+  [%expect
+    {|
+    (0 catch catch)
+    (1 patch catch)
+    (0 patch patch)
+    (2 pitch catch)
+    (1 pitch patch)
+    (0 pitch pitch)
+    (3 pith catch)
+    (2 pith patch)
+    (1 pith pitch)
+    (0 pith pith)
+    (4 pits catch)
+    (3 pits patch)
+    (2 pits pitch)
+    (1 pits pith)
+    (0 pits pits)
+    (5 spits catch)
+    (4 spits patch)
+    (3 spits pitch)
+    (2 spits pith)
+    (1 spits pits)
+    (0 spits spits)
+    (5 spots catch)
+    (4 spots patch)
+    (4 spots pitch)
+    (3 spots pith)
+    (2 spots pits)
+    (1 spots spits)
+    (0 spots spots) |}]
+;;
+
 let%test_module "concat" =
   (module struct
     let test ?sep list =

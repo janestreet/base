@@ -41,6 +41,13 @@ module type S = sig
       is empty. *)
   val dequeue_and_ignore_exn : 'a t -> unit
 
+  (** [drain t ~f ~while_] repeatedly calls [while_] on the head of [t], and if it returns
+      true then dequeues it and calls [f] on it. It stops when [t] is empty or [while_]
+      returns false. A common use case is tracking the sum of data in a recent time
+      interval: [t] contains timestamped data, [while_] checks for elements with an old
+      timestamp, and [f] subtracts data from the sum. *)
+  val drain : 'a t -> f:(('a -> unit)[@local]) -> while_:(('a -> bool)[@local]) -> unit
+
   (** [peek t] returns but does not remove the front element of [t], if any. *)
   val peek : 'a t -> 'a option
 
@@ -94,14 +101,18 @@ module type Queue = sig
 
   module type S = S
 
-  type 'a t [@@deriving_inline compare]
+  type 'a t [@@deriving_inline compare ~localize, globalize]
 
   include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+  include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
+
+  val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
 
   [@@@end]
 
   include S with type 'a t := 'a t
   include Equal.S1 with type 'a t := 'a t
+  include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
   include Invariant.S1 with type 'a t := 'a t
 
   (** Create an empty queue. *)
@@ -111,6 +122,20 @@ module type Queue = sig
   val last : 'a t -> 'a option
 
   val last_exn : 'a t -> 'a
+
+  (** Add an element to the front of the queue, as opposed to [enqueue] which adds to the
+      back of the queue. *)
+  val enqueue_front : 'a t -> 'a -> unit
+
+  (** [dequeue_back t] removes and returns the back element of [t], if any. *)
+  val dequeue_back : 'a t -> 'a option
+
+  val dequeue_back_exn : 'a t -> 'a
+
+  (** [peek_back t] returns but does not remove the back element of [t], if any. *)
+  val peek_back : 'a t -> 'a option
+
+  val peek_back_exn : 'a t -> 'a
 
   (** Transfers up to [len] elements from the front of [src] to the end of [dst], removing
       them from [src].  It is an error if [len < 0].
@@ -137,5 +162,4 @@ module type Queue = sig
       copying the queue elements over.  [set_capacity] may decrease the capacity of [t], if
       [c < capacity t]. *)
   val set_capacity : _ t -> int -> unit
-
 end

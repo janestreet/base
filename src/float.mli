@@ -25,6 +25,8 @@ include Identifiable.S with type t := t
 val of_string_opt : string -> t option
 
 include Comparable.With_zero with type t := t
+include Ppx_compare_lib.Equal.S_local with type t := t
+include Ppx_compare_lib.Comparable.S_local with type t := t
 include Invariant.S with type t := t
 
 val nan : t
@@ -472,7 +474,7 @@ external log10 : t -> t = "caml_log10_float" "log10"
 [@@unboxed] [@@noalloc]
 
 (** Base 2 logarithm. *)
-external log2 : t -> t = "caml_log2_float" "log2"
+external log2 : t -> t = "caml_log2_float" "caml_log2"
 [@@unboxed] [@@noalloc]
 
 (** [expm1 x] computes [exp x -. 1.0], giving numerically-accurate results even if [x] is
@@ -591,9 +593,10 @@ module Class : sig
     | Normal
     | Subnormal
     | Zero
-  [@@deriving_inline compare, enumerate, sexp, sexp_grammar]
+  [@@deriving_inline compare ~localize, enumerate, sexp, sexp_grammar]
 
   include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S_local with type t := t
   include Ppx_enumerate_lib.Enumerable.S with type t := t
   include Sexplib0.Sexpable.S with type t := t
 

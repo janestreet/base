@@ -16,6 +16,7 @@ module Trusted : sig
   val set : 'a t -> int -> 'a -> unit
   val swap : _ t -> int -> int -> unit
   val unsafe_get : 'a t -> int -> 'a
+  val unsafe_get_local : ('a t[@local]) -> int -> 'a
   val unsafe_set : 'a t -> int -> 'a -> unit
   val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
   val unsafe_set_int : 'a t -> int -> int -> unit
@@ -38,7 +39,8 @@ end = struct
   let swap t i j = Obj_array.swap t i j
   let get arr i = Stdlib.Obj.obj (Obj_array.get arr i)
   let set arr i x = Obj_array.set arr i (Stdlib.Obj.repr x)
-  let unsafe_get arr i = Stdlib.Obj.obj (Obj_array.unsafe_get arr i)
+  let unsafe_get_local arr i = Stdlib.Obj.obj (Obj_array.unsafe_get arr i)
+  let unsafe_get arr i = unsafe_get_local arr i
   let unsafe_set arr i x = Obj_array.unsafe_set arr i (Stdlib.Obj.repr x)
   let unsafe_set_int arr i x = Obj_array.unsafe_set_int arr i x
 
@@ -182,7 +184,7 @@ let min_elt t ~compare = Container.min_elt ~fold t ~compare
 let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
 (* This is the same as the ppx_compare [compare_array] but uses our [unsafe_get] and [length]. *)
-let compare compare_elt a b =
+let compare__local compare_elt a b =
   if phys_equal a b
   then 0
   else (
@@ -196,13 +198,15 @@ let compare compare_elt a b =
         if i = len_a
         then 0
         else (
-          let l = unsafe_get a i
-          and r = unsafe_get b i in
+          let l = unsafe_get_local a i
+          and r = unsafe_get_local b i in
           let res = compare_elt l r in
           if res <> 0 then res else loop (i + 1))
       in
-      loop 0))
+      loop 0 [@nontail]))
 ;;
+
+let compare compare_elt a b = compare__local compare_elt a b
 
 module Sort = Array.Private.Sorter (struct
     type nonrec 'a t = 'a t

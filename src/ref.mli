@@ -4,10 +4,12 @@
 open! Import
 
 type 'a t = 'a Stdlib.ref = { mutable contents : 'a }
-[@@deriving_inline compare, equal, globalize, sexp, sexp_grammar]
+[@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 
 val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
 

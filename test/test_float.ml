@@ -1186,3 +1186,76 @@ let%expect_test "iround_exn" =
   require_equal [%here] (module Int) 3 (Float.iround_exn ~dir:`Nearest 3.4);
   require_equal [%here] (module Int) (-3) (Float.iround_exn ~dir:`Nearest (-3.4))
 ;;
+
+let%expect_test "log" =
+  let test float =
+    let log2 = Float.log2 float in
+    let log10 = Float.log10 float in
+    let ratio = log2 /. log10 in
+    let ratio =
+      (* NAN behavior differs in js_of_ocaml *)
+      if Float.is_nan ratio
+      then Float.nan
+      else (
+        assert (Float.(abs ratio - (1. / log10 2.) < 1e-15));
+        ratio)
+    in
+    print_s [%sexp { log2 : float; log10 : float; ratio : float }]
+  in
+  test (-1.);
+  [%expect {|
+    ((log2  NAN)
+     (log10 NAN)
+     (ratio NAN)) |}];
+  test 0.;
+  [%expect {|
+    ((log2  -INF)
+     (log10 -INF)
+     (ratio NAN)) |}];
+  test 1.;
+  [%expect {|
+    ((log2  0)
+     (log10 0)
+     (ratio NAN)) |}];
+  test 2.;
+  [%expect
+    {|
+    ((log2  1)
+     (log10 0.3010299956639812)
+     (ratio 3.3219280948873622)) |}];
+  test 10.;
+  [%expect
+    {|
+    ((log2  3.3219280948873622)
+     (log10 1)
+     (ratio 3.3219280948873622)) |}];
+  test Float.min_positive_subnormal_value;
+  [%expect
+    {|
+    ((log2  -1074)
+     (log10 -323.30621534311581)
+     (ratio 3.3219280948873622)) |}];
+  test Float.epsilon_float;
+  [%expect
+    {|
+    ((log2  -52)
+     (log10 -15.653559774527022)
+     (ratio 3.3219280948873626)) |}];
+  test Float.pi;
+  [%expect
+    {|
+    ((log2  1.6514961294723187)
+     (log10 0.4971498726941338)
+     (ratio 3.3219280948873626)) |}];
+  test Float.max_finite_value;
+  [%expect
+    {|
+    ((log2  1024)
+     (log10 308.25471555991675)
+     (ratio 3.3219280948873622)) |}];
+  test Float.infinity;
+  [%expect {|
+    ((log2  INF)
+     (log10 INF)
+     (ratio NAN)) |}]
+;;

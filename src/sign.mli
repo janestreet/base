@@ -17,6 +17,9 @@ val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 (** This provides [to_string]/[of_string], sexp conversion, Map, Hashtbl, etc. *)
 include Identifiable.S with type t := t
 
+include Ppx_compare_lib.Comparable.S_local with type t := t
+include Ppx_compare_lib.Equal.S_local with type t := t
+
 (** Returns the human-readable strings "positive", "negative", "zero". *)
 val to_string_hum : t -> string
 

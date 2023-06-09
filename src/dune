@@ -9,7 +9,7 @@
 
 (library (name base) (public_name base)
  (ocamlopt_flags :standard (:include ocamlopt-flags))
- (libraries base_internalhash_types caml sexplib0 shadow_stdlib)
+ (libraries base_internalhash_types sexplib0 shadow_stdlib)
  (c_flags :standard -D_LARGEFILE64_SOURCE (:include mpopcnt.sexp))
  (c_names bytes_stubs exn_stubs int_math_stubs hash_stubs am_testing)
  (preprocess no_preprocessing)

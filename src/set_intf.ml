@@ -189,6 +189,7 @@ module type Creators_generic = sig
     : ('a, 'cmp, len:int -> f:((int -> 'a elt)[@local]) -> ('a, 'cmp) t) create_options
 
   val stable_dedup_list : ('a, _, 'a elt list -> 'a elt list) create_options
+  [@@deprecated "[since 2023-04] Use [List.stable_dedup] instead."]
 
   (** The types of [map] and [filter_map] are subtle.  The input set, [('a, _) set],
       reflects the fact that these functions take a set of *any* type, with any
@@ -518,6 +519,7 @@ module type Set = sig
       of polymorphic comparison by instantiating the functor at a different implementation
       of [Comparator] and using the resulting [stable_dedup_list]. *)
   val stable_dedup_list : ('a, _) Comparator.Module.t -> 'a list -> 'a list
+  [@@deprecated "[since 2023-04] Use [List.stable_dedup] instead."]
 
   (** [map c t ~f] returns a new set created by applying [f] to every element in
       [t].  The returned set is based on the provided [comparator].  [O(n log n)]. *)

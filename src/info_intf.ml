@@ -35,10 +35,17 @@ open! Import
 
 module type S = sig
   (** Serialization and comparison force the lazy message. *)
-  type t [@@deriving_inline compare, equal, hash, sexp, sexp_grammar]
+  type t
+  [@@deriving_inline
+    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
   include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S_local with type t := t
   include Ppx_compare_lib.Equal.S with type t := t
+  include Ppx_compare_lib.Equal.S_local with type t := t
+
+  val globalize : (t[@ocaml.local]) -> t
+
   include Ppx_hash_lib.Hashable.S with type t := t
   include Sexplib0.Sexpable.S with type t := t
 

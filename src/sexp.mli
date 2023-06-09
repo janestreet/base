@@ -9,6 +9,8 @@ include Ppx_hash_lib.Hashable.S with type t := t
 [@@@end]
 
 include module type of Sexplib0.Sexp with type t := Sexplib0.Sexp.t
+include Ppx_compare_lib.Equal.S_local with type t := t
+include Ppx_compare_lib.Comparable.S_local with type t := t
 
 val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 

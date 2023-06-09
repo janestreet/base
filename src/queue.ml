@@ -56,6 +56,15 @@ let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
 
 [@@@end]
 
+let globalize _ t =
+  { num_mutations = t.num_mutations
+  ; front = t.front
+  ; mask = t.mask
+  ; length = t.length
+  ; elts = Option_array.copy t.elts
+  }
+;;
+
 module type S = Queue_intf.S
 
 let inc_num_mutations t = t.num_mutations <- t.num_mutations + 1
@@ -89,16 +98,18 @@ let set t i a =
 let is_empty t = t.length = 0
 let length { length; _ } = length
 
-let ensure_no_mutation t num_mutations =
-  if t.num_mutations <> num_mutations
-  then
-    Error.raise_s
-      (Sexp.message
-         "mutation of queue during iteration"
-         [ "", t |> sexp_of_t (fun _ -> Sexp.Atom "_") ])
+let[@cold] [@inline never] raise_mutation_during_iteration t =
+  Error.raise_s
+    (Sexp.message
+       "mutation of queue during iteration"
+       [ "", t |> globalize () |> sexp_of_t (fun _ -> Sexp.Atom "_") ])
 ;;
 
-let compare =
+let ensure_no_mutation t num_mutations =
+  if t.num_mutations <> num_mutations then raise_mutation_during_iteration t
+;;
+
+let compare__local =
   let rec unsafe_compare_from compare_elt pos ~t1 ~t2 ~len1 ~len2 ~mut1 ~mut2 =
     match pos = len1, pos = len2 with
     | true, true -> 0
@@ -127,7 +138,9 @@ let compare =
         ~mut2:t2.num_mutations
 ;;
 
-let equal =
+let compare compare_elt t1 t2 = compare__local compare_elt t1 t2
+
+let equal__local =
   let rec unsafe_equal_from equal_elt pos ~t1 ~t2 ~mut1 ~mut2 ~len =
     pos = len
     ||
@@ -151,6 +164,8 @@ let equal =
          ~mut1:t1.num_mutations
          ~mut2:t2.num_mutations
 ;;
+
+let equal equal_elt t1 t2 = equal__local equal_elt t1 t2
 
 let invariant invariant_a t =
   let { num_mutations; mask = _; elts; front; length } = t in
@@ -225,6 +240,15 @@ let enqueue t a =
   t.length <- t.length + 1
 ;;
 
+let enqueue_front t a =
+  inc_num_mutations t;
+  if t.length = capacity t then set_capacity_internal t (2 * t.length);
+  let front = (t.front - 1) land t.mask in
+  t.front <- front;
+  t.length <- t.length + 1;
+  unsafe_set t 0 a
+;;
+
 let dequeue_nonempty t =
   inc_num_mutations t;
   let elts = t.elts in
@@ -236,15 +260,42 @@ let dequeue_nonempty t =
   res
 ;;
 
+let back_index t = elts_index t (t.length - 1)
+
+let dequeue_back_nonempty t =
+  inc_num_mutations t;
+  let elts = t.elts in
+  let back = back_index t in
+  let res = Option_array.get_some_exn elts back in
+  Option_array.set_none elts back;
+  t.length <- t.length - 1;
+  res
+;;
+
 let dequeue_exn t = if is_empty t then raise Stdlib.Queue.Empty else dequeue_nonempty t
 let dequeue t = if is_empty t then None else Some (dequeue_nonempty t)
 let dequeue_and_ignore_exn (type elt) (t : elt t) = ignore (dequeue_exn t : elt)
+
+let dequeue_back_exn t =
+  if is_empty t then raise Stdlib.Queue.Empty else dequeue_back_nonempty t
+;;
+
+let dequeue_back t = if is_empty t then None else Some (dequeue_back_nonempty t)
 let front_nonempty t = Option_array.unsafe_get_some_exn t.elts t.front
+let back_nonempty t = Option_array.unsafe_get_some_exn t.elts (back_index t)
 let last_nonempty t = unsafe_get t (t.length - 1)
 let peek t = if is_empty t then None else Some (front_nonempty t)
 let peek_exn t = if is_empty t then raise Stdlib.Queue.Empty else front_nonempty t
+let peek_back t = if is_empty t then None else Some (back_nonempty t)
+let peek_back_exn t = if is_empty t then raise Stdlib.Queue.Empty else back_nonempty t
 let last t = if is_empty t then None else Some (last_nonempty t)
 let last_exn t = if is_empty t then raise Stdlib.Queue.Empty else last_nonempty t
+
+let drain t ~f ~while_ =
+  while (not (is_empty t)) && while_ (front_nonempty t) do
+    f (dequeue_nonempty t)
+  done
+;;
 
 let clear t =
   inc_num_mutations t;

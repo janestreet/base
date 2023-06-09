@@ -2,9 +2,10 @@
 
 open! Import
 
-type 'a t = 'a array [@@deriving_inline compare, globalize, sexp, sexp_grammar]
+type 'a t = 'a array [@@deriving_inline compare ~localize, globalize, sexp, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
 val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
 
@@ -281,6 +282,12 @@ val sorted_copy : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t
 
 val last : 'a t -> 'a
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+
+val equal__local
+  :  (('a[@local]) -> ('a[@local]) -> bool)
+  -> ('a t[@local])
+  -> ('a t[@local])
+  -> bool
 
 
 (** The input array is copied internally so that future modifications of it do not change

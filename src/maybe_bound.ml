@@ -107,7 +107,7 @@ type interval_comparison =
   | Below_lower_bound
   | In_range
   | Above_upper_bound
-[@@deriving_inline sexp, sexp_grammar, compare, hash]
+[@@deriving_inline sexp, sexp_grammar, compare ~localize, hash]
 
 let interval_comparison_of_sexp =
   (let error_source__027_ = "maybe_bound.ml.interval_comparison" in
@@ -152,8 +152,14 @@ let (interval_comparison_sexp_grammar : interval_comparison Sexplib0.Sexp_gramma
   }
 ;;
 
+let compare_interval_comparison__local =
+  (Stdlib.compare
+   : (interval_comparison[@ocaml.local]) -> (interval_comparison[@ocaml.local]) -> int)
+;;
+
 let compare_interval_comparison =
-  (Stdlib.compare : interval_comparison -> interval_comparison -> int)
+  (fun a b -> compare_interval_comparison__local a b
+              : interval_comparison -> interval_comparison -> int)
 ;;
 
 let (hash_fold_interval_comparison :

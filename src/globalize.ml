@@ -43,3 +43,7 @@ let globalize_result globalize_a globalize_b t =
 
 let globalize_ref' r = ref !r
 let globalize_ref _ r = globalize_ref' r
+
+external globalize_lazy_t_mono : ('a lazy_t[@local]) -> 'a lazy_t = "%identity"
+
+let globalize_lazy_t _ t = globalize_lazy_t_mono t

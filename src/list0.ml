@@ -99,9 +99,6 @@ let rev_map2_ok =
   fun l1 l2 ~f:((f : _ -> _ -> _) [@local]) -> rmap2_f f [] l1 l2
 ;;
 
-let sort l ~compare = Stdlib.List.sort l ~cmp:compare
-let stable_sort l ~compare = Stdlib.List.stable_sort l ~cmp:compare
-
 let rev = function
   | ([] | [ _ ]) as res -> res
   | x :: y :: rest -> rev_append rest [ y; x ]

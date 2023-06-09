@@ -4,7 +4,7 @@ module Either = Either0
 type ('a, 'b) t = ('a, 'b) Stdlib.result =
   | Ok of 'a
   | Error of 'b
-[@@deriving_inline sexp, sexp_grammar, compare, equal, hash]
+[@@deriving_inline sexp, sexp_grammar, compare ~localize, equal ~localize, hash]
 
 let t_of_sexp :
   'a 'b.
@@ -92,6 +92,25 @@ let t_sexp_grammar :
   }
 ;;
 
+let compare__local :
+  'a 'b.
+  (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+  -> (('b[@ocaml.local]) -> ('b[@ocaml.local]) -> int)
+  -> (('a, 'b) t[@ocaml.local])
+  -> (('a, 'b) t[@ocaml.local])
+  -> int
+  =
+  fun _cmp__a _cmp__b a__033_ b__034_ ->
+  if Stdlib.( == ) a__033_ b__034_
+  then 0
+  else (
+    match a__033_, b__034_ with
+    | Ok _a__035_, Ok _b__036_ -> _cmp__a _a__035_ _b__036_
+    | Ok _, _ -> -1
+    | _, Ok _ -> 1
+    | Error _a__037_, Error _b__038_ -> _cmp__b _a__037_ _b__038_)
+;;
+
 let compare :
   'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
   =
@@ -106,18 +125,37 @@ let compare :
     | Error _a__031_, Error _b__032_ -> _cmp__b _a__031_ _b__032_)
 ;;
 
+let equal__local :
+  'a 'b.
+  (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
+  -> (('b[@ocaml.local]) -> ('b[@ocaml.local]) -> bool)
+  -> (('a, 'b) t[@ocaml.local])
+  -> (('a, 'b) t[@ocaml.local])
+  -> bool
+  =
+  fun _cmp__a _cmp__b a__045_ b__046_ ->
+  if Stdlib.( == ) a__045_ b__046_
+  then true
+  else (
+    match a__045_, b__046_ with
+    | Ok _a__047_, Ok _b__048_ -> _cmp__a _a__047_ _b__048_
+    | Ok _, _ -> false
+    | _, Ok _ -> false
+    | Error _a__049_, Error _b__050_ -> _cmp__b _a__049_ _b__050_)
+;;
+
 let equal :
   'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
   =
-  fun _cmp__a _cmp__b a__033_ b__034_ ->
-  if Stdlib.( == ) a__033_ b__034_
+  fun _cmp__a _cmp__b a__039_ b__040_ ->
+  if Stdlib.( == ) a__039_ b__040_
   then true
   else (
-    match a__033_, b__034_ with
-    | Ok _a__035_, Ok _b__036_ -> _cmp__a _a__035_ _b__036_
+    match a__039_, b__040_ with
+    | Ok _a__041_, Ok _b__042_ -> _cmp__a _a__041_ _b__042_
     | Ok _, _ -> false
     | _, Ok _ -> false
-    | Error _a__037_, Error _b__038_ -> _cmp__b _a__037_ _b__038_)
+    | Error _a__043_, Error _b__044_ -> _cmp__b _a__043_ _b__044_)
 ;;
 
 let hash_fold_t

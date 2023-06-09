@@ -9,9 +9,14 @@ include Int64_replace_polymorphic_compare
 
 module T0 = struct
   module T = struct
-    type t = int64 [@@deriving_inline compare, globalize, hash, sexp, sexp_grammar]
+    type t = int64
+    [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
-    let compare = (compare_int64 : t -> t -> int)
+    let compare__local =
+      (compare_int64__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+    ;;
+
+    let compare = (fun a b -> compare__local a b : t -> t -> int)
     let (globalize : (t[@ocaml.local]) -> t) = (globalize_int64 : (t[@ocaml.local]) -> t)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
@@ -78,6 +83,7 @@ module W : sig
   val of_int64_exn : Stdlib.Int64.t -> t
   val of_int64_trunc : Stdlib.Int64.t -> t
   val compare : t -> t -> int
+  val compare__local : (t[@local]) -> (t[@local]) -> int
   val ceil_pow2 : t -> t
   val floor_pow2 : t -> t
   val ceil_log2 : t -> int
@@ -141,6 +147,7 @@ end = struct
   let t_of_sexp x = wrap_exn (int64_of_sexp x)
   let sexp_of_t x = sexp_of_int64 (unwrap x)
   let compare (x : t) y = compare x y
+  let compare__local (x : t) y = compare__local x y
   let is_pow2 x = Int64.is_pow2 (unwrap x)
 
   let clz x =
@@ -181,6 +188,7 @@ module T = struct
 
   let comparator = W.comparator
   let compare = W.compare
+  let compare__local = W.compare__local
   let invariant = W.invariant
 
   (* We don't expect [hash] to follow the behavior of int in 64bit architecture *)
@@ -369,9 +377,10 @@ let to_nativeint_trunc x = Conv.int64_to_nativeint_trunc (unwrap x)
 include Conv.Make (T)
 
 include Conv.Make_hex (struct
-    type t = T.t [@@deriving_inline compare, hash]
+    type t = T.t [@@deriving_inline compare ~localize, hash]
 
-    let compare = (T.compare : t -> t -> int)
+    let compare__local = (T.compare__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+    let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       T.hash_fold_t

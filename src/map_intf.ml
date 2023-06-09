@@ -21,13 +21,13 @@ module Or_duplicate = struct
 
   let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
     fun _cmp__a a__005_ b__006_ ->
-      if Stdlib.( == ) a__005_ b__006_
-      then true
-      else (
-        match a__005_, b__006_ with
-        | `Ok _left__007_, `Ok _right__008_ -> _cmp__a _left__007_ _right__008_
-        | `Duplicate, `Duplicate -> true
-        | x, y -> Stdlib.( = ) x y)
+    if Stdlib.( == ) a__005_ b__006_
+    then true
+    else (
+      match a__005_, b__006_ with
+      | `Ok _left__007_, `Ok _right__008_ -> _cmp__a _left__007_ _right__008_
+      | `Duplicate, `Duplicate -> true
+      | x, y -> Stdlib.( = ) x y)
   ;;
 
   let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
@@ -84,21 +84,21 @@ module Symmetric_diff_element = struct
     ('k -> 'k -> bool) -> ('v -> 'v -> bool) -> ('k, 'v) t -> ('k, 'v) t -> bool
     =
     fun _cmp__k _cmp__v a__027_ b__028_ ->
-      let t__029_, t__030_ = a__027_ in
-      let t__031_, t__032_ = b__028_ in
-      Stdlib.( && )
-        (_cmp__k t__029_ t__031_)
-        (if Stdlib.( == ) t__030_ t__032_
-         then true
-         else (
-           match t__030_, t__032_ with
-           | `Left _left__033_, `Left _right__034_ -> _cmp__v _left__033_ _right__034_
-           | `Right _left__035_, `Right _right__036_ -> _cmp__v _left__035_ _right__036_
-           | `Unequal _left__037_, `Unequal _right__038_ ->
-             let t__039_, t__040_ = _left__037_ in
-             let t__041_, t__042_ = _right__038_ in
-             Stdlib.( && ) (_cmp__v t__039_ t__041_) (_cmp__v t__040_ t__042_)
-           | x, y -> Stdlib.( = ) x y))
+    let t__029_, t__030_ = a__027_ in
+    let t__031_, t__032_ = b__028_ in
+    Stdlib.( && )
+      (_cmp__k t__029_ t__031_)
+      (if Stdlib.( == ) t__030_ t__032_
+       then true
+       else (
+         match t__030_, t__032_ with
+         | `Left _left__033_, `Left _right__034_ -> _cmp__v _left__033_ _right__034_
+         | `Right _left__035_, `Right _right__036_ -> _cmp__v _left__035_ _right__036_
+         | `Unequal _left__037_, `Unequal _right__038_ ->
+           let t__039_, t__040_ = _left__037_ in
+           let t__041_, t__042_ = _right__038_ in
+           Stdlib.( && ) (_cmp__v t__039_ t__041_) (_cmp__v t__040_ t__042_)
+         | x, y -> Stdlib.( = ) x y))
   ;;
 
   let t_of_sexp :
@@ -197,23 +197,23 @@ module Symmetric_diff_element = struct
     -> Sexplib0.Sexp.t
     =
     fun _of_k__072_ _of_v__073_ (arg0__081_, arg1__082_) ->
-      let res0__083_ = _of_k__072_ arg0__081_
-      and res1__084_ =
-        match arg1__082_ with
-        | `Left v__074_ ->
-          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; _of_v__073_ v__074_ ]
-        | `Right v__075_ ->
-          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; _of_v__073_ v__075_ ]
-        | `Unequal v__076_ ->
-          Sexplib0.Sexp.List
-            [ Sexplib0.Sexp.Atom "Unequal"
-            ; (let arg0__077_, arg1__078_ = v__076_ in
-               let res0__079_ = _of_v__073_ arg0__077_
-               and res1__080_ = _of_v__073_ arg1__078_ in
-               Sexplib0.Sexp.List [ res0__079_; res1__080_ ])
-            ]
-      in
-      Sexplib0.Sexp.List [ res0__083_; res1__084_ ]
+    let res0__083_ = _of_k__072_ arg0__081_
+    and res1__084_ =
+      match arg1__082_ with
+      | `Left v__074_ ->
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; _of_v__073_ v__074_ ]
+      | `Right v__075_ ->
+        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; _of_v__073_ v__075_ ]
+      | `Unequal v__076_ ->
+        Sexplib0.Sexp.List
+          [ Sexplib0.Sexp.Atom "Unequal"
+          ; (let arg0__077_, arg1__078_ = v__076_ in
+             let res0__079_ = _of_v__073_ arg0__077_
+             and res1__080_ = _of_v__073_ arg1__078_ in
+             Sexplib0.Sexp.List [ res0__079_; res1__080_ ])
+          ]
+    in
+    Sexplib0.Sexp.List [ res0__083_; res1__084_ ]
   ;;
 
   let t_sexp_grammar :
@@ -223,44 +223,44 @@ module Symmetric_diff_element = struct
     -> ('k, 'v) t Sexplib0.Sexp_grammar.t
     =
     fun _'k_sexp_grammar _'v_sexp_grammar ->
-      { untyped =
-          List
-            (Cons
-               ( _'k_sexp_grammar.untyped
-               , Cons
-                   ( Variant
-                       { case_sensitivity = Case_sensitive
-                       ; clauses =
-                           [ No_tag
-                               { name = "Left"
-                               ; clause_kind =
-                                   List_clause
-                                     { args = Cons (_'v_sexp_grammar.untyped, Empty) }
-                               }
-                           ; No_tag
-                               { name = "Right"
-                               ; clause_kind =
-                                   List_clause
-                                     { args = Cons (_'v_sexp_grammar.untyped, Empty) }
-                               }
-                           ; No_tag
-                               { name = "Unequal"
-                               ; clause_kind =
-                                   List_clause
-                                     { args =
-                                         Cons
-                                           ( List
-                                               (Cons
-                                                  ( _'v_sexp_grammar.untyped
-                                                  , Cons (_'v_sexp_grammar.untyped, Empty)
-                                                  ))
-                                           , Empty )
-                                     }
-                               }
-                           ]
-                       }
-                   , Empty ) ))
-      }
+    { untyped =
+        List
+          (Cons
+             ( _'k_sexp_grammar.untyped
+             , Cons
+                 ( Variant
+                     { case_sensitivity = Case_sensitive
+                     ; clauses =
+                         [ No_tag
+                             { name = "Left"
+                             ; clause_kind =
+                                 List_clause
+                                   { args = Cons (_'v_sexp_grammar.untyped, Empty) }
+                             }
+                         ; No_tag
+                             { name = "Right"
+                             ; clause_kind =
+                                 List_clause
+                                   { args = Cons (_'v_sexp_grammar.untyped, Empty) }
+                             }
+                         ; No_tag
+                             { name = "Unequal"
+                             ; clause_kind =
+                                 List_clause
+                                   { args =
+                                       Cons
+                                         ( List
+                                             (Cons
+                                                ( _'v_sexp_grammar.untyped
+                                                , Cons (_'v_sexp_grammar.untyped, Empty)
+                                                ))
+                                         , Empty )
+                                   }
+                             }
+                         ]
+                     }
+                 , Empty ) ))
+    }
   ;;
 
   [@@@end]
@@ -307,17 +307,17 @@ module Merge_element = struct
     -> bool
     =
     fun _cmp__left _cmp__right a__097_ b__098_ ->
-      if Stdlib.( == ) a__097_ b__098_
-      then true
-      else (
-        match a__097_, b__098_ with
-        | `Left _left__099_, `Left _right__100_ -> _cmp__left _left__099_ _right__100_
-        | `Right _left__101_, `Right _right__102_ -> _cmp__right _left__101_ _right__102_
-        | `Both _left__103_, `Both _right__104_ ->
-          let t__105_, t__106_ = _left__103_ in
-          let t__107_, t__108_ = _right__104_ in
-          Stdlib.( && ) (_cmp__left t__105_ t__107_) (_cmp__right t__106_ t__108_)
-        | x, y -> Stdlib.( = ) x y)
+    if Stdlib.( == ) a__097_ b__098_
+    then true
+    else (
+      match a__097_, b__098_ with
+      | `Left _left__099_, `Left _right__100_ -> _cmp__left _left__099_ _right__100_
+      | `Right _left__101_, `Right _right__102_ -> _cmp__right _left__101_ _right__102_
+      | `Both _left__103_, `Both _right__104_ ->
+        let t__105_, t__106_ = _left__103_ in
+        let t__107_, t__108_ = _right__104_ in
+        Stdlib.( && ) (_cmp__left t__105_ t__107_) (_cmp__right t__106_ t__108_)
+      | x, y -> Stdlib.( = ) x y)
   ;;
 
   let sexp_of_t :

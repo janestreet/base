@@ -156,6 +156,10 @@ open Message
 
 type t = Message.t Lazy.t
 
+let globalize t =
+  Lazy.globalize (fun _ -> (* the contents of [lazy] are already global *) assert false) t
+;;
+
 let invariant _ = ()
 let to_message = Message.of_info
 let of_message = Message.to_info
@@ -166,7 +170,9 @@ let sexp_of_t t = Message.to_sexp_hum (to_message t)
 let t_of_sexp sexp = lazy (Message.Sexp sexp)
 let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = { untyped = Any "Info.t" }
 let compare t1 t2 = Sexp.compare (sexp_of_t t1) (sexp_of_t t2)
+let compare__local t1 t2 = compare (globalize t1) (globalize t2)
 let equal t1 t2 = Sexp.equal (sexp_of_t t1) (sexp_of_t t2)
+let equal__local t1 t2 = equal (globalize t1) (globalize t2)
 let hash_fold_t state t = Sexp.hash_fold_t state (sexp_of_t t)
 let hash t = Hash.run hash_fold_t t
 

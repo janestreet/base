@@ -42,12 +42,17 @@ type interval_comparison =
   | Below_lower_bound
   | In_range
   | Above_upper_bound
-[@@deriving_inline sexp, sexp_grammar, compare, hash]
+[@@deriving_inline sexp, sexp_grammar, compare ~localize, hash]
 
 val sexp_of_interval_comparison : interval_comparison -> Sexplib0.Sexp.t
 val interval_comparison_of_sexp : Sexplib0.Sexp.t -> interval_comparison
 val interval_comparison_sexp_grammar : interval_comparison Sexplib0.Sexp_grammar.t
 val compare_interval_comparison : interval_comparison -> interval_comparison -> int
+
+val compare_interval_comparison__local
+  :  (interval_comparison[@ocaml.local])
+  -> (interval_comparison[@ocaml.local])
+  -> int
 
 val hash_fold_interval_comparison
   :  Ppx_hash_lib.Std.Hash.state

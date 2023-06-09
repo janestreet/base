@@ -95,7 +95,9 @@ module Replace_polymorphic_compare = struct
   let ascending (x : T.t) y = Poly.ascending x y
   let descending (x : T.t) y = Poly.descending x y
   let compare (x : T.t) y = Poly.compare x y
+  let compare__local ((x : T.t) [@local]) (y [@local]) = Poly.compare x y
   let equal (x : T.t) y = Poly.equal x y
+  let equal__local ((x : T.t) [@local]) (y [@local]) = Poly.equal x y
   let max (x : T.t) y = if x >= y then x else y
   let min (x : T.t) y = if x <= y then x else y
 end

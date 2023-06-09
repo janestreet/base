@@ -22,6 +22,7 @@ val subo : (t, t) Blit.subo
 
 include Indexed_container.S0_with_creators with type t := t with type elt = char
 include Identifiable.S with type t := t
+include Ppx_compare_lib.Comparable.S_local with type t := t
 include Invariant.S with type t := t
 
 (** Maximum length of a string. *)
@@ -88,6 +89,7 @@ module Caseless : sig
   [@@@end]
 
   include Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S_local with type t := t
 
   val is_suffix : t -> suffix:t -> bool
   val is_prefix : t -> prefix:t -> bool
@@ -191,9 +193,10 @@ module Search_pattern : sig
       ; case_sensitive : bool
       ; kmp_array : int array
       }
-    [@@deriving_inline equal, sexp_of]
+    [@@deriving_inline equal ~localize, sexp_of]
 
     include Ppx_compare_lib.Equal.S with type t := t
+    include Ppx_compare_lib.Equal.S_local with type t := t
 
     val sexp_of_t : t -> Sexplib0.Sexp.t
 
@@ -396,6 +399,7 @@ external hash : t -> int = "Base_hash_string"
 (** Fast equality function on strings, doesn't use [compare_val]. *)
 val equal : t -> t -> bool
 
+val equal__local : (t[@local]) -> (t[@local]) -> bool
 val of_char : char -> t
 
 val of_char_list : char list -> t
@@ -409,6 +413,14 @@ val pad_left : ?char:char (** default is [' '] *) -> string -> len:int -> string
     [char] to the end of the string. If s is already longer than [len] it is returned
     unchanged. *)
 val pad_right : ?char:char (** default is [' '] *) -> string -> len:int -> string
+
+(** Reports the Levenshtein edit distance between two strings. Computes the minimum number
+    of single-character insertions, deletions, and substitutions needed to transform one
+    into the other.
+
+    For strings of length M and N, its time complexity is O(M*N) and its space complexity
+    is O(min(M,N)). *)
+val edit_distance : string -> string -> int
 
 (** Operations for escaping and unescaping strings, with parameterized escape and
     escapeworthy characters.  Escaping/unescaping using this module is more efficient than

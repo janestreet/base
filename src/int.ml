@@ -68,9 +68,13 @@ include Conv.Make (T)
 include Conv.Make_hex (struct
     open Int_replace_polymorphic_compare
 
-    type t = int [@@deriving_inline compare, hash]
+    type t = int [@@deriving_inline compare ~localize, hash]
 
-    let compare = (compare_int : t -> t -> int)
+    let compare__local =
+      (compare_int__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+    ;;
+
+    let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int

@@ -4,9 +4,11 @@
 
 open! Import
 
-type 'a t = 'a list [@@deriving_inline compare, globalize, hash, sexp, sexp_grammar]
+type 'a t = 'a list
+[@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
 val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
 
@@ -38,9 +40,10 @@ module Or_unequal_lengths : sig
   type 'a t =
     | Ok of 'a
     | Unequal_lengths
-  [@@deriving_inline compare, sexp_of]
+  [@@deriving_inline compare ~localize, sexp_of]
 
   include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+  include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
   val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
@@ -158,10 +161,10 @@ val split_n : 'a t -> int -> 'a t * 'a t
 
     Presently, the sort is stable, meaning that two equal elements in the input will be in
     the same order in the output. *)
-val sort : 'a t -> compare:('a -> 'a -> int) -> 'a t
+val sort : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t
 
 (** Like [sort], but guaranteed to be stable. *)
-val stable_sort : 'a t -> compare:('a -> 'a -> int) -> 'a t
+val stable_sort : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t
 
 (** Merges two lists: assuming that [l1] and [l2] are sorted according to the comparison
     function [compare], [merge compare l1 l2] will return a sorted list containing all the
@@ -311,7 +314,7 @@ val group : 'a t -> break:(('a -> 'a -> bool)[@local]) -> 'a t t
 val groupi : 'a t -> break:((int -> 'a -> 'a -> bool)[@local]) -> 'a t t
 
 (** Group equal elements into the same buckets. Sorting is stable. *)
-val sort_and_group : 'a t -> compare:('a -> 'a -> int) -> 'a t t
+val sort_and_group : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t t
 
 (** [chunks_of l ~length] returns a list of lists whose concatenation is equal to the
     original list.  Every list has [length] elements, except for possibly the last list,
@@ -348,20 +351,25 @@ val remove_consecutive_duplicates
   -> equal:(('a -> 'a -> bool)[@local])
   -> 'a t
 
-(** Returns the given list with duplicates removed and in sorted order. *)
-val dedup_and_sort : 'a t -> compare:('a -> 'a -> int) -> 'a t
+(** Returns the given list with duplicates removed and in sorted order.
+    Of duplicates in the original list, the element occurring last in
+    the original list is kept. *)
+val dedup_and_sort : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t
+
+(** Returns the original list, dropping all occurrences of duplicates after the first. *)
+val stable_dedup : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t
 
 (** [find_a_dup] returns a duplicate from the list (with no guarantees about which
     duplicate you get), or [None] if there are no dups. *)
-val find_a_dup : 'a t -> compare:('a -> 'a -> int) -> 'a option
+val find_a_dup : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
 
 (** Returns true if there are any two elements in the list which are the same. O(n log n)
     time complexity. *)
-val contains_dup : 'a t -> compare:('a -> 'a -> int) -> bool
+val contains_dup : 'a t -> compare:(('a -> 'a -> int)[@local]) -> bool
 
 (** [find_all_dups] returns a list of all elements that occur more than once, with
     no guarantees about order. O(n log n) time complexity. *)
-val find_all_dups : 'a t -> compare:('a -> 'a -> int) -> 'a list
+val find_all_dups : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a list
 
 (** [all_equal] returns a single element of the list that is equal to all other elements,
     or [None] if no such element exists. *)
@@ -440,7 +448,10 @@ module Assoc : sig
 
   (** Converts an association list with potential duplicate keys into an association list
       of (non-empty) lists with no duplicate keys. *)
-  val sort_and_group : ('a * 'b) list -> compare:('a -> 'a -> int) -> ('a, 'b list) t
+  val sort_and_group
+    :  ('a * 'b) list
+    -> compare:(('a -> 'a -> int)[@local])
+    -> ('a, 'b list) t
 end
 
 (** [sub pos len l] is the [len]-element sublist of [l], starting at [pos]. *)
@@ -501,6 +512,12 @@ val is_sorted : 'a t -> compare:(('a -> 'a -> int)[@local]) -> bool
 
 val is_sorted_strictly : 'a t -> compare:(('a -> 'a -> int)[@local]) -> bool
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+
+val equal__local
+  :  (('a[@local]) -> ('a[@local]) -> bool)
+  -> ('a t[@local])
+  -> ('a t[@local])
+  -> bool
 
 module Infix : sig
   val ( @ ) : 'a t -> 'a t -> 'a t

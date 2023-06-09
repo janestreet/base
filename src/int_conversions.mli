@@ -81,9 +81,10 @@ end
 (** in the output, [to_string], [of_string], [sexp_of_t], and [t_of_sexp] convert
     between [t] and signed hexadecimal with an optional "0x" or "0X" prefix. *)
 module Make_hex (I : sig
-    type t [@@deriving_inline compare, hash]
+    type t [@@deriving_inline compare ~localize, hash]
 
     include Ppx_compare_lib.Comparable.S with type t := t
+    include Ppx_compare_lib.Comparable.S_local with type t := t
     include Ppx_hash_lib.Hashable.S with type t := t
 
     [@@@end]

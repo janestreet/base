@@ -145,12 +145,15 @@ module Caseless = struct
     [@@@end]
 
     let compare c1 c2 = compare (lowercase c1) (lowercase c2)
+    let compare__local c1 c2 = compare c1 c2
     let hash_fold_t state t = hash_fold_char state (lowercase t)
     let hash t = Hash.run hash_fold_t t
   end
 
   include T
   include Comparable.Make (T)
+
+  let equal__local t1 t2 = equal_int (compare__local t1 t2) 0
 end
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after

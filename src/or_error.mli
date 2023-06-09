@@ -10,10 +10,12 @@ open! Import
 
 (** Serialization and comparison of an [Error] force the error's lazy message. *)
 type 'a t = ('a, Error.t) Result.t
-[@@deriving_inline compare, equal, hash, sexp, sexp_grammar]
+[@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
@@ -62,6 +64,10 @@ val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> _ t
 
     [of_exn_result ?backtrace (Error exn) = of_exn ?backtrace exn] *)
 val of_exn_result : ?backtrace:[ `Get | `This of string ] -> ('a, exn) Result.t -> 'a t
+
+(** [of_option t] returns [Ok 'a] if [t] is [Some 'a], and otherwise returns the supplied
+    [error] as [Error error] *)
+val of_option : 'a option -> error:Error.t -> 'a t
 
 (** [error] is a wrapper around [Error.create]:
 

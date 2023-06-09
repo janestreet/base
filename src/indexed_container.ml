@@ -4,7 +4,7 @@ include Indexed_container_intf
 
 let with_return = With_return.with_return
 
-let iteri ~fold t ~f =
+let[@inline always] iteri ~fold t ~f =
   ignore
     (fold t ~init:0 ~f:(fun i x ->
        f i x;
@@ -80,6 +80,7 @@ struct
   let find_mapi t ~f = find_mapi ~iteri t ~f
   let findi t ~f = findi ~iteri t ~f
 end
+[@@inline always]
 
 module Make_gen (T : Make_gen_arg) :
   Generic with type ('a, 'phantom) t := ('a, 'phantom) T.t and type 'a elt := 'a T.elt =
@@ -88,6 +89,7 @@ struct
   include C
   include Make_gen_with_container (T) (C)
 end
+[@@inline always]
 
 module Make (T : Make_arg) = struct
   include Make_gen (struct
@@ -97,6 +99,7 @@ module Make (T : Make_arg) = struct
       type 'a elt = 'a
     end)
 end
+[@@inline always]
 
 module Make0 (T : Make0_arg) = struct
   include Make_gen (struct
