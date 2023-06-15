@@ -4,7 +4,6 @@
 
 open! Import
 include Info_intf
-module Char = Char0
 module String = String0
 
 module Message = struct
@@ -63,53 +62,6 @@ module Message = struct
 
   [@@@end]
 
-  let rec to_strings_hum t ac =
-    (* We use [Sexp.to_string_mach], despite the fact that we are implementing
-       [to_strings_hum], because we want the info to fit on a single line, and once we've
-       had to resort to sexps, the message is going to start not looking so pretty
-       anyway. *)
-    match t with
-    | Could_not_construct sexp ->
-      "could not construct info: " :: Sexp.to_string_mach sexp :: ac
-    | String string -> string :: ac
-    | Exn exn -> Sexp.to_string_mach (Exn.sexp_of_t exn) :: ac
-    | Sexp sexp -> Sexp.to_string_mach sexp :: ac
-    | Tag_sexp (tag, sexp, _) -> tag :: ": " :: Sexp.to_string_mach sexp :: ac
-    | Tag_t (tag, t) -> tag :: ": " :: to_strings_hum t ac
-    | Tag_arg (tag, sexp, t) ->
-      let body = Sexp.to_string_mach sexp :: ": " :: to_strings_hum t ac in
-      if String.length tag = 0 then body else tag :: ": " :: body
-    | With_backtrace (t, backtrace) ->
-      to_strings_hum t ("\nBacktrace:\n" :: backtrace :: ac)
-    | Of_list (trunc_after, ts) ->
-      let ts =
-        match trunc_after with
-        | None -> ts
-        | Some max ->
-          let n = List.length ts in
-          if n <= max
-          then ts
-          else List.take ts max @ [ String (Printf.sprintf "and %d more info" (n - max)) ]
-      in
-      List.fold (List.rev ts) ~init:ac ~f:(fun ac t ->
-        to_strings_hum t (if List.is_empty ac then ac else "; " :: ac))
-  ;;
-
-  let to_string_hum_deprecated t = String.concat (to_strings_hum t [])
-
-  (* Like [String.split_lines], but less optimized and doesn't handle [\r\n]. Avoids a
-     dependency cycle. Improves on naive [String.split_on_char] by removing empty final
-     line. *)
-  let split_lines string =
-    let string =
-      let len = String.length string in
-      if len > 0 && Char.equal '\n' (String.get string (len - 1))
-      then String.sub string ~pos:0 ~len:(len - 1)
-      else string
-    in
-    String.split_on_char string ~sep:'\n'
-  ;;
-
   let rec to_sexps_hum t ac =
     match t with
     | Could_not_construct _ as t -> sexp_of_t t :: ac
@@ -130,7 +82,8 @@ module Message = struct
       let body = sexp :: to_sexps_hum t [] in
       if String.length tag = 0 then List body :: ac else List (Atom tag :: body) :: ac
     | With_backtrace (t, backtrace) ->
-      Sexp.List [ to_sexp_hum t; sexp_of_list sexp_of_string (split_lines backtrace) ]
+      Sexp.List
+        [ to_sexp_hum t; sexp_of_list sexp_of_string (String.split_lines backtrace) ]
       :: ac
     | Of_list (_, ts) ->
       List.fold (List.rev ts) ~init:ac ~f:(fun ac t -> to_sexps_hum t ac)
@@ -182,7 +135,6 @@ let to_string_hum t =
   | message -> Sexp.to_string_hum (Message.to_sexp_hum message)
 ;;
 
-let to_string_hum_deprecated t = Message.to_string_hum_deprecated (to_message t)
 let to_string_mach t = Sexp.to_string_mach (sexp_of_t t)
 let of_lazy l = lazy (protect (fun () -> String (Lazy.force l)))
 let of_lazy_sexp l = lazy (protect (fun () -> Sexp (Lazy.force l)))
@@ -210,7 +162,7 @@ let tag_arg t tag x sexp_of_x =
   lazy (protect (fun () -> Tag_arg (tag, sexp_of_x x, to_message t)))
 ;;
 
-let of_list ?trunc_after ts = lazy (Of_list (trunc_after, List.map ts ~f:to_message))
+let of_list ts = lazy (Of_list (None, List.map ts ~f:to_message))
 
 exception Exn of t
 

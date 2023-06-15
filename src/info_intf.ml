@@ -67,12 +67,6 @@ module type S = sig
   (** [to_string_mach t] outputs [t] as a sexp on a single line. *)
   val to_string_mach : t -> string
 
-  (** Old version (pre 109.61) of [to_string_hum] that some applications rely on.
-
-      Calls should be replaced with [to_string_mach t], which outputs more parentheses and
-      backslashes. *)
-  val to_string_hum_deprecated : t -> string
-
 
   val of_string : string -> t
 
@@ -115,7 +109,7 @@ module type S = sig
   val tag_arg : t -> string -> 'a -> ('a -> Sexp.t) -> t
 
   (** Combines multiple infos into one. *)
-  val of_list : ?trunc_after:int -> t list -> t
+  val of_list : t list -> t
 
   (** [of_exn] and [to_exn] are primarily used with [Error], but their definitions have to
       be here because they refer to the underlying representation.

@@ -68,6 +68,7 @@ module type Accessors = sig
   val counti : ('a, 'b) t -> f:((key:'a key -> data:'b -> bool)[@local]) -> int
   val count : (_, 'b) t -> f:(('b -> bool)[@local]) -> int
   val length : (_, _) t -> int
+  val capacity : _ t -> int
   val is_empty : (_, _) t -> bool
   val mem : ('a, _) t -> 'a key -> bool
   val remove : ('a, _) t -> 'a key -> unit

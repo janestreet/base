@@ -243,7 +243,12 @@ let of_int32 = Conv.int32_to_nativeint
 let of_int32_exn = of_int32
 let to_int32 = Conv.nativeint_to_int32
 let to_int32_exn = Conv.nativeint_to_int32_exn
-let to_int32_trunc = Conv.nativeint_to_int32_trunc
+
+external to_int32_trunc
+  :  (nativeint[@local_opt])
+  -> (int32[@local_opt])
+  = "%nativeint_to_int32"
+
 let of_int64 = Conv.int64_to_nativeint
 let of_int64_exn = Conv.int64_to_nativeint_exn
 let of_int64_trunc = Conv.int64_to_nativeint_trunc

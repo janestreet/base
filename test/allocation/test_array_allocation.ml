@@ -14,14 +14,19 @@ let%expect_test "Array.sort [| 5; 2; 3; 4; 1 |] only allocates when computing bo
   [%expect {||}]
 ;;
 
-let%test "equal does not allocate" =
+let%expect_test "equal does not allocate" =
   let arr1 = [| 1; 2; 3; 4 |] in
   let arr2 = [| 1; 2; 4; 3 |] in
-  require_no_allocation [%here] (fun () -> not (Array.equal Int.equal arr1 arr2))
+  require
+    [%here]
+    (require_no_allocation [%here] (fun () -> not (Array.equal Int.equal arr1 arr2)));
+  [%expect {| |}]
 ;;
 
-let%test "foldi does not allocate" =
+let%expect_test "foldi does not allocate" =
   let arr = [| 1; 2; 3; 4 |] in
   let f i x y = i + x + y in
-  require_no_allocation [%here] (fun () -> 16 = Array.foldi ~init:0 ~f arr)
+  require
+    [%here]
+    (require_no_allocation [%here] (fun () -> 16 = Array.foldi ~init:0 ~f arr))
 ;;

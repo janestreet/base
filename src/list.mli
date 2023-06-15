@@ -21,6 +21,8 @@ val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
 include Indexed_container.S1_with_creators with type 'a t := 'a t
 
+val length : ('a t[@local]) -> int
+
 include Invariant_intf.S1 with type 'a t := 'a t
 
 (** Implements cartesian-product behavior for [map] and [bind]. **)

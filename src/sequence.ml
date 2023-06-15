@@ -858,7 +858,8 @@ let findi t ~f =
     match next s with
     | Done -> None
     | Yield { value = a; state = _ } when f i a -> Some (i, a)
-    | Yield { value = _; state = s } | Skip { state = s } -> loop s next (i + 1) f
+    | Yield { value = _; state = s } -> loop s next (i + 1) f
+    | Skip { state = s } -> loop s next i f
   in
   match t with
   | Sequence { state = seed; next } -> loop seed next 0 f

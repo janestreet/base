@@ -13,6 +13,7 @@ let compare = compare
 let length = 16
 
 let to_binary s = s
+let to_binary_local s = s
 let of_binary_exn s = assert (String.length s = length); make s
 let unsafe_of_binary = make
 

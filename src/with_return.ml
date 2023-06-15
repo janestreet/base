@@ -5,17 +5,14 @@ open! Import
 type 'a return = { return : 'b. 'a -> 'b } [@@unboxed]
 
 let with_return (type a) f =
-  let module M = struct
-    (* Raised to indicate ~return was called.  Local so that the exception is tied to a
-       particular call of [with_return]. *)
-    exception Return of a
-  end
-  in
+  (* Raised to indicate ~return was called.  Local so that the exception is tied to a
+     particular call of [with_return]. *)
+  let exception Return of a in
   let is_alive = ref true in
   let return a =
     if not !is_alive
     then failwith "use of [return] from a [with_return] that already returned";
-    Exn.raise_without_backtrace (M.Return a)
+    Exn.raise_without_backtrace (Return a)
   in
   try
     let a = f { return } in
@@ -25,7 +22,7 @@ let with_return (type a) f =
   | exn ->
     is_alive := false;
     (match exn with
-     | M.Return a -> a
+     | Return a -> a
      | _ -> raise exn)
 ;;
 

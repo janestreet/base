@@ -115,6 +115,8 @@ let maybe_resize_table t =
       done))
 ;;
 
+let capacity t = Array.length t.table
+
 let set t ~key ~data =
   ensure_mutation_allowed t;
   ignore (add_worker ~replace:true t ~key ~data : bool);
@@ -858,6 +860,7 @@ module Poly = struct
   type 'a key = 'a
 
   let hashable = Hashable.poly
+  let capacity = capacity
 
   include Creators (struct
       type 'a t = 'a

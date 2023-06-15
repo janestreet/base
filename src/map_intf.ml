@@ -547,6 +547,8 @@ module type Accessors_generic = sig
       , ('k, 'v Or_error.t, 'cmp) t -> ('k, 'v, 'cmp) t Or_error.t )
         access_options
 
+  val unzip : ('k, 'v1 * 'v2, 'cmp) t -> ('k, 'v1, 'cmp) t * ('k, 'v2, 'cmp) t
+
   val compare_direct
     : ( 'k
       , 'cmp
@@ -1495,6 +1497,10 @@ module type Map = sig
   (** Produces [Ok] of a map including all keys if all data is [Ok], or an [Error]
       including all errors otherwise. *)
   val combine_errors : ('k, 'v Or_error.t, 'cmp) t -> ('k, 'v, 'cmp) t Or_error.t
+
+  (** Given a map of tuples, produces a tuple of maps. Equivalent to:
+      [map t ~f:fst, map t ~f:snd] *)
+  val unzip : ('k, 'v1 * 'v2, 'cmp) t -> ('k, 'v1, 'cmp) t * ('k, 'v2, 'cmp) t
 
   (** Returns a total ordering between maps. The first argument is a total ordering used
       to compare data associated with equal keys in the two maps. *)

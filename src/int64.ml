@@ -35,7 +35,13 @@ let num_bits = 64
 let float_lower_bound = Float0.lower_bound_for_int num_bits
 let float_upper_bound = Float0.upper_bound_for_int num_bits
 let float_of_bits = float_of_bits
-let bits_of_float = bits_of_float
+
+external bits_of_float
+  :  (float[@local_opt])
+  -> (int64[@local_opt])
+  = "caml_int64_bits_of_float" "caml_int64_bits_of_float_unboxed"
+[@@unboxed] [@@noalloc]
+
 let shift_right_logical = shift_right_logical
 let shift_right = shift_right
 let shift_left = shift_left
@@ -142,7 +148,9 @@ let to_int_exn = Conv.int64_to_int_exn
 let of_int32_exn = of_int32
 let to_int32 = Conv.int64_to_int32
 let to_int32_exn = Conv.int64_to_int32_exn
-let of_nativeint = Conv.nativeint_to_int64
+
+external of_nativeint : (nativeint[@local_opt]) -> (t[@local_opt]) = "%int64_of_nativeint"
+
 let of_nativeint_exn = of_nativeint
 let to_nativeint = Conv.int64_to_nativeint
 let to_nativeint_exn = Conv.int64_to_nativeint_exn

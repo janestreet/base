@@ -622,7 +622,7 @@ let for_all2_local_exn t1 t2 ~f =
 
 let for_all2_exn t1 t2 ~f = for_all2_local_exn t1 t2 ~f
 let equal__local equal t1 t2 = length t1 = length t2 && for_all2_local_exn t1 t2 ~f:equal
-let equal equal t1 t2 = equal__local (fun a b -> equal a b) t1 t2
+let equal equal t1 t2 = equal__local equal t1 t2
 
 
 let map_inplace t ~f =

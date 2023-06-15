@@ -1634,7 +1634,7 @@ let () =
 let transpose_exn l =
   match transpose l with
   | Some l -> l
-  | None -> raise (Transpose_got_lists_of_different_lengths (map l ~f:length))
+  | None -> raise (Transpose_got_lists_of_different_lengths (map l ~f:(length :> _ -> _)))
 ;;
 
 let intersperse t ~sep =

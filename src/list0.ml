@@ -10,13 +10,20 @@
 open! Import0
 
 let hd_exn = Stdlib.List.hd
-let length = Stdlib.List.length
 let rev_append = Stdlib.List.rev_append
 let tl_exn = Stdlib.List.tl
 let unzip = Stdlib.List.split
 
 (* Some of these are eta expanded in order to permute parameter order to follow Base
    conventions. *)
+
+let length =
+  let rec length_aux len = function
+    | [] -> len
+    | _ :: l -> length_aux (len + 1) l
+  in
+  fun (l [@local]) -> length_aux 0 l
+;;
 
 let rec exists t ~f:(f [@local]) =
   match t with

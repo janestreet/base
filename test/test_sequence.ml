@@ -639,6 +639,19 @@ let%test_unit _ =
     ~expect:true
 ;;
 
+let%expect_test "findi" =
+  Base_quickcheck.Test.run_exn
+    (module struct
+      type t = int option list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
+    end)
+    ~f:(fun (option_list, f) ->
+      let sequence = option_list |> of_list |> filter_opt in
+      [%test_result: (int * int) option]
+        (findi sequence ~f)
+        ~expect:(List.findi (to_list sequence) ~f));
+  [%expect {| |}]
+;;
+
 let%expect_test _ =
   let xs = init 3 ~f:Fn.id |> Generator.of_sequence in
   let ( @ ) xs ys = Generator.bind xs ~f:(fun () -> ys) in

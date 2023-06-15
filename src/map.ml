@@ -1884,6 +1884,8 @@ module Tree0 = struct
     else Or_error.error_s (sexp_of_t sexp_of_key Error.sexp_of_t errors)
   ;;
 
+  let unzip t = map t ~f:fst, map t ~f:snd
+
   let map_keys
         t1
         ~f
@@ -2178,6 +2180,8 @@ module Accessors = struct
       ~f:(of_like_tree t)
       (Tree0.combine_errors t.tree ~sexp_of_key:t.comparator.sexp_of_t)
   ;;
+
+  let unzip t = of_like_tree2 t (Tree0.unzip t.tree)
 
   let compare_direct compare_data t1 t2 =
     Tree0.compare (compare_key t1) compare_data t1.tree t2.tree
@@ -2578,6 +2582,8 @@ module Tree = struct
   let combine_errors ~comparator t =
     Tree0.combine_errors t ~sexp_of_key:comparator.Comparator.sexp_of_t
   ;;
+
+  let unzip = Tree0.unzip
 
   let compare_direct ~comparator compare_data t1 t2 =
     Tree0.compare comparator.Comparator.compare compare_data t1 t2

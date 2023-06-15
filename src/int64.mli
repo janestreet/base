@@ -67,7 +67,7 @@ external of_int32 : (int32[@local_opt]) -> (t[@local_opt]) = "%int64_of_int32"
 external of_int64 : (t[@local_opt]) -> (t[@local_opt]) = "%identity"
 val to_int : t -> int option
 val to_int32 : t -> int32 option
-val of_nativeint : nativeint -> t
+external of_nativeint : (nativeint[@local_opt]) -> (t[@local_opt]) = "%int64_of_nativeint"
 val to_nativeint : t -> nativeint option
 
 (** {3 Truncating conversions}
@@ -87,7 +87,12 @@ external to_nativeint_trunc
 
 (** {3 Low-level float conversions} *)
 
-val bits_of_float : float -> t
+external bits_of_float
+  :  (float[@local_opt])
+  -> (int64[@local_opt])
+  = "caml_int64_bits_of_float" "caml_int64_bits_of_float_unboxed"
+[@@unboxed] [@@noalloc]
+
 val float_of_bits : t -> float
 
 (** {2 Byte swap operations}

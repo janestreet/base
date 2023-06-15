@@ -251,6 +251,10 @@ module Test_creators_and_accessors
       type t = Inst.t Instance.t [@@deriving equal, quickcheck, sexp_of]
     end
 
+    module Inst_pair = struct
+      type t = (int * int) Instance.t [@@deriving equal, quickcheck, sexp_of]
+    end
+
     module Inst_multi = struct
       type t = int list Instance.t [@@deriving equal, quickcheck, sexp_of]
     end
@@ -1005,6 +1009,24 @@ module Test_creators_and_accessors
              Or_error.map result ~f:(fun data -> key, data))
            |> Or_error.combine_errors
            |> Or_error.map ~f:(create of_alist_exn)));
+    [%expect {| |}]
+  ;;
+
+  let unzip = unzip
+
+  let%expect_test _ =
+    quickcheck_m
+      [%here]
+      (module Inst_pair)
+      ~f:(fun t ->
+        require_equal
+          [%here]
+          (module Pair (Alist))
+          (let a, b = unzip t in
+           to_alist a, to_alist b)
+          (to_alist t
+           |> List.map ~f:(fun (key, (a, b)) -> (key, a), (key, b))
+           |> List.unzip));
     [%expect {| |}]
   ;;
 
