@@ -189,7 +189,7 @@ CAMLprim value Base_int_math_nativeint_ctz(value v) {
   return Val_int(Base_int_math_nativeint_ctz_unboxed(Nativeint_val(v)));
 }
 
-CAMLprim value __attribute__((weak))
+CAMLprim CAMLweakdef value
 caml_csel_value(value v_cond, value v_true, value v_false) {
   return (Bool_val(v_cond) ? v_true : v_false);
 }
