@@ -9,6 +9,7 @@ external magic : (_[@local_opt]) -> (_[@local_opt]) = "%identity"
 external repr : (_[@local_opt]) -> (t[@local_opt]) = "%identity"
 external obj : (t[@local_opt]) -> (_[@local_opt]) = "%identity"
 external raw_field : (t[@local_opt]) -> int -> raw_data = "caml_obj_raw_field"
+external size : (t[@local_opt]) -> int = "%obj_size"
 
 external set_raw_field
   :  (t[@local_opt])

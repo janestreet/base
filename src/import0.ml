@@ -272,17 +272,18 @@ module Uchar_replace_polymorphic_compare = struct
 end
 
 module Float_replace_polymorphic_compare = struct
-  let ( < ) (x : float) y = Poly.( < ) x y
-  let ( <= ) (x : float) y = Poly.( <= ) x y
-  let ( <> ) (x : float) y = Poly.( <> ) x y
-  let ( = ) (x : float) y = Poly.( = ) x y
-  let ( > ) (x : float) y = Poly.( > ) x y
-  let ( >= ) (x : float) y = Poly.( >= ) x y
+  external ( < ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%lessthan"
+  external ( <= ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%lessequal"
+  external ( <> ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%notequal"
+  external ( = ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%equal"
+  external ( > ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%greaterthan"
+  external ( >= ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%greaterequal"
+  external equal : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%equal"
+  external compare : (float[@local_opt]) -> (float[@local_opt]) -> int = "%compare"
+
   let ascending (x : float) y = Poly.ascending x y
   let descending (x : float) y = Poly.descending x y
-  let compare (x : float) y = Poly.compare x y
   let compare__local ((x : float) [@local]) (y [@local]) = Poly.compare x y
-  let equal (x : float) y = Poly.equal x y
   let equal__local ((x : float) [@local]) (y [@local]) = Poly.equal x y
   let max (x : float) y = Bool0.select (x >= y) x y
   let min (x : float) y = Bool0.select (x <= y) x y

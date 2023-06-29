@@ -71,7 +71,14 @@ let int32_to_int_exn x =
 
 (* int <-> int64 *)
 
-let int64_to_int_failure x = convert_failure x "int64" "int" int64_to_string
+let[@cold] int64_to_int_failure x =
+  convert_failure
+    (Stdlib.Int64.add x 0L (* force int64 boxing to be here under flambda2 *))
+    "int64"
+    "int"
+    int64_to_string
+;;
+
 let () = assert (num_bits_int < num_bits_int64)
 let int_to_int64 = Stdlib.Int64.of_int
 let int64_to_int_trunc = Stdlib.Int64.to_int
