@@ -546,5 +546,5 @@ val transpose_exn : 'a t t -> 'a t t
 val intersperse : 'a t -> sep:'a -> 'a t
 
 (** [remove_duplicates l ~equal] removes any duplicate elements from [l] while preserving the order.
-    For example, remove_duplicates [1;1;2;1;3;4;3] ~equal:Int.equal = [1;2;3;4]. *)
+    For example, remove_duplicates [1;1;2;3;1;3;4;3] ~equal:Int.equal = [1;2;3;4]. *)
 val remove_duplicates : 'a t -> equal:('a -> 'a -> bool) -> 'a t
