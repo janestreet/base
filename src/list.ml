@@ -38,9 +38,7 @@ module Or_unequal_lengths = struct
     'a.
     (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
     -> ('a t[@ocaml.local])
-    -> ('a t[@ocaml.local])
-    -> int
-    =
+    -> ('a t[@ocaml.lo=
     fun _cmp__a a__014_ b__015_ ->
     if Stdlib.( == ) a__014_ b__015_
     then 0
@@ -1651,4 +1649,16 @@ let is_suffix list ~suffix ~equal:((equal_elt : _ -> _ -> _) [@local]) =
   let suffix_len = length suffix in
   list_len >= suffix_len
   && equal_with_local_closure equal_elt (drop list (list_len - suffix_len)) suffix
+;;
+
+(** returns lists without any duplicates and preserves the order of the original list *)
+let remove_duplicates l ~equal:equal_elt =
+  let rec aux l accum =
+    match l with
+    | [] -> List.rev accum
+    | h :: t ->
+        if mem accum h ~equal:equal_elt then aux t accum
+        else aux t (h :: accum)
+  in
+  aux l []
 ;;
