@@ -10,12 +10,16 @@ open! Import
 
 (** Serialization and comparison of an [Error] force the error's lazy message. *)
 type 'a t = ('a, Error.t) Result.t
-[@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
+[@@deriving_inline
+  compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
+
+val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
+
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 

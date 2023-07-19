@@ -148,8 +148,11 @@ val partition_result : ('ok, 'error) Result.t t -> 'ok t * 'error t
 
 (** [split_n \[e1; ...; em\] n] is [(\[e1; ...; en\], \[en+1; ...; em\])].
 
-    - If [n > m], [(\[e1; ...; em\], \[\])] is returned.
-    - If [n < 0], [(\[\], \[e1; ...; em\])] is returned. *)
+    - If [n >= m], [(\[e1; ...; em\], \[\])] is returned.
+    - If [n <= 0], [(\[\], \[e1; ...; em\])] is returned.
+
+    In either of these cases, the input list is returned as one side of the pair, rather
+    than being copied. *)
 val split_n : 'a t -> int -> 'a t * 'a t
 
 (** Sort a list in increasing order according to a comparison function.  The comparison
@@ -460,11 +463,12 @@ end
 val sub : 'a t -> pos:int -> len:int -> 'a t
 
 (** [take l n] returns the first [n] elements of [l], or all of [l] if [n > length l].
-    [take l n = fst (split_n l n)]. *)
+    [take l n = fst (split_n l n)]. If [n >= length l], returns [l] rather than a copy. *)
 val take : 'a t -> int -> 'a t
 
 (** [drop l n] returns [l] without the first [n] elements, or the empty list if [n >
-    length l].  [drop l n] is equivalent to [snd (split_n l n)]. *)
+    length l]. [drop l n] is equivalent to [snd (split_n l n)]. If [n <= 0], returns [l]
+    rather than a copy. *)
 val drop : 'a t -> int -> 'a t
 
 (** [take_while l ~f] returns the longest prefix of [l] for which [f] is [true]. *)

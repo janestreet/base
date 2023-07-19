@@ -6,8 +6,8 @@ open! Import
 include Info
 
 let t_sexp_grammar : t Sexplib0.Sexp_grammar.t = { untyped = Any "Error.t" }
-let raise t = raise (to_exn t)
-let raise_s sexp = raise (create_s sexp)
+let[@cold] raise t = raise (to_exn t)
+let[@cold] raise_s sexp = raise (create_s sexp)
 let to_info t = t
 let of_info t = t
 

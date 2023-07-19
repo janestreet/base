@@ -193,3 +193,5 @@ let copy src =
   blito ~src ~dst ();
   dst
 ;;
+
+let sub = Array.sub

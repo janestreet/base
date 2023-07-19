@@ -73,3 +73,5 @@ val unsafe_set_with_caml_modify : (t[@local]) -> int -> Stdlib.Obj.t -> unit
     space leaks.  It does this by setting [t.(i)] to [Stdlib.Obj.repr 0].  As a performance hack,
     it only does this when [not (Stdlib.Obj.is_int t.(i))]. *)
 val unsafe_clear_if_pointer : t -> int -> unit
+
+val sub : t -> pos:int -> len:int -> t

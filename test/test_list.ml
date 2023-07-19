@@ -1500,3 +1500,43 @@ let%expect_test "list sort, dedup" =
         (List.stable_dedup list ~compare)
         (slow_stable_dedup list ~compare))
 ;;
+
+let%expect_test "[take], [drop], and [split]" =
+  for whole_len = 0 to 3 do
+    let whole = List.init whole_len ~f:Fn.id in
+    let test name kind requested_length list =
+      let expected_length = Int.clamp_exn requested_length ~min:0 ~max:whole_len in
+      let phys_equal_whole = phys_equal list whole in
+      let check problem bool =
+        require
+          [%here]
+          bool
+          ~if_false_then_print_s:
+            [%lazy_message
+              name
+                ~problem
+                (whole : int list)
+                (requested_length : int)
+                (expected_length : int)
+                (phys_equal_whole : bool)
+                (list : int list)]
+      in
+      check "wrong length" (List.length list = expected_length);
+      if expected_length = whole_len then check "not phys_equal" phys_equal_whole;
+      match kind with
+      | `prefix ->
+        check "is not a prefix" (List.is_prefix whole ~prefix:list ~equal:( = ))
+      | `suffix ->
+        check "is not a suffix" (List.is_suffix whole ~suffix:list ~equal:( = ))
+    in
+    for prefix_len = -1 to 2 do
+      let suffix_len = whole_len - prefix_len in
+      test "take" `prefix prefix_len (List.take whole prefix_len);
+      test "drop" `suffix suffix_len (List.drop whole prefix_len);
+      let prefix, suffix = List.split_n whole prefix_len in
+      test "split prefix" `prefix prefix_len prefix;
+      test "split suffix" `suffix suffix_len suffix
+    done
+  done;
+  [%expect {| |}]
+;;

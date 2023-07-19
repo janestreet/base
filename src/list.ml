@@ -412,120 +412,30 @@ let of_array = Array.to_list
 let to_array = Array.of_list
 let to_list t = t
 
-let max_non_tailcall =
-  match Sys.backend_type with
-  | Sys.Native | Sys.Bytecode -> 1_000
-  (* We don't know the size of the stack, better be safe and assume it's small. This
-     number was taken from ocaml#stdlib/list.ml which is also equal to the default limit
-     of recursive call in the js_of_ocaml compiler before switching to trampoline. *)
-  | Sys.Other _ -> 50
-;;
-
 (** Tail recursive versions of standard [List] module *)
 
-let tail_append l1 l2 = rev_append (rev l1) l2
+let[@tail_mod_cons] rec append_loop l1 l2 =
+  match l1 with
+  | [] -> l2
+  | [ x1 ] -> x1 :: l2
+  | [ x1; x2 ] -> x1 :: x2 :: l2
+  | [ x1; x2; x3 ] -> x1 :: x2 :: x3 :: l2
+  | [ x1; x2; x3; x4 ] -> x1 :: x2 :: x3 :: x4 :: l2
+  | x1 :: x2 :: x3 :: x4 :: x5 :: tl ->
+    x1 :: x2 :: x3 :: x4 :: x5 :: (append_loop [@tailcall]) tl l2
+;;
 
-(* There are a few optimized list operations here, including append and map.  There are
-   basically two optimizations in play: loop unrolling, and dynamic switching between
-   stack and heap allocation.
-
-   The loop-unrolling is straightforward, we just unroll 5 levels of the loop.  This makes
-   each iteration faster, and also reduces the number of stack frames consumed per list
-   element.
-
-   The dynamic switching is done by counting the number of stack frames, and then
-   switching to the "slow" implementation when we exceed a given limit.  This means that
-   short lists use the fast stack-allocation method, and long lists use a slower one that
-   doesn't require stack space. *)
-let rec count_append l1 l2 count =
+let append l1 l2 =
   match l2 with
   | [] -> l1
-  | _ ->
-    (match l1 with
-     | [] -> l2
-     | [ x1 ] -> x1 :: l2
-     | [ x1; x2 ] -> x1 :: x2 :: l2
-     | [ x1; x2; x3 ] -> x1 :: x2 :: x3 :: l2
-     | [ x1; x2; x3; x4 ] -> x1 :: x2 :: x3 :: x4 :: l2
-     | x1 :: x2 :: x3 :: x4 :: x5 :: tl ->
-       x1
-       :: x2
-       :: x3
-       :: x4
-       :: x5
-       ::
-       (if count > max_non_tailcall
-        then tail_append tl l2
-        else count_append tl l2 (count + 1)))
+  | _ :: _ -> append_loop l1 l2
 ;;
 
-let append l1 l2 = count_append l1 l2 0
-
-(* An ordinary tail recursive map builds up an intermediate (reversed) representation,
-   with one heap allocated object per element. The following implementation instead chunks
-   9 objects into one heap allocated object, reducing allocation and performance costs
-   accordingly. Note that the very end of the list is done by the stdlib's map
-   function. *)
-let tail_map xs ~f:(f [@local]) =
-  let rec rise ys = function
-    | [] -> ys
-    | (y0, y1, y2, y3, y4, y5, y6, y7, y8) :: bs ->
-      rise (y0 :: y1 :: y2 :: y3 :: y4 :: y5 :: y6 :: y7 :: y8 :: ys) bs
-  in
-  let rec dive bs = function
-    | x0 :: x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: x8 :: xs ->
-      let y0 = f x0 in
-      let y1 = f x1 in
-      let y2 = f x2 in
-      let y3 = f x3 in
-      let y4 = f x4 in
-      let y5 = f x5 in
-      let y6 = f x6 in
-      let y7 = f x7 in
-      let y8 = f x8 in
-      dive ((y0, y1, y2, y3, y4, y5, y6, y7, y8) :: bs) xs
-    | xs -> rise (nontail_map ~f xs) bs
-  in
-  let res = dive [] xs in
-  res
-;;
-
-let rec count_map ~f:(f [@local]) l ctr =
+let[@tail_mod_cons] rec map l ~f =
   match l with
   | [] -> []
-  | [ x1 ] ->
-    let f1 = f x1 in
-    [ f1 ]
-  | [ x1; x2 ] ->
-    let f1 = f x1 in
-    let f2 = f x2 in
-    [ f1; f2 ]
-  | [ x1; x2; x3 ] ->
-    let f1 = f x1 in
-    let f2 = f x2 in
-    let f3 = f x3 in
-    [ f1; f2; f3 ]
-  | [ x1; x2; x3; x4 ] ->
-    let f1 = f x1 in
-    let f2 = f x2 in
-    let f3 = f x3 in
-    let f4 = f x4 in
-    [ f1; f2; f3; f4 ]
-  | x1 :: x2 :: x3 :: x4 :: x5 :: tl ->
-    let f1 = f x1 in
-    let f2 = f x2 in
-    let f3 = f x3 in
-    let f4 = f x4 in
-    let f5 = f x5 in
-    f1
-    :: f2
-    :: f3
-    :: f4
-    :: f5
-    :: (if ctr > max_non_tailcall then tail_map ~f tl else count_map ~f tl (ctr + 1))
+  | x :: tl -> f x :: (map [@tailcall]) tl ~f
 ;;
-
-let map l ~f = count_map ~f l 0
 
 let folding_map t ~init ~f =
   let acc = ref init in
@@ -1407,12 +1317,9 @@ let split_n t_orig n =
   then [], t_orig
   else (
     let rec loop n t accum =
-      if n = 0
-      then rev accum, t
-      else (
-        match t with
-        | [] -> t_orig, [] (* in this case, t_orig = rev accum *)
-        | hd :: tl -> loop (n - 1) tl (hd :: accum))
+      match t with
+      | [] -> t_orig, [] (* in this case, t_orig = rev accum *)
+      | hd :: tl -> if n = 0 then rev accum, t else loop (n - 1) tl (hd :: accum)
     in
     loop n t_orig [])
 ;;
@@ -1423,12 +1330,9 @@ let take t_orig n =
   then []
   else (
     let rec loop n t accum =
-      if n = 0
-      then rev accum
-      else (
-        match t with
-        | [] -> t_orig
-        | hd :: tl -> loop (n - 1) tl (hd :: accum))
+      match t with
+      | [] -> t_orig
+      | hd :: tl -> if n = 0 then rev accum else loop (n - 1) tl (hd :: accum)
     in
     loop n t_orig [])
 ;;

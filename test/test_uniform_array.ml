@@ -124,6 +124,21 @@ let%expect_test "map2_exn" =
   [%expect {| (Invalid_argument Array.map2_exn) |}]
 ;;
 
+let%expect_test "fold2_exn" =
+  let test a1 a2 =
+    let result =
+      fold2_exn ~init:0 ~f:(fun acc x y -> acc + x + (1000 * y)) (of_list a1) (of_list a2)
+    in
+    print_s [%sexp (result : int)]
+  in
+  test [] [];
+  [%expect {| 0 |}];
+  test [ 1; 2; 3 ] [ 7; 8; 9 ];
+  [%expect {| 24_006 |}];
+  require_does_raise [%here] (fun () -> test [ 1 ] []);
+  [%expect {| (Invalid_argument Array.fold2_exn) |}]
+;;
+
 let%expect_test "mapi" =
   let test arr =
     let mapped = of_list arr |> mapi ~f:(fun i str -> i, String.capitalize str) in
@@ -135,4 +150,138 @@ let%expect_test "mapi" =
   [%expect {|
     ((0 Foo)
      (1 Bar)) |}]
+;;
+
+let%expect_test "of_list_rev" =
+  let test a = print_s [%sexp (of_list_rev a : int t)] in
+  test [];
+  [%expect {| () |}];
+  test [ 1; 2; 3; 4 ];
+  [%expect {| (4 3 2 1) |}]
+;;
+
+let%expect_test "concat" =
+  let test ts = print_s [%sexp (concat ts : int t)] in
+  test [];
+  [%expect {| () |}];
+  test [ of_list [ 1; 2; 3 ]; of_list [ 4; 5; 6 ]; empty; of_list [ 7 ] ];
+  [%expect {| (1 2 3 4 5 6 7) |}]
+;;
+
+let%expect_test "concat_map" =
+  let test t =
+    print_s
+      [%sexp
+        (concat_map t ~f:(fun i -> of_list [ i * 10; (i * 10) + 1; (i * 10) + 2 ])
+         : int t)]
+  in
+  test empty;
+  [%expect {| () |}];
+  test (of_list [ 1; 2; 3; 4 ]);
+  [%expect {| (10 11 12 20 21 22 30 31 32 40 41 42) |}]
+;;
+
+let%expect_test "concat_mapi" =
+  let test t =
+    print_s
+      [%sexp
+        (concat_mapi t ~f:(fun idx i ->
+           if idx = 1 then empty else of_list [ i * 10; (i * 10) + 1; (i * 10) + 2 ])
+         : int t)]
+  in
+  test empty;
+  [%expect {| () |}];
+  test (of_list [ 1; 2; 3; 4 ]);
+  [%expect {| (10 11 12 30 31 32 40 41 42) |}]
+;;
+
+let%expect_test "filter" =
+  let test t = print_s [%sexp (filter t ~f:(fun i -> i % 2 = 0) : int t)] in
+  test empty;
+  [%expect {| () |}];
+  test (of_list [ 1; 2; 3; 4; 5; 6; 7; 8 ]);
+  [%expect {| (2 4 6 8) |}]
+;;
+
+let%expect_test "filteri" =
+  let test t =
+    print_s [%sexp (filteri t ~f:(fun idx i -> idx = 0 || i % 2 = 0) : int t)]
+  in
+  test empty;
+  [%expect {| () |}];
+  test (of_list [ 1; 2; 3; 4; 5; 6; 7; 8 ]);
+  [%expect {| (1 2 4 6 8) |}]
+;;
+
+let%expect_test "filter_map" =
+  let test t =
+    print_s
+      [%sexp
+        (filter_map t ~f:(fun i ->
+           if i % 2 = 0 then None else Some (Char.of_int_exn (Char.to_int 'a' + i)))
+         : char t)]
+  in
+  test empty;
+  [%expect {| () |}];
+  test (of_list [ 1; 2; 3; 4; 5; 6; 7; 8 ]);
+  [%expect {| (b d f h) |}]
+;;
+
+let%expect_test "filter_mapi" =
+  let test t =
+    print_s
+      [%sexp
+        (filter_mapi t ~f:(fun idx i ->
+           if idx = 0 || i % 2 = 0
+           then None
+           else
+             Some
+               (Int.to_string idx
+                ^ ": "
+                ^ Char.to_string (Char.of_int_exn (Char.to_int 'a' + i))))
+         : string t)]
+  in
+  test empty;
+  [%expect {| () |}];
+  test (of_list [ 1; 2; 3; 4; 5; 6; 7; 8 ]);
+  [%expect {| ("2: d" "4: f" "6: h") |}]
+;;
+
+let%expect_test "find" =
+  let test t = print_s [%sexp (find t ~f:(fun i -> i >= 6) : int option)] in
+  test empty;
+  [%expect {| () |}];
+  test (of_list [ 1; 5; 2; 6; 7; 3; 0; -8; 10 ]);
+  [%expect {| (6) |}]
+;;
+
+let%expect_test "findi" =
+  let test t =
+    print_s [%sexp (findi t ~f:(fun idx i -> idx % 2 = 0 && i >= 6) : (int * int) option)]
+  in
+  test empty;
+  [%expect {| () |}];
+  test (of_list [ 1; 5; 2; 6; 7; 3; 0; -8; 10 ]);
+  [%expect {| ((4 7)) |}]
+;;
+
+let%expect_test "find_map" =
+  let test t = print_s [%sexp (find_map t ~f:Char.of_int : char option)] in
+  test empty;
+  [%expect {| () |}];
+  test (of_list [ 500; 1000; -3; 65; 66; 7000 ]);
+  [%expect {| (A) |}]
+;;
+
+let%expect_test "find_mapi" =
+  let test t =
+    print_s
+      [%sexp
+        (find_mapi t ~f:(fun idx i -> if idx % 2 = 1 then None else Char.of_int i)
+         : char option)]
+  in
+  test empty;
+  [%expect {| () |}];
+  test (of_list [ 500; 1000; -3; 65; 66; 7000 ]);
+  [%expect {| (B) |}]
 ;;
