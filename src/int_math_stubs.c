@@ -189,17 +189,7 @@ CAMLprim value Base_int_math_nativeint_ctz(value v) {
   return Val_int(Base_int_math_nativeint_ctz_unboxed(Nativeint_val(v)));
 }
 
-// Weak symbol declarations aren't supported on Windows.
-// [caml_csel_value] is tagged as weak here for compatibility with
-// [ocaml_intrinsics], which doesn't support Windows anyway.
-//
-// #ifdef __ELF__ excludes macOS too, but [ocaml_intrinsics] doesn't support
-// macOS either. On macOS, the right attribute is [weak_import].
-#ifdef __ELF__
-CAMLprim value __attribute__((weak))
-#else
-CAMLprim value
-#endif
+CAMLprim CAMLweakdef value
 caml_csel_value(value v_cond, value v_true, value v_false) {
   return (Bool_val(v_cond) ? v_true : v_false);
 }
