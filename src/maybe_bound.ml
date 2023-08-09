@@ -4,7 +4,7 @@ type 'a t =
   | Incl of 'a
   | Excl of 'a
   | Unbounded
-[@@deriving_inline enumerate, sexp, sexp_grammar]
+[@@deriving_inline enumerate, sexp, sexp_grammar, globalize]
 
 let all : 'a. 'a list -> 'a t list =
   fun _all_of_a ->
@@ -101,6 +101,16 @@ let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_gramma
   }
 ;;
 
+let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
+  fun (type a__025_)
+      : (((a__025_[@ocaml.local]) -> a__025_) -> (a__025_ t[@ocaml.local]) -> a__025_ t) ->
+    fun _globalize_a__026_ x__027_ ->
+      match x__027_ with
+      | Unbounded as x__028_ -> x__028_
+      | Incl arg__029_ -> Incl (_globalize_a__026_ arg__029_)
+      | Excl arg__030_ -> Excl (_globalize_a__026_ arg__030_)
+;;
+
 [@@@end]
 
 type interval_comparison =
@@ -110,24 +120,24 @@ type interval_comparison =
 [@@deriving_inline sexp, sexp_grammar, compare ~localize, hash]
 
 let interval_comparison_of_sexp =
-  (let error_source__027_ = "maybe_bound.ml.interval_comparison" in
+  (let error_source__033_ = "maybe_bound.ml.interval_comparison" in
    function
    | Sexplib0.Sexp.Atom ("below_lower_bound" | "Below_lower_bound") -> Below_lower_bound
    | Sexplib0.Sexp.Atom ("in_range" | "In_range") -> In_range
    | Sexplib0.Sexp.Atom ("above_upper_bound" | "Above_upper_bound") -> Above_upper_bound
    | Sexplib0.Sexp.List
-       (Sexplib0.Sexp.Atom ("below_lower_bound" | "Below_lower_bound") :: _) as sexp__028_
-     -> Sexplib0.Sexp_conv_error.stag_no_args error_source__027_ sexp__028_
-   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("in_range" | "In_range") :: _) as sexp__028_
-     -> Sexplib0.Sexp_conv_error.stag_no_args error_source__027_ sexp__028_
+       (Sexplib0.Sexp.Atom ("below_lower_bound" | "Below_lower_bound") :: _) as sexp__034_
+     -> Sexplib0.Sexp_conv_error.stag_no_args error_source__033_ sexp__034_
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("in_range" | "In_range") :: _) as sexp__034_
+     -> Sexplib0.Sexp_conv_error.stag_no_args error_source__033_ sexp__034_
    | Sexplib0.Sexp.List
-       (Sexplib0.Sexp.Atom ("above_upper_bound" | "Above_upper_bound") :: _) as sexp__028_
-     -> Sexplib0.Sexp_conv_error.stag_no_args error_source__027_ sexp__028_
-   | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__026_ ->
-     Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__027_ sexp__026_
-   | Sexplib0.Sexp.List [] as sexp__026_ ->
-     Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__027_ sexp__026_
-   | sexp__026_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__027_ sexp__026_
+       (Sexplib0.Sexp.Atom ("above_upper_bound" | "Above_upper_bound") :: _) as sexp__034_
+     -> Sexplib0.Sexp_conv_error.stag_no_args error_source__033_ sexp__034_
+   | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__032_ ->
+     Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__033_ sexp__032_
+   | Sexplib0.Sexp.List [] as sexp__032_ ->
+     Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__033_ sexp__032_
+   | sexp__032_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__033_ sexp__032_
                    : Sexplib0.Sexp.t -> interval_comparison)
 ;;
 

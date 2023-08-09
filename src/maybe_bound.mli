@@ -7,12 +7,13 @@ type 'a t =
   | Incl of 'a
   | Excl of 'a
   | Unbounded
-[@@deriving_inline enumerate, sexp, sexp_grammar]
+[@@deriving_inline enumerate, sexp, sexp_grammar, globalize]
 
 include Ppx_enumerate_lib.Enumerable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
+val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
 
 [@@@end]
 

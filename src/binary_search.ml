@@ -1,4 +1,5 @@
 open! Import
+open Int_replace_polymorphic_compare
 
 (* These functions implement a search for the first (resp. last) element
    satisfying a predicate, assuming that the predicate is increasing on

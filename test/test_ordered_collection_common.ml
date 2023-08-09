@@ -57,9 +57,7 @@ let%test_unit _ =
   List.iter [ 0; 1; 2 ] ~f:(fun total_length ->
     List.iter opts ~f:(fun pos ->
       List.iter opts ~f:(fun len ->
-        let result =
-          Result.try_with (fun () -> get_pos_len_exn () ?pos ?len ~total_length)
-        in
+        let result = get_pos_len () ?pos ?len ~total_length in
         let pos =
           match pos with
           | Some x -> x

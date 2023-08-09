@@ -80,6 +80,39 @@ let%expect_test _ =
   [%expect {| |}]
 ;;
 
+let%expect_test "stack overflow" =
+  (* [Info.of_list [info]] and [Info.of_lazy_t (lazy info)] produce an [Info.t] with the
+     same sexp as the original. Ideally, deep nesting of these should not yield a stack
+     overflow just to produce a small value. *)
+  let depth =
+    match Word_size.word_size with
+    | W64 -> 10_000_000
+    | W32 -> 100_000
+  in
+  let test f =
+    let info = ref (Info.of_string "info") in
+    for _ = 1 to depth do
+      info := f !info
+    done;
+    print_s (Info.sexp_of_t !info)
+  in
+  test (fun info -> Info.of_list [ info ]);
+  [%expect {| info |}];
+  test (fun info -> Info.of_lazy_t (lazy info));
+  [%expect {| info |}];
+  test (fun info -> Info.of_lazy_t (lazy (Info.of_list [ info ])));
+  [%expect {| info |}]
+;;
+
+let%expect_test "cyclic info computation" =
+  let info =
+    let rec lazy_info = lazy (Info.of_lazy_t lazy_info) in
+    Info.of_lazy_t lazy_info
+  in
+  print_s (Info.sexp_of_t info);
+  [%expect {| (Could_not_construct "cycle while computing message") |}]
+;;
+
 let%expect_test "show how backtraces are printed" =
   (* This is a real backtrace from some random OCaml program.
 

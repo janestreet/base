@@ -28,6 +28,7 @@ module Trusted : sig
   val unsafe_blit : ('a t, 'a t) Blit.blit
   val copy : 'a t -> 'a t
   val unsafe_clear_if_pointer : _ t -> int -> unit
+  val sub : 'a t -> pos:int -> len:int -> 'a t
 end = struct
   type 'a t = Obj_array.t
 
@@ -66,6 +67,7 @@ end = struct
 
   let set_with_caml_modify t i x = Obj_array.set_with_caml_modify t i (Stdlib.Obj.repr x)
   let unsafe_clear_if_pointer = Obj_array.unsafe_clear_if_pointer
+  let sub = Obj_array.sub
 end
 
 include Trusted
@@ -109,6 +111,14 @@ let foldi a ~init ~f =
   !acc
 ;;
 
+let fold t ~init ~f =
+  let r = ref init in
+  for i = 0 to length t - 1 do
+    r := f !r (unsafe_get t i)
+  done;
+  !r
+;;
+
 let to_list t = List.init ~f:(get t) (length t)
 
 let of_list l =
@@ -118,26 +128,168 @@ let of_list l =
   res
 ;;
 
+let of_list_rev l =
+  let len = List.length l in
+  let res = unsafe_create_uninitialized ~len in
+  List.iteri l ~f:(fun i x -> set res (len - i - 1) x);
+  res
+;;
+
 (* It is not safe for [to_array] to be the identity function because we have code that
    relies on [float array]s being unboxed, for example in [bin_write_array]. *)
 let to_array t = Array.init (length t) ~f:(fun i -> unsafe_get t i)
 
 let exists t ~f =
-  let rec loop t ~f i =
-    if i < 0 then false else f (unsafe_get t i) || loop t ~f (i - 1)
-  in
-  loop t ~f (length t - 1)
+  let i = ref (length t - 1) in
+  let result = ref false in
+  while !i >= 0 && not !result do
+    if f (unsafe_get t !i) then result := true else decr i
+  done;
+  !result
+;;
+
+let existsi t ~f =
+  let i = ref (length t - 1) in
+  let result = ref false in
+  while !i >= 0 && not !result do
+    if f !i (unsafe_get t !i) then result := true else decr i
+  done;
+  !result
 ;;
 
 let for_all t ~f =
-  let rec loop t ~f i = if i < 0 then true else f (unsafe_get t i) && loop t ~f (i - 1) in
-  loop t ~f (length t - 1)
+  let i = ref (length t - 1) in
+  let result = ref true in
+  while !i >= 0 && !result do
+    if not (f (unsafe_get t !i)) then result := false else decr i
+  done;
+  !result
+;;
+
+let for_alli t ~f =
+  let length = length t in
+  let i = ref (length - 1) in
+  let result = ref true in
+  while !i >= 0 && !result do
+    if not (f !i (unsafe_get t !i)) then result := false else decr i
+  done;
+  !result
+;;
+
+let filter_mapi t ~f =
+  let r = ref empty in
+  let k = ref 0 in
+  for i = 0 to length t - 1 do
+    match f i (unsafe_get t i) with
+    | None -> ()
+    | Some a ->
+      if !k = 0 then r := create ~len:(length t) a;
+      unsafe_set !r !k a;
+      incr k
+  done;
+  if !k = length t then !r else if !k > 0 then sub ~pos:0 ~len:!k !r else empty
+;;
+
+let filteri t ~f = filter_mapi t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
+let filter_map t ~f = filter_mapi t ~f:(fun _i a -> f a) [@nontail]
+let filter t ~f = filter_map t ~f:(fun x -> if f x then Some x else None) [@nontail]
+
+let fold2_exn t1 t2 ~init ~f =
+  let len = length t1 in
+  if length t2 <> len then invalid_arg "Array.fold2_exn";
+  let acc = ref init in
+  for i = 0 to len - 1 do
+    acc := f !acc (unsafe_get t1 i) (unsafe_get t2 i)
+  done;
+  !acc
 ;;
 
 let map2_exn t1 t2 ~f =
   let len = length t1 in
   if length t2 <> len then invalid_arg "Array.map2_exn";
   init len ~f:(fun i -> f (unsafe_get t1 i) (unsafe_get t2 i)) [@nontail]
+;;
+
+let concat ts =
+  let total_len = List.sum (module Int) ts ~f:(fun t -> length t) in
+  let res = unsafe_create_uninitialized ~len:total_len in
+  ignore
+    (List.fold ts ~init:0 ~f:(fun so_far t ->
+       let len = length t in
+       for i = 0 to len - 1 do
+         set res (so_far + i) (get t i)
+       done;
+       so_far + len)
+     : int);
+  res
+;;
+
+let concat_mapi t ~f:(f [@local]) = to_list t |> List.mapi ~f |> concat
+let concat_map t ~f:(f [@local]) = to_list t |> List.map ~f |> concat
+
+let find_map t ~f =
+  let length = length t in
+  if length = 0
+  then None
+  else (
+    let i = ref 0 in
+    let value_found = ref None in
+    while Option.is_none !value_found && !i < length do
+      let value = unsafe_get t !i in
+      value_found := f value;
+      incr i
+    done;
+    !value_found)
+;;
+
+let find_mapi t ~f =
+  let length = length t in
+  if length = 0
+  then None
+  else (
+    let i = ref 0 in
+    let value_found = ref None in
+    while Option.is_none !value_found && !i < length do
+      let value = unsafe_get t !i in
+      value_found := f !i value;
+      incr i
+    done;
+    !value_found)
+;;
+
+let findi t ~f =
+  let length = length t in
+  if length = 0
+  then None
+  else (
+    let i = ref 0 in
+    let found = ref false in
+    let value_found = ref (unsafe_get t 0) in
+    while (not !found) && !i < length do
+      let value = unsafe_get t !i in
+      if f !i value
+      then (
+        value_found := value;
+        found := true)
+      else incr i
+    done;
+    if !found then Some (!i, !value_found) else None)
+;;
+
+let find t ~f = Option.map (findi t ~f:(fun _i x -> f x)) ~f:(fun (_i, x) -> x)
+
+let findi t ~f =
+  let len = length t in
+  let rec loop f i =
+    if i >= len
+    then None
+    else (
+      let x = unsafe_get t i in
+      match f i x with
+      | false -> loop f (i + 1)
+      | true -> Some (i, x))
+  in
+  loop f 0
 ;;
 
 let t_sexp_grammar (type elt) (grammar : elt Sexplib0.Sexp_grammar.t)
@@ -171,14 +323,6 @@ include Blit.Make1 (struct
 
     let unsafe_blit = unsafe_blit
   end)
-
-let fold t ~init ~f =
-  let r = ref init in
-  for i = 0 to length t - 1 do
-    r := f !r (unsafe_get t i)
-  done;
-  !r
-;;
 
 let min_elt t ~compare = Container.min_elt ~fold t ~compare
 let max_elt t ~compare = Container.max_elt ~fold t ~compare

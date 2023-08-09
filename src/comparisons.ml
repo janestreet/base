@@ -28,3 +28,18 @@ module type S = sig
   val min : t -> t -> t
   val max : t -> t -> t
 end
+
+module type S_with_local_opt = sig
+  type t
+
+  external ( < ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessthan"
+  external ( <= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessequal"
+  external ( <> ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%notequal"
+  external ( = ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
+  external ( > ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterthan"
+  external ( >= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterequal"
+  external equal : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
+  external compare : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"
+  val min : t -> t -> t
+  val max : t -> t -> t
+end

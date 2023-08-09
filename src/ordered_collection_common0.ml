@@ -39,7 +39,7 @@ let get_pos_len_exn ?(pos = 0) ?len () ~total_length =
     | None -> total_length - pos
   in
   check_pos_len_exn ~pos ~len ~total_length;
-  pos, len
+   (pos, len)
 ;;
 
 module Private = struct

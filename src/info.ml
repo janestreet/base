@@ -93,34 +93,126 @@ module Message = struct
     | [ sexp ] -> sexp
     | sexps -> Sexp.List sexps
   ;;
-
-  (* We use [protect] to guard against exceptions raised by user-supplied functions, so
-     that failure to produce one part of an info doesn't interfere with other parts. *)
-  let protect f =
-    try f () with
-    | exn -> Could_not_construct (Exn.sexp_of_t exn)
-  ;;
-
-  let of_info info = protect (fun () -> Lazy.force info)
-  let to_info t = lazy t
 end
 
 open Message
 
-type t = Message.t Lazy.t
+module Computed = struct
+  (* Memoized, lazily-computed representation of messages. Maintains its own state to
+     avoid stack overflow from nested [Lazy.t]. *)
 
-let globalize t =
-  Lazy.globalize (fun _ -> (* the contents of [lazy] are already global *) assert false) t
-;;
+  (* We use a global [state ref] so we can mutate [state], but still [globalize] with no
+     cost and without duplicating state. *)
+  type info = { state : state ref [@global] } [@@unboxed]
 
+  (* An [info] starts as a [constructor]. When forced, it is marked [Computing] to avoid
+     cycles. When finished, the final [message] is recorded. *)
+  and state =
+    | Initial of constructor
+    | Computing
+    | Final of Message.t
+
+  (* Recursive constructors for [Info.t]. Others can be built directly as [Message.t]. *)
+  and constructor =
+    | Cons_lazy_info of info Lazy.t
+    | Cons_list of info list
+    | Cons_tag_arg of string * Sexp.t * info
+    | Cons_tag_t of string * info
+
+  (* This is a no-op, since [info] is unboxed. *)
+  let globalize_info ({ state } [@local]) = { state }
+
+  (* We keep a list of stack_frames while computing, rather than using the call stack. *)
+  type stack_frame =
+    | In_info of info
+    | In_tag_arg of string * Sexp.t
+    | In_tag_t of string
+    | In_list of
+        { fwd_prefix : info list
+        ; rev_suffix : Message.t list
+        }
+
+  (* The following mutually-recursive functions compute a [Message.t] from an [info].
+     All calls below are tail calls: we want to avoid using the call stack in favor
+     of our own manual stack. *)
+  let rec compute_info info stack =
+    match !(info.state) with
+    | Initial cons ->
+      info.state := Computing;
+      compute_constructor cons (In_info info :: stack)
+    | Computing ->
+      compute_message (Could_not_construct (Atom "cycle while computing message")) stack
+    | Final message -> compute_message message stack
+
+  and compute_info_list ~fwd_prefix ~rev_suffix stack =
+    match fwd_prefix with
+    | info :: fwd_prefix -> compute_info info (In_list { fwd_prefix; rev_suffix } :: stack)
+    | [] ->
+      let infos =
+        List.fold rev_suffix ~init:[] ~f:(fun tail message ->
+          match message with
+          | Of_list (_, messages) -> messages @ tail
+          | _ -> message :: tail)
+      in
+      compute_message (Of_list (None, infos)) stack
+
+  and compute_constructor cons stack =
+    match cons with
+    | Cons_tag_arg (tag, arg, info) -> compute_info info (In_tag_arg (tag, arg) :: stack)
+    | Cons_tag_t (tag, info) -> compute_info info (In_tag_t tag :: stack)
+    | Cons_list infos -> compute_info_list ~fwd_prefix:infos ~rev_suffix:[] stack
+    | Cons_lazy_info lazy_info ->
+      (match Lazy.force lazy_info with
+       | info -> compute_info info stack
+       | exception exn -> compute_message (Could_not_construct (Exn.sexp_of_t exn)) stack)
+
+  and compute_message message stack =
+    match stack with
+    | [] -> message
+    | In_info info :: stack ->
+      info.state := Final message;
+      compute_message message stack
+    | In_tag_arg (tag, arg) :: stack ->
+      compute_message (Tag_arg (tag, arg, message)) stack
+    | In_tag_t tag :: stack -> compute_message (Tag_t (tag, message)) stack
+    | In_list { fwd_prefix; rev_suffix } :: stack ->
+      compute_info_list ~fwd_prefix ~rev_suffix:(message :: rev_suffix) stack
+  ;;
+
+  (* Helper functions for converting and constructing [info]. *)
+
+  let to_message info = compute_info info []
+  let of_message message = { state = ref (Final message) }
+
+  let is_computed info =
+    match !(info.state) with
+    | Initial _ | Computing -> false
+    | Final _ -> true
+  ;;
+
+  let of_cons cons = { state = ref (Initial cons) }
+  let of_lazy_info lazy_info = of_cons (Cons_lazy_info lazy_info)
+
+  let of_lazy_cons lazy_cons =
+    of_cons (Cons_lazy_info (lazy (of_cons (Lazy.force lazy_cons))))
+  ;;
+
+  let of_lazy_message lazy_message =
+    of_cons (Cons_lazy_info (lazy (of_message (Lazy.force lazy_message))))
+  ;;
+end
+
+open Computed
+
+type t = Computed.info
+
+let globalize = Computed.globalize_info
 let invariant _ = ()
-let to_message = Message.of_info
-let of_message = Message.to_info
 
 (* It is OK to use [Message.to_sexp_hum], which is not stable, because [t_of_sexp] below
    can handle any sexp. *)
 let sexp_of_t t = Message.to_sexp_hum (to_message t)
-let t_of_sexp sexp = lazy (Message.Sexp sexp)
+let t_of_sexp sexp = of_message (Message.Sexp sexp)
 let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = { untyped = Any "Info.t" }
 let compare t1 t2 = Sexp.compare (sexp_of_t t1) (sexp_of_t t2)
 let compare__local t1 t2 = compare (globalize t1) (globalize t2)
@@ -136,33 +228,25 @@ let to_string_hum t =
 ;;
 
 let to_string_mach t = Sexp.to_string_mach (sexp_of_t t)
-let of_lazy l = lazy (protect (fun () -> String (Lazy.force l)))
-let of_lazy_sexp l = lazy (protect (fun () -> Sexp (Lazy.force l)))
-let of_lazy_t lazy_t = Lazy.join lazy_t
-let of_string message = Lazy.from_val (String message)
+let of_lazy l = of_lazy_message (lazy (String (Lazy.force l)))
+let of_lazy_sexp l = of_lazy_message (lazy (Sexp (Lazy.force l)))
+let of_lazy_t lazy_t = of_lazy_info lazy_t
+let of_string message = of_message (String message)
 let createf format = Printf.ksprintf of_string format
-let of_thunk f = lazy (protect (fun () -> String (f ())))
+let of_thunk f = of_lazy_message (lazy (String (f ())))
 
 let create ?here ?strict tag x sexp_of_x =
   match strict with
-  | None -> lazy (protect (fun () -> Tag_sexp (tag, sexp_of_x x, here)))
+  | None -> of_lazy_message (lazy (Tag_sexp (tag, sexp_of_x x, here)))
   | Some () -> of_message (Tag_sexp (tag, sexp_of_x x, here))
 ;;
 
-let create_s sexp = Lazy.from_val (Sexp sexp)
-let tag t ~tag = lazy (Tag_t (tag, to_message t))
-
-let tag_s_lazy t ~tag =
-  lazy (protect (fun () -> Tag_arg ("", Lazy.force tag, to_message t)))
-;;
-
-let tag_s t ~tag = tag_s_lazy t ~tag:(Lazy.from_val tag)
-
-let tag_arg t tag x sexp_of_x =
-  lazy (protect (fun () -> Tag_arg (tag, sexp_of_x x, to_message t)))
-;;
-
-let of_list ts = lazy (Of_list (None, List.map ts ~f:to_message))
+let create_s sexp = of_message (Sexp sexp)
+let tag t ~tag = of_cons (Cons_tag_t (tag, t))
+let tag_s_lazy t ~tag = of_lazy_cons (lazy (Cons_tag_arg ("", Lazy.force tag, t)))
+let tag_s t ~tag = of_cons (Cons_tag_arg ("", tag, t))
+let tag_arg t tag x sexp_of_x = of_lazy_cons (lazy (Cons_tag_arg (tag, sexp_of_x x, t)))
+let of_list ts = of_cons (Cons_list ts)
 
 exception Exn of t
 
@@ -178,10 +262,10 @@ let () =
 ;;
 
 let to_exn t =
-  if not (Lazy.is_val t)
+  if not (is_computed t)
   then Exn t
   else (
-    match Lazy.force t with
+    match to_message t with
     | Message.Exn exn -> exn
     | _ -> Exn t)
 ;;
@@ -196,9 +280,11 @@ let of_exn ?backtrace exn =
   in
   match exn, backtrace with
   | Exn t, None -> t
-  | Exn t, Some backtrace -> lazy (With_backtrace (to_message t, backtrace))
-  | _, None -> Lazy.from_val (Message.Exn exn)
-  | _, Some backtrace -> lazy (With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace))
+  | Exn t, Some backtrace ->
+    of_lazy_message (lazy (With_backtrace (to_message t, backtrace)))
+  | _, None -> of_message (Message.Exn exn)
+  | _, Some backtrace ->
+    of_lazy_message (lazy (With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace)))
 ;;
 
 include Pretty_printer.Register_pp (struct
@@ -208,5 +294,9 @@ include Pretty_printer.Register_pp (struct
     let pp ppf t = Stdlib.Format.pp_print_string ppf (to_string_hum t)
   end)
 
-module Internal_repr = Message
+module Internal_repr = struct
+  include Message
 
+  let to_info = of_message
+  let of_info = to_message
+end

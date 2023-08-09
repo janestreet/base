@@ -20,6 +20,7 @@ include Floatable.S with type t := t
 (** [max] and [min] will return nan if either argument is nan.
 
     The [validate_*] functions always fail if class is [Nan] or [Infinite]. *)
+
 include Identifiable.S with type t := t
 
 val of_string_opt : string -> t option
@@ -28,6 +29,7 @@ include Comparable.With_zero with type t := t
 include Ppx_compare_lib.Equal.S_local with type t := t
 include Ppx_compare_lib.Comparable.S_local with type t := t
 include Invariant.S with type t := t
+include Comparisons.S_with_local_opt with type t := t
 
 val nan : t
 val infinity : t

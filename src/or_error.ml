@@ -1,7 +1,8 @@
 open! Import
 
 type 'a t = ('a, Error.t) Result.t
-[@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
+[@@deriving_inline
+  compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
 let compare__local :
   'a.
@@ -33,6 +34,13 @@ let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
   fun _cmp__a a__013_ b__014_ -> Result.equal _cmp__a Error.equal a__013_ b__014_
 ;;
 
+let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
+  fun (type a__025_)
+      : (((a__025_[@ocaml.local]) -> a__025_) -> (a__025_ t[@ocaml.local]) -> a__025_ t) ->
+    fun _globalize_a__026_ x__027_ ->
+      Result.globalize _globalize_a__026_ Error.globalize x__027_
+;;
+
 let hash_fold_t :
   'a.
   (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
@@ -44,11 +52,11 @@ let hash_fold_t :
 ;;
 
 let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
-  fun _of_a__025_ x__027_ -> Result.t_of_sexp _of_a__025_ Error.t_of_sexp x__027_
+  fun _of_a__030_ x__032_ -> Result.t_of_sexp _of_a__030_ Error.t_of_sexp x__032_
 ;;
 
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-  fun _of_a__028_ x__029_ -> Result.sexp_of_t _of_a__028_ Error.sexp_of_t x__029_
+  fun _of_a__033_ x__034_ -> Result.sexp_of_t _of_a__033_ Error.sexp_of_t x__034_
 ;;
 
 let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =

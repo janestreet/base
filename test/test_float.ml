@@ -1259,3 +1259,9 @@ let%expect_test "log" =
      (log10 INF)
      (ratio NAN)) |}]
 ;;
+
+let%expect_test "float comparisons permit both local and global arguments" =
+  let (_ : float -> float -> bool) = Float.( < ) in
+  let (_ : (float[@local]) -> (float[@local]) -> bool) = Float.( < ) in
+  [%expect {|  |}]
+;;

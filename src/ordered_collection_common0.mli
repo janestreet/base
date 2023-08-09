@@ -22,7 +22,12 @@ open! Import
       pos' = match pos with None -> 0 | Some i -> i
       len' = match len with None -> total_length - pos' | Some i -> i
     v} *)
-val get_pos_len_exn : ?pos:int -> ?len:int -> unit -> total_length:int -> int * int
+val get_pos_len_exn
+  :  ?pos:(int[@local])
+  -> ?len:(int[@local])
+  -> unit
+  -> total_length:int
+  -> (int * int[@local])
 
 (** [check_pos_len_exn ~pos ~len ~total_length] raises unless [pos >= 0 && len >= 0 &&
     pos + len <= total_length]. *)

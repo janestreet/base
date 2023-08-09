@@ -31,6 +31,7 @@ val init : int -> f:((int -> 'a)[@local]) -> 'a t
 val length : ('a t[@local]) -> int
 val get : 'a t -> int -> 'a
 val unsafe_get : 'a t -> int -> 'a
+val unsafe_get_local : ('a t[@local]) -> int -> 'a
 val set : 'a t -> int -> 'a -> unit
 val unsafe_set : 'a t -> int -> 'a -> unit
 val swap : _ t -> int -> int -> unit
@@ -57,6 +58,7 @@ val iter : 'a t -> f:(('a -> unit)[@local]) -> unit
     argument, and the element itself as second argument. *)
 val iteri : 'a t -> f:((int -> 'a -> unit)[@local]) -> unit
 
+val fold : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc)[@local]) -> 'acc
 val foldi : 'a t -> init:'acc -> f:((int -> 'acc -> 'a -> 'acc)[@local]) -> 'acc
 
 (** [of_array] and [to_array] return fresh arrays with the same contents rather than
@@ -65,11 +67,47 @@ val of_array : 'a array -> 'a t
 
 val to_array : 'a t -> 'a array
 val of_list : 'a list -> 'a t
+val of_list_rev : 'a list -> 'a t
 val to_list : 'a t -> 'a list
 
 include Blit.S1 with type 'a t := 'a t
 
 val copy : 'a t -> 'a t
+val exists : 'a t -> f:(('a -> bool)[@local]) -> bool
+val existsi : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
+val for_all : 'a t -> f:(('a -> bool)[@local]) -> bool
+val for_alli : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
+val concat : 'a t list -> 'a t
+val concat_map : 'a t -> f:(('a -> 'b t)[@local]) -> 'b t
+val concat_mapi : 'a t -> f:((int -> 'a -> 'b t)[@local]) -> 'b t
+val filter : 'a t -> f:(('a -> bool)[@local]) -> 'a t
+val filteri : 'a t -> f:((int -> 'a -> bool)[@local]) -> 'a t
+val filter_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b t
+val filter_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b t
+val find : 'a t -> f:(('a -> bool)[@local]) -> 'a option
+val findi : 'a t -> f:((int -> 'a -> bool)[@local]) -> (int * 'a) option
+val find_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b option
+val find_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b option
+
+(** Functions with the 2 suffix raise an exception if the lengths of the two given arrays
+    aren't the same. *)
+val map2_exn : 'a t -> 'b t -> f:(('a -> 'b -> 'c)[@local]) -> 'c t
+
+val fold2_exn
+  :  'a t
+  -> 'b t
+  -> init:'acc
+  -> f:(('acc -> 'a -> 'b -> 'acc)[@local])
+  -> 'acc
+
+val min_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
+val max_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
+
+(** [sort] uses constant heap space.
+
+    To sort only part of the array, specify [pos] to be the index to start sorting from
+    and [len] indicating how many elements to sort. *)
+val sort : ?pos:int -> ?len:int -> 'a t -> compare:(('a -> 'a -> int)[@local]) -> unit
 
 (** {2 Extra lowlevel and unsafe functions} *)
 
@@ -98,22 +136,3 @@ val unsafe_set_int : Stdlib.Obj.t t -> int -> int -> unit
     hack, it only does this when [not (Stdlib.Obj.is_int t.(i))].  It is an error to access
     the cleared index before setting it again. *)
 val unsafe_clear_if_pointer : Stdlib.Obj.t t -> int -> unit
-
-(** As [Array.exists]. *)
-val exists : 'a t -> f:(('a -> bool)[@local]) -> bool
-
-(** As [Array.for_all]. *)
-val for_all : 'a t -> f:(('a -> bool)[@local]) -> bool
-
-(** Functions with the 2 suffix raise an exception if the lengths of the two given arrays
-    aren't the same. *)
-val map2_exn : 'a t -> 'b t -> f:(('a -> 'b -> 'c)[@local]) -> 'c t
-
-val min_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
-val max_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
-
-(** [sort] uses constant heap space.
-
-    To sort only part of the array, specify [pos] to be the index to start sorting from
-    and [len] indicating how many elements to sort. *)
-val sort : ?pos:int -> ?len:int -> 'a t -> compare:(('a -> 'a -> int)[@local]) -> unit

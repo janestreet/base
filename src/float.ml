@@ -886,7 +886,7 @@ let ( / ) = ( /. )
 let ( % ) = ( %. )
 let ( ~- ) = ( ~-. )
 
-let sign_exn t : Sign.t =
+let[@inline] sign_exn t : Sign.t =
   if t > 0.
   then Pos
   else if t < 0.
