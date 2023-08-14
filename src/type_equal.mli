@@ -105,7 +105,12 @@ val detuple2 : ('a1 * 'a2, 'b1 * 'b2) t -> ('a1, 'b1) t * ('a2, 'b2) t
 val tuple2 : ('a1, 'b1) t -> ('a2, 'b2) t -> ('a1 * 'a2, 'b1 * 'b2) t
 
 (** [Injective] is an interface that states that a type is injective, where the type is
-    viewed as a function from types to other types.  The typical usage is:
+    viewed as a function from types to other types.
+    This interface dates from before OCaml added
+    [injectivity annotations](https://v2.ocaml.org/manual/typedecl.html#injectivity) in 
+    release 4.12.
+
+    The typical usage is:
 
     {[
       type 'a t
@@ -124,8 +129,7 @@ val tuple2 : ('a1, 'b1) t -> ('a2, 'b2) t -> ('a1 * 'a2, 'b1 * 'b2) t
     If [module M : Injective], then [M.strip] provides a way to get a proof that two types
     are equal from a proof that both types transformed by [M.t] are equal.
 
-    OCaml has no built-in language feature to state that a type is injective, which is why
-    we have [module type Injective]. However, OCaml can infer that a type is injective,
+    OCaml can infer that a type is injective even without injectivity annotations,
     and we can use this to match [Injective]. A typical implementation will look like
     this:
 
