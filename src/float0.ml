@@ -191,12 +191,49 @@ let lower_bound_for_int num_bits =
     min_int_as_float)
 ;;
 
-(* Float clamping is structured slightly differently than clamping for other types, so
-   that we get the behavior of [clamp_unchecked nan ~min ~max = nan] (for any [min] and
-   [max]) for free.
+(* X86 docs say:
+
+   If only one value is a NaN (SNaN or QNaN) for this instruction, the second source
+   operand, either a NaN or a valid floating-point value
+   is written to the result.
+
+   So we have to be VERY careful how we use these!
+
+   These intrinsics were copied from [Ocaml_intrinsics] to avoid build deps we don't want
 *)
-let clamp_unchecked (t : float) ~min ~max =
-  if t < min then min else if max < t then max else t
+module Intrinsics_with_weird_nan_behavior = struct
+  (** Equivalent to [if x < y then x else y].
+
+      On an x86-64 machine, this compiles to [minsd xmm0, xmm1]. *)
+  external min
+    :  (float[@unboxed])
+    -> (float[@unboxed])
+    -> (float[@unboxed])
+    = "caml_float_min" "caml_float_min_unboxed"
+  [@@noalloc] [@@builtin] [@@no_effects] [@@no_coeffects]
+
+  (** Equivalent to [if x > y then x else y].
+
+      On an x86-64 machine, this compiles to [maxsd xmm0, xmm1]. *)
+  external max
+    :  (float[@unboxed])
+    -> (float[@unboxed])
+    -> (float[@unboxed])
+    = "caml_float_max" "caml_float_max_unboxed"
+  [@@noalloc] [@@builtin] [@@no_effects] [@@no_coeffects]
+end
+
+let clamp_unchecked
+      ~(to_clamp_maybe_nan : float)
+      ~min_which_is_not_nan
+      ~max_which_is_not_nan
+  =
+  (* We want to propagate nans; as per the x86 docs, this means we have to use them as the
+     _second_ argument. *)
+  let t_maybe_nan =
+    Intrinsics_with_weird_nan_behavior.max min_which_is_not_nan to_clamp_maybe_nan
+  in
+  Intrinsics_with_weird_nan_behavior.min max_which_is_not_nan t_maybe_nan
 ;;
 
 let box =

@@ -16,6 +16,10 @@ let sexp_of_t :
 
 type ('a, 'b) equal = ('a, 'b) t
 
+include Type_equal_intf.Definitions (struct
+    type ('a, 'b) t = ('a, 'b) equal
+  end)
+
 let refl = T
 let sym (type a b) (T : (a, b) t) : (b, a) t = T
 let trans (type a b c) (T : (a, b) t) (T : (b, c) t) : (a, c) t = T
@@ -55,24 +59,6 @@ let detuple2 (type a1 a2 b1 b2) (T : (a1 * a2, b1 * b2) t) : (a1, b1) t * (a2, b
 ;;
 
 let tuple2 (type a1 a2 b1 b2) (T : (a1, b1) t) (T : (a2, b2) t) : (a1 * a2, b1 * b2) t = T
-
-module type Injective = sig
-  type 'a t
-
-  val strip : ('a t, 'b t) equal -> ('a, 'b) equal
-end
-
-module type Injective2 = sig
-  type ('a1, 'a2) t
-
-  val strip : (('a1, 'a2) t, ('b1, 'b2) t) equal -> ('a1, 'b1) equal * ('a2, 'b2) equal
-end
-
-module Composition_preserves_injectivity (M1 : Injective) (M2 : Injective) = struct
-  type 'a t = 'a M1.t M2.t
-
-  let strip e = M1.strip (M2.strip e)
-end
 
 module Id = struct
   module Uid = Int

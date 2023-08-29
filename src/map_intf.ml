@@ -394,6 +394,13 @@ module type Accessors_generic = sig
   type 'cmp cmp
   type ('a, 'cmp, 'z) access_options
 
+  (** @inline *)
+  include
+    Dictionary_immutable.Accessors
+    with type 'key key := 'key key
+     and type ('key, 'data, 'cmp) t := ('key, 'data, 'cmp) t
+     and type ('fn, 'key, _, 'cmp) accessor := ('key, 'cmp, 'fn) access_options
+
   val invariants : ('k, 'cmp, ('k, 'v, 'cmp) t -> bool) access_options
   val is_empty : (_, _, _) t -> bool
   val length : (_, _, _) t -> int
@@ -745,6 +752,13 @@ module type Creators_generic = sig
   type ('a, 'cmp, 'z) create_options
   type ('a, 'cmp, 'z) access_options
   type 'cmp cmp
+
+  (** @inline *)
+  include
+    Dictionary_immutable.Creators
+    with type 'key key := 'key key
+     and type ('key, 'data, 'cmp) t := ('key, 'data, 'cmp) t
+     and type ('fn, 'key, _, 'cmp) creator := ('key, 'cmp, 'fn) create_options
 
   val empty : ('k, 'cmp, ('k, _, 'cmp) t) create_options
   val singleton : ('k, 'cmp, 'k key -> 'v -> ('k, 'v, 'cmp) t) create_options
@@ -1124,12 +1138,13 @@ module type Map = sig
       Example:
 
       {[
-        # let map = String.Map.of_alist_fold
-                      [ "a", 1; "a", 10; "b", 2; "b", 20; "b", 200 ]
-                      ~init:Int.Set.empty
-                      ~f:Set.add
-          in
-          print_s [%sexp (map : Int.Set.t String.Map.t)];;
+        # (let map =
+             String.Map.of_alist_fold
+               [ "a", 1; "a", 10; "b", 2; "b", 20; "b", 200 ]
+               ~init:Int.Set.empty
+               ~f:Set.add
+           in
+           print_s [%sexp (map : Int.Set.t String.Map.t)]);;
         ((a (1 10)) (b (2 20 200)))
         - : unit = ()
       ]}

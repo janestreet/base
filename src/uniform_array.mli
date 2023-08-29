@@ -109,6 +109,8 @@ val max_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
     and [len] indicating how many elements to sort. *)
 val sort : ?pos:int -> ?len:int -> 'a t -> compare:(('a -> 'a -> int)[@local]) -> unit
 
+include Binary_searchable.S1 with type 'a t := 'a t
+
 (** {2 Extra lowlevel and unsafe functions} *)
 
 (** The behavior is undefined if you access an element before setting it. *)

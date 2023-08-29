@@ -233,6 +233,7 @@ val to_list_rev : t -> char list
 val rev : t -> t
 
 (** [is_suffix s ~suffix] returns [true] if [s] ends with [suffix]. *)
+
 val is_suffix : t -> suffix:t -> bool
 
 (** [is_prefix s ~prefix] returns [true] if [s] starts with [prefix]. *)

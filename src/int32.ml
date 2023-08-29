@@ -92,12 +92,12 @@ module Compare = struct
   let compare__local = compare__local
   let ascending = compare
   let descending x y = compare y x
-  let min (x : t) y = if x < y then x else y
-  let max (x : t) y = if x > y then x else y
+  let min x y = Bool0.select (x <= y) x y
+  let max x y = Bool0.select (x >= y) x y
   let equal (x : t) y = x = y
   let equal__local ((x : t) [@local]) (y [@local]) = Poly.equal x y
   let between t ~low ~high = low <= t && t <= high
-  let clamp_unchecked t ~min ~max = if t < min then min else if t <= max then t else max
+  let clamp_unchecked t ~min:min_ ~max:max_ = min t max_ |> max min_
 
   let clamp_exn t ~min ~max =
     assert (min <= max);

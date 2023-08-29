@@ -19,18 +19,20 @@ module Key = struct
   type 'a t = (module S with type t = 'a)
 end
 
-(** @canonical Base.Hashtbl.Merge_into_action *)
-module Merge_into_action = struct
-  type 'a t =
-    | Remove
-    | Set_to of 'a
-end
+module Merge_into_action = Dictionary_mutable.Merge_into_action
 
 module type Accessors = sig
   (** {2 Accessors} *)
 
   type ('a, 'b) t
   type 'a key
+
+  (** @inline *)
+  include
+    Dictionary_mutable.Accessors
+    with type 'key key := 'key key
+     and type ('key, 'data, _) t := ('key, 'data) t
+     and type ('fn, _, _, _) accessor := 'fn
 
   val sexp_of_key : ('a, _) t -> 'a key -> Sexp.t
   val clear : (_, _) t -> unit
@@ -309,7 +311,9 @@ module type Accessors = sig
   val merge_into
     :  src:('k, 'a) t
     -> dst:('k, 'b) t
-    -> f:((key:'k key -> 'a -> 'b option -> 'b Merge_into_action.t)[@local])
+    -> f:
+         ((key:'k key -> 'a -> 'b option -> 'b Dictionary_mutable.Merge_into_action.t)
+          [@local])
     -> unit
 
   (** Returns the list of all keys for given hashtable. *)
@@ -388,6 +392,13 @@ module type Creators_generic = sig
   type ('a, 'b) t
   type 'a key
   type ('key, 'data, 'z) create_options
+
+  (** @inline *)
+  include
+    Dictionary_mutable.Creators
+    with type 'key key := 'key key
+     and type ('key, 'data, _) t := ('key, 'data) t
+     and type ('fn, 'key, 'data, _) creator := ('key key, 'data, 'fn) create_options
 
   val create : ('a key, 'b, unit -> ('a, 'b) t) create_options
 

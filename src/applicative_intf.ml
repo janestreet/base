@@ -476,6 +476,7 @@ module type Applicative = sig
   module type S_local = S_local
   module type S2_local = S2_local
 
+  module Ident : S_local with type 'a t = 'a
   module S2_to_S (T : T.T) (X : S2) : S with type 'a t = ('a, T.t) X.t
   module S_to_S2 (X : S) : S2 with type ('a, 'e) t = 'a X.t
   module S3_to_S2 (T : T.T) (X : S3) : S2 with type ('a, 'd) t = ('a, 'd, T.t) X.t

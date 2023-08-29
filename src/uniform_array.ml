@@ -361,3 +361,10 @@ module Sort = Array.Private.Sorter (struct
   end)
 
 let sort = Sort.sort
+
+include Binary_searchable.Make1 (struct
+    type nonrec 'a t = 'a t
+
+    let length = length
+    let get = unsafe_get
+  end)

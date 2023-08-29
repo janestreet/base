@@ -205,7 +205,7 @@ end
 include Pow2
 
 let between t ~low ~high = low <= t && t <= high
-let clamp_unchecked t ~min ~max = if t < min then min else if t <= max then t else max
+let clamp_unchecked t ~min:min_ ~max:max_ = min t max_ |> max min_
 
 let clamp_exn t ~min ~max =
   assert (min <= max);

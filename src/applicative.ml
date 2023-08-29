@@ -258,3 +258,15 @@ module Pair (F : S) (G : S) : S with type 'a t = 'a F.t * 'a G.t = struct
       let map = `Custom custom_map
     end)
 end
+
+module Ident = struct
+  type 'a t = 'a
+
+  include Make_using_map2_local (struct
+      type nonrec 'a t = 'a t
+
+      let return = Fn.id
+      let map2 a b ~f = f a b
+      let map = `Custom (fun a ~f -> f a)
+    end)
+end

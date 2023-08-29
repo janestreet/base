@@ -172,3 +172,14 @@ function caml_make_local_vect(v_len, v_elt) {
     // In javascript there's no local allocation.
     return caml_make_vect (v_len, v_elt);
 }
+
+
+//Provides: caml_float_min
+function caml_float_min(x,y) {
+    return x < y ? x : y;
+}
+
+//Provides: caml_float_max
+function caml_float_max(x, y) {
+    return x > y ? x : y;
+}

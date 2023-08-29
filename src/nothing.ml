@@ -3,10 +3,11 @@ open! Import
 module T = struct
   type t = |
 
-  let unreachable_code = function
+  let unreachable_code_local = function
     | (_ : t) -> .
   ;;
 
+  let unreachable_code x = unreachable_code_local x
   let all = []
   let hash_fold_t _ t = unreachable_code t
   let hash = unreachable_code

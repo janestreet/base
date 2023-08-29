@@ -864,13 +864,21 @@ let clamp_exn t ~min ~max =
   (* Also fails if [min] or [max] is nan *)
   assert (min <= max);
   (* clamp_unchecked is in float0.ml *)
-  clamp_unchecked t ~min ~max
+  clamp_unchecked
+    ~to_clamp_maybe_nan:t
+    ~min_which_is_not_nan:min
+    ~max_which_is_not_nan:max
 ;;
 
 let clamp t ~min ~max =
   (* Also fails if [min] or [max] is nan *)
   if min <= max
-  then Ok (clamp_unchecked t ~min ~max)
+  then
+    Ok
+      (clamp_unchecked
+         ~to_clamp_maybe_nan:t
+         ~min_which_is_not_nan:min
+         ~max_which_is_not_nan:max)
   else
     Or_error.error_s
       (Sexp.message

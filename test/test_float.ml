@@ -123,6 +123,35 @@ let%test_module "clamp" =
     ;;
 
     let%test "clamp bad" = Or_error.is_error (clamp 2.5 ~min:3. ~max:2.)
+    let%test "clamp also bad" = Or_error.is_error (clamp 2.5 ~min:nan ~max:3.)
+    let%test "clamp also bad 2" = Or_error.is_error (clamp 2.5 ~min:2. ~max:nan)
+    let%test "clamp also bad 3" = Or_error.is_error (clamp 2.5 ~min:nan ~max:nan)
+    let%test "clamp also bad 4" = Or_error.is_error (clamp nan ~min:nan ~max:nan)
+
+    let%test_unit "clamp_exn bad" =
+      Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+        clamp_exn 2.5 ~min:3. ~max:2.)
+    ;;
+
+    let%test_unit "clamp_exn also bad" =
+      Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+        clamp_exn 2.5 ~min:nan ~max:3.)
+    ;;
+
+    let%test_unit "clamp_exn also bad 2" =
+      Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+        clamp_exn 2.5 ~min:2. ~max:nan)
+    ;;
+
+    let%test_unit "clamp_exn also bad 3" =
+      Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+        clamp_exn 2.5 ~min:nan ~max:nan)
+    ;;
+
+    let%test_unit "clamp_exn also bad 4" =
+      Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+        clamp_exn nan ~min:nan ~max:nan)
+    ;;
   end)
 ;;
 
