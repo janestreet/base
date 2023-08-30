@@ -15,7 +15,7 @@ let invalid_argf = Printf.invalid_argf
 
 module Array = struct
   external create : int -> 'a -> 'a array = "caml_make_vect"
-  external create_local : int -> 'a -> ('a array[@local]) = "caml_make_vect"
+  external create_local : int -> 'a -> ('a array[@local]) = "caml_make_local_vect"
   external create_float_uninitialized : int -> float array = "caml_make_float_vect"
   external get : ('a array[@local_opt]) -> (int[@local_opt]) -> 'a = "%array_safe_get"
   external length : ('a array[@local_opt]) -> int = "%array_length"
@@ -60,7 +60,7 @@ let create ~len x =
 ;;
 
 let create_local ~len x =
-  
+  [%local]
     (try create_local len x with
      | Invalid_argument _ ->
        invalid_argf "Array.create_local ~len:%d: invalid length" len ())

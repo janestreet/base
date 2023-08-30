@@ -1182,7 +1182,7 @@ let pad_left ?(char = ' ') s ~len =
 let local_copy_prefix (src [@local]) ~prefix_len ~buffer_len =
   let dst = Bytes.create_local buffer_len in
   Bytes.Primitives.unsafe_blit_string ~src ~dst ~src_pos:0 ~dst_pos:0 ~len:prefix_len;
-   dst
+  [%local] dst
 ;;
 
 (* Copies a perhaps-local buffer into a definitely-global string. *)
@@ -1205,7 +1205,7 @@ include struct
        [0 <= dst_pos < length dst]
     *)
     let filter_mapi_into src (dst [@local]) ~f ~src_pos ~dst_pos ~src_len =
-      let dst_pos =  (ref dst_pos) in
+      let dst_pos = [%local] (ref dst_pos) in
       for src_pos = src_pos to src_len - 1 do
         match f src_pos (unsafe_get src src_pos) with
         | None -> ()
@@ -1257,10 +1257,10 @@ include struct
     (* partition helpers *)
 
     let partition_map_into src ~fsts ~snds ~f ~len ~src_pos ~fst_pos ~snd_pos =
-      let fst_pos =  (ref fst_pos) in
-      let snd_pos =  (ref snd_pos) in
+      let fst_pos = [%local] (ref fst_pos) in
+      let snd_pos = [%local] (ref snd_pos) in
       for src_pos = src_pos to len - 1 do
-        match  (f (unsafe_get src src_pos) : (_, _) Either.t) with
+        match [%local] (f (unsafe_get src src_pos) : (_, _) Either.t) with
         | First c ->
           Bytes.unsafe_set fsts !fst_pos c;
           incr fst_pos
@@ -1278,10 +1278,10 @@ include struct
         match (either : (_, _) Either.t) with
         | First c ->
           Bytes.unsafe_set fsts fst_pos c;
-           (fst_pos + 1, snd_pos)
+          [%local] (fst_pos + 1, snd_pos)
         | Second c ->
           Bytes.unsafe_set snds snd_pos c;
-           (fst_pos, snd_pos + 1)
+          [%local] (fst_pos, snd_pos + 1)
       in
       partition_map_into
         src
@@ -1299,7 +1299,7 @@ include struct
       then src, ""
       else (
         let c1 = unsafe_get src pos in
-        match  (f c1 : (_, _) Either.t) with
+        match [%local] (f c1 : (_, _) Either.t) with
         | First c2 when Char.equal c1 c2 ->
           partition_map_first_maybe_id src ~f ~len ~pos:(pos + 1)
         | either ->
@@ -1318,7 +1318,7 @@ include struct
       then "", src
       else (
         let c1 = unsafe_get src pos in
-        match  (f c1 : (_, _) Either.t) with
+        match [%local] (f c1 : (_, _) Either.t) with
         | Second c2 when Char.equal c1 c2 ->
           partition_map_second_maybe_id src ~f ~len ~pos:(pos + 1)
         | either ->
@@ -1341,7 +1341,7 @@ include struct
     then "", ""
     else (
       let c1 = unsafe_get src 0 in
-      match  (f c1 : (_, _) Either.t) with
+      match [%local] (f c1 : (_, _) Either.t) with
       | First c2 when Char.equal c1 c2 -> partition_map_first_maybe_id src ~f ~len ~pos:1
       | Second c2 when Char.equal c1 c2 ->
         partition_map_second_maybe_id src ~f ~len ~pos:1
@@ -1357,7 +1357,7 @@ include struct
   ;;
 
   let partition_tf t ~f =
-    partition_map t ~f:(fun c -> if f c then  (First c) else  (Second c)) [@nontail
+    partition_map t ~f:(fun c -> if f c then [%local] (First c) else [%local] (Second c)) [@nontail
                                                                                           ]
   ;;
 end

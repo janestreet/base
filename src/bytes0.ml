@@ -105,7 +105,7 @@ external unsafe_create_local : int -> (bytes[@local]) = "Base_unsafe_create_loca
   [@@noalloc]
 
 let create_local len =
-  
+  [%ocaml.local]
     (if len > Sys0.max_string_length then invalid_arg "Bytes.create_local";
      unsafe_create_local len)
 ;;

@@ -5,7 +5,7 @@ open! Import
 type t = Stdlib.Obj.t
 type raw_data = Stdlib.Obj.raw_data
 
-external magic : (_[@local_opt]) -> (_[@local_opt]) = "%identity"
+external magic : (_[@local_opt]) -> (_[@local_opt]) = "%obj_magic"
 external repr : (_[@local_opt]) -> (t[@local_opt]) = "%identity"
 external obj : (t[@local_opt]) -> (_[@local_opt]) = "%identity"
 external raw_field : (t[@local_opt]) -> int -> raw_data = "caml_obj_raw_field"

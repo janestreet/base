@@ -86,7 +86,7 @@ end = struct
     ; length : int [@global]
     }
 
-  let with_length tree length =  { tree; length }
+  let with_length tree length = [%local] { tree; length }
   let with_length_global tree length = { tree; length }
   let globalize ({ tree; length } [@local]) = { tree; length }
 end
@@ -184,7 +184,7 @@ module Tree0 = struct
       then fun i -> array.(i)
       else fun i -> array.(array_length - 1 - i)
     in
-    
+    [%local]
       (with_length
          (of_increasing_iterator_unchecked ~len:array_length ~f:next)
          array_length)
@@ -276,37 +276,37 @@ module Tree0 = struct
     ~(add_or_set : Add_or_set.t)
     =
     match t with
-    | Empty ->  (with_length (Leaf (x, data)) (length + 1))
+    | Empty -> [%local] (with_length (Leaf (x, data)) (length + 1))
     | Leaf (v, d) ->
       let c = compare_key x v in
       if c = 0
       then (
         match add_or_set with
-        | Add_exn_internal ->  (Exn.raise_without_backtrace Duplicate)
-        | Add_exn ->  (raise_key_already_present ~key:x ~sexp_of_key)
-        | Set ->  (with_length (Leaf (x, data)) length))
+        | Add_exn_internal -> [%local] (Exn.raise_without_backtrace Duplicate)
+        | Add_exn -> [%local] (raise_key_already_present ~key:x ~sexp_of_key)
+        | Set -> [%local] (with_length (Leaf (x, data)) length))
       else if c < 0
-      then  (with_length (Node (Leaf (x, data), v, d, Empty, 2)) (length + 1))
-      else  (with_length (Node (Empty, v, d, Leaf (x, data), 2)) (length + 1))
+      then [%local] (with_length (Node (Leaf (x, data), v, d, Empty, 2)) (length + 1))
+      else [%local] (with_length (Node (Empty, v, d, Leaf (x, data), 2)) (length + 1))
     | Node (l, v, d, r, h) ->
       let c = compare_key x v in
       if c = 0
       then (
         match add_or_set with
-        | Add_exn_internal ->  (Exn.raise_without_backtrace Duplicate)
-        | Add_exn ->  (raise_key_already_present ~key:x ~sexp_of_key)
-        | Set ->  (with_length (Node (l, x, data, r, h)) length))
+        | Add_exn_internal -> [%local] (Exn.raise_without_backtrace Duplicate)
+        | Add_exn -> [%local] (raise_key_already_present ~key:x ~sexp_of_key)
+        | Set -> [%local] (with_length (Node (l, x, data, r, h)) length))
       else if c < 0
       then (
         let { tree = l; length } =
           find_and_add_or_set ~length ~key:x ~data l ~compare_key ~sexp_of_key ~add_or_set
         in
-         (with_length (bal l v d r) length))
+        [%local] (with_length (bal l v d r) length))
       else (
         let { tree = r; length } =
           find_and_add_or_set ~length ~key:x ~data r ~compare_key ~sexp_of_key ~add_or_set
         in
-         (with_length (bal l v d r) length))
+        [%local] (with_length (bal l v d r) length))
   ;;
 
   (* specialization of [set'] for the case when [key] is less than all the existing keys *)
@@ -331,7 +331,7 @@ module Tree0 = struct
   ;;
 
   let add_exn t ~length ~key ~data ~compare_key ~sexp_of_key =
-    
+    [%local]
       (find_and_add_or_set
          t
          ~length
@@ -343,7 +343,7 @@ module Tree0 = struct
   ;;
 
   let add_exn_internal t ~length ~key ~data ~compare_key ~sexp_of_key =
-    
+    [%local]
       (find_and_add_or_set
          t
          ~length
@@ -355,7 +355,7 @@ module Tree0 = struct
   ;;
 
   let set t ~length ~key ~data ~compare_key =
-    
+    [%local]
       (find_and_add_or_set
          t
          ~length
@@ -563,7 +563,7 @@ module Tree0 = struct
 
   let add_multi t ~length ~key ~data ~compare_key =
     let data = data :: Option.value (find t key ~compare_key) ~default:[] in
-     (set ~length ~key ~data t ~compare_key)
+    [%local] (set ~length ~key ~data t ~compare_key)
   ;;
 
   let find_multi t x ~compare_key =
@@ -734,25 +734,25 @@ module Tree0 = struct
   let remove t x ~length ~compare_key =
     let rec remove_loop t x ~length ~compare_key =
       match t with
-      | Empty ->  (Exn.raise_without_backtrace Remove_no_op)
+      | Empty -> [%local] (Exn.raise_without_backtrace Remove_no_op)
       | Leaf (v, _) ->
         if compare_key x v = 0
-        then  (with_length Empty (length - 1))
-        else  (Exn.raise_without_backtrace Remove_no_op)
+        then [%local] (with_length Empty (length - 1))
+        else [%local] (Exn.raise_without_backtrace Remove_no_op)
       | Node (l, v, d, r, _) ->
         let c = compare_key x v in
         if c = 0
-        then  (with_length (concat_unchecked l r) (length - 1))
+        then [%local] (with_length (concat_unchecked l r) (length - 1))
         else if c < 0
         then (
           let { tree = l; length } = remove_loop l x ~length ~compare_key in
-           (with_length (bal l v d r) length))
+          [%local] (with_length (bal l v d r) length))
         else (
           let { tree = r; length } = remove_loop r x ~length ~compare_key in
-           (with_length (bal l v d r) length))
+          [%local] (with_length (bal l v d r) length))
     in
-    try  (remove_loop t x ~length ~compare_key) with
-    | Remove_no_op ->  (with_length t length)
+    try [%local] (remove_loop t x ~length ~compare_key) with
+    | Remove_no_op -> [%local] (with_length t length)
   ;;
 
   (* Use exception to avoid tree-rebuild in no-op case *)
@@ -765,39 +765,39 @@ module Tree0 = struct
         (match f None with
          | None ->
            (* equivalent to returning: Empty *)
-            (Exn.raise_without_backtrace Change_no_op)
-         | Some data ->  (with_length (Leaf (key, data)) (length + 1)))
+           [%local] (Exn.raise_without_backtrace Change_no_op)
+         | Some data -> [%local] (with_length (Leaf (key, data)) (length + 1)))
       | Leaf (v, d) ->
         let c = compare_key key v in
         if c = 0
         then (
           match f (Some d) with
-          | None ->  (with_length Empty (length - 1))
-          | Some d' ->  (with_length (Leaf (v, d')) length))
+          | None -> [%local] (with_length Empty (length - 1))
+          | Some d' -> [%local] (with_length (Leaf (v, d')) length))
         else if c < 0
         then (
           let { tree = l; length } = change_core Empty key f in
-           (with_length (bal l v d Empty) length))
+          [%local] (with_length (bal l v d Empty) length))
         else (
           let { tree = r; length } = change_core Empty key f in
-           (with_length (bal Empty v d r) length))
+          [%local] (with_length (bal Empty v d r) length))
       | Node (l, v, d, r, h) ->
         let c = compare_key key v in
         if c = 0
         then (
           match f (Some d) with
-          | None ->  (with_length (concat_unchecked l r) (length - 1))
-          | Some data ->  (with_length (Node (l, key, data, r, h)) length))
+          | None -> [%local] (with_length (concat_unchecked l r) (length - 1))
+          | Some data -> [%local] (with_length (Node (l, key, data, r, h)) length))
         else if c < 0
         then (
           let { tree = l; length } = change_core l key f in
-           (with_length (bal l v d r) length))
+          [%local] (with_length (bal l v d r) length))
         else (
           let { tree = r; length } = change_core r key f in
-           (with_length (bal l v d r) length))
+          [%local] (with_length (bal l v d r) length))
     in
-    try  (change_core t key f) with
-    | Change_no_op ->  (with_length t length)
+    try [%local] (change_core t key f) with
+    | Change_no_op -> [%local] (with_length t length)
   ;;
 
   let update t key ~f ~length ~compare_key =
@@ -805,39 +805,39 @@ module Tree0 = struct
       match t with
       | Empty ->
         let data = f None in
-         (with_length (Leaf (key, data)) (length + 1))
+        [%local] (with_length (Leaf (key, data)) (length + 1))
       | Leaf (v, d) ->
         let c = compare_key key v in
         if c = 0
         then (
           let d' = f (Some d) in
-           (with_length (Leaf (v, d')) length))
+          [%local] (with_length (Leaf (v, d')) length))
         else if c < 0
         then (
           let { tree = l; length } = update_core Empty key f in
-           (with_length (bal l v d Empty) length))
+          [%local] (with_length (bal l v d Empty) length))
         else (
           let { tree = r; length } = update_core Empty key f in
-           (with_length (bal Empty v d r) length))
+          [%local] (with_length (bal Empty v d r) length))
       | Node (l, v, d, r, h) ->
         let c = compare_key key v in
         if c = 0
         then (
           let data = f (Some d) in
-           (with_length (Node (l, key, data, r, h)) length))
+          [%local] (with_length (Node (l, key, data, r, h)) length))
         else if c < 0
         then (
           let { tree = l; length } = update_core l key f in
-           (with_length (bal l v d r) length))
+          [%local] (with_length (bal l v d r) length))
         else (
           let { tree = r; length } = update_core r key f in
-           (with_length (bal l v d r) length))
+          [%local] (with_length (bal l v d r) length))
     in
-     (update_core t key f)
+    [%local] (update_core t key f)
   ;;
 
   let remove_multi t key ~length ~compare_key =
-    
+    [%local]
       (change t key ~length ~compare_key ~f:(function
         | None | Some ([] | [ _ ]) -> None
         | Some (_ :: (_ :: _ as non_empty_tail)) -> Some non_empty_tail))
@@ -1586,7 +1586,7 @@ module Tree0 = struct
     let len = !i in
     let get i = Uniform_array.get elts i in
     let tree = of_increasing_iterator_unchecked ~len ~f:get in
-     (with_length tree len)
+    [%local] (with_length tree len)
   ;;
 
   let merge_skewed =
@@ -1828,7 +1828,7 @@ module Tree0 = struct
     let acc = { bad_key = None; map_length = with_length_global empty 0 } in
     iteri
       ~f:
-        ( (fun ~key ~data ->
+        ([%local] (fun ~key ~data ->
            let { tree = map; length } = acc.map_length in
            let ({ tree = _; length = length' } as pair) =
              set ~length ~key ~data map ~compare_key
@@ -2130,31 +2130,31 @@ module Accessors = struct
   ;;
 
   let filter_keys t ~f =
-    let len =  (ref t.length) in
+    let len = [%local] (ref t.length) in
     let tree = Tree0.filter_keys t.tree ~f ~len in
     like_maybe_no_op t (with_length tree !len) [@nontail]
   ;;
 
   let filter t ~f =
-    let len =  (ref t.length) in
+    let len = [%local] (ref t.length) in
     let tree = Tree0.filter t.tree ~f ~len in
     like_maybe_no_op t (with_length tree !len) [@nontail]
   ;;
 
   let filteri t ~f =
-    let len =  (ref t.length) in
+    let len = [%local] (ref t.length) in
     let tree = Tree0.filteri t.tree ~f ~len in
     like_maybe_no_op t (with_length tree !len) [@nontail]
   ;;
 
   let filter_map t ~f =
-    let len =  (ref t.length) in
+    let len = [%local] (ref t.length) in
     let tree = Tree0.filter_map t.tree ~f ~len in
     like t (with_length tree !len) [@nontail]
   ;;
 
   let filter_mapi t ~f =
-    let len =  (ref t.length) in
+    let len = [%local] (ref t.length) in
     let tree = Tree0.filter_mapi t.tree ~f ~len in
     like t (with_length tree !len) [@nontail]
   ;;
@@ -2564,11 +2564,11 @@ module Tree = struct
     Tree0.fold2 t1 t2 ~init ~f ~compare_key:comparator.Comparator.compare
   ;;
 
-  let filter_keys t ~f = Tree0.filter_keys t ~f ~len:( (ref 0)) [@nontail]
-  let filter t ~f = Tree0.filter t ~f ~len:( (ref 0)) [@nontail]
-  let filteri t ~f = Tree0.filteri t ~f ~len:( (ref 0)) [@nontail]
-  let filter_map t ~f = Tree0.filter_map t ~f ~len:( (ref 0)) [@nontail]
-  let filter_mapi t ~f = Tree0.filter_mapi t ~f ~len:( (ref 0)) [@nontail]
+  let filter_keys t ~f = Tree0.filter_keys t ~f ~len:([%local] (ref 0)) [@nontail]
+  let filter t ~f = Tree0.filter t ~f ~len:([%local] (ref 0)) [@nontail]
+  let filteri t ~f = Tree0.filteri t ~f ~len:([%local] (ref 0)) [@nontail]
+  let filter_map t ~f = Tree0.filter_map t ~f ~len:([%local] (ref 0)) [@nontail]
+  let filter_mapi t ~f = Tree0.filter_mapi t ~f ~len:([%local] (ref 0)) [@nontail]
   let partition_mapi t ~f = Tree0.partition_mapi t ~f
   let partition_map t ~f = Tree0.partition_map t ~f
   let partitioni_tf t ~f = Tree0.partitioni_tf t ~f

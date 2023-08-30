@@ -134,8 +134,8 @@ module type S_local =
   S_gen
     with type ('a, 'b) fn := ('a[@local]) -> 'b
      and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
-     and type ('a, 'b, 'c) fun2 := 'a -> ('b -> 'c[@local])
-     and type ('a, 'b, 'c, 'd) fun3 := 'a -> ('b -> ('c -> 'd[@local])[@local])
+     and type ('a, 'b, 'c) fun2 := 'a -> (('b -> 'c)[@local])
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> (('b -> (('c -> 'd)[@local]))[@local])
 
 module type Let_syntax = sig
   type 'a t
@@ -270,8 +270,8 @@ module type S2_local =
   S2_gen
     with type ('a, 'b) fn := ('a[@local]) -> 'b
      and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
-     and type ('a, 'b, 'c) fun2 := 'a -> ('b -> 'c[@local])
-     and type ('a, 'b, 'c, 'd) fun3 := 'a -> ('b -> ('c -> 'd[@local])[@local])
+     and type ('a, 'b, 'c) fun2 := 'a -> (('b -> 'c)[@local])
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> (('b -> (('c -> 'd)[@local]))[@local])
 
 module type Let_syntax2 = sig
   type ('a, 'e) t
@@ -413,8 +413,8 @@ module type S3_local =
   S3_gen
     with type ('a, 'b) fn := ('a[@local]) -> 'b
      and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
-     and type ('a, 'b, 'c) fun2 := 'a -> ('b -> 'c[@local])
-     and type ('a, 'b, 'c, 'd) fun3 := 'a -> ('b -> ('c -> 'd[@local])[@local])
+     and type ('a, 'b, 'c) fun2 := 'a -> (('b -> 'c)[@local])
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> (('b -> (('c -> 'd)[@local]))[@local])
 
 module type Let_syntax3 = sig
   type ('a, 'd, 'e) t
