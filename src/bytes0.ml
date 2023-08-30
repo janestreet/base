@@ -50,7 +50,7 @@ module Primitives = struct
     -> len:int
     -> unit
     = "caml_blit_string"
-  [@@noalloc]
+    [@@noalloc]
 
   external unsafe_get_int64
     :  (bytes[@local_opt])
@@ -102,7 +102,7 @@ let copy = Stdlib.Bytes.copy
 let create = Stdlib.Bytes.create
 
 external unsafe_create_local : int -> (bytes[@local]) = "Base_unsafe_create_local_bytes"
-[@@noalloc]
+  [@@noalloc]
 
 let create_local len =
   
@@ -147,7 +147,7 @@ external unsafe_blit
   -> len:int
   -> unit
   = "caml_blit_bytes"
-[@@noalloc]
+  [@@noalloc]
 
 let to_string = Stdlib.Bytes.to_string
 let of_string = Stdlib.Bytes.of_string

@@ -34,49 +34,49 @@ include T
 include Comparator.Make (T)
 
 include Comparable.With_zero (struct
-    include T
+  include T
 
-    let zero = zero
-  end)
+  let zero = zero
+end)
 
 module Conv = Int_conversions
 include Conv.Make (T)
 
 include Conv.Make_hex (struct
-    open Nativeint_replace_polymorphic_compare
+  open Nativeint_replace_polymorphic_compare
 
-    type t = nativeint [@@deriving_inline compare ~localize, hash]
+  type t = nativeint [@@deriving_inline compare ~localize, hash]
 
-    let compare__local =
-      (compare_nativeint__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
-    ;;
+  let compare__local =
+    (compare_nativeint__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+  ;;
 
-    let compare = (fun a b -> compare__local a b : t -> t -> int)
+  let compare = (fun a b -> compare__local a b : t -> t -> int)
 
-    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      hash_fold_nativeint
+  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+    hash_fold_nativeint
 
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_nativeint in
-      fun x -> func x
-    ;;
+  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+    let func = hash_nativeint in
+    fun x -> func x
+  ;;
 
-    [@@@end]
+  [@@@end]
 
-    let zero = zero
-    let neg = neg
-    let ( < ) = ( < )
-    let to_string i = Printf.sprintf "%nx" i
-    let of_string s = Stdlib.Scanf.sscanf s "%nx" Fn.id
-    let module_name = "Base.Nativeint.Hex"
-  end)
+  let zero = zero
+  let neg = neg
+  let ( < ) = ( < )
+  let to_string i = Printf.sprintf "%nx" i
+  let of_string s = Stdlib.Scanf.sscanf s "%nx" Fn.id
+  let module_name = "Base.Nativeint.Hex"
+end)
 
 include Pretty_printer.Register (struct
-    type nonrec t = t
+  type nonrec t = t
 
-    let to_string = to_string
-    let module_name = "Base.Nativeint"
-  end)
+  let to_string = to_string
+  let module_name = "Base.Nativeint"
+end)
 
 (* Open replace_polymorphic_compare after including functor instantiations so they do not
    shadow its definitions. This is here so that efficient versions of the comparison
@@ -109,7 +109,7 @@ let of_float_unchecked = of_float
 
 let of_float f =
   if Float_replace_polymorphic_compare.( >= ) f float_lower_bound
-  && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
+     && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
   then of_float f
   else
     Printf.invalid_argf
@@ -169,13 +169,13 @@ module Pow2 = struct
     :  (nativeint[@unboxed])
     -> (int[@untagged])
     = "Base_int_math_nativeint_clz" "Base_int_math_nativeint_clz_unboxed"
-  [@@noalloc]
+    [@@noalloc]
 
   external ctz
     :  (nativeint[@unboxed])
     -> (int[@untagged])
     = "Base_int_math_nativeint_ctz" "Base_int_math_nativeint_ctz_unboxed"
-  [@@noalloc]
+    [@@noalloc]
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
@@ -276,16 +276,16 @@ module O = struct
   include Pre_O
 
   include Int_math.Make (struct
-      type nonrec t = t
+    type nonrec t = t
 
-      include Pre_O
+    include Pre_O
 
-      let rem = rem
-      let to_float = to_float
-      let of_float = of_float
-      let of_string = T.of_string
-      let to_string = T.to_string
-    end)
+    let rem = rem
+    let to_float = to_float
+    let of_float = of_float
+    let of_string = T.of_string
+    let to_string = T.to_string
+  end)
 
   let ( land ) = bit_and
   let ( lor ) = bit_or

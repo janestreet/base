@@ -65,22 +65,22 @@ module Make3 (X : Basic3) : S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t = st
 end
 
 module Make2 (X : Basic2) : S2 with type ('a, 'e) t := ('a, 'e) X.t = Make3 (struct
-    include X
+  include X
 
-    type ('a, 'd, 'e) t = ('a, 'd) X.t
-  end)
+  type ('a, 'd, 'e) t = ('a, 'd) X.t
+end)
 
 module Make (X : Basic) : S with type 'a t := 'a X.t = Make2 (struct
-    include X
+  include X
 
-    type ('a, 'e) t = 'a X.t
-  end)
+  type ('a, 'e) t = 'a X.t
+end)
 
 module Make_let_syntax3
-    (X : For_let_syntax3) (Intf : sig
-                             module type S
-                           end)
-    (Impl : Intf.S) =
+  (X : For_let_syntax3) (Intf : sig
+    module type S
+  end)
+  (Impl : Intf.S) =
 struct
   module Let_syntax = struct
     include X
@@ -93,10 +93,10 @@ struct
 end
 
 module Make_let_syntax2
-    (X : For_let_syntax2) (Intf : sig
-                             module type S
-                           end)
-    (Impl : Intf.S) =
+  (X : For_let_syntax2) (Intf : sig
+    module type S
+  end)
+  (Impl : Intf.S) =
   Make_let_syntax3
     (struct
       include X
@@ -107,10 +107,10 @@ module Make_let_syntax2
     (Impl)
 
 module Make_let_syntax
-    (X : For_let_syntax) (Intf : sig
-                            module type S
-                          end)
-    (Impl : Intf.S) =
+  (X : For_let_syntax) (Intf : sig
+    module type S
+  end)
+  (Impl : Intf.S) =
   Make_let_syntax2
     (struct
       include X
@@ -158,17 +158,17 @@ end
 
 module Make2_using_map2 (X : Basic2_using_map2) :
   S2 with type ('a, 'e) t := ('a, 'e) X.t = Make3_using_map2 (struct
-    include X
+  include X
 
-    type ('a, 'd, 'e) t = ('a, 'd) X.t
-  end)
+  type ('a, 'd, 'e) t = ('a, 'd) X.t
+end)
 
 module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t =
-  Make2_using_map2 (struct
-    include X
+Make2_using_map2 (struct
+  include X
 
-    type ('a, 'e) t = 'a X.t
-  end)
+  type ('a, 'e) t = 'a X.t
+end)
 
 module Make3_using_map2_local (X : Basic3_using_map2_local) :
   S3_local with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t = struct
@@ -207,66 +207,66 @@ end
 
 module Make2_using_map2_local (X : Basic2_using_map2_local) :
   S2_local with type ('a, 'e) t := ('a, 'e) X.t = Make3_using_map2_local (struct
-    include X
+  include X
 
-    type ('a, 'd, 'e) t = ('a, 'd) X.t
-  end)
+  type ('a, 'd, 'e) t = ('a, 'd) X.t
+end)
 
 module Make_using_map2_local (X : Basic_using_map2_local) :
   S_local with type 'a t := 'a X.t = Make2_using_map2_local (struct
-    include X
+  include X
 
-    type ('a, 'e) t = 'a X.t
-  end)
+  type ('a, 'e) t = 'a X.t
+end)
 
 module Of_monad2 (M : Monad.S2) : S2 with type ('a, 'e) t := ('a, 'e) M.t = Make2 (struct
-    type ('a, 'e) t = ('a, 'e) M.t
+  type ('a, 'e) t = ('a, 'e) M.t
 
-    let return = M.return
-    let apply mf mx = M.bind mf ~f:(fun f -> M.map mx ~f)
-    let map = `Custom M.map
-  end)
+  let return = M.return
+  let apply mf mx = M.bind mf ~f:(fun f -> M.map mx ~f)
+  let map = `Custom M.map
+end)
 
 module Of_monad (M : Monad.S) : S with type 'a t := 'a M.t = Of_monad2 (struct
-    include M
+  include M
 
-    type ('a, _) t = 'a M.t
-  end)
+  type ('a, _) t = 'a M.t
+end)
 
 module Compose (F : S) (G : S) : S with type 'a t = 'a F.t G.t = struct
   type 'a t = 'a F.t G.t
 
   include Make (struct
-      type nonrec 'a t = 'a t
+    type nonrec 'a t = 'a t
 
-      let return a = G.return (F.return a)
-      let apply tf tx = G.apply (G.map ~f:F.apply tf) tx
-      let custom_map t ~f = G.map ~f:(F.map ~f) t
-      let map = `Custom custom_map
-    end)
+    let return a = G.return (F.return a)
+    let apply tf tx = G.apply (G.map ~f:F.apply tf) tx
+    let custom_map t ~f = G.map ~f:(F.map ~f) t
+    let map = `Custom custom_map
+  end)
 end
 
 module Pair (F : S) (G : S) : S with type 'a t = 'a F.t * 'a G.t = struct
   type 'a t = 'a F.t * 'a G.t
 
   include Make (struct
-      type nonrec 'a t = 'a t
+    type nonrec 'a t = 'a t
 
-      let return a = F.return a, G.return a
-      let apply tf tx = F.apply (fst tf) (fst tx), G.apply (snd tf) (snd tx)
-      let custom_map t ~f = F.map ~f (fst t), G.map ~f (snd t)
-      let map = `Custom custom_map
-    end)
+    let return a = F.return a, G.return a
+    let apply tf tx = F.apply (fst tf) (fst tx), G.apply (snd tf) (snd tx)
+    let custom_map t ~f = F.map ~f (fst t), G.map ~f (snd t)
+    let map = `Custom custom_map
+  end)
 end
 
 module Ident = struct
   type 'a t = 'a
 
   include Make_using_map2_local (struct
-      type nonrec 'a t = 'a t
+    type nonrec 'a t = 'a t
 
-      let return = Fn.id
-      let map2 a b ~f = f a b
-      let map = `Custom (fun a ~f -> f a)
-    end)
+    let return = Fn.id
+    let map2 a b ~f = f a b
+    let map = `Custom (fun a ~f -> f a)
+  end)
 end

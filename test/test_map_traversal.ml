@@ -65,9 +65,9 @@ module Step_applicative = struct
       let rec fn t =
         { compute =
             (fun ~steps ->
-               match t.compute ~steps with
-               | First (x, steps) -> First (f x, steps)
-               | Second t -> Second (fn t))
+              match t.compute ~steps with
+              | First (x, steps) -> First (f x, steps)
+              | Second t -> Second (fn t))
         }
       in
       fn x
@@ -77,9 +77,9 @@ module Step_applicative = struct
       let rec fn a =
         { compute =
             (fun ~steps ->
-               match a.compute ~steps with
-               | First (x, steps) -> (internal_map b ~f:(fun y -> f x y)).compute ~steps
-               | Second t -> Second (fn t))
+              match a.compute ~steps with
+              | First (x, steps) -> (internal_map b ~f:(fun y -> f x y)).compute ~steps
+              | Second t -> Second (fn t))
         }
       in
       fn a
@@ -90,8 +90,8 @@ module Step_applicative = struct
     let of_thunk f =
       { compute =
           (fun ~steps ->
-             let t = f () in
-             t.compute ~steps)
+            let t = f () in
+            t.compute ~steps)
       }
     ;;
   end

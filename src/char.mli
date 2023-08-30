@@ -28,7 +28,6 @@ val to_int : t -> int
     the range 0 to 255. *)
 val of_int : int -> t option
 
-
 (** Returns the character with the given ASCII code. Raises [Failure] if the argument is
     outside the range 0 to 255. *)
 val of_int_exn : int -> t

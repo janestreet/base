@@ -442,7 +442,7 @@ let round_nearest_half_to_even t =
     else if diff_floor > diff_ceil
     then ceil_or_succ
     else if (* exact tie, pick the even *)
-      mod_float floor 2. = 0.
+            mod_float floor 2. = 0.
     then floor
     else ceil_or_succ)
 ;;
@@ -566,17 +566,17 @@ module Class = struct
        Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__007_ sexp__006_
      | sexp__006_ ->
        Sexplib0.Sexp_conv_error.unexpected_stag error_source__007_ sexp__006_
-       : Sexplib0.Sexp.t -> t)
+      : Sexplib0.Sexp.t -> t)
   ;;
 
   let sexp_of_t =
     (function
-      | Infinite -> Sexplib0.Sexp.Atom "Infinite"
-      | Nan -> Sexplib0.Sexp.Atom "Nan"
-      | Normal -> Sexplib0.Sexp.Atom "Normal"
-      | Subnormal -> Sexplib0.Sexp.Atom "Subnormal"
-      | Zero -> Sexplib0.Sexp.Atom "Zero"
-                : t -> Sexplib0.Sexp.t)
+     | Infinite -> Sexplib0.Sexp.Atom "Infinite"
+     | Nan -> Sexplib0.Sexp.Atom "Nan"
+     | Normal -> Sexplib0.Sexp.Atom "Normal"
+     | Subnormal -> Sexplib0.Sexp.Atom "Subnormal"
+     | Zero -> Sexplib0.Sexp.Atom "Zero"
+      : t -> Sexplib0.Sexp.t)
   ;;
 
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
@@ -677,7 +677,7 @@ let to_padded_compact_string_custom t ?(prefix = "") ~kilo ~mega ~giga ~tera ?pe
     else if diff_right > diff_left
     then k
     else if (* a tie *)
-      Int_replace_polymorphic_compare.( = ) (k mod 2) 0
+            Int_replace_polymorphic_compare.( = ) (k mod 2) 0
     then k
     else k + 1
   in
@@ -824,7 +824,7 @@ let round_gen x ~how =
          integers are, but their inverses in most cases are not. *)
       let abs_dd = Int.abs dd in
       if abs_dd > 22 || sd >= 16
-      (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
+         (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
          path.  Similarly, if we need 16 significant digits in the result, then the integer
          [round_nearest (x <op> order)] might not be exactly representable as a float, since
          for some ranges we only have 15 digits of precision guaranteed.
@@ -967,10 +967,10 @@ module Terse = struct
 end
 
 include Comparable.With_zero (struct
-    include T
+  include T
 
-    let zero = zero
-  end)
+  let zero = zero
+end)
 
 (* These are partly here as a performance hack to avoid some boxing we're getting with
    the versions we get from [With_zero].  They also make [Float.is_negative nan] and
@@ -982,11 +982,11 @@ let is_negative t = t < 0.
 let is_non_positive t = t <= 0.
 
 include Pretty_printer.Register (struct
-    include T
+  include T
 
-    let module_name = "Base.Float"
-    let to_string = to_string
-  end)
+  let module_name = "Base.Float"
+  let to_string = to_string
+end)
 
 module O = struct
   let ( + ) = ( + )

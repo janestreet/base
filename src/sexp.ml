@@ -19,7 +19,7 @@ let rec compare__local =
        | _, Atom _ -> 1
        | List _a__005_, List _b__006_ ->
          compare_list__local compare__local _a__005_ _b__006_)
-       : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+    : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
 ;;
 
 let compare = (fun a b -> compare__local a b : t -> t -> int)
@@ -35,7 +35,7 @@ let rec (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash
        let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1 in
        let hsv = hsv in
        hash_fold_list hash_fold_t hsv _a0
-       : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
+    : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
 
 and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
   let func arg =

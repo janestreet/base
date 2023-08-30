@@ -14,7 +14,7 @@ let caml_buffer_length =
 let caml_buffer_blit =
   (Stdlib.Obj.magic
      (Stdlib.Buffer.blit : Stdlib.Buffer.t -> int -> Bytes.t -> int -> int -> unit)
-   : (Stdlib.Buffer.t[@local]) -> int -> (Bytes.t[@local]) -> int -> int -> unit)
+    : (Stdlib.Buffer.t[@local]) -> int -> (Bytes.t[@local]) -> int -> int -> unit)
 ;;
 
 module To_bytes =

@@ -21,43 +21,43 @@ module Message = struct
 
   let rec sexp_of_t =
     (function
-      | Could_not_construct arg0__001_ ->
-        let res0__002_ = Sexp.sexp_of_t arg0__001_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Could_not_construct"; res0__002_ ]
-      | String arg0__003_ ->
-        let res0__004_ = sexp_of_string arg0__003_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "String"; res0__004_ ]
-      | Exn arg0__005_ ->
-        let res0__006_ = sexp_of_exn arg0__005_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Exn"; res0__006_ ]
-      | Sexp arg0__007_ ->
-        let res0__008_ = Sexp.sexp_of_t arg0__007_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Sexp"; res0__008_ ]
-      | Tag_sexp (arg0__009_, arg1__010_, arg2__011_) ->
-        let res0__012_ = sexp_of_string arg0__009_
-        and res1__013_ = Sexp.sexp_of_t arg1__010_
-        and res2__014_ = sexp_of_option Source_code_position0.sexp_of_t arg2__011_ in
-        Sexplib0.Sexp.List
-          [ Sexplib0.Sexp.Atom "Tag_sexp"; res0__012_; res1__013_; res2__014_ ]
-      | Tag_t (arg0__015_, arg1__016_) ->
-        let res0__017_ = sexp_of_string arg0__015_
-        and res1__018_ = sexp_of_t arg1__016_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Tag_t"; res0__017_; res1__018_ ]
-      | Tag_arg (arg0__019_, arg1__020_, arg2__021_) ->
-        let res0__022_ = sexp_of_string arg0__019_
-        and res1__023_ = Sexp.sexp_of_t arg1__020_
-        and res2__024_ = sexp_of_t arg2__021_ in
-        Sexplib0.Sexp.List
-          [ Sexplib0.Sexp.Atom "Tag_arg"; res0__022_; res1__023_; res2__024_ ]
-      | Of_list (arg0__025_, arg1__026_) ->
-        let res0__027_ = sexp_of_option sexp_of_int arg0__025_
-        and res1__028_ = sexp_of_list sexp_of_t arg1__026_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Of_list"; res0__027_; res1__028_ ]
-      | With_backtrace (arg0__029_, arg1__030_) ->
-        let res0__031_ = sexp_of_t arg0__029_
-        and res1__032_ = sexp_of_string arg1__030_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "With_backtrace"; res0__031_; res1__032_ ]
-        : t -> Sexplib0.Sexp.t)
+     | Could_not_construct arg0__001_ ->
+       let res0__002_ = Sexp.sexp_of_t arg0__001_ in
+       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Could_not_construct"; res0__002_ ]
+     | String arg0__003_ ->
+       let res0__004_ = sexp_of_string arg0__003_ in
+       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "String"; res0__004_ ]
+     | Exn arg0__005_ ->
+       let res0__006_ = sexp_of_exn arg0__005_ in
+       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Exn"; res0__006_ ]
+     | Sexp arg0__007_ ->
+       let res0__008_ = Sexp.sexp_of_t arg0__007_ in
+       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Sexp"; res0__008_ ]
+     | Tag_sexp (arg0__009_, arg1__010_, arg2__011_) ->
+       let res0__012_ = sexp_of_string arg0__009_
+       and res1__013_ = Sexp.sexp_of_t arg1__010_
+       and res2__014_ = sexp_of_option Source_code_position0.sexp_of_t arg2__011_ in
+       Sexplib0.Sexp.List
+         [ Sexplib0.Sexp.Atom "Tag_sexp"; res0__012_; res1__013_; res2__014_ ]
+     | Tag_t (arg0__015_, arg1__016_) ->
+       let res0__017_ = sexp_of_string arg0__015_
+       and res1__018_ = sexp_of_t arg1__016_ in
+       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Tag_t"; res0__017_; res1__018_ ]
+     | Tag_arg (arg0__019_, arg1__020_, arg2__021_) ->
+       let res0__022_ = sexp_of_string arg0__019_
+       and res1__023_ = Sexp.sexp_of_t arg1__020_
+       and res2__024_ = sexp_of_t arg2__021_ in
+       Sexplib0.Sexp.List
+         [ Sexplib0.Sexp.Atom "Tag_arg"; res0__022_; res1__023_; res2__024_ ]
+     | Of_list (arg0__025_, arg1__026_) ->
+       let res0__027_ = sexp_of_option sexp_of_int arg0__025_
+       and res1__028_ = sexp_of_list sexp_of_t arg1__026_ in
+       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Of_list"; res0__027_; res1__028_ ]
+     | With_backtrace (arg0__029_, arg1__030_) ->
+       let res0__031_ = sexp_of_t arg0__029_
+       and res1__032_ = sexp_of_string arg1__030_ in
+       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "With_backtrace"; res0__031_; res1__032_ ]
+      : t -> Sexplib0.Sexp.t)
   ;;
 
   [@@@end]
@@ -274,8 +274,7 @@ let of_exn ?backtrace exn =
   let backtrace =
     match backtrace with
     | None -> None
-    | Some `Get ->
-      Some (Stdlib.Printexc.get_backtrace ())
+    | Some `Get -> Some (Stdlib.Printexc.get_backtrace ())
     | Some (`This s) -> Some s
   in
   match exn, backtrace with
@@ -288,11 +287,11 @@ let of_exn ?backtrace exn =
 ;;
 
 include Pretty_printer.Register_pp (struct
-    type nonrec t = t
+  type nonrec t = t
 
-    let module_name = "Base.Info"
-    let pp ppf t = Stdlib.Format.pp_print_string ppf (to_string_hum t)
-  end)
+  let module_name = "Base.Info"
+  let pp ppf t = Stdlib.Format.pp_print_string ppf (to_string_hum t)
+end)
 
 module Internal_repr = struct
   include Message

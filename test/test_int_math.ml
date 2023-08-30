@@ -275,14 +275,14 @@ let%test_module "int rounding quickcheck tests" =
                 raise_s
                   [%sexp
                     "test bug: did not find correctly rounded value"
-                  , { rounded : Integer.t }]
+                    , { rounded : Integer.t }]
             | Some rounded_correctly ->
               if rounded <> rounded_correctly
               then
                 raise_s
                   [%sexp
                     "rounding failed"
-                  , { rounded : Integer.t; rounded_correctly : Integer.t }]))
+                    , { rounded : Integer.t; rounded_correctly : Integer.t }]))
     ;;
 
     let test m =

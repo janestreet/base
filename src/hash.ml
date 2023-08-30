@@ -28,8 +28,8 @@ include Hash_intf
 (** Builtin folding-style hash functions, abstracted over [Hash_intf.S] *)
 module Folding (Hash : Hash_intf.S) :
   Hash_intf.Builtin_intf
-  with type state = Hash.state
-   and type hash_value = Hash.hash_value = struct
+    with type state = Hash.state
+     and type hash_value = Hash.hash_value = struct
   type state = Hash.state
   type hash_value = Hash.hash_value
   type 'a folder = state -> 'a -> state
@@ -117,9 +117,9 @@ end
 
 module F (Hash : Hash_intf.S) :
   Hash_intf.Full
-  with type hash_value = Hash.hash_value
-   and type state = Hash.state
-   and type seed = Hash.seed = struct
+    with type hash_value = Hash.hash_value
+     and type state = Hash.state
+     and type seed = Hash.seed = struct
   include Hash
 
   type 'a folder = state -> 'a -> state
@@ -137,26 +137,26 @@ end
 module Internalhash : sig
   include
     Hash_intf.S
-    with type state = Base_internalhash_types.state
-     (* We give a concrete type for [state], albeit only partially exposed (see
+      with type state = Base_internalhash_types.state
+      (* We give a concrete type for [state], albeit only partially exposed (see
         Base_internalhash_types), so that it unifies with the same type in [Base_boot],
         and to allow optimizations for the immediate type. *)
-     and type seed = Base_internalhash_types.seed
-     and type hash_value = Base_internalhash_types.hash_value
+       and type seed = Base_internalhash_types.seed
+       and type hash_value = Base_internalhash_types.hash_value
 
   external fold_int64 : state -> int64 -> state = "Base_internalhash_fold_int64"
-  [@@noalloc]
+    [@@noalloc]
 
   external fold_int : state -> int -> state = "Base_internalhash_fold_int" [@@noalloc]
 
   external fold_float : state -> float -> state = "Base_internalhash_fold_float"
-  [@@noalloc]
+    [@@noalloc]
 
   external fold_string : state -> string -> state = "Base_internalhash_fold_string"
-  [@@noalloc]
+    [@@noalloc]
 
   external get_hash_value : state -> hash_value = "Base_internalhash_get_hash_value"
-  [@@noalloc]
+    [@@noalloc]
 end = struct
   let description = "internalhash"
 

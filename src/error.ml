@@ -12,8 +12,8 @@ let to_info t = t
 let of_info t = t
 
 include Pretty_printer.Register_pp (struct
-    type nonrec t = t
+  type nonrec t = t
 
-    let module_name = "Base.Error"
-    let pp = pp
-  end)
+  let module_name = "Base.Error"
+  let pp = pp
+end)

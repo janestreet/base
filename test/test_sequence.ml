@@ -59,8 +59,8 @@ let%test_module "Sequence.merge*" =
     ;;
 
     let test_merge_semantics
-          ~merge
-          ~(normalize_list : _ -> compare:((_ -> _ -> _)[@local]) -> _)
+      ~merge
+      ~(normalize_list : _ -> compare:((_ -> _ -> _)[@local]) -> _)
       =
       Base_quickcheck.Test.run_exn
         (module struct
@@ -496,7 +496,7 @@ let%expect_test "fold_m" =
     s12345
     ~init:[]
     ~f:(fun acc n ->
-      Simple_monad.bind Simple_monad.step ~f:(fun () -> Simple_monad.return (n :: acc)))
+    Simple_monad.bind Simple_monad.step ~f:(fun () -> Simple_monad.return (n :: acc)))
   |> printf !"%{sexp: int list Simple_monad.t}\n";
   [%expect {| (Step (Step (Step (Step (Step (Return (5 4 3 2 1))))))) |}]
 ;;

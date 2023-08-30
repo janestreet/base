@@ -55,7 +55,7 @@ let%expect_test "[Map.of_alist_multi] preserves value ordering" =
   print_s
     [%sexp
       (Map.of_alist_multi (module String) [ "a", 1; "a", 2; "b", 1; "b", 3 ]
-       : int list Map.M(String).t)];
+        : int list Map.M(String).t)];
   [%expect {|
     ((a (1 2))
      (b (1 3))) |}]
@@ -253,13 +253,13 @@ let%test_module "[symmetric_diff]" =
         List.map map_pairs ~f:(fun (m, m') ->
           measure_comparisons (fun () ->
             diffs
-            := !diffs
-               + Map.fold_symmetric_diff
-                   ~init:0
-                   ~f:(fun n _ -> n + 1)
-                   ~data_equal:(fun () () -> true)
-                   (m : unit Map.M(Key).t)
-                   m'))
+              := !diffs
+                 + Map.fold_symmetric_diff
+                     ~init:0
+                     ~f:(fun n _ -> n + 1)
+                     ~data_equal:(fun () () -> true)
+                     (m : unit Map.M(Key).t)
+                     m'))
       in
       let worst_counts =
         List.sort counts ~compare:[%compare: int] |> List.rev |> fun l -> List.take l 20
@@ -359,7 +359,7 @@ let%expect_test "[map_keys]" =
     print_s
       [%sexp
         (Map.map_keys c ~f m
-         : [ `Duplicate_key of string | `Ok of string Map.M(String).t ])]
+          : [ `Duplicate_key of string | `Ok of string Map.M(String).t ])]
   in
   let map = Map.of_alist_exn (module Int) [ 1, "one"; 2, "two"; 3, "three" ] in
   test map (module String) ~f:Int.to_string;
@@ -381,7 +381,7 @@ let%expect_test "[fold_until]" =
            ~init:0
            ~f:(fun ~key ~data acc -> if key > 2 then Stop data else Continue (acc + key))
            ~finish:Int.to_string
-         : string)]
+          : string)]
   in
   let map = Map.of_alist_exn (module Int) [ 1, "one"; 2, "two"; 3, "three" ] in
   test map;

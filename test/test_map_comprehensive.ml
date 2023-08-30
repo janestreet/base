@@ -44,12 +44,12 @@ module type S = sig
 
   include
     Map.Creators_and_accessors_generic
-    with type ('a, 'b, 'c) t := ('a, 'b, 'c) Types.t
-    with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Types.tree
-    with type 'a key := 'a Types.key
-    with type 'a cmp := 'a Types.cmp
-    with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) Types.create_options
-    with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Types.access_options
+      with type ('a, 'b, 'c) t := ('a, 'b, 'c) Types.t
+      with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Types.tree
+      with type 'a key := 'a Types.key
+      with type 'a cmp := 'a Types.cmp
+      with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) Types.create_options
+      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Types.access_options
 end
 
 (** Helpers for testing a tree or map type that is an instance of [S]. *)
@@ -85,10 +85,10 @@ end
 
 (** A functor to generate all of [Instance] but [create] and [access] for a map type. *)
 module Instance (Cmp : sig
-    type comparator_witness
+  type comparator_witness
 
-    val comparator : (int, comparator_witness) Comparator.t
-  end) =
+  val comparator : (int, comparator_witness) Comparator.t
+end) =
 struct
   module Key = struct
     type t = int [@@deriving quickcheck, sexp_of]
@@ -100,10 +100,10 @@ struct
     let quickcheck_generator = Base_quickcheck.Generator.small_strictly_positive_int
 
     include Comparable.Infix (struct
-        type nonrec t = t
+      type nonrec t = t
 
-        let compare = compare
-      end)
+      let compare = compare
+    end)
   end
 
   type 'a t = 'a Map.M(Key).t [@@deriving equal, sexp_of]
@@ -137,10 +137,10 @@ end
 
 (** A functor like [Instance], but for tree types. *)
 module Instance_tree (Cmp : sig
-    type comparator_witness
+  type comparator_witness
 
-    val comparator : (int, comparator_witness) Comparator.t
-  end) =
+  val comparator : (int, comparator_witness) Comparator.t
+end) =
 struct
   module M = Instance (Cmp)
   include M
@@ -168,24 +168,24 @@ end
 
 (** Functor for [List.t] *)
 module Lst (T : sig
-    type t [@@deriving equal, sexp_of]
-  end) =
+  type t [@@deriving equal, sexp_of]
+end) =
 struct
   type t = T.t list [@@deriving equal, sexp_of]
 end
 
 (** Functor for [Or_error], ignoring error contents when comparing. *)
 module Ok (T : sig
-    type t [@@deriving equal, sexp_of]
-  end) =
+  type t [@@deriving equal, sexp_of]
+end) =
 struct
   type t = (T.t, (Error.t[@equal.ignore])) Result.t [@@deriving equal, sexp_of]
 end
 
 (** Functor for [Option.t] *)
 module Opt (T : sig
-    type t [@@deriving equal, sexp_of]
-  end) =
+  type t [@@deriving equal, sexp_of]
+end) =
 struct
   type t = T.t option [@@deriving equal, sexp_of]
 end
@@ -193,8 +193,8 @@ end
 (** Functor for pairs of a single type. Random generation frequently generates pairs of
     identical values. *)
 module Pair (T : sig
-    type t [@@deriving equal, quickcheck, sexp_of]
-  end) =
+  type t [@@deriving equal, quickcheck, sexp_of]
+end) =
 struct
   type t = T.t * T.t [@@deriving equal, quickcheck, sexp_of]
 
@@ -210,9 +210,9 @@ end
 
 (** Expect tests for everything exported from [Map.Creators_and_accessors_generic]. *)
 module Test_creators_and_accessors
-    (Types : Types)
-    (Impl : S with module Types := Types)
-    (Instance : Instance with module Types := Types) : S with module Types := Types = struct
+  (Types : Types)
+  (Impl : S with module Types := Types)
+  (Instance : Instance with module Types := Types) : S with module Types := Types = struct
   open Instance
   open Impl
 
@@ -455,7 +455,7 @@ module Test_creators_and_accessors
         let actual = create of_increasing_sequence seq in
         let expect =
           if List.is_sorted alist ~compare:(fun a b ->
-            Comparable.lift Key.compare ~f:fst a b)
+               Comparable.lift Key.compare ~f:fst a b)
           then create of_alist_or_error alist
           else Or_error.error_string "decreasing keys"
         in
@@ -474,7 +474,7 @@ module Test_creators_and_accessors
         let expect =
           let compare a b = Comparable.lift Key.compare ~f:fst a b in
           if List.is_sorted_strictly ~compare alist
-          || List.is_sorted_strictly ~compare (List.rev alist)
+             || List.is_sorted_strictly ~compare (List.rev alist)
           then create of_alist_or_error alist
           else Or_error.error_string "unsorted"
         in
@@ -756,8 +756,8 @@ module Test_creators_and_accessors
           (module Inst_multi)
           (access remove_multi t key)
           (access change t key ~f:(function
-             | None | Some ([] | [ _ ]) -> None
-             | Some (_ :: (_ :: _ as rest)) -> Some rest)));
+            | None | Some ([] | [ _ ]) -> None
+            | Some (_ :: (_ :: _ as rest)) -> Some rest)));
     [%expect {| |}]
   ;;
 
@@ -819,8 +819,8 @@ module Test_creators_and_accessors
   let filteri = filteri
 
   module Physical_equality (T : sig
-      type t [@@deriving sexp_of]
-    end) =
+    type t [@@deriving sexp_of]
+  end) =
   struct
     type t = T.t [@@deriving sexp_of]
 
@@ -1006,7 +1006,7 @@ module Test_creators_and_accessors
           (access combine_errors t)
           (to_alist t
            |> List.map ~f:(fun (key, result) ->
-             Or_error.map result ~f:(fun data -> key, data))
+                Or_error.map result ~f:(fun data -> key, data))
            |> Or_error.combine_errors
            |> Or_error.map ~f:(create of_alist_exn)));
     [%expect {| |}]
@@ -1166,14 +1166,14 @@ module Test_creators_and_accessors
           |> List.concat_map ~f:to_alist
           |> List.Assoc.sort_and_group ~compare:Key.compare
           |> List.filter_map ~f:(fun (key, list) ->
-            let elt =
-              match (list : _ Either.t list) with
-              | [ First x ] -> `Left x
-              | [ Second y ] -> `Right y
-              | [ First x; Second y ] -> `Both (x, y)
-              | _ -> assert false
-            in
-            Option.some_if (Key.( > ) key k) (key, elt))
+               let elt =
+                 match (list : _ Either.t list) with
+                 | [ First x ] -> `Left x
+                 | [ Second y ] -> `Right y
+                 | [ First x; Second y ] -> `Both (x, y)
+                 | _ -> assert false
+               in
+               Option.some_if (Key.( > ) key k) (key, elt))
         in
         require_equal [%here] (module Alist_merge) merge_alist expect;
         require_equal [%here] (module Alist_merge) iter2_alist expect;
@@ -1972,8 +1972,8 @@ end [@ocaml.remove_aliases] = struct
             (module struct
               type t =
                 ((int[@generator Base_quickcheck.Generator.small_strictly_positive_int])
-                 * int)
-                  list
+                * int)
+                list
               [@@deriving quickcheck, sexp_of]
             end)
             ~f:(fun alist ->

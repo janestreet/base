@@ -128,9 +128,9 @@ val filter : 'a t -> f:('a -> bool) -> 'a t
 val merge_deduped_and_sorted : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 val merge : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
-[@@deprecated
-  "[since 2021-07] For identical behavior, use [Sequence.merge_deduped_and_sorted], \
-   but consider using [Sequence.merge_sorted] instead."]
+  [@@deprecated
+    "[since 2021-07] For identical behavior, use [Sequence.merge_deduped_and_sorted], \
+     but consider using [Sequence.merge_sorted] instead."]
 
 (** If [t1] and [t2] are each sorted, [merge_sorted t1 t2 ~compare] merges [t1] and [t2]
     into a sorted sequence. Whenever identical elements are found in both [t1] and [t2],
@@ -321,7 +321,6 @@ val split_n : 'a t -> int -> 'a list * 'a t
     last list may contain fewer than [n] elements. No list contains zero elements. If [n]
     is not positive, it raises. *)
 val chunks_exn : 'a t -> int -> 'a list t
-
 
 (** [shift_right t a] produces [a] and then produces each element of [t]. *)
 val shift_right : 'a t -> 'a -> 'a t

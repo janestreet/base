@@ -21,7 +21,6 @@ module T = struct
   [@@@end]
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
-
   let compare = Int64_replace_polymorphic_compare.compare
   let to_string = to_string
   let of_string = of_string
@@ -40,7 +39,7 @@ external bits_of_float
   :  (float[@local_opt])
   -> (int64[@local_opt])
   = "caml_int64_bits_of_float" "caml_int64_bits_of_float_unboxed"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 let shift_right_logical = shift_right_logical
 let shift_right = shift_right
@@ -65,7 +64,7 @@ let of_float_unchecked = Stdlib.Int64.of_float
 
 let of_float f =
   if Float_replace_polymorphic_compare.( >= ) f float_lower_bound
-  && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
+     && Float_replace_polymorphic_compare.( <= ) f float_upper_bound
   then Stdlib.Int64.of_float f
   else
     Printf.invalid_argf
@@ -91,10 +90,10 @@ let[@inline always] bswap32 x =
 let[@inline always] bswap48 x = Stdlib.Int64.shift_right_logical (bswap64 x) 16
 
 include Comparable.With_zero (struct
-    include T
+  include T
 
-    let zero = zero
-  end)
+  let zero = zero
+end)
 
 (* Open replace_polymorphic_compare after including functor instantiations so they do not
    shadow its definitions. This is here so that efficient versions of the comparison
@@ -204,13 +203,13 @@ module Pow2 = struct
     :  (int64[@unboxed])
     -> (int[@untagged])
     = "Base_int_math_int64_clz" "Base_int_math_int64_clz_unboxed"
-  [@@noalloc]
+    [@@noalloc]
 
   external ctz
     :  (int64[@unboxed])
     -> (int[@untagged])
     = "Base_int_math_int64_ctz" "Base_int_math_int64_ctz_unboxed"
-  [@@noalloc]
+    [@@noalloc]
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
@@ -236,38 +235,38 @@ include Pow2
 include Conv.Make (T)
 
 include Conv.Make_hex (struct
-    type t = int64 [@@deriving_inline compare ~localize, hash]
+  type t = int64 [@@deriving_inline compare ~localize, hash]
 
-    let compare__local =
-      (compare_int64__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
-    ;;
+  let compare__local =
+    (compare_int64__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+  ;;
 
-    let compare = (fun a b -> compare__local a b : t -> t -> int)
+  let compare = (fun a b -> compare__local a b : t -> t -> int)
 
-    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      hash_fold_int64
+  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+    hash_fold_int64
 
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_int64 in
-      fun x -> func x
-    ;;
+  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+    let func = hash_int64 in
+    fun x -> func x
+  ;;
 
-    [@@@end]
+  [@@@end]
 
-    let zero = zero
-    let neg = neg
-    let ( < ) = ( < )
-    let to_string i = Printf.sprintf "%Lx" i
-    let of_string s = Stdlib.Scanf.sscanf s "%Lx" Fn.id
-    let module_name = "Base.Int64.Hex"
-  end)
+  let zero = zero
+  let neg = neg
+  let ( < ) = ( < )
+  let to_string i = Printf.sprintf "%Lx" i
+  let of_string s = Stdlib.Scanf.sscanf s "%Lx" Fn.id
+  let module_name = "Base.Int64.Hex"
+end)
 
 include Pretty_printer.Register (struct
-    type nonrec t = t
+  type nonrec t = t
 
-    let to_string = to_string
-    let module_name = "Base.Int64"
-  end)
+  let to_string = to_string
+  let module_name = "Base.Int64"
+end)
 
 module Pre_O = struct
   external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_add"
@@ -292,16 +291,16 @@ module O = struct
   include Pre_O
 
   include Int_math.Make (struct
-      type nonrec t = t
+    type nonrec t = t
 
-      include Pre_O
+    include Pre_O
 
-      let rem = rem
-      let to_float = to_float
-      let of_float = of_float
-      let of_string = T.of_string
-      let to_string = T.to_string
-    end)
+    let rem = rem
+    let to_float = to_float
+    let of_float = of_float
+    let of_string = T.of_string
+    let to_string = T.to_string
+  end)
 
   external ( land ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_and"
   external ( lor ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_or"

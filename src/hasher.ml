@@ -2,7 +2,6 @@ open! Import
 
 (** Signatures required of types which can be used in [[@@deriving hash]]. *)
 
-
 module type S = sig
   (** The type that is hashed.  *)
   type t

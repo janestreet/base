@@ -1461,11 +1461,11 @@ let%expect_test "list sort, dedup" =
       let prev char = Char.of_int_exn (Int.pred (Char.to_int char)) in
       Shrinker.list
         (Shrinker.create (function
-           | 'a' -> Sequence.empty
-           | 'b' .. 'z' as char -> Sequence.singleton (prev char)
-           | 'A' -> Sequence.singleton 'a'
-           | 'B' .. 'Z' as char -> Sequence.of_list [ Char.lowercase char; prev char ]
-           | _ -> Sequence.empty))
+          | 'a' -> Sequence.empty
+          | 'b' .. 'z' as char -> Sequence.singleton (prev char)
+          | 'A' -> Sequence.singleton 'a'
+          | 'B' .. 'Z' as char -> Sequence.of_list [ Char.lowercase char; prev char ]
+          | _ -> Sequence.empty))
     ;;
   end
   in

@@ -72,7 +72,6 @@ module type Applicative_infix_gen = sig
   type 'a t
   type ('a, 'b) fn
 
-
   (** same as [apply] *)
   val ( <*> ) : ('a -> 'b) t -> 'a t -> 'b t
 
@@ -100,13 +99,13 @@ end
 
 module type For_let_syntax =
   For_let_syntax_gen
-  with type ('a, 'b) fn := 'a -> 'b
-   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
 
 module type For_let_syntax_local =
   For_let_syntax_gen
-  with type ('a, 'b) fn := ('a[@local]) -> 'b
-   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+    with type ('a, 'b) fn := ('a[@local]) -> 'b
+     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
 
 module type S_gen = sig
   include For_let_syntax_gen
@@ -126,17 +125,17 @@ end
 
 module type S =
   S_gen
-  with type ('a, 'b) fn := 'a -> 'b
-   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
-   and type ('a, 'b, 'c) fun2 := 'a -> 'b -> 'c
-   and type ('a, 'b, 'c, 'd) fun3 := 'a -> 'b -> 'c -> 'd
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+     and type ('a, 'b, 'c) fun2 := 'a -> 'b -> 'c
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> 'b -> 'c -> 'd
 
 module type S_local =
   S_gen
-  with type ('a, 'b) fn := ('a[@local]) -> 'b
-   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
-   and type ('a, 'b, 'c) fun2 := 'a -> (('b -> 'c)[@local])
-   and type ('a, 'b, 'c, 'd) fun3 := 'a -> (('b -> (('c -> 'd)[@local]))[@local])
+    with type ('a, 'b) fn := ('a[@local]) -> 'b
+     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+     and type ('a, 'b, 'c) fun2 := 'a -> ('b -> 'c[@local])
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> ('b -> ('c -> 'd[@local])[@local])
 
 module type Let_syntax = sig
   type 'a t
@@ -222,19 +221,19 @@ module type For_let_syntax2_gen = sig
 
   include
     Applicative_infix2_gen
-    with type ('a, 'e) t := ('a, 'e) t
-     and type ('a, 'b) fn := ('a, 'b) fn
+      with type ('a, 'e) t := ('a, 'e) t
+       and type ('a, 'b) fn := ('a, 'b) fn
 end
 
 module type For_let_syntax2 =
   For_let_syntax2_gen
-  with type ('a, 'b) fn := 'a -> 'b
-   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
 
 module type For_let_syntax2_local =
   For_let_syntax2_gen
-  with type ('a, 'b) fn := ('a[@local]) -> 'b
-   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+    with type ('a, 'b) fn := ('a[@local]) -> 'b
+     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
 
 module type S2_gen = sig
   include For_let_syntax2_gen
@@ -256,23 +255,23 @@ module type S2_gen = sig
 
   module Applicative_infix :
     Applicative_infix2_gen
-    with type ('a, 'e) t := ('a, 'e) t
-     and type ('a, 'b) fn := ('a, 'b) fn
+      with type ('a, 'e) t := ('a, 'e) t
+       and type ('a, 'b) fn := ('a, 'b) fn
 end
 
 module type S2 =
   S2_gen
-  with type ('a, 'b) fn := 'a -> 'b
-   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
-   and type ('a, 'b, 'c) fun2 := 'a -> 'b -> 'c
-   and type ('a, 'b, 'c, 'd) fun3 := 'a -> 'b -> 'c -> 'd
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+     and type ('a, 'b, 'c) fun2 := 'a -> 'b -> 'c
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> 'b -> 'c -> 'd
 
 module type S2_local =
   S2_gen
-  with type ('a, 'b) fn := ('a[@local]) -> 'b
-   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
-   and type ('a, 'b, 'c) fun2 := 'a -> (('b -> 'c)[@local])
-   and type ('a, 'b, 'c, 'd) fun3 := 'a -> (('b -> (('c -> 'd)[@local]))[@local])
+    with type ('a, 'b) fn := ('a[@local]) -> 'b
+     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+     and type ('a, 'b, 'c) fun2 := 'a -> ('b -> 'c[@local])
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> ('b -> ('c -> 'd[@local])[@local])
 
 module type Let_syntax2 = sig
   type ('a, 'e) t
@@ -361,19 +360,19 @@ module type For_let_syntax3_gen = sig
 
   include
     Applicative_infix3_gen
-    with type ('a, 'd, 'e) t := ('a, 'd, 'e) t
-     and type ('a, 'b) fn := ('a, 'b) fn
+      with type ('a, 'd, 'e) t := ('a, 'd, 'e) t
+       and type ('a, 'b) fn := ('a, 'b) fn
 end
 
 module type For_let_syntax3 =
   For_let_syntax3_gen
-  with type ('a, 'b) fn := 'a -> 'b
-   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
 
 module type For_let_syntax3_local =
   For_let_syntax3_gen
-  with type ('a, 'b) fn := ('a[@local]) -> 'b
-   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+    with type ('a, 'b) fn := ('a[@local]) -> 'b
+     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
 
 module type S3_gen = sig
   include For_let_syntax3_gen
@@ -399,23 +398,23 @@ module type S3_gen = sig
 
   module Applicative_infix :
     Applicative_infix3_gen
-    with type ('a, 'd, 'e) t := ('a, 'd, 'e) t
-     and type ('a, 'b) fn := ('a, 'b) fn
+      with type ('a, 'd, 'e) t := ('a, 'd, 'e) t
+       and type ('a, 'b) fn := ('a, 'b) fn
 end
 
 module type S3 =
   S3_gen
-  with type ('a, 'b) fn := 'a -> 'b
-   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
-   and type ('a, 'b, 'c) fun2 := 'a -> 'b -> 'c
-   and type ('a, 'b, 'c, 'd) fun3 := 'a -> 'b -> 'c -> 'd
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+     and type ('a, 'b, 'c) fun2 := 'a -> 'b -> 'c
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> 'b -> 'c -> 'd
 
 module type S3_local =
   S3_gen
-  with type ('a, 'b) fn := ('a[@local]) -> 'b
-   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
-   and type ('a, 'b, 'c) fun2 := 'a -> (('b -> 'c)[@local])
-   and type ('a, 'b, 'c, 'd) fun3 := 'a -> (('b -> (('c -> 'd)[@local]))[@local])
+    with type ('a, 'b) fn := ('a[@local]) -> 'b
+     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+     and type ('a, 'b, 'c) fun2 := 'a -> ('b -> 'c[@local])
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> ('b -> ('c -> 'd[@local])[@local])
 
 module type Let_syntax3 = sig
   type ('a, 'd, 'e) t
@@ -487,27 +486,27 @@ module type Applicative = sig
   module Make3 (X : Basic3) : S3 with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t
 
   module Make_let_syntax
-      (X : For_let_syntax) (Intf : sig
-                              module type S
-                            end)
-      (Impl : Intf.S) :
+    (X : For_let_syntax) (Intf : sig
+      module type S
+    end)
+    (Impl : Intf.S) :
     Let_syntax with type 'a t := 'a X.t with module Open_on_rhs_intf := Intf
 
   module Make_let_syntax2
-      (X : For_let_syntax2) (Intf : sig
-                               module type S
-                             end)
-      (Impl : Intf.S) :
+    (X : For_let_syntax2) (Intf : sig
+      module type S
+    end)
+    (Impl : Intf.S) :
     Let_syntax2 with type ('a, 'e) t := ('a, 'e) X.t with module Open_on_rhs_intf := Intf
 
   module Make_let_syntax3
-      (X : For_let_syntax3) (Intf : sig
-                               module type S
-                             end)
-      (Impl : Intf.S) :
+    (X : For_let_syntax3) (Intf : sig
+      module type S
+    end)
+    (Impl : Intf.S) :
     Let_syntax3
-    with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t
-    with module Open_on_rhs_intf := Intf
+      with type ('a, 'd, 'e) t := ('a, 'd, 'e) X.t
+      with module Open_on_rhs_intf := Intf
 
   module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t
 

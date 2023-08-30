@@ -51,14 +51,14 @@ module S_to_S1 (S : S) = struct
 end
 
 module Make (M : sig
-    type t [@@deriving_inline compare, sexp_of]
+  type t [@@deriving_inline compare, sexp_of]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S with type t := t
 
-    val sexp_of_t : t -> Sexplib0.Sexp.t
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    [@@@end]
-  end) =
+  [@@@end]
+end) =
 struct
   include M
 
@@ -68,11 +68,11 @@ struct
 end
 
 module Make1 (M : sig
-    type 'a t
+  type 'a t
 
-    val compare : 'a t -> 'a t -> int
-    val sexp_of_t : 'a t -> Sexp.t
-  end) =
+  val compare : 'a t -> 'a t -> int
+  val sexp_of_t : 'a t -> Sexp.t
+end) =
 struct
   type comparator_witness
 
@@ -83,11 +83,11 @@ module Poly = struct
   type 'a t = 'a
 
   include Make1 (struct
-      type 'a t = 'a
+    type 'a t = 'a
 
-      let compare = Poly.compare
-      let sexp_of_t _ = Sexp.Atom "_"
-    end)
+    let compare = Poly.compare
+    let sexp_of_t _ = Sexp.Atom "_"
+  end)
 end
 
 module type Derived = sig
@@ -98,14 +98,14 @@ module type Derived = sig
 end
 
 module Derived (M : sig
-    type 'a t [@@deriving_inline compare, sexp_of]
+  type 'a t [@@deriving_inline compare, sexp_of]
 
-    include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 
-    val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
+  val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
-    [@@@end]
-  end) =
+  [@@@end]
+end) =
 struct
   type !'cmp comparator_witness
 
@@ -125,18 +125,18 @@ module type Derived2 = sig
 end
 
 module Derived2 (M : sig
-    type ('a, 'b) t [@@deriving_inline compare, sexp_of]
+  type ('a, 'b) t [@@deriving_inline compare, sexp_of]
 
-    include Ppx_compare_lib.Comparable.S2 with type ('a, 'b) t := ('a, 'b) t
+  include Ppx_compare_lib.Comparable.S2 with type ('a, 'b) t := ('a, 'b) t
 
-    val sexp_of_t
-      :  ('a -> Sexplib0.Sexp.t)
-      -> ('b -> Sexplib0.Sexp.t)
-      -> ('a, 'b) t
-      -> Sexplib0.Sexp.t
+  val sexp_of_t
+    :  ('a -> Sexplib0.Sexp.t)
+    -> ('b -> Sexplib0.Sexp.t)
+    -> ('a, 'b) t
+    -> Sexplib0.Sexp.t
 
-    [@@@end]
-  end) =
+  [@@@end]
+end) =
 struct
   type (!'cmp_a, !'cmp_b) comparator_witness
 
@@ -157,11 +157,11 @@ module type Derived_phantom = sig
 end
 
 module Derived_phantom (M : sig
-    type ('a, 'b) t
+  type ('a, 'b) t
 
-    val compare : ('a -> 'a -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
-    val sexp_of_t : ('a -> Sexp.t) -> ('a, _) t -> Sexp.t
-  end) =
+  val compare : ('a -> 'a -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+  val sexp_of_t : ('a -> Sexp.t) -> ('a, _) t -> Sexp.t
+end) =
 struct
   type 'cmp_a comparator_witness
 
@@ -181,17 +181,17 @@ module type Derived2_phantom = sig
 end
 
 module Derived2_phantom (M : sig
-    type ('a, 'b, 'c) t
+  type ('a, 'b, 'c) t
 
-    val compare
-      :  ('a -> 'a -> int)
-      -> ('b -> 'b -> int)
-      -> ('a, 'b, 'c) t
-      -> ('a, 'b, 'c) t
-      -> int
+  val compare
+    :  ('a -> 'a -> int)
+    -> ('b -> 'b -> int)
+    -> ('a, 'b, 'c) t
+    -> ('a, 'b, 'c) t
+    -> int
 
-    val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b, _) t -> Sexp.t
-  end) =
+  val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b, _) t -> Sexp.t
+end) =
 struct
   type (!'cmp_a, !'cmp_b) comparator_witness
 

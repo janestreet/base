@@ -15,7 +15,7 @@ let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.sta
      | Less -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
      | Equal -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
      | Greater -> Ppx_hash_lib.Std.Hash.fold_int hsv 2
-                  : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
+    : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
 ;;
 
 let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
@@ -46,15 +46,15 @@ let t_of_sexp =
    | Sexplib0.Sexp.List [] as sexp__004_ ->
      Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__005_ sexp__004_
    | sexp__004_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__005_ sexp__004_
-                   : Sexplib0.Sexp.t -> t)
+    : Sexplib0.Sexp.t -> t)
 ;;
 
 let sexp_of_t =
   (function
-    | Less -> Sexplib0.Sexp.Atom "Less"
-    | Equal -> Sexplib0.Sexp.Atom "Equal"
-    | Greater -> Sexplib0.Sexp.Atom "Greater"
-                 : t -> Sexplib0.Sexp.t)
+   | Less -> Sexplib0.Sexp.Atom "Less"
+   | Equal -> Sexplib0.Sexp.Atom "Equal"
+   | Greater -> Sexplib0.Sexp.Atom "Greater"
+    : t -> Sexplib0.Sexp.t)
 ;;
 
 let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =

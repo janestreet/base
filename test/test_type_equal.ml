@@ -59,7 +59,7 @@ let%test_module "Type_equal" =
     (* let _a_to_b (a : A.t) =
      *   let T = Id.same_witness_exn A.id B.id in
      *   (a : B.t)
-    *)
+     *)
 
     module C = struct
       type 'a t

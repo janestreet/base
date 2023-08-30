@@ -30,9 +30,9 @@ module type Accessors = sig
   (** @inline *)
   include
     Dictionary_mutable.Accessors
-    with type 'key key := 'key key
-     and type ('key, 'data, _) t := ('key, 'data) t
-     and type ('fn, _, _, _) accessor := 'fn
+      with type 'key key := 'key key
+       and type ('key, 'data, _) t := ('key, 'data) t
+       and type ('fn, _, _, _) accessor := 'fn
 
   val sexp_of_key : ('a, _) t -> 'a key -> Sexp.t
   val clear : (_, _) t -> unit
@@ -302,9 +302,8 @@ module type Accessors = sig
     -> ('k, 'b) t
     -> f:
          ((key:'k key -> [ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> 'c option)
-          [@local])
+         [@local])
     -> ('k, 'c) t
-
 
   (** Every [key] in [src] will be removed or set in [dst] according to the return value
       of [f]. *)
@@ -313,7 +312,7 @@ module type Accessors = sig
     -> dst:('k, 'b) t
     -> f:
          ((key:'k key -> 'a -> 'b option -> 'b Dictionary_mutable.Merge_into_action.t)
-          [@local])
+         [@local])
     -> unit
 
   (** Returns the list of all keys for given hashtable. *)
@@ -351,7 +350,6 @@ module type Accessors = sig
 
   (** Returns the list of all (key, data) pairs for given hashtable. *)
   val to_alist : ('a, 'b) t -> ('a key * 'b) list
-
 
   (** [remove_if_zero]'s default is [false]. *)
   val incr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit
@@ -396,24 +394,23 @@ module type Creators_generic = sig
   (** @inline *)
   include
     Dictionary_mutable.Creators
-    with type 'key key := 'key key
-     and type ('key, 'data, _) t := ('key, 'data) t
-     and type ('fn, 'key, 'data, _) creator := ('key key, 'data, 'fn) create_options
+      with type 'key key := 'key key
+       and type ('key, 'data, _) t := ('key, 'data) t
+       and type ('fn, 'key, 'data, _) creator := ('key key, 'data, 'fn) create_options
 
   val create : ('a key, 'b, unit -> ('a, 'b) t) create_options
-
 
   val of_alist
     : ( 'a key
       , 'b
       , ('a key * 'b) list -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a key ] )
-        create_options
+      create_options
 
   val of_alist_report_all_dups
     : ( 'a key
       , 'b
       , ('a key * 'b) list -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a key list ] )
-        create_options
+      create_options
 
   val of_alist_or_error
     : ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t Or_error.t) create_options
@@ -422,7 +419,6 @@ module type Creators_generic = sig
 
   val of_alist_multi
     : ('a key, 'b list, ('a key * 'b) list -> ('a, 'b list) t) create_options
-
 
   (** {[ create_mapped get_key get_data [x1,...,xn]
          = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn] ]} *)
@@ -433,8 +429,7 @@ module type Creators_generic = sig
         -> get_data:(('r -> 'b)[@local])
         -> 'r list
         -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a key list ] )
-        create_options
-
+      create_options
 
   (** {[ create_with_key ~get_key [x1,...,xn]
          = of_alist [get_key x1, x1; ...; get_key xn, xn] ]} *)
@@ -444,20 +439,19 @@ module type Creators_generic = sig
       , get_key:(('r -> 'a key)[@local])
         -> 'r list
         -> [ `Ok of ('a, 'r) t | `Duplicate_keys of 'a key list ] )
-        create_options
+      create_options
 
   val create_with_key_or_error
     : ( 'a key
       , 'r
       , get_key:(('r -> 'a key)[@local]) -> 'r list -> ('a, 'r) t Or_error.t )
-        create_options
+      create_options
 
   val create_with_key_exn
     : ( 'a key
       , 'r
       , get_key:(('r -> 'a key)[@local]) -> 'r list -> ('a, 'r) t )
-        create_options
-
+      create_options
 
   val group
     : ( 'a key
@@ -467,7 +461,7 @@ module type Creators_generic = sig
         -> combine:(('b -> 'b -> 'b)[@local])
         -> 'r list
         -> ('a, 'b) t )
-        create_options
+      create_options
 end
 
 module type Creators = sig
@@ -660,7 +654,6 @@ module type S_without_submodules = sig
   include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
   (** @inline *)
 
-
   include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
   (** @inline *)
 
@@ -687,10 +680,10 @@ module type S_poly = sig
 
   include
     Creators_generic
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key = 'a
-    with type ('key, 'data, 'z) create_options :=
-      ('key, 'data, 'z) create_options_without_first_class_module
+      with type ('a, 'b) t := ('a, 'b) t
+      with type 'a key = 'a
+      with type ('key, 'data, 'z) create_options :=
+        ('key, 'data, 'z) create_options_without_first_class_module
 
   include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
   include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
@@ -842,20 +835,20 @@ module type Hashtbl = sig
   type nonrec ('key, 'data, 'z) create_options = ('key, 'data, 'z) create_options
 
   module Creators (Key : sig
-      type 'a t
+    type 'a t
 
-      val hashable : 'a t Hashable.t
-    end) : sig
+    val hashable : 'a t Hashable.t
+  end) : sig
     type ('a, 'b) t_ = ('a Key.t, 'b) t
 
     val t_of_sexp : (Sexp.t -> 'a Key.t) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t_
 
     include
       Creators_generic
-      with type ('a, 'b) t := ('a, 'b) t_
-      with type 'a key := 'a Key.t
-      with type ('key, 'data, 'a) create_options :=
-        ('key, 'data, 'a) create_options_without_first_class_module
+        with type ('a, 'b) t := ('a, 'b) t_
+        with type 'a key := 'a Key.t
+        with type ('key, 'data, 'a) create_options :=
+          ('key, 'data, 'a) create_options_without_first_class_module
   end
 
   module Poly : S_poly with type ('a, 'b) t = ('a, 'b) t

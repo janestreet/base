@@ -1,7 +1,6 @@
 open! Core
 open! Import
 
-
 let%expect_test "bool_true" =
   printf "%b" (globalize_bool true);
   [%expect {| true |}]

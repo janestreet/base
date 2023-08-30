@@ -18,12 +18,12 @@ let%test "Hashtbl.merge succeeds with first-class-module interface" =
 
 let%test_module _ =
   (module Hashtbl_tests.Make (struct
-       include Hashtbl
+    include Hashtbl
 
-       let create_poly ?size () = Poly.create ?size ()
-       let of_alist_poly_exn l = Poly.of_alist_exn l
-       let of_alist_poly_or_error l = Poly.of_alist_or_error l
-     end))
+    let create_poly ?size () = Poly.create ?size ()
+    let of_alist_poly_exn l = Poly.of_alist_exn l
+    let of_alist_poly_or_error l = Poly.of_alist_or_error l
+  end))
 ;;
 
 let%expect_test "Hashtbl.find_exn" =
@@ -69,7 +69,7 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
           ~choose_randomly:(Hashtbl.choose_randomly t : (_ * _) option)
           ~choose_randomly_exn:
             (Or_error.try_with (fun () -> Hashtbl.choose_randomly_exn t)
-             : (_ * _) Or_error.t)]
+              : (_ * _) Or_error.t)]
   in
   test [];
   [%expect

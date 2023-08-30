@@ -21,9 +21,9 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Accessors
-        with type _ key := key
-         and type (_, 'data, _) t := 'data t
-         and type ('fn, _, _, _) accessor := 'fn
+          with type _ key := key
+           and type (_, 'data, _) t := 'data t
+           and type ('fn, _, _, _) accessor := 'fn
     end
   end
 
@@ -40,9 +40,9 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Accessors
-        with type 'key key := 'key
-         and type ('key, 'data, _) t := ('key, 'data) t
-         and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
+          with type 'key key := 'key
+           and type ('key, 'data, _) t := ('key, 'data) t
+           and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
     end
   end
 
@@ -59,10 +59,10 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Accessors
-        with type 'key key := 'key
-         and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-         and type ('fn, 'key, 'data, 'phantom) accessor :=
-           ('fn, 'key, 'data, 'phantom) accessor
+          with type 'key key := 'key
+           and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+           and type ('fn, 'key, 'data, 'phantom) accessor :=
+            ('fn, 'key, 'data, 'phantom) accessor
     end
   end
 
@@ -82,9 +82,9 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Creators
-        with type _ key := key
-         and type (_, 'data, _) t := 'data t
-         and type ('fn, _, _, _) creator := 'fn
+          with type _ key := key
+           and type (_, 'data, _) t := 'data t
+           and type ('fn, _, _, _) creator := 'fn
     end
   end
 
@@ -101,9 +101,9 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Creators
-        with type 'key key := 'key
-         and type ('key, 'data, _) t := ('key, 'data) t
-         and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
+          with type 'key key := 'key
+           and type ('key, 'data, _) t := ('key, 'data) t
+           and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
     end
   end
 
@@ -120,10 +120,10 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Creators
-        with type 'key key := 'key
-         and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-         and type ('fn, 'key, 'data, 'phantom) creator :=
-           ('fn, 'key, 'data, 'phantom) creator
+          with type 'key key := 'key
+           and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+           and type ('fn, 'key, 'data, 'phantom) creator :=
+            ('fn, 'key, 'data, 'phantom) creator
     end
   end
 
@@ -142,17 +142,17 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Accessors
-        with type 'key key := 'key key
-        with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-        with type ('fn, 'key, 'data, 'phantom) accessor :=
-          ('fn, 'key, 'data, 'phantom) accessor
+          with type 'key key := 'key key
+          with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+          with type ('fn, 'key, 'data, 'phantom) accessor :=
+            ('fn, 'key, 'data, 'phantom) accessor
 
       include
         Creators
-        with type 'key key := 'key key
-        with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-        with type ('fn, 'key, 'data, 'phantom) creator :=
-          ('fn, 'key, 'data, 'phantom) creator
+          with type 'key key := 'key key
+          with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+          with type ('fn, 'key, 'data, 'phantom) creator :=
+            ('fn, 'key, 'data, 'phantom) creator
     end
   end
 
@@ -169,10 +169,10 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         S
-        with type _ key := key
-         and type (_, 'data, _) t := 'data t
-         and type ('fn, _, _, _) accessor := 'fn
-         and type ('fn, _, _, _) creator := 'fn
+          with type _ key := key
+           and type (_, 'data, _) t := 'data t
+           and type ('fn, _, _, _) accessor := 'fn
+           and type ('fn, _, _, _) creator := 'fn
     end
   end
 
@@ -190,10 +190,10 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         S
-        with type 'key key := 'key
-         and type ('key, 'data, _) t := ('key, 'data) t
-         and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
-         and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
+          with type 'key key := 'key
+           and type ('key, 'data, _) t := ('key, 'data) t
+           and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
+           and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
     end
   end
 
@@ -211,12 +211,12 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         S
-        with type 'key key := 'key
-         and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-         and type ('fn, 'key, 'data, 'phantom) accessor :=
-           ('fn, 'key, 'data, 'phantom) accessor
-         and type ('fn, 'key, 'data, 'phantom) creator :=
-           ('fn, 'key, 'data, 'phantom) creator
+          with type 'key key := 'key
+           and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+           and type ('fn, 'key, 'data, 'phantom) accessor :=
+            ('fn, 'key, 'data, 'phantom) accessor
+           and type ('fn, 'key, 'data, 'phantom) creator :=
+            ('fn, 'key, 'data, 'phantom) creator
     end
   end
 

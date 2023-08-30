@@ -51,7 +51,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Like [find]. Raises if there is no value for the given key. *)
     val find_exn
@@ -67,7 +67,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Like [add]. Raises on duplicates. *)
     val add_exn
@@ -78,7 +78,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Adds or replaces a key/value pair in the dictionary. *)
     val set
@@ -89,7 +89,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Removes any value for the given key. *)
     val remove
@@ -97,7 +97,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Adds, replaces, or removes the value for a given key, depending on its current
         value or lack thereof. *)
@@ -109,7 +109,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Adds or replaces the value for a given key, depending on its current value or
         lack thereof. *)
@@ -121,7 +121,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Adds [data] to the existing key/value pair for [key]. Interprets a missing key as
         having an empty list. *)
@@ -133,7 +133,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Removes one element from the existing key/value pair for [key]. Removes the key
         entirely if the new list is empty. *)
@@ -142,7 +142,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Produces the list associated with the corresponding key. Interprets a missing
         key as having an empty list. *)
@@ -151,7 +151,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Combines every value in the dictionary. *)
     val fold
@@ -169,7 +169,7 @@ module Definitions = struct
              -> data:'data
              -> 'acc
              -> ('acc, 'final) Container.Continue_or_stop.t)
-            [@local])
+           [@local])
       -> finish:(('acc -> 'final)[@local])
       -> 'final
 
@@ -299,7 +299,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Splits the [fst] and [snd] components of values associated with keys into separate
         dictionaries. *)
@@ -316,12 +316,12 @@ module Definitions = struct
                ((key:'key key
                  -> [ `Left of 'data1 | `Right of 'data2 | `Both of 'data1 * 'data2 ]
                  -> 'data3 option)
-                [@local])
+               [@local])
           -> ('key, 'data3, 'phantom) t
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Merges two dictionaries by traversing only the smaller of the two. Adds key/value
         pairs missing from the larger dictionary, and [combine]s duplicate values. *)
@@ -333,7 +333,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Computes a sequence of differences between two dictionaries. *)
     val symmetric_diff
@@ -341,11 +341,11 @@ module Definitions = struct
           -> ('key, 'data, 'phantom) t
           -> data_equal:('data -> 'data -> bool)
           -> ('key key * [ `Left of 'data | `Right of 'data | `Unequal of 'data * 'data ])
-               Sequence.t
+             Sequence.t
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
 
     (** Folds over the result of [symmetric_diff]. May be more performant. *)
     val fold_symmetric_diff
@@ -358,12 +358,12 @@ module Definitions = struct
                  -> 'key key
                     * [ `Left of 'data | `Right of 'data | `Unequal of 'data * 'data ]
                  -> 'acc)
-                [@local])
+               [@local])
           -> 'acc
         , 'key
         , 'data
         , 'phantom )
-          accessor
+        accessor
   end
 
   module type Accessors1 = sig
@@ -373,9 +373,9 @@ module Definitions = struct
     (** @inline *)
     include
       Accessors
-      with type (_, 'data, _) t := 'data t
-       and type _ key := key
-       and type ('fn, _, _, _) accessor := 'fn
+        with type (_, 'data, _) t := 'data t
+         and type _ key := key
+         and type ('fn, _, _, _) accessor := 'fn
   end
 
   module type Accessors2 = sig
@@ -385,9 +385,9 @@ module Definitions = struct
     (** @inline *)
     include
       Accessors
-      with type ('key, 'data, _) t := ('key, 'data) t
-       and type 'key key := 'key
-       and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
+        with type ('key, 'data, _) t := ('key, 'data) t
+         and type 'key key := 'key
+         and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
   end
 
   module type Accessors3 = sig
@@ -397,10 +397,10 @@ module Definitions = struct
     (** @inline *)
     include
       Accessors
-      with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-       and type 'key key := 'key
-       and type ('fn, 'key, 'data, 'phantom) accessor :=
-         ('fn, 'key, 'data, 'phantom) accessor
+        with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+         and type 'key key := 'key
+         and type ('fn, 'key, 'data, 'phantom) accessor :=
+          ('fn, 'key, 'data, 'phantom) accessor
   end
 
   module type Creators = sig
@@ -431,7 +431,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist]. Returns a [Result.t]. *)
     val of_alist_or_error
@@ -439,7 +439,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist]. Raises on duplicates. *)
     val of_alist_exn
@@ -447,7 +447,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Produces a dictionary mapping each key to a list of associated values. *)
     val of_alist_multi
@@ -455,7 +455,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Produces a dictionary using each key/value pair. Combines all values for a given
         key with [init] using [f]. *)
@@ -467,7 +467,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Produces a dictionary using each key/value pair. Combines multiple values for a
         given key using [f]. *)
@@ -478,7 +478,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist]. Consumes a sequence. *)
     val of_sequence
@@ -487,7 +487,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist_or_error]. Consumes a sequence. *)
     val of_sequence_or_error
@@ -495,7 +495,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist_exn]. Consumes a sequence. *)
     val of_sequence_exn
@@ -503,7 +503,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist_multi]. Consumes a sequence. *)
     val of_sequence_multi
@@ -511,7 +511,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist_fold]. Consumes a sequence. *)
     val of_sequence_fold
@@ -522,7 +522,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist_reduce]. Consumes a sequence. *)
     val of_sequence_reduce
@@ -532,7 +532,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist]. Consume values for which keys can be computed. *)
     val of_list_with_key
@@ -542,7 +542,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist_or_error]. Consume values for which keys can be computed. *)
     val of_list_with_key_or_error
@@ -552,7 +552,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist_exn]. Consume values for which keys can be computed. *)
     val of_list_with_key_exn
@@ -560,7 +560,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_alist_multi]. Consume values for which keys can be computed. *)
     val of_list_with_key_multi
@@ -570,7 +570,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Produces a dictionary of all key/value pairs that [iteri] passes to [~f]. Fails if
         a duplicate key is found. *)
@@ -580,7 +580,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
 
     (** Like [of_iteri]. Raises on duplicate key. *)
     val of_iteri_exn
@@ -589,7 +589,7 @@ module Definitions = struct
         , 'key
         , 'data
         , 'phantom )
-          creator
+        creator
   end
 
   module type Creators1 = sig
@@ -599,9 +599,9 @@ module Definitions = struct
     (** @inline *)
     include
       Creators
-      with type (_, 'data, _) t := 'data t
-       and type _ key := key
-       and type ('fn, _, _, _) creator := 'fn
+        with type (_, 'data, _) t := 'data t
+         and type _ key := key
+         and type ('fn, _, _, _) creator := 'fn
   end
 
   module type Creators2 = sig
@@ -611,9 +611,9 @@ module Definitions = struct
     (** @inline *)
     include
       Creators
-      with type ('key, 'data, _) t := ('key, 'data) t
-       and type 'key key := 'key
-       and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
+        with type ('key, 'data, _) t := ('key, 'data) t
+         and type 'key key := 'key
+         and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
   end
 
   module type Creators3 = sig
@@ -623,10 +623,10 @@ module Definitions = struct
     (** @inline *)
     include
       Creators
-      with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-       and type 'key key := 'key
-       and type ('fn, 'key, 'data, 'phantom) creator :=
-         ('fn, 'key, 'data, 'phantom) creator
+        with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+         and type 'key key := 'key
+         and type ('fn, 'key, 'data, 'phantom) creator :=
+          ('fn, 'key, 'data, 'phantom) creator
   end
 
   module type S = sig
@@ -638,18 +638,18 @@ module Definitions = struct
     (** @inline *)
     include
       Accessors
-      with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-       and type 'key key := 'key key
-       and type ('fn, 'key, 'data, 'phantom) accessor :=
-         ('fn, 'key, 'data, 'phantom) accessor
+        with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+         and type 'key key := 'key key
+         and type ('fn, 'key, 'data, 'phantom) accessor :=
+          ('fn, 'key, 'data, 'phantom) accessor
 
     (** @inline *)
     include
       Creators
-      with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-       and type 'key key := 'key key
-       and type ('fn, 'key, 'data, 'phantom) creator :=
-         ('fn, 'key, 'data, 'phantom) creator
+        with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+         and type 'key key := 'key key
+         and type ('fn, 'key, 'data, 'phantom) creator :=
+          ('fn, 'key, 'data, 'phantom) creator
   end
 
   module type S1 = sig
@@ -659,10 +659,10 @@ module Definitions = struct
     (** @inline *)
     include
       S
-      with type (_, 'data, _) t := 'data t
-       and type _ key := key
-       and type ('fn, _, _, _) accessor := 'fn
-       and type ('fn, _, _, _) creator := 'fn
+        with type (_, 'data, _) t := 'data t
+         and type _ key := key
+         and type ('fn, _, _, _) accessor := 'fn
+         and type ('fn, _, _, _) creator := 'fn
   end
 
   module type S2 = sig
@@ -673,10 +673,10 @@ module Definitions = struct
     (** @inline *)
     include
       S
-      with type ('key, 'data, _) t := ('key, 'data) t
-       and type 'key key := 'key
-       and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
-       and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
+        with type ('key, 'data, _) t := ('key, 'data) t
+         and type 'key key := 'key
+         and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
+         and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
   end
 
   module type S3 = sig
@@ -687,12 +687,12 @@ module Definitions = struct
     (** @inline *)
     include
       S
-      with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-       and type 'key key := 'key
-       and type ('fn, 'key, 'data, 'phantom) accessor :=
-         ('fn, 'key, 'data, 'phantom) accessor
-       and type ('fn, 'key, 'data, 'phantom) creator :=
-         ('fn, 'key, 'data, 'phantom) creator
+        with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+         and type 'key key := 'key
+         and type ('fn, 'key, 'data, 'phantom) accessor :=
+          ('fn, 'key, 'data, 'phantom) accessor
+         and type ('fn, 'key, 'data, 'phantom) creator :=
+          ('fn, 'key, 'data, 'phantom) creator
   end
 end
 

@@ -33,7 +33,6 @@ module _ : module type of Container = struct
   module _ (M : S0) : Generic0 = M
   module _ (M : Generic0) : S0 = M
 
-
   (* Ensure that S0_phantom is Generic with a fixed element type. *)
   module type S0_phantom = Container.S0_phantom
 
@@ -61,9 +60,9 @@ module _ : module type of Container = struct
 
       include
         Generic_with_creators
-        with type _ elt := elt
-         and type (_, _) t := t
-         and type ('a, _) concat := 'a list
+          with type _ elt := elt
+           and type (_, _) t := t
+           and type ('a, _) concat := 'a list
 
       val mem : t -> elt -> bool
     end
@@ -109,9 +108,9 @@ module _ : module type of Container = struct
 
       include
         Generic_with_creators
-        with type 'a elt := 'a
-         and type ('a, _) t := 'a t
-         and type ('a, _) concat := 'a t
+          with type 'a elt := 'a
+           and type ('a, _) t := 'a t
+           and type ('a, _) concat := 'a t
     end
   end
 
@@ -184,9 +183,9 @@ module _ : module type of Indexed_container = struct
 
       include
         Generic_with_creators
-        with type _ elt := elt
-         and type (_, _) t := t
-         and type ('a, _) concat := 'a list
+          with type _ elt := elt
+           and type (_, _) t := t
+           and type ('a, _) concat := 'a list
 
       val mem : t -> elt -> bool
     end
@@ -204,9 +203,9 @@ module _ : module type of Indexed_container = struct
 
       include
         Generic_with_creators
-        with type 'a elt := 'a
-         and type ('a, _) t := 'a t
-         and type ('a, _) concat := 'a t
+          with type 'a elt := 'a
+           and type ('a, _) t := 'a t
+           and type ('a, _) concat := 'a t
     end
   end
 

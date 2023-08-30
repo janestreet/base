@@ -22,10 +22,10 @@ end
 include T
 
 module To_bytes = Blit.Make (struct
-    include T
+  include T
 
-    let create ~len = create len
-  end)
+  let create ~len = create len
+end)
 
 include To_bytes
 include Comparator.Make (T)

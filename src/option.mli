@@ -88,7 +88,6 @@ val value_map : 'a t -> default:'b -> f:(('a -> 'b)[@local]) -> 'b
     [default]. [default] is only executed if the underlying value is absent. *)
 val value_or_thunk : 'a t -> default:((unit -> 'a)[@local]) -> 'a
 
-
 (** On [None], returns [init]. On [Some x], returns [f init x]. *)
 val fold : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc)[@local]) -> 'acc
 
@@ -163,7 +162,7 @@ val fold_result
   -> init:'acc
   -> f:(('acc -> 'a -> ('acc, 'e) Result.t)[@local])
   -> ('acc, 'e) Result.t
-[@@deprecated "[since 2019-07] It is not a useful function"]
+  [@@deprecated "[since 2019-07] It is not a useful function"]
 
 val fold_until
   :  'a t
@@ -171,20 +170,20 @@ val fold_until
   -> f:(('acc -> 'a -> ('acc, 'final) Container.Continue_or_stop.t)[@local])
   -> finish:(('acc -> 'final)[@local])
   -> 'final
-[@@deprecated "[since 2019-07] It is not a useful function"]
+  [@@deprecated "[since 2019-07] It is not a useful function"]
 
 val min_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
-[@@deprecated "[since 2019-07] Use [Fn.id] instead"]
+  [@@deprecated "[since 2019-07] Use [Fn.id] instead"]
 
 val max_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
-[@@deprecated "[since 2019-07] Use [Fn.id] instead"]
+  [@@deprecated "[since 2019-07] Use [Fn.id] instead"]
 
 val count : 'a t -> f:(('a -> bool)[@local]) -> int
-[@@deprecated "[since 2019-07] Use pattern matching instead"]
+  [@@deprecated "[since 2019-07] Use pattern matching instead"]
 
 val sum
   :  (module Container.Summable with type t = 'sum)
   -> 'a t
   -> f:(('a -> 'sum)[@local])
   -> 'sum
-[@@deprecated "[since 2019-07] Use [value_map ~default:Summable.zero ~f] instead"]
+  [@@deprecated "[since 2019-07] Use [value_map ~default:Summable.zero ~f] instead"]

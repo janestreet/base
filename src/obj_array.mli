@@ -55,7 +55,6 @@ val set_with_caml_modify : t -> int -> Stdlib.Obj.t -> unit
     [unsafe_set_int] is similar but does not assume anything about the target. *)
 val unsafe_set_assuming_currently_int : (t[@local]) -> int -> Stdlib.Obj.t -> unit
 
-
 val unsafe_set_int_assuming_currently_int : (t[@local]) -> int -> int -> unit
 val unsafe_set_int : t -> int -> int -> unit
 

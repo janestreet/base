@@ -70,10 +70,10 @@ val num_bits_nativeint : int
 
 (** human-friendly string (and possibly sexp) conversions *)
 module Make (I : sig
-    type t
+  type t
 
-    val to_string : t -> string
-  end) : sig
+  val to_string : t -> string
+end) : sig
   val to_string_hum : ?delimiter:char (** defaults to ['_'] *) -> I.t -> string
   val sexp_of_t : I.t -> Sexp.t
 end
@@ -81,28 +81,27 @@ end
 (** in the output, [to_string], [of_string], [sexp_of_t], and [t_of_sexp] convert
     between [t] and signed hexadecimal with an optional "0x" or "0X" prefix. *)
 module Make_hex (I : sig
-    type t [@@deriving_inline compare ~localize, hash]
+  type t [@@deriving_inline compare ~localize, hash]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
-    include Ppx_compare_lib.Comparable.S_local with type t := t
-    include Ppx_hash_lib.Hashable.S with type t := t
+  include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S_local with type t := t
+  include Ppx_hash_lib.Hashable.S with type t := t
 
-    [@@@end]
+  [@@@end]
 
-
-    (** [to_string] and [of_string] convert between [t] and unsigned,
+  (** [to_string] and [of_string] convert between [t] and unsigned,
         unprefixed hexadecimal.
         They must be able to handle all non-negative values and also
         [min_value]. [to_string min_value] must write a positive hex
         representation. *)
-    val to_string : t -> string
+  val to_string : t -> string
 
-    val of_string : string -> t
-    val zero : t
-    val ( < ) : t -> t -> bool
-    val neg : t -> t
-    val module_name : string
-  end) : Int_intf.Hexable with type t := I.t
+  val of_string : string -> t
+  val zero : t
+  val ( < ) : t -> t -> bool
+  val neg : t -> t
+  val module_name : string
+end) : Int_intf.Hexable with type t := I.t
 
 (** global ref affecting whether the [sexp_of_t] returned by [Make]
     is consistent with the [to_string] input or the [to_string_hum] output *)

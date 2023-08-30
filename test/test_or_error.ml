@@ -70,9 +70,7 @@ let%expect_test "behavior and performance on lists of or_error's" =
     (* Show behavior on short lists. *)
     List.iter short_lists ~f:(fun list -> print_endline (to_string (f list)));
     (* Test for timeout / stack overflow on a long list. *)
-    match
-      to_string (f long_list)
-    with
+    match to_string (f long_list) with
     | (_ : string) -> ()
     | exception Stack_overflow -> print_cr [%here] [%message "stack overflow"]
   in

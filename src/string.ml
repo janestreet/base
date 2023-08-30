@@ -218,12 +218,12 @@ module Search_pattern0 = struct
       let matched_chars = ref 0 in
       for i = 1 to n - 1 do
         matched_chars
-        := kmp_internal_loop
-             ~matched_chars:!matched_chars
-             ~next_text_char:(unsafe_get pattern i)
-             ~pattern
-             ~kmp_array
-             ~char_equal;
+          := kmp_internal_loop
+               ~matched_chars:!matched_chars
+               ~next_text_char:(unsafe_get pattern i)
+               ~pattern
+               ~kmp_array
+               ~char_equal;
         Array.unsafe_set kmp_array i !matched_chars
       done);
     { pattern; case_sensitive; kmp_array }
@@ -243,12 +243,12 @@ module Search_pattern0 = struct
       while !j < n && !matched_chars < k do
         let next_text_char = unsafe_get text !j in
         matched_chars
-        := kmp_internal_loop
-             ~matched_chars:!matched_chars
-             ~next_text_char
-             ~pattern
-             ~kmp_array
-             ~char_equal;
+          := kmp_internal_loop
+               ~matched_chars:!matched_chars
+               ~next_text_char
+               ~pattern
+               ~kmp_array
+               ~char_equal;
         j := !j + 1
       done;
       if !matched_chars = k then !j - k else -1)
@@ -291,12 +291,12 @@ module Search_pattern0 = struct
         then (
           let next_text_char = unsafe_get text j in
           matched_chars
-          := kmp_internal_loop
-               ~matched_chars:!matched_chars
-               ~next_text_char
-               ~pattern
-               ~kmp_array
-               ~char_equal)
+            := kmp_internal_loop
+                 ~matched_chars:!matched_chars
+                 ~next_text_char
+                 ~pattern
+                 ~kmp_array
+                 ~char_equal)
       done;
       List.rev !found)
   ;;
@@ -319,7 +319,6 @@ module Search_pattern0 = struct
         ~len:(len_s - i - len_t);
       Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
   ;;
-
 
   let replace_all t ~in_:s ~with_ =
     let matches = index_all t ~may_overlap:false ~in_:s in
@@ -382,7 +381,7 @@ module Search_pattern0 = struct
              (Stdlib.( && )
                 (equal_bool__local a__003_.case_sensitive b__004_.case_sensitive)
                 (equal_array__local equal_int__local a__003_.kmp_array b__004_.kmp_array))
-           : (t[@ocaml.local]) -> (t[@ocaml.local]) -> bool)
+        : (t[@ocaml.local]) -> (t[@ocaml.local]) -> bool)
     ;;
 
     let equal = (fun a b -> equal__local a b : t -> t -> bool)
@@ -392,24 +391,24 @@ module Search_pattern0 = struct
            ; case_sensitive = case_sensitive__010_
            ; kmp_array = kmp_array__012_
            } ->
-        let bnds__007_ = ([] : _ Stdlib.List.t) in
-        let bnds__007_ =
-          let arg__013_ = sexp_of_array sexp_of_int kmp_array__012_ in
-          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "kmp_array"; arg__013_ ] :: bnds__007_
-           : _ Stdlib.List.t)
-        in
-        let bnds__007_ =
-          let arg__011_ = sexp_of_bool case_sensitive__010_ in
-          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "case_sensitive"; arg__011_ ]
-           :: bnds__007_
-           : _ Stdlib.List.t)
-        in
-        let bnds__007_ =
-          let arg__009_ = sexp_of_string pattern__008_ in
-          (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pattern"; arg__009_ ] :: bnds__007_
-           : _ Stdlib.List.t)
-        in
-        Sexplib0.Sexp.List bnds__007_
+         let bnds__007_ = ([] : _ Stdlib.List.t) in
+         let bnds__007_ =
+           let arg__013_ = sexp_of_array sexp_of_int kmp_array__012_ in
+           (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "kmp_array"; arg__013_ ] :: bnds__007_
+             : _ Stdlib.List.t)
+         in
+         let bnds__007_ =
+           let arg__011_ = sexp_of_bool case_sensitive__010_ in
+           (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "case_sensitive"; arg__011_ ]
+            :: bnds__007_
+             : _ Stdlib.List.t)
+         in
+         let bnds__007_ =
+           let arg__009_ = sexp_of_string pattern__008_ in
+           (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pattern"; arg__009_ ] :: bnds__007_
+             : _ Stdlib.List.t)
+         in
+         Sexplib0.Sexp.List bnds__007_
         : t -> Sexplib0.Sexp.t)
     ;;
 
@@ -1359,7 +1358,7 @@ include struct
 
   let partition_tf t ~f =
     partition_map t ~f:(fun c -> if f c then  (First c) else  (Second c)) [@nontail
-    ]
+                                                                                          ]
   ;;
 end
 
@@ -1437,22 +1436,22 @@ module Escaping = struct
     | Ok escapeworthy ->
       Ok
         (fun src ->
-           (* calculate a list of (index of char to escape * escaped char) first, the order
+          (* calculate a list of (index of char to escape * escaped char) first, the order
               is from tail to head *)
-           let to_escape_len = ref 0 in
-           let to_escape =
-             foldi src ~init:[] ~f:(fun i acc c ->
-               match escapeworthy.(Char.to_int c) with
-               | -1 -> acc
-               | n ->
-                 (* (index of char to escape * escaped char) *)
-                 incr to_escape_len;
-                 (i, Char.unsafe_of_int n) :: acc)
-           in
-           match to_escape with
-           | [] -> src
-           | _ ->
-             (* [to_escape] divide [src] to [List.length to_escape + 1] pieces separated by
+          let to_escape_len = ref 0 in
+          let to_escape =
+            foldi src ~init:[] ~f:(fun i acc c ->
+              match escapeworthy.(Char.to_int c) with
+              | -1 -> acc
+              | n ->
+                (* (index of char to escape * escaped char) *)
+                incr to_escape_len;
+                (i, Char.unsafe_of_int n) :: acc)
+          in
+          match to_escape with
+          | [] -> src
+          | _ ->
+            (* [to_escape] divide [src] to [List.length to_escape + 1] pieces separated by
                 the chars to escape.
 
                 Lets take
@@ -1474,31 +1473,31 @@ module Escaping = struct
                 Finally the result will be
 
                 "000_A111_B222_C333" *)
-             let src_len = length src in
-             let dst_len = src_len + !to_escape_len in
-             let dst = Bytes.create dst_len in
-             let rec loop last_idx last_dst_pos = function
-               | [] ->
-                 (* copy "000" at last *)
-                 Bytes.blit_string ~src ~src_pos:0 ~dst ~dst_pos:0 ~len:last_idx
-               | (idx, escaped_char) :: to_escape ->
-                 (*[idx] = the char to escape*)
-                 (* take first iteration for example *)
-                 (* calculate length of "333", minus 1 because we don't copy 'c' *)
-                 let len = last_idx - idx - 1 in
-                 (* set the dst_pos to copy to *)
-                 let dst_pos = last_dst_pos - len in
-                 (* copy "333", set [src_pos] to [idx + 1] to skip 'c' *)
-                 Bytes.blit_string ~src ~src_pos:(idx + 1) ~dst ~dst_pos ~len;
-                 (* backoff [dst_pos] by 2 to copy '_' and 'C' *)
-                 let dst_pos = dst_pos - 2 in
-                 Bytes.set dst dst_pos escape_char;
-                 Bytes.set dst (dst_pos + 1) escaped_char;
-                 loop idx dst_pos to_escape
-             in
-             (* set [last_dst_pos] and [last_idx] to length of [dst] and [src] first *)
-             loop src_len dst_len to_escape;
-             Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
+            let src_len = length src in
+            let dst_len = src_len + !to_escape_len in
+            let dst = Bytes.create dst_len in
+            let rec loop last_idx last_dst_pos = function
+              | [] ->
+                (* copy "000" at last *)
+                Bytes.blit_string ~src ~src_pos:0 ~dst ~dst_pos:0 ~len:last_idx
+              | (idx, escaped_char) :: to_escape ->
+                (*[idx] = the char to escape*)
+                (* take first iteration for example *)
+                (* calculate length of "333", minus 1 because we don't copy 'c' *)
+                let len = last_idx - idx - 1 in
+                (* set the dst_pos to copy to *)
+                let dst_pos = last_dst_pos - len in
+                (* copy "333", set [src_pos] to [idx + 1] to skip 'c' *)
+                Bytes.blit_string ~src ~src_pos:(idx + 1) ~dst ~dst_pos ~len;
+                (* backoff [dst_pos] by 2 to copy '_' and 'C' *)
+                let dst_pos = dst_pos - 2 in
+                Bytes.set dst dst_pos escape_char;
+                Bytes.set dst (dst_pos + 1) escaped_char;
+                loop idx dst_pos to_escape
+            in
+            (* set [last_dst_pos] and [last_idx] to length of [dst] and [src] first *)
+            loop src_len dst_len to_escape;
+            Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
   ;;
 
   let escape_gen_exn ~escapeworthy_map ~escape_char =
@@ -1541,7 +1540,7 @@ module Escaping = struct
     | Ok escapeworthy ->
       Ok
         (fun src ->
-           (* Continue the example in [escape_gen_exn], now we unescape
+          (* Continue the example in [escape_gen_exn], now we unescape
 
               "000_A111_B222_C333"
 
@@ -1554,59 +1553,59 @@ module Escaping = struct
               Then we create a string [dst] to store the result, copy "333" to it, then copy
               'c', then move on to next iteration. After 3 iterations copy "000" and we are
               done.  *)
-           (* indexes of escape chars *)
-           let to_unescape =
-             let rec loop i status acc =
-               if i >= length src
-               then acc
-               else (
-                 let status = update_escape_status src ~escape_char i status in
-                 loop
-                   (i + 1)
-                   status
-                   (match status with
-                    | `Escaping -> i :: acc
-                    | `Escaped | `Literal -> acc))
-             in
-             loop 0 `Literal []
-           in
-           match to_unescape with
-           | [] -> src
-           | idx :: to_unescape' ->
-             let dst = Bytes.create (length src - List.length to_unescape) in
-             let rec loop last_idx last_dst_pos = function
-               | [] ->
-                 (* copy "000" at last *)
-                 Bytes.blit_string ~src ~src_pos:0 ~dst ~dst_pos:0 ~len:last_idx
-               | idx :: to_unescape ->
-                 (* [idx] = index of escaping char *)
-                 (* take 1st iteration as example, calculate the length of "333", minus 2 to
+          (* indexes of escape chars *)
+          let to_unescape =
+            let rec loop i status acc =
+              if i >= length src
+              then acc
+              else (
+                let status = update_escape_status src ~escape_char i status in
+                loop
+                  (i + 1)
+                  status
+                  (match status with
+                   | `Escaping -> i :: acc
+                   | `Escaped | `Literal -> acc))
+            in
+            loop 0 `Literal []
+          in
+          match to_unescape with
+          | [] -> src
+          | idx :: to_unescape' ->
+            let dst = Bytes.create (length src - List.length to_unescape) in
+            let rec loop last_idx last_dst_pos = function
+              | [] ->
+                (* copy "000" at last *)
+                Bytes.blit_string ~src ~src_pos:0 ~dst ~dst_pos:0 ~len:last_idx
+              | idx :: to_unescape ->
+                (* [idx] = index of escaping char *)
+                (* take 1st iteration as example, calculate the length of "333", minus 2 to
                     skip '_C' *)
-                 let len = last_idx - idx - 2 in
-                 (* point [dst_pos] to the position to copy "333" to *)
-                 let dst_pos = last_dst_pos - len in
-                 (* copy "333" *)
-                 Bytes.blit_string ~src ~src_pos:(idx + 2) ~dst ~dst_pos ~len;
-                 (* backoff [dst_pos] by 1 to copy 'c' *)
-                 let dst_pos = dst_pos - 1 in
-                 Bytes.set
-                   dst
-                   dst_pos
-                   (match escapeworthy.(Char.to_int src.[idx + 1]) with
-                    | -1 -> src.[idx + 1]
-                    | n -> Char.unsafe_of_int n);
-                 (* update [last_dst_pos] and [last_idx] *)
-                 loop idx dst_pos to_unescape
-             in
-             if idx < length src - 1
-             then
-               (* set [last_dst_pos] and [last_idx] to length of [dst] and [src] *)
-               loop (length src) (Bytes.length dst) to_unescape
-             else
-               (* for escaped string ending with an escaping char like "000_", just ignore
+                let len = last_idx - idx - 2 in
+                (* point [dst_pos] to the position to copy "333" to *)
+                let dst_pos = last_dst_pos - len in
+                (* copy "333" *)
+                Bytes.blit_string ~src ~src_pos:(idx + 2) ~dst ~dst_pos ~len;
+                (* backoff [dst_pos] by 1 to copy 'c' *)
+                let dst_pos = dst_pos - 1 in
+                Bytes.set
+                  dst
+                  dst_pos
+                  (match escapeworthy.(Char.to_int src.[idx + 1]) with
+                   | -1 -> src.[idx + 1]
+                   | n -> Char.unsafe_of_int n);
+                (* update [last_dst_pos] and [last_idx] *)
+                loop idx dst_pos to_unescape
+            in
+            if idx < length src - 1
+            then
+              (* set [last_dst_pos] and [last_idx] to length of [dst] and [src] *)
+              loop (length src) (Bytes.length dst) to_unescape
+            else
+              (* for escaped string ending with an escaping char like "000_", just ignore
                   the last escaping char *)
-               loop (length src - 1) (Bytes.length dst) to_unescape';
-             Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
+              loop (length src - 1) (Bytes.length dst) to_unescape';
+            Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
   ;;
 
   let unescape_gen_exn ~escapeworthy_map ~escape_char =
@@ -1676,10 +1675,10 @@ module Escaping = struct
     check_bound str pos "index_from";
     let rec loop i status =
       if i >= pos
-      && (match status with
-          | `Literal -> true
-          | `Escaped | `Escaping -> false)
-      && Char.equal str.[i] char
+         && (match status with
+             | `Literal -> true
+             | `Escaped | `Escaping -> false)
+         && Char.equal str.[i] char
       then Some i
       else (
         let i = i + 1 in
@@ -1763,9 +1762,9 @@ module Escaping = struct
       else (
         let status = update_escape_status str ~escape_char pos status in
         if (match status with
-          | `Literal -> true
-          | `Escaped | `Escaping -> false)
-        && is_delim str.[pos]
+            | `Literal -> true
+            | `Escaped | `Escaping -> false)
+           && is_delim str.[pos]
         then (
           let sub_str = sub str ~pos:last_pos ~len:(pos - last_pos) in
           loop (sub_str :: acc) status (pos + 1) (pos + 1))

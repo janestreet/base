@@ -1,6 +1,5 @@
 open! Import
 
-
 (* [t] stores the [t.length] queue elements at consecutive increasing indices of [t.elts],
    mod the capacity of [t], which is [Option_array.length t.elts].  The capacity is
    required to be a power of two (user-requested capacities are rounded up to the nearest
@@ -19,39 +18,39 @@ type 'a t =
 
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
   fun _of_a__001_
-    { num_mutations = num_mutations__003_
-    ; front = front__005_
-    ; mask = mask__007_
-    ; length = length__009_
-    ; elts = elts__011_
-    } ->
-    let bnds__002_ = ([] : _ Stdlib.List.t) in
-    let bnds__002_ =
-      let arg__012_ = Option_array.sexp_of_t _of_a__001_ elts__011_ in
-      (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg__012_ ] :: bnds__002_
-       : _ Stdlib.List.t)
-    in
-    let bnds__002_ =
-      let arg__010_ = sexp_of_int length__009_ in
-      (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg__010_ ] :: bnds__002_
-       : _ Stdlib.List.t)
-    in
-    let bnds__002_ =
-      let arg__008_ = sexp_of_int mask__007_ in
-      (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "mask"; arg__008_ ] :: bnds__002_
-       : _ Stdlib.List.t)
-    in
-    let bnds__002_ =
-      let arg__006_ = sexp_of_int front__005_ in
-      (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "front"; arg__006_ ] :: bnds__002_
-       : _ Stdlib.List.t)
-    in
-    let bnds__002_ =
-      let arg__004_ = sexp_of_int num_mutations__003_ in
-      (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "num_mutations"; arg__004_ ] :: bnds__002_
-       : _ Stdlib.List.t)
-    in
-    Sexplib0.Sexp.List bnds__002_
+      { num_mutations = num_mutations__003_
+      ; front = front__005_
+      ; mask = mask__007_
+      ; length = length__009_
+      ; elts = elts__011_
+      } ->
+  let bnds__002_ = ([] : _ Stdlib.List.t) in
+  let bnds__002_ =
+    let arg__012_ = Option_array.sexp_of_t _of_a__001_ elts__011_ in
+    (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg__012_ ] :: bnds__002_
+      : _ Stdlib.List.t)
+  in
+  let bnds__002_ =
+    let arg__010_ = sexp_of_int length__009_ in
+    (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg__010_ ] :: bnds__002_
+      : _ Stdlib.List.t)
+  in
+  let bnds__002_ =
+    let arg__008_ = sexp_of_int mask__007_ in
+    (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "mask"; arg__008_ ] :: bnds__002_
+      : _ Stdlib.List.t)
+  in
+  let bnds__002_ =
+    let arg__006_ = sexp_of_int front__005_ in
+    (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "front"; arg__006_ ] :: bnds__002_
+      : _ Stdlib.List.t)
+  in
+  let bnds__002_ =
+    let arg__004_ = sexp_of_int num_mutations__003_ in
+    (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "num_mutations"; arg__004_ ] :: bnds__002_
+      : _ Stdlib.List.t)
+  in
+  Sexplib0.Sexp.List bnds__002_
 ;;
 
 [@@@end]
@@ -370,7 +369,6 @@ let foldi t ~init ~f =
     acc) [@nontail]
 ;;
 
-
 (* [iter] is implemented directly because implementing it in terms of [fold] is
    slower. *)
 let iter t ~f =
@@ -398,14 +396,14 @@ let to_list t =
 ;;
 
 module C = Indexed_container.Make (struct
-    type nonrec 'a t = 'a t
+  type nonrec 'a t = 'a t
 
-    let fold = fold
-    let iter = `Custom iter
-    let length = `Custom length
-    let foldi = `Custom foldi
-    let iteri = `Custom iteri
-  end)
+  let fold = fold
+  let iter = `Custom iter
+  let length = `Custom length
+  let foldi = `Custom foldi
+  let iteri = `Custom iteri
+end)
 
 let count = C.count
 let exists = C.exists
@@ -423,7 +421,6 @@ let existsi = C.existsi
 let find_mapi = C.find_mapi
 let findi = C.findi
 let for_alli = C.for_alli
-
 
 (* For [concat_map], [filter_map], and [filter], we don't create [t_result] with [t]'s
    capacity because we have no idea how many elements [t_result] will ultimately hold. *)

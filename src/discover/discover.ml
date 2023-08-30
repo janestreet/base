@@ -15,6 +15,6 @@ let () =
     ~name:"discover"
     ~args:[ "-o", Set_string output, "FILENAME output file" ]
     (fun c ->
-       let has_popcnt = c_test c ~c_flags:[ "-mpopcnt" ] program in
-       Flags.write_sexp !output (if has_popcnt then [ "-mpopcnt" ] else []))
+      let has_popcnt = c_test c ~c_flags:[ "-mpopcnt" ] program in
+      Flags.write_sexp !output (if has_popcnt then [ "-mpopcnt" ] else []))
 ;;

@@ -100,16 +100,16 @@ let does_raise (type a) (f : unit -> a) =
 ;;
 
 include Pretty_printer.Register_pp (struct
-    type t = exn
+  type t = exn
 
-    let pp ppf t =
-      match sexp_of_exn_opt t with
-      | Some sexp -> Sexp.pp_hum ppf sexp
-      | None -> Stdlib.Format.pp_print_string ppf (Stdlib.Printexc.to_string t)
-    ;;
+  let pp ppf t =
+    match sexp_of_exn_opt t with
+    | Some sexp -> Sexp.pp_hum ppf sexp
+    | None -> Stdlib.Format.pp_print_string ppf (Stdlib.Printexc.to_string t)
+  ;;
 
-    let module_name = "Base.Exn"
-  end)
+  let module_name = "Base.Exn"
+end)
 
 let print_with_backtrace exc raw_backtrace =
   Stdlib.Format.eprintf "@[<2>Uncaught exception:@\n@\n@[%a@]@]@\n@." pp exc;

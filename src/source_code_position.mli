@@ -30,4 +30,3 @@ val to_string : t -> string
 
 (** [of_pos Stdlib.__POS__] is like [[%here]] but without using ppx. *)
 val of_pos : string * int * int * int -> t
-

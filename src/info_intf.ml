@@ -67,7 +67,6 @@ module type S = sig
   (** [to_string_mach t] outputs [t] as a sexp on a single line. *)
   val to_string_mach : t -> string
 
-
   val of_string : string -> t
 
   (** Be careful that the body of the lazy or thunk does not access mutable data, since it

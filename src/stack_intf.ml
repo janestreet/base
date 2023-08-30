@@ -14,7 +14,6 @@ module type S = sig
 
   include Invariant.S1 with type 'a t := 'a t
 
-
   (** [fold], [iter], [find], and [find_map] visit the elements in order from the top of
       the stack to the bottom.  [to_list] and [to_array] return the elements in order from
       the top of the stack to the bottom.

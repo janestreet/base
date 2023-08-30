@@ -70,13 +70,13 @@ let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
   fun (type a__024_) : ((a__024_ -> Sexplib0.Sexp.t) -> a__024_ t -> Sexplib0.Sexp.t) ->
   fun _of_a__019_ -> function
-    | Incl arg0__020_ ->
-      let res0__021_ = _of_a__019_ arg0__020_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Incl"; res0__021_ ]
-    | Excl arg0__022_ ->
-      let res0__023_ = _of_a__019_ arg0__022_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Excl"; res0__023_ ]
-    | Unbounded -> Sexplib0.Sexp.Atom "Unbounded"
+  | Incl arg0__020_ ->
+    let res0__021_ = _of_a__019_ arg0__020_ in
+    Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Incl"; res0__021_ ]
+  | Excl arg0__022_ ->
+    let res0__023_ = _of_a__019_ arg0__022_ in
+    Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Excl"; res0__023_ ]
+  | Unbounded -> Sexplib0.Sexp.Atom "Unbounded"
 ;;
 
 let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
@@ -103,12 +103,12 @@ let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_gramma
 
 let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
   fun (type a__025_)
-      : (((a__025_[@ocaml.local]) -> a__025_) -> (a__025_ t[@ocaml.local]) -> a__025_ t) ->
-    fun _globalize_a__026_ x__027_ ->
-      match x__027_ with
-      | Unbounded as x__028_ -> x__028_
-      | Incl arg__029_ -> Incl (_globalize_a__026_ arg__029_)
-      | Excl arg__030_ -> Excl (_globalize_a__026_ arg__030_)
+    : (((a__025_[@ocaml.local]) -> a__025_) -> (a__025_ t[@ocaml.local]) -> a__025_ t) ->
+  fun _globalize_a__026_ x__027_ ->
+  match x__027_ with
+  | Unbounded as x__028_ -> x__028_
+  | Incl arg__029_ -> Incl (_globalize_a__026_ arg__029_)
+  | Excl arg__030_ -> Excl (_globalize_a__026_ arg__030_)
 ;;
 
 [@@@end]
@@ -138,15 +138,15 @@ let interval_comparison_of_sexp =
    | Sexplib0.Sexp.List [] as sexp__032_ ->
      Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__033_ sexp__032_
    | sexp__032_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__033_ sexp__032_
-                   : Sexplib0.Sexp.t -> interval_comparison)
+    : Sexplib0.Sexp.t -> interval_comparison)
 ;;
 
 let sexp_of_interval_comparison =
   (function
-    | Below_lower_bound -> Sexplib0.Sexp.Atom "Below_lower_bound"
-    | In_range -> Sexplib0.Sexp.Atom "In_range"
-    | Above_upper_bound -> Sexplib0.Sexp.Atom "Above_upper_bound"
-                           : interval_comparison -> Sexplib0.Sexp.t)
+   | Below_lower_bound -> Sexplib0.Sexp.Atom "Below_lower_bound"
+   | In_range -> Sexplib0.Sexp.Atom "In_range"
+   | Above_upper_bound -> Sexplib0.Sexp.Atom "Above_upper_bound"
+    : interval_comparison -> Sexplib0.Sexp.t)
 ;;
 
 let (interval_comparison_sexp_grammar : interval_comparison Sexplib0.Sexp_grammar.t) =
@@ -164,23 +164,23 @@ let (interval_comparison_sexp_grammar : interval_comparison Sexplib0.Sexp_gramma
 
 let compare_interval_comparison__local =
   (Stdlib.compare
-   : (interval_comparison[@ocaml.local]) -> (interval_comparison[@ocaml.local]) -> int)
+    : (interval_comparison[@ocaml.local]) -> (interval_comparison[@ocaml.local]) -> int)
 ;;
 
 let compare_interval_comparison =
   (fun a b -> compare_interval_comparison__local a b
-              : interval_comparison -> interval_comparison -> int)
+    : interval_comparison -> interval_comparison -> int)
 ;;
 
 let (hash_fold_interval_comparison :
-       Ppx_hash_lib.Std.Hash.state -> interval_comparison -> Ppx_hash_lib.Std.Hash.state)
+      Ppx_hash_lib.Std.Hash.state -> interval_comparison -> Ppx_hash_lib.Std.Hash.state)
   =
   (fun hsv arg ->
      match arg with
      | Below_lower_bound -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
      | In_range -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
      | Above_upper_bound -> Ppx_hash_lib.Std.Hash.fold_int hsv 2
-                            : Ppx_hash_lib.Std.Hash.state -> interval_comparison -> Ppx_hash_lib.Std.Hash.state)
+    : Ppx_hash_lib.Std.Hash.state -> interval_comparison -> Ppx_hash_lib.Std.Hash.state)
 ;;
 
 let (hash_interval_comparison : interval_comparison -> Ppx_hash_lib.Std.Hash.hash_value) =

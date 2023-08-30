@@ -4,11 +4,11 @@ include Array0
 type 'a t = 'a array [@@deriving_inline compare ~localize, globalize, sexp, sexp_grammar]
 
 let compare__local :
-  'a.
-  (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-  -> ('a t[@ocaml.local])
-  -> ('a t[@ocaml.local])
-  -> int
+      'a.
+      (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+      -> ('a t[@ocaml.local])
+      -> ('a t[@ocaml.local])
+      -> int
   =
   compare_array__local
 ;;
@@ -17,8 +17,8 @@ let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
 
 let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
   fun (type a__009_)
-      : (((a__009_[@ocaml.local]) -> a__009_) -> (a__009_ t[@ocaml.local]) -> a__009_ t) ->
-    globalize_array
+    : (((a__009_[@ocaml.local]) -> a__009_) -> (a__009_ t[@ocaml.local]) -> a__009_ t) ->
+  globalize_array
 ;;
 
 let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = array_of_sexp
@@ -59,12 +59,12 @@ let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_gramma
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
 
 module Sorter (S : sig
-    type 'a t
+  type 'a t
 
-    val get : 'a t -> int -> 'a
-    val set : 'a t -> int -> 'a -> unit
-    val length : 'a t -> int
-  end) =
+  val get : 'a t -> int -> 'a
+  val set : 'a t -> int -> 'a -> unit
+  val length : 'a t -> int
+end) =
 struct
   include S
 
@@ -304,12 +304,12 @@ end
 [@@inline]
 
 module Sort = Sorter (struct
-    type nonrec 'a t = 'a t
+  type nonrec 'a t = 'a t
 
-    let get = unsafe_get
-    let set = unsafe_set
-    let length = length
-  end)
+  let get = unsafe_get
+  let set = unsafe_set
+  let length = length
+end)
 
 let sort = Sort.sort
 let of_array t = t
@@ -533,7 +533,7 @@ let filter_opt t = filter_map t ~f:Fn.id
 
 let raise_length_mismatch name n1 n2 =
   invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
-[@@cold] [@@inline never] [@@local never] [@@specialise never]
+  [@@cold] [@@inline never] [@@local never] [@@specialise never]
 ;;
 
 let check_length2_exn name t1 t2 =
@@ -559,7 +559,6 @@ let fold2_exn t1 t2 ~init ~f =
 
 let filter t ~f = filter_map t ~f:(fun x -> if f x then Some x else None) [@nontail]
 let filteri t ~f = filter_mapi t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
-
 
 let exists t ~f =
   let i = ref (length t - 1) in
@@ -623,7 +622,6 @@ let for_all2_local_exn t1 t2 ~f =
 let for_all2_exn t1 t2 ~f = for_all2_local_exn t1 t2 ~f
 let equal__local equal t1 t2 = length t1 = length t2 && for_all2_local_exn t1 t2 ~f:equal
 let equal equal t1 t2 = equal__local equal t1 t2
-
 
 let map_inplace t ~f =
   for i = 0 to length t - 1 do
@@ -881,27 +879,27 @@ let transpose_exn tt =
 ;;
 
 include Binary_searchable.Make1 (struct
-    type nonrec 'a t = 'a t
+  type nonrec 'a t = 'a t
 
-    let get = get
-    let length = length
-  end)
+  let get = get
+  let length = length
+end)
 
 include Blit.Make1 (struct
-    type nonrec 'a t = 'a t
+  type nonrec 'a t = 'a t
 
-    let length = length
+  let length = length
 
-    let create_like ~len t =
-      if len = 0
-      then [||]
-      else (
-        assert (length t > 0);
-        create ~len t.(0))
-    ;;
+  let create_like ~len t =
+    if len = 0
+    then [||]
+    else (
+      assert (length t > 0);
+      create ~len t.(0))
+  ;;
 
-    let unsafe_blit = unsafe_blit
-  end)
+  let unsafe_blit = unsafe_blit
+end)
 
 let invariant invariant_a t = iter t ~f:invariant_a
 

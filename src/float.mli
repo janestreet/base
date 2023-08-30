@@ -244,7 +244,6 @@ val round_significant : float -> significant_digits:int -> float
 *)
 val round_decimal : float -> decimal_digits:int -> float
 
-
 val is_nan : t -> bool
 
 (** A float is infinite when it is either [infinity] or [neg_infinity]. *)
@@ -316,7 +315,6 @@ val neg : t -> t
 val scale : t -> t -> t
 val abs : t -> t
 
-
 (** A sub-module designed to be opened to make working with floats more convenient.  *)
 module O : sig
   val ( + ) : t -> t -> t
@@ -365,7 +363,7 @@ val to_string_hum
   -> ?decimals:int (** defaults to [3] *)
   -> ?strip_zero:bool (** defaults to [false] *)
   -> ?explicit_plus:bool
-  (** Forces a + in front of non-negative values. Defaults
+       (** Forces a + in front of non-negative values. Defaults
       to [false] *)
   -> t
   -> string
@@ -473,109 +471,109 @@ val frexp : t -> t * int
 
 (** Base 10 logarithm. *)
 external log10 : t -> t = "caml_log10_float" "log10"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Base 2 logarithm. *)
 external log2 : t -> t = "caml_log2_float" "caml_log2"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** [expm1 x] computes [exp x -. 1.0], giving numerically-accurate results even if [x] is
     close to [0.0]. *)
 external expm1 : t -> t = "caml_expm1_float" "caml_expm1"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** [log1p x] computes [log(1.0 +. x)] (natural logarithm), giving numerically-accurate
     results even if [x] is close to [0.0]. *)
 external log1p : t -> t = "caml_log1p_float" "caml_log1p"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** [copysign x y] returns a float whose absolute value is that of [x] and whose sign is
     that of [y].  If [x] is [nan], returns [nan].  If [y] is [nan], returns either [x] or
     [-. x], but it is not specified which. *)
 external copysign : t -> t -> t = "caml_copysign_float" "caml_copysign"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Cosine.  Argument is in radians. *)
 external cos : t -> t = "caml_cos_float" "cos"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Sine.  Argument is in radians. *)
 external sin : t -> t = "caml_sin_float" "sin"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Tangent.  Argument is in radians. *)
 external tan : t -> t = "caml_tan_float" "tan"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Arc cosine.  The argument must fall within the range [[-1.0, 1.0]].  Result is in
     radians and is between [0.0] and [pi]. *)
 external acos : t -> t = "caml_acos_float" "acos"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Arc sine.  The argument must fall within the range [[-1.0, 1.0]].  Result is in
     radians and is between [-pi/2] and [pi/2]. *)
 external asin : t -> t = "caml_asin_float" "asin"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Arc tangent.  Result is in radians and is between [-pi/2] and [pi/2]. *)
 external atan : t -> t = "caml_atan_float" "atan"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** [atan2 y x] returns the arc tangent of [y /. x].  The signs of [x] and [y] are used to
     determine the quadrant of the result.  Result is in radians and is between [-pi] and
     [pi]. *)
 external atan2 : t -> t -> t = "caml_atan2_float" "atan2"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** [hypot x y] returns [sqrt(x *. x + y *. y)], that is, the length of the hypotenuse of
     a right-angled triangle with sides of length [x] and [y], or, equivalently, the
     distance of the point [(x,y)] to origin. *)
 external hypot : t -> t -> t = "caml_hypot_float" "caml_hypot"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Hyperbolic cosine.  Argument is in radians. *)
 external cosh : t -> t = "caml_cosh_float" "cosh"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Hyperbolic sine.  Argument is in radians. *)
 external sinh : t -> t = "caml_sinh_float" "sinh"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Hyperbolic tangent.  Argument is in radians. *)
 external tanh : t -> t = "caml_tanh_float" "tanh"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Hyperbolic arc cosine.  The argument must fall within the range
     [[1.0, inf]].
     Result is in radians and is between [0.0] and [inf].
 *)
 external acosh : float -> float = "caml_acosh_float" "caml_acosh"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Hyperbolic arc sine.  The argument and result range over the entire
     real line.
     Result is in radians.
 *)
 external asinh : float -> float = "caml_asinh_float" "caml_asinh"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Hyperbolic arc tangent.  The argument must fall within the range
     [[-1.0, 1.0]].
     Result is in radians and ranges over the entire real line.
 *)
 external atanh : float -> float = "caml_atanh_float" "caml_atanh"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Square root. *)
 external sqrt : t -> t = "caml_sqrt_float" "sqrt"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Exponential. *)
 external exp : t -> t = "caml_exp_float" "exp" [@@unboxed] [@@noalloc]
 
 (** Natural logarithm. *)
 external log : t -> t = "caml_log_float" "log"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 (** Excluding nan the floating-point "number line" looks like:
     {v
@@ -615,7 +613,7 @@ val classify : t -> Class.t
   [Comparable.With_zero]. *)
 
 val sign : t -> Sign.t
-[@@deprecated "[since 2016-01] Replace [sign] with [robust_sign] or [sign_exn]"]
+  [@@deprecated "[since 2016-01] Replace [sign] with [robust_sign] or [sign_exn]"]
 
 (** The sign of a float.  Both [-0.] and [0.] map to [Zero].  Raises on nan.  All other
     values map to [Neg] or [Pos]. *)

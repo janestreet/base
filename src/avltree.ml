@@ -129,7 +129,7 @@ let balance tree =
           | Empty | Leaf _ -> assert false
           | Node
               ({ left = lr_left; key = _; value = _; height = _; right = lr_right } as
-               lr_node) ->
+              lr_node) ->
             left_node.right <- lr_left;
             root_node.left <- lr_right;
             lr_node.right <- tree;
@@ -163,7 +163,7 @@ let balance tree =
           | Empty | Leaf _ -> assert false
           | Node
               ({ left = rl_left; key = _; value = _; height = _; right = rl_right } as
-               rl_node) ->
+              rl_node) ->
             right_node.left <- rl_right;
             root_node.right <- rl_left;
             rl_node.left <- tree;
@@ -261,17 +261,16 @@ let rec last t =
   | Node { left = _; key = _; value = _; height = _; right = r } -> last r
 ;;
 
-
 let[@inline always] rec findi_and_call_impl
-                          t
-                          ~compare
-                          k
-                          arg1
-                          arg2
-                          ~call_if_found
-                          ~call_if_not_found
-                          ~if_found
-                          ~if_not_found
+  t
+  ~compare
+  k
+  arg1
+  arg2
+  ~call_if_found
+  ~call_if_not_found
+  ~if_found
+  ~if_not_found
   =
   match t with
   | Empty -> call_if_not_found ~if_not_found k arg1 arg2

@@ -173,7 +173,7 @@ let%expect_test "concat_map" =
     print_s
       [%sexp
         (concat_map t ~f:(fun i -> of_list [ i * 10; (i * 10) + 1; (i * 10) + 2 ])
-         : int t)]
+          : int t)]
   in
   test empty;
   [%expect {| () |}];
@@ -187,7 +187,7 @@ let%expect_test "concat_mapi" =
       [%sexp
         (concat_mapi t ~f:(fun idx i ->
            if idx = 1 then empty else of_list [ i * 10; (i * 10) + 1; (i * 10) + 2 ])
-         : int t)]
+          : int t)]
   in
   test empty;
   [%expect {| () |}];
@@ -219,7 +219,7 @@ let%expect_test "filter_map" =
       [%sexp
         (filter_map t ~f:(fun i ->
            if i % 2 = 0 then None else Some (Char.of_int_exn (Char.to_int 'a' + i)))
-         : char t)]
+          : char t)]
   in
   test empty;
   [%expect {| () |}];
@@ -239,7 +239,7 @@ let%expect_test "filter_mapi" =
                (Int.to_string idx
                 ^ ": "
                 ^ Char.to_string (Char.of_int_exn (Char.to_int 'a' + i))))
-         : string t)]
+          : string t)]
   in
   test empty;
   [%expect {| () |}];
@@ -278,7 +278,7 @@ let%expect_test "find_mapi" =
     print_s
       [%sexp
         (find_mapi t ~f:(fun idx i -> if idx % 2 = 1 then None else Char.of_int i)
-         : char option)]
+          : char option)]
   in
   test empty;
   [%expect {| () |}];

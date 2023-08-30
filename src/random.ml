@@ -142,7 +142,7 @@ module State = struct
       (string_of_bound lower_bound)
       (string_of_bound upper_bound)
       ()
-  [@@cold] [@@inline never] [@@local never] [@@specialise never]
+    [@@cold] [@@inline never] [@@local never] [@@specialise never]
   ;;
 
   let int_incl =

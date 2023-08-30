@@ -234,15 +234,15 @@ let%test_module "Make_hex" =
       type t = int [@@deriving quickcheck]
 
       module M = Make_hex (struct
-          type nonrec t = int [@@deriving sexp, compare ~localize, hash, quickcheck]
+        type nonrec t = int [@@deriving sexp, compare ~localize, hash, quickcheck]
 
-          let to_string = Int.Hex.to_string
-          let of_string = Int.Hex.of_string
-          let zero = 0
-          let ( < ) = ( < )
-          let neg = Int.neg
-          let module_name = "Hex_int"
-        end)
+        let to_string = Int.Hex.to_string
+        let of_string = Int.Hex.of_string
+        let zero = 0
+        let ( < ) = ( < )
+        let neg = Int.neg
+        let module_name = "Hex_int"
+      end)
 
       include (M.Hex : module type of M.Hex with type t := t)
     end

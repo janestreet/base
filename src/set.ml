@@ -18,7 +18,6 @@ include Set_intf
 
 let with_return = With_return.with_return
 
-
 module Tree0 = struct
   type 'a t =
     | Empty
@@ -310,9 +309,9 @@ module Tree0 = struct
     Sexplib0.Sexp_conv.Exn_converter.add
       [%extension_constructor Set_min_elt_exn_of_empty_set]
       (function
-        | Set_min_elt_exn_of_empty_set ->
-          Sexplib0.Sexp.Atom "set.ml.Tree0.Set_min_elt_exn_of_empty_set"
-        | _ -> assert false)
+      | Set_min_elt_exn_of_empty_set ->
+        Sexplib0.Sexp.Atom "set.ml.Tree0.Set_min_elt_exn_of_empty_set"
+      | _ -> assert false)
   ;;
 
   [@@@end]
@@ -323,9 +322,9 @@ module Tree0 = struct
     Sexplib0.Sexp_conv.Exn_converter.add
       [%extension_constructor Set_max_elt_exn_of_empty_set]
       (function
-        | Set_max_elt_exn_of_empty_set ->
-          Sexplib0.Sexp.Atom "set.ml.Tree0.Set_max_elt_exn_of_empty_set"
-        | _ -> assert false)
+      | Set_max_elt_exn_of_empty_set ->
+        Sexplib0.Sexp.Atom "set.ml.Tree0.Set_max_elt_exn_of_empty_set"
+      | _ -> assert false)
   ;;
 
   [@@@end]
@@ -715,11 +714,11 @@ module Tree0 = struct
   ;;
 
   let to_sequence
-        comparator
-        ?(order = `Increasing)
-        ?greater_or_equal_to
-        ?less_or_equal_to
-        t
+    comparator
+    ?(order = `Increasing)
+    ?greater_or_equal_to
+    ?less_or_equal_to
+    t
     =
     let inclusive_bound side t bound =
       let compare_elt = comparator.Comparator.compare in
@@ -737,7 +736,6 @@ module Tree0 = struct
       let t = Option.fold greater_or_equal_to ~init:t ~f:(inclusive_bound snd) in
       to_sequence_decreasing comparator ~from_elt:less_or_equal_to t
   ;;
-
 
   let rec find_first_satisfying t ~f =
     match t with
@@ -798,12 +796,12 @@ module Tree0 = struct
   ;;
 
   let merge_to_sequence
-        comparator
-        ?(order = `Increasing)
-        ?greater_or_equal_to
-        ?less_or_equal_to
-        t
-        t'
+    comparator
+    ?(order = `Increasing)
+    ?greater_or_equal_to
+    ?less_or_equal_to
+    t
+    t'
     =
     Sequence.merge_with_duplicates
       (to_sequence comparator ~order ?greater_or_equal_to ?less_or_equal_to t)
@@ -1054,7 +1052,6 @@ module Tree0 = struct
     loop set [] [@nontail]
   ;;
 
-
   let rec find t ~f =
     match t with
     | Empty -> None
@@ -1135,10 +1132,10 @@ module Tree0 = struct
 
   module Named = struct
     let is_subset
-          (subset : _ Named.t)
-          ~of_:(superset : _ Named.t)
-          ~sexp_of_elt
-          ~compare_elt
+      (subset : _ Named.t)
+      ~of_:(superset : _ Named.t)
+      ~sexp_of_elt
+      ~compare_elt
       =
       let invalid_elements = diff subset.set superset.set ~compare_elt in
       if is_empty invalid_elements
@@ -1536,9 +1533,9 @@ let to_tree = Using_comparator.to_tree
 let of_tree m t = Using_comparator.of_tree ~comparator:(to_comparator m) t
 
 module M (Elt : sig
-    type t
-    type comparator_witness
-  end) =
+  type t
+  type comparator_witness
+end) =
 struct
   type nonrec t = (Elt.t, Elt.comparator_witness) t
 end
@@ -1578,9 +1575,9 @@ let sexp_of_m__t (type elt) (module Elt : Sexp_of_m with type t = elt) t =
 ;;
 
 let m__t_of_sexp
-      (type elt cmp)
-      (module Elt : M_of_sexp with type t = elt and type comparator_witness = cmp)
-      sexp
+  (type elt cmp)
+  (module Elt : M_of_sexp with type t = elt and type comparator_witness = cmp)
+  sexp
   =
   Using_comparator.t_of_sexp_direct ~comparator:Elt.comparator Elt.t_of_sexp sexp
 ;;

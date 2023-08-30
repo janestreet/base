@@ -48,7 +48,6 @@ val reraise : t -> string -> _
     ]} *)
 val reraisef : t -> ('a, unit, string, unit -> _) format4 -> 'a
 
-
 (** Human-readable, multi-line. *)
 val to_string : t -> string
 
@@ -60,7 +59,6 @@ val to_string_mach : t -> string
 val protectx : f:(('a -> 'b)[@local]) -> 'a -> finally:(('a -> unit)[@local]) -> 'b
 
 val protect : f:((unit -> 'a)[@local]) -> finally:((unit -> unit)[@local]) -> 'a
-
 
 (** [handle_uncaught ~exit f] catches an exception escaping [f] and prints an error
     message to stderr.  Exits with return code 1 if [exit] is [true], and returns unit
@@ -85,7 +83,6 @@ val handle_uncaught_and_exit : ((unit -> 'a)[@local]) -> 'a
     ]}
     {v : Program died with Reraised("rogue_function", Failure "foo") v} *)
 val reraise_uncaught : string -> ((unit -> 'a)[@local]) -> 'a
-
 
 (** [does_raise f] returns [true] iff [f ()] raises, which is often useful in unit
     tests. *)

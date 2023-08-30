@@ -74,13 +74,13 @@ end
 
 module type Syntax =
   Syntax_gen
-  with type ('a, 'b) fn := 'a -> 'b
-   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
 
 module type Syntax_local =
   Syntax_gen
-  with type ('a, 'b) fn := ('a[@local]) -> 'b
-   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+    with type ('a, 'b) fn := ('a[@local]) -> 'b
+     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
 
 module type S_without_syntax_gen = sig
   type 'a t
@@ -119,13 +119,13 @@ end
 
 module type S_without_syntax =
   S_without_syntax_gen
-  with type ('a, 'b) f_labeled_fn := f:'a -> 'b
-   and type ('a, 'b) fn := 'a -> 'b
+    with type ('a, 'b) f_labeled_fn := f:'a -> 'b
+     and type ('a, 'b) fn := 'a -> 'b
 
 module type S_without_syntax_local =
   S_without_syntax_gen
-  with type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
-   and type ('a, 'b) fn := ('a[@local]) -> 'b
+    with type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+     and type ('a, 'b) fn := ('a[@local]) -> 'b
 
 module type S = sig
   type 'a t
@@ -202,13 +202,13 @@ end
 
 module type Syntax2 =
   Syntax2_gen
-  with type ('a, 'b) fn := 'a -> 'b
-   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
 
 module type Syntax2_local =
   Syntax2_gen
-  with type ('a, 'b) fn := ('a[@local]) -> 'b
-   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+    with type ('a, 'b) fn := ('a[@local]) -> 'b
+     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
 
 module type S2_gen = sig
   (** The same as {!S} except the monad type has two arguments. The second is always just
@@ -223,9 +223,9 @@ module type S2_gen = sig
 
   include
     Syntax2_gen
-    with type ('a, 'e) t := ('a, 'e) t
-     and type ('a, 'b) fn := ('a, 'b) fn
-     and type ('a, 'b) f_labeled_fn := ('a, 'b) f_labeled_fn
+      with type ('a, 'e) t := ('a, 'e) t
+       and type ('a, 'b) fn := ('a, 'b) fn
+       and type ('a, 'b) f_labeled_fn := ('a, 'b) f_labeled_fn
 
   module Monad_infix :
     Infix2_gen with type ('a, 'e) t := ('a, 'e) t and type ('a, 'b) fn := ('a, 'b) fn
@@ -244,8 +244,8 @@ module type S2 =
 
 module type S2_local =
   S2_gen
-  with type ('a, 'b) fn := ('a[@local]) -> 'b
-   and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+    with type ('a, 'b) fn := ('a[@local]) -> 'b
+     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
 
 module type Basic3 = sig
   (** Multi parameter monad. The second and third parameters get unified across all the
@@ -481,36 +481,36 @@ module type Monad = sig
           end)
       ]} *)
   module Of_monad
-      (Monad : S) (M : sig
-                     type 'a t
+    (Monad : S) (M : sig
+      type 'a t
 
-                     val to_monad : 'a t -> 'a Monad.t
-                     val of_monad : 'a Monad.t -> 'a t
-                   end) : S with type 'a t := 'a M.t
+      val to_monad : 'a t -> 'a Monad.t
+      val of_monad : 'a Monad.t -> 'a t
+    end) : S with type 'a t := 'a M.t
 
   module Of_monad2
-      (Monad : S2) (M : sig
-                      type ('a, 'b) t
+    (Monad : S2) (M : sig
+      type ('a, 'b) t
 
-                      val to_monad : ('a, 'b) t -> ('a, 'b) Monad.t
-                      val of_monad : ('a, 'b) Monad.t -> ('a, 'b) t
-                    end) : S2 with type ('a, 'b) t := ('a, 'b) M.t
+      val to_monad : ('a, 'b) t -> ('a, 'b) Monad.t
+      val of_monad : ('a, 'b) Monad.t -> ('a, 'b) t
+    end) : S2 with type ('a, 'b) t := ('a, 'b) M.t
 
   module Of_monad3
-      (Monad : S3) (M : sig
-                      type ('a, 'b, 'c) t
+    (Monad : S3) (M : sig
+      type ('a, 'b, 'c) t
 
-                      val to_monad : ('a, 'b, 'c) t -> ('a, 'b, 'c) Monad.t
-                      val of_monad : ('a, 'b, 'c) Monad.t -> ('a, 'b, 'c) t
-                    end) : S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t
+      val to_monad : ('a, 'b, 'c) t -> ('a, 'b, 'c) Monad.t
+      val of_monad : ('a, 'b, 'c) Monad.t -> ('a, 'b, 'c) t
+    end) : S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t
 
   module Of_monad_indexed
-      (Monad : S_indexed) (M : sig
-                             type ('a, 'i, 'j) t
+    (Monad : S_indexed) (M : sig
+      type ('a, 'i, 'j) t
 
-                             val to_monad : ('a, 'i, 'j) t -> ('a, 'i, 'j) Monad.t
-                             val of_monad : ('a, 'i, 'j) Monad.t -> ('a, 'i, 'j) t
-                           end) : S_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t
+      val to_monad : ('a, 'i, 'j) t -> ('a, 'i, 'j) Monad.t
+      val of_monad : ('a, 'i, 'j) Monad.t -> ('a, 'i, 'j) t
+    end) : S_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t
 
   (** An eager identity monad with functions heavily annotated with
       [@inlined] or [@inline hint].

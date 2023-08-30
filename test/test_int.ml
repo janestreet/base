@@ -86,16 +86,16 @@ let%test_module "Hex" =
         ; -1_000_000, "-0xf_4240"
         ; ( max_value
           , match num_bits with
-          | 31 -> "0x3fff_ffff"
-          | 32 -> "0x7fff_ffff"
-          | 63 -> "0x3fff_ffff_ffff_ffff"
-          | _ -> assert false )
+            | 31 -> "0x3fff_ffff"
+            | 32 -> "0x7fff_ffff"
+            | 63 -> "0x3fff_ffff_ffff_ffff"
+            | _ -> assert false )
         ; ( min_value
           , match num_bits with
-          | 31 -> "-0x4000_0000"
-          | 32 -> "-0x8000_0000"
-          | 63 -> "-0x4000_0000_0000_0000"
-          | _ -> assert false )
+            | 31 -> "-0x4000_0000"
+            | 32 -> "-0x8000_0000"
+            | 63 -> "-0x4000_0000_0000_0000"
+            | _ -> assert false )
         ]
     ;;
 
@@ -161,7 +161,7 @@ let%expect_test "% and /%" =
       type t =
         int
         * (int
-           [@quickcheck.generator Base_quickcheck.Generator.small_strictly_positive_int])
+          [@quickcheck.generator Base_quickcheck.Generator.small_strictly_positive_int])
       [@@deriving quickcheck, sexp_of]
     end)
     ~f:(fun (a, b) ->
@@ -172,17 +172,17 @@ let%expect_test "% and /%" =
 ;;
 
 include (
-struct
-  (** Various functors whose type-correctness ensures desired relationships between
+  struct
+    (** Various functors whose type-correctness ensures desired relationships between
       interfaces. *)
 
-  (* O contained in S *)
-  module _ (M : S) : module type of M.O = M
+    (* O contained in S *)
+    module _ (M : S) : module type of M.O = M
 
-  (* O contained in S_unbounded *)
-  module _ (M : S_unbounded) : module type of M.O = M
+    (* O contained in S_unbounded *)
+    module _ (M : S_unbounded) : module type of M.O = M
 
-  (* S_unbounded in S *)
-  module _ (M : S) : S_unbounded = M
-end :
-sig end)
+    (* S_unbounded in S *)
+    module _ (M : S) : S_unbounded = M
+  end :
+    sig end)

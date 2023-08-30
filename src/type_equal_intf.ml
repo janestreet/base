@@ -169,8 +169,8 @@ module type Type_equal = sig
 
   (** @inline *)
   include module type of Definitions (struct
-      type ('a, 'b) t = ('a, 'b) equal
-    end)
+    type ('a, 'b) t = ('a, 'b) equal
+  end)
 
   (** [refl], [sym], and [trans] construct proofs that type equality is reflexive,
       symmetric, and transitive. *)

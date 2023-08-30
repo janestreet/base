@@ -91,9 +91,9 @@ let%expect_test "deriving equal" =
    [Creators_generic]. *)
 module _ (M : Creators) :
   Creators_generic
-  with type 'a t := 'a M.t
-  with type 'a elt := 'a
-  with type ('a, 'z) create_options := ('a, 'z) create_options = struct
+    with type 'a t := 'a M.t
+    with type 'a elt := 'a
+    with type ('a, 'z) create_options := ('a, 'z) create_options = struct
   include M
 
   let create ?growth_allowed ?size m () = create ?growth_allowed ?size m

@@ -33,25 +33,25 @@ module Make (Int : T) = struct
 end
 
 include Make (struct
-    include Int
+  include Int
 
-    type t = int [@@deriving quickcheck]
-  end)
-
-include Make (struct
-    include Int32
-
-    type t = int32 [@@deriving quickcheck]
-  end)
+  type t = int [@@deriving quickcheck]
+end)
 
 include Make (struct
-    include Int64
+  include Int32
 
-    type t = int64 [@@deriving quickcheck]
-  end)
+  type t = int32 [@@deriving quickcheck]
+end)
 
 include Make (struct
-    include Nativeint
+  include Int64
 
-    type t = nativeint [@@deriving quickcheck]
-  end)
+  type t = int64 [@@deriving quickcheck]
+end)
+
+include Make (struct
+  include Nativeint
+
+  type t = nativeint [@@deriving quickcheck]
+end)

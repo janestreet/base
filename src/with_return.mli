@@ -1,4 +1,3 @@
-
 (** [with_return f] allows for something like the return statement in C within [f].
 
     There are three ways [f] can terminate:

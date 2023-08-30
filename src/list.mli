@@ -134,7 +134,6 @@ val exists2 : 'a t -> 'b t -> f:(('a -> 'b -> bool)[@local]) -> bool Or_unequal_
 (** Like [filter], but reverses the order of the input list. *)
 val rev_filter : 'a t -> f:(('a -> bool)[@local]) -> 'a t
 
-
 val partition3_map
   :  'a t
   -> f:(('a -> [ `Fst of 'b | `Snd of 'c | `Trd of 'd ])[@local])
@@ -254,7 +253,6 @@ val map3
     result to the front of [l2]. *)
 val rev_map_append : 'a t -> 'b t -> f:(('a -> 'b)[@local]) -> 'b t
 
-
 (** [fold_right [a1; ...; an] ~f ~init:b] is [f a1 (f a2 (... (f an b) ...))]. *)
 val fold_right : 'a t -> f:(('a -> 'acc -> 'acc)[@local]) -> init:'acc -> 'acc
 
@@ -336,7 +334,6 @@ val is_prefix : 'a t -> prefix:'a t -> equal:(('a -> 'a -> bool)[@local]) -> boo
 
 (** [is_suffix xs ~suffix] returns [true] if [xs] ends with [suffix]. *)
 val is_suffix : 'a t -> suffix:'a t -> equal:(('a -> 'a -> bool)[@local]) -> bool
-
 
 (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive elements
     [(a1, a2)] in [t] such that [equal a1 a2].  They are returned in the same order as

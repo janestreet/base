@@ -34,4 +34,3 @@ val compose : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
 
 (** Reverses the order of arguments for a binary function. *)
 val flip : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c
-

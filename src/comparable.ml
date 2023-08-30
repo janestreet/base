@@ -2,14 +2,14 @@ open! Import
 include Comparable_intf
 
 module With_zero (T : sig
-    type t [@@deriving_inline compare]
+  type t [@@deriving_inline compare]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S with type t := t
 
-    [@@@end]
+  [@@@end]
 
-    val zero : t
-  end) =
+  val zero : t
+end) =
 struct
   open T
 
@@ -21,12 +21,12 @@ struct
 end
 
 module Poly (T : sig
-    type t [@@deriving_inline sexp_of]
+  type t [@@deriving_inline sexp_of]
 
-    val sexp_of_t : t -> Sexplib0.Sexp.t
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    [@@@end]
-  end) =
+  [@@@end]
+end) =
 struct
   module Replace_polymorphic_compare = struct
     type t = T.t [@@deriving_inline sexp_of]
@@ -76,12 +76,12 @@ let min cmp t t' = if leq cmp t t' then t else t'
 let max cmp t t' = if geq cmp t t' then t else t'
 
 module Infix (T : sig
-    type t [@@deriving_inline compare]
+  type t [@@deriving_inline compare]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S with type t := t
 
-    [@@@end]
-  end) : Infix with type t := T.t = struct
+  [@@@end]
+end) : Infix with type t := T.t = struct
   let ( > ) a b = gt T.compare a b
   let ( < ) a b = lt T.compare a b
   let ( >= ) a b = geq T.compare a b
@@ -92,12 +92,12 @@ end
 [@@inline always]
 
 module Comparisons (T : sig
-    type t [@@deriving_inline compare]
+  type t [@@deriving_inline compare]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S with type t := t
 
-    [@@@end]
-  end) : Comparisons with type t := T.t = struct
+  [@@@end]
+end) : Comparisons with type t := T.t = struct
   include Infix (T)
 
   let compare = T.compare
@@ -108,14 +108,14 @@ end
 [@@inline always]
 
 module Make_using_comparator (T : sig
-    type t [@@deriving_inline sexp_of]
+  type t [@@deriving_inline sexp_of]
 
-    val sexp_of_t : t -> Sexplib0.Sexp.t
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    [@@@end]
+  [@@@end]
 
-    include Comparator.S with type t := t
-  end) : S with type t := T.t and type comparator_witness = T.comparator_witness = struct
+  include Comparator.S with type t := t
+end) : S with type t := T.t and type comparator_witness = T.comparator_witness = struct
   module T = struct
     include T
 
@@ -148,43 +148,43 @@ module Make_using_comparator (T : sig
 end
 
 module Make (T : sig
-    type t [@@deriving_inline compare, sexp_of]
+  type t [@@deriving_inline compare, sexp_of]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S with type t := t
 
-    val sexp_of_t : t -> Sexplib0.Sexp.t
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    [@@@end]
-  end) =
-  Make_using_comparator [@inlined hint] (struct
-    include T
-    include Comparator.Make (T)
-  end)
+  [@@@end]
+end) =
+Make_using_comparator [@inlined hint] (struct
+  include T
+  include Comparator.Make (T)
+end)
 
 module Inherit (C : sig
-    type t [@@deriving_inline compare]
+  type t [@@deriving_inline compare]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S with type t := t
 
-    [@@@end]
-  end) (T : sig
-          type t [@@deriving_inline sexp_of]
+  [@@@end]
+end) (T : sig
+  type t [@@deriving_inline sexp_of]
 
-          val sexp_of_t : t -> Sexplib0.Sexp.t
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 
-          [@@@end]
+  [@@@end]
 
-          val component : t -> C.t
-        end) =
-  Make (struct
-    type t = T.t [@@deriving_inline sexp_of]
+  val component : t -> C.t
+end) =
+Make (struct
+  type t = T.t [@@deriving_inline sexp_of]
 
-    let sexp_of_t = (T.sexp_of_t : t -> Sexplib0.Sexp.t)
+  let sexp_of_t = (T.sexp_of_t : t -> Sexplib0.Sexp.t)
 
-    [@@@end]
+  [@@@end]
 
-    let compare t t' = C.compare (T.component t) (T.component t')
-  end)
+  let compare t t' = C.compare (T.component t) (T.component t')
+end)
 
 (* compare [x] and [y] lexicographically using functions in the list [cmps] *)
 let lexicographic cmps x y =

@@ -6,7 +6,6 @@
 
     It can often be faster than [Array] if you use it with non-floats. *)
 
-
 open! Import
 
 (** See [Base.Array] for comments. *)
@@ -22,8 +21,6 @@ include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 [@@@end]
 
 val invariant : _ t -> unit
-
-
 val empty : _ t
 val create : len:int -> 'a -> 'a t
 val singleton : 'a -> 'a t
@@ -131,7 +128,6 @@ val unsafe_set_assuming_currently_int : Stdlib.Obj.t t -> int -> Stdlib.Obj.t ->
 
 val unsafe_set_int_assuming_currently_int : Stdlib.Obj.t t -> int -> int -> unit
 val unsafe_set_int : Stdlib.Obj.t t -> int -> int -> unit
-
 
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
     space leaks.  It does this by setting [t.(i)] to [Stdlib.Obj.repr 0].  As a performance

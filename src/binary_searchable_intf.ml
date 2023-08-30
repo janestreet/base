@@ -40,7 +40,7 @@ module Which_target_by_key = struct
      ; `First_greater_than_or_equal_to
      ; `First_strictly_greater_than
      ]
-     : t list)
+      : t list)
   ;;
 
   [@@@end]

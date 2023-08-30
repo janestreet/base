@@ -634,9 +634,9 @@ module type Make_with_creators_arg = sig
 
   include
     Make_common_with_creators_arg
-    with type ('a, _) t := 'a t
-     and type 'a elt := 'a
-     and type ('a, _) concat := 'a t
+      with type ('a, _) t := 'a t
+       and type 'a elt := 'a
+       and type ('a, _) concat := 'a t
 end
 
 module type Make0_with_creators_arg = sig
@@ -650,9 +650,9 @@ module type Make0_with_creators_arg = sig
 
   include
     Make_common_with_creators_arg
-    with type ('a, _) t := t
-     and type 'a elt := Elt.t
-     and type ('a, _) concat := 'a list
+      with type ('a, _) t := t
+       and type 'a elt := Elt.t
+       and type ('a, _) concat := 'a list
 end
 
 module type Derived = sig
@@ -770,7 +770,7 @@ module type Container = sig
 
   module Make_gen_with_creators (T : Make_gen_with_creators_arg) :
     Generic_with_creators
-    with type ('a, 'phantom) t := ('a, 'phantom) T.t
-     and type 'a elt := 'a T.elt
-     and type ('a, 'phantom) concat := ('a, 'phantom) T.concat
+      with type ('a, 'phantom) t := ('a, 'phantom) T.t
+       and type 'a elt := 'a T.elt
+       and type ('a, 'phantom) concat := ('a, 'phantom) T.concat
 end

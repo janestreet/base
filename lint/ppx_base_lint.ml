@@ -25,7 +25,7 @@ let zero_modules () =
   |> Array.to_list
   |> List.filter ~f:(fun fn -> Stdlib.Filename.check_suffix fn "0.ml")
   |> List.map ~f:(fun fn ->
-    String.capitalize (String.sub fn ~pos:0 ~len:(String.length fn - 4)))
+       String.capitalize (String.sub fn ~pos:0 ~len:(String.length fn - 4)))
   |> Set.of_list (module String)
 ;;
 
@@ -114,14 +114,14 @@ let check current_module =
         let expansion =
           Ppx_cold.expand_cold_attribute attr
           |> List.map ~f:(fun a ->
-            { a with
-              attr_name =
-                { a.attr_name with
-                  txt =
-                    String.chop_prefix a.attr_name.txt ~prefix:"ocaml."
-                    |> Option.value ~default:a.attr_name.txt
-                }
-            })
+               { a with
+                 attr_name =
+                   { a.attr_name with
+                     txt =
+                       String.chop_prefix a.attr_name.txt ~prefix:"ocaml."
+                       |> Option.value ~default:a.attr_name.txt
+                   }
+               })
         in
         let is_part_of_expansion attr =
           List.exists expansion ~f:(fun a ->

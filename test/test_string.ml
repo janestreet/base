@@ -592,7 +592,7 @@ let%test_module "tr_multi" =
       ; "ab", "dcba", "abcdefg", "dccdefg"
       ]
       |> List.map ~f:(fun (target, replacement, string, expected) ->
-        { Test.target; replacement; string; expected = Some expected })
+           { Test.target; replacement; string; expected = Some expected })
     ;;
 
     let%test_unit _ =
@@ -757,9 +757,9 @@ let%test_module "map" =
         [%here]
         (module String)
         (map s ~f:(function
-           | 'a' -> 'b'
-           | 'b' -> 'a'
-           | x -> x))
+          | 'a' -> 'b'
+          | 'b' -> 'a'
+          | x -> x))
         "fbaoo"
     ;;
   end)
@@ -814,9 +814,9 @@ let%test_unit _ =
   [%test_result: bool]
     ~expect:true
     (exists "abc" ~f:(function
-       | 'a' -> false
-       | 'b' -> true
-       | _ -> assert false))
+      | 'a' -> false
+      | 'b' -> true
+      | _ -> assert false))
 ;;
 
 let%test_unit _ =
@@ -830,9 +830,9 @@ let%test_unit _ =
   [%test_result: bool]
     ~expect:false
     (for_all "abc" ~f:(function
-       | 'a' -> true
-       | 'b' -> false
-       | _ -> assert false))
+      | 'a' -> true
+      | 'b' -> false
+      | _ -> assert false))
 ;;
 
 let%test_unit _ =

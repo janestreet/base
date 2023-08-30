@@ -32,7 +32,7 @@ let rec find_range_near_first_satisfying t ~get ~lo ~hi ~pred =
   else (
     let mid = lo + ((hi - lo) / 2) in
     if pred (get t mid)
-    (* INVARIANT check: it means the first satisfying element is between [lo] and [mid] *)
+       (* INVARIANT check: it means the first satisfying element is between [lo] and [mid] *)
     then
       find_range_near_first_satisfying t ~get ~lo ~hi:mid ~pred
       (* INVARIANT check: it means the first satisfying element, if it exists,
@@ -72,22 +72,22 @@ let find_last_satisfying ?pos ?len t ~pred ~get ~length =
 ;;
 
 let binary_search
-      ?pos
-      ?len
-      t
-      ~length:((length : _ -> _) [@local])
-      ~get:((get : _ -> _ -> _) [@local])
-      ~compare:((compare : _ -> _ -> _) [@local])
-      how
-      v
+  ?pos
+  ?len
+  t
+  ~length:((length : _ -> _) [@local])
+  ~get:((get : _ -> _ -> _) [@local])
+  ~compare:((compare : _ -> _ -> _) [@local])
+  how
+  v
   =
   match how with
   | `Last_strictly_less_than ->
     find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v < 0) [@nontail
-    ]
+                                                                                     ]
   | `Last_less_than_or_equal_to ->
     find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v <= 0) [@nontail
-    ]
+                                                                                      ]
   | `First_equal_to ->
     (match
        find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v >= 0)
@@ -102,10 +102,10 @@ let binary_search
      | None | Some _ -> None)
   | `First_greater_than_or_equal_to ->
     find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v >= 0) [@nontail
-    ]
+                                                                                       ]
   | `First_strictly_greater_than ->
     find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v > 0) [@nontail
-    ]
+                                                                                      ]
 ;;
 
 let binary_search_segmented ?pos ?len t ~length ~get ~segment_of how =

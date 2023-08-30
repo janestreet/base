@@ -5,11 +5,11 @@ type 'a t = ('a, Error.t) Result.t
   compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
 let compare__local :
-  'a.
-  (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-  -> ('a t[@ocaml.local])
-  -> ('a t[@ocaml.local])
-  -> int
+      'a.
+      (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+      -> ('a t[@ocaml.local])
+      -> ('a t[@ocaml.local])
+      -> int
   =
   fun _cmp__a a__007_ b__008_ ->
   Result.compare__local _cmp__a Error.compare__local a__007_ b__008_
@@ -20,11 +20,11 @@ let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
 ;;
 
 let equal__local :
-  'a.
-  (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-  -> ('a t[@ocaml.local])
-  -> ('a t[@ocaml.local])
-  -> bool
+      'a.
+      (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
+      -> ('a t[@ocaml.local])
+      -> ('a t[@ocaml.local])
+      -> bool
   =
   fun _cmp__a a__019_ b__020_ ->
   Result.equal__local _cmp__a Error.equal__local a__019_ b__020_
@@ -36,17 +36,17 @@ let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
 
 let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
   fun (type a__025_)
-      : (((a__025_[@ocaml.local]) -> a__025_) -> (a__025_ t[@ocaml.local]) -> a__025_ t) ->
-    fun _globalize_a__026_ x__027_ ->
-      Result.globalize _globalize_a__026_ Error.globalize x__027_
+    : (((a__025_[@ocaml.local]) -> a__025_) -> (a__025_ t[@ocaml.local]) -> a__025_ t) ->
+  fun _globalize_a__026_ x__027_ ->
+  Result.globalize _globalize_a__026_ Error.globalize x__027_
 ;;
 
 let hash_fold_t :
-  'a.
-  (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-  -> Ppx_hash_lib.Std.Hash.state
-  -> 'a t
-  -> Ppx_hash_lib.Std.Hash.state
+      'a.
+      (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+      -> Ppx_hash_lib.Std.Hash.state
+      -> 'a t
+      -> Ppx_hash_lib.Std.Hash.state
   =
   fun _hash_fold_a hsv arg -> Result.hash_fold_t _hash_fold_a Error.hash_fold_t hsv arg
 ;;
@@ -89,12 +89,12 @@ let map2 a b ~f =
 ;;
 
 module For_applicative = Applicative.Make_using_map2_local (struct
-    type nonrec 'a t = 'a t
+  type nonrec 'a t = 'a t
 
-    let return = return
-    let map = `Custom map
-    let map2 = map2
-  end)
+  let return = return
+  let map = `Custom map
+  let map2 = map2
+end)
 
 let ( *> ) = For_applicative.( *> )
 let ( <* ) = For_applicative.( <* )
@@ -163,7 +163,6 @@ let tag_arg t message a sexp_of_a =
 
 let unimplemented s = error "unimplemented" s sexp_of_string
 
-
 let combine_internal list ~on_ok ~on_error =
   match Result.combine_errors list with
   | Ok x -> Ok (on_ok x)
@@ -203,8 +202,8 @@ let find_ok l =
     Error
       (Error.of_list
          (List.map l ~f:(function
-            | Ok _ -> assert false
-            | Error err -> err)))
+           | Ok _ -> assert false
+           | Error err -> err)))
 ;;
 
 let find_map_ok l ~f =

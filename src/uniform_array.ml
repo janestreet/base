@@ -220,7 +220,7 @@ let concat ts =
          set res (so_far + i) (get t i)
        done;
        so_far + len)
-     : int);
+      : int);
   res
 ;;
 
@@ -309,20 +309,20 @@ include
     end)
 
 include Blit.Make1 (struct
-    type nonrec 'a t = 'a t
+  type nonrec 'a t = 'a t
 
-    let length = length
+  let length = length
 
-    let create_like ~len t =
-      if len = 0
-      then empty
-      else (
-        assert (length t > 0);
-        create ~len (get t 0))
-    ;;
+  let create_like ~len t =
+    if len = 0
+    then empty
+    else (
+      assert (length t > 0);
+      create ~len (get t 0))
+  ;;
 
-    let unsafe_blit = unsafe_blit
-  end)
+  let unsafe_blit = unsafe_blit
+end)
 
 let min_elt t ~compare = Container.min_elt ~fold t ~compare
 let max_elt t ~compare = Container.max_elt ~fold t ~compare
@@ -353,18 +353,18 @@ let compare__local compare_elt a b =
 let compare compare_elt a b = compare__local compare_elt a b
 
 module Sort = Array.Private.Sorter (struct
-    type nonrec 'a t = 'a t
+  type nonrec 'a t = 'a t
 
-    let length = length
-    let get = unsafe_get
-    let set = unsafe_set
-  end)
+  let length = length
+  let get = unsafe_get
+  let set = unsafe_set
+end)
 
 let sort = Sort.sort
 
 include Binary_searchable.Make1 (struct
-    type nonrec 'a t = 'a t
+  type nonrec 'a t = 'a t
 
-    let length = length
-    let get = unsafe_get
-  end)
+  let length = length
+  let get = unsafe_get
+end)

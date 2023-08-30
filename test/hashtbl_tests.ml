@@ -345,13 +345,13 @@ end
    [Creators_generic].  *)
 module _ : sig end = struct
   module Make_creators_check
-      (Type : T.T2)
-      (Key : T.T1)
-      (Options : T.T3)
-      (_ : Hashtbl.Private.Creators_generic
-       with type ('a, 'b) t := ('a, 'b) Type.t
-       with type 'a key := 'a Key.t
-       with type ('a, 'b, 'z) create_options := ('a, 'b, 'z) Options.t) =
+    (Type : T.T2)
+    (Key : T.T1)
+    (Options : T.T3)
+    (_ : Hashtbl.Private.Creators_generic
+           with type ('a, 'b) t := ('a, 'b) Type.t
+           with type 'a key := 'a Key.t
+           with type ('a, 'b, 'z) create_options := ('a, 'b, 'z) Options.t) =
   struct end
 
   module _ (M : Hashtbl.Creators) =

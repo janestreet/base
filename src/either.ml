@@ -63,21 +63,21 @@ module Focus = struct
 end
 
 module Make_focused (M : sig
-    type (+'a, +'b) t
+  type (+'a, +'b) t
 
-    val return : 'a -> ('a, _) t
-    val other : 'b -> (_, 'b) t
-    val focus : ('a, 'b) t -> (('a, 'b) Focus.t[@local])
+  val return : 'a -> ('a, _) t
+  val other : 'b -> (_, 'b) t
+  val focus : ('a, 'b) t -> (('a, 'b) Focus.t[@local])
 
-    val combine
-      :  ('a, 'd) t
-      -> ('b, 'd) t
-      -> f:(('a -> 'b -> 'c)[@local])
-      -> other:(('d -> 'd -> 'd)[@local])
-      -> ('c, 'd) t
+  val combine
+    :  ('a, 'd) t
+    -> ('b, 'd) t
+    -> f:(('a -> 'b -> 'c)[@local])
+    -> other:(('d -> 'd -> 'd)[@local])
+    -> ('c, 'd) t
 
-    val bind : ('a, 'b) t -> f:(('a -> ('c, 'b) t)[@local]) -> ('c, 'b) t
-  end) =
+  val bind : ('a, 'b) t -> f:(('a -> ('c, 'b) t)[@local]) -> ('c, 'b) t
+end) =
 struct
   include M
   open With_return
@@ -88,24 +88,24 @@ struct
   ;;
 
   include Monad.Make2_local (struct
-      type nonrec ('a, 'b) t = ('a, 'b) t
+    type nonrec ('a, 'b) t = ('a, 'b) t
 
-      let return = return
-      let bind = bind
-      let map = `Custom map
-    end)
+    let return = return
+    let bind = bind
+    let map = `Custom map
+  end)
 
   module App = Applicative.Make2_using_map2_local (struct
-      type nonrec ('a, 'b) t = ('a, 'b) t
+    type nonrec ('a, 'b) t = ('a, 'b) t
 
-      let return = return
-      let map = `Custom map
+    let return = return
+    let map = `Custom map
 
-      let map2 : ('a, 'x) t -> ('b, 'x) t -> f:(('a -> 'b -> 'c)[@local]) -> ('c, 'x) t =
-        fun t1 t2 ~f ->
-        bind t1 ~f:(fun x -> bind t2 ~f:(fun y -> return (f x y)) [@nontail]) [@nontail]
-      ;;
-    end)
+    let map2 : ('a, 'x) t -> ('b, 'x) t -> f:(('a -> 'b -> 'c)[@local]) -> ('c, 'x) t =
+      fun t1 t2 ~f ->
+      bind t1 ~f:(fun x -> bind t2 ~f:(fun y -> return (f x y)) [@nontail]) [@nontail]
+    ;;
+  end)
 
   include App
 
@@ -163,58 +163,58 @@ struct
 end
 
 module First = Make_focused (struct
-    type nonrec ('a, 'b) t = ('a, 'b) t
+  type nonrec ('a, 'b) t = ('a, 'b) t
 
-    let return = first
-    let other = second
+  let return = first
+  let other = second
 
-    let focus t : _ Focus.t =
-      match t with
-      | First x -> Focus { value = x }
-      | Second y -> Other { value = y }
-    ;;
+  let focus t : _ Focus.t =
+    match t with
+    | First x -> Focus { value = x }
+    | Second y -> Other { value = y }
+  ;;
 
-    let combine t1 t2 ~f ~other =
-      match t1, t2 with
-      | First x, First y -> First (f x y)
-      | Second x, Second y -> Second (other x y)
-      | Second x, _ | _, Second x -> Second x
-    ;;
+  let combine t1 t2 ~f ~other =
+    match t1, t2 with
+    | First x, First y -> First (f x y)
+    | Second x, Second y -> Second (other x y)
+    | Second x, _ | _, Second x -> Second x
+  ;;
 
-    let bind t ~f =
-      match t with
-      | First x -> f x
-      (* Reuse the value in order to avoid allocation. *)
-      | Second _ as y -> y
-    ;;
-  end)
+  let bind t ~f =
+    match t with
+    | First x -> f x
+    (* Reuse the value in order to avoid allocation. *)
+    | Second _ as y -> y
+  ;;
+end)
 
 module Second = Make_focused (struct
-    type nonrec ('a, 'b) t = ('b, 'a) t
+  type nonrec ('a, 'b) t = ('b, 'a) t
 
-    let return = second
-    let other = first
+  let return = second
+  let other = first
 
-    let focus t : _ Focus.t =
-      match t with
-      | Second x -> Focus { value = x }
-      | First y -> Other { value = y }
-    ;;
+  let focus t : _ Focus.t =
+    match t with
+    | Second x -> Focus { value = x }
+    | First y -> Other { value = y }
+  ;;
 
-    let combine t1 t2 ~f ~other =
-      match t1, t2 with
-      | Second x, Second y -> Second (f x y)
-      | First x, First y -> First (other x y)
-      | First x, _ | _, First x -> First x
-    ;;
+  let combine t1 t2 ~f ~other =
+    match t1, t2 with
+    | Second x, Second y -> Second (f x y)
+    | First x, First y -> First (other x y)
+    | First x, _ | _, First x -> First x
+  ;;
 
-    let bind t ~f =
-      match t with
-      | Second x -> f x
-      (* Reuse the value in order to avoid allocation, like [First.bind] above. *)
-      | First _ as y -> y
-    ;;
-  end)
+  let bind t ~f =
+    match t with
+    | Second x -> f x
+    (* Reuse the value in order to avoid allocation, like [First.bind] above. *)
+    | First _ as y -> y
+  ;;
+end)
 
 module Export = struct
   type ('f, 's) _either = ('f, 's) t =

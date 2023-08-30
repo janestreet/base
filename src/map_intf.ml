@@ -32,8 +32,8 @@ module Or_duplicate = struct
 
   let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
     fun _of_a__009_ -> function
-      | `Ok v__010_ -> Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; _of_a__009_ v__010_ ]
-      | `Duplicate -> Sexplib0.Sexp.Atom "Duplicate"
+    | `Ok v__010_ -> Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; _of_a__009_ v__010_ ]
+    | `Duplicate -> Sexplib0.Sexp.Atom "Duplicate"
   ;;
 
   [@@@end]
@@ -56,7 +56,7 @@ module Symmetric_diff_element = struct
   [@@deriving_inline compare, equal, sexp, sexp_grammar]
 
   let compare :
-    'k 'v. ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
+        'k 'v. ('k -> 'k -> int) -> ('v -> 'v -> int) -> ('k, 'v) t -> ('k, 'v) t -> int
     =
     fun _cmp__k _cmp__v a__011_ b__012_ ->
     let t__013_, t__014_ = a__011_ in
@@ -80,8 +80,8 @@ module Symmetric_diff_element = struct
   ;;
 
   let equal :
-    'k 'v.
-    ('k -> 'k -> bool) -> ('v -> 'v -> bool) -> ('k, 'v) t -> ('k, 'v) t -> bool
+        'k 'v.
+        ('k -> 'k -> bool) -> ('v -> 'v -> bool) -> ('k, 'v) t -> ('k, 'v) t -> bool
     =
     fun _cmp__k _cmp__v a__027_ b__028_ ->
     let t__029_, t__030_ = a__027_ in
@@ -102,11 +102,11 @@ module Symmetric_diff_element = struct
   ;;
 
   let t_of_sexp :
-    'k 'v.
-    (Sexplib0.Sexp.t -> 'k)
-    -> (Sexplib0.Sexp.t -> 'v)
-    -> Sexplib0.Sexp.t
-    -> ('k, 'v) t
+        'k 'v.
+        (Sexplib0.Sexp.t -> 'k)
+        -> (Sexplib0.Sexp.t -> 'v)
+        -> Sexplib0.Sexp.t
+        -> ('k, 'v) t
     =
     let error_source__057_ = "map_intf.ml.Symmetric_diff_element.t" in
     fun _of_k__043_ _of_v__044_ -> function
@@ -190,11 +190,11 @@ module Symmetric_diff_element = struct
   ;;
 
   let sexp_of_t :
-    'k 'v.
-    ('k -> Sexplib0.Sexp.t)
-    -> ('v -> Sexplib0.Sexp.t)
-    -> ('k, 'v) t
-    -> Sexplib0.Sexp.t
+        'k 'v.
+        ('k -> Sexplib0.Sexp.t)
+        -> ('v -> Sexplib0.Sexp.t)
+        -> ('k, 'v) t
+        -> Sexplib0.Sexp.t
     =
     fun _of_k__072_ _of_v__073_ (arg0__081_, arg1__082_) ->
     let res0__083_ = _of_k__072_ arg0__081_
@@ -217,10 +217,10 @@ module Symmetric_diff_element = struct
   ;;
 
   let t_sexp_grammar :
-    'k 'v.
-    'k Sexplib0.Sexp_grammar.t
-    -> 'v Sexplib0.Sexp_grammar.t
-    -> ('k, 'v) t Sexplib0.Sexp_grammar.t
+        'k 'v.
+        'k Sexplib0.Sexp_grammar.t
+        -> 'v Sexplib0.Sexp_grammar.t
+        -> ('k, 'v) t Sexplib0.Sexp_grammar.t
     =
     fun _'k_sexp_grammar _'v_sexp_grammar ->
     { untyped =
@@ -275,12 +275,12 @@ module Merge_element = struct
   [@@deriving_inline compare, equal, sexp_of]
 
   let compare :
-    'left 'right.
-    ('left -> 'left -> int)
-    -> ('right -> 'right -> int)
-    -> ('left, 'right) t
-    -> ('left, 'right) t
-    -> int
+        'left 'right.
+        ('left -> 'left -> int)
+        -> ('right -> 'right -> int)
+        -> ('left, 'right) t
+        -> ('left, 'right) t
+        -> int
     =
     fun _cmp__left _cmp__right a__085_ b__086_ ->
     if Stdlib.( == ) a__085_ b__086_
@@ -299,12 +299,12 @@ module Merge_element = struct
   ;;
 
   let equal :
-    'left 'right.
-    ('left -> 'left -> bool)
-    -> ('right -> 'right -> bool)
-    -> ('left, 'right) t
-    -> ('left, 'right) t
-    -> bool
+        'left 'right.
+        ('left -> 'left -> bool)
+        -> ('right -> 'right -> bool)
+        -> ('left, 'right) t
+        -> ('left, 'right) t
+        -> bool
     =
     fun _cmp__left _cmp__right a__097_ b__098_ ->
     if Stdlib.( == ) a__097_ b__098_
@@ -321,25 +321,25 @@ module Merge_element = struct
   ;;
 
   let sexp_of_t :
-    'left 'right.
-    ('left -> Sexplib0.Sexp.t)
-    -> ('right -> Sexplib0.Sexp.t)
-    -> ('left, 'right) t
-    -> Sexplib0.Sexp.t
+        'left 'right.
+        ('left -> Sexplib0.Sexp.t)
+        -> ('right -> Sexplib0.Sexp.t)
+        -> ('left, 'right) t
+        -> Sexplib0.Sexp.t
     =
     fun _of_left__109_ _of_right__110_ -> function
-      | `Left v__111_ ->
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; _of_left__109_ v__111_ ]
-      | `Right v__112_ ->
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; _of_right__110_ v__112_ ]
-      | `Both v__113_ ->
-        Sexplib0.Sexp.List
-          [ Sexplib0.Sexp.Atom "Both"
-          ; (let arg0__114_, arg1__115_ = v__113_ in
-             let res0__116_ = _of_left__109_ arg0__114_
-             and res1__117_ = _of_right__110_ arg1__115_ in
-             Sexplib0.Sexp.List [ res0__116_; res1__117_ ])
-          ]
+    | `Left v__111_ ->
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; _of_left__109_ v__111_ ]
+    | `Right v__112_ ->
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; _of_right__110_ v__112_ ]
+    | `Both v__113_ ->
+      Sexplib0.Sexp.List
+        [ Sexplib0.Sexp.Atom "Both"
+        ; (let arg0__114_, arg1__115_ = v__113_ in
+           let res0__116_ = _of_left__109_ arg0__114_
+           and res1__117_ = _of_right__110_ arg1__115_ in
+           Sexplib0.Sexp.List [ res0__116_; res1__117_ ])
+        ]
   ;;
 
   [@@@end]
@@ -358,9 +358,9 @@ module Continue_or_stop = struct
 
   let sexp_of_t =
     (function
-      | Continue -> Sexplib0.Sexp.Atom "Continue"
-      | Stop -> Sexplib0.Sexp.Atom "Stop"
-                : t -> Sexplib0.Sexp.t)
+     | Continue -> Sexplib0.Sexp.Atom "Continue"
+     | Stop -> Sexplib0.Sexp.Atom "Stop"
+      : t -> Sexplib0.Sexp.t)
   ;;
 
   [@@@end]
@@ -379,9 +379,9 @@ module Finished_or_unfinished = struct
 
   let sexp_of_t =
     (function
-      | Finished -> Sexplib0.Sexp.Atom "Finished"
-      | Unfinished -> Sexplib0.Sexp.Atom "Unfinished"
-                      : t -> Sexplib0.Sexp.t)
+     | Finished -> Sexplib0.Sexp.Atom "Finished"
+     | Unfinished -> Sexplib0.Sexp.Atom "Unfinished"
+      : t -> Sexplib0.Sexp.t)
   ;;
 
   [@@@end]
@@ -397,9 +397,9 @@ module type Accessors_generic = sig
   (** @inline *)
   include
     Dictionary_immutable.Accessors
-    with type 'key key := 'key key
-     and type ('key, 'data, 'cmp) t := ('key, 'data, 'cmp) t
-     and type ('fn, 'key, _, 'cmp) accessor := ('key, 'cmp, 'fn) access_options
+      with type 'key key := 'key key
+       and type ('key, 'data, 'cmp) t := ('key, 'data, 'cmp) t
+       and type ('fn, 'key, _, 'cmp) accessor := ('key, 'cmp, 'fn) access_options
 
   val invariants : ('k, 'cmp, ('k, 'v, 'cmp) t -> bool) access_options
   val is_empty : (_, _, _) t -> bool
@@ -409,25 +409,25 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t Or_duplicate.t )
-        access_options
+      access_options
 
   val add_exn
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t )
-        access_options
+      access_options
 
   val set
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v, 'cmp) t )
-        access_options
+      access_options
 
   val add_multi
     : ( 'k
       , 'cmp
       , ('k, 'v list, 'cmp) t -> key:'k key -> data:'v -> ('k, 'v list, 'cmp) t )
-        access_options
+      access_options
 
   val remove_multi
     : ('k, 'cmp, ('k, 'v list, 'cmp) t -> 'k key -> ('k, 'v list, 'cmp) t) access_options
@@ -438,17 +438,17 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> 'k key
-      -> f:(('v option -> 'v option)[@local])
-      -> ('k, 'v, 'cmp) t )
-        access_options
+        -> 'k key
+        -> f:(('v option -> 'v option)[@local])
+        -> ('k, 'v, 'cmp) t )
+      access_options
 
   val update
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t -> 'k key -> f:(('v option -> 'v)[@local]) -> ('k, 'v, 'cmp) t
       )
-        access_options
+      access_options
 
   val find : ('k, 'cmp, ('k, 'v, 'cmp) t -> 'k key -> 'v option) access_options
   val find_exn : ('k, 'cmp, ('k, 'v, 'cmp) t -> 'k key -> 'v) access_options
@@ -467,10 +467,10 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v1, 'cmp) t
-      -> ('k, 'v2, 'cmp) t
-      -> f:((key:'k key -> data:('v1, 'v2) Merge_element.t -> unit)[@local])
-      -> unit )
-        access_options
+        -> ('k, 'v2, 'cmp) t
+        -> f:((key:'k key -> data:('v1, 'v2) Merge_element.t -> unit)[@local])
+        -> unit )
+      access_options
 
   val map : ('k, 'v1, 'cmp) t -> f:(('v1 -> 'v2)[@local]) -> ('k, 'v2, 'cmp) t
 
@@ -490,7 +490,7 @@ module type Accessors_generic = sig
     -> init:'acc
     -> f:
          ((key:'k key -> data:'v -> 'acc -> ('acc, 'final) Container.Continue_or_stop.t)
-          [@local])
+         [@local])
     -> finish:(('acc -> 'final)[@local])
     -> 'final
 
@@ -504,11 +504,11 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v1, 'cmp) t
-      -> ('k, 'v2, 'cmp) t
-      -> init:'acc
-      -> f:((key:'k key -> data:('v1, 'v2) Merge_element.t -> 'acc -> 'acc)[@local])
-      -> 'acc )
-        access_options
+        -> ('k, 'v2, 'cmp) t
+        -> init:'acc
+        -> f:((key:'k key -> data:('v1, 'v2) Merge_element.t -> 'acc -> 'acc)[@local])
+        -> 'acc )
+      access_options
 
   val filter_keys : ('k, 'v, 'cmp) t -> f:(('k key -> bool)[@local]) -> ('k, 'v, 'cmp) t
   val filter : ('k, 'v, 'cmp) t -> f:(('v -> bool)[@local]) -> ('k, 'v, 'cmp) t
@@ -552,7 +552,7 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v Or_error.t, 'cmp) t -> ('k, 'v, 'cmp) t Or_error.t )
-        access_options
+      access_options
 
   val unzip : ('k, 'v1 * 'v2, 'cmp) t -> ('k, 'v1, 'cmp) t * ('k, 'v2, 'cmp) t
 
@@ -560,13 +560,13 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('v -> 'v -> int) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> int )
-        access_options
+      access_options
 
   val equal
     : ( 'k
       , 'cmp
       , ('v -> 'v -> bool) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> bool )
-        access_options
+      access_options
 
   val keys : ('k, _, _) t -> 'k key list
   val data : (_, 'v, _) t -> 'v list
@@ -580,39 +580,39 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v1, 'cmp) t
-      -> ('k, 'v2, 'cmp) t
-      -> f:((key:'k key -> ('v1, 'v2) Merge_element.t -> 'v3 option)[@local])
-      -> ('k, 'v3, 'cmp) t )
-        access_options
+        -> ('k, 'v2, 'cmp) t
+        -> f:((key:'k key -> ('v1, 'v2) Merge_element.t -> 'v3 option)[@local])
+        -> ('k, 'v3, 'cmp) t )
+      access_options
 
   val merge_skewed
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> ('k, 'v, 'cmp) t
-      -> combine:((key:'k key -> 'v -> 'v -> 'v)[@local])
-      -> ('k, 'v, 'cmp) t )
-        access_options
+        -> ('k, 'v, 'cmp) t
+        -> combine:((key:'k key -> 'v -> 'v -> 'v)[@local])
+        -> ('k, 'v, 'cmp) t )
+      access_options
 
   val symmetric_diff
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> ('k, 'v, 'cmp) t
-      -> data_equal:('v -> 'v -> bool)
-      -> ('k key, 'v) Symmetric_diff_element.t Sequence.t )
-        access_options
+        -> ('k, 'v, 'cmp) t
+        -> data_equal:('v -> 'v -> bool)
+        -> ('k key, 'v) Symmetric_diff_element.t Sequence.t )
+      access_options
 
   val fold_symmetric_diff
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> ('k, 'v, 'cmp) t
-      -> data_equal:(('v -> 'v -> bool)[@local])
-      -> init:'acc
-      -> f:(('acc -> ('k key, 'v) Symmetric_diff_element.t -> 'acc)[@local])
-      -> 'acc )
-        access_options
+        -> ('k, 'v, 'cmp) t
+        -> data_equal:(('v -> 'v -> bool)[@local])
+        -> init:'acc
+        -> f:(('acc -> ('k key, 'v) Symmetric_diff_element.t -> 'acc)[@local])
+        -> 'acc )
+      access_options
 
   val min_elt : ('k, 'v, _) t -> ('k key * 'v) option
   val min_elt_exn : ('k, 'v, _) t -> 'k key * 'v
@@ -629,64 +629,64 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> 'k key
-      -> ('k, 'v, 'cmp) t * ('k key * 'v) option * ('k, 'v, 'cmp) t )
-        access_options
+        -> 'k key
+        -> ('k, 'v, 'cmp) t * ('k key * 'v) option * ('k, 'v, 'cmp) t )
+      access_options
 
   val split_le_gt
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t -> 'k key -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
-        access_options
+      access_options
 
   val split_lt_ge
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t -> 'k key -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
-        access_options
+      access_options
 
   val append
     : ( 'k
       , 'cmp
       , lower_part:('k, 'v, 'cmp) t
-      -> upper_part:('k, 'v, 'cmp) t
-      -> [ `Ok of ('k, 'v, 'cmp) t | `Overlapping_key_ranges ] )
-        access_options
+        -> upper_part:('k, 'v, 'cmp) t
+        -> [ `Ok of ('k, 'v, 'cmp) t | `Overlapping_key_ranges ] )
+      access_options
 
   val subrange
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> lower_bound:'k key Maybe_bound.t
-      -> upper_bound:'k key Maybe_bound.t
-      -> ('k, 'v, 'cmp) t )
-        access_options
+        -> lower_bound:'k key Maybe_bound.t
+        -> upper_bound:'k key Maybe_bound.t
+        -> ('k, 'v, 'cmp) t )
+      access_options
 
   val fold_range_inclusive
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> min:'k key
-      -> max:'k key
-      -> init:'acc
-      -> f:((key:'k key -> data:'v -> 'acc -> 'acc)[@local])
-      -> 'acc )
-        access_options
+        -> min:'k key
+        -> max:'k key
+        -> init:'acc
+        -> f:((key:'k key -> data:'v -> 'acc -> 'acc)[@local])
+        -> 'acc )
+      access_options
 
   val range_to_alist
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t -> min:'k key -> max:'k key -> ('k key * 'v) list )
-        access_options
+      access_options
 
   val closest_key
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
-      -> 'k key
-      -> ('k key * 'v) option )
-        access_options
+        -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
+        -> 'k key
+        -> ('k key * 'v) option )
+      access_options
 
   val nth : ('k, 'v, 'cmp) t -> int -> ('k key * 'v) option
   val nth_exn : ('k, 'v, 'cmp) t -> int -> 'k key * 'v
@@ -697,40 +697,40 @@ module type Accessors_generic = sig
     : ( 'k
       , 'cmp
       , ?order:[ `Increasing_key | `Decreasing_key ]
-      -> ?keys_greater_or_equal_to:'k key
-      -> ?keys_less_or_equal_to:'k key
-      -> ('k, 'v, 'cmp) t
-      -> ('k key * 'v) Sequence.t )
-        access_options
+        -> ?keys_greater_or_equal_to:'k key
+        -> ?keys_less_or_equal_to:'k key
+        -> ('k, 'v, 'cmp) t
+        -> ('k key * 'v) Sequence.t )
+      access_options
 
   val binary_search
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> compare:((key:'k key -> data:'v -> 'key -> int)[@local])
-      -> Binary_searchable.Which_target_by_key.t
-      -> 'key
-      -> ('k key * 'v) option )
-        access_options
+        -> compare:((key:'k key -> data:'v -> 'key -> int)[@local])
+        -> Binary_searchable.Which_target_by_key.t
+        -> 'key
+        -> ('k key * 'v) option )
+      access_options
 
   val binary_search_segmented
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> segment_of:((key:'k key -> data:'v -> [ `Left | `Right ])[@local])
-      -> Binary_searchable.Which_target_by_segment.t
-      -> ('k key * 'v) option )
-        access_options
+        -> segment_of:((key:'k key -> data:'v -> [ `Left | `Right ])[@local])
+        -> Binary_searchable.Which_target_by_segment.t
+        -> ('k key * 'v) option )
+      access_options
 
   val binary_search_subrange
     : ( 'k
       , 'cmp
       , ('k, 'v, 'cmp) t
-      -> compare:((key:'k key -> data:'v -> 'bound -> int)[@local])
-      -> lower_bound:'bound Maybe_bound.t
-      -> upper_bound:'bound Maybe_bound.t
-      -> ('k, 'v, 'cmp) t )
-        access_options
+        -> compare:((key:'k key -> data:'v -> 'bound -> int)[@local])
+        -> lower_bound:'bound Maybe_bound.t
+        -> upper_bound:'bound Maybe_bound.t
+        -> ('k, 'v, 'cmp) t )
+      access_options
 
   module Make_applicative_traversals (A : Applicative.Lazy_applicative) : sig
     val mapi
@@ -756,9 +756,9 @@ module type Creators_generic = sig
   (** @inline *)
   include
     Dictionary_immutable.Creators
-    with type 'key key := 'key key
-     and type ('key, 'data, 'cmp) t := ('key, 'data, 'cmp) t
-     and type ('fn, 'key, _, 'cmp) creator := ('key, 'cmp, 'fn) create_options
+      with type 'key key := 'key key
+       and type ('key, 'data, 'cmp) t := ('key, 'data, 'cmp) t
+       and type ('fn, 'key, _, 'cmp) creator := ('key, 'cmp, 'fn) create_options
 
   val empty : ('k, 'cmp, ('k, _, 'cmp) t) create_options
   val singleton : ('k, 'cmp, 'k key -> 'v -> ('k, 'v, 'cmp) t) create_options
@@ -767,15 +767,15 @@ module type Creators_generic = sig
     : ( 'k2
       , 'cmp2
       , ('k1, 'v, 'cmp1) t
-      -> f:(('k1 key -> 'k2 key)[@local])
-      -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 key ] )
-        create_options
+        -> f:(('k1 key -> 'k2 key)[@local])
+        -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 key ] )
+      create_options
 
   val map_keys_exn
     : ( 'k2
       , 'cmp2
       , ('k1, 'v, 'cmp1) t -> f:(('k1 key -> 'k2 key)[@local]) -> ('k2, 'v, 'cmp2) t )
-        create_options
+      create_options
 
   val transpose_keys
     : ( 'k1
@@ -783,8 +783,8 @@ module type Creators_generic = sig
       , ( 'k2
         , 'cmp2
         , ('k1, ('k2, 'a, 'cmp2) t, 'cmp1) t -> ('k2, ('k1, 'a, 'cmp1) t, 'cmp2) t )
-          create_options )
-        access_options
+        create_options )
+      access_options
 
   val of_sorted_array
     : ('k, 'cmp, ('k key * 'v) array -> ('k, 'v, 'cmp) t Or_error.t) create_options
@@ -796,13 +796,13 @@ module type Creators_generic = sig
     : ( 'k
       , 'cmp
       , len:int -> f:((int -> 'k key * 'v)[@local]) -> ('k, 'v, 'cmp) t )
-        create_options
+      create_options
 
   val of_alist
     : ( 'k
       , 'cmp
       , ('k key * 'v) list -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ] )
-        create_options
+      create_options
 
   val of_alist_or_error
     : ('k, 'cmp, ('k key * 'v) list -> ('k, 'v, 'cmp) t Or_error.t) create_options
@@ -816,16 +816,16 @@ module type Creators_generic = sig
     : ( 'k
       , 'cmp
       , ('k key * 'v1) list
-      -> init:'v2
-      -> f:(('v2 -> 'v1 -> 'v2)[@local])
-      -> ('k, 'v2, 'cmp) t )
-        create_options
+        -> init:'v2
+        -> f:(('v2 -> 'v1 -> 'v2)[@local])
+        -> ('k, 'v2, 'cmp) t )
+      create_options
 
   val of_alist_reduce
     : ( 'k
       , 'cmp
       , ('k key * 'v) list -> f:(('v -> 'v -> 'v)[@local]) -> ('k, 'v, 'cmp) t )
-        create_options
+      create_options
 
   val of_increasing_sequence
     : ('k, 'cmp, ('k key * 'v) Sequence.t -> ('k, 'v, 'cmp) t Or_error.t) create_options
@@ -835,7 +835,7 @@ module type Creators_generic = sig
       , 'cmp
       , ('k key * 'v) Sequence.t -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ]
       )
-        create_options
+      create_options
 
   val of_sequence_or_error
     : ('k, 'cmp, ('k key * 'v) Sequence.t -> ('k, 'v, 'cmp) t Or_error.t) create_options
@@ -850,56 +850,56 @@ module type Creators_generic = sig
     : ( 'k
       , 'cmp
       , ('k key * 'v1) Sequence.t
-      -> init:'v2
-      -> f:(('v2 -> 'v1 -> 'v2)[@local])
-      -> ('k, 'v2, 'cmp) t )
-        create_options
+        -> init:'v2
+        -> f:(('v2 -> 'v1 -> 'v2)[@local])
+        -> ('k, 'v2, 'cmp) t )
+      create_options
 
   val of_sequence_reduce
     : ( 'k
       , 'cmp
       , ('k key * 'v) Sequence.t -> f:(('v -> 'v -> 'v)[@local]) -> ('k, 'v, 'cmp) t )
-        create_options
+      create_options
 
   val of_list_with_key
     : ( 'k
       , 'cmp
       , 'v list
-      -> get_key:(('v -> 'k key)[@local])
-      -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ] )
-        create_options
+        -> get_key:(('v -> 'k key)[@local])
+        -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ] )
+      create_options
 
   val of_list_with_key_or_error
     : ( 'k
       , 'cmp
       , 'v list -> get_key:(('v -> 'k key)[@local]) -> ('k, 'v, 'cmp) t Or_error.t )
-        create_options
+      create_options
 
   val of_list_with_key_exn
     : ( 'k
       , 'cmp
       , 'v list -> get_key:(('v -> 'k key)[@local]) -> ('k, 'v, 'cmp) t )
-        create_options
+      create_options
 
   val of_list_with_key_multi
     : ( 'k
       , 'cmp
       , 'v list -> get_key:(('v -> 'k key)[@local]) -> ('k, 'v list, 'cmp) t )
-        create_options
+      create_options
 
   val of_iteri
     : ( 'k
       , 'cmp
       , iteri:((f:((key:'k key -> data:'v -> unit)[@local]) -> unit)[@local])
-      -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ] )
-        create_options
+        -> [ `Ok of ('k, 'v, 'cmp) t | `Duplicate_key of 'k key ] )
+      create_options
 
   val of_iteri_exn
     : ( 'k
       , 'cmp
       , iteri:((f:((key:'k key -> data:'v -> unit)[@local]) -> unit)[@local])
-      -> ('k, 'v, 'cmp) t )
-        create_options
+        -> ('k, 'v, 'cmp) t )
+      create_options
 
   val of_tree : ('k, 'cmp, ('k key, 'v, 'cmp) tree -> ('k, 'v, 'cmp) t) create_options
 end
@@ -914,20 +914,20 @@ module type Creators_and_accessors_generic = sig
 
   include
     Creators_generic
-    with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
-    with type ('a, 'b, 'c) tree := ('a, 'b, 'c) tree
-    with type 'a key := 'a key
-    with type 'a cmp := 'a cmp
-    with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) create_options
-    with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) access_options
+      with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+      with type ('a, 'b, 'c) tree := ('a, 'b, 'c) tree
+      with type 'a key := 'a key
+      with type 'a cmp := 'a cmp
+      with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) create_options
+      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) access_options
 
   include
     Accessors_generic
-    with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
-    with type ('a, 'b, 'c) tree := ('a, 'b, 'c) tree
-    with type 'a key := 'a key
-    with type 'a cmp := 'a cmp
-    with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) access_options
+      with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+      with type ('a, 'b, 'c) tree := ('a, 'b, 'c) tree
+      with type 'a key := 'a key
+      with type 'a cmp := 'a cmp
+      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) access_options
 end
 
 module type S_poly = sig
@@ -937,12 +937,12 @@ module type S_poly = sig
 
   include
     Creators_and_accessors_generic
-    with type ('a, 'b, 'c) t := ('a, 'b) t
-    with type ('a, 'b, 'c) tree := ('a, 'b) tree
-    with type 'k key := 'k
-    with type 'c cmp := comparator_witness
-    with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) Without_comparator.t
-    with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Without_comparator.t
+      with type ('a, 'b, 'c) t := ('a, 'b) t
+      with type ('a, 'b, 'c) tree := ('a, 'b) tree
+      with type 'k key := 'k
+      with type 'c cmp := comparator_witness
+      with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) Without_comparator.t
+      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Without_comparator.t
 end
 
 module type For_deriving = sig
@@ -1354,7 +1354,6 @@ module type Map = sig
   (** [update t key ~f] is [change t key ~f:(fun o -> Some (f o))]. *)
   val update : ('k, 'v, 'cmp) t -> 'k -> f:(('v option -> 'v)[@local]) -> ('k, 'v, 'cmp) t
 
-
   (** Returns [Some value] bound to the given key, or [None] if none exists. *)
   val find : ('k, 'v, 'cmp) t -> 'k -> 'v option
 
@@ -1427,7 +1426,7 @@ module type Map = sig
     -> init:'acc
     -> f:
          ((key:'k -> data:'v -> 'acc -> ('acc, 'final) Container.Continue_or_stop.t)
-          [@local])
+         [@local])
     -> finish:(('acc -> 'final)[@local])
     -> 'final
 
@@ -1641,7 +1640,6 @@ module type Map = sig
   val count : ('k, 'v, _) t -> f:(('v -> bool)[@local]) -> int
   val counti : ('k, 'v, _) t -> f:((key:'k -> data:'v -> bool)[@local]) -> int
 
-
   (** [split t key] returns a map of keys strictly less than [key], the mapping of [key] if
       any, and a map of keys strictly greater than [key].
 
@@ -1742,8 +1740,6 @@ module type Map = sig
   (** [rank t k] If [k] is in [t], returns the number of keys strictly less than [k] in
       [t], and [None] otherwise. *)
   val rank : ('k, 'v, 'cmp) t -> 'k -> int option
-
-
 
   (** [to_sequence ?order ?keys_greater_or_equal_to ?keys_less_or_equal_to t]
       gives a sequence of key-value pairs between [keys_less_or_equal_to] and
@@ -1878,9 +1874,9 @@ module type Map = sig
       - a comparator witness
       - a [hash_fold_t] function with the right type *)
   module M (K : sig
-      type t
-      type comparator_witness
-    end) : sig
+    type t
+    type comparator_witness
+  end) : sig
     type nonrec 'v t = (K.t, 'v, K.comparator_witness) t
   end
 
@@ -1929,12 +1925,12 @@ module type Map = sig
 
       include
         Creators_and_accessors_generic
-        with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
-        with type ('a, 'b, 'c) tree := ('a, 'b, 'c) t
-        with type 'k key := 'k
-        with type 'c cmp := 'c
-        with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) With_comparator.t
-        with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) With_comparator.t
+          with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+          with type ('a, 'b, 'c) tree := ('a, 'b, 'c) t
+          with type 'k key := 'k
+          with type 'c cmp := 'c
+          with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) With_comparator.t
+          with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) With_comparator.t
 
       val empty_without_value_restriction : (_, _, _) t
 
@@ -1969,12 +1965,12 @@ module type Map = sig
 
     include
       Creators_and_accessors_generic
-      with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
-      with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Tree.t
-      with type 'k key := 'k
-      with type 'c cmp := 'c
-      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Without_comparator.t
-      with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) With_comparator.t
+        with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+        with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Tree.t
+        with type 'k key := 'k
+        with type 'c cmp := 'c
+        with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Without_comparator.t
+        with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) With_comparator.t
 
     val comparator : ('a, _, 'cmp) t -> ('a, 'cmp) Comparator.t
 
@@ -1993,10 +1989,10 @@ module type Map = sig
   (** A polymorphic Map. *)
   module Poly :
     S_poly
-    with type ('key, +'value) t = ('key, 'value, Comparator.Poly.comparator_witness) t
-     and type ('key, +'value) tree =
-           ('key, 'value, Comparator.Poly.comparator_witness) Using_comparator.Tree.t
-     and type comparator_witness = Comparator.Poly.comparator_witness
+      with type ('key, +'value) t = ('key, 'value, Comparator.Poly.comparator_witness) t
+       and type ('key, +'value) tree =
+        ('key, 'value, Comparator.Poly.comparator_witness) Using_comparator.Tree.t
+       and type comparator_witness = Comparator.Poly.comparator_witness
 
   (** Create a map from a tree using the given comparator. *)
   val of_tree
@@ -2006,7 +2002,6 @@ module type Map = sig
 
   (** Extract a tree from a map. *)
   val to_tree : ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) Using_comparator.Tree.t
-
 
   (** {2 Modules and module types for extending [Map]}
 

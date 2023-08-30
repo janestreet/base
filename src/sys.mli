@@ -13,9 +13,9 @@ val get_argv : unit -> string array
 (** A single result from [get_argv ()]. This value is indefinitely deprecated. It is kept
     for compatibility with {!Stdlib.Sys}. *)
 val argv : string array
-[@@deprecated
-  "[since 2019-08] Use [Sys.get_argv] instead, which has the correct behavior when \
-   [caml_sys_modify_argv] is called."]
+  [@@deprecated
+    "[since 2019-08] Use [Sys.get_argv] instead, which has the correct behavior when \
+     [caml_sys_modify_argv] is called."]
 
 (** [interactive] is set to [true] when being executed in the [ocaml] REPL, and [false]
     otherwise. *)
@@ -107,7 +107,6 @@ val runtime_warnings_enabled : unit -> bool
 val getenv : string -> string option
 
 val getenv_exn : string -> string
-
 
 (** For the purposes of optimization, [opaque_identity] behaves like an unknown (and thus
     possibly side-effecting) function.  At runtime, [opaque_identity] disappears

@@ -8,12 +8,12 @@ module type Sequence_gen = sig
 end
 
 module Make_gen
-    (Src : Sequence_gen) (Dst : sig
-                            include Sequence_gen
+  (Src : Sequence_gen) (Dst : sig
+    include Sequence_gen
 
-                            val create_like : len:int -> 'a Src.t -> 'a t
-                            val unsafe_blit : ('a Src.t, 'a t) blit
-                          end) =
+    val create_like : len:int -> 'a Src.t -> 'a t
+    val unsafe_blit : ('a Src.t, 'a t) blit
+  end) =
 struct
   let unsafe_blit = Dst.unsafe_blit
 
@@ -30,12 +30,12 @@ struct
   ;;
 
   let blito
-        ~src
-        ?(src_pos = 0)
-        ?(src_len = Src.length src - src_pos)
-        ~dst
-        ?(dst_pos = 0)
-        ()
+    ~src
+    ?(src_pos = 0)
+    ?(src_len = Src.length src - src_pos)
+    ~dst
+    ?(dst_pos = 0)
+    ()
     =
     blit ~src ~src_pos ~len:src_len ~dst ~dst_pos
   ;;
@@ -62,21 +62,21 @@ struct
 end
 
 module Make1 (Sequence : sig
-    include Sequence_gen
+  include Sequence_gen
 
-    val create_like : len:int -> 'a t -> 'a t
-    val unsafe_blit : ('a t, 'a t) blit
-  end) =
+  val create_like : len:int -> 'a t -> 'a t
+  val unsafe_blit : ('a t, 'a t) blit
+end) =
   Make_gen (Sequence) (Sequence)
 
 module Make1_generic (Sequence : Sequence1) = Make_gen (Sequence) (Sequence)
 
 module Make (Sequence : sig
-    include Sequence
+  include Sequence
 
-    val create : len:int -> t
-    val unsafe_blit : (t, t) blit
-  end) =
+  val create : len:int -> t
+  val unsafe_blit : (t, t) blit
+end) =
 struct
   module Sequence = struct
     type 'a t = Sequence.t
@@ -92,12 +92,12 @@ struct
 end
 
 module Make_distinct
-    (Src : Sequence) (Dst : sig
-                        include Sequence
+  (Src : Sequence) (Dst : sig
+    include Sequence
 
-                        val create : len:int -> t
-                        val unsafe_blit : (Src.t, t) blit
-                      end) =
+    val create : len:int -> t
+    val unsafe_blit : (Src.t, t) blit
+  end) =
   Make_gen
     (struct
       type 'a t = Src.t
@@ -117,9 +117,9 @@ module Make_distinct
     end)
 
 module Make_to_string (T : sig
-    type t
-  end)
-    (To_bytes : S_distinct with type src := T.t with type dst := bytes) =
+  type t
+end)
+(To_bytes : S_distinct with type src := T.t with type dst := bytes) =
 struct
   open To_bytes
 

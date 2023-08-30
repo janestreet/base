@@ -1,8 +1,6 @@
 open! Import
 module Array = Array0
 module Either = Either0
-
-
 include List1
 
 (* This itself includes [List0]. *)
@@ -14,8 +12,8 @@ module T = struct
 
   let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
     fun (type a__001_)
-        : (((a__001_[@ocaml.local]) -> a__001_) -> (a__001_ t[@ocaml.local]) -> a__001_ t) ->
-      globalize_list
+      : (((a__001_[@ocaml.local]) -> a__001_) -> (a__001_ t[@ocaml.local]) -> a__001_ t) ->
+    globalize_list
   ;;
 
   let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = list_of_sexp
@@ -35,11 +33,11 @@ module Or_unequal_lengths = struct
   [@@deriving_inline compare ~localize, sexp_of]
 
   let compare__local :
-    'a.
-    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-    -> ('a t[@ocaml.local])
-    -> ('a t[@ocaml.local])
-    -> int
+        'a.
+        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+        -> ('a t[@ocaml.local])
+        -> ('a t[@ocaml.local])
+        -> int
     =
     fun _cmp__a a__014_ b__015_ ->
     if Stdlib.( == ) a__014_ b__015_
@@ -67,10 +65,10 @@ module Or_unequal_lengths = struct
   let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
     fun (type a__021_) : ((a__021_ -> Sexplib0.Sexp.t) -> a__021_ t -> Sexplib0.Sexp.t) ->
     fun _of_a__018_ -> function
-      | Ok arg0__019_ ->
-        let res0__020_ = _of_a__018_ arg0__019_ in
-        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; res0__020_ ]
-      | Unequal_lengths -> Sexplib0.Sexp.Atom "Unequal_lengths"
+    | Ok arg0__019_ ->
+      let res0__020_ = _of_a__018_ arg0__019_ in
+      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; res0__020_ ]
+    | Unequal_lengths -> Sexplib0.Sexp.Atom "Unequal_lengths"
   ;;
 
   [@@@end]
@@ -557,7 +555,7 @@ let iteri l ~f =
     (fold l ~init:0 ~f:(fun i x ->
        f i x;
        i + 1)
-     : int)
+      : int)
 ;;
 
 let foldi t ~init ~f =
@@ -903,20 +901,20 @@ module Cartesian_product = struct
 
   open struct
     module Applicative = Applicative.Make_using_map2 (struct
-        type 'a t = 'a list
+      type 'a t = 'a list
 
-        let return = return
-        let map = `Custom map
-        let map2 = map2
-      end)
+      let return = return
+      let map = `Custom map
+      let map2 = map2
+    end)
 
     module Monad = Monad.Make (struct
-        type 'a t = 'a list
+      type 'a t = 'a list
 
-        let return = return
-        let map = `Custom map
-        let bind = bind
-      end)
+      let return = return
+      let map = `Custom map
+      let bind = bind
+    end)
   end
 
   let all = Monad.all
@@ -1172,7 +1170,7 @@ module Assoc = struct
   ;;
 
   let value_sexp_grammar :
-    'a. 'a Sexplib0.Sexp_grammar.t -> 'a value Sexplib0.Sexp_grammar.t
+        'a. 'a Sexplib0.Sexp_grammar.t -> 'a value Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar ->
     { untyped =
@@ -1191,49 +1189,49 @@ module Assoc = struct
   [@@deriving_inline sexp, sexp_grammar]
 
   let t_of_sexp :
-    'a 'b.
-    (Sexplib0.Sexp.t -> 'a)
-    -> (Sexplib0.Sexp.t -> 'b)
-    -> Sexplib0.Sexp.t
-    -> ('a, 'b) t
+        'a 'b.
+        (Sexplib0.Sexp.t -> 'a)
+        -> (Sexplib0.Sexp.t -> 'b)
+        -> Sexplib0.Sexp.t
+        -> ('a, 'b) t
     =
     let error_source__036_ = "list.ml.Assoc.t" in
     fun _of_a__028_ _of_b__029_ x__037_ ->
       list_of_sexp
         (function
-          | Sexplib0.Sexp.List [ arg0__031_; arg1__032_ ] ->
-            let res0__033_ = key_of_sexp _of_a__028_ arg0__031_
-            and res1__034_ = value_of_sexp _of_b__029_ arg1__032_ in
-            res0__033_, res1__034_
-          | sexp__035_ ->
-            Sexplib0.Sexp_conv_error.tuple_of_size_n_expected
-              error_source__036_
-              2
-              sexp__035_)
+         | Sexplib0.Sexp.List [ arg0__031_; arg1__032_ ] ->
+           let res0__033_ = key_of_sexp _of_a__028_ arg0__031_
+           and res1__034_ = value_of_sexp _of_b__029_ arg1__032_ in
+           res0__033_, res1__034_
+         | sexp__035_ ->
+           Sexplib0.Sexp_conv_error.tuple_of_size_n_expected
+             error_source__036_
+             2
+             sexp__035_)
         x__037_
   ;;
 
   let sexp_of_t :
-    'a 'b.
-    ('a -> Sexplib0.Sexp.t)
-    -> ('b -> Sexplib0.Sexp.t)
-    -> ('a, 'b) t
-    -> Sexplib0.Sexp.t
+        'a 'b.
+        ('a -> Sexplib0.Sexp.t)
+        -> ('b -> Sexplib0.Sexp.t)
+        -> ('a, 'b) t
+        -> Sexplib0.Sexp.t
     =
     fun _of_a__038_ _of_b__039_ x__044_ ->
     sexp_of_list
       (fun (arg0__040_, arg1__041_) ->
-         let res0__042_ = sexp_of_key _of_a__038_ arg0__040_
-         and res1__043_ = sexp_of_value _of_b__039_ arg1__041_ in
-         Sexplib0.Sexp.List [ res0__042_; res1__043_ ])
+        let res0__042_ = sexp_of_key _of_a__038_ arg0__040_
+        and res1__043_ = sexp_of_value _of_b__039_ arg1__041_ in
+        Sexplib0.Sexp.List [ res0__042_; res1__043_ ])
       x__044_
   ;;
 
   let t_sexp_grammar :
-    'a 'b.
-    'a Sexplib0.Sexp_grammar.t
-    -> 'b Sexplib0.Sexp_grammar.t
-    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
+        'a 'b.
+        'a Sexplib0.Sexp_grammar.t
+        -> 'b Sexplib0.Sexp_grammar.t
+        -> ('a, 'b) t Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar _'b_sexp_grammar ->
     { untyped =
@@ -1248,7 +1246,7 @@ module Assoc = struct
                           ( (key_sexp_grammar _'a_sexp_grammar).untyped
                           , Cons ((value_sexp_grammar _'b_sexp_grammar).untyped, Empty) ))
                  })
-              .untyped
+                .untyped
           }
     }
   ;;
@@ -1524,13 +1522,13 @@ let () =
   Sexplib0.Sexp_conv.Exn_converter.add
     [%extension_constructor Transpose_got_lists_of_different_lengths]
     (function
-      | Transpose_got_lists_of_different_lengths arg0__045_ ->
-        let res0__046_ = sexp_of_list sexp_of_int arg0__045_ in
-        Sexplib0.Sexp.List
-          [ Sexplib0.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"
-          ; res0__046_
-          ]
-      | _ -> assert false)
+    | Transpose_got_lists_of_different_lengths arg0__045_ ->
+      let res0__046_ = sexp_of_list sexp_of_int arg0__045_ in
+      Sexplib0.Sexp.List
+        [ Sexplib0.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"
+        ; res0__046_
+        ]
+    | _ -> assert false)
 ;;
 
 [@@@end]

@@ -6,14 +6,14 @@ module This_list : S = struct
   include List
 
   include Indexed_container.Make (struct
-      type 'a t = 'a list
+    type 'a t = 'a list
 
-      let fold = List.fold
-      let iter = `Custom List.iter
-      let length = `Custom List.length
-      let foldi = `Define_using_fold
-      let iteri = `Define_using_fold
-    end)
+    let fold = List.fold
+    let iter = `Custom List.iter
+    let length = `Custom List.length
+    let foldi = `Define_using_fold
+    let iteri = `Define_using_fold
+  end)
 end
 
 module That_list : S = List

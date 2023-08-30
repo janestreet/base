@@ -1,4 +1,3 @@
-
 (** A value of type ['a Lazy.t] is a deferred computation, called a suspension, that has a
     result of type ['a].
 

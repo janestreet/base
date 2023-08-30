@@ -19,7 +19,7 @@ include (
 
     let of_list = of_char_list
   end) :
-  sig end)
+    sig end)
 
 (* Quickcheck-based expect tests *)
 

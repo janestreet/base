@@ -35,7 +35,7 @@ let tr_create_map ~target ~replacement =
   (* quick check on the first target character which will 99% be true *)
   let first_target = target.[0] in
   if Char.( <> ) (Bytes0.unsafe_get tr_map (Char.to_int first_target)) first_target
-  || have_any_different tr_map 0
+     || have_any_different tr_map 0
   then Some (Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:tr_map)
   else None
 ;;

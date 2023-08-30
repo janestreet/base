@@ -31,45 +31,45 @@
 include (
   Shadow_stdlib :
     module type of struct
-    include Shadow_stdlib
-  end
-  (* Modules defined in Base *)
-  with module Array := Shadow_stdlib.Array
-  with module Atomic := Shadow_stdlib.Atomic
-  with module Bool := Shadow_stdlib.Bool
-  with module Buffer := Shadow_stdlib.Buffer
-  with module Bytes := Shadow_stdlib.Bytes
-  with module Char := Shadow_stdlib.Char
-  with module Either := Shadow_stdlib.Either
-  with module Float := Shadow_stdlib.Float
-  with module Hashtbl := Shadow_stdlib.Hashtbl
-  with module In_channel := Shadow_stdlib.In_channel
-  with module Int := Shadow_stdlib.Int
-  with module Int32 := Shadow_stdlib.Int32
-  with module Int64 := Shadow_stdlib.Int64
-  with module Lazy := Shadow_stdlib.Lazy
-  with module List := Shadow_stdlib.List
-  with module Map := Shadow_stdlib.Map
-  with module Nativeint := Shadow_stdlib.Nativeint
-  with module Option := Shadow_stdlib.Option
-  with module Out_channel := Shadow_stdlib.Out_channel
-  with module Printf := Shadow_stdlib.Printf
-  with module Queue := Shadow_stdlib.Queue
-  with module Random := Shadow_stdlib.Random
-  with module Result := Shadow_stdlib.Result
-  with module Set := Shadow_stdlib.Set
-  with module Stack := Shadow_stdlib.Stack
-  with module String := Shadow_stdlib.String
-  with module Sys := Shadow_stdlib.Sys
-  with module Uchar := Shadow_stdlib.Uchar
-  with module Unit := Shadow_stdlib.Unit
-  (* Support for generated lexers *)
-  with module Lexing := Shadow_stdlib.Lexing
-  with type ('a, 'b, 'c) format := ('a, 'b, 'c) format
-  with type ('a, 'b, 'c, 'd) format4 := ('a, 'b, 'c, 'd) format4
-  with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
-  with type 'a ref := 'a ref)
-  [@ocaml.warning "-3"]
+      include Shadow_stdlib
+    end
+    (* Modules defined in Base *)
+    with module Array := Shadow_stdlib.Array
+    with module Atomic := Shadow_stdlib.Atomic
+    with module Bool := Shadow_stdlib.Bool
+    with module Buffer := Shadow_stdlib.Buffer
+    with module Bytes := Shadow_stdlib.Bytes
+    with module Char := Shadow_stdlib.Char
+    with module Either := Shadow_stdlib.Either
+    with module Float := Shadow_stdlib.Float
+    with module Hashtbl := Shadow_stdlib.Hashtbl
+    with module In_channel := Shadow_stdlib.In_channel
+    with module Int := Shadow_stdlib.Int
+    with module Int32 := Shadow_stdlib.Int32
+    with module Int64 := Shadow_stdlib.Int64
+    with module Lazy := Shadow_stdlib.Lazy
+    with module List := Shadow_stdlib.List
+    with module Map := Shadow_stdlib.Map
+    with module Nativeint := Shadow_stdlib.Nativeint
+    with module Option := Shadow_stdlib.Option
+    with module Out_channel := Shadow_stdlib.Out_channel
+    with module Printf := Shadow_stdlib.Printf
+    with module Queue := Shadow_stdlib.Queue
+    with module Random := Shadow_stdlib.Random
+    with module Result := Shadow_stdlib.Result
+    with module Set := Shadow_stdlib.Set
+    with module Stack := Shadow_stdlib.Stack
+    with module String := Shadow_stdlib.String
+    with module Sys := Shadow_stdlib.Sys
+    with module Uchar := Shadow_stdlib.Uchar
+    with module Unit := Shadow_stdlib.Unit
+    (* Support for generated lexers *)
+    with module Lexing := Shadow_stdlib.Lexing
+    with type ('a, 'b, 'c) format := ('a, 'b, 'c) format
+    with type ('a, 'b, 'c, 'd) format4 := ('a, 'b, 'c, 'd) format4
+    with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
+    with type 'a ref := 'a ref)
+[@ocaml.warning "-3"]
 
 (**/**)
 
@@ -190,11 +190,11 @@ module Export = struct
   [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
 
   let compare_array__local :
-    'a.
-    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-    -> ('a array[@ocaml.local])
-    -> ('a array[@ocaml.local])
-    -> int
+        'a.
+        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+        -> ('a array[@ocaml.local])
+        -> ('a array[@ocaml.local])
+        -> int
     =
     Array.compare__local
   ;;
@@ -202,11 +202,11 @@ module Export = struct
   let compare_array : 'a. ('a -> 'a -> int) -> 'a array -> 'a array -> int = Array.compare
 
   let equal_array__local :
-    'a.
-    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-    -> ('a array[@ocaml.local])
-    -> ('a array[@ocaml.local])
-    -> bool
+        'a.
+        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
+        -> ('a array[@ocaml.local])
+        -> ('a array[@ocaml.local])
+        -> bool
     =
     Array.equal__local
   ;;
@@ -214,12 +214,12 @@ module Export = struct
   let equal_array : 'a. ('a -> 'a -> bool) -> 'a array -> 'a array -> bool = Array.equal
 
   let globalize_array :
-    'a. (('a[@ocaml.local]) -> 'a) -> ('a array[@ocaml.local]) -> 'a array
+        'a. (('a[@ocaml.local]) -> 'a) -> ('a array[@ocaml.local]) -> 'a array
     =
     fun (type a__017_)
-        :  (((a__017_[@ocaml.local]) -> a__017_) -> (a__017_ array[@ocaml.local])
-            -> a__017_ array) ->
-      Array.globalize
+      :  (((a__017_[@ocaml.local]) -> a__017_) -> (a__017_ array[@ocaml.local])
+      -> a__017_ array) ->
+    Array.globalize
   ;;
 
   let array_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a array =
@@ -231,7 +231,7 @@ module Export = struct
   ;;
 
   let array_sexp_grammar :
-    'a. 'a Sexplib0.Sexp_grammar.t -> 'a array Sexplib0.Sexp_grammar.t
+        'a. 'a Sexplib0.Sexp_grammar.t -> 'a array Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar -> Array.t_sexp_grammar _'a_sexp_grammar
   ;;
@@ -259,7 +259,7 @@ module Export = struct
   ;;
 
   let (hash_fold_bool :
-         Ppx_hash_lib.Std.Hash.state -> bool -> Ppx_hash_lib.Std.Hash.state)
+        Ppx_hash_lib.Std.Hash.state -> bool -> Ppx_hash_lib.Std.Hash.state)
     =
     Bool.hash_fold_t
 
@@ -295,7 +295,7 @@ module Export = struct
   ;;
 
   let (hash_fold_char :
-         Ppx_hash_lib.Std.Hash.state -> char -> Ppx_hash_lib.Std.Hash.state)
+        Ppx_hash_lib.Std.Hash.state -> char -> Ppx_hash_lib.Std.Hash.state)
     =
     Char.hash_fold_t
 
@@ -337,7 +337,7 @@ module Export = struct
   ;;
 
   let (hash_fold_float :
-         Ppx_hash_lib.Std.Hash.state -> float -> Ppx_hash_lib.Std.Hash.state)
+        Ppx_hash_lib.Std.Hash.state -> float -> Ppx_hash_lib.Std.Hash.state)
     =
     Float.hash_fold_t
 
@@ -407,7 +407,7 @@ module Export = struct
   ;;
 
   let (hash_fold_int32 :
-         Ppx_hash_lib.Std.Hash.state -> int32 -> Ppx_hash_lib.Std.Hash.state)
+        Ppx_hash_lib.Std.Hash.state -> int32 -> Ppx_hash_lib.Std.Hash.state)
     =
     Int32.hash_fold_t
 
@@ -443,7 +443,7 @@ module Export = struct
   ;;
 
   let (hash_fold_int64 :
-         Ppx_hash_lib.Std.Hash.state -> int64 -> Ppx_hash_lib.Std.Hash.state)
+        Ppx_hash_lib.Std.Hash.state -> int64 -> Ppx_hash_lib.Std.Hash.state)
     =
     Int64.hash_fold_t
 
@@ -463,11 +463,11 @@ module Export = struct
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
   let compare_list__local :
-    'a.
-    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-    -> ('a list[@ocaml.local])
-    -> ('a list[@ocaml.local])
-    -> int
+        'a.
+        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+        -> ('a list[@ocaml.local])
+        -> ('a list[@ocaml.local])
+        -> int
     =
     List.compare__local
   ;;
@@ -475,11 +475,11 @@ module Export = struct
   let compare_list : 'a. ('a -> 'a -> int) -> 'a list -> 'a list -> int = List.compare
 
   let equal_list__local :
-    'a.
-    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-    -> ('a list[@ocaml.local])
-    -> ('a list[@ocaml.local])
-    -> bool
+        'a.
+        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
+        -> ('a list[@ocaml.local])
+        -> ('a list[@ocaml.local])
+        -> bool
     =
     List.equal__local
   ;;
@@ -487,20 +487,20 @@ module Export = struct
   let equal_list : 'a. ('a -> 'a -> bool) -> 'a list -> 'a list -> bool = List.equal
 
   let globalize_list :
-    'a. (('a[@ocaml.local]) -> 'a) -> ('a list[@ocaml.local]) -> 'a list
+        'a. (('a[@ocaml.local]) -> 'a) -> ('a list[@ocaml.local]) -> 'a list
     =
     fun (type a__078_)
-        :  (((a__078_[@ocaml.local]) -> a__078_) -> (a__078_ list[@ocaml.local])
-            -> a__078_ list) ->
-      List.globalize
+      :  (((a__078_[@ocaml.local]) -> a__078_) -> (a__078_ list[@ocaml.local])
+      -> a__078_ list) ->
+    List.globalize
   ;;
 
   let hash_fold_list :
-    'a.
-    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-    -> Ppx_hash_lib.Std.Hash.state
-    -> 'a list
-    -> Ppx_hash_lib.Std.Hash.state
+        'a.
+        (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+        -> Ppx_hash_lib.Std.Hash.state
+        -> 'a list
+        -> Ppx_hash_lib.Std.Hash.state
     =
     List.hash_fold_t
   ;;
@@ -514,7 +514,7 @@ module Export = struct
   ;;
 
   let list_sexp_grammar :
-    'a. 'a Sexplib0.Sexp_grammar.t -> 'a list Sexplib0.Sexp_grammar.t
+        'a. 'a Sexplib0.Sexp_grammar.t -> 'a list Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar -> List.t_sexp_grammar _'a_sexp_grammar
   ;;
@@ -527,7 +527,7 @@ module Export = struct
 
   let compare_nativeint__local =
     (Nativeint.compare__local
-     : (nativeint[@ocaml.local]) -> (nativeint[@ocaml.local]) -> int)
+      : (nativeint[@ocaml.local]) -> (nativeint[@ocaml.local]) -> int)
   ;;
 
   let compare_nativeint =
@@ -536,7 +536,7 @@ module Export = struct
 
   let equal_nativeint__local =
     (Nativeint.equal__local
-     : (nativeint[@ocaml.local]) -> (nativeint[@ocaml.local]) -> bool)
+      : (nativeint[@ocaml.local]) -> (nativeint[@ocaml.local]) -> bool)
   ;;
 
   let equal_nativeint =
@@ -548,7 +548,7 @@ module Export = struct
   ;;
 
   let (hash_fold_nativeint :
-         Ppx_hash_lib.Std.Hash.state -> nativeint -> Ppx_hash_lib.Std.Hash.state)
+        Ppx_hash_lib.Std.Hash.state -> nativeint -> Ppx_hash_lib.Std.Hash.state)
     =
     Nativeint.hash_fold_t
 
@@ -571,11 +571,11 @@ module Export = struct
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
   let compare_option__local :
-    'a.
-    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-    -> ('a option[@ocaml.local])
-    -> ('a option[@ocaml.local])
-    -> int
+        'a.
+        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+        -> ('a option[@ocaml.local])
+        -> ('a option[@ocaml.local])
+        -> int
     =
     Option.compare__local
   ;;
@@ -585,11 +585,11 @@ module Export = struct
   ;;
 
   let equal_option__local :
-    'a.
-    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-    -> ('a option[@ocaml.local])
-    -> ('a option[@ocaml.local])
-    -> bool
+        'a.
+        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
+        -> ('a option[@ocaml.local])
+        -> ('a option[@ocaml.local])
+        -> bool
     =
     Option.equal__local
   ;;
@@ -599,20 +599,20 @@ module Export = struct
   ;;
 
   let globalize_option :
-    'a. (('a[@ocaml.local]) -> 'a) -> ('a option[@ocaml.local]) -> 'a option
+        'a. (('a[@ocaml.local]) -> 'a) -> ('a option[@ocaml.local]) -> 'a option
     =
     fun (type a__109_)
-        :  (((a__109_[@ocaml.local]) -> a__109_) -> (a__109_ option[@ocaml.local])
-            -> a__109_ option) ->
-      Option.globalize
+      :  (((a__109_[@ocaml.local]) -> a__109_) -> (a__109_ option[@ocaml.local])
+      -> a__109_ option) ->
+    Option.globalize
   ;;
 
   let hash_fold_option :
-    'a.
-    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-    -> Ppx_hash_lib.Std.Hash.state
-    -> 'a option
-    -> Ppx_hash_lib.Std.Hash.state
+        'a.
+        (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+        -> Ppx_hash_lib.Std.Hash.state
+        -> 'a option
+        -> Ppx_hash_lib.Std.Hash.state
     =
     Option.hash_fold_t
   ;;
@@ -626,7 +626,7 @@ module Export = struct
   ;;
 
   let option_sexp_grammar :
-    'a. 'a Sexplib0.Sexp_grammar.t -> 'a option Sexplib0.Sexp_grammar.t
+        'a. 'a Sexplib0.Sexp_grammar.t -> 'a option Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar -> Option.t_sexp_grammar _'a_sexp_grammar
   ;;
@@ -637,11 +637,11 @@ module Export = struct
   [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
 
   let compare_ref__local :
-    'a.
-    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-    -> ('a ref[@ocaml.local])
-    -> ('a ref[@ocaml.local])
-    -> int
+        'a.
+        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+        -> ('a ref[@ocaml.local])
+        -> ('a ref[@ocaml.local])
+        -> int
     =
     Ref.compare__local
   ;;
@@ -649,11 +649,11 @@ module Export = struct
   let compare_ref : 'a. ('a -> 'a -> int) -> 'a ref -> 'a ref -> int = Ref.compare
 
   let equal_ref__local :
-    'a.
-    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-    -> ('a ref[@ocaml.local])
-    -> ('a ref[@ocaml.local])
-    -> bool
+        'a.
+        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
+        -> ('a ref[@ocaml.local])
+        -> ('a ref[@ocaml.local])
+        -> bool
     =
     Ref.equal__local
   ;;
@@ -662,9 +662,9 @@ module Export = struct
 
   let globalize_ref : 'a. (('a[@ocaml.local]) -> 'a) -> ('a ref[@ocaml.local]) -> 'a ref =
     fun (type a__134_)
-        :  (((a__134_[@ocaml.local]) -> a__134_) -> (a__134_ ref[@ocaml.local])
-            -> a__134_ ref) ->
-      Ref.globalize
+      :  (((a__134_[@ocaml.local]) -> a__134_) -> (a__134_ ref[@ocaml.local])
+      -> a__134_ ref) ->
+    Ref.globalize
   ;;
 
   let ref_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a ref =
@@ -702,7 +702,7 @@ module Export = struct
   ;;
 
   let (hash_fold_string :
-         Ppx_hash_lib.Std.Hash.state -> string -> Ppx_hash_lib.Std.Hash.state)
+        Ppx_hash_lib.Std.Hash.state -> string -> Ppx_hash_lib.Std.Hash.state)
     =
     String.hash_fold_t
 
@@ -763,7 +763,7 @@ module Export = struct
   ;;
 
   let (hash_fold_unit :
-         Ppx_hash_lib.Std.Hash.state -> unit -> Ppx_hash_lib.Std.Hash.state)
+        Ppx_hash_lib.Std.Hash.state -> unit -> Ppx_hash_lib.Std.Hash.state)
     =
     Unit.hash_fold_t
 

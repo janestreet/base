@@ -197,32 +197,32 @@ end
 
 let%test_module "Make" =
   (module Test_applicative_s (Applicative.Make (struct
-                                type 'a t = 'a Or_error.t
+    type 'a t = 'a Or_error.t
 
-                                let return = Or_error.return
-                                let apply = Or_error.apply
-                                let map = `Define_using_apply
-                              end)))
+    let return = Or_error.return
+    let apply = Or_error.apply
+    let map = `Define_using_apply
+  end)))
 ;;
 
 let%test_module "Make" =
   (module Test_applicative_s (Applicative.Make_using_map2 (struct
-                                type 'a t = 'a Or_error.t
+    type 'a t = 'a Or_error.t
 
-                                let return = Or_error.return
-                                let map2 = Or_error.map2
-                                let map = `Define_using_map2
-                              end)))
+    let return = Or_error.return
+    let map2 = Or_error.map2
+    let map = `Define_using_map2
+  end)))
 ;;
 
 let%test_module "Make" =
   (module Test_applicative_s (Applicative.Make_using_map2_local (struct
-                                type 'a t = 'a Or_error.t
+    type 'a t = 'a Or_error.t
 
-                                let return x = Ok x
-                                let map2 = Or_error.map2
-                                let map = `Define_using_map2
-                              end)))
+    let return x = Ok x
+    let map2 = Or_error.map2
+    let map = `Define_using_map2
+  end)))
 ;;
 
 (* While law-abiding applicatives shouldn't be relying functions being called
@@ -243,12 +243,12 @@ let%expect_test _ =
       | Map2 : ('a -> 'b -> 'c) * 'a t * 'b t -> 'c t
 
     include Applicative.Make_using_map2 (struct
-        type nonrec 'a t = 'a t
+      type nonrec 'a t = 'a t
 
-        let return x = Return x
-        let map2 a b ~f = Map2 (f, a, b)
-        let map = `Custom (fun a ~f -> Map (f, a))
-      end)
+      let return x = Return x
+      let map2 a b ~f = Map2 (f, a, b)
+      let map = `Custom (fun a ~f -> Map (f, a))
+    end)
 
     let rec sexp_of_t : type a. a t -> Sexp.t = function
       | Other x -> Atom x

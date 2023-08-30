@@ -148,25 +148,25 @@ module type Blit = sig
 
   (** [Make] is for blitting between two values of the same monomorphic type. *)
   module Make (Sequence : sig
-      include Sequence
+    include Sequence
 
-      val create : len:int -> t
-      val unsafe_blit : (t, t) blit
-    end) : S with type t := Sequence.t
+    val create : len:int -> t
+    val unsafe_blit : (t, t) blit
+  end) : S with type t := Sequence.t
 
   (** [Make_distinct] is for blitting between values of distinct monomorphic types. *)
   module Make_distinct
-      (Src : Sequence) (Dst : sig
-                          include Sequence
+    (Src : Sequence) (Dst : sig
+      include Sequence
 
-                          val create : len:int -> t
-                          val unsafe_blit : (Src.t, t) blit
-                        end) : S_distinct with type src := Src.t with type dst := Dst.t
+      val create : len:int -> t
+      val unsafe_blit : (Src.t, t) blit
+    end) : S_distinct with type src := Src.t with type dst := Dst.t
 
   module Make_to_string (T : sig
-      type t
-    end)
-      (To_bytes : S_distinct with type src := T.t with type dst := bytes) :
+    type t
+  end)
+  (To_bytes : S_distinct with type src := T.t with type dst := bytes) :
     S_to_string with type t := T.t
 
   (** [Make1] is for blitting between two values of the same polymorphic type. *)

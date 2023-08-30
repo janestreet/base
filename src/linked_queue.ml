@@ -15,14 +15,14 @@ let drain t ~f ~while_ =
 ;;
 
 module C = Indexed_container.Make (struct
-    type nonrec 'a t = 'a t
+  type nonrec 'a t = 'a t
 
-    let fold = fold
-    let iter = `Custom iter
-    let length = `Custom length
-    let foldi = `Define_using_fold
-    let iteri = `Define_using_fold
-  end)
+  let fold = fold
+  let iter = `Custom iter
+  let length = `Custom length
+  let foldi = `Define_using_fold
+  let iteri = `Define_using_fold
+end)
 
 let count = C.count
 let exists = C.exists

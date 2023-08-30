@@ -3,24 +3,24 @@ open! Array
 
 let%test_module "Binary_searchable" =
   (module Test_binary_searchable.Test1 (struct
-       include Array
+    include Array
 
-       module For_test = struct
-         let of_array = Fn.id
-       end
-     end))
+    module For_test = struct
+      let of_array = Fn.id
+    end
+  end))
 ;;
 
 let%test_module "Blit" =
   (module Test_blit.Test1
-       (struct
-         type 'a z = 'a
+            (struct
+              type 'a z = 'a
 
-         include Array
+              include Array
 
-         let create_bool ~len = create ~len false
-       end)
-       (Array))
+              let create_bool ~len = create ~len false
+            end)
+            (Array))
 ;;
 
 module List_helpers = struct
@@ -489,11 +489,11 @@ let%test_module "permute" =
           raise_s
             [%sexp
               "invalid permutation"
-            , { array_length = (List.length initial_contents : int)
-              ; permutation : int list
-              ; pos : int option
-              ; len : int option
-              }];
+              , { array_length = (List.length initial_contents : int)
+                ; permutation : int list
+                ; pos : int option
+                ; len : int option
+                }];
         not_yet_seen := Set.remove !not_yet_seen permutation
       done
     ;;

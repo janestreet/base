@@ -138,7 +138,6 @@ val fold_mapi
     where [n] is the length of the array [a]. *)
 val fold_right : 'a t -> f:(('a -> 'acc -> 'acc)[@local]) -> init:'acc -> 'acc
 
-
 (** All sort functions in this module sort in increasing order by default.  *)
 
 (** [sort] uses constant heap space. [stable_sort] uses linear heap space.
@@ -220,7 +219,6 @@ val of_list_rev_mapi : 'a list -> f:((int -> 'a -> 'b)[@local]) -> 'b t
 (** Modifies an array in place, applying [f] to every element of the array *)
 val map_inplace : 'a t -> f:(('a -> 'a)[@local]) -> unit
 
-
 (** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true.  It raises
     [Stdlib.Not_found] or [Not_found_s] if there is no such [a]. *)
 val find_exn : 'a t -> f:(('a -> bool)[@local]) -> 'a
@@ -289,7 +287,6 @@ val equal__local
   -> ('a t[@local])
   -> bool
 
-
 (** The input array is copied internally so that future modifications of it do not change
     the sequence. *)
 val to_sequence : 'a t -> 'a Sequence.t
@@ -333,12 +330,12 @@ module Private : sig
   end
 
   module Sorter (S : sig
-      type 'a t
+    type 'a t
 
-      val get : 'a t -> int -> 'a
-      val set : 'a t -> int -> 'a -> unit
-      val length : 'a t -> int
-    end) : sig
+    val get : 'a t -> int -> 'a
+    val set : 'a t -> int -> 'a -> unit
+    val length : 'a t -> int
+  end) : sig
     val sort
       :  ?pos:int
       -> ?len:int

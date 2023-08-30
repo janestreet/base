@@ -3,13 +3,13 @@ open! Import
 type ('a, 'b) t = T : ('a, 'a) t [@@deriving_inline sexp_of]
 
 let sexp_of_t :
-  'a 'b.
-  ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
+      'a 'b.
+      ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
   =
   fun (type a__003_ b__004_)
-      :  ((a__003_ -> Sexplib0.Sexp.t) -> (b__004_ -> Sexplib0.Sexp.t)
-          -> (a__003_, b__004_) t -> Sexplib0.Sexp.t) ->
-    fun _of_a__001_ _of_b__002_ T -> Sexplib0.Sexp.Atom "T"
+    :  ((a__003_ -> Sexplib0.Sexp.t) -> (b__004_ -> Sexplib0.Sexp.t)
+    -> (a__003_, b__004_) t -> Sexplib0.Sexp.t) ->
+  fun _of_a__001_ _of_b__002_ T -> Sexplib0.Sexp.Atom "T"
 ;;
 
 [@@@end]
@@ -17,8 +17,8 @@ let sexp_of_t :
 type ('a, 'b) equal = ('a, 'b) t
 
 include Type_equal_intf.Definitions (struct
-    type ('a, 'b) t = ('a, 'b) equal
-  end)
+  type ('a, 'b) t = ('a, 'b) equal
+end)
 
 let refl = T
 let sym (type a b) (T : (a, b) t) : (b, a) t = T
@@ -26,15 +26,15 @@ let trans (type a b c) (T : (a, b) t) (T : (b, c) t) : (a, c) t = T
 let conv (type a b) (T : (a, b) t) (a : a) : b = a
 
 module Lift (X : sig
-    type 'a t
-  end) =
+  type 'a t
+end) =
 struct
   let lift (type a b) (T : (a, b) t) : (a X.t, b X.t) t = T
 end
 
 module Lift2 (X : sig
-    type ('a1, 'a2) t
-  end) =
+  type ('a1, 'a2) t
+end) =
 struct
   let lift (type a1 b1 a2 b2) (T : (a1, b1) t) (T : (a2, b2) t)
     : ((a1, a2) X.t, (b1, b2) X.t) t
@@ -44,8 +44,8 @@ struct
 end
 
 module Lift3 (X : sig
-    type ('a1, 'a2, 'a3) t
-  end) =
+  type ('a1, 'a2, 'a3) t
+end) =
 struct
   let lift (type a1 b1 a2 b2 a3 b3) (T : (a1, b1) t) (T : (a2, b2) t) (T : (a3, b3) t)
     : ((a1, a2, a3) X.t, (b1, b2, b3) X.t) t
@@ -71,7 +71,7 @@ module Id = struct
       let sexp_of_type_witness_int =
         (fun (`type_witness v__005_) ->
            Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "type_witness"; sexp_of_int v__005_ ]
-           : type_witness_int -> Sexplib0.Sexp.t)
+          : type_witness_int -> Sexplib0.Sexp.t)
       ;;
 
       [@@@end]
@@ -122,7 +122,6 @@ module Id = struct
       | _ -> None
     ;;
   end
-
 
   type 'a t =
     { witness : 'a Witness.t

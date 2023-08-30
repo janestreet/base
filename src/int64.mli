@@ -91,7 +91,7 @@ external bits_of_float
   :  (float[@local_opt])
   -> (int64[@local_opt])
   = "caml_int64_bits_of_float" "caml_int64_bits_of_float_unboxed"
-[@@unboxed] [@@noalloc]
+  [@@unboxed] [@@noalloc]
 
 val float_of_bits : t -> float
 

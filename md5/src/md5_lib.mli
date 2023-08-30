@@ -14,9 +14,6 @@ val unsafe_of_binary : string -> t
 
 val to_hex : t -> string
 val of_hex_exn : string -> t
-
 val string : string -> t
-
 val bytes : bytes -> t
-
 val subbytes : bytes -> pos:int -> len:int -> t

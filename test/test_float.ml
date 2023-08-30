@@ -460,12 +460,12 @@ let%test_module _ =
     ;;
 
     let test_all_six
-          x
-          ~specialized_iround
-          ~specialized_iround_exn
-          ~float_rounding
-          ~dir
-          ~validate
+      x
+      ~specialized_iround
+      ~specialized_iround_exn
+      ~float_rounding
+      ~dir
+      ~validate
       =
       let result1 = iround x ~dir in
       let result2 = Option.try_with (fun () -> iround_exn x ~dir) in
@@ -475,10 +475,10 @@ let%test_module _ =
       let result6 = Option.try_with (fun () -> Int.of_float (round ~dir x)) in
       let ( = ) = Stdlib.( = ) in
       if result1 = result2
-      && result2 = result3
-      && result3 = result4
-      && result4 = result5
-      && result5 = result6
+         && result2 = result3
+         && result3 = result4
+         && result4 = result5
+         && result5 = result6
       then validate result1
       else false
     ;;
@@ -492,10 +492,10 @@ let%test_module _ =
         ~float_rounding:round_nearest
         ~dir:`Nearest
         ~validate:(function
-          | None -> true
-          | Some y ->
-            let y = of_int y in
-            -0.5 < y -. x && y -. x <= 0.5)
+        | None -> true
+        | Some y ->
+          let y = of_int y in
+          -0.5 < y -. x && y -. x <= 0.5)
     ;;
 
     (* iround_down:
@@ -512,10 +512,10 @@ let%test_module _ =
         ~float_rounding:round_down
         ~dir:`Down
         ~validate:(function
-          | None -> true
-          | Some y ->
-            let y = of_int y in
-            0. <= x -. y && x -. y < 1.)
+        | None -> true
+        | Some y ->
+          let y = of_int y in
+          0. <= x -. y && x -. y < 1.)
     ;;
 
     (* iround_up:
@@ -532,10 +532,10 @@ let%test_module _ =
         ~float_rounding:round_up
         ~dir:`Up
         ~validate:(function
-          | None -> true
-          | Some y ->
-            let y = of_int y in
-            0. <= y -. x && y -. x < 1.)
+        | None -> true
+        | Some y ->
+          let y = of_int y in
+          0. <= y -. x && y -. x < 1.)
     ;;
 
     (* iround_towards_zero:
@@ -552,11 +552,11 @@ let%test_module _ =
         ~float_rounding:round_towards_zero
         ~dir:`Zero
         ~validate:(function
-          | None -> true
-          | Some y ->
-            let x = abs x in
-            let y = abs (of_int y) in
-            0. <= x -. y && x -. y < 1. && (Sign.(sign_exn x = sign_exn y) || y = 0.0))
+        | None -> true
+        | Some y ->
+          let x = abs x in
+          let y = abs (of_int y) in
+          0. <= x -. y && x -. y < 1. && (Sign.(sign_exn x = sign_exn y) || y = 0.0))
     ;;
 
     (* Easy cases that used to live inline with the code above. *)
@@ -830,14 +830,14 @@ let%test_module _ =
 ;;
 
 module Test_bounds (I : sig
-    type t
+  type t
 
-    val num_bits : int
-    val of_float : float -> t
-    val to_int64 : t -> Int64.t
-    val max_value : t
-    val min_value : t
-  end) =
+  val num_bits : int
+  val of_float : float -> t
+  val to_int64 : t -> Int64.t
+  val max_value : t
+  val min_value : t
+end) =
 struct
   open I
 
@@ -865,7 +865,7 @@ struct
     in
     let min_value = to_int64 min_value in
     if Int.( = ) num_bits 64
-    (* We cannot detect overflow because on Intel overflow results in min_value. *)
+       (* We cannot detect overflow because on Intel overflow results in min_value. *)
     then true
     else (
       assert (Int64.( <= ) lower_bound_minus_epsilon lower_bound);
@@ -880,7 +880,7 @@ struct
     in
     let max_value = to_int64 max_value in
     if Int.( = ) num_bits 64
-    (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
+       (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
     then Int64.( < ) upper_bound_plus_epsilon upper_bound
     else (
       assert (Int64.( >= ) upper_bound_plus_epsilon upper_bound);
@@ -990,7 +990,6 @@ let%test_module _ =
 ;;
 
 let%test _ = round_nearest 3.6 = 4. && round_nearest (-3.6) = -4.
-
 
 (* The redefinition of [sexp_of_t] in float.ml assumes sexp conversion uses E rather than
    e. *)

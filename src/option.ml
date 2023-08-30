@@ -1,68 +1,68 @@
 open! Import
 
 include (
-struct
-  type 'a t = 'a option
-  [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
+  struct
+    type 'a t = 'a option
+    [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare__local :
-    'a.
-    (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-    -> ('a t[@ocaml.local])
-    -> ('a t[@ocaml.local])
-    -> int
-    =
-    compare_option__local
-  ;;
+    let compare__local :
+          'a.
+          (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
+          -> ('a t[@ocaml.local])
+          -> ('a t[@ocaml.local])
+          -> int
+      =
+      compare_option__local
+    ;;
 
-  let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
+    let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
 
-  let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
-    fun (type a__009_)
+    let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
+      fun (type a__009_)
         : (((a__009_[@ocaml.local]) -> a__009_) -> (a__009_ t[@ocaml.local]) -> a__009_ t) ->
       globalize_option
-  ;;
+    ;;
 
-  let hash_fold_t :
-    'a.
-    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-    -> Ppx_hash_lib.Std.Hash.state
-    -> 'a t
-    -> Ppx_hash_lib.Std.Hash.state
-    =
-    hash_fold_option
-  ;;
+    let hash_fold_t :
+          'a.
+          (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+          -> Ppx_hash_lib.Std.Hash.state
+          -> 'a t
+          -> Ppx_hash_lib.Std.Hash.state
+      =
+      hash_fold_option
+    ;;
 
-  let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
-    option_of_sexp
-  ;;
+    let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
+      option_of_sexp
+    ;;
 
-  let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-    sexp_of_option
-  ;;
+    let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
+      sexp_of_option
+    ;;
 
-  let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
-    fun _'a_sexp_grammar -> option_sexp_grammar _'a_sexp_grammar
-  ;;
+    let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
+      fun _'a_sexp_grammar -> option_sexp_grammar _'a_sexp_grammar
+    ;;
 
-  [@@@end]
-end :
-sig
-  type 'a t = 'a option
-  [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
+    [@@@end]
+  end :
+    sig
+      type 'a t = 'a option
+      [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
-  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-  include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
+      include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+      include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
-  val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
+      val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
 
-  include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
-  include Sexplib0.Sexpable.S1 with type 'a t := 'a t
+      include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
+      include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
-  val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
+      val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
-  [@@@end]
-end)
+      [@@@end]
+    end)
 
 type 'a t = 'a option =
   | None

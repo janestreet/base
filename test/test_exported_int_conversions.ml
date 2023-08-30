@@ -61,11 +61,11 @@ let try_with f x = Option.try_with (fun () -> f x)
 
 (* Checks that a conversion from [A.t] to [B.t] is total using [of] and [to]. *)
 let test_total
-      (type a b)
-      (module A : S with type t = a)
-      (module B : S with type t = b)
-      ~of_:b_of_a
-      ~to_:a_to_b
+  (type a b)
+  (module A : S with type t = a)
+  (module B : S with type t = b)
+  ~of_:b_of_a
+  ~to_:a_to_b
   =
   iter
     (module A)
@@ -83,15 +83,15 @@ let truncate int64 ~num_bits =
    converted to an [Int64.t] is outside the representable range of [B.t] converted to an
    [Int64.t] as well. *)
 let test_partial
-      (type a b)
-      (module A : S with type t = a)
-      (module B : S with type t = b)
-      ~of_:b_of_a
-      ~of_exn:b_of_a_exn
-      ~of_trunc:b_of_a_trunc
-      ~to_:a_to_b
-      ~to_exn:a_to_b_exn
-      ~to_trunc:a_to_b_trunc
+  (type a b)
+  (module A : S with type t = a)
+  (module B : S with type t = b)
+  ~of_:b_of_a
+  ~of_exn:b_of_a_exn
+  ~of_trunc:b_of_a_trunc
+  ~to_:a_to_b
+  ~to_exn:a_to_b_exn
+  ~to_trunc:a_to_b_trunc
   =
   let module B_option = struct
     type t = B.t option [@@deriving compare, sexp_of]
@@ -227,7 +227,6 @@ let%expect_test "int32 <-> int64" =
     ~to_trunc:Int64.to_int32_trunc;
   [%expect {| |}]
 ;;
-
 
 let%expect_test "int <-> int63" =
   test_total (module I) (module I63) ~of_:Int63.of_int ~to_:Int63.of_int;

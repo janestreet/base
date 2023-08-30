@@ -93,10 +93,10 @@ let%test_module "common prefix and suffix" =
           Option.iter (get_shortest_and_longest list) ~f:(fun (shortest, longest) ->
             ignore
               (require_no_allocation [%here] (fun () -> get_common2 shortest longest)
-               : string);
+                : string);
             ignore
               (require_no_allocation [%here] (fun () -> get_common2 longest shortest)
-               : string))))
+                : string))))
     ;;
 
     let test_prefix =

@@ -117,8 +117,6 @@ val index : t -> char -> int option
 val index_exn : t -> char -> int
 val index_from : t -> int -> char -> int option
 val index_from_exn : t -> int -> char -> int
-
-
 val rindex : t -> char -> int option
 val rindex_exn : t -> char -> int
 val rindex_from : t -> int -> char -> int option
@@ -395,14 +393,13 @@ val concat_lines : ?crlf:bool (** default [false] *) -> string list -> string
 
 (** Slightly faster hash function on strings. *)
 external hash : t -> int = "Base_hash_string"
-[@@noalloc]
+  [@@noalloc]
 
 (** Fast equality function on strings, doesn't use [compare_val]. *)
 val equal : t -> t -> bool
 
 val equal__local : (t[@local]) -> (t[@local]) -> bool
 val of_char : char -> t
-
 val of_char_list : char list -> t
 
 (** [pad_left ?char s ~len] returns [s] padded to the length [len] by adding characters
@@ -500,7 +497,6 @@ module Escaping : sig
 
   val rindex_exn : string -> escape_char:char -> char -> int
 
-
   (** [index_from s ~escape_char pos char] finds the first literal (not escaped) instance
       of [char] in [s] starting from [pos] and proceeding towards the end of [s]. *)
   val index_from : string -> escape_char:char -> int -> char -> int option
@@ -528,7 +524,6 @@ module Escaping : sig
       E.g., [split_on_chars ~escape_char:'_' ~on:[',';'|'] "foo_|bar,baz|0" ->
       ["foo_|bar"; "baz"; "0"]]. *)
   val split_on_chars : string -> on:char list -> escape_char:char -> string list
-
 
   (** [lsplit2 s ~on ~escape_char] splits s into a pair on the first literal instance of
       [on] (meaning the first unescaped instance) starting from the left. *)

@@ -180,27 +180,27 @@ module type Hash_set = sig
 
     include
       Creators_generic
-      with type 'a t := 'a t
-      with type 'a elt = 'a
-      with type ('key, 'z) create_options :=
-        ('key, 'z) create_options_without_first_class_module
+        with type 'a t := 'a t
+        with type 'a elt = 'a
+        with type ('key, 'z) create_options :=
+          ('key, 'z) create_options_without_first_class_module
 
     include Accessors with type 'a t := 'a t with type 'a elt := 'a elt
   end
 
   module Creators (Elt : sig
-      type 'a t
+    type 'a t
 
-      val hashable : 'a t Hashable.t
-    end) : sig
+    val hashable : 'a t Hashable.t
+  end) : sig
     val t_of_sexp : (Sexp.t -> 'a Elt.t) -> Sexp.t -> 'a Elt.t t
 
     include
       Creators_generic
-      with type 'a t := 'a Elt.t t
-      with type 'a elt := 'a Elt.t
-      with type ('elt, 'z) create_options :=
-        ('elt, 'z) create_options_without_first_class_module
+        with type 'a t := 'a Elt.t t
+        with type 'a elt := 'a Elt.t
+        with type ('elt, 'z) create_options :=
+          ('elt, 'z) create_options_without_first_class_module
   end
 
   include For_deriving with type 'a t := 'a t

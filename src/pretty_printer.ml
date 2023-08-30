@@ -11,10 +11,10 @@ module type S = sig
 end
 
 module Register_pp (M : sig
-    include S
+  include S
 
-    val module_name : string
-  end) =
+  val module_name : string
+end) =
 struct
   include M
 
@@ -22,13 +22,13 @@ struct
 end
 
 module Register (M : sig
-    type t
+  type t
 
-    val module_name : string
-    val to_string : t -> string
-  end) =
-  Register_pp (struct
-    include M
+  val module_name : string
+  val to_string : t -> string
+end) =
+Register_pp (struct
+  include M
 
-    let pp formatter t = Stdlib.Format.pp_print_string formatter (M.to_string t)
-  end)
+  let pp formatter t = Stdlib.Format.pp_print_string formatter (M.to_string t)
+end)

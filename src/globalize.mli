@@ -20,7 +20,6 @@ val globalize_bytes : (bytes[@local]) -> bytes
 val globalize_string : (string[@local]) -> string
 val globalize_unit : (unit[@local]) -> unit
 val globalize_array : (('a[@local]) -> 'b) -> ('a array[@local]) -> 'a array
-
 val globalize_lazy_t : (('a[@local]) -> 'b) -> ('a lazy_t[@local]) -> 'a lazy_t
 val globalize_list : (('a[@local]) -> 'b) -> ('a list[@local]) -> 'b list
 val globalize_option : (('a[@local]) -> 'b) -> ('a option[@local]) -> 'b option
