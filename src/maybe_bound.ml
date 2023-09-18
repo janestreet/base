@@ -176,10 +176,12 @@ let (hash_fold_interval_comparison :
       Ppx_hash_lib.Std.Hash.state -> interval_comparison -> Ppx_hash_lib.Std.Hash.state)
   =
   (fun hsv arg ->
-     match arg with
-     | Below_lower_bound -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
-     | In_range -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
-     | Above_upper_bound -> Ppx_hash_lib.Std.Hash.fold_int hsv 2
+     Ppx_hash_lib.Std.Hash.fold_int
+       hsv
+       (match arg with
+        | Below_lower_bound -> 0
+        | In_range -> 1
+        | Above_upper_bound -> 2)
     : Ppx_hash_lib.Std.Hash.state -> interval_comparison -> Ppx_hash_lib.Std.Hash.state)
 ;;
 

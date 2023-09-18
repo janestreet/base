@@ -34,7 +34,7 @@ open T
 
 (**/**)
 
-module Definitions (Type_equal : T.T2) = struct
+module Type_equal_defns (Type_equal : T.T2) = struct
   (** The [Lift*] module types are used by the [Lift*] functors. See below. *)
 
   module type Lift = sig
@@ -151,6 +151,84 @@ module Definitions (Type_equal : T.T2) = struct
      that ['a t] is injective with respect to ['a]."]
 end
 
+module Type_equal_id_defns (Id : sig
+  type 'a t
+end) =
+struct
+  module type Arg0 = sig
+    type t [@@deriving_inline sexp_of]
+
+    val sexp_of_t : t -> Sexplib0.Sexp.t
+
+    [@@@end]
+
+    val name : string
+  end
+
+  module type Arg1 = sig
+    type !'a t [@@deriving_inline sexp_of]
+
+    val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
+
+    [@@@end]
+
+    val name : string
+  end
+
+  module type Arg2 = sig
+    type (!'a, !'b) t [@@deriving_inline sexp_of]
+
+    val sexp_of_t
+      :  ('a -> Sexplib0.Sexp.t)
+      -> ('b -> Sexplib0.Sexp.t)
+      -> ('a, 'b) t
+      -> Sexplib0.Sexp.t
+
+    [@@@end]
+
+    val name : string
+  end
+
+  module type Arg3 = sig
+    type (!'a, !'b, !'c) t [@@deriving_inline sexp_of]
+
+    val sexp_of_t
+      :  ('a -> Sexplib0.Sexp.t)
+      -> ('b -> Sexplib0.Sexp.t)
+      -> ('c -> Sexplib0.Sexp.t)
+      -> ('a, 'b, 'c) t
+      -> Sexplib0.Sexp.t
+
+    [@@@end]
+
+    val name : string
+  end
+
+  module type S0 = sig
+    type t
+
+    val type_equal_id : t Id.t
+  end
+
+  module type S1 = sig
+    type 'a t
+
+    val type_equal_id : 'a Id.t -> 'a t Id.t
+  end
+
+  module type S2 = sig
+    type ('a, 'b) t
+
+    val type_equal_id : 'a Id.t -> 'b Id.t -> ('a, 'b) t Id.t
+  end
+
+  module type S3 = sig
+    type ('a, 'b, 'c) t
+
+    val type_equal_id : 'a Id.t -> 'b Id.t -> 'c Id.t -> ('a, 'b, 'c) t Id.t
+  end
+end
+
 (**/**)
 
 module type Type_equal = sig
@@ -168,7 +246,7 @@ module type Type_equal = sig
   type ('a, 'b) equal = ('a, 'b) t
 
   (** @inline *)
-  include module type of Definitions (struct
+  include module type of Type_equal_defns (struct
     type ('a, 'b) t = ('a, 'b) equal
   end)
 
@@ -230,9 +308,24 @@ module type Type_equal = sig
 
     [@@@end]
 
+    (** @inline *)
+    include module type of Type_equal_id_defns (struct
+      type nonrec 'a t = 'a t
+    end)
+
     (** Every [Id.t] contains a unique id that is distinct from the [Uid.t] in any other
         [Id.t]. *)
-    module Uid : Identifiable.S
+    module Uid : sig
+      type t [@@deriving_inline hash, sexp_of]
+
+      include Ppx_hash_lib.Hashable.S with type t := t
+
+      val sexp_of_t : t -> Sexplib0.Sexp.t
+
+      [@@@end]
+
+      include Comparable.S with type t := t
+    end
 
     val uid : _ t -> Uid.t
 
@@ -261,5 +354,10 @@ module type Type_equal = sig
     val same : _ t -> _ t -> bool
     val same_witness : 'a t -> 'b t -> ('a, 'b) equal option
     val same_witness_exn : 'a t -> 'b t -> ('a, 'b) equal
+
+    module Register0 (T : Arg0) : S0 with type t := T.t
+    module Register1 (T : Arg1) : S1 with type 'a t := 'a T.t
+    module Register2 (T : Arg2) : S2 with type ('a, 'b) t := ('a, 'b) T.t
+    module Register3 (T : Arg3) : S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t
   end
 end

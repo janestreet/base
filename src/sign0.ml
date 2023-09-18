@@ -54,10 +54,12 @@ let compare = (fun a b -> compare__local a b : t -> t -> int)
 
 let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
   (fun hsv arg ->
-     match arg with
-     | Neg -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
-     | Zero -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
-     | Pos -> Ppx_hash_lib.Std.Hash.fold_int hsv 2
+     Ppx_hash_lib.Std.Hash.fold_int
+       hsv
+       (match arg with
+        | Neg -> 0
+        | Zero -> 1
+        | Pos -> 2)
     : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
 ;;
 

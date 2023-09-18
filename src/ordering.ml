@@ -11,10 +11,12 @@ let compare = (fun a b -> compare__local a b : t -> t -> int)
 
 let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
   (fun hsv arg ->
-     match arg with
-     | Less -> Ppx_hash_lib.Std.Hash.fold_int hsv 0
-     | Equal -> Ppx_hash_lib.Std.Hash.fold_int hsv 1
-     | Greater -> Ppx_hash_lib.Std.Hash.fold_int hsv 2
+     Ppx_hash_lib.Std.Hash.fold_int
+       hsv
+       (match arg with
+        | Less -> 0
+        | Equal -> 1
+        | Greater -> 2)
     : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
 ;;
 
