@@ -729,43 +729,39 @@ module Tree0 = struct
       join t1 x d (remove_min_elt t2)
   ;;
 
-  exception Remove_no_op
-
   let remove t x ~length ~compare_key =
     let rec remove_loop t x ~length ~compare_key =
       match t with
-      | Empty ->  (Exn.raise_without_backtrace Remove_no_op)
+      | Empty ->  (with_length t length)
       | Leaf (v, _) ->
         if compare_key x v = 0
         then  (with_length Empty (length - 1))
-        else  (Exn.raise_without_backtrace Remove_no_op)
+        else  (with_length t length)
       | Node (l, v, d, r, _) ->
         let c = compare_key x v in
         if c = 0
         then  (with_length (concat_unchecked l r) (length - 1))
         else if c < 0
         then (
-          let { tree = l; length } = remove_loop l x ~length ~compare_key in
-           (with_length (bal l v d r) length))
+          let { tree = l; length = length' } = remove_loop l x ~length ~compare_key in
+          if length = length'
+          then  (with_length t length)
+          else  (with_length (bal l v d r) length'))
         else (
-          let { tree = r; length } = remove_loop r x ~length ~compare_key in
-           (with_length (bal l v d r) length))
+          let { tree = r; length = length' } = remove_loop r x ~length ~compare_key in
+          if length = length'
+          then  (with_length t length)
+          else  (with_length (bal l v d r) length'))
     in
-    try  (remove_loop t x ~length ~compare_key) with
-    | Remove_no_op ->  (with_length t length)
+     (remove_loop t x ~length ~compare_key)
   ;;
-
-  (* Use exception to avoid tree-rebuild in no-op case *)
-  exception Change_no_op
 
   let change t key ~f ~length ~compare_key =
     let rec change_core t key f =
       match t with
       | Empty ->
         (match f None with
-         | None ->
-           (* equivalent to returning: Empty *)
-            (Exn.raise_without_backtrace Change_no_op)
+         | None ->  (with_length Empty length)
          | Some data ->  (with_length (Leaf (key, data)) (length + 1)))
       | Leaf (v, d) ->
         let c = compare_key key v in
@@ -776,11 +772,15 @@ module Tree0 = struct
           | Some d' ->  (with_length (Leaf (v, d')) length))
         else if c < 0
         then (
-          let { tree = l; length } = change_core Empty key f in
-           (with_length (bal l v d Empty) length))
+          let { tree = l'; length } = change_core Empty key f in
+          if phys_equal l' t
+          then  (with_length t length)
+          else  (with_length (bal l' v d Empty) length))
         else (
-          let { tree = r; length } = change_core Empty key f in
-           (with_length (bal Empty v d r) length))
+          let { tree = r'; length } = change_core Empty key f in
+          if phys_equal r' t
+          then  (with_length t length)
+          else  (with_length (bal Empty v d r') length))
       | Node (l, v, d, r, h) ->
         let c = compare_key key v in
         if c = 0
@@ -790,14 +790,17 @@ module Tree0 = struct
           | Some data ->  (with_length (Node (l, key, data, r, h)) length))
         else if c < 0
         then (
-          let { tree = l; length } = change_core l key f in
-           (with_length (bal l v d r) length))
+          let { tree = l'; length } = change_core l key f in
+          if phys_equal l' l
+          then  (with_length t length)
+          else  (with_length (bal l' v d r) length))
         else (
-          let { tree = r; length } = change_core r key f in
-           (with_length (bal l v d r) length))
+          let { tree = r'; length } = change_core r key f in
+          if phys_equal r' r
+          then  (with_length t length)
+          else  (with_length (bal l v d r') length))
     in
-    try  (change_core t key f) with
-    | Change_no_op ->  (with_length t length)
+     (change_core t key f)
   ;;
 
   let update t key ~f ~length ~compare_key =
