@@ -1,3 +1,4 @@
+open Globalize
 open Hash.Builtin
 open Ppx_compare_lib.Builtin
 include Sexplib0.Sexp
@@ -6,7 +7,7 @@ include Sexplib0.Sexp
 type t = Sexplib0.Sexp.t =
   | Atom of string
   | List of t list
-[@@deriving_inline compare ~localize, hash]
+[@@deriving_inline compare ~localize, globalize, hash]
 
 let rec compare__local =
   (fun a__001_ b__002_ ->
@@ -23,6 +24,14 @@ let rec compare__local =
 ;;
 
 let compare = (fun a b -> compare__local a b : t -> t -> int)
+
+let rec (globalize : (t[@ocaml.local]) -> t) =
+  (fun x__009_ ->
+     match x__009_ with
+     | Atom arg__010_ -> Atom (globalize_string arg__010_)
+     | List arg__011_ -> List (globalize_list globalize arg__011_)
+    : (t[@ocaml.local]) -> t)
+;;
 
 let rec (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
   (fun hsv arg ->

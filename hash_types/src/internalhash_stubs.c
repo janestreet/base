@@ -31,6 +31,11 @@ CAMLprim value Base_internalhash_fold_float(value st, value i)
   return Val_long(caml_hash_mix_double(Long_val(st), Double_val(i)));
 }
 
+CAMLprim value Base_internalhash_fold_float_unboxed(value st, double i)
+{
+  return Val_long(caml_hash_mix_double(Long_val(st), i));
+}
+
 /* This code mimics what hashtbl.hash does in OCaml's hash.c */
 #define FINAL_MIX(h)                            \
   h ^= h >> 16; \

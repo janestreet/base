@@ -21,11 +21,13 @@ open! Import
     This is a similar issue to the identifiability of [Nothing.t].  As discussed below,
     another case where [[@deriving enumerate]] could be useful is when this type is part
     of some larger type.
-*)
-type t = | [@@deriving_inline enumerate, sexp_grammar]
+
+    Similar arguments apply for other derivers, like [globalize] and [sexp_grammar]. *)
+type t = | [@@deriving_inline enumerate, globalize, sexp_grammar]
 
 include Ppx_enumerate_lib.Enumerable.S with type t := t
 
+val globalize : (t[@ocaml.local]) -> t
 val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 [@@@end]

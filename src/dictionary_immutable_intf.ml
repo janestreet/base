@@ -200,6 +200,20 @@ module Definitions = struct
       -> f:((key:'key key -> data:'data -> bool)[@local])
       -> int
 
+    (** Sum up [f data] for all data in the dictionary. *)
+    val sum
+      :  (module Container.Summable with type t = 'a)
+      -> ('key, 'data, _) t
+      -> f:(('data -> 'a)[@local])
+      -> 'a
+
+    (** Like [sum]. The function may also depend on the associated key. *)
+    val sumi
+      :  (module Container.Summable with type t = 'a)
+      -> ('key, 'data, _) t
+      -> f:((key:'key -> data:'data -> 'a)[@local])
+      -> 'a
+
     (** Produces the key/value pair with the smallest key if non-empty. *)
     val min_elt : ('key, 'data, _) t -> ('key key * 'data) option
 

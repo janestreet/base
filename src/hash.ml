@@ -149,7 +149,11 @@ module Internalhash : sig
 
   external fold_int : state -> int -> state = "Base_internalhash_fold_int" [@@noalloc]
 
-  external fold_float : state -> float -> state = "Base_internalhash_fold_float"
+  external fold_float
+    :  state
+    -> (float[@unboxed])
+    -> state
+    = "Base_internalhash_fold_float" "Base_internalhash_fold_float_unboxed"
     [@@noalloc]
 
   external fold_string : state -> string -> state = "Base_internalhash_fold_string"
@@ -214,7 +218,11 @@ module T = struct
 
     let hash_bool x = if x then 1 else 0
 
-    external hash_float : float -> int = "Base_hash_double" [@@noalloc]
+    external hash_float
+      :  (float[@unboxed])
+      -> int
+      = "Base_hash_double" "Base_hash_double_unboxed"
+      [@@noalloc]
 
     let hash_unit () = 0
   end

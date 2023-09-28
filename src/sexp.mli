@@ -2,7 +2,9 @@
 type t = Sexplib0.Sexp.t =
   | Atom of string
   | List of t list
-[@@deriving_inline hash]
+[@@deriving_inline globalize, hash]
+
+val globalize : (t[@ocaml.local]) -> t
 
 include Ppx_hash_lib.Hashable.S with type t := t
 

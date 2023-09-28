@@ -625,6 +625,18 @@ module type Accessors_generic = sig
   val count : ('k, 'v, _) t -> f:(('v -> bool)[@local]) -> int
   val counti : ('k, 'v, _) t -> f:((key:'k key -> data:'v -> bool)[@local]) -> int
 
+  val sum
+    :  (module Container.Summable with type t = 'a)
+    -> ('k, 'v, _) t
+    -> f:(('v -> 'a)[@local])
+    -> 'a
+
+  val sumi
+    :  (module Container.Summable with type t = 'a)
+    -> ('k, 'v, _) t
+    -> f:((key:'k key -> data:'v -> 'a)[@local])
+    -> 'a
+
   val split
     : ( 'k
       , 'cmp
@@ -1639,6 +1651,18 @@ module type Map = sig
   val existsi : ('k, 'v, _) t -> f:((key:'k -> data:'v -> bool)[@local]) -> bool
   val count : ('k, 'v, _) t -> f:(('v -> bool)[@local]) -> int
   val counti : ('k, 'v, _) t -> f:((key:'k -> data:'v -> bool)[@local]) -> int
+
+  val sum
+    :  (module Container.Summable with type t = 'a)
+    -> ('k, 'v, _) t
+    -> f:(('v -> 'a)[@local])
+    -> 'a
+
+  val sumi
+    :  (module Container.Summable with type t = 'a)
+    -> ('k, 'v, _) t
+    -> f:((key:'k -> data:'v -> 'a)[@local])
+    -> 'a
 
   (** [split t key] returns a map of keys strictly less than [key], the mapping of [key] if
       any, and a map of keys strictly greater than [key].

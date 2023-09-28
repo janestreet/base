@@ -295,7 +295,7 @@ module Id = struct
     ;;
   end
 
-  let create (type a) ~name sexp_of_t =
+  let register (type a) ~name sexp_of_t =
     let module T =
       Register0 (struct
         type t = a
@@ -306,4 +306,6 @@ module Id = struct
     in
     T.type_equal_id
   ;;
+
+  let create = register
 end

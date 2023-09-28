@@ -329,11 +329,15 @@ module type Type_equal = sig
 
     val uid : _ t -> Uid.t
 
-    (** [create ~name] defines a new type identity. Two calls to [create] will result in
-        two distinct identifiers, even for the same arguments with the same type. If the
-        type ['a] doesn't support sexp conversion, then a good practice is to have the
+    (** [register ~name] defines a new type identity. Two calls to [register] will result
+        in two distinct identifiers, even for the same arguments with the same type. If
+        the type ['a] doesn't support sexp conversion, then a good practice is to have the
         converter be [[%sexp_of: _]], (or [sexp_of_opaque], if not using ppx_sexp_conv).
     *)
+    val register : name:string -> ('a -> Sexp.t) -> 'a t
+
+    (** An alias for [register]. Prefer [register] in new code, as it makes the
+        side-effecting nature clearer. *)
     val create : name:string -> ('a -> Sexp.t) -> 'a t
 
     (** Accessors *)

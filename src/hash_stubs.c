@@ -22,3 +22,9 @@ CAMLprim value Base_hash_double(value d) {
   h = caml_hash_mix_double(0, Double_val(d));
   FINAL_MIX_AND_RETURN(h);
 }
+
+CAMLprim value Base_hash_double_unboxed(double d) {
+  uint32_t h;
+  h = caml_hash_mix_double(0, d);
+  FINAL_MIX_AND_RETURN(h);
+}

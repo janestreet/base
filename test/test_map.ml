@@ -390,3 +390,19 @@ let%expect_test "[fold_until]" =
   test map;
   [%expect {| 2 |}]
 ;;
+
+let%expect_test "[sum]" =
+  let test t = print_s [%sexp (Map.sum (module Int) t ~f:(( * ) 2) : int)] in
+  let map = Map.of_alist_exn (module String) [ "A", 1; "B", 2; "C", 3 ] in
+  test map;
+  [%expect {| 12 |}]
+;;
+
+let%expect_test "[sumi]" =
+  let test t =
+    print_s [%sexp (Map.sumi (module Int) t ~f:(fun ~key ~data -> key * data) : int)]
+  in
+  let map = Map.of_alist_exn (module Int) [ 1, 1; 2, 2; 3, 3 ] in
+  test map;
+  [%expect {| 14 |}]
+;;

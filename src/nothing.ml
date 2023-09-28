@@ -19,6 +19,7 @@ module T = struct
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = { untyped = Union [] }
   let to_string = unreachable_code
   let of_string (_ : string) = failwith "Base.Nothing.of_string: not supported"
+  let globalize = unreachable_code
 end
 
 include T

@@ -1293,6 +1293,25 @@ module Test_creators_and_accessors
     [%expect {| |}]
   ;;
 
+  let sum = sum
+  let sumi = sumi
+
+  let%expect_test "sum" =
+    quickcheck_m
+      [%here]
+      (module Inst)
+      ~f:(fun t ->
+        let f data = data * 2 in
+        let fi ~key ~data = (Instance.int key * 2) + (data * 3) in
+        let fp (key, data) = fi ~key ~data in
+        let m = (module Int : Container.Summable with type t = int) in
+        let data = data t in
+        let alist = to_alist t in
+        require_equal [%here] (module Int) (sum m t ~f) (List.sum m data ~f);
+        require_equal [%here] (module Int) (sumi m t ~f:fi) (List.sum m alist ~f:fp));
+    [%expect {| |}]
+  ;;
+
   let split = split
 
   let%expect_test "split" =
