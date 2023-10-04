@@ -34,6 +34,9 @@ let () =
      cannot eliminate the allocation of [Some].  Flambda2 is expected to eliminate the
      allocation, at which point we can [require_no_allocation] (possibly annotating the
      test with [@tags "fast-flambda"]).
+
+     Note that Flambda 2 only eliminates the allocation in optimized mode.
+     In classic mode, it will remain.  This file is compiled with optimized mode.
   *)
   let compiler_eliminates_the_allocation =
     (* [Version_util.x_library_inlining] is the whole reason this is a separate
@@ -47,5 +50,9 @@ let () =
     let _, { Gc.Allocation_report.minor_words_allocated; _ } =
       Gc.measure_allocation get_some
     in
-    assert (minor_words_allocated = 2)
+    if minor_words_allocated <= 2
+    then ()
+    else
+      failwith
+        (Printf.sprintf "Allocated more words than expected: %d" minor_words_allocated)
 ;;

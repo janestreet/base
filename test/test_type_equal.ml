@@ -72,7 +72,7 @@ let%test_module "Type_equal" =
   end)
 ;;
 
-let%expect_test "Register*" =
+let%expect_test "Create*" =
   let test id1 id2 =
     let same_according_to_id = Type_equal.Id.same id1 id2 in
     let eq = if same_according_to_id then "==" else "<>" in
@@ -94,7 +94,7 @@ let%expect_test "Register*" =
             (same_according_to_uid : bool)]
   in
   let module Bool =
-    Type_equal.Id.Register0 (struct
+    Type_equal.Id.Create0 (struct
       type t = bool [@@deriving sexp_of]
 
       let name = "bool"
@@ -104,7 +104,7 @@ let%expect_test "Register*" =
   test Bool.type_equal_id Bool.type_equal_id;
   [%expect {| (bool == bool) |}];
   let module Int =
-    Type_equal.Id.Register0 (struct
+    Type_equal.Id.Create0 (struct
       type t = int [@@deriving sexp_of]
 
       let name = "int"
@@ -116,11 +116,11 @@ let%expect_test "Register*" =
   (* non-self comparison *)
   test Int.type_equal_id Bool.type_equal_id;
   [%expect {| (int <> bool) |}];
-  (* re-registering the same type *)
+  (* re-creating the same type *)
   test Int.type_equal_id (Type_equal.Id.create ~name:"Stdlib.int" sexp_of_int);
   [%expect {| (int <> Stdlib.int) |}];
   let module Option =
-    Type_equal.Id.Register1 (struct
+    Type_equal.Id.Create1 (struct
       type 'a t = 'a option [@@deriving sexp_of]
 
       let name = "option"
@@ -136,7 +136,7 @@ let%expect_test "Register*" =
   test (Option.type_equal_id Int.type_equal_id) (Option.type_equal_id Bool.type_equal_id);
   [%expect {| ((option int) <> (option bool)) |}];
   let module Either =
-    Type_equal.Id.Register2 (struct
+    Type_equal.Id.Create2 (struct
       type ('a, 'b) t = ('a, 'b) Either.t [@@deriving sexp_of]
 
       let name = "either"
@@ -161,7 +161,7 @@ let%expect_test "Register*" =
     (Either.type_equal_id Bool.type_equal_id Int.type_equal_id);
   [%expect {| ((either int bool) <> (either bool int)) |}];
   let module Tuple3 =
-    Type_equal.Id.Register3 (struct
+    Type_equal.Id.Create3 (struct
       type ('a, 'b, 'c) t = 'a * 'b * 'c [@@deriving sexp_of]
 
       let name = "tuple3"

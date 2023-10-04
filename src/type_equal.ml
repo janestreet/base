@@ -151,7 +151,7 @@ module Id = struct
     val type_key : t key
 
     (* type equality: given another key, produce an [equal] if they represent the same
-       registered type instance *)
+       type instance *)
     val type_equal : 'a key -> (t, 'a) equal option
   end
 
@@ -192,7 +192,7 @@ module Id = struct
     type nonrec 'a t = 'a t
   end)
 
-  module Register0 (T : Arg0) = struct
+  module Create0 (T : Arg0) = struct
     type _ key += T0 : T.t key
 
     let type_equal_id : T.t t =
@@ -214,7 +214,7 @@ module Id = struct
     ;;
   end
 
-  module Register1 (T : Arg1) = struct
+  module Create1 (T : Arg1) = struct
     type _ key += T1 : 'a key -> 'a T.t key
 
     let type_equal_id (type a) ((module A) : a t) : a T.t t =
@@ -239,7 +239,7 @@ module Id = struct
     ;;
   end
 
-  module Register2 (T : Arg2) = struct
+  module Create2 (T : Arg2) = struct
     type _ key += T2 : 'a key * 'b key -> ('a, 'b) T.t key
 
     let type_equal_id (type a b) ((module A) : a t) ((module B) : b t) : (a, b) T.t t =
@@ -264,7 +264,7 @@ module Id = struct
     ;;
   end
 
-  module Register3 (T : Arg3) = struct
+  module Create3 (T : Arg3) = struct
     type _ key += T3 : 'a key * 'b key * 'c key -> ('a, 'b, 'c) T.t key
 
     let type_equal_id
@@ -295,9 +295,9 @@ module Id = struct
     ;;
   end
 
-  let register (type a) ~name sexp_of_t =
+  let create (type a) ~name sexp_of_t =
     let module T =
-      Register0 (struct
+      Create0 (struct
         type t = a
 
         let name = name
@@ -306,6 +306,4 @@ module Id = struct
     in
     T.type_equal_id
   ;;
-
-  let create = register
 end

@@ -1,4 +1,4 @@
 (executables (names test_option_array_allocation)
  (libraries base expect_test_helpers_core compiler-libs.common
   core_kernel.version_util)
- (preprocess (pps ppx_jane)))
+ (ocamlopt_flags :standard -O3) (preprocess (pps ppx_jane)))
