@@ -19,7 +19,7 @@ function Base_caml_exn_is_most_recent_exn(x) {
 function Base_int_math_int32_clz(x) {
   var n = 32;
   var y;
-  y = x >>16; if (y != 0) { n = n -16; x = y; }
+  y = x >> 16; if (y != 0) { n = n - 16; x = y; }
   y = x >> 8; if (y != 0) { n = n - 8; x = y; }
   y = x >> 4; if (y != 0) { n = n - 4; x = y; }
   y = x >> 2; if (y != 0) { n = n - 2; x = y; }
@@ -41,9 +41,9 @@ function Base_int_math_int64_clz(x) {
   var n = 64;
   var y;
   y = caml_int64_shift_right_unsigned(x, 32);
-  if (!caml_int64_is_zero(y)) { n = n -32; x = y; }
+  if (!caml_int64_is_zero(y)) { n = n - 32; x = y; }
   y = caml_int64_shift_right_unsigned(x, 16);
-  if (!caml_int64_is_zero(y)) { n = n -16; x = y; }
+  if (!caml_int64_is_zero(y)) { n = n - 16; x = y; }
   y = caml_int64_shift_right_unsigned(x, 8);
   if (!caml_int64_is_zero(y)) { n = n - 8; x = y; }
   y = caml_int64_shift_right_unsigned(x, 4);
@@ -59,10 +59,10 @@ function Base_int_math_int64_clz(x) {
 function Base_int_math_int32_ctz(x) {
   if (x === 0) { return 32; }
   var n = 1;
-  if ( (x & 0x0000FFFF) === 0) { n = n + 16; x = x >> 16; }
-  if ( (x & 0x000000FF) === 0) { n = n +  8; x = x >>  8; }
-  if ( (x & 0x0000000F) === 0) { n = n +  4; x = x >>  4; }
-  if ( (x & 0x00000003) === 0) { n = n +  2; x = x >>  2; }
+  if ((x & 0x0000FFFF) === 0) { n = n + 16; x = x >> 16; }
+  if ((x & 0x000000FF) === 0) { n = n + 8; x = x >> 8; }
+  if ((x & 0x0000000F) === 0) { n = n + 4; x = x >> 4; }
+  if ((x & 0x00000003) === 0) { n = n + 2; x = x >> 2; }
   return n - (x & 1);
 }
 
@@ -80,9 +80,9 @@ function Base_int_math_nativeint_ctz(x) { return Base_int_math_int32_ctz(x); }
 function Base_int_math_int64_ctz(x) {
   if (caml_int64_is_zero(x)) { return 64; }
   var n = 1;
-  function is_zero (x)    { return caml_int64_is_zero(x); }
-  function land (x,y)     { return caml_int64_and(x, y); }
-  function small_int64(x) { return caml_int64_create_lo_mi_hi(x,0,0); }
+  function is_zero(x) { return caml_int64_is_zero(x); }
+  function land(x, y) { return caml_int64_and(x, y); }
+  function small_int64(x) { return caml_int64_create_lo_mi_hi(x, 0, 0); }
   if (is_zero(land(x, caml_int64_create_lo_mi_hi(0xFFFFFF, 0x0000FF, 0x0000)))) {
     n = n + 32; x = caml_int64_shift_right_unsigned(x, 32);
   }
@@ -90,13 +90,13 @@ function Base_int_math_int64_ctz(x) {
     n = n + 16; x = caml_int64_shift_right_unsigned(x, 16);
   }
   if (is_zero(land(x, small_int64(0x0000FF)))) {
-    n = n +  8; x = caml_int64_shift_right_unsigned(x, 8);
+    n = n + 8; x = caml_int64_shift_right_unsigned(x, 8);
   }
   if (is_zero(land(x, small_int64(0x00000F)))) {
-    n = n +  4; x = caml_int64_shift_right_unsigned(x, 4);
+    n = n + 4; x = caml_int64_shift_right_unsigned(x, 4);
   }
   if (is_zero(land(x, small_int64(0x000003)))) {
-    n = n +  2; x = caml_int64_shift_right_unsigned(x, 2);
+    n = n + 2; x = caml_int64_shift_right_unsigned(x, 2);
   }
   return n - (caml_int64_to_int32(caml_int64_and(x, small_int64(0x000001))));
 }
@@ -106,7 +106,7 @@ function Base_int_math_int_pow_stub(base, exponent) {
   var one = 1;
   var mul = [one, base, one, one];
   var res = one;
-  while (!exponent==0) {
+  while (!exponent == 0) {
     mul[1] = (mul[1] * mul[3]) | 0;
     mul[2] = (mul[1] * mul[1]) | 0;
     mul[3] = (mul[2] * mul[1]) | 0;
@@ -120,7 +120,7 @@ function Base_int_math_int_pow_stub(base, exponent) {
 //Requires: caml_int64_mul, caml_int64_is_zero, caml_int64_shift_right_unsigned
 //Requires: caml_int64_create_lo_hi, caml_int64_lo32
 function Base_int_math_int64_pow_stub(base, exponent) {
-  var one = caml_int64_create_lo_hi(1,0);
+  var one = caml_int64_create_lo_hi(1, 0);
   var mul = [one, base, one, one];
   var res = one;
   while (!caml_int64_is_zero(exponent)) {
@@ -136,12 +136,12 @@ function Base_int_math_int64_pow_stub(base, exponent) {
 //Provides: Base_hash_string mutable
 //Requires: caml_hash
 function Base_hash_string(s) {
-  return caml_hash(1,1,0,s)
+  return caml_hash(1, 1, 0, s)
 }
 //Provides: Base_hash_double const
 //Requires: caml_hash
 function Base_hash_double(d) {
-  return caml_hash(1,1,0,d);
+  return caml_hash(1, 1, 0, d);
 }
 
 //Provides: Base_am_testing const
@@ -152,34 +152,44 @@ function Base_am_testing(x) {
 
 //Provides: caml_csel_value
 function caml_csel_value(v_cond, v_true, v_false) {
-    if (v_cond)
-        return v_true;
-    else
-        return v_false;
+  if (v_cond)
+    return v_true;
+  else
+    return v_false;
 }
 
 //Provides: Base_unsafe_create_local_bytes
 //Requires: caml_create_bytes
 function Base_unsafe_create_local_bytes(v_len) {
-    // This does a redundant bounds check and (since this is
-    // javascript) doesn't allocate locally, but that's fine.
-    return caml_create_bytes(v_len);
+  // This does a redundant bounds check and (since this is
+  // javascript) doesn't allocate locally, but that's fine.
+  return caml_create_bytes(v_len);
 }
 
 //Provides: caml_make_local_vect
 //Requires: caml_make_vect
 function caml_make_local_vect(v_len, v_elt) {
-    // In javascript there's no local allocation.
-    return caml_make_vect (v_len, v_elt);
+  // In javascript there's no local allocation.
+  return caml_make_vect(v_len, v_elt);
 }
 
 
 //Provides: caml_float_min
-function caml_float_min(x,y) {
-    return x < y ? x : y;
+function caml_float_min(x, y) {
+  return x < y ? x : y;
 }
 
 //Provides: caml_float_max
 function caml_float_max(x, y) {
-    return x > y ? x : y;
+  return x > y ? x : y;
+}
+
+//Provides: caml_get_header0
+function caml_get_header0(x) {
+  throw new Error(`BUG: this function should be unreachable; please report to compiler or base devs.`);
+}
+
+//Provides: caml_get_header
+function caml_get_header(x) {
+  throw new Error(`BUG: this function should be unreachable; please report to compiler or base devs.`);
 }

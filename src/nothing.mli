@@ -66,3 +66,23 @@ include Identifiable.S with type t := t
 
 include Ppx_compare_lib.Equal.S_local with type t := t
 include Ppx_compare_lib.Comparable.S_local with type t := t
+
+(** Ignores [None] and guarantees there is no [Some _]. A better replacement for
+    [ignore]. *)
+val must_be_none : t option -> unit
+
+(** Ignores [ [] ] and guarantees there is no [_ :: _]. A better replacement for
+    [ignore]. *)
+val must_be_empty : t list -> unit
+
+(** Returns [ok] from [Ok ok] and guarantees there is no [Error _]. *)
+val must_be_ok : ('ok, t) Result.t -> 'ok
+
+(** Returns [err] from [Error err] and guarantees there is no [Ok _]. *)
+val must_be_error : (t, 'err) Result.t -> 'err
+
+(** Returns [fst] from [First fst] and guarantees there is no [Second _]. *)
+val must_be_first : ('fst, t) Either.t -> 'fst
+
+(** Returns [snd] from [Second snd] and guarantees there is no [First _]. *)
+val must_be_second : (t, 'snd) Either.t -> 'snd

@@ -414,6 +414,8 @@ module Test_creators_and_accessors
   let of_list_with_key_or_error = of_list_with_key_or_error
   let of_list_with_key_exn = of_list_with_key_exn
   let of_list_with_key_multi = of_list_with_key_multi
+  let of_list_with_key_fold = of_list_with_key_fold
+  let of_list_with_key_reduce = of_list_with_key_reduce
 
   let%expect_test _ =
     quickcheck_m
@@ -440,6 +442,22 @@ module Test_creators_and_accessors
           [%here]
           (module Key_and_data_inst_multi)
           (create of_list_with_key_multi list ~get_key:fst)
+          (create of_alist_multi alist);
+        require_equal
+          [%here]
+          (module Key_and_data_inst_multi)
+          (create of_list_with_key_fold list ~get_key:fst ~init:[] ~f:(fun acc x ->
+             x :: acc)
+           |> map ~f:List.rev)
+          (create of_alist_multi alist);
+        require_equal
+          [%here]
+          (module Key_and_data_inst_multi)
+          (create
+             of_list_with_key_reduce
+             (List.map list ~f:List.return)
+             ~get_key:(fun x -> x |> List.hd_exn |> fst)
+             ~f:(fun x y -> x @ y))
           (create of_alist_multi alist));
     [%expect {| |}]
   ;;

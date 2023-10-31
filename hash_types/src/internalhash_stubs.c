@@ -21,6 +21,11 @@ CAMLprim value Base_internalhash_fold_int64(value st, value i)
   return Val_long(caml_hash_mix_int64(Long_val(st), Int64_val(i)));
 }
 
+CAMLprim value Base_internalhash_fold_int64_unboxed(value st, int64_t i)
+{
+  return Val_long(caml_hash_mix_int64(Long_val(st), i));
+}
+
 CAMLprim value Base_internalhash_fold_int(value st, value i)
 {
   return Val_long(caml_hash_mix_intnat(Long_val(st), Long_val(i)));

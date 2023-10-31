@@ -177,72 +177,45 @@ let balance tree =
       tree)
 ;;
 
-(* @pre: tree is balanceable
-   @pre: abs (height (right node) - height (balance tree)) <= 3
-   @post: result is balanceable *)
-
-(* @pre: tree is balanceable
-   @pre: abs (height (right node) - height (balance tree)) <= 3
-   @post: result is balanceable *)
-let set_left node tree =
-  let tree = balance tree in
-  match node with
-  | Node ({ left; key = _; value = _; height = _; right = _ } as r) ->
-    if phys_equal left tree then () else r.left <- tree;
-    update_height node
-  | _ -> assert false
-;;
-
-(* @pre: tree is balanceable
-   @pre: abs (height (left node) - height (balance tree)) <= 3
-   @post: result is balanceable *)
-let set_right node tree =
-  let tree = balance tree in
-  match node with
-  | Node ({ left = _; key = _; value = _; height = _; right } as r) ->
-    if phys_equal right tree then () else r.right <- tree;
-    update_height node
-  | _ -> assert false
-;;
-
 (* @pre: t is balanced.
    @post: result is balanced, with new node inserted
    @post: !added = true iff the shape of the input tree changed.  *)
-let add =
-  let rec add t replace added compare k v =
-    match t with
-    | Empty ->
+let rec add t ~replace ~compare ~added ~key:k ~data:v =
+  match t with
+  | Empty ->
+    added := true;
+    Leaf { key = k; value = v }
+  | Leaf ({ key = k'; value = _ } as r) ->
+    let c = compare k' k in
+    (* This compare is reversed on purpose, we are pretending
+       that the leaf was just inserted instead of the other way
+       round, that way we only allocate one node. *)
+    if c = 0
+    then (
+      added := false;
+      if replace then r.value <- v;
+      t)
+    else (
       added := true;
-      Leaf { key = k; value = v }
-    | Leaf ({ key = k'; value = _ } as r) ->
-      let c = compare k' k in
-      (* This compare is reversed on purpose, we are pretending
-         that the leaf was just inserted instead of the other way
-         round, that way we only allocate one node. *)
-      if c = 0
+      if c < 0
+      then Node { left = t; key = k; value = v; height = 2; right = Empty }
+      else Node { left = Empty; key = k; value = v; height = 2; right = t })
+  | Node ({ left; key = k'; value = _; height = _; right } as r) ->
+    let c = compare k k' in
+    if c = 0
+    then (
+      added := false;
+      if replace then r.value <- v;
+      t)
+    else (
+      if c < 0
       then (
-        added := false;
-        if replace then r.value <- v;
-        t)
+        let left' = add left ~replace ~added ~compare ~key:k ~data:v in
+        if not (phys_equal left' left) then r.left <- left')
       else (
-        added := true;
-        if c < 0
-        then Node { left = t; key = k; value = v; height = 2; right = Empty }
-        else Node { left = Empty; key = k; value = v; height = 2; right = t })
-    | Node ({ left; key = k'; value = _; height = _; right } as r) ->
-      let c = compare k k' in
-      if c = 0
-      then (
-        added := false;
-        if replace then r.value <- v)
-      else if c < 0
-      then set_left t (add left replace added compare k v)
-      else set_right t (add right replace added compare k v);
-      t
-  in
-  fun t ~replace ~compare ~added ~key ~data ->
-    let t = add t replace added compare key data in
-    if !added then balance t else t
+        let right' = add right ~replace ~added ~compare ~key:k ~data:v in
+        if not (phys_equal right' right) then r.right <- right');
+      if !added then balance t else t)
 ;;
 
 let rec first t =
@@ -403,7 +376,7 @@ let mem =
   fun t ~compare k -> find_and_call t ~compare k ~if_found ~if_not_found
 ;;
 
-let remove =
+let rec remove =
   let rec min_elt tree =
     match tree with
     | Empty -> Empty
@@ -414,16 +387,13 @@ let remove =
   let rec remove_min_elt tree =
     match tree with
     | Empty -> assert false
-    | Leaf _ -> Empty (* This must be the root *)
+    | Leaf _ -> Empty
     | Node { left = Empty; key = _; value = _; height = _; right } -> right
     | Node { left = Leaf _; key = k; value = v; height = _; right = Empty } ->
       Leaf { key = k; value = v }
-    | Node { left = Leaf _; key = _; value = _; height = _; right = _ } as node ->
-      set_left node Empty;
-      tree
-    | Node { left; key = _; value = _; height = _; right = _ } as node ->
-      set_left node (remove_min_elt left);
-      tree
+    | Node ({ left; key = _; value = _; height = _; right = _ } as r) ->
+      r.left <- remove_min_elt left;
+      balance tree
   in
   let merge t1 t2 =
     match t1, t2 with
@@ -431,23 +401,24 @@ let remove =
     | t, Empty -> t
     | _, _ ->
       let tree = min_elt t2 in
-      (match tree with
-       | Empty -> assert false
-       | Leaf { key = k; value = v } ->
-         let t2 = balance (remove_min_elt t2) in
-         Node
-           { left = t1
-           ; key = k
-           ; value = v
-           ; height = Int.max (height t1) (height t2) + 1
-           ; right = t2
-           }
-       | Node _ as node ->
-         set_right node (remove_min_elt t2);
-         set_left node t1;
-         node)
+      balance
+        (match tree with
+         | Empty -> assert false
+         | Leaf { key = k; value = v } ->
+           let t2 = remove_min_elt t2 in
+           Node
+             { left = t1
+             ; key = k
+             ; value = v
+             ; height = Int.max (height t1) (height t2) + 1
+             ; right = t2
+             }
+         | Node r ->
+           r.right <- remove_min_elt t2;
+           r.left <- t1;
+           tree)
   in
-  let rec remove t removed compare k =
+  fun t ~removed ~compare k ->
     match t with
     | Empty ->
       removed := false;
@@ -460,21 +431,21 @@ let remove =
       else (
         removed := false;
         t)
-    | Node { left; key = k'; value = _; height = _; right } ->
+    | Node ({ left; key = k'; value = _; height = _; right } as r) ->
       let c = compare k k' in
       if c = 0
       then (
         removed := true;
         merge left right)
-      else if c < 0
-      then (
-        set_left t (remove left removed compare k);
-        t)
       else (
-        set_right t (remove right removed compare k);
-        t)
-  in
-  fun t ~removed ~compare k -> balance (remove t removed compare k)
+        if c < 0
+        then (
+          let left' = remove left ~removed ~compare k in
+          if not (phys_equal left' left) then r.left <- left')
+        else (
+          let right' = remove right ~removed ~compare k in
+          if not (phys_equal right' right) then r.right <- right');
+        if !removed then balance t else t)
 ;;
 
 let rec fold t ~init ~f =

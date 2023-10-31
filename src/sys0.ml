@@ -33,6 +33,11 @@ let ocaml_version = Stdlib.Sys.ocaml_version
 let enable_runtime_warnings = Stdlib.Sys.enable_runtime_warnings
 let runtime_warnings_enabled = Stdlib.Sys.runtime_warnings_enabled
 
+module Make_immediate64
+  (Imm : Stdlib.Sys.Immediate64.Immediate)
+  (Non_imm : Stdlib.Sys.Immediate64.Non_immediate) =
+  Stdlib.Sys.Immediate64.Make (Imm) (Non_imm)
+
 let getenv_exn var =
   try Stdlib.Sys.getenv var with
   | Stdlib.Not_found ->

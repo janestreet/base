@@ -750,33 +750,30 @@ module Tree0 = struct
       join t1 x d (remove_min_elt t2)
   ;;
 
-  let remove t x ~length ~compare_key =
-    let rec remove_loop t x ~length ~compare_key =
-      match t with
-      | Empty ->  (with_length t length)
-      | Leaf (v, _) ->
-        if compare_key x v = 0
-        then  (with_length Empty (length - 1))
-        else  (with_length t length)
-      | Node (l, v, d, r, _) ->
-        let c = compare_key x v in
-        if c = 0
-        then  (with_length (concat_unchecked l r) (length - 1))
-        else (
-          let l, r, length' =
-            if c < 0
-            then (
-              let { tree = l; length = length' } = remove_loop l x ~length ~compare_key in
-              l, r, length')
-            else (
-              let { tree = r; length = length' } = remove_loop r x ~length ~compare_key in
-              l, r, length')
-          in
-          if length = length'
-          then  (with_length t length)
-          else  (with_length (bal l v d r) length'))
-    in
-     (remove_loop t x ~length ~compare_key)
+  let rec remove t x ~length ~compare_key =
+    match t with
+    | Empty ->  (with_length t length)
+    | Leaf (v, _) ->
+      if compare_key x v = 0
+      then  (with_length Empty (length - 1))
+      else  (with_length t length)
+    | Node (l, v, d, r, _) ->
+      let c = compare_key x v in
+      if c = 0
+      then  (with_length (concat_unchecked l r) (length - 1))
+      else (
+        let l, r, length' =
+          if c < 0
+          then (
+            let { tree = l; length = length' } = remove l x ~length ~compare_key in
+            l, r, length')
+          else (
+            let { tree = r; length = length' } = remove r x ~length ~compare_key in
+            l, r, length')
+        in
+        if length = length'
+        then  (with_length t length)
+        else  (with_length (bal l v d r) length'))
   ;;
 
   let rec change t key ~f ~length ~compare_key =
@@ -1552,6 +1549,24 @@ module Tree0 = struct
       (update t key ~length ~compare_key ~f:(fun option ->
          let list = Option.value option ~default:[] in
          data :: list)
+       |> globalize) [@nontail]) [@nontail]
+  ;;
+
+  let of_list_with_key_fold list ~get_key ~init ~f ~compare_key =
+    List.fold list ~init:(with_length_global empty 0) ~f:(fun { tree = t; length } data ->
+      let key = get_key data in
+      (update t key ~length ~compare_key ~f:(function
+         | None -> f init data
+         | Some prev -> f prev data)
+       |> globalize) [@nontail]) [@nontail]
+  ;;
+
+  let of_list_with_key_reduce list ~get_key ~f ~compare_key =
+    List.fold list ~init:(with_length_global empty 0) ~f:(fun { tree = t; length } data ->
+      let key = get_key data in
+      (update t key ~length ~compare_key ~f:(function
+         | None -> data
+         | Some prev -> f prev data)
        |> globalize) [@nontail]) [@nontail]
   ;;
 
@@ -2499,6 +2514,25 @@ module Tree = struct
       .tree
   ;;
 
+  let of_list_with_key_fold ~comparator list ~get_key ~init ~f =
+    (Tree0.of_list_with_key_fold
+       list
+       ~get_key
+       ~init
+       ~f
+       ~compare_key:comparator.Comparator.compare)
+      .tree
+  ;;
+
+  let of_list_with_key_reduce ~comparator list ~get_key ~f =
+    (Tree0.of_list_with_key_reduce
+       list
+       ~get_key
+       ~f
+       ~compare_key:comparator.Comparator.compare)
+      .tree
+  ;;
+
   let to_tree t = t
 
   let invariants ~comparator t =
@@ -2930,6 +2964,25 @@ module Using_comparator = struct
     |> of_tree0 ~comparator
   ;;
 
+  let of_list_with_key_fold ~comparator list ~get_key ~init ~f =
+    Tree0.of_list_with_key_fold
+      list
+      ~get_key
+      ~init
+      ~f
+      ~compare_key:comparator.Comparator.compare
+    |> of_tree0 ~comparator
+  ;;
+
+  let of_list_with_key_reduce ~comparator list ~get_key ~f =
+    Tree0.of_list_with_key_reduce
+      list
+      ~get_key
+      ~f
+      ~compare_key:comparator.Comparator.compare
+    |> of_tree0 ~comparator
+  ;;
+
   let t_of_sexp_direct ~comparator k_of_sexp v_of_sexp sexp =
     of_tree0 ~comparator (Tree0.t_of_sexp_direct k_of_sexp v_of_sexp sexp ~comparator)
   ;;
@@ -3050,6 +3103,14 @@ let of_list_with_key_exn m l ~get_key =
 
 let of_list_with_key_multi m l ~get_key =
   Using_comparator.of_list_with_key_multi ~comparator:(to_comparator m) l ~get_key
+;;
+
+let of_list_with_key_fold m l ~get_key ~init ~f =
+  Using_comparator.of_list_with_key_fold ~comparator:(to_comparator m) l ~get_key ~init ~f
+;;
+
+let of_list_with_key_reduce m l ~get_key ~f =
+  Using_comparator.of_list_with_key_reduce ~comparator:(to_comparator m) l ~get_key ~f
 ;;
 
 let map_keys m t ~f = Using_comparator.map_keys ~comparator:(to_comparator m) t ~f
@@ -3203,6 +3264,14 @@ module Poly = struct
 
   let of_list_with_key_multi l ~get_key =
     Using_comparator.of_list_with_key_multi ~comparator l ~get_key
+  ;;
+
+  let of_list_with_key_fold l ~get_key ~init ~f =
+    Using_comparator.of_list_with_key_fold ~comparator l ~get_key ~init ~f
+  ;;
+
+  let of_list_with_key_reduce l ~get_key ~f =
+    Using_comparator.of_list_with_key_reduce ~comparator l ~get_key ~f
   ;;
 
   let map_keys t ~f = Using_comparator.map_keys ~comparator t ~f

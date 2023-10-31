@@ -6,7 +6,14 @@ type seed = int
 type hash_value = int
 
 external create_seeded : seed -> state = "%identity" [@@noalloc]
-external fold_int64 : state -> int64 -> state = "Base_internalhash_fold_int64" [@@noalloc]
+
+external fold_int64
+  :  state
+  -> (int64[@unboxed])
+  -> state
+  = "Base_internalhash_fold_int64" "Base_internalhash_fold_int64_unboxed"
+  [@@noalloc]
+
 external fold_int : state -> int -> state = "Base_internalhash_fold_int" [@@noalloc]
 
 external fold_float

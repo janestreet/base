@@ -12,7 +12,7 @@
  (libraries base_internalhash_types sexplib0 shadow_stdlib)
  (c_flags :standard -D_LARGEFILE64_SOURCE (:include mpopcnt.sexp))
  (c_names bytes_stubs exn_stubs float_stubs int_math_stubs hash_stubs
-  am_testing)
+  obj_stubs am_testing)
  (preprocess no_preprocessing)
  (lint
   (pps ppx_base ppx_base_lint -check-doc-comments -type-conv-keep-w32=both

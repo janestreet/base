@@ -3,58 +3,7 @@ open! Import
 let raise_s = Error.raise_s
 
 module Repr = Int63_emul.Repr
-
-(* In a world where the compiler would understand [@@immediate64] attributes on type
-   declarations, this module is how one would produce a [type t] with this attribute. *)
-module Immediate64 : sig
-  module type Non_immediate = sig
-    type t
-  end
-
-  module type Immediate = sig
-    type t [@@immediate]
-  end
-
-  module Make (Immediate : Immediate) (Non_immediate : Non_immediate) : sig
-    type t [@@immediate64]
-
-    type 'a repr =
-      | Immediate : Immediate.t repr
-      | Non_immediate : Non_immediate.t repr
-
-    val repr : t repr
-  end
-end = struct
-  module type Non_immediate = sig
-    type t
-  end
-
-  module type Immediate = sig
-    type t [@@immediate]
-  end
-
-  module Make (Immediate : Immediate) (Non_immediate : Non_immediate) = struct
-    type t [@@immediate64]
-
-    type 'a repr =
-      | Immediate : Immediate.t repr
-      | Non_immediate : Non_immediate.t repr
-
-    external transparent_magic : ('a[@local_opt]) -> ('b[@local_opt]) = "%identity"
-
-    let repr =
-      (* [Obj.magic] involves opaqueness under Flambda 2 which will inhibit
-         availability of functions defined in this module for later inlining
-         (e.g. into float.ml). As such we explicitly use %identity here. *)
-      match Word_size.word_size with
-      | W64 -> (transparent_magic Immediate : t repr)
-      | W32 -> (transparent_magic Non_immediate : t repr)
-    ;;
-  end
-  [@@inline always]
-end
-
-include Immediate64.Make (Int) (Int63_emul)
+include Sys0.Make_immediate64 (Int) (Int63_emul)
 
 module Backend = struct
   module type S = sig

@@ -1275,10 +1275,10 @@ module Assoc = struct
 
   let find_exn =
     let not_found = Not_found_s (Atom "List.Assoc.find_exn: not found") in
-    let find_exn t ~equal key =
-      match find t key ~equal with
-      | None -> raise not_found
-      | Some value -> value
+    let rec find_exn t ~equal key =
+      match t with
+      | [] -> raise not_found
+      | (key', value) :: t -> if equal key key' then value else find_exn t ~equal key
     in
     (* named to preserve symbol in compiled binary *)
     find_exn

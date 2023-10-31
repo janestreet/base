@@ -899,6 +899,25 @@ module type Creators_generic = sig
       , 'v list -> get_key:(('v -> 'k key)[@local]) -> ('k, 'v list, 'cmp) t )
       create_options
 
+  val of_list_with_key_fold
+    : ( 'k
+      , 'cmp
+      , 'v list
+        -> get_key:(('v -> 'k key)[@local])
+        -> init:'acc
+        -> f:('acc -> 'v -> 'acc)
+        -> ('k, 'acc, 'cmp) t )
+      create_options
+
+  val of_list_with_key_reduce
+    : ( 'k
+      , 'cmp
+      , 'v list
+        -> get_key:(('v -> 'k key)[@local])
+        -> f:('v -> 'v -> 'v)
+        -> ('k, 'v, 'cmp) t )
+      create_options
+
   val of_iteri
     : ( 'k
       , 'cmp
@@ -1325,6 +1344,23 @@ module type Map = sig
     -> 'v list
     -> get_key:(('v -> 'k)[@local])
     -> ('k, 'v list, 'cmp) t
+
+  (** Like [of_list_with_key]; resolves duplicate keys the same way [of_alist_fold] does. *)
+  val of_list_with_key_fold
+    :  ('k, 'cmp) Comparator.Module.t
+    -> 'v list
+    -> get_key:(('v -> 'k)[@local])
+    -> init:'acc
+    -> f:('acc -> 'v -> 'acc)
+    -> ('k, 'acc, 'cmp) t
+
+  (** Like [of_list_with_key]; resolves duplicate keys the same way [of_alist_reduce] does. *)
+  val of_list_with_key_reduce
+    :  ('k, 'cmp) Comparator.Module.t
+    -> 'v list
+    -> get_key:(('v -> 'k)[@local])
+    -> f:('v -> 'v -> 'v)
+    -> ('k, 'v, 'cmp) t
 
   (** Tests whether a map is empty. *)
   val is_empty : (_, _, _) t -> bool

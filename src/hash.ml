@@ -144,7 +144,11 @@ module Internalhash : sig
        and type seed = Base_internalhash_types.seed
        and type hash_value = Base_internalhash_types.hash_value
 
-  external fold_int64 : state -> int64 -> state = "Base_internalhash_fold_int64"
+  external fold_int64
+    :  state
+    -> (int64[@unboxed])
+    -> state
+    = "Base_internalhash_fold_int64" "Base_internalhash_fold_int64_unboxed"
     [@@noalloc]
 
   external fold_int : state -> int -> state = "Base_internalhash_fold_int" [@@noalloc]

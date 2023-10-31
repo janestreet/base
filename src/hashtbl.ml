@@ -234,12 +234,10 @@ let remove t key =
   ensure_mutation_allowed t;
   let i = slot t key in
   let root = t.table.(i) in
-  let added_or_removed =  (ref false) in
-  let new_root =
-    Avltree.remove root ~removed:added_or_removed ~compare:(compare_key t) key
-  in
+  let removed =  (ref false) in
+  let new_root = Avltree.remove root ~removed ~compare:(compare_key t) key in
   if not (phys_equal root new_root) then t.table.(i) <- new_root;
-  if !added_or_removed then t.length <- t.length - 1
+  if !removed then t.length <- t.length - 1
 ;;
 
 let length t = t.length
