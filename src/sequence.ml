@@ -162,17 +162,13 @@ let fold t ~init ~f =
 let to_list_rev t = fold t ~init:[] ~f:(fun l x -> x :: l)
 
 let to_list (Sequence { state = s; next }) =
-  let safe_to_list t = List.rev (to_list_rev t) in
-  let rec to_list s next i =
-    if i = 0
-    then safe_to_list (Sequence { state = s; next })
-    else (
-      match next s with
-      | Done -> []
-      | Skip { state = s } -> to_list s next i
-      | Yield { value = a; state = s } -> a :: to_list s next (i - 1))
+  let[@tail_mod_cons] rec to_list s next =
+    match next s with
+    | Done -> []
+    | Skip { state = s } -> (to_list [@tailcall]) s next
+    | Yield { value = a; state = s } -> a :: (to_list [@tailcall]) s next
   in
-  to_list s next 500
+  to_list s next
 ;;
 
 let sexp_of_t sexp_of_a t = sexp_of_list sexp_of_a (to_list t)
