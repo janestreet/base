@@ -5,12 +5,7 @@ module Char = Char0
 (* Unfortunately, because the standard library does not expose
    [Stdlib.Random.State.default], we have to construct our own.  We then build the
    [Stdlib.Random.int], [Stdlib.Random.bool] functions and friends using that default state in
-   exactly the same way as the standard library.
-
-   One other trickiness is that we need access to the unexposed [Stdlib.Random.State.assign]
-   function, which accesses the unexposed state representation.  So, we copy the
-   [State.repr] type definition and [assign] function to here from the standard library,
-   and use [Obj.magic] to get access to the underlying implementation. *)
+   exactly the same way as the standard library. *)
 
 (* Regression tests ought to be deterministic because that way anyone who breaks the test
    knows that it's their code that broke the test.  If tests are nondeterministic, a test
@@ -33,29 +28,29 @@ let random_seed ?allow_in_tests () =
   random_seed ()
 ;;
 
-module State = struct
-  (* We allow laziness only for the definition of [default], below, which may lazily call
-     [make_self_init]. For all other purposes, we create and use [t] eagerly. *)
-  type t = Stdlib.Random.State.t Lazy.t
+module Repr = Random_repr
 
-  let bits t = Stdlib.Random.State.bits (Lazy.force t)
-  let bool t = Stdlib.Random.State.bool (Lazy.force t)
-  let int t x = Stdlib.Random.State.int (Lazy.force t) x
-  let int32 t x = Stdlib.Random.State.int32 (Lazy.force t) x
-  let int64 t x = Stdlib.Random.State.int64 (Lazy.force t) x
-  let nativeint t x = Stdlib.Random.State.nativeint (Lazy.force t) x
-  let make seed = Lazy.from_val (Stdlib.Random.State.make seed)
-  let copy t = Lazy.from_val (Stdlib.Random.State.copy (Lazy.force t))
+module State = struct
+  type t = Repr.t
+
+  let bits t = Stdlib.Random.State.bits (Repr.get_state t)
+  let bool t = Stdlib.Random.State.bool (Repr.get_state t)
+  let int t x = Stdlib.Random.State.int (Repr.get_state t) x
+  let int32 t x = Stdlib.Random.State.int32 (Repr.get_state t) x
+  let int64 t x = Stdlib.Random.State.int64 (Repr.get_state t) x
+  let nativeint t x = Stdlib.Random.State.nativeint (Repr.get_state t) x
+  let make seed = Repr.make (Stdlib.Random.State.make seed)
+  let copy t = Repr.make (Stdlib.Random.State.copy (Repr.get_state t))
   let char t = int t 256 |> Char.unsafe_of_int
   let ascii t = int t 128 |> Char.unsafe_of_int
 
   let make_self_init ?allow_in_tests () =
     forbid_nondeterminism_in_tests ~allow_in_tests;
-    Lazy.from_val (Stdlib.Random.State.make_self_init ())
+    Repr.make_lazy ~f:Stdlib.Random.State.make_self_init
   ;;
 
-  let assign = Random_repr.assign
-  let full_init t seed = assign t (make seed)
+  let assign = Repr.assign
+  let full_init t seed = assign t (Stdlib.Random.State.make seed)
 
   let default =
     if am_testing
@@ -69,13 +64,12 @@ module State = struct
          different sequence. *)
       let t = Stdlib.Random.get_state () in
       Stdlib.Random.init 137;
-      Lazy.from_val t)
+      Repr.make t)
     else
-      lazy
-        (* Outside of tests, we initialize random state nondeterministically and lazily.
-           We force the random initialization to be lazy so that we do not pay any cost
-           for it in programs that do not use randomness. *)
-        (Lazy.force (make_self_init ()))
+      (* Outside of tests, we initialize random state nondeterministically and lazily.
+         We force the random initialization to be lazy so that we do not pay any cost
+         for it in programs that do not use randomness. *)
+      make_self_init ()
   ;;
 
   let int_on_64bits t bound =
@@ -233,22 +227,22 @@ module State = struct
   ;;
 end
 
-let default = Random_repr.make_default State.default
-let bits () = State.bits (Random_repr.get_state default)
-let int x = State.int (Random_repr.get_state default) x
-let int32 x = State.int32 (Random_repr.get_state default) x
-let nativeint x = State.nativeint (Random_repr.get_state default) x
-let int64 x = State.int64 (Random_repr.get_state default) x
-let float x = State.float (Random_repr.get_state default) x
-let int_incl x y = State.int_incl (Random_repr.get_state default) x y
-let int32_incl x y = State.int32_incl (Random_repr.get_state default) x y
-let nativeint_incl x y = State.nativeint_incl (Random_repr.get_state default) x y
-let int64_incl x y = State.int64_incl (Random_repr.get_state default) x y
-let float_range x y = State.float_range (Random_repr.get_state default) x y
-let bool () = State.bool (Random_repr.get_state default)
-let char () = State.char (Random_repr.get_state default)
-let ascii () = State.ascii (Random_repr.get_state default)
-let full_init seed = State.full_init (Random_repr.get_state default) seed
+let default = State.default
+let bits () = State.bits default
+let int x = State.int default x
+let int32 x = State.int32 default x
+let nativeint x = State.nativeint default x
+let int64 x = State.int64 default x
+let float x = State.float default x
+let int_incl x y = State.int_incl default x y
+let int32_incl x y = State.int32_incl default x y
+let nativeint_incl x y = State.nativeint_incl default x y
+let int64_incl x y = State.int64_incl default x y
+let float_range x y = State.float_range default x y
+let bool () = State.bool default
+let char () = State.char default
+let ascii () = State.ascii default
+let full_init seed = State.full_init default seed
 let init seed = full_init [| seed |]
 let self_init ?allow_in_tests () = full_init (random_seed ?allow_in_tests ())
-let set_state s = State.assign (Random_repr.get_state default) s
+let set_state s = State.assign default (Repr.get_state s)

@@ -1,7 +1,5 @@
-[@@@zero_alloc check]
-
-let[@zero_alloc] foo x = Base.Printf.failwithf "%d" x ()
-let[@zero_alloc] bar x y = Base.Printf.invalid_argf "%d" (x + y) ()
+let[@zero_alloc] [@inline never] foo x = Base.Printf.failwithf "%d" x ()
+let[@zero_alloc] [@inline never] bar x y = Base.Printf.invalid_argf "%d" (x + y) ()
 
 let%expect_test "foo" =
   let x = Sys.opaque_identity 5 in

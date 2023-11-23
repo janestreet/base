@@ -92,9 +92,6 @@ val to_either : ('ok, 'err) t -> ('ok, 'err) Either0.t
 
 val of_either : ('ok, 'err) Either0.t -> ('ok, 'err) t
 
-val ok_fst : ('ok, 'err) t -> ('ok, 'err) Either0.t
-  [@@deprecated "[since 2020-01] Use [to_either] instead."]
-
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
 val ok_if_true : bool -> error:'err -> (unit, 'err) t
 

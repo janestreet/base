@@ -321,9 +321,6 @@ module type Set = sig
 
   [@@@end]
 
-  type ('k, 'cmp) comparator = ('k, 'cmp) Comparator.Module.t
-  [@@deprecated "[since 2021-12] use [Comparator.Module.t] instead"]
-
   (** Tests internal invariants of the set data structure.  Returns true on success. *)
   val invariants : (_, _) t -> bool
 

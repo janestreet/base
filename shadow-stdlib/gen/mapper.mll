@@ -125,6 +125,7 @@ let val_replacement = function
   | "cosh"                -> Repl "Float.cosh"
   | "decr"                -> Repl "Int.decr"
   | "do_at_exit"          -> No_equivalent
+  | "do_domain_local_at_exit" -> No_equivalent
   | "epsilon_float"       -> Repl "Float.epsilon_float"
   | "exit"                -> No_equivalent
   | "exp"                 -> Repl "Float.exp"

@@ -63,6 +63,9 @@ include (
     with module Sys := Shadow_stdlib.Sys
     with module Uchar := Shadow_stdlib.Uchar
     with module Unit := Shadow_stdlib.Unit
+    (* OCaml 5-related modules we don't want to start shadowing yet. *)
+    with module Domain := Shadow_stdlib.Domain
+    with module Type := Shadow_stdlib.Type
     (* Support for generated lexers *)
     with module Lexing := Shadow_stdlib.Lexing
     with type ('a, 'b, 'c) format := ('a, 'b, 'c) format
@@ -129,10 +132,6 @@ module Or_error = Or_error
 module Ordered_collection_common = Ordered_collection_common
 module Ordering = Ordering
 module Poly = Poly
-
-module Popcount = Popcount
-[@@deprecated "[since 2018-10] use [popcount] functions in the individual int modules"]
-
 module Pretty_printer = Pretty_printer
 module Printf = Printf
 module Linked_queue = Linked_queue

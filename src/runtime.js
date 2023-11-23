@@ -173,15 +173,14 @@ function caml_make_local_vect(v_len, v_elt) {
   return caml_make_vect(v_len, v_elt);
 }
 
-
-//Provides: caml_float_min
-function caml_float_min(x, y) {
-  return x < y ? x : y;
+//Provides: caml_sse2_float64_min_bytecode
+function caml_sse2_float64_min_bytecode(x, y) {
+    return x < y ? x : y;
 }
 
-//Provides: caml_float_max
-function caml_float_max(x, y) {
-  return x > y ? x : y;
+//Provides: caml_sse2_float64_max_bytecode
+function caml_sse2_float64_max_bytecode(x, y) {
+    return x > y ? x : y;
 }
 
 //Provides: caml_get_header0

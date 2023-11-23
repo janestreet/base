@@ -52,6 +52,9 @@ module Module : sig
   type ('a, 'b) t = (module S with type t = 'a and type comparator_witness = 'b)
 end
 
+val of_module : ('a, 'b) Module.t -> ('a, 'b) t
+val to_module : ('a, 'b) t -> ('a, 'b) Module.t
+
 module S_to_S1 (S : S) :
   S1 with type 'a t = S.t with type comparator_witness = S.comparator_witness
 

@@ -1120,9 +1120,6 @@ module type Map = sig
       -> 'left * 'right
   end
 
-  type ('k, 'cmp) comparator = ('k, 'cmp) Comparator.Module.t
-  [@@deprecated "[since 2021-12] use [Comparator.Module.t] instead"]
-
   (** Test if the invariants of the internal AVL search tree hold. *)
   val invariants : (_, _, _) t -> bool
 

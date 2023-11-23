@@ -1,6 +1,6 @@
 (** Unicode character operations.
 
-    A [Uchar.t] represents a Unicode code point -- that is, an integer identifying the
+    A [Uchar.t] represents a Unicode scalar value -- that is, an integer identifying the
     character in abstract. This module does not provide any utilties for converting
     [Uchar.t]s to and from strings -- in order to do so, one needs to settle on a
     particular encoding, such as UTF-8 or UTF-16. See, for instance, the [utf8_text]
@@ -61,11 +61,18 @@ val of_scalar_exn : int -> t
 (** [to_scalar t] is [t] as an integer scalar value. *)
 val to_scalar : t -> int
 
-(** [utf8_byte_width t] returns the number of bytes needed to represent [t] in the UTF-8
-    encoding (https://en.wikipedia.org/wiki/UTF-8).
+(** Number of bytes needed to represent [t] in UTF-8. *)
+val utf_8_byte_length : t -> int
 
-*)
-val utf8_byte_length : t -> int
+(** Number of bytes needed to represent [t] in UTF-16. *)
+val utf_16_byte_length : t -> int
 
 val min_value : t
 val max_value : t
+
+(** U+FEFF, the byte order mark. https://en.wikipedia.org/wiki/Byte_order_mark *)
+val byte_order_mark : t
+
+(** U+FFFD, the Unicode replacement character.
+    https://en.wikipedia.org/wiki/Specials_(Unicode_block)#Replacement_character *)
+val replacement_char : t

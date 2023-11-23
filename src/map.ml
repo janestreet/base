@@ -96,15 +96,24 @@ open With_length
 module Tree0 = struct
   type ('k, 'v) t =
     | Empty
-    | Leaf of 'k * 'v
-    | Node of ('k, 'v) t * 'k * 'v * ('k, 'v) t * int
+    | Leaf of
+        { key : 'k
+        ; data : 'v
+        }
+    | Node of
+        { left : ('k, 'v) t
+        ; key : 'k
+        ; data : 'v
+        ; right : ('k, 'v) t
+        ; height : int
+        }
 
   type ('k, 'v) tree = ('k, 'v) t
 
   let height = function
     | Empty -> 0
     | Leaf _ -> 1
-    | Node (_, _, _, _, h) -> h
+    | Node { left = _; key = _; data = _; right = _; height = h } -> h
   ;;
 
   let invariants =
@@ -120,8 +129,8 @@ module Tree0 = struct
     let rec loop lower upper compare_key t =
       match t with
       | Empty -> true
-      | Leaf (k, _) -> in_range lower upper compare_key k
-      | Node (l, k, _, r, h) ->
+      | Leaf { key = k; data = _ } -> in_range lower upper compare_key k
+      | Node { left = l; key = k; data = _; right = r; height = h } ->
         let hl = height l
         and hr = height r in
         abs (hl - hr) <= 2
@@ -136,13 +145,20 @@ module Tree0 = struct
   (* preconditions: |height(l) - height(r)| <= 2, hl = height(l), hr = height(r) *)
   let[@inline] create_with_heights ~hl ~hr l x d r =
     if hl = 0 && hr = 0
-    then Leaf (x, d)
-    else Node (l, x, d, r, if hl >= hr then hl + 1 else hr + 1)
+    then Leaf { key = x; data = d }
+    else
+      Node
+        { left = l
+        ; key = x
+        ; data = d
+        ; right = r
+        ; height = (if hl >= hr then hl + 1 else hr + 1)
+        }
   ;;
 
   (* precondition: |height(l) - height(r)| <= 2 *)
   let create l x d r = create_with_heights ~hl:(height l) ~hr:(height r) l x d r
-  let singleton key data = Leaf (key, data)
+  let singleton key data = Leaf { key; data }
 
   (* We must call [f] with increasing indexes, because the bin_prot reader in
      Core.Map needs it. *)
@@ -152,16 +168,28 @@ module Tree0 = struct
       | 0 -> Empty
       | 1 ->
         let k, v = f i in
-        Leaf (k, v)
+        Leaf { key = k; data = v }
       | 2 ->
         let kl, vl = f i in
         let k, v = f (i + 1) in
-        Node (Leaf (kl, vl), k, v, Empty, 2)
+        Node
+          { left = Leaf { key = kl; data = vl }
+          ; key = k
+          ; data = v
+          ; right = Empty
+          ; height = 2
+          }
       | 3 ->
         let kl, vl = f i in
         let k, v = f (i + 1) in
         let kr, vr = f (i + 2) in
-        Node (Leaf (kl, vl), k, v, Leaf (kr, vr), 2)
+        Node
+          { left = Leaf { key = kl; data = vl }
+          ; key = k
+          ; data = v
+          ; right = Leaf { key = kr; data = vr }
+          ; height = 2
+          }
       | n ->
         let left_length = n lsr 1 in
         let right_length = n - left_length - 1 in
@@ -221,28 +249,30 @@ module Tree0 = struct
       match l with
       | Empty -> invalid_arg "Map.bal"
       | Leaf _ -> assert false (* height(Leaf) = 1 && 1 is not larger than hr + 2 *)
-      | Node (ll, lv, ld, lr, _) ->
+      | Node { left = ll; key = lv; data = ld; right = lr; height = _ } ->
         if height ll >= height lr
         then create ll lv ld (create lr x d r)
         else (
           match lr with
           | Empty -> invalid_arg "Map.bal"
-          | Leaf (lrv, lrd) -> create (create ll lv ld Empty) lrv lrd (create Empty x d r)
-          | Node (lrl, lrv, lrd, lrr, _) ->
+          | Leaf { key = lrv; data = lrd } ->
+            create (create ll lv ld Empty) lrv lrd (create Empty x d r)
+          | Node { left = lrl; key = lrv; data = lrd; right = lrr; height = _ } ->
             create (create ll lv ld lrl) lrv lrd (create lrr x d r)))
     else if hr > hl + 2
     then (
       match r with
       | Empty -> invalid_arg "Map.bal"
       | Leaf _ -> assert false (* height(Leaf) = 1 && 1 is not larger than hl + 2 *)
-      | Node (rl, rv, rd, rr, _) ->
+      | Node { left = rl; key = rv; data = rd; right = rr; height = _ } ->
         if height rr >= height rl
         then create (create l x d rl) rv rd rr
         else (
           match rl with
           | Empty -> invalid_arg "Map.bal"
-          | Leaf (rlv, rld) -> create (create l x d Empty) rlv rld (create Empty rv rd rr)
-          | Node (rll, rlv, rld, rlr, _) ->
+          | Leaf { key = rlv; data = rld } ->
+            create (create l x d Empty) rlv rld (create Empty rv rd rr)
+          | Node { left = rll; key = rlv; data = rld; right = rlr; height = _ } ->
             create (create l x d rll) rlv rld (create rlr rv rd rr)))
     else create_with_heights ~hl ~hr l x d r
   ;;
@@ -276,26 +306,48 @@ module Tree0 = struct
     ~(add_or_set : Add_or_set.t)
     =
     match t with
-    | Empty ->  (with_length (Leaf (x, data)) (length + 1))
-    | Leaf (v, d) ->
+    | Empty ->  (with_length (Leaf { key = x; data }) (length + 1))
+    | Leaf { key = v; data = d } ->
       let c = compare_key x v in
       if c = 0
       then (
         match add_or_set with
         | Add_exn_internal ->  (Exn.raise_without_backtrace Duplicate)
         | Add_exn ->  (raise_key_already_present ~key:x ~sexp_of_key)
-        | Set ->  (with_length (Leaf (x, data)) length))
+        | Set ->  (with_length (Leaf { key = x; data }) length))
       else if c < 0
-      then  (with_length (Node (Leaf (x, data), v, d, Empty, 2)) (length + 1))
-      else  (with_length (Node (Empty, v, d, Leaf (x, data), 2)) (length + 1))
-    | Node (l, v, d, r, h) ->
+      then
+        
+          (with_length
+             (Node
+                { left = Leaf { key = x; data }
+                ; key = v
+                ; data = d
+                ; right = Empty
+                ; height = 2
+                })
+             (length + 1))
+      else
+        
+          (with_length
+             (Node
+                { left = Empty
+                ; key = v
+                ; data = d
+                ; right = Leaf { key = x; data }
+                ; height = 2
+                })
+             (length + 1))
+    | Node { left = l; key = v; data = d; right = r; height = h } ->
       let c = compare_key x v in
       if c = 0
       then (
         match add_or_set with
         | Add_exn_internal ->  (Exn.raise_without_backtrace Duplicate)
         | Add_exn ->  (raise_key_already_present ~key:x ~sexp_of_key)
-        | Set ->  (with_length (Node (l, x, data, r, h)) length))
+        | Set ->
+          
+            (with_length (Node { left = l; key = x; data; right = r; height = h }) length))
       else (
         let l, r, length =
           if c < 0
@@ -330,9 +382,10 @@ module Tree0 = struct
   (* specialization of [set'] for the case when [key] is less than all the existing keys *)
   let rec set_min key data t =
     match t with
-    | Empty -> Leaf (key, data)
-    | Leaf (v, d) -> Node (Leaf (key, data), v, d, Empty, 2)
-    | Node (l, v, d, r, _) ->
+    | Empty -> Leaf { key; data }
+    | Leaf { key = v; data = d } ->
+      Node { left = Leaf { key; data }; key = v; data = d; right = Empty; height = 2 }
+    | Node { left = l; key = v; data = d; right = r; height = _ } ->
       let l = set_min key data l in
       bal l v d r
   ;;
@@ -341,9 +394,10 @@ module Tree0 = struct
      existing keys  *)
   let rec set_max t key data =
     match t with
-    | Empty -> Leaf (key, data)
-    | Leaf (v, d) -> Node (Empty, v, d, Leaf (key, data), 2)
-    | Node (l, v, d, r, _) ->
+    | Empty -> Leaf { key; data }
+    | Leaf { key = v; data = d } ->
+      Node { left = Empty; key = v; data = d; right = Leaf { key; data }; height = 2 }
+    | Node { left = l; key = v; data = d; right = r; height = _ } ->
       let r = set_max r key data in
       bal l v d r
   ;;
@@ -479,9 +533,10 @@ module Tree0 = struct
     match l, r with
     | Empty, _ -> set_min k d r
     | _, Empty -> set_max l k d
-    | Leaf (lk, ld), _ -> set_min lk ld (set_min k d r)
-    | _, Leaf (rk, rd) -> set_max (set_max l k d) rk rd
-    | Node (ll, lk, ld, lr, lh), Node (rl, rk, rd, rr, rh) ->
+    | Leaf { key = lk; data = ld }, _ -> set_min lk ld (set_min k d r)
+    | _, Leaf { key = rk; data = rd } -> set_max (set_max l k d) rk rd
+    | ( Node { left = ll; key = lk; data = ld; right = lr; height = lh }
+      , Node { left = rl; key = rk; data = rd; right = rr; height = rh } ) ->
       let l, k, d, r =
         (* [bal] requires height difference <= 3. *)
         if lh > rh + 3
@@ -499,14 +554,14 @@ module Tree0 = struct
   let[@inline] rec split_gen t x ~compare_key =
     match t with
     | Empty -> Empty, None, Empty
-    | Leaf (k, d) ->
+    | Leaf { key = k; data = d } ->
       let cmp = compare_key k in
       if cmp = 0
       then Empty, Some (k, d), Empty
       else if cmp < 0
       then Empty, None, t
       else t, None, Empty
-    | Node (l, k, d, r, _) ->
+    | Node { left = l; key = k; data = d; right = r; height = _ } ->
       let cmp = compare_key k in
       if cmp = 0
       then l, Some (k, d), r
@@ -576,8 +631,8 @@ module Tree0 = struct
   let rec find t x ~compare_key =
     match t with
     | Empty -> None
-    | Leaf (v, d) -> if compare_key x v = 0 then Some d else None
-    | Node (l, v, d, r, _) ->
+    | Leaf { key = v; data = d } -> if compare_key x v = 0 then Some d else None
+    | Node { left = l; key = v; data = d; right = r; height = _ } ->
       let c = compare_key x v in
       if c = 0 then Some d else find (if c < 0 then l else r) x ~compare_key
   ;;
@@ -600,8 +655,9 @@ module Tree0 = struct
     let rec find_exn t x ~compare_key ~sexp_of_key =
       match t with
       | Empty -> if_not_found x ~sexp_of_key
-      | Leaf (v, d) -> if compare_key x v = 0 then d else if_not_found x ~sexp_of_key
-      | Node (l, v, d, r, _) ->
+      | Leaf { key = v; data = d } ->
+        if compare_key x v = 0 then d else if_not_found x ~sexp_of_key
+      | Node { left = l; key = v; data = d; right = r; height = _ } ->
         let c = compare_key x v in
         if c = 0 then d else find_exn (if c < 0 then l else r) x ~compare_key ~sexp_of_key
     in
@@ -613,9 +669,9 @@ module Tree0 = struct
 
   let rec min_elt = function
     | Empty -> None
-    | Leaf (k, d) -> Some (k, d)
-    | Node (Empty, k, d, _, _) -> Some (k, d)
-    | Node (l, _, _, _, _) -> min_elt l
+    | Leaf { key = k; data = d } -> Some (k, d)
+    | Node { left = Empty; key = k; data = d; right = _; height = _ } -> Some (k, d)
+    | Node { left = l; key = _; data = _; right = _; height = _ } -> min_elt l
   ;;
 
   exception Map_min_elt_exn_of_empty_map [@@deriving_inline sexp]
@@ -652,9 +708,9 @@ module Tree0 = struct
 
   let rec max_elt = function
     | Empty -> None
-    | Leaf (k, d) -> Some (k, d)
-    | Node (_, k, d, Empty, _) -> Some (k, d)
-    | Node (_, _, _, r, _) -> max_elt r
+    | Leaf { key = k; data = d } -> Some (k, d)
+    | Node { left = _; key = k; data = d; right = Empty; height = _ } -> Some (k, d)
+    | Node { left = _; key = _; data = _; right = r; height = _ } -> max_elt r
   ;;
 
   let max_elt_exn t =
@@ -667,8 +723,9 @@ module Tree0 = struct
     match t with
     | Empty -> invalid_arg "Map.remove_min_elt"
     | Leaf _ -> Empty
-    | Node (Empty, _, _, r, _) -> r
-    | Node (l, x, d, r, _) -> bal (remove_min_elt l) x d r
+    | Node { left = Empty; key = _; data = _; right = r; height = _ } -> r
+    | Node { left = l; key = x; data = d; right = r; height = _ } ->
+      bal (remove_min_elt l) x d r
   ;;
 
   let append ~lower_part ~upper_part ~compare_key =
@@ -686,12 +743,12 @@ module Tree0 = struct
     let rec go t ~min ~max ~init ~f ~compare_key =
       match t with
       | Empty -> init
-      | Leaf (k, d) ->
+      | Leaf { key = k; data = d } ->
         if compare_key k min < 0 || compare_key k max > 0
         then (* k < min || k > max *)
           init
         else f ~key:k ~data:d init
-      | Node (l, k, d, r, _) ->
+      | Node { left = l; key = k; data = d; right = r; height = _ } ->
         let c_min = compare_key k min in
         if c_min < 0
         then
@@ -753,11 +810,11 @@ module Tree0 = struct
   let rec remove t x ~length ~compare_key =
     match t with
     | Empty ->  (with_length t length)
-    | Leaf (v, _) ->
+    | Leaf { key = v; data = _ } ->
       if compare_key x v = 0
       then  (with_length Empty (length - 1))
       else  (with_length t length)
-    | Node (l, v, d, r, _) ->
+    | Node { left = l; key = v; data = d; right = r; height = _ } ->
       let c = compare_key x v in
       if c = 0
       then  (with_length (concat_unchecked l r) (length - 1))
@@ -781,14 +838,14 @@ module Tree0 = struct
     | Empty ->
       (match f None with
        | None ->  (with_length Empty length)
-       | Some data ->  (with_length (Leaf (key, data)) (length + 1)))
-    | Leaf (v, d) ->
+       | Some data ->  (with_length (Leaf { key; data }) (length + 1)))
+    | Leaf { key = v; data = d } ->
       let c = compare_key key v in
       if c = 0
       then (
         match f (Some d) with
         | None ->  (with_length Empty (length - 1))
-        | Some d' ->  (with_length (Leaf (v, d')) length))
+        | Some d' ->  (with_length (Leaf { key = v; data = d' }) length))
       else if c < 0
       then (
         let { tree = l'; length } = change Empty key ~f ~length ~compare_key in
@@ -800,13 +857,15 @@ module Tree0 = struct
         if phys_equal r' t
         then  (with_length t length)
         else  (with_length (bal Empty v d r') length))
-    | Node (l, v, d, r, h) ->
+    | Node { left = l; key = v; data = d; right = r; height = h } ->
       let c = compare_key key v in
       if c = 0
       then (
         match f (Some d) with
         | None ->  (with_length (concat_unchecked l r) (length - 1))
-        | Some data ->  (with_length (Node (l, key, data, r, h)) length))
+        | Some data ->
+          
+            (with_length (Node { left = l; key; data; right = r; height = h }) length))
       else if c < 0
       then (
         let { tree = l'; length } = change l key ~f ~length ~compare_key in
@@ -824,13 +883,13 @@ module Tree0 = struct
     match t with
     | Empty ->
       let data = f None in
-       (with_length (Leaf (key, data)) (length + 1))
-    | Leaf (v, d) ->
+       (with_length (Leaf { key; data }) (length + 1))
+    | Leaf { key = v; data = d } ->
       let c = compare_key key v in
       if c = 0
       then (
         let d' = f (Some d) in
-         (with_length (Leaf (v, d')) length))
+         (with_length (Leaf { key = v; data = d' }) length))
       else if c < 0
       then (
         let { tree = l; length } = update Empty key ~f ~length ~compare_key in
@@ -838,12 +897,13 @@ module Tree0 = struct
       else (
         let { tree = r; length } = update Empty key ~f ~length ~compare_key in
          (with_length (bal Empty v d r) length))
-    | Node (l, v, d, r, h) ->
+    | Node { left = l; key = v; data = d; right = r; height = h } ->
       let c = compare_key key v in
       if c = 0
       then (
         let data = f (Some d) in
-         (with_length (Node (l, key, data, r, h)) length))
+        
+          (with_length (Node { left = l; key; data; right = r; height = h }) length))
       else if c < 0
       then (
         let { tree = l; length } = update l key ~f ~length ~compare_key in
@@ -863,8 +923,8 @@ module Tree0 = struct
   let rec iter_keys t ~f =
     match t with
     | Empty -> ()
-    | Leaf (v, _) -> f v
-    | Node (l, v, _, r, _) ->
+    | Leaf { key = v; data = _ } -> f v
+    | Node { left = l; key = v; data = _; right = r; height = _ } ->
       iter_keys ~f l;
       f v;
       iter_keys ~f r
@@ -873,8 +933,8 @@ module Tree0 = struct
   let rec iter t ~f =
     match t with
     | Empty -> ()
-    | Leaf (_, d) -> f d
-    | Node (l, _, d, r, _) ->
+    | Leaf { key = _; data = d } -> f d
+    | Node { left = l; key = _; data = d; right = r; height = _ } ->
       iter ~f l;
       f d;
       iter ~f r
@@ -883,8 +943,8 @@ module Tree0 = struct
   let rec iteri t ~f =
     match t with
     | Empty -> ()
-    | Leaf (v, d) -> f ~key:v ~data:d
-    | Node (l, v, d, r, _) ->
+    | Leaf { key = v; data = d } -> f ~key:v ~data:d
+    | Node { left = l; key = v; data = d; right = r; height = _ } ->
       iteri ~f l;
       f ~key:v ~data:d;
       iteri ~f r
@@ -894,8 +954,8 @@ module Tree0 = struct
     let rec iteri_until_loop t ~f : Continue_or_stop.t =
       match t with
       | Empty -> Continue
-      | Leaf (v, d) -> f ~key:v ~data:d
-      | Node (l, v, d, r, _) ->
+      | Leaf { key = v; data = d } -> f ~key:v ~data:d
+      | Node { left = l; key = v; data = d; right = r; height = _ } ->
         (match iteri_until_loop ~f l with
          | Stop -> Stop
          | Continue ->
@@ -909,38 +969,39 @@ module Tree0 = struct
   let rec map t ~f =
     match t with
     | Empty -> Empty
-    | Leaf (v, d) -> Leaf (v, f d)
-    | Node (l, v, d, r, h) ->
+    | Leaf { key = v; data = d } -> Leaf { key = v; data = f d }
+    | Node { left = l; key = v; data = d; right = r; height = h } ->
       let l' = map ~f l in
       let d' = f d in
       let r' = map ~f r in
-      Node (l', v, d', r', h)
+      Node { left = l'; key = v; data = d'; right = r'; height = h }
   ;;
 
   let rec mapi t ~f =
     match t with
     | Empty -> Empty
-    | Leaf (v, d) -> Leaf (v, f ~key:v ~data:d)
-    | Node (l, v, d, r, h) ->
+    | Leaf { key = v; data = d } -> Leaf { key = v; data = f ~key:v ~data:d }
+    | Node { left = l; key = v; data = d; right = r; height = h } ->
       let l' = mapi ~f l in
       let d' = f ~key:v ~data:d in
       let r' = mapi ~f r in
-      Node (l', v, d', r', h)
+      Node { left = l'; key = v; data = d'; right = r'; height = h }
   ;;
 
   let rec fold t ~init:accu ~f =
     match t with
     | Empty -> accu
-    | Leaf (v, d) -> f ~key:v ~data:d accu
-    | Node (l, v, d, r, _) -> fold ~f r ~init:(f ~key:v ~data:d (fold ~f l ~init:accu))
+    | Leaf { key = v; data = d } -> f ~key:v ~data:d accu
+    | Node { left = l; key = v; data = d; right = r; height = _ } ->
+      fold ~f r ~init:(f ~key:v ~data:d (fold ~f l ~init:accu))
   ;;
 
   let fold_until t ~init ~f ~finish =
     let rec fold_until_loop t ~acc ~f : (_, _) Container.Continue_or_stop.t =
       match t with
       | Empty -> Continue acc
-      | Leaf (v, d) -> f ~key:v ~data:d acc
-      | Node (l, v, d, r, _) ->
+      | Leaf { key = v; data = d } -> f ~key:v ~data:d acc
+      | Node { left = l; key = v; data = d; right = r; height = _ } ->
         (match fold_until_loop l ~acc ~f with
          | Stop final -> Stop final
          | Continue acc ->
@@ -956,21 +1017,21 @@ module Tree0 = struct
   let rec fold_right t ~init:accu ~f =
     match t with
     | Empty -> accu
-    | Leaf (v, d) -> f ~key:v ~data:d accu
-    | Node (l, v, d, r, _) ->
+    | Leaf { key = v; data = d } -> f ~key:v ~data:d accu
+    | Node { left = l; key = v; data = d; right = r; height = _ } ->
       fold_right ~f l ~init:(f ~key:v ~data:d (fold_right ~f r ~init:accu))
   ;;
 
   let rec filter_mapi t ~f ~len =
     match t with
     | Empty -> Empty
-    | Leaf (v, d) ->
+    | Leaf { key = v; data = d } ->
       (match f ~key:v ~data:d with
-       | Some new_data -> Leaf (v, new_data)
+       | Some new_data -> Leaf { key = v; data = new_data }
        | None ->
          decr len;
          Empty)
-    | Node (l, v, d, r, _) ->
+    | Node { left = l; key = v; data = d; right = r; height = _ } ->
       let l' = filter_mapi l ~f ~len in
       let new_data = f ~key:v ~data:d in
       let r' = filter_mapi r ~f ~len in
@@ -984,13 +1045,13 @@ module Tree0 = struct
   let rec filteri t ~f ~len =
     match t with
     | Empty -> Empty
-    | Leaf (v, d) ->
+    | Leaf { key = v; data = d } ->
       (match f ~key:v ~data:d with
        | true -> t
        | false ->
          decr len;
          Empty)
-    | Node (l, v, d, r, _) ->
+    | Node { left = l; key = v; data = d; right = r; height = _ } ->
       let l' = filteri l ~f ~len in
       let keep_data = f ~key:v ~data:d in
       let r' = filteri r ~f ~len in
@@ -1027,11 +1088,11 @@ module Tree0 = struct
     let rec loop t ~f =
       match t with
       | Empty -> Empty, Empty
-      | Leaf (v, d) ->
+      | Leaf { key = v; data = d } ->
         (match f ~key:v ~data:d with
          | true -> t, Empty
          | false -> Empty, t)
-      | Node (l, v, d, r, _) ->
+      | Node { left = l; key = v; data = d; right = r; height = _ } ->
         let l't, l'f = loop l ~f in
         let keep_data_t = f ~key:v ~data:d in
         let r't, r'f = loop r ~f in
@@ -1061,15 +1122,17 @@ module Tree0 = struct
     let rec cons t (e : (_, _, increasing) t) : (_, _, increasing) t =
       match t with
       | Empty -> e
-      | Leaf (v, d) -> More (v, d, Empty, e)
-      | Node (l, v, d, r, _) -> cons l (More (v, d, r, e))
+      | Leaf { key = v; data = d } -> More (v, d, Empty, e)
+      | Node { left = l; key = v; data = d; right = r; height = _ } ->
+        cons l (More (v, d, r, e))
     ;;
 
     let rec cons_right t (e : (_, _, decreasing) t) : (_, _, decreasing) t =
       match t with
       | Empty -> e
-      | Leaf (v, d) -> More (v, d, Empty, e)
-      | Node (l, v, d, r, _) -> cons_right r (More (v, d, l, e))
+      | Leaf { key = v; data = d } -> More (v, d, Empty, e)
+      | Node { left = l; key = v; data = d; right = r; height = _ } ->
+        cons_right r (More (v, d, l, e))
     ;;
 
     let of_tree tree : (_, _, increasing) t = cons tree End
@@ -1079,9 +1142,12 @@ module Tree0 = struct
       let rec loop t e =
         match t with
         | Empty -> e
-        | Leaf (v, d) -> loop (Node (Empty, v, d, Empty, 1)) e
-        | Node (_, v, _, r, _) when compare v key < 0 -> loop r e
-        | Node (l, v, d, r, _) -> loop l (More (v, d, r, e))
+        | Leaf { key = v; data = d } ->
+          loop (Node { left = Empty; key = v; data = d; right = Empty; height = 1 }) e
+        | Node { left = _; key = v; data = _; right = r; height = _ }
+          when compare v key < 0 -> loop r e
+        | Node { left = l; key = v; data = d; right = r; height = _ } ->
+          loop l (More (v, d, r, e))
       in
       loop t End
     ;;
@@ -1090,9 +1156,12 @@ module Tree0 = struct
       let rec loop t e =
         match t with
         | Empty -> e
-        | Leaf (v, d) -> loop (Node (Empty, v, d, Empty, 1)) e
-        | Node (l, v, _, _, _) when compare v key > 0 -> loop l e
-        | Node (l, v, d, r, _) -> loop r (More (v, d, l, e))
+        | Leaf { key = v; data = d } ->
+          loop (Node { left = Empty; key = v; data = d; right = Empty; height = 1 }) e
+        | Node { left = l; key = v; data = _; right = _; height = _ }
+          when compare v key > 0 -> loop l e
+        | Node { left = l; key = v; data = d; right = r; height = _ } ->
+          loop r (More (v, d, l, e))
       in
       loop t End
     ;;
@@ -1100,8 +1169,8 @@ module Tree0 = struct
     let step_deeper_exn tree e =
       match tree with
       | Empty -> assert false
-      | Leaf (v, d) -> Empty, More (v, d, Empty, e)
-      | Node (l, v, d, r, _) -> l, More (v, d, r, e)
+      | Leaf { key = v; data = d } -> Empty, More (v, d, Empty, e)
+      | Node { left = l; key = v; data = d; right = r; height = _ } -> l, More (v, d, r, e)
     ;;
 
     (* [drop_phys_equal_prefix tree1 acc1 tree2 acc2] drops the largest physically-equal
@@ -1354,7 +1423,7 @@ module Tree0 = struct
           fold new_vals ~init:acc ~f:(fun ~key ~data acc -> add acc key data) [@nontail]
         | old_vals, Empty ->
           fold old_vals ~init:acc ~f:(fun ~key ~data acc -> remove acc key data) [@nontail]
-        | Leaf (k, v), Leaf (k', v') ->
+        | Leaf { key = k; data = v }, Leaf { key = k'; data = v' } ->
           (match compare_key k k' with
            | x when x = 0 -> delta acc k v v'
            | x when x < 0 ->
@@ -1363,7 +1432,9 @@ module Tree0 = struct
            | _ (* when x > 0 *) ->
              let acc = add acc k' v' in
              remove acc k v)
-        | Node (l, k, v, r, _), Node (l', k', v', r', _) when compare_key k k' = 0 ->
+        | ( Node { left = l; key = k; data = v; right = r; height = _ }
+          , Node { left = l'; key = k'; data = v'; right = r'; height = _ } )
+          when compare_key k k' = 0 ->
           let acc = loop l l' acc in
           let acc = delta acc k v v' in
           loop r r' acc
@@ -1378,7 +1449,8 @@ module Tree0 = struct
   let rec length = function
     | Empty -> 0
     | Leaf _ -> 1
-    | Node (l, _, _, r, _) -> length l + length r + 1
+    | Node { left = l; key = _; data = _; right = r; height = _ } ->
+      length l + length r + 1
   ;;
 
   let hash_fold_t_ignoring_structure hash_fold_key hash_fold_data state t =
@@ -1687,7 +1759,7 @@ module Tree0 = struct
       fun t dir k ~compare_key found_marker found_key found_value ->
       match t with
       | Empty -> repackage found_marker found_key found_value
-      | Leaf (k', v') ->
+      | Leaf { key = k'; data = v' } ->
         let c = compare_key k' k in
         if match dir with
            | `Greater_or_equal_to -> c >= 0
@@ -1696,7 +1768,7 @@ module Tree0 = struct
            | `Less_than -> c < 0
         then Some (k', v')
         else repackage found_marker found_key found_value
-      | Node (l, k', v', r, _) ->
+      | Node { left = l; key = k'; data = v'; right = r; height = _ } ->
         let c = compare_key k' k in
         if c = 0
         then (
@@ -1729,8 +1801,8 @@ module Tree0 = struct
   let rec rank t k ~compare_key =
     match t with
     | Empty -> None
-    | Leaf (k', _) -> if compare_key k' k = 0 then Some 0 else None
-    | Node (l, k', _, r, _) ->
+    | Leaf { key = k'; data = _ } -> if compare_key k' k = 0 then Some 0 else None
+    | Node { left = l; key = k'; data = _; right = r; height = _ } ->
       let c = compare_key k' k in
       if c = 0
       then Some (length l)
@@ -1743,13 +1815,13 @@ module Tree0 = struct
      allocates only 2 words and doesn't require write-barrier *)
   let rec nth' num_to_search = function
     | Empty -> None
-    | Leaf (k, v) ->
+    | Leaf { key = k; data = v } ->
       if !num_to_search = 0
       then Some (k, v)
       else (
         decr num_to_search;
         None)
-    | Node (l, k, v, r, _) ->
+    | Node { left = l; key = k; data = v; right = r; height = _ } ->
       (match nth' num_to_search l with
        | Some _ as some -> some
        | None ->
@@ -1765,8 +1837,8 @@ module Tree0 = struct
   let rec find_first_satisfying t ~f =
     match t with
     | Empty -> None
-    | Leaf (k, v) -> if f ~key:k ~data:v then Some (k, v) else None
-    | Node (l, k, v, r, _) ->
+    | Leaf { key = k; data = v } -> if f ~key:k ~data:v then Some (k, v) else None
+    | Node { left = l; key = k; data = v; right = r; height = _ } ->
       if f ~key:k ~data:v
       then (
         match find_first_satisfying l ~f with
@@ -1778,8 +1850,8 @@ module Tree0 = struct
   let rec find_last_satisfying t ~f =
     match t with
     | Empty -> None
-    | Leaf (k, v) -> if f ~key:k ~data:v then Some (k, v) else None
-    | Node (l, k, v, r, _) ->
+    | Leaf { key = k; data = v } -> if f ~key:k ~data:v then Some (k, v) else None
+    | Node { left = l; key = k; data = v; right = r; height = _ } ->
       if f ~key:k ~data:v
       then (
         match find_last_satisfying r ~f with
@@ -1983,12 +2055,14 @@ module Tree0 = struct
     let rec mapi t ~f =
       match t with
       | Empty -> A.return Empty
-      | Leaf (v, d) -> A.map (f ~key:v ~data:d) ~f:(fun new_data -> Leaf (v, new_data))
-      | Node (l, v, d, r, h) ->
+      | Leaf { key = v; data = d } ->
+        A.map (f ~key:v ~data:d) ~f:(fun new_data -> Leaf { key = v; data = new_data })
+      | Node { left = l; key = v; data = d; right = r; height = h } ->
         let l' = A.of_thunk (fun () -> mapi ~f l) in
         let d' = f ~key:v ~data:d in
         let r' = A.of_thunk (fun () -> mapi ~f r) in
-        A.map3 l' d' r' ~f:(fun l' d' r' -> Node (l', v, d', r', h))
+        A.map3 l' d' r' ~f:(fun l' d' r' ->
+          Node { left = l'; key = v; data = d'; right = r'; height = h })
     ;;
 
     (* In theory the computation of length on-the-fly is not necessary here because it can
@@ -1999,11 +2073,11 @@ module Tree0 = struct
       let rec tree_filter_mapi t ~f =
         match t with
         | Empty -> A.return (with_length_global Empty 0)
-        | Leaf (v, d) ->
+        | Leaf { key = v; data = d } ->
           A.map (f ~key:v ~data:d) ~f:(function
-            | Some new_data -> with_length_global (Leaf (v, new_data)) 1
+            | Some new_data -> with_length_global (Leaf { key = v; data = new_data }) 1
             | None -> with_length_global Empty 0)
-        | Node (l, v, d, r, _) ->
+        | Node { left = l; key = v; data = d; right = r; height = _ } ->
           A.map3
             (A.of_thunk (fun () -> tree_filter_mapi l ~f))
             (f ~key:v ~data:d)
@@ -3013,24 +3087,9 @@ end
 
 include Accessors
 
-type ('k, 'cmp) comparator =
-  (module Comparator.S with type t = 'k and type comparator_witness = 'cmp)
-
-let comparator_s (type k cmp) t : (k, cmp) comparator =
-  (module struct
-    type t = k
-    type comparator_witness = cmp
-
-    let comparator = t.comparator
-  end)
-;;
-
-let to_comparator (type k cmp) ((module M) : (k, cmp) comparator) = M.comparator
-
-let of_tree (type k cmp) ((module M) : (k, cmp) comparator) tree =
-  of_tree ~comparator:M.comparator tree
-;;
-
+let comparator_s t = Comparator.to_module t.comparator
+let to_comparator = Comparator.of_module
+let of_tree m tree = of_tree ~comparator:(to_comparator m) tree
 let empty m = Using_comparator.empty ~comparator:(to_comparator m)
 let singleton m a = Using_comparator.singleton ~comparator:(to_comparator m) a
 let of_alist m a = Using_comparator.of_alist ~comparator:(to_comparator m) a

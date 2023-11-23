@@ -1152,6 +1152,14 @@ let of_char_list l =
 
 let of_list = of_char_list
 let of_array a = init (Array.length a) ~f:(Array.get a)
+
+let to_sequence t =
+  let len = length t in
+  Sequence.unfold_step ~init:0 ~f:(fun pos ->
+    if pos >= len then Done else Yield { value = unsafe_get t pos; state = pos + 1 })
+;;
+
+let of_sequence s = of_list (Sequence.to_list s)
 let append = ( ^ )
 
 let pad_right ?(char = ' ') s ~len =

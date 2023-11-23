@@ -99,6 +99,31 @@ let%expect_test "to_list and to_list_rev" =
   [%expect {| (b l a d d e r w r a c k) |}]
 ;;
 
+let%expect_test "[of_sequence] and [to_sequence]" =
+  let test t =
+    let seq = to_sequence t in
+    print_s [%sexp (seq : char Sequence.t)];
+    require_equal [%here] (module String) (of_sequence seq) t;
+    require_equal
+      [%here]
+      (module struct
+        type t = char Sequence.t [@@deriving equal, sexp_of]
+      end)
+      seq
+      (Sequence.of_list (to_list t))
+  in
+  test "";
+  [%expect {| () |}];
+  test "a";
+  [%expect {| (a) |}];
+  test "ab";
+  [%expect {| (a b) |}];
+  test "abc";
+  [%expect {| (a b c) |}];
+  test "lorem ipsum dolor sit amet";
+  [%expect {| (l o r e m " " i p s u m " " d o l o r " " s i t " " a m e t) |}]
+;;
+
 let%expect_test "sub/unsafe_sub" =
   let test ~pos ~len =
     let string = "0123456789" in

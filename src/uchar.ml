@@ -76,17 +76,6 @@ let to_char_exn c =
   else failwithf "Uchar.to_char_exn got a non latin-1 character: U+%04X" (to_int c) ()
 ;;
 
-let utf8_byte_length uchar =
-  let codepoint = to_scalar uchar in
-  if Int.( < ) codepoint 0x80
-  then 1
-  else if Int.( < ) codepoint 0x800
-  then 2
-  else if Int.( < ) codepoint 0x10000
-  then 3
-  else 4
-;;
-
 (* Include type-specific [Replace_polymorphic_compare] at the end, after
    including functor application that could shadow its definitions. This is
    here so that efficient versions of the comparison functions are exported by

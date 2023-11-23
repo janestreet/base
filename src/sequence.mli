@@ -127,11 +127,6 @@ val filter : 'a t -> f:('a -> bool) -> 'a t
     contain duplicates. *)
 val merge_deduped_and_sorted : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
 
-val merge : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
-  [@@deprecated
-    "[since 2021-07] For identical behavior, use [Sequence.merge_deduped_and_sorted], \
-     but consider using [Sequence.merge_sorted] instead."]
-
 (** If [t1] and [t2] are each sorted, [merge_sorted t1 t2 ~compare] merges [t1] and [t2]
     into a sorted sequence. Whenever identical elements are found in both [t1] and [t2],
     the one from [t1] is used first. The behavior is undefined if the inputs aren't

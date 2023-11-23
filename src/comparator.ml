@@ -31,6 +31,17 @@ module Module = struct
   type ('a, 'b) t = (module S with type t = 'a and type comparator_witness = 'b)
 end
 
+let of_module (type a b) ((module M) : (a, b) Module.t) = M.comparator
+
+let to_module (type a b) t : (a, b) Module.t =
+  (module struct
+    type t = a
+    type comparator_witness = b
+
+    let comparator = t
+  end)
+;;
+
 let make (type t) ~compare ~sexp_of_t =
   (module struct
     type comparable_t = t

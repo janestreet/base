@@ -144,13 +144,6 @@ let to_list t =
   | Some x -> [ x ]
 ;;
 
-let min_elt t ~compare:_ = t
-let max_elt t ~compare:_ = t
-
-let sum (type a) (module M : Container.Summable with type t = a) t ~f =
-  value_map t ~default:M.zero ~f
-;;
-
 let for_all t ~f =
   match t with
   | None -> true
@@ -175,18 +168,10 @@ let length t =
   | Some _ -> 1
 ;;
 
-let is_empty = is_none
-
 let fold t ~init ~f =
   match t with
   | None -> init
   | Some x -> f init x
-;;
-
-let count t ~f =
-  match t with
-  | None -> 0
-  | Some a -> if f a then 1 else 0
 ;;
 
 let find t ~f =
@@ -284,6 +269,3 @@ module Applicative_arg = struct
 end
 
 include Applicative.Make_using_map2_local (Applicative_arg)
-
-let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
-let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish

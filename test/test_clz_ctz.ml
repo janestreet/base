@@ -55,7 +55,6 @@ include Make (struct
        {v
         [%test_result: int] ~expect:(num_bits) (ctz 0)
        v}
-
     *)
 end)
 

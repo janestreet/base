@@ -318,6 +318,3 @@ let combine_errors l =
 ;;
 
 let combine_errors_unit l = map (combine_errors l) ~f:(fun (_ : unit list) -> ())
-
-(* deprecated binding for export only *)
-let ok_fst = to_either

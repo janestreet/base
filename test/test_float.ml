@@ -264,7 +264,6 @@ let%test_module _ =
 
          # let x = incr 0.95 in sprintf "%.0f / %.1f / %.2f / %.3f / %.20f" x x x x x ;;
          - : string = "1 / 1.0 / 0.95 / 0.950 / 0.95000000000000006661"
-
       *)
       let f =
         if f >= 1000.

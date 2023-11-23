@@ -122,6 +122,12 @@ val rindex_exn : t -> char -> int
 val rindex_from : t -> int -> char -> int option
 val rindex_from_exn : t -> int -> char -> int
 
+(** Produce a sequence of the characters in a string. *)
+val to_sequence : t -> char Sequence.t
+
+(** Read the characters in a full sequence and produce a string. *)
+val of_sequence : char Sequence.t -> t
+
 (** Substring search and replace functions.  They use the Knuth-Morris-Pratt algorithm
     (KMP) under the hood.
 

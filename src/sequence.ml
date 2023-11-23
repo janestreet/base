@@ -719,14 +719,6 @@ let merge_deduped_and_sorted s1 s2 ~compare =
     | Left x | Right x | Both (x, _) -> x)
 ;;
 
-let (merge [@deprecated
-             "[since 2021-07] For identical behavior, use \
-              [Sequence.merge_deduped_and_sorted], but consider using \
-              [Sequence.merge_sorted] instead."])
-  =
-  merge_deduped_and_sorted
-;;
-
 let merge_sorted
   (Sequence { state = s1; next = next1 })
   (Sequence { state = s2; next = next2 })

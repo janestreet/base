@@ -204,22 +204,24 @@ let lower_bound_for_int num_bits =
 module Intrinsics_with_weird_nan_behavior = struct
   (** Equivalent to [if x < y then x else y].
 
-      On an x86-64 machine, this compiles to [minsd xmm0, xmm1]. *)
+      On an x86-64 machine, this compiles to [minsd xmm0, xmm1].
+      On ARM, this calls a C implementation. *)
   external min
     :  (float[@unboxed])
     -> (float[@unboxed])
     -> (float[@unboxed])
-    = "caml_float_min" "caml_float_min_unboxed"
+    = "caml_sse2_float64_min_bytecode" "caml_sse2_float64_min"
     [@@noalloc] [@@builtin] [@@no_effects] [@@no_coeffects]
 
   (** Equivalent to [if x > y then x else y].
 
-      On an x86-64 machine, this compiles to [maxsd xmm0, xmm1]. *)
+      On an x86-64 machine, this compiles to [maxsd xmm0, xmm1].
+      On ARM, this calls a C implementation. *)
   external max
     :  (float[@unboxed])
     -> (float[@unboxed])
     -> (float[@unboxed])
-    = "caml_float_max" "caml_float_max_unboxed"
+    = "caml_sse2_float64_max_bytecode" "caml_sse2_float64_max"
     [@@noalloc] [@@builtin] [@@no_effects] [@@no_coeffects]
 end
 

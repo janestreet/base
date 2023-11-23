@@ -15,3 +15,7 @@ let compare = Stdlib.Uchar.compare
 let equal = Stdlib.Uchar.equal
 let min_value = Stdlib.Uchar.min
 let max_value = Stdlib.Uchar.max
+let byte_order_mark = Stdlib.Uchar.bom
+let replacement_char = Stdlib.Uchar.rep
+let utf_8_byte_length = Stdlib.Uchar.utf_8_byte_length
+let utf_16_byte_length = Stdlib.Uchar.utf_16_byte_length
