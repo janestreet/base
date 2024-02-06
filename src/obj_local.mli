@@ -9,7 +9,7 @@ external magic : (_[@local_opt]) -> (_[@local_opt]) = "%identity"
 external repr : (_[@local_opt]) -> (t[@local_opt]) = "%identity"
 external obj : (t[@local_opt]) -> (_[@local_opt]) = "%identity"
 external raw_field : (t[@local_opt]) -> int -> raw_data = "caml_obj_raw_field"
-external size : (t[@local_opt]) -> int = "%obj_size"
+val size : t -> int
 external is_int : (t[@local_opt]) -> bool = "%obj_is_int"
 
 external set_raw_field
@@ -34,4 +34,4 @@ val compare_stack_or_heap : stack_or_heap -> stack_or_heap -> int
 [@@@end]
 
 (** Checks if a value is immediate, stack-allocated, or heap-allocated. *)
-val stack_or_heap : (t[@local]) -> stack_or_heap
+val stack_or_heap : t -> stack_or_heap

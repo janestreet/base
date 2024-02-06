@@ -121,3 +121,61 @@ let%expect_test "[floor_log2]" =
   [%expect {|
     61 |}]
 ;;
+
+let%expect_test "binary" =
+  quickcheck_m
+    [%here]
+    (module struct
+      type t = int64 [@@deriving quickcheck, sexp_of]
+    end)
+    ~f:(fun int64 -> ignore (Binary.to_string (of_int64_trunc int64) : string));
+  [%expect {| |}]
+;;
+
+let test_binary i =
+  let i = of_int64_exn i in
+  Binary.to_string_hum i |> print_endline;
+  Binary.to_string i |> print_endline;
+  print_s [%sexp (i : Binary.t)]
+;;
+
+let%expect_test ("binary emulation" [@tags "js-only"]) =
+  test_binary 0b1L;
+  [%expect {|
+    0b1
+    0b1
+    0b1 |}];
+  test_binary 0b0L;
+  [%expect {|
+    0b0
+    0b0
+    0b0 |}]
+;;
+
+let%expect_test "binary" =
+  test_binary 0b01L;
+  [%expect {|
+    0b1
+    0b1
+    0b1 |}];
+  test_binary 0b100L;
+  [%expect {|
+    0b100
+    0b100
+    0b100 |}];
+  test_binary 0b101L;
+  [%expect {|
+    0b101
+    0b101
+    0b101 |}];
+  test_binary 0b10_1010_1010_1010L;
+  [%expect {|
+    0b10_1010_1010_1010
+    0b10101010101010
+    0b10101010101010 |}];
+  test_binary 0b11_1111_0000_0000L;
+  [%expect {|
+    0b11_1111_0000_0000
+    0b11111100000000
+    0b11111100000000 |}]
+;;

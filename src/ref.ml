@@ -5,33 +5,13 @@ include (
     type 'a t = 'a ref
     [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
 
-    let compare__local :
-          'a.
-          (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-          -> ('a t[@ocaml.local])
-          -> ('a t[@ocaml.local])
-          -> int
-      =
-      compare_ref__local
-    ;;
-
+    let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref__local
     let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref
-
-    let equal__local :
-          'a.
-          (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-          -> ('a t[@ocaml.local])
-          -> ('a t[@ocaml.local])
-          -> bool
-      =
-      equal_ref__local
-    ;;
-
+    let equal__local : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool = equal_ref__local
     let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool = equal_ref
 
-    let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
-      fun (type a__017_)
-        : (((a__017_[@ocaml.local]) -> a__017_) -> (a__017_ t[@ocaml.local]) -> a__017_ t) ->
+    let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
+      fun (type a__017_) : ((a__017_ -> a__017_) -> a__017_ t -> a__017_ t) ->
       globalize_ref
     ;;
 
@@ -54,7 +34,7 @@ include (
       include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
       include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 
-      val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
+      val globalize : ('a -> 'a) -> 'a t -> 'a t
 
       include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 

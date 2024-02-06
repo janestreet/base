@@ -6,12 +6,7 @@ type ('f, 's) t =
 [@@deriving_inline compare ~localize, hash, sexp, sexp_grammar]
 
 let compare__local :
-      'f 's.
-      (('f[@ocaml.local]) -> ('f[@ocaml.local]) -> int)
-      -> (('s[@ocaml.local]) -> ('s[@ocaml.local]) -> int)
-      -> (('f, 's) t[@ocaml.local])
-      -> (('f, 's) t[@ocaml.local])
-      -> int
+      'f 's. ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
   =
   fun _cmp__f _cmp__s a__007_ b__008_ ->
   if Stdlib.( == ) a__007_ b__008_

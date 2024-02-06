@@ -58,8 +58,8 @@ let invariant f s = function
 
 module Focus = struct
   type ('a, 'b) t =
-    | Focus of { value : 'a [@global] }
-    | Other of { value : 'b [@global] }
+    | Focus of { value : 'a }
+    | Other of { value : 'b }
 end
 
 module Make_focused (M : sig
@@ -67,16 +67,16 @@ module Make_focused (M : sig
 
   val return : 'a -> ('a, _) t
   val other : 'b -> (_, 'b) t
-  val focus : ('a, 'b) t -> (('a, 'b) Focus.t[@local])
+  val focus : ('a, 'b) t -> ('a, 'b) Focus.t
 
   val combine
     :  ('a, 'd) t
     -> ('b, 'd) t
-    -> f:(('a -> 'b -> 'c)[@local])
-    -> other:(('d -> 'd -> 'd)[@local])
+    -> f:('a -> 'b -> 'c)
+    -> other:('d -> 'd -> 'd)
     -> ('c, 'd) t
 
-  val bind : ('a, 'b) t -> f:(('a -> ('c, 'b) t)[@local]) -> ('c, 'b) t
+  val bind : ('a, 'b) t -> f:('a -> ('c, 'b) t) -> ('c, 'b) t
 end) =
 struct
   include M
@@ -101,7 +101,7 @@ struct
     let return = return
     let map = `Custom map
 
-    let map2 : ('a, 'x) t -> ('b, 'x) t -> f:(('a -> 'b -> 'c)[@local]) -> ('c, 'x) t =
+    let map2 : ('a, 'x) t -> ('b, 'x) t -> f:('a -> 'b -> 'c) -> ('c, 'x) t =
       fun t1 t2 ~f ->
       bind t1 ~f:(fun x -> bind t2 ~f:(fun y -> return (f x y)) [@nontail]) [@nontail]
     ;;

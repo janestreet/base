@@ -7,7 +7,7 @@ type t = bool [@@deriving_inline enumerate, globalize, sexp, sexp_grammar]
 
 include Ppx_enumerate_lib.Enumerable.S with type t := t
 
-val globalize : (t[@ocaml.local]) -> t
+val globalize : t -> t
 
 include Sexplib0.Sexpable.S with type t := t
 

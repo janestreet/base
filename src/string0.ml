@@ -16,7 +16,11 @@
    ocamldep from mistakenly causing a file to depend on [Base.String]. *)
 
 open! Import0
-module Sys = Sys0
+
+open struct
+  module Sys = Sys0
+  module Uchar = Uchar0
+end
 
 module String = struct
   external get : (string[@local_opt]) -> (int[@local_opt]) -> char = "%string_safe_get"
@@ -40,9 +44,43 @@ let lowercase = Stdlib.String.lowercase_ascii
 let make = Stdlib.String.make
 let sub = Stdlib.String.sub
 let uncapitalize = Stdlib.String.uncapitalize_ascii
-let unsafe_blit = Stdlib.String.unsafe_blit
 let uppercase = Stdlib.String.uppercase_ascii
-let split_on_char = Stdlib.String.split_on_char
+let is_valid_utf_8 = Stdlib.String.is_valid_utf_8
+let is_valid_utf_16le = Stdlib.String.is_valid_utf_16le
+let is_valid_utf_16be = Stdlib.String.is_valid_utf_16be
+let get_utf_8_uchar t ~byte_pos = Stdlib.String.get_utf_8_uchar t byte_pos
+let get_utf_16le_uchar t ~byte_pos = Stdlib.String.get_utf_16le_uchar t byte_pos
+let get_utf_16be_uchar t ~byte_pos = Stdlib.String.get_utf_16be_uchar t byte_pos
+
+open struct
+  let get_utf_32_uchar ~get_int32 t ~byte_pos =
+    let len = String.length t in
+    match byte_pos >= 0 && byte_pos < len with
+    | false -> raise (Invalid_argument "index out of bounds")
+    | true ->
+      (match len - byte_pos with
+       | (1 | 2 | 3) as bytes_read ->
+         (* Fewer than 4 bytes remain in [t], so we know the decoding is invalid. *)
+         Uchar.utf_decode_invalid bytes_read
+       | _ ->
+         let int32 = get_int32 t byte_pos in
+         (match Int_conversions.int32_is_representable_as_int int32 with
+          | false -> Uchar.utf_decode_invalid 4
+          | true ->
+            let int = Int_conversions.int32_to_int_trunc int32 in
+            (match Uchar.is_valid int with
+             | true -> Uchar.utf_decode 4 (Uchar.unsafe_of_int int)
+             | false -> Uchar.utf_decode_invalid 4)))
+  ;;
+end
+
+let get_utf_32le_uchar t ~byte_pos =
+  get_utf_32_uchar t ~byte_pos ~get_int32:Stdlib.String.get_int32_le
+;;
+
+let get_utf_32be_uchar t ~byte_pos =
+  get_utf_32_uchar t ~byte_pos ~get_int32:Stdlib.String.get_int32_be
+;;
 
 let concat ?(sep = "") l =
   match l with
@@ -52,7 +90,7 @@ let concat ?(sep = "") l =
   | l -> Stdlib.String.concat ~sep l
 ;;
 
-let iter t ~f:(f [@local]) =
+let iter t ~f =
   for i = 0 to length t - 1 do
     f (unsafe_get t i)
   done

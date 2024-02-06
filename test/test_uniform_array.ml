@@ -285,3 +285,12 @@ let%expect_test "find_mapi" =
   test (of_list [ 500; 1000; -3; 65; 66; 7000 ]);
   [%expect {| (B) |}]
 ;;
+
+let%expect_test "unsafe_to_array_inplace__promise_not_a_float" =
+  let arr = of_list [ 1; 2; 3; 4; 5 ] in
+  print_s [%sexp (arr : int t)];
+  [%expect {| (1 2 3 4 5) |}];
+  let arr = unsafe_to_array_inplace__promise_not_a_float arr in
+  print_s [%sexp (arr : int array)];
+  [%expect {| (1 2 3 4 5) |}]
+;;

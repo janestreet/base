@@ -1,3 +1,15 @@
+* Added `Utf8`, `Utf16le`, `Utf16be`, `Utf32le` and `Utf32be` submodules to `Uchar` and `String` for Unicode
+encoding support.
+
+* Change `Base.Sequence.compare` to not use exceptions internally. This was slow when
+compiling using `js_of_ocaml`.
+
+* Add a `Binary` submodule to `Int`, `Int32`, etc, which provide `to_string` and `sexp_of_t`
+with syntax matching the ocaml binary int literal syntax.
+
+* Make `String.index` and `String.index_exn` use the same function internally. Similar for
+`String.rindex` and `String.rindex_exn`.
+
 ## Release v0.16.0
 
 Changes across many modules:

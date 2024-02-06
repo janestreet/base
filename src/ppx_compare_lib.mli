@@ -2,9 +2,9 @@
     module directly. *)
 
 type 'a compare = 'a -> 'a -> int
-type 'a compare__local = ('a[@local]) -> ('a[@local]) -> int
+type 'a compare__local = 'a -> 'a -> int
 type 'a equal = 'a -> 'a -> bool
-type 'a equal__local = ('a[@local]) -> ('a[@local]) -> bool
+type 'a equal__local = 'a -> 'a -> bool
 
 (** Raise when fully applied *)
 val compare_abstract : type_name:string -> _ compare__local

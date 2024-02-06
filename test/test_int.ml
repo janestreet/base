@@ -115,6 +115,106 @@ let%test_module "Hex" =
   end)
 ;;
 
+let%expect_test "binary" =
+  quickcheck_m
+    [%here]
+    (module struct
+      type t = int [@@deriving quickcheck, sexp_of]
+    end)
+    ~f:(fun (t : t) -> ignore (Binary.to_string t : string))
+;;
+
+let test_binary i =
+  Binary.to_string_hum i |> print_endline;
+  Binary.to_string i |> print_endline;
+  print_s [%sexp (i : Binary.t)]
+;;
+
+let%expect_test "binary" =
+  test_binary 0b0;
+  [%expect {|
+    0b0
+    0b0
+    0b0 |}];
+  test_binary 0b01;
+  [%expect {|
+    0b1
+    0b1
+    0b1 |}];
+  test_binary 0b100;
+  [%expect {|
+    0b100
+    0b100
+    0b100 |}];
+  test_binary 0b101;
+  [%expect {|
+    0b101
+    0b101
+    0b101 |}];
+  test_binary 0b10_1010_1010_1010;
+  [%expect {|
+    0b10_1010_1010_1010
+    0b10101010101010
+    0b10101010101010 |}];
+  test_binary 0b11_1111_0000_0000;
+  [%expect {|
+    0b11_1111_0000_0000
+    0b11111100000000
+    0b11111100000000 |}];
+  test_binary 19;
+  [%expect {|
+    0b1_0011
+    0b10011
+    0b10011 |}];
+  test_binary 0;
+  [%expect {|
+    0b0
+    0b0
+    0b0 |}]
+;;
+
+let%expect_test ("63-bit cases" [@tags "64-bits-only"]) =
+  test_binary (-1);
+  [%expect
+    {|
+    0b111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111
+    0b111111111111111111111111111111111111111111111111111111111111111
+    0b111111111111111111111111111111111111111111111111111111111111111 |}];
+  test_binary max_value;
+  [%expect
+    {|
+    0b11_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111
+    0b11111111111111111111111111111111111111111111111111111111111111
+    0b11111111111111111111111111111111111111111111111111111111111111 |}];
+  test_binary min_value;
+  [%expect
+    {|
+    0b100_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000
+    0b100000000000000000000000000000000000000000000000000000000000000
+    0b100000000000000000000000000000000000000000000000000000000000000 |}]
+;;
+
+let%expect_test ("32-bit cases" [@tags "js-only"]) =
+  test_binary (-1);
+  [%expect
+    {|
+    0b1111_1111_1111_1111_1111_1111_1111_1111
+    0b11111111111111111111111111111111
+    0b11111111111111111111111111111111 |}];
+  test_binary max_value;
+  [%expect
+    {|
+    0b111_1111_1111_1111_1111_1111_1111_1111
+    0b1111111111111111111111111111111
+    0b1111111111111111111111111111111 |}];
+  test_binary min_value;
+  [%expect
+    {|
+    0b1000_0000_0000_0000_0000_0000_0000_0000
+    0b10000000000000000000000000000000
+    0b10000000000000000000000000000000 |}]
+;;
+
 let%test _ = neg 5 + 5 = 0
 let%test _ = pow min_value 1 = min_value
 let%test _ = pow max_value 1 = max_value

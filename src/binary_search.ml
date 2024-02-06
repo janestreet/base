@@ -75,9 +75,9 @@ let binary_search
   ?pos
   ?len
   t
-  ~length:((length : _ -> _) [@local])
-  ~get:((get : _ -> _ -> _) [@local])
-  ~compare:((compare : _ -> _ -> _) [@local])
+  ~(length : _ -> _)
+  ~(get : _ -> _ -> _)
+  ~(compare : _ -> _ -> _)
   how
   v
   =

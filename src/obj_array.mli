@@ -26,16 +26,16 @@ val copy : t -> t
 
 val singleton : Stdlib.Obj.t -> t
 val empty : t
-val length : (t[@local]) -> int
+val length : t -> int
 
 (** [get t i] and [unsafe_get t i] return the object at index [i].  [set t i o] and
     [unsafe_set t i o] set index [i] to [o].  In no case is the object copied.  The
     [unsafe_*] variants omit the bounds check of [i]. *)
 val get : t -> int -> Stdlib.Obj.t
 
-val unsafe_get : (t[@local]) -> int -> Stdlib.Obj.t
+val unsafe_get : t -> int -> Stdlib.Obj.t
 val set : t -> int -> Stdlib.Obj.t -> unit
-val unsafe_set : (t[@local]) -> int -> Stdlib.Obj.t -> unit
+val unsafe_set : t -> int -> Stdlib.Obj.t -> unit
 val swap : t -> int -> int -> unit
 
 (** [set_with_caml_modify] simply sets the value in the array with no bells and whistles,
@@ -53,9 +53,9 @@ val set_with_caml_modify : t -> int -> Stdlib.Obj.t -> unit
     int.
 
     [unsafe_set_int] is similar but does not assume anything about the target. *)
-val unsafe_set_assuming_currently_int : (t[@local]) -> int -> Stdlib.Obj.t -> unit
+val unsafe_set_assuming_currently_int : t -> int -> Stdlib.Obj.t -> unit
 
-val unsafe_set_int_assuming_currently_int : (t[@local]) -> int -> int -> unit
+val unsafe_set_int_assuming_currently_int : t -> int -> int -> unit
 val unsafe_set_int : t -> int -> int -> unit
 
 (** [unsafe_set_omit_phys_equal_check] is like [unsafe_set], except it doesn't do a
@@ -66,7 +66,7 @@ val unsafe_set_omit_phys_equal_check : t -> int -> Stdlib.Obj.t -> unit
 (** Same as [set_with_caml_modify], but without bounds checks. This is like
     [unsafe_set_omit_phys_equal_check] except it doesn't check whether the old value and
     the value being set are integers to try to skip [caml_modify]. *)
-val unsafe_set_with_caml_modify : (t[@local]) -> int -> Stdlib.Obj.t -> unit
+val unsafe_set_with_caml_modify : t -> int -> Stdlib.Obj.t -> unit
 
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
     space leaks.  It does this by setting [t.(i)] to [Stdlib.Obj.repr 0].  As a performance hack,

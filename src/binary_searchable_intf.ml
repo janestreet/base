@@ -62,7 +62,7 @@ type ('t, 'elt, 'key) binary_search =
   ?pos:int
   -> ?len:int
   -> 't
-  -> compare:(('elt -> 'key -> int)[@local])
+  -> compare:('elt -> 'key -> int)
   -> Which_target_by_key.t
   -> 'key
   -> int option
@@ -71,7 +71,7 @@ type ('t, 'elt) binary_search_segmented =
   ?pos:int
   -> ?len:int
   -> 't
-  -> segment_of:(('elt -> [ `Left | `Right ])[@local])
+  -> segment_of:('elt -> [ `Left | `Right ])
   -> Which_target_by_segment.t
   -> int option
 

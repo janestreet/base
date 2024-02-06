@@ -11,14 +11,14 @@ end) (Container : sig
 
   include Generic with type ('a, _) t := 'a t with type 'a elt := 'a Elt.t
 
-  val mem : 'a t -> 'a Elt.t -> equal:(('a Elt.t -> 'a Elt.t -> bool)[@local]) -> bool
+  val mem : 'a t -> 'a Elt.t -> equal:('a Elt.t -> 'a Elt.t -> bool) -> bool
   val of_list : 'a Elt.t list -> [ `Ok of 'a t | `Skip_test ]
 end) : sig
   type 'a t [@@deriving sexp]
 
   include Generic with type ('a, _) t := 'a t
 
-  val mem : 'a t -> 'a Elt.t -> equal:(('a Elt.t -> 'a Elt.t -> bool)[@local]) -> bool
+  val mem : 'a t -> 'a Elt.t -> equal:('a Elt.t -> 'a Elt.t -> bool) -> bool
 end
 with type 'a t := 'a Container.t
 with type 'a elt := 'a Elt.t =

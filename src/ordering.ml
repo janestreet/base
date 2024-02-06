@@ -6,7 +6,7 @@ type t =
   | Greater
 [@@deriving_inline compare ~localize, hash, enumerate, sexp, sexp_grammar]
 
-let compare__local = (Stdlib.compare : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+let compare__local = (Stdlib.compare : t -> t -> int)
 let compare = (fun a b -> compare__local a b : t -> t -> int)
 
 let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =

@@ -1,10 +1,9 @@
-type ('t, 'a, 'accum) fold =
-  't -> init:'accum -> f:(('accum -> 'a -> 'accum)[@local]) -> 'accum
+type ('t, 'a, 'accum) fold = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
 
 type ('t, 'a, 'accum) foldi =
-  't -> init:'accum -> f:((int -> 'accum -> 'a -> 'accum)[@local]) -> 'accum
+  't -> init:'accum -> f:(int -> 'accum -> 'a -> 'accum) -> 'accum
 
-type ('t, 'a) iteri = 't -> f:((int -> 'a -> unit)[@local]) -> unit
+type ('t, 'a) iteri = 't -> f:(int -> 'a -> unit) -> unit
 
 module type S0 = sig
   include Container.S0
@@ -14,11 +13,11 @@ module type S0 = sig
 
   val foldi : (t, elt, _) foldi
   val iteri : (t, elt) iteri
-  val existsi : t -> f:((int -> elt -> bool)[@local]) -> bool
-  val for_alli : t -> f:((int -> elt -> bool)[@local]) -> bool
-  val counti : t -> f:((int -> elt -> bool)[@local]) -> int
-  val findi : t -> f:((int -> elt -> bool)[@local]) -> (int * elt) option
-  val find_mapi : t -> f:((int -> elt -> 'a option)[@local]) -> 'a option
+  val existsi : t -> f:(int -> elt -> bool) -> bool
+  val for_alli : t -> f:(int -> elt -> bool) -> bool
+  val counti : t -> f:(int -> elt -> bool) -> int
+  val findi : t -> f:(int -> elt -> bool) -> (int * elt) option
+  val find_mapi : t -> f:(int -> elt -> 'a option) -> 'a option
 end
 
 module type S1 = sig
@@ -29,11 +28,11 @@ module type S1 = sig
 
   val foldi : ('a t, 'a, _) foldi
   val iteri : ('a t, 'a) iteri
-  val existsi : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
-  val for_alli : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
-  val counti : 'a t -> f:((int -> 'a -> bool)[@local]) -> int
-  val findi : 'a t -> f:((int -> 'a -> bool)[@local]) -> (int * 'a) option
-  val find_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b option
+  val existsi : 'a t -> f:(int -> 'a -> bool) -> bool
+  val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
+  val counti : 'a t -> f:(int -> 'a -> bool) -> int
+  val findi : 'a t -> f:(int -> 'a -> bool) -> (int * 'a) option
+  val find_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b option
 end
 
 module type Generic = sig
@@ -44,11 +43,11 @@ module type Generic = sig
 
   val foldi : (('a, _) t, 'a elt, _) foldi
   val iteri : (('a, _) t, 'a elt) iteri
-  val existsi : ('a, _) t -> f:((int -> 'a elt -> bool)[@local]) -> bool
-  val for_alli : ('a, _) t -> f:((int -> 'a elt -> bool)[@local]) -> bool
-  val counti : ('a, _) t -> f:((int -> 'a elt -> bool)[@local]) -> int
-  val findi : ('a, _) t -> f:((int -> 'a elt -> bool)[@local]) -> (int * 'a elt) option
-  val find_mapi : ('a, _) t -> f:((int -> 'a elt -> 'b option)[@local]) -> 'b option
+  val existsi : ('a, _) t -> f:(int -> 'a elt -> bool) -> bool
+  val for_alli : ('a, _) t -> f:(int -> 'a elt -> bool) -> bool
+  val counti : ('a, _) t -> f:(int -> 'a elt -> bool) -> int
+  val findi : ('a, _) t -> f:(int -> 'a elt -> bool) -> (int * 'a elt) option
+  val find_mapi : ('a, _) t -> f:(int -> 'a elt -> 'b option) -> 'b option
 end
 
 module type S0_with_creators = sig
@@ -57,21 +56,21 @@ module type S0_with_creators = sig
 
   (** [init n ~f] is equivalent to [of_list [f 0; f 1; ...; f (n-1)]]. It raises an
       exception if [n < 0]. *)
-  val init : int -> f:((int -> elt)[@local]) -> t
+  val init : int -> f:(int -> elt) -> t
 
   (** [mapi] is like map. Additionally, it passes in the index of each element as the
       first argument to the mapped function. *)
-  val mapi : t -> f:((int -> elt -> elt)[@local]) -> t
+  val mapi : t -> f:(int -> elt -> elt) -> t
 
-  val filteri : t -> f:((int -> elt -> bool)[@local]) -> t
+  val filteri : t -> f:(int -> elt -> bool) -> t
 
   (** filter_mapi is like [filter_map]. Additionally, it passes in the index of each
       element as the first argument to the mapped function. *)
-  val filter_mapi : t -> f:((int -> elt -> elt option)[@local]) -> t
+  val filter_mapi : t -> f:(int -> elt -> elt option) -> t
 
   (** [concat_mapi t ~f] is like concat_map. Additionally, it passes the index as an
       argument. *)
-  val concat_mapi : t -> f:((int -> elt -> t)[@local]) -> t
+  val concat_mapi : t -> f:(int -> elt -> t) -> t
 end
 
 module type S1_with_creators = sig
@@ -80,37 +79,32 @@ module type S1_with_creators = sig
 
   (** [init n ~f] is equivalent to [of_list [f 0; f 1; ...; f (n-1)]]. It raises an
       exception if [n < 0]. *)
-  val init : int -> f:((int -> 'a)[@local]) -> 'a t
+  val init : int -> f:(int -> 'a) -> 'a t
 
   (** [mapi] is like map. Additionally, it passes in the index of each element as the
       first argument to the mapped function. *)
-  val mapi : 'a t -> f:((int -> 'a -> 'b)[@local]) -> 'b t
+  val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 
-  val filteri : 'a t -> f:((int -> 'a -> bool)[@local]) -> 'a t
+  val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 
   (** filter_mapi is like [filter_map]. Additionally, it passes in the index of each
       element as the first argument to the mapped function. *)
-  val filter_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b t
+  val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
 
   (** [concat_mapi t ~f] is like concat_map. Additionally, it passes the index as an
       argument. *)
-  val concat_mapi : 'a t -> f:((int -> 'a -> 'b t)[@local]) -> 'b t
+  val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
 end
 
 module type Generic_with_creators = sig
   include Container.Generic_with_creators
   include Generic with type 'a elt := 'a elt and type ('a, 'phantom) t := ('a, 'phantom) t
 
-  val init : int -> f:((int -> 'a elt)[@local]) -> ('a, _) t
-  val mapi : ('a, 'p) t -> f:((int -> 'a elt -> 'b elt)[@local]) -> ('b, 'p) t
-  val filteri : ('a, 'p) t -> f:((int -> 'a elt -> bool)[@local]) -> ('a, 'p) t
-
-  val filter_mapi
-    :  ('a, 'p) t
-    -> f:((int -> 'a elt -> 'b elt option)[@local])
-    -> ('b, 'p) t
-
-  val concat_mapi : ('a, 'p) t -> f:((int -> 'a elt -> ('b, 'p) t)[@local]) -> ('b, 'p) t
+  val init : int -> f:(int -> 'a elt) -> ('a, _) t
+  val mapi : ('a, 'p) t -> f:(int -> 'a elt -> 'b elt) -> ('b, 'p) t
+  val filteri : ('a, 'p) t -> f:(int -> 'a elt -> bool) -> ('a, 'p) t
+  val filter_mapi : ('a, 'p) t -> f:(int -> 'a elt -> 'b elt option) -> ('b, 'p) t
+  val concat_mapi : ('a, 'p) t -> f:(int -> 'a elt -> ('b, 'p) t) -> ('b, 'p) t
 end
 
 module type Make_gen_arg = sig
@@ -134,14 +128,11 @@ module type Make_common_with_creators_arg = sig
   include Container_intf.Make_common_with_creators_arg
   include Make_gen_arg with type ('a, 'p) t := ('a, 'p) t and type 'a elt := 'a elt
 
-  val init
-    : [ `Define_using_of_array
-      | `Custom of int -> f:((int -> 'a elt)[@local]) -> ('a, _) t
-      ]
+  val init : [ `Define_using_of_array | `Custom of int -> f:(int -> 'a elt) -> ('a, _) t ]
 
   val concat_mapi
     : [ `Define_using_concat
-      | `Custom of ('a, _) t -> f:((int -> 'a elt -> ('b, _) t)[@local]) -> ('b, _) t
+      | `Custom of ('a, _) t -> f:(int -> 'a elt -> ('b, _) t) -> ('b, _) t
       ]
 end
 
@@ -185,24 +176,14 @@ module type Derived = sig
 
   (** Generic definitions of indexed container operations in terms of [foldi]. *)
 
-  val counti : foldi:('t, 'a, int) foldi -> 't -> f:((int -> 'a -> bool)[@local]) -> int
+  val counti : foldi:('t, 'a, int) foldi -> 't -> f:(int -> 'a -> bool) -> int
 
   (** Generic definitions of indexed container operations in terms of [iteri]. *)
 
-  val existsi : iteri:('t, 'a) iteri -> 't -> f:((int -> 'a -> bool)[@local]) -> bool
-  val for_alli : iteri:('t, 'a) iteri -> 't -> f:((int -> 'a -> bool)[@local]) -> bool
-
-  val findi
-    :  iteri:('t, 'a) iteri
-    -> 't
-    -> f:((int -> 'a -> bool)[@local])
-    -> (int * 'a) option
-
-  val find_mapi
-    :  iteri:('t, 'a) iteri
-    -> 't
-    -> f:((int -> 'a -> 'b option)[@local])
-    -> 'b option
+  val existsi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> bool
+  val for_alli : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> bool
+  val findi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> (int * 'a) option
+  val find_mapi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> 'b option) -> 'b option
 end
 
 module type Indexed_container = sig

@@ -16,7 +16,7 @@ module T = struct
     fun x -> func x
   ;;
 
-  let (globalize : (t[@ocaml.local]) -> t) = (globalize_float : (t[@ocaml.local]) -> t)
+  let (globalize : t -> t) = (globalize_float : t -> t)
   let t_of_sexp = (float_of_sexp : Sexplib0.Sexp.t -> t)
   let sexp_of_t = (sexp_of_float : t -> Sexplib0.Sexp.t)
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = float_sexp_grammar
@@ -538,7 +538,7 @@ module Class = struct
     | Zero
   [@@deriving_inline compare ~localize, enumerate, sexp, sexp_grammar]
 
-  let compare__local = (Stdlib.compare : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+  let compare__local = (Stdlib.compare : t -> t -> int)
   let compare = (fun a b -> compare__local a b : t -> t -> int)
   let all = ([ Infinite; Nan; Normal; Subnormal; Zero ] : t list)
 
@@ -612,9 +612,9 @@ let classify t =
 
 let insert_underscores ?(delimiter = '_') ?(strip_zero = false) string =
   match String.lsplit2 string ~on:'.' with
-  | None -> Int_conversions.insert_delimiter string ~delimiter
+  | None -> Int_string_conversions.insert_delimiter string ~delimiter
   | Some (left, right) ->
-    let left = Int_conversions.insert_delimiter left ~delimiter in
+    let left = Int_string_conversions.insert_delimiter left ~delimiter in
     let right =
       if strip_zero then String.rstrip right ~drop:(fun c -> Char.( = ) c '0') else right
     in

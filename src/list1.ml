@@ -6,7 +6,7 @@ let is_empty = function
   | _ -> false
 ;;
 
-let partition_map t ~f:(f [@local]) =
+let partition_map t ~f =
   let rec loop t fst snd =
     match t with
     | [] -> rev fst, rev snd

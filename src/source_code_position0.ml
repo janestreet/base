@@ -25,7 +25,7 @@ module T = struct
                | n -> n)
             | n -> n)
          | n -> n)
-      : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+      : t -> t -> int)
   ;;
 
   let compare = (fun a b -> compare__local a b : t -> t -> int)

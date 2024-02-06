@@ -954,21 +954,15 @@ let%test_unit _ =
 ;;
 
 let%test_unit _ =
-  [%test_result: int]
-    (length
-       (find_all_dups
-          [ 0, 1; 2, 2; 0, 2; 4, 1 ]
-          ~compare:(fun (_, a) (_, b) -> Int.compare a b)))
-    ~expect:2
+  [%test_result: (int * int) list]
+    (find_all_dups [ 0, 1; 2, 2; 0, 2; 4, 1 ] ~compare:[%compare: _ * int])
+    ~expect:[ 4, 1; 0, 2 ]
 ;;
 
 let%test_unit _ =
-  [%test_result: int]
-    (length
-       (find_all_dups
-          [ 0, 1; 2, 2; 0, 2; 4, 1 ]
-          ~compare:(fun (a, _) (b, _) -> Int.compare a b)))
-    ~expect:1
+  [%test_result: (int * int) list]
+    (find_all_dups [ 0, 1; 2, 2; 0, 2; 4, 1 ] ~compare:[%compare: int * _])
+    ~expect:[ 0, 2 ]
 ;;
 
 let%test_unit _ =
@@ -1539,4 +1533,276 @@ let%expect_test "[take], [drop], and [split]" =
     done
   done;
   [%expect {| |}]
+;;
+
+let print_s sexp =
+  Ref.set_temporarily sexp_style Sexp_style.simple_pretty ~f:(fun () -> print_s sexp)
+;;
+
+let%expect_test "[cartesian_product]" =
+  let test xs ys = print_s [%sexp (cartesian_product xs ys : (int * int) list)] in
+  test [] [];
+  [%expect {| () |}];
+  test [ 1; 2; 3 ] [];
+  [%expect {| () |}];
+  test [] [ 1; 2; 3 ];
+  [%expect {| () |}];
+  test [ 1 ] [ 2; 3; 4 ];
+  [%expect {| ((1 2) (1 3) (1 4)) |}];
+  test [ 1; 2; 3 ] [ 4 ];
+  [%expect {| ((1 4) (2 4) (3 4)) |}];
+  test [ 1; 2 ] [ 3; 4; 5 ];
+  [%expect {| ((1 3) (1 4) (1 5) (2 3) (2 4) (2 5)) |}];
+  test [ 1; 2; 3 ] [ 4; 5 ];
+  [%expect {| ((1 4) (1 5) (2 4) (2 5) (3 4) (3 5)) |}];
+  test [ 1; 2; 3 ] [ 4; 5; 6 ];
+  [%expect {| ((1 4) (1 5) (1 6) (2 4) (2 5) (2 6) (3 4) (3 5) (3 6)) |}]
+;;
+
+let%expect_test "[concat_map]" =
+  let test list =
+    List.concat_map list ~f:(fun n -> List.init n ~f:Int.succ)
+    |> [%sexp_of: int list]
+    |> print_s
+  in
+  test [];
+  [%expect {| () |}];
+  test [ 1 ];
+  [%expect {| (1) |}];
+  test [ 1; 2 ];
+  [%expect {| (1 1 2) |}];
+  test [ 1; 2; 3 ];
+  [%expect {| (1 1 2 1 2 3) |}];
+  test [ 1; 2; 3; 4 ];
+  [%expect {| (1 1 2 1 2 3 1 2 3 4) |}];
+  test [ 4; 5; 6 ];
+  [%expect {| (1 2 3 4 1 2 3 4 5 1 2 3 4 5 6) |}]
+;;
+
+let%expect_test "[concat_mapi]" =
+  let test list =
+    List.concat_mapi list ~f:(fun i n -> List.init n ~f:(( + ) i))
+    |> [%sexp_of: int list]
+    |> print_s
+  in
+  test [];
+  [%expect {| () |}];
+  test [ 1 ];
+  [%expect {| (0) |}];
+  test [ 1; 2 ];
+  [%expect {| (0 1 2) |}];
+  test [ 1; 2; 3 ];
+  [%expect {| (0 1 2 2 3 4) |}];
+  test [ 1; 2; 3; 4 ];
+  [%expect {| (0 1 2 2 3 4 3 4 5 6) |}];
+  test [ 4; 5; 6 ];
+  [%expect {| (0 1 2 3 1 2 3 4 5 2 3 4 5 6 7) |}]
+;;
+
+let%expect_test "[filter]" =
+  let test list =
+    List.filter list ~f:(fun n -> n % 3 > 0) |> [%sexp_of: int list] |> print_s
+  in
+  test [];
+  [%expect {| () |}];
+  test [ 1 ];
+  [%expect {| (1) |}];
+  test [ 1; 2 ];
+  [%expect {| (1 2) |}];
+  test [ 1; 2; 3 ];
+  [%expect {| (1 2) |}];
+  test [ 1; 2; 3; 4 ];
+  [%expect {| (1 2 4) |}];
+  test [ 4; 5; 6 ];
+  [%expect {| (4 5) |}]
+;;
+
+let%expect_test "[filteri]" =
+  let test list =
+    List.filteri list ~f:(fun i n -> n > i) |> [%sexp_of: int list] |> print_s
+  in
+  test [];
+  [%expect {| () |}];
+  test [ 0 ];
+  [%expect {| () |}];
+  test [ 0; 1 ];
+  [%expect {| () |}];
+  test [ 0; 1; 2 ];
+  [%expect {| () |}];
+  test [ 1 ];
+  [%expect {| (1) |}];
+  test [ 1; 2 ];
+  [%expect {| (1 2) |}];
+  test [ 1; 2; 3 ];
+  [%expect {| (1 2 3) |}];
+  test [ 1; 0 ];
+  [%expect {| (1) |}];
+  test [ 2; 1; 0 ];
+  [%expect {| (2) |}];
+  test [ 3; 2; 1; 0 ];
+  [%expect {| (3 2) |}]
+;;
+
+let%expect_test "[map2]" =
+  let test xs ys =
+    map2 xs ys ~f:(fun x y -> x, y)
+    |> [%sexp_of: (int * int) list Or_unequal_lengths.t]
+    |> print_s
+  in
+  test [] [];
+  [%expect {| (Ok ()) |}];
+  test [ 1 ] [ 2 ];
+  [%expect {| (Ok ((1 2))) |}];
+  test [ 1; 2 ] [ 3; 4 ];
+  [%expect {| (Ok ((1 3) (2 4))) |}];
+  test [ 1; 2; 3 ] [ 4; 5; 6 ];
+  [%expect {| (Ok ((1 4) (2 5) (3 6))) |}];
+  test [] [ 1 ];
+  [%expect {| Unequal_lengths |}];
+  test [ 1 ] [];
+  [%expect {| Unequal_lengths |}];
+  test [ 1 ] [ 2; 3; 4 ];
+  [%expect {| Unequal_lengths |}];
+  test [ 1; 2; 3 ] [ 4 ];
+  [%expect {| Unequal_lengths |}]
+;;
+
+let%expect_test "[map3]" =
+  let test xs ys zs =
+    map3 xs ys zs ~f:(fun x y z -> x, y, z)
+    |> [%sexp_of: (int * int * int) list Or_unequal_lengths.t]
+    |> print_s
+  in
+  test [] [] [];
+  [%expect {| (Ok ()) |}];
+  test [ 1 ] [ 2 ] [ 3 ];
+  [%expect {| (Ok ((1 2 3))) |}];
+  test [ 1; 2 ] [ 3; 4 ] [ 5; 6 ];
+  [%expect {| (Ok ((1 3 5) (2 4 6))) |}];
+  test [ 1; 2; 3 ] [ 4; 5; 6 ] [ 7; 8; 9 ];
+  [%expect {| (Ok ((1 4 7) (2 5 8) (3 6 9))) |}];
+  test [] [] [ 1 ];
+  [%expect {| Unequal_lengths |}];
+  test [] [ 1 ] [];
+  [%expect {| Unequal_lengths |}];
+  test [] [] [ 1 ];
+  [%expect {| Unequal_lengths |}];
+  test [ 1 ] [ 2 ] [ 3; 4; 5 ];
+  [%expect {| Unequal_lengths |}];
+  test [ 1 ] [ 2; 3; 4 ] [ 5 ];
+  [%expect {| Unequal_lengths |}];
+  test [ 1; 2; 3 ] [ 4 ] [ 5 ];
+  [%expect {| Unequal_lengths |}]
+;;
+
+let%expect_test "[merge]" =
+  let module Int_list = struct
+    type t = int list [@@deriving equal, sexp_of]
+  end
+  in
+  let test_int xs ys =
+    let list1 = merge xs ys ~compare:Int.compare in
+    print_s [%sexp (list1 : int list)];
+    let list2 = merge ys xs ~compare:Int.compare in
+    require_equal [%here] (module Int_list) list1 list2
+  in
+  test_int [] [];
+  [%expect {| () |}];
+  test_int [] [ 1; 2; 3 ];
+  [%expect {| (1 2 3) |}];
+  test_int [ 1; 2 ] [ 3; 4; 5 ];
+  [%expect {| (1 2 3 4 5) |}];
+  test_int [ 1; 3 ] [ 2; 4; 5 ];
+  [%expect {| (1 2 3 4 5) |}];
+  test_int [ 1; 4 ] [ 2; 3; 5 ];
+  [%expect {| (1 2 3 4 5) |}];
+  test_int [ 1; 5 ] [ 2; 3; 4 ];
+  [%expect {| (1 2 3 4 5) |}];
+  test_int [ 1; 3; 5 ] [ 2; 4 ];
+  [%expect {| (1 2 3 4 5) |}];
+  test_int [ 1; 3; 4 ] [ 1; 2 ];
+  [%expect {| (1 1 2 3 4) |}];
+  let test_pair xs ys =
+    let list1 = merge xs ys ~compare:[%compare: int * _] in
+    print_s [%sexp (list1 : (int * string) list)];
+    let list2 = merge ys xs ~compare:[%compare: int * _] in
+    print_s [%sexp (list2 : (int * string) list)]
+  in
+  test_pair [] [];
+  [%expect {|
+    ()
+    () |}];
+  test_pair [] [ 1, "a"; 2, "b"; 3, "c" ];
+  [%expect {|
+    ((1 a) (2 b) (3 c))
+    ((1 a) (2 b) (3 c)) |}];
+  test_pair [ 1, "z"; 2, "y" ] [ 3, "x"; 4, "w"; 5, "v" ];
+  [%expect {|
+    ((1 z) (2 y) (3 x) (4 w) (5 v))
+    ((1 z) (2 y) (3 x) (4 w) (5 v)) |}];
+  test_pair [ 1, "a"; 2, "b" ] [];
+  [%expect {|
+    ((1 a) (2 b))
+    ((1 a) (2 b)) |}];
+  test_pair [ 1, "a"; 3, "b" ] [ 1, "b"; 2, "a" ];
+  [%expect {|
+    ((1 a) (1 b) (2 a) (3 b))
+    ((1 b) (1 a) (2 a) (3 b)) |}];
+  test_pair [ 0, "!"; 1, "b"; 2, "a" ] [ 1, "a"; 2, "b" ];
+  [%expect {|
+    ((0 !) (1 b) (1 a) (2 a) (2 b))
+    ((0 !) (1 a) (1 b) (2 b) (2 a)) |}]
+;;
+
+let%expect_test "[sub]" =
+  let test pos len list =
+    match sub list ~pos ~len with
+    | list -> print_s [%sexp (list : int list)]
+    | exception exn -> print_s [%sexp "raised", (exn : exn)]
+  in
+  test 0 0 [];
+  [%expect {| () |}];
+  test 1 0 [];
+  [%expect {| (raised (Invalid_argument List.sub)) |}];
+  test 0 1 [];
+  [%expect {| (raised (Invalid_argument List.sub)) |}];
+  let list = [ 1; 2; 3; 4 ] in
+  test 0 0 list;
+  [%expect {| () |}];
+  test 0 4 list;
+  [%expect {| (1 2 3 4) |}];
+  test 0 1 list;
+  [%expect {| (1) |}];
+  test 1 1 list;
+  [%expect {| (2) |}];
+  test 2 1 list;
+  [%expect {| (3) |}];
+  test 3 1 list;
+  [%expect {| (4) |}];
+  test 4 1 list;
+  [%expect {| (raised (Invalid_argument List.sub)) |}];
+  test 0 2 list;
+  [%expect {| (1 2) |}];
+  test 1 2 list;
+  [%expect {| (2 3) |}];
+  test 2 2 list;
+  [%expect {| (3 4) |}];
+  test 3 2 list;
+  [%expect {| (raised (Invalid_argument List.sub)) |}];
+  test 0 3 list;
+  [%expect {| (1 2 3) |}];
+  test 1 3 list;
+  [%expect {| (2 3 4) |}];
+  test 2 3 list;
+  [%expect {| (raised (Invalid_argument List.sub)) |}];
+  test 0 4 list;
+  [%expect {| (1 2 3 4) |}];
+  test 1 4 list;
+  [%expect {| (raised (Invalid_argument List.sub)) |}];
+  test 0 5 list;
+  [%expect {| (raised (Invalid_argument List.sub)) |}];
+  test (-1) 0 list;
+  [%expect {| (raised (Invalid_argument List.sub)) |}];
+  test 1 (-1) list;
+  [%expect {| (raised (Invalid_argument List.sub)) |}]
 ;;

@@ -175,20 +175,20 @@ function caml_make_local_vect(v_len, v_elt) {
 
 //Provides: caml_sse2_float64_min_bytecode
 function caml_sse2_float64_min_bytecode(x, y) {
-    return x < y ? x : y;
+  return x < y ? x : y;
 }
 
 //Provides: caml_sse2_float64_max_bytecode
 function caml_sse2_float64_max_bytecode(x, y) {
-    return x > y ? x : y;
+  return x > y ? x : y;
 }
 
-//Provides: caml_get_header0
-function caml_get_header0(x) {
+//Provides: caml_dummy_obj_is_stack
+function caml_dummy_obj_is_stack(x) {
   throw new Error(`BUG: this function should be unreachable; please report to compiler or base devs.`);
 }
 
-//Provides: caml_get_header
-function caml_get_header(x) {
+//Provides: caml_dummy_obj_is_stack
+function caml_dummy_obj_is_stack(x) {
   throw new Error(`BUG: this function should be unreachable; please report to compiler or base devs.`);
 }

@@ -5,7 +5,7 @@ open! Import
 
 type t [@@deriving_inline globalize]
 
-val globalize : (t[@ocaml.local]) -> t
+val globalize : t -> t
 
 [@@@end]
 

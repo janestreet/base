@@ -475,13 +475,7 @@ let%test_module _ =
                      val create : unit -> 'a t
                      val enqueue : 'a t -> 'a -> unit
                      val dequeue : 'a t -> 'a option
-
-                     val drain
-                       :  'a t
-                       -> f:(('a -> unit)[@local])
-                       -> while_:(('a -> bool)[@local])
-                       -> unit
-
+                     val drain : 'a t -> f:('a -> unit) -> while_:('a -> bool) -> unit
                      val to_array : 'a t -> 'a array
                      val fold : 'a t -> init:'b -> f:('b -> 'a -> 'b) -> 'b
                      val foldi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b) -> 'b

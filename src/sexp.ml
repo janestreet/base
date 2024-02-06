@@ -20,17 +20,17 @@ let rec compare__local =
        | _, Atom _ -> 1
        | List _a__005_, List _b__006_ ->
          compare_list__local compare__local _a__005_ _b__006_)
-    : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+    : t -> t -> int)
 ;;
 
 let compare = (fun a b -> compare__local a b : t -> t -> int)
 
-let rec (globalize : (t[@ocaml.local]) -> t) =
+let rec (globalize : t -> t) =
   (fun x__009_ ->
      match x__009_ with
      | Atom arg__010_ -> Atom (globalize_string arg__010_)
      | List arg__011_ -> List (globalize_list globalize arg__011_)
-    : (t[@ocaml.local]) -> t)
+    : t -> t)
 ;;
 
 let rec (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =

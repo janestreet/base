@@ -156,6 +156,226 @@ let%expect_test "sub/unsafe_sub" =
   [%expect {| (Invalid_argument "pos + len past end: 10 + 1 > 10") |}]
 ;;
 
+let%test_module "Unicode" =
+  (module struct
+    let encodings : (module Utf) list =
+      [ (module Utf8)
+      ; (module Utf16le)
+      ; (module Utf16be)
+      ; (module Utf32le)
+      ; (module Utf32be)
+      ]
+    ;;
+
+    let test_validity (module Utf : Utf) string ~expect =
+      let actual = (Utf.is_valid string : bool) in
+      match actual, expect with
+      | true, true | false, false -> ()
+      | true, false -> print_cr [%here] [%message "expected valid result, got invalid"]
+      | false, true -> print_cr [%here] [%message "expected invalid result, got valid"]
+    ;;
+
+    let%expect_test "valid" =
+      let test_validity = test_validity ~expect:true in
+      (* Valid UTF-8 encoding for ASCII 'a' *)
+      test_validity (module Utf8) "\x61";
+      [%expect {| |}];
+      (* Valid UTF-16LE encoding for ASCII 'a' *)
+      test_validity (module Utf16le) "\x61\x00";
+      [%expect {| |}];
+      (* Valid UTF-16BE encoding for ASCII 'a' *)
+      test_validity (module Utf16be) "\x00\x61";
+      [%expect {| |}];
+      (* Valid UTF-32LE encoding for ASCII 'a' *)
+      test_validity (module Utf32le) "\x61\x00\x00\x00";
+      [%expect {| |}];
+      (* Valid UTF-32BE encoding for ASCII 'a' *)
+      test_validity (module Utf32be) "\x00\x00\x00\x61";
+      [%expect {| |}];
+      (* Valid UTF-8 encoding for 'aö' *)
+      test_validity (module Utf8) "\x61\xc3\xb6";
+      [%expect {| |}];
+      (* Valid UTF-16LE encoding for 'aö' *)
+      test_validity (module Utf16le) "\x61\x00\xf6\x00";
+      [%expect {| |}];
+      (* Valid UTF-16BE encoding for 'aö' *)
+      test_validity (module Utf16be) "\x00\x61\x00\xf6";
+      [%expect {| |}];
+      (* Valid UTF-32LE encoding for 'aö' *)
+      test_validity (module Utf32le) "\x61\x00\x00\x00\xf6\x00\x00\x00";
+      [%expect {| |}];
+      (* Valid UTF-32BE encoding for 'aö' *)
+      test_validity (module Utf32be) "\x00\x00\x00\x61\x00\x00\x00\xf6";
+      [%expect {| |}];
+      (* Valid UTF-16LE encoding for '𝕬' *)
+      test_validity (module Utf16le) "\x35\xd8\x6c\xdd";
+      [%expect {| |}];
+      (* Valid UTF-16LE encoding for '𝕬' *)
+      test_validity (module Utf16be) "\xd8\x35\xdd\x6c";
+      [%expect {| |}]
+    ;;
+
+    let%expect_test "invalid" =
+      let test_validity = test_validity ~expect:false in
+      (* Invalid UTF-8: Premature end-of-string after start of 2-byte sequence *)
+      test_validity (module Utf8) "\x61\xc3";
+      [%expect {| |}];
+      (* Invalid UTF-8: second byte does not start with bits '10' *)
+      test_validity (module Utf8) "\xc3\x28";
+      [%expect {| |}];
+      (* Invalid UTF-8: surrogate pair encoded in UTF-8 *)
+      test_validity (module Utf8) "\xed\xa0\x80";
+      [%expect {| |}];
+      (* Invalid UTF-8: ASCII character "/" (U+002F) is encoded in an overlong form *)
+      test_validity (module Utf8) "\xc0\xaf";
+      [%expect {| |}];
+      (* Invalid UTF-8: The encoded value is outside the Unicode code point range *)
+      test_validity (module Utf8) "\xc0\x28";
+      [%expect {| |}];
+      (* Invalid UTF-16LE: Single byte is not a complete UTF-16 character *)
+      test_validity (module Utf16le) "\x61";
+      [%expect {| |}];
+      (* Invalid UTF-16BE: Single byte is not a complete UTF-16 character *)
+      test_validity (module Utf16be) "\x61";
+      [%expect {| |}];
+      (* Invalid UTF-32LE: Only 3 bytes is not a complete UTF-32 character *)
+      test_validity (module Utf32le) "\x61\x00\x00";
+      [%expect {| |}];
+      (* Invalid UTF-32BE: Only 3 bytes is not a complete UTF-32 character *)
+      test_validity (module Utf32be) "\x61\x00\x00";
+      [%expect {| |}];
+      (* Invalid UTF-16LE: high surrogate not followed by low surrogate *)
+      test_validity (module Utf16le) "\x00\xd8\x00\x00";
+      [%expect {| |}];
+      (* Invalid UTF-16BE: high surrogate not followed by low surrogate *)
+      test_validity (module Utf16be) "\xd8\x00\x00\x00";
+      [%expect {| |}];
+      (* Invalid UTF-32LE: surrogate pair encoded in UTF-32 *)
+      test_validity (module Utf32le) "\x00\xD8\x00\x00";
+      [%expect {| |}];
+      (* Invalid UTF-32BE: surrogate pair encoded in UTF-32 *)
+      test_validity (module Utf32be) "\x00\x00\xD8\x00";
+      [%expect {| |}]
+    ;;
+
+    let test_conversions utf8 =
+      let utf8 =
+        match Utf8.of_string utf8 with
+        | utf8 -> utf8
+        | exception exn ->
+          print_s [%sexp (exn : exn)];
+          Utf8.sanitize utf8
+      in
+      let uchars = Utf8.to_list utf8 in
+      printf "Appearance: %s\n" (Utf8.of_list uchars :> string);
+      print_s [%sexp (uchars : Uchar.t list)];
+      List.iter encodings ~f:(fun (module Utf : Utf) ->
+        let codec_name = Utf.codec_name in
+        let t = Utf.of_list uchars in
+        print_s [%sexp (codec_name : string), (t : Utf.t)];
+        let round_trip = Utf.to_list t in
+        if not ([%equal: Uchar.t list] uchars round_trip)
+        then
+          print_cr
+            [%here]
+            [%message
+              "encoding does not round trip"
+                (codec_name : string)
+                (uchars : Uchar.t list)
+                ~string:(t : Utf.t)
+                (round_trip : Uchar.t list)])
+    ;;
+
+    let%expect_test "conversions" =
+      test_conversions "abc";
+      [%expect
+        {|
+        Appearance: abc
+        (U+0061 U+0062 U+0063)
+        (UTF-8 abc)
+        (UTF-16LE "a\000b\000c\000")
+        (UTF-16BE "\000a\000b\000c")
+        (UTF-32LE "a\000\000\000b\000\000\000c\000\000\000")
+        (UTF-32BE "\000\000\000a\000\000\000b\000\000\000c") |}];
+      test_conversions "\u{0065}\u{0301}";
+      [%expect
+        {|
+        Appearance: é
+        (U+0065 U+0301)
+        (UTF-8 "e\204\129")
+        (UTF-16LE "e\000\001\003")
+        (UTF-16BE "\000e\003\001")
+        (UTF-32LE "e\000\000\000\001\003\000\000")
+        (UTF-32BE "\000\000\000e\000\000\003\001") |}];
+      test_conversions "\u{0063}\u{030C}";
+      [%expect
+        {|
+        Appearance: č
+        (U+0063 U+030C)
+        (UTF-8 "c\204\140")
+        (UTF-16LE "c\000\012\003")
+        (UTF-16BE "\000c\003\012")
+        (UTF-32LE "c\000\000\000\012\003\000\000")
+        (UTF-32BE "\000\000\000c\000\000\003\012") |}];
+      test_conversions "\u{0E28}\u{0E34}";
+      [%expect
+        {|
+        Appearance: ศิ
+        (U+0E28 U+0E34)
+        (UTF-8 "\224\184\168\224\184\180")
+        (UTF-16LE "(\0144\014")
+        (UTF-16BE "\014(\0144")
+        (UTF-32LE "(\014\000\0004\014\000\000")
+        (UTF-32BE "\000\000\014(\000\000\0144") |}];
+      test_conversions "\u{1D11E}";
+      [%expect
+        {|
+        Appearance: 𝄞
+        (U+1D11E)
+        (UTF-8 "\240\157\132\158")
+        (UTF-16LE "4\216\030\221")
+        (UTF-16BE "\2164\221\030")
+        (UTF-32LE "\030\209\001\000")
+        (UTF-32BE "\000\001\209\030") |}];
+      test_conversions "\u{1D56C}";
+      [%expect
+        {|
+        Appearance: 𝕬
+        (U+1D56C)
+        (UTF-8 "\240\157\149\172")
+        (UTF-16LE "5\216l\221")
+        (UTF-16BE "\2165\221l")
+        (UTF-32LE "l\213\001\000")
+        (UTF-32BE "\000\001\213l") |}];
+      test_conversions "\xFF\xFF";
+      [%expect
+        {|
+        ("Base.String.Utf8.of_string: invalid UTF-8" "\255\255")
+        Appearance: ��
+        (U+FFFD U+FFFD)
+        (UTF-8 "\239\191\189\239\191\189")
+        (UTF-16LE "\253\255\253\255")
+        (UTF-16BE "\255\253\255\253")
+        (UTF-32LE "\253\255\000\000\253\255\000\000")
+        (UTF-32BE "\000\000\255\253\000\000\255\253") |}]
+    ;;
+
+    let%expect_test "Test [get] used at an invalid offset" =
+      let utf8 = Utf8.of_string "αβ" in
+      printf "%s\n" (utf8 :> string);
+      [%expect {| αβ |}];
+      print_s [%message "" ~_:(utf8 : Utf8.t) ~_:(Utf8.to_list utf8 : Uchar.t list)];
+      [%expect {| ("\206\177\206\178" (U+03B1 U+03B2)) |}];
+      require_does_raise [%here] (fun () -> Utf8.get utf8 ~byte_pos:1);
+      [%expect
+        {|
+        ("Base.String.Utf8.get: invalid UTF-8 encoding at given position"
+         "\206\177\206\178"
+         (pos 1)) |}]
+    ;;
+  end)
+;;
+
 let%test_module "Caseless Suffix/Prefix" =
   (module struct
     let%test _ = Caseless.is_suffix "OCaml" ~suffix:"AmL"
@@ -637,6 +857,13 @@ let%test_module "tr_multi" =
     ;;
   end)
 ;;
+
+let%test_unit _ = [%test_result: int option] (index "bob" 'b') ~expect:(Some 0)
+let%test_unit _ = [%test_result: int option] (rindex "bob" 'b') ~expect:(Some 2)
+let%test_unit _ = [%test_result: int option] (index "bob" 'c') ~expect:None
+let%test_unit _ = [%test_result: int option] (rindex "bob" 'c') ~expect:None
+let%test_unit _ = [%test_result: int option] (index_from "bobob" 1 'b') ~expect:(Some 2)
+let%test_unit _ = [%test_result: int option] (rindex_from "bobob" 3 'b') ~expect:(Some 2)
 
 let%test_unit _ =
   [%test_result: int option] (lfindi "bob" ~f:(fun _ -> Char.( = ) 'b')) ~expect:(Some 0)

@@ -10,7 +10,7 @@ type 'a t = 'a list
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
-val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
+val globalize : ('a -> 'a) -> 'a t -> 'a t
 
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
@@ -21,7 +21,7 @@ val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
 include Indexed_container.S1_with_creators with type 'a t := 'a t
 
-val length : ('a t[@local]) -> int
+val length : 'a t -> int
 
 include Invariant_intf.S1 with type 'a t := 'a t
 
@@ -72,71 +72,61 @@ val unordered_append : 'a t -> 'a t -> 'a t
 
 (** [rev_map l ~f] gives the same result as {!List.rev}[ (]{!ListLabels.map}[ f l)],
     but is more efficient. *)
-val rev_map : 'a t -> f:(('a -> 'b)[@local]) -> 'b t
+val rev_map : 'a t -> f:('a -> 'b) -> 'b t
 
 (** [iter2 [a1; ...; an] [b1; ...; bn] ~f] calls in turn [f a1 b1; ...; f an bn].
     The exn version will raise if the two lists have different lengths. *)
-val iter2_exn : 'a t -> 'b t -> f:(('a -> 'b -> unit)[@local]) -> unit
+val iter2_exn : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit
 
-val iter2 : 'a t -> 'b t -> f:(('a -> 'b -> unit)[@local]) -> unit Or_unequal_lengths.t
+val iter2 : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit Or_unequal_lengths.t
 
 (** [rev_map2_exn l1 l2 ~f] gives the same result as [List.rev (List.map2_exn l1 l2
     ~f)], but is more efficient. *)
-val rev_map2_exn : 'a t -> 'b t -> f:(('a -> 'b -> 'c)[@local]) -> 'c t
+val rev_map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 
-val rev_map2 : 'a t -> 'b t -> f:(('a -> 'b -> 'c)[@local]) -> 'c t Or_unequal_lengths.t
+val rev_map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t Or_unequal_lengths.t
 
 (** [fold2 ~f ~init:a [b1; ...; bn] [c1; ...; cn]] is [f (... (f (f a b1 c1) b2 c2)
     ...) bn cn].  The exn version will raise if the two lists have different lengths. *)
-val fold2_exn
-  :  'a t
-  -> 'b t
-  -> init:'acc
-  -> f:(('acc -> 'a -> 'b -> 'acc)[@local])
-  -> 'acc
+val fold2_exn : 'a t -> 'b t -> init:'acc -> f:('acc -> 'a -> 'b -> 'acc) -> 'acc
 
 val fold2
   :  'a t
   -> 'b t
   -> init:'acc
-  -> f:(('acc -> 'a -> 'b -> 'acc)[@local])
+  -> f:('acc -> 'a -> 'b -> 'acc)
   -> 'acc Or_unequal_lengths.t
 
 (** [fold_right2 ~f [a1; ...; an] [b1; ...; bn] ~init:c] is
     [f a1 b1 (f a2 b2 (... (f an bn c) ...))].
     The exn version will raise if the two lists have different lengths. *)
-val fold_right2_exn
-  :  'a t
-  -> 'b t
-  -> f:(('a -> 'b -> 'acc -> 'acc)[@local])
-  -> init:'acc
-  -> 'acc
+val fold_right2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'acc -> 'acc) -> init:'acc -> 'acc
 
 val fold_right2
   :  'a t
   -> 'b t
-  -> f:(('a -> 'b -> 'acc -> 'acc)[@local])
+  -> f:('a -> 'b -> 'acc -> 'acc)
   -> init:'acc
   -> 'acc Or_unequal_lengths.t
 
 (** Like {!List.for_all}, but for a two-argument predicate.  The exn version will raise if
     the two lists have different lengths. *)
-val for_all2_exn : 'a t -> 'b t -> f:(('a -> 'b -> bool)[@local]) -> bool
+val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
 
-val for_all2 : 'a t -> 'b t -> f:(('a -> 'b -> bool)[@local]) -> bool Or_unequal_lengths.t
+val for_all2 : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool Or_unequal_lengths.t
 
 (** Like {!List.exists}, but for a two-argument predicate.  The exn version will raise if
     the two lists have different lengths. *)
-val exists2_exn : 'a t -> 'b t -> f:(('a -> 'b -> bool)[@local]) -> bool
+val exists2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
 
-val exists2 : 'a t -> 'b t -> f:(('a -> 'b -> bool)[@local]) -> bool Or_unequal_lengths.t
+val exists2 : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool Or_unequal_lengths.t
 
 (** Like [filter], but reverses the order of the input list. *)
-val rev_filter : 'a t -> f:(('a -> bool)[@local]) -> 'a t
+val rev_filter : 'a t -> f:('a -> bool) -> 'a t
 
 val partition3_map
   :  'a t
-  -> f:(('a -> [ `Fst of 'b | `Snd of 'c | `Trd of 'd ])[@local])
+  -> f:('a -> [ `Fst of 'b | `Snd of 'c | `Trd of 'd ])
   -> 'b t * 'c t * 'd t
 
 (** [partition_result l] returns a pair of lists [(l1, l2)], where [l1] is the
@@ -165,16 +155,16 @@ val split_n : 'a t -> int -> 'a t * 'a t
 
     Presently, the sort is stable, meaning that two equal elements in the input will be in
     the same order in the output. *)
-val sort : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t
+val sort : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 (** Like [sort], but guaranteed to be stable. *)
-val stable_sort : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t
+val stable_sort : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 (** Merges two lists: assuming that [l1] and [l2] are sorted according to the comparison
     function [compare], [merge compare l1 l2] will return a sorted list containing all the
     elements of [l1] and [l2].  If several elements compare equal, the elements of [l1]
     will be before the elements of [l2]. *)
-val merge : 'a t -> 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t
+val merge : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 val hd : 'a t -> 'a option
 val tl : 'a t -> 'a t option
@@ -186,80 +176,64 @@ val hd_exn : 'a t -> 'a
 val tl_exn : 'a t -> 'a t
 
 (** Like [find_exn], but passes the index as an argument. *)
-val findi_exn : 'a t -> f:((int -> 'a -> bool)[@local]) -> int * 'a
+val findi_exn : 'a t -> f:(int -> 'a -> bool) -> int * 'a
 
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f].  It raises
     [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)
-val find_exn : 'a t -> f:(('a -> bool)[@local]) -> 'a
+val find_exn : 'a t -> f:('a -> bool) -> 'a
 
 (** Returns the first evaluation of [f] that returns [Some].  Raises [Stdlib.Not_found] or
     [Not_found_s] if [f] always returns [None].  *)
-val find_map_exn : 'a t -> f:(('a -> 'b option)[@local]) -> 'b
+val find_map_exn : 'a t -> f:('a -> 'b option) -> 'b
 
 (** Like [find_map_exn], but passes the index as an argument. *)
-val find_mapi_exn : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b
+val find_mapi_exn : 'a t -> f:(int -> 'a -> 'b option) -> 'b
 
 (** [folding_map] is a version of [map] that threads an accumulator through calls to
     [f]. *)
 
-val folding_map : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc * 'b)[@local]) -> 'b t
-
-val folding_mapi
-  :  'a t
-  -> init:'acc
-  -> f:((int -> 'acc -> 'a -> 'acc * 'b)[@local])
-  -> 'b t
+val folding_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'b t
+val folding_mapi : 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc * 'b) -> 'b t
 
 (** [fold_map] is a combination of [fold] and [map] that threads an accumulator through
     calls to [f]. *)
 
-val fold_map : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc * 'b)[@local]) -> 'acc * 'b t
-
-val fold_mapi
-  :  'a t
-  -> init:'acc
-  -> f:((int -> 'acc -> 'a -> 'acc * 'b)[@local])
-  -> 'acc * 'b t
+val fold_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
+val fold_mapi : 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
 
 (** [map2 [a1; ...; an] [b1; ...; bn] ~f] is [[f a1 b1; ...; f an bn]].  The exn
     version will raise if the two lists have different lengths. *)
 
-val map2_exn : 'a t -> 'b t -> f:(('a -> 'b -> 'c)[@local]) -> 'c t
-val map2 : 'a t -> 'b t -> f:(('a -> 'b -> 'c)[@local]) -> 'c t Or_unequal_lengths.t
+val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
+val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t Or_unequal_lengths.t
 
 (** Analogous to [rev_map2]. *)
 
-val rev_map3_exn : 'a t -> 'b t -> 'c t -> f:(('a -> 'b -> 'c -> 'd)[@local]) -> 'd t
+val rev_map3_exn : 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t
 
 val rev_map3
   :  'a t
   -> 'b t
   -> 'c t
-  -> f:(('a -> 'b -> 'c -> 'd)[@local])
+  -> f:('a -> 'b -> 'c -> 'd)
   -> 'd t Or_unequal_lengths.t
 
 (** Analogous to [map2]. *)
 
-val map3_exn : 'a t -> 'b t -> 'c t -> f:(('a -> 'b -> 'c -> 'd)[@local]) -> 'd t
-
-val map3
-  :  'a t
-  -> 'b t
-  -> 'c t
-  -> f:(('a -> 'b -> 'c -> 'd)[@local])
-  -> 'd t Or_unequal_lengths.t
+val map3_exn : 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t
+val map3 : 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t Or_unequal_lengths.t
 
 (** [rev_map_append l1 l2 ~f] reverses [l1] mapping [f] over each element, and appends the
     result to the front of [l2]. *)
-val rev_map_append : 'a t -> 'b t -> f:(('a -> 'b)[@local]) -> 'b t
+val rev_map_append : 'a t -> 'b t -> f:('a -> 'b) -> 'b t
 
 (** [fold_right [a1; ...; an] ~f ~init:b] is [f a1 (f a2 (... (f an b) ...))]. *)
-val fold_right : 'a t -> f:(('a -> 'acc -> 'acc)[@local]) -> init:'acc -> 'acc
+val fold_right : 'a t -> f:('a -> 'acc -> 'acc) -> init:'acc -> 'acc
 
 (** [fold_left] is the same as {!Container.S1.fold}, and one should always use
     [fold] rather than [fold_left], except in functors that are parameterized
     over a more general signature where this equivalence does not hold. *)
-val fold_left : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc)[@local]) -> 'acc
+val fold_left : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
 
 (** Transform a list of pairs into a pair of lists: [unzip [(a1,b1); ...; (an,bn)]] is
     [([a1; ...; an], [b1; ...; bn])]. *)
@@ -273,13 +247,13 @@ val unzip3 : ('a * 'b * 'c) t -> 'a t * 'b t * 'c t
 
 val zip : 'a t -> 'b t -> ('a * 'b) t Or_unequal_lengths.t
 val zip_exn : 'a t -> 'b t -> ('a * 'b) t
-val rev_mapi : 'a t -> f:((int -> 'a -> 'b)[@local]) -> 'b t
+val rev_mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 
 (** [reduce_exn [a1; ...; an] ~f] is [f (... (f (f a1 a2) a3) ...) an].  It fails on the
     empty list.  Tail recursive. *)
-val reduce_exn : 'a t -> f:(('a -> 'a -> 'a)[@local]) -> 'a
+val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 
-val reduce : 'a t -> f:(('a -> 'a -> 'a)[@local]) -> 'a option
+val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
 
 (** [reduce_balanced] returns the same value as [reduce] when [f] is associative, but
     differs in that the tree of nested applications of [f] has logarithmic depth.
@@ -287,9 +261,9 @@ val reduce : 'a t -> f:(('a -> 'a -> 'a)[@local]) -> 'a option
     This is useful when your ['a] grows in size as you reduce it and [f] becomes more
     expensive with bigger inputs.  For example, [reduce_balanced ~f:(^)] takes [n*log(n)]
     time, while [reduce ~f:(^)] takes quadratic time. *)
-val reduce_balanced : 'a t -> f:(('a -> 'a -> 'a)[@local]) -> 'a option
+val reduce_balanced : 'a t -> f:('a -> 'a -> 'a) -> 'a option
 
-val reduce_balanced_exn : 'a t -> f:(('a -> 'a -> 'a)[@local]) -> 'a
+val reduce_balanced_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 
 (** [group l ~break] returns a list of lists (i.e., groups) whose concatenation is equal
     to the original list.  Each group is broken where [break] returns true on a pair of
@@ -301,7 +275,7 @@ val reduce_balanced_exn : 'a t -> f:(('a -> 'a -> 'a)[@local]) -> 'a
       group ~break:(<>) ['M';'i';'s';'s';'i';'s';'s';'i';'p';'p';'i'] ->
 
       [['M'];['i'];['s';'s'];['i'];['s';'s'];['i'];['p';'p'];['i']] ]} *)
-val group : 'a t -> break:(('a -> 'a -> bool)[@local]) -> 'a t t
+val group : 'a t -> break:('a -> 'a -> bool) -> 'a t t
 
 (** This is just like [group], except that you get the index in the original list of the
     current element along with the two elements.
@@ -314,10 +288,10 @@ val group : 'a t -> break:(('a -> 'a -> bool)[@local]) -> 'a t t
 
       [['M'; 'i'; 's']; ['s'; 'i'; 's']; ['s'; 'i'; 'p']; ['p'; 'i']] ]}
 *)
-val groupi : 'a t -> break:((int -> 'a -> 'a -> bool)[@local]) -> 'a t t
+val groupi : 'a t -> break:(int -> 'a -> 'a -> bool) -> 'a t t
 
 (** Group equal elements into the same buckets. Sorting is stable. *)
-val sort_and_group : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t t
+val sort_and_group : 'a t -> compare:('a -> 'a -> int) -> 'a t t
 
 (** [chunks_of l ~length] returns a list of lists whose concatenation is equal to the
     original list.  Every list has [length] elements, except for possibly the last list,
@@ -330,19 +304,16 @@ val last : 'a t -> 'a option
 val last_exn : 'a t -> 'a
 
 (** [is_prefix xs ~prefix] returns [true] if [xs] starts with [prefix]. *)
-val is_prefix : 'a t -> prefix:'a t -> equal:(('a -> 'a -> bool)[@local]) -> bool
+val is_prefix : 'a t -> prefix:'a t -> equal:('a -> 'a -> bool) -> bool
 
 (** [is_suffix xs ~suffix] returns [true] if [xs] ends with [suffix]. *)
-val is_suffix : 'a t -> suffix:'a t -> equal:(('a -> 'a -> bool)[@local]) -> bool
+val is_suffix : 'a t -> suffix:'a t -> equal:('a -> 'a -> bool) -> bool
 
 (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive elements
     [(a1, a2)] in [t] such that [equal a1 a2].  They are returned in the same order as
     they appear in [t].  [equal] need not be an equivalence relation; it is simply used as
     a predicate on consecutive elements. *)
-val find_consecutive_duplicate
-  :  'a t
-  -> equal:(('a -> 'a -> bool)[@local])
-  -> ('a * 'a) option
+val find_consecutive_duplicate : 'a t -> equal:('a -> 'a -> bool) -> ('a * 'a) option
 
 (** Returns the given list with consecutive duplicates removed.  The relative order of the
     other elements is unaffected.  The element kept from a run of duplicates is determined
@@ -350,32 +321,32 @@ val find_consecutive_duplicate
 val remove_consecutive_duplicates
   :  ?which_to_keep:[ `First | `Last ] (** default = `Last *)
   -> 'a t
-  -> equal:(('a -> 'a -> bool)[@local])
+  -> equal:('a -> 'a -> bool)
   -> 'a t
 
 (** Returns the given list with duplicates removed and in sorted order.
     Of duplicates in the original list, the element occurring last in
     the original list is kept. *)
-val dedup_and_sort : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t
+val dedup_and_sort : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 (** Returns the original list, dropping all occurrences of duplicates after the first. *)
-val stable_dedup : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a t
+val stable_dedup : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 (** [find_a_dup] returns a duplicate from the list (with no guarantees about which
     duplicate you get), or [None] if there are no dups. *)
-val find_a_dup : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
+val find_a_dup : 'a t -> compare:('a -> 'a -> int) -> 'a option
 
 (** Returns true if there are any two elements in the list which are the same. O(n log n)
     time complexity. *)
-val contains_dup : 'a t -> compare:(('a -> 'a -> int)[@local]) -> bool
+val contains_dup : 'a t -> compare:('a -> 'a -> int) -> bool
 
 (** [find_all_dups] returns a list of all elements that occur more than once, with
     no guarantees about order. O(n log n) time complexity. *)
-val find_all_dups : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a list
+val find_all_dups : 'a t -> compare:('a -> 'a -> int) -> 'a list
 
 (** [all_equal] returns a single element of the list that is equal to all other elements,
     or [None] if no such element exists. *)
-val all_equal : 'a t -> equal:(('a -> 'a -> bool)[@local]) -> 'a option
+val all_equal : 'a t -> equal:('a -> 'a -> bool) -> 'a option
 
 (** [range ?stride ?start ?stop start_i stop_i] is the list of integers from [start_i] to
     [stop_i], stepping by [stride].  If [stride] < 0 then we need [start_i] > [stop_i] for
@@ -393,8 +364,8 @@ val range
     if [stride x] returns [x] or if the direction that [stride x] moves [x] changes from
     one call to the next. *)
 val range'
-  :  compare:(('a -> 'a -> int)[@local])
-  -> stride:(('a -> 'a)[@local])
+  :  compare:('a -> 'a -> int)
+  -> stride:('a -> 'a)
   -> ?start:[ `inclusive | `exclusive ] (** default = `inclusive *)
   -> ?stop:[ `inclusive | `exclusive ] (** default = `exclusive *)
   -> 'a
@@ -403,11 +374,11 @@ val range'
 
 (** [rev_filter_map l ~f] is the reversed sublist of [l] containing only elements for
     which [f] returns [Some e]. *)
-val rev_filter_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b t
+val rev_filter_map : 'a t -> f:('a -> 'b option) -> 'b t
 
 (** rev_filter_mapi is just like [rev_filter_map], but it also passes in the index of each
     element as the first argument to the mapped function. Tail-recursive. *)
-val rev_filter_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b t
+val rev_filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
 
 (** [filter_opt l] is the sublist of [l] containing only elements which are [Some e].  In
     other words, [filter_opt l] = [filter_map ~f:Fn.id l]. *)
@@ -433,12 +404,14 @@ module Assoc : sig
 
   [@@@end]
 
-  val add : ('a, 'b) t -> equal:(('a -> 'a -> bool)[@local]) -> 'a -> 'b -> ('a, 'b) t
-  val find : ('a, 'b) t -> equal:(('a -> 'a -> bool)[@local]) -> 'a -> 'b option
-  val find_exn : ('a, 'b) t -> equal:(('a -> 'a -> bool)[@local]) -> 'a -> 'b
-  val mem : ('a, 'b) t -> equal:(('a -> 'a -> bool)[@local]) -> 'a -> bool
-  val remove : ('a, 'b) t -> equal:(('a -> 'a -> bool)[@local]) -> 'a -> ('a, 'b) t
-  val map : ('a, 'b) t -> f:(('b -> 'c)[@local]) -> ('a, 'c) t
+  (** Removes all existing entries with the same key before adding. *)
+  val add : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b -> ('a, 'b) t
+
+  val find : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b option
+  val find_exn : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b
+  val mem : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> bool
+  val remove : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> ('a, 'b) t
+  val map : ('a, 'b) t -> f:('b -> 'c) -> ('a, 'c) t
 
   (** Bijectivity is not guaranteed because we allow a key to appear more than once. *)
   val inverse : ('a, 'b) t -> ('b, 'a) t
@@ -446,14 +419,11 @@ module Assoc : sig
   (** Converts an association list with potential consecutive duplicate keys into an
       association list of (non-empty) lists with no (consecutive) duplicate keys. Any
       non-consecutive duplicate keys in the input will remain in the output. *)
-  val group : ('a * 'b) list -> equal:(('a -> 'a -> bool)[@local]) -> ('a, 'b list) t
+  val group : ('a * 'b) list -> equal:('a -> 'a -> bool) -> ('a, 'b list) t
 
   (** Converts an association list with potential duplicate keys into an association list
       of (non-empty) lists with no duplicate keys. *)
-  val sort_and_group
-    :  ('a * 'b) list
-    -> compare:(('a -> 'a -> int)[@local])
-    -> ('a, 'b list) t
+  val sort_and_group : ('a * 'b) list -> compare:('a -> 'a -> int) -> ('a, 'b list) t
 end
 
 (** [sub pos len l] is the [len]-element sublist of [l], starting at [pos]. *)
@@ -469,13 +439,13 @@ val take : 'a t -> int -> 'a t
 val drop : 'a t -> int -> 'a t
 
 (** [take_while l ~f] returns the longest prefix of [l] for which [f] is [true]. *)
-val take_while : 'a t -> f:(('a -> bool)[@local]) -> 'a t
+val take_while : 'a t -> f:('a -> bool) -> 'a t
 
 (** [drop_while l ~f] drops the longest prefix of [l] for which [f] is [true]. *)
-val drop_while : 'a t -> f:(('a -> bool)[@local]) -> 'a t
+val drop_while : 'a t -> f:('a -> bool) -> 'a t
 
 (** [split_while xs ~f = (take_while xs ~f, drop_while xs ~f)]. *)
-val split_while : 'a t -> f:(('a -> bool)[@local]) -> 'a t * 'a t
+val split_while : 'a t -> f:('a -> bool) -> 'a t * 'a t
 
 (** [drop_last l] drops the last element of [l], returning [None] if [l] is [empty]. *)
 val drop_last : 'a t -> 'a t option
@@ -511,16 +481,11 @@ val random_element_exn : ?random_state:Random.State.t -> 'a t -> 'a
     a1 a2 <= 0].
 
     [is_sorted_strictly] is similar, except it uses [<] instead of [<=]. *)
-val is_sorted : 'a t -> compare:(('a -> 'a -> int)[@local]) -> bool
+val is_sorted : 'a t -> compare:('a -> 'a -> int) -> bool
 
-val is_sorted_strictly : 'a t -> compare:(('a -> 'a -> int)[@local]) -> bool
+val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) -> bool
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-
-val equal__local
-  :  (('a[@local]) -> ('a[@local]) -> bool)
-  -> ('a t[@local])
-  -> ('a t[@local])
-  -> bool
+val equal__local : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
 module Infix : sig
   val ( @ ) : 'a t -> 'a t -> 'a t

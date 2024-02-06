@@ -2,7 +2,9 @@ open! Import
 module Array = Array0
 module Bytes = Bytes0
 module Int = Int0
+module Uchar = Uchar0
 include String0
+include String_intf
 
 let invalid_argf = Printf.invalid_argf
 let raise_s = Error.raise_s
@@ -11,7 +13,7 @@ let stage = Staged.stage
 module T = struct
   type t = string [@@deriving_inline globalize, hash, sexp, sexp_grammar]
 
-  let (globalize : (t[@ocaml.local]) -> t) = (globalize_string : (t[@ocaml.local]) -> t)
+  let (globalize : t -> t) = (globalize_string : t -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_string
@@ -83,87 +85,98 @@ let contains ?(pos = 0) ?len t char =
 
 let is_empty t = length t = 0
 
-let rec index_from_exn_internal string ~pos ~len ~not_found char =
-  if pos >= len
-  then raise not_found
-  else if Char.equal (unsafe_get string pos) char
-  then pos
-  else index_from_exn_internal string ~pos:(pos + 1) ~len ~not_found char
+let[@inline] index_from_internal string ~len ~not_found ~found char ~pos =
+  let rec loop ~pos =
+    if pos >= len
+    then not_found ()
+    else if Char.equal (unsafe_get string pos) char
+    then found pos
+    else loop ~pos:(pos + 1)
+  in
+  loop ~pos [@nontail]
 ;;
 
-let index_exn_internal t ~not_found char =
-  index_from_exn_internal t ~pos:0 ~len:(length t) ~not_found char
+let index t char =
+  index_from_internal
+    t
+    char
+    ~pos:0
+    ~len:(length t)
+    ~found:Option.some
+    ~not_found:(fun () -> None) [@nontail]
 ;;
 
-let index_exn =
-  let not_found = Not_found_s (Atom "String.index_exn: not found") in
-  let index_exn t char = index_exn_internal t ~not_found char in
-  (* named to preserve symbol in compiled binary *)
-  index_exn
+let index_exn t char =
+  index_from_internal
+    t
+    ~pos:0
+    ~len:(length t)
+    ~found:Fn.id
+    ~not_found:(fun () -> raise (Not_found_s (Atom "String.index_exn: not found")))
+    char [@nontail]
+;;
+
+let index_from t pos char =
+  index_from_internal t char ~pos ~len:(length t) ~found:Option.some ~not_found:(fun () ->
+    None) [@nontail]
 ;;
 
 let index_from_exn =
-  let not_found = Not_found_s (Atom "String.index_from_exn: not found") in
+  let not_found () = raise (Not_found_s (Atom "String.index_from_exn: not found")) in
   let index_from_exn t pos char =
     let len = length t in
     if pos < 0 || pos > len
     then invalid_arg "String.index_from_exn"
-    else index_from_exn_internal t ~pos ~len ~not_found char
+    else index_from_internal t ~pos ~len ~not_found ~found:Fn.id char
   in
   (* named to preserve symbol in compiled binary *)
   index_from_exn
 ;;
 
-let rec rindex_from_exn_internal string ~pos ~len ~not_found char =
-  if pos < 0
-  then raise not_found
-  else if Char.equal (unsafe_get string pos) char
-  then pos
-  else rindex_from_exn_internal string ~pos:(pos - 1) ~len ~not_found char
-;;
-
-let rindex_exn_internal t ~not_found char =
-  let len = length t in
-  rindex_from_exn_internal t ~pos:(len - 1) ~len ~not_found char
-;;
-
-let rindex_exn =
-  let not_found = Not_found_s (Atom "String.rindex_exn: not found") in
-  let rindex_exn t char = rindex_exn_internal t ~not_found char in
-  (* named to preserve symbol in compiled binary *)
-  rindex_exn
-;;
-
-let rindex_from_exn =
-  let not_found = Not_found_s (Atom "String.rindex_from_exn: not found") in
-  let rindex_from_exn t pos char =
-    let len = length t in
-    if pos < -1 || pos >= len
-    then invalid_arg "String.rindex_from_exn"
-    else rindex_from_exn_internal t ~pos ~len ~not_found char
+let[@inline] rindex_from_internal string char ~found ~not_found ~pos =
+  let rec loop ~pos =
+    if pos < 0
+    then not_found ()
+    else if Char.equal (unsafe_get string pos) char
+    then found pos
+    else loop ~pos:(pos - 1)
   in
-  (* named to preserve symbol in compiled binary *)
-  rindex_from_exn
-;;
-
-let index t char =
-  try Some (index_exn t char) with
-  | Not_found_s _ | Stdlib.Not_found -> None
+  loop ~pos [@nontail]
 ;;
 
 let rindex t char =
-  try Some (rindex_exn t char) with
-  | Not_found_s _ | Stdlib.Not_found -> None
+  rindex_from_internal
+    t
+    char
+    ~pos:(length t - 1)
+    ~found:Option.some
+    ~not_found:(fun () -> None) [@nontail]
 ;;
 
-let index_from t pos char =
-  try Some (index_from_exn t pos char) with
-  | Not_found_s _ | Stdlib.Not_found -> None
+let rindex_exn t char =
+  rindex_from_internal
+    t
+    char
+    ~pos:(length t - 1)
+    ~found:Fn.id
+    ~not_found:(fun () -> raise (Not_found_s (Atom "String.rindex_exn: not found")))
+  [@nontail]
 ;;
 
 let rindex_from t pos char =
-  try Some (rindex_from_exn t pos char) with
-  | Not_found_s _ | Stdlib.Not_found -> None
+  rindex_from_internal t char ~pos ~found:Option.some ~not_found:(fun () -> None) [@nontail
+                                                                                    ]
+;;
+
+let rindex_from_exn =
+  let not_found () = raise (Not_found_s (Atom "String.rindex_from_exn: not found")) in
+  let rindex_from_exn t pos char =
+    if pos < -1 || pos >= length t
+    then invalid_arg "String.rindex_from_exn"
+    else rindex_from_internal t ~pos ~not_found ~found:Fn.id char
+  in
+  (* named to preserve symbol in compiled binary *)
+  rindex_from_exn
 ;;
 
 module Search_pattern0 = struct
@@ -381,7 +394,7 @@ module Search_pattern0 = struct
              (Stdlib.( && )
                 (equal_bool__local a__003_.case_sensitive b__004_.case_sensitive)
                 (equal_array__local equal_int__local a__003_.kmp_array b__004_.kmp_array))
-        : (t[@ocaml.local]) -> (t[@ocaml.local]) -> bool)
+        : t -> t -> bool)
     ;;
 
     let equal = (fun a b -> equal__local a b : t -> t -> bool)
@@ -596,20 +609,22 @@ let rev t =
 (** Efficient string splitting *)
 
 let lsplit2_exn =
-  let not_found = Not_found_s (Atom "String.lsplit2_exn: not found") in
+  let not_found () = raise (Not_found_s (Atom "String.lsplit2_exn: not found")) in
   let lsplit2_exn line ~on:delim =
-    let pos = index_exn_internal line ~not_found delim in
-    sub line ~pos:0 ~len:pos, sub line ~pos:(pos + 1) ~len:(length line - pos - 1)
+    let len = length line in
+    let pos = index_from_internal line ~pos:0 ~len ~not_found ~found:Fn.id delim in
+    sub line ~pos:0 ~len:pos, sub line ~pos:(pos + 1) ~len:(len - pos - 1)
   in
   (* named to preserve symbol in compiled binary *)
   lsplit2_exn
 ;;
 
 let rsplit2_exn =
-  let not_found = Not_found_s (Atom "String.rsplit2_exn: not found") in
+  let not_found () = raise (Not_found_s (Atom "String.rsplit2_exn: not found")) in
   let rsplit2_exn line ~on:delim =
-    let pos = rindex_exn_internal line ~not_found delim in
-    sub line ~pos:0 ~len:pos, sub line ~pos:(pos + 1) ~len:(length line - pos - 1)
+    let len = length line in
+    let pos = rindex_from_internal line ~pos:(len - 1) ~not_found ~found:Fn.id delim in
+    sub line ~pos:0 ~len:pos, sub line ~pos:(pos + 1) ~len:(len - pos - 1)
   in
   (* named to preserve symbol in compiled binary *)
   rsplit2_exn
@@ -1187,14 +1202,14 @@ let pad_left ?(char = ' ') s ~len =
 (* Called upon first difference generated by filtering. Allocates [buffer_len] bytes
    for new result, and copies [prefix_len] unchanged characters from [src].
    Always returns a local buffer. *)
-let local_copy_prefix (src [@local]) ~prefix_len ~buffer_len =
+let local_copy_prefix src ~prefix_len ~buffer_len =
   let dst = Bytes.create_local buffer_len in
   Bytes.Primitives.unsafe_blit_string ~src ~dst ~src_pos:0 ~dst_pos:0 ~len:prefix_len;
-   dst
+  dst
 ;;
 
 (* Copies a perhaps-local buffer into a definitely-global string. *)
-let local_copy_to_string (buf [@local]) ~pos =
+let local_copy_to_string buf ~pos =
   let str = Bytes.unsafe_to_string ~no_mutation_while_string_reachable:buf in
   unsafe_sub str ~pos:0 ~len:pos [@nontail]
 ;;
@@ -1212,8 +1227,8 @@ include struct
        [0 <= src_pos < src_len]
        [0 <= dst_pos < length dst]
     *)
-    let filter_mapi_into src (dst [@local]) ~f ~src_pos ~dst_pos ~src_len =
-      let dst_pos =  (ref dst_pos) in
+    let filter_mapi_into src dst ~f ~src_pos ~dst_pos ~src_len =
+      let dst_pos = ref dst_pos in
       for src_pos = src_pos to src_len - 1 do
         match f src_pos (unsafe_get src src_pos) with
         | None -> ()
@@ -1265,10 +1280,10 @@ include struct
     (* partition helpers *)
 
     let partition_map_into src ~fsts ~snds ~f ~len ~src_pos ~fst_pos ~snd_pos =
-      let fst_pos =  (ref fst_pos) in
-      let snd_pos =  (ref snd_pos) in
+      let fst_pos = ref fst_pos in
+      let snd_pos = ref snd_pos in
       for src_pos = src_pos to len - 1 do
-        match  (f (unsafe_get src src_pos) : (_, _) Either.t) with
+        match (f (unsafe_get src src_pos) : (_, _) Either.t) with
         | First c ->
           Bytes.unsafe_set fsts !fst_pos c;
           incr fst_pos
@@ -1286,10 +1301,10 @@ include struct
         match (either : (_, _) Either.t) with
         | First c ->
           Bytes.unsafe_set fsts fst_pos c;
-           (fst_pos + 1, snd_pos)
+          fst_pos + 1, snd_pos
         | Second c ->
           Bytes.unsafe_set snds snd_pos c;
-           (fst_pos, snd_pos + 1)
+          fst_pos, snd_pos + 1
       in
       partition_map_into
         src
@@ -1307,7 +1322,7 @@ include struct
       then src, ""
       else (
         let c1 = unsafe_get src pos in
-        match  (f c1 : (_, _) Either.t) with
+        match (f c1 : (_, _) Either.t) with
         | First c2 when Char.equal c1 c2 ->
           partition_map_first_maybe_id src ~f ~len ~pos:(pos + 1)
         | either ->
@@ -1326,7 +1341,7 @@ include struct
       then "", src
       else (
         let c1 = unsafe_get src pos in
-        match  (f c1 : (_, _) Either.t) with
+        match (f c1 : (_, _) Either.t) with
         | Second c2 when Char.equal c1 c2 ->
           partition_map_second_maybe_id src ~f ~len ~pos:(pos + 1)
         | either ->
@@ -1349,7 +1364,7 @@ include struct
     then "", ""
     else (
       let c1 = unsafe_get src 0 in
-      match  (f c1 : (_, _) Either.t) with
+      match (f c1 : (_, _) Either.t) with
       | First c2 when Char.equal c1 c2 -> partition_map_first_maybe_id src ~f ~len ~pos:1
       | Second c2 when Char.equal c1 c2 ->
         partition_map_second_maybe_id src ~f ~len ~pos:1
@@ -1365,8 +1380,7 @@ include struct
   ;;
 
   let partition_tf t ~f =
-    partition_map t ~f:(fun c -> if f c then  (First c) else  (Second c)) [@nontail
-                                                                                          ]
+    partition_map t ~f:(fun c -> if f c then First c else Second c) [@nontail]
   ;;
 end
 
@@ -1876,6 +1890,264 @@ module Search_pattern = struct
 
   let create ?(case_sensitive = true) pattern = create pattern ~case_sensitive
 end
+
+module Make_utf (Format : sig
+  val codec_name : string
+  val module_name : string
+  val is_valid : t -> bool
+  val byte_length : Uchar.t -> int
+  val get_decode_result : t -> byte_pos:int -> Uchar.utf_decode
+  val set : bytes -> int -> Uchar.t -> int
+end) =
+struct
+  type t = string
+
+  let codec_name = Format.codec_name
+  let is_valid = Format.is_valid
+
+  let raise_get_message =
+    lazy
+      (Printf.sprintf
+         "%s.get: invalid %s encoding at given position"
+         Format.module_name
+         Format.codec_name)
+  ;;
+
+  let[@cold] raise_get t pos =
+    raise_s
+      (Sexp.message (Lazy.force raise_get_message) [ "", Atom t; "pos", sexp_of_int pos ])
+  ;;
+
+  let get t ~byte_pos =
+    (* Even if [t] is validated, we need to validate [pos], so we check the decoding *)
+    let decode = Format.get_decode_result t ~byte_pos in
+    if Uchar.utf_decode_is_valid decode
+    then Uchar.utf_decode_uchar decode
+    else raise_get t byte_pos
+  ;;
+
+  let to_string = Fn.id
+  let of_string_unchecked = Fn.id
+
+  let raise_of_string_message =
+    concat [ Format.module_name; ".of_string: invalid "; codec_name ]
+  ;;
+
+  let[@cold] raise_of_string string =
+    raise_s (Sexp.message raise_of_string_message [ "", Atom string ])
+  ;;
+
+  let of_string string =
+    match is_valid string with
+    | true -> string
+    | false -> raise_of_string string
+  ;;
+
+  include Sexpable.Of_stringable (struct
+    type nonrec t = t
+
+    let of_string = of_string
+    let to_string = to_string
+  end)
+
+  include Identifiable.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+    let hash = hash
+    let hash_fold_t = hash_fold_t
+    let of_string = of_string
+    let to_string = to_string
+    let sexp_of_t = sexp_of_t
+    let t_of_sexp = t_of_sexp
+    let module_name = Format.module_name
+  end)
+
+  let to_sequence t =
+    let open Int_replace_polymorphic_compare in
+    let len = length t in
+    Sequence.unfold ~init:0 ~f:(fun byte_pos ->
+      if byte_pos >= len
+      then None
+      else (
+        let decode = Format.get_decode_result t ~byte_pos in
+        Some (Uchar.utf_decode_uchar decode, byte_pos + Uchar.utf_decode_length decode)))
+  ;;
+
+  let fold t ~init:acc ~f =
+    let len = length t in
+    let rec loop byte_pos acc =
+      if Int_replace_polymorphic_compare.equal byte_pos len
+      then acc
+      else (
+        let decode = Format.get_decode_result t ~byte_pos in
+        loop
+          (byte_pos + Uchar.utf_decode_length decode)
+          (f acc (Uchar.utf_decode_uchar decode)))
+    in
+    loop 0 acc [@nontail]
+  ;;
+
+  let sanitize t =
+    let len = fold t ~init:0 ~f:(fun pos uchar -> pos + Format.byte_length uchar) in
+    let bytes = Bytes.create len in
+    let pos = fold t ~init:0 ~f:(fun pos uchar -> pos + Format.set bytes pos uchar) in
+    assert (Int_replace_polymorphic_compare.equal pos len);
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:bytes
+  ;;
+
+  let of_list uchars =
+    let len = List.fold uchars ~init:0 ~f:(fun n u -> n + Format.byte_length u) in
+    let bytes = Bytes.create len in
+    let pos =
+      List.fold uchars ~init:0 ~f:(fun pos uchar -> pos + Format.set bytes pos uchar)
+    in
+    assert (Int_replace_polymorphic_compare.equal pos len);
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:bytes
+  ;;
+
+  let of_array uchars =
+    let len = ref 0 in
+    for i = 0 to Array.length uchars - 1 do
+      len := !len + Format.byte_length uchars.(i)
+    done;
+    let bytes = Bytes.create !len in
+    let pos = ref 0 in
+    for i = 0 to Array.length uchars - 1 do
+      pos := !pos + Format.set bytes !pos uchars.(i)
+    done;
+    assert (Int_replace_polymorphic_compare.equal !pos !len);
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:bytes
+  ;;
+
+  let concat list = concat ~sep:"" list
+
+  module C = Indexed_container.Make0_with_creators (struct
+    module Elt = Uchar
+
+    type nonrec t = t
+
+    let fold = fold
+    let concat = concat
+    let of_list = of_list
+    let of_array = of_array
+    let init = `Define_using_of_array
+    let length = `Define_using_fold
+    let foldi = `Define_using_fold
+    let iter = `Define_using_fold
+    let iteri = `Define_using_fold
+    let concat_mapi = `Define_using_concat
+  end)
+
+  let append = C.append
+  let concat_map = C.concat_map
+  let concat_mapi = C.concat_mapi
+  let count = C.count
+  let counti = C.counti
+  let exists = C.exists
+  let existsi = C.existsi
+  let filter = C.filter
+  let filter_map = C.filter_map
+  let filter_mapi = C.filter_mapi
+  let filteri = C.filteri
+  let find = C.find
+  let find_map = C.find_map
+  let find_mapi = C.find_mapi
+  let findi = C.findi
+  let fold_result = C.fold_result
+  let fold_until = C.fold_until
+  let foldi = C.foldi
+  let for_all = C.for_all
+  let for_alli = C.for_alli
+  let init = C.init
+  let is_empty = C.is_empty
+  let iter = C.iter
+  let iteri = C.iteri
+  let length = C.length
+  let map = C.map
+  let mapi = C.mapi
+  let max_elt = C.max_elt
+  let mem = C.mem
+  let min_elt = C.min_elt
+  let partition_map = C.partition_map
+  let partition_tf = C.partition_tf
+  let sum = C.sum
+  let to_array = C.to_array
+  let to_list = C.to_list
+  let length_in_uchars = length
+end
+
+module Utf8 = Make_utf (struct
+  let codec_name = "UTF-8"
+  let module_name = "Base.String.Utf8"
+  let is_valid = is_valid_utf_8
+  let byte_length = Uchar.utf_8_byte_length
+  let get_decode_result = get_utf_8_uchar
+  let set = Bytes.set_uchar_utf_8
+end)
+
+module Utf16le = Make_utf (struct
+  let codec_name = "UTF-16LE"
+  let module_name = "Base.String.Utf16le"
+  let is_valid = is_valid_utf_16le
+  let byte_length = Uchar.utf_16_byte_length
+  let get_decode_result = get_utf_16le_uchar
+  let set = Bytes.set_uchar_utf_16le
+end)
+
+module Utf16be = Make_utf (struct
+  let codec_name = "UTF-16BE"
+  let module_name = "Base.String.Utf16be"
+  let is_valid = is_valid_utf_16be
+  let byte_length = Uchar.utf_16_byte_length
+  let get_decode_result = get_utf_16be_uchar
+  let set = Bytes.set_uchar_utf_16be
+end)
+
+module Make_utf32 (Format : sig
+  val codec_name : string
+  val module_name : string
+  val get_decode_result : t -> byte_pos:int -> Uchar.utf_decode
+  val set : bytes -> int -> Uchar.t -> int
+end) =
+Make_utf (struct
+  open Int_replace_polymorphic_compare
+
+  let byte_length _ = 4
+  let codec_name = Format.codec_name
+  let module_name = Format.module_name
+  let set = Format.set
+  let get_decode_result = Format.get_decode_result
+
+  let is_valid t =
+    let len = String.length t in
+    match len mod 4 with
+    | 0 ->
+      let rec loop byte_pos =
+        match byte_pos < len with
+        | false -> true
+        | true ->
+          let result = Format.get_decode_result t ~byte_pos in
+          Uchar.utf_decode_is_valid result && loop (byte_pos + 4)
+      in
+      loop 0 [@nontail]
+    | _ -> false
+  ;;
+end)
+
+module Utf32le = Make_utf32 (struct
+  let codec_name = "UTF-32LE"
+  let module_name = "Base.String.Utf32le"
+  let get_decode_result = get_utf_32le_uchar
+  let set = Bytes.set_uchar_utf_32le
+end)
+
+module Utf32be = Make_utf32 (struct
+  let codec_name = "UTF-32BE"
+  let module_name = "Base.String.Utf32be"
+  let get_decode_result = get_utf_32be_uchar
+  let set = Bytes.set_uchar_utf_32be
+end)
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after
    including functor application that could shadow its definitions. This is

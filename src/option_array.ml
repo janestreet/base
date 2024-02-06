@@ -29,7 +29,7 @@ module Cheap_option = struct
     val is_some : _ t -> bool
     val value_exn : 'a t -> 'a
     val value_unsafe : 'a t -> 'a
-    val iter_some : 'a t -> f:(('a -> unit)[@local]) -> unit
+    val iter_some : 'a t -> f:('a -> unit) -> unit
   end = struct
     type +'a t
 

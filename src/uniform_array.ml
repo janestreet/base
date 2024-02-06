@@ -16,15 +16,16 @@ module Trusted : sig
   val set : 'a t -> int -> 'a -> unit
   val swap : _ t -> int -> int -> unit
   val unsafe_get : 'a t -> int -> 'a
-  val unsafe_get_local : ('a t[@local]) -> int -> 'a
+  val unsafe_get_local : 'a t -> int -> 'a
   val unsafe_set : 'a t -> int -> 'a -> unit
   val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
   val unsafe_set_int : 'a t -> int -> int -> unit
   val unsafe_set_int_assuming_currently_int : 'a t -> int -> int -> unit
   val unsafe_set_assuming_currently_int : 'a t -> int -> 'a -> unit
   val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
+  val unsafe_to_array_inplace__promise_not_a_float : 'a t -> 'a array
   val set_with_caml_modify : 'a t -> int -> 'a -> unit
-  val length : ('a t[@local]) -> int
+  val length : 'a t -> int
   val unsafe_blit : ('a t, 'a t) Blit.blit
   val copy : 'a t -> 'a t
   val unsafe_clear_if_pointer : _ t -> int -> unit
@@ -53,6 +54,9 @@ end = struct
     Obj_array.unsafe_set_assuming_currently_int arr i (Stdlib.Obj.repr x)
   ;;
 
+  (* [t] is just an array under the hood, it just has special considerations about [t] not
+     being a float. *)
+  let unsafe_to_array_inplace__promise_not_a_float arr = Stdlib.Obj.magic arr
   let length = Obj_array.length
   let unsafe_blit = Obj_array.unsafe_blit
   let copy = Obj_array.copy
@@ -224,8 +228,8 @@ let concat ts =
   res
 ;;
 
-let concat_mapi t ~f:(f [@local]) = to_list t |> List.mapi ~f |> concat
-let concat_map t ~f:(f [@local]) = to_list t |> List.map ~f |> concat
+let concat_mapi t ~f = to_list t |> List.mapi ~f |> concat
+let concat_map t ~f = to_list t |> List.map ~f |> concat
 
 let find_map t ~f =
   let length = length t in

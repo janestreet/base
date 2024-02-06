@@ -16,7 +16,7 @@ let%test_module "Type_equal.Id" =
     let%test _ = not (same t1 t2)
     let%test _ = Option.is_some (same_witness t1 t1)
     let%test _ = Option.is_none (same_witness t1 t2)
-    let%test_unit _ = ignore (same_witness_exn t1 t1 : (_, _) Type_equal.equal)
+    let%test_unit _ = ignore (same_witness_exn t1 t1 : (_, _) Type_equal.t)
     let%test _ = Result.is_error (Result.try_with (fun () -> same_witness_exn t1 t2))
   end)
 ;;

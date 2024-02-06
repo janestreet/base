@@ -8,13 +8,13 @@ let f : 'a. 'a -> 'a = Fn.id
 
 (* [id] can operate on local arguments *)
 
-let f : 'a. ('a[@local]) -> ('a[@local]) = Fn.id
+let f : 'a. local_ 'a -> local_ 'a = Fn.id
 
 [%%expect {||}]
 
 (* [id] cannot make a local argument global; this would be unsound *)
 
-let f : 'a. ('a[@local]) -> 'a = Fn.id
+let f : 'a. local_ 'a -> 'a = Fn.id
 
 [%%expect
   {|
@@ -27,7 +27,7 @@ Error: This expression has type local_ 'b -> local_ 'b
    If this following code gets accepted, it means that the meaning of
    [@local_opt] may have changed. However, the [f] below is not unsound. *)
 
-let f : 'a. 'a -> ('a[@local]) = Fn.id
+let f : 'a. 'a -> local_ 'a = Fn.id
 
 [%%expect
   {|

@@ -11,17 +11,17 @@ let globalize_char = function
   | '\x00' .. '\xFF' as c -> c
 ;;
 
-external globalize_float : (float[@local]) -> float = "caml_obj_dup"
-external globalize_int : (int[@local]) -> int = "%identity"
-external globalize_int32 : (int32[@local]) -> int32 = "caml_obj_dup"
-external globalize_int64 : (int64[@local]) -> int64 = "caml_obj_dup"
-external globalize_nativeint : (nativeint[@local]) -> nativeint = "caml_obj_dup"
-external globalize_bytes : (bytes[@local]) -> bytes = "caml_obj_dup"
-external globalize_string : (string[@local]) -> string = "caml_obj_dup"
+external globalize_float : float -> float = "caml_obj_dup"
+external globalize_int : int -> int = "%identity"
+external globalize_int32 : int32 -> int32 = "caml_obj_dup"
+external globalize_int64 : int64 -> int64 = "caml_obj_dup"
+external globalize_nativeint : nativeint -> nativeint = "caml_obj_dup"
+external globalize_bytes : bytes -> bytes = "caml_obj_dup"
+external globalize_string : string -> string = "caml_obj_dup"
 
 let globalize_unit (() as u) = u
 
-external globalize_array' : ('a array[@local]) -> 'a array = "caml_obj_dup"
+external globalize_array' : 'a array -> 'a array = "caml_obj_dup"
 
 let globalize_array _ a = globalize_array' a
 
@@ -44,6 +44,6 @@ let globalize_result globalize_a globalize_b t =
 let globalize_ref' r = ref !r
 let globalize_ref _ r = globalize_ref' r
 
-external globalize_lazy_t_mono : ('a lazy_t[@local]) -> 'a lazy_t = "%identity"
+external globalize_lazy_t_mono : 'a lazy_t -> 'a lazy_t = "%identity"
 
 let globalize_lazy_t _ t = globalize_lazy_t_mono t

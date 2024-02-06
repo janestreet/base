@@ -13,7 +13,7 @@ open! Import
 
 type t = int32 [@@deriving_inline globalize]
 
-val globalize : (t[@ocaml.local]) -> t
+val globalize : t -> t
 
 [@@@end]
 

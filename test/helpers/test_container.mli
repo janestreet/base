@@ -12,7 +12,7 @@ end) : sig
 
   include Generic with type ('a, _) t := 'a t
 
-  val mem : 'a t -> 'a -> equal:(('a -> 'a -> bool)[@local]) -> bool
+  val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 end
 with type 'a t := 'a Container.t
 with type 'a elt := 'a
@@ -28,7 +28,7 @@ end) : sig
 
   include Generic with type ('a, _) t := 'a t
 
-  val mem : 'a t -> 'a -> equal:(('a -> 'a -> bool)[@local]) -> bool
+  val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 end
 with type 'a t := 'a Container.t
 with type 'a elt := 'a

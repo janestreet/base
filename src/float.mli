@@ -10,7 +10,7 @@ open! Import
 
 type t = float [@@deriving_inline globalize, sexp_grammar]
 
-val globalize : (t[@ocaml.local]) -> t
+val globalize : t -> t
 val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 [@@@end]

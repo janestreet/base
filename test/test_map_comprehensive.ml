@@ -2018,12 +2018,18 @@ end [@ocaml.remove_aliases] = struct
                 List.fold_result alist ~init:empty ~f:(fun builder (key, data) ->
                   Or_error.try_with (fun () ->
                     add_exn builder ~comparator:Int.comparator ~key ~data))
-                |> Or_error.map ~f:Build_increasing.to_tree
+                |> Or_error.map ~f:to_tree
               in
+              Or_error.iter actual ~f:(fun map ->
+                require [%here] (Tree.invariants map ~comparator:Int.comparator));
               let expect =
-                Map.Using_comparator.Tree.of_increasing_sequence
-                  ~comparator:Int.comparator
-                  (Sequence.of_list alist)
+                match List.is_sorted_strictly alist ~compare:[%compare: int * _] with
+                | false -> Error (Error.of_string "not sorted")
+                | true ->
+                  Ok
+                    (Map.Using_comparator.Tree.of_sequence_exn
+                       ~comparator:Int.comparator
+                       (Sequence.of_list alist))
               in
               require_equal [%here] (module Ok (Tree_int)) actual expect);
           [%expect {| |}]

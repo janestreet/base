@@ -29,7 +29,7 @@ include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 
-val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
+val globalize : ('a -> 'a) -> 'a t -> 'a t
 
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t

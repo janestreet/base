@@ -93,12 +93,7 @@ let t_sexp_grammar :
 ;;
 
 let compare__local :
-      'a 'b.
-      (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-      -> (('b[@ocaml.local]) -> ('b[@ocaml.local]) -> int)
-      -> (('a, 'b) t[@ocaml.local])
-      -> (('a, 'b) t[@ocaml.local])
-      -> int
+      'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
   =
   fun _cmp__a _cmp__b a__033_ b__034_ ->
   if Stdlib.( == ) a__033_ b__034_
@@ -126,12 +121,7 @@ let compare :
 ;;
 
 let equal__local :
-      'a 'b.
-      (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-      -> (('b[@ocaml.local]) -> ('b[@ocaml.local]) -> bool)
-      -> (('a, 'b) t[@ocaml.local])
-      -> (('a, 'b) t[@ocaml.local])
-      -> bool
+      'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
   =
   fun _cmp__a _cmp__b a__045_ b__046_ ->
   if Stdlib.( == ) a__045_ b__046_

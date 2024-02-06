@@ -1,3 +1,5 @@
-(library (name base_test_allocation)
+(library
+ (name base_test_allocation)
  (libraries async base expect_test_helpers_async expect_test_helpers_core)
- (preprocess (pps ppx_jane)))
+ (preprocess
+  (pps ppx_jane)))

@@ -27,7 +27,7 @@ type t = | [@@deriving_inline enumerate, globalize, sexp_grammar]
 
 include Ppx_enumerate_lib.Enumerable.S with type t := t
 
-val globalize : (t[@ocaml.local]) -> t
+val globalize : t -> t
 val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 [@@@end]
@@ -54,7 +54,7 @@ val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 val unreachable_code : t -> _
 
 (** The same as [unreachable_code], but for local [t]s. *)
-val unreachable_code_local : (t[@local]) -> _
+val unreachable_code_local : t -> _
 
 (** It may seem weird that this is identifiable, but we're just trying to anticipate all
     the contexts in which people may need this. It would be a crying shame if you had some

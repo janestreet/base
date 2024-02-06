@@ -37,26 +37,55 @@ module type Round = sig
   val round_nearest : t -> to_multiple_of:t -> t
 end
 
+(** String format for integers, [to_string] / [sexp_of_t] direction only. Includes
+    comparisons and hash functions for [[@@deriving]]. *)
+module type To_string_format = sig
+  type t [@@deriving_inline sexp_of, compare ~localize, hash]
+
+  val sexp_of_t : t -> Sexplib0.Sexp.t
+
+  include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S_local with type t := t
+  include Ppx_hash_lib.Hashable.S with type t := t
+
+  [@@@end]
+
+  val to_string : t -> string
+  val to_string_hum : ?delimiter:char -> t -> string
+end
+
+(** String format for integers, including both [to_string] / [sexp_of_t] and [of_string] /
+    [t_of_sexp] directions. Includes comparisons and hash functions for [[@@deriving]]. *)
+module type String_format = sig
+  type t [@@deriving_inline sexp, sexp_grammar, compare ~localize, hash]
+
+  include Sexplib0.Sexpable.S with type t := t
+
+  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
+
+  include Ppx_compare_lib.Comparable.S with type t := t
+  include Ppx_compare_lib.Comparable.S_local with type t := t
+  include Ppx_hash_lib.Hashable.S with type t := t
+
+  [@@@end]
+
+  include Stringable.S with type t := t
+
+  val to_string_hum : ?delimiter:char -> t -> string
+end
+
+(** Binary format for integers, unsigned and starting with [0b]. *)
+module type Binaryable = sig
+  type t
+
+  module Binary : To_string_format with type t = t
+end
+
+(** Hex format for integers, signed and starting with [0x]. *)
 module type Hexable = sig
   type t
 
-  module Hex : sig
-    type nonrec t = t [@@deriving_inline sexp, sexp_grammar, compare ~localize, hash]
-
-    include Sexplib0.Sexpable.S with type t := t
-
-    val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-
-    include Ppx_compare_lib.Comparable.S with type t := t
-    include Ppx_compare_lib.Comparable.S_local with type t := t
-    include Ppx_hash_lib.Hashable.S with type t := t
-
-    [@@@end]
-
-    include Stringable.S with type t := t
-
-    val to_string_hum : ?delimiter:char -> t -> string
-  end
+  module Hex : String_format with type t = t
 end
 
 module type S_common = sig
@@ -76,6 +105,7 @@ module type S_common = sig
   include Ppx_compare_lib.Equal.S_local with type t := t
   include Invariant.S with type t := t
   include Hexable with type t := t
+  include Binaryable with type t := t
 
   val of_string_opt : string -> t option
 
@@ -315,7 +345,7 @@ module type Int_without_module_types = sig
 
   type t = int [@@deriving_inline globalize]
 
-  val globalize : (t[@ocaml.local]) -> t
+  val globalize : t -> t
 
   [@@@end]
 
@@ -416,8 +446,9 @@ module type Int = sig
   include Int_without_module_types (** @inline *)
 
   (** {2 Module types specifying integer operations.} *)
-  module type Hexable = Hexable
 
+  module type Binaryable = Binaryable
+  module type Hexable = Hexable
   module type Int_without_module_types = Int_without_module_types
   module type Operators = Operators
   module type Operators_unbounded = Operators_unbounded
@@ -425,4 +456,6 @@ module type Int = sig
   module type S = S
   module type S_common = S_common
   module type S_unbounded = S_unbounded
+  module type String_format = String_format
+  module type To_string_format = To_string_format
 end

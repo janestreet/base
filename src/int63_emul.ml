@@ -11,12 +11,9 @@ module T0 = struct
     type t = int64
     [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
-    let compare__local =
-      (compare_int64__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
-    ;;
-
+    let compare__local = (compare_int64__local : t -> t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
-    let (globalize : (t[@ocaml.local]) -> t) = (globalize_int64 : (t[@ocaml.local]) -> t)
+    let (globalize : t -> t) = (globalize_int64 : t -> t)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int64
@@ -81,7 +78,8 @@ module W : sig
   val of_int64_exn : Stdlib.Int64.t -> t
   val of_int64_trunc : Stdlib.Int64.t -> t
   val compare : t -> t -> int
-  val compare__local : (t[@local]) -> (t[@local]) -> int
+  val compare__local : t -> t -> int
+  val equal__local : t -> t -> bool
   val ceil_pow2 : t -> t
   val floor_pow2 : t -> t
   val ceil_log2 : t -> int
@@ -146,6 +144,7 @@ end = struct
   let sexp_of_t x = sexp_of_int64 (unwrap x)
   let compare (x : t) y = compare x y
   let compare__local (x : t) y = compare__local x y
+  let equal__local (x : t) y = equal__local x y
   let is_pow2 x = Int64.is_pow2 (unwrap x)
 
   let clz x =
@@ -166,7 +165,7 @@ open W
 module T = struct
   type t = W.t [@@deriving_inline globalize, hash, sexp, sexp_grammar]
 
-  let (globalize : (t[@ocaml.local]) -> t) = (W.globalize : (t[@ocaml.local]) -> t)
+  let (globalize : t -> t) = (W.globalize : t -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     W.hash_fold_t
@@ -187,6 +186,7 @@ module T = struct
   let comparator = W.comparator
   let compare = W.compare
   let compare__local = W.compare__local
+  let equal__local = W.equal__local
   let invariant = W.invariant
 
   (* We don't expect [hash] to follow the behavior of int in 64bit architecture *)
@@ -372,12 +372,12 @@ let to_nativeint x = Conv.int64_to_nativeint (unwrap x)
 let to_nativeint_exn x = Conv.int64_to_nativeint_exn (unwrap x)
 let to_nativeint_trunc x = Conv.int64_to_nativeint_trunc (unwrap x)
 
-include Conv.Make (T)
+include Int_string_conversions.Make (T)
 
-include Conv.Make_hex (struct
+include Int_string_conversions.Make_hex (struct
   type t = T.t [@@deriving_inline compare ~localize, hash]
 
-  let compare__local = (T.compare__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
+  let compare__local = (T.compare__local : t -> t -> int)
   let compare = (fun a b -> compare__local a b : t -> t -> int)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
@@ -451,6 +451,33 @@ module O = struct
 end
 
 include O
+
+include Int_string_conversions.Make_binary (struct
+  type t = T.t [@@deriving_inline compare ~localize, equal ~localize, hash]
+
+  let compare__local = (T.compare__local : t -> t -> int)
+  let compare = (fun a b -> compare__local a b : t -> t -> int)
+  let equal__local = (T.equal__local : t -> t -> bool)
+  let equal = (fun a b -> equal__local a b : t -> t -> bool)
+
+  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+    T.hash_fold_t
+
+  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+    let func = T.hash in
+    fun x -> func x
+  ;;
+
+  [@@@end]
+
+  let ( land ) = ( land )
+  let ( lsr ) = ( lsr )
+  let clz = clz
+  let num_bits = num_bits
+  let one = one
+  let to_int_exn = to_int_exn
+  let zero = zero
+end)
 
 (* [Int63] and [Int63.O] agree value-wise *)
 

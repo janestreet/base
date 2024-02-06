@@ -59,8 +59,8 @@ open Step
    sequence *)
 type +_ t =
   | Sequence :
-      { state : 's [@global]
-      ; next : 's -> ('a, 's) Step.t [@global]
+      { state : 's
+      ; next : 's -> ('a, 's) Step.t
       }
       -> 'a t
 
@@ -490,12 +490,7 @@ module Merge_with_duplicates_element = struct
   [@@deriving_inline compare ~localize, hash, sexp, sexp_grammar]
 
   let compare__local :
-        'a 'b.
-        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-        -> (('b[@ocaml.local]) -> ('b[@ocaml.local]) -> int)
-        -> (('a, 'b) t[@ocaml.local])
-        -> (('a, 'b) t[@ocaml.local])
-        -> int
+        'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
     =
     fun _cmp__a _cmp__b a__023_ b__024_ ->
     if Stdlib.( == ) a__023_ b__024_
@@ -1254,15 +1249,24 @@ let drop_while_option (Sequence { state = s; next }) ~f =
   loop s [@nontail]
 ;;
 
-let compare compare_a t1 t2 =
-  With_return.with_return (fun r ->
-    iter (zip_full t1 t2) ~f:(function
-      | `Left _ -> r.return 1
-      | `Right _ -> r.return (-1)
-      | `Both (v1, v2) ->
-        let c = compare_a v1 v2 in
-        if c <> 0 then r.return c);
-    0)
+let rec skip_loop s next =
+  match next s with
+  | Skip { state } -> skip_loop state next
+  | (Done | Yield _) as next -> next
+;;
+
+let compare compare_a (Sequence l) (Sequence r) =
+  let rec loop compare_a s_l next_l s_r next_r =
+    match skip_loop s_l next_l, skip_loop s_r next_r with
+    | Done, Done -> 0
+    | Done, Yield _ -> -1
+    | Yield _, Done -> 1
+    | Yield l, Yield r ->
+      let c = compare_a l.value r.value in
+      if c <> 0 then c else loop compare_a l.state next_l r.state next_r
+    | Skip _, _ | _, Skip _ -> failwith "Bug: This branch should be unreachable"
+  in
+  loop compare_a l.state l.next r.state r.next
 ;;
 
 let compare__local compare_a__local t1 t2 =

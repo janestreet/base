@@ -9,7 +9,7 @@ module T = struct
 
   let compare = (compare_bool : t -> t -> int)
   let all = ([ false; true ] : t list)
-  let (globalize : (t[@ocaml.local]) -> t) = (globalize_bool : (t[@ocaml.local]) -> t)
+  let (globalize : t -> t) = (globalize_bool : t -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_bool

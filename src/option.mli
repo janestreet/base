@@ -27,7 +27,7 @@ type 'a t = 'a option =
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
-val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
+val globalize : ('a -> 'a) -> 'a t -> 'a t
 
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
 
@@ -82,57 +82,57 @@ val value_exn
 
 (** Extracts the underlying value and applies [f] to it if present, otherwise returns
     [default]. *)
-val value_map : 'a t -> default:'b -> f:(('a -> 'b)[@local]) -> 'b
+val value_map : 'a t -> default:'b -> f:('a -> 'b) -> 'b
 
 (** Extracts the underlying value if present, otherwise executes and returns the result of
     [default]. [default] is only executed if the underlying value is absent. *)
-val value_or_thunk : 'a t -> default:((unit -> 'a)[@local]) -> 'a
+val value_or_thunk : 'a t -> default:(unit -> 'a) -> 'a
 
 (** On [None], returns [init]. On [Some x], returns [f init x]. *)
-val fold : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc)[@local]) -> 'acc
+val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
 
 (** Checks whether the provided element is there, using [equal]. *)
-val mem : 'a t -> 'a -> equal:(('a -> 'a -> bool)[@local]) -> bool
+val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 
 val length : 'a t -> int
-val iter : 'a t -> f:(('a -> unit)[@local]) -> unit
+val iter : 'a t -> f:('a -> unit) -> unit
 
 (** On [None], returns [false]. On [Some x], returns [f x]. *)
-val exists : 'a t -> f:(('a -> bool)[@local]) -> bool
+val exists : 'a t -> f:('a -> bool) -> bool
 
 (** On [None], returns [true]. On [Some x], returns [f x]. *)
-val for_all : 'a t -> f:(('a -> bool)[@local]) -> bool
+val for_all : 'a t -> f:('a -> bool) -> bool
 
 (** [find t ~f] returns [t] if [t = Some x] and [f x = true]; otherwise, [find] returns
     [None]. *)
-val find : 'a t -> f:(('a -> bool)[@local]) -> 'a option
+val find : 'a t -> f:('a -> bool) -> 'a option
 
 (** On [None], returns [None]. On [Some x], returns [f x]. *)
-val find_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b option
+val find_map : 'a t -> f:('a -> 'b option) -> 'b option
 
 val to_list : 'a t -> 'a list
 val to_array : 'a t -> 'a array
 
 (** [call x f] runs an optional function [~f] on the argument. *)
-val call : 'a -> f:(('a -> unit) t[@local]) -> unit
+val call : 'a -> f:('a -> unit) t -> unit
 
 (** [merge a b ~f] merges together the values from [a] and [b] using [f].  If both [a] and
     [b] are [None], returns [None].  If only one is [Some], returns that one, and if both
     are [Some], returns [Some] of the result of applying [f] to the contents of [a] and
     [b]. *)
-val merge : 'a t -> 'a t -> f:(('a -> 'a -> 'a)[@local]) -> 'a t
+val merge : 'a t -> 'a t -> f:('a -> 'a -> 'a) -> 'a t
 
-val filter : 'a t -> f:(('a -> bool)[@local]) -> 'a t
+val filter : 'a t -> f:('a -> bool) -> 'a t
 
 (** {2 Constructors} *)
 
 (** [try_with f] returns [Some x] if [f] returns [x] and [None] if [f] raises an
     exception.  See [Result.try_with] if you'd like to know which exception. *)
-val try_with : ((unit -> 'a)[@local]) -> 'a t
+val try_with : (unit -> 'a) -> 'a t
 
 (** [try_with_join f] returns the optional value returned by [f] if it exits normally, and
     [None] if [f] raises an exception. *)
-val try_with_join : ((unit -> 'a t)[@local]) -> 'a t
+val try_with_join : (unit -> 'a t) -> 'a t
 
 (** Wraps the [Some] constructor as a function. *)
 val some : 'a -> 'a t

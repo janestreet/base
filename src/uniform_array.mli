@@ -24,11 +24,11 @@ val invariant : _ t -> unit
 val empty : _ t
 val create : len:int -> 'a -> 'a t
 val singleton : 'a -> 'a t
-val init : int -> f:((int -> 'a)[@local]) -> 'a t
-val length : ('a t[@local]) -> int
+val init : int -> f:(int -> 'a) -> 'a t
+val length : 'a t -> int
 val get : 'a t -> int -> 'a
 val unsafe_get : 'a t -> int -> 'a
-val unsafe_get_local : ('a t[@local]) -> int -> 'a
+val unsafe_get_local : 'a t -> int -> 'a
 val set : 'a t -> int -> 'a -> unit
 val unsafe_set : 'a t -> int -> 'a -> unit
 val swap : _ t -> int -> int -> unit
@@ -47,16 +47,20 @@ val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
 (** Same as [unsafe_set_with_caml_modify], but with bounds check. *)
 val set_with_caml_modify : 'a t -> int -> 'a -> unit
 
-val map : 'a t -> f:(('a -> 'b)[@local]) -> 'b t
-val mapi : 'a t -> f:((int -> 'a -> 'b)[@local]) -> 'b t
-val iter : 'a t -> f:(('a -> unit)[@local]) -> unit
+val map : 'a t -> f:('a -> 'b) -> 'b t
+val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
+val iter : 'a t -> f:('a -> unit) -> unit
 
 (** Like {!iter}, but the function is applied to the index of the element as first
     argument, and the element itself as second argument. *)
-val iteri : 'a t -> f:((int -> 'a -> unit)[@local]) -> unit
+val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
 
-val fold : 'a t -> init:'acc -> f:(('acc -> 'a -> 'acc)[@local]) -> 'acc
-val foldi : 'a t -> init:'acc -> f:((int -> 'acc -> 'a -> 'acc)[@local]) -> 'acc
+val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
+val foldi : 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc) -> 'acc
+
+(** [unsafe_to_array_inplace__promise_not_a_float] converts from a [t] to an [array] in
+    place. This function is unsafe if the underlying type is a float. *)
+val unsafe_to_array_inplace__promise_not_a_float : 'a t -> 'a array
 
 (** [of_array] and [to_array] return fresh arrays with the same contents rather than
     returning a reference to the underlying array. *)
@@ -70,41 +74,35 @@ val to_list : 'a t -> 'a list
 include Blit.S1 with type 'a t := 'a t
 
 val copy : 'a t -> 'a t
-val exists : 'a t -> f:(('a -> bool)[@local]) -> bool
-val existsi : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
-val for_all : 'a t -> f:(('a -> bool)[@local]) -> bool
-val for_alli : 'a t -> f:((int -> 'a -> bool)[@local]) -> bool
+val exists : 'a t -> f:('a -> bool) -> bool
+val existsi : 'a t -> f:(int -> 'a -> bool) -> bool
+val for_all : 'a t -> f:('a -> bool) -> bool
+val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
 val concat : 'a t list -> 'a t
-val concat_map : 'a t -> f:(('a -> 'b t)[@local]) -> 'b t
-val concat_mapi : 'a t -> f:((int -> 'a -> 'b t)[@local]) -> 'b t
-val filter : 'a t -> f:(('a -> bool)[@local]) -> 'a t
-val filteri : 'a t -> f:((int -> 'a -> bool)[@local]) -> 'a t
-val filter_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b t
-val filter_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b t
-val find : 'a t -> f:(('a -> bool)[@local]) -> 'a option
-val findi : 'a t -> f:((int -> 'a -> bool)[@local]) -> (int * 'a) option
-val find_map : 'a t -> f:(('a -> 'b option)[@local]) -> 'b option
-val find_mapi : 'a t -> f:((int -> 'a -> 'b option)[@local]) -> 'b option
+val concat_map : 'a t -> f:('a -> 'b t) -> 'b t
+val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
+val filter : 'a t -> f:('a -> bool) -> 'a t
+val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
+val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
+val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
+val find : 'a t -> f:('a -> bool) -> 'a option
+val findi : 'a t -> f:(int -> 'a -> bool) -> (int * 'a) option
+val find_map : 'a t -> f:('a -> 'b option) -> 'b option
+val find_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b option
 
 (** Functions with the 2 suffix raise an exception if the lengths of the two given arrays
     aren't the same. *)
-val map2_exn : 'a t -> 'b t -> f:(('a -> 'b -> 'c)[@local]) -> 'c t
+val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 
-val fold2_exn
-  :  'a t
-  -> 'b t
-  -> init:'acc
-  -> f:(('acc -> 'a -> 'b -> 'acc)[@local])
-  -> 'acc
-
-val min_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
-val max_elt : 'a t -> compare:(('a -> 'a -> int)[@local]) -> 'a option
+val fold2_exn : 'a t -> 'b t -> init:'acc -> f:('acc -> 'a -> 'b -> 'acc) -> 'acc
+val min_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+val max_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
 
 (** [sort] uses constant heap space.
 
     To sort only part of the array, specify [pos] to be the index to start sorting from
     and [len] indicating how many elements to sort. *)
-val sort : ?pos:int -> ?len:int -> 'a t -> compare:(('a -> 'a -> int)[@local]) -> unit
+val sort : ?pos:int -> ?len:int -> 'a t -> compare:('a -> 'a -> int) -> unit
 
 include Binary_searchable.S1 with type 'a t := 'a t
 

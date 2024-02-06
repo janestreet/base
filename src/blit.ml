@@ -4,7 +4,7 @@ include Blit_intf
 module type Sequence_gen = sig
   type 'a t
 
-  val length : (_ t[@local]) -> int
+  val length : _ t -> int
 end
 
 module Make_gen

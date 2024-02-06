@@ -4,7 +4,7 @@ open! Import
 
 type t = int64 [@@deriving_inline globalize]
 
-val globalize : (t[@ocaml.local]) -> t
+val globalize : t -> t
 
 [@@@end]
 
@@ -87,13 +87,21 @@ external to_nativeint_trunc
 
 (** {3 Low-level float conversions} *)
 
+(** [bits_of_float] will always allocate its result on the heap unless the [_unboxed]
+    C function call is chosen by the compiler. *)
 external bits_of_float
   :  (float[@local_opt])
   -> (int64[@local_opt])
   = "caml_int64_bits_of_float" "caml_int64_bits_of_float_unboxed"
   [@@unboxed] [@@noalloc]
 
-val float_of_bits : t -> float
+(** [float_of_bits] will always allocate its result on the heap unless the [_unboxed]
+    C function call is chosen by the compiler. *)
+external float_of_bits
+  :  (int64[@local_opt])
+  -> (float[@local_opt])
+  = "caml_int64_float_of_bits" "caml_int64_float_of_bits_unboxed"
+  [@@unboxed] [@@noalloc]
 
 (** {2 Byte swap operations}
 

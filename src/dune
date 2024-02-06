@@ -1,30 +1,51 @@
-(rule (targets random_repr.ml)
- (deps (:first_dep select-random-repr/select.ml))
+(rule
+ (targets random_repr.ml)
+ (deps
+  (:first_dep select-random-repr/select.ml))
  (action
   (run %{ocaml} %{first_dep} -ocaml-version %{ocaml_version} -o %{targets})))
 
-(rule (targets pow_overflow_bounds.ml)
- (deps (:first_dep ../generate/generate_pow_overflow_bounds.exe))
- (action (run %{first_dep} -atomic -o %{targets})) (mode fallback))
+(rule
+ (targets pow_overflow_bounds.ml)
+ (deps
+  (:first_dep ../generate/generate_pow_overflow_bounds.exe))
+ (action
+  (run %{first_dep} -atomic -o %{targets}))
+ (mode fallback))
 
-(library (name base) (public_name base)
- (ocamlopt_flags :standard (:include ocamlopt-flags))
+(library
+ (foreign_stubs
+  (language c)
+  (names bytes_stubs exn_stubs float_stubs int_math_stubs hash_stubs
+    obj_stubs am_testing)
+  (flags
+   :standard
+   -D_LARGEFILE64_SOURCE
+   (:include mpopcnt.sexp)))
+ (name base)
+ (public_name base)
+ (ocamlopt_flags
+  :standard
+  (:include ocamlopt-flags))
  (libraries base_internalhash_types sexplib0 shadow_stdlib)
- (c_flags :standard -D_LARGEFILE64_SOURCE (:include mpopcnt.sexp))
- (c_names bytes_stubs exn_stubs float_stubs int_math_stubs hash_stubs
-  obj_stubs am_testing)
  (preprocess no_preprocessing)
  (lint
   (pps ppx_base ppx_base_lint -check-doc-comments -type-conv-keep-w32=both
-   -apply=js_style,base_lint,type_conv,cold))
- (js_of_ocaml (javascript_files runtime.js)))
+    -apply=js_style,base_lint,type_conv,cold))
+ (js_of_ocaml
+  (javascript_files runtime.js)))
 
-(rule (targets mpopcnt.sexp)
- (action (run ./discover/discover.exe -o %{targets})))
+(rule
+ (targets mpopcnt.sexp)
+ (action
+  (run ./discover/discover.exe -o %{targets})))
 
 (ocamllex hex_lexer)
 
 (documentation)
 
-(rule (targets ocamlopt-flags) (deps)
- (action (bash "echo '()' > ocamlopt-flags")))
+(rule
+ (targets ocamlopt-flags)
+ (deps)
+ (action
+  (bash "echo '()' > ocamlopt-flags")))

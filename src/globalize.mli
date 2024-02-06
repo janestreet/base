@@ -9,25 +9,25 @@
 
    Further globalize functions can be generated with `ppx_globalize`. *)
 
-val globalize_bool : (bool[@local]) -> bool
-val globalize_char : (char[@local]) -> char
-val globalize_float : (float[@local]) -> float
-val globalize_int : (int[@local]) -> int
-val globalize_int32 : (int32[@local]) -> int32
-val globalize_int64 : (int64[@local]) -> int64
-val globalize_nativeint : (nativeint[@local]) -> nativeint
-val globalize_bytes : (bytes[@local]) -> bytes
-val globalize_string : (string[@local]) -> string
-val globalize_unit : (unit[@local]) -> unit
-val globalize_array : (('a[@local]) -> 'b) -> ('a array[@local]) -> 'a array
-val globalize_lazy_t : (('a[@local]) -> 'b) -> ('a lazy_t[@local]) -> 'a lazy_t
-val globalize_list : (('a[@local]) -> 'b) -> ('a list[@local]) -> 'b list
-val globalize_option : (('a[@local]) -> 'b) -> ('a option[@local]) -> 'b option
+val globalize_bool : bool -> bool
+val globalize_char : char -> char
+val globalize_float : float -> float
+val globalize_int : int -> int
+val globalize_int32 : int32 -> int32
+val globalize_int64 : int64 -> int64
+val globalize_nativeint : nativeint -> nativeint
+val globalize_bytes : bytes -> bytes
+val globalize_string : string -> string
+val globalize_unit : unit -> unit
+val globalize_array : ('a -> 'b) -> 'a array -> 'a array
+val globalize_lazy_t : ('a -> 'b) -> 'a lazy_t -> 'a lazy_t
+val globalize_list : ('a -> 'b) -> 'a list -> 'b list
+val globalize_option : ('a -> 'b) -> 'a option -> 'b option
 
 val globalize_result
-  :  (('ok[@ocaml.local]) -> 'ok)
-  -> (('err[@ocaml.local]) -> 'err)
-  -> (('ok, 'err) result[@ocaml.local])
+  :  ('ok -> 'ok)
+  -> ('err -> 'err)
+  -> ('ok, 'err) result
   -> ('ok, 'err) result
 
-val globalize_ref : (('a[@local]) -> 'b) -> ('a ref[@local]) -> 'a ref
+val globalize_ref : ('a -> 'b) -> 'a ref -> 'a ref

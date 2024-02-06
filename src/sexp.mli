@@ -4,7 +4,7 @@ type t = Sexplib0.Sexp.t =
   | List of t list
 [@@deriving_inline globalize, hash]
 
-val globalize : (t[@ocaml.local]) -> t
+val globalize : t -> t
 
 include Ppx_hash_lib.Hashable.S with type t := t
 

@@ -58,10 +58,7 @@ let%test_module "Sequence.merge*" =
         [ Both (2, 2); Left 1; Right 3 ]
     ;;
 
-    let test_merge_semantics
-      ~merge
-      ~(normalize_list : _ -> compare:((_ -> _ -> _)[@local]) -> _)
-      =
+    let test_merge_semantics ~merge ~(normalize_list : _ -> compare:(_ -> _ -> _) -> _) =
       Base_quickcheck.Test.run_exn
         (module struct
           module Deduped_and_sorted_int_list = struct

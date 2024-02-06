@@ -7,6 +7,9 @@ external magic : (_[@local_opt]) -> (_[@local_opt]) = "%identity"
 external repr : (_[@local_opt]) -> (t[@local_opt]) = "%identity"
 external obj : (t[@local_opt]) -> (_[@local_opt]) = "%identity"
 external size : (t[@local_opt]) -> int = "%obj_size"
+
+let[@inline always] size t = size (Sys.opaque_identity t)
+
 external is_int : (t[@local_opt]) -> bool = "%obj_is_int"
 
 (* The result doesn't need to be marked local because the data is copied into a fresh
@@ -22,14 +25,8 @@ external set_raw_field
 
 external tag : (t[@local_opt]) -> int = "caml_obj_tag" [@@noalloc]
 
-(* This is unsafe in several ways:
-   - This cannot be called on an immediate
-   - This cannot be called on Javascript platform *)
-external get_header_unsafe : (t[@local_opt]) -> nativeint = "caml_get_header0"
-
-let color_of_header hd =
-  0x3 land Stdlib.Nativeint.to_int (Stdlib.Nativeint.shift_right_logical hd 8)
-;;
+(* Checks if the given value is on the local stack. Returns [false] for immediates. *)
+external is_stack : (t[@local_opt]) -> bool = "caml_dummy_obj_is_stack"
 
 type stack_or_heap =
   | Immediate
@@ -69,16 +66,12 @@ let compare_stack_or_heap = (Stdlib.compare : stack_or_heap -> stack_or_heap -> 
 
 [@@@end]
 
-let local_unmarked = 0x2
-
 let stack_or_heap repr =
   if is_int repr
   then Immediate
   else (
     match Sys.backend_type with
-    | Sys.Native ->
-      let hd = get_header_unsafe repr in
-      if color_of_header hd = local_unmarked then Stack else Heap
+    | Sys.Native -> if is_stack repr then Stack else Heap
     | Sys.Bytecode -> Heap
     | Sys.Other _ -> Heap)
 ;;

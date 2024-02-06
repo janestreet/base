@@ -81,7 +81,7 @@ let slot t key =
 let add_worker t ~replace ~key ~data =
   let i = slot t key in
   let root = t.table.(i) in
-  let added =  (ref false) in
+  let added = ref false in
   let new_root =
     (* The avl tree might replace the value [replace=true] or do nothing [replace=false]
        to the entry, in that case the table did not get bigger, so we should not
@@ -234,7 +234,7 @@ let remove t key =
   ensure_mutation_allowed t;
   let i = slot t key in
   let root = t.table.(i) in
-  let removed =  (ref false) in
+  let removed = ref false in
   let new_root = Avltree.remove root ~removed ~compare:(compare_key t) key in
   if not (phys_equal root new_root) then t.table.(i) <- new_root;
   if !removed then t.length <- t.length - 1
@@ -417,7 +417,7 @@ let partitioni_tf t ~f =
 
 let partition_tf t ~f = partitioni_tf t ~f:(fun ~key:_ ~data -> f data) [@nontail]
 
-let find_or_add t id ~default:(default [@local]) =
+let find_or_add t id ~default =
   find_and_call
     t
     id

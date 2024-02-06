@@ -6,15 +6,12 @@ let contents_bytes = to_bytes
 let add_substring t s ~pos ~len = add_substring t s pos len
 let add_subbytes t s ~pos ~len = add_subbytes t s pos len
 let sexp_of_t t = sexp_of_string (contents t)
-
-let caml_buffer_length =
-  (Stdlib.Obj.magic (Stdlib.Buffer.length : t -> int) : (t[@local]) -> int)
-;;
+let caml_buffer_length = (Stdlib.Obj.magic (Stdlib.Buffer.length : t -> int) : t -> int)
 
 let caml_buffer_blit =
   (Stdlib.Obj.magic
      (Stdlib.Buffer.blit : Stdlib.Buffer.t -> int -> Bytes.t -> int -> int -> unit)
-    : (Stdlib.Buffer.t[@local]) -> int -> (Bytes.t[@local]) -> int -> int -> unit)
+    : Stdlib.Buffer.t -> int -> Bytes.t -> int -> int -> unit)
 ;;
 
 module To_bytes =

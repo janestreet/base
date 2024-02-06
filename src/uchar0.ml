@@ -19,3 +19,11 @@ let byte_order_mark = Stdlib.Uchar.bom
 let replacement_char = Stdlib.Uchar.rep
 let utf_8_byte_length = Stdlib.Uchar.utf_8_byte_length
 let utf_16_byte_length = Stdlib.Uchar.utf_16_byte_length
+
+type utf_decode = Stdlib.Uchar.utf_decode
+
+let utf_decode_is_valid = Stdlib.Uchar.utf_decode_is_valid
+let utf_decode_uchar = Stdlib.Uchar.utf_decode_uchar
+let utf_decode_length = Stdlib.Uchar.utf_decode_length
+let utf_decode = Stdlib.Uchar.utf_decode
+let utf_decode_invalid = Stdlib.Uchar.utf_decode_invalid

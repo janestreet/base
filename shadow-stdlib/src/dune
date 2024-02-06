@@ -1,7 +1,12 @@
-(library (name shadow_stdlib) (public_name base.shadow_stdlib) (libraries)
+(library
+ (name shadow_stdlib)
+ (public_name base.shadow_stdlib)
+ (libraries)
  (preprocess no_preprocessing))
 
-(rule (targets shadow_stdlib.mli) (deps %{ocaml_where}/stdlib.cma)
+(rule
+ (targets shadow_stdlib.mli)
+ (deps %{ocaml_where}/stdlib.cma)
  (action
   (run ../gen/gen.exe -caml-cmi -permissive %{ocaml_where}/stdlib.cmi
-   %{ocaml_where}/stdlib.cma -o %{targets})))
+    %{ocaml_where}/stdlib.cma -o %{targets})))

@@ -15,7 +15,7 @@ let invalid_argf = Printf.invalid_argf
 
 module Array = struct
   external create : int -> 'a -> 'a array = "caml_make_vect"
-  external create_local : int -> 'a -> ('a array[@local]) = "caml_make_vect"
+  external create_local : int -> 'a -> 'a array = "caml_make_vect"
   external create_float_uninitialized : int -> float array = "caml_make_float_vect"
   external get : ('a array[@local_opt]) -> (int[@local_opt]) -> 'a = "%array_safe_get"
   external length : ('a array[@local_opt]) -> int = "%array_length"
@@ -60,10 +60,8 @@ let create ~len x =
 ;;
 
 let create_local ~len x =
-  
-    (try create_local len x with
-     | Invalid_argument _ ->
-       invalid_argf "Array.create_local ~len:%d: invalid length" len ())
+  try create_local len x with
+  | Invalid_argument _ -> invalid_argf "Array.create_local ~len:%d: invalid length" len ()
 ;;
 
 let create_float_uninitialized ~len =
@@ -78,7 +76,7 @@ let concat = Stdlib.Array.concat
 let copy = Stdlib.Array.copy
 let fill = Stdlib.Array.fill
 
-let init len ~f:((f : _ -> _) [@local]) =
+let init len ~(f : _ -> _) =
   if len = 0
   then [||]
   else if len < 0
@@ -96,7 +94,7 @@ let of_list = Stdlib.Array.of_list
 let sub = Stdlib.Array.sub
 let to_list = Stdlib.Array.to_list
 
-let fold t ~init ~f:((f : _ -> _ -> _) [@local]) =
+let fold t ~init ~(f : _ -> _ -> _) =
   let r = ref init in
   for i = 0 to length t - 1 do
     r := f !r (unsafe_get t i)
@@ -104,7 +102,7 @@ let fold t ~init ~f:((f : _ -> _ -> _) [@local]) =
   !r
 ;;
 
-let fold_right t ~f:((f : _ -> _ -> _) [@local]) ~init =
+let fold_right t ~(f : _ -> _ -> _) ~init =
   let r = ref init in
   for i = length t - 1 downto 0 do
     r := f (unsafe_get t i) !r
@@ -112,19 +110,19 @@ let fold_right t ~f:((f : _ -> _ -> _) [@local]) ~init =
   !r
 ;;
 
-let iter t ~f:((f : _ -> _) [@local]) =
+let iter t ~(f : _ -> _) =
   for i = 0 to length t - 1 do
     f (unsafe_get t i)
   done
 ;;
 
-let iteri t ~f:((f : _ -> _ -> _) [@local]) =
+let iteri t ~(f : _ -> _ -> _) =
   for i = 0 to length t - 1 do
     f i (unsafe_get t i)
   done
 ;;
 
-let map t ~f:((f : _ -> _) [@local]) =
+let map t ~(f : _ -> _) =
   let len = length t in
   if len = 0
   then [||]
@@ -136,7 +134,7 @@ let map t ~f:((f : _ -> _) [@local]) =
     r)
 ;;
 
-let mapi t ~f:((f : _ -> _ -> _) [@local]) =
+let mapi t ~(f : _ -> _ -> _) =
   let len = length t in
   if len = 0
   then [||]

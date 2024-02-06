@@ -3,22 +3,11 @@ include Array0
 
 type 'a t = 'a array [@@deriving_inline compare ~localize, globalize, sexp, sexp_grammar]
 
-let compare__local :
-      'a.
-      (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-      -> ('a t[@ocaml.local])
-      -> ('a t[@ocaml.local])
-      -> int
-  =
-  compare_array__local
-;;
-
+let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array__local
 let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
 
-let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
-  fun (type a__009_)
-    : (((a__009_[@ocaml.local]) -> a__009_) -> (a__009_ t[@ocaml.local]) -> a__009_ t) ->
-  globalize_array
+let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
+  fun (type a__009_) : ((a__009_ -> a__009_) -> a__009_ t -> a__009_ t) -> globalize_array
 ;;
 
 let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = array_of_sexp
@@ -77,7 +66,7 @@ struct
   module type Sort = sig
     val sort
       :  'a t
-      -> compare:(('a -> 'a -> int)[@local])
+      -> compare:('a -> 'a -> int)
       -> left:int (* leftmost index of sub-array to sort *)
       -> right:int (* rightmost index of sub-array to sort *)
       -> unit
@@ -162,7 +151,7 @@ struct
 
     val five_element_sort
       :  'a t
-      -> compare:(('a -> 'a -> int)[@local])
+      -> compare:('a -> 'a -> int)
       -> int
       -> int
       -> int
@@ -170,7 +159,7 @@ struct
       -> int
       -> unit
   end = struct
-    let five_element_sort arr ~compare:((compare : _ -> _ -> _) [@local]) m1 m2 m3 m4 m5 =
+    let five_element_sort arr ~(compare : _ -> _ -> _) m1 m2 m3 m4 m5 =
       let compare_and_swap i j =
         if compare (get arr i) (get arr j) > 0 then swap arr i j
       in
@@ -206,7 +195,7 @@ struct
          by itself
          To this end we look at the center 3 elements of the 5 and return pairs of equal
          elements or the widest range *)
-    let choose_pivots arr ~compare:((compare : _ -> _ -> _) [@local]) ~left ~right =
+    let choose_pivots arr ~(compare : _ -> _ -> _) ~left ~right =
       let sixth = (right - left) / 6 in
       let m1 = left + sixth in
       let m2 = m1 + sixth in
@@ -224,7 +213,7 @@ struct
       else m2_val, m4_val, false
     ;;
 
-    let dual_pivot_partition arr ~compare:((compare : _ -> _ -> _) [@local]) ~left ~right =
+    let dual_pivot_partition arr ~(compare : _ -> _ -> _) ~left ~right =
       let pivot1, pivot2, pivots_equal = choose_pivots arr ~compare ~left ~right in
       (* loop invariants:
          1.  left <= l < r <= right
@@ -294,7 +283,7 @@ struct
     ;;
   end
 
-  let sort ?pos ?len arr ~compare:((compare : _ -> _ -> _) [@local]) =
+  let sort ?pos ?len arr ~(compare : _ -> _ -> _) =
     let pos, len =
       Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length arr)
     in

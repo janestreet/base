@@ -5,21 +5,14 @@ include (
     type 'a t = 'a option
     [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
-    let compare__local :
-          'a.
-          (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-          -> ('a t[@ocaml.local])
-          -> ('a t[@ocaml.local])
-          -> int
-      =
+    let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
       compare_option__local
     ;;
 
     let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
 
-    let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
-      fun (type a__009_)
-        : (((a__009_[@ocaml.local]) -> a__009_) -> (a__009_ t[@ocaml.local]) -> a__009_ t) ->
+    let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
+      fun (type a__009_) : ((a__009_ -> a__009_) -> a__009_ t -> a__009_ t) ->
       globalize_option
     ;;
 
@@ -54,7 +47,7 @@ include (
       include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
       include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
-      val globalize : (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t
+      val globalize : ('a -> 'a) -> 'a t -> 'a t
 
       include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
       include Sexplib0.Sexpable.S1 with type 'a t := 'a t

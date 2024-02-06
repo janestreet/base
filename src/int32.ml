@@ -4,7 +4,7 @@ open! Stdlib.Int32
 module T = struct
   type t = int32 [@@deriving_inline globalize, hash, sexp, sexp_grammar]
 
-  let (globalize : (t[@ocaml.local]) -> t) = (globalize_int32 : (t[@ocaml.local]) -> t)
+  let (globalize : t -> t) = (globalize_int32 : t -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_int32
@@ -95,7 +95,7 @@ module Compare = struct
   let min x y = Bool0.select (x <= y) x y
   let max x y = Bool0.select (x >= y) x y
   let equal (x : t) y = x = y
-  let equal__local ((x : t) [@local]) (y [@local]) = Poly.equal x y
+  let equal__local (x : t) y = Poly.equal x y
   let between t ~low ~high = low <= t && t <= high
   let clamp_unchecked t ~min:min_ ~max:max_ = min t max_ |> max min_
 
@@ -232,15 +232,12 @@ module Pow2 = struct
 end
 
 include Pow2
-include Conv.Make (T)
+include Int_string_conversions.Make (T)
 
-include Conv.Make_hex (struct
+include Int_string_conversions.Make_hex (struct
   type t = int32 [@@deriving_inline compare ~localize, hash]
 
-  let compare__local =
-    (compare_int32__local : (t[@ocaml.local]) -> (t[@ocaml.local]) -> int)
-  ;;
-
+  let compare__local = (compare_int32__local : t -> t -> int)
   let compare = (fun a b -> compare__local a b : t -> t -> int)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
@@ -259,6 +256,33 @@ include Conv.Make_hex (struct
   let to_string i = Printf.sprintf "%lx" i
   let of_string s = Stdlib.Scanf.sscanf s "%lx" Fn.id
   let module_name = "Base.Int32.Hex"
+end)
+
+include Int_string_conversions.Make_binary (struct
+  type t = int32 [@@deriving_inline compare ~localize, equal ~localize, hash]
+
+  let compare__local = (compare_int32__local : t -> t -> int)
+  let compare = (fun a b -> compare__local a b : t -> t -> int)
+  let equal__local = (equal_int32__local : t -> t -> bool)
+  let equal = (fun a b -> equal__local a b : t -> t -> bool)
+
+  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+    hash_fold_int32
+
+  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+    let func = hash_int32 in
+    fun x -> func x
+  ;;
+
+  [@@@end]
+
+  let ( land ) = ( land )
+  let ( lsr ) = ( lsr )
+  let clz = clz
+  let num_bits = num_bits
+  let one = one
+  let to_int_exn = to_int_exn
+  let zero = zero
 end)
 
 include Pretty_printer.Register (struct

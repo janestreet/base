@@ -329,23 +329,6 @@ let%test_module "float upper bound is inclusive despite docs" =
     (* The fact that this test passes doesn't demonstrate that the bug has gone away,
        since the test was explicitly contrived to provoke the bug. *)
 
-    (** {[
-         let%expect_test _ =
-           (* No choice but to use magic, since trying to brute-force a seed that causes this
-              behavior takes too long.
-
-              Hack random_state so that the next 60 bits produced by [bits] are all 1s. *)
-           let random_state =
-             let st = Array.create 0 ~len:55 in
-             st.(1) <- 0b11111__11111__11111__11111__11111__00000;
-             st.(2) <- 0b11111__11111__11111__11111__11111__00000;
-             (Stdlib.Obj.magic (st, 0) : Random.State.t)
-           in
-           require [%here] ~cr:CR_someday (Float.( < ) (Random.State.float random_state 1.) 1.);
-           [%expect {| |}]
-         ;;
-       ]} *)
-
     (* This bug is more clearly illustrated by copying the implementation of
        [Random.float] from the stdlib (which is just re-exported by Base).
 

@@ -101,9 +101,8 @@ let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_gramma
   }
 ;;
 
-let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
-  fun (type a__025_)
-    : (((a__025_[@ocaml.local]) -> a__025_) -> (a__025_ t[@ocaml.local]) -> a__025_ t) ->
+let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
+  fun (type a__025_) : ((a__025_ -> a__025_) -> a__025_ t -> a__025_ t) ->
   fun _globalize_a__026_ x__027_ ->
   match x__027_ with
   | Unbounded as x__028_ -> x__028_
@@ -163,8 +162,7 @@ let (interval_comparison_sexp_grammar : interval_comparison Sexplib0.Sexp_gramma
 ;;
 
 let compare_interval_comparison__local =
-  (Stdlib.compare
-    : (interval_comparison[@ocaml.local]) -> (interval_comparison[@ocaml.local]) -> int)
+  (Stdlib.compare : interval_comparison -> interval_comparison -> int)
 ;;
 
 let compare_interval_comparison =

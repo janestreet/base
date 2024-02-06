@@ -49,7 +49,7 @@ module type Basic_local = sig
 
   val return : 'a -> 'a t
   val apply : ('a -> 'b) t -> 'a t -> 'b t
-  val map : 'a t -> f:(('a -> 'b)[@local]) -> 'b t
+  val map : 'a t -> f:('a -> 'b) -> 'b t
 end
 
 module type Basic_using_map2 = sig
@@ -64,8 +64,8 @@ module type Basic_using_map2_local = sig
   type 'a t
 
   val return : 'a -> 'a t
-  val map2 : 'a t -> 'b t -> f:(('a -> 'b -> 'c)[@local]) -> 'c t
-  val map : [ `Define_using_map2 | `Custom of 'a t -> f:(('a -> 'b)[@local]) -> 'b t ]
+  val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
+  val map : [ `Define_using_map2 | `Custom of 'a t -> f:('a -> 'b) -> 'b t ]
 end
 
 module type Applicative_infix_gen = sig
@@ -83,7 +83,7 @@ end
 module type Applicative_infix = Applicative_infix_gen with type ('a, 'b) fn := 'a -> 'b
 
 module type Applicative_infix_local =
-  Applicative_infix_gen with type ('a, 'b) fn := ('a[@local]) -> 'b
+  Applicative_infix_gen with type ('a, 'b) fn := 'a -> 'b
 
 module type For_let_syntax_gen = sig
   type 'a t
@@ -104,8 +104,8 @@ module type For_let_syntax =
 
 module type For_let_syntax_local =
   For_let_syntax_gen
-    with type ('a, 'b) fn := ('a[@local]) -> 'b
-     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
 
 module type S_gen = sig
   include For_let_syntax_gen
@@ -132,10 +132,10 @@ module type S =
 
 module type S_local =
   S_gen
-    with type ('a, 'b) fn := ('a[@local]) -> 'b
-     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
-     and type ('a, 'b, 'c) fun2 := 'a -> ('b -> 'c[@local])
-     and type ('a, 'b, 'c, 'd) fun3 := 'a -> ('b -> ('c -> 'd[@local])[@local])
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+     and type ('a, 'b, 'c) fun2 := 'a -> 'b -> 'c
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> 'b -> 'c -> 'd
 
 module type Let_syntax = sig
   type 'a t
@@ -172,7 +172,7 @@ module type Basic2_local = sig
 
   val return : 'a -> ('a, _) t
   val apply : ('a -> 'b, 'e) t -> ('a, 'e) t -> ('b, 'e) t
-  val map : ('a, 'e) t -> f:(('a -> 'b)[@local]) -> ('b, 'e) t
+  val map : ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t
 end
 
 module type Basic2_using_map2 = sig
@@ -187,12 +187,8 @@ module type Basic2_using_map2_local = sig
   type ('a, 'e) t
 
   val return : 'a -> ('a, _) t
-  val map2 : ('a, 'e) t -> ('b, 'e) t -> f:(('a -> 'b -> 'c)[@local]) -> ('c, 'e) t
-
-  val map
-    : [ `Define_using_map2
-      | `Custom of ('a, 'e) t -> f:(('a -> 'b)[@local]) -> ('b, 'e) t
-      ]
+  val map2 : ('a, 'e) t -> ('b, 'e) t -> f:('a -> 'b -> 'c) -> ('c, 'e) t
+  val map : [ `Define_using_map2 | `Custom of ('a, 'e) t -> f:('a -> 'b) -> ('b, 'e) t ]
 end
 
 module type Applicative_infix2_gen = sig
@@ -208,7 +204,7 @@ end
 module type Applicative_infix2 = Applicative_infix2_gen with type ('a, 'b) fn := 'a -> 'b
 
 module type Applicative_infix2_local =
-  Applicative_infix2_gen with type ('a, 'b) fn := ('a[@local]) -> 'b
+  Applicative_infix2_gen with type ('a, 'b) fn := 'a -> 'b
 
 module type For_let_syntax2_gen = sig
   type ('a, 'e) t
@@ -232,8 +228,8 @@ module type For_let_syntax2 =
 
 module type For_let_syntax2_local =
   For_let_syntax2_gen
-    with type ('a, 'b) fn := ('a[@local]) -> 'b
-     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
 
 module type S2_gen = sig
   include For_let_syntax2_gen
@@ -268,10 +264,10 @@ module type S2 =
 
 module type S2_local =
   S2_gen
-    with type ('a, 'b) fn := ('a[@local]) -> 'b
-     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
-     and type ('a, 'b, 'c) fun2 := 'a -> ('b -> 'c[@local])
-     and type ('a, 'b, 'c, 'd) fun3 := 'a -> ('b -> ('c -> 'd[@local])[@local])
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+     and type ('a, 'b, 'c) fun2 := 'a -> 'b -> 'c
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> 'b -> 'c -> 'd
 
 module type Let_syntax2 = sig
   type ('a, 'e) t
@@ -321,17 +317,10 @@ module type Basic3_using_map2_local = sig
   type ('a, 'd, 'e) t
 
   val return : 'a -> ('a, _, _) t
-
-  val map2
-    :  ('a, 'd, 'e) t
-    -> ('b, 'd, 'e) t
-    -> f:(('a -> 'b -> 'c)[@local])
-    -> ('c, 'd, 'e) t
+  val map2 : ('a, 'd, 'e) t -> ('b, 'd, 'e) t -> f:('a -> 'b -> 'c) -> ('c, 'd, 'e) t
 
   val map
-    : [ `Define_using_map2
-      | `Custom of ('a, 'd, 'e) t -> f:(('a -> 'b)[@local]) -> ('b, 'd, 'e) t
-      ]
+    : [ `Define_using_map2 | `Custom of ('a, 'd, 'e) t -> f:('a -> 'b) -> ('b, 'd, 'e) t ]
 end
 
 module type Applicative_infix3_gen = sig
@@ -347,7 +336,7 @@ end
 module type Applicative_infix3 = Applicative_infix3_gen with type ('a, 'b) fn := 'a -> 'b
 
 module type Applicative_infix3_local =
-  Applicative_infix3_gen with type ('a, 'b) fn := ('a[@local]) -> 'b
+  Applicative_infix3_gen with type ('a, 'b) fn := 'a -> 'b
 
 module type For_let_syntax3_gen = sig
   type ('a, 'd, 'e) t
@@ -371,8 +360,8 @@ module type For_let_syntax3 =
 
 module type For_let_syntax3_local =
   For_let_syntax3_gen
-    with type ('a, 'b) fn := ('a[@local]) -> 'b
-     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
 
 module type S3_gen = sig
   include For_let_syntax3_gen
@@ -411,10 +400,10 @@ module type S3 =
 
 module type S3_local =
   S3_gen
-    with type ('a, 'b) fn := ('a[@local]) -> 'b
-     and type ('a, 'b) f_labeled_fn := f:('a[@local]) -> 'b
-     and type ('a, 'b, 'c) fun2 := 'a -> ('b -> 'c[@local])
-     and type ('a, 'b, 'c, 'd) fun3 := 'a -> ('b -> ('c -> 'd[@local])[@local])
+    with type ('a, 'b) fn := 'a -> 'b
+     and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+     and type ('a, 'b, 'c) fun2 := 'a -> 'b -> 'c
+     and type ('a, 'b, 'c, 'd) fun3 := 'a -> 'b -> 'c -> 'd
 
 module type Let_syntax3 = sig
   type ('a, 'd, 'e) t

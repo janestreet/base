@@ -33,11 +33,7 @@ include Ppx_compare_lib.Equal.S2 with type ('ok, 'err) t := ('ok, 'err) t
 include Ppx_compare_lib.Equal.S_local2 with type ('ok, 'err) t := ('ok, 'err) t
 include Ppx_hash_lib.Hashable.S2 with type ('ok, 'err) t := ('ok, 'err) t
 
-val globalize
-  :  (('ok[@ocaml.local]) -> 'ok)
-  -> (('err[@ocaml.local]) -> 'err)
-  -> (('ok, 'err) t[@ocaml.local])
-  -> ('ok, 'err) t
+val globalize : ('ok -> 'ok) -> ('err -> 'err) -> ('ok, 'err) t -> ('ok, 'err) t
 
 [@@@end]
 
@@ -57,17 +53,17 @@ val ok_exn : ('ok, exn) t -> 'ok
 val ok_or_failwith : ('ok, string) t -> 'ok
 val error : (_, 'err) t -> 'err option
 val of_option : 'ok option -> error:'err -> ('ok, 'err) t
-val iter : ('ok, _) t -> f:(('ok -> unit)[@local]) -> unit
-val iter_error : (_, 'err) t -> f:(('err -> unit)[@local]) -> unit
-val map : ('ok, 'err) t -> f:(('ok -> 'c)[@local]) -> ('c, 'err) t
-val map_error : ('ok, 'err) t -> f:(('err -> 'c)[@local]) -> ('ok, 'c) t
+val iter : ('ok, _) t -> f:('ok -> unit) -> unit
+val iter_error : (_, 'err) t -> f:('err -> unit) -> unit
+val map : ('ok, 'err) t -> f:('ok -> 'c) -> ('c, 'err) t
+val map_error : ('ok, 'err) t -> f:('err -> 'c) -> ('ok, 'c) t
 
 (** Returns [Ok] if both are [Ok] and [Error] otherwise. *)
 val combine
   :  ('ok1, 'err) t
   -> ('ok2, 'err) t
-  -> ok:(('ok1 -> 'ok2 -> 'ok3)[@local])
-  -> err:(('err -> 'err -> 'err)[@local])
+  -> ok:('ok1 -> 'ok2 -> 'ok3)
+  -> err:('err -> 'err -> 'err)
   -> ('ok3, 'err) t
 
 (** [combine_errors ts] returns [Ok] if every element in [ts] is [Ok], else it returns
@@ -95,7 +91,7 @@ val of_either : ('ok, 'err) Either0.t -> ('ok, 'err) t
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
 val ok_if_true : bool -> error:'err -> (unit, 'err) t
 
-val try_with : ((unit -> 'a)[@local]) -> ('a, exn) t
+val try_with : (unit -> 'a) -> ('a, exn) t
 
 module Export : sig
   type ('ok, 'err) _result = ('ok, 'err) t =

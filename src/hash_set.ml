@@ -79,10 +79,7 @@ module Accessors = struct
         acc))
   ;;
 
-  let exists t ~f:(f [@local]) =
-    Hashtbl.existsi t ~f:(fun ~key ~data:() -> f key) [@nontail]
-  ;;
-
+  let exists t ~f = Hashtbl.existsi t ~f:(fun ~key ~data:() -> f key) [@nontail]
   let for_all t ~f = not (Hashtbl.existsi t ~f:(fun ~key ~data:() -> not (f key)))
   let equal t1 t2 = Hashtbl.equal (fun () () -> true) t1 t2
   let copy t = Hashtbl.copy t

@@ -10,9 +10,8 @@ let invalid_argf = Printf.invalid_argf
 module T = struct
   type 'a t = 'a list [@@deriving_inline globalize, sexp, sexp_grammar]
 
-  let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
-    fun (type a__001_)
-      : (((a__001_[@ocaml.local]) -> a__001_) -> (a__001_ t[@ocaml.local]) -> a__001_ t) ->
+  let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
+    fun (type a__001_) : ((a__001_ -> a__001_) -> a__001_ t -> a__001_ t) ->
     globalize_list
   ;;
 
@@ -32,13 +31,7 @@ module Or_unequal_lengths = struct
     | Unequal_lengths
   [@@deriving_inline compare ~localize, sexp_of]
 
-  let compare__local :
-        'a.
-        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-        -> ('a t[@ocaml.local])
-        -> ('a t[@ocaml.local])
-        -> int
-    =
+  let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
     fun _cmp__a a__014_ b__015_ ->
     if Stdlib.( == ) a__014_ b__015_
     then 0
@@ -91,32 +84,32 @@ let range' ~compare ~stride ?(start = `inclusive) ?(stop = `exclusive) start_i s
     | Less -> `Less
     | Greater -> `Greater
   in
-  let rec loop i accum =
+  let[@tail_mod_cons] rec loop i =
     let i_to_stop_order = order i stop_i in
     match i_to_stop_order, initial_stride_order with
     | Less, `Less | Greater, `Greater ->
       (* haven't yet reached [stop_i]. Continue. *)
       let next_i = stride i in
       (match order i next_i, initial_stride_order with
-       | Equal, _ -> raise_stride_cannot_return_same_value ()
+       | Equal, _ -> (raise_stride_cannot_return_same_value [@tailcall false]) ()
        | Less, `Greater | Greater, `Less ->
          invalid_arg "List.range': stride function cannot change direction"
-       | Less, `Less | Greater, `Greater -> loop next_i (i :: accum))
+       | Less, `Less | Greater, `Greater -> i :: loop next_i)
     | Less, `Greater | Greater, `Less ->
       (* stepped past [stop_i].  Finished. *)
-      accum
+      []
     | Equal, _ ->
       (* reached [stop_i].  Finished. *)
       (match stop with
-       | `inclusive -> i :: accum
-       | `exclusive -> accum)
+       | `inclusive -> [ i ]
+       | `exclusive -> [])
   in
   let start_i =
     match start with
     | `inclusive -> start_i
     | `exclusive -> next_i
   in
-  rev (loop start_i [])
+  loop start_i [@nontail]
 ;;
 
 let range ?(stride = 1) ?(start = `inclusive) ?(stop = `exclusive) start_i stop_i =
@@ -300,7 +293,11 @@ let rev_filter t ~f =
   find ~f [] t
 ;;
 
-let filter t ~f = rev (rev_filter t ~f)
+let[@tail_mod_cons] rec filter l ~f =
+  match l with
+  | [] -> []
+  | hd :: tl -> if f hd then hd :: filter tl ~f else filter tl ~f
+;;
 
 let find_map t ~f =
   let rec loop = function
@@ -455,7 +452,14 @@ let fold_map t ~init ~f =
 ;;
 
 let ( >>| ) l f = map l ~f
-let map2_ok l1 l2 ~f = rev (rev_map2_ok l1 l2 ~f)
+
+let[@tail_mod_cons] rec map2_ok l1 l2 ~f =
+  match l1, l2 with
+  | [], [] -> []
+  | x1 :: l1, x2 :: l2 -> f x1 x2 :: map2_ok l1 l2 ~f
+  | _, _ -> invalid_arg "List.map2"
+;;
+
 let map2 l1 l2 ~f = check_length2 l1 l2 ~f:(map2_ok ~f) [@nontail]
 
 let map2_exn l1 l2 ~f =
@@ -480,7 +484,13 @@ let rev_map3_exn l1 l2 l3 ~f =
   rev_map3_ok l1 l2 l3 ~f
 ;;
 
-let map3_ok l1 l2 l3 ~f = rev (rev_map3_ok l1 l2 l3 ~f)
+let[@tail_mod_cons] rec map3_ok l1 l2 l3 ~f =
+  match l1, l2, l3 with
+  | [], [], [] -> []
+  | x1 :: l1, x2 :: l2, x3 :: l3 -> f x1 x2 x3 :: map3_ok l1 l2 l3 ~f
+  | _, _, _ -> invalid_arg "List.map3"
+;;
+
 let map3 l1 l2 l3 ~f = check_length3 l1 l2 l3 ~f:(map3_ok ~f) [@nontail]
 
 let map3_exn l1 l2 l3 ~f =
@@ -529,7 +539,13 @@ let rev_mapi l ~f =
   loop 0 [] l [@nontail]
 ;;
 
-let mapi l ~f = rev (rev_mapi l ~f)
+let mapi l ~f =
+  let[@tail_mod_cons] rec loop i = function
+    | [] -> []
+    | h :: t -> f i h :: loop (i + 1) t
+  in
+  loop 0 l [@nontail]
+;;
 
 let folding_mapi t ~init ~f =
   let acc = ref init in
@@ -563,7 +579,12 @@ let foldi t ~init ~f =
 ;;
 
 let filteri l ~f =
-  rev (foldi l ~f:(fun pos acc x -> if f pos x then x :: acc else acc) ~init:[])
+  let[@tail_mod_cons] rec loop pos l =
+    match l with
+    | [] -> []
+    | hd :: tl -> if f pos hd then hd :: loop (pos + 1) tl else loop (pos + 1) tl
+  in
+  loop 0 l [@nontail]
 ;;
 
 let reduce l ~f =
@@ -625,22 +646,42 @@ let reduce_balanced_exn l ~f =
 ;;
 
 let groupi l ~break =
-  let groups =
-    foldi l ~init:[] ~f:(fun i acc x ->
-      match acc with
-      | [] -> [ [ x ] ]
-      | current_group :: tl ->
-        if break i (hd_exn current_group) x
-        then [ x ] :: current_group :: tl (* start new group *)
-        else (x :: current_group) :: tl)
-    (* extend current group *)
+  (* We allocate shared position and list references so we can make the inner loop use
+     [[@tail_mod_cons]], and still return back information about position and where in the
+     list we left off. *)
+  let pos = ref 0 in
+  let l = ref l in
+  (* As a result of using local references, our inner loop does not need arguments. *)
+  let[@tail_mod_cons] rec take_group () =
+    match !l with
+    | ([] | [ _ ]) as group ->
+      l := [];
+      group
+    | x :: (y :: _ as tl) ->
+      pos := !pos + 1;
+      l := tl;
+      if break !pos x y then [ x ] else x :: take_group ()
   in
-  match groups with
-  | [] -> []
-  | l -> rev_map l ~f:rev
+  (* Our outer loop does not need arguments, either. *)
+  let[@tail_mod_cons] rec groups () =
+    if is_empty !l
+    then []
+    else (
+      let group = take_group () in
+      group :: groups ())
+  in
+  groups () [@nontail]
 ;;
 
 let group l ~break = groupi l ~break:(fun _ x y -> break x y) [@nontail]
+
+let[@tail_mod_cons] rec merge l1 l2 ~compare =
+  match l1, l2 with
+  | [], l2 -> l2
+  | l1, [] -> l1
+  | h1 :: t1, h2 :: t2 ->
+    if compare h1 h2 <= 0 then h1 :: merge t1 l2 ~compare else h2 :: merge l1 t2 ~compare
+;;
 
 let stable_sort l ~compare:cmp =
   let rec rev_merge cmp l1 l2 accu =
@@ -860,33 +901,25 @@ let stable_dedup list ~compare =
     fold dedups ~init:[] ~f:(fun acc dedup -> if dedup.dup then acc else dedup.elt :: acc)
 ;;
 
-let concat_map l ~f:(f [@local]) =
-  let rec aux acc = function
-    | [] -> rev acc
-    | hd :: tl -> aux (rev_append (f hd) acc) tl
-  in
-  let res = aux [] l in
-  res
-;;
-
 let concat_mapi l ~f =
-  let rec aux cont acc = function
-    | [] -> rev acc
-    | hd :: tl -> aux (cont + 1) (rev_append (f cont hd) acc) tl
+  let[@tail_mod_cons] rec outer_loop pos = function
+    | [] -> []
+    | [ hd ] -> (f [@tailcall false]) pos hd
+    | hd :: (_ :: _ as tl) -> inner_loop (pos + 1) (f pos hd) tl
+  and[@tail_mod_cons] inner_loop pos l1 l2 =
+    match l1 with
+    | [] -> outer_loop pos l2
+    | [ x1 ] -> x1 :: outer_loop pos l2
+    | [ x1; x2 ] -> x1 :: x2 :: outer_loop pos l2
+    | [ x1; x2; x3 ] -> x1 :: x2 :: x3 :: outer_loop pos l2
+    | [ x1; x2; x3; x4 ] -> x1 :: x2 :: x3 :: x4 :: outer_loop pos l2
+    | x1 :: x2 :: x3 :: x4 :: x5 :: tl ->
+      x1 :: x2 :: x3 :: x4 :: x5 :: inner_loop pos tl l2
   in
-  aux 0 [] l [@nontail]
+  outer_loop 0 l [@nontail]
 ;;
 
-let merge l1 l2 ~compare =
-  let rec loop acc l1 l2 =
-    match l1, l2 with
-    | [], l2 -> rev_append acc l2
-    | l1, [] -> rev_append acc l1
-    | h1 :: t1, h2 :: t2 ->
-      if compare h1 h2 <= 0 then loop (h1 :: acc) t1 l2 else loop (h2 :: acc) l1 t2
-  in
-  loop [] l1 l2 [@nontail]
-;;
+let concat_map l ~f = concat_mapi l ~f:(fun _ x -> f x) [@nontail]
 
 module Cartesian_product = struct
   (* We are explicit about what we export from functors so that we don't accidentally
@@ -897,7 +930,7 @@ module Cartesian_product = struct
   let map2 a b ~f = concat_map a ~f:(fun x -> map b ~f:(fun y -> f x y))
   let return x = [ x ]
   let ( >>| ) = ( >>| )
-  let ( >>= ) t (f [@local]) = bind t ~f
+  let ( >>= ) t f = bind t ~f
 
   open struct
     module Applicative = Applicative.Make_using_map2 (struct
@@ -1033,25 +1066,21 @@ let contains_dup lst ~compare =
 ;;
 
 let find_all_dups l ~compare =
-  (* We add this reversal, so we can skip a [rev] at the end. We could skip
-     [rev] anyway since we don not give any ordering guarantees, but it is
-     nice to get results in natural order. *)
-  let compare a b = compare b a in
   let sorted = sort ~compare l in
   (* Walk the list and record the first of each consecutive run of identical elements *)
-  let rec loop sorted prev ~already_recorded acc =
+  let[@tail_mod_cons] rec loop sorted prev ~already_recorded =
     match sorted with
-    | [] -> acc
+    | [] -> []
     | hd :: tl ->
       if compare prev hd <> 0
-      then loop tl hd ~already_recorded:false acc
+      then loop tl hd ~already_recorded:false
       else if already_recorded
-      then loop tl hd ~already_recorded:true acc
-      else loop tl hd ~already_recorded:true (hd :: acc)
+      then loop tl hd ~already_recorded:true
+      else hd :: loop tl hd ~already_recorded:true
   in
   match sorted with
   | [] -> []
-  | hd :: tl -> loop tl hd ~already_recorded:false [] [@nontail]
+  | hd :: tl -> loop tl hd ~already_recorded:false [@nontail]
 ;;
 
 let rec all_equal_to t v ~equal =
@@ -1096,7 +1125,14 @@ let rev_filter_map l ~f =
   loop l [] [@nontail]
 ;;
 
-let filter_map l ~f = rev (rev_filter_map l ~f)
+let[@tail_mod_cons] rec filter_map l ~f =
+  match l with
+  | [] -> []
+  | hd :: tl ->
+    (match f hd with
+     | None -> filter_map tl ~f
+     | Some x -> x :: filter_map tl ~f)
+;;
 
 let rev_filter_mapi l ~f =
   let rec loop i l accum =
@@ -1110,7 +1146,18 @@ let rev_filter_mapi l ~f =
   loop 0 l [] [@nontail]
 ;;
 
-let filter_mapi l ~f = rev (rev_filter_mapi l ~f)
+let filter_mapi l ~f =
+  let[@tail_mod_cons] rec loop pos l =
+    match l with
+    | [] -> []
+    | hd :: tl ->
+      (match f pos hd with
+       | None -> loop (pos + 1) tl
+       | Some x -> x :: loop (pos + 1) tl)
+  in
+  loop 0 l [@nontail]
+;;
+
 let filter_opt l = filter_map l ~f:Fn.id
 
 let partition3_map t ~f =
@@ -1305,9 +1352,14 @@ let sub l ~pos ~len =
   (* We use [pos > length l - len] rather than [pos + len > length l] to avoid the
      possibility of overflow. *)
   if pos < 0 || len < 0 || pos > length l - len then invalid_arg "List.sub";
-  rev
-    (foldi l ~init:[] ~f:(fun i acc el ->
-       if i >= pos && i < pos + len then el :: acc else acc))
+  let stop = pos + len in
+  let[@tail_mod_cons] rec loop i l =
+    match l with
+    | [] -> []
+    | hd :: tl ->
+      if i < pos then loop (i + 1) tl else if i < stop then hd :: loop (i + 1) tl else []
+  in
+  loop 0 l [@nontail]
 ;;
 
 let split_n t_orig n =
@@ -1392,12 +1444,16 @@ let cartesian_product list1 list2 =
   if is_empty list2
   then []
   else (
-    let rec loop l1 l2 accum =
+    let[@tail_mod_cons] rec outer_loop l1 =
       match l1 with
-      | [] -> accum
-      | hd :: tl -> loop tl l2 (rev_append (map ~f:(fun x -> hd, x) l2) accum)
+      | [] -> []
+      | x1 :: l1 -> inner_loop x1 l1 list2
+    and[@tail_mod_cons] inner_loop x1 l1 l2 =
+      match l2 with
+      | [] -> outer_loop l1
+      | x2 :: l2 -> (x1, x2) :: inner_loop x1 l1 l2
     in
-    rev (loop list1 list2 []))
+    outer_loop list1 [@nontail])
 ;;
 
 let concat l = fold_right l ~init:[] ~f:append
@@ -1470,7 +1526,7 @@ let rec compare__local cmp a b =
 
 let hash_fold_t = hash_fold_list
 
-let equal_with_local_closure ((equal : _ -> _ -> _) [@local]) t1 t2 =
+let equal_with_local_closure (equal : _ -> _ -> _) t1 t2 =
   let rec loop ~equal t1 t2 =
     match t1, t2 with
     | [], [] -> true
@@ -1548,7 +1604,7 @@ let intersperse t ~sep =
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
 
-let is_suffix list ~suffix ~equal:((equal_elt : _ -> _ -> _) [@local]) =
+let is_suffix list ~suffix ~equal:(equal_elt : _ -> _ -> _) =
   let list_len = length list in
   let suffix_len = length suffix in
   list_len >= suffix_len

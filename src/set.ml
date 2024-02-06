@@ -35,13 +35,13 @@ module Tree0 = struct
 
   (* Sets are represented by balanced binary trees (the heights of the children differ by
      at most 2. *)
-  let height = function
+  let[@inline always] height = function
     | Empty -> 0
     | Leaf { elt = _ } -> 1
     | Node { left = _; elt = _; right = _; height = h; size = _ } -> h
   ;;
 
-  let length = function
+  let[@inline always] length = function
     | Empty -> 0
     | Leaf { elt = _ } -> 1
     | Node { left = _; elt = _; right = _; height = _; size = s } -> s
@@ -81,38 +81,17 @@ module Tree0 = struct
 
   (* Creates a new node with left son l, value v and right son r.
      We must have all elements of l < v < all elements of r.
-     l and r must be balanced and | height l - height r | <= 2.
-     Inline expansion of height for better speed. *)
+     l and r must be balanced and | height l - height r | <= 2. *)
 
-  let create l v r =
-    let hl =
-      match l with
-      | Empty -> 0
-      | Leaf { elt = _ } -> 1
-      | Node { left = _; elt = _; right = _; height = h; size = _ } -> h
-    in
-    let hr =
-      match r with
-      | Empty -> 0
-      | Leaf { elt = _ } -> 1
-      | Node { left = _; elt = _; right = _; height = h; size = _ } -> h
-    in
+  let[@inline always] create l v r =
+    let hl = (height [@inlined]) l in
+    let hr = (height [@inlined]) r in
     let h = if hl >= hr then hl + 1 else hr + 1 in
     if h = 1
     then Leaf { elt = v }
     else (
-      let sl =
-        match l with
-        | Empty -> 0
-        | Leaf { elt = _ } -> 1
-        | Node { left = _; elt = _; right = _; height = _; size = s } -> s
-      in
-      let sr =
-        match r with
-        | Empty -> 0
-        | Leaf { elt = _ } -> 1
-        | Node { left = _; elt = _; right = _; height = _; size = s } -> s
-      in
+      let sl = (length [@inlined]) l in
+      let sr = (length [@inlined]) r in
       Node { left = l; elt = v; right = r; height = h; size = sl + sr + 1 })
   ;;
 
@@ -179,23 +158,11 @@ module Tree0 = struct
   ;;
 
   (* Same as create, but performs one step of rebalancing if necessary.
-     Assumes l and r balanced and | height l - height r | <= 3.
-     Inline expansion of create for better speed in the most frequent case
-     where no rebalancing is required. *)
+     Assumes l and r balanced and | height l - height r | <= 3. *)
 
   let bal l v r =
-    let hl =
-      match l with
-      | Empty -> 0
-      | Leaf { elt = _ } -> 1
-      | Node { left = _; elt = _; right = _; height = h; size = _ } -> h
-    in
-    let hr =
-      match r with
-      | Empty -> 0
-      | Leaf { elt = _ } -> 1
-      | Node { left = _; elt = _; right = _; height = h; size = _ } -> h
-    in
+    let hl = (height [@inlined]) l in
+    let hr = (height [@inlined]) r in
     if hl > hr + 2
     then (
       match l with
@@ -228,23 +195,7 @@ module Tree0 = struct
             create (create l v Empty) rlv (create Empty rv rr)
           | Node { left = rll; elt = rlv; right = rlr; height = _; size = _ } ->
             create (create l v rll) rlv (create rlr rv rr)))
-    else (
-      let h = if hl >= hr then hl + 1 else hr + 1 in
-      let sl =
-        match l with
-        | Empty -> 0
-        | Leaf { elt = _ } -> 1
-        | Node { left = _; elt = _; right = _; height = _; size = s } -> s
-      in
-      let sr =
-        match r with
-        | Empty -> 0
-        | Leaf { elt = _ } -> 1
-        | Node { left = _; elt = _; right = _; height = _; size = s } -> s
-      in
-      if h = 1
-      then Leaf { elt = v }
-      else Node { left = l; elt = v; right = r; height = h; size = sl + sr + 1 })
+    else (create [@inlined]) l v r
   ;;
 
   (* Insertion of one element *)

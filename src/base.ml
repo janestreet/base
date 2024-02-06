@@ -40,6 +40,7 @@ include (
     with module Buffer := Shadow_stdlib.Buffer
     with module Bytes := Shadow_stdlib.Bytes
     with module Char := Shadow_stdlib.Char
+    with module Condition := Shadow_stdlib.Condition
     with module Either := Shadow_stdlib.Either
     with module Float := Shadow_stdlib.Float
     with module Hashtbl := Shadow_stdlib.Hashtbl
@@ -58,6 +59,7 @@ include (
     with module Random := Shadow_stdlib.Random
     with module Result := Shadow_stdlib.Result
     with module Set := Shadow_stdlib.Set
+    with module Semaphore := Shadow_stdlib.Semaphore
     with module Stack := Shadow_stdlib.Stack
     with module String := Shadow_stdlib.String
     with module Sys := Shadow_stdlib.Sys
@@ -110,7 +112,6 @@ module Identifiable = Identifiable
 module Indexed_container = Indexed_container
 module Info = Info
 module Int = Int
-module Int_conversions = Int_conversions
 module Int32 = Int32
 module Int63 = Int63
 module Int64 = Int64
@@ -167,6 +168,13 @@ module Sexp = struct
   include Sexp_with_comparable (** @inline *)
 end
 
+(* [Int_string_conversions] is separated from [Int_conversions] for dependency reasons,
+   but this separation is not important for clients. *)
+module Int_conversions = struct
+  include Int_conversions
+  include Int_string_conversions
+end
+
 (**/**)
 
 module Exported_for_specific_uses = struct
@@ -188,36 +196,20 @@ module Export = struct
   type 'a array = 'a Array.t
   [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
 
-  let compare_array__local :
-        'a.
-        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-        -> ('a array[@ocaml.local])
-        -> ('a array[@ocaml.local])
-        -> int
-    =
+  let compare_array__local : 'a. ('a -> 'a -> int) -> 'a array -> 'a array -> int =
     Array.compare__local
   ;;
 
   let compare_array : 'a. ('a -> 'a -> int) -> 'a array -> 'a array -> int = Array.compare
 
-  let equal_array__local :
-        'a.
-        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-        -> ('a array[@ocaml.local])
-        -> ('a array[@ocaml.local])
-        -> bool
-    =
+  let equal_array__local : 'a. ('a -> 'a -> bool) -> 'a array -> 'a array -> bool =
     Array.equal__local
   ;;
 
   let equal_array : 'a. ('a -> 'a -> bool) -> 'a array -> 'a array -> bool = Array.equal
 
-  let globalize_array :
-        'a. (('a[@ocaml.local]) -> 'a) -> ('a array[@ocaml.local]) -> 'a array
-    =
-    fun (type a__017_)
-      :  (((a__017_[@ocaml.local]) -> a__017_) -> (a__017_ array[@ocaml.local])
-      -> a__017_ array) ->
+  let globalize_array : 'a. ('a -> 'a) -> 'a array -> 'a array =
+    fun (type a__017_) : ((a__017_ -> a__017_) -> a__017_ array -> a__017_ array) ->
     Array.globalize
   ;;
 
@@ -241,21 +233,11 @@ module Export = struct
   [@@deriving_inline
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare_bool__local =
-    (Bool.compare__local : (bool[@ocaml.local]) -> (bool[@ocaml.local]) -> int)
-  ;;
-
+  let compare_bool__local = (Bool.compare__local : bool -> bool -> int)
   let compare_bool = (fun a b -> compare_bool__local a b : bool -> bool -> int)
-
-  let equal_bool__local =
-    (Bool.equal__local : (bool[@ocaml.local]) -> (bool[@ocaml.local]) -> bool)
-  ;;
-
+  let equal_bool__local = (Bool.equal__local : bool -> bool -> bool)
   let equal_bool = (fun a b -> equal_bool__local a b : bool -> bool -> bool)
-
-  let (globalize_bool : (bool[@ocaml.local]) -> bool) =
-    (Bool.globalize : (bool[@ocaml.local]) -> bool)
-  ;;
+  let (globalize_bool : bool -> bool) = (Bool.globalize : bool -> bool)
 
   let (hash_fold_bool :
         Ppx_hash_lib.Std.Hash.state -> bool -> Ppx_hash_lib.Std.Hash.state)
@@ -277,21 +259,11 @@ module Export = struct
   [@@deriving_inline
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare_char__local =
-    (Char.compare__local : (char[@ocaml.local]) -> (char[@ocaml.local]) -> int)
-  ;;
-
+  let compare_char__local = (Char.compare__local : char -> char -> int)
   let compare_char = (fun a b -> compare_char__local a b : char -> char -> int)
-
-  let equal_char__local =
-    (Char.equal__local : (char[@ocaml.local]) -> (char[@ocaml.local]) -> bool)
-  ;;
-
+  let equal_char__local = (Char.equal__local : char -> char -> bool)
   let equal_char = (fun a b -> equal_char__local a b : char -> char -> bool)
-
-  let (globalize_char : (char[@ocaml.local]) -> char) =
-    (Char.globalize : (char[@ocaml.local]) -> char)
-  ;;
+  let (globalize_char : char -> char) = (Char.globalize : char -> char)
 
   let (hash_fold_char :
         Ppx_hash_lib.Std.Hash.state -> char -> Ppx_hash_lib.Std.Hash.state)
@@ -319,21 +291,11 @@ module Export = struct
   [@@deriving_inline
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare_float__local =
-    (Float.compare__local : (float[@ocaml.local]) -> (float[@ocaml.local]) -> int)
-  ;;
-
+  let compare_float__local = (Float.compare__local : float -> float -> int)
   let compare_float = (fun a b -> compare_float__local a b : float -> float -> int)
-
-  let equal_float__local =
-    (Float.equal__local : (float[@ocaml.local]) -> (float[@ocaml.local]) -> bool)
-  ;;
-
+  let equal_float__local = (Float.equal__local : float -> float -> bool)
   let equal_float = (fun a b -> equal_float__local a b : float -> float -> bool)
-
-  let (globalize_float : (float[@ocaml.local]) -> float) =
-    (Float.globalize : (float[@ocaml.local]) -> float)
-  ;;
+  let (globalize_float : float -> float) = (Float.globalize : float -> float)
 
   let (hash_fold_float :
         Ppx_hash_lib.Std.Hash.state -> float -> Ppx_hash_lib.Std.Hash.state)
@@ -355,21 +317,11 @@ module Export = struct
   [@@deriving_inline
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare_int__local =
-    (Int.compare__local : (int[@ocaml.local]) -> (int[@ocaml.local]) -> int)
-  ;;
-
+  let compare_int__local = (Int.compare__local : int -> int -> int)
   let compare_int = (fun a b -> compare_int__local a b : int -> int -> int)
-
-  let equal_int__local =
-    (Int.equal__local : (int[@ocaml.local]) -> (int[@ocaml.local]) -> bool)
-  ;;
-
+  let equal_int__local = (Int.equal__local : int -> int -> bool)
   let equal_int = (fun a b -> equal_int__local a b : int -> int -> bool)
-
-  let (globalize_int : (int[@ocaml.local]) -> int) =
-    (Int.globalize : (int[@ocaml.local]) -> int)
-  ;;
+  let (globalize_int : int -> int) = (Int.globalize : int -> int)
 
   let (hash_fold_int : Ppx_hash_lib.Std.Hash.state -> int -> Ppx_hash_lib.Std.Hash.state) =
     Int.hash_fold_t
@@ -389,21 +341,11 @@ module Export = struct
   [@@deriving_inline
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare_int32__local =
-    (Int32.compare__local : (int32[@ocaml.local]) -> (int32[@ocaml.local]) -> int)
-  ;;
-
+  let compare_int32__local = (Int32.compare__local : int32 -> int32 -> int)
   let compare_int32 = (fun a b -> compare_int32__local a b : int32 -> int32 -> int)
-
-  let equal_int32__local =
-    (Int32.equal__local : (int32[@ocaml.local]) -> (int32[@ocaml.local]) -> bool)
-  ;;
-
+  let equal_int32__local = (Int32.equal__local : int32 -> int32 -> bool)
   let equal_int32 = (fun a b -> equal_int32__local a b : int32 -> int32 -> bool)
-
-  let (globalize_int32 : (int32[@ocaml.local]) -> int32) =
-    (Int32.globalize : (int32[@ocaml.local]) -> int32)
-  ;;
+  let (globalize_int32 : int32 -> int32) = (Int32.globalize : int32 -> int32)
 
   let (hash_fold_int32 :
         Ppx_hash_lib.Std.Hash.state -> int32 -> Ppx_hash_lib.Std.Hash.state)
@@ -425,21 +367,11 @@ module Export = struct
   [@@deriving_inline
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare_int64__local =
-    (Int64.compare__local : (int64[@ocaml.local]) -> (int64[@ocaml.local]) -> int)
-  ;;
-
+  let compare_int64__local = (Int64.compare__local : int64 -> int64 -> int)
   let compare_int64 = (fun a b -> compare_int64__local a b : int64 -> int64 -> int)
-
-  let equal_int64__local =
-    (Int64.equal__local : (int64[@ocaml.local]) -> (int64[@ocaml.local]) -> bool)
-  ;;
-
+  let equal_int64__local = (Int64.equal__local : int64 -> int64 -> bool)
   let equal_int64 = (fun a b -> equal_int64__local a b : int64 -> int64 -> bool)
-
-  let (globalize_int64 : (int64[@ocaml.local]) -> int64) =
-    (Int64.globalize : (int64[@ocaml.local]) -> int64)
-  ;;
+  let (globalize_int64 : int64 -> int64) = (Int64.globalize : int64 -> int64)
 
   let (hash_fold_int64 :
         Ppx_hash_lib.Std.Hash.state -> int64 -> Ppx_hash_lib.Std.Hash.state)
@@ -461,36 +393,20 @@ module Export = struct
   [@@deriving_inline
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare_list__local :
-        'a.
-        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-        -> ('a list[@ocaml.local])
-        -> ('a list[@ocaml.local])
-        -> int
-    =
+  let compare_list__local : 'a. ('a -> 'a -> int) -> 'a list -> 'a list -> int =
     List.compare__local
   ;;
 
   let compare_list : 'a. ('a -> 'a -> int) -> 'a list -> 'a list -> int = List.compare
 
-  let equal_list__local :
-        'a.
-        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-        -> ('a list[@ocaml.local])
-        -> ('a list[@ocaml.local])
-        -> bool
-    =
+  let equal_list__local : 'a. ('a -> 'a -> bool) -> 'a list -> 'a list -> bool =
     List.equal__local
   ;;
 
   let equal_list : 'a. ('a -> 'a -> bool) -> 'a list -> 'a list -> bool = List.equal
 
-  let globalize_list :
-        'a. (('a[@ocaml.local]) -> 'a) -> ('a list[@ocaml.local]) -> 'a list
-    =
-    fun (type a__078_)
-      :  (((a__078_[@ocaml.local]) -> a__078_) -> (a__078_ list[@ocaml.local])
-      -> a__078_ list) ->
+  let globalize_list : 'a. ('a -> 'a) -> 'a list -> 'a list =
+    fun (type a__078_) : ((a__078_ -> a__078_) -> a__078_ list -> a__078_ list) ->
     List.globalize
   ;;
 
@@ -525,25 +441,21 @@ module Export = struct
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
   let compare_nativeint__local =
-    (Nativeint.compare__local
-      : (nativeint[@ocaml.local]) -> (nativeint[@ocaml.local]) -> int)
+    (Nativeint.compare__local : nativeint -> nativeint -> int)
   ;;
 
   let compare_nativeint =
     (fun a b -> compare_nativeint__local a b : nativeint -> nativeint -> int)
   ;;
 
-  let equal_nativeint__local =
-    (Nativeint.equal__local
-      : (nativeint[@ocaml.local]) -> (nativeint[@ocaml.local]) -> bool)
-  ;;
+  let equal_nativeint__local = (Nativeint.equal__local : nativeint -> nativeint -> bool)
 
   let equal_nativeint =
     (fun a b -> equal_nativeint__local a b : nativeint -> nativeint -> bool)
   ;;
 
-  let (globalize_nativeint : (nativeint[@ocaml.local]) -> nativeint) =
-    (Nativeint.globalize : (nativeint[@ocaml.local]) -> nativeint)
+  let (globalize_nativeint : nativeint -> nativeint) =
+    (Nativeint.globalize : nativeint -> nativeint)
   ;;
 
   let (hash_fold_nativeint :
@@ -569,13 +481,7 @@ module Export = struct
   [@@deriving_inline
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare_option__local :
-        'a.
-        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-        -> ('a option[@ocaml.local])
-        -> ('a option[@ocaml.local])
-        -> int
-    =
+  let compare_option__local : 'a. ('a -> 'a -> int) -> 'a option -> 'a option -> int =
     Option.compare__local
   ;;
 
@@ -583,13 +489,7 @@ module Export = struct
     Option.compare
   ;;
 
-  let equal_option__local :
-        'a.
-        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-        -> ('a option[@ocaml.local])
-        -> ('a option[@ocaml.local])
-        -> bool
-    =
+  let equal_option__local : 'a. ('a -> 'a -> bool) -> 'a option -> 'a option -> bool =
     Option.equal__local
   ;;
 
@@ -597,12 +497,8 @@ module Export = struct
     Option.equal
   ;;
 
-  let globalize_option :
-        'a. (('a[@ocaml.local]) -> 'a) -> ('a option[@ocaml.local]) -> 'a option
-    =
-    fun (type a__109_)
-      :  (((a__109_[@ocaml.local]) -> a__109_) -> (a__109_ option[@ocaml.local])
-      -> a__109_ option) ->
+  let globalize_option : 'a. ('a -> 'a) -> 'a option -> 'a option =
+    fun (type a__109_) : ((a__109_ -> a__109_) -> a__109_ option -> a__109_ option) ->
     Option.globalize
   ;;
 
@@ -635,34 +531,20 @@ module Export = struct
   type 'a ref = 'a Ref.t
   [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
 
-  let compare_ref__local :
-        'a.
-        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-        -> ('a ref[@ocaml.local])
-        -> ('a ref[@ocaml.local])
-        -> int
-    =
+  let compare_ref__local : 'a. ('a -> 'a -> int) -> 'a ref -> 'a ref -> int =
     Ref.compare__local
   ;;
 
   let compare_ref : 'a. ('a -> 'a -> int) -> 'a ref -> 'a ref -> int = Ref.compare
 
-  let equal_ref__local :
-        'a.
-        (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-        -> ('a ref[@ocaml.local])
-        -> ('a ref[@ocaml.local])
-        -> bool
-    =
+  let equal_ref__local : 'a. ('a -> 'a -> bool) -> 'a ref -> 'a ref -> bool =
     Ref.equal__local
   ;;
 
   let equal_ref : 'a. ('a -> 'a -> bool) -> 'a ref -> 'a ref -> bool = Ref.equal
 
-  let globalize_ref : 'a. (('a[@ocaml.local]) -> 'a) -> ('a ref[@ocaml.local]) -> 'a ref =
-    fun (type a__134_)
-      :  (((a__134_[@ocaml.local]) -> a__134_) -> (a__134_ ref[@ocaml.local])
-      -> a__134_ ref) ->
+  let globalize_ref : 'a. ('a -> 'a) -> 'a ref -> 'a ref =
+    fun (type a__134_) : ((a__134_ -> a__134_) -> a__134_ ref -> a__134_ ref) ->
     Ref.globalize
   ;;
 
@@ -684,21 +566,11 @@ module Export = struct
   [@@deriving_inline
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare_string__local =
-    (String.compare__local : (string[@ocaml.local]) -> (string[@ocaml.local]) -> int)
-  ;;
-
+  let compare_string__local = (String.compare__local : string -> string -> int)
   let compare_string = (fun a b -> compare_string__local a b : string -> string -> int)
-
-  let equal_string__local =
-    (String.equal__local : (string[@ocaml.local]) -> (string[@ocaml.local]) -> bool)
-  ;;
-
+  let equal_string__local = (String.equal__local : string -> string -> bool)
   let equal_string = (fun a b -> equal_string__local a b : string -> string -> bool)
-
-  let (globalize_string : (string[@ocaml.local]) -> string) =
-    (String.globalize : (string[@ocaml.local]) -> string)
-  ;;
+  let (globalize_string : string -> string) = (String.globalize : string -> string)
 
   let (hash_fold_string :
         Ppx_hash_lib.Std.Hash.state -> string -> Ppx_hash_lib.Std.Hash.state)
@@ -719,22 +591,11 @@ module Export = struct
   type bytes = Bytes.t
   [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
 
-  let compare_bytes__local =
-    (Bytes.compare__local : (bytes[@ocaml.local]) -> (bytes[@ocaml.local]) -> int)
-  ;;
-
+  let compare_bytes__local = (Bytes.compare__local : bytes -> bytes -> int)
   let compare_bytes = (fun a b -> compare_bytes__local a b : bytes -> bytes -> int)
-
-  let equal_bytes__local =
-    (Bytes.equal__local : (bytes[@ocaml.local]) -> (bytes[@ocaml.local]) -> bool)
-  ;;
-
+  let equal_bytes__local = (Bytes.equal__local : bytes -> bytes -> bool)
   let equal_bytes = (fun a b -> equal_bytes__local a b : bytes -> bytes -> bool)
-
-  let (globalize_bytes : (bytes[@ocaml.local]) -> bytes) =
-    (Bytes.globalize : (bytes[@ocaml.local]) -> bytes)
-  ;;
-
+  let (globalize_bytes : bytes -> bytes) = (Bytes.globalize : bytes -> bytes)
   let bytes_of_sexp = (Bytes.t_of_sexp : Sexplib0.Sexp.t -> bytes)
   let sexp_of_bytes = (Bytes.sexp_of_t : bytes -> Sexplib0.Sexp.t)
   let (bytes_sexp_grammar : bytes Sexplib0.Sexp_grammar.t) = Bytes.t_sexp_grammar
@@ -745,21 +606,11 @@ module Export = struct
   [@@deriving_inline
     compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare_unit__local =
-    (Unit.compare__local : (unit[@ocaml.local]) -> (unit[@ocaml.local]) -> int)
-  ;;
-
+  let compare_unit__local = (Unit.compare__local : unit -> unit -> int)
   let compare_unit = (fun a b -> compare_unit__local a b : unit -> unit -> int)
-
-  let equal_unit__local =
-    (Unit.equal__local : (unit[@ocaml.local]) -> (unit[@ocaml.local]) -> bool)
-  ;;
-
+  let equal_unit__local = (Unit.equal__local : unit -> unit -> bool)
   let equal_unit = (fun a b -> equal_unit__local a b : unit -> unit -> bool)
-
-  let (globalize_unit : (unit[@ocaml.local]) -> unit) =
-    (Unit.globalize : (unit[@ocaml.local]) -> unit)
-  ;;
+  let (globalize_unit : unit -> unit) = (Unit.globalize : unit -> unit)
 
   let (hash_fold_unit :
         Ppx_hash_lib.Std.Hash.state -> unit -> Ppx_hash_lib.Std.Hash.state)

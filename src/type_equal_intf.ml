@@ -243,7 +243,7 @@ module type Type_equal = sig
   [@@@end]
 
   (** just an alias, needed when [t] gets shadowed below *)
-  type ('a, 'b) equal = ('a, 'b) t
+  type ('a, 'b) equal := ('a, 'b) t
 
   (** @inline *)
   include module type of Type_equal_defns (struct

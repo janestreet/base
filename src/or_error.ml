@@ -4,13 +4,7 @@ type 'a t = ('a, Error.t) Result.t
 [@@deriving_inline
   compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
-let compare__local :
-      'a.
-      (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> int)
-      -> ('a t[@ocaml.local])
-      -> ('a t[@ocaml.local])
-      -> int
-  =
+let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
   fun _cmp__a a__007_ b__008_ ->
   Result.compare__local _cmp__a Error.compare__local a__007_ b__008_
 ;;
@@ -19,13 +13,7 @@ let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
   fun _cmp__a a__001_ b__002_ -> Result.compare _cmp__a Error.compare a__001_ b__002_
 ;;
 
-let equal__local :
-      'a.
-      (('a[@ocaml.local]) -> ('a[@ocaml.local]) -> bool)
-      -> ('a t[@ocaml.local])
-      -> ('a t[@ocaml.local])
-      -> bool
-  =
+let equal__local : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
   fun _cmp__a a__019_ b__020_ ->
   Result.equal__local _cmp__a Error.equal__local a__019_ b__020_
 ;;
@@ -34,9 +22,8 @@ let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
   fun _cmp__a a__013_ b__014_ -> Result.equal _cmp__a Error.equal a__013_ b__014_
 ;;
 
-let globalize : 'a. (('a[@ocaml.local]) -> 'a) -> ('a t[@ocaml.local]) -> 'a t =
-  fun (type a__025_)
-    : (((a__025_[@ocaml.local]) -> a__025_) -> (a__025_ t[@ocaml.local]) -> a__025_ t) ->
+let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
+  fun (type a__025_) : ((a__025_ -> a__025_) -> a__025_ t -> a__025_ t) ->
   fun _globalize_a__026_ x__027_ ->
   Result.globalize _globalize_a__026_ Error.globalize x__027_
 ;;
