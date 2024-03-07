@@ -4,7 +4,7 @@ module Key = Hashtbl_intf.Key
 module type Accessors = sig
   type 'a t
 
-  include Container.Generic with type ('a, _) t := 'a t
+  include Container.Generic with type ('a, _, _) t := 'a t
 
   (** override [Container.Generic.mem] *)
   val mem : 'a t -> 'a -> bool

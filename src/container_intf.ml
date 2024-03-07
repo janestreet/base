@@ -413,44 +413,44 @@ module type S1_phantom = sig
 end
 
 module type Generic = sig
-  type ('a, 'phantom) t
+  type ('a, 'phantom1, 'phantom2) t
   type 'a elt
 
-  val length : (_, _) t -> int
-  val is_empty : (_, _) t -> bool
-  val mem : ('a, _) t -> 'a elt -> equal:('a elt -> 'a elt -> bool) -> bool
-  val iter : ('a, _) t -> f:('a elt -> unit) -> unit
-  val fold : ('a, _) t -> init:'acc -> f:('acc -> 'a elt -> 'acc) -> 'acc
+  val length : (_, _, _) t -> int
+  val is_empty : (_, _, _) t -> bool
+  val mem : ('a, _, _) t -> 'a elt -> equal:('a elt -> 'a elt -> bool) -> bool
+  val iter : ('a, _, _) t -> f:('a elt -> unit) -> unit
+  val fold : ('a, _, _) t -> init:'acc -> f:('acc -> 'a elt -> 'acc) -> 'acc
 
   val fold_result
-    :  ('a, _) t
+    :  ('a, _, _) t
     -> init:'acc
     -> f:('acc -> 'a elt -> ('acc, 'e) Result.t)
     -> ('acc, 'e) Result.t
 
   val fold_until
-    :  ('a, _) t
+    :  ('a, _, _) t
     -> init:'acc
     -> f:('acc -> 'a elt -> ('acc, 'final) Continue_or_stop.t)
     -> finish:('acc -> 'final)
     -> 'final
 
-  val exists : ('a, _) t -> f:('a elt -> bool) -> bool
-  val for_all : ('a, _) t -> f:('a elt -> bool) -> bool
-  val count : ('a, _) t -> f:('a elt -> bool) -> int
+  val exists : ('a, _, _) t -> f:('a elt -> bool) -> bool
+  val for_all : ('a, _, _) t -> f:('a elt -> bool) -> bool
+  val count : ('a, _, _) t -> f:('a elt -> bool) -> int
 
   val sum
     :  (module Summable with type t = 'sum)
-    -> ('a, _) t
+    -> ('a, _, _) t
     -> f:('a elt -> 'sum)
     -> 'sum
 
-  val find : ('a, _) t -> f:('a elt -> bool) -> 'a elt option
-  val find_map : ('a, _) t -> f:('a elt -> 'b option) -> 'b option
-  val to_list : ('a, _) t -> 'a elt list
-  val to_array : ('a, _) t -> 'a elt array
-  val min_elt : ('a, _) t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
-  val max_elt : ('a, _) t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
+  val find : ('a, _, _) t -> f:('a elt -> bool) -> 'a elt option
+  val find_map : ('a, _, _) t -> f:('a elt -> 'b option) -> 'b option
+  val to_list : ('a, _, _) t -> 'a elt list
+  val to_array : ('a, _, _) t -> 'a elt array
+  val min_elt : ('a, _, _) t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
+  val max_elt : ('a, _, _) t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
 end
 
 module type S0_with_creators = sig
@@ -526,31 +526,39 @@ module type S1_with_creators = sig
 end
 
 module type Generic_with_creators = sig
-  type (_, _) concat
+  type (_, _, _) concat
 
   include Generic
 
-  val of_list : 'a elt list -> ('a, _) t
-  val of_array : 'a elt array -> ('a, _) t
-  val append : ('a, 'p) t -> ('a, 'p) t -> ('a, 'p) t
-  val concat : (('a, 'p) t, 'p) concat -> ('a, 'p) t
-  val map : ('a, 'p) t -> f:('a elt -> 'b elt) -> ('b, 'p) t
-  val filter : ('a, 'p) t -> f:('a elt -> bool) -> ('a, 'p) t
-  val filter_map : ('a, 'p) t -> f:('a elt -> 'b elt option) -> ('b, 'p) t
-  val concat_map : ('a, 'p) t -> f:('a elt -> ('b, 'p) t) -> ('b, 'p) t
-  val partition_tf : ('a, 'p) t -> f:('a elt -> bool) -> ('a, 'p) t * ('a, 'p) t
+  val of_list : 'a elt list -> ('a, _, _) t
+  val of_array : 'a elt array -> ('a, _, _) t
+  val append : ('a, 'p1, 'p2) t -> ('a, 'p1, 'p2) t -> ('a, 'p1, 'p2) t
+  val concat : (('a, 'p1, 'p2) t, 'p1, 'p2) concat -> ('a, 'p1, 'p2) t
+  val map : ('a, 'p1, 'p2) t -> f:('a elt -> 'b elt) -> ('b, 'p1, 'p2) t
+  val filter : ('a, 'p1, 'p2) t -> f:('a elt -> bool) -> ('a, 'p1, 'p2) t
+  val filter_map : ('a, 'p1, 'p2) t -> f:('a elt -> 'b elt option) -> ('b, 'p1, 'p2) t
+  val concat_map : ('a, 'p1, 'p2) t -> f:('a elt -> ('b, 'p1, 'p2) t) -> ('b, 'p1, 'p2) t
+
+  val partition_tf
+    :  ('a, 'p1, 'p2) t
+    -> f:('a elt -> bool)
+    -> ('a, 'p1, 'p2) t * ('a, 'p1, 'p2) t
 
   val partition_map
-    :  ('a, 'p) t
+    :  ('a, 'p1, 'p2) t
     -> f:('a elt -> ('b elt, 'c elt) Either0.t)
-    -> ('b, 'p) t * ('c, 'p) t
+    -> ('b, 'p1, 'p2) t * ('c, 'p1, 'p2) t
 end
 
 module type Make_gen_arg = sig
-  type ('a, 'phantom) t
+  type ('a, 'phantom1, 'phantom2) t
   type 'a elt
 
-  val fold : ('a, 'phantom) t -> init:'acc -> f:('acc -> 'a elt -> 'acc) -> 'acc
+  val fold
+    :  ('a, 'phantom1, 'phantom2) t
+    -> init:'acc
+    -> f:('acc -> 'a elt -> 'acc)
+    -> 'acc
 
   (** The [iter] argument to [Container.Make] specifies how to implement the
       container's [iter] function.  [`Define_using_fold] means to define [iter]
@@ -565,7 +573,9 @@ module type Make_gen_arg = sig
       terms of [iter], so passing in a more efficient [iter] will improve their efficiency
       as well. *)
   val iter
-    : [ `Define_using_fold | `Custom of ('a, 'phantom) t -> f:('a elt -> unit) -> unit ]
+    : [ `Define_using_fold
+      | `Custom of ('a, 'phantom1, 'phantom2) t -> f:('a elt -> unit) -> unit
+      ]
 
   (** The [length] argument to [Container.Make] specifies how to implement the
       container's [length] function.  [`Define_using_fold] means to define
@@ -579,13 +589,13 @@ module type Make_gen_arg = sig
       efficient.  Several other functions returned by [Container.Make] are defined in
       terms of [length], so passing in a more efficient [length] will improve their
       efficiency as well. *)
-  val length : [ `Define_using_fold | `Custom of ('a, 'phantom) t -> int ]
+  val length : [ `Define_using_fold | `Custom of ('a, 'phantom1, 'phantom2) t -> int ]
 end
 
 module type Make_arg = sig
   type 'a t
 
-  include Make_gen_arg with type ('a, _) t := 'a t and type 'a elt := 'a
+  include Make_gen_arg with type ('a, _, _) t := 'a t and type 'a elt := 'a
 end
 
 module type Make0_arg = sig
@@ -597,23 +607,23 @@ module type Make0_arg = sig
 
   type t
 
-  include Make_gen_arg with type ('a, _) t := t and type 'a elt := Elt.t
+  include Make_gen_arg with type ('a, _, _) t := t and type 'a elt := Elt.t
 end
 
 module type Make_common_with_creators_arg = sig
   include Make_gen_arg
 
-  type (_, _) concat
+  type (_, _, _) concat
 
-  val of_list : 'a elt list -> ('a, _) t
-  val of_array : 'a elt array -> ('a, _) t
-  val concat : (('a, _) t, _) concat -> ('a, _) t
+  val of_list : 'a elt list -> ('a, _, _) t
+  val of_array : 'a elt array -> ('a, _, _) t
+  val concat : (('a, _, _) t, _, _) concat -> ('a, _, _) t
 end
 
 module type Make_gen_with_creators_arg = sig
   include Make_common_with_creators_arg
 
-  val concat_of_array : 'a array -> ('a, _) concat
+  val concat_of_array : 'a array -> ('a, _, _) concat
 end
 
 module type Make_with_creators_arg = sig
@@ -621,9 +631,9 @@ module type Make_with_creators_arg = sig
 
   include
     Make_common_with_creators_arg
-      with type ('a, _) t := 'a t
+      with type ('a, _, _) t := 'a t
        and type 'a elt := 'a
-       and type ('a, _) concat := 'a t
+       and type ('a, _, _) concat := 'a t
 end
 
 module type Make0_with_creators_arg = sig
@@ -637,9 +647,9 @@ module type Make0_with_creators_arg = sig
 
   include
     Make_common_with_creators_arg
-      with type ('a, _) t := t
+      with type ('a, _, _) t := t
        and type 'a elt := Elt.t
-       and type ('a, _) concat := 'a list
+       and type ('a, _, _) concat := 'a list
 end
 
 module type Derived = sig
@@ -747,7 +757,9 @@ module type Container = sig
   module Make0 (T : Make0_arg) : S0 with type t := T.t and type elt := T.Elt.t
 
   module Make_gen (T : Make_gen_arg) :
-    Generic with type ('a, 'phantom) t := ('a, 'phantom) T.t and type 'a elt := 'a T.elt
+    Generic
+      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
+       and type 'a elt := 'a T.elt
 
   module Make_with_creators (T : Make_with_creators_arg) :
     S1_with_creators with type 'a t := 'a T.t
@@ -757,7 +769,7 @@ module type Container = sig
 
   module Make_gen_with_creators (T : Make_gen_with_creators_arg) :
     Generic_with_creators
-      with type ('a, 'phantom) t := ('a, 'phantom) T.t
+      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
        and type 'a elt := 'a T.elt
-       and type ('a, 'phantom) concat := ('a, 'phantom) T.concat
+       and type ('a, 'phantom1, 'phantom2) concat := ('a, 'phantom1, 'phantom2) T.concat
 end

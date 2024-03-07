@@ -18,7 +18,8 @@ val empty : _ t
 (** Initially filled with all [None] *)
 val create : len:int -> _ t
 
-include Indexed_container.Generic with type ('a, _) t := 'a t and type 'a elt := 'a option
+include
+  Indexed_container.Generic with type ('a, _, _) t := 'a t and type 'a elt := 'a option
 
 val length : _ t -> int
 val init_some : int -> f:(int -> 'a) -> 'a t

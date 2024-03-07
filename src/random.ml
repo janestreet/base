@@ -34,6 +34,7 @@ module State = struct
   type t = Repr.t
 
   let bits t = Stdlib.Random.State.bits (Repr.get_state t)
+  let bits64 t = Stdlib.Random.State.bits64 (Repr.get_state t)
   let bool t = Stdlib.Random.State.bool (Repr.get_state t)
   let int t x = Stdlib.Random.State.int (Repr.get_state t) x
   let int32 t x = Stdlib.Random.State.int32 (Repr.get_state t) x
@@ -229,6 +230,7 @@ end
 
 let default = State.default
 let bits () = State.bits default
+let bits64 () = State.bits64 default
 let int x = State.int default x
 let int32 x = State.int32 default x
 let nativeint x = State.nativeint default x

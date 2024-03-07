@@ -24,7 +24,7 @@ module _ : module type of Container = struct
       type elt
       type t
 
-      include Generic with type _ elt := elt and type (_, _) t := t
+      include Generic with type _ elt := elt and type (_, _, _) t := t
 
       val mem : t -> elt -> bool
     end
@@ -41,7 +41,7 @@ module _ : module type of Container = struct
       type elt
       type _ t
 
-      include Container.Generic with type _ elt := elt and type (_, 'p) t := 'p t
+      include Container.Generic with type _ elt := elt and type (_, 'p, _) t := 'p t
 
       val mem : _ t -> elt -> bool
     end
@@ -61,8 +61,8 @@ module _ : module type of Container = struct
       include
         Generic_with_creators
           with type _ elt := elt
-           and type (_, _) t := t
-           and type ('a, _) concat := 'a list
+           and type (_, _, _) t := t
+           and type ('a, _, _) concat := 'a list
 
       val mem : t -> elt -> bool
     end
@@ -78,7 +78,7 @@ module _ : module type of Container = struct
     module type Generic1 = sig
       type _ t
 
-      include Container.Generic with type 'a elt := 'a and type ('a, _) t := 'a t
+      include Container.Generic with type 'a elt := 'a and type ('a, _, _) t := 'a t
     end
   end
 
@@ -92,7 +92,7 @@ module _ : module type of Container = struct
     module type Generic1_phantom = sig
       type (_, _) t
 
-      include Generic with type 'a elt := 'a and type ('a, 'p) t := ('a, 'p) t
+      include Generic with type 'a elt := 'a and type ('a, 'p, _) t := ('a, 'p) t
     end
   end
 
@@ -109,8 +109,8 @@ module _ : module type of Container = struct
       include
         Generic_with_creators
           with type 'a elt := 'a
-           and type ('a, _) t := 'a t
-           and type ('a, _) concat := 'a t
+           and type ('a, _, _) t := 'a t
+           and type ('a, _, _) concat := 'a t
     end
   end
 
@@ -145,7 +145,7 @@ module _ : module type of Indexed_container = struct
       type elt
       type t
 
-      include Generic with type _ elt := elt and type (_, _) t := t
+      include Generic with type _ elt := elt and type (_, _, _) t := t
 
       val mem : t -> elt -> bool
     end
@@ -161,7 +161,7 @@ module _ : module type of Indexed_container = struct
     module type Generic1 = sig
       type 'a t
 
-      include Generic with type 'a elt := 'a and type ('a, _) t := 'a t
+      include Generic with type 'a elt := 'a and type ('a, _, _) t := 'a t
     end
   end
 
@@ -184,8 +184,8 @@ module _ : module type of Indexed_container = struct
       include
         Generic_with_creators
           with type _ elt := elt
-           and type (_, _) t := t
-           and type ('a, _) concat := 'a list
+           and type (_, _, _) t := t
+           and type ('a, _, _) concat := 'a list
 
       val mem : t -> elt -> bool
     end
@@ -204,8 +204,8 @@ module _ : module type of Indexed_container = struct
       include
         Generic_with_creators
           with type 'a elt := 'a
-           and type ('a, _) t := 'a t
-           and type ('a, _) concat := 'a t
+           and type ('a, _, _) t := 'a t
+           and type ('a, _, _) concat := 'a t
     end
   end
 

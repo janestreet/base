@@ -309,7 +309,8 @@ module Definitions = struct
       -> ('key, 'data1, 'phantom) t * ('key, 'data2, 'phantom) t
 
     (** Merges two dictionaries by fully traversing both. Not suitable for efficiently
-        merging lists of dictionaries. See [merge_skewed] instead. *)
+        merging lists of dictionaries. See [merge_disjoint_exn] and [merge_skewed]
+        instead. *)
     val merge
       : ( ('key, 'data1, 'phantom) t
           -> ('key, 'data2, 'phantom) t
@@ -318,6 +319,17 @@ module Definitions = struct
                 -> [ `Left of 'data1 | `Right of 'data2 | `Both of 'data1 * 'data2 ]
                 -> 'data3 option)
           -> ('key, 'data3, 'phantom) t
+        , 'key
+        , 'data
+        , 'phantom )
+        accessor
+
+    (** Merges two dictionaries with the same type of data and disjoint sets of keys.
+        Raises if any keys overlap. *)
+    val merge_disjoint_exn
+      : ( ('key, 'data, 'phantom) t
+          -> ('key, 'data, 'phantom) t
+          -> ('key, 'data, 'phantom) t
         , 'key
         , 'data
         , 'phantom )

@@ -24,7 +24,9 @@ module Named = struct
 end
 
 module type Accessors_generic = sig
-  include Container.Generic
+  type ('a, 'cmp) t
+
+  include Container.Generic with type ('a, 'cmp, _) t := ('a, 'cmp) t
 
   type ('a, 'cmp) tree
 
@@ -114,7 +116,7 @@ module type Accessors_generic = sig
   val find_exn : ('a, _) t -> f:('a elt -> bool) -> 'a elt
   val nth : ('a, _) t -> int -> 'a elt option
   val remove_index : ('a, 'cmp, ('a, 'cmp) t -> int -> ('a, 'cmp) t) access_options
-  val to_tree : ('a, 'cmp) t -> ('a elt, 'cmp cmp) tree
+  val to_tree : ('a, 'cmp) t -> ('a, 'cmp) tree
 
   val to_sequence
     : ( 'a
@@ -194,10 +196,11 @@ module type Creators_generic = sig
   val filter_map
     : ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt option) -> ('b, 'cmp) t) create_options
 
-  val of_tree : ('a, 'cmp, ('a elt, 'cmp cmp) tree -> ('a, 'cmp) t) create_options
+  val of_tree : ('a, 'cmp, ('a, 'cmp) tree -> ('a, 'cmp) t) create_options
 end
 
 module type Creators_and_accessors_generic = sig
+  type ('elt, 'cmp) set
   type ('elt, 'cmp) t
   type ('elt, 'cmp) tree
   type 'elt elt
@@ -212,6 +215,7 @@ module type Creators_and_accessors_generic = sig
 
   include
     Creators_generic
+      with type ('a, 'b) set := ('a, 'b) set
       with type ('a, 'b) t := ('a, 'b) t
       with type ('a, 'b) tree := ('a, 'b) tree
       with type 'a elt := 'a elt
@@ -219,12 +223,14 @@ module type Creators_and_accessors_generic = sig
 end
 
 module type S_poly = sig
+  type ('elt, 'cmp) set
   type 'elt t
   type 'elt tree
   type comparator_witness
 
   include
     Creators_and_accessors_generic
+      with type ('elt, 'cmp) set := ('elt, 'cmp) set
       with type ('elt, 'cmp) t := 'elt t
       with type ('elt, 'cmp) tree := 'elt tree
       with type 'a elt := 'a
@@ -729,9 +735,6 @@ module type Set = sig
 
   include For_deriving with type ('a, 'b) t := ('a, 'b) t
 
-  (** A polymorphic Set. *)
-  module Poly : S_poly with type 'elt t = ('elt, Comparator.Poly.comparator_witness) t
-
   (** Using comparator is a similar interface as the toplevel of [Set], except the functions
       take a [~comparator:('elt, 'cmp) Comparator.t] where the functions at the toplevel of
       [Set] takes a [('elt, 'cmp) comparator]. *)
@@ -810,6 +813,15 @@ module type Set = sig
     :  ('a, 'cmp) Comparator.Module.t
     -> ('a, 'cmp) Using_comparator.Tree.t
     -> ('a, 'cmp) t
+
+  (** A polymorphic Set. *)
+  module Poly :
+    S_poly
+      with type 'elt t = ('elt, Comparator.Poly.comparator_witness) t
+      with type comparator_witness := Comparator.Poly.comparator_witness
+      with type 'elt tree :=
+        ('elt, Comparator.Poly.comparator_witness) Using_comparator.Tree.t
+      with type ('elt, 'cmp) set := ('elt, 'cmp) t
 
   (** {2 Modules and module types for extending [Set]}
 

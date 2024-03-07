@@ -202,27 +202,8 @@ let lower_bound_for_int num_bits =
    These intrinsics were copied from [Ocaml_intrinsics] to avoid build deps we don't want
 *)
 module Intrinsics_with_weird_nan_behavior = struct
-  (** Equivalent to [if x < y then x else y].
-
-      On an x86-64 machine, this compiles to [minsd xmm0, xmm1].
-      On ARM, this calls a C implementation. *)
-  external min
-    :  (float[@unboxed])
-    -> (float[@unboxed])
-    -> (float[@unboxed])
-    = "caml_sse2_float64_min_bytecode" "caml_sse2_float64_min"
-    [@@noalloc] [@@builtin] [@@no_effects] [@@no_coeffects]
-
-  (** Equivalent to [if x > y then x else y].
-
-      On an x86-64 machine, this compiles to [maxsd xmm0, xmm1].
-      On ARM, this calls a C implementation. *)
-  external max
-    :  (float[@unboxed])
-    -> (float[@unboxed])
-    -> (float[@unboxed])
-    = "caml_sse2_float64_max_bytecode" "caml_sse2_float64_max"
-    [@@noalloc] [@@builtin] [@@no_effects] [@@no_coeffects]
+  let[@inline always] min a b = Ocaml_intrinsics_kernel.Float.min a b
+  let[@inline always] max a b = Ocaml_intrinsics_kernel.Float.max a b
 end
 
 let clamp_unchecked

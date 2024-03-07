@@ -81,6 +81,7 @@ val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
 val concat : 'a t list -> 'a t
 val concat_map : 'a t -> f:('a -> 'b t) -> 'b t
 val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
+val partition_map : 'a t -> f:('a -> ('b, 'c) Either.t) -> 'b t * 'c t
 val filter : 'a t -> f:('a -> bool) -> 'a t
 val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 val filter_map : 'a t -> f:('a -> 'b option) -> 'b t

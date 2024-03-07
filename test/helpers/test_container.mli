@@ -10,7 +10,7 @@ module Test_S1_allow_skipping_tests (Container : sig
 end) : sig
   type 'a t [@@deriving sexp]
 
-  include Generic with type ('a, _) t := 'a t
+  include Generic with type ('a, _, _) t := 'a t
 
   val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 end
@@ -26,7 +26,7 @@ module Test_S1 (Container : sig
 end) : sig
   type 'a t [@@deriving sexp]
 
-  include Generic with type ('a, _) t := 'a t
+  include Generic with type ('a, _, _) t := 'a t
 
   val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 end
@@ -49,7 +49,7 @@ module Test_S0 (Container : sig
 end) : sig
   type 'a t [@@deriving sexp]
 
-  include Generic with type ('a, _) t := 'a t
+  include Generic with type ('a, _, _) t := 'a t
 
   val mem : 'a t -> 'a elt -> bool
 end

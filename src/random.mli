@@ -42,6 +42,11 @@ val self_init : ?allow_in_tests:bool -> unit -> unit
     algorithm (affects all the following functions) *)
 val bits : unit -> int
 
+(** [Random.bits64 ()] returns 64 random bits as an integer between
+    {!Int64.min_int} and {!Int64.max_int}.
+    @since 4.14 *)
+val bits64 : unit -> int64
+
 (** [Random.int bound] returns a random integer between 0 (inclusive) and [bound]
     (exclusive).  [bound] must be greater than 0. *)
 val int : int -> int
@@ -115,6 +120,7 @@ module State : sig
       update) the given PRNG state instead of the default one.  *)
 
   val bits : t -> int
+  val bits64 : t -> int64
   val int : t -> int -> int
   val int32 : t -> int32 -> int32
   val nativeint : t -> nativeint -> nativeint

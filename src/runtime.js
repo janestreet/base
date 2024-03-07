@@ -150,14 +150,6 @@ function Base_am_testing(x) {
   return 0;
 }
 
-//Provides: caml_csel_value
-function caml_csel_value(v_cond, v_true, v_false) {
-  if (v_cond)
-    return v_true;
-  else
-    return v_false;
-}
-
 //Provides: Base_unsafe_create_local_bytes
 //Requires: caml_create_bytes
 function Base_unsafe_create_local_bytes(v_len) {
@@ -171,16 +163,6 @@ function Base_unsafe_create_local_bytes(v_len) {
 function caml_make_local_vect(v_len, v_elt) {
   // In javascript there's no local allocation.
   return caml_make_vect(v_len, v_elt);
-}
-
-//Provides: caml_sse2_float64_min_bytecode
-function caml_sse2_float64_min_bytecode(x, y) {
-  return x < y ? x : y;
-}
-
-//Provides: caml_sse2_float64_max_bytecode
-function caml_sse2_float64_max_bytecode(x, y) {
-  return x > y ? x : y;
 }
 
 //Provides: caml_dummy_obj_is_stack

@@ -195,6 +195,35 @@ let%expect_test "concat_mapi" =
   [%expect {| (10 11 12 30 31 32 40 41 42) |}]
 ;;
 
+let%expect_test "partition_map" =
+  let test t =
+    let first, second =
+      partition_map t ~f:(fun i ->
+        match i % 2 = 0 with
+        | true -> First i
+        | false -> Second i)
+    in
+    print_s [%sexp (first : int t)];
+    print_s [%sexp (second : int t)]
+  in
+  test empty;
+  [%expect {|
+    ()
+    () |}];
+  test (of_list [ 0; 1; 2; 3 ]);
+  [%expect {|
+    (0 2)
+    (1 3) |}];
+  test (of_list [ 0; 2; 4; 6 ]);
+  [%expect {|
+    (0 2 4 6)
+    () |}];
+  test (of_list [ 1; 3; 5; 7 ]);
+  [%expect {|
+    ()
+    (1 3 5 7) |}]
+;;
+
 let%expect_test "filter" =
   let test t = print_s [%sexp (filter t ~f:(fun i -> i % 2 = 0) : int t)] in
   test empty;

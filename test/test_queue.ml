@@ -1132,6 +1132,39 @@ let%test_module _ =
                  assert (does_raise (fun () -> iter t ~f));
                  assert (not !reached_unreachable)
                ;;
+
+               module Iteration = struct
+                 type t = Iteration.t
+
+                 let start = Iteration.start
+
+                 let assert_no_mutation_since_start =
+                   Iteration.assert_no_mutation_since_start
+                 ;;
+
+                 let%expect_test "mutation-detection" =
+                   let open Expect_test_helpers_base in
+                   let t = of_list [ `elt ] in
+                   let token = start t in
+                   let `elt = get t 0 in
+                   require_does_not_raise [%here] (fun () ->
+                     assert_no_mutation_since_start token t);
+                   [%expect {| |}];
+                   enqueue t `elt;
+                   require_does_raise [%here] (fun () ->
+                     assert_no_mutation_since_start token t);
+                   [%expect
+                     {|
+           ("mutation of queue during iteration" (
+             (num_mutations 2)
+             (front         0)
+             (mask          1)
+             (length        2)
+             (elts (
+               (_)
+               (_))))) |}]
+                 ;;
+               end
              end
              (* This signature is here to remind us to update the unit tests whenever we
       change [Queue]. *) :

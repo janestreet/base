@@ -1199,6 +1199,28 @@ module Test_creators_and_accessors
     [%expect {| |}]
   ;;
 
+  let merge_disjoint_exn = merge_disjoint_exn
+
+  let%expect_test _ =
+    quickcheck_m
+      [%here]
+      (module Pair (Inst))
+      ~f:(fun (a, b) ->
+        let actual = Option.try_with (fun () -> access merge_disjoint_exn a b) in
+        let expect =
+          if existsi a ~f:(fun ~key ~data:_ -> access mem b key)
+          then None
+          else
+            Some
+              (access merge a b ~f:(fun ~key:_ elt ->
+                 match elt with
+                 | `Left x | `Right x -> Some x
+                 | `Both _ -> assert false))
+        in
+        require_equal [%here] (module Opt (Inst)) actual expect);
+    [%expect {| |}]
+  ;;
+
   let merge_skewed = merge_skewed
 
   let%expect_test _ =

@@ -406,3 +406,20 @@ let%expect_test "[sumi]" =
   test map;
   [%expect {| 14 |}]
 ;;
+
+let%expect_test "[merge_disjoint_exn] success" =
+  let map1 = Map.of_alist_exn (module Int) [ 1, "one"; 2, "two" ] in
+  let map2 = Map.of_alist_exn (module Int) [ 3, "three" ] in
+  print_s [%sexp (Map.merge_disjoint_exn map1 map2 : string Map.M(Int).t)];
+  [%expect {|
+    ((1 one)
+     (2 two)
+     (3 three)) |}]
+;;
+
+let%expect_test "[merge_disjoint_exn] failure" =
+  let map1 = Map.of_alist_exn (module Int) [ 1, "one"; 2, "two" ] in
+  let map2 = Map.of_alist_exn (module Int) [ 2, "two"; 3, "three" ] in
+  show_raise (fun () -> Map.merge_disjoint_exn map1 map2);
+  [%expect {| (raised ("Map.merge_disjoint_exn: duplicate key" 2)) |}]
+;;

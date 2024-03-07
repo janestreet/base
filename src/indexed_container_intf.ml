@@ -41,13 +41,13 @@ module type Generic = sig
   (** These are all like their equivalents in [Container] except that an index starting at
       0 is added as the first argument to [f]. *)
 
-  val foldi : (('a, _) t, 'a elt, _) foldi
-  val iteri : (('a, _) t, 'a elt) iteri
-  val existsi : ('a, _) t -> f:(int -> 'a elt -> bool) -> bool
-  val for_alli : ('a, _) t -> f:(int -> 'a elt -> bool) -> bool
-  val counti : ('a, _) t -> f:(int -> 'a elt -> bool) -> int
-  val findi : ('a, _) t -> f:(int -> 'a elt -> bool) -> (int * 'a elt) option
-  val find_mapi : ('a, _) t -> f:(int -> 'a elt -> 'b option) -> 'b option
+  val foldi : (('a, _, _) t, 'a elt, _) foldi
+  val iteri : (('a, _, _) t, 'a elt) iteri
+  val existsi : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> bool
+  val for_alli : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> bool
+  val counti : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> int
+  val findi : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> (int * 'a elt) option
+  val find_mapi : ('a, _, _) t -> f:(int -> 'a elt -> 'b option) -> 'b option
 end
 
 module type S0_with_creators = sig
@@ -98,41 +98,56 @@ end
 
 module type Generic_with_creators = sig
   include Container.Generic_with_creators
-  include Generic with type 'a elt := 'a elt and type ('a, 'phantom) t := ('a, 'phantom) t
 
-  val init : int -> f:(int -> 'a elt) -> ('a, _) t
-  val mapi : ('a, 'p) t -> f:(int -> 'a elt -> 'b elt) -> ('b, 'p) t
-  val filteri : ('a, 'p) t -> f:(int -> 'a elt -> bool) -> ('a, 'p) t
-  val filter_mapi : ('a, 'p) t -> f:(int -> 'a elt -> 'b elt option) -> ('b, 'p) t
-  val concat_mapi : ('a, 'p) t -> f:(int -> 'a elt -> ('b, 'p) t) -> ('b, 'p) t
+  include
+    Generic
+      with type 'a elt := 'a elt
+       and type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
+
+  val init : int -> f:(int -> 'a elt) -> ('a, _, _) t
+  val mapi : ('a, 'p1, 'p2) t -> f:(int -> 'a elt -> 'b elt) -> ('b, 'p1, 'p2) t
+  val filteri : ('a, 'p1, 'p2) t -> f:(int -> 'a elt -> bool) -> ('a, 'p1, 'p2) t
+
+  val filter_mapi
+    :  ('a, 'p1, 'p2) t
+    -> f:(int -> 'a elt -> 'b elt option)
+    -> ('b, 'p1, 'p2) t
+
+  val concat_mapi
+    :  ('a, 'p1, 'p2) t
+    -> f:(int -> 'a elt -> ('b, 'p1, 'p2) t)
+    -> ('b, 'p1, 'p2) t
 end
 
 module type Make_gen_arg = sig
   include Container_intf.Make_gen_arg
 
-  val iteri : [ `Define_using_fold | `Custom of (('a, _) t, 'a elt) iteri ]
-  val foldi : [ `Define_using_fold | `Custom of (('a, _) t, 'a elt, _) foldi ]
+  val iteri : [ `Define_using_fold | `Custom of (('a, _, _) t, 'a elt) iteri ]
+  val foldi : [ `Define_using_fold | `Custom of (('a, _, _) t, 'a elt, _) foldi ]
 end
 
 module type Make_arg = sig
   include Container_intf.Make_arg
-  include Make_gen_arg with type ('a, _) t := 'a t and type 'a elt := 'a
+  include Make_gen_arg with type ('a, _, _) t := 'a t and type 'a elt := 'a
 end
 
 module type Make0_arg = sig
   include Container_intf.Make0_arg
-  include Make_gen_arg with type ('a, _) t := t and type 'a elt := Elt.t
+  include Make_gen_arg with type ('a, _, _) t := t and type 'a elt := Elt.t
 end
 
 module type Make_common_with_creators_arg = sig
   include Container_intf.Make_common_with_creators_arg
-  include Make_gen_arg with type ('a, 'p) t := ('a, 'p) t and type 'a elt := 'a elt
 
-  val init : [ `Define_using_of_array | `Custom of int -> f:(int -> 'a elt) -> ('a, _) t ]
+  include
+    Make_gen_arg with type ('a, 'p1, 'p2) t := ('a, 'p1, 'p2) t and type 'a elt := 'a elt
+
+  val init
+    : [ `Define_using_of_array | `Custom of int -> f:(int -> 'a elt) -> ('a, _, _) t ]
 
   val concat_mapi
     : [ `Define_using_concat
-      | `Custom of ('a, _) t -> f:(int -> 'a elt -> ('b, _) t) -> ('b, _) t
+      | `Custom of ('a, _, _) t -> f:(int -> 'a elt -> ('b, _, _) t) -> ('b, _, _) t
       ]
 end
 
@@ -141,9 +156,9 @@ module type Make_gen_with_creators_arg = sig
 
   include
     Make_common_with_creators_arg
-      with type ('a, 'p) t := ('a, 'p) t
+      with type ('a, 'p1, 'p2) t := ('a, 'p1, 'p2) t
        and type 'a elt := 'a elt
-       and type ('a, 'p) concat := ('a, 'p) concat
+       and type ('a, 'p1, 'p2) concat := ('a, 'p1, 'p2) concat
 end
 
 module type Make_with_creators_arg = sig
@@ -151,9 +166,9 @@ module type Make_with_creators_arg = sig
 
   include
     Make_common_with_creators_arg
-      with type ('a, _) t := 'a t
+      with type ('a, _, _) t := 'a t
        and type 'a elt := 'a
-       and type ('a, _) concat := 'a t
+       and type ('a, _, _) concat := 'a t
 end
 
 module type Make0_with_creators_arg = sig
@@ -161,9 +176,9 @@ module type Make0_with_creators_arg = sig
 
   include
     Make_common_with_creators_arg
-      with type ('a, _) t := t
+      with type ('a, _, _) t := t
        and type 'a elt := Elt.t
-       and type ('a, _) concat := 'a list
+       and type ('a, _, _) concat := 'a list
 end
 
 module type Derived = sig
@@ -205,7 +220,9 @@ module type Indexed_container = sig
   module Make0 (T : Make0_arg) : S0 with type t := T.t and type elt := T.Elt.t
 
   module Make_gen (T : Make_gen_arg) :
-    Generic with type ('a, 'phantom) t := ('a, 'phantom) T.t and type 'a elt := 'a T.elt
+    Generic
+      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
+       and type 'a elt := 'a T.elt
 
   module Make_with_creators (T : Make_with_creators_arg) :
     S1_with_creators with type 'a t := 'a T.t
@@ -215,7 +232,7 @@ module type Indexed_container = sig
 
   module Make_gen_with_creators (T : Make_gen_with_creators_arg) :
     Generic_with_creators
-      with type ('a, 'phantom) t := ('a, 'phantom) T.t
+      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
        and type 'a elt := 'a T.elt
-       and type ('a, 'phantom) concat := ('a, 'phantom) T.concat
+       and type ('a, 'phantom1, 'phantom2) concat := ('a, 'phantom1, 'phantom2) T.concat
 end

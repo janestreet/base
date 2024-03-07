@@ -103,8 +103,9 @@ let to_array ~length ~iter c =
 ;;
 
 module Make_gen (T : Make_gen_arg) :
-  Generic with type ('a, 'phantom) t := ('a, 'phantom) T.t and type 'a elt := 'a T.elt =
-struct
+  Generic
+    with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
+     and type 'a elt := 'a T.elt = struct
   let fold = T.fold
 
   let iter =
@@ -139,7 +140,7 @@ module Make (T : Make_arg) = struct
   include Make_gen (struct
     include T
 
-    type ('a, _) t = 'a T.t
+    type ('a, _, _) t = 'a T.t
     type 'a elt = 'a
   end)
 end
@@ -148,7 +149,7 @@ module Make0 (T : Make0_arg) = struct
   include Make_gen (struct
     include T
 
-    type ('a, _) t = T.t
+    type ('a, _, _) t = T.t
     type 'a elt = T.Elt.t
   end)
 
@@ -157,9 +158,10 @@ end
 
 module Make_gen_with_creators (T : Make_gen_with_creators_arg) :
   Generic_with_creators
-    with type ('a, 'phantom) t := ('a, 'phantom) T.t
+    with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
      and type 'a elt := 'a T.elt
-     and type ('a, 'phantom) concat := ('a, 'phantom) T.concat = struct
+     and type ('a, 'phantom1, 'phantom2) concat := ('a, 'phantom1, 'phantom2) T.concat =
+struct
   include Make_gen (T)
 
   let of_list = T.of_list
@@ -205,9 +207,9 @@ module Make_with_creators (T : Make_with_creators_arg) = struct
   include Make_gen_with_creators (struct
     include T
 
-    type ('a, _) t = 'a T.t
+    type ('a, _, _) t = 'a T.t
     type 'a elt = 'a
-    type ('a, _) concat = 'a T.t
+    type ('a, _, _) concat = 'a T.t
 
     let concat_of_array = of_array
   end)
@@ -217,9 +219,9 @@ module Make0_with_creators (T : Make0_with_creators_arg) = struct
   include Make_gen_with_creators (struct
     include T
 
-    type ('a, _) t = T.t
+    type ('a, _, _) t = T.t
     type 'a elt = T.Elt.t
-    type ('a, _) concat = 'a list
+    type ('a, _, _) concat = 'a list
 
     let concat_of_array = Array.to_list
   end)

@@ -171,7 +171,7 @@ let foldi input ~init ~f =
 let fold input ~init ~f = foldi input ~init ~f:(fun (_ : int) acc x -> f acc x) [@nontail]
 
 include Indexed_container.Make_gen (struct
-  type nonrec ('a, _) t = 'a t
+  type nonrec ('a, _, _) t = 'a t
   type 'a elt = 'a option
 
   let fold = fold

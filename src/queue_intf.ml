@@ -162,4 +162,26 @@ module type Queue = sig
       copying the queue elements over.  [set_capacity] may decrease the capacity of [t], if
       [c < capacity t]. *)
   val set_capacity : _ t -> int -> unit
+
+  (** Use [Iteration] to implement iteration functions that guard against mutation. *)
+  module Iteration : sig
+    type 'a queue := 'a t
+
+    (** A token representing state from the beginning of an iteration. *)
+    type t [@@immediate]
+
+    (** Capture state at the start of iteration. *)
+    val start : _ queue -> t
+
+    (** [assert_no_mutation_since_start t queue] raises if any mutation has happened to
+        [queue] since [t] was created by [start queue]. Results are unspecified if you
+        call [assert_no_mutation_since_start] with a different queue from the one passed
+        to [start].
+
+        Call [assert_no_mutation_since_start] after each step of an iteration loop, before
+        checking if the queue is empty or advancing to the next element. This ensures
+        these read operations are consistent with the queue's state at the start of
+        iteration. *)
+    val assert_no_mutation_since_start : t -> _ queue -> unit
+  end
 end

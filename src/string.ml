@@ -1900,6 +1900,7 @@ module Make_utf (Format : sig
   val set : bytes -> int -> Uchar.t -> int
 end) =
 struct
+  type elt = Uchar.t
   type t = string
 
   let codec_name = Format.codec_name
@@ -2021,6 +2022,21 @@ struct
   ;;
 
   let concat list = concat ~sep:"" list
+
+  let split t ~on =
+    let len = length t in
+    let[@tail_mod_cons] rec loop ~start ~until =
+      if Int_replace_polymorphic_compare.equal until len
+      then [ sub t ~pos:start ~len:(until - start) ]
+      else (
+        let uchar = get t ~byte_pos:until in
+        let next = until + Format.byte_length uchar in
+        if Uchar.equal uchar on
+        then sub t ~pos:start ~len:(until - start) :: loop ~start:next ~until:next
+        else loop ~start ~until:next)
+    in
+    loop ~start:0 ~until:0 [@nontail]
+  ;;
 
   module C = Indexed_container.Make0_with_creators (struct
     module Elt = Uchar

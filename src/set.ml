@@ -1585,9 +1585,7 @@ let hash_m__t folder t =
 
 module Poly = struct
   type comparator_witness = Comparator.Poly.comparator_witness
-  type nonrec ('elt, 'cmp) set = ('elt, comparator_witness) t
   type nonrec 'elt t = ('elt, comparator_witness) t
-  type nonrec 'elt tree = ('elt, comparator_witness) tree
 
   include Accessors
 

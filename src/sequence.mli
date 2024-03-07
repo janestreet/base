@@ -138,10 +138,12 @@ module Merge_with_duplicates_element : sig
     | Left of 'a
     | Right of 'b
     | Both of 'a * 'b
-  [@@deriving_inline compare ~localize, hash, sexp, sexp_grammar]
+  [@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
 
   include Ppx_compare_lib.Comparable.S2 with type ('a, 'b) t := ('a, 'b) t
   include Ppx_compare_lib.Comparable.S_local2 with type ('a, 'b) t := ('a, 'b) t
+  include Ppx_compare_lib.Equal.S2 with type ('a, 'b) t := ('a, 'b) t
+  include Ppx_compare_lib.Equal.S_local2 with type ('a, 'b) t := ('a, 'b) t
   include Ppx_hash_lib.Hashable.S2 with type ('a, 'b) t := ('a, 'b) t
   include Sexplib0.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
 
@@ -499,4 +501,15 @@ module Expert : sig
     -> f:('s -> 'a option -> k:('s -> 'r) -> 'r) (** [k] stands for "continuation" *)
     -> finish:('s -> 'r)
     -> 'r
+
+  module View : sig
+    type +_ t = private
+      | Sequence :
+          { state : 's
+          ; next : 's -> ('a, 's) Step.t
+          }
+          -> 'a t
+  end
+
+  val view : 'a t -> 'a View.t
 end

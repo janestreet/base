@@ -567,6 +567,9 @@ module type Accessors_generic = sig
         -> ('k, 'v3, 'cmp) t )
       access_options
 
+  val merge_disjoint_exn
+    : ('k, 'cmp, ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t) access_options
+
   val merge_skewed
     : ( 'k
       , 'cmp
@@ -1540,12 +1543,17 @@ module type Map = sig
   (** {2 Additional operations on maps} *)
 
   (** Merges two maps. The runtime is O(length(t1) + length(t2)). You shouldn't use this
-      function to merge a list of maps; consider using [merge_skewed] instead. *)
+      function to merge a list of maps; consider using [merge_disjoin_exn] or
+      [merge_skewed] instead. *)
   val merge
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
     -> f:(key:'k -> ('v1, 'v2) Merge_element.t -> 'v3 option)
     -> ('k, 'v3, 'cmp) t
+
+  (** Merges two dictionaries with the same type of data and disjoint sets of keys.
+      Raises if any keys overlap. *)
+  val merge_disjoint_exn : ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t
 
   (** A special case of [merge], [merge_skewed t1 t2] is a map containing all the
       bindings of [t1] and [t2]. Bindings that appear in both [t1] and [t2] are

@@ -15,7 +15,7 @@ module type Utf = sig
 
   (** Interpret [t] as a container of Unicode scalar values, rather than of ASCII
       characters. Indexes, length, etc. are with respect to [Uchar.t]. *)
-  include Indexed_container.S0_with_creators with type t := t and type elt := Uchar0.t
+  include Indexed_container.S0_with_creators with type t := t and type elt = Uchar0.t
 
   (** Counts the number of unicode scalar values in [t]. *)
   val length_in_uchars : t -> int
@@ -47,6 +47,13 @@ module type Utf = sig
       interface may raise or produce unpredictable results if the string is invalid in
       this encoding. *)
   val of_string_unchecked : string -> t
+
+  (** Similar to [String.split], but splits on a [Uchar.t] in [t]. If you want to split on
+      a [char], first convert it with [Uchar.of_char], but note that the actual byte(s) on
+      which [t] is split may not be the same as the [char] byte depending on both [char]
+      and the encoding of [t]. For example, splitting on 'α' in UTF-8 or on '\n' in UTF-16
+      is actually splitting on a 2-byte sequence. *)
+  val split : t -> on:Uchar0.t -> t list
 
   (** The name of this encoding scheme; e.g., "UTF-8". *)
   val codec_name : string

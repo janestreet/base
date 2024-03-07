@@ -549,3 +549,10 @@ let t_sexp_grammar (type a) (grammar : a Sexplib0.Sexp_grammar.t)
   =
   Sexplib0.Sexp_grammar.coerce (List.t_sexp_grammar grammar)
 ;;
+
+module Iteration = struct
+  type t = int
+
+  let start q = q.num_mutations
+  let assert_no_mutation_since_start t q = ensure_no_mutation q t
+end

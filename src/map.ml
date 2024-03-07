@@ -1697,6 +1697,18 @@ module Tree0 = struct
       else merge_large_first length2 t2 t1 ~call:swap ~combine ~compare_key
   ;;
 
+  let merge_disjoint_exn t1 t2 ~length1 ~length2 ~(comparator : _ Comparator.t) =
+    merge_skewed
+      t1
+      t2
+      ~length1
+      ~length2
+      ~compare_key:comparator.compare
+      ~combine:(fun ~key _ _ ->
+      Error.create "Map.merge_disjoint_exn: duplicate key" key comparator.sexp_of_t
+      |> Error.raise)
+  ;;
+
   module Closest_key_impl = struct
     (* [marker] and [repackage] allow us to create "logical" options without actually
        allocating any options. Passing [Found key value] to a function is equivalent to
@@ -2294,6 +2306,17 @@ module Accessors = struct
     like t1 (Tree0.merge t1.tree t2.tree ~f ~compare_key:(compare_key t1)) [@nontail]
   ;;
 
+  let merge_disjoint_exn t1 t2 =
+    like
+      t1
+      (Tree0.merge_disjoint_exn
+         t1.tree
+         t2.tree
+         ~length1:t1.length
+         ~length2:t2.length
+         ~comparator:t1.comparator) [@nontail]
+  ;;
+
   let merge_skewed t1 t2 ~combine =
     (* This is only a no-op in the case where at least one of the maps is empty. *)
     like_maybe_no_op
@@ -2718,6 +2741,11 @@ module Tree = struct
 
   let merge ~comparator t1 t2 ~f =
     (Tree0.merge t1 t2 ~f ~compare_key:comparator.Comparator.compare).tree
+  ;;
+
+  let merge_disjoint_exn ~comparator t1 t2 =
+    (Tree0.merge_disjoint_exn t1 t2 ~length1:(length t1) ~length2:(length t2) ~comparator)
+      .tree
   ;;
 
   let merge_skewed ~comparator t1 t2 ~combine =

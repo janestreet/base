@@ -231,6 +231,29 @@ let concat ts =
 let concat_mapi t ~f = to_list t |> List.mapi ~f |> concat
 let concat_map t ~f = to_list t |> List.map ~f |> concat
 
+let partition_map t ~f =
+  let left, right = ref empty, ref empty in
+  let left_idx, right_idx = ref 0, ref 0 in
+  let append data idx value =
+    if !idx = 0 then data := create ~len:(length t) value;
+    unsafe_set !data !idx value;
+    incr idx
+  in
+  for i = 0 to length t - 1 do
+    match (f (unsafe_get t i) : _ Either.t) with
+    | First a -> append left left_idx a
+    | Second a -> append right right_idx a
+  done;
+  let trim data idx =
+    if !idx = length t
+    then !data
+    else if !idx > 0
+    then sub ~pos:0 ~len:!idx !data
+    else empty
+  in
+  trim left left_idx, trim right right_idx
+;;
+
 let find_map t ~f =
   let length = length t in
   if length = 0
