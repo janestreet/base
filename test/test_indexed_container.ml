@@ -60,7 +60,8 @@ let%expect_test "foldi" =
     (1)
     (2)
     (1 4)
-    (36 16 4 0) |}]
+    (36 16 4 0)
+    |}]
 ;;
 
 let%expect_test "findi" =
@@ -78,14 +79,16 @@ let%expect_test "findi" =
     ((0 1))
     ((0 2))
     ((0 4))
-    ((0 0)) |}];
+    ((0 0))
+    |}];
   check (fun _i elt -> elt = 1);
   [%expect {|
     ()
     ((0 1))
     ()
     ((2 1))
-    ((1 1)) |}]
+    ((1 1))
+    |}]
 ;;
 
 let%expect_test "find_mapi" =
@@ -101,7 +104,8 @@ let%expect_test "find_mapi" =
     (1)
     ()
     (201)
-    (101) |}]
+    (101)
+    |}]
 ;;
 
 let%expect_test "iteri" =
@@ -122,7 +126,8 @@ let%expect_test "iteri" =
     (0 1)
     (1 3 0 2)
     (2 1 1 5 0 4)
-    (7 49 6 36 5 25 4 16 3 9 2 4 1 1 0 0) |}]
+    (7 49 6 36 5 25 4 16 3 9 2 4 1 1 0 0)
+    |}]
 ;;
 
 let bool_examples =
@@ -151,7 +156,8 @@ let%expect_test "for_alli" =
     false
     false
     false
-    true |}]
+    true
+    |}]
 ;;
 
 let%expect_test "existsi" =
@@ -169,7 +175,8 @@ let%expect_test "existsi" =
     false
     true
     true
-    true |}]
+    true
+    |}]
 ;;
 
 let%expect_test "counti" =
@@ -187,5 +194,6 @@ let%expect_test "counti" =
     0
     1
     1
-    2 |}]
+    2
+    |}]
 ;;

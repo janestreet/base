@@ -65,7 +65,8 @@ let%expect_test "array" =
   [%expect {|
     one
     two
-    three |}]
+    three
+    |}]
 ;;
 
 let%expect_test "list" =
@@ -75,7 +76,8 @@ let%expect_test "list" =
   [%expect {|
     one
     two
-    three |}]
+    three
+    |}]
 ;;
 
 let%expect_test "option" =

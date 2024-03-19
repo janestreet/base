@@ -149,7 +149,8 @@ let%expect_test "mapi" =
   test [ "foo"; "bar" ];
   [%expect {|
     ((0 Foo)
-     (1 Bar)) |}]
+     (1 Bar))
+    |}]
 ;;
 
 let%expect_test "of_list_rev" =
@@ -209,19 +210,23 @@ let%expect_test "partition_map" =
   test empty;
   [%expect {|
     ()
-    () |}];
+    ()
+    |}];
   test (of_list [ 0; 1; 2; 3 ]);
   [%expect {|
     (0 2)
-    (1 3) |}];
+    (1 3)
+    |}];
   test (of_list [ 0; 2; 4; 6 ]);
   [%expect {|
     (0 2 4 6)
-    () |}];
+    ()
+    |}];
   test (of_list [ 1; 3; 5; 7 ]);
   [%expect {|
     ()
-    (1 3 5 7) |}]
+    (1 3 5 7)
+    |}]
 ;;
 
 let%expect_test "filter" =

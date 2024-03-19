@@ -196,6 +196,6 @@ struct
       "0b" ^ insert_delimiter_every (to_string_suffix t) ~delimiter ~chars_per_delimiter:4
     ;;
 
-    let sexp_of_t (t : t) : Sexp.t = Atom (to_string t)
+    let sexp_of_t (t : t) : Sexp.t = Atom (to_string_hum t)
   end
 end

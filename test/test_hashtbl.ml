@@ -79,7 +79,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
      (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
      (choose_randomly ())
      (choose_randomly_exn (
-       Error ("[Hashtbl.choose_randomly_exn] of empty hashtbl")))) |}];
+       Error ("[Hashtbl.choose_randomly_exn] of empty hashtbl"))))
+    |}];
   test [] ~size:100;
   [%expect
     {|
@@ -88,7 +89,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
      (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
      (choose_randomly ())
      (choose_randomly_exn (
-       Error ("[Hashtbl.choose_randomly_exn] of empty hashtbl")))) |}];
+       Error ("[Hashtbl.choose_randomly_exn] of empty hashtbl"))))
+    |}];
   test [ 1 ];
   [%expect
     {|
@@ -96,7 +98,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
      (choose_randomly ((_ _)))
-     (choose_randomly_exn (Ok (_ _)))) |}];
+     (choose_randomly_exn (Ok (_ _))))
+    |}];
   test [ 1 ] ~size:100;
   [%expect
     {|
@@ -104,7 +107,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
      (choose_randomly ((_ _)))
-     (choose_randomly_exn (Ok (_ _)))) |}];
+     (choose_randomly_exn (Ok (_ _))))
+    |}];
   test [ 1; 2 ];
   [%expect
     {|
@@ -114,7 +118,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
      (choose_randomly ((_ _)))
-     (choose_randomly_exn (Ok (_ _)))) |}];
+     (choose_randomly_exn (Ok (_ _))))
+    |}];
   test [ 1; 2 ] ~size:100;
   [%expect
     {|
@@ -124,7 +129,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
      (choose_randomly ((_ _)))
-     (choose_randomly_exn (Ok (_ _)))) |}]
+     (choose_randomly_exn (Ok (_ _))))
+    |}]
 ;;
 
 let%expect_test "update_and_return" =

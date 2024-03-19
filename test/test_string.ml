@@ -47,7 +47,8 @@ let%expect_test "edit distance" =
     (3 spots pith)
     (2 spots pits)
     (1 spots spits)
-    (0 spots spots) |}]
+    (0 spots spots)
+    |}]
 ;;
 
 let%test_module "concat" =
@@ -296,7 +297,8 @@ let%test_module "Unicode" =
         (UTF-16LE "a\000b\000c\000")
         (UTF-16BE "\000a\000b\000c")
         (UTF-32LE "a\000\000\000b\000\000\000c\000\000\000")
-        (UTF-32BE "\000\000\000a\000\000\000b\000\000\000c") |}];
+        (UTF-32BE "\000\000\000a\000\000\000b\000\000\000c")
+        |}];
       test_conversions "\u{0065}\u{0301}";
       [%expect
         {|
@@ -306,7 +308,8 @@ let%test_module "Unicode" =
         (UTF-16LE "e\000\001\003")
         (UTF-16BE "\000e\003\001")
         (UTF-32LE "e\000\000\000\001\003\000\000")
-        (UTF-32BE "\000\000\000e\000\000\003\001") |}];
+        (UTF-32BE "\000\000\000e\000\000\003\001")
+        |}];
       test_conversions "\u{0063}\u{030C}";
       [%expect
         {|
@@ -316,7 +319,8 @@ let%test_module "Unicode" =
         (UTF-16LE "c\000\012\003")
         (UTF-16BE "\000c\003\012")
         (UTF-32LE "c\000\000\000\012\003\000\000")
-        (UTF-32BE "\000\000\000c\000\000\003\012") |}];
+        (UTF-32BE "\000\000\000c\000\000\003\012")
+        |}];
       test_conversions "\u{0E28}\u{0E34}";
       [%expect
         {|
@@ -326,7 +330,8 @@ let%test_module "Unicode" =
         (UTF-16LE "(\0144\014")
         (UTF-16BE "\014(\0144")
         (UTF-32LE "(\014\000\0004\014\000\000")
-        (UTF-32BE "\000\000\014(\000\000\0144") |}];
+        (UTF-32BE "\000\000\014(\000\000\0144")
+        |}];
       test_conversions "\u{1D11E}";
       [%expect
         {|
@@ -336,7 +341,8 @@ let%test_module "Unicode" =
         (UTF-16LE "4\216\030\221")
         (UTF-16BE "\2164\221\030")
         (UTF-32LE "\030\209\001\000")
-        (UTF-32BE "\000\001\209\030") |}];
+        (UTF-32BE "\000\001\209\030")
+        |}];
       test_conversions "\u{1D56C}";
       [%expect
         {|
@@ -346,7 +352,8 @@ let%test_module "Unicode" =
         (UTF-16LE "5\216l\221")
         (UTF-16BE "\2165\221l")
         (UTF-32LE "l\213\001\000")
-        (UTF-32BE "\000\001\213l") |}];
+        (UTF-32BE "\000\001\213l")
+        |}];
       test_conversions "\xFF\xFF";
       [%expect
         {|
@@ -357,7 +364,8 @@ let%test_module "Unicode" =
         (UTF-16LE "\253\255\253\255")
         (UTF-16BE "\255\253\255\253")
         (UTF-32LE "\253\255\000\000\253\255\000\000")
-        (UTF-32BE "\000\000\255\253\000\000\255\253") |}]
+        (UTF-32BE "\000\000\255\253\000\000\255\253")
+        |}]
     ;;
 
     let%expect_test "Test [get] used at an invalid offset" =
@@ -371,7 +379,8 @@ let%test_module "Unicode" =
         {|
         ("Base.String.Utf8.get: invalid UTF-8 encoding at given position"
          "\206\177\206\178"
-         (pos 1)) |}]
+         (pos 1))
+        |}]
     ;;
   end)
 ;;
@@ -1182,13 +1191,15 @@ let%expect_test "is_substring_at" =
     {|
     (raised (
       Invalid_argument
-      "String.is_substring_at: invalid index 100 for string of length 26")) |}];
+      "String.is_substring_at: invalid index 100 for string of length 26"))
+    |}];
   test (-1) "";
   [%expect
     {|
     (raised (
       Invalid_argument
-      "String.is_substring_at: invalid index -1 for string of length 26")) |}]
+      "String.is_substring_at: invalid index -1 for string of length 26"))
+    |}]
 ;;
 
 let%expect_test "prefixes and suffixes" =
@@ -1238,31 +1249,38 @@ let%expect_test "testing prefixes and suffixes" =
   test "" "a";
   [%expect {|
     ((is_prefix false)
-     (is_suffix false)) |}];
+     (is_suffix false))
+    |}];
   test "" "";
   [%expect {|
     ((is_prefix true)
-     (is_suffix true)) |}];
+     (is_suffix true))
+    |}];
   test "Foo" "";
   [%expect {|
     ((is_prefix true)
-     (is_suffix true)) |}];
+     (is_suffix true))
+    |}];
   test "H" "H";
   [%expect {|
     ((is_prefix true)
-     (is_suffix true)) |}];
+     (is_suffix true))
+    |}];
   test "Hello" "He";
   [%expect {|
     ((is_prefix true)
-     (is_suffix false)) |}];
+     (is_suffix false))
+    |}];
   test "Hello" "lo";
   [%expect {|
     ((is_prefix false)
-     (is_suffix true)) |}];
+     (is_suffix true))
+    |}];
   test "HelloFoo" "lo";
   [%expect {|
     ((is_prefix false)
-     (is_suffix false)) |}]
+     (is_suffix false))
+    |}]
 ;;
 
 let%expect_test "chop_prefix" =
@@ -1366,23 +1384,29 @@ let%expect_test "pad_left and pad_right" =
     {|
     ((t            "")
      (padded_left  "  ")
-     (padded_right "  ")) |}];
+     (padded_right "  "))
+    |}];
   test "foo" ~len:2;
-  [%expect {|
+  [%expect
+    {|
     ((t            foo)
      (padded_left  foo)
-     (padded_right foo)) |}];
+     (padded_right foo))
+    |}];
   test "foo" ~len:3;
-  [%expect {|
+  [%expect
+    {|
     ((t            foo)
      (padded_left  foo)
-     (padded_right foo)) |}];
+     (padded_right foo))
+    |}];
   test "foo" ~len:10 ~char:'_';
   [%expect
     {|
     ((t            foo)
      (padded_left  _______foo)
-     (padded_right foo_______)) |}]
+     (padded_right foo_______))
+    |}]
 ;;
 
 let%test_module "functions that raise Not_found_s" =
@@ -1418,7 +1442,8 @@ let%test_module "functions that raise Not_found_s" =
         (Error (Not_found_s "String.index_from_exn: not found"))
         (Error (Not_found_s "String.index_from_exn: not found"))
         (Error (Not_found_s "String.index_from_exn: not found"))
-        (Error (Not_found_s "String.index_from_exn: not found")) |}];
+        (Error (Not_found_s "String.index_from_exn: not found"))
+        |}];
       test "a:b:c";
       [%expect
         {|
@@ -1427,7 +1452,8 @@ let%test_module "functions that raise Not_found_s" =
         (Ok 3)
         (Ok 3)
         (Error (Not_found_s "String.index_from_exn: not found"))
-        (Error (Not_found_s "String.index_from_exn: not found")) |}];
+        (Error (Not_found_s "String.index_from_exn: not found"))
+        |}];
       let test_bounds s =
         test_at s (-1);
         test_at s (length s + 1)
@@ -1436,7 +1462,8 @@ let%test_module "functions that raise Not_found_s" =
       [%expect
         {|
         (Error (Invalid_argument String.index_from_exn))
-        (Error (Invalid_argument String.index_from_exn)) |}]
+        (Error (Invalid_argument String.index_from_exn))
+        |}]
     ;;
 
     let%expect_test "rindex_exn" =
@@ -1468,7 +1495,8 @@ let%test_module "functions that raise Not_found_s" =
         (Error (Not_found_s "String.rindex_from_exn: not found"))
         (Error (Not_found_s "String.rindex_from_exn: not found"))
         (Error (Not_found_s "String.rindex_from_exn: not found"))
-        (Error (Not_found_s "String.rindex_from_exn: not found")) |}];
+        (Error (Not_found_s "String.rindex_from_exn: not found"))
+        |}];
       test "a:b:c";
       [%expect
         {|
@@ -1477,7 +1505,8 @@ let%test_module "functions that raise Not_found_s" =
         (Ok 1)
         (Ok 1)
         (Error (Not_found_s "String.rindex_from_exn: not found"))
-        (Error (Not_found_s "String.rindex_from_exn: not found")) |}];
+        (Error (Not_found_s "String.rindex_from_exn: not found"))
+        |}];
       let test_bounds s =
         test_at s (-2);
         test_at s (length s)
@@ -1486,7 +1515,8 @@ let%test_module "functions that raise Not_found_s" =
       [%expect
         {|
         (Error (Invalid_argument String.rindex_from_exn))
-        (Error (Invalid_argument String.rindex_from_exn)) |}]
+        (Error (Invalid_argument String.rindex_from_exn))
+        |}]
     ;;
 
     let%expect_test "lsplit2_exn" =

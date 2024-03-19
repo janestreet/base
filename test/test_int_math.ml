@@ -304,7 +304,8 @@ let%test_module "int rounding quickcheck tests" =
         (testing Up)
         (testing Down)
         (testing Zero)
-        (testing Nearest) |}]
+        (testing Nearest)
+        |}]
     ;;
 
     let%expect_test "int32" =
@@ -323,7 +324,8 @@ let%test_module "int rounding quickcheck tests" =
         (testing Up)
         (testing Down)
         (testing Zero)
-        (testing Nearest) |}]
+        (testing Nearest)
+        |}]
     ;;
 
     let%expect_test "int63" =
@@ -342,7 +344,8 @@ let%test_module "int rounding quickcheck tests" =
         (testing Up)
         (testing Down)
         (testing Zero)
-        (testing Nearest) |}]
+        (testing Nearest)
+        |}]
     ;;
 
     let%expect_test "int64" =
@@ -361,7 +364,8 @@ let%test_module "int rounding quickcheck tests" =
         (testing Up)
         (testing Down)
         (testing Zero)
-        (testing Nearest) |}]
+        (testing Nearest)
+        |}]
     ;;
 
     let%expect_test ("nativeint" [@tags "no-js", "64-bits-only"]) =
@@ -380,7 +384,8 @@ let%test_module "int rounding quickcheck tests" =
         (testing Up)
         (testing Down)
         (testing Zero)
-        (testing Nearest) |}]
+        (testing Nearest)
+        |}]
     ;;
   end)
 ;;

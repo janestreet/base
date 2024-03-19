@@ -7,7 +7,10 @@
     untested definitions, mark them as untested, and keep them separate from definitions
     that need tests. *)
 
-open! Import
+open! Base
+open Base_quickcheck
+open Expect_test_helpers_base
+include Functor_intf.Definitions
 
 open struct
   (** quickcheck configuration *)
@@ -27,63 +30,6 @@ open struct
   let quickcheck_m here m ~f = quickcheck_m here m ~f ~config:quickcheck_config
 end
 
-(** The types that distinguish instances of [Map.Creators_and_accessors_generic]. *)
-module type Types = sig
-  type 'k key
-  type 'c cmp
-  type ('k, 'v, 'c) t
-  type ('k, 'v, 'c) tree
-  type ('k, 'c, 'a) create_options
-  type ('k, 'c, 'a) access_options
-end
-
-(** Like [Map.Creators_and_accessors_generic], but based on [Types] for easier
-    instantiation. *)
-module type S = sig
-  module Types : Types
-
-  include
-    Map.Creators_and_accessors_generic
-      with type ('a, 'b, 'c) t := ('a, 'b, 'c) Types.t
-      with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Types.tree
-      with type 'a key := 'a Types.key
-      with type 'a cmp := 'a Types.cmp
-      with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) Types.create_options
-      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Types.access_options
-end
-
-(** Helpers for testing a tree or map type that is an instance of [S]. *)
-module type Instance = sig
-  module Types : Types
-
-  module Key : sig
-    type t = int Types.key [@@deriving compare, equal, quickcheck, sexp_of]
-
-    include Comparable.Infix with type t := t
-  end
-
-  type 'a t = (int, 'a, Int.comparator_witness) Types.t
-  [@@deriving equal, quickcheck, sexp_of]
-
-  (** Construct a [Key.t]. *)
-  val key : int -> Key.t
-
-  (** Extract an int from a [Key.t]. *)
-  val int : Key.t -> int
-
-  (** Extract a tree (without a comparator) from [t]. *)
-  val tree
-    :  (Key.t, 'a, Int.comparator_witness) Types.tree
-    -> (Key.t, 'a, Int.comparator_witness Types.cmp) Map.Using_comparator.Tree.t
-
-  (** Pass a comparator to a creator function, if necessary. *)
-  val create : (int, Int.comparator_witness, 'a) Types.create_options -> 'a
-
-  (** Pass a comparator to an accessor function, if necessary *)
-  val access : (int, Int.comparator_witness, 'a) Types.access_options -> 'a
-end
-
-(** A functor to generate all of [Instance] but [create] and [access] for a map type. *)
 module Instance (Cmp : sig
   type comparator_witness
 
@@ -128,13 +74,6 @@ struct
   ;;
 end
 
-(** Instantiating key and data both as [int]. *)
-module Instance_int = struct
-  module I = Instance (Int)
-
-  type t = int I.t [@@deriving equal, quickcheck, sexp_of]
-end
-
 (** A functor like [Instance], but for tree types. *)
 module Instance_tree (Cmp : sig
   type comparator_witness
@@ -162,7 +101,7 @@ struct
     Base_quickcheck.Shrinker.map (M.quickcheck_shrinker shr) ~f:to_tree ~f_inverse:of_tree
   ;;
 
-  let equal equal_a = Map.Using_comparator.Tree.equal ~comparator:Int.comparator equal_a
+  let equal equal_a = Map.Using_comparator.Tree.equal ~comparator:Cmp.comparator equal_a
   let sexp_of_t sexp_of_a t = M.sexp_of_t sexp_of_a (of_tree t)
 end
 
@@ -208,7 +147,7 @@ struct
   ;;
 end
 
-(** Expect tests for everything exported from [Map.Creators_and_accessors_generic]. *)
+(* Used in [test__*.ml].  *)
 module Test_creators_and_accessors
   (Types : Types)
   (Impl : S with module Types := Types)
@@ -290,24 +229,22 @@ module Test_creators_and_accessors
   (** creators *)
 
   let empty = empty
-
-  let%expect_test _ =
-    print_s [%sexp (create empty : int t)];
-    [%expect {| () |}]
-  ;;
-
+  let () = require_equal [%here] (module Sexp) [%sexp (create empty : int t)] [%sexp []]
   let singleton = singleton
 
-  let%expect_test _ =
-    print_s [%sexp (create singleton (key 1) 2 : int t)];
-    [%expect {| ((1 2)) |}]
+  let () =
+    require_equal
+      [%here]
+      (module Sexp)
+      [%sexp (create singleton (key 1) 2 : int t)]
+      [%sexp [ [ 1; 2 ] ]]
   ;;
 
   let of_alist = of_alist
   let of_alist_or_error = of_alist_or_error
   let of_alist_exn = of_alist_exn
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Alist)
@@ -328,15 +265,14 @@ module Test_creators_and_accessors
            then Or_error.error_string "duplicate"
            else Ok (List.sort alist ~compare));
         require_equal [%here] (module Ok (Inst)) t_exn t_or_error;
-        require_equal [%here] (module Ok (Inst)) t_or_duplicate t_or_error);
-    [%expect {| |}]
+        require_equal [%here] (module Ok (Inst)) t_or_duplicate t_or_error)
   ;;
 
   let of_alist_multi = of_alist_multi
   let of_alist_fold = of_alist_fold
   let of_alist_reduce = of_alist_reduce
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Alist)
@@ -355,15 +291,14 @@ module Test_creators_and_accessors
           (to_alist t_multi)
           (List.Assoc.sort_and_group alist ~compare:Key.compare);
         require_equal [%here] (module Inst_multi) t_fold t_multi;
-        require_equal [%here] (module Inst_multi) t_reduce t_multi);
-    [%expect {| |}]
+        require_equal [%here] (module Inst_multi) t_reduce t_multi)
   ;;
 
   let of_sequence = of_sequence
   let of_sequence_or_error = of_sequence_or_error
   let of_sequence_exn = of_sequence_exn
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Alist)
@@ -379,15 +314,14 @@ module Test_creators_and_accessors
         let expect = create of_alist_or_error alist in
         require_equal [%here] (module Ok (Inst)) t_or_error expect;
         require_equal [%here] (module Ok (Inst)) t_exn expect;
-        require_equal [%here] (module Ok (Inst)) t_or_duplicate expect);
-    [%expect {| |}]
+        require_equal [%here] (module Ok (Inst)) t_or_duplicate expect)
   ;;
 
   let of_sequence_multi = of_sequence_multi
   let of_sequence_fold = of_sequence_fold
   let of_sequence_reduce = of_sequence_reduce
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Alist)
@@ -406,8 +340,7 @@ module Test_creators_and_accessors
         let expect = create of_alist_multi alist in
         require_equal [%here] (module Inst_multi) t_multi expect;
         require_equal [%here] (module Inst_multi) t_fold expect;
-        require_equal [%here] (module Inst_multi) t_reduce expect);
-    [%expect {| |}]
+        require_equal [%here] (module Inst_multi) t_reduce expect)
   ;;
 
   let of_list_with_key = of_list_with_key
@@ -417,7 +350,7 @@ module Test_creators_and_accessors
   let of_list_with_key_fold = of_list_with_key_fold
   let of_list_with_key_reduce = of_list_with_key_reduce
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Alist)
@@ -458,13 +391,12 @@ module Test_creators_and_accessors
              (List.map list ~f:List.return)
              ~get_key:(fun x -> x |> List.hd_exn |> fst)
              ~f:(fun x y -> x @ y))
-          (create of_alist_multi alist));
-    [%expect {| |}]
+          (create of_alist_multi alist))
   ;;
 
   let of_increasing_sequence = of_increasing_sequence
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Alist)
@@ -477,13 +409,12 @@ module Test_creators_and_accessors
           then create of_alist_or_error alist
           else Or_error.error_string "decreasing keys"
         in
-        require_equal [%here] (module Ok (Inst)) actual expect);
-    [%expect {| |}]
+        require_equal [%here] (module Ok (Inst)) actual expect)
   ;;
 
   let of_sorted_array = of_sorted_array
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Alist)
@@ -496,13 +427,12 @@ module Test_creators_and_accessors
           then create of_alist_or_error alist
           else Or_error.error_string "unsorted"
         in
-        require_equal [%here] (module Ok (Inst)) actual expect);
-    [%expect {| |}]
+        require_equal [%here] (module Ok (Inst)) actual expect)
   ;;
 
   let of_sorted_array_unchecked = of_sorted_array_unchecked
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Alist)
@@ -515,13 +445,12 @@ module Test_creators_and_accessors
         let actual_rev = create of_sorted_array_unchecked (Array.of_list_rev alist) in
         let expect = create of_alist_exn alist in
         require_equal [%here] (module Inst) actual_fwd expect;
-        require_equal [%here] (module Inst) actual_rev expect);
-    [%expect {| |}]
+        require_equal [%here] (module Inst) actual_rev expect)
   ;;
 
   let of_increasing_iterator_unchecked = of_increasing_iterator_unchecked
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Alist)
@@ -538,14 +467,13 @@ module Test_creators_and_accessors
             ~f:(Array.get array)
         in
         let expect = create of_alist_exn alist in
-        require_equal [%here] (module Inst) actual expect);
-    [%expect {| |}]
+        require_equal [%here] (module Inst) actual expect)
   ;;
 
   let of_iteri = of_iteri
   let of_iteri_exn = of_iteri_exn
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Alist)
@@ -559,14 +487,13 @@ module Test_creators_and_accessors
         let actual_exn = Or_error.try_with (fun () -> create of_iteri_exn ~iteri) in
         let expect = create of_alist_or_error alist in
         require_equal [%here] (module Ok (Inst)) actual_or_duplicate expect;
-        require_equal [%here] (module Ok (Inst)) actual_exn expect);
-    [%expect {| |}]
+        require_equal [%here] (module Ok (Inst)) actual_exn expect)
   ;;
 
   let map_keys = map_keys
   let map_keys_exn = map_keys_exn
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -584,13 +511,12 @@ module Test_creators_and_accessors
           |> create of_alist_or_error
         in
         require_equal [%here] (module Ok (Inst)) actual_or_duplicate expect;
-        require_equal [%here] (module Ok (Inst)) actual_exn expect);
-    [%expect {| |}]
+        require_equal [%here] (module Ok (Inst)) actual_exn expect)
   ;;
 
   let transpose_keys = transpose_keys
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_inst)
@@ -603,38 +529,35 @@ module Test_creators_and_accessors
           [%here]
           (module Inst_inst)
           (filter t ~f:(Fn.non is_empty))
-          round_trip);
-    [%expect {| |}]
+          round_trip)
   ;;
 
   (** accessors *)
 
   let invariants = invariants
 
-  let%expect_test _ =
-    quickcheck_m [%here] (module Inst) ~f:(fun t -> require [%here] (access invariants t));
-    [%expect {| |}]
+  let () =
+    quickcheck_m [%here] (module Inst) ~f:(fun t -> require [%here] (access invariants t))
   ;;
 
   let is_empty = is_empty
   let length = length
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst)
       ~f:(fun t ->
         let len = length t in
         require_equal [%here] (module Bool) (is_empty t) (len = 0);
-        require_equal [%here] (module Int) len (List.length (to_alist t)));
-    [%expect {| |}]
+        require_equal [%here] (module Int) len (List.length (to_alist t)))
   ;;
 
   let mem = mem
   let find = find
   let find_exn = find_exn
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -646,13 +569,12 @@ module Test_creators_and_accessors
           [%here]
           (module Opt (Int))
           (Option.try_with (fun () -> access find_exn t key))
-          expect);
-    [%expect {| |}]
+          expect)
   ;;
 
   let set = set
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key_and_data)
@@ -663,14 +585,13 @@ module Test_creators_and_accessors
           (to_alist (access set t ~key ~data))
           (List.sort
              ~compare:(fun a b -> Comparable.lift Key.compare ~f:fst a b)
-             ((key, data) :: List.Assoc.remove (to_alist t) key ~equal:Key.equal)));
-    [%expect {| |}]
+             ((key, data) :: List.Assoc.remove (to_alist t) key ~equal:Key.equal)))
   ;;
 
   let add = add
   let add_exn = add_exn
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key_and_data)
@@ -687,13 +608,12 @@ module Test_creators_and_accessors
           else Ok (access set t ~key ~data)
         in
         require_equal [%here] (module Ok (Inst)) t_add expect;
-        require_equal [%here] (module Ok (Inst)) t_add_exn expect);
-    [%expect {| |}]
+        require_equal [%here] (module Ok (Inst)) t_add_exn expect)
   ;;
 
   let remove = remove
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -702,13 +622,12 @@ module Test_creators_and_accessors
           [%here]
           (module Alist)
           (to_alist (access remove t key))
-          (List.Assoc.remove (to_alist t) key ~equal:Key.equal));
-    [%expect {| |}]
+          (List.Assoc.remove (to_alist t) key ~equal:Key.equal))
   ;;
 
   let change = change
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module struct
@@ -718,7 +637,6 @@ module Test_creators_and_accessors
         let actual =
           access change t key ~f:(fun previous ->
             require_equal [%here] (module Opt (Int)) previous (access find t key);
-            [%expect {| |}];
             maybe_data)
         in
         let expect =
@@ -726,13 +644,12 @@ module Test_creators_and_accessors
           | None -> access remove t key
           | Some data -> access set t ~key ~data
         in
-        require_equal [%here] (module Inst) actual expect);
-    [%expect {| |}]
+        require_equal [%here] (module Inst) actual expect)
   ;;
 
   let update = update
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key_and_data)
@@ -740,19 +657,17 @@ module Test_creators_and_accessors
         let actual =
           access update t key ~f:(fun previous ->
             require_equal [%here] (module Opt (Int)) previous (access find t key);
-            [%expect {| |}];
             data)
         in
         let expect = access set t ~key ~data in
-        require_equal [%here] (module Inst) actual expect);
-    [%expect {| |}]
+        require_equal [%here] (module Inst) actual expect)
   ;;
 
   let find_multi = find_multi
   let add_multi = add_multi
   let remove_multi = remove_multi
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module struct
@@ -775,15 +690,14 @@ module Test_creators_and_accessors
           (access remove_multi t key)
           (access change t key ~f:(function
             | None | Some ([] | [ _ ]) -> None
-            | Some (_ :: (_ :: _ as rest)) -> Some rest)));
-    [%expect {| |}]
+            | Some (_ :: (_ :: _ as rest)) -> Some rest)))
   ;;
 
   let iter_keys = iter_keys
   let iter = iter
   let iteri = iteri
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst)
@@ -805,14 +719,13 @@ module Test_creators_and_accessors
         in
         require_equal [%here] (module Alist) actuali (to_alist t);
         require_equal [%here] (module Lst (Key)) actual_keys (keys t);
-        require_equal [%here] (module Lst (Int)) actual (data t));
-    [%expect {| |}]
+        require_equal [%here] (module Lst (Int)) actual (data t))
   ;;
 
   let map = map
   let mapi = mapi
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst)
@@ -828,8 +741,7 @@ module Test_creators_and_accessors
             type t = (Key.t * int) Instance.t [@@deriving equal, sexp_of]
           end)
           (mapi t ~f:(fun ~key ~data -> key, data))
-          (t |> to_alist |> List.map ~f:(fun (k, v) -> k, (k, v)) |> create of_alist_exn));
-    [%expect {| |}]
+          (t |> to_alist |> List.map ~f:(fun (k, v) -> k, (k, v)) |> create of_alist_exn))
   ;;
 
   let filter_keys = filter_keys
@@ -845,7 +757,7 @@ module Test_creators_and_accessors
     let equal a b = phys_equal a b
   end
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key_and_data)
@@ -869,14 +781,13 @@ module Test_creators_and_accessors
           [%here]
           (module Alist)
           (to_alist (filteri t ~f:(fun ~key ~data -> Key.( <= ) key k && data <= d)))
-          (List.filter (to_alist t) ~f:(fun (key, data) -> Key.( <= ) key k && data <= d)));
-    [%expect {| |}]
+          (List.filter (to_alist t) ~f:(fun (key, data) -> Key.( <= ) key k && data <= d)))
   ;;
 
   let filter_map = filter_map
   let filter_mapi = filter_mapi
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key_and_data)
@@ -894,8 +805,7 @@ module Test_creators_and_accessors
              (filter_mapi t ~f:(fun ~key ~data ->
                 Option.some_if (Key.( <= ) key k && data >= d) (data - d))))
           (List.filter_map (to_alist t) ~f:(fun (key, data) ->
-             Option.some_if (Key.( <= ) key k && data >= d) (key, data - d))));
-    [%expect {| |}]
+             Option.some_if (Key.( <= ) key k && data >= d) (key, data - d))))
   ;;
 
   let partition_mapi = partition_mapi
@@ -903,7 +813,7 @@ module Test_creators_and_accessors
   let partitioni_tf = partitioni_tf
   let partition_tf = partition_tf
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key_and_data)
@@ -949,14 +859,13 @@ module Test_creators_and_accessors
           (List.partition_map (to_alist t) ~f:(fun (key, data) ->
              if Key.( <= ) key k && data >= d
              then First (key, data - d)
-             else Second (key, d))));
-    [%expect {| |}]
+             else Second (key, d))))
   ;;
 
   let fold = fold
   let fold_right = fold_right
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst)
@@ -970,14 +879,13 @@ module Test_creators_and_accessors
           [%here]
           (module Alist)
           (fold_right t ~init:[] ~f:(fun ~key ~data list -> (key, data) :: list))
-          (to_alist t));
-    [%expect {| |}]
+          (to_alist t))
   ;;
 
   let fold_until = fold_until
   let iteri_until = iteri_until
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -1003,13 +911,12 @@ module Test_creators_and_accessors
              |> List.take_while ~f:(fun (key, _) -> Key.( < ) key threshold)
              |> List.map ~f:snd
            in
-           list, if List.length list = length t then Finished else Unfinished));
-    [%expect {| |}]
+           list, if List.length list = length t then Finished else Unfinished))
   ;;
 
   let combine_errors = combine_errors
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -1026,13 +933,12 @@ module Test_creators_and_accessors
            |> List.map ~f:(fun (key, result) ->
                 Or_error.map result ~f:(fun data -> key, data))
            |> Or_error.combine_errors
-           |> Or_error.map ~f:(create of_alist_exn)));
-    [%expect {| |}]
+           |> Or_error.map ~f:(create of_alist_exn)))
   ;;
 
   let unzip = unzip
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_pair)
@@ -1044,14 +950,13 @@ module Test_creators_and_accessors
            to_alist a, to_alist b)
           (to_alist t
            |> List.map ~f:(fun (key, (a, b)) -> (key, a), (key, b))
-           |> List.unzip));
-    [%expect {| |}]
+           |> List.unzip))
   ;;
 
   let equal = equal
   let compare_direct = compare_direct
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Pair (Inst))
@@ -1065,8 +970,7 @@ module Test_creators_and_accessors
           [%here]
           (module Bool)
           (access compare_direct Int.compare a b = 0)
-          (access equal Int.equal a b));
-    [%expect {| |}]
+          (access equal Int.equal a b))
   ;;
 
   let keys = keys
@@ -1074,7 +978,7 @@ module Test_creators_and_accessors
   let to_alist = to_alist
   let to_sequence = to_sequence
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst)
@@ -1087,11 +991,10 @@ module Test_creators_and_accessors
           [%here]
           (module Alist)
           (Sequence.to_list ((access to_sequence) t))
-          alist);
-    [%expect {| |}]
+          alist)
   ;;
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module struct
@@ -1116,11 +1019,10 @@ module Test_creators_and_accessors
                 ~order:
                   (match key_order with
                    | `Decreasing -> `Decreasing_key
-                   | `Increasing -> `Increasing_key))));
-    [%expect {| |}]
+                   | `Increasing -> `Increasing_key))))
   ;;
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module struct
@@ -1146,15 +1048,14 @@ module Test_creators_and_accessors
               | `Increasing_key -> to_alist t)
              ~f:(fun (key, _) ->
                Key.( <= ) keys_greater_or_equal_to key
-               && Key.( <= ) key keys_less_or_equal_to)));
-    [%expect {| |}]
+               && Key.( <= ) key keys_less_or_equal_to)))
   ;;
 
   let merge = merge
   let iter2 = iter2
   let fold2 = fold2
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module struct
@@ -1195,13 +1096,12 @@ module Test_creators_and_accessors
         in
         require_equal [%here] (module Alist_merge) merge_alist expect;
         require_equal [%here] (module Alist_merge) iter2_alist expect;
-        require_equal [%here] (module Alist_merge) fold2_alist expect);
-    [%expect {| |}]
+        require_equal [%here] (module Alist_merge) fold2_alist expect)
   ;;
 
   let merge_disjoint_exn = merge_disjoint_exn
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Pair (Inst))
@@ -1217,13 +1117,12 @@ module Test_creators_and_accessors
                  | `Left x | `Right x -> Some x
                  | `Both _ -> assert false))
         in
-        require_equal [%here] (module Opt (Inst)) actual expect);
-    [%expect {| |}]
+        require_equal [%here] (module Opt (Inst)) actual expect)
   ;;
 
   let merge_skewed = merge_skewed
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Pair (Inst))
@@ -1236,14 +1135,13 @@ module Test_creators_and_accessors
             | `Right b -> Some b
             | `Both (a, b) -> Some (int key + a + b))
         in
-        require_equal [%here] (module Inst) actual expect);
-    [%expect {| |}]
+        require_equal [%here] (module Inst) actual expect)
   ;;
 
   let symmetric_diff = symmetric_diff
   let fold_symmetric_diff = fold_symmetric_diff
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Pair (Inst))
@@ -1270,8 +1168,7 @@ module Test_creators_and_accessors
           |> to_alist
         in
         require_equal [%here] (module Diff) diff_alist expect;
-        require_equal [%here] (module Diff) fold_alist expect);
-    [%expect {| |}]
+        require_equal [%here] (module Diff) fold_alist expect)
   ;;
 
   let min_elt = min_elt
@@ -1279,7 +1176,7 @@ module Test_creators_and_accessors
   let min_elt_exn = min_elt_exn
   let max_elt_exn = max_elt_exn
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst)
@@ -1303,8 +1200,7 @@ module Test_creators_and_accessors
           [%here]
           (module Opt (Key_and_data))
           (Option.try_with (fun () -> max_elt_exn t))
-          (List.last (to_alist t)));
-    [%expect {| |}]
+          (List.last (to_alist t)))
   ;;
 
   let for_all = for_all
@@ -1314,7 +1210,7 @@ module Test_creators_and_accessors
   let count = count
   let counti = counti
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key_and_data)
@@ -1329,14 +1225,13 @@ module Test_creators_and_accessors
         require_equal [%here] (module Bool) (exists t ~f) (List.exists data ~f);
         require_equal [%here] (module Bool) (existsi t ~f:fi) (List.exists alist ~f:fp);
         require_equal [%here] (module Int) (count t ~f) (List.count data ~f);
-        require_equal [%here] (module Int) (counti t ~f:fi) (List.count alist ~f:fp));
-    [%expect {| |}]
+        require_equal [%here] (module Int) (counti t ~f:fi) (List.count alist ~f:fp))
   ;;
 
   let sum = sum
   let sumi = sumi
 
-  let%expect_test "sum" =
+  let () =
     quickcheck_m
       [%here]
       (module Inst)
@@ -1348,13 +1243,12 @@ module Test_creators_and_accessors
         let data = data t in
         let alist = to_alist t in
         require_equal [%here] (module Int) (sum m t ~f) (List.sum m data ~f);
-        require_equal [%here] (module Int) (sumi m t ~f:fi) (List.sum m alist ~f:fp));
-    [%expect {| |}]
+        require_equal [%here] (module Int) (sumi m t ~f:fi) (List.sum m alist ~f:fp))
   ;;
 
   let split = split
 
-  let%expect_test "split" =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -1372,13 +1266,12 @@ module Test_creators_and_accessors
                | Equal -> `Snd (key, data)
                | Greater -> `Trd (key, data))
            in
-           create of_alist_exn before, List.hd equal, create of_alist_exn after));
-    [%expect {| |}]
+           create of_alist_exn before, List.hd equal, create of_alist_exn after))
   ;;
 
   let split_le_gt = split_le_gt
 
-  let%expect_test "split_le_gt" =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -1392,13 +1285,12 @@ module Test_creators_and_accessors
           (let before, after =
              List.partition_tf (to_alist t) ~f:(fun (key, _) -> Key.( <= ) key k)
            in
-           create of_alist_exn before, create of_alist_exn after));
-    [%expect {| |}]
+           create of_alist_exn before, create of_alist_exn after))
   ;;
 
   let split_lt_ge = split_lt_ge
 
-  let%expect_test "split_lt_ge" =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -1412,13 +1304,12 @@ module Test_creators_and_accessors
           (let before, after =
              List.partition_tf (to_alist t) ~f:(fun (key, _) -> Key.( < ) key k)
            in
-           create of_alist_exn before, create of_alist_exn after));
-    [%expect {| |}]
+           create of_alist_exn before, create of_alist_exn after))
   ;;
 
   let append = append
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Pair (Inst))
@@ -1443,15 +1334,14 @@ module Test_creators_and_accessors
           (match access append ~lower_part:a' ~upper_part:b with
            | `Ok t -> Ok t
            | `Overlapping_key_ranges -> Or_error.error_string "overlap")
-          (Ok (create of_alist_exn (to_alist a' @ to_alist b))));
-    [%expect {| |}]
+          (Ok (create of_alist_exn (to_alist a' @ to_alist b))))
   ;;
 
   let subrange = subrange
   let fold_range_inclusive = fold_range_inclusive
   let range_to_alist = range_to_alist
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module struct
@@ -1498,13 +1388,12 @@ module Test_creators_and_accessors
         in
         require_equal [%here] (module Alist) subrange_alist expect;
         require_equal [%here] (module Alist) fold_alist expect;
-        require_equal [%here] (module Alist) range_alist expect);
-    [%expect {| |}]
+        require_equal [%here] (module Alist) range_alist expect)
   ;;
 
   let closest_key = closest_key
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -1530,15 +1419,14 @@ module Test_creators_and_accessors
           [%here]
           (module Opt (Key_and_data))
           (access closest_key t `Greater_than k)
-          (List.find alist ~f:(fun (key, _) -> Key.( > ) key k)));
-    [%expect {| |}]
+          (List.find alist ~f:(fun (key, _) -> Key.( > ) key k)))
   ;;
 
   let nth = nth
   let nth_exn = nth_exn
   let rank = rank
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -1557,13 +1445,12 @@ module Test_creators_and_accessors
           (module Opt (Int))
           (access rank t k)
           (List.find_mapi (to_alist t) ~f:(fun i (key, _) ->
-             Option.some_if (Key.equal key k) i)));
-    [%expect {| |}]
+             Option.some_if (Key.equal key k) i)))
   ;;
 
   let binary_search = binary_search
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -1580,19 +1467,17 @@ module Test_creators_and_accessors
                ~compare:(fun ~key ~data k' ->
                  require_equal [%here] (module Key) k' k;
                  require_equal [%here] (module Opt (Int)) (access find t key) (Some data);
-                 [%expect {| |}];
                  compare (key, data) k')
                which_target
                k)
             (let array = Array.of_list (to_alist t) in
              Array.binary_search array ~compare which_target k
-             |> Option.map ~f:(Array.get array))));
-    [%expect {| |}]
+             |> Option.map ~f:(Array.get array))))
   ;;
 
   let binary_search_segmented = binary_search_segmented
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst_and_key)
@@ -1608,18 +1493,16 @@ module Test_creators_and_accessors
                t
                ~segment_of:(fun ~key ~data ->
                  require_equal [%here] (module Opt (Int)) (access find t key) (Some data);
-                 [%expect {| |}];
                  segment_of (key, data))
                which_target)
             (let array = Array.of_list (to_alist t) in
              Array.binary_search_segmented array ~segment_of which_target
-             |> Option.map ~f:(Array.get array))));
-    [%expect {| |}]
+             |> Option.map ~f:(Array.get array))))
   ;;
 
   let binary_search_subrange = binary_search_subrange
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module struct
@@ -1635,12 +1518,10 @@ module Test_creators_and_accessors
              t
              ~compare:(fun ~key ~data bound ->
                require_equal [%here] (module Opt (Int)) (access find t key) (Some data);
-               [%expect {| |}];
                Key.compare key bound)
              ~lower_bound
              ~upper_bound)
-          (access subrange t ~lower_bound ~upper_bound));
-    [%expect {| |}]
+          (access subrange t ~lower_bound ~upper_bound))
   ;;
 
   module Make_applicative_traversals (A : Applicative.Lazy_applicative) = struct
@@ -1650,7 +1531,7 @@ module Test_creators_and_accessors
     let filter_mapi = M.filter_mapi
   end
 
-  let%expect_test _ =
+  let () =
     let module M =
       Make_applicative_traversals (struct
         module M = struct
@@ -1673,8 +1554,7 @@ module Test_creators_and_accessors
         let f1 ~key:_ ~data = (data * 2) + 1 in
         let f2 ~key:_ ~data = if data < 0 then None else Some data in
         require_equal [%here] (module Inst) (mapi t ~f:f1) (M.mapi t ~f:f1);
-        require_equal [%here] (module Inst) (filter_mapi t ~f:f2) (M.filter_mapi t ~f:f2));
-    [%expect {| |}]
+        require_equal [%here] (module Inst) (filter_mapi t ~f:f2) (M.filter_mapi t ~f:f2))
   ;;
 
   (** tree conversion *)
@@ -1682,7 +1562,7 @@ module Test_creators_and_accessors
   let to_tree = to_tree
   let of_tree = of_tree
 
-  let%expect_test _ =
+  let () =
     quickcheck_m
       [%here]
       (module Inst)
@@ -1694,392 +1574,6 @@ module Test_creators_and_accessors
           [%here]
           (module Alist)
           (to_alist t)
-          (Map.Using_comparator.Tree.to_alist (Instance.tree tree)));
-    [%expect {| |}]
+          (Map.Using_comparator.Tree.to_alist (Instance.tree tree)))
   ;;
-end
-
-(** Expect tests for all of [Base.Map]'s exports. *)
-module _ : module type of struct
-  include Base.Map
-end [@ocaml.remove_aliases] = struct
-  open Base.Map
-
-  (** module types *)
-
-  module type Accessors_generic = Accessors_generic
-  module type Creators_and_accessors_generic = Creators_and_accessors_generic
-  module type Creators_generic = Creators_generic
-  module type For_deriving = For_deriving
-  module type S_poly = S_poly
-
-  (** type-only modules for module type instantiation - untested *)
-
-  module With_comparator = With_comparator
-  module With_first_class_module = With_first_class_module
-  module Without_comparator = Without_comparator
-
-  (** supporting datatypes - untested *)
-
-  module Continue_or_stop = Continue_or_stop
-  module Finished_or_unfinished = Finished_or_unfinished
-  module Merge_element = Merge_element
-  module Or_duplicate = Or_duplicate
-  module Symmetric_diff_element = Symmetric_diff_element
-
-  (** types *)
-
-  type nonrec ('k, 'v, 'c) t = ('k, 'v, 'c) t
-  type nonrec ('k, 'c) comparator = ('k, 'c) Comparator.Module.t
-
-  (** module types for ppx deriving *)
-
-  module type Compare_m = Compare_m
-  module type Equal_m = Equal_m
-  module type Hash_fold_m = Hash_fold_m
-  module type M_sexp_grammar = M_sexp_grammar
-  module type M_of_sexp = M_of_sexp
-  module type Sexp_of_m = Sexp_of_m
-
-  (** functor for ppx deriving - tested below *)
-
-  module M = M
-
-  (** sexp conversions and grammar *)
-
-  let sexp_of_m__t = sexp_of_m__t
-  let m__t_of_sexp = m__t_of_sexp
-
-  let%expect_test _ =
-    quickcheck_m
-      [%here]
-      (module Instance_int)
-      ~f:(fun t ->
-        let sexp = [%sexp_of: int M(Int).t] t in
-        require_equal [%here] (module Sexp) sexp [%sexp (to_alist t : (int * int) list)];
-        let round_trip = [%of_sexp: int M(Int).t] sexp in
-        require_equal [%here] (module Instance_int) round_trip t);
-    [%expect {| |}]
-  ;;
-
-  let m__t_sexp_grammar = m__t_sexp_grammar
-
-  let%expect_test _ =
-    print_s [%sexp ([%sexp_grammar: int M(Int).t] : _ Sexp_grammar.t)];
-    [%expect
-      {|
-      (Tagged (
-        (key sexp_grammar.assoc)
-        (value ())
-        (grammar (
-          List (
-            Many (
-              List (
-                Cons
-                (Tagged ((key sexp_grammar.assoc.key) (value ()) (grammar Integer)))
-                (Cons
-                  (Tagged (
-                    (key sexp_grammar.assoc.value) (value ()) (grammar Integer)))
-                  Empty)))))))) |}]
-  ;;
-
-  (** comparisons *)
-
-  let compare_m__t = compare_m__t
-  let equal_m__t = equal_m__t
-
-  let%expect_test _ =
-    quickcheck_m
-      [%here]
-      (module Pair (Instance_int))
-      ~f:(fun (a, b) ->
-        require_equal
-          [%here]
-          (module Ordering)
-          (Ordering.of_int ([%compare: int M(Int).t] a b))
-          (Ordering.of_int ([%compare: (int * int) list] (to_alist a) (to_alist b)));
-        require_equal
-          [%here]
-          (module Bool)
-          ([%equal: int M(Int).t] a b)
-          ([%equal: (int * int) list] (to_alist a) (to_alist b)));
-    [%expect {| |}]
-  ;;
-
-  (** hash functions *)
-
-  let hash_fold_m__t = hash_fold_m__t
-  let hash_fold_direct = hash_fold_direct
-
-  let%expect_test _ =
-    quickcheck_m
-      [%here]
-      (module Instance_int)
-      ~f:(fun t ->
-        let actual_m = Hash.run [%hash_fold: int M(Int).t] t in
-        let actual_direct =
-          Hash.run (hash_fold_direct Int.hash_fold_t Int.hash_fold_t) t
-        in
-        let expect = Hash.run [%hash_fold: (int * int) list] (to_alist t) in
-        require_equal [%here] (module Int) actual_m expect;
-        require_equal [%here] (module Int) actual_direct expect);
-    [%expect {| |}]
-  ;;
-
-  (** comparator accessors - untested *)
-
-  let comparator_s = comparator_s
-  let comparator = comparator
-
-  (** creators and accessors *)
-
-  include
-    Test_creators_and_accessors
-      (struct
-        type 'k key = 'k
-        type 'c cmp = 'c
-        type ('k, 'v, 'c) tree = ('k, 'v, 'c) Using_comparator.Tree.t
-        type ('k, 'c, 'a) create_options = ('k, 'c) comparator -> 'a
-        type ('k, 'c, 'a) access_options = 'a
-
-        include Base.Map
-      end)
-      (struct
-        include Base.Map
-      end)
-      (struct
-        include Instance (Int)
-
-        let create f = f ((module Int) : _ Comparator.Module.t)
-        let access x = x
-      end)
-
-  (** polymorphic comparison interface *)
-  module Poly = struct
-    open Poly
-
-    type nonrec ('k, 'v) t = ('k, 'v) t
-    type nonrec ('k, 'v) tree = ('k, 'v) tree
-    type nonrec comparator_witness = comparator_witness
-
-    include
-      Test_creators_and_accessors
-        (struct
-          type 'k key = 'k
-          type 'c cmp = comparator_witness
-          type nonrec ('k, 'v, _) t = ('k, 'v) t
-          type nonrec ('k, 'v, _) tree = ('k, 'v) tree
-          type ('k, 'c, 'a) create_options = 'a
-          type ('k, 'c, 'a) access_options = 'a
-        end)
-        (struct
-          include Poly
-        end)
-        (struct
-          include Instance (Comparator.Poly)
-
-          let create x = x
-          let access x = x
-        end)
-  end
-
-  (** comparator interface *)
-
-  module Using_comparator = struct
-    open Using_comparator
-
-    (** type *)
-
-    type nonrec ('k, 'v, 'c) t = ('k, 'v, 'c) t
-
-    (** comparator accessor - untested *)
-
-    let comparator = comparator
-
-    (** sexp conversions *)
-
-    let sexp_of_t = sexp_of_t
-    let t_of_sexp_direct = t_of_sexp_direct
-
-    let%expect_test _ =
-      quickcheck_m
-        [%here]
-        (module Instance_int)
-        ~f:(fun t ->
-          let sexp = sexp_of_t Int.sexp_of_t Int.sexp_of_t [%sexp_of: _] t in
-          require_equal [%here] (module Sexp) sexp ([%sexp_of: int Map.M(Int).t] t);
-          let round_trip =
-            t_of_sexp_direct ~comparator:Int.comparator Int.t_of_sexp Int.t_of_sexp sexp
-          in
-          require_equal [%here] (module Instance_int) round_trip t);
-      [%expect {| |}]
-    ;;
-
-    (** hash function *)
-
-    let hash_fold_direct = hash_fold_direct
-
-    let%expect_test _ =
-      quickcheck_m
-        [%here]
-        (module Instance_int)
-        ~f:(fun t ->
-          require_equal
-            [%here]
-            (module Int)
-            (Hash.run (hash_fold_direct Int.hash_fold_t Int.hash_fold_t) t)
-            (Hash.run [%hash_fold: int Map.M(Int).t] t));
-      [%expect {| |}]
-    ;;
-
-    (** functor for polymorphic definition - untested *)
-
-    module Empty_without_value_restriction (Cmp : Comparator.S1) = struct
-      open Empty_without_value_restriction (Cmp)
-
-      let empty = empty
-    end
-
-    (** creators and accessors *)
-
-    include
-      Test_creators_and_accessors
-        (struct
-          type 'k key = 'k
-          type 'c cmp = 'c
-          type ('k, 'v, 'c) tree = ('k, 'v, 'c) Tree.t
-          type ('k, 'c, 'a) create_options = comparator:('k, 'c) Comparator.t -> 'a
-          type ('k, 'c, 'a) access_options = 'a
-
-          include Using_comparator
-        end)
-        (struct
-          include Using_comparator
-        end)
-        (struct
-          include Instance (Int)
-
-          let create f = f ~comparator:Int.comparator
-          let access x = x
-        end)
-
-    (** tree interface *)
-
-    module Tree = struct
-      open Tree
-
-      (** type *)
-
-      type nonrec ('k, 'v, 'c) t = ('k, 'v, 'c) t
-
-      (** sexp conversions *)
-
-      let sexp_of_t = sexp_of_t
-      let t_of_sexp_direct = t_of_sexp_direct
-
-      let%expect_test _ =
-        let module Tree_int = struct
-          module I = Instance_tree (Int)
-
-          type t = int I.t [@@deriving equal, quickcheck, sexp_of]
-        end
-        in
-        quickcheck_m
-          [%here]
-          (module Tree_int)
-          ~f:(fun tree ->
-            let sexp = sexp_of_t Int.sexp_of_t Int.sexp_of_t [%sexp_of: _] tree in
-            require_equal
-              [%here]
-              (module Sexp)
-              sexp
-              ([%sexp_of: int Map.M(Int).t]
-                 (Using_comparator.of_tree tree ~comparator:Int.comparator));
-            let round_trip =
-              t_of_sexp_direct ~comparator:Int.comparator Int.t_of_sexp Int.t_of_sexp sexp
-            in
-            require_equal [%here] (module Tree_int) round_trip tree);
-        [%expect {| |}]
-      ;;
-
-      (** polymorphic constructor - untested *)
-
-      let empty_without_value_restriction = empty_without_value_restriction
-
-      (** builders *)
-
-      module Build_increasing = struct
-        open Build_increasing
-
-        type nonrec ('k, 'v, 'c) t = ('k, 'v, 'c) t
-
-        (** tree builder functions *)
-
-        let empty = empty
-        let add_exn = add_exn
-        let to_tree = to_tree
-
-        let%expect_test _ =
-          let module Tree_int = struct
-            module I = Instance_tree (Int)
-
-            type t = int I.t [@@deriving equal, quickcheck, sexp_of]
-          end
-          in
-          quickcheck_m
-            [%here]
-            (module struct
-              type t =
-                ((int[@generator Base_quickcheck.Generator.small_strictly_positive_int])
-                * int)
-                list
-              [@@deriving quickcheck, sexp_of]
-            end)
-            ~f:(fun alist ->
-              let actual =
-                List.fold_result alist ~init:empty ~f:(fun builder (key, data) ->
-                  Or_error.try_with (fun () ->
-                    add_exn builder ~comparator:Int.comparator ~key ~data))
-                |> Or_error.map ~f:to_tree
-              in
-              Or_error.iter actual ~f:(fun map ->
-                require [%here] (Tree.invariants map ~comparator:Int.comparator));
-              let expect =
-                match List.is_sorted_strictly alist ~compare:[%compare: int * _] with
-                | false -> Error (Error.of_string "not sorted")
-                | true ->
-                  Ok
-                    (Map.Using_comparator.Tree.of_sequence_exn
-                       ~comparator:Int.comparator
-                       (Sequence.of_list alist))
-              in
-              require_equal [%here] (module Ok (Tree_int)) actual expect);
-          [%expect {| |}]
-        ;;
-      end
-
-      (** creators and accessors *)
-
-      include
-        Test_creators_and_accessors
-          (struct
-            type 'k key = 'k
-            type 'c cmp = 'c
-            type ('k, 'v, 'c) tree = ('k, 'v, 'c) t
-            type ('k, 'c, 'a) create_options = comparator:('k, 'c) Comparator.t -> 'a
-            type ('k, 'c, 'a) access_options = comparator:('k, 'c) Comparator.t -> 'a
-
-            include Tree
-          end)
-          (struct
-            include Tree
-          end)
-          (struct
-            include Instance_tree (Int)
-
-            let create f = f ~comparator:Int.comparator
-            let access f = f ~comparator:Int.comparator
-          end)
-    end
-  end
 end

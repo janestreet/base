@@ -67,7 +67,8 @@ let%test_module "Unsafe primitives" =
         buffer[0] = 0xef
         buffer[1] = 0xbe
         buffer[2] = 0xad
-        buffer[3] = 0xde |}];
+        buffer[3] = 0xde
+        |}];
       (* Ensure that 32-bit writes works on non-word-aligned positions. *)
       Bytes.unsafe_set_int32 buffer 1 178293l;
       printf "%ld" (Bytes.unsafe_get_int32 buffer 1);
@@ -94,7 +95,8 @@ let%test_module "Unsafe primitives" =
         buffer[4] = 0x78
         buffer[5] = 0x56
         buffer[6] = 0x34
-        buffer[7] = 0x12 |}];
+        buffer[7] = 0x12
+        |}];
       (* Ensure that 64-bit writes works on non-word-aligned positions. *)
       Bytes.unsafe_set_int64 buffer 1 0x12345678_deadbeefL;
       printf "%Lx" (Bytes.unsafe_get_int64 buffer 1);

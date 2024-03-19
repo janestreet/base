@@ -76,7 +76,7 @@ let%expect_test "float" =
     ~min:0.
     ~max:100.
     ~check_range:(10., 20.);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "float_range" =
@@ -88,12 +88,12 @@ let%expect_test "float_range" =
     ~min:(-100.)
     ~max:100.
     ~check_range:(-20., -10.);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "int" =
   test [%here] (module Int) 1_000 (fun () -> int 100) ~min:0 ~max:99 ~check_range:(10, 20);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "int_incl" =
@@ -105,7 +105,7 @@ let%expect_test "int_incl" =
     ~min:(-100)
     ~max:100
     ~check_range:(-20, -10);
-  [%expect {||}];
+  [%expect {| |}];
   test
     [%here]
     (module Int)
@@ -114,7 +114,7 @@ let%expect_test "int_incl" =
     ~min:0
     ~max:Int.max_value
     ~check_range:(0, Int.max_value / 100);
-  [%expect {||}];
+  [%expect {| |}];
   test
     [%here]
     (module Int)
@@ -123,7 +123,7 @@ let%expect_test "int_incl" =
     ~min:Int.min_value
     ~max:Int.max_value
     ~check_range:(Int.min_value / 100, Int.max_value / 100);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "int32" =
@@ -135,7 +135,7 @@ let%expect_test "int32" =
     ~min:0l
     ~max:99l
     ~check_range:(10l, 20l);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "int32_incl" =
@@ -147,7 +147,7 @@ let%expect_test "int32_incl" =
     ~min:(-100l)
     ~max:100l
     ~check_range:(-20l, -10l);
-  [%expect {||}];
+  [%expect {| |}];
   test
     [%here]
     (module Int32)
@@ -156,7 +156,7 @@ let%expect_test "int32_incl" =
     ~min:0l
     ~max:Int32.max_value
     ~check_range:(0l, Int32.( / ) Int32.max_value 100l);
-  [%expect {||}];
+  [%expect {| |}];
   test
     [%here]
     (module Int32)
@@ -165,7 +165,7 @@ let%expect_test "int32_incl" =
     ~min:Int32.min_value
     ~max:Int32.max_value
     ~check_range:(Int32.( / ) Int32.min_value 100l, Int32.( / ) Int32.max_value 100l);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "int64" =
@@ -177,7 +177,7 @@ let%expect_test "int64" =
     ~min:0L
     ~max:99L
     ~check_range:(10L, 20L);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "int64_incl" =
@@ -189,7 +189,7 @@ let%expect_test "int64_incl" =
     ~min:(-100L)
     ~max:100L
     ~check_range:(-20L, -10L);
-  [%expect {||}];
+  [%expect {| |}];
   test
     [%here]
     (module Int64)
@@ -198,7 +198,7 @@ let%expect_test "int64_incl" =
     ~min:0L
     ~max:Int64.max_value
     ~check_range:(0L, Int64.( / ) Int64.max_value 100L);
-  [%expect {||}];
+  [%expect {| |}];
   test
     [%here]
     (module Int64)
@@ -207,7 +207,7 @@ let%expect_test "int64_incl" =
     ~min:Int64.min_value
     ~max:Int64.max_value
     ~check_range:(Int64.( / ) Int64.min_value 100L, Int64.( / ) Int64.max_value 100L);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "nativeint" =
@@ -219,7 +219,7 @@ let%expect_test "nativeint" =
     ~min:0n
     ~max:99n
     ~check_range:(10n, 20n);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "nativeint_incl" =
@@ -231,7 +231,7 @@ let%expect_test "nativeint_incl" =
     ~min:(-100n)
     ~max:100n
     ~check_range:(-20n, -10n);
-  [%expect {||}];
+  [%expect {| |}];
   test
     [%here]
     (module Nativeint)
@@ -240,7 +240,7 @@ let%expect_test "nativeint_incl" =
     ~min:0n
     ~max:Nativeint.max_value
     ~check_range:(0n, Nativeint.( / ) Nativeint.max_value 100n);
-  [%expect {||}];
+  [%expect {| |}];
   test
     [%here]
     (module Nativeint)
@@ -250,7 +250,7 @@ let%expect_test "nativeint_incl" =
     ~max:Nativeint.max_value
     ~check_range:
       (Nativeint.( / ) Nativeint.min_value 100n, Nativeint.( / ) Nativeint.max_value 100n);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 (* The int63 functions come from [Int63] rather than [Random], but we test them here
@@ -266,7 +266,7 @@ let%expect_test "int63" =
     ~min:(i 0)
     ~max:(i 99)
     ~check_range:(i 10, i 20);
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "int63_incl" =
@@ -279,7 +279,7 @@ let%expect_test "int63_incl" =
     ~min:(i (-100))
     ~max:(i 100)
     ~check_range:(i (-20), i (-10));
-  [%expect {||}];
+  [%expect {| |}];
   test
     [%here]
     (module Int63)
@@ -288,7 +288,7 @@ let%expect_test "int63_incl" =
     ~min:(i 0)
     ~max:Int63.max_value
     ~check_range:(i 0, Int63.( / ) Int63.max_value (i 100));
-  [%expect {||}];
+  [%expect {| |}];
   test
     [%here]
     (module Int63)
@@ -297,7 +297,7 @@ let%expect_test "int63_incl" =
     ~min:Int63.min_value
     ~max:Int63.max_value
     ~check_range:(Int63.( / ) Int63.min_value (i 100), Int63.( / ) Int63.max_value (i 100));
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "ascii" =
@@ -309,7 +309,7 @@ let%expect_test "ascii" =
     ~min:Char.min_value
     ~max:(Char.of_int_exn 127)
     ~check_range:('a', 'z');
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "char" =
@@ -321,7 +321,7 @@ let%expect_test "char" =
     ~min:Char.min_value
     ~max:Char.max_value
     ~check_range:('\128', '\255');
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%test_module "float upper bound is inclusive despite docs" =
@@ -358,9 +358,10 @@ let%test_module "float upper bound is inclusive despite docs" =
       print_s [%message "likelihood of failure" (failures : int ref) (prob : float)];
       [%expect
         {|
-   ("likelihood of failure"
-     (failures 64)
-     (prob     5.5511151231257827E-17)) |}]
+        ("likelihood of failure"
+          (failures 64)
+          (prob     5.5511151231257827E-17))
+        |}]
     ;;
   end)
 ;;

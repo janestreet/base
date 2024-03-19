@@ -18,7 +18,8 @@ let%expect_test "Finished_or_unfinished <-> Continue_or_stop" =
       (Finished_or_unfinished.of_continue_or_stop c_or_s));
   [%expect {|
     (Continue Finished)
-    (Stop Unfinished) |}]
+    (Stop Unfinished)
+    |}]
 ;;
 
 let%test _ =
@@ -58,7 +59,8 @@ let%expect_test "[Map.of_alist_multi] preserves value ordering" =
         : int list Map.M(String).t)];
   [%expect {|
     ((a (1 2))
-     (b (1 3))) |}]
+     (b (1 3)))
+    |}]
 ;;
 
 let%expect_test "find_exn" =
@@ -108,21 +110,24 @@ let%expect_test "combine_errors" =
   test [ Error "one" ];
   [%expect {|
     (Ok ((1 one)))
-    (Error ((1 one))) |}];
+    (Error ((1 one)))
+    |}];
   (* multiple ok *)
   test [ Ok "one"; Ok "two"; Ok "three" ];
   [%expect {|
     (Ok (
       (1 one)
       (2 two)
-      (3 three))) |}];
+      (3 three)))
+    |}];
   (* multiple errors *)
   test [ Error "one"; Error "two"; Error "three" ];
   [%expect {|
     (Error (
       (1 one)
       (2 two)
-      (3 three))) |}];
+      (3 three)))
+    |}];
   (* one error among oks *)
   test [ Error "one"; Ok "two"; Ok "three" ];
   test [ Ok "one"; Error "two"; Ok "three" ];
@@ -130,7 +135,8 @@ let%expect_test "combine_errors" =
   [%expect {|
     (Error ((1 one)))
     (Error ((2 two)))
-    (Error ((3 three))) |}];
+    (Error ((3 three)))
+    |}];
   (* one ok among errors *)
   test [ Ok "one"; Error "two"; Error "three" ];
   test [ Error "one"; Ok "two"; Error "three" ];
@@ -145,7 +151,8 @@ let%expect_test "combine_errors" =
       (3 three)))
     (Error (
       (1 one)
-      (2 two))) |}]
+      (2 two)))
+    |}]
 ;;
 
 let%test_module "Poly" =
@@ -367,7 +374,8 @@ let%expect_test "[map_keys]" =
     (Ok (
       (1 one)
       (2 two)
-      (3 three))) |}];
+      (3 three)))
+    |}];
   test map (module String) ~f:(fun x -> Int.to_string (x / 2));
   [%expect {| (Duplicate_key 1) |}]
 ;;
@@ -414,7 +422,8 @@ let%expect_test "[merge_disjoint_exn] success" =
   [%expect {|
     ((1 one)
      (2 two)
-     (3 three)) |}]
+     (3 three))
+    |}]
 ;;
 
 let%expect_test "[merge_disjoint_exn] failure" =

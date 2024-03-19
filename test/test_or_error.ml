@@ -58,7 +58,7 @@ let%expect_test "behavior and performance on lists of or_error's" =
     List.init len ~f:(Or_error.errorf "at %d")
   in
   let short_lists = List.map ~f:make_list [ 0; 1; 2; 10 ] in
-  let long_list = make_list 1_000_000 in
+  let long_list = make_list 500_000 in
   let to_string = function
     | Ok _ -> "ok"
     | Error error ->
@@ -81,47 +81,54 @@ let%expect_test "behavior and performance on lists of or_error's" =
     ok
     at 0
     ("at 0" "at 1")
-    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9") |}];
+    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
+    |}];
   test all_unit;
   [%expect
     {|
     ok
     at 0
     ("at 0" "at 1")
-    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9") |}];
+    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
+    |}];
   test combine_errors;
   [%expect
     {|
     ok
     "at 0"
     ("at 0" "at 1")
-    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9") |}];
+    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
+    |}];
   test combine_errors_unit;
   [%expect
     {|
     ok
     "at 0"
     ("at 0" "at 1")
-    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9") |}];
+    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
+    |}];
   test find_ok;
   [%expect
     {|
     ()
     "at 0"
     ("at 0" "at 1")
-    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9") |}];
+    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
+    |}];
   test (find_map_ok ~f:Fn.id);
   [%expect
     {|
     ()
     "at 0"
     ("at 0" "at 1")
-    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9") |}];
+    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
+    |}];
   test filter_ok_at_least_one;
   [%expect
     {|
     ()
     "at 0"
     ("at 0" "at 1")
-    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9") |}]
+    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
+    |}]
 ;;

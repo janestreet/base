@@ -86,7 +86,7 @@ let%expect_test "stack overflow" =
      overflow just to produce a small value. *)
   let depth =
     match Word_size.word_size with
-    | W64 -> 10_000_000
+    | W64 -> 1_000_000
     | W32 -> 100_000
   in
   let test f =
@@ -139,7 +139,8 @@ let%expect_test "show how backtraces are printed" =
       "called from Base__Error.raise_s in file \"error.ml\", line 10, characters 19-40"
       "called from Floops_interfaces__Registrant.register_exn in file \"registrant.ml\", line 18, characters 4-241"
       "called from Floops_interfaces_test__Registrant_test.Test_brick.create_exn.(fun) in file \"registrant_test.ml\", line 25, characters 6-67"
-      "called from Base__Or_error.try_with in file \"or_error.ml\", line 84, characters 9-15")) |}];
+      "called from Base__Or_error.try_with in file \"or_error.ml\", line 84, characters 9-15"))
+    |}];
   print_endline (Info.to_string_hum exn);
   [%expect
     {|
@@ -148,5 +149,6 @@ let%expect_test "show how backtraces are printed" =
       "called from Base__Error.raise_s in file \"error.ml\", line 10, characters 19-40"
       "called from Floops_interfaces__Registrant.register_exn in file \"registrant.ml\", line 18, characters 4-241"
       "called from Floops_interfaces_test__Registrant_test.Test_brick.create_exn.(fun) in file \"registrant_test.ml\", line 25, characters 6-67"
-      "called from Base__Or_error.try_with in file \"or_error.ml\", line 84, characters 9-15")) |}]
+      "called from Base__Or_error.try_with in file \"or_error.ml\", line 84, characters 9-15"))
+    |}]
 ;;

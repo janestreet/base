@@ -17,17 +17,6 @@ module type Utf = sig
       characters. Indexes, length, etc. are with respect to [Uchar.t]. *)
   include Indexed_container.S0_with_creators with type t := t and type elt = Uchar0.t
 
-  (** Counts the number of unicode scalar values in [t]. *)
-  val length_in_uchars : t -> int
-
-  (** [length] could be misinterpreted as counting bytes. We direct users to other,
-      clearer options. *)
-  val length : t -> int
-    [@@alert
-      length_in_uchars
-        "Use [length_in_uchars] to count unicode scalar values or [String.length] to \
-         count bytes"]
-
   (** Produce a sequence of unicode characters. *)
   val to_sequence : t -> Uchar0.t Sequence.t
 
@@ -57,6 +46,33 @@ module type Utf = sig
 
   (** The name of this encoding scheme; e.g., "UTF-8". *)
   val codec_name : string
+
+  (** Counts the number of unicode scalar values in [t].
+
+      This function is not a good proxy for display width, as some scalar values have
+      display widths > 1. Many native applications such as terminal emulators use
+      [wcwidth] (see [man 3 wcwidth]) to compute the display width of a scalar value. See
+      the uucp library's [Uucp.Break.tty_width_hint] for an implementation of [wcwidth]'s
+      logic. However, this is merely best-effort, as display widths will vary based on the
+      font and underlying text shaping engine (see docs on [tty_width_hint] for details).
+
+      For applications that support Grapheme clusters (many terminal emulators do not),
+      [t] should first be split into Grapheme clusters and then the display width of each
+      of those Grapheme clusters needs to be computed (which is the max display width of
+      the scalars that are in the cluster).
+
+      There are some active efforts to improve the current state of affairs:
+      - https://github.com/wez/wezterm/issues/4320
+      - https://www.unicode.org/L2/L2023/23194-text-terminal-wg-report.pdf *)
+  val length_in_uchars : t -> int
+
+  (** [length] could be misinterpreted as counting bytes. We direct users to other,
+      clearer options. *)
+  val length : t -> int
+    [@@alert
+      length_in_uchars
+        "Use [length_in_uchars] to count unicode scalar values or [String.length] to \
+         count bytes"]
 end
 
 (** Iterface for Unicode encodings, specialized for string representation. *)

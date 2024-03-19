@@ -1162,7 +1162,8 @@ let%test_module _ =
              (length        2)
              (elts (
                (_)
-               (_))))) |}]
+               (_)))))
+           |}]
                  ;;
                end
              end

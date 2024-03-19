@@ -1,5 +1,7 @@
 open! Import
-open! Array
+open Base_quickcheck
+open Expect_test_helpers_base
+open Array
 
 let%test_module "Binary_searchable" =
   (module Test_binary_searchable.Test1 (struct
@@ -160,23 +162,28 @@ let%expect_test "merge with duplicates" =
   test [| 1, "a1" |] [| 1, "a2" |];
   [%expect {|
     ((1 a1)
-     (1 a2)) |}];
+     (1 a2))
+    |}];
   test [| 1, "a1"; 2, "a1"; 3, "a1" |] [| 3, "a2"; 4, "a2"; 5, "a2" |];
-  [%expect {|
+  [%expect
+    {|
     ((1 a1)
      (2 a1)
      (3 a1)
      (3 a2)
      (4 a2)
-     (5 a2)) |}];
+     (5 a2))
+    |}];
   test [| 3, "a1"; 4, "a1"; 5, "a1" |] [| 1, "a2"; 2, "a2"; 3, "a2" |];
-  [%expect {|
+  [%expect
+    {|
     ((1 a2)
      (2 a2)
      (3 a1)
      (3 a2)
      (4 a1)
-     (5 a1)) |}];
+     (5 a1))
+    |}];
   test [| 1, "a1"; 3, "a1"; 3, "a1"; 5, "a1" |] [| 2, "a2"; 3, "a2"; 3, "a2"; 4, "a2" |];
   [%expect
     {|
@@ -187,14 +194,69 @@ let%expect_test "merge with duplicates" =
      (3 a2)
      (3 a2)
      (4 a2)
-     (5 a1)) |}]
+     (5 a1))
+    |}]
 ;;
 
 let%test _ = foldi [||] ~init:13 ~f:(fun _ _ _ -> failwith "bad") = 13
 let%test _ = foldi [| 13 |] ~init:17 ~f:(fun i ac x -> ac + i + x) = 30
 let%test _ = foldi [| 13; 17 |] ~init:19 ~f:(fun i ac x -> ac + i + x) = 50
-let%test _ = counti [| 0; 1; 2; 3; 4 |] ~f:(fun idx x -> idx = x) = 5
-let%test _ = counti [| 0; 1; 2; 3; 4 |] ~f:(fun idx x -> idx = 4 - x) = 1
+
+let%test_module "count{,i}" =
+  (module struct
+    let%expect_test "[Array.count{,i} = List.count{,i}]" =
+      quickcheck_m
+        [%here]
+        (module struct
+          type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
+        end)
+        ~f:(fun (list, f) ->
+          require_equal
+            [%here]
+            (module Int)
+            (list |> List.count ~f)
+            (list |> of_list |> count ~f));
+      quickcheck_m
+        [%here]
+        (module struct
+          type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
+        end)
+        ~f:(fun (list, f) ->
+          require_equal
+            [%here]
+            (module Int)
+            (list |> List.counti ~f)
+            (list |> of_list |> counti ~f))
+    ;;
+
+    let%test _ = counti [| 0; 1; 2; 3; 4 |] ~f:(fun idx x -> idx = x) = 5
+    let%test _ = counti [| 0; 1; 2; 3; 4 |] ~f:(fun idx x -> idx = 4 - x) = 1
+  end)
+;;
+
+let%test_module "{min,max}_elt" =
+  (module struct
+    let test_opt_selector arr_fun list_fun =
+      quickcheck_m
+        [%here]
+        (module struct
+          type t = int list [@@deriving sexp_of, quickcheck]
+        end)
+        ~f:(fun list ->
+          let arr = of_list list in
+          require_equal
+            [%here]
+            (module struct
+              type t = int option [@@deriving sexp_of, equal]
+            end)
+            (arr_fun arr ~compare:(fun x y -> Int.compare x y))
+            (list_fun list ~compare:(fun x y -> Int.compare x y)))
+    ;;
+
+    let%expect_test "min_elt" = test_opt_selector min_elt List.min_elt
+    let%expect_test "max_elt" = test_opt_selector max_elt List.max_elt
+  end)
+;;
 
 let%test_unit _ =
   for i = 0 to 5 do
@@ -603,7 +665,8 @@ let%expect_test "cartesian_product" =
      (2 a)
      (2 b)
      (3 a)
-     (3 b)) |}]
+     (3 b))
+    |}]
 ;;
 
 let%expect_test "create_local" =

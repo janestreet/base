@@ -6,7 +6,7 @@ let%expect_test _ =
   let y = Sys.opaque_identity "another" in
   require_no_allocation [%here] (fun () ->
     ignore (Sys.opaque_identity (String.Caseless.equal x y) : bool));
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "empty substring" =
@@ -27,7 +27,7 @@ let%expect_test "mem does not allocate" =
   let string = Sys.opaque_identity "abracadabra" in
   let char = Sys.opaque_identity 'd' in
   require_no_allocation [%here] (fun () -> ignore (String.mem string char : bool));
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "fold does not allocate" =
@@ -36,7 +36,7 @@ let%expect_test "fold does not allocate" =
   let f acc c = if Char.equal c char then true else acc in
   require_no_allocation [%here] (fun () ->
     ignore (String.fold string ~init:false ~f : bool));
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "foldi does not allocate" =
@@ -45,7 +45,7 @@ let%expect_test "foldi does not allocate" =
   let f _i acc c = if Char.equal c char then true else acc in
   require_no_allocation [%here] (fun () ->
     ignore (String.foldi string ~init:false ~f : bool));
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%test_module "common prefix and suffix" =
@@ -135,11 +135,13 @@ let%test_module "common prefix and suffix" =
       test_prefix [ "hello"; "help"; "hex" ];
       [%expect {|
         he
-        (may allocate) |}];
+        (may allocate)
+        |}];
       test_suffix [ "crest"; "zest"; "1st" ];
       [%expect {|
         st
-        (may allocate) |}]
+        (may allocate)
+        |}]
     ;;
 
     let%expect_test "doubleton, no alloc" =
@@ -153,11 +155,13 @@ let%test_module "common prefix and suffix" =
       test_prefix [ "this"; "that"; "the other"; "these"; "those"; "thy"; "thou" ];
       [%expect {|
         th
-        (may allocate) |}];
+        (may allocate)
+        |}];
       test_suffix [ "fourth"; "fifth"; "sixth"; "seventh"; "eleventh"; "twelfth" ];
       [%expect {|
         th
-        (may allocate) |}]
+        (may allocate)
+        |}]
     ;;
 
     let%expect_test "many, no alloc" =

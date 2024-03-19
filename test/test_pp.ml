@@ -13,21 +13,25 @@ let%expect_test "pretty-printers" =
   [%expect {|
     '\000'
     '\r'
-    'a' |}];
+    'a'
+    |}];
   print_all String.pp [ ""; "foo"; "abc\tdef" ];
   [%expect {|
     ""
     "foo"
-    "abc\tdef" |}];
+    "abc\tdef"
+    |}];
   print_all Sign.pp Sign.all;
   [%expect {|
     Neg
     Zero
-    Pos |}];
+    Pos
+    |}];
   print_all Bool.pp Bool.all;
   [%expect {|
     false
-    true |}];
+    true
+    |}];
   print_all Unit.pp Unit.all;
   [%expect {| () |}];
   print_all Nothing.pp Nothing.all;
@@ -36,11 +40,13 @@ let%expect_test "pretty-printers" =
   [%expect {|
     0.
     3.14
-    inf |}];
+    inf
+    |}];
   print_all Int.pp [ 0; 1 ];
   [%expect {|
     0
-    1 |}];
+    1
+    |}];
   print Info.pp (Info.create_s [%sexp "hello", "world"]);
   [%expect {| (hello world) |}]
 ;;

@@ -6,5 +6,5 @@ let%expect_test _ =
   let y = Sys.opaque_identity 'b' in
   require_no_allocation [%here] (fun () ->
     ignore (Sys.opaque_identity (Char.Caseless.equal x y) : bool));
-  [%expect {||}]
+  [%expect {| |}]
 ;;

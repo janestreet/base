@@ -1,0 +1,6 @@
+(library
+ (name base_test_map_full_interface)
+ (libraries base base_quickcheck
+   expect_test_helpers_core.expect_test_helpers_base sexp_grammar)
+ (preprocess
+  (pps ppx_jane)))

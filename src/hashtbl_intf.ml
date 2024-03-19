@@ -129,7 +129,7 @@ module type Accessors = sig
 
       {v
       let h = Hashtbl.of_alist_exn (module Int) [(1, 4); (5, 6)] in
-      let h' = Hashtbl.map h ~f:((fun x -> x * 2)[@local]) in
+      let h' = Hashtbl.map h ~f:(local_ (fun x -> x * 2)) in
       Hashtbl.to_alist h';;
       - : (int * int) list = [(5, 12); (1, 8)]
       v} *)
@@ -146,7 +146,7 @@ module type Accessors = sig
 
       {v
       let h = Hashtbl.of_alist_exn (module Int) [(1, 4); (5, 6)] in
-      Hashtbl.filter_map h ~f:((fun x -> if x > 5 then Some x else None)[@local])
+      Hashtbl.filter_map h ~f:(local_ (fun x -> if x > 5 then Some x else None))
       |> Hashtbl.to_alist;;
       - : (int * int) list = [(5, 6)]
       v} *)
@@ -541,8 +541,8 @@ module type Creators = sig
       {v
         let h =
           Hashtbl.create_mapped (module Int)
-            ~get_key:((fun x -> x)[@local])
-            ~get_data:((fun x -> x + 1)[@local])
+            ~get_key:(local_ (fun x -> x))
+            ~get_data:(local_ (fun x -> x + 1))
            [1; 2; 3];;
         val h : [ `Duplicate_keys of int list | `Ok of (int, int) Hashtbl.t ] = `Ok <abstr>
 
@@ -599,9 +599,9 @@ module type Creators = sig
 
       {v
          Hashtbl.group (module Int)
-           ~get_key:((fun x -> x / 2)[@local])
-           ~get_data:((fun x -> x)[@local])
-           ~combine:((fun x y -> x * y)[@local])
+           ~get_key:(local_ (fun x -> x / 2))
+           ~get_data:(local_ (fun x -> x))
+           ~combine:(local_ (fun x y -> x * y))
             [ 1; 2; 3; 4]
          |> Hashtbl.to_alist;;
          - : (int * int) list = [(2, 4); (1, 6); (0, 1)]

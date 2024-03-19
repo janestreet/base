@@ -518,7 +518,8 @@ let%test_module "Assoc.group" =
       test [ "a", 1; "b", 2 ];
       [%expect {|
         ((a (1))
-         (b (2))) |}];
+         (b (2)))
+        |}];
       test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
       [%expect
         {|
@@ -527,11 +528,13 @@ let%test_module "Assoc.group" =
          (Odd  (3))
          (Even (4))
          (ODD  (5))
-         (EVEN (6))) |}];
+         (EVEN (6)))
+        |}];
       test [ "odd", 1; "Odd", 3; "ODD", 5; "even", 2; "Even", 4; "EVEN", 6 ];
       [%expect {|
         ((odd  (1 3 5))
-         (even (2 4 6))) |}]
+         (even (2 4 6)))
+        |}]
     ;;
   end)
 ;;
@@ -557,11 +560,13 @@ let%test_module "Assoc.sort_and_group" =
       test [ "a", 1; "b", 2 ];
       [%expect {|
         ((a (1))
-         (b (2))) |}];
+         (b (2)))
+        |}];
       test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
       [%expect {|
         ((even (2 4 6))
-         (odd  (1 3 5))) |}]
+         (odd  (1 3 5)))
+        |}]
     ;;
   end)
 ;;
@@ -966,14 +971,6 @@ let%test_unit _ =
 ;;
 
 let%test_unit _ =
-  [%test_result: int] (counti [ 0; 1; 2; 3; 4 ] ~f:(fun idx x -> idx = x)) ~expect:5
-;;
-
-let%test_unit _ =
-  [%test_result: int] (counti [ 0; 1; 2; 3; 4 ] ~f:(fun idx x -> idx = 4 - x)) ~expect:1
-;;
-
-let%test_unit _ =
   [%test_result: int list]
     (filter_map ~f:(fun x -> Some x) Test_values.l1)
     ~expect:Test_values.l1
@@ -1369,7 +1366,8 @@ let%expect_test "[Cartesian_product]" =
     (c 2 mi)
     (c 3 do)
     (c 3 re)
-    (c 3 mi) |}]
+    (c 3 mi)
+    |}]
 ;;
 
 let%expect_test "[compare__local] is the same as [compare]" =
@@ -1383,7 +1381,7 @@ let%expect_test "[compare__local] is the same as [compare]" =
         (module Int)
         (compare Int.compare l1 l2)
         (compare__local Int.compare__local l1 l2));
-  [%expect]
+  [%expect {| |}]
 ;;
 
 let%expect_test "[equal__local] is the same as [equal]" =
@@ -1397,7 +1395,7 @@ let%expect_test "[equal__local] is the same as [equal]" =
         (module Bool)
         (equal Int.equal l1 l2)
         (equal__local Int.equal__local l1 l2));
-  [%expect]
+  [%expect {| |}]
 ;;
 
 let%expect_test "list sort, dedup" =
@@ -1599,48 +1597,180 @@ let%expect_test "[concat_mapi]" =
   [%expect {| (0 1 2 3 1 2 3 4 5 2 3 4 5 6 7) |}]
 ;;
 
-let%expect_test "[filter]" =
-  let test list =
-    List.filter list ~f:(fun n -> n % 3 > 0) |> [%sexp_of: int list] |> print_s
-  in
-  test [];
-  [%expect {| () |}];
-  test [ 1 ];
-  [%expect {| (1) |}];
-  test [ 1; 2 ];
-  [%expect {| (1 2) |}];
-  test [ 1; 2; 3 ];
-  [%expect {| (1 2) |}];
-  test [ 1; 2; 3; 4 ];
-  [%expect {| (1 2 4) |}];
-  test [ 4; 5; 6 ];
-  [%expect {| (4 5) |}]
+let%test_module "filter{,i}" =
+  (module struct
+    open Base_quickcheck
+
+    module Int_list = struct
+      type t = int list [@@deriving equal, sexp_of]
+    end
+
+    let%expect_test "[filter]" =
+      quickcheck_m
+        [%here]
+        (module struct
+          type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
+        end)
+        ~f:(fun (list, f) ->
+          (* test [f] *)
+          let pos = List.filter list ~f in
+          require [%here] (List.for_all pos ~f);
+          (* test [~f] *)
+          let not_f = Fn.non f in
+          let neg = List.filter list ~f:not_f in
+          require [%here] (List.for_all neg ~f:not_f);
+          (* test [f \/ ~f] *)
+          let sort = sort ~compare:Int.compare in
+          require_equal [%here] (module Int_list) (sort list) (sort (pos @ neg)))
+    ;;
+
+    let%expect_test "[filteri]" =
+      quickcheck_m
+        [%here]
+        (module struct
+          type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
+        end)
+        ~f:(fun (list, f) ->
+          let pos, neg =
+            (* stash the original indices, so that we can retrieve them after filtering *)
+            let list = mapi list ~f:(fun i x -> i, x) in
+            let ignore_stash f : _ = fun i (_, x) -> f i x in
+            let use_orig_index f : _ = fun (i, x) -> f i x in
+            (* test [f] *)
+            let pos = List.filteri list ~f:(ignore_stash f) in
+            require [%here] (List.for_all pos ~f:(use_orig_index f));
+            (* test [~f] *)
+            let not_f i x = not (f i x) in
+            let neg = List.filteri list ~f:(ignore_stash not_f) in
+            require [%here] (List.for_all neg ~f:(use_orig_index not_f));
+            pos, neg
+          in
+          (* test [f \/ ~f] *)
+          let sort = sort ~compare:[%compare: int * _] in
+          require_equal [%here] (module Int_list) list (sort (pos @ neg) |> map ~f:snd))
+    ;;
+
+    let%expect_test "[filteri ~f:(Fn.const f) = filter ~f]" =
+      quickcheck_m
+        [%here]
+        (module struct
+          type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
+        end)
+        ~f:(fun (list, f) ->
+          require_equal
+            [%here]
+            (module Int_list)
+            (filteri list ~f:(fun _ x -> f x))
+            (filter list ~f))
+    ;;
+
+    let%expect_test "[filter]" =
+      let test list =
+        List.filter list ~f:(fun n -> n % 3 > 0) |> [%sexp_of: int list] |> print_s
+      in
+      test [];
+      [%expect {| () |}];
+      test [ 1 ];
+      [%expect {| (1) |}];
+      test [ 1; 2 ];
+      [%expect {| (1 2) |}];
+      test [ 1; 2; 3 ];
+      [%expect {| (1 2) |}];
+      test [ 1; 2; 3; 4 ];
+      [%expect {| (1 2 4) |}];
+      test [ 4; 5; 6 ];
+      [%expect {| (4 5) |}]
+    ;;
+
+    let%expect_test "[filteri]" =
+      let test list =
+        List.filteri list ~f:(fun i n -> n > i) |> [%sexp_of: int list] |> print_s
+      in
+      test [];
+      [%expect {| () |}];
+      test [ 0 ];
+      [%expect {| () |}];
+      test [ 0; 1 ];
+      [%expect {| () |}];
+      test [ 0; 1; 2 ];
+      [%expect {| () |}];
+      test [ 1 ];
+      [%expect {| (1) |}];
+      test [ 1; 2 ];
+      [%expect {| (1 2) |}];
+      test [ 1; 2; 3 ];
+      [%expect {| (1 2 3) |}];
+      test [ 1; 0 ];
+      [%expect {| (1) |}];
+      test [ 2; 1; 0 ];
+      [%expect {| (2) |}];
+      test [ 3; 2; 1; 0 ];
+      [%expect {| (3 2) |}]
+    ;;
+  end)
 ;;
 
-let%expect_test "[filteri]" =
-  let test list =
-    List.filteri list ~f:(fun i n -> n > i) |> [%sexp_of: int list] |> print_s
-  in
-  test [];
-  [%expect {| () |}];
-  test [ 0 ];
-  [%expect {| () |}];
-  test [ 0; 1 ];
-  [%expect {| () |}];
-  test [ 0; 1; 2 ];
-  [%expect {| () |}];
-  test [ 1 ];
-  [%expect {| (1) |}];
-  test [ 1; 2 ];
-  [%expect {| (1 2) |}];
-  test [ 1; 2; 3 ];
-  [%expect {| (1 2 3) |}];
-  test [ 1; 0 ];
-  [%expect {| (1) |}];
-  test [ 2; 1; 0 ];
-  [%expect {| (2) |}];
-  test [ 3; 2; 1; 0 ];
-  [%expect {| (3 2) |}]
+let%test_module "count{,i}" =
+  (module struct
+    let%expect_test "[count{,i} list ~f = List.length (filter{,i} list ~f)]" =
+      quickcheck_m
+        [%here]
+        (module struct
+          type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
+        end)
+        ~f:(fun (list, f) ->
+          require_equal [%here] (module Int) (count list ~f) (length (filter list ~f)));
+      quickcheck_m
+        [%here]
+        (module struct
+          type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
+        end)
+        ~f:(fun (list, f) ->
+          require_equal [%here] (module Int) (counti list ~f) (length (filteri list ~f)))
+    ;;
+
+    let%test_unit _ =
+      [%test_result: int] (counti [ 0; 1; 2; 3; 4 ] ~f:(fun idx x -> idx = x)) ~expect:5
+    ;;
+
+    let%test_unit _ =
+      [%test_result: int]
+        (counti [ 0; 1; 2; 3; 4 ] ~f:(fun idx x -> idx = 4 - x))
+        ~expect:1
+    ;;
+  end)
+;;
+
+let%test_module "{min,max}_elt" =
+  (module struct
+    let test_in_list_and_forall ~tested_f ~holds_for_res_over_all_elem =
+      quickcheck_m
+        [%here]
+        (module struct
+          type t = int list [@@deriving quickcheck, sexp_of]
+        end)
+        ~f:(fun list ->
+          let res = tested_f list ~compare:[%compare: int] in
+          match res with
+          | None -> require [%here] (is_empty list)
+          | Some res ->
+            require [%here] (mem list res ~equal:Int.equal);
+            iter list ~f:(fun elem ->
+              require [%here] (holds_for_res_over_all_elem ~res ~elem)))
+    ;;
+
+    let%expect_test "min_elt" =
+      test_in_list_and_forall
+        ~tested_f:min_elt
+        ~holds_for_res_over_all_elem:(fun ~res ~elem -> res <= elem)
+    ;;
+
+    let%expect_test "max_elt" =
+      test_in_list_and_forall
+        ~tested_f:max_elt
+        ~holds_for_res_over_all_elem:(fun ~res ~elem -> res >= elem)
+    ;;
+  end)
 ;;
 
 let%expect_test "[map2]" =
@@ -1731,27 +1861,35 @@ let%expect_test "[merge]" =
   test_pair [] [];
   [%expect {|
     ()
-    () |}];
+    ()
+    |}];
   test_pair [] [ 1, "a"; 2, "b"; 3, "c" ];
   [%expect {|
     ((1 a) (2 b) (3 c))
-    ((1 a) (2 b) (3 c)) |}];
+    ((1 a) (2 b) (3 c))
+    |}];
   test_pair [ 1, "z"; 2, "y" ] [ 3, "x"; 4, "w"; 5, "v" ];
-  [%expect {|
+  [%expect
+    {|
     ((1 z) (2 y) (3 x) (4 w) (5 v))
-    ((1 z) (2 y) (3 x) (4 w) (5 v)) |}];
+    ((1 z) (2 y) (3 x) (4 w) (5 v))
+    |}];
   test_pair [ 1, "a"; 2, "b" ] [];
   [%expect {|
     ((1 a) (2 b))
-    ((1 a) (2 b)) |}];
+    ((1 a) (2 b))
+    |}];
   test_pair [ 1, "a"; 3, "b" ] [ 1, "b"; 2, "a" ];
   [%expect {|
     ((1 a) (1 b) (2 a) (3 b))
-    ((1 b) (1 a) (2 a) (3 b)) |}];
+    ((1 b) (1 a) (2 a) (3 b))
+    |}];
   test_pair [ 0, "!"; 1, "b"; 2, "a" ] [ 1, "a"; 2, "b" ];
-  [%expect {|
+  [%expect
+    {|
     ((0 !) (1 b) (1 a) (2 a) (2 b))
-    ((0 !) (1 a) (1 b) (2 b) (2 a)) |}]
+    ((0 !) (1 a) (1 b) (2 b) (2 a))
+    |}]
 ;;
 
 let%expect_test "[sub]" =

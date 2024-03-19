@@ -13,7 +13,8 @@ let%expect_test _ =
   [%expect {|
     (raised ABC)
     (raised (DEF GHI))
-    (raised (foo (bar 31))) |}]
+    (raised (foo (bar 31)))
+    |}]
 ;;
 
 let%expect_test _ =
@@ -22,5 +23,6 @@ let%expect_test _ =
   [%expect {|
     (raised ABC)
     (raised (DEF GHI))
-    (raised (foo (bar 31))) |}]
+    (raised (foo (bar 31)))
+    |}]
 ;;

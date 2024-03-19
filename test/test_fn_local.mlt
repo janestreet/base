@@ -4,13 +4,13 @@ open Base
 
 let f : 'a. 'a -> 'a = Fn.id
 
-[%%expect {||}]
+[%%expect {| |}]
 
 (* [id] can operate on local arguments *)
 
 let f : 'a. local_ 'a -> local_ 'a = Fn.id
 
-[%%expect {||}]
+[%%expect {| |}]
 
 (* [id] cannot make a local argument global; this would be unsound *)
 

@@ -89,8 +89,9 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
       test_reraiser _Base_Exn_reraise;
       really_show_backtrace [%expect.output];
       [%expect {|
-          Before re-raise: true
-          After  re-raise: true |}]
+        Before re-raise: true
+        After  re-raise: true
+        |}]
     ;;
 
     (* bad, because the backtrace was clobbered *)
@@ -98,8 +99,9 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
       test_reraiser _Base_Exn_reraise_after_clobbering_most_recent_backtrace;
       really_show_backtrace [%expect.output];
       [%expect {|
-          Before re-raise: false
-          After  re-raise: true |}]
+        Before re-raise: false
+        After  re-raise: true
+        |}]
     ;;
 
     (* bad, missing the backtrace before the reraise *)
@@ -107,8 +109,9 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
       test_reraiser external_reraise_unequal;
       really_show_backtrace [%expect.output];
       [%expect {|
-          Before re-raise: false
-          After  re-raise: true |}]
+        Before re-raise: false
+        After  re-raise: true
+        |}]
     ;;
 
     (* bad, missing the backtrace before the reraise *)
@@ -116,8 +119,9 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
       test_reraiser vanilla_raise_unequal;
       really_show_backtrace [%expect.output];
       [%expect {|
-          Before re-raise: false
-          After  re-raise: true |}]
+        Before re-raise: false
+        After  re-raise: true
+        |}]
     ;;
 
     (* good, but no additional info attached *)
@@ -125,8 +129,9 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
       test_reraiser vanilla_raise;
       really_show_backtrace [%expect.output];
       [%expect {|
-          Before re-raise: true
-          After  re-raise: true |}]
+        Before re-raise: true
+        After  re-raise: true
+        |}]
     ;;
 
     (* good *)
@@ -134,8 +139,9 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
       test_reraiser raise_with_original_backtrace;
       really_show_backtrace [%expect.output];
       [%expect {|
-          Before re-raise: true
-          After  re-raise: true |}]
+        Before re-raise: true
+        After  re-raise: true
+        |}]
     ;;
 
     (* good *)
@@ -143,8 +149,9 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
       test_reraise_uncaught ~reraise_uncaught:(Exn.reraise_uncaught "reraised");
       really_show_backtrace [%expect.output];
       [%expect {|
-          Before re-raise: true
-          After  re-raise: true |}]
+        Before re-raise: true
+        After  re-raise: true
+        |}]
     ;;
   end)
 ;;

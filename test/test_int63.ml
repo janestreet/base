@@ -94,11 +94,9 @@ let%test_module "Overflow_exn" =
 let%expect_test "[floor_log2]" =
   let floor_log2 t = print_s [%sexp (floor_log2 t : int)] in
   show_raise (fun () -> floor_log2 zero);
-  [%expect {|
-    (raised ("[Int.floor_log2] got invalid input" 0)) |}];
+  [%expect {| (raised ("[Int.floor_log2] got invalid input" 0)) |}];
   floor_log2 one;
-  [%expect {|
-    0 |}];
+  [%expect {| 0 |}];
   for i = 1 to 8 do
     floor_log2 (i |> of_int)
   done;
@@ -110,16 +108,14 @@ let%expect_test "[floor_log2]" =
     2
     2
     2
-    3 |}];
+    3
+    |}];
   floor_log2 ((one lsl 61) - one);
-  [%expect {|
-    60 |}];
+  [%expect {| 60 |}];
   floor_log2 (one lsl 61);
-  [%expect {|
-    61 |}];
+  [%expect {| 61 |}];
   floor_log2 max_value;
-  [%expect {|
-    61 |}]
+  [%expect {| 61 |}]
 ;;
 
 let%expect_test "binary" =
@@ -144,12 +140,14 @@ let%expect_test ("binary emulation" [@tags "js-only"]) =
   [%expect {|
     0b1
     0b1
-    0b1 |}];
+    0b1
+    |}];
   test_binary 0b0L;
   [%expect {|
     0b0
     0b0
-    0b0 |}]
+    0b0
+    |}]
 ;;
 
 let%expect_test "binary" =
@@ -157,25 +155,30 @@ let%expect_test "binary" =
   [%expect {|
     0b1
     0b1
-    0b1 |}];
+    0b1
+    |}];
   test_binary 0b100L;
   [%expect {|
     0b100
     0b100
-    0b100 |}];
+    0b100
+    |}];
   test_binary 0b101L;
   [%expect {|
     0b101
     0b101
-    0b101 |}];
+    0b101
+    |}];
   test_binary 0b10_1010_1010_1010L;
   [%expect {|
     0b10_1010_1010_1010
     0b10101010101010
-    0b10101010101010 |}];
+    0b10_1010_1010_1010
+    |}];
   test_binary 0b11_1111_0000_0000L;
   [%expect {|
     0b11_1111_0000_0000
     0b11111100000000
-    0b11111100000000 |}]
+    0b11_1111_0000_0000
+    |}]
 ;;

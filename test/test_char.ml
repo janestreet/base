@@ -82,7 +82,8 @@ let%expect_test "all" =
      "\219" "\220" "\221" "\222" "\223" "\224" "\225" "\226" "\227" "\228" "\229"
      "\230" "\231" "\232" "\233" "\234" "\235" "\236" "\237" "\238" "\239" "\240"
      "\241" "\242" "\243" "\244" "\245" "\246" "\247" "\248" "\249" "\250" "\251"
-     "\252" "\253" "\254" "\255") |}]
+     "\252" "\253" "\254" "\255")
+    |}]
 ;;
 
 let%expect_test "predicates" =
@@ -97,18 +98,21 @@ let%expect_test "predicates" =
     [%expect
       {|
       (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b c d e f g h i j k l
-       m n o p q r s t u v w x y z) |}];
+       m n o p q r s t u v w x y z)
+      |}];
     print_s [%sexp (List.filter all ~f:is_alphanum : t list)];
     [%expect
       {|
       (0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b
-       c d e f g h i j k l m n o p q r s t u v w x y z) |}];
+       c d e f g h i j k l m n o p q r s t u v w x y z)
+      |}];
     print_s [%sexp (List.filter all ~f:is_print : t list)];
     [%expect
       {|
       (" " ! "\"" # $ % & ' "(" ")" * + , - . / 0 1 2 3 4 5 6 7 8 9 : ";" < = > ? @
        A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ "\\" ] ^ _ ` a b c d e
-       f g h i j k l m n o p q r s t u v w x y z { | } ~) |}];
+       f g h i j k l m n o p q r s t u v w x y z { | } ~)
+      |}];
     print_s [%sexp (List.filter all ~f:is_whitespace : t list)];
     [%expect {| ("\t" "\n" "\011" "\012" "\r" " ") |}];
     print_s [%sexp (List.filter all ~f:is_hex_digit : t list)];
@@ -129,7 +133,8 @@ let%expect_test "get_hex_digit" =
     [%expect
       {|
       ((0 0) (1 1) (2 2) (3 3) (4 4) (5 5) (6 6) (7 7) (8 8) (9 9) (A 10) (B 11)
-       (C 12) (D 13) (E 14) (F 15) (a 10) (b 11) (c 12) (d 13) (e 14) (f 15)) |}];
+       (C 12) (D 13) (E 14) (F 15) (a 10) (b 11) (c 12) (d 13) (e 14) (f 15))
+      |}];
     require_equal
       [%here]
       (module struct

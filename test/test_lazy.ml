@@ -97,10 +97,12 @@ let%expect_test "equal" =
   [%expect {|
     force lazy_b
     force lazy_a
-    true |}];
+    true
+    |}];
   (* [force], resulting in [false] *)
   print_s [%sexp (equal Int.equal lazy_b lazy_c : bool)];
   [%expect {|
     force lazy_c
-    false |}]
+    false
+    |}]
 ;;

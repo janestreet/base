@@ -19,5 +19,6 @@ let%expect_test "to_string_hum" =
     negative
     zero
     positive
-    not-a-number |}]
+    not-a-number
+    |}]
 ;;

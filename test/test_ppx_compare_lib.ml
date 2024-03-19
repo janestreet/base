@@ -89,5 +89,6 @@ let%expect_test "[compare_abstract]" =
     {|
     (raised (
       Failure
-      "Compare called on the type TY, which is abstract in an implementation.")) |}]
+      "Compare called on the type TY, which is abstract in an implementation."))
+    |}]
 ;;

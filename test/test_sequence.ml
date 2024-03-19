@@ -653,8 +653,7 @@ let%expect_test _ =
   let xs = init 3 ~f:Fn.id |> Generator.of_sequence in
   let ( @ ) xs ys = Generator.bind xs ~f:(fun () -> ys) in
   xs @ xs @ xs @ xs @ xs |> Generator.run |> [%sexp_of: int t] |> print_s;
-  [%expect {|
-    (0 1 2 0 1 2 0 1 2 0 1 2 0 1 2) |}]
+  [%expect {| (0 1 2 0 1 2 0 1 2 0 1 2 0 1 2) |}]
 ;;
 
 let%test_module "group" =
@@ -708,7 +707,8 @@ let%test_module "Caml.Seq" =
         1
         2
         3
-        4 |}]
+        4
+        |}]
     ;;
 
     let%expect_test "to_seq" =
@@ -717,7 +717,8 @@ let%test_module "Caml.Seq" =
         1
         2
         3
-        4 |}]
+        4
+        |}]
     ;;
   end)
 ;;

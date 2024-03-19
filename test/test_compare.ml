@@ -65,52 +65,52 @@ let%expect_test "Base" =
       type t = int [@@deriving sexp_of]
     end)
     Int.[ min_value; minus_one; zero; one; max_value ];
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "Unit" =
   test [%here] (module Unit) Unit.all;
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "Bool" =
   test [%here] (module Bool) Bool.all;
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "Char" =
   test [%here] (module Char) Char.all;
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "Float" =
   test [%here] (module Float) Float.[ min_value; minus_one; zero; one; max_value ];
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "Int" =
   test [%here] (module Int) Int.[ min_value; minus_one; zero; one; max_value ];
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "Int32" =
   test [%here] (module Int32) Int32.[ min_value; minus_one; zero; one; max_value ];
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "Int64" =
   test [%here] (module Int64) Int64.[ min_value; minus_one; zero; one; max_value ];
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "Nativeint" =
   test [%here] (module Nativeint) Nativeint.[ min_value; minus_one; zero; one; max_value ];
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "Int63" =
   test [%here] (module Int63) Int63.[ min_value; minus_one; zero; one; max_value ];
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%test_module "lexicographic" =
@@ -129,9 +129,10 @@ let%test_module "lexicographic" =
               (Ordering.of_int (Comparable.lexicographic [ compare ] a b)));
         [%expect
           {|
-        ((a 1) (b 2) (ordering Less))
-        ((a 1) (b 1) (ordering Equal))
-        ((a 2) (b 1) (ordering Greater)) |}])
+          ((a 1) (b 2) (ordering Less))
+          ((a 1) (b 1) (ordering Equal))
+          ((a 2) (b 1) (ordering Greater))
+          |}])
     ;;
 
     let%expect_test "three comparisons" =
@@ -168,7 +169,8 @@ let%expect_test "reversed" =
   print_s [%message (sort_asc1 : int list) (sort_desc : int list) (sort_asc2 : int list)];
   [%expect
     {|
-      ((sort_asc1 (1 1 2 3 3 4 5 5 5 6 9 9))
-       (sort_desc (9 9 6 5 5 5 4 3 3 2 1 1))
-       (sort_asc2 (1 1 2 3 3 4 5 5 5 6 9 9))) |}]
+    ((sort_asc1 (1 1 2 3 3 4 5 5 5 6 9 9))
+     (sort_desc (9 9 6 5 5 5 4 3 3 2 1 1))
+     (sort_asc2 (1 1 2 3 3 4 5 5 5 6 9 9)))
+    |}]
 ;;

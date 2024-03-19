@@ -40,19 +40,23 @@ let%expect_test "[sets_temporarily] without raise" =
   test [];
   [%expect {|
     ((r1 1)
-     (r2 2)) |}];
+     (r2 2))
+    |}];
   test [ T (r1, 13) ];
   [%expect {|
     ((r1 13)
-     (r2 2)) |}];
+     (r2 2))
+    |}];
   test [ T (r1, 13); T (r1, 17) ];
   [%expect {|
     ((r1 17)
-     (r2 2)) |}];
+     (r2 2))
+    |}];
   test [ T (r1, 13); T (r2, 17) ];
   [%expect {|
     ((r1 13)
-     (r2 17)) |}]
+     (r2 17))
+    |}]
 ;;
 
 let%expect_test "[sets_temporarily] with raise" =

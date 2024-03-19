@@ -77,7 +77,8 @@ let%expect_test "find_and_call_1_and_2" =
     25
     29
     33
-    3_133 |}]
+    3_133
+    |}]
 ;;
 
 let%expect_test ("find_or_add shouldn't allocate" [@tags "no-js"]) =

@@ -128,7 +128,8 @@ let%expect_test "mapi lazy check" =
     ((key  2)
      (data 2))
     ((key  3)
-     (data 3)) |}];
+     (data 3))
+    |}];
   (* take more than enough steps to finish, expect the rest of the output *)
   let test_output =
     match more_computation.compute ~steps:100 with
@@ -150,5 +151,6 @@ let%expect_test "mapi lazy check" =
     ((key  8)
      (data 8))
     ((key  9)
-     (data 9)) |}]
+     (data 9))
+    |}]
 ;;

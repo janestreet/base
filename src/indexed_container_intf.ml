@@ -184,7 +184,7 @@ end
 module type Derived = sig
   (** Generic definitions of [foldi] and [iteri] in terms of [fold].
 
-      E.g., [iteri ~fold t ~f = ignore (fold t ~init:0 ~f:((fun i x -> f i x; i + 1)[@local]))]. *)
+      E.g., [iteri ~fold t ~f = ignore (fold t ~init:0 ~f:(local_ (fun i x -> f i x; i + 1)))]. *)
 
   val foldi : fold:('t, 'a, 'acc) fold -> ('t, 'a, 'acc) foldi
   val iteri : fold:('t, 'a, int) fold -> ('t, 'a) iteri

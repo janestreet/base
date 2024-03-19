@@ -111,8 +111,7 @@ module Test_applicative_s (A : Applicative.S with type 'a t := 'a Or_error.t) :
     test (Ok "o") (error "not okay");
     [%expect {| (Error "not okay") |}];
     test (error "no fst") (error "no snd");
-    [%expect {|
-      (Error ("no fst" "no snd")) |}]
+    [%expect {| (Error ("no fst" "no snd")) |}]
   ;;
 
   let map3 = A.map3
@@ -130,8 +129,7 @@ module Test_applicative_s (A : Applicative.S with type 'a t := 'a Or_error.t) :
     test (Ok "o") (Ok "k") (error "not okay");
     [%expect {| (Error "not okay") |}];
     test (error "no 1st") (error "no 2nd") (error "no 3rd");
-    [%expect {|
-      (Error ("no 1st" "no 2nd" "no 3rd")) |}]
+    [%expect {| (Error ("no 1st" "no 2nd" "no 3rd")) |}]
   ;;
 
   let all = A.all
@@ -159,8 +157,7 @@ module Test_applicative_s (A : Applicative.S with type 'a t := 'a Or_error.t) :
     test [ Ok "o"; Ok "kay"; error "oh no!" ];
     [%expect {| (Error "oh no!") |}];
     test [ error "oh"; error "no"; error "!" ];
-    [%expect {|
-      (Error (oh no !)) |}]
+    [%expect {| (Error (oh no !)) |}]
   ;;
 
   let all_unit = A.all_unit
@@ -188,8 +185,7 @@ module Test_applicative_s (A : Applicative.S with type 'a t := 'a Or_error.t) :
     test [ Ok (); Ok (); error "oh no!" ];
     [%expect {| (Error "oh no!") |}];
     test [ error "oh"; error "no"; error "!" ];
-    [%expect {|
-      (Error (oh no !)) |}]
+    [%expect {| (Error (oh no !)) |}]
   ;;
 
   module Applicative_infix = A.Applicative_infix
@@ -266,8 +262,7 @@ let%expect_test _ =
   test (both a b);
   [%expect {| (Map2 A B) |}];
   test (all_unit [ a; b; c; d ]);
-  [%expect {|
-    (Map2 (Map2 (Map2 (Map2 Return A) B) C) D) |}];
+  [%expect {| (Map2 (Map2 (Map2 (Map2 Return A) B) C) D) |}];
   test (a *> b);
   [%expect {| (Map2 A B) |}]
 ;;

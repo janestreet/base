@@ -6,6 +6,6 @@ let%expect_test _ =
      using the build info in version_util, which isn't available while compiling a test.
      So we delegate the whole test to this executable: *)
   let%bind () = run "bin/test_option_array_allocation.exe" [] in
-  [%expect {||}];
+  [%expect {| |}];
   return ()
 ;;

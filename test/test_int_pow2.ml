@@ -29,7 +29,8 @@ let%expect_test "[floor_log2]" =
     (9 (Ok 3))
     (63 (Ok 5))
     (64 (Ok 6))
-    (65 (Ok 6)) |}]
+    (65 (Ok 6))
+    |}]
 ;;
 
 let%expect_test ("[floor_log2]" [@tags "64-bits-only"]) =
@@ -41,7 +42,8 @@ let%expect_test ("[floor_log2]" [@tags "64-bits-only"]) =
     (-4_611_686_018_427_387_903 (
       Error ("[Int.floor_log2] got invalid input" -4611686018427387903)))
     (4_611_686_018_427_387_902 (Ok 61))
-    (4_611_686_018_427_387_903 (Ok 61)) |}]
+    (4_611_686_018_427_387_903 (Ok 61))
+    |}]
 ;;
 
 let%expect_test "[ceil_log2]" =
@@ -60,7 +62,8 @@ let%expect_test "[ceil_log2]" =
     (9 (Ok 4))
     (63 (Ok 6))
     (64 (Ok 6))
-    (65 (Ok 7)) |}]
+    (65 (Ok 7))
+    |}]
 ;;
 
 let%expect_test ("[ceil_log2]" [@tags "64-bits-only"]) =
@@ -72,7 +75,8 @@ let%expect_test ("[ceil_log2]" [@tags "64-bits-only"]) =
     (-4_611_686_018_427_387_903 (
       Error ("[Int.ceil_log2] got invalid input" -4611686018427387903)))
     (4_611_686_018_427_387_902 (Ok 62))
-    (4_611_686_018_427_387_903 (Ok 62)) |}]
+    (4_611_686_018_427_387_903 (Ok 62))
+    |}]
 ;;
 
 let%test_module "int_math" =

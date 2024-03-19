@@ -1081,7 +1081,8 @@ let%expect_test "square" =
   printf "%f\n" (square (-2.5));
   [%expect {|
     2.250000
-    6.250000 |}]
+    6.250000
+    |}]
 ;;
 
 let%expect_test "mathematical constants" =
@@ -1097,7 +1098,8 @@ let%expect_test "mathematical constants" =
   [%expect
     {|
     sqrt pi diff  : 0.00000000000000022204
-    sqrt 2pi diff : 0.00000000000000044409 |}]
+    sqrt 2pi diff : 0.00000000000000044409
+    |}]
 ;;
 
 let%test _ = not (is_negative Float.nan)
@@ -1189,7 +1191,8 @@ let%expect_test "is_nan, is_inf, and is_finite" =
        4.94065645841247e-324 false false  true
                           1. false false  true
      1.7976931348623157e+308 false false  true
-                         inf false  true false |}]
+                         inf false  true false
+    |}]
 ;;
 
 let%expect_test "nan" =
@@ -1233,62 +1236,72 @@ let%expect_test "log" =
   [%expect {|
     ((log2  NAN)
      (log10 NAN)
-     (ratio NAN)) |}];
+     (ratio NAN))
+    |}];
   test 0.;
   [%expect {|
     ((log2  -INF)
      (log10 -INF)
-     (ratio NAN)) |}];
+     (ratio NAN))
+    |}];
   test 1.;
   [%expect {|
     ((log2  0)
      (log10 0)
-     (ratio NAN)) |}];
+     (ratio NAN))
+    |}];
   test 2.;
   [%expect
     {|
     ((log2  1)
      (log10 0.3010299956639812)
-     (ratio 3.3219280948873622)) |}];
+     (ratio 3.3219280948873622))
+    |}];
   test 10.;
   [%expect
     {|
     ((log2  3.3219280948873622)
      (log10 1)
-     (ratio 3.3219280948873622)) |}];
+     (ratio 3.3219280948873622))
+    |}];
   test Float.min_positive_subnormal_value;
   [%expect
     {|
     ((log2  -1074)
      (log10 -323.30621534311581)
-     (ratio 3.3219280948873622)) |}];
+     (ratio 3.3219280948873622))
+    |}];
   test Float.epsilon_float;
   [%expect
     {|
     ((log2  -52)
      (log10 -15.653559774527022)
-     (ratio 3.3219280948873626)) |}];
+     (ratio 3.3219280948873626))
+    |}];
   test Float.pi;
   [%expect
     {|
     ((log2  1.6514961294723187)
      (log10 0.4971498726941338)
-     (ratio 3.3219280948873626)) |}];
+     (ratio 3.3219280948873626))
+    |}];
   test Float.max_finite_value;
   [%expect
     {|
     ((log2  1024)
      (log10 308.25471555991675)
-     (ratio 3.3219280948873622)) |}];
+     (ratio 3.3219280948873622))
+    |}];
   test Float.infinity;
   [%expect {|
     ((log2  INF)
      (log10 INF)
-     (ratio NAN)) |}]
+     (ratio NAN))
+    |}]
 ;;
 
 let%expect_test "float comparisons permit both local and global arguments" =
   let (_ : float -> float -> bool) = Float.( < ) in
   let (_ : float -> float -> bool) = Float.( < ) in
-  [%expect {|  |}]
+  [%expect {| |}]
 ;;

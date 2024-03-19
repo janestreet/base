@@ -16,7 +16,8 @@ let%expect_test "First.Monad.map" =
   print_s [%message (f' : t) (s' : t)];
   [%expect {|
     ((f' (First  1))
-     (s' (Second str))) |}]
+     (s' (Second str)))
+    |}]
 ;;
 
 let%expect_test "Second.Monad.map" =
@@ -30,7 +31,8 @@ let%expect_test "Second.Monad.map" =
   print_s [%message (f' : t) (s' : t)];
   [%expect {|
     ((f' (First  0))
-     (s' (Second str1))) |}]
+     (s' (Second str1)))
+    |}]
 ;;
 
 let%expect_test "First.Monad.bind" =
@@ -44,7 +46,8 @@ let%expect_test "First.Monad.bind" =
   print_s [%message (f' : t) (s' : t)];
   [%expect {|
     ((f' (First  1))
-     (s' (Second str))) |}]
+     (s' (Second str)))
+    |}]
 ;;
 
 let%expect_test "Second.Monad.bind" =
@@ -58,7 +61,8 @@ let%expect_test "Second.Monad.bind" =
   print_s [%message (f' : t) (s' : t)];
   [%expect {|
     ((f' (First  0))
-     (s' (Second str1))) |}]
+     (s' (Second str1)))
+    |}]
 ;;
 
 let%expect_test "First.map2" =

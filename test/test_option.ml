@@ -18,7 +18,8 @@ let%expect_test "[value_or_thunk]" =
   test None;
   [%expect {|
     THUNK!
-    0 |}];
+    0
+    |}];
   (* same value, no trigger *)
   test (Some 0);
   [%expect {| 0 |}];
@@ -29,7 +30,8 @@ let%expect_test "[value_or_thunk]" =
   test None;
   [%expect {|
     THUNK!
-    0 |}]
+    0
+    |}]
 ;;
 
 let%expect_test "map2" =

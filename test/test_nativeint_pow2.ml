@@ -27,7 +27,8 @@ let%expect_test "[floor_log2]" =
     (9 (Ok 3))
     (63 (Ok 5))
     (64 (Ok 6))
-    (65 (Ok 6)) |}]
+    (65 (Ok 6))
+    |}]
 ;;
 
 let%expect_test ("[floor_log2]" [@tags "64-bits-only"]) =
@@ -39,7 +40,8 @@ let%expect_test ("[floor_log2]" [@tags "64-bits-only"]) =
     (-9_223_372_036_854_775_807 (
       Error ("[Nativeint.floor_log2] got invalid input" -9223372036854775807)))
     (9_223_372_036_854_775_806 (Ok 62))
-    (9_223_372_036_854_775_807 (Ok 62)) |}]
+    (9_223_372_036_854_775_807 (Ok 62))
+    |}]
 ;;
 
 let%expect_test "[ceil_log2]" =
@@ -58,7 +60,8 @@ let%expect_test "[ceil_log2]" =
     (9 (Ok 4))
     (63 (Ok 6))
     (64 (Ok 6))
-    (65 (Ok 7)) |}]
+    (65 (Ok 7))
+    |}]
 ;;
 
 let%expect_test ("[ceil_log2]" [@tags "64-bits-only"]) =
@@ -70,7 +73,8 @@ let%expect_test ("[ceil_log2]" [@tags "64-bits-only"]) =
     (-9_223_372_036_854_775_807 (
       Error ("[Nativeint.ceil_log2] got invalid input" -9223372036854775807)))
     (9_223_372_036_854_775_806 (Ok 63))
-    (9_223_372_036_854_775_807 (Ok 63)) |}]
+    (9_223_372_036_854_775_807 (Ok 63))
+    |}]
 ;;
 
 let%test_module "nativeint_math" =
