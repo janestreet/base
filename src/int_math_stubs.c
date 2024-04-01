@@ -75,9 +75,15 @@ CAMLprim value Base_int_math_int_pow_stub(value base, value exponent) {
   return (Val_long(int_pow(Long_val(base), Long_val(exponent))));
 }
 
+CAMLprim int64_t Base_int_math_int64_pow_stub_unboxed(int64_t base,
+                                                      int64_t exponent) {
+  return int_pow(base, exponent);
+}
+
 CAMLprim value Base_int_math_int64_pow_stub(value base, value exponent) {
   CAMLparam2(base, exponent);
-  CAMLreturn(caml_copy_int64(int_pow(Int64_val(base), Int64_val(exponent))));
+  CAMLreturn(caml_copy_int64(Base_int_math_int64_pow_stub_unboxed(
+      Int64_val(base), Int64_val(exponent))));
 }
 
 /* This implementation is faster than [__builtin_popcount(v) - 1], even though

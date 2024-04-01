@@ -71,6 +71,7 @@ include T
 
 let invariant f t = iter t ~f
 let of_list t = t
+let singleton x = [ x ]
 
 let range' ~compare ~stride ?(start = `inclusive) ?(stop = `exclusive) start_i stop_i =
   let next_i = stride start_i in
@@ -928,7 +929,7 @@ module Cartesian_product = struct
   let bind = concat_map
   let map = map
   let map2 a b ~f = concat_map a ~f:(fun x -> map b ~f:(fun y -> f x y))
-  let return x = [ x ]
+  let return = singleton
   let ( >>| ) = ( >>| )
   let ( >>= ) t f = bind t ~f
 

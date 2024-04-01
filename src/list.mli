@@ -52,6 +52,9 @@ module Or_unequal_lengths : sig
   [@@@end]
 end
 
+(** [singleton x] returns a list with a single element [x]. *)
+val singleton : 'a -> 'a t
+
 val nth : 'a t -> int -> 'a option
 
 (** Return the [n]-th element of the given list.  The first element (head of the list) is

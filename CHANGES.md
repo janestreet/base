@@ -1,3 +1,26 @@
+* Split up tests in `Base` to reduce build times.
+
+* Added `List.singleton`.
+
+* Add a dependency on `ocaml_intrinsics_kernel` library.
+
+* Add `Map.merge_disjoint_exn` for merging two disjoint maps of the same key/value types.
+Raises an exception if there are conflicting keys.
+
+* Add tests for `{min,max}_elt` and `count{,i}` in `Array` and `List`.
+
+* Adjusted tests in `Base` to reduce build times again.
+
+* Added `Sequence.Expert.View` to consume sequences more flexibly and efficiently.
+
+* Remove opaque identity hack now that we use flambda2.
+
+* Added `String.Utf*.split` to split a Unicode string on a given `Uchar.t`.
+
+* Add `partition_map` function to `Uniform_array`.
+
+* Add benchmarks for `Array.(min_elt|max_elt|count|counti)`.
+
 * Added `Utf8`, `Utf16le`, `Utf16be`, `Utf32le` and `Utf32be` submodules to `Uchar` and `String` for Unicode
 encoding support.
 

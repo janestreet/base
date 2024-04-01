@@ -78,7 +78,9 @@ let of_float f =
       ()
 ;;
 
-let ( ** ) b e = pow b e
+(* Not eta-expanding here can lead to less allocations: the function call sites can avoid
+   boxing the int64s more often. *)
+let ( ** ) = pow
 
 external bswap64 : (t[@local_opt]) -> (t[@local_opt]) = "%bswap_int64"
 

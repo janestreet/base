@@ -387,10 +387,29 @@ let fold_map t ~init ~f =
 
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
-let count t ~f = Container.count ~fold t ~f
 let sum m t ~f = Container.sum ~fold m t ~f
-let min_elt t ~compare = Container.min_elt ~fold t ~compare
-let max_elt t ~compare = Container.max_elt ~fold t ~compare
+
+let[@inline always] extremal_element t ~compare ~keep_left_if =
+  if is_empty t
+  then None
+  else (
+    let result = ref (unsafe_get t 0) in
+    for i = 1 to length t - 1 do
+      let x = unsafe_get t i in
+      result := Bool.select ((keep_left_if [@inlined]) (compare x !result)) x !result
+    done;
+    Some !result)
+;;
+
+let min_elt t ~compare =
+  (extremal_element [@inlined]) t ~compare ~keep_left_if:(fun compare_result ->
+    compare_result < 0)
+;;
+
+let max_elt t ~compare =
+  (extremal_element [@inlined]) t ~compare ~keep_left_if:(fun compare_result ->
+    compare_result > 0)
+;;
 
 let foldi t ~init ~f =
   let acc = ref init in
@@ -419,8 +438,20 @@ let fold_mapi t ~init ~f =
   !acc, result
 ;;
 
+let count t ~f =
+  let result = ref 0 in
+  for i = 0 to Array.length t - 1 do
+    result := !result + (f (Array.unsafe_get t i) |> Bool.to_int)
+  done;
+  !result
+;;
+
 let counti t ~f =
-  foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count) [@nontail]
+  let result = ref 0 in
+  for i = 0 to Array.length t - 1 do
+    result := !result + (f i (Array.unsafe_get t i) |> Bool.to_int)
+  done;
+  !result
 ;;
 
 let concat_map t ~f = concat (to_list (map ~f t))

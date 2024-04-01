@@ -6,7 +6,13 @@ let overflow () = Printf.invalid_argf "integer overflow in pow" ()
 
 (* To implement [int64_pow], we use C code rather than OCaml to eliminate allocation. *)
 external int_math_int_pow : int -> int -> int = "Base_int_math_int_pow_stub" [@@noalloc]
-external int_math_int64_pow : int64 -> int64 -> int64 = "Base_int_math_int64_pow_stub"
+
+external int_math_int64_pow
+  :  int64
+  -> int64
+  -> int64
+  = "Base_int_math_int64_pow_stub" "Base_int_math_int64_pow_stub_unboxed"
+  [@@unboxed] [@@noalloc]
 
 let int_pow base exponent =
   if exponent < 0 then negative_exponent ();
