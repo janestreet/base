@@ -13,7 +13,7 @@ depends: [
   "ocaml" {>= "5.1.0"}
   "ocaml_intrinsics_kernel"
   "sexplib0"
-  "dune"                    {>= "2.0.0"}
+  "dune"                    {>= "3.11.0"}
   "dune-configurator"
 ]
 available: arch != "arm32" & arch != "x86_32"
