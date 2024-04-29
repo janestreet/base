@@ -115,7 +115,7 @@ let set_utf_32_uchar ~set_int32 bytes idx uchar =
 let set_uchar_utf_32le = set_utf_32_uchar ~set_int32:Stdlib.Bytes.set_int32_le
 let set_uchar_utf_32be = set_utf_32_uchar ~set_int32:Stdlib.Bytes.set_int32_be
 
-external unsafe_create_local : int -> bytes = "Base_unsafe_create_local_bytes" [@@noalloc]
+external unsafe_create_local : int -> bytes = "Base_unsafe_create_local_bytes"
 
 let create_local len =
   if len > Sys0.max_string_length then invalid_arg "Bytes.create_local";
