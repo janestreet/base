@@ -1,37 +1,131 @@
-* Split up tests in `Base` to reduce build times.
+## Release v0.17.0
 
-* Added `List.singleton`.
+Added functionality:
+* Add `String.to_sequence`
+* Derive `equal` on `Set.Merge_with_duplicates_element.t`
+* Add `Queue.drain`
+* Add `Or_error.of_option`
+* Extend `Hashtbl_intf.Hashtbl` with `capacity`, intended for testing resizing behavior
+* Add `Nothing.must_be_*` functions discarding (parts of) inputs with `Nothing.t` as a
+  type parameter
+* Add `Float.log2`
+* Add `Random.bits64`, re-exported from `Stdlib.Random`
+* Add `String.edit_distance` to compute Levenshtein distance between strings
+* Add `Comparator.to_module` and `Comparator.of_module`, converting between `Comparator.t` and `Comparator.Module.t`
+* Add `Map.sum`, `unzip`, `of_list_with_key_fold`, and `of_list_with_key_reduce`
+* Add `Applicative.Ident`, similar to `Monad.Ident`
+* Extend `Uniform_array` with more operations akin to `Array`
+* Added `List.singleton`
+* Add `Map.merge_disjoint_exn` for merging two disjoint maps of the same key/value types
+  Raises an exception if there are conflicting keys
+* Added `Sequence.Expert.View` to consume sequences more flexibly and efficiently
+* Add a `Binary` submodule to `Int`, `Int32`, etc, which provide `to_string` and
+  `sexp_of_t` with syntax matching the ocaml binary int literal syntax
+* Add `List.stable_dedup` and deprecate `Set.stable_dedup_list`
+* Add `Queue.enqueue_front` and `Queue.dequeue_back`
+* Add `Type_equal.Id.Create*` functors for polymorphic types
 
-* Add a dependency on `ocaml_intrinsics_kernel` library.
+Added unicode support:
+* Added `Utf*` submodules to `Bytes`, `Uchar`, and `String`
+* Types for `Uchar` and `String` encoding UTF-8, UTF-16LE, UTF-16BE, UTF-32LE, UTF32-BE
+* Added conversions, read/write functions, etc
 
-* Add `Map.merge_disjoint_exn` for merging two disjoint maps of the same key/value types.
-Raises an exception if there are conflicting keys.
+Changed behavior:
+* `Info` has improved parsing of DOS newlines and trailing newlines in backtraces
 
-* Add tests for `{min,max}_elt` and `count{,i}` in `Array` and `List`.
+Removed definitions that were previously deprecated:
+* `Type_equal.equal` type alias now that destructive update is available
+* `Map.comparator` and `Set.comparator` type aliases
+* `Base.Popcount`, as it is exported via the various `Int*` modules
+* `Option` functions from `Container` that are not useful
+* `Result.ok_fst`, an alias for `to_either`
+* `Sequence.merge`, an alias for `merge_deduped_and_sorted`
+* `Info.to_string_hum_deprecated`
+* `?trunc_after` flag to `Info.of_list`, no longer used
 
-* Adjusted tests in `Base` to reduce build times again.
+Deprecated:
+* `Type_equal.Injective`, now that injectivity annotations exist
 
-* Added `Sequence.Expert.View` to consume sequences more flexibly and efficiently.
+Removed without deprecating:
+* `Type_equal.Id.Uid.to_string`, `of_string`, and `t_of_sexp`. These were not compatible
+  with the representation changes needed for the new `Id.Create*` functors
 
-* Remove opaque identity hack now that we use flambda2.
+Interface changes:
+* `Container.Generic` now supports two "extra" (non-element) type parameters
+* Abstracted some of `Map` into `Dictionary_immutable` interfaces
+* Abstracted some of `Hashtbl` into `Dictionary_mutable` interfaces
+* Export `Set.Poly.set` type rather than using destructive update
 
-* Added `String.Utf*.split` to split a Unicode string on a given `Uchar.t`.
+Bug fixes:
+* Indexing was wrong in `Sequence.findi`, now fixed and with a regression test
 
-* Add `partition_map` function to `Uniform_array`.
+Performance improvements:
+* Split up and refactored tests in `Base` to reduce build times
+* Stop using exceptions for control, primarily to speed up `js_of_ocaml` versions. Affects
+  `Sequence.compare`, `String.index`, `String.rindex`, `String.index_from`,
+  `String.rindex_from`, `Map.change`, and `Map.remove`
+* Unboxed `Int64.pow`
+* Branchless implementation of `Float.clamp_unchecked`, `Int.clamp_unchecked`
+* Branchless loop body in `Array.count` and `Array.counti`
+* Remove allocation in `List.Assoc.find_exn`
+* Reduce allocation of `With_return` under some compiler configurations
+* Restore `Array.equal` to zero allocation
+* Avoid boxing in `Int64.to_int_exn`, `Int64.hash_fold_t`, `Float.hash_fold_t`
+* Inlining annotation on `Float.sign_exn` to avoid boxing
+* Add `[@cold]` annotation to `Error.raise`
+* Tighten up conditional logic in `Hashtbl.set` and `Hashtbl.remove`
+* Reducing redundant computation in various `Map` functions
+* Rewrite `Array.min_elt` and `Array.max_elt` to reduce branching and allocation
+* Improve `ppx_hash` derived code for enumeration-like variants.
+* Moved queue mutation check to a function marked `[@cold]`.
+* Rewrite `List.dedup_and_sort` without a final remove-duplicates pass.
+* Fix `Info` to avoid blowing up the stack on `force` of the internal `lazy`.
+* Make `List.take`, `List.drop`, and `List.split` return the original list when possible.
+  (issue 153, thanks `@mroch`)
+* Adapted `List` functions to take advantage of `[@tail_mod_cons]` where beneficial.
+* Use `[@tail_mod_cons]` in `Sequence.to_list`
 
-* Add benchmarks for `Array.(min_elt|max_elt|count|counti)`.
+Refactoring:
+* Update whitespace styling, primarily by no longer using ocp-indent on code
+* Use `Stdlib.Sys.Immediate64` in `Int63` instead of hand-written copy
+* Properly use loop variable in `List.chunks_of` helper
+* Rename internal variable in `Hashtbl.remove` for clarity
+* Lift some of `Int_conversions` to `Int_string_conversions` to share elsewhere
+* Remove unused `[@tailcall]` attribute in `List.group`
+* Use inlined records in `Map` and `Set` internal variant representations
+* Reimplement `Map.Build_increasing` to something simpler
+* Remove unnecessary helper in `Map.remove`
+* Remove unused functions from `String0`
+* Use inlining instead of duplication for helpers in `Set` implementation
+* Split out `Ocaml_intrinsics_kernel`, used it for some intrinsics in `Base`
 
-* Added `Utf8`, `Utf16le`, `Utf16be`, `Utf32le` and `Utf32be` submodules to `Uchar` and `String` for Unicode
-encoding support.
+Documentation:
+* Fix typo where `Set.union_list` documented itself as `union`
+* Various grammar and capitalization fixes (PR 145, thanks `@goodship1`)
 
-* Change `Base.Sequence.compare` to not use exceptions internally. This was slow when
-compiling using `js_of_ocaml`.
+Tests and benchmarks, largely to gain confidence in the changes above:
+* Updated allocation expect tests to actually use `let%expect_test` (oops)
+* Updated benchmarks for `Float.clamp*`.
+* Add benchmarks for `Hashtbl.map_inplace`, `create`, `remove`, `set`, `change`, and
+  `find_and_remove`
+* Add benchmarks for `Map.set`, `remove`, and `change`
+* Add `js_of_ocaml`-only benchmarks for `Map.remove` and `Map.change`
+* Benchmark `Sequence.compare` and `String.index`
+* Benchmark `Set.add`, `find`, and `find_map`
+* Tests and benchmarks for `min_elt`, `max_elt`, `count`, and `counti` in `Array` and
+  `List`
 
-* Add a `Binary` submodule to `Int`, `Int32`, etc, which provide `to_string` and `sexp_of_t`
-with syntax matching the ocaml binary int literal syntax.
+Windows:
+* Fixed the windows build. (PR 152, thanks `@hhugo`)
 
-* Make `String.index` and `String.index_exn` use the same function internally. Similar for
-`String.rindex` and `String.rindex_exn`.
+Work toward compatibility with OCaml 5.1:
+* Update `Random` to use new splittable PRNG
+* Other various changes
+
+Improved support for compiler extensions found at https://github.com/ocaml-flambda/flambda-backend:
+* Various updated signatures, definitions, and new functionality to support `local_` mode
+  and stack allocation
+* Added annotations for `[@zero_alloc]` compiler checks
 
 ## Release v0.16.0
 
