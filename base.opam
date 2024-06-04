@@ -10,7 +10,7 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "ocaml" {>= "5.1.0"}
+  "ocaml" {>= "5.3.0"}
   "ocaml_intrinsics_kernel"
   "sexplib0"
   "dune"                    {>= "3.11.0"}
