@@ -169,8 +169,3 @@ function caml_make_local_vect(v_len, v_elt) {
 function caml_dummy_obj_is_stack(x) {
   throw new Error(`BUG: this function should be unreachable; please report to compiler or base devs.`);
 }
-
-//Provides: caml_dummy_obj_is_stack
-function caml_dummy_obj_is_stack(x) {
-  throw new Error(`BUG: this function should be unreachable; please report to compiler or base devs.`);
-}
