@@ -19,7 +19,7 @@ let () =
     let pp = Format.formatter_of_buffer buf in
     Format.pp_set_margin pp max_int;
     (* so we can parse line by line below *)
-    Format.fprintf pp "%a@." Printtyp.signature cmi.Cmi_format.cmi_sign;
+    Format.fprintf pp "%a@." Printtyp.Compat.signature cmi.Cmi_format.cmi_sign;
     let s = Buffer.contents buf in
     let lines = Str.split (Str.regexp "\n") s in
     Printf.fprintf oc "[@@@warning \"-3\"]\n\n";
