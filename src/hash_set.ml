@@ -130,18 +130,18 @@ let t_of_sexp m e_of_sexp sexp =
 ;;
 
 module Creators (Elt : sig
-  type 'a t
+    type 'a t
 
-  val hashable : 'a t Hashable.t
-end) : sig
+    val hashable : 'a t Hashable.t
+  end) : sig
   val t_of_sexp : (Sexp.t -> 'a Elt.t) -> Sexp.t -> 'a Elt.t t
 
   include
     Creators_generic
-      with type 'a t := 'a Elt.t t
-      with type 'a elt := 'a Elt.t
-      with type ('elt, 'z) create_options :=
-        ('elt, 'z) create_options_without_first_class_module
+    with type 'a t := 'a Elt.t t
+    with type 'a elt := 'a Elt.t
+    with type ('elt, 'z) create_options :=
+      ('elt, 'z) create_options_without_first_class_module
 end = struct
   let create ?growth_allowed ?size () =
     create ?growth_allowed ?size (Hashable.to_key Elt.hashable)
@@ -161,10 +161,10 @@ module Poly = struct
   let hashable = poly_hashable
 
   include Creators (struct
-    type 'a t = 'a
+      type 'a t = 'a
 
-    let hashable = hashable
-  end)
+      let hashable = hashable
+    end)
 
   include Accessors
 

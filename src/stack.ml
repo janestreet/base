@@ -19,12 +19,12 @@ let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
   let bnds__002_ =
     let arg__006_ = Option_array.sexp_of_t _of_a__001_ elts__005_ in
     (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg__006_ ] :: bnds__002_
-      : _ Stdlib.List.t)
+     : _ Stdlib.List.t)
   in
   let bnds__002_ =
     let arg__004_ = sexp_of_int length__003_ in
     (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg__004_ ] :: bnds__002_
-      : _ Stdlib.List.t)
+     : _ Stdlib.List.t)
   in
   Sexplib0.Sexp.List bnds__002_
 ;;
@@ -76,12 +76,12 @@ let iter t ~f =
 ;;
 
 module C = Container.Make (struct
-  type nonrec 'a t = 'a t
+    type nonrec 'a t = 'a t
 
-  let fold = fold
-  let iter = `Custom iter
-  let length = `Custom length
-end)
+    let fold = fold
+    let iter = `Custom iter
+    let length = `Custom length
+  end)
 
 let mem = C.mem
 let exists = C.exists

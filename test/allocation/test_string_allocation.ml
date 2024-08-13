@@ -4,7 +4,7 @@ open Expect_test_helpers_core
 let%expect_test _ =
   let x = Sys.opaque_identity "one string" in
   let y = Sys.opaque_identity "another" in
-  require_no_allocation [%here] (fun () ->
+  require_no_allocation (fun () ->
     ignore (Sys.opaque_identity (String.Caseless.equal x y) : bool));
   [%expect {| |}]
 ;;
@@ -12,7 +12,7 @@ let%expect_test _ =
 let%expect_test "empty substring" =
   let string = String.init 10 ~f:Char.of_int_exn in
   let test here f =
-    let substring = require_no_allocation here f in
+    let substring = require_no_allocation ~here f in
     assert (String.is_empty substring)
   in
   test [%here] (fun () -> String.sub string ~pos:0 ~len:0);
@@ -26,7 +26,7 @@ let%expect_test "empty substring" =
 let%expect_test "mem does not allocate" =
   let string = Sys.opaque_identity "abracadabra" in
   let char = Sys.opaque_identity 'd' in
-  require_no_allocation [%here] (fun () -> ignore (String.mem string char : bool));
+  require_no_allocation (fun () -> ignore (String.mem string char : bool));
   [%expect {| |}]
 ;;
 
@@ -34,8 +34,7 @@ let%expect_test "fold does not allocate" =
   let string = Sys.opaque_identity "abracadabra" in
   let char = Sys.opaque_identity 'd' in
   let f acc c = if Char.equal c char then true else acc in
-  require_no_allocation [%here] (fun () ->
-    ignore (String.fold string ~init:false ~f : bool));
+  require_no_allocation (fun () -> ignore (String.fold string ~init:false ~f : bool));
   [%expect {| |}]
 ;;
 
@@ -43,18 +42,14 @@ let%expect_test "foldi does not allocate" =
   let string = Sys.opaque_identity "abracadabra" in
   let char = Sys.opaque_identity 'd' in
   let f _i acc c = if Char.equal c char then true else acc in
-  require_no_allocation [%here] (fun () ->
-    ignore (String.foldi string ~init:false ~f : bool));
+  require_no_allocation (fun () -> ignore (String.foldi string ~init:false ~f : bool));
   [%expect {| |}]
 ;;
 
 let%test_module "common prefix and suffix" =
   (module struct
-    let require_int_equal a b ~message = require_equal [%here] (module Int) a b ~message
-
-    let require_string_equal a b ~message =
-      require_equal [%here] (module String) a b ~message
-    ;;
+    let require_int_equal a b ~message = require_equal (module Int) a b ~message
+    let require_string_equal a b ~message = require_equal (module String) a b ~message
 
     let simulate_common_length ~get_common2_length list =
       let rec loop acc prev list ~get_common2_length =
@@ -89,14 +84,12 @@ let%test_module "common prefix and suffix" =
         if not (String.is_empty common || List.mem list common ~equal:String.equal)
         then print_endline "(may allocate)"
         else (
-          ignore (require_no_allocation [%here] (fun () -> get_common list) : string);
+          ignore (require_no_allocation (fun () -> get_common list) : string);
           Option.iter (get_shortest_and_longest list) ~f:(fun (shortest, longest) ->
             ignore
-              (require_no_allocation [%here] (fun () -> get_common2 shortest longest)
-                : string);
+              (require_no_allocation (fun () -> get_common2 shortest longest) : string);
             ignore
-              (require_no_allocation [%here] (fun () -> get_common2 longest shortest)
-                : string))))
+              (require_no_allocation (fun () -> get_common2 longest shortest) : string))))
     ;;
 
     let test_prefix =
@@ -133,12 +126,14 @@ let%test_module "common prefix and suffix" =
 
     let%expect_test "doubleton, alloc" =
       test_prefix [ "hello"; "help"; "hex" ];
-      [%expect {|
+      [%expect
+        {|
         he
         (may allocate)
         |}];
       test_suffix [ "crest"; "zest"; "1st" ];
-      [%expect {|
+      [%expect
+        {|
         st
         (may allocate)
         |}]
@@ -153,12 +148,14 @@ let%test_module "common prefix and suffix" =
 
     let%expect_test "many, alloc" =
       test_prefix [ "this"; "that"; "the other"; "these"; "those"; "thy"; "thou" ];
-      [%expect {|
+      [%expect
+        {|
         th
         (may allocate)
         |}];
       test_suffix [ "fourth"; "fifth"; "sixth"; "seventh"; "eleventh"; "twelfth" ];
-      [%expect {|
+      [%expect
+        {|
         th
         (may allocate)
         |}]

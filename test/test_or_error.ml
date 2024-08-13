@@ -72,7 +72,7 @@ let%expect_test "behavior and performance on lists of or_error's" =
     (* Test for timeout / stack overflow on a long list. *)
     match to_string (f long_list) with
     | (_ : string) -> ()
-    | exception Stack_overflow -> print_cr [%here] [%message "stack overflow"]
+    | exception Stack_overflow -> print_cr [%message "stack overflow"]
   in
   (* test functions that combine a list of or_errors *)
   test all;

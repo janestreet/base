@@ -57,7 +57,7 @@ module Message = struct
        let res0__031_ = sexp_of_t arg0__029_
        and res1__032_ = sexp_of_string arg1__030_ in
        Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "With_backtrace"; res0__031_; res1__032_ ]
-      : t -> Sexplib0.Sexp.t)
+     : t -> Sexplib0.Sexp.t)
   ;;
 
   [@@@end]
@@ -287,11 +287,11 @@ let of_exn ?backtrace exn =
 ;;
 
 include Pretty_printer.Register_pp (struct
-  type nonrec t = t
+    type nonrec t = t
 
-  let module_name = "Base.Info"
-  let pp ppf t = Stdlib.Format.pp_print_string ppf (to_string_hum t)
-end)
+    let module_name = "Base.Info"
+    let pp ppf t = Stdlib.Format.pp_print_string ppf (to_string_hum t)
+  end)
 
 module Internal_repr = struct
   include Message

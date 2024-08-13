@@ -10,7 +10,8 @@ let errors =
 
 let%expect_test _ =
   List.iter errors ~f:(fun error -> show_raise (fun () -> Error.raise error));
-  [%expect {|
+  [%expect
+    {|
     (raised ABC)
     (raised (DEF GHI))
     (raised (foo (bar 31)))
@@ -20,7 +21,8 @@ let%expect_test _ =
 let%expect_test _ =
   List.iter errors ~f:(fun error ->
     show_raise (fun () -> Error.raise_s [%sexp (error : Error.t)]));
-  [%expect {|
+  [%expect
+    {|
     (raised ABC)
     (raised (DEF GHI))
     (raised (foo (bar 31)))

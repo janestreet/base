@@ -116,7 +116,7 @@ module type Queue = sig
   include Invariant.S1 with type 'a t := 'a t
 
   (** Create an empty queue. *)
-  val create : ?capacity:int (** default is [1]. *) -> unit -> _ t
+  val create : ?capacity:int (** default is [2]. *) -> unit -> _ t
 
   (** [last t] returns the most recently enqueued element in [t], if any. *)
   val last : 'a t -> 'a option

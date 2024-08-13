@@ -35,7 +35,6 @@ let%expect_test _ =
 
 let%expect_test _ =
   require_equal
-    [%here]
     (module Sexp)
     (sexp_of_t nested)
     (sexp_of_t (of_strings [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"; "i" ]));
@@ -50,7 +49,7 @@ let%expect_test _ =
 
 let round t =
   let sexp = sexp_of_t t in
-  require [%here] (Sexp.( = ) sexp (sexp_of_t (t_of_sexp sexp)))
+  require (Sexp.( = ) sexp (sexp_of_t (t_of_sexp sexp)))
 ;;
 
 let%expect_test "non-empty tag" =
@@ -76,7 +75,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  require_equal [%here] (module String) (to_string_hum (of_string "a\nb")) "a\nb";
+  require_equal (module String) (to_string_hum (of_string "a\nb")) "a\nb";
   [%expect {| |}]
 ;;
 

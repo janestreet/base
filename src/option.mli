@@ -70,6 +70,9 @@ include Monad.S_local with type 'a t := 'a t
 (** Extracts the underlying value if present, otherwise returns [default]. *)
 val value : 'a t -> default:'a -> 'a
 
+(** Like [value], but over a local [t]. *)
+val value_local : 'a t -> default:'a -> 'a
+
 (** Extracts the underlying value, or raises if there is no value present. The
     error raised can be augmented using the [~here], [~error], and [~message]
     optional arguments. *)
@@ -80,13 +83,30 @@ val value_exn
   -> 'a t
   -> 'a
 
+(** Like [value_exn], but over a local [t]. *)
+val value_local_exn
+  :  ?here:Source_code_position0.t
+  -> ?error:Error.t
+  -> ?message:string
+  -> 'a t
+  -> 'a
+
 (** Extracts the underlying value and applies [f] to it if present, otherwise returns
     [default]. *)
 val value_map : 'a t -> default:'b -> f:('a -> 'b) -> 'b
 
+(** Like [value_map], but over a local [t]. *)
+val value_map_local : 'a t -> default:'b -> f:('a -> 'b) -> 'b
+
 (** Extracts the underlying value if present, otherwise executes and returns the result of
     [default]. [default] is only executed if the underlying value is absent. *)
 val value_or_thunk : 'a t -> default:(unit -> 'a) -> 'a
+
+(** Like [value_or_thunk], but over a local [t]. *)
+val value_or_thunk_local : 'a t -> default:(unit -> 'a) -> 'a
+
+(** Like [map], but over a local [t]. *)
+val map_local : 'a t -> f:('a -> 'b) -> 'b t
 
 (** On [None], returns [init]. On [Some x], returns [f init x]. *)
 val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
@@ -96,6 +116,9 @@ val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 
 val length : 'a t -> int
 val iter : 'a t -> f:('a -> unit) -> unit
+
+(** Like [iter], but over a local [t]. *)
+val iter_local : 'a t -> f:('a -> unit) -> unit
 
 (** On [None], returns [false]. On [Some x], returns [f x]. *)
 val exists : 'a t -> f:('a -> bool) -> bool
@@ -111,6 +134,7 @@ val find : 'a t -> f:('a -> bool) -> 'a option
 val find_map : 'a t -> f:('a -> 'b option) -> 'b option
 
 val to_list : 'a t -> 'a list
+val to_list_local : 'a t -> 'a list
 val to_array : 'a t -> 'a array
 
 (** [call x f] runs an optional function [~f] on the argument. *)
@@ -137,13 +161,35 @@ val try_with_join : (unit -> 'a t) -> 'a t
 (** Wraps the [Some] constructor as a function. *)
 val some : 'a -> 'a t
 
+(** Like [some], but over a local [t]. *)
+val some_local : 'a -> 'a t
+
 (** [first_some t1 t2] returns [t1] if it has an underlying value, or [t2]
     otherwise. *)
 val first_some : 'a t -> 'a t -> 'a t
 
+(** Like [first_some], but over local [t]s. *)
+val first_some_local : 'a t -> 'a t -> 'a t
+
+(** [first_some_thunk a b] is like [first_some], but it only computes [b ()] if [a] is
+    [None] *)
+val first_some_thunk : 'a t -> (unit -> 'a t) -> 'a t
+
+(** Like [first_some_thunk], but over local [t]s. *)
+val first_some_thunk_local : 'a t -> (unit -> 'a t) -> 'a t
+
 (** [some_if b x] converts a value [x] to [Some x] if [b], and [None]
     otherwise. *)
 val some_if : bool -> 'a -> 'a t
+
+(** Like [some_if], but over a local [t]. *)
+val some_if_local : bool -> 'a -> 'a t
+
+(** Like [some_if], but only computes [x ()] if [b] is true. *)
+val some_if_thunk : bool -> (unit -> 'a) -> 'a t
+
+(** Like [some_if_thunk], but over a local [t] *)
+val some_if_thunk_local : bool -> (unit -> 'a) -> 'a t
 
 (** {2 Predicates} *)
 

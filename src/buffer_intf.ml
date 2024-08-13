@@ -79,4 +79,13 @@ module type Buffer = sig
   (** Buffers using strings as underlying storage medium: *)
 
   include S with type t = Stdlib.Buffer.t (** @open *)
+
+  (** [Buffer.t] does not support [local_], even on compilers supporting modes. *)
+
+  (** @open *)
+  include Blit.S_distinct_global with type src := t and type dst := bytes
+
+  (** For compilers supporting modes: [Buffer] does not support [To_string.sub*] for
+      local values. Other implementations of [S], such as [Core.Bigbuffer], do. *)
+  module To_string : Blit.S_to_string_global with type t := t
 end

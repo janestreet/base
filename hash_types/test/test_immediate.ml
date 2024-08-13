@@ -2,8 +2,7 @@ open! Base
 open! Import
 
 let%expect_test "[Base.Hash.state] is still immediate" =
-  require_no_allocation [%here] (fun () ->
-    ignore (Sys.opaque_identity (Base.Hash.create ())));
+  require_no_allocation (fun () -> ignore (Sys.opaque_identity (Base.Hash.create ())));
   [%expect {| |}]
 ;;
 

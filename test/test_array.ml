@@ -5,12 +5,12 @@ open Array
 
 let%test_module "Binary_searchable" =
   (module Test_binary_searchable.Test1 (struct
-    include Array
+      include Array
 
-    module For_test = struct
-      let of_array = Fn.id
-    end
-  end))
+      module For_test = struct
+        let of_array = Fn.id
+      end
+    end))
 ;;
 
 let%test_module "Blit" =
@@ -118,7 +118,6 @@ let%expect_test "merge" =
     let res = merge a1 a2 ~compare:Int.compare in
     print_s ([%sexp_of: int array] res);
     require_equal
-      [%here]
       (module struct
         type t = int list [@@deriving equal, sexp_of]
       end)
@@ -152,7 +151,6 @@ let%expect_test "merge with duplicates" =
     let res = merge a1 a2 ~compare in
     print_s ([%sexp_of: (int * string) array] res);
     require_equal
-      [%here]
       (module struct
         type t = (int * string) list [@@deriving equal, sexp_of]
       end)
@@ -160,7 +158,8 @@ let%expect_test "merge with duplicates" =
       (List.merge (to_list a1) (to_list a2) ~compare)
   in
   test [| 1, "a1" |] [| 1, "a2" |];
-  [%expect {|
+  [%expect
+    {|
     ((1 a1)
      (1 a2))
     |}];
@@ -206,24 +205,17 @@ let%test_module "count{,i}" =
   (module struct
     let%expect_test "[Array.count{,i} = List.count{,i}]" =
       quickcheck_m
-        [%here]
         (module struct
           type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
         end)
         ~f:(fun (list, f) ->
-          require_equal
-            [%here]
-            (module Int)
-            (list |> List.count ~f)
-            (list |> of_list |> count ~f));
+          require_equal (module Int) (list |> List.count ~f) (list |> of_list |> count ~f));
       quickcheck_m
-        [%here]
         (module struct
           type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
         end)
         ~f:(fun (list, f) ->
           require_equal
-            [%here]
             (module Int)
             (list |> List.counti ~f)
             (list |> of_list |> counti ~f))
@@ -238,14 +230,12 @@ let%test_module "{min,max}_elt" =
   (module struct
     let test_opt_selector arr_fun list_fun =
       quickcheck_m
-        [%here]
         (module struct
           type t = int list [@@deriving sexp_of, quickcheck]
         end)
         ~f:(fun list ->
           let arr = of_list list in
           require_equal
-            [%here]
             (module struct
               type t = int option [@@deriving sexp_of, equal]
             end)
@@ -286,7 +276,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test "map2_exn raise" =
-  require_does_raise [%here] (fun () -> map2_exn [| 1; 2; 3 |] [| 2; 3; 4; 5 |] ~f:( + ));
+  require_does_raise (fun () -> map2_exn [| 1; 2; 3 |] [| 2; 3; 4; 5 |] ~f:( + ));
   [%expect {| (Invalid_argument "length mismatch in Array.map2_exn: 3 <> 4") |}]
 ;;
 
@@ -576,7 +566,6 @@ let%test_module "permute" =
             | Ok _ -> test_permute initial_contents ~pos ~len
             | Error _ ->
               require
-                [%here]
                 (Exn.does_raise (fun () ->
                    permute ?pos ?len (Array.of_list initial_contents)))))
       done;
@@ -622,12 +611,8 @@ let%expect_test "rev and rev_inplace" =
       rev_inplace array;
       array
     in
-    require_equal
-      [%here]
-      (module Int_list)
-      (to_list reversed_array)
-      (List.rev ordered_list);
-    require_equal [%here] (module Int_array) reversed_array (rev ordered_array);
+    require_equal (module Int_list) (to_list reversed_array) (List.rev ordered_list);
+    require_equal (module Int_array) reversed_array (rev ordered_array);
     print_s [%sexp (reversed_array : int array)]
   in
   test [];
@@ -643,7 +628,7 @@ let%expect_test "map_inplace" =
     let f x = x * x in
     let array = of_list list in
     map_inplace array ~f;
-    require_equal [%here] (module Int_list) (to_list array) (List.map list ~f);
+    require_equal (module Int_list) (to_list array) (List.map list ~f);
     print_s [%sexp (array : int array)]
   in
   test [];
@@ -655,11 +640,12 @@ let%expect_test "map_inplace" =
 ;;
 
 let%expect_test "cartesian_product" =
-  require [%here] (is_empty (cartesian_product [||] [||]));
-  require [%here] (is_empty (cartesian_product [||] [| 13 |]));
-  require [%here] (is_empty (cartesian_product [| 13 |] [||]));
+  require (is_empty (cartesian_product [||] [||]));
+  require (is_empty (cartesian_product [||] [| 13 |]));
+  require (is_empty (cartesian_product [| 13 |] [||]));
   print_s [%sexp (cartesian_product [| 1; 2; 3 |] [| "a"; "b" |] : (int * string) array)];
-  [%expect {|
+  [%expect
+    {|
     ((1 a)
      (1 b)
      (2 a)

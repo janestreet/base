@@ -261,7 +261,8 @@ val unzip : ('a * 'b) t -> 'a t * 'b t
     List.sort *)
 val sorted_copy : 'a t -> compare:('a -> 'a -> int) -> 'a t
 
-val last : 'a t -> 'a
+val last : 'a t -> 'a [@@deprecated "[since 2024-07] This was renamed to [last_exn]"]
+val last_exn : 'a t -> 'a
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 val equal__local : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
@@ -303,12 +304,12 @@ module Private : sig
   end
 
   module Sorter (S : sig
-    type 'a t
+      type 'a t
 
-    val get : 'a t -> int -> 'a
-    val set : 'a t -> int -> 'a -> unit
-    val length : 'a t -> int
-  end) : sig
+      val get : 'a t -> int -> 'a
+      val set : 'a t -> int -> 'a -> unit
+      val length : 'a t -> int
+    end) : sig
     val sort : ?pos:int -> ?len:int -> 'a S.t -> compare:('a -> 'a -> int) -> unit
   end
 end

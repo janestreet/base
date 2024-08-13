@@ -28,12 +28,12 @@ let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
   Result.globalize _globalize_a__026_ Error.globalize x__027_
 ;;
 
-let hash_fold_t :
-      'a.
-      (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-      -> Ppx_hash_lib.Std.Hash.state
-      -> 'a t
-      -> Ppx_hash_lib.Std.Hash.state
+let hash_fold_t
+  : 'a.
+  (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+  -> Ppx_hash_lib.Std.Hash.state
+  -> 'a t
+  -> Ppx_hash_lib.Std.Hash.state
   =
   fun _hash_fold_a hsv arg -> Result.hash_fold_t _hash_fold_a Error.hash_fold_t hsv arg
 ;;
@@ -76,12 +76,12 @@ let map2 a b ~f =
 ;;
 
 module For_applicative = Applicative.Make_using_map2_local (struct
-  type nonrec 'a t = 'a t
+    type nonrec 'a t = 'a t
 
-  let return = return
-  let map = `Custom map
-  let map2 = map2
-end)
+    let return = return
+    let map = `Custom map
+    let map2 = map2
+  end)
 
 let ( *> ) = For_applicative.( *> )
 let ( <* ) = For_applicative.( <* )

@@ -122,30 +122,30 @@ module type S = sig
   val pp : Formatter.t -> t -> unit
 
   module Internal_repr : sig
-    type info = t
+      type info = t
 
-    (** The internal representation.  It is exposed so that we can write efficient
+      (** The internal representation.  It is exposed so that we can write efficient
         serializers outside of this module. *)
-    type t =
-      | Could_not_construct of Sexp.t
-      | String of string
-      | Exn of exn
-      | Sexp of Sexp.t
-      | Tag_sexp of string * Sexp.t * Source_code_position0.t option
-      | Tag_t of string * t
-      | Tag_arg of string * Sexp.t * t
-      | Of_list of int option * t list
-      | With_backtrace of t * string (** The second argument is the backtrace *)
-    [@@deriving_inline sexp_of]
+      type t =
+        | Could_not_construct of Sexp.t
+        | String of string
+        | Exn of exn
+        | Sexp of Sexp.t
+        | Tag_sexp of string * Sexp.t * Source_code_position0.t option
+        | Tag_t of string * t
+        | Tag_arg of string * Sexp.t * t
+        | Of_list of int option * t list
+        | With_backtrace of t * string (** The second argument is the backtrace *)
+      [@@deriving_inline sexp_of]
 
-    val sexp_of_t : t -> Sexplib0.Sexp.t
+      val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    [@@@end]
+      [@@@end]
 
-    val of_info : info -> t
-    val to_info : t -> info
-  end
-  with type info := t
+      val of_info : info -> t
+      val to_info : t -> info
+    end
+    with type info := t
 end
 
 module type Info = sig

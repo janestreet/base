@@ -86,8 +86,8 @@ let%expect_test _ =
   let t = create ~len:1 in
   let check x =
     set t 0 (Some x);
-    require [%here] (phys_equal x (unsafe_get_some_exn t 0));
-    require [%here] (phys_equal x (unsafe_get_some_assuming_some t 0))
+    require (phys_equal x (unsafe_get_some_exn t 0));
+    require (phys_equal x (unsafe_get_some_assuming_some t 0))
   in
   check X.magic_value;
   check X.some_other_value

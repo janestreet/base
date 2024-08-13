@@ -31,7 +31,7 @@ external select
   -> ('a[@local_opt])
   -> ('a[@local_opt])
   = "caml_csel_value"
-  [@@noalloc] [@@no_effects] [@@no_coeffects] [@@builtin]
+[@@noalloc] [@@no_effects] [@@no_coeffects] [@@builtin]
 
 module Non_short_circuiting : sig
   (** Non-short circuiting and branch-free boolean operators.

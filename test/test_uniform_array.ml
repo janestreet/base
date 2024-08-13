@@ -69,7 +69,7 @@ let%test_unit _ =
 
 let%expect_test "exists" =
   let test arr f = of_list arr |> exists ~f in
-  let r here = require_equal here (module Bool) in
+  let r here = require_equal ~here (module Bool) in
   r [%here] false (test [] Fn.id);
   r [%here] true (test [ true ] Fn.id);
   r [%here] true (test [ false; false; false; false; true ] Fn.id);
@@ -80,7 +80,7 @@ let%expect_test "exists" =
 
 let%expect_test "for_all" =
   let test arr f = of_list arr |> for_all ~f in
-  let r here = require_equal here (module Bool) in
+  let r here = require_equal ~here (module Bool) in
   r [%here] true (test [] Fn.id);
   r [%here] true (test [ true ] Fn.id);
   r [%here] false (test [ false; false; false; false; true ] Fn.id);
@@ -104,8 +104,8 @@ module Sequence = struct
   type 'a z = 'a
 
   let length = length
-  let get = get
-  let set = set
+  let get t i = get t i
+  let set t i x = set t i x
   let create_bool ~len = create ~len false
 end
 
@@ -120,7 +120,7 @@ let%expect_test "map2_exn" =
   [%expect {| (result ()) |}];
   test [ 1; 2; 3 ] [ 100; 200; 300 ] ( + );
   [%expect {| (result (101 202 303)) |}];
-  require_does_raise [%here] (fun () -> test [ 1 ] [] (fun _ _ -> 0));
+  require_does_raise (fun () -> test [ 1 ] [] (fun _ _ -> 0));
   [%expect {| (Invalid_argument Array.map2_exn) |}]
 ;;
 
@@ -135,7 +135,7 @@ let%expect_test "fold2_exn" =
   [%expect {| 0 |}];
   test [ 1; 2; 3 ] [ 7; 8; 9 ];
   [%expect {| 24_006 |}];
-  require_does_raise [%here] (fun () -> test [ 1 ] []);
+  require_does_raise (fun () -> test [ 1 ] []);
   [%expect {| (Invalid_argument Array.fold2_exn) |}]
 ;;
 
@@ -147,7 +147,8 @@ let%expect_test "mapi" =
   test [];
   [%expect {| () |}];
   test [ "foo"; "bar" ];
-  [%expect {|
+  [%expect
+    {|
     ((0 Foo)
      (1 Bar))
     |}]
@@ -174,7 +175,7 @@ let%expect_test "concat_map" =
     print_s
       [%sexp
         (concat_map t ~f:(fun i -> of_list [ i * 10; (i * 10) + 1; (i * 10) + 2 ])
-          : int t)]
+         : int t)]
   in
   test empty;
   [%expect {| () |}];
@@ -188,7 +189,7 @@ let%expect_test "concat_mapi" =
       [%sexp
         (concat_mapi t ~f:(fun idx i ->
            if idx = 1 then empty else of_list [ i * 10; (i * 10) + 1; (i * 10) + 2 ])
-          : int t)]
+         : int t)]
   in
   test empty;
   [%expect {| () |}];
@@ -208,22 +209,26 @@ let%expect_test "partition_map" =
     print_s [%sexp (second : int t)]
   in
   test empty;
-  [%expect {|
+  [%expect
+    {|
     ()
     ()
     |}];
   test (of_list [ 0; 1; 2; 3 ]);
-  [%expect {|
+  [%expect
+    {|
     (0 2)
     (1 3)
     |}];
   test (of_list [ 0; 2; 4; 6 ]);
-  [%expect {|
+  [%expect
+    {|
     (0 2 4 6)
     ()
     |}];
   test (of_list [ 1; 3; 5; 7 ]);
-  [%expect {|
+  [%expect
+    {|
     ()
     (1 3 5 7)
     |}]
@@ -253,7 +258,7 @@ let%expect_test "filter_map" =
       [%sexp
         (filter_map t ~f:(fun i ->
            if i % 2 = 0 then None else Some (Char.of_int_exn (Char.to_int 'a' + i)))
-          : char t)]
+         : char t)]
   in
   test empty;
   [%expect {| () |}];
@@ -273,7 +278,7 @@ let%expect_test "filter_mapi" =
                (Int.to_string idx
                 ^ ": "
                 ^ Char.to_string (Char.of_int_exn (Char.to_int 'a' + i))))
-          : string t)]
+         : string t)]
   in
   test empty;
   [%expect {| () |}];
@@ -312,7 +317,7 @@ let%expect_test "find_mapi" =
     print_s
       [%sexp
         (find_mapi t ~f:(fun idx i -> if idx % 2 = 1 then None else Char.of_int i)
-          : char option)]
+         : char option)]
   in
   test empty;
   [%expect {| () |}];
@@ -327,4 +332,149 @@ let%expect_test "unsafe_to_array_inplace__promise_not_a_float" =
   let arr = unsafe_to_array_inplace__promise_not_a_float arr in
   print_s [%sexp (arr : int array)];
   [%expect {| (1 2 3 4 5) |}]
+;;
+
+(* Invariant tests *)
+let%test_module (_ [@tags "no-js"]) =
+  (module (
+  struct
+    type 'a t = 'a Uniform_array.t [@@deriving compare ~localize, sexp_of, sexp_grammar]
+
+    let invariant = Uniform_array.invariant
+
+    (* We test that constructors satisfy the invariant, especially when given floats. *)
+
+    open struct
+      let test_poly ?(allow_empty = false) ?cr ?(here = Stdlib.Lexing.dummy_pos) t =
+        assert (allow_empty || length t > 0);
+        require_does_not_raise ~here ?cr (fun () -> invariant t)
+      ;;
+
+      let test ?allow_empty ?cr ?(here = Stdlib.Lexing.dummy_pos) (t : float t) =
+        test_poly ?allow_empty ?cr ~here t
+      ;;
+    end
+
+    let t_of_sexp = Uniform_array.t_of_sexp
+    let%expect_test _ = test (t_of_sexp Float.t_of_sexp (List [ Atom "0" ]))
+    let empty = Uniform_array.empty
+    let%expect_test _ = test empty ~allow_empty:true
+    let create = Uniform_array.create
+    let%expect_test _ = test (create ~len:1 0.)
+    let singleton = Uniform_array.singleton
+    let%expect_test _ = test (singleton 0.)
+    let init = Uniform_array.init
+    let%expect_test _ = test (init 1 ~f:(fun _ -> 0.))
+    let map = Uniform_array.map
+    let%expect_test _ = test (map (singleton 0) ~f:(fun _ -> 0.))
+    let mapi = Uniform_array.mapi
+    let%expect_test _ = test (mapi (singleton 0) ~f:(fun _ _ -> 0.))
+    let of_array = Uniform_array.of_array
+    let%expect_test _ = test (of_array [| 0. |])
+    let of_list = Uniform_array.of_list
+    let%expect_test _ = test (of_list [ 0. ])
+    let of_list_rev = Uniform_array.of_list_rev
+    let%expect_test _ = test (of_list_rev [ 0. ])
+    let sub = Uniform_array.sub
+    let%expect_test _ = test (sub (singleton 0.) ~pos:0 ~len:1)
+    let subo = Uniform_array.subo
+    let%expect_test _ = test (subo (singleton 0.))
+    let copy = Uniform_array.copy
+    let%expect_test _ = test (copy (singleton 0.))
+    let concat = Uniform_array.concat
+    let%expect_test _ = test (concat [ singleton 0. ])
+    let concat_map = Uniform_array.concat_map
+    let%expect_test _ = test (concat_map (singleton 0) ~f:(fun _ -> singleton 0.))
+    let concat_mapi = Uniform_array.concat_mapi
+    let%expect_test _ = test (concat_mapi (singleton 0) ~f:(fun _ _ -> singleton 0.))
+    let partition_map = Uniform_array.partition_map
+
+    let%expect_test _ =
+      let ts, fs =
+        partition_map (of_list [ Either.First 0.; Either.Second 0. ]) ~f:Fn.id
+      in
+      test ts;
+      test fs
+    ;;
+
+    let filter = Uniform_array.filter
+    let%expect_test _ = test (filter (singleton 0.) ~f:(fun _ -> true))
+    let filteri = Uniform_array.filteri
+    let%expect_test _ = test (filteri (singleton 0.) ~f:(fun _ _ -> true))
+    let filter_map = Uniform_array.filter_map
+    let%expect_test _ = test (filter_map (singleton 0) ~f:(fun _ -> Some 0.))
+    let filter_mapi = Uniform_array.filter_mapi
+    let%expect_test _ = test (filter_mapi (singleton 0) ~f:(fun _ _ -> Some 0.))
+    let map2_exn = Uniform_array.map2_exn
+    let%expect_test _ = test (map2_exn (singleton 0) (singleton 0) ~f:(fun _ _ -> 0.))
+    let unsafe_create_uninitialized = Uniform_array.unsafe_create_uninitialized
+
+    let%expect_test _ =
+      let t = unsafe_create_uninitialized ~len:1 in
+      set t 0 0.;
+      test t
+    ;;
+
+    let create_obj_array = Uniform_array.create_obj_array
+
+    let%expect_test _ =
+      let t = create_obj_array ~len:1 in
+      set t 0 (Stdlib.Obj.repr 0.);
+      test_poly t
+    ;;
+
+    (* Accessors, no invariant to test here *)
+
+    let length = Uniform_array.length
+    let get = Uniform_array.get
+    let unsafe_get = Uniform_array.unsafe_get
+    let set = Uniform_array.set
+    let unsafe_set = Uniform_array.unsafe_set
+    let swap = Uniform_array.swap
+    let unsafe_set_omit_phys_equal_check = Uniform_array.unsafe_set_omit_phys_equal_check
+    let unsafe_set_with_caml_modify = Uniform_array.unsafe_set_with_caml_modify
+    let set_with_caml_modify = Uniform_array.set_with_caml_modify
+    let iter = Uniform_array.iter
+    let iteri = Uniform_array.iteri
+    let fold = Uniform_array.fold
+    let foldi = Uniform_array.foldi
+
+    let unsafe_to_array_inplace__promise_not_a_float =
+      Uniform_array.unsafe_to_array_inplace__promise_not_a_float
+    ;;
+
+    let to_array = Uniform_array.to_array
+    let to_list = Uniform_array.to_list
+    let blit = Uniform_array.blit
+    let blito = Uniform_array.blito
+    let unsafe_blit = Uniform_array.unsafe_blit
+    let exists = Uniform_array.exists
+    let existsi = Uniform_array.existsi
+    let for_all = Uniform_array.for_all
+    let for_alli = Uniform_array.for_alli
+    let find = Uniform_array.find
+    let findi = Uniform_array.findi
+    let find_map = Uniform_array.find_map
+    let find_mapi = Uniform_array.find_mapi
+    let fold2_exn = Uniform_array.fold2_exn
+    let min_elt = Uniform_array.min_elt
+    let max_elt = Uniform_array.max_elt
+    let sort = Uniform_array.sort
+    let binary_search = Uniform_array.binary_search
+    let binary_search_segmented = Uniform_array.binary_search_segmented
+
+    let unsafe_set_assuming_currently_int =
+      Uniform_array.unsafe_set_assuming_currently_int
+    ;;
+
+    let unsafe_set_int_assuming_currently_int =
+      Uniform_array.unsafe_set_int_assuming_currently_int
+    ;;
+
+    let unsafe_set_int = Uniform_array.unsafe_set_int
+    let unsafe_clear_if_pointer = Uniform_array.unsafe_clear_if_pointer
+  end :
+    module type of struct
+      include Uniform_array
+    end))
 ;;

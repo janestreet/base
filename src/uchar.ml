@@ -28,18 +28,18 @@ let t_sexp_grammar : t Sexplib0.Sexp_grammar.t =
 ;;
 
 include Pretty_printer.Register (struct
-  type nonrec t = t
+    type nonrec t = t
 
-  let module_name = module_name
-  let to_string = to_string_internal
-end)
+    let module_name = module_name
+    let to_string = to_string_internal
+  end)
 
 include Comparable.Make (struct
-  type nonrec t = t
+    type nonrec t = t
 
-  let compare = compare
-  let sexp_of_t = sexp_of_t
-end)
+    let compare = compare
+    let sexp_of_t = sexp_of_t
+  end)
 
 (* Open replace_polymorphic_compare after including functor instantiations so they do not
    shadow its definitions. This is here so that efficient versions of the comparison
@@ -118,12 +118,12 @@ module Decode_result = struct
 end
 
 module Make_utf (Format : sig
-  val codec_name : string
-  val module_name : string
-  val byte_length : t -> int
-  val get_decode_result : string -> byte_pos:int -> Decode_result.t
-  val set : bytes -> int -> t -> int
-end) : Utf = struct
+    val codec_name : string
+    val module_name : string
+    val byte_length : t -> int
+    val get_decode_result : string -> byte_pos:int -> Decode_result.t
+    val set : bytes -> int -> t -> int
+  end) : Utf = struct
   let codec_name = Format.codec_name
   let byte_length = Format.byte_length
 
@@ -139,7 +139,7 @@ end) : Utf = struct
     Format.module_name ^ ".of_string: expected a single Unicode character"
   ;;
 
-  let[@cold] raise_of_string string =
+  let[@cold] [@inline never] [@local never] [@specialise never] raise_of_string string =
     Error.raise_s (Sexp.message of_string_message [ "string", Atom string ])
   ;;
 
@@ -155,44 +155,44 @@ end) : Utf = struct
 end
 
 module Utf8 = Make_utf (struct
-  let codec_name = "UTF-8"
-  let module_name = "Base.Uchar.Utf8"
-  let byte_length = utf_8_byte_length
-  let get_decode_result = String.get_utf_8_uchar
-  let set = Bytes.set_uchar_utf_8
-end)
+    let codec_name = "UTF-8"
+    let module_name = "Base.Uchar.Utf8"
+    let byte_length = utf_8_byte_length
+    let get_decode_result = String.get_utf_8_uchar
+    let set = Bytes.set_uchar_utf_8
+  end)
 
 module Utf16le = Make_utf (struct
-  let codec_name = "UTF-16LE"
-  let module_name = "Base.Uchar.Utf16le"
-  let byte_length = utf_16_byte_length
-  let get_decode_result = String.get_utf_16le_uchar
-  let set = Bytes.set_uchar_utf_16le
-end)
+    let codec_name = "UTF-16LE"
+    let module_name = "Base.Uchar.Utf16le"
+    let byte_length = utf_16_byte_length
+    let get_decode_result = String.get_utf_16le_uchar
+    let set = Bytes.set_uchar_utf_16le
+  end)
 
 module Utf16be = Make_utf (struct
-  let codec_name = "UTF-16BE"
-  let module_name = "Base.Uchar.Utf16be"
-  let byte_length = utf_16_byte_length
-  let get_decode_result = String.get_utf_16be_uchar
-  let set = Bytes.set_uchar_utf_16be
-end)
+    let codec_name = "UTF-16BE"
+    let module_name = "Base.Uchar.Utf16be"
+    let byte_length = utf_16_byte_length
+    let get_decode_result = String.get_utf_16be_uchar
+    let set = Bytes.set_uchar_utf_16be
+  end)
 
 module Utf32le = Make_utf (struct
-  let codec_name = "UTF-32LE"
-  let module_name = "Base.Uchar.Utf32le"
-  let byte_length _ = 4
-  let get_decode_result = String.get_utf_32le_uchar
-  let set = Bytes.set_uchar_utf_32le
-end)
+    let codec_name = "UTF-32LE"
+    let module_name = "Base.Uchar.Utf32le"
+    let byte_length _ = 4
+    let get_decode_result = String.get_utf_32le_uchar
+    let set = Bytes.set_uchar_utf_32le
+  end)
 
 module Utf32be = Make_utf (struct
-  let codec_name = "UTF-32BE"
-  let module_name = "Base.Uchar.Utf32be"
-  let byte_length _ = 4
-  let get_decode_result = String.get_utf_32be_uchar
-  let set = Bytes.set_uchar_utf_32be
-end)
+    let codec_name = "UTF-32BE"
+    let module_name = "Base.Uchar.Utf32be"
+    let byte_length _ = 4
+    let get_decode_result = String.get_utf_32be_uchar
+    let set = Bytes.set_uchar_utf_32be
+  end)
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after
    including functor application that could shadow its definitions. This is

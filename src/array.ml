@@ -48,12 +48,12 @@ let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_gramma
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
 
 module Sorter (S : sig
-  type 'a t
+    type 'a t
 
-  val get : 'a t -> int -> 'a
-  val set : 'a t -> int -> 'a -> unit
-  val length : 'a t -> int
-end) =
+    val get : 'a t -> int -> 'a
+    val set : 'a t -> int -> 'a -> unit
+    val length : 'a t -> int
+  end) =
 struct
   include S
 
@@ -293,12 +293,12 @@ end
 [@@inline]
 
 module Sort = Sorter (struct
-  type nonrec 'a t = 'a t
+    type nonrec 'a t = 'a t
 
-  let get = unsafe_get
-  let set = unsafe_set
-  let length = length
-end)
+    let get = unsafe_get
+    let set = unsafe_set
+    let length = length
+  end)
 
 let sort = Sort.sort
 let of_array t = t
@@ -328,6 +328,11 @@ let is_sorted_strictly t ~compare =
   done;
   !result
 ;;
+
+(* This implementation initializes the output only once, based on the primitive
+   [caml_array_sub]. Other approaches, like [init] or [map], first initialize with a fixed
+   value, then blit from the source. *)
+let copy t = sub t ~pos:0 ~len:(length t)
 
 let merge a1 a2 ~compare =
   let l1 = Array.length a1 in
@@ -364,7 +369,7 @@ let merge a1 a2 ~compare =
     merged)
 ;;
 
-let copy_matrix = map ~f:copy
+let copy_matrix tt = map ~f:copy tt
 
 let folding_map t ~init ~f =
   let acc = ref init in
@@ -553,7 +558,7 @@ let filter_opt t = filter_map t ~f:Fn.id
 
 let raise_length_mismatch name n1 n2 =
   invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
-  [@@cold] [@@inline never] [@@local never] [@@specialise never]
+[@@cold] [@@inline never] [@@local never] [@@specialise never]
 ;;
 
 let check_length2_exn name t1 t2 =
@@ -851,7 +856,8 @@ let partitioni_tf t ~f =
 
 let partition_map t ~f = partition_mapi t ~f:(fun _ x -> f x) [@nontail]
 let partition_tf t ~f = partitioni_tf t ~f:(fun _ x -> f x) [@nontail]
-let last t = t.(length t - 1)
+let last_exn t = t.(length t - 1)
+let last = last_exn
 
 (* Convert to a sequence but does not attempt to protect against modification
    in the array. *)
@@ -898,29 +904,30 @@ let transpose_exn tt =
   | Some tt' -> tt'
 ;;
 
+let map t ~f = map t ~f
+
 include Binary_searchable.Make1 (struct
-  type nonrec 'a t = 'a t
+    type nonrec 'a t = 'a t
 
-  let get = get
-  let length = length
-end)
+    let get = get
+    let length = length
+  end)
 
-include Blit.Make1 (struct
-  type nonrec 'a t = 'a t
+let blito ~src ?(src_pos = 0) ?(src_len = length src - src_pos) ~dst ?(dst_pos = 0) () =
+  blit ~src ~src_pos ~len:src_len ~dst ~dst_pos
+;;
 
-  let length = length
+let subo ?(pos = 0) ?len src =
+  sub
+    src
+    ~pos
+    ~len:
+      (match len with
+       | Some i -> i
+       | None -> length src - pos)
+;;
 
-  let create_like ~len t =
-    if len = 0
-    then [||]
-    else (
-      assert (length t > 0);
-      create ~len t.(0))
-  ;;
-
-  let unsafe_blit = unsafe_blit
-end)
-
+let sub t ~pos ~len = sub t ~pos ~len
 let invariant invariant_a t = iter t ~f:invariant_a
 
 module Private = struct

@@ -38,8 +38,9 @@ val full_init : int array -> unit
     nondeterministic values, like in [Filename.temp_dir]. *)
 val self_init : ?allow_in_tests:bool -> unit -> unit
 
-(** Return 30 random bits in a nonnegative integer.  @before 3.12.0 used a different
-    algorithm (affects all the following functions) *)
+(** Return 30 random bits in a nonnegative integer.
+
+    @before 3.12.0 used a different algorithm (affects all the following functions) *)
 val bits : unit -> int
 
 (** [Random.bits64 ()] returns 64 random bits as an integer between

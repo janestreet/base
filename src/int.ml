@@ -35,7 +35,7 @@ end
 let num_bits = Int_conversions.num_bits_int
 let float_lower_bound = Float0.lower_bound_for_int num_bits
 let float_upper_bound = Float0.upper_bound_for_int num_bits
-let to_float = Stdlib.float_of_int
+let to_float = (Stdlib.float_of_int :> int -> _)
 let of_float_unchecked = Stdlib.int_of_float
 
 let of_float f =
@@ -57,46 +57,46 @@ include T
 include Comparator.Make (T)
 
 include Comparable.With_zero (struct
-  include T
+    include T
 
-  let zero = zero
-end)
+    let zero = zero
+  end)
 
 module Conv = Int_conversions
 include Int_string_conversions.Make (T)
 
 include Int_string_conversions.Make_hex (struct
-  open Int_replace_polymorphic_compare
+    open Int_replace_polymorphic_compare
 
-  type t = int [@@deriving_inline compare ~localize, hash]
+    type t = int [@@deriving_inline compare ~localize, hash]
 
-  let compare__local = (compare_int__local : t -> t -> int)
-  let compare = (fun a b -> compare__local a b : t -> t -> int)
+    let compare__local = (compare_int__local : t -> t -> int)
+    let compare = (fun a b -> compare__local a b : t -> t -> int)
 
-  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    hash_fold_int
+    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+      hash_fold_int
 
-  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_int in
-    fun x -> func x
-  ;;
+    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+      let func = hash_int in
+      fun x -> func x
+    ;;
 
-  [@@@end]
+    [@@@end]
 
-  let zero = zero
-  let neg = ( ~- )
-  let ( < ) = ( < )
-  let to_string i = Printf.sprintf "%x" i
-  let of_string s = Stdlib.Scanf.sscanf s "%x" Fn.id
-  let module_name = "Base.Int.Hex"
-end)
+    let zero = zero
+    let neg = ( ~- )
+    let ( < ) = ( < )
+    let to_string i = Printf.sprintf "%x" i
+    let of_string s = Stdlib.Scanf.sscanf s "%x" Fn.id
+    let module_name = "Base.Int.Hex"
+  end)
 
 include Pretty_printer.Register (struct
-  type nonrec t = t
+    type nonrec t = t
 
-  let to_string = to_string
-  let module_name = "Base.Int"
-end)
+    let to_string = to_string
+    let module_name = "Base.Int"
+  end)
 
 (* Open replace_polymorphic_compare after including functor instantiations so
    they do not shadow its definitions. This is here so that efficient versions
@@ -206,20 +206,8 @@ module Pow2 = struct
     x land (x - 1) = 0
   ;;
 
-  (* C stubs for int clz and ctz to use the CLZ/BSR/CTZ/BSF instruction where possible *)
-  external clz
-    :  (* Note that we pass the tagged int here. See int_math_stubs.c for details on why
-          this is correct. *)
-       int
-    -> (int[@untagged])
-    = "Base_int_math_int_clz" "Base_int_math_int_clz_untagged"
-    [@@noalloc]
-
-  external ctz
-    :  (int[@untagged])
-    -> (int[@untagged])
-    = "Base_int_math_int_ctz" "Base_int_math_int_ctz_untagged"
-    [@@noalloc]
+  let clz = Ocaml_intrinsics_kernel.Int.count_leading_zeros
+  let ctz = Ocaml_intrinsics_kernel.Int.count_trailing_zeros
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
@@ -241,31 +229,31 @@ let sign = Sign.of_int
 let popcount = Popcount.int_popcount
 
 include Int_string_conversions.Make_binary (struct
-  type t = int [@@deriving_inline compare ~localize, equal ~localize, hash]
+    type t = int [@@deriving_inline compare ~localize, equal ~localize, hash]
 
-  let compare__local = (compare_int__local : t -> t -> int)
-  let compare = (fun a b -> compare__local a b : t -> t -> int)
-  let equal__local = (equal_int__local : t -> t -> bool)
-  let equal = (fun a b -> equal__local a b : t -> t -> bool)
+    let compare__local = (compare_int__local : t -> t -> int)
+    let compare = (fun a b -> compare__local a b : t -> t -> int)
+    let equal__local = (equal_int__local : t -> t -> bool)
+    let equal = (fun a b -> equal__local a b : t -> t -> bool)
 
-  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    hash_fold_int
+    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+      hash_fold_int
 
-  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_int in
-    fun x -> func x
-  ;;
+    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+      let func = hash_int in
+      fun x -> func x
+    ;;
 
-  [@@@end]
+    [@@@end]
 
-  let ( land ) = ( land )
-  let ( lsr ) = ( lsr )
-  let clz = clz
-  let num_bits = num_bits
-  let one = one
-  let to_int_exn = to_int_exn
-  let zero = zero
-end)
+    let ( land ) = ( land )
+    let ( lsr ) = ( lsr )
+    let clz = clz
+    let num_bits = num_bits
+    let one = one
+    let to_int_exn = to_int_exn
+    let zero = zero
+  end)
 
 module Pre_O = struct
   external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%addint"
@@ -290,16 +278,16 @@ module O = struct
   include Pre_O
 
   module F = Int_math.Make (struct
-    type nonrec t = t
+      type nonrec t = t
 
-    include Pre_O
+      include Pre_O
 
-    let rem = rem
-    let to_float = to_float
-    let of_float = of_float
-    let of_string = T.of_string
-    let to_string = T.to_string
-  end)
+      let rem = rem
+      let to_float = to_float
+      let of_float = of_float
+      let of_string = T.of_string
+      let to_string = T.to_string
+    end)
 
   include F
 

@@ -18,7 +18,7 @@ include (
 
     let of_list = of_char_list
   end) :
-    sig end)
+  sig end)
 
 let%expect_test "Hash_set" =
   Base_container_tests.test_container_s0

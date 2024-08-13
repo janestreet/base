@@ -1,7 +1,6 @@
 open! Import
 module Int = Int0
 module String = String0
-module Array = Array0
 
 (* We maintain the property that all values of type [t] do not have the tag
    [double_array_tag].  Some functions below assume this in order to avoid testing the
@@ -41,8 +40,8 @@ let get t i =
   Stdlib.Obj.repr
     (* [Sys.opaque_identity] is required on the array because this code breaks the usual
        assumptions about array kinds that the Flambda 2 optimiser can see. *)
-    ((Sys.opaque_identity (Stdlib.Obj.magic (t : t) : not_a_float array)).(i)
-      : not_a_float)
+    ((Sys.opaque_identity (Obj_local.magic (t : t) : not_a_float array)).(i)
+     : not_a_float)
 ;;
 
 let[@inline always] unsafe_get t i =
@@ -52,7 +51,7 @@ let[@inline always] unsafe_get t i =
     (Array.unsafe_get
        (Sys.opaque_identity (Obj_local.magic (t : t) : not_a_float array))
        i
-      : not_a_float)
+     : not_a_float)
 ;;
 
 let[@inline always] unsafe_set_with_caml_modify t i obj =
@@ -69,8 +68,8 @@ let[@inline always] unsafe_set_with_caml_modify t i obj =
 
 let[@inline always] set_with_caml_modify t i obj =
   (* same as unsafe_set_with_caml_modify but safe *)
-  (Sys.opaque_identity (Stdlib.Obj.magic (t : t) : not_a_float array)).(i)
-    <- (Stdlib.Obj.obj (Sys.opaque_identity obj) : not_a_float)
+  (Sys.opaque_identity (Obj_local.magic (t : t) : not_a_float array)).(i)
+  <- (Stdlib.Obj.obj (Sys.opaque_identity obj) : not_a_float)
 ;;
 
 let[@inline always] unsafe_set_int_assuming_currently_int t i int =
@@ -181,17 +180,12 @@ let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len =
 ;;
 
 include Blit.Make (struct
-  type nonrec t = t
+    type nonrec t = t
 
-  let create = create_zero
-  let length = length
-  let unsafe_blit = unsafe_blit
-end)
+    let create = create_zero
+    let length = length
+    let unsafe_blit = unsafe_blit
+  end)
 
-let copy src =
-  let dst = create_zero ~len:(length src) in
-  blito ~src ~dst ();
-  dst
-;;
-
-let sub = Array.sub
+let sub t ~pos ~len = Array.sub t ~pos ~len
+let copy = Array.copy

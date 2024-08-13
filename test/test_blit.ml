@@ -9,23 +9,23 @@ let%test_module _ =
     let slices_are_valid = ref (Ok ())
 
     module B = Make (struct
-      type t = bool array
+        type t = bool array
 
-      let create ~len = Array.create false ~len
-      let length = Array.length
+        let create ~len = Array.create false ~len
+        let length = Array.length
 
-      let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len =
-        blit_was_called := true;
-        slices_are_valid
+        let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len =
+          blit_was_called := true;
+          slices_are_valid
           := Or_error.try_with (fun () ->
                assert (len >= 0);
                assert (src_pos >= 0);
                assert (src_pos + len <= Array.length src);
                assert (dst_pos >= 0);
                assert (dst_pos + len <= Array.length dst));
-        Array.blit ~src ~src_pos ~dst ~dst_pos ~len
-      ;;
-    end)
+          Array.blit ~src ~src_pos ~dst ~dst_pos ~len
+        ;;
+      end)
 
     let%test_module "Bool" =
       (module Test_blit.Test
@@ -72,7 +72,7 @@ let%test_module _ =
                   check (fun () ->
                     ignore
                       (B.subo (Array.create ~len:src false) ?pos:src_pos ?len:src_len
-                        : bool array))
+                       : bool array))
                 with
                 | exn ->
                   raise_s

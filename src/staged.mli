@@ -38,5 +38,5 @@ open! Import
 
 type +'a t
 
-val stage : 'a -> 'a t
-val unstage : 'a t -> 'a
+external stage : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
+external unstage : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"

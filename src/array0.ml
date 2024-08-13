@@ -48,6 +48,10 @@ module Array = struct
     -> len:int
     -> unit
     = "caml_array_blit"
+
+  external unsafe_fill : 'a array -> int -> int -> 'a -> unit = "caml_array_fill"
+  external unsafe_sub : 'a array -> int -> int -> 'a array = "caml_array_sub"
+  external concat : 'a array list -> 'a array = "caml_array_concat"
 end
 
 include Array
@@ -71,10 +75,24 @@ let create_float_uninitialized ~len =
 ;;
 
 let append = Stdlib.Array.append
-let blit = Stdlib.Array.blit
-let concat = Stdlib.Array.concat
-let copy = Stdlib.Array.copy
-let fill = Stdlib.Array.fill
+
+let blit ~src ~src_pos ~dst ~dst_pos ~len =
+  Ordered_collection_common0.check_pos_len_exn
+    ~pos:src_pos
+    ~len
+    ~total_length:(length src);
+  Ordered_collection_common0.check_pos_len_exn
+    ~pos:dst_pos
+    ~len
+    ~total_length:(length dst);
+  unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len
+;;
+
+let fill a ~pos ~len v =
+  if pos < 0 || len < 0 || pos > length a - len
+  then invalid_arg "Array.fill"
+  else unsafe_fill a pos len v
+;;
 
 let init len ~(f : _ -> _) =
   if len = 0
@@ -91,7 +109,13 @@ let init len ~(f : _ -> _) =
 
 let make_matrix = Stdlib.Array.make_matrix
 let of_list = Stdlib.Array.of_list
-let sub = Stdlib.Array.sub
+
+let sub a ~pos ~len =
+  if pos < 0 || len < 0 || pos > length a - len
+  then invalid_arg "Array.sub"
+  else unsafe_sub a pos len
+;;
+
 let to_list = Stdlib.Array.to_list
 
 let fold t ~init ~(f : _ -> _ -> _) =

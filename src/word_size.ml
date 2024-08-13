@@ -10,7 +10,7 @@ let sexp_of_t =
   (function
    | W32 -> Sexplib0.Sexp.Atom "W32"
    | W64 -> Sexplib0.Sexp.Atom "W64"
-    : t -> Sexplib0.Sexp.t)
+   : t -> Sexplib0.Sexp.t)
 ;;
 
 [@@@end]

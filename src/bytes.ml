@@ -23,10 +23,10 @@ end
 include T
 
 module To_bytes = Blit.Make (struct
-  include T
+    include T
 
-  let create ~len = create len
-end)
+    let create ~len = create len
+  end)
 
 include To_bytes
 include Comparator.Make (T)
@@ -65,9 +65,17 @@ let init n ~f =
   t
 ;;
 
+let rec unsafe_set_char_list t l i =
+  match l with
+  | [] -> ()
+  | c :: l ->
+    unsafe_set t i c;
+    unsafe_set_char_list t l (i + 1)
+;;
+
 let of_char_list l =
   let t = create (List.length l) in
-  List.iteri l ~f:(fun i c -> set t i c);
+  unsafe_set_char_list t l 0;
   t
 ;;
 
@@ -80,7 +88,7 @@ let to_list t =
   loop t (length t - 1) []
 ;;
 
-let to_array t = Array.init (length t) ~f:(fun i -> unsafe_get t i)
+let to_array t = Array.init (length t) ~f:(fun i -> unsafe_get t i) [@nontail]
 let map t ~f = map t ~f
 let mapi t ~f = mapi t ~f
 
@@ -150,7 +158,7 @@ let contains ?pos ?len t char =
     Int_replace_polymorphic_compare.( < ) i last
     && (Char.equal (get t i) char || loop (i + 1))
   in
-  loop pos
+  loop pos [@nontail]
 ;;
 
 module Utf8 = struct

@@ -46,7 +46,7 @@ let test (type t) here m count generate ~min ~max ~check_range:(lo, hi) =
     List.init count ~f:(fun _ -> generate ()) |> List.dedup_and_sort ~compare:T.compare
   in
   require
-    here
+    ~here
     (List.for_all generated ~f:(fun t -> between t ~lower_bound:min ~upper_bound:max))
     ~if_false_then_print_s:
       (lazy
@@ -56,7 +56,7 @@ let test (type t) here m count generate ~min ~max ~check_range:(lo, hi) =
             (max : T.t)
             (generated : T.t list)]);
   require
-    here
+    ~here
     (List.exists generated ~f:(fun t -> between t ~lower_bound:lo ~upper_bound:hi))
     ~if_false_then_print_s:
       (lazy

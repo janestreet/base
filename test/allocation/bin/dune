@@ -1,7 +1,7 @@
 (executables
  (modes byte exe)
  (names test_option_array_allocation)
- (libraries base expect_test_helpers_core compiler-libs.common
+ (libraries base core expect_test_helpers_core compiler-libs.common
    core_kernel.version_util)
  (ocamlopt_flags :standard -O3)
  (preprocess

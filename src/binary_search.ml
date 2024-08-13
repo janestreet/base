@@ -83,11 +83,9 @@ let binary_search
   =
   match how with
   | `Last_strictly_less_than ->
-    find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v < 0) [@nontail
-                                                                                     ]
+    find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v < 0)
   | `Last_less_than_or_equal_to ->
-    find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v <= 0) [@nontail
-                                                                                      ]
+    find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v <= 0)
   | `First_equal_to ->
     (match
        find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v >= 0)
@@ -101,11 +99,9 @@ let binary_search
      | Some x when compare (get t x) v = 0 -> Some x
      | None | Some _ -> None)
   | `First_greater_than_or_equal_to ->
-    find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v >= 0) [@nontail
-                                                                                       ]
+    find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v >= 0)
   | `First_strictly_greater_than ->
-    find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v > 0) [@nontail
-                                                                                      ]
+    find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v > 0)
 ;;
 
 let binary_search_segmented ?pos ?len t ~length ~get ~segment_of how =
@@ -116,8 +112,6 @@ let binary_search_segmented ?pos ?len t ~length ~get ~segment_of how =
   in
   let is_right x = not (is_left x) in
   match how with
-  | `Last_on_left ->
-    find_last_satisfying ?pos ?len t ~length ~get ~pred:is_left [@nontail]
-  | `First_on_right ->
-    find_first_satisfying ?pos ?len t ~length ~get ~pred:is_right [@nontail]
+  | `Last_on_left -> find_last_satisfying ?pos ?len t ~length ~get ~pred:is_left
+  | `First_on_right -> find_first_satisfying ?pos ?len t ~length ~get ~pred:is_right
 ;;

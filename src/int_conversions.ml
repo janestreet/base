@@ -9,7 +9,7 @@ let convert_failure x a b to_string =
     b
     (to_string x)
     ()
-  [@@cold] [@@inline never] [@@local never] [@@specialise never]
+[@@cold] [@@inline never] [@@local never] [@@specialise never]
 ;;
 
 let num_bits_int = Sys.int_size_in_bits
@@ -71,9 +71,11 @@ let int32_to_int_exn x =
 
 (* int <-> int64 *)
 
-let[@cold] int64_to_int_failure x =
+let[@cold] [@inline never] [@local never] [@specialise never] int64_to_int_failure x =
   convert_failure
-    (Stdlib.Int64.add x 0L (* force int64 boxing to be here under flambda2 *))
+    (Stdlib.Int64.add
+       (globalize_int64 x)
+       0L (* force int64 boxing to be here under flambda2 *))
     "int64"
     "int"
     int64_to_string
@@ -86,7 +88,7 @@ let int64_to_int_trunc = Stdlib.Int64.to_int
 let int64_is_representable_as_int =
   let min = int_to_int64 Int.min_value in
   let max = int_to_int64 Int.max_value in
-  fun x -> compare_int64 min x <= 0 && compare_int64 x max <= 0
+  fun x -> compare_int64__local min x <= 0 && compare_int64__local x max <= 0
 ;;
 
 let int64_to_int x =
@@ -207,12 +209,14 @@ let int64_to_nativeint_exn x =
 
 (* int64 <-> int63 *)
 
-let int64_to_int63_failure x = convert_failure x "int64" "int63" int64_to_string
+let int64_to_int63_failure x =
+  convert_failure (globalize_int64 x) "int64" "int63" int64_to_string
+;;
 
 let int64_is_representable_as_int63 =
   let min = Stdlib.Int64.shift_right min_int64 1 in
   let max = Stdlib.Int64.shift_right max_int64 1 in
-  fun x -> compare_int64 min x <= 0 && compare_int64 x max <= 0
+  fun x -> compare_int64__local min x <= 0 && compare_int64__local x max <= 0
 ;;
 
 let int64_fit_on_int63_exn x =

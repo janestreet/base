@@ -12,7 +12,7 @@ let%expect_test "split_le_gt" =
     print_endline "";
     for key = 0 to len + 1 do
       let le, gt = split_le_gt (of_list (List.init len ~f:Int.succ)) key in
-      Core.print_s [%sexp (le : int_set), "<=", (key : int), "<", (gt : int_set)]
+      print_s [%sexp (le : int_set), "<=", (key : int), "<", (gt : int_set)]
     done
   done;
   [%expect
@@ -46,7 +46,7 @@ let%expect_test "split_lt_ge" =
     print_endline "";
     for key = 0 to len + 1 do
       let lt, ge = split_lt_ge (of_list (List.init len ~f:Int.succ)) key in
-      Core.print_s [%sexp (lt : int_set), "<", (key : int), "<=", (ge : int_set)]
+      print_s [%sexp (lt : int_set), "<", (key : int), "<=", (ge : int_set)]
     done
   done;
   [%expect

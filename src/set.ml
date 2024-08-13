@@ -47,8 +47,8 @@ module Tree0 = struct
     | Node { left = _; elt = _; right = _; height = _; size = s } -> s
   ;;
 
-  let invariants =
-    let in_range lower upper compare_elt v =
+  let order_invariants =
+    let in_range ~lower ~upper compare_elt v =
       (match lower with
        | None -> true
        | Some lower -> compare_elt lower v < 0)
@@ -57,22 +57,33 @@ module Tree0 = struct
       | None -> true
       | Some upper -> compare_elt v upper < 0
     in
-    let rec loop lower upper compare_elt t =
+    let rec loop ~lower ~upper compare_elt t =
       match t with
       | Empty -> true
-      | Leaf { elt = v } -> in_range lower upper compare_elt v
-      | Node { left = l; elt = v; right = r; height = h; size = n } ->
-        let hl = height l
-        and hr = height r in
-        abs (hl - hr) <= 2
-        && h = max hl hr + 1
-        && n = length l + length r + 1
-        && in_range lower upper compare_elt v
-        && loop lower (Some v) compare_elt l
-        && loop (Some v) upper compare_elt r
+      | Leaf { elt = v } -> in_range ~lower ~upper compare_elt v
+      | Node { left = l; elt = v; right = r; height = _; size = _ } ->
+        in_range ~lower ~upper compare_elt v
+        && loop ~lower ~upper:(Some v) compare_elt l
+        && loop ~lower:(Some v) ~upper compare_elt r
     in
-    fun t ~compare_elt -> loop None None compare_elt t
+    fun t ~compare_elt -> loop ~lower:None ~upper:None compare_elt t
   ;;
+
+  let rec balance_invariants t =
+    match t with
+    | Empty | Leaf _ -> true
+    | Node { left = l; elt = _; right = r; height = h; size = n } ->
+      let hl = height l
+      and hr = height r in
+      abs (hl - hr) <= 2
+      && h = max hl hr + 1
+      && n = length l + length r + 1
+      && h > 1
+      && balance_invariants l
+      && balance_invariants r
+  ;;
+
+  let invariants t ~compare_elt = order_invariants t ~compare_elt && balance_invariants t
 
   let is_empty = function
     | Empty -> true
@@ -473,21 +484,14 @@ module Tree0 = struct
       else (
         match s1, s2 with
         | Empty, t | t, Empty -> t
-        | Leaf { elt = v1 }, _ ->
-          union (Node { left = Empty; elt = v1; right = Empty; height = 1; size = 1 }) s2
-        | _, Leaf { elt = v2 } ->
-          union s1 (Node { left = Empty; elt = v2; right = Empty; height = 1; size = 1 })
+        | Leaf { elt = v1 }, _ -> add s2 v1 ~compare_elt
+        | _, Leaf { elt = v2 } -> add s1 v2 ~compare_elt
         | ( Node { left = l1; elt = v1; right = r1; height = h1; size = _ }
           , Node { left = l2; elt = v2; right = r2; height = h2; size = _ } ) ->
           if h1 >= h2
-          then
-            if h2 = 1
-            then add s1 v2 ~compare_elt
-            else (
-              let l2, _, r2 = split s2 v1 ~compare_elt in
-              join (union l1 l2) v1 (union r1 r2))
-          else if h1 = 1
-          then add s2 v1 ~compare_elt
+          then (
+            let l2, _, r2 = split s2 v1 ~compare_elt in
+            join (union l1 l2) v1 (union r1 r2))
           else (
             let l1, _, r1 = split s1 v2 ~compare_elt in
             join (union l1 l2) v2 (union r1 r2)))
@@ -1516,9 +1520,9 @@ let to_tree = Using_comparator.to_tree
 let of_tree m t = Using_comparator.of_tree ~comparator:(to_comparator m) t
 
 module M (Elt : sig
-  type t
-  type comparator_witness
-end) =
+    type t
+    type comparator_witness
+  end) =
 struct
   type nonrec t = (Elt.t, Elt.comparator_witness) t
 end
@@ -1613,4 +1617,26 @@ module Poly = struct
   let filter_map a ~f = Using_comparator.filter_map ~comparator a ~f
   let of_tree tree = { comparator; tree }
   let to_tree t = t.tree
+end
+
+module Private = struct
+  module Tree = struct
+    type 'a t = 'a Tree0.t
+
+    let balance_invariants t = Tree0.balance_invariants t
+    let are_balanced t1 t2 = abs (Tree0.height t1 - Tree0.height t2) <= 2
+    let are_almost_balanced t1 t2 = abs (Tree0.height t1 - Tree0.height t2) <= 3
+
+    let expose t =
+      match (t : _ Tree0.t) with
+      | Empty -> None
+      | Leaf { elt } -> Some (Tree0.Empty, elt, Tree0.Empty)
+      | Node { left; elt; right; _ } -> Some (left, elt, right)
+    ;;
+
+    let empty = Tree0.Empty
+    let create_if_balanced = Tree0.create
+    let create_if_almost_balanced = Tree0.bal
+    let create_even_if_completely_unbalanced = Tree0.join
+  end
 end

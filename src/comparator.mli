@@ -61,25 +61,25 @@ module S_to_S1 (S : S) :
 (** [Make] creates a [comparator] value and its phantom [comparator_witness] type for a
     nullary type. *)
 module Make (M : sig
-  type t [@@deriving_inline compare, sexp_of]
+    type t [@@deriving_inline compare, sexp_of]
 
-  include Ppx_compare_lib.Comparable.S with type t := t
+    include Ppx_compare_lib.Comparable.S with type t := t
 
-  val sexp_of_t : t -> Sexplib0.Sexp.t
+    val sexp_of_t : t -> Sexplib0.Sexp.t
 
-  [@@@end]
-end) : S with type t := M.t
+    [@@@end]
+  end) : S with type t := M.t
 
 (** [Make1] creates a [comparator] value and its phantom [comparator_witness] type for a
     unary type.  It takes a [compare] and [sexp_of_t] that have
     non-standard types because the [Comparator.t] type doesn't allow passing in
     additional values for the type argument. *)
 module Make1 (M : sig
-  type 'a t
+    type 'a t
 
-  val compare : 'a t -> 'a t -> int
-  val sexp_of_t : _ t -> Sexp.t
-end) : S1 with type 'a t := 'a M.t
+    val compare : 'a t -> 'a t -> int
+    val sexp_of_t : _ t -> Sexp.t
+  end) : S1 with type 'a t := 'a M.t
 
 module type Derived = sig
   type 'a t
@@ -91,14 +91,14 @@ end
 (** [Derived] creates a [comparator] function that constructs a comparator for the type
     ['a t] given a comparator for the type ['a]. *)
 module Derived (M : sig
-  type 'a t [@@deriving_inline compare, sexp_of]
+    type 'a t [@@deriving_inline compare, sexp_of]
 
-  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+    include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 
-  val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
+    val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
-  [@@@end]
-end) : Derived with type 'a t := 'a M.t
+    [@@@end]
+  end) : Derived with type 'a t := 'a M.t
 
 module type Derived2 = sig
   type ('a, 'b) t
@@ -113,18 +113,18 @@ end
 (** [Derived2] creates a [comparator] function that constructs a comparator for the type
     [('a, 'b) t] given comparators for the type ['a] and ['b]. *)
 module Derived2 (M : sig
-  type ('a, 'b) t [@@deriving_inline compare, sexp_of]
+    type ('a, 'b) t [@@deriving_inline compare, sexp_of]
 
-  include Ppx_compare_lib.Comparable.S2 with type ('a, 'b) t := ('a, 'b) t
+    include Ppx_compare_lib.Comparable.S2 with type ('a, 'b) t := ('a, 'b) t
 
-  val sexp_of_t
-    :  ('a -> Sexplib0.Sexp.t)
-    -> ('b -> Sexplib0.Sexp.t)
-    -> ('a, 'b) t
-    -> Sexplib0.Sexp.t
+    val sexp_of_t
+      :  ('a -> Sexplib0.Sexp.t)
+      -> ('b -> Sexplib0.Sexp.t)
+      -> ('a, 'b) t
+      -> Sexplib0.Sexp.t
 
-  [@@@end]
-end) : Derived2 with type ('a, 'b) t := ('a, 'b) M.t
+    [@@@end]
+  end) : Derived2 with type ('a, 'b) t := ('a, 'b) M.t
 
 module type Derived_phantom = sig
   type ('a, 'b) t
@@ -138,11 +138,11 @@ end
 (** [Derived_phantom] creates a [comparator] function that constructs a comparator for the
     type [('a, 'b) t] given a comparator for the type ['a]. *)
 module Derived_phantom (M : sig
-  type ('a, 'b) t
+    type ('a, 'b) t
 
-  val compare : ('a -> 'a -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
-  val sexp_of_t : ('a -> Sexp.t) -> ('a, _) t -> Sexp.t
-end) : Derived_phantom with type ('a, 'b) t := ('a, 'b) M.t
+    val compare : ('a -> 'a -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+    val sexp_of_t : ('a -> Sexp.t) -> ('a, _) t -> Sexp.t
+  end) : Derived_phantom with type ('a, 'b) t := ('a, 'b) M.t
 
 module type Derived2_phantom = sig
   type ('a, 'b, 'c) t
@@ -157,14 +157,14 @@ end
 (** [Derived2_phantom] creates a [comparator] function that constructs a comparator for the
     type [('a, 'b, 'c) t] given a comparator for the types ['a] and ['b]. *)
 module Derived2_phantom (M : sig
-  type ('a, 'b, 'c) t
+    type ('a, 'b, 'c) t
 
-  val compare
-    :  ('a -> 'a -> int)
-    -> ('b -> 'b -> int)
-    -> ('a, 'b, 'c) t
-    -> ('a, 'b, 'c) t
-    -> int
+    val compare
+      :  ('a -> 'a -> int)
+      -> ('b -> 'b -> int)
+      -> ('a, 'b, 'c) t
+      -> ('a, 'b, 'c) t
+      -> int
 
-  val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b, _) t -> Sexp.t
-end) : Derived2_phantom with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t
+    val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b, _) t -> Sexp.t
+  end) : Derived2_phantom with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t

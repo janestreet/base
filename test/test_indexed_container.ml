@@ -6,14 +6,14 @@ module This_list : S = struct
   include List
 
   include Indexed_container.Make (struct
-    type 'a t = 'a list
+      type 'a t = 'a list
 
-    let fold = List.fold
-    let iter = `Custom List.iter
-    let length = `Custom List.length
-    let foldi = `Define_using_fold
-    let iteri = `Define_using_fold
-  end)
+      let fold = List.fold
+      let iter = `Custom List.iter
+      let length = `Custom List.length
+      let foldi = `Define_using_fold
+      let iteri = `Define_using_fold
+    end)
 end
 
 module That_list : S = List
@@ -41,7 +41,7 @@ let check (type a) here examples ~actual ~expect (module Output : Output with ty
     let actual = actual example in
     let expect = expect example in
     require
-      here
+      ~here
       (Output.compare actual expect = 0)
       ~if_false_then_print_s:(lazy [%message (expect : Output.t)]);
     print_s [%sexp (actual : Output.t)])
@@ -55,7 +55,8 @@ let%expect_test "foldi" =
     (module Int_list)
     ~actual:(fun list -> This_list.foldi list ~init:[] ~f)
     ~expect:(fun list -> That_list.foldi list ~init:[] ~f);
-  [%expect {|
+  [%expect
+    {|
     ()
     (1)
     (2)
@@ -74,7 +75,8 @@ let%expect_test "findi" =
       ~expect:(fun list -> That_list.findi list ~f)
   in
   check (fun i _elt -> i = 0);
-  [%expect {|
+  [%expect
+    {|
     ()
     ((0 1))
     ((0 2))
@@ -82,7 +84,8 @@ let%expect_test "findi" =
     ((0 0))
     |}];
   check (fun _i elt -> elt = 1);
-  [%expect {|
+  [%expect
+    {|
     ()
     ((0 1))
     ()
@@ -99,7 +102,8 @@ let%expect_test "find_mapi" =
     (module Int_option)
     ~actual:(fun list -> This_list.find_mapi list ~f)
     ~expect:(fun list -> That_list.find_mapi list ~f);
-  [%expect {|
+  [%expect
+    {|
     ()
     (1)
     ()
@@ -149,7 +153,8 @@ let%expect_test "for_alli" =
     (module Bool)
     ~actual:(fun list -> This_list.for_alli list ~f)
     ~expect:(fun list -> That_list.for_alli list ~f);
-  [%expect {|
+  [%expect
+    {|
     true
     true
     false
@@ -168,7 +173,8 @@ let%expect_test "existsi" =
     (module Bool)
     ~actual:(fun list -> This_list.existsi list ~f)
     ~expect:(fun list -> That_list.existsi list ~f);
-  [%expect {|
+  [%expect
+    {|
     false
     true
     false
@@ -187,7 +193,8 @@ let%expect_test "counti" =
     (module Int)
     ~actual:(fun list -> This_list.counti list ~f)
     ~expect:(fun list -> That_list.counti list ~f);
-  [%expect {|
+  [%expect
+    {|
     0
     1
     0

@@ -5,7 +5,7 @@ open Expect_test_helpers_core
 let () =
   let t = of_array [| None |] in
   assert (
-    require_no_allocation [%here] (fun () ->
+    require_no_allocation (fun () ->
       match get t 0 with
       | None -> true
       | Some _ -> false))
@@ -44,7 +44,7 @@ let () =
     Config.flambda2 && Version_util.x_library_inlining
   in
   if compiler_eliminates_the_allocation
-  then assert (require_no_allocation [%here] get_some)
+  then assert (require_no_allocation get_some)
   else
     let module Gc = Core.Gc.For_testing in
     let _, { Gc.Allocation_report.minor_words_allocated; _ } =

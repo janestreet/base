@@ -30,8 +30,8 @@ let%expect_test "mapi correctness check" =
     |> Lazy_apply.run
   in
   let reference_output = Map.mapi map ~f in
-  require [%here] (Map.equal Int.equal test_output reference_output);
-  require [%here] (Map.invariants test_output);
+  require (Map.equal Int.equal test_output reference_output);
+  require (Map.invariants test_output);
   [%expect {| |}]
 ;;
 
@@ -43,8 +43,8 @@ let%expect_test "filter_mapi correctness check" =
     |> Lazy_apply.run
   in
   let reference_output = Map.filter_mapi map ~f in
-  require [%here] (Map.equal Int.equal test_output reference_output);
-  require [%here] (Map.invariants test_output);
+  require (Map.equal Int.equal test_output reference_output);
+  require (Map.invariants test_output);
   [%expect {| |}]
 ;;
 
@@ -137,7 +137,7 @@ let%expect_test "mapi lazy check" =
     | Second _ -> assert false
   in
   let reference_output = Map.mapi map ~f in
-  require [%here] (Map.equal Int.equal test_output reference_output);
+  require (Map.equal Int.equal test_output reference_output);
   [%expect
     {|
     ((key  4)

@@ -37,6 +37,19 @@ module type Round = sig
   val round_nearest : t -> to_multiple_of:t -> t
 end
 
+(** Human-readable serialization. *)
+module type To_string_hum = sig
+  type t
+
+  val to_string_hum : ?delimiter:char -> t -> string
+
+  (** Alias for [to_string_hum] where a submodule is more convenient, for instance:
+      [%string "%{x#Int.Hum}"] *)
+  module Hum : sig
+    val to_string : ?delimiter:char -> t -> string
+  end
+end
+
 (** String format for integers, [to_string] / [sexp_of_t] direction only. Includes
     comparisons and hash functions for [[@@deriving]]. *)
 module type To_string_format = sig
@@ -51,7 +64,8 @@ module type To_string_format = sig
   [@@@end]
 
   val to_string : t -> string
-  val to_string_hum : ?delimiter:char -> t -> string
+
+  include To_string_hum with type t := t
 end
 
 (** String format for integers, including both [to_string] / [sexp_of_t] and [of_string] /
@@ -70,8 +84,7 @@ module type String_format = sig
   [@@@end]
 
   include Stringable.S with type t := t
-
-  val to_string_hum : ?delimiter:char -> t -> string
+  include To_string_hum with type t := t
 end
 
 (** Binary format for integers, unsigned and starting with [0b]. *)
@@ -97,7 +110,7 @@ module type S_common = sig
 
   [@@@end]
 
-  include Floatable.S with type t := t
+  include Floatable.S_local_input with type t := t
   include Intable.S with type t := t
   include Identifiable.S with type t := t
   include Comparable.With_zero with type t := t
@@ -458,4 +471,5 @@ module type Int = sig
   module type S_unbounded = S_unbounded
   module type String_format = String_format
   module type To_string_format = To_string_format
+  module type To_string_hum = To_string_hum
 end

@@ -1,1 +1,0 @@
-include Test_using_comparator_intf.Test_using_comparator

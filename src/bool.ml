@@ -40,11 +40,11 @@ include T
 include Comparator.Make (T)
 
 include Pretty_printer.Register (struct
-  type nonrec t = t
+    type nonrec t = t
 
-  let to_string = to_string
-  let module_name = "Base.Bool"
-end)
+    let to_string = to_string
+    let module_name = "Base.Bool"
+  end)
 
 (* Open replace_polymorphic_compare after including functor instantiations so they do not
    shadow its definitions. This is here so that efficient versions of the comparison

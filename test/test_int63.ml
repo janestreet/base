@@ -100,7 +100,8 @@ let%expect_test "[floor_log2]" =
   for i = 1 to 8 do
     floor_log2 (i |> of_int)
   done;
-  [%expect {|
+  [%expect
+    {|
     0
     1
     1
@@ -120,7 +121,6 @@ let%expect_test "[floor_log2]" =
 
 let%expect_test "binary" =
   quickcheck_m
-    [%here]
     (module struct
       type t = int64 [@@deriving quickcheck, sexp_of]
     end)
@@ -137,13 +137,15 @@ let test_binary i =
 
 let%expect_test ("binary emulation" [@tags "js-only"]) =
   test_binary 0b1L;
-  [%expect {|
+  [%expect
+    {|
     0b1
     0b1
     0b1
     |}];
   test_binary 0b0L;
-  [%expect {|
+  [%expect
+    {|
     0b0
     0b0
     0b0
@@ -152,33 +154,49 @@ let%expect_test ("binary emulation" [@tags "js-only"]) =
 
 let%expect_test "binary" =
   test_binary 0b01L;
-  [%expect {|
+  [%expect
+    {|
     0b1
     0b1
     0b1
     |}];
   test_binary 0b100L;
-  [%expect {|
+  [%expect
+    {|
     0b100
     0b100
     0b100
     |}];
   test_binary 0b101L;
-  [%expect {|
+  [%expect
+    {|
     0b101
     0b101
     0b101
     |}];
   test_binary 0b10_1010_1010_1010L;
-  [%expect {|
+  [%expect
+    {|
     0b10_1010_1010_1010
     0b10101010101010
     0b10_1010_1010_1010
     |}];
   test_binary 0b11_1111_0000_0000L;
-  [%expect {|
+  [%expect
+    {|
     0b11_1111_0000_0000
     0b11111100000000
     0b11_1111_0000_0000
     |}]
+;;
+
+let%expect_test ("inlining and resolve calls" [@tags "64-bits-only", "js-only"]) =
+  let i =
+    (Int.bit_and [@inlined always]) (Sys.opaque_identity 1) (Sys.opaque_identity 1)
+  in
+  print_s [%sexp (i : int)];
+  let j = Int63.of_int (Sys.opaque_identity 1) in
+  let i = (Int63.bit_and [@inlined always]) j j in
+  print_s [%sexp (i : t)];
+  [%expect {| |}]
 ;;

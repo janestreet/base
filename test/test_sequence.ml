@@ -448,7 +448,7 @@ let%test_unit _ =
 ;;
 
 let%expect_test _ =
-  require_does_raise [%here] (fun () -> cycle_list_exn []);
+  require_does_raise (fun () -> cycle_list_exn []);
   [%expect {| (Invalid_argument Sequence.cycle_list_exn) |}]
 ;;
 
@@ -493,7 +493,7 @@ let%expect_test "fold_m" =
     s12345
     ~init:[]
     ~f:(fun acc n ->
-    Simple_monad.bind Simple_monad.step ~f:(fun () -> Simple_monad.return (n :: acc)))
+      Simple_monad.bind Simple_monad.step ~f:(fun () -> Simple_monad.return (n :: acc)))
   |> printf !"%{sexp: int list Simple_monad.t}\n";
   [%expect {| (Step (Step (Step (Step (Step (Return (5 4 3 2 1))))))) |}]
 ;;
@@ -556,7 +556,7 @@ let%expect_test "[equal]" =
     let t2 = of_list l2 in
     let b = equal Int.equal t1 t2 in
     print_s [%sexp (b : bool)];
-    require [%here] (Bool.equal b (equal Int.equal t2 t1))
+    require (Bool.equal b (equal Int.equal t2 t1))
   in
   equal [] [];
   [%expect {| true |}];
@@ -703,7 +703,8 @@ let%test_module "Caml.Seq" =
 
     let%expect_test "of_seq" =
       list |> Stdlib.List.to_seq |> Sequence.of_seq |> Sequence.iter ~f:(printf "%d\n");
-      [%expect {|
+      [%expect
+        {|
         1
         2
         3
@@ -713,7 +714,8 @@ let%test_module "Caml.Seq" =
 
     let%expect_test "to_seq" =
       list |> Sequence.of_list |> Sequence.to_seq |> Stdlib.Seq.iter (printf "%d\n");
-      [%expect {|
+      [%expect
+        {|
         1
         2
         3

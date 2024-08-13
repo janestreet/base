@@ -124,6 +124,7 @@ module Lazy = Lazy
 module List = List
 module Map = Map
 module Maybe_bound = Maybe_bound
+module Modes = Modes
 module Monad = Monad
 module Nativeint = Nativeint
 module Nothing = Nothing
@@ -180,6 +181,7 @@ end
 module Exported_for_specific_uses = struct
   module Fieldslib = Fieldslib
   module Globalize = Globalize
+  module Obj_array = Obj_array
   module Obj_local = Obj_local
   module Ppx_compare_lib = Ppx_compare_lib
   module Ppx_enumerate_lib = Ppx_enumerate_lib
@@ -221,8 +223,8 @@ module Export = struct
     Array.sexp_of_t
   ;;
 
-  let array_sexp_grammar :
-        'a. 'a Sexplib0.Sexp_grammar.t -> 'a array Sexplib0.Sexp_grammar.t
+  let array_sexp_grammar
+    : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a array Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar -> Array.t_sexp_grammar _'a_sexp_grammar
   ;;
@@ -410,12 +412,12 @@ module Export = struct
     List.globalize
   ;;
 
-  let hash_fold_list :
-        'a.
-        (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-        -> Ppx_hash_lib.Std.Hash.state
-        -> 'a list
-        -> Ppx_hash_lib.Std.Hash.state
+  let hash_fold_list
+    : 'a.
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+    -> Ppx_hash_lib.Std.Hash.state
+    -> 'a list
+    -> Ppx_hash_lib.Std.Hash.state
     =
     List.hash_fold_t
   ;;
@@ -428,8 +430,8 @@ module Export = struct
     List.sexp_of_t
   ;;
 
-  let list_sexp_grammar :
-        'a. 'a Sexplib0.Sexp_grammar.t -> 'a list Sexplib0.Sexp_grammar.t
+  let list_sexp_grammar
+    : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a list Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar -> List.t_sexp_grammar _'a_sexp_grammar
   ;;
@@ -502,12 +504,12 @@ module Export = struct
     Option.globalize
   ;;
 
-  let hash_fold_option :
-        'a.
-        (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-        -> Ppx_hash_lib.Std.Hash.state
-        -> 'a option
-        -> Ppx_hash_lib.Std.Hash.state
+  let hash_fold_option
+    : 'a.
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+    -> Ppx_hash_lib.Std.Hash.state
+    -> 'a option
+    -> Ppx_hash_lib.Std.Hash.state
     =
     Option.hash_fold_t
   ;;
@@ -520,8 +522,8 @@ module Export = struct
     Option.sexp_of_t
   ;;
 
-  let option_sexp_grammar :
-        'a. 'a Sexplib0.Sexp_grammar.t -> 'a option Sexplib0.Sexp_grammar.t
+  let option_sexp_grammar
+    : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a option Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar -> Option.t_sexp_grammar _'a_sexp_grammar
   ;;
@@ -699,6 +701,8 @@ end
 include Export
 
 include Container_intf.Export (** @inline *)
+
+include Modes.Export (** @inline *)
 
 exception Not_found_s = Not_found_s
 

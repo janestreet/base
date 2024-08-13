@@ -14,10 +14,10 @@ let%expect_test "edit distance" =
       then (
         let d = edit_distance a b in
         print_s [%sexp (d : int), (a : string), (b : string)];
-        if a = b && Int.( <> ) d 0 then print_cr [%here] [%message "non-zero"];
+        if a = b && Int.( <> ) d 0 then print_cr [%message "non-zero"];
         let d' = edit_distance b a in
         if Int.( <> ) d d'
-        then print_cr [%here] [%message "non-symmetric" ~_:(d : int) ~_:(d' : int)])));
+        then print_cr [%message "non-symmetric" ~_:(d : int) ~_:(d' : int)])));
   [%expect
     {|
     (0 catch catch)
@@ -56,7 +56,7 @@ let%test_module "concat" =
     let test ?sep list =
       let from_list = concat ?sep list in
       let from_array = concat_array ?sep (Array.of_list list) in
-      require_equal [%here] (module String) from_list from_array;
+      require_equal (module String) from_list from_array;
       print_s [%sexp (from_list : string)]
     ;;
 
@@ -86,7 +86,6 @@ let%expect_test "to_list and to_list_rev" =
   let test s =
     let list = to_list s in
     require_equal
-      [%here]
       (module struct
         type t = char list [@@deriving equal, sexp_of]
       end)
@@ -104,9 +103,8 @@ let%expect_test "[of_sequence] and [to_sequence]" =
   let test t =
     let seq = to_sequence t in
     print_s [%sexp (seq : char Sequence.t)];
-    require_equal [%here] (module String) (of_sequence seq) t;
+    require_equal (module String) (of_sequence seq) t;
     require_equal
-      [%here]
       (module struct
         type t = char Sequence.t [@@deriving equal, sexp_of]
       end)
@@ -131,7 +129,7 @@ let%expect_test "sub/unsafe_sub" =
     match Or_error.try_with (fun () -> sub string ~pos ~len) with
     | Ok safe_substring ->
       let unsafe_substring = unsafe_sub string ~pos ~len in
-      require_equal [%here] (module String) safe_substring unsafe_substring;
+      require_equal (module String) safe_substring unsafe_substring;
       print_s [%sexp (safe_substring : t)]
     | Error e -> print_s [%sexp (e : Error.t)]
   in
@@ -172,8 +170,8 @@ let%test_module "Unicode" =
       let actual = (Utf.is_valid string : bool) in
       match actual, expect with
       | true, true | false, false -> ()
-      | true, false -> print_cr [%here] [%message "expected valid result, got invalid"]
-      | false, true -> print_cr [%here] [%message "expected invalid result, got valid"]
+      | true, false -> print_cr [%message "expected valid result, got invalid"]
+      | false, true -> print_cr [%message "expected invalid result, got valid"]
     ;;
 
     let%expect_test "valid" =
@@ -278,7 +276,6 @@ let%test_module "Unicode" =
         if not ([%equal: Uchar.t list] uchars round_trip)
         then
           print_cr
-            [%here]
             [%message
               "encoding does not round trip"
                 (codec_name : string)
@@ -374,7 +371,7 @@ let%test_module "Unicode" =
       [%expect {| αβ |}];
       print_s [%message "" ~_:(utf8 : Utf8.t) ~_:(Utf8.to_list utf8 : Uchar.t list)];
       [%expect {| ("\206\177\206\178" (U+03B1 U+03B2)) |}];
-      require_does_raise [%here] (fun () -> Utf8.get utf8 ~byte_pos:1);
+      require_does_raise (fun () -> Utf8.get utf8 ~byte_pos:1);
       [%expect
         {|
         ("Base.String.Utf8.get: invalid UTF-8 encoding at given position"
@@ -502,14 +499,14 @@ let%test_module "Search_pattern" =
           =
           let create_repr = Private.representation (create pattern ~case_sensitive) in
           let slow_create_repr = slow_create pattern ~case_sensitive in
-          require_equal [%here] (module Private) create_repr expected;
-          require_equal [%here] (module Private) slow_create_repr expected
+          require_equal (module Private) create_repr expected;
+          require_equal (module Private) slow_create_repr expected
         ;;
 
         let cmp_both pattern ~case_sensitive =
           let create_repr = Private.representation (create pattern ~case_sensitive) in
           let slow_create_repr = slow_create pattern ~case_sensitive in
-          require_equal [%here] (module Private) create_repr slow_create_repr
+          require_equal (module Private) create_repr slow_create_repr
         ;;
 
         let%expect_test _ =
@@ -846,7 +843,7 @@ let%test_module "tr_multi" =
       ; "ab", "dcba", "abcdefg", "dccdefg"
       ]
       |> List.map ~f:(fun (target, replacement, string, expected) ->
-           { Test.target; replacement; string; expected = Some expected })
+        { Test.target; replacement; string; expected = Some expected })
     ;;
 
     let%test_unit _ =
@@ -1010,12 +1007,11 @@ let%test_module "rstrip" =
 
 let%test_module "map" =
   (module struct
-    let%expect_test "empty" = require_equal [%here] (module String) (map "" ~f:Fn.id) ""
+    let%expect_test "empty" = require_equal (module String) (map "" ~f:Fn.id) ""
 
     let%expect_test "non-empty" =
       let s = "faboo" in
       require_equal
-        [%here]
         (module String)
         (map s ~f:(function
           | 'a' -> 'b'
@@ -1204,37 +1200,37 @@ let%expect_test "is_substring_at" =
 
 let%expect_test "prefixes and suffixes" =
   let s = "0123456789" in
-  require_equal [%here] (module String) (String.prefix s 0) "";
-  require_equal [%here] (module String) (String.prefix s 1) "0";
-  require_equal [%here] (module String) (String.prefix s 2) "01";
-  require_equal [%here] (module String) (String.prefix s 10) s;
-  require_equal [%here] (module String) (String.prefix s 20) s;
-  require_does_raise [%here] (fun () -> String.prefix s (-1));
+  require_equal (module String) (String.prefix s 0) "";
+  require_equal (module String) (String.prefix s 1) "0";
+  require_equal (module String) (String.prefix s 2) "01";
+  require_equal (module String) (String.prefix s 10) s;
+  require_equal (module String) (String.prefix s 20) s;
+  require_does_raise (fun () -> String.prefix s (-1));
   [%expect {| (Invalid_argument "prefix expecting nonnegative argument") |}];
-  require_equal [%here] (module String) (String.suffix s 0) "";
-  require_equal [%here] (module String) (String.suffix s 1) "9";
-  require_equal [%here] (module String) (String.suffix s 2) "89";
-  require_equal [%here] (module String) (String.suffix s 10) s;
-  require_equal [%here] (module String) (String.suffix s 20) s;
-  require_does_raise [%here] (fun () -> String.suffix s (-1));
+  require_equal (module String) (String.suffix s 0) "";
+  require_equal (module String) (String.suffix s 1) "9";
+  require_equal (module String) (String.suffix s 2) "89";
+  require_equal (module String) (String.suffix s 10) s;
+  require_equal (module String) (String.suffix s 20) s;
+  require_does_raise (fun () -> String.suffix s (-1));
   [%expect {| (Invalid_argument "suffix expecting nonnegative argument") |}]
 ;;
 
 let%expect_test "drop prefixes and suffixes" =
   let s = "0123456789" in
-  require_equal [%here] (module String) (String.drop_prefix s 0) s;
-  require_equal [%here] (module String) (String.drop_prefix s 1) "123456789";
-  require_equal [%here] (module String) (String.drop_prefix s 2) "23456789";
-  require_equal [%here] (module String) (String.drop_prefix s 10) "";
-  require_equal [%here] (module String) (String.drop_prefix s 20) "";
-  require_does_raise [%here] (fun () -> String.drop_prefix s (-1));
+  require_equal (module String) (String.drop_prefix s 0) s;
+  require_equal (module String) (String.drop_prefix s 1) "123456789";
+  require_equal (module String) (String.drop_prefix s 2) "23456789";
+  require_equal (module String) (String.drop_prefix s 10) "";
+  require_equal (module String) (String.drop_prefix s 20) "";
+  require_does_raise (fun () -> String.drop_prefix s (-1));
   [%expect {| (Invalid_argument "drop_prefix expecting nonnegative argument") |}];
-  require_equal [%here] (module String) (String.drop_suffix s 0) s;
-  require_equal [%here] (module String) (String.drop_suffix s 1) "012345678";
-  require_equal [%here] (module String) (String.drop_suffix s 2) "01234567";
-  require_equal [%here] (module String) (String.drop_suffix s 10) "";
-  require_equal [%here] (module String) (String.drop_suffix s 20) "";
-  require_does_raise [%here] (fun () -> String.drop_suffix s (-1));
+  require_equal (module String) (String.drop_suffix s 0) s;
+  require_equal (module String) (String.drop_suffix s 1) "012345678";
+  require_equal (module String) (String.drop_suffix s 2) "01234567";
+  require_equal (module String) (String.drop_suffix s 10) "";
+  require_equal (module String) (String.drop_suffix s 20) "";
+  require_does_raise (fun () -> String.drop_suffix s (-1));
   [%expect {| (Invalid_argument "drop_suffix expecting nonnegative argument") |}]
 ;;
 
@@ -1247,37 +1243,44 @@ let%expect_test "testing prefixes and suffixes" =
           ~is_suffix:(is_suffix outer ~suffix:inner : bool)]
   in
   test "" "a";
-  [%expect {|
+  [%expect
+    {|
     ((is_prefix false)
      (is_suffix false))
     |}];
   test "" "";
-  [%expect {|
+  [%expect
+    {|
     ((is_prefix true)
      (is_suffix true))
     |}];
   test "Foo" "";
-  [%expect {|
+  [%expect
+    {|
     ((is_prefix true)
      (is_suffix true))
     |}];
   test "H" "H";
-  [%expect {|
+  [%expect
+    {|
     ((is_prefix true)
      (is_suffix true))
     |}];
   test "Hello" "He";
-  [%expect {|
+  [%expect
+    {|
     ((is_prefix true)
      (is_suffix false))
     |}];
   test "Hello" "lo";
-  [%expect {|
+  [%expect
+    {|
     ((is_prefix false)
      (is_suffix true))
     |}];
   test "HelloFoo" "lo";
-  [%expect {|
+  [%expect
+    {|
     ((is_prefix false)
      (is_suffix false))
     |}]
@@ -1288,14 +1291,12 @@ let%expect_test "chop_prefix" =
   let test_prefix ~prefix =
     let result = Or_error.try_with (fun () -> chop_prefix_exn s ~prefix) in
     require_equal
-      [%here]
       (module struct
         type t = string option [@@deriving equal, sexp_of]
       end)
       (chop_prefix s ~prefix)
       (Or_error.ok result);
     require_equal
-      [%here]
       (module String)
       (chop_prefix_if_exists s ~prefix)
       (result |> Or_error.ok |> Option.value ~default:s);
@@ -1314,14 +1315,12 @@ let%expect_test "chop_suffix" =
   let test_suffix ~suffix =
     let result = Or_error.try_with (fun () -> chop_suffix_exn s ~suffix) in
     require_equal
-      [%here]
       (module struct
         type t = string option [@@deriving equal, sexp_of]
       end)
       (chop_suffix s ~suffix)
       (Or_error.ok result);
     require_equal
-      [%here]
       (module String)
       (chop_suffix_if_exists s ~suffix)
       (result |> Or_error.ok |> Option.value ~default:s);
@@ -1340,13 +1339,11 @@ let%expect_test "String.concat_lines" =
     String.concat (List.map lines ~f:(fun line -> line ^ if crlf then "\r\n" else "\n"))
   in
   quickcheck_m
-    [%here]
     (module struct
       type t = string list * bool [@@deriving quickcheck, sexp_of]
     end)
     ~f:(fun (lines, crlf) ->
       require_equal
-        [%here]
         (module String)
         (String.concat_lines lines ~crlf)
         (concat_lines_reference lines ~crlf));
@@ -1368,15 +1365,15 @@ let%expect_test "String.concat_lines examples" =
 let%expect_test "pad_left and pad_right" =
   let test ?char t ~len =
     let padded_left = pad_left ?char t ~len in
-    require [%here] (Int.( >= ) (length padded_left) len);
-    require [%here] (String.is_suffix padded_left ~suffix:t);
+    require (Int.( >= ) (length padded_left) len);
+    require (String.is_suffix padded_left ~suffix:t);
     let padded_right = pad_right ?char t ~len in
-    require [%here] (Int.( >= ) (length padded_right) len);
-    require [%here] (String.is_prefix padded_right ~prefix:t);
+    require (Int.( >= ) (length padded_right) len);
+    require (String.is_prefix padded_right ~prefix:t);
     if Int.( >= ) (length t) len
     then (
-      require [%here] (phys_equal t padded_left);
-      require [%here] (phys_equal t padded_right));
+      require (phys_equal t padded_left);
+      require (phys_equal t padded_right));
     print_s [%message (t : string) (padded_left : string) (padded_right : string)]
   in
   test "" ~len:2;
@@ -1524,7 +1521,6 @@ let%test_module "functions that raise Not_found_s" =
         let option_result = lsplit2 s ~on:':' in
         let exn_result = Or_error.try_with (fun () -> lsplit2_exn s ~on:':') in
         require_equal
-          [%here]
           (module struct
             type t = (string * string) option [@@deriving equal, sexp_of]
           end)
@@ -1549,7 +1545,6 @@ let%test_module "functions that raise Not_found_s" =
         let option_result = rsplit2 s ~on:':' in
         let exn_result = Or_error.try_with (fun () -> rsplit2_exn s ~on:':') in
         require_equal
-          [%here]
           (module struct
             type t = (string * string) option [@@deriving equal, sexp_of]
           end)

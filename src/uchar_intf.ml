@@ -82,11 +82,11 @@ module type Uchar = sig
 
   (** Number of bytes needed to represent [t] in UTF-8. *)
   val utf_8_byte_length : t -> int
-    [@@deprecated "[since 2023-11] use [Utf8.byte_length]"]
+  [@@deprecated "[since 2023-11] use [Utf8.byte_length]"]
 
   (** Number of bytes needed to represent [t] in UTF-16. *)
   val utf_16_byte_length : t -> int
-    [@@deprecated "[since 2023-11] use [Utf16le.byte_length] or [Utf16be.byte_length]"]
+  [@@deprecated "[since 2023-11] use [Utf16le.byte_length] or [Utf16be.byte_length]"]
 
   val min_value : t
   val max_value : t
@@ -101,7 +101,7 @@ module type Uchar = sig
   (** Result of decoding a UTF codec that may contain invalid encodings. *)
   module Decode_result : sig
     type t = Uchar0.utf_decode
-    [@@immediate] [@@deriving_inline compare, equal, hash, sexp_of]
+    [@@deriving_inline compare, equal, hash, sexp_of] [@@immediate]
 
     include Ppx_compare_lib.Comparable.S with type t := t
     include Ppx_compare_lib.Equal.S with type t := t

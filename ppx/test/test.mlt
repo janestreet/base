@@ -1,0 +1,29 @@
+type t [@@deriving specialize_polymorphic_compare]
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error (warning 22 [preprocessor]): ppx_base_internal: intended only for use inside Base
+
+Line _, characters _-_:
+Error: Unbound module Bool0
+Hint: Did you mean Bool?
+|}]
+
+type 'a t [@@deriving specialize_polymorphic_compare]
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: deriving specialize_polymorphic_compare: expected [type t], no other
+       name or parameters
+|}]
+
+type foo [@@deriving specialize_polymorphic_compare]
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: deriving specialize_polymorphic_compare: expected [type t], no other
+       name or parameters
+|}]

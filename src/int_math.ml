@@ -12,7 +12,7 @@ external int_math_int64_pow
   -> int64
   -> int64
   = "Base_int_math_int64_pow_stub" "Base_int_math_int64_pow_stub_unboxed"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 let int_pow base exponent =
   if exponent < 0 then negative_exponent ();

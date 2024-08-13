@@ -25,9 +25,9 @@ external globalize_array' : 'a array -> 'a array = "caml_obj_dup"
 
 let globalize_array _ a = globalize_array' a
 
-let rec globalize_list f = function
+let[@tail_mod_cons] rec globalize_list f = function
   | [] -> []
-  | x :: xs -> f x :: globalize_list f xs
+  | x :: xs -> f x :: (globalize_list [@tailcall]) f xs
 ;;
 
 let globalize_option f = function

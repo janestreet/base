@@ -572,7 +572,7 @@ let iteri l ~f =
     (fold l ~init:0 ~f:(fun i x ->
        f i x;
        i + 1)
-      : int)
+     : int)
 ;;
 
 let foldi t ~init ~f =
@@ -935,20 +935,20 @@ module Cartesian_product = struct
 
   open struct
     module Applicative = Applicative.Make_using_map2 (struct
-      type 'a t = 'a list
+        type 'a t = 'a list
 
-      let return = return
-      let map = `Custom map
-      let map2 = map2
-    end)
+        let return = return
+        let map = `Custom map
+        let map2 = map2
+      end)
 
     module Monad = Monad.Make (struct
-      type 'a t = 'a list
+        type 'a t = 'a list
 
-      let return = return
-      let map = `Custom map
-      let bind = bind
-    end)
+        let return = return
+        let map = `Custom map
+        let bind = bind
+      end)
   end
 
   let all = Monad.all
@@ -1217,8 +1217,8 @@ module Assoc = struct
     fun _of_a__027_ -> _of_a__027_
   ;;
 
-  let value_sexp_grammar :
-        'a. 'a Sexplib0.Sexp_grammar.t -> 'a value Sexplib0.Sexp_grammar.t
+  let value_sexp_grammar
+    : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a value Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar ->
     { untyped =
@@ -1236,35 +1236,29 @@ module Assoc = struct
     (('a key * 'b value) list[@tag Sexplib0.Sexp_grammar.assoc_tag = List []])
   [@@deriving_inline sexp, sexp_grammar]
 
-  let t_of_sexp :
-        'a 'b.
-        (Sexplib0.Sexp.t -> 'a)
-        -> (Sexplib0.Sexp.t -> 'b)
-        -> Sexplib0.Sexp.t
-        -> ('a, 'b) t
+  let t_of_sexp
+    : 'a 'b.
+    (Sexplib0.Sexp.t -> 'a) -> (Sexplib0.Sexp.t -> 'b) -> Sexplib0.Sexp.t -> ('a, 'b) t
     =
     let error_source__036_ = "list.ml.Assoc.t" in
     fun _of_a__028_ _of_b__029_ x__037_ ->
       list_of_sexp
         (function
-         | Sexplib0.Sexp.List [ arg0__031_; arg1__032_ ] ->
-           let res0__033_ = key_of_sexp _of_a__028_ arg0__031_
-           and res1__034_ = value_of_sexp _of_b__029_ arg1__032_ in
-           res0__033_, res1__034_
-         | sexp__035_ ->
-           Sexplib0.Sexp_conv_error.tuple_of_size_n_expected
-             error_source__036_
-             2
-             sexp__035_)
+          | Sexplib0.Sexp.List [ arg0__031_; arg1__032_ ] ->
+            let res0__033_ = key_of_sexp _of_a__028_ arg0__031_
+            and res1__034_ = value_of_sexp _of_b__029_ arg1__032_ in
+            res0__033_, res1__034_
+          | sexp__035_ ->
+            Sexplib0.Sexp_conv_error.tuple_of_size_n_expected
+              error_source__036_
+              2
+              sexp__035_)
         x__037_
   ;;
 
-  let sexp_of_t :
-        'a 'b.
-        ('a -> Sexplib0.Sexp.t)
-        -> ('b -> Sexplib0.Sexp.t)
-        -> ('a, 'b) t
-        -> Sexplib0.Sexp.t
+  let sexp_of_t
+    : 'a 'b.
+    ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
     =
     fun _of_a__038_ _of_b__039_ x__044_ ->
     sexp_of_list
@@ -1275,11 +1269,11 @@ module Assoc = struct
       x__044_
   ;;
 
-  let t_sexp_grammar :
-        'a 'b.
-        'a Sexplib0.Sexp_grammar.t
-        -> 'b Sexplib0.Sexp_grammar.t
-        -> ('a, 'b) t Sexplib0.Sexp_grammar.t
+  let t_sexp_grammar
+    : 'a 'b.
+    'a Sexplib0.Sexp_grammar.t
+    -> 'b Sexplib0.Sexp_grammar.t
+    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
     =
     fun _'a_sexp_grammar _'b_sexp_grammar ->
     { untyped =

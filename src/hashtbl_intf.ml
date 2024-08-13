@@ -27,49 +27,20 @@ module type Accessors = sig
   type ('a, 'b) t
   type 'a key
 
+  (** Attempting to modify ([set], [remove], etc.) the hashtable during iteration ([fold],
+      [iter], [iter_keys], [iteri]) will raise an exception. *)
+
   (** @inline *)
   include
     Dictionary_mutable.Accessors
-      with type 'key key := 'key key
-       and type ('key, 'data, _) t := ('key, 'data) t
-       and type ('fn, _, _, _) accessor := 'fn
+    with type 'key key := 'key key
+     and type ('key, 'data, _) t := ('key, 'data) t
+     and type ('fn, _, _, _) accessor := 'fn
 
   val sexp_of_key : ('a, _) t -> 'a key -> Sexp.t
-  val clear : (_, _) t -> unit
-  val copy : ('a, 'b) t -> ('a, 'b) t
-
-  (** Attempting to modify ([set], [remove], etc.) the hashtable during iteration ([fold],
-      [iter], [iter_keys], [iteri]) will raise an exception. *)
-  val fold : ('a, 'b) t -> init:'acc -> f:(key:'a key -> data:'b -> 'acc -> 'acc) -> 'acc
-
-  val iter_keys : ('a, _) t -> f:('a key -> unit) -> unit
-  val iter : (_, 'b) t -> f:('b -> unit) -> unit
-
-  (** Iterates over both keys and values.
-
-      Example:
-
-      {v
-      let h = Hashtbl.of_alist_exn (module Int) [(1, 4); (5, 6)] in
-      Hashtbl.iteri h ~f:(fun ~key ~data ->
-        print_endline (Printf.sprintf "%d-%d" key data));;
-      1-4
-      5-6
-      - : unit = ()
-      v} *)
-  val iteri : ('a, 'b) t -> f:(key:'a key -> data:'b -> unit) -> unit
-
-  val existsi : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> bool
-  val exists : (_, 'b) t -> f:('b -> bool) -> bool
-  val for_alli : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> bool
-  val for_all : (_, 'b) t -> f:('b -> bool) -> bool
-  val counti : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> int
-  val count : (_, 'b) t -> f:('b -> bool) -> int
-  val length : (_, _) t -> int
   val capacity : _ t -> int
-  val is_empty : (_, _) t -> bool
-  val mem : ('a, _) t -> 'a key -> bool
-  val remove : ('a, _) t -> 'a key -> unit
+
+  (** We redeclare [choose*] below to add implementation-specific notes on performance. *)
 
   (** Choose an arbitrary key/value pair of a hash table. Returns [None] if [t] is empty.
 
@@ -105,109 +76,6 @@ module type Accessors = sig
     -> ('a, 'b) t
     -> 'a key * 'b
 
-  (** Sets the given [key] to [data]. *)
-  val set : ('a, 'b) t -> key:'a key -> data:'b -> unit
-
-  (** [add] and [add_exn] leave the table unchanged if the key was already present. *)
-  val add : ('a, 'b) t -> key:'a key -> data:'b -> [ `Ok | `Duplicate ]
-
-  val add_exn : ('a, 'b) t -> key:'a key -> data:'b -> unit
-
-  (** [change t key ~f] changes [t]'s value for [key] to be [f (find t key)]. *)
-  val change : ('a, 'b) t -> 'a key -> f:('b option -> 'b option) -> unit
-
-  (** [update t key ~f] is [change t key ~f:(fun o -> Some (f o))]. *)
-  val update : ('a, 'b) t -> 'a key -> f:('b option -> 'b) -> unit
-
-  (** [update_and_return t key ~f] is [update], but returns the result of [f o]. *)
-  val update_and_return : ('a, 'b) t -> 'a key -> f:('b option -> 'b) -> 'b
-
-  (** [map t f] returns a new table with values replaced by the result of applying [f]
-      to the current values.
-
-      Example:
-
-      {v
-      let h = Hashtbl.of_alist_exn (module Int) [(1, 4); (5, 6)] in
-      let h' = Hashtbl.map h ~f:(local_ (fun x -> x * 2)) in
-      Hashtbl.to_alist h';;
-      - : (int * int) list = [(5, 12); (1, 8)]
-      v} *)
-  val map : ('a, 'b) t -> f:('b -> 'c) -> ('a, 'c) t
-
-  (** Like [map], but the function [f] takes both key and data as arguments. *)
-  val mapi : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'c) -> ('a, 'c) t
-
-  (** Returns a new table by filtering the given table's values by [f]: the keys for which
-      [f] applied to the current value returns [Some] are kept, and those for which it
-      returns [None] are discarded.
-
-      Example:
-
-      {v
-      let h = Hashtbl.of_alist_exn (module Int) [(1, 4); (5, 6)] in
-      Hashtbl.filter_map h ~f:(local_ (fun x -> if x > 5 then Some x else None))
-      |> Hashtbl.to_alist;;
-      - : (int * int) list = [(5, 6)]
-      v} *)
-  val filter_map : ('a, 'b) t -> f:('b -> 'c option) -> ('a, 'c) t
-
-  (** Like [filter_map], but the function [f] takes both key and data as arguments. *)
-  val filter_mapi : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'c option) -> ('a, 'c) t
-
-  val filter_keys : ('a, 'b) t -> f:('a key -> bool) -> ('a, 'b) t
-  val filter : ('a, 'b) t -> f:('b -> bool) -> ('a, 'b) t
-  val filteri : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> ('a, 'b) t
-
-  (** Returns new tables with bound values partitioned by [f] applied to the bound
-      values. *)
-  val partition_map : ('a, 'b) t -> f:('b -> ('c, 'd) Either.t) -> ('a, 'c) t * ('a, 'd) t
-
-  (** Like [partition_map], but the function [f] takes both key and data as arguments. *)
-  val partition_mapi
-    :  ('a, 'b) t
-    -> f:(key:'a key -> data:'b -> ('c, 'd) Either.t)
-    -> ('a, 'c) t * ('a, 'd) t
-
-  (** Returns a pair of tables [(t1, t2)], where [t1] contains all the elements of the
-      initial table which satisfy the predicate [f], and [t2] contains the rest. *)
-  val partition_tf : ('a, 'b) t -> f:('b -> bool) -> ('a, 'b) t * ('a, 'b) t
-
-  (** Like [partition_tf], but the function [f] takes both key and data as arguments. *)
-  val partitioni_tf
-    :  ('a, 'b) t
-    -> f:(key:'a key -> data:'b -> bool)
-    -> ('a, 'b) t * ('a, 'b) t
-
-  (** [find_or_add t k ~default] returns the data associated with key [k] if it is in the
-      table [t], and otherwise assigns [k] the value returned by [default ()]. *)
-  val find_or_add : ('a, 'b) t -> 'a key -> default:(unit -> 'b) -> 'b
-
-  (** Like [find_or_add] but [default] takes the key as an argument. *)
-  val findi_or_add : ('a, 'b) t -> 'a key -> default:('a key -> 'b) -> 'b
-
-  (** [find t k] returns [Some] (the current binding) of [k] in [t], or [None] if no such
-      binding exists. *)
-  val find : ('a, 'b) t -> 'a key -> 'b option
-
-  (** [find_exn t k] returns the current binding of [k] in [t], or raises [Stdlib.Not_found]
-      or [Not_found_s] if no such binding exists. *)
-  val find_exn : ('a, 'b) t -> 'a key -> 'b
-
-  (** [find_and_call t k ~if_found ~if_not_found]
-
-      is equivalent to:
-
-      [match find t k with Some v -> if_found v | None -> if_not_found k]
-
-      except that it doesn't allocate the option. *)
-  val find_and_call
-    :  ('a, 'b) t
-    -> 'a key
-    -> if_found:('b -> 'c)
-    -> if_not_found:('a key -> 'c)
-    -> 'c
-
   (** Just like [find_and_call], but takes an extra argument which is passed to [if_found]
       and [if_not_found], so that the client code can avoid allocating closures or using
       refs to pass this additional information.  This function is only useful in code
@@ -229,13 +97,6 @@ module type Accessors = sig
     -> if_not_found:('a key -> 'd -> 'e -> 'c)
     -> 'c
 
-  val findi_and_call
-    :  ('a, 'b) t
-    -> 'a key
-    -> if_found:(key:'a key -> data:'b -> 'c)
-    -> if_not_found:('a key -> 'c)
-    -> 'c
-
   val findi_and_call1
     :  ('a, 'b) t
     -> 'a key
@@ -253,91 +114,12 @@ module type Accessors = sig
     -> if_not_found:('a key -> 'd -> 'e -> 'c)
     -> 'c
 
-  (** [find_and_remove t k] returns Some (the current binding) of k in t and removes it,
-      or None is no such binding exists. *)
-  val find_and_remove : ('a, 'b) t -> 'a key -> 'b option
-
-  (** Merges two hashtables.
-
-      The result of [merge f h1 h2] has as keys the set of all [k] in the union of the
-      sets of keys of [h1] and [h2] for which [d(k)] is not None, where:
-
-      d(k) =
-      - [f ~key:k (`Left d1)]
-        if [k] in [h1] maps to d1, and [h2] does not have data for [k];
-
-      - [f ~key:k (`Right d2)]
-        if [k] in [h2] maps to d2, and [h1] does not have data for [k];
-
-      - [f ~key:k (`Both (d1, d2))]
-        otherwise, where [k] in [h1] maps to [d1] and [k] in [h2] maps to [d2].
-
-      Each key [k] is mapped to a single piece of data [x], where [d(k) = Some x].
-
-      Example:
-
-      {v
-      let h1 = Hashtbl.of_alist_exn (module Int) [(1, 5); (2, 3232)] in
-      let h2 = Hashtbl.of_alist_exn (module Int) [(1, 3)] in
-      Hashtbl.merge h1 h2 ~f:(fun ~key:_ -> function
-        | `Left x -> Some (`Left x)
-        | `Right x -> Some (`Right x)
-        | `Both (x, y) -> if x=y then None else Some (`Both (x,y))
-      ) |> Hashtbl.to_alist;;
-      - : (int * [> `Both of int * int | `Left of int | `Right of int ]) list =
-      [(2, `Left 3232); (1, `Both (5, 3))]
-      v} *)
-  val merge
-    :  ('k, 'a) t
-    -> ('k, 'b) t
-    -> f:(key:'k key -> [ `Left of 'a | `Right of 'b | `Both of 'a * 'b ] -> 'c option)
-    -> ('k, 'c) t
-
-  (** Every [key] in [src] will be removed or set in [dst] according to the return value
-      of [f]. *)
-  val merge_into
-    :  src:('k, 'a) t
-    -> dst:('k, 'b) t
-    -> f:(key:'k key -> 'a -> 'b option -> 'b Dictionary_mutable.Merge_into_action.t)
-    -> unit
-
-  (** Returns the list of all keys for given hashtable. *)
-  val keys : ('a, _) t -> 'a key list
-
-  (** Returns the list of all data for given hashtable. *)
-  val data : (_, 'b) t -> 'b list
-
-  (** [filter_inplace t ~f] removes all the elements from [t] that don't satisfy [f]. *)
-  val filter_keys_inplace : ('a, _) t -> f:('a key -> bool) -> unit
-
-  val filter_inplace : (_, 'b) t -> f:('b -> bool) -> unit
-  val filteri_inplace : ('a, 'b) t -> f:(key:'a key -> data:'b -> bool) -> unit
-
-  (** [map_inplace t ~f] applies [f] to all elements in [t], transforming them in
-      place. *)
-  val map_inplace : (_, 'b) t -> f:('b -> 'b) -> unit
-
-  val mapi_inplace : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b) -> unit
-
-  (** [filter_map_inplace] combines the effects of [map_inplace] and [filter_inplace]. *)
-  val filter_map_inplace : (_, 'b) t -> f:('b -> 'b option) -> unit
-
-  val filter_mapi_inplace : ('a, 'b) t -> f:(key:'a key -> data:'b -> 'b option) -> unit
-
   (** [equal f t1 t2] and [similar f t1 t2] both return true iff [t1] and [t2] have the
       same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)].  [equal] and
       [similar] only differ in their types. *)
   val equal : ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
 
   val similar : ('b1 -> 'b2 -> bool) -> ('a, 'b1) t -> ('a, 'b2) t -> bool
-
-  (** Returns the list of all (key, data) pairs for given hashtable. *)
-  val to_alist : ('a, 'b) t -> ('a key * 'b) list
-
-  (** [remove_if_zero]'s default is [false]. *)
-  val incr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit
-
-  val decr : ?by:int -> ?remove_if_zero:bool -> ('a, int) t -> 'a key -> unit
 end
 
 module type Multi = sig
@@ -377,71 +159,9 @@ module type Creators_generic = sig
   (** @inline *)
   include
     Dictionary_mutable.Creators
-      with type 'key key := 'key key
-       and type ('key, 'data, _) t := ('key, 'data) t
-       and type ('fn, 'key, 'data, _) creator := ('key key, 'data, 'fn) create_options
-
-  val create : ('a key, 'b, unit -> ('a, 'b) t) create_options
-
-  val of_alist
-    : ( 'a key
-      , 'b
-      , ('a key * 'b) list -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a key ] )
-      create_options
-
-  val of_alist_report_all_dups
-    : ( 'a key
-      , 'b
-      , ('a key * 'b) list -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a key list ] )
-      create_options
-
-  val of_alist_or_error
-    : ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t Or_error.t) create_options
-
-  val of_alist_exn : ('a key, 'b, ('a key * 'b) list -> ('a, 'b) t) create_options
-
-  val of_alist_multi
-    : ('a key, 'b list, ('a key * 'b) list -> ('a, 'b list) t) create_options
-
-  (** {[ create_mapped get_key get_data [x1,...,xn]
-         = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn] ]} *)
-  val create_mapped
-    : ( 'a key
-      , 'b
-      , get_key:('r -> 'a key)
-        -> get_data:('r -> 'b)
-        -> 'r list
-        -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a key list ] )
-      create_options
-
-  (** {[ create_with_key ~get_key [x1,...,xn]
-         = of_alist [get_key x1, x1; ...; get_key xn, xn] ]} *)
-  val create_with_key
-    : ( 'a key
-      , 'r
-      , get_key:('r -> 'a key)
-        -> 'r list
-        -> [ `Ok of ('a, 'r) t | `Duplicate_keys of 'a key list ] )
-      create_options
-
-  val create_with_key_or_error
-    : ( 'a key
-      , 'r
-      , get_key:('r -> 'a key) -> 'r list -> ('a, 'r) t Or_error.t )
-      create_options
-
-  val create_with_key_exn
-    : ('a key, 'r, get_key:('r -> 'a key) -> 'r list -> ('a, 'r) t) create_options
-
-  val group
-    : ( 'a key
-      , 'b
-      , get_key:('r -> 'a key)
-        -> get_data:('r -> 'b)
-        -> combine:('b -> 'b -> 'b)
-        -> 'r list
-        -> ('a, 'b) t )
-      create_options
+    with type 'key key := 'key key
+     and type ('key, 'data, _) t := ('key, 'data) t
+     and type ('fn, 'key, 'data, _) creator := ('key key, 'data, 'fn) create_options
 end
 
 module type Creators = sig
@@ -660,10 +380,10 @@ module type S_poly = sig
 
   include
     Creators_generic
-      with type ('a, 'b) t := ('a, 'b) t
-      with type 'a key = 'a
-      with type ('key, 'data, 'z) create_options :=
-        ('key, 'data, 'z) create_options_without_first_class_module
+    with type ('a, 'b) t := ('a, 'b) t
+    with type 'a key = 'a
+    with type ('key, 'data, 'z) create_options :=
+      ('key, 'data, 'z) create_options_without_first_class_module
 
   include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
   include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
@@ -815,20 +535,20 @@ module type Hashtbl = sig
   type nonrec ('key, 'data, 'z) create_options = ('key, 'data, 'z) create_options
 
   module Creators (Key : sig
-    type 'a t
+      type 'a t
 
-    val hashable : 'a t Hashable.t
-  end) : sig
+      val hashable : 'a t Hashable.t
+    end) : sig
     type ('a, 'b) t_ = ('a Key.t, 'b) t
 
     val t_of_sexp : (Sexp.t -> 'a Key.t) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t_
 
     include
       Creators_generic
-        with type ('a, 'b) t := ('a, 'b) t_
-        with type 'a key := 'a Key.t
-        with type ('key, 'data, 'a) create_options :=
-          ('key, 'data, 'a) create_options_without_first_class_module
+      with type ('a, 'b) t := ('a, 'b) t_
+      with type 'a key := 'a Key.t
+      with type ('key, 'data, 'a) create_options :=
+        ('key, 'data, 'a) create_options_without_first_class_module
   end
 
   module Poly : S_poly with type ('a, 'b) t = ('a, 'b) t

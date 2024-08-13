@@ -21,9 +21,9 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Accessors
-          with type _ key := key
-           and type (_, 'data, _) t := 'data t
-           and type ('fn, _, _, _) accessor := 'fn
+        with type _ key := key
+         and type (_, 'data, _) t := 'data t
+         and type ('fn, _, _, _) accessor := 'fn
     end
   end
 
@@ -40,9 +40,9 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Accessors
-          with type 'key key := 'key
-           and type ('key, 'data, _) t := ('key, 'data) t
-           and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
+        with type 'key key := 'key
+         and type ('key, 'data, _) t := ('key, 'data) t
+         and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
     end
   end
 
@@ -59,15 +59,76 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Accessors
-          with type 'key key := 'key
-           and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-           and type ('fn, 'key, 'data, 'phantom) accessor :=
-            ('fn, 'key, 'data, 'phantom) accessor
+        with type 'key key := 'key
+         and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+         and type ('fn, 'key, 'data, 'phantom) accessor :=
+          ('fn, 'key, 'data, 'phantom) accessor
     end
   end
 
   module _ (M : Accessors3) : Accessors_instance3 = M
   module _ (M : Accessors_instance3) : Accessors3 = M
+
+  (* The generic interface for transformers. *)
+  module type Transformers = Dictionary_immutable.Transformers
+
+  (* Ensure that Transformers1 is Transformers with only a data type argument. *)
+  module type Transformers1 = Dictionary_immutable.Transformers1
+
+  open struct
+    module type Transformers_instance1 = sig
+      type key
+      type 'data t
+
+      include
+        Transformers
+        with type _ key := key
+         and type (_, 'data, _) t := 'data t
+         and type ('fn, _, _, _) transformer := 'fn
+    end
+  end
+
+  module _ (M : Transformers1) : Transformers_instance1 = M
+  module _ (M : Transformers_instance1) : Transformers1 = M
+
+  (* Ensure that Transformers2 is Transformers with no phantom type argument. *)
+  module type Transformers2 = Dictionary_immutable.Transformers2
+
+  open struct
+    module type Transformers_instance2 = sig
+      type ('key, 'data) t
+      type ('fn, 'key, 'data) transformer
+
+      include
+        Transformers
+        with type 'key key := 'key
+         and type ('key, 'data, _) t := ('key, 'data) t
+         and type ('fn, 'key, 'data, _) transformer := ('fn, 'key, 'data) transformer
+    end
+  end
+
+  module _ (M : Transformers2) : Transformers_instance2 = M
+  module _ (M : Transformers_instance2) : Transformers2 = M
+
+  (* Ensure that Transformers3 is Transformers with no [key] type. *)
+  module type Transformers3 = Dictionary_immutable.Transformers3
+
+  open struct
+    module type Transformers_instance3 = sig
+      type ('key, 'data, 'phantom) t
+      type ('fn, 'key, 'data, 'phantom) transformer
+
+      include
+        Transformers
+        with type 'key key := 'key
+         and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+         and type ('fn, 'key, 'data, 'phantom) transformer :=
+          ('fn, 'key, 'data, 'phantom) transformer
+    end
+  end
+
+  module _ (M : Transformers3) : Transformers_instance3 = M
+  module _ (M : Transformers_instance3) : Transformers3 = M
 
   (* The generic interface for creators. *)
   module type Creators = Dictionary_immutable.Creators
@@ -82,9 +143,9 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Creators
-          with type _ key := key
-           and type (_, 'data, _) t := 'data t
-           and type ('fn, _, _, _) creator := 'fn
+        with type _ key := key
+         and type (_, 'data, _) t := 'data t
+         and type ('fn, _, _, _) creator := 'fn
     end
   end
 
@@ -101,9 +162,9 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Creators
-          with type 'key key := 'key
-           and type ('key, 'data, _) t := ('key, 'data) t
-           and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
+        with type 'key key := 'key
+         and type ('key, 'data, _) t := ('key, 'data) t
+         and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
     end
   end
 
@@ -120,10 +181,10 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Creators
-          with type 'key key := 'key
-           and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-           and type ('fn, 'key, 'data, 'phantom) creator :=
-            ('fn, 'key, 'data, 'phantom) creator
+        with type 'key key := 'key
+         and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+         and type ('fn, 'key, 'data, 'phantom) creator :=
+          ('fn, 'key, 'data, 'phantom) creator
     end
   end
 
@@ -142,17 +203,24 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         Accessors
-          with type 'key key := 'key key
-          with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-          with type ('fn, 'key, 'data, 'phantom) accessor :=
-            ('fn, 'key, 'data, 'phantom) accessor
+        with type 'key key := 'key key
+        with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+        with type ('fn, 'key, 'data, 'phantom) accessor :=
+          ('fn, 'key, 'data, 'phantom) accessor
+
+      include
+        Transformers
+        with type 'key key := 'key key
+        with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+        with type ('fn, 'key, 'data, 'phantom) transformer :=
+          ('fn, 'key, 'data, 'phantom) accessor
 
       include
         Creators
-          with type 'key key := 'key key
-          with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-          with type ('fn, 'key, 'data, 'phantom) creator :=
-            ('fn, 'key, 'data, 'phantom) creator
+        with type 'key key := 'key key
+        with type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+        with type ('fn, 'key, 'data, 'phantom) creator :=
+          ('fn, 'key, 'data, 'phantom) creator
     end
   end
 
@@ -169,10 +237,10 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         S
-          with type _ key := key
-           and type (_, 'data, _) t := 'data t
-           and type ('fn, _, _, _) accessor := 'fn
-           and type ('fn, _, _, _) creator := 'fn
+        with type _ key := key
+         and type (_, 'data, _) t := 'data t
+         and type ('fn, _, _, _) accessor := 'fn
+         and type ('fn, _, _, _) creator := 'fn
     end
   end
 
@@ -190,10 +258,10 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         S
-          with type 'key key := 'key
-           and type ('key, 'data, _) t := ('key, 'data) t
-           and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
-           and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
+        with type 'key key := 'key
+         and type ('key, 'data, _) t := ('key, 'data) t
+         and type ('fn, 'key, 'data, _) accessor := ('fn, 'key, 'data) accessor
+         and type ('fn, 'key, 'data, _) creator := ('fn, 'key, 'data) creator
     end
   end
 
@@ -211,12 +279,12 @@ module _ : module type of Dictionary_immutable = struct
 
       include
         S
-          with type 'key key := 'key
-           and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
-           and type ('fn, 'key, 'data, 'phantom) accessor :=
-            ('fn, 'key, 'data, 'phantom) accessor
-           and type ('fn, 'key, 'data, 'phantom) creator :=
-            ('fn, 'key, 'data, 'phantom) creator
+        with type 'key key := 'key
+         and type ('key, 'data, 'phantom) t := ('key, 'data, 'phantom) t
+         and type ('fn, 'key, 'data, 'phantom) accessor :=
+          ('fn, 'key, 'data, 'phantom) accessor
+         and type ('fn, 'key, 'data, 'phantom) creator :=
+          ('fn, 'key, 'data, 'phantom) creator
     end
   end
 

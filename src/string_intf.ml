@@ -69,10 +69,10 @@ module type Utf = sig
   (** [length] could be misinterpreted as counting bytes. We direct users to other,
       clearer options. *)
   val length : t -> int
-    [@@alert
-      length_in_uchars
-        "Use [length_in_uchars] to count unicode scalar values or [String.length] to \
-         count bytes"]
+  [@@alert
+    length_in_uchars
+      "Use [length_in_uchars] to count unicode scalar values or [String.length] to count \
+       bytes"]
 end
 
 (** Iterface for Unicode encodings, specialized for string representation. *)
@@ -94,12 +94,12 @@ module type String = sig
 
   [@@@end]
 
-  val sub : (t, t) Blit.sub
+  val sub : (t, t) Blit.sub_global
 
   (** [sub] with no bounds checking, and always returns a new copy *)
   val unsafe_sub : t -> pos:int -> len:int -> t
 
-  val subo : (t, t) Blit.subo
+  val subo : (t, t) Blit.subo_global
 
   include Indexed_container.S0_with_creators with type t := t with type elt = char
   include Identifiable.S with type t := t
@@ -251,14 +251,20 @@ module type String = sig
         E.g., [replace_all] internally calls [index_all ~may_overlap:false]. *)
     val index_all : t -> may_overlap:bool -> in_:string -> int list
 
-    (** Note that the result of [replace_all pattern ~in_:text ~with_:r] may still
-        contain [pattern], e.g.,
-
-        {[
-          replace_all (create "bc") ~in_:"aabbcc" ~with_:"cb" = "aabcbc"
-        ]} *)
     val replace_first : ?pos:int -> t -> in_:string -> with_:string -> string
 
+    (** [replace_all pattern ~in_:text ~with_:r] replaces every appearance of a [pattern]
+        in [text]. Surprisingly, the result can still contain [pattern] at the end, as
+        shown in the following example.
+
+        {[
+          # let pattern = String.Search_pattern.create "bc"
+          val pattern : String.Search_pattern.t = <abstr>
+          # String.Search_pattern.replace_all pattern ~in_:"aabbcc" ~with_:"cb"
+          - : string = "aabcbc"
+        ]}
+
+        which ends with ["bc"]!  *)
     val replace_all : t -> in_:string -> with_:string -> string
 
     (** Similar to [String.split] or [String.split_on_chars], but instead uses a given
@@ -318,7 +324,6 @@ module type String = sig
   val rev : t -> t
 
   (** [is_suffix s ~suffix] returns [true] if [s] ends with [suffix]. *)
-
   val is_suffix : t -> suffix:t -> bool
 
   (** [is_prefix s ~prefix] returns [true] if [s] starts with [prefix]. *)
@@ -469,18 +474,20 @@ module type String = sig
   val concat_array : ?sep:t -> t array -> t
 
   (** Builds a multiline text from a list of lines. Each line is terminated and then
-      concatenated. Equivalent to:
+      concatenated.
 
       {[
-        String.concat (List.map lines ~f:(fun line ->
-          line ^ if crlf then "\r\n" else "\n"))
+        # String.concat_lines ["one two"; "three four"; "five"]
+        - : string = "one two\nthree four\nfive\n"
+        # String.concat_lines ~crlf:true ["one two"; "three four"; "five"]
+        - : string = "one two\r\nthree four\r\nfive\r\n"
       ]}
   *)
   val concat_lines : ?crlf:bool (** default [false] *) -> string list -> string
 
   (** Slightly faster hash function on strings. *)
   external hash : t -> int = "Base_hash_string"
-    [@@noalloc]
+  [@@noalloc]
 
   (** Fast equality function on strings, doesn't use [compare_val]. *)
   val equal : t -> t -> bool
@@ -511,38 +518,84 @@ module type String = sig
       escapeworthy characters.  Escaping/unescaping using this module is more efficient than
       using Pcre. Benchmark code can be found in core/benchmarks/string_escaping.ml. *)
   module Escaping : sig
-    (** [escape_gen_exn escapeworthy_map escape_char] returns a function that will escape a
+    (** [escape_gen_exn escapeworthy_map escape_char] returns a (staged) function that will escape a
         string [s] as follows: if [(c1,c2)] is in [escapeworthy_map], then all occurrences
         of [c1] are replaced by [escape_char] concatenated to [c2].
 
         Raises an exception if [escapeworthy_map] is not one-to-one.  If [escape_char] is
-        not in [escapeworthy_map], then it will be escaped to itself.*)
+        not in [escapeworthy_map], then it will be escaped to itself.
+
+        Examples:
+
+        {[
+          # let escape = Staged.unstage (String.Escaping.escape_gen_exn ~escapeworthy_map:['a','b'; 'b','c'] ~escape_char:'!')
+          val escape : string -> string = <fun>
+          # escape "a!bcd";
+          - : string = "!b!!!ccd"
+          # escape "efgh";
+          - : string = "efgh"
+          # let escape = Staged.unstage (String.Escaping.escape_gen_exn ~escapeworthy_map:['a','b'; 'c','b'] ~escape_char:'!')
+          Exception:
+          ("escapeworthy_map not one-to-one" (c_from c) (c_to b)
+            (escapeworthy_map ((! !) (a b) (c b))))
+        ]}
+    *)
     val escape_gen_exn
       :  escapeworthy_map:(char * char) list
       -> escape_char:char
       -> (string -> string) Staged.t
 
+    (** Like {!escape_gen_exn}, but returns an [Or_error.t] when constructing the escaping
+        function, rather than raising. *)
     val escape_gen
       :  escapeworthy_map:(char * char) list
       -> escape_char:char
       -> (string -> string) Or_error.t
 
-    (** [escape ~escapeworthy ~escape_char s] is
+    (** A simpler version of {!escape_gen}.  In this function, any escaped character is
+        escaped to itself. I.e., if the escape character is ['!'] then escaping the
+        character ['a'] will generate ["!a"].
+
+        Duplicates will be removed from [escapeworthy], and the escape character is
+        implicitly considered escapeworthy, whether or not its on the list explicitly.
+
+        An example where we include the escape character explicitly as escapeworthy:
+
         {[
-          escape_gen_exn ~escapeworthy_map:(List.zip_exn escapeworthy escapeworthy)
-            ~escape_char
+          # let escape = Staged.unstage (String.Escaping.escape ~escapeworthy:['a';'b';'c';'!'] ~escape_char:'!')
+          val escape : string -> string = <fun>
+          # escape "abcd!ef"
+          - : string = "!a!b!cd!!ef"
         ]}
-        Duplicates and [escape_char] will be removed from [escapeworthy].  So, no
-        exception will be raised *)
+
+        And where we don't.
+
+        {[
+          # let escape = Staged.unstage (String.Escaping.escape ~escapeworthy:['a';'b';'c'] ~escape_char:'!')
+          val escape : string -> string = <fun>
+          # escape "abcd!ef"
+          - : string = "!a!b!cd!!ef"
+        ]}
+
+    *)
     val escape : escapeworthy:char list -> escape_char:char -> (string -> string) Staged.t
 
-    (** [unescape_gen_exn] is the inverse operation of [escape_gen_exn]. That is,
+    (** [unescape_gen_exn] is the inverse operation of [escape_gen_exn].
+
+        Example:
+
         {[
-          let escape = Staged.unstage (escape_gen_exn ~escapeworthy_map ~escape_char) in
-          let unescape = Staged.unstage (unescape_gen_exn ~escapeworthy_map ~escape_char) in
-          assert (s = unescape (escape s))
+          # let escapeworthy_map = ['a','b'; 'b','c'] and escape_char = '!'
+          val escapeworthy_map : (char * char) list = [('a', 'b'); ('b', 'c')]
+          val escape_char : char = '!'
+          # let escape = Staged.unstage (String.Escaping.escape_gen_exn ~escapeworthy_map ~escape_char)
+          val escape : string -> string = <fun>
+          # let unescape = Staged.unstage (String.Escaping.unescape_gen_exn ~escapeworthy_map ~escape_char)
+          val unescape : string -> string = <fun>
+          # unescape (escape "abc!de")
+          - : string = "abc!de"
         ]}
-        always succeed when ~escapeworthy_map is not causing exceptions. *)
+        *)
     val unescape_gen_exn
       :  escapeworthy_map:(char * char) list
       -> escape_char:char

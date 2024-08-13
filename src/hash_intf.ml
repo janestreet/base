@@ -128,9 +128,9 @@ module type Full = sig
 
   module Builtin :
     Builtin_intf
-      with type state := state
-       and type 'a folder := 'a folder
-       and type hash_value := hash_value
+    with type state := state
+     and type 'a folder := 'a folder
+     and type hash_value := hash_value
 
   (** [run ?seed folder x] runs [folder] on [x] in a newly allocated hash-state,
       initialized using optional [seed] or a default-seed.
@@ -147,9 +147,9 @@ module type Hash = sig
 
   module F (Hash : S) :
     Full
-      with type hash_value = Hash.hash_value
-       and type state = Hash.state
-       and type seed = Hash.seed
+    with type hash_value = Hash.hash_value
+     and type state = Hash.state
+     and type seed = Hash.seed
 
   (** The code of [ppx_hash] is agnostic to the choice of hash algorithm that is
       used. However, it is not currently possible to mix various choices of hash algorithms
@@ -189,7 +189,7 @@ module type Hash = sig
   (** @open *)
   include
     Full
-      with type state = Base_internalhash_types.state
-       and type seed = Base_internalhash_types.seed
-       and type hash_value = Base_internalhash_types.hash_value
+    with type state = Base_internalhash_types.state
+     and type seed = Base_internalhash_types.seed
+     and type hash_value = Base_internalhash_types.hash_value
 end

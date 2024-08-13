@@ -43,10 +43,10 @@ let insert_underscores input = insert_delimiter input ~delimiter:'_'
 let sexp_of_int_style = Sexp.of_int_style
 
 module Make (I : sig
-  type t
+    type t
 
-  val to_string : t -> string
-end) =
+    val to_string : t -> string
+  end) =
 struct
   open I
 
@@ -66,21 +66,21 @@ struct
 end
 
 module Make_hex (I : sig
-  type t [@@deriving_inline compare ~localize, hash]
+    type t [@@deriving_inline compare ~localize, hash]
 
-  include Ppx_compare_lib.Comparable.S with type t := t
-  include Ppx_compare_lib.Comparable.S_local with type t := t
-  include Ppx_hash_lib.Hashable.S with type t := t
+    include Ppx_compare_lib.Comparable.S with type t := t
+    include Ppx_compare_lib.Comparable.S_local with type t := t
+    include Ppx_hash_lib.Hashable.S with type t := t
 
-  [@@@end]
+    [@@@end]
 
-  val to_string : t -> string
-  val of_string : string -> t
-  val zero : t
-  val ( < ) : t -> t -> bool
-  val neg : t -> t
-  val module_name : string
-end) =
+    val to_string : t -> string
+    val of_string : string -> t
+    val zero : t
+    val ( < ) : t -> t -> bool
+    val neg : t -> t
+    val module_name : string
+  end) =
 struct
   module T_hex = struct
     type t = I.t [@@deriving_inline compare ~localize, hash]
@@ -138,28 +138,32 @@ struct
   module Hex = struct
     include T_hex
     include Sexpable.Of_stringable (T_hex)
+
+    module Hum = struct
+      let to_string = to_string_hum
+    end
   end
 end
 
 module Make_binary (I : sig
-  type t [@@deriving_inline compare ~localize, equal ~localize, hash]
+    type t [@@deriving_inline compare ~localize, equal ~localize, hash]
 
-  include Ppx_compare_lib.Comparable.S with type t := t
-  include Ppx_compare_lib.Comparable.S_local with type t := t
-  include Ppx_compare_lib.Equal.S with type t := t
-  include Ppx_compare_lib.Equal.S_local with type t := t
-  include Ppx_hash_lib.Hashable.S with type t := t
+    include Ppx_compare_lib.Comparable.S with type t := t
+    include Ppx_compare_lib.Comparable.S_local with type t := t
+    include Ppx_compare_lib.Equal.S with type t := t
+    include Ppx_compare_lib.Equal.S_local with type t := t
+    include Ppx_hash_lib.Hashable.S with type t := t
 
-  [@@@end]
+    [@@@end]
 
-  val clz : t -> int
-  val ( lsr ) : t -> int -> t
-  val ( land ) : t -> t -> t
-  val to_int_exn : t -> int
-  val num_bits : int
-  val zero : t
-  val one : t
-end) =
+    val clz : t -> int
+    val ( lsr ) : t -> int -> t
+    val ( land ) : t -> t -> t
+    val to_int_exn : t -> int
+    val num_bits : int
+    val zero : t
+    val one : t
+  end) =
 struct
   module Binary = struct
     type t = I.t [@@deriving_inline compare ~localize, hash]
@@ -197,5 +201,9 @@ struct
     ;;
 
     let sexp_of_t (t : t) : Sexp.t = Atom (to_string_hum t)
+
+    module Hum = struct
+      let to_string = to_string_hum
+    end
   end
 end

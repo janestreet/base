@@ -33,7 +33,6 @@ let%expect_test "bswap32" =
 
 let%expect_test "binary" =
   quickcheck_m
-    [%here]
     (module struct
       type t = int32 [@@deriving quickcheck, sexp_of]
     end)
@@ -49,31 +48,36 @@ let test_binary i =
 
 let%expect_test "binary" =
   test_binary 0b01l;
-  [%expect {|
+  [%expect
+    {|
     0b1
     0b1
     0b1
     |}];
   test_binary 0b100l;
-  [%expect {|
+  [%expect
+    {|
     0b100
     0b100
     0b100
     |}];
   test_binary 0b101l;
-  [%expect {|
+  [%expect
+    {|
     0b101
     0b101
     0b101
     |}];
   test_binary 0b10_1010_1010_1010l;
-  [%expect {|
+  [%expect
+    {|
     0b10_1010_1010_1010
     0b10101010101010
     0b10_1010_1010_1010
     |}];
   test_binary 0b11_1111_0000_0000l;
-  [%expect {|
+  [%expect
+    {|
     0b11_1111_0000_0000
     0b11111100000000
     0b11_1111_0000_0000

@@ -10,25 +10,29 @@ let print_all pp vs = List.iter ~f:(print pp) vs
 
 let%expect_test "pretty-printers" =
   print_all Char.pp [ '\000'; '\r'; 'a' ];
-  [%expect {|
+  [%expect
+    {|
     '\000'
     '\r'
     'a'
     |}];
   print_all String.pp [ ""; "foo"; "abc\tdef" ];
-  [%expect {|
+  [%expect
+    {|
     ""
     "foo"
     "abc\tdef"
     |}];
   print_all Sign.pp Sign.all;
-  [%expect {|
+  [%expect
+    {|
     Neg
     Zero
     Pos
     |}];
   print_all Bool.pp Bool.all;
-  [%expect {|
+  [%expect
+    {|
     false
     true
     |}];
@@ -37,13 +41,15 @@ let%expect_test "pretty-printers" =
   print_all Nothing.pp Nothing.all;
   [%expect {| |}];
   print_all Float.pp [ 0.; 3.14; 1.0 /. 0.0 ];
-  [%expect {|
+  [%expect
+    {|
     0.
     3.14
     inf
     |}];
   print_all Int.pp [ 0; 1 ];
-  [%expect {|
+  [%expect
+    {|
     0
     1
     |}];

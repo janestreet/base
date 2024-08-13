@@ -35,10 +35,10 @@ end
 include T
 
 include Identifiable.Make (struct
-  include T
+    include T
 
-  let module_name = "Base.Char"
-end)
+    let module_name = "Base.Char"
+  end)
 
 let pp fmt c = Stdlib.Format.fprintf fmt "%C" c
 

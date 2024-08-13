@@ -129,7 +129,7 @@ let balance tree =
           | Empty | Leaf _ -> assert false
           | Node
               ({ left = lr_left; key = _; value = _; height = _; right = lr_right } as
-              lr_node) ->
+               lr_node) ->
             left_node.right <- lr_left;
             root_node.left <- lr_right;
             lr_node.right <- tree;
@@ -163,7 +163,7 @@ let balance tree =
           | Empty | Leaf _ -> assert false
           | Node
               ({ left = rl_left; key = _; value = _; height = _; right = rl_right } as
-              rl_node) ->
+               rl_node) ->
             right_node.left <- rl_right;
             root_node.right <- rl_left;
             rl_node.left <- tree;

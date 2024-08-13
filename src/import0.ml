@@ -66,262 +66,48 @@ external ignore : _ -> unit = "%ignore"
 
 let ( != ) = Stdlib.( != )
 let ( * ) = Stdlib.( * )
-let ( ** ) = Stdlib.( ** )
-let ( *. ) = Stdlib.( *. )
+
+external ( ** )
+  :  (float[@local_opt])
+  -> (float[@local_opt])
+  -> float
+  = "caml_power_float" "pow"
+[@@unboxed] [@@noalloc]
+
+external ( *. )
+  :  (float[@local_opt])
+  -> (float[@local_opt])
+  -> (float[@local_opt])
+  = "%mulfloat"
+
 let ( + ) = Stdlib.( + )
-let ( +. ) = Stdlib.( +. )
+
+external ( +. )
+  :  (float[@local_opt])
+  -> (float[@local_opt])
+  -> (float[@local_opt])
+  = "%addfloat"
+
 let ( - ) = Stdlib.( - )
-let ( -. ) = Stdlib.( -. )
+
+external ( -. )
+  :  (float[@local_opt])
+  -> (float[@local_opt])
+  -> (float[@local_opt])
+  = "%subfloat"
+
 let ( / ) = Stdlib.( / )
-let ( /. ) = Stdlib.( /. )
+
+external ( /. )
+  :  (float[@local_opt])
+  -> (float[@local_opt])
+  -> (float[@local_opt])
+  = "%divfloat"
 
 module Poly = Poly0 (** @canonical Base.Poly *)
 
-module Int_replace_polymorphic_compare = struct
-  (* Declared as externals so that the compiler skips the caml_apply_X wrapping even when
-     compiling without cross library inlining. *)
-  external ( = ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%equal"
-  external ( <> ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%notequal"
-  external ( < ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%lessthan"
-  external ( > ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%greaterthan"
-  external ( <= ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%lessequal"
-  external ( >= ) : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%greaterequal"
-  external compare : (int[@local_opt]) -> (int[@local_opt]) -> int = "%compare"
-  external compare__local : (int[@local_opt]) -> (int[@local_opt]) -> int = "%compare"
-  external equal : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%equal"
-  external equal__local : (int[@local_opt]) -> (int[@local_opt]) -> bool = "%equal"
-
-  let ascending (x : int) y = compare x y
-  let descending (x : int) y = compare y x
-  let max (x : int) y = Bool0.select (x >= y) x y
-  let min (x : int) y = Bool0.select (x <= y) x y
-end
-
+include Replace_polymorphic_compare
 include Int_replace_polymorphic_compare
-
-module Int32_replace_polymorphic_compare = struct
-  let ( < ) (x : Stdlib.Int32.t) y = Poly.( < ) x y
-  let ( <= ) (x : Stdlib.Int32.t) y = Poly.( <= ) x y
-  let ( <> ) (x : Stdlib.Int32.t) y = Poly.( <> ) x y
-  let ( = ) (x : Stdlib.Int32.t) y = Poly.( = ) x y
-  let ( > ) (x : Stdlib.Int32.t) y = Poly.( > ) x y
-  let ( >= ) (x : Stdlib.Int32.t) y = Poly.( >= ) x y
-  let ascending (x : Stdlib.Int32.t) y = Poly.ascending x y
-  let descending (x : Stdlib.Int32.t) y = Poly.descending x y
-  let compare (x : Stdlib.Int32.t) y = Poly.compare x y
-  let compare__local (x : Stdlib.Int32.t) y = Poly.compare x y
-  let equal (x : Stdlib.Int32.t) y = Poly.equal x y
-  let equal__local (x : Stdlib.Int32.t) y = Poly.equal x y
-  let max (x : Stdlib.Int32.t) y = Bool0.select (x >= y) x y
-  let min (x : Stdlib.Int32.t) y = Bool0.select (x <= y) x y
-end
-
-module Int64_replace_polymorphic_compare = struct
-  (* Declared as externals so that the compiler skips the caml_apply_X wrapping even when
-     compiling without cross library inlining. *)
-  external ( = )
-    :  (Stdlib.Int64.t[@local_opt])
-    -> (Stdlib.Int64.t[@local_opt])
-    -> bool
-    = "%equal"
-
-  external ( <> )
-    :  (Stdlib.Int64.t[@local_opt])
-    -> (Stdlib.Int64.t[@local_opt])
-    -> bool
-    = "%notequal"
-
-  external ( < )
-    :  (Stdlib.Int64.t[@local_opt])
-    -> (Stdlib.Int64.t[@local_opt])
-    -> bool
-    = "%lessthan"
-
-  external ( > )
-    :  (Stdlib.Int64.t[@local_opt])
-    -> (Stdlib.Int64.t[@local_opt])
-    -> bool
-    = "%greaterthan"
-
-  external ( <= )
-    :  (Stdlib.Int64.t[@local_opt])
-    -> (Stdlib.Int64.t[@local_opt])
-    -> bool
-    = "%lessequal"
-
-  external ( >= )
-    :  (Stdlib.Int64.t[@local_opt])
-    -> (Stdlib.Int64.t[@local_opt])
-    -> bool
-    = "%greaterequal"
-
-  external compare
-    :  (Stdlib.Int64.t[@local_opt])
-    -> (Stdlib.Int64.t[@local_opt])
-    -> int
-    = "%compare"
-
-  external compare__local
-    :  (Stdlib.Int64.t[@local_opt])
-    -> (Stdlib.Int64.t[@local_opt])
-    -> int
-    = "%compare"
-
-  external equal
-    :  (Stdlib.Int64.t[@local_opt])
-    -> (Stdlib.Int64.t[@local_opt])
-    -> bool
-    = "%equal"
-
-  external equal__local
-    :  (Stdlib.Int64.t[@local_opt])
-    -> (Stdlib.Int64.t[@local_opt])
-    -> bool
-    = "%equal"
-
-  let ascending (x : Stdlib.Int64.t) y = Poly.ascending x y
-  let descending (x : Stdlib.Int64.t) y = Poly.descending x y
-  let max (x : Stdlib.Int64.t) y = Bool0.select (x >= y) x y
-  let min (x : Stdlib.Int64.t) y = Bool0.select (x <= y) x y
-end
-
-module Nativeint_replace_polymorphic_compare = struct
-  let ( < ) (x : Stdlib.Nativeint.t) y = Poly.( < ) x y
-  let ( <= ) (x : Stdlib.Nativeint.t) y = Poly.( <= ) x y
-  let ( <> ) (x : Stdlib.Nativeint.t) y = Poly.( <> ) x y
-  let ( = ) (x : Stdlib.Nativeint.t) y = Poly.( = ) x y
-  let ( > ) (x : Stdlib.Nativeint.t) y = Poly.( > ) x y
-  let ( >= ) (x : Stdlib.Nativeint.t) y = Poly.( >= ) x y
-  let ascending (x : Stdlib.Nativeint.t) y = Poly.ascending x y
-  let descending (x : Stdlib.Nativeint.t) y = Poly.descending x y
-  let compare (x : Stdlib.Nativeint.t) y = Poly.compare x y
-  let compare__local (x : Stdlib.Nativeint.t) y = Poly.compare x y
-  let equal (x : Stdlib.Nativeint.t) y = Poly.equal x y
-  let equal__local (x : Stdlib.Nativeint.t) y = Poly.equal x y
-  let max (x : Stdlib.Nativeint.t) y = Bool0.select (x >= y) x y
-  let min (x : Stdlib.Nativeint.t) y = Bool0.select (x <= y) x y
-end
-
-module Bool_replace_polymorphic_compare = struct
-  let ( < ) (x : bool) y = Poly.( < ) x y
-  let ( <= ) (x : bool) y = Poly.( <= ) x y
-  let ( <> ) (x : bool) y = Poly.( <> ) x y
-  let ( = ) (x : bool) y = Poly.( = ) x y
-  let ( > ) (x : bool) y = Poly.( > ) x y
-  let ( >= ) (x : bool) y = Poly.( >= ) x y
-  let ascending (x : bool) y = Poly.ascending x y
-  let descending (x : bool) y = Poly.descending x y
-  let compare (x : bool) y = Poly.compare x y
-  let compare__local (x : bool) y = Poly.compare x y
-  let equal (x : bool) y = Poly.equal x y
-  let equal__local (x : bool) y = Poly.equal x y
-  let max (x : bool) y = Bool0.select (x >= y) x y
-  let min (x : bool) y = Bool0.select (x <= y) x y
-end
-
-module Char_replace_polymorphic_compare = struct
-  let ( < ) (x : char) y = Poly.( < ) x y
-  let ( <= ) (x : char) y = Poly.( <= ) x y
-  let ( <> ) (x : char) y = Poly.( <> ) x y
-  let ( = ) (x : char) y = Poly.( = ) x y
-  let ( > ) (x : char) y = Poly.( > ) x y
-  let ( >= ) (x : char) y = Poly.( >= ) x y
-  let ascending (x : char) y = Poly.ascending x y
-  let descending (x : char) y = Poly.descending x y
-  let compare (x : char) y = Poly.compare x y
-  let compare__local (x : char) y = Poly.compare x y
-  let equal (x : char) y = Poly.equal x y
-  let equal__local (x : char) y = Poly.equal x y
-  let max (x : char) y = Bool0.select (x >= y) x y
-  let min (x : char) y = Bool0.select (x <= y) x y
-end
-
-module Uchar_replace_polymorphic_compare = struct
-  open struct
-    external i : (Stdlib.Uchar.t[@local_opt]) -> int = "%identity"
-  end
-
-  let ( < ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( < ) (i x) (i y)
-  let ( <= ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( <= ) (i x) (i y)
-  let ( <> ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( <> ) (i x) (i y)
-  let ( = ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( = ) (i x) (i y)
-  let ( > ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( > ) (i x) (i y)
-  let ( >= ) (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.( >= ) (i x) (i y)
-
-  let ascending (x : Stdlib.Uchar.t) y =
-    Int_replace_polymorphic_compare.ascending (i x) (i y)
-  ;;
-
-  let descending (x : Stdlib.Uchar.t) y =
-    Int_replace_polymorphic_compare.descending (i x) (i y)
-  ;;
-
-  let compare (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.compare (i x) (i y)
-  let equal (x : Stdlib.Uchar.t) y = Int_replace_polymorphic_compare.equal (i x) (i y)
-
-  let compare__local (x : Stdlib.Uchar.t) y =
-    Int_replace_polymorphic_compare.compare__local (i x) (i y)
-  ;;
-
-  let equal__local (x : Stdlib.Uchar.t) y =
-    Int_replace_polymorphic_compare.equal__local (i x) (i y)
-  ;;
-
-  let max (x : Stdlib.Uchar.t) y = Bool0.select (x >= y) x y
-  let min (x : Stdlib.Uchar.t) y = Bool0.select (x <= y) x y
-end
-
-module Float_replace_polymorphic_compare = struct
-  external ( < ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%lessthan"
-  external ( <= ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%lessequal"
-  external ( <> ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%notequal"
-  external ( = ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%equal"
-  external ( > ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%greaterthan"
-  external ( >= ) : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%greaterequal"
-  external equal : (float[@local_opt]) -> (float[@local_opt]) -> bool = "%equal"
-  external compare : (float[@local_opt]) -> (float[@local_opt]) -> int = "%compare"
-
-  let ascending (x : float) y = Poly.ascending x y
-  let descending (x : float) y = Poly.descending x y
-  let compare__local (x : float) y = Poly.compare x y
-  let equal__local (x : float) y = Poly.equal x y
-  let max (x : float) y = Bool0.select (x >= y) x y
-  let min (x : float) y = Bool0.select (x <= y) x y
-end
-
-module String_replace_polymorphic_compare = struct
-  let ( < ) (x : string) y = Poly.( < ) x y
-  let ( <= ) (x : string) y = Poly.( <= ) x y
-  let ( <> ) (x : string) y = Poly.( <> ) x y
-  let ( = ) (x : string) y = Poly.( = ) x y
-  let ( > ) (x : string) y = Poly.( > ) x y
-  let ( >= ) (x : string) y = Poly.( >= ) x y
-  let ascending (x : string) y = Poly.ascending x y
-  let descending (x : string) y = Poly.descending x y
-  let compare (x : string) y = Poly.compare x y
-  let compare__local (x : string) y = Poly.compare x y
-  let equal (x : string) y = Poly.equal x y
-  let equal__local (x : string) y = Poly.equal x y
-  let max (x : string) y = Bool0.select (x >= y) x y
-  let min (x : string) y = Bool0.select (x <= y) x y
-end
-
-module Bytes_replace_polymorphic_compare = struct
-  let ( < ) (x : bytes) y = Poly.( < ) x y
-  let ( <= ) (x : bytes) y = Poly.( <= ) x y
-  let ( <> ) (x : bytes) y = Poly.( <> ) x y
-  let ( = ) (x : bytes) y = Poly.( = ) x y
-  let ( > ) (x : bytes) y = Poly.( > ) x y
-  let ( >= ) (x : bytes) y = Poly.( >= ) x y
-  let ascending (x : bytes) y = Poly.ascending x y
-  let descending (x : bytes) y = Poly.descending x y
-  let compare (x : bytes) y = Poly.compare x y
-  let compare__local (x : bytes) y = Poly.compare x y
-  let equal (x : bytes) y = Poly.equal x y
-  let equal__local (x : bytes) y = Poly.equal x y
-  let max (x : bytes) y = Bool0.select (x >= y) x y
-  let min (x : bytes) y = Bool0.select (x <= y) x y
-end
 
 (* This needs to be defined as an external so that the compiler can specialize it as a
    direct set or caml_modify. *)
@@ -335,7 +121,9 @@ external ref : 'a -> ('a ref[@local_opt]) = "%makemutable"
 let ( @ ) = Stdlib.( @ )
 let ( ^ ) = Stdlib.( ^ )
 let ( ~- ) = Stdlib.( ~- )
-let ( ~-. ) = Stdlib.( ~-. )
+
+external ( ~-. ) : (float[@local_opt]) -> (float[@local_opt]) = "%negfloat"
+
 let ( asr ) = Stdlib.( asr )
 let ( land ) = Stdlib.( land )
 let lnot = Stdlib.lnot

@@ -2,8 +2,6 @@
     module that matches a bare signature with just a type. This sometimes occurs in
     functor arguments and in interfaces. *)
 
-open! Import
-
 module type T = sig
   type t
 end
@@ -18,4 +16,8 @@ end
 
 module type T3 = sig
   type ('a, 'b, 'c) t
+end
+
+module type T4 = sig
+  type ('a, 'b, 'c, 'd) t
 end

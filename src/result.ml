@@ -6,9 +6,9 @@ type ('a, 'b) t = ('a, 'b) Stdlib.result =
   | Error of 'b
 [@@deriving_inline sexp, sexp_grammar, compare ~localize, equal ~localize, hash]
 
-let t_of_sexp :
-      'a 'b.
-      (Sexplib0.Sexp.t -> 'a) -> (Sexplib0.Sexp.t -> 'b) -> Sexplib0.Sexp.t -> ('a, 'b) t
+let t_of_sexp
+  : 'a 'b.
+  (Sexplib0.Sexp.t -> 'a) -> (Sexplib0.Sexp.t -> 'b) -> Sexplib0.Sexp.t -> ('a, 'b) t
   =
   fun (type a__017_ b__018_)
     :  ((Sexplib0.Sexp.t -> a__017_) -> (Sexplib0.Sexp.t -> b__018_) -> Sexplib0.Sexp.t
@@ -19,7 +19,7 @@ let t_of_sexp :
         (Sexplib0.Sexp.Atom (("ok" | "Ok") as _tag__008_) :: sexp_args__009_) as
       _sexp__007_ ->
       (match sexp_args__009_ with
-       | [ arg0__010_ ] ->
+       | arg0__010_ :: [] ->
          let res0__011_ = _of_a__001_ arg0__010_ in
          Ok res0__011_
        | _ ->
@@ -31,7 +31,7 @@ let t_of_sexp :
         (Sexplib0.Sexp.Atom (("error" | "Error") as _tag__013_) :: sexp_args__014_) as
       _sexp__012_ ->
       (match sexp_args__014_ with
-       | [ arg0__015_ ] ->
+       | arg0__015_ :: [] ->
          let res0__016_ = _of_b__002_ arg0__015_ in
          Error res0__016_
        | _ ->
@@ -47,12 +47,16 @@ let t_of_sexp :
       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__005_ sexp__004_
     | Sexplib0.Sexp.List [] as sexp__004_ ->
       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__005_ sexp__004_
-    | sexp__004_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__005_ sexp__004_
+    | sexp__004_ ->
+      Sexplib0.Sexp_conv_error.unexpected_stag
+        error_source__005_
+        [ "Ok"; "Error" ]
+        sexp__004_
 ;;
 
-let sexp_of_t :
-      'a 'b.
-      ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
+let sexp_of_t
+  : 'a 'b.
+  ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
   =
   fun (type a__025_ b__026_)
     :  ((a__025_ -> Sexplib0.Sexp.t) -> (b__026_ -> Sexplib0.Sexp.t)
@@ -66,11 +70,11 @@ let sexp_of_t :
     Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Error"; res0__024_ ]
 ;;
 
-let t_sexp_grammar :
-      'a 'b.
-      'a Sexplib0.Sexp_grammar.t
-      -> 'b Sexplib0.Sexp_grammar.t
-      -> ('a, 'b) t Sexplib0.Sexp_grammar.t
+let t_sexp_grammar
+  : 'a 'b.
+  'a Sexplib0.Sexp_grammar.t
+  -> 'b Sexplib0.Sexp_grammar.t
+  -> ('a, 'b) t Sexplib0.Sexp_grammar.t
   =
   fun _'a_sexp_grammar _'b_sexp_grammar ->
   { untyped =
@@ -92,8 +96,8 @@ let t_sexp_grammar :
   }
 ;;
 
-let compare__local :
-      'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+let compare__local
+  : 'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
   =
   fun _cmp__a _cmp__b a__033_ b__034_ ->
   if Stdlib.( == ) a__033_ b__034_
@@ -106,8 +110,8 @@ let compare__local :
     | Error _a__037_, Error _b__038_ -> _cmp__b _a__037_ _b__038_)
 ;;
 
-let compare :
-      'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+let compare
+  : 'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
   =
   fun _cmp__a _cmp__b a__027_ b__028_ ->
   if Stdlib.( == ) a__027_ b__028_
@@ -120,8 +124,8 @@ let compare :
     | Error _a__031_, Error _b__032_ -> _cmp__b _a__031_ _b__032_)
 ;;
 
-let equal__local :
-      'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
+let equal__local
+  : 'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
   =
   fun _cmp__a _cmp__b a__045_ b__046_ ->
   if Stdlib.( == ) a__045_ b__046_
@@ -134,8 +138,8 @@ let equal__local :
     | Error _a__049_, Error _b__050_ -> _cmp__b _a__049_ _b__050_)
 ;;
 
-let equal :
-      'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
+let equal
+  : 'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
   =
   fun _cmp__a _cmp__b a__039_ b__040_ ->
   if Stdlib.( == ) a__039_ b__040_
@@ -173,23 +177,23 @@ let hash_fold_t
 let globalize = globalize_result
 
 include Monad.Make2_local (struct
-  type nonrec ('a, 'b) t = ('a, 'b) t
+    type nonrec ('a, 'b) t = ('a, 'b) t
 
-  let bind x ~f =
-    match x with
-    | Error _ as x -> x
-    | Ok x -> f x
-  ;;
+    let bind x ~f =
+      match x with
+      | Error _ as x -> x
+      | Ok x -> f x
+    ;;
 
-  let map x ~f =
-    match x with
-    | Error _ as x -> x
-    | Ok x -> Ok (f x)
-  ;;
+    let map x ~f =
+      match x with
+      | Error _ as x -> x
+      | Ok x -> Ok (f x)
+    ;;
 
-  let map = `Custom map
-  let return x = Ok x
-end)
+    let map = `Custom map
+    let return x = Ok x
+  end)
 
 let invariant check_ok check_error t =
   match t with
@@ -207,17 +211,17 @@ let map_error t ~f =
 ;;
 
 module Error = Monad.Make2_local (struct
-  type nonrec ('a, 'b) t = ('b, 'a) t
+    type nonrec ('a, 'b) t = ('b, 'a) t
 
-  let bind x ~f =
-    match x with
-    | Ok _ as ok -> ok
-    | Error e -> f e
-  ;;
+    let bind x ~f =
+      match x with
+      | Ok _ as ok -> ok
+      | Error e -> f e
+    ;;
 
-  let map = `Custom map_error
-  let return e = Error e
-end)
+    let map = `Custom map_error
+    let return e = Error e
+  end)
 
 let is_ok = function
   | Ok _ -> true

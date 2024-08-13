@@ -33,7 +33,7 @@ let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
         (Sexplib0.Sexp.Atom (("incl" | "Incl") as _tag__009_) :: sexp_args__010_) as
       _sexp__008_ ->
       (match sexp_args__010_ with
-       | [ arg0__011_ ] ->
+       | arg0__011_ :: [] ->
          let res0__012_ = _of_a__003_ arg0__011_ in
          Incl res0__012_
        | _ ->
@@ -45,7 +45,7 @@ let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
         (Sexplib0.Sexp.Atom (("excl" | "Excl") as _tag__014_) :: sexp_args__015_) as
       _sexp__013_ ->
       (match sexp_args__015_ with
-       | [ arg0__016_ ] ->
+       | arg0__016_ :: [] ->
          let res0__017_ = _of_a__003_ arg0__016_ in
          Excl res0__017_
        | _ ->
@@ -64,7 +64,11 @@ let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__006_ sexp__005_
     | Sexplib0.Sexp.List [] as sexp__005_ ->
       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__006_ sexp__005_
-    | sexp__005_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__006_ sexp__005_
+    | sexp__005_ ->
+      Sexplib0.Sexp_conv_error.unexpected_stag
+        error_source__006_
+        [ "Incl"; "Excl"; "Unbounded" ]
+        sexp__005_
 ;;
 
 let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
@@ -136,8 +140,12 @@ let interval_comparison_of_sexp =
      Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__033_ sexp__032_
    | Sexplib0.Sexp.List [] as sexp__032_ ->
      Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__033_ sexp__032_
-   | sexp__032_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__033_ sexp__032_
-    : Sexplib0.Sexp.t -> interval_comparison)
+   | sexp__032_ ->
+     Sexplib0.Sexp_conv_error.unexpected_stag
+       error_source__033_
+       [ "Below_lower_bound"; "In_range"; "Above_upper_bound" ]
+       sexp__032_
+   : Sexplib0.Sexp.t -> interval_comparison)
 ;;
 
 let sexp_of_interval_comparison =
@@ -145,7 +153,7 @@ let sexp_of_interval_comparison =
    | Below_lower_bound -> Sexplib0.Sexp.Atom "Below_lower_bound"
    | In_range -> Sexplib0.Sexp.Atom "In_range"
    | Above_upper_bound -> Sexplib0.Sexp.Atom "Above_upper_bound"
-    : interval_comparison -> Sexplib0.Sexp.t)
+   : interval_comparison -> Sexplib0.Sexp.t)
 ;;
 
 let (interval_comparison_sexp_grammar : interval_comparison Sexplib0.Sexp_grammar.t) =
@@ -167,7 +175,7 @@ let compare_interval_comparison__local =
 
 let compare_interval_comparison =
   (fun a b -> compare_interval_comparison__local a b
-    : interval_comparison -> interval_comparison -> int)
+   : interval_comparison -> interval_comparison -> int)
 ;;
 
 let (hash_fold_interval_comparison :
@@ -180,7 +188,7 @@ let (hash_fold_interval_comparison :
         | Below_lower_bound -> 0
         | In_range -> 1
         | Above_upper_bound -> 2)
-    : Ppx_hash_lib.Std.Hash.state -> interval_comparison -> Ppx_hash_lib.Std.Hash.state)
+   : Ppx_hash_lib.Std.Hash.state -> interval_comparison -> Ppx_hash_lib.Std.Hash.state)
 ;;
 
 let (hash_interval_comparison : interval_comparison -> Ppx_hash_lib.Std.Hash.hash_value) =

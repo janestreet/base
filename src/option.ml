@@ -1,61 +1,57 @@
 open! Import
+open Modes.Export
 
 include (
-  struct
-    type 'a t = 'a option
-    [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
+struct
+  type 'a t = 'a option
+  [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
-    let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-      compare_option__local
-    ;;
+  let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
+    compare_option__local
+  ;;
 
-    let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
+  let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
 
-    let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
-      fun (type a__009_) : ((a__009_ -> a__009_) -> a__009_ t -> a__009_ t) ->
-      globalize_option
-    ;;
+  let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
+    fun (type a__009_) : ((a__009_ -> a__009_) -> a__009_ t -> a__009_ t) ->
+    globalize_option
+  ;;
 
-    let hash_fold_t :
-          'a.
-          (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-          -> Ppx_hash_lib.Std.Hash.state
-          -> 'a t
-          -> Ppx_hash_lib.Std.Hash.state
-      =
-      hash_fold_option
-    ;;
+  let hash_fold_t
+    : 'a.
+    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
+    -> Ppx_hash_lib.Std.Hash.state
+    -> 'a t
+    -> Ppx_hash_lib.Std.Hash.state
+    =
+    hash_fold_option
+  ;;
 
-    let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t =
-      option_of_sexp
-    ;;
+  let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = option_of_sexp
+  let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_option
 
-    let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-      sexp_of_option
-    ;;
+  let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
+    fun _'a_sexp_grammar -> option_sexp_grammar _'a_sexp_grammar
+  ;;
 
-    let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
-      fun _'a_sexp_grammar -> option_sexp_grammar _'a_sexp_grammar
-    ;;
+  [@@@end]
+end :
+sig
+  type 'a t = 'a option
+  [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
-    [@@@end]
-  end :
-    sig
-      type 'a t = 'a option
-      [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
+  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+  include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
-      include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-      include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
+  val globalize : ('a -> 'a) -> 'a t -> 'a t
 
-      val globalize : ('a -> 'a) -> 'a t -> 'a t
+  include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
+  include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
-      include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
-      include Sexplib0.Sexpable.S1 with type 'a t := 'a t
+  val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
-      val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-
-      [@@@end]
-    end)
+  [@@@end]
+end)
 
 type 'a t = 'a option =
   | None
@@ -71,16 +67,28 @@ let is_some = function
   | _ -> false
 ;;
 
-let value_map o ~default ~f =
+let value_map_local o ~default ~f =
   match o with
   | Some x -> f x
   | None -> default
 ;;
 
-let iter o ~f =
+let[@inline] value_map o ~default ~f =
+  (value_map_local
+     (Modes.Global.wrap_option o)
+     ~default:{ global = default }
+     ~f:(Modes.Global.map ~f))
+    .global
+;;
+
+let iter_local o ~f =
   match o with
   | None -> ()
   | Some a -> f a
+;;
+
+let[@inline] iter o ~f =
+  iter_local (Modes.Global.wrap_option o) ~f:(fun x -> f x.global) [@nontail]
 ;;
 
 let invariant f t = iter t ~f
@@ -91,13 +99,17 @@ let call x ~f =
   | Some f -> f x
 ;;
 
-let value t ~default =
+let value_local t ~default =
   match t with
   | None -> default
   | Some x -> x
 ;;
 
-let value_exn ?here ?error ?message t =
+let[@inline] value t ~default =
+  (value_local (Modes.Global.wrap_option t) ~default:{ global = default }).global
+;;
+
+let value_local_exn ?here ?error ?message t =
   match t with
   | Some x -> x
   | None ->
@@ -119,16 +131,32 @@ let value_exn ?here ?error ?message t =
     Error.raise error
 ;;
 
-let value_or_thunk o ~default =
+let[@inline] value_exn ?here ?error ?message t =
+  (value_local_exn ?here ?error ?message (Modes.Global.wrap_option t)).global
+;;
+
+let value_or_thunk_local o ~default =
   match o with
   | Some x -> x
   | None -> default ()
+;;
+
+let[@inline] value_or_thunk o ~default =
+  (value_or_thunk_local (Modes.Global.wrap_option o) ~default:(fun () ->
+     { global = default () }))
+    .global
 ;;
 
 let to_array t =
   match t with
   | None -> [||]
   | Some x -> [| x |]
+;;
+
+let to_list_local t =
+  match t with
+  | None -> []
+  | Some x -> [ x ]
 ;;
 
 let to_list t =
@@ -194,6 +222,13 @@ let equal__local f t t' =
 ;;
 
 let some x = Some x
+let some_local x = Some x
+
+let first_some_local x y =
+  match x with
+  | Some _ -> x
+  | None -> y
+;;
 
 let first_some x y =
   match x with
@@ -201,7 +236,22 @@ let first_some x y =
   | None -> y
 ;;
 
+let first_some_thunk x y =
+  match x with
+  | Some _ -> x
+  | None -> y ()
+;;
+
+let first_some_thunk_local x y =
+  match x with
+  | Some _ -> x
+  | None -> y ()
+;;
+
+let some_if_local cond x = if cond then Some x else None
 let some_if cond x = if cond then Some x else None
+let some_if_thunk cond thunk = if cond then Some (thunk ()) else None
+let some_if_thunk_local cond thunk = if cond then Some (thunk ()) else None
 
 let merge a b ~f =
   match a, b with
@@ -225,6 +275,12 @@ let try_with_join f =
   match f () with
   | x -> x
   | exception _ -> None
+;;
+
+let map_local t ~f =
+  match t with
+  | None -> None
+  | Some a -> Some (f a)
 ;;
 
 let map t ~f =

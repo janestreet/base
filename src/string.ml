@@ -231,12 +231,12 @@ module Search_pattern0 = struct
       let matched_chars = ref 0 in
       for i = 1 to n - 1 do
         matched_chars
-          := kmp_internal_loop
-               ~matched_chars:!matched_chars
-               ~next_text_char:(unsafe_get pattern i)
-               ~pattern
-               ~kmp_array
-               ~char_equal;
+        := kmp_internal_loop
+             ~matched_chars:!matched_chars
+             ~next_text_char:(unsafe_get pattern i)
+             ~pattern
+             ~kmp_array
+             ~char_equal;
         Array.unsafe_set kmp_array i !matched_chars
       done);
     { pattern; case_sensitive; kmp_array }
@@ -256,12 +256,12 @@ module Search_pattern0 = struct
       while !j < n && !matched_chars < k do
         let next_text_char = unsafe_get text !j in
         matched_chars
-          := kmp_internal_loop
-               ~matched_chars:!matched_chars
-               ~next_text_char
-               ~pattern
-               ~kmp_array
-               ~char_equal;
+        := kmp_internal_loop
+             ~matched_chars:!matched_chars
+             ~next_text_char
+             ~pattern
+             ~kmp_array
+             ~char_equal;
         j := !j + 1
       done;
       if !matched_chars = k then !j - k else -1)
@@ -304,12 +304,12 @@ module Search_pattern0 = struct
         then (
           let next_text_char = unsafe_get text j in
           matched_chars
-            := kmp_internal_loop
-                 ~matched_chars:!matched_chars
-                 ~next_text_char
-                 ~pattern
-                 ~kmp_array
-                 ~char_equal)
+          := kmp_internal_loop
+               ~matched_chars:!matched_chars
+               ~next_text_char
+               ~pattern
+               ~kmp_array
+               ~char_equal)
       done;
       List.rev !found)
   ;;
@@ -394,7 +394,7 @@ module Search_pattern0 = struct
              (Stdlib.( && )
                 (equal_bool__local a__003_.case_sensitive b__004_.case_sensitive)
                 (equal_array__local equal_int__local a__003_.kmp_array b__004_.kmp_array))
-        : t -> t -> bool)
+       : t -> t -> bool)
     ;;
 
     let equal = (fun a b -> equal__local a b : t -> t -> bool)
@@ -408,21 +408,21 @@ module Search_pattern0 = struct
          let bnds__007_ =
            let arg__013_ = sexp_of_array sexp_of_int kmp_array__012_ in
            (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "kmp_array"; arg__013_ ] :: bnds__007_
-             : _ Stdlib.List.t)
+            : _ Stdlib.List.t)
          in
          let bnds__007_ =
            let arg__011_ = sexp_of_bool case_sensitive__010_ in
            (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "case_sensitive"; arg__011_ ]
             :: bnds__007_
-             : _ Stdlib.List.t)
+            : _ Stdlib.List.t)
          in
          let bnds__007_ =
            let arg__009_ = sexp_of_string pattern__008_ in
            (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "pattern"; arg__009_ ] :: bnds__007_
-             : _ Stdlib.List.t)
+            : _ Stdlib.List.t)
          in
          Sexplib0.Sexp.List bnds__007_
-        : t -> Sexplib0.Sexp.t)
+       : t -> Sexplib0.Sexp.t)
     ;;
 
     [@@@end]
@@ -675,24 +675,32 @@ let is_substring_at s ~pos ~substring =
   is_substring_at_gen s ~pos ~substring ~char_equal:Char.equal
 ;;
 
-let wrap_sub_n t n ~name ~pos ~len ~on_error =
-  if n < 0
+(** precondition: when [0 <= n <= length t], [~pos] and [~len] are both in-bounds *)
+let wrap_sub_n t n ~name ~pos ~len ~when_n_exceeds_length =
+  if n > length t
+  then when_n_exceeds_length
+  else if n < 0
   then invalid_arg (name ^ " expecting nonnegative argument")
-  else (
-    try sub t ~pos ~len with
-    | _ -> on_error)
+  else
+    (* The way arguments to this function are constructed (see usages below), the check
+       that [0 <= n <= length t] is sufficient to know that [pos] and [len] are
+       valid. Thus [sub] should not raise. *)
+    sub t ~pos ~len
 ;;
 
 let drop_prefix t n =
-  wrap_sub_n ~name:"drop_prefix" t n ~pos:n ~len:(length t - n) ~on_error:""
+  wrap_sub_n ~name:"drop_prefix" t n ~pos:n ~len:(length t - n) ~when_n_exceeds_length:""
 ;;
 
 let drop_suffix t n =
-  wrap_sub_n ~name:"drop_suffix" t n ~pos:0 ~len:(length t - n) ~on_error:""
+  wrap_sub_n ~name:"drop_suffix" t n ~pos:0 ~len:(length t - n) ~when_n_exceeds_length:""
 ;;
 
-let prefix t n = wrap_sub_n ~name:"prefix" t n ~pos:0 ~len:n ~on_error:t
-let suffix t n = wrap_sub_n ~name:"suffix" t n ~pos:(length t - n) ~len:n ~on_error:t
+let prefix t n = wrap_sub_n ~name:"prefix" t n ~pos:0 ~len:n ~when_n_exceeds_length:t
+
+let suffix t n =
+  wrap_sub_n ~name:"suffix" t n ~pos:(length t - n) ~len:n ~when_n_exceeds_length:t
+;;
 
 let lfindi ?(pos = 0) t ~f =
   let n = length t in
@@ -1892,13 +1900,13 @@ module Search_pattern = struct
 end
 
 module Make_utf (Format : sig
-  val codec_name : string
-  val module_name : string
-  val is_valid : t -> bool
-  val byte_length : Uchar.t -> int
-  val get_decode_result : t -> byte_pos:int -> Uchar.utf_decode
-  val set : bytes -> int -> Uchar.t -> int
-end) =
+    val codec_name : string
+    val module_name : string
+    val is_valid : t -> bool
+    val byte_length : Uchar.t -> int
+    val get_decode_result : t -> byte_pos:int -> Uchar.utf_decode
+    val set : bytes -> int -> Uchar.t -> int
+  end) =
 struct
   type elt = Uchar.t
   type t = string
@@ -1914,7 +1922,7 @@ struct
          Format.codec_name)
   ;;
 
-  let[@cold] raise_get t pos =
+  let[@cold] [@inline never] [@local never] [@specialise never] raise_get t pos =
     raise_s
       (Sexp.message (Lazy.force raise_get_message) [ "", Atom t; "pos", sexp_of_int pos ])
   ;;
@@ -1934,7 +1942,7 @@ struct
     concat [ Format.module_name; ".of_string: invalid "; codec_name ]
   ;;
 
-  let[@cold] raise_of_string string =
+  let[@cold] [@inline never] [@local never] [@specialise never] raise_of_string string =
     raise_s (Sexp.message raise_of_string_message [ "", Atom string ])
   ;;
 
@@ -1945,24 +1953,24 @@ struct
   ;;
 
   include Sexpable.Of_stringable (struct
-    type nonrec t = t
+      type nonrec t = t
 
-    let of_string = of_string
-    let to_string = to_string
-  end)
+      let of_string = of_string
+      let to_string = to_string
+    end)
 
   include Identifiable.Make (struct
-    type nonrec t = t
+      type nonrec t = t
 
-    let compare = compare
-    let hash = hash
-    let hash_fold_t = hash_fold_t
-    let of_string = of_string
-    let to_string = to_string
-    let sexp_of_t = sexp_of_t
-    let t_of_sexp = t_of_sexp
-    let module_name = Format.module_name
-  end)
+      let compare = compare
+      let hash = hash
+      let hash_fold_t = hash_fold_t
+      let of_string = of_string
+      let to_string = to_string
+      let sexp_of_t = sexp_of_t
+      let t_of_sexp = t_of_sexp
+      let module_name = Format.module_name
+    end)
 
   let to_sequence t =
     let open Int_replace_polymorphic_compare in
@@ -2039,21 +2047,21 @@ struct
   ;;
 
   module C = Indexed_container.Make0_with_creators (struct
-    module Elt = Uchar
+      module Elt = Uchar
 
-    type nonrec t = t
+      type nonrec t = t
 
-    let fold = fold
-    let concat = concat
-    let of_list = of_list
-    let of_array = of_array
-    let init = `Define_using_of_array
-    let length = `Define_using_fold
-    let foldi = `Define_using_fold
-    let iter = `Define_using_fold
-    let iteri = `Define_using_fold
-    let concat_mapi = `Define_using_concat
-  end)
+      let fold = fold
+      let concat = concat
+      let of_list = of_list
+      let of_array = of_array
+      let init = `Define_using_of_array
+      let length = `Define_using_fold
+      let foldi = `Define_using_fold
+      let iter = `Define_using_fold
+      let iteri = `Define_using_fold
+      let concat_mapi = `Define_using_concat
+    end)
 
   let append = C.append
   let concat_map = C.concat_map
@@ -2094,76 +2102,76 @@ struct
 end
 
 module Utf8 = Make_utf (struct
-  let codec_name = "UTF-8"
-  let module_name = "Base.String.Utf8"
-  let is_valid = is_valid_utf_8
-  let byte_length = Uchar.utf_8_byte_length
-  let get_decode_result = get_utf_8_uchar
-  let set = Bytes.set_uchar_utf_8
-end)
+    let codec_name = "UTF-8"
+    let module_name = "Base.String.Utf8"
+    let is_valid = is_valid_utf_8
+    let byte_length = Uchar.utf_8_byte_length
+    let get_decode_result = get_utf_8_uchar
+    let set = Bytes.set_uchar_utf_8
+  end)
 
 module Utf16le = Make_utf (struct
-  let codec_name = "UTF-16LE"
-  let module_name = "Base.String.Utf16le"
-  let is_valid = is_valid_utf_16le
-  let byte_length = Uchar.utf_16_byte_length
-  let get_decode_result = get_utf_16le_uchar
-  let set = Bytes.set_uchar_utf_16le
-end)
+    let codec_name = "UTF-16LE"
+    let module_name = "Base.String.Utf16le"
+    let is_valid = is_valid_utf_16le
+    let byte_length = Uchar.utf_16_byte_length
+    let get_decode_result = get_utf_16le_uchar
+    let set = Bytes.set_uchar_utf_16le
+  end)
 
 module Utf16be = Make_utf (struct
-  let codec_name = "UTF-16BE"
-  let module_name = "Base.String.Utf16be"
-  let is_valid = is_valid_utf_16be
-  let byte_length = Uchar.utf_16_byte_length
-  let get_decode_result = get_utf_16be_uchar
-  let set = Bytes.set_uchar_utf_16be
-end)
+    let codec_name = "UTF-16BE"
+    let module_name = "Base.String.Utf16be"
+    let is_valid = is_valid_utf_16be
+    let byte_length = Uchar.utf_16_byte_length
+    let get_decode_result = get_utf_16be_uchar
+    let set = Bytes.set_uchar_utf_16be
+  end)
 
 module Make_utf32 (Format : sig
-  val codec_name : string
-  val module_name : string
-  val get_decode_result : t -> byte_pos:int -> Uchar.utf_decode
-  val set : bytes -> int -> Uchar.t -> int
-end) =
+    val codec_name : string
+    val module_name : string
+    val get_decode_result : t -> byte_pos:int -> Uchar.utf_decode
+    val set : bytes -> int -> Uchar.t -> int
+  end) =
 Make_utf (struct
-  open Int_replace_polymorphic_compare
+    open Int_replace_polymorphic_compare
 
-  let byte_length _ = 4
-  let codec_name = Format.codec_name
-  let module_name = Format.module_name
-  let set = Format.set
-  let get_decode_result = Format.get_decode_result
+    let byte_length _ = 4
+    let codec_name = Format.codec_name
+    let module_name = Format.module_name
+    let set = Format.set
+    let get_decode_result = Format.get_decode_result
 
-  let is_valid t =
-    let len = String.length t in
-    match len mod 4 with
-    | 0 ->
-      let rec loop byte_pos =
-        match byte_pos < len with
-        | false -> true
-        | true ->
-          let result = Format.get_decode_result t ~byte_pos in
-          Uchar.utf_decode_is_valid result && loop (byte_pos + 4)
-      in
-      loop 0 [@nontail]
-    | _ -> false
-  ;;
-end)
+    let is_valid t =
+      let len = String.length t in
+      match len mod 4 with
+      | 0 ->
+        let rec loop byte_pos =
+          match byte_pos < len with
+          | false -> true
+          | true ->
+            let result = Format.get_decode_result t ~byte_pos in
+            Uchar.utf_decode_is_valid result && loop (byte_pos + 4)
+        in
+        loop 0 [@nontail]
+      | _ -> false
+    ;;
+  end)
 
 module Utf32le = Make_utf32 (struct
-  let codec_name = "UTF-32LE"
-  let module_name = "Base.String.Utf32le"
-  let get_decode_result = get_utf_32le_uchar
-  let set = Bytes.set_uchar_utf_32le
-end)
+    let codec_name = "UTF-32LE"
+    let module_name = "Base.String.Utf32le"
+    let get_decode_result = get_utf_32le_uchar
+    let set = Bytes.set_uchar_utf_32le
+  end)
 
 module Utf32be = Make_utf32 (struct
-  let codec_name = "UTF-32BE"
-  let module_name = "Base.String.Utf32be"
-  let get_decode_result = get_utf_32be_uchar
-  let set = Bytes.set_uchar_utf_32be
-end)
+    let codec_name = "UTF-32BE"
+    let module_name = "Base.String.Utf32be"
+    let get_decode_result = get_utf_32be_uchar
+    let set = Bytes.set_uchar_utf_32be
+  end)
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after
    including functor application that could shadow its definitions. This is

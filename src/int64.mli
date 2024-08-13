@@ -91,17 +91,17 @@ external to_nativeint_trunc
     C function call is chosen by the compiler. *)
 external bits_of_float
   :  (float[@local_opt])
-  -> (int64[@local_opt])
+  -> int64
   = "caml_int64_bits_of_float" "caml_int64_bits_of_float_unboxed"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** [float_of_bits] will always allocate its result on the heap unless the [_unboxed]
     C function call is chosen by the compiler. *)
 external float_of_bits
   :  (int64[@local_opt])
-  -> (float[@local_opt])
+  -> float
   = "caml_int64_float_of_bits" "caml_int64_float_of_bits_unboxed"
-  [@@unboxed] [@@noalloc]
+[@@unboxed] [@@noalloc]
 
 (** {2 Byte swap operations}
 

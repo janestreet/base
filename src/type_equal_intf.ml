@@ -62,6 +62,17 @@ module Type_equal_defns (Type_equal : T.T2) = struct
       -> (('a1, 'a2, 'a3) t, ('b1, 'b2, 'b3) t) Type_equal.t
   end
 
+  module type Lift4 = sig
+    type ('a, 'b, 'c, 'd) t
+
+    val lift
+      :  ('a1, 'b1) Type_equal.t
+      -> ('a2, 'b2) Type_equal.t
+      -> ('a3, 'b3) Type_equal.t
+      -> ('a4, 'b4) Type_equal.t
+      -> (('a1, 'a2, 'a3, 'a4) t, ('b1, 'b2, 'b3, 'b4) t) Type_equal.t
+  end
+
   (** [Injective] is an interface that states that a type is injective, where the type is
       viewed as a function from types to other types. It predates OCaml's support for
       explicit injectivity annotations in the type system.
@@ -152,8 +163,8 @@ module Type_equal_defns (Type_equal : T.T2) = struct
 end
 
 module Type_equal_id_defns (Id : sig
-  type 'a t
-end) =
+    type 'a t
+  end) =
 struct
   module type Arg0 = sig
     type t [@@deriving_inline sexp_of]
@@ -204,6 +215,22 @@ struct
     val name : string
   end
 
+  module type Arg4 = sig
+    type (!'a, !'b, !'c, !'d) t [@@deriving_inline sexp_of]
+
+    val sexp_of_t
+      :  ('a -> Sexplib0.Sexp.t)
+      -> ('b -> Sexplib0.Sexp.t)
+      -> ('c -> Sexplib0.Sexp.t)
+      -> ('d -> Sexplib0.Sexp.t)
+      -> ('a, 'b, 'c, 'd) t
+      -> Sexplib0.Sexp.t
+
+    [@@@end]
+
+    val name : string
+  end
+
   module type S0 = sig
     type t
 
@@ -227,6 +254,17 @@ struct
 
     val type_equal_id : 'a Id.t -> 'b Id.t -> 'c Id.t -> ('a, 'b, 'c) t Id.t
   end
+
+  module type S4 = sig
+    type ('a, 'b, 'c, 'd) t
+
+    val type_equal_id
+      :  'a Id.t
+      -> 'b Id.t
+      -> 'c Id.t
+      -> 'd Id.t
+      -> ('a, 'b, 'c, 'd) t Id.t
+  end
 end
 
 (**/**)
@@ -247,8 +285,8 @@ module type Type_equal = sig
 
   (** @inline *)
   include module type of Type_equal_defns (struct
-    type ('a, 'b) t = ('a, 'b) equal
-  end)
+      type ('a, 'b) t = ('a, 'b) equal
+    end)
 
   (** [refl], [sym], and [trans] construct proofs that type equality is reflexive,
       symmetric, and transitive. *)
@@ -291,6 +329,7 @@ module type Type_equal = sig
   module Lift (T : T1) : Lift with type 'a t := 'a T.t
   module Lift2 (T : T2) : Lift2 with type ('a, 'b) t := ('a, 'b) T.t
   module Lift3 (T : T3) : Lift3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t
+  module Lift4 (T : T4) : Lift4 with type ('a, 'b, 'c, 'd) t := ('a, 'b, 'c, 'd) T.t
 
   (** [tuple2] and [detuple2] convert between equality on a 2-tuple and its components. *)
 
@@ -310,8 +349,8 @@ module type Type_equal = sig
 
     (** @inline *)
     include module type of Type_equal_id_defns (struct
-      type nonrec 'a t = 'a t
-    end)
+        type nonrec 'a t = 'a t
+      end)
 
     (** Every [Id.t] contains a unique id that is distinct from the [Uid.t] in any other
         [Id.t]. *)
@@ -359,5 +398,6 @@ module type Type_equal = sig
     module Create1 (T : Arg1) : S1 with type 'a t := 'a T.t
     module Create2 (T : Arg2) : S2 with type ('a, 'b) t := ('a, 'b) T.t
     module Create3 (T : Arg3) : S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t
+    module Create4 (T : Arg4) : S4 with type ('a, 'b, 'c, 'd) t := ('a, 'b, 'c, 'd) T.t
   end
 end

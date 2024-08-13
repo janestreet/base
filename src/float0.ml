@@ -5,95 +5,6 @@ open! Import
    functions are available within this module. *)
 open! Float_replace_polymorphic_compare
 
-let ceil = Stdlib.ceil
-let floor = Stdlib.floor
-let mod_float = Stdlib.mod_float
-let modf = Stdlib.modf
-let float_of_string = Stdlib.float_of_string
-let float_of_string_opt = Stdlib.float_of_string_opt
-let nan = Stdlib.nan
-let infinity = Stdlib.infinity
-let neg_infinity = Stdlib.neg_infinity
-let max_finite_value = Stdlib.max_float
-let epsilon_float = Stdlib.epsilon_float
-let classify_float = Stdlib.classify_float
-let abs_float = Stdlib.abs_float
-let is_integer = Stdlib.Float.is_integer
-let ( ** ) = Stdlib.( ** )
-
-let ( %. ) a b =
-  (* Raise in case of a negative modulus, as does Int.( % ). *)
-  if b < 0.
-  then Printf.invalid_argf "%f %% %f in float0.ml: modulus should be positive" a b ();
-  let m = Stdlib.mod_float a b in
-  (* Produce a non-negative result in analogy with Int.( % ). *)
-  if m < 0. then m +. b else m
-;;
-
-(* The bits of INRIA's [Stdlib] that we just want to expose in [Float]. Most are
-   already deprecated in [Stdlib], and eventually all of them should be. *)
-include (
-  struct
-    include Stdlib
-    include Stdlib.Float
-  end :
-    sig
-      external frexp : float -> float * int = "caml_frexp_float"
-
-      external ldexp
-        :  (float[@unboxed])
-        -> (int[@untagged])
-        -> (float[@unboxed])
-        = "caml_ldexp_float" "caml_ldexp_float_unboxed"
-        [@@noalloc]
-
-      external log10 : float -> float = "caml_log10_float" "log10" [@@unboxed] [@@noalloc]
-
-      external log2 : float -> float = "caml_log2_float" "caml_log2"
-        [@@unboxed] [@@noalloc]
-
-      external expm1 : float -> float = "caml_expm1_float" "caml_expm1"
-        [@@unboxed] [@@noalloc]
-
-      external log1p : float -> float = "caml_log1p_float" "caml_log1p"
-        [@@unboxed] [@@noalloc]
-
-      external copysign : float -> float -> float = "caml_copysign_float" "caml_copysign"
-        [@@unboxed] [@@noalloc]
-
-      external cos : float -> float = "caml_cos_float" "cos" [@@unboxed] [@@noalloc]
-      external sin : float -> float = "caml_sin_float" "sin" [@@unboxed] [@@noalloc]
-      external tan : float -> float = "caml_tan_float" "tan" [@@unboxed] [@@noalloc]
-      external acos : float -> float = "caml_acos_float" "acos" [@@unboxed] [@@noalloc]
-      external asin : float -> float = "caml_asin_float" "asin" [@@unboxed] [@@noalloc]
-      external atan : float -> float = "caml_atan_float" "atan" [@@unboxed] [@@noalloc]
-
-      external acosh : float -> float = "caml_acosh_float" "caml_acosh"
-        [@@unboxed] [@@noalloc]
-
-      external asinh : float -> float = "caml_asinh_float" "caml_asinh"
-        [@@unboxed] [@@noalloc]
-
-      external atanh : float -> float = "caml_atanh_float" "caml_atanh"
-        [@@unboxed] [@@noalloc]
-
-      external atan2 : float -> float -> float = "caml_atan2_float" "atan2"
-        [@@unboxed] [@@noalloc]
-
-      external hypot : float -> float -> float = "caml_hypot_float" "caml_hypot"
-        [@@unboxed] [@@noalloc]
-
-      external cosh : float -> float = "caml_cosh_float" "cosh" [@@unboxed] [@@noalloc]
-      external sinh : float -> float = "caml_sinh_float" "sinh" [@@unboxed] [@@noalloc]
-      external tanh : float -> float = "caml_tanh_float" "tanh" [@@unboxed] [@@noalloc]
-      external sqrt : float -> float = "caml_sqrt_float" "sqrt" [@@unboxed] [@@noalloc]
-      external exp : float -> float = "caml_exp_float" "exp" [@@unboxed] [@@noalloc]
-      external log : float -> float = "caml_log_float" "log" [@@unboxed] [@@noalloc]
-    end)
-
-(* We need this indirection because these are exposed as "val" instead of "external" *)
-let frexp = frexp
-let ldexp = ldexp
 let is_nan x = (x : float) <> x
 
 (* An order-preserving bijection between all floats except for NaNs, and 99.95% of
@@ -106,7 +17,9 @@ let is_nan x = (x : float) <> x
    modern standard computers (i.e., implementing IEEE 754), one may in practice safely
    assume that the endianness is the same for floating point numbers as for integers"
    (http://en.wikipedia.org/wiki/Endianness#Floating-point_and_endianness).
-*)
+
+   N.b. the calls to [globalize_float] are no-ops at runtime since the float is unboxed
+   and then consumed by [bits_of_float], so the compiler knows not to re-box it. *)
 let to_int64_preserve_order t =
   if is_nan t
   then None
@@ -114,16 +27,18 @@ let to_int64_preserve_order t =
   then (* also includes -0. *)
     Some 0L
   else if t > 0.
-  then Some (Stdlib.Int64.bits_of_float t)
-  else Some (Stdlib.Int64.neg (Stdlib.Int64.bits_of_float (-.t)))
+  then Some (Stdlib.Int64.bits_of_float (globalize_float t))
+  else Some (Stdlib.Int64.neg (Stdlib.Int64.bits_of_float (globalize_float (-.t))))
 ;;
 
 let to_int64_preserve_order_exn x = Option.value_exn (to_int64_preserve_order x)
 
+(* N.b. the calls to [globalize_int64] are no-ops at runtime since the int64 is unboxed
+   and then consumed by [float_of_bits], so the compiler knows not to re-box it. *)
 let of_int64_preserve_order x =
   if Int64_replace_polymorphic_compare.( >= ) x 0L
-  then Stdlib.Int64.float_of_bits x
-  else ~-.(Stdlib.Int64.float_of_bits (Stdlib.Int64.neg x))
+  then Stdlib.Int64.float_of_bits (globalize_int64 x)
+  else ~-.(Stdlib.Int64.float_of_bits (globalize_int64 (Stdlib.Int64.neg x)))
 ;;
 
 let one_ulp dir t =
@@ -191,42 +106,15 @@ let lower_bound_for_int num_bits =
     min_int_as_float)
 ;;
 
-(* X86 docs say:
-
-   If only one value is a NaN (SNaN or QNaN) for this instruction, the second source
-   operand, either a NaN or a valid floating-point value
-   is written to the result.
-
-   So we have to be VERY careful how we use these!
-
-   These intrinsics were copied from [Ocaml_intrinsics] to avoid build deps we don't want
-*)
-module Intrinsics_with_weird_nan_behavior = struct
-  let[@inline always] min a b = Ocaml_intrinsics_kernel.Float.min a b
-  let[@inline always] max a b = Ocaml_intrinsics_kernel.Float.max a b
-end
-
-let clamp_unchecked
-  ~(to_clamp_maybe_nan : float)
-  ~min_which_is_not_nan
-  ~max_which_is_not_nan
-  =
-  (* We want to propagate nans; as per the x86 docs, this means we have to use them as the
-     _second_ argument. *)
-  let t_maybe_nan =
-    Intrinsics_with_weird_nan_behavior.max min_which_is_not_nan to_clamp_maybe_nan
-  in
-  Intrinsics_with_weird_nan_behavior.min max_which_is_not_nan t_maybe_nan
-;;
-
 let box =
-  (* Prevent potential constant folding of [+. 0.] in the near ocamlopt future. *)
-  let x = Sys0.opaque_identity 0. in
-  fun f -> f +. x
-;;
+  (* Prevent potential constant folding of [+. 0.] in the near ocamlopt future. The reason
+     we add -0 rather than 0 is that [x +. (-0.)] is apparently always the same as [x],
+     whereas [x +. 0.] is not, in that it sends [-0.] to [0.].
 
-(* Include type-specific [Replace_polymorphic_compare] at the end, after
-   including functor application that could shadow its definitions. This is
-   here so that efficient versions of the comparison functions are exported by
-   this module. *)
-include Float_replace_polymorphic_compare
+     N.b. the call to [globalize_float] is a no-op at runtime since the float is unboxed
+     and then consumed by addition, so the compiler knows not to re-box it. The
+     implementation of flambda's heuristics is such that an arithmetic operation is
+     necessary for the behavior we want; it is insufficient to simply globalize it. *)
+  let x = Sys0.opaque_identity ~-.0. in
+  fun f -> globalize_float f +. x
+;;

@@ -23,6 +23,7 @@ include Floatable.S with type t := t
 
 include Identifiable.S with type t := t
 
+val of_string : string -> t
 val of_string_opt : string -> t option
 
 include Comparable.With_zero with type t := t
@@ -55,7 +56,7 @@ val sqrt_pi : t
 val sqrt_2pi : t
 
 (** Euler-Mascheroni constant (γ). *)
-val euler : t
+val euler_gamma_constant : t
 
 (** The difference between 1.0 and the smallest exactly representable floating-point
     number greater than 1.0.  That is:
@@ -141,7 +142,7 @@ val to_int64 : t -> int64
 val round : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> t
 
 val iround : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> int option
-val iround_exn : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> int
+val iround_exn : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> int [@@zero_alloc]
 val round_towards_zero : t -> t
 val round_down : t -> t
 val round_up : t -> t
@@ -156,10 +157,10 @@ val iround_towards_zero : t -> int option
 val iround_down : t -> int option
 val iround_up : t -> int option
 val iround_nearest : t -> int option
-val iround_towards_zero_exn : t -> int
-val iround_down_exn : t -> int
-val iround_up_exn : t -> int
-val iround_nearest_exn : t -> int
+val iround_towards_zero_exn : t -> int [@@zero_alloc]
+val iround_down_exn : t -> int [@@zero_alloc]
+val iround_up_exn : t -> int [@@zero_alloc]
+val iround_nearest_exn : t -> int [@@zero_alloc]
 val int63_round_down_exn : t -> Int63.t
 val int63_round_up_exn : t -> Int63.t
 val int63_round_nearest_exn : t -> Int63.t
@@ -233,7 +234,12 @@ val int63_round_ubound : t
     example above.
 
 *)
-val round_significant : float -> significant_digits:int -> float
+val round_significant : t -> significant_digits:int -> t
+
+(** [round_significant] might return its input, so we provide [round_significant_local]
+    for operating over locally-allocated values. However, if its input is rounded to a
+    different value, this will always be heap-allocated (when boxed). *)
+val round_significant_local : t -> significant_digits:int -> t
 
 (** [round_decimal x ~decimal_digits:n] rounds [x] to the nearest [10**(-n)]. For positive
     [n] it is meant to be equivalent to [sprintf "%.*f" n x |> Float.of_string], but
@@ -242,7 +248,10 @@ val round_significant : float -> significant_digits:int -> float
     All the considerations mentioned in [round_significant] apply (both functions use the
     same code path).
 *)
-val round_decimal : float -> decimal_digits:int -> float
+val round_decimal : t -> decimal_digits:int -> t
+
+(** See [round_significant_local]. *)
+val round_decimal_local : t -> decimal_digits:int -> t
 
 val is_nan : t -> bool
 
@@ -261,9 +270,16 @@ val is_integer : t -> bool
 
 val min_inan : t -> t -> t
 val max_inan : t -> t -> t
-val ( + ) : t -> t -> t
-val ( - ) : t -> t -> t
-val ( / ) : t -> t -> t
+
+(** [min_inan_local] and [max_inan_local] are like [min_inan] and [max_inan], but
+    returning one of two local values. *)
+
+val min_inan_local : t -> t -> t
+val max_inan_local : t -> t -> t
+external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
+external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
+external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
+external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%divfloat"
 
 (** In analogy to Int.( % ), ( % ):
     - always produces non-negative (or NaN) result
@@ -273,24 +289,30 @@ val ( / ) : t -> t -> t
 
     Other cases: (a % Infinity) = a when 0 <= a < Infinity, (a % Infinity) = Infinity when
     -Infinity < a < 0, (+/- Infinity % a) = NaN, (a % 0) = NaN. *)
-val ( % ) : t -> t -> t
+external ( % )
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> t
+  = "Base_caml_modf_positive_float_exn" "Base_caml_modf_positive_float_unboxed_exn"
+[@@unboxed]
 
-val ( * ) : t -> t -> t
-val ( ** ) : t -> t -> t
-val ( ~- ) : t -> t
+external ( ** ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_power_float" "pow"
+[@@unboxed] [@@noalloc]
+
+external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
 
 (** Returns the fractional part and the whole (i.e., integer) part. For example, [modf
     (-3.14)] returns [{ fractional = -0.14; integral = -3.; }]! *)
 module Parts : sig
-  type outer
-  type t
+    type outer
+    type t
 
-  val fractional : t -> outer
-  val integral : t -> outer
-end
-with type outer := t
+    val fractional : t -> outer
+    val integral : t -> outer
+  end
+  with type outer := t
 
-val modf : t -> Parts.t
+external modf : (t[@local_opt]) -> Parts.t = "caml_modf_float"
 
 (** [mod_float x y] returns a result with the same sign as [x].  It returns [nan] if [y]
     is [0].  It is basically
@@ -302,33 +324,43 @@ val modf : t -> Parts.t
     {[ let mod_float x y = x -. floor(x/.y) *. y ]}
 
     and therefore resembles [mod] on integers more than [%]. *)
-val mod_float : t -> t -> t
+external mod_float : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_fmod_float" "fmod"
+[@@unboxed] [@@noalloc]
 
 (** {6 Ordinary functions for arithmetic operations}
 
     These are for modules that inherit from [t], since the infix operators are more
     convenient. *)
-val add : t -> t -> t
+external add : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
 
-val sub : t -> t -> t
-val neg : t -> t
-val scale : t -> t -> t
-val abs : t -> t
+external sub : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
+external neg : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
+external scale : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
+external abs : (t[@local_opt]) -> (t[@local_opt]) = "%absfloat"
 
 (** A sub-module designed to be opened to make working with floats more convenient.  *)
 module O : sig
-  val ( + ) : t -> t -> t
-  val ( - ) : t -> t -> t
-  val ( * ) : t -> t -> t
-  val ( / ) : t -> t -> t
-  val ( % ) : t -> t -> t
-  val ( ** ) : t -> t -> t
-  val ( ~- ) : t -> t
+  external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
+  external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
+  external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
+  external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%divfloat"
 
-  include Comparisons.Infix with type t := t
+  external ( % )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> t
+    = "Base_caml_modf_positive_float_exn" "Base_caml_modf_positive_float_unboxed_exn"
+  [@@unboxed]
 
-  val abs : t -> t
-  val neg : t -> t
+  external ( ** ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_power_float" "pow"
+  [@@unboxed] [@@noalloc]
+
+  external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
+
+  include Comparisons.Infix_with_local_opt with type t := t
+
+  external abs : (t[@local_opt]) -> (t[@local_opt]) = "%absfloat"
+  external neg : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
   val zero : t
   val of_int : int -> t
   val of_float : float -> t
@@ -337,13 +369,22 @@ end
 (** Similar to [O], except that operators are suffixed with a dot, allowing one to have
     both int and float operators in scope simultaneously. *)
 module O_dot : sig
-  val ( +. ) : t -> t -> t
-  val ( -. ) : t -> t -> t
-  val ( *. ) : t -> t -> t
-  val ( /. ) : t -> t -> t
-  val ( %. ) : t -> t -> t
-  val ( **. ) : t -> t -> t
-  val ( ~-. ) : t -> t
+  external ( +. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
+  external ( -. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
+  external ( *. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
+  external ( /. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%divfloat"
+
+  external ( %. )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> t
+    = "Base_caml_modf_positive_float_exn" "Base_caml_modf_positive_float_unboxed_exn"
+  [@@unboxed]
+
+  external ( **. ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_power_float" "pow"
+  [@@unboxed] [@@noalloc]
+
+  external ( ~-. ) : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
 end
 
 (** [to_string x] builds a string [s] representing the float [x] that guarantees the round
@@ -461,119 +502,132 @@ val int_pow : t -> int -> t
 (** [square x] returns [x *. x]. *)
 val square : t -> t
 
+(** [square_local x] returns [x *. x], locally-allocated. *)
+val square_local : t -> t
+
 (** [ldexp x n] returns [x *. 2 ** n] *)
-val ldexp : t -> int -> t
+external ldexp
+  :  (t[@unboxed] [@local_opt])
+  -> (int[@untagged])
+  -> (t[@unboxed])
+  = "caml_ldexp_float" "caml_ldexp_float_unboxed"
+[@@noalloc]
 
 (** [frexp f] returns the pair of the significant and the exponent of [f]. When [f] is
     zero, the significant [x] and the exponent [n] of [f] are equal to zero. When [f] is
     non-zero, they are defined by [f = x *. 2 ** n] and [0.5 <= x < 1.0]. *)
-val frexp : t -> t * int
+external frexp : (t[@local_opt]) -> t * int = "caml_frexp_float"
 
 (** Base 10 logarithm. *)
-external log10 : t -> t = "caml_log10_float" "log10"
-  [@@unboxed] [@@noalloc]
+external log10 : (t[@local_opt]) -> t = "caml_log10_float" "log10"
+[@@unboxed] [@@noalloc]
 
 (** Base 2 logarithm. *)
-external log2 : t -> t = "caml_log2_float" "caml_log2"
-  [@@unboxed] [@@noalloc]
+external log2 : (t[@local_opt]) -> t = "caml_log2_float" "caml_log2"
+[@@unboxed] [@@noalloc]
 
 (** [expm1 x] computes [exp x -. 1.0], giving numerically-accurate results even if [x] is
     close to [0.0]. *)
-external expm1 : t -> t = "caml_expm1_float" "caml_expm1"
-  [@@unboxed] [@@noalloc]
+external expm1 : (t[@local_opt]) -> t = "caml_expm1_float" "caml_expm1"
+[@@unboxed] [@@noalloc]
 
 (** [log1p x] computes [log(1.0 +. x)] (natural logarithm), giving numerically-accurate
     results even if [x] is close to [0.0]. *)
-external log1p : t -> t = "caml_log1p_float" "caml_log1p"
-  [@@unboxed] [@@noalloc]
+external log1p : (t[@local_opt]) -> t = "caml_log1p_float" "caml_log1p"
+[@@unboxed] [@@noalloc]
 
 (** [copysign x y] returns a float whose absolute value is that of [x] and whose sign is
     that of [y].  If [x] is [nan], returns [nan].  If [y] is [nan], returns either [x] or
     [-. x], but it is not specified which. *)
-external copysign : t -> t -> t = "caml_copysign_float" "caml_copysign"
-  [@@unboxed] [@@noalloc]
+external copysign
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> t
+  = "caml_copysign_float" "caml_copysign"
+[@@unboxed] [@@noalloc]
 
 (** Cosine.  Argument is in radians. *)
-external cos : t -> t = "caml_cos_float" "cos"
-  [@@unboxed] [@@noalloc]
+external cos : (t[@local_opt]) -> t = "caml_cos_float" "cos"
+[@@unboxed] [@@noalloc]
 
 (** Sine.  Argument is in radians. *)
-external sin : t -> t = "caml_sin_float" "sin"
-  [@@unboxed] [@@noalloc]
+external sin : (t[@local_opt]) -> t = "caml_sin_float" "sin"
+[@@unboxed] [@@noalloc]
 
 (** Tangent.  Argument is in radians. *)
-external tan : t -> t = "caml_tan_float" "tan"
-  [@@unboxed] [@@noalloc]
+external tan : (t[@local_opt]) -> t = "caml_tan_float" "tan"
+[@@unboxed] [@@noalloc]
 
 (** Arc cosine.  The argument must fall within the range [[-1.0, 1.0]].  Result is in
     radians and is between [0.0] and [pi]. *)
-external acos : t -> t = "caml_acos_float" "acos"
-  [@@unboxed] [@@noalloc]
+external acos : (t[@local_opt]) -> t = "caml_acos_float" "acos"
+[@@unboxed] [@@noalloc]
 
 (** Arc sine.  The argument must fall within the range [[-1.0, 1.0]].  Result is in
     radians and is between [-pi/2] and [pi/2]. *)
-external asin : t -> t = "caml_asin_float" "asin"
-  [@@unboxed] [@@noalloc]
+external asin : (t[@local_opt]) -> t = "caml_asin_float" "asin"
+[@@unboxed] [@@noalloc]
 
 (** Arc tangent.  Result is in radians and is between [-pi/2] and [pi/2]. *)
-external atan : t -> t = "caml_atan_float" "atan"
-  [@@unboxed] [@@noalloc]
+external atan : (t[@local_opt]) -> t = "caml_atan_float" "atan"
+[@@unboxed] [@@noalloc]
 
 (** [atan2 y x] returns the arc tangent of [y /. x].  The signs of [x] and [y] are used to
     determine the quadrant of the result.  Result is in radians and is between [-pi] and
     [pi]. *)
-external atan2 : t -> t -> t = "caml_atan2_float" "atan2"
-  [@@unboxed] [@@noalloc]
+external atan2 : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_atan2_float" "atan2"
+[@@unboxed] [@@noalloc]
 
 (** [hypot x y] returns [sqrt(x *. x + y *. y)], that is, the length of the hypotenuse of
     a right-angled triangle with sides of length [x] and [y], or, equivalently, the
     distance of the point [(x,y)] to origin. *)
-external hypot : t -> t -> t = "caml_hypot_float" "caml_hypot"
-  [@@unboxed] [@@noalloc]
+external hypot : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_hypot_float" "caml_hypot"
+[@@unboxed] [@@noalloc]
 
 (** Hyperbolic cosine.  Argument is in radians. *)
-external cosh : t -> t = "caml_cosh_float" "cosh"
-  [@@unboxed] [@@noalloc]
+external cosh : (t[@local_opt]) -> t = "caml_cosh_float" "cosh"
+[@@unboxed] [@@noalloc]
 
 (** Hyperbolic sine.  Argument is in radians. *)
-external sinh : t -> t = "caml_sinh_float" "sinh"
-  [@@unboxed] [@@noalloc]
+external sinh : (t[@local_opt]) -> t = "caml_sinh_float" "sinh"
+[@@unboxed] [@@noalloc]
 
 (** Hyperbolic tangent.  Argument is in radians. *)
-external tanh : t -> t = "caml_tanh_float" "tanh"
-  [@@unboxed] [@@noalloc]
+external tanh : (t[@local_opt]) -> t = "caml_tanh_float" "tanh"
+[@@unboxed] [@@noalloc]
 
 (** Hyperbolic arc cosine.  The argument must fall within the range
     [[1.0, inf]].
     Result is in radians and is between [0.0] and [inf].
 *)
-external acosh : float -> float = "caml_acosh_float" "caml_acosh"
-  [@@unboxed] [@@noalloc]
+external acosh : (t[@local_opt]) -> t = "caml_acosh_float" "caml_acosh"
+[@@unboxed] [@@noalloc]
 
 (** Hyperbolic arc sine.  The argument and result range over the entire
     real line.
     Result is in radians.
 *)
-external asinh : float -> float = "caml_asinh_float" "caml_asinh"
-  [@@unboxed] [@@noalloc]
+external asinh : (t[@local_opt]) -> t = "caml_asinh_float" "caml_asinh"
+[@@unboxed] [@@noalloc]
 
 (** Hyperbolic arc tangent.  The argument must fall within the range
     [[-1.0, 1.0]].
     Result is in radians and ranges over the entire real line.
 *)
-external atanh : float -> float = "caml_atanh_float" "caml_atanh"
-  [@@unboxed] [@@noalloc]
+external atanh : (t[@local_opt]) -> t = "caml_atanh_float" "caml_atanh"
+[@@unboxed] [@@noalloc]
 
 (** Square root. *)
-external sqrt : t -> t = "caml_sqrt_float" "sqrt"
-  [@@unboxed] [@@noalloc]
+external sqrt : (t[@local_opt]) -> t = "caml_sqrt_float" "sqrt"
+[@@unboxed] [@@noalloc]
 
 (** Exponential. *)
-external exp : t -> t = "caml_exp_float" "exp" [@@unboxed] [@@noalloc]
+external exp : (t[@local_opt]) -> t = "caml_exp_float" "exp"
+[@@unboxed] [@@noalloc]
 
 (** Natural logarithm. *)
-external log : t -> t = "caml_log_float" "log"
-  [@@unboxed] [@@noalloc]
+external log : (t[@local_opt]) -> t = "caml_log_float" "log"
+[@@unboxed] [@@noalloc]
 
 (** Excluding nan the floating-point "number line" looks like:
     {v
@@ -613,7 +667,7 @@ val classify : t -> Class.t
   [Comparable.With_zero]. *)
 
 val sign : t -> Sign.t
-  [@@deprecated "[since 2016-01] Replace [sign] with [robust_sign] or [sign_exn]"]
+[@@deprecated "[since 2016-01] Replace [sign] with [robust_sign] or [sign_exn]"]
 
 (** The sign of a float.  Both [-0.] and [0.] map to [Zero].  Raises on nan.  All other
     values map to [Neg] or [Pos]. *)

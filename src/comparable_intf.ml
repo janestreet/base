@@ -1,7 +1,9 @@
 open! Import
 
 module type Infix = Comparisons.Infix
+module type Infix_with_zero_alloc = Comparisons.Infix_with_zero_alloc
 module type Comparisons = Comparisons.S
+module type Comparisons_with_zero_alloc = Comparisons.S_with_zero_alloc
 
 module Sign = Sign0 (** @canonical Base.Sign *)
 
@@ -142,8 +144,10 @@ module type Comparable = sig
       ]} *)
 
   module type Infix = Infix
+  module type Infix_with_zero_alloc = Infix_with_zero_alloc
   module type S = S
   module type Comparisons = Comparisons
+  module type Comparisons_with_zero_alloc = Comparisons_with_zero_alloc
   module type With_compare = With_compare
   module type With_zero = With_zero
 
@@ -153,77 +157,79 @@ module type Comparable = sig
       without need for the [sexp_of_t] required by [Make*] (see below). *)
 
   module Infix (T : sig
-    type t [@@deriving_inline compare]
+      type t [@@deriving_inline compare]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+      include Ppx_compare_lib.Comparable.S with type t := t
 
-    [@@@end]
-  end) : Infix with type t := T.t
+      [@@@end]
+    end) : Infix with type t := T.t
 
   module Comparisons (T : sig
-    type t [@@deriving_inline compare]
+      type t [@@deriving_inline compare]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+      include Ppx_compare_lib.Comparable.S with type t := t
 
-    [@@@end]
-  end) : Comparisons with type t := T.t
+      [@@@end]
+    end) : Comparisons with type t := T.t
 
   (** Inherit comparability from a component. *)
-  module Inherit (C : sig
-    type t [@@deriving_inline compare]
+  module Inherit
+      (C : sig
+         type t [@@deriving_inline compare]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+         include Ppx_compare_lib.Comparable.S with type t := t
 
-    [@@@end]
-  end) (T : sig
-    type t [@@deriving_inline sexp_of]
+         [@@@end]
+       end)
+      (T : sig
+         type t [@@deriving_inline sexp_of]
 
-    val sexp_of_t : t -> Sexplib0.Sexp.t
+         val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    [@@@end]
+         [@@@end]
 
-    val component : t -> C.t
-  end) : S with type t := T.t
+         val component : t -> C.t
+       end) : S with type t := T.t
 
   module Make (T : sig
-    type t [@@deriving_inline compare, sexp_of]
+      type t [@@deriving_inline compare, sexp_of]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+      include Ppx_compare_lib.Comparable.S with type t := t
 
-    val sexp_of_t : t -> Sexplib0.Sexp.t
+      val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    [@@@end]
-  end) : S with type t := T.t
+      [@@@end]
+    end) : S with type t := T.t
 
   module Make_using_comparator (T : sig
-    type t [@@deriving_inline sexp_of]
+      type t [@@deriving_inline sexp_of]
 
-    val sexp_of_t : t -> Sexplib0.Sexp.t
+      val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    [@@@end]
+      [@@@end]
 
-    include Comparator.S with type t := t
-  end) : S with type t := T.t with type comparator_witness := T.comparator_witness
+      include Comparator.S with type t := t
+    end) : S with type t := T.t with type comparator_witness := T.comparator_witness
 
   module Poly (T : sig
-    type t [@@deriving_inline sexp_of]
+      type t [@@deriving_inline sexp_of]
 
-    val sexp_of_t : t -> Sexplib0.Sexp.t
+      val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    [@@@end]
-  end) : S with type t := T.t
+      [@@@end]
+    end) : S with type t := T.t
 
   module With_zero (T : sig
-    type t [@@deriving_inline compare, sexp_of]
+      type t [@@deriving_inline compare, sexp_of]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+      include Ppx_compare_lib.Comparable.S with type t := t
 
-    val sexp_of_t : t -> Sexplib0.Sexp.t
+      val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    [@@@end]
+      [@@@end]
 
-    val zero : t
-  end) : sig
+      val zero : t
+    end) : sig
     include With_zero with type t := T.t
   end
 end

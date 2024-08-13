@@ -143,11 +143,14 @@ let add_exn t ~key ~data =
 ;;
 
 let clear t =
-  ensure_mutation_allowed t;
-  for i = 0 to Array.length t.table - 1 do
-    t.table.(i) <- Avltree.empty
-  done;
-  t.length <- 0
+  if t.length = 0
+  then ()
+  else (
+    ensure_mutation_allowed t;
+    for i = 0 to Array.length t.table - 1 do
+      t.table.(i) <- Avltree.empty
+    done;
+    t.length <- 0)
 ;;
 
 let find_and_call t key ~if_found ~if_not_found =
@@ -790,20 +793,20 @@ module Accessors = struct
 end
 
 module Creators (Key : sig
-  type 'a t
+    type 'a t
 
-  val hashable : 'a t Hashable.t
-end) : sig
+    val hashable : 'a t Hashable.t
+  end) : sig
   type ('a, 'b) t_ = ('a Key.t, 'b) t
 
   val t_of_sexp : (Sexp.t -> 'a Key.t) -> (Sexp.t -> 'b) -> Sexp.t -> ('a, 'b) t_
 
   include
     Creators_generic
-      with type ('a, 'b) t := ('a, 'b) t_
-      with type 'a key := 'a Key.t
-      with type ('key, 'data, 'a) create_options :=
-        ('key, 'data, 'a) create_options_without_first_class_module
+    with type ('a, 'b) t := ('a, 'b) t_
+    with type 'a key := 'a Key.t
+    with type ('key, 'data, 'a) create_options :=
+      ('key, 'data, 'a) create_options_without_first_class_module
 end = struct
   let hashable = Key.hashable
 
@@ -859,10 +862,10 @@ module Poly = struct
   let capacity = capacity
 
   include Creators (struct
-    type 'a t = 'a
+      type 'a t = 'a
 
-    let hashable = hashable
-  end)
+      let hashable = hashable
+    end)
 
   include Accessors
 

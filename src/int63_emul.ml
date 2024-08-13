@@ -95,16 +95,18 @@ end = struct
   let wrap_exn x =
     (* Raises if the int64 value does not fit on int63. *)
     Conv.int64_fit_on_int63_exn x;
-    Stdlib.Int64.mul x 2L
+    Stdlib.Int64.mul (globalize x) 2L
   ;;
 
   let wrap x =
-    if Conv.int64_is_representable_as_int63 x then Some (Stdlib.Int64.mul x 2L) else None
+    if Conv.int64_is_representable_as_int63 x
+    then Some (Stdlib.Int64.mul (globalize x) 2L)
+    else None
   ;;
 
-  let wrap_modulo x = Stdlib.Int64.mul x 2L
-  let unwrap x = Stdlib.Int64.shift_right x 1
-  let unwrap_unsigned x = Stdlib.Int64.shift_right_logical x 1
+  let wrap_modulo x = Stdlib.Int64.mul (globalize x) 2L
+  let unwrap x = Stdlib.Int64.shift_right (globalize x) 1
+  let unwrap_unsigned x = Stdlib.Int64.shift_right_logical (globalize x) 1
 
   (* This does not use wrap or unwrap to avoid generating exceptions in the case of
      overflows. This is to preserve the semantics of int type on 64 bit architecture. *)
@@ -302,13 +304,13 @@ let floor_log2 = floor_log2
 let ceil_log2 = ceil_log2
 let clz = clz
 let ctz = ctz
-let to_float x = Stdlib.Int64.to_float (unwrap x)
-let of_float_unchecked x = wrap_modulo (Stdlib.Int64.of_float x)
+let to_float x = Int64.to_float (unwrap x)
+let of_float_unchecked x = wrap_modulo (Int64.of_float_unchecked x)
 
 let of_float t =
   let open Float_replace_polymorphic_compare in
   if t >= float_lower_bound && t <= float_upper_bound
-  then wrap_modulo (Stdlib.Int64.of_float t)
+  then of_float_unchecked t
   else
     Printf.invalid_argf
       "Int63.of_float: argument (%f) is out of range or NaN"
@@ -322,10 +324,10 @@ let of_int64_trunc = of_int64_trunc
 let to_int64 = to_int64
 
 include Comparable.With_zero (struct
-  include T
+    include T
 
-  let zero = zero
-end)
+    let zero = zero
+  end)
 
 let between t ~low ~high = low <= t && t <= high
 let clamp_unchecked t ~min:min_ ~max:max_ = min t max_ |> max min_
@@ -375,40 +377,40 @@ let to_nativeint_trunc x = Conv.int64_to_nativeint_trunc (unwrap x)
 include Int_string_conversions.Make (T)
 
 include Int_string_conversions.Make_hex (struct
-  type t = T.t [@@deriving_inline compare ~localize, hash]
+    type t = T.t [@@deriving_inline compare ~localize, hash]
 
-  let compare__local = (T.compare__local : t -> t -> int)
-  let compare = (fun a b -> compare__local a b : t -> t -> int)
+    let compare__local = (T.compare__local : t -> t -> int)
+    let compare = (fun a b -> compare__local a b : t -> t -> int)
 
-  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    T.hash_fold_t
+    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+      T.hash_fold_t
 
-  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = T.hash in
-    fun x -> func x
-  ;;
+    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+      let func = T.hash in
+      fun x -> func x
+    ;;
 
-  [@@@end]
+    [@@@end]
 
-  let zero = zero
-  let neg = ( ~- )
-  let ( < ) = ( < )
+    let zero = zero
+    let neg = ( ~- )
+    let ( < ) = ( < )
 
-  let to_string i =
-    (* the use of [unwrap_unsigned] here is important for the case of [min_value] *)
-    Printf.sprintf "%Lx" (unwrap_unsigned i)
-  ;;
+    let to_string i =
+      (* the use of [unwrap_unsigned] here is important for the case of [min_value] *)
+      Printf.sprintf "%Lx" (unwrap_unsigned i)
+    ;;
 
-  let of_string s = of_string ("0x" ^ s)
-  let module_name = "Base.Int63.Hex"
-end)
+    let of_string s = of_string ("0x" ^ s)
+    let module_name = "Base.Int63.Hex"
+  end)
 
 include Pretty_printer.Register (struct
-  type nonrec t = t
+    type nonrec t = t
 
-  let to_string x = to_string x
-  let module_name = "Base.Int63"
-end)
+    let to_string x = to_string x
+    let module_name = "Base.Int63"
+  end)
 
 module Pre_O = struct
   let ( + ) = ( + )
@@ -430,16 +432,16 @@ module O = struct
   include Pre_O
 
   include Int_math.Make (struct
-    type nonrec t = t
+      type nonrec t = t
 
-    include Pre_O
+      include Pre_O
 
-    let rem = rem
-    let to_float = to_float
-    let of_float = of_float
-    let of_string = T.of_string
-    let to_string = T.to_string
-  end)
+      let rem = rem
+      let to_float = to_float
+      let of_float = of_float
+      let of_string = T.of_string
+      let to_string = T.to_string
+    end)
 
   let ( land ) = bit_and
   let ( lor ) = bit_or
@@ -453,31 +455,31 @@ end
 include O
 
 include Int_string_conversions.Make_binary (struct
-  type t = T.t [@@deriving_inline compare ~localize, equal ~localize, hash]
+    type t = T.t [@@deriving_inline compare ~localize, equal ~localize, hash]
 
-  let compare__local = (T.compare__local : t -> t -> int)
-  let compare = (fun a b -> compare__local a b : t -> t -> int)
-  let equal__local = (T.equal__local : t -> t -> bool)
-  let equal = (fun a b -> equal__local a b : t -> t -> bool)
+    let compare__local = (T.compare__local : t -> t -> int)
+    let compare = (fun a b -> compare__local a b : t -> t -> int)
+    let equal__local = (T.equal__local : t -> t -> bool)
+    let equal = (fun a b -> equal__local a b : t -> t -> bool)
 
-  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    T.hash_fold_t
+    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
+      T.hash_fold_t
 
-  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = T.hash in
-    fun x -> func x
-  ;;
+    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
+      let func = T.hash in
+      fun x -> func x
+    ;;
 
-  [@@@end]
+    [@@@end]
 
-  let ( land ) = ( land )
-  let ( lsr ) = ( lsr )
-  let clz = clz
-  let num_bits = num_bits
-  let one = one
-  let to_int_exn = to_int_exn
-  let zero = zero
-end)
+    let ( land ) = ( land )
+    let ( lsr ) = ( lsr )
+    let clz = clz
+    let num_bits = num_bits
+    let one = one
+    let to_int_exn = to_int_exn
+    let zero = zero
+  end)
 
 (* [Int63] and [Int63.O] agree value-wise *)
 

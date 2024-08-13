@@ -24,8 +24,12 @@ let t_of_sexp =
      Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__003_ sexp__002_
    | Sexplib0.Sexp.List [] as sexp__002_ ->
      Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__003_ sexp__002_
-   | sexp__002_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__003_ sexp__002_
-    : Sexplib0.Sexp.t -> t)
+   | sexp__002_ ->
+     Sexplib0.Sexp_conv_error.unexpected_stag
+       error_source__003_
+       [ "Neg"; "Zero"; "Pos" ]
+       sexp__002_
+   : Sexplib0.Sexp.t -> t)
 ;;
 
 let sexp_of_t =
@@ -33,7 +37,7 @@ let sexp_of_t =
    | Neg -> Sexplib0.Sexp.Atom "Neg"
    | Zero -> Sexplib0.Sexp.Atom "Zero"
    | Pos -> Sexplib0.Sexp.Atom "Pos"
-    : t -> Sexplib0.Sexp.t)
+   : t -> Sexplib0.Sexp.t)
 ;;
 
 let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
@@ -60,7 +64,7 @@ let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.sta
         | Neg -> 0
         | Zero -> 1
         | Pos -> 2)
-    : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
+   : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
 ;;
 
 let (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =

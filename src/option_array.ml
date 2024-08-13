@@ -173,15 +173,15 @@ let foldi input ~init ~f =
 let fold input ~init ~f = foldi input ~init ~f:(fun (_ : int) acc x -> f acc x) [@nontail]
 
 include Indexed_container.Make_gen (struct
-  type nonrec ('a, _, _) t = 'a t
-  type 'a elt = 'a option
+    type nonrec ('a, _, _) t = 'a t
+    type 'a elt = 'a option
 
-  let fold = fold
-  let foldi = `Custom foldi
-  let iter = `Custom iter
-  let iteri = `Custom iteri
-  let length = `Custom length
-end)
+    let fold = fold
+    let foldi = `Custom foldi
+    let iter = `Custom iter
+    let iteri = `Custom iteri
+    let length = `Custom length
+  end)
 
 let length = Uniform_array.length
 
@@ -214,12 +214,12 @@ let of_array_some array =
 let to_array t = Array.init (length t) ~f:(fun i -> unsafe_get t i)
 
 include Blit.Make1_generic (struct
-  type nonrec 'a t = 'a t
+    type nonrec 'a t = 'a t
 
-  let length = length
-  let create_like ~len _ = create ~len
-  let unsafe_blit = Uniform_array.unsafe_blit
-end)
+    let length = length
+    let create_like ~len _ = create ~len
+    let unsafe_blit = Uniform_array.unsafe_blit
+  end)
 
 let copy = Uniform_array.copy
 

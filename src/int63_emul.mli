@@ -34,12 +34,12 @@ module W : sig
 end
 
 module Repr : sig
-  type emulated = t
+    type emulated = t
 
-  type ('underlying_type, 'intermediate_type) t =
-    | Int : (int, int) t
-    | Int64 : (int64, emulated) t
-end
-with type emulated := t
+    type ('underlying_type, 'intermediate_type) t =
+      | Int : (int, int) t
+      | Int64 : (int64, emulated) t
+  end
+  with type emulated := t
 
 val repr : (t, t) Repr.t

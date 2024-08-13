@@ -19,7 +19,7 @@ let test (type a) here (module T : S with type t = a) list =
           if not (Result.compare actual expect = 0)
           then (
             print_cr
-              here
+              ~here
               [%message
                 "comparison failed"
                   (operator : string)
@@ -123,7 +123,6 @@ let%test_module "lexicographic" =
             let ordering = Ordering.of_int (compare a b) in
             print_s [%message (a : int) (b : int) (ordering : Ordering.t)];
             require_equal
-              [%here]
               (module Ordering)
               (Ordering.of_int (compare a b))
               (Ordering.of_int (Comparable.lexicographic [ compare ] a b)));

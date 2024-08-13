@@ -142,7 +142,7 @@ let%expect_test ("32-bit platforms" [@tags "no-js", "32-bits-only"]) =
     |}]
 ;;
 
-let%expect_test ("js_of_ocaml platforms" [@tags "js-only"]) =
+let%expect_test ("js_of_ocaml platforms (js)" [@tags "js-only", "no-wasm"]) =
   test (module Int) Large;
   [%expect
     {|
@@ -152,6 +152,29 @@ let%expect_test ("js_of_ocaml platforms" [@tags "js-only"]) =
     (max 2_147_483_647 2_147_483_647 = 2_147_483_647)
     (min 0 -2_147_483_648 = -2_147_483_648)
     (max 0 -2_147_483_648 = 0)
+    |}];
+  test (module Nativeint) Large;
+  [%expect
+    {|
+    (min -2_147_483_648 0 = -2_147_483_648)
+    (max -2_147_483_648 0 = 0)
+    (min 2_147_483_647 2_147_483_647 = 2_147_483_647)
+    (max 2_147_483_647 2_147_483_647 = 2_147_483_647)
+    (min 0 -2_147_483_648 = -2_147_483_648)
+    (max 0 -2_147_483_648 = 0)
+    |}]
+;;
+
+let%expect_test ("js_of_ocaml platforms (wasm)" [@tags "wasm-only"]) =
+  test (module Int) Large;
+  [%expect
+    {|
+    (min -1_073_741_824 0 = -1_073_741_824)
+    (max -1_073_741_824 0 = 0)
+    (min 1_073_741_823 1_073_741_823 = 1_073_741_823)
+    (max 1_073_741_823 1_073_741_823 = 1_073_741_823)
+    (min 0 -1_073_741_824 = -1_073_741_824)
+    (max 0 -1_073_741_824 = 0)
     |}];
   test (module Nativeint) Large;
   [%expect

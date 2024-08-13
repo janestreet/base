@@ -35,19 +35,19 @@ end
     guarantee that one has the desired [pp] function at the same point where the [name] is
     added. *)
 module Register (M : sig
-  type t
+    type t
 
-  val module_name : string
-  val to_string : t -> string
-end) : S with type t := M.t
+    val module_name : string
+    val to_string : t -> string
+  end) : S with type t := M.t
 
 (** [Register_pp] is like [Register], but allows a custom [pp] function rather than using
     [to_string]. *)
 module Register_pp (M : sig
-  include S
+    include S
 
-  val module_name : string
-end) : S with type t := M.t
+    val module_name : string
+  end) : S with type t := M.t
 
 (** [register name] adds [name] to the list of pretty printers.  Use the [Register]
     functor if possible. *)

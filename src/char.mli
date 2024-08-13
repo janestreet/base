@@ -62,7 +62,7 @@ val is_alphanum : t -> bool
 (** ' ' - '~' *)
 val is_print : t -> bool
 
-(** ' ' or '\t' or '\r' or '\n' *)
+(** ' ' or '\t' or '\r' or '\n' or '\011' (vertical tab) or '\012' (form feed) *)
 val is_whitespace : t -> bool
 
 (** Returns [Some i] if [is_digit c] and [None] otherwise. *)

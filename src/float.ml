@@ -23,17 +23,132 @@ module T = struct
 
   [@@@end]
 
-  let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = Float_replace_polymorphic_compare.compare
+  let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 end
 
 include T
 include Comparator.Make (T)
 
-(* Open replace_polymorphic_compare after including functor instantiations so they do not
-   shadow its definitions. This is here so that efficient versions of the comparison
-   functions are available within this module. *)
+(* We include type-specific [Replace_polymorphic_compare] at the end, after including
+   functor application that could shadow its definitions. This is here so that efficient
+   versions of the comparison functions are exported by this module. *)
 open Float_replace_polymorphic_compare
+
+external ceil : (t[@local_opt]) -> t = "caml_ceil_float" "ceil" [@@unboxed] [@@noalloc]
+external floor : (t[@local_opt]) -> t = "caml_floor_float" "floor" [@@unboxed] [@@noalloc]
+
+external mod_float : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_fmod_float" "fmod"
+[@@unboxed] [@@noalloc]
+
+external float_of_string : (string[@local_opt]) -> t = "caml_float_of_string"
+
+let float_of_string_opt s =
+  try Some (float_of_string s) with
+  | Failure _ -> None
+;;
+
+let nan = Stdlib.nan
+let infinity = Stdlib.infinity
+let neg_infinity = Stdlib.neg_infinity
+let max_finite_value = Stdlib.max_float
+let epsilon_float = Stdlib.epsilon_float
+
+external classify_float
+  :  (t[@unboxed] [@local_opt])
+  -> Stdlib.fpclass
+  = "caml_classify_float" "caml_classify_float_unboxed"
+[@@noalloc]
+
+external trunc : (t[@local_opt]) -> t = "caml_trunc_float" "caml_trunc"
+[@@unboxed] [@@noalloc]
+
+let is_finite t = t -. t = 0.
+let is_integer x = x = trunc x && is_finite x
+
+external frexp : (t[@local_opt]) -> t * int = "caml_frexp_float"
+
+external ldexp
+  :  (t[@unboxed] [@local_opt])
+  -> (int[@untagged])
+  -> (t[@unboxed])
+  = "caml_ldexp_float" "caml_ldexp_float_unboxed"
+[@@noalloc]
+
+external log10 : (t[@local_opt]) -> t = "caml_log10_float" "log10" [@@unboxed] [@@noalloc]
+
+external log2 : (t[@local_opt]) -> t = "caml_log2_float" "caml_log2"
+[@@unboxed] [@@noalloc]
+
+external expm1 : (t[@local_opt]) -> t = "caml_expm1_float" "caml_expm1"
+[@@unboxed] [@@noalloc]
+
+external log1p : (t[@local_opt]) -> t = "caml_log1p_float" "caml_log1p"
+[@@unboxed] [@@noalloc]
+
+external copysign
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> t
+  = "caml_copysign_float" "caml_copysign"
+[@@unboxed] [@@noalloc]
+
+external cos : (t[@local_opt]) -> t = "caml_cos_float" "cos" [@@unboxed] [@@noalloc]
+external sin : (t[@local_opt]) -> t = "caml_sin_float" "sin" [@@unboxed] [@@noalloc]
+external tan : (t[@local_opt]) -> t = "caml_tan_float" "tan" [@@unboxed] [@@noalloc]
+external acos : (t[@local_opt]) -> t = "caml_acos_float" "acos" [@@unboxed] [@@noalloc]
+external asin : (t[@local_opt]) -> t = "caml_asin_float" "asin" [@@unboxed] [@@noalloc]
+external atan : (t[@local_opt]) -> t = "caml_atan_float" "atan" [@@unboxed] [@@noalloc]
+
+external acosh : (t[@local_opt]) -> t = "caml_acosh_float" "caml_acosh"
+[@@unboxed] [@@noalloc]
+
+external asinh : (t[@local_opt]) -> t = "caml_asinh_float" "caml_asinh"
+[@@unboxed] [@@noalloc]
+
+external atanh : (t[@local_opt]) -> t = "caml_atanh_float" "caml_atanh"
+[@@unboxed] [@@noalloc]
+
+external atan2 : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_atan2_float" "atan2"
+[@@unboxed] [@@noalloc]
+
+external hypot : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_hypot_float" "caml_hypot"
+[@@unboxed] [@@noalloc]
+
+external cosh : (t[@local_opt]) -> t = "caml_cosh_float" "cosh" [@@unboxed] [@@noalloc]
+external sinh : (t[@local_opt]) -> t = "caml_sinh_float" "sinh" [@@unboxed] [@@noalloc]
+external tanh : (t[@local_opt]) -> t = "caml_tanh_float" "tanh" [@@unboxed] [@@noalloc]
+external sqrt : (t[@local_opt]) -> t = "caml_sqrt_float" "sqrt" [@@unboxed] [@@noalloc]
+external exp : (t[@local_opt]) -> t = "caml_exp_float" "exp" [@@unboxed] [@@noalloc]
+external log : (t[@local_opt]) -> t = "caml_log_float" "log" [@@unboxed] [@@noalloc]
+
+(* X86 docs say:
+
+   If only one value is a NaN (SNaN or QNaN) for this instruction, the second source
+   operand, either a NaN or a valid floating-point value
+   is written to the result.
+
+   So we have to be VERY careful how we use these!
+
+   These intrinsics were copied from [Ocaml_intrinsics] to avoid build deps we don't want
+*)
+module Intrinsics_with_weird_nan_behavior = struct
+  let[@inline always] min a b = Ocaml_intrinsics_kernel.Float.min a b
+  let[@inline always] max a b = Ocaml_intrinsics_kernel.Float.max a b
+end
+
+let clamp_unchecked
+  ~(to_clamp_maybe_nan : float)
+  ~min_which_is_not_nan
+  ~max_which_is_not_nan
+  =
+  (* We want to propagate nans; as per the x86 docs, this means we have to use them as the
+     _second_ argument. *)
+  let t_maybe_nan =
+    Intrinsics_with_weird_nan_behavior.max min_which_is_not_nan to_clamp_maybe_nan
+  in
+  Intrinsics_with_weird_nan_behavior.min max_which_is_not_nan t_maybe_nan
+;;
 
 let invariant (_ : t) = ()
 let to_float x = x
@@ -41,12 +156,12 @@ let of_float x = x
 
 let of_string s =
   try float_of_string s with
-  | _ -> invalid_argf "Float.of_string %s" s ()
+  | _ -> invalid_argf "Float.of_string %s" (globalize_string s) ()
 ;;
 
 let of_string_opt = float_of_string_opt
 
-external format_float : string -> float -> string = "caml_format_float"
+external format_float : string -> t -> string = "caml_format_float"
 
 (* Stolen from [pervasives.ml].  Adds a "." at the end if needed.  It is in
    [pervasives.mli], but it also says not to use it directly, so we copy and paste the
@@ -186,12 +301,12 @@ let minus_one = -1.
 let pi = 0x3.243F6A8885A308D313198A2E037073
 let sqrt_pi = 0x1.C5BF891B4EF6AA79C3B0520D5DB938
 let sqrt_2pi = 0x2.81B263FEC4E0B2CAF9483F5CE459DC
-let euler = 0x0.93C467E37DB0C7A4D1BE3F810152CB
+let euler_gamma_constant = 0x0.93C467E37DB0C7A4D1BE3F810152CB
 let of_int = Int.to_float
 let to_int = Int.of_float
 let of_int63 i = Int63.to_float i
-let of_int64 i = Stdlib.Int64.to_float i
-let to_int64 = Stdlib.Int64.of_float
+let of_int64 i = Int64.to_float i
+let to_int64 = Int64.of_float
 let iround_lbound = lower_bound_for_int Int.num_bits
 let iround_ubound = upper_bound_for_int Int.num_bits
 
@@ -335,7 +450,7 @@ let iround_nearest_exn_32 t =
   then (
     let t' = add_half_for_round_nearest t in
     if t' <= iround_ubound
-    then Int.of_float_unchecked t'
+    then Int.of_float_unchecked t' [@nontail]
     else invalid_argf "Float.iround_nearest_exn: argument (%f) is too large" (box t) ())
   else (
     let t' = floor (t +. 0.5) in
@@ -348,7 +463,7 @@ let[@ocaml.inline always] iround_nearest_exn_64 t =
   if t >= 0.
   then
     if t < round_nearest_ub
-    then Int.of_float_unchecked (add_half_for_round_nearest t)
+    then Int.of_float_unchecked (add_half_for_round_nearest t) [@nontail]
     else if t <= iround_ubound
     then Int.of_float_unchecked t
     else invalid_argf "Float.iround_nearest_exn: argument (%f) is too large" (box t) ()
@@ -366,15 +481,19 @@ let iround_nearest_exn =
   | W32 -> iround_nearest_exn_32
 ;;
 
+(* We must redefine [iround_nearest_exn] to look like a function so the compiler can infer
+   that it is [@zero_alloc]. *)
+let[@inline] iround_nearest_exn t = iround_nearest_exn t
+
 (* The following [iround_exn] and [iround] functions are slower than the ones above.
    Their equivalence to those functions is tested in the unit tests below. *)
 
 let[@inline] iround_exn ?(dir = `Nearest) t =
   match dir with
-  | `Zero -> iround_towards_zero_exn t
-  | `Nearest -> iround_nearest_exn t
-  | `Up -> iround_up_exn t
-  | `Down -> iround_down_exn t
+  | `Zero -> iround_towards_zero_exn t [@nontail]
+  | `Nearest -> iround_nearest_exn t [@nontail]
+  | `Up -> iround_up_exn t [@nontail]
+  | `Down -> iround_down_exn t [@nontail]
 ;;
 
 let iround ?(dir = `Nearest) t =
@@ -383,38 +502,27 @@ let iround ?(dir = `Nearest) t =
 ;;
 
 let is_inf t = 1. /. t = 0.
-let is_finite t = t -. t = 0.
 
-let min_inan (x : t) y =
-  if is_nan y then x else if is_nan x then y else if x < y then x else y
-;;
-
-let max_inan (x : t) y =
-  if is_nan y then x else if is_nan x then y else if x > y then x else y
-;;
-
-let add = ( +. )
-let sub = ( -. )
-let neg = ( ~-. )
-let abs = abs_float
-let scale = ( *. )
-let square x = x *. x
+external add : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
+external sub : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
+external neg : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
+external abs : (t[@local_opt]) -> (t[@local_opt]) = "%absfloat"
+external scale : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
 
 module Parts : sig
   type t
 
   val fractional : t -> float
   val integral : t -> float
-  val modf : float -> t
 end = struct
   type t = float * float
 
   let fractional t = fst t
   let integral t = snd t
-  let modf = modf
 end
 
-let modf = Parts.modf
+external modf : (t[@local_opt]) -> Parts.t = "caml_modf_float"
+
 let round_down = floor
 let round_up = ceil
 let round_towards_zero t = if t >= 0. then round_down t else round_up t
@@ -422,15 +530,15 @@ let round_towards_zero t = if t >= 0. then round_down t else round_up t
 (* see the comment above [round_nearest_lb] and [round_nearest_ub] for an explanation *)
 let[@ocaml.inline] round_nearest_inline t =
   if t > round_nearest_lb && t < round_nearest_ub
-  then floor (add_half_for_round_nearest t)
-  else t +. 0.
+  then floor (add_half_for_round_nearest t) [@nontail]
+  else box t
 ;;
 
 let round_nearest t = (round_nearest_inline [@ocaml.inlined always]) t
 
 let round_nearest_half_to_even t =
   if t <= round_nearest_lb || t >= round_nearest_ub
-  then t +. 0.
+  then box t
   else (
     let floor = floor t in
     (* [ceil_or_succ = if t is an integer then t +. 1. else ceil t].  Faster than [ceil]. *)
@@ -456,18 +564,11 @@ let int63_round_up_exn t =
     let t' = ceil t in
     if t' <= int63_round_ubound
     then Int63.of_float_unchecked t'
-    else
-      invalid_argf
-        "Float.int63_round_up_exn: argument (%f) is too large"
-        (Float0.box t)
-        ())
+    else invalid_argf "Float.int63_round_up_exn: argument (%f) is too large" (box t) ())
   else if t >= int63_round_lbound
   then Int63.of_float_unchecked t
   else
-    invalid_argf
-      "Float.int63_round_up_exn: argument (%f) is too small or NaN"
-      (Float0.box t)
-      ()
+    invalid_argf "Float.int63_round_up_exn: argument (%f) is too small or NaN" (box t) ()
 ;;
 
 let int63_round_down_exn t =
@@ -475,11 +576,7 @@ let int63_round_down_exn t =
   then
     if t <= int63_round_ubound
     then Int63.of_float_unchecked t
-    else
-      invalid_argf
-        "Float.int63_round_down_exn: argument (%f) is too large"
-        (Float0.box t)
-        ()
+    else invalid_argf "Float.int63_round_down_exn: argument (%f) is too large" (box t) ()
   else (
     let t' = floor t in
     if t' >= int63_round_lbound
@@ -487,7 +584,7 @@ let int63_round_down_exn t =
     else
       invalid_argf
         "Float.int63_round_down_exn: argument (%f) is too small or NaN"
-        (Float0.box t)
+        (box t)
         ())
 ;;
 
@@ -523,10 +620,10 @@ let int63_round_nearest_exn =
 
 let round ?(dir = `Nearest) t =
   match dir with
-  | `Nearest -> round_nearest t
-  | `Down -> round_down t
-  | `Up -> round_up t
-  | `Zero -> round_towards_zero t
+  | `Nearest -> round_nearest t [@nontail]
+  | `Down -> round_down t [@nontail]
+  | `Up -> round_up t [@nontail]
+  | `Zero -> round_towards_zero t [@nontail]
 ;;
 
 module Class = struct
@@ -565,8 +662,11 @@ module Class = struct
      | Sexplib0.Sexp.List [] as sexp__006_ ->
        Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__007_ sexp__006_
      | sexp__006_ ->
-       Sexplib0.Sexp_conv_error.unexpected_stag error_source__007_ sexp__006_
-      : Sexplib0.Sexp.t -> t)
+       Sexplib0.Sexp_conv_error.unexpected_stag
+         error_source__007_
+         [ "Infinite"; "Nan"; "Normal"; "Subnormal"; "Zero" ]
+         sexp__006_
+     : Sexplib0.Sexp.t -> t)
   ;;
 
   let sexp_of_t =
@@ -576,7 +676,7 @@ module Class = struct
      | Normal -> Sexplib0.Sexp.Atom "Normal"
      | Subnormal -> Sexplib0.Sexp.Atom "Subnormal"
      | Zero -> Sexplib0.Sexp.Atom "Zero"
-      : t -> Sexplib0.Sexp.t)
+     : t -> Sexplib0.Sexp.t)
   ;;
 
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
@@ -631,7 +731,9 @@ let to_string_hum ?delimiter ?(decimals = 3) ?strip_zero ?(explicit_plus = false
   | Class.Nan -> "nan"
   | Class.Normal | Class.Subnormal | Class.Zero ->
     let s =
-      if explicit_plus then sprintf "%+.*f" decimals f else sprintf "%.*f" decimals f
+      if explicit_plus
+      then sprintf "%+.*f" decimals (globalize f)
+      else sprintf "%.*f" decimals (globalize f)
     in
     insert_underscores s ?delimiter ?strip_zero
 ;;
@@ -739,11 +841,11 @@ let to_padded_compact_string_custom t ?(prefix = "") ~kilo ~mega ~giga ~tera ?pe
       then conv tera t 100_000_000_000.
       else (
         match peta with
-        | None -> sprintf "%s%.1e" prefix t
+        | None -> sprintf "%s%.1e" prefix (globalize t)
         | Some peta ->
           if t < 999.95E15
           then conv peta t 100_000_000_000_000.
-          else sprintf "%s%.1e" prefix t)
+          else sprintf "%s%.1e" prefix (globalize t))
     in
     if t >= 0. then go t else "-" ^ go ~-.t
 ;;
@@ -764,13 +866,10 @@ let int_pow x n =
   if n = 0
   then 1.
   else (
-    (* Using [x +. (-0.)] on the following line convinces the compiler to avoid a certain
+    (* Using [box x] on the following line convinces the compiler to avoid a certain
        boxing (that would result in allocation in each iteration).  Soon, the compiler
-       shouldn't need this "hint" to avoid the boxing.  The reason we add -0 rather than 0
-       is that [x +. (-0.)] is apparently always the same as [x], whereas [x +. 0.] is
-       not, in that it sends [-0.] to [0.].  This makes a difference because we want
-       [int_pow (-0.) (-1)] to return neg_infinity just like [-0. ** -1.] would.  *)
-    let x = ref (x +. -0.) in
+       shouldn't need this "hint" to avoid the boxing. *)
+    let x = ref (box x) in
     let n = ref n in
     let accum = ref 1. in
     if !n < 0
@@ -798,66 +897,203 @@ let int_pow x n =
     !x *. !accum)
 ;;
 
-let round_gen x ~how =
-  if x = 0.
-  then 0.
-  else if not (is_finite x)
-  then x
-  else (
-    (* Significant digits and decimal digits. *)
-    let sd, dd =
-      match how with
-      | `significant_digits sd ->
-        let dd = sd - to_int (round_up (log10 (abs x))) in
-        sd, dd
-      | `decimal_digits dd ->
-        let sd = dd + to_int (round_up (log10 (abs x))) in
-        sd, dd
-    in
-    let open Int_replace_polymorphic_compare in
-    if sd < 0
-    then 0.
-    else if sd >= 17
+(* [( *. )] is already mode-polymorphic so it doesn't make sense to functorize these, plus
+   their implementation is trivial anyway. *)
+let square x = x *. x
+let square_local x = x *. x
+
+(* The desired behavior here is to propagate a nan if either argument is nan. Because
+   the first comparison will always return false if either argument is nan, it suffices
+   to check if x is nan. Then, when x is nan or both x and y are nan, we return x = nan;
+   and when y is nan but not x, we return y = nan.
+
+   There are various ways to implement these functions.  The benchmark below shows a few
+   different versions.  This benchmark was run over an array of random floats (none of
+   which are nan).
+
+   ┌────────────────────────────────────────────────┬──────────┐
+   │ Name                                           │ Time/Run │
+   ├────────────────────────────────────────────────┼──────────┤
+   │ if is_nan x then x else if x < y then x else y │   2.42us │
+   │ if is_nan x || x < y then x else y             │   2.02us │
+   │ if x < y || is_nan x then x else y             │   1.88us │
+   └────────────────────────────────────────────────┴──────────┘
+
+   The benchmark below was run when x > y is always true (again, no nan values).
+
+   ┌────────────────────────────────────────────────┬──────────┐
+   │ Name                                           │ Time/Run │
+   ├────────────────────────────────────────────────┼──────────┤
+   │ if is_nan x then x else if x < y then x else y │   2.83us │
+   │ if is_nan x || x < y then x else y             │   1.97us │
+   │ if x < y || is_nan x then x else y             │   1.56us │
+   └────────────────────────────────────────────────┴──────────┘
+*)
+let min, min_local =
+  let open
+    Modes.Global.Poly_fn2 (T) (T) (T)
+      (functor
+         (W : Modes.Global.Wrapper)
+         ->
+         struct
+           let fn x y =
+             let x' = W.unwrap x
+             and y' = W.unwrap y in
+             if x' < y' || is_nan x' then x else y
+           ;;
+         end) in
+  fn_global, fn_local
+;;
+
+let max, max_local =
+  let open
+    Modes.Global.Poly_fn2 (T) (T) (T)
+      (functor
+         (W : Modes.Global.Wrapper)
+         ->
+         struct
+           let fn x y =
+             let x' = W.unwrap x
+             and y' = W.unwrap y in
+             if x' > y' || is_nan x' then x else y
+           ;;
+         end) in
+  fn_global, fn_local
+;;
+
+let min_inan, min_inan_local =
+  let open
+    Modes.Global.Poly_fn2 (T) (T) (T)
+      (functor
+         (W : Modes.Global.Wrapper)
+         ->
+         struct
+           let fn x y =
+             let x' = W.unwrap x
+             and y' = W.unwrap y in
+             if is_nan y' then x else if is_nan x' then y else if x' < y' then x else y
+           ;;
+         end) in
+  fn_global, fn_local
+;;
+
+let max_inan, max_inan_local =
+  let open
+    Modes.Global.Poly_fn2 (T) (T) (T)
+      (functor
+         (W : Modes.Global.Wrapper)
+         ->
+         struct
+           let fn x y =
+             let x' = W.unwrap x
+             and y' = W.unwrap y in
+             if is_nan y' then x else if is_nan x' then y else if x' > y' then x else y
+           ;;
+         end) in
+  fn_global, fn_local
+;;
+
+module Round_gen (W : Modes.Global.Wrapper) = struct
+  let round_gen x ~how =
+    let x' = W.unwrap x in
+    if x' = 0.
+    then W.wrap 0.
+    else if not (is_finite x')
     then x
     else (
-      (* Choose the order that is exactly representable as a float. Small positive
-         integers are, but their inverses in most cases are not. *)
-      let abs_dd = Int.abs dd in
-      if abs_dd > 22 || sd >= 16
-         (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
-         path.  Similarly, if we need 16 significant digits in the result, then the integer
-         [round_nearest (x <op> order)] might not be exactly representable as a float, since
-         for some ranges we only have 15 digits of precision guaranteed.
-
-         That said, we are still rounding twice here:
-
-         1) first time when rounding [x *. order] or [x /. order] to the nearest float
-         (just the normal way floating-point multiplication or division works),
-
-         2) second time when applying [round_nearest_half_to_even] to the result of the
-         above operation
-
-         So for arguments within an ulp from a tie we might still produce an off-by-one
-         result. *)
-      then of_string (sprintf "%.*g" sd x)
+      (* Significant digits and decimal digits. *)
+      let sd, dd =
+        match how with
+        | `significant_digits sd ->
+          let dd = sd - to_int (round_up (log10 (abs x'))) in
+          sd, dd
+        | `decimal_digits dd ->
+          let sd = dd + to_int (round_up (log10 (abs x'))) in
+          sd, dd
+      in
+      let open Int_replace_polymorphic_compare in
+      if sd < 0
+      then W.wrap 0.
+      else if sd >= 17
+      then x
       else (
-        let order = int_pow 10. abs_dd in
-        if dd >= 0
-        then round_nearest_half_to_even (x *. order) /. order
-        else round_nearest_half_to_even (x /. order) *. order)))
+        (* Choose the order that is exactly representable as a float. Small positive
+             integers are, but their inverses in most cases are not. *)
+        let abs_dd = Int.abs dd in
+        if abs_dd > 22 || sd >= 16
+           (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
+              path.  Similarly, if we need 16 significant digits in the result, then the integer
+              [round_nearest (x <op> order)] might not be exactly representable as a float, since
+              for some ranges we only have 15 digits of precision guaranteed.
+
+              That said, we are still rounding twice here:
+
+              1) first time when rounding [x *. order] or [x /. order] to the nearest float
+              (just the normal way floating-point multiplication or division works),
+
+              2) second time when applying [round_nearest_half_to_even] to the result of the
+              above operation
+
+              So for arguments within an ulp from a tie we might still produce an off-by-one
+              result. *)
+        then W.wrap (of_string (sprintf "%.*g" sd (globalize x')))
+        else (
+          let order = int_pow 10. abs_dd in
+          if dd >= 0
+          then W.wrap (round_nearest_half_to_even (x' *. order) /. order)
+          else W.wrap (round_nearest_half_to_even (x' /. order) *. order))))
+  ;;
+end
+
+let round_significant, round_significant_local =
+  let open
+    Modes.Global.Poly_fn2 (T) (Int) (T)
+      (functor
+         (W : Modes.Global.Wrapper)
+         ->
+         struct
+           open Round_gen (W)
+
+           let fn x significant_digits =
+             let significant_digits = W.unwrap significant_digits in
+             if Int_replace_polymorphic_compare.( <= ) significant_digits 0
+             then
+               invalid_argf
+                 "Float.round_significant: invalid argument significant_digits:%d"
+                 significant_digits
+                 ()
+             else round_gen x ~how:(`significant_digits significant_digits)
+           ;;
+         end) in
+  fn_global, fn_local
 ;;
 
-let round_significant x ~significant_digits =
-  if Int_replace_polymorphic_compare.( <= ) significant_digits 0
-  then
-    invalid_argf
-      "Float.round_significant: invalid argument significant_digits:%d"
-      significant_digits
-      ()
-  else round_gen x ~how:(`significant_digits significant_digits)
+let round_decimal, round_decimal_local =
+  let open
+    Modes.Global.Poly_fn2 (T) (Int) (T)
+      (functor
+         (W : Modes.Global.Wrapper)
+         ->
+         struct
+           open Round_gen (W)
+
+           let fn x decimal_digits =
+             round_gen x ~how:(`decimal_digits (W.unwrap decimal_digits))
+           ;;
+         end) in
+  fn_global, fn_local
 ;;
 
-let round_decimal x ~decimal_digits = round_gen x ~how:(`decimal_digits decimal_digits)
+let[@inline] round_significant x ~significant_digits =
+  round_significant x significant_digits
+;;
+
+let[@inline] round_significant_local x ~significant_digits =
+  round_significant_local x significant_digits
+;;
+
+let[@inline] round_decimal x ~decimal_digits = round_decimal x decimal_digits
+let[@inline] round_decimal_local x ~decimal_digits = round_decimal_local x decimal_digits
 let between t ~low ~high = low <= t && t <= high
 
 let clamp_exn t ~min ~max =
@@ -886,13 +1122,22 @@ let clamp t ~min ~max =
          [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ])
 ;;
 
-let ( + ) = ( +. )
-let ( - ) = ( -. )
-let ( * ) = ( *. )
-let ( ** ) = ( ** )
-let ( / ) = ( /. )
-let ( % ) = ( %. )
-let ( ~- ) = ( ~-. )
+external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
+external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
+external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
+external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%divfloat"
+
+external ( % )
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> t
+  = "Base_caml_modf_positive_float_exn" "Base_caml_modf_positive_float_unboxed_exn"
+[@@unboxed]
+
+external ( ** ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_power_float" "pow"
+[@@unboxed] [@@noalloc]
+
+external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
 
 let[@inline] sign_exn t : Sign.t =
   if t > 0.
@@ -901,7 +1146,8 @@ let[@inline] sign_exn t : Sign.t =
   then Neg
   else if t = 0.
   then Zero
-  else Error.raise_s (Sexp.message "Float.sign_exn of NAN" [ "", sexp_of_t t ])
+  else
+    Error.raise_s (Sexp.message "Float.sign_exn of NAN" [ "", sexp_of_t (globalize t) ])
 ;;
 
 let sign_or_nan t : Sign_or_nan.t =
@@ -909,8 +1155,8 @@ let sign_or_nan t : Sign_or_nan.t =
 ;;
 
 let ieee_negative t =
-  let bits = Stdlib.Int64.bits_of_float t in
-  Poly.(bits < Stdlib.Int64.zero)
+  let bits = Int64.bits_of_float t in
+  Int64.O.(bits < zero)
 ;;
 
 let exponent_bits = 11
@@ -921,15 +1167,14 @@ let mantissa_mask = Int63.(shift_left one mantissa_bits - one)
 let mantissa_mask64 = Int63.to_int64 mantissa_mask
 
 let ieee_exponent t =
-  let bits = Stdlib.Int64.bits_of_float t in
-  Int64.(bit_and (shift_right_logical bits mantissa_bits) exponent_mask64)
-  |> Stdlib.Int64.to_int
+  let bits = Int64.bits_of_float t in
+  Int64.to_int_trunc Int64.O.((bits lsr mantissa_bits) land exponent_mask64)
 ;;
 
 let ieee_mantissa t =
-  let bits = Stdlib.Int64.bits_of_float t in
+  let bits = Int64.bits_of_float t in
   (* This is safe because mantissa_mask64 < Int63.max_value *)
-  (Int63.of_int64_trunc [@inlined]) Stdlib.Int64.(logand bits mantissa_mask64)
+  (Int63.of_int64_trunc [@inlined]) Int64.O.(bits land mantissa_mask64)
 ;;
 
 let create_ieee_exn ~negative ~exponent ~mantissa =
@@ -953,7 +1198,7 @@ let create_ieee_exn ~negative ~exponent ~mantissa =
 ;;
 
 let create_ieee ~negative ~exponent ~mantissa =
-  Or_error.try_with (fun () -> create_ieee_exn ~negative ~exponent ~mantissa)
+  Or_error.try_with (fun () -> create_ieee_exn ~negative ~exponent ~mantissa) [@nontail]
 ;;
 
 module Terse = struct
@@ -967,10 +1212,10 @@ module Terse = struct
 end
 
 include Comparable.With_zero (struct
-  include T
+    include T
 
-  let zero = zero
-end)
+    let zero = zero
+  end)
 
 (* These are partly here as a performance hack to avoid some boxing we're getting with
    the versions we get from [With_zero].  They also make [Float.is_negative nan] and
@@ -982,38 +1227,58 @@ let is_negative t = t < 0.
 let is_non_positive t = t <= 0.
 
 include Pretty_printer.Register (struct
-  include T
+    include T
 
-  let module_name = "Base.Float"
-  let to_string = to_string
-end)
+    let module_name = "Base.Float"
+    let to_string = to_string
+  end)
 
 module O = struct
-  let ( + ) = ( + )
-  let ( - ) = ( - )
-  let ( * ) = ( * )
-  let ( / ) = ( / )
-  let ( % ) = ( % )
-  let ( ~- ) = ( ~- )
-  let ( ** ) = ( ** )
+  external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
+  external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
+  external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
+  external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%divfloat"
 
-  include (Float_replace_polymorphic_compare : Comparisons.Infix with type t := t)
+  external ( % )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> t
+    = "Base_caml_modf_positive_float_exn" "Base_caml_modf_positive_float_unboxed_exn"
+  [@@unboxed]
 
-  let abs = abs
-  let neg = neg
+  external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
+
+  external ( ** ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_power_float" "pow"
+  [@@unboxed] [@@noalloc]
+
+  include (
+    Float_replace_polymorphic_compare : Comparisons.Infix_with_local_opt with type t := t)
+
+  external abs : (t[@local_opt]) -> (t[@local_opt]) = "%absfloat"
+  external neg : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
+
   let zero = zero
   let of_int = of_int
   let of_float x = x
 end
 
 module O_dot = struct
-  let ( *. ) = ( * )
-  let ( +. ) = ( + )
-  let ( -. ) = ( - )
-  let ( /. ) = ( / )
-  let ( %. ) = ( % )
-  let ( ~-. ) = ( ~- )
-  let ( **. ) = ( ** )
+  external ( +. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
+  external ( -. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
+  external ( *. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
+  external ( /. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%divfloat"
+
+  external ( %. )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> t
+    = "Base_caml_modf_positive_float_exn" "Base_caml_modf_positive_float_unboxed_exn"
+  [@@unboxed]
+
+  external ( ~-. ) : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
+
+  external ( **. ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_power_float" "pow"
+  [@@unboxed] [@@noalloc]
 end
 
 module Private = struct
@@ -1028,40 +1293,17 @@ module Private = struct
   let iround_nearest_exn_64 = iround_nearest_exn_64
 end
 
+module Shadow = struct
+  (* These functions specifically replace defaults in replace_polymorphic_compare. *)
+  let min = min
+  let max = max
+  let min_local = min_local
+  let max_local = max_local
+end
+
 (* Include type-specific [Replace_polymorphic_compare] at the end, after
    including functor application that could shadow its definitions. This is
    here so that efficient versions of the comparison functions are exported by
    this module. *)
 include Float_replace_polymorphic_compare
-
-(* These functions specifically replace defaults in replace_polymorphic_compare.
-
-   The desired behavior here is to propagate a nan if either argument is nan. Because the
-   first comparison will always return false if either argument is nan, it suffices to
-   check if x is nan. Then, when x is nan or both x and y are nan, we return x = nan; and
-   when y is nan but not x, we return y = nan.
-
-   There are various ways to implement these functions.  The benchmark below shows a few
-   different versions.  This benchmark was run over an array of random floats (none of
-   which are nan).
-
-   ┌────────────────────────────────────────────────┬──────────┐
-   │ Name                                           │ Time/Run │
-   ├────────────────────────────────────────────────┼──────────┤
-   │ if is_nan x then x else if x < y then x else y │   2.42us │
-   │ if is_nan x || x < y then x else y             │   2.02us │
-   │ if x < y || is_nan x then x else y             │   1.88us │
-   └────────────────────────────────────────────────┴──────────┘
-
-   The benchmark below was run when x > y is always true (again, no nan values).
-
-   ┌────────────────────────────────────────────────┬──────────┐
-   │ Name                                           │ Time/Run │
-   ├────────────────────────────────────────────────┼──────────┤
-   │ if is_nan x then x else if x < y then x else y │   2.83us │
-   │ if is_nan x || x < y then x else y             │   1.97us │
-   │ if x < y || is_nan x then x else y             │   1.56us │
-   └────────────────────────────────────────────────┴──────────┘
-*)
-let min (x : t) y = if x < y || is_nan x then x else y
-let max (x : t) y = if x > y || is_nan x then x else y
+include Shadow

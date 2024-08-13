@@ -53,7 +53,7 @@ let%test_module "conversions" =
         match a_to_b_or_error a with
         | Ok b ->
           require
-            loc
+            ~here:loc
             (B.equal b b')
             ~if_false_then_print_s:
               (lazy
@@ -65,7 +65,7 @@ let%test_module "conversions" =
                     ~output:(b : B.t)
                     ~expected:(b' : B.t)]);
           require
-            loc
+            ~here:loc
             (A.equal a a')
             ~if_false_then_print_s:
               (lazy
@@ -78,7 +78,7 @@ let%test_module "conversions" =
                     ~round_trip:(a' : A.t)])
         | Error error ->
           require
-            loc
+            ~here:loc
             (not (A.equal a a'))
             ~if_false_then_print_s:
               (lazy
@@ -234,21 +234,21 @@ let%test_module "Make_hex" =
       type t = int [@@deriving quickcheck]
 
       module M = Make_hex (struct
-        type nonrec t = int [@@deriving sexp, compare ~localize, hash, quickcheck]
+          type nonrec t = int [@@deriving sexp, compare ~localize, hash, quickcheck]
 
-        let to_string = Int.Hex.to_string
-        let of_string = Int.Hex.of_string
-        let zero = 0
-        let ( < ) = ( < )
-        let neg = Int.neg
-        let module_name = "Hex_int"
-      end)
+          let to_string = Int.Hex.to_string
+          let of_string = Int.Hex.of_string
+          let zero = 0
+          let ( < ) = ( < )
+          let neg = Int.neg
+          let module_name = "Hex_int"
+        end)
 
       include (M.Hex : module type of M.Hex with type t := t)
     end
 
     let%expect_test "validate sexp grammar" =
-      require_ok [%here] (Sexp_grammar_validation.validate_grammar (module Hex_int));
+      require_ok (Sexp_grammar_validation.validate_grammar (module Hex_int));
       [%expect {| String |}]
     ;;
   end)

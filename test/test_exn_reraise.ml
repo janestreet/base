@@ -88,7 +88,8 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
     let%expect_test "Base.Exn.reraise" =
       test_reraiser _Base_Exn_reraise;
       really_show_backtrace [%expect.output];
-      [%expect {|
+      [%expect
+        {|
         Before re-raise: true
         After  re-raise: true
         |}]
@@ -98,7 +99,8 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
     let%expect_test "Base.Exn.reraise" =
       test_reraiser _Base_Exn_reraise_after_clobbering_most_recent_backtrace;
       really_show_backtrace [%expect.output];
-      [%expect {|
+      [%expect
+        {|
         Before re-raise: false
         After  re-raise: true
         |}]
@@ -108,7 +110,8 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
     let%expect_test "%reraise unequal" =
       test_reraiser external_reraise_unequal;
       really_show_backtrace [%expect.output];
-      [%expect {|
+      [%expect
+        {|
         Before re-raise: false
         After  re-raise: true
         |}]
@@ -118,7 +121,8 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
     let%expect_test "raise unequal" =
       test_reraiser vanilla_raise_unequal;
       really_show_backtrace [%expect.output];
-      [%expect {|
+      [%expect
+        {|
         Before re-raise: false
         After  re-raise: true
         |}]
@@ -128,7 +132,8 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
     let%expect_test "raise equal" =
       test_reraiser vanilla_raise;
       really_show_backtrace [%expect.output];
-      [%expect {|
+      [%expect
+        {|
         Before re-raise: true
         After  re-raise: true
         |}]
@@ -138,7 +143,8 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
     let%expect_test "Caml.Printexc.raise_with_backtrace" =
       test_reraiser raise_with_original_backtrace;
       really_show_backtrace [%expect.output];
-      [%expect {|
+      [%expect
+        {|
         Before re-raise: true
         After  re-raise: true
         |}]
@@ -148,7 +154,8 @@ let%test_module ("Show native backtraces" [@tags "no-js"]) =
     let%expect_test "Exn.reraise_uncaught" =
       test_reraise_uncaught ~reraise_uncaught:(Exn.reraise_uncaught "reraised");
       really_show_backtrace [%expect.output];
-      [%expect {|
+      [%expect
+        {|
         Before re-raise: true
         After  re-raise: true
         |}]

@@ -28,7 +28,6 @@ val init : int -> f:(int -> 'a) -> 'a t
 val length : 'a t -> int
 val get : 'a t -> int -> 'a
 val unsafe_get : 'a t -> int -> 'a
-val unsafe_get_local : 'a t -> int -> 'a
 val set : 'a t -> int -> 'a -> unit
 val unsafe_set : 'a t -> int -> 'a -> unit
 val swap : _ t -> int -> int -> unit

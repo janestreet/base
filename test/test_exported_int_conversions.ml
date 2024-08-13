@@ -70,8 +70,8 @@ let test_total
   iter
     (module A)
     ~f:(fun a ->
-      require_compare_equal [%here] (module B) (b_of_a a) (a_to_b a);
-      require_compare_equal [%here] (module Int64) (A.to_int64 a) (B.to_int64 (b_of_a a)))
+      require_compare_equal (module B) (b_of_a a) (a_to_b a);
+      require_compare_equal (module Int64) (A.to_int64 a) (B.to_int64 (b_of_a a)))
 ;;
 
 let truncate int64 ~num_bits =
@@ -101,28 +101,26 @@ let test_partial
   iter
     (module A)
     ~f:(fun a ->
-      require_compare_equal [%here] (module B_option) (b_of_a a) (a_to_b a);
-      require_compare_equal [%here] (module B_option) (b_of_a a) (try_with b_of_a_exn a);
-      require_compare_equal [%here] (module B_option) (a_to_b a) (try_with a_to_b_exn a);
+      require_compare_equal (module B_option) (b_of_a a) (a_to_b a);
+      require_compare_equal (module B_option) (b_of_a a) (try_with b_of_a_exn a);
+      require_compare_equal (module B_option) (a_to_b a) (try_with a_to_b_exn a);
       match b_of_a a with
       | Some b ->
         Int.incr convertible_count;
-        require_compare_equal [%here] (module B) b (b_of_a_trunc a);
-        require_compare_equal [%here] (module B) b (a_to_b_trunc a);
-        require_compare_equal [%here] (module Int64) (A.to_int64 a) (B.to_int64 b)
+        require_compare_equal (module B) b (b_of_a_trunc a);
+        require_compare_equal (module B) b (a_to_b_trunc a);
+        require_compare_equal (module Int64) (A.to_int64 a) (B.to_int64 b)
       | None ->
         let trunc = truncate (A.to_int64 a) ~num_bits:B.num_bits in
-        require_compare_equal [%here] (module Int64) trunc (B.to_int64 (b_of_a_trunc a));
-        require_compare_equal [%here] (module Int64) trunc (B.to_int64 (a_to_b_trunc a));
+        require_compare_equal (module Int64) trunc (B.to_int64 (b_of_a_trunc a));
+        require_compare_equal (module Int64) trunc (B.to_int64 (a_to_b_trunc a));
         require
-          [%here]
           (Int64.( > ) (A.to_int64 a) (B.to_int64 B.max_value)
            || Int64.( < ) (A.to_int64 a) (B.to_int64 B.min_value))
           ~if_false_then_print_s:(lazy [%message "failed to convert" ~_:(a : A.t)]));
   (* Make sure we stress the conversion a nontrivial number of times. This makes sure the
      random generation is useful and we aren't just testing the hard-coded examples. *)
   require
-    [%here]
     (!convertible_count > 100)
     ~if_false_then_print_s:
       (lazy

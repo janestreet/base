@@ -1,4 +1,5 @@
 open! Import
+open Modes.Export
 include Buffer_intf
 include Stdlib.Buffer
 
@@ -6,31 +7,48 @@ let contents_bytes = to_bytes
 let add_substring t s ~pos ~len = add_substring t s pos len
 let add_subbytes t s ~pos ~len = add_subbytes t s pos len
 let sexp_of_t t = sexp_of_string (contents t)
-let caml_buffer_length = (Stdlib.Obj.magic (Stdlib.Buffer.length : t -> int) : t -> int)
-
-let caml_buffer_blit =
-  (Stdlib.Obj.magic
-     (Stdlib.Buffer.blit : Stdlib.Buffer.t -> int -> Bytes.t -> int -> int -> unit)
-    : Stdlib.Buffer.t -> int -> Bytes.t -> int -> int -> unit)
-;;
 
 module To_bytes =
   Blit.Make_distinct
     (struct
-      type nonrec t = t
+      type nonrec t = t Modes.Global.t
 
-      let length = caml_buffer_length
+      let length t = length t.global
     end)
     (struct
-      type t = Bytes.t
+      type t = Bytes.t Modes.Global.t
 
-      let create ~len = Bytes.create len
-      let length = Bytes.length
+      let create ~len = { global = Bytes.create len }
+      let length t = Bytes.length t.global
 
       let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len =
-        caml_buffer_blit src src_pos dst dst_pos len
+        blit src.global src_pos dst.global dst_pos len
       ;;
     end)
 
-include To_bytes
-module To_string = Blit.Make_to_string (Stdlib.Buffer) (To_bytes)
+let blit ~src ~src_pos ~dst ~dst_pos ~len =
+  To_bytes.blit ~src:{ global = src } ~src_pos ~dst:{ global = dst } ~dst_pos ~len
+;;
+
+let blito ~src ?src_pos ?src_len ~dst ?dst_pos () =
+  To_bytes.blito ~src:{ global = src } ?src_pos ?src_len ~dst:{ global = dst } ?dst_pos ()
+;;
+
+let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len =
+  To_bytes.unsafe_blit ~src:{ global = src } ~src_pos ~dst:{ global = dst } ~dst_pos ~len
+;;
+
+let sub t ~pos ~len = (To_bytes.sub { global = t } ~pos ~len).global
+let subo ?pos ?len t = (To_bytes.subo ?pos ?len { global = t }).global
+
+module To_string = struct
+  let sub t ~pos ~len =
+    let bytes = sub t ~pos ~len in
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:bytes
+  ;;
+
+  let subo ?pos ?len t =
+    let bytes = subo ?pos ?len t in
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:bytes
+  ;;
+end

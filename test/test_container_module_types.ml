@@ -60,9 +60,9 @@ module _ : module type of Container = struct
 
       include
         Generic_with_creators
-          with type _ elt := elt
-           and type (_, _, _) t := t
-           and type ('a, _, _) concat := 'a list
+        with type _ elt := elt
+         and type (_, _, _) t := t
+         and type ('a, _, _) concat := 'a list
 
       val mem : t -> elt -> bool
     end
@@ -108,9 +108,9 @@ module _ : module type of Container = struct
 
       include
         Generic_with_creators
-          with type 'a elt := 'a
-           and type ('a, _, _) t := 'a t
-           and type ('a, _, _) concat := 'a t
+        with type 'a elt := 'a
+         and type ('a, _, _) t := 'a t
+         and type ('a, _, _) concat := 'a t
     end
   end
 
@@ -183,9 +183,9 @@ module _ : module type of Indexed_container = struct
 
       include
         Generic_with_creators
-          with type _ elt := elt
-           and type (_, _, _) t := t
-           and type ('a, _, _) concat := 'a list
+        with type _ elt := elt
+         and type (_, _, _) t := t
+         and type ('a, _, _) concat := 'a list
 
       val mem : t -> elt -> bool
     end
@@ -203,9 +203,9 @@ module _ : module type of Indexed_container = struct
 
       include
         Generic_with_creators
-          with type 'a elt := 'a
-           and type ('a, _, _) t := 'a t
-           and type ('a, _, _) concat := 'a t
+        with type 'a elt := 'a
+         and type ('a, _, _) t := 'a t
+         and type ('a, _, _) concat := 'a t
     end
   end
 

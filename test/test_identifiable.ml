@@ -5,10 +5,10 @@ module T = struct
   type t = string
 
   include Make (struct
-    let module_name = "test"
+      let module_name = "test"
 
-    include String
-  end)
+      include String
+    end)
 end
 
 let%expect_test ("hash coherence" [@tags "64-bits-only"]) =

@@ -1,0 +1,6 @@
+(library
+ (name base_test_coverage_map)
+ (libraries base base_quickcheck base_test_coverage_helpers
+   expect_test_helpers_core.expect_test_helpers_base sexp_grammar stdio)
+ (preprocess
+  (pps ppx_jane)))

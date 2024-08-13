@@ -35,6 +35,20 @@ type ('src, 'dst) subo =
   -> 'src
   -> 'dst
 
+(** Like [blit], but not allowing [local_] values (on compilers supporting modes). *)
+type ('src, 'dst) blit_global =
+  src:'src -> src_pos:int -> dst:'dst -> dst_pos:int -> len:int -> unit
+
+(** Like [blito], but not allowing [local_] values (on compilers supporting modes). *)
+type ('src, 'dst) blito_global =
+  src:'src -> ?src_pos:int -> ?src_len:int -> dst:'dst -> ?dst_pos:int -> unit -> unit
+
+(** Like [sub], but not allowing [local_] values (on compilers supporting modes). *)
+type ('src, 'dst) sub_global = 'src -> pos:int -> len:int -> 'dst
+
+(** Like [subo], but not allowing [local_] values (on compilers supporting modes). *)
+type ('src, 'dst) subo_global = ?pos:int -> ?len:int -> 'src -> 'dst
+
 (*_ These are not implemented less-general-in-terms-of-more-general because odoc produces
   unreadable documentation in that case, with or without [inline] on [include]. *)
 
@@ -69,6 +83,17 @@ module type S_distinct = sig
   val subo : (src, dst) subo
 end
 
+module type S_distinct_global = sig
+  type src
+  type dst
+
+  val blit : (src, dst) blit_global
+  val blito : (src, dst) blito_global
+  val unsafe_blit : (src, dst) blit_global
+  val sub : (src, dst) sub_global
+  val subo : (src, dst) subo_global
+end
+
 module type S1_distinct = sig
   type 'a src
   type 'a dst
@@ -85,6 +110,13 @@ module type S_to_string = sig
 
   val sub : (t, string) sub
   val subo : (t, string) subo
+end
+
+module type S_to_string_global = sig
+  type t
+
+  val sub : (t, string) sub_global
+  val subo : (t, string) subo_global
 end
 
 (** Users of modules matching the blit signatures [S], [S1], and [S1_distinct] only need
@@ -115,12 +147,18 @@ module type Blit = sig
   type nonrec ('src, 'dst) blito = ('src, 'dst) blito
   type nonrec ('src, 'dst) sub = ('src, 'dst) sub
   type nonrec ('src, 'dst) subo = ('src, 'dst) subo
+  type nonrec ('src, 'dst) blit_global = ('src, 'dst) blit_global
+  type nonrec ('src, 'dst) blito_global = ('src, 'dst) blito_global
+  type nonrec ('src, 'dst) sub_global = ('src, 'dst) sub_global
+  type nonrec ('src, 'dst) subo_global = ('src, 'dst) subo_global
 
   module type S = S
   module type S1 = S1
   module type S_distinct = S_distinct
+  module type S_distinct_global = S_distinct_global
   module type S1_distinct = S1_distinct
   module type S_to_string = S_to_string
+  module type S_to_string_global = S_to_string_global
   module type Sequence = Sequence
   module type Sequence1 = Sequence1
 
@@ -143,25 +181,27 @@ module type Blit = sig
 
   (** [Make] is for blitting between two values of the same monomorphic type. *)
   module Make (Sequence : sig
-    include Sequence
-
-    val create : len:int -> t
-    val unsafe_blit : (t, t) blit
-  end) : S with type t := Sequence.t
-
-  (** [Make_distinct] is for blitting between values of distinct monomorphic types. *)
-  module Make_distinct
-    (Src : Sequence) (Dst : sig
       include Sequence
 
       val create : len:int -> t
-      val unsafe_blit : (Src.t, t) blit
-    end) : S_distinct with type src := Src.t with type dst := Dst.t
+      val unsafe_blit : (t, t) blit
+    end) : S with type t := Sequence.t
 
-  module Make_to_string (T : sig
-    type t
-  end)
-  (To_bytes : S_distinct with type src := T.t with type dst := bytes) :
+  (** [Make_distinct] is for blitting between values of distinct monomorphic types. *)
+  module Make_distinct
+      (Src : Sequence)
+      (Dst : sig
+         include Sequence
+
+         val create : len:int -> t
+         val unsafe_blit : (Src.t, t) blit
+       end) : S_distinct with type src := Src.t with type dst := Dst.t
+
+  module Make_to_string
+      (T : sig
+         type t
+       end)
+      (To_bytes : S_distinct with type src := T.t with type dst := bytes) :
     S_to_string with type t := T.t
 
   (** [Make1] is for blitting between two values of the same polymorphic type. *)

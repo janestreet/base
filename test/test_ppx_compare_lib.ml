@@ -13,7 +13,6 @@ let test (type a) (module T : T with type t = a) ordered =
   List.iteri ordered ~f:(fun i ti ->
     List.iteri ordered ~f:(fun j tj ->
       require
-        [%here]
         (Ordering.equal
            (Ordering.of_int (T.compare ti tj))
            (Ordering.of_int (Int.compare i j)))

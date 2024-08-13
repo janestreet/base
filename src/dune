@@ -16,7 +16,8 @@
 (library
  (foreign_stubs
   (language c)
-  (names bytes_stubs exn_stubs int_math_stubs hash_stubs obj_stubs am_testing)
+  (names bytes_stubs exn_stubs float_stubs int_math_stubs hash_stubs
+    obj_stubs am_testing)
   (flags
    :standard
    -D_LARGEFILE64_SOURCE
@@ -30,8 +31,8 @@
    ocaml_intrinsics_kernel)
  (preprocess no_preprocessing)
  (lint
-  (pps ppx_base ppx_base_lint -check-doc-comments -type-conv-keep-w32=both
-    -apply=js_style,base_lint,type_conv,cold))
+  (pps ppx_base ppx_base_internal ppx_base_lint -check-doc-comments
+    -type-conv-keep-w32=both -apply=js_style,base_lint,deriving))
  (js_of_ocaml
   (javascript_files runtime.js)))
 

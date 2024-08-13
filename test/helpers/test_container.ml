@@ -1,27 +1,29 @@
 open! Base
 open! Container
 
-module Test_generic (Elt : sig
-  type 'a t
+module Test_generic
+    (Elt : sig
+       type 'a t
 
-  val of_int : int -> int t
-  val to_int : int t -> int
-end) (Container : sig
-  type 'a t [@@deriving sexp]
+       val of_int : int -> int t
+       val to_int : int t -> int
+     end)
+    (Container : sig
+       type 'a t [@@deriving sexp]
 
-  include Generic with type ('a, _, _) t := 'a t with type 'a elt := 'a Elt.t
+       include Generic with type ('a, _, _) t := 'a t with type 'a elt := 'a Elt.t
 
-  val mem : 'a t -> 'a Elt.t -> equal:('a Elt.t -> 'a Elt.t -> bool) -> bool
-  val of_list : 'a Elt.t list -> [ `Ok of 'a t | `Skip_test ]
-end) : sig
-  type 'a t [@@deriving sexp]
+       val mem : 'a t -> 'a Elt.t -> equal:('a Elt.t -> 'a Elt.t -> bool) -> bool
+       val of_list : 'a Elt.t list -> [ `Ok of 'a t | `Skip_test ]
+     end) : sig
+    type 'a t [@@deriving sexp]
 
-  include Generic with type ('a, _, _) t := 'a t
+    include Generic with type ('a, _, _) t := 'a t
 
-  val mem : 'a t -> 'a Elt.t -> equal:('a Elt.t -> 'a Elt.t -> bool) -> bool
-end
-with type 'a t := 'a Container.t
-with type 'a elt := 'a Elt.t =
+    val mem : 'a t -> 'a Elt.t -> equal:('a Elt.t -> 'a Elt.t -> bool) -> bool
+  end
+  with type 'a t := 'a Container.t
+  with type 'a elt := 'a Elt.t =
 (* This signature constraint reminds us to add unit tests when functions are added to
    [Generic]. *)
 struct
@@ -142,12 +144,12 @@ struct
 end
 
 module Test_S1_allow_skipping_tests (Container : sig
-  type 'a t [@@deriving sexp]
+    type 'a t [@@deriving sexp]
 
-  include Container.S1 with type 'a t := 'a t
+    include Container.S1 with type 'a t := 'a t
 
-  val of_list : 'a list -> [ `Ok of 'a t | `Skip_test ]
-end) =
+    val of_list : 'a list -> [ `Ok of 'a t | `Skip_test ]
+  end) =
 struct
   include
     Test_generic
@@ -161,32 +163,32 @@ struct
 end
 
 module Test_S1 (Container : sig
-  type 'a t [@@deriving sexp]
+    type 'a t [@@deriving sexp]
 
-  include Container.S1 with type 'a t := 'a t
+    include Container.S1 with type 'a t := 'a t
 
-  val of_list : 'a list -> 'a t
-end) =
+    val of_list : 'a list -> 'a t
+  end) =
 Test_S1_allow_skipping_tests (struct
-  include Container
+    include Container
 
-  let of_list l = `Ok (of_list l)
-end)
+    let of_list l = `Ok (of_list l)
+  end)
 
 module Test_S0 (Container : sig
-  module Elt : sig
+    module Elt : sig
+      type t [@@deriving sexp]
+
+      val of_int : int -> t
+      val to_int : t -> int
+    end
+
     type t [@@deriving sexp]
 
-    val of_int : int -> t
-    val to_int : t -> int
-  end
+    include Container.S0 with type t := t and type elt := Elt.t
 
-  type t [@@deriving sexp]
-
-  include Container.S0 with type t := t and type elt := Elt.t
-
-  val of_list : Elt.t list -> t
-end) =
+    val of_list : Elt.t list -> t
+  end) =
 struct
   include
     Test_generic

@@ -23,16 +23,16 @@ module Make_gen (T : Arg) = struct
 end
 
 module Make (T : Indexable) = Make_gen (struct
-  include T
+    include T
 
-  type 'a elt = T.elt
-  type 'a t = T.t
-end)
+    type 'a elt = T.elt
+    type 'a t = T.t
+  end)
 
 module Make1 (T : Indexable1) = Make_gen (struct
-  type 'a elt = 'a
-  type 'a t = 'a T.t
+    type 'a elt = 'a
+    type 'a t = 'a T.t
 
-  let get = T.get
-  let length = T.length
-end)
+    let get = T.get
+    let length = T.length
+  end)

@@ -21,7 +21,7 @@ let check_hash_coherence (type t) here (module T : Hash with type t = t) ts =
     let hash1 = T.hash t in
     let hash2 = [%hash: T.t] t in
     require
-      here
+      ~here
       (hash1 = hash2)
       ~cr:CR_soon
       ~if_false_then_print_s:

@@ -11,6 +11,7 @@ let%test_module "Blit" =
             (struct
               include Bytes
 
+              let get t i = get t i
               let create ~len = create len
             end)
             (Bytes))
@@ -28,7 +29,7 @@ let%expect_test "local" =
     printf "%c" string.[i]
   done;
   [%expect {| 0123456789 |}];
-  Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+  Expect_test_helpers_base.require_does_raise (fun () ->
     ignore (Bytes.create_local (Sys.max_string_length + 1) : Bytes.t));
   [%expect {| (Invalid_argument Bytes.create_local) |}]
 ;;

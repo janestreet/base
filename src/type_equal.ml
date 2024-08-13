@@ -2,9 +2,9 @@ open! Import
 
 type ('a, 'b) t = T : ('a, 'a) t [@@deriving_inline sexp_of]
 
-let sexp_of_t :
-      'a 'b.
-      ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
+let sexp_of_t
+  : 'a 'b.
+  ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
   =
   fun (type a__003_ b__004_)
     :  ((a__003_ -> Sexplib0.Sexp.t) -> (b__004_ -> Sexplib0.Sexp.t)
@@ -17,8 +17,8 @@ let sexp_of_t :
 type ('a, 'b) equal = ('a, 'b) t
 
 include Type_equal_intf.Type_equal_defns (struct
-  type ('a, 'b) t = ('a, 'b) equal
-end)
+    type ('a, 'b) t = ('a, 'b) equal
+  end)
 
 let refl = T
 let sym (type a b) (T : (a, b) t) : (b, a) t = T
@@ -26,15 +26,15 @@ let trans (type a b c) (T : (a, b) t) (T : (b, c) t) : (a, c) t = T
 let conv (type a b) (T : (a, b) t) (a : a) : b = a
 
 module Lift (X : sig
-  type 'a t
-end) =
+    type 'a t
+  end) =
 struct
   let lift (type a b) (T : (a, b) t) : (a X.t, b X.t) t = T
 end
 
 module Lift2 (X : sig
-  type ('a1, 'a2) t
-end) =
+    type ('a1, 'a2) t
+  end) =
 struct
   let lift (type a1 b1 a2 b2) (T : (a1, b1) t) (T : (a2, b2) t)
     : ((a1, a2) X.t, (b1, b2) X.t) t
@@ -44,11 +44,27 @@ struct
 end
 
 module Lift3 (X : sig
-  type ('a1, 'a2, 'a3) t
-end) =
+    type ('a1, 'a2, 'a3) t
+  end) =
 struct
   let lift (type a1 b1 a2 b2 a3 b3) (T : (a1, b1) t) (T : (a2, b2) t) (T : (a3, b3) t)
     : ((a1, a2, a3) X.t, (b1, b2, b3) X.t) t
+    =
+    T
+  ;;
+end
+
+module Lift4 (X : sig
+    type ('a1, 'a2, 'a3, 'a4) t
+  end) =
+struct
+  let lift
+    (type a1 b1 a2 b2 a3 b3 a4 b4)
+    (T : (a1, b1) t)
+    (T : (a2, b2) t)
+    (T : (a3, b3) t)
+    (T : (a4, b4) t)
+    : ((a1, a2, a3, a4) X.t, (b1, b2, b3, b4) X.t) t
     =
     T
   ;;
@@ -79,7 +95,7 @@ module Id = struct
              (match compare_int _a__007_ _b__008_ with
               | 0 -> compare_list compare _a__009_ _b__010_
               | n -> n))
-        : t -> t -> int)
+       : t -> t -> int)
     ;;
 
     let rec (hash_fold_t :
@@ -94,7 +110,7 @@ module Id = struct
              hash_fold_int hsv _a0
            in
            hash_fold_list hash_fold_t hsv _a1
-        : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
+       : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
 
     and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
       let func arg =
@@ -110,17 +126,17 @@ module Id = struct
          let res0__015_ = sexp_of_int arg0__013_
          and res1__016_ = sexp_of_list sexp_of_t arg1__014_ in
          Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "T"; res0__015_; res1__016_ ]
-        : t -> Sexplib0.Sexp.t)
+       : t -> Sexplib0.Sexp.t)
     ;;
 
     [@@@end]
 
     include Comparable.Make (struct
-      type nonrec t = t
+        type nonrec t = t
 
-      let compare = compare
-      let sexp_of_t = sexp_of_t
-    end)
+        let compare = compare
+        let sexp_of_t = sexp_of_t
+      end)
 
     (* We use the extension constructor id for a [key] as the unique id for its type. *)
     let create (key : _ key) args =
@@ -189,8 +205,8 @@ module Id = struct
   ;;
 
   include Type_equal_intf.Type_equal_id_defns (struct
-    type nonrec 'a t = 'a t
-  end)
+      type nonrec 'a t = 'a t
+    end)
 
   module Create0 (T : Arg0) = struct
     type _ key += T0 : T.t key
@@ -289,6 +305,44 @@ module Id = struct
             (match A.type_equal akey, B.type_equal bkey, C.type_equal ckey with
              | Some T, Some T, Some T -> Some T
              | None, _, _ | _, None, _ | _, _, None -> None)
+          | _ -> None
+        ;;
+      end)
+    ;;
+  end
+
+  module Create4 (T : Arg4) = struct
+    type _ key += T4 : 'a key * 'b key * 'c key * 'd key -> ('a, 'b, 'c, 'd) T.t key
+
+    let type_equal_id
+      (type a b c d)
+      ((module A) : a t)
+      ((module B) : b t)
+      ((module C) : c t)
+      ((module D) : d t)
+      : (a, b, c, d) T.t t
+      =
+      (module struct
+        type t = (A.t, B.t, C.t, D.t) T.t
+
+        let id_name = T.name
+
+        let id_sexp =
+          Sexp.List [ Atom id_name; A.id_sexp; B.id_sexp; C.id_sexp; D.id_sexp ]
+        ;;
+
+        let sexp_of_t t = T.sexp_of_t A.sexp_of_t B.sexp_of_t C.sexp_of_t D.sexp_of_t t
+        let type_key = T4 (A.type_key, B.type_key, C.type_key, D.type_key)
+        let uid = Uid.create type_key [ A.uid; B.uid; C.uid; D.uid ]
+
+        let type_equal (type other) (otherkey : other key) : (t, other) equal option =
+          match otherkey with
+          | T4 (akey, bkey, ckey, dkey) ->
+            (match
+               A.type_equal akey, B.type_equal bkey, C.type_equal ckey, D.type_equal dkey
+             with
+             | Some T, Some T, Some T, Some T -> Some T
+             | None, _, _, _ | _, None, _, _ | _, _, None, _ | _, _, _, None -> None)
           | _ -> None
         ;;
       end)

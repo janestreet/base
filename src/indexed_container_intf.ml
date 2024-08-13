@@ -101,8 +101,8 @@ module type Generic_with_creators = sig
 
   include
     Generic
-      with type 'a elt := 'a elt
-       and type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
+    with type 'a elt := 'a elt
+     and type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
 
   val init : int -> f:(int -> 'a elt) -> ('a, _, _) t
   val mapi : ('a, 'p1, 'p2) t -> f:(int -> 'a elt -> 'b elt) -> ('b, 'p1, 'p2) t
@@ -156,9 +156,9 @@ module type Make_gen_with_creators_arg = sig
 
   include
     Make_common_with_creators_arg
-      with type ('a, 'p1, 'p2) t := ('a, 'p1, 'p2) t
-       and type 'a elt := 'a elt
-       and type ('a, 'p1, 'p2) concat := ('a, 'p1, 'p2) concat
+    with type ('a, 'p1, 'p2) t := ('a, 'p1, 'p2) t
+     and type 'a elt := 'a elt
+     and type ('a, 'p1, 'p2) concat := ('a, 'p1, 'p2) concat
 end
 
 module type Make_with_creators_arg = sig
@@ -166,9 +166,9 @@ module type Make_with_creators_arg = sig
 
   include
     Make_common_with_creators_arg
-      with type ('a, _, _) t := 'a t
-       and type 'a elt := 'a
-       and type ('a, _, _) concat := 'a t
+    with type ('a, _, _) t := 'a t
+     and type 'a elt := 'a
+     and type ('a, _, _) concat := 'a t
 end
 
 module type Make0_with_creators_arg = sig
@@ -176,9 +176,9 @@ module type Make0_with_creators_arg = sig
 
   include
     Make_common_with_creators_arg
-      with type ('a, _, _) t := t
-       and type 'a elt := Elt.t
-       and type ('a, _, _) concat := 'a list
+    with type ('a, _, _) t := t
+     and type 'a elt := Elt.t
+     and type ('a, _, _) concat := 'a list
 end
 
 module type Derived = sig
@@ -221,8 +221,8 @@ module type Indexed_container = sig
 
   module Make_gen (T : Make_gen_arg) :
     Generic
-      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
-       and type 'a elt := 'a T.elt
+    with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
+     and type 'a elt := 'a T.elt
 
   module Make_with_creators (T : Make_with_creators_arg) :
     S1_with_creators with type 'a t := 'a T.t
@@ -232,7 +232,7 @@ module type Indexed_container = sig
 
   module Make_gen_with_creators (T : Make_gen_with_creators_arg) :
     Generic_with_creators
-      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
-       and type 'a elt := 'a T.elt
-       and type ('a, 'phantom1, 'phantom2) concat := ('a, 'phantom1, 'phantom2) T.concat
+    with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
+     and type 'a elt := 'a T.elt
+     and type ('a, 'phantom1, 'phantom2) concat := ('a, 'phantom1, 'phantom2) T.concat
 end

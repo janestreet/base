@@ -1,4 +1,4 @@
-open! Core
+open! Base
 open! Import
 
 let%expect_test "bool_true" =
@@ -62,7 +62,8 @@ let%expect_test "array" =
   let a = [| "one"; "two"; "three" |] in
   let a' = globalize_array globalize_string a in
   Array.iter ~f:print_endline a';
-  [%expect {|
+  [%expect
+    {|
     one
     two
     three
@@ -73,11 +74,21 @@ let%expect_test "list" =
   let l = [ "one"; "two"; "three" ] in
   let l' = globalize_list globalize_string l in
   List.iter ~f:print_endline l';
-  [%expect {|
+  [%expect
+    {|
     one
     two
     three
     |}]
+;;
+
+let%expect_test "list does not stack overflow" =
+  let l = List.init 5_000_000 ~f:(fun i -> i) in
+  (* Test for timeout / stack overflow on a long list. *)
+  (match globalize_list globalize_int l with
+   | (_ : int list) -> ()
+   | exception Stack_overflow -> print_cr [%message "stack overflow"]);
+  [%expect {| |}]
 ;;
 
 let%expect_test "option" =

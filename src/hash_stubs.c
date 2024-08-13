@@ -3,12 +3,12 @@
 #include <stdint.h>
 
 /* Final mix and return from the hash.c implementation from INRIA */
-#define FINAL_MIX_AND_RETURN(h)                                                \
-  h ^= h >> 16;                                                                \
-  h *= 0x85ebca6b;                                                             \
-  h ^= h >> 13;                                                                \
-  h *= 0xc2b2ae35;                                                             \
-  h ^= h >> 16;                                                                \
+#define FINAL_MIX_AND_RETURN(h)                                                          \
+  h ^= h >> 16;                                                                          \
+  h *= 0x85ebca6b;                                                                       \
+  h ^= h >> 13;                                                                          \
+  h *= 0xc2b2ae35;                                                                       \
+  h ^= h >> 16;                                                                          \
   return Val_int(h & 0x3FFFFFFFU);
 
 CAMLprim value Base_hash_string(value string) {

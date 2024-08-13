@@ -21,4 +21,4 @@ val invariant : t -> unit
     so that people can find it (e.g. with merlin), and learn what we recommend.  This
     [of_string] has type [unit] because we don't want it to be accidentally used. *)
 val of_string : unit
-  [@@deprecated "[since 2018-02] Use [Parsexp.Single.parse_string_exn]"]
+[@@deprecated "[since 2018-02] Use [Parsexp.Single.parse_string_exn]"]

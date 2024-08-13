@@ -20,7 +20,7 @@ let rec compare__local =
        | _, Atom _ -> 1
        | List _a__005_, List _b__006_ ->
          compare_list__local compare__local _a__005_ _b__006_)
-    : t -> t -> int)
+   : t -> t -> int)
 ;;
 
 let compare = (fun a b -> compare__local a b : t -> t -> int)
@@ -30,7 +30,7 @@ let rec (globalize : t -> t) =
      match x__009_ with
      | Atom arg__010_ -> Atom (globalize_string arg__010_)
      | List arg__011_ -> List (globalize_list globalize arg__011_)
-    : t -> t)
+   : t -> t)
 ;;
 
 let rec (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
@@ -44,7 +44,7 @@ let rec (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash
        let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1 in
        let hsv = hsv in
        hash_fold_list hash_fold_t hsv _a0
-    : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
+   : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
 
 and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
   let func arg =

@@ -129,27 +129,27 @@ let%test_module "clamp" =
     let%test "clamp also bad 4" = Or_error.is_error (clamp nan ~min:nan ~max:nan)
 
     let%test_unit "clamp_exn bad" =
-      Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+      Expect_test_helpers_base.require_does_raise (fun () ->
         clamp_exn 2.5 ~min:3. ~max:2.)
     ;;
 
     let%test_unit "clamp_exn also bad" =
-      Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+      Expect_test_helpers_base.require_does_raise (fun () ->
         clamp_exn 2.5 ~min:nan ~max:3.)
     ;;
 
     let%test_unit "clamp_exn also bad 2" =
-      Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+      Expect_test_helpers_base.require_does_raise (fun () ->
         clamp_exn 2.5 ~min:2. ~max:nan)
     ;;
 
     let%test_unit "clamp_exn also bad 3" =
-      Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+      Expect_test_helpers_base.require_does_raise (fun () ->
         clamp_exn 2.5 ~min:nan ~max:nan)
     ;;
 
     let%test_unit "clamp_exn also bad 4" =
-      Expect_test_helpers_base.require_does_raise [%here] (fun () ->
+      Expect_test_helpers_base.require_does_raise (fun () ->
         clamp_exn nan ~min:nan ~max:nan)
     ;;
   end)
@@ -829,14 +829,14 @@ let%test_module _ =
 ;;
 
 module Test_bounds (I : sig
-  type t
+    type t
 
-  val num_bits : int
-  val of_float : float -> t
-  val to_int64 : t -> Int64.t
-  val max_value : t
-  val min_value : t
-end) =
+    val num_bits : int
+    val of_float : float -> t
+    val to_int64 : t -> Int64.t
+    val max_value : t
+    val min_value : t
+  end) =
 struct
   open I
 
@@ -872,19 +872,48 @@ struct
       Int64.( < ) lower_bound_minus_epsilon min_value)
   ;;
 
-  let%test "bigger than upper bound overflows" =
+  (* This test requires a modification for wasm; the value of [upper_bound_plus_epsilon]
+     in case of [Int64], instead of being [Int64.min_value], is actually
+     [Int64.max_value]. This is due to the limited instruction set provided by wasm; there
+     are two instructions that convert a float to an i64:
+
+     - trunc: traps when the result would be out of range. (a "trap" is
+       basically an unrecoverable exception)
+     - trunc_sat: "saturates" the result when it is out of range, rather than
+       trapping. If the result would be an overflow, it gets clamped to
+       [max_int], and if it would be an underflow, it gets clamped to [min_int].
+
+     The wasm_of_ocaml compiler uses trunc_sat to avoid trapping, but this
+     means it yields a different result on out-of-range results.
+  *)
+  let bigger_than_upper_bound_overflows ~wasm =
     let upper_bound = Int64.of_float float_upper_bound in
     let upper_bound_plus_epsilon =
       Stdlib.Int64.of_float (one_ulp `Up float_upper_bound)
     in
     let max_value = to_int64 max_value in
     if Int.( = ) num_bits 64
-       (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
-    then Int64.( < ) upper_bound_plus_epsilon upper_bound
+    then
+      if not wasm
+      then
+        (* upper_bound_plus_epsilon is not representable as a Int64.t, it has overflowed *)
+        Int64.( = ) upper_bound_plus_epsilon Int64.min_value
+      else
+        (* In the wasm version we clamp instead of overflowing, see the explanation in the
+           comment above. *)
+        Int64.( = ) upper_bound_plus_epsilon Int64.max_value
     else (
       assert (Int64.( >= ) upper_bound_plus_epsilon upper_bound);
       (* a value greater than max_value would overflow if converted to [t] *)
       Int64.( > ) upper_bound_plus_epsilon max_value)
+  ;;
+
+  let%test ("bigger than upper bound overflows" [@tags "no-wasm"]) =
+    bigger_than_upper_bound_overflows ~wasm:false
+  ;;
+
+  let%test ("bigger than upper bound overflows, kind of" [@tags "wasm-only"]) =
+    bigger_than_upper_bound_overflows ~wasm:true
   ;;
 end
 
@@ -1079,7 +1108,8 @@ let%test_module "Hexadecimal syntax" =
 let%expect_test "square" =
   printf "%f\n" (square 1.5);
   printf "%f\n" (square (-2.5));
-  [%expect {|
+  [%expect
+    {|
     2.250000
     6.250000
     |}]
@@ -1091,7 +1121,7 @@ let%expect_test "mathematical constants" =
   eq pi "3.141592653589793238462643383279502884197169399375105820974";
   eq sqrt_pi "1.772453850905516027298167483341145182797549456122387128213";
   eq sqrt_2pi "2.506628274631000502415765284811045253006986740609938316629";
-  eq euler "0.577215664901532860606512090082402431042159335939923598805";
+  eq euler_gamma_constant "0.577215664901532860606512090082402431042159335939923598805";
   (* Check size of diff from  ordinary computation. *)
   printf "sqrt pi diff  : %.20f\n" (sqrt_pi - sqrt pi);
   printf "sqrt 2pi diff : %.20f\n" (sqrt_2pi - sqrt (2. * pi));
@@ -1196,25 +1226,25 @@ let%expect_test "is_nan, is_inf, and is_finite" =
 ;;
 
 let%expect_test "nan" =
-  require [%here] (Float.is_nan (Float.min 1. Float.nan));
-  require [%here] (Float.is_nan (Float.min Float.nan 0.));
-  require [%here] (Float.is_nan (Float.min Float.nan Float.nan));
-  require [%here] (Float.is_nan (Float.max 1. Float.nan));
-  require [%here] (Float.is_nan (Float.max Float.nan 0.));
-  require [%here] (Float.is_nan (Float.max Float.nan Float.nan));
-  require_equal [%here] (module Float) 1. (Float.min_inan 1. Float.nan);
-  require_equal [%here] (module Float) 0. (Float.min_inan Float.nan 0.);
-  require [%here] (Float.is_nan (Float.min_inan Float.nan Float.nan));
-  require_equal [%here] (module Float) 1. (Float.max_inan 1. Float.nan);
-  require_equal [%here] (module Float) 0. (Float.max_inan Float.nan 0.);
-  require [%here] (Float.is_nan (Float.max_inan Float.nan Float.nan))
+  require (Float.is_nan (Float.min 1. Float.nan));
+  require (Float.is_nan (Float.min Float.nan 0.));
+  require (Float.is_nan (Float.min Float.nan Float.nan));
+  require (Float.is_nan (Float.max 1. Float.nan));
+  require (Float.is_nan (Float.max Float.nan 0.));
+  require (Float.is_nan (Float.max Float.nan Float.nan));
+  require_equal (module Float) 1. (Float.min_inan 1. Float.nan);
+  require_equal (module Float) 0. (Float.min_inan Float.nan 0.);
+  require (Float.is_nan (Float.min_inan Float.nan Float.nan));
+  require_equal (module Float) 1. (Float.max_inan 1. Float.nan);
+  require_equal (module Float) 0. (Float.max_inan Float.nan 0.);
+  require (Float.is_nan (Float.max_inan Float.nan Float.nan))
 ;;
 
 let%expect_test "iround_exn" =
-  require_equal [%here] (module Int) 0 (Float.iround_exn ~dir:`Nearest 0.2);
-  require_equal [%here] (module Int) 0 (Float.iround_exn ~dir:`Nearest (-0.2));
-  require_equal [%here] (module Int) 3 (Float.iround_exn ~dir:`Nearest 3.4);
-  require_equal [%here] (module Int) (-3) (Float.iround_exn ~dir:`Nearest (-3.4))
+  require_equal (module Int) 0 (Float.iround_exn ~dir:`Nearest 0.2);
+  require_equal (module Int) 0 (Float.iround_exn ~dir:`Nearest (-0.2));
+  require_equal (module Int) 3 (Float.iround_exn ~dir:`Nearest 3.4);
+  require_equal (module Int) (-3) (Float.iround_exn ~dir:`Nearest (-3.4))
 ;;
 
 let%expect_test "log" =
@@ -1233,19 +1263,22 @@ let%expect_test "log" =
     print_s [%sexp { log2 : float; log10 : float; ratio : float }]
   in
   test (-1.);
-  [%expect {|
+  [%expect
+    {|
     ((log2  NAN)
      (log10 NAN)
      (ratio NAN))
     |}];
   test 0.;
-  [%expect {|
+  [%expect
+    {|
     ((log2  -INF)
      (log10 -INF)
      (ratio NAN))
     |}];
   test 1.;
-  [%expect {|
+  [%expect
+    {|
     ((log2  0)
      (log10 0)
      (ratio NAN))
@@ -1293,7 +1326,8 @@ let%expect_test "log" =
      (ratio 3.3219280948873622))
     |}];
   test Float.infinity;
-  [%expect {|
+  [%expect
+    {|
     ((log2  INF)
      (log10 INF)
      (ratio NAN))

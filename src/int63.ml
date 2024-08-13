@@ -1,4 +1,5 @@
 open! Import
+module _ = Popcount
 
 let raise_s = Error.raise_s
 
@@ -7,29 +8,29 @@ include Sys0.Make_immediate64 (Int) (Int63_emul)
 
 module Backend = struct
   module type S = sig
-    type t
+      type t
 
-    include Int_intf.S with type t := t
+      include Int_intf.S with type t := t
 
-    val of_int : int -> t
-    val to_int : t -> int option
-    val to_int_trunc : t -> int
-    val of_int32 : int32 -> t
-    val to_int32 : t -> Int32.t option
-    val to_int32_trunc : t -> Int32.t
-    val of_int64 : Int64.t -> t option
-    val of_int64_trunc : Int64.t -> t
-    val of_nativeint : nativeint -> t option
-    val to_nativeint : t -> nativeint option
-    val of_nativeint_trunc : nativeint -> t
-    val to_nativeint_trunc : t -> nativeint
-    val of_float_unchecked : float -> t
-    val repr : (t, t) Int63_emul.Repr.t
-    val bswap16 : t -> t
-    val bswap32 : t -> t
-    val bswap48 : t -> t
-  end
-  with type t := t
+      val of_int : int -> t
+      val to_int : t -> int option
+      val to_int_trunc : t -> int
+      val of_int32 : int32 -> t
+      val to_int32 : t -> Int32.t option
+      val to_int32_trunc : t -> Int32.t
+      val of_int64 : Int64.t -> t option
+      val of_int64_trunc : Int64.t -> t
+      val of_nativeint : nativeint -> t option
+      val to_nativeint : t -> nativeint option
+      val of_nativeint_trunc : nativeint -> t
+      val to_nativeint_trunc : t -> nativeint
+      val of_float_unchecked : float -> t
+      val repr : (t, t) Int63_emul.Repr.t
+      val bswap16 : t -> t
+      val bswap32 : t -> t
+      val bswap48 : t -> t
+    end
+    with type t := t
 
   module Native = struct
     include Int

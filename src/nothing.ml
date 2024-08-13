@@ -25,10 +25,10 @@ end
 include T
 
 include Identifiable.Make (struct
-  include T
+    include T
 
-  let module_name = "Base.Nothing"
-end)
+    let module_name = "Base.Nothing"
+  end)
 
 let must_be_none : t option -> unit = function
   | None -> ()

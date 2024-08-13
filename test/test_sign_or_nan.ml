@@ -14,8 +14,9 @@ let%expect_test "to_string_hum" =
     print_endline string;
     match to_sign_exn t with
     | exception _ -> ()
-    | sign -> require_equal [%here] (module String) string (Sign.to_string_hum sign));
-  [%expect {|
+    | sign -> require_equal (module String) string (Sign.to_string_hum sign));
+  [%expect
+    {|
     negative
     zero
     positive

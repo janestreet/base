@@ -7,16 +7,15 @@ let%expect_test "Finished_or_unfinished <-> Continue_or_stop" =
   List.iter2_exn Continue_or_stop.all Finished_or_unfinished.all ~f:(fun c_or_s f_or_u ->
     print_s [%sexp (c_or_s : Continue_or_stop.t), (f_or_u : Finished_or_unfinished.t)];
     require_equal
-      [%here]
       (module Continue_or_stop)
       c_or_s
       (Finished_or_unfinished.to_continue_or_stop f_or_u);
     require_equal
-      [%here]
       (module Finished_or_unfinished)
       f_or_u
       (Finished_or_unfinished.of_continue_or_stop c_or_s));
-  [%expect {|
+  [%expect
+    {|
     (Continue Finished)
     (Stop Unfinished)
     |}]
@@ -56,8 +55,9 @@ let%expect_test "[Map.of_alist_multi] preserves value ordering" =
   print_s
     [%sexp
       (Map.of_alist_multi (module String) [ "a", 1; "a", 2; "b", 1; "b", 3 ]
-        : int list Map.M(String).t)];
-  [%expect {|
+       : int list Map.M(String).t)];
+  [%expect
+    {|
     ((a (1 2))
      (b (1 3)))
     |}]
@@ -66,8 +66,7 @@ let%expect_test "[Map.of_alist_multi] preserves value ordering" =
 let%expect_test "find_exn" =
   let map = Map.of_alist_exn (module String) [ "one", 1; "two", 2; "three", 3 ] in
   let test_success key =
-    require_does_not_raise [%here] (fun () ->
-      print_s [%sexp (Map.find_exn map key : int)])
+    require_does_not_raise (fun () -> print_s [%sexp (Map.find_exn map key : int)])
   in
   test_success "one";
   [%expect {| 1 |}];
@@ -75,7 +74,7 @@ let%expect_test "find_exn" =
   [%expect {| 2 |}];
   test_success "three";
   [%expect {| 3 |}];
-  let test_failure key = require_does_raise [%here] (fun () -> Map.find_exn map key) in
+  let test_failure key = require_does_raise (fun () -> Map.find_exn map key) in
   test_failure "zero";
   [%expect {| (Not_found_s ("Map.find_exn: not found" zero)) |}];
   test_failure "four";
@@ -85,9 +84,9 @@ let%expect_test "find_exn" =
 let%expect_test "[t_of_sexp] error on duplicate" =
   let sexp = Sexplib.Sexp.of_string "((0 a)(1 b)(2 c)(1 d))" in
   (match [%of_sexp: string Map.M(String).t] sexp with
-   | t -> print_cr [%here] [%message "did not raise" (t : string Map.M(String).t)]
+   | t -> print_cr [%message "did not raise" (t : string Map.M(String).t)]
    | exception (Sexp.Of_sexp_error _ as exn) -> print_s (sexp_of_exn exn)
-   | exception exn -> print_cr [%here] [%message "wrong kind of exception" (exn : exn)]);
+   | exception exn -> print_cr [%message "wrong kind of exception" (exn : exn)]);
   [%expect {| (Of_sexp_error "Map.t_of_sexp_direct: duplicate key" (invalid_sexp 1)) |}]
 ;;
 
@@ -108,13 +107,15 @@ let%expect_test "combine_errors" =
   (* singletons *)
   test [ Ok "one" ];
   test [ Error "one" ];
-  [%expect {|
+  [%expect
+    {|
     (Ok ((1 one)))
     (Error ((1 one)))
     |}];
   (* multiple ok *)
   test [ Ok "one"; Ok "two"; Ok "three" ];
-  [%expect {|
+  [%expect
+    {|
     (Ok (
       (1 one)
       (2 two)
@@ -122,7 +123,8 @@ let%expect_test "combine_errors" =
     |}];
   (* multiple errors *)
   test [ Error "one"; Error "two"; Error "three" ];
-  [%expect {|
+  [%expect
+    {|
     (Error (
       (1 one)
       (2 two)
@@ -132,7 +134,8 @@ let%expect_test "combine_errors" =
   test [ Error "one"; Ok "two"; Ok "three" ];
   test [ Ok "one"; Error "two"; Ok "three" ];
   test [ Ok "one"; Ok "two"; Error "three" ];
-  [%expect {|
+  [%expect
+    {|
     (Error ((1 one)))
     (Error ((2 two)))
     (Error ((3 three)))
@@ -231,63 +234,97 @@ let%test_module "[symmetric_diff]" =
         !count - c
       in
       let module Key = struct
-        module T = struct
-          type t = int [@@deriving sexp_of]
+        type t = int [@@deriving sexp_of]
 
-          let compare x y =
-            Int.incr count;
-            compare_int x y
-          ;;
-        end
+        let compare x y =
+          Int.incr count;
+          compare_int x y
+        ;;
 
-        include T
-        include Comparator.Make (T)
+        include (val Comparator.make ~compare ~sexp_of_t)
       end
       in
-      let (_m : unit Map.M(Key).t), map_pairs =
-        List.fold
-          (List.init 1000 ~f:Fn.id)
-          ~init:(Map.empty (module Key), [])
-          ~f:(fun (m, acc) i ->
-            let m' = Map.add_exn m ~key:i ~data:() in
-            m', (m, m') :: acc)
+      let test size =
+        let map_pairs =
+          (* We measure every step of building up a map from one side. This covers
+             different stages of rebalancing along the way. *)
+          List.folding_map
+            (List.init size ~f:Int.succ)
+            ~init:(Map.singleton (module Key) 0 0)
+            ~f:(fun a i ->
+              let b = Map.add_exn a ~key:i ~data:i in
+              b, (a, b))
+        in
+        let add_comparisons = !count in
+        count := 0;
+        let comparisons =
+          List.map map_pairs ~f:(fun (a, b) ->
+            measure_comparisons (fun () ->
+              Map.fold_symmetric_diff a b ~init:() ~f:(fun () _ -> ()) ~data_equal:( = )))
+          |> List.sort ~compare:Int.compare
+        in
+        let len = List.length comparisons in
+        let diff_comparisons = List.sum (module Int) comparisons ~f:Fn.id in
+        let mean_diff_comparisons = Float.of_int diff_comparisons /. Float.of_int len in
+        let median_diff_comparisons = List.nth_exn comparisons (len / 2) in
+        let diff_comparison_buckets =
+          List.sort_and_group comparisons ~compare:Int.compare
+          |> List.map ~f:(fun list ->
+            [%sexp
+              { comparisons = (List.hd_exn list : int); times = (List.length list : int) }])
+        in
+        print_s
+          [%message
+            ""
+              (size : int)
+              (add_comparisons : int)
+              (diff_comparisons : int)
+              (mean_diff_comparisons : float)
+              (median_diff_comparisons : int)
+              (diff_comparison_buckets : Sexp.t list)]
       in
-      print_s [%sexp (!count : int)];
-      [%expect {| 9_966 |}];
-      count := 0;
-      let diffs = ref 0 in
-      let counts =
-        List.map map_pairs ~f:(fun (m, m') ->
-          measure_comparisons (fun () ->
-            diffs
-              := !diffs
-                 + Map.fold_symmetric_diff
-                     ~init:0
-                     ~f:(fun n _ -> n + 1)
-                     ~data_equal:(fun () () -> true)
-                     (m : unit Map.M(Key).t)
-                     m'))
-      in
-      let worst_counts =
-        List.sort counts ~compare:[%compare: int] |> List.rev |> fun l -> List.take l 20
-      in
-      (* The smaller these numbers are, the better. *)
-      print_s [%sexp (!diffs : int), (!count : int)];
-      [%expect {| (1_000 10_955) |}];
-      print_s [%sexp (worst_counts : int list)];
-      [%expect {| (12 12 12 12 12 12 12 12 12 12 12 12 12 12 12 12 12 12 12 12) |}]
+      test (1 lsl 20);
+      [%expect
+        {|
+        ((size                    1_048_576)
+         (add_comparisons         20_971_521)
+         (diff_comparisons        22_020_076)
+         (mean_diff_comparisons   20.999980926513672)
+         (median_diff_comparisons 21)
+         (diff_comparison_buckets (
+           ((comparisons 1)  (times 1))
+           ((comparisons 2)  (times 1))
+           ((comparisons 3)  (times 1))
+           ((comparisons 4)  (times 2))
+           ((comparisons 5)  (times 4))
+           ((comparisons 6)  (times 8))
+           ((comparisons 7)  (times 16))
+           ((comparisons 8)  (times 32))
+           ((comparisons 9)  (times 64))
+           ((comparisons 10) (times 128))
+           ((comparisons 11) (times 256))
+           ((comparisons 12) (times 512))
+           ((comparisons 13) (times 1_024))
+           ((comparisons 14) (times 2_048))
+           ((comparisons 15) (times 4_096))
+           ((comparisons 16) (times 8_192))
+           ((comparisons 17) (times 16_384))
+           ((comparisons 18) (times 32_768))
+           ((comparisons 19) (times 65_536))
+           ((comparisons 20) (times 131_072))
+           ((comparisons 21) (times 262_144))
+           ((comparisons 22) (times 524_287)))))
+        |}]
     ;;
 
     let%expect_test "reconstructing in both directions" =
       let test (map1, map2) =
         let diff = Map.symmetric_diff map1 map2 ~data_equal:Int.equal in
         require_equal
-          [%here]
           (module String_to_int_map)
           (Sequence.fold diff ~init:map1 ~f:apply_diff_left_to_right)
           map2;
         require_equal
-          [%here]
           (module String_to_int_map)
           map1
           (Sequence.fold diff ~init:map2 ~f:apply_diff_right_to_left)
@@ -303,7 +340,6 @@ let%test_module "[symmetric_diff]" =
     let%expect_test "vs [fold_symmetric_diff]" =
       let test (map1, map2) =
         require_compare_equal
-          [%here]
           (module struct
             type t = (string, int) Symmetric_diff_element.t list
             [@@deriving compare, sexp_of]
@@ -358,7 +394,7 @@ let%test_module "of_alist_multi key equality" =
 let%expect_test "remove returns the same object if there's nothing to do" =
   let map1 = Map.of_alist_exn (module Int) [ 1, "one"; 3, "three" ] in
   let map2 = Map.remove map1 2 in
-  require [%here] (phys_equal map1 map2)
+  require (phys_equal map1 map2)
 ;;
 
 let%expect_test "[map_keys]" =
@@ -366,11 +402,12 @@ let%expect_test "[map_keys]" =
     print_s
       [%sexp
         (Map.map_keys c ~f m
-          : [ `Duplicate_key of string | `Ok of string Map.M(String).t ])]
+         : [ `Duplicate_key of string | `Ok of string Map.M(String).t ])]
   in
   let map = Map.of_alist_exn (module Int) [ 1, "one"; 2, "two"; 3, "three" ] in
   test map (module String) ~f:Int.to_string;
-  [%expect {|
+  [%expect
+    {|
     (Ok (
       (1 one)
       (2 two)
@@ -389,7 +426,7 @@ let%expect_test "[fold_until]" =
            ~init:0
            ~f:(fun ~key ~data acc -> if key > 2 then Stop data else Continue (acc + key))
            ~finish:Int.to_string
-          : string)]
+         : string)]
   in
   let map = Map.of_alist_exn (module Int) [ 1, "one"; 2, "two"; 3, "three" ] in
   test map;
@@ -419,7 +456,8 @@ let%expect_test "[merge_disjoint_exn] success" =
   let map1 = Map.of_alist_exn (module Int) [ 1, "one"; 2, "two" ] in
   let map2 = Map.of_alist_exn (module Int) [ 3, "three" ] in
   print_s [%sexp (Map.merge_disjoint_exn map1 map2 : string Map.M(Int).t)];
-  [%expect {|
+  [%expect
+    {|
     ((1 one)
      (2 two)
      (3 three))

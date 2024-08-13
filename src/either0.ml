@@ -5,8 +5,8 @@ type ('f, 's) t =
   | Second of 's
 [@@deriving_inline compare ~localize, hash, sexp, sexp_grammar]
 
-let compare__local :
-      'f 's. ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
+let compare__local
+  : 'f 's. ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
   =
   fun _cmp__f _cmp__s a__007_ b__008_ ->
   if Stdlib.( == ) a__007_ b__008_
@@ -19,8 +19,8 @@ let compare__local :
     | Second _a__011_, Second _b__012_ -> _cmp__s _a__011_ _b__012_)
 ;;
 
-let compare :
-      'f 's. ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
+let compare
+  : 'f 's. ('f -> 'f -> int) -> ('s -> 's -> int) -> ('f, 's) t -> ('f, 's) t -> int
   =
   fun _cmp__f _cmp__s a__001_ b__002_ ->
   if Stdlib.( == ) a__001_ b__002_
@@ -53,9 +53,9 @@ let hash_fold_t
     _hash_fold_s hsv _a0
 ;;
 
-let t_of_sexp :
-      'f 's.
-      (Sexplib0.Sexp.t -> 'f) -> (Sexplib0.Sexp.t -> 's) -> Sexplib0.Sexp.t -> ('f, 's) t
+let t_of_sexp
+  : 'f 's.
+  (Sexplib0.Sexp.t -> 'f) -> (Sexplib0.Sexp.t -> 's) -> Sexplib0.Sexp.t -> ('f, 's) t
   =
   fun (type f__029_ s__030_)
     :  ((Sexplib0.Sexp.t -> f__029_) -> (Sexplib0.Sexp.t -> s__030_) -> Sexplib0.Sexp.t
@@ -94,12 +94,16 @@ let t_of_sexp :
       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__017_ sexp__016_
     | Sexplib0.Sexp.List [] as sexp__016_ ->
       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__017_ sexp__016_
-    | sexp__016_ -> Sexplib0.Sexp_conv_error.unexpected_stag error_source__017_ sexp__016_
+    | sexp__016_ ->
+      Sexplib0.Sexp_conv_error.unexpected_stag
+        error_source__017_
+        [ "First"; "Second" ]
+        sexp__016_
 ;;
 
-let sexp_of_t :
-      'f 's.
-      ('f -> Sexplib0.Sexp.t) -> ('s -> Sexplib0.Sexp.t) -> ('f, 's) t -> Sexplib0.Sexp.t
+let sexp_of_t
+  : 'f 's.
+  ('f -> Sexplib0.Sexp.t) -> ('s -> Sexplib0.Sexp.t) -> ('f, 's) t -> Sexplib0.Sexp.t
   =
   fun (type f__037_ s__038_)
     :  ((f__037_ -> Sexplib0.Sexp.t) -> (s__038_ -> Sexplib0.Sexp.t)
@@ -113,11 +117,11 @@ let sexp_of_t :
     Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Second"; res0__036_ ]
 ;;
 
-let t_sexp_grammar :
-      'f 's.
-      'f Sexplib0.Sexp_grammar.t
-      -> 's Sexplib0.Sexp_grammar.t
-      -> ('f, 's) t Sexplib0.Sexp_grammar.t
+let t_sexp_grammar
+  : 'f 's.
+  'f Sexplib0.Sexp_grammar.t
+  -> 's Sexplib0.Sexp_grammar.t
+  -> ('f, 's) t Sexplib0.Sexp_grammar.t
   =
   fun _'f_sexp_grammar _'s_sexp_grammar ->
   { untyped =

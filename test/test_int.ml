@@ -22,10 +22,9 @@ let%expect_test "of_string_opt" =
 
 let%expect_test "to_string_hum" =
   let test_roundtrip int =
-    require_equal [%here] (module Int) (of_string (to_string_hum int)) int
+    require_equal (module Int) (of_string (to_string_hum int)) int
   in
   quickcheck_m
-    [%here]
     (module struct
       type t = int [@@deriving quickcheck, sexp_of]
     end)
@@ -114,7 +113,6 @@ let%test_module "Hex" =
 
 let%expect_test "binary" =
   quickcheck_m
-    [%here]
     (module struct
       type t = int [@@deriving quickcheck, sexp_of]
     end)
@@ -129,49 +127,57 @@ let test_binary i =
 
 let%expect_test "binary" =
   test_binary 0b0;
-  [%expect {|
+  [%expect
+    {|
     0b0
     0b0
     0b0
     |}];
   test_binary 0b01;
-  [%expect {|
+  [%expect
+    {|
     0b1
     0b1
     0b1
     |}];
   test_binary 0b100;
-  [%expect {|
+  [%expect
+    {|
     0b100
     0b100
     0b100
     |}];
   test_binary 0b101;
-  [%expect {|
+  [%expect
+    {|
     0b101
     0b101
     0b101
     |}];
   test_binary 0b10_1010_1010_1010;
-  [%expect {|
+  [%expect
+    {|
     0b10_1010_1010_1010
     0b10101010101010
     0b10_1010_1010_1010
     |}];
   test_binary 0b11_1111_0000_0000;
-  [%expect {|
+  [%expect
+    {|
     0b11_1111_0000_0000
     0b11111100000000
     0b11_1111_0000_0000
     |}];
   test_binary 19;
-  [%expect {|
+  [%expect
+    {|
     0b1_0011
     0b10011
     0b1_0011
     |}];
   test_binary 0;
-  [%expect {|
+  [%expect
+    {|
     0b0
     0b0
     0b0
@@ -202,7 +208,7 @@ let%expect_test ("63-bit cases" [@tags "64-bits-only"]) =
     |}]
 ;;
 
-let%expect_test ("32-bit cases" [@tags "js-only"]) =
+let%expect_test ("32-bit cases" [@tags "js-only", "no-wasm"]) =
   test_binary (-1);
   [%expect
     {|
@@ -223,6 +229,30 @@ let%expect_test ("32-bit cases" [@tags "js-only"]) =
     0b1000_0000_0000_0000_0000_0000_0000_0000
     0b10000000000000000000000000000000
     0b1000_0000_0000_0000_0000_0000_0000_0000
+    |}]
+;;
+
+let%expect_test ("32-bit wasm cases" [@tags "wasm-only"]) =
+  test_binary (-1);
+  [%expect
+    {|
+    0b111_1111_1111_1111_1111_1111_1111_1111
+    0b1111111111111111111111111111111
+    0b111_1111_1111_1111_1111_1111_1111_1111
+    |}];
+  test_binary max_value;
+  [%expect
+    {|
+    0b11_1111_1111_1111_1111_1111_1111_1111
+    0b111111111111111111111111111111
+    0b11_1111_1111_1111_1111_1111_1111_1111
+    |}];
+  test_binary min_value;
+  [%expect
+    {|
+    0b100_0000_0000_0000_0000_0000_0000_0000
+    0b1000000000000000000000000000000
+    0b100_0000_0000_0000_0000_0000_0000_0000
     |}]
 ;;
 
@@ -268,7 +298,6 @@ let%expect_test "bswap16" =
 
 let%expect_test "% and /%" =
   quickcheck_m
-    [%here]
     (module struct
       type t =
         int
@@ -279,22 +308,22 @@ let%expect_test "% and /%" =
     ~f:(fun (a, b) ->
       let r = a % b in
       let q = a /% b in
-      require [%here] (r >= 0);
-      require_equal [%here] (module Int) a ((q * b) + r))
+      require (r >= 0);
+      require_equal (module Int) a ((q * b) + r))
 ;;
 
 include (
-  struct
-    (** Various functors whose type-correctness ensures desired relationships between
+struct
+  (** Various functors whose type-correctness ensures desired relationships between
       interfaces. *)
 
-    (* O contained in S *)
-    module _ (M : S) : module type of M.O = M
+  (* O contained in S *)
+  module _ (M : S) : module type of M.O = M
 
-    (* O contained in S_unbounded *)
-    module _ (M : S_unbounded) : module type of M.O = M
+  (* O contained in S_unbounded *)
+  module _ (M : S_unbounded) : module type of M.O = M
 
-    (* S_unbounded in S *)
-    module _ (M : S) : S_unbounded = M
-  end :
-    sig end)
+  (* S_unbounded in S *)
+  module _ (M : S) : S_unbounded = M
+end :
+sig end)

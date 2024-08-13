@@ -136,7 +136,6 @@ let%expect_test "get_hex_digit" =
        (C 12) (D 13) (E 14) (F 15) (a 10) (b 11) (c 12) (d 13) (e 14) (f 15))
       |}];
     require_equal
-      [%here]
       (module struct
         type t = (char * int) list [@@deriving equal, sexp_of]
       end)
@@ -145,7 +144,7 @@ let%expect_test "get_hex_digit" =
        |> List.map ~f:(fun char -> char, get_hex_digit_exn char))
       hex_digit_alist;
     [%expect {| |}];
-    require_does_raise [%here] (fun () -> get_hex_digit_exn Char.min_value);
+    require_does_raise (fun () -> get_hex_digit_exn Char.min_value);
     [%expect {| ("Char.get_hex_digit_exn: not a hexadecimal digit" (char "\000")) |}])
 ;;
 

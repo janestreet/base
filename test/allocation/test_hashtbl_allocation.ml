@@ -14,7 +14,7 @@ let%expect_test "find_and_call_1_and_2" =
       assert (a = x);
       assert (b = x * 7)
     in
-    require_no_allocation [%here] (fun () ->
+    require_no_allocation (fun () ->
       for i = 0 to x do
         Hashtbl.find_and_call1 t i ~a:(i * 7) ~if_found ~if_not_found
       done);
@@ -26,7 +26,7 @@ let%expect_test "find_and_call_1_and_2" =
       assert (a = x);
       assert (b = x * 7)
     in
-    require_no_allocation [%here] (fun () ->
+    require_no_allocation (fun () ->
       for i = 0 to x do
         Hashtbl.findi_and_call1 t i ~a:(i * 7) ~if_found ~if_not_found
       done);
@@ -39,7 +39,7 @@ let%expect_test "find_and_call_1_and_2" =
       assert (b = x * 7);
       assert (c = x * 14)
     in
-    require_no_allocation [%here] (fun () ->
+    require_no_allocation (fun () ->
       for i = 0 to x do
         Hashtbl.find_and_call2 t i ~a:(i * 7) ~b:(i * 14) ~if_found ~if_not_found
       done);
@@ -53,7 +53,7 @@ let%expect_test "find_and_call_1_and_2" =
       assert (b = x * 7);
       assert (c = x * 14)
     in
-    require_no_allocation [%here] (fun () ->
+    require_no_allocation (fun () ->
       for i = 0 to x do
         Hashtbl.findi_and_call2 t i ~a:(i * 7) ~b:(i * 14) ~if_found ~if_not_found
       done);
@@ -69,7 +69,8 @@ let%expect_test "find_and_call_1_and_2" =
   test 29;
   test 33;
   test 3133;
-  [%expect {|
+  [%expect
+    {|
     1
     3
     10
@@ -85,6 +86,6 @@ let%expect_test ("find_or_add shouldn't allocate" [@tags "no-js"]) =
   let default = Fn.const () in
   let t = Hashtbl.create (module Int) ~size:16 ~growth_allowed:false in
   Hashtbl.add_exn t ~key:100 ~data:();
-  require_no_allocation [%here] (fun () -> Hashtbl.find_or_add t 100 ~default);
+  require_no_allocation (fun () -> Hashtbl.find_or_add t 100 ~default);
   [%expect {| |}]
 ;;

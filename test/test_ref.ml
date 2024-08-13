@@ -9,10 +9,10 @@ let%test_unit "[set_temporarily] without raise" =
 
 let%expect_test "[set_temporarily] with raise" =
   let r = ref 0 in
-  require_does_raise [%here] (fun () ->
+  require_does_raise (fun () ->
     Nothing.unreachable_code (set_temporarily r 1 ~f:(fun () -> failwith "")));
   [%expect {| (Failure "") |}];
-  require_equal [%here] (module Int) !r 0
+  require_equal (module Int) !r 0
 ;;
 
 let%test_unit "[set_temporarily] where [f] sets the ref" =
@@ -30,7 +30,6 @@ let%expect_test "[sets_temporarily] without raise" =
     sets_temporarily and_values ~f:(fun () ->
       print_s [%message (r1 : int ref) (r2 : int ref)]);
     require_equal
-      [%here]
       (module struct
         type t = int * int [@@deriving equal, sexp_of]
       end)
@@ -38,22 +37,26 @@ let%expect_test "[sets_temporarily] without raise" =
       (i1, i2)
   in
   test [];
-  [%expect {|
+  [%expect
+    {|
     ((r1 1)
      (r2 2))
     |}];
   test [ T (r1, 13) ];
-  [%expect {|
+  [%expect
+    {|
     ((r1 13)
      (r2 2))
     |}];
   test [ T (r1, 13); T (r1, 17) ];
-  [%expect {|
+  [%expect
+    {|
     ((r1 17)
      (r2 2))
     |}];
   test [ T (r1, 13); T (r2, 17) ];
-  [%expect {|
+  [%expect
+    {|
     ((r1 13)
      (r2 17))
     |}]
@@ -61,7 +64,7 @@ let%expect_test "[sets_temporarily] without raise" =
 
 let%expect_test "[sets_temporarily] with raise" =
   let r = ref 0 in
-  require_does_raise [%here] (fun () ->
+  require_does_raise (fun () ->
     Nothing.unreachable_code (sets_temporarily [ T (r, 1) ] ~f:(fun () -> failwith "")));
   [%expect {| (Failure "") |}];
   print_s [%message (r : int ref)];

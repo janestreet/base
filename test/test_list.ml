@@ -504,7 +504,6 @@ let%test_module "Assoc.group" =
             List.map data ~f:(fun datum -> key, datum))
         in
         require_equal
-          [%here]
           (module struct
             type t = (String.Caseless.t * int) list [@@deriving equal, sexp_of]
           end)
@@ -516,7 +515,8 @@ let%test_module "Assoc.group" =
       test [ "a", 1; "A", 2 ];
       [%expect {| ((a (1 2))) |}];
       test [ "a", 1; "b", 2 ];
-      [%expect {|
+      [%expect
+        {|
         ((a (1))
          (b (2)))
         |}];
@@ -531,7 +531,8 @@ let%test_module "Assoc.group" =
          (EVEN (6)))
         |}];
       test [ "odd", 1; "Odd", 3; "ODD", 5; "even", 2; "Even", 4; "EVEN", 6 ];
-      [%expect {|
+      [%expect
+        {|
         ((odd  (1 3 5))
          (even (2 4 6)))
         |}]
@@ -546,7 +547,6 @@ let%test_module "Assoc.sort_and_group" =
         let multi = Assoc.sort_and_group alist ~compare:String.Caseless.compare in
         print_s [%sexp (multi : (string * int list) list)];
         require_equal
-          [%here]
           (module struct
             type t = (string * int list) list [@@deriving equal, sexp_of]
           end)
@@ -558,12 +558,14 @@ let%test_module "Assoc.sort_and_group" =
       test [ "a", 1; "A", 2 ];
       [%expect {| ((a (1 2))) |}];
       test [ "a", 1; "b", 2 ];
-      [%expect {|
+      [%expect
+        {|
         ((a (1))
          (b (2)))
         |}];
       test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
-      [%expect {|
+      [%expect
+        {|
         ((even (2 4 6))
          (odd  (1 3 5)))
         |}]
@@ -1277,9 +1279,9 @@ let%expect_test "drop_last" =
 
 let%expect_test "drop_last_exn" =
   let print_drop_last_exn x = print_s [%sexp (List.drop_last_exn x : int list)] in
-  require_does_raise [%here] (fun () -> print_drop_last_exn []);
+  require_does_raise (fun () -> print_drop_last_exn []);
   [%expect {| (Failure "List.drop_last_exn: empty list") |}];
-  require_does_not_raise [%here] (fun () -> print_drop_last_exn [ 1 ]);
+  require_does_not_raise (fun () -> print_drop_last_exn [ 1 ]);
   [%expect {| () |}]
 ;;
 
@@ -1320,7 +1322,6 @@ let%expect_test "[all_equal]" =
 let%expect_test "[Cartesian_product.apply] identity" =
   let test list =
     require_equal
-      [%here]
       (module struct
         type t = char list [@@deriving equal, sexp_of]
       end)
@@ -1377,7 +1378,6 @@ let%expect_test "[compare__local] is the same as [compare]" =
     end)
     ~f:(fun (l1, l2) ->
       require_equal
-        [%here]
         (module Int)
         (compare Int.compare l1 l2)
         (compare__local Int.compare__local l1 l2));
@@ -1391,7 +1391,6 @@ let%expect_test "[equal__local] is the same as [equal]" =
     end)
     ~f:(fun (l1, l2) ->
       require_equal
-        [%here]
         (module Bool)
         (equal Int.equal l1 l2)
         (equal__local Int.equal__local l1 l2));
@@ -1463,30 +1462,25 @@ let%expect_test "list sort, dedup" =
   in
   let compare = Char.Caseless.compare in
   quickcheck_m
-    [%here]
     ~examples:[ []; [ 'a'; 'a' ]; [ 'a'; 'A' ]; [ 'A'; 'a' ]; [ 'A'; 'A' ] ]
     (module Char_list)
     ~f:(fun list ->
       require_equal
-        [%here]
         (module Char_list)
         ~message:"sort mismatch"
         (List.sort list ~compare)
         (slow_sort list ~compare);
       require_equal
-        [%here]
         (module Char_list)
         ~message:"stable_sort mismatch"
         (List.stable_sort list ~compare)
         (slow_stable_sort list ~compare);
       require_equal
-        [%here]
         (module Char_list)
         ~message:"dedup_and_sort mismatch"
         (List.dedup_and_sort list ~compare)
         (slow_dedup_and_sort list ~compare);
       require_equal
-        [%here]
         (module Char_list)
         ~message:"stable_dedup mismatch"
         (List.stable_dedup list ~compare)
@@ -1501,7 +1495,6 @@ let%expect_test "[take], [drop], and [split]" =
       let phys_equal_whole = phys_equal list whole in
       let check problem bool =
         require
-          [%here]
           bool
           ~if_false_then_print_s:
             [%lazy_message
@@ -1607,26 +1600,24 @@ let%test_module "filter{,i}" =
 
     let%expect_test "[filter]" =
       quickcheck_m
-        [%here]
         (module struct
           type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
         end)
         ~f:(fun (list, f) ->
           (* test [f] *)
           let pos = List.filter list ~f in
-          require [%here] (List.for_all pos ~f);
+          require (List.for_all pos ~f);
           (* test [~f] *)
           let not_f = Fn.non f in
           let neg = List.filter list ~f:not_f in
-          require [%here] (List.for_all neg ~f:not_f);
+          require (List.for_all neg ~f:not_f);
           (* test [f \/ ~f] *)
           let sort = sort ~compare:Int.compare in
-          require_equal [%here] (module Int_list) (sort list) (sort (pos @ neg)))
+          require_equal (module Int_list) (sort list) (sort (pos @ neg)))
     ;;
 
     let%expect_test "[filteri]" =
       quickcheck_m
-        [%here]
         (module struct
           type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
         end)
@@ -1638,27 +1629,25 @@ let%test_module "filter{,i}" =
             let use_orig_index f : _ = fun (i, x) -> f i x in
             (* test [f] *)
             let pos = List.filteri list ~f:(ignore_stash f) in
-            require [%here] (List.for_all pos ~f:(use_orig_index f));
+            require (List.for_all pos ~f:(use_orig_index f));
             (* test [~f] *)
             let not_f i x = not (f i x) in
             let neg = List.filteri list ~f:(ignore_stash not_f) in
-            require [%here] (List.for_all neg ~f:(use_orig_index not_f));
+            require (List.for_all neg ~f:(use_orig_index not_f));
             pos, neg
           in
           (* test [f \/ ~f] *)
           let sort = sort ~compare:[%compare: int * _] in
-          require_equal [%here] (module Int_list) list (sort (pos @ neg) |> map ~f:snd))
+          require_equal (module Int_list) list (sort (pos @ neg) |> map ~f:snd))
     ;;
 
     let%expect_test "[filteri ~f:(Fn.const f) = filter ~f]" =
       quickcheck_m
-        [%here]
         (module struct
           type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
         end)
         ~f:(fun (list, f) ->
           require_equal
-            [%here]
             (module Int_list)
             (filteri list ~f:(fun _ x -> f x))
             (filter list ~f))
@@ -1714,19 +1703,17 @@ let%test_module "count{,i}" =
   (module struct
     let%expect_test "[count{,i} list ~f = List.length (filter{,i} list ~f)]" =
       quickcheck_m
-        [%here]
         (module struct
           type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
         end)
         ~f:(fun (list, f) ->
-          require_equal [%here] (module Int) (count list ~f) (length (filter list ~f)));
+          require_equal (module Int) (count list ~f) (length (filter list ~f)));
       quickcheck_m
-        [%here]
         (module struct
           type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
         end)
         ~f:(fun (list, f) ->
-          require_equal [%here] (module Int) (counti list ~f) (length (filteri list ~f)))
+          require_equal (module Int) (counti list ~f) (length (filteri list ~f)))
     ;;
 
     let%test_unit _ =
@@ -1745,18 +1732,16 @@ let%test_module "{min,max}_elt" =
   (module struct
     let test_in_list_and_forall ~tested_f ~holds_for_res_over_all_elem =
       quickcheck_m
-        [%here]
         (module struct
           type t = int list [@@deriving quickcheck, sexp_of]
         end)
         ~f:(fun list ->
           let res = tested_f list ~compare:[%compare: int] in
           match res with
-          | None -> require [%here] (is_empty list)
+          | None -> require (is_empty list)
           | Some res ->
-            require [%here] (mem list res ~equal:Int.equal);
-            iter list ~f:(fun elem ->
-              require [%here] (holds_for_res_over_all_elem ~res ~elem)))
+            require (mem list res ~equal:Int.equal);
+            iter list ~f:(fun elem -> require (holds_for_res_over_all_elem ~res ~elem)))
     ;;
 
     let%expect_test "min_elt" =
@@ -1834,7 +1819,7 @@ let%expect_test "[merge]" =
     let list1 = merge xs ys ~compare:Int.compare in
     print_s [%sexp (list1 : int list)];
     let list2 = merge ys xs ~compare:Int.compare in
-    require_equal [%here] (module Int_list) list1 list2
+    require_equal (module Int_list) list1 list2
   in
   test_int [] [];
   [%expect {| () |}];
@@ -1859,12 +1844,14 @@ let%expect_test "[merge]" =
     print_s [%sexp (list2 : (int * string) list)]
   in
   test_pair [] [];
-  [%expect {|
+  [%expect
+    {|
     ()
     ()
     |}];
   test_pair [] [ 1, "a"; 2, "b"; 3, "c" ];
-  [%expect {|
+  [%expect
+    {|
     ((1 a) (2 b) (3 c))
     ((1 a) (2 b) (3 c))
     |}];
@@ -1875,12 +1862,14 @@ let%expect_test "[merge]" =
     ((1 z) (2 y) (3 x) (4 w) (5 v))
     |}];
   test_pair [ 1, "a"; 2, "b" ] [];
-  [%expect {|
+  [%expect
+    {|
     ((1 a) (2 b))
     ((1 a) (2 b))
     |}];
   test_pair [ 1, "a"; 3, "b" ] [ 1, "b"; 2, "a" ];
-  [%expect {|
+  [%expect
+    {|
     ((1 a) (1 b) (2 a) (3 b))
     ((1 b) (1 a) (2 a) (3 b))
     |}];

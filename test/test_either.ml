@@ -14,7 +14,8 @@ let%expect_test "First.Monad.map" =
   let f' = inc f in
   let s' = inc s in
   print_s [%message (f' : t) (s' : t)];
-  [%expect {|
+  [%expect
+    {|
     ((f' (First  1))
      (s' (Second str)))
     |}]
@@ -29,7 +30,8 @@ let%expect_test "Second.Monad.map" =
   let f' = add f in
   let s' = add s in
   print_s [%message (f' : t) (s' : t)];
-  [%expect {|
+  [%expect
+    {|
     ((f' (First  0))
      (s' (Second str1)))
     |}]
@@ -44,7 +46,8 @@ let%expect_test "First.Monad.bind" =
   let f' = inc f in
   let s' = inc s in
   print_s [%message (f' : t) (s' : t)];
-  [%expect {|
+  [%expect
+    {|
     ((f' (First  1))
      (s' (Second str)))
     |}]
@@ -59,7 +62,8 @@ let%expect_test "Second.Monad.bind" =
   let f' = add f in
   let s' = add s in
   print_s [%message (f' : t) (s' : t)];
-  [%expect {|
+  [%expect
+    {|
     ((f' (First  0))
      (s' (Second str1)))
     |}]

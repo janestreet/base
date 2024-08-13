@@ -10,7 +10,7 @@ let%test_module "Result.Error" =
     end
 
     let%expect_test "return" =
-      require_equal [%here] (module Int_or_string) (return "error") (Error "error");
+      require_equal (module Int_or_string) (return "error") (Error "error");
       [%expect {| |}]
     ;;
 
@@ -21,7 +21,7 @@ let%test_module "Result.Error" =
         let%bind e3 = Error "e3" in
         return (String.concat ~sep:"," [ e1; e2; e3 ])
       in
-      require_equal [%here] (module Int_or_string) result (Error "e1,e2,e3");
+      require_equal (module Int_or_string) result (Error "e1,e2,e3");
       [%expect {| |}]
     ;;
 
@@ -32,7 +32,7 @@ let%test_module "Result.Error" =
         let%bind e3 = Error "e3" in
         return (String.concat ~sep:"," [ e1; e2; e3 ])
       in
-      require_equal [%here] (module Int_or_string) result (Ok 1);
+      require_equal (module Int_or_string) result (Ok 1);
       [%expect {| |}]
     ;;
 
@@ -41,7 +41,7 @@ let%test_module "Result.Error" =
         let%map e1 = Error "e1" in
         e1 ^ "!"
       in
-      require_equal [%here] (module Int_or_string) result (Error "e1!");
+      require_equal (module Int_or_string) result (Error "e1!");
       [%expect {| |}]
     ;;
 
@@ -50,7 +50,7 @@ let%test_module "Result.Error" =
         let%map e1 = Ok 1 in
         e1 ^ "!"
       in
-      require_equal [%here] (module Int_or_string) result (Ok 1);
+      require_equal (module Int_or_string) result (Ok 1);
       [%expect {| |}]
     ;;
 
