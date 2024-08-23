@@ -19,9 +19,9 @@ let%expect_test "Global.Poly_fn1" =
          (W : Modes.Global.Wrapper)
          ->
          struct
-           let fn x = W.wrap (Int.globalize (W.unwrap x) + 0)
+           let fn x = exclave_ W.wrap (Int.globalize (W.unwrap x) + 0)
          end) in
-  test (module Int) (fun () -> fn_global 1) (fun () -> fn_local 1);
+  test (module Int) (fun () -> fn_global 1) (fun () -> exclave_ fn_local 1);
   [%expect {| 1 |}]
 ;;
 
@@ -32,9 +32,11 @@ let%expect_test "Global.Poly_fn2" =
          (W : Modes.Global.Wrapper)
          ->
          struct
-           let fn x y = W.wrap (Int.globalize (W.unwrap x) + Int.globalize (W.unwrap y))
+           let fn x y = exclave_
+             W.wrap (Int.globalize (W.unwrap x) + Int.globalize (W.unwrap y))
+           ;;
          end) in
-  test (module Int) (fun () -> fn_global 1 2) (fun () -> fn_local 1 2);
+  test (module Int) (fun () -> fn_global 1 2) (fun () -> exclave_ fn_local 1 2);
   [%expect {| 3 |}]
 ;;
 
@@ -45,14 +47,14 @@ let%expect_test "Global.Poly_fn3" =
          (W : Modes.Global.Wrapper)
          ->
          struct
-           let fn x y z =
+           let fn x y z = exclave_
              W.wrap
                (Int.globalize (W.unwrap x)
                 + Int.globalize (W.unwrap y)
                 + Int.globalize (W.unwrap z))
            ;;
          end) in
-  test (module Int) (fun () -> fn_global 1 2 3) (fun () -> fn_local 1 2 3);
+  test (module Int) (fun () -> fn_global 1 2 3) (fun () -> exclave_ fn_local 1 2 3);
   [%expect {| 6 |}]
 ;;
 
@@ -63,9 +65,9 @@ let%expect_test ("Global.Poly_fn1" [@tags "fast-flambda2"]) =
          (W : Modes.Global.Wrapper)
          ->
          struct
-           let fn x = W.wrap (Float.globalize (W.unwrap x) +. 0.)
+           let fn x = exclave_ W.wrap (Float.globalize (W.unwrap x) +. 0.)
          end) in
-  test (module Float) (fun () -> fn_global 1.) (fun () -> fn_local 1.);
+  test (module Float) (fun () -> fn_global 1.) (fun () -> exclave_ fn_local 1.);
   [%expect {| 1 |}]
 ;;
 
@@ -76,11 +78,11 @@ let%expect_test ("Global.Poly_fn2" [@tags "fast-flambda2"]) =
          (W : Modes.Global.Wrapper)
          ->
          struct
-           let fn x y =
+           let fn x y = exclave_
              W.wrap (Float.globalize (W.unwrap x) +. Float.globalize (W.unwrap y))
            ;;
          end) in
-  test (module Float) (fun () -> fn_global 1. 2.) (fun () -> fn_local 1. 2.);
+  test (module Float) (fun () -> fn_global 1. 2.) (fun () -> exclave_ fn_local 1. 2.);
   [%expect {| 3 |}]
 ;;
 
@@ -91,13 +93,16 @@ let%expect_test ("Global.Poly_fn3" [@tags "fast-flambda2"]) =
          (W : Modes.Global.Wrapper)
          ->
          struct
-           let fn x y z =
+           let fn x y z = exclave_
              W.wrap
                (Float.globalize (W.unwrap x)
                 +. Float.globalize (W.unwrap y)
                 +. Float.globalize (W.unwrap z))
            ;;
          end) in
-  test (module Float) (fun () -> fn_global 1. 2. 3.) (fun () -> fn_local 1. 2. 3.);
+  test
+    (module Float)
+    (fun () -> fn_global 1. 2. 3.)
+    (fun () -> exclave_ fn_local 1. 2. 3.);
   [%expect {| 6 |}]
 ;;

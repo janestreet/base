@@ -5,7 +5,7 @@ include Int0
 module T = struct
   type t = int [@@deriving_inline globalize, hash, sexp, sexp_grammar]
 
-  let (globalize : t -> t) = (globalize_int : t -> t)
+  let (globalize : local_ t -> t) = (globalize_int : local_ t -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_int
@@ -35,7 +35,7 @@ end
 let num_bits = Int_conversions.num_bits_int
 let float_lower_bound = Float0.lower_bound_for_int num_bits
 let float_upper_bound = Float0.upper_bound_for_int num_bits
-let to_float = (Stdlib.float_of_int :> int -> _)
+let to_float = (Stdlib.float_of_int :> local_ int -> _)
 let of_float_unchecked = Stdlib.int_of_float
 
 let of_float f =
@@ -70,7 +70,7 @@ include Int_string_conversions.Make_hex (struct
 
     type t = int [@@deriving_inline compare ~localize, hash]
 
-    let compare__local = (compare_int__local : t -> t -> int)
+    let compare__local = (compare_int__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
@@ -231,9 +231,9 @@ let popcount = Popcount.int_popcount
 include Int_string_conversions.Make_binary (struct
     type t = int [@@deriving_inline compare ~localize, equal ~localize, hash]
 
-    let compare__local = (compare_int__local : t -> t -> int)
+    let compare__local = (compare_int__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
-    let equal__local = (equal_int__local : t -> t -> bool)
+    let equal__local = (equal_int__local : local_ t -> local_ t -> bool)
     let equal = (fun a b -> equal__local a b : t -> t -> bool)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =

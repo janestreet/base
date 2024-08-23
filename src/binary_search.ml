@@ -8,7 +8,7 @@ open Int_replace_polymorphic_compare
    If this k = 1 (resp n), find_last_not_satisfying (resp find_first_satisfying)
    will return None. *)
 
-let rec linear_search_first_satisfying t ~get ~lo ~hi ~pred =
+let rec linear_search_first_satisfying t ~get ~lo ~hi ~pred = exclave_
   if lo > hi
   then None
   else if pred (get t lo)
@@ -24,7 +24,7 @@ let rec linear_search_first_satisfying t ~get ~lo ~hi ~pred =
    - If [pred] is not constantly [false] on [t] between [lo] and [hi], the first element
      on which [pred] is [true] is between [lo] and [hi]. *)
 (* Invariant: the first element satisfying [pred], if it exists is between [lo] and [hi] *)
-let rec find_range_near_first_satisfying t ~get ~lo ~hi ~pred =
+let rec find_range_near_first_satisfying t ~get ~lo ~hi ~pred = exclave_
   (* Warning: this function will not terminate if the constant (currently 8) is
      set <= 1 *)
   if hi - lo <= 8
@@ -40,7 +40,7 @@ let rec find_range_near_first_satisfying t ~get ~lo ~hi ~pred =
     else find_range_near_first_satisfying t ~get ~lo:(mid + 1) ~hi ~pred)
 ;;
 
-let find_first_satisfying ?pos ?len t ~get ~length ~pred =
+let find_first_satisfying ?pos ?len t ~get ~length ~pred = exclave_
   let pos, len =
     Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length t)
   in
@@ -53,7 +53,7 @@ let find_first_satisfying ?pos ?len t ~get ~length ~pred =
 (* Takes an array with shape [true,...true,false,...false] (i.e., the _reverse_ of what
    is described above) and returns the index of the last true or None if there are no
    true*)
-let find_last_satisfying ?pos ?len t ~pred ~get ~length =
+let find_last_satisfying ?pos ?len t ~pred ~get ~length = exclave_
   let pos, len =
     Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length t)
   in
@@ -75,12 +75,12 @@ let binary_search
   ?pos
   ?len
   t
-  ~(length : _ -> _)
-  ~(get : _ -> _ -> _)
-  ~(compare : _ -> _ -> _)
+  ~(local_ length : _ -> _)
+  ~(local_ get : _ -> _ -> _)
+  ~(local_ compare : _ -> _ -> _)
   how
   v
-  =
+  = exclave_
   match how with
   | `Last_strictly_less_than ->
     find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v < 0)
@@ -104,7 +104,7 @@ let binary_search
     find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v > 0)
 ;;
 
-let binary_search_segmented ?pos ?len t ~length ~get ~segment_of how =
+let binary_search_segmented ?pos ?len t ~length ~get ~segment_of how = exclave_
   let is_left x =
     match segment_of x with
     | `Left -> true

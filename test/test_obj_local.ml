@@ -28,7 +28,7 @@ let stack_enabled =
 let%test_unit _ =
   [%test_result: stack_or_heap]
     (let foo x =
-       let s = ref x in
+       let local_ s = ref x in
        stack_or_heap (repr s) [@nontail]
      in
      foo 42)

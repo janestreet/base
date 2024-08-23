@@ -104,10 +104,17 @@ let create = Stdlib.Bytes.create
 
 include struct
   open struct
-    external unsafe_set_uint8 : bytes -> int -> int -> unit = "%bytes_unsafe_set"
-    external unsafe_set_uint16_ne : bytes -> int -> int -> unit = "%caml_bytes_set16u"
-    external set_int8 : bytes -> int -> int -> unit = "%bytes_safe_set"
-    external set_int32_ne : bytes -> int -> int32 -> unit = "%caml_bytes_set32"
+    external unsafe_set_uint8 : local_ bytes -> int -> int -> unit = "%bytes_unsafe_set"
+
+    external unsafe_set_uint16_ne
+      :  local_ bytes
+      -> int
+      -> int
+      -> unit
+      = "%caml_bytes_set16u"
+
+    external set_int8 : local_ bytes -> int -> int -> unit = "%bytes_safe_set"
+    external set_int32_ne : local_ bytes -> int -> int32 -> unit = "%caml_bytes_set32"
     external swap16 : int -> int = "%bswap16"
     external swap32 : int32 -> int32 = "%bswap_int32"
 
@@ -134,7 +141,7 @@ include struct
     ;;
   end
 
-  let set_uchar_utf_8 b i u =
+  let set_uchar_utf_8 (local_ b) i u =
     let set = unsafe_set_uint8 in
     let max = length b - 1 in
     match Uchar.to_int u with
@@ -172,7 +179,7 @@ include struct
     | _ -> assert false
   ;;
 
-  let set_uchar_utf_16le b i u =
+  let set_uchar_utf_16le (local_ b) i u =
     let set = unsafe_set_uint16_le in
     let max = length b - 1 in
     if i < 0 || i > max
@@ -201,7 +208,7 @@ include struct
       | _ -> assert false)
   ;;
 
-  let set_uchar_utf_16be b i u =
+  let set_uchar_utf_16be (local_ b) i u =
     let set = unsafe_set_uint16_be in
     let max = length b - 1 in
     if i < 0 || i > max
@@ -230,7 +237,7 @@ include struct
       | _ -> assert false)
   ;;
 
-  let set_utf_32_uchar ~set_int32 bytes idx uchar =
+  let set_utf_32_uchar ~set_int32 (local_ bytes) idx uchar =
     Uchar.to_int uchar
     |> Int_conversions.int_to_int32_trunc (* should never have anything to truncate *)
     |> set_int32 bytes idx;
@@ -241,17 +248,24 @@ include struct
   let set_uchar_utf_32be = set_utf_32_uchar ~set_int32:set_int32_be
 end
 
-external unsafe_create_local : int -> bytes = "Base_unsafe_create_local_bytes" [@@noalloc]
+external unsafe_create_local : int -> local_ bytes = "Base_unsafe_create_local_bytes"
+[@@noalloc]
 
-let create_local len =
+let create_local len = exclave_
   if len > Sys0.max_string_length then invalid_arg "Bytes.create_local";
   unsafe_create_local len
 ;;
 
-external unsafe_fill : bytes -> pos:int -> len:int -> char -> unit = "caml_fill_bytes"
+external unsafe_fill
+  :  local_ bytes
+  -> pos:int
+  -> len:int
+  -> char
+  -> unit
+  = "caml_fill_bytes"
 [@@noalloc]
 
-let fill t ~pos ~len c =
+let fill (local_ t) ~pos ~len c =
   if pos < 0 || len < 0 || pos > length t - len
   then invalid_arg "Bytes.fill"
   else unsafe_fill t ~pos ~len c
@@ -260,7 +274,7 @@ let fill t ~pos ~len c =
 let make = Stdlib.Bytes.make
 let empty = Stdlib.Bytes.empty
 
-let map t ~(f : _ -> _) =
+let map (local_ t) ~(local_ f : _ -> _) =
   let l = length t in
   if l = 0
   then empty
@@ -272,7 +286,7 @@ let map t ~(f : _ -> _) =
     r)
 ;;
 
-let mapi t ~(f : _ -> _ -> _) =
+let mapi (local_ t) ~(local_ f : _ -> _ -> _) =
   let l = length t in
   if l = 0
   then empty
@@ -309,7 +323,7 @@ external unsafe_of_string_promise_no_mutation
   -> (bytes[@local_opt])
   = "%bytes_of_string"
 
-let copy src =
+let copy (local_ src) =
   let len = length src in
   let dst = create len in
   unsafe_blit ~src ~src_pos:0 ~dst ~dst_pos:0 ~len;

@@ -6,14 +6,16 @@ struct
   type 'a t = 'a option
   [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
-  let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
+  let compare__local
+    : 'a. (local_ 'a -> local_ 'a -> int) -> local_ 'a t -> local_ 'a t -> int
+    =
     compare_option__local
   ;;
 
   let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
 
-  let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
-    fun (type a__009_) : ((a__009_ -> a__009_) -> a__009_ t -> a__009_ t) ->
+  let globalize : 'a. (local_ 'a -> 'a) -> local_ 'a t -> 'a t =
+    fun (type a__009_) : ((local_ a__009_ -> a__009_) -> local_ a__009_ t -> a__009_ t) ->
     globalize_option
   ;;
 
@@ -43,7 +45,7 @@ sig
   include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
   include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
-  val globalize : ('a -> 'a) -> 'a t -> 'a t
+  val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
 
   include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
   include Sexplib0.Sexpable.S1 with type 'a t := 'a t
@@ -67,7 +69,7 @@ let is_some = function
   | _ -> false
 ;;
 
-let value_map_local o ~default ~f =
+let value_map_local o ~default ~f = exclave_
   match o with
   | Some x -> f x
   | None -> default
@@ -99,7 +101,7 @@ let call x ~f =
   | Some f -> f x
 ;;
 
-let value_local t ~default =
+let value_local t ~default = exclave_
   match t with
   | None -> default
   | Some x -> x
@@ -109,7 +111,7 @@ let[@inline] value t ~default =
   (value_local (Modes.Global.wrap_option t) ~default:{ global = default }).global
 ;;
 
-let value_local_exn ?here ?error ?message t =
+let value_local_exn ?here ?error ?message t = exclave_
   match t with
   | Some x -> x
   | None ->
@@ -135,7 +137,7 @@ let[@inline] value_exn ?here ?error ?message t =
   (value_local_exn ?here ?error ?message (Modes.Global.wrap_option t)).global
 ;;
 
-let value_or_thunk_local o ~default =
+let value_or_thunk_local o ~default = exclave_
   match o with
   | Some x -> x
   | None -> default ()
@@ -143,7 +145,7 @@ let value_or_thunk_local o ~default =
 
 let[@inline] value_or_thunk o ~default =
   (value_or_thunk_local (Modes.Global.wrap_option o) ~default:(fun () ->
-     { global = default () }))
+     exclave_ { global = default () }))
     .global
 ;;
 
@@ -153,7 +155,7 @@ let to_array t =
   | Some x -> [| x |]
 ;;
 
-let to_list_local t =
+let to_list_local t = exclave_
   match t with
   | None -> []
   | Some x -> [ x ]
@@ -222,9 +224,9 @@ let equal__local f t t' =
 ;;
 
 let some x = Some x
-let some_local x = Some x
+let some_local x = exclave_ Some x
 
-let first_some_local x y =
+let first_some_local x y = exclave_
   match x with
   | Some _ -> x
   | None -> y
@@ -242,16 +244,16 @@ let first_some_thunk x y =
   | None -> y ()
 ;;
 
-let first_some_thunk_local x y =
+let first_some_thunk_local x y = exclave_
   match x with
   | Some _ -> x
   | None -> y ()
 ;;
 
-let some_if_local cond x = if cond then Some x else None
+let some_if_local cond x = exclave_ if cond then Some x else None
 let some_if cond x = if cond then Some x else None
 let some_if_thunk cond thunk = if cond then Some (thunk ()) else None
-let some_if_thunk_local cond thunk = if cond then Some (thunk ()) else None
+let some_if_thunk_local cond thunk = exclave_ if cond then Some (thunk ()) else None
 
 let merge a b ~f =
   match a, b with
@@ -277,7 +279,7 @@ let try_with_join f =
   | exception _ -> None
 ;;
 
-let map_local t ~f =
+let map_local t ~f = exclave_
   match t with
   | None -> None
   | Some a -> Some (f a)

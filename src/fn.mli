@@ -19,10 +19,10 @@ val non : ('a -> bool) -> 'a -> bool
 
 (** [forever f] runs [f ()] until it throws an exception and returns the
     exception. This function is useful for read_line loops, etc. *)
-val forever : (unit -> unit) -> exn
+val forever : local_ (unit -> unit) -> exn
 
 (** [apply_n_times ~n f x] is the [n]-fold application of [f] to [x]. *)
-val apply_n_times : n:int -> ('a -> 'a) -> 'a -> 'a
+val apply_n_times : n:int -> local_ ('a -> 'a) -> 'a -> 'a
 
 (** The identity function.
 

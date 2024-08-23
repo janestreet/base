@@ -5,5 +5,5 @@
    call noalloc. */
 CAMLprim value Base_unsafe_create_local_bytes(value len) {
   mlsize_t size = Long_val(len);
-  return caml_alloc_string(size);
+  return caml_alloc_local_string(size);
 }

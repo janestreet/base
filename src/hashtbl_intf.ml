@@ -84,8 +84,8 @@ module type Accessors = sig
     :  ('a, 'b) t
     -> 'a key
     -> a:'d
-    -> if_found:('b -> 'd -> 'c)
-    -> if_not_found:('a key -> 'd -> 'c)
+    -> if_found:local_ ('b -> 'd -> 'c)
+    -> if_not_found:local_ ('a key -> 'd -> 'c)
     -> 'c
 
   val find_and_call2
@@ -93,16 +93,16 @@ module type Accessors = sig
     -> 'a key
     -> a:'d
     -> b:'e
-    -> if_found:('b -> 'd -> 'e -> 'c)
-    -> if_not_found:('a key -> 'd -> 'e -> 'c)
+    -> if_found:local_ ('b -> 'd -> 'e -> 'c)
+    -> if_not_found:local_ ('a key -> 'd -> 'e -> 'c)
     -> 'c
 
   val findi_and_call1
     :  ('a, 'b) t
     -> 'a key
     -> a:'d
-    -> if_found:(key:'a key -> data:'b -> 'd -> 'c)
-    -> if_not_found:('a key -> 'd -> 'c)
+    -> if_found:local_ (key:'a key -> data:'b -> 'd -> 'c)
+    -> if_not_found:local_ ('a key -> 'd -> 'c)
     -> 'c
 
   val findi_and_call2
@@ -110,8 +110,8 @@ module type Accessors = sig
     -> 'a key
     -> a:'d
     -> b:'e
-    -> if_found:(key:'a key -> data:'b -> 'd -> 'e -> 'c)
-    -> if_not_found:('a key -> 'd -> 'e -> 'c)
+    -> if_found:local_ (key:'a key -> data:'b -> 'd -> 'e -> 'c)
+    -> if_not_found:local_ ('a key -> 'd -> 'e -> 'c)
     -> 'c
 
   (** [equal f t1 t2] and [similar f t1 t2] both return true iff [t1] and [t2] have the
@@ -278,8 +278,8 @@ module type Creators = sig
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
-    -> get_key:('r -> 'a)
-    -> get_data:('r -> 'b)
+    -> get_key:local_ ('r -> 'a)
+    -> get_data:local_ ('r -> 'b)
     -> 'r list
     -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a list ]
 
@@ -289,7 +289,7 @@ module type Creators = sig
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
-    -> get_key:('r -> 'a)
+    -> get_key:local_ ('r -> 'a)
     -> 'r list
     -> [ `Ok of ('a, 'r) t | `Duplicate_keys of 'a list ]
 
@@ -297,7 +297,7 @@ module type Creators = sig
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
-    -> get_key:('r -> 'a)
+    -> get_key:local_ ('r -> 'a)
     -> 'r list
     -> ('a, 'r) t Or_error.t
 
@@ -305,7 +305,7 @@ module type Creators = sig
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
-    -> get_key:('r -> 'a)
+    -> get_key:local_ ('r -> 'a)
     -> 'r list
     -> ('a, 'r) t
 
@@ -330,9 +330,9 @@ module type Creators = sig
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 0 *)
     -> 'a Key.t
-    -> get_key:('r -> 'a)
-    -> get_data:('r -> 'b)
-    -> combine:('b -> 'b -> 'b)
+    -> get_key:local_ ('r -> 'a)
+    -> get_data:local_ ('r -> 'b)
+    -> combine:local_ ('b -> 'b -> 'b)
     -> 'r list
     -> ('a, 'b) t
 end

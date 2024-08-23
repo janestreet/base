@@ -8,17 +8,17 @@ open! Import
     Furthermore, [blit] raises if [src_pos], [len], and [dst_pos] don't specify valid
     slices of [src] and [dst]. *)
 type ('src, 'dst) blit =
-  src:'src -> src_pos:int -> dst:'dst -> dst_pos:int -> len:int -> unit
+  src:local_ 'src -> src_pos:int -> dst:local_ 'dst -> dst_pos:int -> len:int -> unit
 
 (** [blito] is like [blit], except that the [src_pos], [src_len], and [dst_pos] are
     optional (hence the "o" in "blito").  Also, we use [src_len] rather than [len] as a
     reminder that if [src_len] isn't supplied, then the default is to take the slice
     running from [src_pos] to the end of [src]. *)
 type ('src, 'dst) blito =
-  src:'src
+  src:local_ 'src
   -> ?src_pos:int (** default is [0] *)
   -> ?src_len:int (** default is [length src - src_pos] *)
-  -> dst:'dst
+  -> dst:local_ 'dst
   -> ?dst_pos:int (** default is [0] *)
   -> unit
   -> unit
@@ -27,12 +27,12 @@ type ('src, 'dst) blito =
     containing [len] characters of [src] starting at [pos].
 
     [subo] is like [sub], except [pos] and [len] are optional. *)
-type ('src, 'dst) sub = 'src -> pos:int -> len:int -> 'dst
+type ('src, 'dst) sub = local_ 'src -> pos:int -> len:int -> 'dst
 
 type ('src, 'dst) subo =
   ?pos:int (** default is [0] *)
   -> ?len:int (** default is [length src - pos] *)
-  -> 'src
+  -> local_ 'src
   -> 'dst
 
 (** Like [blit], but not allowing [local_] values (on compilers supporting modes). *)
@@ -126,7 +126,7 @@ end
 module type Sequence = sig
   type t
 
-  val length : t -> int
+  val length : local_ t -> int
 end
 
 type 'a poly = 'a
@@ -136,9 +136,9 @@ module type Sequence1 = sig
 
   (** [Make1*] guarantees to only call [create_like ~len t] with [len > 0] if [length t >
       0]. *)
-  val create_like : len:int -> 'a t -> 'a t
+  val create_like : len:int -> local_ 'a t -> 'a t
 
-  val length : _ t -> int
+  val length : local_ _ t -> int
   val unsafe_blit : ('a t, 'a t) blit
 end
 

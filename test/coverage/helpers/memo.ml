@@ -13,7 +13,7 @@ let memoize generator =
 
 let quickcheck_m
   (type a)
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   ?cr
   (module M : Memoized with type t = a)
   ~f

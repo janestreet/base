@@ -6,8 +6,10 @@ include Container_intf
 
 let with_return = With_return.with_return
 
-type ('t, 'a, 'accum) fold = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
-type ('t, 'a) iter = 't -> f:('a -> unit) -> unit
+type ('t, 'a, 'accum) fold =
+  't -> init:'accum -> f:local_ ('accum -> 'a -> 'accum) -> 'accum
+
+type ('t, 'a) iter = 't -> f:local_ ('a -> unit) -> unit
 type 't length = 't -> int
 
 let iter ~(fold : (_, _, _) fold) t ~f = fold t ~init:() ~f:(fun () a -> f a) [@nontail]

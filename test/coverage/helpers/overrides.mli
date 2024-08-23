@@ -25,7 +25,7 @@ val quickcheck_generator_int : int Generator.t
 val quickcheck_generator_list : 'a Generator.t -> 'a list Generator.t
 
 val quickcheck_m
-  :  ?here:Stdlib.Lexing.position
+  :  here:[%call_pos]
   -> ?cr:CR.t
   -> (module Memoized with type t = 'a)
   -> f:('a -> unit)

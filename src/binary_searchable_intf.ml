@@ -62,18 +62,18 @@ type ('t, 'elt, 'key) binary_search =
   ?pos:int
   -> ?len:int
   -> 't
-  -> compare:('elt -> 'key -> int)
+  -> compare:local_ ('elt -> 'key -> int)
   -> Which_target_by_key.t
   -> 'key
-  -> int option
+  -> local_ int option
 
 type ('t, 'elt) binary_search_segmented =
   ?pos:int
   -> ?len:int
   -> 't
-  -> segment_of:('elt -> [ `Left | `Right ])
+  -> segment_of:local_ ('elt -> [ `Left | `Right ])
   -> Which_target_by_segment.t
-  -> int option
+  -> local_ int option
 
 module type S = sig
   type elt

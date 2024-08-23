@@ -26,7 +26,7 @@ module type Basic_gen = sig
 end
 
 module type Basic = Basic_gen with type ('a, 'b) f_labeled_fn := f:'a -> 'b
-module type Basic_local = Basic_gen with type ('a, 'b) f_labeled_fn := f:'a -> 'b
+module type Basic_local = Basic_gen with type ('a, 'b) f_labeled_fn := f:local_ 'a -> 'b
 
 module type Infix_gen = sig
   type 'a t
@@ -42,7 +42,7 @@ module type Infix_gen = sig
 end
 
 module type Infix = Infix_gen with type ('a, 'b) fn := 'a -> 'b
-module type Infix_local = Infix_gen with type ('a, 'b) fn := 'a -> 'b
+module type Infix_local = Infix_gen with type ('a, 'b) fn := local_ 'a -> 'b
 
 module type Syntax_gen = sig
   (** Opening a module of this type allows one to use the [%bind] and [%map] syntax
@@ -77,8 +77,8 @@ module type Syntax =
 
 module type Syntax_local =
   Syntax_gen
-  with type ('a, 'b) fn := 'a -> 'b
-   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+  with type ('a, 'b) fn := local_ 'a -> 'b
+   and type ('a, 'b) f_labeled_fn := f:local_ 'a -> 'b
 
 module type S_without_syntax_gen = sig
   type 'a t
@@ -122,8 +122,8 @@ module type S_without_syntax =
 
 module type S_without_syntax_local =
   S_without_syntax_gen
-  with type ('a, 'b) f_labeled_fn := f:'a -> 'b
-   and type ('a, 'b) fn := 'a -> 'b
+  with type ('a, 'b) f_labeled_fn := f:local_ 'a -> 'b
+   and type ('a, 'b) fn := local_ 'a -> 'b
 
 module type S = sig
   type 'a t
@@ -158,7 +158,7 @@ module type Basic2_gen = sig
 end
 
 module type Basic2 = Basic2_gen with type ('a, 'b) f_labeled_fn := f:'a -> 'b
-module type Basic2_local = Basic2_gen with type ('a, 'b) f_labeled_fn := f:'a -> 'b
+module type Basic2_local = Basic2_gen with type ('a, 'b) f_labeled_fn := f:local_ 'a -> 'b
 
 module type Infix2_gen = sig
   (** Same as {!Infix}, except the monad type has two arguments. The second is always just
@@ -172,7 +172,7 @@ module type Infix2_gen = sig
 end
 
 module type Infix2 = Infix2_gen with type ('a, 'b) fn := 'a -> 'b
-module type Infix2_local = Infix2_gen with type ('a, 'b) fn := 'a -> 'b
+module type Infix2_local = Infix2_gen with type ('a, 'b) fn := local_ 'a -> 'b
 
 module type Syntax2_gen = sig
   type ('a, 'e) t
@@ -203,8 +203,8 @@ module type Syntax2 =
 
 module type Syntax2_local =
   Syntax2_gen
-  with type ('a, 'b) fn := 'a -> 'b
-   and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+  with type ('a, 'b) fn := local_ 'a -> 'b
+   and type ('a, 'b) f_labeled_fn := f:local_ 'a -> 'b
 
 module type S2_gen = sig
   (** The same as {!S} except the monad type has two arguments. The second is always just
@@ -239,7 +239,9 @@ module type S2 =
   S2_gen with type ('a, 'b) fn := 'a -> 'b and type ('a, 'b) f_labeled_fn := f:'a -> 'b
 
 module type S2_local =
-  S2_gen with type ('a, 'b) fn := 'a -> 'b and type ('a, 'b) f_labeled_fn := f:'a -> 'b
+  S2_gen
+  with type ('a, 'b) fn := local_ 'a -> 'b
+   and type ('a, 'b) f_labeled_fn := f:local_ 'a -> 'b
 
 module type Basic3 = sig
   (** Multi parameter monad. The second and third parameters get unified across all the

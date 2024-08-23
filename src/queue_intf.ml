@@ -24,7 +24,7 @@ module type S = sig
   val of_array : 'a array -> 'a t
 
   (** [init n ~f] is equivalent to [of_list (List.init n ~f)]. *)
-  val init : int -> f:(int -> 'a) -> 'a t
+  val init : int -> f:local_ (int -> 'a) -> 'a t
 
   (** [enqueue t a] adds [a] to the end of [t].*)
   val enqueue : 'a t -> 'a -> unit
@@ -46,7 +46,7 @@ module type S = sig
       returns false. A common use case is tracking the sum of data in a recent time
       interval: [t] contains timestamped data, [while_] checks for elements with an old
       timestamp, and [f] subtracts data from the sum. *)
-  val drain : 'a t -> f:('a -> unit) -> while_:('a -> bool) -> unit
+  val drain : 'a t -> f:local_ ('a -> unit) -> while_:local_ ('a -> bool) -> unit
 
   (** [peek t] returns but does not remove the front element of [t], if any. *)
   val peek : 'a t -> 'a option
@@ -59,31 +59,31 @@ module type S = sig
   (** [copy t] returns a copy of [t]. *)
   val copy : 'a t -> 'a t
 
-  val map : 'a t -> f:('a -> 'b) -> 'b t
-  val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
+  val map : 'a t -> f:local_ ('a -> 'b) -> 'b t
+  val mapi : 'a t -> f:local_ (int -> 'a -> 'b) -> 'b t
 
   (** Creates a new queue with elements equal to [List.concat_map ~f (to_list t)]. *)
-  val concat_map : 'a t -> f:('a -> 'b list) -> 'b t
+  val concat_map : 'a t -> f:local_ ('a -> 'b list) -> 'b t
 
-  val concat_mapi : 'a t -> f:(int -> 'a -> 'b list) -> 'b t
+  val concat_mapi : 'a t -> f:local_ (int -> 'a -> 'b list) -> 'b t
 
   (** [filter_map] creates a new queue with elements equal to [List.filter_map ~f (to_list
       t)]. *)
-  val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
+  val filter_map : 'a t -> f:local_ ('a -> 'b option) -> 'b t
 
-  val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
+  val filter_mapi : 'a t -> f:local_ (int -> 'a -> 'b option) -> 'b t
 
   (** [filter] is like [filter_map], except with [List.filter]. *)
-  val filter : 'a t -> f:('a -> bool) -> 'a t
+  val filter : 'a t -> f:local_ ('a -> bool) -> 'a t
 
-  val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
+  val filteri : 'a t -> f:local_ (int -> 'a -> bool) -> 'a t
 
   (** [filter_inplace t ~f] removes all elements of [t] that don't satisfy [f].  If [f]
       raises, [t] is unchanged.  This is inplace in that it modifies [t]; however, it uses
       space linear in the final length of [t]. *)
-  val filter_inplace : 'a t -> f:('a -> bool) -> unit
+  val filter_inplace : 'a t -> f:local_ ('a -> bool) -> unit
 
-  val filteri_inplace : 'a t -> f:(int -> 'a -> bool) -> unit
+  val filteri_inplace : 'a t -> f:local_ (int -> 'a -> bool) -> unit
 end
 
 module type Queue = sig
@@ -106,7 +106,7 @@ module type Queue = sig
   include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
   include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
-  val globalize : ('a -> 'a) -> 'a t -> 'a t
+  val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
 
   [@@@end]
 
@@ -168,7 +168,7 @@ module type Queue = sig
     type 'a queue := 'a t
 
     (** A token representing state from the beginning of an iteration. *)
-    type t [@@immediate]
+    type t : immediate
 
     (** Capture state at the start of iteration. *)
     val start : _ queue -> t

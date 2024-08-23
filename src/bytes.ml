@@ -7,7 +7,7 @@ let stage = Staged.stage
 module T = struct
   type t = bytes [@@deriving_inline globalize, sexp, sexp_grammar]
 
-  let (globalize : t -> t) = (globalize_bytes : t -> t)
+  let (globalize : local_ t -> t) = (globalize_bytes : local_ t -> t)
   let t_of_sexp = (bytes_of_sexp : Sexplib0.Sexp.t -> t)
   let sexp_of_t = (sexp_of_bytes : t -> Sexplib0.Sexp.t)
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = bytes_sexp_grammar

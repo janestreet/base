@@ -20,7 +20,7 @@ let is_nan x = (x : float) <> x
 
    N.b. the calls to [globalize_float] are no-ops at runtime since the float is unboxed
    and then consumed by [bits_of_float], so the compiler knows not to re-box it. *)
-let to_int64_preserve_order t =
+let to_int64_preserve_order (local_ t) =
   if is_nan t
   then None
   else if t = 0.
@@ -31,17 +31,17 @@ let to_int64_preserve_order t =
   else Some (Stdlib.Int64.neg (Stdlib.Int64.bits_of_float (globalize_float (-.t))))
 ;;
 
-let to_int64_preserve_order_exn x = Option.value_exn (to_int64_preserve_order x)
+let to_int64_preserve_order_exn (local_ x) = Option.value_exn (to_int64_preserve_order x)
 
 (* N.b. the calls to [globalize_int64] are no-ops at runtime since the int64 is unboxed
    and then consumed by [float_of_bits], so the compiler knows not to re-box it. *)
-let of_int64_preserve_order x =
+let of_int64_preserve_order (local_ x) =
   if Int64_replace_polymorphic_compare.( >= ) x 0L
   then Stdlib.Int64.float_of_bits (globalize_int64 x)
   else ~-.(Stdlib.Int64.float_of_bits (globalize_int64 (Stdlib.Int64.neg x)))
 ;;
 
-let one_ulp dir t =
+let one_ulp dir (local_ t) =
   match to_int64_preserve_order t with
   | None -> Stdlib.nan
   | Some x ->
@@ -116,5 +116,5 @@ let box =
      implementation of flambda's heuristics is such that an arithmetic operation is
      necessary for the behavior we want; it is insufficient to simply globalize it. *)
   let x = Sys0.opaque_identity ~-.0. in
-  fun f -> globalize_float f +. x
+  fun (local_ f) -> globalize_float f +. x
 ;;

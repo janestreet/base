@@ -11,9 +11,9 @@ module T0 = struct
     type t = int64
     [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
 
-    let compare__local = (compare_int64__local : t -> t -> int)
+    let compare__local = (compare_int64__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
-    let (globalize : t -> t) = (globalize_int64 : t -> t)
+    let (globalize : local_ t -> t) = (globalize_int64 : local_ t -> t)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
       hash_fold_int64
@@ -45,12 +45,12 @@ module W : sig
 
   type t = int64
 
-  val wrap_exn : Stdlib.Int64.t -> t
-  val wrap_modulo : Stdlib.Int64.t -> t
-  val unwrap : t -> Stdlib.Int64.t
+  val wrap_exn : local_ Stdlib.Int64.t -> t
+  val wrap_modulo : local_ Stdlib.Int64.t -> t
+  val unwrap : local_ t -> Stdlib.Int64.t
 
   (** Returns a non-negative int64 that is equal to the input int63 modulo 2^63. *)
-  val unwrap_unsigned : t -> Stdlib.Int64.t
+  val unwrap_unsigned : local_ t -> Stdlib.Int64.t
 
   val invariant : t -> unit
   val add : t -> t -> t
@@ -73,13 +73,13 @@ module W : sig
   val shift_right_logical : t -> int -> t
   val min_value : t
   val max_value : t
-  val to_int64 : t -> Stdlib.Int64.t
-  val of_int64 : Stdlib.Int64.t -> t option
-  val of_int64_exn : Stdlib.Int64.t -> t
-  val of_int64_trunc : Stdlib.Int64.t -> t
+  val to_int64 : local_ t -> Stdlib.Int64.t
+  val of_int64 : local_ Stdlib.Int64.t -> t option
+  val of_int64_exn : local_ Stdlib.Int64.t -> t
+  val of_int64_trunc : local_ Stdlib.Int64.t -> t
   val compare : t -> t -> int
-  val compare__local : t -> t -> int
-  val equal__local : t -> t -> bool
+  val compare__local : local_ t -> local_ t -> int
+  val equal__local : local_ t -> local_ t -> bool
   val ceil_pow2 : t -> t
   val floor_pow2 : t -> t
   val ceil_log2 : t -> int
@@ -167,7 +167,7 @@ open W
 module T = struct
   type t = W.t [@@deriving_inline globalize, hash, sexp, sexp_grammar]
 
-  let (globalize : t -> t) = (W.globalize : t -> t)
+  let (globalize : local_ t -> t) = (W.globalize : local_ t -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     W.hash_fold_t
@@ -379,7 +379,7 @@ include Int_string_conversions.Make (T)
 include Int_string_conversions.Make_hex (struct
     type t = T.t [@@deriving_inline compare ~localize, hash]
 
-    let compare__local = (T.compare__local : t -> t -> int)
+    let compare__local = (T.compare__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
@@ -457,9 +457,9 @@ include O
 include Int_string_conversions.Make_binary (struct
     type t = T.t [@@deriving_inline compare ~localize, equal ~localize, hash]
 
-    let compare__local = (T.compare__local : t -> t -> int)
+    let compare__local = (T.compare__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
-    let equal__local = (T.equal__local : t -> t -> bool)
+    let equal__local = (T.equal__local : local_ t -> local_ t -> bool)
     let equal = (fun a b -> equal__local a b : t -> t -> bool)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =

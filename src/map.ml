@@ -73,22 +73,22 @@ let () =
    keeping the tree global. This saves up to O(log n) blocks of heap allocation. *)
 module With_length : sig
   type 'a t = private
-    { tree : 'a
+    { global_ tree : 'a
     ; length : int
     }
 
-  val with_length : 'a -> int -> 'a t
+  val with_length : 'a -> int -> local_ 'a t
   val with_length_global : 'a -> int -> 'a t
-  val globalize : 'a t -> 'a t
+  val globalize : local_ 'a t -> 'a t
 end = struct
   type 'a t =
-    { tree : 'a
+    { global_ tree : 'a
     ; length : int
     }
 
-  let with_length tree length = { tree; length }
+  let with_length tree length = exclave_ { tree; length }
   let with_length_global tree length = { tree; length }
-  let globalize { tree; length } = { tree; length }
+  let globalize (local_ { tree; length }) = { tree; length }
 end
 
 open With_length
@@ -212,7 +212,7 @@ module Tree0 = struct
     loop len ~f 0
   ;;
 
-  let of_sorted_array_unchecked array ~compare_key =
+  let of_sorted_array_unchecked array ~compare_key = exclave_
     let array_length = Array.length array in
     let next =
       if array_length < 2
@@ -312,7 +312,7 @@ module Tree0 = struct
     ~compare_key
     ~sexp_of_key
     ~(add_or_set : Add_or_set.t)
-    =
+    = exclave_
     match t with
     | Empty -> with_length (Leaf { key = x; data }) (length + 1)
     | Leaf { key = v; data = d } ->
@@ -407,11 +407,11 @@ module Tree0 = struct
       bal l v d r
   ;;
 
-  let add_exn t ~length ~key ~data ~compare_key ~sexp_of_key =
+  let add_exn t ~length ~key ~data ~compare_key ~sexp_of_key = exclave_
     find_and_add_or_set t ~length ~key ~data ~compare_key ~sexp_of_key ~add_or_set:Add_exn
   ;;
 
-  let add_exn_internal t ~length ~key ~data ~compare_key ~sexp_of_key =
+  let add_exn_internal t ~length ~key ~data ~compare_key ~sexp_of_key = exclave_
     find_and_add_or_set
       t
       ~length
@@ -422,7 +422,7 @@ module Tree0 = struct
       ~add_or_set:Add_exn_internal
   ;;
 
-  let set t ~length ~key ~data ~compare_key =
+  let set t ~length ~key ~data ~compare_key = exclave_
     find_and_add_or_set
       t
       ~length
@@ -459,8 +459,8 @@ module Tree0 = struct
       | [ (key, data) ] -> Leaf { key; data }
       | list ->
         let len = List.length list in
-        let list = ref list in
-        let rec loop len =
+        let local_ list = ref list in
+        let rec local_ loop len =
           match len, !list with
           | 1, (key, data) :: tail ->
             list := tail;
@@ -627,7 +627,7 @@ module Tree0 = struct
       if c = 0 then Some d else find (if c < 0 then l else r) x ~compare_key
   ;;
 
-  let add_multi t ~length ~key ~data ~compare_key =
+  let add_multi t ~length ~key ~data ~compare_key = exclave_
     let data = data :: Option.value (find t key ~compare_key) ~default:[] in
     set ~length ~key ~data t ~compare_key
   ;;
@@ -797,7 +797,7 @@ module Tree0 = struct
       join t1 x d (remove_min_elt t2)
   ;;
 
-  let rec remove t x ~length ~compare_key =
+  let rec remove t x ~length ~compare_key = exclave_
     match t with
     | Empty -> with_length t length
     | Leaf { key = v; data = _ } ->
@@ -821,7 +821,7 @@ module Tree0 = struct
         else with_length (bal l v d r) length')
   ;;
 
-  let rec change t key ~f ~length ~compare_key =
+  let rec change t key ~f ~length ~compare_key = exclave_
     match t with
     | Empty ->
       (match f None with
@@ -866,7 +866,7 @@ module Tree0 = struct
         else with_length (bal l v d r') length)
   ;;
 
-  let rec update t key ~f ~length ~compare_key =
+  let rec update t key ~f ~length ~compare_key = exclave_
     match t with
     | Empty ->
       let data = f None in
@@ -899,7 +899,7 @@ module Tree0 = struct
         with_length (bal l v d r) length)
   ;;
 
-  let remove_multi t key ~length ~compare_key =
+  let remove_multi t key ~length ~compare_key = exclave_
     change t key ~length ~compare_key ~f:(function
       | None | Some ([] | [ _ ]) -> None
       | Some (_ :: (_ :: _ as non_empty_tail)) -> Some non_empty_tail)
@@ -1368,9 +1368,9 @@ module Tree0 = struct
     Enum.compare compare_key compare_data e1 e2
   ;;
 
-  let equal compare_key compare_data t1 t2 =
+  let equal compare_key data_equal t1 t2 =
     let e1, e2 = Enum.drop_phys_equal_prefix t1 End t2 End in
-    Enum.equal compare_key compare_data e1 e2
+    Enum.equal compare_key data_equal e1 e2
   ;;
 
   let iter2 t1 t2 ~f ~compare_key =
@@ -1453,7 +1453,7 @@ module Tree0 = struct
 
     type 'a t
 
-    val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
+    val fold : 'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc) -> 'acc
   end
 
   let[@inline always] of_foldable' ~fold foldable ~init ~f ~compare_key =
@@ -1674,7 +1674,7 @@ module Tree0 = struct
     | `Decreasing -> fold t ~init:[] ~f:(fun ~key ~data x -> (key, data) :: x)
   ;;
 
-  let merge t1 t2 ~f ~compare_key =
+  let merge t1 t2 ~f ~compare_key = exclave_
     let elts = Uniform_array.unsafe_create_uninitialized ~len:(length t1 + length t2) in
     let i = ref 0 in
     iter2 t1 t2 ~compare_key ~f:(fun ~key ~data:values ->
@@ -1938,14 +1938,17 @@ module Tree0 = struct
 
   let of_iteri ~iteri ~compare_key =
     let acc = { bad_key = None; map_length = with_length_global empty 0 } in
-    iteri ~f:(fun ~key ~data ->
-      let { tree = map; length } = acc.map_length in
-      let ({ tree = _; length = length' } as pair) =
-        set ~length ~key ~data map ~compare_key
-      in
-      if length = length' && Option.is_none acc.bad_key
-      then acc.bad_key <- Some key
-      else acc.map_length <- globalize pair);
+    iteri
+      ~f:
+        (local_
+        fun ~key ~data ->
+          let { tree = map; length } = acc.map_length in
+          let ({ tree = _; length = length' } as pair) =
+            set ~length ~key ~data map ~compare_key
+          in
+          if length = length' && Option.is_none acc.bad_key
+          then acc.bad_key <- Some key
+          else acc.map_length <- globalize pair);
     match acc.bad_key with
     | None -> `Ok acc.map_length
     | Some key -> `Duplicate_key key
@@ -2243,31 +2246,31 @@ module Accessors = struct
   ;;
 
   let filter_keys t ~f =
-    let len = ref t.length in
+    let local_ len = ref t.length in
     let tree = Tree0.filter_keys t.tree ~f ~len in
     like_maybe_no_op t (with_length tree !len) [@nontail]
   ;;
 
   let filter t ~f =
-    let len = ref t.length in
+    let local_ len = ref t.length in
     let tree = Tree0.filter t.tree ~f ~len in
     like_maybe_no_op t (with_length tree !len) [@nontail]
   ;;
 
   let filteri t ~f =
-    let len = ref t.length in
+    let local_ len = ref t.length in
     let tree = Tree0.filteri t.tree ~f ~len in
     like_maybe_no_op t (with_length tree !len) [@nontail]
   ;;
 
   let filter_map t ~f =
-    let len = ref t.length in
+    let local_ len = ref t.length in
     let tree = Tree0.filter_map t.tree ~f ~len in
     like t (with_length tree !len) [@nontail]
   ;;
 
   let filter_mapi t ~f =
-    let len = ref t.length in
+    let local_ len = ref t.length in
     let tree = Tree0.filter_mapi t.tree ~f ~len in
     like t (with_length tree !len) [@nontail]
   ;;
@@ -2295,7 +2298,7 @@ module Accessors = struct
     Tree0.compare (compare_key t1) compare_data t1.tree t2.tree
   ;;
 
-  let equal compare_data t1 t2 = Tree0.equal (compare_key t1) compare_data t1.tree t2.tree
+  let equal data_equal t1 t2 = Tree0.equal (compare_key t1) data_equal t1.tree t2.tree
   let keys t = Tree0.keys t.tree
   let data t = Tree0.data t.tree
   let to_alist ?key_order t = Tree0.to_alist ?key_order t.tree
@@ -2709,11 +2712,11 @@ module Tree = struct
     Tree0.fold2 t1 t2 ~init ~f ~compare_key:comparator.Comparator.compare
   ;;
 
-  let filter_keys t ~f = Tree0.filter_keys t ~f ~len:(ref 0) [@nontail]
-  let filter t ~f = Tree0.filter t ~f ~len:(ref 0) [@nontail]
-  let filteri t ~f = Tree0.filteri t ~f ~len:(ref 0) [@nontail]
-  let filter_map t ~f = Tree0.filter_map t ~f ~len:(ref 0) [@nontail]
-  let filter_mapi t ~f = Tree0.filter_mapi t ~f ~len:(ref 0) [@nontail]
+  let filter_keys t ~f = Tree0.filter_keys t ~f ~len:(local_ ref 0) [@nontail]
+  let filter t ~f = Tree0.filter t ~f ~len:(local_ ref 0) [@nontail]
+  let filteri t ~f = Tree0.filteri t ~f ~len:(local_ ref 0) [@nontail]
+  let filter_map t ~f = Tree0.filter_map t ~f ~len:(local_ ref 0) [@nontail]
+  let filter_mapi t ~f = Tree0.filter_mapi t ~f ~len:(local_ ref 0) [@nontail]
   let partition_mapi t ~f = Tree0.partition_mapi t ~f
   let partition_map t ~f = Tree0.partition_map t ~f
   let partitioni_tf t ~f = Tree0.partitioni_tf t ~f
@@ -2729,8 +2732,8 @@ module Tree = struct
     Tree0.compare comparator.Comparator.compare compare_data t1 t2
   ;;
 
-  let equal ~comparator compare_data t1 t2 =
-    Tree0.equal comparator.Comparator.compare compare_data t1 t2
+  let equal ~comparator data_equal t1 t2 =
+    Tree0.equal comparator.Comparator.compare data_equal t1 t2
   ;;
 
   let keys t = Tree0.keys t

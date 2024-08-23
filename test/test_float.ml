@@ -1336,6 +1336,6 @@ let%expect_test "log" =
 
 let%expect_test "float comparisons permit both local and global arguments" =
   let (_ : float -> float -> bool) = Float.( < ) in
-  let (_ : float -> float -> bool) = Float.( < ) in
+  let (_ : local_ float -> local_ float -> bool) = Float.( < ) in
   [%expect {| |}]
 ;;

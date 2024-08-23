@@ -68,7 +68,7 @@ let%expect_test "some_if_thunk{,_local}" =
       1
       |}]
   in
-  run_test (fun b f -> some_if_thunk_local b f);
+  run_test (fun b f -> exclave_ some_if_thunk_local b f);
   run_test some_if_thunk
 ;;
 

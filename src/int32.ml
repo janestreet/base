@@ -4,7 +4,7 @@ open! Stdlib.Int32
 module T = struct
   type t = int32 [@@deriving_inline globalize, hash, sexp, sexp_grammar]
 
-  let (globalize : t -> t) = (globalize_int32 : t -> t)
+  let (globalize : local_ t -> t) = (globalize_int32 : local_ t -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_int32
@@ -55,11 +55,14 @@ let zero = zero
 let compare = compare
 let compare__local = Stdlib.compare
 
-external to_float : int32 -> float = "caml_int32_to_float" "caml_int32_to_float_unboxed"
+external to_float
+  :  local_ int32
+  -> float
+  = "caml_int32_to_float" "caml_int32_to_float_unboxed"
 [@@unboxed] [@@noalloc]
 
 external of_float_unchecked
-  :  float
+  :  local_ float
   -> int32
   = "caml_int32_of_float" "caml_int32_of_float_unboxed"
 [@@unboxed] [@@noalloc]
@@ -102,7 +105,7 @@ module Compare = struct
   let min x y = Bool0.select (x <= y) x y
   let max x y = Bool0.select (x >= y) x y
   let equal (x : t) y = x = y
-  let equal__local (x : t) y = Poly.equal x y
+  let equal__local (local_ (x : t)) (local_ y) = Poly.equal x y
   let between t ~low ~high = low <= t && t <= high
   let clamp_unchecked t ~min:min_ ~max:max_ = min t max_ |> max min_
 
@@ -234,7 +237,7 @@ include Int_string_conversions.Make (T)
 include Int_string_conversions.Make_hex (struct
     type t = int32 [@@deriving_inline compare ~localize, hash]
 
-    let compare__local = (compare_int32__local : t -> t -> int)
+    let compare__local = (compare_int32__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
@@ -258,9 +261,9 @@ include Int_string_conversions.Make_hex (struct
 include Int_string_conversions.Make_binary (struct
     type t = int32 [@@deriving_inline compare ~localize, equal ~localize, hash]
 
-    let compare__local = (compare_int32__local : t -> t -> int)
+    let compare__local = (compare_int32__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
-    let equal__local = (equal_int32__local : t -> t -> bool)
+    let equal__local = (equal_int32__local : local_ t -> local_ t -> bool)
     let equal = (fun a b -> equal__local a b : t -> t -> bool)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =

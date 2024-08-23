@@ -47,8 +47,8 @@ module type S_with_local_opt = sig
 
   val min : t -> t -> t
   val max : t -> t -> t
-  val min_local : t -> t -> t
-  val max_local : t -> t -> t
+  val min_local : local_ t -> local_ t -> local_ t
+  val max_local : local_ t -> local_ t -> local_ t
 end
 
 module type Infix_with_zero_alloc = sig

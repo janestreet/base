@@ -18,13 +18,13 @@ module Backend = struct
       val of_int32 : int32 -> t
       val to_int32 : t -> Int32.t option
       val to_int32_trunc : t -> Int32.t
-      val of_int64 : Int64.t -> t option
-      val of_int64_trunc : Int64.t -> t
+      val of_int64 : local_ Int64.t -> t option
+      val of_int64_trunc : local_ Int64.t -> t
       val of_nativeint : nativeint -> t option
       val to_nativeint : t -> nativeint option
       val of_nativeint_trunc : nativeint -> t
       val to_nativeint_trunc : t -> nativeint
-      val of_float_unchecked : float -> t
+      val of_float_unchecked : local_ float -> t
       val repr : (t, t) Int63_emul.Repr.t
       val bswap16 : t -> t
       val bswap32 : t -> t

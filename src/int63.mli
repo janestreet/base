@@ -14,7 +14,7 @@ open! Import
     immediate only on 64 bit platforms.  It is currently ignored by the compiler, however
     we are hoping that one day it will be taken into account so that the compiler can omit
     [caml_modify] when dealing with mutable data structures holding [Int63.t] values. *)
-type t [@@immediate64]
+type t : immediate64
 
 include Int_intf.S with type t := t
 
@@ -37,7 +37,7 @@ val of_int : int -> t
 val to_int : t -> int option
 val of_int32 : Int32.t -> t
 val to_int32 : t -> Int32.t option
-val of_int64 : Int64.t -> t option
+val of_int64 : local_ Int64.t -> t option
 val of_nativeint : nativeint -> t option
 val to_nativeint : t -> nativeint option
 
@@ -48,7 +48,7 @@ val to_nativeint : t -> nativeint option
 
 val to_int_trunc : t -> int
 val to_int32_trunc : t -> Int32.t
-val of_int64_trunc : Int64.t -> t
+val of_int64_trunc : local_ Int64.t -> t
 val of_nativeint_trunc : nativeint -> t
 val to_nativeint_trunc : t -> nativeint
 

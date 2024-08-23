@@ -22,7 +22,7 @@ module type Memo = sig
   val memoize : 'a Generator.t -> 'a list Lazy.t
 
   val quickcheck_m
-    :  ?here:Stdlib.Lexing.position
+    :  here:[%call_pos]
     -> ?cr:CR.t
     -> (module Memoized with type t = 'a)
     -> f:('a -> unit)

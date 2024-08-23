@@ -5,13 +5,25 @@ struct
   type 'a t = 'a ref
   [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
 
-  let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref__local
+  let compare__local
+    : 'a. (local_ 'a -> local_ 'a -> int) -> local_ 'a t -> local_ 'a t -> int
+    =
+    compare_ref__local
+  ;;
+
   let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref
-  let equal__local : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool = equal_ref__local
+
+  let equal__local
+    : 'a. (local_ 'a -> local_ 'a -> bool) -> local_ 'a t -> local_ 'a t -> bool
+    =
+    equal_ref__local
+  ;;
+
   let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool = equal_ref
 
-  let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
-    fun (type a__017_) : ((a__017_ -> a__017_) -> a__017_ t -> a__017_ t) -> globalize_ref
+  let globalize : 'a. (local_ 'a -> 'a) -> local_ 'a t -> 'a t =
+    fun (type a__017_) : ((local_ a__017_ -> a__017_) -> local_ a__017_ t -> a__017_ t) ->
+    globalize_ref
   ;;
 
   let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = ref_of_sexp
@@ -32,7 +44,7 @@ sig
   include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
   include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 
-  val globalize : ('a -> 'a) -> 'a t -> 'a t
+  val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
 
   include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 

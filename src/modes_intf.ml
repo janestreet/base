@@ -16,28 +16,32 @@ module Definitions = struct
     module type Wrapper = sig
       type 'a t
 
-      val wrap : 'a -> 'a t
-      val unwrap : 'a t -> 'a
+      val wrap : 'a -> local_ 'a t
+      val unwrap : local_ 'a t -> local_ 'a
     end
 
     (** Locality-polymorphic 1-argument function. Passed to [Poly_fn1] functor, below. *)
     module Wrapped_fn1 (Input : T) (Output : T) = struct
       module type S = functor (W : Wrapper) -> sig
-        val fn : Input.t W.t -> Output.t W.t
+        val fn : local_ Input.t W.t -> local_ Output.t W.t
       end
     end
 
     (** Locality-polymorphic 2-argument function. Passed to [Poly_fn2] functor, below. *)
     module Wrapped_fn2 (Input1 : T) (Input2 : T) (Output : T) = struct
       module type S = functor (W : Wrapper) -> sig
-        val fn : Input1.t W.t -> Input2.t W.t -> Output.t W.t
+        val fn : local_ Input1.t W.t -> local_ Input2.t W.t -> local_ Output.t W.t
       end
     end
 
     (** Locality-polymorphic 3-argument function. Passed to [Poly_fn3] functor, below. *)
     module Wrapped_fn3 (Input1 : T) (Input2 : T) (Input3 : T) (Output : T) = struct
       module type S = functor (W : Wrapper) -> sig
-        val fn : Input1.t W.t -> Input2.t W.t -> Input3.t W.t -> Output.t W.t
+        val fn
+          :  local_ Input1.t W.t
+          -> local_ Input2.t W.t
+          -> local_ Input3.t W.t
+          -> local_ Output.t W.t
       end
     end
 
@@ -46,7 +50,7 @@ module Definitions = struct
       type input
       type output
 
-      val fn_local : input -> output
+      val fn_local : local_ input -> local_ output
       val fn_global : input -> output
     end
 
@@ -56,7 +60,7 @@ module Definitions = struct
       type input2
       type output
 
-      val fn_local : input1 -> input2 -> output
+      val fn_local : local_ input1 -> local_ input2 -> local_ output
       val fn_global : input1 -> input2 -> output
     end
 
@@ -67,7 +71,7 @@ module Definitions = struct
       type input3
       type output
 
-      val fn_local : input1 -> input2 -> input3 -> output
+      val fn_local : local_ input1 -> local_ input2 -> local_ input3 -> local_ output
       val fn_global : input1 -> input2 -> input3 -> output
     end
   end
@@ -80,7 +84,7 @@ module type Modes = sig
       include Definitions.Global
     end
 
-    type 'a t = { global : 'a }
+    type 'a t = { global_ global : 'a }
     [@@unboxed]
     [@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
 
@@ -97,18 +101,18 @@ module type Modes = sig
 
     (** Globalize a [t]. Takes an argument because [[%globalize]] will pass one for ['a],
         but [globalize] is a no-op so it discards the argument. *)
-    val globalize : _ -> 'a t -> 'a t
+    val globalize : local_ _ -> local_ 'a t -> 'a t
 
     (** Construct a [t]. Returns a global [t], which may be used as a local value. *)
     val wrap : 'a -> 'a t
 
     (** Access the contents of a [t]. Accepts a local [t], to which global values may be
         passed. *)
-    val unwrap : 'a t -> 'a
+    val unwrap : local_ 'a t -> 'a
 
     (** Transform the contents of a [t]. Accepts a local [t], to which global values may
         be passed. Returns a global [t], which may be used as a local value. *)
-    val map : 'a t -> f:('a -> 'b) -> 'b t
+    val map : local_ 'a t -> f:local_ ('a -> 'b) -> 'b t
 
     (** {2 Wrap and unwrap within other types}
 
@@ -243,6 +247,6 @@ module type Modes = sig
 
   (** Can be [open]ed or [include]d to bring field names into scope. *)
   module Export : sig
-    type 'a _global = 'a Global.t = { global : 'a } [@@unboxed]
+    type 'a _global = 'a Global.t = { global_ global : 'a } [@@unboxed]
   end
 end

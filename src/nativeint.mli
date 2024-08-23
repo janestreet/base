@@ -4,7 +4,7 @@ open! Import
 
 type t = nativeint [@@deriving_inline globalize]
 
-val globalize : t -> t
+val globalize : local_ t -> t
 
 [@@@end]
 

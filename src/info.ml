@@ -103,7 +103,7 @@ module Computed = struct
 
   (* We use a global [state ref] so we can mutate [state], but still [globalize] with no
      cost and without duplicating state. *)
-  type info = { state : state ref } [@@unboxed]
+  type info = { global_ state : state ref } [@@unboxed]
 
   (* An [info] starts as a [constructor]. When forced, it is marked [Computing] to avoid
      cycles. When finished, the final [message] is recorded. *)
@@ -120,7 +120,7 @@ module Computed = struct
     | Cons_tag_t of string * info
 
   (* This is a no-op, since [info] is unboxed. *)
-  let globalize_info { state } = { state }
+  let globalize_info (local_ { state }) = { state }
 
   (* We keep a list of stack_frames while computing, rather than using the call stack. *)
   type stack_frame =

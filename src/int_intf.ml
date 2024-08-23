@@ -248,7 +248,7 @@ module type S_common = sig
       rounding towards zero.
       The result is unspecified if the argument is nan or falls outside the range
       of representable integers. *)
-  val of_float_unchecked : float -> t
+  val of_float_unchecked : local_ float -> t
 end
 
 module type Operators_unbounded = sig
@@ -358,7 +358,7 @@ module type Int_without_module_types = sig
 
   type t = int [@@deriving_inline globalize]
 
-  val globalize : t -> t
+  val globalize : local_ t -> t
 
   [@@@end]
 
@@ -406,7 +406,7 @@ module type Int_without_module_types = sig
   val to_int : t -> int
   val of_int32 : int32 -> t option
   val to_int32 : t -> int32 option
-  val of_int64 : int64 -> t option
+  val of_int64 : local_ int64 -> t option
   val of_nativeint : nativeint -> t option
   val to_nativeint : t -> nativeint
 

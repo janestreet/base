@@ -90,7 +90,7 @@ let concat ?(sep = "") l =
   | l -> Stdlib.String.concat ~sep l
 ;;
 
-let iter t ~f =
+let iter t ~(local_ f) =
   for i = 0 to length t - 1 do
     f (unsafe_get t i)
   done

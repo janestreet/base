@@ -5,7 +5,7 @@ include Nativeint_replace_polymorphic_compare
 module T = struct
   type t = nativeint [@@deriving_inline globalize, hash, sexp, sexp_grammar]
 
-  let (globalize : t -> t) = (globalize_nativeint : t -> t)
+  let (globalize : local_ t -> t) = (globalize_nativeint : local_ t -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_nativeint
@@ -45,7 +45,7 @@ include Int_string_conversions.Make_hex (struct
 
     type t = nativeint [@@deriving_inline compare ~localize, hash]
 
-    let compare__local = (compare_nativeint__local : t -> t -> int)
+    let compare__local = (compare_nativeint__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
@@ -101,13 +101,13 @@ let one = one
 let zero = zero
 
 external to_float
-  :  nativeint
+  :  local_ nativeint
   -> float
   = "caml_nativeint_to_float" "caml_nativeint_to_float_unboxed"
 [@@unboxed] [@@noalloc]
 
 external of_float_unchecked
-  :  float
+  :  local_ float
   -> nativeint
   = "caml_nativeint_of_float" "caml_nativeint_of_float_unboxed"
 [@@unboxed] [@@noalloc]
@@ -254,9 +254,9 @@ let ( ** ) b e = pow b e
 include Int_string_conversions.Make_binary (struct
     type t = nativeint [@@deriving_inline compare ~localize, equal ~localize, hash]
 
-    let compare__local = (compare_nativeint__local : t -> t -> int)
+    let compare__local = (compare_nativeint__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
-    let equal__local = (equal_nativeint__local : t -> t -> bool)
+    let equal__local = (equal_nativeint__local : local_ t -> local_ t -> bool)
     let equal = (fun a b -> equal__local a b : t -> t -> bool)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =

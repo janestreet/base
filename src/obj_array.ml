@@ -32,7 +32,7 @@ type not_a_float =
 let _not_a_float_0 = Not_a_float_0
 let _not_a_float_1 = Not_a_float_1 42
 
-let get t i =
+let get (local_ t) i =
   (* Make the compiler believe [t] is an array not containing floats so it does not check
      if [t] is tagged with [Double_array_tag].  It is NOT ok to use [int array] since (if
      this function is inlined and the array contains in-heap boxed values) wrong register

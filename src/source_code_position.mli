@@ -33,10 +33,10 @@ val of_pos : string * int * int * int -> t
 
 (** [here_or_there (Some there)] returns [there]. [here_or_there None] returns [~here],
     which may be defined implicitly on compilers supporting [[%call_pos]]. *)
-val here_or_there : ?here:Stdlib.Lexing.position -> t option -> t
+val here_or_there : here:[%call_pos] -> t option -> t
 
 (** [is_dummy pos] returns true if [pos] is equal to [Stdlib.Lexing.dummy_pos]. 
 
     [Stdlib.Lexing.dummy_pos] is a position guaranteed to be different from any valid
     position. *)
-val is_dummy : t -> bool
+val is_dummy : local_ t -> bool

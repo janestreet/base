@@ -71,8 +71,8 @@ val invariant : ('k, 'v) t -> compare:('k -> 'k -> int) -> unit
 val add
   :  ('k, 'v) t
   -> replace:bool
-  -> compare:('k -> 'k -> int)
-  -> added:bool ref
+  -> compare:local_ ('k -> 'k -> int)
+  -> added:local_ bool ref
   -> key:'k
   -> data:'v
   -> ('k, 'v) t
@@ -84,7 +84,7 @@ val last : ('k, 'v) t -> ('k * 'v) option
 
 (** If the specified key exists in the tree, returns the corresponding value.  O(log(N))
     time and O(1) space. *)
-val find : ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> 'v option
+val find : ('k, 'v) t -> compare:local_ ('k -> 'k -> int) -> 'k -> 'v option
 
 (** [find_and_call t ~compare k ~if_found ~if_not_found]
 
@@ -95,78 +95,78 @@ val find : ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> 'v option
     except that it doesn't allocate the option. *)
 val find_and_call
   :  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
+  -> compare:local_ ('k -> 'k -> int)
   -> 'k
-  -> if_found:('v -> 'a)
-  -> if_not_found:('k -> 'a)
+  -> if_found:local_ ('v -> 'a)
+  -> if_not_found:local_ ('k -> 'a)
   -> 'a
 
 val find_and_call1
   :  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
+  -> compare:local_ ('k -> 'k -> int)
   -> 'k
   -> a:'a
-  -> if_found:('v -> 'a -> 'b)
-  -> if_not_found:('k -> 'a -> 'b)
+  -> if_found:local_ ('v -> 'a -> 'b)
+  -> if_not_found:local_ ('k -> 'a -> 'b)
   -> 'b
 
 val find_and_call2
   :  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
+  -> compare:local_ ('k -> 'k -> int)
   -> 'k
   -> a:'a
   -> b:'b
-  -> if_found:('v -> 'a -> 'b -> 'c)
-  -> if_not_found:('k -> 'a -> 'b -> 'c)
+  -> if_found:local_ ('v -> 'a -> 'b -> 'c)
+  -> if_not_found:local_ ('k -> 'a -> 'b -> 'c)
   -> 'c
 
 val findi_and_call
   :  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
+  -> compare:local_ ('k -> 'k -> int)
   -> 'k
-  -> if_found:(key:'k -> data:'v -> 'a)
-  -> if_not_found:('k -> 'a)
+  -> if_found:local_ (key:'k -> data:'v -> 'a)
+  -> if_not_found:local_ ('k -> 'a)
   -> 'a
 
 val findi_and_call1
   :  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
+  -> compare:local_ ('k -> 'k -> int)
   -> 'k
   -> a:'a
-  -> if_found:(key:'k -> data:'v -> 'a -> 'b)
-  -> if_not_found:('k -> 'a -> 'b)
+  -> if_found:local_ (key:'k -> data:'v -> 'a -> 'b)
+  -> if_not_found:local_ ('k -> 'a -> 'b)
   -> 'b
 
 val findi_and_call2
   :  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
+  -> compare:local_ ('k -> 'k -> int)
   -> 'k
   -> a:'a
   -> b:'b
-  -> if_found:(key:'k -> data:'v -> 'a -> 'b -> 'c)
-  -> if_not_found:('k -> 'a -> 'b -> 'c)
+  -> if_found:local_ (key:'k -> data:'v -> 'a -> 'b -> 'c)
+  -> if_not_found:local_ ('k -> 'a -> 'b -> 'c)
   -> 'c
 
 (** Returns true if key is present in the tree, and false otherwise. *)
-val mem : ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> bool
+val mem : ('k, 'v) t -> compare:local_ ('k -> 'k -> int) -> 'k -> bool
 
 (** Removes key destructively from the tree if it exists, returning the new root node.
     Previous root nodes are not usable anymore; do so at your peril. The [removed] ref
     will be set to true if a node was actually removed, and false otherwise. *)
 val remove
   :  ('k, 'v) t
-  -> removed:bool ref
-  -> compare:('k -> 'k -> int)
+  -> removed:local_ bool ref
+  -> compare:local_ ('k -> 'k -> int)
   -> 'k
   -> ('k, 'v) t
 
 (** Folds over the tree. *)
-val fold : ('k, 'v) t -> init:'acc -> f:(key:'k -> data:'v -> 'acc -> 'acc) -> 'acc
+val fold : ('k, 'v) t -> init:'acc -> f:local_ (key:'k -> data:'v -> 'acc -> 'acc) -> 'acc
 
 (** Iterates over the tree. *)
-val iter : ('k, 'v) t -> f:(key:'k -> data:'v -> unit) -> unit
+val iter : ('k, 'v) t -> f:local_ (key:'k -> data:'v -> unit) -> unit
 
 (** Map over the the tree, changing the data in place. *)
-val mapi_inplace : ('k, 'v) t -> f:(key:'k -> data:'v -> 'v) -> unit
+val mapi_inplace : ('k, 'v) t -> f:local_ (key:'k -> data:'v -> 'v) -> unit
 
 val choose_exn : ('k, 'v) t -> 'k * 'v

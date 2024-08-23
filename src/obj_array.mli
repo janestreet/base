@@ -22,28 +22,28 @@ val create : len:int -> Stdlib.Obj.t -> t
 val create_zero : len:int -> t
 
 (** [copy t] returns a new array with the same elements as [t]. *)
-val copy : t -> t
+val copy : local_ t -> t
 
 val singleton : Stdlib.Obj.t -> t
 val empty : t
-val length : t -> int
+val length : local_ t -> int
 
 (** [get t i] and [unsafe_get t i] return the object at index [i].  [set t i o] and
     [unsafe_set t i o] set index [i] to [o].  In no case is the object copied.  The
     [unsafe_*] variants omit the bounds check of [i]. *)
-val get : t -> int -> Stdlib.Obj.t
+val get : local_ t -> int -> Stdlib.Obj.t
 
-val unsafe_get : t -> int -> Stdlib.Obj.t
-val set : t -> int -> Stdlib.Obj.t -> unit
-val unsafe_set : t -> int -> Stdlib.Obj.t -> unit
-val swap : t -> int -> int -> unit
+val unsafe_get : local_ t -> int -> Stdlib.Obj.t
+val set : local_ t -> int -> Stdlib.Obj.t -> unit
+val unsafe_set : local_ t -> int -> Stdlib.Obj.t -> unit
+val swap : local_ t -> int -> int -> unit
 
 (** [set_with_caml_modify] simply sets the value in the array with no bells and whistles,
     unlike [set] which first reads the value to optimize immediate values and setting the
     index to its current value. This can be used when these optimizations are not useful,
     but the noise in generated code is annoying (and might have an impact on performance,
     although this is pure speculation). *)
-val set_with_caml_modify : t -> int -> Stdlib.Obj.t -> unit
+val set_with_caml_modify : local_ t -> int -> Stdlib.Obj.t -> unit
 
 (** [unsafe_set_assuming_currently_int t i obj] sets index [i] of [t] to [obj], but only
     works correctly if [Stdlib.Obj.is_int (get t i)].  This precondition saves a dynamic
@@ -53,24 +53,24 @@ val set_with_caml_modify : t -> int -> Stdlib.Obj.t -> unit
     int.
 
     [unsafe_set_int] is similar but does not assume anything about the target. *)
-val unsafe_set_assuming_currently_int : t -> int -> Stdlib.Obj.t -> unit
+val unsafe_set_assuming_currently_int : local_ t -> int -> Stdlib.Obj.t -> unit
 
-val unsafe_set_int_assuming_currently_int : t -> int -> int -> unit
-val unsafe_set_int : t -> int -> int -> unit
+val unsafe_set_int_assuming_currently_int : local_ t -> int -> int -> unit
+val unsafe_set_int : local_ t -> int -> int -> unit
 
 (** [unsafe_set_omit_phys_equal_check] is like [unsafe_set], except it doesn't do a
     [phys_equal] check to try to skip [caml_modify].  It is safe to call this even if the
     values are [phys_equal]. *)
-val unsafe_set_omit_phys_equal_check : t -> int -> Stdlib.Obj.t -> unit
+val unsafe_set_omit_phys_equal_check : local_ t -> int -> Stdlib.Obj.t -> unit
 
 (** Same as [set_with_caml_modify], but without bounds checks. This is like
     [unsafe_set_omit_phys_equal_check] except it doesn't check whether the old value and
     the value being set are integers to try to skip [caml_modify]. *)
-val unsafe_set_with_caml_modify : t -> int -> Stdlib.Obj.t -> unit
+val unsafe_set_with_caml_modify : local_ t -> int -> Stdlib.Obj.t -> unit
 
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
     space leaks.  It does this by setting [t.(i)] to [Stdlib.Obj.repr 0].  As a performance hack,
     it only does this when [not (Stdlib.Obj.is_int t.(i))]. *)
-val unsafe_clear_if_pointer : t -> int -> unit
+val unsafe_clear_if_pointer : local_ t -> int -> unit
 
 val sub : t -> pos:int -> len:int -> t

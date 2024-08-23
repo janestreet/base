@@ -46,17 +46,17 @@ val int32_to_int_trunc : int32 -> int
 val int32_to_int64 : int32 -> int64
 val int32_to_nativeint : int32 -> nativeint
 val int32_is_representable_as_int : int32 -> bool
-val int64_to_int : int64 -> int option
-val int64_to_int_exn : int64 -> int
-val int64_to_int_trunc : int64 -> int
+val int64_to_int : local_ int64 -> int option
+val int64_to_int_exn : local_ int64 -> int
+val int64_to_int_trunc : local_ int64 -> int
 val int64_to_int32 : int64 -> int32 option
 val int64_to_int32_exn : int64 -> int32
 val int64_to_int32_trunc : int64 -> int32
 val int64_to_nativeint : int64 -> nativeint option
 val int64_to_nativeint_exn : int64 -> nativeint
 val int64_to_nativeint_trunc : int64 -> nativeint
-val int64_fit_on_int63_exn : int64 -> unit
-val int64_is_representable_as_int63 : int64 -> bool
+val int64_fit_on_int63_exn : local_ int64 -> unit
+val int64_is_representable_as_int63 : local_ int64 -> bool
 val nativeint_to_int : nativeint -> int option
 val nativeint_to_int_exn : nativeint -> int
 val nativeint_to_int_trunc : nativeint -> int

@@ -49,11 +49,11 @@ module type S0 = sig
 
   (** [iter] must allow exceptions raised in [f] to escape, terminating the iteration
       cleanly.  The same holds for all functions below taking an [f]. *)
-  val iter : t -> f:(elt -> unit) -> unit
+  val iter : t -> f:local_ (elt -> unit) -> unit
 
   (** [fold t ~init ~f] returns [f (... f (f (f init e1) e2) e3 ...) en], where [e1..en]
       are the elements of [t]. *)
-  val fold : t -> init:'acc -> f:('acc -> elt -> 'acc) -> 'acc
+  val fold : t -> init:'acc -> f:local_ ('acc -> elt -> 'acc) -> 'acc
 
   (** [fold_result t ~init ~f] is a short-circuiting version of [fold] that runs in the
       [Result] monad.  If [f] returns an [Error _], that value is returned without any
@@ -61,7 +61,7 @@ module type S0 = sig
   val fold_result
     :  t
     -> init:'acc
-    -> f:('acc -> elt -> ('acc, 'e) Result.t)
+    -> f:local_ ('acc -> elt -> ('acc, 'e) Result.t)
     -> ('acc, 'e) Result.t
 
   (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
@@ -96,30 +96,30 @@ module type S0 = sig
   val fold_until
     :  t
     -> init:'acc
-    -> f:('acc -> elt -> ('acc, 'final) Continue_or_stop.t)
-    -> finish:('acc -> 'final)
+    -> f:local_ ('acc -> elt -> ('acc, 'final) Continue_or_stop.t)
+    -> finish:local_ ('acc -> 'final)
     -> 'final
 
   (** Returns [true] if and only if there exists an element for which the provided
       function evaluates to [true]. This is a short-circuiting operation. *)
-  val exists : t -> f:(elt -> bool) -> bool
+  val exists : t -> f:local_ (elt -> bool) -> bool
 
   (** Returns [true] if and only if the provided function evaluates to [true] for all
       elements. This is a short-circuiting operation. *)
-  val for_all : t -> f:(elt -> bool) -> bool
+  val for_all : t -> f:local_ (elt -> bool) -> bool
 
   (** Returns the number of elements for which the provided function evaluates to true. *)
-  val count : t -> f:(elt -> bool) -> int
+  val count : t -> f:local_ (elt -> bool) -> int
 
   (** Returns the sum of [f i] for all [i] in the container. *)
-  val sum : (module Summable with type t = 'sum) -> t -> f:(elt -> 'sum) -> 'sum
+  val sum : (module Summable with type t = 'sum) -> t -> f:local_ (elt -> 'sum) -> 'sum
 
   (** Returns as an [option] the first element for which [f] evaluates to true. *)
-  val find : t -> f:(elt -> bool) -> elt option
+  val find : t -> f:local_ (elt -> bool) -> elt option
 
   (** Returns the first evaluation of [f] that returns [Some], and returns [None] if there
       is no such element.  *)
-  val find_map : t -> f:(elt -> 'a option) -> 'a option
+  val find_map : t -> f:local_ (elt -> 'a option) -> 'a option
 
   val to_list : t -> elt list
   val to_array : t -> elt array
@@ -128,9 +128,9 @@ module type S0 = sig
       function. In case of a tie, the first element encountered while traversing the
       collection is returned. The implementation uses [fold] so it has the same
       complexity as [fold]. Returns [None] iff the collection is empty. *)
-  val min_elt : t -> compare:(elt -> elt -> int) -> elt option
+  val min_elt : t -> compare:local_ (elt -> elt -> int) -> elt option
 
-  val max_elt : t -> compare:(elt -> elt -> int) -> elt option
+  val max_elt : t -> compare:local_ (elt -> elt -> int) -> elt option
 end
 
 module type S0_phantom = sig
@@ -142,11 +142,11 @@ module type S0_phantom = sig
 
   val length : _ t -> int
   val is_empty : _ t -> bool
-  val iter : _ t -> f:(elt -> unit) -> unit
+  val iter : _ t -> f:local_ (elt -> unit) -> unit
 
   (** [fold t ~init ~f] returns [f (... f (f (f init e1) e2) e3 ...) en], where [e1..en]
       are the elements of [t]. *)
-  val fold : _ t -> init:'acc -> f:('acc -> elt -> 'acc) -> 'acc
+  val fold : _ t -> init:'acc -> f:local_ ('acc -> elt -> 'acc) -> 'acc
 
   (** [fold_result t ~init ~f] is a short-circuiting version of [fold] that runs in the
       [Result] monad.  If [f] returns an [Error _], that value is returned without any
@@ -154,7 +154,7 @@ module type S0_phantom = sig
   val fold_result
     :  _ t
     -> init:'acc
-    -> f:('acc -> elt -> ('acc, 'e) Result.t)
+    -> f:local_ ('acc -> elt -> ('acc, 'e) Result.t)
     -> ('acc, 'e) Result.t
 
   (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
@@ -189,31 +189,31 @@ module type S0_phantom = sig
   val fold_until
     :  _ t
     -> init:'acc
-    -> f:('acc -> elt -> ('acc, 'final) Continue_or_stop.t)
-    -> finish:('acc -> 'final)
+    -> f:local_ ('acc -> elt -> ('acc, 'final) Continue_or_stop.t)
+    -> finish:local_ ('acc -> 'final)
     -> 'final
 
   (** Returns [true] if and only if there exists an element for which the provided
       function evaluates to [true].  This is a short-circuiting operation. *)
-  val exists : _ t -> f:(elt -> bool) -> bool
+  val exists : _ t -> f:local_ (elt -> bool) -> bool
 
   (** Returns [true] if and only if the provided function evaluates to [true] for all
       elements.  This is a short-circuiting operation. *)
-  val for_all : _ t -> f:(elt -> bool) -> bool
+  val for_all : _ t -> f:local_ (elt -> bool) -> bool
 
   (** Returns the number of elements for which the provided function evaluates to true. *)
-  val count : _ t -> f:(elt -> bool) -> int
+  val count : _ t -> f:local_ (elt -> bool) -> int
 
   (** Returns the sum of [f i] for all [i] in the container. The order in which the
       elements will be summed is unspecified. *)
-  val sum : (module Summable with type t = 'sum) -> _ t -> f:(elt -> 'sum) -> 'sum
+  val sum : (module Summable with type t = 'sum) -> _ t -> f:local_ (elt -> 'sum) -> 'sum
 
   (** Returns as an [option] the first element for which [f] evaluates to true. *)
-  val find : _ t -> f:(elt -> bool) -> elt option
+  val find : _ t -> f:local_ (elt -> bool) -> elt option
 
   (** Returns the first evaluation of [f] that returns [Some], and returns [None] if there
       is no such element.  *)
-  val find_map : _ t -> f:(elt -> 'a option) -> 'a option
+  val find_map : _ t -> f:local_ (elt -> 'a option) -> 'a option
 
   val to_list : _ t -> elt list
   val to_array : _ t -> elt array
@@ -221,9 +221,9 @@ module type S0_phantom = sig
   (** Returns a min (resp max) element from the collection using the provided [compare]
       function, or [None] if the collection is empty.  In case of a tie, the first element
       encountered while traversing the collection is returned. *)
-  val min_elt : _ t -> compare:(elt -> elt -> int) -> elt option
+  val min_elt : _ t -> compare:local_ (elt -> elt -> int) -> elt option
 
-  val max_elt : _ t -> compare:(elt -> elt -> int) -> elt option
+  val max_elt : _ t -> compare:local_ (elt -> elt -> int) -> elt option
 end
 
 (** Signature for polymorphic container, e.g., ['a list] or ['a array]. *)
@@ -231,15 +231,15 @@ module type S1 = sig
   type 'a t
 
   (** Checks whether the provided element is there, using [equal]. *)
-  val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
+  val mem : 'a t -> 'a -> equal:local_ ('a -> 'a -> bool) -> bool
 
   val length : 'a t -> int
   val is_empty : 'a t -> bool
-  val iter : 'a t -> f:('a -> unit) -> unit
+  val iter : 'a t -> f:local_ ('a -> unit) -> unit
 
   (** [fold t ~init ~f] returns [f (... f (f (f init e1) e2) e3 ...) en], where [e1..en]
       are the elements of [t]  *)
-  val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
+  val fold : 'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc) -> 'acc
 
   (** [fold_result t ~init ~f] is a short-circuiting version of [fold] that runs in the
       [Result] monad.  If [f] returns an [Error _], that value is returned without any
@@ -247,7 +247,7 @@ module type S1 = sig
   val fold_result
     :  'a t
     -> init:'acc
-    -> f:('acc -> 'a -> ('acc, 'e) Result.t)
+    -> f:local_ ('acc -> 'a -> ('acc, 'e) Result.t)
     -> ('acc, 'e) Result.t
 
   (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
@@ -282,31 +282,31 @@ module type S1 = sig
   val fold_until
     :  'a t
     -> init:'acc
-    -> f:('acc -> 'a -> ('acc, 'final) Continue_or_stop.t)
-    -> finish:('acc -> 'final)
+    -> f:local_ ('acc -> 'a -> ('acc, 'final) Continue_or_stop.t)
+    -> finish:local_ ('acc -> 'final)
     -> 'final
 
   (** Returns [true] if and only if there exists an element for which the provided
       function evaluates to [true].  This is a short-circuiting operation. *)
-  val exists : 'a t -> f:('a -> bool) -> bool
+  val exists : 'a t -> f:local_ ('a -> bool) -> bool
 
   (** Returns [true] if and only if the provided function evaluates to [true] for all
       elements.  This is a short-circuiting operation. *)
-  val for_all : 'a t -> f:('a -> bool) -> bool
+  val for_all : 'a t -> f:local_ ('a -> bool) -> bool
 
   (** Returns the number of elements for which the provided function evaluates to true. *)
-  val count : 'a t -> f:('a -> bool) -> int
+  val count : 'a t -> f:local_ ('a -> bool) -> int
 
   (** Returns the sum of [f i] for all [i] in the container. *)
 
-  val sum : (module Summable with type t = 'sum) -> 'a t -> f:('a -> 'sum) -> 'sum
+  val sum : (module Summable with type t = 'sum) -> 'a t -> f:local_ ('a -> 'sum) -> 'sum
 
   (** Returns as an [option] the first element for which [f] evaluates to true. *)
-  val find : 'a t -> f:('a -> bool) -> 'a option
+  val find : 'a t -> f:local_ ('a -> bool) -> 'a option
 
   (** Returns the first evaluation of [f] that returns [Some], and returns [None] if there
       is no such element.  *)
-  val find_map : 'a t -> f:('a -> 'b option) -> 'b option
+  val find_map : 'a t -> f:local_ ('a -> 'b option) -> 'b option
 
   val to_list : 'a t -> 'a list
   val to_array : 'a t -> 'a array
@@ -315,24 +315,24 @@ module type S1 = sig
       [compare] function, or [None] if the collection is empty. In case of a tie, the first
       element encountered while traversing the collection is returned. The implementation
       uses [fold] so it has the same complexity as [fold]. *)
-  val min_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+  val min_elt : 'a t -> compare:local_ ('a -> 'a -> int) -> 'a option
 
-  val max_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+  val max_elt : 'a t -> compare:local_ ('a -> 'a -> int) -> 'a option
 end
 
 module type S1_phantom = sig
   type ('a, 'phantom) t
 
   (** Checks whether the provided element is there, using [equal]. *)
-  val mem : ('a, _) t -> 'a -> equal:('a -> 'a -> bool) -> bool
+  val mem : ('a, _) t -> 'a -> equal:local_ ('a -> 'a -> bool) -> bool
 
   val length : (_, _) t -> int
   val is_empty : (_, _) t -> bool
-  val iter : ('a, _) t -> f:('a -> unit) -> unit
+  val iter : ('a, _) t -> f:local_ ('a -> unit) -> unit
 
   (** [fold t ~init ~f] returns [f (... f (f (f init e1) e2) e3 ...) en], where [e1..en]
       are the elements of [t]. *)
-  val fold : ('a, _) t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
+  val fold : ('a, _) t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc) -> 'acc
 
   (** [fold_result t ~init ~f] is a short-circuiting version of [fold] that runs in the
       [Result] monad.  If [f] returns an [Error _], that value is returned without any
@@ -340,7 +340,7 @@ module type S1_phantom = sig
   val fold_result
     :  ('a, _) t
     -> init:'acc
-    -> f:('acc -> 'a -> ('acc, 'e) Result.t)
+    -> f:local_ ('acc -> 'a -> ('acc, 'e) Result.t)
     -> ('acc, 'e) Result.t
 
   (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If [f]
@@ -375,30 +375,34 @@ module type S1_phantom = sig
   val fold_until
     :  ('a, _) t
     -> init:'acc
-    -> f:('acc -> 'a -> ('acc, 'final) Continue_or_stop.t)
-    -> finish:('acc -> 'final)
+    -> f:local_ ('acc -> 'a -> ('acc, 'final) Continue_or_stop.t)
+    -> finish:local_ ('acc -> 'final)
     -> 'final
 
   (** Returns [true] if and only if there exists an element for which the provided
       function evaluates to [true].  This is a short-circuiting operation. *)
-  val exists : ('a, _) t -> f:('a -> bool) -> bool
+  val exists : ('a, _) t -> f:local_ ('a -> bool) -> bool
 
   (** Returns [true] if and only if the provided function evaluates to [true] for all
       elements.  This is a short-circuiting operation. *)
-  val for_all : ('a, _) t -> f:('a -> bool) -> bool
+  val for_all : ('a, _) t -> f:local_ ('a -> bool) -> bool
 
   (** Returns the number of elements for which the provided function evaluates to true. *)
-  val count : ('a, _) t -> f:('a -> bool) -> int
+  val count : ('a, _) t -> f:local_ ('a -> bool) -> int
 
   (** Returns the sum of [f i] for all [i] in the container. *)
-  val sum : (module Summable with type t = 'sum) -> ('a, _) t -> f:('a -> 'sum) -> 'sum
+  val sum
+    :  (module Summable with type t = 'sum)
+    -> ('a, _) t
+    -> f:local_ ('a -> 'sum)
+    -> 'sum
 
   (** Returns as an [option] the first element for which [f] evaluates to true. *)
-  val find : ('a, _) t -> f:('a -> bool) -> 'a option
+  val find : ('a, _) t -> f:local_ ('a -> bool) -> 'a option
 
   (** Returns the first evaluation of [f] that returns [Some], and returns [None] if there
       is no such element.  *)
-  val find_map : ('a, _) t -> f:('a -> 'b option) -> 'b option
+  val find_map : ('a, _) t -> f:local_ ('a -> 'b option) -> 'b option
 
   val to_list : ('a, _) t -> 'a list
   val to_array : ('a, _) t -> 'a array
@@ -407,9 +411,9 @@ module type S1_phantom = sig
       function. In case of a tie, the first element encountered while traversing the
       collection is returned. The implementation uses [fold] so it has the same complexity
       as [fold]. Returns [None] iff the collection is empty. *)
-  val min_elt : ('a, _) t -> compare:('a -> 'a -> int) -> 'a option
+  val min_elt : ('a, _) t -> compare:local_ ('a -> 'a -> int) -> 'a option
 
-  val max_elt : ('a, _) t -> compare:('a -> 'a -> int) -> 'a option
+  val max_elt : ('a, _) t -> compare:local_ ('a -> 'a -> int) -> 'a option
 end
 
 module type Generic = sig
@@ -418,39 +422,39 @@ module type Generic = sig
 
   val length : (_, _, _) t -> int
   val is_empty : (_, _, _) t -> bool
-  val mem : ('a, _, _) t -> 'a elt -> equal:('a elt -> 'a elt -> bool) -> bool
-  val iter : ('a, _, _) t -> f:('a elt -> unit) -> unit
-  val fold : ('a, _, _) t -> init:'acc -> f:('acc -> 'a elt -> 'acc) -> 'acc
+  val mem : ('a, _, _) t -> 'a elt -> equal:local_ ('a elt -> 'a elt -> bool) -> bool
+  val iter : ('a, _, _) t -> f:local_ ('a elt -> unit) -> unit
+  val fold : ('a, _, _) t -> init:'acc -> f:local_ ('acc -> 'a elt -> 'acc) -> 'acc
 
   val fold_result
     :  ('a, _, _) t
     -> init:'acc
-    -> f:('acc -> 'a elt -> ('acc, 'e) Result.t)
+    -> f:local_ ('acc -> 'a elt -> ('acc, 'e) Result.t)
     -> ('acc, 'e) Result.t
 
   val fold_until
     :  ('a, _, _) t
     -> init:'acc
-    -> f:('acc -> 'a elt -> ('acc, 'final) Continue_or_stop.t)
-    -> finish:('acc -> 'final)
+    -> f:local_ ('acc -> 'a elt -> ('acc, 'final) Continue_or_stop.t)
+    -> finish:local_ ('acc -> 'final)
     -> 'final
 
-  val exists : ('a, _, _) t -> f:('a elt -> bool) -> bool
-  val for_all : ('a, _, _) t -> f:('a elt -> bool) -> bool
-  val count : ('a, _, _) t -> f:('a elt -> bool) -> int
+  val exists : ('a, _, _) t -> f:local_ ('a elt -> bool) -> bool
+  val for_all : ('a, _, _) t -> f:local_ ('a elt -> bool) -> bool
+  val count : ('a, _, _) t -> f:local_ ('a elt -> bool) -> int
 
   val sum
     :  (module Summable with type t = 'sum)
     -> ('a, _, _) t
-    -> f:('a elt -> 'sum)
+    -> f:local_ ('a elt -> 'sum)
     -> 'sum
 
-  val find : ('a, _, _) t -> f:('a elt -> bool) -> 'a elt option
-  val find_map : ('a, _, _) t -> f:('a elt -> 'b option) -> 'b option
+  val find : ('a, _, _) t -> f:local_ ('a elt -> bool) -> 'a elt option
+  val find_map : ('a, _, _) t -> f:local_ ('a elt -> 'b option) -> 'b option
   val to_list : ('a, _, _) t -> 'a elt list
   val to_array : ('a, _, _) t -> 'a elt array
-  val min_elt : ('a, _, _) t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
-  val max_elt : ('a, _, _) t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
+  val min_elt : ('a, _, _) t -> compare:local_ ('a elt -> 'a elt -> int) -> 'a elt option
+  val max_elt : ('a, _, _) t -> compare:local_ ('a elt -> 'a elt -> int) -> 'a elt option
 end
 
 module type S0_with_creators = sig
@@ -468,25 +472,25 @@ module type S0_with_creators = sig
 
   (** [map f (of_list [a1; ...; an])] applies [f] to [a1], [a2], ..., [an], in order, and
       builds a result equivalent to [of_list [f a1; ...; f an]]. *)
-  val map : t -> f:(elt -> elt) -> t
+  val map : t -> f:local_ (elt -> elt) -> t
 
   (** [filter t ~f] returns all the elements of [t] that satisfy the predicate [f]. *)
-  val filter : t -> f:(elt -> bool) -> t
+  val filter : t -> f:local_ (elt -> bool) -> t
 
   (** [filter_map t ~f] applies [f] to every [x] in [t]. The result contains every [y] for
       which [f x] returns [Some y]. *)
-  val filter_map : t -> f:(elt -> elt option) -> t
+  val filter_map : t -> f:local_ (elt -> elt option) -> t
 
   (** [concat_map t ~f] is equivalent to [concat (map t ~f)]. *)
-  val concat_map : t -> f:(elt -> t) -> t
+  val concat_map : t -> f:local_ (elt -> t) -> t
 
   (** [partition_tf t ~f] returns a pair [t1, t2], where [t1] is all elements of [t] that
       satisfy [f], and [t2] is all elements of [t] that do not satisfy [f]. The "tf"
       suffix is mnemonic to remind readers that the result is (trues, falses). *)
-  val partition_tf : t -> f:(elt -> bool) -> t * t
+  val partition_tf : t -> f:local_ (elt -> bool) -> t * t
 
   (** [partition_map t ~f] partitions [t] according to [f]. *)
-  val partition_map : t -> f:(elt -> (elt, elt) Either0.t) -> t * t
+  val partition_map : t -> f:local_ (elt -> (elt, elt) Either0.t) -> t * t
 end
 
 module type S1_with_creators = sig
@@ -504,25 +508,25 @@ module type S1_with_creators = sig
 
   (** [map f (of_list [a1; ...; an])] applies [f] to [a1], [a2], ..., [an], in order, and
       builds a result equivalent to [of_list [f a1; ...; f an]]. *)
-  val map : 'a t -> f:('a -> 'b) -> 'b t
+  val map : 'a t -> f:local_ ('a -> 'b) -> 'b t
 
   (** [filter t ~f] returns all the elements of [t] that satisfy the predicate [f]. *)
-  val filter : 'a t -> f:('a -> bool) -> 'a t
+  val filter : 'a t -> f:local_ ('a -> bool) -> 'a t
 
   (** [filter_map t ~f] applies [f] to every [x] in [t]. The result contains every [y] for
       which [f x] returns [Some y]. *)
-  val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
+  val filter_map : 'a t -> f:local_ ('a -> 'b option) -> 'b t
 
   (** [concat_map t ~f] is equivalent to [concat (map t ~f)]. *)
-  val concat_map : 'a t -> f:('a -> 'b t) -> 'b t
+  val concat_map : 'a t -> f:local_ ('a -> 'b t) -> 'b t
 
   (** [partition_tf t ~f] returns a pair [t1, t2], where [t1] is all elements of [t] that
       satisfy [f], and [t2] is all elements of [t] that do not satisfy [f]. The "tf"
       suffix is mnemonic to remind readers that the result is (trues, falses). *)
-  val partition_tf : 'a t -> f:('a -> bool) -> 'a t * 'a t
+  val partition_tf : 'a t -> f:local_ ('a -> bool) -> 'a t * 'a t
 
   (** [partition_map t ~f] partitions [t] according to [f]. *)
-  val partition_map : 'a t -> f:('a -> ('b, 'c) Either0.t) -> 'b t * 'c t
+  val partition_map : 'a t -> f:local_ ('a -> ('b, 'c) Either0.t) -> 'b t * 'c t
 end
 
 module type Generic_with_creators = sig
@@ -534,19 +538,27 @@ module type Generic_with_creators = sig
   val of_array : 'a elt array -> ('a, _, _) t
   val append : ('a, 'p1, 'p2) t -> ('a, 'p1, 'p2) t -> ('a, 'p1, 'p2) t
   val concat : (('a, 'p1, 'p2) t, 'p1, 'p2) concat -> ('a, 'p1, 'p2) t
-  val map : ('a, 'p1, 'p2) t -> f:('a elt -> 'b elt) -> ('b, 'p1, 'p2) t
-  val filter : ('a, 'p1, 'p2) t -> f:('a elt -> bool) -> ('a, 'p1, 'p2) t
-  val filter_map : ('a, 'p1, 'p2) t -> f:('a elt -> 'b elt option) -> ('b, 'p1, 'p2) t
-  val concat_map : ('a, 'p1, 'p2) t -> f:('a elt -> ('b, 'p1, 'p2) t) -> ('b, 'p1, 'p2) t
+  val map : ('a, 'p1, 'p2) t -> f:local_ ('a elt -> 'b elt) -> ('b, 'p1, 'p2) t
+  val filter : ('a, 'p1, 'p2) t -> f:local_ ('a elt -> bool) -> ('a, 'p1, 'p2) t
+
+  val filter_map
+    :  ('a, 'p1, 'p2) t
+    -> f:local_ ('a elt -> 'b elt option)
+    -> ('b, 'p1, 'p2) t
+
+  val concat_map
+    :  ('a, 'p1, 'p2) t
+    -> f:local_ ('a elt -> ('b, 'p1, 'p2) t)
+    -> ('b, 'p1, 'p2) t
 
   val partition_tf
     :  ('a, 'p1, 'p2) t
-    -> f:('a elt -> bool)
+    -> f:local_ ('a elt -> bool)
     -> ('a, 'p1, 'p2) t * ('a, 'p1, 'p2) t
 
   val partition_map
     :  ('a, 'p1, 'p2) t
-    -> f:('a elt -> ('b elt, 'c elt) Either0.t)
+    -> f:local_ ('a elt -> ('b elt, 'c elt) Either0.t)
     -> ('b, 'p1, 'p2) t * ('c, 'p1, 'p2) t
 end
 
@@ -557,7 +569,7 @@ module type Make_gen_arg = sig
   val fold
     :  ('a, 'phantom1, 'phantom2) t
     -> init:'acc
-    -> f:('acc -> 'a elt -> 'acc)
+    -> f:local_ ('acc -> 'a elt -> 'acc)
     -> 'acc
 
   (** The [iter] argument to [Container.Make] specifies how to implement the
@@ -574,7 +586,7 @@ module type Make_gen_arg = sig
       as well. *)
   val iter
     : [ `Define_using_fold
-      | `Custom of ('a, 'phantom1, 'phantom2) t -> f:('a elt -> unit) -> unit
+      | `Custom of ('a, 'phantom1, 'phantom2) t -> f:local_ ('a elt -> unit) -> unit
       ]
 
   (** The [length] argument to [Container.Make] specifies how to implement the
@@ -657,23 +669,23 @@ module type Derived = sig
 
       E.g.: [iter ~fold t ~f = fold t ~init:() ~f:(fun () a -> f a)]. *)
 
-  type ('t, 'a, 'acc) fold = 't -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
-  type ('t, 'a) iter = 't -> f:('a -> unit) -> unit
+  type ('t, 'a, 'acc) fold = 't -> init:'acc -> f:local_ ('acc -> 'a -> 'acc) -> 'acc
+  type ('t, 'a) iter = 't -> f:local_ ('a -> unit) -> unit
   type 't length = 't -> int
 
   val iter : fold:('t, 'a, unit) fold -> ('t, 'a) iter
-  val count : fold:('t, 'a, int) fold -> 't -> f:('a -> bool) -> int
+  val count : fold:('t, 'a, int) fold -> 't -> f:local_ ('a -> bool) -> int
 
   val min_elt
     :  fold:('t, 'a, 'a option) fold
     -> 't
-    -> compare:('a -> 'a -> int)
+    -> compare:local_ ('a -> 'a -> int)
     -> 'a option
 
   val max_elt
     :  fold:('t, 'a, 'a option) fold
     -> 't
-    -> compare:('a -> 'a -> int)
+    -> compare:local_ ('a -> 'a -> int)
     -> 'a option
 
   val length : fold:('t, _, int) fold -> 't -> int
@@ -683,32 +695,32 @@ module type Derived = sig
     :  fold:('t, 'a, 'sum) fold
     -> (module Summable with type t = 'sum)
     -> 't
-    -> f:('a -> 'sum)
+    -> f:local_ ('a -> 'sum)
     -> 'sum
 
   val fold_result
     :  fold:('t, 'a, 'acc) fold
     -> init:'acc
-    -> f:('acc -> 'a -> ('acc, 'e) Result.t)
+    -> f:local_ ('acc -> 'a -> ('acc, 'e) Result.t)
     -> 't
     -> ('acc, 'e) Result.t
 
   val fold_until
     :  fold:('t, 'a, 'acc) fold
     -> init:'acc
-    -> f:('acc -> 'a -> ('acc, 'final) Continue_or_stop.t)
-    -> finish:('acc -> 'final)
+    -> f:local_ ('acc -> 'a -> ('acc, 'final) Continue_or_stop.t)
+    -> finish:local_ ('acc -> 'final)
     -> 't
     -> 'final
 
   (** Generic definitions of container operations in terms of [iter] and [length]. *)
 
   val is_empty : iter:('t, 'a) iter -> 't -> bool
-  val mem : iter:('t, 'a) iter -> 't -> 'a -> equal:('a -> 'a -> bool) -> bool
-  val exists : iter:('t, 'a) iter -> 't -> f:('a -> bool) -> bool
-  val for_all : iter:('t, 'a) iter -> 't -> f:('a -> bool) -> bool
-  val find : iter:('t, 'a) iter -> 't -> f:('a -> bool) -> 'a option
-  val find_map : iter:('t, 'a) iter -> 't -> f:('a -> 'b option) -> 'b option
+  val mem : iter:('t, 'a) iter -> 't -> 'a -> equal:local_ ('a -> 'a -> bool) -> bool
+  val exists : iter:('t, 'a) iter -> 't -> f:local_ ('a -> bool) -> bool
+  val for_all : iter:('t, 'a) iter -> 't -> f:local_ ('a -> bool) -> bool
+  val find : iter:('t, 'a) iter -> 't -> f:local_ ('a -> bool) -> 'a option
+  val find_map : iter:('t, 'a) iter -> 't -> f:local_ ('a -> 'b option) -> 'b option
   val to_array : length:'t length -> iter:('t, 'a) iter -> 't -> 'a array
 end
 

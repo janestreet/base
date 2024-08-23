@@ -56,9 +56,9 @@ val to_string_mach : t -> string
 
 (** Executes [f] and afterwards executes [finally], whether [f] throws an exception or
     not. *)
-val protectx : f:('a -> 'b) -> 'a -> finally:('a -> unit) -> 'b
+val protectx : f:local_ ('a -> 'b) -> 'a -> finally:local_ ('a -> unit) -> 'b
 
-val protect : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
+val protect : f:local_ (unit -> 'a) -> finally:local_ (unit -> unit) -> 'a
 
 (** [handle_uncaught ~exit f] catches an exception escaping [f] and prints an error
     message to stderr.  Exits with return code 1 if [exit] is [true], and returns unit
@@ -66,11 +66,11 @@ val protect : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
 
     Note that since OCaml 4.02.0, you don't need to use this at the entry point of your
     program, as the OCaml runtime will do better than this function. *)
-val handle_uncaught : exit:bool -> (unit -> unit) -> unit
+val handle_uncaught : exit:bool -> local_ (unit -> unit) -> unit
 
 (** [handle_uncaught_and_exit f] returns [f ()], unless that raises, in which case it
     prints the exception and exits nonzero. *)
-val handle_uncaught_and_exit : (unit -> 'a) -> 'a
+val handle_uncaught_and_exit : local_ (unit -> 'a) -> 'a
 
 (** Traces exceptions passing through.  Useful because in practice, backtraces still don't
     seem to work.
@@ -82,11 +82,11 @@ val handle_uncaught_and_exit : (unit -> 'a) -> 'a
                                  traced_function ();;
     ]}
     {v : Program died with Reraised("rogue_function", Failure "foo") v} *)
-val reraise_uncaught : string -> (unit -> 'a) -> 'a
+val reraise_uncaught : string -> local_ (unit -> 'a) -> 'a
 
 (** [does_raise f] returns [true] iff [f ()] raises, which is often useful in unit
     tests. *)
-val does_raise : (unit -> _) -> bool
+val does_raise : local_ (unit -> _) -> bool
 
 (** Returns [true] if this exception is physically equal to the most recently raised one.
     If so, then [Backtrace.Exn.most_recent ()] is a backtrace corresponding to this

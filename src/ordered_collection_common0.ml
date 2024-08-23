@@ -32,7 +32,7 @@ let check_pos_len_exn ~pos ~len ~total_length =
 [@@inline always]
 ;;
 
-let get_pos_len_exn ?(pos = 0) ?len () ~total_length =
+let get_pos_len_exn ?(pos = 0) ?len () ~total_length = exclave_
   let len =
     match len with
     | Some i -> i

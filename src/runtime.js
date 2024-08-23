@@ -41,14 +41,14 @@ function Base_int_math_int64_pow_stub(base, exponent) {
 }
 
 //Provides: Base_hash_string mutable
-//Requires: caml_hash
+//Requires: caml_hash_exn
 function Base_hash_string(s) {
-  return caml_hash(1, 1, 0, s)
+  return caml_hash_exn(1, 1, 0, s)
 }
 //Provides: Base_hash_double const
-//Requires: caml_hash
+//Requires: caml_hash_exn
 function Base_hash_double(d) {
-  return caml_hash(1, 1, 0, d);
+  return caml_hash_exn(1, 1, 0, d);
 }
 
 //Provides: Base_am_testing const
@@ -77,8 +77,8 @@ function caml_dummy_obj_is_stack(x) {
   throw new Error(`BUG: this function should be unreachable; please report to compiler or base devs.`);
 }
 
-//Provides: caml_dummy_obj_is_stack
-function caml_dummy_obj_is_stack(x) {
+//Provides: caml_obj_is_stack
+function caml_obj_is_stack(x) {
   throw new Error(`BUG: this function should be unreachable; please report to compiler or base devs.`);
 }
 

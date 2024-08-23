@@ -9,7 +9,7 @@ let of_pos (pos_fname, pos_lnum, pos_cnum, _) =
   { pos_fname; pos_lnum; pos_cnum; pos_bol = 0 }
 ;;
 
-let here_or_there ?(here = Stdlib.Lexing.dummy_pos) there =
+let here_or_there ~(here : [%call_pos]) there =
   match there with
   | None -> here
   | Some there -> there

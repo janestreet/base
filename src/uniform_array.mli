@@ -24,38 +24,38 @@ val invariant : _ t -> unit
 val empty : _ t
 val create : len:int -> 'a -> 'a t
 val singleton : 'a -> 'a t
-val init : int -> f:(int -> 'a) -> 'a t
-val length : 'a t -> int
-val get : 'a t -> int -> 'a
-val unsafe_get : 'a t -> int -> 'a
-val set : 'a t -> int -> 'a -> unit
-val unsafe_set : 'a t -> int -> 'a -> unit
-val swap : _ t -> int -> int -> unit
+val init : int -> f:local_ (int -> 'a) -> 'a t
+val length : local_ 'a t -> int
+val get : local_ 'a t -> int -> 'a
+val unsafe_get : local_ 'a t -> int -> 'a
+val set : local_ 'a t -> int -> 'a -> unit
+val unsafe_set : local_ 'a t -> int -> 'a -> unit
+val swap : local_ _ t -> int -> int -> unit
 
 (** [unsafe_set_omit_phys_equal_check] is like [unsafe_set], except it doesn't do a
     [phys_equal] check to try to skip [caml_modify].  It is safe to call this even if the
     values are [phys_equal]. *)
-val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
+val unsafe_set_omit_phys_equal_check : local_ 'a t -> int -> 'a -> unit
 
 (** [unsafe_set_with_caml_modify] always calls [caml_modify] before setting and never gets
     the old value.  This is like [unsafe_set_omit_phys_equal_check] except it doesn't
     check whether the old value and the value being set are integers to try to skip
     [caml_modify]. *)
-val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
+val unsafe_set_with_caml_modify : local_ 'a t -> int -> 'a -> unit
 
 (** Same as [unsafe_set_with_caml_modify], but with bounds check. *)
-val set_with_caml_modify : 'a t -> int -> 'a -> unit
+val set_with_caml_modify : local_ 'a t -> int -> 'a -> unit
 
-val map : 'a t -> f:('a -> 'b) -> 'b t
-val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
-val iter : 'a t -> f:('a -> unit) -> unit
+val map : 'a t -> f:local_ ('a -> 'b) -> 'b t
+val mapi : 'a t -> f:local_ (int -> 'a -> 'b) -> 'b t
+val iter : 'a t -> f:local_ ('a -> unit) -> unit
 
 (** Like {!iter}, but the function is applied to the index of the element as first
     argument, and the element itself as second argument. *)
-val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
+val iteri : 'a t -> f:local_ (int -> 'a -> unit) -> unit
 
-val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
-val foldi : 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc) -> 'acc
+val fold : 'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc) -> 'acc
+val foldi : 'a t -> init:'acc -> f:local_ (int -> 'acc -> 'a -> 'acc) -> 'acc
 
 (** [unsafe_to_array_inplace__promise_not_a_float] converts from a [t] to an [array] in
     place. This function is unsafe if the underlying type is a float. *)
@@ -73,36 +73,36 @@ val to_list : 'a t -> 'a list
 include Blit.S1 with type 'a t := 'a t
 
 val copy : 'a t -> 'a t
-val exists : 'a t -> f:('a -> bool) -> bool
-val existsi : 'a t -> f:(int -> 'a -> bool) -> bool
-val for_all : 'a t -> f:('a -> bool) -> bool
-val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
+val exists : 'a t -> f:local_ ('a -> bool) -> bool
+val existsi : 'a t -> f:local_ (int -> 'a -> bool) -> bool
+val for_all : 'a t -> f:local_ ('a -> bool) -> bool
+val for_alli : 'a t -> f:local_ (int -> 'a -> bool) -> bool
 val concat : 'a t list -> 'a t
-val concat_map : 'a t -> f:('a -> 'b t) -> 'b t
-val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
-val partition_map : 'a t -> f:('a -> ('b, 'c) Either.t) -> 'b t * 'c t
-val filter : 'a t -> f:('a -> bool) -> 'a t
-val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
-val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
-val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
-val find : 'a t -> f:('a -> bool) -> 'a option
-val findi : 'a t -> f:(int -> 'a -> bool) -> (int * 'a) option
-val find_map : 'a t -> f:('a -> 'b option) -> 'b option
-val find_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b option
+val concat_map : 'a t -> f:local_ ('a -> 'b t) -> 'b t
+val concat_mapi : 'a t -> f:local_ (int -> 'a -> 'b t) -> 'b t
+val partition_map : 'a t -> f:local_ ('a -> ('b, 'c) Either.t) -> 'b t * 'c t
+val filter : 'a t -> f:local_ ('a -> bool) -> 'a t
+val filteri : 'a t -> f:local_ (int -> 'a -> bool) -> 'a t
+val filter_map : 'a t -> f:local_ ('a -> 'b option) -> 'b t
+val filter_mapi : 'a t -> f:local_ (int -> 'a -> 'b option) -> 'b t
+val find : 'a t -> f:local_ ('a -> bool) -> 'a option
+val findi : 'a t -> f:local_ (int -> 'a -> bool) -> (int * 'a) option
+val find_map : 'a t -> f:local_ ('a -> 'b option) -> 'b option
+val find_mapi : 'a t -> f:local_ (int -> 'a -> 'b option) -> 'b option
 
 (** Functions with the 2 suffix raise an exception if the lengths of the two given arrays
     aren't the same. *)
-val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
+val map2_exn : 'a t -> 'b t -> f:local_ ('a -> 'b -> 'c) -> 'c t
 
-val fold2_exn : 'a t -> 'b t -> init:'acc -> f:('acc -> 'a -> 'b -> 'acc) -> 'acc
-val min_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
-val max_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+val fold2_exn : 'a t -> 'b t -> init:'acc -> f:local_ ('acc -> 'a -> 'b -> 'acc) -> 'acc
+val min_elt : 'a t -> compare:local_ ('a -> 'a -> int) -> 'a option
+val max_elt : 'a t -> compare:local_ ('a -> 'a -> int) -> 'a option
 
 (** [sort] uses constant heap space.
 
     To sort only part of the array, specify [pos] to be the index to start sorting from
     and [len] indicating how many elements to sort. *)
-val sort : ?pos:int -> ?len:int -> 'a t -> compare:('a -> 'a -> int) -> unit
+val sort : ?pos:int -> ?len:int -> local_ 'a t -> compare:local_ ('a -> 'a -> int) -> unit
 
 include Binary_searchable.S1 with type 'a t := 'a t
 
@@ -122,13 +122,17 @@ val create_obj_array : len:int -> Stdlib.Obj.t t
     int.
 
     [unsafe_set_int] is similar but does not assume anything about the target. *)
-val unsafe_set_assuming_currently_int : Stdlib.Obj.t t -> int -> Stdlib.Obj.t -> unit
+val unsafe_set_assuming_currently_int
+  :  local_ Stdlib.Obj.t t
+  -> int
+  -> Stdlib.Obj.t
+  -> unit
 
-val unsafe_set_int_assuming_currently_int : Stdlib.Obj.t t -> int -> int -> unit
-val unsafe_set_int : Stdlib.Obj.t t -> int -> int -> unit
+val unsafe_set_int_assuming_currently_int : local_ Stdlib.Obj.t t -> int -> int -> unit
+val unsafe_set_int : local_ Stdlib.Obj.t t -> int -> int -> unit
 
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
     space leaks.  It does this by setting [t.(i)] to [Stdlib.Obj.repr 0].  As a performance
     hack, it only does this when [not (Stdlib.Obj.is_int t.(i))].  It is an error to access
     the cleared index before setting it again. *)
-val unsafe_clear_if_pointer : Stdlib.Obj.t t -> int -> unit
+val unsafe_clear_if_pointer : local_ Stdlib.Obj.t t -> int -> unit

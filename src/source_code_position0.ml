@@ -25,7 +25,7 @@ module T = struct
                | n -> n)
             | n -> n)
          | n -> n)
-     : t -> t -> int)
+     : local_ t -> local_ t -> int)
   ;;
 
   let compare = (fun a b -> compare__local a b : t -> t -> int)

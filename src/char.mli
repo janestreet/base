@@ -7,7 +7,7 @@ type t = char [@@deriving_inline enumerate, globalize, sexp, sexp_grammar]
 
 include Ppx_enumerate_lib.Enumerable.S with type t := t
 
-val globalize : t -> t
+val globalize : local_ t -> t
 
 include Sexplib0.Sexpable.S with type t := t
 

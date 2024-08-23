@@ -5,7 +5,7 @@ module type Utf = sig
   type t := bytes
 
   (** Writes a Unicode character to a given position using this encoding. *)
-  val set : t -> int -> Uchar0.t -> int
+  val set : local_ t -> int -> Uchar0.t -> int
 end
 
 module type Bytes = sig
@@ -20,7 +20,7 @@ module type Bytes = sig
 
   type t = bytes [@@deriving_inline globalize, sexp, sexp_grammar]
 
-  val globalize : t -> t
+  val globalize : local_ t -> t
 
   include Sexplib0.Sexpable.S with type t := t
 
@@ -55,7 +55,7 @@ module type Bytes = sig
   val create : int -> t
 
   (** [create_local] is like [create], but returns a stack-allocated [Bytes.t]. *)
-  val create_local : int -> t
+  val create_local : int -> local_ t
 
   (** [make len c] returns a newly-allocated byte sequence of length [len] filled
       with the byte [c]. *)
@@ -63,28 +63,28 @@ module type Bytes = sig
 
   (** [map f t] applies function [f] to every byte, in order, and builds the byte
       sequence with the results returned by [f]. *)
-  val map : t -> f:(char -> char) -> t
+  val map : local_ t -> f:local_ (char -> char) -> t
 
   (** Like [map], but passes each character's index to [f] along with the char. *)
-  val mapi : t -> f:(int -> char -> char) -> t
+  val mapi : local_ t -> f:local_ (int -> char -> char) -> t
 
   (** [copy t] returns a newly-allocated byte sequence that contains the same
       bytes as [t]. *)
-  val copy : t -> t
+  val copy : local_ t -> t
 
   (** [init len ~f] returns a newly-allocated byte sequence of length [len] with
       index [i] in the sequence being initialized with the result of [f i]. *)
-  val init : int -> f:(int -> char) -> t
+  val init : int -> f:local_ (int -> char) -> t
 
   (** [of_char_list l] returns a newly-allocated byte sequence where each byte in
       the sequence corresponds to the byte in [l] at the same index. *)
-  val of_char_list : char list -> t
+  val of_char_list : local_ char list -> t
 
   (** [length t] returns the number of bytes in [t]. *)
   external length : (t[@local_opt]) -> int = "%bytes_length"
 
   (** [get t i] returns the [i]th byte of [t]. *)
-  val get : t -> int -> char
+  val get : local_ t -> int -> char
 
   external unsafe_get : (t[@local_opt]) -> (int[@local_opt]) -> char = "%bytes_unsafe_get"
 
@@ -144,11 +144,11 @@ module type Bytes = sig
 
   (** [fill t ~pos ~len c] modifies [t] in place, replacing all the bytes from
       [pos] to [pos + len] with [c]. *)
-  val fill : t -> pos:int -> len:int -> char -> unit
+  val fill : local_ t -> pos:int -> len:int -> char -> unit
 
   (** [tr ~target ~replacement t] modifies [t] in place, replacing every instance
       of [target] in [s] with [replacement]. *)
-  val tr : target:char -> replacement:char -> t -> unit
+  val tr : target:char -> replacement:char -> local_ t -> unit
 
   (** [tr_multi ~target ~replacement] returns an in-place function that replaces
       every instance of a character in [target] with the corresponding character
@@ -161,24 +161,27 @@ module type Bytes = sig
       corresponding [replacement] character is used. Note that character ranges
       are {b not} supported, so [~target:"a-z"] means the literal characters ['a'],
       ['-'], and ['z']. *)
-  val tr_multi : target:string -> replacement:string -> (t -> unit) Staged.t
+  val tr_multi
+    :  target:local_ string
+    -> replacement:local_ string
+    -> (local_ t -> unit) Staged.t
 
   (** [to_list t] returns the bytes in [t] as a list of chars. *)
-  val to_list : t -> char list
+  val to_list : local_ t -> char list
 
   (** [to_array t] returns the bytes in [t] as an array of chars. *)
-  val to_array : t -> char array
+  val to_array : local_ t -> char array
 
   (** [fold a ~f ~init:b] is [f a1 (f a2 (...))] *)
-  val fold : t -> init:'acc -> f:('acc -> char -> 'acc) -> 'acc
+  val fold : local_ t -> init:'acc -> f:local_ ('acc -> char -> 'acc) -> 'acc
 
   (** [foldi] works similarly to [fold], but also passes the index of each character to
       [f]. *)
-  val foldi : t -> init:'acc -> f:(int -> 'acc -> char -> 'acc) -> 'acc
+  val foldi : local_ t -> init:'acc -> f:local_ (int -> 'acc -> char -> 'acc) -> 'acc
 
   (** [contains ?pos ?len t c] returns [true] iff [c] appears in [t] between [pos]
       and [pos + len]. *)
-  val contains : ?pos:int -> ?len:int -> t -> char -> bool
+  val contains : ?pos:int -> ?len:int -> local_ t -> char -> bool
 
   (** Maximum length of a byte sequence, which is architecture-dependent.  Attempting to
       create a [Bytes] larger than this will raise an exception. *)

@@ -4,7 +4,7 @@ include Blit_intf
 module type Sequence_gen = sig
   type 'a t
 
-  val length : _ t -> int
+  val length : local_ _ t -> int
 end
 
 module Make_gen
@@ -12,7 +12,7 @@ module Make_gen
     (Dst : sig
        include Sequence_gen
 
-       val create_like : len:int -> 'a Src.t -> 'a t
+       val create_like : len:int -> local_ 'a Src.t -> 'a t
        val unsafe_blit : ('a Src.t, 'a t) blit
      end) =
 struct
@@ -65,7 +65,7 @@ end
 module Make1 (Sequence : sig
     include Sequence_gen
 
-    val create_like : len:int -> 'a t -> 'a t
+    val create_like : len:int -> local_ 'a t -> 'a t
     val unsafe_blit : ('a t, 'a t) blit
   end) =
   Make_gen (Sequence) (Sequence)

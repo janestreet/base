@@ -4,7 +4,7 @@ open! Import
 
 type t = int64 [@@deriving_inline globalize]
 
-val globalize : t -> t
+val globalize : local_ t -> t
 
 [@@@end]
 
@@ -65,7 +65,7 @@ include module type of O
 external of_int : (int[@local_opt]) -> (t[@local_opt]) = "%int64_of_int"
 external of_int32 : (int32[@local_opt]) -> (t[@local_opt]) = "%int64_of_int32"
 external of_int64 : (t[@local_opt]) -> (t[@local_opt]) = "%identity"
-val to_int : t -> int option
+val to_int : local_ t -> int option
 val to_int32 : t -> int32 option
 external of_nativeint : (nativeint[@local_opt]) -> (t[@local_opt]) = "%int64_of_nativeint"
 val to_nativeint : t -> nativeint option

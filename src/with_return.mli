@@ -39,11 +39,11 @@ open! Import
 
 type -'a return = private { return : 'b. 'a -> 'b } [@@unboxed]
 
-val with_return : ('a return -> 'a) -> 'a
+val with_return : local_ ('a return -> 'a) -> 'a
 
 (** Note that [with_return_option] allocates ~5 words more than the equivalent
     [with_return] call. *)
-val with_return_option : ('a return -> unit) -> 'a option
+val with_return_option : local_ ('a return -> unit) -> 'a option
 
 (** [prepend a ~f] returns a value [x] such that each call to [x.return] first applies [f]
     before applying [a.return].  The call to [f] is "prepended" to the call to the

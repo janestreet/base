@@ -69,11 +69,16 @@ end
 let gt cmp a b = cmp a b > 0
 let lt cmp a b = cmp a b < 0
 let geq cmp a b = cmp a b >= 0
+let geq_local cmp a b = cmp a b >= 0
 let leq cmp a b = cmp a b <= 0
+let leq_local cmp a b = cmp a b <= 0
 let equal cmp a b = cmp a b = 0
+let equal_local cmp a b = cmp a b = 0
 let not_equal cmp a b = cmp a b <> 0
 let min cmp t t' = Bool0.select (leq cmp t t') t t'
+let min_local cmp t t' = exclave_ Bool0.select (leq_local cmp t t') t t'
 let max cmp t t' = Bool0.select (geq cmp t t') t t'
+let max_local cmp t t' = exclave_ Bool0.select (geq_local cmp t t') t t'
 
 module Infix (T : sig
     type t [@@deriving_inline compare]
@@ -189,19 +194,46 @@ Make (struct
   end)
 
 (* compare [x] and [y] lexicographically using functions in the list [cmps] *)
-let lexicographic cmps x y =
-  let rec loop = function
-    | cmp :: cmps ->
-      let res = cmp x y in
-      if res = 0 then loop cmps else res
-    | [] -> 0
-  in
-  loop cmps
+let rec lexicographic_gen ~apply cmps x y =
+  match cmps with
+  | cmp :: cmps ->
+    let res = apply cmp x y in
+    if res = 0 then lexicographic_gen ~apply cmps x y else res
+  | [] -> 0
+;;
+
+let[@inline] lexicographic cmps x y =
+  let open Modes.Export in
+  lexicographic_gen
+    ~apply:(fun [@inline] cmp { global = x } { global = y } -> cmp x y)
+    cmps
+    { global = x }
+    { global = y }
+;;
+
+let[@inline] lexicographic_local cmps x y =
+  lexicographic_gen ~apply:(fun [@inline] cmp x y -> cmp x y) cmps x y
 ;;
 
 let lift cmp ~f x y = cmp (f x) (f y)
+let lift_local cmp ~f x y = cmp (f x) (f y) [@nontail]
 let reverse cmp x y = cmp y x
+let reverse_local cmp x y = cmp y x
 
 type 'a reversed = 'a
 
 let compare_reversed cmp x y = cmp y x
+let compare_reversed_local cmp x y = cmp y x
+
+module Local = struct
+  let lexicographic = lexicographic_local
+  let lift = lift_local
+  let reverse = reverse_local
+
+  type 'a reversed = 'a
+
+  let compare_reversed = compare_reversed_local
+  let equal = equal_local
+  let max = max_local
+  let min = min_local
+end

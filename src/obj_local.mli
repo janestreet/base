@@ -5,11 +5,11 @@ open! Import
 type t = Stdlib.Obj.t
 type raw_data = Stdlib.Obj.raw_data
 
-external magic : (_[@local_opt]) -> (_[@local_opt]) = "%identity"
+external magic : (_[@local_opt]) -> (_[@local_opt]) = "%obj_magic"
 external repr : (_[@local_opt]) -> (t[@local_opt]) = "%identity"
 external obj : (t[@local_opt]) -> (_[@local_opt]) = "%identity"
 external raw_field : (t[@local_opt]) -> int -> raw_data = "caml_obj_raw_field"
-val size : t -> int
+val size : local_ t -> int
 external is_int : (t[@local_opt]) -> bool = "%obj_is_int"
 
 external set_raw_field
@@ -34,4 +34,4 @@ val compare_stack_or_heap : stack_or_heap -> stack_or_heap -> int
 [@@@end]
 
 (** Checks if a value is immediate, stack-allocated, or heap-allocated. *)
-val stack_or_heap : t -> stack_or_heap
+val stack_or_heap : local_ t -> stack_or_heap

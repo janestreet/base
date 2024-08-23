@@ -70,7 +70,7 @@ module Definitions = struct
     val fold
       :  ('key, 'data, _) t
       -> init:'acc
-      -> f:(key:'key key -> data:'data -> 'acc -> 'acc)
+      -> f:local_ (key:'key key -> data:'data -> 'acc -> 'acc)
       -> 'acc
 
     (** Like [fold]. May stop before completing the iteration. *)
@@ -78,43 +78,52 @@ module Definitions = struct
       :  ('key, 'data, _) t
       -> init:'acc
       -> f:
-           (key:'key key
-            -> data:'data
-            -> 'acc
-            -> ('acc, 'final) Container.Continue_or_stop.t)
-      -> finish:('acc -> 'final)
+           local_ (key:'key key
+                   -> data:'data
+                   -> 'acc
+                   -> ('acc, 'final) Container.Continue_or_stop.t)
+      -> finish:local_ ('acc -> 'final)
       -> 'final
 
     (** Whether every value satisfies [f]. *)
-    val for_all : ('key, 'data, _) t -> f:('data -> bool) -> bool
+    val for_all : ('key, 'data, _) t -> f:local_ ('data -> bool) -> bool
 
     (** Like [for_all]. The predicate may also depend on the associated key. *)
-    val for_alli : ('key, 'data, _) t -> f:(key:'key key -> data:'data -> bool) -> bool
+    val for_alli
+      :  ('key, 'data, _) t
+      -> f:local_ (key:'key key -> data:'data -> bool)
+      -> bool
 
     (** Whether at least one value satisfies [f]. *)
-    val exists : ('key, 'data, _) t -> f:('data -> bool) -> bool
+    val exists : ('key, 'data, _) t -> f:local_ ('data -> bool) -> bool
 
     (** Like [exists]. The predicate may also depend on the associated key. *)
-    val existsi : ('key, 'data, _) t -> f:(key:'key key -> data:'data -> bool) -> bool
+    val existsi
+      :  ('key, 'data, _) t
+      -> f:local_ (key:'key key -> data:'data -> bool)
+      -> bool
 
     (** How many values satisfy [f]. *)
-    val count : ('key, 'data, _) t -> f:('data -> bool) -> int
+    val count : ('key, 'data, _) t -> f:local_ ('data -> bool) -> int
 
     (** Like [count]. The predicate may also depend on the associated key. *)
-    val counti : ('key, 'data, _) t -> f:(key:'key key -> data:'data -> bool) -> int
+    val counti
+      :  ('key, 'data, _) t
+      -> f:local_ (key:'key key -> data:'data -> bool)
+      -> int
 
     (** Sum up [f data] for all data in the dictionary. *)
     val sum
       :  (module Container.Summable with type t = 'a)
       -> ('key, 'data, _) t
-      -> f:('data -> 'a)
+      -> f:local_ ('data -> 'a)
       -> 'a
 
     (** Like [sum]. The function may also depend on the associated key. *)
     val sumi
       :  (module Container.Summable with type t = 'a)
       -> ('key, 'data, _) t
-      -> f:(key:'key key -> data:'data -> 'a)
+      -> f:local_ (key:'key key -> data:'data -> 'a)
       -> 'a
 
     (** Produces the key/value pair with the smallest key if non-empty. *)
@@ -130,13 +139,16 @@ module Definitions = struct
     val max_elt_exn : ('key, 'data, _) t -> 'key key * 'data
 
     (** Calls [f] for every key. *)
-    val iter_keys : ('key, _, _) t -> f:('key key -> unit) -> unit
+    val iter_keys : ('key, _, _) t -> f:local_ ('key key -> unit) -> unit
 
     (** Calls [f] for every value. *)
-    val iter : (_, 'data, _) t -> f:('data -> unit) -> unit
+    val iter : (_, 'data, _) t -> f:local_ ('data -> unit) -> unit
 
     (** Calls [f] for every key/value pair. *)
-    val iteri : ('key, 'data, _) t -> f:(key:'key key -> data:'data -> unit) -> unit
+    val iteri
+      :  ('key, 'data, _) t
+      -> f:local_ (key:'key key -> data:'data -> unit)
+      -> unit
 
     (** Computes a sequence of differences between two dictionaries. *)
     val symmetric_diff
@@ -154,13 +166,16 @@ module Definitions = struct
     val fold_symmetric_diff
       : ( ('key, 'data, 'phantom) t
           -> ('key, 'data, 'phantom) t
-          -> data_equal:('data -> 'data -> bool)
+          -> data_equal:local_ ('data -> 'data -> bool)
           -> init:'acc
           -> f:
-               ('acc
-                -> 'key key
-                   * [ `Left of 'data | `Right of 'data | `Unequal of 'data * 'data ]
-                -> 'acc)
+               local_ ('acc
+                       -> 'key key
+                          * [ `Left of 'data
+                            | `Right of 'data
+                            | `Unequal of 'data * 'data
+                            ]
+                       -> 'acc)
           -> 'acc
           , 'key
           , 'data
@@ -265,7 +280,7 @@ module Definitions = struct
     val change
       : ( ('key, 'data, 'phantom) t
           -> 'key key
-          -> f:('data option -> 'data option)
+          -> f:local_ ('data option -> 'data option)
           -> ('key, 'data, 'phantom) t
           , 'key
           , 'data
@@ -277,7 +292,7 @@ module Definitions = struct
     val update
       : ( ('key, 'data, 'phantom) t
           -> 'key key
-          -> f:('data option -> 'data)
+          -> f:local_ ('data option -> 'data)
           -> ('key, 'data, 'phantom) t
           , 'key
           , 'data
@@ -308,69 +323,69 @@ module Definitions = struct
     (** Transforms every value. *)
     val map
       :  ('key, 'data1, 'phantom) t
-      -> f:('data1 -> 'data2)
+      -> f:local_ ('data1 -> 'data2)
       -> ('key, 'data2, 'phantom) t
 
     (** Like [map]. The transformation may also depend on the associated key. *)
     val mapi
       :  ('key, 'data1, 'phantom) t
-      -> f:(key:'key key -> data:'data1 -> 'data2)
+      -> f:local_ (key:'key key -> data:'data1 -> 'data2)
       -> ('key, 'data2, 'phantom) t
 
     (** Produces only those key/value pairs whose key satisfies [f]. *)
     val filter_keys
       :  ('key, 'data, 'phantom) t
-      -> f:('key key -> bool)
+      -> f:local_ ('key key -> bool)
       -> ('key, 'data, 'phantom) t
 
     (** Produces only those key/value pairs whose value satisfies [f]. *)
     val filter
       :  ('key, 'data, 'phantom) t
-      -> f:('data -> bool)
+      -> f:local_ ('data -> bool)
       -> ('key, 'data, 'phantom) t
 
     (** Produces only those key/value pairs which satisfy [f]. *)
     val filteri
       :  ('key, 'data, 'phantom) t
-      -> f:(key:'key key -> data:'data -> bool)
+      -> f:local_ (key:'key key -> data:'data -> bool)
       -> ('key, 'data, 'phantom) t
 
     (** Produces key/value pairs for which [f] produces [Some]. *)
     val filter_map
       :  ('key, 'data1, 'phantom) t
-      -> f:('data1 -> 'data2 option)
+      -> f:local_ ('data1 -> 'data2 option)
       -> ('key, 'data2, 'phantom) t
 
     (** Like [filter_map]. The new value may also depend on the associated key. *)
     val filter_mapi
       :  ('key, 'data1, 'phantom) t
-      -> f:(key:'key key -> data:'data1 -> 'data2 option)
+      -> f:local_ (key:'key key -> data:'data1 -> 'data2 option)
       -> ('key, 'data2, 'phantom) t
 
     (** Splits one dictionary into two. The first contains key/value pairs for which the
         value satisfies [f]. The second contains the remainder. *)
     val partition_tf
       :  ('key, 'data, 'phantom) t
-      -> f:('data -> bool)
+      -> f:local_ ('data -> bool)
       -> ('key, 'data, 'phantom) t * ('key, 'data, 'phantom) t
 
     (** Like [partition_tf]. The predicate may also depend on the associated key. *)
     val partitioni_tf
       :  ('key, 'data, 'phantom) t
-      -> f:(key:'key key -> data:'data -> bool)
+      -> f:local_ (key:'key key -> data:'data -> bool)
       -> ('key, 'data, 'phantom) t * ('key, 'data, 'phantom) t
 
     (** Splits one dictionary into two, corresponding respectively to [First _] and
         [Second _] results from [f]. *)
     val partition_map
       :  ('key, 'data1, 'phantom) t
-      -> f:('data1 -> ('data2, 'data3) Either.t)
+      -> f:local_ ('data1 -> ('data2, 'data3) Either.t)
       -> ('key, 'data2, 'phantom) t * ('key, 'data3, 'phantom) t
 
     (** Like [partition_map]. The split may also depend on the associated key. *)
     val partition_mapi
       :  ('key, 'data1, 'phantom) t
-      -> f:(key:'key key -> data:'data1 -> ('data2, 'data3) Either.t)
+      -> f:local_ (key:'key key -> data:'data1 -> ('data2, 'data3) Either.t)
       -> ('key, 'data2, 'phantom) t * ('key, 'data3, 'phantom) t
 
     (** Produces an error combining all error messages from key/value pairs, or a
@@ -395,9 +410,12 @@ module Definitions = struct
       : ( ('key, 'data1, 'phantom) t
           -> ('key, 'data2, 'phantom) t
           -> f:
-               (key:'key key
-                -> [ `Left of 'data1 | `Right of 'data2 | `Both of 'data1 * 'data2 ]
-                -> 'data3 option)
+               local_ (key:'key key
+                       -> [ `Left of 'data1
+                          | `Right of 'data2
+                          | `Both of 'data1 * 'data2
+                          ]
+                       -> 'data3 option)
           -> ('key, 'data3, 'phantom) t
           , 'key
           , 'data
@@ -420,7 +438,7 @@ module Definitions = struct
     val merge_skewed
       : ( ('key, 'data, 'phantom) t
           -> ('key, 'data, 'phantom) t
-          -> combine:(key:'key key -> 'data -> 'data -> 'data)
+          -> combine:local_ (key:'key key -> 'data -> 'data -> 'data)
           -> ('key, 'data, 'phantom) t
           , 'key
           , 'data
@@ -524,7 +542,7 @@ module Definitions = struct
     val of_alist_fold
       : ( ('key key * 'data) list
           -> init:'acc
-          -> f:('acc -> 'data -> 'acc)
+          -> f:local_ ('acc -> 'data -> 'acc)
           -> ('key, 'acc, 'phantom) t
           , 'key
           , 'data
@@ -535,7 +553,7 @@ module Definitions = struct
         given key using [f]. *)
     val of_alist_reduce
       : ( ('key key * 'data) list
-          -> f:('data -> 'data -> 'data)
+          -> f:local_ ('data -> 'data -> 'data)
           -> ('key, 'data, 'phantom) t
           , 'key
           , 'data
@@ -579,7 +597,7 @@ module Definitions = struct
     val of_sequence_fold
       : ( ('key key * 'data) Sequence.t
           -> init:'c
-          -> f:('c -> 'data -> 'c)
+          -> f:local_ ('c -> 'data -> 'c)
           -> ('key, 'c, 'phantom) t
           , 'key
           , 'data
@@ -589,7 +607,7 @@ module Definitions = struct
     (** Like [of_alist_reduce]. Consumes a sequence. *)
     val of_sequence_reduce
       : ( ('key key * 'data) Sequence.t
-          -> f:('data -> 'data -> 'data)
+          -> f:local_ ('data -> 'data -> 'data)
           -> ('key, 'data, 'phantom) t
           , 'key
           , 'data
@@ -599,7 +617,7 @@ module Definitions = struct
     (** Like [of_alist]. Consume values for which keys can be computed. *)
     val of_list_with_key
       : ( 'data list
-          -> get_key:('data -> 'key key)
+          -> get_key:local_ ('data -> 'key key)
           -> [ `Ok of ('key, 'data, 'phantom) t | `Duplicate_key of 'key key ]
           , 'key
           , 'data
@@ -608,7 +626,9 @@ module Definitions = struct
 
     (** Like [of_alist_or_error]. Consume values for which keys can be computed. *)
     val of_list_with_key_or_error
-      : ( 'data list -> get_key:('data -> 'key key) -> ('key, 'data, 'phantom) t Or_error.t
+      : ( 'data list
+          -> get_key:local_ ('data -> 'key key)
+          -> ('key, 'data, 'phantom) t Or_error.t
           , 'key
           , 'data
           , 'phantom )
@@ -616,7 +636,7 @@ module Definitions = struct
 
     (** Like [of_alist_exn]. Consume values for which keys can be computed. *)
     val of_list_with_key_exn
-      : ( 'data list -> get_key:('data -> 'key key) -> ('key, 'data, 'phantom) t
+      : ( 'data list -> get_key:local_ ('data -> 'key key) -> ('key, 'data, 'phantom) t
           , 'key
           , 'data
           , 'phantom )
@@ -624,7 +644,9 @@ module Definitions = struct
 
     (** Like [of_alist_multi]. Consume values for which keys can be computed. *)
     val of_list_with_key_multi
-      : ( 'data list -> get_key:('data -> 'key key) -> ('key, 'data list, 'phantom) t
+      : ( 'data list
+          -> get_key:local_ ('data -> 'key key)
+          -> ('key, 'data list, 'phantom) t
           , 'key
           , 'data
           , 'phantom )
@@ -633,7 +655,7 @@ module Definitions = struct
     (** Produces a dictionary of all key/value pairs that [iteri] passes to [~f]. Fails if
         a duplicate key is found. *)
     val of_iteri
-      : ( iteri:(f:(key:'key key -> data:'data -> unit) -> unit)
+      : ( iteri:local_ (f:local_ (key:'key key -> data:'data -> unit) -> unit)
           -> [ `Ok of ('key, 'data, 'phantom) t | `Duplicate_key of 'key key ]
           , 'key
           , 'data
@@ -642,7 +664,7 @@ module Definitions = struct
 
     (** Like [of_iteri]. Raises on duplicate key. *)
     val of_iteri_exn
-      : ( iteri:(f:(key:'key key -> data:'data -> unit) -> unit)
+      : ( iteri:local_ (f:local_ (key:'key key -> data:'data -> unit) -> unit)
           -> ('key, 'data, 'phantom) t
           , 'key
           , 'data

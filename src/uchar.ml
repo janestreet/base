@@ -122,7 +122,7 @@ module Make_utf (Format : sig
     val module_name : string
     val byte_length : t -> int
     val get_decode_result : string -> byte_pos:int -> Decode_result.t
-    val set : bytes -> int -> t -> int
+    val set : local_ bytes -> int -> t -> int
   end) : Utf = struct
   let codec_name = Format.codec_name
   let byte_length = Format.byte_length

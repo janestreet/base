@@ -9,7 +9,7 @@ module String = String0
    this function), even if target/replacement are just 2 characters each.
 
    Return None if the translation map is equivalent to just the identity. *)
-let tr_create_map ~target ~replacement =
+let tr_create_map ~(local_ target) ~(local_ replacement) =
   let tr_map = Bytes.create 256 in
   for i = 0 to 255 do
     Bytes.unsafe_set tr_map i (Char.of_int_exn i)

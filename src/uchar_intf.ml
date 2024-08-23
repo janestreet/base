@@ -100,8 +100,8 @@ module type Uchar = sig
 
   (** Result of decoding a UTF codec that may contain invalid encodings. *)
   module Decode_result : sig
-    type t = Uchar0.utf_decode
-    [@@deriving_inline compare, equal, hash, sexp_of] [@@immediate]
+    type t : immediate = Uchar0.utf_decode
+    [@@deriving_inline compare, equal, hash, sexp_of]
 
     include Ppx_compare_lib.Comparable.S with type t := t
     include Ppx_compare_lib.Equal.S with type t := t

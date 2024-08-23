@@ -5,8 +5,8 @@
       (func $caml_copy_int32 (param i32) (result (ref eq))))
    (import "env" "Int64_val" (func $Int64_val (param (ref eq)) (result i64)))
    (import "env" "Int32_val" (func $Int32_val (param (ref eq)) (result i32)))
-   (import "env" "caml_hash"
-      (func $caml_hash
+   (import "env" "caml_hash_exn"
+      (func $caml_hash_exn
          (param (ref eq)) (param (ref eq)) (param (ref eq)) (param (ref eq))
          (result (ref eq))))
    (import "env" "caml_create_bytes"

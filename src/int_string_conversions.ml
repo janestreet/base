@@ -85,7 +85,7 @@ struct
   module T_hex = struct
     type t = I.t [@@deriving_inline compare ~localize, hash]
 
-    let compare__local = (I.compare__local : t -> t -> int)
+    let compare__local = (I.compare__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
@@ -168,7 +168,7 @@ struct
   module Binary = struct
     type t = I.t [@@deriving_inline compare ~localize, hash]
 
-    let compare__local = (I.compare__local : t -> t -> int)
+    let compare__local = (I.compare__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =

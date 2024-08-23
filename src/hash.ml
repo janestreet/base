@@ -31,7 +31,7 @@ module Folding (Hash : Hash_intf.S) :
    and type hash_value = Hash.hash_value = struct
   type state = Hash.state
   type hash_value = Hash.hash_value
-  type 'a folder = state -> 'a -> state
+  type ('a : any) folder = state -> 'a -> state
 
   let hash_fold_unit s () = s
   let hash_fold_int = Hash.fold_int
@@ -121,7 +121,7 @@ module F (Hash : Hash_intf.S) :
    and type seed = Hash.seed = struct
   include Hash
 
-  type 'a folder = state -> 'a -> state
+  type ('a : any) folder = state -> 'a -> state
 
   let create ?seed () = reset ?seed (alloc ())
   let of_fold hash_fold_t t = get_hash_value (hash_fold_t (create ()) t)
@@ -181,7 +181,7 @@ end
 module T = struct
   include Internalhash
 
-  type 'a folder = state -> 'a -> state
+  type ('a : any) folder = state -> 'a -> state
 
   let create ?seed () = reset ?seed (alloc ())
   let run ?seed folder x = get_hash_value (folder (reset ?seed (alloc ())) x)

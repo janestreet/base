@@ -4,7 +4,7 @@
 open! Import
 include Array0
 
-let permute ?(random_state = Random.State.default) ?(pos = 0) ?len t =
+let permute ?(random_state = Random.State.default) ?(pos = 0) ?len (local_ t) =
   (* Copied from [Ordered_collection_common0] to avoid allocating a tuple when compiling
      without flambda. *)
   let total_length = length t in

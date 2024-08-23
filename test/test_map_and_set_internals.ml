@@ -77,7 +77,7 @@ let test (module Tree : S) =
         type t
 
         val create : max_size:int -> t
-        val iter : t -> size:int -> f:(Tree.t -> unit) -> unit
+        val iter : t -> size:int -> f:local_ (Tree.t -> unit) -> unit
       end = struct
         (* Indexed by size of tree. *)
         type 'a by_size = { by_size : 'a Queue.t } [@@unboxed]
@@ -139,7 +139,7 @@ let test (module Tree : S) =
       let trees = Trees.create ~max_size:max_total_size_to_test
 
       (* Call [f] on all pairs of trees up to the given total maximum size. *)
-      let for_all_pairs ~max_total_size f =
+      let for_all_pairs ~max_total_size (local_ f) =
         for total_size = 0 to max_total_size do
           for lsize = 0 to total_size do
             let rsize = total_size - lsize in
@@ -152,8 +152,8 @@ let test (module Tree : S) =
 
       (* Test constructing all triples that are "balanced enough" for [create]. *)
       let test_all create ~are_balanced_enough ~have_been_shown =
-        let total = ref 0 in
-        let shown = ref 0 in
+        let local_ total = ref 0 in
+        let local_ shown = ref 0 in
         for_all_pairs ~max_total_size:max_total_size_to_test (fun l ~lsize r ~rsize ->
           if are_balanced_enough l r
           then (

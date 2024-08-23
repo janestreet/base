@@ -13,11 +13,11 @@ module Make_gen (T : Arg) = struct
   let get = T.get
   let length = T.length
 
-  let binary_search ?pos ?len t ~compare how v =
+  let binary_search ?pos ?len t ~compare how v = exclave_
     Binary_search.binary_search ?pos ?len t ~get ~length ~compare how v
   ;;
 
-  let binary_search_segmented ?pos ?len t ~segment_of how =
+  let binary_search_segmented ?pos ?len t ~segment_of how = exclave_
     Binary_search.binary_search_segmented ?pos ?len t ~get ~length ~segment_of how
   ;;
 end

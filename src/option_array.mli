@@ -21,9 +21,9 @@ val create : len:int -> _ t
 include
   Indexed_container.Generic with type ('a, _, _) t := 'a t and type 'a elt := 'a option
 
-val length : _ t -> int
-val init_some : int -> f:(int -> 'a) -> 'a t
-val init : int -> f:(int -> 'a option) -> 'a t
+val length : local_ _ t -> int
+val init_some : int -> f:local_ (int -> 'a) -> 'a t
+val init : int -> f:local_ (int -> 'a option) -> 'a t
 val of_array : 'a option array -> 'a t
 val of_array_some : 'a array -> 'a t
 val to_array : 'a t -> 'a option Array.t
@@ -34,7 +34,7 @@ val get : 'a t -> int -> 'a option
 
 (** Similar to [get], but allocates result in the caller's stack region instead
     of heap. *)
-val get_local : 'a t -> int -> 'a option
+val get_local : 'a t -> int -> local_ 'a option
 
 (** Raises if the element number [i] is [None]. *)
 val get_some_exn : 'a t -> int -> 'a
@@ -74,11 +74,11 @@ val clear : _ t -> unit
 
 (** [map f [|a1; ...; an|]] applies function [f] to [a1], [a2], ..., [an], in order,
     and builds the option_array [[|f a1; ...; f an|]] with the results returned by [f]. *)
-val map : 'a t -> f:('a option -> 'b option) -> 'b t
+val map : 'a t -> f:local_ ('a option -> 'b option) -> 'b t
 
 (** [map_some t ~f] is like [map], but [None] elements always map to [None] and [Some]
     always map to [Some]. *)
-val map_some : 'a t -> f:('a -> 'b) -> 'b t
+val map_some : 'a t -> f:local_ ('a -> 'b) -> 'b t
 
 (** Unsafe versions of [set*]. Can cause arbitrary behaviour when used for an
     out-of-bounds array access. *)

@@ -1,7 +1,7 @@
 open! Import
 include Ordered_collection_common0
 
-let get_pos_len ?pos ?len () ~total_length =
+let get_pos_len ?pos ?len () ~total_length = exclave_
   try Result.Ok (get_pos_len_exn () ?pos ?len ~total_length) with
   | Invalid_argument s -> Error (Error.of_string s)
 ;;

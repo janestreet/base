@@ -12,6 +12,6 @@ end
 module type S_local_input = sig
   type t
 
-  val of_string : string -> t
-  val to_string : t -> string
+  val of_string : local_ string -> t
+  val to_string : local_ t -> string
 end

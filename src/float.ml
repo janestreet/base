@@ -16,7 +16,7 @@ module T = struct
     fun x -> func x
   ;;
 
-  let (globalize : t -> t) = (globalize_float : t -> t)
+  let (globalize : local_ t -> t) = (globalize_float : local_ t -> t)
   let t_of_sexp = (float_of_sexp : Sexplib0.Sexp.t -> t)
   let sexp_of_t = (sexp_of_float : t -> Sexplib0.Sexp.t)
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = float_sexp_grammar
@@ -161,7 +161,7 @@ let of_string s =
 
 let of_string_opt = float_of_string_opt
 
-external format_float : string -> t -> string = "caml_format_float"
+external format_float : string -> local_ t -> string = "caml_format_float"
 
 (* Stolen from [pervasives.ml].  Adds a "." at the end if needed.  It is in
    [pervasives.mli], but it also says not to use it directly, so we copy and paste the
@@ -406,7 +406,7 @@ let round_nearest_ub = 2. ** 52.
    and it gets rounded up to [1.] due to the round-ties-to-even rule. *)
 let one_ulp_less_than_half = one_ulp `Down 0.5
 
-let[@ocaml.inline always] add_half_for_round_nearest t =
+let[@ocaml.inline always] add_half_for_round_nearest t = exclave_
   t
   +.
   if t = one_ulp_less_than_half
@@ -635,7 +635,7 @@ module Class = struct
     | Zero
   [@@deriving_inline compare ~localize, enumerate, sexp, sexp_grammar]
 
-  let compare__local = (Stdlib.compare : t -> t -> int)
+  let compare__local = (Stdlib.compare : local_ t -> local_ t -> int)
   let compare = (fun a b -> compare__local a b : t -> t -> int)
   let all = ([ Infinite; Nan; Normal; Subnormal; Zero ] : t list)
 
@@ -900,7 +900,7 @@ let int_pow x n =
 (* [( *. )] is already mode-polymorphic so it doesn't make sense to functorize these, plus
    their implementation is trivial anyway. *)
 let square x = x *. x
-let square_local x = x *. x
+let square_local x = exclave_ x *. x
 
 (* The desired behavior here is to propagate a nan if either argument is nan. Because
    the first comparison will always return false if either argument is nan, it suffices
@@ -994,7 +994,7 @@ let max_inan, max_inan_local =
 ;;
 
 module Round_gen (W : Modes.Global.Wrapper) = struct
-  let round_gen x ~how =
+  let round_gen x ~how = exclave_
     let x' = W.unwrap x in
     if x' = 0.
     then W.wrap 0.
@@ -1054,7 +1054,7 @@ let round_significant, round_significant_local =
          struct
            open Round_gen (W)
 
-           let fn x significant_digits =
+           let fn x significant_digits = exclave_
              let significant_digits = W.unwrap significant_digits in
              if Int_replace_polymorphic_compare.( <= ) significant_digits 0
              then
@@ -1077,7 +1077,7 @@ let round_decimal, round_decimal_local =
          struct
            open Round_gen (W)
 
-           let fn x decimal_digits =
+           let fn x decimal_digits = exclave_
              round_gen x ~how:(`decimal_digits (W.unwrap decimal_digits))
            ;;
          end) in
@@ -1088,12 +1088,16 @@ let[@inline] round_significant x ~significant_digits =
   round_significant x significant_digits
 ;;
 
-let[@inline] round_significant_local x ~significant_digits =
+let[@inline] round_significant_local x ~significant_digits = exclave_
   round_significant_local x significant_digits
 ;;
 
 let[@inline] round_decimal x ~decimal_digits = round_decimal x decimal_digits
-let[@inline] round_decimal_local x ~decimal_digits = round_decimal_local x decimal_digits
+
+let[@inline] round_decimal_local x ~decimal_digits = exclave_
+  round_decimal_local x decimal_digits
+;;
+
 let between t ~low ~high = low <= t && t <= high
 
 let clamp_exn t ~min ~max =

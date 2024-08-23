@@ -16,7 +16,7 @@ module T = struct
     fun x -> func x
   ;;
 
-  let (globalize : t -> t) = (globalize_char : t -> t)
+  let (globalize : local_ t -> t) = (globalize_char : local_ t -> t)
   let t_of_sexp = (char_of_sexp : Sexplib0.Sexp.t -> t)
   let sexp_of_t = (sexp_of_char : t -> Sexplib0.Sexp.t)
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = char_sexp_grammar

@@ -4,7 +4,7 @@ open! Stdlib.Int64
 module T = struct
   type t = int64 [@@deriving_inline globalize, hash, sexp, sexp_grammar]
 
-  let (globalize : t -> t) = (globalize_int64 : t -> t)
+  let (globalize : local_ t -> t) = (globalize_int64 : local_ t -> t)
 
   let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
     hash_fold_int64
@@ -65,11 +65,14 @@ let minus_one = minus_one
 let one = one
 let zero = zero
 
-external to_float : int64 -> float = "caml_int64_to_float" "caml_int64_to_float_unboxed"
+external to_float
+  :  local_ int64
+  -> float
+  = "caml_int64_to_float" "caml_int64_to_float_unboxed"
 [@@unboxed] [@@noalloc]
 
 external of_float_unchecked
-  :  float
+  :  local_ float
   -> int64
   = "caml_int64_of_float" "caml_int64_of_float_unboxed"
 [@@unboxed] [@@noalloc]
@@ -241,7 +244,7 @@ include Int_string_conversions.Make (T)
 include Int_string_conversions.Make_hex (struct
     type t = int64 [@@deriving_inline compare ~localize, hash]
 
-    let compare__local = (compare_int64__local : t -> t -> int)
+    let compare__local = (compare_int64__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
@@ -265,9 +268,9 @@ include Int_string_conversions.Make_hex (struct
 include Int_string_conversions.Make_binary (struct
     type t = int64 [@@deriving_inline compare ~localize, equal ~localize, hash]
 
-    let compare__local = (compare_int64__local : t -> t -> int)
+    let compare__local = (compare_int64__local : local_ t -> local_ t -> int)
     let compare = (fun a b -> compare__local a b : t -> t -> int)
-    let equal__local = (equal_int64__local : t -> t -> bool)
+    let equal__local = (equal_int64__local : local_ t -> local_ t -> bool)
     let equal = (fun a b -> equal__local a b : t -> t -> bool)
 
     let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =

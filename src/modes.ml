@@ -3,7 +3,7 @@ open! Import
 module Global = struct
   include Modes_intf.Definitions.Global
 
-  type 'a t = { global : 'a } [@@unboxed]
+  type 'a t = { global_ global : 'a } [@@unboxed]
 
   let compare__local compare a b = compare a.global b.global
   let compare compare a b = compare__local compare a b
@@ -132,5 +132,5 @@ module Global = struct
 end
 
 module Export = struct
-  type 'a _global = 'a Global.t = { global : 'a } [@@unboxed]
+  type 'a _global = 'a Global.t = { global_ global : 'a } [@@unboxed]
 end

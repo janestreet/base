@@ -3,7 +3,7 @@ open! Import
 type t = Stdlib.Obj.t
 type raw_data = Stdlib.Obj.raw_data
 
-external magic : (_[@local_opt]) -> (_[@local_opt]) = "%identity"
+external magic : (_[@local_opt]) -> (_[@local_opt]) = "%obj_magic"
 external repr : (_[@local_opt]) -> (t[@local_opt]) = "%identity"
 external obj : (t[@local_opt]) -> (_[@local_opt]) = "%identity"
 external size : (t[@local_opt]) -> int = "%obj_size"
@@ -26,7 +26,7 @@ external set_raw_field
 external tag : (t[@local_opt]) -> int = "caml_obj_tag" [@@noalloc]
 
 (* Checks if the given value is on the local stack. Returns [false] for immediates. *)
-external is_stack : (t[@local_opt]) -> bool = "caml_dummy_obj_is_stack"
+external is_stack : (t[@local_opt]) -> bool = "caml_obj_is_stack"
 
 type stack_or_heap =
   | Immediate

@@ -15,9 +15,9 @@ let equal_abstract ~type_name _ _ =
 ;;
 
 type 'a compare = 'a -> 'a -> int
-type 'a compare__local = 'a -> 'a -> int
+type 'a compare__local = local_ 'a -> local_ 'a -> int
 type 'a equal = 'a -> 'a -> bool
-type 'a equal__local = 'a -> 'a -> bool
+type 'a equal__local = local_ 'a -> local_ 'a -> bool
 
 module Comparable = struct
   module type S = sig
@@ -152,7 +152,7 @@ module Builtin = struct
   let compare_unit : unit compare = Poly.compare
   let compare_unit__local : unit compare__local = Poly.compare
 
-  let compare_array__local compare_elt a b =
+  let compare_array__local compare_elt (local_ a) (local_ b) =
     if phys_equal a b
     then 0
     else (

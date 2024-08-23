@@ -10,8 +10,8 @@ let invalid_argf = Printf.invalid_argf
 module T = struct
   type 'a t = 'a list [@@deriving_inline globalize, sexp, sexp_grammar]
 
-  let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
-    fun (type a__001_) : ((a__001_ -> a__001_) -> a__001_ t -> a__001_ t) ->
+  let globalize : 'a. (local_ 'a -> 'a) -> local_ 'a t -> 'a t =
+    fun (type a__001_) : ((local_ a__001_ -> a__001_) -> local_ a__001_ t -> a__001_ t) ->
     globalize_list
   ;;
 
@@ -31,7 +31,9 @@ module Or_unequal_lengths = struct
     | Unequal_lengths
   [@@deriving_inline compare ~localize, sexp_of]
 
-  let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
+  let compare__local
+    : 'a. (local_ 'a -> local_ 'a -> int) -> local_ 'a t -> local_ 'a t -> int
+    =
     fun _cmp__a a__014_ b__015_ ->
     if Stdlib.( == ) a__014_ b__015_
     then 0
@@ -85,7 +87,7 @@ let range' ~compare ~stride ?(start = `inclusive) ?(stop = `exclusive) start_i s
     | Less -> `Less
     | Greater -> `Greater
   in
-  let[@tail_mod_cons] rec loop i =
+  let[@tail_mod_cons] rec local_ loop i =
     let i_to_stop_order = order i stop_i in
     match i_to_stop_order, initial_stride_order with
     | Less, `Less | Greater, `Greater ->
@@ -541,7 +543,7 @@ let rev_mapi l ~f =
 ;;
 
 let mapi l ~f =
-  let[@tail_mod_cons] rec loop i = function
+  let[@tail_mod_cons] rec local_ loop i = function
     | [] -> []
     | h :: t -> f i h :: loop (i + 1) t
   in
@@ -580,7 +582,7 @@ let foldi t ~init ~f =
 ;;
 
 let filteri l ~f =
-  let[@tail_mod_cons] rec loop pos l =
+  let[@tail_mod_cons] rec local_ loop pos l =
     match l with
     | [] -> []
     | hd :: tl -> if f pos hd then hd :: loop (pos + 1) tl else loop (pos + 1) tl
@@ -650,10 +652,10 @@ let groupi l ~break =
   (* We allocate shared position and list references so we can make the inner loop use
      [[@tail_mod_cons]], and still return back information about position and where in the
      list we left off. *)
-  let pos = ref 0 in
-  let l = ref l in
+  let local_ pos = ref 0 in
+  let local_ l = ref l in
   (* As a result of using local references, our inner loop does not need arguments. *)
-  let[@tail_mod_cons] rec take_group () =
+  let[@tail_mod_cons] rec local_ take_group () =
     match !l with
     | ([] | [ _ ]) as group ->
       l := [];
@@ -664,7 +666,7 @@ let groupi l ~break =
       if break !pos x y then [ x ] else x :: take_group ()
   in
   (* Our outer loop does not need arguments, either. *)
-  let[@tail_mod_cons] rec groups () =
+  let[@tail_mod_cons] rec local_ groups () =
     if is_empty !l
     then []
     else (
@@ -903,11 +905,11 @@ let stable_dedup list ~compare =
 ;;
 
 let concat_mapi l ~f =
-  let[@tail_mod_cons] rec outer_loop pos = function
+  let[@tail_mod_cons] rec local_ outer_loop pos = function
     | [] -> []
     | [ hd ] -> (f [@tailcall false]) pos hd
     | hd :: (_ :: _ as tl) -> inner_loop (pos + 1) (f pos hd) tl
-  and[@tail_mod_cons] inner_loop pos l1 l2 =
+  and[@tail_mod_cons] local_ inner_loop pos l1 l2 =
     match l1 with
     | [] -> outer_loop pos l2
     | [ x1 ] -> x1 :: outer_loop pos l2
@@ -931,7 +933,7 @@ module Cartesian_product = struct
   let map2 a b ~f = concat_map a ~f:(fun x -> map b ~f:(fun y -> f x y))
   let return = singleton
   let ( >>| ) = ( >>| )
-  let ( >>= ) t f = bind t ~f
+  let ( >>= ) t (local_ f) = bind t ~f
 
   open struct
     module Applicative = Applicative.Make_using_map2 (struct
@@ -1069,7 +1071,7 @@ let contains_dup lst ~compare =
 let find_all_dups l ~compare =
   let sorted = sort ~compare l in
   (* Walk the list and record the first of each consecutive run of identical elements *)
-  let[@tail_mod_cons] rec loop sorted prev ~already_recorded =
+  let[@tail_mod_cons] rec local_ loop sorted prev ~already_recorded =
     match sorted with
     | [] -> []
     | hd :: tl ->
@@ -1148,7 +1150,7 @@ let rev_filter_mapi l ~f =
 ;;
 
 let filter_mapi l ~f =
-  let[@tail_mod_cons] rec loop pos l =
+  let[@tail_mod_cons] rec local_ loop pos l =
     match l with
     | [] -> []
     | hd :: tl ->
@@ -1348,7 +1350,7 @@ let sub l ~pos ~len =
      possibility of overflow. *)
   if pos < 0 || len < 0 || pos > length l - len then invalid_arg "List.sub";
   let stop = pos + len in
-  let[@tail_mod_cons] rec loop i l =
+  let[@tail_mod_cons] rec local_ loop i l =
     match l with
     | [] -> []
     | hd :: tl ->
@@ -1439,11 +1441,11 @@ let cartesian_product list1 list2 =
   if is_empty list2
   then []
   else (
-    let[@tail_mod_cons] rec outer_loop l1 =
+    let[@tail_mod_cons] rec local_ outer_loop l1 =
       match l1 with
       | [] -> []
       | x1 :: l1 -> inner_loop x1 l1 list2
-    and[@tail_mod_cons] inner_loop x1 l1 l2 =
+    and[@tail_mod_cons] local_ inner_loop x1 l1 l2 =
       match l2 with
       | [] -> outer_loop l1
       | x2 :: l2 -> (x1, x2) :: inner_loop x1 l1 l2
@@ -1521,7 +1523,7 @@ let rec compare__local cmp a b =
 
 let hash_fold_t = hash_fold_list
 
-let equal_with_local_closure (equal : _ -> _ -> _) t1 t2 =
+let equal_with_local_closure (local_ (equal : _ -> _ -> _)) t1 t2 =
   let rec loop ~equal t1 t2 =
     match t1, t2 with
     | [], [] -> true
@@ -1599,7 +1601,7 @@ let intersperse t ~sep =
 let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
 
-let is_suffix list ~suffix ~equal:(equal_elt : _ -> _ -> _) =
+let is_suffix list ~suffix ~equal:(local_ (equal_elt : _ -> _ -> _)) =
   let list_len = length list in
   let suffix_len = length suffix in
   list_len >= suffix_len

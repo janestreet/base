@@ -32,7 +32,7 @@
    every single fold.) *)
 
 module For_generated_code = struct
-  type ('perm, 'record, 'field) t =
+  type ('perm, 'record, 'field : any) t =
     { force_variance : 'perm -> unit
     ; (* force [t] to be contravariant in ['perm], because phantom type variables on
          concrete types don't work that well otherwise (using :> can remove them easily) *)
@@ -45,12 +45,14 @@ module For_generated_code = struct
   let opaque_identity = Sys0.opaque_identity
 end
 
-type ('perm, 'record, 'field) t_with_perm =
+type ('perm, 'record, 'field : any) t_with_perm =
   | Field of ('perm, 'record, 'field) For_generated_code.t
 [@@unboxed]
 
-type ('record, 'field) t = ([ `Read | `Set_and_create ], 'record, 'field) t_with_perm
-type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
+type ('record, 'field : any) t =
+  ([ `Read | `Set_and_create ], 'record, 'field) t_with_perm
+
+type ('record, 'field : any) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
 let name (Field field) = field.name
 let get (Field field) r = field.getter r

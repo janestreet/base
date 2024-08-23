@@ -345,12 +345,12 @@ let%test_module (_ [@tags "no-js"]) =
     (* We test that constructors satisfy the invariant, especially when given floats. *)
 
     open struct
-      let test_poly ?(allow_empty = false) ?cr ?(here = Stdlib.Lexing.dummy_pos) t =
+      let test_poly ?(allow_empty = false) ?cr ~(here : [%call_pos]) t =
         assert (allow_empty || length t > 0);
         require_does_not_raise ~here ?cr (fun () -> invariant t)
       ;;
 
-      let test ?allow_empty ?cr ?(here = Stdlib.Lexing.dummy_pos) (t : float t) =
+      let test ?allow_empty ?cr ~(here : [%call_pos]) (t : float t) =
         test_poly ?allow_empty ?cr ~here t
       ;;
     end

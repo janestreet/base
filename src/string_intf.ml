@@ -86,7 +86,7 @@ module type String = sig
 
   type t = string [@@deriving_inline globalize, sexp, sexp_grammar]
 
-  val globalize : t -> t
+  val globalize : local_ t -> t
 
   include Sexplib0.Sexpable.S with type t := t
 
@@ -97,7 +97,7 @@ module type String = sig
   val sub : (t, t) Blit.sub_global
 
   (** [sub] with no bounds checking, and always returns a new copy *)
-  val unsafe_sub : t -> pos:int -> len:int -> t
+  val unsafe_sub : local_ t -> pos:int -> len:int -> t
 
   val subo : (t, t) Blit.subo_global
 
@@ -109,7 +109,7 @@ module type String = sig
   (** Maximum length of a string. *)
   val max_length : int
 
-  val mem : t -> char -> bool
+  val mem : local_ t -> char -> bool
   external length : (t[@local_opt]) -> int = "%string_length"
   external get : (t[@local_opt]) -> (int[@local_opt]) -> char = "%string_safe_get"
 
@@ -363,32 +363,32 @@ module type String = sig
 
   (** [lfindi ?pos t ~f] returns the smallest [i >= pos] such that [f i t.[i]], if there is
       such an [i].  By default, [pos = 0]. *)
-  val lfindi : ?pos:int -> t -> f:(int -> char -> bool) -> int option
+  val lfindi : ?pos:int -> t -> f:local_ (int -> char -> bool) -> int option
 
   (** [rfindi ?pos t ~f] returns the largest [i <= pos] such that [f i t.[i]], if there is
       such an [i].  By default [pos = length t - 1]. *)
-  val rfindi : ?pos:int -> t -> f:(int -> char -> bool) -> int option
+  val rfindi : ?pos:int -> t -> f:local_ (int -> char -> bool) -> int option
 
   (** [lstrip ?drop s] returns a string with consecutive chars satisfying [drop] (by default
       white space, e.g. tabs, spaces, newlines, and carriage returns) stripped from the
       beginning of [s]. *)
-  val lstrip : ?drop:(char -> bool) -> t -> t
+  val lstrip : ?drop:local_ (char -> bool) -> t -> t
 
   (** [rstrip ?drop s] returns a string with consecutive chars satisfying [drop] (by default
       white space, e.g. tabs, spaces, newlines, and carriage returns) stripped from the end
       of [s]. *)
-  val rstrip : ?drop:(char -> bool) -> t -> t
+  val rstrip : ?drop:local_ (char -> bool) -> t -> t
 
   (** [strip ?drop s] returns a string with consecutive chars satisfying [drop] (by default
       white space, e.g. tabs, spaces, newlines, and carriage returns) stripped from the
       beginning and end of [s]. *)
-  val strip : ?drop:(char -> bool) -> t -> t
+  val strip : ?drop:local_ (char -> bool) -> t -> t
 
   (** Like [map], but allows the replacement of a single character with zero or two or more
       characters. *)
-  val concat_map : ?sep:t -> t -> f:(char -> t) -> t
+  val concat_map : ?sep:t -> t -> f:local_ (char -> t) -> t
 
-  val concat_mapi : ?sep:t -> t -> f:(int -> char -> t) -> t
+  val concat_mapi : ?sep:t -> t -> f:local_ (int -> char -> t) -> t
 
   (** [tr ~target ~replacement s] replaces every instance of [target] in [s] with
       [replacement]. *)
@@ -492,7 +492,7 @@ module type String = sig
   (** Fast equality function on strings, doesn't use [compare_val]. *)
   val equal : t -> t -> bool
 
-  val equal__local : t -> t -> bool
+  val equal__local : local_ t -> local_ t -> bool
   val of_char : char -> t
   val of_char_list : char list -> t
 
@@ -683,10 +683,10 @@ module type String = sig
         escaping or escaped.  This makes sense if you're trying to get rid of junk
         whitespace (for example), because escaped whitespace seems more likely to be
         deliberate and not junk. *)
-    val lstrip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
+    val lstrip_literal : ?drop:local_ (char -> bool) -> t -> escape_char:char -> t
 
-    val rstrip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
-    val strip_literal : ?drop:(char -> bool) -> t -> escape_char:char -> t
+    val rstrip_literal : ?drop:local_ (char -> bool) -> t -> escape_char:char -> t
+    val strip_literal : ?drop:local_ (char -> bool) -> t -> escape_char:char -> t
   end
 
   (** UTF-8 encoding. See [Utf] interface. *)

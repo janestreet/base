@@ -16,7 +16,7 @@ let%test_module (_ [@tags "no-js"]) =
         ?cr
         ?(allow_nonfloat = false)
         ?(allow_empty = false)
-        ?(here = Stdlib.Lexing.dummy_pos)
+        ~(here : [%call_pos])
         t
         =
         (* assertions for calling convention ... *)

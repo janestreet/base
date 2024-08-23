@@ -16,7 +16,7 @@ let%test_module "local mode vs global mode" =
       (type input output)
       (module Input : Input with type t = input)
       (module Output : Output with type t = output)
-      ~local:(fn_local : Input.t -> Output.t)
+      ~local:(fn_local : local_ Input.t -> local_ Output.t)
       ~global:(fn_global : Input.t -> Output.t)
       =
       quickcheck_m
@@ -28,7 +28,8 @@ let%test_module "local mode vs global mode" =
             end)
             (Or_error.try_with (fun () ->
                [%globalize: Output.t]
-                 (require_no_allocation_local (fun () -> fn_local input)) [@nontail]))
+                 (require_no_allocation_local (fun () -> exclave_ fn_local input))
+               [@nontail]))
             (Or_error.try_with (fun () -> fn_global input)))
     ;;
 
@@ -118,7 +119,7 @@ let%test_module "local mode vs global mode" =
 
     let%expect_test "first_some_local" =
       test
-        ~local:(fun (x, y) -> Option.first_some_local x y)
+        ~local:(fun (x, y) -> exclave_ Option.first_some_local x y)
         ~global:(fun (x, y) -> Option.first_some x y)
         (module struct
           type t = int option * int option [@@deriving quickcheck, sexp_of]
@@ -130,7 +131,7 @@ let%test_module "local mode vs global mode" =
 
     let%expect_test "some_if_local" =
       test
-        ~local:(fun (b, i) -> Option.some_if_local b i)
+        ~local:(fun (b, i) -> exclave_ Option.some_if_local b i)
         ~global:(fun (b, i) -> Option.some_if b i)
         (module struct
           type t = bool * int [@@deriving quickcheck, sexp_of]

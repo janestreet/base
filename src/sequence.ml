@@ -57,8 +57,8 @@ module T = struct
      sequence *)
   type +_ t =
     | Sequence :
-        { state : 's
-        ; next : 's -> ('a, 's) Step.t
+        { global_ state : 's
+        ; global_ next : 's -> ('a, 's) Step.t
         }
         -> 'a t
 end
@@ -495,7 +495,12 @@ module Merge_with_duplicates_element = struct
   [@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
 
   let compare__local
-    : 'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+    : 'a 'b.
+    (local_ 'a -> local_ 'a -> int)
+    -> (local_ 'b -> local_ 'b -> int)
+    -> local_ ('a, 'b) t
+    -> local_ ('a, 'b) t
+    -> int
     =
     fun _cmp__a _cmp__b a__023_ b__024_ ->
     if Stdlib.( == ) a__023_ b__024_
@@ -535,7 +540,12 @@ module Merge_with_duplicates_element = struct
   ;;
 
   let equal__local
-    : 'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
+    : 'a 'b.
+    (local_ 'a -> local_ 'a -> bool)
+    -> (local_ 'b -> local_ 'b -> bool)
+    -> local_ ('a, 'b) t
+    -> local_ ('a, 'b) t
+    -> bool
     =
     fun _cmp__a _cmp__b a__043_ b__044_ ->
     if Stdlib.( == ) a__043_ b__044_

@@ -12,11 +12,11 @@ module F (Types : sig
 struct
   open Types
 
-  type 'a hash_fold = hash_state -> 'a -> hash_state
+  type ('a : any) hash_fold = hash_state -> 'a -> hash_state
 
   module Hashable = struct
     module type S_any = sig
-      type t
+      type t : any
 
       val hash_fold_t : t hash_fold
       val hash : t -> hash_value

@@ -818,7 +818,7 @@ let%test_module "tr_multi" =
       let quickcheck_generator =
         let open Base_quickcheck.Generator in
         let open Base_quickcheck.Generator.Let_syntax in
-        let%bind size = size in
+        let%bind size in
         let%bind target_len = int_log_uniform_inclusive 1 255 in
         let%bind target = string_with_length ~length:target_len in
         let%bind replacement_len = int_inclusive 1 target_len in

@@ -12,23 +12,23 @@ module Trusted : sig
   val create_obj_array : len:int -> 'a t
   val create : len:int -> 'a -> 'a t
   val singleton : 'a -> 'a t
-  val get : 'a t -> int -> 'a
-  val set : 'a t -> int -> 'a -> unit
-  val swap : _ t -> int -> int -> unit
-  val unsafe_get : 'a t -> int -> 'a
-  val unsafe_get_local : 'a t -> int -> 'a
-  val unsafe_set : 'a t -> int -> 'a -> unit
-  val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
-  val unsafe_set_int : 'a t -> int -> int -> unit
-  val unsafe_set_int_assuming_currently_int : 'a t -> int -> int -> unit
-  val unsafe_set_assuming_currently_int : 'a t -> int -> 'a -> unit
-  val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
+  val get : local_ 'a t -> int -> 'a
+  val set : local_ 'a t -> int -> 'a -> unit
+  val swap : local_ _ t -> int -> int -> unit
+  val unsafe_get : local_ 'a t -> int -> 'a
+  val unsafe_get_local : local_ 'a t -> int -> 'a
+  val unsafe_set : local_ 'a t -> int -> 'a -> unit
+  val unsafe_set_omit_phys_equal_check : local_ 'a t -> int -> 'a -> unit
+  val unsafe_set_int : local_ 'a t -> int -> int -> unit
+  val unsafe_set_int_assuming_currently_int : local_ 'a t -> int -> int -> unit
+  val unsafe_set_assuming_currently_int : local_ 'a t -> int -> 'a -> unit
+  val unsafe_set_with_caml_modify : local_ 'a t -> int -> 'a -> unit
   val unsafe_to_array_inplace__promise_not_a_float : 'a t -> 'a array
-  val set_with_caml_modify : 'a t -> int -> 'a -> unit
-  val length : 'a t -> int
+  val set_with_caml_modify : local_ 'a t -> int -> 'a -> unit
+  val length : local_ 'a t -> int
   val unsafe_blit : ('a t, 'a t) Blit.blit
   val copy : 'a t -> 'a t
-  val unsafe_clear_if_pointer : _ t -> int -> unit
+  val unsafe_clear_if_pointer : local_ _ t -> int -> unit
   val sub : 'a t -> pos:int -> len:int -> 'a t
 end = struct
   type 'a t = Obj_array.t
@@ -228,10 +228,10 @@ let concat ts =
   res
 ;;
 
-let concat_mapi t ~f = to_list t |> List.mapi ~f |> concat
-let concat_map t ~f = to_list t |> List.map ~f |> concat
+let concat_mapi t ~(local_ f) = to_list t |> List.mapi ~f |> concat
+let concat_map t ~(local_ f) = to_list t |> List.map ~f |> concat
 
-let partition_map t ~f =
+let partition_map t ~(local_ f) =
   let left, right = ref empty, ref empty in
   let left_idx, right_idx = ref 0, ref 0 in
   let append data idx value =

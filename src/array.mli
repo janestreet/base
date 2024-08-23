@@ -7,7 +7,7 @@ type 'a t = 'a array [@@deriving_inline compare ~localize, globalize, sexp, sexp
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 
-val globalize : ('a -> 'a) -> 'a t -> 'a t
+val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
 
 include Sexplib0.Sexpable.S1 with type 'a t := 'a t
 
@@ -64,7 +64,7 @@ val create : len:int -> 'a -> 'a t
 
 (** [create_local ~len x] is like [create]. It allocates the array on the local stack. The
     array's elements are still global. *)
-val create_local : len:int -> 'a -> 'a t
+val create_local : len:int -> 'a -> local_ 'a t
 
 (** [create_float_uninitialized ~len] creates a float array of length [len] with
     uninitialized elements -- that is, they may contain arbitrary, nondeterministic float
@@ -86,21 +86,21 @@ val make_matrix : dimx:int -> dimy:int -> 'a -> 'a t t
 
 (** [Array.copy_matrix t] returns a fresh copy of the array of arrays [t].  This is
     typically used when [t] is a matrix created by [Array.make_matrix]. *)
-val copy_matrix : 'a t t -> 'a t t
+val copy_matrix : local_ 'a t t -> 'a t t
 
 (** Like [Array.append], but concatenates a list of arrays. *)
-val concat : 'a t list -> 'a t
+val concat : local_ 'a t list -> 'a t
 
 (** [Array.copy a] returns a copy of [a], that is, a fresh array
     containing the same elements as [a]. *)
-val copy : 'a t -> 'a t
+val copy : local_ 'a t -> 'a t
 
 (** [Array.fill a ofs len x] modifies the array [a] in place, storing [x] in elements
     number [ofs] to [ofs + len - 1].
 
     Raise [Invalid_argument "Array.fill"] if [ofs] and [len] do not designate a valid
     subarray of [a]. *)
-val fill : 'a t -> pos:int -> len:int -> 'a -> unit
+val fill : local_ 'a t -> pos:int -> len:int -> 'a -> unit
 
 (** [Array.blit v1 o1 v2 o2 len] copies [len] elements from array [v1], starting at
     element number [o1], to array [v2], starting at element number [o2].  It works
@@ -116,19 +116,23 @@ include Blit.S1 with type 'a t := 'a t
 
 (** [folding_map] is a version of [map] that threads an accumulator through calls to
     [f]. *)
-val folding_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'b t
+val folding_map : 'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc * 'b) -> 'b t
 
-val folding_mapi : 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc * 'b) -> 'b t
+val folding_mapi : 'a t -> init:'acc -> f:local_ (int -> 'acc -> 'a -> 'acc * 'b) -> 'b t
 
 (** [Array.fold_map] is a combination of [Array.fold] and [Array.map] that threads an
     accumulator through calls to [f]. *)
-val fold_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
+val fold_map : 'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
 
-val fold_mapi : 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
+val fold_mapi
+  :  'a t
+  -> init:'acc
+  -> f:local_ (int -> 'acc -> 'a -> 'acc * 'b)
+  -> 'acc * 'b t
 
 (** [Array.fold_right f a ~init] computes [f a.(0) (f a.(1) ( ... (f a.(n-1) init) ...))],
     where [n] is the length of the array [a]. *)
-val fold_right : 'a t -> f:('a -> 'acc -> 'acc) -> init:'acc -> 'acc
+val fold_right : 'a t -> f:local_ ('a -> 'acc -> 'acc) -> init:'acc -> 'acc
 
 (** All sort functions in this module sort in increasing order by default.  *)
 
@@ -136,22 +140,22 @@ val fold_right : 'a t -> f:('a -> 'acc -> 'acc) -> init:'acc -> 'acc
 
     To sort only part of the array, specify [pos] to be the index to start sorting from
     and [len] indicating how many elements to sort. *)
-val sort : ?pos:int -> ?len:int -> 'a t -> compare:('a -> 'a -> int) -> unit
+val sort : ?pos:int -> ?len:int -> local_ 'a t -> compare:local_ ('a -> 'a -> int) -> unit
 
 val stable_sort : 'a t -> compare:('a -> 'a -> int) -> unit
-val is_sorted : 'a t -> compare:('a -> 'a -> int) -> bool
+val is_sorted : local_ 'a t -> compare:local_ ('a -> 'a -> int) -> bool
 
 (** [is_sorted_strictly xs ~compare] iff [is_sorted xs ~compare] and no two
     consecutive elements in [xs] are equal according to [compare]. *)
-val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) -> bool
+val is_sorted_strictly : local_ 'a t -> compare:local_ ('a -> 'a -> int) -> bool
 
 (** Merges two arrays: assuming that [a1] and [a2] are sorted according to the comparison
     function [compare], [merge a1 a2 ~compare] will return a sorted array containing all
     the elements of [a1] and [a2]. If several elements compare equal, the elements of [a1]
     will be before the elements of [a2]. *)
-val merge : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
+val merge : 'a t -> 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
 
-val partitioni_tf : 'a t -> f:(int -> 'a -> bool) -> 'a t * 'a t
+val partitioni_tf : 'a t -> f:local_ (int -> 'a -> bool) -> 'a t * 'a t
 val cartesian_product : 'a t -> 'b t -> ('a * 'b) t
 
 (** [transpose] in the sense of a matrix transpose.  It returns [None] if the arrays are
@@ -168,21 +172,21 @@ val filter_opt : 'a option t -> 'a t
 (** Functions with the 2 suffix raise an exception if the lengths of the two given arrays
     aren't the same. *)
 
-val iter2_exn : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit
-val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
-val fold2_exn : 'a t -> 'b t -> init:'acc -> f:('acc -> 'a -> 'b -> 'acc) -> 'acc
+val iter2_exn : 'a t -> 'b t -> f:local_ ('a -> 'b -> unit) -> unit
+val map2_exn : 'a t -> 'b t -> f:local_ ('a -> 'b -> 'c) -> 'c t
+val fold2_exn : 'a t -> 'b t -> init:'acc -> f:local_ ('acc -> 'a -> 'b -> 'acc) -> 'acc
 
 (** [for_all2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
-val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
+val for_all2_exn : 'a t -> 'b t -> f:local_ ('a -> 'b -> bool) -> bool
 
 (** [exists2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
-val exists2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
+val exists2_exn : 'a t -> 'b t -> f:local_ ('a -> 'b -> bool) -> bool
 
 (** [swap arr i j] swaps the value at index [i] with that at index [j]. *)
-val swap : 'a t -> int -> int -> unit
+val swap : local_ 'a t -> int -> int -> unit
 
 (** [rev_inplace t] reverses [t] in place. *)
-val rev_inplace : 'a t -> unit
+val rev_inplace : local_ 'a t -> unit
 
 (** [rev t] returns a reversed copy of [t] *)
 val rev : 'a t -> 'a t
@@ -191,45 +195,48 @@ val rev : 'a t -> 'a t
 val of_list_rev : 'a list -> 'a t
 
 (** [of_list_map l ~f] is the same as [of_list (List.map l ~f)]. *)
-val of_list_map : 'a list -> f:('a -> 'b) -> 'b t
+val of_list_map : 'a list -> f:local_ ('a -> 'b) -> 'b t
 
 (** [of_list_mapi l ~f] is the same as [of_list (List.mapi l ~f)]. *)
-val of_list_mapi : 'a list -> f:(int -> 'a -> 'b) -> 'b t
+val of_list_mapi : 'a list -> f:local_ (int -> 'a -> 'b) -> 'b t
 
 (** [of_list_rev_map l ~f] is the same as [of_list (List.rev_map l ~f)]. *)
-val of_list_rev_map : 'a list -> f:('a -> 'b) -> 'b t
+val of_list_rev_map : 'a list -> f:local_ ('a -> 'b) -> 'b t
 
 (** [of_list_rev_mapi l ~f] is the same as [of_list (List.rev_mapi l ~f)]. *)
-val of_list_rev_mapi : 'a list -> f:(int -> 'a -> 'b) -> 'b t
+val of_list_rev_mapi : 'a list -> f:local_ (int -> 'a -> 'b) -> 'b t
 
 (** Modifies an array in place, applying [f] to every element of the array *)
-val map_inplace : 'a t -> f:('a -> 'a) -> unit
+val map_inplace : local_ 'a t -> f:local_ ('a -> 'a) -> unit
 
 (** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true.  It raises
     [Stdlib.Not_found] or [Not_found_s] if there is no such [a]. *)
-val find_exn : 'a t -> f:('a -> bool) -> 'a
+val find_exn : 'a t -> f:local_ ('a -> bool) -> 'a
 
 (** Returns the first evaluation of [f] that returns [Some].  Raises [Stdlib.Not_found] or
     [Not_found_s] if [f] always returns [None].  *)
-val find_map_exn : 'a t -> f:('a -> 'b option) -> 'b
+val find_map_exn : 'a t -> f:local_ ('a -> 'b option) -> 'b
 
 (** [findi_exn t f] returns the first index [i] of [t] for which [f i t.(i)] is true.  It
     raises [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)
-val findi_exn : 'a t -> f:(int -> 'a -> bool) -> int * 'a
+val findi_exn : 'a t -> f:local_ (int -> 'a -> bool) -> int * 'a
 
 (** [find_mapi_exn] is like [find_map_exn] but passes the index as an argument. *)
-val find_mapi_exn : 'a t -> f:(int -> 'a -> 'b option) -> 'b
+val find_mapi_exn : 'a t -> f:local_ (int -> 'a -> 'b option) -> 'b
 
 (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive elements
     [(a1, a2)] in [t] such that [equal a1 a2].  They are returned in the same order as
     they appear in [t]. *)
-val find_consecutive_duplicate : 'a t -> equal:('a -> 'a -> bool) -> ('a * 'a) option
+val find_consecutive_duplicate
+  :  'a t
+  -> equal:local_ ('a -> 'a -> bool)
+  -> ('a * 'a) option
 
 (** [reduce f [a1; ...; an]] is [Some (f (... (f (f a1 a2) a3) ...) an)].  Returns [None]
     on the empty array. *)
-val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
+val reduce : 'a t -> f:local_ ('a -> 'a -> 'a) -> 'a option
 
-val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
+val reduce_exn : 'a t -> f:local_ ('a -> 'a -> 'a) -> 'a
 
 (** [permute ?random_state ?pos ?len t] randomly permutes [t] in place.
 
@@ -238,7 +245,7 @@ val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
 
     [permute] side-effects [random_state] by repeated calls to [Random.State.int].  If
     [random_state] is not supplied, [permute] uses [Random.State.default]. *)
-val permute : ?random_state:Random.State.t -> ?pos:int -> ?len:int -> 'a t -> unit
+val permute : ?random_state:Random.State.t -> ?pos:int -> ?len:int -> local_ 'a t -> unit
 
 (** [random_element ?random_state t] is [None] if [t] is empty, else it is [Some x] for
     some [x] chosen uniformly at random from [t].
@@ -259,12 +266,12 @@ val unzip : ('a * 'b) t -> 'a t * 'b t
 
 (** [sorted_copy ar compare] returns a shallow copy of [ar] that is sorted. Similar to
     List.sort *)
-val sorted_copy : 'a t -> compare:('a -> 'a -> int) -> 'a t
+val sorted_copy : local_ 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
 
 val last : 'a t -> 'a [@@deprecated "[since 2024-07] This was renamed to [last_exn]"]
 val last_exn : 'a t -> 'a
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-val equal__local : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+val equal__local : (local_ 'a -> local_ 'a -> bool) -> local_ 'a t -> local_ 'a t -> bool
 
 (** The input array is copied internally so that future modifications of it do not change
     the sequence. *)
@@ -282,7 +289,12 @@ val to_sequence_mutable : 'a t -> 'a Sequence.t
 module Private : sig
   module Sort : sig
     module type Sort = sig
-      val sort : 'a t -> compare:('a -> 'a -> int) -> left:int -> right:int -> unit
+      val sort
+        :  local_ 'a t
+        -> compare:local_ ('a -> 'a -> int)
+        -> left:int
+        -> right:int
+        -> unit
     end
 
     module Insertion_sort : Sort
@@ -292,8 +304,8 @@ module Private : sig
       include Sort
 
       val five_element_sort
-        :  'a t
-        -> compare:('a -> 'a -> int)
+        :  local_ 'a t
+        -> compare:local_ ('a -> 'a -> int)
         -> int
         -> int
         -> int
@@ -306,10 +318,15 @@ module Private : sig
   module Sorter (S : sig
       type 'a t
 
-      val get : 'a t -> int -> 'a
-      val set : 'a t -> int -> 'a -> unit
-      val length : 'a t -> int
+      val get : local_ 'a t -> int -> 'a
+      val set : local_ 'a t -> int -> 'a -> unit
+      val length : local_ 'a t -> int
     end) : sig
-    val sort : ?pos:int -> ?len:int -> 'a S.t -> compare:('a -> 'a -> int) -> unit
+    val sort
+      :  ?pos:int
+      -> ?len:int
+      -> local_ 'a S.t
+      -> compare:local_ ('a -> 'a -> int)
+      -> unit
   end
 end

@@ -9,25 +9,25 @@
 
    Further globalize functions can be generated with `ppx_globalize`. *)
 
-val globalize_bool : bool -> bool
-val globalize_char : char -> char
-val globalize_float : float -> float
-val globalize_int : int -> int
-val globalize_int32 : int32 -> int32
-val globalize_int64 : int64 -> int64
-val globalize_nativeint : nativeint -> nativeint
-val globalize_bytes : bytes -> bytes
-val globalize_string : string -> string
-val globalize_unit : unit -> unit
-val globalize_array : ('a -> 'b) -> 'a array -> 'a array
-val globalize_lazy_t : ('a -> 'b) -> 'a lazy_t -> 'a lazy_t
-val globalize_list : ('a -> 'b) -> 'a list -> 'b list
-val globalize_option : ('a -> 'b) -> 'a option -> 'b option
+val globalize_bool : local_ bool -> bool
+val globalize_char : local_ char -> char
+val globalize_float : local_ float -> float
+val globalize_int : local_ int -> int
+val globalize_int32 : local_ int32 -> int32
+val globalize_int64 : local_ int64 -> int64
+val globalize_nativeint : local_ nativeint -> nativeint
+val globalize_bytes : local_ bytes -> bytes
+val globalize_string : local_ string -> string
+val globalize_unit : local_ unit -> unit
+val globalize_array : (local_ 'a -> 'b) -> local_ 'a array -> 'a array
+val globalize_lazy_t : (local_ 'a -> 'b) -> local_ 'a lazy_t -> 'a lazy_t
+val globalize_list : (local_ 'a -> 'b) -> local_ 'a list -> 'b list
+val globalize_option : (local_ 'a -> 'b) -> local_ 'a option -> 'b option
 
 val globalize_result
-  :  ('ok -> 'ok)
-  -> ('err -> 'err)
-  -> ('ok, 'err) result
+  :  (local_ 'ok -> 'ok)
+  -> (local_ 'err -> 'err)
+  -> local_ ('ok, 'err) result
   -> ('ok, 'err) result
 
-val globalize_ref : ('a -> 'b) -> 'a ref -> 'a ref
+val globalize_ref : (local_ 'a -> 'b) -> local_ 'a ref -> 'a ref

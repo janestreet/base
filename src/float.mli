@@ -10,7 +10,7 @@ open! Import
 
 type t = float [@@deriving_inline globalize, sexp_grammar]
 
-val globalize : t -> t
+val globalize : local_ t -> t
 val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
 [@@@end]
@@ -23,8 +23,8 @@ include Floatable.S with type t := t
 
 include Identifiable.S with type t := t
 
-val of_string : string -> t
-val of_string_opt : string -> t option
+val of_string : local_ string -> t
+val of_string_opt : local_ string -> t option
 
 include Comparable.With_zero with type t := t
 include Ppx_compare_lib.Equal.S_local with type t := t
@@ -82,26 +82,26 @@ val min_positive_normal_value : t
 (** An order-preserving bijection between all floats except for nans, and all int64s with
     absolute value smaller than or equal to [2**63 - 2**52].  Note both 0. and -0. map to
     0L. *)
-val to_int64_preserve_order : t -> int64 option
+val to_int64_preserve_order : local_ t -> int64 option
 
-val to_int64_preserve_order_exn : t -> int64
+val to_int64_preserve_order_exn : local_ t -> int64
 
 (** Returns [nan] if the absolute value of the argument is too large. *)
-val of_int64_preserve_order : int64 -> t
+val of_int64_preserve_order : local_ int64 -> t
 
 (** The next or previous representable float.  ULP stands for "unit of least precision",
     and is the spacing between floating point numbers.  Both [one_ulp `Up infinity] and
     [one_ulp `Down neg_infinity] return a nan. *)
-val one_ulp : [ `Up | `Down ] -> t -> t
+val one_ulp : [ `Up | `Down ] -> local_ t -> t
 
 (** Note that this doesn't round trip in either direction.  For example, [Float.to_int
     (Float.of_int max_int) <> max_int]. *)
 val of_int : int -> t
 
-val to_int : t -> int
-val of_int63 : Int63.t -> t
-val of_int64 : int64 -> t
-val to_int64 : t -> int64
+val to_int : local_ t -> int
+val of_int63 : local_ Int63.t -> t
+val of_int64 : local_ int64 -> t
+val to_int64 : local_ t -> int64
 
 (** [round] rounds a float to an integer float.  [iround{,_exn}] rounds a float to an
     int.  Both round according to a direction [dir], with default [dir] being [`Nearest].
@@ -139,31 +139,31 @@ val to_int64 : t -> int64
     - [round_* i = i] for any float [i] that is an integer.
 
     - [iround_*_exn (of_int i) = i] for any int [i] with [-2**52 <= i <= 2**52]. *)
-val round : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> t
+val round : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> local_ t -> t
 
-val iround : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> int option
-val iround_exn : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> t -> int [@@zero_alloc]
-val round_towards_zero : t -> t
-val round_down : t -> t
-val round_up : t -> t
+val iround : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> local_ t -> int option
+val iround_exn : ?dir:[ `Zero | `Nearest | `Up | `Down ] -> local_ t -> int [@@zero_alloc]
+val round_towards_zero : local_ t -> t
+val round_down : local_ t -> t
+val round_up : local_ t -> t
 
 (** Rounds half integers up. *)
-val round_nearest : t -> t
+val round_nearest : local_ t -> t
 
 (** Rounds half integers to the even integer. *)
-val round_nearest_half_to_even : t -> t
+val round_nearest_half_to_even : local_ t -> t
 
-val iround_towards_zero : t -> int option
-val iround_down : t -> int option
-val iround_up : t -> int option
-val iround_nearest : t -> int option
-val iround_towards_zero_exn : t -> int [@@zero_alloc]
-val iround_down_exn : t -> int [@@zero_alloc]
-val iround_up_exn : t -> int [@@zero_alloc]
-val iround_nearest_exn : t -> int [@@zero_alloc]
-val int63_round_down_exn : t -> Int63.t
-val int63_round_up_exn : t -> Int63.t
-val int63_round_nearest_exn : t -> Int63.t
+val iround_towards_zero : local_ t -> int option
+val iround_down : local_ t -> int option
+val iround_up : local_ t -> int option
+val iround_nearest : local_ t -> int option
+val iround_towards_zero_exn : local_ t -> int [@@zero_alloc]
+val iround_down_exn : local_ t -> int [@@zero_alloc]
+val iround_up_exn : local_ t -> int [@@zero_alloc]
+val iround_nearest_exn : local_ t -> int [@@zero_alloc]
+val int63_round_down_exn : local_ t -> Int63.t
+val int63_round_up_exn : local_ t -> Int63.t
+val int63_round_nearest_exn : local_ t -> Int63.t
 
 (** If [f < iround_lbound || f > iround_ubound], then [iround*] functions will refuse to
     round [f], returning [None] or raising as appropriate. *)
@@ -239,7 +239,7 @@ val round_significant : t -> significant_digits:int -> t
 (** [round_significant] might return its input, so we provide [round_significant_local]
     for operating over locally-allocated values. However, if its input is rounded to a
     different value, this will always be heap-allocated (when boxed). *)
-val round_significant_local : t -> significant_digits:int -> t
+val round_significant_local : local_ t -> significant_digits:int -> local_ t
 
 (** [round_decimal x ~decimal_digits:n] rounds [x] to the nearest [10**(-n)]. For positive
     [n] it is meant to be equivalent to [sprintf "%.*f" n x |> Float.of_string], but
@@ -251,18 +251,18 @@ val round_significant_local : t -> significant_digits:int -> t
 val round_decimal : t -> decimal_digits:int -> t
 
 (** See [round_significant_local]. *)
-val round_decimal_local : t -> decimal_digits:int -> t
+val round_decimal_local : local_ t -> decimal_digits:int -> local_ t
 
-val is_nan : t -> bool
+val is_nan : local_ t -> bool
 
 (** A float is infinite when it is either [infinity] or [neg_infinity]. *)
-val is_inf : t -> bool
+val is_inf : local_ t -> bool
 
 (** A float is finite when neither [is_nan] nor [is_inf] is true. *)
-val is_finite : t -> bool
+val is_finite : local_ t -> bool
 
 (** [is_integer x] is [true] if and only if [x] is an integer. *)
-val is_integer : t -> bool
+val is_integer : local_ t -> bool
 
 (** [min_inan] and [max_inan] return, respectively, the min and max of the two given
     values, except when one of the values is a [nan], in which case the other is
@@ -274,8 +274,8 @@ val max_inan : t -> t -> t
 (** [min_inan_local] and [max_inan_local] are like [min_inan] and [max_inan], but
     returning one of two local values. *)
 
-val min_inan_local : t -> t -> t
-val max_inan_local : t -> t -> t
+val min_inan_local : local_ t -> local_ t -> local_ t
+val max_inan_local : local_ t -> local_ t -> local_ t
 external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
 external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
 external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
@@ -394,7 +394,7 @@ end
     [3.14] as [3.1400000000000001243].  The only exception is that occasionally it will
     output 17 significant digits when the number can be represented with just 16 (but not
     15 or less) of them. *)
-val to_string : t -> string
+val to_string : local_ t -> string
 
 (** Pretty print float, for example [to_string_hum ~decimals:3 1234.1999 = "1_234.200"]
     [to_string_hum ~decimals:3 ~strip_zero:true 1234.1999 = "1_234.2" ].  No delimiters
@@ -406,7 +406,7 @@ val to_string_hum
   -> ?explicit_plus:bool
        (** Forces a + in front of non-negative values. Defaults
       to [false] *)
-  -> t
+  -> local_ t
   -> string
 
 (** Produce a lossy compact string representation of the float.  The float is scaled by
@@ -459,14 +459,14 @@ val to_string_hum
           ()
     ]}
 *)
-val to_padded_compact_string : t -> string
+val to_padded_compact_string : local_ t -> string
 
 (** Similar to [to_padded_compact_string] but allows the user to provide different
     abbreviations. This can be useful to display currency values, e.g. $1mm3, where
     prefix="$", mega="mm".
 *)
 val to_padded_compact_string_custom
-  :  t
+  :  local_ t
   -> ?prefix:string
   -> kilo:string
   -> mega:string
@@ -497,13 +497,13 @@ val to_padded_compact_string_custom
     Depending on context, calling this function might or might not allocate 2 minor words.
     Even if called in a way that causes allocation, it still appears to be faster than
     [**]. *)
-val int_pow : t -> int -> t
+val int_pow : local_ t -> int -> t
 
 (** [square x] returns [x *. x]. *)
 val square : t -> t
 
 (** [square_local x] returns [x *. x], locally-allocated. *)
-val square_local : t -> t
+val square_local : local_ t -> local_ t
 
 (** [ldexp x n] returns [x *. 2 ** n] *)
 external ldexp
@@ -661,7 +661,7 @@ module Class : sig
   include Stringable.S with type t := t
 end
 
-val classify : t -> Class.t
+val classify : local_ t -> Class.t
 
 (*_ Caution: If we remove this sig item, [sign] will still be present from
   [Comparable.With_zero]. *)
@@ -671,11 +671,11 @@ val sign : t -> Sign.t
 
 (** The sign of a float.  Both [-0.] and [0.] map to [Zero].  Raises on nan.  All other
     values map to [Neg] or [Pos]. *)
-val sign_exn : t -> Sign.t
+val sign_exn : local_ t -> Sign.t
 
 (** The sign of a float, with support for NaN. Both [-0.] and [0.] map to [Zero].  All NaN
     values map to [Nan]. All other values map to [Neg] or [Pos]. *)
-val sign_or_nan : t -> Sign_or_nan.t
+val sign_or_nan : local_ t -> Sign_or_nan.t
 
 (** These functions construct and destruct 64-bit floating point numbers based on their
     IEEE representation with a sign bit, an 11-bit non-negative (biased) exponent, and a
@@ -689,12 +689,12 @@ val sign_or_nan : t -> Sign_or_nan.t
       create_ieee_exn ~negative:false ~exponent ~mantissa
       = 2 ** (exponent - 1023) * (1 + (2 ** -52) * mantissa)
     ]} *)
-val create_ieee : negative:bool -> exponent:int -> mantissa:Int63.t -> t Or_error.t
+val create_ieee : negative:bool -> exponent:int -> mantissa:local_ Int63.t -> t Or_error.t
 
-val create_ieee_exn : negative:bool -> exponent:int -> mantissa:Int63.t -> t
-val ieee_negative : t -> bool
-val ieee_exponent : t -> int
-val ieee_mantissa : t -> Int63.t
+val create_ieee_exn : negative:bool -> exponent:int -> mantissa:local_ Int63.t -> t
+val ieee_negative : local_ t -> bool
+val ieee_exponent : local_ t -> int
+val ieee_mantissa : local_ t -> Int63.t
 
 (** S-expressions contain at most 8 significant digits. *)
 module Terse : sig
@@ -715,7 +715,7 @@ end
 
   https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
-  val box : t -> t
+  val box : local_ t -> t
 
   val clamp_unchecked
     :  to_clamp_maybe_nan:t

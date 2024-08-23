@@ -12,7 +12,7 @@ module Test_S1_allow_skipping_tests (Container : sig
 
     include Generic with type ('a, _, _) t := 'a t
 
-    val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
+    val mem : 'a t -> 'a -> equal:local_ ('a -> 'a -> bool) -> bool
   end
   with type 'a t := 'a Container.t
   with type 'a elt := 'a
@@ -28,7 +28,7 @@ module Test_S1 (Container : sig
 
     include Generic with type ('a, _, _) t := 'a t
 
-    val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
+    val mem : 'a t -> 'a -> equal:local_ ('a -> 'a -> bool) -> bool
   end
   with type 'a t := 'a Container.t
   with type 'a elt := 'a

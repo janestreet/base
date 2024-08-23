@@ -28,8 +28,8 @@ module type Accessors = sig
   val strict_remove_exn : 'a t -> 'a -> unit
   val clear : 'a t -> unit
   val equal : 'a t -> 'a t -> bool
-  val filter : 'a t -> f:('a -> bool) -> 'a t
-  val filter_inplace : 'a t -> f:('a -> bool) -> unit
+  val filter : 'a t -> f:local_ ('a -> bool) -> 'a t
+  val filter_inplace : 'a t -> f:local_ ('a -> bool) -> unit
 
   (** [inter t1 t2] computes the set intersection of [t1] and [t2].  Runs in O(min(length
       t1, length t2)).  Behavior is undefined if [t1] and [t2] don't have the same
@@ -39,7 +39,7 @@ module type Accessors = sig
   val union : 'a t -> 'a t -> 'a t
   val diff : 'a t -> 'a t -> 'a t
   val of_hashtbl_keys : ('a, _) Hashtbl.t -> 'a t
-  val to_hashtbl : 'key t -> f:('key -> 'data) -> ('key, 'data) Hashtbl.t
+  val to_hashtbl : 'key t -> f:local_ ('key -> 'data) -> ('key, 'data) Hashtbl.t
 end
 
 type ('key, 'z) create_options = ('key, unit, 'z) Hashtbl_intf.create_options

@@ -44,7 +44,7 @@ module type S = sig
   include Ppx_compare_lib.Equal.S with type t := t
   include Ppx_compare_lib.Equal.S_local with type t := t
 
-  val globalize : t -> t
+  val globalize : local_ t -> t
 
   include Ppx_hash_lib.Hashable.S with type t := t
   include Sexplib0.Sexpable.S with type t := t

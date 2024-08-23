@@ -67,7 +67,7 @@ end
 
 module type Builtin_hash_fold_intf = sig
   type state
-  type 'a folder = state -> 'a -> state
+  type ('a : any) folder = state -> 'a -> state
 
   val hash_fold_nativeint : nativeint folder
   val hash_fold_int64 : int64 folder
@@ -117,7 +117,7 @@ end
 module type Full = sig
   include S (** @inline *)
 
-  type 'a folder = state -> 'a -> state
+  type ('a : any) folder = state -> 'a -> state
 
   (** [create ?seed ()] is a convenience.  Equivalent to [reset ?seed (alloc ())]. *)
   val create : ?seed:seed -> unit -> state
@@ -129,7 +129,7 @@ module type Full = sig
   module Builtin :
     Builtin_intf
     with type state := state
-     and type 'a folder := 'a folder
+     and type ('a : any) folder := 'a folder
      and type hash_value := hash_value
 
   (** [run ?seed folder x] runs [folder] on [x] in a newly allocated hash-state,
