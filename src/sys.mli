@@ -118,7 +118,9 @@ val getenv_exn : string -> string
         ignore (Sys.opaque_identity (my_pure_computation ()))
       done
     ]} *)
-external opaque_identity : ('a[@local_opt]) -> ('a[@local_opt]) = "%opaque"
+external opaque_identity : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%opaque"
+[@@layout_poly]
 
 (** Like [opaque_identity]. Forces its argument to be globally allocated. *)
-external opaque_identity_global : 'a -> 'a = "%opaque"
+external opaque_identity_global : 'a. 'a -> 'a = "%opaque"
+[@@layout_poly]

@@ -50,7 +50,9 @@ let getenv var =
   | exception Stdlib.Not_found -> None
 ;;
 
-external opaque_identity : ('a[@local_opt]) -> ('a[@local_opt]) = "%opaque"
-external opaque_identity_global : 'a -> 'a = "%opaque"
+external opaque_identity : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%opaque"
+[@@layout_poly]
+
+external opaque_identity_global : 'a. 'a -> 'a = "%opaque" [@@layout_poly]
 
 exception Break = Stdlib.Sys.Break

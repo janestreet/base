@@ -1368,9 +1368,9 @@ module Tree0 = struct
     Enum.compare compare_key compare_data e1 e2
   ;;
 
-  let equal compare_key compare_data t1 t2 =
+  let equal compare_key data_equal t1 t2 =
     let e1, e2 = Enum.drop_phys_equal_prefix t1 End t2 End in
-    Enum.equal compare_key compare_data e1 e2
+    Enum.equal compare_key data_equal e1 e2
   ;;
 
   let iter2 t1 t2 ~f ~compare_key =
@@ -2295,7 +2295,7 @@ module Accessors = struct
     Tree0.compare (compare_key t1) compare_data t1.tree t2.tree
   ;;
 
-  let equal compare_data t1 t2 = Tree0.equal (compare_key t1) compare_data t1.tree t2.tree
+  let equal data_equal t1 t2 = Tree0.equal (compare_key t1) data_equal t1.tree t2.tree
   let keys t = Tree0.keys t.tree
   let data t = Tree0.data t.tree
   let to_alist ?key_order t = Tree0.to_alist ?key_order t.tree
@@ -2729,8 +2729,8 @@ module Tree = struct
     Tree0.compare comparator.Comparator.compare compare_data t1 t2
   ;;
 
-  let equal ~comparator compare_data t1 t2 =
-    Tree0.equal comparator.Comparator.compare compare_data t1 t2
+  let equal ~comparator data_equal t1 t2 =
+    Tree0.equal comparator.Comparator.compare data_equal t1 t2
   ;;
 
   let keys t = Tree0.keys t

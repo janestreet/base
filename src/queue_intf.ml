@@ -101,18 +101,18 @@ module type Queue = sig
 
   module type S = S
 
-  type 'a t [@@deriving_inline compare ~localize, globalize]
+  type 'a t [@@deriving_inline compare ~localize, equal ~localize, globalize]
 
   include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
   include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
+  include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+  include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 
   val globalize : ('a -> 'a) -> 'a t -> 'a t
 
   [@@@end]
 
   include S with type 'a t := 'a t
-  include Equal.S1 with type 'a t := 'a t
-  include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
   include Invariant.S1 with type 'a t := 'a t
 
   (** Create an empty queue. *)

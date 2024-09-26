@@ -863,35 +863,9 @@ let tr_multi ~target ~replacement =
         else s))
 ;;
 
-(* fast version, if we ever need it:
-   {[
-     let concat_array ~sep ar =
-       let ar_len = Array.length ar in
-       if ar_len = 0 then ""
-       else
-         let sep_len = length sep in
-         let res_len_ref = ref (sep_len * (ar_len - 1)) in
-         for i = 0 to ar_len - 1 do
-           res_len_ref := !res_len_ref + length ar.(i)
-         done;
-         let res = create !res_len_ref in
-         let str_0 = ar.(0) in
-         let len_0 = length str_0 in
-         blit ~src:str_0 ~src_pos:0 ~dst:res ~dst_pos:0 ~len:len_0;
-         let pos_ref = ref len_0 in
-         for i = 1 to ar_len - 1 do
-           let pos = !pos_ref in
-           blit ~src:sep ~src_pos:0 ~dst:res ~dst_pos:pos ~len:sep_len;
-           let new_pos = pos + sep_len in
-           let str_i = ar.(i) in
-           let len_i = length str_i in
-           blit ~src:str_i ~src_pos:0 ~dst:res ~dst_pos:new_pos ~len:len_i;
-           pos_ref := new_pos + len_i
-         done;
-         res
-   ]} *)
+external concat_array : string array -> sep:string -> string = "Base_string_concat_array"
 
-let concat_array ?sep ar = concat ?sep (Array.to_list ar)
+let concat_array ?(sep = "") ar = concat_array ar ~sep
 let concat_map ?sep s ~f = concat_array ?sep (Array.map (to_array s) ~f)
 let concat_mapi ?sep t ~f = concat_array ?sep (Array.mapi (to_array t) ~f)
 

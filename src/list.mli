@@ -5,10 +5,13 @@
 open! Import
 
 type 'a t = 'a list
-[@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
+[@@deriving_inline
+  compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 
 val globalize : ('a -> 'a) -> 'a t -> 'a t
 
@@ -487,8 +490,6 @@ val random_element_exn : ?random_state:Random.State.t -> 'a t -> 'a
 val is_sorted : 'a t -> compare:('a -> 'a -> int) -> bool
 
 val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) -> bool
-val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-val equal__local : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
 module Infix : sig
   val ( @ ) : 'a t -> 'a t -> 'a t

@@ -7,15 +7,17 @@ module type Comparisons_with_zero_alloc = Comparisons.S_with_zero_alloc
 
 module Sign = Sign0 (** @canonical Base.Sign *)
 
-module type With_compare = sig
-  (** Various combinators for [compare] and [equal] functions. *)
+module type With_compare_gen = sig
+  type ('a, 'b) compare_fn
+  type ('a, 'b) fn
+  type 'a select_fn
 
   (** [lexicographic cmps x y] compares [x] and [y] lexicographically using functions in the
       list [cmps]. *)
-  val lexicographic : ('a -> 'a -> int) list -> 'a -> 'a -> int
+  val lexicographic : ('a, int) compare_fn list -> ('a, int) compare_fn
 
   (** [lift cmp ~f x y] compares [x] and [y] by comparing [f x] and [f y] via [cmp]. *)
-  val lift : ('a -> 'a -> 'result) -> f:('b -> 'a) -> 'b -> 'b -> 'result
+  val lift : ('a, 'result) compare_fn -> f:('b, 'a) fn -> ('b, 'result) compare_fn
 
   (** [reverse cmp x y = cmp y x]
 
@@ -26,7 +28,7 @@ module type With_compare = sig
       [Comparable.S] provides [ascending] and [descending], which are more readable as a
       pair than [compare] and [reverse compare]. Similarly, [<=] is more idiomatic than
       [reverse (>=)]. *)
-  val reverse : ('a -> 'a -> 'result) -> 'a -> 'a -> 'result
+  val reverse : ('a, 'result) compare_fn -> ('a, 'result) compare_fn
 
   (** {!reversed} is the identity type but its associated compare function is the same as
       the {!reverse} function above. It allows you to get reversed comparisons with
@@ -34,15 +36,31 @@ module type With_compare = sig
       have strings ordered in the reverse order. *)
   type 'a reversed = 'a
 
-  val compare_reversed : ('a -> 'a -> int) -> 'a reversed -> 'a reversed -> int
+  val compare_reversed : ('a, int) compare_fn -> ('a reversed, int) compare_fn
 
   (** The functions below are analogues of the type-specific functions exported by the
       [Comparable.S] interface. *)
 
-  val equal : ('a -> 'a -> int) -> 'a -> 'a -> bool
-  val max : ('a -> 'a -> int) -> 'a -> 'a -> 'a
-  val min : ('a -> 'a -> int) -> 'a -> 'a -> 'a
+  val equal : ('a, int) compare_fn -> ('a, bool) compare_fn
+  val max : ('a, int) compare_fn -> 'a select_fn
+  val min : ('a, int) compare_fn -> 'a select_fn
 end
+
+(** Various combinators for [compare] and [equal] functions. *)
+module type With_compare =
+  With_compare_gen
+  with type ('a, 'b) compare_fn := 'a -> 'a -> 'b
+   and type ('a, 'b) fn := 'a -> 'b
+   and type 'a select_fn := 'a -> 'a -> 'a
+(** @inline *)
+
+(** Various combinators for [compare__local] and [equal__local] functions. *)
+module type With_compare_local =
+  With_compare_gen
+  with type ('a, 'b) compare_fn := 'a -> 'a -> 'b
+   and type ('a, 'b) fn := 'a -> 'b
+   and type 'a select_fn := 'a -> 'a -> 'a
+(** @inline *)
 
 module type With_zero = sig
   type t
@@ -149,9 +167,11 @@ module type Comparable = sig
   module type Comparisons = Comparisons
   module type Comparisons_with_zero_alloc = Comparisons_with_zero_alloc
   module type With_compare = With_compare
+  module type With_compare_local = With_compare_local
   module type With_zero = With_zero
 
   include With_compare
+  module Local : With_compare_local
 
   (** Derive [Infix] or [Comparisons] functions from just [[@@deriving compare]],
       without need for the [sexp_of_t] required by [Make*] (see below). *)

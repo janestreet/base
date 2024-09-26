@@ -97,3 +97,32 @@ function Base_caml_modf_positive_float_unboxed_exn(a, b) {
 function Base_caml_modf_positive_float_exn(a, b) {
   return Base_caml_modf_positive_float_unboxed_exn(a, b);
 }
+
+//Provides: Base_string_concat_array
+//Requires: caml_ml_string_length, caml_create_bytes, caml_blit_bytes
+//Requires: caml_string_of_bytes, caml_string_of_jsstring
+function Base_string_concat_array(v_string_array, v_sep) {
+  // Arrays have a header element at the beginning, so the indices in this function
+  // are off by one. Here, checking for length === 1 means the OCaml array is empty.
+  if (v_string_array.length === 1) {
+    return caml_string_of_jsstring("");
+  }
+  const sep_len = caml_ml_string_length(v_sep);
+  let string_len = sep_len * (v_string_array.length - 2);
+  for (let i = 1; i < v_string_array.length; i++) {
+    string_len += caml_ml_string_length(v_string_array[i]);
+  }
+  const result = caml_create_bytes(string_len);
+  let pos = 0;
+  for (let i = 1; i < v_string_array.length; i++) {
+    if (i !== 1) {
+      caml_blit_bytes(v_sep, 0, result, pos, sep_len);
+      pos += sep_len;
+    }
+    const string = v_string_array[i];
+    const len = caml_ml_string_length(string);
+    caml_blit_bytes(string, 0, result, pos, len);
+    pos += len;
+  }
+  return caml_string_of_bytes(result);
+}

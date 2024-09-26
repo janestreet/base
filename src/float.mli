@@ -127,8 +127,8 @@ val to_int64 : t -> int64
     v}
 
     For convenience, versions of these functions with the [dir] argument hard-coded are
-    provided.  If you are writing performance-critical code you should use the
-    versions with the hard-coded arguments (e.g. [iround_down_exn]).  The [_exn] ones
+    provided. If you are writing performance-critical code you should use the
+    versions with the hard-coded arguments (e.g. [iround_down_exn]). The [_exn] ones
     are the fastest.
 
     The following properties hold:

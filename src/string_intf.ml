@@ -104,6 +104,7 @@ module type String = sig
   include Indexed_container.S0_with_creators with type t := t with type elt = char
   include Identifiable.S with type t := t
   include Ppx_compare_lib.Comparable.S_local with type t := t
+  include Ppx_compare_lib.Equal.S_local with type t := t
   include Invariant.S with type t := t
 
   (** Maximum length of a string. *)
@@ -489,10 +490,6 @@ module type String = sig
   external hash : t -> int = "Base_hash_string"
   [@@noalloc]
 
-  (** Fast equality function on strings, doesn't use [compare_val]. *)
-  val equal : t -> t -> bool
-
-  val equal__local : t -> t -> bool
   val of_char : char -> t
   val of_char_list : char list -> t
 

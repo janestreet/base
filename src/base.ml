@@ -652,10 +652,12 @@ module Export = struct
   (* This is declared as an external to be optimized away in more contexts. *)
 
   (** Reverse application operator. [x |> g |> f] is equivalent to [f (g (x))]. *)
-  external ( |> ) : 'a -> (('a -> 'b)[@local_opt]) -> 'b = "%revapply"
+  external ( |> ) : 'a 'b. 'a -> (('a -> 'b)[@local_opt]) -> 'b = "%revapply"
+  [@@layout_poly]
 
   (** Application operator. [g @@ f @@ x] is equivalent to [g (f (x))]. *)
-  external ( @@ ) : (('a -> 'b)[@local_opt]) -> 'a -> 'b = "%apply"
+  external ( @@ ) : 'a 'b. (('a -> 'b)[@local_opt]) -> 'a -> 'b = "%apply"
+  [@@layout_poly]
 
   (** Boolean operations *)
 
@@ -665,7 +667,7 @@ module Export = struct
   external not : (bool[@local_opt]) -> bool = "%boolnot"
 
   (* This must be declared as an external for the warnings to work properly. *)
-  external ignore : (_[@local_opt]) -> unit = "%ignore"
+  external ignore : 'a. ('a[@local_opt]) -> unit = "%ignore" [@@layout_poly]
 
   (** Common string operations *)
   let ( ^ ) = String.( ^ )
@@ -712,5 +714,3 @@ exception Not_found_s = Not_found_s
    program refers to at least one value directly in [Base]; referring to values in
    [Base.Bool], for example, is not sufficient. *)
 let () = Backtrace.initialize_module ()
-
-module Caml = struct end [@@deprecated "[since 2023-01] use Stdlib instead of Caml"]

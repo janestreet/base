@@ -470,3 +470,70 @@ let%expect_test "[merge_disjoint_exn] failure" =
   show_raise (fun () -> Map.merge_disjoint_exn map1 map2);
   [%expect {| (raised ("Map.merge_disjoint_exn: duplicate key" 2)) |}]
 ;;
+
+let create_balanced array = Map.of_sorted_array_unchecked (module Int) array
+
+let create_left_to_right array =
+  Array.fold
+    array
+    ~init:(Map.empty (module Int))
+    ~f:(fun map (key, data) -> Map.add_exn map ~key ~data)
+;;
+
+let create_right_to_left array =
+  Array.fold_right
+    array
+    ~init:(Map.empty (module Int))
+    ~f:(fun (key, data) map -> Map.add_exn map ~key ~data)
+;;
+
+let create_random array =
+  Array.permute ~random_state:(Random.State.make [| Array.length array |]) array;
+  create_left_to_right array
+;;
+
+let%expect_test ("space" [@tags "no-js"]) =
+  let create ~length ~construction =
+    let array = Array.init length ~f:(fun x -> x + 1, x + 1) in
+    match construction with
+    | `l_to_r -> create_left_to_right array
+    | `r_to_l -> create_right_to_left array
+    | `balanced -> create_balanced array
+    | `random -> create_random array
+  in
+  let sexps =
+    let%bind.List length = [ 1; 100; 10_000; 1_000_000 ] in
+    let%map.List construction = [ `l_to_r; `r_to_l; `balanced; `random ] in
+    let t = create ~length ~construction in
+    let words = Stdlib.Obj.reachable_words (Stdlib.Obj.repr t) in
+    [%sexp
+      { length : int
+      ; construction : [ `l_to_r | `r_to_l | `balanced | `random ]
+      ; words : int
+      }]
+  in
+  Expectable.print sexps;
+  [%expect
+    {|
+    ┌───────────┬──────────────┬───────────┐
+    │ length    │ construction │ words     │
+    ├───────────┼──────────────┼───────────┤
+    │         1 │ l_to_r       │        17 │
+    │         1 │ r_to_l       │        17 │
+    │         1 │ balanced     │        17 │
+    │         1 │ random       │        17 │
+    │       100 │ l_to_r       │       464 │
+    │       100 │ r_to_l       │       464 │
+    │       100 │ balanced     │       503 │
+    │       100 │ random       │       509 │
+    │    10_000 │ l_to_r       │    45_014 │
+    │    10_000 │ r_to_l       │    45_014 │
+    │    10_000 │ balanced     │    47_726 │
+    │    10_000 │ random       │    48_887 │
+    │ 1_000_000 │ l_to_r       │ 4_500_014 │
+    │ 1_000_000 │ r_to_l       │ 4_500_014 │
+    │ 1_000_000 │ balanced     │ 4_572_875 │
+    │ 1_000_000 │ random       │ 4_884_050 │
+    └───────────┴──────────────┴───────────┘
+    |}]
+;;

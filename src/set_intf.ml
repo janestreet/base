@@ -164,6 +164,11 @@ module type Transformers_generic = sig
     : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * ('a, 'cmp) t) access_options
 
   val group_by : ('a, 'cmp) t -> equiv:('a elt -> 'a elt -> bool) -> ('a, 'cmp) t list
+  [@@deprecated
+    "[since 2024-08] This function is slow (O(n^2)) and pretty much never the right \
+     thing to use. Consider using [to_list] along with [List.sort_and_group] or \
+     [List.group]."]
+
   val remove_index : ('a, 'cmp, ('a, 'cmp) t -> int -> ('a, 'cmp) t) access_options
 end
 
@@ -186,9 +191,6 @@ module type Creators_generic = sig
 
   val of_increasing_iterator_unchecked
     : ('a, 'cmp, len:int -> f:(int -> 'a elt) -> ('a, 'cmp) t) create_options
-
-  val stable_dedup_list : ('a, _, 'a elt list -> 'a elt list) create_options
-  [@@deprecated "[since 2023-04] Use [List.stable_dedup] instead."]
 
   (** The types of [map] and [filter_map] are subtle.  The input set, [('a, _) set],
       reflects the fact that these functions take a set of *any* type, with any
@@ -520,13 +522,6 @@ module type Set = sig
     -> f:(int -> 'a)
     -> ('a, 'cmp) t
 
-  (** [stable_dedup_list] is here rather than in the [List] module because the
-      implementation relies crucially on sets, and because doing so allows one to avoid uses
-      of polymorphic comparison by instantiating the functor at a different implementation
-      of [Comparator] and using the resulting [stable_dedup_list]. *)
-  val stable_dedup_list : ('a, _) Comparator.Module.t -> 'a list -> 'a list
-  [@@deprecated "[since 2023-04] Use [List.stable_dedup] instead."]
-
   (** [map c t ~f] returns a new set created by applying [f] to every element in
       [t].  The returned set is based on the provided [comparator].  [O(n log n)]. *)
   val map : ('b, 'cmp) Comparator.Module.t -> ('a, _) t -> f:('a -> 'b) -> ('b, 'cmp) t
@@ -641,6 +636,10 @@ module type Set = sig
       [group_by] runs in O(n^2) time, so if you have a comparison function, it's usually
       much faster to use [Set.of_list]. *)
   val group_by : ('a, 'cmp) t -> equiv:('a -> 'a -> bool) -> ('a, 'cmp) t list
+  [@@deprecated
+    "[since 2024-08] This function is slow (O(n^2)) and pretty much never the right \
+     thing to use. Consider using [to_list] along with [List.sort_and_group] or \
+     [List.group]."]
 
   (** [to_sequence t] converts the set [t] to a sequence of the elements between
       [greater_or_equal_to] and [less_or_equal_to] inclusive in the order indicated by

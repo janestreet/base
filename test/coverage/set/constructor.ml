@@ -361,7 +361,7 @@ module Constructor = struct
         (access Impl.split_lt_ge) (value t) elt |> Side.select side
       | Group_by (fn, n, t) ->
         let list =
-          Impl.group_by
+          (Impl.group_by [@alert "-deprecated"])
             (value t)
             ~equiv:(Comparable.lift Int.equal ~f:(Func.apply fn (module Elt)))
         in
@@ -400,9 +400,14 @@ module Make (Instance : Instance) (Impl : Impl with module Types := Instance.Typ
 struct
   open Instance
 
-  type t = Elt.t Constructor.t [@@deriving equal, quickcheck, sexp_of]
+  type t = Elt.t Constructor.t [@@deriving equal, quickcheck]
 
   include Constructor.Make (Instance) (Impl)
+
+  let sexp_of_t cons =
+    let value = value cons in
+    [%sexp { value : Instance.t; cons : Elt.t Constructor.t }]
+  ;;
 
   let quickcheck_generator = Generator.map quickcheck_generator ~f:normalize
 end
@@ -500,9 +505,6 @@ let%test_module (_ [@tags "64-bits-only"]) =
     (* Complicated types, not covered. *)
 
     let of_tree = Set.of_tree
-
-    (* Deprecated, not covered *)
-    let stable_dedup_list = (Set.stable_dedup_list [@alert "-deprecated"])
 
     (* Tests *)
 
@@ -945,7 +947,7 @@ let%test_module (_ [@tags "64-bits-only"]) =
         |}]
     ;;
 
-    let group_by = Set.group_by
+    let group_by = (Set.group_by [@alert "-deprecated"])
 
     let%expect_test _ =
       test (function
