@@ -638,11 +638,9 @@ let merge =
   let maybe_set t ~key ~f d =
     match f ~key d with
     | None -> ()
-    | Some v -> set t ~key ~data:v
+    | Some v -> add_exn t ~key ~data:v
   in
   fun t_left t_right ~f ->
-    if not (Hashable.equal t_left.hashable t_right.hashable)
-    then invalid_arg "Hashtbl.merge: different 'hashable' values";
     let new_t =
       create
         ~growth_allowed:t_left.growth_allowed

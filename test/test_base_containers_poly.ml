@@ -60,6 +60,8 @@ let%expect_test "Array" =
     Container: testing [filteri]
     Container: testing [filter_mapi]
     Container: testing [concat_mapi]
+    Container: testing [partitioni_tf]
+    Container: testing [partition_mapi]
     |}]
 ;;
 
@@ -111,6 +113,8 @@ let%expect_test "List" =
     Container: testing [filteri]
     Container: testing [filter_mapi]
     Container: testing [concat_mapi]
+    Container: testing [partitioni_tf]
+    Container: testing [partition_mapi]
     |}]
 ;;
 

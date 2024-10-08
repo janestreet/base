@@ -71,6 +71,14 @@ module type S0_with_creators = sig
   (** [concat_mapi t ~f] is like concat_map. Additionally, it passes the index as an
       argument. *)
   val concat_mapi : t -> f:(int -> elt -> t) -> t
+
+  (** [partitioni_tf t ~f] is like partition_tf. Additionally, it passes the index as an
+      argument. *)
+  val partitioni_tf : t -> f:(int -> elt -> bool) -> t * t
+
+  (** [partition_mapi t ~f] is like partition_map. Additionally, it passes the index as an
+      argument. *)
+  val partition_mapi : t -> f:(int -> elt -> (elt, elt) Either0.t) -> t * t
 end
 
 module type S1_with_creators = sig
@@ -94,6 +102,14 @@ module type S1_with_creators = sig
   (** [concat_mapi t ~f] is like concat_map. Additionally, it passes the index as an
       argument. *)
   val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
+
+  (** [partitioni_tf t ~f] is like partition_tf. Additionally, it passes the index as an
+      argument. *)
+  val partitioni_tf : 'a t -> f:(int -> 'a -> bool) -> 'a t * 'a t
+
+  (** [partition_mapi t ~f] is like partition_map. Additionally, it passes the index as an
+      argument. *)
+  val partition_mapi : 'a t -> f:(int -> 'a -> ('b, 'c) Either0.t) -> 'b t * 'c t
 end
 
 module type Generic_with_creators = sig
@@ -117,6 +133,16 @@ module type Generic_with_creators = sig
     :  ('a, 'p1, 'p2) t
     -> f:(int -> 'a elt -> ('b, 'p1, 'p2) t)
     -> ('b, 'p1, 'p2) t
+
+  val partitioni_tf
+    :  ('a, 'p1, 'p2) t
+    -> f:(int -> 'a elt -> bool)
+    -> ('a, 'p1, 'p2) t * ('a, 'p1, 'p2) t
+
+  val partition_mapi
+    :  ('a, 'p1, 'p2) t
+    -> f:(int -> 'a elt -> ('b elt, 'c elt) Either0.t)
+    -> ('b, 'p1, 'p2) t * ('c, 'p1, 'p2) t
 end
 
 module type Make_gen_arg = sig

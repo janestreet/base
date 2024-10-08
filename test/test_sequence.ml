@@ -35,67 +35,65 @@ let%test_unit _ =
       [ 0, 'a'; 0, 'e'; 2, 'a'; 0, 'i'; 2, 'e'; 4, 'a'; 0, 'o'; 2, 'i'; 4, 'e'; 6, 'a' ]
 ;;
 
-let%test_module "Sequence.merge*" =
-  (module struct
-    let%test_unit _ =
-      [%test_eq: (int, int) Merge_with_duplicates_element.t list]
-        (to_list
-           (merge_with_duplicates
-              (of_list [ 1; 2 ])
-              (of_list [ 2; 3 ])
-              (* Can't use Core_int.compare because it would be a dependency cycle. *)
-              ~compare:Int.compare))
-        [ Left 1; Both (2, 2); Right 3 ]
-    ;;
+module%test [@name "Sequence.merge*"] _ = struct
+  let%test_unit _ =
+    [%test_eq: (int, int) Merge_with_duplicates_element.t list]
+      (to_list
+         (merge_with_duplicates
+            (of_list [ 1; 2 ])
+            (of_list [ 2; 3 ])
+            (* Can't use Core_int.compare because it would be a dependency cycle. *)
+            ~compare:Int.compare))
+      [ Left 1; Both (2, 2); Right 3 ]
+  ;;
 
-    let%test_unit _ =
-      [%test_eq: (int, int) Merge_with_duplicates_element.t list]
-        (to_list
-           (merge_with_duplicates
-              (of_list [ 2; 1 ])
-              (of_list [ 2; 3 ])
-              ~compare:Int.compare))
-        [ Both (2, 2); Left 1; Right 3 ]
-    ;;
+  let%test_unit _ =
+    [%test_eq: (int, int) Merge_with_duplicates_element.t list]
+      (to_list
+         (merge_with_duplicates
+            (of_list [ 2; 1 ])
+            (of_list [ 2; 3 ])
+            ~compare:Int.compare))
+      [ Both (2, 2); Left 1; Right 3 ]
+  ;;
 
-    let test_merge_semantics ~merge ~(normalize_list : _ -> compare:(_ -> _ -> _) -> _) =
-      Base_quickcheck.Test.run_exn
-        (module struct
-          module Deduped_and_sorted_int_list = struct
-            type t = int list [@@deriving quickcheck, sexp_of]
+  let test_merge_semantics ~merge ~(normalize_list : _ -> compare:(_ -> _ -> _) -> _) =
+    Base_quickcheck.Test.run_exn
+      (module struct
+        module Deduped_and_sorted_int_list = struct
+          type t = int list [@@deriving quickcheck, sexp_of]
 
-            let sort t = normalize_list t ~compare:Int.compare
+          let sort t = normalize_list t ~compare:Int.compare
 
-            let quickcheck_generator =
-              Base_quickcheck.Generator.map quickcheck_generator ~f:sort
-            ;;
+          let quickcheck_generator =
+            Base_quickcheck.Generator.map quickcheck_generator ~f:sort
+          ;;
 
-            let quickcheck_shrinker =
-              Base_quickcheck.Shrinker.map quickcheck_shrinker ~f:sort ~f_inverse:sort
-            ;;
-          end
+          let quickcheck_shrinker =
+            Base_quickcheck.Shrinker.map quickcheck_shrinker ~f:sort ~f_inverse:sort
+          ;;
+        end
 
-          type t = Deduped_and_sorted_int_list.t * Deduped_and_sorted_int_list.t
-          [@@deriving quickcheck, sexp_of]
-        end)
-        ~f:(fun (xs, ys) ->
-          [%test_result: int list]
-            (Sequence.to_list
-               (merge (Sequence.of_list xs) (Sequence.of_list ys) ~compare:Int.compare))
-            ~expect:(normalize_list (xs @ ys) ~compare:Int.compare))
-    ;;
+        type t = Deduped_and_sorted_int_list.t * Deduped_and_sorted_int_list.t
+        [@@deriving quickcheck, sexp_of]
+      end)
+      ~f:(fun (xs, ys) ->
+        [%test_result: int list]
+          (Sequence.to_list
+             (merge (Sequence.of_list xs) (Sequence.of_list ys) ~compare:Int.compare))
+          ~expect:(normalize_list (xs @ ys) ~compare:Int.compare))
+  ;;
 
-    let%test_unit "merge_deduped_and_sorted" =
-      test_merge_semantics
-        ~merge:Sequence.merge_deduped_and_sorted
-        ~normalize_list:List.dedup_and_sort
-    ;;
+  let%test_unit "merge_deduped_and_sorted" =
+    test_merge_semantics
+      ~merge:Sequence.merge_deduped_and_sorted
+      ~normalize_list:List.dedup_and_sort
+  ;;
 
-    let%test_unit "merge_sorted" =
-      test_merge_semantics ~merge:Sequence.merge_sorted ~normalize_list:List.sort
-    ;;
-  end)
-;;
+  let%test_unit "merge_sorted" =
+    test_merge_semantics ~merge:Sequence.merge_sorted ~normalize_list:List.sort
+  ;;
+end
 
 let%test _ = fold ~f:( + ) ~init:0 (of_list [ 1; 2; 3; 4; 5 ]) = 15
 let%test _ = fold ~f:( + ) ~init:0 (of_list []) = 0
@@ -656,71 +654,65 @@ let%expect_test _ =
   [%expect {| (0 1 2 0 1 2 0 1 2 0 1 2 0 1 2) |}]
 ;;
 
-let%test_module "group" =
-  (module struct
-    let%test _ =
-      of_list [ 1; 2; 3; 4 ]
-      |> group ~break:(fun _ x -> Int.equal x 3)
-      |> [%compare.equal: int list t] (of_list [ [ 1; 2 ]; [ 3; 4 ] ])
-    ;;
+module%test [@name "group"] _ = struct
+  let%test _ =
+    of_list [ 1; 2; 3; 4 ]
+    |> group ~break:(fun _ x -> Int.equal x 3)
+    |> [%compare.equal: int list t] (of_list [ [ 1; 2 ]; [ 3; 4 ] ])
+  ;;
 
-    let%test _ =
-      group empty ~break:(fun _ -> assert false) |> [%compare.equal: unit list t] empty
-    ;;
+  let%test _ =
+    group empty ~break:(fun _ -> assert false) |> [%compare.equal: unit list t] empty
+  ;;
 
-    let mis = of_list [ 'M'; 'i'; 's'; 's'; 'i'; 's'; 's'; 'i'; 'p'; 'p'; 'i' ]
+  let mis = of_list [ 'M'; 'i'; 's'; 's'; 'i'; 's'; 's'; 'i'; 'p'; 'p'; 'i' ]
 
-    let equal_letters =
-      of_list
-        [ [ 'M' ]
-        ; [ 'i' ]
-        ; [ 's'; 's' ]
-        ; [ 'i' ]
-        ; [ 's'; 's' ]
-        ; [ 'i' ]
-        ; [ 'p'; 'p' ]
-        ; [ 'i' ]
-        ]
-    ;;
+  let equal_letters =
+    of_list
+      [ [ 'M' ]
+      ; [ 'i' ]
+      ; [ 's'; 's' ]
+      ; [ 'i' ]
+      ; [ 's'; 's' ]
+      ; [ 'i' ]
+      ; [ 'p'; 'p' ]
+      ; [ 'i' ]
+      ]
+  ;;
 
-    let single_letters =
-      of_list [ [ 'M'; 'i'; 's'; 's'; 'i'; 's'; 's'; 'i'; 'p'; 'p'; 'i' ] ]
-    ;;
+  let single_letters =
+    of_list [ [ 'M'; 'i'; 's'; 's'; 'i'; 's'; 's'; 'i'; 'p'; 'p'; 'i' ] ]
+  ;;
 
-    let%test _ =
-      group ~break:Char.( <> ) mis |> [%compare.equal: char list t] equal_letters
-    ;;
+  let%test _ = group ~break:Char.( <> ) mis |> [%compare.equal: char list t] equal_letters
 
-    let%test _ =
-      group ~break:(fun _ _ -> false) mis |> [%compare.equal: char list t] single_letters
-    ;;
-  end)
-;;
+  let%test _ =
+    group ~break:(fun _ _ -> false) mis |> [%compare.equal: char list t] single_letters
+  ;;
+end
 
-let%test_module "Caml.Seq" =
-  (module struct
-    let list = [ 1; 2; 3; 4 ]
+module%test [@name "Caml.Seq"] _ = struct
+  let list = [ 1; 2; 3; 4 ]
 
-    let%expect_test "of_seq" =
-      list |> Stdlib.List.to_seq |> Sequence.of_seq |> Sequence.iter ~f:(printf "%d\n");
-      [%expect
-        {|
-        1
-        2
-        3
-        4
-        |}]
-    ;;
+  let%expect_test "of_seq" =
+    list |> Stdlib.List.to_seq |> Sequence.of_seq |> Sequence.iter ~f:(printf "%d\n");
+    [%expect
+      {|
+      1
+      2
+      3
+      4
+      |}]
+  ;;
 
-    let%expect_test "to_seq" =
-      list |> Sequence.of_list |> Sequence.to_seq |> Stdlib.Seq.iter (printf "%d\n");
-      [%expect
-        {|
-        1
-        2
-        3
-        4
-        |}]
-    ;;
-  end)
-;;
+  let%expect_test "to_seq" =
+    list |> Sequence.of_list |> Sequence.to_seq |> Stdlib.Seq.iter (printf "%d\n");
+    [%expect
+      {|
+      1
+      2
+      3
+      4
+      |}]
+  ;;
+end

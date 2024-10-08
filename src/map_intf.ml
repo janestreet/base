@@ -1323,7 +1323,7 @@ module type Map = sig
 
     include Ppx_compare_lib.Comparable.S2 with type ('k, 'v) t := ('k, 'v) t
     include Ppx_compare_lib.Equal.S2 with type ('k, 'v) t := ('k, 'v) t
-    include Sexplib0.Sexpable.S2 with type ('k, 'v) t := ('k, 'v) t
+    include Sexplib0.Sexpable.S_any2 with type ('k, 'v) t := ('k, 'v) t
 
     val t_sexp_grammar
       :  'k Sexplib0.Sexp_grammar.t

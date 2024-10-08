@@ -1261,11 +1261,11 @@ include struct
   open struct
     (* partition helpers *)
 
-    let partition_map_into src ~fsts ~snds ~f ~len ~src_pos ~fst_pos ~snd_pos =
+    let partition_mapi_into src ~fsts ~snds ~f ~len ~src_pos ~fst_pos ~snd_pos =
       let fst_pos = ref fst_pos in
       let snd_pos = ref snd_pos in
       for src_pos = src_pos to len - 1 do
-        match (f (unsafe_get src src_pos) : (_, _) Either.t) with
+        match (f src_pos (unsafe_get src src_pos) : (_, _) Either.t) with
         | First c ->
           Bytes.unsafe_set fsts !fst_pos c;
           incr fst_pos
@@ -1276,7 +1276,7 @@ include struct
       local_copy_to_string fsts ~pos:!fst_pos, local_copy_to_string snds ~pos:!snd_pos
     ;;
 
-    let partition_map_difference src ~f ~len ~pos:src_pos ~fst_pos ~snd_pos either =
+    let partition_mapi_difference src ~f ~len ~pos:src_pos ~fst_pos ~snd_pos either =
       let fsts = local_copy_prefix src ~prefix_len:fst_pos ~buffer_len:len in
       let snds = local_copy_prefix src ~prefix_len:snd_pos ~buffer_len:len in
       let fst_pos, snd_pos =
@@ -1288,7 +1288,7 @@ include struct
           Bytes.unsafe_set snds snd_pos c;
           fst_pos, snd_pos + 1
       in
-      partition_map_into
+      partition_mapi_into
         src
         ~fsts
         ~snds
@@ -1299,16 +1299,16 @@ include struct
         ~snd_pos [@nontail]
     ;;
 
-    let rec partition_map_first_maybe_id src ~f ~pos ~len =
+    let rec partition_mapi_first_maybe_id src ~f ~pos ~len =
       if pos = len
       then src, ""
       else (
         let c1 = unsafe_get src pos in
-        match (f c1 : (_, _) Either.t) with
+        match (f pos c1 : (_, _) Either.t) with
         | First c2 when Char.equal c1 c2 ->
-          partition_map_first_maybe_id src ~f ~len ~pos:(pos + 1)
+          partition_mapi_first_maybe_id src ~f ~len ~pos:(pos + 1)
         | either ->
-          partition_map_difference
+          partition_mapi_difference
             src
             ~f
             ~len
@@ -1318,16 +1318,16 @@ include struct
             either [@nontail])
     ;;
 
-    let rec partition_map_second_maybe_id src ~f ~pos ~len =
+    let rec partition_mapi_second_maybe_id src ~f ~pos ~len =
       if pos = len
       then "", src
       else (
         let c1 = unsafe_get src pos in
-        match (f c1 : (_, _) Either.t) with
+        match (f pos c1 : (_, _) Either.t) with
         | Second c2 when Char.equal c1 c2 ->
-          partition_map_second_maybe_id src ~f ~len ~pos:(pos + 1)
+          partition_mapi_second_maybe_id src ~f ~len ~pos:(pos + 1)
         | either ->
-          partition_map_difference
+          partition_mapi_difference
             src
             ~f
             ~len
@@ -1340,18 +1340,18 @@ include struct
 
   (* partition functions *)
 
-  let partition_map src ~f =
+  let partition_mapi src ~f =
     let len = length src in
     if len = 0
     then "", ""
     else (
       let c1 = unsafe_get src 0 in
-      match (f c1 : (_, _) Either.t) with
-      | First c2 when Char.equal c1 c2 -> partition_map_first_maybe_id src ~f ~len ~pos:1
+      match (f 0 c1 : (_, _) Either.t) with
+      | First c2 when Char.equal c1 c2 -> partition_mapi_first_maybe_id src ~f ~len ~pos:1
       | Second c2 when Char.equal c1 c2 ->
-        partition_map_second_maybe_id src ~f ~len ~pos:1
+        partition_mapi_second_maybe_id src ~f ~len ~pos:1
       | either ->
-        partition_map_difference
+        partition_mapi_difference
           src
           ~f
           ~len
@@ -1361,9 +1361,12 @@ include struct
           either [@nontail])
   ;;
 
-  let partition_tf t ~f =
-    partition_map t ~f:(fun c -> if f c then First c else Second c) [@nontail]
+  let partitioni_tf t ~f =
+    partition_mapi t ~f:(fun i c -> if f i c then First c else Second c) [@nontail]
   ;;
+
+  let partition_tf t ~f = partitioni_tf t ~f:(fun _ c -> f c) [@nontail]
+  let partition_map t ~f = partition_mapi t ~f:(fun _ c -> f c) [@nontail]
 end
 
 let edit_distance s1 s2 =
@@ -2068,7 +2071,9 @@ struct
   let mem = C.mem
   let min_elt = C.min_elt
   let partition_map = C.partition_map
+  let partition_mapi = C.partition_mapi
   let partition_tf = C.partition_tf
+  let partitioni_tf = C.partitioni_tf
   let sum = C.sum
   let to_array = C.to_array
   let to_list = C.to_list

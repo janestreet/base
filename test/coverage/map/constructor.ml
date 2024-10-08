@@ -771,1189 +771,1185 @@ end
 
    The number of quickcheck tests on 32-bit architectures is configured to be lower, so we
    skip the coverage checks there. *)
-let%test_module (_ [@tags "64-bits-only"]) =
-  (module (
-  struct
-    module Types = struct
-      type 'key key = 'key
-      type 'cmp cmp = 'cmp
-      type ('key, 'data, 'cmp) t = ('key, 'data, 'cmp) Map.t
-      type ('key, 'data, 'cmp) tree = ('key, 'data, 'cmp) Map.Using_comparator.Tree.t
+module%test [@tags "64-bits-only"] _ : Impl = struct
+  module Types = struct
+    type 'key key = 'key
+    type 'cmp cmp = 'cmp
+    type ('key, 'data, 'cmp) t = ('key, 'data, 'cmp) Map.t
+    type ('key, 'data, 'cmp) tree = ('key, 'data, 'cmp) Map.Using_comparator.Tree.t
 
-      type ('key, 'cmp, 'fn) create_options =
-        ('key, 'cmp, 'fn) Map.With_first_class_module.t
+    type ('key, 'cmp, 'fn) create_options =
+      ('key, 'cmp, 'fn) Map.With_first_class_module.t
 
-      type ('key, 'cmp, 'fn) access_options = ('key, 'cmp, 'fn) Map.Without_comparator.t
+    type ('key, 'cmp, 'fn) access_options = ('key, 'cmp, 'fn) Map.Without_comparator.t
+  end
+
+  open struct
+    module Int_data = struct
+      include Int
+
+      type t = int [@@deriving quickcheck]
+
+      let combine_non_commutative a b = (10 * a) + b
     end
 
-    open struct
-      module Int_data = struct
-        include Int
+    module Instance = struct
+      module Types = Types
+      module Key = Int_data
 
-        type t = int [@@deriving quickcheck]
+      type 'a t = (int, 'a, Int.comparator_witness) Map.t
 
-        let combine_non_commutative a b = (10 * a) + b
-      end
-
-      module Instance = struct
-        module Types = Types
-        module Key = Int_data
-
-        type 'a t = (int, 'a, Int.comparator_witness) Map.t
-
-        let compare = Map.compare_direct
-        let equal = Map.equal
-        let sexp_of_t f t = Map.sexp_of_m__t (module Key) f t
-        let create f = f ((module Key) : (_, _) Comparator.Module.t)
-        let access f = f
-      end
-
-      module Cons = Make (Instance) (Map) (Int_data)
-
-      let sample = Memo.memoize Cons.quickcheck_generator
-
-      let%expect_test "normalization" =
-        quickcheck_m
-          (module struct
-            include Cons
-
-            let sample = sample
-          end)
-          ~f:(fun t ->
-            require_equal (module Cons) t (Cons.normalize t);
-            require_does_not_raise (fun () -> ignore (Cons.value t : int Map.M(Int).t)))
-      ;;
-
-      let%expect_test "number of constructors" =
-        let stats = Stats.create () in
-        List.iter (Lazy.force sample) ~f:(fun t ->
-          Stats.add stats (Constructor.number_of_constructors t));
-        Stats.print stats;
-        [%expect
-          {|
-            % | size | count
-          ----+------+------
-            0 |    1 | 10000
-           50 |    4 |  5747
-           75 |   11 |  2687
-           90 |   25 |  1057
-           95 |   40 |   523
-           99 |   77 |   101
-          100 |  293 |     1
-          |}]
-      ;;
-
-      let test predicate =
-        let stats = Stats.create () in
-        List.iter (force sample) ~f:(fun t ->
-          if predicate t
-          then (
-            let size = Map.length (Cons.value t) in
-            Stats.add stats size));
-        Stats.print stats
-      ;;
+      let compare = Map.compare_direct
+      let equal = Map.equal
+      let sexp_of_t f t = Map.sexp_of_m__t (module Key) f t
+      let create f = f ((module Key) : (_, _) Comparator.Module.t)
+      let access f = f
     end
 
-    (* Accessors only, not covered. *)
+    module Cons = Make (Instance) (Map) (Int_data)
 
-    include (Map : Accessors with module Types := Types)
+    let sample = Memo.memoize Cons.quickcheck_generator
 
-    (* Complicated types, not covered. *)
+    let%expect_test "normalization" =
+      quickcheck_m
+        (module struct
+          include Cons
 
-    let transpose_keys = Map.transpose_keys
-    let of_tree = Map.of_tree
-    let combine_errors = Map.combine_errors
-    let unzip = Map.unzip
-    let of_alist_multi = Map.of_alist_multi
-    let of_sequence_multi = Map.of_sequence_multi
-    let of_list_with_key_multi = Map.of_list_with_key_multi
-    let add_multi = Map.add_multi
-    let remove_multi = Map.remove_multi
+          let sample = sample
+        end)
+        ~f:(fun t ->
+          require_equal (module Cons) t (Cons.normalize t);
+          require_does_not_raise (fun () -> ignore (Cons.value t : int Map.M(Int).t)))
+    ;;
 
-    (* Tests *)
-
-    let empty = Map.empty
-
-    let%expect_test _ =
-      test (function
-        | Empty -> true
-        | _ -> false);
+    let%expect_test "number of constructors" =
+      let stats = Stats.create () in
+      List.iter (Lazy.force sample) ~f:(fun t ->
+        Stats.add stats (Constructor.number_of_constructors t));
+      Stats.print stats;
       [%expect
         {|
           % | size | count
         ----+------+------
-          - |    0 |    86
+          0 |    1 | 10000
+         50 |    4 |  5747
+         75 |   11 |  2687
+         90 |   25 |  1057
+         95 |   40 |   523
+         99 |   77 |   101
+        100 |  293 |     1
         |}]
     ;;
 
-    let singleton = Map.singleton
-
-    let%expect_test _ =
-      test (function
-        | Singleton _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-        100 |    1 |    79
-        |}]
+    let test predicate =
+      let stats = Stats.create () in
+      List.iter (force sample) ~f:(fun t ->
+        if predicate t
+        then (
+          let size = Map.length (Cons.value t) in
+          Stats.add stats size));
+      Stats.print stats
     ;;
-
-    let map_keys = Map.map_keys
-
-    let%expect_test _ =
-      test (function
-        | Map_keys _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   117
-        ----+------+------
-          0 |    1 |   170
-         50 |    3 |    94
-         75 |    8 |    44
-         90 |   14 |    21
-         95 |   19 |    10
-         99 |   27 |     2
-        100 |   28 |     1
-        |}]
-    ;;
-
-    let map_keys_exn = Map.map_keys_exn
-
-    let%expect_test _ =
-      test (function
-        | Map_keys_exn _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    91
-        ----+------+------
-          0 |    1 |   192
-         50 |    3 |   100
-         75 |    8 |    50
-         90 |   16 |    20
-         95 |   23 |    11
-         99 |   28 |     2
-        100 |   48 |     1
-        |}]
-    ;;
-
-    let of_sorted_array = Map.of_sorted_array
-
-    let%expect_test _ =
-      test (function
-        | Of_sorted_array _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    16
-        ----+------+------
-          0 |    1 |    56
-         50 |   11 |    28
-         75 |   21 |    15
-         90 |   25 |     8
-         95 |   28 |     3
-        100 |   31 |     1
-        |}]
-    ;;
-
-    let of_sorted_array_unchecked = Map.of_sorted_array_unchecked
-
-    let%expect_test _ =
-      test (function
-        | Of_sorted_array_unchecked _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |     9
-        ----+------+------
-          0 |    1 |    74
-         50 |    8 |    41
-         75 |   18 |    20
-         90 |   25 |     9
-        100 |   28 |     4
-        |}]
-    ;;
-
-    let of_increasing_iterator_unchecked = Map.of_increasing_iterator_unchecked
-
-    let%expect_test _ =
-      test (function
-        | Of_increasing_iterator_unchecked _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |     9
-        ----+------+------
-          0 |    1 |    82
-         50 |   10 |    41
-         75 |   18 |    21
-         90 |   26 |     9
-         95 |   27 |     7
-        100 |   30 |     2
-        |}]
-    ;;
-
-    let of_alist = Map.of_alist
-
-    let%expect_test _ =
-      test (function
-        | Of_alist _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    18
-        ----+------+------
-          0 |    1 |    64
-         50 |   13 |    32
-         75 |   22 |    16
-         90 |   26 |     8
-         95 |   29 |     4
-        100 |   31 |     1
-        |}]
-    ;;
-
-    let of_alist_or_error = Map.of_alist_or_error
-
-    let%expect_test _ =
-      test (function
-        | Of_alist_or_error _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    18
-        ----+------+------
-          0 |    1 |    74
-         50 |   11 |    37
-         75 |   20 |    20
-         90 |   26 |     8
-         95 |   29 |     4
-        100 |   31 |     2
-        |}]
-    ;;
-
-    let of_alist_exn = Map.of_alist_exn
-
-    let%expect_test _ =
-      test (function
-        | Of_alist_exn _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |     9
-        ----+------+------
-          0 |    1 |    59
-         50 |    9 |    30
-         75 |   16 |    15
-         90 |   25 |     6
-         95 |   28 |     3
-        100 |   30 |     1
-        |}]
-    ;;
-
-    let of_alist_fold = Map.of_alist_fold
-
-    let%expect_test _ =
-      test (function
-        | Of_alist_fold _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |     8
-        ----+------+------
-          0 |    1 |    76
-         50 |    3 |    55
-         75 |    4 |    32
-        100 |    5 |     8
-        |}]
-    ;;
-
-    let of_alist_reduce = Map.of_alist_reduce
-
-    let%expect_test _ =
-      test (function
-        | Of_alist_reduce _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    11
-        ----+------+------
-          0 |    1 |    72
-         50 |    3 |    41
-         90 |    4 |    29
-         95 |    5 |     7
-        100 |    6 |     1
-        |}]
-    ;;
-
-    let of_increasing_sequence = Map.of_increasing_sequence
-
-    let%expect_test _ =
-      test (function
-        | Of_increasing_sequence _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |     9
-        ----+------+------
-          0 |    1 |    77
-         50 |    9 |    39
-         75 |   17 |    20
-         90 |   20 |    12
-         95 |   24 |     5
-        100 |   28 |     1
-        |}]
-    ;;
-
-    let of_sequence = Map.of_sequence
-
-    let%expect_test _ =
-      test (function
-        | Of_sequence _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |     9
-        ----+------+------
-          0 |    1 |    79
-         50 |    9 |    44
-         75 |   15 |    20
-         90 |   22 |     9
-         95 |   23 |     7
-        100 |   29 |     1
-        |}]
-    ;;
-
-    let of_sequence_or_error = Map.of_sequence_or_error
-
-    let%expect_test _ =
-      test (function
-        | Of_sequence_or_error _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    15
-        ----+------+------
-          0 |    1 |    77
-         50 |    9 |    41
-         75 |   18 |    22
-         90 |   24 |     9
-         95 |   26 |     6
-        100 |   31 |     1
-        |}]
-    ;;
-
-    let of_sequence_exn = Map.of_sequence_exn
-
-    let%expect_test _ =
-      test (function
-        | Of_sequence_exn _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    11
-        ----+------+------
-          0 |    1 |    71
-         50 |   14 |    36
-         75 |   21 |    19
-         90 |   25 |     8
-         95 |   27 |     4
-        100 |   28 |     2
-        |}]
-    ;;
-
-    let of_sequence_fold = Map.of_sequence_fold
-
-    let%expect_test _ =
-      test (function
-        | Of_sequence_fold _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    13
-        ----+------+------
-          0 |    1 |    71
-         50 |    3 |    48
-         90 |    4 |    32
-        100 |    5 |     7
-        |}]
-    ;;
-
-    let of_sequence_reduce = Map.of_sequence_reduce
-
-    let%expect_test _ =
-      test (function
-        | Of_sequence_reduce _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    11
-        ----+------+------
-          0 |    1 |    68
-         75 |    3 |    45
-         95 |    4 |    14
-        100 |    5 |     3
-        |}]
-    ;;
-
-    let of_list_with_key = Map.of_list_with_key
-
-    let%expect_test _ =
-      test (function
-        | Of_list_with_key _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    10
-        ----+------+------
-          0 |    1 |    68
-         50 |   12 |    35
-         75 |   19 |    17
-         95 |   25 |     7
-        100 |   27 |     1
-        |}]
-    ;;
-
-    let of_list_with_key_or_error = Map.of_list_with_key_or_error
-
-    let%expect_test _ =
-      test (function
-        | Of_list_with_key_or_error _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    14
-        ----+------+------
-          0 |    1 |    86
-         50 |   11 |    44
-         75 |   18 |    23
-         90 |   25 |    10
-         95 |   27 |     6
-        100 |   30 |     1
-        |}]
-    ;;
-
-    let of_list_with_key_exn = Map.of_list_with_key_exn
-
-    let%expect_test _ =
-      test (function
-        | Of_list_with_key_exn _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    10
-        ----+------+------
-          0 |    1 |    68
-         50 |   10 |    34
-         75 |   17 |    18
-         90 |   24 |     7
-         95 |   25 |     6
-        100 |   28 |     2
-        |}]
-    ;;
-
-    let of_list_with_key_fold = Map.of_list_with_key_fold
-
-    let%expect_test _ =
-      test (function
-        | Of_list_with_key_fold _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    13
-        ----+------+------
-          0 |    1 |    68
-         50 |    2 |    41
-        100 |    3 |    17
-        |}]
-    ;;
-
-    let of_list_with_key_reduce = Map.of_list_with_key_reduce
-
-    let%expect_test _ =
-      test (function
-        | Of_list_with_key_reduce _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    12
-        ----+------+------
-          0 |    1 |    69
-         50 |    2 |    48
-         95 |    3 |    18
-        100 |    4 |     1
-        |}]
-    ;;
-
-    let of_iteri = Map.of_iteri
-
-    let%expect_test _ =
-      test (function
-        | Of_iteri _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    11
-        ----+------+------
-          0 |    1 |    78
-         50 |   11 |    39
-         75 |   20 |    20
-         90 |   27 |     8
-        100 |   30 |     5
-        |}]
-    ;;
-
-    let of_iteri_exn = Map.of_iteri_exn
-
-    let%expect_test _ =
-      test (function
-        | Of_iteri_exn _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    17
-        ----+------+------
-          0 |    1 |    67
-         50 |   10 |    36
-         75 |   18 |    17
-         90 |   26 |     7
-         95 |   29 |     5
-        100 |   31 |     1
-        |}]
-    ;;
-
-    let add = Map.add
-
-    let%expect_test _ =
-      test (function
-        | Add _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          0 |    1 |   265
-         50 |    3 |   143
-         75 |    7 |    69
-         90 |   17 |    27
-         95 |   21 |    16
-         99 |   27 |     4
-        100 |   38 |     1
-        |}]
-    ;;
-
-    let add_exn = Map.add_exn
-
-    let%expect_test _ =
-      test (function
-        | Add_exn _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          0 |    1 |   271
-         50 |    2 |   183
-         75 |    4 |    85
-         90 |   13 |    33
-         95 |   21 |    14
-         99 |   28 |     4
-        100 |   51 |     1
-        |}]
-    ;;
-
-    let set = Map.set
-
-    let%expect_test _ =
-      test (function
-        | Set _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          0 |    1 |   263
-         50 |    2 |   151
-         75 |    5 |    66
-         90 |   12 |    29
-         95 |   20 |    14
-         99 |   26 |     3
-        100 |   29 |     1
-        |}]
-    ;;
-
-    let change = Map.change
-
-    let%expect_test _ =
-      test (function
-        | Change _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    62
-        ----+------+------
-          0 |    1 |   202
-         50 |    3 |   101
-         75 |    8 |    53
-         90 |   16 |    22
-         95 |   21 |    11
-         99 |   28 |     3
-        100 |   41 |     1
-        |}]
-    ;;
-
-    let update = Map.update
-
-    let%expect_test _ =
-      test (function
-        | Update _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          0 |    1 |   277
-         50 |    2 |   178
-         75 |    7 |    71
-         90 |   18 |    29
-         95 |   23 |    18
-         99 |   30 |     3
-        100 |   48 |     1
-        |}]
-    ;;
-
-    let remove = Map.remove
-
-    let%expect_test _ =
-      test (function
-        | Remove _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   100
-        ----+------+------
-          0 |    1 |   190
-         50 |    3 |   113
-         75 |   11 |    48
-         90 |   20 |    20
-         95 |   24 |    10
-         99 |   39 |     2
-        100 |   42 |     1
-        |}]
-    ;;
-
-    let map = Map.map
-
-    let%expect_test _ =
-      test (function
-        | Map _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   110
-        ----+------+------
-          0 |    1 |   194
-         50 |    3 |   106
-         75 |    8 |    53
-         90 |   18 |    22
-         95 |   23 |    10
-         99 |   43 |     2
-        100 |   49 |     1
-        |}]
-    ;;
-
-    let mapi = Map.mapi
-
-    let%expect_test _ =
-      test (function
-        | Mapi _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   100
-        ----+------+------
-          0 |    1 |   169
-         50 |    2 |   114
-         75 |    8 |    45
-         90 |   18 |    18
-         95 |   21 |     9
-         99 |   29 |     2
-        100 |   30 |     1
-        |}]
-    ;;
-
-    let filter_keys = Map.filter_keys
-
-    let%expect_test _ =
-      test (function
-        | Filter_keys _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   168
-        ----+------+------
-          0 |    1 |   133
-         50 |    2 |    76
-         75 |    7 |    34
-         90 |   16 |    18
-         95 |   22 |     7
-         99 |   29 |     2
-        100 |   38 |     1
-        |}]
-    ;;
-
-    let filter = Map.filter
-
-    let%expect_test _ =
-      test (function
-        | Filter _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   163
-        ----+------+------
-          0 |    1 |   140
-         50 |    2 |    97
-         75 |    6 |    37
-         90 |   12 |    14
-         95 |   20 |     7
-        100 |   24 |     2
-        |}]
-    ;;
-
-    let filteri = Map.filteri
-
-    let%expect_test _ =
-      test (function
-        | Filteri _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   157
-        ----+------+------
-          0 |    1 |   134
-         50 |    2 |    81
-         75 |    4 |    39
-         90 |   10 |    16
-         95 |   14 |     8
-         99 |   23 |     2
-        100 |   24 |     1
-        |}]
-    ;;
-
-    let filter_map = Map.filter_map
-
-    let%expect_test _ =
-      test (function
-        | Filter_map _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   154
-        ----+------+------
-          0 |    1 |   109
-         50 |    3 |    64
-         75 |    6 |    30
-         90 |   16 |    11
-         95 |   20 |     8
-         99 |   24 |     2
-        100 |   26 |     1
-        |}]
-    ;;
-
-    let filter_mapi = Map.filter_mapi
-
-    let%expect_test _ =
-      test (function
-        | Filter_mapi _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   184
-        ----+------+------
-          0 |    1 |   119
-         50 |    2 |    78
-         75 |    5 |    32
-         90 |   14 |    12
-         95 |   19 |     6
-         99 |   24 |     3
-        100 |   25 |     1
-        |}]
-    ;;
-
-    let partition_mapi = Map.partition_mapi
-
-    let%expect_test _ =
-      test (function
-        | Partition_mapi _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   145
-        ----+------+------
-          0 |    1 |   105
-         50 |    3 |    53
-         75 |    7 |    27
-         90 |   15 |    11
-         95 |   22 |     6
-         99 |   26 |     3
-        100 |   28 |     1
-        |}]
-    ;;
-
-    let partition_map = Map.partition_map
-
-    let%expect_test _ =
-      test (function
-        | Partition_map _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   142
-        ----+------+------
-          0 |    1 |   128
-         50 |    3 |    64
-         75 |    8 |    32
-         90 |   15 |    13
-         95 |   18 |     8
-        100 |   24 |     2
-        |}]
-    ;;
-
-    let partitioni_tf = Map.partitioni_tf
-
-    let%expect_test _ =
-      test (function
-        | Partitioni_tf _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   158
-        ----+------+------
-          0 |    1 |   132
-         50 |    2 |    77
-         75 |    5 |    33
-         90 |   10 |    15
-         95 |   14 |     7
-        100 |   27 |     2
-        |}]
-    ;;
-
-    let partition_tf = Map.partition_tf
-
-    let%expect_test _ =
-      test (function
-        | Partition_tf _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   142
-        ----+------+------
-          0 |    1 |   121
-         50 |    2 |    75
-         75 |    6 |    33
-         90 |   12 |    14
-         95 |   21 |     7
-         99 |   29 |     2
-        100 |   41 |     1
-        |}]
-    ;;
-
-    let merge = Map.merge
-
-    let%expect_test _ =
-      test (function
-        | Merge _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    83
-        ----+------+------
-          0 |    1 |   179
-         50 |    2 |   120
-         75 |    5 |    55
-         90 |    9 |    20
-         95 |   11 |    10
-         99 |   24 |     2
-        100 |   53 |     1
-        |}]
-    ;;
-
-    let merge_disjoint_exn = Map.merge_disjoint_exn
-
-    let%expect_test _ =
-      test (function
-        | Merge_disjoint_exn _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    33
-        ----+------+------
-          0 |    1 |   249
-         50 |    5 |   126
-         75 |   13 |    67
-         90 |   23 |    31
-         95 |   29 |    13
-         99 |   42 |     3
-        100 |   69 |     1
-        |}]
-    ;;
-
-    let merge_skewed = Map.merge_skewed
-
-    let%expect_test _ =
-      test (function
-        | Merge_skewed _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    37
-        ----+------+------
-          0 |    1 |   237
-         50 |    5 |   122
-         75 |   13 |    65
-         90 |   22 |    25
-         95 |   27 |    15
-         99 |   34 |     3
-        100 |   40 |     1
-        |}]
-    ;;
-
-    let split = Map.split
-
-    let%expect_test _ =
-      test (function
-        | Split _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   176
-        ----+------+------
-          0 |    1 |   115
-         50 |    2 |    72
-         75 |    6 |    33
-         90 |   10 |    15
-         95 |   14 |     8
-         99 |   18 |     2
-        100 |   27 |     1
-        |}]
-    ;;
-
-    let split_le_gt = Map.split_le_gt
-
-    let%expect_test _ =
-      test (function
-        | Split_le_gt _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   164
-        ----+------+------
-          0 |    1 |   115
-         50 |    2 |    67
-         75 |    5 |    30
-         90 |   12 |    13
-         95 |   19 |     7
-         99 |   23 |     4
-        100 |   25 |     1
-        |}]
-    ;;
-
-    let split_lt_ge = Map.split_lt_ge
-
-    let%expect_test _ =
-      test (function
-        | Split_lt_ge _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   132
-        ----+------+------
-          0 |    1 |   123
-         50 |    2 |    69
-         75 |    5 |    32
-         90 |   13 |    13
-         95 |   15 |     7
-         99 |   27 |     2
-        100 |   63 |     1
-        |}]
-    ;;
-
-    let append = Map.append
-
-    let%expect_test _ =
-      test (function
-        | Append _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    23
-        ----+------+------
-          0 |    1 |   260
-         50 |    5 |   140
-         75 |   12 |    66
-         90 |   22 |    26
-         95 |   28 |    13
-         99 |   41 |     3
-        100 |   43 |     2
-        |}]
-    ;;
-
-    let subrange = Map.subrange
-
-    let%expect_test _ =
-      test (function
-        | Subrange _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   191
-        ----+------+------
-          0 |    1 |    84
-         50 |    2 |    51
-         75 |    6 |    23
-         90 |   16 |     9
-         95 |   19 |     5
-        100 |   25 |     1
-        |}]
-    ;;
-
-    module Make_applicative_traversals (A : Applicative.Lazy_applicative) = struct
-      module T = Map.Make_applicative_traversals (A)
-
-      let mapi = T.mapi
-      let filter_mapi = T.filter_mapi
-    end
-
-    let%expect_test _ =
-      test (function
-        | Make_applicative_traversals__mapi _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    94
-        ----+------+------
-          0 |    1 |   179
-         50 |    3 |    95
-         75 |    6 |    53
-         90 |   16 |    20
-         95 |   21 |     9
-         99 |   25 |     2
-        100 |   27 |     1
-        |}]
-    ;;
-
-    let%expect_test _ =
-      test (function
-        | Make_applicative_traversals__filter_mapi _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   159
-        ----+------+------
-          0 |    1 |   138
-         50 |    3 |    70
-         75 |    7 |    35
-         90 |   12 |    17
-         95 |   16 |     8
-         99 |   22 |     2
-        100 |   27 |     1
-        |}]
-    ;;
-  end :
-    Impl))
-;;
+  end
+
+  (* Accessors only, not covered. *)
+
+  include (Map : Accessors with module Types := Types)
+
+  (* Complicated types, not covered. *)
+
+  let transpose_keys = Map.transpose_keys
+  let of_tree = Map.of_tree
+  let combine_errors = Map.combine_errors
+  let unzip = Map.unzip
+  let of_alist_multi = Map.of_alist_multi
+  let of_sequence_multi = Map.of_sequence_multi
+  let of_list_with_key_multi = Map.of_list_with_key_multi
+  let add_multi = Map.add_multi
+  let remove_multi = Map.remove_multi
+
+  (* Tests *)
+
+  let empty = Map.empty
+
+  let%expect_test _ =
+    test (function
+      | Empty -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    86
+      |}]
+  ;;
+
+  let singleton = Map.singleton
+
+  let%expect_test _ =
+    test (function
+      | Singleton _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+      100 |    1 |    79
+      |}]
+  ;;
+
+  let map_keys = Map.map_keys
+
+  let%expect_test _ =
+    test (function
+      | Map_keys _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   117
+      ----+------+------
+        0 |    1 |   170
+       50 |    3 |    94
+       75 |    8 |    44
+       90 |   14 |    21
+       95 |   19 |    10
+       99 |   27 |     2
+      100 |   28 |     1
+      |}]
+  ;;
+
+  let map_keys_exn = Map.map_keys_exn
+
+  let%expect_test _ =
+    test (function
+      | Map_keys_exn _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    91
+      ----+------+------
+        0 |    1 |   192
+       50 |    3 |   100
+       75 |    8 |    50
+       90 |   16 |    20
+       95 |   23 |    11
+       99 |   28 |     2
+      100 |   48 |     1
+      |}]
+  ;;
+
+  let of_sorted_array = Map.of_sorted_array
+
+  let%expect_test _ =
+    test (function
+      | Of_sorted_array _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    16
+      ----+------+------
+        0 |    1 |    56
+       50 |   11 |    28
+       75 |   21 |    15
+       90 |   25 |     8
+       95 |   28 |     3
+      100 |   31 |     1
+      |}]
+  ;;
+
+  let of_sorted_array_unchecked = Map.of_sorted_array_unchecked
+
+  let%expect_test _ =
+    test (function
+      | Of_sorted_array_unchecked _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |     9
+      ----+------+------
+        0 |    1 |    74
+       50 |    8 |    41
+       75 |   18 |    20
+       90 |   25 |     9
+      100 |   28 |     4
+      |}]
+  ;;
+
+  let of_increasing_iterator_unchecked = Map.of_increasing_iterator_unchecked
+
+  let%expect_test _ =
+    test (function
+      | Of_increasing_iterator_unchecked _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |     9
+      ----+------+------
+        0 |    1 |    82
+       50 |   10 |    41
+       75 |   18 |    21
+       90 |   26 |     9
+       95 |   27 |     7
+      100 |   30 |     2
+      |}]
+  ;;
+
+  let of_alist = Map.of_alist
+
+  let%expect_test _ =
+    test (function
+      | Of_alist _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    18
+      ----+------+------
+        0 |    1 |    64
+       50 |   13 |    32
+       75 |   22 |    16
+       90 |   26 |     8
+       95 |   29 |     4
+      100 |   31 |     1
+      |}]
+  ;;
+
+  let of_alist_or_error = Map.of_alist_or_error
+
+  let%expect_test _ =
+    test (function
+      | Of_alist_or_error _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    18
+      ----+------+------
+        0 |    1 |    74
+       50 |   11 |    37
+       75 |   20 |    20
+       90 |   26 |     8
+       95 |   29 |     4
+      100 |   31 |     2
+      |}]
+  ;;
+
+  let of_alist_exn = Map.of_alist_exn
+
+  let%expect_test _ =
+    test (function
+      | Of_alist_exn _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |     9
+      ----+------+------
+        0 |    1 |    59
+       50 |    9 |    30
+       75 |   16 |    15
+       90 |   25 |     6
+       95 |   28 |     3
+      100 |   30 |     1
+      |}]
+  ;;
+
+  let of_alist_fold = Map.of_alist_fold
+
+  let%expect_test _ =
+    test (function
+      | Of_alist_fold _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |     8
+      ----+------+------
+        0 |    1 |    76
+       50 |    3 |    55
+       75 |    4 |    32
+      100 |    5 |     8
+      |}]
+  ;;
+
+  let of_alist_reduce = Map.of_alist_reduce
+
+  let%expect_test _ =
+    test (function
+      | Of_alist_reduce _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    11
+      ----+------+------
+        0 |    1 |    72
+       50 |    3 |    41
+       90 |    4 |    29
+       95 |    5 |     7
+      100 |    6 |     1
+      |}]
+  ;;
+
+  let of_increasing_sequence = Map.of_increasing_sequence
+
+  let%expect_test _ =
+    test (function
+      | Of_increasing_sequence _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |     9
+      ----+------+------
+        0 |    1 |    77
+       50 |    9 |    39
+       75 |   17 |    20
+       90 |   20 |    12
+       95 |   24 |     5
+      100 |   28 |     1
+      |}]
+  ;;
+
+  let of_sequence = Map.of_sequence
+
+  let%expect_test _ =
+    test (function
+      | Of_sequence _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |     9
+      ----+------+------
+        0 |    1 |    79
+       50 |    9 |    44
+       75 |   15 |    20
+       90 |   22 |     9
+       95 |   23 |     7
+      100 |   29 |     1
+      |}]
+  ;;
+
+  let of_sequence_or_error = Map.of_sequence_or_error
+
+  let%expect_test _ =
+    test (function
+      | Of_sequence_or_error _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    15
+      ----+------+------
+        0 |    1 |    77
+       50 |    9 |    41
+       75 |   18 |    22
+       90 |   24 |     9
+       95 |   26 |     6
+      100 |   31 |     1
+      |}]
+  ;;
+
+  let of_sequence_exn = Map.of_sequence_exn
+
+  let%expect_test _ =
+    test (function
+      | Of_sequence_exn _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    11
+      ----+------+------
+        0 |    1 |    71
+       50 |   14 |    36
+       75 |   21 |    19
+       90 |   25 |     8
+       95 |   27 |     4
+      100 |   28 |     2
+      |}]
+  ;;
+
+  let of_sequence_fold = Map.of_sequence_fold
+
+  let%expect_test _ =
+    test (function
+      | Of_sequence_fold _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    13
+      ----+------+------
+        0 |    1 |    71
+       50 |    3 |    48
+       90 |    4 |    32
+      100 |    5 |     7
+      |}]
+  ;;
+
+  let of_sequence_reduce = Map.of_sequence_reduce
+
+  let%expect_test _ =
+    test (function
+      | Of_sequence_reduce _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    11
+      ----+------+------
+        0 |    1 |    68
+       75 |    3 |    45
+       95 |    4 |    14
+      100 |    5 |     3
+      |}]
+  ;;
+
+  let of_list_with_key = Map.of_list_with_key
+
+  let%expect_test _ =
+    test (function
+      | Of_list_with_key _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    10
+      ----+------+------
+        0 |    1 |    68
+       50 |   12 |    35
+       75 |   19 |    17
+       95 |   25 |     7
+      100 |   27 |     1
+      |}]
+  ;;
+
+  let of_list_with_key_or_error = Map.of_list_with_key_or_error
+
+  let%expect_test _ =
+    test (function
+      | Of_list_with_key_or_error _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    14
+      ----+------+------
+        0 |    1 |    86
+       50 |   11 |    44
+       75 |   18 |    23
+       90 |   25 |    10
+       95 |   27 |     6
+      100 |   30 |     1
+      |}]
+  ;;
+
+  let of_list_with_key_exn = Map.of_list_with_key_exn
+
+  let%expect_test _ =
+    test (function
+      | Of_list_with_key_exn _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    10
+      ----+------+------
+        0 |    1 |    68
+       50 |   10 |    34
+       75 |   17 |    18
+       90 |   24 |     7
+       95 |   25 |     6
+      100 |   28 |     2
+      |}]
+  ;;
+
+  let of_list_with_key_fold = Map.of_list_with_key_fold
+
+  let%expect_test _ =
+    test (function
+      | Of_list_with_key_fold _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    13
+      ----+------+------
+        0 |    1 |    68
+       50 |    2 |    41
+      100 |    3 |    17
+      |}]
+  ;;
+
+  let of_list_with_key_reduce = Map.of_list_with_key_reduce
+
+  let%expect_test _ =
+    test (function
+      | Of_list_with_key_reduce _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    12
+      ----+------+------
+        0 |    1 |    69
+       50 |    2 |    48
+       95 |    3 |    18
+      100 |    4 |     1
+      |}]
+  ;;
+
+  let of_iteri = Map.of_iteri
+
+  let%expect_test _ =
+    test (function
+      | Of_iteri _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    11
+      ----+------+------
+        0 |    1 |    78
+       50 |   11 |    39
+       75 |   20 |    20
+       90 |   27 |     8
+      100 |   30 |     5
+      |}]
+  ;;
+
+  let of_iteri_exn = Map.of_iteri_exn
+
+  let%expect_test _ =
+    test (function
+      | Of_iteri_exn _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    17
+      ----+------+------
+        0 |    1 |    67
+       50 |   10 |    36
+       75 |   18 |    17
+       90 |   26 |     7
+       95 |   29 |     5
+      100 |   31 |     1
+      |}]
+  ;;
+
+  let add = Map.add
+
+  let%expect_test _ =
+    test (function
+      | Add _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        0 |    1 |   265
+       50 |    3 |   143
+       75 |    7 |    69
+       90 |   17 |    27
+       95 |   21 |    16
+       99 |   27 |     4
+      100 |   38 |     1
+      |}]
+  ;;
+
+  let add_exn = Map.add_exn
+
+  let%expect_test _ =
+    test (function
+      | Add_exn _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        0 |    1 |   271
+       50 |    2 |   183
+       75 |    4 |    85
+       90 |   13 |    33
+       95 |   21 |    14
+       99 |   28 |     4
+      100 |   51 |     1
+      |}]
+  ;;
+
+  let set = Map.set
+
+  let%expect_test _ =
+    test (function
+      | Set _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        0 |    1 |   263
+       50 |    2 |   151
+       75 |    5 |    66
+       90 |   12 |    29
+       95 |   20 |    14
+       99 |   26 |     3
+      100 |   29 |     1
+      |}]
+  ;;
+
+  let change = Map.change
+
+  let%expect_test _ =
+    test (function
+      | Change _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    62
+      ----+------+------
+        0 |    1 |   202
+       50 |    3 |   101
+       75 |    8 |    53
+       90 |   16 |    22
+       95 |   21 |    11
+       99 |   28 |     3
+      100 |   41 |     1
+      |}]
+  ;;
+
+  let update = Map.update
+
+  let%expect_test _ =
+    test (function
+      | Update _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        0 |    1 |   277
+       50 |    2 |   178
+       75 |    7 |    71
+       90 |   18 |    29
+       95 |   23 |    18
+       99 |   30 |     3
+      100 |   48 |     1
+      |}]
+  ;;
+
+  let remove = Map.remove
+
+  let%expect_test _ =
+    test (function
+      | Remove _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   100
+      ----+------+------
+        0 |    1 |   190
+       50 |    3 |   113
+       75 |   11 |    48
+       90 |   20 |    20
+       95 |   24 |    10
+       99 |   39 |     2
+      100 |   42 |     1
+      |}]
+  ;;
+
+  let map = Map.map
+
+  let%expect_test _ =
+    test (function
+      | Map _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   110
+      ----+------+------
+        0 |    1 |   194
+       50 |    3 |   106
+       75 |    8 |    53
+       90 |   18 |    22
+       95 |   23 |    10
+       99 |   43 |     2
+      100 |   49 |     1
+      |}]
+  ;;
+
+  let mapi = Map.mapi
+
+  let%expect_test _ =
+    test (function
+      | Mapi _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   100
+      ----+------+------
+        0 |    1 |   169
+       50 |    2 |   114
+       75 |    8 |    45
+       90 |   18 |    18
+       95 |   21 |     9
+       99 |   29 |     2
+      100 |   30 |     1
+      |}]
+  ;;
+
+  let filter_keys = Map.filter_keys
+
+  let%expect_test _ =
+    test (function
+      | Filter_keys _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   168
+      ----+------+------
+        0 |    1 |   133
+       50 |    2 |    76
+       75 |    7 |    34
+       90 |   16 |    18
+       95 |   22 |     7
+       99 |   29 |     2
+      100 |   38 |     1
+      |}]
+  ;;
+
+  let filter = Map.filter
+
+  let%expect_test _ =
+    test (function
+      | Filter _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   163
+      ----+------+------
+        0 |    1 |   140
+       50 |    2 |    97
+       75 |    6 |    37
+       90 |   12 |    14
+       95 |   20 |     7
+      100 |   24 |     2
+      |}]
+  ;;
+
+  let filteri = Map.filteri
+
+  let%expect_test _ =
+    test (function
+      | Filteri _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   157
+      ----+------+------
+        0 |    1 |   134
+       50 |    2 |    81
+       75 |    4 |    39
+       90 |   10 |    16
+       95 |   14 |     8
+       99 |   23 |     2
+      100 |   24 |     1
+      |}]
+  ;;
+
+  let filter_map = Map.filter_map
+
+  let%expect_test _ =
+    test (function
+      | Filter_map _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   154
+      ----+------+------
+        0 |    1 |   109
+       50 |    3 |    64
+       75 |    6 |    30
+       90 |   16 |    11
+       95 |   20 |     8
+       99 |   24 |     2
+      100 |   26 |     1
+      |}]
+  ;;
+
+  let filter_mapi = Map.filter_mapi
+
+  let%expect_test _ =
+    test (function
+      | Filter_mapi _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   184
+      ----+------+------
+        0 |    1 |   119
+       50 |    2 |    78
+       75 |    5 |    32
+       90 |   14 |    12
+       95 |   19 |     6
+       99 |   24 |     3
+      100 |   25 |     1
+      |}]
+  ;;
+
+  let partition_mapi = Map.partition_mapi
+
+  let%expect_test _ =
+    test (function
+      | Partition_mapi _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   145
+      ----+------+------
+        0 |    1 |   105
+       50 |    3 |    53
+       75 |    7 |    27
+       90 |   15 |    11
+       95 |   22 |     6
+       99 |   26 |     3
+      100 |   28 |     1
+      |}]
+  ;;
+
+  let partition_map = Map.partition_map
+
+  let%expect_test _ =
+    test (function
+      | Partition_map _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   142
+      ----+------+------
+        0 |    1 |   128
+       50 |    3 |    64
+       75 |    8 |    32
+       90 |   15 |    13
+       95 |   18 |     8
+      100 |   24 |     2
+      |}]
+  ;;
+
+  let partitioni_tf = Map.partitioni_tf
+
+  let%expect_test _ =
+    test (function
+      | Partitioni_tf _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   158
+      ----+------+------
+        0 |    1 |   132
+       50 |    2 |    77
+       75 |    5 |    33
+       90 |   10 |    15
+       95 |   14 |     7
+      100 |   27 |     2
+      |}]
+  ;;
+
+  let partition_tf = Map.partition_tf
+
+  let%expect_test _ =
+    test (function
+      | Partition_tf _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   142
+      ----+------+------
+        0 |    1 |   121
+       50 |    2 |    75
+       75 |    6 |    33
+       90 |   12 |    14
+       95 |   21 |     7
+       99 |   29 |     2
+      100 |   41 |     1
+      |}]
+  ;;
+
+  let merge = Map.merge
+
+  let%expect_test _ =
+    test (function
+      | Merge _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    83
+      ----+------+------
+        0 |    1 |   179
+       50 |    2 |   120
+       75 |    5 |    55
+       90 |    9 |    20
+       95 |   11 |    10
+       99 |   24 |     2
+      100 |   53 |     1
+      |}]
+  ;;
+
+  let merge_disjoint_exn = Map.merge_disjoint_exn
+
+  let%expect_test _ =
+    test (function
+      | Merge_disjoint_exn _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    33
+      ----+------+------
+        0 |    1 |   249
+       50 |    5 |   126
+       75 |   13 |    67
+       90 |   23 |    31
+       95 |   29 |    13
+       99 |   42 |     3
+      100 |   69 |     1
+      |}]
+  ;;
+
+  let merge_skewed = Map.merge_skewed
+
+  let%expect_test _ =
+    test (function
+      | Merge_skewed _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    37
+      ----+------+------
+        0 |    1 |   237
+       50 |    5 |   122
+       75 |   13 |    65
+       90 |   22 |    25
+       95 |   27 |    15
+       99 |   34 |     3
+      100 |   40 |     1
+      |}]
+  ;;
+
+  let split = Map.split
+
+  let%expect_test _ =
+    test (function
+      | Split _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   176
+      ----+------+------
+        0 |    1 |   115
+       50 |    2 |    72
+       75 |    6 |    33
+       90 |   10 |    15
+       95 |   14 |     8
+       99 |   18 |     2
+      100 |   27 |     1
+      |}]
+  ;;
+
+  let split_le_gt = Map.split_le_gt
+
+  let%expect_test _ =
+    test (function
+      | Split_le_gt _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   164
+      ----+------+------
+        0 |    1 |   115
+       50 |    2 |    67
+       75 |    5 |    30
+       90 |   12 |    13
+       95 |   19 |     7
+       99 |   23 |     4
+      100 |   25 |     1
+      |}]
+  ;;
+
+  let split_lt_ge = Map.split_lt_ge
+
+  let%expect_test _ =
+    test (function
+      | Split_lt_ge _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   132
+      ----+------+------
+        0 |    1 |   123
+       50 |    2 |    69
+       75 |    5 |    32
+       90 |   13 |    13
+       95 |   15 |     7
+       99 |   27 |     2
+      100 |   63 |     1
+      |}]
+  ;;
+
+  let append = Map.append
+
+  let%expect_test _ =
+    test (function
+      | Append _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    23
+      ----+------+------
+        0 |    1 |   260
+       50 |    5 |   140
+       75 |   12 |    66
+       90 |   22 |    26
+       95 |   28 |    13
+       99 |   41 |     3
+      100 |   43 |     2
+      |}]
+  ;;
+
+  let subrange = Map.subrange
+
+  let%expect_test _ =
+    test (function
+      | Subrange _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   191
+      ----+------+------
+        0 |    1 |    84
+       50 |    2 |    51
+       75 |    6 |    23
+       90 |   16 |     9
+       95 |   19 |     5
+      100 |   25 |     1
+      |}]
+  ;;
+
+  module Make_applicative_traversals (A : Applicative.Lazy_applicative) = struct
+    module T = Map.Make_applicative_traversals (A)
+
+    let mapi = T.mapi
+    let filter_mapi = T.filter_mapi
+  end
+
+  let%expect_test _ =
+    test (function
+      | Make_applicative_traversals__mapi _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    94
+      ----+------+------
+        0 |    1 |   179
+       50 |    3 |    95
+       75 |    6 |    53
+       90 |   16 |    20
+       95 |   21 |     9
+       99 |   25 |     2
+      100 |   27 |     1
+      |}]
+  ;;
+
+  let%expect_test _ =
+    test (function
+      | Make_applicative_traversals__filter_mapi _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   159
+      ----+------+------
+        0 |    1 |   138
+       50 |    3 |    70
+       75 |    7 |    35
+       90 |   12 |    17
+       95 |   16 |     8
+       99 |   22 |     2
+      100 |   27 |     1
+      |}]
+  ;;
+end

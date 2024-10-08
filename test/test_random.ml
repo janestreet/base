@@ -1,22 +1,19 @@
 open! Import
 open! Random
 
-let%test_module "State" =
-  (module struct
-    include State
+module%test State = struct
+  include State
 
-    let%test_unit ("random int above 2^30" [@tags "64-bits-only"]) =
-      let state = make [| 1; 2; 3; 4; 5 |] in
-      for _ = 1 to 100 do
-        let bound = Int.shift_left 1 40 in
-        let n = int state bound in
-        if n < 0 || n >= bound
-        then
-          failwith (Printf.sprintf "random result %d out of bounds (0,%d)" n (bound - 1))
-      done
-    ;;
-  end)
-;;
+  let%test_unit ("random int above 2^30" [@tags "64-bits-only"]) =
+    let state = make [| 1; 2; 3; 4; 5 |] in
+    for _ = 1 to 100 do
+      let bound = Int.shift_left 1 40 in
+      let n = int state bound in
+      if n < 0 || n >= bound
+      then failwith (Printf.sprintf "random result %d out of bounds (0,%d)" n (bound - 1))
+    done
+  ;;
+end
 
 external random_seed : unit -> Stdlib.Obj.t = "caml_sys_random_seed"
 
@@ -324,44 +321,42 @@ let%expect_test "char" =
   [%expect {| |}]
 ;;
 
-let%test_module "float upper bound is inclusive despite docs" =
-  (module struct
-    (* The fact that this test passes doesn't demonstrate that the bug has gone away,
+module%test [@name "float upper bound is inclusive despite docs"] _ = struct
+  (* The fact that this test passes doesn't demonstrate that the bug has gone away,
        since the test was explicitly contrived to provoke the bug. *)
 
-    (* This bug is more clearly illustrated by copying the implementation of
+  (* This bug is more clearly illustrated by copying the implementation of
        [Random.float] from the stdlib (which is just re-exported by Base).
 
        Basically, when [r1 /. scale +. r2] requires more than 53 bits of precision, and
        [bits2] consists of all 1s, rounding causes [rawfloat] to return 1. *)
 
-    let rawfloat bits1 bits2 =
-      let scale = 1073741824.0
-      and r1 = Stdlib.float bits1
-      and r2 = Stdlib.float bits2 in
-      ((r1 /. scale) +. r2) /. scale
-    ;;
+  let rawfloat bits1 bits2 =
+    let scale = 1073741824.0
+    and r1 = Stdlib.float bits1
+    and r2 = Stdlib.float bits2 in
+    ((r1 /. scale) +. r2) /. scale
+  ;;
 
-    let%expect_test "likelihood of failure" =
-      (* test 256 states of the random number generator, highest as 60-bit numbers, out of
+  let%expect_test "likelihood of failure" =
+    (* test 256 states of the random number generator, highest as 60-bit numbers, out of
          which 64 would have yield a float exactly equal to 1 if [Random.State.float] was
          not recursive. *)
-      let lbound = (1 lsl 30) - (1 lsl 8) in
-      let ubound = (1 lsl 30) - 1 in
-      let bits2 = ubound in
-      let failures = ref 0 in
-      for bits1 = lbound to ubound do
-        let open Float.O in
-        if rawfloat bits1 bits2 >= 1. then Int.incr failures
-      done;
-      let prob = Stdlib.float !failures *. 0x1p-60 in
-      print_s [%message "likelihood of failure" (failures : int ref) (prob : float)];
-      [%expect
-        {|
-        ("likelihood of failure"
-          (failures 64)
-          (prob     5.5511151231257827E-17))
-        |}]
-    ;;
-  end)
-;;
+    let lbound = (1 lsl 30) - (1 lsl 8) in
+    let ubound = (1 lsl 30) - 1 in
+    let bits2 = ubound in
+    let failures = ref 0 in
+    for bits1 = lbound to ubound do
+      let open Float.O in
+      if rawfloat bits1 bits2 >= 1. then Int.incr failures
+    done;
+    let prob = Stdlib.float !failures *. 0x1p-60 in
+    print_s [%message "likelihood of failure" (failures : int ref) (prob : float)];
+    [%expect
+      {|
+      ("likelihood of failure"
+        (failures 64)
+        (prob     5.5511151231257827E-17))
+      |}]
+  ;;
+end

@@ -73,29 +73,27 @@ let%expect_test ("[ceil_log2]" [@tags "64-bits-only"]) =
     |}]
 ;;
 
-let%test_module "int_math" =
-  (module struct
-    let test_cases () =
-      of_ints
-        [ 0b10101010
-        ; 0b1010101010101010
-        ; 0b101010101010101010101010
-        ; 0b10000000
-        ; 0b1000000000001000
-        ; 0b100000000000000000001000
-        ]
-    ;;
+module%test [@name "int_math"] _ = struct
+  let test_cases () =
+    of_ints
+      [ 0b10101010
+      ; 0b1010101010101010
+      ; 0b101010101010101010101010
+      ; 0b10000000
+      ; 0b1000000000001000
+      ; 0b100000000000000000001000
+      ]
+  ;;
 
-    let%test_unit "ceil_pow2" =
-      List.iter (test_cases ()) ~f:(fun x ->
-        let p2 = ceil_pow2 x in
-        assert (is_pow2 p2 && p2 >= x && x >= p2 / of_int_exn 2))
-    ;;
+  let%test_unit "ceil_pow2" =
+    List.iter (test_cases ()) ~f:(fun x ->
+      let p2 = ceil_pow2 x in
+      assert (is_pow2 p2 && p2 >= x && x >= p2 / of_int_exn 2))
+  ;;
 
-    let%test_unit "floor_pow2" =
-      List.iter (test_cases ()) ~f:(fun x ->
-        let p2 = floor_pow2 x in
-        assert (is_pow2 p2 && of_int_exn 2 * p2 >= x && x >= p2))
-    ;;
-  end)
-;;
+  let%test_unit "floor_pow2" =
+    List.iter (test_cases ()) ~f:(fun x ->
+      let p2 = floor_pow2 x in
+      assert (is_pow2 p2 && of_int_exn 2 * p2 >= x && x >= p2))
+  ;;
+end

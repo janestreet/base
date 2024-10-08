@@ -16,163 +16,159 @@ let%expect_test "find_exn" =
   [%expect {| (Ok -2) |}]
 ;;
 
-let%test_module "reduce_balanced" =
-  (module struct
-    let test expect list =
-      [%test_result: string option]
-        ~expect
-        (reduce_balanced ~f:(fun a b -> "(" ^ a ^ "+" ^ b ^ ")") list)
-    ;;
+module%test [@name "reduce_balanced"] _ = struct
+  let test expect list =
+    [%test_result: string option]
+      ~expect
+      (reduce_balanced ~f:(fun a b -> "(" ^ a ^ "+" ^ b ^ ")") list)
+  ;;
 
-    let%test_unit "length 0" = test None []
-    let%test_unit "length 1" = test (Some "a") [ "a" ]
-    let%test_unit "length 2" = test (Some "(a+b)") [ "a"; "b" ]
+  let%test_unit "length 0" = test None []
+  let%test_unit "length 1" = test (Some "a") [ "a" ]
+  let%test_unit "length 2" = test (Some "(a+b)") [ "a"; "b" ]
 
-    let%test_unit "length 6" =
-      test (Some "(((a+b)+(c+d))+(e+f))") [ "a"; "b"; "c"; "d"; "e"; "f" ]
-    ;;
+  let%test_unit "length 6" =
+    test (Some "(((a+b)+(c+d))+(e+f))") [ "a"; "b"; "c"; "d"; "e"; "f" ]
+  ;;
 
-    let%test_unit "longer" =
-      (* pairs (index, number of times f called on me) to check:
+  let%test_unit "longer" =
+    (* pairs (index, number of times f called on me) to check:
          1. f called on results in index order
          2. total number of calls on any element is low
          called on 2^n + 1 to demonstrate lack of balance (most elements are distance 7 from
          the tree root, but one is distance 1) *)
-      let data = map (range 0 65) ~f:(fun i -> [ i, 0 ]) in
-      let f x y = map (x @ y) ~f:(fun (ix, cx) -> ix, cx + 1) in
-      match reduce_balanced data ~f with
-      | None -> failwith "None"
-      | Some l ->
-        [%test_result: int] ~expect:65 (List.length l);
-        iteri l ~f:(fun actual_index (computed_index, num_f) ->
-          let expected_num_f = if actual_index = 64 then 1 else 7 in
-          [%test_result: int * int]
-            ~expect:(actual_index, expected_num_f)
-            (computed_index, num_f))
-    ;;
-  end)
-;;
+    let data = map (range 0 65) ~f:(fun i -> [ i, 0 ]) in
+    let f x y = map (x @ y) ~f:(fun (ix, cx) -> ix, cx + 1) in
+    match reduce_balanced data ~f with
+    | None -> failwith "None"
+    | Some l ->
+      [%test_result: int] ~expect:65 (List.length l);
+      iteri l ~f:(fun actual_index (computed_index, num_f) ->
+        let expected_num_f = if actual_index = 64 then 1 else 7 in
+        [%test_result: int * int]
+          ~expect:(actual_index, expected_num_f)
+          (computed_index, num_f))
+  ;;
+end
 
-let%test_module "range symmetries" =
-  (module struct
-    let basic ~stride ~start ~stop ~start_n ~stop_n ~result =
-      [%compare.equal: int t] (range ~stride ~start ~stop start_n stop_n) result
-    ;;
+module%test [@name "range symmetries"] _ = struct
+  let basic ~stride ~start ~stop ~start_n ~stop_n ~result =
+    [%compare.equal: int t] (range ~stride ~start ~stop start_n stop_n) result
+  ;;
 
-    let test stride (start_n, start) (stop_n, stop) result =
-      basic ~stride ~start ~stop ~start_n ~stop_n ~result
-      && (* works for negative [start] and [stop] *)
-      basic
-        ~stride:(-stride)
-        ~start_n:(-start_n)
-        ~stop_n:(-stop_n)
-        ~start
-        ~stop
-        ~result:(List.map result ~f:(fun x -> -x))
-    ;;
+  let test stride (start_n, start) (stop_n, stop) result =
+    basic ~stride ~start ~stop ~start_n ~stop_n ~result
+    && (* works for negative [start] and [stop] *)
+    basic
+      ~stride:(-stride)
+      ~start_n:(-start_n)
+      ~stop_n:(-stop_n)
+      ~start
+      ~stop
+      ~result:(List.map result ~f:(fun x -> -x))
+  ;;
 
-    let%test _ = test 1 (3, `inclusive) (1, `exclusive) []
-    let%test _ = test 1 (3, `inclusive) (3, `exclusive) []
-    let%test _ = test 1 (3, `inclusive) (4, `exclusive) [ 3 ]
-    let%test _ = test 1 (3, `inclusive) (8, `exclusive) [ 3; 4; 5; 6; 7 ]
-    let%test _ = test 3 (4, `inclusive) (10, `exclusive) [ 4; 7 ]
-    let%test _ = test 3 (4, `inclusive) (11, `exclusive) [ 4; 7; 10 ]
-    let%test _ = test 3 (4, `inclusive) (12, `exclusive) [ 4; 7; 10 ]
-    let%test _ = test 3 (4, `inclusive) (13, `exclusive) [ 4; 7; 10 ]
-    let%test _ = test 3 (4, `inclusive) (14, `exclusive) [ 4; 7; 10; 13 ]
-    let%test _ = test (-1) (1, `inclusive) (3, `exclusive) []
-    let%test _ = test (-1) (3, `inclusive) (3, `exclusive) []
-    let%test _ = test (-1) (4, `inclusive) (3, `exclusive) [ 4 ]
-    let%test _ = test (-1) (8, `inclusive) (3, `exclusive) [ 8; 7; 6; 5; 4 ]
-    let%test _ = test (-3) (10, `inclusive) (4, `exclusive) [ 10; 7 ]
-    let%test _ = test (-3) (10, `inclusive) (3, `exclusive) [ 10; 7; 4 ]
-    let%test _ = test (-3) (10, `inclusive) (2, `exclusive) [ 10; 7; 4 ]
-    let%test _ = test (-3) (10, `inclusive) (1, `exclusive) [ 10; 7; 4 ]
-    let%test _ = test (-3) (10, `inclusive) (0, `exclusive) [ 10; 7; 4; 1 ]
-    let%test _ = test 1 (3, `exclusive) (1, `exclusive) []
-    let%test _ = test 1 (3, `exclusive) (3, `exclusive) []
-    let%test _ = test 1 (3, `exclusive) (4, `exclusive) []
-    let%test _ = test 1 (3, `exclusive) (8, `exclusive) [ 4; 5; 6; 7 ]
-    let%test _ = test 3 (4, `exclusive) (10, `exclusive) [ 7 ]
-    let%test _ = test 3 (4, `exclusive) (11, `exclusive) [ 7; 10 ]
-    let%test _ = test 3 (4, `exclusive) (12, `exclusive) [ 7; 10 ]
-    let%test _ = test 3 (4, `exclusive) (13, `exclusive) [ 7; 10 ]
-    let%test _ = test 3 (4, `exclusive) (14, `exclusive) [ 7; 10; 13 ]
-    let%test _ = test (-1) (1, `exclusive) (3, `exclusive) []
-    let%test _ = test (-1) (3, `exclusive) (3, `exclusive) []
-    let%test _ = test (-1) (4, `exclusive) (3, `exclusive) []
-    let%test _ = test (-1) (8, `exclusive) (3, `exclusive) [ 7; 6; 5; 4 ]
-    let%test _ = test (-3) (10, `exclusive) (4, `exclusive) [ 7 ]
-    let%test _ = test (-3) (10, `exclusive) (3, `exclusive) [ 7; 4 ]
-    let%test _ = test (-3) (10, `exclusive) (2, `exclusive) [ 7; 4 ]
-    let%test _ = test (-3) (10, `exclusive) (1, `exclusive) [ 7; 4 ]
-    let%test _ = test (-3) (10, `exclusive) (0, `exclusive) [ 7; 4; 1 ]
-    let%test _ = test 1 (3, `inclusive) (1, `inclusive) []
-    let%test _ = test 1 (3, `inclusive) (3, `inclusive) [ 3 ]
-    let%test _ = test 1 (3, `inclusive) (4, `inclusive) [ 3; 4 ]
-    let%test _ = test 1 (3, `inclusive) (8, `inclusive) [ 3; 4; 5; 6; 7; 8 ]
-    let%test _ = test 3 (4, `inclusive) (10, `inclusive) [ 4; 7; 10 ]
-    let%test _ = test 3 (4, `inclusive) (11, `inclusive) [ 4; 7; 10 ]
-    let%test _ = test 3 (4, `inclusive) (12, `inclusive) [ 4; 7; 10 ]
-    let%test _ = test 3 (4, `inclusive) (13, `inclusive) [ 4; 7; 10; 13 ]
-    let%test _ = test 3 (4, `inclusive) (14, `inclusive) [ 4; 7; 10; 13 ]
-    let%test _ = test (-1) (1, `inclusive) (3, `inclusive) []
-    let%test _ = test (-1) (3, `inclusive) (3, `inclusive) [ 3 ]
-    let%test _ = test (-1) (4, `inclusive) (3, `inclusive) [ 4; 3 ]
-    let%test _ = test (-1) (8, `inclusive) (3, `inclusive) [ 8; 7; 6; 5; 4; 3 ]
-    let%test _ = test (-3) (10, `inclusive) (4, `inclusive) [ 10; 7; 4 ]
-    let%test _ = test (-3) (10, `inclusive) (3, `inclusive) [ 10; 7; 4 ]
-    let%test _ = test (-3) (10, `inclusive) (2, `inclusive) [ 10; 7; 4 ]
-    let%test _ = test (-3) (10, `inclusive) (1, `inclusive) [ 10; 7; 4; 1 ]
-    let%test _ = test (-3) (10, `inclusive) (0, `inclusive) [ 10; 7; 4; 1 ]
-    let%test _ = test 1 (3, `exclusive) (1, `inclusive) []
-    let%test _ = test 1 (3, `exclusive) (3, `inclusive) []
-    let%test _ = test 1 (3, `exclusive) (4, `inclusive) [ 4 ]
-    let%test _ = test 1 (3, `exclusive) (8, `inclusive) [ 4; 5; 6; 7; 8 ]
-    let%test _ = test 3 (4, `exclusive) (10, `inclusive) [ 7; 10 ]
-    let%test _ = test 3 (4, `exclusive) (11, `inclusive) [ 7; 10 ]
-    let%test _ = test 3 (4, `exclusive) (12, `inclusive) [ 7; 10 ]
-    let%test _ = test 3 (4, `exclusive) (13, `inclusive) [ 7; 10; 13 ]
-    let%test _ = test 3 (4, `exclusive) (14, `inclusive) [ 7; 10; 13 ]
-    let%test _ = test (-1) (1, `exclusive) (3, `inclusive) []
-    let%test _ = test (-1) (3, `exclusive) (3, `inclusive) []
-    let%test _ = test (-1) (4, `exclusive) (3, `inclusive) [ 3 ]
-    let%test _ = test (-1) (8, `exclusive) (3, `inclusive) [ 7; 6; 5; 4; 3 ]
-    let%test _ = test (-3) (10, `exclusive) (4, `inclusive) [ 7; 4 ]
-    let%test _ = test (-3) (10, `exclusive) (3, `inclusive) [ 7; 4 ]
-    let%test _ = test (-3) (10, `exclusive) (2, `inclusive) [ 7; 4 ]
-    let%test _ = test (-3) (10, `exclusive) (1, `inclusive) [ 7; 4; 1 ]
-    let%test _ = test (-3) (10, `exclusive) (0, `inclusive) [ 7; 4; 1 ]
+  let%test _ = test 1 (3, `inclusive) (1, `exclusive) []
+  let%test _ = test 1 (3, `inclusive) (3, `exclusive) []
+  let%test _ = test 1 (3, `inclusive) (4, `exclusive) [ 3 ]
+  let%test _ = test 1 (3, `inclusive) (8, `exclusive) [ 3; 4; 5; 6; 7 ]
+  let%test _ = test 3 (4, `inclusive) (10, `exclusive) [ 4; 7 ]
+  let%test _ = test 3 (4, `inclusive) (11, `exclusive) [ 4; 7; 10 ]
+  let%test _ = test 3 (4, `inclusive) (12, `exclusive) [ 4; 7; 10 ]
+  let%test _ = test 3 (4, `inclusive) (13, `exclusive) [ 4; 7; 10 ]
+  let%test _ = test 3 (4, `inclusive) (14, `exclusive) [ 4; 7; 10; 13 ]
+  let%test _ = test (-1) (1, `inclusive) (3, `exclusive) []
+  let%test _ = test (-1) (3, `inclusive) (3, `exclusive) []
+  let%test _ = test (-1) (4, `inclusive) (3, `exclusive) [ 4 ]
+  let%test _ = test (-1) (8, `inclusive) (3, `exclusive) [ 8; 7; 6; 5; 4 ]
+  let%test _ = test (-3) (10, `inclusive) (4, `exclusive) [ 10; 7 ]
+  let%test _ = test (-3) (10, `inclusive) (3, `exclusive) [ 10; 7; 4 ]
+  let%test _ = test (-3) (10, `inclusive) (2, `exclusive) [ 10; 7; 4 ]
+  let%test _ = test (-3) (10, `inclusive) (1, `exclusive) [ 10; 7; 4 ]
+  let%test _ = test (-3) (10, `inclusive) (0, `exclusive) [ 10; 7; 4; 1 ]
+  let%test _ = test 1 (3, `exclusive) (1, `exclusive) []
+  let%test _ = test 1 (3, `exclusive) (3, `exclusive) []
+  let%test _ = test 1 (3, `exclusive) (4, `exclusive) []
+  let%test _ = test 1 (3, `exclusive) (8, `exclusive) [ 4; 5; 6; 7 ]
+  let%test _ = test 3 (4, `exclusive) (10, `exclusive) [ 7 ]
+  let%test _ = test 3 (4, `exclusive) (11, `exclusive) [ 7; 10 ]
+  let%test _ = test 3 (4, `exclusive) (12, `exclusive) [ 7; 10 ]
+  let%test _ = test 3 (4, `exclusive) (13, `exclusive) [ 7; 10 ]
+  let%test _ = test 3 (4, `exclusive) (14, `exclusive) [ 7; 10; 13 ]
+  let%test _ = test (-1) (1, `exclusive) (3, `exclusive) []
+  let%test _ = test (-1) (3, `exclusive) (3, `exclusive) []
+  let%test _ = test (-1) (4, `exclusive) (3, `exclusive) []
+  let%test _ = test (-1) (8, `exclusive) (3, `exclusive) [ 7; 6; 5; 4 ]
+  let%test _ = test (-3) (10, `exclusive) (4, `exclusive) [ 7 ]
+  let%test _ = test (-3) (10, `exclusive) (3, `exclusive) [ 7; 4 ]
+  let%test _ = test (-3) (10, `exclusive) (2, `exclusive) [ 7; 4 ]
+  let%test _ = test (-3) (10, `exclusive) (1, `exclusive) [ 7; 4 ]
+  let%test _ = test (-3) (10, `exclusive) (0, `exclusive) [ 7; 4; 1 ]
+  let%test _ = test 1 (3, `inclusive) (1, `inclusive) []
+  let%test _ = test 1 (3, `inclusive) (3, `inclusive) [ 3 ]
+  let%test _ = test 1 (3, `inclusive) (4, `inclusive) [ 3; 4 ]
+  let%test _ = test 1 (3, `inclusive) (8, `inclusive) [ 3; 4; 5; 6; 7; 8 ]
+  let%test _ = test 3 (4, `inclusive) (10, `inclusive) [ 4; 7; 10 ]
+  let%test _ = test 3 (4, `inclusive) (11, `inclusive) [ 4; 7; 10 ]
+  let%test _ = test 3 (4, `inclusive) (12, `inclusive) [ 4; 7; 10 ]
+  let%test _ = test 3 (4, `inclusive) (13, `inclusive) [ 4; 7; 10; 13 ]
+  let%test _ = test 3 (4, `inclusive) (14, `inclusive) [ 4; 7; 10; 13 ]
+  let%test _ = test (-1) (1, `inclusive) (3, `inclusive) []
+  let%test _ = test (-1) (3, `inclusive) (3, `inclusive) [ 3 ]
+  let%test _ = test (-1) (4, `inclusive) (3, `inclusive) [ 4; 3 ]
+  let%test _ = test (-1) (8, `inclusive) (3, `inclusive) [ 8; 7; 6; 5; 4; 3 ]
+  let%test _ = test (-3) (10, `inclusive) (4, `inclusive) [ 10; 7; 4 ]
+  let%test _ = test (-3) (10, `inclusive) (3, `inclusive) [ 10; 7; 4 ]
+  let%test _ = test (-3) (10, `inclusive) (2, `inclusive) [ 10; 7; 4 ]
+  let%test _ = test (-3) (10, `inclusive) (1, `inclusive) [ 10; 7; 4; 1 ]
+  let%test _ = test (-3) (10, `inclusive) (0, `inclusive) [ 10; 7; 4; 1 ]
+  let%test _ = test 1 (3, `exclusive) (1, `inclusive) []
+  let%test _ = test 1 (3, `exclusive) (3, `inclusive) []
+  let%test _ = test 1 (3, `exclusive) (4, `inclusive) [ 4 ]
+  let%test _ = test 1 (3, `exclusive) (8, `inclusive) [ 4; 5; 6; 7; 8 ]
+  let%test _ = test 3 (4, `exclusive) (10, `inclusive) [ 7; 10 ]
+  let%test _ = test 3 (4, `exclusive) (11, `inclusive) [ 7; 10 ]
+  let%test _ = test 3 (4, `exclusive) (12, `inclusive) [ 7; 10 ]
+  let%test _ = test 3 (4, `exclusive) (13, `inclusive) [ 7; 10; 13 ]
+  let%test _ = test 3 (4, `exclusive) (14, `inclusive) [ 7; 10; 13 ]
+  let%test _ = test (-1) (1, `exclusive) (3, `inclusive) []
+  let%test _ = test (-1) (3, `exclusive) (3, `inclusive) []
+  let%test _ = test (-1) (4, `exclusive) (3, `inclusive) [ 3 ]
+  let%test _ = test (-1) (8, `exclusive) (3, `inclusive) [ 7; 6; 5; 4; 3 ]
+  let%test _ = test (-3) (10, `exclusive) (4, `inclusive) [ 7; 4 ]
+  let%test _ = test (-3) (10, `exclusive) (3, `inclusive) [ 7; 4 ]
+  let%test _ = test (-3) (10, `exclusive) (2, `inclusive) [ 7; 4 ]
+  let%test _ = test (-3) (10, `exclusive) (1, `inclusive) [ 7; 4; 1 ]
+  let%test _ = test (-3) (10, `exclusive) (0, `inclusive) [ 7; 4; 1 ]
 
-    let test_start_inc_exc stride start (stop, stop_inc_exc) result =
-      test stride (start, `inclusive) (stop, stop_inc_exc) result
-      &&
-      match result with
-      | [] -> true
-      | head :: tail ->
-        head = start && test stride (start, `exclusive) (stop, stop_inc_exc) tail
-    ;;
+  let test_start_inc_exc stride start (stop, stop_inc_exc) result =
+    test stride (start, `inclusive) (stop, stop_inc_exc) result
+    &&
+    match result with
+    | [] -> true
+    | head :: tail ->
+      head = start && test stride (start, `exclusive) (stop, stop_inc_exc) tail
+  ;;
 
-    let test_inc_exc stride start stop result =
-      test_start_inc_exc stride start (stop, `inclusive) result
-      &&
-      match List.rev result with
-      | [] -> true
-      | last :: all_but_last ->
-        let all_but_last = List.rev all_but_last in
-        if last = stop
-        then test_start_inc_exc stride start (stop, `exclusive) all_but_last
-        else true
-    ;;
+  let test_inc_exc stride start stop result =
+    test_start_inc_exc stride start (stop, `inclusive) result
+    &&
+    match List.rev result with
+    | [] -> true
+    | last :: all_but_last ->
+      let all_but_last = List.rev all_but_last in
+      if last = stop
+      then test_start_inc_exc stride start (stop, `exclusive) all_but_last
+      else true
+  ;;
 
-    let%test _ = test_inc_exc 1 4 10 [ 4; 5; 6; 7; 8; 9; 10 ]
-    let%test _ = test_inc_exc 3 4 10 [ 4; 7; 10 ]
-    let%test _ = test_inc_exc 3 4 11 [ 4; 7; 10 ]
-    let%test _ = test_inc_exc 3 4 12 [ 4; 7; 10 ]
-    let%test _ = test_inc_exc 3 4 13 [ 4; 7; 10; 13 ]
-    let%test _ = test_inc_exc 3 4 14 [ 4; 7; 10; 13 ]
-  end)
-;;
+  let%test _ = test_inc_exc 1 4 10 [ 4; 5; 6; 7; 8; 9; 10 ]
+  let%test _ = test_inc_exc 3 4 10 [ 4; 7; 10 ]
+  let%test _ = test_inc_exc 3 4 11 [ 4; 7; 10 ]
+  let%test _ = test_inc_exc 3 4 12 [ 4; 7; 10 ]
+  let%test _ = test_inc_exc 3 4 13 [ 4; 7; 10; 13 ]
+  let%test _ = test_inc_exc 3 4 14 [ 4; 7; 10; 13 ]
+end
 
 module Test_values = struct
   let long1 =
@@ -426,183 +422,169 @@ let%test_unit _ =
 
 let%test_unit _ = [%test_result: (int * _) list] (mapi ~f:(fun i x -> i, x) []) ~expect:[]
 
-let%test_module "group" =
-  (module struct
-    let%test_unit _ =
-      [%test_result: int list list]
-        (group [ 1; 2; 3; 4 ] ~break:(fun _ x -> x = 3))
-        ~expect:[ [ 1; 2 ]; [ 3; 4 ] ]
-    ;;
+module%test [@name "group"] _ = struct
+  let%test_unit _ =
+    [%test_result: int list list]
+      (group [ 1; 2; 3; 4 ] ~break:(fun _ x -> x = 3))
+      ~expect:[ [ 1; 2 ]; [ 3; 4 ] ]
+  ;;
 
-    let%test_unit _ =
-      [%test_result: int list list] (group [] ~break:(fun _ -> assert false)) ~expect:[]
-    ;;
+  let%test_unit _ =
+    [%test_result: int list list] (group [] ~break:(fun _ -> assert false)) ~expect:[]
+  ;;
 
-    let mis = [ 'M'; 'i'; 's'; 's'; 'i'; 's'; 's'; 'i'; 'p'; 'p'; 'i' ]
+  let mis = [ 'M'; 'i'; 's'; 's'; 'i'; 's'; 's'; 'i'; 'p'; 'p'; 'i' ]
 
-    let equal_letters =
-      [ [ 'M' ]
-      ; [ 'i' ]
-      ; [ 's'; 's' ]
-      ; [ 'i' ]
-      ; [ 's'; 's' ]
-      ; [ 'i' ]
-      ; [ 'p'; 'p' ]
-      ; [ 'i' ]
-      ]
-    ;;
+  let equal_letters =
+    [ [ 'M' ]
+    ; [ 'i' ]
+    ; [ 's'; 's' ]
+    ; [ 'i' ]
+    ; [ 's'; 's' ]
+    ; [ 'i' ]
+    ; [ 'p'; 'p' ]
+    ; [ 'i' ]
+    ]
+  ;;
 
-    let single_letters = [ [ 'M'; 'i'; 's'; 's'; 'i'; 's'; 's'; 'i'; 'p'; 'p'; 'i' ] ]
+  let single_letters = [ [ 'M'; 'i'; 's'; 's'; 'i'; 's'; 's'; 'i'; 'p'; 'p'; 'i' ] ]
 
-    let every_three =
-      [ [ 'M'; 'i'; 's' ]; [ 's'; 'i'; 's' ]; [ 's'; 'i'; 'p' ]; [ 'p'; 'i' ] ]
-    ;;
+  let every_three =
+    [ [ 'M'; 'i'; 's' ]; [ 's'; 'i'; 's' ]; [ 's'; 'i'; 'p' ]; [ 'p'; 'i' ] ]
+  ;;
 
-    let%test_unit _ =
-      [%test_result: char list list] (group ~break:Char.( <> ) mis) ~expect:equal_letters
-    ;;
+  let%test_unit _ =
+    [%test_result: char list list] (group ~break:Char.( <> ) mis) ~expect:equal_letters
+  ;;
 
-    let%test_unit _ =
-      [%test_result: char list list]
-        (group ~break:(fun _ _ -> false) mis)
-        ~expect:single_letters
-    ;;
+  let%test_unit _ =
+    [%test_result: char list list]
+      (group ~break:(fun _ _ -> false) mis)
+      ~expect:single_letters
+  ;;
 
-    let%test_unit _ =
-      [%test_result: char list list]
-        (groupi ~break:(fun i _ _ -> i % 3 = 0) mis)
-        ~expect:every_three
-    ;;
-  end)
-;;
+  let%test_unit _ =
+    [%test_result: char list list]
+      (groupi ~break:(fun i _ _ -> i % 3 = 0) mis)
+      ~expect:every_three
+  ;;
+end
 
-let%test_module "sort_and_group" =
-  (module struct
-    let%expect_test _ =
-      let compare a b =
-        Comparable.lift
-          String.compare
-          ~f:(fun s -> String.rstrip ~drop:Char.is_digit s)
-          a
-          b
+module%test [@name "sort_and_group"] _ = struct
+  let%expect_test _ =
+    let compare a b =
+      Comparable.lift String.compare ~f:(fun s -> String.rstrip ~drop:Char.is_digit s) a b
+    in
+    [%test_result: string list list]
+      (sort_and_group [ "b1"; "c1"; "a1"; "a2"; "b2"; "a3" ] ~compare)
+      ~expect:[ [ "a1"; "a2"; "a3" ]; [ "b1"; "b2" ]; [ "c1" ] ]
+  ;;
+end
+
+module%test [@name "Assoc.group"] _ = struct
+  let%expect_test _ =
+    let test alist =
+      let multi = Assoc.group alist ~equal:String.Caseless.equal in
+      print_s [%sexp (multi : (string * int list) list)];
+      let round_trip =
+        List.concat_map multi ~f:(fun (key, data) ->
+          List.map data ~f:(fun datum -> key, datum))
       in
-      [%test_result: string list list]
-        (sort_and_group [ "b1"; "c1"; "a1"; "a2"; "b2"; "a3" ] ~compare)
-        ~expect:[ [ "a1"; "a2"; "a3" ]; [ "b1"; "b2" ]; [ "c1" ] ]
-    ;;
-  end)
-;;
+      require_equal
+        (module struct
+          type t = (String.Caseless.t * int) list [@@deriving equal, sexp_of]
+        end)
+        alist
+        round_trip
+    in
+    test [];
+    [%expect {| () |}];
+    test [ "a", 1; "A", 2 ];
+    [%expect {| ((a (1 2))) |}];
+    test [ "a", 1; "b", 2 ];
+    [%expect
+      {|
+      ((a (1))
+       (b (2)))
+      |}];
+    test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
+    [%expect
+      {|
+      ((odd  (1))
+       (even (2))
+       (Odd  (3))
+       (Even (4))
+       (ODD  (5))
+       (EVEN (6)))
+      |}];
+    test [ "odd", 1; "Odd", 3; "ODD", 5; "even", 2; "Even", 4; "EVEN", 6 ];
+    [%expect
+      {|
+      ((odd  (1 3 5))
+       (even (2 4 6)))
+      |}]
+  ;;
+end
 
-let%test_module "Assoc.group" =
-  (module struct
-    let%expect_test _ =
-      let test alist =
-        let multi = Assoc.group alist ~equal:String.Caseless.equal in
-        print_s [%sexp (multi : (string * int list) list)];
-        let round_trip =
-          List.concat_map multi ~f:(fun (key, data) ->
-            List.map data ~f:(fun datum -> key, datum))
-        in
-        require_equal
-          (module struct
-            type t = (String.Caseless.t * int) list [@@deriving equal, sexp_of]
-          end)
-          alist
-          round_trip
-      in
-      test [];
-      [%expect {| () |}];
-      test [ "a", 1; "A", 2 ];
-      [%expect {| ((a (1 2))) |}];
-      test [ "a", 1; "b", 2 ];
-      [%expect
-        {|
-        ((a (1))
-         (b (2)))
-        |}];
-      test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
-      [%expect
-        {|
-        ((odd  (1))
-         (even (2))
-         (Odd  (3))
-         (Even (4))
-         (ODD  (5))
-         (EVEN (6)))
-        |}];
-      test [ "odd", 1; "Odd", 3; "ODD", 5; "even", 2; "Even", 4; "EVEN", 6 ];
-      [%expect
-        {|
-        ((odd  (1 3 5))
-         (even (2 4 6)))
-        |}]
-    ;;
-  end)
-;;
+module%test [@name "Assoc.sort_and_group"] _ = struct
+  let%expect_test _ =
+    let test alist =
+      let multi = Assoc.sort_and_group alist ~compare:String.Caseless.compare in
+      print_s [%sexp (multi : (string * int list) list)];
+      require_equal
+        (module struct
+          type t = (string * int list) list [@@deriving equal, sexp_of]
+        end)
+        multi
+        (Map.to_alist (Map.of_alist_multi (module String.Caseless) alist))
+    in
+    test [];
+    [%expect {| () |}];
+    test [ "a", 1; "A", 2 ];
+    [%expect {| ((a (1 2))) |}];
+    test [ "a", 1; "b", 2 ];
+    [%expect
+      {|
+      ((a (1))
+       (b (2)))
+      |}];
+    test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
+    [%expect
+      {|
+      ((even (2 4 6))
+       (odd  (1 3 5)))
+      |}]
+  ;;
+end
 
-let%test_module "Assoc.sort_and_group" =
-  (module struct
-    let%expect_test _ =
-      let test alist =
-        let multi = Assoc.sort_and_group alist ~compare:String.Caseless.compare in
-        print_s [%sexp (multi : (string * int list) list)];
-        require_equal
-          (module struct
-            type t = (string * int list) list [@@deriving equal, sexp_of]
-          end)
-          multi
-          (Map.to_alist (Map.of_alist_multi (module String.Caseless) alist))
-      in
-      test [];
-      [%expect {| () |}];
-      test [ "a", 1; "A", 2 ];
-      [%expect {| ((a (1 2))) |}];
-      test [ "a", 1; "b", 2 ];
-      [%expect
-        {|
-        ((a (1))
-         (b (2)))
-        |}];
-      test [ "odd", 1; "even", 2; "Odd", 3; "Even", 4; "ODD", 5; "EVEN", 6 ];
-      [%expect
-        {|
-        ((even (2 4 6))
-         (odd  (1 3 5)))
-        |}]
-    ;;
-  end)
-;;
+module%test [@name "chunks_of"] _ = struct
+  let test length break_every =
+    let l = List.init length ~f:Fn.id in
+    let b = chunks_of l ~length:break_every in
+    [%test_eq: int list] (List.concat b) l;
+    List.iter
+      b
+      ~f:([%test_pred: int list] (fun batch -> List.length batch <= break_every))
+  ;;
 
-let%test_module "chunks_of" =
-  (module struct
-    let test length break_every =
-      let l = List.init length ~f:Fn.id in
-      let b = chunks_of l ~length:break_every in
-      [%test_eq: int list] (List.concat b) l;
-      List.iter
-        b
-        ~f:([%test_pred: int list] (fun batch -> List.length batch <= break_every))
-    ;;
+  let expect_exn length break_every =
+    match test length break_every with
+    | exception _ -> ()
+    | () -> raise_s [%message "Didn't raise." (length : int) (break_every : int)]
+  ;;
 
-    let expect_exn length break_every =
-      match test length break_every with
-      | exception _ -> ()
-      | () -> raise_s [%message "Didn't raise." (length : int) (break_every : int)]
-    ;;
+  let%test_unit _ =
+    for n = 0 to 10 do
+      for k = n + 2 downto 1 do
+        test n k
+      done
+    done;
+    expect_exn 1 0;
+    expect_exn 1 (-1)
+  ;;
 
-    let%test_unit _ =
-      for n = 0 to 10 do
-        for k = n + 2 downto 1 do
-          test n k
-        done
-      done;
-      expect_exn 1 0;
-      expect_exn 1 (-1)
-    ;;
-
-    let%test_unit _ = [%test_result: _ list list] (chunks_of [] ~length:1) ~expect:[]
-  end)
-;;
+  let%test_unit _ = [%test_result: _ list list] (chunks_of [] ~length:1) ~expect:[]
+end
 
 let%test _ = last_exn [ 1; 2; 3 ] = 3
 let%test _ = last_exn [ 1 ] = 1
@@ -1065,35 +1047,33 @@ let%test_unit _ =
   [%test_result: int list] (drop [ 1; 2; 3; 4; 5; 6 ] (-5)) ~expect:[ 1; 2; 3; 4; 5; 6 ]
 ;;
 
-let%test_module "{take,drop,split}_while" =
-  (module struct
-    let pred = function
-      | '0' .. '9' -> true
-      | _ -> false
-    ;;
+module%test [@name "{take,drop,split}_while"] _ = struct
+  let pred = function
+    | '0' .. '9' -> true
+    | _ -> false
+  ;;
 
-    let test xs prefix suffix =
-      let prefix1, suffix1 = split_while ~f:pred xs in
-      let prefix2 = take_while xs ~f:pred in
-      let suffix2 = drop_while xs ~f:pred in
-      [%test_eq: char list] xs (prefix @ suffix);
-      [%test_result: char list] ~expect:prefix prefix1;
-      [%test_result: char list] ~expect:prefix prefix2;
-      [%test_result: char list] ~expect:suffix suffix1;
-      [%test_result: char list] ~expect:suffix suffix2
-    ;;
+  let test xs prefix suffix =
+    let prefix1, suffix1 = split_while ~f:pred xs in
+    let prefix2 = take_while xs ~f:pred in
+    let suffix2 = drop_while xs ~f:pred in
+    [%test_eq: char list] xs (prefix @ suffix);
+    [%test_result: char list] ~expect:prefix prefix1;
+    [%test_result: char list] ~expect:prefix prefix2;
+    [%test_result: char list] ~expect:suffix suffix1;
+    [%test_result: char list] ~expect:suffix suffix2
+  ;;
 
-    let%test_unit _ =
-      test [ '1'; '2'; '3'; 'a'; 'b'; 'c' ] [ '1'; '2'; '3' ] [ 'a'; 'b'; 'c' ]
-    ;;
+  let%test_unit _ =
+    test [ '1'; '2'; '3'; 'a'; 'b'; 'c' ] [ '1'; '2'; '3' ] [ 'a'; 'b'; 'c' ]
+  ;;
 
-    let%test_unit _ = test [ '1'; '2'; 'a'; 'b'; 'c' ] [ '1'; '2' ] [ 'a'; 'b'; 'c' ]
-    let%test_unit _ = test [ '1'; 'a'; 'b'; 'c' ] [ '1' ] [ 'a'; 'b'; 'c' ]
-    let%test_unit _ = test [ 'a'; 'b'; 'c' ] [] [ 'a'; 'b'; 'c' ]
-    let%test_unit _ = test [ '1'; '2'; '3' ] [ '1'; '2'; '3' ] []
-    let%test_unit _ = test [] [] []
-  end)
-;;
+  let%test_unit _ = test [ '1'; '2'; 'a'; 'b'; 'c' ] [ '1'; '2' ] [ 'a'; 'b'; 'c' ]
+  let%test_unit _ = test [ '1'; 'a'; 'b'; 'c' ] [ '1' ] [ 'a'; 'b'; 'c' ]
+  let%test_unit _ = test [ 'a'; 'b'; 'c' ] [] [ 'a'; 'b'; 'c' ]
+  let%test_unit _ = test [ '1'; '2'; '3' ] [ '1'; '2'; '3' ] []
+  let%test_unit _ = test [] [] []
+end
 
 let%test_unit _ = [%test_result: int list] (concat []) ~expect:[]
 let%test_unit _ = [%test_result: int list] (concat [ [] ]) ~expect:[]
@@ -1142,69 +1122,67 @@ let%test_unit _ =
 let%test_unit _ = [%test_result: int option] (random_element []) ~expect:None
 let%test_unit _ = [%test_result: int option] (random_element [ 0 ]) ~expect:(Some 0)
 
-let%test_module "transpose" =
-  (module struct
-    let round_trip a b =
-      [%test_result: int list list option] (transpose a) ~expect:(Some b);
-      [%test_result: int list list option] (transpose b) ~expect:(Some a)
-    ;;
+module%test [@name "transpose"] _ = struct
+  let round_trip a b =
+    [%test_result: int list list option] (transpose a) ~expect:(Some b);
+    [%test_result: int list list option] (transpose b) ~expect:(Some a)
+  ;;
 
-    let%test_unit _ = round_trip [] []
+  let%test_unit _ = round_trip [] []
 
-    let%test_unit _ =
-      [%test_result: int list list option] (transpose [ [] ]) ~expect:(Some [])
-    ;;
+  let%test_unit _ =
+    [%test_result: int list list option] (transpose [ [] ]) ~expect:(Some [])
+  ;;
 
-    let%test_unit _ =
-      [%test_result: int list list option] (transpose [ []; [] ]) ~expect:(Some [])
-    ;;
+  let%test_unit _ =
+    [%test_result: int list list option] (transpose [ []; [] ]) ~expect:(Some [])
+  ;;
 
-    let%test_unit _ =
-      [%test_result: int list list option] (transpose [ []; []; [] ]) ~expect:(Some [])
-    ;;
+  let%test_unit _ =
+    [%test_result: int list list option] (transpose [ []; []; [] ]) ~expect:(Some [])
+  ;;
 
-    let%test_unit _ = round_trip [ [ 1 ] ] [ [ 1 ] ]
-    let%test_unit _ = round_trip [ [ 1 ]; [ 2 ] ] [ [ 1; 2 ] ]
-    let%test_unit _ = round_trip [ [ 1 ]; [ 2 ]; [ 3 ] ] [ [ 1; 2; 3 ] ]
-    let%test_unit _ = round_trip [ [ 1; 2 ]; [ 3; 4 ] ] [ [ 1; 3 ]; [ 2; 4 ] ]
+  let%test_unit _ = round_trip [ [ 1 ] ] [ [ 1 ] ]
+  let%test_unit _ = round_trip [ [ 1 ]; [ 2 ] ] [ [ 1; 2 ] ]
+  let%test_unit _ = round_trip [ [ 1 ]; [ 2 ]; [ 3 ] ] [ [ 1; 2; 3 ] ]
+  let%test_unit _ = round_trip [ [ 1; 2 ]; [ 3; 4 ] ] [ [ 1; 3 ]; [ 2; 4 ] ]
 
-    let%test_unit _ =
-      round_trip [ [ 1; 2; 3 ]; [ 4; 5; 6 ] ] [ [ 1; 4 ]; [ 2; 5 ]; [ 3; 6 ] ]
-    ;;
+  let%test_unit _ =
+    round_trip [ [ 1; 2; 3 ]; [ 4; 5; 6 ] ] [ [ 1; 4 ]; [ 2; 5 ]; [ 3; 6 ] ]
+  ;;
 
-    let%test_unit _ =
-      round_trip
-        [ [ 1; 2; 3 ]; [ 4; 5; 6 ]; [ 7; 8; 9 ] ]
-        [ [ 1; 4; 7 ]; [ 2; 5; 8 ]; [ 3; 6; 9 ] ]
-    ;;
+  let%test_unit _ =
+    round_trip
+      [ [ 1; 2; 3 ]; [ 4; 5; 6 ]; [ 7; 8; 9 ] ]
+      [ [ 1; 4; 7 ]; [ 2; 5; 8 ]; [ 3; 6; 9 ] ]
+  ;;
 
-    let%test_unit _ =
-      round_trip
-        [ [ 1; 2; 3; 4 ]; [ 5; 6; 7; 8 ]; [ 9; 10; 11; 12 ] ]
-        [ [ 1; 5; 9 ]; [ 2; 6; 10 ]; [ 3; 7; 11 ]; [ 4; 8; 12 ] ]
-    ;;
+  let%test_unit _ =
+    round_trip
+      [ [ 1; 2; 3; 4 ]; [ 5; 6; 7; 8 ]; [ 9; 10; 11; 12 ] ]
+      [ [ 1; 5; 9 ]; [ 2; 6; 10 ]; [ 3; 7; 11 ]; [ 4; 8; 12 ] ]
+  ;;
 
-    let%test_unit _ =
-      round_trip
-        [ [ 1; 2; 3; 4 ]; [ 5; 6; 7; 8 ]; [ 9; 10; 11; 12 ]; [ 13; 14; 15; 16 ] ]
-        [ [ 1; 5; 9; 13 ]; [ 2; 6; 10; 14 ]; [ 3; 7; 11; 15 ]; [ 4; 8; 12; 16 ] ]
-    ;;
+  let%test_unit _ =
+    round_trip
+      [ [ 1; 2; 3; 4 ]; [ 5; 6; 7; 8 ]; [ 9; 10; 11; 12 ]; [ 13; 14; 15; 16 ] ]
+      [ [ 1; 5; 9; 13 ]; [ 2; 6; 10; 14 ]; [ 3; 7; 11; 15 ]; [ 4; 8; 12; 16 ] ]
+  ;;
 
-    let%test_unit _ =
-      round_trip
-        [ [ 1; 2; 3 ]; [ 4; 5; 6 ]; [ 7; 8; 9 ]; [ 10; 11; 12 ] ]
-        [ [ 1; 4; 7; 10 ]; [ 2; 5; 8; 11 ]; [ 3; 6; 9; 12 ] ]
-    ;;
+  let%test_unit _ =
+    round_trip
+      [ [ 1; 2; 3 ]; [ 4; 5; 6 ]; [ 7; 8; 9 ]; [ 10; 11; 12 ] ]
+      [ [ 1; 4; 7; 10 ]; [ 2; 5; 8; 11 ]; [ 3; 6; 9; 12 ] ]
+  ;;
 
-    let%test_unit _ =
-      [%test_result: int list list option] (transpose [ []; [ 1 ] ]) ~expect:None
-    ;;
+  let%test_unit _ =
+    [%test_result: int list list option] (transpose [ []; [ 1 ] ]) ~expect:None
+  ;;
 
-    let%test_unit _ =
-      [%test_result: int list list option] (transpose [ [ 1; 2 ]; [ 3 ] ]) ~expect:None
-    ;;
-  end)
-;;
+  let%test_unit _ =
+    [%test_result: int list list option] (transpose [ [ 1; 2 ]; [ 3 ] ]) ~expect:None
+  ;;
+end
 
 let%test_unit _ =
   [%test_result: int list] (intersperse [ 1; 2; 3 ] ~sep:0) ~expect:[ 1; 0; 2; 0; 3 ]
@@ -1265,6 +1243,37 @@ let%test_unit _ =
       let y = acc + (i * x) in
       y, y)
     ~expect:(0, [])
+;;
+
+let test_partition_mapi list ~f ~expect =
+  [%test_result: int list * int list] (partition_mapi list ~f) ~expect
+;;
+
+let%test_unit _ =
+  test_partition_mapi
+    []
+    ~f:(fun i x -> if i = x then First (i + x) else Second (i - x))
+    ~expect:([], [])
+;;
+
+let%test_unit _ =
+  test_partition_mapi
+    [ 3; 5; 2; 1; 4 ]
+    ~f:(fun i x -> if i = x then First (i + x) else Second (i - x))
+    ~expect:([ 4; 8 ], [ -3; -4; 2 ])
+;;
+
+let test_partitioni_tf list ~f ~expect =
+  [%test_result: int list * int list] (partitioni_tf list ~f) ~expect
+;;
+
+let%test_unit _ = test_partitioni_tf [] ~f:(fun i x -> i = x && x > 2) ~expect:([], [])
+
+let%test_unit _ =
+  test_partitioni_tf
+    [ 3; 5; 2; 1; 4 ]
+    ~f:(fun i x -> i = x && x > 2)
+    ~expect:([ 4 ], [ 3; 5; 2; 1 ])
 ;;
 
 let%expect_test "drop_last" =
@@ -1590,173 +1599,165 @@ let%expect_test "[concat_mapi]" =
   [%expect {| (0 1 2 3 1 2 3 4 5 2 3 4 5 6 7) |}]
 ;;
 
-let%test_module "filter{,i}" =
-  (module struct
-    open Base_quickcheck
+module%test [@name "filter{,i}"] _ = struct
+  open Base_quickcheck
 
-    module Int_list = struct
-      type t = int list [@@deriving equal, sexp_of]
-    end
+  module Int_list = struct
+    type t = int list [@@deriving equal, sexp_of]
+  end
 
-    let%expect_test "[filter]" =
-      quickcheck_m
-        (module struct
-          type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
-        end)
-        ~f:(fun (list, f) ->
+  let%expect_test "[filter]" =
+    quickcheck_m
+      (module struct
+        type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
+      end)
+      ~f:(fun (list, f) ->
+        (* test [f] *)
+        let pos = List.filter list ~f in
+        require (List.for_all pos ~f);
+        (* test [~f] *)
+        let not_f = Fn.non f in
+        let neg = List.filter list ~f:not_f in
+        require (List.for_all neg ~f:not_f);
+        (* test [f \/ ~f] *)
+        let sort = sort ~compare:Int.compare in
+        require_equal (module Int_list) (sort list) (sort (pos @ neg)))
+  ;;
+
+  let%expect_test "[filteri]" =
+    quickcheck_m
+      (module struct
+        type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
+      end)
+      ~f:(fun (list, f) ->
+        let pos, neg =
+          (* stash the original indices, so that we can retrieve them after filtering *)
+          let list = mapi list ~f:(fun i x -> i, x) in
+          let ignore_stash f : _ = fun i (_, x) -> f i x in
+          let use_orig_index f : _ = fun (i, x) -> f i x in
           (* test [f] *)
-          let pos = List.filter list ~f in
-          require (List.for_all pos ~f);
+          let pos = List.filteri list ~f:(ignore_stash f) in
+          require (List.for_all pos ~f:(use_orig_index f));
           (* test [~f] *)
-          let not_f = Fn.non f in
-          let neg = List.filter list ~f:not_f in
-          require (List.for_all neg ~f:not_f);
-          (* test [f \/ ~f] *)
-          let sort = sort ~compare:Int.compare in
-          require_equal (module Int_list) (sort list) (sort (pos @ neg)))
-    ;;
+          let not_f i x = not (f i x) in
+          let neg = List.filteri list ~f:(ignore_stash not_f) in
+          require (List.for_all neg ~f:(use_orig_index not_f));
+          pos, neg
+        in
+        (* test [f \/ ~f] *)
+        let sort = sort ~compare:[%compare: int * _] in
+        require_equal (module Int_list) list (sort (pos @ neg) |> map ~f:snd))
+  ;;
 
-    let%expect_test "[filteri]" =
-      quickcheck_m
-        (module struct
-          type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
-        end)
-        ~f:(fun (list, f) ->
-          let pos, neg =
-            (* stash the original indices, so that we can retrieve them after filtering *)
-            let list = mapi list ~f:(fun i x -> i, x) in
-            let ignore_stash f : _ = fun i (_, x) -> f i x in
-            let use_orig_index f : _ = fun (i, x) -> f i x in
-            (* test [f] *)
-            let pos = List.filteri list ~f:(ignore_stash f) in
-            require (List.for_all pos ~f:(use_orig_index f));
-            (* test [~f] *)
-            let not_f i x = not (f i x) in
-            let neg = List.filteri list ~f:(ignore_stash not_f) in
-            require (List.for_all neg ~f:(use_orig_index not_f));
-            pos, neg
-          in
-          (* test [f \/ ~f] *)
-          let sort = sort ~compare:[%compare: int * _] in
-          require_equal (module Int_list) list (sort (pos @ neg) |> map ~f:snd))
-    ;;
+  let%expect_test "[filteri ~f:(Fn.const f) = filter ~f]" =
+    quickcheck_m
+      (module struct
+        type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
+      end)
+      ~f:(fun (list, f) ->
+        require_equal
+          (module Int_list)
+          (filteri list ~f:(fun _ x -> f x))
+          (filter list ~f))
+  ;;
 
-    let%expect_test "[filteri ~f:(Fn.const f) = filter ~f]" =
-      quickcheck_m
-        (module struct
-          type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
-        end)
-        ~f:(fun (list, f) ->
-          require_equal
-            (module Int_list)
-            (filteri list ~f:(fun _ x -> f x))
-            (filter list ~f))
-    ;;
+  let%expect_test "[filter]" =
+    let test list =
+      List.filter list ~f:(fun n -> n % 3 > 0) |> [%sexp_of: int list] |> print_s
+    in
+    test [];
+    [%expect {| () |}];
+    test [ 1 ];
+    [%expect {| (1) |}];
+    test [ 1; 2 ];
+    [%expect {| (1 2) |}];
+    test [ 1; 2; 3 ];
+    [%expect {| (1 2) |}];
+    test [ 1; 2; 3; 4 ];
+    [%expect {| (1 2 4) |}];
+    test [ 4; 5; 6 ];
+    [%expect {| (4 5) |}]
+  ;;
 
-    let%expect_test "[filter]" =
-      let test list =
-        List.filter list ~f:(fun n -> n % 3 > 0) |> [%sexp_of: int list] |> print_s
-      in
-      test [];
-      [%expect {| () |}];
-      test [ 1 ];
-      [%expect {| (1) |}];
-      test [ 1; 2 ];
-      [%expect {| (1 2) |}];
-      test [ 1; 2; 3 ];
-      [%expect {| (1 2) |}];
-      test [ 1; 2; 3; 4 ];
-      [%expect {| (1 2 4) |}];
-      test [ 4; 5; 6 ];
-      [%expect {| (4 5) |}]
-    ;;
+  let%expect_test "[filteri]" =
+    let test list =
+      List.filteri list ~f:(fun i n -> n > i) |> [%sexp_of: int list] |> print_s
+    in
+    test [];
+    [%expect {| () |}];
+    test [ 0 ];
+    [%expect {| () |}];
+    test [ 0; 1 ];
+    [%expect {| () |}];
+    test [ 0; 1; 2 ];
+    [%expect {| () |}];
+    test [ 1 ];
+    [%expect {| (1) |}];
+    test [ 1; 2 ];
+    [%expect {| (1 2) |}];
+    test [ 1; 2; 3 ];
+    [%expect {| (1 2 3) |}];
+    test [ 1; 0 ];
+    [%expect {| (1) |}];
+    test [ 2; 1; 0 ];
+    [%expect {| (2) |}];
+    test [ 3; 2; 1; 0 ];
+    [%expect {| (3 2) |}]
+  ;;
+end
 
-    let%expect_test "[filteri]" =
-      let test list =
-        List.filteri list ~f:(fun i n -> n > i) |> [%sexp_of: int list] |> print_s
-      in
-      test [];
-      [%expect {| () |}];
-      test [ 0 ];
-      [%expect {| () |}];
-      test [ 0; 1 ];
-      [%expect {| () |}];
-      test [ 0; 1; 2 ];
-      [%expect {| () |}];
-      test [ 1 ];
-      [%expect {| (1) |}];
-      test [ 1; 2 ];
-      [%expect {| (1 2) |}];
-      test [ 1; 2; 3 ];
-      [%expect {| (1 2 3) |}];
-      test [ 1; 0 ];
-      [%expect {| (1) |}];
-      test [ 2; 1; 0 ];
-      [%expect {| (2) |}];
-      test [ 3; 2; 1; 0 ];
-      [%expect {| (3 2) |}]
-    ;;
-  end)
-;;
+module%test [@name "count{,i}"] _ = struct
+  let%expect_test "[count{,i} list ~f = List.length (filter{,i} list ~f)]" =
+    quickcheck_m
+      (module struct
+        type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
+      end)
+      ~f:(fun (list, f) ->
+        require_equal (module Int) (count list ~f) (length (filter list ~f)));
+    quickcheck_m
+      (module struct
+        type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
+      end)
+      ~f:(fun (list, f) ->
+        require_equal (module Int) (counti list ~f) (length (filteri list ~f)))
+  ;;
 
-let%test_module "count{,i}" =
-  (module struct
-    let%expect_test "[count{,i} list ~f = List.length (filter{,i} list ~f)]" =
-      quickcheck_m
-        (module struct
-          type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
-        end)
-        ~f:(fun (list, f) ->
-          require_equal (module Int) (count list ~f) (length (filter list ~f)));
-      quickcheck_m
-        (module struct
-          type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
-        end)
-        ~f:(fun (list, f) ->
-          require_equal (module Int) (counti list ~f) (length (filteri list ~f)))
-    ;;
+  let%test_unit _ =
+    [%test_result: int] (counti [ 0; 1; 2; 3; 4 ] ~f:(fun idx x -> idx = x)) ~expect:5
+  ;;
 
-    let%test_unit _ =
-      [%test_result: int] (counti [ 0; 1; 2; 3; 4 ] ~f:(fun idx x -> idx = x)) ~expect:5
-    ;;
+  let%test_unit _ =
+    [%test_result: int] (counti [ 0; 1; 2; 3; 4 ] ~f:(fun idx x -> idx = 4 - x)) ~expect:1
+  ;;
+end
 
-    let%test_unit _ =
-      [%test_result: int]
-        (counti [ 0; 1; 2; 3; 4 ] ~f:(fun idx x -> idx = 4 - x))
-        ~expect:1
-    ;;
-  end)
-;;
+module%test [@name "{min,max}_elt"] _ = struct
+  let test_in_list_and_forall ~tested_f ~holds_for_res_over_all_elem =
+    quickcheck_m
+      (module struct
+        type t = int list [@@deriving quickcheck, sexp_of]
+      end)
+      ~f:(fun list ->
+        let res = tested_f list ~compare:[%compare: int] in
+        match res with
+        | None -> require (is_empty list)
+        | Some res ->
+          require (mem list res ~equal:Int.equal);
+          iter list ~f:(fun elem -> require (holds_for_res_over_all_elem ~res ~elem)))
+  ;;
 
-let%test_module "{min,max}_elt" =
-  (module struct
-    let test_in_list_and_forall ~tested_f ~holds_for_res_over_all_elem =
-      quickcheck_m
-        (module struct
-          type t = int list [@@deriving quickcheck, sexp_of]
-        end)
-        ~f:(fun list ->
-          let res = tested_f list ~compare:[%compare: int] in
-          match res with
-          | None -> require (is_empty list)
-          | Some res ->
-            require (mem list res ~equal:Int.equal);
-            iter list ~f:(fun elem -> require (holds_for_res_over_all_elem ~res ~elem)))
-    ;;
+  let%expect_test "min_elt" =
+    test_in_list_and_forall
+      ~tested_f:min_elt
+      ~holds_for_res_over_all_elem:(fun ~res ~elem -> res <= elem)
+  ;;
 
-    let%expect_test "min_elt" =
-      test_in_list_and_forall
-        ~tested_f:min_elt
-        ~holds_for_res_over_all_elem:(fun ~res ~elem -> res <= elem)
-    ;;
-
-    let%expect_test "max_elt" =
-      test_in_list_and_forall
-        ~tested_f:max_elt
-        ~holds_for_res_over_all_elem:(fun ~res ~elem -> res >= elem)
-    ;;
-  end)
-;;
+  let%expect_test "max_elt" =
+    test_in_list_and_forall
+      ~tested_f:max_elt
+      ~holds_for_res_over_all_elem:(fun ~res ~elem -> res >= elem)
+  ;;
+end
 
 let%expect_test "[map2]" =
   let test xs ys =

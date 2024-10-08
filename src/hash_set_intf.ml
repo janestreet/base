@@ -172,7 +172,7 @@ module type Hash_set = sig
   module Poly : sig
     type nonrec 'a t = 'a t [@@deriving_inline sexp, sexp_grammar]
 
-    include Sexplib0.Sexpable.S1 with type 'a t := 'a t
+    include Sexplib0.Sexpable.S_any1 with type 'a t := 'a t
 
     val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 

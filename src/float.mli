@@ -700,7 +700,7 @@ val ieee_mantissa : t -> Int63.t
 module Terse : sig
   type nonrec t = t [@@deriving_inline sexp, sexp_grammar]
 
-  include Sexplib0.Sexpable.S with type t := t
+  include Sexplib0.Sexpable.S_any with type t := t
 
   val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 

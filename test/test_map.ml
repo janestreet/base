@@ -158,238 +158,232 @@ let%expect_test "combine_errors" =
     |}]
 ;;
 
-let%test_module "Poly" =
-  (module struct
-    let%test _ = length Poly.empty = 0
+module%test Poly = struct
+  let%test _ = length Poly.empty = 0
 
-    let%test _ =
-      let a = Poly.of_alist_exn [] in
-      Poly.equal Base.Poly.equal a Poly.empty
+  let%test _ =
+    let a = Poly.of_alist_exn [] in
+    Poly.equal Base.Poly.equal a Poly.empty
+  ;;
+
+  let%test _ =
+    let a = Poly.of_alist_exn [ "a", 1 ] in
+    let b = Poly.of_alist_exn [ 1, "b" ] in
+    length a = length b
+  ;;
+end
+
+module%test [@name "[symmetric_diff]"] _ = struct
+  let%expect_test "examples" =
+    let test alist1 alist2 =
+      Map.symmetric_diff
+        ~data_equal:Int.equal
+        (Map.of_alist_exn (module String) alist1)
+        (Map.of_alist_exn (module String) alist2)
+      |> Sequence.to_list
+      |> [%sexp_of: (string, int) Symmetric_diff_element.t list]
+      |> print_s
+    in
+    test [] [];
+    [%expect {| () |}];
+    test [ "one", 1 ] [];
+    [%expect {| ((one (Left 1))) |}];
+    test [] [ "two", 2 ];
+    [%expect {| ((two (Right 2))) |}];
+    test [ "one", 1; "two", 2 ] [ "one", 1; "two", 2 ];
+    [%expect {| () |}];
+    test [ "one", 1; "two", 2 ] [ "one", 1; "two", 3 ];
+    [%expect {| ((two (Unequal (2 3)))) |}]
+  ;;
+
+  module String_to_int_map = struct
+    type t = int Map.M(String).t [@@deriving equal, sexp_of]
+
+    open Base_quickcheck
+
+    let quickcheck_generator =
+      Generator.map_t_m (module String) Generator.string Generator.int
     ;;
 
-    let%test _ =
-      let a = Poly.of_alist_exn [ "a", 1 ] in
-      let b = Poly.of_alist_exn [ 1, "b" ] in
-      length a = length b
-    ;;
-  end)
-;;
+    let quickcheck_observer = Observer.map_t Observer.string Observer.int
+    let quickcheck_shrinker = Shrinker.map_t Shrinker.string Shrinker.int
+  end
 
-let%test_module "[symmetric_diff]" =
-  (module struct
-    let%expect_test "examples" =
-      let test alist1 alist2 =
-        Map.symmetric_diff
-          ~data_equal:Int.equal
-          (Map.of_alist_exn (module String) alist1)
-          (Map.of_alist_exn (module String) alist2)
-        |> Sequence.to_list
-        |> [%sexp_of: (string, int) Symmetric_diff_element.t list]
-        |> print_s
-      in
-      test [] [];
-      [%expect {| () |}];
-      test [ "one", 1 ] [];
-      [%expect {| ((one (Left 1))) |}];
-      test [] [ "two", 2 ];
-      [%expect {| ((two (Right 2))) |}];
-      test [ "one", 1; "two", 2 ] [ "one", 1; "two", 2 ];
-      [%expect {| () |}];
-      test [ "one", 1; "two", 2 ] [ "one", 1; "two", 3 ];
-      [%expect {| ((two (Unequal (2 3)))) |}]
-    ;;
+  let apply_diff_left_to_right map (key, elt) =
+    match elt with
+    | `Right data | `Unequal (_, data) -> Map.set map ~key ~data
+    | `Left _ -> Map.remove map key
+  ;;
 
-    module String_to_int_map = struct
-      type t = int Map.M(String).t [@@deriving equal, sexp_of]
+  let apply_diff_right_to_left map (key, elt) =
+    match elt with
+    | `Left data | `Unequal (data, _) -> Map.set map ~key ~data
+    | `Right _ -> Map.remove map key
+  ;;
 
-      open Base_quickcheck
+  (* This is a deterministic benchmark rather than a test, measuring the number of
+       comparisons made by fold_symmetric_diff. *)
+  let%expect_test "number of key comparisons" =
+    let count = ref 0 in
+    let measure_comparisons f =
+      let c = !count in
+      f ();
+      !count - c
+    in
+    let module Key = struct
+      type t = int [@@deriving sexp_of]
 
-      let quickcheck_generator =
-        Generator.map_t_m (module String) Generator.string Generator.int
+      let compare x y =
+        Int.incr count;
+        compare_int x y
       ;;
 
-      let quickcheck_observer = Observer.map_t Observer.string Observer.int
-      let quickcheck_shrinker = Shrinker.map_t Shrinker.string Shrinker.int
+      include (val Comparator.make ~compare ~sexp_of_t)
     end
-
-    let apply_diff_left_to_right map (key, elt) =
-      match elt with
-      | `Right data | `Unequal (_, data) -> Map.set map ~key ~data
-      | `Left _ -> Map.remove map key
-    ;;
-
-    let apply_diff_right_to_left map (key, elt) =
-      match elt with
-      | `Left data | `Unequal (data, _) -> Map.set map ~key ~data
-      | `Right _ -> Map.remove map key
-    ;;
-
-    (* This is a deterministic benchmark rather than a test, measuring the number of
-       comparisons made by fold_symmetric_diff. *)
-    let%expect_test "number of key comparisons" =
-      let count = ref 0 in
-      let measure_comparisons f =
-        let c = !count in
-        f ();
-        !count - c
-      in
-      let module Key = struct
-        type t = int [@@deriving sexp_of]
-
-        let compare x y =
-          Int.incr count;
-          compare_int x y
-        ;;
-
-        include (val Comparator.make ~compare ~sexp_of_t)
-      end
-      in
-      let test size =
-        let map_pairs =
-          (* We measure every step of building up a map from one side. This covers
+    in
+    let test size =
+      let map_pairs =
+        (* We measure every step of building up a map from one side. This covers
              different stages of rebalancing along the way. *)
-          List.folding_map
-            (List.init size ~f:Int.succ)
-            ~init:(Map.singleton (module Key) 0 0)
-            ~f:(fun a i ->
-              let b = Map.add_exn a ~key:i ~data:i in
-              b, (a, b))
-        in
-        let add_comparisons = !count in
-        count := 0;
-        let comparisons =
-          List.map map_pairs ~f:(fun (a, b) ->
-            measure_comparisons (fun () ->
-              Map.fold_symmetric_diff a b ~init:() ~f:(fun () _ -> ()) ~data_equal:( = )))
-          |> List.sort ~compare:Int.compare
-        in
-        let len = List.length comparisons in
-        let diff_comparisons = List.sum (module Int) comparisons ~f:Fn.id in
-        let mean_diff_comparisons = Float.of_int diff_comparisons /. Float.of_int len in
-        let median_diff_comparisons = List.nth_exn comparisons (len / 2) in
-        let diff_comparison_buckets =
-          List.sort_and_group comparisons ~compare:Int.compare
-          |> List.map ~f:(fun list ->
-            [%sexp
-              { comparisons = (List.hd_exn list : int); times = (List.length list : int) }])
-        in
-        print_s
-          [%message
-            ""
-              (size : int)
-              (add_comparisons : int)
-              (diff_comparisons : int)
-              (mean_diff_comparisons : float)
-              (median_diff_comparisons : int)
-              (diff_comparison_buckets : Sexp.t list)]
+        List.folding_map
+          (List.init size ~f:Int.succ)
+          ~init:(Map.singleton (module Key) 0 0)
+          ~f:(fun a i ->
+            let b = Map.add_exn a ~key:i ~data:i in
+            b, (a, b))
       in
-      test (1 lsl 20);
-      [%expect
-        {|
-        ((size                    1_048_576)
-         (add_comparisons         20_971_521)
-         (diff_comparisons        22_020_076)
-         (mean_diff_comparisons   20.999980926513672)
-         (median_diff_comparisons 21)
-         (diff_comparison_buckets (
-           ((comparisons 1)  (times 1))
-           ((comparisons 2)  (times 1))
-           ((comparisons 3)  (times 1))
-           ((comparisons 4)  (times 2))
-           ((comparisons 5)  (times 4))
-           ((comparisons 6)  (times 8))
-           ((comparisons 7)  (times 16))
-           ((comparisons 8)  (times 32))
-           ((comparisons 9)  (times 64))
-           ((comparisons 10) (times 128))
-           ((comparisons 11) (times 256))
-           ((comparisons 12) (times 512))
-           ((comparisons 13) (times 1_024))
-           ((comparisons 14) (times 2_048))
-           ((comparisons 15) (times 4_096))
-           ((comparisons 16) (times 8_192))
-           ((comparisons 17) (times 16_384))
-           ((comparisons 18) (times 32_768))
-           ((comparisons 19) (times 65_536))
-           ((comparisons 20) (times 131_072))
-           ((comparisons 21) (times 262_144))
-           ((comparisons 22) (times 524_287)))))
-        |}]
-    ;;
+      let add_comparisons = !count in
+      count := 0;
+      let comparisons =
+        List.map map_pairs ~f:(fun (a, b) ->
+          measure_comparisons (fun () ->
+            Map.fold_symmetric_diff a b ~init:() ~f:(fun () _ -> ()) ~data_equal:( = )))
+        |> List.sort ~compare:Int.compare
+      in
+      let len = List.length comparisons in
+      let diff_comparisons = List.sum (module Int) comparisons ~f:Fn.id in
+      let mean_diff_comparisons = Float.of_int diff_comparisons /. Float.of_int len in
+      let median_diff_comparisons = List.nth_exn comparisons (len / 2) in
+      let diff_comparison_buckets =
+        List.sort_and_group comparisons ~compare:Int.compare
+        |> List.map ~f:(fun list ->
+          [%sexp
+            { comparisons = (List.hd_exn list : int); times = (List.length list : int) }])
+      in
+      print_s
+        [%message
+          ""
+            (size : int)
+            (add_comparisons : int)
+            (diff_comparisons : int)
+            (mean_diff_comparisons : float)
+            (median_diff_comparisons : int)
+            (diff_comparison_buckets : Sexp.t list)]
+    in
+    test (1 lsl 20);
+    [%expect
+      {|
+      ((size                    1_048_576)
+       (add_comparisons         20_971_521)
+       (diff_comparisons        22_020_076)
+       (mean_diff_comparisons   20.999980926513672)
+       (median_diff_comparisons 21)
+       (diff_comparison_buckets (
+         ((comparisons 1)  (times 1))
+         ((comparisons 2)  (times 1))
+         ((comparisons 3)  (times 1))
+         ((comparisons 4)  (times 2))
+         ((comparisons 5)  (times 4))
+         ((comparisons 6)  (times 8))
+         ((comparisons 7)  (times 16))
+         ((comparisons 8)  (times 32))
+         ((comparisons 9)  (times 64))
+         ((comparisons 10) (times 128))
+         ((comparisons 11) (times 256))
+         ((comparisons 12) (times 512))
+         ((comparisons 13) (times 1_024))
+         ((comparisons 14) (times 2_048))
+         ((comparisons 15) (times 4_096))
+         ((comparisons 16) (times 8_192))
+         ((comparisons 17) (times 16_384))
+         ((comparisons 18) (times 32_768))
+         ((comparisons 19) (times 65_536))
+         ((comparisons 20) (times 131_072))
+         ((comparisons 21) (times 262_144))
+         ((comparisons 22) (times 524_287)))))
+      |}]
+  ;;
 
-    let%expect_test "reconstructing in both directions" =
-      let test (map1, map2) =
-        let diff = Map.symmetric_diff map1 map2 ~data_equal:Int.equal in
-        require_equal
-          (module String_to_int_map)
-          (Sequence.fold diff ~init:map1 ~f:apply_diff_left_to_right)
-          map2;
-        require_equal
-          (module String_to_int_map)
-          map1
-          (Sequence.fold diff ~init:map2 ~f:apply_diff_right_to_left)
-      in
-      Base_quickcheck.Test.run_exn
-        ~f:test
+  let%expect_test "reconstructing in both directions" =
+    let test (map1, map2) =
+      let diff = Map.symmetric_diff map1 map2 ~data_equal:Int.equal in
+      require_equal
+        (module String_to_int_map)
+        (Sequence.fold diff ~init:map1 ~f:apply_diff_left_to_right)
+        map2;
+      require_equal
+        (module String_to_int_map)
+        map1
+        (Sequence.fold diff ~init:map2 ~f:apply_diff_right_to_left)
+    in
+    Base_quickcheck.Test.run_exn
+      ~f:test
+      (module struct
+        type t = String_to_int_map.t * String_to_int_map.t
+        [@@deriving quickcheck, sexp_of]
+      end)
+  ;;
+
+  let%expect_test "vs [fold_symmetric_diff]" =
+    let test (map1, map2) =
+      require_compare_equal
         (module struct
-          type t = String_to_int_map.t * String_to_int_map.t
-          [@@deriving quickcheck, sexp_of]
+          type t = (string, int) Symmetric_diff_element.t list
+          [@@deriving compare, sexp_of]
         end)
-    ;;
+        (Map.symmetric_diff map1 map2 ~data_equal:Int.equal
+         |> Sequence.fold ~init:[] ~f:(Fn.flip List.cons))
+        (Map.fold_symmetric_diff
+           map1
+           map2
+           ~data_equal:Int.equal
+           ~init:[]
+           ~f:(Fn.flip List.cons))
+    in
+    Base_quickcheck.Test.run_exn
+      ~f:test
+      (module struct
+        type t = String_to_int_map.t * String_to_int_map.t
+        [@@deriving quickcheck, sexp_of]
+      end)
+  ;;
+end
 
-    let%expect_test "vs [fold_symmetric_diff]" =
-      let test (map1, map2) =
-        require_compare_equal
-          (module struct
-            type t = (string, int) Symmetric_diff_element.t list
-            [@@deriving compare, sexp_of]
-          end)
-          (Map.symmetric_diff map1 map2 ~data_equal:Int.equal
-           |> Sequence.fold ~init:[] ~f:(Fn.flip List.cons))
-          (Map.fold_symmetric_diff
-             map1
-             map2
-             ~data_equal:Int.equal
-             ~init:[]
-             ~f:(Fn.flip List.cons))
-      in
-      Base_quickcheck.Test.run_exn
-        ~f:test
-        (module struct
-          type t = String_to_int_map.t * String_to_int_map.t
-          [@@deriving quickcheck, sexp_of]
-        end)
-    ;;
-  end)
-;;
+module%test [@name "of_alist_multi key equality"] _ = struct
+  module Key = struct
+    module T = struct
+      type t = string * int [@@deriving sexp_of]
 
-let%test_module "of_alist_multi key equality" =
-  (module struct
-    module Key = struct
-      module T = struct
-        type t = string * int [@@deriving sexp_of]
-
-        let compare = [%compare: string * _]
-      end
-
-      include T
-      include Comparator.Make (T)
+      let compare = [%compare: string * _]
     end
 
-    let alist = [ ("a", 1), 1; ("a", 2), 3; ("b", 0), 0; ("a", 3), 2 ]
+    include T
+    include Comparator.Make (T)
+  end
 
-    let%expect_test "of_alist_multi chooses the first key" =
-      print_s [%sexp (Map.of_alist_multi (module Key) alist : int list Map.M(Key).t)];
-      [%expect {| (((a 1) (1 3 2)) ((b 0) (0))) |}]
-    ;;
+  let alist = [ ("a", 1), 1; ("a", 2), 3; ("b", 0), 0; ("a", 3), 2 ]
 
-    let%test_unit "of_{alist,sequence}_multi have the same behaviour" =
-      [%test_result: int list Map.M(Key).t]
-        ~expect:(Map.of_alist_multi (module Key) alist)
-        (Map.of_sequence_multi (module Key) (Sequence.of_list alist))
-    ;;
-  end)
-;;
+  let%expect_test "of_alist_multi chooses the first key" =
+    print_s [%sexp (Map.of_alist_multi (module Key) alist : int list Map.M(Key).t)];
+    [%expect {| (((a 1) (1 3 2)) ((b 0) (0))) |}]
+  ;;
+
+  let%test_unit "of_{alist,sequence}_multi have the same behaviour" =
+    [%test_result: int list Map.M(Key).t]
+      ~expect:(Map.of_alist_multi (module Key) alist)
+      (Map.of_sequence_multi (module Key) (Sequence.of_list alist))
+  ;;
+end
 
 let%expect_test "remove returns the same object if there's nothing to do" =
   let map1 = Map.of_alist_exn (module Int) [ 1, "one"; 3, "three" ] in

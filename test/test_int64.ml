@@ -75,6 +75,47 @@ let%expect_test "bswap64" =
     |}]
 ;;
 
+let%expect_test "of_string" =
+  let test s =
+    let result = Or_error.try_with (fun () -> of_string s) in
+    print_s [%sexp (result : t Or_error.t)]
+  in
+  test "0";
+  [%expect {| (Ok 0) |}];
+  test "-1";
+  [%expect {| (Ok -1) |}];
+  test "0xBEEF";
+  [%expect {| (Ok 48_879) |}];
+  (* max_value *)
+  test "9_223_372_036_854_775_807";
+  [%expect {| (Ok 9_223_372_036_854_775_807) |}];
+  (* max_value + 1 *)
+  test "9_223_372_036_854_775_808";
+  [%expect {| (Error (Failure Int64.of_string)) |}];
+  (* min_value  *)
+  test "-9_223_372_036_854_775_808";
+  [%expect {| (Ok -9_223_372_036_854_775_808) |}];
+  (* min_value - 1 *)
+  test "-9_223_372_036_854_775_809";
+  [%expect {| (Error (Failure Int64.of_string)) |}];
+  (*
+   * Bases other than 10 are more permissive:
+   *)
+  (* max_value (hex) *)
+  test "0x7fff_ffff_ffff_ffff";
+  [%expect {| (Ok 9_223_372_036_854_775_807) |}];
+  (* max_value + 1 (hex) *)
+  test "0x8000_0000_0000_0000";
+  [%expect {| (Ok -9_223_372_036_854_775_808) |}];
+  (* min_value (hex) *)
+  test "-0x8000_0000_0000_0000";
+  [%expect {| (Ok -9_223_372_036_854_775_808) |}];
+  (* min_value - 1 (hex) *)
+  test "-0x8000_0000_0000_0001";
+  [%expect {| (Ok 9_223_372_036_854_775_807) |}];
+  ()
+;;
+
 let%expect_test "binary" =
   quickcheck_m
     (module struct

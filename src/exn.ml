@@ -34,7 +34,7 @@ let () =
 
 [@@@end]
 
-exception Sexp of Sexp.t
+exception Sexp of Sexp.t Lazy.t
 
 (* We install a custom exn-converter rather than use:
 
@@ -47,13 +47,14 @@ exception Sexp of Sexp.t
    to eliminate the extra wrapping of [(Sexp ...)]. *)
 let () =
   Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Sexp] (function
-    | Sexp t -> t
+    | Sexp t -> Lazy.force t
     | _ ->
       (* Reaching this branch indicates a bug in sexplib. *)
       assert false)
 ;;
 
-let create_s sexp = Sexp sexp
+let create_s sexp = Sexp (Lazy.from_val sexp)
+let create_s_lazy lazy_sexp = Sexp lazy_sexp
 
 let raise_with_original_backtrace t backtrace =
   Stdlib.Printexc.raise_with_backtrace t backtrace

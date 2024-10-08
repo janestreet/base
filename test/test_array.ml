@@ -3,27 +3,24 @@ open Base_quickcheck
 open Expect_test_helpers_base
 open Array
 
-let%test_module "Binary_searchable" =
-  (module Test_binary_searchable.Test1 (struct
+module%test Binary_searchable = Test_binary_searchable.Test1 (struct
+    include Array
+
+    module For_test = struct
+      let of_array = Fn.id
+    end
+  end)
+
+module%test Blit =
+  Test_blit.Test1
+    (struct
+      type 'a z = 'a
+
       include Array
 
-      module For_test = struct
-        let of_array = Fn.id
-      end
-    end))
-;;
-
-let%test_module "Blit" =
-  (module Test_blit.Test1
-            (struct
-              type 'a z = 'a
-
-              include Array
-
-              let create_bool ~len = create ~len false
-            end)
-            (Array))
-;;
+      let create_bool ~len = create ~len false
+    end)
+    (Array)
 
 module List_helpers = struct
   let rec sprinkle x xs =
@@ -40,58 +37,54 @@ module List_helpers = struct
   ;;
 end
 
-let%test_module "Sort" =
-  (module struct
-    open Private.Sort
+module%test Sort = struct
+  open Private.Sort
 
-    let%test_module "Intro_sort.five_element_sort" =
-      (module struct
-        (* run [five_element_sort] on all permutations of an array of five elements *)
+  module%test [@name "Intro_sort.five_element_sort"] _ = struct
+    (* run [five_element_sort] on all permutations of an array of five elements *)
 
-        let all_perms = List_helpers.permutations [ 1; 2; 3; 4; 5 ]
-        let%test _ = List.length all_perms = 120
-        let%test _ = not (List.contains_dup ~compare:[%compare: int list] all_perms)
+    let all_perms = List_helpers.permutations [ 1; 2; 3; 4; 5 ]
+    let%test _ = List.length all_perms = 120
+    let%test _ = not (List.contains_dup ~compare:[%compare: int list] all_perms)
 
-        let%test _ =
-          List.for_all all_perms ~f:(fun l ->
-            let arr = Array.of_list l in
-            Intro_sort.five_element_sort arr ~compare:[%compare: int] 0 1 2 3 4;
-            [%compare.equal: int t] arr [| 1; 2; 3; 4; 5 |])
-        ;;
-      end)
+    let%test _ =
+      List.for_all all_perms ~f:(fun l ->
+        let arr = Array.of_list l in
+        Intro_sort.five_element_sort arr ~compare:[%compare: int] 0 1 2 3 4;
+        [%compare.equal: int t] arr [| 1; 2; 3; 4; 5 |])
+    ;;
+  end
+
+  module Test (M : Private.Sort.Sort) = struct
+    let random_data ~length ~range =
+      let arr = Array.create ~len:length 0 in
+      for i = 0 to length - 1 do
+        arr.(i) <- Random.int range
+      done;
+      arr
     ;;
 
-    module Test (M : Private.Sort.Sort) = struct
-      let random_data ~length ~range =
-        let arr = Array.create ~len:length 0 in
-        for i = 0 to length - 1 do
-          arr.(i) <- Random.int range
-        done;
-        arr
-      ;;
+    let assert_sorted arr =
+      M.sort arr ~left:0 ~right:(Array.length arr - 1) ~compare:[%compare: int];
+      let len = Array.length arr in
+      let rec loop i prev =
+        if i = len then true else if arr.(i) < prev then false else loop (i + 1) arr.(i)
+      in
+      loop 0 (-1)
+    ;;
 
-      let assert_sorted arr =
-        M.sort arr ~left:0 ~right:(Array.length arr - 1) ~compare:[%compare: int];
-        let len = Array.length arr in
-        let rec loop i prev =
-          if i = len then true else if arr.(i) < prev then false else loop (i + 1) arr.(i)
-        in
-        loop 0 (-1)
-      ;;
+    let%test _ = assert_sorted (random_data ~length:0 ~range:100)
+    let%test _ = assert_sorted (random_data ~length:1 ~range:100)
+    let%test _ = assert_sorted (random_data ~length:100 ~range:1_000)
+    let%test _ = assert_sorted (random_data ~length:1_000 ~range:1)
+    let%test _ = assert_sorted (random_data ~length:1_000 ~range:10)
+    let%test _ = assert_sorted (random_data ~length:1_000 ~range:1_000_000)
+  end
 
-      let%test _ = assert_sorted (random_data ~length:0 ~range:100)
-      let%test _ = assert_sorted (random_data ~length:1 ~range:100)
-      let%test _ = assert_sorted (random_data ~length:100 ~range:1_000)
-      let%test _ = assert_sorted (random_data ~length:1_000 ~range:1)
-      let%test _ = assert_sorted (random_data ~length:1_000 ~range:10)
-      let%test _ = assert_sorted (random_data ~length:1_000 ~range:1_000_000)
-    end
-
-    let%test_module _ = (module Test (Insertion_sort))
-    let%test_module _ = (module Test (Heap_sort))
-    let%test_module _ = (module Test (Intro_sort))
-  end)
-;;
+  module%test _ = Test (Insertion_sort)
+  module%test _ = Test (Heap_sort)
+  module%test _ = Test (Intro_sort)
+end
 
 let%test _ = is_sorted [||] ~compare:[%compare: int]
 let%test _ = is_sorted [| 0 |] ~compare:[%compare: int]
@@ -201,52 +194,45 @@ let%test _ = foldi [||] ~init:13 ~f:(fun _ _ _ -> failwith "bad") = 13
 let%test _ = foldi [| 13 |] ~init:17 ~f:(fun i ac x -> ac + i + x) = 30
 let%test _ = foldi [| 13; 17 |] ~init:19 ~f:(fun i ac x -> ac + i + x) = 50
 
-let%test_module "count{,i}" =
-  (module struct
-    let%expect_test "[Array.count{,i} = List.count{,i}]" =
-      quickcheck_m
-        (module struct
-          type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
-        end)
-        ~f:(fun (list, f) ->
-          require_equal (module Int) (list |> List.count ~f) (list |> of_list |> count ~f));
-      quickcheck_m
-        (module struct
-          type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
-        end)
-        ~f:(fun (list, f) ->
-          require_equal
-            (module Int)
-            (list |> List.counti ~f)
-            (list |> of_list |> counti ~f))
-    ;;
+module%test [@name "count{,i}"] _ = struct
+  let%expect_test "[Array.count{,i} = List.count{,i}]" =
+    quickcheck_m
+      (module struct
+        type t = int list * (int -> bool) [@@deriving quickcheck, sexp_of]
+      end)
+      ~f:(fun (list, f) ->
+        require_equal (module Int) (list |> List.count ~f) (list |> of_list |> count ~f));
+    quickcheck_m
+      (module struct
+        type t = int list * (int -> int -> bool) [@@deriving quickcheck, sexp_of]
+      end)
+      ~f:(fun (list, f) ->
+        require_equal (module Int) (list |> List.counti ~f) (list |> of_list |> counti ~f))
+  ;;
 
-    let%test _ = counti [| 0; 1; 2; 3; 4 |] ~f:(fun idx x -> idx = x) = 5
-    let%test _ = counti [| 0; 1; 2; 3; 4 |] ~f:(fun idx x -> idx = 4 - x) = 1
-  end)
-;;
+  let%test _ = counti [| 0; 1; 2; 3; 4 |] ~f:(fun idx x -> idx = x) = 5
+  let%test _ = counti [| 0; 1; 2; 3; 4 |] ~f:(fun idx x -> idx = 4 - x) = 1
+end
 
-let%test_module "{min,max}_elt" =
-  (module struct
-    let test_opt_selector arr_fun list_fun =
-      quickcheck_m
-        (module struct
-          type t = int list [@@deriving sexp_of, quickcheck]
-        end)
-        ~f:(fun list ->
-          let arr = of_list list in
-          require_equal
-            (module struct
-              type t = int option [@@deriving sexp_of, equal]
-            end)
-            (arr_fun arr ~compare:(fun x y -> Int.compare x y))
-            (list_fun list ~compare:(fun x y -> Int.compare x y)))
-    ;;
+module%test [@name "{min,max}_elt"] _ = struct
+  let test_opt_selector arr_fun list_fun =
+    quickcheck_m
+      (module struct
+        type t = int list [@@deriving sexp_of, quickcheck]
+      end)
+      ~f:(fun list ->
+        let arr = of_list list in
+        require_equal
+          (module struct
+            type t = int option [@@deriving sexp_of, equal]
+          end)
+          (arr_fun arr ~compare:(fun x y -> Int.compare x y))
+          (list_fun list ~compare:(fun x y -> Int.compare x y)))
+  ;;
 
-    let%expect_test "min_elt" = test_opt_selector min_elt List.min_elt
-    let%expect_test "max_elt" = test_opt_selector max_elt List.max_elt
-  end)
-;;
+  let%expect_test "min_elt" = test_opt_selector min_elt List.min_elt
+  let%expect_test "max_elt" = test_opt_selector max_elt List.max_elt
+end
 
 let%test_unit _ =
   for i = 0 to 5 do
@@ -506,73 +492,100 @@ let%test_unit _ =
     ~expect:(0, [||])
 ;;
 
-let%test_module "permute" =
-  (module struct
-    module Int_list = struct
-      type t = int list [@@deriving compare, sexp_of]
-
-      include (val Comparator.make ~compare ~sexp_of_t)
-    end
-
-    let test_permute initial_contents ~pos ~len =
-      let all_permutations =
-        let pos, len =
-          Ordered_collection_common.get_pos_len_exn
-            ?pos
-            ?len
-            ~total_length:(List.length initial_contents)
-            ()
-        in
-        let left = List.take initial_contents pos in
-        let middle = List.sub initial_contents ~pos ~len in
-        let right = List.drop initial_contents (pos + len) in
-        Set.of_list
-          (module Int_list)
-          (List_helpers.permutations middle
-           |> List.map ~f:(fun middle -> left @ middle @ right))
-      in
-      let not_yet_seen = ref all_permutations in
-      while not (Set.is_empty !not_yet_seen) do
-        let array = of_list initial_contents in
-        permute ?pos ?len array;
-        let permutation = to_list array in
-        if not (Set.mem all_permutations permutation)
-        then
-          raise_s
-            [%sexp
-              "invalid permutation"
-              , { array_length = (List.length initial_contents : int)
-                ; permutation : int list
-                ; pos : int option
-                ; len : int option
-                }];
-        not_yet_seen := Set.remove !not_yet_seen permutation
-      done
-    ;;
-
-    let%expect_test "permute different array lengths and subranges" =
-      let indices = None :: List.map [ 0; 1; 2; 3; 4 ] ~f:Option.some in
-      for array_length = 0 to 4 do
-        let initial_contents = List.init array_length ~f:Int.succ in
-        List.iter indices ~f:(fun pos ->
-          List.iter indices ~f:(fun len ->
-            match
-              Ordered_collection_common.get_pos_len
-                ?pos
-                ?len
-                ~total_length:array_length
-                ()
-            with
-            | Ok _ -> test_permute initial_contents ~pos ~len
-            | Error _ ->
-              require
-                (Exn.does_raise (fun () ->
-                   permute ?pos ?len (Array.of_list initial_contents)))))
-      done;
-      [%expect {| |}]
-    ;;
-  end)
+let test_partition_mapi array ~f ~expect =
+  [%test_result: int array * int array] (partition_mapi array ~f) ~expect
 ;;
+
+let%test_unit _ =
+  test_partition_mapi
+    [||]
+    ~f:(fun i x -> if i = x then First (i + x) else Second (i - x))
+    ~expect:([||], [||])
+;;
+
+let%test_unit _ =
+  test_partition_mapi
+    [| 3; 5; 2; 1; 4 |]
+    ~f:(fun i x -> if i = x then First (i + x) else Second (i - x))
+    ~expect:([| 4; 8 |], [| -3; -4; 2 |])
+;;
+
+let test_partitioni_tf list ~f ~expect =
+  [%test_result: int array * int array] (partitioni_tf list ~f) ~expect
+;;
+
+let%test_unit _ =
+  test_partitioni_tf [||] ~f:(fun i x -> i = x && x > 2) ~expect:([||], [||])
+;;
+
+let%test_unit _ =
+  test_partitioni_tf
+    [| 3; 5; 2; 1; 4 |]
+    ~f:(fun i x -> i = x && x > 2)
+    ~expect:([| 4 |], [| 3; 5; 2; 1 |])
+;;
+
+module%test [@name "permute"] _ = struct
+  module Int_list = struct
+    type t = int list [@@deriving compare, sexp_of]
+
+    include (val Comparator.make ~compare ~sexp_of_t)
+  end
+
+  let test_permute initial_contents ~pos ~len =
+    let all_permutations =
+      let pos, len =
+        Ordered_collection_common.get_pos_len_exn
+          ?pos
+          ?len
+          ~total_length:(List.length initial_contents)
+          ()
+      in
+      let left = List.take initial_contents pos in
+      let middle = List.sub initial_contents ~pos ~len in
+      let right = List.drop initial_contents (pos + len) in
+      Set.of_list
+        (module Int_list)
+        (List_helpers.permutations middle
+         |> List.map ~f:(fun middle -> left @ middle @ right))
+    in
+    let not_yet_seen = ref all_permutations in
+    while not (Set.is_empty !not_yet_seen) do
+      let array = of_list initial_contents in
+      permute ?pos ?len array;
+      let permutation = to_list array in
+      if not (Set.mem all_permutations permutation)
+      then
+        raise_s
+          [%sexp
+            "invalid permutation"
+            , { array_length = (List.length initial_contents : int)
+              ; permutation : int list
+              ; pos : int option
+              ; len : int option
+              }];
+      not_yet_seen := Set.remove !not_yet_seen permutation
+    done
+  ;;
+
+  let%expect_test "permute different array lengths and subranges" =
+    let indices = None :: List.map [ 0; 1; 2; 3; 4 ] ~f:Option.some in
+    for array_length = 0 to 4 do
+      let initial_contents = List.init array_length ~f:Int.succ in
+      List.iter indices ~f:(fun pos ->
+        List.iter indices ~f:(fun len ->
+          match
+            Ordered_collection_common.get_pos_len ?pos ?len ~total_length:array_length ()
+          with
+          | Ok _ -> test_permute initial_contents ~pos ~len
+          | Error _ ->
+            require
+              (Exn.does_raise (fun () ->
+                 permute ?pos ?len (Array.of_list initial_contents)))))
+    done;
+    [%expect {| |}]
+  ;;
+end
 
 let%expect_test "create_float_uninitialized" =
   let array = create_float_uninitialized ~len:10 in

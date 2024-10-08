@@ -1181,6 +1181,23 @@ let partition_tf t ~f =
 
 let partition_result t = partition_map t ~f:Result.to_either
 
+let partition_mapi t ~f =
+  let rec loop i t fst snd =
+    match t with
+    | [] -> rev fst, rev snd
+    | x :: t ->
+      (match (f i x : _ Either0.t) with
+       | First y -> loop (i + 1) t (y :: fst) snd
+       | Second y -> loop (i + 1) t fst (y :: snd))
+  in
+  loop 0 t [] [] [@nontail]
+;;
+
+let partitioni_tf t ~f =
+  let f i x : _ Either.t = if f i x then First x else Second x in
+  partition_mapi t ~f [@nontail]
+;;
+
 module Assoc = struct
   type 'a key = ('a[@tag Sexplib0.Sexp_grammar.assoc_key_tag = List []])
   [@@deriving_inline sexp, sexp_grammar]

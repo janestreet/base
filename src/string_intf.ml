@@ -88,7 +88,7 @@ module type String = sig
 
   val globalize : t -> t
 
-  include Sexplib0.Sexpable.S with type t := t
+  include Sexplib0.Sexpable.S_any with type t := t
 
   val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
@@ -164,7 +164,7 @@ module type String = sig
     type nonrec t = t [@@deriving_inline hash, sexp, sexp_grammar]
 
     include Ppx_hash_lib.Hashable.S with type t := t
-    include Sexplib0.Sexpable.S with type t := t
+    include Sexplib0.Sexpable.S_any with type t := t
 
     val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
