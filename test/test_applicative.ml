@@ -191,35 +191,29 @@ module Test_applicative_s (A : Applicative.S with type 'a t := 'a Or_error.t) :
   module Applicative_infix = A.Applicative_infix
 end
 
-let%test_module "Make" =
-  (module Test_applicative_s (Applicative.Make (struct
-      type 'a t = 'a Or_error.t
+module%test Make = Test_applicative_s (Applicative.Make (struct
+    type 'a t = 'a Or_error.t
 
-      let return = Or_error.return
-      let apply = Or_error.apply
-      let map = `Define_using_apply
-    end)))
-;;
+    let return = Or_error.return
+    let apply = Or_error.apply
+    let map = `Define_using_apply
+  end))
 
-let%test_module "Make" =
-  (module Test_applicative_s (Applicative.Make_using_map2 (struct
-      type 'a t = 'a Or_error.t
+module%test Make = Test_applicative_s (Applicative.Make_using_map2 (struct
+    type 'a t = 'a Or_error.t
 
-      let return = Or_error.return
-      let map2 = Or_error.map2
-      let map = `Define_using_map2
-    end)))
-;;
+    let return = Or_error.return
+    let map2 = Or_error.map2
+    let map = `Define_using_map2
+  end))
 
-let%test_module "Make" =
-  (module Test_applicative_s (Applicative.Make_using_map2_local (struct
-      type 'a t = 'a Or_error.t
+module%test Make = Test_applicative_s (Applicative.Make_using_map2_local (struct
+    type 'a t = 'a Or_error.t
 
-      let return x = Ok x
-      let map2 = Or_error.map2
-      let map = `Define_using_map2
-    end)))
-;;
+    let return x = Ok x
+    let map2 = Or_error.map2
+    let map = `Define_using_map2
+  end))
 
 (* While law-abiding applicatives shouldn't be relying functions being called
    the minimal number of times, it is good for performance that things be this

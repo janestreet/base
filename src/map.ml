@@ -899,6 +899,19 @@ module Tree0 = struct
         with_length (bal l v d r) length)
   ;;
 
+  let update_and_return t key ~f ~length ~compare_key = exclave_
+    let result_ref = ref None in
+    let new_t =
+      update t key ~length ~compare_key ~f:(fun elt ->
+        let res = f elt in
+        result_ref := Some res;
+        res)
+    in
+    (* This [Option.value_exn] is safe because it is guaranteed by [update] that [f] will
+       be called exactly once. *)
+    !result_ref |> Option.value_exn |> Modes.Global.wrap, new_t
+  ;;
+
   let remove_multi t key ~length ~compare_key = exclave_
     change t key ~length ~compare_key ~f:(function
       | None | Some ([] | [ _ ]) -> None
@@ -2213,6 +2226,13 @@ module Accessors = struct
     [@nontail]
   ;;
 
+  let update_and_return t key ~f =
+    let result, new_t =
+      Tree0.update_and_return t.tree key ~f ~length:t.length ~compare_key:(compare_key t)
+    in
+    Modes.Global.unwrap result, like t new_t
+  ;;
+
   let find_exn t key =
     Tree0.find_exn
       t.tree
@@ -2675,7 +2695,19 @@ module Tree = struct
   ;;
 
   let update ~comparator t key ~f =
-    change ~comparator t key ~f:(fun data -> Some (f data)) [@nontail]
+    (Tree0.update t key ~f ~length:0 ~compare_key:comparator.Comparator.compare).tree
+  ;;
+
+  let update_and_return ~comparator t key ~f =
+    let result, tree0 =
+      Tree0.update_and_return
+        t
+        key
+        ~f
+        ~length:0
+        ~compare_key:comparator.Comparator.compare
+    in
+    Modes.Global.unwrap result, tree0.tree
   ;;
 
   let find_exn ~comparator t key =

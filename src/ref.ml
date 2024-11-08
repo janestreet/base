@@ -46,7 +46,7 @@ sig
 
   val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
 
-  include Sexplib0.Sexpable.S1 with type 'a t := 'a t
+  include Sexplib0.Sexpable.S_any1 with type 'a t := 'a t
 
   val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 

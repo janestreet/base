@@ -3,7 +3,7 @@ open Ppxlib
 
 module Specialize_polymorphic_compare = struct
   let signature ~loc =
-    [%sig:
+    [%sigil:
       [@@@ocaml.ppwarning "ppx_base_internal: intended only for use inside Base"]
 
       external ( = ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"

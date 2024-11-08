@@ -44,7 +44,7 @@ let equal eq1 eq2 t1 t2 =
   | First _, Second _ | Second _, First _ -> false
 ;;
 
-let local_equal eq1 eq2 t1 t2 =
+let equal__local eq1 eq2 t1 t2 =
   match t1, t2 with
   | First x, First y -> eq1 x y
   | Second x, Second y -> eq2 x y

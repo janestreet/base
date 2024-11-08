@@ -82,86 +82,84 @@ let really_show_backtrace s =
       (String.is_substring s ~substring:"handle_uncaught")
 ;;
 
-let%test_module ("Show native backtraces" [@tags "no-js"]) =
-  (module struct
-    (* good *)
-    let%expect_test "Base.Exn.reraise" =
-      test_reraiser _Base_Exn_reraise;
-      really_show_backtrace [%expect.output];
-      [%expect
-        {|
-        Before re-raise: true
-        After  re-raise: true
-        |}]
-    ;;
+module%test [@name "Show native backtraces"] [@tags "no-js"] _ = struct
+  (* good *)
+  let%expect_test "Base.Exn.reraise" =
+    test_reraiser _Base_Exn_reraise;
+    really_show_backtrace [%expect.output];
+    [%expect
+      {|
+      Before re-raise: true
+      After  re-raise: true
+      |}]
+  ;;
 
-    (* bad, because the backtrace was clobbered *)
-    let%expect_test "Base.Exn.reraise" =
-      test_reraiser _Base_Exn_reraise_after_clobbering_most_recent_backtrace;
-      really_show_backtrace [%expect.output];
-      [%expect
-        {|
-        Before re-raise: false
-        After  re-raise: true
-        |}]
-    ;;
+  (* bad, because the backtrace was clobbered *)
+  let%expect_test "Base.Exn.reraise" =
+    test_reraiser _Base_Exn_reraise_after_clobbering_most_recent_backtrace;
+    really_show_backtrace [%expect.output];
+    [%expect
+      {|
+      Before re-raise: false
+      After  re-raise: true
+      |}]
+  ;;
 
-    (* bad, missing the backtrace before the reraise *)
-    let%expect_test "%reraise unequal" =
-      test_reraiser external_reraise_unequal;
-      really_show_backtrace [%expect.output];
-      [%expect
-        {|
-        Before re-raise: false
-        After  re-raise: true
-        |}]
-    ;;
+  (* bad, missing the backtrace before the reraise *)
+  let%expect_test "%reraise unequal" =
+    test_reraiser external_reraise_unequal;
+    really_show_backtrace [%expect.output];
+    [%expect
+      {|
+      Before re-raise: false
+      After  re-raise: true
+      |}]
+  ;;
 
-    (* bad, missing the backtrace before the reraise *)
-    let%expect_test "raise unequal" =
-      test_reraiser vanilla_raise_unequal;
-      really_show_backtrace [%expect.output];
-      [%expect
-        {|
-        Before re-raise: false
-        After  re-raise: true
-        |}]
-    ;;
+  (* bad, missing the backtrace before the reraise *)
+  let%expect_test "raise unequal" =
+    test_reraiser vanilla_raise_unequal;
+    really_show_backtrace [%expect.output];
+    [%expect
+      {|
+      Before re-raise: false
+      After  re-raise: true
+      |}]
+  ;;
 
-    (* good, but no additional info attached *)
-    let%expect_test "raise equal" =
-      test_reraiser vanilla_raise;
-      really_show_backtrace [%expect.output];
-      [%expect
-        {|
-        Before re-raise: true
-        After  re-raise: true
-        |}]
-    ;;
+  (* good, but no additional info attached *)
+  let%expect_test "raise equal" =
+    test_reraiser vanilla_raise;
+    really_show_backtrace [%expect.output];
+    [%expect
+      {|
+      Before re-raise: true
+      After  re-raise: true
+      |}]
+  ;;
 
-    (* good *)
-    let%expect_test "Caml.Printexc.raise_with_backtrace" =
-      test_reraiser raise_with_original_backtrace;
-      really_show_backtrace [%expect.output];
-      [%expect
-        {|
-        Before re-raise: true
-        After  re-raise: true
-        |}]
-    ;;
+  (* good *)
+  let%expect_test "Caml.Printexc.raise_with_backtrace" =
+    test_reraiser raise_with_original_backtrace;
+    really_show_backtrace [%expect.output];
+    [%expect
+      {|
+      Before re-raise: true
+      After  re-raise: true
+      |}]
+  ;;
 
-    (* good *)
-    let%expect_test "Exn.reraise_uncaught" =
-      test_reraise_uncaught ~reraise_uncaught:(Exn.reraise_uncaught "reraised");
-      really_show_backtrace [%expect.output];
-      [%expect
-        {|
-        Before re-raise: true
-        After  re-raise: true
-        |}]
-    ;;
-  end)
-;;
+  (* good *)
+  let%expect_test "Exn.reraise_uncaught" =
+    test_reraise_uncaught ~reraise_uncaught:(Exn.reraise_uncaught "reraised");
+    really_show_backtrace [%expect.output];
+    [%expect
+      {|
+      Before re-raise: true
+      After  re-raise: true
+      |}]
+  ;;
+end
 
 (* An example bad backtrace:
    {v

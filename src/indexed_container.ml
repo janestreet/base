@@ -152,6 +152,27 @@ struct
   let filteri t ~f =
     filter_mapi t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
   ;;
+
+  let partition_mapi t ~f =
+    let array = Array.mapi (to_array t) ~f in
+    let xs =
+      Array.fold_right array ~init:[] ~f:(fun either acc ->
+        match (either : _ Either0.t) with
+        | First x -> x :: acc
+        | Second _ -> acc)
+    in
+    let ys =
+      Array.fold_right array ~init:[] ~f:(fun either acc ->
+        match (either : _ Either0.t) with
+        | First _ -> acc
+        | Second x -> x :: acc)
+    in
+    of_list xs, of_list ys
+  ;;
+
+  let partitioni_tf t ~f =
+    partition_mapi t ~f:(fun i x -> if f i x then First x else Second x) [@nontail]
+  ;;
 end
 
 module Make_with_creators (T : Make_with_creators_arg) = struct

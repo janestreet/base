@@ -40,6 +40,7 @@ module type Accessors = sig
   val diff : 'a t -> 'a t -> 'a t
   val of_hashtbl_keys : ('a, _) Hashtbl.t -> 'a t
   val to_hashtbl : 'key t -> f:local_ ('key -> 'data) -> ('key, 'data) Hashtbl.t
+  val capacity : _ t -> int
 end
 
 type ('key, 'z) create_options = ('key, unit, 'z) Hashtbl_intf.create_options
@@ -172,7 +173,7 @@ module type Hash_set = sig
   module Poly : sig
     type nonrec 'a t = 'a t [@@deriving_inline sexp, sexp_grammar]
 
-    include Sexplib0.Sexpable.S1 with type 'a t := 'a t
+    include Sexplib0.Sexpable.S_any1 with type 'a t := 'a t
 
     val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 

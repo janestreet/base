@@ -2,7 +2,7 @@ open! Import
 
 let const c _ = c
 
-external ignore : (_[@local_opt]) -> unit = "%ignore"
+external ignore : ('a : any). ('a[@local_opt]) -> unit = "%ignore" [@@layout_poly]
 
 (* this has the same behavior as [Stdlib.ignore] *)
 
@@ -17,8 +17,14 @@ let forever f =
   | e -> e
 ;;
 
-external id : ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
-external ( |> ) : 'a -> (('a -> 'b)[@local_opt]) -> 'b = "%revapply"
+external id : ('a : any). ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
+[@@layout_poly]
+
+external ( |> )
+  : ('a : any) ('b : any).
+  'a -> (('a -> 'b)[@local_opt]) -> 'b
+  = "%revapply"
+[@@layout_poly]
 
 (* The typical use case for these functions is to pass in functional arguments and get
    functions as a result. *)

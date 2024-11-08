@@ -96,33 +96,29 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
     List.equal String.equal predicted found
   ;;
 
-  let%test_module "of_alist" =
-    (module struct
-      let%test "size" =
-        let predicted = List.length test_data in
-        let found = Hashtbl.length (Hashtbl.of_alist_poly_exn test_data) in
-        predicted = found
-      ;;
+  module%test [@name "of_alist"] _ = struct
+    let%test "size" =
+      let predicted = List.length test_data in
+      let found = Hashtbl.length (Hashtbl.of_alist_poly_exn test_data) in
+      predicted = found
+    ;;
 
-      let%test "right keys" =
-        let predicted = List.map test_data ~f:(fun (k, _) -> k) in
-        let found = Hashtbl.keys (Hashtbl.of_alist_poly_exn test_data) in
-        let sp = List.sort ~compare:Poly.ascending predicted in
-        let sf = List.sort ~compare:Poly.ascending found in
-        sp = sf
-      ;;
-    end)
-  ;;
+    let%test "right keys" =
+      let predicted = List.map test_data ~f:(fun (k, _) -> k) in
+      let found = Hashtbl.keys (Hashtbl.of_alist_poly_exn test_data) in
+      let sp = List.sort ~compare:Poly.ascending predicted in
+      let sf = List.sort ~compare:Poly.ascending found in
+      sp = sf
+    ;;
+  end
 
-  let%test_module "of_alist_or_error" =
-    (module struct
-      let%test "unique" = Result.is_ok (Hashtbl.of_alist_poly_or_error test_data)
+  module%test [@name "of_alist_or_error"] _ = struct
+    let%test "unique" = Result.is_ok (Hashtbl.of_alist_poly_or_error test_data)
 
-      let%test "duplicate" =
-        Result.is_error (Hashtbl.of_alist_poly_or_error (test_data @ test_data))
-      ;;
-    end)
-  ;;
+    let%test "duplicate" =
+      Result.is_error (Hashtbl.of_alist_poly_or_error (test_data @ test_data))
+    ;;
+  end
 
   let%test "size and right keys" =
     let predicted = List.map test_data ~f:(fun (k, _) -> k) in

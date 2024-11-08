@@ -31,7 +31,12 @@
 
 open! Import
 
-type +'a t [@@deriving_inline globalize, sexp_of]
+type +'a t [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp_of]
+
+include Ppx_compare_lib.Comparable.S1 with type +'a t := 'a t
+include Ppx_compare_lib.Comparable.S_local1 with type +'a t := 'a t
+include Ppx_compare_lib.Equal.S1 with type +'a t := 'a t
+include Ppx_compare_lib.Equal.S_local1 with type +'a t := 'a t
 
 val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
 val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
@@ -40,10 +45,6 @@ val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
 type 'a sequence := 'a t
 
-include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
-include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
-include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
 include Indexed_container.S1 with type 'a t := 'a t
 include Monad.S with type 'a t := 'a t
 

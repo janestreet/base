@@ -268,45 +268,20 @@ module Tree0 = struct
       else create l v r
   ;;
 
+  let return_none () = None
+
   (* Smallest and greatest element of a set *)
-  let rec min_elt = function
-    | Empty -> None
+  let rec call_with_min_elt ~none ~some = function
+    | Empty -> none ()
     | Leaf { elt = v } | Node { left = Empty; elt = v; right = _; height = _; size = _ }
-      -> Some v
-    | Node { left = l; elt = _; right = _; height = _; size = _ } -> min_elt l
+      -> some v
+    | Node { left = l; elt = _; right = _; height = _; size = _ } ->
+      call_with_min_elt l ~none ~some
   ;;
 
-  exception Set_min_elt_exn_of_empty_set [@@deriving_inline sexp]
-
-  let () =
-    Sexplib0.Sexp_conv.Exn_converter.add
-      [%extension_constructor Set_min_elt_exn_of_empty_set]
-      (function
-      | Set_min_elt_exn_of_empty_set ->
-        Sexplib0.Sexp.Atom "set.ml.Tree0.Set_min_elt_exn_of_empty_set"
-      | _ -> assert false)
-  ;;
-
-  [@@@end]
-
-  exception Set_max_elt_exn_of_empty_set [@@deriving_inline sexp]
-
-  let () =
-    Sexplib0.Sexp_conv.Exn_converter.add
-      [%extension_constructor Set_max_elt_exn_of_empty_set]
-      (function
-      | Set_max_elt_exn_of_empty_set ->
-        Sexplib0.Sexp.Atom "set.ml.Tree0.Set_max_elt_exn_of_empty_set"
-      | _ -> assert false)
-  ;;
-
-  [@@@end]
-
-  let min_elt_exn t =
-    match min_elt t with
-    | None -> raise Set_min_elt_exn_of_empty_set
-    | Some v -> v
-  ;;
+  let raise_min_elt_exn () = Error.raise_s (Atom "Set.min_elt_exn: empty set")
+  let min_elt t = call_with_min_elt t ~none:return_none ~some:Option.return
+  let min_elt_exn t = call_with_min_elt t ~none:raise_min_elt_exn ~some:Fn.id
 
   let fold_until t ~init ~f ~finish =
     let rec fold_until_helper ~f t acc =
@@ -326,18 +301,17 @@ module Tree0 = struct
     | Stop x -> x
   ;;
 
-  let rec max_elt = function
-    | Empty -> None
+  let rec call_with_max_elt ~none ~some = function
+    | Empty -> none ()
     | Leaf { elt = v } | Node { left = _; elt = v; right = Empty; height = _; size = _ }
-      -> Some v
-    | Node { left = _; elt = _; right = r; height = _; size = _ } -> max_elt r
+      -> some v
+    | Node { left = _; elt = _; right = r; height = _; size = _ } ->
+      call_with_max_elt r ~none ~some
   ;;
 
-  let max_elt_exn t =
-    match max_elt t with
-    | None -> raise Set_max_elt_exn_of_empty_set
-    | Some v -> v
-  ;;
+  let raise_max_elt_exn () = Error.raise_s (Atom "Set.max_elt_exn: empty set")
+  let max_elt t = call_with_max_elt t ~none:return_none ~some:Option.return
+  let max_elt_exn t = call_with_max_elt t ~none:raise_max_elt_exn ~some:Fn.id
 
   (* Remove the smallest element of the given set *)
 
@@ -974,23 +948,15 @@ module Tree0 = struct
 
   let elements s = elements_aux [] s
 
-  let choose t =
-    match t with
-    | Empty -> None
-    | Leaf { elt = v } -> Some v
-    | Node { left = _; elt = v; right = _; height = _; size = _ } -> Some v
+  let call_with_choose ~none ~some = function
+    | Empty -> none ()
+    | Leaf { elt = v } -> some v
+    | Node { left = _; elt = v; right = _; height = _; size = _ } -> some v
   ;;
 
-  let choose_exn =
-    let not_found = Not_found_s (Atom "Set.choose_exn: empty set") in
-    let choose_exn t =
-      match choose t with
-      | None -> raise not_found
-      | Some v -> v
-    in
-    (* named to preserve symbol in compiled binary *)
-    choose_exn
-  ;;
+  let raise_choose_exn () = Error.raise_s (Atom "Set.choose_exn: empty set")
+  let choose t = call_with_choose t ~none:return_none ~some:Option.return
+  let choose_exn t = call_with_choose t ~none:raise_choose_exn ~some:Fn.id
 
   let of_list lst ~compare_elt =
     List.fold lst ~init:empty ~f:(fun t x -> add t x ~compare_elt)
@@ -1079,7 +1045,7 @@ module Tree0 = struct
 
   let find_exn t ~f =
     match find t ~f with
-    | None -> failwith "Set.find_exn failed to find a matching element"
+    | None -> Error.raise_s (Atom "Set.find_exn: failed to find a matching element")
     | Some e -> e
   ;;
 
@@ -1094,18 +1060,6 @@ module Tree0 = struct
         let l_size = length l in
         let c = Poly.compare i l_size in
         if c < 0 then nth l i else if c = 0 then Some v else nth r (i - l_size - 1))
-  ;;
-
-  let stable_dedup_list xs ~compare_elt =
-    let rec loop xs leftovers already_seen =
-      match xs with
-      | [] -> List.rev leftovers
-      | hd :: tl ->
-        if mem already_seen hd ~compare_elt
-        then loop tl leftovers already_seen
-        else loop tl (hd :: leftovers) (add already_seen hd ~compare_elt)
-    in
-    loop xs [] empty
   ;;
 
   let t_of_sexp_direct a_of_sexp sexp ~compare_elt =
@@ -1368,11 +1322,6 @@ module Tree = struct
 
   let of_sorted_array ~comparator a = Tree0.of_sorted_array a ~compare_elt:(ce comparator)
   let union_list ~comparator l = Tree0.union_list l ~to_tree:Fn.id ~comparator
-
-  let stable_dedup_list ~comparator xs =
-    Tree0.stable_dedup_list xs ~compare_elt:(ce comparator)
-  ;;
-
   let group_by t ~equiv = Tree0.group_by t ~equiv
   let split ~comparator t a = Tree0.split t a ~compare_elt:(ce comparator)
   let split_le_gt ~comparator t a = Tree0.split_le_gt t a ~compare_elt:(ce comparator)
@@ -1475,10 +1424,6 @@ module Using_comparator = struct
     { comparator; tree = Tree0.of_array a ~compare_elt:comparator.Comparator.compare }
   ;;
 
-  let stable_dedup_list ~comparator xs =
-    Tree0.stable_dedup_list xs ~compare_elt:comparator.Comparator.compare
-  ;;
-
   let map ~comparator t ~f =
     { comparator; tree = Tree0.map t.tree ~f ~compare_elt:comparator.Comparator.compare }
   ;;
@@ -1509,11 +1454,6 @@ let of_sorted_array m a = Using_comparator.of_sorted_array ~comparator:(to_compa
 let of_list m a = Using_comparator.of_list ~comparator:(to_comparator m) a
 let of_sequence m a = Using_comparator.of_sequence ~comparator:(to_comparator m) a
 let of_array m a = Using_comparator.of_array ~comparator:(to_comparator m) a
-
-let stable_dedup_list m a =
-  Using_comparator.stable_dedup_list ~comparator:(to_comparator m) a
-;;
-
 let map m a ~f = Using_comparator.map ~comparator:(to_comparator m) a ~f
 let filter_map m a ~f = Using_comparator.filter_map ~comparator:(to_comparator m) a ~f
 let to_tree = Using_comparator.to_tree
@@ -1612,7 +1552,6 @@ module Poly = struct
   let of_list a = Using_comparator.of_list ~comparator a
   let of_sequence a = Using_comparator.of_sequence ~comparator a
   let of_array a = Using_comparator.of_array ~comparator a
-  let stable_dedup_list a = Using_comparator.stable_dedup_list ~comparator a
   let map a ~f = Using_comparator.map ~comparator a ~f
   let filter_map a ~f = Using_comparator.filter_map ~comparator a ~f
   let of_tree tree = { comparator; tree }

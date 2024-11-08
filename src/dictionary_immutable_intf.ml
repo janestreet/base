@@ -299,6 +299,17 @@ module Definitions = struct
           , 'phantom )
           transformer
 
+    (** Like [update]. Returns the new value. *)
+    val update_and_return
+      : ( ('key, 'data, 'phantom) t
+          -> 'key key
+          -> f:local_ ('data option -> 'data)
+          -> 'data * ('key, 'data, 'phantom) t
+          , 'key
+          , 'data
+          , 'phantom )
+          transformer
+
     (** Adds [data] to the existing key/value pair for [key]. Interprets a missing key as
         having an empty list. *)
     val add_multi

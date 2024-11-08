@@ -138,5 +138,7 @@ let%expect_test "String" =
     Container: testing [filteri]
     Container: testing [filter_mapi]
     Container: testing [concat_mapi]
+    Container: testing [partitioni_tf]
+    Container: testing [partition_mapi]
     |}]
 ;;

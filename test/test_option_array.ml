@@ -1,33 +1,31 @@
 open! Import
 open Option_array
 
-let%test_module "Cheap_option" =
-  (module struct
-    open For_testing.Unsafe_cheap_option
+module%test Cheap_option = struct
+  open For_testing.Unsafe_cheap_option
 
-    let roundtrip_via_cheap_option (type a) (x : a) =
-      let opt : a t = some x in
-      assert (is_some opt);
-      assert (phys_equal (value_exn opt) x)
-    ;;
+  let roundtrip_via_cheap_option (type a) (x : a) =
+    let opt : a t = some x in
+    assert (is_some opt);
+    assert (phys_equal (value_exn opt) x)
+  ;;
 
-    let%test_unit _ = roundtrip_via_cheap_option 0
-    let%test_unit _ = roundtrip_via_cheap_option 1
-    let%test_unit _ = roundtrip_via_cheap_option (ref 0)
-    let%test_unit _ = roundtrip_via_cheap_option `x6e8ee3478e1d7449
-    let%test_unit _ = roundtrip_via_cheap_option 0.0
-    let%test _ = not (is_some none)
+  let%test_unit _ = roundtrip_via_cheap_option 0
+  let%test_unit _ = roundtrip_via_cheap_option 1
+  let%test_unit _ = roundtrip_via_cheap_option (ref 0)
+  let%test_unit _ = roundtrip_via_cheap_option `x6e8ee3478e1d7449
+  let%test_unit _ = roundtrip_via_cheap_option 0.0
+  let%test _ = not (is_some none)
 
-    let%test_unit "memory corruption" =
-      let make_list () = List.init ~f:(fun i -> Some i) 5 in
-      Stdlib.Gc.minor ();
-      let x = value_unsafe (some (make_list ())) in
-      Stdlib.Gc.minor ();
-      let (_ : int option list) = List.init ~f:(fun i -> Some (i * 100)) 10000 in
-      [%test_result: Int.t Option.t List.t] ~expect:(make_list ()) x
-    ;;
-  end)
-;;
+  let%test_unit "memory corruption" =
+    let make_list () = List.init ~f:(fun i -> Some i) 5 in
+    Stdlib.Gc.minor ();
+    let x = value_unsafe (some (make_list ())) in
+    Stdlib.Gc.minor ();
+    let (_ : int option list) = List.init ~f:(fun i -> Some (i * 100)) 10000 in
+    [%test_result: Int.t Option.t List.t] ~expect:(make_list ()) x
+  ;;
+end
 
 module Sequence = struct
   let length = length

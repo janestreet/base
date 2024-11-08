@@ -6,13 +6,18 @@ open! Import
 
     See {{:https://github.com/janestreet/ppx_pipebang} ppx_pipebang} for
     further details. *)
-external ( |> ) : 'a -> (('a -> 'b)[@local_opt]) -> 'b = "%revapply"
+external ( |> )
+  : ('a : any) ('b : any).
+  'a -> (('a -> 'b)[@local_opt]) -> 'b
+  = "%revapply"
+[@@layout_poly]
 
 (** Produces a function that just returns its first argument. *)
 val const : 'a -> _ -> 'a
 
 (** Ignores its argument and returns [()]. *)
-external ignore : (_[@local_opt]) -> unit = "%ignore"
+external ignore : ('a : any). ('a[@local_opt]) -> unit = "%ignore"
+[@@layout_poly]
 
 (** Negates a boolean function. *)
 val non : ('a -> bool) -> 'a -> bool
@@ -27,7 +32,8 @@ val apply_n_times : n:int -> local_ ('a -> 'a) -> 'a -> 'a
 (** The identity function.
 
     See also: {!Sys.opaque_identity}. *)
-external id : ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
+external id : ('a : any). ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
+[@@layout_poly]
 
 (** [compose f g x] is [f (g x)]. *)
 val compose : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c

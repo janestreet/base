@@ -14,6 +14,7 @@ module Accessors = struct
   let hashable = hashable
   let clear = Hashtbl.clear
   let length = Hashtbl.length
+  let capacity = Hashtbl.capacity
   let mem = Hashtbl.mem
   let is_empty t = Hashtbl.is_empty t
 

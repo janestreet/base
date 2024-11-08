@@ -97,10 +97,6 @@ module Test_creators
 
   let () = print_endline "Functor.Test_creators: running tests."
 
-  (** deprecated, not testing *)
-
-  and stable_dedup_list = (stable_dedup_list [@alert "-deprecated"])
-
   (** creators *)
 
   and empty = empty
@@ -823,7 +819,7 @@ module Test_transformers
         require_equal (module Inst_and_inst.Value) by_partition_tf expect;
         require_equal (module Inst_and_inst.Value) by_filter expect)
 
-  and group_by = group_by
+  and group_by = (group_by [@alert "-deprecated"])
 
   and () =
     quickcheck_m
@@ -831,7 +827,9 @@ module Test_transformers
       ~f:(fun (t, i) ->
         let t = Inst.value t in
         let f e = Elt.to_int e % i in
-        let actual = group_by t ~equiv:(Comparable.lift Int.equal ~f) in
+        let actual =
+          (group_by [@alert "-deprecated"]) t ~equiv:(Comparable.lift Int.equal ~f)
+        in
         let expect =
           List.sort_and_group ~compare:(Comparable.lift Int.compare ~f) (to_list t)
           |> List.map ~f:(create of_list)

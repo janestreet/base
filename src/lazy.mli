@@ -32,7 +32,7 @@ include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
 
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
-include Sexplib0.Sexpable.S1 with type 'a t := 'a t
+include Sexplib0.Sexpable.S_any1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 

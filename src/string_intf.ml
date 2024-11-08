@@ -88,7 +88,7 @@ module type String = sig
 
   val globalize : local_ t -> t
 
-  include Sexplib0.Sexpable.S with type t := t
+  include Sexplib0.Sexpable.S_any with type t := t
 
   val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
@@ -104,6 +104,7 @@ module type String = sig
   include Indexed_container.S0_with_creators with type t := t with type elt = char
   include Identifiable.S with type t := t
   include Ppx_compare_lib.Comparable.S_local with type t := t
+  include Ppx_compare_lib.Equal.S_local with type t := t
   include Invariant.S with type t := t
 
   (** Maximum length of a string. *)
@@ -163,7 +164,7 @@ module type String = sig
     type nonrec t = t [@@deriving_inline hash, sexp, sexp_grammar]
 
     include Ppx_hash_lib.Hashable.S with type t := t
-    include Sexplib0.Sexpable.S with type t := t
+    include Sexplib0.Sexpable.S_any with type t := t
 
     val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
@@ -471,7 +472,7 @@ module type String = sig
   val common_prefix2_length : t -> t -> int
 
   (** [concat_array sep ar] like {!String.concat}, but operates on arrays. *)
-  val concat_array : ?sep:t -> t array -> t
+  val concat_array : ?sep:local_ t -> local_ t array -> t
 
   (** Builds a multiline text from a list of lines. Each line is terminated and then
       concatenated.
@@ -489,10 +490,6 @@ module type String = sig
   external hash : t -> int = "Base_hash_string"
   [@@noalloc]
 
-  (** Fast equality function on strings, doesn't use [compare_val]. *)
-  val equal : t -> t -> bool
-
-  val equal__local : local_ t -> local_ t -> bool
   val of_char : char -> t
   val of_char_list : char list -> t
 

@@ -26,9 +26,13 @@
       (func $fmod (param f64) (param f64) (result f64)))
    (import "env" "caml_invalid_argument"
       (func $caml_invalid_argument (param (ref eq))))
+   (import "env" "caml_string_cat"
+      (func $caml_string_cat
+         (param (ref eq)) (param (ref eq)) (result (ref eq))))
 
    (type $string (array (mut i8)))
    (type $float (struct (field f64)))
+   (type $block (array (mut (ref eq))))
 
    (func (export "Base_int_math_int_popcount")
       (param (ref eq)) (result (ref eq))
@@ -192,4 +196,73 @@
              (call $Double_val (local.get $y)))
          (then (local.get $x))
          (else (local.get $y))))
+
+   (func (export "Base_string_concat_array")
+      (param $str_array (ref eq)) (param $sep_ref (ref eq)) (result (ref eq))
+      (local $i i32)
+      (local $len i32)
+      (local $b (ref $block))
+      (local $v (ref $string))
+      (local $sep (ref $string))
+      (local $str (ref $string))
+      (local $total_len i32)
+      (local $sep_len i32)
+      (local $offset i32)
+      (local $local_len i32)
+      (local.set $sep (ref.cast (ref $string) (local.get $sep_ref)))
+      (local.set $sep_len (array.len (local.get $sep)))
+      (local.set $b (ref.cast (ref $block) (local.get $str_array)))
+      (local.set $len (array.len (local.get $b)))
+      (local.set $i (i32.const 1))
+      (local.set $total_len (i32.const 0))
+      (loop $compute_length
+         (if (i32.lt_s (local.get $i) (local.get $len))
+            (then
+               (local.set $v (ref.cast
+                  (ref $string)
+                  (array.get $block (local.get $b) (local.get $i))))
+               (local.set $total_len
+                  (i32.add
+                     (local.get $total_len)
+                     (array.len (local.get $v))))
+               (if (i32.lt_s (local.get $i) (i32.sub (local.get $len) (i32.const 1)))
+                  (then
+                  (local.set $total_len
+                     (i32.add
+                        (local.get $total_len)
+                        (local.get $sep_len)))))
+               (local.set $i (i32.add (local.get $i) (i32.const 1)))
+               (br $compute_length))))
+
+      (local.set $offset (i32.const 0))
+      (local.set $local_len (i32.const 0))
+      (local.set $i (i32.const 1))
+      (local.set $str (array.new $string (i32.const 0) (local.get $total_len)))
+      (loop $loop
+         (if (i32.lt_s (local.get $i) (local.get $len))
+            (then
+               (local.set $v
+                  (ref.cast
+                     (ref $string)
+                     (array.get $block (local.get $b) (local.get $i))))
+               (local.set $local_len (array.len (local.get $v)))
+               (array.copy $string $string
+                  (local.get $str)
+                  (local.get $offset)
+                  (local.get $v)
+                  (i32.const 0)
+                  (local.get $local_len))
+               (local.set $offset (i32.add (local.get $offset) (local.get $local_len)))
+               (if (i32.lt_s (local.get $i) (i32.sub (local.get $len) (i32.const 1)))
+                  (then
+                     (array.copy $string $string
+                        (local.get $str)
+                        (local.get $offset)
+                        (local.get $sep)
+                        (i32.const 0)
+                        (local.get $sep_len))
+                     (local.set $offset (i32.add (local.get $offset) (local.get $sep_len)))))
+               (local.set $i (i32.add (local.get $i) (i32.const 1)))
+               (br $loop))))
+      (local.get $str))
 )

@@ -393,7 +393,10 @@ module Definitions = struct
       -> ('key, 'c, 'phantom) t * ('key, 'd, 'phantom) t
 
     (** Merges two dictionaries by fully traversing both. Not suitable for efficiently
-        merging lists of dictionaries. See [merge_into] instead. *)
+        merging lists of dictionaries. See [merge_into] instead.
+
+        If the two dictionaries differ in their implementations, e.g. of [hash] or
+        [compare] functions, those from the first argument are preferred. *)
     val merge
       : ( ('key, 'data1, 'phantom) t
           -> ('key, 'data2, 'phantom) t

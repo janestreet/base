@@ -1118,6 +1118,22 @@ module Test_transformers
         let expect = access set t ~key ~data in
         require_equal (module Inst.Value) actual expect)
 
+  and update_and_return = update_and_return
+
+  and () =
+    quickcheck_m
+      (module Inst_and_key_and_data)
+      ~f:(fun (t, key, data) ->
+        let t = Inst.value t in
+        let new_data, actual =
+          access update_and_return t key ~f:(fun previous ->
+            require_equal (module Data.Option (Int)) previous (access find t key);
+            data)
+        in
+        let expect = access set t ~key ~data in
+        require_equal (module Inst.Value) actual expect;
+        require_equal (module Int) new_data data)
+
   and add_multi = add_multi
   and remove_multi = remove_multi
 

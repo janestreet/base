@@ -361,7 +361,7 @@ module Constructor = struct
         (access Impl.split_lt_ge) (value t) elt |> Side.select side
       | Group_by (fn, n, t) ->
         let list =
-          Impl.group_by
+          (Impl.group_by [@alert "-deprecated"])
             (value t)
             ~equiv:(Comparable.lift Int.equal ~f:(Func.apply fn (module Elt)))
         in
@@ -400,9 +400,14 @@ module Make (Instance : Instance) (Impl : Impl with module Types := Instance.Typ
 struct
   open Instance
 
-  type t = Elt.t Constructor.t [@@deriving equal, quickcheck, sexp_of]
+  type t = Elt.t Constructor.t [@@deriving equal, quickcheck]
 
   include Constructor.Make (Instance) (Impl)
+
+  let sexp_of_t cons =
+    let value = value cons in
+    [%sexp { value : Instance.t; cons : Elt.t Constructor.t }]
+  ;;
 
   let quickcheck_generator = Generator.map quickcheck_generator ~f:normalize
 end
@@ -411,580 +416,573 @@ end
 
    The number of quickcheck tests on 32-bit architectures is configured to be lower, so we
    skip the coverage checks there. *)
-let%test_module (_ [@tags "64-bits-only"]) =
-  (module (
-  struct
-    module Types = struct
-      type 'elt elt = 'elt
-      type 'cmp cmp = 'cmp
-      type ('elt, 'cmp) set = ('elt, 'cmp) Set.t
-      type ('elt, 'cmp) t = ('elt, 'cmp) Set.t
-      type ('elt, 'cmp) tree = ('elt, 'cmp) Set.Using_comparator.Tree.t
+module%test [@tags "64-bits-only"] _ : Impl = struct
+  module Types = struct
+    type 'elt elt = 'elt
+    type 'cmp cmp = 'cmp
+    type ('elt, 'cmp) set = ('elt, 'cmp) Set.t
+    type ('elt, 'cmp) t = ('elt, 'cmp) Set.t
+    type ('elt, 'cmp) tree = ('elt, 'cmp) Set.Using_comparator.Tree.t
 
-      type ('elt, 'cmp, 'fn) create_options =
-        ('elt, 'cmp, 'fn) Set.With_first_class_module.t
+    type ('elt, 'cmp, 'fn) create_options =
+      ('elt, 'cmp, 'fn) Set.With_first_class_module.t
 
-      type ('elt, 'cmp, 'fn) access_options = ('elt, 'cmp, 'fn) Set.Without_comparator.t
+    type ('elt, 'cmp, 'fn) access_options = ('elt, 'cmp, 'fn) Set.Without_comparator.t
+  end
+
+  open struct
+    module Elt = struct
+      include Int
+
+      type t = int [@@deriving quickcheck]
     end
 
-    open struct
-      module Elt = struct
-        include Int
+    module Instance = struct
+      module Types = Types
+      module Elt = Elt
 
-        type t = int [@@deriving quickcheck]
-      end
+      type t = (int, Int.comparator_witness) Set.t
 
-      module Instance = struct
-        module Types = Types
-        module Elt = Elt
-
-        type t = (int, Int.comparator_witness) Set.t
-
-        let compare = Set.compare_direct
-        let equal = Set.equal
-        let sexp_of_t t = Set.sexp_of_m__t (module Elt) t
-        let create f = f ((module Elt) : (_, _) Comparator.Module.t)
-        let access f = f
-      end
-
-      module Cons = Make (Instance) (Set)
-
-      let sample = Memo.memoize Cons.quickcheck_generator
-
-      let%expect_test "normalization" =
-        quickcheck_m
-          (module struct
-            include Cons
-
-            let sample = sample
-          end)
-          ~f:(fun t ->
-            require_equal (module Cons) t (Cons.normalize t);
-            require_does_not_raise (fun () -> ignore (Cons.value t : Set.M(Int).t)))
-      ;;
-
-      let%expect_test "number of constructors" =
-        let stats = Stats.create () in
-        List.iter (Lazy.force sample) ~f:(fun t ->
-          Stats.add stats (Constructor.number_of_constructors t));
-        Stats.print stats;
-        [%expect
-          {|
-            % | size | count
-          ----+------+------
-            0 |    1 | 10000
-           50 |    9 |  5119
-           75 |   38 |  2510
-           90 |   80 |  1004
-           95 |  129 |   505
-           99 |  274 |   100
-          100 |  718 |     1
-          |}]
-      ;;
-
-      let test predicate =
-        let stats = Stats.create () in
-        List.iter (force sample) ~f:(fun t ->
-          if predicate t
-          then (
-            let size = Set.length (Cons.value t) in
-            Stats.add stats size));
-        Stats.print stats
-      ;;
+      let compare = Set.compare_direct
+      let equal = Set.equal
+      let sexp_of_t t = Set.sexp_of_m__t (module Elt) t
+      let create f = f ((module Elt) : (_, _) Comparator.Module.t)
+      let access f = f
     end
 
-    (* Accessors only, not covered. *)
+    module Cons = Make (Instance) (Set)
 
-    include (Set : Accessors with module Types := Types)
+    let sample = Memo.memoize Cons.quickcheck_generator
 
-    (* Complicated types, not covered. *)
+    let%expect_test "normalization" =
+      quickcheck_m
+        (module struct
+          include Cons
 
-    let of_tree = Set.of_tree
+          let sample = sample
+        end)
+        ~f:(fun t ->
+          require_equal (module Cons) t (Cons.normalize t);
+          require_does_not_raise (fun () -> ignore (Cons.value t : Set.M(Int).t)))
+    ;;
 
-    (* Deprecated, not covered *)
-    let stable_dedup_list = (Set.stable_dedup_list [@alert "-deprecated"])
-
-    (* Tests *)
-
-    let empty = Set.empty
-
-    let%expect_test _ =
-      test (function
-        | Empty -> true
-        | _ -> false);
+    let%expect_test "number of constructors" =
+      let stats = Stats.create () in
+      List.iter (Lazy.force sample) ~f:(fun t ->
+        Stats.add stats (Constructor.number_of_constructors t));
+      Stats.print stats;
       [%expect
         {|
           % | size | count
         ----+------+------
-          - |    0 |   198
+          0 |    1 | 10000
+         50 |    9 |  5119
+         75 |   38 |  2510
+         90 |   80 |  1004
+         95 |  129 |   505
+         99 |  274 |   100
+        100 |  718 |     1
         |}]
     ;;
 
-    let singleton = Set.singleton
-
-    let%expect_test _ =
-      test (function
-        | Singleton _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-        100 |    1 |   181
-        |}]
+    let test predicate =
+      let stats = Stats.create () in
+      List.iter (force sample) ~f:(fun t ->
+        if predicate t
+        then (
+          let size = Set.length (Cons.value t) in
+          Stats.add stats size));
+      Stats.print stats
     ;;
+  end
 
-    let of_sorted_array = Set.of_sorted_array
+  (* Accessors only, not covered. *)
 
-    let%expect_test _ =
-      test (function
-        | Of_sorted_array _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    25
-        ----+------+------
-          0 |    1 |   152
-         50 |    8 |    78
-         75 |   16 |    38
-         90 |   23 |    16
-         95 |   28 |     8
-         99 |   30 |     2
-        100 |   31 |     1
-        |}]
-    ;;
+  include (Set : Accessors with module Types := Types)
 
-    let of_sorted_array_unchecked = Set.of_sorted_array_unchecked
+  (* Complicated types, not covered. *)
 
-    let%expect_test _ =
-      test (function
-        | Of_sorted_array_unchecked _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    29
-        ----+------+------
-          0 |    1 |   172
-         50 |   10 |    86
-         75 |   19 |    47
-         90 |   25 |    20
-         95 |   29 |     9
-         99 |   30 |     7
-        100 |   31 |     1
-        |}]
-    ;;
+  let of_tree = Set.of_tree
 
-    let of_increasing_iterator_unchecked = Set.of_increasing_iterator_unchecked
+  (* Tests *)
 
-    let%expect_test _ =
-      test (function
-        | Of_increasing_iterator_unchecked _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    40
-        ----+------+------
-          0 |    1 |   143
-         50 |    9 |    76
-         75 |   19 |    36
-         90 |   25 |    18
-         95 |   27 |    10
-         99 |   29 |     4
-        100 |   31 |     1
-        |}]
-    ;;
+  let empty = Set.empty
 
-    let of_list = Set.of_list
+  let%expect_test _ =
+    test (function
+      | Empty -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   198
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Of_list _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    32
-        ----+------+------
-          0 |    1 |   159
-         50 |    4 |    85
-         75 |    6 |    41
-         90 |   16 |    16
-         95 |   24 |    11
-         99 |   29 |     2
-        100 |   31 |     1
-        |}]
-    ;;
+  let singleton = Set.singleton
 
-    let of_array = Set.of_array
+  let%expect_test _ =
+    test (function
+      | Singleton _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+      100 |    1 |   181
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Of_array _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    27
-        ----+------+------
-          0 |    1 |   165
-         50 |    4 |    86
-         75 |   12 |    42
-         90 |   21 |    17
-         95 |   24 |     9
-        100 |   30 |     2
-        |}]
-    ;;
+  let of_sorted_array = Set.of_sorted_array
 
-    let of_sequence = Set.of_sequence
+  let%expect_test _ =
+    test (function
+      | Of_sorted_array _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    25
+      ----+------+------
+        0 |    1 |   152
+       50 |    8 |    78
+       75 |   16 |    38
+       90 |   23 |    16
+       95 |   28 |     8
+       99 |   30 |     2
+      100 |   31 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Of_sequence _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    34
-        ----+------+------
-          0 |    1 |   154
-         50 |    4 |    82
-         75 |    8 |    40
-         90 |   20 |    16
-         95 |   26 |     8
-         99 |   30 |     5
-        100 |   31 |     1
-        |}]
-    ;;
+  let of_sorted_array_unchecked = Set.of_sorted_array_unchecked
 
-    let add = Set.add
+  let%expect_test _ =
+    test (function
+      | Of_sorted_array_unchecked _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    29
+      ----+------+------
+        0 |    1 |   172
+       50 |   10 |    86
+       75 |   19 |    47
+       90 |   25 |    20
+       95 |   29 |     9
+       99 |   30 |     7
+      100 |   31 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Add _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-         50 |    1 |   574
-         75 |    3 |   155
-         90 |    8 |    59
-         95 |   12 |    29
-         99 |   25 |     6
-        100 |   29 |     1
-        |}]
-    ;;
+  let of_increasing_iterator_unchecked = Set.of_increasing_iterator_unchecked
 
-    let remove = Set.remove
+  let%expect_test _ =
+    test (function
+      | Of_increasing_iterator_unchecked _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    40
+      ----+------+------
+        0 |    1 |   143
+       50 |    9 |    76
+       75 |   19 |    36
+       90 |   25 |    18
+       95 |   27 |    10
+       99 |   29 |     4
+      100 |   31 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Remove _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   325
-        ----+------+------
-          0 |    1 |   238
-         50 |    2 |   146
-         75 |    8 |    62
-         90 |   17 |    25
-         95 |   21 |    12
-         99 |   27 |     3
-        100 |   28 |     1
-        |}]
-    ;;
+  let of_list = Set.of_list
 
-    let map = Set.map
+  let%expect_test _ =
+    test (function
+      | Of_list _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    32
+      ----+------+------
+        0 |    1 |   159
+       50 |    4 |    85
+       75 |    6 |    41
+       90 |   16 |    16
+       95 |   24 |    11
+       99 |   29 |     2
+      100 |   31 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Map _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   295
-        ----+------+------
-          0 |    1 |   249
-         50 |    2 |   130
-         75 |    3 |    79
-         90 |    8 |    26
-         95 |   12 |    13
-         99 |   24 |     4
-        100 |   29 |     1
-        |}]
-    ;;
+  let of_array = Set.of_array
 
-    let filter = Set.filter
+  let%expect_test _ =
+    test (function
+      | Of_array _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    27
+      ----+------+------
+        0 |    1 |   165
+       50 |    4 |    86
+       75 |   12 |    42
+       90 |   21 |    17
+       95 |   24 |     9
+      100 |   30 |     2
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Filter _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   404
-        ----+------+------
-          0 |    1 |   145
-         50 |    2 |    82
-         75 |    5 |    38
-         90 |   14 |    15
-         95 |   19 |     8
-         99 |   23 |     3
-        100 |   25 |     1
-        |}]
-    ;;
+  let of_sequence = Set.of_sequence
 
-    let filter_map = Set.filter_map
+  let%expect_test _ =
+    test (function
+      | Of_sequence _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    34
+      ----+------+------
+        0 |    1 |   154
+       50 |    4 |    82
+       75 |    8 |    40
+       90 |   20 |    16
+       95 |   26 |     8
+       99 |   30 |     5
+      100 |   31 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Filter_map _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   350
-        ----+------+------
-          0 |    1 |   207
-         50 |    2 |   107
-         75 |    3 |    63
-         90 |   12 |    21
-         95 |   14 |    14
-         99 |   24 |     4
-        100 |   27 |     1
-        |}]
-    ;;
+  let add = Set.add
 
-    let partition_tf = Set.partition_tf
+  let%expect_test _ =
+    test (function
+      | Add _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+       50 |    1 |   574
+       75 |    3 |   155
+       90 |    8 |    59
+       95 |   12 |    29
+       99 |   25 |     6
+      100 |   29 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Partition_tf _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   411
-        ----+------+------
-          0 |    1 |   155
-         50 |    2 |    86
-         75 |    4 |    43
-         90 |   13 |    17
-         95 |   17 |     8
-         99 |   25 |     3
-        100 |   28 |     1
-        |}]
-    ;;
+  let remove = Set.remove
 
-    let diff = Set.diff
+  let%expect_test _ =
+    test (function
+      | Remove _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   325
+      ----+------+------
+        0 |    1 |   238
+       50 |    2 |   146
+       75 |    8 |    62
+       90 |   17 |    25
+       95 |   21 |    12
+       99 |   27 |     3
+      100 |   28 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Diff _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   348
-        ----+------+------
-          0 |    1 |   218
-         50 |    2 |   135
-         75 |    7 |    55
-         90 |   14 |    23
-         95 |   18 |    13
-        100 |   29 |     3
-        |}]
-    ;;
+  let map = Set.map
 
-    let inter = Set.inter
+  let%expect_test _ =
+    test (function
+      | Map _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   295
+      ----+------+------
+        0 |    1 |   249
+       50 |    2 |   130
+       75 |    3 |    79
+       90 |    8 |    26
+       95 |   12 |    13
+       99 |   24 |     4
+      100 |   29 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Inter _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   519
-        ----+------+------
-         50 |    1 |    63
-         75 |    2 |    30
-         90 |    6 |     7
-         95 |    8 |     4
-        100 |   25 |     1
-        |}]
-    ;;
+  let filter = Set.filter
 
-    let union = Set.union
+  let%expect_test _ =
+    test (function
+      | Filter _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   404
+      ----+------+------
+        0 |    1 |   145
+       50 |    2 |    82
+       75 |    5 |    38
+       90 |   14 |    15
+       95 |   19 |     8
+       99 |   23 |     3
+      100 |   25 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Union _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   173
-        ----+------+------
-          0 |    1 |   395
-         50 |    3 |   229
-         75 |    9 |   104
-         90 |   17 |    45
-         95 |   25 |    22
-         99 |   37 |     4
-        100 |   48 |     2
-        |}]
-    ;;
+  let filter_map = Set.filter_map
 
-    let union_list = Set.union_list
+  let%expect_test _ =
+    test (function
+      | Filter_map _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   350
+      ----+------+------
+        0 |    1 |   207
+       50 |    2 |   107
+       75 |    3 |    63
+       90 |   12 |    21
+       95 |   14 |    14
+       99 |   24 |     4
+      100 |   27 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Union_list _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |    88
-        ----+------+------
-          0 |    1 |   448
-         50 |    3 |   251
-         75 |    6 |   120
-         90 |   10 |    53
-         95 |   13 |    30
-         99 |   19 |     5
-        100 |   24 |     1
-        |}]
-    ;;
+  let partition_tf = Set.partition_tf
 
-    let split = Set.split
+  let%expect_test _ =
+    test (function
+      | Partition_tf _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   411
+      ----+------+------
+        0 |    1 |   155
+       50 |    2 |    86
+       75 |    4 |    43
+       90 |   13 |    17
+       95 |   17 |     8
+       99 |   25 |     3
+      100 |   28 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Split _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   413
-        ----+------+------
-          0 |    1 |   155
-         50 |    2 |    88
-         75 |    5 |    39
-         90 |   13 |    16
-         95 |   16 |    10
-         99 |   26 |     2
-        100 |   27 |     1
-        |}]
-    ;;
+  let diff = Set.diff
 
-    let split_le_gt = Set.split_le_gt
+  let%expect_test _ =
+    test (function
+      | Diff _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   348
+      ----+------+------
+        0 |    1 |   218
+       50 |    2 |   135
+       75 |    7 |    55
+       90 |   14 |    23
+       95 |   18 |    13
+      100 |   29 |     3
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Split_le_gt _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   401
-        ----+------+------
-          0 |    1 |   160
-         50 |    2 |    91
-         75 |    5 |    44
-         90 |   11 |    16
-         95 |   14 |     9
-         99 |   17 |     4
-        100 |   24 |     1
-        |}]
-    ;;
+  let inter = Set.inter
 
-    let split_lt_ge = Set.split_lt_ge
+  let%expect_test _ =
+    test (function
+      | Inter _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   519
+      ----+------+------
+       50 |    1 |    63
+       75 |    2 |    30
+       90 |    6 |     7
+       95 |    8 |     4
+      100 |   25 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Split_lt_ge _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   427
-        ----+------+------
-          0 |    1 |   172
-         50 |    2 |    88
-         75 |    4 |    54
-         90 |   10 |    19
-         95 |   13 |    10
-         99 |   26 |     2
-        100 |   36 |     1
-        |}]
-    ;;
+  let union = Set.union
 
-    let group_by = Set.group_by
+  let%expect_test _ =
+    test (function
+      | Union _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   173
+      ----+------+------
+        0 |    1 |   395
+       50 |    3 |   229
+       75 |    9 |   104
+       90 |   17 |    45
+       95 |   25 |    22
+       99 |   37 |     4
+      100 |   48 |     2
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Group_by _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   559
-        ----+------+------
-          0 |    1 |     9
-         50 |    2 |     5
-         75 |    4 |     3
-        100 |   14 |     1
-        |}]
-    ;;
+  let union_list = Set.union_list
 
-    let remove_index = Set.remove_index
+  let%expect_test _ =
+    test (function
+      | Union_list _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |    88
+      ----+------+------
+        0 |    1 |   448
+       50 |    3 |   251
+       75 |    6 |   120
+       90 |   10 |    53
+       95 |   13 |    30
+       99 |   19 |     5
+      100 |   24 |     1
+      |}]
+  ;;
 
-    let%expect_test _ =
-      test (function
-        | Remove_index _ -> true
-        | _ -> false);
-      [%expect
-        {|
-          % | size | count
-        ----+------+------
-          - |    0 |   304
-        ----+------+------
-          0 |    1 |   284
-         50 |    2 |   157
-         75 |    6 |    75
-         90 |   13 |    32
-         95 |   19 |    15
-         99 |   26 |     4
-        100 |   27 |     2
-        |}]
-    ;;
-  end :
-    Impl))
-;;
+  let split = Set.split
+
+  let%expect_test _ =
+    test (function
+      | Split _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   413
+      ----+------+------
+        0 |    1 |   155
+       50 |    2 |    88
+       75 |    5 |    39
+       90 |   13 |    16
+       95 |   16 |    10
+       99 |   26 |     2
+      100 |   27 |     1
+      |}]
+  ;;
+
+  let split_le_gt = Set.split_le_gt
+
+  let%expect_test _ =
+    test (function
+      | Split_le_gt _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   401
+      ----+------+------
+        0 |    1 |   160
+       50 |    2 |    91
+       75 |    5 |    44
+       90 |   11 |    16
+       95 |   14 |     9
+       99 |   17 |     4
+      100 |   24 |     1
+      |}]
+  ;;
+
+  let split_lt_ge = Set.split_lt_ge
+
+  let%expect_test _ =
+    test (function
+      | Split_lt_ge _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   427
+      ----+------+------
+        0 |    1 |   172
+       50 |    2 |    88
+       75 |    4 |    54
+       90 |   10 |    19
+       95 |   13 |    10
+       99 |   26 |     2
+      100 |   36 |     1
+      |}]
+  ;;
+
+  let group_by = (Set.group_by [@alert "-deprecated"])
+
+  let%expect_test _ =
+    test (function
+      | Group_by _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   559
+      ----+------+------
+        0 |    1 |     9
+       50 |    2 |     5
+       75 |    4 |     3
+      100 |   14 |     1
+      |}]
+  ;;
+
+  let remove_index = Set.remove_index
+
+  let%expect_test _ =
+    test (function
+      | Remove_index _ -> true
+      | _ -> false);
+    [%expect
+      {|
+        % | size | count
+      ----+------+------
+        - |    0 |   304
+      ----+------+------
+        0 |    1 |   284
+       50 |    2 |   157
+       75 |    6 |    75
+       90 |   13 |    32
+       95 |   19 |    15
+       99 |   26 |     4
+      100 |   27 |     2
+      |}]
+  ;;
+end

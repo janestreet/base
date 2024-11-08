@@ -2,14 +2,17 @@
 
 open! Import
 
-type 'a t = 'a array [@@deriving_inline compare ~localize, globalize, sexp, sexp_grammar]
+type 'a t = 'a array
+[@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 
 val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
 
-include Sexplib0.Sexpable.S1 with type 'a t := 'a t
+include Sexplib0.Sexpable.S_any1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
@@ -270,8 +273,6 @@ val sorted_copy : local_ 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
 
 val last : 'a t -> 'a [@@deprecated "[since 2024-07] This was renamed to [last_exn]"]
 val last_exn : 'a t -> 'a
-val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-val equal__local : (local_ 'a -> local_ 'a -> bool) -> local_ 'a t -> local_ 'a t -> bool
 
 (** The input array is copied internally so that future modifications of it do not change
     the sequence. *)

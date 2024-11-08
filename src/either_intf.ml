@@ -34,10 +34,12 @@ module type Either = sig
   type ('f, 's) t = ('f, 's) Either0.t =
     | First of 'f
     | Second of 's
-  [@@deriving_inline compare ~localize, hash, sexp, sexp_grammar]
+  [@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
 
   include Ppx_compare_lib.Comparable.S2 with type ('f, 's) t := ('f, 's) t
   include Ppx_compare_lib.Comparable.S_local2 with type ('f, 's) t := ('f, 's) t
+  include Ppx_compare_lib.Equal.S2 with type ('f, 's) t := ('f, 's) t
+  include Ppx_compare_lib.Equal.S_local2 with type ('f, 's) t := ('f, 's) t
   include Ppx_hash_lib.Hashable.S2 with type ('f, 's) t := ('f, 's) t
   include Sexplib0.Sexpable.S2 with type ('f, 's) t := ('f, 's) t
 
@@ -60,15 +62,6 @@ module type Either = sig
     -> first:local_ ('a -> 'c)
     -> second:local_ ('b -> 'd)
     -> ('c, 'd) t
-
-  val equal : ('f -> 'f -> bool) -> ('s -> 's -> bool) -> ('f, 's) t -> ('f, 's) t -> bool
-
-  val local_equal
-    :  (local_ 'f -> local_ 'f -> bool)
-    -> (local_ 's -> local_ 's -> bool)
-    -> local_ ('f, 's) t
-    -> local_ ('f, 's) t
-    -> bool
 
   module type Focused = Focused
 

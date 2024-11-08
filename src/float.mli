@@ -127,8 +127,8 @@ val to_int64 : local_ t -> int64
     v}
 
     For convenience, versions of these functions with the [dir] argument hard-coded are
-    provided.  If you are writing performance-critical code you should use the
-    versions with the hard-coded arguments (e.g. [iround_down_exn]).  The [_exn] ones
+    provided. If you are writing performance-critical code you should use the
+    versions with the hard-coded arguments (e.g. [iround_down_exn]). The [_exn] ones
     are the fastest.
 
     The following properties hold:
@@ -700,7 +700,7 @@ val ieee_mantissa : local_ t -> Int63.t
 module Terse : sig
   type nonrec t = t [@@deriving_inline sexp, sexp_grammar]
 
-  include Sexplib0.Sexpable.S with type t := t
+  include Sexplib0.Sexpable.S_any with type t := t
 
   val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 

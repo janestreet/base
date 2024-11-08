@@ -209,16 +209,19 @@ module Pow2 = struct
   let clz = Ocaml_intrinsics_kernel.Int.count_leading_zeros
   let ctz = Ocaml_intrinsics_kernel.Int.count_trailing_zeros
 
+  let[@cold] [@inline never] [@local never] [@specialise never] log2_bad_input i =
+    raise_s (Sexp.message "[Int.floor_log2] got invalid input" [ "", sexp_of_int i ])
+  ;;
+
   (** Hacker's Delight Second Edition p106 *)
-  let floor_log2 i =
-    if i <= 0
-    then raise_s (Sexp.message "[Int.floor_log2] got invalid input" [ "", sexp_of_int i ]);
-    num_bits - 1 - clz i
+  let floor_log2 i = if i <= 0 then log2_bad_input i else num_bits - 1 - clz i
+
+  let[@cold] [@inline never] [@local never] [@specialise never] log2_bad_input i =
+    raise_s (Sexp.message "[Int.ceil_log2] got invalid input" [ "", sexp_of_int i ])
   ;;
 
   let ceil_log2 i =
-    if i <= 0
-    then raise_s (Sexp.message "[Int.ceil_log2] got invalid input" [ "", sexp_of_int i ]);
+    if i <= 0 then log2_bad_input i;
     if i = 1 then 0 else num_bits - clz (i - 1)
   ;;
 end
@@ -342,6 +345,14 @@ end
 include O
 
 (* [Int] and [Int.O] agree value-wise *)
+
+module Summable = struct
+  type nonrec t = t
+
+  let zero = zero
+  let[@inline] ( + ) x y = x + y
+  let[@inline] ( - ) x y = x - y
+end
 
 module Private = struct
   module O_F = O.F

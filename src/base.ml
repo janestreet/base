@@ -758,5 +758,3 @@ exception Not_found_s = Not_found_s
    program refers to at least one value directly in [Base]; referring to values in
    [Base.Bool], for example, is not sufficient. *)
 let () = Backtrace.initialize_module ()
-
-module Caml = struct end [@@deprecated "[since 2023-01] use Stdlib instead of Caml"]

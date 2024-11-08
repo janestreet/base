@@ -1,4 +1,5 @@
 open Import0
+include Ppx_compare_lib_intf.Definitions
 
 let compare_abstract ~type_name _ _ =
   Printf.ksprintf
@@ -13,122 +14,6 @@ let equal_abstract ~type_name _ _ =
     "Equal called on the type %s, which is abstract in an implementation."
     type_name
 ;;
-
-type 'a compare = 'a -> 'a -> int
-type 'a compare__local = local_ 'a -> local_ 'a -> int
-type 'a equal = 'a -> 'a -> bool
-type 'a equal__local = local_ 'a -> local_ 'a -> bool
-
-module Comparable = struct
-  module type S = sig
-    type t
-
-    val compare : t compare
-  end
-
-  module type S1 = sig
-    type 'a t
-
-    val compare : 'a compare -> 'a t compare
-  end
-
-  module type S2 = sig
-    type ('a, 'b) t
-
-    val compare : 'a compare -> 'b compare -> ('a, 'b) t compare
-  end
-
-  module type S3 = sig
-    type ('a, 'b, 'c) t
-
-    val compare : 'a compare -> 'b compare -> 'c compare -> ('a, 'b, 'c) t compare
-  end
-
-  module type S_local = sig
-    type t
-
-    val compare__local : t compare__local
-  end
-
-  module type S_local1 = sig
-    type 'a t
-
-    val compare__local : 'a compare__local -> 'a t compare__local
-  end
-
-  module type S_local2 = sig
-    type ('a, 'b) t
-
-    val compare__local
-      :  'a compare__local
-      -> 'b compare__local
-      -> ('a, 'b) t compare__local
-  end
-
-  module type S_local3 = sig
-    type ('a, 'b, 'c) t
-
-    val compare__local
-      :  'a compare__local
-      -> 'b compare__local
-      -> 'c compare__local
-      -> ('a, 'b, 'c) t compare__local
-  end
-end
-
-module Equal = struct
-  module type S = sig
-    type t
-
-    val equal : t equal
-  end
-
-  module type S1 = sig
-    type 'a t
-
-    val equal : 'a equal -> 'a t equal
-  end
-
-  module type S2 = sig
-    type ('a, 'b) t
-
-    val equal : 'a equal -> 'b equal -> ('a, 'b) t equal
-  end
-
-  module type S3 = sig
-    type ('a, 'b, 'c) t
-
-    val equal : 'a equal -> 'b equal -> 'c equal -> ('a, 'b, 'c) t equal
-  end
-
-  module type S_local = sig
-    type t
-
-    val equal__local : t equal__local
-  end
-
-  module type S_local1 = sig
-    type 'a t
-
-    val equal__local : 'a equal__local -> 'a t equal__local
-  end
-
-  module type S_local2 = sig
-    type ('a, 'b) t
-
-    val equal__local : 'a equal__local -> 'b equal__local -> ('a, 'b) t equal__local
-  end
-
-  module type S_local3 = sig
-    type ('a, 'b, 'c) t
-
-    val equal__local
-      :  'a equal__local
-      -> 'b equal__local
-      -> 'c equal__local
-      -> ('a, 'b, 'c) t equal__local
-  end
-end
 
 module Builtin = struct
   let compare_bool : bool compare = Poly.compare

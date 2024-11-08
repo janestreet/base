@@ -76,38 +76,36 @@ let%expect_test ("[ceil_log2]" [@tags "64-bits-only"]) =
     |}]
 ;;
 
-let%test_module "int64_math" =
-  (module struct
-    let test_cases () =
-      let cases =
-        [ 0b10101010L
-        ; 0b1010101010101010L
-        ; 0b101010101010101010101010L
-        ; 0b10000000L
-        ; 0b1000000000001000L
-        ; 0b100000000000000000001000L
+module%test [@name "int64_math"] _ = struct
+  let test_cases () =
+    let cases =
+      [ 0b10101010L
+      ; 0b1010101010101010L
+      ; 0b101010101010101010101010L
+      ; 0b10000000L
+      ; 0b1000000000001000L
+      ; 0b100000000000000000001000L
+      ]
+    in
+    let cases =
+      cases
+      @ [ (0b1010101010101010L lsl 16) lor 0b1010101010101010L
+        ; (0b1000000000000000L lsl 16) lor 0b0000000000001000L
         ]
-      in
-      let cases =
-        cases
-        @ [ (0b1010101010101010L lsl 16) lor 0b1010101010101010L
-          ; (0b1000000000000000L lsl 16) lor 0b0000000000001000L
-          ]
-      in
-      let added_cases = List.map cases ~f:(fun x -> x lsl 16) in
-      List.concat [ cases; added_cases ]
-    ;;
+    in
+    let added_cases = List.map cases ~f:(fun x -> x lsl 16) in
+    List.concat [ cases; added_cases ]
+  ;;
 
-    let%test_unit "ceil_pow2" =
-      List.iter (test_cases ()) ~f:(fun x ->
-        let p2 = ceil_pow2 x in
-        assert (is_pow2 p2 && p2 >= x && x >= p2 / 2L))
-    ;;
+  let%test_unit "ceil_pow2" =
+    List.iter (test_cases ()) ~f:(fun x ->
+      let p2 = ceil_pow2 x in
+      assert (is_pow2 p2 && p2 >= x && x >= p2 / 2L))
+  ;;
 
-    let%test_unit "floor_pow2" =
-      List.iter (test_cases ()) ~f:(fun x ->
-        let p2 = floor_pow2 x in
-        assert (is_pow2 p2 && 2L * p2 >= x && x >= p2))
-    ;;
-  end)
-;;
+  let%test_unit "floor_pow2" =
+    List.iter (test_cases ()) ~f:(fun x ->
+      let p2 = floor_pow2 x in
+      assert (is_pow2 p2 && 2L * p2 >= x && x >= p2))
+  ;;
+end

@@ -79,43 +79,41 @@ let%expect_test ("[ceil_log2]" [@tags "64-bits-only"]) =
     |}]
 ;;
 
-let%test_module "int_math" =
-  (module struct
-    let test_cases () =
+module%test [@name "int_math"] _ = struct
+  let test_cases () =
+    let cases =
+      [ 0b10101010
+      ; 0b1010101010101010
+      ; 0b101010101010101010101010
+      ; 0b10000000
+      ; 0b1000000000001000
+      ; 0b100000000000000000001000
+      ]
+    in
+    match Word_size.word_size with
+    | W64 ->
+      (* create some >32 bit values... *)
+      (* We can't use literals directly because the compiler complains on 32 bits. *)
       let cases =
-        [ 0b10101010
-        ; 0b1010101010101010
-        ; 0b101010101010101010101010
-        ; 0b10000000
-        ; 0b1000000000001000
-        ; 0b100000000000000000001000
-        ]
+        cases
+        @ [ (0b1010101010101010 lsl 16) lor 0b1010101010101010
+          ; (0b1000000000000000 lsl 16) lor 0b0000000000001000
+          ]
       in
-      match Word_size.word_size with
-      | W64 ->
-        (* create some >32 bit values... *)
-        (* We can't use literals directly because the compiler complains on 32 bits. *)
-        let cases =
-          cases
-          @ [ (0b1010101010101010 lsl 16) lor 0b1010101010101010
-            ; (0b1000000000000000 lsl 16) lor 0b0000000000001000
-            ]
-        in
-        let added_cases = List.map cases ~f:(fun x -> x lsl 16) in
-        List.concat [ cases; added_cases ]
-      | W32 -> cases
-    ;;
+      let added_cases = List.map cases ~f:(fun x -> x lsl 16) in
+      List.concat [ cases; added_cases ]
+    | W32 -> cases
+  ;;
 
-    let%test_unit "ceil_pow2" =
-      List.iter (test_cases ()) ~f:(fun x ->
-        let p2 = ceil_pow2 x in
-        assert (is_pow2 p2 && p2 >= x && x >= p2 / 2))
-    ;;
+  let%test_unit "ceil_pow2" =
+    List.iter (test_cases ()) ~f:(fun x ->
+      let p2 = ceil_pow2 x in
+      assert (is_pow2 p2 && p2 >= x && x >= p2 / 2))
+  ;;
 
-    let%test_unit "floor_pow2" =
-      List.iter (test_cases ()) ~f:(fun x ->
-        let p2 = floor_pow2 x in
-        assert (is_pow2 p2 && 2 * p2 >= x && x >= p2))
-    ;;
-  end)
-;;
+  let%test_unit "floor_pow2" =
+    List.iter (test_cases ()) ~f:(fun x ->
+      let p2 = floor_pow2 x in
+      assert (is_pow2 p2 && 2 * p2 >= x && x >= p2))
+  ;;
+end

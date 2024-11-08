@@ -33,7 +33,12 @@ end
 (** [Register] builds a [pp] function from a [to_string] function, and adds the
     [module_name ^ ".pp"] to the list of pretty printers.  The idea is to statically
     guarantee that one has the desired [pp] function at the same point where the [name] is
-    added. *)
+    added.
+
+    [module_name ^ ".pp"] must be a valid OCaml identifier. It is recommended to not have
+    any "."s in [module_name]. For example, if [module_name] is "A.B" and "A.B" is not a
+    valid identifier because "A" is a valid library that doesn't expose a module "B", then
+    "A.B.pp" will not be a valid identifier. *)
 module Register (M : sig
     type t
 

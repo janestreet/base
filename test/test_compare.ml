@@ -113,50 +113,48 @@ let%expect_test "Int63" =
   [%expect {| |}]
 ;;
 
-let%test_module "lexicographic" =
-  (module struct
-    let%expect_test "single" =
-      Ref.set_temporarily sexp_style To_string_hum ~f:(fun () ->
-        List.iter
-          [ 1, 2; 1, 1; 2, 1 ]
-          ~f:(fun (a, b) ->
-            let ordering = Ordering.of_int (compare a b) in
-            print_s [%message (a : int) (b : int) (ordering : Ordering.t)];
-            require_equal
-              (module Ordering)
-              (Ordering.of_int (compare a b))
-              (Ordering.of_int (Comparable.lexicographic [ compare ] a b)));
-        [%expect
-          {|
-          ((a 1) (b 2) (ordering Less))
-          ((a 1) (b 1) (ordering Equal))
-          ((a 2) (b 1) (ordering Greater))
-          |}])
-    ;;
+module%test [@name "lexicographic"] _ = struct
+  let%expect_test "single" =
+    Ref.set_temporarily sexp_style To_string_hum ~f:(fun () ->
+      List.iter
+        [ 1, 2; 1, 1; 2, 1 ]
+        ~f:(fun (a, b) ->
+          let ordering = Ordering.of_int (compare a b) in
+          print_s [%message (a : int) (b : int) (ordering : Ordering.t)];
+          require_equal
+            (module Ordering)
+            (Ordering.of_int (compare a b))
+            (Ordering.of_int (Comparable.lexicographic [ compare ] a b)));
+      [%expect
+        {|
+        ((a 1) (b 2) (ordering Less))
+        ((a 1) (b 1) (ordering Equal))
+        ((a 2) (b 1) (ordering Greater))
+        |}])
+  ;;
 
-    let%expect_test "three comparisons" =
-      Ref.set_temporarily sexp_style To_string_hum ~f:(fun () ->
-        let compare_first_three_elts a_1 b_1 =
-          Comparable.lexicographic
-            (List.init 3 ~f:(fun i a b -> compare a.(i) b.(i)))
-            a_1
-            b_1
-        in
-        let test a b =
-          let a = Array.of_list a in
-          let b = Array.of_list b in
-          let ordering = Ordering.of_int (compare_first_three_elts a b) in
-          print_s [%message (a : int array) (b : int array) (ordering : Ordering.t)]
-        in
-        test [ 1; 2; 3; 4 ] [ 1; 2; 4; 9 ];
-        [%expect {| ((a (1 2 3 4)) (b (1 2 4 9)) (ordering Less)) |}];
-        test [ 1; 2; 3; 4 ] [ 1; 2; 3; 9 ];
-        [%expect {| ((a (1 2 3 4)) (b (1 2 3 9)) (ordering Equal)) |}];
-        test [ 1; 2; 3; 4 ] [ 1; 1; 4; 9 ];
-        [%expect {| ((a (1 2 3 4)) (b (1 1 4 9)) (ordering Greater)) |}])
-    ;;
-  end)
-;;
+  let%expect_test "three comparisons" =
+    Ref.set_temporarily sexp_style To_string_hum ~f:(fun () ->
+      let compare_first_three_elts a_1 b_1 =
+        Comparable.lexicographic
+          (List.init 3 ~f:(fun i a b -> compare a.(i) b.(i)))
+          a_1
+          b_1
+      in
+      let test a b =
+        let a = Array.of_list a in
+        let b = Array.of_list b in
+        let ordering = Ordering.of_int (compare_first_three_elts a b) in
+        print_s [%message (a : int array) (b : int array) (ordering : Ordering.t)]
+      in
+      test [ 1; 2; 3; 4 ] [ 1; 2; 4; 9 ];
+      [%expect {| ((a (1 2 3 4)) (b (1 2 4 9)) (ordering Less)) |}];
+      test [ 1; 2; 3; 4 ] [ 1; 2; 3; 9 ];
+      [%expect {| ((a (1 2 3 4)) (b (1 2 3 9)) (ordering Equal)) |}];
+      test [ 1; 2; 3; 4 ] [ 1; 1; 4; 9 ];
+      [%expect {| ((a (1 2 3 4)) (b (1 1 4 9)) (ordering Greater)) |}])
+  ;;
+end
 
 let%expect_test "reversed" =
   let list = [ 3; 1; 4; 1; 5; 9; 2; 6; 5; 3; 5; 9 ] in

@@ -322,6 +322,14 @@ include O
 
 (* [Nativeint] and [Nativeint.O] agree value-wise *)
 
+module Summable = struct
+  type nonrec t = t
+
+  let zero = zero
+  let[@inline] ( + ) x y = x + y
+  let[@inline] ( - ) x y = x - y
+end
+
 (* Include type-specific [Replace_polymorphic_compare] at the end, after
    including functor application that could shadow its definitions. This is
    here so that efficient versions of the comparison functions are exported by

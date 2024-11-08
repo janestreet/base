@@ -5,15 +5,18 @@
 open! Import
 
 type 'a t = 'a list
-[@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
+[@@deriving_inline
+  compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
 include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
 include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
 
 val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
 
 include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
-include Sexplib0.Sexpable.S1 with type 'a t := 'a t
+include Sexplib0.Sexpable.S_any1 with type 'a t := 'a t
 
 val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 
@@ -417,7 +420,7 @@ val filter_opt : 'a option t -> 'a t
 module Assoc : sig
   type ('a, 'b) t = ('a * 'b) list [@@deriving_inline sexp, sexp_grammar]
 
-  include Sexplib0.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
+  include Sexplib0.Sexpable.S_any2 with type ('a, 'b) t := ('a, 'b) t
 
   val t_sexp_grammar
     :  'a Sexplib0.Sexp_grammar.t
@@ -509,8 +512,6 @@ val random_element_exn : ?random_state:Random.State.t -> 'a t -> 'a
 val is_sorted : 'a t -> compare:local_ ('a -> 'a -> int) -> bool
 
 val is_sorted_strictly : 'a t -> compare:local_ ('a -> 'a -> int) -> bool
-val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-val equal__local : (local_ 'a -> local_ 'a -> bool) -> local_ 'a t -> local_ 'a t -> bool
 
 module Infix : sig
   val ( @ ) : 'a t -> 'a t -> 'a t
