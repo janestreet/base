@@ -11,7 +11,7 @@ OCaml compiler. In particular it makes different choices and doesn't
 re-export features that are not fully portable such as I/O, which are
 left to other libraries.
 
-You also might want to browse the [[https://ocaml.janestreet.com/ocaml-core/latest/doc/base/index.html][API Documentation]].
+You also might want to browse the [[https://ocaml.org/p/core/latest][API Documentation]].
 
 ** Installation
 
