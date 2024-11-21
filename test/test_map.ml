@@ -284,33 +284,41 @@ module%test [@name "[symmetric_diff]"] _ = struct
     [%expect
       {|
       ((size                    1_048_576)
-       (add_comparisons         20_971_521)
-       (diff_comparisons        22_020_076)
-       (mean_diff_comparisons   20.999980926513672)
-       (median_diff_comparisons 21)
+       (add_comparisons         24_379_415)
+       (diff_comparisons        25_165_828)
+       (mean_diff_comparisons   24.000003814697266)
+       (median_diff_comparisons 24)
        (diff_comparison_buckets (
          ((comparisons 1)  (times 1))
          ((comparisons 2)  (times 1))
-         ((comparisons 3)  (times 1))
-         ((comparisons 4)  (times 2))
-         ((comparisons 5)  (times 4))
-         ((comparisons 6)  (times 8))
-         ((comparisons 7)  (times 16))
-         ((comparisons 8)  (times 32))
-         ((comparisons 9)  (times 64))
-         ((comparisons 10) (times 128))
-         ((comparisons 11) (times 256))
-         ((comparisons 12) (times 512))
-         ((comparisons 13) (times 1_024))
-         ((comparisons 14) (times 2_048))
-         ((comparisons 15) (times 4_096))
-         ((comparisons 16) (times 8_192))
-         ((comparisons 17) (times 16_384))
-         ((comparisons 18) (times 32_768))
-         ((comparisons 19) (times 65_536))
-         ((comparisons 20) (times 131_072))
-         ((comparisons 21) (times 262_144))
-         ((comparisons 22) (times 524_287)))))
+         ((comparisons 3)  (times 3))
+         ((comparisons 4)  (times 4))
+         ((comparisons 5)  (times 6))
+         ((comparisons 6)  (times 11))
+         ((comparisons 7)  (times 20))
+         ((comparisons 8)  (times 35))
+         ((comparisons 9)  (times 61))
+         ((comparisons 10) (times 107))
+         ((comparisons 11) (times 188))
+         ((comparisons 12) (times 330))
+         ((comparisons 13) (times 579))
+         ((comparisons 14) (times 1_016))
+         ((comparisons 15) (times 1_783))
+         ((comparisons 16) (times 3_129))
+         ((comparisons 17) (times 5_491))
+         ((comparisons 18) (times 9_636))
+         ((comparisons 19) (times 16_910))
+         ((comparisons 20) (times 29_675))
+         ((comparisons 21) (times 52_056))
+         ((comparisons 22) (times 90_397))
+         ((comparisons 23) (times 147_221))
+         ((comparisons 24) (times 205_068))
+         ((comparisons 25) (times 224_909))
+         ((comparisons 26) (times 170_393))
+         ((comparisons 27) (times 73_527))
+         ((comparisons 28) (times 14_876))
+         ((comparisons 29) (times 1_123))
+         ((comparisons 30) (times 20)))))
       |}]
   ;;
 
@@ -512,22 +520,22 @@ let%expect_test ("space" [@tags "no-js"]) =
     ┌───────────┬──────────────┬───────────┐
     │ length    │ construction │ words     │
     ├───────────┼──────────────┼───────────┤
-    │         1 │ l_to_r       │        17 │
-    │         1 │ r_to_l       │        17 │
-    │         1 │ balanced     │        17 │
-    │         1 │ random       │        17 │
-    │       100 │ l_to_r       │       464 │
-    │       100 │ r_to_l       │       464 │
-    │       100 │ balanced     │       503 │
-    │       100 │ random       │       509 │
-    │    10_000 │ l_to_r       │    45_014 │
-    │    10_000 │ r_to_l       │    45_014 │
-    │    10_000 │ balanced     │    47_726 │
-    │    10_000 │ random       │    48_887 │
-    │ 1_000_000 │ l_to_r       │ 4_500_014 │
-    │ 1_000_000 │ r_to_l       │ 4_500_014 │
-    │ 1_000_000 │ balanced     │ 4_572_875 │
-    │ 1_000_000 │ random       │ 4_884_050 │
+    │         1 │ l_to_r       │        16 │
+    │         1 │ r_to_l       │        16 │
+    │         1 │ balanced     │        16 │
+    │         1 │ random       │        16 │
+    │       100 │ l_to_r       │       463 │
+    │       100 │ r_to_l       │       463 │
+    │       100 │ balanced     │       502 │
+    │       100 │ random       │       487 │
+    │    10_000 │ l_to_r       │    45_013 │
+    │    10_000 │ r_to_l       │    45_013 │
+    │    10_000 │ balanced     │    47_725 │
+    │    10_000 │ random       │    47_083 │
+    │ 1_000_000 │ l_to_r       │ 4_500_013 │
+    │ 1_000_000 │ r_to_l       │ 4_500_013 │
+    │ 1_000_000 │ balanced     │ 4_572_874 │
+    │ 1_000_000 │ random       │ 4_714_564 │
     └───────────┴──────────────┴───────────┘
     |}]
 ;;

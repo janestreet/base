@@ -181,9 +181,10 @@ let () =
       | { pstr_loc = loc; _ } :: _ as st ->
         (check (module_of_loc loc))#structure st;
         st)
-    ~intf:(function
-      | [] -> []
-      | { psig_loc = loc; _ } :: _ as sg ->
+    ~intf:(fun sg ->
+      match sg.psg_items with
+      | [] -> sg
+      | { psig_loc = loc; _ } :: _ ->
         (check (module_of_loc loc))#signature sg;
         sg)
 ;;

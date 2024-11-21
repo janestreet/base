@@ -102,3 +102,16 @@ let to_string { Stdlib.Lexing.pos_fname; pos_lnum; pos_cnum; pos_bol } =
 ;;
 
 let sexp_of_t t = Sexp.Atom (to_string t)
+let equal__local a b = equal_int (compare__local a b) 0
+
+let of_pos (pos_fname, pos_lnum, pos_cnum, _) =
+  { pos_fname; pos_lnum; pos_cnum; pos_bol = 0 }
+;;
+
+let here_or_there ?(here = Stdlib.Lexing.dummy_pos) there =
+  match there with
+  | None -> here
+  | Some there -> there
+;;
+
+let is_dummy t = equal__local Stdlib.Lexing.dummy_pos t

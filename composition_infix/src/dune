@@ -1,0 +1,5 @@
+(library
+ (name composition_infix)
+ (public_name base.composition_infix)
+ (preprocess no_preprocessing)
+ (libraries))

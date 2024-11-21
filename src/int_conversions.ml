@@ -71,14 +71,10 @@ let int32_to_int_exn x =
 
 (* int <-> int64 *)
 
-let[@cold] [@inline never] [@local never] [@specialise never] int64_to_int_failure x =
-  convert_failure
-    (Stdlib.Int64.add
-       (globalize_int64 x)
-       0L (* force int64 boxing to be here under flambda2 *))
-    "int64"
-    "int"
-    int64_to_string
+let[@cold] [@inline never] [@local never] [@specialise never] [@zero_alloc] int64_to_int_failure
+  x
+  =
+  convert_failure x "int64" "int" int64_to_string
 ;;
 
 let () = assert (num_bits_int < num_bits_int64)
@@ -96,7 +92,15 @@ let int64_to_int x =
 ;;
 
 let int64_to_int_exn x =
-  if int64_is_representable_as_int x then int64_to_int_trunc x else int64_to_int_failure x
+  if int64_is_representable_as_int x
+  then int64_to_int_trunc x
+  else (
+    let x =
+      Stdlib.Int64.add
+        (globalize_int64 x)
+        0L (* force int64 boxing to be here under flambda2 *)
+    in
+    int64_to_int_failure x)
 ;;
 
 (* int <-> nativeint *)

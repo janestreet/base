@@ -249,6 +249,14 @@ module type S_common = sig
       The result is unspecified if the argument is nan or falls outside the range
       of representable integers. *)
   val of_float_unchecked : float -> t
+
+  module Summable : sig
+    type nonrec t = t
+
+    val zero : t
+    val ( + ) : t -> t -> t
+    val ( - ) : t -> t -> t
+  end
 end
 
 module type Operators_unbounded = sig

@@ -44,9 +44,10 @@ module%test [@name "local mode vs global mode"] _ = struct
   ;;
 
   let%expect_test "value_local_exn" =
+    let here = [%here] in
     test
-      ~local:Option.value_local_exn
-      ~global:Option.value_exn
+      ~local:(Option.value_local_exn ~here)
+      ~global:(Option.value_exn ~here)
       (module struct
         type t = int option [@@deriving quickcheck, sexp_of]
       end)

@@ -60,7 +60,6 @@ let pred = pred
 let succ = succ
 let pow = Int_math.Private.int64_pow
 let rem = rem
-let neg = neg
 let minus_one = minus_one
 let one = one
 let zero = zero
@@ -168,19 +167,82 @@ let of_nativeint_exn = of_nativeint
 let to_nativeint = Conv.int64_to_nativeint
 let to_nativeint_exn = Conv.int64_to_nativeint_exn
 
+module Pre_O = struct
+  external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_add"
+  external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_sub"
+  external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_mul"
+  external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_div"
+  external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) = "%int64_neg"
+
+  let ( ** ) = ( ** )
+
+  include Int64_replace_polymorphic_compare
+
+  let abs = abs
+
+  external neg : (t[@local_opt]) -> (t[@local_opt]) = "%int64_neg"
+
+  let zero = zero
+  let of_int_exn = of_int_exn
+end
+
+module O = struct
+  include Pre_O
+
+  include Int_math.Make (struct
+      type nonrec t = t
+
+      include Pre_O
+
+      let rem = rem
+      let to_float = to_float
+      let of_float = of_float
+      let of_string = T.of_string
+      let to_string = T.to_string
+    end)
+
+  external ( land ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_and"
+  external ( lor ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_or"
+  external ( lxor ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_xor"
+
+  let lnot = bit_not
+
+  external ( lsl )
+    :  (t[@local_opt])
+    -> (int[@local_opt])
+    -> (t[@local_opt])
+    = "%int64_lsl"
+
+  external ( asr )
+    :  (t[@local_opt])
+    -> (int[@local_opt])
+    -> (t[@local_opt])
+    = "%int64_asr"
+
+  external ( lsr )
+    :  (t[@local_opt])
+    -> (int[@local_opt])
+    -> (t[@local_opt])
+    = "%int64_lsr"
+end
+
+include O
+
 module Pow2 = struct
   open! Import
   open Int64_replace_polymorphic_compare
 
-  let raise_s = Error.raise_s
+  open struct
+    let raise_s = Error.raise_s
 
-  let non_positive_argument () =
-    Printf.invalid_argf "argument must be strictly positive" ()
-  ;;
+    let non_positive_argument () =
+      Printf.invalid_argf "argument must be strictly positive" ()
+    ;;
 
-  let ( lor ) = Stdlib.Int64.logor
-  let ( lsr ) = Stdlib.Int64.shift_right_logical
-  let ( land ) = Stdlib.Int64.logand
+    let ( lor ) = Stdlib.Int64.logor
+    let ( lsr ) = Stdlib.Int64.shift_right_logical
+    let ( land ) = Stdlib.Int64.logand
+  end
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 x =
@@ -296,68 +358,15 @@ include Pretty_printer.Register (struct
     let module_name = "Base.Int64"
   end)
 
-module Pre_O = struct
-  external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_add"
-  external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_sub"
-  external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_mul"
-  external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_div"
-  external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) = "%int64_neg"
+(* [Int64] and [Int64.O] agree value-wise *)
 
-  let ( ** ) = ( ** )
-
-  include Int64_replace_polymorphic_compare
-
-  let abs = abs
-
-  external neg : (t[@local_opt]) -> (t[@local_opt]) = "%int64_neg"
+module Summable = struct
+  type nonrec t = t
 
   let zero = zero
-  let of_int_exn = of_int_exn
+  let[@inline] ( + ) x y = x + y
+  let[@inline] ( - ) x y = x - y
 end
-
-module O = struct
-  include Pre_O
-
-  include Int_math.Make (struct
-      type nonrec t = t
-
-      include Pre_O
-
-      let rem = rem
-      let to_float = to_float
-      let of_float = of_float
-      let of_string = T.of_string
-      let to_string = T.to_string
-    end)
-
-  external ( land ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_and"
-  external ( lor ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_or"
-  external ( lxor ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_xor"
-
-  let lnot = bit_not
-
-  external ( lsl )
-    :  (t[@local_opt])
-    -> (int[@local_opt])
-    -> (t[@local_opt])
-    = "%int64_lsl"
-
-  external ( asr )
-    :  (t[@local_opt])
-    -> (int[@local_opt])
-    -> (t[@local_opt])
-    = "%int64_asr"
-
-  external ( lsr )
-    :  (t[@local_opt])
-    -> (int[@local_opt])
-    -> (t[@local_opt])
-    = "%int64_lsr"
-end
-
-include O
-
-(* [Int64] and [Int64.O] agree value-wise *)
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after
    including functor application that could shadow its definitions. This is

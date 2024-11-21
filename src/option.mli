@@ -74,10 +74,10 @@ val value : 'a t -> default:'a -> 'a
 val value_local : 'a t -> default:'a -> 'a
 
 (** Extracts the underlying value, or raises if there is no value present. The
-    error raised can be augmented using the [~here], [~error], and [~message]
-    optional arguments. *)
+    raised error can be augmented using the [~error] and [~message] optional arguments.
+    If neither is provided, the raised error will include the provided location. *)
 val value_exn
-  :  ?here:Source_code_position0.t
+  :  ?here:Stdlib.Lexing.position
   -> ?error:Error.t
   -> ?message:string
   -> 'a t
@@ -85,7 +85,7 @@ val value_exn
 
 (** Like [value_exn], but over a local [t]. *)
 val value_local_exn
-  :  ?here:Source_code_position0.t
+  :  ?here:Stdlib.Lexing.position
   -> ?error:Error.t
   -> ?message:string
   -> 'a t

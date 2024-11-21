@@ -40,6 +40,7 @@ module type Accessors = sig
   val diff : 'a t -> 'a t -> 'a t
   val of_hashtbl_keys : ('a, _) Hashtbl.t -> 'a t
   val to_hashtbl : 'key t -> f:('key -> 'data) -> ('key, 'data) Hashtbl.t
+  val capacity : _ t -> int
 end
 
 type ('key, 'z) create_options = ('key, unit, 'z) Hashtbl_intf.create_options

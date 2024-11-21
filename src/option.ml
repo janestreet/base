@@ -109,30 +109,25 @@ let[@inline] value t ~default =
   (value_local (Modes.Global.wrap_option t) ~default:{ global = default }).global
 ;;
 
-let value_local_exn ?here ?error ?message t =
+let value_local_exn ?(here = Stdlib.Lexing.dummy_pos) ?error ?message t =
   match t with
   | Some x -> x
   | None ->
     let error =
-      match here, error, message with
-      | None, None, None -> Error.of_string "Option.value_exn None"
-      | None, None, Some m -> Error.of_string m
-      | None, Some e, None -> e
-      | None, Some e, Some m -> Error.tag e ~tag:m
-      | Some p, None, None ->
-        Error.create "Option.value_exn" p Source_code_position0.sexp_of_t
-      | Some p, None, Some m -> Error.create m p Source_code_position0.sexp_of_t
-      | Some p, Some e, _ ->
-        Error.create
-          (value message ~default:"")
-          (e, p)
-          (sexp_of_pair Error.sexp_of_t Source_code_position0.sexp_of_t)
+      match error, message with
+      | None, None ->
+        if Source_code_position.is_dummy here
+        then Error.of_string "Option.value_exn None"
+        else Error.create "Option.value_exn None" here Source_code_position0.sexp_of_t
+      | Some e, None -> e
+      | None, Some m -> Error.of_string m
+      | Some e, Some m -> Error.tag e ~tag:m
     in
     Error.raise error
 ;;
 
-let[@inline] value_exn ?here ?error ?message t =
-  (value_local_exn ?here ?error ?message (Modes.Global.wrap_option t)).global
+let[@inline] value_exn ?(here = Stdlib.Lexing.dummy_pos) ?error ?message t =
+  (value_local_exn ~here ?error ?message (Modes.Global.wrap_option t)).global
 ;;
 
 let value_or_thunk_local o ~default =

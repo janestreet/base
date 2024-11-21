@@ -2,8 +2,8 @@
 
 open! Import
 
-(** [Infix] lists the typical infix comparison operators.  These functions are provided by
-    [<M>.O] modules, i.e., modules that expose monomorphic infix comparisons over some
+(** [Infix] lists the typical infix comparison operators. These functions are provided
+    by [<M>.O] modules, i.e., modules that expose monomorphic infix comparisons over some
     [<M>.t]. *)
 module type Infix = sig
   type t

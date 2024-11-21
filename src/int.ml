@@ -346,6 +346,14 @@ include O
 
 (* [Int] and [Int.O] agree value-wise *)
 
+module Summable = struct
+  type nonrec t = t
+
+  let zero = zero
+  let[@inline] ( + ) x y = x + y
+  let[@inline] ( - ) x y = x - y
+end
+
 module Private = struct
   module O_F = O.F
 end

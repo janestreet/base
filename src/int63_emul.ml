@@ -483,6 +483,14 @@ include Int_string_conversions.Make_binary (struct
 
 (* [Int63] and [Int63.O] agree value-wise *)
 
+module Summable = struct
+  type nonrec t = t
+
+  let zero = zero
+  let[@inline] ( + ) x y = x + y
+  let[@inline] ( - ) x y = x - y
+end
+
 module Repr = struct
   type emulated = t
 

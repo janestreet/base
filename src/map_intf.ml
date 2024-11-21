@@ -1115,6 +1115,14 @@ module type Map = sig
   (** [update t key ~f] is [change t key ~f:(fun o -> Some (f o))]. *)
   val update : ('k, 'v, 'cmp) t -> 'k -> f:('v option -> 'v) -> ('k, 'v, 'cmp) t
 
+  (** [update_and_return t key ~f] is like [update t key ~f], but also returns the new
+      value. *)
+  val update_and_return
+    :  ('k, 'v, 'cmp) t
+    -> 'k
+    -> f:('v option -> 'v)
+    -> 'v * ('k, 'v, 'cmp) t
+
   (** Returns [Some value] bound to the given key, or [None] if none exists. *)
   val find : ('k, 'v, 'cmp) t -> 'k -> 'v option
 
