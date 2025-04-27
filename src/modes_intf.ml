@@ -74,179 +74,420 @@ module Definitions = struct
       val fn_local : local_ input1 -> local_ input2 -> local_ input3 -> local_ output
       val fn_global : input1 -> input2 -> input3 -> output
     end
+
+    module type Global = sig
+      type 'a t
+      [@@deriving compare ~localize, equal ~localize, hash, sexp ~localize, sexp_grammar]
+
+      (** Globalize a [t]. Takes an argument because [[%globalize]] will pass one for
+          ['a], but [globalize] is a no-op so it discards the argument. *)
+      val globalize : local_ _ -> local_ 'a t -> 'a t
+
+      (** Construct a [t]. Returns a global [t], which may be used as a local value. *)
+      val wrap : 'a -> 'a t
+
+      (** Access the contents of a [t]. Accepts a local [t], to which global values may be
+          passed. *)
+      val unwrap : local_ 'a t -> 'a
+
+      (** Transform the contents of a [t]. Accepts a local [t], to which global values may
+          be passed. Returns a global [t], which may be used as a local value. *)
+      val map : local_ 'a t -> f:local_ ('a -> 'b) -> 'b t
+
+      (** {2 Wrap and unwrap within other types}
+
+          It can be safe to wrap or unwrap a [Global.t] inside other types as a coercion
+          rather than a conversion, i.e. without copying any data. Since the type system
+          does not provide coercions for this, we provide explicit operations to convert
+          as a no-op. We export them as [external ... = "%identity"] to make this clear.
+
+          The [wrap_*] functions produce global values, which may be used as local values.
+
+          The [unwrap_*] functions produce local or global values, depending on which they
+          are passed. If used for globals, the result may be used as a local value. If
+          used for locals, the result must be local because the outer constructor may not
+          be used as a global value.
+
+          In general, it is safe to wrap or unwrap a type parameter ['a] in this way if
+          the wrapping and unwrapping do not pass through any arrow type. *)
+
+      (** Wrapping and unwrapping [List]. *)
+
+      external wrap_list : 'a list -> 'a t list = "%identity"
+
+      external unwrap_list
+        :  ('a t list[@local_opt])
+        -> ('a list[@local_opt])
+        = "%identity"
+
+      (** Wrapping and unwrapping [Iarray]. *)
+
+      external wrap_iarray : 'a iarray -> 'a t iarray = "%identity"
+
+      external unwrap_iarray
+        :  ('a t iarray[@local_opt])
+        -> ('a iarray[@local_opt])
+        = "%identity"
+
+      (** Wrapping and unwrapping [Option]. *)
+
+      external wrap_option : 'a option -> 'a t option = "%identity"
+
+      external unwrap_option
+        :  ('a t option[@local_opt])
+        -> ('a option[@local_opt])
+        = "%identity"
+
+      (** Wrapping and unwrapping [Either]. *)
+
+      external wrap_either : ('a, 'b) Either0.t -> ('a t, 'b t) Either0.t = "%identity"
+
+      external unwrap_either
+        :  (('a t, 'b t) Either0.t[@local_opt])
+        -> (('a, 'b) Either0.t[@local_opt])
+        = "%identity"
+
+      (** Wrapping and unwrapping [Either.First]. *)
+
+      external wrap_first : ('a, 'b) Either0.t -> ('a t, 'b) Either0.t = "%identity"
+
+      external unwrap_first
+        :  (('a t, 'b) Either0.t[@local_opt])
+        -> (('a, 'b) Either0.t[@local_opt])
+        = "%identity"
+
+      (** Wrapping and unwrapping [Either.Second]. *)
+
+      external wrap_second : ('a, 'b) Either0.t -> ('a, 'b t) Either0.t = "%identity"
+
+      external unwrap_second
+        :  (('a, 'b t) Either0.t[@local_opt])
+        -> (('a, 'b) Either0.t[@local_opt])
+        = "%identity"
+
+      (** Wrapping and unwrapping [Result]. *)
+
+      external wrap_result : ('a, 'b) Result.t -> ('a t, 'b t) Result.t = "%identity"
+
+      external unwrap_result
+        :  (('a t, 'b t) Result.t[@local_opt])
+        -> (('a, 'b) Result.t[@local_opt])
+        = "%identity"
+
+      (** Wrapping and unwrapping [Result.Ok]. *)
+
+      external wrap_ok : ('a, 'b) Result.t -> ('a t, 'b) Result.t = "%identity"
+
+      external unwrap_ok
+        :  (('a t, 'b) Result.t[@local_opt])
+        -> (('a, 'b) Result.t[@local_opt])
+        = "%identity"
+
+      (** Wrapping and unwrapping [Result.Error]. *)
+
+      external wrap_error : ('a, 'b) Result.t -> ('a, 'b t) Result.t = "%identity"
+
+      external unwrap_error
+        :  (('a, 'b t) Result.t[@local_opt])
+        -> (('a, 'b) Result.t[@local_opt])
+        = "%identity"
+
+      (** {2 Simulating mode polymorphism}
+
+          Until the mode extension to the OCaml compiler supports polymorphism over modes,
+          we have to simulate it by writing multiple instances of some functions. These
+          functors handle simple cases of local-vs-global versions of functions.
+
+          Given a function that is parameterized over the [Wrapper] signature above, these
+          functors provide two versions of the function, one that operates on and returns
+          local values, and one that operates on and returns global values.
+
+          Performance caveat:
+
+          The function implementation itself is only compiled once. Inputs it unwraps will
+          be local, and may need to be [globalize]d. Outputs it produces will be global,
+          and will be allocated on the heap. To avoid these performance concerns, you will
+          need to actually write two versions of the function. *)
+
+      (** Instantiate local and global versions of a 1-argument function. *)
+      module Poly_fn1 (Input : T) (Output : T) (F : Wrapped_fn1(Input)(Output).S) :
+        Poly_fn1 with type input := Input.t and type output := Output.t
+
+      (** Instantiate local and global versions of a 2-argument function. *)
+      module Poly_fn2
+          (Input1 : T)
+          (Input2 : T)
+          (Output : T)
+          (F : Wrapped_fn2(Input1)(Input2)(Output).S) :
+        Poly_fn2
+        with type input1 := Input1.t
+         and type input2 := Input2.t
+         and type output := Output.t
+
+      (** Instantiate local and global versions of a 3-argument function. *)
+      module Poly_fn3
+          (Input1 : T)
+          (Input2 : T)
+          (Input3 : T)
+          (Output : T)
+          (F : Wrapped_fn3(Input1)(Input2)(Input3)(Output).S) :
+        Poly_fn3
+        with type input1 := Input1.t
+         and type input2 := Input2.t
+         and type input3 := Input3.t
+         and type output := Output.t
+    end
+  end
+
+  module Portable = struct
+    module type Portable = sig
+      type 'a t
+
+      (** Construct a [t]. *)
+      external wrap
+        :  ('a[@local_opt]) @ portable
+        -> ('a t[@local_opt]) @ portable
+        = "%identity"
+
+      (** Access the contents of a [t]. *)
+      external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) @ portable = "%identity"
+
+      (** Transform the contents of a [t]. *)
+      val map : 'a t -> f:local_ ('a @ portable -> 'b @ portable) -> 'b t @ portable
+
+      (** {2 Wrap and unwrap within other types}
+
+          It can be safe to wrap or unwrap a [Portable.t] inside other types as a coercion
+          rather than a conversion, i.e. without copying any data. Since the type system
+          does not provide coercions for this, we provide explicit operations to convert
+          as a no-op. We export them as [external ... = "%identity"] to make this clear.
+
+          In general, it is safe to wrap or unwrap a type parameter ['a] in this way if
+          the wrapping and unwrapping do not pass through any arrow type. *)
+
+      (** Wrapping and unwrapping [List]. *)
+
+      external wrap_list
+        :  ('a list[@local_opt]) @ portable
+        -> ('a t list[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_list
+        :  ('a t list[@local_opt])
+        -> ('a list[@local_opt]) @ portable
+        = "%identity"
+
+      (** Wrapping and unwrapping [Iarray]. *)
+
+      external wrap_iarray
+        :  ('a iarray[@local_opt]) @ portable
+        -> ('a t iarray[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_iarray
+        :  ('a t iarray[@local_opt])
+        -> ('a iarray[@local_opt]) @ portable
+        = "%identity"
+
+      (** Wrapping and unwrapping [Option]. *)
+
+      external wrap_option
+        :  ('a option[@local_opt]) @ portable
+        -> ('a t option[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_option
+        :  ('a t option[@local_opt])
+        -> ('a option[@local_opt]) @ portable
+        = "%identity"
+
+      (** Wrapping and unwrapping [Either]. *)
+
+      external wrap_either
+        :  (('a, 'b) Either0.t[@local_opt]) @ portable
+        -> (('a t, 'b t) Either0.t[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_either
+        :  (('a t, 'b t) Either0.t[@local_opt])
+        -> (('a, 'b) Either0.t[@local_opt]) @ portable
+        = "%identity"
+
+      (** Wrapping and unwrapping [Either.First]. *)
+
+      external wrap_first
+        :  (('a, 'b) Either0.t[@local_opt]) @ portable
+        -> (('a t, 'b) Either0.t[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_first
+        :  (('a t, 'b) Either0.t[@local_opt])
+        -> (('a, 'b) Either0.t[@local_opt])
+        = "%identity"
+
+      external unwrap_first__portable
+        :  (('a t, 'b) Either0.t[@local_opt]) @ portable
+        -> (('a, 'b) Either0.t[@local_opt]) @ portable
+        = "%identity"
+
+      (** Wrapping and unwrapping [Either.Second]. *)
+
+      external wrap_second
+        :  (('a, 'b) Either0.t[@local_opt]) @ portable
+        -> (('a, 'b t) Either0.t[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_second
+        :  (('a, 'b t) Either0.t[@local_opt])
+        -> (('a, 'b) Either0.t[@local_opt])
+        = "%identity"
+
+      external unwrap_second__portable
+        :  (('a, 'b t) Either0.t[@local_opt]) @ portable
+        -> (('a, 'b) Either0.t[@local_opt]) @ portable
+        = "%identity"
+
+      (** Wrapping and unwrapping [Result]. *)
+
+      external wrap_result
+        :  (('a, 'b) Result.t[@local_opt]) @ portable
+        -> (('a t, 'b t) Result.t[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_result
+        :  (('a t, 'b t) Result.t[@local_opt])
+        -> (('a, 'b) Result.t[@local_opt]) @ portable
+        = "%identity"
+
+      (** Wrapping and unwrapping [Result.Ok]. *)
+
+      external wrap_ok
+        :  (('a, 'b) Result.t[@local_opt]) @ portable
+        -> (('a t, 'b) Result.t[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_ok
+        :  (('a t, 'b) Result.t[@local_opt])
+        -> (('a, 'b) Result.t[@local_opt])
+        = "%identity"
+
+      external unwrap_ok__portable
+        :  (('a t, 'b) Result.t[@local_opt]) @ portable
+        -> (('a, 'b) Result.t[@local_opt]) @ portable
+        = "%identity"
+
+      (** Wrapping and unwrapping [Result.Error]. *)
+
+      external wrap_error
+        :  (('a, 'b) Result.t[@local_opt]) @ portable
+        -> (('a, 'b t) Result.t[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_error
+        :  (('a, 'b t) Result.t[@local_opt])
+        -> (('a, 'b) Result.t[@local_opt])
+        = "%identity"
+
+      external unwrap_error__portable
+        :  (('a, 'b t) Result.t[@local_opt]) @ portable
+        -> (('a, 'b) Result.t[@local_opt]) @ portable
+        = "%identity"
+    end
+  end
+
+  module At_locality = struct
+    (** Abstract over whether a value is [local] or [global]. *)
+    module type At_locality = sig
+      (** Zero-cost representation of locality abstraction. Safety comes from the phantom
+          types; representation is just ['a] behind the scenes. *)
+      type (+'a, 'locality) t
+      [@@deriving
+        compare ~localize, equal ~localize, hash, globalize, sexp_of, sexp_grammar]
+
+      (** Create a global wrapper. Can have any phantom type. *)
+      val wrap : 'a -> ('a, _) t
+
+      (** Unwrap a global wrapper. When the wrapper is global, the contents are too. *)
+      val unwrap : ('a, _) t -> 'a
+
+      (** Wrap local contents. *)
+      val wrap_local : local_ 'a -> local_ ('a, [ `local ]) t
+
+      (** Unwrap local contents. Global or local contents can be unwrapped as local. *)
+      val unwrap_local : local_ ('a, _) t -> local_ 'a
+
+      (** Unwrap global contents. *)
+      val unwrap_global : local_ ('a, [ `global ]) t -> 'a
+
+      (** Convert phantom type of a wrapper to local. *)
+      val to_local : local_ ('a, _) t -> local_ ('a, [ `local ]) t
+
+      (** Convert phantom type of a global wrapper to global. *)
+      val to_global : ('a, _) t -> ('a, [ `global ]) t
+
+      (** Globalize a wrapper where the contents are already global. *)
+      val globalize_global : local_ ('a, [ `global ]) t -> ('a, [ `global ]) t
+    end
   end
 end
 
-module type Modes = sig
+module type Modes = sig @@ portable
   (** Wrap values in the [global_] mode, even in a [local_] context. *)
   module Global : sig
     include module type of struct
       include Definitions.Global
     end
 
-    type 'a t = { global_ global : 'a }
-    [@@unboxed]
-    [@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
+    type 'a t = { global_ global : 'a } [@@unboxed]
 
-    include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-    include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
-    include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
-    include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
-    include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
-    include Sexplib0.Sexpable.S1 with type 'a t := 'a t
+    include Global with type 'a t := 'a t (** @inline *)
+  end
 
-    val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
+  module Portable : sig
+    include module type of struct
+      include Definitions.Portable
+    end
 
-    [@@@end]
+    type 'a t : value mod portable = { portable : 'a @@ portable }
+    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
 
-    (** Globalize a [t]. Takes an argument because [[%globalize]] will pass one for ['a],
-        but [globalize] is a no-op so it discards the argument. *)
-    val globalize : local_ _ -> local_ 'a t -> 'a t
+    include Portable with type 'a t := 'a t
+  end
 
-    (** Construct a [t]. Returns a global [t], which may be used as a local value. *)
-    val wrap : 'a -> 'a t
+  module Contended : sig
+    type 'a t : value mod contended = { contended : 'a @@ contended }
+    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+  end
 
-    (** Access the contents of a [t]. Accepts a local [t], to which global values may be
-        passed. *)
-    val unwrap : local_ 'a t -> 'a
+  module Portended : sig
+    type 'a t : value mod contended portable = { portended : 'a @@ contended portable }
+    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+  end
 
-    (** Transform the contents of a [t]. Accepts a local [t], to which global values may
-        be passed. Returns a global [t], which may be used as a local value. *)
-    val map : local_ 'a t -> f:local_ ('a -> 'b) -> 'b t
+  (** Abstract over whether a value is [local] or [global]. *)
+  module At_locality : sig
+    include module type of struct
+      include Definitions.At_locality
+    end
 
-    (** {2 Wrap and unwrap within other types}
+    type (+'a, 'locality) t
 
-        It can be safe to wrap or unwrap a [Global.t] inside other types as a coercion
-        rather than a conversion, i.e. without copying any data. Since the type system
-        does not provide coercions for this, we provide explicit operations to convert as
-        a no-op. We export them as [external ... = "%identity"] to make this clear.
-
-        The [wrap_*] functions produce global values, which may be used as local values.
-
-        The [unwrap_*] functions produce local or global values, depending on which they
-        are passed. If used for globals, the result may be used as a local value. If used
-        for locals, the result must be local because the outer constructor may not be used
-        as a global value.
-
-        In general, it is safe to wrap or unwrap a type parameter ['a] in this way if the
-        wrapping and unwrapping do not pass through any arrow type. *)
-
-    (** Wrapping and unwrapping [List]. *)
-
-    external wrap_list : 'a list -> 'a t list = "%identity"
-    external unwrap_list : ('a t list[@local_opt]) -> ('a list[@local_opt]) = "%identity"
-
-    (** Wrapping and unwrapping [Option]. *)
-
-    external wrap_option : 'a option -> 'a t option = "%identity"
-
-    external unwrap_option
-      :  ('a t option[@local_opt])
-      -> ('a option[@local_opt])
-      = "%identity"
-
-    (** Wrapping and unwrapping [Either]. *)
-
-    external wrap_either : ('a, 'b) Either.t -> ('a t, 'b t) Either.t = "%identity"
-
-    external unwrap_either
-      :  (('a t, 'b t) Either.t[@local_opt])
-      -> (('a, 'b) Either.t[@local_opt])
-      = "%identity"
-
-    (** Wrapping and unwrapping [Either.First]. *)
-
-    external wrap_first : ('a, 'b) Either.t -> ('a t, 'b) Either.t = "%identity"
-
-    external unwrap_first
-      :  (('a t, 'b) Either.t[@local_opt])
-      -> (('a, 'b) Either.t[@local_opt])
-      = "%identity"
-
-    (** Wrapping and unwrapping [Either.Second]. *)
-
-    external wrap_second : ('a, 'b) Either.t -> ('a, 'b t) Either.t = "%identity"
-
-    external unwrap_second
-      :  (('a, 'b t) Either.t[@local_opt])
-      -> (('a, 'b) Either.t[@local_opt])
-      = "%identity"
-
-    (** Wrapping and unwrapping [Result]. *)
-
-    external wrap_result : ('a, 'b) Result.t -> ('a t, 'b t) Result.t = "%identity"
-
-    external unwrap_result
-      :  (('a t, 'b t) Result.t[@local_opt])
-      -> (('a, 'b) Result.t[@local_opt])
-      = "%identity"
-
-    (** Wrapping and unwrapping [Result.Ok]. *)
-
-    external wrap_ok : ('a, 'b) Result.t -> ('a t, 'b) Result.t = "%identity"
-
-    external unwrap_ok
-      :  (('a t, 'b) Result.t[@local_opt])
-      -> (('a, 'b) Result.t[@local_opt])
-      = "%identity"
-
-    (** Wrapping and unwrapping [Result.Error]. *)
-
-    external wrap_error : ('a, 'b) Result.t -> ('a, 'b t) Result.t = "%identity"
-
-    external unwrap_error
-      :  (('a, 'b t) Result.t[@local_opt])
-      -> (('a, 'b) Result.t[@local_opt])
-      = "%identity"
-
-    (** {2 Simulating mode polymorphism}
-
-        Until the mode extension to the OCaml compiler supports polymorphism over modes,
-        we have to simulate it by writing multiple instances of some functions. These
-        functors handle simple cases of local-vs-global versions of functions.
-
-        Given a function that is parameterized over the [Wrapper] signature above, these
-        functors provide two versions of the function, one that operates on and returns
-        local values, and one that operates on and returns global values.
-
-        Performance caveat:
-
-        The function implementation itself is only compiled once. Inputs it unwraps will
-        be local, and may need to be [globalize]d. Outputs it produces will be global, and
-        will be allocated on the heap. To avoid these performance concerns, you will need
-        to actually write two versions of the function. *)
-
-    (** Instantiate local and global versions of a 1-argument function. *)
-    module Poly_fn1 (Input : T) (Output : T) (F : Wrapped_fn1(Input)(Output).S) :
-      Poly_fn1 with type input := Input.t and type output := Output.t
-
-    (** Instantiate local and global versions of a 2-argument function. *)
-    module Poly_fn2
-        (Input1 : T)
-        (Input2 : T)
-        (Output : T)
-        (F : Wrapped_fn2(Input1)(Input2)(Output).S) :
-      Poly_fn2
-      with type input1 := Input1.t
-       and type input2 := Input2.t
-       and type output := Output.t
-
-    (** Instantiate local and global versions of a 3-argument function. *)
-    module Poly_fn3
-        (Input1 : T)
-        (Input2 : T)
-        (Input3 : T)
-        (Output : T)
-        (F : Wrapped_fn3(Input1)(Input2)(Input3)(Output).S) :
-      Poly_fn3
-      with type input1 := Input1.t
-       and type input2 := Input2.t
-       and type input3 := Input3.t
-       and type output := Output.t
+    include At_locality with type ('a, 'l) t := ('a, 'l) t
   end
 
   (** Can be [open]ed or [include]d to bring field names into scope. *)
   module Export : sig
     type 'a _global = 'a Global.t = { global_ global : 'a } [@@unboxed]
+
+    type 'a _portable : value mod portable = 'a Portable.t = { portable : 'a @@ portable }
+    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+
+    type 'a _contended : value mod contended = 'a Contended.t =
+      { contended : 'a @@ contended }
+    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+
+    type 'a _portended : value mod contended portable = 'a Portended.t =
+      { portended : 'a @@ contended portable }
+    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
   end
 end

@@ -1030,9 +1030,11 @@ module Test_transformers
   open Impl
   open Test_helpers (Instance) (Impl)
 
-  module type Make_applicative_traversals = module type of Make_applicative_traversals
+  module type%template Make_applicative_traversals =
+      module type of Make_applicative_traversals [@modality p]
+  [@@modality p = (nonportable, portable)]
 
-  let () = print_endline "Functor.Test_transformers: running tests."
+  let%template () = print_endline "Functor.Test_transformers: running tests."
 
   (** transformers *)
 
@@ -1480,16 +1482,20 @@ module Test_transformers
         in
         require_equal (module Alist) subrange_alist expect)
 
-  and m_Make_applicative_traversals : (module Make_applicative_traversals) =
+  and m_Make_applicative_traversals : ((module Make_applicative_traversals)[@modality p]) =
     (module functor
-              (A : Applicative.Lazy_applicative)
+              (A : sig
+               @@ p
+                 include Applicative.Lazy_applicative
+               end)
               ->
               struct
-                module M = Make_applicative_traversals (A)
+                module M = Make_applicative_traversals [@modality p] (A)
 
                 let mapi = M.mapi
                 let filter_mapi = M.filter_mapi
               end)
+  [@@modality p = (nonportable, portable)]
 
   and () =
     let module M =
@@ -1517,5 +1523,6 @@ module Test_transformers
         require_equal (module Inst.Value) (filter_mapi t ~f:f2) (M.filter_mapi t ~f:f2))
   ;;
 
-  module Make_applicative_traversals = (val m_Make_applicative_traversals)
+  module%template.portable [@modality p] Make_applicative_traversals =
+    (val (m_Make_applicative_traversals [@modality p]))
 end

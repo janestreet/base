@@ -10,7 +10,7 @@ module type S = sig
   val one : t
   val max_value : t
   val to_int64 : t -> int64
-  val shift_right : t -> int -> t
+  val shift_right : local_ t -> int -> t
   val random : Random.State.t -> t -> t -> t
 end
 

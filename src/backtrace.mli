@@ -1,35 +1,32 @@
+@@ portable
+
 (** Module for managing stack backtraces.
 
     The [Backtrace] module deals with two different kinds of backtraces:
 
     + Snapshots of the stack obtained on demand ([Backtrace.get])
-    + The stack frames unwound when an exception is raised ([Backtrace.Exn])
-*)
+    + The stack frames unwound when an exception is raised ([Backtrace.Exn]) *)
 
 open! Import
 
-(** A [Backtrace.t] is a snapshot of the stack obtained by calling [Backtrace.get].  It is
-    represented as a string with newlines separating the frames.  [sexp_of_t] splits the
+(** A [Backtrace.t] is a snapshot of the stack obtained by calling [Backtrace.get]. It is
+    represented as a string with newlines separating the frames. [sexp_of_t] splits the
     string at newlines and removes some of the cruft, leaving a human-friendly list of
     frames, but [to_string] does not. *)
-type t = Stdlib.Printexc.raw_backtrace [@@deriving_inline sexp_of]
-
-val sexp_of_t : t -> Sexplib0.Sexp.t
-
-[@@@end]
+type t = Stdlib.Printexc.raw_backtrace [@@deriving sexp_of]
 
 val get : ?at_most_num_frames:int -> unit -> t
 val to_string : t -> string
 val to_string_list : t -> string list
 
 (** The value of [elide] controls the behavior of backtrace serialization functions such
-    as {!to_string}, {!to_string_list}, and {!sexp_of_t}.  When set to [false], these
+    as {!to_string}, {!to_string_list}, and {!sexp_of_t}. When set to [false], these
     functions behave as expected, returning a faithful representation of their argument.
     When set to [true], these functions will ignore their argument and return a message
     indicating that behavior.
 
     The default value is [false]. *)
-val elide : bool ref
+val elide : bool Dynamic.t
 
 (** [Backtrace.Exn] has functions for controlling and printing the backtrace of the most
     recently raised exception.
@@ -79,15 +76,14 @@ module Exn : sig
   val most_recent : unit -> t
 
   (** [most_recent_for_exn exn] returns a backtrace containing the stack that was unwound
-      when raising [exn] if [exn] is the most recently raised exception.  Otherwise it
+      when raising [exn] if [exn] is the most recently raised exception. Otherwise it
       returns [None].
 
-      Note that this may return a misleading backtrace instead of [None] if
-      different raise events happen to raise physically equal exceptions.
-      Consider the example below. Here if [e = Not_found] and [g] usees
-      [Not_found] internally then the backtrace will correspond to the
-      internal backtrace in [g] instead of the one used in [f], which is
-      not desirable.
+      Note that this may return a misleading backtrace instead of [None] if different
+      raise events happen to raise physically equal exceptions. Consider the example
+      below. Here if [e = Not_found] and [g] usees [Not_found] internally then the
+      backtrace will correspond to the internal backtrace in [g] instead of the one used
+      in [f], which is not desirable.
 
       {[
         try f () with
@@ -95,11 +91,10 @@ module Exn : sig
           g ();
           let bt = Backtrace.Exn.most_recent_for_exn e in
           ...
-      ]}
-  *)
+      ]} *)
   val most_recent_for_exn : Exn.t -> t option
 end
 
-(** User code never calls this.  It is called only in [base.ml], as a top-level side
+(** User code never calls this. It is called only in [base.ml], as a top-level side
     effect, to initialize [am_recording ()] as specified above. *)
 val initialize_module : unit -> unit

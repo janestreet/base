@@ -4,15 +4,22 @@
   inlining. (If aliased without a type annotation, the compiler would implement them
   using the generic code doing a C call, and it's this code that would be inlined.) As a
   result we have to copy the [external ...] declaration here. *)
-external ( < ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%lessthan"
-external ( <= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%lessequal"
-external ( <> ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%notequal"
-external ( = ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
-external ( > ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%greaterthan"
-external ( >= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%greaterequal"
-external ascending : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
-external compare : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
-external equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
+external ( < ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%lessthan"
+external ( <= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%lessequal"
+external ( <> ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%notequal"
+external ( = ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%equal"
+external ( > ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%greaterthan"
+
+external ( >= )
+  :  ('a[@local_opt])
+  -> ('a[@local_opt])
+  -> bool
+  @@ portable
+  = "%greaterequal"
+
+external ascending : ('a[@local_opt]) -> ('a[@local_opt]) -> int @@ portable = "%compare"
+external compare : ('a[@local_opt]) -> ('a[@local_opt]) -> int @@ portable = "%compare"
+external equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%equal"
 
 let descending x y = compare y x
 let max x y = Bool0.select (x >= y) x y

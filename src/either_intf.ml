@@ -1,19 +1,19 @@
 (** A type that represents values with two possibilities.
 
-    [Either] can be seen as a generic sum type, the dual of [Tuple].  [First] is neither
+    [Either] can be seen as a generic sum type, the dual of [Tuple]. [First] is neither
     more important nor less important than [Second].
 
-    Many functions in [Either] focus on just one constructor.  The [Focused] signature
-    abstracts over which constructor is the focus.  To use these functions, use the
-    [First] or [Second] modules in [S].  *)
+    Many functions in [Either] focus on just one constructor. The [Focused] signature
+    abstracts over which constructor is the focus. To use these functions, use the [First]
+    or [Second] modules in [S]. *)
 
 open! Import
 
 module type Focused = sig
   type (+'focus, +'other) t
 
-  include Monad.S2_local with type ('a, 'b) t := ('a, 'b) t
-  include Applicative.S2_local with type ('a, 'b) t := ('a, 'b) t
+  include Monad.S2__local with type ('a, 'b) t := ('a, 'b) t
+  include Applicative.S2__local with type ('a, 'b) t := ('a, 'b) t
 
   val value : ('a, _) t -> default:'a -> 'a
   val to_option : ('a, _) t -> 'a option
@@ -30,25 +30,12 @@ module type Focused = sig
   val combine_all_unit : (unit, 'b) t list -> f:local_ ('b -> 'b -> 'b) -> (unit, 'b) t
 end
 
-module type Either = sig
+module type Either = sig @@ portable
   type ('f, 's) t = ('f, 's) Either0.t =
     | First of 'f
     | Second of 's
-  [@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
-
-  include Ppx_compare_lib.Comparable.S2 with type ('f, 's) t := ('f, 's) t
-  include Ppx_compare_lib.Comparable.S_local2 with type ('f, 's) t := ('f, 's) t
-  include Ppx_compare_lib.Equal.S2 with type ('f, 's) t := ('f, 's) t
-  include Ppx_compare_lib.Equal.S_local2 with type ('f, 's) t := ('f, 's) t
-  include Ppx_hash_lib.Hashable.S2 with type ('f, 's) t := ('f, 's) t
-  include Sexplib0.Sexpable.S2 with type ('f, 's) t := ('f, 's) t
-
-  val t_sexp_grammar
-    :  'f Sexplib0.Sexp_grammar.t
-    -> 's Sexplib0.Sexp_grammar.t
-    -> ('f, 's) t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
   include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
 

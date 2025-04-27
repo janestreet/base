@@ -1,18 +1,9 @@
 open! Import
 include Stdlib.Lazy
 
-type 'a t = 'a lazy_t [@@deriving_inline sexp, sexp_grammar]
+type 'a t = 'a lazy_t [@@deriving sexp ~localize, sexp_grammar]
 
-let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = lazy_t_of_sexp
-let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_lazy_t
-
-let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
-  fun _'a_sexp_grammar -> lazy_t_sexp_grammar _'a_sexp_grammar
-;;
-
-[@@@end]
-
-external force : ('a t[@local_opt]) -> 'a = "%lazy_force"
+external force : ('a t[@local_opt]) -> 'a @@ portable = "%lazy_force"
 
 let globalize = Globalize.globalize_lazy_t
 let map t ~f = lazy (f (force t))
@@ -31,7 +22,7 @@ let equal equal_a t1 t2 = equal__local equal_a t1 t2
 let hash_fold_t = Hash.Builtin.hash_fold_lazy_t
 let peek t = if is_val t then Some (force t) else None
 
-include Monad.Make (struct
+include%template Monad.Make [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let return x = from_val x
@@ -43,7 +34,13 @@ include Monad.Make (struct
 module T_unforcing = struct
   type nonrec 'a t = 'a t
 
+  let is_val t = Obj_local.tag (Obj_local.repr t) <> Stdlib.Obj.lazy_tag
+
   let sexp_of_t sexp_of_a t =
     if is_val t then sexp_of_a (force t) else sexp_of_string "<unforced lazy>"
+  ;;
+
+  let sexp_of_t__local sexp_of_a t = exclave_
+    if is_val t then sexp_of_a (force t) else sexp_of_string__local "<unforced lazy>"
   ;;
 end

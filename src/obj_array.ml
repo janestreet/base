@@ -1,5 +1,6 @@
 open! Import
 module Int = Int0
+module Sexp = Sexp0
 module String = String0
 
 (* We maintain the property that all values of type [t] do not have the tag
@@ -18,12 +19,12 @@ let sexp_of_t t =
     (String.concat ~sep:"" [ "<Obj_array.t of length "; Int.to_string (length t); ">" ])
 ;;
 
-let zero_obj = Stdlib.Obj.repr (0 : int)
+let zero_obj = Stdlib.Obj.repr (0 : int) |> Stdlib.Obj.magic_portable
 
 (* We call [Array.create] with a value that is not a float so that the array doesn't get
    tagged with [Double_array_tag]. *)
-let create_zero ~len = Array.create ~len zero_obj
-let empty = [||]
+let create_zero ~len = Array.create ~len (Stdlib.Obj.magic_uncontended zero_obj)
+let empty = [||] |> Portability_hacks.Cross.Portable.(cross (array magic))
 
 type not_a_float =
   | Not_a_float_0
@@ -32,7 +33,7 @@ type not_a_float =
 let _not_a_float_0 = Not_a_float_0
 let _not_a_float_1 = Not_a_float_1 42
 
-let get (local_ t) i =
+let[@zero_alloc] get (local_ t) i =
   (* Make the compiler believe [t] is an array not containing floats so it does not check
      if [t] is tagged with [Double_array_tag].  It is NOT ok to use [int array] since (if
      this function is inlined and the array contains in-heap boxed values) wrong register
@@ -44,7 +45,7 @@ let get (local_ t) i =
      : not_a_float)
 ;;
 
-let[@inline always] unsafe_get t i =
+let[@inline always] [@zero_alloc] unsafe_get t i =
   (* Make the compiler believe [t] is an array not containing floats so it does not check
      if [t] is tagged with [Double_array_tag]. *)
   Stdlib.Obj.repr
@@ -159,7 +160,7 @@ let unsafe_clear_if_pointer t i =
 ;;
 
 (** [unsafe_blit] is like [Array.blit], except it uses our own for-loop to avoid
-    caml_modify when possible.  Its performance is still not comparable to a memcpy. *)
+    caml_modify when possible. Its performance is still not comparable to a memcpy. *)
 let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len =
   (* When [phys_equal src dst], we need to check whether [dst_pos < src_pos] and have the
      for loop go in the right direction so that we don't overwrite data that we still need
@@ -179,7 +180,7 @@ let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len =
     done
 ;;
 
-include Blit.Make (struct
+include%template Blit.Make [@modality portable] (struct
     type nonrec t = t
 
     let create = create_zero

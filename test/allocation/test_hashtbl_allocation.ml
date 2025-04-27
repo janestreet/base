@@ -1,7 +1,7 @@
 open! Base
 open Expect_test_helpers_core
 
-let () = Int_conversions.sexp_of_int_style := `Underscores
+let () = Dynamic.set_root Int_conversions.sexp_of_int_style `Underscores
 
 let%expect_test "find_and_call_1_and_2" =
   let test x =

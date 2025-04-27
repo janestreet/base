@@ -61,6 +61,15 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
           ~choose:(Hashtbl.choose t : (_ * _) option)
           ~choose_exn:
             (Or_error.try_with (fun () -> Hashtbl.choose_exn t) : (_ * _) Or_error.t)
+          ~choose_local:
+            ([%globalize: (int Modes.Global.t * int Modes.Global.t) option]
+               [%template (Hashtbl.choose [@mode local]) t]
+             : (_ * _) option)
+          ~choose_local_exn:
+            (Or_error.try_with (fun () ->
+               [%globalize: int Modes.Global.t * int Modes.Global.t]
+                 [%template (Hashtbl.choose_exn [@mode local]) t] [@nontail])
+             : (_ * _) Or_error.t)
           ~choose_randomly:(Hashtbl.choose_randomly t : (_ * _) option)
           ~choose_randomly_exn:
             (Or_error.try_with (fun () -> Hashtbl.choose_randomly_exn t)
@@ -72,6 +81,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
     ((input  ())
      (choose ())
      (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
+     (choose_local ())
+     (choose_local_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
      (choose_randomly ())
      (choose_randomly_exn (
        Error ("[Hashtbl.choose_randomly_exn] of empty hashtbl"))))
@@ -82,6 +93,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
     ((input  ())
      (choose ())
      (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
+     (choose_local ())
+     (choose_local_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
      (choose_randomly ())
      (choose_randomly_exn (
        Error ("[Hashtbl.choose_randomly_exn] of empty hashtbl"))))
@@ -92,6 +105,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
     ((input  ((1 1)))
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
+     (choose_local ((_ _)))
+     (choose_local_exn (Ok (_ _)))
      (choose_randomly ((_ _)))
      (choose_randomly_exn (Ok (_ _))))
     |}];
@@ -101,6 +116,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
     ((input  ((1 1)))
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
+     (choose_local ((_ _)))
+     (choose_local_exn (Ok (_ _)))
      (choose_randomly ((_ _)))
      (choose_randomly_exn (Ok (_ _))))
     |}];
@@ -112,6 +129,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
        (2 2)))
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
+     (choose_local ((_ _)))
+     (choose_local_exn (Ok (_ _)))
      (choose_randomly ((_ _)))
      (choose_randomly_exn (Ok (_ _))))
     |}];
@@ -123,6 +142,8 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
        (2 2)))
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
+     (choose_local ((_ _)))
+     (choose_local_exn (Ok (_ _)))
      (choose_randomly ((_ _)))
      (choose_randomly_exn (Ok (_ _))))
     |}]

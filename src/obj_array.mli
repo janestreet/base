@@ -1,14 +1,12 @@
+@@ portable
+
 (** This module is not exposed for external use, and is only here for the implementation
-    of [Uniform_array] internally.  [Obj.t Uniform_array.t] should be used in place of
-    [Obj_array.t].  *)
+    of [Uniform_array] internally. [Obj.t Uniform_array.t] should be used in place of
+    [Obj_array.t]. *)
 
 open! Import
 
-type t [@@deriving_inline sexp_of]
-
-val sexp_of_t : t -> Sexplib0.Sexp.t
-
-[@@@end]
+type t [@@deriving sexp_of]
 
 include Blit.S with type t := t
 include Invariant.S with type t := t
@@ -28,12 +26,13 @@ val singleton : Stdlib.Obj.t -> t
 val empty : t
 val length : local_ t -> int
 
-(** [get t i] and [unsafe_get t i] return the object at index [i].  [set t i o] and
-    [unsafe_set t i o] set index [i] to [o].  In no case is the object copied.  The
+(** [get t i] and [unsafe_get t i] return the object at index [i]. [set t i o] and
+    [unsafe_set t i o] set index [i] to [o]. In no case is the object copied. The
     [unsafe_*] variants omit the bounds check of [i]. *)
 val get : local_ t -> int -> Stdlib.Obj.t
+[@@zero_alloc]
 
-val unsafe_get : local_ t -> int -> Stdlib.Obj.t
+val unsafe_get : local_ t -> int -> Stdlib.Obj.t [@@zero_alloc]
 val set : local_ t -> int -> Stdlib.Obj.t -> unit
 val unsafe_set : local_ t -> int -> Stdlib.Obj.t -> unit
 val swap : local_ t -> int -> int -> unit
@@ -46,7 +45,7 @@ val swap : local_ t -> int -> int -> unit
 val set_with_caml_modify : local_ t -> int -> Stdlib.Obj.t -> unit
 
 (** [unsafe_set_assuming_currently_int t i obj] sets index [i] of [t] to [obj], but only
-    works correctly if [Stdlib.Obj.is_int (get t i)].  This precondition saves a dynamic
+    works correctly if [Stdlib.Obj.is_int (get t i)]. This precondition saves a dynamic
     check.
 
     [unsafe_set_int_assuming_currently_int] is similar, except the value being set is an
@@ -59,7 +58,7 @@ val unsafe_set_int_assuming_currently_int : local_ t -> int -> int -> unit
 val unsafe_set_int : local_ t -> int -> int -> unit
 
 (** [unsafe_set_omit_phys_equal_check] is like [unsafe_set], except it doesn't do a
-    [phys_equal] check to try to skip [caml_modify].  It is safe to call this even if the
+    [phys_equal] check to try to skip [caml_modify]. It is safe to call this even if the
     values are [phys_equal]. *)
 val unsafe_set_omit_phys_equal_check : local_ t -> int -> Stdlib.Obj.t -> unit
 
@@ -69,8 +68,8 @@ val unsafe_set_omit_phys_equal_check : local_ t -> int -> Stdlib.Obj.t -> unit
 val unsafe_set_with_caml_modify : local_ t -> int -> Stdlib.Obj.t -> unit
 
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
-    space leaks.  It does this by setting [t.(i)] to [Stdlib.Obj.repr 0].  As a performance hack,
-    it only does this when [not (Stdlib.Obj.is_int t.(i))]. *)
+    space leaks. It does this by setting [t.(i)] to [Stdlib.Obj.repr 0]. As a performance
+    hack, it only does this when [not (Stdlib.Obj.is_int t.(i))]. *)
 val unsafe_clear_if_pointer : local_ t -> int -> unit
 
 val sub : t -> pos:int -> len:int -> t

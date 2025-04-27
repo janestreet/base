@@ -63,6 +63,7 @@ module Focus = struct
 end
 
 module Make_focused (M : sig
+  @@ portable
     type (+'a, +'b) t
 
     val return : 'a -> ('a, _) t
@@ -87,7 +88,7 @@ struct
     res
   ;;
 
-  include Monad.Make2_local (struct
+  include%template Monad.Make2 [@mode local] [@modality portable] (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return
@@ -95,7 +96,8 @@ struct
       let map = `Custom map
     end)
 
-  module App = Applicative.Make2_using_map2_local (struct
+  module%template App =
+  Applicative.Make2_using_map2 [@mode local] [@modality portable] (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return

@@ -1,41 +1,140 @@
-open! Base
+open! Stdppx
 open Ppxlib
 
 module Specialize_polymorphic_compare = struct
   let signature ~loc =
-    [%sigil:
+    [%sig:
       [@@@ocaml.ppwarning "ppx_base_internal: intended only for use inside Base"]
 
-      external ( = ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
-      external ( <> ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%notequal"
-      external ( < ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessthan"
-      external ( > ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterthan"
-      external ( <= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessequal"
-      external ( >= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterequal"
-      external compare : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"
-      external compare__local : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"
-      external equal : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
-      external equal__local : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
-      val ascending : t -> t -> int
-      val descending : t -> t -> int
-      val max : t -> t -> t
-      val min : t -> t -> t]
+      external ( = ) : (t[@local_opt]) -> (t[@local_opt]) -> bool @@ portable = "%equal"
+
+      external ( <> )
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%notequal"
+
+      external ( < )
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%lessthan"
+
+      external ( > )
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%greaterthan"
+
+      external ( <= )
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%lessequal"
+
+      external ( >= )
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%greaterequal"
+
+      external compare
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> int
+        @@ portable
+        = "%compare"
+
+      external compare__local
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> int
+        @@ portable
+        = "%compare"
+
+      external equal : (t[@local_opt]) -> (t[@local_opt]) -> bool @@ portable = "%equal"
+
+      external equal__local
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%equal"
+
+      val ascending : t -> t -> int @@ portable
+      val descending : t -> t -> int @@ portable
+      val max : t -> t -> t @@ portable
+      val min : t -> t -> t @@ portable]
   ;;
 
   let structure ~loc =
     [%str
       [@@@ocaml.ppwarning "ppx_base_internal: intended only for use inside Base"]
 
-      external ( = ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
-      external ( <> ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%notequal"
-      external ( < ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessthan"
-      external ( > ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterthan"
-      external ( <= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessequal"
-      external ( >= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterequal"
-      external compare : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"
-      external compare__local : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"
-      external equal : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
-      external equal__local : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
+      external ( = ) : (t[@local_opt]) -> (t[@local_opt]) -> bool @@ portable = "%equal"
+
+      external ( <> )
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%notequal"
+
+      external ( < )
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%lessthan"
+
+      external ( > )
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%greaterthan"
+
+      external ( <= )
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%lessequal"
+
+      external ( >= )
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%greaterequal"
+
+      external compare
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> int
+        @@ portable
+        = "%compare"
+
+      external compare__local
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> int
+        @@ portable
+        = "%compare"
+
+      external equal : (t[@local_opt]) -> (t[@local_opt]) -> bool @@ portable = "%equal"
+
+      external equal__local
+        :  (t[@local_opt])
+        -> (t[@local_opt])
+        -> bool
+        @@ portable
+        = "%equal"
 
       let ascending x y = compare x y
       let descending x y = compare y x
@@ -60,7 +159,7 @@ module Specialize_polymorphic_compare = struct
       List.concat_map decls ~f:(fun decl ->
         let loc = decl.ptype_loc in
         match check_decl decl with
-        | Ok () -> signature ~loc
+        | Ok () -> (Ppxlib_jane.Shim.Signature.of_parsetree (signature ~loc)).psg_items
         | Error ext -> [ Ast_builder.Default.psig_extension ~loc ext [] ]))
   ;;
 

@@ -14,23 +14,43 @@ module Sys = Sys0
 let invalid_argf = Printf.invalid_argf
 
 module Array = struct
-  external create : int -> 'a -> 'a array = "caml_make_vect"
-  external create_local : int -> 'a -> local_ 'a array = "caml_make_local_vect"
-  external create_float_uninitialized : int -> float array = "caml_make_float_vect"
-  external get : ('a array[@local_opt]) -> (int[@local_opt]) -> 'a = "%array_safe_get"
-  external length : ('a array[@local_opt]) -> int = "%array_length"
+  external create : int -> 'a -> 'a array @@ portable = "caml_make_vect"
+
+  external create_local
+    :  int
+    -> 'a
+    -> local_ 'a array
+    @@ portable
+    = "caml_make_local_vect"
+
+  external create_float_uninitialized
+    :  int
+    -> float array
+    @@ portable
+    = "caml_make_float_vect"
+
+  external get
+    :  ('a array[@local_opt])
+    -> (int[@local_opt])
+    -> 'a
+    @@ portable
+    = "%array_safe_get"
+
+  external length : ('a array[@local_opt]) -> int @@ portable = "%array_length"
 
   external set
     :  ('a array[@local_opt])
     -> (int[@local_opt])
     -> 'a
     -> unit
+    @@ portable
     = "%array_safe_set"
 
   external unsafe_get
     :  ('a array[@local_opt])
     -> (int[@local_opt])
     -> 'a
+    @@ portable
     = "%array_unsafe_get"
 
   external unsafe_set
@@ -38,6 +58,7 @@ module Array = struct
     -> (int[@local_opt])
     -> 'a
     -> unit
+    @@ portable
     = "%array_unsafe_set"
 
   external unsafe_blit
@@ -47,11 +68,27 @@ module Array = struct
     -> dst_pos:int
     -> len:int
     -> unit
+    @@ portable
     = "caml_array_blit"
 
-  external unsafe_fill : local_ 'a array -> int -> int -> 'a -> unit = "caml_array_fill"
-  external unsafe_sub : local_ 'a array -> int -> int -> 'a array = "caml_array_sub"
-  external concat : local_ 'a array list -> 'a array = "caml_array_concat"
+  external unsafe_fill
+    :  local_ 'a array
+    -> int
+    -> int
+    -> 'a
+    -> unit
+    @@ portable
+    = "caml_array_fill"
+
+  external unsafe_sub
+    :  local_ 'a array
+    -> int
+    -> int
+    -> 'a array
+    @@ portable
+    = "caml_array_sub"
+
+  external concat : local_ 'a array list -> 'a array @@ portable = "caml_array_concat"
 end
 
 include Array

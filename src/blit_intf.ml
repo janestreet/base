@@ -1,172 +1,151 @@
-(** Standard type for [blit] functions, and reusable code for validating [blit]
-    arguments. *)
+(** Standard type for [blit] functions, and reusable code for validating [blit] arguments. *)
 
 open! Import
 
-(** If [blit : (src, dst) blit], then [blit ~src ~src_pos ~len ~dst ~dst_pos] blits [len]
-    values from [src] starting at position [src_pos] to [dst] at position [dst_pos].
-    Furthermore, [blit] raises if [src_pos], [len], and [dst_pos] don't specify valid
-    slices of [src] and [dst]. *)
-type ('src, 'dst) blit =
-  src:local_ 'src -> src_pos:int -> dst:local_ 'dst -> dst_pos:int -> len:int -> unit
+module Definitions = struct
+  (** If [blit : (src, dst) blit], then [blit ~src ~src_pos ~len ~dst ~dst_pos] blits
+      [len] values from [src] starting at position [src_pos] to [dst] at position
+      [dst_pos]. Furthermore, [blit] raises if [src_pos], [len], and [dst_pos] don't
+      specify valid slices of [src] and [dst]. *)
+  type ('src, 'dst) blit =
+    src:local_ 'src -> src_pos:int -> dst:local_ 'dst -> dst_pos:int -> len:int -> unit
 
-(** [blito] is like [blit], except that the [src_pos], [src_len], and [dst_pos] are
-    optional (hence the "o" in "blito").  Also, we use [src_len] rather than [len] as a
-    reminder that if [src_len] isn't supplied, then the default is to take the slice
-    running from [src_pos] to the end of [src]. *)
-type ('src, 'dst) blito =
-  src:local_ 'src
-  -> ?src_pos:int (** default is [0] *)
-  -> ?src_len:int (** default is [length src - src_pos] *)
-  -> dst:local_ 'dst
-  -> ?dst_pos:int (** default is [0] *)
-  -> unit
-  -> unit
+  (** [blito] is like [blit], except that the [src_pos], [src_len], and [dst_pos] are
+      optional (hence the "o" in "blito"). Also, we use [src_len] rather than [len] as a
+      reminder that if [src_len] isn't supplied, then the default is to take the slice
+      running from [src_pos] to the end of [src]. *)
+  type ('src, 'dst) blito =
+    src:local_ 'src
+    -> ?src_pos:int (** default is [0] *)
+    -> ?src_len:int (** default is [length src - src_pos] *)
+    -> dst:local_ 'dst
+    -> ?dst_pos:int (** default is [0] *)
+    -> unit
+    -> unit
 
-(** If [sub : (src, dst) sub], then [sub ~src ~pos ~len] returns a sequence of type [dst]
-    containing [len] characters of [src] starting at [pos].
+  (** If [sub : (src, dst) sub], then [sub ~src ~pos ~len] returns a sequence of type
+      [dst] containing [len] characters of [src] starting at [pos].
 
-    [subo] is like [sub], except [pos] and [len] are optional. *)
-type ('src, 'dst) sub = local_ 'src -> pos:int -> len:int -> 'dst
+      [subo] is like [sub], except [pos] and [len] are optional. *)
+  type ('src, 'dst) sub = local_ 'src -> pos:int -> len:int -> 'dst
 
-type ('src, 'dst) subo =
-  ?pos:int (** default is [0] *)
-  -> ?len:int (** default is [length src - pos] *)
-  -> local_ 'src
-  -> 'dst
+  type ('src, 'dst) subo =
+    ?pos:int (** default is [0] *)
+    -> ?len:int (** default is [length src - pos] *)
+    -> local_ 'src
+    -> 'dst
 
-(** Like [blit], but not allowing [local_] values (on compilers supporting modes). *)
-type ('src, 'dst) blit_global =
-  src:'src -> src_pos:int -> dst:'dst -> dst_pos:int -> len:int -> unit
+  (** Like [blit], but not allowing [local_] values (on compilers supporting modes). *)
+  type ('src, 'dst) blit_global =
+    src:'src -> src_pos:int -> dst:'dst -> dst_pos:int -> len:int -> unit
 
-(** Like [blito], but not allowing [local_] values (on compilers supporting modes). *)
-type ('src, 'dst) blito_global =
-  src:'src -> ?src_pos:int -> ?src_len:int -> dst:'dst -> ?dst_pos:int -> unit -> unit
+  (** Like [blito], but not allowing [local_] values (on compilers supporting modes). *)
+  type ('src, 'dst) blito_global =
+    src:'src -> ?src_pos:int -> ?src_len:int -> dst:'dst -> ?dst_pos:int -> unit -> unit
 
-(** Like [sub], but not allowing [local_] values (on compilers supporting modes). *)
-type ('src, 'dst) sub_global = 'src -> pos:int -> len:int -> 'dst
+  (** Like [sub], but not allowing [local_] values (on compilers supporting modes). *)
+  type ('src, 'dst) sub_global = 'src -> pos:int -> len:int -> 'dst
 
-(** Like [subo], but not allowing [local_] values (on compilers supporting modes). *)
-type ('src, 'dst) subo_global = ?pos:int -> ?len:int -> 'src -> 'dst
+  (** Like [subo], but not allowing [local_] values (on compilers supporting modes). *)
+  type ('src, 'dst) subo_global = ?pos:int -> ?len:int -> 'src -> 'dst
 
-(*_ These are not implemented less-general-in-terms-of-more-general because odoc produces
-  unreadable documentation in that case, with or without [inline] on [include]. *)
+  (** Blit for distinct [src] and [dst] types that each have two parameters: ['elt] that
+      must be the same in both types, and ['phantom] that can be different. *)
+  module type S1_phantom_distinct = sig
+    type ('elt, 'phantom) src
+    type ('elt, 'phantom) dst
 
-module type S = sig
-  type t
+    val blit : (('a, _) src, ('a, _) dst) blit
+    val blito : (('a, _) src, ('a, _) dst) blito
+    val unsafe_blit : (('a, _) src, ('a, _) dst) blit
+    val sub : (('a, _) src, ('a, _) dst) sub
+    val subo : (('a, _) src, ('a, _) dst) subo
+  end
 
-  val blit : (t, t) blit
-  val blito : (t, t) blito
-  val unsafe_blit : (t, t) blit
-  val sub : (t, t) sub
-  val subo : (t, t) subo
+  module type S = sig
+    type t
+
+    include S1_phantom_distinct with type (_, _) src := t and type (_, _) dst := t
+  end
+
+  module type S1 = sig
+    type 'a t
+
+    include S1_phantom_distinct with type ('a, _) src := 'a t and type ('a, _) dst := 'a t
+  end
+
+  module type S_distinct = sig
+    type src
+    type dst
+
+    include S1_phantom_distinct with type (_, _) src := src and type (_, _) dst := dst
+  end
+
+  module type S_distinct_global = sig
+    type src
+    type dst
+
+    val blit : (src, dst) blit_global
+    val blito : (src, dst) blito_global
+    val unsafe_blit : (src, dst) blit_global
+    val sub : (src, dst) sub_global
+    val subo : (src, dst) subo_global
+  end
+
+  module type S_phantom_distinct = sig
+    type 'a src
+    type 'a dst
+
+    include
+      S1_phantom_distinct with type (_, 'a) src := 'a src and type (_, 'a) dst := 'a dst
+  end
+
+  module type S_to_string = sig
+    type t
+
+    val sub : (t, string) sub
+    val subo : (t, string) subo
+  end
+
+  module type S_to_string_global = sig
+    type t
+
+    val sub : (t, string) sub_global
+    val subo : (t, string) subo_global
+  end
+
+  (** Users of modules matching the blit signatures [S], [S1], [S_phantom_distinct], and
+      [S1_phantom_distinct] only need to understand the code above. The code below is only
+      for those that need to implement modules that match those signatures. *)
+
+  module type Sequence = sig
+    type t
+
+    val length : local_ t -> int
+  end
+
+  module type Sequence1 = sig
+    type 'a t
+
+    (** [Make1*] guarantees to only call [create_like ~len t] with [len > 0] if
+        [length t > 0]. *)
+    val create_like : len:int -> local_ 'a t -> 'a t
+
+    val length : local_ _ t -> int
+    val unsafe_blit : ('a t, 'a t) blit
+  end
 end
 
-module type S1 = sig
-  type 'a t
-
-  val blit : ('a t, 'a t) blit
-  val blito : ('a t, 'a t) blito
-  val unsafe_blit : ('a t, 'a t) blit
-  val sub : ('a t, 'a t) sub
-  val subo : ('a t, 'a t) subo
-end
-
-module type S_distinct = sig
-  type src
-  type dst
-
-  val blit : (src, dst) blit
-  val blito : (src, dst) blito
-  val unsafe_blit : (src, dst) blit
-  val sub : (src, dst) sub
-  val subo : (src, dst) subo
-end
-
-module type S_distinct_global = sig
-  type src
-  type dst
-
-  val blit : (src, dst) blit_global
-  val blito : (src, dst) blito_global
-  val unsafe_blit : (src, dst) blit_global
-  val sub : (src, dst) sub_global
-  val subo : (src, dst) subo_global
-end
-
-module type S1_distinct = sig
-  type 'a src
-  type 'a dst
-
-  val blit : (_ src, _ dst) blit
-  val blito : (_ src, _ dst) blito
-  val unsafe_blit : (_ src, _ dst) blit
-  val sub : (_ src, _ dst) sub
-  val subo : (_ src, _ dst) subo
-end
-
-module type S_to_string = sig
-  type t
-
-  val sub : (t, string) sub
-  val subo : (t, string) subo
-end
-
-module type S_to_string_global = sig
-  type t
-
-  val sub : (t, string) sub_global
-  val subo : (t, string) subo_global
-end
-
-(** Users of modules matching the blit signatures [S], [S1], and [S1_distinct] only need
-    to understand the code above.  The code below is only for those that need to implement
-    modules that match those signatures. *)
-
-module type Sequence = sig
-  type t
-
-  val length : local_ t -> int
-end
-
-type 'a poly = 'a
-
-module type Sequence1 = sig
-  type 'a t
-
-  (** [Make1*] guarantees to only call [create_like ~len t] with [len > 0] if [length t >
-      0]. *)
-  val create_like : len:int -> local_ 'a t -> 'a t
-
-  val length : local_ _ t -> int
-  val unsafe_blit : ('a t, 'a t) blit
-end
-
-module type Blit = sig
-  type nonrec ('src, 'dst) blit = ('src, 'dst) blit
-  type nonrec ('src, 'dst) blito = ('src, 'dst) blito
-  type nonrec ('src, 'dst) sub = ('src, 'dst) sub
-  type nonrec ('src, 'dst) subo = ('src, 'dst) subo
-  type nonrec ('src, 'dst) blit_global = ('src, 'dst) blit_global
-  type nonrec ('src, 'dst) blito_global = ('src, 'dst) blito_global
-  type nonrec ('src, 'dst) sub_global = ('src, 'dst) sub_global
-  type nonrec ('src, 'dst) subo_global = ('src, 'dst) subo_global
-
-  module type S = S
-  module type S1 = S1
-  module type S_distinct = S_distinct
-  module type S_distinct_global = S_distinct_global
-  module type S1_distinct = S1_distinct
-  module type S_to_string = S_to_string
-  module type S_to_string_global = S_to_string_global
-  module type Sequence = Sequence
-  module type Sequence1 = Sequence1
+module type Blit = sig @@ portable
+  include module type of struct
+    include Definitions
+  end
 
   (** There are various [Make*] functors that turn an [unsafe_blit] function into a [blit]
-      function.  The functors differ in whether the sequence type is monomorphic or
+      function. The functors differ in whether the sequence type is monomorphic or
       polymorphic, and whether the src and dst types are distinct or are the same.
 
-      The blit functions make sure the slices are valid and then call [unsafe_blit].  They
+      The blit functions make sure the slices are valid and then call [unsafe_blit]. They
       guarantee at a call [unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len] that:
 
       {[
@@ -180,7 +159,7 @@ module type Blit = sig
       The [Make*] functors also automatically create unit tests. *)
 
   (** [Make] is for blitting between two values of the same monomorphic type. *)
-  module Make (Sequence : sig
+  module%template.portable Make (Sequence : sig
       include Sequence
 
       val create : len:int -> t
@@ -188,7 +167,7 @@ module type Blit = sig
     end) : S with type t := Sequence.t
 
   (** [Make_distinct] is for blitting between values of distinct monomorphic types. *)
-  module Make_distinct
+  module%template.portable Make_distinct
       (Src : Sequence)
       (Dst : sig
          include Sequence
@@ -197,7 +176,7 @@ module type Blit = sig
          val unsafe_blit : (Src.t, t) blit
        end) : S_distinct with type src := Src.t with type dst := Dst.t
 
-  module Make_to_string
+  module%template.portable Make_to_string
       (T : sig
          type t
        end)
@@ -205,9 +184,23 @@ module type Blit = sig
     S_to_string with type t := T.t
 
   (** [Make1] is for blitting between two values of the same polymorphic type. *)
-  module Make1 (Sequence : Sequence1) : S1 with type 'a t := 'a Sequence.t
+  module%template.portable Make1 (Sequence : Sequence1) :
+    S1 with type 'a t := 'a Sequence.t
 
-  (** [Make1_generic] is for blitting between two values of the same container type that's
-      not fully polymorphic (in the sense of Container.Generic). *)
-  module Make1_generic (Sequence : Sequence1) : S1 with type 'a t := 'a Sequence.t
+  module%template.portable Make1_phantom_distinct
+      (Src : sig
+         type ('elt, 'phantom) t
+
+         val length : local_ (_, _) t -> int
+       end)
+      (Dst : sig
+         type ('elt, 'phantom) t
+
+         val length : local_ (_, _) t -> int
+         val create_like : len:int -> local_ ('elt, _) Src.t -> ('elt, _) t
+         val unsafe_blit : (('elt, _) Src.t, ('elt, _) t) blit
+       end) :
+    S1_phantom_distinct
+    with type ('elt, 'phantom) src := ('elt, 'phantom) Src.t
+    with type ('elt, 'phantom) dst := ('elt, 'phantom) Dst.t
 end

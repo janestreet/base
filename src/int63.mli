@@ -1,8 +1,10 @@
+@@ portable
+
 (** 63-bit integers.
 
-    The size of Int63 is always 63 bits.  On a 64-bit platform it is just an int
-    (63-bits), and on a 32-bit platform it is an int64 wrapped to respect the
-    semantics of 63-bit integers.
+    The size of Int63 is always 63 bits. On a 64-bit platform it is just an int (63-bits),
+    and on a 32-bit platform it is an int64 wrapped to respect the semantics of 63-bit
+    integers.
 
     Because [Int63] has different representations on 32-bit and 64-bit platforms,
     marshalling [Int63] will not work between 32-bit and 64-bit platforms -- [unmarshal]
@@ -11,56 +13,58 @@
 open! Import
 
 (** The [@@immediate64] attribute is to indicate that [t] is implemented by a type that is
-    immediate only on 64 bit platforms.  It is currently ignored by the compiler, however
+    immediate only on 64 bit platforms. It is currently ignored by the compiler, however
     we are hoping that one day it will be taken into account so that the compiler can omit
     [caml_modify] when dealing with mutable data structures holding [Int63.t] values. *)
-type t : immediate64
+type t : immediate64 [@@deriving globalize]
 
 include Int_intf.S with type t := t
+include Replace_polymorphic_compare.S with type t := t
 
 (** {2 Arithmetic with overflow}
 
     Unlike the usual operations, these never overflow, preferring instead to raise. *)
 
 module Overflow_exn : sig
-  val ( + ) : t -> t -> t
-  val ( - ) : t -> t -> t
-  val ( * ) : t -> t -> t
-  val ( / ) : t -> t -> t
+  val ( + ) : local_ t -> local_ t -> t
+  val ( - ) : local_ t -> local_ t -> t
+  val ( * ) : local_ t -> local_ t -> t
+  val ( / ) : local_ t -> local_ t -> t
   val abs : t -> t
-  val neg : t -> t
+  val abs_local : local_ t -> local_ t
+  val neg : local_ t -> t
 end
 
 (** {2 Conversion functions} *)
 
 val of_int : int -> t
-val to_int : t -> int option
-val of_int32 : Int32.t -> t
-val to_int32 : t -> Int32.t option
-val of_int64 : local_ Int64.t -> t option
-val of_nativeint : nativeint -> t option
-val to_nativeint : t -> nativeint option
+val to_int : local_ t -> int option
+val of_int32 : local_ int32 -> t
+val to_int32 : local_ t -> int32 option
+val of_int64 : local_ int64 -> t option
+val of_int64_exn : local_ int64 -> t
+val of_nativeint : local_ nativeint -> t option
+val to_nativeint : local_ t -> nativeint option
 
 (** {3 Truncating conversions}
 
     These functions return the least-significant bits of the input. In cases where
     optional conversions return [Some x], truncating conversions return [x]. *)
 
-val to_int_trunc : t -> int
-val to_int32_trunc : t -> Int32.t
-val of_int64_trunc : local_ Int64.t -> t
-val of_nativeint_trunc : nativeint -> t
-val to_nativeint_trunc : t -> nativeint
+val to_int_trunc : local_ t -> int
+val to_int32_trunc : local_ t -> int32
+val of_int64_trunc : local_ int64 -> t
+val of_nativeint_trunc : local_ nativeint -> t
+val to_nativeint_trunc : local_ t -> nativeint
 
 (** {2 Byteswap functions}
 
-    See {{!modtype:Int.Int_without_module_types}[Int]'s byte swap section} for
-    a description of Base's approach to exposing byte swap primitives.
-*)
+    See {{!modtype:Int.Int_without_module_types} [Int]'s byte swap section} for a
+    description of Base's approach to exposing byte swap primitives. *)
 
-val bswap16 : t -> t
-val bswap32 : t -> t
-val bswap48 : t -> t
+val bswap16 : local_ t -> t
+val bswap32 : local_ t -> t
+val bswap48 : local_ t -> t
 
 (** {2 Random generation} *)
 
@@ -71,13 +75,13 @@ val bswap48 : t -> t
 val random : ?state:Random.State.t -> t -> t
 
 (** [random_incl ~state lo hi] returns a random integer between [lo] (inclusive) and [hi]
-    (inclusive).  Raises if [lo > hi].
+    (inclusive). Raises if [lo > hi].
 
     The default [~state] is [Random.State.default]. *)
 val random_incl : ?state:Random.State.t -> t -> t -> t
 
 (** [floor_log2 x] returns the floor of log-base-2 of [x], and raises if [x <= 0]. *)
-val floor_log2 : t -> int
+val floor_log2 : local_ t -> int
 
 (**/**)
 

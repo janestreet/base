@@ -1,11 +1,46 @@
 open! Import
 module Int = Int0
 module Char = Char0
+module Capsule = Capsule.Expert
 
 (* Unfortunately, because the standard library does not expose
    [Stdlib.Random.State.default], we have to construct our own.  We then build the
    [Stdlib.Random.int], [Stdlib.Random.bool] functions and friends using that default state in
    exactly the same way as the standard library. *)
+module Random_repr : sig
+  val assign
+    :  src:Stdlib.Random.State.t @ local
+    -> dst:Stdlib.Random.State.t @ local
+    -> unit
+    @@ portable
+end = struct
+  module Repr = struct
+    open Stdlib.Bigarray
+
+    type t = (int64, int64_elt, c_layout) Array1.t
+
+    external of_state
+      :  (Stdlib.Random.State.t[@local_opt])
+      -> (t[@local_opt])
+      @@ portable
+      = "%identity"
+  end
+
+  module Array1 = struct
+    external blit
+      :  (('a, 'b, 'c) Stdlib.Bigarray.Array1.t[@local_opt])
+      -> (('a, 'b, 'c) Stdlib.Bigarray.Array1.t[@local_opt])
+      -> unit
+      @@ portable
+      = "caml_ba_blit"
+  end
+
+  let assign ~src ~dst =
+    let dst = Repr.of_state dst in
+    let src = Repr.of_state src in
+    Array1.blit src dst
+  ;;
+end
 
 (* Regression tests ought to be deterministic because that way anyone who breaks the test
    knows that it's their code that broke the test.  If tests are nondeterministic, a test
@@ -21,65 +56,180 @@ let forbid_nondeterminism_in_tests ~allow_in_tests =
         "initializing Random with a nondeterministic seed is forbidden in inline tests")
 ;;
 
-external random_seed : unit -> int array = "caml_sys_random_seed"
+external random_seed : unit -> int array @@ portable = "caml_sys_random_seed"
 
 let random_seed ?allow_in_tests () =
   forbid_nondeterminism_in_tests ~allow_in_tests;
   random_seed ()
 ;;
 
-module Repr = Random_repr
+(* Define functions for safely letting [Stdlib.Random.State.t] interact with capsules. *)
+open (
+struct
+  external magic_unwrap_capsule
+    :  ('a, 'k) Capsule.Data.t @ local
+    -> 'a @ local
+    @@ portable
+    = "%identity"
+
+  let assign_capsule ~password:_ ~src ~dst =
+    Random_repr.assign ~src:(magic_unwrap_capsule src) ~dst [@nontail]
+  ;;
+
+  external magic_wrap_capsule : 'a -> ('a, 'k) Capsule.Data.t @@ portable = "%identity"
+
+  let copy_into_capsule src = magic_wrap_capsule (Stdlib.Random.State.copy src)
+  let split_into_capsule src = magic_wrap_capsule (Stdlib.Random.State.split src)
+end :
+sig
+@@ portable
+  (* This is safe because we have shared access to the capsule ['k], and only copy
+     immutable data from [src] into [dst] (the integer values of the underlying state
+     array). *)
+  val assign_capsule
+    :  password:'k Capsule.Password.Shared.t @ local
+    -> src:(Stdlib.Random.State.t, 'k) Capsule.Data.t @ local
+    -> dst:Stdlib.Random.State.t @ local
+    -> unit
+
+  (* This is safe because the resulting state is unique. *)
+  val copy_into_capsule
+    :  Stdlib.Random.State.t
+    -> (Stdlib.Random.State.t, 'k) Capsule.Data.t
+
+  (* This is safe because the resulting state is unique. *)
+  val split_into_capsule
+    :  Stdlib.Random.State.t
+    -> (Stdlib.Random.State.t, 'k) Capsule.Data.t
+end)
 
 module State = struct
-  type t = Repr.t
+  (* Make [t] abstract for the implementation of the functions below. *)
+  module T : sig @@ portable
+    type t
 
-  let bits t = Stdlib.Random.State.bits (Repr.get_state t)
-  let bits64 t = Stdlib.Random.State.bits64 (Repr.get_state t)
-  let bool t = Stdlib.Random.State.bool (Repr.get_state t)
-  let int t x = Stdlib.Random.State.int (Repr.get_state t) x
-  let int32 t x = Stdlib.Random.State.int32 (Repr.get_state t) x
-  let int64 t x = Stdlib.Random.State.int64 (Repr.get_state t) x
-  let nativeint t x = Stdlib.Random.State.nativeint (Repr.get_state t) x
-  let make seed = Repr.make (Stdlib.Random.State.make seed)
-  let copy t = Repr.make (Stdlib.Random.State.copy (Repr.get_state t))
-  let char t = int t 256 |> Char.unsafe_of_int
-  let ascii t = int t 128 |> Char.unsafe_of_int
+    val default : t
+    val get_default : unit -> t
+    val of_stdlib : Stdlib.Random.State.t -> t
+    val of_stdlib_lazy : f:(unit -> Stdlib.Random.State.t) -> t
+
+    val with_stdlib
+      : ('a : value mod contended portable).
+      f:(Stdlib.Random.State.t -> 'a) @ local portable -> t -> 'a
+  end = struct
+    let default_state =
+      let default_state_key =
+        Stdlib.Domain.DLS.new_key
+          ~split_from_parent:(fun state ->
+            let (P (type k) (key : k Capsule.Key.t)) = Capsule.create () in
+            let state = split_into_capsule state in
+            fun () ->
+              let access = Capsule.Key.destroy key in
+              Capsule.Data.unwrap ~access state)
+          Stdlib.Random.State.make_self_init
+      in
+      let () =
+        if am_testing
+        then (
+          (* We define Base's default random state as a copy of OCaml's default random state.
+             This means that programs that use Base.Random will see the same sequence of
+             random bits as if they had used Stdlib.Random. However, because [get_state] returns
+             a copy, Base.Random and OCaml.Random are not using the same state. If a program
+             used both, each of them would go through the same sequence of random bits. To
+             avoid that, we reset OCaml's random state to a different seed, giving it a
+             different sequence. *)
+          Stdlib.Domain.DLS.set
+            Stdlib.Domain.DLS.Access.for_initial_domain
+            default_state_key
+            (Stdlib.Random.get_state ());
+          Stdlib.Random.init 137)
+        else
+          (* Outside of tests, we initialize random state nondeterministically and lazily.
+             We force the random initialization to be lazy so that we do not pay any cost
+             for it in programs that do not use randomness. *)
+          ()
+      in
+      default_state_key
+    ;;
+
+    type t =
+      | Default
+      | Custom of Stdlib.Random.State.t Lazy.t
+
+    let default = Default
+    let[@inline] get_default () = Default
+    let of_stdlib st = Custom (Lazy.from_val st)
+    let of_stdlib_lazy ~f = Custom (Lazy.from_fun f)
+
+    let[@inline] with_stdlib ~f = function
+      | Default ->
+        Stdlib.Domain.DLS.access
+          (stack_
+            fun access ->
+              let default_state = Stdlib.Domain.DLS.get access default_state in
+              f default_state [@nontail]) [@nontail]
+      | Custom lz_st -> f (Lazy.force lz_st)
+    ;;
+  end
+
+  include T
 
   let make_self_init ?allow_in_tests () =
     forbid_nondeterminism_in_tests ~allow_in_tests;
-    Repr.make_lazy ~f:Stdlib.Random.State.make_self_init
+    of_stdlib_lazy ~f:Stdlib.Random.State.make_self_init
   ;;
 
-  let assign = Repr.assign
-  let full_init t seed = assign t (Stdlib.Random.State.make seed)
+  let bits t = with_stdlib ~f:Stdlib.Random.State.bits t
+  let[@inline] bits64 t = with_stdlib ~f:Stdlib.Random.State.bits64 t
+  let bool t = with_stdlib ~f:Stdlib.Random.State.bool t
+  let int t x = with_stdlib ~f:(fun state -> Stdlib.Random.State.int state x) t
 
-  let default =
-    if am_testing
-    then (
-      (* We define Base's default random state as a copy of OCaml's default random state.
-         This means that programs that use Base.Random will see the same sequence of
-         random bits as if they had used Stdlib.Random. However, because [get_state] returns
-         a copy, Base.Random and OCaml.Random are not using the same state. If a program
-         used both, each of them would go through the same sequence of random bits. To
-         avoid that, we reset OCaml's random state to a different seed, giving it a
-         different sequence. *)
-      let t = Stdlib.Random.get_state () in
-      Stdlib.Random.init 137;
-      Repr.make t)
-    else
-      (* Outside of tests, we initialize random state nondeterministically and lazily.
-         We force the random initialization to be lazy so that we do not pay any cost
-         for it in programs that do not use randomness. *)
-      make_self_init ()
+  let[@inline] int32 t x =
+    with_stdlib ~f:(fun state -> Stdlib.Random.State.int32 state x) t
   ;;
 
-  let int_on_64bits t bound =
+  let[@inline] int64 t x =
+    with_stdlib ~f:(fun state -> Stdlib.Random.State.int64 state x) t
+  ;;
+
+  let[@inline] nativeint t x =
+    with_stdlib ~f:(fun state -> Stdlib.Random.State.nativeint state x) t
+  ;;
+
+  let make seed = of_stdlib (Stdlib.Random.State.make seed)
+
+  let copy t =
+    let (P access) = Capsule.current () in
+    with_stdlib ~f:(fun state -> copy_into_capsule state) t
+    |> Capsule.Data.unwrap ~access
+    |> of_stdlib
+  ;;
+
+  let char t = int t 256 |> Char.unsafe_of_int
+  let ascii t = int t 128 |> Char.unsafe_of_int
+
+  let full_init t seed =
+    let seed = Stdlib.Random.State.make seed in
+    let (P access) = Capsule.current () in
+    let seed = Capsule.Data.wrap ~access seed in
+    Capsule.Password.with_current
+      access
+      (stack_
+        fun password ->
+          let password = Capsule.Password.shared password in
+          with_stdlib
+            t
+            ~f:(stack_ fun state -> assign_capsule ~password ~src:seed ~dst:state)
+          [@nontail]) [@nontail]
+  ;;
+
+  let[@inline] int_on_64bits t bound =
     if bound <= 0x3FFFFFFF (* (1 lsl 30) - 1 *)
     then int t bound
     else Stdlib.Int64.to_int (int64 t (Stdlib.Int64.of_int bound))
   ;;
 
-  let int_on_32bits t bound =
+  let[@inline] int_on_32bits t bound =
     (* Not always true with the JavaScript backend. *)
     if bound <= 0x3FFFFFFF (* (1 lsl 30) - 1 *)
     then int t bound
@@ -95,7 +245,7 @@ module State = struct
   let full_range_int64 =
     let open Stdlib.Int64 in
     let bits state = of_int (bits state) in
-    fun state ->
+    fun [@inline] state ->
       logxor
         (bits state)
         (logxor (shift_left (bits state) 30) (shift_left (bits state) 60))
@@ -104,11 +254,16 @@ module State = struct
   let full_range_int32 =
     let open Stdlib.Int32 in
     let bits state = of_int (bits state) in
-    fun state -> logxor (bits state) (shift_left (bits state) 30)
+    fun [@inline] state -> logxor (bits state) (shift_left (bits state) 30)
   ;;
 
-  let full_range_int_on_64bits state = Stdlib.Int64.to_int (full_range_int64 state)
-  let full_range_int_on_32bits state = Stdlib.Int32.to_int (full_range_int32 state)
+  let[@inline] full_range_int_on_64bits state =
+    Stdlib.Int64.to_int (full_range_int64 state)
+  ;;
+
+  let[@inline] full_range_int_on_32bits state =
+    Stdlib.Int32.to_int (full_range_int32 state)
+  ;;
 
   let full_range_int =
     match Word_size.word_size with
@@ -116,11 +271,11 @@ module State = struct
     | W32 -> full_range_int_on_32bits
   ;;
 
-  let full_range_nativeint_on_64bits state =
+  let[@inline] full_range_nativeint_on_64bits state =
     Stdlib.Int64.to_nativeint (full_range_int64 state)
   ;;
 
-  let full_range_nativeint_on_32bits state =
+  let[@inline] full_range_nativeint_on_32bits state =
     Stdlib.Nativeint.of_int32 (full_range_int32 state)
   ;;
 
@@ -137,7 +292,7 @@ module State = struct
       (string_of_bound lower_bound)
       (string_of_bound upper_bound)
       ()
-  [@@cold] [@@inline never] [@@local never] [@@specialise never]
+  [@@cold]
   ;;
 
   let int_incl =
@@ -207,44 +362,69 @@ module State = struct
   ;;
 
   (* Return a uniformly random float in [0, 1). *)
-  let rec rawfloat state =
-    let open Float_replace_polymorphic_compare in
-    let scale = 0x1p-30 in
-    (* 2^-30 *)
-    let r1 = Stdlib.float_of_int (bits state) in
-    let r2 = Stdlib.float_of_int (bits state) in
-    let result = ((r1 *. scale) +. r2) *. scale in
-    (* With very small probability, result can round up to 1.0, so in that case, we just
-       try again. *)
-    if result < 1.0 then result else rawfloat state
+  let[@inline] rawfloat state =
+    let result = ref 0.0 in
+    while
+      let open Float_replace_polymorphic_compare in
+      let scale = 0x1p-30 in
+      (* 2^-30 *)
+      let r1 = Stdlib.float_of_int (bits state) in
+      let r2 = Stdlib.float_of_int (bits state) in
+      result := ((r1 *. scale) +. r2) *. scale;
+      (* With very small probability, result can round up to 1.0, so in that case, we just
+         try again. *)
+      !result >= 1.0
+    do
+      ()
+    done;
+    !result
   ;;
 
-  let float state hi = rawfloat state *. hi
+  let[@inline] float state hi = rawfloat state *. hi
 
-  let float_range state lo hi =
+  let[@inline] float_range state lo hi =
     let open Float_replace_polymorphic_compare in
     if lo > hi then raise_crossed_bounds "float" lo hi Stdlib.string_of_float;
     lo +. float state (hi -. lo)
   ;;
 end
 
-let default = State.default
-let bits () = State.bits default
-let bits64 () = State.bits64 default
-let int x = State.int default x
-let int32 x = State.int32 default x
-let nativeint x = State.nativeint default x
-let int64 x = State.int64 default x
-let float x = State.float default x
-let int_incl x y = State.int_incl default x y
-let int32_incl x y = State.int32_incl default x y
-let nativeint_incl x y = State.nativeint_incl default x y
-let int64_incl x y = State.int64_incl default x y
-let float_range x y = State.float_range default x y
-let bool () = State.bool default
-let char () = State.char default
-let ascii () = State.ascii default
-let full_init seed = State.full_init default seed
+let bits () = State.bits (State.get_default ())
+let[@inline] bits64 () = State.bits64 (State.get_default ())
+let int x = State.int (State.get_default ()) x
+let[@inline] int32 x = State.int32 (State.get_default ()) x
+let[@inline] nativeint x = State.nativeint (State.get_default ()) x
+let[@inline] int64 x = State.int64 (State.get_default ()) x
+let[@inline] float x = State.float (State.get_default ()) x
+let int_incl x y = State.int_incl (State.get_default ()) x y
+let[@inline] int32_incl x y = State.int32_incl (State.get_default ()) x y
+let[@inline] nativeint_incl x y = State.nativeint_incl (State.get_default ()) x y
+let[@inline] int64_incl x y = State.int64_incl (State.get_default ()) x y
+let[@inline] float_range x y = State.float_range (State.get_default ()) x y
+let bool () = State.bool (State.get_default ())
+let char () = State.char (State.get_default ())
+let ascii () = State.ascii (State.get_default ())
+let full_init seed = State.full_init (State.get_default ()) seed
 let init seed = full_init [| seed |]
 let self_init ?allow_in_tests () = full_init (random_seed ?allow_in_tests ())
-let set_state s = State.assign default (Repr.get_state s)
+
+let set_state s =
+  State.with_stdlib
+    s
+    ~f:
+      (stack_
+        fun state ->
+          let (P access) = Capsule.current () in
+          let capsule = Capsule.Data.wrap ~access state in
+          Capsule.Password.with_current
+            access
+            (stack_
+              fun password ->
+                let password = Capsule.Password.shared password in
+                State.with_stdlib
+                  (State.get_default ())
+                  ~f:
+                    (stack_
+                      fun default -> assign_capsule ~password ~src:capsule ~dst:default)
+                [@nontail]) [@nontail]) [@nontail]
+;;

@@ -1,10 +1,15 @@
 (** An internal-only module factored out due to a circular dependency between core_array
-    and core_list.  Contains code for permuting an array. *)
+    and core_list. Contains code for permuting an array. *)
 
 open! Import
 include Array0
 
-let permute ?(random_state = Random.State.default) ?(pos = 0) ?len (local_ t) =
+let (permute @ portable)
+  ?(random_state = Random.State.get_default ())
+  ?(pos = 0)
+  ?len
+  (local_ t)
+  =
   (* Copied from [Ordered_collection_common0] to avoid allocating a tuple when compiling
      without flambda. *)
   let total_length = length t in

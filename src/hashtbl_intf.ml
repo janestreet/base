@@ -1,18 +1,13 @@
 open! Import
+module Sexp = Sexp0
 
 (** @canonical Base.Hashtbl.Key *)
 module Key = struct
   module type S = sig
-    type t [@@deriving_inline compare, sexp_of]
+    type t [@@deriving compare, sexp_of]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
-
-    val sexp_of_t : t -> Sexplib0.Sexp.t
-
-    [@@@end]
-
-    (** Two [t]s that [compare] equal must have equal hashes for the hashtable
-        to behave properly. *)
+    (** Two [t]s that [compare] equal must have equal hashes for the hashtable to behave
+        properly. *)
     val hash : t -> int
   end
 
@@ -46,16 +41,28 @@ module type Accessors = sig
 
       The choice is deterministic. Calling [choose] multiple times on the same table
       returns the same key/value pair, so long as the table is not mutated in between.
-      Beyond determinism, no guarantees are made about how the choice is made. Expect
-      bias toward certain hash values.
+      Beyond determinism, no guarantees are made about how the choice is made. Expect bias
+      toward certain hash values.
 
-      This hash bias can lead to degenerate performance in some cases, such as clearing
-      a hash table using repeated [choose] and [remove]. At each iteration, finding the
-      next element may have to scan farther from its initial hash value. *)
-  val choose : ('a, 'b) t -> ('a key * 'b) option
+      This hash bias can lead to degenerate performance in some cases, such as clearing a
+      hash table using repeated [choose] and [remove]. At each iteration, finding the next
+      element may have to scan farther from its initial hash value. *)
+  val%template choose : ('a, 'b) t -> ('a key * 'b) option @ m
+  [@@mode m = global]
+
+  (** Like [choose], but returns a local pair option *)
+  val%template choose
+    :  ('a, 'b) t
+    -> ('a key Modes.Global.t * 'b Modes.Global.t) option @ m
+  [@@mode m = local]
 
   (** Like [choose]. Raises if [t] is empty. *)
-  val choose_exn : ('a, 'b) t -> 'a key * 'b
+  val%template choose_exn : ('a, 'b) t -> 'a key * 'b @ m
+  [@@mode m = global]
+
+  (** Like [choose_exn], but returns a local pair *)
+  val%template choose_exn : ('a, 'b) t -> 'a key Modes.Global.t * 'b Modes.Global.t @ m
+  [@@mode m = local]
 
   (** Chooses a random key/value pair of a hash table. Returns [None] if [t] is empty.
 
@@ -78,8 +85,8 @@ module type Accessors = sig
 
   (** Just like [find_and_call], but takes an extra argument which is passed to [if_found]
       and [if_not_found], so that the client code can avoid allocating closures or using
-      refs to pass this additional information.  This function is only useful in code
-      which tries to minimize heap allocation. *)
+      refs to pass this additional information. This function is only useful in code which
+      tries to minimize heap allocation. *)
   val find_and_call1
     :  ('a, 'b) t
     -> 'a key
@@ -115,7 +122,7 @@ module type Accessors = sig
     -> 'c
 
   (** [equal f t1 t2] and [similar f t1 t2] both return true iff [t1] and [t2] have the
-      same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)].  [equal] and
+      same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)]. [equal] and
       [similar] only differ in their types. *)
   val equal : ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
 
@@ -126,13 +133,12 @@ module type Multi = sig
   type ('a, 'b) t
   type 'a key
 
-  (** [add_multi t ~key ~data] if [key] is present in the table then cons
-      [data] on the list, otherwise add [key] with a single element list. *)
+  (** [add_multi t ~key ~data] if [key] is present in the table then cons [data] on the
+      list, otherwise add [key] with a single element list. *)
   val add_multi : ('a, 'b list) t -> key:'a key -> data:'b -> unit
 
   (** [remove_multi t key] updates the table, removing the head of the list bound to
-      [key]. If the list has only one element (or is empty) then the binding is
-      removed. *)
+      [key]. If the list has only one element (or is empty) then the binding is removed. *)
   val remove_multi : ('a, _ list) t -> 'a key -> unit
 
   (** [find_multi t key] returns the empty list if [key] is not present in the table,
@@ -252,8 +258,9 @@ module type Creators = sig
   (** Applies the [get_key] and [get_data] functions to the ['r list] to create the
       initial keys and values, respectively, for the new hashtable.
 
-      {[ create_mapped get_key get_data [x1;...;xn]
-         = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn]
+      {[
+        create_mapped get_key get_data [x1;...;xn]
+        = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn]
       ]}
 
       Example:
@@ -283,8 +290,10 @@ module type Creators = sig
     -> 'r list
     -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a list ]
 
-  (** {[ create_with_key ~get_key [x1;...;xn]
-         = of_alist [get_key x1, x1; ...; get_key xn, xn] ]} *)
+  (** {[
+        create_with_key ~get_key [x1;...;xn]
+        = of_alist [get_key x1, x1; ...; get_key xn, xn]
+      ]} *)
   val create_with_key
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 0 *)
@@ -309,11 +318,11 @@ module type Creators = sig
     -> 'r list
     -> ('a, 'r) t
 
-  (** Like [create_mapped], applies the [get_key] and [get_data] functions to the ['r
-      list] to create the initial keys and values, respectively, for the new hashtable --
-      and then, like [add_multi], folds together values belonging to the same keys. Here,
-      though, the function used for the folding is given by [combine] (instead of just
-      being a [cons]).
+  (** Like [create_mapped], applies the [get_key] and [get_data] functions to the
+      ['r list] to create the initial keys and values, respectively, for the new hashtable
+      -- and then, like [add_multi], folds together values belonging to the same keys.
+      Here, though, the function used for the folding is given by [combine] (instead of
+      just being a [cons]).
 
       Example:
 
@@ -325,7 +334,7 @@ module type Creators = sig
             [ 1; 2; 3; 4]
          |> Hashtbl.to_alist;;
          - : (int * int) list = [(2, 4); (1, 6); (0, 1)]
-       v} *)
+      v} *)
   val group
     :  ?growth_allowed:bool (** defaults to [true] *)
     -> ?size:int (** initial size -- default 0 *)
@@ -363,16 +372,7 @@ module type S_without_submodules = sig
 end
 
 module type S_poly = sig
-  type ('a, 'b) t [@@deriving_inline sexp, sexp_grammar]
-
-  include Sexplib0.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
-
-  val t_sexp_grammar
-    :  'a Sexplib0.Sexp_grammar.t
-    -> 'b Sexplib0.Sexp_grammar.t
-    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  type ('a, 'b) t [@@deriving sexp, sexp_grammar]
 
   val hashable : 'a Hashable.t
 
@@ -393,29 +393,17 @@ module type For_deriving = sig
   type ('k, 'v) t
 
   module type Sexp_of_m = sig
-    type t [@@deriving_inline sexp_of]
-
-    val sexp_of_t : t -> Sexplib0.Sexp.t
-
-    [@@@end]
+    type t [@@deriving sexp_of]
   end
 
   module type M_of_sexp = sig
-    type t [@@deriving_inline of_sexp]
-
-    val t_of_sexp : Sexplib0.Sexp.t -> t
-
-    [@@@end]
+    type t [@@deriving of_sexp]
 
     include Key.S with type t := t
   end
 
   module type M_sexp_grammar = sig
-    type t [@@deriving_inline sexp_grammar]
-
-    val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-
-    [@@@end]
+    type t [@@deriving sexp_grammar]
   end
 
   module type Equal_m = sig end
@@ -436,6 +424,7 @@ module type For_deriving = sig
     :  (module M_sexp_grammar with type t = 'k)
     -> 'v Sexplib0.Sexp_grammar.t
     -> ('k, 'v) t Sexplib0.Sexp_grammar.t
+    @@ portable
 
   val equal_m__t
     :  (module Equal_m)
@@ -445,21 +434,21 @@ module type For_deriving = sig
     -> bool
 end
 
-module type Hashtbl = sig
+module type Hashtbl = sig @@ portable
   (** A hash table is a mutable data structure implementing a map between keys and values.
       It supports constant-time lookup and in-place modification.
 
       {1 Usage}
 
-      As a simple example, we'll create a hash table with string keys using the
-      {{!create}[create]} constructor, which expects a module defining the key's type:
+      As a simple example, we'll create a hash table with string keys using the {{!create}
+      [create]} constructor, which expects a module defining the key's type:
 
       {[
         let h = Hashtbl.create (module String);;
         val h : (string, '_a) Hashtbl.t = <abstr>
       ]}
 
-      We can set the values of individual keys with {{!set}[set]}. If the key already has
+      We can set the values of individual keys with {{!set} [set]}. If the key already has
       a value, it will be overwritten.
 
       {v
@@ -486,7 +475,7 @@ module type Hashtbl = sig
       - : (string * int) list = [("foo", 6); ("bar", 6)]
       v}
 
-      {{!change}[change]} lets us change a key's value by applying the given function:
+      {{!change} [change]} lets us change a key's value by applying the given function:
 
       {v
       Hashtbl.change h "foo" (fun x ->
@@ -500,8 +489,7 @@ module type Hashtbl = sig
       - : (string * int) list = [("foo", 12); ("bar", 6)]
       v}
 
-
-      We can use {{!merge}[merge]} to merge two hashtables with fine-grained control over
+      We can use {{!merge} [merge]} to merge two hashtables with fine-grained control over
       how we choose values when a key is present in the first ("left") hashtable, the
       second ("right"), or both. Here, we'll cons the values when both hashtables have a
       key:
@@ -534,7 +522,7 @@ module type Hashtbl = sig
 
   type nonrec ('key, 'data, 'z) create_options = ('key, 'data, 'z) create_options
 
-  module Creators (Key : sig
+  module%template.portable Creators (Key : sig
       type 'a t
 
       val hashable : 'a t Hashable.t

@@ -47,7 +47,7 @@ let () =
   then assert (require_no_allocation get_some)
   else
     let module Gc = Core.Gc.For_testing in
-    let _, { Gc.Allocation_report.minor_words_allocated; _ } =
+    let #(_, { Gc.Allocation_report.minor_words_allocated; _ }) =
       Gc.measure_allocation get_some
     in
     if minor_words_allocated <= 2

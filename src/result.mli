@@ -1,48 +1,40 @@
+@@ portable
+
 (** [Result] is often used to handle error messages. *)
 
 open! Import
 
+[%%template:
+type ('ok : k, 'err) t =
+  | Ok of 'ok
+  | Error of 'err
+[@@deriving sexp ~localize, compare ~localize, equal ~localize]
+[@@kind k = (float64, bits32, bits64, word)]
+
 (** ['ok] is the return type, and ['err] is often an error message string.
 
     {[
-      type nat = Zero | Succ of nat
+      type nat =
+        | Zero
+        | Succ of nat
 
       let pred = function
         | Succ n -> Ok n
         | Zero -> Error "Zero does not have a predecessor"
+      ;;
     ]}
 
-    The return type of [pred] could be [nat option], but [(nat, string)
-    Result.t] gives more control over the error message. *)
+    The return type of [pred] could be [nat option], but [(nat, string) Result.t] gives
+    more control over the error message. *)
 type ('ok, 'err) t = ('ok, 'err) Stdlib.result =
   | Ok of 'ok
   | Error of 'err
-[@@deriving_inline
-  sexp, sexp_grammar, compare ~localize, equal ~localize, hash, globalize]
+[@@deriving
+  sexp ~localize, sexp_grammar, compare ~localize, equal ~localize, hash, globalize]
+[@@kind k = (value, immediate, immediate64)]]
 
-include Sexplib0.Sexpable.S2 with type ('ok, 'err) t := ('ok, 'err) t
-
-val t_sexp_grammar
-  :  'ok Sexplib0.Sexp_grammar.t
-  -> 'err Sexplib0.Sexp_grammar.t
-  -> ('ok, 'err) t Sexplib0.Sexp_grammar.t
-
-include Ppx_compare_lib.Comparable.S2 with type ('ok, 'err) t := ('ok, 'err) t
-include Ppx_compare_lib.Comparable.S_local2 with type ('ok, 'err) t := ('ok, 'err) t
-include Ppx_compare_lib.Equal.S2 with type ('ok, 'err) t := ('ok, 'err) t
-include Ppx_compare_lib.Equal.S_local2 with type ('ok, 'err) t := ('ok, 'err) t
-include Ppx_hash_lib.Hashable.S2 with type ('ok, 'err) t := ('ok, 'err) t
-
-val globalize
-  :  (local_ 'ok -> 'ok)
-  -> (local_ 'err -> 'err)
-  -> local_ ('ok, 'err) t
-  -> ('ok, 'err) t
-
-[@@@end]
-
-include Monad.S2_local with type ('a, 'err) t := ('a, 'err) t
-module Error : Monad.S2_local with type ('err, 'a) t := ('a, 'err) t
+include Monad.S2__local with type ('a, 'err) t := ('a, 'err) t
+module Error : Monad.S2__local with type ('err, 'a) t := ('a, 'err) t
 include Invariant_intf.S2 with type ('ok, 'err) t := ('ok, 'err) t
 
 val fail : 'err -> (_, 'err) t
@@ -50,16 +42,29 @@ val fail : 'err -> (_, 'err) t
 (** e.g., [failf "Couldn't find bloogle %s" (Bloogle.to_string b)]. *)
 val failf : ('a, unit, string, (_, string) t) format4 -> 'a
 
-val is_ok : (_, _) t -> bool
-val is_error : (_, _) t -> bool
+[%%template:
+[@@@kind.default k = (value, immediate, immediate64, float64, bits32, bits64, word)]
+
+val is_ok : ((_, _) t[@kind k]) -> bool
+val is_error : ((_, _) t[@kind k]) -> bool]
+
 val ok : ('ok, _) t -> 'ok option
 val ok_exn : ('ok, exn) t -> 'ok
 val ok_or_failwith : ('ok, string) t -> 'ok
 val error : (_, 'err) t -> 'err option
 val of_option : 'ok option -> error:'err -> ('ok, 'err) t
+val of_option_or_thunk : 'ok option -> error:(unit -> 'err) -> ('ok, 'err) t
 val iter : ('ok, _) t -> f:local_ ('ok -> unit) -> unit
 val iter_error : (_, 'err) t -> f:local_ ('err -> unit) -> unit
-val map : ('ok, 'err) t -> f:local_ ('ok -> 'c) -> ('c, 'err) t
+
+val%template map
+  :  (('ok, 'err) t[@kind ki])
+  -> f:local_ ('ok -> 'c)
+  -> (('c, 'err) t[@kind ko])
+[@@kind
+  ki = (value, immediate, immediate64, float64, bits32, bits64, word)
+  , ko = (value, immediate, immediate64, float64, bits32, bits64, word)]
+
 val map_error : ('ok, 'err) t -> f:local_ ('err -> 'c) -> ('ok, 'c) t
 
 (** Returns [Ok] if both are [Ok] and [Error] otherwise. *)
@@ -81,12 +86,13 @@ val combine_errors : ('ok, 'err) t list -> ('ok list, 'err list) t
     returns [Error] with all the errors in [ts], like [combine_errors]. *)
 val combine_errors_unit : (unit, 'err) t list -> (unit, 'err list) t
 
-(** [to_either] is useful with [List.partition_map].  For example:
+(** [to_either] is useful with [List.partition_map]. For example:
 
     {[
       let ints, exns =
-        List.partition_map ["1"; "two"; "three"; "4"] ~f:(fun string ->
+        List.partition_map [ "1"; "two"; "three"; "4" ] ~f:(fun string ->
           Result.to_either (Result.try_with (fun () -> Int.of_string string)))
+      ;;
     ]} *)
 val to_either : ('ok, 'err) t -> ('ok, 'err) Either0.t
 
@@ -102,6 +108,9 @@ module Export : sig
     | Ok of 'ok
     | Error of 'err
 
-  val is_ok : (_, _) t -> bool
-  val is_error : (_, _) t -> bool
+  [%%template:
+  [@@@kind.default k = (value, immediate, immediate64, float64, bits32, bits64, word)]
+
+  val is_ok : ((_, _) t[@kind k]) -> bool
+  val is_error : ((_, _) t[@kind k]) -> bool]
 end

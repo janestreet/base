@@ -2,7 +2,8 @@ open! Import
 
 let const c _ = c
 
-external ignore : ('a : any). ('a[@local_opt]) -> unit = "%ignore" [@@layout_poly]
+external ignore : ('a : any). ('a[@local_opt]) -> unit @@ portable = "%ignore"
+[@@layout_poly]
 
 (* this has the same behavior as [Stdlib.ignore] *)
 
@@ -17,12 +18,13 @@ let forever f =
   | e -> e
 ;;
 
-external id : ('a : any). ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
+external id : ('a : any). ('a[@local_opt]) -> ('a[@local_opt]) @@ portable = "%identity"
 [@@layout_poly]
 
 external ( |> )
   : ('a : any) ('b : any).
   'a -> (('a -> 'b)[@local_opt]) -> 'b
+  @@ portable
   = "%revapply"
 [@@layout_poly]
 

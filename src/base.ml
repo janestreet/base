@@ -1,9 +1,9 @@
 (** This module is the toplevel of the Base library; it's what you get when you write
     [open Base].
 
-    The goal of Base is both to be a more complete standard library, with richer APIs,
-    and to be more consistent in its design. For instance, in the standard library
-    some things have modules and others don't; in Base, everything is a module.
+    The goal of Base is both to be a more complete standard library, with richer APIs, and
+    to be more consistent in its design. For instance, in the standard library some things
+    have modules and others don't; in Base, everything is a module.
 
     Base extends some modules and data structures from the standard library, like [Array],
     [Buffer], [Bytes], [Char], [Hashtbl], [Int32], [Int64], [Lazy], [List], [Map],
@@ -11,15 +11,18 @@
     difference is that Base doesn't use exceptions as much as the standard library and
     instead makes heavy use of the [Result] type, as in:
 
-    {[ type ('a,'b) result = Ok of 'a | Error of 'b ]}
+    {[
+      type ('a, 'b) result =
+        | Ok of 'a
+        | Error of 'b
+    ]}
 
     Base also adds entirely new modules, most notably:
 
     - [Comparable], [Comparator], and [Comparisons] in lieu of polymorphic compare.
     - [Container], which provides a consistent interface across container-like data
       structures (arrays, lists, strings).
-    - [Result], [Error], and [Or_error], supporting the or-error pattern.
-*)
+    - [Result], [Error], and [Or_error], supporting the or-error pattern. *)
 
 (*_ We hide this from the web docs because the line wrapping is bad, making it
   pretty much inscrutable. *)
@@ -51,6 +54,7 @@ include (
     with module Lazy := Shadow_stdlib.Lazy
     with module List := Shadow_stdlib.List
     with module Map := Shadow_stdlib.Map
+    with module Modes := Shadow_stdlib.Modes
     with module Nativeint := Shadow_stdlib.Nativeint
     with module Option := Shadow_stdlib.Option
     with module Out_channel := Shadow_stdlib.Out_channel
@@ -81,6 +85,7 @@ include (
 open! Import
 module Applicative = Applicative
 module Array = Array
+module Atomic = Atomic
 module Avltree = Avltree
 module Backtrace = Backtrace
 module Binary_search = Binary_search
@@ -89,11 +94,14 @@ module Blit = Blit
 module Bool = Bool
 module Buffer = Buffer
 module Bytes = Bytes
+module Capsule = Capsule
 module Char = Char
 module Comparable = Comparable
 module Comparator = Comparator
 module Comparisons = Comparisons
 module Container = Container
+module Container_with_local = Container_with_local
+module Dynamic = Dynamic
 module Either = Either
 module Equal = Equal
 module Error = Error
@@ -108,6 +116,7 @@ module Hash_set = Hash_set
 module Hashable = Hashable
 module Hasher = Hasher
 module Hashtbl = Hashtbl
+module Iarray = Iarray
 module Identifiable = Identifiable
 module Indexed_container = Indexed_container
 module Info = Info
@@ -134,6 +143,8 @@ module Or_error = Or_error
 module Ordered_collection_common = Ordered_collection_common
 module Ordering = Ordering
 module Poly = Poly
+module Portability_hacks = Basement.Portability_hacks
+module Portable_lazy = Portable_lazy
 module Pretty_printer = Pretty_printer
 module Printf = Printf
 module Linked_queue = Linked_queue
@@ -143,6 +154,7 @@ module Ref = Ref
 module Result = Result
 module Sequence = Sequence
 module Set = Set
+module Sexp = Sexp
 module Sexpable = Sexpable
 module Sign = Sign
 module Sign_or_nan = Sign_or_nan
@@ -164,11 +176,6 @@ module Word_size = Word_size
 (* Avoid a level of indirection for uses of the signatures defined in [T]. *)
 include T
 
-(* This is a hack so that odoc creates better documentation. *)
-module Sexp = struct
-  include Sexp_with_comparable (** @inline *)
-end
-
 (* [Int_string_conversions] is separated from [Int_conversions] for dependency reasons,
    but this separation is not important for clients. *)
 module Int_conversions = struct
@@ -183,9 +190,6 @@ module Exported_for_specific_uses = struct
   module Globalize = Globalize
   module Obj_array = Obj_array
   module Obj_local = Obj_local
-  module Ppx_compare_lib = Ppx_compare_lib
-  module Ppx_enumerate_lib = Ppx_enumerate_lib
-  module Ppx_hash_lib = Ppx_hash_lib
   module Variantslib = Variantslib
 
   let am_testing = am_testing
@@ -196,480 +200,75 @@ end
 module Export = struct
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
   type 'a array = 'a Array.t
-  [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
-
-  let compare_array__local
-    : 'a. (local_ 'a -> local_ 'a -> int) -> local_ 'a array -> local_ 'a array -> int
-    =
-    Array.compare__local
-  ;;
-
-  let compare_array : 'a. ('a -> 'a -> int) -> 'a array -> 'a array -> int = Array.compare
-
-  let equal_array__local
-    : 'a. (local_ 'a -> local_ 'a -> bool) -> local_ 'a array -> local_ 'a array -> bool
-    =
-    Array.equal__local
-  ;;
-
-  let equal_array : 'a. ('a -> 'a -> bool) -> 'a array -> 'a array -> bool = Array.equal
-
-  let globalize_array : 'a. (local_ 'a -> 'a) -> local_ 'a array -> 'a array =
-    fun (type a__017_)
-      : ((local_ a__017_ -> a__017_) -> local_ a__017_ array -> a__017_ array) ->
-    Array.globalize
-  ;;
-
-  let array_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a array =
-    Array.t_of_sexp
-  ;;
-
-  let sexp_of_array : 'a. ('a -> Sexplib0.Sexp.t) -> 'a array -> Sexplib0.Sexp.t =
-    Array.sexp_of_t
-  ;;
-
-  let array_sexp_grammar
-    : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a array Sexplib0.Sexp_grammar.t
-    =
-    fun _'a_sexp_grammar -> Array.t_sexp_grammar _'a_sexp_grammar
-  ;;
-
-  [@@@end]
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
 
   type bool = Bool.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-
-  let compare_bool__local = (Bool.compare__local : local_ bool -> local_ bool -> int)
-  let compare_bool = (fun a b -> compare_bool__local a b : bool -> bool -> int)
-  let equal_bool__local = (Bool.equal__local : local_ bool -> local_ bool -> bool)
-  let equal_bool = (fun a b -> equal_bool__local a b : bool -> bool -> bool)
-  let (globalize_bool : local_ bool -> bool) = (Bool.globalize : local_ bool -> bool)
-
-  let (hash_fold_bool :
-        Ppx_hash_lib.Std.Hash.state -> bool -> Ppx_hash_lib.Std.Hash.state)
-    =
-    Bool.hash_fold_t
-
-  and (hash_bool : bool -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Bool.hash in
-    fun x -> func x
-  ;;
-
-  let bool_of_sexp = (Bool.t_of_sexp : Sexplib0.Sexp.t -> bool)
-  let sexp_of_bool = (Bool.sexp_of_t : bool -> Sexplib0.Sexp.t)
-  let (bool_sexp_grammar : bool Sexplib0.Sexp_grammar.t) = Bool.t_sexp_grammar
-
-  [@@@end]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
   type char = Char.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
-  let compare_char__local = (Char.compare__local : local_ char -> local_ char -> int)
-  let compare_char = (fun a b -> compare_char__local a b : char -> char -> int)
-  let equal_char__local = (Char.equal__local : local_ char -> local_ char -> bool)
-  let equal_char = (fun a b -> equal_char__local a b : char -> char -> bool)
-  let (globalize_char : local_ char -> char) = (Char.globalize : local_ char -> char)
-
-  let (hash_fold_char :
-        Ppx_hash_lib.Std.Hash.state -> char -> Ppx_hash_lib.Std.Hash.state)
-    =
-    Char.hash_fold_t
-
-  and (hash_char : char -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Char.hash in
-    fun x -> func x
-  ;;
-
-  let char_of_sexp = (Char.t_of_sexp : Sexplib0.Sexp.t -> char)
-  let sexp_of_char = (Char.sexp_of_t : char -> Sexplib0.Sexp.t)
-  let (char_sexp_grammar : char Sexplib0.Sexp_grammar.t) = Char.t_sexp_grammar
-
-  [@@@end]
-
-  type exn = Exn.t [@@deriving_inline sexp_of]
-
-  let sexp_of_exn = (Exn.sexp_of_t : exn -> Sexplib0.Sexp.t)
-
-  [@@@end]
+  type exn = Exn.t [@@deriving sexp_of]
 
   type float = Float.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
-  let compare_float__local = (Float.compare__local : local_ float -> local_ float -> int)
-  let compare_float = (fun a b -> compare_float__local a b : float -> float -> int)
-  let equal_float__local = (Float.equal__local : local_ float -> local_ float -> bool)
-  let equal_float = (fun a b -> equal_float__local a b : float -> float -> bool)
-
-  let (globalize_float : local_ float -> float) =
-    (Float.globalize : local_ float -> float)
-  ;;
-
-  let (hash_fold_float :
-        Ppx_hash_lib.Std.Hash.state -> float -> Ppx_hash_lib.Std.Hash.state)
-    =
-    Float.hash_fold_t
-
-  and (hash_float : float -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Float.hash in
-    fun x -> func x
-  ;;
-
-  let float_of_sexp = (Float.t_of_sexp : Sexplib0.Sexp.t -> float)
-  let sexp_of_float = (Float.sexp_of_t : float -> Sexplib0.Sexp.t)
-  let (float_sexp_grammar : float Sexplib0.Sexp_grammar.t) = Float.t_sexp_grammar
-
-  [@@@end]
+  type 'a iarray = 'a Iarray.t
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
   type int = Int.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-
-  let compare_int__local = (Int.compare__local : local_ int -> local_ int -> int)
-  let compare_int = (fun a b -> compare_int__local a b : int -> int -> int)
-  let equal_int__local = (Int.equal__local : local_ int -> local_ int -> bool)
-  let equal_int = (fun a b -> equal_int__local a b : int -> int -> bool)
-  let (globalize_int : local_ int -> int) = (Int.globalize : local_ int -> int)
-
-  let (hash_fold_int : Ppx_hash_lib.Std.Hash.state -> int -> Ppx_hash_lib.Std.Hash.state) =
-    Int.hash_fold_t
-
-  and (hash_int : int -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Int.hash in
-    fun x -> func x
-  ;;
-
-  let int_of_sexp = (Int.t_of_sexp : Sexplib0.Sexp.t -> int)
-  let sexp_of_int = (Int.sexp_of_t : int -> Sexplib0.Sexp.t)
-  let (int_sexp_grammar : int Sexplib0.Sexp_grammar.t) = Int.t_sexp_grammar
-
-  [@@@end]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
   type int32 = Int32.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-
-  let compare_int32__local = (Int32.compare__local : local_ int32 -> local_ int32 -> int)
-  let compare_int32 = (fun a b -> compare_int32__local a b : int32 -> int32 -> int)
-  let equal_int32__local = (Int32.equal__local : local_ int32 -> local_ int32 -> bool)
-  let equal_int32 = (fun a b -> equal_int32__local a b : int32 -> int32 -> bool)
-
-  let (globalize_int32 : local_ int32 -> int32) =
-    (Int32.globalize : local_ int32 -> int32)
-  ;;
-
-  let (hash_fold_int32 :
-        Ppx_hash_lib.Std.Hash.state -> int32 -> Ppx_hash_lib.Std.Hash.state)
-    =
-    Int32.hash_fold_t
-
-  and (hash_int32 : int32 -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Int32.hash in
-    fun x -> func x
-  ;;
-
-  let int32_of_sexp = (Int32.t_of_sexp : Sexplib0.Sexp.t -> int32)
-  let sexp_of_int32 = (Int32.sexp_of_t : int32 -> Sexplib0.Sexp.t)
-  let (int32_sexp_grammar : int32 Sexplib0.Sexp_grammar.t) = Int32.t_sexp_grammar
-
-  [@@@end]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
   type int64 = Int64.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-
-  let compare_int64__local = (Int64.compare__local : local_ int64 -> local_ int64 -> int)
-  let compare_int64 = (fun a b -> compare_int64__local a b : int64 -> int64 -> int)
-  let equal_int64__local = (Int64.equal__local : local_ int64 -> local_ int64 -> bool)
-  let equal_int64 = (fun a b -> equal_int64__local a b : int64 -> int64 -> bool)
-
-  let (globalize_int64 : local_ int64 -> int64) =
-    (Int64.globalize : local_ int64 -> int64)
-  ;;
-
-  let (hash_fold_int64 :
-        Ppx_hash_lib.Std.Hash.state -> int64 -> Ppx_hash_lib.Std.Hash.state)
-    =
-    Int64.hash_fold_t
-
-  and (hash_int64 : int64 -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Int64.hash in
-    fun x -> func x
-  ;;
-
-  let int64_of_sexp = (Int64.t_of_sexp : Sexplib0.Sexp.t -> int64)
-  let sexp_of_int64 = (Int64.sexp_of_t : int64 -> Sexplib0.Sexp.t)
-  let (int64_sexp_grammar : int64 Sexplib0.Sexp_grammar.t) = Int64.t_sexp_grammar
-
-  [@@@end]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
   type 'a list = 'a List.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-
-  let compare_list__local
-    : 'a. (local_ 'a -> local_ 'a -> int) -> local_ 'a list -> local_ 'a list -> int
-    =
-    List.compare__local
-  ;;
-
-  let compare_list : 'a. ('a -> 'a -> int) -> 'a list -> 'a list -> int = List.compare
-
-  let equal_list__local
-    : 'a. (local_ 'a -> local_ 'a -> bool) -> local_ 'a list -> local_ 'a list -> bool
-    =
-    List.equal__local
-  ;;
-
-  let equal_list : 'a. ('a -> 'a -> bool) -> 'a list -> 'a list -> bool = List.equal
-
-  let globalize_list : 'a. (local_ 'a -> 'a) -> local_ 'a list -> 'a list =
-    fun (type a__078_)
-      : ((local_ a__078_ -> a__078_) -> local_ a__078_ list -> a__078_ list) ->
-    List.globalize
-  ;;
-
-  let hash_fold_list
-    : 'a.
-    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-    -> Ppx_hash_lib.Std.Hash.state
-    -> 'a list
-    -> Ppx_hash_lib.Std.Hash.state
-    =
-    List.hash_fold_t
-  ;;
-
-  let list_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a list =
-    List.t_of_sexp
-  ;;
-
-  let sexp_of_list : 'a. ('a -> Sexplib0.Sexp.t) -> 'a list -> Sexplib0.Sexp.t =
-    List.sexp_of_t
-  ;;
-
-  let list_sexp_grammar
-    : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a list Sexplib0.Sexp_grammar.t
-    =
-    fun _'a_sexp_grammar -> List.t_sexp_grammar _'a_sexp_grammar
-  ;;
-
-  [@@@end]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
   type nativeint = Nativeint.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-
-  let compare_nativeint__local =
-    (Nativeint.compare__local : local_ nativeint -> local_ nativeint -> int)
-  ;;
-
-  let compare_nativeint =
-    (fun a b -> compare_nativeint__local a b : nativeint -> nativeint -> int)
-  ;;
-
-  let equal_nativeint__local =
-    (Nativeint.equal__local : local_ nativeint -> local_ nativeint -> bool)
-  ;;
-
-  let equal_nativeint =
-    (fun a b -> equal_nativeint__local a b : nativeint -> nativeint -> bool)
-  ;;
-
-  let (globalize_nativeint : local_ nativeint -> nativeint) =
-    (Nativeint.globalize : local_ nativeint -> nativeint)
-  ;;
-
-  let (hash_fold_nativeint :
-        Ppx_hash_lib.Std.Hash.state -> nativeint -> Ppx_hash_lib.Std.Hash.state)
-    =
-    Nativeint.hash_fold_t
-
-  and (hash_nativeint : nativeint -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Nativeint.hash in
-    fun x -> func x
-  ;;
-
-  let nativeint_of_sexp = (Nativeint.t_of_sexp : Sexplib0.Sexp.t -> nativeint)
-  let sexp_of_nativeint = (Nativeint.sexp_of_t : nativeint -> Sexplib0.Sexp.t)
-
-  let (nativeint_sexp_grammar : nativeint Sexplib0.Sexp_grammar.t) =
-    Nativeint.t_sexp_grammar
-  ;;
-
-  [@@@end]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
   type 'a option = 'a Option.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
-  let compare_option__local
-    : 'a. (local_ 'a -> local_ 'a -> int) -> local_ 'a option -> local_ 'a option -> int
-    =
-    Option.compare__local
-  ;;
+  type%template nonrec ('a : k) option = ('a Option.t[@kind k])
+  [@@deriving compare ~localize, equal ~localize, sexp ~localize]
+  [@@kind k = (float64, bits32, bits64, word)]
 
-  let compare_option : 'a. ('a -> 'a -> int) -> 'a option -> 'a option -> int =
-    Option.compare
-  ;;
+  type ('a, 'b) result = ('a, 'b) Result.t
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
-  let equal_option__local
-    : 'a. (local_ 'a -> local_ 'a -> bool) -> local_ 'a option -> local_ 'a option -> bool
-    =
-    Option.equal__local
-  ;;
-
-  let equal_option : 'a. ('a -> 'a -> bool) -> 'a option -> 'a option -> bool =
-    Option.equal
-  ;;
-
-  let globalize_option : 'a. (local_ 'a -> 'a) -> local_ 'a option -> 'a option =
-    fun (type a__109_)
-      : ((local_ a__109_ -> a__109_) -> local_ a__109_ option -> a__109_ option) ->
-    Option.globalize
-  ;;
-
-  let hash_fold_option
-    : 'a.
-    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-    -> Ppx_hash_lib.Std.Hash.state
-    -> 'a option
-    -> Ppx_hash_lib.Std.Hash.state
-    =
-    Option.hash_fold_t
-  ;;
-
-  let option_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a option =
-    Option.t_of_sexp
-  ;;
-
-  let sexp_of_option : 'a. ('a -> Sexplib0.Sexp.t) -> 'a option -> Sexplib0.Sexp.t =
-    Option.sexp_of_t
-  ;;
-
-  let option_sexp_grammar
-    : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a option Sexplib0.Sexp_grammar.t
-    =
-    fun _'a_sexp_grammar -> Option.t_sexp_grammar _'a_sexp_grammar
-  ;;
-
-  [@@@end]
+  type%template nonrec ('a : k, 'b) result = (('a, 'b) Result.t[@kind k])
+  [@@deriving compare ~localize, equal ~localize, sexp ~localize]
+  [@@kind k = (float64, bits32, bits64, word)]
 
   type 'a ref = 'a Ref.t
-  [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
-
-  let compare_ref__local
-    : 'a. (local_ 'a -> local_ 'a -> int) -> local_ 'a ref -> local_ 'a ref -> int
-    =
-    Ref.compare__local
-  ;;
-
-  let compare_ref : 'a. ('a -> 'a -> int) -> 'a ref -> 'a ref -> int = Ref.compare
-
-  let equal_ref__local
-    : 'a. (local_ 'a -> local_ 'a -> bool) -> local_ 'a ref -> local_ 'a ref -> bool
-    =
-    Ref.equal__local
-  ;;
-
-  let equal_ref : 'a. ('a -> 'a -> bool) -> 'a ref -> 'a ref -> bool = Ref.equal
-
-  let globalize_ref : 'a. (local_ 'a -> 'a) -> local_ 'a ref -> 'a ref =
-    fun (type a__134_)
-      : ((local_ a__134_ -> a__134_) -> local_ a__134_ ref -> a__134_ ref) ->
-    Ref.globalize
-  ;;
-
-  let ref_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a ref =
-    Ref.t_of_sexp
-  ;;
-
-  let sexp_of_ref : 'a. ('a -> Sexplib0.Sexp.t) -> 'a ref -> Sexplib0.Sexp.t =
-    Ref.sexp_of_t
-  ;;
-
-  let ref_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a ref Sexplib0.Sexp_grammar.t =
-    fun _'a_sexp_grammar -> Ref.t_sexp_grammar _'a_sexp_grammar
-  ;;
-
-  [@@@end]
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
 
   type string = String.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-
-  let compare_string__local =
-    (String.compare__local : local_ string -> local_ string -> int)
-  ;;
-
-  let compare_string = (fun a b -> compare_string__local a b : string -> string -> int)
-  let equal_string__local = (String.equal__local : local_ string -> local_ string -> bool)
-  let equal_string = (fun a b -> equal_string__local a b : string -> string -> bool)
-
-  let (globalize_string : local_ string -> string) =
-    (String.globalize : local_ string -> string)
-  ;;
-
-  let (hash_fold_string :
-        Ppx_hash_lib.Std.Hash.state -> string -> Ppx_hash_lib.Std.Hash.state)
-    =
-    String.hash_fold_t
-
-  and (hash_string : string -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = String.hash in
-    fun x -> func x
-  ;;
-
-  let string_of_sexp = (String.t_of_sexp : Sexplib0.Sexp.t -> string)
-  let sexp_of_string = (String.sexp_of_t : string -> Sexplib0.Sexp.t)
-  let (string_sexp_grammar : string Sexplib0.Sexp_grammar.t) = String.t_sexp_grammar
-
-  [@@@end]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
   type bytes = Bytes.t
-  [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
-
-  let compare_bytes__local = (Bytes.compare__local : local_ bytes -> local_ bytes -> int)
-  let compare_bytes = (fun a b -> compare_bytes__local a b : bytes -> bytes -> int)
-  let equal_bytes__local = (Bytes.equal__local : local_ bytes -> local_ bytes -> bool)
-  let equal_bytes = (fun a b -> equal_bytes__local a b : bytes -> bytes -> bool)
-
-  let (globalize_bytes : local_ bytes -> bytes) =
-    (Bytes.globalize : local_ bytes -> bytes)
-  ;;
-
-  let bytes_of_sexp = (Bytes.t_of_sexp : Sexplib0.Sexp.t -> bytes)
-  let sexp_of_bytes = (Bytes.sexp_of_t : bytes -> Sexplib0.Sexp.t)
-  let (bytes_sexp_grammar : bytes Sexplib0.Sexp_grammar.t) = Bytes.t_sexp_grammar
-
-  [@@@end]
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
 
   type unit = Unit.t
-  [@@deriving_inline
-    compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-
-  let compare_unit__local = (Unit.compare__local : local_ unit -> local_ unit -> int)
-  let compare_unit = (fun a b -> compare_unit__local a b : unit -> unit -> int)
-  let equal_unit__local = (Unit.equal__local : local_ unit -> local_ unit -> bool)
-  let equal_unit = (fun a b -> equal_unit__local a b : unit -> unit -> bool)
-  let (globalize_unit : local_ unit -> unit) = (Unit.globalize : local_ unit -> unit)
-
-  let (hash_fold_unit :
-        Ppx_hash_lib.Std.Hash.state -> unit -> Ppx_hash_lib.Std.Hash.state)
-    =
-    Unit.hash_fold_t
-
-  and (hash_unit : unit -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = Unit.hash in
-    fun x -> func x
-  ;;
-
-  let unit_of_sexp = (Unit.t_of_sexp : Sexplib0.Sexp.t -> unit)
-  let sexp_of_unit = (Unit.sexp_of_t : unit -> Sexplib0.Sexp.t)
-  let (unit_sexp_grammar : unit Sexplib0.Sexp_grammar.t) = Unit.t_sexp_grammar
-
-  [@@@end]
+  [@@deriving
+    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
   (** Format stuff *)
 
@@ -680,6 +279,10 @@ module Export = struct
   (** List operators *)
 
   include List.Infix
+
+  (** Iarray operators *)
+
+  include Iarray.O
 
   (** Int operators and comparisons *)
 
@@ -696,22 +299,40 @@ module Export = struct
   external ( |> )
     : ('a : any) ('b : any).
     'a -> (('a -> 'b)[@local_opt]) -> 'b
+    @@ portable
     = "%revapply"
   [@@layout_poly]
 
   (** Application operator. [g @@ f @@ x] is equivalent to [g (f (x))]. *)
-  external ( @@ ) : ('a : any) ('b : any). (('a -> 'b)[@local_opt]) -> 'a -> 'b = "%apply"
+  external ( @@ )
+    : ('a : any) ('b : any).
+    (('a -> 'b)[@local_opt]) -> 'a -> 'b
+    @@ portable
+    = "%apply"
   [@@layout_poly]
 
   (** Boolean operations *)
 
   (* These need to be declared as an external to get the lazy behavior *)
-  external ( && ) : (bool[@local_opt]) -> (bool[@local_opt]) -> bool = "%sequand"
-  external ( || ) : (bool[@local_opt]) -> (bool[@local_opt]) -> bool = "%sequor"
-  external not : (bool[@local_opt]) -> bool = "%boolnot"
+  external ( && )
+    :  (bool[@local_opt])
+    -> (bool[@local_opt])
+    -> bool
+    @@ portable
+    = "%sequand"
+
+  external ( || )
+    :  (bool[@local_opt])
+    -> (bool[@local_opt])
+    -> bool
+    @@ portable
+    = "%sequor"
+
+  external not : (bool[@local_opt]) -> bool @@ portable = "%boolnot"
 
   (* This must be declared as an external for the warnings to work properly. *)
-  external ignore : ('a : any). ('a[@local_opt]) -> unit = "%ignore" [@@layout_poly]
+  external ignore : ('a : any). ('a[@local_opt]) -> unit @@ portable = "%ignore"
+  [@@layout_poly]
 
   (** Common string operations *)
   let ( ^ ) = String.( ^ )
@@ -720,9 +341,9 @@ module Export = struct
 
   (* Declared as an externals so that the compiler skips the caml_modify when possible and
      to keep reference unboxing working *)
-  external ( ! ) : ('a ref[@local_opt]) -> 'a = "%field0"
-  external ref : 'a -> ('a ref[@local_opt]) = "%makemutable"
-  external ( := ) : ('a ref[@local_opt]) -> 'a -> unit = "%setfield0"
+  external ( ! ) : ('a ref[@local_opt]) -> 'a @@ portable = "%field0"
+  external ref : 'a -> ('a ref[@local_opt]) @@ portable = "%makemutable"
+  external ( := ) : ('a ref[@local_opt]) -> 'a -> unit @@ portable = "%setfield0"
 
   (** Pair operations *)
 
@@ -732,7 +353,7 @@ module Export = struct
   (** Exceptions stuff *)
 
   (* Declared as an external so that the compiler may rewrite '%raise' as '%reraise'. *)
-  external raise : exn -> _ = "%raise"
+  external raise : exn -> _ @ portable unique @@ portable = "%reraise"
 
   let failwith = failwith
   let invalid_arg = invalid_arg
@@ -740,13 +361,19 @@ module Export = struct
 
   (** Misc *)
 
-  external phys_equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%eq"
-  external force : ('a Lazy.t[@local_opt]) -> 'a = "%lazy_force"
+  external phys_equal
+    :  ('a[@local_opt]) @ contended
+    -> ('a[@local_opt]) @ contended
+    -> bool
+    @@ portable
+    = "%eq"
+
+  external force : ('a Lazy.t[@local_opt]) -> 'a @@ portable = "%lazy_force"
 end
 
 include Export
 
-include Container_intf.Export (** @inline *)
+include Container.Export (** @inline *)
 
 include Modes.Export (** @inline *)
 

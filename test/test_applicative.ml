@@ -103,7 +103,7 @@ module Test_applicative_s (A : Applicative.S with type 'a t := 'a Or_error.t) :
   let map2 = A.map2
 
   let%expect_test _ =
-    let test x y = print_s [%sexp (map2 x y ~f:( ^ ) : string Or_error.t)] in
+    let test x y = print_s [%sexp (map2 x y ~f:(fun x y -> x ^ y) : string Or_error.t)] in
     test (Ok "o") (Ok "kay");
     [%expect {| (Ok okay) |}];
     test (error "not okay") (Ok "kay");
@@ -207,7 +207,7 @@ module%test Make = Test_applicative_s (Applicative.Make_using_map2 (struct
     let map = `Define_using_map2
   end))
 
-module%test Make = Test_applicative_s (Applicative.Make_using_map2_local (struct
+module%test Make = Test_applicative_s (Applicative.Make_using_map2__local (struct
     type 'a t = 'a Or_error.t
 
     let return x = Ok x

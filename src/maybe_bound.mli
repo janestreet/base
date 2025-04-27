@@ -1,3 +1,5 @@
+@@ portable
+
 (** Used for specifying a bound (either upper or lower) as inclusive, exclusive, or
     unbounded. *)
 
@@ -7,15 +9,7 @@ type 'a t =
   | Incl of 'a
   | Excl of 'a
   | Unbounded
-[@@deriving_inline enumerate, sexp, sexp_grammar, globalize]
-
-include Ppx_enumerate_lib.Enumerable.S1 with type 'a t := 'a t
-include Sexplib0.Sexpable.S1 with type 'a t := 'a t
-
-val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
-
-[@@@end]
+[@@deriving enumerate, sexp ~localize, sexp_grammar, globalize]
 
 val map : 'a t -> f:local_ ('a -> 'b) -> 'b t
 val is_lower_bound : 'a t -> of_:'a -> compare:local_ ('a -> 'a -> int) -> bool
@@ -39,26 +33,7 @@ type interval_comparison =
   | Below_lower_bound
   | In_range
   | Above_upper_bound
-[@@deriving_inline sexp, sexp_grammar, compare ~localize, hash]
-
-val sexp_of_interval_comparison : interval_comparison -> Sexplib0.Sexp.t
-val interval_comparison_of_sexp : Sexplib0.Sexp.t -> interval_comparison
-val interval_comparison_sexp_grammar : interval_comparison Sexplib0.Sexp_grammar.t
-val compare_interval_comparison : interval_comparison -> interval_comparison -> int
-
-val compare_interval_comparison__local
-  :  local_ interval_comparison
-  -> local_ interval_comparison
-  -> int
-
-val hash_fold_interval_comparison
-  :  Ppx_hash_lib.Std.Hash.state
-  -> interval_comparison
-  -> Ppx_hash_lib.Std.Hash.state
-
-val hash_interval_comparison : interval_comparison -> Ppx_hash_lib.Std.Hash.hash_value
-
-[@@@end]
+[@@deriving sexp ~localize, sexp_grammar, compare ~localize, hash]
 
 (** [compare_to_interval_exn ~lower ~upper x ~compare] raises if [lower] and [upper] are
     crossed. *)

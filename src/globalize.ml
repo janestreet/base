@@ -11,19 +11,21 @@ let globalize_char = function
   | '\x00' .. '\xFF' as c -> c
 ;;
 
-external globalize_float : local_ float -> float = "%obj_dup"
-external globalize_int : local_ int -> int = "%identity"
-external globalize_int32 : local_ int32 -> int32 = "%obj_dup"
-external globalize_int64 : local_ int64 -> int64 = "%obj_dup"
-external globalize_nativeint : local_ nativeint -> nativeint = "%obj_dup"
-external globalize_bytes : local_ bytes -> bytes = "%obj_dup"
-external globalize_string : local_ string -> string = "%obj_dup"
+external globalize_float : local_ float -> float @@ portable = "%obj_dup"
+external globalize_int : local_ int -> int @@ portable = "%identity"
+external globalize_int32 : local_ int32 -> int32 @@ portable = "%obj_dup"
+external globalize_int64 : local_ int64 -> int64 @@ portable = "%obj_dup"
+external globalize_nativeint : local_ nativeint -> nativeint @@ portable = "%obj_dup"
+external globalize_bytes : local_ bytes -> bytes @@ portable = "%obj_dup"
+external globalize_string : local_ string -> string @@ portable = "%obj_dup"
 
 let globalize_unit (() as u) = u
 
-external globalize_array' : local_ 'a array -> 'a array = "%obj_dup"
+external globalize_array' : local_ 'a array -> 'a array @@ portable = "%obj_dup"
 
 let globalize_array _ a = globalize_array' a
+
+external globalize_floatarray : local_ floatarray -> floatarray @@ portable = "%obj_dup"
 
 let[@tail_mod_cons] rec globalize_list f = function
   | [] -> []
@@ -44,6 +46,6 @@ let globalize_result globalize_a globalize_b t =
 let globalize_ref' r = ref !r
 let globalize_ref _ r = globalize_ref' r
 
-external globalize_lazy_t_mono : local_ 'a lazy_t -> 'a lazy_t = "%identity"
+external globalize_lazy_t_mono : local_ 'a lazy_t -> 'a lazy_t @@ portable = "%identity"
 
 let globalize_lazy_t _ t = globalize_lazy_t_mono t

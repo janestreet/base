@@ -1,3 +1,5 @@
+@@ portable
+
 (** First-class representative of an individual variant in a variant type, used in
     [[@@deriving variants]]. *)
 

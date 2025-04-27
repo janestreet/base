@@ -190,7 +190,7 @@ module%test [@name "element selection"] _ = struct
       (0 (Error "Set.choose_exn: empty set"))
       (1 (Ok 1))
       (2 multiple (((Ok 2) balanced) ((Ok 1) left-heavy) ((Ok 2) right-heavy)))
-      (3 multiple (((Ok 2) balanced) ((Ok 1) left-heavy) ((Ok 3) right-heavy)))
+      (3 (Ok 2))
       (4 multiple (((Ok 3) balanced) ((Ok 2) left-heavy) ((Ok 3) right-heavy)))
       (5 multiple (((Ok 3) balanced) ((Ok 2) left-heavy) ((Ok 4) right-heavy)))
       (6 multiple (((Ok 4) balanced) ((Ok 2) left-heavy) ((Ok 5) right-heavy)))
@@ -249,9 +249,7 @@ module%test [@name "element selection"] _ = struct
       (0 ())
       (1 ((1)))
       (2 ((1 2)))
-      (3
-       multiple
-       ((((3) (1 2)) balanced) (((3) (1 2)) left-heavy) (((1 2) (3)) right-heavy)))
+      (3 ((3) (1 2)))
       (4
        multiple
        ((((1 2 4) (3)) balanced)
@@ -307,18 +305,18 @@ let%expect_test ("space" [@tags "no-js"]) =
     │         1 │ r_to_l       │        15 │
     │         1 │ balanced     │        15 │
     │         1 │ random       │        15 │
-    │       100 │ l_to_r       │       413 │
-    │       100 │ r_to_l       │       413 │
-    │       100 │ balanced     │       465 │
-    │       100 │ random       │       473 │
-    │    10_000 │ l_to_r       │    40_013 │
-    │    10_000 │ r_to_l       │    40_013 │
-    │    10_000 │ balanced     │    43_629 │
-    │    10_000 │ random       │    45_177 │
-    │ 1_000_000 │ l_to_r       │ 4_000_013 │
-    │ 1_000_000 │ r_to_l       │ 4_000_013 │
-    │ 1_000_000 │ balanced     │ 4_097_161 │
-    │ 1_000_000 │ random       │ 4_512_061 │
+    │       100 │ l_to_r       │       363 │
+    │       100 │ r_to_l       │       363 │
+    │       100 │ balanced     │       402 │
+    │       100 │ random       │       387 │
+    │    10_000 │ l_to_r       │    35_013 │
+    │    10_000 │ r_to_l       │    35_013 │
+    │    10_000 │ balanced     │    37_725 │
+    │    10_000 │ random       │    37_083 │
+    │ 1_000_000 │ l_to_r       │ 3_500_013 │
+    │ 1_000_000 │ r_to_l       │ 3_500_013 │
+    │ 1_000_000 │ balanced     │ 3_572_874 │
+    │ 1_000_000 │ random       │ 3_714_564 │
     └───────────┴──────────────┴───────────┘
     |}]
 ;;

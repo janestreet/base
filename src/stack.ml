@@ -1,4 +1,5 @@
 open! Import
+module Sexp = Sexp0
 include Stack_intf
 
 let raise_s = Error.raise_s
@@ -11,25 +12,7 @@ type 'a t =
   { mutable length : int
   ; mutable elts : 'a Option_array.t
   }
-[@@deriving_inline sexp_of]
-
-let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-  fun _of_a__001_ { length = length__003_; elts = elts__005_ } ->
-  let bnds__002_ = ([] : _ Stdlib.List.t) in
-  let bnds__002_ =
-    let arg__006_ = Option_array.sexp_of_t _of_a__001_ elts__005_ in
-    (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "elts"; arg__006_ ] :: bnds__002_
-     : _ Stdlib.List.t)
-  in
-  let bnds__002_ =
-    let arg__004_ = sexp_of_int length__003_ in
-    (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "length"; arg__004_ ] :: bnds__002_
-     : _ Stdlib.List.t)
-  in
-  Sexplib0.Sexp.List bnds__002_
-;;
-
-[@@@end]
+[@@deriving sexp_of]
 
 let sexp_of_t_internal = sexp_of_t
 let sexp_of_t = `Rebound_later
@@ -55,7 +38,13 @@ let invariant invariant_a ({ length; elts } as t) : unit =
          [ "exn", exn |> Exn.sexp_of_t; "stack", t |> sexp_of_t_internal sexp_of_opaque ])
 ;;
 
-let create (type a) () : a t = { length = 0; elts = Option_array.empty }
+let create (type a) () : a t =
+  { length = 0
+  ; elts =
+      Portability_hacks.magic_uncontended__promise_deeply_immutable Option_array.empty
+  }
+;;
+
 let length t = t.length
 let is_empty t = length t = 0
 
@@ -75,7 +64,7 @@ let iter t ~f =
   done
 ;;
 
-module C = Container.Make (struct
+module%template C = Container.Make [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let fold = fold
@@ -148,13 +137,13 @@ let pop_nonempty t =
   result
 ;;
 
-let pop_error = Error.of_string "Stack.pop of empty stack"
+let pop_error () = Error.of_string "Stack.pop of empty stack"
 let pop t = if is_empty t then None else Some (pop_nonempty t)
-let pop_exn t = if is_empty t then Error.raise pop_error else pop_nonempty t
+let pop_exn t = if is_empty t then Error.raise (pop_error ()) else pop_nonempty t
 let top_nonempty t = Option_array.get_some_exn t.elts (t.length - 1)
-let top_error = Error.of_string "Stack.top of empty stack"
+let top_error () = Error.of_string "Stack.top of empty stack"
 let top t = if is_empty t then None else Some (top_nonempty t)
-let top_exn t = if is_empty t then Error.raise top_error else top_nonempty t
+let top_exn t = if is_empty t then Error.raise (top_error ()) else top_nonempty t
 let copy { length; elts } = { length; elts = Option_array.copy elts }
 
 let clear t =

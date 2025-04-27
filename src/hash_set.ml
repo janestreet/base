@@ -8,7 +8,6 @@ let with_return = With_return.with_return
 
 type 'a t = ('a, unit) Hashtbl.t
 type 'a hash_set = 'a t
-type 'a elt = 'a
 
 module Accessors = struct
   let hashable = hashable
@@ -24,32 +23,45 @@ module Accessors = struct
         match f elt with
         | None -> ()
         | Some _ as o -> r.return o);
-      None) [@nontail]
+      None)
+    [@nontail]
   ;;
 
   let find t ~f = find_map t ~f:(fun a -> if f a then Some a else None) [@nontail]
   let add t k = Hashtbl.set t ~key:k ~data:()
 
-  let strict_add t k =
+  let strict_add t k : Ok_or_duplicate.t =
     if mem t k
-    then Or_error.error_string "element already exists"
+    then Duplicate
     else (
       Hashtbl.set t ~key:k ~data:();
-      Result.Ok ())
+      Ok)
   ;;
 
-  let strict_add_exn t k = Or_error.ok_exn (strict_add t k)
+  let strict_add_or_error t k =
+    match strict_add t k with
+    | Duplicate -> Or_error.error_string "element already exists"
+    | Ok -> Ok ()
+  ;;
+
+  let strict_add_exn t k = Or_error.ok_exn (strict_add_or_error t k)
   let remove = Hashtbl.remove
 
-  let strict_remove t k =
+  let strict_remove t k : Ok_or_absent.t =
     if mem t k
     then (
       remove t k;
-      Result.Ok ())
-    else Or_error.error "element not in set" k (Hashtbl.sexp_of_key t)
+      Ok)
+    else Absent
   ;;
 
-  let strict_remove_exn t k = Or_error.ok_exn (strict_remove t k)
+  let strict_remove_or_error t k =
+    match strict_remove t k with
+    | Ok -> Ok ()
+    | Absent -> Or_error.error "element not in set" k (Hashtbl.sexp_of_key t)
+  ;;
+
+  let strict_remove_exn t k = Or_error.ok_exn (strict_remove_or_error t k)
 
   let fold t ~init ~f =
     Hashtbl.fold t ~init ~f:(fun ~key ~data:() acc -> f acc key) [@nontail]
@@ -86,6 +98,11 @@ module Accessors = struct
   let copy t = Hashtbl.copy t
   let filter t ~f = Hashtbl.filteri t ~f:(fun ~key ~data:() -> f key) [@nontail]
   let union t1 t2 = Hashtbl.merge t1 t2 ~f:(fun ~key:_ _ -> Some ())
+
+  let union_in_place ~dst ~src =
+    Hashtbl.merge_into ~src ~dst ~f:(fun ~key:_ _ _ -> Set_to ())
+  ;;
+
   let diff t1 t2 = filter t1 ~f:(fun key -> not (Hashtbl.mem t2 key))
 
   let inter t1 t2 =
@@ -125,12 +142,12 @@ let t_of_sexp m e_of_sexp sexp =
     List.iter list ~f:(fun sexp ->
       let e = e_of_sexp sexp in
       match strict_add t e with
-      | Ok () -> ()
-      | Error _ -> of_sexp_error "Hash_set.t_of_sexp got a duplicate element" sexp);
+      | Ok -> ()
+      | Duplicate -> of_sexp_error "Hash_set.t_of_sexp got a duplicate element" sexp);
     t
 ;;
 
-module Creators (Elt : sig
+module%template.portable Creators (Elt : sig
     type 'a t
 
     val hashable : 'a t Hashable.t
@@ -161,7 +178,7 @@ module Poly = struct
 
   let hashable = poly_hashable
 
-  include Creators (struct
+  include%template Creators [@modality portable] (struct
       type 'a t = 'a
 
       let hashable = hashable

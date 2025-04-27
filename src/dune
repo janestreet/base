@@ -1,11 +1,4 @@
 (rule
- (targets random_repr.ml)
- (deps
-  (:first_dep select-random-repr/select.ml))
- (action
-  (run %{ocaml} %{first_dep} -ocaml-version %{ocaml_version} -o %{targets})))
-
-(rule
  (targets pow_overflow_bounds.ml)
  (deps
   (:first_dep ../generate/generate_pow_overflow_bounds.exe))
@@ -16,8 +9,8 @@
 (library
  (foreign_stubs
   (language c)
-  (names bytes_stubs exn_stubs float_stubs int_math_stubs hash_stubs
-    obj_stubs string_stubs am_testing)
+  (names bytes_stubs exn_stubs float_stubs int_stubs int_math_stubs obj_stubs
+    string_stubs am_testing)
   (flags
    :standard
    -D_LARGEFILE64_SOURCE
@@ -27,14 +20,16 @@
  (ocamlopt_flags
   :standard
   (:include ocamlopt-flags))
- (libraries base_internalhash_types sexplib0 shadow_stdlib
+ (libraries basement ppx_hash.base_internalhash_types sexplib0 shadow_stdlib
    ocaml_intrinsics_kernel)
- (preprocess no_preprocessing)
- (lint
-  (pps ppx_base ppx_base_internal ppx_base_lint -check-doc-comments
-    -type-conv-keep-w32=both -apply=js_style,base_lint,deriving))
+ (preprocess
+  (pps ppx_base ppx_base_internal ppx_base_lint
+    -do-not-correct-cold-attributes -type-conv-keep-w32=both))
  (js_of_ocaml
-  (javascript_files runtime.js)))
+  (javascript_files runtime.js))
+ (wasm_of_ocaml
+  (javascript_files runtime.js)
+  (wasm_files runtime.wat)))
 
 (rule
  (targets mpopcnt.sexp)

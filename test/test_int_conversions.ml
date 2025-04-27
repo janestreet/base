@@ -126,7 +126,8 @@ module%test [@name "conversions"] _ = struct
       [%here]
       (module Int)
       (module Int32)
-      (Stdlib.Int32.of_int, with_exn int_to_int32_exn)
+      ( Stdlib.Int32.of_int
+      , with_exn (fun x -> globalize_int32 (int_to_int32_exn x) [@nontail]) )
       (Stdlib.Int32.to_int, with_exn int32_to_int_exn);
     [%expect {| |}];
     test
@@ -178,7 +179,8 @@ module%test [@name "conversions"] _ = struct
       (module Int32)
       (module Int64)
       (Stdlib.Int64.of_int32, alwaysok int32_to_int64)
-      (Stdlib.Int64.to_int32, with_exn int64_to_int32_exn);
+      ( Stdlib.Int64.to_int32
+      , with_exn (fun x -> globalize_int32 (int64_to_int32_exn x) [@nontail]) );
     [%expect {| |}];
     test
       [%here]
@@ -195,7 +197,8 @@ module%test [@name "conversions"] _ = struct
       (module Int32)
       (module Nativeint)
       (Stdlib.Nativeint.of_int32, alwaysok int32_to_nativeint)
-      (Stdlib.Nativeint.to_int32, with_exn nativeint_to_int32_exn);
+      ( Stdlib.Nativeint.to_int32
+      , with_exn (fun x -> globalize_int32 (nativeint_to_int32_exn x) [@nontail]) );
     [%expect {| |}];
     test
       [%here]
@@ -211,7 +214,8 @@ module%test [@name "conversions"] _ = struct
       [%here]
       (module Int64)
       (module Nativeint)
-      (Stdlib.Int64.to_nativeint, with_exn int64_to_nativeint_exn)
+      ( Stdlib.Int64.to_nativeint
+      , with_exn (fun x -> globalize_nativeint (int64_to_nativeint_exn x) [@nontail]) )
       (Stdlib.Int64.of_nativeint, alwaysok nativeint_to_int64);
     [%expect {| |}];
     test

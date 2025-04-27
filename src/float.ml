@@ -1,47 +1,43 @@
 open! Import
 open! Printf
 module Bytes = Bytes0
+module Sexp = Sexp0
+include Float_intf
 include Float0
 
 let raise_s = Error.raise_s
 
 module T = struct
-  type t = float [@@deriving_inline hash, globalize, sexp, sexp_grammar]
-
-  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    hash_fold_float
-
-  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_float in
-    fun x -> func x
-  ;;
-
-  let (globalize : local_ t -> t) = (globalize_float : local_ t -> t)
-  let t_of_sexp = (float_of_sexp : Sexplib0.Sexp.t -> t)
-  let sexp_of_t = (sexp_of_float : t -> Sexplib0.Sexp.t)
-  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = float_sexp_grammar
-
-  [@@@end]
+  type t = float [@@deriving hash, globalize, sexp ~localize, sexp_grammar]
 
   let compare = Float_replace_polymorphic_compare.compare
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 end
 
 include T
-include Comparator.Make (T)
+
+include%template Comparator.Make [@modality portable] (T)
 
 (* We include type-specific [Replace_polymorphic_compare] at the end, after including
    functor application that could shadow its definitions. This is here so that efficient
    versions of the comparison functions are exported by this module. *)
 open Float_replace_polymorphic_compare
 
-external ceil : (t[@local_opt]) -> t = "caml_ceil_float" "ceil" [@@unboxed] [@@noalloc]
-external floor : (t[@local_opt]) -> t = "caml_floor_float" "floor" [@@unboxed] [@@noalloc]
-
-external mod_float : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_fmod_float" "fmod"
+external ceil : (t[@local_opt]) -> t @@ portable = "caml_ceil_float" "ceil"
 [@@unboxed] [@@noalloc]
 
-external float_of_string : (string[@local_opt]) -> t = "caml_float_of_string"
+external floor : (t[@local_opt]) -> t @@ portable = "caml_floor_float" "floor"
+[@@unboxed] [@@noalloc]
+
+external mod_float
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> t
+  @@ portable
+  = "caml_fmod_float" "fmod"
+[@@unboxed] [@@noalloc]
+
+external float_of_string : (string[@local_opt]) -> t @@ portable = "caml_float_of_string"
 
 let float_of_string_opt s =
   try Some (float_of_string s) with
@@ -57,70 +53,106 @@ let epsilon_float = Stdlib.epsilon_float
 external classify_float
   :  (t[@unboxed] [@local_opt])
   -> Stdlib.fpclass
+  @@ portable
   = "caml_classify_float" "caml_classify_float_unboxed"
 [@@noalloc]
 
-external trunc : (t[@local_opt]) -> t = "caml_trunc_float" "caml_trunc"
+external trunc : (t[@local_opt]) -> t @@ portable = "caml_trunc_float" "caml_trunc"
 [@@unboxed] [@@noalloc]
 
 let is_finite t = t -. t = 0.
 let is_integer x = x = trunc x && is_finite x
 
-external frexp : (t[@local_opt]) -> t * int = "caml_frexp_float"
+external frexp : (t[@local_opt]) -> t * int @@ portable = "caml_frexp_float"
 
 external ldexp
   :  (t[@unboxed] [@local_opt])
   -> (int[@untagged])
   -> (t[@unboxed])
+  @@ portable
   = "caml_ldexp_float" "caml_ldexp_float_unboxed"
 [@@noalloc]
 
-external log10 : (t[@local_opt]) -> t = "caml_log10_float" "log10" [@@unboxed] [@@noalloc]
-
-external log2 : (t[@local_opt]) -> t = "caml_log2_float" "caml_log2"
+external log10 : (t[@local_opt]) -> t @@ portable = "caml_log10_float" "log10"
 [@@unboxed] [@@noalloc]
 
-external expm1 : (t[@local_opt]) -> t = "caml_expm1_float" "caml_expm1"
+external log2 : (t[@local_opt]) -> t @@ portable = "caml_log2_float" "caml_log2"
 [@@unboxed] [@@noalloc]
 
-external log1p : (t[@local_opt]) -> t = "caml_log1p_float" "caml_log1p"
+external expm1 : (t[@local_opt]) -> t @@ portable = "caml_expm1_float" "caml_expm1"
+[@@unboxed] [@@noalloc]
+
+external log1p : (t[@local_opt]) -> t @@ portable = "caml_log1p_float" "caml_log1p"
 [@@unboxed] [@@noalloc]
 
 external copysign
   :  (t[@local_opt])
   -> (t[@local_opt])
   -> t
+  @@ portable
   = "caml_copysign_float" "caml_copysign"
 [@@unboxed] [@@noalloc]
 
-external cos : (t[@local_opt]) -> t = "caml_cos_float" "cos" [@@unboxed] [@@noalloc]
-external sin : (t[@local_opt]) -> t = "caml_sin_float" "sin" [@@unboxed] [@@noalloc]
-external tan : (t[@local_opt]) -> t = "caml_tan_float" "tan" [@@unboxed] [@@noalloc]
-external acos : (t[@local_opt]) -> t = "caml_acos_float" "acos" [@@unboxed] [@@noalloc]
-external asin : (t[@local_opt]) -> t = "caml_asin_float" "asin" [@@unboxed] [@@noalloc]
-external atan : (t[@local_opt]) -> t = "caml_atan_float" "atan" [@@unboxed] [@@noalloc]
-
-external acosh : (t[@local_opt]) -> t = "caml_acosh_float" "caml_acosh"
+external cos : (t[@local_opt]) -> t @@ portable = "caml_cos_float" "cos"
 [@@unboxed] [@@noalloc]
 
-external asinh : (t[@local_opt]) -> t = "caml_asinh_float" "caml_asinh"
+external sin : (t[@local_opt]) -> t @@ portable = "caml_sin_float" "sin"
 [@@unboxed] [@@noalloc]
 
-external atanh : (t[@local_opt]) -> t = "caml_atanh_float" "caml_atanh"
+external tan : (t[@local_opt]) -> t @@ portable = "caml_tan_float" "tan"
 [@@unboxed] [@@noalloc]
 
-external atan2 : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_atan2_float" "atan2"
+external acos : (t[@local_opt]) -> t @@ portable = "caml_acos_float" "acos"
 [@@unboxed] [@@noalloc]
 
-external hypot : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_hypot_float" "caml_hypot"
+external asin : (t[@local_opt]) -> t @@ portable = "caml_asin_float" "asin"
 [@@unboxed] [@@noalloc]
 
-external cosh : (t[@local_opt]) -> t = "caml_cosh_float" "cosh" [@@unboxed] [@@noalloc]
-external sinh : (t[@local_opt]) -> t = "caml_sinh_float" "sinh" [@@unboxed] [@@noalloc]
-external tanh : (t[@local_opt]) -> t = "caml_tanh_float" "tanh" [@@unboxed] [@@noalloc]
-external sqrt : (t[@local_opt]) -> t = "caml_sqrt_float" "sqrt" [@@unboxed] [@@noalloc]
-external exp : (t[@local_opt]) -> t = "caml_exp_float" "exp" [@@unboxed] [@@noalloc]
-external log : (t[@local_opt]) -> t = "caml_log_float" "log" [@@unboxed] [@@noalloc]
+external atan : (t[@local_opt]) -> t @@ portable = "caml_atan_float" "atan"
+[@@unboxed] [@@noalloc]
+
+external acosh : (t[@local_opt]) -> t @@ portable = "caml_acosh_float" "caml_acosh"
+[@@unboxed] [@@noalloc]
+
+external asinh : (t[@local_opt]) -> t @@ portable = "caml_asinh_float" "caml_asinh"
+[@@unboxed] [@@noalloc]
+
+external atanh : (t[@local_opt]) -> t @@ portable = "caml_atanh_float" "caml_atanh"
+[@@unboxed] [@@noalloc]
+
+external atan2
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> t
+  @@ portable
+  = "caml_atan2_float" "atan2"
+[@@unboxed] [@@noalloc]
+
+external hypot
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> t
+  @@ portable
+  = "caml_hypot_float" "caml_hypot"
+[@@unboxed] [@@noalloc]
+
+external cosh : (t[@local_opt]) -> t @@ portable = "caml_cosh_float" "cosh"
+[@@unboxed] [@@noalloc]
+
+external sinh : (t[@local_opt]) -> t @@ portable = "caml_sinh_float" "sinh"
+[@@unboxed] [@@noalloc]
+
+external tanh : (t[@local_opt]) -> t @@ portable = "caml_tanh_float" "tanh"
+[@@unboxed] [@@noalloc]
+
+external sqrt : (t[@local_opt]) -> t @@ portable = "caml_sqrt_float" "sqrt"
+[@@unboxed] [@@noalloc]
+
+external exp : (t[@local_opt]) -> t @@ portable = "caml_exp_float" "exp"
+[@@unboxed] [@@noalloc]
+
+external log : (t[@local_opt]) -> t @@ portable = "caml_log_float" "log"
+[@@unboxed] [@@noalloc]
 
 (* X86 docs say:
 
@@ -161,7 +193,7 @@ let of_string s =
 
 let of_string_opt = float_of_string_opt
 
-external format_float : string -> local_ t -> string = "caml_format_float"
+external format_float : string -> local_ t -> string @@ portable = "caml_format_float"
 
 (* Stolen from [pervasives.ml].  Adds a "." at the end if needed.  It is in
    [pervasives.mli], but it also says not to use it directly, so we copy and paste the
@@ -503,13 +535,31 @@ let iround ?(dir = `Nearest) t =
 
 let is_inf t = 1. /. t = 0.
 
-external add : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
-external sub : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
-external neg : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
-external abs : (t[@local_opt]) -> (t[@local_opt]) = "%absfloat"
-external scale : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
+external add
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> (t[@local_opt])
+  @@ portable
+  = "%addfloat"
 
-module Parts : sig
+external sub
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> (t[@local_opt])
+  @@ portable
+  = "%subfloat"
+
+external neg : (t[@local_opt]) -> (t[@local_opt]) @@ portable = "%negfloat"
+external abs : (t[@local_opt]) -> (t[@local_opt]) @@ portable = "%absfloat"
+
+external scale
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> (t[@local_opt])
+  @@ portable
+  = "%mulfloat"
+
+module Parts : sig @@ portable
   type t
 
   val fractional : t -> float
@@ -521,7 +571,7 @@ end = struct
   let integral t = snd t
 end
 
-external modf : (t[@local_opt]) -> Parts.t = "caml_modf_float"
+external modf : (t[@local_opt]) -> Parts.t @@ portable = "caml_modf_float"
 
 let round_down = floor
 let round_up = ceil
@@ -633,68 +683,7 @@ module Class = struct
     | Normal
     | Subnormal
     | Zero
-  [@@deriving_inline compare ~localize, enumerate, sexp, sexp_grammar]
-
-  let compare__local = (Stdlib.compare : local_ t -> local_ t -> int)
-  let compare = (fun a b -> compare__local a b : t -> t -> int)
-  let all = ([ Infinite; Nan; Normal; Subnormal; Zero ] : t list)
-
-  let t_of_sexp =
-    (let error_source__007_ = "float.ml.Class.t" in
-     function
-     | Sexplib0.Sexp.Atom ("infinite" | "Infinite") -> Infinite
-     | Sexplib0.Sexp.Atom ("nan" | "Nan") -> Nan
-     | Sexplib0.Sexp.Atom ("normal" | "Normal") -> Normal
-     | Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") -> Subnormal
-     | Sexplib0.Sexp.Atom ("zero" | "Zero") -> Zero
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("infinite" | "Infinite") :: _) as
-       sexp__008_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("nan" | "Nan") :: _) as sexp__008_ ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("normal" | "Normal") :: _) as sexp__008_ ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") :: _) as
-       sexp__008_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp__008_ ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__006_ ->
-       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__007_ sexp__006_
-     | Sexplib0.Sexp.List [] as sexp__006_ ->
-       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__007_ sexp__006_
-     | sexp__006_ ->
-       Sexplib0.Sexp_conv_error.unexpected_stag
-         error_source__007_
-         [ "Infinite"; "Nan"; "Normal"; "Subnormal"; "Zero" ]
-         sexp__006_
-     : Sexplib0.Sexp.t -> t)
-  ;;
-
-  let sexp_of_t =
-    (function
-     | Infinite -> Sexplib0.Sexp.Atom "Infinite"
-     | Nan -> Sexplib0.Sexp.Atom "Nan"
-     | Normal -> Sexplib0.Sexp.Atom "Normal"
-     | Subnormal -> Sexplib0.Sexp.Atom "Subnormal"
-     | Zero -> Sexplib0.Sexp.Atom "Zero"
-     : t -> Sexplib0.Sexp.t)
-  ;;
-
-  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
-    { untyped =
-        Variant
-          { case_sensitivity = Case_sensitive_except_first_character
-          ; clauses =
-              [ No_tag { name = "Infinite"; clause_kind = Atom_clause }
-              ; No_tag { name = "Nan"; clause_kind = Atom_clause }
-              ; No_tag { name = "Normal"; clause_kind = Atom_clause }
-              ; No_tag { name = "Subnormal"; clause_kind = Atom_clause }
-              ; No_tag { name = "Zero"; clause_kind = Atom_clause }
-              ]
-          }
-    }
-  ;;
-
-  [@@@end]
+  [@@deriving compare ~localize, enumerate, equal ~localize, sexp ~localize, sexp_grammar]
 
   let to_string t = string_of_sexp (sexp_of_t t)
   let of_string s = t_of_sexp (sexp_of_string s)
@@ -740,7 +729,19 @@ let to_string_hum ?delimiter ?(decimals = 3) ?strip_zero ?(explicit_plus = false
 
 let sexp_of_t t =
   let sexp = sexp_of_t t in
-  match !Sexp.of_float_style with
+  match Dynamic.get Sexp.of_float_style with
+  | `No_underscores -> sexp
+  | `Underscores ->
+    (match sexp with
+     | List _ ->
+       raise_s (Sexp.message "[sexp_of_float] produced strange sexp" [ "sexp", sexp ])
+     | Atom string ->
+       if String.contains string 'E' then sexp else Atom (insert_underscores string))
+;;
+
+let sexp_of_t__local t = exclave_
+  let sexp = sexp_of_t__local t in
+  match Dynamic.get Sexp.of_float_style with
   | `No_underscores -> sexp
   | `Underscores ->
     (match sexp with
@@ -748,9 +749,11 @@ let sexp_of_t t =
        raise_s
          (Sexp.message
             "[sexp_of_float] produced strange sexp"
-            [ "sexp", Sexp.sexp_of_t sexp ])
+            [ "sexp", Sexp.globalize sexp ])
      | Atom string ->
-       if String.contains string 'E' then sexp else Atom (insert_underscores string))
+       if String.contains string 'E'
+       then sexp
+       else Atom (insert_underscores (globalize_string string)))
 ;;
 
 let to_padded_compact_string_custom t ?(prefix = "") ~kilo ~mega ~giga ~tera ?peta () =
@@ -897,10 +900,10 @@ let int_pow x n =
     !x *. !accum)
 ;;
 
-(* [( *. )] is already mode-polymorphic so it doesn't make sense to functorize these, plus
-   their implementation is trivial anyway. *)
-let square x = x *. x
-let square_local x = exclave_ x *. x
+[%%template
+[@@@mode.default m = (global, local)]
+
+let square x = (x *. x) [@exclave_if_local m]
 
 (* The desired behavior here is to propagate a nan if either argument is nan. Because
    the first comparison will always return false if either argument is nan, it suffices
@@ -929,174 +932,76 @@ let square_local x = exclave_ x *. x
    │ if x < y || is_nan x then x else y             │   1.56us │
    └────────────────────────────────────────────────┴──────────┘
 *)
-let min, min_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (T) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           let fn x y =
-             let x' = W.unwrap x
-             and y' = W.unwrap y in
-             if x' < y' || is_nan x' then x else y
-           ;;
-         end) in
-  fn_global, fn_local
-;;
+let min x y = if x < y || is_nan x then x else y
+let max x y = if x > y || is_nan x then x else y
+let min_inan x y = if is_nan y then x else if is_nan x then y else if x < y then x else y
+let max_inan x y = if is_nan y then x else if is_nan x then y else if x > y then x else y
 
-let max, max_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (T) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           let fn x y =
-             let x' = W.unwrap x
-             and y' = W.unwrap y in
-             if x' > y' || is_nan x' then x else y
-           ;;
-         end) in
-  fn_global, fn_local
-;;
-
-let min_inan, min_inan_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (T) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           let fn x y =
-             let x' = W.unwrap x
-             and y' = W.unwrap y in
-             if is_nan y' then x else if is_nan x' then y else if x' < y' then x else y
-           ;;
-         end) in
-  fn_global, fn_local
-;;
-
-let max_inan, max_inan_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (T) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           let fn x y =
-             let x' = W.unwrap x
-             and y' = W.unwrap y in
-             if is_nan y' then x else if is_nan x' then y else if x' > y' then x else y
-           ;;
-         end) in
-  fn_global, fn_local
-;;
-
-module Round_gen (W : Modes.Global.Wrapper) = struct
-  let round_gen x ~how = exclave_
-    let x' = W.unwrap x in
-    if x' = 0.
-    then W.wrap 0.
-    else if not (is_finite x')
+let round_gen x ~how =
+  if x = 0.
+  then 0.
+  else if not (is_finite x)
+  then x
+  else (
+    (* Significant digits and decimal digits. *)
+    let sd, dd =
+      match how with
+      | `significant_digits sd ->
+        let dd = sd - to_int (round_up (log10 (abs x))) in
+        sd, dd
+      | `decimal_digits dd ->
+        let sd = dd + to_int (round_up (log10 (abs x))) in
+        sd, dd
+    in
+    let open Int_replace_polymorphic_compare in
+    if sd < 0
+    then 0.
+    else if sd >= 17
     then x
     else (
-      (* Significant digits and decimal digits. *)
-      let sd, dd =
-        match how with
-        | `significant_digits sd ->
-          let dd = sd - to_int (round_up (log10 (abs x'))) in
-          sd, dd
-        | `decimal_digits dd ->
-          let sd = dd + to_int (round_up (log10 (abs x'))) in
-          sd, dd
-      in
-      let open Int_replace_polymorphic_compare in
-      if sd < 0
-      then W.wrap 0.
-      else if sd >= 17
-      then x
+      (* Choose the order that is exactly representable as a float. Small positive
+         integers are, but their inverses in most cases are not. *)
+      let abs_dd = Int.abs dd in
+      if abs_dd > 22 || sd >= 16
+         (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
+            path.  Similarly, if we need 16 significant digits in the result, then the integer
+            [round_nearest (x <op> order)] might not be exactly representable as a float, since
+            for some ranges we only have 15 digits of precision guaranteed.
+
+            That said, we are still rounding twice here:
+
+            1) first time when rounding [x *. order] or [x /. order] to the nearest float
+            (just the normal way floating-point multiplication or division works),
+
+            2) second time when applying [round_nearest_half_to_even] to the result of the
+            above operation
+
+            So for arguments within an ulp from a tie we might still produce an off-by-one
+            result. *)
+      then of_string (sprintf "%.*g" sd (globalize x))
       else (
-        (* Choose the order that is exactly representable as a float. Small positive
-             integers are, but their inverses in most cases are not. *)
-        let abs_dd = Int.abs dd in
-        if abs_dd > 22 || sd >= 16
-           (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
-              path.  Similarly, if we need 16 significant digits in the result, then the integer
-              [round_nearest (x <op> order)] might not be exactly representable as a float, since
-              for some ranges we only have 15 digits of precision guaranteed.
-
-              That said, we are still rounding twice here:
-
-              1) first time when rounding [x *. order] or [x /. order] to the nearest float
-              (just the normal way floating-point multiplication or division works),
-
-              2) second time when applying [round_nearest_half_to_even] to the result of the
-              above operation
-
-              So for arguments within an ulp from a tie we might still produce an off-by-one
-              result. *)
-        then W.wrap (of_string (sprintf "%.*g" sd (globalize x')))
-        else (
-          let order = int_pow 10. abs_dd in
-          if dd >= 0
-          then W.wrap (round_nearest_half_to_even (x' *. order) /. order)
-          else W.wrap (round_nearest_half_to_even (x' /. order) *. order))))
-  ;;
-end
-
-let round_significant, round_significant_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (Int) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           open Round_gen (W)
-
-           let fn x significant_digits = exclave_
-             let significant_digits = W.unwrap significant_digits in
-             if Int_replace_polymorphic_compare.( <= ) significant_digits 0
-             then
-               invalid_argf
-                 "Float.round_significant: invalid argument significant_digits:%d"
-                 significant_digits
-                 ()
-             else round_gen x ~how:(`significant_digits significant_digits)
-           ;;
-         end) in
-  fn_global, fn_local
+        let order = int_pow 10. abs_dd in
+        if dd >= 0
+        then round_nearest_half_to_even (x *. order) /. order
+        else round_nearest_half_to_even (x /. order) *. order)))
 ;;
 
-let round_decimal, round_decimal_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (Int) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           open Round_gen (W)
-
-           let fn x decimal_digits = exclave_
-             round_gen x ~how:(`decimal_digits (W.unwrap decimal_digits))
-           ;;
-         end) in
-  fn_global, fn_local
+let round_significant x ~significant_digits =
+  if Int_replace_polymorphic_compare.( <= ) significant_digits 0
+  then
+    invalid_argf
+      "Float.round_significant: invalid argument significant_digits:%d"
+      significant_digits
+      ()
+  else (
+    let how = `significant_digits significant_digits in
+    (round_gen [@mode m]) x ~how [@exclave_if_local m])
 ;;
 
-let[@inline] round_significant x ~significant_digits =
-  round_significant x significant_digits
-;;
-
-let[@inline] round_significant_local x ~significant_digits = exclave_
-  round_significant_local x significant_digits
-;;
-
-let[@inline] round_decimal x ~decimal_digits = round_decimal x decimal_digits
-
-let[@inline] round_decimal_local x ~decimal_digits = exclave_
-  round_decimal_local x decimal_digits
-;;
+let round_decimal x ~decimal_digits =
+  let how = `decimal_digits decimal_digits in
+  (round_gen [@mode m]) x ~how [@exclave_if_local m]
+;;]
 
 let between t ~low ~high = low <= t && t <= high
 
@@ -1126,22 +1031,51 @@ let clamp t ~min ~max =
          [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ])
 ;;
 
-external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
-external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
-external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
-external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%divfloat"
+external ( + )
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> (t[@local_opt])
+  @@ portable
+  = "%addfloat"
+
+external ( - )
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> (t[@local_opt])
+  @@ portable
+  = "%subfloat"
+
+external ( * )
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> (t[@local_opt])
+  @@ portable
+  = "%mulfloat"
+
+external ( / )
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> (t[@local_opt])
+  @@ portable
+  = "%divfloat"
 
 external ( % )
   :  (t[@local_opt])
   -> (t[@local_opt])
   -> t
+  @@ portable
   = "Base_caml_modf_positive_float_exn" "Base_caml_modf_positive_float_unboxed_exn"
 [@@unboxed]
 
-external ( ** ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_power_float" "pow"
+external ( ** )
+  :  (t[@local_opt])
+  -> (t[@local_opt])
+  -> t
+  @@ portable
+  = "caml_power_float" "pow"
 [@@unboxed] [@@noalloc]
 
-external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
+external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) @@ portable = "%negfloat"
 
 let[@inline] sign_exn t : Sign.t =
   if t > 0.
@@ -1209,13 +1143,14 @@ module Terse = struct
   type nonrec t = t
 
   let t_of_sexp = t_of_sexp
-  let to_string x = Printf.sprintf "%.8G" x
+  let to_string x = format_float "%.8G" x
   let sexp_of_t x = Sexp.Atom (to_string x)
+  let sexp_of_t__local x = exclave_ Sexp.Atom (to_string x)
   let of_string x = of_string x
   let t_sexp_grammar = t_sexp_grammar
 end
 
-include Comparable.With_zero (struct
+include%template Comparable.With_zero [@modality portable] (struct
     include T
 
     let zero = zero
@@ -1230,7 +1165,7 @@ let is_non_negative t = t >= 0.
 let is_negative t = t < 0.
 let is_non_positive t = t <= 0.
 
-include Pretty_printer.Register (struct
+include%template Pretty_printer.Register [@modality portable] (struct
     include T
 
     let module_name = "Base.Float"
@@ -1238,28 +1173,61 @@ include Pretty_printer.Register (struct
   end)
 
 module O = struct
-  external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
-  external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
-  external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
-  external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%divfloat"
+  external ( + )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> (t[@local_opt])
+    @@ portable
+    = "%addfloat"
+
+  external ( - )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> (t[@local_opt])
+    @@ portable
+    = "%subfloat"
+
+  external ( * )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> (t[@local_opt])
+    @@ portable
+    = "%mulfloat"
+
+  external ( / )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> (t[@local_opt])
+    @@ portable
+    = "%divfloat"
 
   external ( % )
     :  (t[@local_opt])
     -> (t[@local_opt])
     -> t
+    @@ portable
     = "Base_caml_modf_positive_float_exn" "Base_caml_modf_positive_float_unboxed_exn"
   [@@unboxed]
 
-  external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
+  external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) @@ portable = "%negfloat"
 
-  external ( ** ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_power_float" "pow"
+  external ( ** )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> t
+    @@ portable
+    = "caml_power_float" "pow"
   [@@unboxed] [@@noalloc]
 
   include (
-    Float_replace_polymorphic_compare : Comparisons.Infix_with_local_opt with type t := t)
+    Float_replace_polymorphic_compare :
+    sig
+    @@ portable
+      include Comparisons.Infix_with_local_opt with type t := t
+    end)
 
-  external abs : (t[@local_opt]) -> (t[@local_opt]) = "%absfloat"
-  external neg : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
+  external abs : (t[@local_opt]) -> (t[@local_opt]) @@ portable = "%absfloat"
+  external neg : (t[@local_opt]) -> (t[@local_opt]) @@ portable = "%negfloat"
 
   let zero = zero
   let of_int = of_int
@@ -1267,21 +1235,50 @@ module O = struct
 end
 
 module O_dot = struct
-  external ( +. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
-  external ( -. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
-  external ( *. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
-  external ( /. ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%divfloat"
+  external ( +. )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> (t[@local_opt])
+    @@ portable
+    = "%addfloat"
+
+  external ( -. )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> (t[@local_opt])
+    @@ portable
+    = "%subfloat"
+
+  external ( *. )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> (t[@local_opt])
+    @@ portable
+    = "%mulfloat"
+
+  external ( /. )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> (t[@local_opt])
+    @@ portable
+    = "%divfloat"
 
   external ( %. )
     :  (t[@local_opt])
     -> (t[@local_opt])
     -> t
+    @@ portable
     = "Base_caml_modf_positive_float_exn" "Base_caml_modf_positive_float_unboxed_exn"
   [@@unboxed]
 
-  external ( ~-. ) : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
+  external ( ~-. ) : (t[@local_opt]) -> (t[@local_opt]) @@ portable = "%negfloat"
 
-  external ( **. ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "caml_power_float" "pow"
+  external ( **. )
+    :  (t[@local_opt])
+    -> (t[@local_opt])
+    -> t
+    @@ portable
+    = "caml_power_float" "pow"
   [@@unboxed] [@@noalloc]
 end
 
@@ -1299,10 +1296,11 @@ end
 
 module Shadow = struct
   (* These functions specifically replace defaults in replace_polymorphic_compare. *)
-  let min = min
-  let max = max
-  let min_local = min_local
-  let max_local = max_local
+  [%%template
+  [@@@mode.default m = (global, local)]
+
+  let min = (min [@mode m])
+  let max = (max [@mode m])]
 end
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after

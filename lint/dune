@@ -1,5 +1,5 @@
 (library
  (name ppx_base_lint)
  (kind ppx_rewriter)
- (libraries compiler-libs.common base ppxlib ppx_cold)
+ (libraries compiler-libs.common ppxlib.stdppx ppxlib ppxlib_jane ppx_cold)
  (preprocess no_preprocessing))

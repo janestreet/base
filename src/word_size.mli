@@ -1,3 +1,5 @@
+@@ portable
+
 (** For determining the word size that the program is using. *)
 
 open! Import
@@ -5,11 +7,7 @@ open! Import
 type t =
   | W32
   | W64
-[@@deriving_inline sexp_of]
-
-val sexp_of_t : t -> Sexplib0.Sexp.t
-
-[@@@end]
+[@@deriving sexp_of ~localize]
 
 val num_bits : t -> int
 

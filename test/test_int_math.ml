@@ -133,7 +133,7 @@ include Test (Nativeint)
 
 module%test [@name "int rounding quickcheck tests"] _ = struct
   module type With_quickcheck = sig
-    type t [@@deriving sexp_of]
+    type t : value mod contended portable [@@deriving sexp_of]
 
     include Make_arg with type t := t
 
@@ -418,9 +418,9 @@ module%test [@name "overflow_bounds"] _ = struct
   ;;
 
   let test_overflow_table tbl conv max_val =
-    assert (Array.length tbl = 64);
+    assert (Iarray.length tbl = 64);
     let max_val = conv max_val in
-    Array.iteri tbl ~f:(fun i max_base ->
+    Iarray.iteri tbl ~f:(fun i max_base ->
       let max_base = conv max_base in
       let overflows b = Bigint.(b ** of_int i > max_val) in
       let is_ok =

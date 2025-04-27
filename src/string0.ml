@@ -23,28 +23,42 @@ open struct
 end
 
 module String = struct
-  external get : (string[@local_opt]) -> (int[@local_opt]) -> char = "%string_safe_get"
-  external length : (string[@local_opt]) -> int = "%string_length"
+  external get
+    :  (string[@local_opt])
+    -> (int[@local_opt])
+    -> char
+    @@ portable
+    = "%string_safe_get"
+
+  external length : (string[@local_opt]) -> int @@ portable = "%string_length"
 
   external unsafe_get
     :  (string[@local_opt])
     -> (int[@local_opt])
     -> char
+    @@ portable
     = "%string_unsafe_get"
 end
 
 include String
 
 let max_length = Sys.max_string_length
-let ( ^ ) = ( ^ )
+
+let ( ^ ) (s1 @ local) (s2 @ local) =
+  let l1 = length s1
+  and l2 = length s2 in
+  let s = Bytes0.create (l1 + l2) in
+  Bytes0.unsafe_blit_string ~src:s1 ~src_pos:0 ~dst:s ~dst_pos:0 ~len:l1;
+  Bytes0.unsafe_blit_string ~src:s2 ~src_pos:0 ~dst:s ~dst_pos:l1 ~len:l2;
+  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:s
+;;
+
 let capitalize = Stdlib.String.capitalize_ascii
 let compare = Stdlib.String.compare
 let escaped = Stdlib.String.escaped
-let lowercase = Stdlib.String.lowercase_ascii
 let make = Stdlib.String.make
 let sub = Stdlib.String.sub
 let uncapitalize = Stdlib.String.uncapitalize_ascii
-let uppercase = Stdlib.String.uppercase_ascii
 let is_valid_utf_8 = Stdlib.String.is_valid_utf_8
 let is_valid_utf_16le = Stdlib.String.is_valid_utf_16le
 let is_valid_utf_16be = Stdlib.String.is_valid_utf_16be
@@ -82,12 +96,72 @@ let get_utf_32be_uchar t ~byte_pos =
   get_utf_32_uchar t ~byte_pos ~get_int32:Stdlib.String.get_int32_be
 ;;
 
-let concat ?(sep = "") l =
-  match l with
-  | [] -> ""
-  (* The stdlib does not specialize this case because it could break existing projects. *)
-  | [ x ] -> x
-  | l -> Stdlib.String.concat ~sep l
+include struct
+  let ensure_ge (x : int) y = if x >= y then x else invalid_arg "String.concat"
+
+  let rec sum_lengths acc seplen = function
+    | [] -> acc
+    | hd :: [] -> length hd + acc
+    | hd :: tl -> sum_lengths (ensure_ge (length hd + seplen + acc) acc) seplen tl
+  ;;
+
+  let rec unsafe_blits dst pos sep seplen = function
+    | [] -> dst
+    | hd :: [] ->
+      Bytes0.unsafe_blit_string ~src:hd ~src_pos:0 ~dst ~dst_pos:pos ~len:(length hd);
+      dst
+    | hd :: tl ->
+      Bytes0.unsafe_blit_string ~src:hd ~src_pos:0 ~dst ~dst_pos:pos ~len:(length hd);
+      Bytes0.unsafe_blit_string
+        ~src:sep
+        ~src_pos:0
+        ~dst
+        ~dst_pos:(pos + length hd)
+        ~len:seplen;
+      unsafe_blits dst (pos + length hd + seplen) sep seplen tl
+  ;;
+
+  let concat : ?sep:string -> string list @ local -> string =
+    fun ?(sep = "") l ->
+    match l with
+    | [] -> ""
+    | [ x ] -> Globalize.globalize_string x
+    | l ->
+      let seplen = length sep in
+      Bytes0.unsafe_to_string
+        ~no_mutation_while_string_reachable:
+          (unsafe_blits (Bytes0.create (sum_lengths 0 seplen l)) 0 sep seplen l)
+  ;;
+end
+
+let lowercase string =
+  let string =
+    Bytes0.unsafe_of_string_promise_no_mutation string |> Bytes0.map ~f:Char0.lowercase
+  in
+  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:string
+;;
+
+let lowercase__stack (string @ local) = exclave_
+  let string =
+    Bytes0.unsafe_of_string_promise_no_mutation string
+    |> Bytes0.map__stack ~f:Char0.lowercase
+  in
+  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:string
+;;
+
+let uppercase string =
+  let string =
+    Bytes0.unsafe_of_string_promise_no_mutation string |> Bytes0.map ~f:Char0.uppercase
+  in
+  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:string
+;;
+
+let uppercase__stack (string @ local) = exclave_
+  let string =
+    Bytes0.unsafe_of_string_promise_no_mutation string
+    |> Bytes0.map__stack ~f:Char0.uppercase
+  in
+  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
 
 let iter t ~(local_ f) =

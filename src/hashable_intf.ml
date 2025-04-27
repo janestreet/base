@@ -1,16 +1,15 @@
 open! Import
+module Sexp = Sexp0
 
-(** @canonical Base.Hashable.Key *)
-module type Key = sig
-  type t [@@deriving_inline compare, sexp_of]
+(** We give a name to [Key__portable], even though it could normally be written as
+    [sig @@ portable include Key end]. This is so [of_key__portable] can use it for
+    first-class modules.
 
-  include Ppx_compare_lib.Comparable.S with type t := t
+    @canonical Base.Hashable.Key *)
+module type%template [@modality p = (portable, nonportable)] Key = sig @@ p
+  type t [@@deriving compare, sexp_of]
 
-  val sexp_of_t : t -> Sexplib0.Sexp.t
-
-  [@@@end]
-
-  (** Values returned by [hash] must be non-negative.  An exception will be raised in the
+  (** Values returned by [hash] must be non-negative. An exception will be raised in the
       case that [hash] returns a negative value. *)
   val hash : t -> int
 end
@@ -23,7 +22,7 @@ module Hashable = struct
     }
 
   (** This function is sound but not complete, meaning that if it returns [true] then it's
-      safe to use the two interchangeably.  If it's [false], you have no guarantees.  For
+      safe to use the two interchangeably. If it's [false], you have no guarantees. For
       example:
 
       {[
@@ -38,8 +37,7 @@ module Hashable = struct
         let a = Hashtbl_intf.Hashable.{ hash; compare; sexp_of_t = Int.sexp_of_t };;
         let b = Hashtbl_intf.Hashable.{ hash; compare; sexp_of_t = Int.sexp_of_t };;
         equal a b;;  (* false?! *)
-      ]}
-  *)
+      ]} *)
   let equal a b =
     phys_equal a b
     || (phys_equal a.hash b.hash
@@ -51,8 +49,10 @@ module Hashable = struct
   let hash = Stdlib.Hashtbl.hash
   let poly = { hash; compare = Poly.compare; sexp_of_t = (fun _ -> Sexp.Atom "_") }
 
-  let of_key (type a) (module Key : Key with type t = a) =
+  let%template of_key : type a. ((module Key with type t = a)[@modality p]) -> a t @ p =
+    fun (module Key) ->
     { hash = Key.hash; compare = Key.compare; sexp_of_t = Key.sexp_of_t }
+  [@@modality p = (portable, nonportable)] [@@conflate_modality_as_mode p]
   ;;
 
   let to_key (type a) { hash; compare; sexp_of_t } =
@@ -69,7 +69,7 @@ end
 
 include Hashable
 
-module type Hashable = sig
+module type Hashable = sig @@ portable
   type 'a t = 'a Hashable.t =
     { hash : 'a -> int
     ; compare : 'a -> 'a -> int
@@ -78,7 +78,10 @@ module type Hashable = sig
 
   val equal : 'a t -> 'a t -> bool
   val poly : 'a t
-  val of_key : (module Key with type t = 'a) -> 'a t
+
+  val%template of_key : ((module Key with type t = 'a)[@modality p]) -> 'a t @ p
+  [@@modality p = (portable, nonportable)] [@@conflate_modality_as_mode p]
+
   val to_key : 'a t -> (module Key with type t = 'a)
   val hash_param : int -> int -> 'a -> int
   val hash : 'a -> int

@@ -1,3 +1,5 @@
+@@ portable
+
 type result =
   | Neg of string
   | Pos of string

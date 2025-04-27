@@ -3,4 +3,5 @@
  (public_name base.md5)
  (preprocess no_preprocessing)
  (libraries)
- (js_of_ocaml (javascript_files)))
+ (js_of_ocaml (javascript_files))
+ (wasm_of_ocaml (javascript_files)))

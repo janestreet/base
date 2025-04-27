@@ -101,7 +101,6 @@ let%expect_test "iteri" =
 
 module Sequence = struct
   type nonrec 'a t = 'a t
-  type 'a z = 'a
 
   let length = length
   let get t i = get t i

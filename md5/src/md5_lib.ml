@@ -3,6 +3,7 @@ type t = string
 (* Share the digest of the empty string *)
 let empty = Digest.string ""
 let make s = if s = empty then empty else s
+let make_local s = if s = empty then empty else s
 let compare = compare
 let length = 16
 let to_binary s = s
@@ -14,6 +15,10 @@ let of_binary_exn s =
 ;;
 
 let unsafe_of_binary = make
+let unsafe_of_binary_local = make_local
+
+external globalize : local_ t -> t @@ portable = "%obj_dup"
+
 let to_hex = Digest.to_hex
 let of_hex_exn s = make (Digest.from_hex s)
 let string s = make (Digest.string s)

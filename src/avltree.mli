@@ -1,41 +1,43 @@
+@@ portable
+
 (** A low-level, mutable AVL tree.
 
     It is not intended to be used directly by casual users. It is used for implementing
-    other data structures. The interface is somewhat ugly, and it's that way for a
-    reason: the goal of this module is minimum memory overhead and maximum performance.
+    other data structures. The interface is somewhat ugly, and it's that way for a reason:
+    the goal of this module is minimum memory overhead and maximum performance.
 
     {2 Caveats}
 
     1. [compare] is passed to every function where it is used. If you pass a different
-    [compare] to functions on the same tree, then behavior is indeterminate. Why? Because
-    otherwise we'd need a top-level record to store [compare], and when building a hash
-    table, or other structure, that little [t] is a block that increases memory
-    overhead. However, if an empty tree is just a constructor [Empty], then it's just a
-    number, and uses no extra memory beyond the array bucket that holds it. That's the
-    first secret of how Hashtbl's memory overhead isn't higher than INRIA's, even though
-    it uses a tree instead of a list for buckets.
+       [compare] to functions on the same tree, then behavior is indeterminate. Why?
+       Because otherwise we'd need a top-level record to store [compare], and when
+       building a hash table, or other structure, that little [t] is a block that
+       increases memory overhead. However, if an empty tree is just a constructor [Empty],
+       then it's just a number, and uses no extra memory beyond the array bucket that
+       holds it. That's the first secret of how Hashtbl's memory overhead isn't higher
+       than INRIA's, even though it uses a tree instead of a list for buckets.
 
     2. But if it's mutable, why do all the "mutators" return [t]? Answer: it is mutable,
-    but the root node might change due to balancing. Since we have no top-level record to
-    hold the current root node (see point 1), you have to do it. If you fail to do it, and
-    use an old root node, you're responsible for the (sure to be nasty) consequences.
+       but the root node might change due to balancing. Since we have no top-level record
+       to hold the current root node (see point 1), you have to do it. If you fail to do
+       it, and use an old root node, you're responsible for the (sure to be nasty)
+       consequences.
 
     3. What on earth is up with the [~removed] argument to some functions? See point 1:
-    since there is no top-level node, it isn't possible to keep track of how many nodes
-    are in the tree unless each mutator tells you whether or not it added or removed a
-    node (vs. replacing an existing one). If you intend to keep a count (as you must in a
-    hash table), then you will need to pay attention to this flag.
+       since there is no top-level node, it isn't possible to keep track of how many nodes
+       are in the tree unless each mutator tells you whether or not it added or removed a
+       node (vs. replacing an existing one). If you intend to keep a count (as you must in
+       a hash table), then you will need to pay attention to this flag.
 
-    After all this, you're probably asking yourself whether all these hacks are worth
-    it. Yes! They are! With them, we built a hash table that is faster than INRIA's (no
-    small feat) with the same memory overhead, sane add semantics (the add semantics they
-    used were a performance hack), and worst-case log(N) insertion, lookup, and
-    removal. *)
+    After all this, you're probably asking yourself whether all these hacks are worth it.
+    Yes! They are! With them, we built a hash table that is faster than INRIA's (no small
+    feat) with the same memory overhead, sane add semantics (the add semantics they used
+    were a performance hack), and worst-case log(N) insertion, lookup, and removal. *)
 
 open! Import
 
 (** We expose [t] to allow an optimization in Hashtbl that makes iter and fold more than
-    twice as fast.  We keep the type private to reduce opportunities for external code to
+    twice as fast. We keep the type private to reduce opportunities for external code to
     violate avltree invariants. *)
 type ('k, 'v) t = private
   | Empty
@@ -52,6 +54,7 @@ type ('k, 'v) t = private
       }
 
 val empty : ('k, 'v) t
+val get_empty : unit -> ('k, 'v) t
 val is_empty : _ t -> bool
 
 (** Checks invariants, raising an exception if any invariants fail. *)
@@ -82,7 +85,7 @@ val add
 val first : ('k, 'v) t -> ('k * 'v) option
 val last : ('k, 'v) t -> ('k * 'v) option
 
-(** If the specified key exists in the tree, returns the corresponding value.  O(log(N))
+(** If the specified key exists in the tree, returns the corresponding value. O(log(N))
     time and O(1) space. *)
 val find : ('k, 'v) t -> compare:local_ ('k -> 'k -> int) -> 'k -> 'v option
 
@@ -169,4 +172,7 @@ val iter : ('k, 'v) t -> f:local_ (key:'k -> data:'v -> unit) -> unit
 (** Map over the the tree, changing the data in place. *)
 val mapi_inplace : ('k, 'v) t -> f:local_ (key:'k -> data:'v -> 'v) -> unit
 
-val choose_exn : ('k, 'v) t -> 'k * 'v
+val%template choose_exn : ('k, 'v) t -> 'k * 'v @ m [@@mode m = global]
+
+val%template choose_exn : ('k, 'v) t -> 'k Modes.Global.t * 'v Modes.Global.t @ m
+[@@mode m = local]

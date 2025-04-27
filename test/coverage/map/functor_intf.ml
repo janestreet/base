@@ -14,7 +14,7 @@ module Definitions = struct
   end
 
   (** Like [Map.Creators_generic], but based on [Types] for easier instantiation. *)
-  module type Creators = sig
+  module type Creators = sig @@ portable
     module Types : Types
 
     include
@@ -28,7 +28,7 @@ module Definitions = struct
   end
 
   (** Like [Map.Accessors_generic], but based on [Types] for easier instantiation. *)
-  module type Accessors = sig
+  module type Accessors = sig @@ portable
     module Types : Types
 
     include
@@ -41,7 +41,7 @@ module Definitions = struct
   end
 
   (** Like [Map.Transformers_generic], but based on [Types] for easier instantiation. *)
-  module type Transformers = sig
+  module type Transformers = sig @@ portable
     module Types : Types
 
     include
@@ -55,7 +55,7 @@ module Definitions = struct
 
   (** Like [Map.Creators_and_accessors_and_transformers_generic], but based on [Types] for
       easier instantiation. *)
-  module type Impl = sig
+  module type Impl = sig @@ portable
     module Types : Types
     include Creators with module Types := Types
     include Accessors with module Types := Types

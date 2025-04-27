@@ -1,24 +1,42 @@
-(** Type of S-expressions *)
-type t = Sexplib0.Sexp.t =
-  | Atom of string
-  | List of t list
-[@@deriving_inline globalize, hash]
+@@ portable
+   (*_ This module is separated from Sexp to avoid circular dependencies as many things use
+  s-expressions *)
 
-val globalize : local_ t -> t
+(** @inline *)
+include module type of struct
+  include Sexp0
+end
 
-include Ppx_hash_lib.Hashable.S with type t := t
+include Comparable.S with type t := t
+include Ppx_compare_lib.Comparable.S__local with type t := t
+include Ppx_compare_lib.Equal.S__local with type t := t
 
-[@@@end]
+(** A witness that [Sexp.t] can safely cross portability. *)
+val cross_portable : t Basement.Portability_hacks.Cross.Portable.t
 
-include module type of Sexplib0.Sexp with type t := Sexplib0.Sexp.t
-include Ppx_compare_lib.Equal.S_local with type t := t
-include Ppx_compare_lib.Comparable.S_local with type t := t
+(** A witness that [Sexp.t] can safely cross contention. *)
+val cross_contended : t Basement.Portability_hacks.Cross.Contended.t
 
-val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-val invariant : t -> unit
+(** Like the printing functions above, but without escaping UTF-8 characters. Still
+    escapes ASCII control codes, but does not escape other non-graphical UTF-8 characters.
+    The [to_string*] functions return [String.Utf8.t], which is a subtype of [string]. *)
+module Utf8 : sig
+  val to_string : t -> String.Utf8.t
+  val to_string_mach : t -> String.Utf8.t
+  val to_string_hum : ?indent:int -> t -> String.Utf8.t
+  val pp_hum : Format.formatter -> t -> unit
+  val pp_hum_indent : int -> Format.formatter -> t -> unit
+  val pp_mach : Format.formatter -> t -> unit
+  val pp : Format.formatter -> t -> unit
+  val must_escape : string -> bool
+  val mach_maybe_esc_str : string -> string
+  val esc_str : string -> string
+end
 
-(** Base has never had an [of_string] function.  We expose a deprecated [of_string] here
-    so that people can find it (e.g. with merlin), and learn what we recommend.  This
-    [of_string] has type [unit] because we don't want it to be accidentally used. *)
-val of_string : unit
-[@@deprecated "[since 2018-02] Use [Parsexp.Single.parse_string_exn]"]
+module Private : sig
+  module Utf8 : sig
+    val escaped : string -> quoted:bool -> string
+  end
+end
+[@@alert
+  base_sexp_private "This module is intended only for use in testing [Base.Sexp] itself."]

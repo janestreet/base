@@ -1,7 +1,8 @@
 open! Import
+module Sexp = Sexp0
 include Sexplib0.Sexpable
 
-module Of_sexpable
+module%template.portable Of_sexpable
     (Sexpable : S)
     (M : sig
        type t
@@ -18,7 +19,7 @@ module Of_sexpable
   let sexp_of_t t = Sexpable.sexp_of_t (M.to_sexpable t)
 end
 
-module Of_sexpable1
+module%template.portable Of_sexpable1
     (Sexpable : S1)
     (M : sig
        type 'a t
@@ -35,7 +36,7 @@ module Of_sexpable1
   let sexp_of_t sexp_of_a t = Sexpable.sexp_of_t sexp_of_a (M.to_sexpable t)
 end
 
-module Of_sexpable2
+module%template.portable Of_sexpable2
     (Sexpable : S2)
     (M : sig
        type ('a, 'b) t
@@ -54,7 +55,7 @@ module Of_sexpable2
   ;;
 end
 
-module Of_sexpable3
+module%template.portable Of_sexpable3
     (Sexpable : S3)
     (M : sig
        type ('a, 'b, 'c) t
@@ -73,13 +74,9 @@ module Of_sexpable3
   ;;
 end
 
-module Of_stringable
+module%template.portable Of_stringable
     (M : Stringable.S) : sig
-    type t [@@deriving_inline sexp_grammar]
-
-    val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-
-    [@@@end]
+    type t [@@deriving sexp_grammar]
 
     include S with type t := t
   end

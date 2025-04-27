@@ -58,12 +58,12 @@ module%test [@name "layout polymorphism"] _ =
     ;;
   end :
   sig
-    [@@@kind k = (immediate, word, bits32, bits64, float64)]
+    [@@@kind.default k = (immediate, word, bits32, bits64, float64)]
 
-    type t : k [@@kind k]
+    type t : k
 
-    val zero : unit -> (t[@kind k]) [@@kind k]
-    val is_zero : (t[@kind k]) -> bool [@@kind k]
+    val zero : unit -> (t[@kind k])
+    val is_zero : (t[@kind k]) -> bool
   end)
 
   [@@@kind k = (immediate, word, bits32, bits64, float64)]

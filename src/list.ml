@@ -8,65 +8,14 @@ include List1
 let invalid_argf = Printf.invalid_argf
 
 module T = struct
-  type 'a t = 'a list [@@deriving_inline globalize, sexp, sexp_grammar]
-
-  let globalize : 'a. (local_ 'a -> 'a) -> local_ 'a t -> 'a t =
-    fun (type a__001_) : ((local_ a__001_ -> a__001_) -> local_ a__001_ t -> a__001_ t) ->
-    globalize_list
-  ;;
-
-  let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = list_of_sexp
-  let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_list
-
-  let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
-    fun _'a_sexp_grammar -> list_sexp_grammar _'a_sexp_grammar
-  ;;
-
-  [@@@end]
+  type 'a t = 'a list [@@deriving globalize, sexp ~localize, sexp_grammar]
 end
 
 module Or_unequal_lengths = struct
   type 'a t =
     | Ok of 'a
     | Unequal_lengths
-  [@@deriving_inline compare ~localize, sexp_of]
-
-  let compare__local
-    : 'a. (local_ 'a -> local_ 'a -> int) -> local_ 'a t -> local_ 'a t -> int
-    =
-    fun _cmp__a a__014_ b__015_ ->
-    if Stdlib.( == ) a__014_ b__015_
-    then 0
-    else (
-      match a__014_, b__015_ with
-      | Ok _a__016_, Ok _b__017_ -> _cmp__a _a__016_ _b__017_
-      | Ok _, _ -> -1
-      | _, Ok _ -> 1
-      | Unequal_lengths, Unequal_lengths -> 0)
-  ;;
-
-  let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-    fun _cmp__a a__010_ b__011_ ->
-    if Stdlib.( == ) a__010_ b__011_
-    then 0
-    else (
-      match a__010_, b__011_ with
-      | Ok _a__012_, Ok _b__013_ -> _cmp__a _a__012_ _b__013_
-      | Ok _, _ -> -1
-      | _, Ok _ -> 1
-      | Unequal_lengths, Unequal_lengths -> 0)
-  ;;
-
-  let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t =
-    fun (type a__021_) : ((a__021_ -> Sexplib0.Sexp.t) -> a__021_ t -> Sexplib0.Sexp.t) ->
-    fun _of_a__018_ -> function
-    | Ok arg0__019_ ->
-      let res0__020_ = _of_a__018_ arg0__019_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Ok"; res0__020_ ]
-    | Unequal_lengths -> Sexplib0.Sexp.Atom "Unequal_lengths"
-  ;;
-
-  [@@@end]
+  [@@deriving compare ~localize, sexp_of ~localize]
 end
 
 include T
@@ -317,7 +266,8 @@ let find_map_exn =
   let not_found = Not_found_s (Atom "List.find_map_exn: not found") in
   let find_map_exn t ~f =
     match find_map t ~f with
-    | None -> raise not_found
+    | None ->
+      raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
     | Some x -> x
   in
   (* named to preserve symbol in compiled binary *)
@@ -336,7 +286,8 @@ let find_exn =
   let not_found = Not_found_s (Atom "List.find_exn: not found") in
   let rec find_exn t ~f =
     match t with
-    | [] -> raise not_found
+    | [] ->
+      raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
     | x :: t -> if f x then x else find_exn t ~f
   in
   (* named to preserve symbol in compiled binary *)
@@ -356,7 +307,8 @@ let findi_exn =
   let not_found = Not_found_s (Atom "List.findi_exn: not found") in
   let findi_exn t ~f =
     match findi t ~f with
-    | None -> raise not_found
+    | None ->
+      raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
     | Some x -> x
   in
   findi_exn
@@ -378,7 +330,8 @@ let find_mapi_exn =
   let not_found = Not_found_s (Atom "List.find_mapi_exn: not found") in
   let find_mapi_exn t ~f =
     match find_mapi t ~f with
-    | None -> raise not_found
+    | None ->
+      raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
     | Some x -> x
   in
   (* named to preserve symbol in compiled binary *)
@@ -440,7 +393,8 @@ let folding_map t ~init ~f =
   map t ~f:(fun x ->
     let new_acc, y = f !acc x in
     acc := new_acc;
-    y) [@nontail]
+    y)
+  [@nontail]
 ;;
 
 let fold_map t ~init ~f =
@@ -555,7 +509,8 @@ let folding_mapi t ~init ~f =
   mapi t ~f:(fun i x ->
     let new_acc, y = f i !acc x in
     acc := new_acc;
-    y) [@nontail]
+    y)
+  [@nontail]
 ;;
 
 let fold_mapi t ~init ~f =
@@ -936,7 +891,7 @@ module Cartesian_product = struct
   let ( >>= ) t (local_ f) = bind t ~f
 
   open struct
-    module Applicative = Applicative.Make_using_map2 (struct
+    module%template Applicative = Applicative.Make_using_map2 [@modality portable] (struct
         type 'a t = 'a list
 
         let return = return
@@ -944,7 +899,7 @@ module Cartesian_product = struct
         let map2 = map2
       end)
 
-    module Monad = Monad.Make (struct
+    module%template Monad = Monad.Make [@modality portable] (struct
         type 'a t = 'a list
 
         let return = return
@@ -993,7 +948,12 @@ module Cartesian_product = struct
   end
 end
 
-include (Cartesian_product : Monad.S_local with type 'a t := 'a t)
+include (
+  Cartesian_product :
+  sig
+  @@ portable
+    include Monad.S__local with type 'a t := 'a t
+  end)
 
 (** returns final element of list *)
 let rec last_exn list =
@@ -1107,13 +1067,19 @@ let counti t ~f =
   foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count) [@nontail]
 ;;
 
-let init n ~f =
-  if n < 0 then invalid_argf "List.init %d" n ();
+let init_internal n ~f ~name =
+  if n < 0 then invalid_argf "%s %d" name n ();
   let rec loop i accum =
     assert (i >= 0);
     if i = 0 then accum else loop (i - 1) (f (i - 1) :: accum)
   in
   loop n [] [@nontail]
+;;
+
+let init n ~f = init_internal n ~f ~name:"List.init"
+
+let create ~len x =
+  init_internal len ~f:(local_ fun _ -> x) ~name:"List.create" [@nontail]
 ;;
 
 let rev_filter_map l ~f =
@@ -1202,117 +1168,14 @@ let partitioni_tf t ~f =
 
 module Assoc = struct
   type 'a key = ('a[@tag Sexplib0.Sexp_grammar.assoc_key_tag = List []])
-  [@@deriving_inline sexp, sexp_grammar]
-
-  let key_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a key =
-    fun _of_a__022_ -> _of_a__022_
-  ;;
-
-  let sexp_of_key : 'a. ('a -> Sexplib0.Sexp.t) -> 'a key -> Sexplib0.Sexp.t =
-    fun _of_a__024_ -> _of_a__024_
-  ;;
-
-  let key_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a key Sexplib0.Sexp_grammar.t =
-    fun _'a_sexp_grammar ->
-    { untyped =
-        Tagged
-          { key = Sexplib0.Sexp_grammar.assoc_key_tag
-          ; value = List []
-          ; grammar = _'a_sexp_grammar.untyped
-          }
-    }
-  ;;
-
-  [@@@end]
+  [@@deriving sexp ~localize, sexp_grammar]
 
   type 'a value = ('a[@tag Sexplib0.Sexp_grammar.assoc_value_tag = List []])
-  [@@deriving_inline sexp, sexp_grammar]
-
-  let value_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a value =
-    fun _of_a__025_ -> _of_a__025_
-  ;;
-
-  let sexp_of_value : 'a. ('a -> Sexplib0.Sexp.t) -> 'a value -> Sexplib0.Sexp.t =
-    fun _of_a__027_ -> _of_a__027_
-  ;;
-
-  let value_sexp_grammar
-    : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a value Sexplib0.Sexp_grammar.t
-    =
-    fun _'a_sexp_grammar ->
-    { untyped =
-        Tagged
-          { key = Sexplib0.Sexp_grammar.assoc_value_tag
-          ; value = List []
-          ; grammar = _'a_sexp_grammar.untyped
-          }
-    }
-  ;;
-
-  [@@@end]
+  [@@deriving sexp ~localize, sexp_grammar]
 
   type ('a, 'b) t =
     (('a key * 'b value) list[@tag Sexplib0.Sexp_grammar.assoc_tag = List []])
-  [@@deriving_inline sexp, sexp_grammar]
-
-  let t_of_sexp
-    : 'a 'b.
-    (Sexplib0.Sexp.t -> 'a) -> (Sexplib0.Sexp.t -> 'b) -> Sexplib0.Sexp.t -> ('a, 'b) t
-    =
-    let error_source__036_ = "list.ml.Assoc.t" in
-    fun _of_a__028_ _of_b__029_ x__037_ ->
-      list_of_sexp
-        (function
-          | Sexplib0.Sexp.List [ arg0__031_; arg1__032_ ] ->
-            let res0__033_ = key_of_sexp _of_a__028_ arg0__031_
-            and res1__034_ = value_of_sexp _of_b__029_ arg1__032_ in
-            res0__033_, res1__034_
-          | sexp__035_ ->
-            Sexplib0.Sexp_conv_error.tuple_of_size_n_expected
-              error_source__036_
-              2
-              sexp__035_)
-        x__037_
-  ;;
-
-  let sexp_of_t
-    : 'a 'b.
-    ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
-    =
-    fun _of_a__038_ _of_b__039_ x__044_ ->
-    sexp_of_list
-      (fun (arg0__040_, arg1__041_) ->
-        let res0__042_ = sexp_of_key _of_a__038_ arg0__040_
-        and res1__043_ = sexp_of_value _of_b__039_ arg1__041_ in
-        Sexplib0.Sexp.List [ res0__042_; res1__043_ ])
-      x__044_
-  ;;
-
-  let t_sexp_grammar
-    : 'a 'b.
-    'a Sexplib0.Sexp_grammar.t
-    -> 'b Sexplib0.Sexp_grammar.t
-    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
-    =
-    fun _'a_sexp_grammar _'b_sexp_grammar ->
-    { untyped =
-        Tagged
-          { key = Sexplib0.Sexp_grammar.assoc_tag
-          ; value = List []
-          ; grammar =
-              (list_sexp_grammar
-                 { untyped =
-                     List
-                       (Cons
-                          ( (key_sexp_grammar _'a_sexp_grammar).untyped
-                          , Cons ((value_sexp_grammar _'b_sexp_grammar).untyped, Empty) ))
-                 })
-                .untyped
-          }
-    }
-  ;;
-
-  [@@@end]
+  [@@deriving sexp ~localize, sexp_grammar]
 
   let pair_of_group = function
     | [] -> assert false
@@ -1338,7 +1201,8 @@ module Assoc = struct
     let not_found = Not_found_s (Atom "List.Assoc.find_exn: not found") in
     let rec find_exn t ~equal key =
       match t with
-      | [] -> raise not_found
+      | [] ->
+        raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
       | (key', value) :: t -> if equal key key' then value else find_exn t ~equal key
     in
     (* named to preserve symbol in compiled binary *)
@@ -1496,7 +1360,7 @@ module Infix = struct
   let ( @ ) = append
 end
 
-let permute ?(random_state = Random.State.default) list =
+let permute ?(random_state = Random.State.get_default ()) list =
   match list with
   (* special cases to speed things up in trivial cases *)
   | [] | [ _ ] -> list
@@ -1507,14 +1371,14 @@ let permute ?(random_state = Random.State.default) list =
     Array.to_list arr
 ;;
 
-let random_element_exn ?(random_state = Random.State.default) list =
+let random_element_exn ?(random_state = Random.State.get_default ()) list =
   if is_empty list
   then failwith "List.random_element_exn: empty list"
   else nth_exn list (Random.State.int random_state (length list))
 ;;
 
-let random_element ?(random_state = Random.State.default) list =
-  try Some (random_element_exn ~random_state list) with
+let random_element ?random_state list =
+  try Some (random_element_exn ?random_state list) with
   | _ -> None
 ;;
 
@@ -1586,22 +1450,7 @@ let transpose =
   fun t -> loop t [] true
 ;;
 
-exception Transpose_got_lists_of_different_lengths of int list [@@deriving_inline sexp]
-
-let () =
-  Sexplib0.Sexp_conv.Exn_converter.add
-    [%extension_constructor Transpose_got_lists_of_different_lengths]
-    (function
-    | Transpose_got_lists_of_different_lengths arg0__045_ ->
-      let res0__046_ = sexp_of_list sexp_of_int arg0__045_ in
-      Sexplib0.Sexp.List
-        [ Sexplib0.Sexp.Atom "list.ml.Transpose_got_lists_of_different_lengths"
-        ; res0__046_
-        ]
-    | _ -> assert false)
-;;
-
-[@@@end]
+exception Transpose_got_lists_of_different_lengths of int list [@@deriving sexp]
 
 let transpose_exn l =
   match transpose l with

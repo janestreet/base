@@ -4,7 +4,7 @@
 open! Import
 
 (** An [Indexable] type is a finite sequence of elements indexed by consecutive integers
-    [0] ... [length t - 1].  [get] and [length] must be O(1) for the resulting
+    [0] ... [length t - 1]. [get] and [length] must be O(1) for the resulting
     [binary_search] to be lg(n). *)
 module type Indexable = sig
   type elt
@@ -23,27 +23,14 @@ end
 
 module Which_target_by_key = struct
   type t =
-    [ `Last_strictly_less_than (**        {v | < elt X |                       v} *)
-    | `Last_less_than_or_equal_to (**     {v |      <= elt       X |           v} *)
-    | `Last_equal_to (**                  {v           |   = elt X |           v} *)
-    | `First_equal_to (**                 {v           | X = elt   |           v} *)
-    | `First_greater_than_or_equal_to (** {v           | X       >= elt      | v} *)
-    | `First_strictly_greater_than (**    {v                       | X > elt | v} *)
+    [ `Last_strictly_less_than (** [         | < elt X |                       ] *)
+    | `Last_less_than_or_equal_to (** [      |      <= elt       X |           ] *)
+    | `Last_equal_to (** [                             |   = elt X |           ] *)
+    | `First_equal_to (** [                            | X = elt   |           ] *)
+    | `First_greater_than_or_equal_to (** [            | X       >= elt      | ] *)
+    | `First_strictly_greater_than (** [                           | X > elt | ] *)
     ]
-  [@@deriving_inline enumerate]
-
-  let all =
-    ([ `Last_strictly_less_than
-     ; `Last_less_than_or_equal_to
-     ; `Last_equal_to
-     ; `First_equal_to
-     ; `First_greater_than_or_equal_to
-     ; `First_strictly_greater_than
-     ]
-     : t list)
-  ;;
-
-  [@@@end]
+  [@@deriving enumerate]
 end
 
 module Which_target_by_segment = struct
@@ -51,11 +38,7 @@ module Which_target_by_segment = struct
     [ `Last_on_left
     | `First_on_right
     ]
-  [@@deriving_inline enumerate]
-
-  let all = ([ `Last_on_left; `First_on_right ] : t list)
-
-  [@@@end]
+  [@@deriving enumerate]
 end
 
 type ('t, 'elt, 'key) binary_search =
@@ -93,7 +76,7 @@ module type S1 = sig
   val binary_search_segmented : ('a t, 'a) binary_search_segmented
 end
 
-module type Binary_searchable = sig
+module type Binary_searchable = sig @@ portable
   module type S = S
   module type S1 = S1
   module type Indexable = Indexable
@@ -105,6 +88,8 @@ module type Binary_searchable = sig
   type nonrec ('t, 'elt, 'key) binary_search = ('t, 'elt, 'key) binary_search
   type nonrec ('t, 'elt) binary_search_segmented = ('t, 'elt) binary_search_segmented
 
-  module Make (T : Indexable) : S with type t := T.t with type elt := T.elt
-  module Make1 (T : Indexable1) : S1 with type 'a t := 'a T.t
+  module%template.portable Make (T : Indexable) :
+    S with type t := T.t with type elt := T.elt
+
+  module%template.portable Make1 (T : Indexable1) : S1 with type 'a t := 'a T.t
 end

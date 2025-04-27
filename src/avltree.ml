@@ -2,6 +2,7 @@
    can't use them. *)
 
 open! Import
+module Sexp = Sexp0
 
 let raise_s = Error.raise_s
 
@@ -30,6 +31,7 @@ type ('k, 'v) t =
       }
 
 let empty = Empty
+let get_empty () = Empty
 
 let is_empty = function
   | Empty -> true
@@ -503,7 +505,13 @@ let rec mapi_inplace t ~f =
     mapi_inplace ~f right
 ;;
 
-let choose_exn = function
+let%template[@mode local] choose_exn = function
+  | Empty -> raise_s (Sexp.message "[Avltree.choose_exn] of empty hashtbl" [])
+  | Leaf { key; value; _ } | Node { key; value; _ } ->
+    exclave_ Modes.Global.wrap key, Modes.Global.wrap value
+;;
+
+let%template[@mode global] choose_exn = function
   | Empty -> raise_s (Sexp.message "[Avltree.choose_exn] of empty hashtbl" [])
   | Leaf { key; value; _ } | Node { key; value; _ } -> key, value
 ;;

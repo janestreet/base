@@ -1,8 +1,9 @@
+@@ portable
+
 (** Pseudo-random number generation.
 
     This is a wrapper of the standard library's [Random] library, though it does not share
-    state with that library.
-*)
+    state with that library. *)
 
 (*_
   (***********************************************************************)
@@ -24,7 +25,7 @@ open! Import
 
 (** Note that all of these "basic" functions mutate a global random state. *)
 
-(** Initialize the generator, using the argument as a seed.  The same seed will always
+(** Initialize the generator, using the argument as a seed. The same seed will always
     yield the same sequence of numbers. *)
 val init : int -> unit
 
@@ -32,8 +33,8 @@ val init : int -> unit
 val full_init : int array -> unit
 
 (** Initialize the generator with a more-or-less random seed chosen in a system-dependent
-    way.  By default, [self_init] is disallowed in inline tests, as it's often used for no
-    good reason and it just creates nondeterministic failures for everyone.  Passing
+    way. By default, [self_init] is disallowed in inline tests, as it's often used for no
+    good reason and it just creates nondeterministic failures for everyone. Passing
     [~allow_in_tests:true] removes this restriction in case you legitimately want
     nondeterministic values, like in [Filename.temp_dir]. *)
 val self_init : ?allow_in_tests:bool -> unit -> unit
@@ -43,34 +44,34 @@ val self_init : ?allow_in_tests:bool -> unit -> unit
     @before 3.12.0 used a different algorithm (affects all the following functions) *)
 val bits : unit -> int
 
-(** [Random.bits64 ()] returns 64 random bits as an integer between
-    {!Int64.min_int} and {!Int64.max_int}.
+(** [Random.bits64 ()] returns 64 random bits as an integer between {!Int64.min_int} and
+    {!Int64.max_int}.
     @since 4.14 *)
 val bits64 : unit -> int64
 
 (** [Random.int bound] returns a random integer between 0 (inclusive) and [bound]
-    (exclusive).  [bound] must be greater than 0. *)
+    (exclusive). [bound] must be greater than 0. *)
 val int : int -> int
 
 (** [Random.int32 bound] returns a random integer between 0 (inclusive) and [bound]
-    (exclusive).  [bound] must be greater than 0. *)
+    (exclusive). [bound] must be greater than 0. *)
 val int32 : int32 -> int32
 
 (** [Random.nativeint bound] returns a random integer between 0 (inclusive) and [bound]
-    (exclusive).  [bound] must be greater than 0. *)
+    (exclusive). [bound] must be greater than 0. *)
 val nativeint : nativeint -> nativeint
 
 (** [Random.int64 bound] returns a random integer between 0 (inclusive) and [bound]
-    (exclusive).  [bound] must be greater than 0. *)
+    (exclusive). [bound] must be greater than 0. *)
 val int64 : int64 -> int64
 
 (** [Random.float bound] returns a random floating-point number between 0 (inclusive) and
-    [bound] (exclusive).  If [bound] is negative, the result is negative or zero.  If
+    [bound] (exclusive). If [bound] is negative, the result is negative or zero. If
     [bound] is 0, the result is 0. *)
 val float : float -> float
 
-(** Produces a random value between the given inclusive bounds.  Raises if bounds are
-    given in decreasing order. *)
+(** Produces a random value between the given inclusive bounds. Raises if bounds are given
+    in decreasing order. *)
 val int_incl : int -> int -> int
 
 val int32_incl : int32 -> int32 -> int32
@@ -93,21 +94,25 @@ val ascii : unit -> char
 (** {6 Advanced functions} *)
 
 (** The functions from module [State] manipulate the current state of the random generator
-    explicitly.  This allows using one or several deterministic PRNGs, even in a
+    explicitly. This allows using one or several deterministic PRNGs, even in a
     multi-threaded program, without interference from other parts of the program.
 
     Note that [Random.get_state] from the standard library is not exposed, because it
     misleadingly makes a copy of random state, which is not typically the desired outcome
     for accessing the shared state.
 
-    Obtaining multiple generators with good independence properties is nontrivial; see
-    the [Splittable_random] library for that. *)
+    Obtaining multiple generators with good independence properties is nontrivial; see the
+    [Splittable_random] library for that. *)
 module State : sig
   type t
 
   (** This gives access to the default random state, allowing user code to share (and
       thereby mutate) the random state used by the main functions in [Random]. *)
   val default : t
+
+  (** See {!default}. Used to get uncontended access to the default state in a portable
+      function. *)
+  val get_default : unit -> t
 
   (** Creates a new state and initializes it with the given seed. *)
   val make : int array -> t
@@ -118,7 +123,7 @@ module State : sig
   val copy : t -> t
 
   (** These functions are the same as the basic functions, except that they use (and
-      update) the given PRNG state instead of the default one.  *)
+      update) the given PRNG state instead of the default one. *)
 
   val bits : t -> int
   val bits64 : t -> int64

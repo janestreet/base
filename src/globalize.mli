@@ -1,13 +1,14 @@
-(**
-   `globalize` functions for the builtin types.
+@@ portable
 
-   These functions are equivalent to the identity function, except that they copy their
-   input rather than return it. They only copy as much as is required to match that type:
-   `global_` and mutable subcomponents are not copied since those are already global.
-   Globalizing a type with mutable contents (e.g., ['a array] or ['a ref]) will therefore
-   create a non-shared copy; mutating the copy won't affect the original and vice versa.
+(** `globalize` functions for the builtin types.
 
-   Further globalize functions can be generated with `ppx_globalize`. *)
+    These functions are equivalent to the identity function, except that they copy their
+    input rather than return it. They only copy as much as is required to match that type:
+    `global_` and mutable subcomponents are not copied since those are already global.
+    Globalizing a type with mutable contents (e.g., ['a array] or ['a ref]) will therefore
+    create a non-shared copy; mutating the copy won't affect the original and vice versa.
+
+    Further globalize functions can be generated with `ppx_globalize`. *)
 
 val globalize_bool : local_ bool -> bool
 val globalize_char : local_ char -> char
@@ -20,6 +21,7 @@ val globalize_bytes : local_ bytes -> bytes
 val globalize_string : local_ string -> string
 val globalize_unit : local_ unit -> unit
 val globalize_array : (local_ 'a -> 'b) -> local_ 'a array -> 'a array
+val globalize_floatarray : local_ floatarray -> floatarray
 val globalize_lazy_t : (local_ 'a -> 'b) -> local_ 'a lazy_t -> 'a lazy_t
 val globalize_list : (local_ 'a -> 'b) -> local_ 'a list -> 'b list
 val globalize_option : (local_ 'a -> 'b) -> local_ 'a option -> 'b option

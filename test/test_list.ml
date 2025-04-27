@@ -184,6 +184,20 @@ module Test_values = struct
   let l1 = [ 1; 2; 3; 4; 5; 6; 7; 8; 9; 10 ]
 end
 
+let%expect_test "create" =
+  let test len elt = print_s [%sexp (create ~len elt : string list)] in
+  test 0 "nothing";
+  [%expect {| () |}];
+  test 1 "something";
+  [%expect {| (something) |}];
+  test 2 "ha";
+  [%expect {| (ha ha) |}];
+  test 3 "ho";
+  [%expect {| (ho ho ho) |}];
+  require_does_raise (fun () -> test (-1) "oops");
+  [%expect {| (Invalid_argument "List.create -1") |}]
+;;
+
 let%test_unit _ =
   [%test_result: int list]
     (rev_append [ 1; 2; 3 ] [ 4; 5; 6 ])

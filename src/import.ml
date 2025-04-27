@@ -5,4 +5,4 @@ include Hash.Builtin
 include Ppx_compare_lib.Builtin
 include Globalize
 
-exception Not_found_s = Sexp.Not_found_s
+exception Not_found_s = Sexp0.Not_found_s

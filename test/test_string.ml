@@ -761,7 +761,6 @@ let%test_unit _ =
   assert (phys_equal s (sub s ~pos:0 ~len:(String.length s)));
   assert (phys_equal s (prefix s (String.length s)));
   assert (phys_equal s (suffix s (String.length s)));
-  assert (phys_equal s (concat [ s ]));
   assert (phys_equal s (tr s ~target:'\255' ~replacement:'\000'))
 ;;
 
@@ -1536,11 +1535,46 @@ end
 module%test Escaping = struct
   open Escaping
 
-  module%test [@name "escape_gen"] _ = struct
-    let escape =
-      unstage (escape_gen_exn ~escapeworthy_map:[ '%', 'p'; '^', 'c' ] ~escape_char:'_')
-    ;;
+  (* A test function that checks that all versions of the function return the same result.
+  *)
+  let test_all functions_to_test : _ =
+    fun ~escapeworthy_map ~escape_char ->
+    let fs = List.map functions_to_test ~f:(fun f -> f ~escapeworthy_map ~escape_char) in
+    fun x ->
+      let results = List.map fs ~f:(fun f -> f x) in
+      match List.all_equal results ~equal:String.equal with
+      | None -> raise_s [%message "Unexpected disagreement in results" (results : t list)]
+      | Some result -> result
+  ;;
 
+  module Test_fun = struct
+    let map t ~f : _ =
+      fun ~escapeworthy_map ~escape_char -> t ~escapeworthy_map ~escape_char |> f
+    ;;
+  end
+
+  let%template escape_gen_exn =
+    test_all
+      [ escape_gen_exn |> Test_fun.map ~f:Staged.unstage
+      ; escape_gen |> Test_fun.map ~f:ok_exn
+      ; (escape_gen [@mode portable])
+        |> Test_fun.map ~f:ok_exn
+        |> Test_fun.map ~f:Modes.Portable.unwrap
+      ]
+  ;;
+
+  let%template unescape_gen_exn =
+    test_all
+      [ unescape_gen_exn |> Test_fun.map ~f:Staged.unstage
+      ; unescape_gen |> Test_fun.map ~f:ok_exn
+      ; (unescape_gen [@mode portable])
+        |> Test_fun.map ~f:ok_exn
+        |> Test_fun.map ~f:Modes.Portable.unwrap
+      ]
+  ;;
+
+  module%test [@name "escape_gen"] _ = struct
+    let escape = escape_gen_exn ~escapeworthy_map:[ '%', 'p'; '^', 'c' ] ~escape_char:'_'
     let%test _ = escape "" = ""
     let%test _ = escape "foo" = "foo"
     let%test _ = escape "_" = "__"
@@ -1548,10 +1582,7 @@ module%test Escaping = struct
     let%test _ = escape "^foo%" = "_cfoo_p"
 
     let escape2 =
-      unstage
-        (escape_gen_exn
-           ~escapeworthy_map:[ '_', '.'; '%', 'p'; '^', 'c' ]
-           ~escape_char:'_')
+      escape_gen_exn ~escapeworthy_map:[ '_', '.'; '%', 'p'; '^', 'c' ] ~escape_char:'_'
     ;;
 
     let%test _ = escape2 "_." = "_.."
@@ -1569,7 +1600,7 @@ module%test Escaping = struct
 
   module%test [@name "unescape_gen"] _ = struct
     let unescape =
-      unstage (unescape_gen_exn ~escapeworthy_map:[ '%', 'p'; '^', 'c' ] ~escape_char:'_')
+      unescape_gen_exn ~escapeworthy_map:[ '%', 'p'; '^', 'c' ] ~escape_char:'_'
     ;;
 
     let%test _ = unescape "__" = "_"
@@ -1579,10 +1610,7 @@ module%test Escaping = struct
     let%test _ = unescape "_cfoo_p" = "^foo%"
 
     let unescape2 =
-      unstage
-        (unescape_gen_exn
-           ~escapeworthy_map:[ '_', '.'; '%', 'p'; '^', 'c' ]
-           ~escape_char:'_')
+      unescape_gen_exn ~escapeworthy_map:[ '_', '.'; '%', 'p'; '^', 'c' ] ~escape_char:'_'
     ;;
 
     (* this one is ill-formed, just ignore the escape_char without escaped char *)
@@ -1596,8 +1624,8 @@ module%test Escaping = struct
 
     (* generate [n] random string and check if escaping and unescaping are consistent *)
     let random_test ~escapeworthy_map ~escape_char n =
-      let escape = unstage (escape_gen_exn ~escapeworthy_map ~escape_char) in
-      let unescape = unstage (unescape_gen_exn ~escapeworthy_map ~escape_char) in
+      let escape = escape_gen_exn ~escapeworthy_map ~escape_char in
+      let unescape = unescape_gen_exn ~escapeworthy_map ~escape_char in
       let test str =
         let escaped = escape str in
         let unescaped = unescape escaped in

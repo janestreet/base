@@ -11,10 +11,16 @@ build: [
 ]
 depends: [
   "ocaml" {>= "5.1.0"}
+  "basement"
   "ocaml_intrinsics_kernel"
+  "ppx_base"
+  "ppx_cold"
+  "ppx_hash"
+  "ppxlib_jane"
   "sexplib0"
-  "dune"                    {>= "3.11.0"}
+  "dune"                    {>= "3.17.0"}
   "dune-configurator"
+  "ppxlib"                  {= "0.33.0+jst"}
 ]
 available: arch != "arm32" & arch != "x86_32"
 synopsis: "Full standard library replacement for OCaml"

@@ -16,7 +16,7 @@ module type Utf = sig
   val codec_name : string
 end
 
-module type Uchar = sig
+module type Uchar = sig @@ portable
   (** Unicode operations.
 
       A [Uchar.t] represents a Unicode scalar value, which is the basic unit of Unicode.
@@ -26,20 +26,12 @@ module type Uchar = sig
 
   open! Import
 
-  type t = Uchar0.t [@@deriving_inline hash, sexp, sexp_grammar]
-
-  include Ppx_hash_lib.Hashable.S with type t := t
-  include Sexplib0.Sexpable.S_any with type t := t
-
-  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
-
+  type t = Uchar0.t [@@deriving hash, sexp ~localize, sexp_grammar]
   type uchar := t
 
   include Comparable.S with type t := t
-  include Ppx_compare_lib.Comparable.S_local with type t := t
-  include Ppx_compare_lib.Equal.S_local with type t := t
+  include Ppx_compare_lib.Comparable.S__local with type t := t
+  include Ppx_compare_lib.Equal.S__local with type t := t
   include Pretty_printer.S with type t := t
   include Invariant.S with type t := t
 
@@ -71,8 +63,8 @@ module type Uchar = sig
       [0x0000]...[0xD7FF] or [0xE000]...[0x10FFFF]). *)
   val int_is_scalar : int -> bool
 
-  (** [of_scalar_exn n] is [n] as a Unicode scalar value.  Raises if [not (int_is_scalar
-      i)]. *)
+  (** [of_scalar_exn n] is [n] as a Unicode scalar value. Raises if
+      [not (int_is_scalar i)]. *)
   val of_scalar : int -> t option
 
   val of_scalar_exn : int -> t
@@ -101,15 +93,7 @@ module type Uchar = sig
   (** Result of decoding a UTF codec that may contain invalid encodings. *)
   module Decode_result : sig
     type t : immediate = Uchar0.utf_decode
-    [@@deriving_inline compare, equal, hash, sexp_of]
-
-    include Ppx_compare_lib.Comparable.S with type t := t
-    include Ppx_compare_lib.Equal.S with type t := t
-    include Ppx_hash_lib.Hashable.S with type t := t
-
-    val sexp_of_t : t -> Sexplib0.Sexp.t
-
-    [@@@end]
+    [@@deriving compare, equal, hash, sexp_of ~localize]
 
     (** [true] iff [t] represents a Unicode scalar value. *)
     val is_valid : t -> bool

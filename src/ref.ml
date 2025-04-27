@@ -3,54 +3,12 @@ open! Import
 include (
 struct
   type 'a t = 'a ref
-  [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
-
-  let compare__local
-    : 'a. (local_ 'a -> local_ 'a -> int) -> local_ 'a t -> local_ 'a t -> int
-    =
-    compare_ref__local
-  ;;
-
-  let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref
-
-  let equal__local
-    : 'a. (local_ 'a -> local_ 'a -> bool) -> local_ 'a t -> local_ 'a t -> bool
-    =
-    equal_ref__local
-  ;;
-
-  let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool = equal_ref
-
-  let globalize : 'a. (local_ 'a -> 'a) -> local_ 'a t -> 'a t =
-    fun (type a__017_) : ((local_ a__017_ -> a__017_) -> local_ a__017_ t -> a__017_ t) ->
-    globalize_ref
-  ;;
-
-  let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = ref_of_sexp
-  let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_ref
-
-  let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
-    fun _'a_sexp_grammar -> ref_sexp_grammar _'a_sexp_grammar
-  ;;
-
-  [@@@end]
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
 end :
 sig
+@@ portable
   type 'a t = 'a ref
-  [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
-
-  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-  include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
-  include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
-  include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
-
-  val globalize : (local_ 'a -> 'a) -> local_ 'a t -> 'a t
-
-  include Sexplib0.Sexpable.S_any1 with type 'a t := 'a t
-
-  val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
 end)
 
 (* In the definition of [t], we do not have [[@@deriving compare, sexp]] because
@@ -59,9 +17,9 @@ end)
    contents : 'a } ] which would result in different (and unwanted) behavior.  *)
 type 'a t = 'a ref = { mutable contents : 'a }
 
-external create : 'a -> ('a t[@local_opt]) = "%makemutable"
-external ( ! ) : ('a t[@local_opt]) -> 'a = "%field0"
-external ( := ) : ('a t[@local_opt]) -> 'a -> unit = "%setfield0"
+external create : 'a -> ('a t[@local_opt]) @@ portable = "%makemutable"
+external ( ! ) : ('a t[@local_opt]) -> 'a @@ portable = "%field0"
+external ( := ) : ('a t[@local_opt]) -> 'a -> unit @@ portable = "%setfield0"
 
 let swap t1 t2 =
   let tmp = !t1 in
@@ -78,7 +36,7 @@ let set_temporarily t a ~f =
 ;;
 
 module And_value = struct
-  type t = T : 'a ref * 'a -> t [@@deriving sexp_of]
+  type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~localize]
 
   let set (T (r, a)) = r := a
   let sets ts = List.iter ts ~f:set

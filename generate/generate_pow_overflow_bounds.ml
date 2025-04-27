@@ -118,11 +118,12 @@ let gen_array ~typ ~bits ~sign ~indent =
     | Pos -> pos_bounds
     | Neg -> Array.map pos_bounds ~f:Z.( ~- )
   in
+  pr "Iarray.unsafe_of_array__promise_no_mutation (";
   pr "[| %s" (format_entry typ bounds.(0));
   for i = 1 to Array.length bounds - 1 do
     pr ";  %s" (format_entry typ bounds.(i))
   done;
-  pr "|]"
+  pr "|])"
 ;;
 
 let gen_bounds typ =
@@ -139,22 +140,27 @@ let gen_bounds typ =
        | Pos -> "positive"
        | Neg -> "negative")
   in
-  pr "let %s : %s array =" (array_name typ Pos) (ocaml_type_name typ);
+  pr "let %s : %s iarray =" (array_name typ Pos) (ocaml_type_name typ);
+  pr "  Portability_hacks.Cross.Portable.(cross (iarray infer))";
+  pr "  (";
   (match typ with
    | Int ->
      pr "  match Int_conversions.num_bits_int with";
-     pr "  | 32 -> Array.map %s ~f:Stdlib.Int32.to_int" (array_name Int32 Pos);
+     pr "  | 32 -> Iarray.map %s ~f:Stdlib.Int32.to_int" (array_name Int32 Pos);
      pr "  | 63 ->";
      gen_array ~typ ~bits:63 ~sign:Pos ~indent:4;
      pr "  | 31 ->";
      gen_array ~typ ~bits:31 ~sign:Pos ~indent:4;
      pr "  | _ -> assert false"
    | _ -> gen_array ~typ ~bits:(bits typ) ~sign:Pos ~indent:2);
-  pr "";
+  pr "  )";
   if generate_negative_bounds typ
   then (
-    pr "let %s : %s array =" (array_name typ Neg) (ocaml_type_name typ);
-    gen_array ~typ ~bits:(bits typ) ~sign:Neg ~indent:2)
+    pr "let %s : %s iarray =" (array_name typ Neg) (ocaml_type_name typ);
+    pr "  Portability_hacks.Cross.Portable.(cross (iarray infer))";
+    pr "  (";
+    gen_array ~typ ~bits:(bits typ) ~sign:Neg ~indent:2;
+    pr "  )")
 ;;
 
 let () =
@@ -162,7 +168,7 @@ let () =
   pr "";
   pr "open! Import";
   pr "";
-  pr "module Array = Array0";
+  pr "module Iarray = Iarray0";
   pr "";
   pr "(* We have to use Int64.to_int_exn instead of int constants to make";
   pr "   sure that file can be preprocessed on 32-bit machines. *)";

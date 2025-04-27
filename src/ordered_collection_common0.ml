@@ -11,7 +11,7 @@ let slow_check_pos_len_exn ~pos ~len ~total_length =
      possibility of overflow. *)
   if pos > total_length - len
   then invalid_argf "pos + len past end: %d + %d > %d" pos len total_length ()
-[@@cold] [@@inline never] [@@local never] [@@specialise never]
+[@@cold]
 ;;
 
 let check_pos_len_exn ~pos ~len ~total_length =

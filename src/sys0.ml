@@ -9,10 +9,11 @@
 
 open! Import0
 
-type backend_type = Stdlib.Sys.backend_type =
+type backend_type : value mod contended portable = Stdlib.Sys.backend_type =
   | Native
   | Bytecode
   | Other of string
+[@@unsafe_allow_any_mode_crossing]
 
 let backend_type = Stdlib.Sys.backend_type
 let interactive = Stdlib.Sys.interactive
@@ -50,9 +51,14 @@ let getenv var =
   | exception Stdlib.Not_found -> None
 ;;
 
-external opaque_identity : ('a : any). ('a[@local_opt]) -> ('a[@local_opt]) = "%opaque"
+external opaque_identity
+  : ('a : any).
+  ('a[@local_opt]) -> ('a[@local_opt])
+  @@ portable
+  = "%opaque"
 [@@layout_poly]
 
-external opaque_identity_global : ('a : any). 'a -> 'a = "%opaque" [@@layout_poly]
+external opaque_identity_global : ('a : any). 'a -> 'a @@ portable = "%opaque"
+[@@layout_poly]
 
 exception Break = Stdlib.Sys.Break

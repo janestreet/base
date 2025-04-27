@@ -12,6 +12,7 @@ module Global = struct
   let hash_fold_t hash state t = hash state t.global
   let t_of_sexp of_sexp sexp = { global = of_sexp sexp }
   let sexp_of_t sexp_of t = sexp_of t.global
+  let sexp_of_t__local sexp_of t = exclave_ sexp_of t.global
 
   let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
     Sexplib0.Sexp_grammar.coerce
@@ -22,55 +23,92 @@ module Global = struct
   let unwrap { global } = global
   let map { global = x } ~f = { global = f x }
 
-  external wrap_list : 'a list -> 'a t list = "%identity"
-  external unwrap_list : ('a t list[@local_opt]) -> ('a list[@local_opt]) = "%identity"
-  external wrap_option : 'a option -> 'a t option = "%identity"
+  external wrap_list : 'a list -> 'a t list @@ portable = "%identity"
+
+  external unwrap_list
+    :  ('a t list[@local_opt])
+    -> ('a list[@local_opt])
+    @@ portable
+    = "%identity"
+
+  external wrap_iarray : 'a iarray -> 'a t iarray @@ portable = "%identity"
+
+  external unwrap_iarray
+    :  ('a t iarray[@local_opt])
+    -> ('a iarray[@local_opt])
+    @@ portable
+    = "%identity"
+
+  external wrap_option : 'a option -> 'a t option @@ portable = "%identity"
 
   external unwrap_option
     :  ('a t option[@local_opt])
     -> ('a option[@local_opt])
+    @@ portable
     = "%identity"
 
-  external wrap_either : ('a, 'b) Either.t -> ('a t, 'b t) Either.t = "%identity"
+  external wrap_either
+    :  ('a, 'b) Either0.t
+    -> ('a t, 'b t) Either0.t
+    @@ portable
+    = "%identity"
 
   external unwrap_either
-    :  (('a t, 'b t) Either.t[@local_opt])
-    -> (('a, 'b) Either.t[@local_opt])
+    :  (('a t, 'b t) Either0.t[@local_opt])
+    -> (('a, 'b) Either0.t[@local_opt])
+    @@ portable
     = "%identity"
 
-  external wrap_first : ('a, 'b) Either.t -> ('a t, 'b) Either.t = "%identity"
+  external wrap_first
+    :  ('a, 'b) Either0.t
+    -> ('a t, 'b) Either0.t
+    @@ portable
+    = "%identity"
 
   external unwrap_first
-    :  (('a t, 'b) Either.t[@local_opt])
-    -> (('a, 'b) Either.t[@local_opt])
+    :  (('a t, 'b) Either0.t[@local_opt])
+    -> (('a, 'b) Either0.t[@local_opt])
+    @@ portable
     = "%identity"
 
-  external wrap_second : ('a, 'b) Either.t -> ('a, 'b t) Either.t = "%identity"
+  external wrap_second
+    :  ('a, 'b) Either0.t
+    -> ('a, 'b t) Either0.t
+    @@ portable
+    = "%identity"
 
   external unwrap_second
-    :  (('a, 'b t) Either.t[@local_opt])
-    -> (('a, 'b) Either.t[@local_opt])
+    :  (('a, 'b t) Either0.t[@local_opt])
+    -> (('a, 'b) Either0.t[@local_opt])
+    @@ portable
     = "%identity"
 
-  external wrap_result : ('a, 'b) Result.t -> ('a t, 'b t) Result.t = "%identity"
+  external wrap_result
+    :  ('a, 'b) Result.t
+    -> ('a t, 'b t) Result.t
+    @@ portable
+    = "%identity"
 
   external unwrap_result
     :  (('a t, 'b t) Result.t[@local_opt])
     -> (('a, 'b) Result.t[@local_opt])
+    @@ portable
     = "%identity"
 
-  external wrap_ok : ('a, 'b) Result.t -> ('a t, 'b) Result.t = "%identity"
+  external wrap_ok : ('a, 'b) Result.t -> ('a t, 'b) Result.t @@ portable = "%identity"
 
   external unwrap_ok
     :  (('a t, 'b) Result.t[@local_opt])
     -> (('a, 'b) Result.t[@local_opt])
+    @@ portable
     = "%identity"
 
-  external wrap_error : ('a, 'b) Result.t -> ('a, 'b t) Result.t = "%identity"
+  external wrap_error : ('a, 'b) Result.t -> ('a, 'b t) Result.t @@ portable = "%identity"
 
   external unwrap_error
     :  (('a, 'b t) Result.t[@local_opt])
     -> (('a, 'b) Result.t[@local_opt])
+    @@ portable
     = "%identity"
 
   module Global_wrapper = struct
@@ -131,6 +169,227 @@ module Global = struct
   end
 end
 
+module Portable = struct
+  include Modes_intf.Definitions.Portable
+
+  type 'a t : value mod portable = { portable : 'a @@ portable }
+  [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+
+  external wrap
+    :  ('a[@local_opt]) @ portable
+    -> ('a t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap
+    :  ('a t[@local_opt])
+    -> ('a[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  let map { portable } ~f = { portable = f portable }
+
+  external wrap_list
+    :  ('a list[@local_opt]) @ portable
+    -> ('a t list[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap_list
+    :  ('a t list[@local_opt])
+    -> ('a list[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external wrap_iarray
+    :  ('a iarray[@local_opt]) @ portable
+    -> ('a t iarray[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap_iarray
+    :  ('a t iarray[@local_opt])
+    -> ('a iarray[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external wrap_option
+    :  ('a option[@local_opt]) @ portable
+    -> ('a t option[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap_option
+    :  ('a t option[@local_opt])
+    -> ('a option[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external wrap_either
+    :  (('a, 'b) Either0.t[@local_opt]) @ portable
+    -> (('a t, 'b t) Either0.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap_either
+    :  (('a t, 'b t) Either0.t[@local_opt])
+    -> (('a, 'b) Either0.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external wrap_first
+    :  (('a, 'b) Either0.t[@local_opt]) @ portable
+    -> (('a t, 'b) Either0.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap_first
+    :  (('a t, 'b) Either0.t[@local_opt])
+    -> (('a, 'b) Either0.t[@local_opt])
+    @@ portable
+    = "%identity"
+
+  external unwrap_first__portable
+    :  (('a t, 'b) Either0.t[@local_opt]) @ portable
+    -> (('a, 'b) Either0.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external wrap_second
+    :  (('a, 'b) Either0.t[@local_opt]) @ portable
+    -> (('a, 'b t) Either0.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap_second
+    :  (('a, 'b t) Either0.t[@local_opt])
+    -> (('a, 'b) Either0.t[@local_opt])
+    @@ portable
+    = "%identity"
+
+  external unwrap_second__portable
+    :  (('a, 'b t) Either0.t[@local_opt]) @ portable
+    -> (('a, 'b) Either0.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external wrap_result
+    :  (('a, 'b) Result.t[@local_opt]) @ portable
+    -> (('a t, 'b t) Result.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap_result
+    :  (('a t, 'b t) Result.t[@local_opt])
+    -> (('a, 'b) Result.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external wrap_ok
+    :  (('a, 'b) Result.t[@local_opt]) @ portable
+    -> (('a t, 'b) Result.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap_ok
+    :  (('a t, 'b) Result.t[@local_opt])
+    -> (('a, 'b) Result.t[@local_opt])
+    @@ portable
+    = "%identity"
+
+  external unwrap_ok__portable
+    :  (('a t, 'b) Result.t[@local_opt]) @ portable
+    -> (('a, 'b) Result.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external wrap_error
+    :  (('a, 'b) Result.t[@local_opt]) @ portable
+    -> (('a, 'b t) Result.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap_error
+    :  (('a, 'b t) Result.t[@local_opt])
+    -> (('a, 'b) Result.t[@local_opt])
+    @@ portable
+    = "%identity"
+
+  external unwrap_error__portable
+    :  (('a, 'b t) Result.t[@local_opt]) @ portable
+    -> (('a, 'b) Result.t[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+end
+
+module Contended = struct
+  type 'a t : value mod contended = { contended : 'a @@ contended }
+  [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+end
+
+module Portended = struct
+  type 'a t : value mod contended portable = { portended : 'a @@ contended portable }
+  [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+end
+
+module At_locality = struct
+  include Modes_intf.Definitions.At_locality
+
+  (* The safety of this module is tested in `test/test_modes.ml`, which reimplements its
+     interface without using [external] definitions. *)
+
+  type (+'a, 'locality) t
+
+  external wrap : 'a 'loc. 'a -> ('a, 'loc) t @@ portable = "%identity"
+  external unwrap : 'a 'loc. ('a, 'loc) t -> 'a @@ portable = "%identity"
+
+  external wrap_local
+    : 'a.
+    local_ 'a -> local_ ('a, [ `local ]) t
+    @@ portable
+    = "%identity"
+
+  external unwrap_local
+    : 'a 'loc.
+    local_ ('a, 'loc) t -> local_ 'a
+    @@ portable
+    = "%identity"
+
+  external unwrap_global : 'a. local_ ('a, [ `global ]) t -> 'a @@ portable = "%identity"
+
+  let to_local t = exclave_ wrap_local (unwrap_local t)
+  let to_global t = wrap (unwrap t)
+  let globalize globalize_a _ t = wrap (globalize_a (unwrap_local t))
+  let globalize_global t = wrap (unwrap_global t)
+  let equal equal_a _ x y = equal_a (unwrap x) (unwrap y)
+  let compare compare_a _ x y = compare_a (unwrap x) (unwrap y)
+  let equal__local equal_a _ x y = equal_a (unwrap_local x) (unwrap_local y) [@nontail]
+
+  let compare__local compare_a _ x y =
+    compare_a (unwrap_local x) (unwrap_local y) [@nontail]
+  ;;
+
+  let hash_fold_t hash_fold_a _ state t = hash_fold_a state (unwrap t)
+  let sexp_of_t sexp_of_a _ t = sexp_of_a (unwrap t)
+
+  let t_sexp_grammar
+    : type a. a Sexplib0.Sexp_grammar.t -> _ -> (a, _) t Sexplib0.Sexp_grammar.t
+    =
+    fun grammar _ -> Sexplib0.Sexp_grammar.coerce grammar
+  ;;
+end
+
 module Export = struct
   type 'a _global = 'a Global.t = { global_ global : 'a } [@@unboxed]
+
+  type 'a _portable : value mod portable = 'a Portable.t = { portable : 'a @@ portable }
+  [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+
+  type 'a _contended : value mod contended = 'a Contended.t =
+    { contended : 'a @@ contended }
+  [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+
+  type 'a _portended : value mod contended portable = 'a Portended.t =
+    { portended : 'a @@ contended portable }
+  [@@unboxed] [@@unsafe_allow_any_mode_crossing]
 end

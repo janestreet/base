@@ -1,5 +1,40 @@
 open! Import
+module Sexp = Sexp0
 module Key = Hashtbl_intf.Key
+
+module Ok_or_absent = struct
+  type t =
+    | Absent
+    | Ok
+  [@@deriving compare, enumerate, equal, hash, sexp_of]
+
+  let is_ok = function
+    | Absent -> false
+    | Ok -> true
+  ;;
+
+  let is_absent = function
+    | Absent -> true
+    | Ok -> false
+  ;;
+end
+
+module Ok_or_duplicate = struct
+  type t =
+    | Duplicate
+    | Ok
+  [@@deriving compare, enumerate, equal, hash, sexp_of]
+
+  let is_ok = function
+    | Duplicate -> false
+    | Ok -> true
+  ;;
+
+  let is_duplicate = function
+    | Duplicate -> true
+    | Ok -> false
+  ;;
+end
 
 module type Accessors = sig
   type 'a t
@@ -14,29 +49,38 @@ module type Accessors = sig
 
   val add : 'a t -> 'a -> unit
 
-  (** [strict_add t x] returns [Ok ()] if the [x] was not in [t], or an [Error] if it
-      was. *)
-  val strict_add : 'a t -> 'a -> unit Or_error.t
+  (** [strict_add t x] returns [Ok] if [x] was not in [t], or [Duplicate] if it was. *)
+  val strict_add : 'a t -> 'a -> Ok_or_duplicate.t
 
+  (** Like [strict_add]; returns [Ok ()] or [Error _]. *)
+  val strict_add_or_error : 'a t -> 'a -> unit Or_error.t
+
+  (** Like [strict_add]; raises on failure. *)
   val strict_add_exn : 'a t -> 'a -> unit
+
   val remove : 'a t -> 'a -> unit
 
-  (** [strict_remove t x] returns [Ok ()] if the [x] was in [t], or an [Error] if it
-      was not. *)
-  val strict_remove : 'a t -> 'a -> unit Or_error.t
+  (** [strict_remove t x] returns [Ok] if [x] was in [t], or [Absent] if it was not. *)
+  val strict_remove : 'a t -> 'a -> Ok_or_absent.t
 
+  (** Like [strict_remove]; returns [Ok ()] or [Error _]. *)
+  val strict_remove_or_error : 'a t -> 'a -> unit Or_error.t
+
+  (** Like [strict_remove]; raises on failure. *)
   val strict_remove_exn : 'a t -> 'a -> unit
+
   val clear : 'a t -> unit
   val equal : 'a t -> 'a t -> bool
   val filter : 'a t -> f:local_ ('a -> bool) -> 'a t
   val filter_inplace : 'a t -> f:local_ ('a -> bool) -> unit
 
-  (** [inter t1 t2] computes the set intersection of [t1] and [t2].  Runs in O(min(length
-      t1, length t2)).  Behavior is undefined if [t1] and [t2] don't have the same
-      equality function. *)
+  (** [inter t1 t2] computes the set intersection of [t1] and [t2]. Runs in O(min(length
+      t1, length t2)). Behavior is undefined if [t1] and [t2] don't have the same equality
+      function. *)
   val inter : 'key t -> 'key t -> 'key t
 
   val union : 'a t -> 'a t -> 'a t
+  val union_in_place : dst:'a t -> src:'a t -> unit
   val diff : 'a t -> 'a t -> 'a t
   val of_hashtbl_keys : ('a, _) Hashtbl.t -> 'a t
   val to_hashtbl : 'key t -> f:local_ ('key -> 'data) -> ('key, 'data) Hashtbl.t
@@ -75,29 +119,17 @@ module type Creators_generic = sig
 end
 
 module type Sexp_of_m = sig
-  type t [@@deriving_inline sexp_of]
-
-  val sexp_of_t : t -> Sexplib0.Sexp.t
-
-  [@@@end]
+  type t [@@deriving sexp_of]
 end
 
 module type M_of_sexp = sig
-  type t [@@deriving_inline of_sexp]
-
-  val t_of_sexp : Sexplib0.Sexp.t -> t
-
-  [@@@end]
+  type t [@@deriving of_sexp]
 
   include Hashtbl_intf.Key.S with type t := t
 end
 
 module type M_sexp_grammar = sig
-  type t [@@deriving_inline sexp_grammar]
-
-  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  type t [@@deriving sexp_grammar]
 end
 
 module type Equal_m = sig end
@@ -134,23 +166,22 @@ module type For_deriving = sig
   val m__t_sexp_grammar
     :  (module M_sexp_grammar with type t = 'elt)
     -> 'elt t Sexplib0.Sexp_grammar.t
+    @@ portable
 
   val equal_m__t : (module Equal_m) -> 'elt t -> 'elt t -> bool
 end
 
-module type Hash_set = sig
-  type !'a t [@@deriving_inline sexp_of]
+module type Hash_set = sig @@ portable
+  type !'a t [@@deriving sexp_of]
 
-  val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
-
-  [@@@end]
-
-  (** We use [[@@deriving sexp_of]] but not [[@@deriving sexp]] because we want people to be
-      explicit about the hash and comparison functions used when creating hashtables.  One
-      can use [Hash_set.Poly.t], which does have [[@@deriving sexp]], to use polymorphic
-      comparison and hashing. *)
+  (** We use [[@@deriving sexp_of]] but not [[@@deriving sexp]] because we want people to
+      be explicit about the hash and comparison functions used when creating hashtables.
+      One can use [Hash_set.Poly.t], which does have [[@@deriving sexp]], to use
+      polymorphic comparison and hashing. *)
 
   module Key = Key
+  module Ok_or_absent = Ok_or_absent
+  module Ok_or_duplicate = Ok_or_duplicate
 
   module type Creators = Creators
   module type Creators_generic = Creators_generic
@@ -162,7 +193,7 @@ module type Hash_set = sig
 
   module type Accessors = Accessors
 
-  include Accessors with type 'a t := 'a t with type 'a elt = 'a (** @open *)
+  include Accessors with type 'a t := 'a t with type 'a elt := 'a (** @open *)
 
   val hashable_s : 'key t -> 'key Key.t
 
@@ -171,13 +202,7 @@ module type Hash_set = sig
 
   (** A hash set that uses polymorphic comparison *)
   module Poly : sig
-    type nonrec 'a t = 'a t [@@deriving_inline sexp, sexp_grammar]
-
-    include Sexplib0.Sexpable.S_any1 with type 'a t := 'a t
-
-    val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-
-    [@@@end]
+    type nonrec 'a t = 'a t [@@deriving sexp, sexp_grammar]
 
     include
       Creators_generic
@@ -189,7 +214,7 @@ module type Hash_set = sig
     include Accessors with type 'a t := 'a t with type 'a elt := 'a elt
   end
 
-  module Creators (Elt : sig
+  module%template.portable Creators (Elt : sig
       type 'a t
 
       val hashable : 'a t Hashable.t

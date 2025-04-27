@@ -1,3 +1,5 @@
+@@ portable
+
 (** [with_return f] allows for something like the return statement in C within [f].
 
     There are three ways [f] can terminate:
@@ -12,19 +14,22 @@
       let find l ~f =
         with_return (fun r ->
           List.iter l ~f:(fun x -> if f x then r.return (Some x));
-          None
-        )
+          None)
+      ;;
     ]}
 
     It is only because of a deficiency of ML types that [with_return] doesn't have type:
 
-    {[ val with_return : 'a. (('a -> ('b. 'b)) -> 'a) -> 'a ]}
+    {[
+      val with_return : 'a. (('a -> ('b. 'b)) -> 'a) -> 'a
+    ]}
 
     but we can slightly increase the scope of ['b] without changing the meaning of the
     type, and then we get:
 
     {[
-      type 'a return = { return : 'b . 'a -> 'b }
+      type 'a return = { return : 'b. 'a -> 'b }
+
       val with_return : ('a return -> 'a) -> 'a
     ]}
 
@@ -46,8 +51,8 @@ val with_return : local_ ('a return -> 'a) -> 'a
 val with_return_option : local_ ('a return -> unit) -> 'a option
 
 (** [prepend a ~f] returns a value [x] such that each call to [x.return] first applies [f]
-    before applying [a.return].  The call to [f] is "prepended" to the call to the
-    original [a.return].  A possible use case is to hand [x] over to another function
-    which returns ['b], a subtype of ['a], or to capture a common transformation [f]
-    applied to returned values at several call sites. *)
+    before applying [a.return]. The call to [f] is "prepended" to the call to the original
+    [a.return]. A possible use case is to hand [x] over to another function which returns
+    ['b], a subtype of ['a], or to capture a common transformation [f] applied to returned
+    values at several call sites. *)
 val prepend : 'a return -> f:('b -> 'a) -> 'b return

@@ -1,3 +1,5 @@
+@@ portable
+
 (** OCaml record field. *)
 
 (**/**)
@@ -18,9 +20,9 @@ end
 
 (**/**)
 
-(** ['record] is the type of the record.  ['field] is the type of the
-    values stored in the record field with name [name]. ['perm] is a way
-    of restricting the operations that can be used. *)
+(** ['record] is the type of the record. ['field] is the type of the values stored in the
+    record field with name [name]. ['perm] is a way of restricting the operations that can
+    be used. *)
 type ('perm, 'record, 'field : any) t_with_perm =
   | Field of ('perm, 'record, 'field) For_generated_code.t
 [@@unboxed]
@@ -33,14 +35,23 @@ type ('record, 'field : any) t =
 type ('record, 'field : any) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
 val name : (_, _, _ : any) t_with_perm -> string
-val get : (_, 'r, 'a) t_with_perm -> 'r -> 'a
-val fset : ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> 'a -> 'r
-val setter : ([> `Set_and_create ], 'r, 'a) t_with_perm -> ('r -> 'a -> unit) option
-val map : ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> f:local_ ('a -> 'a) -> 'r
+
+[%%template:
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
+
+val get : (_, 'r, 'a : k) t_with_perm -> 'r -> 'a
+val fset : ([> `Set_and_create ], 'r, 'a : k) t_with_perm -> 'r -> 'a -> 'r
+val setter : ([> `Set_and_create ], 'r, 'a : k) t_with_perm -> ('r -> 'a -> unit) option
+
+val map
+  :  ([> `Set_and_create ], 'r, 'a : k) t_with_perm
+  -> 'r
+  -> f:local_ ('a -> 'a)
+  -> 'r
 
 val updater
-  :  ([> `Set_and_create ], 'r, 'a) t_with_perm
-  -> ('r -> f:local_ ('a -> 'a) -> unit) option
+  :  ([> `Set_and_create ], 'r, 'a : k) t_with_perm
+  -> ('r -> f:local_ ('a -> 'a) -> unit) option]
 
 type ('perm, 'record, 'result) user =
   { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }

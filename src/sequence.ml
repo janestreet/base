@@ -1,53 +1,21 @@
 open! Import
-open Container_intf.Export
+open Container.Export
 module Array = Array0
 module List = List1
 
 module Step = struct
   (* 'a is an item in the sequence, 's is the state that will produce the remainder of
      the sequence *)
-  type ('a, 's) t =
+  type (+'a : any, 's) t =
     | Done
     | Skip of { state : 's }
-    | Yield of
+    | Yield :
+        ('a : value) 's.
         { value : 'a
         ; state : 's
         }
-  [@@deriving_inline sexp_of]
-
-  let sexp_of_t
-    : 'a 's.
-    ('a -> Sexplib0.Sexp.t) -> ('s -> Sexplib0.Sexp.t) -> ('a, 's) t -> Sexplib0.Sexp.t
-    =
-    fun (type a__011_ s__012_)
-      :  ((a__011_ -> Sexplib0.Sexp.t) -> (s__012_ -> Sexplib0.Sexp.t)
-      -> (a__011_, s__012_) t -> Sexplib0.Sexp.t) ->
-    fun _of_a__001_ _of_s__002_ -> function
-    | Done -> Sexplib0.Sexp.Atom "Done"
-    | Skip { state = state__004_ } ->
-      let bnds__003_ = ([] : _ Stdlib.List.t) in
-      let bnds__003_ =
-        let arg__005_ = _of_s__002_ state__004_ in
-        (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "state"; arg__005_ ] :: bnds__003_
-         : _ Stdlib.List.t)
-      in
-      Sexplib0.Sexp.List (Sexplib0.Sexp.Atom "Skip" :: bnds__003_)
-    | Yield { value = value__007_; state = state__009_ } ->
-      let bnds__006_ = ([] : _ Stdlib.List.t) in
-      let bnds__006_ =
-        let arg__010_ = _of_s__002_ state__009_ in
-        (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "state"; arg__010_ ] :: bnds__006_
-         : _ Stdlib.List.t)
-      in
-      let bnds__006_ =
-        let arg__008_ = _of_a__001_ value__007_ in
-        (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "value"; arg__008_ ] :: bnds__006_
-         : _ Stdlib.List.t)
-      in
-      Sexplib0.Sexp.List (Sexplib0.Sexp.Atom "Yield" :: bnds__006_)
-  ;;
-
-  [@@@end]
+        -> ('a, 's) t
+  [@@deriving sexp_of ~localize]
 end
 
 open Step
@@ -55,8 +23,9 @@ open Step
 module T = struct
   (* 'a is an item in the sequence, 's is the state that will produce the remainder of the
      sequence *)
-  type +_ t =
+  type (+_ : any) t =
     | Sequence :
+        ('a : any) 's.
         { global_ state : 's
         ; global_ next : 's -> ('a, 's) Step.t
         }
@@ -427,7 +396,8 @@ let mem t a ~equal =
   | Sequence { state = seed; next } -> loop seed next a [@nontail]
 ;;
 
-let empty = Sequence { state = (); next = (fun () -> Done) }
+let empty : ('a : any). 'a t = Sequence { state = (); next = (fun () -> Done) }
+let[@inline] get_empty () = Sequence { state = (); next = (fun () -> Done) }
 
 let bind t ~f =
   unfold_step
@@ -440,13 +410,13 @@ let bind t ~f =
               (match next seed with
                | Done -> Done
                | Skip { state = s } ->
-                 Skip { state = empty, Sequence { state = s; next } }
+                 Skip { state = get_empty (), Sequence { state = s; next } }
                | Yield { value = a; state = s } ->
                  Skip { state = f a, Sequence { state = s; next } }))
          | Skip { state = s } -> Skip { state = Sequence { state = s; next }, rest }
          | Yield { value = a; state = s } ->
            Yield { value = a; state = Sequence { state = s; next }, rest }))
-    ~init:(empty, t)
+    ~init:(get_empty (), t)
 ;;
 
 let return x =
@@ -455,7 +425,7 @@ let return x =
     | Some x -> Yield { value = x; state = None })
 ;;
 
-include Monad.Make (struct
+include%template Monad.Make [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let map = `Custom map
@@ -492,241 +462,7 @@ module Merge_with_duplicates_element = struct
     | Left of 'a
     | Right of 'b
     | Both of 'a * 'b
-  [@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
-
-  let compare__local
-    : 'a 'b.
-    (local_ 'a -> local_ 'a -> int)
-    -> (local_ 'b -> local_ 'b -> int)
-    -> local_ ('a, 'b) t
-    -> local_ ('a, 'b) t
-    -> int
-    =
-    fun _cmp__a _cmp__b a__023_ b__024_ ->
-    if Stdlib.( == ) a__023_ b__024_
-    then 0
-    else (
-      match a__023_, b__024_ with
-      | Left _a__025_, Left _b__026_ -> _cmp__a _a__025_ _b__026_
-      | Left _, _ -> -1
-      | _, Left _ -> 1
-      | Right _a__027_, Right _b__028_ -> _cmp__b _a__027_ _b__028_
-      | Right _, _ -> -1
-      | _, Right _ -> 1
-      | Both (_a__029_, _a__031_), Both (_b__030_, _b__032_) ->
-        (match _cmp__a _a__029_ _b__030_ with
-         | 0 -> _cmp__b _a__031_ _b__032_
-         | n -> n))
-  ;;
-
-  let compare
-    : 'a 'b. ('a -> 'a -> int) -> ('b -> 'b -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
-    =
-    fun _cmp__a _cmp__b a__013_ b__014_ ->
-    if Stdlib.( == ) a__013_ b__014_
-    then 0
-    else (
-      match a__013_, b__014_ with
-      | Left _a__015_, Left _b__016_ -> _cmp__a _a__015_ _b__016_
-      | Left _, _ -> -1
-      | _, Left _ -> 1
-      | Right _a__017_, Right _b__018_ -> _cmp__b _a__017_ _b__018_
-      | Right _, _ -> -1
-      | _, Right _ -> 1
-      | Both (_a__019_, _a__021_), Both (_b__020_, _b__022_) ->
-        (match _cmp__a _a__019_ _b__020_ with
-         | 0 -> _cmp__b _a__021_ _b__022_
-         | n -> n))
-  ;;
-
-  let equal__local
-    : 'a 'b.
-    (local_ 'a -> local_ 'a -> bool)
-    -> (local_ 'b -> local_ 'b -> bool)
-    -> local_ ('a, 'b) t
-    -> local_ ('a, 'b) t
-    -> bool
-    =
-    fun _cmp__a _cmp__b a__043_ b__044_ ->
-    if Stdlib.( == ) a__043_ b__044_
-    then true
-    else (
-      match a__043_, b__044_ with
-      | Left _a__045_, Left _b__046_ -> _cmp__a _a__045_ _b__046_
-      | Left _, _ -> false
-      | _, Left _ -> false
-      | Right _a__047_, Right _b__048_ -> _cmp__b _a__047_ _b__048_
-      | Right _, _ -> false
-      | _, Right _ -> false
-      | Both (_a__049_, _a__051_), Both (_b__050_, _b__052_) ->
-        Stdlib.( && ) (_cmp__a _a__049_ _b__050_) (_cmp__b _a__051_ _b__052_))
-  ;;
-
-  let equal
-    : 'a 'b. ('a -> 'a -> bool) -> ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
-    =
-    fun _cmp__a _cmp__b a__033_ b__034_ ->
-    if Stdlib.( == ) a__033_ b__034_
-    then true
-    else (
-      match a__033_, b__034_ with
-      | Left _a__035_, Left _b__036_ -> _cmp__a _a__035_ _b__036_
-      | Left _, _ -> false
-      | _, Left _ -> false
-      | Right _a__037_, Right _b__038_ -> _cmp__b _a__037_ _b__038_
-      | Right _, _ -> false
-      | _, Right _ -> false
-      | Both (_a__039_, _a__041_), Both (_b__040_, _b__042_) ->
-        Stdlib.( && ) (_cmp__a _a__039_ _b__040_) (_cmp__b _a__041_ _b__042_))
-  ;;
-
-  let hash_fold_t
-    : type a b.
-      (Ppx_hash_lib.Std.Hash.state -> a -> Ppx_hash_lib.Std.Hash.state)
-      -> (Ppx_hash_lib.Std.Hash.state -> b -> Ppx_hash_lib.Std.Hash.state)
-      -> Ppx_hash_lib.Std.Hash.state
-      -> (a, b) t
-      -> Ppx_hash_lib.Std.Hash.state
-    =
-    fun _hash_fold_a _hash_fold_b hsv arg ->
-    match arg with
-    | Left _a0 ->
-      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 0 in
-      let hsv = hsv in
-      _hash_fold_a hsv _a0
-    | Right _a0 ->
-      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 1 in
-      let hsv = hsv in
-      _hash_fold_b hsv _a0
-    | Both (_a0, _a1) ->
-      let hsv = Ppx_hash_lib.Std.Hash.fold_int hsv 2 in
-      let hsv =
-        let hsv = hsv in
-        _hash_fold_a hsv _a0
-      in
-      _hash_fold_b hsv _a1
-  ;;
-
-  let t_of_sexp
-    : 'a 'b.
-    (Sexplib0.Sexp.t -> 'a) -> (Sexplib0.Sexp.t -> 'b) -> Sexplib0.Sexp.t -> ('a, 'b) t
-    =
-    fun (type a__076_ b__077_)
-      :  ((Sexplib0.Sexp.t -> a__076_) -> (Sexplib0.Sexp.t -> b__077_) -> Sexplib0.Sexp.t
-      -> (a__076_, b__077_) t) ->
-    let error_source__057_ = "sequence.ml.Merge_with_duplicates_element.t" in
-    fun _of_a__053_ _of_b__054_ -> function
-      | Sexplib0.Sexp.List
-          (Sexplib0.Sexp.Atom (("left" | "Left") as _tag__060_) :: sexp_args__061_) as
-        _sexp__059_ ->
-        (match sexp_args__061_ with
-         | arg0__062_ :: [] ->
-           let res0__063_ = _of_a__053_ arg0__062_ in
-           Left res0__063_
-         | _ ->
-           Sexplib0.Sexp_conv_error.stag_incorrect_n_args
-             error_source__057_
-             _tag__060_
-             _sexp__059_)
-      | Sexplib0.Sexp.List
-          (Sexplib0.Sexp.Atom (("right" | "Right") as _tag__065_) :: sexp_args__066_) as
-        _sexp__064_ ->
-        (match sexp_args__066_ with
-         | arg0__067_ :: [] ->
-           let res0__068_ = _of_b__054_ arg0__067_ in
-           Right res0__068_
-         | _ ->
-           Sexplib0.Sexp_conv_error.stag_incorrect_n_args
-             error_source__057_
-             _tag__065_
-             _sexp__064_)
-      | Sexplib0.Sexp.List
-          (Sexplib0.Sexp.Atom (("both" | "Both") as _tag__070_) :: sexp_args__071_) as
-        _sexp__069_ ->
-        (match sexp_args__071_ with
-         | [ arg0__072_; arg1__073_ ] ->
-           let res0__074_ = _of_a__053_ arg0__072_
-           and res1__075_ = _of_b__054_ arg1__073_ in
-           Both (res0__074_, res1__075_)
-         | _ ->
-           Sexplib0.Sexp_conv_error.stag_incorrect_n_args
-             error_source__057_
-             _tag__070_
-             _sexp__069_)
-      | Sexplib0.Sexp.Atom ("left" | "Left") as sexp__058_ ->
-        Sexplib0.Sexp_conv_error.stag_takes_args error_source__057_ sexp__058_
-      | Sexplib0.Sexp.Atom ("right" | "Right") as sexp__058_ ->
-        Sexplib0.Sexp_conv_error.stag_takes_args error_source__057_ sexp__058_
-      | Sexplib0.Sexp.Atom ("both" | "Both") as sexp__058_ ->
-        Sexplib0.Sexp_conv_error.stag_takes_args error_source__057_ sexp__058_
-      | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__056_ ->
-        Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__057_ sexp__056_
-      | Sexplib0.Sexp.List [] as sexp__056_ ->
-        Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__057_ sexp__056_
-      | sexp__056_ ->
-        Sexplib0.Sexp_conv_error.unexpected_stag
-          error_source__057_
-          [ "Left"; "Right"; "Both" ]
-          sexp__056_
-  ;;
-
-  let sexp_of_t
-    : 'a 'b.
-    ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
-    =
-    fun (type a__088_ b__089_)
-      :  ((a__088_ -> Sexplib0.Sexp.t) -> (b__089_ -> Sexplib0.Sexp.t)
-      -> (a__088_, b__089_) t -> Sexplib0.Sexp.t) ->
-    fun _of_a__078_ _of_b__079_ -> function
-    | Left arg0__080_ ->
-      let res0__081_ = _of_a__078_ arg0__080_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Left"; res0__081_ ]
-    | Right arg0__082_ ->
-      let res0__083_ = _of_b__079_ arg0__082_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Right"; res0__083_ ]
-    | Both (arg0__084_, arg1__085_) ->
-      let res0__086_ = _of_a__078_ arg0__084_
-      and res1__087_ = _of_b__079_ arg1__085_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Both"; res0__086_; res1__087_ ]
-  ;;
-
-  let t_sexp_grammar
-    : 'a 'b.
-    'a Sexplib0.Sexp_grammar.t
-    -> 'b Sexplib0.Sexp_grammar.t
-    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
-    =
-    fun _'a_sexp_grammar _'b_sexp_grammar ->
-    { untyped =
-        Variant
-          { case_sensitivity = Case_sensitive_except_first_character
-          ; clauses =
-              [ No_tag
-                  { name = "Left"
-                  ; clause_kind =
-                      List_clause { args = Cons (_'a_sexp_grammar.untyped, Empty) }
-                  }
-              ; No_tag
-                  { name = "Right"
-                  ; clause_kind =
-                      List_clause { args = Cons (_'b_sexp_grammar.untyped, Empty) }
-                  }
-              ; No_tag
-                  { name = "Both"
-                  ; clause_kind =
-                      List_clause
-                        { args =
-                            Cons
-                              ( _'a_sexp_grammar.untyped
-                              , Cons (_'b_sexp_grammar.untyped, Empty) )
-                        }
-                  }
-              ]
-          }
-    }
-  ;;
-
-  [@@@end]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp ~localize, sexp_grammar]
 end
 
 let merge_with_duplicates
@@ -864,7 +600,7 @@ let split_n s n =
     then List.rev accum, Sequence { state = s; next }
     else (
       match next s with
-      | Done -> List.rev accum, empty
+      | Done -> List.rev accum, get_empty ()
       | Skip { state = s } -> loop s i accum next
       | Yield { value = a; state = s } -> loop s (i - 1) (a :: accum) next)
   in
@@ -1279,7 +1015,7 @@ let drop_eagerly s len =
     then Sequence { state = s; next }
     else (
       match next s with
-      | Done -> empty
+      | Done -> get_empty ()
       | Skip { state = s } -> loop i ~len s next
       | Yield { value = _; state = s } -> loop (i + 1) ~len s next)
   in
@@ -1419,7 +1155,8 @@ module Generator = struct
   end
 
   include T
-  include Monad.Make2 (T)
+
+  include%template Monad.Make2 [@modality portable] (T)
 
   let yield e k = Wrap (Yield { value = e; state = k })
   let to_steps t = t (fun () -> Wrap Done)

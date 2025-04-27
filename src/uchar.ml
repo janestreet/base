@@ -1,5 +1,6 @@
 open! Import
 module Bytes = Bytes0
+module Sexp = Sexp0
 module String = String0
 include Uchar_intf
 
@@ -14,6 +15,7 @@ let hash t = Hash.run hash_fold_t t
 (* Not for export. String formats exported via [Utf*] modules below. *)
 let to_string_internal t = Printf.sprintf "U+%04X" (to_int t)
 let sexp_of_t t = Sexp.Atom (to_string_internal t)
+let sexp_of_t__local t = exclave_ Sexp.Atom (to_string_internal t)
 
 let t_of_sexp sexp =
   match sexp with
@@ -27,14 +29,14 @@ let t_sexp_grammar : t Sexplib0.Sexp_grammar.t =
   Sexplib0.Sexp_grammar.coerce string_sexp_grammar
 ;;
 
-include Pretty_printer.Register (struct
+include%template Pretty_printer.Register [@modality portable] (struct
     type nonrec t = t
 
     let module_name = module_name
     let to_string = to_string_internal
   end)
 
-include Comparable.Make (struct
+include%template Comparable.Make [@modality portable] (struct
     type nonrec t = t
 
     let compare = compare
@@ -101,6 +103,7 @@ module Decode_result = struct
   let bytes_consumed = Uchar0.utf_decode_length
   let uchar_or_replacement_char = Uchar0.utf_decode_uchar
   let sexp_of_t t = sexp_of_t (uchar_or_replacement_char t)
+  let sexp_of_t__local t = exclave_ sexp_of_t__local (uchar_or_replacement_char t)
 
   let uchar t =
     match is_valid t with
@@ -118,12 +121,16 @@ module Decode_result = struct
 end
 
 module Make_utf (Format : sig
+  @@ portable
     val codec_name : string
     val module_name : string
     val byte_length : t -> int
     val get_decode_result : string -> byte_pos:int -> Decode_result.t
     val set : local_ bytes -> int -> t -> int
-  end) : Utf = struct
+  end) : sig
+  @@ portable
+  include Utf
+end = struct
   let codec_name = Format.codec_name
   let byte_length = Format.byte_length
 
@@ -139,7 +146,7 @@ module Make_utf (Format : sig
     Format.module_name ^ ".of_string: expected a single Unicode character"
   ;;
 
-  let[@cold] [@inline never] [@local never] [@specialise never] raise_of_string string =
+  let[@cold] raise_of_string string =
     Error.raise_s (Sexp.message of_string_message [ "string", Atom string ])
   ;;
 

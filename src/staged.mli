@@ -1,7 +1,9 @@
+@@ portable
+
 (** A type for making staging explicit in the type of a function.
 
     For example, you might want to have a function that creates a function for allocating
-    unique identifiers.  Rather than using the type:
+    unique identifiers. Rather than using the type:
 
     {[
       val make_id_allocator : unit -> unit -> int
@@ -18,15 +20,19 @@
     {[
       let make_id_allocator () =
         let ctr = ref 0 in
-        stage (fun () -> incr ctr; !ctr)
+        stage (fun () ->
+          incr ctr;
+          !ctr)
+      ;;
     ]}
 
     and could be invoked as follows:
 
     {[
-      let (id1,id2) =
+      let id1, id2 =
         let alloc = unstage (make_id_allocator ()) in
-        (alloc (), alloc ())
+        alloc (), alloc ()
+      ;;
     ]}
 
     both {!stage} and {!unstage} functions are available in the toplevel namespace.
@@ -38,5 +44,8 @@ open! Import
 
 type +'a t
 
-external stage : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
-external unstage : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+[%%template:
+[@@@mode.default p = (nonportable, portable)]
+
+external stage : ('a[@local_opt]) @ p -> ('a t[@local_opt]) @ p = "%identity"
+external unstage : ('a t[@local_opt]) @ p -> ('a[@local_opt]) @ p = "%identity"]

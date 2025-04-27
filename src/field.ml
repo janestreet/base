@@ -35,7 +35,8 @@ module For_generated_code = struct
   type ('perm, 'record, 'field : any) t =
     { force_variance : 'perm -> unit
     ; (* force [t] to be contravariant in ['perm], because phantom type variables on
-         concrete types don't work that well otherwise (using :> can remove them easily) *)
+         concrete types don't work that well otherwise (using :> can remove them easily)
+      *)
       name : string
     ; setter : ('record -> 'field -> unit) option
     ; getter : 'record -> 'field
@@ -55,17 +56,20 @@ type ('record, 'field : any) t =
 type ('record, 'field : any) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
 let name (Field field) = field.name
+
+[%%template
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
+
 let get (Field field) r = field.getter r
 let fset (Field field) r v = field.fset r v
 let setter (Field field) = field.setter
-
-type ('perm, 'record, 'result) user =
-  { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }
-
 let map (Field field) r ~f = field.fset r (f (field.getter r))
 
 let updater (Field field) =
   match field.setter with
   | None -> None
   | Some setter -> Some (fun r ~f -> setter r (f (field.getter r)))
-;;
+;;]
+
+type ('perm, 'record, 'result) user =
+  { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }

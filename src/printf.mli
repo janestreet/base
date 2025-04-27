@@ -1,3 +1,5 @@
+@@ portable
+
 (** Functions for formatted output.
 
     [fprintf] and related functions format their arguments according to the given format
@@ -7,7 +9,9 @@
 
     Conversion specifications have the following form:
 
-    {[% [flags] [width] [.precision] type]}
+    {[
+      % [flags] [width] [.precision] type
+    ]}
 
     In short, a conversion specification consists in the [%] character, followed by
     optional modifiers and a type which is made of one or two characters.
@@ -15,9 +19,9 @@
     The types and their meanings are:
 
     - [d], [i]: convert an integer argument to signed decimal.
-    - [u], [n], [l], [L], or [N]: convert an integer argument to unsigned
-      decimal. Warning: [n], [l], [L], and [N] are used for [scanf], and should not be used
-      for [printf].
+    - [u], [n], [l], [L], or [N]: convert an integer argument to unsigned decimal.
+      Warning: [n], [l], [L], and [N] are used for [scanf], and should not be used for
+      [printf].
     - [x]: convert an integer argument to unsigned hexadecimal, using lowercase letters.
     - [X]: convert an integer argument to unsigned hexadecimal, using uppercase letters.
     - [o]: convert an integer argument to unsigned octal.
@@ -32,10 +36,11 @@
       [d.ddd e+-dd] (mantissa and exponent).
     - [g] or [G]: convert a floating-point argument to decimal notation, in style [f] or
       [e], [E] (whichever is more compact). Moreover, any trailing zeros are removed from
-      the fractional part of the result and the decimal-point character is removed if there
-      is no fractional part remaining.
+      the fractional part of the result and the decimal-point character is removed if
+      there is no fractional part remaining.
     - [h] or [H]: convert a floating-point argument to hexadecimal notation, in the style
-      [0xh.hhhh e+-dd] (hexadecimal mantissa, exponent in decimal and denotes a power of 2).
+      [0xh.hhhh e+-dd] (hexadecimal mantissa, exponent in decimal and denotes a power of
+      2).
     - [B]: convert a boolean argument to the string true or false
     - [b]: convert a boolean argument (deprecated; do not use in new programs).
     - [ld], [li], [lu], [lx], [lX], [lo]: convert an int32 argument to the format
@@ -47,7 +52,8 @@
     - [a]: user-defined printer. Take two arguments and apply the first one to outchan
       (the current output channel) and to the second argument. The first argument must
       therefore have type [out_channel -> 'b -> unit] and the second ['b]. The output
-      produced by the function is inserted in the output of [fprintf] at the current point.
+      produced by the function is inserted in the output of [fprintf] at the current
+      point.
     - [t]: same as [%a], but take only one argument (with type [out_channel -> unit]) and
       apply it to [outchan].
     - [{ fmt %}]: convert a format string argument to its type digest. The argument must
@@ -79,11 +85,10 @@
     [%.4f] prints a [float] with 4 fractional digits.
 
     The integer in a [width] or [precision] can also be specified as [*], in which case an
-    extra integer argument is taken to specify the corresponding [width] or
-    [precision]. This integer argument precedes immediately the argument to print. For
-    instance, [%.*f] prints a float with as many fractional digits as the value of the
-    argument given before the float.
-*)
+    extra integer argument is taken to specify the corresponding [width] or [precision].
+    This integer argument precedes immediately the argument to print. For instance, [%.*f]
+    prints a float with as many fractional digits as the value of the argument given
+    before the float. *)
 
 open! Import0
 
@@ -112,7 +117,7 @@ val kbprintf
 
 (** {6 Formatting error and exit functions}
 
-    These functions have a polymorphic return type, since they do not return.  Naively,
+    These functions have a polymorphic return type, since they do not return. Naively,
     this doesn't mix well with variadic functions: if you define, say,
 
     {[
@@ -125,15 +130,11 @@ val kbprintf
 
     To mitigate this problem, these functions all take a final unit parameter. These
     rarely arise as formatting positional parameters (they can do with e.g. "%a", but not
-    in a useful way) so they serve as an effective signpost for
-    "end of formatting arguments". *)
+    in a useful way) so they serve as an effective signpost for "end of formatting
+    arguments". *)
 
-(** Raises [Failure].
+(** Raises [Failure]. *)
+val failwithf : ('r, unit, string, unit -> _ @ portable) format4 -> 'r
 
-    *)
-val failwithf : ('r, unit, string, unit -> _) format4 -> 'r
-
-(** Raises [Invalid_arg].
-
-    *)
-val invalid_argf : ('r, unit, string, unit -> _) format4 -> 'r
+(** Raises [Invalid_arg]. *)
+val invalid_argf : ('r, unit, string, unit -> _ @ portable) format4 -> 'r

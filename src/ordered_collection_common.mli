@@ -1,3 +1,5 @@
+@@ portable
+
 (** Functions for ordered collections. *)
 
 open! Import

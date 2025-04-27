@@ -7,11 +7,12 @@ module type T = sig
 
   val zero : t
   val one : t
-  val ( + ) : t -> t -> t
-  val ( lsr ) : t -> int -> t
-  val ( land ) : t -> t -> t
+  val ( + ) : local_ t -> local_ t -> t
+  val ( lsr ) : local_ t -> int -> t
+  val ( land ) : local_ t -> local_ t -> t
   val to_int_exn : t -> int
-  val popcount : t -> int
+  val of_int_exn : int -> t
+  val popcount : t -> t
 end
 
 module Make (Int : T) = struct
@@ -27,8 +28,8 @@ module Make (Int : T) = struct
     Base_quickcheck.Test.run_exn
       (module Int)
       ~f:(fun int ->
-        let expect = popcount_naive int in
-        [%test_result: int] ~expect (Int.popcount int))
+        let expect = popcount_naive int |> Int.of_int_exn in
+        [%test_result: Int.t] ~expect (Int.popcount int))
   ;;
 end
 

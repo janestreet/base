@@ -91,6 +91,7 @@ let%expect_test "String" =
 
       (* eta-expand due to [local_] types *)
       let mem t c = mem t c
+      let append t1 t2 = append t1 t2
 
       (* leave off the [?sep] argument *)
       let concat list = concat list

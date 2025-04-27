@@ -20,13 +20,20 @@ module Uchar = Uchar0
 module Sys = Sys0
 
 module Primitives = struct
-  external get : (bytes[@local_opt]) -> (int[@local_opt]) -> char = "%bytes_safe_get"
-  external length : (bytes[@local_opt]) -> int = "%bytes_length"
+  external get
+    :  (bytes[@local_opt])
+    -> (int[@local_opt])
+    -> char
+    @@ portable
+    = "%bytes_safe_get"
+
+  external length : (bytes[@local_opt]) -> int @@ portable = "%bytes_length"
 
   external unsafe_get
     :  (bytes[@local_opt])
     -> (int[@local_opt])
     -> char
+    @@ portable
     = "%bytes_unsafe_get"
 
   external set
@@ -34,6 +41,7 @@ module Primitives = struct
     -> (int[@local_opt])
     -> (char[@local_opt])
     -> unit
+    @@ portable
     = "%bytes_safe_set"
 
   external unsafe_set
@@ -41,6 +49,7 @@ module Primitives = struct
     -> (int[@local_opt])
     -> (char[@local_opt])
     -> unit
+    @@ portable
     = "%bytes_unsafe_set"
 
   (* [unsafe_blit_string] is not exported in the [stdlib] so we export it here *)
@@ -51,6 +60,7 @@ module Primitives = struct
     -> dst_pos:int
     -> len:int
     -> unit
+    @@ portable
     = "caml_blit_string"
   [@@noalloc]
 
@@ -58,6 +68,7 @@ module Primitives = struct
     :  (bytes[@local_opt])
     -> (int[@local_opt])
     -> int64
+    @@ portable
     = "%caml_bytes_get64u"
 
   external unsafe_set_int64
@@ -65,12 +76,14 @@ module Primitives = struct
     -> (int[@local_opt])
     -> (int64[@local_opt])
     -> unit
+    @@ portable
     = "%caml_bytes_set64u"
 
   external unsafe_get_int32
     :  (bytes[@local_opt])
     -> (int[@local_opt])
     -> int32
+    @@ portable
     = "%caml_bytes_get32u"
 
   external unsafe_set_int32
@@ -78,12 +91,14 @@ module Primitives = struct
     -> (int[@local_opt])
     -> (int32[@local_opt])
     -> unit
+    @@ portable
     = "%caml_bytes_set32u"
 
   external unsafe_get_int16
     :  (bytes[@local_opt])
     -> (int[@local_opt])
     -> int
+    @@ portable
     = "%caml_bytes_get16u"
 
   external unsafe_set_int16
@@ -91,6 +106,7 @@ module Primitives = struct
     -> (int[@local_opt])
     -> (int[@local_opt])
     -> unit
+    @@ portable
     = "%caml_bytes_set16u"
 end
 
@@ -104,19 +120,34 @@ let create = Stdlib.Bytes.create
 
 include struct
   open struct
-    external unsafe_set_uint8 : local_ bytes -> int -> int -> unit = "%bytes_unsafe_set"
+    external unsafe_set_uint8
+      :  local_ bytes
+      -> int
+      -> int
+      -> unit
+      @@ portable
+      = "%bytes_unsafe_set"
 
     external unsafe_set_uint16_ne
       :  local_ bytes
       -> int
       -> int
       -> unit
+      @@ portable
       = "%caml_bytes_set16u"
 
-    external set_int8 : local_ bytes -> int -> int -> unit = "%bytes_safe_set"
-    external set_int32_ne : local_ bytes -> int -> int32 -> unit = "%caml_bytes_set32"
-    external swap16 : int -> int = "%bswap16"
-    external swap32 : int32 -> int32 = "%bswap_int32"
+    external set_int8 : local_ bytes -> int -> int -> unit @@ portable = "%bytes_safe_set"
+
+    external set_int32_ne
+      :  local_ bytes
+      -> int
+      -> int32
+      -> unit
+      @@ portable
+      = "%caml_bytes_set32"
+
+    external swap16 : int -> int @@ portable = "%bswap16"
+    external swap32 : int32 -> int32 @@ portable = "%bswap_int32"
 
     let set_uint8 = set_int8
 
@@ -244,11 +275,15 @@ include struct
     4
   ;;
 
-  let set_uchar_utf_32le = set_utf_32_uchar ~set_int32:set_int32_le
-  let set_uchar_utf_32be = set_utf_32_uchar ~set_int32:set_int32_be
+  let set_uchar_utf_32le (b @ local) i c = set_utf_32_uchar ~set_int32:set_int32_le b i c
+  let set_uchar_utf_32be (b @ local) i c = set_utf_32_uchar ~set_int32:set_int32_be b i c
 end
 
-external unsafe_create_local : int -> local_ bytes = "Base_unsafe_create_local_bytes"
+external unsafe_create_local
+  :  int
+  -> local_ bytes
+  @@ portable
+  = "Base_unsafe_create_local_bytes"
 [@@noalloc]
 
 let create_local len = exclave_
@@ -262,6 +297,7 @@ external unsafe_fill
   -> len:int
   -> char
   -> unit
+  @@ portable
   = "caml_fill_bytes"
 [@@noalloc]
 
@@ -273,13 +309,26 @@ let fill (local_ t) ~pos ~len c =
 
 let make = Stdlib.Bytes.make
 let empty = Stdlib.Bytes.empty
+let get_empty () = Portability_hacks.magic_uncontended__promise_deeply_immutable empty
 
 let map (local_ t) ~(local_ f : _ -> _) =
   let l = length t in
   if l = 0
-  then empty
+  then get_empty ()
   else (
     let r = create l in
+    for i = 0 to l - 1 do
+      unsafe_set r i (f (unsafe_get t i))
+    done;
+    r)
+;;
+
+let map__stack (local_ t) ~(local_ f : _ -> _) = exclave_
+  let l = length t in
+  if l = 0
+  then get_empty ()
+  else (
+    let r = create_local l in
     for i = 0 to l - 1 do
       unsafe_set r i (f (unsafe_get t i))
     done;
@@ -289,7 +338,7 @@ let map (local_ t) ~(local_ f : _ -> _) =
 let mapi (local_ t) ~(local_ f : _ -> _ -> _) =
   let l = length t in
   if l = 0
-  then empty
+  then get_empty ()
   else (
     let r = create l in
     for i = 0 to l - 1 do
@@ -307,6 +356,7 @@ external unsafe_blit
   -> dst_pos:int
   -> len:int
   -> unit
+  @@ portable
   = "caml_blit_bytes"
 [@@noalloc]
 
@@ -316,11 +366,13 @@ let of_string = Stdlib.Bytes.of_string
 external unsafe_to_string
   :  no_mutation_while_string_reachable:(bytes[@local_opt])
   -> (string[@local_opt])
+  @@ portable
   = "%bytes_to_string"
 
 external unsafe_of_string_promise_no_mutation
   :  (string[@local_opt])
   -> (bytes[@local_opt])
+  @@ portable
   = "%bytes_of_string"
 
 let copy (local_ src) =
