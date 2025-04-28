@@ -9,7 +9,7 @@ module type Arg = sig
   val length : _ t -> int
 end
 
-module Make_gen (T : Arg) = struct
+module%template.portable Make_gen (T : Arg) = struct
   let get = T.get
   let length = T.length
 
@@ -22,14 +22,16 @@ module Make_gen (T : Arg) = struct
   ;;
 end
 
-module Make (T : Indexable) = Make_gen (struct
+module%template.portable [@modality p] Make (T : Indexable) =
+Make_gen [@modality p] (struct
     include T
 
     type 'a elt = T.elt
     type 'a t = T.t
   end)
 
-module Make1 (T : Indexable1) = Make_gen (struct
+module%template.portable [@modality p] Make1 (T : Indexable1) =
+Make_gen [@modality p] (struct
     type 'a elt = 'a
     type 'a t = 'a T.t
 

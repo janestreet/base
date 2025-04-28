@@ -25,6 +25,8 @@ external globalize_array' : 'a array -> 'a array = "caml_obj_dup"
 
 let globalize_array _ a = globalize_array' a
 
+external globalize_floatarray : floatarray -> floatarray = "caml_obj_dup"
+
 let[@tail_mod_cons] rec globalize_list f = function
   | [] -> []
   | x :: xs -> f x :: (globalize_list [@tailcall]) f xs

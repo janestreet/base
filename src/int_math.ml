@@ -18,7 +18,9 @@ let int_pow base exponent =
   if exponent < 0 then negative_exponent ();
   if abs base > 1
      && (exponent > 63
-         || abs base > Pow_overflow_bounds.int_positive_overflow_bounds.(exponent))
+         || abs base
+            > (Portability_hacks.Cross.Contended.(cross (iarray infer))
+                 Pow_overflow_bounds.int_positive_overflow_bounds).:(exponent))
   then overflow ();
   int_math_int_pow base exponent
 ;;
@@ -29,6 +31,9 @@ module Int64_with_comparisons = struct
   external ( < ) : (int64[@local_opt]) -> (int64[@local_opt]) -> bool = "%lessthan"
   external ( > ) : (int64[@local_opt]) -> (int64[@local_opt]) -> bool = "%greaterthan"
   external ( >= ) : (int64[@local_opt]) -> (int64[@local_opt]) -> bool = "%greaterequal"
+  external neg : (int64[@local_opt]) -> (int64[@local_opt]) = "%int64_neg"
+
+  let abs_local n = if n >= 0L then n else neg n
 end
 
 (* we don't do [abs] in int64 case to avoid allocation *)
@@ -39,10 +44,14 @@ let int64_pow base exponent =
      && (exponent > 63L
          || (base >= 0L
              && base
-                > Pow_overflow_bounds.int64_positive_overflow_bounds.(to_int exponent))
+                > (Portability_hacks.Cross.Contended.(cross (iarray infer))
+                     Pow_overflow_bounds.int64_positive_overflow_bounds).:(to_int exponent)
+            )
          || (base < 0L
              && base
-                < Pow_overflow_bounds.int64_negative_overflow_bounds.(to_int exponent)))
+                < (Portability_hacks.Cross.Contended.(cross (iarray infer))
+                     Pow_overflow_bounds.int64_negative_overflow_bounds).:(to_int exponent)
+            ))
   then overflow ();
   int_math_int64_pow base exponent
 ;;
@@ -50,10 +59,12 @@ let int64_pow base exponent =
 let int63_pow_on_int64 base exponent =
   let open Int64_with_comparisons in
   if exponent < 0L then negative_exponent ();
-  if abs base > 1L
+  if abs_local base > 1L
      && (exponent > 63L
-         || abs base
-            > Pow_overflow_bounds.int63_on_int64_positive_overflow_bounds.(to_int exponent)
+         || abs_local base
+            > (Portability_hacks.Cross.Contended.(cross (iarray infer))
+                 Pow_overflow_bounds.int63_on_int64_positive_overflow_bounds).:(to_int
+                                                                                  exponent)
         )
   then overflow ();
   int_math_int64_pow base exponent
@@ -62,7 +73,9 @@ let int63_pow_on_int64 base exponent =
 module type Make_arg = sig
   type t
 
-  include Floatable.S with type t := t
+  val globalize : t -> t
+
+  include Floatable.S_local_input with type t := t
   include Stringable.S with type t := t
 
   val ( + ) : t -> t -> t
@@ -70,9 +83,12 @@ module type Make_arg = sig
   val ( * ) : t -> t -> t
   val ( / ) : t -> t -> t
   val ( ~- ) : t -> t
-
-  include Comparisons.Infix with type t := t
-
+  val ( <> ) : t -> t -> bool
+  val ( <= ) : t -> t -> bool
+  val ( >= ) : t -> t -> bool
+  val ( = ) : t -> t -> bool
+  val ( < ) : t -> t -> bool
+  val ( > ) : t -> t -> bool
   val abs : t -> t
   val neg : t -> t
   val zero : t
@@ -88,8 +104,8 @@ module Make (X : Make_arg) = struct
     then
       invalid_argf
         "%s %% %s in core_int.ml: modulus should be positive"
-        (to_string x)
-        (to_string y)
+        (to_string (globalize x))
+        (to_string (globalize y))
         ();
     let rval = X.rem x y in
     if rval < zero then rval + y else rval
@@ -102,8 +118,8 @@ module Make (X : Make_arg) = struct
     then
       invalid_argf
         "%s /%% %s in core_int.ml: divisor should be positive"
-        (to_string x)
-        (to_string y)
+        (to_string (globalize x))
+        (to_string (globalize y))
         ();
     if x < zero then ((x + one) / y) - one else x / y
   ;;
@@ -115,7 +131,12 @@ module Make (X : Make_arg) = struct
 
   let round_up i ~to_multiple_of:modulus =
     let remainder = i % modulus in
-    if remainder = zero then i else i + modulus - remainder
+    if remainder = zero
+    then
+      (* [+ zero] is essentially [globalize], but we suspect the compiler can optimize it
+         away more readily *)
+      i + zero
+    else i + modulus - remainder
   ;;
 
   let round_towards_zero i ~to_multiple_of =

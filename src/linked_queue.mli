@@ -8,7 +8,7 @@ include Queue_intf.S with type 'a t = 'a Stdlib.Queue.t (** @inline *)
 val create : unit -> _ t
 
 (** [transfer ~src ~dst] adds all of the elements of [src] to the end of [dst], then
-    clears [src].  It is equivalent to the sequence:
+    clears [src]. It is equivalent to the sequence:
 
     {[
       iter ~src ~f:(enqueue dst);

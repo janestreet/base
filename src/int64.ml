@@ -1,75 +1,74 @@
 open! Import
 open! Stdlib.Int64
+module Sexp = Sexp0
 
 module T = struct
-  type t = int64 [@@deriving_inline globalize, hash, sexp, sexp_grammar]
-
-  let (globalize : t -> t) = (globalize_int64 : t -> t)
-
-  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    hash_fold_int64
-
-  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_int64 in
-    fun x -> func x
-  ;;
-
-  let t_of_sexp = (int64_of_sexp : Sexplib0.Sexp.t -> t)
-  let sexp_of_t = (sexp_of_int64 : t -> Sexplib0.Sexp.t)
-  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = int64_sexp_grammar
-
-  [@@@end]
+  type t = int64 [@@deriving globalize, hash, sexp ~localize, sexp_grammar]
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = Int64_replace_polymorphic_compare.compare
-  let to_string = to_string
-  let of_string = of_string
-  let of_string_opt = of_string_opt
+
+  external format : string -> int64 -> string = "caml_int64_format"
+
+  let to_string n = format "%d" n
+
+  external of_string
+    :  string
+    -> (int64[@unboxed])
+    = "caml_int64_of_string" "caml_dummy_int64_of_string_unboxed"
+
+  let of_string_opt s =
+    try Some (of_string s) with
+    | Failure _ -> None
+  ;;
 end
 
 include T
-include Comparator.Make (T)
+
+include%template Comparator.Make [@modality portable] (T)
 
 let num_bits = 64
 let float_lower_bound = Float0.lower_bound_for_int num_bits
 let float_upper_bound = Float0.upper_bound_for_int num_bits
 
 external float_of_bits
-  :  (int64[@local_opt])
+  :  t
   -> float
   = "caml_int64_float_of_bits" "caml_int64_float_of_bits_unboxed"
 [@@unboxed] [@@noalloc]
 
 external bits_of_float
-  :  (float[@local_opt])
-  -> int64
+  :  float
+  -> t
   = "caml_int64_bits_of_float" "caml_int64_bits_of_float_unboxed"
 [@@unboxed] [@@noalloc]
 
-let shift_right_logical = shift_right_logical
-let shift_right = shift_right
-let shift_left = shift_left
-let bit_not = lognot
-let bit_xor = logxor
-let bit_or = logor
-let bit_and = logand
+external shift_right_logical : t -> int -> t = "%int64_lsr"
+external shift_right : t -> int -> t = "%int64_asr"
+external shift_left : t -> int -> t = "%int64_lsl"
+external bit_xor : t -> t -> t = "%int64_xor"
+external bit_or : t -> t -> t = "%int64_or"
+external bit_and : t -> t -> t = "%int64_and"
+
+let bit_not n = bit_xor n (-1L)
 let min_value = min_int
 let max_value = max_int
 let abs = abs
-let pred = pred
-let succ = succ
+let abs_local n = if Int64_replace_polymorphic_compare.(n >= 0L) then n else neg n
 let pow = Int_math.Private.int64_pow
-let rem = rem
+
+external rem : t -> t -> t = "%int64_mod"
+
 let minus_one = minus_one
 let one = one
 let zero = zero
 
-external to_float : int64 -> float = "caml_int64_to_float" "caml_int64_to_float_unboxed"
+external to_float : t -> float = "caml_int64_to_float" "caml_int64_to_float_unboxed"
 [@@unboxed] [@@noalloc]
 
 external of_float_unchecked
   :  float
-  -> int64
+  -> t
   = "caml_int64_of_float" "caml_int64_of_float_unboxed"
 [@@unboxed] [@@noalloc]
 
@@ -88,21 +87,21 @@ let of_float f =
    boxing the int64s more often. *)
 let ( ** ) = pow
 
-external bswap64 : (t[@local_opt]) -> (t[@local_opt]) = "%bswap_int64"
+external bswap64 : t -> (t[@local_opt]) = "%bswap_int64"
 
-let[@inline always] bswap16 x = Stdlib.Int64.shift_right_logical (bswap64 x) 48
+let[@inline always] bswap16 x = shift_right_logical (bswap64 x) 48
 
 let[@inline always] bswap32 x =
   (* This is strictly better than coercing to an int32 to perform byteswap. Coercing
      from an int32 will add unnecessary shift operations to sign extend the number
      appropriately.
   *)
-  Stdlib.Int64.shift_right_logical (bswap64 x) 32
+  shift_right_logical (bswap64 x) 32
 ;;
 
-let[@inline always] bswap48 x = Stdlib.Int64.shift_right_logical (bswap64 x) 16
+let[@inline always] bswap48 x = shift_right_logical (bswap64 x) 16
 
-include Comparable.With_zero (struct
+include%template Comparable.With_zero [@modality portable] (struct
     include T
 
     let zero = zero
@@ -137,50 +136,52 @@ let decr r = r := sub !r one
 
 external of_int64 : (t[@local_opt]) -> (t[@local_opt]) = "%identity"
 
-let of_int64_exn = of_int64
 let to_int64 t = t
+let of_int64_exn t = t
+let to_local_int64 t = t
+let of_local_int64_exn t = t
 let popcount = Popcount.int64_popcount
 
 module Conv = Int_conversions
 
-external to_int_trunc : (t[@local_opt]) -> int = "%int64_to_int"
-external to_int32_trunc : (int64[@local_opt]) -> (int32[@local_opt]) = "%int64_to_int32"
-
-external to_nativeint_trunc
-  :  (int64[@local_opt])
-  -> (nativeint[@local_opt])
-  = "%int64_to_nativeint"
-
-external of_int : (int[@local_opt]) -> (int64[@local_opt]) = "%int64_of_int"
-external of_int32 : (int32[@local_opt]) -> (int64[@local_opt]) = "%int64_of_int32"
+external to_int_trunc : t -> int = "%int64_to_int"
+external to_int32_trunc : t -> (int32[@local_opt]) = "%int64_to_int32"
+external to_nativeint_trunc : t -> (nativeint[@local_opt]) = "%int64_to_nativeint"
+external of_int : int -> (t[@local_opt]) = "%int64_of_int"
+external of_int32 : int32 -> (t[@local_opt]) = "%int64_of_int32"
 
 let of_int_exn = of_int
 let to_int = Conv.int64_to_int
 let to_int_exn = Conv.int64_to_int_exn
 let of_int32_exn = of_int32
+let of_local_int32_exn = of_int32
 let to_int32 = Conv.int64_to_int32
-let to_int32_exn = Conv.int64_to_int32_exn
+let to_local_int32_exn = Conv.int64_to_int32_exn
+let to_int32_exn t = globalize_int32 (to_local_int32_exn t) [@nontail]
 
-external of_nativeint : (nativeint[@local_opt]) -> (t[@local_opt]) = "%int64_of_nativeint"
+external of_nativeint : nativeint -> (t[@local_opt]) = "%int64_of_nativeint"
 
 let of_nativeint_exn = of_nativeint
+let of_local_nativeint_exn = of_nativeint
 let to_nativeint = Conv.int64_to_nativeint
-let to_nativeint_exn = Conv.int64_to_nativeint_exn
+let to_local_nativeint_exn = Conv.int64_to_nativeint_exn
+let to_nativeint_exn t = globalize_nativeint (to_local_nativeint_exn t) [@nontail]
 
 module Pre_O = struct
-  external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_add"
-  external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_sub"
-  external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_mul"
-  external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_div"
-  external ( ~- ) : (t[@local_opt]) -> (t[@local_opt]) = "%int64_neg"
+  external ( + ) : t -> t -> (t[@local_opt]) = "%int64_add"
+  external ( - ) : t -> t -> (t[@local_opt]) = "%int64_sub"
+  external ( * ) : t -> t -> (t[@local_opt]) = "%int64_mul"
+  external ( / ) : t -> t -> (t[@local_opt]) = "%int64_div"
+  external ( ~- ) : t -> (t[@local_opt]) = "%int64_neg"
 
   let ( ** ) = ( ** )
 
   include Int64_replace_polymorphic_compare
 
   let abs = abs
+  let abs_local = abs_local
 
-  external neg : (t[@local_opt]) -> (t[@local_opt]) = "%int64_neg"
+  external neg : t -> (t[@local_opt]) = "%int64_neg"
 
   let zero = zero
   let of_int_exn = of_int_exn
@@ -192,6 +193,8 @@ module O = struct
   include Int_math.Make (struct
       type nonrec t = t
 
+      let globalize = globalize
+
       include Pre_O
 
       let rem = rem
@@ -201,77 +204,59 @@ module O = struct
       let to_string = T.to_string
     end)
 
-  external ( land ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_and"
-  external ( lor ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_or"
-  external ( lxor ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%int64_xor"
+  external ( land ) : t -> t -> (t[@local_opt]) = "%int64_and"
+  external ( lor ) : t -> t -> (t[@local_opt]) = "%int64_or"
+  external ( lxor ) : t -> t -> (t[@local_opt]) = "%int64_xor"
 
   let lnot = bit_not
 
-  external ( lsl )
-    :  (t[@local_opt])
-    -> (int[@local_opt])
-    -> (t[@local_opt])
-    = "%int64_lsl"
-
-  external ( asr )
-    :  (t[@local_opt])
-    -> (int[@local_opt])
-    -> (t[@local_opt])
-    = "%int64_asr"
-
-  external ( lsr )
-    :  (t[@local_opt])
-    -> (int[@local_opt])
-    -> (t[@local_opt])
-    = "%int64_lsr"
+  external ( lsl ) : t -> int -> (t[@local_opt]) = "%int64_lsl"
+  external ( asr ) : t -> int -> (t[@local_opt]) = "%int64_asr"
+  external ( lsr ) : t -> int -> (t[@local_opt]) = "%int64_lsr"
 end
 
 include O
 
+let pred n = n - 1L
+let succ n = n + 1L
+
 module Pow2 = struct
-  open! Import
   open Int64_replace_polymorphic_compare
 
-  open struct
-    let raise_s = Error.raise_s
+  let raise_s = Error.raise_s
 
-    let non_positive_argument () =
-      Printf.invalid_argf "argument must be strictly positive" ()
-    ;;
-
-    let ( lor ) = Stdlib.Int64.logor
-    let ( lsr ) = Stdlib.Int64.shift_right_logical
-    let ( land ) = Stdlib.Int64.logand
-  end
+  let non_positive_argument () =
+    Printf.invalid_argf "argument must be strictly positive" ()
+  ;;
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 x =
-    if x <= Stdlib.Int64.zero then non_positive_argument ();
-    let x = Stdlib.Int64.pred x in
+    if x <= 0L then non_positive_argument ();
+    let x = x - 1L in
     let x = x lor (x lsr 1) in
     let x = x lor (x lsr 2) in
     let x = x lor (x lsr 4) in
     let x = x lor (x lsr 8) in
     let x = x lor (x lsr 16) in
     let x = x lor (x lsr 32) in
-    Stdlib.Int64.succ x
+    x + 1L
   ;;
 
   (** "floor power of 2" - Largest power of 2 less than or equal to x. *)
   let floor_pow2 x =
-    if x <= Stdlib.Int64.zero then non_positive_argument ();
+    if x <= 0L then non_positive_argument ();
     let x = x lor (x lsr 1) in
     let x = x lor (x lsr 2) in
     let x = x lor (x lsr 4) in
     let x = x lor (x lsr 8) in
     let x = x lor (x lsr 16) in
     let x = x lor (x lsr 32) in
-    Stdlib.Int64.sub x (x lsr 1)
+    x - (x lsr 1)
   ;;
 
   let is_pow2 x =
-    if x <= Stdlib.Int64.zero then non_positive_argument ();
-    x land Stdlib.Int64.pred x = Stdlib.Int64.zero
+    if x <= 0L then non_positive_argument ();
+    x land (x - 1L) = 0L
   ;;
 
   let clz = Ocaml_intrinsics_kernel.Int64.count_leading_zeros
@@ -279,21 +264,28 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if i <= Stdlib.Int64.zero
+    if i <= 0L
     then
       raise_s
-        (Sexp.message "[Int64.floor_log2] got invalid input" [ "", sexp_of_int64 i ]);
-    num_bits - 1 - clz i
+        (Sexp.message
+           "[Int64.floor_log2] got invalid input"
+           [ "", sexp_of_int64 (globalize i) ]);
+    Int.O.(num_bits - 1 - (clz i |> to_int_trunc))
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if Poly.( <= ) i Stdlib.Int64.zero
+    if i <= 0L
     then
-      raise_s (Sexp.message "[Int64.ceil_log2] got invalid input" [ "", sexp_of_int64 i ]);
-    if Stdlib.Int64.equal i Stdlib.Int64.one
+      raise_s
+        (Sexp.message
+           "[Int64.ceil_log2] got invalid input"
+           [ "", sexp_of_int64 (globalize i) ]);
+    if i = 1L
     then 0
-    else num_bits - clz (Stdlib.Int64.pred i)
+    else (
+      let i = i - 1L in
+      Int.O.(num_bits - (clz i |> to_int_trunc)))
   ;;
 end
 
@@ -301,46 +293,18 @@ include Pow2
 include Int_string_conversions.Make (T)
 
 include Int_string_conversions.Make_hex (struct
-    type t = int64 [@@deriving_inline compare ~localize, hash]
-
-    let compare__local = (compare_int64__local : t -> t -> int)
-    let compare = (fun a b -> compare__local a b : t -> t -> int)
-
-    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      hash_fold_int64
-
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_int64 in
-      fun x -> func x
-    ;;
-
-    [@@@end]
+    type t = int64 [@@deriving compare ~localize, hash]
 
     let zero = zero
     let neg = neg
     let ( < ) = ( < )
-    let to_string i = Printf.sprintf "%Lx" i
+    let to_string i = format "%Lx" i
     let of_string s = Stdlib.Scanf.sscanf s "%Lx" Fn.id
     let module_name = "Base.Int64.Hex"
   end)
 
 include Int_string_conversions.Make_binary (struct
-    type t = int64 [@@deriving_inline compare ~localize, equal ~localize, hash]
-
-    let compare__local = (compare_int64__local : t -> t -> int)
-    let compare = (fun a b -> compare__local a b : t -> t -> int)
-    let equal__local = (equal_int64__local : t -> t -> bool)
-    let equal = (fun a b -> equal__local a b : t -> t -> bool)
-
-    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      hash_fold_int64
-
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_int64 in
-      fun x -> func x
-    ;;
-
-    [@@@end]
+    type t = int64 [@@deriving compare ~localize, equal ~localize, hash]
 
     let ( land ) = ( land )
     let ( lsr ) = ( lsr )
@@ -351,7 +315,7 @@ include Int_string_conversions.Make_binary (struct
     let zero = zero
   end)
 
-include Pretty_printer.Register (struct
+include%template Pretty_printer.Register [@modality portable] (struct
     type nonrec t = t
 
     let to_string = to_string

@@ -4,7 +4,7 @@
 open! Import
 open! Sexplib0.Sexpable
 
-module Of_sexpable
+module%template.portable Of_sexpable
     (Sexpable : S)
     (M : sig
        type t
@@ -13,7 +13,7 @@ module Of_sexpable
        val of_sexpable : Sexpable.t -> t
      end) : S with type t := M.t
 
-module Of_sexpable1
+module%template.portable Of_sexpable1
     (Sexpable : S1)
     (M : sig
        type 'a t
@@ -22,7 +22,7 @@ module Of_sexpable1
        val of_sexpable : 'a Sexpable.t -> 'a t
      end) : S1 with type 'a t := 'a M.t
 
-module Of_sexpable2
+module%template.portable Of_sexpable2
     (Sexpable : S2)
     (M : sig
        type ('a, 'b) t
@@ -31,7 +31,7 @@ module Of_sexpable2
        val of_sexpable : ('a, 'b) Sexpable.t -> ('a, 'b) t
      end) : S2 with type ('a, 'b) t := ('a, 'b) M.t
 
-module Of_sexpable3
+module%template.portable Of_sexpable3
     (Sexpable : S3)
     (M : sig
        type ('a, 'b, 'c) t
@@ -40,20 +40,15 @@ module Of_sexpable3
        val of_sexpable : ('a, 'b, 'c) Sexpable.t -> ('a, 'b, 'c) t
      end) : S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t
 
-module Of_stringable
+module%template.portable Of_stringable
     (M : Stringable.S) : sig
-    type t [@@deriving_inline sexp_grammar]
-
-    val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-
-    [@@@end]
+    type t [@@deriving sexp_grammar]
 
     include S with type t := t
   end
   with type t := M.t
 
 (** New code should use the [[@@deriving sexp]] syntax directly. These module types ([S],
-    [S1], [S2], and [S3]) are exported for backwards compatibility only.
-*)
+    [S1], [S2], and [S3]) are exported for backwards compatibility only. *)
 include module type of Sexplib0.Sexpable
 (** @inline *)

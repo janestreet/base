@@ -4,66 +4,36 @@
    The only difference being the lowest bit (immediate bit) set to 1. *)
 
 open! Import
+module Sexp = Sexp0
 include Int64_replace_polymorphic_compare
-
-module T0 = struct
-  module T = struct
-    type t = int64
-    [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
-
-    let compare__local = (compare_int64__local : t -> t -> int)
-    let compare = (fun a b -> compare__local a b : t -> t -> int)
-    let (globalize : t -> t) = (globalize_int64 : t -> t)
-
-    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      hash_fold_int64
-
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = hash_int64 in
-      fun x -> func x
-    ;;
-
-    let t_of_sexp = (int64_of_sexp : Sexplib0.Sexp.t -> t)
-    let sexp_of_t = (sexp_of_int64 : t -> Sexplib0.Sexp.t)
-    let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = int64_sexp_grammar
-
-    [@@@end]
-
-    let hashable : t Hashable.t = { hash; compare; sexp_of_t }
-  end
-
-  include T
-  include Comparator.Make (T)
-end
-
 module Conv = Int_conversions
 
 module W : sig
-  include module type of struct
-    include T0
-  end
-
   type t = int64
+  [@@deriving compare ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
-  val wrap_exn : Stdlib.Int64.t -> t
-  val wrap_modulo : Stdlib.Int64.t -> t
-  val unwrap : t -> Stdlib.Int64.t
+  include Comparator.S with type t := t
+
+  val wrap_exn : int64 -> t
+  val wrap_modulo : int64 -> t
+  val unwrap : t -> int64
 
   (** Returns a non-negative int64 that is equal to the input int63 modulo 2^63. *)
-  val unwrap_unsigned : t -> Stdlib.Int64.t
+  val unwrap_unsigned : t -> int64
 
   val invariant : t -> unit
   val add : t -> t -> t
   val sub : t -> t -> t
   val neg : t -> t
   val abs : t -> t
+  val abs_local : t -> t
   val succ : t -> t
   val pred : t -> t
   val mul : t -> t -> t
   val pow : t -> t -> t
   val div : t -> t -> t
   val rem : t -> t -> t
-  val popcount : t -> int
+  val popcount : t -> t
   val bit_not : t -> t
   val bit_xor : t -> t -> t
   val bit_or : t -> t -> t
@@ -73,10 +43,10 @@ module W : sig
   val shift_right_logical : t -> int -> t
   val min_value : t
   val max_value : t
-  val to_int64 : t -> Stdlib.Int64.t
-  val of_int64 : Stdlib.Int64.t -> t option
-  val of_int64_exn : Stdlib.Int64.t -> t
-  val of_int64_trunc : Stdlib.Int64.t -> t
+  val to_int64 : t -> int64
+  val of_int64 : int64 -> t option
+  val of_int64_exn : int64 -> t
+  val of_int64_trunc : int64 -> t
   val compare : t -> t -> int
   val compare__local : t -> t -> int
   val equal__local : t -> t -> bool
@@ -85,17 +55,21 @@ module W : sig
   val ceil_log2 : t -> int
   val floor_log2 : t -> int
   val is_pow2 : t -> bool
-  val clz : t -> int
-  val ctz : t -> int
+  val clz : t -> t
+  val ctz : t -> t
 end = struct
-  include T0
+  module T = struct
+    type t = int64 [@@deriving compare ~localize, globalize, hash, sexp_of, sexp_grammar]
+  end
 
-  type t = int64
+  include T
+
+  include%template Comparator.Make [@modality portable] (T)
 
   let wrap_exn x =
     (* Raises if the int64 value does not fit on int63. *)
     Conv.int64_fit_on_int63_exn x;
-    Stdlib.Int64.mul (globalize x) 2L
+    Stdlib.Int64.mul x 2L
   ;;
 
   let wrap x =
@@ -105,7 +79,7 @@ end = struct
   ;;
 
   let wrap_modulo x = Stdlib.Int64.mul (globalize x) 2L
-  let unwrap x = Stdlib.Int64.shift_right (globalize x) 1
+  let unwrap x = Stdlib.Int64.shift_right x 1
   let unwrap_unsigned x = Stdlib.Int64.shift_right_logical (globalize x) 1
 
   (* This does not use wrap or unwrap to avoid generating exceptions in the case of
@@ -115,74 +89,59 @@ end = struct
   ;;
 
   let mask = 0xffff_ffff_ffff_fffeL
-  let m x = Stdlib.Int64.logand x mask
+  let m x = Int64.O.(x land mask)
   let invariant t = assert (m t = t)
-  let add x y = Stdlib.Int64.add x y
-  let sub x y = Stdlib.Int64.sub x y
-  let neg x = Stdlib.Int64.neg x
-  let abs x = Stdlib.Int64.abs x
-  let one = wrap_exn 1L
+  let add = Int64.( + )
+  let sub = Int64.( - )
+  let neg = Int64.neg
+  let abs = Int64.abs
+  let abs_local = Int64.abs_local
+  let one = globalize (wrap_exn 1L)
   let succ a = add a one
   let pred a = sub a one
   let min_value = m Stdlib.Int64.min_int
   let max_value = m Stdlib.Int64.max_int
-  let bit_not x = m (Stdlib.Int64.lognot x)
-  let bit_and = Stdlib.Int64.logand
-  let bit_xor = Stdlib.Int64.logxor
-  let bit_or = Stdlib.Int64.logor
-  let shift_left x i = Stdlib.Int64.shift_left x i
-  let shift_right x i = m (Stdlib.Int64.shift_right x i)
-  let shift_right_logical x i = m (Stdlib.Int64.shift_right_logical x i)
+  let bit_not x = m (Int64.lnot x)
+  let bit_and = Int64.bit_and
+  let bit_xor = Int64.bit_xor
+  let bit_or = Int64.bit_or
+  let shift_left = Int64.shift_left
+  let shift_right x i = m Int64.O.(x asr i) [@nontail]
+  let shift_right_logical x i = m Int64.O.(x lsr i) [@nontail]
   let pow = f2 Int_math.Private.int63_pow_on_int64
-  let mul a b = Stdlib.Int64.mul a (Stdlib.Int64.shift_right b 1)
-  let div a b = wrap_modulo (Stdlib.Int64.div a b)
-  let rem a b = Stdlib.Int64.rem a b
-  let popcount x = Popcount.int64_popcount x
-  let to_int64 t = unwrap t
-  let of_int64 t = wrap t
-  let of_int64_exn t = wrap_exn t
+  let mul a b = Int64.O.(a * (b asr 1))
+  let div a b = wrap_modulo Int64.O.(a / b)
+  let rem = Int64.rem
+  let popcount x = Popcount.int64_popcount x |> wrap_modulo
+  let to_int64 = unwrap
+  let of_int64 = wrap
+  let of_int64_exn = wrap_exn
   let of_int64_trunc t = wrap_modulo t
-  let t_of_sexp x = wrap_exn (int64_of_sexp x)
-  let sexp_of_t x = sexp_of_int64 (unwrap x)
+  let t_of_sexp x = globalize (wrap_exn (int64_of_sexp x)) [@nontail]
+  let sexp_of_t x = sexp_of_int64 (globalize_int64 (unwrap x))
+  let sexp_of_t__local x = sexp_of_int64__local (unwrap x)
   let compare (x : t) y = compare x y
   let compare__local (x : t) y = compare__local x y
   let equal__local (x : t) y = equal__local x y
-  let is_pow2 x = Int64.is_pow2 (unwrap x)
+  let is_pow2 x = Int64.is_pow2 (unwrap x) [@nontail]
 
   let clz x =
     (* We run Int64.clz directly on the wrapped int63 value. This is correct because the
        bits of the int63_emul are left-aligned in the Int64. *)
-    Int64.clz x
+    Int64.clz x |> wrap_modulo
   ;;
 
-  let ctz x = Int64.ctz (unwrap x)
-  let floor_pow2 x = Int64.floor_pow2 (unwrap x) |> wrap_exn
-  let ceil_pow2 x = Int64.floor_pow2 (unwrap x) |> wrap_exn
-  let floor_log2 x = Int64.floor_log2 (unwrap x)
-  let ceil_log2 x = Int64.ceil_log2 (unwrap x)
+  let ctz x = (Int64.ctz (unwrap x) |> wrap_modulo) [@nontail]
+  let floor_pow2 x = globalize (wrap_exn (Int64.floor_pow2 (unwrap x))) [@nontail]
+  let ceil_pow2 x = globalize (wrap_exn (Int64.floor_pow2 (unwrap x))) [@nontail]
+  let floor_log2 x = Int64.floor_log2 (unwrap x) [@nontail]
+  let ceil_log2 x = Int64.ceil_log2 (unwrap x) [@nontail]
 end
 
 open W
 
 module T = struct
-  type t = W.t [@@deriving_inline globalize, hash, sexp, sexp_grammar]
-
-  let (globalize : t -> t) = (W.globalize : t -> t)
-
-  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    W.hash_fold_t
-
-  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = W.hash in
-    fun x -> func x
-  ;;
-
-  let t_of_sexp = (W.t_of_sexp : Sexplib0.Sexp.t -> t)
-  let sexp_of_t = (W.sexp_of_t : t -> Sexplib0.Sexp.t)
-  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = W.t_sexp_grammar
-
-  [@@@end]
-
+  type t = W.t [@@deriving globalize, hash, sexp ~localize, sexp_grammar]
   type comparator_witness = W.comparator_witness
 
   let comparator = W.comparator
@@ -195,7 +154,10 @@ module T = struct
   let _ = hash
   let hash (x : t) = Stdlib.Hashtbl.hash x
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
-  let invalid_str x = Printf.failwithf "Int63.of_string: invalid input %S" x ()
+
+  let invalid_str x =
+    Printf.failwithf "Int63.of_string: invalid input %S" (globalize_string x) ()
+  ;;
 
   (*
      "sign" refers to whether the number starts with a '-'
@@ -236,19 +198,19 @@ module T = struct
     else sign, true
   ;;
 
-  let to_string x = Stdlib.Int64.to_string (unwrap x)
+  let to_string x = Stdlib.Int64.to_string (globalize_int64 (unwrap x))
 
   let of_string_raw str =
     let sign, signedness = sign_and_signedness str in
     if signedness
-    then of_int64_exn (Stdlib.Int64.of_string str)
+    then globalize (of_int64_exn (Int64.of_string str)) [@nontail]
     else (
       let pos_str =
         match sign with
-        | `Neg -> String.sub str ~pos:1 ~len:(String.length str - 1)
+        | `Neg -> String.unsafe_sub str ~pos:1 ~len:(String.length str - 1)
         | `Pos -> str
       in
-      let int64 = Stdlib.Int64.of_string pos_str in
+      let int64 = Int64.of_string pos_str in
       (* unsigned 63-bit int must parse as a positive signed 64-bit int *)
       if Int64_replace_polymorphic_compare.( < ) int64 0L then invalid_str str;
       let int63 = wrap_modulo int64 in
@@ -287,6 +249,7 @@ let bit_or = bit_or
 let bit_and = bit_and
 let popcount = popcount
 let abs = abs
+let abs_local = abs_local
 let pred = pred
 let succ = succ
 let pow = pow
@@ -294,9 +257,9 @@ let rem = rem
 let neg = neg
 let max_value = max_value
 let min_value = min_value
-let minus_one = wrap_exn Stdlib.Int64.minus_one
-let one = wrap_exn Stdlib.Int64.one
-let zero = wrap_exn Stdlib.Int64.zero
+let minus_one = globalize (wrap_exn Stdlib.Int64.minus_one)
+let one = globalize (wrap_exn Stdlib.Int64.one)
+let zero = globalize (wrap_exn Stdlib.Int64.zero)
 let is_pow2 = is_pow2
 let floor_pow2 = floor_pow2
 let ceil_pow2 = ceil_pow2
@@ -304,7 +267,7 @@ let floor_log2 = floor_log2
 let ceil_log2 = ceil_log2
 let clz = clz
 let ctz = ctz
-let to_float x = Int64.to_float (unwrap x)
+let to_float x = Int64.to_float (unwrap x) [@nontail]
 let of_float_unchecked x = wrap_modulo (Int64.of_float_unchecked x)
 
 let of_float t =
@@ -319,11 +282,13 @@ let of_float t =
 ;;
 
 let of_int64 = of_int64
-let of_int64_exn = of_int64_exn
+let of_local_int64_exn = of_int64_exn
+let of_int64_exn x = globalize (of_local_int64_exn x) [@nontail]
 let of_int64_trunc = of_int64_trunc
-let to_int64 = to_int64
+let to_local_int64 = to_int64
+let to_int64 x = globalize_int64 (to_local_int64 x) [@nontail]
 
-include Comparable.With_zero (struct
+include%template Comparable.With_zero [@modality portable] (struct
     include T
 
     let zero = zero
@@ -357,40 +322,32 @@ let incr r = r := !r + one
 let decr r = r := !r - one
 
 (* We can reuse conversion function from/to int64 here. *)
-let of_int x = wrap_exn (Conv.int_to_int64 x)
-let of_int_exn x = of_int x
-let to_int x = Conv.int64_to_int (unwrap x)
-let to_int_exn x = Conv.int64_to_int_exn (unwrap x)
-let to_int_trunc x = Conv.int64_to_int_trunc (unwrap x)
-let of_int32 x = wrap_exn (Conv.int32_to_int64 x)
-let of_int32_exn x = of_int32 x
-let to_int32 x = Conv.int64_to_int32 (unwrap x)
-let to_int32_exn x = Conv.int64_to_int32_exn (unwrap x)
-let to_int32_trunc x = Conv.int64_to_int32_trunc (unwrap x)
-let of_nativeint x = of_int64 (Conv.nativeint_to_int64 x)
-let of_nativeint_exn x = wrap_exn (Conv.nativeint_to_int64 x)
+let of_int x = globalize (wrap_exn (Conv.int_to_int64 x)) [@nontail]
+let of_int_exn = of_int
+let to_int x = Conv.int64_to_int (unwrap x) [@nontail]
+let to_int_exn x = Conv.int64_to_int_exn (unwrap x) [@nontail]
+let to_int_trunc x = Conv.int64_to_int_trunc (unwrap x) [@nontail]
+let of_local_int32 x = wrap_exn (Conv.int32_to_int64 x)
+let of_local_int32_exn = of_local_int32
+let of_int32 x = globalize (of_local_int32 x) [@nontail]
+let of_int32_exn = of_int32
+let to_int32 x = Conv.int64_to_int32 (unwrap x) [@nontail]
+let to_local_int32_exn x = Conv.int64_to_int32_exn (unwrap x)
+let to_int32_exn x = globalize_int32 (to_local_int32_exn x) [@nontail]
+let to_int32_trunc x = Conv.int64_to_int32_trunc (unwrap x) [@nontail]
+let of_nativeint x = of_int64 (Conv.nativeint_to_int64 x) [@nontail]
+let of_local_nativeint_exn x = wrap_exn (Conv.nativeint_to_int64 x)
+let of_nativeint_exn x = globalize (of_local_nativeint_exn x) [@nontail]
 let of_nativeint_trunc x = of_int64_trunc (Conv.nativeint_to_int64 x)
-let to_nativeint x = Conv.int64_to_nativeint (unwrap x)
-let to_nativeint_exn x = Conv.int64_to_nativeint_exn (unwrap x)
+let to_nativeint x = Conv.int64_to_nativeint (unwrap x) [@nontail]
+let to_local_nativeint_exn x = Conv.int64_to_nativeint_exn (unwrap x)
+let to_nativeint_exn x = globalize_nativeint (to_local_nativeint_exn x) [@nontail]
 let to_nativeint_trunc x = Conv.int64_to_nativeint_trunc (unwrap x)
 
 include Int_string_conversions.Make (T)
 
 include Int_string_conversions.Make_hex (struct
-    type t = T.t [@@deriving_inline compare ~localize, hash]
-
-    let compare__local = (T.compare__local : t -> t -> int)
-    let compare = (fun a b -> compare__local a b : t -> t -> int)
-
-    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      T.hash_fold_t
-
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = T.hash in
-      fun x -> func x
-    ;;
-
-    [@@@end]
+    type t = T.t [@@deriving compare ~localize, hash]
 
     let zero = zero
     let neg = ( ~- )
@@ -405,7 +362,7 @@ include Int_string_conversions.Make_hex (struct
     let module_name = "Base.Int63.Hex"
   end)
 
-include Pretty_printer.Register (struct
+include%template Pretty_printer.Register [@modality portable] (struct
     type nonrec t = t
 
     let to_string x = to_string x
@@ -420,9 +377,10 @@ module Pre_O = struct
   let ( ~- ) = ( ~- )
   let ( ** ) = ( ** )
 
-  include (Int64_replace_polymorphic_compare : Comparisons.Infix with type t := t)
+  include Int64_replace_polymorphic_compare
 
   let abs = abs
+  let abs_local = abs_local
   let neg = neg
   let zero = zero
   let of_int_exn = of_int_exn
@@ -433,6 +391,8 @@ module O = struct
 
   include Int_math.Make (struct
       type nonrec t = t
+
+      let globalize = globalize
 
       include Pre_O
 
@@ -455,22 +415,7 @@ end
 include O
 
 include Int_string_conversions.Make_binary (struct
-    type t = T.t [@@deriving_inline compare ~localize, equal ~localize, hash]
-
-    let compare__local = (T.compare__local : t -> t -> int)
-    let compare = (fun a b -> compare__local a b : t -> t -> int)
-    let equal__local = (T.equal__local : t -> t -> bool)
-    let equal = (fun a b -> equal__local a b : t -> t -> bool)
-
-    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      T.hash_fold_t
-
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = T.hash in
-      fun x -> func x
-    ;;
-
-    [@@@end]
+    type t = T.t [@@deriving compare ~localize, equal ~localize, hash]
 
     let ( land ) = ( land )
     let ( lsr ) = ( lsr )

@@ -1,18 +1,12 @@
 open! Import
 module Array = Array0
+module Sexp = Sexp0
 include Bytes_intf
 
 let stage = Staged.stage
 
 module T = struct
-  type t = bytes [@@deriving_inline globalize, sexp, sexp_grammar]
-
-  let (globalize : t -> t) = (globalize_bytes : t -> t)
-  let t_of_sexp = (bytes_of_sexp : Sexplib0.Sexp.t -> t)
-  let sexp_of_t = (sexp_of_bytes : t -> Sexplib0.Sexp.t)
-  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = bytes_sexp_grammar
-
-  [@@@end]
+  type t = bytes [@@deriving globalize, sexp ~localize, sexp_grammar]
 
   include Bytes0
 
@@ -22,24 +16,25 @@ end
 
 include T
 
-module To_bytes = Blit.Make (struct
+module%template To_bytes = Blit.Make [@modality portable] (struct
     include T
 
     let create ~len = create len
   end)
 
 include To_bytes
-include Comparator.Make (T)
-include Pretty_printer.Register_pp (T)
+
+include%template Comparator.Make [@modality portable] (T)
+include%template Pretty_printer.Register_pp [@modality portable] (T)
 
 (* Open replace_polymorphic_compare after including functor instantiations so they do not
    shadow its definitions. This is here so that efficient versions of the comparison
    functions are available within this module. *)
 open! Bytes_replace_polymorphic_compare
-module To_string = Blit.Make_to_string (T) (To_bytes)
+module%template To_string = Blit.Make_to_string [@modality portable] (T) (To_bytes)
 
-module From_string =
-  Blit.Make_distinct
+module%template From_string =
+  Blit.Make_distinct [@modality portable]
     (struct
       type t = string
 

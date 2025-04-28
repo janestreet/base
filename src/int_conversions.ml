@@ -9,7 +9,7 @@ let convert_failure x a b to_string =
     b
     (to_string x)
     ()
-[@@cold] [@@inline never] [@@local never] [@@specialise never]
+[@@cold]
 ;;
 
 let num_bits_int = Sys.int_size_in_bits
@@ -31,9 +31,13 @@ let nativeint_to_string = Stdlib.Nativeint.to_string
 (* int <-> int32 *)
 
 let int_to_int32_failure x = convert_failure x "int" "int32" int_to_string
-let int32_to_int_failure x = convert_failure x "int32" "int" int32_to_string
-let int32_to_int_trunc = Stdlib.Int32.to_int
-let int_to_int32_trunc = Stdlib.Int32.of_int
+
+let int32_to_int_failure x =
+  convert_failure (globalize_int32 x) "int32" "int" int32_to_string
+;;
+
+external int32_to_int_trunc : int32 -> int = "%int32_to_int"
+external int_to_int32_trunc : int -> (int32[@local_opt]) = "%int32_of_int"
 
 let int_is_representable_as_int32 =
   if num_bits_int <= num_bits_int32
@@ -50,7 +54,7 @@ let int32_is_representable_as_int =
   else (
     let min = int_to_int32_trunc Int.min_value in
     let max = int_to_int32_trunc Int.max_value in
-    fun x -> compare_int32 min x <= 0 && compare_int32 x max <= 0)
+    fun x -> compare_int32__local min x <= 0 && compare_int32__local x max <= 0)
 ;;
 
 let int_to_int32 x =
@@ -71,15 +75,14 @@ let int32_to_int_exn x =
 
 (* int <-> int64 *)
 
-let[@cold] [@inline never] [@local never] [@specialise never] [@zero_alloc] int64_to_int_failure
-  x
-  =
+let[@cold] [@zero_alloc] int64_to_int_failure x =
   convert_failure x "int64" "int" int64_to_string
 ;;
 
 let () = assert (num_bits_int < num_bits_int64)
-let int_to_int64 = Stdlib.Int64.of_int
-let int64_to_int_trunc = Stdlib.Int64.to_int
+
+external int_to_int64 : int -> (int64[@local_opt]) = "%int64_of_int"
+external int64_to_int_trunc : int64 -> int = "%int64_to_int"
 
 let int64_is_representable_as_int =
   let min = int_to_int64 Int.min_value in
@@ -105,10 +108,14 @@ let int64_to_int_exn x =
 
 (* int <-> nativeint *)
 
-let nativeint_to_int_failure x = convert_failure x "nativeint" "int" nativeint_to_string
+let nativeint_to_int_failure x =
+  convert_failure (globalize_nativeint x) "nativeint" "int" nativeint_to_string
+;;
+
 let () = assert (num_bits_int <= num_bits_nativeint)
-let int_to_nativeint = Stdlib.Nativeint.of_int
-let nativeint_to_int_trunc = Stdlib.Nativeint.to_int
+
+external int_to_nativeint : int -> (nativeint[@local_opt]) = "%nativeint_of_int"
+external nativeint_to_int_trunc : nativeint -> int = "%nativeint_to_int"
 
 let nativeint_is_representable_as_int =
   if num_bits_nativeint <= num_bits_int
@@ -116,7 +123,7 @@ let nativeint_is_representable_as_int =
   else (
     let min = int_to_nativeint Int.min_value in
     let max = int_to_nativeint Int.max_value in
-    fun x -> compare_nativeint min x <= 0 && compare_nativeint x max <= 0)
+    fun x -> compare_nativeint__local min x <= 0 && compare_nativeint__local x max <= 0)
 ;;
 
 let nativeint_to_int x =
@@ -131,16 +138,26 @@ let nativeint_to_int_exn x =
 
 (* int32 <-> int64 *)
 
-let int64_to_int32_failure x = convert_failure x "int64" "int32" int64_to_string
-let () = assert (num_bits_int32 < num_bits_int64)
-let int32_to_int64 = Stdlib.Int64.of_int32
-let int64_to_int32_trunc = Stdlib.Int64.to_int32
-
-let int64_is_representable_as_int32 =
-  let min = int32_to_int64 min_int32 in
-  let max = int32_to_int64 max_int32 in
-  fun x -> compare_int64 min x <= 0 && compare_int64 x max <= 0
+let int64_to_int32_failure x =
+  convert_failure (globalize_int64 x) "int64" "int32" int64_to_string
 ;;
+
+let () = assert (num_bits_int32 < num_bits_int64)
+
+external int32_to_int64 : int32 -> (int64[@local_opt]) = "%int64_of_int32"
+external int64_to_int32_trunc : int64 -> (int32[@local_opt]) = "%int64_to_int32"
+
+include struct
+  open struct
+    let min = int32_to_int64 min_int32
+    let max = int32_to_int64 max_int32
+  end
+
+  let int64_is_representable_as_int32 x =
+    compare_int64__local min x <= 0 && compare_int64__local x max <= 0
+  [@@zero_alloc]
+  ;;
+end
 
 let int64_to_int32 x =
   if int64_is_representable_as_int32 x then Some (int64_to_int32_trunc x) else None
@@ -155,12 +172,17 @@ let int64_to_int32_exn x =
 (* int32 <-> nativeint *)
 
 let nativeint_to_int32_failure x =
-  convert_failure x "nativeint" "int32" nativeint_to_string
+  convert_failure (globalize_nativeint x) "nativeint" "int32" nativeint_to_string
 ;;
 
 let () = assert (num_bits_int32 <= num_bits_nativeint)
-let int32_to_nativeint = Stdlib.Nativeint.of_int32
-let nativeint_to_int32_trunc = Stdlib.Nativeint.to_int32
+
+external int32_to_nativeint : int32 -> (nativeint[@local_opt]) = "%nativeint_of_int32"
+
+external nativeint_to_int32_trunc
+  :  nativeint
+  -> (int32[@local_opt])
+  = "%nativeint_to_int32"
 
 let nativeint_is_representable_as_int32 =
   if num_bits_nativeint <= num_bits_int32
@@ -168,7 +190,7 @@ let nativeint_is_representable_as_int32 =
   else (
     let min = int32_to_nativeint min_int32 in
     let max = int32_to_nativeint max_int32 in
-    fun x -> compare_nativeint min x <= 0 && compare_nativeint x max <= 0)
+    fun x -> compare_nativeint__local min x <= 0 && compare_nativeint__local x max <= 0)
 ;;
 
 let nativeint_to_int32 x =
@@ -185,10 +207,18 @@ let nativeint_to_int32_exn x =
 
 (* int64 <-> nativeint *)
 
-let int64_to_nativeint_failure x = convert_failure x "int64" "nativeint" int64_to_string
+let int64_to_nativeint_failure x =
+  convert_failure (globalize_int64 x) "int64" "nativeint" int64_to_string
+;;
+
 let () = assert (num_bits_int64 >= num_bits_nativeint)
-let int64_to_nativeint_trunc = Stdlib.Int64.to_nativeint
-let nativeint_to_int64 = Stdlib.Int64.of_nativeint
+
+external int64_to_nativeint_trunc
+  :  int64
+  -> (nativeint[@local_opt])
+  = "%int64_to_nativeint"
+
+external nativeint_to_int64 : nativeint -> (int64[@local_opt]) = "%int64_of_nativeint"
 
 let int64_is_representable_as_nativeint =
   if num_bits_int64 <= num_bits_nativeint
@@ -196,7 +226,7 @@ let int64_is_representable_as_nativeint =
   else (
     let min = nativeint_to_int64 min_nativeint in
     let max = nativeint_to_int64 max_nativeint in
-    fun x -> compare_int64 min x <= 0 && compare_int64 x max <= 0)
+    fun x -> compare_int64__local min x <= 0 && compare_int64__local x max <= 0)
 ;;
 
 let int64_to_nativeint x =

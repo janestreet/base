@@ -47,15 +47,21 @@ module Tree0 = struct
   type 'a t =
     | Empty
     (* Leaf is the same as Node with empty children but uses less space. *)
-    | Leaf of { elt : 'a }
+    | Leaf of { elt : 'a [@globalized] }
     | Node of
-        { left : 'a t
-        ; elt : 'a
-        ; right : 'a t
+        { left : 'a t [@globalized]
+        ; elt : 'a [@globalized]
+        ; right : 'a t [@globalized]
         ; weight : int
         }
 
   type 'a tree = 'a t
+
+  let globalize : 'a. 'a t -> 'a t = function
+    | Empty -> Empty
+    | Leaf { elt } -> Leaf { elt }
+    | Node { left; elt; right; weight } -> Node { left; elt; right; weight }
+  ;;
 
   (* Checks for failure of the balance invariant in one direction:
 
@@ -569,8 +575,6 @@ module Tree0 = struct
 
   (* Implementation of the set operations *)
 
-  let empty = Empty
-
   let rec mem t x ~compare_elt =
     match t with
     | Empty -> false
@@ -640,7 +644,7 @@ module Tree0 = struct
 
   let union_list ~comparator ~to_tree xs =
     let compare_elt = comparator.Comparator.compare in
-    List.fold xs ~init:empty ~f:(fun ac x -> union ac (to_tree x) ~compare_elt)
+    List.fold xs ~init:Empty ~f:(fun ac x -> union ac (to_tree x) ~compare_elt)
   ;;
 
   let inter s1 s2 ~compare_elt =
@@ -1115,17 +1119,17 @@ module Tree0 = struct
   let choose_exn t = call_with_choose t ~none:raise_choose_exn ~some:Fn.id
 
   let of_list lst ~compare_elt =
-    List.fold lst ~init:empty ~f:(fun t x -> add t x ~compare_elt)
+    List.fold lst ~init:Empty ~f:(fun t x -> add t x ~compare_elt)
   ;;
 
   let of_sequence sequence ~compare_elt =
-    Sequence.fold sequence ~init:empty ~f:(fun t x -> add t x ~compare_elt)
+    Sequence.fold sequence ~init:Empty ~f:(fun t x -> add t x ~compare_elt)
   ;;
 
   let to_list s = elements s
 
   let of_array a ~compare_elt =
-    Array.fold a ~init:empty ~f:(fun t x -> add t x ~compare_elt)
+    Array.fold a ~init:Empty ~f:(fun t x -> add t x ~compare_elt)
   ;;
 
   (* faster but equivalent to [Array.of_list (to_list t)] *)
@@ -1156,7 +1160,7 @@ module Tree0 = struct
   ;;
 
   let map t ~f ~compare_elt =
-    fold t ~init:empty ~f:(fun t x -> add t (f x) ~compare_elt) [@nontail]
+    fold t ~init:Empty ~f:(fun t x -> add t (f x) ~compare_elt) [@nontail]
   ;;
 
   let group_by set ~equiv =
@@ -1205,6 +1209,22 @@ module Tree0 = struct
     | Some e -> e
   ;;
 
+  let rank t elt ~compare_elt =
+    let rec loop t acc =
+      match t with
+      | Empty -> None
+      | Leaf { elt = elt' } -> if compare_elt elt' elt = 0 then Some acc else None
+      | Node { left = l; elt = elt'; right = r; weight = _ } ->
+        let c = compare_elt elt' elt in
+        if c = 0
+        then Some (acc + length l)
+        else if c > 0
+        then loop l acc
+        else loop r (acc + length l + 1)
+    in
+    loop t 0 [@nontail]
+  ;;
+
   let rec nth t i =
     match t with
     | Empty -> None
@@ -1226,7 +1246,7 @@ module Tree0 = struct
       if length set = List.length lst
       then set
       else (
-        let set = ref empty in
+        let set = ref Empty in
         List.iter2_exn lst elt_lst ~f:(fun el_sexp el ->
           if mem !set el ~compare_elt
           then of_sexp_error "Set.t_of_sexp: duplicate element in set" el_sexp
@@ -1271,12 +1291,13 @@ type ('a, 'comparator) t =
        to the functional value in the comparator.
        Note that this does not affect polymorphic [compare]: that still produces
        nonsense. *)
-    comparator : ('a, 'comparator) Comparator.t
+    comparator : ('a, 'comparator) Comparator.t [@globalized]
   ; tree : 'a Tree0.t
   }
 
 type ('a, 'comparator) tree = 'a Tree0.t
 
+let globalize { comparator; tree } = { comparator; tree = Tree0.globalize tree }
 let like { tree = _; comparator } tree = { tree; comparator }
 
 let like_maybe_no_op ({ tree = old_tree; comparator } as old_t) tree =
@@ -1373,6 +1394,7 @@ module Accessors = struct
 
   let group_by t ~equiv = List.map (Tree0.group_by t.tree ~equiv) ~f:(like t)
   let nth t i = Tree0.nth t.tree i
+  let rank t v = Tree0.rank t.tree v ~compare_elt:(compare_elt t)
   let remove_index t i = like t (Tree0.remove_index t.tree i ~compare_elt:(compare_elt t))
   let sexp_of_t sexp_of_a _ t = Tree0.sexp_of_t sexp_of_a t.tree
 
@@ -1408,14 +1430,15 @@ let compare _ _ t1 t2 = compare_direct t1 t2
 module Tree = struct
   type ('a, 'comparator) t = ('a, 'comparator) tree
 
+  let globalize _ _ t = Tree0.globalize t
   let ce comparator = comparator.Comparator.compare
 
   let t_of_sexp_direct ~comparator a_of_sexp sexp =
     Tree0.t_of_sexp_direct ~compare_elt:(ce comparator) a_of_sexp sexp
   ;;
 
-  let empty_without_value_restriction = Tree0.empty
-  let empty ~comparator:_ = empty_without_value_restriction
+  let empty_without_value_restriction = Tree0.Empty
+  let empty ~comparator:_ = Tree0.Empty
   let singleton ~comparator:_ e = Tree0.singleton e
   let length t = Tree0.length t
   let invariants ~comparator t = Tree0.invariants t ~compare_elt:(ce comparator)
@@ -1483,6 +1506,7 @@ module Tree = struct
   let split_le_gt ~comparator t a = Tree0.split_le_gt t a ~compare_elt:(ce comparator)
   let split_lt_ge ~comparator t a = Tree0.split_lt_ge t a ~compare_elt:(ce comparator)
   let nth t i = Tree0.nth t i
+  let rank ~comparator t v = Tree0.rank t v ~compare_elt:(ce comparator)
   let remove_index ~comparator t i = Tree0.remove_index t i ~compare_elt:(ce comparator)
   let sexp_of_t sexp_of_a _ t = Tree0.sexp_of_t sexp_of_a t
   let to_tree t = t
@@ -1539,10 +1563,10 @@ module Using_comparator = struct
       (Tree0.t_of_sexp_direct ~compare_elt:comparator.compare a_of_sexp sexp)
   ;;
 
-  let empty ~comparator = { comparator; tree = Tree0.empty }
+  let empty ~comparator = { comparator; tree = Tree0.Empty }
 
-  module Empty_without_value_restriction (Elt : Comparator.S1) = struct
-    let empty = { comparator = Elt.comparator; tree = Tree0.empty }
+  module%template.portable Empty_without_value_restriction (Elt : Comparator.S1) = struct
+    let empty = { comparator = Elt.comparator; tree = Tree0.Empty }
   end
 
   let singleton ~comparator e = { comparator; tree = Tree0.singleton e }
@@ -1624,33 +1648,22 @@ struct
 end
 
 module type Sexp_of_m = sig
-  type t [@@deriving_inline sexp_of]
-
-  val sexp_of_t : t -> Sexplib0.Sexp.t
-
-  [@@@end]
+  type t [@@deriving sexp_of]
 end
 
 module type M_of_sexp = sig
-  type t [@@deriving_inline of_sexp]
-
-  val t_of_sexp : Sexplib0.Sexp.t -> t
-
-  [@@@end]
+  type t [@@deriving of_sexp]
 
   include Comparator.S with type t := t
 end
 
 module type M_sexp_grammar = sig
-  type t [@@deriving_inline sexp_grammar]
-
-  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  type t [@@deriving sexp_grammar]
 end
 
 module type Compare_m = sig end
 module type Equal_m = sig end
+module type Globalize_m = sig end
 module type Hash_fold_m = Hasher.S
 
 let sexp_of_m__t (type elt) (module Elt : Sexp_of_m with type t = elt) t =
@@ -1673,6 +1686,7 @@ let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt)
 
 let compare_m__t (module _ : Compare_m) t1 t2 = compare_direct t1 t2
 let equal_m__t (module _ : Equal_m) t1 t2 = equal t1 t2
+let globalize_m__t (module _ : Globalize_m) t = globalize t
 
 let hash_fold_m__t (type elt) (module Elt : Hash_fold_m with type t = elt) state =
   hash_fold_direct Elt.hash_fold_t state
@@ -1691,7 +1705,8 @@ module Poly = struct
 
   let comparator = Comparator.Poly.comparator
 
-  include Using_comparator.Empty_without_value_restriction (Comparator.Poly)
+  include%template
+    Using_comparator.Empty_without_value_restriction [@modality portable] (Comparator.Poly)
 
   let singleton a = Using_comparator.singleton ~comparator a
   let union_list a = Using_comparator.union_list ~comparator a

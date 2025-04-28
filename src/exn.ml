@@ -1,47 +1,18 @@
 open! Import
+module Sexp = Sexp0
 
-type t = exn [@@deriving_inline sexp_of]
-
-let sexp_of_t = (sexp_of_exn : t -> Sexplib0.Sexp.t)
-
-[@@@end]
+type t = exn [@@deriving sexp_of]
 
 let exit = Stdlib.exit
 
-exception Finally of t * t [@@deriving_inline sexp]
-
-let () =
-  Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Finally] (function
-    | Finally (arg0__001_, arg1__002_) ->
-      let res0__003_ = sexp_of_t arg0__001_
-      and res1__004_ = sexp_of_t arg1__002_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "exn.ml.Finally"; res0__003_; res1__004_ ]
-    | _ -> assert false)
-;;
-
-[@@@end]
-
-exception Reraised of string * t [@@deriving_inline sexp]
-
-let () =
-  Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Reraised] (function
-    | Reraised (arg0__005_, arg1__006_) ->
-      let res0__007_ = sexp_of_string arg0__005_
-      and res1__008_ = sexp_of_t arg1__006_ in
-      Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "exn.ml.Reraised"; res0__007_; res1__008_ ]
-    | _ -> assert false)
-;;
-
-[@@@end]
-
+exception Finally of t * t [@@deriving sexp]
+exception Reraised of string * t [@@deriving sexp]
 exception Sexp of Sexp.t Lazy.t
 
 (* We install a custom exn-converter rather than use:
 
    {[
-     exception Sexp of Sexp.t [@@deriving_inline sexp]
-     (* ... *)
-     [@@@end]
+     exception Sexp of Sexp.t [@@deriving sexp]
    ]}
 
    to eliminate the extra wrapping of [(Sexp ...)]. *)
@@ -100,20 +71,40 @@ let does_raise (type a) (f : unit -> a) =
   | _ -> true
 ;;
 
-include Pretty_printer.Register_pp (struct
+module Serialized = struct
+  type t =
+    | Sexp of Sexp.t
+    | String of string
+  [@@unsafe_allow_any_mode_crossing]
+
+  let of_exn exn =
+    match sexp_of_exn_opt exn with
+    | Some sexp -> Sexp sexp
+    | None -> String (Stdlib.Printexc.to_string exn)
+  ;;
+
+  let pp ppf t =
+    match t with
+    | Sexp sexp -> Sexp.pp_hum ppf sexp
+    | String str -> Stdlib.Format.pp_print_string ppf str
+  ;;
+end
+
+include%template Pretty_printer.Register_pp [@modality portable] (struct
     type t = exn
 
-    let pp ppf t =
-      match sexp_of_exn_opt t with
-      | Some sexp -> Sexp.pp_hum ppf sexp
-      | None -> Stdlib.Format.pp_print_string ppf (Stdlib.Printexc.to_string t)
-    ;;
-
+    let pp ppf t = Serialized.of_exn t |> Serialized.pp ppf
     let module_name = "Base.Exn"
   end)
 
-let print_with_backtrace exc raw_backtrace =
-  Stdlib.Format.eprintf "@[<2>Uncaught exception:@\n@\n@[%a@]@]@\n@." pp exc;
+let print_with_backtrace exn raw_backtrace =
+  let serialized_exn = Serialized.of_exn exn in
+  Stdlib.Domain.DLS.access (fun access ->
+    Stdlib.Format.fprintf
+      (Stdlib.Format.get_err_formatter access)
+      "@[<2>Uncaught exception:@\n@\n@[%a@]@]@\n@."
+      Serialized.pp
+      serialized_exn);
   if Stdlib.Printexc.backtrace_status ()
   then Stdlib.Printexc.print_raw_backtrace Stdlib.stderr raw_backtrace;
   Stdlib.flush Stdlib.stderr

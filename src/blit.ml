@@ -1,21 +1,22 @@
 open! Import
-include Blit_intf
+include Blit_intf.Definitions
 
-module type Sequence_gen = sig
-  type 'a t
+module%template.portable Make1_phantom_distinct
+    (Src : sig
+       type ('elt, 'phantom) t
 
-  val length : _ t -> int
-end
-
-module Make_gen
-    (Src : Sequence_gen)
+       val length : (_, _) t -> int
+     end)
     (Dst : sig
-       include Sequence_gen
+       type ('elt, 'phantom) t
 
-       val create_like : len:int -> 'a Src.t -> 'a t
-       val unsafe_blit : ('a Src.t, 'a t) blit
-     end) =
-struct
+       val length : (_, _) t -> int
+       val create_like : len:int -> ('elt, _) Src.t -> ('elt, _) t
+       val unsafe_blit : (('elt, _) Src.t, ('elt, _) t) blit
+     end) :
+  S1_phantom_distinct
+  with type ('elt, 'phantom) src := ('elt, 'phantom) Src.t
+  with type ('elt, 'phantom) dst := ('elt, 'phantom) Dst.t = struct
   let unsafe_blit = Dst.unsafe_blit
 
   let blit ~src ~src_pos ~dst ~dst_pos ~len =
@@ -62,17 +63,18 @@ struct
   ;;
 end
 
-module Make1 (Sequence : sig
-    include Sequence_gen
+module%template.portable [@modality p] Make1 (Sequence : Sequence1) = struct
+  module Seq = struct
+    include Sequence
 
-    val create_like : len:int -> 'a t -> 'a t
-    val unsafe_blit : ('a t, 'a t) blit
-  end) =
-  Make_gen (Sequence) (Sequence)
+    type ('a, _) t = 'a Sequence.t
+  end
 
-module Make1_generic (Sequence : Sequence1) = Make_gen (Sequence) (Sequence)
+  include Make1_phantom_distinct [@modality p] (Seq) (Seq)
+end
 
-module Make (Sequence : sig
+module%template.portable
+  [@modality p] Make (Sequence : sig
     include Sequence
 
     val create : len:int -> t
@@ -80,7 +82,7 @@ module Make (Sequence : sig
   end) =
 struct
   module Sequence = struct
-    type 'a t = Sequence.t
+    type (_, _) t = Sequence.t
 
     open Sequence
 
@@ -89,10 +91,11 @@ struct
     let unsafe_blit = unsafe_blit
   end
 
-  include Make_gen (Sequence) (Sequence)
+  include Make1_phantom_distinct [@modality p] (Sequence) (Sequence)
 end
 
-module Make_distinct
+module%template.portable
+  [@modality p] Make_distinct
     (Src : Sequence)
     (Dst : sig
        include Sequence
@@ -100,16 +103,16 @@ module Make_distinct
        val create : len:int -> t
        val unsafe_blit : (Src.t, t) blit
      end) =
-  Make_gen
+  Make1_phantom_distinct [@modality p]
     (struct
-      type 'a t = Src.t
+      type (_, _) t = Src.t
 
       open Src
 
       let length = length
     end)
     (struct
-      type 'a t = Dst.t
+      type (_, _) t = Dst.t
 
       open Dst
 
@@ -118,7 +121,7 @@ module Make_distinct
       let unsafe_blit = unsafe_blit
     end)
 
-module Make_to_string
+module%template.portable Make_to_string
     (T : sig
        type t
      end)

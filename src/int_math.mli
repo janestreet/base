@@ -6,7 +6,9 @@ open! Import
 module type Make_arg = sig
   type t
 
-  include Floatable.S with type t := t
+  val globalize : t -> t
+
+  include Floatable.S_local_input with type t := t
   include Stringable.S with type t := t
 
   val ( + ) : t -> t -> t
@@ -14,9 +16,12 @@ module type Make_arg = sig
   val ( * ) : t -> t -> t
   val ( / ) : t -> t -> t
   val ( ~- ) : t -> t
-
-  include Comparisons.Infix with type t := t
-
+  val ( <> ) : t -> t -> bool
+  val ( <= ) : t -> t -> bool
+  val ( >= ) : t -> t -> bool
+  val ( = ) : t -> t -> bool
+  val ( < ) : t -> t -> bool
+  val ( > ) : t -> t -> bool
   val abs : t -> t
   val neg : t -> t
   val zero : t
@@ -26,7 +31,7 @@ end
 
 (** Derived operations common to various integer modules.
 
-    See {{!Base.Int.S_common}[Int.S_common]} for a description of the operations derived
+    See {{!Base.Int.S_common} [Int.S_common]} for a description of the operations derived
     by this module. *)
 module Make (X : Make_arg) : sig
   val ( % ) : X.t -> X.t -> X.t

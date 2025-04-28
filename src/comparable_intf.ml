@@ -7,13 +7,25 @@ module type Comparisons_with_zero_alloc = Comparisons.S_with_zero_alloc
 
 module Sign = Sign0 (** @canonical Base.Sign *)
 
-module type With_compare_gen = sig
-  type ('a, 'b) compare_fn
-  type ('a, 'b) fn
-  type 'a select_fn
+(** Various combinators for [compare] and [equal] functions. *)
+module type%template With_compare = sig
+  (** {!reversed} is the identity type but its associated compare function is the same as
+      the {!reverse} function below. It allows you to get reversed comparisons with
+      [ppx_compare], writing, for example, [[%compare: string Comparable.reversed]] to
+      have strings ordered in the reverse order. *)
+  type 'a reversed = 'a
 
-  (** [lexicographic cmps x y] compares [x] and [y] lexicographically using functions in the
-      list [cmps]. *)
+  [@@@mode m = (global, local)]
+
+  type ('a, 'b) compare_fn := 'a -> 'a -> 'b
+  type ('a, 'b) fn := 'a -> 'b
+  type 'a select_fn := 'a -> 'a -> 'a
+
+  [@@@mode.default m]
+  [@@@kind.default k = (value, float64, bits32, bits64, word)]
+
+  (** [lexicographic cmps x y] compares [x] and [y] lexicographically using functions in
+      the list [cmps]. *)
   val lexicographic : ('a, int) compare_fn list -> ('a, int) compare_fn
 
   (** [lift cmp ~f x y] compares [x] and [y] by comparing [f x] and [f y] via [cmp]. *)
@@ -30,12 +42,6 @@ module type With_compare_gen = sig
       [reverse (>=)]. *)
   val reverse : ('a, 'result) compare_fn -> ('a, 'result) compare_fn
 
-  (** {!reversed} is the identity type but its associated compare function is the same as
-      the {!reverse} function above. It allows you to get reversed comparisons with
-      [ppx_compare], writing, for example, [[%compare: string Comparable.reversed]] to
-      have strings ordered in the reverse order. *)
-  type 'a reversed = 'a
-
   val compare_reversed : ('a, int) compare_fn -> ('a reversed, int) compare_fn
 
   (** The functions below are analogues of the type-specific functions exported by the
@@ -46,23 +52,7 @@ module type With_compare_gen = sig
   val min : ('a, int) compare_fn -> 'a select_fn
 end
 
-(** Various combinators for [compare] and [equal] functions. *)
-module type With_compare =
-  With_compare_gen
-  with type ('a, 'b) compare_fn := 'a -> 'a -> 'b
-   and type ('a, 'b) fn := 'a -> 'b
-   and type 'a select_fn := 'a -> 'a -> 'a
-(** @inline *)
-
-(** Various combinators for [compare__local] and [equal__local] functions. *)
-module type With_compare_local =
-  With_compare_gen
-  with type ('a, 'b) compare_fn := 'a -> 'a -> 'b
-   and type ('a, 'b) fn := 'a -> 'b
-   and type 'a select_fn := 'a -> 'a -> 'a
-(** @inline *)
-
-module type With_zero = sig
+module type%template With_zero = sig
   type t
 
   val is_positive : t -> bool
@@ -73,16 +63,17 @@ module type With_zero = sig
   (** Returns [Neg], [Zero], or [Pos] in a way consistent with the above functions. *)
   val sign : t -> Sign.t
 end
+[@@mode m = (global, local)]
 
 module type S = sig
   type t
 
   include Comparisons with type t := t
 
-  (** [ascending] is identical to [compare]. [descending x y = ascending y x].  These are
-      intended to be mnemonic when used like [List.sort ~compare:ascending] and [List.sort
-      ~cmp:descending], since they cause the list to be sorted in ascending or descending
-      order, respectively. *)
+  (** [ascending] is identical to [compare]. [descending x y = ascending y x]. These are
+      intended to be mnemonic when used like [List.sort ~compare:ascending] and
+      [List.sort ~cmp:descending], since they cause the list to be sorted in ascending or
+      descending order, respectively. *)
   val ascending : t -> t -> int
 
   val descending : t -> t -> int
@@ -141,12 +132,12 @@ module type Comparable = sig
       {[
         module C = Comparable.Make (T)
         include C
-        module Infix = (C : Comparable.Infix with type t := t)
+        module Infix : Comparable.Infix with type t := t = C
       ]}
 
-      A common pattern is to define a module [O] with a restricted signature. It aims to be
-      (locally) opened to bring useful operators into scope without shadowing unexpected
-      variable names. E.g., in the [Date] module:
+      A common pattern is to define a module [O] with a restricted signature. It aims to
+      be (locally) opened to bring useful operators into scope without shadowing
+      unexpected variable names. E.g., in the [Date] module:
 
       {[
         module O = struct
@@ -169,86 +160,59 @@ module type Comparable = sig
   module type Comparisons = Comparisons
   module type Comparisons_with_zero_alloc = Comparisons_with_zero_alloc
   module type With_compare = With_compare
-  module type With_compare_local = With_compare_local
-  module type With_zero = With_zero
+  module type%template With_zero = With_zero [@mode m] [@@mode m = (global, local)]
 
   include With_compare
-  module Local : With_compare_local
 
-  (** Derive [Infix] or [Comparisons] functions from just [[@@deriving compare]],
-      without need for the [sexp_of_t] required by [Make*] (see below). *)
+  (** Derive [Infix] or [Comparisons] functions from just [[@@deriving compare]], without
+      need for the [sexp_of_t] required by [Make*] (see below). *)
 
-  module Infix (T : sig
-      type t [@@deriving_inline compare]
-
-      include Ppx_compare_lib.Comparable.S with type t := t
-
-      [@@@end]
+  module%template.portable Infix (T : sig
+      type t [@@deriving compare]
     end) : Infix with type t := T.t
 
-  module Comparisons (T : sig
-      type t [@@deriving_inline compare]
-
-      include Ppx_compare_lib.Comparable.S with type t := t
-
-      [@@@end]
+  module%template.portable Comparisons (T : sig
+      type t [@@deriving compare]
     end) : Comparisons with type t := T.t
 
   (** Inherit comparability from a component. *)
-  module Inherit
+  module%template.portable Inherit
       (C : sig
-         type t [@@deriving_inline compare]
-
-         include Ppx_compare_lib.Comparable.S with type t := t
-
-         [@@@end]
+         type t [@@deriving compare]
        end)
       (T : sig
-         type t [@@deriving_inline sexp_of]
-
-         val sexp_of_t : t -> Sexplib0.Sexp.t
-
-         [@@@end]
+         type t [@@deriving sexp_of]
 
          val component : t -> C.t
        end) : S with type t := T.t
 
-  module Make (T : sig
-      type t [@@deriving_inline compare, sexp_of]
+  module%template.portable Make (T : sig
+      type t [@@deriving compare, sexp_of]
 
       include Ppx_compare_lib.Comparable.S with type t := t
-
-      val sexp_of_t : t -> Sexplib0.Sexp.t
-
-      [@@@end]
     end) : S with type t := T.t
 
-  module Make_using_comparator (T : sig
-      type t [@@deriving_inline sexp_of]
-
-      val sexp_of_t : t -> Sexplib0.Sexp.t
-
-      [@@@end]
+  module%template.portable Make_using_comparator (T : sig
+      type t [@@deriving sexp_of]
 
       include Comparator.S with type t := t
     end) : S with type t := T.t with type comparator_witness := T.comparator_witness
 
-  module Poly (T : sig
-      type t [@@deriving_inline sexp_of]
-
-      val sexp_of_t : t -> Sexplib0.Sexp.t
-
-      [@@@end]
+  module%template.portable Poly (T : sig
+      type t [@@deriving sexp_of]
     end) : S with type t := T.t
 
-  module With_zero (T : sig
-      type t [@@deriving_inline compare, sexp_of]
+  module%template With_zero (T : sig
+      type t [@@deriving (compare [@mode m]), sexp_of]
 
-      include Ppx_compare_lib.Comparable.S with type t := t
+      val zero : t
+    end) : sig
+    include With_zero [@mode m] with type t := T.t
+  end
+  [@@mode m = (global, local)]
 
-      val sexp_of_t : t -> Sexplib0.Sexp.t
-
-      [@@@end]
+  module With_zero__portable (T : sig
+      type t [@@deriving compare, sexp_of]
 
       val zero : t
     end) : sig

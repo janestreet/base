@@ -144,8 +144,8 @@ let test (module Tree : S) =
           for lsize = 0 to total_size do
             let rsize = total_size - lsize in
             Trees.iter trees ~size:lsize ~f:(fun l ->
-              Trees.iter trees ~size:rsize ~f:(fun r -> f l ~lsize r ~rsize) [@nontail]) [@nontail
-                                                                                          ]
+              Trees.iter trees ~size:rsize ~f:(fun r -> f l ~lsize r ~rsize) [@nontail])
+            [@nontail]
           done
         done
       ;;

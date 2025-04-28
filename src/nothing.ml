@@ -15,6 +15,7 @@ module T = struct
   let compare__local a _ = unreachable_code a
   let equal__local a _ = unreachable_code a
   let sexp_of_t = unreachable_code
+  let sexp_of_t__local = unreachable_code_local
   let t_of_sexp sexp = Sexplib0.Sexp_conv_error.empty_type "Base.Nothing.t" sexp
   let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = { untyped = Union [] }
   let to_string = unreachable_code
@@ -24,7 +25,7 @@ end
 
 include T
 
-include Identifiable.Make (struct
+include%template Identifiable.Make [@modality portable] (struct
     include T
 
     let module_name = "Base.Nothing"

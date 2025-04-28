@@ -2,27 +2,27 @@
     sharing.
 
     The elements are computed on demand, possibly repeating work if they are demanded
-    multiple times.  A sequence can be built by unfolding from some initial state, which
+    multiple times. A sequence can be built by unfolding from some initial state, which
     will in practice often be other containers.
 
     Most functions constructing a sequence will not immediately compute any elements of
-    the sequence.  These functions will always return in O(1), but traversing the
-    resulting sequence may be more expensive.  The most they will do immediately is
-    generate a new internal state and a new step function.
+    the sequence. These functions will always return in O(1), but traversing the resulting
+    sequence may be more expensive. The most they will do immediately is generate a new
+    internal state and a new step function.
 
     Functions that transform existing sequences sometimes have to reconstruct some suffix
-    of the input sequence, even if it is unmodified.  For example, calling [drop 1] will
+    of the input sequence, even if it is unmodified. For example, calling [drop 1] will
     return a sequence with a slightly larger state and whose elements all cost slightly
-    more to traverse.  Because this is sometimes undesirable (for example, applying [drop
-    1] n times will cost O(n) per element traversed in the result), there are also more
-    eager versions of many functions (whose names are suffixed with [_eagerly]) that do
-    more work up front.  A function has the [_eagerly] suffix iff it matches both of these
-    conditions:
+    more to traverse. Because this is sometimes undesirable (for example, applying
+    [drop 1] n times will cost O(n) per element traversed in the result), there are also
+    more eager versions of many functions (whose names are suffixed with [_eagerly]) that
+    do more work up front. A function has the [_eagerly] suffix iff it matches both of
+    these conditions:
 
     - It might consume an element from an input [t] before returning.
 
     - It only returns a [t] (not paired with something else, not wrapped in an [option],
-      etc.).  If it returns anything other than a [t] and it has at least one [t] input,
+      etc.). If it returns anything other than a [t] and it has at least one [t] input,
       it's probably demanding elements from the input [t] anyway.
 
     Only [*_exn] functions can raise exceptions, except if the function underlying the
@@ -31,64 +31,48 @@
 
 open! Import
 
-type +'a t [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp_of]
-
-include Ppx_compare_lib.Comparable.S1 with type +'a t := 'a t
-include Ppx_compare_lib.Comparable.S_local1 with type +'a t := 'a t
-include Ppx_compare_lib.Equal.S1 with type +'a t := 'a t
-include Ppx_compare_lib.Equal.S_local1 with type +'a t := 'a t
-
-val globalize : ('a -> 'a) -> 'a t -> 'a t
-val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
-
-[@@@end]
-
+type +'a t [@@deriving compare ~localize, equal ~localize, globalize, sexp_of]
 type 'a sequence := 'a t
 
 include Indexed_container.S1 with type 'a t := 'a t
 include Monad.S with type 'a t := 'a t
 
 (** [empty] is a sequence with no elements. *)
-val empty : _ t
+val empty : 'a. 'a t
+
+val get_empty : unit -> _ t
 
 (** [next] returns the next element of a sequence and the next tail if the sequence is not
     finished. *)
 val next : 'a t -> ('a * 'a t) option
 
-(** A [Step] describes the next step of the sequence construction.  [Done] indicates the
-    sequence is finished.  [Skip] indicates the sequence continues with another state
-    without producing the next element yet.  [Yield] outputs an element and introduces a
+(** A [Step] describes the next step of the sequence construction. [Done] indicates the
+    sequence is finished. [Skip] indicates the sequence continues with another state
+    without producing the next element yet. [Yield] outputs an element and introduces a
     new state.
 
     Modifying ['s] doesn't violate any {e internal} invariants, but it may violate some
-    undocumented expectations.  For example, one might expect that producing an element
+    undocumented expectations. For example, one might expect that producing an element
     from the same point in the sequence would always give the same value, but if the state
     can mutate, that is not so. *)
 module Step : sig
-  type ('a, 's) t =
+  type (+'a, 's) t =
     | Done
     | Skip of { state : 's }
-    | Yield of
+    | Yield :
+        'a 's.
         { value : 'a
         ; state : 's
         }
-  [@@deriving_inline sexp_of]
-
-  val sexp_of_t
-    :  ('a -> Sexplib0.Sexp.t)
-    -> ('s -> Sexplib0.Sexp.t)
-    -> ('a, 's) t
-    -> Sexplib0.Sexp.t
-
-  [@@@end]
+        -> ('a, 's) t
+  [@@deriving sexp_of ~localize]
 end
 
 (** [unfold_step ~init ~f] constructs a sequence by giving an initial state [init] and a
     function [f] explaining how to continue the next step from a given state. *)
 val unfold_step : init:'s -> f:('s -> ('a, 's) Step.t) -> 'a t
 
-(** [unfold ~init f] is a simplified version of [unfold_step] that does not allow
-    [Skip]. *)
+(** [unfold ~init f] is a simplified version of [unfold_step] that does not allow [Skip]. *)
 val unfold : init:'s -> f:('s -> ('a * 's) option) -> 'a t
 
 (** [unfold_with t ~init ~f] folds a state through the sequence [t] to create a new
@@ -96,9 +80,10 @@ val unfold : init:'s -> f:('s -> ('a * 's) option) -> 'a t
 val unfold_with : 'a t -> init:'s -> f:('s -> 'a -> ('b, 's) Step.t) -> 'b t
 
 (** [unfold_with_and_finish t ~init ~running_step ~inner_finished ~finishing_step] folds a
-    state through [t] to create a new sequence (like [unfold_with t ~init
-    ~f:running_step]), and then continues the new sequence by unfolding the final state
-    (like [unfold_step ~init:(inner_finished final_state) ~f:finishing_step]). *)
+    state through [t] to create a new sequence (like
+    [unfold_with t ~init ~f:running_step]), and then continues the new sequence by
+    unfolding the final state (like
+    [unfold_step ~init:(inner_finished final_state) ~f:finishing_step]). *)
 val unfold_with_and_finish
   :  'a t
   -> init:'s_a
@@ -112,8 +97,7 @@ val nth : 'a t -> int -> 'a option
 
 val nth_exn : 'a t -> int -> 'a
 
-(** [folding_map] is a version of [map] that threads an accumulator through calls to
-    [f]. *)
+(** [folding_map] is a version of [map] that threads an accumulator through calls to [f]. *)
 val folding_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'b t
 
 val folding_mapi : 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc * 'b) -> 'b t
@@ -121,11 +105,11 @@ val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 val filter : 'a t -> f:('a -> bool) -> 'a t
 
-(** If [t1] and [t2] are each sorted without duplicates, [merge_deduped_and_sorted t1 t2
-    ~compare] merges [t1] and [t2] into a sorted sequence without duplicates. Whenever
-    identical elements are found in both [t1] and [t2], the one from [t1] is used and the
-    one from [t2] is discarded. The behavior is undefined if the inputs aren't sorted or
-    contain duplicates. *)
+(** If [t1] and [t2] are each sorted without duplicates,
+    [merge_deduped_and_sorted t1 t2 ~compare] merges [t1] and [t2] into a sorted sequence
+    without duplicates. Whenever identical elements are found in both [t1] and [t2], the
+    one from [t1] is used and the one from [t2] is discarded. The behavior is undefined if
+    the inputs aren't sorted or contain duplicates. *)
 val merge_deduped_and_sorted : 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 (** If [t1] and [t2] are each sorted, [merge_sorted t1 t2 ~compare] merges [t1] and [t2]
@@ -139,21 +123,7 @@ module Merge_with_duplicates_element : sig
     | Left of 'a
     | Right of 'b
     | Both of 'a * 'b
-  [@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
-
-  include Ppx_compare_lib.Comparable.S2 with type ('a, 'b) t := ('a, 'b) t
-  include Ppx_compare_lib.Comparable.S_local2 with type ('a, 'b) t := ('a, 'b) t
-  include Ppx_compare_lib.Equal.S2 with type ('a, 'b) t := ('a, 'b) t
-  include Ppx_compare_lib.Equal.S_local2 with type ('a, 'b) t := ('a, 'b) t
-  include Ppx_hash_lib.Hashable.S2 with type ('a, 'b) t := ('a, 'b) t
-  include Sexplib0.Sexpable.S2 with type ('a, 'b) t := ('a, 'b) t
-
-  val t_sexp_grammar
-    :  'a Sexplib0.Sexp_grammar.t
-    -> 'b Sexplib0.Sexp_grammar.t
-    -> ('a, 'b) t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp ~localize, sexp_grammar]
 end
 
 (** [merge_with_duplicates_element t1 t2 ~compare] is like [merge], except that for each
@@ -185,20 +155,20 @@ val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
     [t2]. *)
 val append : 'a t -> 'a t -> 'a t
 
-(** [concat tt] produces the elements of each inner sequence sequentially.  If any inner
+(** [concat tt] produces the elements of each inner sequence sequentially. If any inner
     sequences are infinite, elements of subsequent inner sequences will not be reached. *)
 val concat : 'a t t -> 'a t
 
-(** [concat_map t ~f] is [concat (map t ~f)].*)
+(** [concat_map t ~f] is [concat (map t ~f)]. *)
 val concat_map : 'a t -> f:('a -> 'b t) -> 'b t
 
 (** [concat_mapi t ~f] is like concat_map, but passes the index as an argument. *)
 val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
 
 (** [interleave tt] produces each element of the inner sequences of [tt] eventually, even
-    if any or all of the inner sequences are infinite.  The elements of each inner
-    sequence are produced in order with respect to that inner sequence.  The manner of
-    interleaving among the separate inner sequences is deterministic but unspecified. *)
+    if any or all of the inner sequences are infinite. The elements of each inner sequence
+    are produced in order with respect to that inner sequence. The manner of interleaving
+    among the separate inner sequences is deterministic but unspecified. *)
 val interleave : 'a t t -> 'a t
 
 (** [round_robin list] is like [interleave (of_list list)], except that the manner of
@@ -235,20 +205,21 @@ val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
     {[
       group ~break:(<>) (of_list ['M';'i';'s';'s';'i';'s';'s';'i';'p';'p';'i']) ->
 
-      of_list [['M'];['i'];['s';'s'];['i'];['s';'s'];['i'];['p';'p'];['i']] ]} *)
+      of_list [['M'];['i'];['s';'s'];['i'];['s';'s'];['i'];['p';'p'];['i']]
+    ]} *)
 val group : 'a t -> break:('a -> 'a -> bool) -> 'a list t
 
 (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive elements
-    [(a1, a2)] in [t] such that [equal a1 a2].  They are returned in the same order as
-    they appear in [t]. *)
+    [(a1, a2)] in [t] such that [equal a1 a2]. They are returned in the same order as they
+    appear in [t]. *)
 val find_consecutive_duplicate : 'a t -> equal:('a -> 'a -> bool) -> ('a * 'a) option
 
-(** The same sequence with consecutive duplicates removed.  The relative order of the
-    other elements is unaffected. *)
+(** The same sequence with consecutive duplicates removed. The relative order of the other
+    elements is unaffected. *)
 val remove_consecutive_duplicates : 'a t -> equal:('a -> 'a -> bool) -> 'a t
 
 (** [range ?stride ?start ?stop start_i stop_i] is the sequence of integers from [start_i]
-    to [stop_i], stepping by [stride].  If [stride] < 0 then we need [start_i] > [stop_i]
+    to [stop_i], stepping by [stride]. If [stride] < 0 then we need [start_i] > [stop_i]
     for the result to be nonempty (or [start_i] >= [stop_i] in the case where both bounds
     are inclusive). *)
 val range
@@ -259,7 +230,7 @@ val range
   -> int
   -> int t
 
-(** [init n ~f] is [[(f 0); (f 1); ...; (f (n-1))]].  It is an error if [n < 0]. *)
+(** [init n ~f] is [[(f 0); (f 1); ...; (f (n-1))]]. It is an error if [n < 0]. *)
 val init : int -> f:(int -> 'a) -> 'a t
 
 (** [filter_map t ~f] produce mapped elements of [t] which are not [None]. *)
@@ -269,11 +240,11 @@ val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
     element to [f]. *)
 val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
 
-(** [filter_opt t] produces the elements of [t] which are not [None].  [filter_opt t] =
+(** [filter_opt t] produces the elements of [t] which are not [None]. [filter_opt t] =
     [filter_map t ~f:Fn.id]. *)
 val filter_opt : 'a option t -> 'a t
 
-(** [sub t ~pos ~len] is the [len]-element subsequence of [t], starting at [pos].  If the
+(** [sub t ~pos ~len] is the [len]-element subsequence of [t], starting at [pos]. If the
     sequence is shorter than [pos + len], it returns [ t[pos] ... t[l-1] ], where [l] is
     the length of the sequence. *)
 val sub : 'a t -> pos:int -> len:int -> 'a t
@@ -281,9 +252,9 @@ val sub : 'a t -> pos:int -> len:int -> 'a t
 (** [take t n] produces the first [n] elements of [t]. *)
 val take : 'a t -> int -> 'a t
 
-(** [drop t n] produces all elements of [t] except the first [n] elements.  If there are
+(** [drop t n] produces all elements of [t] except the first [n] elements. If there are
     fewer than [n] elements in [t], there is no error; the resulting sequence simply
-    produces no elements.  Usually you will probably want to use [drop_eagerly] because it
+    produces no elements. Usually you will probably want to use [drop_eagerly] because it
     can be significantly cheaper. *)
 val drop : 'a t -> int -> 'a t
 
@@ -296,13 +267,13 @@ val drop_eagerly : 'a t -> int -> 'a t
 val take_while : 'a t -> f:('a -> bool) -> 'a t
 
 (** [drop_while t ~f] produces the suffix of [t] beginning with the first element of [t]
-    for which [f] is [false].  Usually you will probably want to use [drop_while_option]
+    for which [f] is [false]. Usually you will probably want to use [drop_while_option]
     because it can be significantly cheaper. *)
 val drop_while : 'a t -> f:('a -> bool) -> 'a t
 
 (** [drop_while_option t ~f] immediately consumes the elements from [t] until the
     predicate [f] fails and returns the first element that failed along with the
-    unevaluated tail of [t].  The first element is returned separately because the
+    unevaluated tail of [t]. The first element is returned separately because the
     alternatives would mean forcing the consumer to evaluate the first element again (if
     the previous state of the sequence is returned) or take on extra cost for each element
     (if the element is added to the final state of the sequence using [shift_right]). *)
@@ -321,26 +292,26 @@ val chunks_exn : 'a t -> int -> 'a list t
 val shift_right : 'a t -> 'a -> 'a t
 
 (** [shift_right_with_list t l] produces the elements of [l], then produces the elements
-    of [t].  It is better to call [shift_right_with_list] with a list of size n than
+    of [t]. It is better to call [shift_right_with_list] with a list of size n than
     [shift_right] n times; the former will require O(1) work per element produced and the
     latter O(n) work per element produced. *)
 val shift_right_with_list : 'a t -> 'a list -> 'a t
 
-(** [shift_left t n] is a synonym for [drop t n].*)
+(** [shift_left t n] is a synonym for [drop t n]. *)
 val shift_left : 'a t -> int -> 'a t
 
 module Infix : sig
   val ( @ ) : 'a t -> 'a t -> 'a t
 end
 
-(** Returns a sequence with all possible pairs.  The stepper function of the second
+(** Returns a sequence with all possible pairs. The stepper function of the second
     sequence passed as argument may be applied to the same state multiple times, so be
-    careful using [cartesian_product] with expensive or side-effecting functions.  If the
+    careful using [cartesian_product] with expensive or side-effecting functions. If the
     second sequence is infinite, some values in the first sequence may not be reached. *)
 val cartesian_product : 'a t -> 'b t -> ('a * 'b) t
 
 (** Returns a sequence that eventually reaches every possible pair of elements of the
-    inputs, even if either or both are infinite.  The step function of both inputs may be
+    inputs, even if either or both are infinite. The step function of both inputs may be
     applied to the same state repeatedly, so be careful using
     [interleaved_cartesian_product] with expensive or side-effecting functions. *)
 val interleaved_cartesian_product : 'a t -> 'b t -> ('a * 'b) t
@@ -349,8 +320,7 @@ val interleaved_cartesian_product : 'a t -> 'b t -> ('a * 'b) t
     [intersperse [1;2;3] ~sep:0 = [1;0;2;0;3]]. *)
 val intersperse : 'a t -> sep:'a -> 'a t
 
-(** [cycle_list_exn xs] repeats the elements of [xs] forever.  If [xs] is empty, it
-    raises. *)
+(** [cycle_list_exn xs] repeats the elements of [xs] forever. If [xs] is empty, it raises. *)
 val cycle_list_exn : 'a list -> 'a t
 
 (** [repeat a] repeats [a] forever. *)
@@ -361,8 +331,8 @@ val singleton : 'a -> 'a t
 
 (** [delayed_fold] allows to do an on-demand fold, while maintaining a state.
 
-    It is possible to exit early by not calling [k] in [f].  It is also possible to call
-    [k] multiple times.  This results in the rest of the sequence being folded over
+    It is possible to exit early by not calling [k] in [f]. It is also possible to call
+    [k] multiple times. This results in the rest of the sequence being folded over
     multiple times, independently.
 
     Note that [delayed_fold], when targeting JavaScript, can result in stack overflow as
@@ -404,23 +374,23 @@ val of_list : 'a list -> 'a t
 val of_lazy : 'a t Lazy.t -> 'a t
 
 (** [memoize t] produces each element of [t], but also memoizes them so that if you
-    consume the same element multiple times it is only computed once.  It's a non-eager
+    consume the same element multiple times it is only computed once. It's a non-eager
     version of [force_eagerly]. *)
 val memoize : 'a t -> 'a t
 
-(** [force_eagerly t] precomputes the sequence.  It is behaviorally equivalent to [of_list
-    (to_list t)], but may at some point have a more efficient implementation.  It's an
-    eager version of [memoize]. *)
+(** [force_eagerly t] precomputes the sequence. It is behaviorally equivalent to
+    [of_list (to_list t)], but may at some point have a more efficient implementation.
+    It's an eager version of [memoize]. *)
 val force_eagerly : 'a t -> 'a t
 
 (** [bounded_length ~at_most t] returns [`Is len] if [len = length t <= at_most], and
-    otherwise returns [`Greater].  Walks through only as much of the sequence as
-    necessary.  Always returns [`Greater] if [at_most < 0]. *)
+    otherwise returns [`Greater]. Walks through only as much of the sequence as necessary.
+    Always returns [`Greater] if [at_most < 0]. *)
 val bounded_length : _ t -> at_most:int -> [ `Is of int | `Greater ]
 
-(** [length_is_bounded_by ~min ~max t] returns true if [min <= length t] and [length t <=
-    max] When [min] or [max] are not provided, the check for that bound is omitted.  Walks
-    through only as much of the sequence as necessary. *)
+(** [length_is_bounded_by ~min ~max t] returns true if [min <= length t] and
+    [length t <= max] When [min] or [max] are not provided, the check for that bound is
+    omitted. Walks through only as much of the sequence as necessary. *)
 val length_is_bounded_by : ?min:int -> ?max:int -> _ t -> bool
 
 val of_seq : 'a Stdlib.Seq.t -> 'a t
@@ -437,10 +407,12 @@ val to_seq : 'a t -> 'a Stdlib.Seq.t
       let rec traverse_list = function
         | [] -> return ()
         | x :: xs -> yield x >>= fun () -> traverse_list xs
+      ;;
 
       let traverse_option = function
         | None -> return ()
         | Some x -> yield x
+      ;;
 
       let traverse_array arr =
         let n = Array.length arr in
@@ -448,18 +420,18 @@ val to_seq : 'a t -> 'a Stdlib.Seq.t
           if i >= n then return () else yield arr.(i) >>= fun () -> loop (i + 1)
         in
         loop 0
+      ;;
 
       let rec traverse_bst = function
         | Node.Empty -> return ()
         | Node.Branch (left, value, right) ->
-          traverse_bst left  >>= fun () ->
-          yield        value >>= fun () ->
-          traverse_bst right
+          traverse_bst left >>= fun () -> yield value >>= fun () -> traverse_bst right
+      ;;
 
-      let sequence_of_list   x = Generator.run (traverse_list   x)
+      let sequence_of_list x = Generator.run (traverse_list x)
       let sequence_of_option x = Generator.run (traverse_option x)
-      let sequence_of_array  x = Generator.run (traverse_array  x)
-      let sequence_of_bst    x = Generator.run (traverse_bst    x)
+      let sequence_of_array x = Generator.run (traverse_array x)
+      let sequence_of_bst x = Generator.run (traverse_bst x)
     ]} *)
 
 module Generator : sig
@@ -475,15 +447,13 @@ end
     client code to distinguish between
 
     {[
-      List.filter xs ~f
-      |> Sequence.of_list
+      List.filter xs ~f |> Sequence.of_list
     ]}
 
     and
 
     {[
-      Sequence.of_list xs
-      |> Sequence.filter ~f
+      Sequence.of_list xs |> Sequence.filter ~f
     ]}
 
     But sometimes for operational reasons it still makes sense to distinguish them. For
@@ -504,10 +474,11 @@ module Expert : sig
     -> 'r
 
   module View : sig
-    type +_ t = private
+    type +_ t =
       | Sequence :
-          { state : 's
-          ; next : 's -> ('a, 's) Step.t
+          'a 's.
+          { state : 's [@globalized]
+          ; next : 's -> ('a, 's) Step.t [@globalized]
           }
           -> 'a t
   end

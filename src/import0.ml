@@ -42,13 +42,44 @@ include (
 [@ocaml.warning "-3"]
 
 type 'a ref = 'a Stdlib.ref = { mutable contents : 'a }
+type 'a iarray = 'a Basement.Stdlib_iarray_labels.t
 
-(* Reshuffle [Stdlib] so that we choose the modules using labels when available. *)
 module Stdlib = struct
   include Stdlib
+
+  (* Reshuffle [Stdlib] so that we choose the modules using labels when available. *)
   include Stdlib.StdLabels
   include Stdlib.MoreLabels
+
+  (* Shadow unsafe [Stdlib] functions with their safe versions from [Basement.Stdlib_shim]. *)
+
+  module Atomic = struct
+    include Stdlib.Atomic
+    include Basement.Stdlib_shim.Atomic.Safe
+  end
+
+  module Domain = struct
+    include Stdlib.Domain
+    include Basement.Stdlib_shim.Domain.Safe
+  end
+
+  module Format = struct
+    include Stdlib.Format
+    include Basement.Stdlib_shim.Format.Safe
+  end
+
+  module Obj = struct
+    include Stdlib.Obj
+    include Basement.Stdlib_shim.Obj
+  end
+
+  module Printexc = struct
+    include Stdlib.Printexc
+    include Basement.Stdlib_shim.Printexc.Safe
+  end
 end
+
+module Portability_hacks = Basement.Portability_hacks
 
 external ( |> ) : 'a -> (('a -> 'b)[@local_opt]) -> 'b = "%revapply"
 
@@ -57,12 +88,12 @@ external ( && ) : (bool[@local_opt]) -> (bool[@local_opt]) -> bool = "%sequand"
 external ( || ) : (bool[@local_opt]) -> (bool[@local_opt]) -> bool = "%sequor"
 external not : (bool[@local_opt]) -> bool = "%boolnot"
 
-(* We use [Obj.magic] here as other implementations generate a conditional jump and the
-   performance difference is noticeable. *)
-let bool_to_int (x : bool) : int = Stdlib.Obj.magic x
+(* We use a binding to [%identity] here because [Obj.magic] is an optimization barrier. *)
+external bool_to_int : bool -> int = "%identity"
 
 (* This needs to be declared as an external for the warnings to work properly *)
 external ignore : _ -> unit = "%ignore"
+external ignore_contended : _ -> unit = "%ignore"
 
 let ( != ) = Stdlib.( != )
 let ( * ) = Stdlib.( * )
@@ -104,6 +135,8 @@ external ( /. )
   -> (float[@local_opt])
   = "%divfloat"
 
+module Hash = Ppx_hash_lib.Std.Hash
+
 module Poly = Poly0 (** @canonical Base.Poly *)
 
 include Replace_polymorphic_compare
@@ -122,10 +155,13 @@ let ( @ ) = Stdlib.( @ )
 let ( ^ ) = Stdlib.( ^ )
 let ( ~- ) = Stdlib.( ~- )
 
+external ( .:() ) : ('a iarray[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
 external ( ~-. ) : (float[@local_opt]) -> (float[@local_opt]) = "%negfloat"
 
 let ( asr ) = Stdlib.( asr )
-let ( land ) = Stdlib.( land )
+
+external ( land ) : int -> int -> int = "%andint"
+
 let lnot = Stdlib.lnot
 let ( lor ) = Stdlib.( lor )
 let ( lsl ) = Stdlib.( lsl )

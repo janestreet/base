@@ -43,7 +43,6 @@ include
     end)
     (struct
       type nonrec 'a t = 'a t [@@deriving sexp]
-      type 'a z = 'a
 
       include Sequence
 

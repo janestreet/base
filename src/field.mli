@@ -18,9 +18,9 @@ end
 
 (**/**)
 
-(** ['record] is the type of the record.  ['field] is the type of the
-    values stored in the record field with name [name]. ['perm] is a way
-    of restricting the operations that can be used. *)
+(** ['record] is the type of the record. ['field] is the type of the values stored in the
+    record field with name [name]. ['perm] is a way of restricting the operations that can
+    be used. *)
 type ('perm, 'record, 'field) t_with_perm =
   | Field of ('perm, 'record, 'field) For_generated_code.t
 [@@unboxed]
@@ -32,6 +32,10 @@ type ('record, 'field) t = ([ `Read | `Set_and_create ], 'record, 'field) t_with
 type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
 val name : (_, _, _) t_with_perm -> string
+
+[%%template:
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
+
 val get : (_, 'r, 'a) t_with_perm -> 'r -> 'a
 val fset : ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> 'a -> 'r
 val setter : ([> `Set_and_create ], 'r, 'a) t_with_perm -> ('r -> 'a -> unit) option
@@ -39,7 +43,7 @@ val map : ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> f:('a -> 'a) -> 'r
 
 val updater
   :  ([> `Set_and_create ], 'r, 'a) t_with_perm
-  -> ('r -> f:('a -> 'a) -> unit) option
+  -> ('r -> f:('a -> 'a) -> unit) option]
 
 type ('perm, 'record, 'result) user =
   { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }

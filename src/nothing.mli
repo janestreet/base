@@ -2,39 +2,32 @@
     but the implementer knows this type will not be used in their implementation of the
     interface.
 
-    For instance, [Async.Rpc.Pipe_rpc.t] is parameterized by an error type, but a user
-    may want to define a Pipe RPC that can't fail. *)
+    For instance, [Async.Rpc.Pipe_rpc.t] is parameterized by an error type, but a user may
+    want to define a Pipe RPC that can't fail. *)
 
 open! Import
 
 (** Having [[@@deriving enumerate]] may seem strange due to the fact that generated
     [val all : t list] is the empty list, so it seems like it could be of no use.
 
-    This may be true if you always expect your type to be [Nothing.t], but [[@@deriving
-    enumerate]] can be useful if you have a type which you expect to change over time.
-    For example, you may have a program which has to interact with multiple servers which
-    are possibly at different versions.  It may be useful in this program to have a
-    variant type which enumerates the ways in which the servers may differ.  When all the
-    servers are at the same version, you can change this type to [Nothing.t] and code
-    which uses an enumeration of the type will continue to work correctly.
+    This may be true if you always expect your type to be [Nothing.t], but
+    [[@@deriving enumerate]] can be useful if you have a type which you expect to change
+    over time. For example, you may have a program which has to interact with multiple
+    servers which are possibly at different versions. It may be useful in this program to
+    have a variant type which enumerates the ways in which the servers may differ. When
+    all the servers are at the same version, you can change this type to [Nothing.t] and
+    code which uses an enumeration of the type will continue to work correctly.
 
-    This is a similar issue to the identifiability of [Nothing.t].  As discussed below,
+    This is a similar issue to the identifiability of [Nothing.t]. As discussed below,
     another case where [[@deriving enumerate]] could be useful is when this type is part
     of some larger type.
 
     Similar arguments apply for other derivers, like [globalize] and [sexp_grammar]. *)
-type t = | [@@deriving_inline enumerate, globalize, sexp_grammar]
-
-include Ppx_enumerate_lib.Enumerable.S with type t := t
-
-val globalize : t -> t
-val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-
-[@@@end]
+type t = | [@@deriving enumerate, globalize, sexp ~localize, sexp_grammar]
 
 (** Because there are no values of type [Nothing.t], a piece of code that has a value of
-    type [Nothing.t] must be unreachable.  In such an unreachable piece of code, one can
-    use [unreachable_code] to give the code whatever type one needs.  For example:
+    type [Nothing.t] must be unreachable. In such an unreachable piece of code, one can
+    use [unreachable_code] to give the code whatever type one needs. For example:
 
     {[
       let f (r : (int, Nothing.t) Result.t) : int =
@@ -49,8 +42,7 @@ val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 
     {[
       let f (Ok i : (int, Nothing.t) Result.t) = i
-    ]}
-*)
+    ]} *)
 val unreachable_code : t -> _
 
 (** The same as [unreachable_code], but for local [t]s. *)
@@ -64,15 +56,13 @@ val unreachable_code_local : t -> _
     Obviously, [of_string] and [t_of_sexp] will raise an exception. *)
 include Identifiable.S with type t := t
 
-include Ppx_compare_lib.Equal.S_local with type t := t
-include Ppx_compare_lib.Comparable.S_local with type t := t
+include Ppx_compare_lib.Equal.S__local with type t := t
+include Ppx_compare_lib.Comparable.S__local with type t := t
 
-(** Ignores [None] and guarantees there is no [Some _]. A better replacement for
-    [ignore]. *)
+(** Ignores [None] and guarantees there is no [Some _]. A better replacement for [ignore]. *)
 val must_be_none : t option -> unit
 
-(** Ignores [ [] ] and guarantees there is no [_ :: _]. A better replacement for
-    [ignore]. *)
+(** Ignores [ [] ] and guarantees there is no [_ :: _]. A better replacement for [ignore]. *)
 val must_be_empty : t list -> unit
 
 (** Returns [ok] from [Ok ok] and guarantees there is no [Error _]. *)

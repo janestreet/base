@@ -14,7 +14,7 @@ let drain t ~f ~while_ =
   done
 ;;
 
-module C = Indexed_container.Make (struct
+module%template C = Indexed_container.Make [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let fold = fold

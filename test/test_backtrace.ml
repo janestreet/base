@@ -7,7 +7,7 @@ let%test_unit (_ [@tags "no-js"]) =
 ;;
 
 let%expect_test _ =
-  Backtrace.elide := true;
+  Dynamic.set_root Backtrace.elide true;
   Stdio.Out_channel.(output_string stdout)
     (Sexp.to_string (sexp_of_t (Exn.with_recording false ~f:Exn.most_recent)));
   [%expect {| ("<backtrace elided in test>") |}]

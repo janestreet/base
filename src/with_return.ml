@@ -29,7 +29,8 @@ let with_return (type a) f =
 let with_return_option f =
   with_return (fun return ->
     f { return = (fun a -> return.return (Some a)) };
-    None) [@nontail]
+    None)
+  [@nontail]
 ;;
 
 let prepend { return } ~f = { return = (fun x -> return (f x)) }

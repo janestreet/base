@@ -14,8 +14,6 @@ module%test Binary_searchable = Test_binary_searchable.Test1 (struct
 module%test Blit =
   Test_blit.Test1
     (struct
-      type 'a z = 'a
-
       include Array
 
       let create_bool ~len = create ~len false

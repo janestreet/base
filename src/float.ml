@@ -1,34 +1,22 @@
 open! Import
 open! Printf
 module Bytes = Bytes0
+module Sexp = Sexp0
+include Float_intf
 include Float0
 
 let raise_s = Error.raise_s
 
 module T = struct
-  type t = float [@@deriving_inline hash, globalize, sexp, sexp_grammar]
-
-  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    hash_fold_float
-
-  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_float in
-    fun x -> func x
-  ;;
-
-  let (globalize : t -> t) = (globalize_float : t -> t)
-  let t_of_sexp = (float_of_sexp : Sexplib0.Sexp.t -> t)
-  let sexp_of_t = (sexp_of_float : t -> Sexplib0.Sexp.t)
-  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = float_sexp_grammar
-
-  [@@@end]
+  type t = float [@@deriving hash, globalize, sexp ~localize, sexp_grammar]
 
   let compare = Float_replace_polymorphic_compare.compare
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 end
 
 include T
-include Comparator.Make (T)
+
+include%template Comparator.Make [@modality portable] (T)
 
 (* We include type-specific [Replace_polymorphic_compare] at the end, after including
    functor application that could shadow its definitions. This is here so that efficient
@@ -633,68 +621,7 @@ module Class = struct
     | Normal
     | Subnormal
     | Zero
-  [@@deriving_inline compare ~localize, enumerate, sexp, sexp_grammar]
-
-  let compare__local = (Stdlib.compare : t -> t -> int)
-  let compare = (fun a b -> compare__local a b : t -> t -> int)
-  let all = ([ Infinite; Nan; Normal; Subnormal; Zero ] : t list)
-
-  let t_of_sexp =
-    (let error_source__007_ = "float.ml.Class.t" in
-     function
-     | Sexplib0.Sexp.Atom ("infinite" | "Infinite") -> Infinite
-     | Sexplib0.Sexp.Atom ("nan" | "Nan") -> Nan
-     | Sexplib0.Sexp.Atom ("normal" | "Normal") -> Normal
-     | Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") -> Subnormal
-     | Sexplib0.Sexp.Atom ("zero" | "Zero") -> Zero
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("infinite" | "Infinite") :: _) as
-       sexp__008_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("nan" | "Nan") :: _) as sexp__008_ ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("normal" | "Normal") :: _) as sexp__008_ ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("subnormal" | "Subnormal") :: _) as
-       sexp__008_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("zero" | "Zero") :: _) as sexp__008_ ->
-       Sexplib0.Sexp_conv_error.stag_no_args error_source__007_ sexp__008_
-     | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__006_ ->
-       Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__007_ sexp__006_
-     | Sexplib0.Sexp.List [] as sexp__006_ ->
-       Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__007_ sexp__006_
-     | sexp__006_ ->
-       Sexplib0.Sexp_conv_error.unexpected_stag
-         error_source__007_
-         [ "Infinite"; "Nan"; "Normal"; "Subnormal"; "Zero" ]
-         sexp__006_
-     : Sexplib0.Sexp.t -> t)
-  ;;
-
-  let sexp_of_t =
-    (function
-     | Infinite -> Sexplib0.Sexp.Atom "Infinite"
-     | Nan -> Sexplib0.Sexp.Atom "Nan"
-     | Normal -> Sexplib0.Sexp.Atom "Normal"
-     | Subnormal -> Sexplib0.Sexp.Atom "Subnormal"
-     | Zero -> Sexplib0.Sexp.Atom "Zero"
-     : t -> Sexplib0.Sexp.t)
-  ;;
-
-  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) =
-    { untyped =
-        Variant
-          { case_sensitivity = Case_sensitive_except_first_character
-          ; clauses =
-              [ No_tag { name = "Infinite"; clause_kind = Atom_clause }
-              ; No_tag { name = "Nan"; clause_kind = Atom_clause }
-              ; No_tag { name = "Normal"; clause_kind = Atom_clause }
-              ; No_tag { name = "Subnormal"; clause_kind = Atom_clause }
-              ; No_tag { name = "Zero"; clause_kind = Atom_clause }
-              ]
-          }
-    }
-  ;;
-
-  [@@@end]
+  [@@deriving compare ~localize, enumerate, equal ~localize, sexp ~localize, sexp_grammar]
 
   let to_string t = string_of_sexp (sexp_of_t t)
   let of_string s = t_of_sexp (sexp_of_string s)
@@ -740,7 +667,19 @@ let to_string_hum ?delimiter ?(decimals = 3) ?strip_zero ?(explicit_plus = false
 
 let sexp_of_t t =
   let sexp = sexp_of_t t in
-  match !Sexp.of_float_style with
+  match Dynamic.get Sexp.of_float_style with
+  | `No_underscores -> sexp
+  | `Underscores ->
+    (match sexp with
+     | List _ ->
+       raise_s (Sexp.message "[sexp_of_float] produced strange sexp" [ "sexp", sexp ])
+     | Atom string ->
+       if String.contains string 'E' then sexp else Atom (insert_underscores string))
+;;
+
+let sexp_of_t__local t =
+  let sexp = sexp_of_t__local t in
+  match Dynamic.get Sexp.of_float_style with
   | `No_underscores -> sexp
   | `Underscores ->
     (match sexp with
@@ -748,9 +687,11 @@ let sexp_of_t t =
        raise_s
          (Sexp.message
             "[sexp_of_float] produced strange sexp"
-            [ "sexp", Sexp.sexp_of_t sexp ])
+            [ "sexp", Sexp.globalize sexp ])
      | Atom string ->
-       if String.contains string 'E' then sexp else Atom (insert_underscores string))
+       if String.contains string 'E'
+       then sexp
+       else Atom (insert_underscores (globalize_string string)))
 ;;
 
 let to_padded_compact_string_custom t ?(prefix = "") ~kilo ~mega ~giga ~tera ?peta () =
@@ -897,10 +838,10 @@ let int_pow x n =
     !x *. !accum)
 ;;
 
-(* [( *. )] is already mode-polymorphic so it doesn't make sense to functorize these, plus
-   their implementation is trivial anyway. *)
-let square x = x *. x
-let square_local x = x *. x
+[%%template
+[@@@mode.default m = (global, local)]
+
+let square x = (x *. x) [@exclave_if_local m]
 
 (* The desired behavior here is to propagate a nan if either argument is nan. Because
    the first comparison will always return false if either argument is nan, it suffices
@@ -929,171 +870,77 @@ let square_local x = x *. x
    │ if x < y || is_nan x then x else y             │   1.56us │
    └────────────────────────────────────────────────┴──────────┘
 *)
-let min, min_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (T) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           let fn x y =
-             let x' = W.unwrap x
-             and y' = W.unwrap y in
-             if x' < y' || is_nan x' then x else y
-           ;;
-         end) in
-  fn_global, fn_local
-;;
+let min x y = if x < y || is_nan x then x else y
+let max x y = if x > y || is_nan x then x else y
+let min_inan x y = if is_nan y then x else if is_nan x then y else if x < y then x else y
+let max_inan x y = if is_nan y then x else if is_nan x then y else if x > y then x else y
 
-let max, max_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (T) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           let fn x y =
-             let x' = W.unwrap x
-             and y' = W.unwrap y in
-             if x' > y' || is_nan x' then x else y
-           ;;
-         end) in
-  fn_global, fn_local
-;;
-
-let min_inan, min_inan_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (T) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           let fn x y =
-             let x' = W.unwrap x
-             and y' = W.unwrap y in
-             if is_nan y' then x else if is_nan x' then y else if x' < y' then x else y
-           ;;
-         end) in
-  fn_global, fn_local
-;;
-
-let max_inan, max_inan_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (T) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           let fn x y =
-             let x' = W.unwrap x
-             and y' = W.unwrap y in
-             if is_nan y' then x else if is_nan x' then y else if x' > y' then x else y
-           ;;
-         end) in
-  fn_global, fn_local
-;;
-
-module Round_gen (W : Modes.Global.Wrapper) = struct
-  let round_gen x ~how =
-    let x' = W.unwrap x in
-    if x' = 0.
-    then W.wrap 0.
-    else if not (is_finite x')
+let round_gen x ~how =
+  if x = 0.
+  then 0.
+  else if not (is_finite x)
+  then x
+  else (
+    (* Significant digits and decimal digits. *)
+    let sd, dd =
+      match how with
+      | `significant_digits sd ->
+        let dd = sd - to_int (round_up (log10 (abs x))) in
+        sd, dd
+      | `decimal_digits dd ->
+        let sd = dd + to_int (round_up (log10 (abs x))) in
+        sd, dd
+    in
+    let open Int_replace_polymorphic_compare in
+    if sd < 0
+    then 0.
+    else if sd >= 17
     then x
     else (
-      (* Significant digits and decimal digits. *)
-      let sd, dd =
-        match how with
-        | `significant_digits sd ->
-          let dd = sd - to_int (round_up (log10 (abs x'))) in
-          sd, dd
-        | `decimal_digits dd ->
-          let sd = dd + to_int (round_up (log10 (abs x'))) in
-          sd, dd
-      in
-      let open Int_replace_polymorphic_compare in
-      if sd < 0
-      then W.wrap 0.
-      else if sd >= 17
-      then x
+      (* Choose the order that is exactly representable as a float. Small positive
+         integers are, but their inverses in most cases are not. *)
+      let abs_dd = Int.abs dd in
+      if abs_dd > 22 || sd >= 16
+         (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
+            path.  Similarly, if we need 16 significant digits in the result, then the integer
+            [round_nearest (x <op> order)] might not be exactly representable as a float, since
+            for some ranges we only have 15 digits of precision guaranteed.
+
+            That said, we are still rounding twice here:
+
+            1) first time when rounding [x *. order] or [x /. order] to the nearest float
+            (just the normal way floating-point multiplication or division works),
+
+            2) second time when applying [round_nearest_half_to_even] to the result of the
+            above operation
+
+            So for arguments within an ulp from a tie we might still produce an off-by-one
+            result. *)
+      then of_string (sprintf "%.*g" sd (globalize x))
       else (
-        (* Choose the order that is exactly representable as a float. Small positive
-             integers are, but their inverses in most cases are not. *)
-        let abs_dd = Int.abs dd in
-        if abs_dd > 22 || sd >= 16
-           (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
-              path.  Similarly, if we need 16 significant digits in the result, then the integer
-              [round_nearest (x <op> order)] might not be exactly representable as a float, since
-              for some ranges we only have 15 digits of precision guaranteed.
-
-              That said, we are still rounding twice here:
-
-              1) first time when rounding [x *. order] or [x /. order] to the nearest float
-              (just the normal way floating-point multiplication or division works),
-
-              2) second time when applying [round_nearest_half_to_even] to the result of the
-              above operation
-
-              So for arguments within an ulp from a tie we might still produce an off-by-one
-              result. *)
-        then W.wrap (of_string (sprintf "%.*g" sd (globalize x')))
-        else (
-          let order = int_pow 10. abs_dd in
-          if dd >= 0
-          then W.wrap (round_nearest_half_to_even (x' *. order) /. order)
-          else W.wrap (round_nearest_half_to_even (x' /. order) *. order))))
-  ;;
-end
-
-let round_significant, round_significant_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (Int) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           open Round_gen (W)
-
-           let fn x significant_digits =
-             let significant_digits = W.unwrap significant_digits in
-             if Int_replace_polymorphic_compare.( <= ) significant_digits 0
-             then
-               invalid_argf
-                 "Float.round_significant: invalid argument significant_digits:%d"
-                 significant_digits
-                 ()
-             else round_gen x ~how:(`significant_digits significant_digits)
-           ;;
-         end) in
-  fn_global, fn_local
+        let order = int_pow 10. abs_dd in
+        if dd >= 0
+        then round_nearest_half_to_even (x *. order) /. order
+        else round_nearest_half_to_even (x /. order) *. order)))
 ;;
 
-let round_decimal, round_decimal_local =
-  let open
-    Modes.Global.Poly_fn2 (T) (Int) (T)
-      (functor
-         (W : Modes.Global.Wrapper)
-         ->
-         struct
-           open Round_gen (W)
-
-           let fn x decimal_digits =
-             round_gen x ~how:(`decimal_digits (W.unwrap decimal_digits))
-           ;;
-         end) in
-  fn_global, fn_local
+let round_significant x ~significant_digits =
+  if Int_replace_polymorphic_compare.( <= ) significant_digits 0
+  then
+    invalid_argf
+      "Float.round_significant: invalid argument significant_digits:%d"
+      significant_digits
+      ()
+  else (
+    let how = `significant_digits significant_digits in
+    (round_gen [@mode m]) x ~how [@exclave_if_local m])
 ;;
 
-let[@inline] round_significant x ~significant_digits =
-  round_significant x significant_digits
-;;
+let round_decimal x ~decimal_digits =
+  let how = `decimal_digits decimal_digits in
+  (round_gen [@mode m]) x ~how [@exclave_if_local m]
+;;]
 
-let[@inline] round_significant_local x ~significant_digits =
-  round_significant_local x significant_digits
-;;
-
-let[@inline] round_decimal x ~decimal_digits = round_decimal x decimal_digits
-let[@inline] round_decimal_local x ~decimal_digits = round_decimal_local x decimal_digits
 let between t ~low ~high = low <= t && t <= high
 
 let clamp_exn t ~min ~max =
@@ -1205,13 +1052,14 @@ module Terse = struct
   type nonrec t = t
 
   let t_of_sexp = t_of_sexp
-  let to_string x = Printf.sprintf "%.8G" x
+  let to_string x = format_float "%.8G" x
   let sexp_of_t x = Sexp.Atom (to_string x)
+  let sexp_of_t__local x = Sexp.Atom (to_string x)
   let of_string x = of_string x
   let t_sexp_grammar = t_sexp_grammar
 end
 
-include Comparable.With_zero (struct
+include%template Comparable.With_zero [@modality portable] (struct
     include T
 
     let zero = zero
@@ -1226,7 +1074,7 @@ let is_non_negative t = t >= 0.
 let is_negative t = t < 0.
 let is_non_positive t = t <= 0.
 
-include Pretty_printer.Register (struct
+include%template Pretty_printer.Register [@modality portable] (struct
     include T
 
     let module_name = "Base.Float"
@@ -1252,7 +1100,10 @@ module O = struct
   [@@unboxed] [@@noalloc]
 
   include (
-    Float_replace_polymorphic_compare : Comparisons.Infix_with_local_opt with type t := t)
+    Float_replace_polymorphic_compare :
+    sig
+      include Comparisons.Infix_with_local_opt with type t := t
+    end)
 
   external abs : (t[@local_opt]) -> (t[@local_opt]) = "%absfloat"
   external neg : (t[@local_opt]) -> (t[@local_opt]) = "%negfloat"
@@ -1295,10 +1146,11 @@ end
 
 module Shadow = struct
   (* These functions specifically replace defaults in replace_polymorphic_compare. *)
-  let min = min
-  let max = max
-  let min_local = min_local
-  let max_local = max_local
+  [%%template
+  [@@@mode.default m = (global, local)]
+
+  let min = (min [@mode m])
+  let max = (max [@mode m])]
 end
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after

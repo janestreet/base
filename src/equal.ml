@@ -1,6 +1,6 @@
 (** This module defines signatures that are to be included in other signatures to ensure a
-    consistent interface to [equal] functions.  There is a signature ([S], [S1], [S2],
-    [S3]) for each arity of type.  Usage looks like:
+    consistent interface to [equal] functions. There is a signature ([S], [S1], [S2],
+    [S3]) for each arity of type. Usage looks like:
 
     {[
       type t

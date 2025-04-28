@@ -4,69 +4,27 @@
 
 open! Import
 include Info_intf
+module Sexp = Sexp0
 module String = String0
 
 module Message = struct
   type t =
     | Could_not_construct of Sexp.t
     | String of string
-    | Exn of exn
+    | Exn of exn Modes.Global.t
     | Sexp of Sexp.t
     | Tag_sexp of string * Sexp.t * Source_code_position0.t option
     | Tag_t of string * t
     | Tag_arg of string * Sexp.t * t
     | Of_list of int option * t list
     | With_backtrace of t * string (* backtrace *)
-  [@@deriving_inline sexp_of]
-
-  let rec sexp_of_t =
-    (function
-     | Could_not_construct arg0__001_ ->
-       let res0__002_ = Sexp.sexp_of_t arg0__001_ in
-       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Could_not_construct"; res0__002_ ]
-     | String arg0__003_ ->
-       let res0__004_ = sexp_of_string arg0__003_ in
-       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "String"; res0__004_ ]
-     | Exn arg0__005_ ->
-       let res0__006_ = sexp_of_exn arg0__005_ in
-       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Exn"; res0__006_ ]
-     | Sexp arg0__007_ ->
-       let res0__008_ = Sexp.sexp_of_t arg0__007_ in
-       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Sexp"; res0__008_ ]
-     | Tag_sexp (arg0__009_, arg1__010_, arg2__011_) ->
-       let res0__012_ = sexp_of_string arg0__009_
-       and res1__013_ = Sexp.sexp_of_t arg1__010_
-       and res2__014_ = sexp_of_option Source_code_position0.sexp_of_t arg2__011_ in
-       Sexplib0.Sexp.List
-         [ Sexplib0.Sexp.Atom "Tag_sexp"; res0__012_; res1__013_; res2__014_ ]
-     | Tag_t (arg0__015_, arg1__016_) ->
-       let res0__017_ = sexp_of_string arg0__015_
-       and res1__018_ = sexp_of_t arg1__016_ in
-       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Tag_t"; res0__017_; res1__018_ ]
-     | Tag_arg (arg0__019_, arg1__020_, arg2__021_) ->
-       let res0__022_ = sexp_of_string arg0__019_
-       and res1__023_ = Sexp.sexp_of_t arg1__020_
-       and res2__024_ = sexp_of_t arg2__021_ in
-       Sexplib0.Sexp.List
-         [ Sexplib0.Sexp.Atom "Tag_arg"; res0__022_; res1__023_; res2__024_ ]
-     | Of_list (arg0__025_, arg1__026_) ->
-       let res0__027_ = sexp_of_option sexp_of_int arg0__025_
-       and res1__028_ = sexp_of_list sexp_of_t arg1__026_ in
-       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "Of_list"; res0__027_; res1__028_ ]
-     | With_backtrace (arg0__029_, arg1__030_) ->
-       let res0__031_ = sexp_of_t arg0__029_
-       and res1__032_ = sexp_of_string arg1__030_ in
-       Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "With_backtrace"; res0__031_; res1__032_ ]
-     : t -> Sexplib0.Sexp.t)
-  ;;
-
-  [@@@end]
+  [@@deriving sexp_of]
 
   let rec to_sexps_hum t ac =
     match t with
     | Could_not_construct _ as t -> sexp_of_t t :: ac
     | String string -> Atom string :: ac
-    | Exn exn -> Exn.sexp_of_t exn :: ac
+    | Exn { global = exn } -> Exn.sexp_of_t exn :: ac
     | Sexp sexp -> sexp :: ac
     | Tag_sexp (tag, sexp, here) ->
       List
@@ -103,7 +61,7 @@ module Computed = struct
 
   (* We use a global [state ref] so we can mutate [state], but still [globalize] with no
      cost and without duplicating state. *)
-  type info = { state : state ref } [@@unboxed]
+  type info = { state : state ref [@globalized] } [@@unboxed]
 
   (* An [info] starts as a [constructor]. When forced, it is marked [Computing] to avoid
      cycles. When finished, the final [message] is recorded. *)
@@ -132,6 +90,10 @@ module Computed = struct
         ; rev_suffix : Message.t list
         }
 
+  open struct
+    let list_fold = Portability_hacks.magic_portable__needs_base_and_core List.fold
+  end
+
   (* The following mutually-recursive functions compute a [Message.t] from an [info].
      All calls below are tail calls: we want to avoid using the call stack in favor
      of our own manual stack. *)
@@ -139,7 +101,7 @@ module Computed = struct
     match !(info.state) with
     | Initial cons ->
       info.state := Computing;
-      compute_constructor cons (In_info info :: stack)
+      compute_constructor cons (In_info (globalize_info info) :: stack)
     | Computing ->
       compute_message (Could_not_construct (Atom "cycle while computing message")) stack
     | Final message -> compute_message message stack
@@ -149,7 +111,7 @@ module Computed = struct
     | info :: fwd_prefix -> compute_info info (In_list { fwd_prefix; rev_suffix } :: stack)
     | [] ->
       let infos =
-        List.fold rev_suffix ~init:[] ~f:(fun tail message ->
+        list_fold rev_suffix ~init:[] ~f:(fun tail message ->
           match message with
           | Of_list (_, messages) -> messages @ tail
           | _ -> message :: tail)
@@ -164,7 +126,7 @@ module Computed = struct
     | Cons_lazy_info lazy_info ->
       (match Lazy.force lazy_info with
        | info -> compute_info info stack
-       | exception exn -> compute_message (Could_not_construct (Exn.sexp_of_t exn)) stack)
+       | exception exn -> compute_message (Could_not_construct (sexp_of_exn exn)) stack)
 
   and compute_message message stack =
     match stack with
@@ -252,7 +214,7 @@ exception Exn of t
 
 let () =
   (* We install a custom exn-converter rather than use
-     [exception Exn of t [@@deriving_inline sexp] ... [@@@end]] to eliminate the extra
+     [exception Exn of t [@@deriving sexp]] to eliminate the extra
      wrapping of "(Exn ...)". *)
   Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Exn] (function
     | Exn t -> sexp_of_t t
@@ -266,7 +228,7 @@ let to_exn t =
   then Exn t
   else (
     match to_message t with
-    | Message.Exn exn -> exn
+    | Message.Exn { global = exn } -> exn
     | _ -> Exn t)
 ;;
 
@@ -281,12 +243,12 @@ let of_exn ?backtrace exn =
   | Exn t, None -> t
   | Exn t, Some backtrace ->
     of_lazy_message (lazy (With_backtrace (to_message t, backtrace)))
-  | _, None -> of_message (Message.Exn exn)
+  | _, None -> of_message (Message.Exn { global = exn })
   | _, Some backtrace ->
     of_lazy_message (lazy (With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace)))
 ;;
 
-include Pretty_printer.Register_pp (struct
+include%template Pretty_printer.Register_pp [@mode portable] (struct
     type nonrec t = t
 
     let module_name = "Base.Info"

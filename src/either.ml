@@ -58,8 +58,8 @@ let invariant f s = function
 
 module Focus = struct
   type ('a, 'b) t =
-    | Focus of { value : 'a }
-    | Other of { value : 'b }
+    | Focus of { value : 'a [@globalized] }
+    | Other of { value : 'b [@globalized] }
 end
 
 module Make_focused (M : sig
@@ -87,7 +87,7 @@ struct
     res
   ;;
 
-  include Monad.Make2_local (struct
+  include%template Monad.Make2 [@mode local] [@modality portable] (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return
@@ -95,7 +95,8 @@ struct
       let map = `Custom map
     end)
 
-  module App = Applicative.Make2_using_map2_local (struct
+  module%template App =
+  Applicative.Make2_using_map2 [@mode local] [@modality portable] (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return

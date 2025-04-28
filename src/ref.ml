@@ -3,42 +3,11 @@ open! Import
 include (
 struct
   type 'a t = 'a ref
-  [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
-
-  let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref__local
-  let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_ref
-  let equal__local : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool = equal_ref__local
-  let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool = equal_ref
-
-  let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
-    fun (type a__017_) : ((a__017_ -> a__017_) -> a__017_ t -> a__017_ t) -> globalize_ref
-  ;;
-
-  let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = ref_of_sexp
-  let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_ref
-
-  let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
-    fun _'a_sexp_grammar -> ref_sexp_grammar _'a_sexp_grammar
-  ;;
-
-  [@@@end]
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
 end :
 sig
   type 'a t = 'a ref
-  [@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
-
-  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-  include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
-  include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
-  include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
-
-  val globalize : ('a -> 'a) -> 'a t -> 'a t
-
-  include Sexplib0.Sexpable.S_any1 with type 'a t := 'a t
-
-  val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
 end)
 
 (* In the definition of [t], we do not have [[@@deriving compare, sexp]] because
@@ -66,7 +35,7 @@ let set_temporarily t a ~f =
 ;;
 
 module And_value = struct
-  type t = T : 'a ref * 'a -> t [@@deriving sexp_of]
+  type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~localize]
 
   let set (T (r, a)) = r := a
   let sets ts = List.iter ts ~f:set

@@ -32,43 +32,7 @@ type stack_or_heap =
   | Immediate
   | Stack
   | Heap
-[@@deriving_inline sexp, compare]
-
-let stack_or_heap_of_sexp =
-  (let error_source__003_ = "obj_local.ml.stack_or_heap" in
-   function
-   | Sexplib0.Sexp.Atom ("immediate" | "Immediate") -> Immediate
-   | Sexplib0.Sexp.Atom ("stack" | "Stack") -> Stack
-   | Sexplib0.Sexp.Atom ("heap" | "Heap") -> Heap
-   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("immediate" | "Immediate") :: _) as
-     sexp__004_ -> Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp__004_
-   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("stack" | "Stack") :: _) as sexp__004_ ->
-     Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp__004_
-   | Sexplib0.Sexp.List (Sexplib0.Sexp.Atom ("heap" | "Heap") :: _) as sexp__004_ ->
-     Sexplib0.Sexp_conv_error.stag_no_args error_source__003_ sexp__004_
-   | Sexplib0.Sexp.List (Sexplib0.Sexp.List _ :: _) as sexp__002_ ->
-     Sexplib0.Sexp_conv_error.nested_list_invalid_sum error_source__003_ sexp__002_
-   | Sexplib0.Sexp.List [] as sexp__002_ ->
-     Sexplib0.Sexp_conv_error.empty_list_invalid_sum error_source__003_ sexp__002_
-   | sexp__002_ ->
-     Sexplib0.Sexp_conv_error.unexpected_stag
-       error_source__003_
-       [ "Immediate"; "Stack"; "Heap" ]
-       sexp__002_
-   : Sexplib0.Sexp.t -> stack_or_heap)
-;;
-
-let sexp_of_stack_or_heap =
-  (function
-   | Immediate -> Sexplib0.Sexp.Atom "Immediate"
-   | Stack -> Sexplib0.Sexp.Atom "Stack"
-   | Heap -> Sexplib0.Sexp.Atom "Heap"
-   : stack_or_heap -> Sexplib0.Sexp.t)
-;;
-
-let compare_stack_or_heap = (Stdlib.compare : stack_or_heap -> stack_or_heap -> int)
-
-[@@@end]
+[@@deriving sexp ~localize, compare]
 
 let stack_or_heap repr =
   if is_int repr

@@ -1,23 +1,20 @@
 (** Exceptions.
 
-    [sexp_of_t] uses a global table of sexp converters.  To register a converter for a new
+    [sexp_of_t] uses a global table of sexp converters. To register a converter for a new
     exception, add [[@@deriving sexp]] to its definition. If no suitable converter is
     found, the standard converter in [Printexc] will be used to generate an atomic
     S-expression. *)
 
 open! Import
+module Sexp := Sexp0
 
-type t = exn [@@deriving_inline sexp_of]
-
-val sexp_of_t : t -> Sexplib0.Sexp.t
-
-[@@@end]
+type t = exn [@@deriving sexp_of]
 
 include Pretty_printer.S with type t := t
 
-(** Raised when finalization after an exception failed, too.
-    The first exception argument is the one raised by the initial
-    function, the second exception the one raised by the finalizer. *)
+(** Raised when finalization after an exception failed, too. The first exception argument
+    is the one raised by the initial function, the second exception the one raised by the
+    finalizer. *)
 exception Finally of t * t
 
 exception Reraised of string * t
@@ -33,9 +30,9 @@ val create_s_lazy : Sexp.t Lazy.t -> t
 (** Same as [raise], except that the backtrace is not recorded. *)
 val raise_without_backtrace : t -> _
 
-(** [raise_with_original_backtrace t bt] raises the exception [exn], recording [bt]
-    as the backtrace it was originally raised at. This is useful to re-raise
-    exceptions annotated with extra information. *)
+(** [raise_with_original_backtrace t bt] raises the exception [exn], recording [bt] as the
+    backtrace it was originally raised at. This is useful to re-raise exceptions annotated
+    with extra information. *)
 val raise_with_original_backtrace : t -> Stdlib.Printexc.raw_backtrace -> _
 
 val reraise : t -> string -> _
@@ -64,7 +61,7 @@ val protectx : f:('a -> 'b) -> 'a -> finally:('a -> unit) -> 'b
 val protect : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
 
 (** [handle_uncaught ~exit f] catches an exception escaping [f] and prints an error
-    message to stderr.  Exits with return code 1 if [exit] is [true], and returns unit
+    message to stderr. Exits with return code 1 if [exit] is [true], and returns unit
     otherwise.
 
     Note that since OCaml 4.02.0, you don't need to use this at the entry point of your
@@ -75,20 +72,21 @@ val handle_uncaught : exit:bool -> (unit -> unit) -> unit
     prints the exception and exits nonzero. *)
 val handle_uncaught_and_exit : (unit -> 'a) -> 'a
 
-(** Traces exceptions passing through.  Useful because in practice, backtraces still don't
+(** Traces exceptions passing through. Useful because in practice, backtraces still don't
     seem to work.
 
     Example:
     {[
       let rogue_function () = if Random.bool () then failwith "foo" else 3
-      let traced_function () = Exn.reraise_uncaught "rogue_function" rogue_function
-                                 traced_function ();;
+
+      let traced_function () =
+        Exn.reraise_uncaught "rogue_function" rogue_function traced_function ()
+      ;;
     ]}
     {v : Program died with Reraised("rogue_function", Failure "foo") v} *)
 val reraise_uncaught : string -> (unit -> 'a) -> 'a
 
-(** [does_raise f] returns [true] iff [f ()] raises, which is often useful in unit
-    tests. *)
+(** [does_raise f] returns [true] iff [f ()] raises, which is often useful in unit tests. *)
 val does_raise : (unit -> _) -> bool
 
 (** Returns [true] if this exception is physically equal to the most recently raised one.
@@ -97,13 +95,11 @@ val does_raise : (unit -> _) -> bool
 
     Note that, confusingly, exceptions can be physically equal even if the caller was not
     involved in handling of the last-raised exception. See the documentation of
-    [Backtrace.Exn.most_recent_for_exn] for further discussion.
-*)
+    [Backtrace.Exn.most_recent_for_exn] for further discussion. *)
 val is_phys_equal_most_recent : t -> bool
 
-(** User code never calls this.  It is called in [base.ml] as a top-level side
-    effect to change the display of exceptions and install an uncaught-exception
-    printer. *)
+(** User code never calls this. It is called in [base.ml] as a top-level side effect to
+    change the display of exceptions and install an uncaught-exception printer. *)
 val initialize_module : unit -> unit
 
 (**/**)

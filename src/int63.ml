@@ -1,4 +1,5 @@
 open! Import
+module Sexp = Sexp0
 module _ = Popcount
 
 let raise_s = Error.raise_s
@@ -8,18 +9,20 @@ include Sys0.Make_immediate64 (Int) (Int63_emul)
 
 module Backend = struct
   module type S = sig
-      type t
+      type t [@@deriving globalize]
 
       include Int_intf.S with type t := t
+      include Replace_polymorphic_compare.S with type t := t
 
       val of_int : int -> t
       val to_int : t -> int option
       val to_int_trunc : t -> int
       val of_int32 : int32 -> t
-      val to_int32 : t -> Int32.t option
-      val to_int32_trunc : t -> Int32.t
-      val of_int64 : Int64.t -> t option
-      val of_int64_trunc : Int64.t -> t
+      val to_int32 : t -> int32 option
+      val to_int32_trunc : t -> int32
+      val of_int64 : int64 -> t option
+      val of_int64_exn : int64 -> t
+      val of_int64_trunc : int64 -> t
       val of_nativeint : nativeint -> t option
       val to_nativeint : t -> nativeint option
       val of_nativeint_trunc : nativeint -> t
@@ -35,14 +38,17 @@ module Backend = struct
   module Native = struct
     include Int
 
-    let to_int x = Some x
-    let to_int_trunc x = x
+    let to_int (x : t) = Some x
+    let to_int_trunc (x : t) = x
+    let to_int32 x = to_int32 x
+    let to_int32_trunc x = to_int32_trunc x
 
-    (* [of_int32_exn] is a safe operation on platforms with 64-bit word sizes. *)
-    let of_int32 = of_int32_exn
+    (* [of_local_int32_exn] is a safe operation on platforms with 64-bit word sizes. *)
+    let of_int32 x = globalize_int (of_local_int32_exn x)
     let to_nativeint_trunc x = to_nativeint x
     let to_nativeint x = Some (to_nativeint x)
     let repr = Int63_emul.Repr.Int
+    let bswap16 = (bswap16 :> t -> t)
     let bswap32 t = Int64.to_int_trunc (Int64.bswap32 (Int64.of_int t))
     let bswap48 t = Int64.to_int_trunc (Int64.bswap48 (Int64.of_int t))
   end
@@ -105,16 +111,17 @@ module Overflow_exn = struct
   ;;
 
   let abs t = if t = min_value then failwith "abs overflow" else abs t
+  let abs_local t = if t = min_value then failwith "abs_local overflow" else abs_local t
   let neg t = if t = min_value then failwith "neg overflow" else neg t
 end
 
 let () = assert (Int.( = ) num_bits 63)
 
-let random_of_int ?(state = Random.State.default) bound =
+let random_of_int ?(state = Random.State.get_default ()) bound =
   of_int (Random.State.int state (to_int_exn bound))
 ;;
 
-let random_of_int64 ?(state = Random.State.default) bound =
+let random_of_int64 ?(state = Random.State.get_default ()) bound =
   of_int64_exn (Random.State.int64 state (to_int64 bound))
 ;;
 
@@ -124,11 +131,11 @@ let random =
   | W32 -> random_of_int64
 ;;
 
-let random_incl_of_int ?(state = Random.State.default) lo hi =
+let random_incl_of_int ?(state = Random.State.get_default ()) lo hi =
   of_int (Random.State.int_incl state (to_int_exn lo) (to_int_exn hi))
 ;;
 
-let random_incl_of_int64 ?(state = Random.State.default) lo hi =
+let random_incl_of_int64 ?(state = Random.State.get_default ()) lo hi =
   of_int64_exn (Random.State.int64_incl state (to_int64 lo) (to_int64 hi))
 ;;
 

@@ -1,61 +1,41 @@
 open! Import
-open Modes.Export
+
+module%template Constructors = struct
+  type nonrec 'a t =
+    | None
+    | Some of 'a
+  [@@kind k = (float64, bits32, bits64, word)]
+  [@@deriving sexp ~localize, compare ~localize]
+
+  type 'a t = 'a option =
+    | None
+    | Some of 'a
+end
+
+include Constructors
 
 include (
 struct
   type 'a t = 'a option
-  [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
-
-  let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
-    compare_option__local
-  ;;
-
-  let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_option
-
-  let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
-    fun (type a__009_) : ((a__009_ -> a__009_) -> a__009_ t -> a__009_ t) ->
-    globalize_option
-  ;;
-
-  let hash_fold_t
-    : 'a.
-    (Ppx_hash_lib.Std.Hash.state -> 'a -> Ppx_hash_lib.Std.Hash.state)
-    -> Ppx_hash_lib.Std.Hash.state
-    -> 'a t
-    -> Ppx_hash_lib.Std.Hash.state
-    =
-    hash_fold_option
-  ;;
-
-  let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = option_of_sexp
-  let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_option
-
-  let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
-    fun _'a_sexp_grammar -> option_sexp_grammar _'a_sexp_grammar
-  ;;
-
-  [@@@end]
+  [@@deriving compare ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 end :
 sig
   type 'a t = 'a option
-  [@@deriving_inline compare ~localize, globalize, hash, sexp, sexp_grammar]
-
-  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-  include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
-
-  val globalize : ('a -> 'a) -> 'a t -> 'a t
-
-  include Ppx_hash_lib.Hashable.S1 with type 'a t := 'a t
-  include Sexplib0.Sexpable.S_any1 with type 'a t := 'a t
-
-  val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  [@@deriving compare ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 end)
 
 type 'a t = 'a option =
   | None
   | Some of 'a
+
+[%%template
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
+
+open struct
+  type nonrec 'a t = ('a t[@kind k]) =
+    | None
+    | Some of 'a
+end
 
 let is_none = function
   | None -> true
@@ -67,29 +47,20 @@ let is_some = function
   | _ -> false
 ;;
 
-let value_map_local o ~default ~f =
-  match o with
-  | Some x -> f x
+[@@@mode.default m = (global, local)]
+
+let value_map t ~default ~f =
+  match t with
+  | Some x -> f x [@exclave_if_local m]
   | None -> default
+[@@kind ki = k, ko = (value, float64, bits32, bits64, word)]
 ;;
 
-let[@inline] value_map o ~default ~f =
-  (value_map_local
-     (Modes.Global.wrap_option o)
-     ~default:{ global = default }
-     ~f:(Modes.Global.map ~f))
-    .global
-;;
-
-let iter_local o ~f =
+let iter o ~f =
   match o with
   | None -> ()
   | Some a -> f a
-;;
-
-let[@inline] iter o ~f =
-  iter_local (Modes.Global.wrap_option o) ~f:(fun x -> f x.global) [@nontail]
-;;
+;;]
 
 let invariant f t = iter t ~f
 
@@ -99,17 +70,14 @@ let call x ~f =
   | Some f -> f x
 ;;
 
-let value_local t ~default =
+let%template value t ~default =
   match t with
   | None -> default
   | Some x -> x
+[@@mode m = (global, local)]
 ;;
 
-let[@inline] value t ~default =
-  (value_local (Modes.Global.wrap_option t) ~default:{ global = default }).global
-;;
-
-let value_local_exn ?(here = Stdlib.Lexing.dummy_pos) ?error ?message t =
+let%template value_exn ?(here = Stdlib.Lexing.dummy_pos) ?error ?message t =
   match t with
   | Some x -> x
   | None ->
@@ -124,22 +92,14 @@ let value_local_exn ?(here = Stdlib.Lexing.dummy_pos) ?error ?message t =
       | Some e, Some m -> Error.tag e ~tag:m
     in
     Error.raise error
+[@@mode m = (global, local)]
 ;;
 
-let[@inline] value_exn ?(here = Stdlib.Lexing.dummy_pos) ?error ?message t =
-  (value_local_exn ~here ?error ?message (Modes.Global.wrap_option t)).global
-;;
-
-let value_or_thunk_local o ~default =
+let%template value_or_thunk o ~default =
   match o with
   | Some x -> x
-  | None -> default ()
-;;
-
-let[@inline] value_or_thunk o ~default =
-  (value_or_thunk_local (Modes.Global.wrap_option o) ~default:(fun () ->
-     { global = default () }))
-    .global
+  | None -> default () [@exclave_if_local m]
+[@@mode m = (global, local)]
 ;;
 
 let to_array t =
@@ -148,16 +108,11 @@ let to_array t =
   | Some x -> [| x |]
 ;;
 
-let to_list_local t =
+let%template to_list t =
   match t with
   | None -> []
-  | Some x -> [ x ]
-;;
-
-let to_list t =
-  match t with
-  | None -> []
-  | Some x -> [ x ]
+  | Some x -> [ x ] [@exclave_if_local m]
+[@@mode m = (global, local)]
 ;;
 
 let for_all t ~f =
@@ -202,28 +157,19 @@ let find_map t ~f =
   | Some a -> f a
 ;;
 
-let equal f t t' =
+[%%template
+[@@@mode.default m = (global, local)]
+
+let equal f (t : (_ t[@kind k])) (t' : (_ t[@kind k])) =
   match t, t' with
   | None, None -> true
   | Some x, Some x' -> f x x'
   | _ -> false
+[@@kind k = (value, float64, bits32, bits64, word)]
 ;;
 
-let equal__local f t t' =
-  match t, t' with
-  | None, None -> true
-  | Some x, Some x' -> f x x'
-  | _ -> false
-;;
-
-let some x = Some x
-let some_local x = Some x
-
-let first_some_local x y =
-  match x with
-  | Some _ -> x
-  | None -> y
-;;
+let equal_t = (equal [@kind k] [@mode m]) [@@kind k = (float64, bits32, bits64, word)]
+let some x = Some x [@exclave_if_local m]
 
 let first_some x y =
   match x with
@@ -234,19 +180,18 @@ let first_some x y =
 let first_some_thunk x y =
   match x with
   | Some _ -> x
-  | None -> y ()
+  | None -> y () [@exclave_if_local m]
 ;;
 
-let first_some_thunk_local x y =
-  match x with
-  | Some _ -> x
-  | None -> y ()
+let some_if cond x = if cond then Some x [@exclave_if_local m] else None]
+
+let%template[@mode global] some_if_thunk cond thunk =
+  if cond then Some (thunk ()) else None
 ;;
 
-let some_if_local cond x = if cond then Some x else None
-let some_if cond x = if cond then Some x else None
-let some_if_thunk cond thunk = if cond then Some (thunk ()) else None
-let some_if_thunk_local cond thunk = if cond then Some (thunk ()) else None
+let%template[@mode local] some_if_thunk cond thunk =
+  if cond then Some (thunk ()) else None
+;;
 
 let merge a b ~f =
   match a, b with
@@ -272,13 +217,13 @@ let try_with_join f =
   | exception _ -> None
 ;;
 
-let map_local t ~f =
+let%template[@mode local] map t ~f =
   match t with
   | None -> None
   | Some a -> Some (f a)
 ;;
 
-let map t ~f =
+let%template[@mode global] map t ~f =
   match t with
   | None -> None
   | Some a -> Some (f a)
@@ -297,7 +242,7 @@ module Monad_arg = struct
   ;;
 end
 
-include Monad.Make_local (Monad_arg)
+include%template Monad.Make [@mode local] [@modality portable] (Monad_arg)
 
 module Applicative_arg = struct
   type 'a t = 'a option
@@ -312,4 +257,5 @@ module Applicative_arg = struct
   ;;
 end
 
-include Applicative.Make_using_map2_local (Applicative_arg)
+include%template
+  Applicative.Make_using_map2 [@mode local] [@modality portable] (Applicative_arg)

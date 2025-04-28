@@ -4,24 +4,17 @@
 open! Import
 
 module type S = sig
-  type 'a t [@@deriving_inline sexp, sexp_grammar]
-
-  include Sexplib0.Sexpable.S1 with type 'a t := 'a t
-
-  val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  type 'a t [@@deriving sexp, sexp_grammar]
 
   include Invariant.S1 with type 'a t := 'a t
 
   (** [fold], [iter], [find], and [find_map] visit the elements in order from the top of
-      the stack to the bottom.  [to_list] and [to_array] return the elements in order from
+      the stack to the bottom. [to_list] and [to_array] return the elements in order from
       the top of the stack to the bottom.
 
       Iteration functions ([iter], [fold], etc.) have unspecified behavior (although they
       should still be memory-safe) when the stack is mutated while they are running (e.g.
-      by having the passed-in function call [push] or [pop] on the stack).
-  *)
+      by having the passed-in function call [push] or [pop] on the stack). *)
   include Container.S1 with type 'a t := 'a t
 
   (** [of_list l] returns a stack whose top is the first element of [l] and bottom is the
@@ -56,7 +49,7 @@ module type S = sig
   val copy : 'a t -> 'a t
 
   (** [until_empty t f] repeatedly pops an element [a] off of [t] and runs [f a], until
-      [t] becomes empty.  It is fine if [f] adds more elements to [t], in which case the
+      [t] becomes empty. It is fine if [f] adds more elements to [t], in which case the
       most-recently-added element will be processed next. *)
   val until_empty : 'a t -> ('a -> unit) -> unit
 
@@ -83,7 +76,7 @@ module type Stack = sig
   (** [capacity t] returns the length of the array backing [t]. *)
   val capacity : _ t -> int
 
-  (** [set_capacity t capacity] sets the length of the array backing [t] to [max capacity
-      (length t)].  To shrink as much as possible, do [set_capacity t 0]. *)
+  (** [set_capacity t capacity] sets the length of the array backing [t] to
+      [max capacity (length t)]. To shrink as much as possible, do [set_capacity t 0]. *)
   val set_capacity : _ t -> int -> unit
 end

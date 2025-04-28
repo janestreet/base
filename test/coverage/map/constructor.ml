@@ -1943,8 +1943,11 @@ module%test [@tags "64-bits-only"] _ : Impl = struct
       |}]
   ;;
 
-  module Make_applicative_traversals (A : Applicative.Lazy_applicative) = struct
-    module T = Map.Make_applicative_traversals (A)
+  module%template.portable
+    [@modality p] Make_applicative_traversals
+      (A : Applicative.Lazy_applicative) =
+  struct
+    module T = Map.Make_applicative_traversals [@modality p] (A)
 
     let mapi = T.mapi
     let filter_mapi = T.filter_mapi

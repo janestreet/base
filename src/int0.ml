@@ -14,9 +14,17 @@
    Defining [module Int = Int0] is also necessary because it prevents ocamldep
    from mistakenly causing a file to depend on [Base.Int]. *)
 
-let to_string = Stdlib.string_of_int
-let of_string = Stdlib.int_of_string
-let of_string_opt = Stdlib.int_of_string_opt
+external format : string -> int -> string = "caml_format_int"
+
+let to_string n = format "%d" n
+
+external of_string : string -> int = "caml_int_of_string"
+
+let of_string_opt s =
+  try Some (of_string s) with
+  | Failure _ -> None
+;;
+
 let to_float = Stdlib.float_of_int
 let of_float = Stdlib.int_of_float
 let max_value = Stdlib.max_int

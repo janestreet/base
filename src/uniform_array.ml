@@ -8,15 +8,16 @@ module Trusted : sig
   type 'a t
 
   val empty : 'a t
+  val get_empty : unit -> 'a t
   val unsafe_create_uninitialized : len:int -> 'a t
   val create_obj_array : len:int -> 'a t
   val create : len:int -> 'a -> 'a t
   val singleton : 'a -> 'a t
-  val get : 'a t -> int -> 'a
+  val get : 'a t -> int -> 'a [@@zero_alloc]
   val set : 'a t -> int -> 'a -> unit
   val swap : _ t -> int -> int -> unit
-  val unsafe_get : 'a t -> int -> 'a
-  val unsafe_get_local : 'a t -> int -> 'a
+  val unsafe_get : 'a t -> int -> 'a [@@zero_alloc]
+  val unsafe_get_local : 'a t -> int -> 'a [@@zero_alloc]
   val unsafe_set : 'a t -> int -> 'a -> unit
   val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
   val unsafe_set_int : 'a t -> int -> int -> unit
@@ -34,15 +35,20 @@ end = struct
   type 'a t = Obj_array.t
 
   let empty = Obj_array.empty
+
+  let[@inline] get_empty () =
+    Portability_hacks.magic_uncontended__promise_deeply_immutable empty
+  ;;
+
   let unsafe_create_uninitialized ~len = Obj_array.create_zero ~len
   let create_obj_array ~len = Obj_array.create_zero ~len
   let create ~len x = Obj_array.create ~len (Stdlib.Obj.repr x)
   let singleton x = Obj_array.singleton (Stdlib.Obj.repr x)
   let swap t i j = Obj_array.swap t i j
-  let get arr i = Stdlib.Obj.obj (Obj_array.get arr i)
+  let[@zero_alloc] get arr i = Stdlib.Obj.obj (Obj_array.get arr i)
   let set arr i x = Obj_array.set arr i (Stdlib.Obj.repr x)
-  let unsafe_get_local arr i = Stdlib.Obj.obj (Obj_array.unsafe_get arr i)
-  let unsafe_get arr i = unsafe_get_local arr i
+  let[@zero_alloc] unsafe_get_local arr i = Stdlib.Obj.obj (Obj_array.unsafe_get arr i)
+  let[@zero_alloc] unsafe_get arr i = unsafe_get_local arr i
   let unsafe_set arr i x = Obj_array.unsafe_set arr i (Stdlib.Obj.repr x)
   let unsafe_set_int arr i x = Obj_array.unsafe_set_int arr i x
 
@@ -181,7 +187,7 @@ let for_alli t ~f =
 ;;
 
 let filter_mapi t ~f =
-  let r = ref empty in
+  let r = ref (get_empty ()) in
   let k = ref 0 in
   for i = 0 to length t - 1 do
     match f i (unsafe_get t i) with
@@ -191,7 +197,7 @@ let filter_mapi t ~f =
       unsafe_set !r !k a;
       incr k
   done;
-  if !k = length t then !r else if !k > 0 then sub ~pos:0 ~len:!k !r else empty
+  if !k = length t then !r else if !k > 0 then sub ~pos:0 ~len:!k !r else get_empty ()
 ;;
 
 let filteri t ~f = filter_mapi t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
@@ -232,7 +238,7 @@ let concat_mapi t ~f = to_list t |> List.mapi ~f |> concat
 let concat_map t ~f = to_list t |> List.map ~f |> concat
 
 let partition_map t ~f =
-  let left, right = ref empty, ref empty in
+  let left, right = ref (get_empty ()), ref (get_empty ()) in
   let left_idx, right_idx = ref 0, ref 0 in
   let append data idx value =
     if !idx = 0 then data := create ~len:(length t) value;
@@ -249,7 +255,7 @@ let partition_map t ~f =
     then !data
     else if !idx > 0
     then sub ~pos:0 ~len:!idx !data
-    else empty
+    else get_empty ()
   in
   trim left left_idx, trim right right_idx
 ;;
@@ -325,8 +331,8 @@ let t_sexp_grammar (type elt) (grammar : elt Sexplib0.Sexp_grammar.t)
   Sexplib0.Sexp_grammar.coerce (Array.t_sexp_grammar grammar)
 ;;
 
-include
-  Sexpable.Of_sexpable1
+include%template
+  Sexpable.Of_sexpable1 [@modality portable]
     (Array)
     (struct
       type nonrec 'a t = 'a t
@@ -335,14 +341,14 @@ include
       let of_sexpable = of_array
     end)
 
-include Blit.Make1 (struct
+include%template Blit.Make1 [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let length = length
 
     let create_like ~len t =
       if len = 0
-      then empty
+      then get_empty ()
       else (
         assert (length t > 0);
         create ~len (get t 0))
@@ -379,7 +385,7 @@ let compare__local compare_elt a b =
 
 let compare compare_elt a b = compare__local compare_elt a b
 
-module Sort = Array.Private.Sorter (struct
+module%template Sort = Array.Private.Sorter [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let length = length
@@ -389,7 +395,7 @@ module Sort = Array.Private.Sorter (struct
 
 let sort = Sort.sort
 
-include Binary_searchable.Make1 (struct
+include%template Binary_searchable.Make1 [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let length = length

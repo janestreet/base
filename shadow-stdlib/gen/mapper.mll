@@ -143,6 +143,7 @@ let val_replacement = function
   | "fst"                 -> No_equivalent
   | "hypot"               -> Repl "Float.hypot"
   | "ignore"              -> No_equivalent
+  | "ignore_contended"    -> No_equivalent
   | "in_channel_length"   -> Repl "Stdio.In_channel.length"
   | "incr"                -> Repl "Int.incr"
   | "infinity"            -> Repl "Float.infinity"
@@ -292,6 +293,7 @@ let id_trail = ['a'-'z' 'A'-'Z' '_' '0'-'9']*
 let id = ['a'-'z' 'A'-'Z' '_' '0'-'9'] id_trail
 let val_id = id | '(' [^ ')']* ')'
 let params = ('(' [^')']* ')' | ['+' '-']? '\'' id) " "
+let kind = " : " [^ '=']*
 
 let val_ = "val " | "external "
 
@@ -299,9 +301,10 @@ rule line = parse
   | "module Camlinternal" _*
     { "" (* We can't deprecate these *) }
   | "module Bigarray" _* { "" (* Don't deprecate it yet *) }
-  | "type " (params? as params) (id as id) (_* as def)
-      { sprintf "type nonrec %s%s = %sStdlib.%s%s\n%s"
+  | "type " (params? as params) (id as id) (kind? as kind) ((" = " _*)? as def)
+      { sprintf "type nonrec %s%s%s = %sStdlib.%s%s\n%s"
           params id
+          kind
           params id
           (if is_alias id then "" else def)
           (match type_replacement id with

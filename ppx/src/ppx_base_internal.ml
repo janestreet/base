@@ -1,9 +1,9 @@
-open! Base
+open! Stdppx
 open Ppxlib
 
 module Specialize_polymorphic_compare = struct
   let signature ~loc =
-    [%sigil:
+    [%sig:
       [@@@ocaml.ppwarning "ppx_base_internal: intended only for use inside Base"]
 
       external ( = ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
@@ -60,7 +60,7 @@ module Specialize_polymorphic_compare = struct
       List.concat_map decls ~f:(fun decl ->
         let loc = decl.ptype_loc in
         match check_decl decl with
-        | Ok () -> signature ~loc
+        | Ok () -> (Ppxlib_jane.Shim.Signature.of_parsetree (signature ~loc)).psg_items
         | Error ext -> [ Ast_builder.Default.psig_extension ~loc ext [] ]))
   ;;
 

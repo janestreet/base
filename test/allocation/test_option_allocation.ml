@@ -31,9 +31,10 @@ module%test [@name "local mode vs global mode"] _ = struct
           (Or_error.try_with (fun () -> fn_global input)))
   ;;
 
+  [%%template
   let%expect_test "value_local" =
     test
-      ~local:(Option.value_local ~default:0)
+      ~local:((Option.value [@mode local]) ~default:0)
       ~global:(Option.value ~default:0)
       (module struct
         type t = int option [@@deriving quickcheck, sexp_of]
@@ -46,7 +47,7 @@ module%test [@name "local mode vs global mode"] _ = struct
   let%expect_test "value_local_exn" =
     let here = [%here] in
     test
-      ~local:(Option.value_local_exn ~here)
+      ~local:((Option.value_exn [@mode local]) ~here)
       ~global:(Option.value_exn ~here)
       (module struct
         type t = int option [@@deriving quickcheck, sexp_of]
@@ -58,7 +59,7 @@ module%test [@name "local mode vs global mode"] _ = struct
 
   let%expect_test "value_map_local" =
     test
-      ~local:(Option.value_map_local ~f:(fun x -> x + 1) ~default:0)
+      ~local:((Option.value_map [@mode local]) ~f:(fun x -> x + 1) ~default:0)
       ~global:(Option.value_map ~f:(fun x -> x + 1) ~default:0)
       (module struct
         type t = int option [@@deriving quickcheck, sexp_of]
@@ -70,7 +71,7 @@ module%test [@name "local mode vs global mode"] _ = struct
 
   let%expect_test "value_or_thunk_local" =
     test
-      ~local:(Option.value_or_thunk_local ~default:(fun () -> 0))
+      ~local:((Option.value_or_thunk [@mode local]) ~default:(fun () -> 0))
       ~global:(Option.value_or_thunk ~default:(fun () -> 0))
       (module struct
         type t = int option [@@deriving quickcheck, sexp_of]
@@ -82,7 +83,7 @@ module%test [@name "local mode vs global mode"] _ = struct
 
   let%expect_test "map_local" =
     test
-      ~local:(Option.map_local ~f:(fun x -> x + 1))
+      ~local:((Option.map [@mode local]) ~f:(fun x -> x + 1))
       ~global:(Option.map ~f:(fun x -> x + 1))
       (module struct
         type t = int option [@@deriving quickcheck, sexp_of]
@@ -94,7 +95,7 @@ module%test [@name "local mode vs global mode"] _ = struct
 
   let%expect_test "to_list_local" =
     test
-      ~local:Option.to_list_local
+      ~local:(Option.to_list [@mode local])
       ~global:Option.to_list
       (module struct
         type t = int option [@@deriving quickcheck, sexp_of]
@@ -106,7 +107,7 @@ module%test [@name "local mode vs global mode"] _ = struct
 
   let%expect_test "some_local" =
     test
-      ~local:Option.some_local
+      ~local:(Option.some [@mode local])
       ~global:Option.some
       (module struct
         type t = int [@@deriving quickcheck, sexp_of]
@@ -118,7 +119,7 @@ module%test [@name "local mode vs global mode"] _ = struct
 
   let%expect_test "first_some_local" =
     test
-      ~local:(fun (x, y) -> Option.first_some_local x y)
+      ~local:(fun (x, y) -> (Option.first_some [@mode local]) x y)
       ~global:(fun (x, y) -> Option.first_some x y)
       (module struct
         type t = int option * int option [@@deriving quickcheck, sexp_of]
@@ -130,7 +131,7 @@ module%test [@name "local mode vs global mode"] _ = struct
 
   let%expect_test "some_if_local" =
     test
-      ~local:(fun (b, i) -> Option.some_if_local b i)
+      ~local:(fun (b, i) -> (Option.some_if [@mode local]) b i)
       ~global:(fun (b, i) -> Option.some_if b i)
       (module struct
         type t = bool * int [@@deriving quickcheck, sexp_of]
@@ -138,5 +139,5 @@ module%test [@name "local mode vs global mode"] _ = struct
       (module struct
         type t = int option [@@deriving equal, globalize, sexp_of]
       end)
-  ;;
+  ;;]
 end

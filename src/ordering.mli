@@ -1,5 +1,5 @@
-(** [Ordering] is intended to make code that matches on the result of a comparison
-    more concise and easier to read.
+(** [Ordering] is intended to make code that matches on the result of a comparison more
+    concise and easier to read.
 
     For example, instead of writing:
 
@@ -20,9 +20,7 @@
       | Less -> ...
       | Equal -> ...
       | Greater -> ...
-    ]}
-
-*)
+    ]} *)
 
 open! Import
 
@@ -30,20 +28,9 @@ type t =
   | Less
   | Equal
   | Greater
-[@@deriving_inline compare ~localize, equal ~localize, hash, sexp, sexp_grammar]
+[@@deriving compare ~localize, equal ~localize, hash, sexp ~localize, sexp_grammar]
 
-include Ppx_compare_lib.Comparable.S with type t := t
-include Ppx_compare_lib.Comparable.S_local with type t := t
-include Ppx_compare_lib.Equal.S with type t := t
-include Ppx_compare_lib.Equal.S_local with type t := t
-include Ppx_hash_lib.Hashable.S with type t := t
-include Sexplib0.Sexpable.S with type t := t
-
-val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-
-[@@@end]
-
-(*_ Avoid [@@deriving_inline enumerate] due to circular dependency *)
+(*_ Avoid [@@deriving enumerate] due to circular dependency *)
 val all : t list
 
 (** [of_int n] is:

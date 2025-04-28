@@ -653,6 +653,17 @@ module Test_accessors
           require_equal (module Data.Option (Elt)) (nth t i) (Some elt));
         require_equal (module Data.Option (Elt)) (nth t (length t)) None)
 
+  and rank = rank
+
+  and () =
+    quickcheck_m
+      (module Inst_and_elt)
+      ~f:(fun (t, e) ->
+        let t = Inst.value t in
+        List.iteri (to_list t) ~f:(fun i elt ->
+          require_equal (module Data.Option (Int)) (access rank t elt) (Some i));
+        if not (access mem t e) then require_none [%sexp_of: int] (access rank t e))
+
   and binary_search = binary_search
 
   and () =

@@ -101,3 +101,35 @@ let%expect_test ("Global.Poly_fn3" [@tags "fast-flambda2"]) =
   test (module Float) (fun () -> fn_global 1. 2. 3.) (fun () -> fn_local 1. 2. 3.);
   [%expect {| 6 |}]
 ;;
+
+let%expect_test "At_locality.(un)wrap" =
+  let test x =
+    test
+      (module Int)
+      (fun () ->
+        Modes.At_locality.unwrap (Sys.opaque_identity (Modes.At_locality.wrap x)))
+      (fun () ->
+        Modes.At_locality.unwrap_local
+          (Sys.opaque_identity (Modes.At_locality.wrap_local x)))
+  in
+  test 0;
+  [%expect {| 0 |}];
+  test 1;
+  [%expect {| 1 |}]
+;;
+
+let%expect_test "At_locality.unwrap_global" =
+  let test x =
+    test
+      (module Int)
+      (fun () ->
+        Modes.At_locality.unwrap_global (Sys.opaque_identity (Modes.At_locality.wrap x)))
+      (fun () ->
+        Modes.At_locality.unwrap_local
+          (Sys.opaque_identity (Modes.At_locality.wrap_local x)))
+  in
+  test 0;
+  [%expect {| 0 |}];
+  test 1;
+  [%expect {| 1 |}]
+;;

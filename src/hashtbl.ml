@@ -55,7 +55,7 @@ let max_table_length = Int.floor_pow2 Array.max_length
 let create ?(growth_allowed = true) ?(size = 0) ~hashable () =
   let size = Int.min (Int.max 1 size) max_table_length in
   let size = Int.ceil_pow2 size in
-  { table = Array.create ~len:size Avltree.empty
+  { table = Array.create ~len:size (Avltree.get_empty ())
   ; length = 0
   ; growth_allowed
   ; hashable
@@ -105,7 +105,7 @@ let maybe_resize_table t =
     let new_array_length = Int.min (len * 2) max_table_length in
     if new_array_length > len
     then (
-      let new_table = Array.create ~len:new_array_length Avltree.empty in
+      let new_table = Array.create ~len:new_array_length (Avltree.get_empty ()) in
       let old_table = t.table in
       t.table <- new_table;
       t.length <- 0;
@@ -148,7 +148,7 @@ let clear t =
   else (
     ensure_mutation_allowed t;
     for i = 0 to Array.length t.table - 1 do
-      t.table.(i) <- Avltree.empty
+      t.table.(i) <- Avltree.get_empty ()
     done;
     t.length <- 0)
 ;;
@@ -294,30 +294,42 @@ let iteri t ~f =
 let iter t ~f = iteri t ~f:(fun ~key:_ ~data -> f data) [@nontail]
 let iter_keys t ~f = iteri t ~f:(fun ~key ~data:_ -> f key) [@nontail]
 
-let rec choose_nonempty table i =
+let%template rec choose_nonempty table i =
   let avltree = Array.unsafe_get table i in
   if Avltree.is_empty avltree
-  then choose_nonempty table ((i + 1) land (Array.length table - 1))
-  else Avltree.choose_exn avltree
+  then (
+    let i = (i + 1) land (Array.length table - 1) in
+    (choose_nonempty [@mode m]) table i [@exclave_if_local m])
+  else (Avltree.choose_exn [@mode m]) avltree [@exclave_if_local m]
+[@@mode m = (local, global)]
 ;;
 
-let choose_exn t =
+let%template choose_exn t =
   if t.length = 0 then raise_s (Sexp.message "[Hashtbl.choose_exn] of empty hashtbl" []);
-  choose_nonempty t.table 0
+  (choose_nonempty [@mode m]) t.table 0 [@exclave_if_local m]
+[@@mode m = (local, global)]
 ;;
 
-let choose t = if is_empty t then None else Some (choose_nonempty t.table 0)
+let%template choose t =
+  if is_empty t then None else Some ((choose_nonempty [@mode m]) t.table 0)
+[@@mode m = local]
+;;
+
+let%template choose t =
+  if is_empty t then None else Some ((choose_nonempty [@mode m]) t.table 0)
+[@@mode m = global]
+;;
 
 let choose_randomly_nonempty ~random_state t =
   let start_idx = Random.State.int random_state (Array.length t.table) in
   choose_nonempty t.table start_idx
 ;;
 
-let choose_randomly ?(random_state = Random.State.default) t =
+let choose_randomly ?(random_state = Random.State.get_default ()) t =
   if is_empty t then None else Some (choose_randomly_nonempty ~random_state t)
 ;;
 
-let choose_randomly_exn ?(random_state = Random.State.default) t =
+let choose_randomly_exn ?(random_state = Random.State.get_default ()) t =
   if t.length = 0
   then raise_s (Sexp.message "[Hashtbl.choose_randomly_exn] of empty hashtbl" []);
   choose_randomly_nonempty ~random_state t
@@ -350,7 +362,8 @@ let find_exn =
 let existsi t ~f =
   with_return (fun r ->
     iteri t ~f:(fun ~key ~data -> if f ~key ~data then r.return true);
-    false) [@nontail]
+    false)
+  [@nontail]
 ;;
 
 let exists t ~f = existsi t ~f:(fun ~key:_ ~data -> f data) [@nontail]
@@ -358,8 +371,8 @@ let for_alli t ~f = not (existsi t ~f:(fun ~key ~data -> not (f ~key ~data)))
 let for_all t ~f = not (existsi t ~f:(fun ~key:_ ~data -> not (f data)))
 
 let counti t ~f =
-  fold t ~init:0 ~f:(fun ~key ~data acc -> if f ~key ~data then acc + 1 else acc) [@nontail
-                                                                                    ]
+  fold t ~init:0 ~f:(fun ~key ~data acc -> if f ~key ~data then acc + 1 else acc)
+  [@nontail]
 ;;
 
 let count t ~f =
@@ -414,7 +427,7 @@ let partition_mapi t ~f =
 let partition_map t ~f = partition_mapi t ~f:(fun ~key:_ ~data -> f data) [@nontail]
 
 let partitioni_tf t ~f =
-  partition_mapi t ~f:(fun ~key ~data -> if f ~key ~data then First data else Second data) 
+  partition_mapi t ~f:(fun ~key ~data -> if f ~key ~data then First data else Second data)
   [@nontail]
 ;;
 
@@ -567,7 +580,12 @@ let sexp_of_t sexp_of_key sexp_of_data t =
   |> sexp_of_list (sexp_of_pair sexp_of_key sexp_of_data)
 ;;
 
-let t_of_sexp ~hashable k_of_sexp d_of_sexp sexp =
+let%template[@mode p = (nonportable, portable)] t_of_sexp
+  ~hashable
+  k_of_sexp
+  d_of_sexp
+  sexp
+  =
   let alist = list_of_sexp (pair_of_sexp k_of_sexp d_of_sexp) sexp in
   match of_alist ~hashable alist ~size:(List.length alist) with
   | `Ok v -> v
@@ -606,7 +624,8 @@ let add_to_groups groups ~get_key ~get_data ~combine ~rows =
       | None -> data
       | Some old -> combine old data
     in
-    set groups ~key ~data) [@nontail]
+    set groups ~key ~data)
+  [@nontail]
 ;;
 
 let group ?growth_allowed ?size ~hashable ~get_key ~get_data ~combine rows =
@@ -658,7 +677,9 @@ let merge =
           match find t_left key with
           | None -> maybe_set new_t ~key ~f (`Right right)
           | Some _ -> ()
-          (* already done above *)) [@nontail]) [@nontail]);
+          (* already done above *))
+        [@nontail])
+      [@nontail]);
     new_t
 ;;
 
@@ -671,8 +692,8 @@ let merge_into ~src ~dst ~f =
     | Set_to data ->
       (match dst_data with
        | None -> set dst ~key ~data
-       | Some dst_data -> if not (phys_equal dst_data data) then set dst ~key ~data)) [@nontail
-                                                                                        ]
+       | Some dst_data -> if not (phys_equal dst_data data) then set dst ~key ~data))
+  [@nontail]
 ;;
 
 let filteri_inplace t ~f =
@@ -700,7 +721,8 @@ let filter_map_inplace t ~f =
 let mapi_inplace t ~f =
   ensure_mutation_allowed t;
   without_mutating t (fun () ->
-    Array.iter t.table ~f:(Avltree.mapi_inplace ~f) [@nontail]) [@nontail]
+    Array.iter t.table ~f:(Avltree.mapi_inplace ~f) [@nontail])
+  [@nontail]
 ;;
 
 let map_inplace t ~f = mapi_inplace t ~f:(fun ~key:_ ~data -> f data) [@nontail]
@@ -712,8 +734,10 @@ let equal equal t t' =
           iteri t ~f:(fun ~key ~data ->
             match find t' key with
             | None -> r.return false
-            | Some data' -> if not (equal data data') then r.return false) [@nontail]);
-        true) [@nontail])
+            | Some data' -> if not (equal data data') then r.return false)
+          [@nontail]);
+        true)
+  [@nontail])
 ;;
 
 let similar = equal
@@ -721,7 +745,8 @@ let similar = equal
 module Accessors = struct
   let invariant = invariant
   let choose = choose
-  let choose_exn = choose_exn
+  let%template choose = (choose [@mode m]) [@@mode m = (local, global)]
+  let%template choose_exn = (choose_exn [@mode m]) [@@mode m = (local, global)]
   let choose_randomly = choose_randomly
   let choose_randomly_exn = choose_randomly_exn
   let clear = clear
@@ -790,7 +815,8 @@ module Accessors = struct
   let sexp_of_key = sexp_of_key
 end
 
-module Creators (Key : sig
+module%template.portable
+  [@modality p] Creators (Key : sig
     type 'a t
 
     val hashable : 'a t Hashable.t
@@ -825,7 +851,9 @@ end = struct
     of_alist_exn ?growth_allowed ~hashable ?size l
   ;;
 
-  let t_of_sexp k_of_sexp d_of_sexp sexp = t_of_sexp ~hashable k_of_sexp d_of_sexp sexp
+  let t_of_sexp k_of_sexp d_of_sexp sexp =
+    (t_of_sexp [@modality p]) ~hashable k_of_sexp d_of_sexp sexp
+  ;;
 
   let of_alist_multi ?growth_allowed ?size l =
     of_alist_multi ?growth_allowed ~hashable ?size l
@@ -859,7 +887,7 @@ module Poly = struct
   let hashable = Hashable.poly
   let capacity = capacity
 
-  include Creators (struct
+  include%template Creators [@modality portable] (struct
       type 'a t = 'a
 
       let hashable = hashable
@@ -932,29 +960,17 @@ module M (K : T.T) = struct
 end
 
 module type Sexp_of_m = sig
-  type t [@@deriving_inline sexp_of]
-
-  val sexp_of_t : t -> Sexplib0.Sexp.t
-
-  [@@@end]
+  type t [@@deriving sexp_of]
 end
 
 module type M_of_sexp = sig
-  type t [@@deriving_inline of_sexp]
-
-  val t_of_sexp : Sexplib0.Sexp.t -> t
-
-  [@@@end]
+  type t [@@deriving of_sexp]
 
   include Key.S with type t := t
 end
 
 module type M_sexp_grammar = sig
-  type t [@@deriving_inline sexp_grammar]
-
-  val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  type t [@@deriving sexp_grammar]
 end
 
 module type Equal_m = sig end

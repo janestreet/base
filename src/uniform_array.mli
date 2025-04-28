@@ -9,16 +9,7 @@
 open! Import
 
 (** See [Base.Array] for comments. *)
-type 'a t [@@deriving_inline sexp, sexp_grammar, compare ~localize]
-
-include Sexplib0.Sexpable.S1 with type 'a t := 'a t
-
-val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-
-include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
-
-[@@@end]
+type 'a t [@@deriving sexp, sexp_grammar, compare ~localize]
 
 val invariant : _ t -> unit
 val empty : _ t
@@ -33,13 +24,13 @@ val unsafe_set : 'a t -> int -> 'a -> unit
 val swap : _ t -> int -> int -> unit
 
 (** [unsafe_set_omit_phys_equal_check] is like [unsafe_set], except it doesn't do a
-    [phys_equal] check to try to skip [caml_modify].  It is safe to call this even if the
+    [phys_equal] check to try to skip [caml_modify]. It is safe to call this even if the
     values are [phys_equal]. *)
 val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
 
 (** [unsafe_set_with_caml_modify] always calls [caml_modify] before setting and never gets
-    the old value.  This is like [unsafe_set_omit_phys_equal_check] except it doesn't
-    check whether the old value and the value being set are integers to try to skip
+    the old value. This is like [unsafe_set_omit_phys_equal_check] except it doesn't check
+    whether the old value and the value being set are integers to try to skip
     [caml_modify]. *)
 val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
 
@@ -115,8 +106,8 @@ val unsafe_create_uninitialized : len:int -> _ t
 val create_obj_array : len:int -> Stdlib.Obj.t t
 
 (** [unsafe_set_assuming_currently_int t i obj] sets index [i] of [t] to [obj], but only
-    works correctly if the value there is an immediate, i.e. [Stdlib.Obj.is_int (get t i)].
-    This precondition saves a dynamic check.
+    works correctly if the value there is an immediate, i.e.
+    [Stdlib.Obj.is_int (get t i)]. This precondition saves a dynamic check.
 
     [unsafe_set_int_assuming_currently_int] is similar, except the value being set is an
     int.
@@ -128,7 +119,7 @@ val unsafe_set_int_assuming_currently_int : Stdlib.Obj.t t -> int -> int -> unit
 val unsafe_set_int : Stdlib.Obj.t t -> int -> int -> unit
 
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
-    space leaks.  It does this by setting [t.(i)] to [Stdlib.Obj.repr 0].  As a performance
-    hack, it only does this when [not (Stdlib.Obj.is_int t.(i))].  It is an error to access
+    space leaks. It does this by setting [t.(i)] to [Stdlib.Obj.repr 0]. As a performance
+    hack, it only does this when [not (Stdlib.Obj.is_int t.(i))]. It is an error to access
     the cleared index before setting it again. *)
 val unsafe_clear_if_pointer : Stdlib.Obj.t t -> int -> unit

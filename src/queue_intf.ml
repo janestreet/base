@@ -3,13 +3,7 @@ open! Import
 (** An interface for queues that follows Base's conventions, as opposed to OCaml's
     standard [Queue] module. *)
 module type S = sig
-  type 'a t [@@deriving_inline sexp, sexp_grammar]
-
-  include Sexplib0.Sexpable.S1 with type 'a t := 'a t
-
-  val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-
-  [@@@end]
+  type 'a t [@@deriving sexp, sexp_grammar]
 
   include Indexed_container.S1 with type 'a t := 'a t
 
@@ -26,7 +20,7 @@ module type S = sig
   (** [init n ~f] is equivalent to [of_list (List.init n ~f)]. *)
   val init : int -> f:(int -> 'a) -> 'a t
 
-  (** [enqueue t a] adds [a] to the end of [t].*)
+  (** [enqueue t a] adds [a] to the end of [t]. *)
   val enqueue : 'a t -> 'a -> unit
 
   (** [enqueue_all t list] adds all elements in [list] to [t] in order of [list]. *)
@@ -67,8 +61,8 @@ module type S = sig
 
   val concat_mapi : 'a t -> f:(int -> 'a -> 'b list) -> 'b t
 
-  (** [filter_map] creates a new queue with elements equal to [List.filter_map ~f (to_list
-      t)]. *)
+  (** [filter_map] creates a new queue with elements equal to
+      [List.filter_map ~f (to_list t)]. *)
   val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
 
   val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
@@ -78,8 +72,8 @@ module type S = sig
 
   val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
 
-  (** [filter_inplace t ~f] removes all elements of [t] that don't satisfy [f].  If [f]
-      raises, [t] is unchanged.  This is inplace in that it modifies [t]; however, it uses
+  (** [filter_inplace t ~f] removes all elements of [t] that don't satisfy [f]. If [f]
+      raises, [t] is unchanged. This is inplace in that it modifies [t]; however, it uses
       space linear in the final length of [t]. *)
   val filter_inplace : 'a t -> f:('a -> bool) -> unit
 
@@ -89,28 +83,19 @@ end
 module type Queue = sig
   (** A queue implemented with an array.
 
-      The implementation will grow the array as necessary.  The array will
-      never automatically be shrunk, but the size can be interrogated and set
-      with [capacity] and [set_capacity].
+      The implementation will grow the array as necessary. The array will never
+      automatically be shrunk, but the size can be interrogated and set with [capacity]
+      and [set_capacity].
 
-      Iteration functions ([iter], [fold], [map], [concat_map], [filter],
-      [filter_map], [filter_inplace], and some functions from [Container.S1])
-      will raise if the queue is modified during iteration.
+      Iteration functions ([iter], [fold], [map], [concat_map], [filter], [filter_map],
+      [filter_inplace], and some functions from [Container.S1]) will raise if the queue is
+      modified during iteration.
 
       Also see {!Linked_queue}, which has different performance characteristics. *)
 
   module type S = S
 
-  type 'a t [@@deriving_inline compare ~localize, equal ~localize, globalize]
-
-  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-  include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
-  include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
-  include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
-
-  val globalize : ('a -> 'a) -> 'a t -> 'a t
-
-  [@@@end]
+  type 'a t [@@deriving compare ~localize, equal ~localize, globalize]
 
   include S with type 'a t := 'a t
   include Invariant.S1 with type 'a t := 'a t
@@ -138,7 +123,7 @@ module type Queue = sig
   val peek_back_exn : 'a t -> 'a
 
   (** Transfers up to [len] elements from the front of [src] to the end of [dst], removing
-      them from [src].  It is an error if [len < 0].
+      them from [src]. It is an error if [len < 0].
 
       Aside from a call to [set_capacity dst] if needed, runs in O([len]) time *)
   val blit_transfer
@@ -148,8 +133,8 @@ module type Queue = sig
     -> unit
     -> unit
 
-  (** [get t i] returns the [i]'th element in [t], where the 0'th element is at the front of
-      [t] and the [length t - 1] element is at the back. *)
+  (** [get t i] returns the [i]'th element in [t], where the 0'th element is at the front
+      of [t] and the [length t - 1] element is at the back. *)
   val get : 'a t -> int -> 'a
 
   val set : 'a t -> int -> 'a -> unit
@@ -157,10 +142,10 @@ module type Queue = sig
   (** Returns the current length of the backing array. *)
   val capacity : _ t -> int
 
-  (** [set_capacity t c] sets the capacity of [t]'s backing array to at least [max c (length
-      t)].  If [t]'s capacity changes, then this involves allocating a new backing array and
-      copying the queue elements over.  [set_capacity] may decrease the capacity of [t], if
-      [c < capacity t]. *)
+  (** [set_capacity t c] sets the capacity of [t]'s backing array to at least
+      [max c (length t)]. If [t]'s capacity changes, then this involves allocating a new
+      backing array and copying the queue elements over. [set_capacity] may decrease the
+      capacity of [t], if [c < capacity t]. *)
   val set_capacity : _ t -> int -> unit
 
   (** Use [Iteration] to implement iteration functions that guard against mutation. *)

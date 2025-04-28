@@ -418,9 +418,9 @@ module%test [@name "overflow_bounds"] _ = struct
   ;;
 
   let test_overflow_table tbl conv max_val =
-    assert (Array.length tbl = 64);
+    assert (Iarray.length tbl = 64);
     let max_val = conv max_val in
-    Array.iteri tbl ~f:(fun i max_base ->
+    Iarray.iteri tbl ~f:(fun i max_base ->
       let max_base = conv max_base in
       let overflows b = Bigint.(b ** of_int i > max_val) in
       let is_ok =

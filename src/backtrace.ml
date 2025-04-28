@@ -1,9 +1,10 @@
 open! Import
+module Sexp = Sexp0
 module Sys = Sys0
 
 type t = Stdlib.Printexc.raw_backtrace
 
-let elide = ref false
+let elide = Dynamic.make false
 let elided_message = "<backtrace elided in test>"
 
 let get ?(at_most_num_frames = Int.max_value) () =
@@ -11,7 +12,7 @@ let get ?(at_most_num_frames = Int.max_value) () =
 ;;
 
 let to_string t =
-  if !elide then elided_message else Stdlib.Printexc.raw_backtrace_to_string t
+  if Dynamic.get elide then elided_message else Stdlib.Printexc.raw_backtrace_to_string t
 ;;
 
 let to_string_list t = String.split_lines (to_string t)

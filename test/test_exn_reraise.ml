@@ -55,7 +55,7 @@ let callstacker ~reraise_uncaught =
 
 let with_backtraces_enabled f =
   Backtrace.Exn.with_recording true ~f:(fun () ->
-    Ref.set_temporarily Backtrace.elide false ~f)
+    Dynamic.with_temporarily Backtrace.elide false ~f)
 ;;
 
 let test_reraise_uncaught ~reraise_uncaught =

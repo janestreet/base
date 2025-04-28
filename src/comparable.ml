@@ -1,12 +1,25 @@
 open! Import
+module Sexp = Sexp0
 include Comparable_intf
 
-module With_zero (T : sig
-    type t [@@deriving_inline compare]
+module%template With_zero (T : sig
+    type t [@@deriving compare [@mode m]]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+    val zero : t
+  end) =
+struct
+  open T
 
-    [@@@end]
+  let is_positive t = (compare [@mode m]) t zero > 0
+  let is_non_negative t = (compare [@mode m]) t zero >= 0
+  let is_negative t = (compare [@mode m]) t zero < 0
+  let is_non_positive t = (compare [@mode m]) t zero <= 0
+  let sign t = Sign0.of_int ((compare [@mode m]) t zero)
+end
+[@@mode m = (global, local)]
+
+module With_zero__portable (T : sig
+    type t [@@deriving compare]
 
     val zero : t
   end) =
@@ -20,20 +33,13 @@ struct
   let sign t = Sign0.of_int (compare t zero)
 end
 
-module Poly (T : sig
-    type t [@@deriving_inline sexp_of]
-
-    val sexp_of_t : t -> Sexplib0.Sexp.t
-
-    [@@@end]
+module%template.portable
+  [@modality p] Poly (T : sig
+    type t [@@deriving sexp_of]
   end) =
 struct
   module Replace_polymorphic_compare = struct
-    type t = T.t [@@deriving_inline sexp_of]
-
-    let sexp_of_t = (T.sexp_of_t : t -> Sexplib0.Sexp.t)
-
-    [@@@end]
+    type t = T.t [@@deriving sexp_of]
 
     include Poly
   end
@@ -60,7 +66,7 @@ struct
 
   module C = struct
     include T
-    include Comparator.Make (Replace_polymorphic_compare)
+    include Comparator.Make [@modality p] (Replace_polymorphic_compare)
   end
 
   include C
@@ -68,24 +74,28 @@ end
 
 let gt cmp a b = cmp a b > 0
 let lt cmp a b = cmp a b < 0
-let geq cmp a b = cmp a b >= 0
-let geq_local cmp a b = cmp a b >= 0
-let leq cmp a b = cmp a b <= 0
-let leq_local cmp a b = cmp a b <= 0
-let equal cmp a b = cmp a b = 0
-let equal_local cmp a b = cmp a b = 0
 let not_equal cmp a b = cmp a b <> 0
-let min cmp t t' = Bool0.select (leq cmp t t') t t'
-let min_local cmp t t' = Bool0.select (leq_local cmp t t') t t'
-let max cmp t t' = Bool0.select (geq cmp t t') t t'
-let max_local cmp t t' = Bool0.select (geq_local cmp t t') t t'
 
-module Infix (T : sig
-    type t [@@deriving_inline compare]
+[%%template
+[@@@mode.default m = (global, local)]
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+let geq cmp a b = cmp a b >= 0
+let leq cmp a b = cmp a b <= 0
+let equal cmp a b = cmp a b = 0
 
-    [@@@end]
+let min cmp t t' =
+  let is_leq = (leq [@mode m] [@kind k]) cmp t t' in
+  (Bool0.select [@mode m] [@kind k]) is_leq t t' [@exclave_if_local m]
+;;
+
+let max cmp t t' =
+  let is_geq = (geq [@mode m] [@kind k]) cmp t t' in
+  (Bool0.select [@mode m] [@kind k]) is_geq t t' [@exclave_if_local m]
+;;]
+
+module%template.portable Infix (T : sig
+    type t [@@deriving compare]
   end) : Infix with type t := T.t = struct
   let ( > ) a b = gt T.compare a b
   let ( < ) a b = lt T.compare a b
@@ -96,14 +106,11 @@ module Infix (T : sig
 end
 [@@inline always]
 
-module Comparisons (T : sig
-    type t [@@deriving_inline compare]
-
-    include Ppx_compare_lib.Comparable.S with type t := t
-
-    [@@@end]
+module%template.portable
+  [@modality p] Comparisons (T : sig
+    type t [@@deriving compare]
   end) : Comparisons with type t := T.t = struct
-  include Infix (T)
+  include Infix [@modality p] (T)
 
   let compare = T.compare
   let equal = ( = )
@@ -112,12 +119,9 @@ module Comparisons (T : sig
 end
 [@@inline always]
 
-module Make_using_comparator (T : sig
-    type t [@@deriving_inline sexp_of]
-
-    val sexp_of_t : t -> Sexplib0.Sexp.t
-
-    [@@@end]
+module%template.portable
+  [@modality p] Make_using_comparator (T : sig
+    type t [@@deriving sexp_of]
 
     include Comparator.S with type t := t
   end) : S with type t := T.t and type comparator_witness = T.comparator_witness = struct
@@ -128,7 +132,7 @@ module Make_using_comparator (T : sig
   end
 
   include T
-  module Replace_polymorphic_compare = Comparisons (T)
+  module Replace_polymorphic_compare = Comparisons [@modality p] (T)
   include Replace_polymorphic_compare
 
   let ascending = compare
@@ -152,88 +156,46 @@ module Make_using_comparator (T : sig
   ;;
 end
 
-module Make (T : sig
-    type t [@@deriving_inline compare, sexp_of]
-
-    include Ppx_compare_lib.Comparable.S with type t := t
-
-    val sexp_of_t : t -> Sexplib0.Sexp.t
-
-    [@@@end]
+module%template.portable
+  [@modality p] Make (T : sig
+    type t [@@deriving compare, sexp_of]
   end) =
-Make_using_comparator [@inlined hint] (struct
+Make_using_comparator [@inlined hint] [@modality p] (struct
     include T
-    include Comparator.Make (T)
+    include Comparator.Make [@modality p] (T)
   end)
 
-module Inherit
+module%template.portable
+  [@modality p] Inherit
     (C : sig
-       type t [@@deriving_inline compare]
-
-       include Ppx_compare_lib.Comparable.S with type t := t
-
-       [@@@end]
+       type t [@@deriving compare]
      end)
     (T : sig
-       type t [@@deriving_inline sexp_of]
-
-       val sexp_of_t : t -> Sexplib0.Sexp.t
-
-       [@@@end]
+       type t [@@deriving sexp_of]
 
        val component : t -> C.t
      end) =
-Make (struct
-    type t = T.t [@@deriving_inline sexp_of]
-
-    let sexp_of_t = (T.sexp_of_t : t -> Sexplib0.Sexp.t)
-
-    [@@@end]
+Make [@modality p] (struct
+    type t = T.t [@@deriving sexp_of]
 
     let compare t t' = C.compare (T.component t) (T.component t')
   end)
 
+type 'a reversed = 'a
+
+[%%template
+[@@@mode.default m = (global, local)]
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
+
 (* compare [x] and [y] lexicographically using functions in the list [cmps] *)
-let rec lexicographic_gen ~apply cmps x y =
+let rec lexicographic cmps x y =
   match cmps with
   | cmp :: cmps ->
-    let res = apply cmp x y in
-    if res = 0 then lexicographic_gen ~apply cmps x y else res
+    let res = cmp x y in
+    if res = 0 then (lexicographic [@mode m] [@kind k]) cmps x y else res
   | [] -> 0
 ;;
 
-let[@inline] lexicographic cmps x y =
-  let open Modes.Export in
-  lexicographic_gen
-    ~apply:(fun [@inline] cmp { global = x } { global = y } -> cmp x y)
-    cmps
-    { global = x }
-    { global = y }
-;;
-
-let[@inline] lexicographic_local cmps x y =
-  lexicographic_gen ~apply:(fun [@inline] cmp x y -> cmp x y) cmps x y
-;;
-
-let lift cmp ~f x y = cmp (f x) (f y)
-let lift_local cmp ~f x y = cmp (f x) (f y) [@nontail]
+let lift cmp ~f x y = cmp (f x) (f y) [@nontail]
 let reverse cmp x y = cmp y x
-let reverse_local cmp x y = cmp y x
-
-type 'a reversed = 'a
-
-let compare_reversed cmp x y = cmp y x
-let compare_reversed_local cmp x y = cmp y x
-
-module Local = struct
-  let lexicographic = lexicographic_local
-  let lift = lift_local
-  let reverse = reverse_local
-
-  type 'a reversed = 'a
-
-  let compare_reversed = compare_reversed_local
-  let equal = equal_local
-  let max = max_local
-  let min = min_local
-end
+let compare_reversed cmp x y = cmp y x]

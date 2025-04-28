@@ -5,7 +5,7 @@ include Base_test_helpers
 include Base_quickcheck.Export
 include Expect_test_helpers_base
 
-let () = Int_conversions.sexp_of_int_style := `Underscores
+let () = Dynamic.set_root Int_conversions.sexp_of_int_style `Underscores
 let is_none = Option.is_none
 let is_some = Option.is_some
 let ok_exn = Or_error.ok_exn

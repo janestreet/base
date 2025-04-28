@@ -25,13 +25,7 @@ type stack_or_heap =
   | Immediate
   | Stack
   | Heap
-[@@deriving_inline sexp, compare]
-
-val sexp_of_stack_or_heap : stack_or_heap -> Sexplib0.Sexp.t
-val stack_or_heap_of_sexp : Sexplib0.Sexp.t -> stack_or_heap
-val compare_stack_or_heap : stack_or_heap -> stack_or_heap -> int
-
-[@@@end]
+[@@deriving sexp ~localize, compare]
 
 (** Checks if a value is immediate, stack-allocated, or heap-allocated. *)
 val stack_or_heap : t -> stack_or_heap

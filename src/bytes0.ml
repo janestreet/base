@@ -237,8 +237,8 @@ include struct
     4
   ;;
 
-  let set_uchar_utf_32le = set_utf_32_uchar ~set_int32:set_int32_le
-  let set_uchar_utf_32be = set_utf_32_uchar ~set_int32:set_int32_be
+  let set_uchar_utf_32le b i c = set_utf_32_uchar ~set_int32:set_int32_le b i c
+  let set_uchar_utf_32be b i c = set_utf_32_uchar ~set_int32:set_int32_be b i c
 end
 
 external unsafe_create_local : int -> bytes = "Base_unsafe_create_local_bytes" [@@noalloc]
@@ -259,13 +259,26 @@ let fill t ~pos ~len c =
 
 let make = Stdlib.Bytes.make
 let empty = Stdlib.Bytes.empty
+let get_empty () = Portability_hacks.magic_uncontended__promise_deeply_immutable empty
 
 let map t ~(f : _ -> _) =
   let l = length t in
   if l = 0
-  then empty
+  then get_empty ()
   else (
     let r = create l in
+    for i = 0 to l - 1 do
+      unsafe_set r i (f (unsafe_get t i))
+    done;
+    r)
+;;
+
+let map__stack t ~(f : _ -> _) =
+  let l = length t in
+  if l = 0
+  then get_empty ()
+  else (
+    let r = create_local l in
     for i = 0 to l - 1 do
       unsafe_set r i (f (unsafe_get t i))
     done;
@@ -275,7 +288,7 @@ let map t ~(f : _ -> _) =
 let mapi t ~(f : _ -> _ -> _) =
   let l = length t in
   if l = 0
-  then empty
+  then get_empty ()
   else (
     let r = create l in
     for i = 0 to l - 1 do

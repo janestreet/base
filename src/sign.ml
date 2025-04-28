@@ -1,6 +1,7 @@
 open! Import
 include Sign0
-include Identifiable.Make (Sign0)
+
+include%template Identifiable.Make [@modality portable] (Sign0)
 
 (* Open [Replace_polymorphic_compare] after including functor applications so
    they do not shadow its definitions. This is here so that efficient versions

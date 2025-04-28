@@ -62,8 +62,9 @@ let%expect_test "map2" =
   [%expect {| () |}]
 ;;
 
+[%%template
 let%expect_test "some_if_thunk{,_local}" =
-  let print_opt = Option.iter_local ~f:(fun x -> Stdlib.print_int x) in
+  let print_opt = (Option.iter [@mode local]) ~f:(fun x -> Stdlib.print_int x) in
   let run_test some_if_thunk =
     (* In the [false] case, don't run the thunk *)
     print_opt (some_if_thunk false (fun () -> assert false));
@@ -79,16 +80,16 @@ let%expect_test "some_if_thunk{,_local}" =
       1
       |}]
   in
-  run_test (fun b f -> some_if_thunk_local b f);
+  run_test (fun b f -> [%template some_if_thunk [@mode local]] b f);
   run_test some_if_thunk
 ;;
 
 let%expect_test "first_some_thunk" =
-  let print_opt = Option.iter_local ~f:(fun x -> Stdlib.print_int x) in
+  let print_opt = (Option.iter [@mode local]) ~f:(fun x -> Stdlib.print_int x) in
   print_opt (first_some_thunk None (Fn.const None));
   [%expect {| |}];
   print_opt (first_some_thunk (Some 1) (fun () -> failwith "should not be run"));
   [%expect {| 1 |}];
   print_opt (first_some_thunk None (Fn.const (Some 2)));
   [%expect {| 2 |}]
-;;
+;;]

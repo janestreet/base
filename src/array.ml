@@ -1,23 +1,9 @@
 open! Import
+include Array_intf.Definitions
 include Array0
 
-type 'a t = 'a array [@@deriving_inline compare ~localize, globalize, sexp, sexp_grammar]
-
-let compare__local : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array__local
-let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int = compare_array
-
-let globalize : 'a. ('a -> 'a) -> 'a t -> 'a t =
-  fun (type a__009_) : ((a__009_ -> a__009_) -> a__009_ t -> a__009_ t) -> globalize_array
-;;
-
-let t_of_sexp : 'a. (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t = array_of_sexp
-let sexp_of_t : 'a. ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t = sexp_of_array
-
-let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
-  fun _'a_sexp_grammar -> array_sexp_grammar _'a_sexp_grammar
-;;
-
-[@@@end]
+type 'a t = 'a array
+[@@deriving compare ~localize, globalize, sexp ~localize, sexp_grammar]
 
 (* This module implements a new in-place, constant heap sorting algorithm to replace the
    one used by the standard libraries.  Its only purpose is to be faster (hopefully
@@ -47,7 +33,8 @@ let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_gramma
      Slides at http://www.cs.princeton.edu/~rs/talks/QuicksortIsOptimal.pdf
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
 
-module Sorter (S : sig
+module%template.portable
+  [@modality p] Sorter (S : sig
     type 'a t
 
     val get : 'a t -> int -> 'a
@@ -292,7 +279,7 @@ struct
 end
 [@@inline]
 
-module Sort = Sorter (struct
+module%template Sort = Sorter [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let get = unsafe_get
@@ -376,7 +363,8 @@ let folding_map t ~init ~f =
   map t ~f:(fun x ->
     let new_acc, y = f !acc x in
     acc := new_acc;
-    y) [@nontail]
+    y)
+  [@nontail]
 ;;
 
 let fold_map t ~init ~f =
@@ -429,7 +417,8 @@ let folding_mapi t ~init ~f =
   mapi t ~f:(fun i x ->
     let new_acc, y = f i !acc x in
     acc := new_acc;
-    y) [@nontail]
+    y)
+  [@nontail]
 ;;
 
 let fold_mapi t ~init ~f =
@@ -558,7 +547,7 @@ let filter_opt t = filter_map t ~f:Fn.id
 
 let raise_length_mismatch name n1 n2 =
   invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
-[@@cold] [@@inline never] [@@local never] [@@specialise never]
+[@@cold]
 ;;
 
 let check_length2_exn name t1 t2 =
@@ -719,7 +708,8 @@ let find_map_exn =
   let not_found = Not_found_s (Atom "Array.find_map_exn: not found") in
   let find_map_exn t ~f =
     match find_map t ~f with
-    | None -> raise not_found
+    | None ->
+      raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
     | Some x -> x
   in
   (* named to preserve symbol in compiled binary *)
@@ -745,7 +735,8 @@ let find_mapi_exn =
   let not_found = Not_found_s (Atom "Array.find_mapi_exn: not found") in
   let find_mapi_exn t ~f =
     match find_mapi t ~f with
-    | None -> raise not_found
+    | None ->
+      raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
     | Some x -> x
   in
   (* named to preserve symbol in compiled binary *)
@@ -792,13 +783,13 @@ let reduce_exn t ~f =
 
 let permute = Array_permute.permute
 
-let random_element_exn ?(random_state = Random.State.default) t =
+let random_element_exn ?(random_state = Random.State.get_default ()) t =
   if is_empty t
   then failwith "Array.random_element_exn: empty array"
   else t.(Random.State.int random_state (length t))
 ;;
 
-let random_element ?(random_state = Random.State.default) t =
+let random_element ?(random_state = Random.State.get_default ()) t =
   try Some (random_element_exn ~random_state t) with
   | _ -> None
 ;;
@@ -906,7 +897,7 @@ let transpose_exn tt =
 
 let map t ~f = map t ~f
 
-include Binary_searchable.Make1 (struct
+include%template Binary_searchable.Make1 [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let get = get
@@ -932,5 +923,5 @@ let invariant invariant_a t = iter t ~f:invariant_a
 
 module Private = struct
   module Sort = Sort
-  module Sorter = Sorter
+  module%template.portable [@modality p] Sorter = Sorter [@modality p]
 end

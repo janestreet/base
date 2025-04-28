@@ -62,6 +62,7 @@ type nonrec ('e, 'c) t = ('e, 'c) t
 module type Compare_m = Compare_m
 module type Equal_m = Equal_m
 module type Hash_fold_m = Hash_fold_m
+module type Globalize_m = Globalize_m
 module type M_sexp_grammar = M_sexp_grammar
 module type M_of_sexp = M_of_sexp
 module type Sexp_of_m = Sexp_of_m
@@ -69,6 +70,20 @@ module type Sexp_of_m = Sexp_of_m
 (** functor for ppx deriving - tested below *)
 
 module M = M
+
+(** globalizing *)
+
+let globalize_m__t = globalize_m__t
+
+let%expect_test _ =
+  quickcheck_m
+    (module Instance)
+    ~f:(fun t ->
+      let t = Instance.value t in
+      let round_trip = globalize_m__t (module Int) t in
+      require_equal (module Instance.Value) round_trip t);
+  [%expect {| |}]
+;;
 
 (** sexp conversions and grammar *)
 
@@ -235,8 +250,11 @@ module Using_comparator = struct
 
   (** functor for polymorphic definition - untested *)
 
-  module Empty_without_value_restriction (Cmp : Comparator.S1) = struct
-    open Empty_without_value_restriction (Cmp)
+  module%template.portable
+    [@modality p] Empty_without_value_restriction
+      (Cmp : Comparator.S1) =
+  struct
+    open Empty_without_value_restriction [@modality p] (Cmp)
 
     let empty = empty
   end
@@ -263,6 +281,19 @@ module Using_comparator = struct
     (** type *)
 
     type nonrec ('e, 'c) t = ('e, 'c) t
+
+    (** globalizing *)
+
+    let globalize = globalize
+
+    let%expect_test _ =
+      quickcheck_m
+        (module Tree_int)
+        ~f:(fun tree ->
+          let tree = Tree_int.value tree in
+          let round_trip = globalize () () tree in
+          require_equal (module Tree_int.Value) round_trip tree)
+    ;;
 
     (** sexp conversions *)
 

@@ -1,5 +1,0 @@
-(library
- (name base_internalhash_types_test)
- (libraries base expect_test_helpers_core stdio)
- (preprocess
-  (pps ppx_jane)))

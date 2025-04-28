@@ -1,19 +1,7 @@
 open! Import
+module Sexp = Sexp0
 
-type ('a, 'b) t = T : ('a, 'a) t [@@deriving_inline sexp_of]
-
-let sexp_of_t
-  : 'a 'b.
-  ('a -> Sexplib0.Sexp.t) -> ('b -> Sexplib0.Sexp.t) -> ('a, 'b) t -> Sexplib0.Sexp.t
-  =
-  fun (type a__003_ b__004_)
-    :  ((a__003_ -> Sexplib0.Sexp.t) -> (b__004_ -> Sexplib0.Sexp.t)
-    -> (a__003_, b__004_) t -> Sexplib0.Sexp.t) ->
-  fun _of_a__001_ _of_b__002_ T -> Sexplib0.Sexp.Atom "T"
-;;
-
-[@@@end]
-
+type ('a, 'b) t = T : 'a. ('a, 'a) t [@@deriving sexp_of ~localize]
 type ('a, 'b) equal = ('a, 'b) t
 
 include Type_equal_intf.Type_equal_defns (struct
@@ -83,55 +71,9 @@ module Id = struct
   module Uid = struct
     (* A unique id contains an [int] representing a (possibly parameterized) type, and a
        list of uids for the parameters to that type. *)
-    type t = T of int * t list [@@deriving_inline compare, hash, sexp_of]
+    type t = T of int * t list [@@deriving compare, hash, sexp_of ~localize]
 
-    let rec compare =
-      (fun a__005_ b__006_ ->
-         if Stdlib.( == ) a__005_ b__006_
-         then 0
-         else (
-           match a__005_, b__006_ with
-           | T (_a__007_, _a__009_), T (_b__008_, _b__010_) ->
-             (match compare_int _a__007_ _b__008_ with
-              | 0 -> compare_list compare _a__009_ _b__010_
-              | n -> n))
-       : t -> t -> int)
-    ;;
-
-    let rec (hash_fold_t :
-              Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
-      =
-      (fun hsv arg ->
-         match arg with
-         | T (_a0, _a1) ->
-           let hsv = hsv in
-           let hsv =
-             let hsv = hsv in
-             hash_fold_int hsv _a0
-           in
-           hash_fold_list hash_fold_t hsv _a1
-       : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state)
-
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func arg =
-        Ppx_hash_lib.Std.Hash.get_hash_value
-          (let hsv = Ppx_hash_lib.Std.Hash.create () in
-           hash_fold_t hsv arg)
-      in
-      fun x -> func x
-    ;;
-
-    let rec sexp_of_t =
-      (fun (T (arg0__013_, arg1__014_)) ->
-         let res0__015_ = sexp_of_int arg0__013_
-         and res1__016_ = sexp_of_list sexp_of_t arg1__014_ in
-         Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "T"; res0__015_; res1__016_ ]
-       : t -> Sexplib0.Sexp.t)
-    ;;
-
-    [@@@end]
-
-    include Comparable.Make (struct
+    include%template Comparable.Make [@modality portable] (struct
         type nonrec t = t
 
         let compare = compare
@@ -148,42 +90,29 @@ module Id = struct
   end
 
   (* Every type-equal id must support these operations. *)
-  module type S = sig
-    type t
+  type 'a t =
+    { (* How to render values of the type. *)
+      sexp_of_t : 'a -> Sexp.t
+    ; (* A unique id for this type. *)
+      uid : Uid.t
+    ; (* Name of the type-equal id. *)
+      id_name : string
+    ; (* Sexp of the type-equal id. *)
+      id_sexp : Sexp.t
+    ; (* [key] value for the type. *)
+      type_key : 'a key
+    ; (* type equality: given another key, produce an [equal] if they represent the same
+         type instance *)
+      type_equal : 'b. 'b key -> ('a, 'b) equal option
+    }
 
-    (* How to render values of the type. *)
-    val sexp_of_t : t -> Sexp.t
-
-    (* A unique id for this type. *)
-    val uid : Uid.t
-
-    (* Name of the type-equal id. *)
-    val id_name : string
-
-    (* Sexp of the type-equal id. *)
-    val id_sexp : Sexp.t
-
-    (* [key] value for the type. *)
-    val type_key : t key
-
-    (* type equality: given another key, produce an [equal] if they represent the same
-       type instance *)
-    val type_equal : 'a key -> (t, 'a) equal option
-  end
-
-  (* An [Id.t] is a first-class module implementing the above operations. *)
-  type 'a t = (module S with type t = 'a)
-
-  let uid (type a) ((module A) : a t) = A.uid
-  let name (type a) ((module A) : a t) = A.id_name
-  let sexp_of_t (type a) _ ((module A) : a t) = A.id_sexp
-  let to_sexp (type a) ((module A) : a t) = A.sexp_of_t
+  let uid a = a.uid
+  let name a = a.id_name
+  let sexp_of_t _ a = a.id_sexp
+  let to_sexp a = a.sexp_of_t
   let hash t = Uid.hash (uid t)
   let hash_fold_t state t = Uid.hash_fold_t state (uid t)
-
-  let same_witness (type a b) ((module A) : a t) ((module B) : b t) =
-    A.type_equal B.type_key
-  ;;
+  let same_witness a b = a.type_equal b.type_key
 
   let same_witness_exn t1 t2 =
     match same_witness t1 t2 with
@@ -208,156 +137,135 @@ module Id = struct
       type nonrec 'a t = 'a t
     end)
 
-  module Create0 (T : Arg0) = struct
+  module%template.portable Create0 (T : Arg0) = struct
     type _ key += T0 : T.t key
 
     let type_equal_id : T.t t =
-      (module struct
-        type t = T.t
-
-        let id_name = T.name
-        let id_sexp = Sexp.Atom id_name
-        let sexp_of_t = T.sexp_of_t
-        let type_key = T0
-        let uid = Uid.create type_key []
-
-        let type_equal (type other) (otherkey : other key) : (t, other) equal option =
-          match otherkey with
-          | T0 -> Some T
-          | _ -> None
-        ;;
-      end)
+      let id_name = T.name in
+      let id_sexp = Sexp.Atom id_name in
+      let sexp_of_t = T.sexp_of_t in
+      let type_key = T0 in
+      let uid = Uid.create type_key [] in
+      let type_equal (type other) (otherkey : other key) : (T.t, other) equal option =
+        match otherkey with
+        | T0 -> Some T
+        | _ -> None
+      in
+      { id_name; id_sexp; sexp_of_t; type_key; uid; type_equal }
     ;;
   end
 
-  module Create1 (T : Arg1) = struct
+  module%template.portable Create1 (T : Arg1) = struct
     type _ key += T1 : 'a key -> 'a T.t key
 
-    let type_equal_id (type a) ((module A) : a t) : a T.t t =
-      (module struct
-        type t = A.t T.t
-
-        let id_name = T.name
-        let id_sexp = Sexp.List [ Atom id_name; A.id_sexp ]
-        let sexp_of_t t = T.sexp_of_t A.sexp_of_t t
-        let type_key = T1 A.type_key
-        let uid = Uid.create type_key [ A.uid ]
-
-        let type_equal (type other) (otherkey : other key) : (t, other) equal option =
-          match otherkey with
-          | T1 akey ->
-            (match A.type_equal akey with
-             | Some T -> Some T
-             | None -> None)
-          | _ -> None
-        ;;
-      end)
+    let type_equal_id (type a) (a : a t) : a T.t t =
+      let id_name = T.name in
+      let id_sexp = Sexp.List [ Atom id_name; a.id_sexp ] in
+      let sexp_of_t t = T.sexp_of_t a.sexp_of_t t in
+      let type_key = T1 a.type_key in
+      let uid = Uid.create type_key [ a.uid ] in
+      let type_equal (type other) (otherkey : other key) : (a T.t, other) equal option =
+        match otherkey with
+        | T1 akey ->
+          (match a.type_equal akey with
+           | Some T -> Some T
+           | None -> None)
+        | _ -> None
+      in
+      { id_name; id_sexp; sexp_of_t; type_key; uid; type_equal }
     ;;
   end
 
-  module Create2 (T : Arg2) = struct
+  module%template.portable Create2 (T : Arg2) = struct
     type _ key += T2 : 'a key * 'b key -> ('a, 'b) T.t key
 
-    let type_equal_id (type a b) ((module A) : a t) ((module B) : b t) : (a, b) T.t t =
-      (module struct
-        type t = (A.t, B.t) T.t
-
-        let id_name = T.name
-        let id_sexp = Sexp.List [ Atom id_name; A.id_sexp; B.id_sexp ]
-        let sexp_of_t t = T.sexp_of_t A.sexp_of_t B.sexp_of_t t
-        let type_key = T2 (A.type_key, B.type_key)
-        let uid = Uid.create type_key [ A.uid; B.uid ]
-
-        let type_equal (type other) (otherkey : other key) : (t, other) equal option =
-          match otherkey with
-          | T2 (akey, bkey) ->
-            (match A.type_equal akey, B.type_equal bkey with
-             | Some T, Some T -> Some T
-             | None, _ | _, None -> None)
-          | _ -> None
-        ;;
-      end)
+    let type_equal_id (type a b) (a : a t) (b : b t) : (a, b) T.t t =
+      let id_name = T.name in
+      let id_sexp = Sexp.List [ Atom id_name; a.id_sexp; b.id_sexp ] in
+      let sexp_of_t t = T.sexp_of_t a.sexp_of_t b.sexp_of_t t in
+      let type_key = T2 (a.type_key, b.type_key) in
+      let uid = Uid.create type_key [ a.uid; b.uid ] in
+      let type_equal (type other) (otherkey : other key)
+        : ((a, b) T.t, other) equal option
+        =
+        match otherkey with
+        | T2 (akey, bkey) ->
+          (match a.type_equal akey, b.type_equal bkey with
+           | Some T, Some T -> Some T
+           | None, _ | _, None -> None)
+        | _ -> None
+      in
+      { id_name; id_sexp; sexp_of_t; type_key; uid; type_equal }
     ;;
   end
 
-  module Create3 (T : Arg3) = struct
+  module%template.portable Create3 (T : Arg3) = struct
     type _ key += T3 : 'a key * 'b key * 'c key -> ('a, 'b, 'c) T.t key
 
-    let type_equal_id
-      (type a b c)
-      ((module A) : a t)
-      ((module B) : b t)
-      ((module C) : c t)
-      : (a, b, c) T.t t
-      =
-      (module struct
-        type t = (A.t, B.t, C.t) T.t
-
-        let id_name = T.name
-        let id_sexp = Sexp.List [ Atom id_name; A.id_sexp; B.id_sexp; C.id_sexp ]
-        let sexp_of_t t = T.sexp_of_t A.sexp_of_t B.sexp_of_t C.sexp_of_t t
-        let type_key = T3 (A.type_key, B.type_key, C.type_key)
-        let uid = Uid.create type_key [ A.uid; B.uid; C.uid ]
-
-        let type_equal (type other) (otherkey : other key) : (t, other) equal option =
-          match otherkey with
-          | T3 (akey, bkey, ckey) ->
-            (match A.type_equal akey, B.type_equal bkey, C.type_equal ckey with
-             | Some T, Some T, Some T -> Some T
-             | None, _, _ | _, None, _ | _, _, None -> None)
-          | _ -> None
-        ;;
-      end)
+    let type_equal_id (type a b c) (a : a t) (b : b t) (c : c t) : (a, b, c) T.t t =
+      let id_name = T.name in
+      let id_sexp = Sexp.List [ Atom id_name; a.id_sexp; b.id_sexp; c.id_sexp ] in
+      let sexp_of_t t = T.sexp_of_t a.sexp_of_t b.sexp_of_t c.sexp_of_t t in
+      let type_key = T3 (a.type_key, b.type_key, c.type_key) in
+      let uid = Uid.create type_key [ a.uid; b.uid; c.uid ] in
+      let type_equal (type other) (otherkey : other key)
+        : ((a, b, c) T.t, other) equal option
+        =
+        match otherkey with
+        | T3 (akey, bkey, ckey) ->
+          (match a.type_equal akey, b.type_equal bkey, c.type_equal ckey with
+           | Some T, Some T, Some T -> Some T
+           | None, _, _ | _, None, _ | _, _, None -> None)
+        | _ -> None
+      in
+      { id_name; id_sexp; sexp_of_t; type_key; uid; type_equal }
     ;;
   end
 
-  module Create4 (T : Arg4) = struct
+  module%template.portable Create4 (T : Arg4) = struct
     type _ key += T4 : 'a key * 'b key * 'c key * 'd key -> ('a, 'b, 'c, 'd) T.t key
 
-    let type_equal_id
-      (type a b c d)
-      ((module A) : a t)
-      ((module B) : b t)
-      ((module C) : c t)
-      ((module D) : d t)
+    let type_equal_id (type a b c d) (a : a t) (b : b t) (c : c t) (d : d t)
       : (a, b, c, d) T.t t
       =
-      (module struct
-        type t = (A.t, B.t, C.t, D.t) T.t
-
-        let id_name = T.name
-
-        let id_sexp =
-          Sexp.List [ Atom id_name; A.id_sexp; B.id_sexp; C.id_sexp; D.id_sexp ]
-        ;;
-
-        let sexp_of_t t = T.sexp_of_t A.sexp_of_t B.sexp_of_t C.sexp_of_t D.sexp_of_t t
-        let type_key = T4 (A.type_key, B.type_key, C.type_key, D.type_key)
-        let uid = Uid.create type_key [ A.uid; B.uid; C.uid; D.uid ]
-
-        let type_equal (type other) (otherkey : other key) : (t, other) equal option =
-          match otherkey with
-          | T4 (akey, bkey, ckey, dkey) ->
-            (match
-               A.type_equal akey, B.type_equal bkey, C.type_equal ckey, D.type_equal dkey
-             with
-             | Some T, Some T, Some T, Some T -> Some T
-             | None, _, _, _ | _, None, _, _ | _, _, None, _ | _, _, _, None -> None)
-          | _ -> None
-        ;;
-      end)
+      let id_name = T.name in
+      let id_sexp =
+        Sexp.List [ Atom id_name; a.id_sexp; b.id_sexp; c.id_sexp; d.id_sexp ]
+      in
+      let sexp_of_t t = T.sexp_of_t a.sexp_of_t b.sexp_of_t c.sexp_of_t d.sexp_of_t t in
+      let type_key = T4 (a.type_key, b.type_key, c.type_key, d.type_key) in
+      let uid = Uid.create type_key [ a.uid; b.uid; c.uid; d.uid ] in
+      let type_equal (type other) (otherkey : other key)
+        : ((a, b, c, d) T.t, other) equal option
+        =
+        match otherkey with
+        | T4 (akey, bkey, ckey, dkey) ->
+          (match
+             a.type_equal akey, b.type_equal bkey, c.type_equal ckey, d.type_equal dkey
+           with
+           | Some T, Some T, Some T, Some T -> Some T
+           | None, _, _, _ | _, None, _, _ | _, _, None, _ | _, _, _, None -> None)
+        | _ -> None
+      in
+      { id_name; id_sexp; sexp_of_t; type_key; uid; type_equal }
     ;;
   end
 
-  let create (type a) ~name sexp_of_t =
-    let module T =
-      Create0 (struct
-        type t = a
-
-        let name = name
-        let sexp_of_t = sexp_of_t
-      end)
+  let%template create (type a) ~name sexp_of_t =
+    let open struct
+      type _ key += T0 : a key
+    end in
+    let id_name = name in
+    let id_sexp = Sexp.Atom id_name in
+    let sexp_of_t = sexp_of_t in
+    let type_key = T0 in
+    let uid = Uid.create type_key [] in
+    let type_equal (type other) (otherkey : other key) : (a, other) equal option =
+      match otherkey with
+      | T0 -> Some T
+      | _ -> None
     in
-    T.type_equal_id
+    { id_name; id_sexp; sexp_of_t; type_key; uid; type_equal }
+  [@@mode p = (nonportable, portable)]
   ;;
 end

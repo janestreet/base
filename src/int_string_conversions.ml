@@ -1,4 +1,5 @@
 open! Import
+module Sexp = Sexp0
 
 (* string conversions *)
 
@@ -59,20 +60,14 @@ struct
   let sexp_of_t t =
     let s = to_string t in
     Sexp.Atom
-      (match !sexp_of_int_style with
+      (match Dynamic.get sexp_of_int_style with
        | `Underscores -> insert_delimiter_every s ~chars_per_delimiter ~delimiter:'_'
        | `No_underscores -> s)
   ;;
 end
 
 module Make_hex (I : sig
-    type t [@@deriving_inline compare ~localize, hash]
-
-    include Ppx_compare_lib.Comparable.S with type t := t
-    include Ppx_compare_lib.Comparable.S_local with type t := t
-    include Ppx_hash_lib.Hashable.S with type t := t
-
-    [@@@end]
+    type t [@@deriving compare ~localize, hash]
 
     val to_string : t -> string
     val of_string : string -> t
@@ -83,20 +78,7 @@ module Make_hex (I : sig
   end) =
 struct
   module T_hex = struct
-    type t = I.t [@@deriving_inline compare ~localize, hash]
-
-    let compare__local = (I.compare__local : t -> t -> int)
-    let compare = (fun a b -> compare__local a b : t -> t -> int)
-
-    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      I.hash_fold_t
-
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = I.hash in
-      fun x -> func x
-    ;;
-
-    [@@@end]
+    type t = I.t [@@deriving compare ~localize, hash]
 
     let chars_per_delimiter = 4
 
@@ -137,7 +119,8 @@ struct
 
   module Hex = struct
     include T_hex
-    include Sexpable.Of_stringable (T_hex)
+
+    include%template Sexpable.Of_stringable [@modality portable] (T_hex)
 
     module Hum = struct
       let to_string = to_string_hum
@@ -146,17 +129,9 @@ struct
 end
 
 module Make_binary (I : sig
-    type t [@@deriving_inline compare ~localize, equal ~localize, hash]
+    type t [@@deriving compare ~localize, equal ~localize, hash]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
-    include Ppx_compare_lib.Comparable.S_local with type t := t
-    include Ppx_compare_lib.Equal.S with type t := t
-    include Ppx_compare_lib.Equal.S_local with type t := t
-    include Ppx_hash_lib.Hashable.S with type t := t
-
-    [@@@end]
-
-    val clz : t -> int
+    val clz : t -> t
     val ( lsr ) : t -> int -> t
     val ( land ) : t -> t -> t
     val to_int_exn : t -> int
@@ -166,22 +141,11 @@ module Make_binary (I : sig
   end) =
 struct
   module Binary = struct
-    type t = I.t [@@deriving_inline compare ~localize, hash]
+    type t = I.t [@@deriving compare ~localize, hash]
 
-    let compare__local = (I.compare__local : t -> t -> int)
-    let compare = (fun a b -> compare__local a b : t -> t -> int)
-
-    let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-      I.hash_fold_t
-
-    and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-      let func = I.hash in
-      fun x -> func x
+    let bits t =
+      if I.equal__local t I.zero then 0 else I.num_bits - (I.clz t |> I.to_int_exn)
     ;;
-
-    [@@@end]
-
-    let bits t = if I.equal__local t I.zero then 0 else I.num_bits - I.clz t
 
     let to_string_suffix (t : t) =
       let bits = bits t in
@@ -192,6 +156,7 @@ struct
           let bit_index = bits - char_index - 1 in
           let bit = I.((t lsr bit_index) land one) in
           Char.unsafe_of_int (Char.to_int '0' + I.to_int_exn bit))
+        [@nontail]
     ;;
 
     let to_string (t : t) = "0b" ^ to_string_suffix t

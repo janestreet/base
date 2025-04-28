@@ -57,8 +57,8 @@ module Definitions = struct
     val find_exn
       : (('key, 'data, 'phantom) t -> 'key key -> 'data, 'key, 'data, 'phantom) accessor
 
-    (** Produces the list associated with the corresponding key. Interprets a missing
-        key as having an empty list. *)
+    (** Produces the list associated with the corresponding key. Interprets a missing key
+        as having an empty list. *)
     val find_multi
       : ( ('key, 'data list, 'phantom) t -> 'key key -> 'data list
           , 'key
@@ -272,8 +272,8 @@ module Definitions = struct
           , 'phantom )
           transformer
 
-    (** Adds or replaces the value for a given key, depending on its current value or
-        lack thereof. *)
+    (** Adds or replaces the value for a given key, depending on its current value or lack
+        thereof. *)
     val update
       : ( ('key, 'data, 'phantom) t
           -> 'key key

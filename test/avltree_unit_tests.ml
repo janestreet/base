@@ -96,10 +96,11 @@ module%test _ : module type of Avltree = struct
   open For_quickcheck
 
   let empty = empty
+  let get_empty = get_empty
 
   let%test_unit _ =
-    match empty with
-    | Empty -> ()
+    match empty, get_empty () with
+    | Empty, Empty -> ()
     | _ -> assert false
   ;;
 
@@ -392,4 +393,21 @@ module%test _ : module type of Avltree = struct
           (is_some (Option.try_with (fun () -> choose_exn t)))
           ~expect:(not (Map.is_empty map)))
   ;;
+
+  let%template[@mode m = local] choose_exn = (choose_exn [@mode m])
+
+  [%%template
+    let%test_unit _ =
+      Base_quickcheck.Test.run_exn
+        (module Constructors)
+        ~f:(fun constructors ->
+          let t, map = reify constructors in
+          [%test_result: bool]
+            (is_some
+               (Option.try_with (fun () ->
+                  [%globalize: int Modes.Global.t * string Modes.Global.t]
+                    ((choose_exn [@mode m]) t) [@nontail])))
+            ~expect:(not (Map.is_empty map)))
+    [@@mode m = local]
+    ;;]
 end

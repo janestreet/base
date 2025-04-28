@@ -17,7 +17,7 @@ module Test_S1_allow_skipping_tests (Container : sig
   with type 'a t := 'a Container.t
   with type 'a elt := 'a
 
-module Test_S1 (Container : sig
+module%template.portable Test_S1 (Container : sig
     type 'a t [@@deriving sexp]
 
     include Container.S1 with type 'a t := 'a t

@@ -8,8 +8,8 @@ let add_substring t s ~pos ~len = add_substring t s pos len
 let add_subbytes t s ~pos ~len = add_subbytes t s pos len
 let sexp_of_t t = sexp_of_string (contents t)
 
-module To_bytes =
-  Blit.Make_distinct
+module%template To_bytes =
+  Blit.Make_distinct [@modality portable]
     (struct
       type nonrec t = t Modes.Global.t
 

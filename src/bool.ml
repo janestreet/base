@@ -1,29 +1,12 @@
 open! Import
+module Sexp = Sexp0
 include Bool0
 
 let invalid_argf = Printf.invalid_argf
 
 module T = struct
   type t = bool
-  [@@deriving_inline compare, enumerate, globalize, hash, sexp, sexp_grammar]
-
-  let compare = (compare_bool : t -> t -> int)
-  let all = ([ false; true ] : t list)
-  let (globalize : t -> t) = (globalize_bool : t -> t)
-
-  let (hash_fold_t : Ppx_hash_lib.Std.Hash.state -> t -> Ppx_hash_lib.Std.Hash.state) =
-    hash_fold_bool
-
-  and (hash : t -> Ppx_hash_lib.Std.Hash.hash_value) =
-    let func = hash_bool in
-    fun x -> func x
-  ;;
-
-  let t_of_sexp = (bool_of_sexp : Sexplib0.Sexp.t -> t)
-  let sexp_of_t = (sexp_of_bool : t -> Sexplib0.Sexp.t)
-  let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = bool_sexp_grammar
-
-  [@@@end]
+  [@@deriving compare, enumerate, globalize, hash, sexp ~localize, sexp_grammar]
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 
@@ -37,9 +20,10 @@ module T = struct
 end
 
 include T
-include Comparator.Make (T)
 
-include Pretty_printer.Register (struct
+include%template Comparator.Make [@modality portable] (T)
+
+include%template Pretty_printer.Register [@modality portable] (struct
     type nonrec t = t
 
     let to_string = to_string
@@ -75,7 +59,8 @@ let to_int x = bool_to_int x
 module Non_short_circuiting = struct
   (* We don't expose this, since we don't want to break the invariant mentioned below of
      (to_int true = 1) and (to_int false = 0). *)
-  let unsafe_of_int (x : int) : bool = Stdlib.Obj.magic x
+  external unsafe_of_int : int -> bool = "%identity"
+
   let ( || ) a b = unsafe_of_int (to_int a lor to_int b)
   let ( && ) a b = unsafe_of_int (to_int a land to_int b)
 end

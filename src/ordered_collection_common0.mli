@@ -1,11 +1,11 @@
 open! Import0
 
-(** [get_pos_len_exn], and [check_pos_len_exn] are intended to be used
-    by functions that take a sequence (array, string, bigstring, ...) and an optional
-    [pos] and [len] specifying a subrange of the sequence.  Such functions should call
-    [get_pos_len] with the length of the sequence and the optional [pos] and [len], and it
-    will return the [pos] and [len] specifying the range, where the default [pos] is zero
-    and the default [len] is to go to the end of the sequence.
+(** [get_pos_len_exn], and [check_pos_len_exn] are intended to be used by functions that
+    take a sequence (array, string, bigstring, ...) and an optional [pos] and [len]
+    specifying a subrange of the sequence. Such functions should call [get_pos_len] with
+    the length of the sequence and the optional [pos] and [len], and it will return the
+    [pos] and [len] specifying the range, where the default [pos] is zero and the default
+    [len] is to go to the end of the sequence.
 
     It should be the case that:
 
@@ -13,8 +13,8 @@ open! Import0
       pos >= 0 && len >= 0 && pos + len <= total_length
     ]}
 
-    Note that this allows [pos = total_length] and [len = 0], i.e., an empty subrange
-    at the end of the sequence.
+    Note that this allows [pos = total_length] and [len = 0], i.e., an empty subrange at
+    the end of the sequence.
 
     [get_pos_len_exn] returns [(pos', len')] specifying a subrange where:
 
@@ -24,8 +24,8 @@ open! Import0
     v} *)
 val get_pos_len_exn : ?pos:int -> ?len:int -> unit -> total_length:int -> int * int
 
-(** [check_pos_len_exn ~pos ~len ~total_length] raises unless [pos >= 0 && len >= 0 &&
-    pos + len <= total_length]. *)
+(** [check_pos_len_exn ~pos ~len ~total_length] raises unless
+    [pos >= 0 && len >= 0 && pos + len <= total_length]. *)
 val check_pos_len_exn : pos:int -> len:int -> total_length:int -> unit
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:

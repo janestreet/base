@@ -191,7 +191,7 @@ module%test _ : module type of Queue = struct
     [%test_result: (int * int) list] (to_list t') ~expect:[]
   ;;
 
-  include Test_container.Test_S1 (Queue)
+  include%template Test_container.Test_S1 [@modality portable] (Queue)
 
   let dequeue_exn = dequeue_exn
   let enqueue = enqueue

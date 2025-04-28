@@ -1,8 +1,8 @@
 (** 63-bit integers.
 
-    The size of Int63 is always 63 bits.  On a 64-bit platform it is just an int
-    (63-bits), and on a 32-bit platform it is an int64 wrapped to respect the
-    semantics of 63-bit integers.
+    The size of Int63 is always 63 bits. On a 64-bit platform it is just an int (63-bits),
+    and on a 32-bit platform it is an int64 wrapped to respect the semantics of 63-bit
+    integers.
 
     Because [Int63] has different representations on 32-bit and 64-bit platforms,
     marshalling [Int63] will not work between 32-bit and 64-bit platforms -- [unmarshal]
@@ -11,12 +11,13 @@
 open! Import
 
 (** The [@@immediate64] attribute is to indicate that [t] is implemented by a type that is
-    immediate only on 64 bit platforms.  It is currently ignored by the compiler, however
+    immediate only on 64 bit platforms. It is currently ignored by the compiler, however
     we are hoping that one day it will be taken into account so that the compiler can omit
     [caml_modify] when dealing with mutable data structures holding [Int63.t] values. *)
-type t [@@immediate64]
+type t [@@deriving globalize] [@@immediate64]
 
 include Int_intf.S with type t := t
+include Replace_polymorphic_compare.S with type t := t
 
 (** {2 Arithmetic with overflow}
 
@@ -28,6 +29,7 @@ module Overflow_exn : sig
   val ( * ) : t -> t -> t
   val ( / ) : t -> t -> t
   val abs : t -> t
+  val abs_local : t -> t
   val neg : t -> t
 end
 
@@ -35,9 +37,10 @@ end
 
 val of_int : int -> t
 val to_int : t -> int option
-val of_int32 : Int32.t -> t
-val to_int32 : t -> Int32.t option
-val of_int64 : Int64.t -> t option
+val of_int32 : int32 -> t
+val to_int32 : t -> int32 option
+val of_int64 : int64 -> t option
+val of_int64_exn : int64 -> t
 val of_nativeint : nativeint -> t option
 val to_nativeint : t -> nativeint option
 
@@ -47,16 +50,15 @@ val to_nativeint : t -> nativeint option
     optional conversions return [Some x], truncating conversions return [x]. *)
 
 val to_int_trunc : t -> int
-val to_int32_trunc : t -> Int32.t
-val of_int64_trunc : Int64.t -> t
+val to_int32_trunc : t -> int32
+val of_int64_trunc : int64 -> t
 val of_nativeint_trunc : nativeint -> t
 val to_nativeint_trunc : t -> nativeint
 
 (** {2 Byteswap functions}
 
-    See {{!modtype:Int.Int_without_module_types}[Int]'s byte swap section} for
-    a description of Base's approach to exposing byte swap primitives.
-*)
+    See {{!modtype:Int.Int_without_module_types} [Int]'s byte swap section} for a
+    description of Base's approach to exposing byte swap primitives. *)
 
 val bswap16 : t -> t
 val bswap32 : t -> t
@@ -71,7 +73,7 @@ val bswap48 : t -> t
 val random : ?state:Random.State.t -> t -> t
 
 (** [random_incl ~state lo hi] returns a random integer between [lo] (inclusive) and [hi]
-    (inclusive).  Raises if [lo > hi].
+    (inclusive). Raises if [lo > hi].
 
     The default [~state] is [Random.State.default]. *)
 val random_incl : ?state:Random.State.t -> t -> t -> t

@@ -4,20 +4,7 @@
 open! Import
 
 type 'a t = 'a Stdlib.ref = { mutable contents : 'a }
-[@@deriving_inline compare ~localize, equal ~localize, globalize, sexp, sexp_grammar]
-
-include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-include Ppx_compare_lib.Comparable.S_local1 with type 'a t := 'a t
-include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
-include Ppx_compare_lib.Equal.S_local1 with type 'a t := 'a t
-
-val globalize : ('a -> 'a) -> 'a t -> 'a t
-
-include Sexplib0.Sexpable.S1 with type 'a t := 'a t
-
-val t_sexp_grammar : 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
-
-[@@@end]
+[@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
 
 (*_ defined as externals to avoid breaking the inliner *)
 
@@ -36,7 +23,7 @@ val replace : 'a t -> ('a -> 'a) -> unit
 val set_temporarily : 'a t -> 'a -> f:(unit -> 'b) -> 'b
 
 module And_value : sig
-  type t = T : 'a ref * 'a -> t [@@deriving sexp_of]
+  type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~localize]
 
   (** [set (T (r, x))] is equivalent to [r := x]. *)
   val set : t -> unit
