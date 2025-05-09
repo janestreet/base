@@ -1,22 +1,28 @@
 open! Import
 
-(** Interface for encoding and decoding individual Unicode scalar values. See [String.Utf]
-    for working with Unicode strings. *)
-module type Utf = sig
-  (** [to_string] encodes a Unicode scalar value in this encoding.
+module Definitions = struct
+  (** Interface for encoding and decoding individual Unicode scalar values. See
+      [String.Utf] for working with Unicode strings. *)
+  module type Utf = sig
+    (** [to_string] encodes a Unicode scalar value in this encoding.
 
-      [of_string] interprets a string as one Unicode scalar value in this encoding, and
-      raises if the string cannot be interpreted as such. *)
-  include Stringable.S with type t := Uchar0.t
+        [of_string] interprets a string as one Unicode scalar value in this encoding, and
+        raises if the string cannot be interpreted as such. *)
+    include Stringable.S with type t := Uchar0.t
 
-  (** Returns the number of bytes used for a given scalar value in this encoding. *)
-  val byte_length : Uchar0.t -> int
+    (** Returns the number of bytes used for a given scalar value in this encoding. *)
+    val byte_length : Uchar0.t -> int
 
-  (** The name of this encoding scheme; e.g., "UTF-8". *)
-  val codec_name : string
+    (** The name of this encoding scheme; e.g., "UTF-8". *)
+    val codec_name : string
+  end
 end
 
 module type Uchar = sig
+  include module type of struct
+    include Definitions
+  end
+
   (** Unicode operations.
 
       A [Uchar.t] represents a Unicode scalar value, which is the basic unit of Unicode.
@@ -125,6 +131,4 @@ module type Uchar = sig
 
   (** UTF-32 big-endian encoding. See [Utf] interface. *)
   module Utf32be : Utf
-
-  module type Utf = Utf
 end

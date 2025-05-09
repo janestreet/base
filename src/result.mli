@@ -1,6 +1,7 @@
 (** [Result] is often used to handle error messages. *)
 
 open! Import
+module Invariant := Invariant_intf.Definitions
 
 [%%template:
 type ('ok, 'err) t =
@@ -33,7 +34,7 @@ type ('ok, 'err) t = ('ok, 'err) Stdlib.result =
 
 include Monad.S2__local with type ('a, 'err) t := ('a, 'err) t
 module Error : Monad.S2__local with type ('err, 'a) t := ('a, 'err) t
-include Invariant_intf.S2 with type ('ok, 'err) t := ('ok, 'err) t
+include Invariant.S2 with type ('ok, 'err) t := ('ok, 'err) t
 
 val fail : 'err -> (_, 'err) t
 

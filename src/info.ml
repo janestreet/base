@@ -3,7 +3,7 @@
    adding new dependencies. *)
 
 open! Import
-include Info_intf
+include Info_intf.Definitions
 module Sexp = Sexp0
 module String = String0
 
@@ -197,7 +197,7 @@ let of_string message = of_message (String message)
 let createf format = Printf.ksprintf of_string format
 let of_thunk f = of_lazy_message (lazy (String (f ())))
 
-let create ?here ?strict tag x sexp_of_x =
+let%template[@kind k = (bits64, float64, value)] create ?here ?strict tag x sexp_of_x =
   match strict with
   | None -> of_lazy_message (lazy (Tag_sexp (tag, sexp_of_x x, here)))
   | Some () -> of_message (Tag_sexp (tag, sexp_of_x x, here))

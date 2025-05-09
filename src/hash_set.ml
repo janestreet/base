@@ -1,5 +1,5 @@
 open! Import
-include Hash_set_intf
+include Hash_set_intf.Definitions
 
 let hashable_s = Hashtbl.hashable_s
 let hashable = Hashtbl.Private.hashable

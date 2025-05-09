@@ -1,307 +1,318 @@
 open! Import
-open! T
 module Sexp = Sexp0
 
-module type Elt_plain = sig
-  type t [@@deriving compare, sexp_of]
-end
+module Definitions = struct
+  module type Elt_plain = sig
+    type t [@@deriving compare, sexp_of]
+  end
 
-module Without_comparator = Map_intf.Without_comparator
-module With_comparator = Map_intf.With_comparator
-module With_first_class_module = Map_intf.With_first_class_module
-module Merge_to_sequence_element = Sequence.Merge_with_duplicates_element
+  module Without_comparator = Map.Without_comparator
+  module With_comparator = Map.With_comparator
+  module With_first_class_module = Map.With_first_class_module
+  module Merge_to_sequence_element = Sequence.Merge_with_duplicates_element
 
-module Named = struct
-  type 'a t =
-    { set : 'a
-    ; name : string
-    }
-end
+  module Named = struct
+    type 'a t =
+      { set : 'a
+      ; name : string
+      }
+  end
 
-module type Accessors_generic = sig
-  type ('a, 'cmp) t
+  module type Accessors_generic = sig
+    type ('a, 'cmp) t
 
-  include Container.Generic with type ('a, 'cmp, _) t := ('a, 'cmp) t
+    include Container.Generic with type ('a, 'cmp, _) t := ('a, 'cmp) t
 
-  type ('a, 'cmp) tree
+    type ('a, 'cmp) tree
 
-  (** The [access_options] type is used to make [Accessors_generic] flexible as to whether
-      a comparator is required to be passed to certain functions. *)
-  type ('a, 'cmp, 'z) access_options
+    (** The [access_options] type is used to make [Accessors_generic] flexible as to
+        whether a comparator is required to be passed to certain functions. *)
+    type ('a, 'cmp, 'z) access_options
 
-  type 'cmp cmp
+    type 'cmp cmp
 
-  val invariants : ('a, 'cmp, ('a, 'cmp) t -> bool) access_options
+    val invariants : ('a, 'cmp, ('a, 'cmp) t -> bool) access_options
 
-  (** override [Container]'s [mem] *)
-  val mem : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> bool) access_options
+    (** override [Container]'s [mem] *)
+    val mem : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> bool) access_options
 
-  val symmetric_diff
-    : ( 'a
-        , 'cmp
-        , ('a, 'cmp) t -> ('a, 'cmp) t -> ('a elt, 'a elt) Either.t Sequence.t )
-        access_options
-
-  val compare_direct : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> int) access_options
-  val equal : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) access_options
-  val is_subset : ('a, 'cmp, ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool) access_options
-  val are_disjoint : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) access_options
-
-  module Named : sig
-    val is_subset
+    val symmetric_diff
       : ( 'a
           , 'cmp
-          , ('a, 'cmp) t Named.t -> of_:('a, 'cmp) t Named.t -> unit Or_error.t )
+          , ('a, 'cmp) t -> ('a, 'cmp) t -> ('a elt, 'a elt) Either.t Sequence.t )
           access_options
 
-    val equal
+    val compare_direct : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> int) access_options
+    val equal : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) access_options
+    val is_subset : ('a, 'cmp, ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool) access_options
+    val are_disjoint : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) access_options
+
+    module Named : sig
+      val is_subset
+        : ( 'a
+            , 'cmp
+            , ('a, 'cmp) t Named.t -> of_:('a, 'cmp) t Named.t -> unit Or_error.t )
+            access_options
+
+      val equal
+        : ( 'a
+            , 'cmp
+            , ('a, 'cmp) t Named.t -> ('a, 'cmp) t Named.t -> unit Or_error.t )
+            access_options
+    end
+
+    val fold_until
+      :  ('a, _) t
+      -> init:'acc
+      -> f:('acc -> 'a elt -> ('acc, 'final) Container.Continue_or_stop.t)
+      -> finish:('acc -> 'final)
+      -> 'final
+
+    val fold_right : ('a, _) t -> init:'acc -> f:('a elt -> 'acc -> 'acc) -> 'acc
+
+    val iter2
       : ( 'a
           , 'cmp
-          , ('a, 'cmp) t Named.t -> ('a, 'cmp) t Named.t -> unit Or_error.t )
+          , ('a, 'cmp) t
+            -> ('a, 'cmp) t
+            -> f:
+                 ([ `Left of 'a elt | `Right of 'a elt | `Both of 'a elt * 'a elt ]
+                  -> unit)
+            -> unit )
+          access_options
+
+    val elements : ('a, _) t -> 'a elt list
+    val min_elt : ('a, _) t -> 'a elt option
+    val min_elt_exn : ('a, _) t -> 'a elt
+    val max_elt : ('a, _) t -> 'a elt option
+    val max_elt_exn : ('a, _) t -> 'a elt
+    val choose : ('a, _) t -> 'a elt option
+    val choose_exn : ('a, _) t -> 'a elt
+    val find_exn : ('a, _) t -> f:('a elt -> bool) -> 'a elt
+    val nth : ('a, _) t -> int -> 'a elt option
+    val rank : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> int option) access_options
+    val to_tree : ('a, 'cmp) t -> ('a, 'cmp) tree
+
+    val to_sequence
+      : ( 'a
+          , 'cmp
+          , ?order:[ `Increasing | `Decreasing ]
+            -> ?greater_or_equal_to:'a elt
+            -> ?less_or_equal_to:'a elt
+            -> ('a, 'cmp) t
+            -> 'a elt Sequence.t )
+          access_options
+
+    val binary_search
+      : ( 'a
+          , 'cmp
+          , ('a, 'cmp) t
+            -> compare:('a elt -> 'key -> int)
+            -> Binary_searchable.Which_target_by_key.t
+            -> 'key
+            -> 'a elt option )
+          access_options
+
+    val binary_search_segmented
+      : ( 'a
+          , 'cmp
+          , ('a, 'cmp) t
+            -> segment_of:('a elt -> [ `Left | `Right ])
+            -> Binary_searchable.Which_target_by_segment.t
+            -> 'a elt option )
+          access_options
+
+    val merge_to_sequence
+      : ( 'a
+          , 'cmp
+          , ?order:[ `Increasing | `Decreasing ]
+            -> ?greater_or_equal_to:'a elt
+            -> ?less_or_equal_to:'a elt
+            -> ('a, 'cmp) t
+            -> ('a, 'cmp) t
+            -> ('a elt, 'a elt) Merge_to_sequence_element.t Sequence.t )
           access_options
   end
 
-  val fold_until
-    :  ('a, _) t
-    -> init:'acc
-    -> f:('acc -> 'a elt -> ('acc, 'final) Container.Continue_or_stop.t)
-    -> finish:('acc -> 'final)
-    -> 'final
+  module type Transformers_generic = sig
+    type ('a, 'cmp) t
+    type ('a, 'cmp) tree
+    type ('a, 'cmp, 'z) access_options
+    type 'elt elt
+    type 'cmp cmp
 
-  val fold_right : ('a, _) t -> init:'acc -> f:('a elt -> 'acc -> 'acc) -> 'acc
+    val add : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t) access_options
+    val remove : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t) access_options
+    val union : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> ('a, 'cmp) t) access_options
+    val inter : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> ('a, 'cmp) t) access_options
+    val diff : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> ('a, 'cmp) t) access_options
+    val filter : ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t
+    val partition_tf : ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t * ('a, 'cmp) t
 
-  val iter2
-    : ( 'a
-        , 'cmp
-        , ('a, 'cmp) t
-          -> ('a, 'cmp) t
-          -> f:([ `Left of 'a elt | `Right of 'a elt | `Both of 'a elt * 'a elt ] -> unit)
-          -> unit )
-        access_options
+    val split
+      : ( 'a
+          , 'cmp
+          , ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * 'a elt option * ('a, 'cmp) t )
+          access_options
 
-  val elements : ('a, _) t -> 'a elt list
-  val min_elt : ('a, _) t -> 'a elt option
-  val min_elt_exn : ('a, _) t -> 'a elt
-  val max_elt : ('a, _) t -> 'a elt option
-  val max_elt_exn : ('a, _) t -> 'a elt
-  val choose : ('a, _) t -> 'a elt option
-  val choose_exn : ('a, _) t -> 'a elt
-  val find_exn : ('a, _) t -> f:('a elt -> bool) -> 'a elt
-  val nth : ('a, _) t -> int -> 'a elt option
-  val rank : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> int option) access_options
-  val to_tree : ('a, 'cmp) t -> ('a, 'cmp) tree
+    val split_le_gt
+      : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * ('a, 'cmp) t) access_options
 
-  val to_sequence
-    : ( 'a
-        , 'cmp
-        , ?order:[ `Increasing | `Decreasing ]
-          -> ?greater_or_equal_to:'a elt
-          -> ?less_or_equal_to:'a elt
-          -> ('a, 'cmp) t
-          -> 'a elt Sequence.t )
-        access_options
+    val split_lt_ge
+      : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * ('a, 'cmp) t) access_options
 
-  val binary_search
-    : ( 'a
-        , 'cmp
-        , ('a, 'cmp) t
-          -> compare:('a elt -> 'key -> int)
-          -> Binary_searchable.Which_target_by_key.t
-          -> 'key
-          -> 'a elt option )
-        access_options
+    val group_by : ('a, 'cmp) t -> equiv:('a elt -> 'a elt -> bool) -> ('a, 'cmp) t list
+    [@@deprecated
+      "[since 2024-08] This function is slow (O(n^2)) and pretty much never the right \
+       thing to use. Consider using [to_list] along with [List.sort_and_group] or \
+       [List.group]."]
 
-  val binary_search_segmented
-    : ( 'a
-        , 'cmp
-        , ('a, 'cmp) t
-          -> segment_of:('a elt -> [ `Left | `Right ])
-          -> Binary_searchable.Which_target_by_segment.t
-          -> 'a elt option )
-        access_options
-
-  val merge_to_sequence
-    : ( 'a
-        , 'cmp
-        , ?order:[ `Increasing | `Decreasing ]
-          -> ?greater_or_equal_to:'a elt
-          -> ?less_or_equal_to:'a elt
-          -> ('a, 'cmp) t
-          -> ('a, 'cmp) t
-          -> ('a elt, 'a elt) Merge_to_sequence_element.t Sequence.t )
-        access_options
-end
-
-module type Transformers_generic = sig
-  type ('a, 'cmp) t
-  type ('a, 'cmp) tree
-  type ('a, 'cmp, 'z) access_options
-  type 'elt elt
-  type 'cmp cmp
-
-  val add : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t) access_options
-  val remove : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t) access_options
-  val union : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> ('a, 'cmp) t) access_options
-  val inter : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> ('a, 'cmp) t) access_options
-  val diff : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> ('a, 'cmp) t) access_options
-  val filter : ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t
-  val partition_tf : ('a, 'cmp) t -> f:('a elt -> bool) -> ('a, 'cmp) t * ('a, 'cmp) t
-
-  val split
-    : ( 'a
-        , 'cmp
-        , ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * 'a elt option * ('a, 'cmp) t )
-        access_options
-
-  val split_le_gt
-    : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * ('a, 'cmp) t) access_options
-
-  val split_lt_ge
-    : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> ('a, 'cmp) t * ('a, 'cmp) t) access_options
-
-  val group_by : ('a, 'cmp) t -> equiv:('a elt -> 'a elt -> bool) -> ('a, 'cmp) t list
-  [@@deprecated
-    "[since 2024-08] This function is slow (O(n^2)) and pretty much never the right \
-     thing to use. Consider using [to_list] along with [List.sort_and_group] or \
-     [List.group]."]
-
-  val remove_index : ('a, 'cmp, ('a, 'cmp) t -> int -> ('a, 'cmp) t) access_options
-end
-
-module type Creators_generic = sig
-  type ('a, 'cmp) t
-  type ('a, 'cmp) set
-  type ('a, 'cmp) tree
-  type 'a elt
-  type ('a, 'cmp, 'z) create_options
-  type 'cmp cmp
-
-  val empty : ('a, 'cmp, ('a, 'cmp) t) create_options
-  val singleton : ('a, 'cmp, 'a elt -> ('a, 'cmp) t) create_options
-  val union_list : ('a, 'cmp, ('a, 'cmp) t list -> ('a, 'cmp) t) create_options
-  val of_list : ('a, 'cmp, 'a elt list -> ('a, 'cmp) t) create_options
-  val of_sequence : ('a, 'cmp, 'a elt Sequence.t -> ('a, 'cmp) t) create_options
-  val of_array : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t) create_options
-  val of_sorted_array : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t Or_error.t) create_options
-  val of_sorted_array_unchecked : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t) create_options
-
-  val of_increasing_iterator_unchecked
-    : ('a, 'cmp, len:int -> f:(int -> 'a elt) -> ('a, 'cmp) t) create_options
-
-  (** The types of [map] and [filter_map] are subtle. The input set, [('a, _) set],
-      reflects the fact that these functions take a set of *any* type, with any
-      comparator, while the output set, [('b, 'cmp) t], reflects that the output set has
-      the particular ['cmp] of the creation function. The comparator can come in one of
-      three ways, depending on which set module is used
-
-      - [Set.map] -- comparator comes as an argument
-      - [Set.Poly.map] -- comparator is polymorphic comparison
-      - [Foo.Set.map] -- comparator is [Foo.comparator] *)
-  val map : ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt) -> ('b, 'cmp) t) create_options
-
-  val filter_map
-    : ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt option) -> ('b, 'cmp) t) create_options
-
-  val of_tree : ('a, 'cmp, ('a, 'cmp) tree -> ('a, 'cmp) t) create_options
-end
-
-module type Creators_and_accessors_and_transformers_generic = sig
-  type ('elt, 'cmp) set
-  type ('elt, 'cmp) t
-  type ('elt, 'cmp) tree
-  type 'elt elt
-  type 'cmp cmp
-  type ('elt, 'cmp, 'fn) access_options
-
-  include
-    Accessors_generic
-    with type ('a, 'b) t := ('a, 'b) t
-    with type ('a, 'b) tree := ('a, 'b) tree
-    with type 'a elt := 'a elt
-    with type 'cmp cmp := 'cmp cmp
-    with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) access_options
-
-  include
-    Transformers_generic
-    with type ('a, 'b) t := ('a, 'b) t
-    with type ('a, 'b) tree := ('a, 'b) tree
-    with type 'a elt := 'a elt
-    with type 'cmp cmp := 'cmp cmp
-    with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) access_options
-
-  include
-    Creators_generic
-    with type ('a, 'b) set := ('a, 'b) set
-    with type ('a, 'b) t := ('a, 'b) t
-    with type ('a, 'b) tree := ('a, 'b) tree
-    with type 'a elt := 'a elt
-    with type 'cmp cmp := 'cmp cmp
-end
-
-module type S_poly = sig
-  type ('elt, 'cmp) set
-  type 'elt t
-  type 'elt tree
-  type comparator_witness
-
-  include
-    Creators_and_accessors_and_transformers_generic
-    with type ('elt, 'cmp) set := ('elt, 'cmp) set
-    with type ('elt, 'cmp) t := 'elt t
-    with type ('elt, 'cmp) tree := 'elt tree
-    with type 'a elt := 'a
-    with type 'c cmp := comparator_witness
-    with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) Without_comparator.t
-    with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Without_comparator.t
-end
-
-module type For_deriving = sig
-  type ('a, 'b) t
-
-  module type Sexp_of_m = sig
-    type t [@@deriving sexp_of]
+    val remove_index : ('a, 'cmp, ('a, 'cmp) t -> int -> ('a, 'cmp) t) access_options
   end
 
-  module type M_of_sexp = sig
-    type t [@@deriving of_sexp]
+  module type Creators_generic = sig
+    type ('a, 'cmp) t
+    type ('a, 'cmp) set
+    type ('a, 'cmp) tree
+    type 'a elt
+    type ('a, 'cmp, 'z) create_options
+    type 'cmp cmp
 
-    include Comparator.S with type t := t
+    val empty : ('a, 'cmp, ('a, 'cmp) t) create_options
+    val singleton : ('a, 'cmp, 'a elt -> ('a, 'cmp) t) create_options
+    val union_list : ('a, 'cmp, ('a, 'cmp) t list -> ('a, 'cmp) t) create_options
+    val of_list : ('a, 'cmp, 'a elt list -> ('a, 'cmp) t) create_options
+    val of_sequence : ('a, 'cmp, 'a elt Sequence.t -> ('a, 'cmp) t) create_options
+    val of_array : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t) create_options
+
+    val of_sorted_array
+      : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t Or_error.t) create_options
+
+    val of_sorted_array_unchecked
+      : ('a, 'cmp, 'a elt array -> ('a, 'cmp) t) create_options
+
+    val of_increasing_iterator_unchecked
+      : ('a, 'cmp, len:int -> f:(int -> 'a elt) -> ('a, 'cmp) t) create_options
+
+    (** The types of [map] and [filter_map] are subtle. The input set, [('a, _) set],
+        reflects the fact that these functions take a set of *any* type, with any
+        comparator, while the output set, [('b, 'cmp) t], reflects that the output set has
+        the particular ['cmp] of the creation function. The comparator can come in one of
+        three ways, depending on which set module is used
+
+        - [Set.map] -- comparator comes as an argument
+        - [Set.Poly.map] -- comparator is polymorphic comparison
+        - [Foo.Set.map] -- comparator is [Foo.comparator] *)
+    val map : ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt) -> ('b, 'cmp) t) create_options
+
+    val filter_map
+      : ('b, 'cmp, ('a, _) set -> f:('a -> 'b elt option) -> ('b, 'cmp) t) create_options
+
+    val of_tree : ('a, 'cmp, ('a, 'cmp) tree -> ('a, 'cmp) t) create_options
   end
 
-  module type M_sexp_grammar = sig
-    type t [@@deriving sexp_grammar]
+  module type Creators_and_accessors_and_transformers_generic = sig
+    type ('elt, 'cmp) set
+    type ('elt, 'cmp) t
+    type ('elt, 'cmp) tree
+    type 'elt elt
+    type 'cmp cmp
+    type ('elt, 'cmp, 'fn) access_options
+
+    include
+      Accessors_generic
+      with type ('a, 'b) t := ('a, 'b) t
+      with type ('a, 'b) tree := ('a, 'b) tree
+      with type 'a elt := 'a elt
+      with type 'cmp cmp := 'cmp cmp
+      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) access_options
+
+    include
+      Transformers_generic
+      with type ('a, 'b) t := ('a, 'b) t
+      with type ('a, 'b) tree := ('a, 'b) tree
+      with type 'a elt := 'a elt
+      with type 'cmp cmp := 'cmp cmp
+      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) access_options
+
+    include
+      Creators_generic
+      with type ('a, 'b) set := ('a, 'b) set
+      with type ('a, 'b) t := ('a, 'b) t
+      with type ('a, 'b) tree := ('a, 'b) tree
+      with type 'a elt := 'a elt
+      with type 'cmp cmp := 'cmp cmp
   end
 
-  module type Compare_m = sig end
-  module type Equal_m = sig end
-  module type Globalize_m = sig end
-  module type Hash_fold_m = Hasher.S
+  module type S_poly = sig
+    type ('elt, 'cmp) set
+    type 'elt t
+    type 'elt tree
+    type comparator_witness
 
-  val sexp_of_m__t : (module Sexp_of_m with type t = 'elt) -> ('elt, 'cmp) t -> Sexp.t
+    include
+      Creators_and_accessors_and_transformers_generic
+      with type ('elt, 'cmp) set := ('elt, 'cmp) set
+      with type ('elt, 'cmp) t := 'elt t
+      with type ('elt, 'cmp) tree := 'elt tree
+      with type 'a elt := 'a
+      with type 'c cmp := comparator_witness
+      with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) Without_comparator.t
+      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Without_comparator.t
+  end
 
-  val m__t_of_sexp
-    :  (module M_of_sexp with type t = 'elt and type comparator_witness = 'cmp)
-    -> Sexp.t
-    -> ('elt, 'cmp) t
+  module type For_deriving = sig
+    type ('a, 'b) t
 
-  val m__t_sexp_grammar
-    :  (module M_sexp_grammar with type t = 'elt)
-    -> ('elt, 'cmp) t Sexplib0.Sexp_grammar.t
+    module type Sexp_of_m = sig
+      type t [@@deriving sexp_of]
+    end
 
-  val compare_m__t : (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
-  val equal_m__t : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
-  val globalize_m__t : (module Globalize_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t
+    module type M_of_sexp = sig
+      type t [@@deriving of_sexp]
 
-  val hash_fold_m__t
-    :  (module Hash_fold_m with type t = 'elt)
-    -> Hash.state
-    -> ('elt, _) t
-    -> Hash.state
+      include Comparator.S with type t := t
+    end
 
-  val hash_m__t : (module Hash_fold_m with type t = 'elt) -> ('elt, _) t -> int
+    module type M_sexp_grammar = sig
+      type t [@@deriving sexp_grammar]
+    end
+
+    module type Compare_m = sig end
+    module type Equal_m = sig end
+    module type Globalize_m = sig end
+    module type Hash_fold_m = Hasher.S
+
+    val sexp_of_m__t : (module Sexp_of_m with type t = 'elt) -> ('elt, 'cmp) t -> Sexp.t
+
+    val m__t_of_sexp
+      :  (module M_of_sexp with type t = 'elt and type comparator_witness = 'cmp)
+      -> Sexp.t
+      -> ('elt, 'cmp) t
+
+    val m__t_sexp_grammar
+      :  (module M_sexp_grammar with type t = 'elt)
+      -> ('elt, 'cmp) t Sexplib0.Sexp_grammar.t
+
+    val compare_m__t : (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
+    val equal_m__t : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
+    val globalize_m__t : (module Globalize_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t
+
+    val hash_fold_m__t
+      :  (module Hash_fold_m with type t = 'elt)
+      -> Hash.state
+      -> ('elt, _) t
+      -> Hash.state
+
+    val hash_m__t : (module Hash_fold_m with type t = 'elt) -> ('elt, _) t -> int
+  end
 end
 
 module type Set = sig
+  include module type of struct
+    include Definitions
+  end
+
   (** Sets based on {!Comparator.S}.
 
       Creators require a comparator argument to be passed in, whereas accessors use the
@@ -696,14 +707,6 @@ module type Set = sig
       the right set, or both. In the both case, both elements are returned, in case the
       caller can distinguish between elements that are equal to the sets' comparator. Runs
       in O(length t + length t'). *)
-  module Merge_to_sequence_element : sig
-    type ('a, 'b) t = ('a, 'b) Sequence.Merge_with_duplicates_element.t =
-      | Left of 'a
-      | Right of 'b
-      | Both of 'a * 'b
-    [@@deriving compare, sexp]
-  end
-
   val merge_to_sequence
     :  ?order:[ `Increasing (** default *) | `Decreasing ]
     -> ?greater_or_equal_to:'a
@@ -809,25 +812,6 @@ module type Set = sig
     with type 'elt tree :=
       ('elt, Comparator.Poly.comparator_witness) Using_comparator.Tree.t
     with type ('elt, 'cmp) set := ('elt, 'cmp) t
-
-  (** {2 Modules and module types for extending [Set]}
-
-      For use in extensions of Base, like [Core]. *)
-
-  module With_comparator = With_comparator
-  module With_first_class_module = With_first_class_module
-  module Without_comparator = Without_comparator
-
-  module type For_deriving = For_deriving
-  module type S_poly = S_poly
-  module type Accessors_generic = Accessors_generic
-  module type Transformers_generic = Transformers_generic
-  module type Creators_generic = Creators_generic
-
-  module type Creators_and_accessors_and_transformers_generic =
-    Creators_and_accessors_and_transformers_generic
-
-  module type Elt_plain = Elt_plain
 
   (**/**)
 

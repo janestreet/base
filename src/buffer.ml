@@ -1,6 +1,6 @@
 open! Import
 open Modes.Export
-include Buffer_intf
+include Buffer_intf.Definitions
 include Stdlib.Buffer
 
 let contents_bytes = to_bytes

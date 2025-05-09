@@ -67,9 +67,10 @@ include Monad.S__local with type 'a t := 'a t
 
 [%%template:
 [@@@mode.default m = (global, local)]
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
 
 (** Extracts the underlying value if present, otherwise returns [default]. *)
-val value : 'a t -> default:'a -> 'a
+val value : ('a t[@kind k]) -> default:'a -> 'a
 
 (** Extracts the underlying value, or raises if there is no value present. The raised
     error can be augmented using the [~error] and [~message] optional arguments. If
@@ -78,20 +79,23 @@ val value_exn
   :  ?here:Stdlib.Lexing.position
   -> ?error:Error.t
   -> ?message:string
-  -> 'a t
+  -> ('a t[@kind k])
   -> 'a
+
+(** Extracts the underlying value if present, otherwise executes and returns the result of
+    [default]. [default] is only executed if the underlying value is absent. *)
+val value_or_thunk : ('a t[@kind k]) -> default:(unit -> 'a) -> 'a
+
+val iter : ('a t[@kind k]) -> f:('a -> unit) -> unit
+
+[@@@kind ki = k]
+[@@@kind.default ko = (value, float64, bits32, bits64, word)]
 
 (** Extracts the underlying value and applies [f] to it if present, otherwise returns
     [default]. *)
 val value_map : 'a 'b. ('a t[@kind ki]) -> default:'b -> f:('a -> 'b) -> 'b
-[@@kind
-  ki = (value, float64, bits32, bits64, word), ko = (value, float64, bits32, bits64, word)]
 
-(** Extracts the underlying value if present, otherwise executes and returns the result of
-    [default]. [default] is only executed if the underlying value is absent. *)
-val value_or_thunk : 'a t -> default:(unit -> 'a) -> 'a
-
-val map : 'a t -> f:('a -> 'b) -> 'b t]
+val map : 'a 'b. ('a t[@kind ki]) -> f:('a -> 'b) -> ('b t[@kind ko])]
 
 (** On [None], returns [init]. On [Some x], returns [f init x]. *)
 val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
@@ -100,9 +104,6 @@ val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
 val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 
 val length : 'a t -> int
-
-val%template iter : ('a t[@kind k]) -> f:('a -> unit) -> unit
-[@@mode m = (global, local)] [@@kind k = (value, float64, bits32, bits64, word)]
 
 (** On [None], returns [false]. On [Some x], returns [f x]. *)
 val exists : 'a t -> f:('a -> bool) -> bool

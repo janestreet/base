@@ -1,15 +1,22 @@
 open! Import
-include Binary_searchable_intf
+include Binary_searchable_intf.Definitions
 
-module type Arg = sig
+[@@@warning "-incompatible-with-upstream"]
+
+module type%template Arg = sig
   type 'a elt
   type 'a t
 
   val get : 'a t -> int -> 'a elt
   val length : _ t -> int
 end
+[@@kind k = (value, immediate, immediate64)]
 
-module%template.portable Make_gen (T : Arg) = struct
+module%template.portable
+  [@kind k = (value, immediate, immediate64)] Make_gen
+    (T : Arg
+  [@kind k]) =
+struct
   let get = T.get
   let length = T.length
 
@@ -30,8 +37,11 @@ Make_gen [@modality p] (struct
     type 'a t = T.t
   end)
 
-module%template.portable [@modality p] Make1 (T : Indexable1) =
-Make_gen [@modality p] (struct
+module%template.portable
+  [@kind k = (value, immediate, immediate64)] [@modality p] Make1
+    (T : Indexable1
+  [@kind k]) =
+Make_gen [@kind k] [@modality p] (struct
     type 'a elt = 'a
     type 'a t = 'a T.t
 

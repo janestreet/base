@@ -1,9 +1,10 @@
 open! Import
 
 (* WARNING:
-   We use non-memory-safe things throughout the [Trusted] module.
+   We use non-memory-safe and non-mode-safe things throughout the [Trusted] module.
    Most of it is only safe in combination with the type signature (e.g. exposing
-   [val copy : 'a t -> 'b t] would be a big mistake). *)
+   [val copy : 'a t -> 'b t] would be a big mistake. Likewise, exposing
+   ['a t : immutable_data with 'a] would be a big mistake.). *)
 module Trusted : sig
   type 'a t
 
@@ -32,52 +33,73 @@ module Trusted : sig
   val unsafe_clear_if_pointer : _ t -> int -> unit
   val sub : 'a t -> pos:int -> len:int -> 'a t
 end = struct
-  type 'a t = Obj_array.t
+  (* It is safe to claim that ['a t] is mutable data as long as ['a] is mutable
+     data: we only store ['a]s (mutably).
 
-  let empty = Obj_array.empty
+     Forging a mode-crossing claim requires minting a new type, so we can't
+     just say [type 'a t : mutable_data with 'a = Obj_array.t]. That's why
+     we mint an unboxed record instead.
+  *)
+  type 'a t = { arr : Obj_array.t } [@@unboxed] [@@unsafe_allow_any_mode_crossing]
 
-  let[@inline] get_empty () =
-    Portability_hacks.magic_uncontended__promise_deeply_immutable empty
+  let empty = { arr = Obj_array.empty }
+  let[@inline] get_empty () = { arr = Obj_array.get_empty () }
+  let unsafe_create_uninitialized ~len = { arr = Obj_array.create_zero ~len }
+  let create_obj_array ~len = { arr = Obj_array.create_zero ~len }
+  let create ~len x = { arr = Obj_array.create ~len (Stdlib.Obj.repr x) }
+  let singleton x = { arr = Obj_array.singleton (Stdlib.Obj.repr x) }
+  let swap t i j : unit = Obj_array.swap t.arr i j
+
+  (* *)
+
+  let[@zero_alloc] get t i = Stdlib.Obj.obj (Obj_array.get t.arr i)
+  let set t i x : unit = Obj_array.set t.arr i (Stdlib.Obj.repr x)
+
+  (* We annotate the return types on this and other functions to help document the
+     fact that (i) we're trying to avoid partial application, and (ii) we've
+     successfully avoided it.
+  *)
+  let[@zero_alloc] unsafe_get_local (type a) t i : a =
+    Stdlib.Obj.obj (Obj_array.unsafe_get t.arr i)
   ;;
 
-  let unsafe_create_uninitialized ~len = Obj_array.create_zero ~len
-  let create_obj_array ~len = Obj_array.create_zero ~len
-  let create ~len x = Obj_array.create ~len (Stdlib.Obj.repr x)
-  let singleton x = Obj_array.singleton (Stdlib.Obj.repr x)
-  let swap t i j = Obj_array.swap t i j
-  let[@zero_alloc] get arr i = Stdlib.Obj.obj (Obj_array.get arr i)
-  let set arr i x = Obj_array.set arr i (Stdlib.Obj.repr x)
-  let[@zero_alloc] unsafe_get_local arr i = Stdlib.Obj.obj (Obj_array.unsafe_get arr i)
-  let[@zero_alloc] unsafe_get arr i = unsafe_get_local arr i
-  let unsafe_set arr i x = Obj_array.unsafe_set arr i (Stdlib.Obj.repr x)
-  let unsafe_set_int arr i x = Obj_array.unsafe_set_int arr i x
+  let[@zero_alloc] unsafe_get (type a) t i : a = unsafe_get_local t i
+  let unsafe_set t i x : unit = Obj_array.unsafe_set t.arr i (Stdlib.Obj.repr x)
+  let unsafe_set_int t i x : unit = Obj_array.unsafe_set_int t.arr i x
 
-  let unsafe_set_int_assuming_currently_int arr i x =
-    Obj_array.unsafe_set_int_assuming_currently_int arr i x
+  let unsafe_set_int_assuming_currently_int t i x : unit =
+    Obj_array.unsafe_set_int_assuming_currently_int t.arr i x
   ;;
 
-  let unsafe_set_assuming_currently_int arr i x =
-    Obj_array.unsafe_set_assuming_currently_int arr i (Stdlib.Obj.repr x)
+  let unsafe_set_assuming_currently_int t i x : unit =
+    Obj_array.unsafe_set_assuming_currently_int t.arr i (Stdlib.Obj.repr x)
   ;;
 
   (* [t] is just an array under the hood, it just has special considerations about [t] not
      being a float. *)
-  let unsafe_to_array_inplace__promise_not_a_float arr = Stdlib.Obj.magic arr
-  let length = Obj_array.length
-  let unsafe_blit = Obj_array.unsafe_blit
-  let copy = Obj_array.copy
+  let unsafe_to_array_inplace__promise_not_a_float t : _ array = Stdlib.Obj.magic t.arr
+  let length t : int = Obj_array.length t.arr
 
-  let unsafe_set_omit_phys_equal_check t i x =
-    Obj_array.unsafe_set_omit_phys_equal_check t i (Stdlib.Obj.repr x)
+  let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len : unit =
+    Obj_array.unsafe_blit ~src:src.arr ~src_pos ~dst:dst.arr ~dst_pos ~len
   ;;
 
-  let unsafe_set_with_caml_modify t i x =
-    Obj_array.unsafe_set_with_caml_modify t i (Stdlib.Obj.repr x)
+  let copy t = { arr = Obj_array.copy t.arr }
+
+  let unsafe_set_omit_phys_equal_check t i x : unit =
+    Obj_array.unsafe_set_omit_phys_equal_check t.arr i (Stdlib.Obj.repr x)
   ;;
 
-  let set_with_caml_modify t i x = Obj_array.set_with_caml_modify t i (Stdlib.Obj.repr x)
-  let unsafe_clear_if_pointer = Obj_array.unsafe_clear_if_pointer
-  let sub = Obj_array.sub
+  let unsafe_set_with_caml_modify t i x : unit =
+    Obj_array.unsafe_set_with_caml_modify t.arr i (Stdlib.Obj.repr x)
+  ;;
+
+  let set_with_caml_modify t i x : unit =
+    Obj_array.set_with_caml_modify t.arr i (Stdlib.Obj.repr x)
+  ;;
+
+  let unsafe_clear_if_pointer t i : unit = Obj_array.unsafe_clear_if_pointer t.arr i
+  let sub t ~pos ~len = { arr = Obj_array.sub t.arr ~pos ~len }
 end
 
 include Trusted

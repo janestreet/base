@@ -1,223 +1,231 @@
-type ('t, 'a, 'accum) fold = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
+open! Import
 
-type ('t, 'a, 'accum) foldi =
-  't -> init:'accum -> f:(int -> 'accum -> 'a -> 'accum) -> 'accum
+[@@@warning "-incompatible-with-upstream"]
 
-type ('t, 'a) iteri = 't -> f:(int -> 'a -> unit) -> unit
+module Definitions = struct
+  type ('t, 'a, 'accum) fold = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
 
-module type Iterators_with_index = sig
-  include Container.Generic_types
+  type ('t, 'a, 'accum) foldi =
+    't -> init:'accum -> f:(int -> 'accum -> 'a -> 'accum) -> 'accum
 
-  (** These are all like their equivalents in [Container] except that an index starting at
-      0 is added as the first argument to [f]. *)
+  type ('t, 'a) iteri = 't -> f:(int -> 'a -> unit) -> unit
 
-  val foldi : (('a, _, _) t, 'a elt, _) foldi
-  val iteri : (('a, _, _) t, 'a elt) iteri
-  val existsi : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> bool
-  val for_alli : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> bool
-  val counti : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> int
-  val findi : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> (int * 'a elt) option
-  val find_mapi : ('a, _, _) t -> f:(int -> 'a elt -> 'b option) -> 'b option
-end
+  module type%template Iterators_with_index = sig
+    include Container.Generic_types [@kind k]
 
-module type Generic = sig
-  include Container.Generic
+    (** These are all like their equivalents in [Container] except that an index starting
+        at 0 is added as the first argument to [f]. *)
 
-  include
-    Iterators_with_index
-    with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
-     and type 'a elt := 'a elt
-end
+    val foldi : (('a, _, _) t, 'a elt, _) foldi
+    val iteri : (('a, _, _) t, 'a elt) iteri
+    val existsi : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> bool
+    val for_alli : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> bool
+    val counti : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> int
+    val findi : ('a, _, _) t -> f:(int -> 'a elt -> bool) -> (int * 'a elt) option
+    val find_mapi : ('a, _, _) t -> f:(int -> 'a elt -> 'b option) -> 'b option
+  end
+  [@@kind k = (value, immediate, immediate64)]
 
-(** Like [Generic], but [mem] does not accept an [equal] function, since [Make0] already
-    takes [Elt.equal]. *)
-module type S0 = sig
-  include Container.S0
-  include Iterators_with_index with type (_, _, _) t := t and type _ elt := elt
-end
+  module type Generic = sig
+    include Container.Generic
 
-module type S1 = sig
-  include Container.S1
-  include Iterators_with_index with type ('a, _, _) t := 'a t and type 'a elt := 'a
-end
+    include
+      Iterators_with_index
+      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
+       and type 'a elt := 'a elt
+  end
 
-module type Creators_with_index = sig
-  include Container.Generic_types
+  (** Like [Generic], but [mem] does not accept an [equal] function, since [Make0] already
+      takes [Elt.equal]. *)
+  module type S0 = sig
+    include Container.S0
+    include Iterators_with_index with type (_, _, _) t := t and type _ elt := elt
+  end
 
-  (** [init n ~f] is equivalent to [of_list [f 0; f 1; ...; f (n-1)]]. It raises an
-      exception if [n < 0]. *)
-  val init : int -> f:(int -> 'a elt) -> ('a, _, _) t
+  module type%template S1 = sig
+    include Container.S1 [@kind k]
 
-  (** [mapi] is like map. Additionally, it passes in the index of each element as the
-      first argument to the mapped function. *)
-  val mapi : ('a, 'p1, 'p2) t -> f:(int -> 'a elt -> 'b elt) -> ('b, 'p1, 'p2) t
+    include
+      Iterators_with_index [@kind k] with type ('a, _, _) t := 'a t and type 'a elt := 'a
+  end
+  [@@kind k = (value, immediate, immediate64)]
 
-  val filteri : ('a, 'p1, 'p2) t -> f:(int -> 'a elt -> bool) -> ('a, 'p1, 'p2) t
+  module type Creators_with_index = sig
+    include Container.Generic_types
 
-  (** filter_mapi is like [filter_map]. Additionally, it passes in the index of each
-      element as the first argument to the mapped function. *)
-  val filter_mapi
-    :  ('a, 'p1, 'p2) t
-    -> f:(int -> 'a elt -> 'b elt option)
-    -> ('b, 'p1, 'p2) t
+    (** [init n ~f] is equivalent to [of_list [f 0; f 1; ...; f (n-1)]]. It raises an
+        exception if [n < 0]. *)
+    val init : int -> f:(int -> 'a elt) -> ('a, _, _) t
 
-  (** [concat_mapi t ~f] is like concat_map. Additionally, it passes the index as an
-      argument. *)
-  val concat_mapi
-    :  ('a, 'p1, 'p2) t
-    -> f:(int -> 'a elt -> ('b, 'p1, 'p2) t)
-    -> ('b, 'p1, 'p2) t
+    (** [mapi] is like map. Additionally, it passes in the index of each element as the
+        first argument to the mapped function. *)
+    val mapi : ('a, 'p1, 'p2) t -> f:(int -> 'a elt -> 'b elt) -> ('b, 'p1, 'p2) t
 
-  (** [partitioni_tf t ~f] is like partition_tf. Additionally, it passes the index as an
-      argument. *)
-  val partitioni_tf
-    :  ('a, 'p1, 'p2) t
-    -> f:(int -> 'a elt -> bool)
-    -> ('a, 'p1, 'p2) t * ('a, 'p1, 'p2) t
+    val filteri : ('a, 'p1, 'p2) t -> f:(int -> 'a elt -> bool) -> ('a, 'p1, 'p2) t
 
-  (** [partition_mapi t ~f] is like partition_map. Additionally, it passes the index as an
-      argument. *)
-  val partition_mapi
-    :  ('a, 'p1, 'p2) t
-    -> f:(int -> 'a elt -> ('b elt, 'c elt) Either0.t)
-    -> ('b, 'p1, 'p2) t * ('c, 'p1, 'p2) t
-end
+    (** filter_mapi is like [filter_map]. Additionally, it passes in the index of each
+        element as the first argument to the mapped function. *)
+    val filter_mapi
+      :  ('a, 'p1, 'p2) t
+      -> f:(int -> 'a elt -> 'b elt option)
+      -> ('b, 'p1, 'p2) t
 
-module type Generic_with_creators = sig
-  include Generic
+    (** [concat_mapi t ~f] is like concat_map. Additionally, it passes the index as an
+        argument. *)
+    val concat_mapi
+      :  ('a, 'p1, 'p2) t
+      -> f:(int -> 'a elt -> ('b, 'p1, 'p2) t)
+      -> ('b, 'p1, 'p2) t
 
-  include
-    Container.Creators
-    with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
-     and type 'a elt := 'a elt
+    (** [partitioni_tf t ~f] is like partition_tf. Additionally, it passes the index as an
+        argument. *)
+    val partitioni_tf
+      :  ('a, 'p1, 'p2) t
+      -> f:(int -> 'a elt -> bool)
+      -> ('a, 'p1, 'p2) t * ('a, 'p1, 'p2) t
 
-  include
-    Creators_with_index
-    with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
-     and type 'a elt := 'a elt
-end
+    (** [partition_mapi t ~f] is like partition_map. Additionally, it passes the index as
+        an argument. *)
+    val partition_mapi
+      :  ('a, 'p1, 'p2) t
+      -> f:(int -> 'a elt -> ('b elt, 'c elt) Either0.t)
+      -> ('b, 'p1, 'p2) t * ('c, 'p1, 'p2) t
+  end
 
-(** Like [Generic_with_creators], but [mem] does not accept an [equal] function, since
-    [Make0_with_creators] already takes [Elt.equal]. *)
-module type S0_with_creators = sig
-  include S0
+  module type Generic_with_creators = sig
+    include Generic
 
-  include
-    Container.Creators
-    with type (_, _, _) t := t
-     and type _ elt := elt
-     and type (_, _, _) concat := t list
+    include
+      Container.Creators
+      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
+       and type 'a elt := 'a elt
 
-  include Creators_with_index with type (_, _, _) t := t and type _ elt := elt
-end
+    include
+      Creators_with_index
+      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
+       and type 'a elt := 'a elt
+  end
 
-module type S1_with_creators = sig
-  include S1
+  (** Like [Generic_with_creators], but [mem] does not accept an [equal] function, since
+      [Make0_with_creators] already takes [Elt.equal]. *)
+  module type S0_with_creators = sig
+    include S0
 
-  include
-    Container.Creators
-    with type ('a, _, _) t := 'a t
-     and type 'a elt := 'a
-     and type ('a, _, _) concat := 'a t
+    include
+      Container.Creators
+      with type (_, _, _) t := t
+       and type _ elt := elt
+       and type (_, _, _) concat := t list
 
-  include Creators_with_index with type ('a, _, _) t := 'a t and type 'a elt := 'a
-end
+    include Creators_with_index with type (_, _, _) t := t and type _ elt := elt
+  end
 
-module type Make_gen_arg = sig
-  include Container.Make_gen_arg
+  module type S1_with_creators = sig
+    include S1
 
-  val iteri : [ `Define_using_fold | `Custom of (('a, _, _) t, 'a elt) iteri ]
-  val foldi : [ `Define_using_fold | `Custom of (('a, _, _) t, 'a elt, _) foldi ]
-end
+    include
+      Container.Creators
+      with type ('a, _, _) t := 'a t
+       and type 'a elt := 'a
+       and type ('a, _, _) concat := 'a t
 
-module type Make_arg = sig
-  include Container.Make_arg
-  include Make_gen_arg with type ('a, _, _) t := 'a t and type 'a elt := 'a
-end
+    include Creators_with_index with type ('a, _, _) t := 'a t and type 'a elt := 'a
+  end
 
-module type Make0_arg = sig
-  include Container.Make0_arg
-  include Make_gen_arg with type ('a, _, _) t := t and type 'a elt := Elt.t
-end
+  module type Make_gen_arg = sig
+    include Container.Make_gen_arg
 
-module type Make_common_with_creators_arg = sig
-  include Container.Make_common_with_creators_arg
+    val iteri : [ `Define_using_fold | `Custom of (('a, _, _) t, 'a elt) iteri ]
+    val foldi : [ `Define_using_fold | `Custom of (('a, _, _) t, 'a elt, _) foldi ]
+  end
 
-  include
-    Make_gen_arg with type ('a, 'p1, 'p2) t := ('a, 'p1, 'p2) t and type 'a elt := 'a elt
+  module type Make_arg = sig
+    include Container.Make_arg
+    include Make_gen_arg with type ('a, _, _) t := 'a t and type 'a elt := 'a
+  end
 
-  val init
-    : [ `Define_using_of_array | `Custom of int -> f:(int -> 'a elt) -> ('a, _, _) t ]
+  module type Make0_arg = sig
+    include Container.Make0_arg
+    include Make_gen_arg with type ('a, _, _) t := t and type 'a elt := Elt.t
+  end
 
-  val concat_mapi
-    : [ `Define_using_concat
-      | `Custom of ('a, _, _) t -> f:(int -> 'a elt -> ('b, _, _) t) -> ('b, _, _) t
-      ]
-end
+  module type Make_common_with_creators_arg = sig
+    include Container.Make_common_with_creators_arg
 
-module type Make_gen_with_creators_arg = sig
-  include Container.Make_gen_with_creators_arg
+    include
+      Make_gen_arg
+      with type ('a, 'p1, 'p2) t := ('a, 'p1, 'p2) t
+       and type 'a elt := 'a elt
 
-  include
-    Make_common_with_creators_arg
-    with type ('a, 'p1, 'p2) t := ('a, 'p1, 'p2) t
-     and type 'a elt := 'a elt
-     and type ('a, 'p1, 'p2) concat := ('a, 'p1, 'p2) concat
-end
+    val init
+      : [ `Define_using_of_array | `Custom of int -> f:(int -> 'a elt) -> ('a, _, _) t ]
 
-module type Make_with_creators_arg = sig
-  include Container.Make_with_creators_arg
+    val concat_mapi
+      : [ `Define_using_concat
+        | `Custom of ('a, _, _) t -> f:(int -> 'a elt -> ('b, _, _) t) -> ('b, _, _) t
+        ]
+  end
 
-  include
-    Make_common_with_creators_arg
-    with type ('a, _, _) t := 'a t
-     and type 'a elt := 'a
-     and type ('a, _, _) concat := 'a t
-end
+  module type Make_gen_with_creators_arg = sig
+    include Container.Make_gen_with_creators_arg
 
-module type Make0_with_creators_arg = sig
-  include Container.Make0_with_creators_arg
+    include
+      Make_common_with_creators_arg
+      with type ('a, 'p1, 'p2) t := ('a, 'p1, 'p2) t
+       and type 'a elt := 'a elt
+       and type ('a, 'p1, 'p2) concat := ('a, 'p1, 'p2) concat
+  end
 
-  include
-    Make_common_with_creators_arg
-    with type ('a, _, _) t := t
-     and type 'a elt := Elt.t
-     and type ('a, _, _) concat := 'a list
-end
+  module type Make_with_creators_arg = sig
+    include Container.Make_with_creators_arg
 
-module type Derived = sig
-  (** Generic definitions of [foldi] and [iteri] in terms of [fold].
+    include
+      Make_common_with_creators_arg
+      with type ('a, _, _) t := 'a t
+       and type 'a elt := 'a
+       and type ('a, _, _) concat := 'a t
+  end
 
-      E.g., [iteri ~fold t ~f = ignore (fold t ~init:0 ~f:(fun i x -> f i x; i + 1))]. *)
+  module type Make0_with_creators_arg = sig
+    include Container.Make0_with_creators_arg
 
-  val foldi : fold:('t, 'a, 'acc) fold -> ('t, 'a, 'acc) foldi
-  val iteri : fold:('t, 'a, int) fold -> ('t, 'a) iteri
+    include
+      Make_common_with_creators_arg
+      with type ('a, _, _) t := t
+       and type 'a elt := Elt.t
+       and type ('a, _, _) concat := 'a list
+  end
 
-  (** Generic definitions of indexed container operations in terms of [foldi]. *)
+  module type Derived = sig
+    (** Generic definitions of [foldi] and [iteri] in terms of [fold].
 
-  val counti : foldi:('t, 'a, int) foldi -> 't -> f:(int -> 'a -> bool) -> int
+        E.g., [iteri ~fold t ~f = ignore (fold t ~init:0 ~f:(fun i x -> f i x; i + 1))]. *)
 
-  (** Generic definitions of indexed container operations in terms of [iteri]. *)
+    val foldi : fold:('t, 'a, 'acc) fold -> ('t, 'a, 'acc) foldi
+    val iteri : fold:('t, 'a, int) fold -> ('t, 'a) iteri
 
-  val existsi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> bool
-  val for_alli : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> bool
-  val findi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> (int * 'a) option
-  val find_mapi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> 'b option) -> 'b option
+    (** Generic definitions of indexed container operations in terms of [foldi]. *)
+
+    val counti : foldi:('t, 'a, int) foldi -> 't -> f:(int -> 'a -> bool) -> int
+
+    (** Generic definitions of indexed container operations in terms of [iteri]. *)
+
+    val existsi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> bool
+    val for_alli : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> bool
+    val findi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> bool) -> (int * 'a) option
+    val find_mapi : iteri:('t, 'a) iteri -> 't -> f:(int -> 'a -> 'b option) -> 'b option
+  end
 end
 
 module type Indexed_container = sig
+  include module type of struct
+    include Definitions
+  end
+
   (** Provides generic signatures for containers that support indexed iteration ([iteri],
       [foldi], ...). In principle, any container that has [iter] can also implement
       [iteri], but the idea is that [Indexed_container_intf] should be included only for
       containers that have a meaningful underlying ordering. *)
-
-  module type Derived = Derived
-  module type Generic = Generic
-  module type Generic_with_creators = Generic_with_creators
-  module type S0 = S0
-  module type S0_with_creators = S0_with_creators
-  module type S1 = S1
-  module type S1_with_creators = S1_with_creators
 
   include Derived
   module%template.portable Make (T : Make_arg) : S1 with type 'a t := 'a T.t

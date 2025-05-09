@@ -44,6 +44,10 @@ include (
 type 'a ref = 'a Stdlib.ref = { mutable contents : 'a }
 type 'a iarray = 'a Basement.Stdlib_iarray_labels.t
 
+type 'a or_null = 'a Basement.Or_null_shim.t =
+  | Null
+  | This of 'a
+
 module Stdlib = struct
   include Stdlib
 
@@ -55,7 +59,8 @@ module Stdlib = struct
 
   module Atomic = struct
     include Stdlib.Atomic
-    include Basement.Stdlib_shim.Atomic.Safe
+    include Basement.Stdlib_shim.Atomic.Local
+    module Contended = Basement.Stdlib_shim.Atomic.Contended
   end
 
   module Domain = struct
@@ -71,6 +76,11 @@ module Stdlib = struct
   module Obj = struct
     include Stdlib.Obj
     include Basement.Stdlib_shim.Obj
+
+    module Extension_constructor = struct
+      include Stdlib.Obj.Extension_constructor
+      include Basement.Stdlib_shim.Obj.Extension_constructor
+    end
   end
 
   module Printexc = struct

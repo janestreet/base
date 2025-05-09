@@ -9,39 +9,41 @@
 
 open! Import
 
-[%%template
-[@@@mode.default m = (global, local)]
-
-module type Arg = sig
-  type t [@@deriving (compare [@mode m]), hash, sexp]
-
-  include Stringable.S with type t := t
-
-  (** For registering the pretty printer. *)
-  val module_name : string
-end
-
-module type Arg_with_comparator = sig
-  include Arg [@mode m]
-  include Comparator.S with type t := t
-end
-
-module type S = sig
-  type t [@@deriving (compare [@mode m]), hash, sexp]
-
-  include Stringable.S with type t := t
-  include Comparable.S with type t := t
-  include Pretty_printer.S with type t := t
-
-  val hashable : t Hashable.t
-end]
-
-module type%template Identifiable = sig
+module Definitions = struct
+  [%%template
   [@@@mode.default m = (global, local)]
 
-  module type Arg = Arg [@mode m]
-  module type Arg_with_comparator = Arg_with_comparator [@mode m]
-  module type S = S [@mode m]
+  module type Arg = sig
+    type t [@@deriving (compare [@mode m]), hash, sexp]
+
+    include Stringable.S with type t := t
+
+    (** For registering the pretty printer. *)
+    val module_name : string
+  end
+
+  module type Arg_with_comparator = sig
+    include Arg [@mode m]
+    include Comparator.S with type t := t
+  end
+
+  module type S = sig
+    type t [@@deriving (compare [@mode m]), hash, sexp]
+
+    include Stringable.S with type t := t
+    include Comparable.S with type t := t
+    include Pretty_printer.S with type t := t
+
+    val hashable : t Hashable.t
+  end]
+end
+
+module type%template Identifiable = sig
+  include module type of struct
+    include Definitions
+  end
+
+  [@@@mode.default m = (global, local)]
 
   (** Used for making an Identifiable module. Here's an example.
 

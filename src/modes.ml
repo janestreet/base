@@ -3,7 +3,7 @@ open! Import
 module Global = struct
   include Modes_intf.Definitions.Global
 
-  type 'a t = { global : 'a [@globalized] } [@@unboxed]
+  type 'a t = { global : 'a } [@@unboxed]
 
   let compare__local compare a b = compare a.global b.global
   let compare compare a b = compare__local compare a b
@@ -142,7 +142,7 @@ end
 module Portable = struct
   include Modes_intf.Definitions.Portable
 
-  type 'a t = { portable : 'a } [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+  type 'a t = { portable : 'a } [@@unboxed]
 
   external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
   external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
@@ -254,11 +254,15 @@ module Portable = struct
 end
 
 module Contended = struct
-  type 'a t = { contended : 'a } [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+  type 'a t = { contended : 'a } [@@unboxed]
 end
 
 module Portended = struct
-  type 'a t = { portended : 'a } [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+  type 'a t = { portended : 'a } [@@unboxed]
+end
+
+module Aliased = struct
+  type 'a t = { aliased : 'a } [@@unboxed]
 end
 
 module At_locality = struct
@@ -267,13 +271,25 @@ module At_locality = struct
   (* The safety of this module is tested in `test/test_modes.ml`, which reimplements its
      interface without using [external] definitions. *)
 
-  type (+'a, 'locality) t
+  type actually_local = |
+
+  type global = [ `global ]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+  [@@immediate]
+
+  type local =
+    [ `global
+    | `local of (actually_local[@compare.ignore] [@equal.ignore] [@sexp.opaque])
+    ]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+
+  type (+'a, +'locality) t
 
   external wrap : 'a 'loc. 'a -> ('a, 'loc) t = "%identity"
   external unwrap : 'a 'loc. ('a, 'loc) t -> 'a = "%identity"
-  external wrap_local : 'a. 'a -> ('a, [ `local ]) t = "%identity"
+  external wrap_local : 'a. 'a -> ('a, local) t = "%identity"
   external unwrap_local : 'a 'loc. ('a, 'loc) t -> 'a = "%identity"
-  external unwrap_global : 'a. ('a, [ `global ]) t -> 'a = "%identity"
+  external unwrap_global : 'a. ('a, global) t -> 'a = "%identity"
 
   let to_local t = wrap_local (unwrap_local t)
   let to_global t = wrap (unwrap t)
@@ -297,15 +313,91 @@ module At_locality = struct
   ;;
 end
 
+module At_portability = struct
+  type nonportable_ [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+
+  (* We only need [hash_fold]. *)
+  let _ = [%hash: nonportable_]
+
+  type portable = [ `portable ]
+  [@@deriving compare, equal, hash, sexp_of, sexp_grammar] [@@immediate]
+
+  type nonportable =
+    [ `portable
+    | `nonportable of nonportable_
+    ]
+  [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+
+  type (+!'a, +'portability) t
+
+  external wrap_portable : ('a[@local_opt]) -> (('a, _) t[@local_opt]) = "%identity"
+
+  external unwrap_portable
+    :  (('a, portable) t[@local_opt])
+    -> ('a[@local_opt])
+    = "%identity"
+
+  external wrap_nonportable
+    :  ('a[@local_opt])
+    -> (('a, nonportable) t[@local_opt])
+    = "%identity"
+
+  external unwrap_nonportable : (('a, _) t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+
+  [%%template
+  type portability = nonportable
+  [@@mode nonportable] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+
+  type portability = portable
+  [@@mode portable] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+
+  external wrap
+    :  ('a[@local_opt])
+    -> (('a, (portability[@mode m])) t[@local_opt])
+    = "%identity"
+  [@@mode m = (portable, nonportable)]
+
+  external unwrap
+    :  (('a, (portability[@mode m])) t[@local_opt])
+    -> ('a[@local_opt])
+    = "%identity"
+  [@@mode m = portable]
+
+  external unwrap : (('a, _) t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+  [@@mode __ = nonportable]]
+
+  let%template equal equal_a _ x y =
+    equal_a (unwrap_nonportable x) (unwrap_nonportable y) [@nontail]
+  [@@mode __ = (local, global)]
+  ;;
+
+  let%template compare compare_a _ x y =
+    compare_a (unwrap_nonportable x) (unwrap_nonportable y) [@nontail]
+  [@@mode __ = (local, global)]
+  ;;
+
+  let hash_fold_t hash_fold_a _ state t = hash_fold_a state (unwrap_nonportable t)
+  let sexp_of_t sexp_of_a _ t = sexp_of_a (unwrap_nonportable t)
+
+  let t_sexp_grammar
+    : type a. a Sexplib0.Sexp_grammar.t -> _ -> (a, _) t Sexplib0.Sexp_grammar.t
+    =
+    fun grammar _ -> Sexplib0.Sexp_grammar.coerce grammar
+  ;;
+end
+
+module Portable_via_contended = struct
+  type +'a t
+
+  external wrap : 'a -> 'a t = "%identity"
+  external unwrap : 'a t -> 'a = "%identity"
+  external unwrap_contended : 'a. 'a t -> 'a = "%identity"
+end
+
 module Export = struct
-  type 'a _global = 'a Global.t = { global : 'a [@globalized] } [@@unboxed]
-
-  type 'a _portable = 'a Portable.t = { portable : 'a }
-  [@@unboxed] [@@unsafe_allow_any_mode_crossing]
-
-  type 'a _contended = 'a Contended.t = { contended : 'a }
-  [@@unboxed] [@@unsafe_allow_any_mode_crossing]
-
-  type 'a _portended = 'a Portended.t = { portended : 'a }
-  [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+  type 'a global = 'a Global.t = { global : 'a } [@@unboxed]
+  type 'a portable = 'a Portable.t = { portable : 'a } [@@unboxed]
+  type 'a contended = 'a Contended.t = { contended : 'a } [@@unboxed]
+  type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
+  type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
 end

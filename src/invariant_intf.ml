@@ -3,6 +3,8 @@ module Sexp = Sexp0
 
 type 'a inv = 'a -> unit
 
+[@@@warning "-incompatible-with-upstream"]
+
 module Definitions = struct
   type 'a t = 'a inv
 
@@ -13,7 +15,7 @@ module Definitions = struct
   end
 
   [%%template
-  [@@@kind.default ka = (value, float64, bits32, bits64, word)]
+  [@@@kind.default ka = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
   module type S1 = sig
     type 'a t
@@ -21,7 +23,7 @@ module Definitions = struct
     val invariant : 'a inv -> 'a t inv [@@kind ka]
   end
 
-  [@@@kind.default kb = (value, float64, bits32, bits64, word)]
+  [@@@kind.default kb = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
   module type S2 = sig
     type ('a, 'b) t
@@ -29,7 +31,7 @@ module Definitions = struct
     val invariant : 'a inv -> 'b inv -> ('a, 'b) t inv [@@kind ka kb]
   end
 
-  [@@@kind.default kc = (value, float64, bits32, bits64, word)]
+  [@@@kind.default kc = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
   module type S3 = sig
     type ('a, 'b, 'c) t
@@ -37,8 +39,6 @@ module Definitions = struct
     val invariant : 'a inv -> 'b inv -> 'c inv -> ('a, 'b, 'c) t inv [@@kind ka kb kc]
   end]
 end
-
-include Definitions
 
 module type Invariant = sig
   (** This module defines signatures that are to be included in other signatures to ensure
@@ -62,7 +62,7 @@ module type Invariant = sig
   end
 
   [%%template:
-  [@@@kind.default k = (value, float64, bits32, bits64, word)]
+  [@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
   (** [invariant t sexp_of_t f] runs [f ()], and if [f] raises, wraps the exception in an
       [Error.t] that states "invariant failed" and includes both the exception raised by

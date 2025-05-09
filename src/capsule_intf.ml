@@ -79,5 +79,34 @@ module type Capsule = sig
     val with_lock : 'k t -> f:('k Password.t -> 'a) -> 'a
   end
 
+  module Isolated : sig
+    (** A value isolated within its own capsule.
+
+        A primary use-case for this type is to use aliasing as a proxy for contention.
+        [unique] access to an ['a Capsule.Isolated.t] allows [uncontended] access to the
+        underlying ['a]. [aliased] access to an ['a Capsule.Isolated.t] allows [shared]
+        access to the underlying ['a]. *)
+    type 'a t
+
+    (** [create f] runs [f] within a fresh capsule, and creates a [Capsule.Isolated.t]
+        containing the result. *)
+    val create : (unit -> 'a) -> 'a t
+
+    (** [with_unique t ~f] takes a [unique] isolated capsule [t], calls [f] with its
+        value, and returns a tuple of the unique isolated capsule and the result of [f]. *)
+    val with_unique : 'a 'b. 'a t -> f:('a -> 'b) -> 'a t * 'b Modes.Aliased.t
+
+    (** Like [with_unique], but with the most general mode annotations. *)
+    val with_unique_gen : 'a t -> f:('a -> 'b) -> 'a t * 'b
+
+    (** [with_unique t ~f] takes an [aliased] isolated capsule [t], calls [f] with shared
+        access to its value, and returns a tuple of the unique isolated capsule and the
+        result of [f]. *)
+    val with_shared : 'a 'b. 'a t -> f:('a -> 'b) -> 'b
+
+    (** Like [with_shared], but with the most general mode annotations. *)
+    val with_shared_gen : 'a 'b. 'a t -> f:('a -> 'b) -> 'b
+  end
+
   module Expert = Basement.Capsule
 end

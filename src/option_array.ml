@@ -31,6 +31,11 @@ module Cheap_option = struct
     val iter_some : 'a t -> f:('a -> unit) -> unit
     val get_none : unit -> _ t
   end = struct
+    (* It is safe to claim that ['a t] is immutable data as long as ['a] is immutable
+       data:
+         - the [None] values are immutable blocks or immediates.
+         - the [Some x] values are the value [x] (of type ['a]) itself.
+    *)
     type +'a t
 
     (* Being a pointer, no one outside this module can construct a value that is
@@ -120,6 +125,7 @@ end
 type 'a t = 'a Cheap_option.t Uniform_array.t [@@deriving sexp, sexp_grammar]
 
 let empty = Uniform_array.empty
+let get_empty = Uniform_array.get_empty
 let create ~len = Uniform_array.create ~len (Cheap_option.get_none ())
 let init n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.of_option (f i)) [@nontail]
 let init_some n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.some (f i)) [@nontail]

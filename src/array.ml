@@ -5,6 +5,8 @@ include Array0
 type 'a t = 'a array
 [@@deriving compare ~localize, globalize, sexp ~localize, sexp_grammar]
 
+[@@@warning "-incompatible-with-upstream"]
+
 (* This module implements a new in-place, constant heap sorting algorithm to replace the
    one used by the standard libraries.  Its only purpose is to be faster (hopefully
    strictly faster) than the base sort and stable_sort.
@@ -34,7 +36,7 @@ type 'a t = 'a array
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
 
 module%template.portable
-  [@modality p] Sorter (S : sig
+  [@kind k = (value, immediate, immediate64)] [@modality p] Sorter (S : sig
     type 'a t
 
     val get : 'a t -> int -> 'a
@@ -279,7 +281,8 @@ struct
 end
 [@@inline]
 
-module%template Sort = Sorter [@modality portable] (struct
+module%template [@kind k = (value, immediate, immediate64)] Sort =
+Sorter [@kind k] [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let get = unsafe_get
@@ -922,6 +925,11 @@ let sub t ~pos ~len = sub t ~pos ~len
 let invariant invariant_a t = iter t ~f:invariant_a
 
 module Private = struct
-  module Sort = Sort
-  module%template.portable [@modality p] Sorter = Sorter [@modality p]
+  module%template [@kind k = (value, immediate, immediate64)] Sort = Sort [@kind k]
+
+  module%template.portable
+    [@kind k = (value, immediate, immediate64)] [@modality p] Sorter =
+    Sorter
+    [@kind k]
+    [@modality p]
 end

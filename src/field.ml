@@ -31,6 +31,8 @@
    record type with 40 fields would actually allocate the 40 [For_generated_code.t]'s at
    every single fold.) *)
 
+[@@@warning "-incompatible-with-upstream"]
+
 module For_generated_code = struct
   type ('perm, 'record, 'field) t =
     { force_variance : 'perm -> unit
@@ -56,7 +58,7 @@ type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 let name (Field field) = field.name
 
 [%%template
-[@@@kind.default k = (value, float64, bits32, bits64, word)]
+[@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
 let get (Field field) r = field.getter r
 let fset (Field field) r v = field.fset r v

@@ -1,14 +1,20 @@
 open! Import
 
-(** Interface for Unicode encodings, such as UTF-8. *)
-module type Utf = sig
-  type t := bytes
+module Definitions = struct
+  (** Interface for Unicode encodings, such as UTF-8. *)
+  module type Utf = sig
+    type t := bytes
 
-  (** Writes a Unicode character to a given position using this encoding. *)
-  val set : t -> int -> Uchar0.t -> int
+    (** Writes a Unicode character to a given position using this encoding. *)
+    val set : t -> int -> Uchar0.t -> int
+  end
 end
 
 module type Bytes = sig
+  include module type of struct
+    include Definitions
+  end
+
   (** OCaml's byte sequence type, semantically similar to a [char array], but taking less
       space in memory.
 
@@ -47,6 +53,7 @@ module type Bytes = sig
 
   (** [create_local] is like [create], but returns a stack-allocated [Bytes.t]. *)
   val create_local : int -> t
+  [@@zero_alloc]
 
   (** [make len c] returns a newly-allocated byte sequence of length [len] filled with the
       byte [c]. *)
@@ -284,6 +291,4 @@ module type Bytes = sig
 
   (** UTF-32 big-endian encoding. See [Utf] interface. *)
   module Utf32be : Utf
-
-  module type Utf = Utf
 end

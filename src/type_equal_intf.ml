@@ -30,124 +30,134 @@
     pass around values of type [Type_equal.t] at runtime. *)
 
 open! Import
-open T
 module Sexp = Sexp0
 
-(**/**)
+module Definitions = struct
+  module%template Type_equal_defns (Type_equal : T.T2 [@kind any any]) = struct
+    (** The [Lift*] module types are used by the [Lift*] functors. See below. *)
 
-module Type_equal_defns (Type_equal : T.T2) = struct
-  (** The [Lift*] module types are used by the [Lift*] functors. See below. *)
+    [@@@kind.default k1 = (any, value)]
 
-  module type Lift = sig
-    type 'a t
+    module type Lift = sig
+      type 'a t
 
-    val lift : ('a, 'b) Type_equal.t -> ('a t, 'b t) Type_equal.t
+      val lift : 'a 'b. ('a, 'b) Type_equal.t -> ('a t, 'b t) Type_equal.t
+    end
+
+    [@@@kind.default k2 = (any, value)]
+
+    module type Lift2 = sig
+      type ('a, 'b) t
+
+      val lift
+        : 'a1 'b1 'a2 'b2.
+        ('a1, 'b1) Type_equal.t
+        -> ('a2, 'b2) Type_equal.t
+        -> (('a1, 'a2) t, ('b1, 'b2) t) Type_equal.t
+    end
+
+    [@@@kind.default k3 = (any, value)]
+
+    module type Lift3 = sig
+      type ('a, 'b, 'c) t
+
+      val lift
+        : 'a1 'b1 'a2 'b2 'a3 'b3.
+        ('a1, 'b1) Type_equal.t
+        -> ('a2, 'b2) Type_equal.t
+        -> ('a3, 'b3) Type_equal.t
+        -> (('a1, 'a2, 'a3) t, ('b1, 'b2, 'b3) t) Type_equal.t
+    end
+
+    [@@@kind.default k4 = (any, value)]
+
+    module type Lift4 = sig
+      type ('a, 'b, 'c, 'd) t
+
+      val lift
+        : 'a1 'b1 'a2 'b2 'a3 'b3 'a4 'b4.
+        ('a1, 'b1) Type_equal.t
+        -> ('a2, 'b2) Type_equal.t
+        -> ('a3, 'b3) Type_equal.t
+        -> ('a4, 'b4) Type_equal.t
+        -> (('a1, 'a2, 'a3, 'a4) t, ('b1, 'b2, 'b3, 'b4) t) Type_equal.t
+    end
   end
 
-  module type Lift2 = sig
-    type ('a, 'b) t
+  module Type_equal_id_defns (Id : sig
+      type 'a t
+    end) =
+  struct
+    module type Arg0 = sig
+      type t [@@deriving sexp_of]
 
-    val lift
-      :  ('a1, 'b1) Type_equal.t
-      -> ('a2, 'b2) Type_equal.t
-      -> (('a1, 'a2) t, ('b1, 'b2) t) Type_equal.t
-  end
+      val name : string
+    end
 
-  module type Lift3 = sig
-    type ('a, 'b, 'c) t
+    module type Arg1 = sig
+      type !'a t [@@deriving sexp_of]
 
-    val lift
-      :  ('a1, 'b1) Type_equal.t
-      -> ('a2, 'b2) Type_equal.t
-      -> ('a3, 'b3) Type_equal.t
-      -> (('a1, 'a2, 'a3) t, ('b1, 'b2, 'b3) t) Type_equal.t
-  end
+      val name : string
+    end
 
-  module type Lift4 = sig
-    type ('a, 'b, 'c, 'd) t
+    module type Arg2 = sig
+      type (!'a, !'b) t [@@deriving sexp_of]
 
-    val lift
-      :  ('a1, 'b1) Type_equal.t
-      -> ('a2, 'b2) Type_equal.t
-      -> ('a3, 'b3) Type_equal.t
-      -> ('a4, 'b4) Type_equal.t
-      -> (('a1, 'a2, 'a3, 'a4) t, ('b1, 'b2, 'b3, 'b4) t) Type_equal.t
+      val name : string
+    end
+
+    module type Arg3 = sig
+      type (!'a, !'b, !'c) t [@@deriving sexp_of]
+
+      val name : string
+    end
+
+    module type Arg4 = sig
+      type (!'a, !'b, !'c, !'d) t [@@deriving sexp_of]
+
+      val name : string
+    end
+
+    module type S0 = sig
+      type t
+
+      val type_equal_id : t Id.t
+    end
+
+    module type S1 = sig
+      type 'a t
+
+      val type_equal_id : 'a Id.t -> 'a t Id.t
+    end
+
+    module type S2 = sig
+      type ('a, 'b) t
+
+      val type_equal_id : 'a Id.t -> 'b Id.t -> ('a, 'b) t Id.t
+    end
+
+    module type S3 = sig
+      type ('a, 'b, 'c) t
+
+      val type_equal_id : 'a Id.t -> 'b Id.t -> 'c Id.t -> ('a, 'b, 'c) t Id.t
+    end
+
+    module type S4 = sig
+      type ('a, 'b, 'c, 'd) t
+
+      val type_equal_id
+        :  'a Id.t
+        -> 'b Id.t
+        -> 'c Id.t
+        -> 'd Id.t
+        -> ('a, 'b, 'c, 'd) t Id.t
+    end
   end
 end
-
-module Type_equal_id_defns (Id : sig
-    type 'a t
-  end) =
-struct
-  module type Arg0 = sig
-    type t [@@deriving sexp_of]
-
-    val name : string
-  end
-
-  module type Arg1 = sig
-    type !'a t [@@deriving sexp_of]
-
-    val name : string
-  end
-
-  module type Arg2 = sig
-    type (!'a, !'b) t [@@deriving sexp_of]
-
-    val name : string
-  end
-
-  module type Arg3 = sig
-    type (!'a, !'b, !'c) t [@@deriving sexp_of]
-
-    val name : string
-  end
-
-  module type Arg4 = sig
-    type (!'a, !'b, !'c, !'d) t [@@deriving sexp_of]
-
-    val name : string
-  end
-
-  module type S0 = sig
-    type t
-
-    val type_equal_id : t Id.t
-  end
-
-  module type S1 = sig
-    type 'a t
-
-    val type_equal_id : 'a Id.t -> 'a t Id.t
-  end
-
-  module type S2 = sig
-    type ('a, 'b) t
-
-    val type_equal_id : 'a Id.t -> 'b Id.t -> ('a, 'b) t Id.t
-  end
-
-  module type S3 = sig
-    type ('a, 'b, 'c) t
-
-    val type_equal_id : 'a Id.t -> 'b Id.t -> 'c Id.t -> ('a, 'b, 'c) t Id.t
-  end
-
-  module type S4 = sig
-    type ('a, 'b, 'c, 'd) t
-
-    val type_equal_id
-      :  'a Id.t
-      -> 'b Id.t
-      -> 'c Id.t
-      -> 'd Id.t
-      -> ('a, 'b, 'c, 'd) t Id.t
-  end
-end
-
-(**/**)
 
 module type Type_equal = sig
+  open Definitions
+
   type ('a, 'b) t = T : 'a. ('a, 'a) t [@@deriving sexp_of ~localize]
 
   (** just an alias, needed when [t] gets shadowed below *)
@@ -202,10 +212,25 @@ module type Type_equal = sig
       sometimes, e.g., when using [conv], one needs to explicitly use this fact to
       construct an appropriate [Type_equal.t]. The [Lift*] functors do this. *)
 
-  module Lift (T : T1) : Lift with type 'a t := 'a T.t
-  module Lift2 (T : T2) : Lift2 with type ('a, 'b) t := ('a, 'b) T.t
-  module Lift3 (T : T3) : Lift3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t
-  module Lift4 (T : T4) : Lift4 with type ('a, 'b, 'c, 'd) t := ('a, 'b, 'c, 'd) T.t
+  [%%template:
+  [@@@kind.default k1 = (any, value)]
+
+  module Lift (T : T1 [@kind k1]) : Lift [@kind k1] with type 'a t := 'a T.t
+
+  [@@@kind.default k2 = (any, value)]
+
+  module Lift2 (T : T2 [@kind k1 k2]) :
+    Lift2 [@kind k1 k2] with type ('a, 'b) t := ('a, 'b) T.t
+
+  [@@@kind.default k3 = (any, value)]
+
+  module Lift3 (T : T3 [@kind k1 k2 k3]) :
+    Lift3 [@kind k1 k2 k3] with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t
+
+  [@@@kind.default k4 = (any, value)]
+
+  module Lift4 (T : T4 [@kind k1 k2 k3 k4]) :
+    Lift4 [@kind k1 k2 k3 k4] with type ('a, 'b, 'c, 'd) t := ('a, 'b, 'c, 'd) T.t]
 
   (** [tuple2] and [detuple2] convert between equality on a 2-tuple and its components. *)
 

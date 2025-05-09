@@ -139,6 +139,7 @@ module Nothing = Nothing
 module Option = Option
 module Option_array = Option_array
 module Or_error = Or_error
+module Or_null = Or_null
 module Ordered_collection_common = Ordered_collection_common
 module Ordering = Ordering
 module Poly = Poly
@@ -341,6 +342,14 @@ module Export = struct
 
   external phys_equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%eq"
   external force : ('a Lazy.t[@local_opt]) -> 'a = "%lazy_force"
+
+  (* Export ['a or_null] with constructors [Null] and [This] whenever Base is opened,
+     so uses of those identifiers work in both upstream OCaml and OxCaml. *)
+
+  type 'a or_null = 'a Or_null.t =
+    | Null
+    | This of 'a
+  [@@deriving sexp ~localize]
 end
 
 include Export

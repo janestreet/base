@@ -243,7 +243,7 @@ end
 
 external unsafe_create_local : int -> bytes = "Base_unsafe_create_local_bytes" [@@noalloc]
 
-let create_local len =
+let[@zero_alloc] create_local len =
   if len > Sys0.max_string_length then invalid_arg "Bytes.create_local";
   unsafe_create_local len
 ;;

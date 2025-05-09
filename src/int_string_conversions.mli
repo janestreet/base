@@ -1,4 +1,5 @@
 open! Import
+open Int_intf.Definitions
 module Sexp := Sexp0
 
 (** human-friendly string (and possibly sexp) conversions *)
@@ -27,7 +28,7 @@ module Make_hex (I : sig
     val neg : t -> t
     val module_name : string
   end) : sig
-  include Int_intf.Hexable with type t := I.t
+  include Hexable with type t := I.t
 end
 
 (** in the output, [to_string], [to_string_hum], and [sexp_of_t] convert [t] to an
@@ -43,7 +44,7 @@ module Make_binary (I : sig
     val one : t
     val zero : t
   end) : sig
-  include Int_intf.Binaryable with type t := I.t
+  include Binaryable with type t := I.t
 end
 
 (** global ref affecting whether the [sexp_of_t] returned by [Make] is consistent with the

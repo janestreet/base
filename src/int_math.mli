@@ -2,6 +2,7 @@
     multiples) based on other basic operations. *)
 
 open! Import
+open Int_intf.Definitions
 
 module type Make_arg = sig
   type t
@@ -38,7 +39,7 @@ module Make (X : Make_arg) : sig
   val ( /% ) : X.t -> X.t -> X.t
   val ( // ) : X.t -> X.t -> float
 
-  include Int_intf.Round with type t := X.t
+  include Round with type t := X.t
 end
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:

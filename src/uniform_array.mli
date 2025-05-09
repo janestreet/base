@@ -13,6 +13,10 @@ type 'a t [@@deriving sexp, sexp_grammar, compare ~localize]
 
 val invariant : _ t -> unit
 val empty : _ t
+
+(** For obtaining uncontended access to [empty] from a portable function. *)
+val get_empty : unit -> _ t
+
 val create : len:int -> 'a -> 'a t
 val singleton : 'a -> 'a t
 val init : int -> f:(int -> 'a) -> 'a t

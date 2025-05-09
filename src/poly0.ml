@@ -11,8 +11,14 @@ external ( = ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
 external ( > ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%greaterthan"
 external ( >= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%greaterequal"
 external ascending : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
-external compare : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
-external equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
+
+(** We provide templated names so [include Poly] satisfies relevant interfaces. *)
+
+external%template compare : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
+[@@mode m = (global, local)]
+
+external%template equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
+[@@mode m = (global, local)]
 
 let descending x y = compare y x
 let max x y = Bool0.select (x >= y) x y

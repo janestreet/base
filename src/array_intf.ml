@@ -2,6 +2,8 @@
 
 open! Import
 
+[@@@warning "-incompatible-with-upstream"]
+
 module Definitions = struct
   module type Public = sig
     type 'a t
@@ -311,7 +313,8 @@ module type Array = sig
       end
     end
 
-    module%template.portable Sorter (S : sig
+    module%template.portable
+      [@kind k = (value, immediate, immediate64)] Sorter (S : sig
         type 'a t
 
         val get : 'a t -> int -> 'a

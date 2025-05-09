@@ -1,6 +1,6 @@
 open! Import
 module Sexp = Sexp0
-include Stack_intf
+include Stack_intf.Definitions
 
 let raise_s = Error.raise_s
 

@@ -387,9 +387,18 @@ module Definitions = struct
 
   module At_locality = struct
     (** Abstract over whether a value is [local] or [global]. *)
-    module type At_locality = sig
-      (** Zero-cost representation of locality abstraction. Safety comes from the phantom
-          types; representation is just ['a] behind the scenes. *)
+    module type Without_crossing = sig
+      type actually_local
+
+      type local =
+        [ `global
+        | `local of actually_local
+        ]
+      [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+
+      type global = [ `global ]
+      [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+
       type (+'a, 'locality) t
       [@@deriving
         compare ~localize, equal ~localize, hash, globalize, sexp_of, sexp_grammar]
@@ -401,22 +410,54 @@ module Definitions = struct
       val unwrap : ('a, _) t -> 'a
 
       (** Wrap local contents. *)
-      val wrap_local : 'a -> ('a, [ `local ]) t
+      val wrap_local : 'a -> ('a, local) t
 
       (** Unwrap local contents. Global or local contents can be unwrapped as local. *)
       val unwrap_local : ('a, _) t -> 'a
 
       (** Unwrap global contents. *)
-      val unwrap_global : ('a, [ `global ]) t -> 'a
+      val unwrap_global : ('a, global) t -> 'a
 
       (** Convert phantom type of a wrapper to local. *)
-      val to_local : ('a, _) t -> ('a, [ `local ]) t
+      val to_local : ('a, _) t -> ('a, local) t
 
       (** Convert phantom type of a global wrapper to global. *)
-      val to_global : ('a, _) t -> ('a, [ `global ]) t
+      val to_global : ('a, _) t -> ('a, global) t
 
       (** Globalize a wrapper where the contents are already global. *)
-      val globalize_global : ('a, [ `global ]) t -> ('a, [ `global ]) t
+      val globalize_global : ('a, global) t -> ('a, global) t
+    end
+
+    module type At_locality = sig
+      type actually_local
+
+      (** Phantom type parameter for {!t} which represents that the inhabitant is known to
+          be [global]. *)
+      type global = [ `global ] [@@immediate]
+
+      (** Phantom type parameter for {!t} which represents that the locality of the
+          inhabitant is unknown, and so must be assumed to be [local]. *)
+      type local =
+        [ `global
+        | `local of actually_local
+        ]
+
+      (** Abstract over whether a value is [global] or [local], with zero runtime cost,
+          supporting mode crossing locality in the global case
+
+          [('a, global) t] represents a ['a] that is known to be [global]. This type
+          importantly mode-crosses along the locality axis, even if ['a] usually does not.
+
+          [('a, local) t] represents a ['a] whose locality is unknown. This type does not
+          mode-cross along the locality axis, even if ['a] usually does. *)
+      type (+'a, +'locality) t
+
+      include
+        Without_crossing
+        with type ('a, 'loc) t := ('a, 'loc) t
+         and type actually_local := actually_local
+         and type global := global
+         and type local := local
     end
   end
 end
@@ -428,7 +469,7 @@ module type Modes = sig
       include Definitions.Global
     end
 
-    type 'a t = { global : 'a [@globalized] } [@@unboxed]
+    type 'a t = { global : 'a } [@@unboxed]
 
     include Global with type 'a t := 'a t (** @inline *)
   end
@@ -438,17 +479,21 @@ module type Modes = sig
       include Definitions.Portable
     end
 
-    type 'a t = { portable : 'a } [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+    type 'a t = { portable : 'a } [@@unboxed]
 
     include Portable with type 'a t := 'a t
   end
 
   module Contended : sig
-    type 'a t = { contended : 'a } [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+    type 'a t = { contended : 'a } [@@unboxed]
   end
 
   module Portended : sig
-    type 'a t = { portended : 'a } [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+    type 'a t = { portended : 'a } [@@unboxed]
+  end
+
+  module Aliased : sig
+    type 'a t = { aliased : 'a } [@@unboxed]
   end
 
   (** Abstract over whether a value is [local] or [global]. *)
@@ -457,22 +502,138 @@ module type Modes = sig
       include Definitions.At_locality
     end
 
-    type (+'a, 'locality) t
+    include At_locality
+  end
 
-    include At_locality with type ('a, 'l) t := ('a, 'l) t
+  (** Abstract over whether a value is [portable] or [nonportable] *)
+  module At_portability : sig
+    type nonportable_
+
+    (** Phantom type parameter for {!t} which represents that the inhabitant is known to
+        be [portable]. *)
+    type portable = [ `portable ]
+    [@@deriving compare, equal, hash, sexp_of, sexp_grammar] [@@immediate]
+
+    (** Phantom type parameter for {!t} which represents that the portability of the
+        inhabitant is unknown, and so must be assumed to be [nonportable]. *)
+    type nonportable =
+      [ `portable
+      | `nonportable of nonportable_
+      ]
+    [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+
+    (** Abstract over whether a value is [portable] or [nonportable], with zero runtime
+        cost.
+
+        [('a, portable) t] represents a ['a] that is known to be [portable]. This type
+        importantly mode-crosses along the portability axis, even if ['a] usually does
+        not.
+
+        [('a, nonportable) t] represents a ['a] whose portability is unknown. This type
+        does not mode-cross along the portability axis, even if ['a] usually does. *)
+    type (+!'a, +'portability) t
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+
+    external wrap_portable : ('a[@local_opt]) -> (('a, _) t[@local_opt]) = "%identity"
+
+    external unwrap_portable
+      :  (('a, portable) t[@local_opt])
+      -> ('a[@local_opt])
+      = "%identity"
+
+    external wrap_nonportable
+      :  ('a[@local_opt])
+      -> (('a, nonportable) t[@local_opt])
+      = "%identity"
+
+    external unwrap_nonportable
+      :  (('a, _) t[@local_opt])
+      -> ('a[@local_opt])
+      = "%identity"
+
+    (** The following two types are intended to be used with [ppx_template] to template
+        over the ['portability] type parameter itself, for example if it appears as the
+        parameter of another type.
+
+        For example:
+
+        {[
+          type%template ('a, 'b) t =
+            { maybe_portable :
+                ( 'a -> 'b
+                  , (Modes.At_portability.portability[@modality m]) )
+                  Modes.At_portability.t
+            }
+          [@@modality m = (portable, nonportable)]
+        ]} *)
+
+    [%%template:
+    type portability = nonportable
+    [@@mode nonportable] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+
+    type portability = portable
+    [@@mode portable] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+
+    external wrap
+      :  ('a[@local_opt])
+      -> (('a, (portability[@mode m])) t[@local_opt])
+      = "%identity"
+    [@@mode m = (portable, nonportable)]
+
+    external unwrap
+      :  (('a, (portability[@mode m])) t[@local_opt])
+      -> ('a[@local_opt])
+      = "%identity"
+    [@@mode m = portable]
+
+    external unwrap : (('a, _) t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+    [@@mode __ = nonportable]]
+  end
+
+  (** Allow a type to mode-cross portability by disallowing contended access to it. This
+      type is useful for making a value portable (or a type mode-cross portability) when
+      you don't actually need to use it in another capsule.
+
+      Example: Suppose we have the type
+      {[
+        type t =
+          { init : unit -> unit
+          ; users : string list
+          }
+      ]}
+      where all fields except for [init] are [immutable_data]. If we know that we will
+      only ever call [t.init] from the current capsule, but then want to pass the record
+      to other capsules, we can wrap [init] in [Portable_via_contended.t] so that it can
+      be read and run from the current capsule, but is safe to send to other capsules
+      since they won't be able to extract the contained function (even if it was actually
+      portable):
+
+      {[
+        type t =
+          { init : (unit -> unit) Portable_via_contended.t
+          ; users : string list
+          }
+      ]} *)
+  module Portable_via_contended : sig
+    type +'a t
+
+    (** The [uncontended] annotations below are redundant, but present to emphasize their
+        importance for safety. *)
+
+    external wrap : 'a -> 'a t = "%identity"
+    external unwrap : 'a t -> 'a = "%identity"
+
+    (** If the contained value is of a type that crosses portability, it's safe to extract
+        it, even if it has crossed a capsule boundary. *)
+    external unwrap_contended : 'a. 'a t -> 'a = "%identity"
   end
 
   (** Can be [open]ed or [include]d to bring field names into scope. *)
   module Export : sig
-    type 'a _global = 'a Global.t = { global : 'a [@globalized] } [@@unboxed]
-
-    type 'a _portable = 'a Portable.t = { portable : 'a }
-    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
-
-    type 'a _contended = 'a Contended.t = { contended : 'a }
-    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
-
-    type 'a _portended = 'a Portended.t = { portended : 'a }
-    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+    type 'a global = 'a Global.t = { global : 'a } [@@unboxed]
+    type 'a portable = 'a Portable.t = { portable : 'a } [@@unboxed]
+    type 'a contended = 'a Contended.t = { contended : 'a } [@@unboxed]
+    type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
+    type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
   end
 end

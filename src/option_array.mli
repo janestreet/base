@@ -9,6 +9,9 @@ type 'a t [@@deriving sexp, sexp_grammar]
 
 val empty : _ t
 
+(** For obtaining uncontended access to [empty] from a portable function. *)
+val get_empty : unit -> _ t
+
 (** Initially filled with all [None] *)
 val create : len:int -> _ t
 

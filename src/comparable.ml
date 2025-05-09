@@ -1,8 +1,11 @@
 open! Import
 module Sexp = Sexp0
-include Comparable_intf
+include Comparable_intf.Definitions
 
-module%template With_zero (T : sig
+[%%template
+[@@@mode.default m = (local, global)]
+
+module With_zero (T : sig
     type t [@@deriving compare [@mode m]]
 
     val zero : t
@@ -16,22 +19,23 @@ struct
   let is_non_positive t = (compare [@mode m]) t zero <= 0
   let sign t = Sign0.of_int ((compare [@mode m]) t zero)
 end
-[@@mode m = (global, local)]
+[@@modality nonportable]
 
-module With_zero__portable (T : sig
-    type t [@@deriving compare]
+module With_zero (T : sig
+    type t [@@deriving compare [@mode m]]
 
     val zero : t
   end) =
 struct
   open T
 
-  let is_positive t = compare t zero > 0
-  let is_non_negative t = compare t zero >= 0
-  let is_negative t = compare t zero < 0
-  let is_non_positive t = compare t zero <= 0
-  let sign t = Sign0.of_int (compare t zero)
+  let is_positive t = (compare [@mode m]) t zero > 0
+  let is_non_negative t = (compare [@mode m]) t zero >= 0
+  let is_negative t = (compare [@mode m]) t zero < 0
+  let is_non_positive t = (compare [@mode m]) t zero <= 0
+  let sign t = Sign0.of_int ((compare [@mode m]) t zero)
 end
+[@@modality portable]
 
 module%template.portable
   [@modality p] Poly (T : sig
@@ -70,7 +74,7 @@ struct
   end
 
   include C
-end
+end]
 
 let gt cmp a b = cmp a b > 0
 let lt cmp a b = cmp a b < 0
@@ -106,33 +110,40 @@ module%template.portable Infix (T : sig
 end
 [@@inline always]
 
+[%%template
+[@@@mode.default m = (local, global)]
+
 module%template.portable
   [@modality p] Comparisons (T : sig
-    type t [@@deriving compare]
-  end) : Comparisons with type t := T.t = struct
+    type t [@@deriving compare [@mode m]]
+  end) : Comparisons [@mode m] with type t := T.t = struct
   include Infix [@modality p] (T)
 
-  let compare = T.compare
-  let equal = ( = )
+  let[@mode m = (global, m)] compare = (T.compare [@mode m])
+
+  let[@mode m = (global, m)] [@inline] equal x y =
+    (equal [@mode m]) (T.compare [@mode m]) x y
+  ;;
+
   let min t t' = min compare t t'
   let max t t' = max compare t t'
 end
 [@@inline always]
 
 module%template.portable
-  [@modality p] Make_using_comparator (T : sig
-    type t [@@deriving sexp_of]
-
-    include Comparator.S with type t := t
-  end) : S with type t := T.t and type comparator_witness = T.comparator_witness = struct
+  [@modality p] Make_using_comparator
+    (T : Arg_for_make_using_comparator
+  [@mode m]) :
+  S [@mode m] with type t := T.t and type comparator_witness = T.comparator_witness =
+struct
   module T = struct
     include T
 
-    let compare = comparator.compare
+    let compare = [%eta2 Comparator.compare T.comparator]
   end
 
   include T
-  module Replace_polymorphic_compare = Comparisons [@modality p] (T)
+  module Replace_polymorphic_compare = Comparisons [@modality p] [@mode m] (T)
   include Replace_polymorphic_compare
 
   let ascending = compare
@@ -158,9 +169,9 @@ end
 
 module%template.portable
   [@modality p] Make (T : sig
-    type t [@@deriving compare, sexp_of]
+    type t [@@deriving (compare [@mode m]), sexp_of]
   end) =
-Make_using_comparator [@inlined hint] [@modality p] (struct
+Make_using_comparator [@inlined hint] [@modality p] [@mode m] (struct
     include T
     include Comparator.Make [@modality p] (T)
   end)
@@ -168,18 +179,21 @@ Make_using_comparator [@inlined hint] [@modality p] (struct
 module%template.portable
   [@modality p] Inherit
     (C : sig
-       type t [@@deriving compare]
+       type t [@@deriving compare [@mode m]]
      end)
     (T : sig
        type t [@@deriving sexp_of]
 
        val component : t -> C.t
      end) =
-Make [@modality p] (struct
+Make [@modality p] [@mode m] (struct
     type t = T.t [@@deriving sexp_of]
 
-    let compare t t' = C.compare (T.component t) (T.component t')
-  end)
+    let%template compare t t' =
+      (C.compare [@mode m]) (T.component t) (T.component t') [@nontail]
+    [@@mode m' = (global, m)]
+    ;;
+  end)]
 
 type 'a reversed = 'a
 

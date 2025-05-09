@@ -4,7 +4,7 @@ open! Import
 
 type t = nativeint [@@deriving globalize]
 
-include Int_intf.S with type t := t
+include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t
 
 (** {2 Conversion functions} *)

@@ -3,3 +3,73 @@ open Base
 let _ = Map.add
 
 [%%expect {| |}]
+
+(* Maps mode-cross using the comparator witness *)
+
+module With_nonportable_compare = struct
+  type t = { inner : int } [@@deriving sexp_of]
+
+  let toplevel_ref = ref 0
+
+  let compare { inner = x1 } { inner = x2 } =
+    Int.compare (!toplevel_ref + x1) (!toplevel_ref + x2)
+  ;;
+
+  include functor Comparator.Make
+  include functor Comparable.Make_using_comparator
+end
+
+module%template With_portable_compare = struct
+  type t = { inner : int } [@@deriving sexp_of, compare]
+
+  include functor Comparator.Make [@modality portable]
+end
+
+let use_portable (_ : _ @@ portable) = ()
+
+[%%expect {| |}]
+
+let nonportable_doesn't_cross (x : int Map.M(With_nonportable_compare).t @@ nonportable) =
+  use_portable x
+;;
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: This value is nonportable but expected to be portable.
+|}]
+
+let portable_crosses (x : int Map.M(With_portable_compare).t @@ nonportable) =
+  use_portable x
+;;
+
+[%%expect {| |}]
+
+(* Comparator.Make [@modality portable] doesn't work if the comparator isn't portable *)
+
+module%template With_nonportable_compare2 = struct
+  type t = { inner : int } [@@deriving sexp_of]
+
+  let toplevel_ref = ref 0
+
+  let compare { inner = x1 } { inner = x2 } =
+    Int.compare (!toplevel_ref + x1) (!toplevel_ref + x2)
+  ;;
+
+  include functor Comparator.Make [@modality portable]
+end
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: Signature mismatch in included functor's parameter:
+       Values do not match:
+         val compare : t -> t -> int
+       is not included in
+         val compare :
+           t Ppx_compare_lib__Ppx_compare_lib_intf.Definitions.compare @@
+           portable
+       The second is portable and the first is nonportable.
+       File "comparator.mli", line 91, characters 4-40: Expected declaration
+       File "test_map.mlt", line 55, characters 6-13: Actual declaration
+|}]

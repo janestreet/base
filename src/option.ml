@@ -4,8 +4,7 @@ module%template Constructors = struct
   type nonrec 'a t =
     | None
     | Some of 'a
-  [@@kind k = (float64, bits32, bits64, word)]
-  [@@deriving sexp ~localize, compare ~localize]
+  [@@kind k = (float64, bits32, bits64, word)] [@@deriving compare ~localize]
 
   type 'a t = 'a option =
     | None
@@ -16,12 +15,10 @@ include Constructors
 
 include (
 struct
-  type 'a t = 'a option
-  [@@deriving compare ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+  type 'a t = 'a option [@@deriving compare ~localize, globalize, hash, sexp_grammar]
 end :
 sig
-  type 'a t = 'a option
-  [@@deriving compare ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+  type 'a t = 'a option [@@deriving compare ~localize, globalize, hash, sexp_grammar]
 end)
 
 type 'a t = 'a option =
@@ -47,37 +44,51 @@ let is_some = function
   | _ -> false
 ;;
 
+include struct
+  [@@@kind.default k]
+
+  let t_of_sexp a__of_sexp (sexp : Sexplib0.Sexp.t) : _ t =
+    if Dynamic.get read_old_option_format
+    then (
+      match sexp with
+      | List [] | Atom ("none" | "None") -> None
+      | List [ el ] | List [ Atom ("some" | "Some"); el ] -> Some (a__of_sexp el)
+      | List _ -> of_sexp_error "option_of_sexp: list must represent optional value" sexp
+      | Atom _ -> of_sexp_error "option_of_sexp: only none can be atom" sexp)
+    else (
+      match sexp with
+      | Atom ("none" | "None") -> None
+      | List [ Atom ("some" | "Some"); el ] -> Some (a__of_sexp el)
+      | Atom _ -> of_sexp_error "option_of_sexp: only none can be atom" sexp
+      | List _ -> of_sexp_error "option_of_sexp: list must be (some el)" sexp)
+  [@@kind k]
+  ;;
+
+  [@@@alloc a @ m = (heap, stack)]
+  [@@@mode.default m]
+
+  (* Copied and templated from [Sexplib0] *)
+
+  let sexp_of_t sexp_of__a option : Sexplib0.Sexp.t =
+    let write_old_option_format = Dynamic.get write_old_option_format in
+    match[@exclave_if_stack a] option with
+    | Some x when write_old_option_format -> List [ sexp_of__a x ]
+    | Some x -> List [ Atom "some"; sexp_of__a x ]
+    | None when write_old_option_format -> List []
+    | None -> Atom "none"
+  [@@kind k] [@@mode m]
+  ;;
+end
+
 [@@@mode.default m = (global, local)]
 
-let value_map t ~default ~f =
-  match t with
-  | Some x -> f x [@exclave_if_local m]
-  | None -> default
-[@@kind ki = k, ko = (value, float64, bits32, bits64, word)]
-;;
-
-let iter o ~f =
-  match o with
-  | None -> ()
-  | Some a -> f a
-;;]
-
-let invariant f t = iter t ~f
-
-let call x ~f =
-  match f with
-  | None -> ()
-  | Some f -> f x
-;;
-
-let%template value t ~default =
+let value t ~default =
   match t with
   | None -> default
   | Some x -> x
-[@@mode m = (global, local)]
 ;;
 
-let%template value_exn ?(here = Stdlib.Lexing.dummy_pos) ?error ?message t =
+let value_exn ?(here = Stdlib.Lexing.dummy_pos) ?error ?message t =
   match t with
   | Some x -> x
   | None ->
@@ -91,15 +102,39 @@ let%template value_exn ?(here = Stdlib.Lexing.dummy_pos) ?error ?message t =
       | None, Some m -> Error.of_string m
       | Some e, Some m -> Error.tag e ~tag:m
     in
-    Error.raise error
-[@@mode m = (global, local)]
+    (match Error.raise error with
+     | (_ : Nothing.t) -> .)
 ;;
 
-let%template value_or_thunk o ~default =
+let value_or_thunk o ~default =
   match o with
   | Some x -> x
   | None -> default () [@exclave_if_local m]
-[@@mode m = (global, local)]
+;;
+
+let iter o ~f =
+  match o with
+  | None -> ()
+  | Some a -> f a
+;;
+
+let value_map t ~default ~f =
+  match t with
+  | Some x -> f x [@exclave_if_local m]
+  | None -> default
+[@@kind ki = k, ko = (value, float64, bits32, bits64, word)]
+;;]
+
+let t__float64_of_sexp = t_of_sexp__float64
+let t__bits32_of_sexp = t_of_sexp__bits32
+let t__bits64_of_sexp = t_of_sexp__bits64
+let t__word_of_sexp = t_of_sexp__word
+let invariant f t = iter t ~f
+
+let call x ~f =
+  match f with
+  | None -> ()
+  | Some f -> f x
 ;;
 
 let to_array t =
@@ -168,7 +203,6 @@ let equal f (t : (_ t[@kind k])) (t' : (_ t[@kind k])) =
 [@@kind k = (value, float64, bits32, bits64, word)]
 ;;
 
-let equal_t = (equal [@kind k] [@mode m]) [@@kind k = (float64, bits32, bits64, word)]
 let some x = Some x [@exclave_if_local m]
 
 let first_some x y =
@@ -217,17 +251,21 @@ let try_with_join f =
   | exception _ -> None
 ;;
 
-let%template[@mode local] map t ~f =
+[%%template
+[@@@kind.default
+  ki = (value, float64, bits32, bits64, word), ko = (value, float64, bits32, bits64, word)]
+
+let[@mode local] map (t : (_ t[@kind ki])) ~f : (_ t[@kind ko]) =
   match t with
   | None -> None
   | Some a -> Some (f a)
 ;;
 
-let%template[@mode global] map t ~f =
+let[@mode global] map (t : (_ t[@kind ki])) ~f : (_ t[@kind ko]) =
   match t with
   | None -> None
   | Some a -> Some (f a)
-;;
+;;]
 
 module Monad_arg = struct
   type 'a t = 'a option

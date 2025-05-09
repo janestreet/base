@@ -3,93 +3,95 @@
 
 open! Import
 
-(** An [Indexable] type is a finite sequence of elements indexed by consecutive integers
-    [0] ... [length t - 1]. [get] and [length] must be O(1) for the resulting
-    [binary_search] to be lg(n). *)
-module type Indexable = sig
-  type elt
-  type t
+[@@@warning "-incompatible-with-upstream"]
 
-  val get : t -> int -> elt
-  val length : t -> int
-end
+module Definitions = struct
+  (** An [Indexable] type is a finite sequence of elements indexed by consecutive integers
+      [0] ... [length t - 1]. [get] and [length] must be O(1) for the resulting
+      [binary_search] to be lg(n). *)
+  module type Indexable = sig
+    type elt
+    type t
 
-module type Indexable1 = sig
-  type 'a t
+    val get : t -> int -> elt
+    val length : t -> int
+  end
 
-  val get : 'a t -> int -> 'a
-  val length : _ t -> int
-end
+  module type%template Indexable1 = sig
+    type 'a t
 
-module Which_target_by_key = struct
-  type t =
-    [ `Last_strictly_less_than (** [         | < elt X |                       ] *)
-    | `Last_less_than_or_equal_to (** [      |      <= elt       X |           ] *)
-    | `Last_equal_to (** [                             |   = elt X |           ] *)
-    | `First_equal_to (** [                            | X = elt   |           ] *)
-    | `First_greater_than_or_equal_to (** [            | X       >= elt      | ] *)
-    | `First_strictly_greater_than (** [                           | X > elt | ] *)
-    ]
-  [@@deriving enumerate]
-end
+    val get : 'a t -> int -> 'a
+    val length : _ t -> int
+  end
+  [@@kind k = (value, immediate, immediate64)]
 
-module Which_target_by_segment = struct
-  type t =
-    [ `Last_on_left
-    | `First_on_right
-    ]
-  [@@deriving enumerate]
-end
+  module Which_target_by_key = struct
+    type t =
+      [ `Last_strictly_less_than (** [         | < elt X |                       ] *)
+      | `Last_less_than_or_equal_to (** [      |      <= elt       X |           ] *)
+      | `Last_equal_to (** [                             |   = elt X |           ] *)
+      | `First_equal_to (** [                            | X = elt   |           ] *)
+      | `First_greater_than_or_equal_to (** [            | X       >= elt      | ] *)
+      | `First_strictly_greater_than (** [                           | X > elt | ] *)
+      ]
+    [@@deriving enumerate]
+  end
 
-type ('t, 'elt, 'key) binary_search =
-  ?pos:int
-  -> ?len:int
-  -> 't
-  -> compare:('elt -> 'key -> int)
-  -> Which_target_by_key.t
-  -> 'key
-  -> int option
+  module Which_target_by_segment = struct
+    type t =
+      [ `Last_on_left
+      | `First_on_right
+      ]
+    [@@deriving enumerate]
+  end
 
-type ('t, 'elt) binary_search_segmented =
-  ?pos:int
-  -> ?len:int
-  -> 't
-  -> segment_of:('elt -> [ `Left | `Right ])
-  -> Which_target_by_segment.t
-  -> int option
+  type ('t, 'elt, 'key) binary_search =
+    ?pos:int
+    -> ?len:int
+    -> 't
+    -> compare:('elt -> 'key -> int)
+    -> Which_target_by_key.t
+    -> 'key
+    -> int option
 
-module type S = sig
-  type elt
-  type t
+  type ('t, 'elt) binary_search_segmented =
+    ?pos:int
+    -> ?len:int
+    -> 't
+    -> segment_of:('elt -> [ `Left | `Right ])
+    -> Which_target_by_segment.t
+    -> int option
 
-  (** See [Binary_search.binary_search] in binary_search.ml *)
-  val binary_search : (t, elt, 'key) binary_search
+  module type S = sig
+    type elt
+    type t
 
-  (** See [Binary_search.binary_search_segmented] in binary_search.ml *)
-  val binary_search_segmented : (t, elt) binary_search_segmented
-end
+    (** See [Binary_search.binary_search] in binary_search.ml *)
+    val binary_search : (t, elt, 'key) binary_search
 
-module type S1 = sig
-  type 'a t
+    (** See [Binary_search.binary_search_segmented] in binary_search.ml *)
+    val binary_search_segmented : (t, elt) binary_search_segmented
+  end
 
-  val binary_search : ('a t, 'a, 'key) binary_search
-  val binary_search_segmented : ('a t, 'a) binary_search_segmented
+  module type%template S1 = sig
+    type 'a t
+
+    val binary_search : ('a t, 'a, 'key) binary_search
+    val binary_search_segmented : ('a t, 'a) binary_search_segmented
+  end
+  [@@kind k = (value, immediate, immediate64)]
 end
 
 module type Binary_searchable = sig
-  module type S = S
-  module type S1 = S1
-  module type Indexable = Indexable
-  module type Indexable1 = Indexable1
-
-  module Which_target_by_key = Which_target_by_key
-  module Which_target_by_segment = Which_target_by_segment
-
-  type nonrec ('t, 'elt, 'key) binary_search = ('t, 'elt, 'key) binary_search
-  type nonrec ('t, 'elt) binary_search_segmented = ('t, 'elt) binary_search_segmented
+  include module type of struct
+    include Definitions
+  end
 
   module%template.portable Make (T : Indexable) :
     S with type t := T.t with type elt := T.elt
 
-  module%template.portable Make1 (T : Indexable1) : S1 with type 'a t := 'a T.t
+  module%template.portable
+    [@kind k = (value, immediate, immediate64)] Make1
+      (T : Indexable1
+    [@kind k]) : S1 [@kind k] with type 'a t := 'a T.t
 end

@@ -1,10 +1,11 @@
 open! Import
+open Type_equal_intf.Definitions
 module Sexp = Sexp0
 
 type ('a, 'b) t = T : 'a. ('a, 'a) t [@@deriving sexp_of ~localize]
 type ('a, 'b) equal = ('a, 'b) t
 
-include Type_equal_intf.Type_equal_defns (struct
+include Type_equal_defns (struct
     type ('a, 'b) t = ('a, 'b) equal
   end)
 
@@ -13,12 +14,17 @@ let sym (type a b) (T : (a, b) t) : (b, a) t = T
 let trans (type a b c) (T : (a, b) t) (T : (b, c) t) : (a, c) t = T
 let conv (type a b) (T : (a, b) t) (a : a) : b = a
 
+[%%template
+[@@@kind.default k1 = (any, value)]
+
 module Lift (X : sig
     type 'a t
   end) =
 struct
   let lift (type a b) (T : (a, b) t) : (a X.t, b X.t) t = T
 end
+
+[@@@kind.default k2 = (any, value)]
 
 module Lift2 (X : sig
     type ('a1, 'a2) t
@@ -31,6 +37,8 @@ struct
   ;;
 end
 
+[@@@kind.default k3 = (any, value)]
+
 module Lift3 (X : sig
     type ('a1, 'a2, 'a3) t
   end) =
@@ -41,6 +49,8 @@ struct
     T
   ;;
 end
+
+[@@@kind.default k4 = (any, value)]
 
 module Lift4 (X : sig
     type ('a1, 'a2, 'a3, 'a4) t
@@ -56,7 +66,7 @@ struct
     =
     T
   ;;
-end
+end]
 
 let detuple2 (type a1 a2 b1 b2) (T : (a1 * a2, b1 * b2) t) : (a1, b1) t * (a2, b2) t =
   T, T
@@ -133,7 +143,7 @@ module Id = struct
     | None -> false
   ;;
 
-  include Type_equal_intf.Type_equal_id_defns (struct
+  include Type_equal_id_defns (struct
       type nonrec 'a t = 'a t
     end)
 
