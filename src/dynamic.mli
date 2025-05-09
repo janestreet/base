@@ -7,8 +7,8 @@ open! Import
     [Dynamic] works like [Ref], except that changes to its value are only visible to the
     current fiber and its children.
 
-    (A note on fibers: currently, common libraries for parallel programming in OxCaml
-    are nascent, and a work-in-progress. If you're not using parallelism, you can safely
+    (A note on fibers: currently, common libraries for parallel programming in OxCaml are
+    nascent, and a work-in-progress. If you're not using parallelism, you can safely
     assume that you can ignore any references in documentation to "fibers".)
 
     Every dynamic variable has a single "root" value, which is visible by default to all

@@ -2,7 +2,7 @@ open! Import
 module Bytes = Bytes0
 module Sexp = Sexp0
 module String = String0
-include Uchar_intf
+include Uchar_intf.Definitions
 
 let failwithf = Printf.failwithf
 

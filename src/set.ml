@@ -14,7 +14,7 @@
 (* Sets over ordered types *)
 
 open! Import
-include Set_intf
+include Set_intf.Definitions
 
 let with_return = With_return.with_return
 
@@ -643,7 +643,7 @@ module Tree0 = struct
   ;;
 
   let union_list ~comparator ~to_tree xs =
-    let compare_elt = comparator.Comparator.compare in
+    let compare_elt = Comparator.compare comparator in
     List.fold xs ~init:Empty ~f:(fun ac x -> union ac (to_tree x) ~compare_elt)
   ;;
 
@@ -815,7 +815,7 @@ module Tree0 = struct
     let init =
       match from_elt with
       | None -> Enum.of_set t
-      | Some key -> Enum.starting_at_increasing t key comparator.Comparator.compare
+      | Some key -> Enum.starting_at_increasing t key (Comparator.compare comparator)
     in
     Sequence.unfold_step ~init ~f:next
   ;;
@@ -830,7 +830,7 @@ module Tree0 = struct
     let init =
       match from_elt with
       | None -> Enum.of_set_right t
-      | Some key -> Enum.starting_at_decreasing t key comparator.Comparator.compare
+      | Some key -> Enum.starting_at_decreasing t key (Comparator.compare comparator)
     in
     Sequence.unfold_step ~init ~f:next
   ;;
@@ -843,7 +843,7 @@ module Tree0 = struct
     t
     =
     let inclusive_bound side t bound =
-      let compare_elt = comparator.Comparator.compare in
+      let compare_elt = Comparator.compare comparator in
       let l, maybe, r = split t bound ~compare_elt in
       let t = side (l, r) in
       match maybe with
@@ -930,8 +930,8 @@ module Tree0 = struct
       (to_sequence comparator ~order ?greater_or_equal_to ?less_or_equal_to t')
       ~compare:
         (match order with
-         | `Increasing -> comparator.compare
-         | `Decreasing -> Fn.flip comparator.compare)
+         | `Increasing -> Comparator.compare comparator
+         | `Decreasing -> Fn.flip (Comparator.compare comparator))
   ;;
 
   let compare compare_elt s1 s2 =
@@ -1304,7 +1304,7 @@ let like_maybe_no_op ({ tree = old_tree; comparator } as old_t) tree =
   if phys_equal old_tree tree then old_t else { tree; comparator }
 ;;
 
-let compare_elt t = t.comparator.Comparator.compare
+let compare_elt t = Comparator.compare t.comparator
 
 module Accessors = struct
   let comparator t = t.comparator
@@ -1362,7 +1362,7 @@ module Accessors = struct
         (to_named_tree subset)
         ~of_:(to_named_tree superset)
         ~compare_elt:(compare_elt subset.set)
-        ~sexp_of_elt:subset.set.comparator.sexp_of_t
+        ~sexp_of_elt:(Comparator.sexp_of_t subset.set.comparator)
     ;;
 
     let equal t1 t2 =
@@ -1431,7 +1431,7 @@ module Tree = struct
   type ('a, 'comparator) t = ('a, 'comparator) tree
 
   let globalize _ _ t = Tree0.globalize t
-  let ce comparator = comparator.Comparator.compare
+  let ce comparator = Comparator.compare comparator
 
   let t_of_sexp_direct ~comparator a_of_sexp sexp =
     Tree0.t_of_sexp_direct ~compare_elt:(ce comparator) a_of_sexp sexp
@@ -1536,7 +1536,7 @@ module Tree = struct
         t1
         ~of_:t2
         ~compare_elt:(ce comparator)
-        ~sexp_of_elt:comparator.Comparator.sexp_of_t
+        ~sexp_of_elt:(Comparator.sexp_of_t comparator)
     ;;
 
     let equal ~comparator t1 t2 =
@@ -1544,7 +1544,7 @@ module Tree = struct
         t1
         t2
         ~compare_elt:(ce comparator)
-        ~sexp_of_elt:comparator.Comparator.sexp_of_t
+        ~sexp_of_elt:(Comparator.sexp_of_t comparator)
     ;;
   end
 end
@@ -1560,7 +1560,7 @@ module Using_comparator = struct
   let t_of_sexp_direct ~comparator a_of_sexp sexp =
     of_tree
       ~comparator
-      (Tree0.t_of_sexp_direct ~compare_elt:comparator.compare a_of_sexp sexp)
+      (Tree0.t_of_sexp_direct ~compare_elt:(Comparator.compare comparator) a_of_sexp sexp)
   ;;
 
   let empty ~comparator = { comparator; tree = Tree0.Empty }
@@ -1577,7 +1577,7 @@ module Using_comparator = struct
 
   let of_sorted_array_unchecked ~comparator array =
     let tree =
-      Tree0.of_sorted_array_unchecked array ~compare_elt:comparator.Comparator.compare
+      Tree0.of_sorted_array_unchecked array ~compare_elt:(Comparator.compare comparator)
     in
     { comparator; tree }
   ;;
@@ -1588,29 +1588,33 @@ module Using_comparator = struct
 
   let of_sorted_array ~comparator array =
     Or_error.Monad_infix.(
-      Tree0.of_sorted_array array ~compare_elt:comparator.Comparator.compare
+      Tree0.of_sorted_array array ~compare_elt:(Comparator.compare comparator)
       >>| fun tree -> { comparator; tree })
   ;;
 
   let of_list ~comparator l =
-    { comparator; tree = Tree0.of_list l ~compare_elt:comparator.Comparator.compare }
+    { comparator; tree = Tree0.of_list l ~compare_elt:(Comparator.compare comparator) }
   ;;
 
   let of_sequence ~comparator s =
-    { comparator; tree = Tree0.of_sequence s ~compare_elt:comparator.Comparator.compare }
+    { comparator
+    ; tree = Tree0.of_sequence s ~compare_elt:(Comparator.compare comparator)
+    }
   ;;
 
   let of_array ~comparator a =
-    { comparator; tree = Tree0.of_array a ~compare_elt:comparator.Comparator.compare }
+    { comparator; tree = Tree0.of_array a ~compare_elt:(Comparator.compare comparator) }
   ;;
 
   let map ~comparator t ~f =
-    { comparator; tree = Tree0.map t.tree ~f ~compare_elt:comparator.Comparator.compare }
+    { comparator
+    ; tree = Tree0.map t.tree ~f ~compare_elt:(Comparator.compare comparator)
+    }
   ;;
 
   let filter_map ~comparator t ~f =
     { comparator
-    ; tree = Tree0.filter_map t.tree ~f ~compare_elt:comparator.Comparator.compare
+    ; tree = Tree0.filter_map t.tree ~f ~compare_elt:(Comparator.compare comparator)
     }
   ;;
 

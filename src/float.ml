@@ -2,7 +2,7 @@ open! Import
 open! Printf
 module Bytes = Bytes0
 module Sexp = Sexp0
-include Float_intf
+include Float_intf.Definitions
 include Float0
 
 let raise_s = Error.raise_s

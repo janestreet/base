@@ -4,6 +4,8 @@
 
 (**/**)
 
+[@@@warning "-incompatible-with-upstream"]
+
 module For_generated_code : sig
   (*_ don't use this by hand, it is only meant for ppx_fields_conv *)
 
@@ -37,7 +39,7 @@ type ('record, 'field : any) readonly_t = ([ `Read ], 'record, 'field) t_with_pe
 val name : (_, _, _ : any) t_with_perm -> string
 
 [%%template:
-[@@@kind.default k = (value, float64, bits32, bits64, word)]
+[@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
 val get : (_, 'r, 'a : k) t_with_perm -> 'r -> 'a
 val fset : ([> `Set_and_create ], 'r, 'a : k) t_with_perm -> 'r -> 'a -> 'r

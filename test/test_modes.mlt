@@ -1,0 +1,190 @@
+open Base
+
+let use_portable (_x @ portable) = ()
+let use_global (_x @ global) = ()
+
+type ('a : value mod portable) require_portable
+type ('a : value mod global) require_global
+
+[%%expect {| |}]
+
+(* Tests for Modes.At_locality.t *)
+
+(* [('a, Modes.At_locality.global) Modes.At_locality.t] crosses locality even if ['a] doesn't *)
+
+type _crosses_locality =
+  (string, Modes.At_locality.global) Modes.At_locality.t require_global
+
+[%%expect {| |}]
+
+let crosses_locality (x : (_, Modes.At_locality.global) Modes.At_locality.t @@ local) =
+  use_global x
+;;
+
+[%%expect {| |}]
+
+(* [('a, Modes.At_locality.local) Modes.At_locality.t] doesn't cross locality even if ['a] does *)
+
+type _doesn't_cross_locality =
+  (int, Modes.At_locality.local) Modes.At_locality.t require_global
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: This type
+         (Base.int, Base.Modes.At_locality.local) Base.Modes.At_locality.t =
+           (Base.int, Base.Modes.At_locality.local) Base__Modes.At_locality.t
+       should be an instance of type ('a : value mod global)
+       The kind of (Base.int, Base.Modes.At_locality.local)
+                   Base.Modes.At_locality.t is immediate
+         with Base.Modes.At_locality.local @@ many portable unyielding aliased contended.
+       But the kind of (Base.int, Base.Modes.At_locality.local)
+                       Base.Modes.At_locality.t must be a subkind of
+         value mod global
+         because of the definition of require_global at file "test_modes.mlt", line 7, characters 0-43.
+
+       The first mode-crosses less than the second along:
+         locality: mod global with Base.Modes.At_locality.local ≰
+           mod global
+|}]
+
+let doesn't_cross_locality
+  (x : (int, Modes.At_locality.local) Modes.At_locality.t @@ local)
+  =
+  use_global x [@nontail]
+;;
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: This value escapes its region.
+|}]
+
+(* Tests for Modes.At_portability.t *)
+
+(* [('a, Modes.At_portability.portable) Modes.At_portability.t] crosses portability even if
+   ['a] doesn't *)
+
+type _crosses_portability =
+  (int -> int, Modes.At_portability.portable) Modes.At_portability.t require_portable
+
+[%%expect {| |}]
+
+let crosses_portability
+  (x : (_, Modes.At_portability.portable) Modes.At_portability.t @@ nonportable)
+  =
+  use_portable x
+;;
+
+[%%expect {| |}]
+
+(* [('a, Modes.At_portability.nonportable) Modes.At_portability.t] doesn't cross
+   portability, even if ['a] does. *)
+
+type _doesn't_cross_portability =
+  (int, Modes.At_portability.nonportable) Modes.At_portability.t require_portable
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: This type
+         (Base.int, Base.Modes.At_portability.nonportable)
+         Base.Modes.At_portability.t =
+           (Base.int, Base.Modes.At_portability.nonportable)
+           Base__Modes.At_portability.t
+       should be an instance of type ('a : value mod portable)
+       The kind of (Base.int, Base.Modes.At_portability.nonportable)
+                   Base.Modes.At_portability.t is immediate
+         with Base.Modes.At_portability.nonportable @@ global many unyielding aliased contended.
+       But the kind of (Base.int, Base.Modes.At_portability.nonportable)
+                       Base.Modes.At_portability.t must be a subkind of
+         value mod portable
+         because of the definition of require_portable at file "test_modes.mlt", line 6, characters 0-47.
+
+       The first mode-crosses less than the second along:
+         portability: mod portable
+           with Base.Modes.At_portability.nonportable ≰ mod portable
+|}]
+
+let doesn't_cross_portability
+  (x : (int, Modes.At_portability.nonportable) Modes.At_portability.t @@ nonportable)
+  =
+  use_portable x
+;;
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: This value is nonportable but expected to be portable.
+|}]
+
+type _doesn't_cross_portability =
+  (int -> int, Modes.At_portability.nonportable) Modes.At_portability.t require_portable
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: This type
+         (Base.int -> Base.int, Base.Modes.At_portability.nonportable)
+         Base.Modes.At_portability.t =
+           (Base.int -> Base.int, Base.Modes.At_portability.nonportable)
+           Base__Modes.At_portability.t
+       should be an instance of type ('a : value mod portable)
+       The kind of (Base.int -> Base.int,
+                    Base.Modes.At_portability.nonportable)
+                   Base.Modes.At_portability.t is
+         value mod aliased contended portable
+         with Base.Modes.At_portability.nonportable @@ aliased contended.
+       But the kind of (Base.int -> Base.int,
+                        Base.Modes.At_portability.nonportable)
+                       Base.Modes.At_portability.t must be a subkind of
+         value mod portable
+         because of the definition of require_portable at file "test_modes.mlt", line 6, characters 0-47.
+
+       The first mode-crosses less than the second along:
+         portability: mod portable
+           with Base.Modes.At_portability.nonportable ≰ mod portable
+|}]
+
+let doesn't_cross_portability
+  (x :
+    (int -> int, Modes.At_portability.nonportable) Modes.At_portability.t
+    @@ nonportable)
+  =
+  use_portable x
+;;
+
+[%%expect
+  {|
+Line _, characters _-_:
+Error: This value is nonportable but expected to be portable.
+|}]
+
+(* We can implement Modes.Portable.t using Modes.At_portability.t *)
+
+type 'a complicated_portable : immutable_data with 'a @@ portable =
+  { inner : ('a, Modes.At_portability.portable) Modes.At_portability.t }
+[@@unboxed]
+
+[%%expect {| |}]
+
+(* portable things are a subtype of nonportable things *)
+
+let foo
+  (_x : (unit -> unit, [< Modes.At_portability.nonportable ]) Modes.At_portability.t)
+  =
+  ()
+;;
+
+let () = foo (Modes.At_portability.wrap_portable (fun () -> ()))
+let () = foo (Modes.At_portability.wrap_nonportable (fun () -> ()))
+
+[%%expect {| |}]
+
+type t = (int, Modes.At_portability.nonportable) Modes.At_portability.t
+[@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+
+type t = (int, Modes.At_portability.portable) Modes.At_portability.t
+[@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+
+[%%expect {| |}]

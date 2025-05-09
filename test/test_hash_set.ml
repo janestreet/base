@@ -18,6 +18,7 @@ end = struct
   module type For_deriving = Hash_set.For_deriving
   module type M_of_sexp = Hash_set.M_of_sexp
   module type Sexp_of_m = Hash_set.Sexp_of_m
+  module type M_sexp_grammar = Hash_set.M_sexp_grammar
 
   module%template.portable [@modality p] Creators = Hash_set.Creators [@modality p]
   module Key = Hash_set.Key

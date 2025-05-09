@@ -1,5 +1,5 @@
 open! Import
-include Either_intf
+include Either_intf.Definitions
 module List = List0
 include Either0
 

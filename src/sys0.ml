@@ -13,7 +13,6 @@ type backend_type : value mod contended portable = Stdlib.Sys.backend_type =
   | Native
   | Bytecode
   | Other of string
-[@@unsafe_allow_any_mode_crossing]
 
 let backend_type = Stdlib.Sys.backend_type
 let interactive = Stdlib.Sys.interactive

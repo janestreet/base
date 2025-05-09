@@ -5,13 +5,13 @@
 open! Import
 module Sexp := Sexp0
 
-include Info_intf.S with type t = private Info.t (** @open *)
+include Info.S with type t = private Info.t (** @open *)
 
 (** Note that the exception raised by this function maintains a reference to the [t]
     passed in. *)
-val raise : t -> _
+val raise : t -> _ @ portable
 
-val raise_s : Sexp.t -> _
+val raise_s : Sexp.t -> _ @ portable
 
 (** Re-raise exceptions raised from [f] with this [t] as context. If this function raises,
     the exception maintains a reference to the [t] passed in. *)

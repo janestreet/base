@@ -1,6 +1,6 @@
 [@@@warning "-preprocessor"]
 
-include Replace_polymorphic_compare_intf
+include Replace_polymorphic_compare_intf.Definitions
 
 module Bool_replace_polymorphic_compare = struct
   type t = bool [@@deriving specialize_polymorphic_compare]

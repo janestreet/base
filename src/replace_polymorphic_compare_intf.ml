@@ -1,11 +1,15 @@
 [@@@warning "-preprocessor"]
 
-module type S = sig
-  type t [@@deriving specialize_polymorphic_compare]
+module Definitions = struct
+  module type S = sig
+    type t [@@deriving specialize_polymorphic_compare]
+  end
 end
 
 module type Replace_polymorphic_compare = sig @@ portable
-  module type S = S
+  include module type of struct
+    include Definitions
+  end
 
   module Bool_replace_polymorphic_compare : S with type t := bool
   module Bytes_replace_polymorphic_compare : S with type t := bytes

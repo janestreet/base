@@ -8,19 +8,31 @@ module Sexp := Sexp0
 
 (** [('a, 'witness) t] contains a comparison function for values of type ['a]. Two values
     of type [t] with the same ['witness] are guaranteed to have the same comparison
-    function. *)
-type ('a, 'witness) t = private
-  { compare : 'a -> 'a -> int
-  ; sexp_of_t : 'a -> Sexp.t
-  }
+    function.
+
+    In OxCaml, [('a, 'witness) t] additionally tracks whether or not the underlying
+    comparison function is portable using the ['witness] parameter - if the ['witness]
+    type crosses portability, then the comparison function is known to be portable. *)
+type ('a, 'witness) t : value mod contended portable with 'witness @@ contended
+
+(*_ See the SAFETY comment in the .ml file *)
+
+val compare : ('a, 'witness) t -> 'a -> 'a -> int
+val sexp_of_t : ('a, 'witness) t -> 'a -> Sexp.t
 
 type ('a, 'b) comparator = ('a, 'b) t
 
 module type S = sig
   type t
-  type comparator_witness
+  type comparator_witness : value
 
   val comparator : (t, comparator_witness) comparator
+end
+
+module type%template [@modality portable] S = sig @@ portable
+  type comparator_witness : value mod portable
+
+  include S with type comparator_witness := comparator_witness
 end
 
 module type S1 = sig
@@ -30,10 +42,16 @@ module type S1 = sig
   val comparator : ('a t, comparator_witness) comparator
 end
 
+module type%template [@modality portable] S1 = sig @@ portable
+  type comparator_witness : value mod portable
+
+  include S1 with type comparator_witness := comparator_witness
+end
+
 module type%template S_fc = sig @@ p
   type comparable_t
 
-  include S with type t := comparable_t
+  include S [@modality p] with type t := comparable_t
 end
 [@@modality p = (nonportable, portable)]
 
@@ -49,7 +67,7 @@ val%template make
   -> ((module S_fc with type comparable_t = 'a)[@mode p])
 [@@mode p = (nonportable, portable)]
 
-module Poly : S1 with type 'a t = 'a
+module%template Poly : S1 [@modality portable] with type 'a t = 'a
 
 module Module : sig
   (** First-class module providing a comparator and witness type. *)
@@ -64,20 +82,22 @@ module%template.portable S_to_S1 (S : S) :
 
 (** [Make] creates a [comparator] value and its phantom [comparator_witness] type for a
     nullary type. *)
-module%template.portable Make (M : sig
+module%template.portable
+  [@modality p] Make (M : sig
     type t [@@deriving compare, sexp_of]
-  end) : S with type t := M.t
+  end) : S [@modality p] with type t := M.t
 
 (** [Make1] creates a [comparator] value and its phantom [comparator_witness] type for a
     unary type. It takes a [compare] and [sexp_of_t] that have non-standard types because
     the [Comparator.t] type doesn't allow passing in additional values for the type
     argument. *)
-module%template.portable Make1 (M : sig
+module%template.portable
+  [@modality p] Make1 (M : sig
     type 'a t
 
     val compare : 'a t -> 'a t -> int
     val sexp_of_t : _ t -> Sexp.t
-  end) : S1 with type 'a t := 'a M.t
+  end) : S1 [@modality p] with type 'a t := 'a M.t
 
 module type Derived = sig
   type 'a t

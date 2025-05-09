@@ -33,7 +33,11 @@
 
 open! Import
 
-type (+'a : any) t [@@deriving compare ~localize, equal ~localize, globalize, sexp_of]
+type (+'a : any) t [@@deriving globalize]
+
+[%%rederive:
+  type nonrec +'a t = 'a t [@@deriving compare ~localize, equal ~localize, sexp_of]]
+
 type 'a sequence := 'a t
 
 include Indexed_container.S1 with type 'a t := 'a t

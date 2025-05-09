@@ -3,17 +3,28 @@ open! Base
 (* Demonstrate the mode safety of [Modes.At_locality]. We avoid [match] to show that
    dynamic dispatch is not required. We avoid [Obj] and [external] to show that the
    operations can be implemented safely. The implementation in [modes.ml] is essentially a
-   hand-optimized version of this one to avoid (heap or stack) allocation. *)
-module _ : Modes.At_locality.At_locality = struct
+   hand-optimized version of this one to avoid (heap or stack) allocation.
+
+   We can't demonstrate the safety of the mode-crossing, because the compiler is not smart
+   enough about GADTs. *)
+module _ : Modes.At_locality.Without_crossing = struct
+  type actually_local = Modes.At_locality.actually_local
+
+  type global = Modes.At_locality.global
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+
+  type local = Modes.At_locality.local
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+
   type (+'a, 'locality) t =
-    | Local : 'a -> ('a, [ `local ]) t
+    | Local : 'a -> ('a, local) t
     | Global : global_ 'a -> ('a, _) t
 
   let wrap a = Global a
   let unwrap (type locality) (Local a | Global a : (_, locality) t) = a
   let wrap_local a = exclave_ Local a
   let unwrap_local (type locality) (Local a | Global a : (_, locality) t @@ local) = a
-  let unwrap_global (Global a : (_, [ `global ]) t) = a
+  let unwrap_global (Global a : (_, global) t) = a
   let to_local t = exclave_ wrap_local (unwrap_local t)
   let to_global t = wrap (unwrap t)
   let globalize globalize_a _ t = wrap (globalize_a (unwrap_local t))
@@ -33,6 +44,14 @@ module _ : Modes.At_locality.At_locality = struct
     : type a. a Sexplib0.Sexp_grammar.t -> _ -> (a, _) t Sexplib0.Sexp_grammar.t
     =
     fun grammar _ -> Sexplib0.Sexp_grammar.coerce grammar
+  ;;
+end
+
+module _ = struct
+  (* witness that subtyping works: *)
+  let _ =
+    fun (type a) (t : (a, Modes.At_locality.global) Modes.At_locality.t) ->
+    (t :> (a, Modes.At_locality.local) Modes.At_locality.t)
   ;;
 end
 

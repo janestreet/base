@@ -4,6 +4,7 @@
     multiples) based on other basic operations. *)
 
 open! Import
+open Int_intf.Definitions
 
 module type Make_arg = sig @@ portable
   type t : value mod contended portable
@@ -40,7 +41,7 @@ module Make (X : Make_arg) : sig @@ portable
   val ( /% ) : local_ X.t -> local_ X.t -> X.t
   val ( // ) : local_ X.t -> local_ X.t -> float
 
-  include Int_intf.Round with type t := X.t
+  include Round with type t := X.t
 end
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:

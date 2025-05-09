@@ -6,7 +6,7 @@ open! Import
 
 type t = int64 [@@deriving globalize]
 
-include Int_intf.S with type t := t
+include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t
 
 module O : sig

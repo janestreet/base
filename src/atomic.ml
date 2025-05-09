@@ -7,10 +7,19 @@ module Compare_failed_or_set_here = struct
   [@@deriving sexp_of ~localize]
 end
 
-type 'a t = 'a Stdlib.Atomic.t
+type 'a t = 'a Basement.Portable_atomic.t
 
-let make = Stdlib.Atomic.make
-let make_alone = Stdlib.Atomic.make_contended
+let make = Basement.Portable_atomic.make
+
+let make_alone =
+  if Basement.Stdlib_shim.runtime5 ()
+  then Basement.Portable_atomic.make_contended
+  else
+    (* [caml_atomic_make_contended] is not supported on runtime4; we can just fall back to
+       regular make, which is semantically correct and we shouldn't be as worried about
+       false sharing on single-core applications anyway. *)
+    make
+;;
 
 external get : ('a t[@local_opt]) -> 'a @ contended portable @@ portable = "%atomic_load"
 
@@ -44,13 +53,17 @@ external compare_exchange
   @@ portable
   = "%atomic_compare_exchange"
 
+external is_runtime5 : unit -> bool @@ portable = "%runtime5"
+
+let cpu_relax = if is_runtime5 () then Stdlib.Domain.cpu_relax else Fn.id
+
 let rec update_and_return t ~(pure_f @ local) =
   let old = get t in
   let new_ = pure_f old in
   match compare_and_set t ~if_phys_equal_to:old ~replace_with:new_ with
   | Set_here -> old
   | Compare_failed ->
-    Stdlib.Domain.cpu_relax ();
+    cpu_relax ();
     update_and_return t ~pure_f
 ;;
 

@@ -47,3 +47,37 @@ module Mutex = struct
 
   let with_lock = Expert.Mutex.with_lock
 end
+
+module Isolated = struct
+  type ('a, 'k) inner : value mod contended portable =
+    { key : 'k Expert.Key.t
+    ; data : ('a, 'k) Data.t @@ aliased
+    }
+
+  type 'a t : value mod contended portable = P : ('a, 'k) inner -> 'a t [@@unboxed]
+
+  let create f =
+    let (P key) = Expert.create () in
+    let data = Data.create f in
+    P { key; data }
+  ;;
+
+  let with_unique_gen (P { key; data }) ~f =
+    let result, key =
+      Expert.Key.access key ~f:(fun access -> f (Expert.Data.unwrap ~access data))
+    in
+    P { key; data }, result
+  ;;
+
+  let with_unique t ~f =
+    with_unique_gen t ~f:(fun x -> { Modes.Aliased.aliased = f x }) [@nontail]
+  ;;
+
+  let with_shared_gen (P { key; data }) ~f =
+    Expert.Key.access_shared key ~f:(fun access ->
+      f (Expert.Data.unwrap_shared ~access data))
+    [@nontail]
+  ;;
+
+  let with_shared = with_shared_gen
+end

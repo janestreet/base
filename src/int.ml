@@ -1,6 +1,6 @@
 open! Import
 module Sexp = Sexp0
-include Int_intf
+include Int_intf.Definitions
 include Int0
 
 module T = struct

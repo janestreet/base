@@ -1,4 +1,5 @@
 open! Import
+include Queue_intf.Definitions
 module Sexp = Sexp0
 
 (* [t] stores the [t.length] queue elements at consecutive increasing indices of [t.elts],
@@ -25,8 +26,6 @@ let globalize _ t =
   ; elts = Option_array.copy t.elts
   }
 ;;
-
-module type S = Queue_intf.S
 
 let inc_num_mutations t = t.num_mutations <- t.num_mutations + 1
 let capacity t = t.mask + 1

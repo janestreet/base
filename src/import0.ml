@@ -44,6 +44,7 @@ include (
 
 type 'a ref = 'a Stdlib.ref = { mutable contents : 'a }
 type 'a iarray = 'a Basement.Stdlib_iarray_labels.t
+type 'a or_null = 'a Basement.Or_null_shim.t [@@or_null_reexport]
 
 module Stdlib = struct
   include Stdlib
@@ -56,7 +57,8 @@ module Stdlib = struct
 
   module Atomic = struct
     include Stdlib.Atomic
-    include Basement.Stdlib_shim.Atomic.Safe
+    include Basement.Stdlib_shim.Atomic.Local
+    module Contended = Basement.Stdlib_shim.Atomic.Contended
   end
 
   module Domain = struct
@@ -72,6 +74,11 @@ module Stdlib = struct
   module Obj = struct
     include Stdlib.Obj
     include Basement.Stdlib_shim.Obj
+
+    module Extension_constructor = struct
+      include Stdlib.Obj.Extension_constructor
+      include Basement.Stdlib_shim.Obj.Extension_constructor
+    end
   end
 
   module Printexc = struct
@@ -194,7 +201,7 @@ let snd = Stdlib.snd
 
 (* [raise] needs to be defined as an external as the compiler automatically replaces
    '%raise' by '%reraise' when appropriate. *)
-external raise : exn -> _ @@ portable = "%reraise"
+external raise : exn -> _ @ portable @@ portable = "%reraise"
 external phys_equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%eq"
 external decr : (int ref[@local_opt]) -> unit @@ portable = "%decr"
 external incr : (int ref[@local_opt]) -> unit @@ portable = "%incr"

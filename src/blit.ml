@@ -1,20 +1,23 @@
 open! Import
 include Blit_intf.Definitions
 
+[@@@warning "-incompatible-with-upstream"]
+
 module%template.portable Make1_phantom_distinct
     (Src : sig
-       type ('elt, 'phantom) t
+       type ('elt : k, 'phantom) t
 
        val length : local_ (_, _) t -> int
      end)
     (Dst : sig
-       type ('elt, 'phantom) t
+       type ('elt : k, 'phantom) t
 
        val length : local_ (_, _) t -> int
        val create_like : len:int -> local_ ('elt, _) Src.t -> ('elt, _) t
        val unsafe_blit : (('elt, _) Src.t, ('elt, _) t) blit
      end) :
   S1_phantom_distinct
+  [@kind k]
   with type ('elt, 'phantom) src := ('elt, 'phantom) Src.t
   with type ('elt, 'phantom) dst := ('elt, 'phantom) Dst.t = struct
   let unsafe_blit = Dst.unsafe_blit
@@ -62,16 +65,18 @@ module%template.portable Make1_phantom_distinct
          | None -> Src.length src - pos)
   ;;
 end
+[@@kind k = (value, immediate, immediate64)]
 
-module%template.portable [@modality p] Make1 (Sequence : Sequence1) = struct
+module%template.portable [@modality p] Make1 (Sequence : Sequence1 [@kind k]) = struct
   module Seq = struct
     include Sequence
 
-    type ('a, _) t = 'a Sequence.t
+    type ('a : k, _) t = 'a Sequence.t
   end
 
-  include Make1_phantom_distinct [@modality p] (Seq) (Seq)
+  include Make1_phantom_distinct [@kind k] [@modality p] (Seq) (Seq)
 end
+[@@kind k = (value, immediate, immediate64)]
 
 module%template.portable
   [@modality p] Make (Sequence : sig

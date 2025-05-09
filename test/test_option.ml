@@ -93,3 +93,113 @@ let%expect_test "first_some_thunk" =
   print_opt (first_some_thunk None (Fn.const (Some 2)));
   [%expect {| 2 |}]
 ;;]
+
+module%test Test_sexp = struct
+  [%%template
+  module
+    [@kind k = (float64, bits32, bits64, word, value)] Test_one (T : sig
+      type t : k [@@deriving sexp ~localize]
+
+      val of_int : int -> t
+    end) : sig end = struct
+    open T
+
+    type nonrec t = (t Option.t[@kind k]) [@@deriving sexp ~localize]
+
+    let%expect_test "serialize" =
+      let five : t = Some (of_int 5) in
+      five |> sexp_of_t |> print_s;
+      five |> (sexp_of_t [@mode local]) |> Sexp.globalize |> print_s;
+      [%expect
+        {|
+        (5)
+        (5)
+        |}];
+      let none : t = None in
+      none |> sexp_of_t |> print_s;
+      none |> sexp_of_t |> Sexp.globalize |> print_s;
+      [%expect
+        {|
+        ()
+        ()
+        |}]
+    ;;
+
+    let%expect_test "serialize (explicit longhand)" =
+      Dynamic.with_temporarily
+        Sexplib0.Sexp_conv.write_old_option_format
+        false
+        ~f:(fun () ->
+          let five : t = Some (of_int 5) in
+          five |> sexp_of_t |> print_s;
+          five |> (sexp_of_t [@mode local]) |> Sexp.globalize |> print_s;
+          [%expect
+            {|
+            (some 5)
+            (some 5)
+            |}];
+          let none : t = None in
+          none |> sexp_of_t |> print_s;
+          none |> sexp_of_t |> Sexp.globalize |> print_s;
+          [%expect
+            {|
+            none
+            none
+            |}])
+    ;;
+
+    let%expect_test "deserialize longhand format" =
+      let five = Sexp.List [ Sexp.Atom "Some"; Sexp.Atom "5" ] in
+      five |> t_of_sexp |> sexp_of_t |> print_s;
+      [%expect {| (5) |}];
+      let none = Sexp.Atom "None" in
+      none |> t_of_sexp |> sexp_of_t |> print_s;
+      [%expect {| () |}]
+    ;;
+
+    let%expect_test "deserialize shorthand format" =
+      let five = [%sexp_of: int option] (Some 5) in
+      five |> t_of_sexp |> sexp_of_t |> print_s;
+      [%expect {| (5) |}];
+      let none = [%sexp_of: int option] None in
+      none |> t_of_sexp |> sexp_of_t |> print_s;
+      [%expect {| () |}];
+      Dynamic.with_temporarily
+        Sexplib0.Sexp_conv.read_old_option_format
+        false
+        ~f:(fun () ->
+          Expect_test_helpers_base.require_does_raise
+            ~cr:CR_soon
+            ~hide_positions:true
+            (fun () ->
+               let five = [%sexp_of: int option] (Some 5) in
+               five |> t_of_sexp |> sexp_of_t |> print_s);
+          [%expect
+            {| (Of_sexp_error "option_of_sexp: list must be (some el)" (invalid_sexp (5))) |}];
+          Expect_test_helpers_base.require_does_raise
+            ~cr:CR_soon
+            ~hide_positions:true
+            (fun () ->
+               let none = [%sexp_of: int option] None in
+               none |> t_of_sexp |> sexp_of_t |> print_s);
+          [%expect
+            {| (Of_sexp_error "option_of_sexp: list must be (some el)" (invalid_sexp ())) |}])
+    ;;
+  end
+
+  module _ = Test_one [@kind float64] (Float_u)
+  module _ = Test_one [@kind word] (Nativeint_u)
+  module _ = Test_one [@kind bits64] (Int64_u)
+
+  module _ = Test_one [@kind bits32] (struct
+      include Int32_u
+
+      let of_int = of_int_exn
+    end)
+
+  module _ = Test_one [@kind value] (struct
+      include String
+
+      let of_int = Int.to_string
+    end)]
+end

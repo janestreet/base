@@ -9,28 +9,34 @@
 
 open! Import
 
-module type Focused = sig
-  type (+'focus, +'other) t
+module Definitions = struct
+  module type Focused = sig
+    type (+'focus, +'other) t
 
-  include Monad.S2__local with type ('a, 'b) t := ('a, 'b) t
-  include Applicative.S2__local with type ('a, 'b) t := ('a, 'b) t
+    include Monad.S2__local with type ('a, 'b) t := ('a, 'b) t
+    include Applicative.S2__local with type ('a, 'b) t := ('a, 'b) t
 
-  val value : ('a, _) t -> default:'a -> 'a
-  val to_option : ('a, _) t -> 'a option
-  val with_return : local_ (local_ 'a With_return.return -> 'b) -> ('a, 'b) t
+    val value : ('a, _) t -> default:'a -> 'a
+    val to_option : ('a, _) t -> 'a option
+    val with_return : local_ (local_ 'a With_return.return -> 'b) -> ('a, 'b) t
 
-  val combine
-    :  ('a, 'd) t
-    -> ('b, 'd) t
-    -> f:local_ ('a -> 'b -> 'c)
-    -> other:local_ ('d -> 'd -> 'd)
-    -> ('c, 'd) t
+    val combine
+      :  ('a, 'd) t
+      -> ('b, 'd) t
+      -> f:local_ ('a -> 'b -> 'c)
+      -> other:local_ ('d -> 'd -> 'd)
+      -> ('c, 'd) t
 
-  val combine_all : ('a, 'b) t list -> f:local_ ('b -> 'b -> 'b) -> ('a list, 'b) t
-  val combine_all_unit : (unit, 'b) t list -> f:local_ ('b -> 'b -> 'b) -> (unit, 'b) t
+    val combine_all : ('a, 'b) t list -> f:local_ ('b -> 'b -> 'b) -> ('a list, 'b) t
+    val combine_all_unit : (unit, 'b) t list -> f:local_ ('b -> 'b -> 'b) -> (unit, 'b) t
+  end
 end
 
 module type Either = sig @@ portable
+  include module type of struct
+    include Definitions
+  end
+
   type ('f, 's) t = ('f, 's) Either0.t =
     | First of 'f
     | Second of 's
@@ -49,8 +55,6 @@ module type Either = sig @@ portable
     -> first:local_ ('a -> 'c)
     -> second:local_ ('b -> 'd)
     -> ('c, 'd) t
-
-  module type Focused = Focused
 
   module First : Focused with type ('a, 'b) t = ('a, 'b) t
   module Second : Focused with type ('a, 'b) t = ('b, 'a) t

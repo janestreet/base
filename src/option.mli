@@ -69,9 +69,10 @@ include Monad.S__local with type 'a t := 'a t
 
 [%%template:
 [@@@mode.default m = (global, local)]
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
 
 (** Extracts the underlying value if present, otherwise returns [default]. *)
-val value : 'a t @ m -> default:'a @ m -> 'a @ m
+val value : ('a t[@kind k]) @ m -> default:'a @ m -> 'a @ m
 
 (** Extracts the underlying value, or raises if there is no value present. The raised
     error can be augmented using the [~error] and [~message] optional arguments. If
@@ -80,22 +81,27 @@ val value_exn
   :  here:[%call_pos]
   -> ?error:Error.t
   -> ?message:string
-  -> 'a t @ m
+  -> ('a t[@kind k]) @ m
   -> 'a @ m
+
+(** Extracts the underlying value if present, otherwise executes and returns the result of
+    [default]. [default] is only executed if the underlying value is absent. *)
+val value_or_thunk : ('a t[@kind k]) @ m -> default:(unit -> 'a @ m) @ local -> 'a @ m
+
+val iter : ('a t[@kind k]) @ m -> f:('a @ m -> unit) @ local -> unit
+
+[@@@kind ki = k]
+[@@@kind.default ko = (value, float64, bits32, bits64, word)]
 
 (** Extracts the underlying value and applies [f] to it if present, otherwise returns
     [default]. *)
 val value_map
   : ('a : ki) ('b : ko).
   ('a t[@kind ki]) @ m -> default:'b @ m -> f:('a @ m -> 'b @ m) @ local -> 'b @ m
-[@@kind
-  ki = (value, float64, bits32, bits64, word), ko = (value, float64, bits32, bits64, word)]
 
-(** Extracts the underlying value if present, otherwise executes and returns the result of
-    [default]. [default] is only executed if the underlying value is absent. *)
-val value_or_thunk : 'a t @ m -> default:(unit -> 'a @ m) @ local -> 'a @ m
-
-val map : 'a t @ m -> f:('a @ m -> 'b @ m) @ local -> 'b t @ m]
+val map
+  : ('a : ki) ('b : ko).
+  ('a t[@kind ki]) @ m -> f:('a @ m -> 'b @ m) @ local -> ('b t[@kind ko]) @ m]
 
 (** On [None], returns [init]. On [Some x], returns [f init x]. *)
 val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) @ local -> 'acc
@@ -104,9 +110,6 @@ val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) @ local -> 'acc
 val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) @ local -> bool
 
 val length : 'a t -> int
-
-val%template iter : ('a t[@kind k]) @ m -> f:('a @ m -> unit) @ local -> unit
-[@@mode m = (global, local)] [@@kind k = (value, float64, bits32, bits64, word)]
 
 (** On [None], returns [false]. On [Some x], returns [f x]. *)
 val exists : 'a t -> f:('a -> bool) @ local -> bool

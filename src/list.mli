@@ -5,6 +5,7 @@
     lexicographic. *)
 
 open! Import
+module Invariant := Invariant_intf.Definitions
 
 type 'a t = 'a list
 [@@deriving
@@ -14,7 +15,7 @@ include Indexed_container.S1_with_creators with type 'a t := 'a t
 
 val length : local_ 'a t -> int
 
-include Invariant_intf.S1 with type 'a t := 'a t
+include Invariant.S1 with type 'a t := 'a t
 
 (** Implements cartesian-product behavior for [map] and [bind]. **)
 module Cartesian_product : sig

@@ -13,10 +13,10 @@
 
 open! Import
 module List = List0
-include Map_intf
+include Map_intf.Definitions
 
 module Finished_or_unfinished = struct
-  include Map_intf.Finished_or_unfinished
+  include Finished_or_unfinished
 
   (* These two functions are tested in [test_map.ml] to make sure our use of
      [Stdlib.Obj.magic] is correct and safe. *)
@@ -25,7 +25,7 @@ module Finished_or_unfinished = struct
 end
 
 module Merge_element = struct
-  include Map_intf.Merge_element
+  include Merge_element
 
   let left = function
     | `Right _ -> None
@@ -1397,7 +1397,7 @@ module Tree0 = struct
     let init =
       match from_key with
       | None -> Enum.of_tree t
-      | Some key -> Enum.starting_at_increasing t key comparator.Comparator.compare
+      | Some key -> Enum.starting_at_increasing t key (Comparator.compare comparator)
     in
     Sequence.unfold_step ~init ~f:next
   ;;
@@ -1412,7 +1412,7 @@ module Tree0 = struct
     let init =
       match from_key with
       | None -> Enum.of_tree_right t
-      | Some key -> Enum.starting_at_decreasing t key comparator.Comparator.compare
+      | Some key -> Enum.starting_at_decreasing t key (Comparator.compare comparator)
     in
     Sequence.unfold_step ~init ~f:next
   ;;
@@ -1425,7 +1425,7 @@ module Tree0 = struct
     t
     =
     let inclusive_bound side t bound =
-      let compare_key = comparator.Comparator.compare in
+      let compare_key = Comparator.compare comparator in
       let l, maybe, r = split t bound ~compare_key in
       let t = side (l, r) in
       match maybe with
@@ -1574,20 +1574,23 @@ module Tree0 = struct
     ;;
 
     let of_foldable_or_error foldable ~comparator =
-      match of_foldable foldable ~compare_key:comparator.Comparator.compare with
+      match of_foldable foldable ~compare_key:(Comparator.compare comparator) with
       | `Ok x -> Result.Ok x
       | `Duplicate_key key ->
         Or_error.error
           ("Map.of_" ^ M.name ^ "_or_error: duplicate key")
           key
-          comparator.sexp_of_t
+          (Comparator.sexp_of_t comparator)
     ;;
 
     let of_foldable_exn foldable ~comparator =
-      match of_foldable foldable ~compare_key:comparator.Comparator.compare with
+      match of_foldable foldable ~compare_key:(Comparator.compare comparator) with
       | `Ok x -> x
       | `Duplicate_key key ->
-        Error.create ("Map.of_" ^ M.name ^ "_exn: duplicate key") key comparator.sexp_of_t
+        Error.create
+          ("Map.of_" ^ M.name ^ "_exn: duplicate key")
+          key
+          (Comparator.sexp_of_t comparator)
         |> Error.raise
     ;;
 
@@ -1643,20 +1646,23 @@ module Tree0 = struct
   ;;
 
   let of_list_with_key_or_error list ~get_key ~comparator =
-    match of_list_with_key list ~get_key ~compare_key:comparator.Comparator.compare with
+    match of_list_with_key list ~get_key ~compare_key:(Comparator.compare comparator) with
     | `Ok x -> Result.Ok x
     | `Duplicate_key key ->
       Or_error.error
         "Map.of_list_with_key_or_error: duplicate key"
         key
-        comparator.sexp_of_t
+        (Comparator.sexp_of_t comparator)
   ;;
 
   let of_list_with_key_exn list ~get_key ~comparator =
-    match of_list_with_key list ~get_key ~compare_key:comparator.Comparator.compare with
+    match of_list_with_key list ~get_key ~compare_key:(Comparator.compare comparator) with
     | `Ok x -> x
     | `Duplicate_key key ->
-      Error.create "Map.of_list_with_key_exn: duplicate key" key comparator.sexp_of_t
+      Error.create
+        "Map.of_list_with_key_exn: duplicate key"
+        key
+        (Comparator.sexp_of_t comparator)
       |> Error.raise
   ;;
 
@@ -1774,9 +1780,16 @@ module Tree0 = struct
   ;;
 
   let merge_disjoint_exn t1 t2 ~(comparator : _ Comparator.t) =
-    merge_skewed t1 t2 ~compare_key:comparator.compare ~combine:(fun ~key _ _ ->
-      Error.create "Map.merge_disjoint_exn: duplicate key" key comparator.sexp_of_t
-      |> Error.raise)
+    merge_skewed
+      t1
+      t2
+      ~compare_key:(Comparator.compare comparator)
+      ~combine:(fun ~key _ _ ->
+        Error.create
+          "Map.merge_disjoint_exn: duplicate key"
+          key
+          (Comparator.sexp_of_t comparator)
+        |> Error.raise)
   ;;
 
   module Closest_key_impl = struct
@@ -2003,16 +2016,16 @@ module Tree0 = struct
   ;;
 
   let of_iteri_exn ~iteri ~(comparator : _ Comparator.t) =
-    match of_iteri ~iteri ~compare_key:comparator.compare with
+    match of_iteri ~iteri ~compare_key:(Comparator.compare comparator) with
     | `Ok v -> v
     | `Duplicate_key key ->
-      Error.create "Map.of_iteri_exn: duplicate key" key comparator.sexp_of_t
+      Error.create "Map.of_iteri_exn: duplicate key" key (Comparator.sexp_of_t comparator)
       |> Error.raise
   ;;
 
   let t_of_sexp_direct key_of_sexp value_of_sexp sexp ~(comparator : _ Comparator.t) =
     let alist = list_of_sexp (pair_of_sexp key_of_sexp value_of_sexp) sexp in
-    let compare_key = comparator.compare in
+    let compare_key = Comparator.compare comparator in
     match of_alist alist ~compare_key with
     | `Ok v -> v
     | `Duplicate_key k ->
@@ -2043,11 +2056,9 @@ module Tree0 = struct
 
   let unzip t = map t ~f:fst, map t ~f:snd
 
-  let map_keys
-    t1
-    ~f
-    ~comparator:({ compare = compare_key; sexp_of_t = sexp_of_key } : _ Comparator.t)
-    =
+  let map_keys t1 ~f ~comparator =
+    let compare_key = Comparator.compare comparator in
+    let sexp_of_key = Comparator.sexp_of_t comparator in
     with_return (fun { return } ->
       `Ok
         (fold t1 ~init:Empty ~f:(fun ~key ~data t2 ->
@@ -2061,7 +2072,7 @@ module Tree0 = struct
     match map_keys t ~f ~comparator with
     | `Ok result -> result
     | `Duplicate_key key ->
-      let sexp_of_key = comparator.Comparator.sexp_of_t in
+      let sexp_of_key = Comparator.sexp_of_t comparator in
       Error.raise_s
         (Sexp.message "Map.map_keys_exn: duplicate key" [ "key", key |> sexp_of_key ])
   ;;
@@ -2069,14 +2080,18 @@ module Tree0 = struct
   let transpose_keys ~outer_comparator ~inner_comparator outer_t =
     fold outer_t ~init:Empty ~f:(fun ~key:outer_key ~data:inner_t acc ->
       fold inner_t ~init:acc ~f:(fun ~key:inner_key ~data acc ->
-        update acc inner_key ~compare_key:inner_comparator.Comparator.compare ~f:(function
+        update
+          acc
+          inner_key
+          ~compare_key:(Comparator.compare inner_comparator)
+          ~f:(function
           | None -> singleton outer_key data
           | Some elt ->
             set
               elt
               ~key:outer_key
               ~data
-              ~compare_key:outer_comparator.Comparator.compare [@nontail])
+              ~compare_key:(Comparator.compare outer_comparator) [@nontail])
           [@nontail]))
   ;;
 
@@ -2134,7 +2149,7 @@ type ('k, 'v, 'comparator) t =
 type ('k, 'v, 'comparator) tree = ('k, 'v) Tree0.t
 
 let globalize (local_ { comparator; tree }) = { comparator; tree = Tree0.globalize tree }
-let compare_key t = t.comparator.Comparator.compare
+let compare_key t = Comparator.compare t.comparator
 let like { tree = _; comparator } tree = { tree; comparator }
 
 let like_maybe_no_op ({ tree = old_tree; comparator } as old_t) tree =
@@ -2163,7 +2178,7 @@ module Accessors = struct
          ~key
          ~data
          ~compare_key:(compare_key t)
-         ~sexp_of_key:t.comparator.sexp_of_t) [@nontail]
+         ~sexp_of_key:(Comparator.sexp_of_t t.comparator)) [@nontail]
   ;;
 
   let add_exn_internal t ~key ~data =
@@ -2174,7 +2189,7 @@ module Accessors = struct
          ~key
          ~data
          ~compare_key:(compare_key t)
-         ~sexp_of_key:t.comparator.sexp_of_t) [@nontail]
+         ~sexp_of_key:(Comparator.sexp_of_t t.comparator)) [@nontail]
   ;;
 
   let add t ~key ~data =
@@ -2213,7 +2228,7 @@ module Accessors = struct
       t.tree
       key
       ~compare_key:(compare_key t)
-      ~sexp_of_key:t.comparator.sexp_of_t
+      ~sexp_of_key:(Comparator.sexp_of_t t.comparator)
   ;;
 
   let find t key = Tree0.find t.tree key ~compare_key:(compare_key t)
@@ -2273,7 +2288,7 @@ module Accessors = struct
   let combine_errors t =
     Or_error.map
       ~f:(like t)
-      (Tree0.combine_errors t.tree ~sexp_of_key:t.comparator.sexp_of_t)
+      (Tree0.combine_errors t.tree ~sexp_of_key:(Comparator.sexp_of_t t.comparator))
   ;;
 
   let unzip t = like2 t (Tree0.unzip t.tree)
@@ -2436,34 +2451,34 @@ module Tree = struct
   let singleton ~comparator:_ k v = Tree0.singleton k v
 
   let of_sorted_array_unchecked ~comparator array =
-    Tree0.of_sorted_array_unchecked array ~compare_key:comparator.Comparator.compare
+    Tree0.of_sorted_array_unchecked array ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_sorted_array ~comparator array =
-    Tree0.of_sorted_array array ~compare_key:comparator.Comparator.compare
+    Tree0.of_sorted_array array ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_alist ~comparator alist =
-    Tree0.of_alist alist ~compare_key:comparator.Comparator.compare
+    Tree0.of_alist alist ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_alist_or_error ~comparator alist = Tree0.of_alist_or_error alist ~comparator
   let of_alist_exn ~comparator alist = Tree0.of_alist_exn alist ~comparator
 
   let of_alist_multi ~comparator alist =
-    Tree0.of_alist_multi alist ~compare_key:comparator.Comparator.compare
+    Tree0.of_alist_multi alist ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_alist_fold ~comparator alist ~init ~f =
-    Tree0.of_alist_fold alist ~init ~f ~compare_key:comparator.Comparator.compare
+    Tree0.of_alist_fold alist ~init ~f ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_alist_reduce ~comparator alist ~f =
-    Tree0.of_alist_reduce alist ~f ~compare_key:comparator.Comparator.compare
+    Tree0.of_alist_reduce alist ~f ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_iteri ~comparator ~iteri =
-    Tree0.of_iteri ~iteri ~compare_key:comparator.Comparator.compare
+    Tree0.of_iteri ~iteri ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_iteri_exn ~comparator ~iteri = Tree0.of_iteri_exn ~iteri ~comparator
@@ -2473,30 +2488,30 @@ module Tree = struct
   ;;
 
   let of_increasing_sequence ~comparator seq =
-    Tree0.of_increasing_sequence seq ~compare_key:comparator.Comparator.compare
+    Tree0.of_increasing_sequence seq ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_sequence ~comparator seq =
-    Tree0.of_sequence seq ~compare_key:comparator.Comparator.compare
+    Tree0.of_sequence seq ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_sequence_or_error ~comparator seq = Tree0.of_sequence_or_error seq ~comparator
   let of_sequence_exn ~comparator seq = Tree0.of_sequence_exn seq ~comparator
 
   let of_sequence_multi ~comparator seq =
-    Tree0.of_sequence_multi seq ~compare_key:comparator.Comparator.compare
+    Tree0.of_sequence_multi seq ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_sequence_fold ~comparator seq ~init ~f =
-    Tree0.of_sequence_fold seq ~init ~f ~compare_key:comparator.Comparator.compare
+    Tree0.of_sequence_fold seq ~init ~f ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_sequence_reduce ~comparator seq ~f =
-    Tree0.of_sequence_reduce seq ~f ~compare_key:comparator.Comparator.compare
+    Tree0.of_sequence_reduce seq ~f ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_list_with_key ~comparator list ~get_key =
-    Tree0.of_list_with_key list ~get_key ~compare_key:comparator.Comparator.compare
+    Tree0.of_list_with_key list ~get_key ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_list_with_key_or_error ~comparator list ~get_key =
@@ -2508,7 +2523,10 @@ module Tree = struct
   ;;
 
   let of_list_with_key_multi ~comparator list ~get_key =
-    Tree0.of_list_with_key_multi list ~get_key ~compare_key:comparator.Comparator.compare
+    Tree0.of_list_with_key_multi
+      list
+      ~get_key
+      ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_list_with_key_fold ~comparator list ~get_key ~init ~f =
@@ -2517,7 +2535,7 @@ module Tree = struct
       ~get_key
       ~init
       ~f
-      ~compare_key:comparator.Comparator.compare
+      ~compare_key:(Comparator.compare comparator)
   ;;
 
   let of_list_with_key_reduce ~comparator list ~get_key ~f =
@@ -2525,20 +2543,20 @@ module Tree = struct
       list
       ~get_key
       ~f
-      ~compare_key:comparator.Comparator.compare
+      ~compare_key:(Comparator.compare comparator)
   ;;
 
   let to_tree t = t
 
   let invariants ~comparator t =
-    Tree0.invariants t ~compare_key:comparator.Comparator.compare
+    Tree0.invariants t ~compare_key:(Comparator.compare comparator)
   ;;
 
   let is_empty t = Tree0.is_empty t
   let length t = Tree0.length t
 
   let set ~comparator t ~key ~data =
-    Tree0.set t ~key ~data ~compare_key:comparator.Comparator.compare
+    Tree0.set t ~key ~data ~compare_key:(Comparator.compare comparator)
   ;;
 
   let add_exn ~comparator t ~key ~data =
@@ -2546,8 +2564,8 @@ module Tree = struct
       t
       ~key
       ~data
-      ~compare_key:comparator.Comparator.compare
-      ~sexp_of_key:comparator.sexp_of_t
+      ~compare_key:(Comparator.compare comparator)
+      ~sexp_of_key:(Comparator.sexp_of_t comparator)
   ;;
 
   let add_exn_internal ~comparator t ~key ~data =
@@ -2555,8 +2573,8 @@ module Tree = struct
       t
       ~key
       ~data
-      ~compare_key:comparator.Comparator.compare
-      ~sexp_of_key:comparator.sexp_of_t
+      ~compare_key:(Comparator.compare comparator)
+      ~sexp_of_key:(Comparator.sexp_of_t comparator)
   ;;
 
   let add ~comparator t ~key ~data =
@@ -2565,28 +2583,28 @@ module Tree = struct
   ;;
 
   let add_multi ~comparator t ~key ~data =
-    Tree0.add_multi t ~key ~data ~compare_key:comparator.Comparator.compare
+    Tree0.add_multi t ~key ~data ~compare_key:(Comparator.compare comparator)
   ;;
 
   let remove_multi ~comparator t key =
-    Tree0.remove_multi t key ~compare_key:comparator.Comparator.compare
+    Tree0.remove_multi t key ~compare_key:(Comparator.compare comparator)
   ;;
 
   let find_multi ~comparator t key =
-    Tree0.find_multi t key ~compare_key:comparator.Comparator.compare
+    Tree0.find_multi t key ~compare_key:(Comparator.compare comparator)
   ;;
 
   let change ~comparator t key ~f =
-    Tree0.change t key ~f ~compare_key:comparator.Comparator.compare
+    Tree0.change t key ~f ~compare_key:(Comparator.compare comparator)
   ;;
 
   let update ~comparator t key ~f =
-    Tree0.update t key ~f ~compare_key:comparator.Comparator.compare
+    Tree0.update t key ~f ~compare_key:(Comparator.compare comparator)
   ;;
 
   let update_and_return ~comparator t key ~f =
     let result, tree =
-      Tree0.update_and_return t key ~f ~compare_key:comparator.Comparator.compare
+      Tree0.update_and_return t key ~f ~compare_key:(Comparator.compare comparator)
     in
     Modes.Global.unwrap result, tree
   ;;
@@ -2595,24 +2613,26 @@ module Tree = struct
     Tree0.find_exn
       t
       key
-      ~compare_key:comparator.Comparator.compare
-      ~sexp_of_key:comparator.Comparator.sexp_of_t
+      ~compare_key:(Comparator.compare comparator)
+      ~sexp_of_key:(Comparator.sexp_of_t comparator)
   ;;
 
-  let find ~comparator t key = Tree0.find t key ~compare_key:comparator.Comparator.compare
+  let find ~comparator t key =
+    Tree0.find t key ~compare_key:(Comparator.compare comparator)
+  ;;
 
   let remove ~comparator t key =
-    Tree0.remove t key ~compare_key:comparator.Comparator.compare
+    Tree0.remove t key ~compare_key:(Comparator.compare comparator)
   ;;
 
-  let mem ~comparator t key = Tree0.mem t key ~compare_key:comparator.Comparator.compare
+  let mem ~comparator t key = Tree0.mem t key ~compare_key:(Comparator.compare comparator)
   let iter_keys t ~f = Tree0.iter_keys t ~f
   let iter t ~f = Tree0.iter t ~f
   let iteri t ~f = Tree0.iteri t ~f
   let iteri_until t ~f = Tree0.iteri_until t ~f
 
   let iter2 ~comparator t1 t2 ~f =
-    Tree0.iter2 t1 t2 ~f ~compare_key:comparator.Comparator.compare
+    Tree0.iter2 t1 t2 ~f ~compare_key:(Comparator.compare comparator)
   ;;
 
   let map t ~f = Tree0.map t ~f
@@ -2622,7 +2642,7 @@ module Tree = struct
   let fold_right t ~init ~f = Tree0.fold_right t ~f ~init
 
   let fold2 ~comparator t1 t2 ~init ~f =
-    Tree0.fold2 t1 t2 ~init ~f ~compare_key:comparator.Comparator.compare
+    Tree0.fold2 t1 t2 ~init ~f ~compare_key:(Comparator.compare comparator)
   ;;
 
   let filter_keys t ~f = Tree0.filter_keys t ~f
@@ -2636,17 +2656,17 @@ module Tree = struct
   let partition_tf t ~f = Tree0.partition_tf t ~f
 
   let combine_errors ~comparator t =
-    Tree0.combine_errors t ~sexp_of_key:comparator.Comparator.sexp_of_t
+    Tree0.combine_errors t ~sexp_of_key:(Comparator.sexp_of_t comparator)
   ;;
 
   let unzip = Tree0.unzip
 
   let compare_direct ~comparator compare_data t1 t2 =
-    Tree0.compare comparator.Comparator.compare compare_data t1 t2
+    Tree0.compare (Comparator.compare comparator) compare_data t1 t2
   ;;
 
   let equal ~comparator data_equal t1 t2 =
-    Tree0.equal comparator.Comparator.compare data_equal t1 t2
+    Tree0.equal (Comparator.compare comparator) data_equal t1 t2
   ;;
 
   let keys t = Tree0.keys t
@@ -2654,27 +2674,27 @@ module Tree = struct
   let to_alist ?key_order t = Tree0.to_alist ?key_order t
 
   let symmetric_diff ~comparator t1 t2 ~data_equal =
-    Tree0.symmetric_diff t1 t2 ~compare_key:comparator.Comparator.compare ~data_equal
+    Tree0.symmetric_diff t1 t2 ~compare_key:(Comparator.compare comparator) ~data_equal
   ;;
 
   let fold_symmetric_diff ~comparator t1 t2 ~data_equal ~init ~f =
     Tree0.fold_symmetric_diff
       t1
       t2
-      ~compare_key:comparator.Comparator.compare
+      ~compare_key:(Comparator.compare comparator)
       ~data_equal
       ~init
       ~f
   ;;
 
   let merge ~comparator t1 t2 ~f =
-    Tree0.merge t1 t2 ~f ~compare_key:comparator.Comparator.compare
+    Tree0.merge t1 t2 ~f ~compare_key:(Comparator.compare comparator)
   ;;
 
   let merge_disjoint_exn ~comparator t1 t2 = Tree0.merge_disjoint_exn t1 t2 ~comparator
 
   let merge_skewed ~comparator t1 t2 ~combine =
-    Tree0.merge_skewed t1 t2 ~combine ~compare_key:comparator.Comparator.compare
+    Tree0.merge_skewed t1 t2 ~combine ~compare_key:(Comparator.compare comparator)
   ;;
 
   let min_elt t = Tree0.min_elt t
@@ -2689,14 +2709,14 @@ module Tree = struct
   let counti t ~f = Tree0.counti t ~f
   let sum m t ~f = Tree0.sum m t ~f
   let sumi m t ~f = Tree0.sumi m t ~f
-  let split ~comparator t k = Tree0.split t k ~compare_key:comparator.Comparator.compare
+  let split ~comparator t k = Tree0.split t k ~compare_key:(Comparator.compare comparator)
 
   let split_le_gt ~comparator t k =
     Tree0.split_and_reinsert_boundary
       t
       ~into:`Left
       k
-      ~compare_key:comparator.Comparator.compare
+      ~compare_key:(Comparator.compare comparator)
   ;;
 
   let split_lt_ge ~comparator t k =
@@ -2704,11 +2724,11 @@ module Tree = struct
       t
       ~into:`Right
       k
-      ~compare_key:comparator.Comparator.compare
+      ~compare_key:(Comparator.compare comparator)
   ;;
 
   let append ~comparator ~lower_part ~upper_part =
-    Tree0.append ~lower_part ~upper_part ~compare_key:comparator.Comparator.compare
+    Tree0.append ~lower_part ~upper_part ~compare_key:(Comparator.compare comparator)
   ;;
 
   let subrange ~comparator t ~lower_bound ~upper_bound =
@@ -2717,7 +2737,7 @@ module Tree = struct
         t
         ~lower_bound
         ~upper_bound
-        ~compare_key:comparator.Comparator.compare
+        ~compare_key:(Comparator.compare comparator)
     in
     ret
   ;;
@@ -2729,20 +2749,24 @@ module Tree = struct
       ~max
       ~init
       ~f
-      ~compare_key:comparator.Comparator.compare
+      ~compare_key:(Comparator.compare comparator)
   ;;
 
   let range_to_alist ~comparator t ~min ~max =
-    Tree0.range_to_alist t ~min ~max ~compare_key:comparator.Comparator.compare
+    Tree0.range_to_alist t ~min ~max ~compare_key:(Comparator.compare comparator)
   ;;
 
   let closest_key ~comparator t dir key =
-    Tree0.closest_key t dir key ~compare_key:comparator.Comparator.compare
+    Tree0.closest_key t dir key ~compare_key:(Comparator.compare comparator)
   ;;
 
   let nth t n = Tree0.nth t n
   let nth_exn t n = Option.value_exn (nth t n)
-  let rank ~comparator t key = Tree0.rank t key ~compare_key:comparator.Comparator.compare
+
+  let rank ~comparator t key =
+    Tree0.rank t key ~compare_key:(Comparator.compare comparator)
+  ;;
+
   let sexp_of_t sexp_of_k sexp_of_v _ t = Tree0.sexp_of_t sexp_of_k sexp_of_v t
 
   let t_of_sexp_direct ~comparator k_of_sexp v_of_sexp sexp =
@@ -2790,7 +2814,7 @@ module Tree = struct
 
     let add_exn t ~comparator ~key ~data =
       match Tree0.Build_increasing.max_key t with
-      | Some prev_key when comparator.Comparator.compare prev_key key >= 0 ->
+      | Some prev_key when (Comparator.compare comparator) prev_key key >= 0 ->
         Error.raise_s (Sexp.Atom "Map.Build_increasing.add: non-increasing key")
       | _ -> Tree0.Build_increasing.add_unchecked t ~key ~data
     ;;
@@ -2812,18 +2836,18 @@ module Using_comparator = struct
   let of_sorted_array_unchecked ~comparator array =
     of_tree
       ~comparator
-      (Tree0.of_sorted_array_unchecked array ~compare_key:comparator.Comparator.compare)
+      (Tree0.of_sorted_array_unchecked array ~compare_key:(Comparator.compare comparator))
     [@nontail]
   ;;
 
   let of_sorted_array ~comparator array =
     Or_error.map
-      (Tree0.of_sorted_array array ~compare_key:comparator.Comparator.compare)
+      (Tree0.of_sorted_array array ~compare_key:(Comparator.compare comparator))
       ~f:(fun tree -> of_tree ~comparator tree)
   ;;
 
   let of_alist ~comparator alist =
-    match Tree0.of_alist alist ~compare_key:comparator.Comparator.compare with
+    match Tree0.of_alist alist ~compare_key:(Comparator.compare comparator) with
     | `Ok tree -> `Ok (of_tree ~comparator tree)
     | `Duplicate_key _ as z -> z
   ;;
@@ -2840,23 +2864,23 @@ module Using_comparator = struct
   let of_alist_multi ~comparator alist =
     of_tree
       ~comparator
-      (Tree0.of_alist_multi alist ~compare_key:comparator.Comparator.compare)
+      (Tree0.of_alist_multi alist ~compare_key:(Comparator.compare comparator))
   ;;
 
   let of_alist_fold ~comparator alist ~init ~f =
     of_tree
       ~comparator
-      (Tree0.of_alist_fold alist ~init ~f ~compare_key:comparator.Comparator.compare)
+      (Tree0.of_alist_fold alist ~init ~f ~compare_key:(Comparator.compare comparator))
   ;;
 
   let of_alist_reduce ~comparator alist ~f =
     of_tree
       ~comparator
-      (Tree0.of_alist_reduce alist ~f ~compare_key:comparator.Comparator.compare)
+      (Tree0.of_alist_reduce alist ~f ~compare_key:(Comparator.compare comparator))
   ;;
 
   let of_iteri ~comparator ~iteri =
-    match Tree0.of_iteri ~compare_key:comparator.Comparator.compare ~iteri with
+    match Tree0.of_iteri ~compare_key:(Comparator.compare comparator) ~iteri with
     | `Ok tree_length -> `Ok (of_tree ~comparator tree_length)
     | `Duplicate_key _ as z -> z
   ;;
@@ -2872,11 +2896,11 @@ module Using_comparator = struct
   let of_increasing_sequence ~comparator seq =
     Or_error.map
       ~f:(fun x -> of_tree ~comparator x)
-      (Tree0.of_increasing_sequence seq ~compare_key:comparator.Comparator.compare)
+      (Tree0.of_increasing_sequence seq ~compare_key:(Comparator.compare comparator))
   ;;
 
   let of_sequence ~comparator seq =
-    match Tree0.of_sequence seq ~compare_key:comparator.Comparator.compare with
+    match Tree0.of_sequence seq ~compare_key:(Comparator.compare comparator) with
     | `Ok tree -> `Ok (of_tree ~comparator tree)
     | `Duplicate_key _ as z -> z
   ;;
@@ -2893,24 +2917,24 @@ module Using_comparator = struct
   let of_sequence_multi ~comparator seq =
     of_tree
       ~comparator
-      (Tree0.of_sequence_multi seq ~compare_key:comparator.Comparator.compare)
+      (Tree0.of_sequence_multi seq ~compare_key:(Comparator.compare comparator))
   ;;
 
   let of_sequence_fold ~comparator seq ~init ~f =
     of_tree
       ~comparator
-      (Tree0.of_sequence_fold seq ~init ~f ~compare_key:comparator.Comparator.compare)
+      (Tree0.of_sequence_fold seq ~init ~f ~compare_key:(Comparator.compare comparator))
   ;;
 
   let of_sequence_reduce ~comparator seq ~f =
     of_tree
       ~comparator
-      (Tree0.of_sequence_reduce seq ~f ~compare_key:comparator.Comparator.compare)
+      (Tree0.of_sequence_reduce seq ~f ~compare_key:(Comparator.compare comparator))
   ;;
 
   let of_list_with_key ~comparator list ~get_key =
     match
-      Tree0.of_list_with_key list ~get_key ~compare_key:comparator.Comparator.compare
+      Tree0.of_list_with_key list ~get_key ~compare_key:(Comparator.compare comparator)
     with
     | `Ok tree -> `Ok (of_tree ~comparator tree)
     | `Duplicate_key _ as z -> z
@@ -2926,7 +2950,10 @@ module Using_comparator = struct
   ;;
 
   let of_list_with_key_multi ~comparator list ~get_key =
-    Tree0.of_list_with_key_multi list ~get_key ~compare_key:comparator.Comparator.compare
+    Tree0.of_list_with_key_multi
+      list
+      ~get_key
+      ~compare_key:(Comparator.compare comparator)
     |> of_tree ~comparator
   ;;
 
@@ -2936,7 +2963,7 @@ module Using_comparator = struct
       ~get_key
       ~init
       ~f
-      ~compare_key:comparator.Comparator.compare
+      ~compare_key:(Comparator.compare comparator)
     |> of_tree ~comparator
   ;;
 
@@ -2945,7 +2972,7 @@ module Using_comparator = struct
       list
       ~get_key
       ~f
-      ~compare_key:comparator.Comparator.compare
+      ~compare_key:(Comparator.compare comparator)
     |> of_tree ~comparator
   ;;
 

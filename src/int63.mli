@@ -18,7 +18,7 @@ open! Import
     [caml_modify] when dealing with mutable data structures holding [Int63.t] values. *)
 type t : immediate64 [@@deriving globalize]
 
-include Int_intf.S with type t := t
+include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t
 
 (** {2 Arithmetic with overflow}

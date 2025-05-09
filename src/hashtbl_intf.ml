@@ -1,271 +1,278 @@
 open! Import
 module Sexp = Sexp0
 
-(** @canonical Base.Hashtbl.Key *)
-module Key = struct
-  module type S = sig
-    type t [@@deriving compare, sexp_of]
+module Definitions = struct
+  (** @canonical Base.Hashtbl.Key *)
+  module%template Key = struct
+    [@@@kind.default k = (value, bits64, float64)]
 
-    (** Two [t]s that [compare] equal must have equal hashes for the hashtable to behave
-        properly. *)
-    val hash : t -> int
+    module type S = sig
+      type t : k [@@deriving sexp_of]
+
+      val compare : [%compare: t]
+
+      (** Two [t]s that [compare] equal must have equal hashes for the hashtable to behave
+          properly. *)
+      val hash : t -> int
+    end
+
+    type ('a : k) t = ((module S with type t = 'a)[@kind k])
   end
 
-  type 'a t = (module S with type t = 'a)
-end
+  module Merge_into_action = Dictionary_mutable.Merge_into_action
 
-module Merge_into_action = Dictionary_mutable.Merge_into_action
+  module type Accessors = sig
+    (** {2 Accessors} *)
 
-module type Accessors = sig
-  (** {2 Accessors} *)
+    type ('a, 'b) t
+    type 'a key
 
-  type ('a, 'b) t
-  type 'a key
+    (** Attempting to modify ([set], [remove], etc.) the hashtable during iteration
+        ([fold], [iter], [iter_keys], [iteri]) will raise an exception. *)
 
-  (** Attempting to modify ([set], [remove], etc.) the hashtable during iteration ([fold],
-      [iter], [iter_keys], [iteri]) will raise an exception. *)
+    (** @inline *)
+    include
+      Dictionary_mutable.Accessors
+      with type 'key key := 'key key
+       and type ('key, 'data, _) t := ('key, 'data) t
+       and type ('fn, _, _, _) accessor := 'fn
 
-  (** @inline *)
-  include
-    Dictionary_mutable.Accessors
-    with type 'key key := 'key key
-     and type ('key, 'data, _) t := ('key, 'data) t
-     and type ('fn, _, _, _) accessor := 'fn
+    val sexp_of_key : ('a, _) t -> 'a key -> Sexp.t
+    val capacity : _ t -> int
 
-  val sexp_of_key : ('a, _) t -> 'a key -> Sexp.t
-  val capacity : _ t -> int
+    (** We redeclare [choose*] below to add implementation-specific notes on performance. *)
 
-  (** We redeclare [choose*] below to add implementation-specific notes on performance. *)
+    (** Choose an arbitrary key/value pair of a hash table. Returns [None] if [t] is
+        empty.
 
-  (** Choose an arbitrary key/value pair of a hash table. Returns [None] if [t] is empty.
+        The choice is deterministic. Calling [choose] multiple times on the same table
+        returns the same key/value pair, so long as the table is not mutated in between.
+        Beyond determinism, no guarantees are made about how the choice is made. Expect
+        bias toward certain hash values.
 
-      The choice is deterministic. Calling [choose] multiple times on the same table
-      returns the same key/value pair, so long as the table is not mutated in between.
-      Beyond determinism, no guarantees are made about how the choice is made. Expect bias
-      toward certain hash values.
+        This hash bias can lead to degenerate performance in some cases, such as clearing
+        a hash table using repeated [choose] and [remove]. At each iteration, finding the
+        next element may have to scan farther from its initial hash value. *)
+    val%template choose : ('a, 'b) t -> ('a key * 'b) option @ m
+    [@@mode m = global]
 
-      This hash bias can lead to degenerate performance in some cases, such as clearing a
-      hash table using repeated [choose] and [remove]. At each iteration, finding the next
-      element may have to scan farther from its initial hash value. *)
-  val%template choose : ('a, 'b) t -> ('a key * 'b) option @ m
-  [@@mode m = global]
+    (** Like [choose], but returns a local pair option *)
+    val%template choose
+      :  ('a, 'b) t
+      -> ('a key Modes.Global.t * 'b Modes.Global.t) option @ m
+    [@@mode m = local]
 
-  (** Like [choose], but returns a local pair option *)
-  val%template choose
-    :  ('a, 'b) t
-    -> ('a key Modes.Global.t * 'b Modes.Global.t) option @ m
-  [@@mode m = local]
+    (** Like [choose]. Raises if [t] is empty. *)
+    val%template choose_exn : ('a, 'b) t -> 'a key * 'b @ m
+    [@@mode m = global]
 
-  (** Like [choose]. Raises if [t] is empty. *)
-  val%template choose_exn : ('a, 'b) t -> 'a key * 'b @ m
-  [@@mode m = global]
+    (** Like [choose_exn], but returns a local pair *)
+    val%template choose_exn : ('a, 'b) t -> 'a key Modes.Global.t * 'b Modes.Global.t @ m
+    [@@mode m = local]
 
-  (** Like [choose_exn], but returns a local pair *)
-  val%template choose_exn : ('a, 'b) t -> 'a key Modes.Global.t * 'b Modes.Global.t @ m
-  [@@mode m = local]
+    (** Chooses a random key/value pair of a hash table. Returns [None] if [t] is empty.
 
-  (** Chooses a random key/value pair of a hash table. Returns [None] if [t] is empty.
+        The choice is distributed uniformly across hash values, rather than across keys
+        themselves. As a consequence, the closer the keys are to evenly spaced out in the
+        table, the closer this function will be to a uniform choice of keys.
 
-      The choice is distributed uniformly across hash values, rather than across keys
-      themselves. As a consequence, the closer the keys are to evenly spaced out in the
-      table, the closer this function will be to a uniform choice of keys.
+        This function may be preferable to [choose] when nondeterministic choice is
+        acceptable, and bias toward certain hash values is undesirable. *)
+    val choose_randomly
+      :  ?random_state:Random.State.t (** default: [Random.State.default] *)
+      -> ('a, 'b) t
+      -> ('a key * 'b) option
 
-      This function may be preferable to [choose] when nondeterministic choice is
-      acceptable, and bias toward certain hash values is undesirable. *)
-  val choose_randomly
-    :  ?random_state:Random.State.t (** default: [Random.State.default] *)
-    -> ('a, 'b) t
-    -> ('a key * 'b) option
+    (** Like [choose_randomly]. Raises if [t] is empty. *)
+    val choose_randomly_exn
+      :  ?random_state:Random.State.t (** default: [Random.State.default] *)
+      -> ('a, 'b) t
+      -> 'a key * 'b
 
-  (** Like [choose_randomly]. Raises if [t] is empty. *)
-  val choose_randomly_exn
-    :  ?random_state:Random.State.t (** default: [Random.State.default] *)
-    -> ('a, 'b) t
-    -> 'a key * 'b
+    (** Just like [find_and_call], but takes an extra argument which is passed to
+        [if_found] and [if_not_found], so that the client code can avoid allocating
+        closures or using refs to pass this additional information. This function is only
+        useful in code which tries to minimize heap allocation. *)
+    val find_and_call1
+      :  ('a, 'b) t
+      -> 'a key
+      -> a:'d
+      -> if_found:local_ ('b -> 'd -> 'c)
+      -> if_not_found:local_ ('a key -> 'd -> 'c)
+      -> 'c
 
-  (** Just like [find_and_call], but takes an extra argument which is passed to [if_found]
-      and [if_not_found], so that the client code can avoid allocating closures or using
-      refs to pass this additional information. This function is only useful in code which
-      tries to minimize heap allocation. *)
-  val find_and_call1
-    :  ('a, 'b) t
-    -> 'a key
-    -> a:'d
-    -> if_found:local_ ('b -> 'd -> 'c)
-    -> if_not_found:local_ ('a key -> 'd -> 'c)
-    -> 'c
+    val find_and_call2
+      :  ('a, 'b) t
+      -> 'a key
+      -> a:'d
+      -> b:'e
+      -> if_found:local_ ('b -> 'd -> 'e -> 'c)
+      -> if_not_found:local_ ('a key -> 'd -> 'e -> 'c)
+      -> 'c
 
-  val find_and_call2
-    :  ('a, 'b) t
-    -> 'a key
-    -> a:'d
-    -> b:'e
-    -> if_found:local_ ('b -> 'd -> 'e -> 'c)
-    -> if_not_found:local_ ('a key -> 'd -> 'e -> 'c)
-    -> 'c
+    val findi_and_call1
+      :  ('a, 'b) t
+      -> 'a key
+      -> a:'d
+      -> if_found:local_ (key:'a key -> data:'b -> 'd -> 'c)
+      -> if_not_found:local_ ('a key -> 'd -> 'c)
+      -> 'c
 
-  val findi_and_call1
-    :  ('a, 'b) t
-    -> 'a key
-    -> a:'d
-    -> if_found:local_ (key:'a key -> data:'b -> 'd -> 'c)
-    -> if_not_found:local_ ('a key -> 'd -> 'c)
-    -> 'c
+    val findi_and_call2
+      :  ('a, 'b) t
+      -> 'a key
+      -> a:'d
+      -> b:'e
+      -> if_found:local_ (key:'a key -> data:'b -> 'd -> 'e -> 'c)
+      -> if_not_found:local_ ('a key -> 'd -> 'e -> 'c)
+      -> 'c
 
-  val findi_and_call2
-    :  ('a, 'b) t
-    -> 'a key
-    -> a:'d
-    -> b:'e
-    -> if_found:local_ (key:'a key -> data:'b -> 'd -> 'e -> 'c)
-    -> if_not_found:local_ ('a key -> 'd -> 'e -> 'c)
-    -> 'c
+    (** [equal f t1 t2] and [similar f t1 t2] both return true iff [t1] and [t2] have the
+        same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)]. [equal] and
+        [similar] only differ in their types. *)
+    val equal : ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
 
-  (** [equal f t1 t2] and [similar f t1 t2] both return true iff [t1] and [t2] have the
-      same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)]. [equal] and
-      [similar] only differ in their types. *)
-  val equal : ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
+    val similar : ('b1 -> 'b2 -> bool) -> ('a, 'b1) t -> ('a, 'b2) t -> bool
+  end
 
-  val similar : ('b1 -> 'b2 -> bool) -> ('a, 'b1) t -> ('a, 'b2) t -> bool
-end
+  module type Multi = sig
+    type ('a, 'b) t
+    type 'a key
 
-module type Multi = sig
-  type ('a, 'b) t
-  type 'a key
+    (** [add_multi t ~key ~data] if [key] is present in the table then cons [data] on the
+        list, otherwise add [key] with a single element list. *)
+    val add_multi : ('a, 'b list) t -> key:'a key -> data:'b -> unit
 
-  (** [add_multi t ~key ~data] if [key] is present in the table then cons [data] on the
-      list, otherwise add [key] with a single element list. *)
-  val add_multi : ('a, 'b list) t -> key:'a key -> data:'b -> unit
+    (** [remove_multi t key] updates the table, removing the head of the list bound to
+        [key]. If the list has only one element (or is empty) then the binding is removed. *)
+    val remove_multi : ('a, _ list) t -> 'a key -> unit
 
-  (** [remove_multi t key] updates the table, removing the head of the list bound to
-      [key]. If the list has only one element (or is empty) then the binding is removed. *)
-  val remove_multi : ('a, _ list) t -> 'a key -> unit
+    (** [find_multi t key] returns the empty list if [key] is not present in the table,
+        returns [t]'s values for [key] otherwise. *)
+    val find_multi : ('a, 'b list) t -> 'a key -> 'b list
+  end
 
-  (** [find_multi t key] returns the empty list if [key] is not present in the table,
-      returns [t]'s values for [key] otherwise. *)
-  val find_multi : ('a, 'b list) t -> 'a key -> 'b list
-end
+  type ('key, 'data, 'z) create_options =
+    ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 0 *)
+    -> 'key Key.t
+    -> 'z
 
-type ('key, 'data, 'z) create_options =
-  ?growth_allowed:bool (** defaults to [true] *)
-  -> ?size:int (** initial size -- default 0 *)
-  -> 'key Key.t
-  -> 'z
+  type ('key, 'data, 'z) create_options_without_first_class_module =
+    ?growth_allowed:bool (** defaults to [true] *)
+    -> ?size:int (** initial size -- default 0 *)
+    -> 'z
 
-type ('key, 'data, 'z) create_options_without_first_class_module =
-  ?growth_allowed:bool (** defaults to [true] *)
-  -> ?size:int (** initial size -- default 0 *)
-  -> 'z
+  module type Creators_generic = sig
+    type ('a, 'b) t
+    type 'a key
+    type ('key, 'data, 'z) create_options
 
-module type Creators_generic = sig
-  type ('a, 'b) t
-  type 'a key
-  type ('key, 'data, 'z) create_options
+    (** @inline *)
+    include
+      Dictionary_mutable.Creators
+      with type 'key key := 'key key
+       and type ('key, 'data, _) t := ('key, 'data) t
+       and type ('fn, 'key, 'data, _) creator := ('key key, 'data, 'fn) create_options
+  end
 
-  (** @inline *)
-  include
-    Dictionary_mutable.Creators
-    with type 'key key := 'key key
-     and type ('key, 'data, _) t := ('key, 'data) t
-     and type ('fn, 'key, 'data, _) creator := ('key key, 'data, 'fn) create_options
-end
+  module type Creators = sig
+    type ('a, 'b) t
 
-module type Creators = sig
-  type ('a, 'b) t
+    (** {2 Creators} *)
 
-  (** {2 Creators} *)
+    (** The module you pass to [create] must have a type that is hashable, sexpable, and
+        comparable.
 
-  (** The module you pass to [create] must have a type that is hashable, sexpable, and
-      comparable.
+        Example:
 
-      Example:
-
-      {v
+        {v
         Hashtbl.create (module Int);;
         - : (int, '_a) Hashtbl.t = <abstr>;;
-      v} *)
-  val create
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> ('a, 'b) t
+        v} *)
+    val create
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> ('a, 'b) t
 
-  (** Example:
+    (** Example:
 
-      {v
+        {v
          Hashtbl.of_alist (module Int) [(3, "something"); (2, "whatever")]
          - : [ `Duplicate_key of int | `Ok of (int, string) Hashtbl.t ] = `Ok <abstr>
-      v} *)
-  val of_alist
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> ('a * 'b) list
-    -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a ]
+        v} *)
+    val of_alist
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> ('a * 'b) list
+      -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a ]
 
-  (** Whereas [of_alist] will report [Duplicate_key] no matter how many dups there are in
-      your list, [of_alist_report_all_dups] will report each and every duplicate entry.
+    (** Whereas [of_alist] will report [Duplicate_key] no matter how many dups there are
+        in your list, [of_alist_report_all_dups] will report each and every duplicate
+        entry.
 
-      For example:
+        For example:
 
-      {v
+        {v
         Hashtbl.of_alist (module Int) [(1, "foo"); (1, "bar"); (2, "foo"); (2, "bar")];;
         - : [ `Duplicate_key of int | `Ok of (int, string) Hashtbl.t ] = `Duplicate_key 1
 
         Hashtbl.of_alist_report_all_dups (module Int) [(1, "foo"); (1, "bar"); (2, "foo"); (2, "bar")];;
         - : [ `Duplicate_keys of int list | `Ok of (int, string) Hashtbl.t ] = `Duplicate_keys [1; 2]
-      v} *)
-  val of_alist_report_all_dups
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> ('a * 'b) list
-    -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a list ]
+        v} *)
+    val of_alist_report_all_dups
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> ('a * 'b) list
+      -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a list ]
 
-  val of_alist_or_error
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> ('a * 'b) list
-    -> ('a, 'b) t Or_error.t
+    val of_alist_or_error
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> ('a * 'b) list
+      -> ('a, 'b) t Or_error.t
 
-  val of_alist_exn
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> ('a * 'b) list
-    -> ('a, 'b) t
+    val of_alist_exn
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> ('a * 'b) list
+      -> ('a, 'b) t
 
-  (** Creates a {{!Multi} "multi"} hashtable, i.e., a hashtable where each key points to a
-      list potentially containing multiple values. So instead of short-circuiting with a
-      [`Duplicate_key] variant on duplicates, as in [of_alist], [of_alist_multi] folds
-      those values into a list for the given key:
+    (** Creates a {{!Multi} "multi"} hashtable, i.e., a hashtable where each key points to
+        a list potentially containing multiple values. So instead of short-circuiting with
+        a [`Duplicate_key] variant on duplicates, as in [of_alist], [of_alist_multi] folds
+        those values into a list for the given key:
 
-      {v
+        {v
       let h = Hashtbl.of_alist_multi (module Int) [(1, "a"); (1, "b"); (2, "c"); (2, "d")];;
       val h : (int, string list) Hashtbl.t = <abstr>
 
       Hashtbl.find_exn h 1;;
       - : string list = ["b"; "a"]
-      v} *)
-  val of_alist_multi
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> ('a * 'b) list
-    -> ('a, 'b list) t
+        v} *)
+    val of_alist_multi
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> ('a * 'b) list
+      -> ('a, 'b list) t
 
-  (** Applies the [get_key] and [get_data] functions to the ['r list] to create the
-      initial keys and values, respectively, for the new hashtable.
+    (** Applies the [get_key] and [get_data] functions to the ['r list] to create the
+        initial keys and values, respectively, for the new hashtable.
 
-      {[
-        create_mapped get_key get_data [x1;...;xn]
-        = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn]
-      ]}
+        {[
+          create_mapped get_key get_data [x1;...;xn]
+          = of_alist [get_key x1, get_data x1; ...; get_key xn, get_data xn]
+        ]}
 
-      Example:
+        Example:
 
-      {v
+        {v
         let h =
           Hashtbl.create_mapped (module Int)
             ~get_key:(local_ (fun x -> x))
@@ -280,53 +287,53 @@ module type Creators = sig
         in
         Hashtbl.find_exn h 1;;
         - : int = 2
-      v} *)
-  val create_mapped
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> get_key:local_ ('r -> 'a)
-    -> get_data:local_ ('r -> 'b)
-    -> 'r list
-    -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a list ]
+        v} *)
+    val create_mapped
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> get_key:local_ ('r -> 'a)
+      -> get_data:local_ ('r -> 'b)
+      -> 'r list
+      -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a list ]
 
-  (** {[
-        create_with_key ~get_key [x1;...;xn]
-        = of_alist [get_key x1, x1; ...; get_key xn, xn]
-      ]} *)
-  val create_with_key
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> get_key:local_ ('r -> 'a)
-    -> 'r list
-    -> [ `Ok of ('a, 'r) t | `Duplicate_keys of 'a list ]
+    (** {[
+          create_with_key ~get_key [x1;...;xn]
+          = of_alist [get_key x1, x1; ...; get_key xn, xn]
+        ]} *)
+    val create_with_key
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> get_key:local_ ('r -> 'a)
+      -> 'r list
+      -> [ `Ok of ('a, 'r) t | `Duplicate_keys of 'a list ]
 
-  val create_with_key_or_error
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> get_key:local_ ('r -> 'a)
-    -> 'r list
-    -> ('a, 'r) t Or_error.t
+    val create_with_key_or_error
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> get_key:local_ ('r -> 'a)
+      -> 'r list
+      -> ('a, 'r) t Or_error.t
 
-  val create_with_key_exn
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> get_key:local_ ('r -> 'a)
-    -> 'r list
-    -> ('a, 'r) t
+    val create_with_key_exn
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> get_key:local_ ('r -> 'a)
+      -> 'r list
+      -> ('a, 'r) t
 
-  (** Like [create_mapped], applies the [get_key] and [get_data] functions to the
-      ['r list] to create the initial keys and values, respectively, for the new hashtable
-      -- and then, like [add_multi], folds together values belonging to the same keys.
-      Here, though, the function used for the folding is given by [combine] (instead of
-      just being a [cons]).
+    (** Like [create_mapped], applies the [get_key] and [get_data] functions to the
+        ['r list] to create the initial keys and values, respectively, for the new
+        hashtable -- and then, like [add_multi], folds together values belonging to the
+        same keys. Here, though, the function used for the folding is given by [combine]
+        (instead of just being a [cons]).
 
-      Example:
+        Example:
 
-      {v
+        {v
          Hashtbl.group (module Int)
            ~get_key:(local_ (fun x -> x / 2))
            ~get_data:(local_ (fun x -> x))
@@ -334,107 +341,163 @@ module type Creators = sig
             [ 1; 2; 3; 4]
          |> Hashtbl.to_alist;;
          - : (int * int) list = [(2, 4); (1, 6); (0, 1)]
-      v} *)
-  val group
-    :  ?growth_allowed:bool (** defaults to [true] *)
-    -> ?size:int (** initial size -- default 0 *)
-    -> 'a Key.t
-    -> get_key:local_ ('r -> 'a)
-    -> get_data:local_ ('r -> 'b)
-    -> combine:local_ ('b -> 'b -> 'b)
-    -> 'r list
-    -> ('a, 'b) t
-end
-
-module type S_without_submodules = sig
-  val hash : 'a -> int
-  val hash_param : int -> int -> 'a -> int
-
-  type (!'a, !'b) t
-
-  (** We provide a [sexp_of_t] but not a [t_of_sexp] for this type because one needs to be
-      explicit about the hash and comparison functions used when creating a hashtable.
-      Note that [Hashtbl.Poly.t] does have [[@@deriving sexp]], and uses OCaml's built-in
-      polymorphic comparison and and polymorphic hashing. *)
-  val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
-
-  include Creators with type ('a, 'b) t := ('a, 'b) t (** @inline *)
-
-  include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
-  (** @inline *)
-
-  include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
-  (** @inline *)
-
-  val hashable_s : ('key, _) t -> 'key Key.t
-
-  include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
-end
-
-module type S_poly = sig
-  type ('a, 'b) t [@@deriving sexp, sexp_grammar]
-
-  val hashable : 'a Hashable.t
-
-  include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
-
-  include
-    Creators_generic
-    with type ('a, 'b) t := ('a, 'b) t
-    with type 'a key = 'a
-    with type ('key, 'data, 'z) create_options :=
-      ('key, 'data, 'z) create_options_without_first_class_module
-
-  include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
-  include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
-end
-
-module type For_deriving = sig
-  type ('k, 'v) t
-
-  module type Sexp_of_m = sig
-    type t [@@deriving sexp_of]
+        v} *)
+    val group
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a Key.t
+      -> get_key:local_ ('r -> 'a)
+      -> get_data:local_ ('r -> 'b)
+      -> combine:local_ ('b -> 'b -> 'b)
+      -> 'r list
+      -> ('a, 'b) t
   end
 
-  module type M_of_sexp = sig
-    type t [@@deriving of_sexp]
+  module type S_without_submodules = sig
+    val hash : 'a -> int
+    val hash_param : int -> int -> 'a -> int
 
-    include Key.S with type t := t
+    type (!'a, !'b) t
+
+    (** We provide a [sexp_of_t] but not a [t_of_sexp] for this type because one needs to
+        be explicit about the hash and comparison functions used when creating a
+        hashtable. Note that [Hashtbl.Poly.t] does have [[@@deriving sexp]], and uses
+        OCaml's built-in polymorphic comparison and and polymorphic hashing. *)
+    val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
+
+    include Creators with type ('a, 'b) t := ('a, 'b) t (** @inline *)
+
+    include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
+    (** @inline *)
+
+    include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
+    (** @inline *)
+
+    val hashable_s : ('key, _) t -> 'key Key.t
+
+    include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
   end
 
-  module type M_sexp_grammar = sig
-    type t [@@deriving sexp_grammar]
+  module type S_poly = sig
+    type ('a, 'b) t [@@deriving sexp, sexp_grammar]
+
+    val hashable : 'a Hashable.t
+
+    include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
+
+    include
+      Creators_generic
+      with type ('a, 'b) t := ('a, 'b) t
+      with type 'a key = 'a
+      with type ('key, 'data, 'z) create_options :=
+        ('key, 'data, 'z) create_options_without_first_class_module
+
+    include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
+    include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
   end
 
-  module type Equal_m = sig end
+  module type For_deriving = sig
+    type ('k, 'v) t
 
-  val sexp_of_m__t
-    :  (module Sexp_of_m with type t = 'k)
-    -> ('v -> Sexp.t)
-    -> ('k, 'v) t
-    -> Sexp.t
+    module type Sexp_of_m = sig
+      type t [@@deriving sexp_of]
+    end
 
-  val m__t_of_sexp
-    :  (module M_of_sexp with type t = 'k)
-    -> (Sexp.t -> 'v)
-    -> Sexp.t
-    -> ('k, 'v) t
+    module type M_of_sexp = sig
+      type t [@@deriving of_sexp]
 
-  val m__t_sexp_grammar
-    :  (module M_sexp_grammar with type t = 'k)
-    -> 'v Sexplib0.Sexp_grammar.t
-    -> ('k, 'v) t Sexplib0.Sexp_grammar.t
-    @@ portable
+      include Key.S with type t := t
+    end
 
-  val equal_m__t
-    :  (module Equal_m)
-    -> ('v -> 'v -> bool)
-    -> ('k, 'v) t
-    -> ('k, 'v) t
-    -> bool
+    module type M_sexp_grammar = sig
+      type t [@@deriving sexp_grammar]
+    end
+
+    module type Equal_m = sig end
+
+    val sexp_of_m__t
+      :  (module Sexp_of_m with type t = 'k)
+      -> ('v -> Sexp.t)
+      -> ('k, 'v) t
+      -> Sexp.t
+
+    val m__t_of_sexp
+      :  (module M_of_sexp with type t = 'k)
+      -> (Sexp.t -> 'v)
+      -> Sexp.t
+      -> ('k, 'v) t
+
+    val m__t_sexp_grammar
+      :  (module M_sexp_grammar with type t = 'k)
+      -> 'v Sexplib0.Sexp_grammar.t
+      -> ('k, 'v) t Sexplib0.Sexp_grammar.t
+      @@ portable
+
+    val equal_m__t
+      :  (module Equal_m)
+      -> ('v -> 'v -> bool)
+      -> ('k, 'v) t
+      -> ('k, 'v) t
+      -> bool
+  end
+
+  module type%template Non_value = sig @@ portable
+    type (!'a : k, !'b : v) t
+    [@@deriving sexp_of]
+    [@@kind k = (float64, bits64, value), v = (float64, bits64, value)]
+
+    [@@@kind k = (float64, bits64, value), v = (float64, bits64, value)]
+
+    type (!'a : k, !'b : v) t := (('a, 'b) t[@kind k v])
+    type 'a key := ('a Key.t[@kind k])
+
+    [@@@kind.default k v]
+
+    val create
+      :  ?growth_allowed:bool (** defaults to [true] *)
+      -> ?size:int (** initial size -- default 0 *)
+      -> 'a key
+      -> ('a, 'b) t
+
+    val length : ('k, 'v) t -> int
+    val capacity : ('k, 'v) t -> int
+    val is_empty : ('k, 'v) t -> bool
+    val add_exn : ('k, 'v) t -> key:'k -> data:'v -> unit
+    val find : ('k, 'v) t -> 'k -> ('v Option.t[@kind v])
+    val find_and_remove : ('k, 'v) t -> 'k -> ('v Option.t[@kind v])
+    val remove : ('k, 'v) t -> 'k -> unit
+    val mem : ('k, 'v) t -> 'k -> bool
+    val set : ('k, 'v) t -> key:'k -> data:'v -> unit
+    val clear : _ t -> unit
+
+    val find_and_call
+      :  ('k, 'v) t
+      -> 'k
+      -> if_found:local_ ('v -> 'a)
+      -> if_not_found:local_ ('k -> 'a)
+      -> 'a
+
+    val update : ('k, 'v) t -> 'k -> f:local_ (('v Option.t[@kind v]) -> 'v) -> unit
+
+    val update_and_return
+      :  ('k, 'v) t
+      -> 'k
+      -> f:local_ (('v Option.t[@kind v]) -> 'v)
+      -> 'v
+
+    val change
+      :  ('k, 'v) t
+      -> 'k
+      -> f:local_ (('v Option.t[@kind v]) -> ('v Option.t[@kind v]))
+      -> unit
+  end
 end
 
 module type Hashtbl = sig @@ portable
+  include module type of struct
+    include Definitions
+  end
+
   (** A hash table is a mutable data structure implementing a map between keys and values.
       It supports constant-time lookup and in-place modification.
 
@@ -508,19 +571,9 @@ module type Hashtbl = sig @@ portable
 
       {1 Interface} *)
 
-  include S_without_submodules (** @inline *)
+  include Non_value
 
-  module type Accessors = Accessors
-  module type Creators = Creators
-  module type Multi = Multi
-  module type S_poly = S_poly
-  module type S_without_submodules = S_without_submodules
-  module type For_deriving = For_deriving
-
-  module Key = Key
-  module Merge_into_action = Merge_into_action
-
-  type nonrec ('key, 'data, 'z) create_options = ('key, 'data, 'z) create_options
+  include S_without_submodules with type ('k, 'v) t := ('k, 'v) t (** @inline *)
 
   module%template.portable Creators (Key : sig
       type 'a t

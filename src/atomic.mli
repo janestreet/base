@@ -37,7 +37,7 @@ module Compare_failed_or_set_here : sig
   [@@deriving sexp_of ~localize]
 end
 
-type !'a t : value mod contended portable = 'a Stdlib.Atomic.t
+type !'a t : value mod contended portable = 'a Basement.Portable_atomic.t
 
 [%%rederive: type nonrec (!'a : value mod contended) t = 'a t [@@deriving sexp_of]]
 [%%rederive: type nonrec (!'a : value mod portable) t = 'a t [@@deriving of_sexp]]

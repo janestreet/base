@@ -95,5 +95,47 @@ module type Capsule = sig @@ portable
     val with_lock : 'k t -> f:('k Password.t @ local -> 'a) @ local -> 'a
   end
 
+  module Isolated : sig @@ portable
+    (** A value isolated within its own capsule.
+
+        A primary use-case for this type is to use aliasing as a proxy for contention.
+        [unique] access to an ['a Capsule.Isolated.t] allows [uncontended] access to the
+        underlying ['a]. [aliased] access to an ['a Capsule.Isolated.t] allows [shared]
+        access to the underlying ['a]. *)
+    type 'a t : value mod contended portable
+
+    (** [create f] runs [f] within a fresh capsule, and creates a [Capsule.Isolated.t]
+        containing the result. *)
+    val create : (unit -> 'a) @ local portable -> 'a t @ unique
+
+    (** [with_unique t ~f] takes a [unique] isolated capsule [t], calls [f] with its
+        value, and returns a tuple of the unique isolated capsule and the result of [f]. *)
+    val with_unique
+      : 'a ('b : value mod contended portable).
+      'a t @ unique
+      -> f:('a -> 'b) @ local once portable
+      -> 'a t * 'b Modes.Aliased.t @ unique
+
+    (** Like [with_unique], but with the most general mode annotations. *)
+    val with_unique_gen
+      :  'a t @ unique
+      -> f:('a -> 'b @ contended portable unique) @ local once portable
+      -> 'a t * 'b @ contended portable unique
+
+    (** [with_unique t ~f] takes an [aliased] isolated capsule [t], calls [f] with shared
+        access to its value, and returns a tuple of the unique isolated capsule and the
+        result of [f]. *)
+    val with_shared
+      : ('a : value mod portable) ('b : value mod contended portable).
+      'a t -> f:('a @ shared -> 'b) @ local once portable -> 'b
+
+    (** Like [with_shared], but with the most general mode annotations. *)
+    val with_shared_gen
+      : ('a : value mod portable) 'b.
+      'a t
+      -> f:('a @ shared -> 'b @ contended portable) @ local once portable
+      -> 'b @ contended portable
+  end
+
   module Expert = Basement.Capsule
 end

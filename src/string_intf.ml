@@ -1,80 +1,87 @@
 open! Import
 
-(** Interface for Unicode encodings, such as UTF-8. Written with an abstract type, and
-    specialized below. *)
-module type Utf = sig
-  type t [@@deriving sexp_grammar]
+module Definitions = struct
+  (** Interface for Unicode encodings, such as UTF-8. Written with an abstract type, and
+      specialized below. *)
+  module type Utf = sig
+    type t [@@deriving sexp_grammar]
 
-  (** [t_of_sexp] and [of_string] will raise if the input is invalid in this encoding. See
-      [sanitize] below to construct a valid [t] from arbitrary input. *)
-  include Identifiable.S with type t := t
+    (** [t_of_sexp] and [of_string] will raise if the input is invalid in this encoding.
+        See [sanitize] below to construct a valid [t] from arbitrary input. *)
+    include Identifiable.S with type t := t
 
-  (** Interpret [t] as a container of Unicode scalar values, rather than of ASCII
-      characters. Indexes, length, etc. are with respect to [Uchar.t]. *)
-  include Indexed_container.S0_with_creators with type t := t and type elt = Uchar0.t
+    (** Interpret [t] as a container of Unicode scalar values, rather than of ASCII
+        characters. Indexes, length, etc. are with respect to [Uchar.t]. *)
+    include Indexed_container.S0_with_creators with type t := t and type elt = Uchar0.t
 
-  (** Produce a sequence of unicode characters. *)
-  val to_sequence : t -> Uchar0.t Sequence.t
+    (** Produce a sequence of unicode characters. *)
+    val to_sequence : t -> Uchar0.t Sequence.t
 
-  (** Reports whether a string is valid in this encoding. *)
-  val is_valid : string -> bool
+    (** Reports whether a string is valid in this encoding. *)
+    val is_valid : string -> bool
 
-  (** Create a [t] from a string by replacing any byte sequences that are invalid in this
-      encoding with [Uchar.replacement_char]. This can be used to decode strings that may
-      be encoded incorrectly. *)
-  val sanitize : string -> t
+    (** Create a [t] from a string by replacing any byte sequences that are invalid in
+        this encoding with [Uchar.replacement_char]. This can be used to decode strings
+        that may be encoded incorrectly. *)
+    val sanitize : string -> t
 
-  (** Decodes the Unicode scalar value at the given byte index in this encoding. Raises if
-      [byte_pos] does not refer to the start of a Unicode scalar value. *)
-  val get : t -> byte_pos:int -> Uchar0.t
+    (** Decodes the Unicode scalar value at the given byte index in this encoding. Raises
+        if [byte_pos] does not refer to the start of a Unicode scalar value. *)
+    val get : t -> byte_pos:int -> Uchar0.t
 
-  (** Creates a [t] without sanitizing or validating the string. Other functions in this
-      interface may raise or produce unpredictable results if the string is invalid in
-      this encoding. *)
-  val of_string_unchecked : string -> t
+    (** Creates a [t] without sanitizing or validating the string. Other functions in this
+        interface may raise or produce unpredictable results if the string is invalid in
+        this encoding. *)
+    val of_string_unchecked : string -> t
 
-  (** Similar to [String.split], but splits on a [Uchar.t] in [t]. If you want to split on
-      a [char], first convert it with [Uchar.of_char], but note that the actual byte(s) on
-      which [t] is split may not be the same as the [char] byte depending on both [char]
-      and the encoding of [t]. For example, splitting on 'α' in UTF-8 or on '\n' in UTF-16
-      is actually splitting on a 2-byte sequence. *)
-  val split : t -> on:Uchar0.t -> t list
+    (** Similar to [String.split], but splits on a [Uchar.t] in [t]. If you want to split
+        on a [char], first convert it with [Uchar.of_char], but note that the actual
+        byte(s) on which [t] is split may not be the same as the [char] byte depending on
+        both [char] and the encoding of [t]. For example, splitting on 'α' in UTF-8 or on
+        '\n' in UTF-16 is actually splitting on a 2-byte sequence. *)
+    val split : t -> on:Uchar0.t -> t list
 
-  (** The name of this encoding scheme; e.g., "UTF-8". *)
-  val codec_name : string
+    (** The name of this encoding scheme; e.g., "UTF-8". *)
+    val codec_name : string
 
-  (** Counts the number of unicode scalar values in [t].
+    (** Counts the number of unicode scalar values in [t].
 
-      This function is not a good proxy for display width, as some scalar values have
-      display widths > 1. Many native applications such as terminal emulators use
-      [wcwidth] (see [man 3 wcwidth]) to compute the display width of a scalar value. See
-      the uucp library's [Uucp.Break.tty_width_hint] for an implementation of [wcwidth]'s
-      logic. However, this is merely best-effort, as display widths will vary based on the
-      font and underlying text shaping engine (see docs on [tty_width_hint] for details).
+        This function is not a good proxy for display width, as some scalar values have
+        display widths > 1. Many native applications such as terminal emulators use
+        [wcwidth] (see [man 3 wcwidth]) to compute the display width of a scalar value.
+        See the uucp library's [Uucp.Break.tty_width_hint] for an implementation of
+        [wcwidth]'s logic. However, this is merely best-effort, as display widths will
+        vary based on the font and underlying text shaping engine (see docs on
+        [tty_width_hint] for details).
 
-      For applications that support Grapheme clusters (many terminal emulators do not),
-      [t] should first be split into Grapheme clusters and then the display width of each
-      of those Grapheme clusters needs to be computed (which is the max display width of
-      the scalars that are in the cluster).
+        For applications that support Grapheme clusters (many terminal emulators do not),
+        [t] should first be split into Grapheme clusters and then the display width of
+        each of those Grapheme clusters needs to be computed (which is the max display
+        width of the scalars that are in the cluster).
 
-      There are some active efforts to improve the current state of affairs:
-      - https://github.com/wez/wezterm/issues/4320
-      - https://www.unicode.org/L2/L2023/23194-text-terminal-wg-report.pdf *)
-  val length_in_uchars : t -> int
+        There are some active efforts to improve the current state of affairs:
+        - https://github.com/wez/wezterm/issues/4320
+        - https://www.unicode.org/L2/L2023/23194-text-terminal-wg-report.pdf *)
+    val length_in_uchars : t -> int
 
-  (** [length] could be misinterpreted as counting bytes. We direct users to other,
-      clearer options. *)
-  val length : t -> int
-  [@@alert
-    length_in_uchars
-      "Use [length_in_uchars] to count unicode scalar values or [String.length] to count \
-       bytes"]
+    (** [length] could be misinterpreted as counting bytes. We direct users to other,
+        clearer options. *)
+    val length : t -> int
+    [@@alert
+      length_in_uchars
+        "Use [length_in_uchars] to count unicode scalar values or [String.length] to \
+         count bytes"]
+  end
+
+  (** Iterface for Unicode encodings, specialized for string representation. *)
+  module type Utf_as_string = Utf with type t = private string
 end
 
-(** Iterface for Unicode encodings, specialized for string representation. *)
-module type Utf_as_string = Utf with type t = private string
-
 module type String = sig @@ portable
+  include module type of struct
+    include Definitions
+  end
+
   (** An extension of the standard [StringLabels]. If you [open Base], you'll get these
       extensions in the [String] module. *)
 
@@ -554,7 +561,10 @@ module type String = sig @@ portable
           # escape "abcd!ef"
           - : string = "!a!b!cd!!ef"
         ]} *)
-    val escape : escapeworthy:char list -> escape_char:char -> (string -> string) Staged.t
+    val escape
+      :  escapeworthy:char list
+      -> escape_char:char
+      -> (string -> string) Staged.t @ portable
 
     (** [unescape_gen_exn] is the inverse operation of [escape_gen_exn].
 
@@ -590,7 +600,7 @@ module type String = sig @@ portable
     [@@mode portable]
 
     (** [unescape ~escape_char] is defined as [unescape_gen_exn ~map:[] ~escape_char] *)
-    val unescape : escape_char:char -> (string -> string) Staged.t
+    val unescape : escape_char:char -> (string -> string) Staged.t @ portable
 
     (** Any char in an escaped string is either escaping, escaped, or literal. For
         example, for escaped string ["0_a0__0"] with [escape_char] as ['_'], pos 1 and 4
@@ -686,7 +696,4 @@ module type String = sig @@ portable
 
   (** UTF-32 big-endian encoding. See [Utf] interface. *)
   module Utf32be : Utf_as_string
-
-  module type Utf = Utf
-  module type Utf_as_string = Utf_as_string
 end

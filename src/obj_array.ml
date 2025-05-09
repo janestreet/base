@@ -25,6 +25,7 @@ let zero_obj = Stdlib.Obj.repr (0 : int) |> Stdlib.Obj.magic_portable
    tagged with [Double_array_tag]. *)
 let create_zero ~len = Array.create ~len (Stdlib.Obj.magic_uncontended zero_obj)
 let empty = [||] |> Portability_hacks.Cross.Portable.(cross (array magic))
+let get_empty () = empty |> Portability_hacks.magic_uncontended__promise_deeply_immutable
 
 type not_a_float =
   | Not_a_float_0

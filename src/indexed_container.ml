@@ -1,6 +1,6 @@
 open! Import
 module Array = Array0
-include Indexed_container_intf
+include Indexed_container_intf.Definitions
 
 let with_return = With_return.with_return
 

@@ -5,7 +5,7 @@ module Int = Int0
 module Sexp = Sexp0
 module Uchar = Uchar0
 include String0
-include String_intf
+include String_intf.Definitions
 
 let invalid_argf = Printf.invalid_argf
 let raise_s = Error.raise_s

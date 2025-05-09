@@ -7,7 +7,7 @@ open! Import
 
 type t [@@deriving globalize]
 
-include Int_intf.S with type t := t
+include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t
 
 val of_int : int -> t

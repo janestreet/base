@@ -20,7 +20,7 @@ module Cheap_option = struct
   let phys_same (type a b) (a : a) (b : b) = phys_equal a (Stdlib.Obj.magic b : a)
 
   module T0 : sig @@ portable
-    type 'a t
+    type 'a t : immutable_data with 'a
 
     val none : _ t
     val some : 'a -> 'a t
@@ -31,7 +31,12 @@ module Cheap_option = struct
     val iter_some : 'a t -> f:local_ ('a -> unit) -> unit
     val get_none : unit -> _ t
   end = struct
-    type +'a t
+    (* It is safe to claim that ['a t] is immutable data as long as ['a] is immutable
+       data:
+         - the [None] values are immutable blocks or immediates.
+         - the [Some x] values are the value [x] (of type ['a]) itself.
+    *)
+    type +'a t : immutable_data with 'a
 
     (* Being a pointer, no one outside this module can construct a value that is
        [phys_same] as this one.
@@ -124,6 +129,7 @@ end
 type 'a t = 'a Cheap_option.t Uniform_array.t [@@deriving sexp, sexp_grammar]
 
 let empty = Uniform_array.empty
+let get_empty = Uniform_array.get_empty
 let create ~len = Uniform_array.create ~len (Cheap_option.get_none ())
 let init n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.of_option (f i)) [@nontail]
 let init_some n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.some (f i)) [@nontail]

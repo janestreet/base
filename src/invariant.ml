@@ -2,10 +2,12 @@ open! Import
 include Invariant_intf.Definitions
 module Sexp = Sexp0
 
+[@@@warning "-incompatible-with-upstream"]
+
 let raise_s = Error.raise_s
 
 [%%template
-[@@@kind.default k = (value, float64, bits32, bits64, word)]
+[@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
 let invariant ~(here : [%call_pos]) t sexp_of_t f : unit =
   try f () with

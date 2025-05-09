@@ -1,5 +1,5 @@
 open! Import
-include Identifiable_intf
+include Identifiable_intf.Definitions
 
 [%%template
 [@@@mode.default m = (global, local)]

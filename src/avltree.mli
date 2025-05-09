@@ -36,22 +36,36 @@
 
 open! Import
 
+[%%template:
 (** We expose [t] to allow an optimization in Hashtbl that makes iter and fold more than
     twice as fast. We keep the type private to reduce opportunities for external code to
     violate avltree invariants. *)
-type ('k, 'v) t = private
+
+type ('k : k, 'v : v) t = private
   | Empty
   | Node of
-      { mutable left : ('k, 'v) t
+      { mutable left : (('k, 'v) t[@kind k v])
       ; key : 'k
       ; mutable value : 'v
       ; mutable height : int
-      ; mutable right : ('k, 'v) t
+      ; mutable right : (('k, 'v) t[@kind k v])
       }
   | Leaf of
       { key : 'k
       ; mutable value : 'v
       }
+[@@kind k = (value, bits64, float64), v = (value, bits64, float64)]
+
+(** Returns the first (leftmost) or last (rightmost) element in the tree. *)
+
+val first : ('k, 'v) t -> ('k * 'v) option
+val last : ('k, 'v) t -> ('k * 'v) option
+
+[@@@kind k = (value, bits64, float64), v = (value, bits64, float64)]
+
+type ('k : k, 'v : v) t := (('k, 'v) t[@kind k v])
+
+[@@@kind.default k v]
 
 val empty : ('k, 'v) t
 val get_empty : unit -> ('k, 'v) t
@@ -80,14 +94,9 @@ val add
   -> data:'v
   -> ('k, 'v) t
 
-(** Returns the first (leftmost) or last (rightmost) element in the tree. *)
-
-val first : ('k, 'v) t -> ('k * 'v) option
-val last : ('k, 'v) t -> ('k * 'v) option
-
 (** If the specified key exists in the tree, returns the corresponding value. O(log(N))
     time and O(1) space. *)
-val find : ('k, 'v) t -> compare:local_ ('k -> 'k -> int) -> 'k -> 'v option
+val find : ('k, 'v) t -> compare:local_ ('k -> 'k -> int) -> 'k -> ('v Option.t[@kind v])
 
 (** [find_and_call t ~compare k ~if_found ~if_not_found]
 
@@ -170,7 +179,7 @@ val fold : ('k, 'v) t -> init:'acc -> f:local_ (key:'k -> data:'v -> 'acc -> 'ac
 val iter : ('k, 'v) t -> f:local_ (key:'k -> data:'v -> unit) -> unit
 
 (** Map over the the tree, changing the data in place. *)
-val mapi_inplace : ('k, 'v) t -> f:local_ (key:'k -> data:'v -> 'v) -> unit
+val mapi_inplace : ('k, 'v) t -> f:local_ (key:'k -> data:'v -> 'v) -> unit]
 
 val%template choose_exn : ('k, 'v) t -> 'k * 'v @ m [@@mode m = global]
 

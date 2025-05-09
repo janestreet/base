@@ -7,6 +7,8 @@
 
 open! Import
 
+[@@@warning "-incompatible-with-upstream"]
+
 module Definitions = struct
   module Export = struct
     (** [Continue_or_stop.t] is used by the [f] argument to [fold_until] in order to
@@ -34,13 +36,14 @@ module Definitions = struct
     val ( + ) : t -> t -> t
   end
 
-  module type Generic_types = sig
-    type ('a, _, _) t
-    type 'a elt
+  module type%template Generic_types = sig
+    type ('a : k, _, _) t
+    type ('a : k) elt
   end
+  [@@kind k = (value, immediate, immediate64)]
 
-  module type Generic_without_mem = sig
-    include Generic_types
+  module type%template Generic_without_mem = sig
+    include Generic_types [@kind k]
 
     val length : (_, _, _) t -> int
     val is_empty : (_, _, _) t -> bool
@@ -141,22 +144,25 @@ module Definitions = struct
       -> compare:('a elt -> 'a elt -> int) @ local
       -> 'a elt option
   end
+  [@@kind k = (value, immediate, immediate64)]
 
-  module type Generic = sig
-    include Generic_without_mem
+  module type%template Generic = sig
+    include Generic_without_mem [@kind k]
 
     (** Checks whether the provided element is there, using [equal]. *)
     val mem : ('a, _, _) t -> 'a elt -> equal:('a elt -> 'a elt -> bool) @ local -> bool
   end
+  [@@kind k = (value, immediate, immediate64)]
 
   (** Like [Generic], but [mem] does not accept an [equal] function, since [Make0] already
       takes [Elt.equal]. *)
-  module type Generic_for_s0 = sig
-    include Generic_without_mem
+  module type%template Generic_for_s0 = sig
+    include Generic_without_mem [@kind k]
 
     (** Checks whether the provided element is there, using equality on [elt]s. *)
     val mem : ('a, _, _) t -> 'a elt -> bool
   end
+  [@@kind k = (value, immediate, immediate64)]
 
   (** Signature for monomorphic container - a container for a specific element type, e.g.,
       string, which is a container of characters ([type elt = char]) and never of anything
@@ -177,18 +183,23 @@ module Definitions = struct
   end
 
   (** Signature for polymorphic container, e.g., ['a list] or ['a array]. *)
-  module type S1 = sig
-    type 'a t
+  module type%template S1 = sig
+    type ('a : k) t
 
-    include Generic with type ('a, _, _) t := 'a t and type 'a elt := 'a
+    include Generic [@kind k] with type ('a, _, _) t := 'a t and type 'a elt := 'a
   end
+  [@@kind k = (value, immediate, immediate64)]
 
-  module type S1_phantom = sig
-    type ('a, 'phantom) t
+  module type%template S1_phantom = sig
+    type ('a : k, 'phantom) t
 
     include
-      Generic with type ('a, 'phantom, _) t := ('a, 'phantom) t and type 'a elt := 'a
+      Generic
+      [@kind k]
+      with type ('a, 'phantom, _) t := ('a, 'phantom) t
+       and type 'a elt := 'a
   end
+  [@@kind k = (value, immediate, immediate64)]
 
   module type Creators = sig
     include Generic_types

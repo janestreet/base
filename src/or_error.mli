@@ -13,7 +13,7 @@ open! Import
 module Sexp := Sexp0
 
 [%%template:
-type 'a t = (('a, Error.t) Result.t[@kind k])
+type ('a : k) t = (('a, Error.t) Result.t[@kind k])
 [@@deriving compare ~localize, equal ~localize, sexp]
 [@@kind k = (float64, bits32, bits64, word)]
 

@@ -27,7 +27,7 @@ module Primitives = struct
     @@ portable
     = "%bytes_safe_get"
 
-  external length : (bytes[@local_opt]) -> int @@ portable = "%bytes_length"
+  external length : (bytes[@local_opt]) @ shared -> int @@ portable = "%bytes_length"
 
   external unsafe_get
     :  (bytes[@local_opt])
@@ -286,7 +286,7 @@ external unsafe_create_local
   = "Base_unsafe_create_local_bytes"
 [@@noalloc]
 
-let create_local len = exclave_
+let[@zero_alloc] create_local len = exclave_
   if len > Sys0.max_string_length then invalid_arg "Bytes.create_local";
   unsafe_create_local len
 ;;
