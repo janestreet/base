@@ -20,17 +20,7 @@ open! Import
 
 (** {2 Type and Interfaces} *)
 
-module%template Constructors : sig
-  type ('a : k) t =
-    | None
-    | Some of 'a
-  [@@kind k = (float64, bits32, bits64, word)]
-
-  type ('a : k) t = 'a option =
-    | None
-    | Some of 'a
-  [@@kind k = value]
-end
+module Constructors : module type of Option0
 
 type%template ('a : k) t = ('a Constructors.t[@kind k])
 [@@deriving compare ~localize, equal ~localize, sexp ~localize]

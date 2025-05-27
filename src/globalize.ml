@@ -37,6 +37,11 @@ let globalize_option f = function
   | Some x -> Some (f x)
 ;;
 
+let globalize_or_null f = function
+  | Basement.Or_null_shim.Null -> Basement.Or_null_shim.Null
+  | This x -> This (f x)
+;;
+
 let globalize_result globalize_a globalize_b t =
   match t with
   | Ok a -> Ok (globalize_a a)

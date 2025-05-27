@@ -1,30 +1,13 @@
 open! Import
-
-module%template Constructors = struct
-  type nonrec ('a : k) t =
-    | None
-    | Some of 'a
-  [@@kind k = (float64, bits32, bits64, word)] [@@deriving compare ~localize]
-
-  type 'a t = 'a option =
-    | None
-    | Some of 'a
-end
-
+module Constructors = Option0
 include Constructors
-
-include (
-struct
-  type 'a t = 'a option [@@deriving compare ~localize, globalize, hash, sexp_grammar]
-end :
-sig
-@@ portable
-  type 'a t = 'a option [@@deriving compare ~localize, globalize, hash, sexp_grammar]
-end)
 
 type 'a t = 'a option =
   | None
   | Some of 'a
+
+[%%rederive.portable
+  type 'a t = 'a option [@@deriving compare ~localize, globalize, hash, sexp_grammar]]
 
 [%%template
 [@@@kind.default k = (value, float64, bits32, bits64, word)]
@@ -65,7 +48,7 @@ include struct
   [@@kind k]
   ;;
 
-  [@@@alloc a @ m = (heap, stack)]
+  [@@@alloc a @ m = (heap_global, stack_local)]
   [@@@mode.default m]
 
   (* Copied and templated from [Sexplib0] *)

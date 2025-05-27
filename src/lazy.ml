@@ -34,7 +34,7 @@ include%template Monad.Make [@modality portable] (struct
 module T_unforcing = struct
   type nonrec 'a t = 'a t
 
-  let is_val t = Obj_local.tag (Obj_local.repr t) <> Stdlib.Obj.lazy_tag
+  let is_val t = Obj.tag (Obj.repr t) <> Stdlib.Obj.lazy_tag
 
   let sexp_of_t sexp_of_a t =
     if is_val t then sexp_of_a (force t) else sexp_of_string "<unforced lazy>"

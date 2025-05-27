@@ -6,9 +6,12 @@ open! Import
 
 module Definitions = struct
   module type Public = sig
-    type 'a t
-    [@@deriving
-      compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
+    type ('a : any_non_null) t
+
+    [%%rederive:
+      type nonrec 'a t = 'a t
+      [@@deriving
+        compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]]
 
     include Binary_searchable.S1 with type 'a t := 'a t
     include Indexed_container.S1_with_creators with type 'a t := 'a t
@@ -18,10 +21,14 @@ module Definitions = struct
         [max_length/2] on 32-bit machines and [max_length] on 64-bit machines. *)
     val max_length : int
 
-    (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
-    compiling without cross library inlining. *)
+    (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even
+        when compiling without cross library inlining. *)
 
-    external length : ('a t[@local_opt]) -> int = "%array_length"
+    external length
+      : ('a : any_non_null).
+      ('a array[@local_opt]) @ contended -> int
+      = "%array_length"
+    [@@layout_poly]
 
     (** [Array.get a n] returns the element number [n] of array [a]. The first element has
         number 0. The last element has number [Array.length a - 1]. You can also write
@@ -29,7 +36,11 @@ module Definitions = struct
 
         Raise [Invalid_argument "index out of bounds"] if [n] is outside the range 0 to
         [(Array.length a - 1)]. *)
-    external get : ('a t[@local_opt]) -> (int[@local_opt]) -> 'a = "%array_safe_get"
+    external%template get
+      : ('a : any_non_null).
+      ('a array[@local_opt]) @ m -> (int[@local_opt]) -> 'a @ m
+      = "%array_safe_get"
+    [@@layout_poly] [@@mode m = (uncontended, shared)]
 
     (** [Array.set a n x] modifies array [a] in place, replacing element number [n] with
         [x]. You can also write [a.(n) <- x] instead of [Array.set a n x].
@@ -37,36 +48,68 @@ module Definitions = struct
         Raise [Invalid_argument "index out of bounds"] if [n] is outside the range 0 to
         [Array.length a - 1]. *)
     external set
-      :  ('a t[@local_opt])
-      -> (int[@local_opt])
-      -> 'a
-      -> unit
+      : ('a : any_non_null).
+      ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
       = "%array_safe_set"
+    [@@layout_poly]
 
     (** Unsafe version of [get]. Can cause arbitrary behavior when used for an
         out-of-bounds array access. *)
-    external unsafe_get
-      :  ('a t[@local_opt])
-      -> (int[@local_opt])
-      -> 'a
+    external%template unsafe_get
+      : ('a : any_non_null).
+      ('a array[@local_opt]) @ m -> (int[@local_opt]) -> 'a @ m
       = "%array_unsafe_get"
+    [@@layout_poly] [@@mode m = (uncontended, shared)]
 
     (** Unsafe version of [set]. Can cause arbitrary behavior when used for an
         out-of-bounds array access. *)
     external unsafe_set
-      :  ('a t[@local_opt])
-      -> (int[@local_opt])
-      -> 'a
-      -> unit
+      : ('a : any_non_null).
+      ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
       = "%array_unsafe_set"
+    [@@layout_poly]
 
-    (** [create ~len x] creates an array of length [len] with the value [x] populated in
-        each element. *)
-    val create : len:int -> 'a -> 'a t
+    [%%template:
+      external create
+        : ('a : any_non_null).
+        len:int -> 'a -> 'a array @ m
+        = "%makearray_dynamic"
+      [@@ocaml.doc
+        " [create ~len x] creates an array of length [len] with the value [x] populated in\n\
+        \          each element. "]
+      [@@layout_poly]
+      [@@alloc __ @ m = (heap_global, stack_local)]]
 
-    (** [create_local ~len x] is like [create]. It allocates the array on the local stack.
-        The array's elements are still global. *)
-    val create_local : len:int -> 'a -> local_ 'a t
+    external create_local
+      : ('a : any_non_null).
+      len:int -> 'a -> local_ 'a array
+      = "%makearray_dynamic"
+    [@@ocaml.doc
+      " [create_local ~len x] is like [create]. It allocates the array on the local\n\
+      \          stack. The array's elements are still global. "]
+    [@@layout_poly]
+
+    external magic_create_uninitialized
+      : ('a : any_non_null).
+      len:int -> ('a array[@local_opt])
+      = "%makearray_dynamic_uninit"
+    [@@ocaml.doc
+      " [magic_create_uninitialized ~len] creates an array of length [len] with\n\
+      \          uninitialized elements -- that is, they may contain arbitrary, \
+       nondeterministic\n\
+      \          'a values. This can be significantly faster than using [create].\n\n\
+      \          [magic_create_uninitialized] can only be used for GC-ignorable arrays not\n\
+      \          involving tagged immediates and arrays of elements with unboxed number \
+       layout.\n\
+      \          The compiler rejects attempts to use [magic_create_uninitialized] to \
+       produce\n\
+      \          e.g. an [('a : value) array].\n\n\
+      \          [magic_create_uninitialized] can break abstraction boundaries and type \
+       safety\n\
+      \          (e.g. by creating phony witnesses to type equality) and so should be \
+       used with\n\
+      \          caution. "]
+    [@@layout_poly]
 
     (** [create_float_uninitialized ~len] creates a float array of length [len] with
         uninitialized elements -- that is, they may contain arbitrary, nondeterministic
@@ -116,6 +159,13 @@ module Definitions = struct
         types. The unsafe versions do not bound-check the arguments. *)
     include Blit.S1 with type 'a t := 'a t
 
+    val%template foldi_right
+      :  'a t @ local
+      -> init:'acc @ m
+      -> f:(int -> 'a -> 'acc @ m -> 'acc @ m)
+      -> 'acc @ m
+    [@@alloc a @ m = (stack_local, heap_global)]
+
     (** [folding_map] is a version of [map] that threads an accumulator through calls to
         [f]. *)
     val folding_map : 'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc * 'b) -> 'b t
@@ -139,7 +189,12 @@ module Definitions = struct
     (** [Array.fold_right f a ~init] computes
         [f a.(0) (f a.(1) ( ... (f a.(n-1) init) ...))], where [n] is the length of the
         array [a]. *)
-    val fold_right : 'a t -> f:local_ ('a -> 'acc -> 'acc) -> init:'acc -> 'acc
+    val%template fold_right
+      :  'a t @ m
+      -> f:local_ ('a @ m -> 'acc -> 'acc)
+      -> init:'acc
+      -> 'acc
+    [@@mode m = (uncontended, shared)]
 
     (** All sort functions in this module sort in increasing order by default. *)
 
@@ -309,7 +364,7 @@ module type Array = sig @@ portable
     include Definitions
   end
 
-  include Public with type 'a t = 'a array (** @inline *)
+  include Public with type ('a : any_non_null) t = 'a array (** @inline *)
 
   (**/**)
 

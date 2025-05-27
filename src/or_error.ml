@@ -143,10 +143,13 @@ let combine_errors_unit list =
 ;;
 
 let filter_ok_at_least_one l =
-  let ok, errs = List.partition_map l ~f:Result.to_either in
-  match ok with
-  | [] -> Error (Error.of_list errs)
-  | _ -> Ok ok
+  match l with
+  | [] -> error_string "filter_ok_at_least_one called on empty list"
+  | l ->
+    let ok, errs = List.partition_map l ~f:Result.to_either in
+    (match ok with
+     | [] -> Error (Error.of_list errs)
+     | _ -> Ok ok)
 ;;
 
 let find_ok l =
@@ -161,14 +164,17 @@ let find_ok l =
 ;;
 
 let find_map_ok l ~f =
-  With_return.with_return (fun { return } ->
-    Error
-      (Error.of_list
-         (List.map l ~f:(fun elt ->
-            match f elt with
-            | Ok _ as x -> return x
-            | Error err -> err))))
-  [@nontail]
+  match l with
+  | [] -> error_string "find_map_ok called on empty list"
+  | l ->
+    With_return.with_return (fun { return } ->
+      Error
+        (Error.of_list
+           (List.map l ~f:(fun elt ->
+              match f elt with
+              | Ok _ as x -> return x
+              | Error err -> err))))
+    [@nontail]
 ;;
 
 let map = Result.map

@@ -92,12 +92,12 @@ module Id = struct
   module Uid = struct
     (* A unique id contains an [int] representing a (possibly parameterized) type, and a
        list of uids for the parameters to that type. *)
-    type t = T of int * t list [@@deriving compare, hash, sexp_of ~localize]
+    type t = T of int * t list [@@deriving compare ~localize, hash, sexp_of ~localize]
 
-    include%template Comparable.Make [@modality portable] (struct
+    include%template Comparable.Make [@mode local] [@modality portable] (struct
         type nonrec t = t
 
-        let compare = compare
+        let[@mode l = (local, global)] compare = (compare [@mode l])
         let sexp_of_t = sexp_of_t
       end)
 

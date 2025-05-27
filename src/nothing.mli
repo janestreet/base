@@ -56,10 +56,7 @@ val unreachable_code_local : local_ t -> _
     prevented for lack of [Identifiable.S] here.
 
     Obviously, [of_string] and [t_of_sexp] will raise an exception. *)
-include Identifiable.S with type t := t
-
-include Ppx_compare_lib.Equal.S__local with type t := t
-include Ppx_compare_lib.Comparable.S__local with type t := t
+include%template Identifiable.S [@mode local] [@modality portable] with type t := t
 
 (** Ignores [None] and guarantees there is no [Some _]. A better replacement for [ignore]. *)
 val must_be_none : t option -> unit

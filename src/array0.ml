@@ -14,14 +14,27 @@ module Sys = Sys0
 let invalid_argf = Printf.invalid_argf
 
 module Array = struct
-  external create : int -> 'a -> 'a array @@ portable = "caml_make_vect"
+  [%%template
+    external create
+      : ('a : any_non_null).
+      len:int -> 'a -> 'a array @ m
+      @@ portable
+      = "%makearray_dynamic"
+    [@@alloc __ @ m = (heap_global, stack_local)] [@@layout_poly]]
 
   external create_local
-    :  int
-    -> 'a
-    -> local_ 'a array
+    : ('a : any_non_null).
+    len:int -> 'a -> local_ 'a array
     @@ portable
-    = "caml_make_local_vect"
+    = "%makearray_dynamic"
+  [@@layout_poly]
+
+  external magic_create_uninitialized
+    : ('a : any_non_null).
+    len:int -> ('a array[@local_opt])
+    @@ portable
+    = "%makearray_dynamic_uninit"
+  [@@layout_poly]
 
   external create_float_uninitialized
     :  int
@@ -29,37 +42,40 @@ module Array = struct
     @@ portable
     = "caml_make_float_vect"
 
-  external get
-    :  ('a array[@local_opt])
-    -> (int[@local_opt])
-    -> 'a
+  external%template get
+    : ('a : any_non_null).
+    ('a array[@local_opt]) @ m -> (int[@local_opt]) -> 'a @ m
     @@ portable
     = "%array_safe_get"
+  [@@layout_poly] [@@mode m = (uncontended, shared)]
 
-  external length : ('a array[@local_opt]) -> int @@ portable = "%array_length"
+  external length
+    : ('a : any_non_null).
+    ('a array[@local_opt]) @ contended -> int
+    @@ portable
+    = "%array_length"
+  [@@layout_poly]
 
   external set
-    :  ('a array[@local_opt])
-    -> (int[@local_opt])
-    -> 'a
-    -> unit
+    : ('a : any_non_null).
+    ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
     @@ portable
     = "%array_safe_set"
+  [@@layout_poly]
 
-  external unsafe_get
-    :  ('a array[@local_opt])
-    -> (int[@local_opt])
-    -> 'a
+  external%template unsafe_get
+    : ('a : any_non_null).
+    ('a array[@local_opt]) @ m -> (int[@local_opt]) -> 'a @ m
     @@ portable
     = "%array_unsafe_get"
+  [@@mode m = (uncontended, shared)] [@@layout_poly]
 
   external unsafe_set
-    :  ('a array[@local_opt])
-    -> (int[@local_opt])
-    -> 'a
-    -> unit
+    : ('a : any_non_null).
+    ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
     @@ portable
     = "%array_unsafe_set"
+  [@@layout_poly]
 
   external unsafe_blit
     :  src:('a array[@local_opt])
@@ -94,16 +110,6 @@ end
 include Array
 
 let max_length = Sys.max_array_length
-
-let create ~len x =
-  try create len x with
-  | Invalid_argument _ -> invalid_argf "Array.create ~len:%d: invalid length" len ()
-;;
-
-let create_local ~len x = exclave_
-  try create_local len x with
-  | Invalid_argument _ -> invalid_argf "Array.create_local ~len:%d: invalid length" len ()
-;;
 
 let create_float_uninitialized ~len =
   try create_float_uninitialized len with
@@ -163,12 +169,13 @@ let fold t ~init ~(local_ f : _ -> _ -> _) =
   !r
 ;;
 
-let fold_right t ~(local_ f : _ -> _ -> _) ~init =
+let%template fold_right (t @ m) ~(local_ f : _ @ m -> _ -> _) ~init =
   let r = ref init in
   for i = length t - 1 downto 0 do
-    r := f (unsafe_get t i) !r
+    r := f ((unsafe_get [@mode m]) t i) !r
   done;
   !r
+[@@mode m = (uncontended, shared)]
 ;;
 
 let iter t ~(local_ f : _ -> _) =

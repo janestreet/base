@@ -1,0 +1,207 @@
+open! Import
+
+type t = Stdlib.Obj.t
+type raw_data = Stdlib.Obj.raw_data
+
+(** Flambda2 attempts to track whether a block is an array, and %obj_size and %obj_field
+    may only be used on unspecialized blocks. Hence we wrap them with [opaque_identity],
+    which makes Flambda2 forget any additional information about the block. *)
+
+external tag : t @ contended local once -> int @@ portable = "caml_obj_tag" [@@noalloc]
+external is_int : t @ contended local once -> bool @@ portable = "%obj_is_int"
+
+let[@inline] is_block t = not (is_int t)
+
+external size : t @ contended local once -> int @@ portable = "%obj_size"
+
+let%template[@inline always] size t =
+  size ((Sys.opaque_identity [@mode contended once nonportable aliased]) t)
+;;
+
+external dup : t -> t @@ portable = "%obj_dup"
+external reachable_words : t -> int @@ portable = "caml_obj_reachable_words"
+
+external uniquely_reachable_words
+  :  t array
+  -> int array * int
+  @@ portable
+  = "caml_obj_uniquely_reachable_words"
+
+let first_non_constant_constructor_tag = Stdlib.Obj.first_non_constant_constructor_tag
+let last_non_constant_constructor_tag = Stdlib.Obj.last_non_constant_constructor_tag
+let forcing_tag = Stdlib.Obj.forcing_tag
+let cont_tag = Stdlib.Obj.cont_tag
+let lazy_tag = Stdlib.Obj.lazy_tag
+let closure_tag = Stdlib.Obj.closure_tag
+let object_tag = Stdlib.Obj.object_tag
+let infix_tag = Stdlib.Obj.infix_tag
+let forward_tag = Stdlib.Obj.forward_tag
+let no_scan_tag = Stdlib.Obj.no_scan_tag
+let abstract_tag = Stdlib.Obj.abstract_tag
+let string_tag = Stdlib.Obj.string_tag
+let double_tag = Stdlib.Obj.double_tag
+let double_array_tag = Stdlib.Obj.double_array_tag
+let custom_tag = Stdlib.Obj.custom_tag
+let int_tag = Stdlib.Obj.int_tag
+let out_of_heap_tag = Stdlib.Obj.out_of_heap_tag
+let unaligned_tag = Stdlib.Obj.unaligned_tag
+
+external%template repr
+  :  ('a[@local_opt]) @ c o p u
+  -> (t[@local_opt]) @ c o p u
+  @@ portable
+  = "%obj_magic"
+[@@mode
+  c = (uncontended, shared, contended)
+  , o = (many, once)
+  , p = (nonportable, portable)
+  , u = (aliased, unique)]
+
+external%template magic
+  : ('a : any) ('b : any).
+  ('a[@local_opt]) @ c o p u -> ('b[@local_opt]) @ c o p u
+  @@ portable
+  = "%obj_magic"
+[@@layout_poly]
+[@@mode
+  c = (uncontended, shared, contended)
+  , o = (many, once)
+  , p = (nonportable, portable)
+  , u = (aliased, unique)]
+
+external%template magic_portable
+  : ('a : any).
+  ('a[@local_opt]) @ c o u -> ('a[@local_opt]) @ c o portable u
+  @@ portable
+  = "%identity"
+[@@layout_poly]
+[@@mode c = (uncontended, shared, contended), o = (many, once), u = (aliased, unique)]
+
+external%template magic_uncontended
+  : ('a : any).
+  ('a[@local_opt]) @ contended o p u -> ('a[@local_opt]) @ o p u
+  @@ portable
+  = "%identity"
+[@@layout_poly]
+[@@mode o = (many, once), p = (nonportable, portable), u = (aliased, unique)]
+
+external%template magic_many
+  : ('a : any).
+  ('a[@local_opt]) @ c once p u -> ('a[@local_opt]) @ c p u
+  @@ portable
+  = "%identity"
+[@@layout_poly]
+[@@mode
+  c = (uncontended, shared, contended), p = (nonportable, portable), u = (aliased, unique)]
+
+external%template magic_unique
+  : ('a : any).
+  ('a[@local_opt]) @ c o p -> ('a[@local_opt]) @ c o p unique
+  @@ portable
+  = "%identity"
+[@@layout_poly]
+[@@mode
+  c = (uncontended, shared, contended), o = (many, once), p = (nonportable, portable)]
+
+external is_stack : t @ contended local once -> bool @@ portable = "caml_obj_is_stack"
+[@@noalloc]
+
+type stack_or_heap =
+  | Immediate
+  | Stack
+  | Heap
+[@@deriving sexp ~localize, compare]
+
+let%template stack_or_heap repr =
+  (* [is_int] and [is_stack] do not actually consume [repr]. *)
+  let repr = (magic_many [@mode contended nonportable aliased]) repr in
+  if is_int repr
+  then Immediate
+  else (
+    match Sys.backend_type with
+    | Sys.Native -> if is_stack repr then Stack else Heap
+    | Sys.Bytecode -> Heap
+    | Sys.Other _ -> Heap)
+;;
+
+external reserved_header_bits
+  :  t @ contended local once
+  -> int
+  @@ portable
+  = "caml_succ_scannable_prefix_len"
+[@@noalloc]
+
+type uniform_or_mixed =
+  | Immediate
+  | Uniform
+  | Mixed of { scannable_prefix_len : int }
+[@@deriving sexp ~localize, compare ~localize, globalize]
+
+let%template uniform_or_mixed repr = exclave_
+  (* [is_int] and [reserved_header_bits] do not actually consume [repr]. *)
+  let repr = (magic_many [@mode contended nonportable aliased]) repr in
+  if is_int repr
+  then Immediate
+  else (
+    match Sys.backend_type with
+    | Sys.Native ->
+      (match reserved_header_bits repr with
+       | 0 -> Uniform
+       | n -> Mixed { scannable_prefix_len = n - 1 })
+    | Sys.Bytecode -> Uniform
+    | Sys.Other _ -> Uniform)
+;;
+
+module Ephemeron = struct
+  include Stdlib.Ephemeron
+end
+
+module Expert = struct
+  include Stdlib.Obj
+
+  external%template obj
+    :  (t[@local_opt]) @ c o p u
+    -> ('a[@local_opt]) @ c o p u
+    @@ portable
+    = "%obj_magic"
+  [@@mode
+    c = (uncontended, shared, contended)
+    , o = (many, once)
+    , p = (nonportable, portable)
+    , u = (aliased, unique)]
+
+  external field : (t[@local_opt]) -> int -> (t[@local_opt]) @@ portable = "%obj_field"
+
+  (* We have to write both implementations because it doesn't make sense to template over
+     an allocator, but the local version needs exclave. If [Sys.opaque_identity] preserved
+     the fact that [t] is regional rather than local to this function, we could instead
+     write {[
+       let%template[@mode m = (global, local)] [@inline always] field t i =
+         let t = Sys.opaque_identity t in
+         field i [@exclave_if_local m]
+       ;;
+     ]} *)
+  let[@inline always] field__local t i = exclave_ field (Sys.opaque_identity t) i
+  let[@inline always] field t i = field (Sys.opaque_identity t) i
+
+  external set_field : (t[@local_opt]) -> int -> t -> unit @@ portable = "%obj_set_field"
+
+  let%template[@inline always] set_field t i f = set_field (Sys.opaque_identity t) i f
+  [@@mode l = (local, global)]
+  ;;
+
+  external raw_field
+    :  (t[@local_opt])
+    -> int
+    -> raw_data
+    @@ portable
+    = "caml_obj_raw_field"
+
+  external set_raw_field
+    :  (t[@local_opt])
+    -> int
+    -> raw_data
+    -> unit
+    @@ portable
+    = "caml_obj_set_raw_field"
+end

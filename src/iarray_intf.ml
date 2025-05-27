@@ -20,7 +20,8 @@ module Definitions = struct
 
     (** Standard interfaces *)
 
-    include Binary_searchable.S1 with type 'a t := 'a t
+    include%template Binary_searchable.S1 [@mode local] with type 'a t := 'a t
+
     include Indexed_container.S1_with_creators with type 'a t := 'a t
     include Invariant.S1 with type 'a t := 'a t
 
@@ -53,6 +54,9 @@ module Definitions = struct
     val singleton : 'a -> 'a t
     val create : len:int -> 'a -> mutate:local_ (local_ 'a array -> unit) -> 'a iarray
 
+    val%template init : int -> f:(int -> 'a @ m) @ local -> 'a t @ m
+    [@@alloc __ @ m = (heap_global, stack_local)]
+
     (** Conversions *)
 
     val of_sequence : 'a Sequence.t -> 'a t
@@ -82,11 +86,26 @@ module Definitions = struct
 
     (** Combining elements *)
 
-    val fold_right : 'a t -> init:'acc -> f:local_ ('a -> 'acc -> 'acc) -> 'acc
     val reduce : 'a t -> f:local_ ('a -> 'a -> 'a) -> 'a option
     val reduce_exn : 'a t -> f:local_ ('a -> 'a -> 'a) -> 'a
     val combine_errors : 'a Or_error.t t -> 'a t Or_error.t
     val combine_errors_unit : unit Or_error.t t -> unit Or_error.t
+
+    [%%template:
+    [@@@kind.default ka = value, kacc = (value, bits64, bits32, word, float64)]
+
+    val fold
+      : ('a : ka) ('acc : kacc).
+      'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc) -> 'acc
+
+    val foldi
+      : ('a : ka) ('acc : kacc).
+      'a t -> init:'acc -> f:local_ (int -> 'acc -> 'a -> 'acc) -> 'acc
+
+    val fold_right
+      : ('a : ka) ('acc : kacc).
+      'a t -> init:'acc -> f:local_ ('a -> 'acc -> 'acc) -> 'acc]
+
     val fold_map : 'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
 
     val fold_mapi
@@ -230,6 +249,30 @@ module Definitions = struct
         -> local_ 'c t
 
       val cartesian_product : local_ 'a t -> local_ 'b t -> local_ ('a * 'b) t
+
+      [%%template:
+      [@@@kind.default ka = value, kacc = (value, bits64, bits32, word, float64)]
+
+      val fold
+        : ('a : ka) ('acc : kacc).
+        local_ 'a t
+        -> init:local_ 'acc
+        -> f:local_ (local_ 'acc -> local_ 'a -> local_ 'acc)
+        -> local_ 'acc
+
+      val foldi
+        : ('a : ka) ('acc : kacc).
+        local_ 'a t
+        -> init:local_ 'acc
+        -> f:local_ (int -> local_ 'acc -> local_ 'a -> local_ 'acc)
+        -> local_ 'acc
+
+      val fold_right
+        : ('a : ka) ('acc : kacc).
+        local_ 'a t
+        -> init:local_ 'acc
+        -> f:local_ (local_ 'a -> local_ 'acc -> local_ 'acc)
+        -> local_ 'acc]
 
       val fold_map
         :  local_ 'a t

@@ -143,7 +143,8 @@ val combine_errors : 'a t list -> 'a list t
 val combine_errors_unit : unit t list -> unit t
 
 (** [filter_ok_at_least_one ts] returns all values in [ts] that are [Ok] if there is at
-    least one, otherwise it returns the same error as [combine_errors ts]. *)
+    least one, otherwise it returns the same error as [combine_errors ts]. Returns a
+    bespoke error when passed an empty list. *)
 val filter_ok_at_least_one : 'a t list -> 'a list t
 
 (** [find_ok ts] returns the first value in [ts] that is [Ok], otherwise it returns the
@@ -151,5 +152,6 @@ val filter_ok_at_least_one : 'a t list -> 'a list t
 val find_ok : 'a t list -> 'a t
 
 (** [find_map_ok l ~f] returns the first value in [l] for which [f] returns [Ok],
-    otherwise it returns the same error as [combine_errors (List.map l ~f)]. *)
+    otherwise it returns the same error as [combine_errors (List.map l ~f)]. Returns a
+    bespoke error when passed an empty list. *)
 val find_map_ok : 'a list -> f:local_ ('a -> 'b t) -> 'b t

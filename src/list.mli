@@ -6,15 +6,17 @@
 
 open! Import
 module Invariant := Invariant_intf.Definitions
+module Constructors : module type of List0.Constructors
+
+type%template ('a : k) t = (('a : k) Constructors.t[@kind k])
+[@@kind k = (float64, bits32, bits64, word)]
+[@@deriving compare ~localize, equal ~localize, sexp_of ~localize]
 
 type 'a t = 'a list
 [@@deriving
   compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
 include Indexed_container.S1_with_creators with type 'a t := 'a t
-
-val length : local_ 'a t -> int
-
 include Invariant.S1 with type 'a t := 'a t
 
 (** Implements cartesian-product behavior for [map] and [bind]. **)
@@ -43,27 +45,77 @@ val create : len:int -> 'a -> 'a list
 (** [singleton x] returns a list with a single element [x]. *)
 val singleton : 'a -> 'a t
 
-val nth : 'a t -> int -> 'a option
+[%%template:
+[@@@kind k = (float64, bits32, bits64, word, value)]
+
+type 'a t := ('a t[@kind k])
+
+[@@@kind.default k]
+
+val iter : 'a t -> f:local_ ('a -> unit) -> unit
+val iteri : 'a t -> f:local_ (int -> 'a -> unit) -> unit
+val length : local_ _ t -> int
 
 (** Return the [n]-th element of the given list. The first element (head of the list) is
     at position 0. Raise if the list is too short or [n] is negative. *)
 val nth_exn : 'a t -> int -> 'a
 
-(** List reversal. *)
-val rev : 'a t -> 'a t
+val nth : 'a t -> int -> ('a Option0.t[@kind k])
+val filteri : 'a t -> f:local_ (int -> 'a -> bool) -> 'a t
+val filter : 'a t -> f:local_ ('a -> bool) -> 'a t
+val append : 'a t -> 'a t -> 'a t
+val init : int -> f:local_ (int -> 'a) -> 'a t
+val mem : 'a t -> 'a -> equal:local_ ('a -> 'a -> bool) -> bool
 
 (** [rev_append l1 l2] reverses [l1] and concatenates it to [l2]. This is equivalent to
     [(]{!List.rev}[ l1) @ l2], but [rev_append] is more efficient. *)
 val rev_append : 'a t -> 'a t -> 'a t
 
+(** List reversal. *)
+val rev : 'a t -> 'a t]
+
+[%%template:
+[@@@kind.default
+  ka = (float64, bits32, bits64, word, value), kb = (float64, bits32, bits64, word, value)]
+
+val map : ('a t[@kind ka]) -> f:local_ ('a -> 'b) -> ('b t[@kind kb])
+val mapi : ('a t[@kind ka]) -> f:local_ (int -> 'a -> 'b) -> ('b t[@kind kb])
+
+(** [rev_map l ~f] gives the same result as {!List.rev}[ (]{!List.map}[ l ~f)], but is
+    more efficient. *)
+val rev_map : ('a t[@kind ka]) -> f:local_ ('a -> 'b) -> ('b t[@kind kb])
+
+val rev_mapi : ('a t[@kind ka]) -> f:local_ (int -> 'a -> 'b) -> ('b t[@kind kb])
+
+val filter_map
+  :  ('a t[@kind ka])
+  -> f:local_ ('a -> ('b Option0.t[@kind kb]))
+  -> ('b t[@kind kb])
+
+val filter_mapi
+  :  ('a t[@kind ka])
+  -> f:local_ (int -> 'a -> ('b Option0.t[@kind kb]))
+  -> ('b t[@kind kb])
+
+val concat_map : ('a t[@kind ka]) -> f:local_ ('a -> ('b t[@kind kb])) -> ('b t[@kind kb])
+
+val concat_mapi
+  :  ('a t[@kind ka])
+  -> f:local_ (int -> 'a -> ('b t[@kind kb]))
+  -> ('b t[@kind kb])
+
+val fold
+  : ('a : ka) ('b : kb).
+  ('a t[@kind ka]) -> init:'b -> f:local_ ('b -> 'a -> 'b) -> 'b
+
+val foldi
+  : ('a : ka) ('b : kb).
+  ('a t[@kind ka]) -> init:'b -> f:local_ (int -> 'b -> 'a -> 'b) -> 'b]
+
 (** [unordered_append l1 l2] has the same elements as [l1 @ l2], but in some unspecified
     order. Generally takes time proportional to length of first list, but is O(1) if
     either list is empty. *)
 val unordered_append : 'a t -> 'a t -> 'a t
-
-(** [rev_map l ~f] gives the same result as {!List.rev}[ (]{!ListLabels.map}[ f l)], but
-    is more efficient. *)
-val rev_map : 'a t -> f:local_ ('a -> 'b) -> 'b t
 
 (** [iter2 [a1; ...; an] [b1; ...; bn] ~f] calls in turn [f a1 b1; ...; f an bn]. The exn
     version will raise if the two lists have different lengths. *)
@@ -253,7 +305,6 @@ val unzip3 : ('a * 'b * 'c) t -> 'a t * 'b t * 'c t
 
 val zip : 'a t -> 'b t -> ('a * 'b) t Or_unequal_lengths.t
 val zip_exn : 'a t -> 'b t -> ('a * 'b) t
-val rev_mapi : 'a t -> f:local_ (int -> 'a -> 'b) -> 'b t
 
 (** [reduce_exn [a1; ...; an] ~f] is [f (... (f (f a1 a2) a3) ...) an]. It fails on the
     empty list. Tail recursive. *)

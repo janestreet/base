@@ -95,11 +95,11 @@ module Definitions = struct
 
     include Floatable.S_local_input with type t := t
     include Intable.S with type t := t
-    include Identifiable.S with type t := t
+
+    include%template Identifiable.S [@mode local] [@modality portable] with type t := t
+
     include Stringable.S_local_input with type t := t
     include Comparable.With_zero with type t := t
-    include Ppx_compare_lib.Comparable.S__local with type t := t
-    include Ppx_compare_lib.Equal.S__local with type t := t
     include Invariant.S with type t := t
     include Hexable with type t := t
     include Binaryable with type t := t

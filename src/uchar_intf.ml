@@ -35,9 +35,8 @@ module type Uchar = sig @@ portable
   type t = Uchar0.t [@@deriving hash, sexp ~localize, sexp_grammar]
   type uchar := t
 
-  include Comparable.S with type t := t
-  include Ppx_compare_lib.Comparable.S__local with type t := t
-  include Ppx_compare_lib.Equal.S__local with type t := t
+  include%template Comparable.S [@mode local] [@modality portable] with type t := t
+
   include Pretty_printer.S with type t := t
   include Invariant.S with type t := t
 
@@ -99,7 +98,7 @@ module type Uchar = sig @@ portable
   (** Result of decoding a UTF codec that may contain invalid encodings. *)
   module Decode_result : sig
     type t : immediate = Uchar0.utf_decode
-    [@@deriving compare, equal, hash, sexp_of ~localize]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~localize]
 
     (** [true] iff [t] represents a Unicode scalar value. *)
     val is_valid : t -> bool

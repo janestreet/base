@@ -6,6 +6,9 @@ open! Import
 [@@@warning "-incompatible-with-upstream"]
 
 module Definitions = struct
+  [%%template
+  [@@@mode.default m = (global, local)]
+
   (** An [Indexable] type is a finite sequence of elements indexed by consecutive integers
       [0] ... [length t - 1]. [get] and [length] must be O(1) for the resulting
       [binary_search] to be lg(n). *)
@@ -13,17 +16,17 @@ module Definitions = struct
     type elt
     type t
 
-    val get : t -> int -> elt
-    val length : t -> int
+    val get : t @ m' -> int -> elt @ m' [@@mode m' = (global, m)]
+    val length : t @ m' -> int [@@mode m' = (global, m)]
   end
 
-  module type%template Indexable1 = sig
+  module type Indexable1 = sig
     type ('a : k) t
 
-    val get : 'a t -> int -> 'a
-    val length : _ t -> int
+    val get : 'a t @ m' -> int -> 'a @ m' [@@mode m' = (global, m)]
+    val length : _ t @ m' -> int [@@mode m' = (global, m)]
   end
-  [@@kind k = (value, immediate, immediate64)]
+  [@@kind k = (value, immediate, immediate64)]]
 
   module Which_target_by_key = struct
     type t =
@@ -45,20 +48,23 @@ module Definitions = struct
     [@@deriving enumerate]
   end
 
+  [%%template
+  [@@@mode.default m = (global, local)]
+
   type ('t, 'elt, 'key) binary_search =
     ?pos:int
     -> ?len:int
-    -> 't
-    -> compare:local_ ('elt -> 'key -> int)
+    -> 't @ m
+    -> compare:local_ ('elt @ m -> 'key @ m -> int)
     -> Which_target_by_key.t
-    -> 'key
+    -> 'key @ m
     -> local_ int option
 
   type ('t, 'elt) binary_search_segmented =
     ?pos:int
     -> ?len:int
-    -> 't
-    -> segment_of:local_ ('elt -> [ `Left | `Right ])
+    -> 't @ m
+    -> segment_of:local_ ('elt @ m -> [ `Left | `Right ])
     -> Which_target_by_segment.t
     -> local_ int option
 
@@ -67,19 +73,29 @@ module Definitions = struct
     type t
 
     (** See [Binary_search.binary_search] in binary_search.ml *)
-    val binary_search : (t, elt, 'key) binary_search
+
+    val binary_search : ((t, elt, 'key) binary_search[@mode m']) [@@mode m' = (global, m)]
 
     (** See [Binary_search.binary_search_segmented] in binary_search.ml *)
-    val binary_search_segmented : (t, elt) binary_search_segmented
+
+    val binary_search_segmented : ((t, elt) binary_search_segmented[@mode m'])
+    [@@mode m' = (global, m)]
   end
 
-  module type%template S1 = sig
+  module type S1 = sig
     type ('a : k) t
 
-    val binary_search : ('a t, 'a, 'key) binary_search
-    val binary_search_segmented : ('a t, 'a) binary_search_segmented
+    (** See [Binary_search.binary_search] in binary_search.ml *)
+
+    val binary_search : (('a t, 'a, 'key) binary_search[@mode m'])
+    [@@mode m' = (global, m)]
+
+    (** See [Binary_search.binary_search_segmented] in binary_search.ml *)
+
+    val binary_search_segmented : (('a t, 'a) binary_search_segmented[@mode m'])
+    [@@mode m' = (global, m)]
   end
-  [@@kind k = (value, immediate, immediate64)]
+  [@@kind k = (value, immediate, immediate64)]]
 end
 
 module type Binary_searchable = sig @@ portable
@@ -87,11 +103,13 @@ module type Binary_searchable = sig @@ portable
     include Definitions
   end
 
-  module%template.portable Make (T : Indexable) :
-    S with type t := T.t with type elt := T.elt
+  [%%template:
+  [@@@mode.default m = (global, local)]
 
-  module%template.portable
-    [@kind k = (value, immediate, immediate64)] Make1
-      (T : Indexable1
-    [@kind k]) : S1 [@kind k] with type 'a t := 'a T.t
+  module%template.portable Make (T : Indexable [@mode m]) :
+    S [@mode m] with type t := T.t with type elt := T.elt
+
+  module%template.portable Make1 (T : Indexable1 [@mode m] [@kind k]) :
+    S1 [@mode m] [@kind k] with type 'a t := 'a T.t
+  [@@kind k = (value, immediate, immediate64)]]
 end

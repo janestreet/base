@@ -1773,6 +1773,12 @@ module%test [@name "{min,max}_elt"] _ = struct
   ;;
 end
 
+let%expect_test "regression test: [mem] doesn't stack overflow" =
+  let n = 1_000_000 in
+  let t = List.init n ~f:(fun i -> i) in
+  assert (not (List.mem t n ~equal:Int.equal))
+;;
+
 let%expect_test "[map2]" =
   let test xs ys =
     map2 xs ys ~f:(fun x y -> x, y)

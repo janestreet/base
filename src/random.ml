@@ -1,7 +1,7 @@
 open! Import
 module Int = Int0
 module Char = Char0
-module Capsule = Capsule.Expert
+module Capsule = Basement.Capsule
 
 (* Unfortunately, because the standard library does not expose
    [Stdlib.Random.State.default], we have to construct our own.  We then build the

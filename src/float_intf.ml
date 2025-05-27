@@ -18,15 +18,13 @@ module Definitions = struct
 
     (** [max] and [min] will return nan if either argument is nan. *)
 
-    include Identifiable.S with type t := t
+    include%template Identifiable.S [@mode local] [@modality portable] with type t := t
 
     val of_string : local_ string -> t
     val of_string_opt : local_ string -> t option
 
     include%template Comparable.With_zero [@mode local] with type t := t
 
-    include Ppx_compare_lib.Equal.S__local with type t := t
-    include Ppx_compare_lib.Comparable.S__local with type t := t
     include Invariant.S with type t := t
     include Comparisons.S_with_local_opt with type t := t
 

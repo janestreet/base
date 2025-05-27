@@ -99,8 +99,11 @@ let max cmp t t' =
   (Bool0.select [@mode m] [@kind k]) is_geq t t' [@exclave_if_local m]
 ;;]
 
+[%%template
+[@@@mode.default m = (local, global)]
+
 module%template.portable Infix (T : sig
-    type t [@@deriving compare]
+    type t [@@deriving compare [@mode m]]
   end) : Infix with type t := T.t = struct
   let ( > ) a b = gt T.compare a b
   let ( < ) a b = lt T.compare a b
@@ -111,14 +114,11 @@ module%template.portable Infix (T : sig
 end
 [@@inline always]
 
-[%%template
-[@@@mode.default m = (local, global)]
-
 module%template.portable
   [@modality p] Comparisons (T : sig
     type t [@@deriving compare [@mode m]]
   end) : Comparisons [@mode m] with type t := T.t = struct
-  include Infix [@modality p] (T)
+  include Infix [@mode m] [@modality p] (T)
 
   let[@mode m = (global, m)] compare = (T.compare [@mode m])
 
@@ -132,9 +132,11 @@ end
 [@@inline always]
 
 module%template.portable
-  [@modality p] Make_using_comparator
-    (T : Arg_for_make_using_comparator
-  [@mode m]) :
+  [@modality p] Make_using_comparator (T : sig
+    type t [@@deriving sexp_of]
+
+    include Using_comparator_arg [@mode m] with type t := t
+  end) :
   S [@mode m] with type t := T.t and type comparator_witness = T.comparator_witness =
 struct
   module T = struct

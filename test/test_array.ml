@@ -677,3 +677,37 @@ let%expect_test "create_local" =
   print_s (sexp_of_t sexp_of_int array);
   [%expect {| (0 1 2 3 4 5 6 7 8 9) |}]
 ;;
+
+include%template struct
+  let%expect_test "foldi_right" =
+    let test t ~init =
+      let result =
+        (foldi_right [@alloc a]) t ~init ~f:(fun index i acc ->
+          print_s [%message (index : int) (i : int) (acc : int)];
+          acc + index + i)
+      in
+      print_s [%message (result : int)]
+    in
+    test [||] ~init:13;
+    [%expect {| (result 13) |}];
+    test [| 13 |] ~init:17;
+    [%expect
+      {|
+      ((index 0)
+       (i     13)
+       (acc   17))
+      (result 30)
+      |}];
+    test [| 13; 17 |] ~init:19;
+    [%expect
+      {|
+      ((index 1)
+       (i     17)
+       (acc   19))
+      ((index 0)
+       (i     13)
+       (acc   37))
+      (result 50)
+      |}]
+  ;;
+end [@@alloc a @ m = (stack_local, heap_global)]

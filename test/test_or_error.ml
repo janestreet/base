@@ -159,7 +159,7 @@ let%expect_test "behavior and performance on lists of or_error's" =
   test (find_map_ok ~f:Fn.id);
   [%expect
     {|
-    ()
+    find_map_ok called on empty list
     "at 0"
     ("at 0" "at 1")
     ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
@@ -167,7 +167,7 @@ let%expect_test "behavior and performance on lists of or_error's" =
   test filter_ok_at_least_one;
   [%expect
     {|
-    ()
+    filter_ok_at_least_one called on empty list
     "at 0"
     ("at 0" "at 1")
     ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")

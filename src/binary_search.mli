@@ -27,6 +27,9 @@
 
 open! Import
 
+[%%template:
+[@@@mode.default m = (global, local)]
+
 (** [binary_search ?pos ?len t ~length ~get ~compare which elt] takes [t] that is sorted
     in increasing order according to [compare], where [compare] and [elt] divide [t] into
     three (possibly empty) segments:
@@ -46,10 +49,10 @@ open! Import
 val binary_search
   :  ?pos:int
   -> ?len:int
-  -> 't
-  -> length:local_ ('t -> int)
-  -> get:local_ ('t -> int -> 'elt)
-  -> compare:local_ ('elt -> 'key -> int)
+  -> 't @ m
+  -> length:local_ ('t @ m -> int)
+  -> get:local_ ('t @ m -> int -> 'elt @ m)
+  -> compare:local_ ('elt @ m -> 'key @ m -> int)
   -> [ `Last_strictly_less_than (** [         | < elt X |                       ] *)
      | `Last_less_than_or_equal_to (** [      |      <= elt       X |           ] *)
      | `Last_equal_to (** [                             |   = elt X |           ] *)
@@ -57,7 +60,7 @@ val binary_search
      | `First_greater_than_or_equal_to (** [            | X       >= elt      | ] *)
      | `First_strictly_greater_than (** [                           | X > elt | ] *)
      ]
-  -> 'key
+  -> 'key @ m
   -> local_ int option
 
 (** [binary_search_segmented ?pos ?len t ~length ~get ~segment_of which] takes a
@@ -72,8 +75,8 @@ val binary_search
     of the left segment, while [`First_on_right] yields the index of the first element of
     the right segment. It returns [None] if the segment is empty.
 
-    By default, [binary_search] searches the entire [t]. One can supply [?pos] or [?len]
-    to search a slice of [t].
+    By default, [binary_search_segmented] searches the entire [t]. One can supply [?pos]
+    or [?len] to search a slice of [t].
 
     [binary_search_segmented] does not check that [segment_of] segments [t] as in the
     diagram, and behavior is unspecified if [segment_of] doesn't segment [t]. Behavior is
@@ -81,9 +84,9 @@ val binary_search
 val binary_search_segmented
   :  ?pos:int
   -> ?len:int
-  -> 't
-  -> length:local_ ('t -> int)
-  -> get:local_ ('t -> int -> 'elt)
-  -> segment_of:local_ ('elt -> [ `Left | `Right ])
+  -> 't @ m
+  -> length:local_ ('t @ m -> int)
+  -> get:local_ ('t @ m -> int -> 'elt @ m)
+  -> segment_of:local_ ('elt @ m -> [ `Left | `Right ])
   -> [ `Last_on_left | `First_on_right ]
-  -> local_ int option
+  -> local_ int option]

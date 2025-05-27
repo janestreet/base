@@ -91,8 +91,11 @@ let to_char_exn c =
 module Decode_result = struct
   type t = Uchar0.utf_decode
 
-  let compare : t -> t -> int = Poly.compare
-  let equal : t -> t -> bool = Poly.equal
+  [%%template
+  [@@@mode.default m = (local, global)]
+
+  let compare : t @ m -> t @ m -> int = Poly.compare
+  let equal : t @ m -> t @ m -> bool = Poly.equal]
 
   let hash_fold_t : Hash.state -> t -> Hash.state =
     fun state t -> hash_fold_int state (Hashable.hash t)
@@ -125,7 +128,7 @@ module Make_utf (Format : sig
     val codec_name : string
     val module_name : string
     val byte_length : t -> int
-    val get_decode_result : string -> byte_pos:int -> Decode_result.t
+    val get_decode_result : local_ string -> byte_pos:int -> Decode_result.t
     val set : local_ bytes -> int -> t -> int
   end) : sig
   @@ portable

@@ -50,12 +50,17 @@ let getenv var =
   | exception Stdlib.Not_found -> None
 ;;
 
-external opaque_identity
+external%template opaque_identity
   : ('a : any).
-  ('a[@local_opt]) -> ('a[@local_opt])
+  ('a[@local_opt]) @ c o p u -> ('a[@local_opt]) @ c o p u
   @@ portable
   = "%opaque"
 [@@layout_poly]
+[@@mode
+  c = (uncontended, shared, contended)
+  , o = (many, once)
+  , p = (nonportable, portable)
+  , u = (aliased, unique)]
 
 external opaque_identity_global : ('a : any). 'a -> 'a @@ portable = "%opaque"
 [@@layout_poly]

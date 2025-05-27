@@ -7,7 +7,7 @@ module Definitions = struct
       [ `Ok of 'a
       | `Duplicate
       ]
-    [@@deriving compare, equal, sexp_of]
+    [@@deriving compare ~localize, equal ~localize, sexp_of]
   end
 
   module Without_comparator = struct
@@ -24,7 +24,7 @@ module Definitions = struct
 
   module Symmetric_diff_element = struct
     type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
-    [@@deriving compare, equal, sexp, sexp_grammar]
+    [@@deriving compare ~localize, equal ~localize, sexp, sexp_grammar]
   end
 
   module Merge_element = struct
@@ -33,7 +33,7 @@ module Definitions = struct
       | `Right of 'right
       | `Both of 'left * 'right
       ]
-    [@@deriving compare, equal, sexp_of]
+    [@@deriving compare ~localize, equal ~localize, sexp_of]
   end
 
   (** @canonical Base.Map.Continue_or_stop *)
@@ -41,7 +41,7 @@ module Definitions = struct
     type t =
       | Continue
       | Stop
-    [@@deriving compare, enumerate, equal, sexp_of]
+    [@@deriving compare ~localize, enumerate, equal ~localize, sexp_of]
   end
 
   (** @canonical Base.Map.Finished_or_unfinished *)
@@ -49,7 +49,7 @@ module Definitions = struct
     type t =
       | Finished
       | Unfinished
-    [@@deriving compare, enumerate, equal, sexp_of]
+    [@@deriving compare ~localize, enumerate, equal ~localize, sexp_of]
   end
 
   module type Accessors_generic = sig
@@ -98,17 +98,25 @@ module Definitions = struct
             -> 'acc )
           access_options
 
-    val compare_direct
+    val%template compare_direct
       : ( 'k
           , 'cmp
-          , ('v -> 'v -> int) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> int )
+          , ('v @ m -> 'v @ m -> int)
+            -> ('k, 'v, 'cmp) t @ m
+            -> ('k, 'v, 'cmp) t @ m
+            -> int )
           access_options
+    [@@mode m = (local, global)]
 
-    val equal
+    val%template equal
       : ( 'k
           , 'cmp
-          , ('v -> 'v -> bool) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> bool )
+          , ('v @ m -> 'v @ m -> bool)
+            -> ('k, 'v, 'cmp) t @ m
+            -> ('k, 'v, 'cmp) t @ m
+            -> bool )
           access_options
+    [@@mode m = (local, global)]
 
     val to_alist
       :  ?key_order:[ `Increasing | `Decreasing ]
@@ -423,11 +431,25 @@ module Definitions = struct
       -> ('k, 'v, 'cmp) t
       -> int
 
+    val compare__local_m__t
+      :  (module Compare_m)
+      -> ('v @ local -> 'v @ local -> int)
+      -> ('k, 'v, 'cmp) t @ local
+      -> ('k, 'v, 'cmp) t @ local
+      -> int
+
     val equal_m__t
       :  (module Equal_m)
       -> ('v -> 'v -> bool)
       -> ('k, 'v, 'cmp) t
       -> ('k, 'v, 'cmp) t
+      -> bool
+
+    val equal__local_m__t
+      :  (module Equal_m)
+      -> ('v @ local -> 'v @ local -> bool)
+      -> ('k, 'v, 'cmp) t @ local
+      -> ('k, 'v, 'cmp) t @ local
       -> bool
 
     val globalize_m__t
@@ -458,12 +480,13 @@ module type Map = sig @@ portable
        , !'cmp)
        t :
        value mod contended portable with 'key with 'value with ('key, 'cmp) Comparator.t
+  [@@deriving globalize]
 
   module Finished_or_unfinished : sig
     type t = Finished_or_unfinished.t =
       | Finished
       | Unfinished
-    [@@deriving compare, enumerate, equal, sexp_of]
+    [@@deriving compare ~localize, enumerate, equal ~localize, sexp_of]
 
     (** Maps [Continue] to [Finished] and [Stop] to [Unfinished]. *)
     val of_continue_or_stop : Continue_or_stop.t -> t
@@ -478,7 +501,7 @@ module type Map = sig @@ portable
       | `Right of 'right
       | `Both of 'left * 'right
       ]
-    [@@deriving compare, equal, sexp_of]
+    [@@deriving compare ~localize, equal ~localize, sexp_of]
 
     val left : ('left, _) t -> 'left option
     val right : (_, 'right) t -> 'right option
@@ -500,9 +523,15 @@ module type Map = sig @@ portable
   val comparator_s : ('a, _, 'cmp) t -> ('a, 'cmp) Comparator.Module.t
 
   val comparator : ('a, _, 'cmp) t -> ('a, 'cmp) Comparator.t
+  val globalize0 : ('key, 'data, 'cmp) t @ local -> ('key, 'data, 'cmp) t
 
   (** The empty map. *)
   val empty : ('a, 'cmp) Comparator.Module.t -> ('a, 'b, 'cmp) t
+
+  val%template empty
+    : ('cmp : value mod portable) 'a 'b.
+    ('a, 'cmp) Comparator.Module.t -> ('a, 'b, 'cmp) t @ portable
+  [@@mode portable]
 
   (** A map with one (key, data) pair. *)
   val singleton : ('a, 'cmp) Comparator.Module.t -> 'a -> 'b -> ('a, 'b, 'cmp) t
@@ -931,7 +960,12 @@ module type Map = sig @@ portable
 
   (** Returns a total ordering between maps. The first argument is a total ordering used
       to compare data associated with equal keys in the two maps. *)
-  val compare_direct : ('v -> 'v -> int) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> int
+  val%template compare_direct
+    :  ('v @ m -> 'v @ m -> int)
+    -> ('k, 'v, 'cmp) t @ m
+    -> ('k, 'v, 'cmp) t @ m
+    -> int
+  [@@mode m = (local, global)]
 
   (** Hash function: a building block to use when hashing data structures containing maps
       in them. [hash_fold_direct hash_fold_key] is compatible with [compare_direct] iff
@@ -942,7 +976,12 @@ module type Map = sig @@ portable
   (** [equal cmp m1 m2] tests whether the maps [m1] and [m2] are equal, that is, contain
       the same keys and associate each key with the same value. [cmp] is the equality
       predicate used to compare the values associated with the keys. *)
-  val equal : ('v -> 'v -> bool) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> bool
+  val%template equal
+    :  ('v @ m -> 'v @ m -> bool)
+    -> ('k, 'v, 'cmp) t @ m
+    -> ('k, 'v, 'cmp) t @ m
+    -> bool
+  [@@mode m = (local, global)]
 
   (** Returns a list of the keys in the given map. *)
   val keys : ('k, _, _) t -> 'k list

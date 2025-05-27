@@ -2,7 +2,7 @@
  (name base_test)
  (libraries base base_container_tests core.base_for_tests base_test_helpers
    bignum.bigint expect_test_helpers_core.expect_test_helpers_base expectable
-   float_u int32_u int64_u nativeint_u portable_test_helpers
-   sexp_grammar_validation sexplib stdio)
+   unboxed.float_u unboxed.int32_u unboxed.int64_u unboxed.nativeint_u
+   portable.test_helpers sexp_grammar_validation sexplib stdio)
  (preprocess
   (pps ppx_jane -dont-apply=pipebang -no-check-on-extensions)))

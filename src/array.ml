@@ -2,8 +2,11 @@ open! Import
 include Array_intf.Definitions
 include Array0
 
-type 'a t = 'a array
-[@@deriving compare ~localize, globalize, sexp ~localize, sexp_grammar]
+type ('a : any_non_null) t = 'a array
+
+[%%rederive.portable
+  type nonrec 'a t = 'a array
+  [@@deriving compare ~localize, globalize, sexp ~localize, sexp_grammar]]
 
 [@@@warning "-incompatible-with-upstream"]
 
@@ -413,6 +416,21 @@ let foldi t ~init ~f =
     acc := f i !acc (unsafe_get t i)
   done;
   !acc
+;;
+
+let%template foldi_right (t @ local) ~(init @ m) ~(f @ local) =
+  (let rec (aux @ local) (t @ local) ~idx ~(acc @ m) ~(f @ local) =
+     (if idx < 0
+      then acc
+      else (
+        (* [unsafe_get] is safe, since [idx >= 0 && idx < Array.length t] *)
+        let acc = f idx (unsafe_get t idx) acc in
+        aux t ~idx:(idx - 1) ~acc ~f))
+     [@exclave_if_stack a]
+   in
+   aux t ~idx:(length t - 1) ~acc:init ~f [@nontail])
+  [@exclave_if_stack a]
+[@@alloc a @ m = (stack_local, heap_global)]
 ;;
 
 let folding_mapi t ~init ~f =

@@ -1,11 +1,8 @@
 external magic : ('a : any) ('b : any). 'a -> 'b @@ portable = "%identity" [@@layout_poly]
-
-include struct
-  external box_int64 : (int64#[@unboxed]) -> local_ int64 @@ portable = "%box_int64"
-  external unbox_int64 : local_ int64 -> (int64#[@unboxed]) @@ portable = "%unbox_int64"
-  external box_float : (float#[@unboxed]) -> local_ float @@ portable = "%box_float"
-  external unbox_float : local_ float -> (float#[@unboxed]) @@ portable = "%unbox_float"
-end
+external box_int64 : (int64#[@unboxed]) -> local_ int64 @@ portable = "%box_int64"
+external unbox_int64 : local_ int64 -> (int64#[@unboxed]) @@ portable = "%unbox_int64"
+external box_float : (float#[@unboxed]) -> local_ float @@ portable = "%box_float"
+external unbox_float : local_ float -> (float#[@unboxed]) @@ portable = "%unbox_float"
 
 external bits_of_float
   :  float @ local
@@ -55,13 +52,11 @@ external select
 [@@@mode.default m = (local, global)]
 
 external select
-  :  bool
-  -> ('a[@local_opt])
-  -> ('a[@local_opt])
-  -> ('a[@local_opt])
+  : ('a : k).
+  bool -> ('a[@local_opt]) -> ('a[@local_opt]) -> ('a[@local_opt])
   @@ portable
   = "caml_csel_value"
-[@@kind k = value] [@@noalloc] [@@no_effects] [@@no_coeffects] [@@builtin]
+[@@kind k = value_or_null] [@@noalloc] [@@no_effects] [@@no_coeffects] [@@builtin]
 
 let[@inline] select : type (a : k). bool -> a @ m -> a @ m -> a @ m =
   fun if_ then_ else_ -> magic ((select [@kind k]) if_ (magic then_) (magic else_))

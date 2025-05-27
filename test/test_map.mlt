@@ -70,6 +70,7 @@ Error: Signature mismatch in included functor's parameter:
            t Ppx_compare_lib__Ppx_compare_lib_intf.Definitions.compare @@
            portable
        The second is portable and the first is nonportable.
-       File "comparator.mli", line 91, characters 4-40: Expected declaration
+       File "comparator_intf.ml", line 135, characters 6-54:
+         Expected declaration
        File "test_map.mlt", line 55, characters 6-13: Actual declaration
 |}]

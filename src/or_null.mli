@@ -24,7 +24,7 @@ type 'a t = 'a or_null
 
 [%%rederive:
   type nonrec ('a : value mod non_null) t : immediate_or_null with 'a = 'a t
-  [@@deriving compare ~localize, equal ~localize, sexp ~localize]]
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize]]
 
 (** {3 Accessors} *)
 
@@ -35,14 +35,8 @@ type 'a t = 'a or_null
 val value : 'a t @ m -> default:'a @ m -> 'a @ m
 
 (** Extracts the underlying value, or raises if there is no value present. The raised
-    error can be augmented using the [~error] and [~message] optional arguments. If
-    neither is provided, the raised error will include the provided location. *)
-val value_exn
-  :  here:[%call_pos]
-  -> ?error:Error.t
-  -> ?message:string
-  -> 'a t @ m
-  -> 'a @ m
+    error will include the provided location. *)
+val value_exn : here:[%call_pos] -> 'a t @ m -> 'a @ m
 
 (** Extracts the underlying value if present, otherwise executes and returns the result of
     [default]. [default] is only executed if the underlying value is absent. *)
@@ -125,6 +119,10 @@ val to_option : 'a t @ m -> 'a option @ m
 
 (** [of_option (Some x) = This x] and [of_option None = Null]. *)
 val of_option : 'a option @ m -> 'a t @ m]
+
+(** [map_to_option t ~f] is the same as [map t ~f |> to_option] *)
+val%template map_to_option : 'a t @ m -> f:('a @ m -> 'b @ m) @ local -> 'b option @ m
+[@@alloc __ @ m = (heap_global, stack_local)]
 
 (** {5 Predicates} *)
 

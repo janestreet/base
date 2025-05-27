@@ -29,6 +29,7 @@ include (
     with module Map := Shadow_stdlib.Map
     with module Modes := Shadow_stdlib.Modes
     with module Nativeint := Shadow_stdlib.Nativeint
+    with module Obj := Shadow_stdlib.Obj
     with module Option := Shadow_stdlib.Option
     with module Printf := Shadow_stdlib.Printf
     with module Queue := Shadow_stdlib.Queue

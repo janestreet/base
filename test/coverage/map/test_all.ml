@@ -75,8 +75,21 @@ module type Sexp_of_m = Sexp_of_m
 
 module M = M
 
+(** Portable empty *)
+
+let%template empty = (empty [@mode portable]) [@@mode portable]
+
+let%expect_test "" =
+  require_equal
+    (module Sexp)
+    [%sexp ((empty [@mode portable]) (module Sexp) : _ Map.M(Sexp).t)]
+    [%sexp []]
+;;
+
 (** globalizing *)
 
+let globalize = globalize
+let globalize0 = globalize0
 let globalize_m__t = globalize_m__t
 
 let%expect_test _ =
@@ -84,7 +97,7 @@ let%expect_test _ =
     (module Instance_int)
     ~f:(fun t ->
       let t = Instance_int.value t in
-      let round_trip = globalize_m__t (module Int) globalize_int t in
+      let round_trip = globalize0 t in
       require_equal (module Instance_int.Value) round_trip t);
   [%expect {| |}]
 ;;
@@ -132,6 +145,8 @@ let%expect_test _ =
 
 let compare_m__t = compare_m__t
 let equal_m__t = equal_m__t
+let compare__local_m__t = compare__local_m__t
+let equal__local_m__t = equal__local_m__t
 
 let%expect_test _ =
   quickcheck_m

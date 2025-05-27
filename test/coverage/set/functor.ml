@@ -412,7 +412,9 @@ module Test_accessors
         require_equal (module Elts_result) result expect)
 
   and equal = equal
+  and equal__local = equal__local
   and compare_direct = compare_direct
+  and compare_direct__local = compare_direct__local
 
   and () =
     quickcheck_m

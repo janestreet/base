@@ -42,17 +42,14 @@ let[@zero_alloc] get (local_ t) i =
   Stdlib.Obj.repr
     (* [Sys.opaque_identity] is required on the array because this code breaks the usual
        assumptions about array kinds that the Flambda 2 optimiser can see. *)
-    ((Sys.opaque_identity (Obj_local.magic (t : t) : not_a_float array)).(i)
-     : not_a_float)
+    ((Sys.opaque_identity (Obj.magic (t : t) : not_a_float array)).(i) : not_a_float)
 ;;
 
 let[@inline always] [@zero_alloc] unsafe_get t i =
   (* Make the compiler believe [t] is an array not containing floats so it does not check
      if [t] is tagged with [Double_array_tag]. *)
   Stdlib.Obj.repr
-    (Array.unsafe_get
-       (Sys.opaque_identity (Obj_local.magic (t : t) : not_a_float array))
-       i
+    (Array.unsafe_get (Sys.opaque_identity (Obj.magic (t : t) : not_a_float array)) i
      : not_a_float)
 ;;
 
@@ -63,21 +60,21 @@ let[@inline always] unsafe_set_with_caml_modify t i obj =
      Obj.double_array_tag) which flambda has tried in the past (at least that's assuming
      the compiler respects Sys.opaque_identity, which is not always the case). *)
   Array.unsafe_set
-    (Sys.opaque_identity (Obj_local.magic (t : t) : not_a_float array))
+    (Sys.opaque_identity (Obj.magic (t : t) : not_a_float array))
     i
     (Stdlib.Obj.obj (Sys.opaque_identity obj) : not_a_float)
 ;;
 
 let[@inline always] set_with_caml_modify t i obj =
   (* same as unsafe_set_with_caml_modify but safe *)
-  (Sys.opaque_identity (Obj_local.magic (t : t) : not_a_float array)).(i)
+  (Sys.opaque_identity (Obj.magic (t : t) : not_a_float array)).(i)
   <- (Stdlib.Obj.obj (Sys.opaque_identity obj) : not_a_float)
 ;;
 
 let[@inline always] unsafe_set_int_assuming_currently_int t i int =
   (* This skips [caml_modify], which is OK if both the old and new values are integers. *)
   Array.unsafe_set
-    (Sys.opaque_identity (Obj_local.magic (t : t) : int array))
+    (Sys.opaque_identity (Obj.magic (t : t) : int array))
     i
     (Sys.opaque_identity int)
 ;;

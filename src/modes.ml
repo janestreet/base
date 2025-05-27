@@ -39,6 +39,14 @@ module Global = struct
     @@ portable
     = "%identity"
 
+  external wrap_or_null : 'a or_null -> 'a t or_null @@ portable = "%identity"
+
+  external unwrap_or_null
+    :  ('a t or_null[@local_opt])
+    -> 'a or_null
+    @@ portable
+    = "%identity"
+
   external wrap_option : 'a option -> 'a t option @@ portable = "%identity"
 
   external unwrap_option
@@ -174,6 +182,12 @@ module Portable = struct
 
   type 'a t : value mod portable = { portable : 'a @@ portable } [@@unboxed]
 
+  external cross
+    : ('a : value mod portable).
+    'a -> 'a @ portable
+    @@ portable
+    = "%identity"
+
   external wrap
     :  ('a[@local_opt]) @ portable
     -> ('a t[@local_opt]) @ portable
@@ -209,6 +223,18 @@ module Portable = struct
   external unwrap_iarray
     :  ('a t iarray[@local_opt])
     -> ('a iarray[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external wrap_or_null
+    :  ('a or_null[@local_opt]) @ portable
+    -> ('a t or_null[@local_opt]) @ portable
+    @@ portable
+    = "%identity"
+
+  external unwrap_or_null
+    :  ('a t or_null[@local_opt])
+    -> ('a or_null[@local_opt]) @ portable
     @@ portable
     = "%identity"
 
@@ -323,6 +349,12 @@ end
 
 module Contended = struct
   type 'a t : value mod contended = { contended : 'a @@ contended } [@@unboxed]
+
+  external cross
+    : ('a : value mod contended).
+    'a @ contended -> 'a
+    @@ portable
+    = "%identity"
 end
 
 module Portended = struct
@@ -330,8 +362,18 @@ module Portended = struct
   [@@unboxed]
 end
 
+module Many = struct
+  type 'a t : value mod many = { many : 'a @@ many } [@@unboxed]
+end
+
 module Aliased = struct
   type 'a t : value mod aliased = { aliased : 'a @@ aliased } [@@unboxed]
+end
+
+module Immutable_data = struct
+  type 'a t : immutable_data =
+    { immutable_data : 'a @@ contended many portable unyielding }
+  [@@unboxed]
 end
 
 module At_locality = struct
@@ -397,19 +439,21 @@ end
 module At_portability = struct
   type nonportable_ :
     value mod aliased contended external_ global many non_null unyielding
-  [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
-  (* We only need [hash_fold]. *)
+  (* We only need [hash_fold] and local comparisons. *)
+  let _ = [%compare: nonportable_]
+  let _ = [%equal: nonportable_]
   let _ = [%hash: nonportable_]
 
   type portable : immediate = [ `portable ]
-  [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
   type nonportable =
     [ `portable
     | `nonportable of nonportable_
     ]
-  [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
   type (+!'a
        , +'portability)
@@ -444,24 +488,26 @@ module At_portability = struct
 
   [%%template
   type portability = nonportable
-  [@@mode nonportable] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+  [@@mode nonportable]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
   type portability = portable
-  [@@mode portable] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+  [@@mode portable]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
   external wrap
-    :  ('a[@local_opt]) @ m
-    -> (('a, (portability[@mode m])) t[@local_opt]) @ m
+    :  ('a[@local_opt]) @ p
+    -> (('a, (portability[@mode p])) t[@local_opt]) @ p
     @@ portable
     = "%identity"
-  [@@mode m = (portable, nonportable)]
+  [@@mode p = (portable, nonportable)]
 
   external unwrap
-    :  (('a, (portability[@mode m])) t[@local_opt])
-    -> ('a[@local_opt]) @ m
+    :  (('a, (portability[@mode p])) t[@local_opt])
+    -> ('a[@local_opt]) @ p
     @@ portable
     = "%identity"
-  [@@mode m = portable]
+  [@@mode p = portable]
 
   external unwrap : (('a, _) t[@local_opt]) -> ('a[@local_opt]) @@ portable = "%identity"
   [@@mode __ = nonportable]]
@@ -489,12 +535,12 @@ end
 module Portable_via_contended = struct
   type +'a t : value mod portable
 
-  external wrap : 'a -> 'a t @@ portable = "%identity"
-  external unwrap : 'a t -> 'a @@ portable = "%identity"
+  external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) @@ portable = "%identity"
+  external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) @@ portable = "%identity"
 
   external unwrap_contended
     : ('a : value mod portable).
-    'a t @ contended -> 'a @ contended
+    ('a t[@local_opt]) @ contended -> ('a[@local_opt]) @ contended
     @@ portable
     = "%identity"
 end
@@ -513,6 +559,12 @@ module Export = struct
     { portended : 'a @@ contended portable }
   [@@unboxed]
 
+  type 'a many : value mod many = 'a Many.t = { many : 'a @@ many } [@@unboxed]
+
   type 'a aliased : value mod aliased = 'a Aliased.t = { aliased : 'a @@ aliased }
+  [@@unboxed]
+
+  type 'a immutable_data : immutable_data = 'a Immutable_data.t =
+    { immutable_data : 'a @@ contended many portable unyielding }
   [@@unboxed]
 end

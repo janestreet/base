@@ -26,6 +26,11 @@ val globalize_lazy_t : (local_ 'a -> 'b) -> local_ 'a lazy_t -> 'a lazy_t
 val globalize_list : (local_ 'a -> 'b) -> local_ 'a list -> 'b list
 val globalize_option : (local_ 'a -> 'b) -> local_ 'a option -> 'b option
 
+val globalize_or_null
+  :  (local_ 'a -> 'b)
+  -> local_ 'a Basement.Or_null_shim.t
+  -> 'b Basement.Or_null_shim.t
+
 val globalize_result
   :  (local_ 'ok -> 'ok)
   -> (local_ 'err -> 'err)

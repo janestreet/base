@@ -17,9 +17,7 @@ type t = Stdlib.Lexing.position =
   }
 [@@deriving hash, sexp_of ~localize]
 
-include Comparable.S with type t := t
-include Ppx_compare_lib.Equal.S__local with type t := t
-include Ppx_compare_lib.Comparable.S__local with type t := t
+include%template Comparable.S [@mode local] [@modality portable] with type t := t
 
 (** [to_string t] converts [t] to the form ["FILE:LINE:COL"]. *)
 val to_string : t -> string
@@ -35,4 +33,4 @@ val here_or_there : here:[%call_pos] -> t option -> t
 
     [Stdlib.Lexing.dummy_pos] is a position guaranteed to be different from any valid
     position. *)
-val is_dummy : local_ t -> bool @@ portable
+val is_dummy : local_ t -> bool

@@ -291,6 +291,8 @@ let[@zero_alloc] create_local len = exclave_
   unsafe_create_local len
 ;;
 
+let%template[@alloc stack] create = create_local
+
 external unsafe_fill
   :  local_ bytes
   -> pos:int

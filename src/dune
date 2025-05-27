@@ -24,7 +24,8 @@
    ocaml_intrinsics_kernel)
  (preprocess
   (pps ppx_base ppx_base_internal ppx_base_lint
-    -do-not-correct-cold-attributes -type-conv-keep-w32=both))
+    -do-not-correct-cold-attributes -require-template-extension
+    -type-conv-keep-w32=both))
  (js_of_ocaml
   (javascript_files runtime.js))
  (wasm_of_ocaml

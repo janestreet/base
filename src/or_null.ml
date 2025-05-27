@@ -2,15 +2,29 @@ open! Import
 
 type 'a t = 'a or_null
 
+external is_null : local_ _ or_null -> bool @@ portable = "%is_null"
+
+external unsafe_value : ('a t[@local_opt]) -> ('a[@local_opt]) @@ portable = "%identity"
+[@@alert unsafe_optimizations_if_misapplied]
+
 include (
 struct
-  type 'a t = 'a or_null [@@deriving sexp ~localize]
+  type 'a t = 'a or_null [@@deriving globalize, sexp ~localize]
 end :
   sig
   @@ portable
-    type 'a t = 'a or_null [@@deriving sexp ~localize]
+    type 'a t = 'a or_null [@@deriving globalize, sexp ~localize]
   end
   with type 'a t := 'a or_null)
+
+let[@cold] raise_value_exn ~here =
+  let error =
+    if Source_code_position.is_dummy here
+    then Error.of_string "Or_null.value_exn Null"
+    else Error.create "Or_null.value_exn Null" here Source_code_position0.sexp_of_t
+  in
+  Error.raise error
+;;
 
 [%%template
 [@@@mode.default m = (global, local)]
@@ -30,27 +44,10 @@ let[@inline] equal equal_elt t1 t2 =
   | This elt1, This elt2 -> equal_elt elt1 elt2
 ;;
 
-let[@inline] value t ~default =
-  match t with
-  | Null -> default
-  | This x -> x
-;;
-
-let[@inline] value_exn ~(here : [%call_pos]) ?error ?message t =
+let[@inline] value_exn ~(here : [%call_pos]) t =
   match t with
   | This x -> x
-  | Null ->
-    let error =
-      match error, message with
-      | None, None ->
-        if Source_code_position.is_dummy here
-        then Error.of_string "Or_null.value_exn Null"
-        else Error.create "Or_null.value_exn Null" here Source_code_position0.sexp_of_t
-      | Some e, None -> e
-      | None, Some m -> Error.of_string m
-      | Some e, Some m -> Error.tag e ~tag:m
-    in
-    Error.raise error
+  | Null -> raise_value_exn ~here
 ;;
 
 let[@inline] value_or_thunk o ~default =
@@ -72,9 +69,9 @@ let[@inline] value_map t ~default ~(local_ f) =
 ;;
 
 let[@inline] both t1 t2 =
-  match t1, t2 with
-  | Null, _ | _, Null -> Null
-  | This x, This y -> This (x, y) [@exclave_if_local m]
+  match #(t1, t2) with
+  | #(Null, _) | #(_, Null) -> Null
+  | #(This x, This y) -> This (x, y) [@exclave_if_local m]
 ;;
 
 let[@inline] bind t ~(local_ f) =
@@ -91,22 +88,10 @@ let[@inline] to_list t =
 
 let[@inline] this a = This a [@exclave_if_local m]
 
-let[@inline] first_this t t' =
-  match t with
-  | This _ -> t
-  | Null -> t'
-;;
-
 let[@inline] first_this_thunk t t' =
   match t with
   | This _ -> t
   | Null -> t' () [@exclave_if_local m]
-;;
-
-let[@inline] this_if b x =
-  match b with
-  | true -> This x [@exclave_if_local m]
-  | false -> Null
 ;;
 
 let[@inline] fold t ~init ~f =
@@ -161,6 +146,13 @@ let[@inline] of_option = function
   | None -> Null
   | Some x -> This x
 ;;]
+
+let%template[@inline] map_to_option t ~f =
+  match t with
+  | Null -> None
+  | This x -> Some (f x) [@exclave_if_stack a]
+[@@alloc a = (heap, stack)]
+;;
 
 [%%template
 let[@inline] [@mode local] map t ~f = exclave_
@@ -223,12 +215,27 @@ let[@inline] [@mode global] try_with_join f =
   match f () with
   | x -> x
   | exception _ -> Null
-;;]
+;;
 
-external is_null : local_ _ or_null -> bool @@ portable = "%is_null"
+let value t ~default = exclave_
+  (unsafe_value [@alert "-unsafe_optimizations_if_misapplied"])
+    (Bool.select (is_null t) (This default) t)
+[@@inline] [@@mode local]
+;;
+
+let value t ~default =
+  (unsafe_value [@alert "-unsafe_optimizations_if_misapplied"])
+    (Bool.select (is_null t) (This default) t)
+[@@inline] [@@mode global]
+;;
+
+let[@inline] [@mode local] this_if b x = exclave_ Bool.select b (This x) Null
+let[@inline] [@mode global] this_if b x = Bool.select b (This x) Null
+let[@inline] [@mode local] first_this t t' = exclave_ Bool.select (is_null t) t' t
+let[@inline] [@mode global] first_this t t' = Bool.select (is_null t) t' t]
 
 let[@inline] is_this t = not (is_null t)
-let[@inline] length t = Bool.select (is_null t) 0 1
+let[@inline] length t = Bool.to_int (is_this t)
 
 module Let_syntax = struct
   let return = this
