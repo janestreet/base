@@ -23,7 +23,8 @@ type 'a t = 'a or_null =
   | This of 'a
 
 [%%rederive:
-  type nonrec 'a t = 'a t [@@deriving compare ~localize, equal ~localize, sexp ~localize]]
+  type nonrec 'a t = 'a t
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize]]
 
 (** {3 Accessors} *)
 
@@ -34,14 +35,8 @@ type 'a t = 'a or_null =
 val value : 'a t -> default:'a -> 'a
 
 (** Extracts the underlying value, or raises if there is no value present. The raised
-    error can be augmented using the [~error] and [~message] optional arguments. If
-    neither is provided, the raised error will include the provided location. *)
-val value_exn
-  :  ?here:Stdlib.Lexing.position
-  -> ?error:Error.t
-  -> ?message:string
-  -> 'a t
-  -> 'a
+    error will include the provided location. *)
+val value_exn : ?here:Stdlib.Lexing.position -> 'a t -> 'a
 
 (** Extracts the underlying value if present, otherwise executes and returns the result of
     [default]. [default] is only executed if the underlying value is absent. *)
@@ -120,6 +115,10 @@ val to_option : 'a t -> 'a option
 
 (** [of_option (Some x) = This x] and [of_option None = Null]. *)
 val of_option : 'a option -> 'a t]
+
+(** [map_to_option t ~f] is the same as [map t ~f |> to_option] *)
+val%template map_to_option : 'a t -> f:('a -> 'b) -> 'b option
+[@@alloc __ @ m = (heap_global, stack_local)]
 
 (** {5 Predicates} *)
 

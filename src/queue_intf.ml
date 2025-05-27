@@ -30,6 +30,7 @@ module Definitions = struct
     (** [dequeue t] removes and returns the front element of [t], if any. *)
     val dequeue : 'a t -> 'a option
 
+    val dequeue_or_null : 'a t -> 'a or_null
     val dequeue_exn : 'a t -> 'a
 
     (** [dequeue_and_ignore_exn t] removes the front element of [t], or raises if the

@@ -91,8 +91,11 @@ let to_char_exn c =
 module Decode_result = struct
   type t = Uchar0.utf_decode
 
+  [%%template
+  [@@@mode.default m = (local, global)]
+
   let compare : t -> t -> int = Poly.compare
-  let equal : t -> t -> bool = Poly.equal
+  let equal : t -> t -> bool = Poly.equal]
 
   let hash_fold_t : Hash.state -> t -> Hash.state =
     fun state t -> hash_fold_int state (Hashable.hash t)

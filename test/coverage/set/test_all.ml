@@ -35,7 +35,7 @@ module type Creators_and_accessors_and_transformers_generic =
   Creators_and_accessors_and_transformers_generic
 
 module type Creators_generic = Creators_generic
-module type Elt_plain = Elt_plain
+module type%template Elt_plain = Set.Elt_plain [@mode m] [@@mode m = (local, global)]
 module type For_deriving = For_deriving
 module type S_poly = S_poly
 
@@ -73,6 +73,8 @@ module M = M
 
 (** globalizing *)
 
+let globalize = globalize
+let globalize0 = globalize0
 let globalize_m__t = globalize_m__t
 
 let%expect_test _ =
@@ -80,7 +82,7 @@ let%expect_test _ =
     (module Instance)
     ~f:(fun t ->
       let t = Instance.value t in
-      let round_trip = globalize_m__t (module Int) t in
+      let round_trip = globalize0 t in
       require_equal (module Instance.Value) round_trip t);
   [%expect {| |}]
 ;;
@@ -112,8 +114,11 @@ let%expect_test _ =
 (** comparisons *)
 
 let compare = compare
+let compare__local = compare__local
 let compare_m__t = compare_m__t
+let compare_m__t__local = compare_m__t__local
 let equal_m__t = equal_m__t
+let equal_m__t__local = equal_m__t__local
 
 let%expect_test _ =
   quickcheck_m
@@ -201,6 +206,17 @@ module Poly = struct
       Functor.Transformers with module Types := Instances.Types.Poly)
 end
 
+(** Portable empty *)
+
+let%template empty = (empty [@mode portable]) [@@mode portable]
+
+let%expect_test "" =
+  require_equal
+    (module Sexp)
+    [%sexp ((empty [@mode portable]) (module Sexp) : Set.M(Sexp).t)]
+    [%sexp []]
+;;
+
 (** comparator interface *)
 
 module Using_comparator = struct
@@ -285,13 +301,14 @@ module Using_comparator = struct
     (** globalizing *)
 
     let globalize = globalize
+    let globalize0 = globalize0
 
     let%expect_test _ =
       quickcheck_m
         (module Tree_int)
         ~f:(fun tree ->
           let tree = Tree_int.value tree in
-          let round_trip = globalize () () tree in
+          let round_trip = globalize0 tree in
           require_equal (module Tree_int.Value) round_trip tree)
     ;;
 

@@ -25,6 +25,9 @@
 
 open! Import
 
+[%%template:
+[@@@mode.default m = (global, local)]
+
 (** [binary_search ?pos ?len t ~length ~get ~compare which elt] takes [t] that is sorted
     in increasing order according to [compare], where [compare] and [elt] divide [t] into
     three (possibly empty) segments:
@@ -70,8 +73,8 @@ val binary_search
     of the left segment, while [`First_on_right] yields the index of the first element of
     the right segment. It returns [None] if the segment is empty.
 
-    By default, [binary_search] searches the entire [t]. One can supply [?pos] or [?len]
-    to search a slice of [t].
+    By default, [binary_search_segmented] searches the entire [t]. One can supply [?pos]
+    or [?len] to search a slice of [t].
 
     [binary_search_segmented] does not check that [segment_of] segments [t] as in the
     diagram, and behavior is unspecified if [segment_of] doesn't segment [t]. Behavior is
@@ -84,4 +87,4 @@ val binary_search_segmented
   -> get:('t -> int -> 'elt)
   -> segment_of:('elt -> [ `Left | `Right ])
   -> [ `Last_on_left | `First_on_right ]
-  -> int option
+  -> int option]

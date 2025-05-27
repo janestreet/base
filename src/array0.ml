@@ -14,31 +14,40 @@ module Sys = Sys0
 let invalid_argf = Printf.invalid_argf
 
 module Array = struct
-  external create : int -> 'a -> 'a array = "caml_make_vect"
-  external create_local : int -> 'a -> 'a array = "caml_make_vect"
+  [%%template
+    external create : len:int -> 'a -> 'a array = "caml_make_vect"
+    [@@alloc __ = (heap, stack)]]
+
+  let create_local = create
+  let magic_create_uninitialized ~len = create ~len (Stdlib.Obj.magic 0)
+
   external create_float_uninitialized : int -> float array = "caml_make_float_vect"
-  external get : ('a array[@local_opt]) -> (int[@local_opt]) -> 'a = "%array_safe_get"
-  external length : ('a array[@local_opt]) -> int = "%array_length"
+
+  external%template get
+    : 'a.
+    ('a array[@local_opt]) -> (int[@local_opt]) -> 'a
+    = "%array_safe_get"
+  [@@layout_poly] [@@mode m = (uncontended, shared)]
+
+  external length : 'a. ('a array[@local_opt]) -> int = "%array_length" [@@layout_poly]
 
   external set
-    :  ('a array[@local_opt])
-    -> (int[@local_opt])
-    -> 'a
-    -> unit
+    : 'a.
+    ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
     = "%array_safe_set"
+  [@@layout_poly]
 
-  external unsafe_get
-    :  ('a array[@local_opt])
-    -> (int[@local_opt])
-    -> 'a
+  external%template unsafe_get
+    : 'a.
+    ('a array[@local_opt]) -> (int[@local_opt]) -> 'a
     = "%array_unsafe_get"
+  [@@mode m = (uncontended, shared)] [@@layout_poly]
 
   external unsafe_set
-    :  ('a array[@local_opt])
-    -> (int[@local_opt])
-    -> 'a
-    -> unit
+    : 'a.
+    ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
     = "%array_unsafe_set"
+  [@@layout_poly]
 
   external unsafe_blit
     :  src:('a array[@local_opt])
@@ -57,16 +66,6 @@ end
 include Array
 
 let max_length = Sys.max_array_length
-
-let create ~len x =
-  try create len x with
-  | Invalid_argument _ -> invalid_argf "Array.create ~len:%d: invalid length" len ()
-;;
-
-let create_local ~len x =
-  try create_local len x with
-  | Invalid_argument _ -> invalid_argf "Array.create_local ~len:%d: invalid length" len ()
-;;
 
 let create_float_uninitialized ~len =
   try create_float_uninitialized len with
@@ -126,12 +125,13 @@ let fold t ~init ~(f : _ -> _ -> _) =
   !r
 ;;
 
-let fold_right t ~(f : _ -> _ -> _) ~init =
+let%template fold_right t ~(f : _ -> _ -> _) ~init =
   let r = ref init in
   for i = length t - 1 downto 0 do
-    r := f (unsafe_get t i) !r
+    r := f ((unsafe_get [@mode m]) t i) !r
   done;
   !r
+[@@mode m = (uncontended, shared)]
 ;;
 
 let iter t ~(f : _ -> _) =

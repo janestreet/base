@@ -103,7 +103,7 @@ module Tree0 = struct
 
   type ('k, 'v) tree = ('k, 'v) t
 
-  let globalize : 'k 'v. ('k, 'v) t -> ('k, 'v) t = function
+  let globalize0 : 'k 'v. ('k, 'v) t -> ('k, 'v) t = function
     | Empty -> Empty
     | Leaf { key; data } -> Leaf { key; data }
     | Node { left; key; data; right; weight } -> Node { left; key; data; right; weight }
@@ -2145,7 +2145,7 @@ type ('k, 'v, 'comparator) t =
 
 type ('k, 'v, 'comparator) tree = ('k, 'v) Tree0.t
 
-let globalize { comparator; tree } = { comparator; tree = Tree0.globalize tree }
+let globalize0 { comparator; tree } = { comparator; tree = Tree0.globalize0 tree }
 let compare_key t = Comparator.compare t.comparator
 let like { tree = _; comparator } tree = { tree; comparator }
 
@@ -2290,11 +2290,14 @@ module Accessors = struct
 
   let unzip t = like2 t (Tree0.unzip t.tree)
 
-  let compare_direct compare_data t1 t2 =
+  let%template[@mode m = (local, global)] compare_direct compare_data t1 t2 =
     Tree0.compare (compare_key t1) compare_data t1.tree t2.tree
   ;;
 
-  let equal data_equal t1 t2 = Tree0.equal (compare_key t1) data_equal t1.tree t2.tree
+  let%template[@mode m = (local, global)] equal data_equal t1 t2 =
+    Tree0.equal (compare_key t1) data_equal t1.tree t2.tree
+  ;;
+
   let keys t = Tree0.keys t.tree
   let data t = Tree0.data t.tree
   let to_alist ?key_order t = Tree0.to_alist ?key_order t.tree
@@ -2441,7 +2444,8 @@ end
 module Tree = struct
   type ('k, 'v, 'comparator) t = ('k, 'v, 'comparator) tree
 
-  let globalize _ _ _ tree = Tree0.globalize tree
+  let globalize0 = Tree0.globalize0
+  let globalize _ _ _ t = globalize0 t
   let empty_without_value_restriction = Tree0.Empty
   let empty ~comparator:_ = Tree0.Empty
   let of_tree ~comparator:_ tree = tree
@@ -2658,11 +2662,11 @@ module Tree = struct
 
   let unzip = Tree0.unzip
 
-  let compare_direct ~comparator compare_data t1 t2 =
+  let%template[@mode m = (local, global)] compare_direct ~comparator compare_data t1 t2 =
     Tree0.compare (Comparator.compare comparator) compare_data t1 t2
   ;;
 
-  let equal ~comparator data_equal t1 t2 =
+  let%template[@mode m = (local, global)] equal ~comparator data_equal t1 t2 =
     Tree0.equal (Comparator.compare comparator) data_equal t1 t2
   ;;
 
@@ -2825,7 +2829,10 @@ module Using_comparator = struct
 
   include Accessors
 
-  let empty ~comparator = { tree = Tree0.Empty; comparator }
+  let%template empty ~comparator = { tree = Tree0.Empty; comparator }
+  [@@mode p = (portable, nonportable)]
+  ;;
+
   let singleton ~comparator k v = { comparator; tree = Tree0.singleton k v }
   let of_tree ~comparator tree = { comparator; tree }
   let to_tree = to_tree
@@ -3007,6 +3014,12 @@ let comparator_s t = Comparator.to_module t.comparator
 let to_comparator = Comparator.of_module
 let of_tree m tree = of_tree ~comparator:(to_comparator m) tree
 let empty m = Using_comparator.empty ~comparator:(to_comparator m)
+
+let%template empty (type cw) (m : (_, cw) Comparator.Module.t) =
+  (Using_comparator.empty [@mode portable]) ~comparator:(to_comparator m)
+[@@mode portable]
+;;
+
 let singleton m a = Using_comparator.singleton ~comparator:(to_comparator m) a
 let of_alist m a = Using_comparator.of_alist ~comparator:(to_comparator m) a
 
@@ -3165,11 +3178,19 @@ let m__t_sexp_grammar
 
 let compare_m__t (module _ : Compare_m) compare_v t1 t2 = compare_direct compare_v t1 t2
 let equal_m__t (module _ : Equal_m) equal_v t1 t2 = equal equal_v t1 t2
-let globalize_m__t (module _ : Globalize_m) _ t = globalize t
+
+let compare__local_m__t (module _ : Compare_m) compare_v t1 t2 =
+  compare_direct__local compare_v t1 t2
+;;
+
+let equal__local_m__t (module _ : Equal_m) equal_v t1 t2 = equal__local equal_v t1 t2
+let globalize_m__t (module _ : Globalize_m) _ t = globalize0 t
 
 let hash_fold_m__t (type k) (module K : Hash_fold_m with type t = k) hash_fold_v state =
   hash_fold_direct K.hash_fold_t hash_fold_v state
 ;;
+
+let globalize _ _ _ t = globalize0 t
 
 module Poly = struct
   type nonrec ('k, 'v) t = ('k, 'v, Comparator.Poly.comparator_witness) t

@@ -57,7 +57,7 @@ module Tree0 = struct
 
   type 'a tree = 'a t
 
-  let globalize : 'a. 'a t -> 'a t = function
+  let globalize0 : 'a. 'a t -> 'a t = function
     | Empty -> Empty
     | Leaf { elt } -> Leaf { elt }
     | Node { left; elt; right; weight } -> Node { left; elt; right; weight }
@@ -1297,7 +1297,8 @@ type ('a, 'comparator) t =
 
 type ('a, 'comparator) tree = 'a Tree0.t
 
-let globalize { comparator; tree } = { comparator; tree = Tree0.globalize tree }
+let globalize0 { comparator; tree } = { comparator; tree = Tree0.globalize0 tree }
+let globalize _ _ t = globalize0 t
 let like { tree = _; comparator } tree = { tree; comparator }
 
 let like_maybe_no_op ({ tree = old_tree; comparator } as old_t) tree =
@@ -1346,8 +1347,14 @@ module Accessors = struct
     Tree0.symmetric_diff t1.tree t2.tree ~compare_elt:(compare_elt t1)
   ;;
 
-  let compare_direct t1 t2 = Tree0.compare (compare_elt t1) t1.tree t2.tree
-  let equal t1 t2 = Tree0.equal t1.tree t2.tree ~compare_elt:(compare_elt t1)
+  let%template[@mode m = (local, global)] compare_direct t1 t2 =
+    Tree0.compare (compare_elt t1) t1.tree t2.tree
+  ;;
+
+  let%template[@mode m = (local, global)] equal t1 t2 =
+    Tree0.equal t1.tree t2.tree ~compare_elt:(compare_elt t1)
+  ;;
+
   let is_subset t ~of_ = Tree0.is_subset t.tree ~of_:of_.tree ~compare_elt:(compare_elt t)
 
   let are_disjoint t1 t2 =
@@ -1427,10 +1434,15 @@ include Accessors
 
 let compare _ _ t1 t2 = compare_direct t1 t2
 
+let%template[@mode local] compare _ _ t1 t2 =
+  compare_direct (globalize0 t1) (globalize0 t2)
+;;
+
 module Tree = struct
   type ('a, 'comparator) t = ('a, 'comparator) tree
 
-  let globalize _ _ t = Tree0.globalize t
+  let globalize0 = Tree0.globalize0
+  let globalize _ _ t = globalize0 t
   let ce comparator = Comparator.compare comparator
 
   let t_of_sexp_direct ~comparator a_of_sexp sexp =
@@ -1479,8 +1491,14 @@ module Tree = struct
     Tree0.symmetric_diff t1 t2 ~compare_elt:(ce comparator)
   ;;
 
-  let compare_direct ~comparator t1 t2 = Tree0.compare (ce comparator) t1 t2
-  let equal ~comparator t1 t2 = Tree0.equal t1 t2 ~compare_elt:(ce comparator)
+  let%template[@mode m = (local, global)] compare_direct ~comparator t1 t2 =
+    Tree0.compare (ce comparator) t1 t2
+  ;;
+
+  let%template[@mode m = (local, global)] equal ~comparator t1 t2 =
+    Tree0.equal t1 t2 ~compare_elt:(ce comparator)
+  ;;
+
   let is_subset ~comparator t ~of_ = Tree0.is_subset t ~of_ ~compare_elt:(ce comparator)
 
   let are_disjoint ~comparator t1 t2 =
@@ -1563,7 +1581,9 @@ module Using_comparator = struct
       (Tree0.t_of_sexp_direct ~compare_elt:(Comparator.compare comparator) a_of_sexp sexp)
   ;;
 
-  let empty ~comparator = { comparator; tree = Tree0.Empty }
+  let%template empty ~comparator = { comparator; tree = Tree0.Empty }
+  [@@mode p = (portable, nonportable)]
+  ;;
 
   module%template.portable Empty_without_value_restriction (Elt : Comparator.S1) = struct
     let empty = { comparator = Elt.comparator; tree = Tree0.Empty }
@@ -1623,6 +1643,12 @@ end
 
 let to_comparator = Comparator.of_module
 let empty m = Using_comparator.empty ~comparator:(to_comparator m)
+
+let%template empty (type cw) (m : (_, cw) Comparator.Module.t) =
+  (Using_comparator.empty [@mode portable]) ~comparator:(to_comparator m)
+[@@mode portable]
+;;
+
 let singleton m a = Using_comparator.singleton ~comparator:(to_comparator m) a
 let union_list m a = Using_comparator.union_list ~comparator:(to_comparator m) a
 
@@ -1690,7 +1716,13 @@ let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt)
 
 let compare_m__t (module _ : Compare_m) t1 t2 = compare_direct t1 t2
 let equal_m__t (module _ : Equal_m) t1 t2 = equal t1 t2
-let globalize_m__t (module _ : Globalize_m) t = globalize t
+
+let%template compare_m__t__local (module _ : Compare_m) t1 t2 =
+  (compare_direct [@mode local]) t1 t2
+;;
+
+let%template equal_m__t__local (module _ : Equal_m) t1 t2 = (equal [@mode local]) t1 t2
+let globalize_m__t (module _ : Globalize_m) t = globalize0 t
 
 let hash_fold_m__t (type elt) (module Elt : Hash_fold_m with type t = elt) state =
   hash_fold_direct Elt.hash_fold_t state

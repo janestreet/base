@@ -55,6 +55,7 @@ include (
     with module List := Shadow_stdlib.List
     with module Map := Shadow_stdlib.Map
     with module Nativeint := Shadow_stdlib.Nativeint
+    with module Obj := Shadow_stdlib.Obj
     with module Option := Shadow_stdlib.Option
     with module Out_channel := Shadow_stdlib.Out_channel
     with module Printf := Shadow_stdlib.Printf
@@ -84,7 +85,6 @@ include (
 open! Import
 module Applicative = Applicative
 module Array = Array
-module Atomic = Atomic
 module Avltree = Avltree
 module Backtrace = Backtrace
 module Binary_search = Binary_search
@@ -93,7 +93,6 @@ module Blit = Blit
 module Bool = Bool
 module Buffer = Buffer
 module Bytes = Bytes
-module Capsule = Capsule
 module Char = Char
 module Comparable = Comparable
 module Comparator = Comparator
@@ -136,6 +135,7 @@ module Modes = Modes
 module Monad = Monad
 module Nativeint = Nativeint
 module Nothing = Nothing
+module Obj = Obj
 module Option = Option
 module Option_array = Option_array
 module Or_error = Or_error
@@ -189,7 +189,6 @@ module Exported_for_specific_uses = struct
   module Fieldslib = Fieldslib
   module Globalize = Globalize
   module Obj_array = Obj_array
-  module Obj_local = Obj_local
   module Variantslib = Variantslib
 
   let am_testing = am_testing
@@ -198,9 +197,13 @@ end
 (**/**)
 
 module Export = struct
-  (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
   type 'a array = 'a Array.t
-  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
+
+  (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
+  [%%rederive.portable
+    type 'a array = 'a Array.t
+    [@@deriving
+      compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]]
 
   type bool = Bool.t
   [@@deriving
@@ -349,7 +352,7 @@ module Export = struct
   type 'a or_null = 'a Or_null.t =
     | Null
     | This of 'a
-  [@@deriving sexp ~localize]
+  [@@deriving globalize, sexp ~localize]
 end
 
 include Export

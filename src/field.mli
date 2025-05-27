@@ -2,8 +2,6 @@
 
 (**/**)
 
-[@@@warning "-incompatible-with-upstream"]
-
 module For_generated_code : sig
   (*_ don't use this by hand, it is only meant for ppx_fields_conv *)
 

@@ -8,7 +8,7 @@ module Definitions = struct
 
     (** [t_of_sexp] and [of_string] will raise if the input is invalid in this encoding.
         See [sanitize] below to construct a valid [t] from arbitrary input. *)
-    include Identifiable.S with type t := t
+    include%template Identifiable.S [@mode local] [@modality portable] with type t := t
 
     (** Interpret [t] as a container of Unicode scalar values, rather than of ASCII
         characters. Indexes, length, etc. are with respect to [Uchar.t]. *)
@@ -33,6 +33,10 @@ module Definitions = struct
         interface may raise or produce unpredictable results if the string is invalid in
         this encoding. *)
     val of_string_unchecked : string -> t
+
+    (** Attempts to decode the Unicode scalar value at the given byte index in this
+        encoding, without first sanitizing or validating the string. *)
+    val get_unchecked : string -> byte_pos:int -> Uchar0.utf_decode
 
     (** Similar to [String.split], but splits on a [Uchar.t] in [t]. If you want to split
         on a [char], first convert it with [Uchar.of_char], but note that the actual
@@ -97,9 +101,9 @@ module type String = sig
   val subo : (t, t) Blit.subo_global
 
   include Indexed_container.S0_with_creators with type t := t with type elt = char
-  include Identifiable.S with type t := t
-  include Ppx_compare_lib.Comparable.S__local with type t := t
-  include Ppx_compare_lib.Equal.S__local with type t := t
+
+  include%template Identifiable.S [@mode local] [@modality portable] with type t := t
+
   include Invariant.S with type t := t
 
   (** Maximum length of a string. *)
@@ -166,7 +170,8 @@ module type String = sig
   module Caseless : sig
     type nonrec t = t [@@deriving hash, sexp ~localize, sexp_grammar]
 
-    include Comparable.S with type t := t
+    include%template Comparable.S [@modality portable] with type t := t
+
     include Ppx_compare_lib.Comparable.S__local with type t := t
 
     val is_suffix : t -> suffix:t -> bool

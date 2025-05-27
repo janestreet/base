@@ -43,6 +43,7 @@ end = struct
   let m__t_of_sexp = Hash_set.m__t_of_sexp
   let m__t_sexp_grammar = Hash_set.m__t_sexp_grammar
   let equal_m__t = Hash_set.equal_m__t
+  let equal__local_m__t = Hash_set.equal__local_m__t
 
   (* Testing generic container functionality. *)
 
@@ -400,7 +401,7 @@ end = struct
     [%expect {| ((dst (0 1 2 3)) (src (1 2 3))) |}]
   ;;
 
-  let equal = Hash_set.equal
+  let%template equal = (Hash_set.equal [@mode m]) [@@mode m = (local, global)]
 
   let%expect_test "deriving equal" =
     let module Hs = struct

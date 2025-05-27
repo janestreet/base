@@ -5,7 +5,8 @@ module String = String0
 include Char0
 
 module T = struct
-  type t = char [@@deriving compare, hash, globalize, sexp ~localize, sexp_grammar]
+  type t = char
+  [@@deriving compare ~localize, hash, globalize, sexp ~localize, sexp_grammar]
 
   let to_string t = String.make 1 t
 

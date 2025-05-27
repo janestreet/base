@@ -1,8 +1,6 @@
 open! Import
 include Blit_intf.Definitions
 
-[@@@warning "-incompatible-with-upstream"]
-
 module%template.portable Make1_phantom_distinct
     (Src : sig
        type ('elt, 'phantom) t

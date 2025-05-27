@@ -2,9 +2,10 @@ open! Import
 module Sexp = Sexp0
 
 module Definitions = struct
-  module type Elt_plain = sig
-    type t [@@deriving compare, sexp_of]
+  module type%template Elt_plain = sig
+    type t [@@deriving (compare [@mode m]), sexp_of]
   end
+  [@@mode m = (local, global)]
 
   module Without_comparator = Map.Without_comparator
   module With_comparator = Map.With_comparator
@@ -42,8 +43,13 @@ module Definitions = struct
           , ('a, 'cmp) t -> ('a, 'cmp) t -> ('a elt, 'a elt) Either.t Sequence.t )
           access_options
 
-    val compare_direct : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> int) access_options
-    val equal : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) access_options
+    val%template compare_direct
+      : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> int) access_options
+    [@@mode m = (local, global)]
+
+    val%template equal : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) access_options
+    [@@mode m = (local, global)]
+
     val is_subset : ('a, 'cmp, ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool) access_options
     val are_disjoint : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) access_options
 
@@ -296,6 +302,14 @@ module Definitions = struct
 
     val compare_m__t : (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
     val equal_m__t : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
+
+    val compare_m__t__local
+      :  (module Compare_m)
+      -> ('elt, 'cmp) t
+      -> ('elt, 'cmp) t
+      -> int
+
+    val equal_m__t__local : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
     val globalize_m__t : (module Globalize_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t
 
     val hash_fold_m__t
@@ -322,7 +336,7 @@ module type Set = sig
       the second identifies the comparator, which determines the comparison function that
       is used for ordering elements in this set. Many operations (e.g., {!union}), require
       that they be passed sets with the same element type and the same comparator type. *)
-  type (!'elt, !'cmp) t [@@deriving compare]
+  type (!'elt, !'cmp) t [@@deriving compare ~localize, globalize]
 
   (** Tests internal invariants of the set data structure. Returns true on success. *)
   val invariants : (_, _) t -> bool
@@ -332,9 +346,13 @@ module type Set = sig
   val comparator_s : ('a, 'cmp) t -> ('a, 'cmp) Comparator.Module.t
 
   val comparator : ('a, 'cmp) t -> ('a, 'cmp) Comparator.t
+  val globalize0 : ('a, 'cmp) t -> ('a, 'cmp) t
 
   (** Creates an empty set based on the provided comparator. *)
   val empty : ('a, 'cmp) Comparator.Module.t -> ('a, 'cmp) t
+
+  val%template empty : 'cmp 'a. ('a, 'cmp) Comparator.Module.t -> ('a, 'cmp) t
+  [@@mode portable]
 
   (** Creates a set based on the provided comparator that contains only the provided
       element. *)
@@ -385,7 +403,8 @@ module type Set = sig
   (** [compare_direct t1 t2] compares the sets [t1] and [t2]. It returns the same result
       as [compare], but unlike compare, doesn't require arguments to be passed in for the
       type parameters of the set. [O(length t1 + length t2)]. *)
-  val compare_direct : ('a, 'cmp) t -> ('a, 'cmp) t -> int
+  val%template compare_direct : ('a, 'cmp) t -> ('a, 'cmp) t -> int
+  [@@mode m = (local, global)]
 
   (** Hash function: a building block to use when hashing data structures containing sets
       in them. [hash_fold_direct hash_fold_key] is compatible with [compare_direct] iff
@@ -395,7 +414,8 @@ module type Set = sig
 
   (** [equal t1 t2] returns [true] iff the two sets have the same elements.
       [O(length t1 + length t2)] *)
-  val equal : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
+  val%template equal : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
+  [@@mode m = (local, global)]
 
   (** [exists t ~f] returns [true] iff there exists an [a] in [t] for which [f a]. [O(n)],
       but returns as soon as it finds an [a] for which [f a]. *)
@@ -755,7 +775,7 @@ module type Set = sig
       (** A [Tree.t] contains just the tree data structure that a set is based on, without
           including the comparator. Accordingly, any operation on a [Tree.t] must also
           take as an argument the corresponding comparator. *)
-      type ('a, 'cmp) t [@@deriving sexp_of]
+      type ('a, 'cmp) t [@@deriving globalize, sexp_of]
 
       val t_of_sexp_direct
         :  comparator:('elt, 'cmp) Comparator.t
@@ -763,7 +783,7 @@ module type Set = sig
         -> Sexp.t
         -> ('elt, 'cmp) t
 
-      val globalize : _ -> _ -> ('elt, 'cmp) t -> ('elt, 'cmp) t
+      val globalize0 : ('elt, 'cmp) t -> ('elt, 'cmp) t
 
       include
         Creators_and_accessors_and_transformers_generic

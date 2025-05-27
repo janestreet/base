@@ -101,13 +101,29 @@ module%test _ : module type of Queue = struct
     [%test_result: int option] (dequeue t) ~expect:None
   ;;
 
+  let%test_unit _ =
+    let t = singleton 7 in
+    [%test_result: int] (length t) ~expect:1;
+    [%test_result: int] (capacity t) ~expect:1;
+    [%test_result: int Or_null.t] (dequeue_or_null t) ~expect:(This 7);
+    [%test_result: int Or_null.t] (dequeue_or_null t) ~expect:Null
+  ;;
+
   let init = init
+  let dequeue_or_null = dequeue_or_null
 
   let%test_unit _ =
     let t = init 0 ~f:(fun _ -> assert false) in
     [%test_result: int] (length t) ~expect:0;
     [%test_result: int] (capacity t) ~expect:1;
     [%test_result: int option] (dequeue t) ~expect:None
+  ;;
+
+  let%test_unit _ =
+    let t = init 0 ~f:(fun _ -> assert false) in
+    [%test_result: int] (length t) ~expect:0;
+    [%test_result: int] (capacity t) ~expect:1;
+    [%test_result: int Or_null.t] (dequeue_or_null t) ~expect:Null
   ;;
 
   let%test_unit _ =
@@ -118,6 +134,16 @@ module%test _ : module type of Queue = struct
     [%test_result: int option] (dequeue t) ~expect:(Some 2);
     [%test_result: int option] (dequeue t) ~expect:(Some 4);
     [%test_result: int option] (dequeue t) ~expect:None
+  ;;
+
+  let%test_unit _ =
+    let t = init 3 ~f:(fun i -> i * 2) in
+    [%test_result: int] (length t) ~expect:3;
+    [%test_result: int] (capacity t) ~expect:4;
+    [%test_result: int Or_null.t] (dequeue_or_null t) ~expect:(This 0);
+    [%test_result: int Or_null.t] (dequeue_or_null t) ~expect:(This 2);
+    [%test_result: int Or_null.t] (dequeue_or_null t) ~expect:(This 4);
+    [%test_result: int Or_null.t] (dequeue_or_null t) ~expect:Null
   ;;
 
   let%test_unit _ =

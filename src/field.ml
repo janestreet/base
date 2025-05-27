@@ -31,8 +31,6 @@
    record type with 40 fields would actually allocate the 40 [For_generated_code.t]'s at
    every single fold.) *)
 
-[@@@warning "-incompatible-with-upstream"]
-
 module For_generated_code = struct
   type ('perm, 'record, 'field) t =
     { force_variance : 'perm -> unit

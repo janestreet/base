@@ -612,7 +612,9 @@ module Test_accessors
            list, if List.length list = length t then Finished else Unfinished))
 
   and equal = equal
+  and equal__local = equal__local
   and compare_direct = compare_direct
+  and compare_direct__local = compare_direct__local
 
   and () =
     quickcheck_m

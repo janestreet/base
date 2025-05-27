@@ -7,8 +7,6 @@
 
 open! Import
 
-[@@@warning "-incompatible-with-upstream"]
-
 module Definitions = struct
   module Export = struct
     (** [Continue_or_stop.t] is used by the [f] argument to [fold_until] in order to

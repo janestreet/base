@@ -55,16 +55,18 @@ module Definitions = struct
     val min : ('a, int) compare_fn -> 'a select_fn
   end
 
-  module type%template [@mode global] Arg_for_make_using_comparator = sig
-    type t [@@deriving sexp_of]
+  module type%template
+    [@mode global] [@modality p = (portable, nonportable)] Using_comparator_arg = sig
+    type t
 
-    include Comparator.S with type t := t
+    include Comparator.S [@modality p] with type t := t
   end
 
-  module type%template [@mode local] Arg_for_make_using_comparator = sig
-    type t [@@deriving (compare [@mode local]), sexp_of]
+  module type%template
+    [@mode local] [@modality p = (portable, nonportable)] Using_comparator_arg = sig
+    type t [@@deriving compare [@mode local]]
 
-    include Comparator.S with type t := t
+    include Comparator.S [@modality p] with type t := t
   end
 
   module type%template With_zero = sig
@@ -80,7 +82,7 @@ module Definitions = struct
   end
   [@@mode m = (global, local)]
 
-  module type%template S = sig
+  module type%template [@modality p = (portable, nonportable)] S = sig
     type t
 
     include Comparisons [@mode m] with type t := t
@@ -104,7 +106,7 @@ module Definitions = struct
 
     val clamp : t -> min:t -> max:t -> t Or_error.t
 
-    include Comparator.S with type t := t
+    include Comparator.S [@modality p] with type t := t
   end
   [@@mode m = (global, local)]
 
@@ -180,12 +182,12 @@ module type Comparable = sig
   (** Derive [Infix] or [Comparisons] functions from just [[@@deriving compare]], without
       need for the [sexp_of_t] required by [Make*] (see below). *)
 
-  module%template.portable Infix (T : sig
-      type t [@@deriving compare]
-    end) : Infix with type t := T.t
-
   [%%template:
   [@@@mode.default m = (local, global)]
+
+  module%template.portable Infix (T : sig
+      type t [@@deriving compare [@mode m]]
+    end) : Infix with type t := T.t
 
   module%template.portable Comparisons (T : sig
       type t [@@deriving compare [@mode m]]
@@ -202,18 +204,22 @@ module type Comparable = sig
          val component : t -> C.t
        end) : S [@mode m] with type t := T.t
 
-  module%template.portable Make (T : sig
+  module%template.portable
+    [@modality p] Make (T : sig
       type t [@@deriving (compare [@mode m]), sexp_of]
-    end) : S [@mode m] with type t := T.t
+    end) : S [@modality p] [@mode m] with type t := T.t
 
-  module%template.portable Make_using_comparator
-      (T : Arg_for_make_using_comparator
-    [@mode m]) :
+  module%template.portable Make_using_comparator (T : sig
+      type t [@@deriving sexp_of]
+
+      include Using_comparator_arg [@mode m] with type t := t
+    end) :
     S [@mode m] with type t := T.t with type comparator_witness := T.comparator_witness
 
-  module%template.portable Poly (T : sig
+  module%template.portable
+    [@modality p] Poly (T : sig
       type t [@@deriving sexp_of]
-    end) : S [@mode m] with type t := T.t
+    end) : S [@modality p] [@mode m] with type t := T.t
 
   module With_zero (T : sig
       type t [@@deriving (compare [@mode m]), sexp_of]

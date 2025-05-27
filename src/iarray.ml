@@ -22,7 +22,6 @@ module Local = struct
   let append = I.append_local
   let for_all t ~f = I.for_all_local t ~f
   let exists t ~f = I.exists_local t ~f
-  let fold t ~init ~f = I.fold_left_local t ~init ~f
   let iteri t ~f = I.iteri_local t ~f
   let iter t ~f = I.iter_local t ~f
   let iter2_exn t1 t2 ~f = I.iter2_local t1 t2 ~f
@@ -43,6 +42,36 @@ module Local = struct
     in
     sub t ~pos ~len
   ;;
+
+  [%%template
+  [@@@kind ka = value, kacc = (value, bits64, bits32, word, float64)]
+
+  let rec foldi_loop t ~f ~len ~pos ~acc =
+    if len = pos
+    then acc
+    else foldi_loop t ~f ~len ~pos:(pos + 1) ~acc:(f pos acc (unsafe_get t pos))
+  ;;
+
+  [@@@kind.default ka = ka, kacc = kacc]
+
+  let foldi (type a acc) (t : a t) ~(init : acc) ~f =
+    foldi_loop t ~f ~len:(length t) ~pos:0 ~acc:init
+  ;;
+
+  let fold t ~init ~f =
+    (foldi [@inlined] [@kind ka kacc])
+      ~f:(fun [@inline always] _ acc a -> f acc a)
+      ~init
+      t
+  ;;
+
+  let fold_right (type a acc) (t : a t) ~(init : acc) ~f =
+    let rec loop pos acc =
+      let pos = pos - 1 in
+      if pos < 0 then acc else loop pos (f (unsafe_get t pos) acc)
+    in
+    loop (length t) init [@nontail]
+  ;;]
 
   let prefix t ~len = sub t ~pos:0 ~len
   let suffix t ~len = sub t ~pos:(length t - len) ~len
@@ -81,14 +110,6 @@ module Local = struct
   let for_alli t ~f = for_alli_loop t ~f ~len:(length t) ~pos:0
   let existsi t ~f = existsi_loop t ~f ~len:(length t) ~pos:0
   let mem t x ~equal = exists t ~f:(fun y -> equal x y) [@nontail]
-
-  let rec foldi_loop t ~f ~len ~pos ~acc =
-    if len = pos
-    then acc
-    else foldi_loop t ~f ~len ~pos:(pos + 1) ~acc:(f pos acc (unsafe_get t pos))
-  ;;
-
-  let foldi t ~init ~f = foldi_loop t ~f ~len:(length t) ~pos:0 ~acc:init
 
   let rec fold_result_loop t ~f ~len ~pos ~acc =
     if len = pos
@@ -497,6 +518,7 @@ end
 (** Constructors *)
 
 let init len ~f = unsafe_of_array__promise_no_mutation (Array.init len ~f)
+let%template[@alloc stack] init = Local.init
 let singleton x = unsafe_of_array__promise_no_mutation [| x |]
 
 let[@inline] create ~len x ~mutate =
@@ -711,13 +733,29 @@ let iteri t ~(f : _ -> _ -> _) =
   done
 ;;
 
-let foldi t ~init ~(f : _ -> _ -> _ -> _) =
+[%%template
+[@@@kind.default ka = value, kacc = (value, bits64, bits32, word, float64)]
+
+let foldi (type a acc) (t : a t) ~(init : acc) ~f : acc =
   let n = length t in
   let rec loop pos acc =
     if pos = n then acc else loop (pos + 1) (f pos acc (unsafe_get t pos))
   in
   loop 0 init [@nontail]
 ;;
+
+let fold t ~init ~f =
+  (foldi [@inlined] [@kind ka kacc]) t ~init ~f:(fun [@inline always] _ acc x -> f acc x)
+  [@nontail]
+;;
+
+let fold_right (type a acc) (t : a t) ~(init : acc) ~f =
+  let rec loop pos acc =
+    let pos = pos - 1 in
+    if pos < 0 then acc else loop pos (f (unsafe_get t pos) acc)
+  in
+  loop (length t) init [@nontail]
+;;]
 
 let existsi t ~(f : _ -> _ -> _) =
   let n = length t in
@@ -783,7 +821,6 @@ let fold_until t ~init ~f ~finish =
 ;;
 
 let iter t ~f = iteri t ~f:(fun _ x -> f x) [@nontail]
-let fold t ~init ~f = foldi t ~init ~f:(fun _ acc x -> f acc x) [@nontail]
 let exists t ~f = existsi t ~f:(fun _ x -> f x) [@nontail]
 let for_all t ~f = for_alli t ~f:(fun _ x -> f x) [@nontail]
 let count t ~f = counti t ~f:(fun _ x -> f x) [@nontail]
@@ -1022,14 +1059,6 @@ let update t i ~f =
 
 (** Combining elements *)
 
-let fold_right t ~init ~f =
-  let rec loop pos acc =
-    let pos = pos - 1 in
-    if pos < 0 then acc else loop pos (f (unsafe_get t pos) acc)
-  in
-  loop (length t) init [@nontail]
-;;
-
 let unsafe_reduce t ~f =
   let len = length t in
   let rec loop pos acc =
@@ -1149,11 +1178,11 @@ let is_sorted_strictly t ~compare =
 
 (** Binary search *)
 
-include%template Binary_searchable.Make1 [@modality portable] (struct
+include%template Binary_searchable.Make1 [@mode local] [@modality portable] (struct
     type nonrec 'a t = 'a t
 
-    let get = get
-    let length = length
+    let[@mode m = (global, local)] get = get
+    let[@mode m = (global, local)] length = length
   end)
 
 (** Private exports *)

@@ -254,7 +254,7 @@ module type Type_equal = sig
     module Uid : sig
       type t [@@deriving hash, sexp_of ~localize]
 
-      include Comparable.S with type t := t
+      include%template Comparable.S [@mode local] [@modality portable] with type t := t
     end
 
     val uid : _ t -> Uid.t

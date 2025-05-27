@@ -74,12 +74,12 @@ function caml_make_local_vect(v_len, v_elt) {
 
 //Provides: caml_dummy_obj_is_stack
 function caml_dummy_obj_is_stack(x) {
-  throw new Error(`BUG: this function should be unreachable; please report to compiler or base devs.`);
+  return 0;
 }
 
-//Provides: caml_dummy_obj_is_stack
-function caml_dummy_obj_is_stack(x) {
-  throw new Error(`BUG: this function should be unreachable; please report to compiler or base devs.`);
+//Provides: caml_dummy_succ_scannable_prefix_len
+function caml_dummy_succ_scannable_prefix_len(x) {
+  return 0;
 }
 
 //Provides: Base_caml_modf_positive_float_unboxed_exn

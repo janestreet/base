@@ -125,6 +125,11 @@ module Definitions = struct
         -> ('a iarray[@local_opt])
         = "%identity"
 
+      (** Wrapping and unwrapping [Or_null]. *)
+
+      external wrap_or_null : 'a or_null -> 'a t or_null = "%identity"
+      external unwrap_or_null : ('a t or_null[@local_opt]) -> 'a or_null = "%identity"
+
       (** Wrapping and unwrapping [Option]. *)
 
       external wrap_option : 'a option -> 'a t option = "%identity"
@@ -239,6 +244,10 @@ module Definitions = struct
     module type Portable = sig
       type 'a t
 
+      (** Require a value has a type that mode-crosses portability. This is useful for
+          assisting type inference as well as improving error messages. *)
+      external cross : 'a. 'a -> 'a = "%identity"
+
       (** Construct a [t]. *)
       external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
 
@@ -277,6 +286,18 @@ module Definitions = struct
       external unwrap_iarray
         :  ('a t iarray[@local_opt])
         -> ('a iarray[@local_opt])
+        = "%identity"
+
+      (** Wrapping and unwrapping [Or_null]. *)
+
+      external wrap_or_null
+        :  ('a or_null[@local_opt])
+        -> ('a t or_null[@local_opt])
+        = "%identity"
+
+      external unwrap_or_null
+        :  ('a t or_null[@local_opt])
+        -> ('a or_null[@local_opt])
         = "%identity"
 
       (** Wrapping and unwrapping [Option]. *)
@@ -486,14 +507,26 @@ module type Modes = sig
 
   module Contended : sig
     type 'a t = { contended : 'a } [@@unboxed]
+
+    (** Require a value has a type that mode-crosses contention. This is useful for
+        assisting type inference as well as improving error messages. *)
+    external cross : 'a. 'a -> 'a = "%identity"
   end
 
   module Portended : sig
     type 'a t = { portended : 'a } [@@unboxed]
   end
 
+  module Many : sig
+    type 'a t = { many : 'a } [@@unboxed]
+  end
+
   module Aliased : sig
     type 'a t = { aliased : 'a } [@@unboxed]
+  end
+
+  module Immutable_data : sig
+    type 'a t = { immutable_data : 'a } [@@unboxed]
   end
 
   (** Abstract over whether a value is [local] or [global]. *)
@@ -512,7 +545,8 @@ module type Modes = sig
     (** Phantom type parameter for {!t} which represents that the inhabitant is known to
         be [portable]. *)
     type portable = [ `portable ]
-    [@@deriving compare, equal, hash, sexp_of, sexp_grammar] [@@immediate]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+    [@@immediate]
 
     (** Phantom type parameter for {!t} which represents that the portability of the
         inhabitant is unknown, and so must be assumed to be [nonportable]. *)
@@ -520,7 +554,7 @@ module type Modes = sig
       [ `portable
       | `nonportable of nonportable_
       ]
-    [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
     (** Abstract over whether a value is [portable] or [nonportable], with zero runtime
         cost.
@@ -561,30 +595,32 @@ module type Modes = sig
           type%template ('a, 'b) t =
             { maybe_portable :
                 ( 'a -> 'b
-                  , (Modes.At_portability.portability[@modality m]) )
+                  , (Modes.At_portability.portability[@modality p]) )
                   Modes.At_portability.t
             }
-          [@@modality m = (portable, nonportable)]
+          [@@modality p = (portable, nonportable)]
         ]} *)
 
     [%%template:
     type portability = nonportable
-    [@@mode nonportable] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+    [@@mode nonportable]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
     type portability = portable
-    [@@mode portable] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+    [@@mode portable]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
     external wrap
       :  ('a[@local_opt])
-      -> (('a, (portability[@mode m])) t[@local_opt])
+      -> (('a, (portability[@mode p])) t[@local_opt])
       = "%identity"
-    [@@mode m = (portable, nonportable)]
+    [@@mode p = (portable, nonportable)]
 
     external unwrap
-      :  (('a, (portability[@mode m])) t[@local_opt])
+      :  (('a, (portability[@mode p])) t[@local_opt])
       -> ('a[@local_opt])
       = "%identity"
-    [@@mode m = portable]
+    [@@mode p = portable]
 
     external unwrap : (('a, _) t[@local_opt]) -> ('a[@local_opt]) = "%identity"
     [@@mode __ = nonportable]]
@@ -620,12 +656,12 @@ module type Modes = sig
     (** The [uncontended] annotations below are redundant, but present to emphasize their
         importance for safety. *)
 
-    external wrap : 'a -> 'a t = "%identity"
-    external unwrap : 'a t -> 'a = "%identity"
+    external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
+    external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
 
     (** If the contained value is of a type that crosses portability, it's safe to extract
         it, even if it has crossed a capsule boundary. *)
-    external unwrap_contended : 'a. 'a t -> 'a = "%identity"
+    external unwrap_contended : 'a. ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
   end
 
   (** Can be [open]ed or [include]d to bring field names into scope. *)
@@ -634,6 +670,8 @@ module type Modes = sig
     type 'a portable = 'a Portable.t = { portable : 'a } [@@unboxed]
     type 'a contended = 'a Contended.t = { contended : 'a } [@@unboxed]
     type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
+    type 'a many = 'a Many.t = { many : 'a } [@@unboxed]
     type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
+    type 'a immutable_data = 'a Immutable_data.t = { immutable_data : 'a } [@@unboxed]
   end
 end

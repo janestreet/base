@@ -8,7 +8,7 @@ module Definitions = struct
     type t =
       | Absent
       | Ok
-    [@@deriving compare, enumerate, equal, hash, sexp_of]
+    [@@deriving compare ~localize, enumerate, equal ~localize, hash, sexp_of]
 
     let is_ok = function
       | Absent -> false
@@ -25,7 +25,7 @@ module Definitions = struct
     type t =
       | Duplicate
       | Ok
-    [@@deriving compare, enumerate, equal, hash, sexp_of]
+    [@@deriving compare ~localize, enumerate, equal ~localize, hash, sexp_of]
 
     let is_ok = function
       | Duplicate -> false
@@ -72,7 +72,9 @@ module Definitions = struct
     val strict_remove_exn : 'a t -> 'a -> unit
 
     val clear : 'a t -> unit
-    val equal : 'a t -> 'a t -> bool
+
+    val%template equal : 'a t -> 'a t -> bool [@@mode m = (local, global)]
+
     val filter : 'a t -> f:('a -> bool) -> 'a t
     val filter_inplace : 'a t -> f:('a -> bool) -> unit
 
@@ -171,6 +173,7 @@ module Definitions = struct
       -> 'elt t Sexplib0.Sexp_grammar.t
 
     val equal_m__t : (module Equal_m) -> 'elt t -> 'elt t -> bool
+    val equal__local_m__t : (module Equal_m) -> 'elt t -> 'elt t -> bool
   end
 end
 

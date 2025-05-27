@@ -10,6 +10,17 @@ module _ : module type of struct
 end = struct
   type 'a t = 'a or_null [@@or_null_reexport] [@@deriving sexp ~localize]
 
+  let globalize = globalize_or_null
+
+  let%expect_test "globalize" =
+    let t = Null in
+    print_s [%sexp ([%globalize: int t] t : int t)];
+    [%expect {| () |}];
+    let t' = This "hello world" in
+    print_s [%sexp ([%globalize: string t] t' : string t)];
+    [%expect {| ("hello world") |}]
+  ;;
+
   let%template[@mode m = (global, local)] compare = (Or_null.compare [@mode m])
 
   let%expect_test "compare" =
@@ -105,6 +116,18 @@ end = struct
     [%expect {| () |}];
     print_s [%sexp (to_option (This 42) : int option)];
     [%expect {| (42) |}]
+  ;;
+
+  let%template[@alloc a = (heap, stack)] map_to_option =
+    (Or_null.map_to_option [@alloc a])
+  ;;
+
+  let%expect_test "map_to_option" =
+    let f x = x + 1 in
+    print_s [%sexp (map_to_option ~f Null : int option)];
+    [%expect {| () |}];
+    print_s [%sexp (map_to_option ~f (This 42) : int option)];
+    [%expect {| (43) |}]
   ;;
 
   let%template[@mode m = (global, local)] of_option = (Or_null.of_option [@mode m])

@@ -22,16 +22,18 @@ module Definitions = struct
     val module_name : string
   end
 
+  [@@@modality.default p = (portable, nonportable)]
+
   module type Arg_with_comparator = sig
     include Arg [@mode m]
-    include Comparator.S with type t := t
+    include Comparator.S [@modality p] with type t := t
   end
 
   module type S = sig
-    type t [@@deriving (compare [@mode m]), hash, sexp]
+    type t [@@deriving hash, sexp]
 
     include Stringable.S with type t := t
-    include Comparable.S with type t := t
+    include Comparable.S [@modality p] [@mode m] with type t := t
     include Pretty_printer.S with type t := t
 
     val hashable : t Hashable.t
@@ -64,8 +66,15 @@ module type%template Identifiable = sig
           include Identifiable.Make (T)
         end
       ]} *)
-  module%template.portable Make (M : Arg [@mode m]) : S [@mode m] with type t := M.t
+  module%template.portable [@modality p] Make (M : Arg [@mode m]) :
+    S [@mode m] [@modality p] with type t := M.t
 
-  module%template.portable Make_using_comparator (M : Arg_with_comparator [@mode m]) :
-    S [@mode m] with type t := M.t with type comparator_witness := M.comparator_witness
+  module%template.portable
+    [@modality p] Make_using_comparator
+      (M : Arg_with_comparator
+    [@mode m] [@modality p]) :
+    S
+    [@mode m] [@modality p]
+    with type t := M.t
+    with type comparator_witness := M.comparator_witness
 end

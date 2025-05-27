@@ -248,6 +248,8 @@ let[@zero_alloc] create_local len =
   unsafe_create_local len
 ;;
 
+let%template[@alloc stack] create = create_local
+
 external unsafe_fill : bytes -> pos:int -> len:int -> char -> unit = "caml_fill_bytes"
 [@@noalloc]
 

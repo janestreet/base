@@ -32,6 +32,8 @@ module Global = struct
     -> ('a iarray[@local_opt])
     = "%identity"
 
+  external wrap_or_null : 'a or_null -> 'a t or_null = "%identity"
+  external unwrap_or_null : ('a t or_null[@local_opt]) -> 'a or_null = "%identity"
   external wrap_option : 'a option -> 'a t option = "%identity"
 
   external unwrap_option
@@ -144,6 +146,7 @@ module Portable = struct
 
   type 'a t = { portable : 'a } [@@unboxed]
 
+  external cross : 'a. 'a -> 'a = "%identity"
   external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
   external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
 
@@ -160,6 +163,16 @@ module Portable = struct
   external unwrap_iarray
     :  ('a t iarray[@local_opt])
     -> ('a iarray[@local_opt])
+    = "%identity"
+
+  external wrap_or_null
+    :  ('a or_null[@local_opt])
+    -> ('a t or_null[@local_opt])
+    = "%identity"
+
+  external unwrap_or_null
+    :  ('a t or_null[@local_opt])
+    -> ('a or_null[@local_opt])
     = "%identity"
 
   external wrap_option
@@ -255,14 +268,24 @@ end
 
 module Contended = struct
   type 'a t = { contended : 'a } [@@unboxed]
+
+  external cross : 'a. 'a -> 'a = "%identity"
 end
 
 module Portended = struct
   type 'a t = { portended : 'a } [@@unboxed]
 end
 
+module Many = struct
+  type 'a t = { many : 'a } [@@unboxed]
+end
+
 module Aliased = struct
   type 'a t = { aliased : 'a } [@@unboxed]
+end
+
+module Immutable_data = struct
+  type 'a t = { immutable_data : 'a } [@@unboxed]
 end
 
 module At_locality = struct
@@ -314,19 +337,23 @@ module At_locality = struct
 end
 
 module At_portability = struct
-  type nonportable_ [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+  type nonportable_
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
-  (* We only need [hash_fold]. *)
+  (* We only need [hash_fold] and local comparisons. *)
+  let _ = [%compare: nonportable_]
+  let _ = [%equal: nonportable_]
   let _ = [%hash: nonportable_]
 
   type portable = [ `portable ]
-  [@@deriving compare, equal, hash, sexp_of, sexp_grammar] [@@immediate]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+  [@@immediate]
 
   type nonportable =
     [ `portable
     | `nonportable of nonportable_
     ]
-  [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
   type (+!'a, +'portability) t
 
@@ -346,22 +373,24 @@ module At_portability = struct
 
   [%%template
   type portability = nonportable
-  [@@mode nonportable] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+  [@@mode nonportable]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
   type portability = portable
-  [@@mode portable] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
+  [@@mode portable]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
   external wrap
     :  ('a[@local_opt])
-    -> (('a, (portability[@mode m])) t[@local_opt])
+    -> (('a, (portability[@mode p])) t[@local_opt])
     = "%identity"
-  [@@mode m = (portable, nonportable)]
+  [@@mode p = (portable, nonportable)]
 
   external unwrap
-    :  (('a, (portability[@mode m])) t[@local_opt])
+    :  (('a, (portability[@mode p])) t[@local_opt])
     -> ('a[@local_opt])
     = "%identity"
-  [@@mode m = portable]
+  [@@mode p = portable]
 
   external unwrap : (('a, _) t[@local_opt]) -> ('a[@local_opt]) = "%identity"
   [@@mode __ = nonportable]]
@@ -389,9 +418,9 @@ end
 module Portable_via_contended = struct
   type +'a t
 
-  external wrap : 'a -> 'a t = "%identity"
-  external unwrap : 'a t -> 'a = "%identity"
-  external unwrap_contended : 'a. 'a t -> 'a = "%identity"
+  external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
+  external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+  external unwrap_contended : 'a. ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
 end
 
 module Export = struct
@@ -399,5 +428,7 @@ module Export = struct
   type 'a portable = 'a Portable.t = { portable : 'a } [@@unboxed]
   type 'a contended = 'a Contended.t = { contended : 'a } [@@unboxed]
   type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
+  type 'a many = 'a Many.t = { many : 'a } [@@unboxed]
   type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
+  type 'a immutable_data = 'a Immutable_data.t = { immutable_data : 'a } [@@unboxed]
 end

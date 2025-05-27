@@ -6,9 +6,7 @@ include module type of struct
   include Sexp0
 end
 
-include Comparable.S with type t := t
-include Ppx_compare_lib.Comparable.S__local with type t := t
-include Ppx_compare_lib.Equal.S__local with type t := t
+include%template Comparable.S [@mode local] [@modality portable] with type t := t
 
 (** A witness that [Sexp.t] can safely cross portability. *)
 val cross_portable : t Basement.Portability_hacks.Cross.Portable.t

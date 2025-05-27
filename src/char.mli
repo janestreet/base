@@ -5,9 +5,8 @@ open! Import
 (** An alias for the type of characters. *)
 type t = char [@@deriving enumerate, globalize, sexp ~localize, sexp_grammar]
 
-include Identifiable.S with type t := t
-include Ppx_compare_lib.Equal.S__local with type t := t
-include Ppx_compare_lib.Comparable.S__local with type t := t
+include%template Identifiable.S [@mode local] [@modality portable] with type t := t
+
 include Invariant.S with type t := t
 module O : Comparisons.Infix with type t := t
 
@@ -84,7 +83,8 @@ val max_value : t
 module Caseless : sig
   type nonrec t = t [@@deriving hash, sexp ~localize, sexp_grammar]
 
-  include Comparable.S with type t := t
+  include%template Comparable.S [@modality portable] with type t := t
+
   include Ppx_compare_lib.Equal.S__local with type t := t
   include Ppx_compare_lib.Comparable.S__local with type t := t
 end

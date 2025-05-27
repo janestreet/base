@@ -8,7 +8,6 @@ type ('a, 'witness) t =
 [@@unsafe_allow_any_mode_crossing]
 (* SAFETY
    ======
-
    The type system is not currently expressive enough to express something like "this
    field has a portable modality, iff this type parameter has a particular kind". So we
    use [@@unsafe_allow_any_mode_crossing] to "lie" about the actual kind of this type, and
@@ -16,45 +15,25 @@ type ('a, 'witness) t =
 
    Importantly for safety, we must never expose a constructor which allows constructing a
    [('a, 'witness) t] with a ['witness] that crosses portability, unless the [compare] and
-   [sexp_of_t] functions are known to be portable. *)
+   [sexp_of_t] functions are known to be portable. In each of the functors below, we
+   provide a demonstration that, in the cases where a [comparator_witness] is produced
+   that crosses portability, the comparator is constructed [@ portable].
+
+   The particularly interesting cases for this are the derived comparators. A derived
+   comparator_witness can cross portability if both the compare function on which the
+   comparator is being derived is portable, and if all of the comparators passed into the
+   derived comparator are portable. We express this using with-kinds, and it should be
+   thought about carefully. *)
 
 let[@inline] compare { compare; _ } = compare
 let[@inline] sexp_of_t { sexp_of_t; _ } = sexp_of_t
 
-type ('a, 'b) comparator = ('a, 'b) t
-
-module type Witness = sig
-  type comparator_witness
+module T = struct
+  type ('a, 'b) comparator = ('a, 'b) t
 end
 
-module type%template [@modality portable] Witness = sig
-  type comparator_witness
-end
-
-[%%template
-[@@@modality.default m = (portable, nonportable)]
-
-module type S = sig
-  type t
-
-  include Witness [@modality m]
-
-  val comparator : (t, comparator_witness) comparator
-end
-
-module type S1 = sig
-  type 'a t
-
-  include Witness [@modality m]
-
-  val comparator : ('a t, comparator_witness) comparator
-end
-
-module type S_fc = sig
-  type comparable_t
-
-  include S [@modality m] with type t := comparable_t
-end]
+include T
+include Comparator_intf.Definitions (T)
 
 module Module = struct
   type ('a, 'b) t = (module S with type t = 'a and type comparator_witness = 'b)
@@ -71,24 +50,14 @@ let to_module (type a b) t : (a, b) Module.t =
   end)
 ;;
 
-let make (type t) ~compare ~sexp_of_t =
+let%template[@modality p = (nonportable, portable)] make (type t) ~compare ~sexp_of_t =
   (module struct
     type comparable_t = t
     type comparator_witness
 
     let comparator : (t, comparator_witness) comparator = { compare; sexp_of_t }
   end : S_fc
-    with type comparable_t = t)
-;;
-
-let%template[@modality portable] make (type t) ~compare ~sexp_of_t =
-  (module struct
-    type comparable_t = t
-    type comparator_witness
-
-    let comparator : (t, comparator_witness) comparator = { compare; sexp_of_t }
-  end : S_fc
-    with type comparable_t = t[@modality portable])
+    with type comparable_t = t[@modality p])
 ;;
 
 module%template.portable S_to_S1 (S : S) = struct
@@ -100,36 +69,42 @@ module%template.portable S_to_S1 (S : S) = struct
   let comparator = comparator
 end
 
-module Witness : Witness = struct
-  type comparator_witness
-end
-
-module%template [@modality p = portable] Witness : Witness [@modality p] = struct
-  type comparator_witness
-end
+[%%template
+[@@@mode.default m = (local, global)]
 
 module%template.portable
-  [@modality m] Make (M : sig
-    type t [@@deriving compare, sexp_of]
+  [@modality p] Make (M : sig
+    type t [@@deriving (compare [@mode m]), sexp_of]
   end) =
 struct
-  include M
-  include Witness [@modality m]
+  type comparator_witness
 
-  let comparator = M.{ compare; sexp_of_t }
+  let comparator =
+    (* Demonstrate that [compare] and [sexp_of_t] are portable when [value mod p] is
+       [value mod portable]. *)
+    let compare = M.compare in
+    let sexp_of_t = M.sexp_of_t in
+    { compare; sexp_of_t }
+  ;;
 end
 
 module%template.portable
-  [@modality m] Make1 (M : sig
+  [@modality p] Make1 (M : sig
     type 'a t
 
-    val compare : 'a t -> 'a t -> int
+    val compare : 'a t -> 'a t -> int [@@mode m = (global, m)]
     val sexp_of_t : 'a t -> Sexp.t
-  end) : S1 [@modality m] with type 'a t := 'a M.t = struct
-  include Witness [@modality m]
+  end) : S1 [@modality p] with type 'a t := 'a M.t = struct
+  type comparator_witness
 
-  let comparator = M.{ compare; sexp_of_t }
-end
+  let comparator =
+    (* Demonstrate that [compare] and [sexp_of_t] are portable when [value mod p] is
+       [value mod portable]. *)
+    let compare = M.compare in
+    let sexp_of_t = M.sexp_of_t in
+    { compare; sexp_of_t }
+  ;;
+end]
 
 module Poly = struct
   type 'a t = 'a
@@ -142,81 +117,40 @@ module Poly = struct
     end)
 end
 
-module type Derived = sig
-  type 'a t
-  type !'cmp comparator_witness
+[%%template
+[@@@mode.default m = (local, global)]
 
-  val comparator : ('a, 'cmp) comparator -> ('a t, 'cmp comparator_witness) comparator
-end
-
-module%template.portable Derived (M : sig
-    type 'a t [@@deriving compare, sexp_of]
-  end) =
-struct
-  type !'cmp comparator_witness
-
-  let comparator a =
-    { compare = M.compare a.compare; sexp_of_t = M.sexp_of_t a.sexp_of_t }
-  ;;
-end
-
-module type Derived2 = sig
-  type ('a, 'b) t
-  type (!'cmp_a, !'cmp_b) comparator_witness
-
-  val comparator
-    :  ('a, 'cmp_a) comparator
-    -> ('b, 'cmp_b) comparator
-    -> (('a, 'b) t, ('cmp_a, 'cmp_b) comparator_witness) comparator
-end
-
-module%template.portable Derived2 (M : sig
-    type ('a, 'b) t [@@deriving compare, sexp_of]
-  end) =
-struct
-  type (!'cmp_a, !'cmp_b) comparator_witness
-
-  let comparator a b =
-    { compare = M.compare a.compare b.compare
-    ; sexp_of_t = M.sexp_of_t a.sexp_of_t b.sexp_of_t
-    }
-  ;;
-end
-
-module type Derived_phantom = sig
-  type ('a, 'b) t
-  type 'cmp comparator_witness
-
-  val comparator
-    :  ('a, 'cmp) comparator
-    -> (('a, _) t, 'cmp comparator_witness) comparator
-end
-
-module%template.portable Derived_phantom (M : sig
+module%template.portable
+  [@modality p] Derived_phantom (M : sig
     type ('a, 'b) t
 
     val compare : ('a -> 'a -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
+    [@@mode m = (global, m)]
+
     val sexp_of_t : ('a -> Sexp.t) -> ('a, _) t -> Sexp.t
   end) =
 struct
-  type 'cmp_a comparator_witness
+  type !'cmp_a comparator_witness
+
+  open struct
+    (* Demonstrate that [compare] and [sexp_of_t] are portable when
+       [value mod p with 'cmp_a] is [value mod portable]. *)
+    let _comparator (type a cmp_a) (a : (a, cmp_a) comparator) =
+      let compare = [%eta2 M.compare a.compare] in
+      let sexp_of_t = [%eta1 M.sexp_of_t a.sexp_of_t] in
+      { compare; sexp_of_t }
+    ;;
+  end
 
   let comparator a =
-    { compare = M.compare a.compare; sexp_of_t = M.sexp_of_t a.sexp_of_t }
+    let compare = [%eta2 M.compare a.compare] in
+    let sexp_of_t = [%eta1 M.sexp_of_t a.sexp_of_t] in
+    { compare; sexp_of_t }
   ;;
 end
 
-module type Derived2_phantom = sig
-  type ('a, 'b, 'c) t
-  type (!'cmp_a, !'cmp_b) comparator_witness
-
-  val comparator
-    :  ('a, 'cmp_a) comparator
-    -> ('b, 'cmp_b) comparator
-    -> (('a, 'b, _) t, ('cmp_a, 'cmp_b) comparator_witness) comparator
-end
-
-module%template.portable Derived2_phantom (M : sig
+module%template.portable
+  [@modality p] Derived2_phantom (M : sig
     type ('a, 'b, 'c) t
 
     val compare
@@ -225,15 +159,50 @@ module%template.portable Derived2_phantom (M : sig
       -> ('a, 'b, 'c) t
       -> ('a, 'b, 'c) t
       -> int
+    [@@mode m = (global, m)]
 
     val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b, _) t -> Sexp.t
   end) =
 struct
   type (!'cmp_a, !'cmp_b) comparator_witness
 
+  open struct
+    (* Demonstrate that [compare] and [sexp_of_t] are portable when
+       [value mod p with 'cmp_a with 'cmp_b] is [value mod portable]. *)
+    let _comparator
+      (type a cmp_a b cmp_b)
+      (a : (a, cmp_a) comparator)
+      (b : (b, cmp_b) comparator)
+      =
+      let compare = [%eta2 M.compare a.compare b.compare] in
+      let sexp_of_t = [%eta1 M.sexp_of_t a.sexp_of_t b.sexp_of_t] in
+      { compare; sexp_of_t }
+    ;;
+  end
+
   let comparator a b =
-    { compare = M.compare a.compare b.compare
-    ; sexp_of_t = M.sexp_of_t a.sexp_of_t b.sexp_of_t
-    }
+    let compare = [%eta2 M.compare a.compare b.compare] in
+    let sexp_of_t = [%eta1 M.sexp_of_t a.sexp_of_t b.sexp_of_t] in
+    { compare; sexp_of_t }
   ;;
 end
+
+module%template.portable
+  [@modality p] Derived (M : sig
+    type 'a t [@@deriving (compare [@mode m]), sexp_of]
+  end) =
+Derived_phantom [@mode m] [@modality p] (struct
+    include M
+
+    type ('a, _) t = 'a M.t
+  end)
+
+module%template.portable
+  [@modality p] Derived2 (M : sig
+    type ('a, 'b) t [@@deriving (compare [@mode m]), sexp_of]
+  end) =
+Derived2_phantom [@mode m] [@modality p] (struct
+    include M
+
+    type ('a, 'b, _) t = ('a, 'b) M.t
+  end)]

@@ -2,13 +2,14 @@
 
 open! Import
 
-[@@@warning "-incompatible-with-upstream"]
-
 module Definitions = struct
   module type Public = sig
     type 'a t
-    [@@deriving
-      compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
+
+    [%%rederive:
+      type nonrec 'a t = 'a t
+      [@@deriving
+        compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]]
 
     include Binary_searchable.S1 with type 'a t := 'a t
     include Indexed_container.S1_with_creators with type 'a t := 'a t
@@ -18,10 +19,10 @@ module Definitions = struct
         [max_length/2] on 32-bit machines and [max_length] on 64-bit machines. *)
     val max_length : int
 
-    (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
-    compiling without cross library inlining. *)
+    (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even
+        when compiling without cross library inlining. *)
 
-    external length : ('a t[@local_opt]) -> int = "%array_length"
+    external length : 'a. ('a array[@local_opt]) -> int = "%array_length" [@@layout_poly]
 
     (** [Array.get a n] returns the element number [n] of array [a]. The first element has
         number 0. The last element has number [Array.length a - 1]. You can also write
@@ -29,7 +30,11 @@ module Definitions = struct
 
         Raise [Invalid_argument "index out of bounds"] if [n] is outside the range 0 to
         [(Array.length a - 1)]. *)
-    external get : ('a t[@local_opt]) -> (int[@local_opt]) -> 'a = "%array_safe_get"
+    external%template get
+      : 'a.
+      ('a array[@local_opt]) -> (int[@local_opt]) -> 'a
+      = "%array_safe_get"
+    [@@layout_poly] [@@mode m = (uncontended, shared)]
 
     (** [Array.set a n x] modifies array [a] in place, replacing element number [n] with
         [x]. You can also write [a.(n) <- x] instead of [Array.set a n x].
@@ -37,36 +42,40 @@ module Definitions = struct
         Raise [Invalid_argument "index out of bounds"] if [n] is outside the range 0 to
         [Array.length a - 1]. *)
     external set
-      :  ('a t[@local_opt])
-      -> (int[@local_opt])
-      -> 'a
-      -> unit
+      : 'a.
+      ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
       = "%array_safe_set"
+    [@@layout_poly]
 
     (** Unsafe version of [get]. Can cause arbitrary behavior when used for an
         out-of-bounds array access. *)
-    external unsafe_get
-      :  ('a t[@local_opt])
-      -> (int[@local_opt])
-      -> 'a
+    external%template unsafe_get
+      : 'a.
+      ('a array[@local_opt]) -> (int[@local_opt]) -> 'a
       = "%array_unsafe_get"
+    [@@layout_poly] [@@mode m = (uncontended, shared)]
 
     (** Unsafe version of [set]. Can cause arbitrary behavior when used for an
         out-of-bounds array access. *)
     external unsafe_set
-      :  ('a t[@local_opt])
-      -> (int[@local_opt])
-      -> 'a
-      -> unit
+      : 'a.
+      ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
       = "%array_unsafe_set"
+    [@@layout_poly]
 
-    (** [create ~len x] creates an array of length [len] with the value [x] populated in
-        each element. *)
-    val create : len:int -> 'a -> 'a t
+    [%%template:
+      val create : len:int -> 'a -> 'a array
+      [@@ocaml.doc
+        " [create ~len x] creates an array of length [len] with the value [x] populated in\n\
+        \          each element. "]
+      [@@alloc __ = (heap, stack)]]
 
-    (** [create_local ~len x] is like [create]. It allocates the array on the local stack.
-        The array's elements are still global. *)
-    val create_local : len:int -> 'a -> 'a t
+    val create_local : len:int -> 'a -> 'a array
+
+    val magic_create_uninitialized : len:int -> 'a array
+    [@@ocaml.doc
+      " [magic_create_uninitialized ~len] creates an array of length [len]. All elements\n\
+      \          are magically populated as a tagged [0]. "]
 
     (** [create_float_uninitialized ~len] creates a float array of length [len] with
         uninitialized elements -- that is, they may contain arbitrary, nondeterministic
@@ -116,6 +125,9 @@ module Definitions = struct
         types. The unsafe versions do not bound-check the arguments. *)
     include Blit.S1 with type 'a t := 'a t
 
+    val%template foldi_right : 'a t -> init:'acc -> f:(int -> 'a -> 'acc -> 'acc) -> 'acc
+    [@@alloc a @ m = (stack_local, heap_global)]
+
     (** [folding_map] is a version of [map] that threads an accumulator through calls to
         [f]. *)
     val folding_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'b t
@@ -131,7 +143,8 @@ module Definitions = struct
     (** [Array.fold_right f a ~init] computes
         [f a.(0) (f a.(1) ( ... (f a.(n-1) init) ...))], where [n] is the length of the
         array [a]. *)
-    val fold_right : 'a t -> f:('a -> 'acc -> 'acc) -> init:'acc -> 'acc
+    val%template fold_right : 'a t -> f:('a -> 'acc -> 'acc) -> init:'acc -> 'acc
+    [@@mode m = (uncontended, shared)]
 
     (** All sort functions in this module sort in increasing order by default. *)
 

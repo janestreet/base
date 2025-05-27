@@ -1,7 +1,5 @@
 open! Import
 
-[@@@warning "-incompatible-with-upstream"]
-
 module Definitions = struct
   type ('t, 'a, 'accum) fold = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
 

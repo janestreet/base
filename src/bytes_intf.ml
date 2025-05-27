@@ -29,9 +29,9 @@ module type Bytes = sig
   (** {1 Common Interfaces} *)
 
   include Blit.S with type t := t
-  include Comparable.S with type t := t
-  include Ppx_compare_lib.Comparable.S__local with type t := t
-  include Ppx_compare_lib.Equal.S__local with type t := t
+
+  include%template Comparable.S [@mode local] with type t := t
+
   include Stringable.S with type t := t
 
   (** Note that [pp] allocates in order to preserve the state of the byte sequence it was
@@ -49,7 +49,8 @@ module type Bytes = sig
 
   (** [create len] returns a newly-allocated and uninitialized byte sequence of length
       [len]. No guarantees are made about the contents of the return value. *)
-  val create : int -> t
+  val%template create : int -> t
+  [@@alloc __ @ m = (heap_global, stack_local)]
 
   (** [create_local] is like [create], but returns a stack-allocated [Bytes.t]. *)
   val create_local : int -> t

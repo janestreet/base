@@ -2,8 +2,6 @@
 
 open! Import
 
-[@@@warning "-incompatible-with-upstream"]
-
 module Definitions = struct
   (** If [blit : (src, dst) blit], then [blit ~src ~src_pos ~len ~dst ~dst_pos] blits
       [len] values from [src] starting at position [src_pos] to [dst] at position

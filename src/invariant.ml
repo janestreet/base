@@ -2,8 +2,6 @@ open! Import
 include Invariant_intf.Definitions
 module Sexp = Sexp0
 
-[@@@warning "-incompatible-with-upstream"]
-
 let raise_s = Error.raise_s
 
 [%%template

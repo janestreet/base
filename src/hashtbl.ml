@@ -30,7 +30,7 @@ type ('k, 'v) t =
   { mutable table : (('k, 'v) Avltree.t[@kind k v]) array
   ; mutable length : int
   ; growth_allowed : bool
-  ; hashable : 'k Hashable.t
+  ; hashable : 'k Hashable.t [@globalized]
   ; mutable mutation_allowed : bool (* Set during all iteration operations *)
   }
 
@@ -115,6 +115,7 @@ let maybe_resize_table t =
 ;;
 
 let capacity t = Array.length t.table
+let growth_allowed t = t.growth_allowed
 
 let set t ~key ~data =
   (ensure_mutation_allowed [@kind k v]) t;
@@ -154,28 +155,34 @@ let clear t =
     t.length <- 0)
 ;;
 
-let find_and_call t key ~if_found ~if_not_found =
+let[@mode local] find_and_call t key ~if_found ~if_not_found =
   (* with a good hash function these first two cases will be the overwhelming majority,
      and Avltree.find is recursive, so it can't be inlined, so doing this avoids a
      function call in most cases. *)
   match t.table.((slot [@kind k v]) t key) with
   | Avltree.Empty -> if_not_found key
   | Avltree.Leaf { key = k; value = v } ->
-    if (compare_key [@kind k v]) t k key = 0 then if_found v else if_not_found key
+    if t.hashable.compare k key = 0 then if_found v else if_not_found key
   | tree ->
     (Avltree.find_and_call [@kind k v])
       tree
-      ~compare:((compare_key [@kind k v]) t)
+      ~compare:t.hashable.compare
       key
       ~if_found
       ~if_not_found
 ;;
 
-let find =
+let[@mode global] [@inline] find_and_call t key ~if_found ~if_not_found =
+  (find_and_call [@mode local] [@kind k v]) t key ~if_found ~if_not_found
+;;
+
+let[@mode local] find =
   let if_found v : (_ Option.t[@kind v]) = Some v in
   let if_not_found _ : (_ Option.t[@kind v]) = None in
-  fun t key -> (find_and_call [@kind k v]) t key ~if_found ~if_not_found
+  fun t key -> (find_and_call [@mode local] [@kind k v]) t key ~if_found ~if_not_found
 ;;
+
+let[@mode global] [@inline] find = [%eta2 find [@mode local] [@kind k v]]
 
 let mem t key =
   match t.table.((slot [@kind k v]) t key) with
@@ -278,7 +285,7 @@ let findi_and_call2 t key ~a ~b ~if_found ~if_not_found =
       ~if_not_found
 ;;
 
-let iteri t ~f =
+let%template[@mode local] iteri t ~f =
   if t.length = 0
   then ()
   else (
@@ -299,6 +306,7 @@ let iteri t ~f =
       raise exn)
 ;;
 
+let%template[@mode global] [@inline] iteri t ~f = (iteri [@mode local]) t ~f
 let iter t ~f = iteri t ~f:(fun ~key:_ ~data -> f data) [@nontail]
 let iter_keys t ~f = iteri t ~f:(fun ~key ~data:_ -> f key) [@nontail]
 
@@ -786,12 +794,12 @@ let mapi_inplace t ~f =
 
 let map_inplace t ~f = mapi_inplace t ~f:(fun ~key:_ ~data -> f data) [@nontail]
 
-let equal equal t t' =
+let%template[@mode local] equal equal t t' =
   length t = length t'
   && (with_return (fun r ->
         without_mutating t' (fun () ->
-          iteri t ~f:(fun ~key ~data ->
-            match find t' key with
+          (iteri [@mode local]) t ~f:(fun ~key ~data ->
+            match (find [@mode local]) t' key with
             | None -> r.return false
             | Some data' -> if not (equal data data') then r.return false)
           [@nontail]);
@@ -799,7 +807,11 @@ let equal equal t t' =
   [@nontail])
 ;;
 
-let similar = equal
+let%template[@mode global] [@inline] equal equal t t' =
+  (equal [@mode local]) [%eta2 equal] t t'
+;;
+
+let%template similar = (equal [@mode m]) [@@mode m = (local, global)]
 
 module Accessors = struct
   let invariant = invariant
@@ -945,6 +957,7 @@ module Poly = struct
 
   let hashable = Hashable.poly
   let capacity = capacity
+  let growth_allowed = growth_allowed
 
   include%template Creators [@modality portable] (struct
       type 'a t = 'a

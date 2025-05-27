@@ -20,7 +20,8 @@ module Definitions = struct
 
     (** Standard interfaces *)
 
-    include Binary_searchable.S1 with type 'a t := 'a t
+    include%template Binary_searchable.S1 [@mode local] with type 'a t := 'a t
+
     include Indexed_container.S1_with_creators with type 'a t := 'a t
     include Invariant.S1 with type 'a t := 'a t
 
@@ -53,6 +54,9 @@ module Definitions = struct
     val singleton : 'a -> 'a t
     val create : len:int -> 'a -> mutate:('a array -> unit) -> 'a iarray
 
+    val%template init : int -> f:(int -> 'a) -> 'a t
+    [@@alloc __ @ m = (heap_global, stack_local)]
+
     (** Conversions *)
 
     val of_sequence : 'a Sequence.t -> 'a t
@@ -82,11 +86,18 @@ module Definitions = struct
 
     (** Combining elements *)
 
-    val fold_right : 'a t -> init:'acc -> f:('a -> 'acc -> 'acc) -> 'acc
     val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
     val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
     val combine_errors : 'a Or_error.t t -> 'a t Or_error.t
     val combine_errors_unit : unit Or_error.t t -> unit Or_error.t
+
+    [%%template:
+    [@@@kind.default ka = value, kacc = (value, bits64, bits32, word, float64)]
+
+    val fold : 'a 'acc. 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
+    val foldi : 'a 'acc. 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc) -> 'acc
+    val fold_right : 'a 'acc. 'a t -> init:'acc -> f:('a -> 'acc -> 'acc) -> 'acc]
+
     val fold_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
     val fold_mapi : 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
 
@@ -194,6 +205,14 @@ module Definitions = struct
       val iter2_exn : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit
       val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
       val cartesian_product : 'a t -> 'b t -> ('a * 'b) t
+
+      [%%template:
+      [@@@kind.default ka = value, kacc = (value, bits64, bits32, word, float64)]
+
+      val fold : 'a 'acc. 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
+      val foldi : 'a 'acc. 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc) -> 'acc
+      val fold_right : 'a 'acc. 'a t -> init:'acc -> f:('a -> 'acc -> 'acc) -> 'acc]
+
       val fold_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
 
       val fold_mapi

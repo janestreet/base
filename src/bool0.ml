@@ -1,11 +1,8 @@
 external magic : 'a 'b. 'a -> 'b = "%identity" [@@layout_poly]
-
-include struct
-  external box_int64 : int64 -> int64 = "%identity"
-  external unbox_int64 : int64 -> int64 = "%identity"
-  external box_float : float -> float = "%identity"
-  external unbox_float : float -> float = "%identity"
-end
+external box_int64 : int64 -> int64 = "%identity"
+external unbox_int64 : int64 -> int64 = "%identity"
+external box_float : float -> float = "%identity"
+external unbox_float : float -> float = "%identity"
 
 external bits_of_float
   :  float
@@ -50,12 +47,10 @@ external select
 [@@@mode.default m = (local, global)]
 
 external select
-  :  bool
-  -> ('a[@local_opt])
-  -> ('a[@local_opt])
-  -> ('a[@local_opt])
+  : 'a.
+  bool -> ('a[@local_opt]) -> ('a[@local_opt]) -> ('a[@local_opt])
   = "caml_csel_value"
-[@@kind k = value] [@@noalloc] [@@no_effects] [@@no_coeffects] [@@builtin]
+[@@kind k = value_or_null] [@@noalloc] [@@no_effects] [@@no_coeffects] [@@builtin]
 
 let[@inline] select : type a. bool -> a -> a -> a =
   fun if_ then_ else_ -> magic ((select [@kind k]) if_ (magic then_) (magic else_))

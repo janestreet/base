@@ -12,7 +12,7 @@ module W : sig
   type t = int64
   [@@deriving compare ~localize, globalize, hash, sexp ~localize, sexp_grammar]
 
-  include Comparator.S with type t := t
+  include%template Comparator.S [@modality portable] with type t := t
 
   val wrap_exn : int64 -> t
   val wrap_modulo : int64 -> t

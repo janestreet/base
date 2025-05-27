@@ -387,17 +387,21 @@ let%test "int_pow misc" =
 ;;
 
 (* some ugly corner cases with extremely large exponents and some serious precision loss *)
-let%test ("int_pow bad cases" [@tags "64-bits-only"]) =
+let%expect_test ("int_pow bad cases" [@tags "64-bits-only"]) =
   let a = one_ulp `Down 1. in
   let b = one_ulp `Up 1. in
   let large = 1 lsl 61 in
   let small = Int.neg large in
   (* this huge discrepancy comes from the fact that [1 / a = b] but this is a very poor
      approximation, and in particular [1 / b = one_ulp `Down a = a * a]. *)
-  a **. of_int small = 1.5114276650041252e+111
-  && int_pow a small = 2.2844048619719663e+222
-  && int_pow b large = 2.2844048619719663e+222
-  && b **. of_int large = 2.2844135865396268e+222
+  print_s [%message (a **. of_int small : t)];
+  [%expect {| ("a **. (of_int small)" 1.5114276650041252E+111) |}];
+  print_s [%message (int_pow a small : t)];
+  [%expect {| ("int_pow a small" 2.2844048619719663E+222) |}];
+  print_s [%message (int_pow b large : t)];
+  [%expect {| ("int_pow b large" 2.2844048619719663E+222) |}];
+  print_s [%message (b **. of_int large : t)];
+  [%expect {| ("b **. (of_int large)" 2.2844135865396268E+222) |}]
 ;;
 
 let%test_unit "sign_exn" =

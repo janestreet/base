@@ -5,18 +5,19 @@ module Definitions = struct
   (** @canonical Base.Hashtbl.Key *)
   module%template Key = struct
     [@@@kind.default k = (value, bits64, float64)]
+    [@@@mode.default m = (local, global)]
 
     module type S = sig
       type t [@@deriving sexp_of]
 
-      val compare : [%compare: t]
+      val compare : t -> t -> int [@@mode m = (global, m)]
 
       (** Two [t]s that [compare] equal must have equal hashes for the hashtable to behave
           properly. *)
       val hash : t -> int
     end
 
-    type 'a t = ((module S with type t = 'a)[@kind k])
+    type 'a t = ((module S with type t = 'a)[@kind k] [@mode m])
   end
 
   module Merge_into_action = Dictionary_mutable.Merge_into_action
@@ -39,6 +40,7 @@ module Definitions = struct
 
     val sexp_of_key : ('a, _) t -> 'a key -> Sexp.t
     val capacity : _ t -> int
+    val growth_allowed : _ t -> bool
 
     (** We redeclare [choose*] below to add implementation-specific notes on performance. *)
 
@@ -458,6 +460,7 @@ module Definitions = struct
 
     val length : ('k, 'v) t -> int
     val capacity : ('k, 'v) t -> int
+    val growth_allowed : ('k, 'v) t -> bool
     val is_empty : ('k, 'v) t -> bool
     val add_exn : ('k, 'v) t -> key:'k -> data:'v -> unit
     val find : ('k, 'v) t -> 'k -> ('v Option.t[@kind v])
@@ -482,6 +485,16 @@ module Definitions = struct
       -> 'k
       -> f:(('v Option.t[@kind v]) -> ('v Option.t[@kind v]))
       -> unit
+  end
+
+  module type Hashtbl_equality = sig
+    type ('a, 'b) t
+
+    val%template equal : ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
+    [@@mode m = local]
+
+    val%template similar : ('b -> 'c -> bool) -> ('a, 'b) t -> ('a, 'c) t -> bool
+    [@@mode m = local]
   end
 end
 
@@ -566,6 +579,8 @@ module type Hashtbl = sig
   include Non_value
 
   include S_without_submodules with type ('k, 'v) t := ('k, 'v) t (** @inline *)
+
+  include Hashtbl_equality with type ('k, 'v) t := ('k, 'v) t (** @inline *)
 
   module%template.portable Creators (Key : sig
       type 'a t

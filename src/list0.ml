@@ -9,12 +9,35 @@
 open! Import0
 
 let hd_exn = Stdlib.List.hd
-let rev_append = Stdlib.List.rev_append
 let tl_exn = Stdlib.List.tl
 let unzip = Stdlib.List.split
 
+module%template Constructors = struct
+  type 'a t =
+    | []
+    | ( :: ) of 'a * ('a t[@kind k])
+  [@@kind k = (float64, bits32, bits64, word)]
+  [@@deriving compare ~localize, equal ~localize]
+
+  type 'a t = 'a list =
+    | []
+    | ( :: ) of 'a * 'a t
+end
+
+include Constructors
+
 (* Some of these are eta expanded in order to permute parameter order to follow Base
    conventions. *)
+
+[%%template
+[@@@kind.default k = (float64, bits32, bits64, word, value)]
+
+open struct
+  type nonrec 'a t = ('a t[@kind k]) =
+    | []
+    | ( :: ) of 'a * ('a t[@kind k])
+  [@@kind k]
+end
 
 let length =
   let rec length_aux len = function
@@ -27,21 +50,63 @@ let length =
 let rec exists t ~f =
   match t with
   | [] -> false
-  | x :: xs -> if f x then true else exists xs ~f
+  | x :: xs -> if f x then true else (exists [@kind k]) xs ~f
 ;;
 
-let rec exists2_ok l1 l2 ~(f : _ -> _ -> _) =
-  match l1, l2 with
-  | [], [] -> false
-  | a1 :: l1, a2 :: l2 -> f a1 a2 || exists2_ok l1 l2 ~f
-  | _, _ -> invalid_arg "List.exists2"
-;;
-
-let rec fold t ~init ~(f : _ -> _ -> _) =
+let rec iter t ~(f : _ -> _) =
   match t with
-  | [] -> init
-  | a :: l -> fold l ~init:(f init a) ~f
+  | [] -> ()
+  | a :: l ->
+    f a;
+    (iter [@kind k]) l ~f
 ;;
+
+(* Copied from [Stdlib] for templating *)
+let rec rev_append l1 l2 =
+  match l1 with
+  | [] -> l2
+  | a :: l -> (rev_append [@kind k]) l (a :: l2)
+;;
+
+let rev = function
+  | ([] | [ _ ]) as res -> res
+  | x :: y :: rest -> (rev_append [@kind k]) rest [ y; x ]
+;;
+
+let for_all t ~f = not ((exists [@kind k]) t ~f:(fun x -> not (f x)))
+
+[@@@kind ka = k]
+
+let fold t ~init ~(f : _ -> _ -> _) =
+  let rec loop acc = function
+    | [] -> acc
+    | a :: l -> loop (f acc a) l
+  in
+  loop init t [@nontail]
+[@@kind
+  ka = ka
+  , kb
+    = ( float64
+      , bits32
+      , bits64
+      , word
+      , value
+      , value & float64
+      , value & bits32
+      , value & bits64
+      , value & word
+      , value & value )]
+;;
+
+[@@@kind.default kb = (float64, bits32, bits64, word, value)]
+
+let rev_map =
+  let rec rmap_f f accu : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
+    | [] -> accu
+    | a :: l -> rmap_f f (f a :: accu) l
+  in
+  fun l ~f -> rmap_f f [] l
+;;]
 
 let rec fold2_ok l1 l2 ~init ~(f : _ -> _ -> _ -> _) =
   match l1, l2 with
@@ -50,21 +115,11 @@ let rec fold2_ok l1 l2 ~init ~(f : _ -> _ -> _ -> _) =
   | _, _ -> invalid_arg "List.fold_left2"
 ;;
 
-let for_all t ~f = not (exists t ~f:(fun x -> not (f x)))
-
-let rec for_all2_ok l1 l2 ~(f : _ -> _ -> _) =
+let rec exists2_ok l1 l2 ~(f : _ -> _ -> _) =
   match l1, l2 with
-  | [], [] -> true
-  | a1 :: l1, a2 :: l2 -> f a1 a2 && for_all2_ok l1 l2 ~f
-  | _, _ -> invalid_arg "List.for_all2"
-;;
-
-let rec iter t ~(f : _ -> _) =
-  match t with
-  | [] -> ()
-  | a :: l ->
-    f a;
-    iter l ~f
+  | [], [] -> false
+  | a1 :: l1, a2 :: l2 -> f a1 a2 || exists2_ok l1 l2 ~f
+  | _, _ -> invalid_arg "List.exists2"
 ;;
 
 let rec iter2_ok l1 l2 ~(f : _ -> _ -> unit) =
@@ -76,23 +131,19 @@ let rec iter2_ok l1 l2 ~(f : _ -> _ -> unit) =
   | _, _ -> invalid_arg "List.iter2"
 ;;
 
+let rec for_all2_ok l1 l2 ~(f : _ -> _ -> _) =
+  match l1, l2 with
+  | [], [] -> true
+  | a1 :: l1, a2 :: l2 -> f a1 a2 && for_all2_ok l1 l2 ~f
+  | _, _ -> invalid_arg "List.for_all2"
+;;
+
 let rec nontail_map t ~f =
   match t with
   | [] -> []
   | x :: xs ->
     let y = f x in
     y :: nontail_map xs ~f
-;;
-
-let nontail_mapi t ~f = Stdlib.List.mapi t ~f
-let partition t ~f = Stdlib.List.partition t ~f
-
-let rev_map =
-  let rec rmap_f f accu = function
-    | [] -> accu
-    | a :: l -> rmap_f f (f a :: accu) l
-  in
-  fun l ~f -> rmap_f f [] l
 ;;
 
 let rev_map2_ok =
@@ -105,10 +156,8 @@ let rev_map2_ok =
   fun l1 l2 ~(f : _ -> _ -> _) -> rmap2_f f [] l1 l2
 ;;
 
-let rev = function
-  | ([] | [ _ ]) as res -> res
-  | x :: y :: rest -> rev_append rest [ y; x ]
-;;
+let nontail_mapi t ~f = Stdlib.List.mapi t ~f
+let partition t ~f = Stdlib.List.partition t ~f
 
 let fold_right l ~(f : _ -> _ -> _) ~init =
   match l with

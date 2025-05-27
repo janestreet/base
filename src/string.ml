@@ -1873,9 +1873,11 @@ struct
          [ "", Atom t; "pos", sexp_of_int pos ])
   ;;
 
+  let get_unchecked = Format.get_decode_result
+
   let get t ~byte_pos =
     (* Even if [t] is validated, we need to validate [pos], so we check the decoding *)
-    let decode = Format.get_decode_result t ~byte_pos in
+    let decode = get_unchecked t ~byte_pos in
     if Uchar.utf_decode_is_valid decode
     then Uchar.utf_decode_uchar decode
     else raise_get t byte_pos
@@ -1905,10 +1907,10 @@ struct
       let to_string = to_string
     end)
 
-  include%template Identifiable.Make [@modality portable] (struct
+  include%template Identifiable.Make [@mode local] [@modality portable] (struct
       type nonrec t = t
 
-      let compare = compare
+      let[@mode l = (local, global)] compare = (compare [@mode l])
       let hash = hash
       let hash_fold_t = hash_fold_t
       let of_string = of_string

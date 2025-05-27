@@ -3,9 +3,10 @@ include Array_intf.Definitions
 include Array0
 
 type 'a t = 'a array
-[@@deriving compare ~localize, globalize, sexp ~localize, sexp_grammar]
 
-[@@@warning "-incompatible-with-upstream"]
+[%%rederive.portable
+  type nonrec 'a t = 'a array
+  [@@deriving compare ~localize, globalize, sexp ~localize, sexp_grammar]]
 
 (* This module implements a new in-place, constant heap sorting algorithm to replace the
    one used by the standard libraries.  Its only purpose is to be faster (hopefully
@@ -413,6 +414,21 @@ let foldi t ~init ~f =
     acc := f i !acc (unsafe_get t i)
   done;
   !acc
+;;
+
+let%template foldi_right t ~init ~f =
+  (let rec aux t ~idx ~acc ~f =
+     (if idx < 0
+      then acc
+      else (
+        (* [unsafe_get] is safe, since [idx >= 0 && idx < Array.length t] *)
+        let acc = f idx (unsafe_get t idx) acc in
+        aux t ~idx:(idx - 1) ~acc ~f))
+     [@exclave_if_stack a]
+   in
+   aux t ~idx:(length t - 1) ~acc:init ~f [@nontail])
+  [@exclave_if_stack a]
+[@@alloc a @ m = (stack_local, heap_global)]
 ;;
 
 let folding_mapi t ~init ~f =

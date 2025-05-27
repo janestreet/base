@@ -94,7 +94,11 @@ module Accessors = struct
 
   let exists t ~f = Hashtbl.existsi t ~f:(fun ~key ~data:() -> f key) [@nontail]
   let for_all t ~f = not (Hashtbl.existsi t ~f:(fun ~key ~data:() -> not (f key)))
-  let equal t1 t2 = Hashtbl.equal (fun () () -> true) t1 t2
+
+  let%template equal t1 t2 = (Hashtbl.equal [@mode m]) (fun () () -> true) t1 t2
+  [@@mode m = (local, global)]
+  ;;
+
   let copy t = Hashtbl.copy t
   let filter t ~f = Hashtbl.filteri t ~f:(fun ~key ~data:() -> f key) [@nontail]
   let union t1 t2 = Hashtbl.merge t1 t2 ~f:(fun ~key:_ _ -> Some ())
@@ -207,6 +211,7 @@ let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt)
 ;;
 
 let equal_m__t (module _ : Equal_m) t1 t2 = equal t1 t2
+let equal__local_m__t (module _ : Equal_m) t1 t2 = equal__local t1 t2
 
 module Private = struct
   let hashable = Hashtbl.Private.hashable

@@ -34,6 +34,14 @@
    (type $float (struct (field f64)))
    (type $block (array (mut (ref eq))))
 
+   (func (export "caml_dummy_obj_is_stack")
+      (param (ref eq)) (result (ref eq))
+      (ref.i31 (i32.const 0)))
+
+   (func (export "caml_dummy_succ_scannable_prefix_len")
+      (param (ref eq)) (result (ref eq))
+      (ref.i31 (i32.const 0)))
+
    (func (export "Base_int_math_int_popcount")
       (param (ref eq)) (result (ref eq))
       (ref.i31 (i32.popcnt (i31.get_u (ref.cast (ref i31) (local.get 0))))))

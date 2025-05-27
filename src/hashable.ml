@@ -41,7 +41,7 @@ let%template[@kind k = (value, float64, bits64)] of_key
   =
   fun (module Key) ->
   { hash = Key.hash; compare = Key.compare; sexp_of_t = Key.sexp_of_t }
-[@@modality p = (portable, nonportable)] [@@conflate_modality_as_mode p]
+[@@modality p = (portable, nonportable)]
 ;;
 
 let to_key (type a) { hash; compare; sexp_of_t } =

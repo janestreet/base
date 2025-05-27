@@ -8,12 +8,15 @@ open Int_replace_polymorphic_compare
    If this k = 1 (resp n), find_last_not_satisfying (resp find_first_satisfying)
    will return None. *)
 
+[%%template
+[@@@mode.default m = (global, local)]
+
 let rec linear_search_first_satisfying t ~get ~lo ~hi ~pred =
   if lo > hi
   then None
   else if pred (get t lo)
   then Some lo
-  else linear_search_first_satisfying t ~get ~lo:(lo + 1) ~hi ~pred
+  else (linear_search_first_satisfying [@mode m]) t ~get ~lo:(lo + 1) ~hi ~pred
 ;;
 
 (* Takes a container [t], a predicate [pred] and two indices [lo < hi], such that
@@ -34,10 +37,10 @@ let rec find_range_near_first_satisfying t ~get ~lo ~hi ~pred =
     if pred (get t mid)
        (* INVARIANT check: it means the first satisfying element is between [lo] and [mid] *)
     then
-      find_range_near_first_satisfying t ~get ~lo ~hi:mid ~pred
+      (find_range_near_first_satisfying [@mode m]) t ~get ~lo ~hi:mid ~pred
       (* INVARIANT check: it means the first satisfying element, if it exists,
          is between [mid+1] and [hi] *)
-    else find_range_near_first_satisfying t ~get ~lo:(mid + 1) ~hi ~pred)
+    else (find_range_near_first_satisfying [@mode m]) t ~get ~lo:(mid + 1) ~hi ~pred)
 ;;
 
 let find_first_satisfying ?pos ?len t ~get ~length ~pred =
@@ -46,8 +49,8 @@ let find_first_satisfying ?pos ?len t ~get ~length ~pred =
   in
   let lo = pos in
   let hi = pos + len - 1 in
-  let lo, hi = find_range_near_first_satisfying t ~get ~lo ~hi ~pred in
-  linear_search_first_satisfying t ~get ~lo ~hi ~pred
+  let lo, hi = (find_range_near_first_satisfying [@mode m]) t ~get ~lo ~hi ~pred in
+  (linear_search_first_satisfying [@mode m]) t ~get ~lo ~hi ~pred
 ;;
 
 (* Takes an array with shape [true,...true,false,...false] (i.e., the _reverse_ of what
@@ -62,7 +65,8 @@ let find_last_satisfying ?pos ?len t ~pred ~get ~length =
   else (
     (* The last satisfying is the one just before the first not satisfying *)
     match
-      find_first_satisfying ~pos ~len t ~get ~length ~pred:(fun x -> not (pred x))
+      (find_first_satisfying [@mode m]) ~pos ~len t ~get ~length ~pred:(fun x ->
+        not (pred x))
     with
     | None -> Some (pos + len - 1)
     (* This means that all elements satisfy pred.
@@ -83,25 +87,31 @@ let binary_search
   =
   match how with
   | `Last_strictly_less_than ->
-    find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v < 0)
+    (find_last_satisfying [@mode m]) ?pos ?len t ~get ~length ~pred:(fun x ->
+      compare x v < 0)
   | `Last_less_than_or_equal_to ->
-    find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v <= 0)
+    (find_last_satisfying [@mode m]) ?pos ?len t ~get ~length ~pred:(fun x ->
+      compare x v <= 0)
   | `First_equal_to ->
     (match
-       find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v >= 0)
+       (find_first_satisfying [@mode m]) ?pos ?len t ~get ~length ~pred:(fun x ->
+         compare x v >= 0)
      with
      | Some x when compare (get t x) v = 0 -> Some x
      | None | Some _ -> None)
   | `Last_equal_to ->
     (match
-       find_last_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v <= 0)
+       (find_last_satisfying [@mode m]) ?pos ?len t ~get ~length ~pred:(fun x ->
+         compare x v <= 0)
      with
      | Some x when compare (get t x) v = 0 -> Some x
      | None | Some _ -> None)
   | `First_greater_than_or_equal_to ->
-    find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v >= 0)
+    (find_first_satisfying [@mode m]) ?pos ?len t ~get ~length ~pred:(fun x ->
+      compare x v >= 0)
   | `First_strictly_greater_than ->
-    find_first_satisfying ?pos ?len t ~get ~length ~pred:(fun x -> compare x v > 0)
+    (find_first_satisfying [@mode m]) ?pos ?len t ~get ~length ~pred:(fun x ->
+      compare x v > 0)
 ;;
 
 let binary_search_segmented ?pos ?len t ~length ~get ~segment_of how =
@@ -112,6 +122,8 @@ let binary_search_segmented ?pos ?len t ~length ~get ~segment_of how =
   in
   let is_right x = not (is_left x) in
   match how with
-  | `Last_on_left -> find_last_satisfying ?pos ?len t ~length ~get ~pred:is_left
-  | `First_on_right -> find_first_satisfying ?pos ?len t ~length ~get ~pred:is_right
-;;
+  | `Last_on_left ->
+    (find_last_satisfying [@mode m]) ?pos ?len t ~length ~get ~pred:is_left
+  | `First_on_right ->
+    (find_first_satisfying [@mode m]) ?pos ?len t ~length ~get ~pred:is_right
+;;]
