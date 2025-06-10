@@ -2,6 +2,7 @@ open! Import
 include Iarray_intf.Definitions
 include Iarray0
 module I = Basement.Stdlib_iarray_labels
+include O
 
 let is_empty t = length t = 0
 let last_exn t = t.:(length t - 1)

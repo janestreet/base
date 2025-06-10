@@ -2002,14 +2002,11 @@ module Tree0 = struct
 
   let of_iteri ~iteri ~compare_key =
     let acc = { bad_key = None; map = Empty } in
-    iteri
-      ~f:
-        (local_
-        fun ~key ~data ->
-          let new_map = set ~key ~data acc.map ~compare_key in
-          if length acc.map = length new_map && Option.is_none acc.bad_key
-          then acc.bad_key <- Some key
-          else acc.map <- new_map);
+    iteri ~f:(local_ fun ~key ~data ->
+      let new_map = set ~key ~data acc.map ~compare_key in
+      if length acc.map = length new_map && Option.is_none acc.bad_key
+      then acc.bad_key <- Some key
+      else acc.map <- new_map);
     match acc.bad_key with
     | None -> `Ok acc.map
     | Some key -> `Duplicate_key key

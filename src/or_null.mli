@@ -148,3 +148,19 @@ module Let_syntax : sig
     module Open_on_rhs : sig end
   end
 end
+
+(** Let syntax for use with locally-allocated values. *)
+module Local : sig
+  module Let_syntax : sig
+    val return : 'a @ local -> 'a t @ local
+
+    module Let_syntax : sig
+      val return : 'a @ local -> 'a t @ local
+      val map : 'a t @ local -> f:('a @ local -> 'b @ local) @ local -> 'b t @ local
+      val bind : 'a t @ local -> f:('a @ local -> 'b t @ local) @ local -> 'b t @ local
+      val both : 'a t @ local -> 'b t @ local -> ('a * 'b) t @ local
+
+      module Open_on_rhs : sig end
+    end
+  end
+end

@@ -32,6 +32,8 @@
 open! Import
 module Sexp = Sexp0
 
+[@@@warning "-incompatible-with-upstream"]
+
 module Definitions = struct
   module%template Type_equal_defns (Type_equal : T.T2 [@kind any any]) = struct
     (** The [Lift*] module types are used by the [Lift*] functors. See below. *)
@@ -85,36 +87,12 @@ module Definitions = struct
     end
   end
 
-  module Type_equal_id_defns (Id : sig
+  module%template Type_equal_id_defns (Id : sig
       type ('a : any) t
     end) =
   struct
     module type Arg0 = sig
       type t : any [@@deriving sexp_of]
-
-      val name : string
-    end
-
-    module type Arg1 = sig
-      type !'a t [@@deriving sexp_of]
-
-      val name : string
-    end
-
-    module type Arg2 = sig
-      type (!'a, !'b) t [@@deriving sexp_of]
-
-      val name : string
-    end
-
-    module type Arg3 = sig
-      type (!'a, !'b, !'c) t [@@deriving sexp_of]
-
-      val name : string
-    end
-
-    module type Arg4 = sig
-      type (!'a, !'b, !'c, !'d) t [@@deriving sexp_of]
 
       val name : string
     end
@@ -125,26 +103,58 @@ module Definitions = struct
       val type_equal_id : t Id.t
     end
 
+    [@@@kind.default ka = (value, immediate64)]
+
+    module type Arg1 = sig
+      type (!'a : ka) t [@@deriving sexp_of]
+
+      val name : string
+    end
+
     module type S1 = sig
-      type 'a t
+      type ('a : ka) t
 
       val type_equal_id : 'a Id.t -> 'a t Id.t
     end
 
+    [@@@kind.default kb = (value, immediate64)]
+
+    module type Arg2 = sig
+      type (!'a : ka, !'b : kb) t [@@deriving sexp_of]
+
+      val name : string
+    end
+
     module type S2 = sig
-      type ('a, 'b) t
+      type ('a : ka, 'b : kb) t
 
       val type_equal_id : 'a Id.t -> 'b Id.t -> ('a, 'b) t Id.t
     end
 
+    [@@@kind.default kc = (value, immediate64)]
+
+    module type Arg3 = sig
+      type (!'a : ka, !'b : kb, !'c : kc) t [@@deriving sexp_of]
+
+      val name : string
+    end
+
     module type S3 = sig
-      type ('a, 'b, 'c) t
+      type ('a : ka, 'b : kb, 'c : kc) t
 
       val type_equal_id : 'a Id.t -> 'b Id.t -> 'c Id.t -> ('a, 'b, 'c) t Id.t
     end
 
+    [@@@kind.default kd = (value, immediate64)]
+
+    module type Arg4 = sig
+      type (!'a : ka, !'b : kb, !'c : kc, !'d : kd) t [@@deriving sexp_of]
+
+      val name : string
+    end
+
     module type S4 = sig
-      type ('a, 'b, 'c, 'd) t
+      type ('a : ka, 'b : kb, 'c : kc, 'd : kd) t
 
       val type_equal_id
         :  'a Id.t
@@ -290,7 +300,11 @@ module type Type_equal = sig @@ portable
 
     module%template.portable Create0 (T : Arg0) : S0 with type t := T.t
     module%template.portable Create1 (T : Arg1) : S1 with type 'a t := 'a T.t
-    module%template.portable Create2 (T : Arg2) : S2 with type ('a, 'b) t := ('a, 'b) T.t
+
+    module%template.portable
+      [@kind a = (value, immediate64), b = value] Create2
+        (T : Arg2
+      [@kind a b]) : S2 [@kind a b] with type ('a, 'b) t := ('a, 'b) T.t
 
     module%template.portable Create3 (T : Arg3) :
       S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t

@@ -164,7 +164,7 @@ val some_if_thunk : bool -> (unit -> 'a @ m) @ local -> 'a t @ m]
 [@@@kind.default k = (value, float64, bits32, bits64, word)]
 
 (** [is_none t] returns true iff [t = None]. *)
-val is_none : ('a t[@kind k]) @ local -> bool
+val is_none : ('a t[@kind k]) @ contended local -> bool
 
 (** [is_some t] returns true iff [t = Some x]. *)
-val is_some : ('a t[@kind k]) @ local -> bool]
+val is_some : ('a t[@kind k]) @ contended local -> bool]

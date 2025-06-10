@@ -711,3 +711,71 @@ include%template struct
       |}]
   ;;
 end [@@alloc a @ m = (stack_local, heap_global)]
+
+let%expect_test "templated map" =
+  let%template[@kind k = (value, bits64, float64)] print t f =
+    for i = 0 to length t - 1 do
+      let x = get t i in
+      print_s (f x)
+    done
+  in
+  let t = Array.init 6 ~f:(fun i -> Int63.of_int (i + 1)) in
+  print t Int63.sexp_of_t;
+  [%expect
+    {|
+    1
+    2
+    3
+    4
+    5
+    6
+    |}];
+  let t = (map [@kind immediate64 value]) t ~f:(fun x -> {%string|0%{x#Int63}|}) in
+  print t String.sexp_of_t;
+  [%expect
+    {|
+    01
+    02
+    03
+    04
+    05
+    06
+    |}];
+  let t = (map [@kind value bits64]) t ~f:(fun x -> Int64_u.(of_string x + #1L)) in
+  (print [@kind bits64]) t Int64_u.sexp_of_t;
+  [%expect
+    {|
+    2
+    3
+    4
+    5
+    6
+    7
+    |}];
+  let t =
+    (map [@kind bits64 float64]) t ~f:(fun x ->
+      let f = Int64_u.to_float x in
+      Float_u.(f * #2.25))
+  in
+  (print [@kind float64]) t Float_u.sexp_of_t;
+  [%expect
+    {|
+    4.5
+    6.75
+    9
+    11.25
+    13.5
+    15.75
+    |}];
+  let t = (map [@kind float64 immediate]) t ~f:(fun x -> Float_u.(x > #10.0)) in
+  print t Bool.sexp_of_t;
+  [%expect
+    {|
+    false
+    false
+    false
+    true
+    true
+    true
+    |}]
+;;

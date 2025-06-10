@@ -34,7 +34,7 @@ module%test _ : module type of Queue = struct
     [%expect {| (1 2 3 4) |}]
   ;;
 
-  let capacity = capacity
+  let capacity = [%eta1 capacity]
   let set_capacity = set_capacity
 
   let%test_unit _ =
@@ -110,7 +110,7 @@ module%test _ : module type of Queue = struct
   ;;
 
   let init = init
-  let dequeue_or_null = dequeue_or_null
+  let dequeue_or_null = [%eta1 dequeue_or_null]
 
   let%test_unit _ =
     let t = init 0 ~f:(fun _ -> assert false) in
@@ -150,8 +150,8 @@ module%test _ : module type of Queue = struct
     assert (does_raise (fun () : unit Queue.t -> init (-1) ~f:(fun _ -> ())))
   ;;
 
-  let get = get
-  let set = set
+  let get = [%eta2 get]
+  let set = [%eta3 set]
 
   let%test_unit _ =
     let t = create () in
@@ -219,17 +219,17 @@ module%test _ : module type of Queue = struct
 
   include%template Test_container.Test_S1 [@modality portable] (Queue)
 
-  let dequeue_exn = dequeue_exn
+  let dequeue_exn = [%eta1 dequeue_exn]
   let enqueue = enqueue
   let enqueue_front = enqueue_front
   let dequeue_back = dequeue_back
-  let dequeue_back_exn = dequeue_back_exn
+  let dequeue_back_exn = [%eta1 dequeue_back_exn]
   let peek = peek
-  let peek_exn = peek_exn
+  let peek_exn = [%eta1 peek_exn]
   let peek_back = peek_back
-  let peek_back_exn = peek_back_exn
+  let peek_back_exn = [%eta1 peek_back_exn]
   let last = last
-  let last_exn = last_exn
+  let last_exn = [%eta1 last_exn]
 
   let%test_unit _ =
     let t = create () in
@@ -263,7 +263,7 @@ module%test _ : module type of Queue = struct
     [%test_result: int] (dequeue_back_exn t) ~expect:3
   ;;
 
-  let dequeue_and_ignore_exn = dequeue_and_ignore_exn
+  let dequeue_and_ignore_exn = [%eta1 dequeue_and_ignore_exn]
 
   let%test_unit _ =
     let t = create () in
@@ -404,7 +404,7 @@ module%test _ : module type of Queue = struct
     ;;
   end
 
-  let clear = clear
+  let clear = [%eta1 clear]
 
   let%test_unit "clear" =
     let q = of_list [ 1; 2; 3; 4 ] in

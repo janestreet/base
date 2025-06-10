@@ -25,11 +25,9 @@ module Make (Int : T) = struct
   ;;
 
   let%test_unit _ =
-    Base_quickcheck.Test.run_exn
-      (module Int)
-      ~f:(fun int ->
-        let expect = popcount_naive int |> Int.of_int_exn in
-        [%test_result: Int.t] ~expect (Int.popcount int))
+    Base_quickcheck.Test.run_exn (module Int) ~f:(fun int ->
+      let expect = popcount_naive int |> Int.of_int_exn in
+      [%test_result: Int.t] ~expect (Int.popcount int))
   ;;
 end
 

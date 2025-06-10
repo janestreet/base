@@ -30,12 +30,13 @@ module Definitions = struct
     (** [dequeue t] removes and returns the front element of [t], if any. *)
     val dequeue : 'a t -> 'a option
 
-    val dequeue_or_null : 'a t -> 'a or_null
-    val dequeue_exn : 'a t -> 'a
+    val dequeue_or_null : 'a t -> 'a or_null [@@zero_alloc]
+    val dequeue_exn : 'a t -> 'a [@@zero_alloc]
 
     (** [dequeue_and_ignore_exn t] removes the front element of [t], or raises if the
         queue is empty. *)
     val dequeue_and_ignore_exn : 'a t -> unit
+    [@@zero_alloc]
 
     (** [drain t ~f ~while_] repeatedly calls [while_] on the head of [t], and if it
         returns true then dequeues it and calls [f] on it. It stops when [t] is empty or
@@ -47,10 +48,10 @@ module Definitions = struct
     (** [peek t] returns but does not remove the front element of [t], if any. *)
     val peek : 'a t -> 'a option
 
-    val peek_exn : 'a t -> 'a
+    val peek_exn : 'a t -> 'a [@@zero_alloc]
 
     (** [clear t] discards all elements from [t]. *)
-    val clear : _ t -> unit
+    val clear : _ t -> unit [@@zero_alloc]
 
     (** [copy t] returns a copy of [t]. *)
     val copy : 'a t -> 'a t
@@ -111,7 +112,7 @@ module type Queue = sig @@ portable
   (** [last t] returns the most recently enqueued element in [t], if any. *)
   val last : 'a t -> 'a option
 
-  val last_exn : 'a t -> 'a
+  val last_exn : 'a t -> 'a [@@zero_alloc]
 
   (** Add an element to the front of the queue, as opposed to [enqueue] which adds to the
       back of the queue. *)
@@ -120,12 +121,12 @@ module type Queue = sig @@ portable
   (** [dequeue_back t] removes and returns the back element of [t], if any. *)
   val dequeue_back : 'a t -> 'a option
 
-  val dequeue_back_exn : 'a t -> 'a
+  val dequeue_back_exn : 'a t -> 'a [@@zero_alloc]
 
   (** [peek_back t] returns but does not remove the back element of [t], if any. *)
   val peek_back : 'a t -> 'a option
 
-  val peek_back_exn : 'a t -> 'a
+  val peek_back_exn : 'a t -> 'a [@@zero_alloc]
 
   (** Transfers up to [len] elements from the front of [src] to the end of [dst], removing
       them from [src]. It is an error if [len < 0].
@@ -141,11 +142,13 @@ module type Queue = sig @@ portable
   (** [get t i] returns the [i]'th element in [t], where the 0'th element is at the front
       of [t] and the [length t - 1] element is at the back. *)
   val get : 'a t -> int -> 'a
+  [@@zero_alloc]
 
-  val set : 'a t -> int -> 'a -> unit
+  val set : 'a t -> int -> 'a -> unit [@@zero_alloc]
 
   (** Returns the current length of the backing array. *)
   val capacity : _ t -> int
+  [@@zero_alloc]
 
   (** [set_capacity t c] sets the capacity of [t]'s backing array to at least
       [max c (length t)]. If [t]'s capacity changes, then this involves allocating a new

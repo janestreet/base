@@ -5,7 +5,9 @@
 open! Import
 module Sexp := Sexp0
 
-include Info.S with type t = private Info.t (** @open *)
+type t : value mod contended = private Info.t
+
+include Info.S with type t := t (** @open *)
 
 (** Note that the exception raised by this function maintains a reference to the [t]
     passed in. *)

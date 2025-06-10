@@ -1,6 +1,7 @@
 open! Import
 include Array_intf.Definitions
-include Array0
+module Array = Array0
+include Array
 
 type ('a : any_non_null) t = 'a array
 
@@ -567,7 +568,7 @@ let filter_map t ~f = filter_mapi t ~f:(fun _i a -> f a) [@nontail]
 let filter_opt t = filter_map t ~f:Fn.id
 
 let raise_length_mismatch name n1 n2 =
-  invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
+  Printf.invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
 [@@cold]
 ;;
 
@@ -916,7 +917,16 @@ let transpose_exn tt =
   | Some tt' -> tt'
 ;;
 
-let map t ~f = map t ~f
+[@@@warning "-incompatible-with-upstream"]
+
+let%template[@kind
+              ki = (value, float64, bits32, bits64, word, immediate, immediate64)
+              , ko = (value, float64, bits32, bits64, word, immediate, immediate64)] map
+  t
+  ~f
+  =
+  (map [@kind ki ko]) t ~f
+;;
 
 include%template Binary_searchable.Make1 [@modality portable] (struct
     type nonrec 'a t = 'a t

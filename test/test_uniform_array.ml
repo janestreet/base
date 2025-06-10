@@ -442,7 +442,7 @@ end = struct
     Uniform_array.unsafe_to_array_inplace__promise_not_a_float
   ;;
 
-  let to_array = Uniform_array.to_array
+  let%template to_array = (Uniform_array.to_array [@alloc a]) [@@alloc a = (heap, stack)]
   let to_list = Uniform_array.to_list
   let blit = Uniform_array.blit
   let blito = Uniform_array.blito

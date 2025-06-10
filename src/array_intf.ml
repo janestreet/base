@@ -17,6 +17,11 @@ module Definitions = struct
     include Indexed_container.S1_with_creators with type 'a t := 'a t
     include Invariant.S1 with type 'a t := 'a t
 
+    val%template map : ('a : ki) ('b : ko). 'a t -> f:local_ ('a -> 'b) -> 'b t
+    [@@kind
+      ki = (value, float64, bits32, bits64, word, immediate, immediate64)
+      , ko = (value, float64, bits32, bits64, word, immediate, immediate64)]
+
     (** Maximum length of a normal array. The maximum length of a float array is
         [max_length/2] on 32-bit machines and [max_length] on 64-bit machines. *)
     val max_length : int
@@ -116,6 +121,10 @@ module Definitions = struct
         float values. This can be significantly faster than using [create], when unboxed
         float array representations are enabled. *)
     val create_float_uninitialized : len:int -> float t
+
+    (** [init n ~f] creates an array of length [n] with index [i] set to [f i]. *)
+    val%template init : int -> f:(int -> 'a) @ local -> 'a array @ m
+    [@@alloc __ @ m = (heap_global, stack_local)]
 
     (** [Array.make_matrix dimx dimy e] returns a two-dimensional array (an array of
         arrays) with first dimension [dimx] and second dimension [dimy]. All the elements

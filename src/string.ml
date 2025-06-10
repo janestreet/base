@@ -4,8 +4,9 @@ module Bytes = Bytes0
 module Int = Int0
 module Sexp = Sexp0
 module Uchar = Uchar0
-include String0
+module String = String0
 include String_intf.Definitions
+include String
 
 let invalid_argf = Printf.invalid_argf
 let raise_s = Error.raise_s
@@ -90,7 +91,8 @@ let index t char =
     ~pos:0
     ~len:(length t)
     ~found:Option.some
-    ~not_found:(local_ fun () -> None) [@nontail]
+    ~not_found:(local_ fun () -> None)
+  [@nontail]
 ;;
 
 let index_exn t char =
@@ -110,7 +112,8 @@ let index_from t pos char =
     ~pos
     ~len:(length t)
     ~found:Option.some
-    ~not_found:(local_ fun () -> None) [@nontail]
+    ~not_found:(local_ fun () -> None)
+  [@nontail]
 ;;
 
 let index_from_exn =
@@ -151,18 +154,13 @@ let rindex_exn t char =
     char
     ~pos:(length t - 1)
     ~found:Fn.id
-    ~not_found:
-      (local_ fun () -> raise (Not_found_s (Atom "String.rindex_exn: not found")))
-  [@nontail]
+    ~not_found:(local_ fun () ->
+      raise (Not_found_s (Atom "String.rindex_exn: not found"))) [@nontail]
 ;;
 
 let rindex_from t pos char =
-  rindex_from_internal
-    t
-    char
-    ~pos
-    ~found:Option.some
-    ~not_found:(local_ fun () -> None) [@nontail]
+  rindex_from_internal t char ~pos ~found:Option.some ~not_found:(local_ fun () -> None)
+  [@nontail]
 ;;
 
 let rindex_from_exn =
@@ -1147,7 +1145,7 @@ let pad_left ?(char = ' ') s ~len =
    Always returns a local buffer. *)
 let local_copy_prefix (local_ src) ~prefix_len ~buffer_len = exclave_
   let dst = Bytes.create_local buffer_len in
-  Bytes.Primitives.unsafe_blit_string ~src ~dst ~src_pos:0 ~dst_pos:0 ~len:prefix_len;
+  Bytes.unsafe_blit_string ~src ~dst ~src_pos:0 ~dst_pos:0 ~len:prefix_len;
   dst
 ;;
 

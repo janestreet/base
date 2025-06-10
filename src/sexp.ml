@@ -105,10 +105,8 @@ module Utf8 = struct
   end = struct
     let escaped_length string =
       let string = String.Utf8.of_string_unchecked string in
-      String.Utf8.sum
-        (module Int)
-        string
-        ~f:(fun uchar -> Kind.byte_length (Kind.of_uchar uchar) uchar)
+      String.Utf8.sum (module Int) string ~f:(fun uchar ->
+        Kind.byte_length (Kind.of_uchar uchar) uchar)
     ;;
 
     let blit bytes pos string =
@@ -125,10 +123,8 @@ module Utf8 = struct
     include Escape
   end = struct
     let escaped_length string =
-      String.sum
-        (module Int)
-        string
-        ~f:(fun char -> Kind.byte_length (Kind.of_char char) (Uchar.of_char char))
+      String.sum (module Int) string ~f:(fun char ->
+        Kind.byte_length (Kind.of_char char) (Uchar.of_char char))
     ;;
 
     let blit bytes pos string =

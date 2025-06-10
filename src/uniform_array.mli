@@ -22,7 +22,7 @@ val get_empty : unit -> _ t
 val create : len:int -> 'a -> 'a t
 val singleton : 'a -> 'a t
 val init : int -> f:local_ (int -> 'a) -> 'a t
-val length : local_ 'a t -> int
+val length : local_ 'a t @ contended -> int
 val get : local_ 'a t -> int -> 'a
 val unsafe_get : local_ 'a t -> int -> 'a
 val set : local_ 'a t -> int -> 'a -> unit
@@ -62,7 +62,9 @@ val unsafe_to_array_inplace__promise_not_a_float : 'a t -> 'a array
     returning a reference to the underlying array. *)
 val of_array : 'a array -> 'a t
 
-val to_array : 'a t -> 'a array
+val%template to_array : 'a t @ m -> 'a array @ m
+[@@alloc __ @ m = (heap_global, stack_local)]
+
 val of_list : 'a list -> 'a t
 val of_list_rev : 'a list -> 'a t
 val to_list : 'a t -> 'a list

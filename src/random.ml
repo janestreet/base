@@ -115,7 +115,7 @@ module State = struct
 
     val with_stdlib
       : ('a : value mod contended portable).
-      f:(Stdlib.Random.State.t -> 'a) @ local portable -> t -> 'a
+      f:(Stdlib.Random.State.t -> 'a) @ local portable unyielding -> t -> 'a
   end = struct
     let default_state =
       let default_state_key =
@@ -163,11 +163,10 @@ module State = struct
 
     let[@inline] with_stdlib ~f = function
       | Default ->
-        Stdlib.Domain.DLS.access
-          (stack_
-            fun access ->
-              let default_state = Stdlib.Domain.DLS.get access default_state in
-              f default_state [@nontail]) [@nontail]
+        Stdlib.Domain.DLS.access (stack_ fun access ->
+          let default_state = Stdlib.Domain.DLS.get access default_state in
+          f default_state [@nontail])
+        [@nontail]
       | Custom lz_st -> f (Lazy.force lz_st)
     ;;
   end
@@ -212,15 +211,12 @@ module State = struct
     let seed = Stdlib.Random.State.make seed in
     let (P access) = Capsule.current () in
     let seed = Capsule.Data.wrap ~access seed in
-    Capsule.Password.with_current
-      access
-      (stack_
-        fun password ->
-          let password = Capsule.Password.shared password in
-          with_stdlib
-            t
-            ~f:(stack_ fun state -> assign_capsule ~password ~src:seed ~dst:state)
-          [@nontail]) [@nontail]
+    Capsule.Password.with_current access (stack_ fun password ->
+      let password = Capsule.Password.shared password in
+      let password = Basement.Stdlib_shim.Obj.magic_unyielding password in
+      with_stdlib t ~f:(stack_ fun state -> assign_capsule ~password ~src:seed ~dst:state)
+      [@nontail])
+    [@nontail]
   ;;
 
   let[@inline] int_on_64bits t bound =
@@ -409,22 +405,15 @@ let init seed = full_init [| seed |]
 let self_init ?allow_in_tests () = full_init (random_seed ?allow_in_tests ())
 
 let set_state s =
-  State.with_stdlib
-    s
-    ~f:
-      (stack_
-        fun state ->
-          let (P access) = Capsule.current () in
-          let capsule = Capsule.Data.wrap ~access state in
-          Capsule.Password.with_current
-            access
-            (stack_
-              fun password ->
-                let password = Capsule.Password.shared password in
-                State.with_stdlib
-                  (State.get_default ())
-                  ~f:
-                    (stack_
-                      fun default -> assign_capsule ~password ~src:capsule ~dst:default)
-                [@nontail]) [@nontail]) [@nontail]
+  State.with_stdlib s ~f:(stack_ fun state ->
+    let (P access) = Capsule.current () in
+    let capsule = Capsule.Data.wrap ~access state in
+    Capsule.Password.with_current access (stack_ fun password ->
+      let password = Capsule.Password.shared password in
+      let password = Basement.Stdlib_shim.Obj.magic_unyielding password in
+      State.with_stdlib (State.get_default ()) ~f:(stack_ fun default ->
+        assign_capsule ~password ~src:capsule ~dst:default)
+      [@nontail])
+    [@nontail])
+  [@nontail]
 ;;

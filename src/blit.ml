@@ -3,23 +3,23 @@ include Blit_intf.Definitions
 
 [@@@warning "-incompatible-with-upstream"]
 
-module%template.portable Make1_phantom_distinct
+module%template.portable Make1_phantom2_distinct
     (Src : sig
-       type ('elt : k, 'phantom) t
+       type ('elt : k, 'p1, 'p2) t
 
-       val length : local_ (_, _) t -> int
+       val length : local_ (_, _, _) t -> int
      end)
     (Dst : sig
-       type ('elt : k, 'phantom) t
+       type ('elt : k, 'p1, 'p2) t
 
-       val length : local_ (_, _) t -> int
-       val create_like : len:int -> local_ ('elt, _) Src.t -> ('elt, _) t
-       val unsafe_blit : (('elt, _) Src.t, ('elt, _) t) blit
+       val length : local_ (_, _, _) t -> int
+       val create_like : len:int -> local_ ('elt, _, _) Src.t -> ('elt, _, _) t
+       val unsafe_blit : (('elt, _, _) Src.t, ('elt, _, _) t) blit
      end) :
-  S1_phantom_distinct
+  S1_phantom2_distinct
   [@kind k]
-  with type ('elt, 'phantom) src := ('elt, 'phantom) Src.t
-  with type ('elt, 'phantom) dst := ('elt, 'phantom) Dst.t = struct
+  with type ('elt, 'p1, 'p2) src := ('elt, 'p1, 'p2) Src.t
+  with type ('elt, 'p1, 'p2) dst := ('elt, 'p1, 'p2) Dst.t = struct
   let unsafe_blit = Dst.unsafe_blit
 
   let blit ~src ~src_pos ~dst ~dst_pos ~len =
@@ -71,10 +71,10 @@ module%template.portable [@modality p] Make1 (Sequence : Sequence1 [@kind k]) = 
   module Seq = struct
     include Sequence
 
-    type ('a : k, _) t = 'a Sequence.t
+    type ('a : k, _, _) t = 'a Sequence.t
   end
 
-  include Make1_phantom_distinct [@kind k] [@modality p] (Seq) (Seq)
+  include Make1_phantom2_distinct [@kind k] [@modality p] (Seq) (Seq)
 end
 [@@kind k = (value, immediate, immediate64)]
 
@@ -87,7 +87,7 @@ module%template.portable
   end) =
 struct
   module Sequence = struct
-    type (_, _) t = Sequence.t
+    type (_, _, _) t = Sequence.t
 
     open Sequence
 
@@ -96,7 +96,7 @@ struct
     let unsafe_blit = unsafe_blit
   end
 
-  include Make1_phantom_distinct [@modality p] (Sequence) (Sequence)
+  include Make1_phantom2_distinct [@modality p] (Sequence) (Sequence)
 end
 
 module%template.portable
@@ -108,16 +108,16 @@ module%template.portable
        val create : len:int -> t
        val unsafe_blit : (Src.t, t) blit
      end) =
-  Make1_phantom_distinct [@modality p]
+  Make1_phantom2_distinct [@modality p]
     (struct
-      type (_, _) t = Src.t
+      type (_, _, _) t = Src.t
 
       open Src
 
       let length = length
     end)
     (struct
-      type (_, _) t = Dst.t
+      type (_, _, _) t = Dst.t
 
       open Dst
 

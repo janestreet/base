@@ -137,17 +137,18 @@ let fill (local_ a) ~pos ~len v =
   else unsafe_fill a pos len v
 ;;
 
-let init len ~(local_ f : _ -> _) =
+let%template[@alloc a = (heap, stack)] init len ~(local_ f : _ -> _) =
   if len = 0
   then [||]
   else if len < 0
   then invalid_arg "Array.init"
   else (
-    let res = create ~len (f 0) in
-    for i = 1 to Int0.pred len do
-      unsafe_set res i (f i)
-    done;
-    res)
+    (let res = (create [@alloc a]) ~len (f 0) in
+     for i = 1 to Int0.pred len do
+       unsafe_set res i (f i)
+     done;
+     res)
+    [@exclave_if_stack a])
 ;;
 
 let make_matrix = Stdlib.Array.make_matrix
@@ -190,7 +191,35 @@ let iteri t ~(local_ f : _ -> _ -> _) =
   done
 ;;
 
-let map (local_ t) ~(local_ f : _ -> _) =
+[@@@warning "-incompatible-with-upstream"]
+
+let%template[@kind
+              ki = (value, immediate, immediate64, float64, bits32, bits64, word)
+              , ko = (float64, bits32, bits64, word)] map
+  (type (a : ki) (b : ko))
+  (local_ (t : a array))
+  ~(local_ f : _ -> _)
+  : b array
+  =
+  let len = length t in
+  if len = 0
+  then [||]
+  else (
+    let r = magic_create_uninitialized ~len in
+    for i = 0 to len - 1 do
+      unsafe_set r i (f (unsafe_get t i))
+    done;
+    r)
+;;
+
+let%template[@kind
+              ki = (value, immediate, immediate64, float64, bits32, bits64, word)
+              , ko = (value, immediate, immediate64)] map
+  (type (a : ki) (b : ko))
+  (local_ (t : a array))
+  ~(local_ f : _ -> _)
+  : b array
+  =
   let len = length t in
   if len = 0
   then [||]

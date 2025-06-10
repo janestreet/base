@@ -2,6 +2,8 @@ open! Import
 open Type_equal_intf.Definitions
 module Sexp = Sexp0
 
+[@@@warning "-incompatible-with-upstream"]
+
 type ('a : any, 'b : any) t = T : ('a : any). ('a, 'a) t [@@deriving sexp_of ~localize]
 type ('a : any, 'b : any) equal = ('a, 'b) t
 
@@ -200,10 +202,14 @@ module Id = struct
     ;;
   end
 
-  module%template.portable Create2 (T : Arg2) = struct
-    type _ key += T2 : 'a key * 'b key -> ('a, 'b) T.t key
+  module%template.portable
+    [@kind a = (value, immediate64), b = value] Create2
+      (T : Arg2
+    [@kind a b]) =
+  struct
+    type _ key += T2 : ('a : a) ('b : b). 'a key * 'b key -> ('a, 'b) T.t key
 
-    let type_equal_id (type a b) (a : a t) (b : b t) : (a, b) T.t t =
+    let type_equal_id (type (a : a) (b : b)) (a : a t) (b : b t) : (a, b) T.t t =
       let id_name = T.name in
       let id_sexp = Sexp.List [ Atom id_name; a.id_sexp; b.id_sexp ] in
       let sexp_of_t t = T.sexp_of_t a.sexp_of_t b.sexp_of_t t in

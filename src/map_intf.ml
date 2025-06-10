@@ -479,7 +479,7 @@ module type Map = sig @@ portable
        , +!'value
        , !'cmp)
        t :
-       value mod contended portable with 'key with 'value with ('key, 'cmp) Comparator.t
+       immutable_data with 'key with 'value with ('key, 'cmp) Comparator.t
   [@@deriving globalize]
 
   module Finished_or_unfinished : sig
@@ -1347,7 +1347,7 @@ module type Map = sig @@ portable
       -> ('k, 'v, 'cmp) t
 
     module Tree : sig
-      type (+'k, +'v, 'cmp) t [@@deriving sexp_of]
+      type (+'k, +'v, 'cmp) t : immutable_data with 'k with 'v [@@deriving sexp_of]
 
       val t_of_sexp_direct
         :  comparator:('k, 'cmp) Comparator.t

@@ -533,4 +533,94 @@ end = struct
     test_complex (This 10);
     [%expect {| (21) |}]
   ;;
+
+  module Local = Or_null.Local
+
+  let%expect_test "let%bindl local syntax" =
+    let maybe_double (local_ x) = exclave_ if x > 0 then This (x * 2) else Null in
+    let test_bind (local_ o) =
+      let res =
+        let%bindl.Or_null.Local x = o in
+        maybe_double x
+      in
+      print_s [%sexp (res : int or_null)]
+    in
+    test_bind Null;
+    [%expect {| () |}];
+    test_bind (This 5);
+    [%expect {| (10) |}];
+    test_bind (This (-3));
+    [%expect {| () |}]
+  ;;
+
+  let%expect_test "let%mapl local syntax" =
+    let test_map (local_ o) =
+      let res =
+        let%mapl.Or_null.Local x = o in
+        x * 2
+      in
+      print_s [%sexp (res : int or_null)]
+    in
+    test_map Null;
+    [%expect {| () |}];
+    test_map (This 21);
+    [%expect {| (42) |}]
+  ;;
+
+  let%expect_test "let%mapl with multiple bindings" =
+    let test_map (local_ o1) (local_ o2) =
+      let res =
+        let%mapl.Or_null.Local x = o1
+        and y = o2 in
+        x + y
+      in
+      print_s [%sexp (res : int or_null)]
+    in
+    test_map Null Null;
+    [%expect {| () |}];
+    test_map (This 10) Null;
+    [%expect {| () |}];
+    test_map Null (This 20);
+    [%expect {| () |}];
+    test_map (This 10) (This 20);
+    [%expect {| (30) |}]
+  ;;
+
+  let%expect_test "nested let%bindl and let%mapl" =
+    let test_nested (local_ o1) (local_ o2) =
+      let res =
+        let%bindl.Or_null.Local x = o1 in
+        let%mapl.Or_null.Local y = o2 in
+        x * y
+      in
+      print_s [%sexp (res : int or_null)]
+    in
+    test_nested Null Null;
+    [%expect {| () |}];
+    test_nested (This 6) Null;
+    [%expect {| () |}];
+    test_nested Null (This 7);
+    [%expect {| () |}];
+    test_nested (This 6) (This 7);
+    [%expect {| (42) |}]
+  ;;
+
+  let%expect_test "complex nested local ppx_let syntax" =
+    let halve (local_ x) = exclave_ if x % 2 = 0 then This (x / 2) else Null in
+    let test_complex (local_ o) =
+      let res =
+        let%bindl.Or_null.Local a = o in
+        let%bindl.Or_null.Local b = halve a in
+        let%mapl.Or_null.Local c = This (b + 1) in
+        a + b + c
+      in
+      print_s [%sexp (res : int or_null)]
+    in
+    test_complex Null;
+    [%expect {| () |}];
+    test_complex (This 5);
+    [%expect {| () |}];
+    test_complex (This 10);
+    [%expect {| (21) |}]
+  ;;
 end

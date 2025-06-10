@@ -33,8 +33,6 @@ module O = struct
     = "%array_safe_get"
 end
 
-include O
-
 (** Indexing and length *)
 
 external get
@@ -51,7 +49,7 @@ external unsafe_get
   @@ portable
   = "%array_unsafe_get"
 
-external length : ('a t[@local_opt]) -> int @@ portable = "%array_length"
+external length : ('a t[@local_opt]) @ contended -> int @@ portable = "%array_length"
 
 (** Constructors *)
 

@@ -1,5 +1,9 @@
 open! Import
 
+open struct
+  module Result = Result0
+end
+
 module Global = struct
   include Modes_intf.Definitions.Global
 
@@ -357,6 +361,10 @@ module Contended = struct
     = "%identity"
 end
 
+module Shared = struct
+  type 'a t = { shared : 'a @@ shared } [@@unboxed]
+end
+
 module Portended = struct
   type 'a t : value mod contended portable = { portended : 'a @@ contended portable }
   [@@unboxed]
@@ -371,8 +379,8 @@ module Aliased = struct
 end
 
 module Immutable_data = struct
-  type 'a t : immutable_data =
-    { immutable_data : 'a @@ contended many portable unyielding }
+  type ('a : value mod non_float) t : immutable_data =
+    { immutable_data : 'a @@ immutable many stateless unyielding }
   [@@unboxed]
 end
 
@@ -382,9 +390,7 @@ module At_locality = struct
   (* The safety of this module is tested in `test/test_modes.ml`, which reimplements its
      interface without using [external] definitions. *)
 
-  type actually_local :
-    value mod aliased contended external_ many non_null portable unyielding =
-    |
+  type actually_local : immediate = |
 
   type global : immediate = [ `global ]
   [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
@@ -545,6 +551,15 @@ module Portable_via_contended = struct
     = "%identity"
 end
 
+module Contended_via_portable = struct
+  type +'a t : value mod contended
+
+  external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) @@ portable = "%identity"
+  external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) @@ portable = "%identity"
+
+  let sexp_of_t sexp_of_a t = sexp_of_a (unwrap t)
+end
+
 module Export = struct
   type 'a global : value mod global = 'a Global.t = { global : 'a @@ global } [@@unboxed]
 
@@ -555,6 +570,8 @@ module Export = struct
     { contended : 'a @@ contended }
   [@@unboxed]
 
+  type 'a shared = 'a Shared.t = { shared : 'a @@ shared } [@@unboxed]
+
   type 'a portended : value mod contended portable = 'a Portended.t =
     { portended : 'a @@ contended portable }
   [@@unboxed]
@@ -564,7 +581,7 @@ module Export = struct
   type 'a aliased : value mod aliased = 'a Aliased.t = { aliased : 'a @@ aliased }
   [@@unboxed]
 
-  type 'a immutable_data : immutable_data = 'a Immutable_data.t =
-    { immutable_data : 'a @@ contended many portable unyielding }
+  type ('a : value mod non_float) immutable_data : immutable_data = 'a Immutable_data.t =
+    { immutable_data : 'a @@ immutable many stateless unyielding }
   [@@unboxed]
 end

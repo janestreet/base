@@ -18,18 +18,15 @@ module%test [@name "local mode vs global mode"] _ = struct
     ~local:(fn_local : local_ Input.t -> local_ Output.t)
     ~global:(fn_global : Input.t -> Output.t)
     =
-    quickcheck_m
-      (module Input)
-      ~f:(fun input ->
-        require_equal
-          (module struct
-            type t = Output.t Or_error.t [@@deriving equal, sexp_of]
-          end)
-          (Or_error.try_with (fun () ->
-             [%globalize: Output.t]
-               (require_no_allocation_local (fun () -> exclave_ fn_local input))
-             [@nontail]))
-          (Or_error.try_with (fun () -> fn_global input)))
+    quickcheck_m (module Input) ~f:(fun input ->
+      require_equal
+        (module struct
+          type t = Output.t Or_error.t [@@deriving equal, sexp_of]
+        end)
+        (Or_error.try_with (fun () ->
+           [%globalize: Output.t]
+             (require_no_allocation_local (fun () -> exclave_ fn_local input)) [@nontail]))
+        (Or_error.try_with (fun () -> fn_global input)))
   ;;
 
   [%%template

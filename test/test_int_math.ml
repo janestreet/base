@@ -254,26 +254,22 @@ module%test [@name "int rounding quickcheck tests"] _ = struct
     let module Math = Make (Integer) in
     let module Pair = Rounding_pair (Integer) in
     require_does_not_raise (fun () ->
-      Base_quickcheck.Test.run_exn
-        (module Pair)
-        ~f:(fun ({ number; factor } : Pair.t) ->
-          let rounded = Math.round number ~dir ~to_multiple_of:factor in
-          (* Test that if it is possible to round correctly, then we do. *)
-          match round_correctly number ~dir ~factor with
-          | None ->
-            if is_rounded_correctly number ~dir ~factor ~rounded
-            then
-              raise_s
-                [%sexp
-                  "test bug: did not find correctly rounded value"
-                  , { rounded : Integer.t }]
-          | Some rounded_correctly ->
-            if rounded <> rounded_correctly
-            then
-              raise_s
-                [%sexp
-                  "rounding failed"
-                  , { rounded : Integer.t; rounded_correctly : Integer.t }]))
+      Base_quickcheck.Test.run_exn (module Pair) ~f:(fun ({ number; factor } : Pair.t) ->
+        let rounded = Math.round number ~dir ~to_multiple_of:factor in
+        (* Test that if it is possible to round correctly, then we do. *)
+        match round_correctly number ~dir ~factor with
+        | None ->
+          if is_rounded_correctly number ~dir ~factor ~rounded
+          then
+            raise_s
+              [%sexp
+                "test bug: did not find correctly rounded value", { rounded : Integer.t }]
+        | Some rounded_correctly ->
+          if rounded <> rounded_correctly
+          then
+            raise_s
+              [%sexp
+                "rounding failed", { rounded : Integer.t; rounded_correctly : Integer.t }]))
   ;;
 
   let test m =

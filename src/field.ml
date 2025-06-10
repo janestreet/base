@@ -60,7 +60,8 @@ type ('record, 'field : any) readonly_t = ([ `Read ], 'record, 'field) t_with_pe
 let name (Field field) = field.name
 
 [%%template
-[@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+[@@@kind.default
+  k = (value_or_null, float64, bits32, bits64, word, immediate, immediate64)]
 
 let get (Field field) r = field.getter r
 let fset (Field field) r v = field.fset r v

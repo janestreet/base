@@ -202,7 +202,7 @@ let snd = Stdlib.snd
 
 (* [raise] needs to be defined as an external as the compiler automatically replaces
    '%raise' by '%reraise' when appropriate. *)
-external raise : exn -> _ @ portable @@ portable = "%reraise"
+external raise : exn -> _ @ portable unique @@ portable = "%reraise"
 external phys_equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%eq"
 external decr : (int ref[@local_opt]) -> unit @@ portable = "%decr"
 external incr : (int ref[@local_opt]) -> unit @@ portable = "%incr"

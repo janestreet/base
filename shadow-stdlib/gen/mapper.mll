@@ -274,6 +274,10 @@ let module_replacement = function
   | "Gc"       -> Some No_equivalent
   | "Printexc" -> Some (Repl_text "Use [Exn] or [Backtrace] instead")
   | "Seq"      -> Some (Approx "Sequence")
+  | "Atomic"   ->
+    Some (Repl_text "\
+Use [Atomic] from [Portable] (or [Core], which reexports it from\n\
+[Portable]) instead")
   | _          -> None
 
 let replace ~is_exn id replacement =

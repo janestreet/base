@@ -27,7 +27,7 @@ module Trusted : sig @@ portable
   val unsafe_set_with_caml_modify : local_ 'a t -> int -> 'a -> unit
   val unsafe_to_array_inplace__promise_not_a_float : 'a t -> 'a array
   val set_with_caml_modify : local_ 'a t -> int -> 'a -> unit
-  val length : local_ 'a t -> int
+  val length : local_ 'a t @ contended -> int
   val unsafe_blit : ('a t, 'a t) Blit.blit
   val copy : 'a t -> 'a t
   val unsafe_clear_if_pointer : local_ _ t -> int -> unit
@@ -170,7 +170,10 @@ let of_list_rev l =
 
 (* It is not safe for [to_array] to be the identity function because we have code that
    relies on [float array]s being unboxed, for example in [bin_write_array]. *)
-let to_array t = Array.init (length t) ~f:(fun i -> unsafe_get t i)
+let%template[@alloc a = (heap, stack)] to_array t =
+  let n = length t in
+  (Array.init [@alloc a]) n ~f:(fun i -> unsafe_get t i) [@exclave_if_stack a]
+;;
 
 let exists t ~f =
   let i = ref (length t - 1) in

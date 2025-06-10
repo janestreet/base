@@ -50,7 +50,7 @@ module Definitions = struct
     type t =
       | Could_not_construct of Sexp.t
       | String of string
-      | Exn of exn Modes.Global.t
+      | Exn of exn Modes.Contended_via_portable.t Modes.Global.t
       | Sexp of Sexp.t
       | Tag_sexp of string * Sexp.t * Source_code_position0.t option
       | Tag_t of string * t
@@ -65,7 +65,7 @@ module Definitions = struct
 
   module type S = sig @@ portable
     (** Serialization and comparison force the lazy message. *)
-    type t
+    type t : value mod contended global
     [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 
     include Invariant.S with type t := t
@@ -82,7 +82,7 @@ module Definitions = struct
     (** [to_string_mach t] outputs [t] as a sexp on a single line. *)
     val to_string_mach : t -> string
 
-    val of_string : string -> t
+    val of_string : string -> t @ portable
 
     (** Be careful that the body of the lazy or thunk does not access mutable data, since
         it will only be called at an undetermined later point. *)
@@ -105,7 +105,7 @@ module Definitions = struct
       -> t
     [@@kind k = (bits64, float64, value)]
 
-    val create_s : Sexp.t -> t
+    val create_s : Sexp.t -> t @ portable
 
     (** Constructs a [t] containing only a string from a format. This eagerly constructs
         the string. *)

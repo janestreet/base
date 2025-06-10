@@ -38,7 +38,6 @@ include (
     end
     (* Modules defined in Base *)
     with module Array := Shadow_stdlib.Array
-    with module Atomic := Shadow_stdlib.Atomic
     with module Bool := Shadow_stdlib.Bool
     with module Buffer := Shadow_stdlib.Buffer
     with module Bytes := Shadow_stdlib.Bytes
@@ -187,10 +186,8 @@ end
 (**/**)
 
 module Exported_for_specific_uses = struct
-  module Fieldslib = Fieldslib
   module Globalize = Globalize
   module Obj_array = Obj_array
-  module Variantslib = Variantslib
 
   let am_testing = am_testing
 end

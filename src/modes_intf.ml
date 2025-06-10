@@ -6,6 +6,10 @@
 
 open! Import
 
+open struct
+  module Result = Result0
+end
+
 module Definitions = struct
   module Global = struct
     (** Abstraction over modality. Used in [Wrapped_fn*] signatures, below.
@@ -460,8 +464,7 @@ module Definitions = struct
     end
 
     module type At_locality = sig
-      type actually_local :
-        value mod aliased contended external_ many non_null portable unyielding
+      type actually_local : immediate
 
       (** Phantom type parameter for {!t} which represents that the inhabitant is known to
           be [global]. *)
@@ -529,6 +532,10 @@ module type Modes = sig @@ portable
     external cross : ('a : value mod contended). 'a @ contended -> 'a = "%identity"
   end
 
+  module Shared : sig
+    type 'a t = { shared : 'a @@ shared } [@@unboxed]
+  end
+
   module Portended : sig
     type 'a t : value mod contended portable = { portended : 'a @@ contended portable }
     [@@unboxed]
@@ -543,8 +550,8 @@ module type Modes = sig @@ portable
   end
 
   module Immutable_data : sig
-    type 'a t : immutable_data =
-      { immutable_data : 'a @@ contended many portable unyielding }
+    type ('a : value mod non_float) t : immutable_data =
+      { immutable_data : 'a @@ immutable many stateless unyielding }
     [@@unboxed]
   end
 
@@ -701,6 +708,15 @@ module type Modes = sig @@ portable
       = "%identity"
   end
 
+  (** Allow a type to mode-cross from contended by prohibiting it from being moved to
+      another domain (i.e., by ensuring it's nonportable). *)
+  module Contended_via_portable : sig
+    type +'a t : value mod contended [@@deriving sexp_of]
+
+    external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
+    external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+  end
+
   (** Can be [open]ed or [include]d to bring field names into scope. *)
   module Export : sig
     type 'a global : value mod global = 'a Global.t = { global : 'a @@ global }
@@ -713,6 +729,8 @@ module type Modes = sig @@ portable
       { contended : 'a @@ contended }
     [@@unboxed]
 
+    type 'a shared = 'a Shared.t = { shared : 'a @@ shared } [@@unboxed]
+
     type 'a portended : value mod contended portable = 'a Portended.t =
       { portended : 'a @@ contended portable }
     [@@unboxed]
@@ -722,8 +740,9 @@ module type Modes = sig @@ portable
     type 'a aliased : value mod aliased = 'a Aliased.t = { aliased : 'a @@ aliased }
     [@@unboxed]
 
-    type 'a immutable_data : immutable_data = 'a Immutable_data.t =
-      { immutable_data : 'a @@ contended many portable unyielding }
+    type ('a : value mod non_float) immutable_data : immutable_data =
+          'a Immutable_data.t =
+      { immutable_data : 'a @@ immutable many stateless unyielding }
     [@@unboxed]
   end
 end

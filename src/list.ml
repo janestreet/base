@@ -2,6 +2,7 @@ open! Import
 module Array = Array0
 module Either = Either0
 include List1
+include Constructors
 
 (* This itself includes [List0]. *)
 
@@ -1336,6 +1337,12 @@ let partition_mapi t ~f =
 let partitioni_tf t ~f =
   let f i x : _ Either.t = if f i x then First x else Second x in
   partition_mapi t ~f [@nontail]
+;;
+
+let of_iter ~iter =
+  let local_ acc = ref [] in
+  iter ~f:(fun x -> acc := x :: !acc);
+  rev !acc
 ;;
 
 module Assoc = struct

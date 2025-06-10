@@ -1954,3 +1954,12 @@ let%expect_test "[sub]" =
   test 1 (-1) list;
   [%expect {| (raised (Invalid_argument List.sub)) |}]
 ;;
+
+let%expect_test "[of_iter]" =
+  let module M = struct
+    type t = int list [@@deriving equal, quickcheck ~generator ~shrinker, sexp_of]
+  end
+  in
+  quickcheck_m (module M) ~f:(fun list ->
+    require_equal (module M) list (List.of_iter ~iter:(List.iter list)))
+;;

@@ -13,7 +13,7 @@ module T = struct
   let of_string s =
     match String.length s with
     | 1 -> s.[0]
-    | _ -> failwithf "Char.of_string: %S" s ()
+    | _ -> Printf.failwithf "Char.of_string: %S" s ()
   ;;
 end
 
@@ -82,7 +82,7 @@ let get_digit_unsafe t = to_int t - to_int '0'
 let get_digit_exn t =
   if is_digit t
   then get_digit_unsafe t
-  else failwithf "Char.get_digit_exn %C: not a digit" t ()
+  else Printf.failwithf "Char.get_digit_exn %C: not a digit" t ()
 ;;
 
 let get_digit t = if is_digit t then Some (get_digit_unsafe t) else None

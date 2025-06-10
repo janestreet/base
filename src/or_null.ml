@@ -229,10 +229,17 @@ let value t ~default =
 [@@inline] [@@mode global]
 ;;
 
-let[@inline] [@mode local] this_if b x = exclave_ Bool.select b (This x) Null
-let[@inline] [@mode global] this_if b x = Bool.select b (This x) Null
-let[@inline] [@mode local] first_this t t' = exclave_ Bool.select (is_null t) t' t
-let[@inline] [@mode global] first_this t t' = Bool.select (is_null t) t' t]
+[@@@mode.default m = (global, local)]
+
+let[@inline] this_if b x =
+  let this = This x in
+  Bool.select b this Null [@exclave_if_local m]
+;;
+
+let[@inline] first_this t t' =
+  let is_null = is_null t in
+  Bool.select is_null t' t [@exclave_if_local m]
+;;]
 
 let[@inline] is_this t = not (is_null t)
 let[@inline] length t = Bool.to_int (is_this t)
@@ -249,5 +256,20 @@ module Let_syntax = struct
     let both = both
 
     module Open_on_rhs = struct end
+  end
+end
+
+module Local = struct
+  module Let_syntax = struct
+    let%template return = (this [@mode local])
+
+    module Let_syntax = struct
+      let%template return = (this [@mode local])
+      let%template bind = (bind [@mode local])
+      let%template map = (map [@mode local])
+      let%template both = (both [@mode local])
+
+      module Open_on_rhs = struct end
+    end
   end
 end

@@ -92,10 +92,10 @@ val error
   -> ('a -> Sexp.t)
   -> _ t
 
-val error_s : Sexp.t -> _ t
+val error_s : Sexp.t -> _ t @ portable
 
 (** [error_string message] is [Error (Error.of_string message)]. *)
-val error_string : string -> _ t
+val error_string : string -> _ t @ portable
 
 (** [errorf format arg1 arg2 ...] is [Error (sprintf format arg1 arg2 ...)]. Note that it
     calculates the string eagerly, so when performance matters you may want to use [error]

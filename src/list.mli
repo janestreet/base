@@ -67,12 +67,14 @@ val append : 'a t -> 'a t -> 'a t
 val init : int -> f:local_ (int -> 'a) -> 'a t
 val mem : 'a t -> 'a -> equal:local_ ('a -> 'a -> bool) -> bool
 
+[@@@alloc.default a @ m = (stack_local, heap_global)]
+
 (** [rev_append l1 l2] reverses [l1] and concatenates it to [l2]. This is equivalent to
     [(]{!List.rev}[ l1) @ l2], but [rev_append] is more efficient. *)
-val rev_append : 'a t -> 'a t -> 'a t
+val rev_append : 'a t @ m -> 'a t @ m -> 'a t @ m
 
 (** List reversal. *)
-val rev : 'a t -> 'a t]
+val rev : 'a t @ m -> 'a t @ m]
 
 [%%template:
 [@@@kind.default
@@ -106,7 +108,11 @@ val concat_mapi
 
 val fold
   : ('a : ka) ('b : kb).
-  ('a t[@kind ka]) -> init:'b -> f:local_ ('b -> 'a -> 'b) -> 'b
+  ('a t[@kind ka]) @ ma
+  -> init:'b @ mb
+  -> f:local_ ('b @ mb -> 'a @ ma -> 'b @ mb)
+  -> 'b @ mb
+[@@mode ma = (local, global), mb = (local, global)]
 
 val foldi
   : ('a : ka) ('b : kb).
@@ -286,7 +292,12 @@ val map3
 val rev_map_append : 'a t -> 'b t -> f:local_ ('a -> 'b) -> 'b t
 
 (** [fold_right [a1; ...; an] ~f ~init:b] is [f a1 (f a2 (... (f an b) ...))]. *)
-val fold_right : 'a t -> f:local_ ('a -> 'acc -> 'acc) -> init:'acc -> 'acc
+val%template fold_right
+  :  'a t @ m
+  -> f:('a @ m -> 'acc @ mcc -> 'acc @ mcc) @ local
+  -> init:'acc @ mcc
+  -> 'acc @ mcc
+[@@mode m = (local, global), mcc = (local, global)]
 
 (** [fold_left] is the same as {!Container.S1.fold}, and one should always use [fold]
     rather than [fold_left], except in functors that are parameterized over a more general
@@ -443,6 +454,9 @@ val rev_filter_mapi : 'a t -> f:local_ (int -> 'a -> 'b option) -> 'b t
 (** [filter_opt l] is the sublist of [l] containing only elements which are [Some e]. In
     other words, [filter_opt l] = [filter_map ~f:Fn.id l]. *)
 val filter_opt : 'a option t -> 'a t
+
+(** Create a list of every value [iter] passes to [f], in chronological order. *)
+val of_iter : iter:local_ (f:local_ ('a -> unit) -> unit) -> 'a t
 
 (** Interpret a list of (key, value) pairs as a map in which only the first occurrence of
     a key affects the semantics, i.e.:

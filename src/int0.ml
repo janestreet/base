@@ -14,11 +14,11 @@
    Defining [module Int = Int0] is also necessary because it prevents ocamldep
    from mistakenly causing a file to depend on [Base.Int]. *)
 
-external format : string -> local_ int -> string @@ portable = "caml_format_int"
+external format : string @ local -> int -> string @@ portable = "caml_format_int"
 
 let to_string (local_ n) = format "%d" n
 
-external of_string : local_ string -> int @@ portable = "caml_int_of_string"
+external of_string : string @ local -> int @@ portable = "caml_int_of_string"
 
 let of_string_opt (local_ s) =
   try Some (of_string s) with

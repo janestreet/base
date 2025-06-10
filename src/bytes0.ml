@@ -15,7 +15,6 @@
    ocamldep from mistakenly causing a file to depend on [Base.Bytes]. *)
 
 open! Import0
-module Char = Char0
 module Uchar = Uchar0
 module Sys = Sys0
 
@@ -291,7 +290,7 @@ let[@zero_alloc] create_local len = exclave_
   unsafe_create_local len
 ;;
 
-let%template[@alloc stack] create = create_local
+let%template[@alloc stack] create x = exclave_ create_local x [@@zero_alloc]
 
 external unsafe_fill
   :  local_ bytes

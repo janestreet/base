@@ -17,7 +17,7 @@ type _crosses_locality =
 
 [%%expect {| |}]
 
-let crosses_locality (x : (_, Modes.At_locality.global) Modes.At_locality.t @@ local) =
+let crosses_locality (x : (_, Modes.At_locality.global) Modes.At_locality.t @ local) =
   use_global x
 ;;
 
@@ -36,20 +36,19 @@ Error: This type
            (Base.int, Base.Modes.At_locality.local) Base__Modes.At_locality.t
        should be an instance of type ('a : value mod global)
        The kind of (Base.int, Base.Modes.At_locality.local)
-                   Base.Modes.At_locality.t is immediate
-         with Base.Modes.At_locality.local @@ many portable unyielding aliased contended.
+                   Base.Modes.At_locality.t is immutable_data mod aliased
+         with Base.Modes.At_locality.actually_local @@ unyielding many portable aliased contended.
        But the kind of (Base.int, Base.Modes.At_locality.local)
                        Base.Modes.At_locality.t must be a subkind of
          value mod global
          because of the definition of require_global at file "test_modes.mlt", line 7, characters 0-43.
 
        The first mode-crosses less than the second along:
-         locality: mod global with Base.Modes.At_locality.local ≰
-           mod global
+         locality: mod local ≰ mod global
 |}]
 
 let doesn't_cross_locality
-  (x : (int, Modes.At_locality.local) Modes.At_locality.t @@ local)
+  (x : (int, Modes.At_locality.local) Modes.At_locality.t @ local)
   =
   use_global x [@nontail]
 ;;
@@ -71,7 +70,7 @@ type _crosses_portability =
 [%%expect {| |}]
 
 let crosses_portability
-  (x : (_, Modes.At_portability.portable) Modes.At_portability.t @@ nonportable)
+  (x : (_, Modes.At_portability.portable) Modes.At_portability.t @ nonportable)
   =
   use_portable x
 ;;
@@ -94,8 +93,9 @@ Error: This type
            Base__Modes.At_portability.t
        should be an instance of type ('a : value mod portable)
        The kind of (Base.int, Base.Modes.At_portability.nonportable)
-                   Base.Modes.At_portability.t is immediate
-         with Base.Modes.At_portability.nonportable @@ global many unyielding aliased contended.
+                   Base.Modes.At_portability.t is
+         immutable_data mod global aliased yielding
+         with Base.Modes.At_portability.nonportable_ @@ global many aliased contended.
        But the kind of (Base.int, Base.Modes.At_portability.nonportable)
                        Base.Modes.At_portability.t must be a subkind of
          value mod portable
@@ -103,11 +103,11 @@ Error: This type
 
        The first mode-crosses less than the second along:
          portability: mod portable
-           with Base.Modes.At_portability.nonportable ≰ mod portable
+           with Base.Modes.At_portability.nonportable_ ≰ mod portable
 |}]
 
 let doesn't_cross_portability
-  (x : (int, Modes.At_portability.nonportable) Modes.At_portability.t @@ nonportable)
+  (x : (int, Modes.At_portability.nonportable) Modes.At_portability.t @ nonportable)
   =
   use_portable x
 ;;
@@ -133,8 +133,8 @@ Error: This type
        The kind of (Base.int -> Base.int,
                     Base.Modes.At_portability.nonportable)
                    Base.Modes.At_portability.t is
-         value mod aliased contended portable
-         with Base.Modes.At_portability.nonportable @@ aliased contended.
+         value mod aliased portable immutable non_float
+         with Base.Modes.At_portability.nonportable_ @@ aliased contended.
        But the kind of (Base.int -> Base.int,
                         Base.Modes.At_portability.nonportable)
                        Base.Modes.At_portability.t must be a subkind of
@@ -143,13 +143,13 @@ Error: This type
 
        The first mode-crosses less than the second along:
          portability: mod portable
-           with Base.Modes.At_portability.nonportable ≰ mod portable
+           with Base.Modes.At_portability.nonportable_ ≰ mod portable
 |}]
 
 let doesn't_cross_portability
   (x :
     (int -> int, Modes.At_portability.nonportable) Modes.At_portability.t
-    @@ nonportable)
+    @ nonportable)
   =
   use_portable x
 ;;

@@ -10,6 +10,7 @@ let hash_fold_t _ t = unreachable_code t
 let hash = unreachable_code
 let compare a _ = unreachable_code a
 let compare__local a _ = unreachable_code a
+let equal a _ = unreachable_code a
 let equal__local a _ = unreachable_code a
 let sexp_of_t = unreachable_code
 let sexp_of_t__local = unreachable_code_local

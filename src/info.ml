@@ -11,7 +11,7 @@ module Message = struct
   type t =
     | Could_not_construct of Sexp.t
     | String of string
-    | Exn of exn Modes.Global.t
+    | Exn of exn Modes.Contended_via_portable.t Modes.Global.t
     | Sexp of Sexp.t
     | Tag_sexp of string * Sexp.t * Source_code_position0.t option
     | Tag_t of string * t
@@ -24,7 +24,8 @@ module Message = struct
     match t with
     | Could_not_construct _ as t -> sexp_of_t t :: ac
     | String string -> Atom string :: ac
-    | Exn { global = exn } -> Exn.sexp_of_t exn :: ac
+    | Exn { global = exn } ->
+      Exn.sexp_of_t (Modes.Contended_via_portable.unwrap exn) :: ac
     | Sexp sexp -> sexp :: ac
     | Tag_sexp (tag, sexp, here) ->
       List
@@ -59,9 +60,15 @@ module Computed = struct
   (* Memoized, lazily-computed representation of messages. Maintains its own state to
      avoid stack overflow from nested [Lazy.t]. *)
 
-  (* We use a global [state ref] so we can mutate [state], but still [globalize] with no
-     cost and without duplicating state. *)
-  type info = { global_ state : state ref } [@@unboxed]
+  (* We use a [Modes.Global.t] wrapper around mutable state so we can mutate the state,
+     but still [globalize] with no cost and without duplicating state. *)
+  type info = unstaged_info Modes.Global.t
+
+  and unstaged_info =
+    | Constant of Message.t
+    | Staged of staged_info
+
+  and staged_info = { state : state ref Modes.Contended_via_portable.t } [@@unboxed]
 
   (* An [info] starts as a [constructor]. When forced, it is marked [Computing] to avoid
      cycles. When finished, the final [message] is recorded. *)
@@ -77,12 +84,9 @@ module Computed = struct
     | Cons_tag_arg of string * Sexp.t * info
     | Cons_tag_t of string * info
 
-  (* This is a no-op, since [info] is unboxed. *)
-  let globalize_info (local_ { state }) = { state }
-
   (* We keep a list of stack_frames while computing, rather than using the call stack. *)
   type stack_frame =
-    | In_info of info
+    | In_info of staged_info
     | In_tag_arg of string * Sexp.t
     | In_tag_t of string
     | In_list of
@@ -90,28 +94,30 @@ module Computed = struct
         ; rev_suffix : Message.t list
         }
 
-  open struct
-    let list_fold = Portability_hacks.magic_portable__needs_base_and_core List.fold
-  end
-
   (* The following mutually-recursive functions compute a [Message.t] from an [info].
      All calls below are tail calls: we want to avoid using the call stack in favor
      of our own manual stack. *)
   let rec compute_info info stack =
-    match !(info.state) with
-    | Initial cons ->
-      info.state := Computing;
-      compute_constructor cons (In_info (globalize_info info) :: stack)
-    | Computing ->
-      compute_message (Could_not_construct (Atom "cycle while computing message")) stack
-    | Final message -> compute_message message stack
+    match Modes.Global.unwrap info with
+    | Constant message -> compute_message message stack
+    | Staged info ->
+      let state = Modes.Contended_via_portable.unwrap info.state in
+      (match !state with
+       | Initial cons ->
+         state := Computing;
+         compute_constructor cons (In_info info :: stack)
+       | Computing ->
+         compute_message
+           (Could_not_construct (Atom "cycle while computing message"))
+           stack
+       | Final message -> compute_message message stack)
 
   and compute_info_list ~fwd_prefix ~rev_suffix stack =
     match fwd_prefix with
     | info :: fwd_prefix -> compute_info info (In_list { fwd_prefix; rev_suffix } :: stack)
     | [] ->
       let infos =
-        list_fold rev_suffix ~init:[] ~f:(fun tail message ->
+        List.fold rev_suffix ~init:[] ~f:(fun tail message ->
           match message with
           | Of_list (_, messages) -> messages @ tail
           | _ -> message :: tail)
@@ -132,7 +138,7 @@ module Computed = struct
     match stack with
     | [] -> message
     | In_info info :: stack ->
-      info.state := Final message;
+      Modes.Contended_via_portable.unwrap info.state := Final message;
       compute_message message stack
     | In_tag_arg (tag, arg) :: stack ->
       compute_message (Tag_arg (tag, arg, message)) stack
@@ -144,15 +150,27 @@ module Computed = struct
   (* Helper functions for converting and constructing [info]. *)
 
   let to_message info = compute_info info []
-  let of_message message = { state = ref (Final message) }
 
-  let is_computed info =
-    match !(info.state) with
-    | Initial _ | Computing -> false
-    | Final _ -> true
+  let%template of_message (message @ p) : info = { global = Constant message }
+  [@@mode p = (portable, nonportable)]
   ;;
 
-  let of_cons cons = { state = ref (Initial cons) }
+  let is_computed : info -> bool =
+    fun t ->
+    match t.global with
+    | Constant _ -> true
+    | Staged info ->
+      let state = Modes.Contended_via_portable.unwrap info.state in
+      (match !state with
+       | Initial _ | Computing -> false
+       | Final _ -> true)
+  ;;
+
+  let of_cons cons =
+    Staged { state = ref (Initial cons) |> Modes.Contended_via_portable.wrap }
+    |> Modes.Global.wrap
+  ;;
+
   let of_lazy_info lazy_info = of_cons (Cons_lazy_info lazy_info)
 
   let of_lazy_cons lazy_cons =
@@ -168,7 +186,7 @@ open Computed
 
 type t = Computed.info
 
-let globalize = Computed.globalize_info
+let globalize x = x
 let invariant _ = ()
 
 (* It is OK to use [Message.to_sexp_hum], which is not stable, because [t_of_sexp] below
@@ -193,7 +211,7 @@ let to_string_mach t = Sexp.to_string_mach (sexp_of_t t)
 let of_lazy l = of_lazy_message (lazy (String (Lazy.force l)))
 let of_lazy_sexp l = of_lazy_message (lazy (Sexp (Lazy.force l)))
 let of_lazy_t lazy_t = of_lazy_info lazy_t
-let of_string message = of_message (String message)
+let%template of_string message = (of_message [@mode portable]) (String message)
 let createf format = Printf.ksprintf of_string format
 let of_thunk f = of_lazy_message (lazy (String (f ())))
 
@@ -203,7 +221,7 @@ let%template[@kind k = (bits64, float64, value)] create ?here ?strict tag x sexp
   | Some () -> of_message (Tag_sexp (tag, sexp_of_x x, here))
 ;;
 
-let create_s sexp = of_message (Sexp sexp)
+let%template create_s sexp = (of_message [@mode portable]) (Sexp sexp)
 let tag t ~tag = of_cons (Cons_tag_t (tag, t))
 let tag_s_lazy t ~tag = of_lazy_cons (lazy (Cons_tag_arg ("", Lazy.force tag, t)))
 let tag_s t ~tag = of_cons (Cons_tag_arg ("", tag, t))
@@ -228,7 +246,7 @@ let to_exn t =
   then Exn t
   else (
     match to_message t with
-    | Message.Exn { global = exn } -> exn
+    | Message.Exn { global = exn } -> Modes.Contended_via_portable.unwrap exn
     | _ -> Exn t)
 ;;
 
@@ -243,7 +261,7 @@ let of_exn ?backtrace exn =
   | Exn t, None -> t
   | Exn t, Some backtrace ->
     of_lazy_message (lazy (With_backtrace (to_message t, backtrace)))
-  | _, None -> of_message (Message.Exn { global = exn })
+  | _, None -> of_message (Message.Exn { global = Modes.Contended_via_portable.wrap exn })
   | _, Some backtrace ->
     of_lazy_message (lazy (With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace)))
 ;;

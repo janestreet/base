@@ -25,7 +25,7 @@ val copy : local_ t -> t
 val singleton : Stdlib.Obj.t -> t
 val empty : t
 val get_empty : unit -> t
-val length : local_ t -> int
+val length : local_ t @ contended -> int
 
 (** [get t i] and [unsafe_get t i] return the object at index [i]. [set t i o] and
     [unsafe_set t i o] set index [i] to [o]. In no case is the object copied. The

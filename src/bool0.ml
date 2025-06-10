@@ -1,4 +1,10 @@
-external magic : ('a : any) ('b : any). 'a -> 'b @@ portable = "%identity" [@@layout_poly]
+external magic
+  : ('a : any) ('b : any).
+  ('a[@local_opt]) -> ('b[@local_opt])
+  @@ portable
+  = "%identity"
+[@@layout_poly]
+
 external box_int64 : (int64#[@unboxed]) -> local_ int64 @@ portable = "%box_int64"
 external unbox_int64 : local_ int64 -> (int64#[@unboxed]) @@ portable = "%unbox_int64"
 external box_float : (float#[@unboxed]) -> local_ float @@ portable = "%box_float"

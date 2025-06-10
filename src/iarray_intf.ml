@@ -32,7 +32,7 @@ module Definitions = struct
 
     (** Indexing *)
 
-    external length : ('a t[@local_opt]) -> int = "%array_length"
+    external length : ('a t[@local_opt]) @ contended -> int = "%array_length"
     external get : ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
 
     external unsafe_get

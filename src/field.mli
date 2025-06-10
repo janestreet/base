@@ -39,9 +39,10 @@ type ('record, 'field : any) readonly_t = ([ `Read ], 'record, 'field) t_with_pe
 val name : (_, _, _ : any) t_with_perm -> string
 
 [%%template:
-[@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+[@@@kind.default
+  k = (value_or_null, float64, bits32, bits64, word, immediate, immediate64)]
 
-val get : (_, 'r, 'a : k) t_with_perm -> 'r -> 'a
+val get : 'perm 'r ('a : k). ('perm, 'r, 'a) t_with_perm -> 'r -> 'a
 val fset : ([> `Set_and_create ], 'r, 'a : k) t_with_perm -> 'r -> 'a -> 'r
 val setter : ([> `Set_and_create ], 'r, 'a : k) t_with_perm -> ('r -> 'a -> unit) option
 

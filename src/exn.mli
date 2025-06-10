@@ -30,14 +30,17 @@ val create_s : Sexp.t -> t
 val create_s_lazy : Sexp.t Lazy.t -> t
 
 (** Same as [raise], except that the backtrace is not recorded. *)
-val raise_without_backtrace : t -> _ @ portable
+val raise_without_backtrace : t -> _ @ portable unique
 
 (** [raise_with_original_backtrace t bt] raises the exception [exn], recording [bt] as the
     backtrace it was originally raised at. This is useful to re-raise exceptions annotated
     with extra information. *)
-val raise_with_original_backtrace : t -> Stdlib.Printexc.raw_backtrace -> _ @ portable
+val raise_with_original_backtrace
+  :  t
+  -> Stdlib.Printexc.raw_backtrace
+  -> _ @ portable unique
 
-val reraise : t -> string -> _ @ portable
+val reraise : t -> string -> _ @ portable unique
 
 (** Types with [format4] are hard to read, so here's an example.
 
