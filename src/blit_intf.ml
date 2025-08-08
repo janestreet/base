@@ -51,15 +51,15 @@ module Definitions = struct
 
   (** Blit for distinct [src] and [dst] types that each have two parameters: ['elt] that
       must be the same in both types, and ['phantom] that can be different. *)
-  module type%template S1_phantom_distinct = sig
-    type ('elt, 'phantom) src
-    type ('elt, 'phantom) dst
+  module type%template S1_phantom2_distinct = sig
+    type ('elt, 'p1, 'p2) src
+    type ('elt, 'p1, 'p2) dst
 
-    val blit : (('a, _) src, ('a, _) dst) blit
-    val blito : (('a, _) src, ('a, _) dst) blito
-    val unsafe_blit : (('a, _) src, ('a, _) dst) blit
-    val sub : (('a, _) src, ('a, _) dst) sub
-    val subo : (('a, _) src, ('a, _) dst) subo
+    val blit : (('a, _, _) src, ('a, _, _) dst) blit
+    val blito : (('a, _, _) src, ('a, _, _) dst) blito
+    val unsafe_blit : (('a, _, _) src, ('a, _, _) dst) blit
+    val sub : (('a, _, _) src, ('a, _, _) dst) sub
+    val subo : (('a, _, _) src, ('a, _, _) dst) subo
   end
   [@@kind k = (value, immediate, immediate64)]
 
@@ -67,7 +67,10 @@ module Definitions = struct
     type t
 
     include
-      S1_phantom_distinct [@kind k] with type (_, _) src := t and type (_, _) dst := t
+      S1_phantom2_distinct
+      [@kind k]
+      with type (_, _, _) src := t
+       and type (_, _, _) dst := t
   end
   [@@kind k = (value, immediate, immediate64)]
 
@@ -75,10 +78,10 @@ module Definitions = struct
     type 'a t
 
     include
-      S1_phantom_distinct
+      S1_phantom2_distinct
       [@kind k]
-      with type ('a, _) src := 'a t
-       and type ('a, _) dst := 'a t
+      with type ('a, _, _) src := 'a t
+       and type ('a, _, _) dst := 'a t
   end
   [@@kind k = (value, immediate, immediate64)]
 
@@ -86,7 +89,8 @@ module Definitions = struct
     type src
     type dst
 
-    include S1_phantom_distinct with type (_, _) src := src and type (_, _) dst := dst
+    include
+      S1_phantom2_distinct with type (_, _, _) src := src and type (_, _, _) dst := dst
   end
 
   module type S_distinct_global = sig
@@ -105,7 +109,9 @@ module Definitions = struct
     type 'a dst
 
     include
-      S1_phantom_distinct with type (_, 'a) src := 'a src and type (_, 'a) dst := 'a dst
+      S1_phantom2_distinct
+      with type (_, 'a, _) src := 'a src
+       and type (_, 'a, _) dst := 'a dst
   end
 
   module type S_to_string = sig
@@ -123,8 +129,8 @@ module Definitions = struct
   end
 
   (** Users of modules matching the blit signatures [S], [S1], [S_phantom_distinct], and
-      [S1_phantom_distinct] only need to understand the code above. The code below is only
-      for those that need to implement modules that match those signatures. *)
+      [S1_phantom2_distinct] only need to understand the code above. The code below is
+      only for those that need to implement modules that match those signatures. *)
 
   module type Sequence = sig
     type t
@@ -197,20 +203,20 @@ module type Blit = sig
     S1 [@kind k] with type 'a t := 'a Sequence.t
   [@@kind k = (value, immediate, immediate64)]
 
-  module%template.portable Make1_phantom_distinct
+  module%template.portable Make1_phantom2_distinct
       (Src : sig
-         type ('elt, 'phantom) t
+         type ('elt, 'p1, 'p2) t
 
-         val length : (_, _) t -> int
+         val length : (_, _, _) t -> int
        end)
       (Dst : sig
-         type ('elt, 'phantom) t
+         type ('elt, 'p1, 'p2) t
 
-         val length : (_, _) t -> int
-         val create_like : len:int -> ('elt, _) Src.t -> ('elt, _) t
-         val unsafe_blit : (('elt, _) Src.t, ('elt, _) t) blit
+         val length : (_, _, _) t -> int
+         val create_like : len:int -> ('elt, _, _) Src.t -> ('elt, _, _) t
+         val unsafe_blit : (('elt, _, _) Src.t, ('elt, _, _) t) blit
        end) :
-    S1_phantom_distinct
-    with type ('elt, 'phantom) src := ('elt, 'phantom) Src.t
-    with type ('elt, 'phantom) dst := ('elt, 'phantom) Dst.t
+    S1_phantom2_distinct
+    with type ('elt, 'p1, 'p2) src := ('elt, 'p1, 'p2) Src.t
+    with type ('elt, 'p1, 'p2) dst := ('elt, 'p1, 'p2) Dst.t
 end

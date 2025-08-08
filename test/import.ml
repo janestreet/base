@@ -4,6 +4,7 @@ include Base_for_tests
 include Base_test_helpers
 include Base_quickcheck.Export
 include Expect_test_helpers_base
+module Atomic = Portable.Atomic
 
 let () = Dynamic.set_root Int_conversions.sexp_of_int_style `Underscores
 let is_none = Option.is_none

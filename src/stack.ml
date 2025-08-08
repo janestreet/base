@@ -67,8 +67,10 @@ let iter t ~f =
 module%template C = Container.Make [@modality portable] (struct
     type nonrec 'a t = 'a t
 
-    let fold = fold
+    let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
+    let fold = `Custom fold
     let iter = `Custom iter
+    let iter_until = `Define_using_fold_until
     let length = `Custom length
   end)
 
@@ -85,6 +87,7 @@ let min_elt = C.min_elt
 let max_elt = C.max_elt
 let fold_result = C.fold_result
 let fold_until = C.fold_until
+let iter_until = C.iter_until
 
 let of_list (type a) (l : a list) =
   if List.is_empty l

@@ -146,6 +146,10 @@ module Definitions = struct
     val nth : ('k, 'v, 'cmp) t -> int -> ('k key * 'v) option
     val nth_exn : ('k, 'v, 'cmp) t -> int -> 'k key * 'v
     val rank : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int option) access_options
+    val count_lt : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int) access_options
+    val count_le : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int) access_options
+    val count_gt : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int) access_options
+    val count_ge : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int) access_options
     val to_tree : ('k, 'v, 'cmp) t -> ('k key, 'v, 'cmp) tree
 
     val to_sequence
@@ -419,7 +423,7 @@ module Definitions = struct
       -> ('k, 'v, 'cmp) t
       -> int
 
-    val compare__local_m__t
+    val compare_m__t__local
       :  (module Compare_m)
       -> ('v -> 'v -> int)
       -> ('k, 'v, 'cmp) t
@@ -433,7 +437,7 @@ module Definitions = struct
       -> ('k, 'v, 'cmp) t
       -> bool
 
-    val equal__local_m__t
+    val equal_m__t__local
       :  (module Equal_m)
       -> ('v -> 'v -> bool)
       -> ('k, 'v, 'cmp) t
@@ -1077,6 +1081,30 @@ module type Map = sig
       the smaller of the two output maps. The O(m) term is due to the need to calculate
       the length of the output maps. *)
   val split_lt_ge : ('k, 'v, 'cmp) t -> 'k -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
+
+  (** [count_lt t key] returns the number of keys in [t] that are strictly less than
+      [key].
+
+      Runtime is O(log n) where n is the size of the input map. *)
+  val count_lt : ('k, 'v, 'cmp) t -> 'k -> int
+
+  (** [count_le t key] returns the number of keys in [t] that are less than or equal to
+      [key].
+
+      Runtime is O(log n) where n is the size of the input map. *)
+  val count_le : ('k, 'v, 'cmp) t -> 'k -> int
+
+  (** [count_gt t key] returns the number of keys in [t] that are strictly greater than
+      [key].
+
+      Runtime is O(log n) where n is the size of the input map. *)
+  val count_gt : ('k, 'v, 'cmp) t -> 'k -> int
+
+  (** [count_ge t key] returns the number of keys in [t] that are greater than or equal to
+      [key].
+
+      Runtime is O(log n) where n is the size of the input map. *)
+  val count_ge : ('k, 'v, 'cmp) t -> 'k -> int
 
   (** [append ~lower_part ~upper_part] returns [`Ok map] where [map] contains all the
       [(key, value)] pairs from the two input maps if all the keys from [lower_part] are

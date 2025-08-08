@@ -1,12 +1,14 @@
 open! Import
 include Array_intf.Definitions
-include Array0
+module Array = Array0
+module Result = Result0
+include Array
 
 type 'a t = 'a array
 
 [%%rederive.portable
   type nonrec 'a t = 'a array
-  [@@deriving compare ~localize, globalize, sexp ~localize, sexp_grammar]]
+  [@@deriving compare ~localize, globalize, sexp ~stackify, sexp_grammar]]
 
 (* This module implements a new in-place, constant heap sorting algorithm to replace the
    one used by the standard libraries.  Its only purpose is to be faster (hopefully
@@ -292,9 +294,17 @@ Sorter [@kind k] [@modality portable] (struct
   end)
 
 let sort = Sort.sort
-let of_array t = t
-let to_array t = t
-let is_empty t = length t = 0
+
+let%template get_opt arr n : (_ Option.t[@kind k]) =
+  if 0 <= n && n < length arr
+  then
+    Some ((unsafe_get [@mode c]) arr n)
+    (* SAFETY: bounds checked above *) [@exclave_if_stack a]
+  else None
+[@@mode c = (uncontended, shared)]
+[@@kind k = (value, immediate, immediate64, float64, bits32, bits64, word)]
+[@@alloc a = (heap, stack)]
+;;
 
 let is_sorted t ~compare =
   let i = ref (length t - 1) in
@@ -320,10 +330,391 @@ let is_sorted_strictly t ~compare =
   !result
 ;;
 
-(* This implementation initializes the output only once, based on the primitive
-   [caml_array_sub]. Other approaches, like [init] or [map], first initialize with a fixed
-   value, then blit from the source. *)
-let copy t = sub t ~pos:0 ~len:(length t)
+let folding_map t ~init ~f =
+  let acc = ref init in
+  map t ~f:(fun x ->
+    let new_acc, y = f !acc x in
+    acc := new_acc;
+    y)
+  [@nontail]
+;;
+
+let fold_map t ~init ~f =
+  let acc = ref init in
+  let result =
+    map t ~f:(fun x ->
+      let new_acc, y = f !acc x in
+      acc := new_acc;
+      y)
+  in
+  !acc, result
+;;
+
+[%%template
+let length t = length t
+[@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+;;
+
+[@@@kind.default k1 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+
+let to_array t = t
+let of_array t = t
+let is_empty t = (length [@kind k1]) t = 0
+
+let sum (type a) (module M : Container.Summable with type t = a[@kind k1]) t ~f =
+  let toplevel_get = Toplevel_value.get [@kind k1] in
+  (fold [@kind k1 k1]) t ~init:((toplevel_get [@inlined]) M.zero) ~f:(fun n a ->
+    M.( + ) n (f a))
+  [@nontail]
+;;
+
+let for_all t ~f =
+  let i = ref (length t - 1) in
+  let result = ref true in
+  while !i >= 0 && !result do
+    if not (f (unsafe_get t !i)) then result := false else decr i
+  done;
+  !result
+;;
+
+let for_alli t ~f =
+  let length = length t in
+  let i = ref (length - 1) in
+  let result = ref true in
+  while !i >= 0 && !result do
+    if not (f !i (unsafe_get t !i)) then result := false else decr i
+  done;
+  !result
+;;
+
+let count t ~f =
+  let result = ref 0 in
+  for i = 0 to Array.length t - 1 do
+    result := !result + (f (Array.unsafe_get t i) |> Bool.to_int)
+  done;
+  !result
+;;
+
+let counti t ~f =
+  let result = ref 0 in
+  for i = 0 to Array.length t - 1 do
+    result := !result + (f i (Array.unsafe_get t i) |> Bool.to_int)
+  done;
+  !result
+;;
+
+let exists t ~f =
+  let i = ref (length t - 1) in
+  let result = ref false in
+  while !i >= 0 && not !result do
+    if f (unsafe_get t !i) then result := true else decr i
+  done;
+  !result
+;;
+
+let existsi t ~f =
+  let i = ref (length t - 1) in
+  let result = ref false in
+  while !i >= 0 && not !result do
+    if f !i (unsafe_get t !i) then result := true else decr i
+  done;
+  !result
+;;
+
+let mem t a ~equal = (exists [@kind k1]) t ~f:(equal a) [@nontail]
+
+let[@inline always] extremal_element t ~compare ~keep_left_if : (_ Option0.t[@kind k1]) =
+  if (is_empty [@kind k1]) t
+  then None
+  else (
+    let length = length t in
+    let rec loop i result =
+      if i < length
+      then (
+        let x = unsafe_get t i in
+        loop
+          (i + 1)
+          ((Bool0.select [@kind k1])
+             ((keep_left_if [@inlined]) ((compare [@inlined hint]) x result))
+             x
+             result))
+      else result
+    in
+    Some ((loop [@inlined]) 1 (unsafe_get t 0)))
+;;
+
+let min_elt t ~compare =
+  (extremal_element [@kind k1] [@inlined]) t ~compare ~keep_left_if:(fun compare_result ->
+    compare_result < 0)
+;;
+
+let max_elt t ~compare =
+  (extremal_element [@kind k1] [@inlined]) t ~compare ~keep_left_if:(fun compare_result ->
+    compare_result > 0)
+;;
+
+let[@inline always] findi_internal t ~f ~if_found ~if_not_found =
+  let length = length t in
+  if length = 0
+  then (if_not_found [@inlined]) ()
+  else (
+    let rec loop i =
+      if i < length
+      then (
+        let x = unsafe_get t i in
+        if (f [@inlined hint]) i x then (if_found [@inlined]) ~i ~value:x else loop (i + 1))
+      else (if_not_found [@inlined]) ()
+    in
+    (loop [@inlined]) 0 [@nontail])
+[@@kind k1 = k1, k2 = (value, k1, value & k1)]
+;;
+
+let find t ~f =
+  (findi_internal [@inlined] [@kind k1 value])
+    t
+    ~f:(fun _ v -> f v)
+    ~if_found:(fun ~i:_ ~value : (_ Option0.t[@kind k1]) -> Some value)
+    ~if_not_found:(fun () -> None) [@nontail]
+;;
+
+let find_exn t ~f =
+  (findi_internal [@inlined] [@kind k1 k1])
+    t
+    ~f:(fun _i x -> f x)
+    ~if_found:(fun ~i:_ ~value -> value)
+    ~if_not_found:(fun () ->
+      (raise [@kind k1]) (Not_found_s (Atom "Array.find_exn: not found"))) [@nontail]
+;;
+
+let findi t ~f =
+  (findi_internal [@inlined] [@kind k1 value])
+    t
+    ~f
+    ~if_found:(fun ~i ~value : (_ Option0.t[@kind value & k1]) -> Some (i, value))
+    ~if_not_found:(fun () -> None)
+;;
+
+let findi_exn t ~f =
+  (findi_internal [@inlined] [@kind k1 (value & k1)])
+    t
+    ~f
+    ~if_found:(fun ~i ~value -> i, value)
+    ~if_not_found:(fun () ->
+      (raise [@kind value & k1]) (Not_found_s (Atom "Array.findi_exn: not found")))
+;;
+
+(* The [value] version of this implementation initializes the output only once, based on
+     the primitive [caml_array_sub]. Other approaches, like [init] or [map], first
+     initialize with a fixed value, then blit from the source. *)
+let copy t = (sub [@kind k1]) t ~pos:0 ~len:(length t)
+
+[@@@kind.default k2 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+
+let iteri_until t ~f ~finish =
+  let length = length t in
+  let rec loop i =
+    if i < length
+    then (
+      match
+        ((f [@inlined hint]) i (unsafe_get t i)
+         : (_ Container.Continue_or_stop.t[@kind value k2]))
+      with
+      | Continue () -> loop (i + 1)
+      | Stop res -> res)
+    else (finish [@inlined hint]) i
+  in
+  (loop [@inlined]) 0 [@nontail]
+;;
+
+let iter_until t ~f ~finish =
+  (iteri_until [@kind k1 k2] [@inlined])
+    t
+    ~f:(fun _i x -> f x)
+    ~finish:(fun _i -> finish ()) [@nontail]
+;;
+
+let fold_result t ~init ~f =
+  let length = length t in
+  let rec loop i acc : (_ Result.t[@kind k2]) =
+    if i < length
+    then (
+      match ((f [@inlined hint]) acc (unsafe_get t i) : (_ Result.t[@kind k2])) with
+      | Error _ as result -> result
+      | Ok acc -> loop (i + 1) acc)
+    else Ok acc
+  in
+  (loop [@inlined]) 0 init [@nontail]
+;;
+
+let find_map t ~f : (_ Option0.t[@kind k2]) =
+  let length = length t in
+  if length = 0
+  then None
+  else (
+    let rec loop i : (_ Option0.t[@kind k2]) =
+      if i < length
+      then (
+        let value = unsafe_get t i in
+        match ((f [@inlined hint]) value : (_ Option0.t[@kind k2])) with
+        | None -> loop (i + 1)
+        | Some _ as result -> result)
+      else None
+    in
+    (loop [@inlined]) 0 [@nontail])
+;;
+
+let find_map_exn =
+  let not_found = Not_found_s (Atom "Array.find_map_exn: not found") in
+  let find_map_exn t ~f =
+    match (find_map [@inlined] [@kind k1 k2]) t ~f with
+    | None ->
+      (raise [@kind k2])
+        (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
+    | Some x -> x
+  in
+  (* named to preserve symbol in compiled binary *)
+  find_map_exn
+;;
+
+let find_mapi t ~f : (_ Option0.t[@kind k2]) =
+  let length = length t in
+  if length = 0
+  then None
+  else (
+    let i = ref 0 in
+    let value_found = ref (None : (_ Option0.t[@kind k2])) in
+    while (Option.is_none [@kind k2]) !value_found && !i < length do
+      let value = unsafe_get t !i in
+      value_found := f !i value;
+      incr i
+    done;
+    !value_found)
+;;
+
+let find_mapi_exn =
+  let not_found = Not_found_s (Atom "Array.find_mapi_exn: not found") in
+  let find_mapi_exn t ~f =
+    match (find_mapi [@kind k1 k2]) t ~f with
+    | None ->
+      (raise [@kind k2])
+        (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
+    | Some x -> x
+  in
+  (* named to preserve symbol in compiled binary *)
+  find_mapi_exn
+;;
+
+let foldi t ~init ~f =
+  let length = length t in
+  let rec loop i acc =
+    if i < length
+    then (
+      let acc = (f [@inlined hint]) i acc (unsafe_get t i) in
+      loop (i + 1) acc)
+    else acc
+  in
+  (loop [@inlined]) 0 init [@nontail]
+;;
+
+let filter_mapi t ~f =
+  let r = ref [||] in
+  let k = ref 0 in
+  for i = 0 to length t - 1 do
+    match (f i (unsafe_get t i) : (_ Option0.t[@kind k2])) with
+    | None -> ()
+    | Some a ->
+      if !k = 0 then r := create ~len:(length t) a;
+      unsafe_set !r !k a;
+      incr k
+  done;
+  if !k = length t then !r else if !k > 0 then (sub [@kind k2]) ~pos:0 ~len:!k !r else [||]
+;;
+
+let filter_map t ~f = (filter_mapi [@kind k1 k2]) t ~f:(fun _i a -> f a) [@nontail]
+let concat_map t ~f = (concat [@kind k2]) (to_list ((map [@kind k1 value]) ~f t))
+let concat_mapi t ~f = (concat [@kind k2]) (to_list ((mapi [@kind k1 value]) ~f t))]
+
+[%%template
+[@@@kind.default k1 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+
+let filter t ~f =
+  (filter_map [@kind k1 k1]) t ~f:(fun x -> if f x then Some x else None) [@nontail]
+;;
+
+let filteri t ~f =
+  (filter_mapi [@kind k1 k1]) t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
+;;
+
+[@@@kind.default
+  k2 = (value, immediate, immediate64, float64, bits32, bits64, word)
+  , k3 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+
+let foldi_until t ~init ~f ~finish =
+  let length = length t in
+  let rec loop i acc =
+    if i < length
+    then (
+      match
+        ((f [@inlined hint]) i acc (unsafe_get t i)
+         : (_ Container.Continue_or_stop.t[@kind k2 k3]))
+      with
+      | Continue acc -> loop (i + 1) acc
+      | Stop res -> res)
+    else finish i acc
+  in
+  (loop [@inlined]) 0 init [@nontail]
+;;
+
+let fold_until t ~init ~f ~finish =
+  (foldi_until [@kind k1 k2 k3] [@inlined])
+    t
+    ~init
+    ~f:(fun _i acc x -> f acc x)
+    ~finish:(fun _i acc -> finish acc) [@nontail]
+;;
+
+let partition_mapi t ~f =
+  let (both : (_ Either0.t[@kind k2 k3]) t) = (mapi [@kind k1 value]) t ~f in
+  let firsts =
+    (filter_map [@kind value k2]) both ~f:(function
+      | First x -> (Some x : (_ Option0.t[@kind k2]))
+      | Second _ -> None)
+  in
+  let seconds =
+    (filter_map [@kind value k3]) both ~f:(function
+      | First _ -> (None : (_ Option0.t[@kind k3]))
+      | Second x -> Some x)
+  in
+  firsts, seconds
+;;
+
+let partition_map t ~f =
+  (partition_mapi [@kind k1 k2 k3]) t ~f:(fun _ x -> f x) [@nontail]
+;;]
+
+[%%template
+[@@@kind.default k = (value, immediate, immediate64, float64, bits32, bits64, word)]
+
+let partitioni_tf t ~f =
+  (partition_mapi [@kind k k k]) t ~f:(fun i x -> if f i x then First x else Second x)
+  [@nontail]
+;;
+
+let partition_tf t ~f = (partitioni_tf [@kind k]) t ~f:(fun _ x -> f x) [@nontail]]
+
+(* We generated [findi]s that return [value & value]s, but for backwards compatibility we
+   want to return the boxed product instead when dealing only with values. *)
+
+let findi t ~f =
+  match (findi [@inlined]) t ~f with
+  | Some (i, value) -> Some (i, value)
+  | None -> None
+;;
+
+let findi_exn t ~f =
+  let i, value = findi_exn t ~f in
+  i, value
+;;
 
 let merge a1 a2 ~compare =
   let l1 = Array.length a1 in
@@ -362,60 +753,6 @@ let merge a1 a2 ~compare =
 
 let copy_matrix tt = map ~f:copy tt
 
-let folding_map t ~init ~f =
-  let acc = ref init in
-  map t ~f:(fun x ->
-    let new_acc, y = f !acc x in
-    acc := new_acc;
-    y)
-  [@nontail]
-;;
-
-let fold_map t ~init ~f =
-  let acc = ref init in
-  let result =
-    map t ~f:(fun x ->
-      let new_acc, y = f !acc x in
-      acc := new_acc;
-      y)
-  in
-  !acc, result
-;;
-
-let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
-let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
-let sum m t ~f = Container.sum ~fold m t ~f
-
-let[@inline always] extremal_element t ~compare ~keep_left_if =
-  if is_empty t
-  then None
-  else (
-    let result = ref (unsafe_get t 0) in
-    for i = 1 to length t - 1 do
-      let x = unsafe_get t i in
-      result := Bool.select ((keep_left_if [@inlined]) (compare x !result)) x !result
-    done;
-    Some !result)
-;;
-
-let min_elt t ~compare =
-  (extremal_element [@inlined]) t ~compare ~keep_left_if:(fun compare_result ->
-    compare_result < 0)
-;;
-
-let max_elt t ~compare =
-  (extremal_element [@inlined]) t ~compare ~keep_left_if:(fun compare_result ->
-    compare_result > 0)
-;;
-
-let foldi t ~init ~f =
-  let acc = ref init in
-  for i = 0 to length t - 1 do
-    acc := f i !acc (unsafe_get t i)
-  done;
-  !acc
-;;
-
 let%template foldi_right t ~init ~f =
   (let rec aux t ~idx ~acc ~f =
      (if idx < 0
@@ -450,25 +787,6 @@ let fold_mapi t ~init ~f =
   in
   !acc, result
 ;;
-
-let count t ~f =
-  let result = ref 0 in
-  for i = 0 to Array.length t - 1 do
-    result := !result + (f (Array.unsafe_get t i) |> Bool.to_int)
-  done;
-  !result
-;;
-
-let counti t ~f =
-  let result = ref 0 in
-  for i = 0 to Array.length t - 1 do
-    result := !result + (f i (Array.unsafe_get t i) |> Bool.to_int)
-  done;
-  !result
-;;
-
-let concat_map t ~f = concat (to_list (map ~f t))
-let concat_mapi t ~f = concat (to_list (mapi ~f t))
 
 let rev_inplace t =
   let i = ref 0 in
@@ -547,25 +865,10 @@ let of_list_rev_mapi xs ~f =
   t
 ;;
 
-let filter_mapi t ~f =
-  let r = ref [||] in
-  let k = ref 0 in
-  for i = 0 to length t - 1 do
-    match f i (unsafe_get t i) with
-    | None -> ()
-    | Some a ->
-      if !k = 0 then r := create ~len:(length t) a;
-      unsafe_set !r !k a;
-      incr k
-  done;
-  if !k = length t then !r else if !k > 0 then sub ~pos:0 ~len:!k !r else [||]
-;;
-
-let filter_map t ~f = filter_mapi t ~f:(fun _i a -> f a) [@nontail]
 let filter_opt t = filter_map t ~f:Fn.id
 
 let raise_length_mismatch name n1 n2 =
-  invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
+  Printf.invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
 [@@cold]
 ;;
 
@@ -588,48 +891,6 @@ let map2_exn t1 t2 ~f =
 let fold2_exn t1 t2 ~init ~f =
   check_length2_exn "Array.fold2_exn" t1 t2;
   foldi t1 ~init ~f:(fun i ac x -> f ac x (unsafe_get t2 i)) [@nontail]
-;;
-
-let filter t ~f = filter_map t ~f:(fun x -> if f x then Some x else None) [@nontail]
-let filteri t ~f = filter_mapi t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
-
-let exists t ~f =
-  let i = ref (length t - 1) in
-  let result = ref false in
-  while !i >= 0 && not !result do
-    if f (unsafe_get t !i) then result := true else decr i
-  done;
-  !result
-;;
-
-let existsi t ~f =
-  let i = ref (length t - 1) in
-  let result = ref false in
-  while !i >= 0 && not !result do
-    if f !i (unsafe_get t !i) then result := true else decr i
-  done;
-  !result
-;;
-
-let mem t a ~equal = exists t ~f:(equal a) [@nontail]
-
-let for_all t ~f =
-  let i = ref (length t - 1) in
-  let result = ref true in
-  while !i >= 0 && !result do
-    if not (f (unsafe_get t !i)) then result := false else decr i
-  done;
-  !result
-;;
-
-let for_alli t ~f =
-  let length = length t in
-  let i = ref (length - 1) in
-  let result = ref true in
-  while !i >= 0 && !result do
-    if not (f !i (unsafe_get t !i)) then result := false else decr i
-  done;
-  !result
 ;;
 
 let exists2_exn t1 t2 ~f =
@@ -660,106 +921,6 @@ let map_inplace t ~f =
   for i = 0 to length t - 1 do
     unsafe_set t i (f (unsafe_get t i))
   done
-;;
-
-let[@inline always] findi_internal t ~f ~if_found ~if_not_found =
-  let length = length t in
-  if length = 0
-  then if_not_found ()
-  else (
-    let i = ref 0 in
-    let found = ref false in
-    let value_found = ref (unsafe_get t 0) in
-    while (not !found) && !i < length do
-      let value = unsafe_get t !i in
-      if f !i value
-      then (
-        value_found := value;
-        found := true)
-      else incr i
-    done;
-    if !found then if_found ~i:!i ~value:!value_found else if_not_found ())
-;;
-
-let findi t ~f =
-  findi_internal
-    t
-    ~f
-    ~if_found:(fun ~i ~value -> Some (i, value))
-    ~if_not_found:(fun () -> None)
-;;
-
-let findi_exn t ~f =
-  findi_internal
-    t
-    ~f
-    ~if_found:(fun ~i ~value -> i, value)
-    ~if_not_found:(fun () -> raise (Not_found_s (Atom "Array.findi_exn: not found")))
-;;
-
-let find_exn t ~f =
-  findi_internal
-    t
-    ~f:(fun _i x -> f x)
-    ~if_found:(fun ~i:_ ~value -> value)
-    ~if_not_found:(fun () -> raise (Not_found_s (Atom "Array.find_exn: not found")))
-  [@nontail]
-;;
-
-let find t ~f = Option.map (findi t ~f:(fun _i x -> f x)) ~f:(fun (_i, x) -> x)
-
-let find_map t ~f =
-  let length = length t in
-  if length = 0
-  then None
-  else (
-    let i = ref 0 in
-    let value_found = ref None in
-    while Option.is_none !value_found && !i < length do
-      let value = unsafe_get t !i in
-      value_found := f value;
-      incr i
-    done;
-    !value_found)
-;;
-
-let find_map_exn =
-  let not_found = Not_found_s (Atom "Array.find_map_exn: not found") in
-  let find_map_exn t ~f =
-    match find_map t ~f with
-    | None ->
-      raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
-    | Some x -> x
-  in
-  (* named to preserve symbol in compiled binary *)
-  find_map_exn
-;;
-
-let find_mapi t ~f =
-  let length = length t in
-  if length = 0
-  then None
-  else (
-    let i = ref 0 in
-    let value_found = ref None in
-    while Option.is_none !value_found && !i < length do
-      let value = unsafe_get t !i in
-      value_found := f !i value;
-      incr i
-    done;
-    !value_found)
-;;
-
-let find_mapi_exn =
-  let not_found = Not_found_s (Atom "Array.find_mapi_exn: not found") in
-  let find_mapi_exn t ~f =
-    match find_mapi t ~f with
-    | None ->
-      raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
-    | Some x -> x
-  in
-  (* named to preserve symbol in compiled binary *)
-  find_mapi_exn
 ;;
 
 let find_consecutive_duplicate t ~equal =
@@ -845,27 +1006,6 @@ let sorted_copy t ~compare =
   t1
 ;;
 
-let partition_mapi t ~f =
-  let (both : _ Either.t t) = mapi t ~f in
-  let firsts =
-    filter_map both ~f:(function
-      | First x -> Some x
-      | Second _ -> None)
-  in
-  let seconds =
-    filter_map both ~f:(function
-      | First _ -> None
-      | Second x -> Some x)
-  in
-  firsts, seconds
-;;
-
-let partitioni_tf t ~f =
-  partition_mapi t ~f:(fun i x -> if f i x then First x else Second x) [@nontail]
-;;
-
-let partition_map t ~f = partition_mapi t ~f:(fun _ x -> f x) [@nontail]
-let partition_tf t ~f = partitioni_tf t ~f:(fun _ x -> f x) [@nontail]
 let last_exn t = t.(length t - 1)
 let last = last_exn
 
@@ -914,7 +1054,14 @@ let transpose_exn tt =
   | Some tt' -> tt'
 ;;
 
-let map t ~f = map t ~f
+let%template[@kind
+              k1 = (value, float64, bits32, bits64, word, immediate, immediate64)
+              , k2 = (value, float64, bits32, bits64, word, immediate, immediate64)] map
+  t
+  ~f
+  =
+  (map [@kind k1 k2]) t ~f
+;;
 
 include%template Binary_searchable.Make1 [@modality portable] (struct
     type nonrec 'a t = 'a t
@@ -925,6 +1072,33 @@ include%template Binary_searchable.Make1 [@modality portable] (struct
 
 let blito ~src ?(src_pos = 0) ?(src_len = length src - src_pos) ~dst ?(dst_pos = 0) () =
   blit ~src ~src_pos ~len:src_len ~dst ~dst_pos
+;;
+
+let split_n t_orig n =
+  if n <= 0
+  then [||], t_orig
+  else (
+    let length = length t_orig in
+    if n >= length
+    then t_orig, [||]
+    else (
+      let first = sub t_orig ~pos:0 ~len:n in
+      let second = sub t_orig ~pos:n ~len:(length - n) in
+      first, second))
+;;
+
+let chunks_of t ~length:chunk_length =
+  if chunk_length <= 0
+  then Printf.invalid_argf "Array.chunks_of: Expected length > 0, got %d" chunk_length ();
+  let length = length t in
+  if length = 0
+  then [||]
+  else (
+    let num_chunks = (length + chunk_length - 1) / chunk_length in
+    init num_chunks ~f:(fun i ->
+      let start = i * chunk_length in
+      let current_chunk_length = min chunk_length (length - start) in
+      sub t ~pos:start ~len:current_chunk_length))
 ;;
 
 let subo ?(pos = 0) ?len src =

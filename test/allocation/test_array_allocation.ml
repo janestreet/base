@@ -26,3 +26,18 @@ let%expect_test "foldi does not allocate" =
   let f i x y = i + x + y in
   require (require_no_allocation (fun () -> 16 = Array.foldi ~init:0 ~f arr))
 ;;
+
+let%expect_test "(get_opt[@alloc stack]) does not allocate" =
+  let arr = [| "hello"; "world" |] in
+  require
+    (Option.is_some
+       ([%globalize: string option]
+          (require_no_allocation_local (fun () ->
+             [%template (Array.get_opt [@alloc stack]) arr 0]))));
+  let iarr = Iarray.unsafe_of_array__promise_no_mutation [| "hello"; "world" |] in
+  require
+    (Option.is_some
+       ([%globalize: string option]
+          (require_no_allocation_local (fun () ->
+             [%template (Iarray.get_opt [@alloc stack]) iarr 0]))))
+;;

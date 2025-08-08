@@ -40,8 +40,21 @@ module type Either = sig
   type ('f, 's) t = ('f, 's) Either0.t =
     | First of 'f
     | Second of 's
-  [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+
+  include sig
+      type%template ('f, 's) t = (('f, 's) Either0.t[@kind kf ks])
+      [@@kind
+        kf = (float64, bits32, bits64, word, immediate, immediate64, value)
+        , ks = (float64, bits32, bits64, word, immediate, immediate64, value)]
+      [@@deriving compare ~localize, equal ~localize, sexp ~stackify, sexp_grammar]
+    end
+    with type ('f, 's) t := ('f, 's) t
+
+  [%%rederive:
+    type nonrec ('f, 's) t = ('f, 's) t =
+      | First of 'f
+      | Second of 's
+    [@@deriving globalize, hash]]
 
   include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
 

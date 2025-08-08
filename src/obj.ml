@@ -82,7 +82,7 @@ type stack_or_heap =
   | Immediate
   | Stack
   | Heap
-[@@deriving sexp ~localize, compare]
+[@@deriving sexp ~stackify, compare]
 
 let%template stack_or_heap repr =
   (* [is_int] and [is_stack] do not actually consume [repr]. *)
@@ -102,7 +102,7 @@ type uniform_or_mixed =
   | Immediate
   | Uniform
   | Mixed of { scannable_prefix_len : int }
-[@@deriving sexp ~localize, compare ~localize, globalize]
+[@@deriving sexp ~stackify, compare ~localize, globalize]
 
 let%template uniform_or_mixed repr =
   (* [is_int] and [reserved_header_bits] do not actually consume [repr]. *)

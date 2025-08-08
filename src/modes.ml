@@ -1,5 +1,18 @@
 open! Import
 
+open struct
+  module Result = Result0
+end
+
+type%template 'a t = { modal : 'a }
+[@@unboxed]
+[@@modality
+  g = (local, global)
+  , p = (nonportable, portable)
+  , c = (uncontended, shared, contended)
+  , m = (once, many)
+  , a = (unique, aliased)]
+
 module Global = struct
   include Modes_intf.Definitions.Global
 
@@ -12,7 +25,7 @@ module Global = struct
   let hash_fold_t hash state t = hash state t.global
   let t_of_sexp of_sexp sexp = { global = of_sexp sexp }
   let sexp_of_t sexp_of t = sexp_of t.global
-  let sexp_of_t__local sexp_of t = sexp_of t.global
+  let sexp_of_t__stack sexp_of t = sexp_of t.global
 
   let t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t =
     Sexplib0.Sexp_grammar.coerce
@@ -83,6 +96,18 @@ module Global = struct
     -> (('a, 'b) Result.t[@local_opt])
     = "%identity"
 
+  external wrap_tuple2 : 'a * 'b -> 'a t * 'b t = "%identity"
+  external wrap_fst : 'a * 'b -> 'a t * 'b = "%identity"
+  external wrap_snd : 'a * 'b -> 'a * 'b t = "%identity"
+
+  external unwrap_tuple2
+    :  ('a t * 'b t[@local_opt])
+    -> ('a * 'b[@local_opt])
+    = "%identity"
+
+  external unwrap_fst : ('a t * 'b[@local_opt]) -> ('a * 'b[@local_opt]) = "%identity"
+  external unwrap_snd : ('a * 'b t[@local_opt]) -> ('a * 'b[@local_opt]) = "%identity"
+
   module Global_wrapper = struct
     type nonrec 'a t = 'a t
 
@@ -144,7 +169,19 @@ end
 module Portable = struct
   include Modes_intf.Definitions.Portable
 
-  type 'a t = { portable : 'a } [@@unboxed]
+  type 'a t = { portable : 'a }
+  [@@unboxed] [@@deriving compare ~localize, equal ~localize, hash]
+
+  let%template sexp_of_t sexp_of_a { portable } = sexp_of_a portable [@exclave_if_stack a]
+  [@@alloc a = (heap, stack)]
+  ;;
+
+  let%template[@alloc stack] sexp_of_t = (sexp_of_t [@alloc stack])
+  let t_of_sexp a_of_sexp sexp = { portable = a_of_sexp sexp }
+
+  let t_sexp_grammar : type a. a Sexplib0.Sexp_grammar.t -> a t Sexplib0.Sexp_grammar.t =
+    Sexplib0.Sexp_grammar.coerce
+  ;;
 
   external cross : 'a. 'a -> 'a = "%identity"
   external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
@@ -235,6 +272,16 @@ module Portable = struct
     -> (('a, 'b) Result.t[@local_opt])
     = "%identity"
 
+  external wrap_result_list
+    :  (('a, 'b) Result.t list[@local_opt])
+    -> (('a t, 'b t) Result.t list[@local_opt])
+    = "%identity"
+
+  external unwrap_result_list
+    :  (('a t, 'b t) Result.t list[@local_opt])
+    -> (('a, 'b) Result.t list[@local_opt])
+    = "%identity"
+
   external wrap_ok
     :  (('a, 'b) Result.t[@local_opt])
     -> (('a t, 'b) Result.t[@local_opt])
@@ -264,12 +311,37 @@ module Portable = struct
     :  (('a, 'b t) Result.t[@local_opt])
     -> (('a, 'b) Result.t[@local_opt])
     = "%identity"
+
+  external wrap_tuple2 : ('a * 'b[@local_opt]) -> ('a t * 'b t[@local_opt]) = "%identity"
+  external wrap_fst : ('a * 'b[@local_opt]) -> ('a t * 'b[@local_opt]) = "%identity"
+  external wrap_snd : ('a * 'b[@local_opt]) -> ('a * 'b t[@local_opt]) = "%identity"
+
+  external unwrap_tuple2
+    :  ('a t * 'b t[@local_opt])
+    -> ('a * 'b[@local_opt])
+    = "%identity"
+
+  external%template unwrap_fst
+    :  ('a t * 'b[@local_opt])
+    -> ('a * 'b[@local_opt])
+    = "%identity"
+  [@@mode p = (portable, nonportable)]
+
+  external%template unwrap_snd
+    :  ('a * 'b t[@local_opt])
+    -> ('a * 'b[@local_opt])
+    = "%identity"
+  [@@mode p = (portable, nonportable)]
 end
 
 module Contended = struct
   type 'a t = { contended : 'a } [@@unboxed]
 
   external cross : 'a. 'a -> 'a = "%identity"
+end
+
+module Shared = struct
+  type 'a t = { shared : 'a } [@@unboxed]
 end
 
 module Portended = struct
@@ -294,7 +366,8 @@ module At_locality = struct
   (* The safety of this module is tested in `test/test_modes.ml`, which reimplements its
      interface without using [external] definitions. *)
 
-  type actually_local = |
+  (* This type must not cross locality. *)
+  type actually_local
 
   type global = [ `global ]
   [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
@@ -423,10 +496,21 @@ module Portable_via_contended = struct
   external unwrap_contended : 'a. ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
 end
 
+module Contended_via_portable = struct
+  type +'a t
+
+  external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
+  external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+
+  let sexp_of_t sexp_of_a t = sexp_of_a (unwrap t)
+  let refute_portable _ = assert false
+end
+
 module Export = struct
   type 'a global = 'a Global.t = { global : 'a } [@@unboxed]
   type 'a portable = 'a Portable.t = { portable : 'a } [@@unboxed]
   type 'a contended = 'a Contended.t = { contended : 'a } [@@unboxed]
+  type 'a shared = 'a Shared.t = { shared : 'a } [@@unboxed]
   type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
   type 'a many = 'a Many.t = { many : 'a } [@@unboxed]
   type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]

@@ -187,7 +187,28 @@ let snd = Stdlib.snd
 
 (* [raise] needs to be defined as an external as the compiler automatically replaces
    '%raise' by '%reraise' when appropriate. *)
-external raise : exn -> _ = "%raise"
+  external%template raise : 'a. exn -> 'a = "%reraise"
+  [@@kind k = (value_or_null, immediate, immediate64)]
+
+let%template raise : 'a. exn -> 'a =
+  fun exn ->
+  match (raise exn : Nothing0.t) with
+  | _ -> .
+[@@kind
+  k
+  = ( bits32
+    , bits64
+    , float64
+    , word
+    , value & bits32
+    , value & bits64
+    , value & float64
+    , value & word
+    , value & immediate
+    , value & immediate64
+    , value & value )]
+;;
+
 external phys_equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%eq"
 external decr : (int ref[@local_opt]) -> unit = "%decr"
 external incr : (int ref[@local_opt]) -> unit = "%incr"

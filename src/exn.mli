@@ -24,18 +24,25 @@ exception Reraised of string * t
     particular exn constructor doesn't matter. *)
 val create_s : Sexp.t -> t
 
+(** [create_s_uncontended] returns a function that can be used to obtain uncontended
+    access to the resulting exception from within a portable function.
+
+    The [@ uncontended] below is redundant, as that is the default. It is written for
+    clarity. *)
+val create_s_uncontended : Sexp.t -> unit -> t
+
 (** [create_s_lazy lazy_sexp] is like [create_s], but takes a lazily generated sexp. *)
 val create_s_lazy : Sexp.t Lazy.t -> t
 
 (** Same as [raise], except that the backtrace is not recorded. *)
-val raise_without_backtrace : t -> _
+val raise_without_backtrace : 'a. t -> 'a
 
 (** [raise_with_original_backtrace t bt] raises the exception [exn], recording [bt] as the
     backtrace it was originally raised at. This is useful to re-raise exceptions annotated
     with extra information. *)
-val raise_with_original_backtrace : t -> Stdlib.Printexc.raw_backtrace -> _
+val raise_with_original_backtrace : 'a. t -> Stdlib.Printexc.raw_backtrace -> 'a
 
-val reraise : t -> string -> _
+val reraise : 'a. t -> string -> 'a
 
 (** Types with [format4] are hard to read, so here's an example.
 

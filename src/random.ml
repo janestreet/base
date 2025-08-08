@@ -138,22 +138,27 @@ module State = struct
       default_state_key
     ;;
 
-    type t =
+    type inner =
       | Default
       | Custom of Stdlib.Random.State.t Lazy.t
 
-    let default = Default
-    let[@inline] get_default () = Default
-    let of_stdlib st = Custom (Lazy.from_val st)
-    let of_stdlib_lazy ~f = Custom (Lazy.from_fun f)
+    type t = inner Modes.Portable_via_contended.t
 
-    let[@inline] with_stdlib ~f = function
+    let wrap = Modes.Portable_via_contended.wrap
+    let unwrap = Modes.Portable_via_contended.unwrap
+    let default = wrap Default
+    let[@inline] get_default () = wrap Default
+    let of_stdlib st = wrap (Custom (Lazy.from_val st))
+    let of_stdlib_lazy ~f = wrap (Custom (Lazy.from_fun f))
+
+    let[@inline] with_stdlib ~f t =
+      match unwrap t with
       | Default ->
         Stdlib.Domain.DLS.access (fun access ->
           let default_state = Stdlib.Domain.DLS.get access default_state in
           f default_state [@nontail])
         [@nontail]
-      | Custom lz_st -> f (Lazy.force lz_st)
+      | Custom st -> f (Lazy.force st)
     ;;
   end
 
@@ -199,6 +204,7 @@ module State = struct
     let seed = Capsule.Data.wrap ~access seed in
     Capsule.Password.with_current access (fun password ->
       let password = Capsule.Password.shared password in
+      let password = Basement.Stdlib_shim.Obj.magic_unyielding password in
       with_stdlib t ~f:(fun state -> assign_capsule ~password ~src:seed ~dst:state)
       [@nontail])
     [@nontail]
@@ -395,6 +401,7 @@ let set_state s =
     let capsule = Capsule.Data.wrap ~access state in
     Capsule.Password.with_current access (fun password ->
       let password = Capsule.Password.shared password in
+      let password = Basement.Stdlib_shim.Obj.magic_unyielding password in
       State.with_stdlib (State.get_default ()) ~f:(fun default ->
         assign_capsule ~password ~src:capsule ~dst:default)
       [@nontail])

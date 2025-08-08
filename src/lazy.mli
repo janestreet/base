@@ -22,7 +22,7 @@ open! Import
 
 type 'a t = 'a lazy_t
 [@@deriving
-  compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+  compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
 include Monad.S with type 'a t := 'a t
 
@@ -63,5 +63,5 @@ val peek : 'a t -> 'a option
     type does not expose [of_sexp]. To be used in debug code, while tracking a Heisenbug,
     etc. *)
 module T_unforcing : sig
-  type nonrec 'a t = 'a t [@@deriving sexp_of ~localize]
+  type nonrec 'a t = 'a t [@@deriving sexp_of ~stackify]
 end

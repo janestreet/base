@@ -69,7 +69,7 @@ module Step : sig
         ; state : 's
         }
         -> ('a, 's) t
-  [@@deriving sexp_of ~localize]
+  [@@deriving sexp_of ~stackify]
 end
 
 (** [unfold_step ~init ~f] constructs a sequence by giving an initial state [init] and a
@@ -127,7 +127,7 @@ module Merge_with_duplicates_element : sig
     | Left of 'a
     | Right of 'b
     | Both of 'a * 'b
-  [@@deriving compare ~localize, equal ~localize, hash, sexp ~localize, sexp_grammar]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
 end
 
 (** [merge_with_duplicates_element t1 t2 ~compare] is like [merge], except that for each

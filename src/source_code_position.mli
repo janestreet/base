@@ -13,7 +13,7 @@ type t = Stdlib.Lexing.position =
   ; pos_bol : int
   ; pos_cnum : int
   }
-[@@deriving hash, sexp_of ~localize]
+[@@deriving hash, sexp_of ~stackify]
 
 include%template Comparable.S [@mode local] [@modality portable] with type t := t
 

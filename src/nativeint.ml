@@ -4,7 +4,7 @@ module Sexp = Sexp0
 include Nativeint_replace_polymorphic_compare
 
 module T = struct
-  type t = nativeint [@@deriving globalize, hash, sexp ~localize, sexp_grammar]
+  type t = nativeint [@@deriving globalize, hash, sexp ~stackify, sexp_grammar]
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = Nativeint_replace_polymorphic_compare.compare
@@ -65,9 +65,9 @@ include%template Pretty_printer.Register [@modality portable] (struct
 open! Nativeint_replace_polymorphic_compare
 
 let invariant (_ : t) = ()
-let num_bits = Word_size.num_bits Word_size.word_size
-let float_lower_bound = Float0.lower_bound_for_int num_bits
-let float_upper_bound = Float0.upper_bound_for_int num_bits
+let num_bits = Word_size.num_bits Word_size.word_size |> of_int
+let float_lower_bound = Float0.lower_bound_for_int (num_bits |> to_int)
+let float_upper_bound = Float0.upper_bound_for_int (num_bits |> to_int)
 
 external shift_right_logical : t -> int -> t = "%nativeint_lsr"
 external shift_right : t -> int -> t = "%nativeint_asr"
@@ -122,17 +122,65 @@ let of_float f =
       ()
 ;;
 
-module Pow2 = struct
-  open Nativeint_replace_polymorphic_compare
+let of_int_exn = of_int
+let to_int = Conv.nativeint_to_int
+let to_int_exn = Conv.nativeint_to_int_exn
+let to_int_trunc = Conv.nativeint_to_int_trunc
+let ( ~- ) = neg
+let pow b e = of_int_exn (Int_math.Private.int_pow (to_int_exn b) (to_int_exn e))
+let ( ** ) b e = pow b e
 
+module Pre_O = struct
+  let ( + ) = ( + )
+  let ( - ) = ( - )
+  let ( * ) = ( * )
+  let ( / ) = ( / )
+  let ( ~- ) = ( ~- )
+  let ( ** ) = ( ** )
+
+  include Nativeint_replace_polymorphic_compare
+
+  let abs = abs
+  let abs_local = abs_local
+  let neg = neg
+  let zero = zero
+  let of_int_exn = of_int_exn
+end
+
+module O = struct
+  include Pre_O
+
+  include Int_math.Make (struct
+      type nonrec t = t
+
+      let globalize = globalize
+
+      include Pre_O
+
+      let rem = rem
+      let to_float = to_float
+      let of_float = of_float
+      let of_string = T.of_string
+      let to_string = T.to_string
+    end)
+
+  let ( land ) = bit_and
+  let ( lor ) = bit_or
+  let ( lxor ) = bit_xor
+  let lnot = bit_not
+  let ( lsl ) = shift_left
+  let ( asr ) = shift_right
+  let ( lsr ) = shift_right_logical
+end
+
+include O
+
+module Pow2 = struct
   let raise_s = Error.raise_s
 
   let non_positive_argument () =
     Printf.invalid_argf "argument must be strictly positive" ()
   ;;
-
-  let ( lor ) = Stdlib.Nativeint.logor
-  let ( lsr ) = Stdlib.Nativeint.shift_right_logical
 
   external ( land ) : t -> t -> t = "%nativeint_and"
 
@@ -179,7 +227,7 @@ module Pow2 = struct
         (Sexp.message
            "[Nativeint.floor_log2] got invalid input"
            [ "", sexp_of_nativeint (globalize i) ]);
-    Int.O.(num_bits - 1 - (clz i |> to_int))
+    num_bits - 1n - clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
@@ -191,10 +239,10 @@ module Pow2 = struct
            "[Nativeint.ceil_log2] got invalid input"
            [ "", sexp_of_nativeint (globalize i) ]);
     if i = 1n
-    then 0
+    then 0n
     else (
       let i = i - 1n in
-      Int.O.(num_bits - (clz i |> to_int)))
+      num_bits - clz i)
   ;;
 end
 
@@ -218,7 +266,6 @@ let clamp t ~min ~max =
   else Ok (clamp_unchecked t ~min ~max)
 ;;
 
-let ( ~- ) = neg
 let incr r = r := !r + one
 let decr r = r := !r - one
 
@@ -232,12 +279,6 @@ let to_local_nativeint_exn = to_nativeint
 let popcount = Popcount.nativeint_popcount
 
 external of_int : int -> (t[@local_opt]) = "%nativeint_of_int"
-
-let of_int_exn = of_int
-let to_int = Conv.nativeint_to_int
-let to_int_exn = Conv.nativeint_to_int_exn
-let to_int_trunc = Conv.nativeint_to_int_trunc
-
 external of_int32 : int32 -> (t[@local_opt]) = "%nativeint_of_int32"
 
 let of_int32_exn = of_int32
@@ -256,8 +297,6 @@ external of_int64_trunc : int64 -> (nativeint[@local_opt]) = "%int64_to_nativein
 
 let to_int64 = Conv.nativeint_to_int64
 let to_local_int64 = Conv.nativeint_to_int64
-let pow b e = of_int_exn (Int_math.Private.int_pow (to_int_exn b) (to_int_exn e))
-let ( ** ) b e = pow b e
 
 include Int_string_conversions.Make_binary (struct
     type t = nativeint [@@deriving compare ~localize, equal ~localize, hash]
@@ -269,54 +308,10 @@ include Int_string_conversions.Make_binary (struct
     let clz = clz
     let num_bits = num_bits
     let one = one
-    let to_int_exn = to_int_exn
+    let to_int_trunc = to_int_trunc
     let zero = zero
+    let ( - ) = ( - )
   end)
-
-module Pre_O = struct
-  let ( + ) = ( + )
-  let ( - ) = ( - )
-  let ( * ) = ( * )
-  let ( / ) = ( / )
-  let ( ~- ) = ( ~- )
-  let ( ** ) = ( ** )
-
-  include Nativeint_replace_polymorphic_compare
-
-  let abs = abs
-  let abs_local = abs_local
-  let neg = neg
-  let zero = zero
-  let of_int_exn = of_int_exn
-end
-
-module O = struct
-  include Pre_O
-
-  include Int_math.Make (struct
-      type nonrec t = t
-
-      let globalize = globalize
-
-      include Pre_O
-
-      let rem = rem
-      let to_float = to_float
-      let of_float = of_float
-      let of_string = T.of_string
-      let to_string = T.to_string
-    end)
-
-  let ( land ) = bit_and
-  let ( lor ) = bit_or
-  let ( lxor ) = bit_xor
-  let lnot = bit_not
-  let ( lsl ) = shift_left
-  let ( asr ) = shift_right
-  let ( lsr ) = shift_right_logical
-end
-
-include O
 
 (* [Nativeint] and [Nativeint.O] agree value-wise *)
 

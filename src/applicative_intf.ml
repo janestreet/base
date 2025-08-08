@@ -19,10 +19,14 @@ open! Import
 
 module Definitions = struct
   [%%template
-  [@@@mode.default m = (global, local)]
+  [@@@mode.default m = (global, local), p = (nonportable, portable)]
 
   (** Module types below provide both global and local versions. In OxCaml, the latter
-      accept local [~f] closures. *)
+      accept local [~f] closures.
+
+      Both [local] and [portable] versions are designed with a strict data structure in
+      mind. The types won't make sense for Applicatives whose evaluation is delayed (e.g.
+      most monads, Command.Param, or anything like a database query applicative). *)
 
   (** Applicative operations. An applicative abstracts the notion of computations whose
       results can be combined. An ['a t] represents a computation returning ['a].
@@ -78,14 +82,14 @@ module Definitions = struct
   module type S2_kernel = sig
     type ('a, 'p) t
 
-    include S3_kernel [@mode m] with type ('a, 'p, _) t := ('a, 'p) t
+    include S3_kernel [@mode m p] with type ('a, 'p, _) t := ('a, 'p) t
   end
 
   (** Applicative operations for applicatives with one type parameter. *)
   module type S_kernel = sig
     type 'a t
 
-    include S3_kernel [@mode m] with type ('a, _, _) t := 'a t
+    include S3_kernel [@mode m p] with type ('a, _, _) t := 'a t
   end
 
   (** Infix operators. This module type subsumes the other [Index*] types below. *)
@@ -102,14 +106,14 @@ module Definitions = struct
   module type Applicative_infix2 = sig
     type ('a, 'p) t
 
-    include Applicative_infix3 [@mode m] with type ('a, 'p, _) t := ('a, 'p) t
+    include Applicative_infix3 [@mode m p] with type ('a, 'p, _) t := ('a, 'p) t
   end
 
   (** Infix operators for applicatives with one type parameter. *)
   module type Applicative_infix = sig
     type 'a t
 
-    include Applicative_infix3 [@mode m] with type ('a, _, _) t := 'a t
+    include Applicative_infix3 [@mode m p] with type ('a, _, _) t := 'a t
   end
 
   (** Complete applicative interface. Extends [_kernel] with infix operators.
@@ -118,25 +122,25 @@ module Definitions = struct
   module type S3 = sig
     type ('a, 'p, 'q) t
 
-    include S3_kernel [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
-    include Applicative_infix3 [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
+    include S3_kernel [@mode m p] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
+    include Applicative_infix3 [@mode m p] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
 
     module Applicative_infix :
-      Applicative_infix3 [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
+      Applicative_infix3 [@mode m p] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
   end
 
   (** Complete applicative interface with two type parameters. *)
   module type S2 = sig
     type ('a, 'p) t
 
-    include S3 [@mode m] with type ('a, 'p, _) t := ('a, 'p) t
+    include S3 [@mode m p] with type ('a, 'p, _) t := ('a, 'p) t
   end
 
   (** Complete applicative interface with one type parameter. *)
   module type S = sig
     type 'a t
 
-    include S3 [@mode m] with type ('a, _, _) t := 'a t
+    include S3 [@mode m p] with type ('a, _, _) t := 'a t
   end
 
   (** Supports [let%map] syntax. See [ppx_let] documentation.
@@ -287,8 +291,9 @@ module type Applicative = sig
   [%%template:
   (** The identity applicative. Useful as an argument to functors that require a monad, to
       produce a non-applicative result. *)
-  module Ident : sig
-      include S [@mode local]
+  module%template
+    [@mode p = (portable, nonportable)] Ident : sig
+      include S [@mode local p]
     end
     with type 'a t = 'a
 

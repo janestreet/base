@@ -8,10 +8,10 @@
     {[
       # let h = Hashtbl.of_alist_exn (module String) [ ("Bar", "Value") ];;
       val h : (string, string) Base.Hashtbl.t = <abstr>
-      # Hashtbl.find h "Foo";;
-      - : string option = None
-      # Hashtbl.find h "Bar";;
-      - : string option = Some "Value"
+      # (Hashtbl.find h "Foo" : _ option);;
+      - : string option = Base.Option.None
+      # (Hashtbl.find h "Bar" : _ option);;
+      - : string option = Base.Option.Some "Value"
     ]} *)
 
 open! Import
@@ -21,14 +21,28 @@ open! Import
 module Constructors : module type of Option0
 
 type%template 'a t = ('a Constructors.t[@kind k])
-[@@deriving compare ~localize, equal ~localize, sexp ~localize]
-[@@kind k = (float64, bits32, bits64, word)]
+[@@deriving compare ~localize, equal ~localize, sexp ~stackify]
+[@@kind
+  k
+  = ( float64
+    , bits32
+    , bits64
+    , word
+    , immediate
+    , immediate64
+    , value & float64
+    , value & bits32
+    , value & bits64
+    , value & word
+    , value & immediate
+    , value & immediate64
+    , value & value )]
 
 type 'a t = 'a option =
   | None
   | Some of 'a
 [@@deriving
-  compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+  compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
 include Invariant.S1 with type 'a t := 'a t
 
@@ -57,7 +71,23 @@ include Monad.S__local with type 'a t := 'a t
 
 [%%template:
 [@@@mode.default m = (global, local)]
-[@@@kind.default k = (value, float64, bits32, bits64, word)]
+
+[@@@kind.default
+  k
+  = ( value
+    , float64
+    , bits32
+    , bits64
+    , word
+    , immediate
+    , immediate64
+    , value & float64
+    , value & bits32
+    , value & bits64
+    , value & word
+    , value & immediate
+    , value & immediate64
+    , value & value )]
 
 (** Extracts the underlying value if present, otherwise returns [default]. *)
 val value : ('a t[@kind k]) -> default:'a -> 'a
@@ -79,13 +109,30 @@ val value_or_thunk : ('a t[@kind k]) -> default:(unit -> 'a) -> 'a
 val iter : ('a t[@kind k]) -> f:('a -> unit) -> unit
 
 [@@@kind ki = k]
-[@@@kind.default ko = (value, float64, bits32, bits64, word)]
+
+[@@@kind.default
+  ko
+  = ( value
+    , float64
+    , bits32
+    , bits64
+    , word
+    , immediate
+    , immediate64
+    , value & float64
+    , value & bits32
+    , value & bits64
+    , value & word
+    , value & immediate
+    , value & immediate64
+    , value & value )]
 
 (** Extracts the underlying value and applies [f] to it if present, otherwise returns
     [default]. *)
 val value_map : 'a 'b. ('a t[@kind ki]) -> default:'b -> f:('a -> 'b) -> 'b
 
-val map : 'a 'b. ('a t[@kind ki]) -> f:('a -> 'b) -> ('b t[@kind ko])]
+val map : 'a 'b. ('a t[@kind ki]) -> f:('a -> 'b) -> ('b t[@kind ko])
+val bind : 'a 'b. ('a t[@kind ki]) -> f:('a -> ('b t[@kind ko])) -> ('b t[@kind ko])]
 
 (** On [None], returns [init]. On [Some x], returns [f init x]. *)
 val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
@@ -139,6 +186,8 @@ val try_with_join : (unit -> 'a t) -> 'a t
 (** Wraps the [Some] constructor as a function. *)
 val some : 'a -> 'a t
 
+val return : 'a -> 'a t
+
 (** [first_some t1 t2] returns [t1] if it has an underlying value, or [t2] otherwise. *)
 val first_some : 'a t -> 'a t -> 'a t
 
@@ -155,10 +204,46 @@ val some_if_thunk : bool -> (unit -> 'a) -> 'a t]
 (** {2 Predicates} *)
 
 [%%template:
-[@@@kind.default k = (value, float64, bits32, bits64, word)]
+[@@@kind.default
+  k
+  = ( value
+    , float64
+    , bits32
+    , bits64
+    , word
+    , immediate
+    , immediate64
+    , value & float64
+    , value & bits32
+    , value & bits64
+    , value & word
+    , value & immediate
+    , value & immediate64
+    , value & value )]
 
 (** [is_none t] returns true iff [t = None]. *)
 val is_none : ('a t[@kind k]) -> bool
 
 (** [is_some t] returns true iff [t = Some x]. *)
 val is_some : ('a t[@kind k]) -> bool]
+
+module Local : sig
+  module Let_syntax : sig
+    val return : 'a -> 'a t
+
+    (** Pronounced "map". Infix form of [map]. *)
+    val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
+
+    (** Pronounced "bind". Infix form of [bind]. *)
+    val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+
+    module Let_syntax : sig
+      val return : 'a -> 'a t
+      val map : 'a t -> f:('a -> 'b) -> 'b t
+      val bind : 'a t -> f:('a -> 'b t) -> 'b t
+      val both : 'a t -> 'b t -> ('a * 'b) t
+
+      module Open_on_rhs : sig end
+    end
+  end
+end

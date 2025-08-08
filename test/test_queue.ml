@@ -34,7 +34,7 @@ module%test _ : module type of Queue = struct
     [%expect {| (1 2 3 4) |}]
   ;;
 
-  let capacity = capacity
+  let capacity = [%eta1 capacity]
   let set_capacity = set_capacity
 
   let%test_unit _ =
@@ -110,7 +110,7 @@ module%test _ : module type of Queue = struct
   ;;
 
   let init = init
-  let dequeue_or_null = dequeue_or_null
+  let dequeue_or_null = [%eta1 dequeue_or_null]
 
   let%test_unit _ =
     let t = init 0 ~f:(fun _ -> assert false) in
@@ -150,8 +150,8 @@ module%test _ : module type of Queue = struct
     assert (does_raise (fun () : unit Queue.t -> init (-1) ~f:(fun _ -> ())))
   ;;
 
-  let get = get
-  let set = set
+  let get = [%eta2 get]
+  let set = [%eta3 set]
 
   let%test_unit _ =
     let t = create () in
@@ -219,17 +219,17 @@ module%test _ : module type of Queue = struct
 
   include%template Test_container.Test_S1 [@modality portable] (Queue)
 
-  let dequeue_exn = dequeue_exn
+  let dequeue_exn = [%eta1 dequeue_exn]
   let enqueue = enqueue
   let enqueue_front = enqueue_front
   let dequeue_back = dequeue_back
-  let dequeue_back_exn = dequeue_back_exn
+  let dequeue_back_exn = [%eta1 dequeue_back_exn]
   let peek = peek
-  let peek_exn = peek_exn
+  let peek_exn = [%eta1 peek_exn]
   let peek_back = peek_back
-  let peek_back_exn = peek_back_exn
+  let peek_back_exn = [%eta1 peek_back_exn]
   let last = last
-  let last_exn = last_exn
+  let last_exn = [%eta1 last_exn]
 
   let%test_unit _ =
     let t = create () in
@@ -263,7 +263,7 @@ module%test _ : module type of Queue = struct
     [%test_result: int] (dequeue_back_exn t) ~expect:3
   ;;
 
-  let dequeue_and_ignore_exn = dequeue_and_ignore_exn
+  let dequeue_and_ignore_exn = [%eta1 dequeue_and_ignore_exn]
 
   let%test_unit _ =
     let t = create () in
@@ -404,7 +404,7 @@ module%test _ : module type of Queue = struct
     ;;
   end
 
-  let clear = clear
+  let clear = [%eta1 clear]
 
   let%test_unit "clear" =
     let q = of_list [ 1; 2; 3; 4 ] in
@@ -473,7 +473,9 @@ module%test _ : module type of Queue = struct
   let for_alli = for_alli
   let iter = iter
   let iteri = iteri
+  let iteri_until = iteri_until
   let foldi = foldi
+  let foldi_until = foldi_until
   let findi = findi
   let find_mapi = find_mapi
 
@@ -488,8 +490,23 @@ module%test _ : module type of Queue = struct
       val to_array : 'a t -> 'a array
       val fold : 'a t -> init:'b -> f:('b -> 'a -> 'b) -> 'b
       val foldi : 'a t -> init:'b -> f:(int -> 'b -> 'a -> 'b) -> 'b
+
+      val foldi_until
+        :  'a t
+        -> init:'b
+        -> f:(int -> 'b -> 'a -> ('b, 'c) Continue_or_stop.t)
+        -> finish:(int -> 'b -> 'c)
+        -> 'c
+
       val iter : 'a t -> f:('a -> unit) -> unit
       val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
+
+      val iteri_until
+        :  'a t
+        -> f:(int -> 'a -> (unit, 'b) Continue_or_stop.t)
+        -> finish:(int -> 'b)
+        -> 'b
+
       val length : 'a t -> int
       val clear : 'a t -> unit
       val concat_map : 'a t -> f:('a -> 'b list) -> 'b t
@@ -569,6 +586,87 @@ module%test _ : module type of Queue = struct
           (Int.to_string !r_a)
           (this_to_string t_a)
           (Int.to_string !r_b)
+          (that_to_string t_b)
+          ()
+    ;;
+
+    let iteri_until (t_a, t_b) =
+      let length = This_queue.length t_a in
+      let r_a, r_b = ref 0, ref 0 in
+      let res_a =
+        This_queue.iteri_until
+          t_a
+          ~f:(fun i x ->
+            r_a := !r_a + (x lxor i);
+            if x % length = 0 then Stop i else Continue ())
+          ~finish:(fun i ->
+            r_a := !r_a + i;
+            i)
+      in
+      let res_b =
+        That_queue.iteri_until
+          t_b
+          ~f:(fun i x ->
+            r_b := !r_b + (x lxor i);
+            if x % length = 0 then Stop i else Continue ())
+          ~finish:(fun i ->
+            r_b := !r_b + i;
+            i)
+      in
+      if !r_a <> !r_b
+      then
+        Printf.failwithf
+          "error in iteri_until: %s (from %s) <> %s (from %s)"
+          (Int.to_string !r_a)
+          (this_to_string t_a)
+          (Int.to_string !r_b)
+          (that_to_string t_b)
+          ()
+      else if res_a <> res_b
+      then
+        Printf.failwithf
+          "error in iteri_until: %s (from %s) <> %s (from %s)"
+          (Int.to_string res_a)
+          (this_to_string t_a)
+          (Int.to_string res_b)
+          (that_to_string t_b)
+          ()
+    ;;
+
+    let foldi_until (t_a, t_b) =
+      let length = This_queue.length t_a in
+      let r_a, res_a =
+        This_queue.foldi_until
+          t_a
+          ~init:0
+          ~f:(fun i acc x ->
+            if x % length = 0 then Stop (i, acc) else Continue (acc + (x lxor i)))
+          ~finish:(fun i acc -> i, acc)
+      in
+      let r_b, res_b =
+        That_queue.foldi_until
+          t_b
+          ~init:0
+          ~f:(fun i acc x ->
+            if x % length = 0 then Stop (i, acc) else Continue (acc + (x lxor i)))
+          ~finish:(fun i acc -> i, acc)
+      in
+      if r_a <> r_b
+      then
+        Printf.failwithf
+          "error in iteri_until: %s (from %s) <> %s (from %s)"
+          (Int.to_string r_a)
+          (this_to_string t_a)
+          (Int.to_string r_b)
+          (that_to_string t_b)
+          ()
+      else if res_a <> res_b
+      then
+        Printf.failwithf
+          "error in iteri_until: %s (from %s) <> %s (from %s)"
+          (Int.to_string res_a)
+          (this_to_string t_a)
+          (Int.to_string res_b)
           (that_to_string t_b)
           ()
     ;;
@@ -968,7 +1066,7 @@ module%test _ : module type of Queue = struct
               ())
         else (
           let queue_was_empty = This_queue.length (fst t) = 0 in
-          let r = Random.int 200 in
+          let r = Random.int 210 in
           if r < 60
           then enqueue t (Random.int 10_000)
           else if r < 65
@@ -1021,7 +1119,11 @@ module%test _ : module type of Queue = struct
           then length_check t
           else if r < 200
           then drain t
-          else failwith "Impossible: We did [Random.int 200] above";
+          else if r < 205
+          then iteri_until t
+          else if r < 210
+          then foldi_until t
+          else failwith "Impossible: We did [Random.int 210] above";
           loop
             ~all_ops:(all_ops - 1)
             ~non_empty_ops:(if queue_was_empty then non_empty_ops else non_empty_ops - 1))

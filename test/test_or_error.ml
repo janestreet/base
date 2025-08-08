@@ -3,6 +3,10 @@ open! Or_error
 
 let%test _ = [%compare.equal: string t] (errorf "foo %d" 13) (error_string "foo 13")
 
+let%test _ =
+  [%compare.equal: string t] (errorf_portable "foo %d" 13 ()) (error_string "foo 13")
+;;
+
 let%test_unit _ =
   for i = 0 to 10 do
     assert (
@@ -17,6 +21,17 @@ let%test _ = Result.is_error (combine_errors [ Ok (); error_string "" ])
 let ( = ) = [%compare.equal: unit t]
 let%test _ = combine_errors_unit [ Ok (); Ok () ] = Ok ()
 let%test _ = combine_errors_unit [] = Ok ()
+
+(* Portable error creation *)
+
+let%test _ = Result.is_error ((combine_errors [@mode portable]) [ error_string "" ])
+
+let%test _ =
+  Result.is_error ((combine_errors [@mode portable]) [ Ok (); error_string "" ])
+;;
+
+let%test _ = (combine_errors_unit [@mode portable]) [ Ok (); Ok () ] = Ok ()
+let%test _ = (combine_errors_unit [@mode portable]) [] = Ok ()
 
 let%test _ =
   let a = Error.of_string "a"
@@ -96,10 +111,11 @@ let%expect_test "behavior and performance on lists of or_error's" =
   let make_list len =
     (* We construct atoms with spaces in them to show sexp rendering with quotes, which is
        significant to [Error.to_string_hum]'s behavior below. *)
-    List.init len ~f:(Or_error.errorf "at %d")
+    List.init len ~f:(fun i ->
+      Or_error.errorf_portable "at %d" i () |> Modes.Portable.wrap)
   in
   let short_lists = List.map ~f:make_list [ 0; 1; 2; 10 ] in
-  let long_list = make_list 500_000 in
+  let long_list = make_list 500_000 |> Modes.Portable.unwrap_list in
   let to_string = function
     | Ok _ -> "ok"
     | Error error ->
@@ -107,9 +123,10 @@ let%expect_test "behavior and performance on lists of or_error's" =
          also happens to observe whether the error was created via [Error.of_string]. *)
       Error.to_string_hum error
   in
-  let test f =
+  let%template[@mode p = (portable, nonportable)] test (f : _ -> _) =
     (* Show behavior on short lists. *)
-    List.iter short_lists ~f:(fun list -> print_endline (to_string (f list)));
+    List.iter short_lists ~f:(fun list ->
+      print_endline (to_string (f (Modes.Portable.unwrap_list list))));
     (* Test for timeout / stack overflow on a long list. *)
     match to_string (f long_list) with
     | (_ : string) -> ()
@@ -140,7 +157,23 @@ let%expect_test "behavior and performance on lists of or_error's" =
     ("at 0" "at 1")
     ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
     |}];
+  (test [@mode portable]) (combine_errors [@mode portable]);
+  [%expect
+    {|
+    ok
+    "at 0"
+    ("at 0" "at 1")
+    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
+    |}];
   test combine_errors_unit;
+  [%expect
+    {|
+    ok
+    "at 0"
+    ("at 0" "at 1")
+    ("at 0" "at 1" "at 2" "at 3" "at 4" "at 5" "at 6" "at 7" "at 8" "at 9")
+    |}];
+  (test [@mode portable]) (combine_errors_unit [@mode portable]);
   [%expect
     {|
     ok

@@ -15,7 +15,6 @@
    ocamldep from mistakenly causing a file to depend on [Base.Bytes]. *)
 
 open! Import0
-module Char = Char0
 module Uchar = Uchar0
 module Sys = Sys0
 
@@ -98,7 +97,19 @@ include Primitives
 
 let max_length = Sys.max_string_length
 let blit = Stdlib.Bytes.blit
-let blit_string = Stdlib.Bytes.blit_string
+
+external string_length : string -> int = "%string_length"
+
+let blit_string ~src ~src_pos ~dst ~dst_pos ~len =
+  if len < 0
+     || src_pos < 0
+     || src_pos > string_length src - len
+     || dst_pos < 0
+     || dst_pos > length dst - len
+  then invalid_arg "String.blit / Bytes.blit_string"
+  else unsafe_blit_string ~src ~src_pos ~dst ~dst_pos ~len
+;;
+
 let compare = Stdlib.Bytes.compare
 let create = Stdlib.Bytes.create
 
@@ -248,7 +259,7 @@ let[@zero_alloc] create_local len =
   unsafe_create_local len
 ;;
 
-let%template[@alloc stack] create = create_local
+let%template[@alloc stack] create x = create_local x [@@zero_alloc]
 
 external unsafe_fill : bytes -> pos:int -> len:int -> char -> unit = "caml_fill_bytes"
 [@@noalloc]
@@ -259,7 +270,13 @@ let fill t ~pos ~len c =
   else unsafe_fill t ~pos ~len c
 ;;
 
-let make = Stdlib.Bytes.make
+let%template[@alloc a = (heap, stack)] make n c =
+  (let t = (create [@alloc a]) n in
+   unsafe_fill t ~pos:0 ~len:n c;
+   t)
+  [@exclave_if_stack a]
+;;
+
 let empty = Stdlib.Bytes.empty
 let get_empty () = Portability_hacks.magic_uncontended__promise_deeply_immutable empty
 

@@ -78,12 +78,10 @@ let globalize0 = globalize0
 let globalize_m__t = globalize_m__t
 
 let%expect_test _ =
-  quickcheck_m
-    (module Instance)
-    ~f:(fun t ->
-      let t = Instance.value t in
-      let round_trip = globalize0 t in
-      require_equal (module Instance.Value) round_trip t);
+  quickcheck_m (module Instance) ~f:(fun t ->
+    let t = Instance.value t in
+    let round_trip = globalize0 t in
+    require_equal (module Instance.Value) round_trip t);
   [%expect {| |}]
 ;;
 
@@ -93,14 +91,12 @@ let sexp_of_m__t = sexp_of_m__t
 let m__t_of_sexp = m__t_of_sexp
 
 let%expect_test _ =
-  quickcheck_m
-    (module Instance)
-    ~f:(fun t ->
-      let t = Instance.value t in
-      let sexp = [%sexp_of: M(Int).t] t in
-      require_equal (module Sexp) sexp [%sexp (to_list t : int list)];
-      let round_trip = [%of_sexp: M(Int).t] sexp in
-      require_equal (module Instance.Value) round_trip t);
+  quickcheck_m (module Instance) ~f:(fun t ->
+    let t = Instance.value t in
+    let sexp = [%sexp_of: M(Int).t] t in
+    require_equal (module Sexp) sexp [%sexp (to_list t : int list)];
+    let round_trip = [%of_sexp: M(Int).t] sexp in
+    require_equal (module Instance.Value) round_trip t);
   [%expect {| |}]
 ;;
 
@@ -121,23 +117,21 @@ let equal_m__t = equal_m__t
 let equal_m__t__local = equal_m__t__local
 
 let%expect_test _ =
-  quickcheck_m
-    (module Instance_pair)
-    ~f:(fun (a, b) ->
-      let a = Instance.value a in
-      let b = Instance.value b in
-      require_equal
-        (module Ordering)
-        (Ordering.of_int ([%compare: M(Int).t] a b))
-        (Ordering.of_int ([%compare: int list] (to_list a) (to_list b)));
-      require_equal
-        (module Ordering)
-        (Ordering.of_int ([%compare: M(Int).t] a b))
-        (Ordering.of_int (compare Int.compare [%compare: _] a b));
-      require_equal
-        (module Bool)
-        ([%equal: M(Int).t] a b)
-        ([%equal: int list] (to_list a) (to_list b)));
+  quickcheck_m (module Instance_pair) ~f:(fun (a, b) ->
+    let a = Instance.value a in
+    let b = Instance.value b in
+    require_equal
+      (module Ordering)
+      (Ordering.of_int ([%compare: M(Int).t] a b))
+      (Ordering.of_int ([%compare: int list] (to_list a) (to_list b)));
+    require_equal
+      (module Ordering)
+      (Ordering.of_int ([%compare: M(Int).t] a b))
+      (Ordering.of_int (compare Int.compare [%compare: _] a b));
+    require_equal
+      (module Bool)
+      ([%equal: M(Int).t] a b)
+      ([%equal: int list] (to_list a) (to_list b)));
   [%expect {| |}]
 ;;
 
@@ -148,17 +142,15 @@ let hash_fold_m__t = hash_fold_m__t
 let hash_fold_direct = hash_fold_direct
 
 let%expect_test _ =
-  quickcheck_m
-    (module Instance)
-    ~f:(fun t ->
-      let t = Instance.value t in
-      let actual_m = [%hash: M(Int).t] t in
-      let actual_fold_m = Hash.run [%hash_fold: M(Int).t] t in
-      let actual_fold_direct = Hash.run (hash_fold_direct Int.hash_fold_t) t in
-      let expect = Hash.run [%hash_fold: int list] (to_list t) in
-      require_equal (module Int) actual_m expect;
-      require_equal (module Int) actual_fold_m expect;
-      require_equal (module Int) actual_fold_direct expect);
+  quickcheck_m (module Instance) ~f:(fun t ->
+    let t = Instance.value t in
+    let actual_m = [%hash: M(Int).t] t in
+    let actual_fold_m = Hash.run [%hash_fold: M(Int).t] t in
+    let actual_fold_direct = Hash.run (hash_fold_direct Int.hash_fold_t) t in
+    let expect = Hash.run [%hash_fold: int list] (to_list t) in
+    require_equal (module Int) actual_m expect;
+    require_equal (module Int) actual_fold_m expect;
+    require_equal (module Int) actual_fold_direct expect);
   [%expect {| |}]
 ;;
 
@@ -237,14 +229,12 @@ module Using_comparator = struct
   let t_of_sexp_direct = t_of_sexp_direct
 
   let%expect_test _ =
-    quickcheck_m
-      (module Instance)
-      ~f:(fun t ->
-        let t = Instance.value t in
-        let sexp = sexp_of_t Int.sexp_of_t [%sexp_of: _] t in
-        require_equal (module Sexp) sexp ([%sexp_of: Set.M(Int).t] t);
-        let round_trip = t_of_sexp_direct ~comparator:Int.comparator Int.t_of_sexp sexp in
-        require_equal (module Instance.Value) round_trip t);
+    quickcheck_m (module Instance) ~f:(fun t ->
+      let t = Instance.value t in
+      let sexp = sexp_of_t Int.sexp_of_t [%sexp_of: _] t in
+      require_equal (module Sexp) sexp ([%sexp_of: Set.M(Int).t] t);
+      let round_trip = t_of_sexp_direct ~comparator:Int.comparator Int.t_of_sexp sexp in
+      require_equal (module Instance.Value) round_trip t);
     [%expect {| |}]
   ;;
 
@@ -253,14 +243,12 @@ module Using_comparator = struct
   let hash_fold_direct = hash_fold_direct
 
   let%expect_test _ =
-    quickcheck_m
-      (module Instance)
-      ~f:(fun t ->
-        let t = Instance.value t in
-        require_equal
-          (module Int)
-          (Hash.run (hash_fold_direct Int.hash_fold_t) t)
-          (Hash.run [%hash_fold: Set.M(Int).t] t));
+    quickcheck_m (module Instance) ~f:(fun t ->
+      let t = Instance.value t in
+      require_equal
+        (module Int)
+        (Hash.run (hash_fold_direct Int.hash_fold_t) t)
+        (Hash.run [%hash_fold: Set.M(Int).t] t));
     [%expect {| |}]
   ;;
 
@@ -304,12 +292,10 @@ module Using_comparator = struct
     let globalize0 = globalize0
 
     let%expect_test _ =
-      quickcheck_m
-        (module Tree_int)
-        ~f:(fun tree ->
-          let tree = Tree_int.value tree in
-          let round_trip = globalize0 tree in
-          require_equal (module Tree_int.Value) round_trip tree)
+      quickcheck_m (module Tree_int) ~f:(fun tree ->
+        let tree = Tree_int.value tree in
+        let round_trip = globalize0 tree in
+        require_equal (module Tree_int.Value) round_trip tree)
     ;;
 
     (** sexp conversions *)
@@ -318,20 +304,16 @@ module Using_comparator = struct
     let t_of_sexp_direct = t_of_sexp_direct
 
     let%expect_test _ =
-      quickcheck_m
-        (module Tree_int)
-        ~f:(fun tree ->
-          let tree = Tree_int.value tree in
-          let sexp = sexp_of_t Int.sexp_of_t [%sexp_of: _] tree in
-          require_equal
-            (module Sexp)
-            sexp
-            ([%sexp_of: Set.M(Int).t]
-               (Using_comparator.of_tree tree ~comparator:Int.comparator));
-          let round_trip =
-            t_of_sexp_direct ~comparator:Int.comparator Int.t_of_sexp sexp
-          in
-          require_equal (module Tree_int.Value) round_trip tree)
+      quickcheck_m (module Tree_int) ~f:(fun tree ->
+        let tree = Tree_int.value tree in
+        let sexp = sexp_of_t Int.sexp_of_t [%sexp_of: _] tree in
+        require_equal
+          (module Sexp)
+          sexp
+          ([%sexp_of: Set.M(Int).t]
+             (Using_comparator.of_tree tree ~comparator:Int.comparator));
+        let round_trip = t_of_sexp_direct ~comparator:Int.comparator Int.t_of_sexp sexp in
+        require_equal (module Tree_int.Value) round_trip tree)
     ;;
 
     (** polymorphic constructor - untested *)

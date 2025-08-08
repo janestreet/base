@@ -8,10 +8,16 @@ module This_list : S = struct
   include Indexed_container.Make (struct
       type 'a t = 'a list
 
-      let fold = List.fold
+      let fold_until t ~init ~f ~finish =
+        Container.fold_until ~fold:List.fold ~init ~f t ~finish
+      ;;
+
+      let fold = `Custom List.fold
+      let iter_until = `Define_using_fold_until
       let iter = `Custom List.iter
       let length = `Custom List.length
       let foldi = `Define_using_fold
+      let foldi_until = `Define_using_fold_until
       let iteri = `Define_using_fold
     end)
 end

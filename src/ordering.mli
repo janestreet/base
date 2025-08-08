@@ -28,7 +28,7 @@ type t =
   | Less
   | Equal
   | Greater
-[@@deriving compare ~localize, equal ~localize, hash, sexp ~localize, sexp_grammar]
+[@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
 
 (*_ Avoid [@@deriving enumerate] due to circular dependency *)
 val all : t list

@@ -84,36 +84,12 @@ module Definitions = struct
     end
   end
 
-  module Type_equal_id_defns (Id : sig
+  module%template Type_equal_id_defns (Id : sig
       type 'a t
     end) =
   struct
     module type Arg0 = sig
       type t [@@deriving sexp_of]
-
-      val name : string
-    end
-
-    module type Arg1 = sig
-      type !'a t [@@deriving sexp_of]
-
-      val name : string
-    end
-
-    module type Arg2 = sig
-      type (!'a, !'b) t [@@deriving sexp_of]
-
-      val name : string
-    end
-
-    module type Arg3 = sig
-      type (!'a, !'b, !'c) t [@@deriving sexp_of]
-
-      val name : string
-    end
-
-    module type Arg4 = sig
-      type (!'a, !'b, !'c, !'d) t [@@deriving sexp_of]
 
       val name : string
     end
@@ -124,10 +100,26 @@ module Definitions = struct
       val type_equal_id : t Id.t
     end
 
+    [@@@kind.default ka = (value, immediate64)]
+
+    module type Arg1 = sig
+      type !'a t [@@deriving sexp_of]
+
+      val name : string
+    end
+
     module type S1 = sig
       type 'a t
 
       val type_equal_id : 'a Id.t -> 'a t Id.t
+    end
+
+    [@@@kind.default kb = (value, immediate64)]
+
+    module type Arg2 = sig
+      type (!'a, !'b) t [@@deriving sexp_of]
+
+      val name : string
     end
 
     module type S2 = sig
@@ -136,10 +128,26 @@ module Definitions = struct
       val type_equal_id : 'a Id.t -> 'b Id.t -> ('a, 'b) t Id.t
     end
 
+    [@@@kind.default kc = (value, immediate64)]
+
+    module type Arg3 = sig
+      type (!'a, !'b, !'c) t [@@deriving sexp_of]
+
+      val name : string
+    end
+
     module type S3 = sig
       type ('a, 'b, 'c) t
 
       val type_equal_id : 'a Id.t -> 'b Id.t -> 'c Id.t -> ('a, 'b, 'c) t Id.t
+    end
+
+    [@@@kind.default kd = (value, immediate64)]
+
+    module type Arg4 = sig
+      type (!'a, !'b, !'c, !'d) t [@@deriving sexp_of]
+
+      val name : string
     end
 
     module type S4 = sig
@@ -158,7 +166,7 @@ end
 module type Type_equal = sig
   open Definitions
 
-  type ('a, 'b) t = T : 'a. ('a, 'a) t [@@deriving sexp_of ~localize]
+  type ('a, 'b) t = T : 'a. ('a, 'a) t [@@deriving sexp_of ~stackify]
 
   (** just an alias, needed when [t] gets shadowed below *)
   type ('a, 'b) equal := ('a, 'b) t
@@ -252,12 +260,12 @@ module type Type_equal = sig
     (** Every [Id.t] contains a unique id that is distinct from the [Uid.t] in any other
         [Id.t]. *)
     module Uid : sig
-      type t [@@deriving hash, sexp_of ~localize]
+      type t [@@deriving hash, sexp_of ~stackify]
 
       include%template Comparable.S [@mode local] [@modality portable] with type t := t
     end
 
-    val uid : _ t -> Uid.t
+    val%template uid : _ t -> Uid.t [@@mode m = (global, local)]
 
     (** [create ~name] defines a new type identity. Two calls to [create] will result in
         two distinct identifiers, even for the same arguments with the same type. If the
@@ -286,7 +294,11 @@ module type Type_equal = sig
 
     module%template.portable Create0 (T : Arg0) : S0 with type t := T.t
     module%template.portable Create1 (T : Arg1) : S1 with type 'a t := 'a T.t
-    module%template.portable Create2 (T : Arg2) : S2 with type ('a, 'b) t := ('a, 'b) T.t
+
+    module%template.portable
+      [@kind a = (value, immediate64), b = value] Create2
+        (T : Arg2
+      [@kind a b]) : S2 [@kind a b] with type ('a, 'b) t := ('a, 'b) T.t
 
     module%template.portable Create3 (T : Arg3) :
       S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) T.t

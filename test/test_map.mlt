@@ -25,11 +25,11 @@ module%template With_portable_compare = struct
   include functor Comparator.Make [@modality portable]
 end
 
-let use_portable (_ : _ @@ portable) = ()
+let use_portable (_ : _ @ portable) = ()
 
 [%%expect {| |}]
 
-let nonportable_doesn't_cross (x : int Map.M(With_nonportable_compare).t @@ nonportable) =
+let nonportable_doesn't_cross (x : int Map.M(With_nonportable_compare).t @ nonportable) =
   use_portable x
 ;;
 
@@ -39,7 +39,7 @@ Line _, characters _-_:
 Error: This value is nonportable but expected to be portable.
 |}]
 
-let portable_crosses (x : int Map.M(With_portable_compare).t @@ nonportable) =
+let portable_crosses (x : int Map.M(With_portable_compare).t @ nonportable) =
   use_portable x
 ;;
 

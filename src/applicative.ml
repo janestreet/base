@@ -224,16 +224,16 @@ module Make_let_syntax
     (Intf)
     (Impl)]
 
-module Ident = struct
+module%template [@mode p = (portable, nonportable)] Ident = struct
   type 'a t = 'a
 
-  let return = Fn.id
+  let return x = x
   let apply f a = f a
   let both a b = a, b
   let map3 a b c ~f = f a b c
   let map2 a b ~f = f a b
   let map a ~f = f a
-  let all = Fn.id
+  let all x = x
   let all_unit = ignore
 
   module Applicative_infix = struct

@@ -3,7 +3,7 @@
 
 open! Import
 
-type t = bool [@@deriving enumerate, globalize, sexp ~localize, sexp_grammar]
+type t = bool [@@deriving enumerate, globalize, sexp ~stackify, sexp_grammar]
 
 include%template Identifiable.S [@mode local] [@modality portable] with type t := t
 

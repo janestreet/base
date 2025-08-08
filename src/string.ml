@@ -4,15 +4,16 @@ module Bytes = Bytes0
 module Int = Int0
 module Sexp = Sexp0
 module Uchar = Uchar0
-include String0
+module String = String0
 include String_intf.Definitions
+include String
 
 let invalid_argf = Printf.invalid_argf
 let raise_s = Error.raise_s
 let%template stage = (Staged.stage [@mode p]) [@@mode p = (nonportable, portable)]
 
 module T = struct
-  type t = string [@@deriving globalize, hash, sexp ~localize, sexp_grammar]
+  type t = string [@@deriving globalize, hash, sexp ~stackify, sexp_grammar]
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = compare
@@ -26,6 +27,9 @@ type elt = char
 
 let invariant (_ : t) = ()
 
+[%%template
+[@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
 (* This is copied/adapted from 'blit.ml'.
    [sub], [subo] could be implemented using [Blit.Make(Bytes)] plus unsafe casts to/from
    string but were inlined here to avoid using [Bytes.unsafe_of_string] as much as possible.
@@ -34,9 +38,10 @@ let unsafe_sub src ~pos ~len =
   if len = 0
   then ""
   else (
-    let dst = Bytes.create len in
-    Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
-    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
+    (let dst = (Bytes.create [@alloc a]) len in
+     Bytes.unsafe_blit_string ~src ~src_pos:pos ~dst ~dst_pos:0 ~len;
+     Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
+    [@exclave_if_stack a])
 ;;
 
 let sub src ~pos ~len =
@@ -44,18 +49,18 @@ let sub src ~pos ~len =
   then src
   else (
     Ordered_collection_common.check_pos_len_exn ~pos ~len ~total_length:(length src);
-    unsafe_sub src ~pos ~len)
+    (unsafe_sub [@alloc a]) src ~pos ~len [@exclave_if_stack a])
 ;;
 
 let subo ?(pos = 0) ?len src =
-  sub
+  (sub [@alloc a])
     src
     ~pos
     ~len:
       (match len with
        | Some i -> i
-       | None -> length src - pos)
-;;
+       | None -> length src - pos) [@exclave_if_stack a]
+;;]
 
 let rec contains_unsafe t ~pos ~end_ char =
   pos < end_
@@ -171,24 +176,21 @@ module Search_pattern0 = struct
   type t =
     { pattern : string
     ; case_sensitive : bool
-    ; kmp_array : int array
+    ; kmp_array : int iarray
     }
 
-  let sexp_of_t { pattern; case_sensitive; kmp_array = _ } : Sexp.t =
+  let%template[@alloc a = (heap, stack)] sexp_of_t
+    { pattern; case_sensitive; kmp_array = _ }
+    : Sexp.t
+    =
     List
-      [ List [ Atom "pattern"; sexp_of_string pattern ]
-      ; List [ Atom "case_sensitive"; sexp_of_bool case_sensitive ]
+      [ List [ Atom "pattern"; (sexp_of_string [@alloc a]) pattern ]
+      ; List [ Atom "case_sensitive"; (sexp_of_bool [@alloc a]) case_sensitive ]
       ]
+    [@exclave_if_stack a]
   ;;
 
-  let sexp_of_t__local { pattern; case_sensitive; kmp_array = _ } : Sexp.t =
-    List
-      [ List [ Atom "pattern"; sexp_of_string__local pattern ]
-      ; List [ Atom "case_sensitive"; sexp_of_bool__local case_sensitive ]
-      ]
-  ;;
-
-  let pattern t = t.pattern
+  let%template[@mode m = (global, local)] pattern t = t.pattern
   let case_sensitive t = t.case_sensitive
 
   (* Find max number of matched characters at [next_text_char], given the current
@@ -200,7 +202,7 @@ module Search_pattern0 = struct
       !matched_chars > 0
       && not (char_equal next_text_char (unsafe_get pattern !matched_chars))
     do
-      matched_chars := Array.unsafe_get kmp_array (!matched_chars - 1)
+      matched_chars := Iarray0.unsafe_get kmp_array (!matched_chars - 1)
     done;
     if char_equal next_text_char (unsafe_get pattern !matched_chars)
     then matched_chars := !matched_chars + 1;
@@ -216,25 +218,35 @@ module Search_pattern0 = struct
   (* Classic KMP pre-processing of the pattern: build the int array, which, for each i,
      contains the length of the longest non-trivial prefix of s which is equal to a suffix
      ending at s.[i] *)
-  let create pattern ~case_sensitive =
-    let n = length pattern in
-    let kmp_array = Array.create ~len:n (-1) in
-    if n > 0
-    then (
-      let char_equal = get_char_equal ~case_sensitive in
-      Array.unsafe_set kmp_array 0 0;
-      let matched_chars = ref 0 in
-      for i = 1 to n - 1 do
-        matched_chars
-        := kmp_internal_loop
-             ~matched_chars:!matched_chars
-             ~next_text_char:(unsafe_get pattern i)
-             ~pattern
-             ~kmp_array
-             ~char_equal;
-        Array.unsafe_set kmp_array i !matched_chars
-      done);
-    { pattern; case_sensitive; kmp_array }
+  let%template[@alloc a = (heap, stack)] create pattern ~case_sensitive =
+    (let n = length pattern in
+     let kmp_array = (Array.create [@alloc a]) ~len:n (-1) in
+     if n > 0
+     then (
+       let char_equal = get_char_equal ~case_sensitive in
+       Array.unsafe_set kmp_array 0 0;
+       let matched_chars = ref 0 in
+       for i = 1 to n - 1 do
+         matched_chars
+         := kmp_internal_loop
+              ~matched_chars:!matched_chars
+              ~next_text_char:(unsafe_get pattern i)
+              ~pattern
+              ~kmp_array:
+                ((* The array won't be mutated for the duration of this function
+                     call, and the function doesn't save the iarray reference. *)
+                 Iarray0.unsafe_of_array__promise_no_mutation
+                   kmp_array)
+              ~char_equal;
+         Array.unsafe_set kmp_array i !matched_chars
+       done);
+     { pattern
+     ; case_sensitive
+     ; kmp_array =
+         (* The array won't be mutated from now on. *)
+         Iarray0.unsafe_of_array__promise_no_mutation kmp_array
+     })
+    [@exclave_if_stack a]
   ;;
 
   (* Classic KMP: use the pre-processed pattern to optimize look-behinds on non-matches.
@@ -293,7 +305,7 @@ module Search_pattern0 = struct
           found := (j - k) :: !found;
           (* we just found a match in the previous iteration *)
           match may_overlap with
-          | true -> matched_chars := Array.unsafe_get kmp_array (k - 1)
+          | true -> matched_chars := Iarray0.unsafe_get kmp_array (k - 1)
           | false -> matched_chars := 0);
         if j < n
         then (
@@ -309,23 +321,27 @@ module Search_pattern0 = struct
       List.rev !found)
   ;;
 
+  [%%template
+  [@@@alloc.default a = (heap, stack)]
+
   let replace_first ?pos t ~in_:s ~with_ =
     match index ?pos t ~in_:s with
     | None -> s
     | Some i ->
-      let len_s = length s in
-      let len_t = length t.pattern in
-      let len_with = length with_ in
-      let dst = Bytes.create (len_s + len_with - len_t) in
-      Bytes.blit_string ~src:s ~src_pos:0 ~dst ~dst_pos:0 ~len:i;
-      Bytes.blit_string ~src:with_ ~src_pos:0 ~dst ~dst_pos:i ~len:len_with;
-      Bytes.blit_string
-        ~src:s
-        ~src_pos:(i + len_t)
-        ~dst
-        ~dst_pos:(i + len_with)
-        ~len:(len_s - i - len_t);
-      Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
+      (let len_s = length s in
+       let len_t = length t.pattern in
+       let len_with = length with_ in
+       let dst = (Bytes.create [@alloc a]) (len_s + len_with - len_t) in
+       Bytes.blit_string ~src:s ~src_pos:0 ~dst ~dst_pos:0 ~len:i;
+       Bytes.blit_string ~src:with_ ~src_pos:0 ~dst ~dst_pos:i ~len:len_with;
+       Bytes.blit_string
+         ~src:s
+         ~src_pos:(i + len_t)
+         ~dst
+         ~dst_pos:(i + len_with)
+         ~len:(len_s - i - len_t);
+       Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
+      [@exclave_if_stack a]
   ;;
 
   let replace_all t ~in_:s ~with_ =
@@ -333,32 +349,33 @@ module Search_pattern0 = struct
     match matches with
     | [] -> s
     | _ :: _ ->
-      let len_s = length s in
-      let len_t = length t.pattern in
-      let len_with = length with_ in
-      let num_matches = List.length matches in
-      let dst = Bytes.create (len_s + ((len_with - len_t) * num_matches)) in
-      let next_dst_pos = ref 0 in
-      let next_src_pos = ref 0 in
-      List.iter matches ~f:(fun i ->
-        let len = i - !next_src_pos in
-        Bytes.blit_string ~src:s ~src_pos:!next_src_pos ~dst ~dst_pos:!next_dst_pos ~len;
-        Bytes.blit_string
-          ~src:with_
-          ~src_pos:0
-          ~dst
-          ~dst_pos:(!next_dst_pos + len)
-          ~len:len_with;
-        next_dst_pos := !next_dst_pos + len + len_with;
-        next_src_pos := !next_src_pos + len + len_t);
-      Bytes.blit_string
-        ~src:s
-        ~src_pos:!next_src_pos
-        ~dst
-        ~dst_pos:!next_dst_pos
-        ~len:(len_s - !next_src_pos);
-      Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
-  ;;
+      (let len_s = length s in
+       let len_t = length t.pattern in
+       let len_with = length with_ in
+       let num_matches = List.length matches in
+       let dst = (Bytes.create [@alloc a]) (len_s + ((len_with - len_t) * num_matches)) in
+       let next_dst_pos = ref 0 in
+       let next_src_pos = ref 0 in
+       List.iter matches ~f:(fun i ->
+         let len = i - !next_src_pos in
+         Bytes.blit_string ~src:s ~src_pos:!next_src_pos ~dst ~dst_pos:!next_dst_pos ~len;
+         Bytes.blit_string
+           ~src:with_
+           ~src_pos:0
+           ~dst
+           ~dst_pos:(!next_dst_pos + len)
+           ~len:len_with;
+         next_dst_pos := !next_dst_pos + len + len_with;
+         next_src_pos := !next_src_pos + len + len_t);
+       Bytes.blit_string
+         ~src:s
+         ~src_pos:!next_src_pos
+         ~dst
+         ~dst_pos:!next_dst_pos
+         ~len:(len_s - !next_src_pos);
+       Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst)
+      [@exclave_if_stack a]
+  ;;]
 
   let split_on t s =
     let pattern_len = String.length t.pattern in
@@ -375,9 +392,9 @@ module Search_pattern0 = struct
     type nonrec t = t =
       { pattern : string
       ; case_sensitive : bool
-      ; kmp_array : int array
+      ; kmp_array : int Iarray0.t
       }
-    [@@deriving equal ~localize, sexp_of ~localize]
+    [@@deriving equal ~localize, sexp_of ~stackify]
 
     let representation = Fn.id
   end
@@ -389,28 +406,41 @@ end
 
 open Search_pattern_helper
 
-let substr_index_gen ~case_sensitive ?pos t ~pattern =
-  Search_pattern.index ?pos (Search_pattern.create ~case_sensitive pattern) ~in_:t
+let%template substr_index_gen ~case_sensitive ?pos t ~pattern =
+  Search_pattern.index
+    ?pos
+    ((Search_pattern.create [@alloc stack]) ~case_sensitive pattern)
+    ~in_:t [@nontail]
 ;;
 
 let substr_index_exn_gen ~case_sensitive ?pos t ~pattern =
   Search_pattern.index_exn ?pos (Search_pattern.create ~case_sensitive pattern) ~in_:t
 ;;
 
-let substr_index_all_gen ~case_sensitive t ~may_overlap ~pattern =
+let%template substr_index_all_gen ~case_sensitive t ~may_overlap ~pattern =
   Search_pattern.index_all
-    (Search_pattern.create ~case_sensitive pattern)
+    ((Search_pattern.create [@alloc stack]) ~case_sensitive pattern)
     ~may_overlap
+    ~in_:t [@nontail]
+;;
+
+[%%template
+[@@@alloc.default a = (heap, stack)]
+
+let substr_replace_first_gen ~case_sensitive ?pos t ~pattern ~with_ =
+  (Search_pattern.replace_first [@alloc a])
+    ?pos
+    ((Search_pattern.create [@alloc stack]) ~case_sensitive pattern)
     ~in_:t
+    ~with_ [@exclave_if_stack a] [@nontail]
 ;;
 
-let substr_replace_first_gen ~case_sensitive ?pos t ~pattern =
-  Search_pattern.replace_first ?pos (Search_pattern.create ~case_sensitive pattern) ~in_:t
-;;
-
-let substr_replace_all_gen ~case_sensitive t ~pattern =
-  Search_pattern.replace_all (Search_pattern.create ~case_sensitive pattern) ~in_:t
-;;
+let substr_replace_all_gen ~case_sensitive t ~pattern ~with_ =
+  (Search_pattern.replace_all [@alloc a])
+    ((Search_pattern.create [@alloc stack]) ~case_sensitive pattern)
+    ~in_:t
+    ~with_ [@exclave_if_stack a] [@nontail]
+;;]
 
 let is_substring_gen ~case_sensitive t ~substring =
   Option.is_some (substr_index_gen t ~pattern:substring ~case_sensitive)
@@ -419,8 +449,13 @@ let is_substring_gen ~case_sensitive t ~substring =
 let substr_index = substr_index_gen ~case_sensitive:true
 let substr_index_exn = substr_index_exn_gen ~case_sensitive:true
 let substr_index_all = substr_index_all_gen ~case_sensitive:true
-let substr_replace_first = substr_replace_first_gen ~case_sensitive:true
-let substr_replace_all = substr_replace_all_gen ~case_sensitive:true
+
+[%%template
+[@@@alloc.default a = (heap, stack)]
+
+let substr_replace_first = (substr_replace_first_gen [@alloc a]) ~case_sensitive:true
+let substr_replace_all = (substr_replace_all_gen [@alloc a]) ~case_sensitive:true]
+
 let is_substring = is_substring_gen ~case_sensitive:true
 
 let is_substring_at_gen =
@@ -465,7 +500,7 @@ let is_prefix_gen string ~prefix ~char_equal =
 
 module Caseless = struct
   module T = struct
-    type t = string [@@deriving sexp ~localize, sexp_grammar]
+    type t = string [@@deriving sexp ~stackify, sexp_grammar]
 
     let char_compare_caseless c1 c2 = Char.compare (Char.lowercase c1) (Char.lowercase c2)
 
@@ -510,8 +545,13 @@ module Caseless = struct
     let substr_index = substr_index_gen ~case_sensitive:false
     let substr_index_exn = substr_index_exn_gen ~case_sensitive:false
     let substr_index_all = substr_index_all_gen ~case_sensitive:false
-    let substr_replace_first = substr_replace_first_gen ~case_sensitive:false
-    let substr_replace_all = substr_replace_all_gen ~case_sensitive:false
+
+    [%%template
+    [@@@alloc.default a = (heap, stack)]
+
+    let substr_replace_first = (substr_replace_first_gen [@alloc a]) ~case_sensitive:false
+    let substr_replace_all = (substr_replace_all_gen [@alloc a]) ~case_sensitive:false]
+
     let is_substring = is_substring_gen ~case_sensitive:false
     let is_substring_at = is_substring_at_gen ~char_equal:Char.Caseless.equal
   end
@@ -593,6 +633,9 @@ let rec char_list_mem l (c : char) =
   | hd :: tl -> Char.equal hd c || char_list_mem tl c
 ;;
 
+[%%template
+[@@@alloc.default a = (heap, stack)]
+
 let split_gen str ~on =
   let is_delim =
     match on with
@@ -600,21 +643,27 @@ let split_gen str ~on =
     | `char_list l -> fun c -> char_list_mem l c
   in
   let len = length str in
-  let rec loop acc last_pos pos =
-    if pos = -1
-    then sub str ~pos:0 ~len:last_pos :: acc
-    else if is_delim str.[pos]
-    then (
-      let pos1 = pos + 1 in
-      let sub_str = sub str ~pos:pos1 ~len:(last_pos - pos1) in
-      loop (sub_str :: acc) pos (pos - 1))
-    else loop acc last_pos (pos - 1)
-  in
-  loop [] len (len - 1)
+  (let rec loop acc last_pos pos =
+     (if pos = -1
+      then (sub [@alloc a]) str ~pos:0 ~len:last_pos :: acc
+      else if is_delim str.[pos]
+      then (
+        let pos1 = pos + 1 in
+        let sub_str = (sub [@alloc a]) str ~pos:pos1 ~len:(last_pos - pos1) in
+        loop (sub_str :: acc) pos (pos - 1))
+      else loop acc last_pos (pos - 1))
+     [@exclave_if_stack a]
+   in
+   loop [] len (len - 1))
+  [@exclave_if_stack a]
 ;;
 
-let split str ~on = split_gen str ~on:(`char on)
-let split_on_chars str ~on:chars = split_gen str ~on:(`char_list chars)
+let split str ~on = (split_gen [@alloc a]) str ~on:(`char on) [@exclave_if_stack a]
+
+let split_on_chars str ~on:chars =
+  (split_gen [@alloc a]) str ~on:(`char_list chars) [@exclave_if_stack a]
+;;]
+
 let is_suffix s ~suffix = is_suffix_gen s ~suffix ~char_equal:Char.equal
 let is_prefix s ~prefix = is_prefix_gen s ~prefix ~char_equal:Char.equal
 
@@ -727,13 +776,14 @@ let mapi t ~f =
 ;;
 
 (* repeated code to avoid requiring an extra allocation for a closure on each call. *)
-let map t ~f =
-  let l = length t in
-  let t' = Bytes.create l in
-  for i = 0 to l - 1 do
-    Bytes.unsafe_set t' i (f t.[i])
-  done;
-  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t'
+let%template[@alloc a = (heap, stack)] map t ~f =
+  (let l = length t in
+   let t' = Bytes.create l in
+   for i = 0 to l - 1 do
+     Bytes.unsafe_set t' i (f t.[i])
+   done;
+   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t')
+  [@exclave_if_stack a]
 ;;
 
 let to_array s = Array.init (length s) ~f:(fun i -> s.[i])
@@ -772,13 +822,20 @@ let count t ~f = Container.count ~fold t ~f
 let sum m t ~f = Container.sum ~fold m t ~f
 let min_elt t = Container.min_elt ~fold t
 let max_elt t = Container.max_elt ~fold t
-let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
-let find_mapi t ~f = Indexed_container.find_mapi ~iteri t ~f
-let findi t ~f = Indexed_container.findi ~iteri t ~f
+let fold_result t ~init ~f = Container.fold_result ~fold_until ~init ~f t
+
+let foldi_until t ~init ~f ~finish =
+  Indexed_container.foldi_until ~fold_until ~init ~f t ~finish
+;;
+
+let iter_until t ~f ~finish = Container.iter_until ~fold_until ~f t ~finish
+let iteri_until t ~f ~finish = Indexed_container.iteri_until ~foldi_until ~f t ~finish
+let find_mapi t ~f = Indexed_container.find_mapi ~iteri_until t ~f
+let findi t ~f = Indexed_container.findi ~iteri_until t ~f
 let counti t ~f = Indexed_container.counti ~foldi t ~f
-let for_alli t ~f = Indexed_container.for_alli ~iteri t ~f
-let existsi t ~f = Indexed_container.existsi ~iteri t ~f
+let for_alli t ~f = Indexed_container.for_alli ~iteri_until t ~f
+let existsi t ~f = Indexed_container.existsi ~iteri_until t ~f
 
 let mem =
   let rec loop t c ~pos:i ~len =
@@ -787,11 +844,13 @@ let mem =
   fun t c -> loop t c ~pos:0 ~len:(length t)
 ;;
 
-let tr ~target ~replacement s =
+let%template[@alloc a = (heap, stack)] tr ~target ~replacement s =
   if Char.equal target replacement
   then s
   else if mem s target
-  then map s ~f:(fun c -> if Char.equal c target then replacement else c)
+  then
+    (map [@alloc a]) s ~f:(fun c -> if Char.equal c target then replacement else c)
+    [@exclave_if_stack a]
   else s
 ;;
 
@@ -1133,7 +1192,7 @@ let pad_left ?(char = ' ') s ~len =
    Always returns a local buffer. *)
 let local_copy_prefix src ~prefix_len ~buffer_len =
   let dst = Bytes.create_local buffer_len in
-  Bytes.Primitives.unsafe_blit_string ~src ~dst ~src_pos:0 ~dst_pos:0 ~len:prefix_len;
+  Bytes.unsafe_blit_string ~src ~dst ~src_pos:0 ~dst_pos:0 ~len:prefix_len;
   dst
 ;;
 
@@ -1840,7 +1899,9 @@ let clamp t ~min ~max =
 module Search_pattern = struct
   include Search_pattern0
 
-  let create ?(case_sensitive = true) pattern = create pattern ~case_sensitive
+  let%template[@alloc a = (heap, stack)] create ?(case_sensitive = true) pattern =
+    (create [@alloc a]) pattern ~case_sensitive [@exclave_if_stack a]
+  ;;
 end
 
 module Make_utf (Format : sig
@@ -1999,14 +2060,17 @@ struct
 
       type nonrec t = t
 
-      let fold = fold
+      let fold_until t ~init ~f ~finish = Container.fold_until ~fold t ~init ~f ~finish
+      let fold = `Custom fold
       let concat = concat
       let of_list = of_list
       let of_array = of_array
       let init = `Define_using_of_array
       let length = `Define_using_fold
       let foldi = `Define_using_fold
+      let foldi_until = `Define_using_fold_until
       let iter = `Define_using_fold
+      let iter_until = `Define_using_fold_until
       let iteri = `Define_using_fold
       let concat_mapi = `Define_using_concat
     end)
@@ -2029,12 +2093,15 @@ struct
   let fold_result = C.fold_result
   let fold_until = C.fold_until
   let foldi = C.foldi
+  let foldi_until = C.foldi_until
   let for_all = C.for_all
   let for_alli = C.for_alli
   let init = C.init
   let is_empty = C.is_empty
   let iter = C.iter
   let iteri = C.iteri
+  let iter_until = C.iter_until
+  let iteri_until = C.iteri_until
   let length = C.length
   let map = C.map
   let mapi = C.mapi

@@ -49,8 +49,12 @@ module Array = struct
     = "%array_unsafe_set"
   [@@layout_poly]
 
+  [%%template
+  [@@@kind.default k = (value, immediate, immediate64)]
+
   external unsafe_blit
-    :  src:('a array[@local_opt])
+    : 'a.
+    src:('a array[@local_opt])
     -> src_pos:int
     -> dst:('a array[@local_opt])
     -> dst_pos:int
@@ -58,12 +62,54 @@ module Array = struct
     -> unit
     = "caml_array_blit"
 
-  external unsafe_fill : 'a array -> int -> int -> 'a -> unit = "caml_array_fill"
-  external unsafe_sub : 'a array -> int -> int -> 'a array = "caml_array_sub"
-  external concat : 'a array list -> 'a array = "caml_array_concat"
+  external unsafe_fill : 'a. 'a array -> int -> int -> 'a -> unit = "caml_array_fill"
+  external unsafe_sub : 'a. 'a array -> int -> int -> 'a array = "caml_array_sub"
+  external concat : 'a. 'a array list -> 'a array = "caml_array_concat"]
 end
 
 include Array
+
+[%%template
+[@@@kind.default k = (float64, bits32, bits64, word)]
+
+let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len =
+  let blit_one i = unsafe_set dst (dst_pos + i) (unsafe_get src (src_pos + i)) in
+  if phys_equal src dst && src_pos < dst_pos
+  then
+    for i = len - 1 downto 0 do
+      (blit_one [@inlined]) i
+    done
+  else
+    for i = 0 to len - 1 do
+      (blit_one [@inlined]) i
+    done
+;;
+
+let unsafe_fill t pos len x =
+  for i = pos to pos + len - 1 do
+    unsafe_set t i x
+  done
+;;
+
+let unsafe_sub t pos len =
+  let res = magic_create_uninitialized ~len in
+  (unsafe_blit [@kind k]) ~src:t ~src_pos:pos ~dst:res ~dst_pos:0 ~len;
+  res
+;;
+
+let concat ts =
+  let len =
+    (List0.fold [@mode local local]) ts ~init:0 ~f:(fun acc t -> acc + length t)
+  in
+  let res = magic_create_uninitialized ~len in
+  let _total_length =
+    (List0.fold [@mode local local]) ts ~init:0 ~f:(fun start t ->
+      let len = length t in
+      (unsafe_blit [@kind k]) ~src:t ~src_pos:0 ~dst:res ~dst_pos:start ~len;
+      start + len)
+  in
+  res
+;;]
 
 let max_length = Sys.max_array_length
 
@@ -73,7 +119,11 @@ let create_float_uninitialized ~len =
     invalid_argf "Array.create_float_uninitialized ~len:%d: invalid length" len ()
 ;;
 
-let append = Stdlib.Array.append
+let%template append = Stdlib.Array.append [@@kind k = (value, immediate, immediate64)]
+
+let%template append t1 t2 = (concat [@kind k]) [ t1; t2 ]
+[@@kind k = (float64, bits32, bits64, word)]
+;;
 
 let blit ~src ~src_pos ~dst ~dst_pos ~len =
   Ordered_collection_common0.check_pos_len_exn
@@ -87,43 +137,7 @@ let blit ~src ~src_pos ~dst ~dst_pos ~len =
   unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len
 ;;
 
-let fill a ~pos ~len v =
-  if pos < 0 || len < 0 || pos > length a - len
-  then invalid_arg "Array.fill"
-  else unsafe_fill a pos len v
-;;
-
-let init len ~(f : _ -> _) =
-  if len = 0
-  then [||]
-  else if len < 0
-  then invalid_arg "Array.init"
-  else (
-    let res = create ~len (f 0) in
-    for i = 1 to Int0.pred len do
-      unsafe_set res i (f i)
-    done;
-    res)
-;;
-
 let make_matrix = Stdlib.Array.make_matrix
-let of_list = Stdlib.Array.of_list
-
-let sub a ~pos ~len =
-  if pos < 0 || len < 0 || pos > length a - len
-  then invalid_arg "Array.sub"
-  else unsafe_sub a pos len
-;;
-
-let to_list = Stdlib.Array.to_list
-
-let fold t ~init ~(f : _ -> _ -> _) =
-  let r = ref init in
-  for i = 0 to length t - 1 do
-    r := f !r (unsafe_get t i)
-  done;
-  !r
-;;
 
 let%template fold_right t ~(f : _ -> _ -> _) ~init =
   let r = ref init in
@@ -134,41 +148,166 @@ let%template fold_right t ~(f : _ -> _ -> _) ~init =
 [@@mode m = (uncontended, shared)]
 ;;
 
-let iter t ~(f : _ -> _) =
-  for i = 0 to length t - 1 do
-    f (unsafe_get t i)
-  done
-;;
+[%%template
+[@@@kind.default k1 = (value, immediate, immediate64, float64, bits32, bits64, word)]
 
-let iteri t ~(f : _ -> _ -> _) =
-  for i = 0 to length t - 1 do
-    f i (unsafe_get t i)
-  done
-;;
-
-let map t ~(f : _ -> _) =
-  let len = length t in
+let init len ~(f : _ -> _) =
   if len = 0
   then [||]
+  else if len < 0
+  then invalid_arg "Array.init"
   else (
-    let r = create ~len (f (unsafe_get t 0)) in
-    for i = 1 to len - 1 do
-      unsafe_set r i (f (unsafe_get t i))
-    done;
-    r)
+    (let res = (create [@alloc a]) ~len (f 0) in
+     for i = 1 to Int0.pred len do
+       unsafe_set res i (f i)
+     done;
+     res)
+    [@exclave_if_stack a])
+[@@alloc a = (heap, stack)]
 ;;
 
-let mapi t ~(f : _ -> _ -> _) =
-  let len = length t in
-  if len = 0
-  then [||]
-  else (
-    let r = create ~len (f 0 (unsafe_get t 0)) in
-    for i = 1 to len - 1 do
-      unsafe_set r i (f i (unsafe_get t i))
-    done;
-    r)
+let sub a ~pos ~len =
+  if pos < 0 || len < 0 || pos > length a - len
+  then invalid_arg "Array.sub"
+  else (unsafe_sub [@kind k1]) a pos len
 ;;
+
+(* Copied from [Stdlib.Array], with type annotations added for templating *)
+let to_list a =
+  let rec tolist i res : (_ List0.Constructors.t[@kind k1]) =
+    if i < 0 then res else tolist (i - 1) (unsafe_get a i :: res)
+  in
+  tolist (length a - 1) []
+;;
+
+(* Copied from [Stdlib.Array], with type annotations added for templating and some
+   functions changed to the equivalent base ones *)
+let of_list = function
+  | ([] : (_ List0.Constructors.t[@kind k1])) -> [||]
+  | hd :: tl as l ->
+    let a = create ~len:((List0.length [@kind k1]) l) hd in
+    let rec fill i = function
+      | ([] : (_ List0.Constructors.t[@kind k1])) -> a
+      | hd :: tl ->
+        unsafe_set a i hd;
+        fill (i + 1) tl
+    in
+    fill 1 tl
+;;
+
+let fill a ~pos ~len v =
+  if pos < 0 || len < 0 || pos > length a - len
+  then invalid_arg "Array.fill"
+  else (unsafe_fill [@kind k1]) a pos len v
+;;]
+
+[@@@array.iter]
+
+[%%template
+  let iter (type a) (t : a array) ~(f : _ -> _) =
+    for i = 0 to length t - 1 do
+      f (unsafe_get t i)
+    done
+  [@@kind ki = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  ;;]
+
+[@@@end]
+[@@@array.iteri]
+
+[%%template
+  let iteri (type a) (t : a array) ~(f : _ -> _ -> _) =
+    for i = 0 to length t - 1 do
+      f i (unsafe_get t i)
+    done
+  [@@kind ki = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  ;;]
+
+[@@@end]
+[@@@array.fold]
+
+[%%template
+  let fold (type a b) (t : a array) ~init ~(f : _ -> _ -> _) : b =
+    let length = length t in
+    let rec loop i acc =
+      if i < length then loop (i + 1) ((f [@inlined hint]) acc (unsafe_get t i)) else acc
+    in
+    (loop [@inlined]) 0 init [@nontail]
+  [@@kind
+    ki = (value, immediate, immediate64, float64, bits32, bits64, word)
+    , ko = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  ;;]
+
+[@@@end]
+[@@@array.map]
+
+[%%template
+  let map (type a b) (t : a array) ~(f : _ -> _) : b array =
+    let len = length t in
+    if len = 0
+    then [||]
+    else (
+      let r = magic_create_uninitialized ~len in
+      for i = 0 to len - 1 do
+        unsafe_set r i (f (unsafe_get t i))
+      done;
+      r)
+  [@@kind
+    ki = (value, immediate, immediate64, float64, bits32, bits64, word)
+    , ko = (float64, bits32, bits64, word)]
+  ;;]
+
+[%%template
+  let map (type a b) (t : a array) ~(f : _ -> _) : b array =
+    let len = length t in
+    if len = 0
+    then [||]
+    else (
+      let r = create ~len (f (unsafe_get t 0)) in
+      for i = 1 to len - 1 do
+        unsafe_set r i (f (unsafe_get t i))
+      done;
+      r)
+  [@@kind
+    ki = (value, immediate, immediate64, float64, bits32, bits64, word)
+    , ko = (value, immediate, immediate64)]
+  ;;]
+
+[@@@end]
+[@@@array.mapi]
+
+[%%template
+  let mapi (type a b) (t : a array) ~(f : _ -> _ -> _) : b array =
+    let len = length t in
+    if len = 0
+    then [||]
+    else (
+      let r = magic_create_uninitialized ~len in
+      for i = 0 to len - 1 do
+        unsafe_set r i (f i (unsafe_get t i))
+      done;
+      r)
+  [@@kind
+    ki = (value, immediate, immediate64, float64, bits32, bits64, word)
+    , ko = (float64, bits32, bits64, word)]
+  ;;]
+
+[%%template
+  let mapi (type a b) (t : a array) ~(f : _ -> _ -> _) : b array =
+    let len = length t in
+    if len = 0
+    then [||]
+    else (
+      let r = create ~len (f 0 (unsafe_get t 0)) in
+      for i = 1 to len - 1 do
+        unsafe_set r i (f i (unsafe_get t i))
+      done;
+      r)
+  [@@kind
+    ki = (value, immediate, immediate64, float64, bits32, bits64, word)
+    , ko = (value, immediate, immediate64)]
+  ;;]
+
+[@@@end]
 
 let stable_sort t ~compare = Stdlib.Array.stable_sort t ~cmp:compare
 

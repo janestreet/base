@@ -503,6 +503,77 @@ let%expect_test "iter_m" =
   [%expect {| (1 2 3 4 5) |}]
 ;;
 
+let%expect_test "iter_until" =
+  let acc = ref [] in
+  iter_until
+    s12345
+    ~f:(fun x ->
+      acc := x :: !acc;
+      match x = 4 with
+      | true -> Stop !acc
+      | false -> Continue ())
+    ~finish:(fun () -> assert false)
+  |> printf !"%{sexp: int list}\n";
+  [%expect {| (4 3 2 1) |}];
+  let acc = ref [] in
+  iter_until
+    s12345
+    ~f:(fun x ->
+      acc := x :: !acc;
+      Continue ())
+    ~finish:(fun () -> !acc)
+  |> printf !"%{sexp: int list}\n";
+  [%expect {| (5 4 3 2 1) |}]
+;;
+
+let%expect_test "iteri_until" =
+  let acc = ref [] in
+  iteri_until
+    s12345
+    ~f:(fun i x ->
+      assert (i + 1 = x);
+      acc := x :: !acc;
+      match x = 4 with
+      | true -> Stop !acc
+      | false -> Continue ())
+    ~finish:(fun _ -> assert false)
+  |> printf !"%{sexp: int list}\n";
+  [%expect {| (4 3 2 1) |}];
+  let acc = ref [] in
+  iteri_until
+    s12345
+    ~f:(fun i x ->
+      assert (i + 1 = x);
+      acc := x :: !acc;
+      Continue ())
+    ~finish:(fun i -> i, !acc)
+  |> printf !"%{sexp: int * int list}\n";
+  [%expect {| (5 (5 4 3 2 1)) |}]
+;;
+
+let%expect_test "foldi_until" =
+  foldi_until
+    s12345
+    ~init:[]
+    ~f:(fun i acc x ->
+      assert (i + 1 = x);
+      match x = 4 with
+      | true -> Stop (x :: acc)
+      | false -> Continue (x :: acc))
+    ~finish:(fun _ _ -> assert false)
+  |> printf !"%{sexp: int list}\n";
+  [%expect {| (4 3 2 1) |}];
+  foldi_until
+    s12345
+    ~init:[]
+    ~f:(fun i acc x ->
+      assert (i + 1 = x);
+      Continue (x :: acc))
+    ~finish:(fun i acc -> i, acc)
+  |> printf !"%{sexp: int * int list}\n";
+  [%expect {| (5 (5 4 3 2 1)) |}]
+;;
+
 let%test _ =
   let num_computations = ref 0 in
   let t =

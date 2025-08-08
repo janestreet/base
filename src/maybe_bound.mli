@@ -7,7 +7,7 @@ type 'a t =
   | Incl of 'a
   | Excl of 'a
   | Unbounded
-[@@deriving enumerate, sexp ~localize, sexp_grammar, globalize]
+[@@deriving enumerate, sexp ~stackify, sexp_grammar, globalize]
 
 val map : 'a t -> f:('a -> 'b) -> 'b t
 val is_lower_bound : 'a t -> of_:'a -> compare:('a -> 'a -> int) -> bool
@@ -31,7 +31,7 @@ type interval_comparison =
   | Below_lower_bound
   | In_range
   | Above_upper_bound
-[@@deriving sexp ~localize, sexp_grammar, compare ~localize, hash]
+[@@deriving sexp ~stackify, sexp_grammar, compare ~localize, hash]
 
 (** [compare_to_interval_exn ~lower ~upper x ~compare] raises if [lower] and [upper] are
     crossed. *)

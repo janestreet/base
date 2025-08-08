@@ -24,7 +24,7 @@ module type Bytes = sig
 
   open! Import
 
-  type t = bytes [@@deriving globalize, sexp ~localize, sexp_grammar]
+  type t = bytes [@@deriving globalize, sexp ~stackify, sexp_grammar]
 
   (** {1 Common Interfaces} *)
 

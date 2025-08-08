@@ -14,21 +14,32 @@ val cross_portable : t Basement.Portability_hacks.Cross.Portable.t
 (** A witness that [Sexp.t] can safely cross contention. *)
 val cross_contended : t Basement.Portability_hacks.Cross.Contended.t
 
+module type Pretty_printing = Sexplib0.Sexp.Pretty_printing (** @inline *)
+
+(** Like {!Pretty_printing}, but specialized to [string] output. Useful for making packed
+    modules since [(module Pretty_printing with type output := string)] is not valid
+    syntax. *)
+module type Pretty_printing_to_string = Pretty_printing with type output := string
+
+include Pretty_printing_to_string
+
 (** Like the printing functions above, but without escaping UTF-8 characters. Still
     escapes ASCII control codes, but does not escape other non-graphical UTF-8 characters.
+
     The [to_string*] functions return [String.Utf8.t], which is a subtype of [string]. *)
-module Utf8 : sig
-  val to_string : t -> String.Utf8.t
-  val to_string_mach : t -> String.Utf8.t
-  val to_string_hum : ?indent:int -> t -> String.Utf8.t
-  val pp_hum : Format.formatter -> t -> unit
-  val pp_hum_indent : int -> Format.formatter -> t -> unit
-  val pp_mach : Format.formatter -> t -> unit
-  val pp : Format.formatter -> t -> unit
-  val must_escape : string -> bool
-  val mach_maybe_esc_str : string -> string
-  val esc_str : string -> string
-end
+module Utf8 : Pretty_printing with type output := String.Utf8.t
+(** inline *)
+
+(** Like {!Utf8}, but prints to [string]s rather than [String.Utf8.t]. This mostly exists
+    to make it easier to migrate to utf8 based printing, e.g. with
+    {[
+      module Sexp = struct
+        include Sexp
+        include Utf8_as_string
+      end
+    ]} *)
+module Utf8_as_string : Pretty_printing_to_string
+(** inline *)
 
 module Private : sig
   module Utf8 : sig

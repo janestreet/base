@@ -5,7 +5,7 @@ module Definitions = struct
   (** @canonical Base.Hashtbl.Key *)
   module%template Key = struct
     [@@@kind.default k = (value, bits64, float64)]
-    [@@@mode.default m = (local, global)]
+    [@@@mode.default m = (local, global), p = (nonportable, portable)]
 
     module type S = sig
       type t [@@deriving sexp_of]
@@ -17,7 +17,7 @@ module Definitions = struct
       val hash : t -> int
     end
 
-    type 'a t = ((module S with type t = 'a)[@kind k] [@mode m])
+    type 'a t = ((module S with type t = 'a)[@kind k] [@mode m p])
   end
 
   module Merge_into_action = Dictionary_mutable.Merge_into_action
@@ -63,12 +63,7 @@ module Definitions = struct
     [@@mode m = local]
 
     (** Like [choose]. Raises if [t] is empty. *)
-    val%template choose_exn : ('a, 'b) t -> 'a key * 'b
-    [@@mode m = global]
-
-    (** Like [choose_exn], but returns a local pair *)
-    val%template choose_exn : ('a, 'b) t -> 'a key Modes.Global.t * 'b Modes.Global.t
-    [@@mode m = local]
+    val choose_exn : ('a, 'b) t -> 'a key * 'b
 
     (** Chooses a random key/value pair of a hash table. Returns [None] if [t] is empty.
 
@@ -89,12 +84,16 @@ module Definitions = struct
       -> ('a, 'b) t
       -> 'a key * 'b
 
+    (** [find_or_null] returns [This data] if the key is found, [Null] if not. *)
+    val find_or_null : ('a, 'b) t -> 'a key -> 'b or_null
+
     (** Just like [find_and_call], but takes an extra argument which is passed to
         [if_found] and [if_not_found], so that the client code can avoid allocating
         closures or using refs to pass this additional information. This function is only
         useful in code which tries to minimize heap allocation. *)
     val find_and_call1
-      :  ('a, 'b) t
+      : 'a 'b 'c 'd.
+      ('a, 'b) t
       -> 'a key
       -> a:'d
       -> if_found:('b -> 'd -> 'c)
@@ -102,7 +101,8 @@ module Definitions = struct
       -> 'c
 
     val find_and_call2
-      :  ('a, 'b) t
+      : 'a 'b 'c 'd 'e.
+      ('a, 'b) t
       -> 'a key
       -> a:'d
       -> b:'e
@@ -111,7 +111,8 @@ module Definitions = struct
       -> 'c
 
     val findi_and_call1
-      :  ('a, 'b) t
+      : 'a 'b 'c 'd.
+      ('a, 'b) t
       -> 'a key
       -> a:'d
       -> if_found:(key:'a key -> data:'b -> 'd -> 'c)
@@ -119,7 +120,8 @@ module Definitions = struct
       -> 'c
 
     val findi_and_call2
-      :  ('a, 'b) t
+      : 'a 'b 'c 'd 'e.
+      ('a, 'b) t
       -> 'a key
       -> a:'d
       -> b:'e
@@ -441,50 +443,112 @@ module Definitions = struct
   end
 
   module type%template Non_value = sig
-    type (!'a, !'b) t
-    [@@deriving sexp_of]
-    [@@kind k = (float64, bits64, value), v = (float64, bits64, value)]
+    include sig
+      type (!'a, !'b) t
+      [@@deriving sexp_of]
+      [@@kind k = (float64, bits64, value_or_null), v = (float64, bits64, value_or_null)]
 
-    [@@@kind k = (float64, bits64, value), v = (float64, bits64, value)]
+      [@@@kind k = (float64, bits64, value_or_null), v = (float64, bits64, value_or_null)]
 
-    type (!'a, !'b) t := (('a, 'b) t[@kind k v])
-    type 'a key := ('a Key.t[@kind k])
+      type (!'a, !'b) t := (('a, 'b) t[@kind k v])
+      type 'a key := ('a Key.t[@kind k] [@mode p]) [@@mode p = (nonportable, portable)]
 
-    [@@@kind.default k v]
+      [@@@kind.default k v]
 
-    val create
-      :  ?growth_allowed:bool (** defaults to [true] *)
-      -> ?size:int (** initial size -- default 0 *)
-      -> 'a key
-      -> ('a, 'b) t
+      val create
+        :  ?growth_allowed:bool (** defaults to [true] *)
+        -> ?size:int (** initial size -- default 0 *)
+        -> ('a key[@mode p])
+        -> ('a, 'b) t
+      [@@mode p = (nonportable, portable)]
 
-    val length : ('k, 'v) t -> int
-    val capacity : ('k, 'v) t -> int
-    val growth_allowed : ('k, 'v) t -> bool
-    val is_empty : ('k, 'v) t -> bool
-    val add_exn : ('k, 'v) t -> key:'k -> data:'v -> unit
-    val find : ('k, 'v) t -> 'k -> ('v Option.t[@kind v])
-    val find_and_remove : ('k, 'v) t -> 'k -> ('v Option.t[@kind v])
-    val remove : ('k, 'v) t -> 'k -> unit
-    val mem : ('k, 'v) t -> 'k -> bool
-    val set : ('k, 'v) t -> key:'k -> data:'v -> unit
-    val clear : _ t -> unit
+      val singleton
+        :  ?growth_allowed:bool
+        -> ?size:int
+        -> 'k key
+        -> 'k
+        -> 'v
+        -> ('k, 'v) t
 
-    val find_and_call
-      :  ('k, 'v) t
-      -> 'k
-      -> if_found:('v -> 'a)
-      -> if_not_found:('k -> 'a)
-      -> 'a
+      val length : ('k, 'v) t -> int [@@mode c = (uncontended, shared)]
+      val capacity : ('k, 'v) t -> int [@@mode c = (uncontended, shared)]
+      val growth_allowed : ('k, 'v) t -> bool [@@mode c = (uncontended, contended)]
+      val is_empty : ('k, 'v) t -> bool [@@mode c = (uncontended, shared)]
+      val add_exn : ('k, 'v) t -> key:'k -> data:'v -> unit
+      val add : ('k, 'v) t -> key:'k -> data:'v -> [ `Ok | `Duplicate ]
 
-    val update : ('k, 'v) t -> 'k -> f:(('v Option.t[@kind v]) -> 'v) -> unit
-    val update_and_return : ('k, 'v) t -> 'k -> f:(('v Option.t[@kind v]) -> 'v) -> 'v
+      val find : ('k, 'v) t -> 'k -> ('v Option.t[@kind v])
+      [@@mode c = (uncontended, shared)]
 
-    val change
-      :  ('k, 'v) t
-      -> 'k
-      -> f:(('v Option.t[@kind v]) -> ('v Option.t[@kind v]))
-      -> unit
+      val find_exn : ('k, 'v) t -> 'k -> 'v
+      val find_and_remove : ('k, 'v) t -> 'k -> ('v Option.t[@kind v])
+      val remove : ('k, 'v) t -> 'k -> unit
+      val mem : 'k 'v. ('k, 'v) t -> 'k -> bool [@@mode c = (uncontended, shared)]
+      val set : ('k, 'v) t -> key:'k -> data:'v -> unit
+      val clear : _ t -> unit
+
+      val find_and_call
+        : 'k 'v 'a.
+        ('k, 'v) t -> 'k -> if_found:('v -> 'a) -> if_not_found:('k -> 'a) -> 'a
+      [@@kind k = k, v = v, r = (value_or_null, bits64, float64)]
+      [@@mode c = (uncontended, shared)]
+
+      val find_and_call1
+        : 'k 'v 'a 'r.
+        ('k, 'v) t
+        -> 'k
+        -> a:'a
+        -> if_found:('v -> 'a -> 'r)
+        -> if_not_found:('k -> 'a -> 'r)
+        -> 'r
+      [@@kind
+        k = k
+        , v = v
+        , a = (value_or_null, bits64, float64)
+        , r = (value_or_null, bits64, float64)]
+      [@@mode c = (uncontended, shared)]
+
+      val update : ('k, 'v) t -> 'k -> f:(('v Option.t[@kind v]) -> 'v) -> unit
+      val update_and_return : ('k, 'v) t -> 'k -> f:(('v Option.t[@kind v]) -> 'v) -> 'v
+
+      val change
+        :  ('k, 'v) t
+        -> 'k
+        -> f:(('v Option.t[@kind v]) -> ('v Option.t[@kind v]))
+        -> unit
+
+      val fold : ('k, 'v) t -> init:'acc -> f:(key:'k -> data:'v -> 'acc -> 'acc) -> 'acc
+      val iteri : ('k, 'v) t -> f:(key:'k -> data:'v -> unit) -> unit
+      val find_or_add : ('k, 'v) t -> 'k -> default:(unit -> 'v) -> 'v
+      val findi_or_add : ('k, 'v) t -> 'k -> default:('k -> 'v) -> 'v
+      val keys : ('k, 'v) t -> ('k List.t[@kind k])
+      val data : ('k, 'v) t -> ('v List.t[@kind v])
+      val choose_exn : ('k, 'v) t -> 'k * 'v
+    end
+
+    include sig
+      [@@@kind.default
+        k = (value_or_null, bits64, float64), v = (value_or_null, bits64, float64)]
+
+      val add_multi
+        :  (('k, ('v List.t[@kind v])) t[@kind k value_or_null])
+        -> key:'k
+        -> data:'v
+        -> unit
+
+      val remove_multi
+        :  (('k, ('v List.t[@kind v])) t[@kind k value_or_null])
+        -> 'k
+        -> unit
+
+      val find_multi
+        :  (('k, ('v List.t[@kind v])) t[@kind k value_or_null])
+        -> 'k
+        -> ('v List.t[@kind v])
+
+      val map : (('k, 'v) t[@kind k v]) -> f:('v -> 'w) -> (('k, 'w) t[@kind k v'])
+      [@@kind k = k, v = v, v' = (value_or_null, bits64, float64)]
+    end
   end
 
   module type Hashtbl_equality = sig
@@ -576,11 +640,13 @@ module type Hashtbl = sig
 
       {1 Interface} *)
 
-  include Non_value
+  type (!'a, !'b) t
 
   include S_without_submodules with type ('k, 'v) t := ('k, 'v) t (** @inline *)
 
   include Hashtbl_equality with type ('k, 'v) t := ('k, 'v) t (** @inline *)
+
+  include Non_value with type ('k, 'v) t := ('k, 'v) t (** @inline *)
 
   module%template.portable Creators (Key : sig
       type 'a t

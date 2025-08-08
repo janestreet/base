@@ -2,7 +2,7 @@ open! Import
 open Type_equal_intf.Definitions
 module Sexp = Sexp0
 
-type ('a, 'b) t = T : 'a. ('a, 'a) t [@@deriving sexp_of ~localize]
+type ('a, 'b) t = T : 'a. ('a, 'a) t [@@deriving sexp_of ~stackify]
 type ('a, 'b) equal = ('a, 'b) t
 
 include Type_equal_defns (struct
@@ -81,7 +81,7 @@ module Id = struct
   module Uid = struct
     (* A unique id contains an [int] representing a (possibly parameterized) type, and a
        list of uids for the parameters to that type. *)
-    type t = T of int * t list [@@deriving compare ~localize, hash, sexp_of ~localize]
+    type t = T of int * t list [@@deriving compare ~localize, hash, sexp_of ~stackify]
 
     include%template Comparable.Make [@mode local] [@modality portable] (struct
         type nonrec t = t
@@ -116,7 +116,7 @@ module Id = struct
       type_equal : 'b. 'b key -> ('a, 'b) equal option
     }
 
-  let uid a = a.uid
+  let%template uid a = a.uid [@@mode m = (global, local)]
   let name a = a.id_name
   let sexp_of_t _ a = a.id_sexp
   let to_sexp a = a.sexp_of_t
@@ -186,8 +186,12 @@ module Id = struct
     ;;
   end
 
-  module%template.portable Create2 (T : Arg2) = struct
-    type _ key += T2 : 'a key * 'b key -> ('a, 'b) T.t key
+  module%template.portable
+    [@kind a = (value, immediate64), b = value] Create2
+      (T : Arg2
+    [@kind a b]) =
+  struct
+    type _ key += T2 : 'a 'b. 'a key * 'b key -> ('a, 'b) T.t key
 
     let type_equal_id (type a b) (a : a t) (b : b t) : (a, b) T.t t =
       let id_name = T.name in

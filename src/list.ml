@@ -2,19 +2,20 @@ open! Import
 module Array = Array0
 module Either = Either0
 include List1
+include Constructors
 
 (* This itself includes [List0]. *)
 
 let invalid_argf = Printf.invalid_argf
 
 [%%rederive.portable
-  type 'a t = 'a list [@@deriving globalize, sexp ~localize, sexp_grammar]]
+  type 'a t = 'a list [@@deriving globalize, sexp ~stackify, sexp_grammar]]
 
 module Or_unequal_lengths = struct
   type 'a t =
     | Ok of 'a
     | Unequal_lengths
-  [@@deriving compare ~localize, sexp_of ~localize]
+  [@@deriving compare ~localize, sexp_of ~stackify]
 end
 
 let invariant f t = iter t ~f
@@ -79,7 +80,7 @@ let tl t =
 ;;
 
 [%%template
-[@@@kind k = (float64, bits32, bits64, word, value)]
+[@@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value)]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -420,7 +421,8 @@ let append l1 l2 =
 
 [%%template
 [@@@kind.default
-  ka = (float64, bits32, bits64, word, value), kb = (float64, bits32, bits64, word, value)]
+  ka = (float64, bits32, bits64, word, immediate, immediate64, value)
+  , kb = (float64, bits32, bits64, word, immediate, immediate64, value)]
 
 let rev_mapi l ~f =
   let rec loop i acc : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
@@ -439,7 +441,9 @@ let foldi t ~init ~f =
 ;;]
 
 [%%template
-[@@@kind.default ka = (float64, bits32, bits64, word, value), kb = value]
+[@@@kind.default
+  ka = (float64, bits32, bits64, word, immediate, immediate64, value)
+  , kb = (value, immediate, immediate64)]
 
 open struct
   type nonrec 'a t = ('a t[@kind ka]) =
@@ -466,7 +470,7 @@ let[@tail_mod_cons] rec filter_map l ~f : (_ t[@kind kb]) =
   match l with
   | [] -> []
   | hd :: tl ->
-    (match f hd with
+    (match (f hd : (_ Option0.t[@kind kb])) with
      | None -> (filter_map [@kind ka kb]) tl ~f
      | Some x -> x :: (filter_map [@kind ka kb]) tl ~f)
 ;;
@@ -476,7 +480,7 @@ let filter_mapi l ~f =
     match l with
     | [] -> []
     | hd :: tl ->
-      (match f pos hd with
+      (match (f pos hd : (_ Option0.t[@kind kb])) with
        | None -> loop (pos + 1) tl
        | Some x -> x :: loop (pos + 1) tl)
   in
@@ -504,7 +508,7 @@ let concat_mapi l ~f =
 let concat_map l ~f = (concat_mapi [@kind ka kb]) l ~f:(fun _ x -> f x) [@nontail]]
 
 [%%template
-[@@@kind.default k = (float64, bits32, bits64, word)]
+[@@@kind.default k = (float64, bits32, bits64, word, immediate, immediate64)]
 
 (* Copied from [Sexplib0] for templating *)
 
@@ -528,11 +532,11 @@ let sexp_of_t : _ -> (_ t[@kind k]) -> Sexplib0.Sexp.t =
     rev (rev_map lst []) []
   in
   List (map ~f:sexp_of__a t)
-[@@mode __ = local]
+[@@mode __ = stack]
 ;;]
 
 [%%template
-[@@@kind.default k = (float64, bits32, bits64, word)]
+[@@@kind.default k = (float64, bits32, bits64, word, immediate, immediate64)]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -571,7 +575,8 @@ let append l1 l2 =
 
 [%%template
 [@@@kind.default
-  ka = (float64, bits32, bits64, word, value), kb = (float64, bits32, bits64, word)]
+  ka = (float64, bits32, bits64, word, immediate, immediate64, value)
+  , kb = (float64, bits32, bits64, word)]
 
 open struct
   type nonrec 'a t = ('a t[@kind ka]) =
@@ -1333,16 +1338,22 @@ let partitioni_tf t ~f =
   partition_mapi t ~f [@nontail]
 ;;
 
+let of_iter ~iter =
+  let acc = ref [] in
+  iter ~f:(fun x -> acc := x :: !acc);
+  rev !acc
+;;
+
 module Assoc = struct
   type 'a key = ('a[@tag Sexplib0.Sexp_grammar.assoc_key_tag = List []])
-  [@@deriving sexp ~localize, sexp_grammar]
+  [@@deriving sexp ~stackify, sexp_grammar]
 
   type 'a value = ('a[@tag Sexplib0.Sexp_grammar.assoc_value_tag = List []])
-  [@@deriving sexp ~localize, sexp_grammar]
+  [@@deriving sexp ~stackify, sexp_grammar]
 
   type ('a, 'b) t =
     (('a key * 'b value) list[@tag Sexplib0.Sexp_grammar.assoc_tag = List []])
-  [@@deriving sexp ~localize, sexp_grammar]
+  [@@deriving sexp ~stackify, sexp_grammar]
 
   let pair_of_group = function
     | [] -> assert false
@@ -1631,8 +1642,15 @@ let intersperse t ~sep =
   | x :: xs -> x :: fold_right xs ~init:[] ~f:(fun y acc -> sep :: y :: acc)
 ;;
 
-let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
+let fold_result t ~init ~f = Container.fold_result ~fold_until ~init ~f t
+
+let foldi_until t ~init ~f ~finish =
+  Indexed_container.foldi_until ~fold_until ~init ~f t ~finish
+;;
+
+let iter_until t ~f ~finish = Container.iter_until ~fold_until t ~f ~finish
+let iteri_until t ~f ~finish = Indexed_container.iteri_until ~foldi_until t ~f ~finish
 
 let is_suffix list ~suffix ~equal:(equal_elt : _ -> _ -> _) =
   let list_len = length list in

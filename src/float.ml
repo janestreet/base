@@ -8,7 +8,7 @@ include Float0
 let raise_s = Error.raise_s
 
 module T = struct
-  type t = float [@@deriving hash, globalize, sexp ~localize, sexp_grammar]
+  type t = float [@@deriving hash, globalize, sexp ~stackify, sexp_grammar]
 
   let compare = Float_replace_polymorphic_compare.compare
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
@@ -543,8 +543,8 @@ let round_nearest_half_to_even t =
     else ceil_or_succ)
 ;;
 
-let int63_round_lbound = lower_bound_for_int Int63.num_bits
-let int63_round_ubound = upper_bound_for_int Int63.num_bits
+let int63_round_lbound = lower_bound_for_int Int63.(num_bits |> to_int_trunc)
+let int63_round_ubound = upper_bound_for_int Int63.(num_bits |> to_int_trunc)
 
 let int63_round_up_exn t =
   if t > 0.0
@@ -621,7 +621,7 @@ module Class = struct
     | Normal
     | Subnormal
     | Zero
-  [@@deriving compare ~localize, enumerate, equal ~localize, sexp ~localize, sexp_grammar]
+  [@@deriving compare ~localize, enumerate, equal ~localize, sexp ~stackify, sexp_grammar]
 
   let to_string t = string_of_sexp (sexp_of_t t)
   let of_string s = t_of_sexp (sexp_of_string s)
@@ -677,8 +677,8 @@ let sexp_of_t t =
        if String.contains string 'E' then sexp else Atom (insert_underscores string))
 ;;
 
-let sexp_of_t__local t =
-  let sexp = sexp_of_t__local t in
+let sexp_of_t__stack t =
+  let sexp = sexp_of_t__stack t in
   match Dynamic.get Sexp.of_float_style with
   | `No_underscores -> sexp
   | `Underscores ->
@@ -1053,8 +1053,11 @@ module Terse = struct
 
   let t_of_sexp = t_of_sexp
   let to_string x = format_float "%.8G" x
-  let sexp_of_t x = Sexp.Atom (to_string x)
-  let sexp_of_t__local x = Sexp.Atom (to_string x)
+
+  let%template[@alloc a = (heap, stack)] sexp_of_t x =
+    Sexp.Atom (to_string x) [@exclave_if_stack a]
+  ;;
+
   let of_string x = of_string x
   let t_sexp_grammar = t_sexp_grammar
 end

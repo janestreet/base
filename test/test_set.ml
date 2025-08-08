@@ -122,7 +122,7 @@ module%test [@name "element selection"] _ = struct
   end
 
   let test1 (type a) (module M : S with type t = a) fn =
-    Ref.set_temporarily sexp_style Sexp_style.simple_pretty ~f:(fun () ->
+    Dynamic.with_temporarily sexp_style Sexp_style.simple_pretty ~f:(fun () ->
       for len = 0 to 8 do
         let results =
           create ~len |> List.map ~f:(fun (set_name, set) -> fn set, set_name)

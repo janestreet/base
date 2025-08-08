@@ -8,7 +8,7 @@ type t =
   | Zero
   | Pos
   | Nan
-[@@deriving enumerate, sexp ~localize, sexp_grammar]
+[@@deriving enumerate, sexp ~stackify, sexp_grammar]
 
 (** This provides [to_string]/[of_string], sexp conversion, Map, Hashtbl, etc. *)
 include%template Identifiable.S [@mode local] [@modality portable] with type t := t

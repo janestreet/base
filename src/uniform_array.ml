@@ -8,30 +8,31 @@ open! Import
 module Trusted : sig
   type 'a t
 
-  val empty : 'a t
-  val get_empty : unit -> 'a t
-  val unsafe_create_uninitialized : len:int -> 'a t
-  val create_obj_array : len:int -> 'a t
-  val create : len:int -> 'a -> 'a t
-  val singleton : 'a -> 'a t
-  val get : 'a t -> int -> 'a [@@zero_alloc]
-  val set : 'a t -> int -> 'a -> unit
-  val swap : _ t -> int -> int -> unit
-  val unsafe_get : 'a t -> int -> 'a [@@zero_alloc]
-  val unsafe_get_local : 'a t -> int -> 'a [@@zero_alloc]
-  val unsafe_set : 'a t -> int -> 'a -> unit
-  val unsafe_set_omit_phys_equal_check : 'a t -> int -> 'a -> unit
-  val unsafe_set_int : 'a t -> int -> int -> unit
-  val unsafe_set_int_assuming_currently_int : 'a t -> int -> int -> unit
-  val unsafe_set_assuming_currently_int : 'a t -> int -> 'a -> unit
-  val unsafe_set_with_caml_modify : 'a t -> int -> 'a -> unit
+  val empty : 'a. 'a t
+  val get_empty : 'a. unit -> 'a t
+  val unsafe_create_uninitialized : 'a. len:int -> 'a t
+  val create_obj_array : 'a. len:int -> 'a t
+  val create : 'a. len:int -> 'a -> 'a t
+  val singleton : 'a. 'a -> 'a t
+  val get : 'a. 'a t -> int -> 'a [@@zero_alloc]
+  val set : 'a. 'a t -> int -> 'a -> unit
+  val swap : 'a. 'a t -> int -> int -> unit
+  val unsafe_get : 'a. 'a t -> int -> 'a [@@zero_alloc]
+  val unsafe_get_local : 'a. 'a t -> int -> 'a [@@zero_alloc]
+  val unsafe_set : 'a. 'a t -> int -> 'a -> unit
+  val unsafe_set_omit_phys_equal_check : 'a. 'a t -> int -> 'a -> unit
+  val unsafe_set_int : 'a. 'a t -> int -> int -> unit
+  val unsafe_set_int_assuming_currently_int : 'a. 'a t -> int -> int -> unit
+  val unsafe_set_assuming_currently_int : 'a. 'a t -> int -> 'a -> unit
+  val unsafe_set_with_caml_modify : 'a. 'a t -> int -> 'a -> unit
   val unsafe_to_array_inplace__promise_not_a_float : 'a t -> 'a array
-  val set_with_caml_modify : 'a t -> int -> 'a -> unit
-  val length : 'a t -> int
-  val unsafe_blit : ('a t, 'a t) Blit.blit
-  val copy : 'a t -> 'a t
-  val unsafe_clear_if_pointer : _ t -> int -> unit
-  val sub : 'a t -> pos:int -> len:int -> 'a t
+  val set_with_caml_modify : 'a. 'a t -> int -> 'a -> unit
+  val length : 'a. 'a t -> int
+  val unsafe_blit : 'a. ('a t, 'a t) Blit.blit
+  val copy : 'a. 'a t -> 'a t
+  val unsafe_clear_if_pointer : 'a. 'a t -> int -> unit
+  val sub : 'a. 'a t -> pos:int -> len:int -> 'a t
+  val invariant : 'a. 'a t -> unit
 end = struct
   (* It is safe to claim that ['a t] is mutable data as long as ['a] is mutable
      data: we only store ['a]s (mutably).
@@ -42,29 +43,33 @@ end = struct
   *)
   type 'a t = { arr : Obj_array.t } [@@unboxed] [@@unsafe_allow_any_mode_crossing]
 
+  (* Convert possibly null values to/from [Stdlib.Obj.t]. Normally discouraged
+     due to e.g. the possibility of [Stdlib.Obj.t or_null], but it's safe to put null
+     pointers into an [Obj_array.t]. Uses [%identity] instead of [%opaque] since
+     nullability is not relevant in the cmm. *)
+  external repr : 'a. 'a -> Stdlib.Obj.t = "%identity"
+  external obj : 'a. Stdlib.Obj.t -> 'a = "%identity"
+
   let empty = { arr = Obj_array.empty }
   let[@inline] get_empty () = { arr = Obj_array.get_empty () }
   let unsafe_create_uninitialized ~len = { arr = Obj_array.create_zero ~len }
   let create_obj_array ~len = { arr = Obj_array.create_zero ~len }
-  let create ~len x = { arr = Obj_array.create ~len (Stdlib.Obj.repr x) }
-  let singleton x = { arr = Obj_array.singleton (Stdlib.Obj.repr x) }
+  let create ~len x = { arr = Obj_array.create ~len (repr x) }
+  let singleton x = { arr = Obj_array.singleton (repr x) }
   let swap t i j : unit = Obj_array.swap t.arr i j
 
   (* *)
 
-  let[@zero_alloc] get t i = Stdlib.Obj.obj (Obj_array.get t.arr i)
-  let set t i x : unit = Obj_array.set t.arr i (Stdlib.Obj.repr x)
+  let[@zero_alloc] get t i = obj (Obj_array.get t.arr i)
+  let set t i x : unit = Obj_array.set t.arr i (repr x)
 
   (* We annotate the return types on this and other functions to help document the
      fact that (i) we're trying to avoid partial application, and (ii) we've
      successfully avoided it.
   *)
-  let[@zero_alloc] unsafe_get_local (type a) t i : a =
-    Stdlib.Obj.obj (Obj_array.unsafe_get t.arr i)
-  ;;
-
+  let[@zero_alloc] unsafe_get_local (type a) t i : a = obj (Obj_array.unsafe_get t.arr i)
   let[@zero_alloc] unsafe_get (type a) t i : a = unsafe_get_local t i
-  let unsafe_set t i x : unit = Obj_array.unsafe_set t.arr i (Stdlib.Obj.repr x)
+  let unsafe_set t i x : unit = Obj_array.unsafe_set t.arr i (repr x)
   let unsafe_set_int t i x : unit = Obj_array.unsafe_set_int t.arr i x
 
   let unsafe_set_int_assuming_currently_int t i x : unit =
@@ -72,7 +77,7 @@ end = struct
   ;;
 
   let unsafe_set_assuming_currently_int t i x : unit =
-    Obj_array.unsafe_set_assuming_currently_int t.arr i (Stdlib.Obj.repr x)
+    Obj_array.unsafe_set_assuming_currently_int t.arr i (repr x)
   ;;
 
   (* [t] is just an array under the hood, it just has special considerations about [t] not
@@ -87,26 +92,23 @@ end = struct
   let copy t = { arr = Obj_array.copy t.arr }
 
   let unsafe_set_omit_phys_equal_check t i x : unit =
-    Obj_array.unsafe_set_omit_phys_equal_check t.arr i (Stdlib.Obj.repr x)
+    Obj_array.unsafe_set_omit_phys_equal_check t.arr i (repr x)
   ;;
 
   let unsafe_set_with_caml_modify t i x : unit =
-    Obj_array.unsafe_set_with_caml_modify t.arr i (Stdlib.Obj.repr x)
+    Obj_array.unsafe_set_with_caml_modify t.arr i (repr x)
   ;;
 
-  let set_with_caml_modify t i x : unit =
-    Obj_array.set_with_caml_modify t.arr i (Stdlib.Obj.repr x)
-  ;;
-
+  let set_with_caml_modify t i x : unit = Obj_array.set_with_caml_modify t.arr i (repr x)
   let unsafe_clear_if_pointer t i : unit = Obj_array.unsafe_clear_if_pointer t.arr i
   let sub t ~pos ~len = { arr = Obj_array.sub t.arr ~pos ~len }
+
+  let invariant t =
+    assert (Stdlib.Obj.tag (Stdlib.Obj.repr t) <> Stdlib.Obj.double_array_tag)
+  ;;
 end
 
 include Trusted
-
-let invariant t =
-  assert (Stdlib.Obj.tag (Stdlib.Obj.repr t) <> Stdlib.Obj.double_array_tag)
-;;
 
 let init l ~f =
   if l < 0
@@ -151,25 +153,28 @@ let fold t ~init ~f =
   !r
 ;;
 
-let to_list t = List.init ~f:(fun i -> get t i) (length t)
+let to_list t = Stdlib.List.init ~len:(length t) ~f:(fun i -> get t i)
 
 let of_list l =
-  let len = List.length l in
+  let len = Stdlib.List.length l in
   let res = unsafe_create_uninitialized ~len in
-  List.iteri l ~f:(fun i x -> set res i x);
+  Stdlib.List.iteri l ~f:(fun i x -> set res i x);
   res
 ;;
 
 let of_list_rev l =
-  let len = List.length l in
+  let len = Stdlib.List.length l in
   let res = unsafe_create_uninitialized ~len in
-  List.iteri l ~f:(fun i x -> set res (len - i - 1) x);
+  Stdlib.List.iteri l ~f:(fun i x -> set res (len - i - 1) x);
   res
 ;;
 
 (* It is not safe for [to_array] to be the identity function because we have code that
    relies on [float array]s being unboxed, for example in [bin_write_array]. *)
-let to_array t = Array.init (length t) ~f:(fun i -> unsafe_get t i)
+let%template[@alloc a = (heap, stack)] to_array t =
+  let n = length t in
+  (Array.init [@alloc a]) n ~f:(fun i -> unsafe_get t i) [@exclave_if_stack a]
+;;
 
 let exists t ~f =
   let i = ref (length t - 1) in
@@ -256,8 +261,22 @@ let concat ts =
   res
 ;;
 
-let concat_mapi t ~f = to_list t |> List.mapi ~f |> concat
-let concat_map t ~f = to_list t |> List.map ~f |> concat
+let list_mapi l ~f =
+  let[@tail_mod_cons] rec loop i = function
+    | [] -> []
+    | h :: t -> f i h :: loop (i + 1) t
+  in
+  loop 0 l [@nontail]
+;;
+
+let[@tail_mod_cons] rec list_map l ~f =
+  match l with
+  | [] -> []
+  | x :: tl -> f x :: (list_map [@tailcall]) tl ~f
+;;
+
+let concat_mapi t ~f = to_list t |> list_mapi ~f |> concat
+let concat_map t ~f = to_list t |> list_map ~f |> concat
 
 let partition_map t ~f =
   let left, right = ref (get_empty ()), ref (get_empty ()) in
@@ -312,26 +331,26 @@ let find_mapi t ~f =
     !value_found)
 ;;
 
-let findi t ~f =
+let findi (type a) (t : a t) ~f =
   let length = length t in
   if length = 0
   then None
   else (
     let i = ref 0 in
     let found = ref false in
-    let value_found = ref (unsafe_get t 0) in
+    let value_found = Stdlib.ref (unsafe_get t 0) in
     while (not !found) && !i < length do
       let value = unsafe_get t !i in
       if f !i value
       then (
-        value_found := value;
+        Stdlib.( := ) value_found value;
         found := true)
       else incr i
     done;
-    if !found then Some (!i, !value_found) else None)
+    if !found then Some (!i, Stdlib.( ! ) value_found) else None)
 ;;
 
-let find t ~f = Option.map (findi t ~f:(fun _i x -> f x)) ~f:(fun (_i, x) -> x)
+let find t ~f = Stdlib.Option.map (fun (_i, x) -> x) (findi t ~f:(fun _i x -> f x))
 
 let findi t ~f =
   let len = length t in
@@ -353,15 +372,31 @@ let t_sexp_grammar (type elt) (grammar : elt Sexplib0.Sexp_grammar.t)
   Sexplib0.Sexp_grammar.coerce (Array.t_sexp_grammar grammar)
 ;;
 
-include%template
-  Sexpable.Of_sexpable1 [@modality portable]
-    (Array)
-    (struct
-      type nonrec 'a t = 'a t
+(* Copied from the implementation of [sexp_of_array]. We can't reuse the array
+   conversion functions directly because [or_null array]s are forbidden. *)
+let sexp_of_t sexp_of__a t =
+  let lst_ref = ref [] in
+  for i = length t - 1 downto 0 do
+    lst_ref := sexp_of__a (unsafe_get t i) :: !lst_ref
+  done;
+  Sexp.List !lst_ref
+;;
 
-      let to_sexpable = to_array
-      let of_sexpable = of_array
-    end)
+let t_of_sexp a__of_sexp sexp =
+  match (sexp : Sexp.t) with
+  | List [] -> get_empty ()
+  | List (h :: t) ->
+    let len = List.length t + 1 in
+    let res = create ~len (a__of_sexp h) in
+    let rec loop i = function
+      | [] -> res
+      | h :: t ->
+        unsafe_set res i (a__of_sexp h);
+        loop (i + 1) t
+    in
+    loop 1 t
+  | Atom _ -> of_sexp_error "Uniform_array.t_of_sexp: list needed" sexp
+;;
 
 include%template Blit.Make1 [@modality portable] (struct
     type nonrec 'a t = 'a t

@@ -7,12 +7,12 @@ module Invariant := Invariant_intf.Definitions
 module Constructors : module type of List0.Constructors
 
 type%template 'a t = ('a Constructors.t[@kind k])
-[@@kind k = (float64, bits32, bits64, word)]
-[@@deriving compare ~localize, equal ~localize, sexp_of ~localize]
+[@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+[@@deriving compare ~localize, equal ~localize, sexp_of ~stackify]
 
 type 'a t = 'a list
 [@@deriving
-  compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+  compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
 include Indexed_container.S1_with_creators with type 'a t := 'a t
 include Invariant.S1 with type 'a t := 'a t
@@ -34,7 +34,7 @@ module Or_unequal_lengths : sig
   type 'a t =
     | Ok of 'a
     | Unequal_lengths
-  [@@deriving compare ~localize, sexp_of ~localize]
+  [@@deriving compare ~localize, sexp_of ~stackify]
 end
 
 (** [create ~len x] returns a list of length [len] populated [x]. *)
@@ -44,7 +44,7 @@ val create : len:int -> 'a -> 'a list
 val singleton : 'a -> 'a t
 
 [%%template:
-[@@@kind k = (float64, bits32, bits64, word, value)]
+[@@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value)]
 
 type 'a t := ('a t[@kind k])
 
@@ -65,6 +65,8 @@ val append : 'a t -> 'a t -> 'a t
 val init : int -> f:(int -> 'a) -> 'a t
 val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 
+[@@@alloc.default a @ m = (stack_local, heap_global)]
+
 (** [rev_append l1 l2] reverses [l1] and concatenates it to [l2]. This is equivalent to
     [(]{!List.rev}[ l1) @ l2], but [rev_append] is more efficient. *)
 val rev_append : 'a t -> 'a t -> 'a t
@@ -74,7 +76,8 @@ val rev : 'a t -> 'a t]
 
 [%%template:
 [@@@kind.default
-  ka = (float64, bits32, bits64, word, value), kb = (float64, bits32, bits64, word, value)]
+  ka = (float64, bits32, bits64, word, immediate, immediate64, value)
+  , kb = (float64, bits32, bits64, word, immediate, immediate64, value)]
 
 val map : ('a t[@kind ka]) -> f:('a -> 'b) -> ('b t[@kind kb])
 val mapi : ('a t[@kind ka]) -> f:(int -> 'a -> 'b) -> ('b t[@kind kb])
@@ -103,6 +106,8 @@ val concat_mapi
   -> ('b t[@kind kb])
 
 val fold : 'a 'b. ('a t[@kind ka]) -> init:'b -> f:('b -> 'a -> 'b) -> 'b
+[@@mode ma = (local, global), mb = (local, global)]
+
 val foldi : 'a 'b. ('a t[@kind ka]) -> init:'b -> f:(int -> 'b -> 'a -> 'b) -> 'b]
 
 (** [unordered_append l1 l2] has the same elements as [l1 @ l2], but in some unspecified
@@ -263,7 +268,8 @@ val map3 : 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t Or_unequal_l
 val rev_map_append : 'a t -> 'b t -> f:('a -> 'b) -> 'b t
 
 (** [fold_right [a1; ...; an] ~f ~init:b] is [f a1 (f a2 (... (f an b) ...))]. *)
-val fold_right : 'a t -> f:('a -> 'acc -> 'acc) -> init:'acc -> 'acc
+val%template fold_right : 'a t -> f:('a -> 'acc -> 'acc) -> init:'acc -> 'acc
+[@@mode m = (local, global), mcc = (local, global)]
 
 (** [fold_left] is the same as {!Container.S1.fold}, and one should always use [fold]
     rather than [fold_left], except in functors that are parameterized over a more general
@@ -418,6 +424,9 @@ val rev_filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
     other words, [filter_opt l] = [filter_map ~f:Fn.id l]. *)
 val filter_opt : 'a option t -> 'a t
 
+(** Create a list of every value [iter] passes to [f], in chronological order. *)
+val of_iter : iter:(f:('a -> unit) -> unit) -> 'a t
+
 (** Interpret a list of (key, value) pairs as a map in which only the first occurrence of
     a key affects the semantics, i.e.:
 
@@ -431,7 +440,7 @@ val filter_opt : 'a option t -> 'a t
       Map.xxx (alist |> Map.of_alist_multi |> Map.map ~f:List.hd) ...args...
     ]} *)
 module Assoc : sig
-  type ('a, 'b) t = ('a * 'b) list [@@deriving sexp ~localize, sexp_grammar]
+  type ('a, 'b) t = ('a * 'b) list [@@deriving sexp ~stackify, sexp_grammar]
 
   (** Removes all existing entries with the same key before adding. *)
   val add : ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b -> ('a, 'b) t

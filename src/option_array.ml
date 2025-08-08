@@ -177,8 +177,11 @@ include%template Indexed_container.Make_gen [@modality portable] (struct
     type nonrec ('a, _, _) t = 'a t
     type 'a elt = 'a option
 
-    let fold = fold
+    let fold_until t ~init ~f ~finish = Container.fold_until ~fold t ~init ~f ~finish
+    let fold = `Custom fold
     let foldi = `Custom foldi
+    let foldi_until = `Define_using_fold_until
+    let iter_until = `Define_using_fold_until
     let iter = `Custom iter
     let iteri = `Custom iteri
     let length = `Custom length

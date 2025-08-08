@@ -1325,8 +1325,9 @@ module Accessors = struct
   let fold t ~init ~f = Tree0.fold t.tree ~init ~f
   let fold_until t ~init ~f ~finish = Tree0.fold_until t.tree ~init ~f ~finish
   let fold_right t ~init ~f = Tree0.fold_right t.tree ~init ~f
-  let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
+  let fold_result t ~init ~f = Container.fold_result ~fold_until ~init ~f t
   let iter t ~f = Tree0.iter t.tree ~f
+  let iter_until t ~f ~finish = Container.iter_until ~fold_until ~f ~finish t
   let iter2 a b ~f = Tree0.iter2 a.tree b.tree ~f ~compare_elt:(compare_elt a)
   let exists t ~f = Tree0.exists t.tree ~f
   let for_all t ~f = Tree0.for_all t.tree ~f
@@ -1544,7 +1545,8 @@ module Tree = struct
     Tree0.merge_to_sequence comparator ?order ?greater_or_equal_to ?less_or_equal_to t t'
   ;;
 
-  let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
+  let fold_result t ~init ~f = Container.fold_result ~fold_until ~init ~f t
+  let iter_until t ~f ~finish = Container.iter_until ~fold_until ~f ~finish t
 
   module Named = struct
     include Tree0.Named

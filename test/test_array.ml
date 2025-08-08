@@ -11,6 +11,20 @@ module%test Binary_searchable = Test_binary_searchable.Test1 (struct
     end
   end)
 
+open struct
+  (* Quickcheck helpers [Array]. *)
+
+  module Int_t = struct
+    type t = (int[@generator Generator.small_positive_or_zero_int]) array
+    [@@deriving equal, globalize, quickcheck, sexp]
+  end
+
+  module Int_list = struct
+    type t = (int[@generator Generator.small_positive_or_zero_int]) list
+    [@@deriving equal, globalize, quickcheck, sexp]
+  end
+end
+
 module%test Blit =
   Test_blit.Test1
     (struct
@@ -417,6 +431,16 @@ let%test_unit _ =
 ;;
 
 let%test_unit _ =
+  [%test_result: int option] (get_opt [| 3; 5; 1; 1; 2 |] 2) ~expect:(Some 1)
+;;
+
+let%test_unit _ =
+  [%test_result: int option] (get_opt [| 3; 5; 1; 1; 2 |] (-1)) ~expect:None
+;;
+
+let%test_unit _ = [%test_result: int option] (get_opt [| 3; 5; 1; 1; 2 |] 10) ~expect:None
+
+let%test_unit _ =
   List.iter
     ~f:(fun (l, expect) ->
       let t = of_list l in
@@ -594,14 +618,6 @@ let%expect_test "create_float_uninitialized" =
   [%expect {| 10 |}]
 ;;
 
-module Int_array = struct
-  type t = int array [@@deriving equal, sexp_of]
-end
-
-module Int_list = struct
-  type t = int list [@@deriving equal, sexp_of]
-end
-
 let%expect_test "swap" =
   let array = [| 0; 1; 2; 3 |] in
   print_s [%sexp (array : int array)];
@@ -623,7 +639,7 @@ let%expect_test "rev and rev_inplace" =
       array
     in
     require_equal (module Int_list) (to_list reversed_array) (List.rev ordered_list);
-    require_equal (module Int_array) reversed_array (rev ordered_array);
+    require_equal (module Int_t) reversed_array (rev ordered_array);
     print_s [%sexp (reversed_array : int array)]
   in
   test [];
@@ -711,3 +727,108 @@ include%template struct
       |}]
   ;;
 end [@@alloc a @ m = (stack_local, heap_global)]
+
+let%expect_test "[split_n]" =
+  quickcheck_m (module Int_t) ~f:(fun arr ->
+    let list = to_list arr in
+    for n = -2 to length arr + 2 do
+      let first_arr, second_arr = split_n arr n in
+      let first_list, second_list = List.split_n list n in
+      require_equal (module Int_t) first_arr (of_list first_list);
+      require_equal (module Int_t) second_arr (of_list second_list)
+    done)
+;;
+
+let%expect_test "[chunks_of]" =
+  quickcheck_m (module Int_t) ~f:(fun arr ->
+    let list = to_list arr in
+    for length = 1 to max 1 (Array.length arr + 2) do
+      let chunks_arr = chunks_of arr ~length in
+      let chunks_list = List.chunks_of list ~length in
+      require_equal
+        (module struct
+          type t = int array array [@@deriving equal, sexp_of]
+        end)
+        chunks_arr
+        (List.map chunks_list ~f:of_list |> of_list)
+    done);
+  (* Test that [chunks_of] raises for invalid length. *)
+  require_does_raise (fun () -> chunks_of [| 1; 2; 3 |] ~length:0);
+  require_does_raise (fun () -> chunks_of [| 1; 2; 3 |] ~length:(-1));
+  [%expect
+    {|
+    (Invalid_argument "Array.chunks_of: Expected length > 0, got 0")
+    (Invalid_argument "Array.chunks_of: Expected length > 0, got -1")
+    |}]
+;;
+
+let%expect_test "templated map{,i}" =
+  let%template[@kind k = (value, bits64, float64)] print t f =
+    for i = 0 to length t - 1 do
+      let x = get t i in
+      print_s (f x)
+    done
+  in
+  let t = Array.init 6 ~f:(fun i -> Int63.of_int (i + 1)) in
+  print t Int63.sexp_of_t;
+  [%expect
+    {|
+    1
+    2
+    3
+    4
+    5
+    6
+    |}];
+  let t =
+    (mapi [@kind immediate64 value]) t ~f:(fun i x -> {%string|%{i#Int}%{x#Int63}|})
+  in
+  print t String.sexp_of_t;
+  [%expect
+    {|
+    01
+    12
+    23
+    34
+    45
+    56
+    |}];
+  let t = (map [@kind value bits64]) t ~f:(fun x -> Int64_u.(of_string x + 1L)) in
+  (print [@kind bits64]) t Int64_u.sexp_of_t;
+  [%expect
+    {|
+    2
+    13
+    24
+    35
+    46
+    57
+    |}];
+  let t =
+    (mapi [@kind bits64 float64]) t ~f:(fun i x ->
+      let f = Int64_u.to_float x in
+      let i = Float_u.of_int i in
+      Float_u.((f * 2.25) - i))
+  in
+  (print [@kind float64]) t Float_u.sexp_of_t;
+  [%expect
+    {|
+    4.5
+    28.25
+    52
+    75.75
+    99.5
+    123.25
+    |}];
+  let t = (map [@kind float64 immediate]) t ~f:(fun x -> Float_u.(x > 55.0)) in
+  print t Bool.sexp_of_t;
+  [%expect
+    {|
+    false
+    false
+    false
+    true
+    true
+    true
+    |}]
+;;

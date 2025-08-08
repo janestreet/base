@@ -91,14 +91,17 @@ module type String = sig
 
   open! Import
 
-  type t = string [@@deriving globalize, sexp ~localize, sexp_grammar]
+  type t = string [@@deriving globalize, sexp ~stackify, sexp_grammar]
 
-  val sub : (t, t) Blit.sub_global
+  [%%template:
+  [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
+  val sub : t -> pos:int -> len:int -> t
 
   (** [sub] with no bounds checking, and always returns a new copy *)
   val unsafe_sub : t -> pos:int -> len:int -> t
 
-  val subo : (t, t) Blit.subo_global
+  val subo : ?pos:int -> ?len:int -> t -> t]
 
   include Indexed_container.S0_with_creators with type t := t with type elt = char
 
@@ -121,7 +124,7 @@ module type String = sig
     -> char
     = "%string_unsafe_get"
 
-  val make : int -> char -> t
+  val%template make : int -> char -> t [@@alloc a @ m = (heap @ global, stack @ local)]
 
   (** String append. Also available unqualified, but re-exported here for documentation
       purposes.
@@ -131,11 +134,14 @@ module type String = sig
       not have this problem -- it allocates the result buffer only once. *)
   val ( ^ ) : t -> t -> t
 
+  [%%template:
+  [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
   val append : t -> t -> t
 
   (** Concatenates all strings in the list using separator [sep] (with a default separator
       [""]). *)
-  val concat : ?sep:t -> t list -> t
+  val concat : ?sep:t -> t list -> t]
 
   (** Special characters are represented by escape sequences, following the lexical
       conventions of OCaml. *)
@@ -168,7 +174,7 @@ module type String = sig
       that for example [Caseless.is_suffix "OCaml" ~suffix:"AmL"] and
       [Caseless.is_prefix "OCaml" ~prefix:"oc"] are [true]. *)
   module Caseless : sig
-    type nonrec t = t [@@deriving hash, sexp ~localize, sexp_grammar]
+    type nonrec t = t [@@deriving hash, sexp ~stackify, sexp_grammar]
 
     include%template Comparable.S [@modality portable] with type t := t
 
@@ -181,8 +187,12 @@ module type String = sig
     val substr_index : ?pos:int -> t -> pattern:t -> int option
     val substr_index_exn : ?pos:int -> t -> pattern:t -> int
     val substr_index_all : t -> may_overlap:bool -> pattern:t -> int list
+
+    [%%template:
+    [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
     val substr_replace_first : ?pos:int -> t -> pattern:t -> with_:t -> t
-    val substr_replace_all : t -> pattern:t -> with_:t -> t
+    val substr_replace_all : t -> pattern:t -> with_:t -> t]
   end
 
   (** [index] gives the index of the first appearance of [char] in the string when
@@ -216,14 +226,16 @@ module type String = sig
       The functions in the [Search_pattern] module allow the program to preprocess the
       searched pattern once and then use it many times without further allocations. *)
   module Search_pattern : sig
-    type t [@@deriving sexp_of ~localize]
+    type t [@@deriving sexp_of ~stackify]
 
     (** [create pattern] preprocesses [pattern] as per KMP, building an [int array] of
         length [length pattern]. All inputs are valid. *)
-    val create : ?case_sensitive:bool (** default = true *) -> string -> t
+    val%template create : ?case_sensitive:bool (** default = true *) -> string -> t
+    [@@alloc a @ m = (heap @ global, stack @ local)]
 
     (** [pattern t] returns the string pattern used to create [t]. *)
-    val pattern : t -> string
+    val%template pattern : t -> string
+    [@@mode m = (global, local)]
 
     (** [case_sensitive t] returns whether [t] matches strings case-sensitively. *)
     val case_sensitive : t -> bool
@@ -248,6 +260,9 @@ module type String = sig
         E.g., [replace_all] internally calls [index_all ~may_overlap:false]. *)
     val index_all : t -> may_overlap:bool -> in_:string -> int list
 
+    [%%template:
+    [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
     val replace_first : ?pos:int -> t -> in_:string -> with_:string -> string
 
     (** [replace_all pattern ~in_:text ~with_:r] replaces every appearance of a [pattern]
@@ -262,7 +277,7 @@ module type String = sig
         ]}
 
         which ends with ["bc"]! *)
-    val replace_all : t -> in_:string -> with_:string -> string
+    val replace_all : t -> in_:string -> with_:string -> string]
 
     (** Similar to [String.split] or [String.split_on_chars], but instead uses a given
         search pattern as the separator. Separators are non-overlapping. *)
@@ -279,9 +294,9 @@ module type String = sig
       type t =
         { pattern : string
         ; case_sensitive : bool
-        ; kmp_array : int array
+        ; kmp_array : int iarray
         }
-      [@@deriving equal ~localize, sexp_of ~localize]
+      [@@deriving equal ~localize, sexp_of ~stackify]
 
       val representation : public -> t
     end
@@ -296,10 +311,14 @@ module type String = sig
 
   val substr_index_exn : ?pos:int -> t -> pattern:t -> int
   val substr_index_all : t -> may_overlap:bool -> pattern:t -> int list
+
+  [%%template:
+  [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
   val substr_replace_first : ?pos:int -> t -> pattern:t -> with_:t -> t
 
   (** As with [Search_pattern.replace_all], the result may still contain [pattern]. *)
-  val substr_replace_all : t -> pattern:t -> with_:t -> t
+  val substr_replace_all : t -> pattern:t -> with_:t -> t]
 
   (** [is_substring ~substring:"bar" "foo bar baz"] is true. *)
   val is_substring : t -> substring:t -> bool
@@ -337,6 +356,9 @@ module type String = sig
       appearance of [on] from the right. *)
   val rsplit2 : t -> on:char -> (t * t) option
 
+  [%%template:
+  [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
   (** [split s ~on] returns a list of substrings of [s] that are separated by [on].
       Consecutive [on] characters will cause multiple empty strings in the result.
       Splitting the empty string returns a list of the empty string, not the empty list. *)
@@ -345,7 +367,7 @@ module type String = sig
   (** [split_on_chars s ~on] returns a list of all substrings of [s] that are separated by
       one of the chars from [on]. [on] are not grouped. So a grouping of [on] in the
       source string will produce multiple empty string splits in the result. *)
-  val split_on_chars : t -> on:char list -> t list
+  val split_on_chars : t -> on:char list -> t list]
 
   (** [split_lines t] returns the list of lines that comprise [t]. The lines do not
       include the trailing ["\n"] or ["\r\n"]. *)
@@ -382,7 +404,8 @@ module type String = sig
 
   (** [tr ~target ~replacement s] replaces every instance of [target] in [s] with
       [replacement]. *)
-  val tr : target:char -> replacement:char -> t -> t
+  val%template tr : target:char -> replacement:char -> t -> t
+  [@@alloc a @ m = (heap @ global, stack @ local)]
 
   (** [tr_multi ~target ~replacement] returns a function that replaces every instance of a
       character in [target] with the corresponding character in [replacement].

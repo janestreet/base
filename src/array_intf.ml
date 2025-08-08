@@ -9,11 +9,27 @@ module Definitions = struct
     [%%rederive:
       type nonrec 'a t = 'a t
       [@@deriving
-        compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]]
+        compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]]
 
     include Binary_searchable.S1 with type 'a t := 'a t
+
+    include
+      Indexed_container.S1_with_creators__base
+      with type 'a t := 'a t
+       and type 'a t__float64 := 'a t
+       and type 'a t__bits32 := 'a t
+       and type 'a t__bits64 := 'a t
+       and type 'a t__word := 'a t
+       and type 'a t__immediate := 'a t
+       and type 'a t__immediate64 := 'a t
+
     include Indexed_container.S1_with_creators with type 'a t := 'a t
     include Invariant.S1 with type 'a t := 'a t
+
+    val%template map : 'a 'b. 'a t -> f:('a -> 'b) -> 'b t
+    [@@kind
+      k1 = (value, float64, bits32, bits64, word, immediate, immediate64)
+      , k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
     (** Maximum length of a normal array. The maximum length of a float array is
         [max_length/2] on 32-bit machines and [max_length] on 64-bit machines. *)
@@ -35,6 +51,12 @@ module Definitions = struct
       ('a array[@local_opt]) -> (int[@local_opt]) -> 'a
       = "%array_safe_get"
     [@@layout_poly] [@@mode m = (uncontended, shared)]
+
+    (** Like {!get}, but returns [None] instead of raising. *)
+    val%template get_opt : 'a. 'a array -> int -> ('a Option.t[@kind k])
+    [@@mode c = (uncontended, shared)]
+    [@@kind k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    [@@alloc a @ m = (heap_global, stack_local)]
 
     (** [Array.set a n x] modifies array [a] in place, replacing element number [n] with
         [x]. You can also write [a.(n) <- x] instead of [Array.set a n x].
@@ -66,22 +88,26 @@ module Definitions = struct
     [%%template:
       val create : len:int -> 'a -> 'a array
       [@@ocaml.doc
-        " [create ~len x] creates an array of length [len] with the value [x] populated in\n\
-        \          each element. "]
+        {| [create ~len x] creates an array of length [len] with the value [x] populated in
+          each element. |}]
       [@@alloc __ = (heap, stack)]]
 
     val create_local : len:int -> 'a -> 'a array
 
     val magic_create_uninitialized : len:int -> 'a array
     [@@ocaml.doc
-      " [magic_create_uninitialized ~len] creates an array of length [len]. All elements\n\
-      \          are magically populated as a tagged [0]. "]
+      {| [magic_create_uninitialized ~len] creates an array of length [len]. All elements
+          are magically populated as a tagged [0]. |}]
 
     (** [create_float_uninitialized ~len] creates a float array of length [len] with
         uninitialized elements -- that is, they may contain arbitrary, nondeterministic
         float values. This can be significantly faster than using [create], when unboxed
         float array representations are enabled. *)
     val create_float_uninitialized : len:int -> float t
+
+    (** [init n ~f] creates an array of length [n] with index [i] set to [f i]. *)
+    val%template init : int -> f:(int -> 'a) -> 'a array
+    [@@alloc __ @ m = (heap_global, stack_local)]
 
     (** [Array.make_matrix dimx dimy e] returns a two-dimensional array (an array of
         arrays) with first dimension [dimx] and second dimension [dimy]. All the elements
@@ -99,19 +125,22 @@ module Definitions = struct
         typically used when [t] is a matrix created by [Array.make_matrix]. *)
     val copy_matrix : 'a t t -> 'a t t
 
+    [%%template:
+    [@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+
     (** Like [Array.append], but concatenates a list of arrays. *)
-    val concat : 'a t list -> 'a t
+    val concat : 'a. 'a t list -> 'a t
 
     (** [Array.copy a] returns a copy of [a], that is, a fresh array containing the same
         elements as [a]. *)
-    val copy : 'a t -> 'a t
+    val copy : 'a. 'a t -> 'a t
 
     (** [Array.fill a ofs len x] modifies the array [a] in place, storing [x] in elements
         number [ofs] to [ofs + len - 1].
 
         Raise [Invalid_argument "Array.fill"] if [ofs] and [len] do not designate a valid
         subarray of [a]. *)
-    val fill : 'a t -> pos:int -> len:int -> 'a -> unit
+    val fill : 'a. 'a t -> pos:int -> len:int -> 'a -> unit]
 
     (** [Array.blit v1 o1 v2 o2 len] copies [len] elements from array [v1], starting at
         element number [o1], to array [v2], starting at element number [o2]. It works
@@ -124,6 +153,12 @@ module Definitions = struct
         [int_blit] and [float_blit] provide fast bound-checked blits for immediate data
         types. The unsafe versions do not bound-check the arguments. *)
     include Blit.S1 with type 'a t := 'a t
+
+    val%template unsafe_blit : 'a. ('a array, 'a array) Blit.blit
+    [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+
+    val%template sub : 'a. ('a array, 'a array) Blit.sub
+    [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
 
     val%template foldi_right : 'a t -> init:'acc -> f:(int -> 'a -> 'acc -> 'acc) -> 'acc
     [@@alloc a @ m = (stack_local, heap_global)]
@@ -221,20 +256,30 @@ module Definitions = struct
     (** Modifies an array in place, applying [f] to every element of the array *)
     val map_inplace : 'a t -> f:('a -> 'a) -> unit
 
+    [%%template:
+    [@@@kind.default k1 = (value, float64, bits32, bits64, word, immediate, immediate64)]
+
     (** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true. It raises
         [Stdlib.Not_found] or [Not_found_s] if there is no such [a]. *)
-    val find_exn : 'a t -> f:('a -> bool) -> 'a
+    val find_exn : 'a. 'a t -> f:('a -> bool) -> 'a
+
+    [@@@kind.default k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
     (** Returns the first evaluation of [f] that returns [Some]. Raises [Stdlib.Not_found]
         or [Not_found_s] if [f] always returns [None]. *)
-    val find_map_exn : 'a t -> f:('a -> 'b option) -> 'b
+    val find_map_exn : 'a 'b. 'a t -> f:('a -> ('b Option.t[@kind k2])) -> 'b
+
+    (** [find_mapi_exn] is like [find_map_exn] but passes the index as an argument. *)
+    val find_mapi_exn : 'a 'b. 'a t -> f:(int -> 'a -> ('b Option.t[@kind k2])) -> 'b]
 
     (** [findi_exn t f] returns the first index [i] of [t] for which [f i t.(i)] is true.
         It raises [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)
-    val findi_exn : 'a t -> f:(int -> 'a -> bool) -> int * 'a
+    val%template findi_exn : 'a. 'a t -> f:(int -> 'a -> bool) -> int * 'a
+    [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
 
-    (** [find_mapi_exn] is like [find_map_exn] but passes the index as an argument. *)
-    val find_mapi_exn : 'a t -> f:(int -> 'a -> 'b option) -> 'b
+    (** For backwards compatibility, we return a boxed product for the value-only version
+        of [findi_exn] (instead of a [value & value] product) *)
+    val findi_exn : 'a t -> f:(int -> 'a -> bool) -> int * 'a
 
     (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive
         elements [(a1, a2)] in [t] such that [equal a1 a2]. They are returned in the same
@@ -264,6 +309,18 @@ module Definitions = struct
     val random_element : ?random_state:Random.State.t -> 'a t -> 'a option
 
     val random_element_exn : ?random_state:Random.State.t -> 'a t -> 'a
+
+    (** [split_n t n] returns a pair of arrays [(first, second)] where [first] contains
+        the first [n] elements of [t] and [second] contains the remaining elements.
+
+        - If [n >= length t], returns [(t, [||])].
+        - If [n <= 0], returns [([||], t)]. *)
+    val split_n : 'a t -> int -> 'a t * 'a t
+
+    (** [chunks_of t ~length] returns an array of arrays whose concatenation is equal to
+        the original array. Every array has [length] elements, except for possibly the
+        last array, which may have fewer. [chunks_of] raises if [length <= 0]. *)
+    val chunks_of : 'a t -> length:int -> 'a t t
 
     (** [zip] is like [List.zip], but for arrays. *)
     val zip : 'a t -> 'b t -> ('a * 'b) t option

@@ -52,14 +52,14 @@ type ('k, 'v) t = private
       { key : 'k
       ; mutable value : 'v
       }
-[@@kind k = (value, bits64, float64), v = (value, bits64, float64)]
+[@@kind k = (value_or_null, bits64, float64), v = (value_or_null, bits64, float64)]
 
 (** Returns the first (leftmost) or last (rightmost) element in the tree. *)
 
 val first : ('k, 'v) t -> ('k * 'v) option
 val last : ('k, 'v) t -> ('k * 'v) option
 
-[@@@kind k = (value, bits64, float64), v = (value, bits64, float64)]
+[@@@kind k = (value_or_null, bits64, float64), v = (value_or_null, bits64, float64)]
 
 type ('k, 'v) t := (('k, 'v) t[@kind k v])
 
@@ -95,6 +95,11 @@ val add
 (** If the specified key exists in the tree, returns the corresponding value. O(log(N))
     time and O(1) space. *)
 val find : ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> ('v Option.t[@kind v])
+[@@mode c = (uncontended, shared)]
+
+[%%template:
+[@@@mode.default c = (uncontended, shared)]
+[@@@kind r = (value_or_null, bits64, float64)]
 
 (** [find_and_call t ~compare k ~if_found ~if_not_found]
 
@@ -104,61 +109,78 @@ val find : ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> ('v Option.t[@kind v
 
     except that it doesn't allocate the option. *)
 val find_and_call
-  :  ('k, 'v) t
+  : 'k 'v 'r.
+  ('k, 'v) t
   -> compare:('k -> 'k -> int)
   -> 'k
-  -> if_found:('v -> 'a)
-  -> if_not_found:('k -> 'a)
-  -> 'a
-
-val find_and_call1
-  :  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
-  -> 'k
-  -> a:'a
-  -> if_found:('v -> 'a -> 'b)
-  -> if_not_found:('k -> 'a -> 'b)
-  -> 'b
-
-val find_and_call2
-  :  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
-  -> 'k
-  -> a:'a
-  -> b:'b
-  -> if_found:('v -> 'a -> 'b -> 'c)
-  -> if_not_found:('k -> 'a -> 'b -> 'c)
-  -> 'c
+  -> if_found:('v -> 'r)
+  -> if_not_found:('k -> 'r)
+  -> 'r
+[@@kind k = k, v = v, r = r]
 
 val findi_and_call
-  :  ('k, 'v) t
+  : 'k 'v 'r.
+  ('k, 'v) t
   -> compare:('k -> 'k -> int)
   -> 'k
-  -> if_found:(key:'k -> data:'v -> 'a)
-  -> if_not_found:('k -> 'a)
-  -> 'a
+  -> if_found:(key:'k -> data:'v -> 'r)
+  -> if_not_found:('k -> 'r)
+  -> 'r
+[@@kind k = k, v = v, r = r]
 
-val findi_and_call1
-  :  ('k, 'v) t
+[@@@kind a = (value_or_null, bits64, float64)]
+
+val find_and_call1
+  : 'k 'v 'a 'r.
+  ('k, 'v) t
   -> compare:('k -> 'k -> int)
   -> 'k
   -> a:'a
-  -> if_found:(key:'k -> data:'v -> 'a -> 'b)
-  -> if_not_found:('k -> 'a -> 'b)
-  -> 'b
+  -> if_found:('v -> 'a -> 'r)
+  -> if_not_found:('k -> 'a -> 'r)
+  -> 'r
+[@@kind k = k, v = v, a = a, r = r]
 
-val findi_and_call2
-  :  ('k, 'v) t
+val findi_and_call1
+  : 'k 'v 'a 'r.
+  ('k, 'v) t
+  -> compare:('k -> 'k -> int)
+  -> 'k
+  -> a:'a
+  -> if_found:(key:'k -> data:'v -> 'a -> 'r)
+  -> if_not_found:('k -> 'a -> 'r)
+  -> 'r
+[@@kind k = k, v = v, a = a, r = r]
+
+[@@@kind b = (value_or_null, bits64, float64)]
+
+val find_and_call2
+  : 'k 'v 'a 'b 'r.
+  ('k, 'v) t
   -> compare:('k -> 'k -> int)
   -> 'k
   -> a:'a
   -> b:'b
-  -> if_found:(key:'k -> data:'v -> 'a -> 'b -> 'c)
-  -> if_not_found:('k -> 'a -> 'b -> 'c)
-  -> 'c
+  -> if_found:('v -> 'a -> 'b -> 'r)
+  -> if_not_found:('k -> 'a -> 'b -> 'r)
+  -> 'r
+[@@kind k = k, v = v, a = a, b = b, r = r]
+
+val findi_and_call2
+  : 'k 'v 'a 'b 'r.
+  ('k, 'v) t
+  -> compare:('k -> 'k -> int)
+  -> 'k
+  -> a:'a
+  -> b:'b
+  -> if_found:(key:'k -> data:'v -> 'a -> 'b -> 'r)
+  -> if_not_found:('k -> 'a -> 'b -> 'r)
+  -> 'r
+[@@kind k = k, v = v, a = a, b = b, r = r]]
 
 (** Returns true if key is present in the tree, and false otherwise. *)
-val mem : ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> bool
+val mem : 'k 'v. ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> bool
+[@@mode c = (uncontended, shared)]
 
 (** Removes key destructively from the tree if it exists, returning the new root node.
     Previous root nodes are not usable anymore; do so at your peril. The [removed] ref
@@ -171,15 +193,14 @@ val remove
   -> ('k, 'v) t
 
 (** Folds over the tree. *)
-val fold : ('k, 'v) t -> init:'acc -> f:(key:'k -> data:'v -> 'acc -> 'acc) -> 'acc
+val fold
+  : 'k 'v 'acc.
+  ('k, 'v) t -> init:'acc -> f:(key:'k -> data:'v -> 'acc -> 'acc) -> 'acc
 
 (** Iterates over the tree. *)
 val iter : ('k, 'v) t -> f:(key:'k -> data:'v -> unit) -> unit
 
 (** Map over the the tree, changing the data in place. *)
-val mapi_inplace : ('k, 'v) t -> f:(key:'k -> data:'v -> 'v) -> unit]
+val mapi_inplace : ('k, 'v) t -> f:(key:'k -> data:'v -> 'v) -> unit
 
-val%template choose_exn : ('k, 'v) t -> 'k * 'v [@@mode m = global]
-
-val%template choose_exn : ('k, 'v) t -> 'k Modes.Global.t * 'v Modes.Global.t
-[@@mode m = local]
+val choose_exn : ('k, 'v) t -> 'k * 'v]

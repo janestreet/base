@@ -2,13 +2,23 @@ open! Import
 include Iarray_intf.Definitions
 include Iarray0
 module I = Basement.Stdlib_iarray_labels
+include O
 
 let is_empty t = length t = 0
 let last_exn t = t.:(length t - 1)
-let empty = Stdlib.Obj.magic_portable (unsafe_of_array__promise_no_mutation [||])
+let empty = Obj.magic_portable (unsafe_of_array__promise_no_mutation [||])
 
 let[@inline] get_empty () =
   Portability_hacks.magic_uncontended__promise_deeply_immutable empty
+;;
+
+let%template get_opt t n =
+  if 0 <= n && n < length t
+  then
+    Some ((unsafe_get [@mode c]) t n)
+    [@exclave_if_stack a] (* SAFETY: bounds checked above *)
+  else None
+[@@mode c = (uncontended, shared, contended)] [@@alloc a = (heap, stack)]
 ;;
 
 (** Local allocation *)
@@ -59,7 +69,7 @@ module Local = struct
   ;;
 
   let fold t ~init ~f =
-    (foldi [@inlined] [@kind ka kacc])
+    (foldi [@inlined hint] [@kind ka kacc])
       ~f:(fun [@inline always] _ acc a -> f acc a)
       ~init
       t
@@ -618,7 +628,7 @@ let globalize globalize_elt t =
   init (length t) ~f:(fun i -> globalize_elt (get t i) [@nontail]) [@nontail]
 ;;
 
-let compare__local compare_elt ta tb =
+let%template compare compare_elt ta tb =
   if phys_equal ta tb
   then 0
   else (
@@ -636,60 +646,7 @@ let compare__local compare_elt ta tb =
       in
       loop 0 [@nontail]
     | c -> c)
-;;
-
-let equal__local equal_elt ta tb =
-  if phys_equal ta tb
-  then true
-  else (
-    let na = length ta in
-    let nb = length tb in
-    match Int.equal na nb with
-    | false -> false
-    | true ->
-      let rec loop pos =
-        if pos = na
-        then true
-        else equal_elt (unsafe_get ta pos) (unsafe_get tb pos) && loop (pos + 1)
-      in
-      loop 0 [@nontail])
-;;
-
-let compare compare_elt ta tb =
-  if phys_equal ta tb
-  then 0
-  else (
-    let na = length ta in
-    let nb = length tb in
-    match Int.compare na nb with
-    | 0 ->
-      let rec loop pos =
-        if pos = na
-        then 0
-        else (
-          match compare_elt (unsafe_get ta pos) (unsafe_get tb pos) with
-          | 0 -> loop (pos + 1)
-          | c -> c)
-      in
-      loop 0 [@nontail]
-    | c -> c)
-;;
-
-let equal equal_elt ta tb =
-  if phys_equal ta tb
-  then true
-  else (
-    let na = length ta in
-    let nb = length tb in
-    match Int.equal na nb with
-    | false -> false
-    | true ->
-      let rec loop pos =
-        if pos = na
-        then true
-        else equal_elt (unsafe_get ta pos) (unsafe_get tb pos) && loop (pos + 1)
-      in
-      loop 0 [@nontail])
+[@@mode __ = (local, global)]
 ;;
 
 let hash_fold_t hash_fold_elt state t =
@@ -702,21 +659,6 @@ let t_of_sexp elt_of_sexp sexp =
   match (sexp : Sexp.t) with
   | Atom _ -> Sexplib0.Sexp_conv.of_sexp_error "iarray_of_sexp: list expected" sexp
   | List sexps -> of_list_map ~f:elt_of_sexp sexps
-;;
-
-let sexp_of_t sexp_of__a ar =
-  let lst_ref = ref [] in
-  for i = length ar - 1 downto 0 do
-    lst_ref := sexp_of__a ar.:(i) :: !lst_ref
-  done;
-  Sexp.List !lst_ref
-;;
-
-let sexp_of_t__local sexp_of__a ar =
-  let rec loop i acc =
-    if i < 0 then Sexp.List acc else loop (i - 1) (sexp_of__a (get ar i) :: acc)
-  in
-  loop (length ar - 1) []
 ;;
 
 let t_sexp_grammar (a_sexp_grammar : 'a Sexplib0.Sexp_grammar.t)
@@ -733,6 +675,8 @@ let iteri t ~(f : _ -> _ -> _) =
   done
 ;;
 
+let iter t ~f = iteri t ~f:(fun _ x -> f x) [@nontail]
+
 [%%template
 [@@@kind.default ka = value, kacc = (value, bits64, bits32, word, float64)]
 
@@ -745,7 +689,8 @@ let foldi (type a acc) (t : a t) ~(init : acc) ~f : acc =
 ;;
 
 let fold t ~init ~f =
-  (foldi [@inlined] [@kind ka kacc]) t ~init ~f:(fun [@inline always] _ acc x -> f acc x)
+  (foldi [@inlined hint] [@kind ka kacc]) t ~init ~f:(fun [@inline always] _ acc x ->
+    f acc x)
   [@nontail]
 ;;
 
@@ -807,20 +752,44 @@ let fold_result t ~init ~f =
   loop 0 init [@nontail]
 ;;
 
-let fold_until t ~init ~f ~finish =
+let foldi_until t ~init ~f ~finish =
   let n = length t in
   let rec loop pos acc =
     if pos = n
-    then finish acc
+    then finish pos acc
     else (
-      match (f acc (unsafe_get t pos) : (_, _) Container.Continue_or_stop.t) with
+      match (f pos acc (unsafe_get t pos) : (_, _) Container.Continue_or_stop.t) with
       | Stop x -> x
       | Continue acc -> loop (pos + 1) acc)
   in
   loop 0 init [@nontail]
 ;;
 
-let iter t ~f = iteri t ~f:(fun _ x -> f x) [@nontail]
+let fold_until t ~init ~f ~finish =
+  foldi_until
+    t
+    ~init
+    ~f:(fun _ acc x -> f acc x)
+    ~finish:(fun _ acc -> finish acc) [@nontail]
+;;
+
+let iteri_until t ~f ~finish =
+  let n = length t in
+  let rec loop pos =
+    if pos = n
+    then finish pos
+    else (
+      match (f pos (unsafe_get t pos) : (_, _) Container.Continue_or_stop.t) with
+      | Stop x -> x
+      | Continue () -> loop (pos + 1))
+  in
+  loop 0 [@nontail]
+;;
+
+let iter_until t ~f ~finish =
+  iteri_until t ~f:(fun _ x -> f x) ~finish:(fun _ -> finish ()) [@nontail]
+;;
+
 let exists t ~f = existsi t ~f:(fun _ x -> f x) [@nontail]
 let for_all t ~f = for_alli t ~f:(fun _ x -> f x) [@nontail]
 let count t ~f = counti t ~f:(fun _ x -> f x) [@nontail]
@@ -950,7 +919,7 @@ let filteri t ~f =
     let out = Array.create_local ~len (unsafe_get t 0) in
     let rec loop pos out_len =
       if pos = len
-      then Of_array.sub out ~pos:0 ~len:out_len [@nontail]
+      then if out_len = len then t else Of_array.sub out ~pos:0 ~len:out_len [@nontail]
       else (
         let x = unsafe_get t pos in
         match f pos x with
@@ -1147,6 +1116,39 @@ let rev t =
   init n ~f:(fun pos -> unsafe_get t (n - pos - 1)) [@nontail]
 ;;
 
+(* In [split_n] and [chunks_of], we can't use [empty] here because it is [contended], so
+   we use
+   {[
+     unsafe_of_array__promise_no_mutation [||]
+   ]}. *)
+
+let split_n t_orig n =
+  if n <= 0
+  then unsafe_of_array__promise_no_mutation [||], t_orig
+  else (
+    let length = length t_orig in
+    if n >= length
+    then t_orig, unsafe_of_array__promise_no_mutation [||]
+    else (
+      let first = prefix t_orig ~len:n in
+      let second = drop_prefix t_orig ~len:n in
+      first, second))
+;;
+
+let chunks_of t ~length:chunk_length =
+  if chunk_length <= 0
+  then Printf.invalid_argf "Iarray.chunks_of: Expected length > 0, got %d" chunk_length ();
+  let length = length t in
+  if length = 0
+  then unsafe_of_array__promise_no_mutation [||]
+  else (
+    let num_chunks = (length + chunk_length - 1) / chunk_length in
+    init num_chunks ~f:(fun i ->
+      let start = i * chunk_length in
+      let current_chunk_length = min chunk_length (length - start) in
+      sub t ~pos:start ~len:current_chunk_length))
+;;
+
 let sort t ~compare =
   Array.sorted_copy ~compare (unsafe_to_array__promise_no_mutation t)
   |> unsafe_of_array__promise_no_mutation
@@ -1175,6 +1177,67 @@ let is_sorted t ~compare =
 let is_sorted_strictly t ~compare =
   Array.is_sorted_strictly ~compare (unsafe_to_array__promise_no_mutation t)
 ;;
+
+module Unique = struct
+  let[@inline] init len ~(f : _ -> _) : _ =
+    (* SAFETY:
+
+       - We know the elements are unique because the function [f] is annotated to return
+         them
+       - We know the array itself is unique because the implementation of [init] returns a
+         newly allocated array.
+    *)
+    Obj.magic_unique (init len ~f)
+  ;;
+
+  let mapi t ~f =
+    init (length t) ~f:(fun i ->
+      f
+        i
+        (* SAFETY:
+
+           - We only call this once on each index of the original array
+           - We discard the original array once we're done, so no references remain
+        *)
+        (Obj.magic_unique (unsafe_get t i)))
+    [@nontail]
+  ;;
+
+  let map t ~f = (mapi [@inlined]) t ~f:(fun [@inline] _ x -> f x) [@nontail]
+
+  let iteri t ~f =
+    for i = 0 to length t - 1 do
+      (* SAFETY:
+
+         - We only call this once on each index of the original array
+         - We discard the original array once we're done, so no references remain
+      *)
+      f i (Obj.magic_unique (unsafe_get t i))
+    done
+  ;;
+
+  let iter t ~f = (iteri [@inlined]) t ~f:(fun [@inline] _ x -> f x) [@nontail]
+
+  let[@inline] unzip t : _ t * _ t =
+    (* SAFETY:
+       We know the returned arrays are unique because of the contract of [unzip] - each
+       element of the argument array, which is unique, is split into one of the two
+       returned arrays, both of which are newly allocated
+    *)
+    Obj.magic_unique (unzip t)
+  ;;
+
+  let[@inline] zip_exn t1 t2 : (_ * _) t =
+    (* SAFETY:
+
+       - We know the elements of the returned array are unique because of the contract of
+         [zip_exn] - each element is a newly allocated tuple containing distinct elements
+         from the two argument arrays, both of which are known to be unique.
+       - We know the array itself is unique because it's newly allocated by [zip_exn]
+    *)
+    Obj.magic_unique (zip_exn t1 t2)
+  ;;
+end
 
 (** Binary search *)
 

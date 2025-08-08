@@ -46,7 +46,8 @@ val ok : 'ok t -> 'ok option
 
 (** [ok_exn t] throws an exception if [t] is an [Error], and otherwise returns the
     contents of the [Ok] constructor. *)
-val ok_exn : 'a t -> 'a
+val%template ok_exn : 'a. ('a t[@kind k]) -> 'a
+[@@kind k = (value, immediate, immediate64, float64, bits32, bits64, word)]
 
 (** [of_exn ?backtrace exn] is [Error (Error.of_exn ?backtrace exn)]. *)
 val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> _ t
@@ -97,11 +98,17 @@ val error_string : string -> _ t
     instead. *)
 val errorf : ('a, unit, string, _ t) format4 -> 'a
 
+(** [errorf_portable format arg1 arg2 ... ()] is like [errorf format arg1 arg2 ...] but
+    constructing a portable error. *)
+val errorf_portable : ('a, unit, string, unit -> _ t) format4 -> 'a
+
 (** [tag t ~tag] is [Result.map_error t ~f:(Error.tag ~tag)]. *)
-val tag : 'a t -> tag:string -> 'a t
+val%template tag : 'a t -> tag:string -> 'a t
+[@@mode p = (portable, nonportable)]
 
 (** [tag_s] is like [tag] with a sexp tag. *)
-val tag_s : 'a t -> tag:Sexp.t -> 'a t
+val%template tag_s : 'a t -> tag:Sexp.t -> 'a t
+[@@mode p = (portable, nonportable)]
 
 (** [tag_s_lazy] is like [tag] with a lazy sexp tag. *)
 val tag_s_lazy : 'a t -> tag:Sexp.t Lazy.t -> 'a t
@@ -131,11 +138,13 @@ val iter_error : _ t -> f:(Error.t -> unit) -> unit
         combine_errors [...; Error e1; ...; Error en; ...]
         = Error (Error.of_list [e1; ...; en])
       ]} *)
-val combine_errors : 'a t list -> 'a list t
+val%template combine_errors : 'a t list -> 'a list t
+[@@mode p = (portable, nonportable)]
 
 (** [combine_errors_unit ts] returns [Ok] if every element in [ts] is [Ok ()], else it
     returns [Error] with all the errors in [ts], like [combine_errors]. *)
-val combine_errors_unit : unit t list -> unit t
+val%template combine_errors_unit : unit t list -> unit t
+[@@mode p = (portable, nonportable)]
 
 (** [filter_ok_at_least_one ts] returns all values in [ts] that are [Ok] if there is at
     least one, otherwise it returns the same error as [combine_errors ts]. Returns a

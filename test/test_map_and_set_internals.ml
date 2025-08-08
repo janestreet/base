@@ -6,7 +6,7 @@ open! Base
 open Expect_test_helpers_base
 
 let print_s sexp =
-  Ref.set_temporarily sexp_style Sexp_style.simple_pretty ~f:(fun () -> print_s sexp)
+  Dynamic.with_temporarily sexp_style Sexp_style.simple_pretty ~f:(fun () -> print_s sexp)
 ;;
 
 module type S = sig

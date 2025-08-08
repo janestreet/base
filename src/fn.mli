@@ -35,4 +35,5 @@ external id : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
 val compose : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
 
 (** Reverses the order of arguments for a binary function. *)
-val flip : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c
+val%template flip : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c
+[@@modality p = (portable, nonportable)]

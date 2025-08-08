@@ -6,7 +6,7 @@ type t =
   | Neg
   | Zero
   | Pos
-[@@deriving sexp ~localize, sexp_grammar, compare ~localize, hash, enumerate]
+[@@deriving sexp ~stackify, sexp_grammar, compare ~localize, hash, enumerate]
 
 module Replace_polymorphic_compare = struct
   let ( < ) (x : t) y = Poly.( < ) x y
@@ -18,6 +18,7 @@ module Replace_polymorphic_compare = struct
   let ascending (x : t) y = Poly.ascending x y
   let descending (x : t) y = Poly.descending x y
   let compare (x : t) y = Poly.compare x y
+  let compare__local (x : t) y = Poly.compare x y
   let equal (x : t) y = Poly.equal x y
   let equal__local (x : t) y = Poly.equal x y
   let max (x : t) y = if x >= y then x else y

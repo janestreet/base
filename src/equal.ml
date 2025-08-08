@@ -16,29 +16,42 @@
 
 open! Import
 
+[%%template
+[@@@mode.default m = (global, local)]
+
 type 'a t = 'a -> 'a -> bool
-type 'a equal = 'a t
+type 'a equal = ('a t[@mode m])
 
 module type S = sig
   type t
 
-  val equal : t equal
+  val%template equal : (t equal[@mode m]) [@@mode m = (global, m)]
 end
 
 module type S1 = sig
   type 'a t
 
-  val equal : 'a equal -> 'a t equal
+  val%template equal : ('a equal[@mode m]) -> ('a t equal[@mode m])
+  [@@mode m = (global, m)]
 end
 
 module type S2 = sig
   type ('a, 'b) t
 
-  val equal : 'a equal -> 'b equal -> ('a, 'b) t equal
+  val%template equal
+    :  ('a equal[@mode m])
+    -> ('b equal[@mode m])
+    -> (('a, 'b) t equal[@mode m])
+  [@@mode m = (global, m)]
 end
 
 module type S3 = sig
   type ('a, 'b, 'c) t
 
-  val equal : 'a equal -> 'b equal -> 'c equal -> ('a, 'b, 'c) t equal
-end
+  val%template equal
+    :  ('a equal[@mode m])
+    -> ('b equal[@mode m])
+    -> ('c equal[@mode m])
+    -> (('a, 'b, 'c) t equal[@mode m])
+  [@@mode m = (global, m)]
+end]

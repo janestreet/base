@@ -6,6 +6,10 @@
 
 open! Import
 
+open struct
+  module Result = Result0
+end
+
 module Definitions = struct
   module Global = struct
     (** Abstraction over modality. Used in [Wrapped_fn*] signatures, below.
@@ -73,7 +77,7 @@ module Definitions = struct
 
     module type Global = sig
       type 'a t
-      [@@deriving compare ~localize, equal ~localize, hash, sexp ~localize, sexp_grammar]
+      [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
 
       (** Globalize a [t]. Takes an argument because [[%globalize]] will pass one for
           ['a], but [globalize] is a no-op so it discards the argument. *)
@@ -193,6 +197,20 @@ module Definitions = struct
         -> (('a, 'b) Result.t[@local_opt])
         = "%identity"
 
+      (** Wrapping and unwrapping two-tuples. *)
+
+      external wrap_tuple2 : 'a * 'b -> 'a t * 'b t = "%identity"
+      external wrap_fst : 'a * 'b -> 'a t * 'b = "%identity"
+      external wrap_snd : 'a * 'b -> 'a * 'b t = "%identity"
+
+      external unwrap_tuple2
+        :  ('a t * 'b t[@local_opt])
+        -> ('a * 'b[@local_opt])
+        = "%identity"
+
+      external unwrap_fst : ('a t * 'b[@local_opt]) -> ('a * 'b[@local_opt]) = "%identity"
+      external unwrap_snd : ('a * 'b t[@local_opt]) -> ('a * 'b[@local_opt]) = "%identity"
+
       (** {2 Simulating mode polymorphism}
 
           Until the mode extension to the OCaml compiler supports polymorphism over modes,
@@ -243,6 +261,10 @@ module Definitions = struct
   module Portable = struct
     module type Portable = sig
       type 'a t
+      [@@deriving
+        compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
+      val t_of_sexp : (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t
 
       (** Require a value has a type that mode-crosses portability. This is useful for
           assisting type inference as well as improving error messages. *)
@@ -370,6 +392,18 @@ module Definitions = struct
         -> (('a, 'b) Result.t[@local_opt])
         = "%identity"
 
+      (** Wrapping and unwrapping [Result.t list]. *)
+
+      external wrap_result_list
+        :  (('a, 'b) Result.t list[@local_opt])
+        -> (('a t, 'b t) Result.t list[@local_opt])
+        = "%identity"
+
+      external unwrap_result_list
+        :  (('a t, 'b t) Result.t list[@local_opt])
+        -> (('a, 'b) Result.t list[@local_opt])
+        = "%identity"
+
       (** Wrapping and unwrapping [Result.Ok]. *)
 
       external wrap_ok
@@ -403,6 +437,33 @@ module Definitions = struct
         :  (('a, 'b t) Result.t[@local_opt])
         -> (('a, 'b) Result.t[@local_opt])
         = "%identity"
+
+      (** Wrapping and unwrapping two-tuples. *)
+
+      external wrap_tuple2
+        :  ('a * 'b[@local_opt])
+        -> ('a t * 'b t[@local_opt])
+        = "%identity"
+
+      external wrap_fst : ('a * 'b[@local_opt]) -> ('a t * 'b[@local_opt]) = "%identity"
+      external wrap_snd : ('a * 'b[@local_opt]) -> ('a * 'b t[@local_opt]) = "%identity"
+
+      external unwrap_tuple2
+        :  ('a t * 'b t[@local_opt])
+        -> ('a * 'b[@local_opt])
+        = "%identity"
+
+      external%template unwrap_fst
+        :  ('a t * 'b[@local_opt])
+        -> ('a * 'b[@local_opt])
+        = "%identity"
+      [@@mode p = (portable, nonportable)]
+
+      external%template unwrap_snd
+        :  ('a * 'b t[@local_opt])
+        -> ('a * 'b[@local_opt])
+        = "%identity"
+      [@@mode p = (portable, nonportable)]
     end
   end
 
@@ -450,6 +511,9 @@ module Definitions = struct
     end
 
     module type At_locality = sig
+      (** Phantom type parameter for {!t} representing that the inhabitant may be local.
+          This type does not cross locality to enforce the relationship between
+          mode-crossing and phantom types in the [with] clauses on [type t] below. *)
       type actually_local
 
       (** Phantom type parameter for {!t} which represents that the inhabitant is known to
@@ -484,6 +548,15 @@ module Definitions = struct
 end
 
 module type Modes = sig
+  type%template 'a t = { modal : 'a }
+  [@@unboxed]
+  [@@modality
+    g = (local, global)
+    , p = (nonportable, portable)
+    , c = (uncontended, shared, contended)
+    , m = (once, many)
+    , a = (unique, aliased)]
+
   (** Wrap values in the [global_] mode, even in a [local_] context. *)
   module Global : sig
     include module type of struct
@@ -511,6 +584,10 @@ module type Modes = sig
     (** Require a value has a type that mode-crosses contention. This is useful for
         assisting type inference as well as improving error messages. *)
     external cross : 'a. 'a -> 'a = "%identity"
+  end
+
+  module Shared : sig
+    type 'a t = { shared : 'a } [@@unboxed]
   end
 
   module Portended : sig
@@ -664,11 +741,26 @@ module type Modes = sig
     external unwrap_contended : 'a. ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
   end
 
+  (** Allow a type to mode-cross from contended by prohibiting it from being moved to
+      another domain (i.e., by ensuring it's nonportable). *)
+  module Contended_via_portable : sig
+    type +'a t [@@deriving sexp_of]
+
+    external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
+    external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+
+    (** It's impossible to construct a portable [t]. [refute_portable] lets you make use
+        of that fact: having a portable [t] in hand means that you're in unreachable code
+        and don't have to produce a result. *)
+    val refute_portable : _ t -> _
+  end
+
   (** Can be [open]ed or [include]d to bring field names into scope. *)
   module Export : sig
     type 'a global = 'a Global.t = { global : 'a } [@@unboxed]
     type 'a portable = 'a Portable.t = { portable : 'a } [@@unboxed]
     type 'a contended = 'a Contended.t = { contended : 'a } [@@unboxed]
+    type 'a shared = 'a Shared.t = { shared : 'a } [@@unboxed]
     type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
     type 'a many = 'a Many.t = { many : 'a } [@@unboxed]
     type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]

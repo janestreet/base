@@ -17,7 +17,7 @@ type _crosses_locality =
 
 [%%expect {| |}]
 
-let crosses_locality (x : (_, Modes.At_locality.global) Modes.At_locality.t @@ local) =
+let crosses_locality (x : (_, Modes.At_locality.global) Modes.At_locality.t @ local) =
   use_global x
 ;;
 
@@ -37,7 +37,7 @@ Error: This type
        should be an instance of type ('a : value mod global)
        The kind of (Base.int, Base.Modes.At_locality.local)
                    Base.Modes.At_locality.t is immediate
-         with Base.Modes.At_locality.local @@ many portable unyielding aliased contended.
+         with Base.Modes.At_locality.local @@ unyielding many portable aliased contended.
        But the kind of (Base.int, Base.Modes.At_locality.local)
                        Base.Modes.At_locality.t must be a subkind of
          value mod global
@@ -49,7 +49,7 @@ Error: This type
 |}]
 
 let doesn't_cross_locality
-  (x : (int, Modes.At_locality.local) Modes.At_locality.t @@ local)
+  (x : (int, Modes.At_locality.local) Modes.At_locality.t @ local)
   =
   use_global x [@nontail]
 ;;
@@ -71,7 +71,7 @@ type _crosses_portability =
 [%%expect {| |}]
 
 let crosses_portability
-  (x : (_, Modes.At_portability.portable) Modes.At_portability.t @@ nonportable)
+  (x : (_, Modes.At_portability.portable) Modes.At_portability.t @ nonportable)
   =
   use_portable x
 ;;
@@ -95,7 +95,7 @@ Error: This type
        should be an instance of type ('a : value mod portable)
        The kind of (Base.int, Base.Modes.At_portability.nonportable)
                    Base.Modes.At_portability.t is immediate
-         with Base.Modes.At_portability.nonportable @@ global many unyielding aliased contended.
+         with Base.Modes.At_portability.nonportable @@ global many aliased contended.
        But the kind of (Base.int, Base.Modes.At_portability.nonportable)
                        Base.Modes.At_portability.t must be a subkind of
          value mod portable
@@ -107,7 +107,7 @@ Error: This type
 |}]
 
 let doesn't_cross_portability
-  (x : (int, Modes.At_portability.nonportable) Modes.At_portability.t @@ nonportable)
+  (x : (int, Modes.At_portability.nonportable) Modes.At_portability.t @ nonportable)
   =
   use_portable x
 ;;
@@ -133,7 +133,7 @@ Error: This type
        The kind of (Base.int -> Base.int,
                     Base.Modes.At_portability.nonportable)
                    Base.Modes.At_portability.t is
-         value mod aliased contended portable
+         value mod aliased portable immutable non_float
          with Base.Modes.At_portability.nonportable @@ aliased contended.
        But the kind of (Base.int -> Base.int,
                         Base.Modes.At_portability.nonportable)
@@ -149,7 +149,7 @@ Error: This type
 let doesn't_cross_portability
   (x :
     (int -> int, Modes.At_portability.nonportable) Modes.At_portability.t
-    @@ nonportable)
+    @ nonportable)
   =
   use_portable x
 ;;

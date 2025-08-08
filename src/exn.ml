@@ -7,7 +7,8 @@ let exit = Stdlib.exit
 
 exception Finally of t * t [@@deriving sexp]
 exception Reraised of string * t [@@deriving sexp]
-exception Sexp of Sexp.t Lazy.t
+exception Sexp of Sexp.t
+exception Sexp_lazy of Sexp.t Lazy.t
 
 (* We install a custom exn-converter rather than use:
 
@@ -15,17 +16,26 @@ exception Sexp of Sexp.t Lazy.t
      exception Sexp of Sexp.t [@@deriving sexp]
    ]}
 
-   to eliminate the extra wrapping of [(Sexp ...)]. *)
+   to eliminate the extra wrapping of [(Sexp ...)]. (Similarly for [Sexp_lazy].) *)
 let () =
   Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Sexp] (function
-    | Sexp t -> Lazy.force t
+    | Sexp t -> t
     | _ ->
       (* Reaching this branch indicates a bug in sexplib. *)
-      assert false)
+      assert false);
+  Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Sexp_lazy] (function
+    | Sexp_lazy t -> Lazy.force t
+    | _ -> assert false)
 ;;
 
-let create_s sexp = Sexp (Lazy.from_val sexp)
-let create_s_lazy lazy_sexp = Sexp lazy_sexp
+let create_s sexp = Sexp sexp
+
+let create_s_uncontended sexp =
+  let exn = Sexp sexp |> Portability_hacks.magic_portable__needs_mode_crossing_exns in
+  fun () -> Portability_hacks.magic_uncontended__needs_mode_crossing_exns exn
+;;
+
+let create_s_lazy lazy_sexp = Sexp_lazy lazy_sexp
 
 let raise_with_original_backtrace t backtrace =
   Stdlib.Printexc.raise_with_backtrace t backtrace

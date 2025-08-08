@@ -3,7 +3,7 @@
 open! Import
 
 (** An alias for the type of characters. *)
-type t = char [@@deriving enumerate, globalize, sexp ~localize, sexp_grammar]
+type t = char [@@deriving enumerate, globalize, sexp ~stackify, sexp_grammar]
 
 include%template Identifiable.S [@mode local] [@modality portable] with type t := t
 
@@ -81,7 +81,7 @@ val max_value : t
 (** [Caseless] compares and hashes characters ignoring case, so that for example
     [Caseless.equal 'A' 'a'] and [Caseless.('a' < 'B')] are [true]. *)
 module Caseless : sig
-  type nonrec t = t [@@deriving hash, sexp ~localize, sexp_grammar]
+  type nonrec t = t [@@deriving hash, sexp ~stackify, sexp_grammar]
 
   include%template Comparable.S [@modality portable] with type t := t
 

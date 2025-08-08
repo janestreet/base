@@ -15,17 +15,18 @@ module type T = sig
   val ( lsl ) : t -> int -> t
   val clz : t -> t
   val ctz : t -> t
-  val num_bits : int
+  val num_bits : t
   val of_int_exn : int -> t
+  val to_int_trunc : t -> int
 end
 
 module Make (Int : T) = struct
   let%expect_test "one-hot" =
     let clz_and_ctz int = { E.clz = Int.clz int; ctz = Int.ctz int } in
-    for i = 0 to Int.num_bits - 1 do
+    let num_bits = Int.num_bits |> Int.to_int_trunc in
+    for i = 0 to num_bits - 1 do
       [%test_result: Int.t E.t]
-        ~expect:
-          { E.clz = Int.num_bits - 1 - i |> Int.of_int_exn; ctz = i |> Int.of_int_exn }
+        ~expect:{ E.clz = num_bits - 1 - i |> Int.of_int_exn; ctz = i |> Int.of_int_exn }
         (clz_and_ctz Int.(one lsl i))
     done
   ;;
@@ -37,6 +38,8 @@ include Make (Int63.Private.Emul)
 
 include Make (struct
     include Int
+
+    let to_int_trunc t = t
 
     let%expect_test "zero" =
       (* [clz 0] is guaranteed to be num_bits for int. We compute clz on the tagged

@@ -3,7 +3,7 @@ open! Stdlib.Int64
 module Sexp = Sexp0
 
 module T = struct
-  type t = int64 [@@deriving globalize, hash, sexp ~localize, sexp_grammar]
+  type t = int64 [@@deriving globalize, hash, sexp ~stackify, sexp_grammar]
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = Int64_replace_polymorphic_compare.compare
@@ -30,6 +30,7 @@ include%template Comparator.Make [@modality portable] (T)
 let num_bits = 64
 let float_lower_bound = Float0.lower_bound_for_int num_bits
 let float_upper_bound = Float0.upper_bound_for_int num_bits
+let num_bits = of_int num_bits
 
 external float_of_bits
   :  t
@@ -221,7 +222,7 @@ let pred n = n - 1L
 let succ n = n + 1L
 
 module Pow2 = struct
-  open Int64_replace_polymorphic_compare
+  open O
 
   let raise_s = Error.raise_s
 
@@ -270,7 +271,7 @@ module Pow2 = struct
         (Sexp.message
            "[Int64.floor_log2] got invalid input"
            [ "", sexp_of_int64 (globalize i) ]);
-    Int.O.(num_bits - 1 - (clz i |> to_int_trunc))
+    num_bits - 1L - clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
@@ -282,10 +283,10 @@ module Pow2 = struct
            "[Int64.ceil_log2] got invalid input"
            [ "", sexp_of_int64 (globalize i) ]);
     if i = 1L
-    then 0
+    then 0L
     else (
       let i = i - 1L in
-      Int.O.(num_bits - (clz i |> to_int_trunc)))
+      num_bits - clz i)
   ;;
 end
 
@@ -311,8 +312,9 @@ include Int_string_conversions.Make_binary (struct
     let clz = clz
     let num_bits = num_bits
     let one = one
-    let to_int_exn = to_int_exn
+    let to_int_trunc = to_int_trunc
     let zero = zero
+    let ( - ) = O.( - )
   end)
 
 include%template Pretty_printer.Register [@modality portable] (struct

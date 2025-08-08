@@ -4,49 +4,61 @@
 open! Import
 open! Sexplib0.Sexpable
 
+[%%template:
+[@@@alloc.default a @ m = (stack_local, heap_global)]
+
 module%template.portable Of_sexpable
-    (Sexpable : S)
+    (Sexpable : S
+  [@alloc a])
     (M : sig
        type t
 
-       val to_sexpable : t -> Sexpable.t
+       val to_sexpable : t -> Sexpable.t [@@alloc __ @ m = (a @ m, heap_global)]
        val of_sexpable : Sexpable.t -> t
-     end) : S with type t := M.t
+     end) : S [@alloc a] with type t := M.t
 
 module%template.portable Of_sexpable1
-    (Sexpable : S1)
+    (Sexpable : S1
+  [@alloc a])
     (M : sig
        type 'a t
 
-       val to_sexpable : 'a t -> 'a Sexpable.t
+       val to_sexpable : 'a t -> 'a Sexpable.t [@@alloc __ @ m = (a @ m, heap_global)]
        val of_sexpable : 'a Sexpable.t -> 'a t
-     end) : S1 with type 'a t := 'a M.t
+     end) : S1 [@alloc a] with type 'a t := 'a M.t
 
 module%template.portable Of_sexpable2
-    (Sexpable : S2)
+    (Sexpable : S2
+  [@alloc a])
     (M : sig
        type ('a, 'b) t
 
        val to_sexpable : ('a, 'b) t -> ('a, 'b) Sexpable.t
+       [@@alloc __ @ m = (a @ m, heap_global)]
+
        val of_sexpable : ('a, 'b) Sexpable.t -> ('a, 'b) t
-     end) : S2 with type ('a, 'b) t := ('a, 'b) M.t
+     end) : S2 [@alloc a] with type ('a, 'b) t := ('a, 'b) M.t
 
 module%template.portable Of_sexpable3
-    (Sexpable : S3)
+    (Sexpable : S3
+  [@alloc a])
     (M : sig
        type ('a, 'b, 'c) t
 
        val to_sexpable : ('a, 'b, 'c) t -> ('a, 'b, 'c) Sexpable.t
+       [@@alloc __ @ m = (a @ m, heap_global)]
+
        val of_sexpable : ('a, 'b, 'c) Sexpable.t -> ('a, 'b, 'c) t
-     end) : S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t
+     end) : S3 [@alloc a] with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t
 
 module%template.portable Of_stringable
-    (M : Stringable.S) : sig
+    (M : Stringable.S
+  [@alloc a]) : sig
     type t [@@deriving sexp_grammar]
 
-    include S with type t := t
+    include S [@alloc a] with type t := t
   end
-  with type t := M.t
+  with type t := M.t]
 
 (** New code should use the [[@@deriving sexp]] syntax directly. These module types ([S],
     [S1], [S2], and [S3]) are exported for backwards compatibility only. *)

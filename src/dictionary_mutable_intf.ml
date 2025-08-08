@@ -87,27 +87,29 @@ module Definitions = struct
     (** Like [find]. Calls [if_found data] if a value exists, or [if_not_found key]
         otherwise. Avoids allocation [Some]. *)
     val find_and_call
-      : ( ('key, 'data, 'phantom) t
-          -> 'key key
-          -> if_found:('data -> 'c)
-          -> if_not_found:('key key -> 'c)
-          -> 'c
-          , 'key
-          , 'data
-          , 'phantom )
-          accessor
+      : 'key 'data 'phantom 'c.
+      ( ('key, 'data, 'phantom) t
+        -> 'key key
+        -> if_found:('data -> 'c)
+        -> if_not_found:('key key -> 'c)
+        -> 'c
+        , 'key
+        , 'data
+        , 'phantom )
+        accessor
 
     (** Like [findi]. Calls [if_found ~key ~data] if a value exists. *)
     val findi_and_call
-      : ( ('key, 'data, 'phantom) t
-          -> 'key key
-          -> if_found:(key:'key key -> data:'data -> 'c)
-          -> if_not_found:('key key -> 'c)
-          -> 'c
-          , 'key
-          , 'data
-          , 'phantom )
-          accessor
+      : 'key 'data 'phantom 'c.
+      ( ('key, 'data, 'phantom) t
+        -> 'key key
+        -> if_found:(key:'key key -> data:'data -> 'c)
+        -> if_not_found:('key key -> 'c)
+        -> 'c
+        , 'key
+        , 'data
+        , 'phantom )
+        accessor
 
     (** Like [find]. Removes the value for [key], if any, from the dictionary before
         returning it. *)

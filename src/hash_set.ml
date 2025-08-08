@@ -72,8 +72,9 @@ module Accessors = struct
   let sum m t ~f = Container.sum ~fold m t ~f
   let min_elt t ~compare = Container.min_elt ~fold t ~compare
   let max_elt t ~compare = Container.max_elt ~fold t ~compare
-  let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
   let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
+  let fold_result t ~init ~f = Container.fold_result ~fold_until ~init ~f t
+  let iter_until t ~f ~finish = Container.iter_until ~fold_until ~f t ~finish
   let to_list = Hashtbl.keys
 
   let sexp_of_t sexp_of_e t =

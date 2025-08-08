@@ -61,19 +61,27 @@ include String
 
 let max_length = Sys.max_string_length
 
-let ( ^ ) s1 s2 =
-  let l1 = length s1
-  and l2 = length s2 in
-  let s = Bytes0.create (l1 + l2) in
-  Bytes0.unsafe_blit_string ~src:s1 ~src_pos:0 ~dst:s ~dst_pos:0 ~len:l1;
-  Bytes0.unsafe_blit_string ~src:s2 ~src_pos:0 ~dst:s ~dst_pos:l1 ~len:l2;
-  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:s
+let%template[@alloc a = (heap, stack)] append s1 s2 =
+  (let l1 = length s1
+   and l2 = length s2 in
+   let s = (Bytes0.create [@alloc a]) (l1 + l2) in
+   Bytes0.unsafe_blit_string ~src:s1 ~src_pos:0 ~dst:s ~dst_pos:0 ~len:l1;
+   Bytes0.unsafe_blit_string ~src:s2 ~src_pos:0 ~dst:s ~dst_pos:l1 ~len:l2;
+   Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:s)
+  [@exclave_if_stack a]
 ;;
 
+let ( ^ ) s1 s2 = append s1 s2
 let capitalize = Stdlib.String.capitalize_ascii
 let compare = Stdlib.String.compare
 let escaped = Stdlib.String.escaped
-let make = Stdlib.String.make
+
+let%template[@alloc a = (heap, stack)] make n c =
+  Bytes0.unsafe_to_string
+    ~no_mutation_while_string_reachable:((Bytes0.make [@alloc a]) n c)
+  [@exclave_if_stack a]
+;;
+
 let sub = Stdlib.String.sub
 let uncapitalize = Stdlib.String.uncapitalize_ascii
 
@@ -450,10 +458,9 @@ include struct
   ;;
 
   let rec unsafe_blits dst pos sep seplen = function
-    | [] -> dst
+    | [] -> ()
     | hd :: [] ->
-      Bytes0.unsafe_blit_string ~src:hd ~src_pos:0 ~dst ~dst_pos:pos ~len:(length hd);
-      dst
+      Bytes0.unsafe_blit_string ~src:hd ~src_pos:0 ~dst ~dst_pos:pos ~len:(length hd)
     | hd :: tl ->
       Bytes0.unsafe_blit_string ~src:hd ~src_pos:0 ~dst ~dst_pos:pos ~len:(length hd);
       Bytes0.unsafe_blit_string
@@ -465,16 +472,25 @@ include struct
       unsafe_blits dst (pos + length hd + seplen) sep seplen tl
   ;;
 
-  let concat : ?sep:string -> string list -> string =
-    fun ?(sep = "") l ->
-    match l with
+  open%template (
+  struct
+    let[@alloc m = heap] smart_globalize globalize a = globalize a
+    let[@alloc m = stack] smart_globalize _globalize a = a
+  end :
+  sig
+    val smart_globalize : ('a -> 'a) -> 'a -> 'a
+    [@@alloc __ @ m = (heap_global, stack_local)]
+  end)
+
+  let%template[@alloc a = (heap, stack)] concat ?(sep = "") l =
+    match[@exclave_if_stack a] l with
     | [] -> ""
-    | [ x ] -> Globalize.globalize_string x
+    | [ x ] -> (smart_globalize [@alloc a]) Globalize.globalize_string x
     | l ->
       let seplen = length sep in
-      Bytes0.unsafe_to_string
-        ~no_mutation_while_string_reachable:
-          (unsafe_blits (Bytes0.create (sum_lengths 0 seplen l)) 0 sep seplen l)
+      let s = (Bytes0.create [@alloc a]) (sum_lengths 0 seplen l) in
+      unsafe_blits s 0 sep seplen l;
+      Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:s
   ;;
 end
 

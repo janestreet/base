@@ -4,7 +4,7 @@
 open! Import
 
 type 'a t = 'a Stdlib.ref = { mutable contents : 'a }
-[@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
+[@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
 
 (*_ defined as externals to avoid breaking the inliner *)
 
@@ -23,7 +23,7 @@ val replace : 'a t -> ('a -> 'a) -> unit
 val set_temporarily : 'a t -> 'a -> f:(unit -> 'b) -> 'b
 
 module And_value : sig
-  type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~localize]
+  type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~stackify]
 
   (** [set (T (r, x))] is equivalent to [r := x]. *)
   val set : t -> unit

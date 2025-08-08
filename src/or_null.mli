@@ -24,7 +24,7 @@ type 'a t = 'a or_null =
 
 [%%rederive:
   type nonrec 'a t = 'a t
-  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize]]
+  [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp ~stackify]]
 
 (** {3 Accessors} *)
 
@@ -142,5 +142,21 @@ module Let_syntax : sig
     val both : 'a t -> 'b t -> ('a * 'b) t
 
     module Open_on_rhs : sig end
+  end
+end
+
+(** Let syntax for use with locally-allocated values. *)
+module Local : sig
+  module Let_syntax : sig
+    val return : 'a -> 'a t
+
+    module Let_syntax : sig
+      val return : 'a -> 'a t
+      val map : 'a t -> f:('a -> 'b) -> 'b t
+      val bind : 'a t -> f:('a -> 'b t) -> 'b t
+      val both : 'a t -> 'b t -> ('a * 'b) t
+
+      module Open_on_rhs : sig end
+    end
   end
 end

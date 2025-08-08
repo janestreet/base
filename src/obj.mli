@@ -23,7 +23,7 @@ type stack_or_heap =
   | Immediate
   | Stack
   | Heap
-[@@deriving sexp ~localize, compare]
+[@@deriving sexp ~stackify, compare]
 
 (** Checks if a value is immediate, stack-allocated, or heap-allocated. *)
 val stack_or_heap : t -> stack_or_heap
@@ -33,7 +33,7 @@ type uniform_or_mixed =
   | Immediate
   | Uniform
   | Mixed of { scannable_prefix_len : int }
-[@@deriving sexp ~localize, compare ~localize, globalize]
+[@@deriving sexp ~stackify, compare ~localize, globalize]
 
 (** Checks if a value is immediate, a uniform block, or a mixed block. *)
 val uniform_or_mixed : t -> uniform_or_mixed

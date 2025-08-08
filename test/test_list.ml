@@ -1550,7 +1550,7 @@ let%expect_test "[take], [drop], and [split]" =
 ;;
 
 let print_s sexp =
-  Ref.set_temporarily sexp_style Sexp_style.simple_pretty ~f:(fun () -> print_s sexp)
+  Dynamic.with_temporarily sexp_style Sexp_style.simple_pretty ~f:(fun () -> print_s sexp)
 ;;
 
 let%expect_test "[cartesian_product]" =
@@ -1953,4 +1953,13 @@ let%expect_test "[sub]" =
   [%expect {| (raised (Invalid_argument List.sub)) |}];
   test 1 (-1) list;
   [%expect {| (raised (Invalid_argument List.sub)) |}]
+;;
+
+let%expect_test "[of_iter]" =
+  let module M = struct
+    type t = int list [@@deriving equal, quickcheck ~generator ~shrinker, sexp_of]
+  end
+  in
+  quickcheck_m (module M) ~f:(fun list ->
+    require_equal (module M) list (List.of_iter ~iter:(List.iter list)))
 ;;

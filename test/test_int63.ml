@@ -77,8 +77,12 @@ module%test Overflow_exn = struct
 end
 
 let%expect_test "[floor_log2]" =
-  let floor_log2 t = print_s [%sexp (floor_log2 t : int)] in
+  let floor_log2 t = print_s [%sexp (floor_log2 t : Int63.t)] in
   show_raise (fun () -> floor_log2 zero);
+  (* normalize wasm/native error message *)
+  [%expect.output]
+  |> String.substr_replace_all ~pattern:"Int64" ~with_:"Int"
+  |> print_endline;
   [%expect {| (raised ("[Int.floor_log2] got invalid input" 0)) |}];
   floor_log2 one;
   [%expect {| 0 |}];

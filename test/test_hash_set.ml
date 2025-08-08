@@ -1,7 +1,7 @@
 open! Import
 
 module%test _ = struct
-  let () = sexp_style := Sexp_style.simple_pretty
+  let () = Dynamic.set_root sexp_style Sexp_style.simple_pretty
 end
 
 module Int_hash_set = struct
@@ -97,6 +97,7 @@ end = struct
       Container: testing [is_empty]
       Container: testing [mem]
       Container: testing [iter]
+      Container: testing [iter_until]
       Container: testing [fold]
       Container: testing [fold_result]
       Container: testing [fold_until]

@@ -12,7 +12,7 @@ module Definitions = struct
 
     open! Import
 
-    type t = float [@@deriving globalize, sexp ~localize, sexp_grammar]
+    type t = float [@@deriving globalize, sexp ~stackify, sexp_grammar]
 
     include Floatable.S with type t := t
 
@@ -672,7 +672,7 @@ module Definitions = struct
         | Subnormal
         | Zero
       [@@deriving
-        compare ~localize, enumerate, equal ~localize, sexp ~localize, sexp_grammar]
+        compare ~localize, enumerate, equal ~localize, sexp ~stackify, sexp_grammar]
 
       include Stringable.S with type t := t
     end
@@ -714,7 +714,7 @@ module Definitions = struct
 
     (** S-expressions contain at most 8 significant digits. *)
     module Terse : sig
-      type nonrec t = t [@@deriving sexp ~localize, sexp_grammar]
+      type nonrec t = t [@@deriving sexp ~stackify, sexp_grammar]
 
       include Stringable.S_local_input with type t := t
     end

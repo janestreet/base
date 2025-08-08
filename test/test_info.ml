@@ -21,6 +21,13 @@ let%expect_test _ =
   [%expect {| (tag info) |}]
 ;;
 
+let%expect_test _ =
+  print_endline
+    (to_string_hum
+       ((tag_s [@mode portable]) ~tag:[%message "tag"] (create_s [%message "info"])));
+  [%expect {| (tag info) |}]
+;;
+
 let of_strings strings = of_list (List.map ~f:of_string strings)
 
 let nested =
@@ -66,6 +73,7 @@ let%expect_test _ = round (of_string "hello")
 let%expect_test _ = round (of_thunk (fun () -> "hello"))
 let%expect_test _ = round (create "tag" 13 [%sexp_of: int])
 let%expect_test _ = round (tag (of_string "hello") ~tag:"tag")
+let%expect_test _ = round ((tag [@mode portable]) (of_string "hello") ~tag:"tag")
 let%expect_test _ = round (tag_arg (of_string "hello") "tag" 13 [%sexp_of: int])
 let%expect_test _ = round (tag_arg (of_string "hello") "" 13 [%sexp_of: int])
 let%expect_test _ = round (of_list [ of_string "hello"; of_string "goodbye" ])
@@ -88,18 +96,28 @@ let%expect_test "stack overflow" =
     | W64 -> 1_000_000
     | W32 -> 100_000
   in
-  let test f =
-    let info = ref (Info.of_string "info") in
+  let%template[@mode __ = (portable, nonportable)] test f ~wrap ~unwrap =
+    let info = ref (wrap (Info.of_string "info")) in
     for _ = 1 to depth do
-      info := f !info
+      info := f (unwrap !info) |> wrap
     done;
-    print_s (Info.sexp_of_t !info)
+    print_s (Info.sexp_of_t (unwrap !info))
   in
-  test (fun info -> Info.of_list [ info ]);
+  test (fun info -> Info.of_list [ info ]) ~wrap:Fn.id ~unwrap:Fn.id;
   [%expect {| info |}];
-  test (fun info -> Info.of_lazy_t (lazy info));
+  test (fun info -> Info.of_lazy_t (lazy info)) ~wrap:Fn.id ~unwrap:Fn.id;
   [%expect {| info |}];
-  test (fun info -> Info.of_lazy_t (lazy (Info.of_list [ info ])));
+  test
+    (fun info -> Info.of_lazy_t (lazy (Info.of_list [ info ])))
+    ~wrap:Fn.id
+    ~unwrap:Fn.id;
+  [%expect {| info |}];
+  (test [@mode portable])
+    ~wrap:Modes.Portable.wrap
+    ~unwrap:Modes.Portable.unwrap
+    (fun info ->
+       Info.of_portable_lazy_t
+         (Portable_lazy.from_fun (fun () -> (Info.of_list [@mode portable]) [ info ])));
   [%expect {| info |}]
 ;;
 
@@ -107,6 +125,14 @@ let%expect_test "cyclic info computation" =
   let info =
     let rec lazy_info = lazy (Info.of_lazy_t lazy_info) in
     Info.of_lazy_t lazy_info
+  in
+  print_s (Info.sexp_of_t info);
+  [%expect {| (Could_not_construct "cycle while computing message") |}];
+  let info =
+    let lazy_info =
+      Portable_lazy.from_fun_fixed (fun lazy_info -> Info.of_portable_lazy_t lazy_info)
+    in
+    Info.of_portable_lazy_t lazy_info
   in
   print_s (Info.sexp_of_t info);
   [%expect {| (Could_not_construct "cycle while computing message") |}]
@@ -150,4 +176,46 @@ let%expect_test "show how backtraces are printed" =
       "called from Floops_interfaces_test__Registrant_test.Test_brick.create_exn.(fun) in file \"registrant_test.ml\", line 25, characters 6-67"
       "called from Base__Or_error.try_with in file \"or_error.ml\", line 84, characters 9-15"))
     |}]
+;;
+
+let%expect_test "portabilize" =
+  let portable_lazy_status = Atomic.make "<unforced>" in
+  let examples =
+    [ create_s [%message "sexp"]
+    ; of_string "string"
+    ; of_lazy
+        (lazy
+          (print_endline "forcing lazy";
+           "lazy"))
+    ; of_thunk (fun () ->
+        print_endline "forcing thunk";
+        "thunk")
+    ; of_portable_lazy
+        (Portable_lazy.from_fun (fun () ->
+           Atomic.set portable_lazy_status "portable lazy was forced";
+           "portable lazy"))
+    ]
+  in
+  let examples = List.map examples ~f:portabilize in
+  [%expect
+    {|
+    forcing lazy
+    forcing thunk
+    |}];
+  (* The info constructed with [of_portable_lazy] wasn't forced
+     by [portabilize] because it's already portable. *)
+  print_endline (Atomic.get portable_lazy_status);
+  [%expect {| <unforced> |}];
+  List.iter examples ~f:(fun info -> print_s [%sexp (info : t)]);
+  [%expect
+    {|
+    sexp
+    string
+    lazy
+    thunk
+    "portable lazy"
+    |}];
+  (* But sexpifying the portable lazy has forced it. *)
+  print_endline (Atomic.get portable_lazy_status);
+  [%expect {| portable lazy was forced |}]
 ;;

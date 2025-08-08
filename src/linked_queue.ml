@@ -4,10 +4,10 @@ include Linked_queue0
 let enqueue t x = Linked_queue0.push x t
 let dequeue_or_null t = if is_empty t then Null else This (Linked_queue0.pop t)
 let[@inline] dequeue t = dequeue_or_null t |> Or_null.to_option
-let dequeue_exn = Linked_queue0.pop
+let dequeue_exn = [%eta1 Linked_queue0.pop]
 let dequeue_and_ignore_exn (type elt) (t : elt t) = ignore (dequeue_exn t : elt)
 let peek t = if is_empty t then None else Some (Linked_queue0.peek t)
-let peek_exn = Linked_queue0.peek
+let peek_exn = [%eta1 Linked_queue0.peek]
 
 let drain t ~f ~while_ =
   while (not (is_empty t)) && while_ (peek_exn t) do
@@ -18,10 +18,13 @@ let drain t ~f ~while_ =
 module%template C = Indexed_container.Make [@modality portable] (struct
     type nonrec 'a t = 'a t
 
-    let fold = fold
+    let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
+    let fold = `Custom fold
+    let iter_until = `Define_using_fold_until
     let iter = `Custom iter
     let length = `Custom length
     let foldi = `Define_using_fold
+    let foldi_until = `Define_using_fold_until
     let iteri = `Define_using_fold
   end)
 
@@ -31,7 +34,10 @@ let find = C.find
 let find_map = C.find_map
 let fold_result = C.fold_result
 let fold_until = C.fold_until
+let foldi_until = C.foldi_until
 let for_all = C.for_all
+let iter_until = C.iter_until
+let iteri_until = C.iteri_until
 let max_elt = C.max_elt
 let mem = C.mem
 let min_elt = C.min_elt

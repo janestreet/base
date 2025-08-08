@@ -16,7 +16,7 @@ module%template Constructors = struct
   type 'a t =
     | []
     | ( :: ) of 'a * ('a t[@kind k])
-  [@@kind k = (float64, bits32, bits64, word)]
+  [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
   [@@deriving compare ~localize, equal ~localize]
 
   type 'a t = 'a list =
@@ -24,13 +24,13 @@ module%template Constructors = struct
     | ( :: ) of 'a * 'a t
 end
 
-include Constructors
+open Constructors
 
 (* Some of these are eta expanded in order to permute parameter order to follow Base
    conventions. *)
 
 [%%template
-[@@@kind.default k = (float64, bits32, bits64, word, value)]
+[@@@kind.default k = (float64, bits32, bits64, word, immediate, immediate64, value)]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -65,25 +65,24 @@ let rec iter t ~(f : _ -> _) =
 let rec rev_append l1 l2 =
   match l1 with
   | [] -> l2
-  | a :: l -> (rev_append [@kind k]) l (a :: l2)
+  | a :: l -> (rev_append [@alloc a] [@kind k]) l (a :: l2) [@exclave_if_stack a]
+[@@alloc a @ m = (stack_local, heap_global)]
 ;;
 
-let rev = function
+let rev l =
+  match l with
   | ([] | [ _ ]) as res -> res
-  | x :: y :: rest -> (rev_append [@kind k]) rest [ y; x ]
+  | x :: y :: rest ->
+    (rev_append [@alloc a] [@kind k]) rest [ y; x ] [@exclave_if_stack a]
+[@@alloc a @ m = (stack_local, heap_global)]
 ;;
 
 let for_all t ~f = not ((exists [@kind k]) t ~f:(fun x -> not (f x)))
 
 [@@@kind ka = k]
 
-let fold t ~init ~(f : _ -> _ -> _) =
-  let rec loop acc = function
-    | [] -> acc
-    | a :: l -> loop (f acc a) l
-  in
-  loop init t [@nontail]
-[@@kind
+[%%template
+[@@@kind.default
   ka = ka
   , kb
     = ( float64
@@ -91,14 +90,35 @@ let fold t ~init ~(f : _ -> _ -> _) =
       , bits64
       , word
       , value
+      , immediate
+      , immediate64
       , value & float64
       , value & bits32
       , value & bits64
       , value & word
+      , value & immediate
+      , value & immediate64
       , value & value )]
+
+let fold_alloc t ~init ~(f : _ -> _ -> _) =
+  (let rec loop acc = function
+     | [] -> acc
+     | a :: l -> loop (f acc a) l [@exclave_if_stack ab]
+   in
+   loop init t [@nontail])
+  [@exclave_if_stack ab]
+[@@mode ma = (local, global)] [@@alloc ab @ mb = (stack_local, heap_global)]
 ;;
 
-[@@@kind.default kb = (float64, bits32, bits64, word, value)]
+let fold = (fold_alloc [@mode ma] [@alloc stack] [@kind ka kb])
+[@@mode ma = (local, global), mb = local]
+;;
+
+let fold = (fold_alloc [@mode ma] [@alloc heap] [@kind ka kb])
+[@@mode ma = (local, global), mb = global]
+;;]
+
+[@@@kind.default kb = (float64, bits32, bits64, word, immediate, immediate64, value)]
 
 let rev_map =
   let rec rmap_f f accu : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
@@ -159,10 +179,33 @@ let rev_map2_ok =
 let nontail_mapi t ~f = Stdlib.List.mapi t ~f
 let partition t ~f = Stdlib.List.partition t ~f
 
-let fold_right l ~(f : _ -> _ -> _) ~init =
+module For_fold_right = struct
+  module Wrapper = Modes.Global
+
+  module%template [@mode local] Wrapper = struct
+    let wrap_list = Fn.id
+    let unwrap = Fn.id
+  end
+end
+
+let%template fold_right l ~(f : _ -> _ -> _) ~init =
+  let open For_fold_right.Wrapper [@mode ma] in
   match l with
   | [] -> init (* avoid the allocation of [~f] below *)
-  | _ -> fold ~f:(fun a b -> f b a) ~init (rev l) [@nontail]
+  | _ ->
+    (fold [@mode local mb])
+      ~f:(fun a b -> f (unwrap b) a [@nontail] [@exclave_if_stack ab])
+      ~init
+      ((rev [@alloc stack]) (wrap_list l)) [@nontail] [@exclave_if_stack ab]
+[@@mode ma = (local, global)] [@@alloc ab @ mb = (stack_local, heap_global)]
+;;
+
+let%template fold_right = (fold_right [@mode ma] [@alloc stack])
+[@@mode ma = (local, global), __ = local]
+;;
+
+let%template fold_right = (fold_right [@mode ma] [@alloc heap])
+[@@mode ma = (local, global), __ = global]
 ;;
 
 let fold_right2_ok l1 l2 ~(f : _ -> _ -> _ -> _) ~init =

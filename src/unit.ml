@@ -1,7 +1,7 @@
 open! Import
 
 module T = struct
-  type t = unit [@@deriving enumerate, globalize, hash, sexp ~localize, sexp_grammar]
+  type t = unit [@@deriving enumerate, globalize, hash, sexp ~stackify, sexp_grammar]
 
   let compare _ _ = 0
   let compare__local _ _ = 0

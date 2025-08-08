@@ -3,12 +3,12 @@ open! Import0
 type 'a t = 'a Stdlib.Queue.t
 
 let create = Stdlib.Queue.create
-let clear = Stdlib.Queue.clear
+let clear = [%eta1 Stdlib.Queue.clear]
 let copy = Stdlib.Queue.copy
 let is_empty = Stdlib.Queue.is_empty
 let length = Stdlib.Queue.length
-let peek = Stdlib.Queue.peek
-let pop = Stdlib.Queue.pop
+let peek = [%eta1 Stdlib.Queue.peek]
+let pop = [%eta1 Stdlib.Queue.pop]
 let push = Stdlib.Queue.push
 let transfer = Stdlib.Queue.transfer
 

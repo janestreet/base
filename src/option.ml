@@ -10,7 +10,22 @@ type 'a t = 'a option =
   type 'a t = 'a option [@@deriving compare ~localize, globalize, hash, sexp_grammar]]
 
 [%%template
-[@@@kind.default k = (value, float64, bits32, bits64, word)]
+[@@@kind.default
+  k
+  = ( value
+    , float64
+    , bits32
+    , bits64
+    , word
+    , immediate
+    , immediate64
+    , value & float64
+    , value & bits32
+    , value & bits64
+    , value & word
+    , value & immediate
+    , value & immediate64
+    , value & value )]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -45,11 +60,9 @@ include struct
       | List [ Atom ("some" | "Some"); el ] -> Some (a__of_sexp el)
       | Atom _ -> of_sexp_error "option_of_sexp: only none can be atom" sexp
       | List _ -> of_sexp_error "option_of_sexp: list must be (some el)" sexp)
-  [@@kind k]
   ;;
 
-  [@@@alloc a @ m = (heap_global, stack_local)]
-  [@@@mode.default m]
+  [@@@alloc.default a = (heap, stack)]
 
   (* Copied and templated from [Sexplib0] *)
 
@@ -60,7 +73,6 @@ include struct
     | Some x -> List [ Atom "some"; sexp_of__a x ]
     | None when write_old_option_format -> List []
     | None -> Atom "none"
-  [@@kind k] [@@mode m]
   ;;
 end
 
@@ -106,13 +118,25 @@ let value_map t ~default ~f =
   match t with
   | Some x -> f x [@exclave_if_local m]
   | None -> default
-[@@kind ki = k, ko = (value, float64, bits32, bits64, word)]
+[@@kind
+  ki = k
+  , ko
+    = ( value
+      , float64
+      , bits32
+      , bits64
+      , word
+      , immediate
+      , immediate64
+      , value & float64
+      , value & bits32
+      , value & bits64
+      , value & word
+      , value & immediate
+      , value & immediate64
+      , value & value )]
 ;;]
 
-let t__float64_of_sexp = t_of_sexp__float64
-let t__bits32_of_sexp = t_of_sexp__bits32
-let t__bits64_of_sexp = t_of_sexp__bits64
-let t__word_of_sexp = t_of_sexp__word
 let invariant f t = iter t ~f
 
 let call x ~f =
@@ -184,7 +208,22 @@ let equal f (t : (_ t[@kind k])) (t' : (_ t[@kind k])) =
   | None, None -> true
   | Some x, Some x' -> f x x'
   | _ -> false
-[@@kind k = (value, float64, bits32, bits64, word)]
+[@@kind
+  k
+  = ( value
+    , float64
+    , bits32
+    , bits64
+    , word
+    , immediate
+    , immediate64
+    , value & float64
+    , value & bits32
+    , value & bits64
+    , value & word
+    , value & immediate
+    , value & immediate64
+    , value & value )]
 ;;
 
 let some x = Some x [@exclave_if_local m]
@@ -237,7 +276,36 @@ let try_with_join f =
 
 [%%template
 [@@@kind.default
-  ki = (value, float64, bits32, bits64, word), ko = (value, float64, bits32, bits64, word)]
+  ki
+  = ( value
+    , float64
+    , bits32
+    , bits64
+    , word
+    , immediate
+    , immediate64
+    , value & float64
+    , value & bits32
+    , value & bits64
+    , value & word
+    , value & immediate
+    , value & immediate64
+    , value & value )
+  , ko
+    = ( value
+      , float64
+      , bits32
+      , bits64
+      , word
+      , immediate
+      , immediate64
+      , value & float64
+      , value & bits32
+      , value & bits64
+      , value & word
+      , value & immediate
+      , value & immediate64
+      , value & value )]
 
 let[@mode local] map (t : (_ t[@kind ki])) ~f : (_ t[@kind ko]) =
   match t with
@@ -249,19 +317,33 @@ let[@mode global] map (t : (_ t[@kind ki])) ~f : (_ t[@kind ko]) =
   match t with
   | None -> None
   | Some a -> Some (f a)
+;;
+
+[@@@mode.default m = (global, local)]
+
+let bind (t : (_ t[@kind ki])) ~f : (_ t[@kind ko]) =
+  match t with
+  | None -> None
+  | Some a -> f a [@exclave_if_local m]
 ;;]
+
+[%%template
+[@@@mode.default m = (global, local)]
+
+let return = (some [@mode m])]
+
+let%template[@mode local] both x y =
+  match x, y with
+  | None, _ | _, None -> None
+  | Some x, Some y -> Some (x, y)
+;;
 
 module Monad_arg = struct
   type 'a t = 'a option
 
-  let return x = Some x
+  let return = return
   let map = `Custom map
-
-  let bind o ~f =
-    match o with
-    | None -> None
-    | Some x -> f x
-  ;;
+  let bind = bind
 end
 
 include%template Monad.Make [@mode local] [@modality portable] (Monad_arg)
@@ -281,3 +363,20 @@ end
 
 include%template
   Applicative.Make_using_map2 [@mode local] [@modality portable] (Applicative_arg)
+
+module%template Local = struct
+  module Let_syntax = struct
+    let return = (return [@mode local])
+    let ( >>| ) x f = (map [@mode local]) x ~f
+    let ( >>= ) x f = (bind [@mode local]) x ~f
+
+    module Let_syntax = struct
+      let return = (return [@mode local])
+      let map = (map [@mode local])
+      let bind = (bind [@mode local])
+      let both = (both [@mode local])
+
+      module Open_on_rhs = struct end
+    end
+  end
+end

@@ -5,7 +5,7 @@ open! Import
 type t =
   | W32
   | W64
-[@@deriving sexp_of ~localize]
+[@@deriving sexp_of ~stackify]
 
 val num_bits : t -> int
 

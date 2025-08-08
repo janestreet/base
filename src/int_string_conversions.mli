@@ -39,10 +39,11 @@ module Make_binary (I : sig
     val clz : t -> t
     val ( lsr ) : t -> int -> t
     val ( land ) : t -> t -> t
-    val to_int_exn : t -> int
-    val num_bits : int
+    val to_int_trunc : t -> int
+    val num_bits : t
     val one : t
     val zero : t
+    val ( - ) : t -> t -> t
   end) : sig
   include Binaryable with type t := I.t
 end

@@ -6,7 +6,7 @@ module T = struct
     | Zero
     | Pos
     | Nan
-  [@@deriving sexp ~localize, sexp_grammar, compare ~localize, hash, enumerate]
+  [@@deriving sexp ~stackify, sexp_grammar, compare ~localize, hash, enumerate]
 
   let of_string s = t_of_sexp (sexp_of_string s)
   let to_string t = string_of_sexp (sexp_of_t t)

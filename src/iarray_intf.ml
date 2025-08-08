@@ -16,7 +16,7 @@ module Definitions = struct
   module type Public = sig
     type +'a t
     [@@deriving
-      compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+      compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
     (** Standard interfaces *)
 
@@ -33,13 +33,20 @@ module Definitions = struct
     (** Indexing *)
 
     external length : ('a t[@local_opt]) -> int = "%array_length"
+
+    [%%template:
+    [@@@mode.default c = (uncontended, shared, contended)]
+
     external get : ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
+
+    val%template get_opt : 'a t -> int -> 'a option
+    [@@mode c] [@@alloc __ @ m = (heap_global, stack_local)]
 
     external unsafe_get
       :  ('a t[@local_opt])
       -> int
       -> ('a[@local_opt])
-      = "%array_unsafe_get"
+      = "%array_unsafe_get"]
 
     val last_exn : 'a t -> 'a
 
@@ -73,6 +80,18 @@ module Definitions = struct
     val drop_prefix : 'a t -> len:int -> 'a t
     val drop_suffix : 'a t -> len:int -> 'a t
     val group : 'a t -> break:('a -> 'a -> bool) -> 'a t t
+
+    (** [split_n t n] returns a pair of iarrays [(first, second)] where [first] contains
+        the first [n] elements of [t] and [second] contains the remaining elements.
+
+        - If [n >= length t], returns [(t, empty)].
+        - If [n <= 0], returns [(empty, t)]. *)
+    val split_n : 'a t -> int -> 'a t * 'a t
+
+    (** [chunks_of t ~length] returns an iarray of iarrays whose concatenation is equal to
+        the original iarray. Every iarray has [length] elements, except for possibly the
+        last iarray, which may have fewer. [chunks_of] raises if [length <= 0]. *)
+    val chunks_of : 'a t -> length:int -> 'a t t
 
     (** Reordering *)
 
@@ -220,6 +239,17 @@ module Definitions = struct
         -> init:'acc
         -> f:(int -> 'acc -> 'a -> 'acc * 'b)
         -> 'acc * 'b t
+    end
+
+    (** Operations for unique iarrays *)
+    module Unique : sig
+      val init : int -> f:(int -> 'a) -> 'a t
+      val map : 'a t -> f:('a -> 'b) -> 'b t
+      val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
+      val iter : 'a t -> f:('a -> unit) -> unit
+      val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
+      val unzip : ('a * 'b) t -> 'a t * 'b t
+      val zip_exn : 'a t -> 'b t -> ('a * 'b) t
     end
 
     (** Unsafe conversions

@@ -13,6 +13,7 @@ depends: [
   "ocaml" {>= "5.1.0"}
   "basement"
   "ocaml_intrinsics_kernel"
+  "ppx_array_base"
   "ppx_base"
   "ppx_cold"
   "ppx_hash"

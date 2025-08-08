@@ -585,6 +585,15 @@ module type Set = sig
       largest. *)
   val iter : ('a, _) t -> f:('a -> unit) -> unit
 
+  (** [iter_until t ~f ~finish] is a short-circuiting version of [iter]. If [f] returns
+      [Stop x] the computation ceases and returns [x]. If [f] always returns [Continue ()]
+      the final result is computed by [finish]. *)
+  val iter_until
+    :  ('a, _) t
+    -> f:('a -> (unit, 'final) Container.Continue_or_stop.t)
+    -> finish:(unit -> 'final)
+    -> 'final
+
   (** Iterate two sets side by side. Complexity is [O(m+n)] where [m] and [n] are the
       sizes of the two input sets. As an example, with the inputs [0; 1] and [1; 2], [f]
       will be called with [`Left 0]; [`Both (1, 1)]; and [`Right 2]. *)

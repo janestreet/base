@@ -13,7 +13,8 @@ module For_generated_code : sig
     ; fset : 'record -> 'field -> 'record
     }
 
-  val opaque_identity : 'a -> 'a
+  external opaque_identity : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%opaque"
+  [@@layout_poly]
 end
 
 (**/**)
@@ -34,9 +35,10 @@ type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 val name : (_, _, _) t_with_perm -> string
 
 [%%template:
-[@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+[@@@kind.default
+  k = (value_or_null, float64, bits32, bits64, word, immediate, immediate64)]
 
-val get : (_, 'r, 'a) t_with_perm -> 'r -> 'a
+val get : 'perm 'r 'a. ('perm, 'r, 'a) t_with_perm -> 'r -> 'a
 val fset : ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> 'a -> 'r
 val setter : ([> `Set_and_create ], 'r, 'a) t_with_perm -> ('r -> 'a -> unit) option
 val map : ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> f:('a -> 'a) -> 'r

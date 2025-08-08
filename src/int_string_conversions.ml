@@ -134,17 +134,19 @@ module Make_binary (I : sig
     val clz : t -> t
     val ( lsr ) : t -> int -> t
     val ( land ) : t -> t -> t
-    val to_int_exn : t -> int
-    val num_bits : int
+    val to_int_trunc : t -> int
+    val num_bits : t
     val zero : t
     val one : t
+    val ( - ) : t -> t -> t
   end) =
 struct
   module Binary = struct
     type t = I.t [@@deriving compare ~localize, hash]
 
     let bits t =
-      if I.equal__local t I.zero then 0 else I.num_bits - (I.clz t |> I.to_int_exn)
+      let open I in
+      (if equal__local t zero then zero else num_bits - clz t) |> to_int_trunc
     ;;
 
     let to_string_suffix (t : t) =
@@ -155,7 +157,7 @@ struct
         String.init bits ~f:(fun char_index ->
           let bit_index = bits - char_index - 1 in
           let bit = I.((t lsr bit_index) land one) in
-          Char.unsafe_of_int (Char.to_int '0' + I.to_int_exn bit))
+          Char.unsafe_of_int (Char.to_int '0' + I.to_int_trunc bit))
         [@nontail]
     ;;
 

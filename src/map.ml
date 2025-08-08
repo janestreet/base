@@ -722,6 +722,50 @@ module Tree0 = struct
       left, mid, right)
   ;;
 
+  let length = function
+    | Empty -> 0
+    | Leaf _ -> 1
+    | Node { left = _; key = _; data = _; right = _; weight = w } -> w - 1
+  ;;
+
+  let count_lt_eq_gt t k ~compare_key =
+    let rec loop t ~lt ~gt =
+      match t with
+      | Empty -> lt, 0, gt
+      | Leaf { key; data = _ } ->
+        (match compare_key key k with
+         | c when c < 0 -> lt + 1, 0, gt
+         | c when c > 0 -> lt, 0, gt + 1
+         | _ -> lt, 1, gt)
+      | Node { left; key; data = _; right; weight = _ } ->
+        (match compare_key key k with
+         | c when c < 0 -> loop right ~lt:(lt + 1 + length left) ~gt
+         | c when c > 0 -> loop left ~lt ~gt:(gt + 1 + length right)
+         | _ -> lt + length left, 1, gt + length right)
+    in
+    loop t ~lt:0 ~gt:0
+  ;;
+
+  let count_lt t k ~compare_key =
+    let lt, _, _ = count_lt_eq_gt t k ~compare_key in
+    lt
+  ;;
+
+  let count_le t k ~compare_key =
+    let lt, eq, _ = count_lt_eq_gt t k ~compare_key in
+    lt + eq
+  ;;
+
+  let count_gt t k ~compare_key =
+    let _, _, gt = count_lt_eq_gt t k ~compare_key in
+    gt
+  ;;
+
+  let count_ge t k ~compare_key =
+    let _, eq, gt = count_lt_eq_gt t k ~compare_key in
+    eq + gt
+  ;;
+
   let rec find t x ~compare_key =
     match t with
     | Empty -> None
@@ -1509,12 +1553,6 @@ module Tree0 = struct
         | Node _, Node _ | Node _, Leaf _ | Leaf _, Node _ -> slow t t' ~init:acc)
     in
     loop t1 t2 init [@nontail]
-  ;;
-
-  let length = function
-    | Empty -> 0
-    | Leaf _ -> 1
-    | Node { left = _; key = _; data = _; right = _; weight = w } -> w - 1
   ;;
 
   let hash_fold_t_ignoring_structure hash_fold_key hash_fold_data state t =
@@ -2358,6 +2396,10 @@ module Accessors = struct
 
   let split_le_gt t k = split_and_reinsert_boundary t ~into:`Left k
   let split_lt_ge t k = split_and_reinsert_boundary t ~into:`Right k
+  let count_lt t k = Tree0.count_lt t.tree k ~compare_key:(compare_key t)
+  let count_le t k = Tree0.count_le t.tree k ~compare_key:(compare_key t)
+  let count_gt t k = Tree0.count_gt t.tree k ~compare_key:(compare_key t)
+  let count_ge t k = Tree0.count_ge t.tree k ~compare_key:(compare_key t)
 
   let subrange t ~lower_bound ~upper_bound =
     let _, mid, _ =
@@ -2726,6 +2768,22 @@ module Tree = struct
       ~into:`Right
       k
       ~compare_key:(Comparator.compare comparator)
+  ;;
+
+  let count_lt ~comparator t k =
+    Tree0.count_lt t k ~compare_key:(Comparator.compare comparator)
+  ;;
+
+  let count_le ~comparator t k =
+    Tree0.count_le t k ~compare_key:(Comparator.compare comparator)
+  ;;
+
+  let count_gt ~comparator t k =
+    Tree0.count_gt t k ~compare_key:(Comparator.compare comparator)
+  ;;
+
+  let count_ge ~comparator t k =
+    Tree0.count_ge t k ~compare_key:(Comparator.compare comparator)
   ;;
 
   let append ~comparator ~lower_part ~upper_part =
@@ -3179,11 +3237,11 @@ let m__t_sexp_grammar
 let compare_m__t (module _ : Compare_m) compare_v t1 t2 = compare_direct compare_v t1 t2
 let equal_m__t (module _ : Equal_m) equal_v t1 t2 = equal equal_v t1 t2
 
-let compare__local_m__t (module _ : Compare_m) compare_v t1 t2 =
+let compare_m__t__local (module _ : Compare_m) compare_v t1 t2 =
   compare_direct__local compare_v t1 t2
 ;;
 
-let equal__local_m__t (module _ : Equal_m) equal_v t1 t2 = equal__local equal_v t1 t2
+let equal_m__t__local (module _ : Equal_m) equal_v t1 t2 = equal__local equal_v t1 t2
 let globalize_m__t (module _ : Globalize_m) _ t = globalize0 t
 
 let hash_fold_m__t (type k) (module K : Hash_fold_m with type t = k) hash_fold_v state =

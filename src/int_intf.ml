@@ -86,7 +86,7 @@ module Definitions = struct
   end
 
   module type S_common = sig
-    type t [@@deriving sexp ~localize, sexp_grammar]
+    type t [@@deriving sexp ~stackify, sexp_grammar]
 
     include Floatable.S_local_input with type t := t
     include Intable.S with type t := t
@@ -299,7 +299,7 @@ module Definitions = struct
 
     (** The number of bits available in this integer type. Note that the integer
         representations are signed. *)
-    val num_bits : int
+    val num_bits : t
 
     (** The largest representable integer. *)
     val max_value : t
@@ -324,10 +324,10 @@ module Definitions = struct
     val floor_pow2 : t -> t
 
     (** [ceil_log2 x] returns the ceiling of log-base-2 of [x], and raises if [x <= 0]. *)
-    val ceil_log2 : t -> int
+    val ceil_log2 : t -> t
 
     (** [floor_log2 x] returns the floor of log-base-2 of [x], and raises if [x <= 0]. *)
-    val floor_log2 : t -> int
+    val floor_log2 : t -> t
 
     (** [is_pow2 x] returns true iff [x] is a power of 2. [is_pow2] raises if [x <= 0]. *)
     val is_pow2 : t -> bool

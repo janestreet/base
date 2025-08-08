@@ -32,7 +32,7 @@ module type Uchar = sig
 
   open! Import
 
-  type t = Uchar0.t [@@deriving hash, sexp ~localize, sexp_grammar]
+  type t = Uchar0.t [@@deriving hash, sexp ~stackify, sexp_grammar]
   type uchar := t
 
   include%template Comparable.S [@mode local] [@modality portable] with type t := t
@@ -98,7 +98,7 @@ module type Uchar = sig
   (** Result of decoding a UTF codec that may contain invalid encodings. *)
   module Decode_result : sig
     type t = Uchar0.utf_decode
-    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~localize] [@@immediate]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify] [@@immediate]
 
     (** [true] iff [t] represents a Unicode scalar value. *)
     val is_valid : t -> bool
