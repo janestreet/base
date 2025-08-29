@@ -58,7 +58,6 @@ val%template fold_right : 'a array -> f:('a -> 'b -> 'b) -> init:'b -> 'b
 [@@mode m = (uncontended, shared)]
 
 val stable_sort : 'a array -> compare:('a -> 'a -> int) -> unit
-val swap : 'a array -> int -> int -> unit
 
 [%%template:
 [@@@kind.default k1 = (value, immediate, immediate64, float64, bits32, bits64, word)]
@@ -73,6 +72,7 @@ val of_list : ('a List0.Constructors.t[@kind k1]) -> 'a array
 val sub : 'a. 'a array -> pos:int -> len:int -> 'a array
 val append : 'a. 'a array -> 'a array -> 'a array
 val fill : 'a. 'a array -> pos:int -> len:int -> 'a -> unit
+val swap : 'a. 'a array -> int -> int -> unit
 
 [@@@kind.default k2 = (value, immediate, immediate64, float64, bits32, bits64, word)]
 

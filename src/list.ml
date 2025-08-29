@@ -624,23 +624,23 @@ let filter_mapi l ~f =
 let concat_mapi l ~f =
   let rec loop ~acc pos : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
     | [] -> []
-    | [ hd ] -> f pos hd
+    | [ hd ] -> (rev_append [@kind kb]) acc (f pos hd)
     | hd :: (_ :: _ as tl) ->
       let acc = (rev_append [@kind kb]) (f pos hd) acc in
       (loop [@tailcall]) ~acc (pos + 1) tl
   in
-  (loop ~acc:[] 0 l |> (rev [@kind kb])) [@nontail]
+  loop ~acc:[] 0 l [@nontail]
 ;;
 
 let concat_map l ~f =
   let rec loop ~acc : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
     | [] -> []
-    | [ hd ] -> f hd
+    | [ hd ] -> (rev_append [@kind kb]) acc (f hd)
     | hd :: (_ :: _ as tl) ->
       let acc = (rev_append [@kind kb]) (f hd) acc in
       (loop [@tailcall]) ~acc tl
   in
-  (loop ~acc:[] l |> (rev [@kind kb])) [@nontail]
+  loop ~acc:[] l [@nontail]
 ;;]
 
 let folding_map t ~init ~f =
@@ -740,6 +740,13 @@ let zip_exn l1 l2 =
 ;;
 
 let zip l1 l2 = map2 ~f:(fun a b -> a, b) l1 l2
+
+let zip3_exn l1 l2 l3 =
+  check_length3_exn "zip3_exn" l1 l2 l3;
+  map3_ok l1 l2 l3 ~f:(fun a b c -> a, b, c)
+;;
+
+let zip3 l1 l2 l3 = map3 l1 l2 l3 ~f:(fun a b c -> a, b, c)
 
 (** Additional list operations *)
 

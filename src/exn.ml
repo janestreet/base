@@ -29,12 +29,6 @@ let () =
 ;;
 
 let create_s sexp = Sexp sexp
-
-let create_s_uncontended sexp =
-  let exn = Sexp sexp |> Portability_hacks.magic_portable__needs_mode_crossing_exns in
-  fun () -> Portability_hacks.magic_uncontended__needs_mode_crossing_exns exn
-;;
-
 let create_s_lazy lazy_sexp = Sexp_lazy lazy_sexp
 
 let raise_with_original_backtrace t backtrace =

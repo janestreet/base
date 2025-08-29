@@ -602,6 +602,10 @@ module type Modes = sig
     type 'a t = { aliased : 'a } [@@unboxed]
   end
 
+  module Unyielding : sig
+    type 'a t = { unyielding : 'a } [@@unboxed]
+  end
+
   module Immutable_data : sig
     type 'a t = { immutable_data : 'a } [@@unboxed]
   end
@@ -755,6 +759,51 @@ module type Modes = sig
     val refute_portable : _ t -> _
   end
 
+  (** A witness of mode-crossing. In spirit, it's similar to [Type_equal.t]: there's no
+      runtime content, but the fact that you have a ['a Mod.t] in hand lets you recover
+      mode-crossing information about ['a]. *)
+  module Mod : sig
+    type%template 'a t = Mod : 'a. ('a t[@modality g p c m a])
+    [@@modality
+      g = (local, global)
+      , p = (nonportable, portable)
+      , c = (uncontended, shared, contended)
+      , m = (once, many)
+      , a = (unique, aliased)]
+
+    (** Aliases of [Mod] for specific modalities. These aliases aren't necessary, but they
+        are a bit more convenient than ppx_template (e.g. they are auto-completed in
+        editors). *)
+
+    module Global : sig
+      type%template 'a t = ('a t[@modality global]) = Mod : 'a. 'a t
+    end
+
+    module Portable : sig
+      type%template 'a t = ('a t[@modality portable]) = Mod : 'a. 'a t
+    end
+
+    module Contended : sig
+      type%template 'a t = ('a t[@modality contended]) = Mod : 'a. 'a t
+    end
+
+    module Shared : sig
+      type%template 'a t = ('a t[@modality shared]) = Mod : 'a. 'a t
+    end
+
+    module Portended : sig
+      type%template 'a t = ('a t[@modality portable contended]) = Mod : 'a. 'a t
+    end
+
+    module Many : sig
+      type%template 'a t = ('a t[@modality many]) = Mod : 'a. 'a t
+    end
+
+    module Aliased : sig
+      type%template 'a t = ('a t[@modality aliased]) = Mod : 'a. 'a t
+    end
+  end
+
   (** Can be [open]ed or [include]d to bring field names into scope. *)
   module Export : sig
     type 'a global = 'a Global.t = { global : 'a } [@@unboxed]
@@ -764,6 +813,7 @@ module type Modes = sig
     type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
     type 'a many = 'a Many.t = { many : 'a } [@@unboxed]
     type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
+    type 'a unyielding = 'a Unyielding.t = { unyielding : 'a } [@@unboxed]
     type 'a immutable_data = 'a Immutable_data.t = { immutable_data : 'a } [@@unboxed]
   end
 end

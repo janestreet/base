@@ -199,6 +199,13 @@ let fill a ~pos ~len v =
   if pos < 0 || len < 0 || pos > length a - len
   then invalid_arg "Array.fill"
   else (unsafe_fill [@kind k1]) a pos len v
+;;
+
+let swap t i j =
+  let elt_i = t.(i) in
+  let elt_j = t.(j) in
+  unsafe_set t i elt_j;
+  unsafe_set t j elt_i
 ;;]
 
 [@@@array.iter]
@@ -310,10 +317,3 @@ let fill a ~pos ~len v =
 [@@@end]
 
 let stable_sort t ~compare = Stdlib.Array.stable_sort t ~cmp:compare
-
-let swap t i j =
-  let elt_i = t.(i) in
-  let elt_j = t.(j) in
-  unsafe_set t i elt_j;
-  unsafe_set t j elt_i
-;;

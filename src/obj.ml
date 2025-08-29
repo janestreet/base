@@ -96,7 +96,8 @@ let%template stack_or_heap repr =
     | Sys.Other _ -> Heap)
 ;;
 
-external reserved_header_bits : t -> int = "caml_dummy_succ_scannable_prefix_len" [@@noalloc]
+external reserved_header_bits : t -> int = "caml_dummy_succ_scannable_prefix_len"
+[@@noalloc]
 
 type uniform_or_mixed =
   | Immediate

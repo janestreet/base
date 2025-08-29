@@ -13,7 +13,7 @@ module Message = struct
   type t =
     | Could_not_construct of Sexp.t
     | String of string
-    | Exn of (unit -> exn) Modes.Global.t
+    | Exn of exn Modes.Global.t
     | Sexp of Sexp.t
     | Tag_sexp of string * Sexp.t * Source_code_position0.t option
     | Tag_t of string * t
@@ -26,7 +26,7 @@ module Message = struct
     match t with
     | Could_not_construct _ as t -> sexp_of_t t :: ac
     | String string -> Atom string :: ac
-    | Exn { global = exn } -> Exn.sexp_of_t (exn ()) :: ac
+    | Exn { global = exn } -> Exn.sexp_of_t exn :: ac
     | Sexp sexp -> sexp :: ac
     | Tag_sexp (tag, sexp, here) ->
       List
@@ -52,25 +52,6 @@ module Message = struct
     match to_sexps_hum t [] with
     | [ sexp ] -> sexp
     | sexps -> Sexp.List sexps
-  ;;
-
-  let rec portabilize : t -> t = function
-    | Exn { global = exn } ->
-      let exn = exn () in
-      let copied_exn = Exn.create_s_uncontended (Exn.sexp_of_t exn) in
-      Exn { global = copied_exn }
-    | Sexp sexp -> Sexp sexp
-    | String str -> String str
-    | Of_list (i, xs) ->
-      Of_list
-        ( i
-        , List.map xs ~f:(fun x -> portabilize x |> Modes.Portable.wrap)
-          |> Modes.Portable.unwrap_list )
-    | Could_not_construct sexp -> Could_not_construct sexp
-    | Tag_sexp (sexp, string, src_pos) -> Tag_sexp (sexp, string, src_pos)
-    | Tag_t (string, t) -> Tag_t (string, portabilize t)
-    | Tag_arg (string, sexp, t) -> Tag_arg (string, sexp, portabilize t)
-    | With_backtrace (t, backtrace) -> With_backtrace (portabilize t, backtrace)
   ;;
 end
 
@@ -511,13 +492,22 @@ let () =
       assert false)
 ;;
 
+let portabilize (t : t) : t =
+  match t.global with
+  (* As an optimization: if the value is already known-portable, there's no need to
+     force its computation. *)
+  | Staged_portable x -> { global = Staged_portable x }
+  | Constant x -> { global = Constant x }
+  | Staged_nonportable _ -> [%template of_message [@mode portable]] (to_message t)
+;;
+
 let to_exn t =
   if not (is_computed t)
-  then Exn t
+  then Exn (portabilize t)
   else (
     match to_message t with
-    | Exn { global = exn } -> exn ()
-    | _ -> Exn t)
+    | Exn { global = exn } -> exn
+    | _ -> Exn (portabilize t))
 ;;
 
 let of_exn ?backtrace exn =
@@ -531,21 +521,9 @@ let of_exn ?backtrace exn =
   | Exn t, None -> t
   | Exn t, Some backtrace ->
     of_thunked_message (fun () -> With_backtrace (to_message t, backtrace))
-  | _, None -> of_message (Exn { global = (fun () -> exn) })
+  | _, None -> of_message (Exn { global = exn })
   | _, Some backtrace ->
     of_thunked_message (fun () -> With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace))
-;;
-
-let portabilize (t : t) : t =
-  match t.global with
-  | Staged_portable x ->
-    (* As an optimization: if the value is already known-portable, there's no need to
-       force its computation. *)
-    { global = Staged_portable x }
-  | Constant _ | Staged_nonportable _ ->
-    let message = to_message t in
-    let message = Message.portabilize message in
-    [%template of_message [@mode portable]] message
 ;;
 
 include%template Pretty_printer.Register_pp [@mode portable] (struct

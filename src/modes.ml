@@ -356,6 +356,10 @@ module Aliased = struct
   type 'a t = { aliased : 'a } [@@unboxed]
 end
 
+module Unyielding = struct
+  type 'a t = { unyielding : 'a } [@@unboxed]
+end
+
 module Immutable_data = struct
   type 'a t = { immutable_data : 'a } [@@unboxed]
 end
@@ -506,6 +510,44 @@ module Contended_via_portable = struct
   let refute_portable _ = assert false
 end
 
+module Mod = struct
+  type%template 'a t = Mod : 'a. ('a t[@modality g p c m a])
+  [@@modality
+    g = (local, global)
+    , p = (nonportable, portable)
+    , c = (uncontended, shared, contended)
+    , m = (once, many)
+    , a = (unique, aliased)]
+
+  module Global = struct
+    type%template 'a t = ('a t[@modality global]) = Mod : 'a. 'a t
+  end
+
+  module Portable = struct
+    type%template 'a t = ('a t[@modality portable]) = Mod : 'a. 'a t
+  end
+
+  module Contended = struct
+    type%template 'a t = ('a t[@modality contended]) = Mod : 'a. 'a t
+  end
+
+  module Shared = struct
+    type%template 'a t = ('a t[@modality shared]) = Mod : 'a. 'a t
+  end
+
+  module Portended = struct
+    type%template 'a t = ('a t[@modality portable contended]) = Mod : 'a. 'a t
+  end
+
+  module Many = struct
+    type%template 'a t = ('a t[@modality many]) = Mod : 'a. 'a t
+  end
+
+  module Aliased = struct
+    type%template 'a t = ('a t[@modality aliased]) = Mod : 'a. 'a t
+  end
+end
+
 module Export = struct
   type 'a global = 'a Global.t = { global : 'a } [@@unboxed]
   type 'a portable = 'a Portable.t = { portable : 'a } [@@unboxed]
@@ -514,5 +556,6 @@ module Export = struct
   type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
   type 'a many = 'a Many.t = { many : 'a } [@@unboxed]
   type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
+  type 'a unyielding = 'a Unyielding.t = { unyielding : 'a } [@@unboxed]
   type 'a immutable_data = 'a Immutable_data.t = { immutable_data : 'a } [@@unboxed]
 end

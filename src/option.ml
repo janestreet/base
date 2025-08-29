@@ -33,16 +33,6 @@ open struct
     | Some of 'a
 end
 
-let is_none = function
-  | None -> true
-  | _ -> false
-;;
-
-let is_some = function
-  | Some _ -> true
-  | _ -> false
-;;
-
 include struct
   [@@@kind.default k]
 

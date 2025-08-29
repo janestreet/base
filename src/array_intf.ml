@@ -1,27 +1,34 @@
 (** Fixed-length, mutable vector of elements with O(1) [get] and [set] operations. *)
 
 open! Import
+module Option = Option0
+module List = List0.Constructors
 
 module Definitions = struct
   module type Public = sig
     type 'a t
-
-    [%%rederive:
-      type nonrec 'a t = 'a t
-      [@@deriving
-        compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]]
 
     include Binary_searchable.S1 with type 'a t := 'a t
 
     include
       Indexed_container.S1_with_creators__base
       with type 'a t := 'a t
-       and type 'a t__float64 := 'a t
-       and type 'a t__bits32 := 'a t
-       and type 'a t__bits64 := 'a t
-       and type 'a t__word := 'a t
-       and type 'a t__immediate := 'a t
-       and type 'a t__immediate64 := 'a t
+       and type 'a t__float64 = 'a t
+       and type 'a t__bits32 = 'a t
+       and type 'a t__bits64 = 'a t
+       and type 'a t__word = 'a t
+       and type 'a t__immediate = 'a t
+       and type 'a t__immediate64 = 'a t
+
+    [%%template:
+    [@@@kind k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+
+    [%%rederive:
+      type nonrec 'a t = 'a t
+      [@@kind k]
+      [@@deriving compare ~localize, equal ~localize, sexp ~stackify, globalize]]]
+
+    [%%rederive: type nonrec 'a t = 'a t [@@deriving sexp_grammar]]
 
     include Indexed_container.S1_with_creators with type 'a t := 'a t
     include Invariant.S1 with type 'a t := 'a t
@@ -223,36 +230,6 @@ module Definitions = struct
     val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
     val fold2_exn : 'a t -> 'b t -> init:'acc -> f:('acc -> 'a -> 'b -> 'acc) -> 'acc
 
-    (** [for_all2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
-    val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
-
-    (** [exists2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
-    val exists2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
-
-    (** [swap arr i j] swaps the value at index [i] with that at index [j]. *)
-    val swap : 'a t -> int -> int -> unit
-
-    (** [rev_inplace t] reverses [t] in place. *)
-    val rev_inplace : 'a t -> unit
-
-    (** [rev t] returns a reversed copy of [t] *)
-    val rev : 'a t -> 'a t
-
-    (** [of_list_rev l] converts from list then reverses in place. *)
-    val of_list_rev : 'a list -> 'a t
-
-    (** [of_list_map l ~f] is the same as [of_list (List.map l ~f)]. *)
-    val of_list_map : 'a list -> f:('a -> 'b) -> 'b t
-
-    (** [of_list_mapi l ~f] is the same as [of_list (List.mapi l ~f)]. *)
-    val of_list_mapi : 'a list -> f:(int -> 'a -> 'b) -> 'b t
-
-    (** [of_list_rev_map l ~f] is the same as [of_list (List.rev_map l ~f)]. *)
-    val of_list_rev_map : 'a list -> f:('a -> 'b) -> 'b t
-
-    (** [of_list_rev_mapi l ~f] is the same as [of_list (List.rev_mapi l ~f)]. *)
-    val of_list_rev_mapi : 'a list -> f:(int -> 'a -> 'b) -> 'b t
-
     (** Modifies an array in place, applying [f] to every element of the array *)
     val map_inplace : 'a t -> f:('a -> 'a) -> unit
 
@@ -263,6 +240,18 @@ module Definitions = struct
         [Stdlib.Not_found] or [Not_found_s] if there is no such [a]. *)
     val find_exn : 'a. 'a t -> f:('a -> bool) -> 'a
 
+    (** [swap arr i j] swaps the value at index [i] with that at index [j]. *)
+    val swap : 'a. 'a t -> int -> int -> unit
+
+    (** [rev_inplace t] reverses [t] in place. *)
+    val rev_inplace : 'a. 'a t -> unit
+
+    (** [rev t] returns a reversed copy of [t] *)
+    val rev : 'a. 'a t -> 'a t
+
+    (** [of_list_rev l] converts from list then reverses in place. *)
+    val of_list_rev : 'a. ('a List.t[@kind k1]) -> 'a t
+
     [@@@kind.default k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
     (** Returns the first evaluation of [f] that returns [Some]. Raises [Stdlib.Not_found]
@@ -270,7 +259,29 @@ module Definitions = struct
     val find_map_exn : 'a 'b. 'a t -> f:('a -> ('b Option.t[@kind k2])) -> 'b
 
     (** [find_mapi_exn] is like [find_map_exn] but passes the index as an argument. *)
-    val find_mapi_exn : 'a 'b. 'a t -> f:(int -> 'a -> ('b Option.t[@kind k2])) -> 'b]
+    val find_mapi_exn : 'a 'b. 'a t -> f:(int -> 'a -> ('b Option.t[@kind k2])) -> 'b
+
+    (** [of_list_map l ~f] is the same as [of_list (List.map l ~f)]. *)
+    val of_list_map : 'a 'b. ('a List.t[@kind k1]) -> f:('a -> 'b) -> 'b t
+
+    (** [of_list_mapi l ~f] is the same as [of_list (List.mapi l ~f)]. *)
+    val of_list_mapi : 'a 'b. ('a List.t[@kind k1]) -> f:(int -> 'a -> 'b) -> 'b t
+
+    (** [of_list_rev_map l ~f] is the same as [of_list (List.rev_map l ~f)]. *)
+    val of_list_rev_map : 'a 'b. ('a List.t[@kind k1]) -> f:('a -> 'b) -> 'b t
+
+    (** [of_list_rev_mapi l ~f] is the same as [of_list (List.rev_mapi l ~f)]. *)
+    val of_list_rev_mapi : 'a 'b. ('a List.t[@kind k1]) -> f:(int -> 'a -> 'b) -> 'b t
+
+    [%%template:
+    [@@@kind.default k1 k2]
+    [@@@mode.default m = (global, local)]
+
+    (** [for_all2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
+    val for_all2_exn : 'a 'b. 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
+
+    (** [exists2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
+    val exists2_exn : 'a 'b. 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool]]
 
     (** [findi_exn t f] returns the first index [i] of [t] for which [f i t.(i)] is true.
         It raises [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)

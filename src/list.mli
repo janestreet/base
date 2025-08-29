@@ -289,6 +289,11 @@ val unzip3 : ('a * 'b * 'c) t -> 'a t * 'b t * 'c t
 val zip : 'a t -> 'b t -> ('a * 'b) t Or_unequal_lengths.t
 val zip_exn : 'a t -> 'b t -> ('a * 'b) t
 
+(** Analogous to [zip], but with 3 lists rather than 2. *)
+
+val zip3 : 'a t -> 'b t -> 'c t -> ('a * 'b * 'c) t Or_unequal_lengths.t
+val zip3_exn : 'a t -> 'b t -> 'c t -> ('a * 'b * 'c) t
+
 (** [reduce_exn [a1; ...; an] ~f] is [f (... (f (f a1 a2) a3) ...) an]. It fails on the
     empty list. Tail recursive. *)
 val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a

@@ -50,7 +50,7 @@ module Definitions = struct
     type t =
       | Could_not_construct of Sexp.t
       | String of string
-      | Exn of (unit -> exn) Modes.Global.t
+      | Exn of exn Modes.Global.t
       | Sexp of Sexp.t
       | Tag_sexp of string * Sexp.t * Source_code_position0.t option
       | Tag_t of string * t
@@ -209,15 +209,8 @@ module Definitions = struct
     (** Constructs a portable info out of a possibly non-portable info. This operation is
         less expensive than [err |> sexp_of_t |> create_s], but it's not a no-op.
 
-        It's not a no-op for two reasons:
-        - It forces the computation of the input info.
-        - It forces any [exn]s contained in the [Info.t] to their sexp representation.
-
-        For the latter reason, [of_exn exn |> portabilize |> to_exn] won't return [exn],
-        unlike [of_exn exn |> to_exn]. Instead, it will return a sexpified version of the
-        [exn]. We take this approach -- of converting exns to sexps -- mainly because
-        [exn]s can't safely be moved between domains unless all accesses to them are at
-        mode contended. *)
+        It's not a no-op because it needs to force any non-portable computation of the
+        input info. *)
     val portabilize : t -> t
   end
 

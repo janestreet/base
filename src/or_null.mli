@@ -6,9 +6,9 @@
     it is forbidden: the kind system prevents nested ['a or_null or_null] types.
 
     The ['a] in ['a or_null] must have a [non_null] kind, like vanilla OCaml types, while
-    ['a or_null] has a new kind called [immediate_or_null with 'a], inheriting everything
-    but the nullability from the kind of ['a]. In the most general case, the kind of
-    ['a or_null] is called [value_or_null].
+    ['a or_null] has a new kind called [value_or_null mod everything with 'a], inheriting
+    everything but the nullability from the kind of ['a]. In the most general case, the
+    kind of ['a or_null] is called [value_or_null].
 
     This module largely mirrors {!Option}. One major difference is that ['a or_null],
     despite admitting [bind], is not a [Monad] (or even an [Applicative]), since it's not

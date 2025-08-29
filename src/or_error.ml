@@ -2,7 +2,7 @@ open! Import
 
 [%%template
 type nonrec 'a t = (('a, Error.t) Result.t[@kind k])
-[@@deriving compare ~localize, equal ~localize, sexp]
+[@@deriving compare ~localize, equal ~localize, globalize, sexp]
 [@@kind k = (float64, bits32, bits64, word)]
 
 type nonrec 'a t = ('a, Error.t) Result.t

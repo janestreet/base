@@ -18,7 +18,10 @@ val globalize_nativeint : nativeint -> nativeint
 val globalize_bytes : bytes -> bytes
 val globalize_string : string -> string
 val globalize_unit : unit -> unit
-val globalize_array : ('a -> 'b) -> 'a array -> 'a array
+
+val%template globalize_array : 'a 'b. ('a -> 'b) -> 'a array -> 'a array
+[@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value)]
+
 val globalize_floatarray : floatarray -> floatarray
 val globalize_lazy_t : ('a -> 'b) -> 'a lazy_t -> 'a lazy_t
 val globalize_list : ('a -> 'b) -> 'a list -> 'b list
@@ -30,9 +33,7 @@ val globalize_or_null
   -> 'b Basement.Or_null_shim.t
 
 val globalize_result
-  :  ('ok -> 'ok)
-  -> ('err -> 'err)
-  -> ('ok, 'err) result
-  -> ('ok, 'err) result
+  : 'ok 'err.
+  ('ok -> 'ok) -> ('err -> 'err) -> ('ok, 'err) result -> ('ok, 'err) result
 
 val globalize_ref : ('a -> 'b) -> 'a ref -> 'a ref

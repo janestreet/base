@@ -12,7 +12,7 @@ module Sexp := Sexp0
 
 [%%template:
 type 'a t = (('a, Error.t) Result.t[@kind k])
-[@@deriving compare ~localize, equal ~localize, sexp]
+[@@deriving compare ~localize, equal ~localize, globalize, sexp]
 [@@kind k = (float64, bits32, bits64, word)]
 
 (** Serialization and comparison of an [Error] force the error's lazy message. *)

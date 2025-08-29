@@ -369,7 +369,7 @@ let findi t ~f =
 let t_sexp_grammar (type elt) (grammar : elt Sexplib0.Sexp_grammar.t)
   : elt t Sexplib0.Sexp_grammar.t
   =
-  Sexplib0.Sexp_grammar.coerce (Array.t_sexp_grammar grammar)
+  Sexplib0.Sexp_grammar.coerce (list_sexp_grammar grammar)
 ;;
 
 (* Copied from the implementation of [sexp_of_array]. We can't reuse the array

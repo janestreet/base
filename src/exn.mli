@@ -24,13 +24,6 @@ exception Reraised of string * t
     particular exn constructor doesn't matter. *)
 val create_s : Sexp.t -> t
 
-(** [create_s_uncontended] returns a function that can be used to obtain uncontended
-    access to the resulting exception from within a portable function.
-
-    The [@ uncontended] below is redundant, as that is the default. It is written for
-    clarity. *)
-val create_s_uncontended : Sexp.t -> unit -> t
-
 (** [create_s_lazy lazy_sexp] is like [create_s], but takes a lazily generated sexp. *)
 val create_s_lazy : Sexp.t Lazy.t -> t
 

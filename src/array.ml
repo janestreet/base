@@ -2,13 +2,17 @@ open! Import
 include Array_intf.Definitions
 module Array = Array0
 module Result = Result0
+module Option = Option0
+module List = List0
 include Array
 
 type 'a t = 'a array
 
+type%template 'a t = 'a array
+[@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+
 [%%rederive.portable
-  type nonrec 'a t = 'a array
-  [@@deriving compare ~localize, globalize, sexp ~stackify, sexp_grammar]]
+  type nonrec 'a t = 'a array [@@deriving globalize, sexp ~stackify, sexp_grammar]]
 
 (* This module implements a new in-place, constant heap sorting algorithm to replace the
    one used by the standard libraries.  Its only purpose is to be faster (hopefully
@@ -275,7 +279,7 @@ struct
     ;;
   end
 
-  let sort ?pos ?len arr ~(compare : _ -> _ -> _) =
+  let sort ?pos ?len arr ~compare =
     let pos, len =
       Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length arr)
     in
@@ -348,6 +352,11 @@ let fold_map t ~init ~f =
       y)
   in
   !acc, result
+;;
+
+let raise_length_mismatch name n1 n2 =
+  Printf.invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
+[@@cold]
 ;;
 
 [%%template
@@ -423,7 +432,7 @@ let existsi t ~f =
 
 let mem t a ~equal = (exists [@kind k1]) t ~f:(equal a) [@nontail]
 
-let[@inline always] extremal_element t ~compare ~keep_left_if : (_ Option0.t[@kind k1]) =
+let[@inline always] extremal_element t ~compare ~keep_left_if : (_ Option.t[@kind k1]) =
   if (is_empty [@kind k1]) t
   then None
   else (
@@ -473,7 +482,7 @@ let find t ~f =
   (findi_internal [@inlined] [@kind k1 value])
     t
     ~f:(fun _ v -> f v)
-    ~if_found:(fun ~i:_ ~value : (_ Option0.t[@kind k1]) -> Some value)
+    ~if_found:(fun ~i:_ ~value : (_ Option.t[@kind k1]) -> Some value)
     ~if_not_found:(fun () -> None) [@nontail]
 ;;
 
@@ -490,7 +499,7 @@ let findi t ~f =
   (findi_internal [@inlined] [@kind k1 value])
     t
     ~f
-    ~if_found:(fun ~i ~value : (_ Option0.t[@kind value & k1]) -> Some (i, value))
+    ~if_found:(fun ~i ~value : (_ Option.t[@kind value & k1]) -> Some (i, value))
     ~if_not_found:(fun () -> None)
 ;;
 
@@ -507,6 +516,40 @@ let findi_exn t ~f =
      the primitive [caml_array_sub]. Other approaches, like [init] or [map], first
      initialize with a fixed value, then blit from the source. *)
 let copy t = (sub [@kind k1]) t ~pos:0 ~len:(length t)
+
+let rev_inplace t =
+  let i = ref 0 in
+  let j = ref (length t - 1) in
+  while !i < !j do
+    (swap [@kind k1]) t !i !j;
+    incr i;
+    decr j
+  done
+;;
+
+let rev t =
+  let t = (copy [@kind k1]) t in
+  (rev_inplace [@kind k1]) t;
+  t
+;;
+
+let of_list_rev (l : (_ List.Constructors.t[@kind k1])) =
+  match l with
+  | [] -> [||]
+  | a :: l ->
+    let len = 1 + (List.length [@kind k1]) l in
+    let t = create ~len a in
+    let r = ref l in
+    (* We start at [len - 2] because we already put [a] at [t.(len - 1)]. *)
+    for i = len - 2 downto 0 do
+      match !r with
+      | [] -> assert false
+      | a :: l ->
+        t.(i) <- a;
+        r := l
+    done;
+    t
+;;
 
 [@@@kind.default k2 = (value, immediate, immediate64, float64, bits32, bits64, word)]
 
@@ -535,7 +578,7 @@ let iter_until t ~f ~finish =
 
 let fold_result t ~init ~f =
   let length = length t in
-  let rec loop i acc : (_ Result.t[@kind k2]) =
+  let rec loop i acc =
     if i < length
     then (
       match ((f [@inlined hint]) acc (unsafe_get t i) : (_ Result.t[@kind k2])) with
@@ -546,16 +589,16 @@ let fold_result t ~init ~f =
   (loop [@inlined]) 0 init [@nontail]
 ;;
 
-let find_map t ~f : (_ Option0.t[@kind k2]) =
+let find_map t ~f : (_ Option.t[@kind k2]) =
   let length = length t in
   if length = 0
   then None
   else (
-    let rec loop i : (_ Option0.t[@kind k2]) =
+    let rec loop i : (_ Option.t[@kind k2]) =
       if i < length
       then (
         let value = unsafe_get t i in
-        match ((f [@inlined hint]) value : (_ Option0.t[@kind k2])) with
+        match ((f [@inlined hint]) value : (_ Option.t[@kind k2])) with
         | None -> loop (i + 1)
         | Some _ as result -> result)
       else None
@@ -576,13 +619,13 @@ let find_map_exn =
   find_map_exn
 ;;
 
-let find_mapi t ~f : (_ Option0.t[@kind k2]) =
+let find_mapi t ~f : (_ Option.t[@kind k2]) =
   let length = length t in
   if length = 0
   then None
   else (
     let i = ref 0 in
-    let value_found = ref (None : (_ Option0.t[@kind k2])) in
+    let value_found = ref (None : (_ Option.t[@kind k2])) in
     while (Option.is_none [@kind k2]) !value_found && !i < length do
       let value = unsafe_get t !i in
       value_found := f !i value;
@@ -620,7 +663,7 @@ let filter_mapi t ~f =
   let r = ref [||] in
   let k = ref 0 in
   for i = 0 to length t - 1 do
-    match (f i (unsafe_get t i) : (_ Option0.t[@kind k2])) with
+    match (f i (unsafe_get t i) : (_ Option.t[@kind k2])) with
     | None -> ()
     | Some a ->
       if !k = 0 then r := create ~len:(length t) a;
@@ -632,7 +675,64 @@ let filter_mapi t ~f =
 
 let filter_map t ~f = (filter_mapi [@kind k1 k2]) t ~f:(fun _i a -> f a) [@nontail]
 let concat_map t ~f = (concat [@kind k2]) (to_list ((map [@kind k1 value]) ~f t))
-let concat_mapi t ~f = (concat [@kind k2]) (to_list ((mapi [@kind k1 value]) ~f t))]
+let concat_mapi t ~f = (concat [@kind k2]) (to_list ((mapi [@kind k1 value]) ~f t))
+
+let check_length2_exn name t1 t2 =
+  let n1 = length t1 in
+  let n2 = length t2 in
+  if n1 <> n2 then raise_length_mismatch name n1 n2
+;;
+
+(* [of_list_map] and [of_list_rev_map] are based on functions from the OCaml
+   distribution. *)
+
+let of_list_map (xs : (_ List.Constructors.t[@kind k1])) ~f =
+  match xs with
+  | [] -> [||]
+  | hd :: tl ->
+    let a = create ~len:(1 + (List.length [@kind k1]) tl) ((f [@inlined hint]) hd) in
+    let rec fill i : (_ List.Constructors.t[@kind k1]) -> _ = function
+      | [] -> a
+      | hd :: tl ->
+        unsafe_set a i ((f [@inlined hint]) hd);
+        fill (i + 1) tl
+    in
+    fill 1 tl [@nontail]
+;;
+
+let of_list_mapi (xs : (_ List.Constructors.t[@kind k1])) ~f =
+  match xs with
+  | [] -> [||]
+  | hd :: tl ->
+    let a = create ~len:(1 + (List.length [@kind k1]) tl) ((f [@inlined hint]) 0 hd) in
+    let rec fill a i : (_ List.Constructors.t[@kind k1]) -> _ = function
+      | [] -> a
+      | hd :: tl ->
+        unsafe_set a i ((f [@inlined hint]) i hd);
+        fill a (i + 1) tl
+    in
+    fill a 1 tl [@nontail]
+;;
+
+[%%template
+[@@@kind.default k1 k2]
+[@@@mode.default m = (global, local)]
+
+let exists2_exn t1 t2 ~f =
+  (check_length2_exn [@kind k1 k2]) "Array.exists2_exn" t1 t2;
+  let rec loop i =
+    if i >= 0 then f (unsafe_get t1 i) (unsafe_get t2 i) || loop (i - 1) else false
+  in
+  (loop [@inlined]) (length t1 - 1) [@nontail]
+;;
+
+let for_all2_exn t1 t2 ~f =
+  (check_length2_exn [@kind k1 k2]) "Array.for_all2_exn" t1 t2;
+  let rec loop i =
+    if i >= 0 then f (unsafe_get t1 i) (unsafe_get t2 i) && loop (i - 1) else true
+  in
+  (loop [@inlined]) (length t1 - 1) [@nontail]
+;;]]
 
 [%%template
 [@@@kind.default k1 = (value, immediate, immediate64, float64, bits32, bits64, word)]
@@ -645,9 +745,30 @@ let filteri t ~f =
   (filter_mapi [@kind k1 k1]) t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
 ;;
 
-[@@@kind.default
-  k2 = (value, immediate, immediate64, float64, bits32, bits64, word)
-  , k3 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+let globalize = (globalize_array [@kind k1])
+
+[%%template
+[@@@kind.default k1]
+[@@@mode.default m = (global, local)]
+
+let equal = (equal_array [@kind k1] [@mode m])
+let compare = (compare_array [@kind k1] [@mode m])]
+
+[@@@kind.default k2 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+
+let of_list_rev_map xs ~f =
+  let t = (of_list_map [@kind k1 k2]) xs ~f in
+  (rev_inplace [@kind k2]) t;
+  t
+;;
+
+let of_list_rev_mapi xs ~f =
+  let t = (of_list_mapi [@kind k1 k2]) xs ~f in
+  (rev_inplace [@kind k2]) t;
+  t
+;;
+
+[@@@kind.default k3 = (value, immediate, immediate64, float64, bits32, bits64, word)]
 
 let foldi_until t ~init ~f ~finish =
   let length = length t in
@@ -677,12 +798,12 @@ let partition_mapi t ~f =
   let (both : (_ Either0.t[@kind k2 k3]) t) = (mapi [@kind k1 value]) t ~f in
   let firsts =
     (filter_map [@kind value k2]) both ~f:(function
-      | First x -> (Some x : (_ Option0.t[@kind k2]))
+      | First x -> (Some x : (_ Option.t[@kind k2]))
       | Second _ -> None)
   in
   let seconds =
     (filter_map [@kind value k3]) both ~f:(function
-      | First _ -> (None : (_ Option0.t[@kind k3]))
+      | First _ -> (None : (_ Option.t[@kind k3]))
       | Second x -> Some x)
   in
   firsts, seconds
@@ -701,6 +822,39 @@ let partitioni_tf t ~f =
 ;;
 
 let partition_tf t ~f = (partitioni_tf [@kind k]) t ~f:(fun _ x -> f x) [@nontail]]
+
+(* These are copies of sexplib0 functions because we don't have access to ppx-template
+   there.
+
+   These are tested in core/test/test_array.ml because we want access to quicheck.
+*)
+
+[%%template
+[@@@alloc.default a @ m = (heap_global, stack_local)]
+
+let sexp_of_t = (sexp_of_t [@alloc a]) [@@kind k = (immediate, immediate64)]
+
+let sexp_of_t (sexp_of_elt : _ -> Sexp0.t) t : Sexp0.t =
+  (let rec loop i res =
+     if i < 0
+     then res
+     else loop (i - 1) (sexp_of_elt (unsafe_get t i) :: res) [@exclave_if_stack a]
+   in
+   List ((loop [@inlined]) (length t - 1) []))
+  [@exclave_if_stack a]
+[@@kind k = (float64, bits32, bits64, word)]
+;;]
+
+[%%template
+let t_of_sexp = t_of_sexp [@@kind k = (immediate, immediate64)]
+
+let t_of_sexp elt_of_sexp (sexp : Sexp0.t) =
+  match sexp with
+  | List [] -> [||]
+  | List (_ :: _ as l) -> (of_list_map [@kind value k]) l ~f:elt_of_sexp
+  | Atom _ -> of_sexp_error "array_of_sexp: list needed" sexp
+[@@kind k = (float64, bits32, bits64, word)]
+;;]
 
 (* We generated [findi]s that return [value & value]s, but for backwards compatibility we
    want to return the boxed product instead when dealing only with values. *)
@@ -788,95 +942,7 @@ let fold_mapi t ~init ~f =
   !acc, result
 ;;
 
-let rev_inplace t =
-  let i = ref 0 in
-  let j = ref (length t - 1) in
-  while !i < !j do
-    swap t !i !j;
-    incr i;
-    decr j
-  done
-;;
-
-let rev t =
-  let t = copy t in
-  rev_inplace t;
-  t
-;;
-
-let of_list_rev l =
-  match l with
-  | [] -> [||]
-  | a :: l ->
-    let len = 1 + List.length l in
-    let t = create ~len a in
-    let r = ref l in
-    (* We start at [len - 2] because we already put [a] at [t.(len - 1)]. *)
-    for i = len - 2 downto 0 do
-      match !r with
-      | [] -> assert false
-      | a :: l ->
-        t.(i) <- a;
-        r := l
-    done;
-    t
-;;
-
-(* [of_list_map] and [of_list_rev_map] are based on functions from the OCaml
-   distribution. *)
-
-let of_list_map xs ~f =
-  match xs with
-  | [] -> [||]
-  | hd :: tl ->
-    let a = create ~len:(1 + List.length tl) (f hd) in
-    let rec fill i = function
-      | [] -> a
-      | hd :: tl ->
-        unsafe_set a i (f hd);
-        fill (i + 1) tl
-    in
-    fill 1 tl [@nontail]
-;;
-
-let of_list_mapi xs ~f =
-  match xs with
-  | [] -> [||]
-  | hd :: tl ->
-    let a = create ~len:(1 + List.length tl) (f 0 hd) in
-    let rec fill a i = function
-      | [] -> a
-      | hd :: tl ->
-        unsafe_set a i (f i hd);
-        fill a (i + 1) tl
-    in
-    fill a 1 tl [@nontail]
-;;
-
-let of_list_rev_map xs ~f =
-  let t = of_list_map xs ~f in
-  rev_inplace t;
-  t
-;;
-
-let of_list_rev_mapi xs ~f =
-  let t = of_list_mapi xs ~f in
-  rev_inplace t;
-  t
-;;
-
 let filter_opt t = filter_map t ~f:Fn.id
-
-let raise_length_mismatch name n1 n2 =
-  Printf.invalid_argf "length mismatch in %s: %d <> %d" name n1 n2 ()
-[@@cold]
-;;
-
-let check_length2_exn name t1 t2 =
-  let n1 = length t1 in
-  let n2 = length t2 in
-  if n1 <> n2 then raise_length_mismatch name n1 n2
-;;
 
 let iter2_exn t1 t2 ~f =
   check_length2_exn "Array.iter2_exn" t1 t2;
@@ -892,30 +958,6 @@ let fold2_exn t1 t2 ~init ~f =
   check_length2_exn "Array.fold2_exn" t1 t2;
   foldi t1 ~init ~f:(fun i ac x -> f ac x (unsafe_get t2 i)) [@nontail]
 ;;
-
-let exists2_exn t1 t2 ~f =
-  check_length2_exn "Array.exists2_exn" t1 t2;
-  let i = ref (length t1 - 1) in
-  let result = ref false in
-  while !i >= 0 && not !result do
-    if f (unsafe_get t1 !i) (unsafe_get t2 !i) then result := true else decr i
-  done;
-  !result
-;;
-
-let for_all2_local_exn t1 t2 ~f =
-  check_length2_exn "Array.for_all2_exn" t1 t2;
-  let i = ref (length t1 - 1) in
-  let result = ref true in
-  while !i >= 0 && !result do
-    if not (f (unsafe_get t1 !i) (unsafe_get t2 !i)) then result := false else decr i
-  done;
-  !result
-;;
-
-let for_all2_exn t1 t2 ~f = for_all2_local_exn t1 t2 ~f
-let equal__local equal t1 t2 = length t1 = length t2 && for_all2_local_exn t1 t2 ~f:equal
-let equal equal t1 t2 = equal__local equal t1 t2
 
 let map_inplace t ~f =
   for i = 0 to length t - 1 do
