@@ -28,15 +28,12 @@ end
 let of_string s = t_of_sexp (sexp_of_string s)
 let to_string t = string_of_sexp (sexp_of_t t)
 
-let to_int = function
-  | Neg -> -1
-  | Zero -> 0
-  | Pos -> 1
-;;
+external magic_transparent : t -> int = "%identity"
 
+let to_int t = magic_transparent t - 1
 let _ = hash
 
 (* Ignore the hash function produced by [@@deriving hash] *)
 let hash = to_int
 let module_name = "Base.Sign"
-let of_int n = if n < 0 then Neg else if n = 0 then Zero else Pos
+let of_int n = Bool0.select (n < 0) Neg (Bool0.select (n = 0) Zero Pos)

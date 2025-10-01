@@ -12,4 +12,13 @@ external select
 [@@builtin]
 
 val select : 'a. bool -> 'a -> 'a -> 'a
-[@@kind k = (float64, bits32, bits64, word)] [@@zero_alloc]]
+[@@kind
+  k
+  = ( float64
+    , bits32
+    , bits64
+    , word
+    , value & value
+    , value & value & value
+    , value & value & value & value )]
+[@@zero_alloc]]

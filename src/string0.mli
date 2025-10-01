@@ -46,3 +46,12 @@ val uppercase : string -> string]
 
 val iter : string -> f:(char -> unit) -> unit
 val split_lines : string -> string list
+
+(** [init n ~f] is equivalent to [of_list [f 0; f 1; ...; f (n-1)]]. It raises an
+    exception if [n < 0]. *)
+val init : int -> f:(int -> char) -> string
+
+(** [filter t ~f] returns all the elements of [t] that satisfy the predicate [f]. *)
+val filter : string -> f:(char -> bool) -> string
+
+val filteri : string -> f:(int -> char -> bool) -> string

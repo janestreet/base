@@ -26,12 +26,12 @@ end
 (** Indexing and length *)
 
 [%%template
-[@@@mode.default c = (uncontended, shared, contended)]
+[@@@mode.default c = (uncontended, shared, contended), p = (portable, nonportable)]
 
 external get : ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
 external unsafe_get : ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_unsafe_get"]
 
-external length : ('a t[@local_opt]) -> int = "%array_length"
+external length : 'a. ('a t[@local_opt]) -> int = "%array_length" [@@layout_poly]
 
 (** Constructors *)
 

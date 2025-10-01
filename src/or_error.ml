@@ -17,8 +17,8 @@ let join = Result.join
 
 let%template map = (Result.map [@kind ki ko])
 [@@kind
-  ki = (value, immediate, immediate64, float64, bits32, bits64, word)
-  , ko = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  ki = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)
+  , ko = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
 ;;
 
 let return = Result.return
@@ -76,17 +76,19 @@ let ok = Result.ok
 let is_ok = Result.is_ok
 let is_error = Result.is_error
 
-let try_with ?(backtrace = false) f =
+let%template try_with ?(backtrace = false) f =
   try Ok (f ()) with
   | exn -> Error (Error.of_exn exn ?backtrace:(if backtrace then Some `Get else None))
+[@@mode p = (nonportable, portable)]
 ;;
 
 let try_with_join ?backtrace f = join (try_with ?backtrace f)
 
 [%%template
-[@@@kind.default k = (value, immediate, immediate64, float64, bits32, bits64, word)]
+[@@@kind.default
+  k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
 
-let ok_exn : ('a t[@kind k]) -> 'a = function
+let ok_exn : 'a. ('a t[@kind k]) -> 'a = function
   | Ok x -> x
   | Error err -> (Error.raise [@kind k]) err
 ;;]

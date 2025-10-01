@@ -1576,9 +1576,6 @@ module%test Escaping = struct
     test_all
       [ escape_gen_exn |> Test_fun.map ~f:Staged.unstage
       ; escape_gen |> Test_fun.map ~f:ok_exn
-      ; (escape_gen [@mode portable])
-        |> Test_fun.map ~f:ok_exn
-        |> Test_fun.map ~f:Modes.Portable.unwrap
       ]
   ;;
 
@@ -1586,9 +1583,6 @@ module%test Escaping = struct
     test_all
       [ unescape_gen_exn |> Test_fun.map ~f:Staged.unstage
       ; unescape_gen |> Test_fun.map ~f:ok_exn
-      ; (unescape_gen [@mode portable])
-        |> Test_fun.map ~f:ok_exn
-        |> Test_fun.map ~f:Modes.Portable.unwrap
       ]
   ;;
 

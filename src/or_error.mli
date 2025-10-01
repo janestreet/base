@@ -36,7 +36,8 @@ val is_error : _ t -> bool
     [Error.t]. [try_with_join] is like [try_with], except that [f] can throw exceptions or
     return an [Error] directly, without ending up with a nested error; it is equivalent to
     [Result.join (try_with f)]. *)
-val try_with : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a) -> 'a t
+val%template try_with : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a) -> 'a t
+[@@mode p = (nonportable, portable)]
 
 val try_with_join : ?backtrace:bool (** defaults to [false] *) -> (unit -> 'a t) -> 'a t
 
@@ -47,7 +48,7 @@ val ok : 'ok t -> 'ok option
 (** [ok_exn t] throws an exception if [t] is an [Error], and otherwise returns the
     contents of the [Ok] constructor. *)
 val%template ok_exn : 'a. ('a t[@kind k]) -> 'a
-[@@kind k = (value, immediate, immediate64, float64, bits32, bits64, word)]
+[@@kind k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
 
 (** [of_exn ?backtrace exn] is [Error (Error.of_exn ?backtrace exn)]. *)
 val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> _ t
@@ -122,10 +123,10 @@ val tag_arg : 'a t -> string -> 'b -> ('b -> Sexp.t) -> 'a t
     the function that is unimplemented. *)
 val unimplemented : string -> _ t
 
-val%template map : ('a t[@kind ki]) -> f:('a -> 'b) -> ('b t[@kind ko])
+val%template map : 'a 'b. ('a t[@kind ki]) -> f:('a -> 'b) -> ('b t[@kind ko])
 [@@kind
-  ki = (value, immediate, immediate64, float64, bits32, bits64, word)
-  , ko = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  ki = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)
+  , ko = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
 
 val iter : 'a t -> f:('a -> unit) -> unit
 val iter_error : _ t -> f:(Error.t -> unit) -> unit

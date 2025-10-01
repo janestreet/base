@@ -228,13 +228,5 @@ module type Comparable = sig
     end) : sig
     include With_zero [@mode m] with type t := T.t
   end
-
-  module With_zero (T : sig
-      type t [@@deriving (compare [@mode m]), sexp_of]
-
-      val zero : t
-    end) : sig
-    include With_zero [@mode m] with type t := T.t
-  end
-  [@@modality portable]]
+  [@@modality (p, c) = ((nonportable, uncontended), (portable, contended))]]
 end

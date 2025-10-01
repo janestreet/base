@@ -209,6 +209,72 @@ let%expect_test "" =
     [%sexp []]
 ;;
 
+(** tree interface *)
+
+module Tree = struct
+  open Tree
+
+  (** type *)
+
+  type nonrec weight = weight
+
+  type nonrec ('e, 'c) t = ('e, 'c) t = private
+    | Empty
+    | Leaf of { elt : 'e [@globalized] }
+    | Node of
+        { left : ('e, 'c) t [@globalized]
+        ; elt : 'e [@globalized]
+        ; right : ('e, 'c) t [@globalized]
+        ; weight : weight
+        }
+
+  (** globalizing *)
+
+  let globalize = globalize
+  let globalize0 = globalize0
+
+  let%expect_test _ =
+    quickcheck_m (module Tree_int) ~f:(fun tree ->
+      let tree = Tree_int.value tree in
+      let round_trip = globalize0 tree in
+      require_equal (module Tree_int.Value) round_trip tree)
+  ;;
+
+  (** sexp conversions *)
+
+  let sexp_of_t = sexp_of_t
+  let t_of_sexp_direct = t_of_sexp_direct
+
+  let%expect_test _ =
+    quickcheck_m (module Tree_int) ~f:(fun tree ->
+      let tree = Tree_int.value tree in
+      let sexp = sexp_of_t Int.sexp_of_t [%sexp_of: _] tree in
+      require_equal
+        (module Sexp)
+        sexp
+        ([%sexp_of: Set.M(Int).t]
+           (Using_comparator.of_tree tree ~comparator:Int.comparator));
+      let round_trip = t_of_sexp_direct ~comparator:Int.comparator Int.t_of_sexp sexp in
+      require_equal (module Tree_int.Value) round_trip tree)
+  ;;
+
+  (** polymorphic constructor - untested *)
+
+  let empty_without_value_restriction = empty_without_value_restriction
+
+  (** creators and accessors and transformers *)
+
+  include (
+    Test_tree_accessors : Functor.Accessors with module Types := Instances.Types.Tree)
+
+  include (
+    Test_tree_creators : Functor.Creators with module Types := Instances.Types.Tree)
+
+  include (
+    Test_tree_transformers :
+      Functor.Transformers with module Types := Instances.Types.Tree)
+end
+
 (** comparator interface *)
 
 module Using_comparator = struct
@@ -277,59 +343,5 @@ module Using_comparator = struct
     Test_using_comparator_transformers :
       Functor.Transformers with module Types := Instances.Types.Using_comparator)
 
-  (** tree interface *)
-
-  module Tree = struct
-    open Tree
-
-    (** type *)
-
-    type nonrec ('e, 'c) t = ('e, 'c) t
-
-    (** globalizing *)
-
-    let globalize = globalize
-    let globalize0 = globalize0
-
-    let%expect_test _ =
-      quickcheck_m (module Tree_int) ~f:(fun tree ->
-        let tree = Tree_int.value tree in
-        let round_trip = globalize0 tree in
-        require_equal (module Tree_int.Value) round_trip tree)
-    ;;
-
-    (** sexp conversions *)
-
-    let sexp_of_t = sexp_of_t
-    let t_of_sexp_direct = t_of_sexp_direct
-
-    let%expect_test _ =
-      quickcheck_m (module Tree_int) ~f:(fun tree ->
-        let tree = Tree_int.value tree in
-        let sexp = sexp_of_t Int.sexp_of_t [%sexp_of: _] tree in
-        require_equal
-          (module Sexp)
-          sexp
-          ([%sexp_of: Set.M(Int).t]
-             (Using_comparator.of_tree tree ~comparator:Int.comparator));
-        let round_trip = t_of_sexp_direct ~comparator:Int.comparator Int.t_of_sexp sexp in
-        require_equal (module Tree_int.Value) round_trip tree)
-    ;;
-
-    (** polymorphic constructor - untested *)
-
-    let empty_without_value_restriction = empty_without_value_restriction
-
-    (** creators and accessors and transformers *)
-
-    include (
-      Test_tree_accessors : Functor.Accessors with module Types := Instances.Types.Tree)
-
-    include (
-      Test_tree_creators : Functor.Creators with module Types := Instances.Types.Tree)
-
-    include (
-      Test_tree_transformers :
-        Functor.Transformers with module Types := Instances.Types.Tree)
-  end
+  module Tree = Tree
 end

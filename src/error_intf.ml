@@ -12,7 +12,15 @@ module type Error = sig
 
   [%%template:
   [@@@kind.default
-    k = (value_or_null, immediate, immediate64, bits64, bits32, word, float64)]
+    k
+    = ( value_or_null
+      , immediate
+      , immediate64
+      , bits64
+      , bits32
+      , word
+      , float64
+      , bits32 & bits32 )]
 
   (** Note that the exception raised by this function maintains a reference to the [t]
       passed in. *)

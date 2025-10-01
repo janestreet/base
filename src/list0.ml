@@ -16,7 +16,17 @@ module%template Constructors = struct
   type 'a t =
     | []
     | ( :: ) of 'a * ('a t[@kind k])
-  [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+  [@@kind
+    k
+    = ( float64
+      , bits32
+      , bits64
+      , word
+      , immediate
+      , immediate64
+      , value_or_null & value_or_null
+      , value_or_null & value_or_null & value_or_null
+      , value_or_null & value_or_null & value_or_null & value_or_null )]
   [@@deriving compare ~localize, equal ~localize]
 
   type 'a t = 'a list =
@@ -30,7 +40,18 @@ open Constructors
    conventions. *)
 
 [%%template
-[@@@kind.default k = (float64, bits32, bits64, word, immediate, immediate64, value)]
+[@@@kind.default
+  k
+  = ( float64
+    , bits32
+    , bits64
+    , word
+    , immediate
+    , immediate64
+    , value_or_null
+    , value_or_null & value_or_null
+    , value_or_null & value_or_null & value_or_null
+    , value_or_null & value_or_null & value_or_null & value_or_null )]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -89,16 +110,18 @@ let for_all t ~f = not ((exists [@kind k]) t ~f:(fun x -> not (f x)))
       , bits32
       , bits64
       , word
-      , value
+      , value_or_null
       , immediate
       , immediate64
-      , value & float64
-      , value & bits32
-      , value & bits64
-      , value & word
-      , value & immediate
-      , value & immediate64
-      , value & value )]
+      , value_or_null & float64
+      , value_or_null & bits32
+      , value_or_null & bits64
+      , value_or_null & word
+      , value_or_null & immediate
+      , value_or_null & immediate64
+      , value_or_null & value_or_null
+      , value_or_null & value_or_null & value_or_null
+      , value_or_null & value_or_null & value_or_null & value_or_null )]
 
 let fold_alloc t ~init ~(f : _ -> _ -> _) =
   (let rec loop acc = function
@@ -118,7 +141,8 @@ let fold = (fold_alloc [@mode ma] [@alloc heap] [@kind ka kb])
 [@@mode ma = (local, global), mb = global]
 ;;]
 
-[@@@kind.default kb = (float64, bits32, bits64, word, immediate, immediate64, value)]
+[@@@kind.default
+  kb = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
 
 let rev_map =
   let rec rmap_f f accu : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
@@ -180,7 +204,11 @@ let nontail_mapi t ~f = Stdlib.List.mapi t ~f
 let partition t ~f = Stdlib.List.partition t ~f
 
 module For_fold_right = struct
-  module Wrapper = Modes.Global
+  module%template [@mode global] Wrapper = struct
+    external wrap_list : 'a. 'a list -> 'a Modes.Global.t list = "%identity"
+
+    let[@inline] unwrap { Modes.Global.global } = global
+  end
 
   module%template [@mode local] Wrapper = struct
     let wrap_list = Fn.id

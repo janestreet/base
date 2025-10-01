@@ -297,7 +297,7 @@ module%test _ : module type of Avltree = struct
       ~f:(fun (constructors, key) ->
         let t, map = (reify [@kind k v]) constructors in
         [%test_result: Data.t option]
-          ((Option.map [@kind v value])
+          ((Option.map [@kind v value_or_null])
              ((find [@kind k v]) t (Key.unbox key) ~compare)
              ~f:Data.box)
           ~expect:(Map.find map key))

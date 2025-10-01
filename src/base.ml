@@ -218,8 +218,11 @@ module Export = struct
     compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type 'a iarray = 'a Iarray.t
-  [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+
+  [%%rederive.portable
+    type 'a iarray = 'a Iarray.t
+    [@@deriving
+      compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]
 
   type int = Int.t
   [@@deriving

@@ -49,6 +49,12 @@ module Definitions = struct
         allows faster reclamation of the space used by the buffer. *)
     val reset : t -> unit
 
+    (** [truncate b len] truncates the length of [b] to [len].
+
+        Note: the internal byte sequence is not shortened. Raises [Invalid_argument] if
+        [len < 0] or [len > length b]. *)
+    val truncate : t -> int -> unit
+
     (** [add_char b c] appends the character [c] at the end of the buffer [b]. *)
     val add_char : t -> char -> unit
 

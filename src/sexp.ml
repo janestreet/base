@@ -284,7 +284,10 @@ end
 module Utf8 = struct
   include Utf8_as_string
 
-  let to_string_hum ?indent t = to_string_hum ?indent t |> String.Utf8.of_string_unchecked
+  let to_string_hum ?indent ?max_width t =
+    to_string_hum ?indent ?max_width t |> String.Utf8.of_string_unchecked
+  ;;
+
   let to_string_mach t = to_string_mach t |> String.Utf8.of_string_unchecked
   let to_string t = to_string t |> String.Utf8.of_string_unchecked
 end

@@ -15,8 +15,11 @@ module Definitions = struct
 
   module type Public = sig
     type +'a t
-    [@@deriving
-      compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+
+    [%%rederive:
+      type nonrec 'a t = 'a t
+      [@@deriving
+        compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]
 
     (** Standard interfaces *)
 
@@ -32,10 +35,10 @@ module Definitions = struct
 
     (** Indexing *)
 
-    external length : ('a t[@local_opt]) -> int = "%array_length"
+    external length : 'a. ('a t[@local_opt]) -> int = "%array_length" [@@layout_poly]
 
     [%%template:
-    [@@@mode.default c = (uncontended, shared, contended)]
+    [@@@mode.default c = (uncontended, shared, contended), p = (portable, nonportable)]
 
     external get : ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
 

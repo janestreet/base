@@ -80,7 +80,7 @@ let tl t =
 ;;
 
 [%%template
-[@@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value)]
+[@@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -130,7 +130,7 @@ let init n ~f = (init_internal [@kind k]) n ~f ~name:"List.init"
 
 let iteri l ~f =
   ignore
-    ((fold [@kind k value]) l ~init:0 ~f:(fun i x ->
+    ((fold [@kind k value_or_null]) l ~init:0 ~f:(fun i x ->
        f i x;
        i + 1)
      : int)
@@ -421,8 +421,8 @@ let append l1 l2 =
 
 [%%template
 [@@@kind.default
-  ka = (float64, bits32, bits64, word, immediate, immediate64, value)
-  , kb = (float64, bits32, bits64, word, immediate, immediate64, value)]
+  ka = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)
+  , kb = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
 
 let rev_mapi l ~f =
   let rec loop i acc : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
@@ -434,7 +434,7 @@ let rev_mapi l ~f =
 
 let foldi t ~init ~f =
   let _, r =
-    (fold [@kind ka (value & kb)]) t ~init:(0, init) ~f:(fun (i, acc) v ->
+    (fold [@kind ka (value_or_null & kb)]) t ~init:(0, init) ~f:(fun (i, acc) v ->
       i + 1, f i acc v)
   in
   r
@@ -442,8 +442,8 @@ let foldi t ~init ~f =
 
 [%%template
 [@@@kind.default
-  ka = (float64, bits32, bits64, word, immediate, immediate64, value)
-  , kb = (value, immediate, immediate64)]
+  ka = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)
+  , kb = (value_or_null, immediate, immediate64)]
 
 open struct
   type nonrec 'a t = ('a t[@kind ka]) =
@@ -513,7 +513,7 @@ let concat_map l ~f = (concat_mapi [@kind ka kb]) l ~f:(fun _ x -> f x) [@nontai
 (* Copied from [Sexplib0] for templating *)
 
 let sexp_of_t sexp_of__a t : Sexplib0.Sexp.t =
-  List ((map [@kind k value]) ~f:sexp_of__a t)
+  List ((map [@kind k value_or_null]) ~f:sexp_of__a t)
 ;;
 
 let sexp_of_t : _ -> (_ t[@kind k]) -> Sexplib0.Sexp.t =
@@ -575,7 +575,7 @@ let append l1 l2 =
 
 [%%template
 [@@@kind.default
-  ka = (float64, bits32, bits64, word, immediate, immediate64, value)
+  ka = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)
   , kb = (float64, bits32, bits64, word)]
 
 open struct
@@ -1099,13 +1099,22 @@ module Cartesian_product = struct
 
   let bind = concat_map
   let map = map
-  let map2 a b ~f = concat_map a ~f:(fun x -> map b ~f:(fun y -> f x y))
+
+  let map2 a b ~f =
+    concat_map a ~f:(fun x -> map b ~f:(fun y -> f x y) [@nontail]) [@nontail]
+  ;;
+
   let return = singleton
   let ( >>| ) = ( >>| )
   let ( >>= ) t f = bind t ~f
 
   open struct
-    module%template Applicative = Applicative.Make_using_map2 [@modality portable] (struct
+    module%template Applicative =
+    Applicative.Make_using_map2
+      [@kind value_or_null mod maybe_null]
+      [@mode local]
+      [@modality portable]
+      (struct
         type 'a t = 'a list
 
         let return = return
@@ -1113,7 +1122,8 @@ module Cartesian_product = struct
         let map2 = map2
       end)
 
-    module%template Monad = Monad.Make [@modality portable] (struct
+    module%template Monad =
+    Monad.Make [@kind value_or_null mod maybe_null] [@mode local] [@modality portable] (struct
         type 'a t = 'a list
 
         let return = return
@@ -1165,7 +1175,8 @@ end
 include (
   Cartesian_product :
   sig
-    include Monad.S__local with type 'a t := 'a t
+    include%template
+      Monad.S [@kind value_or_null mod maybe_null] [@mode local] with type 'a t := 'a t
   end)
 
 (** returns final element of list *)
@@ -1273,8 +1284,20 @@ let all_equal t ~equal =
 
 let count t ~f = Container.count ~fold t ~f
 let sum m t ~f = Container.sum ~fold m t ~f
-let min_elt t ~compare = Container.min_elt ~fold t ~compare
-let max_elt t ~compare = Container.max_elt ~fold t ~compare
+
+let min_elt t ~compare =
+  match t with
+  | [] -> None
+  | elt :: t ->
+    Some (fold t ~init:elt ~f:(fun acc elt -> if compare acc elt > 0 then elt else acc))
+;;
+
+let max_elt t ~compare =
+  match t with
+  | [] -> None
+  | elt :: t ->
+    Some (fold t ~init:elt ~f:(fun acc elt -> if compare acc elt < 0 then elt else acc))
+;;
 
 let counti t ~f =
   foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count) [@nontail]

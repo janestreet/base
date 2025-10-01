@@ -24,6 +24,6 @@ external ( |> ) : 'a 'b. 'a -> (('a -> 'b)[@local_opt]) -> 'b = "%revapply"
 
 (* The typical use case for these functions is to pass in functional arguments and get
    functions as a result. *)
-let compose f g x = f (g x)
+let%template[@modality p = (nonportable, portable)] compose f g x = f (g x)
 let%template[@modality p = (nonportable, portable)] flip f x y = f y x
 let rec apply_n_times ~n f x = if n <= 0 then x else apply_n_times ~n:(n - 1) f (f x)

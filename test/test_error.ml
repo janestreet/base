@@ -64,12 +64,7 @@ let%expect_test "reraise_uncaught" =
          (Portable_lazy.from_fun (fun () ->
             raise_s [%message "ceci n'est pas une erreur portable"])))
       ~f:(fun () -> raise_s [%message "oops"]));
-  [%expect
-    {|
-    ((Could_not_construct (
-       "Basement__Portable_lazy.Force_raised(\"Basement__Portable_lazy.Force_raised(\\\"\\\\\\\"ceci n'est pas une erreur portable\\\\\\\"\\\")\")"))
-     oops)
-    |}];
+  [%expect {| ((Could_not_construct "ceci n'est pas une erreur portable") oops) |}];
   require_does_not_raise (fun () ->
     Error.reraise_uncaught (Error.of_string "no problem") ~f:(fun () -> ()));
   [%expect {| |}]

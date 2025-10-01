@@ -36,7 +36,7 @@ let nonportable_doesn't_cross (x : int Map.M(With_nonportable_compare).t @ nonpo
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value is nonportable but expected to be portable.
+Error: This value is nonportable but is expected to be portable.
 |}]
 
 let portable_crosses (x : int Map.M(With_portable_compare).t @ nonportable) =

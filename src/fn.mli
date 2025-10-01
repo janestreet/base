@@ -32,7 +32,8 @@ external id : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
 [@@layout_poly]
 
 (** [compose f g x] is [f (g x)]. *)
-val compose : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
+val%template compose : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
+[@@modality p = (portable, nonportable)]
 
 (** Reverses the order of arguments for a binary function. *)
 val%template flip : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c

@@ -160,3 +160,12 @@ module Local : sig
     end
   end
 end
+
+(** Be very careful -- [unsafe_value] is particularly unsafe. This should only be used in
+    [match%optional] syntax. *)
+module Optional_syntax : sig
+  module Optional_syntax : sig
+    val is_none : _ t -> bool [@@zero_alloc]
+    val unsafe_value : 'a t -> 'a [@@zero_alloc]
+  end
+end

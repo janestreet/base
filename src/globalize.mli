@@ -24,8 +24,8 @@ val%template globalize_array : 'a 'b. ('a -> 'b) -> 'a array -> 'a array
 
 val globalize_floatarray : floatarray -> floatarray
 val globalize_lazy_t : ('a -> 'b) -> 'a lazy_t -> 'a lazy_t
-val globalize_list : ('a -> 'b) -> 'a list -> 'b list
-val globalize_option : ('a -> 'b) -> 'a option -> 'b option
+val globalize_list : 'a 'b. ('a -> 'b) -> 'a list -> 'b list
+val globalize_option : 'a 'b. ('a -> 'b) -> 'a option -> 'b option
 
 val globalize_or_null
   :  ('a -> 'b)
@@ -36,4 +36,4 @@ val globalize_result
   : 'ok 'err.
   ('ok -> 'ok) -> ('err -> 'err) -> ('ok, 'err) result -> ('ok, 'err) result
 
-val globalize_ref : ('a -> 'b) -> 'a ref -> 'a ref
+val globalize_ref : 'a 'b. ('a -> 'b) -> 'a ref -> 'a ref

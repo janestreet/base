@@ -43,7 +43,8 @@ type%template 'a t = 'a array
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
 
 module%template.portable
-  [@kind k = (value, immediate, immediate64)] [@modality p] Sorter (S : sig
+  [@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
+  [@modality p] Sorter (S : sig
     type 'a t
 
     val get : 'a t -> int -> 'a
@@ -219,23 +220,28 @@ struct
          4.  left <= x < l  implies arr[x] < pivot1
          5.  r < x <= right implies arr[x] > pivot2 *)
       let rec loop l p r =
-        let pv = get arr p in
-        if compare pv pivot1 < 0
-        then (
-          swap arr p l;
-          cont (l + 1) (p + 1) r)
-        else if compare pv pivot2 > 0
-        then (
-          (* loop invariants:  same as those of the outer loop *)
-          let rec scan_backwards r =
-            if r > p && compare (get arr r) pivot2 > 0 then scan_backwards (r - 1) else r
-          in
-          let r = scan_backwards r in
-          swap arr r p;
-          cont l p (r - 1))
-        else cont l (p + 1) r
-      and cont l p r = if p > r then l, r else loop l p r in
-      let l, r = cont left left right in
+        if p > r
+        then l, r
+        else (
+          let pv = get arr p in
+          if compare pv pivot1 < 0
+          then (
+            swap arr p l;
+            loop (l + 1) (p + 1) r)
+          else if compare pv pivot2 > 0
+          then (
+            (* loop invariants:  same as those of the outer loop *)
+            let rec scan_backwards r =
+              if r > p && compare (get arr r) pivot2 > 0
+              then scan_backwards (r - 1)
+              else r
+            in
+            let r = scan_backwards r in
+            swap arr r p;
+            loop l p (r - 1))
+          else loop l (p + 1) r)
+      in
+      let l, r = loop left left right in
       l, r, pivots_equal
     ;;
 
@@ -288,7 +294,8 @@ struct
 end
 [@@inline]
 
-module%template [@kind k = (value, immediate, immediate64)] Sort =
+module%template
+  [@kind k = (value, immediate, immediate64, value mod external_, value mod external64)] Sort =
 Sorter [@kind k] [@modality portable] (struct
     type nonrec 'a t = 'a t
 
@@ -514,7 +521,7 @@ let findi_exn t ~f =
 
 (* The [value] version of this implementation initializes the output only once, based on
      the primitive [caml_array_sub]. Other approaches, like [init] or [map], first
-     initialize with a fixed value, then blit from the source. *)
+   initialize with a fixed value, then blit from the source. *)
 let copy t = (sub [@kind k1]) t ~pos:0 ~len:(length t)
 
 let rev_inplace t =
@@ -1157,10 +1164,14 @@ let sub t ~pos ~len = sub t ~pos ~len
 let invariant invariant_a t = iter t ~f:invariant_a
 
 module Private = struct
-  module%template [@kind k = (value, immediate, immediate64)] Sort = Sort [@kind k]
+  module%template
+    [@kind k = (value, immediate, immediate64, value mod external_, value mod external64)] Sort =
+    Sort
+    [@kind k]
 
   module%template.portable
-    [@kind k = (value, immediate, immediate64)] [@modality p] Sorter =
+    [@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
+    [@modality p] Sorter =
     Sorter
     [@kind k]
     [@modality p]

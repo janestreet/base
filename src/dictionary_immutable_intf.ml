@@ -384,6 +384,11 @@ module Definitions = struct
       -> f:(key:'key key -> data:'data1 -> ('data2, 'data3) Either.t)
       -> ('key, 'data2, 'phantom) t * ('key, 'data3, 'phantom) t
 
+    (** [partition_result t = partition_map t ~f:Result.to_either] *)
+    val partition_result
+      :  ('key, ('ok, 'error) Result.t, 'phantom) t
+      -> ('key, 'ok, 'phantom) t * ('key, 'error, 'phantom) t
+
     (** Produces an error combining all error messages from key/value pairs, or a
         dictionary of all [Ok] values if none are [Error]. *)
     val combine_errors

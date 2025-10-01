@@ -101,14 +101,15 @@ include%template Pretty_printer.Register_pp [@modality portable] (struct
     let module_name = "Base.Exn"
   end)
 
+let get_err_formatter = Obj.magic_portable Stdlib.Format.get_err_formatter
+
 let print_with_backtrace exn raw_backtrace =
   let serialized_exn = Serialized.of_exn exn in
-  Stdlib.Domain.DLS.access (fun access ->
-    Stdlib.Format.fprintf
-      (Stdlib.Format.get_err_formatter access)
-      "@[<2>Uncaught exception:@\n@\n@[%a@]@]@\n@."
-      Serialized.pp
-      serialized_exn);
+  Stdlib.Format.fprintf
+    (get_err_formatter ())
+    "@[<2>Uncaught exception:@\n@\n@[%a@]@]@\n@."
+    Serialized.pp
+    serialized_exn;
   if Stdlib.Printexc.backtrace_status ()
   then Stdlib.Printexc.print_raw_backtrace Stdlib.stderr raw_backtrace;
   Stdlib.flush Stdlib.stderr

@@ -9,7 +9,8 @@ let t_sexp_grammar : t Sexplib0.Sexp_grammar.t = { untyped = Any "Error.t" }
 
 [%%template
 [@@@kind.default
-  k = (value_or_null, immediate, immediate64, bits64, bits32, word, float64)]
+  k
+  = (value_or_null, immediate, immediate64, bits64, bits32, word, float64, bits32 & bits32)]
 
 let[@cold] raise (type a) t : a = (raise [@kind k]) (to_exn t)
 let[@cold] raise_s (type a) sexp : a = (raise [@kind k]) (create_s sexp)

@@ -155,12 +155,12 @@ include Int_replace_polymorphic_compare
 
 (* This needs to be defined as an external so that the compiler can specialize it as a
    direct set or caml_modify. *)
-external ( := ) : ('a ref[@local_opt]) -> 'a -> unit = "%setfield0"
+external ( := ) : 'a. ('a ref[@local_opt]) -> 'a -> unit = "%setfield0"
 
 (* These need to be defined as an external otherwise the compiler won't unbox
    references. *)
-external ( ! ) : ('a ref[@local_opt]) -> 'a = "%field0"
-external ref : 'a -> ('a ref[@local_opt]) = "%makemutable"
+external ( ! ) : 'a. ('a ref[@local_opt]) -> 'a = "%field0"
+external ref : 'a. 'a -> ('a ref[@local_opt]) = "%makemutable"
 
 let ( @ ) = Stdlib.( @ )
 let ( ^ ) = Stdlib.( ^ )
@@ -181,16 +181,22 @@ let ( lxor ) = Stdlib.( lxor )
 let ( mod ) = Stdlib.( mod )
 let abs = Stdlib.abs
 let failwith = Stdlib.failwith
-let fst = Stdlib.fst
 let invalid_arg = Stdlib.invalid_arg
-let snd = Stdlib.snd
+
+external fst : 'a 'b. ('a * 'b[@local_opt]) -> ('a[@local_opt]) = "%field0"
+external snd : 'a 'b. ('a * 'b[@local_opt]) -> ('b[@local_opt]) = "%field1"
 
 (* [raise] needs to be defined as an external as the compiler automatically replaces
    '%raise' by '%reraise' when appropriate. *)
   external%template raise : 'a. exn -> 'a = "%reraise"
   [@@kind k = (value_or_null, immediate, immediate64)]
 
-let%template raise : 'a. exn -> 'a =
+[%%template
+[@@@kind kr1 = (value & value)]
+[@@@kind kr2 = (value & value & value)]
+[@@@kind kr3 = (value & value & value & value)]
+
+let raise : 'a. exn -> 'a =
   fun exn ->
   match (raise exn : Nothing0.t) with
   | _ -> .
@@ -206,8 +212,12 @@ let%template raise : 'a. exn -> 'a =
     , value & word
     , value & immediate
     , value & immediate64
-    , value & value )]
-;;
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3
+    , bits32 & bits32 )]
+;;]
 
 external phys_equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%eq"
 external decr : (int ref[@local_opt]) -> unit = "%decr"

@@ -145,15 +145,7 @@ module Definitions = struct
       -> ('a -> Sexp.t)
       -> t
     [@@kind k = (bits64, float64, value)]
-
-    val%template create
-      :  ?here:Source_code_position0.t
-      -> ?strict:unit
-      -> string
-      -> 'a
-      -> ('a -> Sexp.t)
-      -> t
-    [@@kind k = (bits64, float64, value)] [@@mode portable]
+    [@@mode (p, c) = ((nonportable, uncontended), (portable, contended))]
 
     val create_s : Sexp.t -> t
 
@@ -181,9 +173,8 @@ module Definitions = struct
     [@@mode p = (portable, nonportable)]
 
     (** Adds a string and some other data in the form of an s-expression at the front. *)
-    val tag_arg : t -> string -> 'a -> ('a -> Sexp.t) -> t
-
-    val%template tag_arg : t -> string -> 'a -> ('a -> Sexp.t) -> t [@@mode portable]
+    val%template tag_arg : t -> string -> 'a -> ('a -> Sexp.t) -> t
+    [@@mode (p, c) = ((nonportable, uncontended), (portable, contended))]
 
     (** Combines multiple infos into one. *)
     val%template of_list : t list -> t
@@ -212,6 +203,9 @@ module Definitions = struct
         It's not a no-op because it needs to force any non-portable computation of the
         input info. *)
     val portabilize : t -> t
+
+    (** Convert to [Portable.t] via [portabilize]. *)
+    val to_portable_portabilize : t -> Portable.t
   end
 
   module type S = sig

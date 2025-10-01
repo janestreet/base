@@ -63,7 +63,7 @@ module%template.portable Make1_phantom2_distinct
          | None -> Src.length src - pos)
   ;;
 end
-[@@kind k = (value, immediate, immediate64)]
+[@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
 
 module%template.portable [@modality p] Make1 (Sequence : Sequence1 [@kind k]) = struct
   module Seq = struct
@@ -74,7 +74,7 @@ module%template.portable [@modality p] Make1 (Sequence : Sequence1 [@kind k]) = 
 
   include Make1_phantom2_distinct [@kind k] [@modality p] (Seq) (Seq)
 end
-[@@kind k = (value, immediate, immediate64)]
+[@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
 
 module%template.portable
   [@modality p] Make (Sequence : sig

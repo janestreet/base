@@ -9,8 +9,8 @@
 (library
  (foreign_stubs
   (language c)
-  (names bytes_stubs exn_stubs float_stubs int_stubs int_math_stubs obj_stubs
-    string_stubs am_testing)
+  (names array_stubs bytes_stubs exn_stubs float_stubs int_stubs
+    int_math_stubs obj_stubs string_stubs am_testing)
   (flags
    :standard
    -D_LARGEFILE64_SOURCE

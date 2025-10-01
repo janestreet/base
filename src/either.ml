@@ -3,6 +3,12 @@ include Either_intf.Definitions
 module List = List0
 include Either0
 
+open struct
+  type nonrec ('a, 'b) t = ('a, 'b) t =
+    | First of 'a
+    | Second of 'b
+end
+
 let swap = function
   | First x -> Second x
   | Second x -> First x

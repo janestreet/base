@@ -64,7 +64,7 @@ let doesn't_cross_locality
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value escapes its region.
+Error: This value is local but is expected to be global.
 |}]
 
 (* Tests for Modes.At_portability.t *)
@@ -129,7 +129,7 @@ let doesn't_cross_portability
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value is nonportable but expected to be portable.
+Error: This value is nonportable but is expected to be portable.
 |}]
 
 type _doesn't_cross_portability =
@@ -173,7 +173,7 @@ let doesn't_cross_portability
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value is nonportable but expected to be portable.
+Error: This value is nonportable but is expected to be portable.
 |}]
 
 (* We can implement Modes.Portable.t using Modes.At_portability.t *)

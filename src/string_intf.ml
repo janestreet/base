@@ -552,18 +552,10 @@ module type String = sig
 
     (** Like {!escape_gen_exn}, but returns an [Or_error.t] when constructing the escaping
         function, rather than raising. *)
-    val%template escape_gen
+    val escape_gen
       :  escapeworthy_map:(char * char) list
       -> escape_char:char
       -> (string -> string) Or_error.t
-    [@@mode nonportable]
-
-    (** Like [escape_gen], but identifying the returned function as portable. *)
-    val%template escape_gen
-      :  escapeworthy_map:(char * char) list
-      -> escape_char:char
-      -> (string -> string) Modes.Portable.t Or_error.t
-    [@@mode portable]
 
     (** A simpler version of {!escape_gen}. In this function, any escaped character is
         escaped to itself. I.e., if the escape character is ['!'] then escaping the
@@ -611,18 +603,10 @@ module type String = sig
       -> escape_char:char
       -> (string -> string) Staged.t
 
-    val%template unescape_gen
+    val unescape_gen
       :  escapeworthy_map:(char * char) list
       -> escape_char:char
       -> (string -> string) Or_error.t
-    [@@mode nonportable]
-
-    (** Like [unescape_gen], but identifying the returned function as portable. *)
-    val%template unescape_gen
-      :  escapeworthy_map:(char * char) list
-      -> escape_char:char
-      -> (string -> string) Modes.Portable.t Or_error.t
-    [@@mode portable]
 
     (** [unescape ~escape_char] is defined as [unescape_gen_exn ~map:[] ~escape_char] *)
     val unescape : escape_char:char -> (string -> string) Staged.t

@@ -1,6 +1,7 @@
 open! Import
 module Array = Array0
 module Sexp = Sexp0
+module String = String0
 include Bytes_intf.Definitions
 
 let stage = Staged.stage

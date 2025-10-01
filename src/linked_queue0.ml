@@ -10,18 +10,6 @@ let length = Stdlib.Queue.length
 let peek = [%eta1 Stdlib.Queue.peek]
 let pop = [%eta1 Stdlib.Queue.pop]
 let push = Stdlib.Queue.push
-let transfer = Stdlib.Queue.transfer
-
-let iter t ~(f : _ -> _) =
-  let caml_iter : ('a -> unit) -> 'a t -> unit =
-    Stdlib.Obj.magic (Stdlib.Queue.iter : ('a -> unit) -> 'a t -> unit)
-  in
-  caml_iter f t
-;;
-
-let fold t ~init ~(f : _ -> _ -> _) =
-  let caml_fold : ('b -> 'a -> 'b) -> 'b -> 'a t -> 'b =
-    Stdlib.Obj.magic (Stdlib.Queue.fold : ('b -> 'a -> 'b) -> 'b -> 'a t -> 'b)
-  in
-  caml_fold f init t
-;;
+let transfer = [%eta2 Stdlib.Queue.transfer]
+let iter t ~f = Stdlib.Queue.iter f t
+let fold t ~init ~f = Stdlib.Queue.fold f init t

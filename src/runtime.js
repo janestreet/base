@@ -98,6 +98,10 @@ function Base_caml_modf_positive_float_exn(a, b) {
   return Base_caml_modf_positive_float_unboxed_exn(a, b);
 }
 
+//Provides: base_array_unsafe_float_blit
+//Requires: caml_array_blit
+var base_array_unsafe_float_blit = caml_array_blit
+
 //Provides: Base_string_concat_array
 //Requires: caml_ml_string_length, caml_create_bytes, caml_blit_bytes
 //Requires: caml_string_of_bytes, caml_string_of_jsstring
@@ -125,4 +129,10 @@ function Base_string_concat_array(v_string_array, v_sep) {
     pos += len;
   }
   return caml_string_of_bytes(result);
+}
+
+// Provides: Base_obj_new_mixed_block
+// Requires: caml_obj_block
+function Base_obj_new_mixed_block(tag, wosize, scannable) {
+  return caml_obj_block(tag, wosize);
 }

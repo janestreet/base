@@ -10,9 +10,13 @@ type 'a t = 'a option =
   type 'a t = 'a option [@@deriving compare ~localize, globalize, hash, sexp_grammar]]
 
 [%%template
+[@@@kind kr1 = (value & value)]
+[@@@kind kr2 = (value & value & value)]
+[@@@kind kr3 = (value & value & value & value)]
+
 [@@@kind.default
   k
-  = ( value
+  = ( value_or_null
     , float64
     , bits32
     , bits64
@@ -25,7 +29,10 @@ type 'a t = 'a option =
     , value & word
     , value & immediate
     , value & immediate64
-    , value & value )]
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3 )]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -111,7 +118,7 @@ let value_map t ~default ~f =
 [@@kind
   ki = k
   , ko
-    = ( value
+    = ( value_or_null
       , float64
       , bits32
       , bits64
@@ -124,7 +131,10 @@ let value_map t ~default ~f =
       , value & word
       , value & immediate
       , value & immediate64
-      , value & value )]
+      , value & value
+      , value & kr1
+      , value & kr2
+      , value & kr3 )]
 ;;]
 
 let invariant f t = iter t ~f
@@ -192,6 +202,9 @@ let find_map t ~f =
 
 [%%template
 [@@@mode.default m = (global, local)]
+[@@@kind kr1 = (value & value)]
+[@@@kind kr2 = (value & value & value)]
+[@@@kind kr3 = (value & value & value & value)]
 
 let equal f (t : (_ t[@kind k])) (t' : (_ t[@kind k])) =
   match t, t' with
@@ -200,7 +213,7 @@ let equal f (t : (_ t[@kind k])) (t' : (_ t[@kind k])) =
   | _ -> false
 [@@kind
   k
-  = ( value
+  = ( value_or_null
     , float64
     , bits32
     , bits64
@@ -213,7 +226,10 @@ let equal f (t : (_ t[@kind k])) (t' : (_ t[@kind k])) =
     , value & word
     , value & immediate
     , value & immediate64
-    , value & value )]
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3 )]
 ;;
 
 let some x = Some x [@exclave_if_local m]
@@ -265,9 +281,13 @@ let try_with_join f =
 ;;
 
 [%%template
+[@@@kind kr1 = (value & value)]
+[@@@kind kr2 = (value & value & value)]
+[@@@kind kr3 = (value & value & value & value)]
+
 [@@@kind.default
   ki
-  = ( value
+  = ( value_or_null
     , float64
     , bits32
     , bits64
@@ -280,9 +300,12 @@ let try_with_join f =
     , value & word
     , value & immediate
     , value & immediate64
-    , value & value )
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3 )
   , ko
-    = ( value
+    = ( value_or_null
       , float64
       , bits32
       , bits64
@@ -295,7 +318,10 @@ let try_with_join f =
       , value & word
       , value & immediate
       , value & immediate64
-      , value & value )]
+      , value & value
+      , value & kr1
+      , value & kr2
+      , value & kr3 )]
 
 let[@mode local] map (t : (_ t[@kind ki])) ~f : (_ t[@kind ko]) =
   match t with
@@ -336,7 +362,9 @@ module Monad_arg = struct
   let bind = bind
 end
 
-include%template Monad.Make [@mode local] [@modality portable] (Monad_arg)
+include%template
+  Monad.Make [@kind value_or_null mod maybe_null] [@mode local] [@modality portable]
+    (Monad_arg)
 
 module Applicative_arg = struct
   type 'a t = 'a option
@@ -352,7 +380,11 @@ module Applicative_arg = struct
 end
 
 include%template
-  Applicative.Make_using_map2 [@mode local] [@modality portable] (Applicative_arg)
+  Applicative.Make_using_map2
+    [@kind value_or_null mod maybe_null]
+    [@mode local]
+    [@modality portable]
+    (Applicative_arg)
 
 module%template Local = struct
   module Let_syntax = struct

@@ -1,7 +1,12 @@
 open! Import
 open! Sign
 
-let%test "of_int" = of_int 37 = Pos && of_int (-22) = Neg && of_int 0 = Zero
+let%test _ = of_int 37 = Pos
+let%test _ = of_int (-22) = Neg
+let%test _ = of_int 0 = Zero
+let%test _ = Int.( = ) (to_int Neg) (-1)
+let%test _ = Int.( = ) (to_int Zero) 0
+let%test _ = Int.( = ) (to_int Pos) 1
 
 let%test_unit "( * )" =
   List.cartesian_product all all

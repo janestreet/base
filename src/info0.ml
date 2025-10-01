@@ -510,7 +510,7 @@ let to_exn t =
     | _ -> Exn (portabilize t))
 ;;
 
-let of_exn ?backtrace exn =
+let%template of_exn ?backtrace exn =
   let backtrace =
     match backtrace with
     | None -> None
@@ -520,10 +520,12 @@ let of_exn ?backtrace exn =
   match exn, backtrace with
   | Exn t, None -> t
   | Exn t, Some backtrace ->
-    of_thunked_message (fun () -> With_backtrace (to_message t, backtrace))
+    (of_thunked_message [@mode portable]) (fun () ->
+      With_backtrace (to_message t, backtrace))
   | _, None -> of_message (Exn { global = exn })
   | _, Some backtrace ->
-    of_thunked_message (fun () -> With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace))
+    (of_thunked_message [@mode portable]) (fun () ->
+      With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace))
 ;;
 
 include%template Pretty_printer.Register_pp [@mode portable] (struct
@@ -590,3 +592,4 @@ end
 
 let of_portable = Modes.Portable.unwrap
 let to_portable = Modes.Portable.wrap
+let to_portable_portabilize t = to_portable (portabilize t)

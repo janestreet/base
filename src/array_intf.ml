@@ -395,7 +395,8 @@ module type Array = sig
     end
 
     module%template.portable
-      [@kind k = (value, immediate, immediate64)] Sorter (S : sig
+      [@kind
+        k = (value, immediate, immediate64, value mod external_, value mod external64)] Sorter (S : sig
         type 'a t
 
         val get : 'a t -> int -> 'a

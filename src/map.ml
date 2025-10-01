@@ -87,23 +87,23 @@ module Tree0 = struct
      [2] Balancing weight-balanced trees, Hirai and Yamamoto, JFP 21 (3): 287–307, 2011.
      https://yoichihirai.com/bst.pdf *)
 
-  type ('k, 'v) t =
+  type ('k, 'v, 'cmp) t =
     | Empty
     | Leaf of
         { key : 'k [@globalized]
         ; data : 'v [@globalized]
         }
     | Node of
-        { left : ('k, 'v) t [@globalized]
+        { left : ('k, 'v, 'cmp) t [@globalized]
         ; key : 'k [@globalized]
         ; data : 'v [@globalized]
-        ; right : ('k, 'v) t [@globalized]
+        ; right : ('k, 'v, 'cmp) t [@globalized]
         ; weight : int
         }
 
-  type ('k, 'v) tree = ('k, 'v) t
+  type ('k, 'v, 'cmp) tree = ('k, 'v, 'cmp) t
 
-  let globalize0 : 'k 'v. ('k, 'v) t -> ('k, 'v) t = function
+  let globalize0 : 'k 'v 'cmp. ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t = function
     | Empty -> Empty
     | Leaf { key; data } -> Leaf { key; data }
     | Node { left; key; data; right; weight } -> Node { left; key; data; right; weight }
@@ -219,7 +219,7 @@ module Tree0 = struct
   (* We must call [f] with increasing indexes, because the bin_prot reader in
      Core.Map needs it. *)
   let of_increasing_iterator_unchecked ~len ~f =
-    let rec loop n ~f i : (_, _) t =
+    let rec loop n ~f i : (_, _, _) t =
       match n with
       | 0 -> Empty
       | 1 ->
@@ -448,15 +448,15 @@ module Tree0 = struct
   ;;
 
   module Build_increasing : sig
-    type ('k, 'd) t
+    type ('k, 'd, 'cmp) t
 
-    val empty : ('k, 'd) t
-    val get_empty : unit -> ('k, 'd) t
-    val max_key : ('k, 'd) t -> 'k option
-    val add_unchecked : ('k, 'd) t -> key:'k -> data:'d -> ('k, 'd) t
-    val to_tree_unchecked : ('k, 'd) t -> ('k, 'd) tree
+    val empty : ('k, 'd, 'cmp) t
+    val get_empty : unit -> ('k, 'd, 'cmp) t
+    val max_key : ('k, 'd, 'cmp) t -> 'k option
+    val add_unchecked : ('k, 'd, 'cmp) t -> key:'k -> data:'d -> ('k, 'd, 'cmp) t
+    val to_tree_unchecked : ('k, 'd, 'cmp) t -> ('k, 'd, 'cmp) tree
   end = struct
-    type ('k, 'd) t = ('k * 'd) list
+    type ('k, 'd, 'cmp) t = ('k * 'd) list
 
     let empty = []
     let get_empty () = []
@@ -1186,6 +1186,7 @@ module Tree0 = struct
   ;;
 
   let partition_map t ~f = partition_mapi t ~f:(fun ~key:_ ~data -> f data) [@nontail]
+  let partition_result t = partition_map t ~f:Result.to_either [@nontail]
 
   let partitioni_tf t ~f =
     let rec loop t ~f =
@@ -1218,11 +1219,11 @@ module Tree0 = struct
     type increasing
     type decreasing
 
-    type ('k, 'v, 'direction) t =
+    type ('k, 'v, 'cmp, 'direction) t =
       | End
-      | More of 'k * 'v * ('k, 'v) tree * ('k, 'v, 'direction) t
+      | More of 'k * 'v * ('k, 'v, 'cmp) tree * ('k, 'v, 'cmp, 'direction) t
 
-    let rec cons t (e : (_, _, increasing) t) : (_, _, increasing) t =
+    let rec cons t (e : (_, _, _, increasing) t) : (_, _, _, increasing) t =
       match t with
       | Empty -> e
       | Leaf { key = v; data = d } -> More (v, d, Empty, e)
@@ -1230,7 +1231,7 @@ module Tree0 = struct
         cons l (More (v, d, r, e))
     ;;
 
-    let rec cons_right t (e : (_, _, decreasing) t) : (_, _, decreasing) t =
+    let rec cons_right t (e : (_, _, _, decreasing) t) : (_, _, _, decreasing) t =
       match t with
       | Empty -> e
       | Leaf { key = v; data = d } -> More (v, d, Empty, e)
@@ -1238,10 +1239,10 @@ module Tree0 = struct
         cons_right r (More (v, d, l, e))
     ;;
 
-    let of_tree tree : (_, _, increasing) t = cons tree End
-    let of_tree_right tree : (_, _, decreasing) t = cons_right tree End
+    let of_tree tree : (_, _, _, increasing) t = cons tree End
+    let of_tree_right tree : (_, _, _, decreasing) t = cons_right tree End
 
-    let starting_at_increasing t key compare : (_, _, increasing) t =
+    let starting_at_increasing t key compare : (_, _, _, increasing) t =
       let rec loop t e =
         match t with
         | Empty -> e
@@ -1255,7 +1256,7 @@ module Tree0 = struct
       loop t End
     ;;
 
-    let starting_at_decreasing t key compare : (_, _, decreasing) t =
+    let starting_at_decreasing t key compare : (_, _, _, decreasing) t =
       let rec loop t e =
         match t with
         | Empty -> e
@@ -1786,6 +1787,241 @@ module Tree0 = struct
     | `Decreasing -> fold t ~init:[] ~f:(fun ~key ~data x -> (key, data) :: x)
   ;;
 
+  module When_unmatched = struct
+    include When_unmatched
+
+    let apply_to_node
+      : type k a b c.
+        (k, a, b) t
+        -> key:k
+        -> data:a
+        -> left:(k, b, c) tree
+        -> right:(k, b, c) tree
+        -> (k, b, c) tree
+      =
+      fun t ->
+      match t with
+      | Drop -> fun ~key:_ ~data:_ ~left ~right -> concat_and_balance_unchecked left right
+      | Keep -> fun ~key ~data ~left ~right -> join left key data right
+      | Map f -> fun ~key ~data ~left ~right -> join left key (f ~key ~data) right
+      | Filter f ->
+        fun ~key ~data ~left ~right ->
+          if f ~key ~data
+          then join left key data right
+          else concat_and_balance_unchecked left right
+      | Filter_map f ->
+        fun ~key ~data ~left ~right ->
+          (match f ~key ~data with
+           | None -> concat_and_balance_unchecked left right
+           | Some data -> join left key data right)
+    ;;
+
+    let apply_to_subtree : type k a b c. (k, a, b) t -> (k, a, c) tree -> (k, b, c) tree =
+      fun t ->
+      match t with
+      | Drop -> fun _ -> Empty
+      | Keep -> fun tree -> tree
+      | Map f -> fun tree -> mapi tree ~f
+      | Filter f -> fun tree -> filteri tree ~f
+      | Filter_map f -> fun tree -> filter_mapi tree ~f
+    ;;
+  end
+
+  module When_matched_internal = struct
+    (* Like [When_matched], but special cased to always traverse the left tree. Allows us
+       to avoid allocation in [Keep] and [Filter] cases by reusing unmodified trees. *)
+    type ('k, 'a, 'b, 'c) t =
+      | Drop
+      | Keep_first : (_, 'a, _, 'a) t
+      | Map of (key:'k -> 'a -> 'b -> 'c)
+      | Filter_first : (key:'k -> 'a -> 'b -> bool) -> ('k, 'a, 'b, 'a) t
+      | Filter_map of (key:'k -> 'a -> 'b -> 'c option)
+
+    (* In cases where type ['a] = ['c], we can sometimes reuse our input tree. *)
+    let join_or_reuse ~key data ~left ~right ~tree1 ~tree1_left ~tree1_right =
+      if phys_equal left tree1_left && phys_equal right tree1_right
+      then tree1
+      else join left key data right
+    ;;
+
+    let apply_to_node
+      : type k a b c d.
+        (k, a, b, c) t
+        -> key:k
+        -> a
+        -> b
+        -> left:(k, c, d) tree
+        -> right:(k, c, d) tree
+        -> tree1:(k, a, d) tree
+        -> tree1_left:(k, a, d) tree
+        -> tree1_right:(k, a, d) tree
+        -> (k, c, d) tree
+      =
+      (* Match on [t] eagerly and return a function that can be reused on each node. *)
+      fun t ->
+      match t with
+      | Drop ->
+        fun ~key:_ _ _ ~left ~right ~tree1:_ ~tree1_left:_ ~tree1_right:_ ->
+          concat_and_balance_unchecked left right
+      | Keep_first ->
+        fun ~key a _ ~left ~right ~tree1 ~tree1_left ~tree1_right ->
+          join_or_reuse ~key a ~left ~right ~tree1 ~tree1_left ~tree1_right
+      | Map f ->
+        fun ~key a b ~left ~right ~tree1:_ ~tree1_left:_ ~tree1_right:_ ->
+          join left key (f ~key a b) right
+      | Filter_first f ->
+        fun ~key a b ~left ~right ~tree1 ~tree1_left ~tree1_right ->
+          if f ~key a b
+          then join_or_reuse ~key a ~left ~right ~tree1 ~tree1_left ~tree1_right
+          else concat_and_balance_unchecked left right
+      | Filter_map f ->
+        fun ~key a b ~left ~right ~tree1:_ ~tree1_left:_ ~tree1_right:_ ->
+          (match f ~key a b with
+           | None -> concat_and_balance_unchecked left right
+           | Some data -> join left key data right)
+    ;;
+  end
+
+  (* Workhorse of [merge_by_case], specialized to use [When_matched_internal]. *)
+  let merge_by_case_internal
+    (type k a b c d)
+    (tree1 : (k, a, d) tree)
+    (tree2 : (k, b, d) tree)
+    ~(left : (k, a, c) When_unmatched.t)
+    ~(right : (k, b, c) When_unmatched.t)
+    ~(both : (k, a, b, c) When_matched_internal.t)
+    ~(compare_key : k -> k -> int)
+    =
+    (* Perform all our matching on GADTs once, before recurring. *)
+    let when_unmatched_left_key = When_unmatched.apply_to_node left in
+    let when_unmatched_left = When_unmatched.apply_to_subtree left in
+    let when_unmatched_right = When_unmatched.apply_to_subtree right in
+    let when_matched = When_matched_internal.apply_to_node both in
+    let rec merge (tree1 : (k, a, d) tree) (tree2 : (k, b, d) tree) =
+      (* Walk [tree1] recursively. *)
+      match
+        (* The extra [Empty] is a trick so we can combine [Leaf] and [Node] clauses, using
+           the [Empty] for the fields of [Node] that are not present in a [Leaf]. *)
+        Empty, tree1, tree2
+      with
+      | _, Empty, Empty -> Empty
+      | _, Empty, _ -> when_unmatched_right tree2
+      | _, _, Empty -> when_unmatched_left tree1
+      | (_ as tree1_left as tree1_right), Leaf { key; data = tree1_data }, _
+      | ( _
+        , Node
+            { left = tree1_left; key; data = tree1_data; right = tree1_right; weight = _ }
+        , _ ) ->
+        (* Find the corresponding key in [tree2] and merge. *)
+        let tree2_left, tree2_maybe_data, tree2_right = split tree2 key ~compare_key in
+        let left = merge tree1_left tree2_left in
+        let right = merge tree1_right tree2_right in
+        (match tree2_maybe_data with
+         | None -> when_unmatched_left_key ~key ~data:tree1_data ~left ~right
+         | Some (_, tree2_data) ->
+           when_matched
+             ~key
+             tree1_data
+             tree2_data
+             ~left
+             ~right
+             ~tree1
+             ~tree1_left
+             ~tree1_right)
+    in
+    merge tree1 tree2 [@nontail]
+  ;;
+
+  (* Dispatch to [merge_by_case_internal], case by case. Determine which tree to recur on
+     first by [both], then based on [weight tree1] and [weight tree2] if a choice
+     remains. We prefer to walk the larger tree so we don't have to repeat [split] on a
+     large tree more often than necessary in [merge_by_case_internal] above. *)
+  let merge_by_case
+    (type k a b c d)
+    (tree1 : (k, a, d) tree)
+    (tree2 : (k, b, d) tree)
+    ~(left : (k, a, c) When_unmatched.t)
+    ~(right : (k, b, c) When_unmatched.t)
+    ~(both : (k, a, b, c) When_matched.t)
+    ~(compare_key : k -> k -> int)
+    =
+    match (both : _ When_matched.t) with
+    | Drop ->
+      (* dispatch based on weight *)
+      if weight tree1 >= weight tree2
+      then merge_by_case_internal tree1 tree2 ~left ~right ~both:Drop ~compare_key
+      else
+        merge_by_case_internal tree2 tree1 ~left:right ~right:left ~both:Drop ~compare_key
+    | Keep_first ->
+      (* traverse left tree to keep unmodified nodes *)
+      merge_by_case_internal tree1 tree2 ~left ~right ~both:Keep_first ~compare_key
+    | Keep_second ->
+      (* traverse right tree to keep unmodified nodes *)
+      merge_by_case_internal
+        tree2
+        tree1
+        ~left:right
+        ~right:left
+        ~both:Keep_first
+        ~compare_key
+    | Map f ->
+      (* dispatch based on weight *)
+      if weight tree1 >= weight tree2
+      then
+        merge_by_case_internal
+          tree1
+          tree2
+          ~left
+          ~right
+          ~both:(Map f)
+          ~compare_key [@nontail]
+      else
+        merge_by_case_internal
+          tree2
+          tree1
+          ~left:right
+          ~right:left
+          ~both:(Map (fun ~key a b -> f ~key b a))
+          ~compare_key [@nontail]
+    | Filter_first f ->
+      (* traverse left tree to keep unmodified nodes *)
+      merge_by_case_internal
+        tree1
+        tree2
+        ~left
+        ~right
+        ~both:(Filter_first f)
+        ~compare_key [@nontail]
+    | Filter_second f ->
+      (* traverse right tree to keep unmodified nodes *)
+      merge_by_case_internal
+        tree2
+        tree1
+        ~left:right
+        ~right:left
+        ~both:(Filter_first (fun ~key a b -> f ~key b a))
+        ~compare_key [@nontail]
+    | Filter_map f ->
+      (* dispatch based on weight *)
+      if weight tree1 >= weight tree2
+      then
+        merge_by_case_internal
+          tree1
+          tree2
+          ~left
+          ~right
+          ~both:(Filter_map f)
+          ~compare_key [@nontail]
+      else
+        merge_by_case_internal
+          tree2
+          tree1
+          ~left:right
+          ~right:left
+          ~both:(Filter_map (fun ~key a b -> f ~key b a))
+          ~compare_key [@nontail]
+  ;;
+
   let merge t1 t2 ~f ~compare_key =
     let elts = Uniform_array.unsafe_create_uninitialized ~len:(length t1 + length t2) in
     let i = ref 0 in
@@ -1853,8 +2089,8 @@ module Tree0 = struct
 
     (* The type signature is explicit here to allow polymorphic recursion. *)
     let rec loop
-      : 'k 'v 'k_opt 'v_opt.
-      ('k, 'v) tree
+      : 'k 'v 'cmp 'k_opt 'v_opt.
+      ('k, 'v, 'cmp) tree
       -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
       -> 'k
       -> compare_key:('k -> 'k -> int)
@@ -2033,9 +2269,9 @@ module Tree0 = struct
        | Some upper_bound -> Some (lower_bound, upper_bound))
   ;;
 
-  type ('k, 'v) acc =
+  type ('k, 'v, 'c) acc =
     { mutable bad_key : 'k option
-    ; mutable map : ('k, 'v) t
+    ; mutable map : ('k, 'v, 'c) t
     }
 
   let of_iteri ~iteri ~compare_key =
@@ -2083,7 +2319,7 @@ module Tree0 = struct
   ;;
 
   let combine_errors t ~sexp_of_key =
-    let oks, errors = partition_map t ~f:Result.to_either in
+    let oks, errors = partition_result t in
     if is_empty errors
     then Ok oks
     else Or_error.error_s (sexp_of_t sexp_of_key Error.sexp_of_t errors)
@@ -2178,10 +2414,8 @@ type ('k, 'v, 'comparator) t =
        Note that this does not affect polymorphic [compare]: that still produces
        nonsense. *)
     comparator : ('k, 'comparator) Comparator.t [@globalized]
-  ; tree : ('k, 'v) Tree0.t
+  ; tree : ('k, 'v, 'comparator) Tree0.t
   }
-
-type ('k, 'v, 'comparator) tree = ('k, 'v) Tree0.t
 
 let globalize0 { comparator; tree } = { comparator; tree = Tree0.globalize0 tree }
 let compare_key t = Comparator.compare t.comparator
@@ -2317,6 +2551,7 @@ module Accessors = struct
   let like2_maybe_no_op t (t1, t2) = like_maybe_no_op t t1, like_maybe_no_op t t2
   let partition_mapi t ~f = like2 t (Tree0.partition_mapi t.tree ~f)
   let partition_map t ~f = like2 t (Tree0.partition_map t.tree ~f)
+  let partition_result t = like2 t (Tree0.partition_result t.tree)
   let partitioni_tf t ~f = like2_maybe_no_op t (Tree0.partitioni_tf t.tree ~f)
   let partition_tf t ~f = like2_maybe_no_op t (Tree0.partition_tf t.tree ~f)
 
@@ -2352,6 +2587,12 @@ module Accessors = struct
       ~data_equal
       ~init
       ~f
+  ;;
+
+  let merge_by_case t1 t2 ~left ~right ~both =
+    (Tree0.merge_by_case t1.tree t2.tree ~left ~right ~both ~compare_key:(compare_key t1)
+     |> like t1)
+    [@nontail]
   ;;
 
   let merge t1 t2 ~f =
@@ -2484,7 +2725,21 @@ end
 (* [0] is used as the [length] argument everywhere in this module, since trees do not
    have their lengths stored at the root, unlike maps. The values are discarded always. *)
 module Tree = struct
-  type ('k, 'v, 'comparator) t = ('k, 'v, 'comparator) tree
+  type weight = int
+
+  type ('k, 'v, 'cmp) t = ('k, 'v, 'cmp) Tree0.t =
+    | Empty
+    | Leaf of
+        { key : 'k [@globalized]
+        ; data : 'v [@globalized]
+        }
+    | Node of
+        { left : ('k, 'v, 'cmp) t [@globalized]
+        ; key : 'k [@globalized]
+        ; data : 'v [@globalized]
+        ; right : ('k, 'v, 'cmp) t [@globalized]
+        ; weight : int
+        }
 
   let globalize0 = Tree0.globalize0
   let globalize _ _ _ t = globalize0 t
@@ -2695,6 +2950,7 @@ module Tree = struct
   let filter_mapi t ~f = Tree0.filter_mapi t ~f
   let partition_mapi t ~f = Tree0.partition_mapi t ~f
   let partition_map t ~f = Tree0.partition_map t ~f
+  let partition_result t = Tree0.partition_result t
   let partitioni_tf t ~f = Tree0.partitioni_tf t ~f
   let partition_tf t ~f = Tree0.partition_tf t ~f
 
@@ -2728,6 +2984,11 @@ module Tree = struct
       ~data_equal
       ~init
       ~f
+  ;;
+
+  let merge_by_case ~comparator t1 t2 ~left ~right ~both =
+    let compare_key = Comparator.compare comparator in
+    Tree0.merge_by_case t1 t2 ~left ~right ~both ~compare_key
   ;;
 
   let merge ~comparator t1 t2 ~f =
@@ -2867,7 +3128,7 @@ module Tree = struct
   ;;
 
   module Build_increasing = struct
-    type ('k, 'v, 'w) t = ('k, 'v) Tree0.Build_increasing.t
+    type ('k, 'v, 'w) t = ('k, 'v, 'w) Tree0.Build_increasing.t
 
     let empty = Tree0.Build_increasing.empty
 
@@ -3071,11 +3332,10 @@ include Accessors
 let comparator_s t = Comparator.to_module t.comparator
 let to_comparator = Comparator.of_module
 let of_tree m tree = of_tree ~comparator:(to_comparator m) tree
-let empty m = Using_comparator.empty ~comparator:(to_comparator m)
 
 let%template empty (type cw) (m : (_, cw) Comparator.Module.t) =
-  (Using_comparator.empty [@mode portable]) ~comparator:(to_comparator m)
-[@@mode portable]
+  (Using_comparator.empty [@mode p]) ~comparator:(to_comparator m)
+[@@mode p = (nonportable, portable)]
 ;;
 
 let singleton m a = Using_comparator.singleton ~comparator:(to_comparator m) a
@@ -3252,7 +3512,7 @@ let globalize _ _ _ t = globalize0 t
 
 module Poly = struct
   type nonrec ('k, 'v) t = ('k, 'v, Comparator.Poly.comparator_witness) t
-  type nonrec ('k, 'v) tree = ('k, 'v) Tree0.t
+  type nonrec ('k, 'v) tree = ('k, 'v, Comparator.Poly.comparator_witness) Tree0.t
   type comparator_witness = Comparator.Poly.comparator_witness
 
   include Accessors
@@ -3326,7 +3586,7 @@ end
 
 module Private = struct
   module Tree = struct
-    type ('k, 'v) t = ('k, 'v) Tree0.t
+    type ('k, 'v) t = ('k, 'v, Comparator.Poly.comparator_witness) Tree0.t
 
     let balance_invariants t = Tree0.balance_invariants t
 
@@ -3355,7 +3615,7 @@ module Private = struct
     ;;
 
     let expose t =
-      match (t : (_, _) Tree0.t) with
+      match (t : (_, _, _) Tree0.t) with
       | Empty -> None
       | Leaf { key; data } -> Some (Tree0.Empty, key, data, Tree0.Empty)
       | Node { left; key; data; right; _ } -> Some (left, key, data, right)

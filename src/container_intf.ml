@@ -48,14 +48,25 @@ module Definitions = struct
         as well as in the symmetric case. *)
     val ( + ) : t -> t -> t
   end
-  [@@kind k = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  [@@kind
+    k
+    = ( value
+      , immediate
+      , immediate64
+      , float64
+      , bits32
+      , bits64
+      , word
+      , value & value
+      , value & value & value
+      , value & value & value & value )]
   [@@mode m = (global, local)]
 
   module type Generic_types = sig
     type ('a, _, _) t
     type 'a elt
   end
-  [@@kind k = (value, immediate, immediate64)]
+  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
 
   module type Generic_types__base = sig
     [@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
@@ -187,7 +198,7 @@ module Definitions = struct
     val max_elt : ('a, _, _) t -> compare:('a elt -> 'a elt -> int) -> 'a elt option
     [@@mode m = (global, m)]
   end
-  [@@kind k = (value, immediate, immediate64)]
+  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
 
   module type Generic_without_mem__base = sig
     include Generic_types__base
@@ -349,7 +360,7 @@ module Definitions = struct
     val mem : ('a, _, _) t -> 'a elt -> equal:('a elt -> 'a elt -> bool) -> bool
     [@@mode m = (global, m)]
   end
-  [@@kind k = (value, immediate, immediate64)]
+  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
 
   module type Generic__base = sig
     include Generic_without_mem__base [@alloc a]
@@ -465,7 +476,7 @@ module Definitions = struct
     include
       Generic [@kind k] [@alloc a] with type ('a, _, _) t := 'a t and type 'a elt := 'a
   end
-  [@@kind k = (value, immediate, immediate64)]
+  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
 
   module type S1__base = sig
     type 'a t [@@kind k = (value, float64, bits32, bits64, word, immediate, immediate64)]
@@ -586,42 +597,38 @@ module Definitions = struct
     [@@@kind.default k1 = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
     include sig
-        type ('a, 'b, 'c) t
-        type 'a elt
+      type ('a, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1])
+      type 'a elt := ('a elt[@kind k1])
 
-        [@@@kind.default k1]
+      [@@@kind.default k1]
 
-        val of_list : ('a elt List0.Constructors.t[@kind k1]) -> ('a, _, _) t
-        [@@alloc __ @ m = (heap_global, a @ m)]
+      val of_list : ('a elt List0.Constructors.t[@kind k1]) -> ('a, _, _) t
+      [@@alloc __ @ m = (heap_global, a @ m)]
 
-        val of_array : 'a elt array -> ('a, _, _) t
-        [@@alloc __ @ m = (heap_global, a @ m)]
+      val of_array : 'a elt array -> ('a, _, _) t [@@alloc __ @ m = (heap_global, a @ m)]
 
-        (** E.g., [append (of_list [a; b]) (of_list [c; d; e])] is
-            [of_list [a; b; c; d; e]] *)
-        val append : ('a, 'p1, 'p2) t -> ('a, 'p1, 'p2) t -> ('a, 'p1, 'p2) t
-        [@@alloc __ @ m = (heap_global, a @ m)]
+      (** E.g., [append (of_list [a; b]) (of_list [c; d; e])] is [of_list [a; b; c; d; e]] *)
+      val append : ('a, 'p1, 'p2) t -> ('a, 'p1, 'p2) t -> ('a, 'p1, 'p2) t
+      [@@alloc __ @ m = (heap_global, a @ m)]
 
-        (** Concatenates a nested container. The elements of the inner containers are
-            concatenated together in order to give the result. *)
-        val concat : (('a, 'p1, 'p2) t, 'p1, 'p2) concat -> ('a, 'p1, 'p2) t
-        [@@alloc __ @ m = (heap_global, a @ m)]
+      (** Concatenates a nested container. The elements of the inner containers are
+          concatenated together in order to give the result. *)
+      val concat : (('a, 'p1, 'p2) t, 'p1, 'p2) concat -> ('a, 'p1, 'p2) t
+      [@@alloc __ @ m = (heap_global, a @ m)]
 
-        (** [filter t ~f] returns all the elements of [t] that satisfy the predicate [f]. *)
-        val filter : ('a, 'p1, 'p2) t -> f:('a elt -> bool) -> ('a, 'p1, 'p2) t
-        [@@alloc __ @ m = (heap_global, a @ m)]
+      (** [filter t ~f] returns all the elements of [t] that satisfy the predicate [f]. *)
+      val filter : ('a, 'p1, 'p2) t -> f:('a elt -> bool) -> ('a, 'p1, 'p2) t
+      [@@alloc __ @ m = (heap_global, a @ m)]
 
-        (** [partition_tf t ~f] returns a pair [t1, t2], where [t1] is all elements of [t]
-            that satisfy [f], and [t2] is all elements of [t] that do not satisfy [f]. The
-            "tf" suffix is mnemonic to remind readers that the result is (trues, falses). *)
-        val partition_tf
-          :  ('a, 'p1, 'p2) t
-          -> f:('a elt -> bool)
-          -> ('a, 'p1, 'p2) t * ('a, 'p1, 'p2) t
-        [@@alloc __ @ m = (heap_global, a @ m)]
-      end
-      with type ('a, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1])
-       and type 'a elt := ('a elt[@kind k1])
+      (** [partition_tf t ~f] returns a pair [t1, t2], where [t1] is all elements of [t]
+          that satisfy [f], and [t2] is all elements of [t] that do not satisfy [f]. The
+          "tf" suffix is mnemonic to remind readers that the result is (trues, falses). *)
+      val partition_tf
+        :  ('a, 'p1, 'p2) t
+        -> f:('a elt -> bool)
+        -> ('a, 'p1, 'p2) t * ('a, 'p1, 'p2) t
+      [@@alloc __ @ m = (heap_global, a @ m)]
+    end
 
     [@@@kind.default k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
 

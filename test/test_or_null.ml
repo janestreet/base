@@ -634,4 +634,20 @@ end = struct
     test_complex (This 10);
     [%expect {| (21) |}]
   ;;
+
+  module Optional_syntax = Optional_syntax
+
+  let%expect_test "optional syntax" =
+    let () =
+      match%optional.Or_null This 3 with
+      | None -> failwith "wrong"
+      | Some x -> require_equal (module Int) x 3
+    in
+    let () =
+      match%optional.Or_null Null with
+      | Some x -> raise_s [%message "wrong" (x : int)]
+      | None -> ()
+    in
+    [%expect {| |}]
+  ;;
 end

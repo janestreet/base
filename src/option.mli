@@ -20,7 +20,12 @@ open! Import
 
 module Constructors : module type of Option0
 
-type%template 'a t = ('a Constructors.t[@kind k])
+[%%template:
+[@@@kind kr1 = (value & value)]
+[@@@kind kr2 = (value & value & value)]
+[@@@kind kr3 = (value & value & value & value)]
+
+type 'a t = ('a Constructors.t[@kind k])
 [@@deriving compare ~localize, equal ~localize, sexp ~stackify]
 [@@kind
   k
@@ -36,7 +41,10 @@ type%template 'a t = ('a Constructors.t[@kind k])
     , value & word
     , value & immediate
     , value & immediate64
-    , value & value )]
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3 )]]
 
 type 'a t = 'a option =
   | None
@@ -55,7 +63,8 @@ include Invariant.S1 with type 'a t := 'a t
     - [Some f <*> None = None]
     - [Some f <*> Some x = Some (f x)] *)
 
-include Applicative.S__local with type 'a t := 'a t
+include%template
+  Applicative.S [@kind value_or_null mod maybe_null] [@mode local] with type 'a t := 'a t
 
 (** {3 Monadic interface}
 
@@ -65,16 +74,20 @@ include Applicative.S__local with type 'a t := 'a t
     - [(None >>= f) = None]
     - [(Some x >>= f) = f x] *)
 
-include Monad.S__local with type 'a t := 'a t
+include%template
+  Monad.S [@kind value_or_null mod maybe_null] [@mode local] with type 'a t := 'a t
 
 (** {2 Extracting Underlying Values} *)
 
 [%%template:
 [@@@mode.default m = (global, local)]
+[@@@kind kr1 = (value & value)]
+[@@@kind kr2 = (value & value & value)]
+[@@@kind kr3 = (value & value & value & value)]
 
 [@@@kind.default
   k
-  = ( value
+  = ( value_or_null
     , float64
     , bits32
     , bits64
@@ -87,7 +100,10 @@ include Monad.S__local with type 'a t := 'a t
     , value & word
     , value & immediate
     , value & immediate64
-    , value & value )]
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3 )]
 
 (** Extracts the underlying value if present, otherwise returns [default]. *)
 val value : ('a t[@kind k]) -> default:'a -> 'a
@@ -112,7 +128,7 @@ val iter : ('a t[@kind k]) -> f:('a -> unit) -> unit
 
 [@@@kind.default
   ko
-  = ( value
+  = ( value_or_null
     , float64
     , bits32
     , bits64
@@ -125,7 +141,10 @@ val iter : ('a t[@kind k]) -> f:('a -> unit) -> unit
     , value & word
     , value & immediate
     , value & immediate64
-    , value & value )]
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3 )]
 
 (** Extracts the underlying value and applies [f] to it if present, otherwise returns
     [default]. *)
@@ -204,9 +223,13 @@ val some_if_thunk : bool -> (unit -> 'a) -> 'a t]
 (** {2 Predicates} *)
 
 [%%template:
+[@@@kind kr1 = (value & value)]
+[@@@kind kr2 = (value & value & value)]
+[@@@kind kr3 = (value & value & value & value)]
+
 [@@@kind.default
   k
-  = ( value
+  = ( value_or_null
     , float64
     , bits32
     , bits64
@@ -219,7 +242,10 @@ val some_if_thunk : bool -> (unit -> 'a) -> 'a t]
     , value & word
     , value & immediate
     , value & immediate64
-    , value & value )]
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3 )]
 
 (** [is_none t] returns true iff [t = None]. *)
 val is_none : ('a t[@kind k]) -> bool

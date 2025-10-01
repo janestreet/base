@@ -5,22 +5,12 @@ open! Import
     [Dynamic] works like [Ref], except that changes to its value are only visible to the
     current fiber and its children.
 
-    (A note on fibers: currently, common libraries for parallel programming in OxCaml are
-    nascent, and a work-in-progress. If you're not using parallelism, you can safely
-    assume that you can ignore any references in documentation to "fibers".)
-
     Every dynamic variable has a single "root" value, which is visible by default to all
     running fibers. A fiber can temporarily change the locally visible value of a dynamic
     variable within the scope of a function by calling [with_temporarily]. During the
     execution of [with_temporarily], any changes to the root value of the dynamic variable
     (eg via calls to [set_root] by the current or other fibers) are unobservable until
-    after the outermost call to [with_temporarily] returns.
-
-    NOTE: This module currently contains a "stub" implementation of dynamically scoped
-    variables, intended as a safe stop-gap until we add support for native dynamic scoping
-    in the runtime. It is currently unsafe to use this module in the presence of fibers.
-    The intention is that the interface exposed by this module will not change when it is
-    replaced with a fiber-safe implementation. *)
+    after the outermost call to [with_temporarily] returns. *)
 
 type 'a t = 'a Basement.Dynamic.t
 

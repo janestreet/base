@@ -19,23 +19,7 @@ struct
   let is_non_positive t = (compare [@mode m]) t zero <= 0
   let sign t = Sign0.of_int ((compare [@mode m]) t zero)
 end
-[@@modality nonportable]
-
-module With_zero (T : sig
-    type t [@@deriving compare [@mode m]]
-
-    val zero : t
-  end) =
-struct
-  open T
-
-  let is_positive t = (compare [@mode m]) t zero > 0
-  let is_non_negative t = (compare [@mode m]) t zero >= 0
-  let is_negative t = (compare [@mode m]) t zero < 0
-  let is_non_positive t = (compare [@mode m]) t zero <= 0
-  let sign t = Sign0.of_int ((compare [@mode m]) t zero)
-end
-[@@modality portable]
+[@@modality (p, c) = ((nonportable, uncontended), (portable, contended))]
 
 module%template.portable
   [@modality p] Poly (T : sig

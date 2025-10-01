@@ -52,6 +52,8 @@ module Array = struct
   [%%template
   [@@@kind.default k = (value, immediate, immediate64)]
 
+  (* [unsafe_blit] can't be [[@noalloc]] because, even though it does not allocate, it
+     still can induce a minor GC *)
   external unsafe_blit
     : 'a.
     src:('a array[@local_opt])
@@ -65,25 +67,23 @@ module Array = struct
   external unsafe_fill : 'a. 'a array -> int -> int -> 'a -> unit = "caml_array_fill"
   external unsafe_sub : 'a. 'a array -> int -> int -> 'a array = "caml_array_sub"
   external concat : 'a. 'a array list -> 'a array = "caml_array_concat"]
+
+  [%%template
+    external unsafe_blit
+      :  src:('a array[@local_opt])
+      -> src_pos:int
+      -> dst:('a array[@local_opt])
+      -> dst_pos:int
+      -> len:int
+      -> unit
+      = "caml_array_blit"
+    [@@kind __ = (bits64, bits32, word, float64)]]
 end
 
 include Array
 
 [%%template
 [@@@kind.default k = (float64, bits32, bits64, word)]
-
-let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len =
-  let blit_one i = unsafe_set dst (dst_pos + i) (unsafe_get src (src_pos + i)) in
-  if phys_equal src dst && src_pos < dst_pos
-  then
-    for i = len - 1 downto 0 do
-      (blit_one [@inlined]) i
-    done
-  else
-    for i = 0 to len - 1 do
-      (blit_one [@inlined]) i
-    done
-;;
 
 let unsafe_fill t pos len x =
   for i = pos to pos + len - 1 do

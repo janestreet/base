@@ -1,31 +1,42 @@
 open! Import
 
 [%%template
-  type nonrec 'a t =
-    | None
-    | Some of 'a
-  [@@kind
-    k
-    = ( float64
-      , bits32
-      , bits64
-      , word
-      , immediate
-      , immediate64
-      , value & float64
-      , value & bits32
-      , value & bits64
-      , value & word
-      , value & immediate
-      , value & immediate64
-      , value & value )]
-  [@@deriving compare ~localize]]
+[@@@kind kr1 = (value & value)]
+[@@@kind kr2 = (value & value & value)]
+[@@@kind kr3 = (value & value & value & value)]
+
+type nonrec 'a t =
+  | None
+  | Some of 'a
+[@@kind
+  k
+  = ( float64
+    , bits32
+    , bits64
+    , word
+    , immediate
+    , immediate64
+    , value & float64
+    , value & bits32
+    , value & bits64
+    , value & word
+    , value & immediate
+    , value & immediate64
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3 )]
+[@@deriving compare ~localize]]
 
 type 'a t = 'a option =
   | None
   | Some of 'a
 
 [%%template
+[@@@kind kr1 = (value & value)]
+[@@@kind kr2 = (value & value & value)]
+[@@@kind kr3 = (value & value & value & value)]
+
 [@@@kind.default
   k
   = ( value
@@ -41,7 +52,10 @@ type 'a t = 'a option =
     , value & word
     , value & immediate
     , value & immediate64
-    , value & value )]
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3 )]
 
 let is_none : (_ t[@kind k]) -> bool = function
   | None -> true

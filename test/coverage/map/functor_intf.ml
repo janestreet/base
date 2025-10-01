@@ -20,8 +20,10 @@ module Definitions = struct
     include
       Map.Creators_generic
       with type ('a, 'b, 'c) t := ('a, 'b, 'c) Types.t
+      with type ('a, 'b, 'c) map := ('a, 'b, 'c) Types.t
       with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Types.tree
       with type 'a key := 'a Types.key
+      with type 'a map_key := 'a Types.key
       with type 'a cmp := 'a Types.cmp
       with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) Types.create_options
       with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Types.access_options

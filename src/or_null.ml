@@ -7,6 +7,16 @@ type 'a t = 'a or_null =
 external is_null : 'a t -> bool = "%obj_is_int"
 external unsafe_value : 'a t -> 'a = "%field0"
 
+module Optional_syntax = struct
+  module Optional_syntax = struct
+    let[@zero_alloc] [@inline] is_none t = is_null t
+
+    let[@inline] unsafe_value t =
+      (unsafe_value [@alert "-unsafe_optimizations_if_misapplied"]) t
+    ;;
+  end
+end
+
 include (
 struct
   type 'a t = 'a or_null [@@deriving globalize, sexp ~stackify]

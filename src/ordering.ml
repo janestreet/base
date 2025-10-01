@@ -6,8 +6,7 @@ type t =
   | Greater
 [@@deriving compare ~localize, hash, enumerate, sexp ~stackify, sexp_grammar]
 
-let equal a b = compare a b = 0
-let equal__local a b = compare__local a b = 0
+let%template[@mode m = (local, global)] equal a b = (compare [@mode m]) a b = 0
 
 module Export = struct
   type _ordering = t =

@@ -1155,6 +1155,7 @@ module Test_transformers
 
   and partition_mapi = partition_mapi
   and partition_map = partition_map
+  and partition_result = partition_result
   and partitioni_tf = partitioni_tf
   and partition_tf = partition_tf
 
@@ -1251,6 +1252,149 @@ module Test_transformers
           Option.some_if (Key.( > ) key k) (key, elt))
       in
       require_equal (module Alist_merge) merge_alist expect)
+
+  and merge_by_case = merge_by_case
+
+  and () =
+    let module One_side = struct
+      type t =
+        [ `Drop
+        | `Keep
+        | `Map
+        | `Filter
+        | `Filter_map
+        ]
+      [@@deriving quickcheck, sexp_of]
+
+      let swap = function
+        | key, `Left x -> key, `Right x
+        | key, `Right y -> key, `Left y
+        | key, `Both (x, y) -> key, `Both (y, x)
+      ;;
+
+      let map_f ~key ~data = if Key.to_int key <= 1 then data else swap data
+      let filter_f ~key ~data:_ = Key.to_int key <= 1
+
+      let filter_map_f ~key ~data =
+        match Key.to_int key with
+        | 0 -> Some data
+        | 1 -> Some (swap data)
+        | _ -> None
+      ;;
+
+      let apply : t -> _ =
+        fun t ~key data ->
+        match t with
+        | `Drop -> None
+        | `Keep -> Some data
+        | `Map -> Some (map_f ~key ~data)
+        | `Filter -> Option.some_if (filter_f ~key ~data) data
+        | `Filter_map -> filter_map_f ~key ~data
+      ;;
+
+      let to_when_unmatched : t -> _ Map.When_unmatched.t = function
+        | `Drop -> Drop
+        | `Keep -> Keep
+        | `Map -> Map map_f
+        | `Filter -> Filter filter_f
+        | `Filter_map -> Filter_map filter_map_f
+      ;;
+
+      (* Ensure we haven't missed a case. *)
+      let _of_when_unmatched : _ Map.When_unmatched.t -> t = function
+        | Drop -> `Drop
+        | Keep -> `Keep
+        | Map _ -> `Map
+        | Filter _ -> `Filter
+        | Filter_map _ -> `Filter_map
+      ;;
+    end
+    in
+    let module Two_sides = struct
+      type t =
+        [ `Drop
+        | `Keep_first
+        | `Keep_second
+        | `Map
+        | `Filter_first
+        | `Filter_second
+        | `Filter_map
+        ]
+      [@@deriving quickcheck, sexp_of]
+
+      let map_f ~key x y = if Key.to_int key <= 1 then x else y
+      let filter_f ~key _ _ = Key.to_int key <= 1
+
+      let filter_map_f ~key x y =
+        match Key.to_int key with
+        | 0 -> Some x
+        | 1 -> Some y
+        | _ -> None
+      ;;
+
+      let apply : t -> _ =
+        fun t ~key x y ->
+        match t with
+        | `Drop -> None
+        | `Keep_first -> Some x
+        | `Keep_second -> Some y
+        | `Map -> Some (map_f ~key x y)
+        | `Filter_first -> Option.some_if (filter_f ~key x y) x
+        | `Filter_second -> Option.some_if (filter_f ~key x y) y
+        | `Filter_map -> filter_map_f ~key x y
+      ;;
+
+      let to_when_matched : t -> _ Map.When_matched.t = function
+        | `Drop -> Drop
+        | `Keep_first -> Keep_first
+        | `Keep_second -> Keep_second
+        | `Map -> Map map_f
+        | `Filter_first -> Filter_first filter_f
+        | `Filter_second -> Filter_second filter_f
+        | `Filter_map -> Filter_map filter_map_f
+      ;;
+
+      (* Ensure we haven't missed a case. *)
+      let _of_when_matched : _ Map.When_matched.t -> t = function
+        | Drop -> `Drop
+        | Keep_first -> `Keep_first
+        | Keep_second -> `Keep_second
+        | Map _ -> `Map
+        | Filter_first _ -> `Filter_first
+        | Filter_second _ -> `Filter_second
+        | Filter_map _ -> `Filter_map
+      ;;
+    end
+    in
+    quickcheck_m
+      (module struct
+        type t = Inst_and_inst.t * One_side.t * One_side.t * Two_sides.t
+        [@@deriving quickcheck, sexp_of]
+
+        let sample = Memo.memoize [%generator: t]
+      end)
+      ~f:(fun ((a, b), left, right, both) ->
+        let a = Inst.value a in
+        let b = Inst.value b in
+        let actual =
+          access
+            merge_by_case
+            (Impl.mapi a ~f:(fun ~key ~data -> key, `Left data))
+            (Impl.mapi b ~f:(fun ~key ~data -> key, `Right data))
+            ~left:(One_side.to_when_unmatched left)
+            ~right:(One_side.to_when_unmatched right)
+            ~both:(Two_sides.to_when_matched both)
+          |> data
+        in
+        let expect =
+          access merge a b ~f:(fun ~key elt ->
+            match elt with
+            | `Left _ -> One_side.apply left ~key (key, elt)
+            | `Right _ -> One_side.apply right ~key (key, elt)
+            | `Both (x, y) -> Two_sides.apply both ~key (key, `Left x) (key, `Right y))
+          |> data
+        in
+        require_equal (module Alist_merge) actual expect)
 
   and merge_disjoint_exn = merge_disjoint_exn
 

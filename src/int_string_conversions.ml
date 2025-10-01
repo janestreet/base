@@ -1,5 +1,6 @@
 open! Import
 module Sexp = Sexp0
+module String = String0
 
 (* string conversions *)
 

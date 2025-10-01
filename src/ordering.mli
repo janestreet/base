@@ -41,6 +41,7 @@ val all : t list
       Greater  if n > 0
     v} *)
 val of_int : int -> t
+[@@zero_alloc]
 
 (** [to_int t] is:
 
@@ -53,6 +54,7 @@ val of_int : int -> t
     It can be useful when writing a comparison function to allow one to return
     [Ordering.t] values and transform them to [int]s later. *)
 val to_int : t -> int
+[@@zero_alloc]
 
 module Export : sig
   type _ordering = t =
