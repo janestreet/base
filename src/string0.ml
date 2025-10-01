@@ -20,6 +20,7 @@ open! Import0
 open struct
   module Sys = Sys0
   module Uchar = Uchar0
+  module Bytes = Bytes0
 end
 
 module String = struct
@@ -86,19 +87,27 @@ include String
 
 let max_length = Sys.max_string_length
 
-let ( ^ ) (s1 @ local) (s2 @ local) =
-  let l1 = length s1
-  and l2 = length s2 in
-  let s = Bytes0.create (l1 + l2) in
-  Bytes0.unsafe_blit_string ~src:s1 ~src_pos:0 ~dst:s ~dst_pos:0 ~len:l1;
-  Bytes0.unsafe_blit_string ~src:s2 ~src_pos:0 ~dst:s ~dst_pos:l1 ~len:l2;
-  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:s
+let%template[@alloc a = (heap, stack)] append (s1 @ local) (s2 @ local) =
+  (let l1 = length s1
+   and l2 = length s2 in
+   let s = (Bytes.create [@alloc a]) (l1 + l2) in
+   Bytes.unsafe_blit_string ~src:s1 ~src_pos:0 ~dst:s ~dst_pos:0 ~len:l1;
+   Bytes.unsafe_blit_string ~src:s2 ~src_pos:0 ~dst:s ~dst_pos:l1 ~len:l2;
+   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s)
+  [@exclave_if_stack a]
 ;;
 
+let ( ^ ) s1 s2 = append s1 s2
 let capitalize = Stdlib.String.capitalize_ascii
 let compare = Stdlib.String.compare
 let escaped = Stdlib.String.escaped
-let make = Stdlib.String.make
+
+let%template[@alloc a = (heap, stack)] make n c =
+  Bytes.unsafe_to_string
+    ~no_mutation_while_string_reachable:((Bytes.make [@alloc a]) n c)
+  [@exclave_if_stack a]
+;;
+
 let sub = Stdlib.String.sub
 let uncapitalize = Stdlib.String.uncapitalize_ascii
 
@@ -475,13 +484,12 @@ include struct
   ;;
 
   let rec unsafe_blits dst pos sep seplen = function
-    | [] -> dst
+    | [] -> ()
     | hd :: [] ->
-      Bytes0.unsafe_blit_string ~src:hd ~src_pos:0 ~dst ~dst_pos:pos ~len:(length hd);
-      dst
+      Bytes.unsafe_blit_string ~src:hd ~src_pos:0 ~dst ~dst_pos:pos ~len:(length hd)
     | hd :: tl ->
-      Bytes0.unsafe_blit_string ~src:hd ~src_pos:0 ~dst ~dst_pos:pos ~len:(length hd);
-      Bytes0.unsafe_blit_string
+      Bytes.unsafe_blit_string ~src:hd ~src_pos:0 ~dst ~dst_pos:pos ~len:(length hd);
+      Bytes.unsafe_blit_string
         ~src:sep
         ~src_pos:0
         ~dst
@@ -490,47 +498,57 @@ include struct
       unsafe_blits dst (pos + length hd + seplen) sep seplen tl
   ;;
 
-  let concat : ?sep:string -> string list @ local -> string =
-    fun ?(sep = "") l ->
-    match l with
+  open%template (
+  struct
+    let[@alloc m = heap] smart_globalize globalize a = globalize a
+    let[@alloc m = stack] smart_globalize _globalize a = a
+  end :
+  sig
+  @@ portable
+    val smart_globalize : ('a @ local -> 'a @ global) -> 'a @ local -> 'a @ m
+    [@@alloc __ @ m = (heap_global, stack_local)]
+  end)
+
+  let%template[@alloc a = (heap, stack)] concat ?(sep = "") (l @ local) =
+    match[@exclave_if_stack a] l with
     | [] -> ""
-    | [ x ] -> Globalize.globalize_string x
+    | [ x ] -> (smart_globalize [@alloc a]) Globalize.globalize_string x
     | l ->
       let seplen = length sep in
-      Bytes0.unsafe_to_string
-        ~no_mutation_while_string_reachable:
-          (unsafe_blits (Bytes0.create (sum_lengths 0 seplen l)) 0 sep seplen l)
+      let s = (Bytes.create [@alloc a]) (sum_lengths 0 seplen l) in
+      unsafe_blits s 0 sep seplen l;
+      Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s
   ;;
 end
 
 let lowercase string =
   let string =
-    Bytes0.unsafe_of_string_promise_no_mutation string |> Bytes0.map ~f:Char0.lowercase
+    Bytes.unsafe_of_string_promise_no_mutation string |> Bytes.map ~f:Char0.lowercase
   in
-  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:string
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
 
 let lowercase__stack (string @ local) = exclave_
   let string =
-    Bytes0.unsafe_of_string_promise_no_mutation string
-    |> Bytes0.map__stack ~f:Char0.lowercase
+    Bytes.unsafe_of_string_promise_no_mutation string
+    |> Bytes.map__stack ~f:Char0.lowercase
   in
-  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:string
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
 
 let uppercase string =
   let string =
-    Bytes0.unsafe_of_string_promise_no_mutation string |> Bytes0.map ~f:Char0.uppercase
+    Bytes.unsafe_of_string_promise_no_mutation string |> Bytes.map ~f:Char0.uppercase
   in
-  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:string
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
 
 let uppercase__stack (string @ local) = exclave_
   let string =
-    Bytes0.unsafe_of_string_promise_no_mutation string
-    |> Bytes0.map__stack ~f:Char0.uppercase
+    Bytes.unsafe_of_string_promise_no_mutation string
+    |> Bytes.map__stack ~f:Char0.uppercase
   in
-  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:string
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
 
 let iter t ~(local_ f) =
@@ -566,4 +584,86 @@ let split_lines =
           back_up_at_newline ~t ~pos ~eol)
       done;
       sub t ~pos:0 ~len:!eol :: !ac)
+;;
+
+let init n ~f =
+  if n < 0 then Printf.invalid_argf "String.init %d" n ();
+  let t = Bytes.create n in
+  for i = 0 to n - 1 do
+    Bytes.set t i (f i)
+  done;
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t
+;;
+
+(* [filter t f] is implemented by the following algorithm.
+
+   Let [n = length t].
+
+   1. Find the lowest [i] such that [not (f t.[i])].
+
+   2. If there is no such [i], then return [t].
+
+   3. If there is such an [i], allocate a string, [out], to hold the result.  [out] has
+   length [n - 1], which is the maximum possible output size given that there is at least
+   one character not satisfying [f].
+
+   4. Copy characters at indices 0 ... [i - 1] from [t] to [out].
+
+   5. Walk through characters at indices [i+1] ... [n-1] of [t], copying those that
+   satisfy [f] from [t] to [out].
+
+   6. If we completely filled [out], then return it.  If not, return the prefix of [out]
+   that we did fill in.
+
+   This algorithm has the property that it doesn't allocate a new string if there's
+   nothing to filter, which is a common case. *)
+let filter t ~f =
+  let n = length t in
+  let i = ref 0 in
+  while !i < n && f t.[!i] do
+    incr i
+  done;
+  if !i = n
+  then t
+  else (
+    let out = Bytes.create (n - 1) in
+    Bytes.blit_string ~src:t ~src_pos:0 ~dst:out ~dst_pos:0 ~len:!i;
+    let out_pos = ref !i in
+    incr i;
+    while !i < n do
+      let c = t.[!i] in
+      if f c
+      then (
+        Bytes.set out !out_pos c;
+        incr out_pos);
+      incr i
+    done;
+    let out = Bytes.unsafe_to_string ~no_mutation_while_string_reachable:out in
+    if !out_pos = n - 1 then out else sub out ~pos:0 ~len:!out_pos)
+;;
+
+(* repeated code to avoid requiring an extra allocation for a closure on each call. *)
+let filteri t ~f =
+  let n = length t in
+  let i = ref 0 in
+  while !i < n && f !i t.[!i] do
+    incr i
+  done;
+  if !i = n
+  then t
+  else (
+    let out = Bytes.create (n - 1) in
+    Bytes.blit_string ~src:t ~src_pos:0 ~dst:out ~dst_pos:0 ~len:!i;
+    let out_pos = ref !i in
+    incr i;
+    while !i < n do
+      let c = t.[!i] in
+      if f !i c
+      then (
+        Bytes.set out !out_pos c;
+        incr out_pos);
+      incr i
+    done;
+    let out = Bytes.unsafe_to_string ~no_mutation_while_string_reachable:out in
+    if !out_pos = n - 1 then out else sub out ~pos:0 ~len:!out_pos)
 ;;

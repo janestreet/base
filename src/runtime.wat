@@ -3,6 +3,10 @@
       (func $caml_copy_int64 (param i64) (result (ref eq))))
    (import "env" "caml_copy_int32"
       (func $caml_copy_int32 (param i32) (result (ref eq))))
+   (import "env" "caml_floatarray_blit"
+      (func $caml_floatarray_blit
+         (param (ref eq)) (param (ref eq)) (param (ref eq)) (param (ref eq))
+         (param (ref eq)) (result (ref eq))))
    (import "env" "Int64_val" (func $Int64_val (param (ref eq)) (result i64)))
    (import "env" "Int32_val" (func $Int32_val (param (ref eq)) (result i32)))
    (import "env" "caml_hash"
@@ -28,6 +32,9 @@
       (func $caml_invalid_argument (param (ref eq))))
    (import "env" "caml_string_cat"
       (func $caml_string_cat
+         (param (ref eq)) (param (ref eq)) (result (ref eq))))
+   (import "env" "caml_obj_block"
+      (func $caml_obj_block
          (param (ref eq)) (param (ref eq)) (result (ref eq))))
 
    (type $string (array (mut i8)))
@@ -205,6 +212,8 @@
          (then (local.get $x))
          (else (local.get $y))))
 
+   (export "base_array_unsafe_float_blit" (func $caml_floatarray_blit))
+
    (func (export "Base_string_concat_array")
       (param $str_array (ref eq)) (param $sep_ref (ref eq)) (result (ref eq))
       (local $i i32)
@@ -273,4 +282,9 @@
                (local.set $i (i32.add (local.get $i) (i32.const 1)))
                (br $loop))))
       (local.get $str))
+
+   (func (export "Base_obj_new_mixed_block")
+      (param $tag (ref eq)) (param $wosize (ref eq)) (param $scannable (ref eq))
+      (result (ref eq))
+      (call $caml_obj_block (local.get $tag) (local.get $wosize)))
 )

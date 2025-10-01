@@ -14,9 +14,12 @@ module Definitions = struct
   end
 
   module type Public = sig
-    type +'a t
-    [@@deriving
-      compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    type (+'a : any mod separable) t
+
+    [%%rederive:
+      type nonrec 'a t = 'a t
+      [@@deriving
+        compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]
 
     (** Standard interfaces *)
 
@@ -32,14 +35,29 @@ module Definitions = struct
 
     (** Indexing *)
 
-    external length : ('a t[@local_opt]) @ contended -> int = "%array_length"
-    external get : ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
+    external length
+      : ('a : any mod separable).
+      ('a t[@local_opt]) @ immutable -> int
+      = "%array_length"
+    [@@layout_poly]
+
+    [%%template:
+    [@@@mode.default c = (uncontended, shared, contended), p = (portable, nonportable)]
+
+    external get
+      :  ('a t[@local_opt]) @ c p
+      -> int
+      -> ('a[@local_opt]) @ c p
+      = "%array_safe_get"
+
+    val%template get_opt : 'a t @ c m p -> int -> 'a option @ c m p
+    [@@mode c] [@@alloc __ @ m = (heap_global, stack_local)]
 
     external unsafe_get
-      :  ('a t[@local_opt])
+      :  ('a t[@local_opt]) @ c p
       -> int
-      -> ('a[@local_opt])
-      = "%array_unsafe_get"
+      -> ('a[@local_opt]) @ c p
+      = "%array_unsafe_get"]
 
     val last_exn : 'a t -> 'a
 
@@ -73,6 +91,18 @@ module Definitions = struct
     val drop_prefix : 'a t -> len:int -> 'a t
     val drop_suffix : 'a t -> len:int -> 'a t
     val group : 'a t -> break:local_ ('a -> 'a -> bool) -> 'a t t
+
+    (** [split_n t n] returns a pair of iarrays [(first, second)] where [first] contains
+        the first [n] elements of [t] and [second] contains the remaining elements.
+
+        - If [n >= length t], returns [(t, empty)].
+        - If [n <= 0], returns [(empty, t)]. *)
+    val split_n : 'a t -> int -> 'a t * 'a t
+
+    (** [chunks_of t ~length] returns an iarray of iarrays whose concatenation is equal to
+        the original iarray. Every iarray has [length] elements, except for possibly the
+        last iarray, which may have fewer. [chunks_of] raises if [length <= 0]. *)
+    val chunks_of : 'a t -> length:int -> 'a t t
 
     (** Reordering *)
 
@@ -287,6 +317,22 @@ module Definitions = struct
         -> local_ 'acc * 'b t
     end
 
+    (** Operations for unique iarrays *)
+    module Unique : sig
+      val init : int -> f:(int -> 'a @ unique) -> 'a t @ unique
+      val map : 'a t @ unique -> f:('a @ unique -> 'b @ unique) @ local -> 'b t @ unique
+
+      val mapi
+        :  'a t @ unique
+        -> f:(int -> 'a @ unique -> 'b @ unique) @ local
+        -> 'b t @ unique
+
+      val iter : 'a t @ unique -> f:('a @ unique -> unit) @ local -> unit
+      val iteri : 'a t @ unique -> f:(int -> 'a @ unique -> unit) @ local -> unit
+      val unzip : ('a * 'b) t @ unique -> 'a t * 'b t @ unique
+      val zip_exn : 'a t @ unique -> 'b t @ unique -> ('a * 'b) t @ unique
+    end
+
     (** Unsafe conversions
 
         Immutable arrays can be converted to and from mutable arrays, as they can have the
@@ -309,7 +355,7 @@ module type Iarray = sig @@ portable
     include Definitions
   end
 
-  include Public with type 'a t = 'a iarray (** @inline *)
+  include Public with type ('a : any mod separable) t = 'a iarray (** @inline *)
 
   (**/**)
 

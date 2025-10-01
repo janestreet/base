@@ -2,12 +2,14 @@
    combinators for [sexp_of], [of_sexp], [compare] and [hash] and are included in
    [Import]. *)
 
+[@@@warning "-incompatible-with-upstream"]
+
 include (
   Shadow_stdlib :
     module type of struct
       include Shadow_stdlib
     end
-    with type 'a ref := 'a ref
+    with type ('a : value_or_null) ref := 'a ref
     with type ('a, 'b, 'c) format := ('a, 'b, 'c) format
     with type ('a, 'b, 'c, 'd) format4 := ('a, 'b, 'c, 'd) format4
     with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
@@ -43,8 +45,10 @@ include (
     with module Unit := Shadow_stdlib.Unit)
 [@ocaml.warning "-3"]
 
-type 'a ref = 'a Stdlib.ref = { mutable contents : 'a }
-type 'a iarray = 'a Basement.Stdlib_iarray_labels.t
+[@@@warning "-incompatible-with-upstream"]
+
+type ('a : value_or_null) ref = 'a Stdlib.ref = { mutable contents : 'a }
+type ('a : any mod separable) iarray = 'a Basement.Stdlib_iarray_labels.t
 type 'a or_null = 'a Basement.Or_null_shim.t [@@or_null_reexport]
 
 module Stdlib = struct
@@ -164,12 +168,21 @@ include Int_replace_polymorphic_compare
 
 (* This needs to be defined as an external so that the compiler can specialize it as a
    direct set or caml_modify. *)
-external ( := ) : ('a ref[@local_opt]) -> 'a -> unit @@ portable = "%setfield0"
+external ( := )
+  : ('a : value_or_null).
+  ('a ref[@local_opt]) -> 'a -> unit
+  @@ portable
+  = "%setfield0"
 
 (* These need to be defined as an external otherwise the compiler won't unbox
    references. *)
-external ( ! ) : ('a ref[@local_opt]) -> 'a @@ portable = "%field0"
-external ref : 'a -> ('a ref[@local_opt]) @@ portable = "%makemutable"
+external ( ! ) : ('a : value_or_null). ('a ref[@local_opt]) -> 'a @@ portable = "%field0"
+
+external ref
+  : ('a : value_or_null).
+  'a -> ('a ref[@local_opt])
+  @@ portable
+  = "%makemutable"
 
 let ( @ ) = Stdlib.( @ )
 let ( ^ ) = Stdlib.( ^ )
@@ -196,13 +209,53 @@ let ( lxor ) = Stdlib.( lxor )
 let ( mod ) = Stdlib.( mod )
 let abs = Stdlib.abs
 let failwith = Stdlib.failwith
-let fst = Stdlib.fst
 let invalid_arg = Stdlib.invalid_arg
-let snd = Stdlib.snd
+
+external fst
+  : ('a : value_or_null) ('b : value_or_null).
+  ('a * 'b[@local_opt]) -> ('a[@local_opt])
+  @@ portable
+  = "%field0_immut"
+
+external snd
+  : ('a : value_or_null) ('b : value_or_null).
+  ('a * 'b[@local_opt]) -> ('b[@local_opt])
+  @@ portable
+  = "%field1_immut"
 
 (* [raise] needs to be defined as an external as the compiler automatically replaces
    '%raise' by '%reraise' when appropriate. *)
-external raise : exn -> _ @ portable unique @@ portable = "%reraise"
+  external%template raise : ('a : k). exn -> 'a @ portable unique @@ portable = "%reraise"
+  [@@kind k = (value_or_null, immediate, immediate64)]
+
+[%%template
+[@@@kind kr1 = (value & value)]
+[@@@kind kr2 = (value & value & value)]
+[@@@kind kr3 = (value & value & value & value)]
+
+let raise : ('a : k). (exn -> 'a @ portable unique) @ portable =
+  fun exn ->
+  match (raise exn : Nothing0.t) with
+  | _ -> .
+[@@kind
+  k
+  = ( bits32
+    , bits64
+    , float64
+    , word
+    , value & bits32
+    , value & bits64
+    , value & float64
+    , value & word
+    , value & immediate
+    , value & immediate64
+    , value & value
+    , value & kr1
+    , value & kr2
+    , value & kr3
+    , bits32 & bits32 )]
+;;]
+
 external phys_equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%eq"
 external decr : (int ref[@local_opt]) -> unit @@ portable = "%decr"
 external incr : (int ref[@local_opt]) -> unit @@ portable = "%incr"

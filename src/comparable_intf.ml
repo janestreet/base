@@ -222,21 +222,13 @@ module type Comparable = sig @@ portable
     end) : S [@modality p] [@mode m] with type t := T.t
 
   module With_zero (T : sig
-      type t [@@deriving (compare [@mode m]), sexp_of]
+    @@ p
+      type t : value mod c p [@@deriving (compare [@mode m]), sexp_of]
 
       val zero : t
     end) : sig
+    @@ p
     include With_zero [@mode m] with type t := T.t
   end
-
-  module With_zero (T : sig
-    @@ portable
-      type t : value mod contended [@@deriving (compare [@mode m]), sexp_of]
-
-      val zero : t
-    end) : sig
-    @@ portable
-    include With_zero [@mode m] with type t := T.t
-  end
-  [@@modality portable]]
+  [@@modality (p, c) = ((nonportable, uncontended), (portable, contended))]]
 end

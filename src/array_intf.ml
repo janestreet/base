@@ -1,26 +1,44 @@
 (** Fixed-length, mutable vector of elements with O(1) [get] and [set] operations. *)
 
 open! Import
+module Option = Option0
+module List = List0.Constructors
 
 [@@@warning "-incompatible-with-upstream"]
 
 module Definitions = struct
   module type Public = sig
-    type ('a : any_non_null) t
-
-    [%%rederive:
-      type nonrec 'a t = 'a t
-      [@@deriving
-        compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]]
+    type ('a : any mod separable) t
 
     include Binary_searchable.S1 with type 'a t := 'a t
+
+    include
+      Indexed_container.S1_with_creators__base
+      with type 'a t := 'a t
+       and type 'a t__float64 = 'a t
+       and type 'a t__bits32 = 'a t
+       and type 'a t__bits64 = 'a t
+       and type 'a t__word = 'a t
+       and type 'a t__immediate = 'a t
+       and type 'a t__immediate64 = 'a t
+
+    [%%template:
+    [@@@kind k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+
+    [%%rederive:
+      type nonrec ('a : k) t = 'a t
+      [@@kind k]
+      [@@deriving compare ~localize, equal ~localize, sexp ~stackify, globalize]]]
+
+    [%%rederive: type nonrec 'a t = 'a t [@@deriving sexp_grammar]]
+
     include Indexed_container.S1_with_creators with type 'a t := 'a t
     include Invariant.S1 with type 'a t := 'a t
 
-    val%template map : ('a : ki) ('b : ko). 'a t -> f:local_ ('a -> 'b) -> 'b t
+    val%template map : ('a : k1) ('b : k2). 'a t -> f:local_ ('a -> 'b) -> 'b t
     [@@kind
-      ki = (value, float64, bits32, bits64, word, immediate, immediate64)
-      , ko = (value, float64, bits32, bits64, word, immediate, immediate64)]
+      k1 = (value, float64, bits32, bits64, word, immediate, immediate64)
+      , k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
     (** Maximum length of a normal array. The maximum length of a float array is
         [max_length/2] on 32-bit machines and [max_length] on 64-bit machines. *)
@@ -30,8 +48,8 @@ module Definitions = struct
         when compiling without cross library inlining. *)
 
     external length
-      : ('a : any_non_null).
-      ('a array[@local_opt]) @ contended -> int
+      : ('a : any mod separable).
+      ('a array[@local_opt]) @ immutable -> int
       = "%array_length"
     [@@layout_poly]
 
@@ -42,10 +60,18 @@ module Definitions = struct
         Raise [Invalid_argument "index out of bounds"] if [n] is outside the range 0 to
         [(Array.length a - 1)]. *)
     external%template get
-      : ('a : any_non_null).
+      : ('a : any mod separable).
       ('a array[@local_opt]) @ m -> (int[@local_opt]) -> 'a @ m
       = "%array_safe_get"
     [@@layout_poly] [@@mode m = (uncontended, shared)]
+
+    (** Like {!get}, but returns [None] instead of raising. *)
+    val%template get_opt
+      : ('a : k).
+      'a array @ c local -> int -> ('a Option.t[@kind k]) @ c m
+    [@@mode c = (uncontended, shared)]
+    [@@kind k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    [@@alloc a @ m = (heap_global, stack_local)]
 
     (** [Array.set a n x] modifies array [a] in place, replacing element number [n] with
         [x]. You can also write [a.(n) <- x] instead of [Array.set a n x].
@@ -53,7 +79,7 @@ module Definitions = struct
         Raise [Invalid_argument "index out of bounds"] if [n] is outside the range 0 to
         [Array.length a - 1]. *)
     external set
-      : ('a : any_non_null).
+      : ('a : any mod separable).
       ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
       = "%array_safe_set"
     [@@layout_poly]
@@ -61,7 +87,7 @@ module Definitions = struct
     (** Unsafe version of [get]. Can cause arbitrary behavior when used for an
         out-of-bounds array access. *)
     external%template unsafe_get
-      : ('a : any_non_null).
+      : ('a : any mod separable).
       ('a array[@local_opt]) @ m -> (int[@local_opt]) -> 'a @ m
       = "%array_unsafe_get"
     [@@layout_poly] [@@mode m = (uncontended, shared)]
@@ -69,51 +95,48 @@ module Definitions = struct
     (** Unsafe version of [set]. Can cause arbitrary behavior when used for an
         out-of-bounds array access. *)
     external unsafe_set
-      : ('a : any_non_null).
+      : ('a : any mod separable).
       ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
       = "%array_unsafe_set"
     [@@layout_poly]
 
     [%%template:
       external create
-        : ('a : any_non_null).
+        : ('a : any mod separable).
         len:int -> 'a -> 'a array @ m
         = "%makearray_dynamic"
       [@@ocaml.doc
-        " [create ~len x] creates an array of length [len] with the value [x] populated in\n\
-        \          each element. "]
+        {| [create ~len x] creates an array of length [len] with the value [x] populated in
+          each element. |}]
       [@@layout_poly]
       [@@alloc __ @ m = (heap_global, stack_local)]]
 
     external create_local
-      : ('a : any_non_null).
+      : ('a : any mod separable).
       len:int -> 'a -> local_ 'a array
       = "%makearray_dynamic"
     [@@ocaml.doc
-      " [create_local ~len x] is like [create]. It allocates the array on the local\n\
-      \          stack. The array's elements are still global. "]
+      {| [create_local ~len x] is like [create]. It allocates the array on the local
+          stack. The array's elements are still global. |}]
     [@@layout_poly]
 
     external magic_create_uninitialized
-      : ('a : any_non_null).
+      : ('a : any mod separable).
       len:int -> ('a array[@local_opt])
       = "%makearray_dynamic_uninit"
     [@@ocaml.doc
-      " [magic_create_uninitialized ~len] creates an array of length [len] with\n\
-      \          uninitialized elements -- that is, they may contain arbitrary, \
-       nondeterministic\n\
-      \          'a values. This can be significantly faster than using [create].\n\n\
-      \          [magic_create_uninitialized] can only be used for GC-ignorable arrays not\n\
-      \          involving tagged immediates and arrays of elements with unboxed number \
-       layout.\n\
-      \          The compiler rejects attempts to use [magic_create_uninitialized] to \
-       produce\n\
-      \          e.g. an [('a : value) array].\n\n\
-      \          [magic_create_uninitialized] can break abstraction boundaries and type \
-       safety\n\
-      \          (e.g. by creating phony witnesses to type equality) and so should be \
-       used with\n\
-      \          caution. "]
+      {| [magic_create_uninitialized ~len] creates an array of length [len] with
+          uninitialized elements -- that is, they may contain arbitrary, nondeterministic
+          'a values. This can be significantly faster than using [create].
+
+          [magic_create_uninitialized] can only be used for GC-ignorable arrays not
+          involving tagged immediates and arrays of elements with unboxed number layout.
+          The compiler rejects attempts to use [magic_create_uninitialized] to produce
+          e.g. an [('a : value) array].
+
+          [magic_create_uninitialized] can break abstraction boundaries and type safety
+          (e.g. by creating phony witnesses to type equality) and so should be used with
+          caution. |}]
     [@@layout_poly]
 
     (** [create_float_uninitialized ~len] creates a float array of length [len] with
@@ -142,19 +165,22 @@ module Definitions = struct
         typically used when [t] is a matrix created by [Array.make_matrix]. *)
     val copy_matrix : local_ 'a t t -> 'a t t
 
+    [%%template:
+    [@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+
     (** Like [Array.append], but concatenates a list of arrays. *)
-    val concat : local_ 'a t list -> 'a t
+    val concat : ('a : k). local_ 'a t list -> 'a t
 
     (** [Array.copy a] returns a copy of [a], that is, a fresh array containing the same
         elements as [a]. *)
-    val copy : local_ 'a t -> 'a t
+    val copy : ('a : k). local_ 'a t -> 'a t
 
     (** [Array.fill a ofs len x] modifies the array [a] in place, storing [x] in elements
         number [ofs] to [ofs + len - 1].
 
         Raise [Invalid_argument "Array.fill"] if [ofs] and [len] do not designate a valid
         subarray of [a]. *)
-    val fill : local_ 'a t -> pos:int -> len:int -> 'a -> unit
+    val fill : ('a : k). local_ 'a t -> pos:int -> len:int -> 'a -> unit]
 
     (** [Array.blit v1 o1 v2 o2 len] copies [len] elements from array [v1], starting at
         element number [o1], to array [v2], starting at element number [o2]. It works
@@ -167,6 +193,12 @@ module Definitions = struct
         [int_blit] and [float_blit] provide fast bound-checked blits for immediate data
         types. The unsafe versions do not bound-check the arguments. *)
     include Blit.S1 with type 'a t := 'a t
+
+    val%template unsafe_blit : ('a : k). ('a array, 'a array) Blit.blit
+    [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+
+    val%template sub : ('a : k). ('a array, 'a array) Blit.sub
+    [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
 
     val%template foldi_right
       :  'a t @ local
@@ -258,53 +290,83 @@ module Definitions = struct
       -> f:local_ ('acc -> 'a -> 'b -> 'acc)
       -> 'acc
 
-    (** [for_all2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
-    val for_all2_exn : 'a t -> 'b t -> f:local_ ('a -> 'b -> bool) -> bool
-
-    (** [exists2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
-    val exists2_exn : 'a t -> 'b t -> f:local_ ('a -> 'b -> bool) -> bool
-
-    (** [swap arr i j] swaps the value at index [i] with that at index [j]. *)
-    val swap : local_ 'a t -> int -> int -> unit
-
-    (** [rev_inplace t] reverses [t] in place. *)
-    val rev_inplace : local_ 'a t -> unit
-
-    (** [rev t] returns a reversed copy of [t] *)
-    val rev : 'a t -> 'a t
-
-    (** [of_list_rev l] converts from list then reverses in place. *)
-    val of_list_rev : 'a list -> 'a t
-
-    (** [of_list_map l ~f] is the same as [of_list (List.map l ~f)]. *)
-    val of_list_map : 'a list -> f:local_ ('a -> 'b) -> 'b t
-
-    (** [of_list_mapi l ~f] is the same as [of_list (List.mapi l ~f)]. *)
-    val of_list_mapi : 'a list -> f:local_ (int -> 'a -> 'b) -> 'b t
-
-    (** [of_list_rev_map l ~f] is the same as [of_list (List.rev_map l ~f)]. *)
-    val of_list_rev_map : 'a list -> f:local_ ('a -> 'b) -> 'b t
-
-    (** [of_list_rev_mapi l ~f] is the same as [of_list (List.rev_mapi l ~f)]. *)
-    val of_list_rev_mapi : 'a list -> f:local_ (int -> 'a -> 'b) -> 'b t
-
     (** Modifies an array in place, applying [f] to every element of the array *)
     val map_inplace : local_ 'a t -> f:local_ ('a -> 'a) -> unit
 
+    [%%template:
+    [@@@kind.default k1 = (value, float64, bits32, bits64, word, immediate, immediate64)]
+
     (** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true. It raises
         [Stdlib.Not_found] or [Not_found_s] if there is no such [a]. *)
-    val find_exn : 'a t -> f:local_ ('a -> bool) -> 'a
+    val find_exn : ('a : k1). 'a t -> f:local_ ('a -> bool) -> 'a
+
+    (** [swap arr i j] swaps the value at index [i] with that at index [j]. *)
+    val swap : ('a : k1). local_ 'a t -> int -> int -> unit
+
+    (** [rev_inplace t] reverses [t] in place. *)
+    val rev_inplace : ('a : k1). local_ 'a t -> unit
+
+    (** [rev t] returns a reversed copy of [t] *)
+    val rev : ('a : k1). 'a t -> 'a t
+
+    (** [of_list_rev l] converts from list then reverses in place. *)
+    val of_list_rev : ('a : k1). ('a List.t[@kind k1]) -> 'a t
+
+    [@@@kind.default k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
 
     (** Returns the first evaluation of [f] that returns [Some]. Raises [Stdlib.Not_found]
         or [Not_found_s] if [f] always returns [None]. *)
-    val find_map_exn : 'a t -> f:local_ ('a -> 'b option) -> 'b
+    val find_map_exn
+      : ('a : k1) ('b : k2).
+      'a t -> f:local_ ('a -> ('b Option.t[@kind k2])) -> 'b
+
+    (** [find_mapi_exn] is like [find_map_exn] but passes the index as an argument. *)
+    val find_mapi_exn
+      : ('a : k1) ('b : k2).
+      'a t -> f:local_ (int -> 'a -> ('b Option.t[@kind k2])) -> 'b
+
+    (** [of_list_map l ~f] is the same as [of_list (List.map l ~f)]. *)
+    val of_list_map
+      : ('a : k1) ('b : k2).
+      ('a List.t[@kind k1]) -> f:local_ ('a -> 'b) -> 'b t
+
+    (** [of_list_mapi l ~f] is the same as [of_list (List.mapi l ~f)]. *)
+    val of_list_mapi
+      : ('a : k1) ('b : k2).
+      ('a List.t[@kind k1]) -> f:local_ (int -> 'a -> 'b) -> 'b t
+
+    (** [of_list_rev_map l ~f] is the same as [of_list (List.rev_map l ~f)]. *)
+    val of_list_rev_map
+      : ('a : k1) ('b : k2).
+      ('a List.t[@kind k1]) -> f:local_ ('a -> 'b) -> 'b t
+
+    (** [of_list_rev_mapi l ~f] is the same as [of_list (List.rev_mapi l ~f)]. *)
+    val of_list_rev_mapi
+      : ('a : k1) ('b : k2).
+      ('a List.t[@kind k1]) -> f:local_ (int -> 'a -> 'b) -> 'b t
+
+    [%%template:
+    [@@@kind.default k1 k2]
+    [@@@mode.default m = (global, local)]
+
+    (** [for_all2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
+    val for_all2_exn
+      : ('a : k1) ('b : k2).
+      'a t @ m -> 'b t @ m -> f:('a @ m -> 'b @ m -> bool) @ local -> bool
+
+    (** [exists2_exn t1 t2 ~f] fails if [length t1 <> length t2]. *)
+    val exists2_exn
+      : ('a : k1) ('b : k2).
+      'a t @ m -> 'b t @ m -> f:('a @ m -> 'b @ m -> bool) @ local -> bool]]
 
     (** [findi_exn t f] returns the first index [i] of [t] for which [f i t.(i)] is true.
         It raises [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)
-    val findi_exn : 'a t -> f:local_ (int -> 'a -> bool) -> int * 'a
+    val%template findi_exn : ('a : k). 'a t -> f:local_ (int -> 'a -> bool) -> #(int * 'a)
+    [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
 
-    (** [find_mapi_exn] is like [find_map_exn] but passes the index as an argument. *)
-    val find_mapi_exn : 'a t -> f:local_ (int -> 'a -> 'b option) -> 'b
+    (** For backwards compatibility, we return a boxed product for the value-only version
+        of [findi_exn] (instead of a [value & value] product) *)
+    val findi_exn : 'a t -> f:local_ (int -> 'a -> bool) -> int * 'a
 
     (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive
         elements [(a1, a2)] in [t] such that [equal a1 a2]. They are returned in the same
@@ -343,6 +405,18 @@ module Definitions = struct
 
     val random_element_exn : ?random_state:Random.State.t -> 'a t -> 'a
 
+    (** [split_n t n] returns a pair of arrays [(first, second)] where [first] contains
+        the first [n] elements of [t] and [second] contains the remaining elements.
+
+        - If [n >= length t], returns [(t, [||])].
+        - If [n <= 0], returns [([||], t)]. *)
+    val split_n : 'a t -> int -> 'a t * 'a t
+
+    (** [chunks_of t ~length] returns an array of arrays whose concatenation is equal to
+        the original array. Every array has [length] elements, except for possibly the
+        last array, which may have fewer. [chunks_of] raises if [length <= 0]. *)
+    val chunks_of : 'a t -> length:int -> 'a t t
+
     (** [zip] is like [List.zip], but for arrays. *)
     val zip : 'a t -> 'b t -> ('a * 'b) t option
 
@@ -373,7 +447,7 @@ module type Array = sig @@ portable
     include Definitions
   end
 
-  include Public with type ('a : any_non_null) t = 'a array (** @inline *)
+  include Public with type ('a : any mod separable) t = 'a array (** @inline *)
 
   (**/**)
 
@@ -410,7 +484,8 @@ module type Array = sig @@ portable
     end
 
     module%template.portable
-      [@kind k = (value, immediate, immediate64)] Sorter (S : sig
+      [@kind
+        k = (value, immediate, immediate64, value mod external_, value mod external64)] Sorter (S : sig
         type ('a : k) t
 
         val get : local_ 'a t -> int -> 'a

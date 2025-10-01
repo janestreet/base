@@ -80,9 +80,6 @@ val random : ?state:Random.State.t -> t -> t
     The default [~state] is [Random.State.default]. *)
 val random_incl : ?state:Random.State.t -> t -> t -> t
 
-(** [floor_log2 x] returns the floor of log-base-2 of [x], and raises if [x <= 0]. *)
-val floor_log2 : local_ t -> int
-
 (**/**)
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:

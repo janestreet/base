@@ -8,12 +8,13 @@ let map x ~f : (_ t[@kind ko]) =
   | Error err -> Error err
   | Ok x -> Ok (f x)
 [@@kind
-  ki = (value, immediate, immediate64, float64, bits32, bits64, word)
-  , ko = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  ki = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)
+  , ko = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
 ;;
 
-include Monad.Make2 [@mode local] [@modality portable] (struct
-    type nonrec ('a, 'b) t = ('a, 'b) t
+include
+  Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local] [@modality portable] (struct
+    type nonrec ('a : value_or_null, 'b) t = ('a, 'b) t
 
     let bind x ~f =
       match x with
@@ -40,8 +41,9 @@ let map_error t ~f =
   | Error x -> Error (f x)
 ;;
 
-module%template Error = Monad.Make2 [@mode local] [@modality portable] (struct
-    type nonrec ('a, 'b) t = ('b, 'a) t
+module%template Error =
+Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local] [@modality portable] (struct
+    type nonrec ('a : value_or_null, 'b) t = ('b, 'a) t
 
     let bind x ~f =
       match x with
@@ -54,7 +56,8 @@ module%template Error = Monad.Make2 [@mode local] [@modality portable] (struct
   end)
 
 [%%template
-[@@@kind.default k = (value, immediate, immediate64, float64, bits32, bits64, word)]
+[@@@kind.default
+  k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
 
 let is_ok : (_ t[@kind k]) -> bool = function
   | Ok _ -> true
@@ -128,12 +131,13 @@ let ok_or_failwith = function
 ;;
 
 module Export = struct
-  type ('ok, 'err) _result = ('ok, 'err) t =
+  type ('ok : value_or_null, 'err : value_or_null) _result = ('ok, 'err) t =
     | Ok of 'ok
     | Error of 'err
 
   [%%template
-  [@@@kind.default k = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  [@@@kind.default
+    k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
 
   let is_error = (is_error [@kind k])
   let is_ok = (is_ok [@kind k])]

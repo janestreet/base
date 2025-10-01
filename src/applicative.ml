@@ -3,8 +3,10 @@ module List = List0
 include Applicative_intf.Definitions
 
 [%%template
-module%template.portable Make3 (X : Basic3) :
-  S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t = struct
+[@@@kind.default k = (value, value_or_null mod maybe_null)]
+
+module%template.portable Make3 (X : Basic3 [@kind k]) :
+  S3 [@kind k] with type ('a : k, 'p, 'q) t := ('a, 'p, 'q) X.t = struct
   include X
 
   let ( <*> ) = apply
@@ -33,24 +35,25 @@ module%template.portable Make3 (X : Basic3) :
   end
 end
 
-module%template.portable [@modality p] Make2 (X : Basic2) :
-  S2 with type ('a, 'p) t := ('a, 'p) X.t = Make3 [@modality p] (struct
+module%template.portable [@modality p] Make2 (X : Basic2 [@kind k]) :
+  S2 [@kind k] with type ('a : k, 'p) t := ('a, 'p) X.t =
+Make3 [@kind k] [@modality p] (struct
     include X
 
-    type ('a, 'p, _) t = ('a, 'p) X.t
+    type ('a : k, 'p, _) t = ('a, 'p) X.t
   end)
 
-module%template.portable [@modality p] Make (X : Basic) : S with type 'a t := 'a X.t =
-Make3 [@modality p] (struct
+module%template.portable [@modality p] Make (X : Basic [@kind k]) :
+  S [@kind k] with type ('a : k) t := 'a X.t = Make3 [@kind k] [@modality p] (struct
     include X
 
-    type ('a, _, _) t = 'a X.t
+    type ('a : k, _, _) t = 'a X.t
   end)
 
 [@@@mode.default m = (global, local)]
 
-module%template.portable Make3_using_map2 (X : Basic3_using_map2 [@mode m]) :
-  S3 [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t = struct
+module%template.portable Make3_using_map2 (X : Basic3_using_map2 [@kind k] [@mode m]) :
+  S3 [@kind k] [@mode m] with type ('a : k, 'p, 'q) t := ('a, 'p, 'q) X.t = struct
   include X
 
   let apply tf ta = map2 tf ta ~f:(fun f a -> f a)
@@ -87,24 +90,27 @@ end
 module%template.portable
   [@modality p] Make2_using_map2
     (X : Basic2_using_map2
-  [@mode m]) : S2 [@mode m] with type ('a, 'p) t := ('a, 'p) X.t =
-Make3_using_map2 [@mode m] [@modality p] (struct
+  [@kind k] [@mode m]) : S2 [@kind k] [@mode m] with type ('a : k, 'p) t := ('a, 'p) X.t =
+Make3_using_map2 [@kind k] [@mode m] [@modality p] (struct
     include X
 
-    type ('a, 'p, _) t = ('a, 'p) X.t
+    type ('a : k, 'p, _) t = ('a, 'p) X.t
   end)
 
-module%template.portable [@modality p] Make_using_map2 (X : Basic_using_map2 [@mode m]) :
-  S [@mode m] with type 'a t := 'a X.t = Make3_using_map2 [@mode m] [@modality p] (struct
+module%template.portable
+  [@modality p] Make_using_map2
+    (X : Basic_using_map2
+  [@kind k] [@mode m]) : S [@kind k] [@mode m] with type ('a : k) t := 'a X.t =
+Make3_using_map2 [@kind k] [@mode m] [@modality p] (struct
     include X
 
-    type ('a, _, _) t = 'a X.t
+    type ('a : k, _, _) t = 'a X.t
   end)
 
-module%template.portable [@modality p] Of_monad3 (M : Monad.S3 [@mode m]) :
-  S3 [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t =
-Make3_using_map2 [@mode m] [@modality p] (struct
-    type ('a, 'p, 'q) t = ('a, 'p, 'q) M.t
+module%template.portable [@modality p] Of_monad3 (M : Monad.S3 [@kind k] [@mode m]) :
+  S3 [@kind k] [@mode m] with type ('a : k, 'p, 'q) t := ('a, 'p, 'q) M.t =
+Make3_using_map2 [@kind k] [@mode m] [@modality p] (struct
+    type ('a : k, 'p, 'q) t = ('a, 'p, 'q) M.t
 
     let return = M.return
 
@@ -115,27 +121,32 @@ Make3_using_map2 [@mode m] [@modality p] (struct
     let map = `Custom M.map
   end)
 
-module%template.portable [@modality p] Of_monad2 (M : Monad.S2 [@mode m]) :
-  S2 [@mode m] with type ('a, 'p) t := ('a, 'p) M.t =
-Of_monad3 [@mode m] [@modality p] (struct
+module%template.portable [@modality p] Of_monad2 (M : Monad.S2 [@kind k] [@mode m]) :
+  S2 [@kind k] [@mode m] with type ('a : k, 'p) t := ('a, 'p) M.t =
+Of_monad3 [@kind k] [@mode m] [@modality p] (struct
     include M
 
-    type ('a, 'p, _) t = ('a, 'p) M.t
+    type ('a : k, 'p, _) t = ('a, 'p) M.t
   end)
 
-module%template.portable [@modality p] Of_monad (M : Monad.S [@mode m]) :
-  S [@mode m] with type 'a t := 'a M.t = Of_monad3 [@mode m] [@modality p] (struct
+module%template.portable [@modality p] Of_monad (M : Monad.S [@kind k] [@mode m]) :
+  S [@kind k] [@mode m] with type ('a : k) t := 'a M.t =
+Of_monad3 [@kind k] [@mode m] [@modality p] (struct
     include M
 
-    type ('a, _, _) t = 'a M.t
+    type ('a : k, _, _) t = 'a M.t
   end)
 
-module%template.portable [@modality p] Compose (F : S [@mode m]) (G : S [@mode m]) :
-  S [@mode m] with type 'a t = 'a F.t G.t = struct
-  type 'a t = 'a F.t G.t
+module%template.portable
+  [@modality p] Compose
+    (F : S
+  [@kind k] [@mode m])
+    (G : S
+  [@kind k] [@mode m]) : S [@kind k] [@mode m] with type ('a : k) t = 'a F.t G.t = struct
+  type ('a : k) t = 'a F.t G.t
 
-  include Make_using_map2 [@mode m] [@modality p] (struct
-      type nonrec 'a t = 'a t
+  include Make_using_map2 [@kind k] [@mode m] [@modality p] (struct
+      type nonrec ('a : k) t = 'a t
 
       let return a = G.return (F.return a)
       let map2 tx ty ~f = G.map2 tx ty ~f:(F.map2 ~f) [@nontail]
@@ -144,12 +155,17 @@ module%template.portable [@modality p] Compose (F : S [@mode m]) (G : S [@mode m
     end)
 end
 
-module%template.portable [@modality p] Pair (F : S [@mode m]) (G : S [@mode m]) :
-  S [@mode m] with type 'a t = 'a F.t * 'a G.t = struct
-  type 'a t = 'a F.t * 'a G.t
+module%template.portable
+  [@modality p] Pair
+    (F : S
+  [@kind k] [@mode m])
+    (G : S
+  [@kind k] [@mode m]) : S [@kind k] [@mode m] with type ('a : k) t = 'a F.t * 'a G.t =
+struct
+  type ('a : k) t = 'a F.t * 'a G.t
 
-  include Make_using_map2 [@mode m] [@modality p] (struct
-      type nonrec 'a t = 'a t
+  include Make_using_map2 [@kind k] [@mode m] [@modality p] (struct
+      type nonrec ('a : k) t = 'a t
 
       let return a = F.return a, G.return a
       let map2 tx ty ~f = F.map2 ~f (fst tx) (fst ty), G.map2 ~f (snd tx) (snd ty)
@@ -163,15 +179,15 @@ end
 module Make_let_syntax3
     (X : sig
      @@ p
-       include For_let_syntax3 [@mode m]
+       include For_let_syntax3 [@kind k] [@mode m]
      end)
     (Intf : sig
        module type S
      end)
     (Impl : Intf.S) : sig @@ p
-    include Let_syntax3 [@mode m]
+    include Let_syntax3 [@kind k] [@mode m]
   end
-  with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t
+  with type ('a : k, 'p, 'q) t := ('a, 'p, 'q) X.t
   with module Open_on_rhs_intf := Intf = struct
   module Let_syntax = struct
     include X
@@ -186,21 +202,21 @@ end
 module Make_let_syntax2
     (X : sig
      @@ p
-       include For_let_syntax2 [@mode m]
+       include For_let_syntax2 [@kind k] [@mode m]
      end)
     (Intf : sig
        module type S
      end)
     (Impl : Intf.S) : sig @@ p
-    include Let_syntax2 [@mode m]
+    include Let_syntax2 [@kind k] [@mode m]
   end
-  with type ('a, 'p) t := ('a, 'p) X.t
+  with type ('a : k, 'p) t := ('a, 'p) X.t
   with module Open_on_rhs_intf := Intf =
-  Make_let_syntax3 [@mode m] [@modality p]
+  Make_let_syntax3 [@kind k] [@mode m] [@modality p]
     (struct
       include X
 
-      type ('a, 'p, _) t = ('a, 'p) X.t
+      type ('a : k, 'p, _) t = ('a, 'p) X.t
     end)
     (Intf)
     (Impl)
@@ -208,35 +224,35 @@ module Make_let_syntax2
 module Make_let_syntax
     (X : sig
      @@ p
-       include For_let_syntax [@mode m]
+       include For_let_syntax [@kind k] [@mode m]
      end)
     (Intf : sig
        module type S
      end)
     (Impl : Intf.S) : sig @@ p
-    include Let_syntax [@mode m]
+    include Let_syntax [@kind k] [@mode m]
   end
-  with type 'a t := 'a X.t
+  with type ('a : k) t := 'a X.t
   with module Open_on_rhs_intf := Intf =
-  Make_let_syntax3 [@mode m] [@modality p]
+  Make_let_syntax3 [@kind k] [@mode m] [@modality p]
     (struct
       include X
 
-      type ('a, _, _) t = 'a X.t
+      type ('a : k, _, _) t = 'a X.t
     end)
     (Intf)
     (Impl)]
 
-module Ident = struct
-  type 'a t = 'a
+module%template [@mode p = (portable, nonportable)] Ident = struct
+  type ('a : value_or_null) t = 'a
 
-  let return = Fn.id
+  let return x = x
   let apply f a = f a
   let both a b = a, b
   let map3 a b c ~f = f a b c
   let map2 a b ~f = f a b
   let map a ~f = f a
-  let all = Fn.id
+  let all x = x
   let all_unit = ignore
 
   module Applicative_infix = struct

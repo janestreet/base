@@ -34,7 +34,7 @@
 [@@@warning "-incompatible-with-upstream"]
 
 module For_generated_code = struct
-  type ('perm, 'record, 'field : any) t =
+  type ('perm, 'record : any, 'field : any) t =
     { force_variance : 'perm -> unit
     ; (* force [t] to be contravariant in ['perm], because phantom type variables on
          concrete types don't work that well otherwise (using :> can remove them easily)
@@ -45,26 +45,39 @@ module For_generated_code = struct
     ; fset : 'record -> 'field -> 'record
     }
 
-  let opaque_identity = Sys0.opaque_identity
+  external opaque_identity
+    : ('a : any).
+    ('a[@local_opt]) -> ('a[@local_opt])
+    @@ portable
+    = "%opaque"
+  [@@layout_poly]
 end
 
-type ('perm, 'record, 'field : any) t_with_perm =
+type ('perm, 'record : any, 'field : any) t_with_perm =
   | Field of ('perm, 'record, 'field) For_generated_code.t
 [@@unboxed]
 
-type ('record, 'field : any) t =
+type ('record : any, 'field : any) t =
   ([ `Read | `Set_and_create ], 'record, 'field) t_with_perm
 
-type ('record, 'field : any) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
+type ('record : any, 'field : any) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
 let name (Field field) = field.name
 
 [%%template
 [@@@kind.default
-  k = (value_or_null, float64, bits32, bits64, word, immediate, immediate64)]
+  k
+  = ( value_or_null
+    , float64
+    , bits32
+    , bits64
+    , word
+    , immediate
+    , immediate64
+    , value & value & value & bits32 )]
 
-let get (Field field) r = field.getter r
-let fset (Field field) r v = field.fset r v
+let get (Field field) = field.getter
+let fset (Field field) = field.fset
 let setter (Field field) = field.setter
 let map (Field field) r ~f = field.fset r (f (field.getter r))
 
@@ -74,5 +87,5 @@ let updater (Field field) =
   | Some setter -> Some (fun r ~f -> setter r (f (field.getter r)))
 ;;]
 
-type ('perm, 'record, 'result) user =
+type ('perm, 'record : any, 'result) user =
   { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }

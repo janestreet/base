@@ -36,7 +36,7 @@ let nonportable_doesn't_cross (x : int Map.M(With_nonportable_compare).t @ nonpo
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value is nonportable but expected to be portable.
+Error: This value is nonportable but is expected to be portable.
 |}]
 
 let portable_crosses (x : int Map.M(With_portable_compare).t @ nonportable) =
@@ -64,12 +64,12 @@ end
 Line _, characters _-_:
 Error: Signature mismatch in included functor's parameter:
        Values do not match:
-         val compare : t -> t -> int
+         val compare : t -> t -> int (* in a structure at nonportable *)
        is not included in
          val compare :
            t Ppx_compare_lib__Ppx_compare_lib_intf.Definitions.compare @@
-           portable
-       The second is portable and the first is nonportable.
+           portable (* in a structure at nonportable *)
+       The first is nonportable but the second is portable.
        File "comparator_intf.ml", line 135, characters 6-54:
          Expected declaration
        File "test_map.mlt", line 55, characters 6-13: Actual declaration

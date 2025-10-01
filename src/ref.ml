@@ -2,20 +2,20 @@ open! Import
 
 include (
 struct
-  type 'a t = 'a ref
-  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
+  type ('a : value_or_null) t = 'a ref
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
 end :
 sig
 @@ portable
-  type 'a t = 'a ref
-  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
+  type ('a : value_or_null) t = 'a ref
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
 end)
 
 (* In the definition of [t], we do not have [[@@deriving compare, sexp]] because
    in general, syntax extensions tend to use the implementation when available rather than
    using the alias.  Here that would lead to use the record representation [ { mutable
    contents : 'a } ] which would result in different (and unwanted) behavior.  *)
-type 'a t = 'a ref = { mutable contents : 'a }
+type ('a : value_or_null) t = 'a ref = { mutable contents : 'a }
 
 external create : 'a -> ('a t[@local_opt]) @@ portable = "%makemutable"
 external ( ! ) : ('a t[@local_opt]) -> 'a @@ portable = "%field0"
@@ -36,7 +36,7 @@ let set_temporarily t a ~f =
 ;;
 
 module And_value = struct
-  type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~localize]
+  type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~stackify]
 
   let set (T (r, a)) = r := a
   let sets ts = List.iter ts ~f:set

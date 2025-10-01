@@ -24,7 +24,8 @@ end
    so moving the [[@@@kind.default]] to after the type definition and adding a poly
    attribute separately on the type might break code after the end of the templated
    section. *)
-[@@@kind.default k = (bits64, float64, value), v = (bits64, float64, value)]
+[@@@kind.default
+  k = (bits64, float64, value_or_null), v = (bits64, float64, value_or_null)]
 
 type ('k : k, 'v : v) t =
   | Empty
@@ -231,17 +232,27 @@ let rec add t ~replace ~compare ~added ~key:k ~data:v =
       if !added then (balance [@kind k v]) t else t)
 ;;
 
-let[@inline always] rec findi_and_call_impl
-  t
-  ~compare
-  k
-  arg1
-  arg2
-  ~call_if_found
-  ~call_if_not_found
-  ~if_found
-  ~if_not_found
+let[@kind
+     k = k
+     , v = v
+     , a = (value_or_null, bits64, float64)
+     , b = (value_or_null, bits64, float64)
+     , r = (value_or_null, bits64, float64)]
+   [@mode c = (uncontended, shared)]
+   [@inline always] rec findi_and_call_impl
+  : type (k : k mod c) (v : v) (a : a) (b : b) (r : r) if_ in_.
+    ((k, v) t[@kind k v]) @ c
+    -> compare:(k -> k -> int) @ local
+    -> k
+    -> a
+    -> b
+    -> call_if_found:(if_found:if_ @ local -> key:k -> data:v @ c -> a -> b -> r) @ local
+    -> call_if_not_found:(if_not_found:in_ @ local -> k -> a -> b -> r) @ local
+    -> if_found:if_ @ local
+    -> if_not_found:in_ @ local
+    -> r
   =
+  fun t ~compare k arg1 arg2 ~call_if_found ~call_if_not_found ~if_found ~if_not_found ->
   match t with
   | Empty -> call_if_not_found ~if_not_found k arg1 arg2
   | Leaf { key = k'; value = v } ->
@@ -253,7 +264,7 @@ let[@inline always] rec findi_and_call_impl
     if c = 0
     then call_if_found ~if_found ~key:k' ~data:v arg1 arg2
     else
-      (findi_and_call_impl [@kind k v])
+      (findi_and_call_impl [@kind k v a b r] [@mode c])
         (if c < 0 then left else right)
         ~compare
         k
@@ -265,11 +276,15 @@ let[@inline always] rec findi_and_call_impl
         ~if_not_found
 ;;
 
-let find_and_call =
+[%%template
+[@@@mode.default c = (uncontended, shared)]
+[@@@kind r = (value_or_null, bits64, float64)]
+
+let[@kind k = k, v = v, r = r] find_and_call =
   let call_if_found ~if_found ~key:_ ~data () () = if_found data in
   let call_if_not_found ~if_not_found key () () = if_not_found key in
-  fun t ~compare k ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v])
+  fun (t @ c) ~compare k ~if_found ~if_not_found ->
+    (findi_and_call_impl [@kind k v value_or_null value_or_null r] [@mode c])
       t
       ~compare
       k
@@ -281,11 +296,11 @@ let find_and_call =
       ~if_not_found
 ;;
 
-let findi_and_call =
+let[@kind k = k, v = v, r = r] findi_and_call =
   let call_if_found ~if_found ~key ~data () () = if_found ~key ~data in
   let call_if_not_found ~if_not_found key () () = if_not_found key in
-  fun t ~compare k ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v])
+  fun (t @ c) ~compare k ~if_found ~if_not_found ->
+    (findi_and_call_impl [@kind k v value_or_null value_or_null r] [@mode c])
       t
       ~compare
       k
@@ -297,11 +312,13 @@ let findi_and_call =
       ~if_not_found
 ;;
 
-let find_and_call1 =
+[@@@kind a = (value_or_null, bits64, float64)]
+
+let[@kind k = k, v = v, a = a, r = r] find_and_call1 =
   let call_if_found ~if_found ~key:_ ~data arg () = if_found data arg in
   let call_if_not_found ~if_not_found key arg () = if_not_found key arg in
-  fun t ~compare k ~a ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v])
+  fun (t @ c) ~compare k ~a ~if_found ~if_not_found ->
+    (findi_and_call_impl [@kind k v a value_or_null r] [@mode c])
       t
       ~compare
       k
@@ -313,11 +330,11 @@ let find_and_call1 =
       ~if_not_found
 ;;
 
-let findi_and_call1 =
+let[@kind k = k, v = v, a = a, r = r] findi_and_call1 =
   let call_if_found ~if_found ~key ~data arg () = if_found ~key ~data arg in
   let call_if_not_found ~if_not_found key arg () = if_not_found key arg in
-  fun t ~compare k ~a ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v])
+  fun (t @ c) ~compare k ~a ~if_found ~if_not_found ->
+    (findi_and_call_impl [@kind k v a value_or_null r] [@mode c])
       t
       ~compare
       k
@@ -329,11 +346,13 @@ let findi_and_call1 =
       ~if_not_found
 ;;
 
-let find_and_call2 =
+[@@@kind b = (value_or_null, bits64, float64)]
+
+let[@kind k = k, v = v, a = a, b = b, r = r] find_and_call2 =
   let call_if_found ~if_found ~key:_ ~data arg1 arg2 = if_found data arg1 arg2 in
   let call_if_not_found ~if_not_found key arg1 arg2 = if_not_found key arg1 arg2 in
-  fun t ~compare k ~a ~b ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v])
+  fun (t @ c) ~compare k ~a ~b ~if_found ~if_not_found ->
+    (findi_and_call_impl [@kind k v a b r] [@mode c])
       t
       ~compare
       k
@@ -345,11 +364,11 @@ let find_and_call2 =
       ~if_not_found
 ;;
 
-let findi_and_call2 =
+let[@kind k = k, v = v, a = a, b = b, r = r] findi_and_call2 =
   let call_if_found ~if_found ~key ~data arg1 arg2 = if_found ~key ~data arg1 arg2 in
   let call_if_not_found ~if_not_found key arg1 arg2 = if_not_found key arg1 arg2 in
-  fun t ~compare k ~a ~b ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v])
+  fun (t @ c) ~compare k ~a ~b ~if_found ~if_not_found ->
+    (findi_and_call_impl [@kind k v a b r] [@mode c])
       t
       ~compare
       k
@@ -359,18 +378,33 @@ let findi_and_call2 =
       ~call_if_not_found
       ~if_found
       ~if_not_found
-;;
+;;]
 
 let find =
-  let if_found v : (_ Option.t[@kind v]) = Some v in
-  let if_not_found _ : (_ Option.t[@kind v]) = None in
-  fun t ~compare k -> (find_and_call [@kind k v]) t ~compare k ~if_found ~if_not_found
+  let if_found v : ((_ Option.t[@kind v]) Modes.t[@mode c]) = { modal = Some v } in
+  let if_not_found _ : ((_ Option.t[@kind v]) Modes.t[@mode c]) = { modal = None } in
+  fun t ~compare k ->
+    ((find_and_call [@kind k v value_or_null] [@mode c])
+       t
+       ~compare
+       k
+       ~if_found
+       ~if_not_found)
+      .modal
+[@@mode c = (uncontended, shared)]
 ;;
 
 let mem =
   let if_found _ = true in
   let if_not_found _ = false in
-  fun t ~compare k -> (find_and_call [@kind k v]) t ~compare k ~if_found ~if_not_found
+  fun t ~compare k ->
+    (find_and_call [@kind k v value_or_null] [@mode c])
+      t
+      ~compare
+      k
+      ~if_found
+      ~if_not_found
+[@@mode c = (uncontended, shared)]
 ;;
 
 let rec remove =
@@ -498,6 +532,13 @@ let rec mapi_inplace t ~f =
     (mapi_inplace [@kind k v]) ~f left;
     t.value <- f ~key ~data:value;
     (mapi_inplace [@kind k v]) ~f right
+;;
+
+let choose_exn = function
+  | Empty ->
+    (match raise_s (Sexp.message "[Avltree.choose_exn] of empty hashtbl" []) with
+     | (_ : Nothing.t) -> .)
+  | Leaf { key; value; _ } | Node { key; value; _ } -> #(key, value)
 ;;]
 
 let rec first t =
@@ -514,15 +555,4 @@ let rec last t =
   | Leaf { key = k; value = v }
   | Node { left = _; key = k; value = v; height = _; right = Empty } -> Some (k, v)
   | Node { left = _; key = _; value = _; height = _; right = r } -> last r
-;;
-
-let%template[@mode local] choose_exn = function
-  | Empty -> raise_s (Sexp.message "[Avltree.choose_exn] of empty hashtbl" [])
-  | Leaf { key; value; _ } | Node { key; value; _ } ->
-    exclave_ Modes.Global.wrap key, Modes.Global.wrap value
-;;
-
-let%template[@mode global] choose_exn = function
-  | Empty -> raise_s (Sexp.message "[Avltree.choose_exn] of empty hashtbl" [])
-  | Leaf { key; value; _ } | Node { key; value; _ } -> key, value
 ;;

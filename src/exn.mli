@@ -27,20 +27,19 @@ exception Reraised of string * t
 val create_s : Sexp.t -> t
 
 (** [create_s_lazy lazy_sexp] is like [create_s], but takes a lazily generated sexp. *)
-val create_s_lazy : Sexp.t Lazy.t -> t
+val create_s_lazy : Sexp.t Lazy.t -> t @@ nonportable
 
 (** Same as [raise], except that the backtrace is not recorded. *)
-val raise_without_backtrace : t -> _ @ portable unique
+val raise_without_backtrace : ('a : value_or_null). t -> 'a @ portable unique
 
 (** [raise_with_original_backtrace t bt] raises the exception [exn], recording [bt] as the
     backtrace it was originally raised at. This is useful to re-raise exceptions annotated
     with extra information. *)
 val raise_with_original_backtrace
-  :  t
-  -> Stdlib.Printexc.raw_backtrace
-  -> _ @ portable unique
+  : ('a : value_or_null).
+  t -> Stdlib.Printexc.raw_backtrace -> 'a @ portable unique
 
-val reraise : t -> string -> _ @ portable unique
+val reraise : ('a : value_or_null). t -> string -> 'a @ portable unique
 
 (** Types with [format4] are hard to read, so here's an example.
 
@@ -61,9 +60,9 @@ val to_string_mach : t -> string
 
 (** Executes [f] and afterwards executes [finally], whether [f] throws an exception or
     not. *)
-val protectx : f:local_ ('a -> 'b) -> 'a -> finally:local_ ('a -> unit) -> 'b
+val protectx : f:('a -> 'b) @ local once -> 'a -> finally:('a -> unit) @ local once -> 'b
 
-val protect : f:local_ (unit -> 'a) -> finally:local_ (unit -> unit) -> 'a
+val protect : f:(unit -> 'a) @ local once -> finally:(unit -> unit) @ local once -> 'a
 
 (** [handle_uncaught ~exit f] catches an exception escaping [f] and prints an error
     message to stderr. Exits with return code 1 if [exit] is [true], and returns unit
@@ -71,11 +70,11 @@ val protect : f:local_ (unit -> 'a) -> finally:local_ (unit -> unit) -> 'a
 
     Note that since OCaml 4.02.0, you don't need to use this at the entry point of your
     program, as the OCaml runtime will do better than this function. *)
-val handle_uncaught : exit:bool -> local_ (unit -> unit) -> unit @@ nonportable
+val handle_uncaught : exit:bool -> (unit -> unit) @ local once -> unit @@ nonportable
 
 (** [handle_uncaught_and_exit f] returns [f ()], unless that raises, in which case it
     prints the exception and exits nonzero. *)
-val handle_uncaught_and_exit : local_ (unit -> 'a) -> 'a @@ nonportable
+val handle_uncaught_and_exit : (unit -> 'a) @ local once -> 'a @@ nonportable
 
 (** Traces exceptions passing through. Useful because in practice, backtraces still don't
     seem to work.
@@ -89,10 +88,10 @@ val handle_uncaught_and_exit : local_ (unit -> 'a) -> 'a @@ nonportable
       ;;
     ]}
     {v : Program died with Reraised("rogue_function", Failure "foo") v} *)
-val reraise_uncaught : string -> local_ (unit -> 'a) -> 'a
+val reraise_uncaught : string -> (unit -> 'a) @ local once -> 'a
 
 (** [does_raise f] returns [true] iff [f ()] raises, which is often useful in unit tests. *)
-val does_raise : local_ (unit -> _) -> bool
+val does_raise : (unit -> _) @ local once -> bool
 
 (** Returns [true] if this exception is physically equal to the most recently raised one.
     If so, then [Backtrace.Exn.most_recent ()] is a backtrace corresponding to this

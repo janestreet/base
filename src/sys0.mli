@@ -42,7 +42,6 @@ val getenv : string -> string option
 external%template opaque_identity
   : ('a : any).
   ('a[@local_opt]) @ c o p u -> ('a[@local_opt]) @ c o p u
-  @@ portable
   = "%opaque"
 [@@layout_poly]
 [@@mode
@@ -51,8 +50,7 @@ external%template opaque_identity
   , p = (nonportable, portable)
   , u = (aliased, unique)]
 
-external opaque_identity_global : ('a : any). 'a -> 'a @@ portable = "%opaque"
-[@@layout_poly]
+external opaque_identity_global : ('a : any). 'a -> 'a = "%opaque" [@@layout_poly]
 
 (** [= Stdlib.Sys.Break] *)
 exception Break

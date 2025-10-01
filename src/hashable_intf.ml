@@ -37,7 +37,11 @@ module type Hashable = sig @@ portable
   val%template of_key : ((module Key with type t = 'a)[@kind k] [@modality p]) -> 'a t @ p
   [@@kind k = (value, float64, bits64)] [@@modality p = (portable, nonportable)]
 
-  val to_key : 'a t -> (module Key with type t = 'a)
+  val%template to_key
+    :  'a t @ p
+    -> ((module Key with type t = 'a)[@kind k] [@modality p]) @ p
+  [@@kind k = (value, float64, bits64)] [@@modality p = (portable, nonportable)]
+
   val hash_param : int -> int -> 'a -> int
   val hash : 'a -> int
 end

@@ -9,8 +9,8 @@
 (library
  (foreign_stubs
   (language c)
-  (names bytes_stubs exn_stubs float_stubs int_stubs int_math_stubs obj_stubs
-    string_stubs am_testing)
+  (names array_stubs bytes_stubs exn_stubs float_stubs int_stubs
+    int_math_stubs obj_stubs string_stubs am_testing)
   (flags
    :standard
    -D_LARGEFILE64_SOURCE
@@ -23,7 +23,7 @@
  (libraries ppx_hash.base_internalhash_types basement ocaml_intrinsics_kernel
    sexplib0 shadow_stdlib)
  (preprocess
-  (pps ppx_base ppx_base_internal ppx_base_lint
+  (pps ppx_base ppx_base_internal ppx_base_lint ppx_array_base
     -do-not-correct-cold-attributes -require-template-extension
     -type-conv-keep-w32=both))
  (js_of_ocaml

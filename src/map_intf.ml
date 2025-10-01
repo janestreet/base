@@ -36,6 +36,37 @@ module Definitions = struct
     [@@deriving compare ~localize, equal ~localize, sexp_of]
   end
 
+  module When_unmatched = struct
+    (** Used for [merge_by_case] for unmatched keys in one map or the other. Using a more
+        specific case, like [Drop] instead of [Filter (fun ... -> false)] or [Map f]
+        instead of [Filter_map (fun ... -> Some (f ...))], allows a more optimized
+        implementation. [Drop] and [Keep], specifically, allow some entire non-overlapping
+        subtrees to be handled without traversal. *)
+    type ('k, 'a, 'b) t =
+      | Drop
+      | Keep : (_, 'a, 'a) t
+      | Map of (key:'k -> local_ (data:'a -> 'b))
+      | Filter : (key:'k -> local_ (data:'a -> bool)) -> ('k, 'a, 'a) t
+      | Filter_map of (key:'k -> local_ (data:'a -> 'b option))
+    [@@deriving sexp_of]
+  end
+
+  module When_matched = struct
+    (** Used for [merge_by_case] for matching keys in two merged maps. Using a more
+        specific case, like [Drop] instead of [Filter_map (fun ~key:_ _ _ -> None)] or
+        [Map f] instead of [Filter_map (fun ... -> Some (f ...))], allows a more optimized
+        implementation. *)
+    type ('k, 'a, 'b, 'c) t =
+      | Drop
+      | Keep_first : (_, 'a, _, 'a) t
+      | Keep_second : (_, _, 'a, 'a) t
+      | Map of (key:'k -> local_ ('a -> 'b -> 'c))
+      | Filter_first : (key:'k -> local_ ('a -> 'b -> bool)) -> ('k, 'a, 'b, 'a) t
+      | Filter_second : (key:'k -> local_ ('a -> 'b -> bool)) -> ('k, 'a, 'b, 'b) t
+      | Filter_map of (key:'k -> local_ ('a -> 'b -> 'c option))
+    [@@deriving sexp_of]
+  end
+
   (** @canonical Base.Map.Continue_or_stop *)
   module Continue_or_stop = struct
     type t =
@@ -152,6 +183,10 @@ module Definitions = struct
     val nth : ('k, 'v, 'cmp) t -> int -> ('k key * 'v) option
     val nth_exn : ('k, 'v, 'cmp) t -> int -> 'k key * 'v
     val rank : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int option) access_options
+    val count_lt : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int) access_options
+    val count_le : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int) access_options
+    val count_gt : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int) access_options
+    val count_ge : ('k, 'cmp, ('k, _, 'cmp) t -> 'k key -> int) access_options
     val to_tree : ('k, 'v, 'cmp) t -> ('k key, 'v, 'cmp) tree
 
     val to_sequence
@@ -245,6 +280,17 @@ module Definitions = struct
             -> ('k, 'v, 'cmp) t )
           access_options
 
+    val merge_by_case
+      : ( 'k
+          , 'cmp
+          , ('k, 'v1, 'cmp) t
+            -> ('k, 'v2, 'cmp) t
+            -> left:local_ ('k key, 'v1, 'v3) When_unmatched.t
+            -> right:local_ ('k key, 'v2, 'v3) When_unmatched.t
+            -> both:local_ ('k key, 'v1, 'v2, 'v3) When_matched.t
+            -> ('k, 'v3, 'cmp) t )
+          access_options
+
     module%template.portable Make_applicative_traversals
         (A : Applicative.Lazy_applicative) : sig
       val mapi
@@ -261,8 +307,10 @@ module Definitions = struct
 
   module type Creators_generic = sig
     type ('k, 'v, 'cmp) t
+    type ('k, 'v, 'cmp) map
     type ('k, 'v, 'cmp) tree
     type 'k key
+    type 'k map_key
     type ('a, 'cmp, 'z) create_options
     type ('a, 'cmp, 'z) access_options
     type 'cmp cmp
@@ -277,15 +325,17 @@ module Definitions = struct
     val map_keys
       : ( 'k2
           , 'cmp2
-          , ('k1, 'v, 'cmp1) t
-            -> f:local_ ('k1 key -> 'k2 key)
+          , ('k1, 'v, 'cmp1) map
+            -> f:local_ ('k1 map_key -> 'k2 key)
             -> [ `Ok of ('k2, 'v, 'cmp2) t | `Duplicate_key of 'k2 key ] )
           create_options
 
     val map_keys_exn
       : ( 'k2
           , 'cmp2
-          , ('k1, 'v, 'cmp1) t -> f:local_ ('k1 key -> 'k2 key) -> ('k2, 'v, 'cmp2) t )
+          , ('k1, 'v, 'cmp1) map
+            -> f:local_ ('k1 map_key -> 'k2 key)
+            -> ('k2, 'v, 'cmp2) t )
           create_options
 
     val transpose_keys
@@ -293,8 +343,8 @@ module Definitions = struct
           , 'cmp1
           , ( 'k2
               , 'cmp2
-              , ('k1, ('k2, 'a, 'cmp2) t, 'cmp1) t -> ('k2, ('k1, 'a, 'cmp1) t, 'cmp2) t
-              )
+              , ('k1, ('k2, 'a, 'cmp2) t, 'cmp1) map
+                -> ('k2, ('k1, 'a, 'cmp1) map, 'cmp2) t )
               create_options )
           access_options
 
@@ -337,8 +387,10 @@ module Definitions = struct
 
   module type Creators_and_accessors_and_transformers_generic = sig
     type ('a, 'b, 'c) t
+    type ('a, 'b, 'c) map
     type ('a, 'b, 'c) tree
     type 'a key
+    type 'a map_key
     type 'a cmp
     type ('a, 'b, 'c) create_options
     type ('a, 'b, 'c) access_options
@@ -346,8 +398,10 @@ module Definitions = struct
     include
       Creators_generic
       with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+      with type ('a, 'b, 'c) map := ('a, 'b, 'c) map
       with type ('a, 'b, 'c) tree := ('a, 'b, 'c) tree
       with type 'a key := 'a key
+      with type 'a map_key := 'a map_key
       with type 'a cmp := 'a cmp
       with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) create_options
       with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) access_options
@@ -371,14 +425,17 @@ module Definitions = struct
 
   module type S_poly = sig
     type ('a, 'b) t
+    type ('a, 'b) map
     type ('a, 'b) tree
     type comparator_witness
 
     include
       Creators_and_accessors_and_transformers_generic
       with type ('a, 'b, 'c) t := ('a, 'b) t
+      with type ('a, 'b, 'c) map := ('a, 'b) map
       with type ('a, 'b, 'c) tree := ('a, 'b) tree
       with type 'k key := 'k
+      with type 'k map_key := 'k
       with type 'c cmp := comparator_witness
       with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) Without_comparator.t
       with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Without_comparator.t
@@ -431,7 +488,7 @@ module Definitions = struct
       -> ('k, 'v, 'cmp) t
       -> int
 
-    val compare__local_m__t
+    val compare_m__t__local
       :  (module Compare_m)
       -> ('v @ local -> 'v @ local -> int)
       -> ('k, 'v, 'cmp) t @ local
@@ -445,7 +502,7 @@ module Definitions = struct
       -> ('k, 'v, 'cmp) t
       -> bool
 
-    val equal__local_m__t
+    val equal_m__t__local
       :  (module Equal_m)
       -> ('v @ local -> 'v @ local -> bool)
       -> ('k, 'v, 'cmp) t @ local
@@ -515,7 +572,7 @@ module type Map = sig @@ portable
       -> 'left * 'right
   end
 
-  (** Test if the invariants of the internal AVL search tree hold. *)
+  (** Test if the invariants of the internal weight-balanced search tree hold. *)
   val invariants : (_, _, _) t -> bool
 
   (** Returns a first-class module that can be used to build other map/set/etc. with the
@@ -526,12 +583,10 @@ module type Map = sig @@ portable
   val globalize0 : ('key, 'data, 'cmp) t @ local -> ('key, 'data, 'cmp) t
 
   (** The empty map. *)
-  val empty : ('a, 'cmp) Comparator.Module.t -> ('a, 'b, 'cmp) t
-
   val%template empty
-    : ('cmp : value mod portable) 'a 'b.
-    ('a, 'cmp) Comparator.Module.t -> ('a, 'b, 'cmp) t @ portable
-  [@@mode portable]
+    : 'a 'b ('cmp : value mod p).
+    ('a, 'cmp) Comparator.Module.t -> ('a, 'b, 'cmp) t @ p
+  [@@mode p = (nonportable, portable)]
 
   (** A map with one (key, data) pair. *)
   val singleton : ('a, 'cmp) Comparator.Module.t -> 'a -> 'b -> ('a, 'b, 'cmp) t
@@ -934,6 +989,11 @@ module type Map = sig @@ portable
     -> f:local_ ('v1 -> ('v2, 'v3) Either.t)
     -> ('k, 'v2, 'cmp) t * ('k, 'v3, 'cmp) t
 
+  (** [partition_result t = partition_map t ~f:Result.to_either] *)
+  val partition_result
+    :  ('k, ('ok, 'error) Result.t, 'cmp) t
+    -> ('k, 'ok, 'cmp) t * ('k, 'error, 'cmp) t
+
   (** {[
         partitioni_tf t ~f
         = partition_mapi t ~f:(fun ~key ~data ->
@@ -997,9 +1057,12 @@ module type Map = sig @@ portable
 
   (** {2 Additional operations on maps} *)
 
-  (** Merges two maps. The runtime is O(length(t1) + length(t2)). You shouldn't use this
-      function to merge a list of maps; consider using [merge_disjoin_exn] or
-      [merge_skewed] instead. *)
+  (** Merges two maps. The runtime is O(length(t1) + length(t2)).
+
+      The [merge_*] functions immediately below perform better in cases where they are
+      applicable. For merging a list of maps especially, use [merge_disjoint_exn] or
+      [merge_skewed] instead. If you don't require the full generality of [~f]'s behavior,
+      use [merge_by_case]. *)
   val merge
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
@@ -1023,6 +1086,16 @@ module type Map = sig @@ portable
     -> ('k, 'v, 'cmp) t
     -> combine:local_ (key:'k -> 'v -> 'v -> 'v)
     -> ('k, 'v, 'cmp) t
+
+  (** An alternative to [merge] that is more efficient when unmatched keys are
+      unconditionally dropped or kept unchanged in the result. *)
+  val merge_by_case
+    :  ('k, 'v1, 'cmp) t
+    -> ('k, 'v2, 'cmp) t
+    -> left:local_ ('k, 'v1, 'v3) When_unmatched.t
+    -> right:local_ ('k, 'v2, 'v3) When_unmatched.t
+    -> both:local_ ('k, 'v1, 'v2, 'v3) When_matched.t
+    -> ('k, 'v3, 'cmp) t
 
   (** [symmetric_diff t1 t2 ~data_equal] returns a list of changes between [t1] and [t2].
       It is intended to be efficient in the case where [t1] and [t2] share a large amount
@@ -1119,6 +1192,30 @@ module type Map = sig @@ portable
       the smaller of the two output maps. The O(m) term is due to the need to calculate
       the length of the output maps. *)
   val split_lt_ge : ('k, 'v, 'cmp) t -> 'k -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
+
+  (** [count_lt t key] returns the number of keys in [t] that are strictly less than
+      [key].
+
+      Runtime is O(log n) where n is the size of the input map. *)
+  val count_lt : ('k, 'v, 'cmp) t -> 'k -> int
+
+  (** [count_le t key] returns the number of keys in [t] that are less than or equal to
+      [key].
+
+      Runtime is O(log n) where n is the size of the input map. *)
+  val count_le : ('k, 'v, 'cmp) t -> 'k -> int
+
+  (** [count_gt t key] returns the number of keys in [t] that are strictly greater than
+      [key].
+
+      Runtime is O(log n) where n is the size of the input map. *)
+  val count_gt : ('k, 'v, 'cmp) t -> 'k -> int
+
+  (** [count_ge t key] returns the number of keys in [t] that are greater than or equal to
+      [key].
+
+      Runtime is O(log n) where n is the size of the input map. *)
+  val count_ge : ('k, 'v, 'cmp) t -> 'k -> int
 
   (** [append ~lower_part ~upper_part] returns [`Ok map] where [map] contains all the
       [(key, value)] pairs from the two input maps if all the keys from [lower_part] are
@@ -1333,6 +1430,75 @@ module type Map = sig @@ portable
 
   include For_deriving with type ('key, 'value, 'cmp) t := ('key, 'value, 'cmp) t
 
+  module Tree : sig
+    type weight : immutable_data
+
+    type (+'k, +'v, 'cmp) t : immutable_data with 'k with 'v = private
+      | Empty
+      | Leaf of
+          { global_ key : 'k
+          ; global_ data : 'v
+          }
+      | Node of
+          { global_ left : ('k, 'v, 'cmp) t
+          ; global_ key : 'k
+          ; global_ data : 'v
+          ; global_ right : ('k, 'v, 'cmp) t
+          ; weight : weight
+          }
+    [@@deriving sexp_of]
+
+    val t_of_sexp_direct
+      :  comparator:('k, 'cmp) Comparator.t
+      -> (Sexp.t -> 'k)
+      -> (Sexp.t -> 'v)
+      -> Sexp.t
+      -> ('k, 'v, 'cmp) t
+
+    val globalize : _ -> _ -> _ -> local_ ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t
+
+    include
+      Creators_and_accessors_and_transformers_generic
+      with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+      with type ('a, 'b, 'c) map := ('a, 'b, 'c) t
+      with type ('a, 'b, 'c) tree := ('a, 'b, 'c) t
+      with type 'k key := 'k
+      with type 'k map_key := 'k
+      with type 'c cmp := 'c
+      with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) With_comparator.t
+      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) With_comparator.t
+
+    val empty_without_value_restriction : (_, _, _) t
+
+    (** [Build_increasing] can be used to construct a map incrementally from a sequence
+        that is known to be increasing.
+
+        The total time complexity of constructing a map this way is O(n), which is more
+        efficient than using [Map.add] by a logarithmic factor.
+
+        This interface can be thought of as a dual of [to_sequence], but we don't have an
+        equally neat idiom for the duals of sequences ([of_sequence] is much less general
+        because it does not allow the sequence to be produced asynchronously). *)
+    module Build_increasing : sig
+      type ('a, 'b, 'c) tree := ('a, 'b, 'c) t
+      type ('k, 'v, 'w) t
+
+      val empty : ('k, 'v, 'w) t
+
+      (** Time complexity of [add_exn] is amortized constant-time (if [t] is used
+          linearly), with a worst-case O(log(n)) time. *)
+      val add_exn
+        :  ('k, 'v, 'w) t
+        -> comparator:('k, 'w) Comparator.t
+        -> key:'k
+        -> data:'v
+        -> ('k, 'v, 'w) t
+
+      (** Time complexity is O(log(n)). *)
+      val to_tree : ('k, 'v, 'w) t -> ('k, 'v, 'w) tree
+    end
+  end
+
   (** [Using_comparator] is a similar interface as the toplevel of [Map], except the
       functions take a [~comparator:('k, 'cmp) Comparator.t], whereas the functions at the
       toplevel of [Map] take a [('k, 'cmp) comparator]. *)
@@ -1346,63 +1512,13 @@ module type Map = sig @@ portable
       -> Sexp.t
       -> ('k, 'v, 'cmp) t
 
-    module Tree : sig
-      type (+'k, +'v, 'cmp) t : immutable_data with 'k with 'v [@@deriving sexp_of]
-
-      val t_of_sexp_direct
-        :  comparator:('k, 'cmp) Comparator.t
-        -> (Sexp.t -> 'k)
-        -> (Sexp.t -> 'v)
-        -> Sexp.t
-        -> ('k, 'v, 'cmp) t
-
-      val globalize : _ -> _ -> _ -> local_ ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t
-
-      include
-        Creators_and_accessors_and_transformers_generic
-        with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
-        with type ('a, 'b, 'c) tree := ('a, 'b, 'c) t
-        with type 'k key := 'k
-        with type 'c cmp := 'c
-        with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) With_comparator.t
-        with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) With_comparator.t
-
-      val empty_without_value_restriction : (_, _, _) t
-
-      (** [Build_increasing] can be used to construct a map incrementally from a sequence
-          that is known to be increasing.
-
-          The total time complexity of constructing a map this way is O(n), which is more
-          efficient than using [Map.add] by a logarithmic factor.
-
-          This interface can be thought of as a dual of [to_sequence], but we don't have
-          an equally neat idiom for the duals of sequences ([of_sequence] is much less
-          general because it does not allow the sequence to be produced asynchronously). *)
-      module Build_increasing : sig
-        type ('a, 'b, 'c) tree := ('a, 'b, 'c) t
-        type ('k, 'v, 'w) t
-
-        val empty : ('k, 'v, 'w) t
-
-        (** Time complexity of [add_exn] is amortized constant-time (if [t] is used
-            linearly), with a worst-case O(log(n)) time. *)
-        val add_exn
-          :  ('k, 'v, 'w) t
-          -> comparator:('k, 'w) Comparator.t
-          -> key:'k
-          -> data:'v
-          -> ('k, 'v, 'w) t
-
-        (** Time complexity is O(log(n)). *)
-        val to_tree : ('k, 'v, 'w) t -> ('k, 'v, 'w) tree
-      end
-    end
-
     include
       Creators_and_accessors_and_transformers_generic
       with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+      with type ('a, 'b, 'c) map := ('a, 'b, 'c) t
       with type ('a, 'b, 'c) tree := ('a, 'b, 'c) Tree.t
       with type 'k key := 'k
+      with type 'k map_key := 'k
       with type 'c cmp := 'c
       with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) Without_comparator.t
       with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) With_comparator.t
@@ -1419,12 +1535,15 @@ module type Map = sig @@ portable
     module%template.portable Empty_without_value_restriction (K : Comparator.S1) : sig
       val empty : ('a K.t, 'v, K.comparator_witness) t
     end
+
+    module Tree = Tree
   end
 
   (** A polymorphic Map. *)
   module Poly :
     S_poly
     with type ('key, +'value) t = ('key, 'value, Comparator.Poly.comparator_witness) t
+     and type ('key, +'value) map := ('key, 'value, Comparator.Poly.comparator_witness) t
      and type ('key, +'value) tree =
       ('key, 'value, Comparator.Poly.comparator_witness) Using_comparator.Tree.t
      and type comparator_witness = Comparator.Poly.comparator_witness

@@ -7,7 +7,7 @@ type t = |
   , equal ~localize
   , globalize
   , hash
-  , sexp ~localize
+  , sexp ~stackify
   , sexp_grammar]
 
 val unreachable_code_local : t @ local -> _

@@ -183,7 +183,7 @@ module type Hash_set = sig @@ portable
     include Definitions
   end
 
-  type !'a t [@@deriving sexp_of]
+  type !'a t : value mod non_float [@@deriving sexp_of]
 
   (** We use [[@@deriving sexp_of]] but not [[@@deriving sexp]] because we want people to
       be explicit about the hash and comparison functions used when creating hashtables.

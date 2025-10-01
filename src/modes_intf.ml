@@ -81,7 +81,7 @@ module Definitions = struct
 
     module type Global = sig
       type 'a t
-      [@@deriving compare ~localize, equal ~localize, hash, sexp ~localize, sexp_grammar]
+      [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
 
       (** Globalize a [t]. Takes an argument because [[%globalize]] will pass one for
           ['a], but [globalize] is a no-op so it discards the argument. *)
@@ -201,6 +201,20 @@ module Definitions = struct
         -> (('a, 'b) Result.t[@local_opt])
         = "%identity"
 
+      (** Wrapping and unwrapping two-tuples. *)
+
+      external wrap_tuple2 : 'a * 'b -> 'a t * 'b t = "%identity"
+      external wrap_fst : 'a * 'b -> 'a t * 'b = "%identity"
+      external wrap_snd : 'a * 'b -> 'a * 'b t = "%identity"
+
+      external unwrap_tuple2
+        :  ('a t * 'b t[@local_opt])
+        -> ('a * 'b[@local_opt])
+        = "%identity"
+
+      external unwrap_fst : ('a t * 'b[@local_opt]) -> ('a * 'b[@local_opt]) = "%identity"
+      external unwrap_snd : ('a * 'b t[@local_opt]) -> ('a * 'b[@local_opt]) = "%identity"
+
       (** {2 Simulating mode polymorphism}
 
           Until the mode extension to the OCaml compiler supports polymorphism over modes,
@@ -251,6 +265,10 @@ module Definitions = struct
   module Portable = struct
     module type Portable = sig
       type 'a t
+      [@@deriving
+        compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
+      val t_of_sexp : (Sexplib0.Sexp.t -> 'a @ portable) -> Sexplib0.Sexp.t -> 'a t
 
       (** Require a value has a type that mode-crosses portability. This is useful for
           assisting type inference as well as improving error messages. *)
@@ -384,6 +402,18 @@ module Definitions = struct
         -> (('a, 'b) Result.t[@local_opt]) @ portable
         = "%identity"
 
+      (** Wrapping and unwrapping [Result.t list]. *)
+
+      external wrap_result_list
+        :  (('a, 'b) Result.t list[@local_opt]) @ portable
+        -> (('a t, 'b t) Result.t list[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_result_list
+        :  (('a t, 'b t) Result.t list[@local_opt])
+        -> (('a, 'b) Result.t list[@local_opt]) @ portable
+        = "%identity"
+
       (** Wrapping and unwrapping [Result.Ok]. *)
 
       external wrap_ok
@@ -417,6 +447,40 @@ module Definitions = struct
         :  (('a, 'b t) Result.t[@local_opt]) @ portable
         -> (('a, 'b) Result.t[@local_opt]) @ portable
         = "%identity"
+
+      (** Wrapping and unwrapping two-tuples. *)
+
+      external wrap_tuple2
+        :  ('a * 'b[@local_opt]) @ portable
+        -> ('a t * 'b t[@local_opt])
+        = "%identity"
+
+      external wrap_fst
+        :  ('a * 'b[@local_opt]) @ portable
+        -> ('a t * 'b[@local_opt]) @ portable
+        = "%identity"
+
+      external wrap_snd
+        :  ('a * 'b[@local_opt]) @ portable
+        -> ('a * 'b t[@local_opt]) @ portable
+        = "%identity"
+
+      external unwrap_tuple2
+        :  ('a t * 'b t[@local_opt])
+        -> ('a * 'b[@local_opt]) @ portable
+        = "%identity"
+
+      external%template unwrap_fst
+        :  ('a t * 'b[@local_opt]) @ p
+        -> ('a * 'b[@local_opt]) @ p
+        = "%identity"
+      [@@mode p = (portable, nonportable)]
+
+      external%template unwrap_snd
+        :  ('a * 'b t[@local_opt]) @ p
+        -> ('a * 'b[@local_opt]) @ p
+        = "%identity"
+      [@@mode p = (portable, nonportable)]
     end
   end
 
@@ -464,7 +528,11 @@ module Definitions = struct
     end
 
     module type At_locality = sig
-      type actually_local : immediate
+      (** Phantom type parameter for {!t} representing that the inhabitant may be local.
+          This type does not cross locality to enforce the relationship between
+          mode-crossing and phantom types in the [with] clauses on [type t] below. *)
+      type actually_local :
+        value mod aliased contended external_ many non_null portable unyielding
 
       (** Phantom type parameter for {!t} which represents that the inhabitant is known to
           be [global]. *)
@@ -503,13 +571,23 @@ module Definitions = struct
 end
 
 module type Modes = sig @@ portable
+  type%template 'a t = { modal : 'a @@ a c g m p }
+  [@@unboxed]
+  [@@modality
+    g = (local, global)
+    , p = (nonportable, portable)
+    , c = (uncontended, shared, contended)
+    , m = (once, many)
+    , a = (unique, aliased)]
+
   (** Wrap values in the [global_] mode, even in a [local_] context. *)
   module Global : sig
     include module type of struct
       include Definitions.Global
     end
 
-    type 'a t : value mod global = { global : 'a @@ global } [@@unboxed]
+    type ('a : value_or_null) t : value_or_null mod global = { global : 'a @@ global }
+    [@@unboxed]
 
     include Global with type 'a t := 'a t (** @inline *)
   end
@@ -519,13 +597,17 @@ module type Modes = sig @@ portable
       include Definitions.Portable
     end
 
-    type 'a t : value mod portable = { portable : 'a @@ portable } [@@unboxed]
+    type ('a : value_or_null) t : value_or_null mod portable =
+      { portable : 'a @@ portable }
+    [@@unboxed]
 
     include Portable with type 'a t := 'a t
   end
 
   module Contended : sig
-    type 'a t : value mod contended = { contended : 'a @@ contended } [@@unboxed]
+    type ('a : value_or_null) t : value_or_null mod contended =
+      { contended : 'a @@ contended }
+    [@@unboxed]
 
     (** Require a value has a type that mode-crosses contention. This is useful for
         assisting type inference as well as improving error messages. *)
@@ -533,20 +615,29 @@ module type Modes = sig @@ portable
   end
 
   module Shared : sig
-    type 'a t = { shared : 'a @@ shared } [@@unboxed]
+    type ('a : value_or_null) t = { shared : 'a @@ shared } [@@unboxed]
   end
 
   module Portended : sig
-    type 'a t : value mod contended portable = { portended : 'a @@ contended portable }
+    type ('a : value_or_null) t : value_or_null mod contended portable =
+      { portended : 'a @@ contended portable }
     [@@unboxed]
   end
 
   module Many : sig
-    type 'a t : value mod many = { many : 'a @@ many } [@@unboxed]
+    type ('a : value_or_null) t : value_or_null mod many = { many : 'a @@ many }
+    [@@unboxed]
   end
 
   module Aliased : sig
-    type 'a t : value mod aliased = { aliased : 'a @@ aliased } [@@unboxed]
+    type ('a : value_or_null) t : value_or_null mod aliased = { aliased : 'a @@ aliased }
+    [@@unboxed]
+  end
+
+  module Unyielding : sig
+    type ('a : value_or_null) t : value_or_null mod unyielding =
+      { unyielding : 'a @@ unyielding }
+    [@@unboxed]
   end
 
   module Immutable_data : sig
@@ -715,29 +806,98 @@ module type Modes = sig @@ portable
 
     external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
     external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+
+    (** It's impossible to construct a portable [t]. [refute_portable] lets you make use
+        of that fact: having a portable [t] in hand means that you're in unreachable code
+        and don't have to produce a result. *)
+    val refute_portable : _ t @ portable -> _ @ portable
+  end
+
+  (** A witness of mode-crossing. In spirit, it's similar to [Type_equal.t]: there's no
+      runtime content, but the fact that you have a ['a Mod.t] in hand lets you recover
+      mode-crossing information about ['a]. *)
+  module Mod : sig
+    type%template ('a : any) t =
+      | Mod : ('a : any mod a c g m p). ('a t[@modality g p c m a])
+    [@@modality
+      g = (local, global)
+      , p = (nonportable, portable)
+      , c = (uncontended, shared, contended)
+      , m = (once, many)
+      , a = (unique, aliased)]
+
+    (** Aliases of [Mod] for specific modalities. These aliases aren't necessary, but they
+        are a bit more convenient than ppx_template (e.g. they are auto-completed in
+        editors). *)
+
+    module Global : sig
+      type%template ('a : any) t = ('a t[@modality global]) =
+        | Mod : ('a : any mod global). 'a t
+    end
+
+    module Portable : sig
+      type%template ('a : any) t = ('a t[@modality portable]) =
+        | Mod : ('a : any mod portable). 'a t
+    end
+
+    module Contended : sig
+      type%template ('a : any) t = ('a t[@modality contended]) =
+        | Mod : ('a : any mod contended). 'a t
+    end
+
+    module Shared : sig
+      type%template ('a : any) t = ('a t[@modality shared]) =
+        | Mod : ('a : any mod shared). 'a t
+    end
+
+    module Portended : sig
+      type%template ('a : any) t = ('a t[@modality portable contended]) =
+        | Mod : ('a : any mod contended portable). 'a t
+    end
+
+    module Many : sig
+      type%template ('a : any) t = ('a t[@modality many]) =
+        | Mod : ('a : any mod many). 'a t
+    end
+
+    module Aliased : sig
+      type%template ('a : any) t = ('a t[@modality aliased]) =
+        | Mod : ('a : any mod aliased). 'a t
+    end
   end
 
   (** Can be [open]ed or [include]d to bring field names into scope. *)
   module Export : sig
-    type 'a global : value mod global = 'a Global.t = { global : 'a @@ global }
+    type ('a : value_or_null) global : value_or_null mod global = 'a Global.t =
+      { global : 'a @@ global }
     [@@unboxed]
 
-    type 'a portable : value mod portable = 'a Portable.t = { portable : 'a @@ portable }
+    type ('a : value_or_null) portable : value_or_null mod portable = 'a Portable.t =
+      { portable : 'a @@ portable }
     [@@unboxed]
 
-    type 'a contended : value mod contended = 'a Contended.t =
+    type ('a : value_or_null) contended : value_or_null mod contended = 'a Contended.t =
       { contended : 'a @@ contended }
     [@@unboxed]
 
-    type 'a shared = 'a Shared.t = { shared : 'a @@ shared } [@@unboxed]
+    type ('a : value_or_null) shared = 'a Shared.t = { shared : 'a @@ shared } [@@unboxed]
 
-    type 'a portended : value mod contended portable = 'a Portended.t =
+    type ('a : value_or_null) portended : value_or_null mod contended portable =
+          'a Portended.t =
       { portended : 'a @@ contended portable }
     [@@unboxed]
 
-    type 'a many : value mod many = 'a Many.t = { many : 'a @@ many } [@@unboxed]
+    type ('a : value_or_null) many : value_or_null mod many = 'a Many.t =
+      { many : 'a @@ many }
+    [@@unboxed]
 
-    type 'a aliased : value mod aliased = 'a Aliased.t = { aliased : 'a @@ aliased }
+    type ('a : value_or_null) aliased : value_or_null mod aliased = 'a Aliased.t =
+      { aliased : 'a @@ aliased }
+    [@@unboxed]
+
+    type ('a : value_or_null) unyielding : value_or_null mod unyielding =
+          'a Unyielding.t =
+      { unyielding : 'a @@ unyielding }
     [@@unboxed]
 
     type ('a : value mod non_float) immutable_data : immutable_data =

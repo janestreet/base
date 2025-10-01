@@ -387,7 +387,7 @@ let%test "int_pow misc" =
 ;;
 
 (* some ugly corner cases with extremely large exponents and some serious precision loss *)
-let%expect_test ("int_pow bad cases" [@tags "64-bits-only"]) =
+let%expect_test ("int_pow bad cases" [@tags "64-bits-only", "not-with-nix"]) =
   let a = one_ulp `Down 1. in
   let b = one_ulp `Up 1. in
   let large = 1 lsl 61 in
@@ -801,7 +801,7 @@ end
 module Test_bounds (I : sig
     type t
 
-    val num_bits : int
+    val num_bits : t
     val of_float : float -> t
     val to_int64 : t -> Int64.t
     val max_value : t
@@ -810,6 +810,7 @@ module Test_bounds (I : sig
 struct
   open I
 
+  let num_bits = num_bits |> to_int64 |> Int64.to_int_trunc
   let float_lower_bound = lower_bound_for_int num_bits
   let float_upper_bound = upper_bound_for_int num_bits
   let%test_unit "lower bound is valid" = ignore (of_float float_lower_bound : t)
@@ -1208,7 +1209,7 @@ let%expect_test "iround_exn" =
   require_equal (module Int) (-3) (Float.iround_exn ~dir:`Nearest (-3.4))
 ;;
 
-let%expect_test "log" =
+let%expect_test ("log" [@tags "not-with-nix"]) =
   let test float =
     let log2 = Float.log2 float in
     let log10 = Float.log10 float in

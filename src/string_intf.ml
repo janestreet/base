@@ -91,14 +91,17 @@ module type String = sig @@ portable
 
   open! Import
 
-  type t = string [@@deriving globalize, sexp ~localize, sexp_grammar]
+  type t = string [@@deriving globalize, sexp ~stackify, sexp_grammar]
 
-  val sub : (t, t) Blit.sub_global
+  [%%template:
+  [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
+  val sub : t @ m -> pos:int -> len:int -> t @ m
 
   (** [sub] with no bounds checking, and always returns a new copy *)
-  val unsafe_sub : local_ t -> pos:int -> len:int -> t
+  val unsafe_sub : t @ local -> pos:int -> len:int -> t @ m
 
-  val subo : (t, t) Blit.subo_global
+  val subo : ?pos:int -> ?len:int -> t @ m -> t @ m]
 
   include Indexed_container.S0_with_creators with type t := t with type elt = char
 
@@ -119,10 +122,10 @@ module type String = sig @@ portable
     :  (string[@local_opt])
     -> (int[@local_opt])
     -> char
-    @@ portable
     = "%string_unsafe_get"
 
-  val make : int -> char -> t
+  val%template make : int -> char -> t @ m
+  [@@alloc a @ m = (heap @ global, stack @ local)]
 
   (** String append. Also available unqualified, but re-exported here for documentation
       purposes.
@@ -132,11 +135,14 @@ module type String = sig @@ portable
       not have this problem -- it allocates the result buffer only once. *)
   val ( ^ ) : t @ local -> t @ local -> t
 
-  val append : t @ local -> t @ local -> t
+  [%%template:
+  [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
+  val append : t @ local -> t @ local -> t @ m
 
   (** Concatenates all strings in the list using separator [sep] (with a default separator
       [""]). *)
-  val concat : ?sep:t -> t list @ local -> t
+  val concat : ?sep:t -> t list @ local -> t @ m]
 
   (** Special characters are represented by escape sequences, following the lexical
       conventions of OCaml. *)
@@ -169,21 +175,31 @@ module type String = sig @@ portable
       that for example [Caseless.is_suffix "OCaml" ~suffix:"AmL"] and
       [Caseless.is_prefix "OCaml" ~prefix:"oc"] are [true]. *)
   module Caseless : sig
-    type nonrec t = t [@@deriving hash, sexp ~localize, sexp_grammar]
+    type nonrec t = t [@@deriving hash, sexp ~stackify, sexp_grammar]
 
     include%template Comparable.S [@modality portable] with type t := t
 
     include Ppx_compare_lib.Comparable.S__local with type t := t
 
-    val is_suffix : t -> suffix:t -> bool
-    val is_prefix : t -> prefix:t -> bool
-    val is_substring : t -> substring:t -> bool
-    val is_substring_at : t -> pos:int -> substring:t -> bool
-    val substr_index : ?pos:int -> t -> pattern:t -> int option
-    val substr_index_exn : ?pos:int -> t -> pattern:t -> int
-    val substr_index_all : t -> may_overlap:bool -> pattern:t -> int list
-    val substr_replace_first : ?pos:int -> t -> pattern:t -> with_:t -> t
-    val substr_replace_all : t -> pattern:t -> with_:t -> t
+    val is_suffix : local_ t -> suffix:local_ t -> bool
+    val is_prefix : local_ t -> prefix:local_ t -> bool
+    val is_substring : local_ t -> substring:local_ t -> bool
+    val is_substring_at : local_ t -> pos:int -> substring:local_ t -> bool
+    val substr_index : ?pos:int -> local_ t -> pattern:local_ t -> int option
+    val substr_index_exn : ?pos:int -> local_ t -> pattern:t -> int
+    val substr_index_all : local_ t -> may_overlap:bool -> pattern:local_ t -> int list
+
+    [%%template:
+    [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
+    val substr_replace_first
+      :  ?pos:int
+      -> t @ m
+      -> pattern:t @ local
+      -> with_:t @ local
+      -> t @ m
+
+    val substr_replace_all : t @ m -> pattern:t @ local -> with_:t @ local -> t @ m]
   end
 
   (** [index] gives the index of the first appearance of [char] in the string when
@@ -217,26 +233,31 @@ module type String = sig @@ portable
       The functions in the [Search_pattern] module allow the program to preprocess the
       searched pattern once and then use it many times without further allocations. *)
   module Search_pattern : sig
-    type t [@@deriving sexp_of ~localize]
+    type t : immutable_data [@@deriving sexp_of ~stackify]
 
     (** [create pattern] preprocesses [pattern] as per KMP, building an [int array] of
         length [length pattern]. All inputs are valid. *)
-    val create : ?case_sensitive:bool (** default = true *) -> string -> t
+    val%template create
+      :  ?case_sensitive:bool (** default = true *)
+      -> string @ m
+      -> t @ m
+    [@@alloc a @ m = (heap @ global, stack @ local)]
 
     (** [pattern t] returns the string pattern used to create [t]. *)
-    val pattern : t -> string
+    val%template pattern : t @ m -> string @ m
+    [@@mode m = (global, local)]
 
     (** [case_sensitive t] returns whether [t] matches strings case-sensitively. *)
-    val case_sensitive : t -> bool
+    val case_sensitive : local_ t -> bool
 
     (** [matches pat str] returns true if [str] matches [pat] *)
-    val matches : t -> string -> bool
+    val matches : local_ t -> local_ string -> bool
 
     (** [pos < 0] or [pos >= length string] result in no match (hence [index] returns
         [None] and [index_exn] raises). *)
-    val index : ?pos:int -> t -> in_:string -> int option
+    val index : ?pos:int -> local_ t -> in_:local_ string -> int option
 
-    val index_exn : ?pos:int -> t -> in_:string -> int
+    val index_exn : ?pos:int -> t -> in_:local_ string -> int
 
     (** [may_overlap] determines whether after a successful match, [index_all] should
         start looking for another one at the very next position ([~may_overlap:true]), or
@@ -247,9 +268,17 @@ module type String = sig @@ portable
         - [index_all (create "aaa") ~may_overlap:true ~in_:"aaaaBaaaaaa" = [0; 1; 5; 6; 7; 8]]
 
         E.g., [replace_all] internally calls [index_all ~may_overlap:false]. *)
-    val index_all : t -> may_overlap:bool -> in_:string -> int list
+    val index_all : local_ t -> may_overlap:bool -> in_:local_ string -> int list
 
-    val replace_first : ?pos:int -> t -> in_:string -> with_:string -> string
+    [%%template:
+    [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
+    val replace_first
+      :  ?pos:int
+      -> t @ local
+      -> in_:string @ m
+      -> with_:string @ local
+      -> string @ m
 
     (** [replace_all pattern ~in_:text ~with_:r] replaces every appearance of a [pattern]
         in [text]. Surprisingly, the result can still contain [pattern] at the end, as
@@ -263,11 +292,11 @@ module type String = sig @@ portable
         ]}
 
         which ends with ["bc"]! *)
-    val replace_all : t -> in_:string -> with_:string -> string
+    val replace_all : t @ local -> in_:string @ m -> with_:string @ local -> string @ m]
 
     (** Similar to [String.split] or [String.split_on_chars], but instead uses a given
         search pattern as the separator. Separators are non-overlapping. *)
-    val split_on : t -> string -> string list
+    val split_on : local_ t -> string -> string list
 
     (**/**)
 
@@ -280,9 +309,9 @@ module type String = sig @@ portable
       type t =
         { pattern : string
         ; case_sensitive : bool
-        ; kmp_array : int array
+        ; kmp_array : int iarray
         }
-      [@@deriving equal ~localize, sexp_of ~localize]
+      [@@deriving equal ~localize, sexp_of ~stackify]
 
       val representation : public -> t
     end
@@ -293,20 +322,29 @@ module type String = sig @@ portable
       complete. [pos < 0] or [pos >= length t] result in no match (hence [substr_index]
       returns [None] and [substr_index_exn] raises). [may_overlap] indicates whether to
       report overlapping matches, see [Search_pattern.index_all]. *)
-  val substr_index : ?pos:int -> t -> pattern:t -> int option
+  val substr_index : ?pos:int -> local_ t -> pattern:local_ t -> int option
 
-  val substr_index_exn : ?pos:int -> t -> pattern:t -> int
-  val substr_index_all : t -> may_overlap:bool -> pattern:t -> int list
-  val substr_replace_first : ?pos:int -> t -> pattern:t -> with_:t -> t
+  val substr_index_exn : ?pos:int -> local_ t -> pattern:t -> int
+  val substr_index_all : local_ t -> may_overlap:bool -> pattern:local_ t -> int list
+
+  [%%template:
+  [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
+  val substr_replace_first
+    :  ?pos:int
+    -> t @ m
+    -> pattern:t @ local
+    -> with_:t @ local
+    -> t @ m
 
   (** As with [Search_pattern.replace_all], the result may still contain [pattern]. *)
-  val substr_replace_all : t -> pattern:t -> with_:t -> t
+  val substr_replace_all : t @ m -> pattern:t @ local -> with_:t @ local -> t @ m]
 
   (** [is_substring ~substring:"bar" "foo bar baz"] is true. *)
-  val is_substring : t -> substring:t -> bool
+  val is_substring : local_ t -> substring:local_ t -> bool
 
   (** [is_substring_at "foo bar baz" ~pos:4 ~substring:"bar"] is true. *)
-  val is_substring_at : t -> pos:int -> substring:t -> bool
+  val is_substring_at : local_ t -> pos:int -> substring:local_ t -> bool
 
   (** Returns the reversed list of characters contained in a list. *)
   val to_list_rev : t -> char list
@@ -315,10 +353,10 @@ module type String = sig @@ portable
   val rev : t -> t
 
   (** [is_suffix s ~suffix] returns [true] if [s] ends with [suffix]. *)
-  val is_suffix : t -> suffix:t -> bool
+  val is_suffix : local_ t -> suffix:local_ t -> bool
 
   (** [is_prefix s ~prefix] returns [true] if [s] starts with [prefix]. *)
-  val is_prefix : t -> prefix:t -> bool
+  val is_prefix : local_ t -> prefix:local_ t -> bool
 
   (** If the string [s] contains the character [on], then [lsplit2_exn s ~on] returns a
       pair containing [s] split around the first appearance of [on] (from the left).
@@ -338,15 +376,18 @@ module type String = sig @@ portable
       appearance of [on] from the right. *)
   val rsplit2 : t -> on:char -> (t * t) option
 
+  [%%template:
+  [@@@alloc.default a @ m = (heap @ global, stack @ local)]
+
   (** [split s ~on] returns a list of substrings of [s] that are separated by [on].
       Consecutive [on] characters will cause multiple empty strings in the result.
       Splitting the empty string returns a list of the empty string, not the empty list. *)
-  val split : t -> on:char -> t list
+  val split : t @ m -> on:char -> t list @ m
 
   (** [split_on_chars s ~on] returns a list of all substrings of [s] that are separated by
       one of the chars from [on]. [on] are not grouped. So a grouping of [on] in the
       source string will produce multiple empty string splits in the result. *)
-  val split_on_chars : t -> on:char list -> t list
+  val split_on_chars : t @ m -> on:char list -> t list @ m]
 
   (** [split_lines t] returns the list of lines that comprise [t]. The lines do not
       include the trailing ["\n"] or ["\r\n"]. *)
@@ -354,11 +395,11 @@ module type String = sig @@ portable
 
   (** [lfindi ?pos t ~f] returns the smallest [i >= pos] such that [f i t.[i]], if there
       is such an [i]. By default, [pos = 0]. *)
-  val lfindi : ?pos:int -> t -> f:local_ (int -> char -> bool) -> int option
+  val lfindi : ?pos:int -> local_ t -> f:local_ (int -> char -> bool) -> int option
 
   (** [rfindi ?pos t ~f] returns the largest [i <= pos] such that [f i t.[i]], if there is
       such an [i]. By default [pos = length t - 1]. *)
-  val rfindi : ?pos:int -> t -> f:local_ (int -> char -> bool) -> int option
+  val rfindi : ?pos:int -> local_ t -> f:local_ (int -> char -> bool) -> int option
 
   (** [lstrip ?drop s] returns a string with consecutive chars satisfying [drop] (by
       default white space, e.g. tabs, spaces, newlines, and carriage returns) stripped
@@ -383,7 +424,8 @@ module type String = sig @@ portable
 
   (** [tr ~target ~replacement s] replaces every instance of [target] in [s] with
       [replacement]. *)
-  val tr : target:char -> replacement:char -> t -> t
+  val%template tr : target:char -> replacement:char -> t @ m -> t @ m
+  [@@alloc a @ m = (heap @ global, stack @ local)]
 
   (** [tr_multi ~target ~replacement] returns a function that replaces every instance of a
       character in [target] with the corresponding character in [replacement].
@@ -530,18 +572,10 @@ module type String = sig @@ portable
 
     (** Like {!escape_gen_exn}, but returns an [Or_error.t] when constructing the escaping
         function, rather than raising. *)
-    val%template escape_gen
+    val escape_gen
       :  escapeworthy_map:(char * char) list
       -> escape_char:char
-      -> (string -> string) Or_error.t
-    [@@mode nonportable]
-
-    (** Like [escape_gen], but identifying the returned function as portable. *)
-    val%template escape_gen
-      :  escapeworthy_map:(char * char) list
-      -> escape_char:char
-      -> (string -> string) Modes.Portable.t Or_error.t
-    [@@mode portable]
+      -> (string -> string) Or_error.t @ portable
 
     (** A simpler version of {!escape_gen}. In this function, any escaped character is
         escaped to itself. I.e., if the escape character is ['!'] then escaping the
@@ -592,18 +626,10 @@ module type String = sig @@ portable
       -> escape_char:char
       -> (string -> string) Staged.t @ portable
 
-    val%template unescape_gen
+    val unescape_gen
       :  escapeworthy_map:(char * char) list
       -> escape_char:char
-      -> (string -> string) Or_error.t
-    [@@mode nonportable]
-
-    (** Like [unescape_gen], but identifying the returned function as portable. *)
-    val%template unescape_gen
-      :  escapeworthy_map:(char * char) list
-      -> escape_char:char
-      -> (string -> string) Modes.Portable.t Or_error.t
-    [@@mode portable]
+      -> (string -> string) Or_error.t @ portable
 
     (** [unescape ~escape_char] is defined as [unescape_gen_exn ~map:[] ~escape_char] *)
     val unescape : escape_char:char -> (string -> string) Staged.t @ portable

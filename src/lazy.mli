@@ -24,7 +24,7 @@ open! Import
 
 type 'a t = 'a lazy_t
 [@@deriving
-  compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+  compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
 include Monad.S with type 'a t := 'a t
 
@@ -34,7 +34,7 @@ exception Undefined
     forced, [Lazy.force x] returns the same value again without recomputing it. If it
     raised an exception, the same exception is raised again. Raise [Undefined] if the
     forcing of [x] tries to force [x] itself recursively. *)
-external force : ('a t[@local_opt]) -> 'a @@ portable = "%lazy_force"
+external force : ('a t[@local_opt]) -> 'a = "%lazy_force"
 
 (** Like [force] except that [force_val x] does not use an exception handler, so it may be
     more efficient. However, if the computation of [x] raises an exception, it is
@@ -65,5 +65,5 @@ val peek : 'a t -> 'a option
     type does not expose [of_sexp]. To be used in debug code, while tracking a Heisenbug,
     etc. *)
 module T_unforcing : sig
-  type nonrec 'a t = 'a t [@@deriving sexp_of ~localize]
+  type nonrec 'a t = 'a t [@@deriving sexp_of ~stackify]
 end

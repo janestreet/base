@@ -6,7 +6,7 @@ include Char0
 
 module T = struct
   type t = char
-  [@@deriving compare ~localize, hash, globalize, sexp ~localize, sexp_grammar]
+  [@@deriving compare ~localize, hash, globalize, sexp ~stackify, sexp_grammar]
 
   let to_string t = String.make 1 t
 
@@ -126,7 +126,7 @@ end
 
 module Caseless = struct
   module T = struct
-    type t = char [@@deriving sexp ~localize, sexp_grammar]
+    type t = char [@@deriving sexp ~stackify, sexp_grammar]
 
     let compare c1 c2 = compare (lowercase c1) (lowercase c2)
     let compare__local c1 c2 = compare c1 c2

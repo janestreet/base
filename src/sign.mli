@@ -8,7 +8,7 @@ type t = Sign0.t =
   | Neg
   | Zero
   | Pos
-[@@deriving enumerate, sexp ~localize, sexp_grammar]
+[@@deriving enumerate, sexp ~stackify, sexp_grammar]
 
 (** This provides [to_string]/[of_string], sexp conversion, Map, Hashtbl, etc. *)
 include%template Identifiable.S [@mode local] [@modality portable] with type t := t
@@ -16,10 +16,10 @@ include%template Identifiable.S [@mode local] [@modality portable] with type t :
 (** Returns the human-readable strings "positive", "negative", "zero". *)
 val to_string_hum : t -> string
 
-val of_int : int -> t
+val of_int : int -> t [@@zero_alloc]
 
 (** Map [Neg/Zero/Pos] to [-1/0/1] respectively. *)
-val to_int : t -> int
+val to_int : t -> int [@@zero_alloc]
 
 (** Map [Neg/Zero/Pos] to [-1./0./1.] respectively. (There is no [of_float] here, but see
     {!Float.sign_exn}.) *)

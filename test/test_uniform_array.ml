@@ -333,12 +333,60 @@ let%expect_test "unsafe_to_array_inplace__promise_not_a_float" =
   [%expect {| (1 2 3 4 5) |}]
 ;;
 
+let%expect_test "or_null elements" =
+  let arr = create ~len:5 Null in
+  print_s [%sexp (arr : int or_null t)];
+  [%expect
+    {|
+    (()
+     ()
+     ()
+     ()
+     ())
+    |}];
+  for i = 0 to 4 do
+    set arr i (This i)
+  done;
+  print_s [%sexp (arr : int or_null t)];
+  [%expect
+    {|
+    ((0)
+     (1)
+     (2)
+     (3)
+     (4))
+    |}];
+  let arr2 = concat [ arr; create ~len:3 Null ] in
+  let arr3 =
+    map arr2 ~f:(function
+      | This i when i % 2 = 0 -> This (i / 2)
+      | This _ -> Null
+      | Null -> This (-1))
+  in
+  print_s [%sexp (arr3 : int or_null t)];
+  [%expect
+    {|
+    ((0)
+     ()
+     (1)
+     ()
+     (2)
+     (-1)
+     (-1)
+     (-1))
+    |}];
+  let arr4 = filter_map arr3 ~f:Or_null.to_option in
+  print_s [%sexp (arr4 : int t)];
+  [%expect {| (0 1 2 -1 -1 -1) |}]
+;;
+
 (* Invariant tests *)
 module%test [@tags "no-js"] _ : module type of struct
   include Uniform_array
 end = struct
-  type 'a t = 'a Uniform_array.t [@@deriving compare ~localize, sexp_of, sexp_grammar]
+  type ('a : value_or_null) t = 'a Uniform_array.t [@@deriving compare ~localize, sexp_of]
 
+  let t_sexp_grammar = Uniform_array.t_sexp_grammar
   let invariant = Uniform_array.invariant
 
   (* We test that constructors satisfy the invariant, especially when given floats. *)

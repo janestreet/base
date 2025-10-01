@@ -24,7 +24,7 @@ module type Bytes = sig @@ portable
 
   open! Import
 
-  type t = bytes [@@deriving globalize, sexp ~localize, sexp_grammar]
+  type t = bytes [@@deriving globalize, sexp ~stackify, sexp_grammar]
 
   (** {1 Common Interfaces} *)
 
@@ -82,7 +82,7 @@ module type Bytes = sig @@ portable
   val of_char_list : local_ char list -> t
 
   (** [length t] returns the number of bytes in [t]. *)
-  external length : (t[@local_opt]) @ shared -> int = "%bytes_length"
+  external length : (t[@local_opt]) @ immutable -> int = "%bytes_length"
 
   (** [get t i] returns the [i]th byte of [t]. *)
   val get : local_ t -> int -> char

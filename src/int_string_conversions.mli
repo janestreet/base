@@ -47,10 +47,11 @@ module Make_binary (I : sig
     val clz : local_ t -> t
     val ( lsr ) : local_ t -> int -> t
     val ( land ) : local_ t -> local_ t -> t
-    val to_int_exn : local_ t -> int
-    val num_bits : int
+    val to_int_trunc : local_ t -> int
+    val num_bits : t
     val one : t
     val zero : t
+    val ( - ) : local_ t -> local_ t -> t
   end) : sig
   @@ portable
   include Binaryable with type t := I.t

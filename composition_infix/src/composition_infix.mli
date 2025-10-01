@@ -1,3 +1,5 @@
+@@ portable
+
 (** Infix composition operators.
 
     - [ a |> (f >> g) = a |> f |> g ]

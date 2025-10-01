@@ -63,7 +63,7 @@ val elide : bool Dynamic.t
 module Exn : sig
   val am_recording : unit -> bool
   val set_recording : bool -> unit
-  val with_recording : bool -> f:local_ (unit -> 'a) -> 'a
+  val with_recording : bool -> f:(unit -> 'a) @ local once -> 'a
 
   (** [most_recent ()] returns a backtrace containing the stack that was unwound by the
       most recently raised exception.

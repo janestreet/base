@@ -170,7 +170,7 @@ module type Type_equal = sig @@ portable
   open Definitions
 
   type ('a : any, 'b : any) t = T : ('a : any). ('a, 'a) t
-  [@@deriving sexp_of ~localize]
+  [@@deriving sexp_of ~stackify]
 
   (** just an alias, needed when [t] gets shadowed below *)
   type ('a : any, 'b : any) equal := ('a, 'b) t
@@ -266,12 +266,12 @@ module type Type_equal = sig @@ portable
     (** Every [Id.t] contains a unique id that is distinct from the [Uid.t] in any other
         [Id.t]. *)
     module Uid : sig
-      type t : value mod contended portable [@@deriving hash, sexp_of ~localize]
+      type t : value mod contended portable [@@deriving hash, sexp_of ~stackify]
 
       include%template Comparable.S [@mode local] [@modality portable] with type t := t
     end
 
-    val uid : (_ : any) t -> Uid.t
+    val%template uid : (_ : any) t @ m -> Uid.t @ m [@@mode m = (global, local)]
 
     (** [create ~name] defines a new type identity. Two calls to [create] will result in
         two distinct identifiers, even for the same arguments with the same type. If the

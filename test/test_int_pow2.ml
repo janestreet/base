@@ -81,6 +81,7 @@ let%expect_test ("[ceil_log2]" [@tags "64-bits-only"]) =
 
 module%test [@name "int_math"] _ = struct
   let test_cases () =
+    let edge_cases = [ 1; 1 lsl (Int.num_bits - 2); Int.max_value - 1; Int.max_value ] in
     let cases =
       [ 0b10101010
       ; 0b1010101010101010
@@ -101,19 +102,23 @@ module%test [@name "int_math"] _ = struct
           ]
       in
       let added_cases = List.map cases ~f:(fun x -> x lsl 16) in
-      List.concat [ cases; added_cases ]
-    | W32 -> cases
+      List.concat [ edge_cases; cases; added_cases ]
+    | W32 -> List.concat [ edge_cases; cases ]
   ;;
 
   let%test_unit "ceil_pow2" =
     List.iter (test_cases ()) ~f:(fun x ->
-      let p2 = ceil_pow2 x in
-      assert (is_pow2 p2 && p2 >= x && x >= p2 / 2))
+      let would_overflow = (not (is_pow2 x)) && x * 2 < x in
+      if not would_overflow
+      then (
+        let p2 = ceil_pow2 x in
+        assert (is_pow2 p2 && p2 >= x && x > p2 / 2)))
   ;;
 
   let%test_unit "floor_pow2" =
     List.iter (test_cases ()) ~f:(fun x ->
       let p2 = floor_pow2 x in
-      assert (is_pow2 p2 && 2 * p2 >= x && x >= p2))
+      let would_overflow = Int.max_value / 2 < p2 in
+      assert (is_pow2 p2 && (would_overflow || 2 * p2 > x) && x >= p2))
   ;;
 end

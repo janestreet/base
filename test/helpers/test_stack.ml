@@ -35,6 +35,7 @@ module Debug (Stack : S) : S with type 'a t = 'a Stack.t = struct
   let for_all t ~f : bool = debug t (fun () -> for_all t ~f) [@nontail]
   let is_empty t : bool = debug t (fun () -> is_empty t)
   let iter t ~f : unit = debug t (fun () -> iter t ~f) [@nontail]
+  let iter_until t ~f ~finish = debug t (fun () -> iter_until t ~f ~finish) [@nontail]
   let length t : int = debug t (fun () -> length t)
   let mem t a ~equal : bool = debug t (fun () -> mem t a ~equal) [@nontail]
   let of_list l : _ t = check_and_return (of_list l)

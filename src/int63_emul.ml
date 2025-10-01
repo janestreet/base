@@ -10,7 +10,7 @@ module Conv = Int_conversions
 
 module W : sig @@ portable
   type t = int64
-  [@@deriving compare ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+  [@@deriving compare ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   include%template Comparator.S [@modality portable] with type t := t
 
@@ -52,8 +52,8 @@ module W : sig @@ portable
   val equal__local : local_ t -> local_ t -> bool
   val ceil_pow2 : local_ t -> t
   val floor_pow2 : local_ t -> t
-  val ceil_log2 : local_ t -> int
-  val floor_log2 : local_ t -> int
+  val ceil_log2 : local_ t -> t
+  val floor_log2 : local_ t -> t
   val is_pow2 : local_ t -> bool
   val clz : local_ t -> t
   val ctz : local_ t -> t
@@ -119,7 +119,7 @@ end = struct
   let of_int64_trunc t = wrap_modulo t
   let t_of_sexp x = globalize (wrap_exn (int64_of_sexp x)) [@nontail]
   let sexp_of_t x = sexp_of_int64 (globalize_int64 (unwrap x))
-  let sexp_of_t__local x = exclave_ sexp_of_int64__local (unwrap x)
+  let sexp_of_t__stack x = exclave_ sexp_of_int64__stack (unwrap x)
   let compare (x : t) y = compare x y
   let compare__local (x : t) y = compare__local x y
   let equal__local (x : t) y = equal__local x y
@@ -134,14 +134,14 @@ end = struct
   let ctz x = (Int64.ctz (unwrap x) |> wrap_modulo) [@nontail]
   let floor_pow2 x = globalize (wrap_exn (Int64.floor_pow2 (unwrap x))) [@nontail]
   let ceil_pow2 x = globalize (wrap_exn (Int64.floor_pow2 (unwrap x))) [@nontail]
-  let floor_log2 x = Int64.floor_log2 (unwrap x) [@nontail]
-  let ceil_log2 x = Int64.ceil_log2 (unwrap x) [@nontail]
+  let floor_log2 x = Int64.floor_log2 (unwrap x) |> wrap_modulo
+  let ceil_log2 x = Int64.ceil_log2 (unwrap x) |> wrap_modulo
 end
 
 open W
 
 module T = struct
-  type t = W.t [@@deriving globalize, hash, sexp ~localize, sexp_grammar]
+  type t = W.t [@@deriving globalize, hash, sexp ~stackify, sexp_grammar]
   type comparator_witness = W.comparator_witness
 
   let comparator = W.comparator
@@ -343,6 +343,7 @@ let to_nativeint x = Conv.int64_to_nativeint (unwrap x) [@nontail]
 let to_local_nativeint_exn x = exclave_ Conv.int64_to_nativeint_exn (unwrap x)
 let to_nativeint_exn x = globalize_nativeint (to_local_nativeint_exn x) [@nontail]
 let to_nativeint_trunc x = Conv.int64_to_nativeint_trunc (unwrap x)
+let num_bits = of_int_exn num_bits
 
 include Int_string_conversions.Make (T)
 
@@ -422,8 +423,9 @@ include Int_string_conversions.Make_binary (struct
     let clz = clz
     let num_bits = num_bits
     let one = one
-    let to_int_exn = to_int_exn
+    let to_int_trunc = to_int_trunc
     let zero = zero
+    let ( - ) = ( - )
   end)
 
 (* [Int63] and [Int63.O] agree value-wise *)

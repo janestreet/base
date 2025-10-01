@@ -94,22 +94,54 @@ let%expect_test "first_some_thunk" =
   [%expect {| 2 |}]
 ;;]
 
+let%expect_test "local Let_syntax" =
+  let print_opt = (Option.iter [@mode local]) ~f:(fun x -> Stdlib.print_int x) in
+  let open Option.Local.Let_syntax in
+  let one = Some 1 in
+  let a =
+    let%mapl one in
+    one + 1
+  in
+  print_opt a;
+  [%expect {| 2 |}];
+  let b =
+    let%bindl one in
+    Some (one + 2)
+  in
+  print_opt b;
+  [%expect {| 3 |}];
+  let c =
+    let%mapl one
+    and two = Some 2
+    and three = Some 3 in
+    one + two + three
+  in
+  print_opt c;
+  [%expect {| 6 |}];
+  let d =
+    let%bindl one in
+    return one
+  in
+  print_opt d;
+  [%expect {| 1 |}]
+;;
+
 module%test Test_sexp = struct
   [%%template
   module
     [@kind k = (float64, bits32, bits64, word, value)] Test_one (T : sig
-      type t : k [@@deriving sexp ~localize]
+      type t : k [@@deriving sexp ~stackify]
 
       val of_int : int -> t
     end) : sig end = struct
     open T
 
-    type nonrec t = (t Option.t[@kind k]) [@@deriving sexp ~localize]
+    type nonrec t = (t Option.t[@kind k]) [@@deriving sexp ~stackify]
 
     let%expect_test "serialize" =
       let five : t = Some (of_int 5) in
       five |> sexp_of_t |> print_s;
-      five |> (sexp_of_t [@mode local]) |> Sexp.globalize |> print_s;
+      five |> (sexp_of_t [@alloc stack]) |> Sexp.globalize |> print_s;
       [%expect
         {|
         (5)
@@ -132,7 +164,7 @@ module%test Test_sexp = struct
         ~f:(fun () ->
           let five : t = Some (of_int 5) in
           five |> sexp_of_t |> print_s;
-          five |> (sexp_of_t [@mode local]) |> Sexp.globalize |> print_s;
+          five |> (sexp_of_t [@alloc stack]) |> Sexp.globalize |> print_s;
           [%expect
             {|
             (some 5)

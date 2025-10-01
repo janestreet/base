@@ -25,7 +25,7 @@ open! Import
     of some larger type.
 
     Similar arguments apply for other derivers, like [globalize] and [sexp_grammar]. *)
-type t = | [@@deriving enumerate, globalize, sexp ~localize, sexp_grammar]
+type t = | [@@deriving enumerate, globalize, sexp ~stackify, sexp_grammar]
 
 (** Because there are no values of type [Nothing.t], a piece of code that has a value of
     type [Nothing.t] must be unreachable. In such an unreachable piece of code, one can

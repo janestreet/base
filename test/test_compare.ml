@@ -115,7 +115,7 @@ let%expect_test "Int63" =
 
 module%test [@name "lexicographic"] _ = struct
   let%expect_test "single" =
-    Ref.set_temporarily sexp_style To_string_hum ~f:(fun () ->
+    Dynamic.with_temporarily sexp_style To_string_hum ~f:(fun () ->
       List.iter
         [ 1, 2; 1, 1; 2, 1 ]
         ~f:(fun (a, b) ->
@@ -134,7 +134,7 @@ module%test [@name "lexicographic"] _ = struct
   ;;
 
   let%expect_test "three comparisons" =
-    Ref.set_temporarily sexp_style To_string_hum ~f:(fun () ->
+    Dynamic.with_temporarily sexp_style To_string_hum ~f:(fun () ->
       let compare_first_three_elts a_1 b_1 =
         Comparable.lexicographic
           (List.init 3 ~f:(fun i a b -> compare a.(i) b.(i)))

@@ -421,6 +421,30 @@ let%expect_test _ =
   [%expect {| (raised (Invalid_argument "length mismatch in zip_exn: 1 <> 3")) |}]
 ;;
 
+let%test_unit _ =
+  [%test_result: (int * int * int) list Or_unequal_lengths.t]
+    (zip3 [ 1; 2; 3 ] [ 4; 5; 6 ] [ 7; 8; 9 ])
+    ~expect:(Ok [ 1, 4, 7; 2, 5, 8; 3, 6, 9 ])
+;;
+
+let%test_unit _ =
+  [%test_result: (int * int * int) list Or_unequal_lengths.t]
+    (zip3 [ 1 ] [ 4; 5 ] [ 7 ])
+    ~expect:Unequal_lengths
+;;
+
+let%test_unit _ =
+  [%test_result: (int * int * int) list]
+    (zip3_exn [ 1; 2; 3 ] [ 4; 5; 6 ] [ 7; 8; 9 ])
+    ~expect:[ 1, 4, 7; 2, 5, 8; 3, 6, 9 ]
+;;
+
+let%expect_test _ =
+  show_raise (fun () -> zip3_exn [ 1 ] [ 4; 5 ] [ 7 ]);
+  [%expect
+    {| (raised (Invalid_argument "length mismatch in zip3_exn: 1 <> 2 || 2 <> 1")) |}]
+;;
+
 let%expect_test _ =
   show_raise (fun () ->
     rev_map3_exn [ 1 ] [ 4; 5; 6 ] [ 2; 3 ] ~f:(fun a b c -> a + b + c));
@@ -1550,7 +1574,7 @@ let%expect_test "[take], [drop], and [split]" =
 ;;
 
 let print_s sexp =
-  Ref.set_temporarily sexp_style Sexp_style.simple_pretty ~f:(fun () -> print_s sexp)
+  Dynamic.with_temporarily sexp_style Sexp_style.simple_pretty ~f:(fun () -> print_s sexp)
 ;;
 
 let%expect_test "[cartesian_product]" =

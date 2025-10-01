@@ -36,15 +36,23 @@ Error: This type
            (Base.int, Base.Modes.At_locality.local) Base__Modes.At_locality.t
        should be an instance of type ('a : value mod global)
        The kind of (Base.int, Base.Modes.At_locality.local)
-                   Base.Modes.At_locality.t is immutable_data mod aliased
-         with Base.Modes.At_locality.actually_local @@ unyielding many portable aliased contended.
+                   Base.Modes.At_locality.t is
+           immediate
+             with Base.Modes.At_locality.local
+                    @@
+                    unyielding
+                    many
+                    portable
+                    aliased
+                    contended.
        But the kind of (Base.int, Base.Modes.At_locality.local)
                        Base.Modes.At_locality.t must be a subkind of
-         value mod global
+           value mod global
          because of the definition of require_global at file "test_modes.mlt", line 7, characters 0-43.
 
        The first mode-crosses less than the second along:
-         locality: mod local ≰ mod global
+         locality: mod global with Base.Modes.At_locality.local ≰
+           mod global
 |}]
 
 let doesn't_cross_locality
@@ -56,7 +64,7 @@ let doesn't_cross_locality
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value escapes its region.
+Error: This value is local but is expected to be global.
 |}]
 
 (* Tests for Modes.At_portability.t *)
@@ -94,16 +102,22 @@ Error: This type
        should be an instance of type ('a : value mod portable)
        The kind of (Base.int, Base.Modes.At_portability.nonportable)
                    Base.Modes.At_portability.t is
-         immutable_data mod global aliased yielding
-         with Base.Modes.At_portability.nonportable_ @@ global many aliased contended.
+           immediate
+             with Base.Modes.At_portability.nonportable
+                    @@
+                    global
+                    many
+                    aliased
+                    contended.
        But the kind of (Base.int, Base.Modes.At_portability.nonportable)
                        Base.Modes.At_portability.t must be a subkind of
-         value mod portable
+           value mod portable
          because of the definition of require_portable at file "test_modes.mlt", line 6, characters 0-47.
 
        The first mode-crosses less than the second along:
-         portability: mod portable
-           with Base.Modes.At_portability.nonportable_ ≰ mod portable
+         portability:
+           mod portable with Base.Modes.At_portability.nonportable ≰
+           mod portable
 |}]
 
 let doesn't_cross_portability
@@ -115,7 +129,7 @@ let doesn't_cross_portability
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value is nonportable but expected to be portable.
+Error: This value is nonportable but is expected to be portable.
 |}]
 
 type _doesn't_cross_portability =
@@ -133,17 +147,19 @@ Error: This type
        The kind of (Base.int -> Base.int,
                     Base.Modes.At_portability.nonportable)
                    Base.Modes.At_portability.t is
-         value mod aliased portable immutable non_float
-         with Base.Modes.At_portability.nonportable_ @@ aliased contended.
+           value
+             mod aliased portable immutable non_float
+             with Base.Modes.At_portability.nonportable @@ aliased contended.
        But the kind of (Base.int -> Base.int,
                         Base.Modes.At_portability.nonportable)
                        Base.Modes.At_portability.t must be a subkind of
-         value mod portable
+           value mod portable
          because of the definition of require_portable at file "test_modes.mlt", line 6, characters 0-47.
 
        The first mode-crosses less than the second along:
-         portability: mod portable
-           with Base.Modes.At_portability.nonportable_ ≰ mod portable
+         portability:
+           mod portable with Base.Modes.At_portability.nonportable ≰
+           mod portable
 |}]
 
 let doesn't_cross_portability
@@ -157,7 +173,7 @@ let doesn't_cross_portability
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value is nonportable but expected to be portable.
+Error: This value is nonportable but is expected to be portable.
 |}]
 
 (* We can implement Modes.Portable.t using Modes.At_portability.t *)

@@ -371,12 +371,10 @@ module type Set = sig @@ portable
   val globalize0 : ('a, 'cmp) t @ local -> ('a, 'cmp) t
 
   (** Creates an empty set based on the provided comparator. *)
-  val empty : ('a, 'cmp) Comparator.Module.t -> ('a, 'cmp) t
-
   val%template empty
-    : ('cmp : value mod portable) 'a.
-    ('a, 'cmp) Comparator.Module.t -> ('a, 'cmp) t @ portable
-  [@@mode portable]
+    : 'a ('cmp : value mod p).
+    ('a, 'cmp) Comparator.Module.t -> ('a, 'cmp) t @ p
+  [@@mode p = (nonportable, portable)]
 
   (** Creates a set based on the provided comparator that contains only the provided
       element. *)
@@ -613,6 +611,15 @@ module type Set = sig @@ portable
       largest. *)
   val iter : ('a, _) t -> f:local_ ('a -> unit) -> unit
 
+  (** [iter_until t ~f ~finish] is a short-circuiting version of [iter]. If [f] returns
+      [Stop x] the computation ceases and returns [x]. If [f] always returns [Continue ()]
+      the final result is computed by [finish]. *)
+  val iter_until
+    :  ('a, _) t
+    -> f:('a -> (unit, 'final) Container.Continue_or_stop.t) @ local
+    -> finish:(unit -> 'final) @ local
+    -> 'final
+
   (** Iterate two sets side by side. Complexity is [O(m+n)] where [m] and [n] are the
       sizes of the two input sets. As an example, with the inputs [0; 1] and [1; 2], [f]
       will be called with [`Left 0]; [`Both (1, 1)]; and [`Right 2]. *)
@@ -787,6 +794,44 @@ module type Set = sig @@ portable
 
   include For_deriving with type ('a, 'b) t := ('a, 'b) t
 
+  module Tree : sig
+    type weight : immutable_data
+
+    (** A [Tree.t] contains just the tree data structure that a set is based on, without
+        including the comparator. Accordingly, any operation on a [Tree.t] must also take
+        as an argument the corresponding comparator. *)
+    type ('a, 'cmp) t : immutable_data with 'a = private
+      | Empty
+      | Leaf of { global_ elt : 'a }
+      | Node of
+          { global_ left : ('a, 'cmp) t
+          ; global_ elt : 'a
+          ; global_ right : ('a, 'cmp) t
+          ; weight : weight
+          }
+    [@@deriving globalize, sexp_of]
+
+    val t_of_sexp_direct
+      :  comparator:('elt, 'cmp) Comparator.t
+      -> (Sexp.t -> 'elt)
+      -> Sexp.t
+      -> ('elt, 'cmp) t
+
+    val globalize0 : local_ ('elt, 'cmp) t -> ('elt, 'cmp) t
+
+    include
+      Creators_and_accessors_and_transformers_generic
+      with type ('a, 'b) set := ('a, 'b) t
+      with type ('a, 'b) t := ('a, 'b) t
+      with type ('a, 'b) tree := ('a, 'b) t
+      with type 'a elt := 'a
+      with type 'c cmp := 'c
+      with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) With_comparator.t
+      with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) With_comparator.t
+
+    val empty_without_value_restriction : (_, _) t
+  end
+
   (** Using comparator is a similar interface as the toplevel of [Set], except the
       functions take a [~comparator:('elt, 'cmp) Comparator.t] where the functions at the
       toplevel of [Set] takes a [('elt, 'cmp) comparator]. *)
@@ -798,33 +843,6 @@ module type Set = sig @@ portable
       -> (Sexp.t -> 'elt)
       -> Sexp.t
       -> ('elt, 'cmp) t
-
-    module Tree : sig
-      (** A [Tree.t] contains just the tree data structure that a set is based on, without
-          including the comparator. Accordingly, any operation on a [Tree.t] must also
-          take as an argument the corresponding comparator. *)
-      type ('a, 'cmp) t : immutable_data with 'a [@@deriving globalize, sexp_of]
-
-      val t_of_sexp_direct
-        :  comparator:('elt, 'cmp) Comparator.t
-        -> (Sexp.t -> 'elt)
-        -> Sexp.t
-        -> ('elt, 'cmp) t
-
-      val globalize0 : local_ ('elt, 'cmp) t -> ('elt, 'cmp) t
-
-      include
-        Creators_and_accessors_and_transformers_generic
-        with type ('a, 'b) set := ('a, 'b) t
-        with type ('a, 'b) t := ('a, 'b) t
-        with type ('a, 'b) tree := ('a, 'b) t
-        with type 'a elt := 'a
-        with type 'c cmp := 'c
-        with type ('a, 'b, 'c) create_options := ('a, 'b, 'c) With_comparator.t
-        with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) With_comparator.t
-
-      val empty_without_value_restriction : (_, _) t
-    end
 
     include
       Creators_and_accessors_and_transformers_generic
@@ -843,6 +861,8 @@ module type Set = sig @@ portable
     module%template.portable Empty_without_value_restriction (Elt : Comparator.S1) : sig
       val empty : ('a Elt.t, Elt.comparator_witness) t
     end
+
+    module Tree = Tree
   end
 
   val to_tree : ('a, 'cmp) t -> ('a, 'cmp) Using_comparator.Tree.t

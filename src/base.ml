@@ -77,7 +77,7 @@ include (
     with type ('a, 'b, 'c) format := ('a, 'b, 'c) format
     with type ('a, 'b, 'c, 'd) format4 := ('a, 'b, 'c, 'd) format4
     with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
-    with type 'a ref := 'a ref)
+    with type ('a : value_or_null) ref := 'a ref)
 [@ocaml.warning "-3"]
 
 (**/**)
@@ -102,7 +102,7 @@ module Container_with_local = Container_with_local
 module Dynamic = Dynamic
 module Either = Either
 module Equal = Equal
-module Error = Error
+module Error = Error_with_extras
 module Exn = Exn
 module Field = Field
 module Float = Float
@@ -165,6 +165,7 @@ module String = String
 module Stringable = Stringable
 module Sys = Sys
 module T = T
+module Toplevel_value = Toplevel_value
 module Type_equal = Type_equal
 module Uniform_array = Uniform_array
 module Unit = Unit
@@ -195,81 +196,84 @@ end
 (**/**)
 
 module Export = struct
-  type ('a : any_non_null) array = 'a Array.t
+  type ('a : any mod separable) array = 'a Array.t
 
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
   [%%rederive.portable
     type 'a array = 'a Array.t
     [@@deriving
-      compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]]
+      compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]]
 
   type bool = Bool.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type char = Char.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type exn = Exn.t [@@deriving sexp_of]
 
   type float = Float.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
-  type 'a iarray = 'a Iarray.t
-  [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+  type ('a : any mod separable) iarray = 'a Iarray.t
+
+  [%%rederive.portable
+    type 'a iarray = 'a Iarray.t
+    [@@deriving
+      compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]
 
   type int = Int.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type int32 = Int32.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type int64 = Int64.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
-  type 'a list = 'a List.t
+  type ('a : value_or_null) list = 'a List.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type nativeint = Nativeint.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
-  type 'a option = 'a Option.t
+  type ('a : value_or_null) option = 'a Option.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type%template nonrec ('a : k) option = ('a Option.t[@kind k])
-  [@@deriving compare ~localize, equal ~localize, sexp ~localize]
+  [@@deriving compare ~localize, equal ~localize, sexp ~stackify]
   [@@kind k = (float64, bits32, bits64, word)]
 
-  type ('a, 'b) result = ('a, 'b) Result.t
+  type ('a : value_or_null, 'b : value_or_null) result = ('a, 'b) Result.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
-  type%template nonrec ('a : k, 'b) result = (('a, 'b) Result.t[@kind k])
-  [@@deriving compare ~localize, equal ~localize, sexp ~localize]
+  type%template nonrec ('a : k, 'b : value_or_null) result = (('a, 'b) Result.t[@kind k])
+  [@@deriving compare ~localize, equal ~localize, sexp ~stackify]
   [@@kind k = (float64, bits32, bits64, word)]
 
-  type 'a ref = 'a Ref.t
-  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
+  type ('a : value_or_null) ref = 'a Ref.t
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
 
   type string = String.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type bytes = Bytes.t
-  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~localize, sexp_grammar]
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
 
   type unit = Unit.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~localize, sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   (** Format stuff *)
 
@@ -334,7 +338,7 @@ module Export = struct
   (* This must be declared as an external for the warnings to work properly. *)
   external ignore
     : ('a : any).
-    ('a[@local_opt]) @ contended once -> unit
+    ('a[@local_opt]) @ immutable once -> unit
     @@ portable
     = "%ignore"
   [@@layout_poly]
@@ -358,7 +362,11 @@ module Export = struct
   (** Exceptions stuff *)
 
   (* Declared as an external so that the compiler may rewrite '%raise' as '%reraise'. *)
-  external raise : exn -> _ @ portable unique @@ portable = "%reraise"
+  external raise
+    : ('a : value_or_null).
+    exn -> 'a @ portable unique
+    @@ portable
+    = "%reraise"
 
   let failwith = failwith
   let invalid_arg = invalid_arg
@@ -367,9 +375,8 @@ module Export = struct
   (** Misc *)
 
   external phys_equal
-    :  ('a[@local_opt]) @ contended
-    -> ('a[@local_opt]) @ contended
-    -> bool
+    : ('a : value_or_null).
+    ('a[@local_opt]) @ contended -> ('a[@local_opt]) @ contended -> bool
     @@ portable
     = "%eq"
 
@@ -379,7 +386,7 @@ module Export = struct
      so uses of those identifiers work in both upstream OCaml and OxCaml. *)
 
   type nonrec 'a or_null = 'a or_null
-  [@@or_null_reexport] [@@deriving globalize, sexp ~localize]
+  [@@or_null_reexport] [@@deriving globalize, sexp ~stackify]
 end
 
 include Export

@@ -6,7 +6,7 @@ type t = Stdlib.Lexing.position =
   ; pos_bol : int
   ; pos_cnum : int
   }
-[@@deriving compare ~localize, equal ~localize, hash, sexp_of ~localize]
+[@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify]
 
 include%template Comparator.S [@mode portable] with type t := t
 

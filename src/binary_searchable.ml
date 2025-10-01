@@ -13,7 +13,7 @@ module type Arg = sig
   val get : 'a t @ m' -> int -> 'a elt @ m' [@@mode m' = (global, m)]
   val length : _ t @ m' -> int [@@mode m' = (global, m)]
 end
-[@@kind k = (value, immediate, immediate64)]
+[@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
 
 module%template.portable Make_gen (T : Arg [@mode m] [@kind k]) = struct
   let[@mode m' = (global, m)] get = (T.get [@mode m'])
@@ -43,7 +43,7 @@ module%template.portable Make_gen (T : Arg [@mode m] [@kind k]) = struct
       how
   ;;
 end
-[@@kind k = (value, immediate, immediate64)]
+[@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
 
 module%template.portable [@modality p] Make (T : Indexable [@mode m]) =
 Make_gen [@mode m] [@modality p] (struct
@@ -61,4 +61,4 @@ Make_gen [@mode m] [@kind k] [@modality p] (struct
     let[@mode m' = (global, m)] get = (T.get [@mode m'])
     let[@mode m' = (global, m)] length = (T.length [@mode m'])
   end)
-[@@kind k = (value, immediate, immediate64)]]
+[@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]]

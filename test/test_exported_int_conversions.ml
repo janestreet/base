@@ -3,7 +3,7 @@ open! Import
 module type S = sig
   type t [@@deriving compare, sexp_of]
 
-  val num_bits : int
+  val num_bits : t
   val min_value : t
   val minus_one : t
   val zero : t
@@ -50,7 +50,8 @@ let iter (type a) (module M : S with type t = a) ~f =
   for _ = 1 to 10_000 do
     (* skew toward low numbers of bits so that, e.g., choosing a random int64 does
        frequently find a value that can be converted to int32. *)
-    let strip_bits = Random.State.int_incl state 0 (M.num_bits - 1) in
+    let num_bits = M.num_bits |> M.to_int64 |> Int64.to_int_trunc in
+    let strip_bits = Random.State.int_incl state 0 (num_bits - 1) in
     let lo = M.shift_right M.min_value strip_bits in
     let hi = M.shift_right M.max_value strip_bits in
     f (M.random state lo hi)
@@ -107,7 +108,8 @@ let test_partial
       require_compare_equal (module B) b (a_to_b_trunc a);
       require_compare_equal (module Int64) (A.to_int64 a) (B.to_int64 b)
     | None ->
-      let trunc = truncate (A.to_int64 a) ~num_bits:B.num_bits in
+      let num_bits = B.num_bits |> B.to_int64 |> Int64.to_int_trunc in
+      let trunc = truncate (A.to_int64 a) ~num_bits in
       require_compare_equal (module Int64) trunc (B.to_int64 (b_of_a_trunc a));
       require_compare_equal (module Int64) trunc (B.to_int64 (a_to_b_trunc a));
       require

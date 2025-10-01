@@ -10,7 +10,7 @@ module T = struct
     ; pos_bol : int
     ; pos_cnum : int
     }
-  [@@deriving compare ~localize, hash, sexp_of ~localize]
+  [@@deriving compare ~localize, hash, sexp_of ~stackify]
 end
 
 include T

@@ -26,7 +26,7 @@ module Primitives = struct
     @@ portable
     = "%bytes_safe_get"
 
-  external length : (bytes[@local_opt]) @ shared -> int @@ portable = "%bytes_length"
+  external length : (bytes[@local_opt]) @ immutable -> int @@ portable = "%bytes_length"
 
   external unsafe_get
     :  (bytes[@local_opt])
@@ -113,7 +113,19 @@ include Primitives
 
 let max_length = Sys.max_string_length
 let blit = Stdlib.Bytes.blit
-let blit_string = Stdlib.Bytes.blit_string
+
+external string_length : string @ local shared -> int @@ portable = "%string_length"
+
+let blit_string ~(src @ local) ~src_pos ~(dst @ local) ~dst_pos ~len =
+  if len < 0
+     || src_pos < 0
+     || src_pos > string_length src - len
+     || dst_pos < 0
+     || dst_pos > length dst - len
+  then invalid_arg "String.blit / Bytes.blit_string"
+  else unsafe_blit_string ~src ~src_pos ~dst ~dst_pos ~len
+;;
+
 let compare = Stdlib.Bytes.compare
 let create = Stdlib.Bytes.create
 
@@ -308,7 +320,13 @@ let fill (local_ t) ~pos ~len c =
   else unsafe_fill t ~pos ~len c
 ;;
 
-let make = Stdlib.Bytes.make
+let%template[@alloc a = (heap, stack)] make n c =
+  (let t = (create [@alloc a]) n in
+   unsafe_fill t ~pos:0 ~len:n c;
+   t)
+  [@exclave_if_stack a]
+;;
+
 let empty = Stdlib.Bytes.empty
 let get_empty () = Portability_hacks.magic_uncontended__promise_deeply_immutable empty
 

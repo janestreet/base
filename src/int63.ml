@@ -115,7 +115,7 @@ module Overflow_exn = struct
   let neg t = if t = min_value then failwith "neg overflow" else neg t
 end
 
-let () = assert (Int.( = ) num_bits 63)
+let () = assert (Int.( = ) (num_bits |> to_int_trunc) 63)
 
 let random_of_int ?(state = Random.State.get_default ()) bound =
   of_int (Random.State.int state (to_int_exn bound))
@@ -143,19 +143,6 @@ let random_incl =
   match Word_size.word_size with
   | W64 -> random_incl_of_int
   | W32 -> random_incl_of_int64
-;;
-
-let floor_log2 t =
-  match Word_size.word_size with
-  | W64 -> t |> to_int_exn |> Int.floor_log2
-  | W32 ->
-    if t <= zero
-    then raise_s (Sexp.message "[Int.floor_log2] got invalid input" [ "", sexp_of_t t ]);
-    let floor_log2 = ref (Int.( - ) num_bits 2) in
-    while equal zero (bit_and t (shift_left one !floor_log2)) do
-      floor_log2 := Int.( - ) !floor_log2 1
-    done;
-    !floor_log2
 ;;
 
 module Private = struct

@@ -2,13 +2,13 @@ open! Import
 open! Or_null
 
 module%test _ = struct
-  let () = sexp_style := Sexp_style.simple_pretty
+  let () = Dynamic.set_root sexp_style Sexp_style.simple_pretty
 end
 
 module _ : module type of struct
   include Or_null
 end = struct
-  type 'a t = 'a or_null [@@or_null_reexport] [@@deriving sexp ~localize]
+  type 'a t = 'a or_null [@@or_null_reexport] [@@deriving sexp ~stackify]
 
   let globalize = globalize_or_null
 
@@ -19,6 +19,17 @@ end = struct
     let t' @ local = This "hello world" in
     print_s [%sexp ([%globalize: string t] t' : string t)];
     [%expect {| ("hello world") |}]
+  ;;
+
+  let hash_fold_t = hash_fold_t
+
+  let%expect_test "hash" =
+    let t = Null in
+    print_s [%sexp ([%hash: int t] t : int)];
+    [%expect {| 1_058_613_066 |}];
+    let t' = This "my string" in
+    print_s [%sexp ([%hash: string t] t' : int)];
+    [%expect {| 333_169_405 |}]
   ;;
 
   let%template[@mode m = (global, local)] compare = (Or_null.compare [@mode m])
@@ -622,5 +633,21 @@ end = struct
     [%expect {| () |}];
     test_complex (This 10);
     [%expect {| (21) |}]
+  ;;
+
+  module Optional_syntax = Optional_syntax
+
+  let%expect_test "optional syntax" =
+    let () =
+      match%optional.Or_null This 3 with
+      | None -> failwith "wrong"
+      | Some x -> require_equal (module Int) x 3
+    in
+    let () =
+      match%optional.Or_null Null with
+      | Some x -> raise_s [%message "wrong" (x : int)]
+      | None -> ()
+    in
+    [%expect {| |}]
   ;;
 end

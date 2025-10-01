@@ -26,7 +26,7 @@ module Definitions = struct
     val get : 'a t @ m' -> int -> 'a @ m' [@@mode m' = (global, m)]
     val length : _ t @ m' -> int [@@mode m' = (global, m)]
   end
-  [@@kind k = (value, immediate, immediate64)]]
+  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]]
 
   module Which_target_by_key = struct
     type t =
@@ -95,7 +95,7 @@ module Definitions = struct
     val binary_search_segmented : (('a t, 'a) binary_search_segmented[@mode m'])
     [@@mode m' = (global, m)]
   end
-  [@@kind k = (value, immediate, immediate64)]]
+  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]]
 end
 
 module type Binary_searchable = sig @@ portable
@@ -111,5 +111,5 @@ module type Binary_searchable = sig @@ portable
 
   module%template.portable Make1 (T : Indexable1 [@mode m] [@kind k]) :
     S1 [@mode m] [@kind k] with type 'a t := 'a T.t
-  [@@kind k = (value, immediate, immediate64)]]
+  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]]
 end

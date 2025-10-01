@@ -42,6 +42,7 @@ struct
   let to_list = to_list
   let fold_result = fold_result
   let fold_until = fold_until
+  let iter_until = iter_until
 
   let%test_unit _ =
     let ( = ) = Poly.equal in
@@ -104,7 +105,21 @@ struct
          with
          | Ok 0 -> assert (Container.length c = 0)
          | Ok _ -> failwith "Expected fold to stop early"
-         | Error x -> assert (mid = x)))
+         | Error x -> assert (mid = x));
+        let r = ref 0 in
+        (match
+           Container.iter_until
+             c
+             ~f:(fun _ ->
+               if !r = mid
+               then Stop (Ok !r)
+               else (
+                 Int.incr r;
+                 Continue ()))
+             ~finish:(fun () -> Error ())
+         with
+         | Error () -> assert (Container.is_empty c)
+         | Ok x -> assert (mid = x)))
   ;;
 
   let min_elt = min_elt

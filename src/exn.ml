@@ -7,7 +7,8 @@ let exit = Stdlib.exit
 
 exception Finally of t * t [@@deriving sexp]
 exception Reraised of string * t [@@deriving sexp]
-exception Sexp of Sexp.t Lazy.t
+exception Sexp of Sexp.t
+exception Sexp_lazy of Sexp.t Lazy.t
 
 (* We install a custom exn-converter rather than use:
 
@@ -15,17 +16,20 @@ exception Sexp of Sexp.t Lazy.t
      exception Sexp of Sexp.t [@@deriving sexp]
    ]}
 
-   to eliminate the extra wrapping of [(Sexp ...)]. *)
+   to eliminate the extra wrapping of [(Sexp ...)]. (Similarly for [Sexp_lazy].) *)
 let () =
   Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Sexp] (function
-    | Sexp t -> Lazy.force t
+    | Sexp t -> t
     | _ ->
       (* Reaching this branch indicates a bug in sexplib. *)
-      assert false)
+      assert false);
+  Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Sexp_lazy] (function
+    | Sexp_lazy t -> Lazy.force t
+    | _ -> assert false)
 ;;
 
-let create_s sexp = Sexp (Lazy.from_val sexp)
-let create_s_lazy lazy_sexp = Sexp lazy_sexp
+let create_s sexp = Sexp sexp
+let create_s_lazy lazy_sexp = Sexp_lazy lazy_sexp
 
 let raise_with_original_backtrace t backtrace =
   Stdlib.Printexc.raise_with_backtrace t backtrace
@@ -101,14 +105,15 @@ include%template Pretty_printer.Register_pp [@modality portable] (struct
     let module_name = "Base.Exn"
   end)
 
+let get_err_formatter = Obj.magic_portable Stdlib.Format.get_err_formatter
+
 let print_with_backtrace exn raw_backtrace =
   let serialized_exn = Serialized.of_exn exn in
-  Stdlib.Domain.DLS.access (fun access ->
-    Stdlib.Format.fprintf
-      (Stdlib.Format.get_err_formatter access)
-      "@[<2>Uncaught exception:@\n@\n@[%a@]@]@\n@."
-      Serialized.pp
-      serialized_exn);
+  Stdlib.Format.fprintf
+    (get_err_formatter ())
+    "@[<2>Uncaught exception:@\n@\n@[%a@]@]@\n@."
+    Serialized.pp
+    serialized_exn;
   if Stdlib.Printexc.backtrace_status ()
   then Stdlib.Printexc.print_raw_backtrace Stdlib.stderr raw_backtrace;
   Stdlib.flush Stdlib.stderr

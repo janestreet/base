@@ -44,7 +44,10 @@ let%template[@kind k = (value, float64, bits64)] of_key
 [@@modality p = (portable, nonportable)]
 ;;
 
-let to_key (type a) { hash; compare; sexp_of_t } =
+let%template[@kind k = (value, float64, bits64)] to_key
+  : type (a : k). a t @ p -> ((module Key with type t = a)[@kind k] [@modality p]) @ p
+  =
+  fun { hash; compare; sexp_of_t } ->
   (module struct
     type t = a
 
@@ -52,5 +55,6 @@ let to_key (type a) { hash; compare; sexp_of_t } =
     let compare = compare
     let sexp_of_t = sexp_of_t
   end : Key
-    with type t = a)
+    with type t = a[@kind k] [@modality p])
+[@@modality p = (portable, nonportable)]
 ;;

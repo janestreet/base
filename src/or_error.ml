@@ -1,11 +1,13 @@
 open! Import
 
+[@@@warning "-incompatible-with-upstream"]
+
 [%%template
 type nonrec ('a : k) t = (('a, Error.t) Result.t[@kind k])
-[@@deriving compare ~localize, equal ~localize, sexp]
+[@@deriving compare ~localize, equal ~localize, globalize, sexp]
 [@@kind k = (float64, bits32, bits64, word)]
 
-type nonrec 'a t = ('a, Error.t) Result.t
+type nonrec ('a : value_or_null) t = ('a, Error.t) Result.t
 [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 [@@kind k = (value, immediate, immediate64)]]
 
@@ -17,8 +19,8 @@ let join = Result.join
 
 let%template map = (Result.map [@kind ki ko])
 [@@kind
-  ki = (value, immediate, immediate64, float64, bits32, bits64, word)
-  , ko = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  ki = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)
+  , ko = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
 ;;
 
 let return = Result.return
@@ -76,17 +78,22 @@ let ok = Result.ok
 let is_ok = Result.is_ok
 let is_error = Result.is_error
 
-let try_with ?(backtrace = false) f =
+let%template try_with ?(backtrace = false) f =
   try Ok (f ()) with
   | exn -> Error (Error.of_exn exn ?backtrace:(if backtrace then Some `Get else None))
+[@@mode p = (nonportable, portable)]
 ;;
 
 let try_with_join ?backtrace f = join (try_with ?backtrace f)
 
-let ok_exn = function
+[%%template
+[@@@kind.default
+  k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+
+let ok_exn : ('a : k). ('a t[@kind k]) -> 'a = function
   | Ok x -> x
-  | Error err -> Error.raise err
-;;
+  | Error err -> (Error.raise [@kind k]) err
+;;]
 
 let of_exn ?backtrace exn = Error (Error.of_exn ?backtrace exn)
 
@@ -100,27 +107,45 @@ let of_option_lazy_string t ~error = of_option t ~error:(Error.of_lazy error)
 let of_option_lazy_sexp t ~error = of_option t ~error:(Error.of_lazy_sexp error)
 let of_option_lazy t ~error = of_option t ~error:(Error.of_lazy_t error)
 
-let error ?here ?strict message a sexp_of_a =
-  Error (Error.create ?here ?strict message a sexp_of_a)
+let%template error ?here ?strict message a sexp_of_a =
+  Error ((Error.create [@mode m]) ?here ?strict message a sexp_of_a)
+[@@mode m = (portable, nonportable)]
 ;;
 
 let error_s sexp = Error (Error.create_s sexp)
 let error_string message = Error (Error.of_string message)
 let errorf format = Printf.ksprintf error_string format
-let tag t ~tag = Result.map_error t ~f:(Error.tag ~tag)
-let tag_s t ~tag = Result.map_error t ~f:(Error.tag_s ~tag)
+let errorf_portable format = Printf.ksprintf (fun string () -> error_string string) format
+
+let%template tag t ~tag =
+  match t with
+  | Ok _ as ok -> ok
+  | Error err -> Error ((Error.tag [@mode p]) err ~tag)
+[@@mode p = (portable, nonportable)]
+;;
+
+let%template tag_s t ~tag =
+  match t with
+  | Ok _ as ok -> ok
+  | Error err -> Error ((Error.tag_s [@mode p]) err ~tag)
+[@@mode p = (portable, nonportable)]
+;;
+
 let tag_s_lazy t ~tag = Result.map_error t ~f:(Error.tag_s_lazy ~tag)
 
 let tag_arg t message a sexp_of_a =
   Result.map_error t ~f:(fun e -> Error.tag_arg e message a sexp_of_a)
 ;;
 
-let unimplemented s = error "unimplemented" s sexp_of_string
+let unimplemented s =
+  [%template error [@mode portable]] "unimplemented" s [%eta1 sexp_of_string]
+;;
 
-let combine_internal list ~on_ok ~on_error =
+let%template combine_internal (list @ p) ~on_ok ~on_error =
   match Result.combine_errors list with
   | Ok x -> Ok (on_ok x)
   | Error errs -> Error (on_error errs)
+[@@mode p = (portable, nonportable)]
 ;;
 
 let ignore_unit_list (_ : unit list) = ()
@@ -138,8 +163,26 @@ let all_unit list =
 
 let combine_errors list = combine_internal list ~on_ok:Fn.id ~on_error:Error.of_list
 
+let%template combine_errors list =
+  (combine_internal [@mode portable])
+    (Modes.Portable.wrap_result_list list)
+    ~on_ok:Modes.Portable.unwrap_list
+    ~on_error:(fun errs ->
+      (Error.of_list [@mode portable]) (Modes.Portable.unwrap_list errs))
+[@@mode portable]
+;;
+
 let combine_errors_unit list =
   combine_internal list ~on_ok:ignore_unit_list ~on_error:Error.of_list
+;;
+
+let%template combine_errors_unit list =
+  (combine_internal [@mode portable])
+    (Modes.Portable.wrap_result_list list)
+    ~on_ok:(fun xs -> Modes.Portable.unwrap_list xs |> ignore_unit_list)
+    ~on_error:(fun errs ->
+      (Error.of_list [@mode portable]) (Modes.Portable.unwrap_list errs))
+[@@mode portable]
 ;;
 
 let filter_ok_at_least_one l =

@@ -11,7 +11,7 @@ Array.create_local ~len:10 k
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value escapes its region.
+Error: This value is local but is expected to be global.
 |}]
 ;;
 
@@ -22,7 +22,7 @@ ref arr
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value escapes its region.
+Error: This value is local but is expected to be global.
 |}]
 ;;
 

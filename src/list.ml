@@ -9,13 +9,14 @@ include Constructors
 let invalid_argf = Printf.invalid_argf
 
 [%%rederive.portable
-  type 'a t = 'a list [@@deriving globalize, sexp ~localize, sexp_grammar]]
+  type ('a : value_or_null) t = 'a list
+  [@@deriving globalize, sexp ~stackify, sexp_grammar]]
 
 module Or_unequal_lengths = struct
-  type 'a t =
+  type ('a : value_or_null) t =
     | Ok of 'a
     | Unequal_lengths
-  [@@deriving compare ~localize, sexp_of ~localize]
+  [@@deriving compare ~localize, sexp_of ~stackify]
 end
 
 let invariant f t = iter t ~f
@@ -79,11 +80,13 @@ let tl t =
   | _ :: t' -> Some t'
 ;;
 
+[@@@warning "-incompatible-with-upstream"]
+
 [%%template
-[@@@kind k = (float64, bits32, bits64, word, value)]
+[@@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
 
 open struct
-  type nonrec 'a t = ('a t[@kind k]) =
+  type nonrec ('a : k) t = ('a t[@kind k]) =
     | []
     | ( :: ) of 'a * ('a t[@kind k])
 end
@@ -130,7 +133,7 @@ let init n ~f = (init_internal [@kind k]) n ~f ~name:"List.init"
 
 let iteri l ~f =
   ignore
-    ((fold [@kind k value]) l ~init:0 ~f:(fun i x ->
+    ((fold [@kind k value_or_null]) l ~init:0 ~f:(fun i x ->
        f i x;
        i + 1)
      : int)
@@ -151,7 +154,7 @@ let unordered_append l1 l2 =
 ;;
 
 module Check_length2 = struct
-  type ('a, 'b) t =
+  type ('a : value_or_null, 'b : value_or_null) t =
     | Same_length of int
     | Unequal_lengths of
         { shared_length : int
@@ -190,7 +193,7 @@ let check_length2 l1 l2 ~f =
 ;;
 
 module Check_length3 = struct
-  type ('a, 'b, 'c) t =
+  type ('a : value_or_null, 'b : value_or_null, 'c : value_or_null) t =
     | Same_length of int
     | Unequal_lengths of
         { shared_length : int
@@ -421,7 +424,8 @@ let append l1 l2 =
 
 [%%template
 [@@@kind.default
-  ka = (float64, bits32, bits64, word, value), kb = (float64, bits32, bits64, word, value)]
+  ka = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)
+  , kb = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
 
 let rev_mapi l ~f =
   let rec loop i acc : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
@@ -433,17 +437,19 @@ let rev_mapi l ~f =
 
 let foldi t ~init ~f =
   let #(_, r) =
-    (fold [@kind ka (value & kb)]) t ~init:#(0, init) ~f:(fun #(i, acc) v ->
+    (fold [@kind ka (value_or_null & kb)]) t ~init:#(0, init) ~f:(fun #(i, acc) v ->
       #(i + 1, f i acc v))
   in
   r
 ;;]
 
 [%%template
-[@@@kind.default ka = (float64, bits32, bits64, word, value), kb = value]
+[@@@kind.default
+  ka = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)
+  , kb = (value_or_null, immediate, immediate64)]
 
 open struct
-  type nonrec 'a t = ('a t[@kind ka]) =
+  type nonrec ('a : ka) t = ('a t[@kind ka]) =
     | []
     | ( :: ) of 'a * ('a t[@kind ka])
   [@@kind ka]
@@ -467,7 +473,7 @@ let[@tail_mod_cons] rec filter_map l ~f : (_ t[@kind kb]) =
   match l with
   | [] -> []
   | hd :: tl ->
-    (match f hd with
+    (match (f hd : (_ Option0.t[@kind kb])) with
      | None -> (filter_map [@kind ka kb]) tl ~f
      | Some x -> x :: (filter_map [@kind ka kb]) tl ~f)
 ;;
@@ -477,7 +483,7 @@ let filter_mapi l ~f =
     match l with
     | [] -> []
     | hd :: tl ->
-      (match f pos hd with
+      (match (f pos hd : (_ Option0.t[@kind kb])) with
        | None -> loop (pos + 1) tl
        | Some x -> x :: loop (pos + 1) tl)
   in
@@ -507,12 +513,12 @@ let concat_map l ~(local_ f) =
 ;;]
 
 [%%template
-[@@@kind.default k = (float64, bits32, bits64, word)]
+[@@@kind.default k = (float64, bits32, bits64, word, immediate, immediate64)]
 
 (* Copied from [Sexplib0] for templating *)
 
 let sexp_of_t sexp_of__a t : Sexplib0.Sexp.t =
-  List ((map [@kind k value]) ~f:sexp_of__a t)
+  List ((map [@kind k value_or_null]) ~f:sexp_of__a t)
 ;;
 
 let sexp_of_t : _ -> (_ t[@kind k]) @ local -> Sexplib0.Sexp.t @ local =
@@ -531,11 +537,11 @@ let sexp_of_t : _ -> (_ t[@kind k]) @ local -> Sexplib0.Sexp.t @ local =
     rev (rev_map lst []) []
   in
   exclave_ List (map ~f:sexp_of__a t)
-[@@mode __ = local]
+[@@mode __ = stack]
 ;;]
 
 [%%template
-[@@@kind.default k = (float64, bits32, bits64, word)]
+[@@@kind.default k = (float64, bits32, bits64, word, immediate, immediate64)]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -574,10 +580,11 @@ let append l1 l2 =
 
 [%%template
 [@@@kind.default
-  ka = (float64, bits32, bits64, word, value), kb = (float64, bits32, bits64, word)]
+  ka = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)
+  , kb = (float64, bits32, bits64, word)]
 
 open struct
-  type nonrec 'a t = ('a t[@kind ka]) =
+  type nonrec ('a : ka) t = ('a t[@kind ka]) =
     | []
     | ( :: ) of 'a * ('a t[@kind ka])
   [@@kind ka]
@@ -622,23 +629,23 @@ let filter_mapi l ~f =
 let concat_mapi l ~(local_ f) =
   let rec local_ loop ~acc pos : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
     | [] -> []
-    | [ hd ] -> f pos hd
+    | [ hd ] -> (rev_append [@kind kb]) acc (f pos hd)
     | hd :: (_ :: _ as tl) ->
       let acc = (rev_append [@kind kb]) (f pos hd) acc in
       (loop [@tailcall]) ~acc (pos + 1) tl
   in
-  (loop ~acc:[] 0 l |> (rev [@kind kb])) [@nontail]
+  loop ~acc:[] 0 l [@nontail]
 ;;
 
 let concat_map l ~(local_ f) =
   let rec local_ loop ~acc : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
     | [] -> []
-    | [ hd ] -> f hd
+    | [ hd ] -> (rev_append [@kind kb]) acc (f hd)
     | hd :: (_ :: _ as tl) ->
       let acc = (rev_append [@kind kb]) (f hd) acc in
       (loop [@tailcall]) ~acc tl
   in
-  (loop ~acc:[] l |> (rev [@kind kb])) [@nontail]
+  loop ~acc:[] l [@nontail]
 ;;]
 
 let folding_map t ~init ~f =
@@ -738,6 +745,13 @@ let zip_exn l1 l2 =
 ;;
 
 let zip l1 l2 = map2 ~f:(fun a b -> a, b) l1 l2
+
+let zip3_exn l1 l2 l3 =
+  check_length3_exn "zip3_exn" l1 l2 l3;
+  map3_ok l1 l2 l3 ~f:(fun a b c -> a, b, c)
+;;
+
+let zip3 l1 l2 l3 = map3 l1 l2 l3 ~f:(fun a b c -> a, b, c)
 
 (** Additional list operations *)
 
@@ -1069,7 +1083,7 @@ let stable_dedup list ~compare =
   | [] | [ _ ] -> list (* special case for performance *)
   | _ :: _ :: _ ->
     let open struct
-      type 'a dedup =
+      type ('a : value_or_null) dedup =
         { elt : 'a
         ; mutable dup : bool
         }
@@ -1090,22 +1104,32 @@ module Cartesian_product = struct
 
   let bind = concat_map
   let map = map
-  let map2 a b ~f = concat_map a ~f:(fun x -> map b ~f:(fun y -> f x y))
+
+  let map2 a b ~f =
+    concat_map a ~f:(fun x -> map b ~f:(fun y -> f x y) [@nontail]) [@nontail]
+  ;;
+
   let return = singleton
   let ( >>| ) = ( >>| )
   let ( >>= ) t (local_ f) = bind t ~f
 
   open struct
-    module%template Applicative = Applicative.Make_using_map2 [@modality portable] (struct
-        type 'a t = 'a list
+    module%template Applicative =
+    Applicative.Make_using_map2
+      [@kind value_or_null mod maybe_null]
+      [@mode local]
+      [@modality portable]
+      (struct
+        type ('a : value_or_null) t = 'a list
 
         let return = return
         let map = `Custom map
         let map2 = map2
       end)
 
-    module%template Monad = Monad.Make [@modality portable] (struct
-        type 'a t = 'a list
+    module%template Monad =
+    Monad.Make [@kind value_or_null mod maybe_null] [@mode local] [@modality portable] (struct
+        type ('a : value_or_null) t = 'a list
 
         let return = return
         let map = `Custom map
@@ -1157,7 +1181,10 @@ include (
   Cartesian_product :
   sig
   @@ portable
-    include Monad.S__local with type 'a t := 'a t
+    include%template
+      Monad.S
+      [@kind value_or_null mod maybe_null] [@mode local]
+      with type ('a : value_or_null) t := 'a t
   end)
 
 (** returns final element of list *)
@@ -1265,8 +1292,20 @@ let all_equal t ~equal =
 
 let count t ~f = Container.count ~fold t ~f
 let sum m t ~f = Container.sum ~fold m t ~f
-let min_elt t ~compare = Container.min_elt ~fold t ~compare
-let max_elt t ~compare = Container.max_elt ~fold t ~compare
+
+let min_elt t ~compare =
+  match t with
+  | [] -> None
+  | elt :: t ->
+    Some (fold t ~init:elt ~f:(fun acc elt -> if compare acc elt > 0 then elt else acc))
+;;
+
+let max_elt t ~compare =
+  match t with
+  | [] -> None
+  | elt :: t ->
+    Some (fold t ~init:elt ~f:(fun acc elt -> if compare acc elt < 0 then elt else acc))
+;;
 
 let counti t ~f =
   foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count) [@nontail]
@@ -1346,15 +1385,16 @@ let of_iter ~iter =
 ;;
 
 module Assoc = struct
-  type 'a key = ('a[@tag Sexplib0.Sexp_grammar.assoc_key_tag = List []])
-  [@@deriving sexp ~localize, sexp_grammar]
+  type ('a : value_or_null) key = ('a[@tag Sexplib0.Sexp_grammar.assoc_key_tag = List []])
+  [@@deriving sexp ~stackify, sexp_grammar]
 
-  type 'a value = ('a[@tag Sexplib0.Sexp_grammar.assoc_value_tag = List []])
-  [@@deriving sexp ~localize, sexp_grammar]
+  type ('a : value_or_null) value =
+    ('a[@tag Sexplib0.Sexp_grammar.assoc_value_tag = List []])
+  [@@deriving sexp ~stackify, sexp_grammar]
 
-  type ('a, 'b) t =
+  type ('a : value_or_null, 'b : value_or_null) t =
     (('a key * 'b value) list[@tag Sexplib0.Sexp_grammar.assoc_tag = List []])
-  [@@deriving sexp ~localize, sexp_grammar]
+  [@@deriving sexp ~stackify, sexp_grammar]
 
   let pair_of_group = function
     | [] -> assert false
@@ -1593,7 +1633,7 @@ let equal_with_local_closure (local_ (equal : _ -> _ -> _)) t1 t2 =
   loop ~equal t1 t2
 ;;
 
-let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
+let equal : ('a : value_or_null). ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
   fun f x y -> equal_with_local_closure f x y
 ;;
 
@@ -1643,8 +1683,15 @@ let intersperse t ~sep =
   | x :: xs -> x :: fold_right xs ~init:[] ~f:(fun y acc -> sep :: y :: acc)
 ;;
 
-let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
 let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
+let fold_result t ~init ~f = Container.fold_result ~fold_until ~init ~f t
+
+let foldi_until t ~init ~f ~finish =
+  Indexed_container.foldi_until ~fold_until ~init ~f t ~finish
+;;
+
+let iter_until t ~f ~finish = Container.iter_until ~fold_until t ~f ~finish
+let iteri_until t ~f ~finish = Indexed_container.iteri_until ~foldi_until t ~f ~finish
 
 let is_suffix list ~suffix ~equal:(local_ (equal_elt : _ -> _ -> _)) =
   let list_len = length list in

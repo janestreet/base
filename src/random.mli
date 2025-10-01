@@ -104,7 +104,7 @@ val ascii : unit -> char
     Obtaining multiple generators with good independence properties is nontrivial; see the
     [Splittable_random] library for that. *)
 module State : sig
-  type t
+  type t : value mod portable
 
   (** This gives access to the default random state, allowing user code to share (and
       thereby mutate) the random state used by the main functions in [Random]. *)

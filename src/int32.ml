@@ -3,7 +3,7 @@ open! Stdlib.Int32
 module Sexp = Sexp0
 
 module T = struct
-  type t = int32 [@@deriving globalize, hash, sexp ~localize, sexp_grammar]
+  type t = int32 [@@deriving globalize, hash, sexp ~stackify, sexp_grammar]
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare (x : t) y = compare x y
@@ -28,9 +28,9 @@ include T
 
 include%template Comparator.Make [@modality portable] (T)
 
-let num_bits = 32
-let float_lower_bound = Float0.lower_bound_for_int num_bits
-let float_upper_bound = Float0.upper_bound_for_int num_bits
+let num_bits = 32l
+let float_lower_bound = Float0.lower_bound_for_int (num_bits |> to_int)
+let float_upper_bound = Float0.upper_bound_for_int (num_bits |> to_int)
 
 external float_of_bits
   :  local_ t
@@ -194,116 +194,6 @@ external bswap32 : local_ t -> (t[@local_opt]) @@ portable = "%bswap_int32"
 
 let bswap16 x = shift_right_logical (bswap32 x) 16
 
-module Pow2 = struct
-  open Int32_replace_polymorphic_compare
-
-  let raise_s = Error.raise_s
-
-  let non_positive_argument () =
-    Printf.invalid_argf "argument must be strictly positive" ()
-  ;;
-
-  let ( lor ) = Stdlib.Int32.logor
-  let ( lsr ) = Stdlib.Int32.shift_right_logical
-
-  external ( land ) : local_ t -> local_ t -> t @@ portable = "%int32_and"
-
-  (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
-  let ceil_pow2 x =
-    if x <= 0l then non_positive_argument ();
-    let x = x - 1l in
-    let x = x lor (x lsr 1) in
-    let x = x lor (x lsr 2) in
-    let x = x lor (x lsr 4) in
-    let x = x lor (x lsr 8) in
-    let x = x lor (x lsr 16) in
-    x + 1l
-  ;;
-
-  (** "floor power of 2" - Largest power of 2 less than or equal to x. *)
-  let floor_pow2 x =
-    if x <= 0l then non_positive_argument ();
-    let x = x lor (x lsr 1) in
-    let x = x lor (x lsr 2) in
-    let x = x lor (x lsr 4) in
-    let x = x lor (x lsr 8) in
-    let x = x lor (x lsr 16) in
-    x - (x lsr 1)
-  ;;
-
-  let is_pow2 x =
-    if x <= 0l then non_positive_argument ();
-    x land (x - 1l) = 0l
-  ;;
-
-  let clz = Ocaml_intrinsics_kernel.Int32.count_leading_zeros
-  let ctz = Ocaml_intrinsics_kernel.Int32.count_trailing_zeros
-
-  (** Hacker's Delight Second Edition p106 *)
-  let floor_log2 i =
-    if i <= 0l
-    then
-      raise_s
-        (Sexp.message
-           "[Int32.floor_log2] got invalid input"
-           [ "", sexp_of_int32 (globalize i) ]);
-    Int.O.(num_bits - 1 - (clz i |> to_int_trunc))
-  ;;
-
-  (** Hacker's Delight Second Edition p106 *)
-  let ceil_log2 i =
-    if i <= 0l
-    then
-      raise_s
-        (Sexp.message
-           "[Int32.ceil_log2] got invalid input"
-           [ "", sexp_of_int32 (globalize i) ]);
-    (* The [i = 1] check is needed because clz(0) is undefined *)
-    if i = 1l
-    then 0
-    else (
-      let i = i - 1l in
-      Int.O.(num_bits - (clz i |> to_int_trunc)))
-  ;;
-end
-
-include Pow2
-include Int_string_conversions.Make (T)
-
-include Int_string_conversions.Make_hex (struct
-    type t = int32 [@@deriving compare ~localize, hash]
-
-    let zero = zero
-
-    external neg : local_ t -> t @@ portable = "%int32_neg"
-
-    let ( < ) = ( < )
-    let to_string i = format "%lx" i
-    let of_string s = Stdlib.Scanf.sscanf s "%lx" Fn.id
-    let module_name = "Base.Int32.Hex"
-  end)
-
-include Int_string_conversions.Make_binary (struct
-    type t = int32 [@@deriving compare ~localize, equal ~localize, hash]
-
-    let ( land ) = ( land )
-
-    external ( lsr ) : local_ t -> int -> t @@ portable = "%int32_lsr"
-
-    let clz = clz
-    let num_bits = num_bits
-    let one = one
-    let to_int_exn = to_int_exn
-    let zero = zero
-  end)
-
-include%template Pretty_printer.Register [@modality portable] (struct
-    type nonrec t = t
-
-    let to_string = to_string
-    let module_name = "Base.Int32"
-  end)
-
 module Pre_O = struct
   let ( + ) = ( + )
   let ( - ) = ( - )
@@ -348,6 +238,112 @@ module O = struct
 end
 
 include O
+
+module Pow2 = struct
+  open O
+
+  let raise_s = Error.raise_s
+
+  let non_positive_argument () =
+    Printf.invalid_argf "argument must be strictly positive" ()
+  ;;
+
+  (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
+  let ceil_pow2 x =
+    if x <= 0l then non_positive_argument ();
+    let x = x - 1l in
+    let x = x lor (x lsr 1) in
+    let x = x lor (x lsr 2) in
+    let x = x lor (x lsr 4) in
+    let x = x lor (x lsr 8) in
+    let x = x lor (x lsr 16) in
+    x + 1l
+  ;;
+
+  (** "floor power of 2" - Largest power of 2 less than or equal to x. *)
+  let floor_pow2 x =
+    if x <= 0l then non_positive_argument ();
+    let x = x lor (x lsr 1) in
+    let x = x lor (x lsr 2) in
+    let x = x lor (x lsr 4) in
+    let x = x lor (x lsr 8) in
+    let x = x lor (x lsr 16) in
+    x - (x lsr 1)
+  ;;
+
+  let is_pow2 x =
+    if x <= 0l then non_positive_argument ();
+    x land (x - 1l) = 0l
+  ;;
+
+  let clz = Ocaml_intrinsics_kernel.Int32.count_leading_zeros
+  let ctz = Ocaml_intrinsics_kernel.Int32.count_trailing_zeros
+
+  (** Hacker's Delight Second Edition p106 *)
+  let floor_log2 i =
+    if i <= 0l
+    then
+      raise_s
+        (Sexp.message
+           "[Int32.floor_log2] got invalid input"
+           [ "", sexp_of_int32 (globalize i) ]);
+    num_bits - 1l - clz i
+  ;;
+
+  (** Hacker's Delight Second Edition p106 *)
+  let ceil_log2 i =
+    if i <= 0l
+    then
+      raise_s
+        (Sexp.message
+           "[Int32.ceil_log2] got invalid input"
+           [ "", sexp_of_int32 (globalize i) ]);
+    (* The [i = 1] check is needed because clz(0) is undefined *)
+    if i = 1l
+    then 0l
+    else (
+      let i = i - 1l in
+      num_bits - clz i)
+  ;;
+end
+
+include Pow2
+include Int_string_conversions.Make (T)
+
+include Int_string_conversions.Make_hex (struct
+    type t = int32 [@@deriving compare ~localize, hash]
+
+    let zero = zero
+
+    external neg : local_ t -> t @@ portable = "%int32_neg"
+
+    let ( < ) = ( < )
+    let to_string i = format "%lx" i
+    let of_string s = Stdlib.Scanf.sscanf s "%lx" Fn.id
+    let module_name = "Base.Int32.Hex"
+  end)
+
+include Int_string_conversions.Make_binary (struct
+    type t = int32 [@@deriving compare ~localize, equal ~localize, hash]
+
+    let ( land ) = ( land )
+
+    external ( lsr ) : local_ t -> int -> t @@ portable = "%int32_lsr"
+
+    let clz = clz
+    let num_bits = num_bits
+    let one = one
+    let to_int_trunc = to_int_trunc
+    let zero = zero
+    let ( - ) = ( - )
+  end)
+
+include%template Pretty_printer.Register [@modality portable] (struct
+    type nonrec t = t
+
+    let to_string = to_string
+    let module_name = "Base.Int32"
+  end)
 
 (* [Int32] and [Int32.O] agree value-wise *)
 

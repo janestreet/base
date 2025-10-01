@@ -3,7 +3,7 @@
 module Uchar := Uchar0
 
 external get : (bytes[@local_opt]) -> (int[@local_opt]) -> char = "%bytes_safe_get"
-external length : (bytes[@local_opt]) @ shared -> int = "%bytes_length"
+external length : (bytes[@local_opt]) @ immutable -> int = "%bytes_length"
 
 external unsafe_get
   :  (bytes[@local_opt])
@@ -76,7 +76,15 @@ external unsafe_set_int16
 
 val max_length : int
 val blit : src:bytes -> src_pos:int -> dst:bytes -> dst_pos:int -> len:int -> unit
-val blit_string : src:string -> src_pos:int -> dst:bytes -> dst_pos:int -> len:int -> unit
+
+val blit_string
+  :  src:string @ local
+  -> src_pos:int
+  -> dst:bytes @ local
+  -> dst_pos:int
+  -> len:int
+  -> unit
+
 val compare : bytes -> bytes -> int
 val create : int -> bytes
 val set_uchar_utf_8 : bytes @ local -> int -> Uchar.t -> int
@@ -102,7 +110,9 @@ external unsafe_fill
 [@@noalloc]
 
 val fill : bytes @ local -> pos:int -> len:int -> char -> unit
-val make : int -> char -> bytes
+
+val%template make : int -> char -> bytes @ m [@@alloc a @ m = (heap_global, stack_local)]
+
 val empty : bytes
 val get_empty : unit -> bytes
 

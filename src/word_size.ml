@@ -4,7 +4,7 @@ module Sys = Sys0
 type t =
   | W32
   | W64
-[@@deriving sexp_of ~localize]
+[@@deriving sexp_of ~stackify]
 
 let num_bits = function
   | W32 -> 32

@@ -75,7 +75,9 @@ module type Stack = sig @@ portable
     include Definitions
   end
 
-  include S (** @open *)
+  type 'a t : mutable_data with 'a
+
+  include S with type 'a t := 'a t (** @open *)
 
   (** [capacity t] returns the length of the array backing [t]. *)
   val capacity : _ t -> int

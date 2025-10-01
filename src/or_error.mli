@@ -12,13 +12,15 @@
 open! Import
 module Sexp := Sexp0
 
+[@@@warning "-incompatible-with-upstream"]
+
 [%%template:
 type ('a : k) t = (('a, Error.t) Result.t[@kind k])
-[@@deriving compare ~localize, equal ~localize, sexp]
+[@@deriving compare ~localize, equal ~localize, globalize, sexp]
 [@@kind k = (float64, bits32, bits64, word)]
 
 (** Serialization and comparison of an [Error] force the error's lazy message. *)
-type 'a t = (('a, Error.t) Result.t[@kind k])
+type ('a : value_or_null) t = (('a, Error.t) Result.t[@kind k])
 [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
 [@@kind k = (value, immediate, immediate64)]]
 
@@ -38,7 +40,11 @@ val is_error : _ t -> bool
     [Error.t]. [try_with_join] is like [try_with], except that [f] can throw exceptions or
     return an [Error] directly, without ending up with a nested error; it is equivalent to
     [Result.join (try_with f)]. *)
-val try_with : ?backtrace:bool (** defaults to [false] *) -> local_ (unit -> 'a) -> 'a t
+val%template try_with
+  :  ?backtrace:bool (** defaults to [false] *)
+  -> local_ (unit -> 'a @ p)
+  -> 'a t @ p
+[@@mode p = (nonportable, portable)]
 
 val try_with_join
   :  ?backtrace:bool (** defaults to [false] *)
@@ -51,7 +57,8 @@ val ok : 'ok t -> 'ok option
 
 (** [ok_exn t] throws an exception if [t] is an [Error], and otherwise returns the
     contents of the [Ok] constructor. *)
-val ok_exn : 'a t -> 'a
+val%template ok_exn : ('a : k). ('a t[@kind k]) -> 'a
+[@@kind k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
 
 (** [of_exn ?backtrace exn] is [Error (Error.of_exn ?backtrace exn)]. *)
 val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> _ t
@@ -102,11 +109,17 @@ val error_string : string -> _ t @ portable
     instead. *)
 val errorf : ('a, unit, string, _ t) format4 -> 'a
 
+(** [errorf_portable format arg1 arg2 ... ()] is like [errorf format arg1 arg2 ...] but
+    constructing a portable error. *)
+val errorf_portable : ('a, unit, string, unit -> _ t @ portable) format4 -> 'a
+
 (** [tag t ~tag] is [Result.map_error t ~f:(Error.tag ~tag)]. *)
-val tag : 'a t -> tag:string -> 'a t
+val%template tag : 'a t @ p -> tag:string -> 'a t @ p
+[@@mode p = (portable, nonportable)]
 
 (** [tag_s] is like [tag] with a sexp tag. *)
-val tag_s : 'a t -> tag:Sexp.t -> 'a t
+val%template tag_s : 'a t @ p -> tag:Sexp.t -> 'a t @ p
+[@@mode p = (portable, nonportable)]
 
 (** [tag_s_lazy] is like [tag] with a lazy sexp tag. *)
 val tag_s_lazy : 'a t -> tag:Sexp.t Lazy.t -> 'a t
@@ -118,12 +131,14 @@ val tag_arg : 'a t -> string -> 'b -> ('b -> Sexp.t) -> 'a t
     compilation, where on some platforms the function is defined normally, and on some
     platforms it is defined as unimplemented. The supplied string should be the name of
     the function that is unimplemented. *)
-val unimplemented : string -> _ t
+val unimplemented : string -> _ t @ portable
 
-val%template map : ('a t[@kind ki]) -> f:local_ ('a -> 'b) -> ('b t[@kind ko])
+val%template map
+  : ('a : ki) ('b : ko).
+  ('a t[@kind ki]) -> f:local_ ('a -> 'b) -> ('b t[@kind ko])
 [@@kind
-  ki = (value, immediate, immediate64, float64, bits32, bits64, word)
-  , ko = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  ki = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)
+  , ko = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
 
 val iter : 'a t -> f:local_ ('a -> unit) -> unit
 val iter_error : _ t -> f:local_ (Error.t -> unit) -> unit
@@ -136,11 +151,13 @@ val iter_error : _ t -> f:local_ (Error.t -> unit) -> unit
         combine_errors [...; Error e1; ...; Error en; ...]
         = Error (Error.of_list [e1; ...; en])
       ]} *)
-val combine_errors : 'a t list -> 'a list t
+val%template combine_errors : 'a t list @ p -> 'a list t @ p
+[@@mode p = (portable, nonportable)]
 
 (** [combine_errors_unit ts] returns [Ok] if every element in [ts] is [Ok ()], else it
     returns [Error] with all the errors in [ts], like [combine_errors]. *)
-val combine_errors_unit : unit t list -> unit t
+val%template combine_errors_unit : unit t list @ p -> unit t @ p
+[@@mode p = (portable, nonportable)]
 
 (** [filter_ok_at_least_one ts] returns all values in [ts] that are [Ok] if there is at
     least one, otherwise it returns the same error as [combine_errors ts]. Returns a

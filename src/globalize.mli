@@ -10,6 +10,8 @@
 
     Further globalize functions can be generated with `ppx_globalize`. *)
 
+[@@@warning "-incompatible-with-upstream"]
+
 val globalize_bool : local_ bool -> bool
 val globalize_char : local_ char -> char
 val globalize_float : local_ float -> float
@@ -20,11 +22,22 @@ val globalize_nativeint : local_ nativeint -> nativeint
 val globalize_bytes : local_ bytes -> bytes
 val globalize_string : local_ string -> string
 val globalize_unit : local_ unit -> unit
-val globalize_array : (local_ 'a -> 'b) -> local_ 'a array -> 'a array
+
+val%template globalize_array
+  : ('a : k) ('b : any).
+  (local_ 'a -> 'b) -> local_ 'a array -> 'a array
+[@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value)]
+
 val globalize_floatarray : local_ floatarray -> floatarray
 val globalize_lazy_t : (local_ 'a -> 'b) -> local_ 'a lazy_t -> 'a lazy_t
-val globalize_list : (local_ 'a -> 'b) -> local_ 'a list -> 'b list
-val globalize_option : (local_ 'a -> 'b) -> local_ 'a option -> 'b option
+
+val globalize_list
+  : ('a : value_or_null) ('b : value_or_null).
+  (local_ 'a -> 'b) -> local_ 'a list -> 'b list
+
+val globalize_option
+  : ('a : value_or_null) ('b : value_or_null).
+  (local_ 'a -> 'b) -> local_ 'a option -> 'b option
 
 val globalize_or_null
   :  (local_ 'a -> 'b)
@@ -32,9 +45,12 @@ val globalize_or_null
   -> 'b Basement.Or_null_shim.t
 
 val globalize_result
-  :  (local_ 'ok -> 'ok)
+  : ('ok : value_or_null) ('err : value_or_null).
+  (local_ 'ok -> 'ok)
   -> (local_ 'err -> 'err)
   -> local_ ('ok, 'err) result
   -> ('ok, 'err) result
 
-val globalize_ref : (local_ 'a -> 'b) -> local_ 'a ref -> 'a ref
+val globalize_ref
+  : ('a : value_or_null) ('b : value_or_null).
+  (local_ 'a -> 'b) -> local_ 'a ref -> 'a ref

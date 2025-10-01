@@ -50,6 +50,8 @@ module Without_comparator = Without_comparator
 module Continue_or_stop = Continue_or_stop
 module Finished_or_unfinished = Finished_or_unfinished
 module Merge_element = Merge_element
+module When_matched = When_matched
+module When_unmatched = When_unmatched
 module Or_duplicate = Or_duplicate
 module Symmetric_diff_element = Symmetric_diff_element
 
@@ -141,8 +143,8 @@ let%expect_test _ =
 
 let compare_m__t = compare_m__t
 let equal_m__t = equal_m__t
-let compare__local_m__t = compare__local_m__t
-let equal__local_m__t = equal__local_m__t
+let compare_m__t__local = compare_m__t__local
+let equal_m__t__local = equal_m__t__local
 
 let%expect_test _ =
   quickcheck_m (module Instance_int_pair) ~f:(fun (a, b) ->
@@ -210,6 +212,126 @@ module Poly = struct
   include (
     Test_poly_transformers :
       Functor.Transformers with module Types := Instances.Types.Poly)
+end
+
+(** tree interface *)
+
+module Tree = struct
+  open Tree
+
+  (** type *)
+
+  type nonrec weight = weight
+
+  type nonrec (+'k, +'v, 'c) t = ('k, 'v, 'c) t = private
+    | Empty
+    | Leaf of
+        { global_ key : 'k
+        ; global_ data : 'v
+        }
+    | Node of
+        { global_ left : ('k, 'v, 'c) t
+        ; global_ key : 'k
+        ; global_ data : 'v
+        ; global_ right : ('k, 'v, 'c) t
+        ; weight : weight
+        }
+
+  (** globalizing *)
+
+  let globalize = globalize
+
+  let%expect_test _ =
+    quickcheck_m (module Tree_int) ~f:(fun tree ->
+      let tree = Tree_int.value tree in
+      let round_trip = globalize () () () tree in
+      require_equal (module Tree_int.Value) round_trip tree);
+    [%expect {| |}]
+  ;;
+
+  (** sexp conversions *)
+
+  let sexp_of_t = sexp_of_t
+  let t_of_sexp_direct = t_of_sexp_direct
+
+  let%expect_test _ =
+    quickcheck_m (module Tree_int) ~f:(fun tree ->
+      let tree = Tree_int.value tree in
+      let sexp = sexp_of_t Int.sexp_of_t Int.sexp_of_t [%sexp_of: _] tree in
+      require_equal
+        (module Sexp)
+        sexp
+        ([%sexp_of: int Map.M(Int).t]
+           (Using_comparator.of_tree tree ~comparator:Int.comparator));
+      let round_trip =
+        t_of_sexp_direct ~comparator:Int.comparator Int.t_of_sexp Int.t_of_sexp sexp
+      in
+      require_equal (module Tree_int.Value) round_trip tree);
+    [%expect {| |}]
+  ;;
+
+  (** polymorphic constructor - untested *)
+
+  let empty_without_value_restriction = empty_without_value_restriction
+
+  (** builders *)
+
+  module Build_increasing = struct
+    open Build_increasing
+
+    type nonrec ('k, 'v, 'c) t = ('k, 'v, 'c) t
+
+    (** tree builder functions *)
+
+    let empty = empty
+    let add_exn = add_exn
+    let to_tree = to_tree
+
+    let%expect_test _ =
+      quickcheck_m
+        (module struct
+          type t =
+            ((int[@generator Base_quickcheck.Generator.small_strictly_positive_int])
+            * int)
+              list
+          [@@deriving quickcheck, sexp_of]
+
+          let sample = Memo.memoize [%generator: t]
+        end)
+        ~f:(fun alist ->
+          let actual =
+            List.fold_result alist ~init:empty ~f:(fun builder (key, data) ->
+              Or_error.try_with (fun () ->
+                add_exn builder ~comparator:Int.comparator ~key ~data))
+            |> Or_error.map ~f:to_tree
+          in
+          Or_error.iter actual ~f:(fun map ->
+            require (Tree.invariants map ~comparator:Int.comparator));
+          let expect =
+            match List.is_sorted_strictly alist ~compare:[%compare: int * _] with
+            | false -> Error (Error.of_string "not sorted")
+            | true ->
+              Ok
+                (Map.Using_comparator.Tree.of_sequence_exn
+                   ~comparator:Int.comparator
+                   (Sequence.of_list alist))
+          in
+          require_equal (module Data.Or_error (Tree_int.Value)) actual expect);
+      [%expect {| |}]
+    ;;
+  end
+
+  (** creators and accessors and transformers *)
+
+  include (
+    Test_tree_accessors : Functor.Accessors with module Types := Instances.Types.Tree)
+
+  include (
+    Test_tree_creators : Functor.Creators with module Types := Instances.Types.Tree)
+
+  include (
+    Test_tree_transformers :
+      Functor.Transformers with module Types := Instances.Types.Tree)
 end
 
 (** comparator interface *)
@@ -281,109 +403,5 @@ module Using_comparator = struct
     Test_using_comparator_transformers :
       Functor.Transformers with module Types := Instances.Types.Using_comparator)
 
-  (** tree interface *)
-
-  module Tree = struct
-    open Tree
-
-    (** type *)
-
-    type nonrec ('k, 'v, 'c) t = ('k, 'v, 'c) t
-
-    (** globalizing *)
-
-    let globalize = globalize
-
-    let%expect_test _ =
-      quickcheck_m (module Tree_int) ~f:(fun tree ->
-        let tree = Tree_int.value tree in
-        let round_trip = globalize () () () tree in
-        require_equal (module Tree_int.Value) round_trip tree);
-      [%expect {| |}]
-    ;;
-
-    (** sexp conversions *)
-
-    let sexp_of_t = sexp_of_t
-    let t_of_sexp_direct = t_of_sexp_direct
-
-    let%expect_test _ =
-      quickcheck_m (module Tree_int) ~f:(fun tree ->
-        let tree = Tree_int.value tree in
-        let sexp = sexp_of_t Int.sexp_of_t Int.sexp_of_t [%sexp_of: _] tree in
-        require_equal
-          (module Sexp)
-          sexp
-          ([%sexp_of: int Map.M(Int).t]
-             (Using_comparator.of_tree tree ~comparator:Int.comparator));
-        let round_trip =
-          t_of_sexp_direct ~comparator:Int.comparator Int.t_of_sexp Int.t_of_sexp sexp
-        in
-        require_equal (module Tree_int.Value) round_trip tree);
-      [%expect {| |}]
-    ;;
-
-    (** polymorphic constructor - untested *)
-
-    let empty_without_value_restriction = empty_without_value_restriction
-
-    (** builders *)
-
-    module Build_increasing = struct
-      open Build_increasing
-
-      type nonrec ('k, 'v, 'c) t = ('k, 'v, 'c) t
-
-      (** tree builder functions *)
-
-      let empty = empty
-      let add_exn = add_exn
-      let to_tree = to_tree
-
-      let%expect_test _ =
-        quickcheck_m
-          (module struct
-            type t =
-              ((int[@generator Base_quickcheck.Generator.small_strictly_positive_int])
-              * int)
-                list
-            [@@deriving quickcheck, sexp_of]
-
-            let sample = Memo.memoize [%generator: t]
-          end)
-          ~f:(fun alist ->
-            let actual =
-              List.fold_result alist ~init:empty ~f:(fun builder (key, data) ->
-                Or_error.try_with (fun () ->
-                  add_exn builder ~comparator:Int.comparator ~key ~data))
-              |> Or_error.map ~f:to_tree
-            in
-            Or_error.iter actual ~f:(fun map ->
-              require (Tree.invariants map ~comparator:Int.comparator));
-            let expect =
-              match List.is_sorted_strictly alist ~compare:[%compare: int * _] with
-              | false -> Error (Error.of_string "not sorted")
-              | true ->
-                Ok
-                  (Map.Using_comparator.Tree.of_sequence_exn
-                     ~comparator:Int.comparator
-                     (Sequence.of_list alist))
-            in
-            require_equal (module Data.Or_error (Tree_int.Value)) actual expect);
-        [%expect {| |}]
-      ;;
-    end
-
-    (** creators and accessors and transformers *)
-
-    include (
-      Test_tree_accessors : Functor.Accessors with module Types := Instances.Types.Tree)
-
-    include (
-      Test_tree_creators : Functor.Creators with module Types := Instances.Types.Tree)
-
-    include (
-      Test_tree_transformers :
-        Functor.Transformers with module Types := Instances.Types.Tree)
-  end
+  module Tree = Tree
 end

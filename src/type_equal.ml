@@ -4,7 +4,7 @@ module Sexp = Sexp0
 
 [@@@warning "-incompatible-with-upstream"]
 
-type ('a : any, 'b : any) t = T : ('a : any). ('a, 'a) t [@@deriving sexp_of ~localize]
+type ('a : any, 'b : any) t = T : ('a : any). ('a, 'a) t [@@deriving sexp_of ~stackify]
 type ('a : any, 'b : any) equal = ('a, 'b) t
 
 include Type_equal_defns (struct
@@ -94,7 +94,7 @@ module Id = struct
   module Uid = struct
     (* A unique id contains an [int] representing a (possibly parameterized) type, and a
        list of uids for the parameters to that type. *)
-    type t = T of int * t list [@@deriving compare ~localize, hash, sexp_of ~localize]
+    type t = T of int * t list [@@deriving compare ~localize, hash, sexp_of ~stackify]
 
     include%template Comparable.Make [@mode local] [@modality portable] (struct
         type nonrec t = t
@@ -129,7 +129,7 @@ module Id = struct
       type_equal : ('b : any). 'b key @ contended -> ('a, 'b) equal option
     }
 
-  let uid a = a.uid
+  let%template uid a = a.uid [@@mode m = (global, local)]
   let name a = a.id_name
   let sexp_of_t _ a = a.id_sexp
   let to_sexp a = a.sexp_of_t

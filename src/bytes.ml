@@ -1,12 +1,13 @@
 open! Import
 module Array = Array0
 module Sexp = Sexp0
+module String = String0
 include Bytes_intf.Definitions
 
 let stage = Staged.stage
 
 module T = struct
-  type t = bytes [@@deriving globalize, sexp ~localize, sexp_grammar]
+  type t = bytes [@@deriving globalize, sexp ~stackify, sexp_grammar]
 
   include Bytes0
 

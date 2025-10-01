@@ -3,6 +3,8 @@
    anything special.  However, [globalize_int] cannot be written this way, so we resort to
    using an [external]. *)
 
+[@@@warning "-incompatible-with-upstream"]
+
 let globalize_bool = function
   | (true | false) as b -> b
 ;;
@@ -21,9 +23,16 @@ external globalize_string : local_ string -> string @@ portable = "%obj_dup"
 
 let globalize_unit (() as u) = u
 
-external globalize_array' : local_ 'a array -> 'a array @@ portable = "%obj_dup"
+[%%template
+[@@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value)]
 
-let globalize_array _ a = globalize_array' a
+external globalize_array'
+  :  local_ ('a : k) array
+  -> ('a : k) array
+  @@ portable
+  = "%obj_dup"
+
+let globalize_array _ a = globalize_array' a [@@kind k]]
 
 external globalize_floatarray : local_ floatarray -> floatarray @@ portable = "%obj_dup"
 

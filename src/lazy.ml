@@ -1,7 +1,7 @@
 open! Import
 include Stdlib.Lazy
 
-type 'a t = 'a lazy_t [@@deriving sexp ~localize, sexp_grammar]
+type 'a t = 'a lazy_t [@@deriving sexp ~stackify, sexp_grammar]
 
 external force : ('a t[@local_opt]) -> 'a @@ portable = "%lazy_force"
 
@@ -36,11 +36,9 @@ module T_unforcing = struct
 
   let is_val t = Obj.tag (Obj.repr t) <> Stdlib.Obj.lazy_tag
 
-  let sexp_of_t sexp_of_a t =
-    if is_val t then sexp_of_a (force t) else sexp_of_string "<unforced lazy>"
-  ;;
-
-  let sexp_of_t__local sexp_of_a t = exclave_
-    if is_val t then sexp_of_a (force t) else sexp_of_string__local "<unforced lazy>"
+  let%template[@alloc a = (heap, stack)] sexp_of_t sexp_of_a t =
+    if [@exclave_if_stack a] is_val t
+    then sexp_of_a (force t)
+    else (sexp_of_string [@alloc a]) "<unforced lazy>"
   ;;
 end

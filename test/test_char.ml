@@ -59,7 +59,7 @@ module%test [@name "int to char conversion"] _ = struct
 end
 
 let%expect_test "all" =
-  Ref.set_temporarily sexp_style To_string_hum ~f:(fun () ->
+  Dynamic.with_temporarily sexp_style To_string_hum ~f:(fun () ->
     print_s [%sexp (all : t list)]);
   [%expect
     {|
@@ -85,7 +85,7 @@ let%expect_test "all" =
 ;;
 
 let%expect_test "predicates" =
-  Ref.set_temporarily sexp_style To_string_hum ~f:(fun () ->
+  Dynamic.with_temporarily sexp_style To_string_hum ~f:(fun () ->
     print_s [%sexp (List.filter all ~f:is_digit : t list)];
     [%expect {| (0 1 2 3 4 5 6 7 8 9) |}];
     print_s [%sexp (List.filter all ~f:is_lowercase : t list)];
@@ -122,7 +122,7 @@ let%expect_test "predicates" =
 ;;
 
 let%expect_test "get_hex_digit" =
-  Ref.set_temporarily sexp_style To_string_hum ~f:(fun () ->
+  Dynamic.with_temporarily sexp_style To_string_hum ~f:(fun () ->
     let hex_digit_alist =
       List.filter_map Char.all ~f:(fun char ->
         Option.map (get_hex_digit char) ~f:(fun digit -> char, digit))

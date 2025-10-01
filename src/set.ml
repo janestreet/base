@@ -44,20 +44,20 @@ module Tree0 = struct
      [2] Balancing weight-balanced trees, Hirai and Yamamoto, JFP 21 (3): 287–307, 2011.
      https://yoichihirai.com/bst.pdf *)
 
-  type 'a t =
+  type ('a, 'cmp) t =
     | Empty
     (* Leaf is the same as Node with empty children but uses less space. *)
     | Leaf of { global_ elt : 'a }
     | Node of
-        { global_ left : 'a t
+        { global_ left : ('a, 'cmp) t
         ; global_ elt : 'a
-        ; global_ right : 'a t
+        ; global_ right : ('a, 'cmp) t
         ; weight : int
         }
 
-  type 'a tree = 'a t
+  type ('a, 'cmp) tree = ('a, 'cmp) t
 
-  let globalize0 : 'a. local_ 'a t -> 'a t = function
+  let globalize0 : 'a 'cmp. local_ ('a, 'cmp) t -> ('a, 'cmp) t = function
     | Empty -> Empty
     | Leaf { elt } -> Leaf { elt }
     | Node { left; elt; right; weight } -> Node { left; elt; right; weight }
@@ -686,28 +686,28 @@ module Tree0 = struct
     type increasing
     type decreasing
 
-    type ('a, 'direction) t =
+    type ('a, 'cmp, 'direction) t =
       | End
-      | More of 'a * 'a tree * ('a, 'direction) t
+      | More of 'a * ('a, 'cmp) tree * ('a, 'cmp, 'direction) t
 
-    let rec cons s (e : (_, increasing) t) : (_, increasing) t =
+    let rec cons s (e : (_, _, increasing) t) : (_, _, increasing) t =
       match s with
       | Empty -> e
       | Leaf { elt = v } -> More (v, Empty, e)
       | Node { left = l; elt = v; right = r; weight = _ } -> cons l (More (v, r, e))
     ;;
 
-    let rec cons_right s (e : (_, decreasing) t) : (_, decreasing) t =
+    let rec cons_right s (e : (_, _, decreasing) t) : (_, _, decreasing) t =
       match s with
       | Empty -> e
       | Leaf { elt = v } -> More (v, Empty, e)
       | Node { left = l; elt = v; right = r; weight = _ } -> cons_right r (More (v, l, e))
     ;;
 
-    let of_set s : (_, increasing) t = cons s End
-    let of_set_right s : (_, decreasing) t = cons_right s End
+    let of_set s : (_, _, increasing) t = cons s End
+    let of_set_right s : (_, _, decreasing) t = cons_right s End
 
-    let starting_at_increasing t key compare : (_, increasing) t =
+    let starting_at_increasing t key compare : (_, _, increasing) t =
       let rec loop t e =
         match t with
         | Empty -> e
@@ -720,7 +720,7 @@ module Tree0 = struct
       loop t End
     ;;
 
-    let starting_at_decreasing t key compare : (_, decreasing) t =
+    let starting_at_decreasing t key compare : (_, _, decreasing) t =
       let rec loop t e =
         match t with
         | Empty -> e
@@ -1292,10 +1292,8 @@ type ('a, 'comparator) t =
        Note that this does not affect polymorphic [compare]: that still produces
        nonsense. *)
     global_ comparator : ('a, 'comparator) Comparator.t
-  ; tree : 'a Tree0.t
+  ; tree : ('a, 'comparator) Tree0.t
   }
-
-type ('a, 'comparator) tree = 'a Tree0.t
 
 let globalize0 (local_ { comparator; tree }) =
   { comparator; tree = Tree0.globalize0 tree }
@@ -1328,8 +1326,9 @@ module Accessors = struct
   let fold t ~init ~f = Tree0.fold t.tree ~init ~f
   let fold_until t ~init ~f ~finish = Tree0.fold_until t.tree ~init ~f ~finish
   let fold_right t ~init ~f = Tree0.fold_right t.tree ~init ~f
-  let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
+  let fold_result t ~init ~f = Container.fold_result ~fold_until ~init ~f t
   let iter t ~f = Tree0.iter t.tree ~f
+  let iter_until t ~f ~finish = Container.iter_until ~fold_until ~f ~finish t
   let iter2 a b ~f = Tree0.iter2 a.tree b.tree ~f ~compare_elt:(compare_elt a)
   let exists t ~f = Tree0.exists t.tree ~f
   let for_all t ~f = Tree0.for_all t.tree ~f
@@ -1442,7 +1441,17 @@ let%template[@mode local] compare _ _ t1 t2 =
 ;;
 
 module Tree = struct
-  type ('a, 'comparator) t = ('a, 'comparator) tree
+  type weight = int
+
+  type ('a, 'cmp) t = ('a, 'cmp) Tree0.t =
+    | Empty
+    | Leaf of { global_ elt : 'a }
+    | Node of
+        { global_ left : ('a, 'cmp) t
+        ; global_ elt : 'a
+        ; global_ right : ('a, 'cmp) t
+        ; weight : int
+        }
 
   let globalize0 = Tree0.globalize0
   let globalize _ _ t = globalize0 t
@@ -1547,7 +1556,8 @@ module Tree = struct
     Tree0.merge_to_sequence comparator ?order ?greater_or_equal_to ?less_or_equal_to t t'
   ;;
 
-  let fold_result t ~init ~f = Container.fold_result ~fold ~init ~f t
+  let fold_result t ~init ~f = Container.fold_result ~fold_until ~init ~f t
+  let iter_until t ~f ~finish = Container.iter_until ~fold_until ~f ~finish t
 
   module Named = struct
     include Tree0.Named
@@ -1645,11 +1655,10 @@ module Using_comparator = struct
 end
 
 let to_comparator = Comparator.of_module
-let empty m = Using_comparator.empty ~comparator:(to_comparator m)
 
-let%template empty (type cw : value mod portable) (m : (_, cw) Comparator.Module.t) =
-  (Using_comparator.empty [@mode portable]) ~comparator:(to_comparator m)
-[@@mode portable]
+let%template empty (type cw : value mod p) (m : (_, cw) Comparator.Module.t) =
+  (Using_comparator.empty [@mode p]) ~comparator:(to_comparator m)
+[@@mode p = (nonportable, portable)]
 ;;
 
 let singleton m a = Using_comparator.singleton ~comparator:(to_comparator m) a
@@ -1770,7 +1779,7 @@ end
 
 module Private = struct
   module Tree = struct
-    type 'a t = 'a Tree0.t
+    type 'a t = ('a, Comparator.Poly.comparator_witness) Tree0.t
 
     let balance_invariants t = Tree0.balance_invariants t
 
@@ -1799,7 +1808,7 @@ module Private = struct
     ;;
 
     let expose t =
-      match (t : _ Tree0.t) with
+      match (t : (_, _) Tree0.t) with
       | Empty -> None
       | Leaf { elt } -> Some (Tree0.Empty, elt, Tree0.Empty)
       | Node { left; elt; right; _ } -> Some (left, elt, right)

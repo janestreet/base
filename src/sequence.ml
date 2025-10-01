@@ -15,7 +15,7 @@ module Step = struct
         ; state : 's
         }
         -> ('a, 's) t
-  [@@deriving sexp_of ~localize]
+  [@@deriving sexp_of ~stackify]
 end
 
 open Step
@@ -462,7 +462,7 @@ module Merge_with_duplicates_element = struct
     | Left of 'a
     | Right of 'b
     | Both of 'a * 'b
-  [@@deriving compare ~localize, equal ~localize, hash, sexp ~localize, sexp_grammar]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
 end
 
 let merge_with_duplicates
@@ -990,6 +990,48 @@ let fold_result s ~init ~f =
   in
   match s with
   | Sequence { state = s; next } -> loop s next f init
+;;
+
+let foldi_until s ~init ~f ~finish =
+  let rec loop s next f i acc =
+    match next s with
+    | Done -> finish i acc
+    | Skip { state = s } -> loop s next f i acc
+    | Yield { value = a; state = s } ->
+      (match (f i acc a : ('a, 'b) Continue_or_stop.t) with
+       | Stop x -> x
+       | Continue acc -> loop s next f (i + 1) acc)
+  in
+  match s with
+  | Sequence { state = s; next } -> loop s next f 0 init [@nontail]
+;;
+
+let iter_until s ~f ~finish =
+  let rec loop s next f =
+    match next s with
+    | Done -> finish ()
+    | Skip { state = s } -> loop s next f
+    | Yield { value = a; state = s } ->
+      (match (f a : ('a, 'b) Continue_or_stop.t) with
+       | Stop x -> x
+       | Continue () -> loop s next f)
+  in
+  match s with
+  | Sequence { state = s; next } -> loop s next f [@nontail]
+;;
+
+let iteri_until s ~f ~finish =
+  let rec loop s next f i =
+    match next s with
+    | Done -> finish i
+    | Skip { state = s } -> loop s next f i
+    | Yield { value = a; state = s } ->
+      (match (f i a : ('a, 'b) Continue_or_stop.t) with
+       | Stop x -> x
+       | Continue () -> loop s next f (i + 1))
+  in
+  match s with
+  | Sequence { state = s; next } -> loop s next f 0 [@nontail]
 ;;
 
 let force_eagerly t = of_list (to_list t)

@@ -106,7 +106,7 @@ end)
 module State = struct
   (* Make [t] abstract for the implementation of the functions below. *)
   module T : sig @@ portable
-    type t
+    type t : value mod portable
 
     val default : t
     val get_default : unit -> t
@@ -117,18 +117,10 @@ module State = struct
       : ('a : value mod contended portable).
       f:(Stdlib.Random.State.t -> 'a) @ local portable unyielding -> t -> 'a
   end = struct
+    module DLS = Basement.Stdlib_shim.Domain.Safe.DLS
+
     let default_state =
-      let default_state_key =
-        Stdlib.Domain.DLS.new_key
-          ~split_from_parent:(fun state ->
-            let (P (type k) (key : k Capsule.Key.t)) = Capsule.create () in
-            let state = split_into_capsule state in
-            fun () ->
-              let access = Capsule.Key.destroy key in
-              Capsule.Data.unwrap ~access state)
-          Stdlib.Random.State.make_self_init
-      in
-      let () =
+      let%template state_initializer =
         if am_testing
         then (
           (* We define Base's default random state as a copy of OCaml's default random state.
@@ -138,36 +130,57 @@ module State = struct
              used both, each of them would go through the same sequence of random bits. To
              avoid that, we reset OCaml's random state to a different seed, giving it a
              different sequence. *)
-          Stdlib.Domain.DLS.set
-            Stdlib.Domain.DLS.Access.for_initial_domain
-            default_state_key
-            (Stdlib.Random.get_state ());
-          Stdlib.Random.init 137)
+          let (P (type k) (key : k Capsule.Key.t)) = Capsule.create () in
+          let initial_state = copy_into_capsule (Stdlib.Random.get_state ()) in
+          Stdlib.Random.init 137;
+          (* This function is run at most once per domain, and we only destroy the
+             key on the initial domain. *)
+          (Obj.magic_many [@mode portable]) (fun () ->
+            if Stdlib.Domain.is_main_domain ()
+            then (
+              let access = Capsule.Key.destroy key in
+              Capsule.Data.unwrap ~access initial_state)
+            else Stdlib.Random.State.make_self_init ()))
         else
           (* Outside of tests, we initialize random state nondeterministically and lazily.
              We force the random initialization to be lazy so that we do not pay any cost
              for it in programs that do not use randomness. *)
-          ()
+          Stdlib.Random.State.make_self_init
+      in
+      let default_state_key =
+        DLS.new_key
+          ~split_from_parent:(fun state ->
+            let (P (type k) (key : k Capsule.Key.t)) = Capsule.create () in
+            let state = split_into_capsule state in
+            fun () ->
+              let access = Capsule.Key.destroy key in
+              Capsule.Data.unwrap ~access state)
+          state_initializer
       in
       default_state_key
     ;;
 
-    type t =
+    type inner =
       | Default
       | Custom of Stdlib.Random.State.t Lazy.t
 
-    let default = Default
-    let[@inline] get_default () = Default
-    let of_stdlib st = Custom (Lazy.from_val st)
-    let of_stdlib_lazy ~f = Custom (Lazy.from_fun f)
+    type t = inner Modes.Portable_via_contended.t
 
-    let[@inline] with_stdlib ~f = function
+    let wrap = Modes.Portable_via_contended.wrap
+    let unwrap = Modes.Portable_via_contended.unwrap
+    let default = wrap Default
+    let[@inline] get_default () = wrap Default
+    let of_stdlib st = wrap (Custom (Lazy.from_val st))
+    let of_stdlib_lazy ~f = wrap (Custom (Lazy.from_fun f))
+
+    let[@inline] with_stdlib ~f t =
+      match unwrap t with
       | Default ->
-        Stdlib.Domain.DLS.access (stack_ fun access ->
-          let default_state = Stdlib.Domain.DLS.get access default_state in
-          f default_state [@nontail])
-        [@nontail]
-      | Custom lz_st -> f (Lazy.force lz_st)
+        (* This is thread safe because the state is only updated via a non-preemptable
+           C call, [f] does not yield, and [f] does not borrow the state. *)
+        let default_state = Obj.magic_uncontended (DLS.get default_state) in
+        f default_state [@nontail]
+      | Custom st -> f (Lazy.force st)
     ;;
   end
 

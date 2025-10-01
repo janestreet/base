@@ -60,19 +60,19 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
           ~input:(t : int_hashtbl)
           ~choose:(Hashtbl.choose t : (_ * _) option)
           ~choose_exn:
-            (Or_error.try_with (fun () -> Hashtbl.choose_exn t) : (_ * _) Or_error.t)
+            (Or_error.try_with (fun () ->
+               let #(k, v) = Hashtbl.choose_exn t in
+               k, v)
+             : (_ * _) Or_error.t)
           ~choose_local:
             ([%globalize: (int Modes.Global.t * int Modes.Global.t) option]
                [%template (Hashtbl.choose [@mode local]) t]
              : (_ * _) option)
-          ~choose_local_exn:
-            (Or_error.try_with (fun () ->
-               [%globalize: int Modes.Global.t * int Modes.Global.t]
-                 [%template (Hashtbl.choose_exn [@mode local]) t] [@nontail])
-             : (_ * _) Or_error.t)
           ~choose_randomly:(Hashtbl.choose_randomly t : (_ * _) option)
           ~choose_randomly_exn:
-            (Or_error.try_with (fun () -> Hashtbl.choose_randomly_exn t)
+            (Or_error.try_with (fun () ->
+               let #(k, v) = Hashtbl.choose_randomly_exn t in
+               k, v)
              : (_ * _) Or_error.t)]
   in
   test [];
@@ -81,8 +81,7 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
     ((input  ())
      (choose ())
      (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
-     (choose_local ())
-     (choose_local_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
+     (choose_local    ())
      (choose_randomly ())
      (choose_randomly_exn (
        Error ("[Hashtbl.choose_randomly_exn] of empty hashtbl"))))
@@ -93,8 +92,7 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
     ((input  ())
      (choose ())
      (choose_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
-     (choose_local ())
-     (choose_local_exn (Error ("[Hashtbl.choose_exn] of empty hashtbl")))
+     (choose_local    ())
      (choose_randomly ())
      (choose_randomly_exn (
        Error ("[Hashtbl.choose_randomly_exn] of empty hashtbl"))))
@@ -105,8 +103,7 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
     ((input  ((1 1)))
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
-     (choose_local ((_ _)))
-     (choose_local_exn (Ok (_ _)))
+     (choose_local    ((_ _)))
      (choose_randomly ((_ _)))
      (choose_randomly_exn (Ok (_ _))))
     |}];
@@ -116,8 +113,7 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
     ((input  ((1 1)))
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
-     (choose_local ((_ _)))
-     (choose_local_exn (Ok (_ _)))
+     (choose_local    ((_ _)))
      (choose_randomly ((_ _)))
      (choose_randomly_exn (Ok (_ _))))
     |}];
@@ -129,8 +125,7 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
        (2 2)))
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
-     (choose_local ((_ _)))
-     (choose_local_exn (Ok (_ _)))
+     (choose_local    ((_ _)))
      (choose_randomly ((_ _)))
      (choose_randomly_exn (Ok (_ _))))
     |}];
@@ -142,8 +137,7 @@ let%expect_test "[choose], [choose_exn], [choose_randomly], [choose_randomly_exn
        (2 2)))
      (choose ((_ _)))
      (choose_exn (Ok (_ _)))
-     (choose_local ((_ _)))
-     (choose_local_exn (Ok (_ _)))
+     (choose_local    ((_ _)))
      (choose_randomly ((_ _)))
      (choose_randomly_exn (Ok (_ _))))
     |}]
@@ -170,17 +164,20 @@ let%expect_test "smoke tests for templated versions" =
     type t = string option [@@deriving compare, equal, sexp]
   end
   in
-  let t = (Hashtbl.create [@kind float64 value]) (module Float_u) in
-  (Hashtbl.set [@kind float64 value]) t ~key:#1.0 ~data:"foo";
-  require ((Hashtbl.mem [@kind float64 value]) t #1.0);
-  require (not @@ (Hashtbl.mem [@kind float64 value]) t #2.0);
-  require_equal (module StrO) ((Hashtbl.find [@kind float64 value]) t #2.0) None;
-  require_equal (module StrO) ((Hashtbl.find [@kind float64 value]) t #1.0) (Some "foo");
-  (Hashtbl.add_exn [@kind float64 value]) t ~key:#0.0 ~data:"zero";
+  let t = (Hashtbl.create [@kind float64 value_or_null]) (module Float_u) in
+  (Hashtbl.set [@kind float64 value_or_null]) t ~key:#1.0 ~data:"foo";
+  require ((Hashtbl.mem [@kind float64 value_or_null]) t #1.0);
+  require (not @@ (Hashtbl.mem [@kind float64 value_or_null]) t #2.0);
+  require_equal (module StrO) ((Hashtbl.find [@kind float64 value_or_null]) t #2.0) None;
+  require_equal
+    (module StrO)
+    ((Hashtbl.find [@kind float64 value_or_null]) t #1.0)
+    (Some "foo");
+  (Hashtbl.add_exn [@kind float64 value_or_null]) t ~key:#0.0 ~data:"zero";
   require_does_raise (fun () ->
-    (Hashtbl.add_exn [@kind float64 value]) t ~key:#0.0 ~data:"zero");
+    (Hashtbl.add_exn [@kind float64 value_or_null]) t ~key:#0.0 ~data:"zero");
   [%expect {| ("Hashtbl.add_exn got key already present" 0) |}];
-  print_s [%sexp (t : ((Float_u.t, string) Hashtbl.t[@kind float64 value]))];
+  print_s [%sexp (t : ((Float_u.t, string) Hashtbl.t[@kind float64 value_or_null]))];
   [%expect
     {|
     ((0 zero)

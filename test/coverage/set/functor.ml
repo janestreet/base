@@ -327,6 +327,30 @@ module Test_accessors
       in
       require_equal (module Data.List (Elt)) actual (to_list t))
 
+  and iter_until = iter_until
+
+  and () =
+    quickcheck_m (module Inst_and_elt) ~f:(fun (t, threshold) ->
+      let t = Inst.value t in
+      let res, actual =
+        let q = Queue.create () in
+        let res =
+          iter_until
+            t
+            ~finish:(fun () -> true)
+            ~f:(fun elt ->
+              if Elt.( >= ) elt threshold
+              then Stop false
+              else (
+                Queue.enqueue q elt;
+                Continue ()))
+        in
+        res, Queue.to_list q
+      in
+      let expect = to_list t |> List.take_while ~f:(fun elt -> Elt.( < ) elt threshold) in
+      require_equal (module Bool) res (List.length expect = length t);
+      require_equal (module Data.List (Elt)) actual expect)
+
   and fold = fold
   and fold_right = fold_right
 

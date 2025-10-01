@@ -32,7 +32,7 @@ val to_array : 'a t -> 'a option Array.t
 val get : 'a t -> int -> 'a option
 
 (** Similar to [get], but allocates result in the caller's stack region instead of heap. *)
-val get_local : 'a t -> int -> local_ 'a option
+val get_local : local_ 'a t -> int -> local_ 'a option
 
 (** Raises if the element number [i] is [None]. *)
 val get_some_exn : 'a t -> int -> 'a

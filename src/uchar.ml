@@ -14,8 +14,10 @@ let hash t = Hash.run hash_fold_t t
 
 (* Not for export. String formats exported via [Utf*] modules below. *)
 let to_string_internal t = Printf.sprintf "U+%04X" (to_int t)
-let sexp_of_t t = Sexp.Atom (to_string_internal t)
-let sexp_of_t__local t = exclave_ Sexp.Atom (to_string_internal t)
+
+let%template[@alloc a = (heap, stack)] sexp_of_t t =
+  Sexp.Atom (to_string_internal t) [@exclave_if_stack a]
+;;
 
 let t_of_sexp sexp =
   match sexp with
@@ -105,8 +107,10 @@ module Decode_result = struct
   let is_valid = Uchar0.utf_decode_is_valid
   let bytes_consumed = Uchar0.utf_decode_length
   let uchar_or_replacement_char = Uchar0.utf_decode_uchar
-  let sexp_of_t t = sexp_of_t (uchar_or_replacement_char t)
-  let sexp_of_t__local t = exclave_ sexp_of_t__local (uchar_or_replacement_char t)
+
+  let%template[@alloc a = (heap, stack)] sexp_of_t t =
+    (sexp_of_t [@alloc a]) (uchar_or_replacement_char t) [@exclave_if_stack a]
+  ;;
 
   let uchar t =
     match is_valid t with

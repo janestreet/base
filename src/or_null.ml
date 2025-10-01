@@ -7,15 +7,27 @@ external is_null : local_ _ or_null -> bool @@ portable = "%is_null"
 external unsafe_value : ('a t[@local_opt]) -> ('a[@local_opt]) @@ portable = "%identity"
 [@@alert unsafe_optimizations_if_misapplied]
 
+module Optional_syntax = struct
+  module Optional_syntax = struct
+    let[@zero_alloc] [@inline] is_none t = is_null t
+
+    let[@inline] unsafe_value t =
+      (unsafe_value [@alert "-unsafe_optimizations_if_misapplied"]) t
+    ;;
+  end
+end
+
 include (
 struct
-  type 'a t = 'a or_null [@@deriving globalize, sexp ~localize]
+  type 'a t = 'a or_null [@@deriving globalize, sexp ~stackify]
 end :
   sig
   @@ portable
-    type 'a t = 'a or_null [@@deriving globalize, sexp ~localize]
+    type 'a t = 'a or_null [@@deriving globalize, sexp ~stackify]
   end
   with type 'a t := 'a or_null)
+
+[%%rederive.portable type ('a : value mod non_null) t = 'a or_null [@@deriving hash]]
 
 let[@cold] raise_value_exn ~here =
   let error =

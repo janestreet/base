@@ -472,6 +472,7 @@ module%test Search_pattern = struct
           if string_equal (prefix x j) (suffix x j) then kmp_array.(i) <- j
         done
       done;
+      let kmp_array = Iarray.of_array kmp_array in
       ({ pattern; kmp_array; case_sensitive } : Private.t)
     ;;
 
@@ -490,13 +491,16 @@ module%test Search_pattern = struct
 
     let%expect_test _ =
       List.iter [%all: bool] ~f:(fun case_sensitive ->
-        test_both { pattern = ""; case_sensitive; kmp_array = [||] })
+        test_both { pattern = ""; case_sensitive; kmp_array = Iarray.of_array [||] })
     ;;
 
     let%expect_test _ =
       List.iter [%all: bool] ~f:(fun case_sensitive ->
         test_both
-          { pattern = "ababab"; case_sensitive; kmp_array = [| 0; 0; 1; 2; 3; 4 |] })
+          { pattern = "ababab"
+          ; case_sensitive
+          ; kmp_array = Iarray.of_array [| 0; 0; 1; 2; 3; 4 |]
+          })
     ;;
 
     let%expect_test _ =
@@ -504,7 +508,7 @@ module%test Search_pattern = struct
         test_both
           { pattern = "abaCabaD"
           ; case_sensitive
-          ; kmp_array = [| 0; 0; 1; 0; 1; 2; 3; 0 |]
+          ; kmp_array = Iarray.of_array [| 0; 0; 1; 0; 1; 2; 3; 0 |]
           })
     ;;
 
@@ -514,58 +518,73 @@ module%test Search_pattern = struct
           { pattern = "abaCabaDabaCabaCabaDabaCabaEabab"
           ; case_sensitive
           ; kmp_array =
-              [| 0
-               ; 0
-               ; 1
-               ; 0
-               ; 1
-               ; 2
-               ; 3
-               ; 0
-               ; 1
-               ; 2
-               ; 3
-               ; 4
-               ; 5
-               ; 6
-               ; 7
-               ; 4
-               ; 5
-               ; 6
-               ; 7
-               ; 8
-               ; 9
-               ; 10
-               ; 11
-               ; 12
-               ; 13
-               ; 14
-               ; 15
-               ; 0
-               ; 1
-               ; 2
-               ; 3
-               ; 2
-              |]
+              Iarray.of_array
+                [| 0
+                 ; 0
+                 ; 1
+                 ; 0
+                 ; 1
+                 ; 2
+                 ; 3
+                 ; 0
+                 ; 1
+                 ; 2
+                 ; 3
+                 ; 4
+                 ; 5
+                 ; 6
+                 ; 7
+                 ; 4
+                 ; 5
+                 ; 6
+                 ; 7
+                 ; 8
+                 ; 9
+                 ; 10
+                 ; 11
+                 ; 12
+                 ; 13
+                 ; 14
+                 ; 15
+                 ; 0
+                 ; 1
+                 ; 2
+                 ; 3
+                 ; 2
+                |]
           })
     ;;
 
     let%expect_test _ =
-      test_both { pattern = "aaA"; case_sensitive = true; kmp_array = [| 0; 1; 0 |] }
-    ;;
-
-    let%expect_test _ =
-      test_both { pattern = "aaA"; case_sensitive = false; kmp_array = [| 0; 1; 2 |] }
+      test_both
+        { pattern = "aaA"
+        ; case_sensitive = true
+        ; kmp_array = Iarray.of_array [| 0; 1; 0 |]
+        }
     ;;
 
     let%expect_test _ =
       test_both
-        { pattern = "aAaAaA"; case_sensitive = true; kmp_array = [| 0; 0; 1; 2; 3; 4 |] }
+        { pattern = "aaA"
+        ; case_sensitive = false
+        ; kmp_array = Iarray.of_array [| 0; 1; 2 |]
+        }
     ;;
 
     let%expect_test _ =
       test_both
-        { pattern = "aAaAaA"; case_sensitive = false; kmp_array = [| 0; 1; 2; 3; 4; 5 |] }
+        { pattern = "aAaAaA"
+        ; case_sensitive = true
+        ; kmp_array = Iarray.of_array [| 0; 0; 1; 2; 3; 4 |]
+        }
+    ;;
+
+    let%expect_test _ =
+      test_both
+        { pattern = "aAaAaA"
+        ; case_sensitive = false
+        ; kmp_array = Iarray.of_array [| 0; 1; 2; 3; 4; 5 |]
+        }
     ;;
 
     let rec x k =
@@ -600,7 +619,7 @@ module%test Search_pattern = struct
           [%test_result: String.Caseless.t]
             case_insensitive.pattern
             ~expect:case_sensitive_but_lowercase.pattern;
-          [%test_result: int array]
+          [%test_result: int iarray]
             case_insensitive.kmp_array
             ~expect:case_sensitive_but_lowercase.kmp_array)
     ;;
@@ -1557,9 +1576,6 @@ module%test Escaping = struct
     test_all
       [ escape_gen_exn |> Test_fun.map ~f:Staged.unstage
       ; escape_gen |> Test_fun.map ~f:ok_exn
-      ; (escape_gen [@mode portable])
-        |> Test_fun.map ~f:ok_exn
-        |> Test_fun.map ~f:Modes.Portable.unwrap
       ]
   ;;
 
@@ -1567,9 +1583,6 @@ module%test Escaping = struct
     test_all
       [ unescape_gen_exn |> Test_fun.map ~f:Staged.unstage
       ; unescape_gen |> Test_fun.map ~f:ok_exn
-      ; (unescape_gen [@mode portable])
-        |> Test_fun.map ~f:ok_exn
-        |> Test_fun.map ~f:Modes.Portable.unwrap
       ]
   ;;
 

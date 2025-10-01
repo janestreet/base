@@ -8,7 +8,9 @@ let print_for ints f =
   List.iter ints ~f:(fun i ->
     print_s
       [%message
-        "" ~_:(i : nativeint) ~_:(Or_error.try_with (fun () -> f i) : int Or_error.t)])
+        ""
+          ~_:(i : nativeint)
+          ~_:(Or_error.try_with (fun () -> f i) : nativeint Or_error.t)])
 ;;
 
 let%expect_test "[floor_log2]" =

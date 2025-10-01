@@ -4,7 +4,7 @@ include Int_intf.Definitions
 include Int0
 
 module T = struct
-  type t = int [@@deriving globalize, hash, sexp ~localize, sexp_grammar]
+  type t = int [@@deriving globalize, hash, sexp ~stackify, sexp_grammar]
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare x y = Int_replace_polymorphic_compare.compare x y
@@ -166,32 +166,36 @@ module Pow2 = struct
     Printf.invalid_argf "argument must be strictly positive" ()
   ;;
 
+  (** "ceiling power of 2 - 1" - Least power of 2 minus 1 greater than or equal to x. *)
+  let ceil_pow2_minus_1 n =
+    (* This does not let [Nativeint]s escape and allocations are optimized away.
+       [Stdlib.Nativeint] is used to avoid a dependency cycle. *)
+    let open Stdlib.Nativeint in
+    let n = of_int n in
+    let n = logor n (shift_right_logical n 1) in
+    let n = logor n (shift_right_logical n 2) in
+    let n = logor n (shift_right_logical n 4) in
+    let n = logor n (shift_right_logical n 8) in
+    let n = logor n (shift_right_logical n 16) in
+    to_int
+      (if (* This condition should get constant folded and there should be no branch. *)
+          Stdlib.Sys.int_size > 32
+       then logor n (shift_right_logical n 32)
+       else n)
+  ;;
+
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 x =
     if x <= 0 then non_positive_argument ();
     let x = x - 1 in
-    let x = x lor (x lsr 1) in
-    let x = x lor (x lsr 2) in
-    let x = x lor (x lsr 4) in
-    let x = x lor (x lsr 8) in
-    let x = x lor (x lsr 16) in
-    (* The next line is superfluous on 32-bit architectures, but it's faster to do it
-       anyway than to branch *)
-    let x = x lor (x lsr 32) in
+    let x = ceil_pow2_minus_1 x in
     x + 1
   ;;
 
   (** "floor power of 2" - Largest power of 2 less than or equal to x. *)
   let floor_pow2 x =
     if x <= 0 then non_positive_argument ();
-    let x = x lor (x lsr 1) in
-    let x = x lor (x lsr 2) in
-    let x = x lor (x lsr 4) in
-    let x = x lor (x lsr 8) in
-    let x = x lor (x lsr 16) in
-    (* The next line is superfluous on 32-bit architectures, but it's faster to do it
-       anyway than to branch *)
-    let x = x lor (x lsr 32) in
+    let x = ceil_pow2_minus_1 x in
     x - (x lsr 1)
   ;;
 
@@ -235,8 +239,9 @@ include Int_string_conversions.Make_binary (struct
     let clz = clz
     let num_bits = num_bits
     let one = one
-    let to_int_exn (i : t) = i
+    let to_int_trunc (i : t) = i
     let zero = zero
+    let ( - ) = ( - )
   end)
 
 module Pre_O = struct
