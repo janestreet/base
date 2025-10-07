@@ -12,6 +12,12 @@ module Definitions = struct
 
     include Binary_searchable.S1 with type 'a t := 'a t
 
+    val array_should_be_polymorphic_over_value_or_null : unit
+    [@@ocaml.doc
+      {| Refer to this in code that hacks around array's current lack of [value_or_null]
+          support. When the appropriate compiler features land, we will remove this
+          binding and fix up relevant client code. |}]
+
     include
       Indexed_container.S1_with_creators__base
       with type 'a t := 'a t

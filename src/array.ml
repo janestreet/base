@@ -1180,3 +1180,5 @@ module Private = struct
     [@kind k]
     [@modality p]
 end
+
+let array_should_be_polymorphic_over_value_or_null = ()
