@@ -188,8 +188,7 @@ external snd : 'a 'b. ('a * 'b[@local_opt]) -> ('b[@local_opt]) = "%field1"
 
 (* [raise] needs to be defined as an external as the compiler automatically replaces
    '%raise' by '%reraise' when appropriate. *)
-  external%template raise : 'a. exn -> 'a = "%reraise"
-  [@@kind k = (value_or_null, immediate, immediate64)]
+  external%template raise : 'a. exn -> 'a = "%reraise" [@@kind k = value_or_null_with_imm]
 
 [%%template
 [@@@kind kr1 = (value & value)]
@@ -200,23 +199,7 @@ let raise : 'a. exn -> 'a =
   fun exn ->
   match (raise exn : Nothing0.t) with
   | _ -> .
-[@@kind
-  k
-  = ( bits32
-    , bits64
-    , float64
-    , word
-    , value & bits32
-    , value & bits64
-    , value & float64
-    , value & word
-    , value & immediate
-    , value & immediate64
-    , value & value
-    , value & kr1
-    , value & kr2
-    , value & kr3
-    , bits32 & bits32 )]
+[@@kind k = (base_non_value, value & (base_with_imm, kr1, kr2, kr3), bits32 & bits32)]
 ;;]
 
 external phys_equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%eq"

@@ -51,9 +51,7 @@ let equal eq1 eq2 (t1 : (_ t[@kind kf ks])) (t2 : (_ t[@kind kf ks])) =
   | First x, First y -> eq1 x y
   | Second x, Second y -> eq2 x y
   | First _, Second _ | Second _, First _ -> false
-[@@kind
-  kf = (float64, bits32, bits64, word, value, immediate, immediate64)
-  , ks = (float64, bits32, bits64, word, value, immediate, immediate64)]
+[@@kind kf = base_or_null_with_imm, ks = base_or_null_with_imm]
 ;;]
 
 let invariant f s = function
@@ -70,18 +68,19 @@ end
 module Make_focused (M : sig
     type (+'a, +'b) t
 
-    val return : 'a -> ('a, _) t
-    val other : 'b -> (_, 'b) t
-    val focus : ('a, 'b) t -> ('a, 'b) Focus.t
+    val return : 'a 'b. 'a -> ('a, 'b) t
+    val other : 'a 'b. 'b -> ('a, 'b) t
+    val focus : 'a 'b. ('a, 'b) t -> ('a, 'b) Focus.t
 
     val combine
-      :  ('a, 'd) t
+      : 'a 'b 'c 'd.
+      ('a, 'd) t
       -> ('b, 'd) t
       -> f:('a -> 'b -> 'c)
       -> other:('d -> 'd -> 'd)
       -> ('c, 'd) t
 
-    val bind : ('a, 'b) t -> f:('a -> ('c, 'b) t) -> ('c, 'b) t
+    val bind : 'a 'b 'c. ('a, 'b) t -> f:('a -> ('c, 'b) t) -> ('c, 'b) t
   end) =
 struct
   include M
@@ -92,7 +91,8 @@ struct
     res
   ;;
 
-  include%template Monad.Make2 [@mode local] [@modality portable] (struct
+  include%template
+    Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local] [@modality portable] (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return
@@ -101,13 +101,18 @@ struct
     end)
 
   module%template App =
-  Applicative.Make2_using_map2 [@mode local] [@modality portable] (struct
+  Applicative.Make2_using_map2
+    [@kind value_or_null mod maybe_null]
+    [@mode local]
+    [@modality portable]
+    (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return
       let map = `Custom map
 
-      let map2 : ('a, 'x) t -> ('b, 'x) t -> f:('a -> 'b -> 'c) -> ('c, 'x) t =
+      let map2 : 'a 'b 'c 'x. ('a, 'x) t -> ('b, 'x) t -> f:('a -> 'b -> 'c) -> ('c, 'x) t
+        =
         fun t1 t2 ~f ->
         bind t1 ~f:(fun x -> bind t2 ~f:(fun y -> return (f x y)) [@nontail]) [@nontail]
       ;;

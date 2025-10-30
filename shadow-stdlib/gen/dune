@@ -1,7 +1,7 @@
 (executables
  (modes byte exe)
  (names gen)
- (libraries str compiler-libs.common)
+ (libraries compiler-libs.common str)
  (link_flags -linkall)
  (preprocess no_preprocessing))
 

@@ -13,22 +13,30 @@ module Definitions = struct
   module type Focused = sig
     type (+'focus, +'other) t
 
-    include Monad.S2__local with type ('a, 'b) t := ('a, 'b) t
-    include Applicative.S2__local with type ('a, 'b) t := ('a, 'b) t
+    include%template
+      Monad.S2
+      [@kind value_or_null mod maybe_null] [@mode local]
+      with type ('a, 'b) t := ('a, 'b) t
 
-    val value : ('a, _) t -> default:'a -> 'a
-    val to_option : ('a, _) t -> 'a option
-    val with_return : ('a With_return.return -> 'b) -> ('a, 'b) t
+    include%template
+      Applicative.S2
+      [@kind value_or_null mod maybe_null] [@mode local]
+      with type ('a, 'b) t := ('a, 'b) t
+
+    val value : 'a 'b. ('a, 'b) t -> default:'a -> 'a
+    val to_option : 'a 'b. ('a, 'b) t -> 'a option
+    val with_return : 'a 'b. ('a With_return.return -> 'b) -> ('a, 'b) t
 
     val combine
-      :  ('a, 'd) t
+      : 'a 'b 'c 'd.
+      ('a, 'd) t
       -> ('b, 'd) t
       -> f:('a -> 'b -> 'c)
       -> other:('d -> 'd -> 'd)
       -> ('c, 'd) t
 
-    val combine_all : ('a, 'b) t list -> f:('b -> 'b -> 'b) -> ('a list, 'b) t
-    val combine_all_unit : (unit, 'b) t list -> f:('b -> 'b -> 'b) -> (unit, 'b) t
+    val combine_all : 'a 'b. ('a, 'b) t list -> f:('b -> 'b -> 'b) -> ('a list, 'b) t
+    val combine_all_unit : 'b. (unit, 'b) t list -> f:('b -> 'b -> 'b) -> (unit, 'b) t
   end
 end
 
@@ -43,9 +51,7 @@ module type Either = sig
 
   include sig
       type%template ('f, 's) t = (('f, 's) Either0.t[@kind kf ks])
-      [@@kind
-        kf = (float64, bits32, bits64, word, immediate, immediate64, value)
-        , ks = (float64, bits32, bits64, word, immediate, immediate64, value)]
+      [@@kind kf = base_or_null_with_imm, ks = base_or_null_with_imm]
       [@@deriving compare ~localize, equal ~localize, sexp ~stackify, sexp_grammar]
     end
     with type ('f, 's) t := ('f, 's) t
@@ -58,22 +64,22 @@ module type Either = sig
 
   include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
 
-  val swap : ('f, 's) t -> ('s, 'f) t
-  val value : ('a, 'a) t -> 'a
-  val iter : ('a, 'b) t -> first:('a -> unit) -> second:('b -> unit) -> unit
-  val value_map : ('a, 'b) t -> first:('a -> 'c) -> second:('b -> 'c) -> 'c
-  val map : ('a, 'b) t -> first:('a -> 'c) -> second:('b -> 'd) -> ('c, 'd) t
+  val swap : 'f 's. ('f, 's) t -> ('s, 'f) t
+  val value : 'a. ('a, 'a) t -> 'a
+  val iter : 'a 'b. ('a, 'b) t -> first:('a -> unit) -> second:('b -> unit) -> unit
+  val value_map : 'a 'b 'c. ('a, 'b) t -> first:('a -> 'c) -> second:('b -> 'c) -> 'c
+  val map : 'a 'b 'c 'd. ('a, 'b) t -> first:('a -> 'c) -> second:('b -> 'd) -> ('c, 'd) t
 
   module First : Focused with type ('a, 'b) t = ('a, 'b) t
   module Second : Focused with type ('a, 'b) t = ('b, 'a) t
 
-  val is_first : (_, _) t -> bool
-  val is_second : (_, _) t -> bool
+  val is_first : 'f 's. ('f, 's) t -> bool
+  val is_second : 'f 's. ('f, 's) t -> bool
 
   (** [first] and [second] are [First.return] and [Second.return]. *)
-  val first : 'f -> ('f, _) t
+  val first : 'f 's. 'f -> ('f, 's) t
 
-  val second : 's -> (_, 's) t
+  val second : 'f 's. 's -> ('f, 's) t
 
   (**/**)
 

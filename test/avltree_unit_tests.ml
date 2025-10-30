@@ -515,7 +515,7 @@ module%test _ : module type of Avltree = struct
              | Some data -> `Found (key, data, a, b)))
   ;;
 
-  let iter = (iter [@kind k v])
+  let iter = (iter [@kind k v] [@mode c]) [@@mode c = (uncontended, shared)]
 
   let%test_unit _ =
     Base_quickcheck.Test.run_exn (module Constructors) ~f:(fun constructors ->
@@ -540,7 +540,7 @@ module%test _ : module type of Avltree = struct
         ~expect:(Map.map map ~f:Data.map |> Map.to_alist |> List.rev))
   ;;
 
-  let fold = (fold [@kind k v])
+  let fold = (fold [@kind k v] [@mode c]) [@@mode c = (uncontended, shared)]
 
   let%test_unit _ =
     Base_quickcheck.Test.run_exn (module Constructors) ~f:(fun constructors ->
@@ -551,7 +551,7 @@ module%test _ : module type of Avltree = struct
         ~expect:(Map.to_alist map |> List.rev))
   ;;
 
-  let choose_exn = (choose_exn [@kind k v])
+  let choose_exn = (choose_exn [@kind k v] [@mode c]) [@@mode c = (uncontended, shared)]
 
   let%test_unit _ =
     Base_quickcheck.Test.run_exn (module Constructors) ~f:(fun constructors ->

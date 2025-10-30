@@ -56,7 +56,7 @@ val to_string_mach : t -> string
 
 (** Executes [f] and afterwards executes [finally], whether [f] throws an exception or
     not. *)
-val protectx : f:('a -> 'b) -> 'a -> finally:('a -> unit) -> 'b
+val protectx : 'a 'b. f:('a -> 'b) -> 'a -> finally:('a -> unit) -> 'b
 
 val protect : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
 
@@ -71,6 +71,11 @@ val handle_uncaught : exit:bool -> (unit -> unit) -> unit
 (** [handle_uncaught_and_exit f] returns [f ()], unless that raises, in which case it
     prints the exception and exits nonzero. *)
 val handle_uncaught_and_exit : (unit -> 'a) -> 'a
+
+(** [handle_uncaught_and_exit_immediately f] returns [f ()], unless that raises, in which
+    case it prints the exception and exits nonzero without running any [at_exit]
+    functions. *)
+val handle_uncaught_and_exit_immediately : (unit -> 'a) -> 'a
 
 (** Traces exceptions passing through. Useful because in practice, backtraces still don't
     seem to work.

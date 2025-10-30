@@ -50,7 +50,7 @@ external select
   : 'a.
   bool -> ('a[@local_opt]) -> ('a[@local_opt]) -> ('a[@local_opt])
   = "caml_csel_value"
-[@@kind k = (value_or_null, immediate, immediate64)]
+[@@kind k = value_or_null_with_imm]
 [@@mode m]
 [@@noalloc]
 [@@no_effects]
@@ -71,6 +71,11 @@ let[@inline] select : type a. bool -> a -> a -> a =
           (bits_of_float (magic then_))
           (bits_of_float (magic else_))))
 [@@kind k = float64] [@@mode m]
+;;
+
+let[@inline] select : type a. bool -> a -> a -> a =
+  fun if_ then_ else_ -> if if_ then then_ else else_
+[@@kind k = float32] [@@mode m]
 ;;
 
 let[@inline] select : type a. bool -> a -> a -> a =

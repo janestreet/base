@@ -22,7 +22,7 @@ external globalize_string : string -> string = "caml_obj_dup"
 let globalize_unit (() as u) = u
 
 [%%template
-[@@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value)]
+[@@@kind k = base_with_imm]
 
 external globalize_array' : 'a array -> 'a array = "caml_obj_dup"
 

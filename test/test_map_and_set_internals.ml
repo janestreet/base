@@ -643,21 +643,30 @@ let test (module Tree : S) =
 let () =
   test
     (module struct
-      type t = unit Set.Private.Tree.t
+      type t = (unit, Comparator.Poly.comparator_witness) Set.Tree.t
 
-      let balance_invariants = Set.Private.Tree.balance_invariants
-      let are_balanced = Set.Private.Tree.are_balanced
-      let are_almost_balanced = Set.Private.Tree.are_almost_balanced
-      let expose t = Option.map (Set.Private.Tree.expose t) ~f:(fun (l, (), r) -> l, r)
-      let empty = Set.Private.Tree.empty
-      let create_if_balanced l r = Set.Private.Tree.create_if_balanced l () r
+      let balance_invariants = Set.Tree.Expert.balance_invariants
+      let are_balanced = Set.Tree.Expert.are_balanced
+      let are_almost_balanced = Set.Tree.Expert.need_rebalance_at_most_once
+      let empty = Set.Tree.Expert.empty
+
+      let expose t =
+        match (t : t) with
+        | Empty -> None
+        | Leaf { elt = () } -> Some (empty, empty)
+        | Node { left; elt = (); right; weight = _ } -> Some (left, right)
+      ;;
+
+      let create_if_balanced l r =
+        Set.Tree.Expert.create_assuming_balanced_unchecked l () r
+      ;;
 
       let create_if_almost_balanced l r =
-        Set.Private.Tree.create_if_almost_balanced l () r
+        Set.Tree.Expert.create_and_rebalance_at_most_once_unchecked l () r
       ;;
 
       let create_even_if_completely_unbalanced l r =
-        Set.Private.Tree.create_even_if_completely_unbalanced l () r
+        Set.Tree.Expert.create_and_rebalance_unchecked l () r
       ;;
     end)
 [@@alert "-set_private"]
@@ -666,25 +675,30 @@ let () =
 let () =
   test
     (module struct
-      type t = (unit, unit) Map.Private.Tree.t
+      type t = (unit, unit, Comparator.Poly.comparator_witness) Map.Tree.t
 
-      let balance_invariants = Map.Private.Tree.balance_invariants
-      let are_balanced = Map.Private.Tree.are_balanced
-      let are_almost_balanced = Map.Private.Tree.are_almost_balanced
+      let balance_invariants = Map.Tree.Expert.balance_invariants
+      let are_balanced = Map.Tree.Expert.are_balanced
+      let are_almost_balanced = Map.Tree.Expert.need_rebalance_at_most_once
+      let empty = Map.Tree.Expert.empty
 
       let expose t =
-        Option.map (Map.Private.Tree.expose t) ~f:(fun (l, (), (), r) -> l, r)
+        match (t : t) with
+        | Empty -> None
+        | Leaf { key = (); data = () } -> Some (empty, empty)
+        | Node { left; key = (); data = (); right; weight = _ } -> Some (left, right)
       ;;
 
-      let empty = Map.Private.Tree.empty
-      let create_if_balanced l r = Map.Private.Tree.create_if_balanced l () () r
+      let create_if_balanced l r =
+        Map.Tree.Expert.create_assuming_balanced_unchecked l () () r
+      ;;
 
       let create_if_almost_balanced l r =
-        Map.Private.Tree.create_if_almost_balanced l () () r
+        Map.Tree.Expert.create_and_rebalance_at_most_once_unchecked l () () r
       ;;
 
       let create_even_if_completely_unbalanced l r =
-        Map.Private.Tree.create_even_if_completely_unbalanced l () () r
+        Map.Tree.Expert.create_and_rebalance_unchecked l () () r
       ;;
     end)
 [@@alert "-map_private"]

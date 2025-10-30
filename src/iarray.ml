@@ -54,7 +54,7 @@ module Local = struct
   ;;
 
   [%%template
-  [@@@kind ka = value, kacc = (value, bits64, bits32, word, float64)]
+  [@@@kind ka = value, kacc = base]
 
   let rec foldi_loop t ~f ~len ~pos ~acc =
     if len = pos
@@ -678,7 +678,7 @@ let iteri t ~(f : _ -> _ -> _) =
 let iter t ~f = iteri t ~f:(fun _ x -> f x) [@nontail]
 
 [%%template
-[@@@kind.default ka = value, kacc = (value, bits64, bits32, word, float64)]
+[@@@kind.default ka = value, kacc = base]
 
 let foldi (type a acc) (t : a t) ~(init : acc) ~f : acc =
   let n = length t in

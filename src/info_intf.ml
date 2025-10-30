@@ -83,7 +83,7 @@ module Definitions = struct
     val%template create
       : 'a.
       ?here:Source_code_position0.t -> ?strict:unit -> string -> 'a -> ('a -> Sexp.t) -> t
-    [@@kind k = (bits64, float64, value)]
+    [@@kind k = (bits64, float64, value_or_null)]
 
     val tag_s : t -> tag:Sexp.t -> t
     val tag : t -> tag:string -> t
@@ -138,13 +138,9 @@ module Definitions = struct
         [create] and the sexp conversion, those mutations will be reflected in the sexp.
         Use [~strict:()] to force [sexp_of_a a] to be computed immediately. *)
     val%template create
-      :  ?here:Source_code_position0.t
-      -> ?strict:unit
-      -> string
-      -> 'a
-      -> ('a -> Sexp.t)
-      -> t
-    [@@kind k = (bits64, float64, value)]
+      : 'a.
+      ?here:Source_code_position0.t -> ?strict:unit -> string -> 'a -> ('a -> Sexp.t) -> t
+    [@@kind k = (bits64, float64, value_or_null)]
     [@@mode (p, c) = ((nonportable, uncontended), (portable, contended))]
 
     val create_s : Sexp.t -> t
@@ -173,7 +169,7 @@ module Definitions = struct
     [@@mode p = (portable, nonportable)]
 
     (** Adds a string and some other data in the form of an s-expression at the front. *)
-    val%template tag_arg : t -> string -> 'a -> ('a -> Sexp.t) -> t
+    val%template tag_arg : 'a. t -> string -> 'a -> ('a -> Sexp.t) -> t
     [@@mode (p, c) = ((nonportable, uncontended), (portable, contended))]
 
     (** Combines multiple infos into one. *)

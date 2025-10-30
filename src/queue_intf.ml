@@ -48,6 +48,7 @@ module Definitions = struct
     (** [peek t] returns but does not remove the front element of [t], if any. *)
     val peek : 'a t -> 'a option
 
+    val peek_or_null : 'a t -> 'a or_null [@@zero_alloc]
     val peek_exn : 'a t -> 'a [@@zero_alloc]
 
     (** [clear t] discards all elements from [t]. *)

@@ -37,14 +37,16 @@ val name : (_, _, _) t_with_perm -> string
 [%%template:
 [@@@kind.default
   k
-  = ( value_or_null
-    , float64
-    , bits32
-    , bits64
-    , word
-    , immediate
-    , immediate64
-    , value & value & value & bits32 )]
+  = ( base_or_null_with_imm
+    , value & value & value & bits32
+    , value & value & value & value & value
+    , value & value & value & value & value & value
+    , float64 & float64 & float64 & float64 & float64 & float64
+    , (float64 & float64 & float64 & float64 & float64 & float64)
+      & (float64 & float64 & float64 & float64 & float64 & float64)
+      & (value & value & value & value & value & value)
+      & value
+      & value )]
 
 val get : 'perm 'r 'a. ('perm, 'r, 'a) t_with_perm -> 'r -> 'a
 val fset : 'a 'r. ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> 'a -> 'r

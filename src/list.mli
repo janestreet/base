@@ -7,14 +7,18 @@ module Invariant := Invariant_intf.Definitions
 module Constructors : module type of List0.Constructors
 
 type%template 'a t = ('a Constructors.t[@kind k])
-[@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+[@@kind k = (base_non_value, immediate, immediate64)]
 [@@deriving compare ~localize, equal ~localize, sexp_of ~stackify]
 
 type 'a t = 'a list
 [@@deriving
   compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
-include Indexed_container.S1_with_creators with type 'a t := 'a t
+include%template
+  Indexed_container.S1_with_creators
+  [@kind_set.explicit value_or_null] [@alloc stack]
+  with type 'a t := 'a t
+
 include Invariant.S1 with type 'a t := 'a t
 
 (** Implements cartesian-product behavior for [map] and [bind]. **)
@@ -50,14 +54,14 @@ val create : 'a. len:int -> 'a -> 'a list
 val singleton : 'a. 'a -> 'a t
 
 [%%template:
-[@@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
+[@@@kind k = base_or_null_with_imm]
 
 type 'a t := ('a t[@kind k])
 
 [@@@kind.default k]
 
-val iter : 'a. 'a t -> f:('a -> unit) -> unit
-val iteri : 'a. 'a t -> f:(int -> 'a -> unit) -> unit
+val iter : 'a. 'a t -> f:('a -> unit) -> unit [@@mode l = (local, global)]
+val iteri : 'a. 'a t -> f:(int -> 'a -> unit) -> unit [@@mode l = (local, global)]
 val length : 'a. 'a t -> int
 
 (** Return the [n]-th element of the given list. The first element (head of the list) is
@@ -65,13 +69,14 @@ val length : 'a. 'a t -> int
 val nth_exn : 'a. 'a t -> int -> 'a
 
 val nth : 'a. 'a t -> int -> ('a Option0.t[@kind k])
+val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool [@@mode l = (local, global)]
+
+[@@@alloc.default a @ l = (stack_local, heap_global)]
+
+val init : 'a. int -> f:(int -> 'a) -> 'a t
+val append : 'a. 'a t -> 'a t -> 'a t
 val filteri : 'a. 'a t -> f:(int -> 'a -> bool) -> 'a t
 val filter : 'a. 'a t -> f:('a -> bool) -> 'a t
-val append : 'a. 'a t -> 'a t -> 'a t
-val init : 'a. int -> f:(int -> 'a) -> 'a t
-val mem : 'a. 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
-
-[@@@alloc.default a @ m = (stack_local, heap_global)]
 
 (** [rev_append l1 l2] reverses [l1] and concatenates it to [l2]. This is equivalent to
     [(]{!List.rev}[ l1) @ l2], but [rev_append] is more efficient. *)
@@ -81,9 +86,9 @@ val rev_append : 'a. 'a t -> 'a t -> 'a t
 val rev : 'a. 'a t -> 'a t]
 
 [%%template:
-[@@@kind.default
-  ka = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)
-  , kb = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
+[@@@kind.default ka = base_or_null_with_imm, kb = base_or_null_with_imm]
+[@@@mode.default ma = (local, global)]
+[@@@alloc.default __ @ mb = (heap_global, stack_local)]
 
 val map : 'a 'b. ('a t[@kind ka]) -> f:('a -> 'b) -> ('b t[@kind kb])
 val mapi : 'a 'b. ('a t[@kind ka]) -> f:(int -> 'a -> 'b) -> ('b t[@kind kb])
@@ -106,11 +111,13 @@ val concat_map : 'a 'b. ('a t[@kind ka]) -> f:('a -> ('b t[@kind kb])) -> ('b t[
 
 val concat_mapi
   : 'a 'b.
-  ('a t[@kind ka]) -> f:(int -> 'a -> ('b t[@kind kb])) -> ('b t[@kind kb])
+  ('a t[@kind ka]) -> f:(int -> 'a -> ('b t[@kind kb])) -> ('b t[@kind kb])]
+
+[%%template:
+[@@@kind.default ka = base_or_null_with_imm, kb = base_or_null_with_imm]
+[@@@mode.default ma = (local, global), mb = (local, global)]
 
 val fold : 'a 'b. ('a t[@kind ka]) -> init:'b -> f:('b -> 'a -> 'b) -> 'b
-[@@mode ma = (local, global), mb = (local, global)]
-
 val foldi : 'a 'b. ('a t[@kind ka]) -> init:'b -> f:(int -> 'b -> 'a -> 'b) -> 'b]
 
 (** [unordered_append l1 l2] has the same elements as [l1 @ l2], but in some unspecified
@@ -163,16 +170,9 @@ val for_all2 : 'a 'b. 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool Or_unequal_le
 val exists2_exn : 'a 'b. 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
 
 val exists2 : 'a 'b. 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool Or_unequal_lengths.t
-val is_empty : 'a. 'a t -> bool
-val for_all : 'a. 'a t -> f:('a -> bool) -> bool
-val exists : 'a. 'a t -> f:('a -> bool) -> bool
-val min_elt : 'a. 'a t -> compare:('a -> 'a -> int) -> 'a option
-val max_elt : 'a. 'a t -> compare:('a -> 'a -> int) -> 'a option
 
 (** Like [filter], but reverses the order of the input list. *)
 val rev_filter : 'a. 'a t -> f:('a -> bool) -> 'a t
-
-val partition_map : 'a 'b 'c. 'a t -> f:('a -> ('b, 'c) Either0.t) -> 'b t * 'c t
 
 val partition3_map
   : 'a 'b 'c 'd.
@@ -181,7 +181,8 @@ val partition3_map
 (** [partition_result l] returns a pair of lists [(l1, l2)], where [l1] is the list of all
     [Ok] elements in [l] and [l2] is the list of all [Error] elements. The order of
     elements in the input list is preserved. *)
-val partition_result : 'ok 'error. ('ok, 'error) Result.t t -> 'ok t * 'error t
+val%template partition_result : 'ok 'error. ('ok, 'error) Result.t t -> 'ok t * 'error t
+[@@alloc a @ m = (heap_global, stack_local)]
 
 (** [split_n [e1; ...; em] n] is [([e1; ...; en], [en+1; ...; em])].
 
@@ -226,13 +227,9 @@ val tl_exn : 'a. 'a t -> 'a t
 (** Like [find_exn], but passes the index as an argument. *)
 val findi_exn : 'a. 'a t -> f:(int -> 'a -> bool) -> int * 'a
 
-val find : 'a. 'a t -> f:('a -> bool) -> 'a option
-
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f]. It raises
     [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)
 val find_exn : 'a. 'a t -> f:('a -> bool) -> 'a
-
-val find_map : 'a 'b. 'a t -> f:('a -> 'b option) -> 'b option
 
 (** Returns the first evaluation of [f] that returns [Some]. Raises [Stdlib.Not_found] or
     [Not_found_s] if [f] always returns [None]. *)
@@ -286,7 +283,7 @@ val rev_map_append : 'a 'b. 'a t -> 'b t -> f:('a -> 'b) -> 'b t
 
 (** [fold_right [a1; ...; an] ~f ~init:b] is [f a1 (f a2 (... (f an b) ...))]. *)
 val%template fold_right : 'a 'acc. 'a t -> f:('a -> 'acc -> 'acc) -> init:'acc -> 'acc
-[@@mode m = (local, global), mcc = (local, global)]
+[@@mode li = (local, global), lo = (local, global)]
 
 (** [fold_left] is the same as {!Container.S1.fold}, and one should always use [fold]
     rather than [fold_left], except in functors that are parameterized over a more general
@@ -360,6 +357,15 @@ val sort_and_group : 'a. 'a t -> compare:('a -> 'a -> int) -> 'a t t
     original list. Every list has [length] elements, except for possibly the last list,
     which may have fewer. [chunks_of] raises if [length <= 0]. *)
 val chunks_of : 'a. 'a t -> length:int -> 'a t t
+
+(** [chunk_evenly l ~into] returns a list of exactly [into] lists whose concatenation is
+    equal to the original list. The number of items in each list are split as evenly as
+    possible (i.e. lengths differ by at most 1).
+
+    Specifically (with [n = length l]), the output consists of [n % into] lists of length
+    [(n / into) + 1] followed by [into - n % into] of length [n / into]. Raises if
+    [into <= 0]. *)
+val chunk_evenly : 'a t -> into:int -> 'a t t
 
 (** The final element of a list. The [_exn] version raises on the empty list. *)
 val last : 'a. 'a t -> 'a option
@@ -436,17 +442,23 @@ val range'
   -> 'a
   -> 'a t
 
+[%%template:
+[@@@alloc.default a @ l = (heap_global, stack_local)]
+
+(** [filter_opt l] is the sublist of [l] containing only elements which are [Some e]. In
+    other words, [filter_opt l] = [filter_map ~f:Fn.id l]. *)
+val filter_opt : 'a. 'a option t -> 'a t
+
+[@@@mode lo = l]
+[@@@mode.default li = (global, local)]
+
 (** [rev_filter_map l ~f] is the reversed sublist of [l] containing only elements for
     which [f] returns [Some e]. *)
 val rev_filter_map : 'a 'b. 'a t -> f:('a -> 'b option) -> 'b t
 
 (** rev_filter_mapi is just like [rev_filter_map], but it also passes in the index of each
     element as the first argument to the mapped function. Tail-recursive. *)
-val rev_filter_mapi : 'a 'b. 'a t -> f:(int -> 'a -> 'b option) -> 'b t
-
-(** [filter_opt l] is the sublist of [l] containing only elements which are [Some e]. In
-    other words, [filter_opt l] = [filter_map ~f:Fn.id l]. *)
-val filter_opt : 'a. 'a option t -> 'a t
+val rev_filter_mapi : 'a 'b. 'a t -> f:(int -> 'a -> 'b option) -> 'b t]
 
 (** Create a list of every value [iter] passes to [f], in chronological order. *)
 val of_iter : 'a. iter:(f:('a -> unit) -> unit) -> 'a t
@@ -574,3 +586,7 @@ val transpose_exn : 'a. 'a t t -> 'a t t
 (** [intersperse xs ~sep] places [sep] between adjacent elements of [xs]. For example,
     [intersperse [1;2;3] ~sep:0 = [1;0;2;0;3]]. *)
 val intersperse : 'a. 'a t -> sep:'a -> 'a t
+
+module Private : sig
+  val max_non_tailcall : int
+end

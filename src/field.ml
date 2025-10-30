@@ -59,14 +59,16 @@ let name (Field field) = field.name
 [%%template
 [@@@kind.default
   k
-  = ( value_or_null
-    , float64
-    , bits32
-    , bits64
-    , word
-    , immediate
-    , immediate64
-    , value & value & value & bits32 )]
+  = ( base_or_null_with_imm
+    , value & value & value & bits32
+    , value & value & value & value & value
+    , value & value & value & value & value & value
+    , float64 & float64 & float64 & float64 & float64 & float64
+    , (float64 & float64 & float64 & float64 & float64 & float64)
+      & (float64 & float64 & float64 & float64 & float64 & float64)
+      & (value & value & value & value & value & value)
+      & value
+      & value )]
 
 let get (Field field) = field.getter
 let fset (Field field) = field.fset

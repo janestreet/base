@@ -274,6 +274,30 @@ module Definitions = struct
             -> ('k, 'v, 'cmp) t )
           access_options
 
+    val merge
+      : ( 'k
+          , 'cmp
+          , ('k, 'v1, 'cmp) t
+            -> ('k, 'v2, 'cmp) t
+            -> f:(key:'k key -> ('v1, 'v2) Merge_element.t -> 'v3 option)
+            -> ('k, 'v3, 'cmp) t )
+          access_options
+
+    val merge_disjoint_exn
+      : ( 'k
+          , 'cmp
+          , ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t )
+          access_options
+
+    val merge_skewed
+      : ( 'k
+          , 'cmp
+          , ('k, 'v, 'cmp) t
+            -> ('k, 'v, 'cmp) t
+            -> combine:(key:'k key -> 'v -> 'v -> 'v)
+            -> ('k, 'v, 'cmp) t )
+          access_options
+
     val merge_by_case
       : ( 'k
           , 'cmp
@@ -1453,6 +1477,105 @@ module type Map = sig
       (** Time complexity is O(log(n)). *)
       val to_tree : ('k, 'v, 'w) t -> ('k, 'v, 'w) tree
     end
+
+    (** Low-level constructors for balanced trees. If not carefully used, the results
+        might violate the normal invariants of a tree. *)
+    module Expert : sig
+      (** Sexp prints the internal node structure. *)
+      type nonrec ('k, 'v, 'cmp) t = ('k, 'v, 'cmp) t [@@deriving sexp_of]
+
+      (** Just the tree balance checks from [invariants]. Excludes the checks in
+          [order_invariants]. *)
+      val balance_invariants : (_, _, _) t -> bool
+
+      (** Just the key ordering checks from [invariants]. Excludes the checks in
+          [balance_invariants]. *)
+      val order_invariants
+        :  comparator:('k, 'cmp) Comparator.t
+        -> ('k, 'v, 'cmp) t
+        -> bool
+
+      (** Reports whether two trees are sufficiently balanced for
+          [create_assuming_balanced_unchecked]. Two trees with the same or mirrored shape
+          are guaranteed to be balanced. The left and right subtrees of a [Node]
+          constructor are also guaranteed to be balanced.
+
+          We do not describe our balance invariants in detail in this interface, as they
+          have changed in the past and may change again in the future. *)
+      val are_balanced : ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> bool
+
+      (** Reports whether two trees are sufficiently balanced for
+          [create_and_rebalance_at_most_once_unchecked].
+
+          If two trees satisfy [are_balanced], at most a single key is added or removed
+          from one of them, and the tree is rebuilt via
+          [create_and_rebalance_at_most_once_unchecked], then the result should satisfy
+          [need_rebalance_at_most_once].
+
+          The preceding operations are equivalent to a single call to most single-key
+          update functions, e.g. [add], [remove], [change], etc. *)
+      val need_rebalance_at_most_once : ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> bool
+
+      (** [create_assuming_balanced_unchecked left key data right] constructs a single
+          [Node]. Given keys must be unique and strictly sorted, and
+          [are_balanced left right] must be true. Otherwise map/tree behavior will be
+          unspecified. *)
+      val create_assuming_balanced_unchecked
+        :  ('k, 'v, 'cmp) t
+        -> 'k
+        -> 'v
+        -> ('k, 'v, 'cmp) t
+        -> ('k, 'v, 'cmp) t
+
+      (** [create_and_rebalance_at_most_once_unchecked left key data right] constructs a
+          [Node], possibly rebalancing [left] and [right] once. Given keys must be unique
+          and strictly sorted, and [need_rebalance_at_most_once left right] must be true.
+          Otherwise map/tree behavior will be unspecified. *)
+      val create_and_rebalance_at_most_once_unchecked
+        :  ('k, 'v, 'cmp) t
+        -> 'k
+        -> 'v
+        -> ('k, 'v, 'cmp) t
+        -> ('k, 'v, 'cmp) t
+
+      (** [create_and_rebalance_unchecked left key data right] constructs a [Node],
+          possibly rebalancing [left] and [right] recursively. Given keys must be unique
+          and strictly sorted. Otherwise map/tree behavior will be unspecified. The
+          subtrees may be arbitrarily imbalanced with respect to each other. *)
+      val create_and_rebalance_unchecked
+        :  ('k, 'v, 'cmp) t
+        -> 'k
+        -> 'v
+        -> ('k, 'v, 'cmp) t
+        -> ('k, 'v, 'cmp) t
+
+      (** [concat_and_rebalance_at_most_once_unchecked left right] appends [left] and
+          [right] in that order, possibly rebalancing the result once. Given keys must be
+          unique and strictly sorted, and [are_balanced left right] must be true.
+          Otherwise map/tree behavior will be unspecified. *)
+      val concat_and_rebalance_at_most_once_unchecked
+        :  ('k, 'v, 'cmp) t
+        -> ('k, 'v, 'cmp) t
+        -> ('k, 'v, 'cmp) t
+
+      (** [concat_and_rebalance_unchecked left right] appends [left] and [right] in that
+          order, rebalancing the result recursively. Given keys must be unique and
+          strictly sorted. Otherwise map/tree behavior will be unspecified. The subtrees
+          may be arbitrarily imbalanced with respect to each other. *)
+      val concat_and_rebalance_unchecked
+        :  ('k, 'v, 'cmp) t
+        -> ('k, 'v, 'cmp) t
+        -> ('k, 'v, 'cmp) t
+
+      (** Like [Tree.singleton], but does not require a comparator. *)
+      val singleton : 'k -> 'v -> ('k, 'v, 'cmp) t
+
+      (** Equivalent to [empty_without_value_restriction]. *)
+      val empty : ('k, 'v, 'cmp) t
+
+      (** Compute a tree's length from its weight field. *)
+      val length_of_weight : weight -> int
+    end
   end
 
   (** [Using_comparator] is a similar interface as the toplevel of [Map], except the
@@ -1512,30 +1635,4 @@ module type Map = sig
 
   (** Extract a tree from a map. *)
   val to_tree : ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) Using_comparator.Tree.t
-
-  (**/**)
-
-  module Private : sig
-    module Tree : sig
-      type ('k, 'v) t
-
-      val balance_invariants : ('k, 'v) t -> bool
-      val are_balanced : ('k, 'v) t -> ('k, 'v) t -> bool
-      val are_almost_balanced : ('k, 'v) t -> ('k, 'v) t -> bool
-      val expose : ('k, 'v) t -> (('k, 'v) t * 'k * 'v * ('k, 'v) t) option
-      val empty : ('k, 'v) t
-      val create_if_balanced : ('k, 'v) t -> 'k -> 'v -> ('k, 'v) t -> ('k, 'v) t
-      val create_if_almost_balanced : ('k, 'v) t -> 'k -> 'v -> ('k, 'v) t -> ('k, 'v) t
-
-      val create_even_if_completely_unbalanced
-        :  ('k, 'v) t
-        -> 'k
-        -> 'v
-        -> ('k, 'v) t
-        -> ('k, 'v) t
-    end
-  end
-  [@@alert
-    map_private
-      "These definitions are only for testing the internal implementation of Map."]
 end

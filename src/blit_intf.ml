@@ -2,6 +2,9 @@
 
 open! Import
 
+[%%template
+[@@@kind_set.define values = (value_with_imm, value mod external_, value mod external64)]
+
 module Definitions = struct
   (** If [blit : (src, dst) blit], then [blit ~src ~src_pos ~len ~dst ~dst_pos] blits
       [len] values from [src] starting at position [src_pos] to [dst] at position
@@ -61,7 +64,7 @@ module Definitions = struct
     val sub : (('a, _, _) src, ('a, _, _) dst) sub
     val subo : (('a, _, _) src, ('a, _, _) dst) subo
   end
-  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
+  [@@kind k = values]
 
   module type%template S = sig
     type t
@@ -72,7 +75,7 @@ module Definitions = struct
       with type (_, _, _) src := t
        and type (_, _, _) dst := t
   end
-  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
+  [@@kind k = values]
 
   module type%template S1 = sig
     type 'a t
@@ -83,7 +86,7 @@ module Definitions = struct
       with type ('a, _, _) src := 'a t
        and type ('a, _, _) dst := 'a t
   end
-  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
+  [@@kind k = values]
 
   module type S_distinct = sig
     type src
@@ -148,7 +151,7 @@ module Definitions = struct
     val length : _ t -> int
     val unsafe_blit : ('a t, 'a t) blit
   end
-  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
+  [@@kind k = values]
 end
 
 module type Blit = sig
@@ -201,7 +204,7 @@ module type Blit = sig
   (** [Make1] is for blitting between two values of the same polymorphic type. *)
   module%template.portable Make1 (Sequence : Sequence1 [@kind k]) :
     S1 [@kind k] with type 'a t := 'a Sequence.t
-  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
+  [@@kind k = values]
 
   module%template.portable Make1_phantom2_distinct
       (Src : sig
@@ -219,4 +222,4 @@ module type Blit = sig
     S1_phantom2_distinct
     with type ('elt, 'p1, 'p2) src := ('elt, 'p1, 'p2) Src.t
     with type ('elt, 'p1, 'p2) dst := ('elt, 'p1, 'p2) Dst.t
-end
+end]

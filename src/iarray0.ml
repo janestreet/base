@@ -4,6 +4,9 @@ open! Import0
 
 type +'a t = 'a iarray
 
+[%%template
+[@@@mode.default c = (uncontended, shared)]
+
 (* This one should not operate on local arrays, because that would be more unsafe:
    extraction from a local array gets *global* elements. So if this function worked
    on local arrays it could be used to forget that a value was local by storing it
@@ -15,21 +18,33 @@ external unsafe_to_array__promise_no_mutation : 'a. 'a t -> 'a array = "%identit
 external unsafe_of_array__promise_no_mutation
   : 'a.
   ('a array[@local_opt]) -> ('a t[@local_opt])
-  = "%identity"
+  = "%identity"]
 
 (** Operators *)
 
 module O = struct
-  external ( .:() ) : ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
+  external ( .:() )
+    : 'a.
+    ('a t[@local_opt]) -> int -> ('a[@local_opt])
+    = "%array_safe_get"
+  [@@layout_poly]
 end
+
+open O
 
 (** Indexing and length *)
 
 [%%template
 [@@@mode.default c = (uncontended, shared, contended), p = (portable, nonportable)]
 
-external get : ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
-external unsafe_get : ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_unsafe_get"]
+external get : 'a. ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
+[@@layout_poly]
+
+external unsafe_get
+  : 'a.
+  ('a t[@local_opt]) -> int -> ('a[@local_opt])
+  = "%array_unsafe_get"
+[@@layout_poly]]
 
 external length : 'a. ('a t[@local_opt]) -> int = "%array_length" [@@layout_poly]
 

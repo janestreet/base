@@ -35,6 +35,8 @@
 open! Import
 
 [%%template:
+[@@@kind_set.define all = (value_or_null, bits64, float64)]
+
 (** We expose [t] to allow an optimization in Hashtbl that makes iter and fold more than
     twice as fast. We keep the type private to reduce opportunities for external code to
     violate avltree invariants. *)
@@ -52,14 +54,14 @@ type ('k, 'v) t = private
       { key : 'k
       ; mutable value : 'v
       }
-[@@kind k = (value_or_null, bits64, float64), v = (value_or_null, bits64, float64)]
+[@@kind k = all, v = all]
 
 (** Returns the first (leftmost) or last (rightmost) element in the tree. *)
 
 val first : ('k, 'v) t -> ('k * 'v) option
 val last : ('k, 'v) t -> ('k * 'v) option
 
-[@@@kind k = (value_or_null, bits64, float64), v = (value_or_null, bits64, float64)]
+[@@@kind k = all, v = all]
 
 type ('k, 'v) t := (('k, 'v) t[@kind k v])
 
@@ -97,86 +99,87 @@ val add
 val find : ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> ('v Option.t[@kind v])
 [@@mode c = (uncontended, shared)]
 
-[%%template:
-[@@@mode.default c = (uncontended, shared)]
-[@@@kind r = (value_or_null, bits64, float64)]
+include sig
+  [@@@mode.default c = (uncontended, shared)]
+  [@@@kind r = all]
 
-(** [find_and_call t ~compare k ~if_found ~if_not_found]
+  (** [find_and_call t ~compare k ~if_found ~if_not_found]
 
-    is equivalent to:
+      is equivalent to:
 
-    [match find t ~compare k with Some v -> if_found v | None -> if_not_found k]
+      [match find t ~compare k with Some v -> if_found v | None -> if_not_found k]
 
-    except that it doesn't allocate the option. *)
-val find_and_call
-  : 'k 'v 'r.
-  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
-  -> 'k
-  -> if_found:('v -> 'r)
-  -> if_not_found:('k -> 'r)
-  -> 'r
-[@@kind k = k, v = v, r = r]
+      except that it doesn't allocate the option. *)
+  val find_and_call
+    : 'k 'v 'r.
+    ('k, 'v) t
+    -> compare:('k -> 'k -> int)
+    -> 'k
+    -> if_found:('v -> 'r)
+    -> if_not_found:('k -> 'r)
+    -> 'r
+  [@@kind k = k, v = v, r = r]
 
-val findi_and_call
-  : 'k 'v 'r.
-  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
-  -> 'k
-  -> if_found:(key:'k -> data:'v -> 'r)
-  -> if_not_found:('k -> 'r)
-  -> 'r
-[@@kind k = k, v = v, r = r]
+  val findi_and_call
+    : 'k 'v 'r.
+    ('k, 'v) t
+    -> compare:('k -> 'k -> int)
+    -> 'k
+    -> if_found:(key:'k -> data:'v -> 'r)
+    -> if_not_found:('k -> 'r)
+    -> 'r
+  [@@kind k = k, v = v, r = r]
 
-[@@@kind a = (value_or_null, bits64, float64)]
+  [@@@kind a = all]
 
-val find_and_call1
-  : 'k 'v 'a 'r.
-  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
-  -> 'k
-  -> a:'a
-  -> if_found:('v -> 'a -> 'r)
-  -> if_not_found:('k -> 'a -> 'r)
-  -> 'r
-[@@kind k = k, v = v, a = a, r = r]
+  val find_and_call1
+    : 'k 'v 'a 'r.
+    ('k, 'v) t
+    -> compare:('k -> 'k -> int)
+    -> 'k
+    -> a:'a
+    -> if_found:('v -> 'a -> 'r)
+    -> if_not_found:('k -> 'a -> 'r)
+    -> 'r
+  [@@kind k = k, v = v, a = a, r = r]
 
-val findi_and_call1
-  : 'k 'v 'a 'r.
-  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
-  -> 'k
-  -> a:'a
-  -> if_found:(key:'k -> data:'v -> 'a -> 'r)
-  -> if_not_found:('k -> 'a -> 'r)
-  -> 'r
-[@@kind k = k, v = v, a = a, r = r]
+  val findi_and_call1
+    : 'k 'v 'a 'r.
+    ('k, 'v) t
+    -> compare:('k -> 'k -> int)
+    -> 'k
+    -> a:'a
+    -> if_found:(key:'k -> data:'v -> 'a -> 'r)
+    -> if_not_found:('k -> 'a -> 'r)
+    -> 'r
+  [@@kind k = k, v = v, a = a, r = r]
 
-[@@@kind b = (value_or_null, bits64, float64)]
+  [@@@kind b = all]
 
-val find_and_call2
-  : 'k 'v 'a 'b 'r.
-  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
-  -> 'k
-  -> a:'a
-  -> b:'b
-  -> if_found:('v -> 'a -> 'b -> 'r)
-  -> if_not_found:('k -> 'a -> 'b -> 'r)
-  -> 'r
-[@@kind k = k, v = v, a = a, b = b, r = r]
+  val find_and_call2
+    : 'k 'v 'a 'b 'r.
+    ('k, 'v) t
+    -> compare:('k -> 'k -> int)
+    -> 'k
+    -> a:'a
+    -> b:'b
+    -> if_found:('v -> 'a -> 'b -> 'r)
+    -> if_not_found:('k -> 'a -> 'b -> 'r)
+    -> 'r
+  [@@kind k = k, v = v, a = a, b = b, r = r]
 
-val findi_and_call2
-  : 'k 'v 'a 'b 'r.
-  ('k, 'v) t
-  -> compare:('k -> 'k -> int)
-  -> 'k
-  -> a:'a
-  -> b:'b
-  -> if_found:(key:'k -> data:'v -> 'a -> 'b -> 'r)
-  -> if_not_found:('k -> 'a -> 'b -> 'r)
-  -> 'r
-[@@kind k = k, v = v, a = a, b = b, r = r]]
+  val findi_and_call2
+    : 'k 'v 'a 'b 'r.
+    ('k, 'v) t
+    -> compare:('k -> 'k -> int)
+    -> 'k
+    -> a:'a
+    -> b:'b
+    -> if_found:(key:'k -> data:'v -> 'a -> 'b -> 'r)
+    -> if_not_found:('k -> 'a -> 'b -> 'r)
+    -> 'r
+  [@@kind k = k, v = v, a = a, b = b, r = r]
+end
 
 (** Returns true if key is present in the tree, and false otherwise. *)
 val mem : 'k 'v. ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> bool
@@ -196,11 +199,13 @@ val remove
 val fold
   : 'k 'v 'acc.
   ('k, 'v) t -> init:'acc -> f:(key:'k -> data:'v -> 'acc -> 'acc) -> 'acc
+[@@mode c = (uncontended, shared)]
 
 (** Iterates over the tree. *)
-val iter : ('k, 'v) t -> f:(key:'k -> data:'v -> unit) -> unit
+val iter : 'k 'v. ('k, 'v) t -> f:(key:'k -> data:'v -> unit) -> unit
+[@@mode c = (uncontended, shared)]
 
-(** Map over the the tree, changing the data in place. *)
+(** Map over the tree, changing the data in place. *)
 val mapi_inplace : ('k, 'v) t -> f:(key:'k -> data:'v -> 'v) -> unit
 
-val choose_exn : ('k, 'v) t -> 'k * 'v]
+val choose_exn : ('k, 'v) t -> 'k * 'v [@@mode c = (uncontended, shared)]]

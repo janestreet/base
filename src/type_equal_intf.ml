@@ -213,7 +213,9 @@ module type Type_equal = sig
       ]}
 
       this would give a type error. *)
-  val conv : ('a, 'b) t -> 'a -> 'b
+  val%template conv : 'a 'b. ('a, 'b) t -> 'a -> 'b
+  [@@kind k = (value_or_null, value_or_null & bits64)]
+  [@@mode l = (global, local), v = (read_write, read, immutable)]
 
   (** It is always safe to conclude that if type [a] equals [b], then for any type ['a t],
       type [a t] equals [b t]. The OCaml type checker uses this fact when it can. However,

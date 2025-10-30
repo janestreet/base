@@ -3141,6 +3141,62 @@ module Tree = struct
 
     let to_tree t = Tree0.Build_increasing.to_tree_unchecked t
   end
+
+  module Expert = struct
+    type ('k, 'v, 'cmp) t = ('k, 'v, 'cmp) Tree0.t =
+      | Empty
+      | Leaf of
+          { key : 'k [@globalized]
+          ; data : 'v [@globalized]
+          }
+      | Node of
+          { left : ('k, 'v, 'cmp) t [@globalized]
+          ; key : 'k [@globalized]
+          ; data : 'v [@globalized]
+          ; right : ('k, 'v, 'cmp) t [@globalized]
+          ; weight : int
+          }
+    [@@deriving sexp_of]
+
+    let balance_invariants t = Tree0.balance_invariants t
+
+    let order_invariants ~comparator t =
+      Tree0.order_invariants t ~compare_key:(Comparator.compare comparator)
+    ;;
+
+    let are_balanced t1 t2 =
+      let w1 = Tree0.weight t1
+      and w2 = Tree0.weight t2 in
+      (not (Tree0.is_too_heavy ~weight:w1 ~for_weight:w2))
+      && not (Tree0.is_too_heavy ~weight:w2 ~for_weight:w1)
+    ;;
+
+    let need_rebalance_at_most_once t1 t2 =
+      let w1 = Tree0.weight t1
+      and w2 = Tree0.weight t2 in
+      match t1, t2 with
+      | Node node, _ when Tree0.is_too_heavy ~weight:w1 ~for_weight:w2 ->
+        (not (Tree0.is_too_heavy ~weight:(w1 - 1) ~for_weight:w2))
+        && Tree0.may_rotate_just_once
+             ~inner_sibling_weight:(Tree0.weight node.right)
+             ~outer_sibling_weight:(Tree0.weight node.left)
+      | _, Node node when Tree0.is_too_heavy ~weight:w2 ~for_weight:w1 ->
+        (not (Tree0.is_too_heavy ~weight:(w2 - 1) ~for_weight:w1))
+        && Tree0.may_rotate_just_once
+             ~inner_sibling_weight:(Tree0.weight node.left)
+             ~outer_sibling_weight:(Tree0.weight node.right)
+      | _ -> true
+    ;;
+
+    let create_assuming_balanced_unchecked = Tree0.create
+    let create_and_rebalance_at_most_once_unchecked = Tree0.bal
+    let create_and_rebalance_unchecked = Tree0.join
+    let concat_and_rebalance_at_most_once_unchecked = Tree0.concat_unchecked
+    let concat_and_rebalance_unchecked = Tree0.concat_and_balance_unchecked
+    let singleton = Tree0.singleton
+    let empty = Empty
+    let length_of_weight = Int.pred
+  end
 end
 
 module Using_comparator = struct
@@ -3582,48 +3638,4 @@ module Poly = struct
   let map_keys t ~f = Using_comparator.map_keys ~comparator t ~f
   let map_keys_exn t ~f = Using_comparator.map_keys_exn ~comparator t ~f
   let transpose_keys t = Using_comparator.transpose_keys ~comparator t
-end
-
-module Private = struct
-  module Tree = struct
-    type ('k, 'v) t = ('k, 'v, Comparator.Poly.comparator_witness) Tree0.t
-
-    let balance_invariants t = Tree0.balance_invariants t
-
-    let are_balanced t1 t2 =
-      let w1 = Tree0.weight t1
-      and w2 = Tree0.weight t2 in
-      (not (Tree0.is_too_heavy ~weight:w1 ~for_weight:w2))
-      && not (Tree0.is_too_heavy ~weight:w2 ~for_weight:w1)
-    ;;
-
-    let are_almost_balanced t1 t2 =
-      let w1 = Tree0.weight t1
-      and w2 = Tree0.weight t2 in
-      match t1, t2 with
-      | Node node, _ when Tree0.is_too_heavy ~weight:w1 ~for_weight:w2 ->
-        (not (Tree0.is_too_heavy ~weight:(w1 - 1) ~for_weight:w2))
-        && Tree0.may_rotate_just_once
-             ~inner_sibling_weight:(Tree0.weight node.right)
-             ~outer_sibling_weight:(Tree0.weight node.left)
-      | _, Node node when Tree0.is_too_heavy ~weight:w2 ~for_weight:w1 ->
-        (not (Tree0.is_too_heavy ~weight:(w2 - 1) ~for_weight:w1))
-        && Tree0.may_rotate_just_once
-             ~inner_sibling_weight:(Tree0.weight node.left)
-             ~outer_sibling_weight:(Tree0.weight node.right)
-      | _ -> true
-    ;;
-
-    let expose t =
-      match (t : (_, _, _) Tree0.t) with
-      | Empty -> None
-      | Leaf { key; data } -> Some (Tree0.Empty, key, data, Tree0.Empty)
-      | Node { left; key; data; right; _ } -> Some (left, key, data, right)
-    ;;
-
-    let empty = Tree0.Empty
-    let create_if_balanced = Tree0.create
-    let create_if_almost_balanced = Tree0.bal
-    let create_even_if_completely_unbalanced = Tree0.join
-  end
 end

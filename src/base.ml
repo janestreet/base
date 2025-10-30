@@ -147,6 +147,7 @@ module Portable_lazy = Portable_lazy
 module Pretty_printer = Pretty_printer
 module Printf = Printf
 module Linked_queue = Linked_queue
+module Nonempty_list = Nonempty_list
 module Queue = Queue
 module Random = Random
 module Ref = Ref
@@ -250,7 +251,7 @@ module Export = struct
 
   type%template nonrec 'a option = ('a Option.t[@kind k])
   [@@deriving compare ~localize, equal ~localize, sexp ~stackify]
-  [@@kind k = (float64, bits32, bits64, word)]
+  [@@kind k = base_non_value]
 
   type ('a, 'b) result = ('a, 'b) Result.t
   [@@deriving
@@ -258,7 +259,7 @@ module Export = struct
 
   type%template nonrec ('a, 'b) result = (('a, 'b) Result.t[@kind k])
   [@@deriving compare ~localize, equal ~localize, sexp ~stackify]
-  [@@kind k = (float64, bits32, bits64, word)]
+  [@@kind k = base_non_value]
 
   type 'a ref = 'a Ref.t
   [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
@@ -324,9 +325,9 @@ module Export = struct
 
   (* Declared as an externals so that the compiler skips the caml_modify when possible and
      to keep reference unboxing working *)
-  external ( ! ) : ('a ref[@local_opt]) -> 'a = "%field0"
-  external ref : 'a -> ('a ref[@local_opt]) = "%makemutable"
-  external ( := ) : ('a ref[@local_opt]) -> 'a -> unit = "%setfield0"
+  external ( ! ) : 'a. ('a ref[@local_opt]) -> 'a = "%field0"
+  external ref : 'a. 'a -> ('a ref[@local_opt]) = "%makemutable"
+  external ( := ) : 'a. ('a ref[@local_opt]) -> 'a -> unit = "%setfield0"
 
   (** Pair operations *)
 
@@ -353,7 +354,7 @@ module Export = struct
   type 'a or_null = 'a Or_null.t =
     | Null
     | This of 'a
-  [@@deriving globalize, sexp ~stackify]
+  [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp ~stackify]
 end
 
 include Export

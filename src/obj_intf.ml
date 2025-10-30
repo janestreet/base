@@ -16,12 +16,12 @@ module Definitions = struct
   [@@deriving sexp ~stackify, compare ~localize, globalize]
 end
 
-module type S = sig
+module type%template [@kind.explicit k = (value, value_or_null)] S = sig
   open Definitions
 
-  type t = Stdlib.Obj.t
+  type t
 
-  external%template repr : ('a[@local_opt]) -> (t[@local_opt]) = "%identity"
+  external%template repr : 'a. ('a[@local_opt]) -> (t[@local_opt]) = "%identity"
   [@@mode
     c = (uncontended, shared, contended)
     , o = (many, once)
@@ -30,12 +30,21 @@ module type S = sig
 
   (** [dup t] returns a shallow copy of [t]. However if [t] is immutable then it might be
       returned unchanged. *)
-  val dup : t -> t
+  external dup : t -> t = "caml_obj_dup"
 
+  (** Returns the tag of the block. *)
   external tag : t -> int = "caml_obj_tag" [@@noalloc]
-  val size : t -> int [@@zero_alloc]
+
+  (** Computes the total size (in words) of the value. *)
+  val size : t -> int
+  [@@zero_alloc]
+
+  (** Tests if the argument is an immediate value (int or variant constructor). *)
   external is_int : t -> bool = "%obj_is_int"
-  val is_block : t -> bool [@@zero_alloc]
+
+  (** Tests if the argument is a heap-allocated block. *)
+  val is_block : t -> bool
+  [@@zero_alloc]
 
   (** Checks whether a value is stack-allocated. *)
   external is_stack : t -> bool = "caml_dummy_obj_is_stack"
@@ -51,29 +60,21 @@ module type S = sig
 
   (** Computes the total size (in words, including the headers) of all heap blocks
       accessible from the argument. Statically allocated blocks are included. *)
-  val reachable_words : t -> int
+  external reachable_words : t -> int = "caml_obj_reachable_words"
 
   module Expert : sig
-    include module type of struct
-      include Stdlib.Obj
-    end
-
-    external new_mixed_block
-      :  tag:int
-      -> total_words:int
-      -> scannable_words:int
-      -> t
-      = "Base_obj_new_mixed_block"
-
-    external%template obj : (t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+    external%template obj : 'a. (t[@local_opt]) -> ('a[@local_opt]) = "%identity"
     [@@mode
       c = (uncontended, shared, contended)
       , o = (many, once)
       , p = (nonportable, portable)
       , u = (aliased, unique)]
 
-    val%template field : t -> int -> t [@@mode l = (local, global)]
-    val%template set_field : t -> int -> t -> unit [@@mode l = (local, global)]
+    [%%template:
+    [@@@mode.default l = (local, global)]
+
+    val field : t -> int -> t
+    val set_field : t -> int -> t -> unit]
 
     external raw_field : (t[@local_opt]) -> int -> raw_data = "caml_obj_raw_field"
 
@@ -94,7 +95,9 @@ module type Obj = sig
     include Definitions
   end
 
-  include S (** @inline *)
+  type t = Stdlib.Obj.t
+
+  include%template S [@kind.explicit value] with type t := t (** @inline *)
 
   val first_non_constant_constructor_tag : int
   val last_non_constant_constructor_tag : int
@@ -153,5 +156,34 @@ module type Obj = sig
     include module type of struct
       include Stdlib.Ephemeron
     end
+  end
+
+  module Expert : sig
+    include module type of struct
+      include Stdlib.Obj
+    end
+
+    include module type of Expert
+
+    external new_mixed_block
+      :  tag:int
+      -> total_words:int
+      -> scannable_words:int
+      -> t
+      = "Base_obj_new_mixed_block"
+  end
+
+  module Nullable : sig
+    (** Versions of [Obj] functions that work on [maybe_null] values.
+
+        Defines a distinct type to avoid optimizations assuming its values are [non_null]. *)
+
+    type t
+
+    include%template S [@kind.explicit value_or_null] with type t := t (** @inline *)
+
+    (** Tests if the argument is an immediate value (int, variant constructor, or null). *)
+    val is_immediate : t -> bool
+    [@@zero_alloc]
   end
 end

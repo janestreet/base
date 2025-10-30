@@ -25,7 +25,7 @@ module Definitions = struct
     type 'a select_fn := 'a -> 'a -> 'a
 
     [@@@mode.default m]
-    [@@@kind.default k = (value, float64, bits32, bits64, word)]
+    [@@@kind.default k = base_or_null]
 
     (** [lexicographic cmps x y] compares [x] and [y] lexicographically using functions in
         the list [cmps]. *)

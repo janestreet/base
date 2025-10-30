@@ -556,6 +556,7 @@ module type Modes = sig
     , c = (uncontended, shared, contended)
     , m = (once, many)
     , a = (unique, aliased)]
+  [@@kind k = base_or_null]
 
   (** Wrap values in the [global_] mode, even in a [local_] context. *)
   module Global : sig
@@ -602,6 +603,10 @@ module type Modes = sig
     type 'a t = { aliased : 'a } [@@unboxed]
   end
 
+  module Forkable : sig
+    type 'a t = { forkable : 'a } [@@unboxed]
+  end
+
   module Unyielding : sig
     type 'a t = { unyielding : 'a } [@@unboxed]
   end
@@ -622,6 +627,8 @@ module type Modes = sig
   (** Abstract over whether a value is [portable] or [nonportable] *)
   module At_portability : sig
     type nonportable_
+    [@@allow_redundant_modalities
+      "While [global] implies [forkable unyielding], we include them for clarity"]
 
     (** Phantom type parameter for {!t} which represents that the inhabitant is known to
         be [portable]. *)
@@ -647,6 +654,8 @@ module type Modes = sig
         [('a, nonportable) t] represents a ['a] whose portability is unknown. This type
         does not mode-cross along the portability axis, even if ['a] usually does. *)
     type (+!'a, +'portability) t
+    [@@allow_redundant_modalities
+      "While [global] implies [forkable unyielding], we include them for clarity"]
     [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
     external wrap_portable : ('a[@local_opt]) -> (('a, _) t[@local_opt]) = "%identity"
@@ -813,6 +822,7 @@ module type Modes = sig
     type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
     type 'a many = 'a Many.t = { many : 'a } [@@unboxed]
     type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
+    type 'a forkable = 'a Forkable.t = { forkable : 'a } [@@unboxed]
     type 'a unyielding = 'a Unyielding.t = { unyielding : 'a } [@@unboxed]
     type 'a immutable_data = 'a Immutable_data.t = { immutable_data : 'a } [@@unboxed]
   end

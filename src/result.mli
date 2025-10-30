@@ -8,7 +8,7 @@ type ('ok, 'err) t =
   | Ok of 'ok
   | Error of 'err
 [@@deriving sexp ~stackify, compare ~localize, equal ~localize, globalize]
-[@@kind k = (float64, bits32, bits64, word)]
+[@@kind k = base_non_value]
 
 (** ['ok] is the return type, and ['err] is often an error message string.
 
@@ -30,7 +30,7 @@ type ('ok, 'err) t = ('ok, 'err) Stdlib.result =
   | Error of 'err
 [@@deriving
   sexp ~stackify, sexp_grammar, compare ~localize, equal ~localize, hash, globalize]
-[@@kind k = (value_or_null, immediate, immediate64)]]
+[@@kind k = value_or_null_with_imm]]
 
 include%template
   Monad.S2
@@ -50,8 +50,7 @@ val fail : 'err -> (_, 'err) t
 val failf : ('a, unit, string, (_, string) t) format4 -> 'a
 
 [%%template:
-[@@@kind.default
-  k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+[@@@kind.default k = base_or_null_with_imm]
 
 val is_ok : 'ok 'err. (('ok, 'err) t[@kind k]) -> bool
 val is_error : 'ok 'err. (('ok, 'err) t[@kind k]) -> bool]
@@ -68,9 +67,7 @@ val iter_error : 'ok 'err. ('ok, 'err) t -> f:('err -> unit) -> unit
 val%template map
   : 'a 'b 'err.
   (('a, 'err) t[@kind ki]) -> f:('a -> 'b) -> (('b, 'err) t[@kind ko])
-[@@kind
-  ki = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)
-  , ko = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+[@@kind ki = base_or_null_with_imm, ko = base_or_null_with_imm]
 
 val map_error : 'ok 'err 'c. ('ok, 'err) t -> f:('err -> 'c) -> ('ok, 'c) t
 
@@ -102,7 +99,8 @@ val combine_errors_unit : 'err. (unit, 'err) t list -> (unit, 'err list) t
           Result.to_either (Result.try_with (fun () -> Int.of_string string)))
       ;;
     ]} *)
-val to_either : 'ok 'err. ('ok, 'err) t -> ('ok, 'err) Either0.t
+val%template to_either : 'ok 'err. ('ok, 'err) t -> ('ok, 'err) Either0.t
+[@@mode m = (global, local)]
 
 val of_either : 'ok 'err. ('ok, 'err) Either0.t -> ('ok, 'err) t
 
@@ -117,8 +115,7 @@ module Export : sig
     | Error of 'err
 
   [%%template:
-  [@@@kind.default
-    k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+  [@@@kind.default k = base_or_null_with_imm]
 
   val is_ok : 'ok 'err. (('ok, 'err) t[@kind k]) -> bool
   val is_error : 'ok 'err. (('ok, 'err) t[@kind k]) -> bool]

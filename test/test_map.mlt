@@ -69,7 +69,10 @@ Error: Signature mismatch in included functor's parameter:
          val compare :
            t Ppx_compare_lib__Ppx_compare_lib_intf.Definitions.compare @@
            portable (* in a structure at nonportable *)
-       The first is nonportable but the second is portable.
+       The left-hand side is nonportable
+       because it contains a usage (of the value toplevel_ref at File "test_map.mlt", line 56, characters 18-30)
+       which is expected to be uncontended.
+       However, the right-hand side is portable.
        File "comparator_intf.ml", line 135, characters 6-54:
          Expected declaration
        File "test_map.mlt", line 55, characters 6-13: Actual declaration

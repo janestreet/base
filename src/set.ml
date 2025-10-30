@@ -1575,6 +1575,58 @@ module Tree = struct
         ~sexp_of_elt:(Comparator.sexp_of_t comparator)
     ;;
   end
+
+  module Expert = struct
+    type ('a, 'cmp) t = ('a, 'cmp) Tree0.t =
+      | Empty
+      | Leaf of { elt : 'a [@globalized] }
+      | Node of
+          { left : ('a, 'cmp) t [@globalized]
+          ; elt : 'a [@globalized]
+          ; right : ('a, 'cmp) t [@globalized]
+          ; weight : int
+          }
+    [@@deriving sexp_of]
+
+    let balance_invariants t = Tree0.balance_invariants t
+
+    let order_invariants ~comparator t =
+      Tree0.order_invariants t ~compare_elt:(Comparator.compare comparator)
+    ;;
+
+    let are_balanced t1 t2 =
+      let w1 = Tree0.weight t1
+      and w2 = Tree0.weight t2 in
+      (not (Tree0.is_too_heavy ~weight:w1 ~for_weight:w2))
+      && not (Tree0.is_too_heavy ~weight:w2 ~for_weight:w1)
+    ;;
+
+    let need_rebalance_at_most_once t1 t2 =
+      let w1 = Tree0.weight t1
+      and w2 = Tree0.weight t2 in
+      match t1, t2 with
+      | Node node, _ when Tree0.is_too_heavy ~weight:w1 ~for_weight:w2 ->
+        (not (Tree0.is_too_heavy ~weight:(w1 - 1) ~for_weight:w2))
+        && Tree0.may_rotate_just_once
+             ~inner_sibling_weight:(Tree0.weight node.right)
+             ~outer_sibling_weight:(Tree0.weight node.left)
+      | _, Node node when Tree0.is_too_heavy ~weight:w2 ~for_weight:w1 ->
+        (not (Tree0.is_too_heavy ~weight:(w2 - 1) ~for_weight:w1))
+        && Tree0.may_rotate_just_once
+             ~inner_sibling_weight:(Tree0.weight node.left)
+             ~outer_sibling_weight:(Tree0.weight node.right)
+      | _ -> true
+    ;;
+
+    let create_assuming_balanced_unchecked = Tree0.create
+    let create_and_rebalance_at_most_once_unchecked = Tree0.bal
+    let create_and_rebalance_unchecked = Tree0.join
+    let concat_and_rebalance_at_most_once_unchecked = Tree0.merge
+    let concat_and_rebalance_unchecked = Tree0.concat
+    let singleton = Tree0.singleton
+    let empty = Empty
+    let length_of_weight = Int.pred
+  end
 end
 
 module Using_comparator = struct
@@ -1772,48 +1824,4 @@ module Poly = struct
   let filter_map a ~f = Using_comparator.filter_map ~comparator a ~f
   let of_tree tree = { comparator; tree }
   let to_tree t = t.tree
-end
-
-module Private = struct
-  module Tree = struct
-    type 'a t = ('a, Comparator.Poly.comparator_witness) Tree0.t
-
-    let balance_invariants t = Tree0.balance_invariants t
-
-    let are_balanced t1 t2 =
-      let w1 = Tree0.weight t1
-      and w2 = Tree0.weight t2 in
-      (not (Tree0.is_too_heavy ~weight:w1 ~for_weight:w2))
-      && not (Tree0.is_too_heavy ~weight:w2 ~for_weight:w1)
-    ;;
-
-    let are_almost_balanced t1 t2 =
-      let w1 = Tree0.weight t1
-      and w2 = Tree0.weight t2 in
-      match t1, t2 with
-      | Node node, _ when Tree0.is_too_heavy ~weight:w1 ~for_weight:w2 ->
-        (not (Tree0.is_too_heavy ~weight:(w1 - 1) ~for_weight:w2))
-        && Tree0.may_rotate_just_once
-             ~inner_sibling_weight:(Tree0.weight node.right)
-             ~outer_sibling_weight:(Tree0.weight node.left)
-      | _, Node node when Tree0.is_too_heavy ~weight:w2 ~for_weight:w1 ->
-        (not (Tree0.is_too_heavy ~weight:(w2 - 1) ~for_weight:w1))
-        && Tree0.may_rotate_just_once
-             ~inner_sibling_weight:(Tree0.weight node.left)
-             ~outer_sibling_weight:(Tree0.weight node.right)
-      | _ -> true
-    ;;
-
-    let expose t =
-      match (t : (_, _) Tree0.t) with
-      | Empty -> None
-      | Leaf { elt } -> Some (Tree0.Empty, elt, Tree0.Empty)
-      | Node { left; elt; right; _ } -> Some (left, elt, right)
-    ;;
-
-    let empty = Tree0.Empty
-    let create_if_balanced = Tree0.create
-    let create_if_almost_balanced = Tree0.bal
-    let create_even_if_completely_unbalanced = Tree0.join
-  end
 end

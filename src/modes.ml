@@ -12,6 +12,7 @@ type%template 'a t = { modal : 'a }
   , c = (uncontended, shared, contended)
   , m = (once, many)
   , a = (unique, aliased)]
+[@@kind k = base_or_null]
 
 module Global = struct
   include Modes_intf.Definitions.Global
@@ -356,6 +357,10 @@ module Aliased = struct
   type 'a t = { aliased : 'a } [@@unboxed]
 end
 
+module Forkable = struct
+  type 'a t = { forkable : 'a } [@@unboxed]
+end
+
 module Unyielding = struct
   type 'a t = { unyielding : 'a } [@@unboxed]
 end
@@ -415,6 +420,8 @@ end
 
 module At_portability = struct
   type nonportable_
+  [@@allow_redundant_modalities
+    "While [global] implies [forkable unyielding], we include them for clarity"]
   [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
   (* We only need [hash_fold] and local comparisons. *)
@@ -433,6 +440,8 @@ module At_portability = struct
   [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
   type (+!'a, +'portability) t
+  [@@allow_redundant_modalities
+    "While [global] implies [forkable unyielding], we include them for clarity"]
 
   external wrap_portable : ('a[@local_opt]) -> (('a, _) t[@local_opt]) = "%identity"
 
@@ -556,6 +565,7 @@ module Export = struct
   type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
   type 'a many = 'a Many.t = { many : 'a } [@@unboxed]
   type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
+  type 'a forkable = 'a Forkable.t = { forkable : 'a } [@@unboxed]
   type 'a unyielding = 'a Unyielding.t = { unyielding : 'a } [@@unboxed]
   type 'a immutable_data = 'a Immutable_data.t = { immutable_data : 'a } [@@unboxed]
 end

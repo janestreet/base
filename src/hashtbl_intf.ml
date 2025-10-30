@@ -2,9 +2,13 @@ open! Import
 module Sexp = Sexp0
 
 module Definitions = struct
+  [%%template
+  [@@@kind_set.define additional = (bits64, float64)]
+  [@@@kind_set.define all = (additional, value_or_null)]
+
   (** @canonical Base.Hashtbl.Key *)
-  module%template Key = struct
-    [@@@kind.default k = (value, bits64, float64)]
+  module Key = struct
+    [@@@kind.default k = (additional, value)]
     [@@@mode.default m = (local, global), p = (nonportable, portable)]
 
     module type S = sig
@@ -22,7 +26,7 @@ module Definitions = struct
 
   module Merge_into_action = Dictionary_mutable.Merge_into_action
 
-  module type Accessors = sig
+  module type%template [@mode s = (uncontended, shared)] Accessors = sig
     (** {2 Accessors} *)
 
     type ('a, 'b) t
@@ -34,6 +38,7 @@ module Definitions = struct
     (** @inline *)
     include
       Dictionary_mutable.Accessors
+      [@mode s]
       with type 'key key := 'key key
        and type ('key, 'data, _) t := ('key, 'data) t
        and type ('fn, _, _, _) accessor := 'fn
@@ -41,6 +46,9 @@ module Definitions = struct
     val sexp_of_key : ('a, _) t -> 'a key -> Sexp.t
     val capacity : _ t -> int
     val growth_allowed : _ t -> bool
+
+    [%%template:
+    [@@@mode.default c = (uncontended, s)]
 
     (** We redeclare [choose*] below to add implementation-specific notes on performance. *)
 
@@ -55,12 +63,12 @@ module Definitions = struct
         This hash bias can lead to degenerate performance in some cases, such as clearing
         a hash table using repeated [choose] and [remove]. At each iteration, finding the
         next element may have to scan farther from its initial hash value. *)
-    val%template choose : ('a, 'b) t -> ('a key * 'b) option
-    [@@mode m = global]
+    val choose : ('a, 'b) t -> ('a key * 'b) option
+    [@@mode m = global, c = c]
 
     (** Like [choose], but returns a local pair option *)
-    val%template choose : ('a, 'b) t -> ('a key Modes.Global.t * 'b Modes.Global.t) option
-    [@@mode m = local]
+    val choose : ('a, 'b) t -> ('a key Modes.Global.t * 'b Modes.Global.t) option
+    [@@mode m = local, c = c]
 
     (** Like [choose]. Raises if [t] is empty. *)
     val choose_exn : ('a, 'b) t -> 'a key * 'b
@@ -85,7 +93,7 @@ module Definitions = struct
       -> 'a key * 'b
 
     (** [find_or_null] returns [This data] if the key is found, [Null] if not. *)
-    val find_or_null : ('a, 'b) t -> 'a key -> 'b or_null
+    val find_or_null : 'a 'b. ('a, 'b) t -> 'a key -> 'b or_null
 
     (** Just like [find_and_call], but takes an extra argument which is passed to
         [if_found] and [if_not_found], so that the client code can avoid allocating
@@ -127,7 +135,7 @@ module Definitions = struct
       -> b:'e
       -> if_found:(key:'a key -> data:'b -> 'd -> 'e -> 'c)
       -> if_not_found:('a key -> 'd -> 'e -> 'c)
-      -> 'c
+      -> 'c]
 
     (** [equal f t1 t2] and [similar f t1 t2] both return true iff [t1] and [t2] have the
         same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)]. [equal] and
@@ -137,7 +145,7 @@ module Definitions = struct
     val similar : ('b1 -> 'b2 -> bool) -> ('a, 'b1) t -> ('a, 'b2) t -> bool
   end
 
-  module type Multi = sig
+  module type%template [@mode s = (uncontended, shared)] Multi = sig
     type ('a, 'b) t
     type 'a key
 
@@ -151,7 +159,8 @@ module Definitions = struct
 
     (** [find_multi t key] returns the empty list if [key] is not present in the table,
         returns [t]'s values for [key] otherwise. *)
-    val find_multi : ('a, 'b list) t -> 'a key -> 'b list
+    val%template find_multi : 'a 'b. ('a, 'b list) t -> 'a key -> 'b list
+    [@@mode c = (uncontended, s)]
   end
 
   type ('key, 'data, 'z) create_options =
@@ -178,10 +187,14 @@ module Definitions = struct
        and type ('fn, 'key, 'data, _) creator := ('key key, 'data, 'fn) create_options
   end
 
-  module type Creators = sig
+  module type%template
+    [@mode (p, c) = ((nonportable, uncontended), (portable, contended))] Creators = sig
     type ('a, 'b) t
 
     (** {2 Creators} *)
+
+    [%%template:
+    [@@@mode.default (p, c) = ((nonportable, uncontended), (p, c))]
 
     (** The module you pass to [create] must have a type that is hashable, sexpable, and
         comparable.
@@ -193,9 +206,10 @@ module Definitions = struct
         - : (int, '_a) Hashtbl.t = <abstr>;;
         v} *)
     val create
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'b.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> ('a, 'b) t
 
     (** Example:
@@ -205,9 +219,10 @@ module Definitions = struct
          - : [ `Duplicate_key of int | `Ok of (int, string) Hashtbl.t ] = `Ok <abstr>
         v} *)
     val of_alist
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'b.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> ('a * 'b) list
       -> [ `Ok of ('a, 'b) t | `Duplicate_key of 'a ]
 
@@ -225,23 +240,26 @@ module Definitions = struct
         - : [ `Duplicate_keys of int list | `Ok of (int, string) Hashtbl.t ] = `Duplicate_keys [1; 2]
         v} *)
     val of_alist_report_all_dups
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'b.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> ('a * 'b) list
       -> [ `Ok of ('a, 'b) t | `Duplicate_keys of 'a list ]
 
     val of_alist_or_error
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'b.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> ('a * 'b) list
       -> ('a, 'b) t Or_error.t
 
     val of_alist_exn
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'b.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> ('a * 'b) list
       -> ('a, 'b) t
 
@@ -258,9 +276,10 @@ module Definitions = struct
       - : string list = ["b"; "a"]
         v} *)
     val of_alist_multi
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'b.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> ('a * 'b) list
       -> ('a, 'b list) t
 
@@ -291,9 +310,10 @@ module Definitions = struct
         - : int = 2
         v} *)
     val create_mapped
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'b 'r.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> get_key:('r -> 'a)
       -> get_data:('r -> 'b)
       -> 'r list
@@ -304,25 +324,28 @@ module Definitions = struct
           = of_alist [get_key x1, x1; ...; get_key xn, xn]
         ]} *)
     val create_with_key
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'r.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> get_key:('r -> 'a)
       -> 'r list
       -> [ `Ok of ('a, 'r) t | `Duplicate_keys of 'a list ]
 
     val create_with_key_or_error
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'r.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> get_key:('r -> 'a)
       -> 'r list
       -> ('a, 'r) t Or_error.t
 
     val create_with_key_exn
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'r.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> get_key:('r -> 'a)
       -> 'r list
       -> ('a, 'r) t
@@ -345,17 +368,19 @@ module Definitions = struct
          - : (int * int) list = [(2, 4); (1, 6); (0, 1)]
         v} *)
     val group
-      :  ?growth_allowed:bool (** defaults to [true] *)
+      : 'a 'b 'r.
+      ?growth_allowed:bool (** defaults to [true] *)
       -> ?size:int (** initial size -- default 0 *)
-      -> 'a Key.t
+      -> ('a Key.t[@mode p])
       -> get_key:('r -> 'a)
       -> get_data:('r -> 'b)
       -> combine:('b -> 'b -> 'b)
       -> 'r list
-      -> ('a, 'b) t
+      -> ('a, 'b) t]
   end
 
-  module type S_without_submodules = sig
+  module type%template
+    [@mode (p, s) = ((nonportable, uncontended), (portable, shared))] S_without_submodules = sig
     val hash : 'a -> int
     val hash_param : int -> int -> 'a -> int
 
@@ -367,12 +392,12 @@ module Definitions = struct
         OCaml's built-in polymorphic comparison and and polymorphic hashing. *)
     val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b) t -> Sexp.t
 
-    include Creators with type ('a, 'b) t := ('a, 'b) t (** @inline *)
+    include Creators [@mode p] with type ('a, 'b) t := ('a, 'b) t (** @inline *)
 
-    include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
+    include Accessors [@mode s] with type ('a, 'b) t := ('a, 'b) t with type 'a key = 'a
     (** @inline *)
 
-    include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
+    include Multi [@mode s] with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
     (** @inline *)
 
     val hashable_s : ('key, _) t -> 'key Key.t
@@ -380,7 +405,7 @@ module Definitions = struct
     include Invariant.S2 with type ('a, 'b) t := ('a, 'b) t
   end
 
-  module type S_poly = sig
+  module type%template [@mode s = (uncontended, shared)] S_poly = sig
     type ('a, 'b) t [@@deriving sexp, sexp_grammar]
 
     val hashable : 'a Hashable.t
@@ -394,8 +419,10 @@ module Definitions = struct
       with type ('key, 'data, 'z) create_options :=
         ('key, 'data, 'z) create_options_without_first_class_module
 
-    include Accessors with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
-    include Multi with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
+    include
+      Accessors [@mode s] with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
+
+    include Multi [@mode s] with type ('a, 'b) t := ('a, 'b) t with type 'a key := 'a key
   end
 
   module type For_deriving = sig
@@ -442,13 +469,11 @@ module Definitions = struct
       -> bool
   end
 
-  module type%template Non_value = sig
+  module type Non_value = sig
     include sig
-      type (!'a, !'b) t
-      [@@deriving sexp_of]
-      [@@kind k = (float64, bits64, value_or_null), v = (float64, bits64, value_or_null)]
+      type (!'a, !'b) t [@@deriving sexp_of] [@@kind k = all, v = all]
 
-      [@@@kind k = (float64, bits64, value_or_null), v = (float64, bits64, value_or_null)]
+      [@@@kind k = all, v = all]
 
       type (!'a, !'b) t := (('a, 'b) t[@kind k v])
       type 'a key := ('a Key.t[@kind k] [@mode p]) [@@mode p = (nonportable, portable)]
@@ -465,10 +490,11 @@ module Definitions = struct
       val singleton
         :  ?growth_allowed:bool
         -> ?size:int
-        -> 'k key
+        -> ('k key[@mode p])
         -> 'k
         -> 'v
         -> ('k, 'v) t
+      [@@mode p = (nonportable, portable)]
 
       val length : ('k, 'v) t -> int [@@mode c = (uncontended, shared)]
       val capacity : ('k, 'v) t -> int [@@mode c = (uncontended, shared)]
@@ -480,7 +506,7 @@ module Definitions = struct
       val find : ('k, 'v) t -> 'k -> ('v Option.t[@kind v])
       [@@mode c = (uncontended, shared)]
 
-      val find_exn : ('k, 'v) t -> 'k -> 'v
+      val find_exn : 'k 'v. ('k, 'v) t -> 'k -> 'v [@@mode c = (uncontended, shared)]
       val find_and_remove : ('k, 'v) t -> 'k -> ('v Option.t[@kind v])
       val remove : ('k, 'v) t -> 'k -> unit
       val mem : 'k 'v. ('k, 'v) t -> 'k -> bool [@@mode c = (uncontended, shared)]
@@ -490,8 +516,7 @@ module Definitions = struct
       val find_and_call
         : 'k 'v 'a.
         ('k, 'v) t -> 'k -> if_found:('v -> 'a) -> if_not_found:('k -> 'a) -> 'a
-      [@@kind k = k, v = v, r = (value_or_null, bits64, float64)]
-      [@@mode c = (uncontended, shared)]
+      [@@kind k = k, v = v, r = all] [@@mode c = (uncontended, shared)]
 
       val find_and_call1
         : 'k 'v 'a 'r.
@@ -501,12 +526,7 @@ module Definitions = struct
         -> if_found:('v -> 'a -> 'r)
         -> if_not_found:('k -> 'a -> 'r)
         -> 'r
-      [@@kind
-        k = k
-        , v = v
-        , a = (value_or_null, bits64, float64)
-        , r = (value_or_null, bits64, float64)]
-      [@@mode c = (uncontended, shared)]
+      [@@kind k = k, v = v, a = all, r = all] [@@mode c = (uncontended, shared)]
 
       val update : ('k, 'v) t -> 'k -> f:(('v Option.t[@kind v]) -> 'v) -> unit
       val update_and_return : ('k, 'v) t -> 'k -> f:(('v Option.t[@kind v]) -> 'v) -> 'v
@@ -517,18 +537,31 @@ module Definitions = struct
         -> f:(('v Option.t[@kind v]) -> ('v Option.t[@kind v]))
         -> unit
 
-      val fold : ('k, 'v) t -> init:'acc -> f:(key:'k -> data:'v -> 'acc -> 'acc) -> 'acc
-      val iteri : ('k, 'v) t -> f:(key:'k -> data:'v -> unit) -> unit
+      val fold
+        : 'k 'v 'acc.
+        ('k, 'v) t -> init:'acc -> f:(key:'k -> data:'v -> 'acc -> 'acc) -> 'acc
+      [@@synchro __ @ c = (unsync_uncontended, sync_shared)]
+
+      val iter : 'k 'v. ('k, 'v) t -> f:('v -> unit) -> unit
+      [@@mode l = (global, local)] [@@synchro __ @ c = (unsync_uncontended, sync_shared)]
+
+      val iteri : 'k 'v. ('k, 'v) t -> f:(key:'k -> data:'v -> unit) -> unit
+      [@@mode l = (global, local)] [@@synchro __ @ c = (unsync_uncontended, sync_shared)]
+
       val find_or_add : ('k, 'v) t -> 'k -> default:(unit -> 'v) -> 'v
       val findi_or_add : ('k, 'v) t -> 'k -> default:('k -> 'v) -> 'v
+
       val keys : ('k, 'v) t -> ('k List.t[@kind k])
+      [@@synchro __ @ c = (unsync_uncontended, sync_shared)]
+
       val data : ('k, 'v) t -> ('v List.t[@kind v])
-      val choose_exn : ('k, 'v) t -> 'k * 'v
+      [@@synchro __ @ c = (unsync_uncontended, sync_shared)]
+
+      val choose_exn : ('k, 'v) t -> 'k * 'v [@@mode c = (uncontended, shared)]
     end
 
     include sig
-      [@@@kind.default
-        k = (value_or_null, bits64, float64), v = (value_or_null, bits64, float64)]
+      [@@@kind.default k = all, v = all]
 
       val add_multi
         :  (('k, ('v List.t[@kind v])) t[@kind k value_or_null])
@@ -545,21 +578,21 @@ module Definitions = struct
         :  (('k, ('v List.t[@kind v])) t[@kind k value_or_null])
         -> 'k
         -> ('v List.t[@kind v])
+      [@@mode c = (uncontended, shared)]
 
       val map : (('k, 'v) t[@kind k v]) -> f:('v -> 'w) -> (('k, 'w) t[@kind k v'])
-      [@@kind k = k, v = v, v' = (value_or_null, bits64, float64)]
+      [@@kind k = k, v = v, v' = all]
     end
   end
 
   module type Hashtbl_equality = sig
     type ('a, 'b) t
 
-    val%template equal : ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool
-    [@@mode m = local]
+    val equal : ('b -> 'b -> bool) -> ('a, 'b) t -> ('a, 'b) t -> bool [@@mode m = local]
 
-    val%template similar : ('b -> 'c -> bool) -> ('a, 'b) t -> ('a, 'c) t -> bool
+    val similar : ('b -> 'c -> bool) -> ('a, 'b) t -> ('a, 'c) t -> bool
     [@@mode m = local]
-  end
+  end]
 end
 
 module type Hashtbl = sig
@@ -642,7 +675,9 @@ module type Hashtbl = sig
 
   type (!'a, !'b) t
 
-  include S_without_submodules with type ('k, 'v) t := ('k, 'v) t (** @inline *)
+  include%template
+    S_without_submodules [@mode portable] with type ('k, 'v) t := ('k, 'v) t
+  (** @inline *)
 
   include Hashtbl_equality with type ('k, 'v) t := ('k, 'v) t (** @inline *)
 
@@ -665,7 +700,7 @@ module type Hashtbl = sig
         ('key, 'data, 'a) create_options_without_first_class_module
   end
 
-  module Poly : S_poly with type ('a, 'b) t = ('a, 'b) t
+  module%template Poly : S_poly [@mode shared] with type ('a, 'b) t = ('a, 'b) t
 
   (** [M] is meant to be used in combination with OCaml applicative functor types:
 

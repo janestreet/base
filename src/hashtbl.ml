@@ -1,5 +1,6 @@
 open! Import
 include Hashtbl_intf.Definitions
+module Subatomic = Basement.Subatomic
 
 module type Key = Key.S
 
@@ -24,51 +25,79 @@ let _supplemental_hash h =
 ;;
 
 [%%template
-[@@@kind.default
-  k = (float64, bits64, value_or_null), v = (float64, bits64, value_or_null)]
+[@@@kind_set.define all = (float64, bits64, value_or_null)]
 
-type ('k, 'v) t =
-  { mutable table : (('k, 'v) Avltree.t[@kind k v]) array
-  ; mutable length : int
-  ; growth_allowed : bool
-  ; hashable : 'k Hashable.t [@globalized]
-  ; mutable mutation_allowed : bool (* Set during all iteration operations *)
-  }
+[%%template
+[@@@kind.default k = all, v = all]
+
+include struct
+  type ('k, 'v) t =
+    { mutable table : (('k, 'v) Avltree.t[@kind k v]) array
+    ; mutable length : int
+    ; growth_allowed : bool
+    ; hashable : 'k Hashable.t [@globalized]
+    ; num_iterators__do_not_read_write_directly : int Atomic.t
+    }
+  [@@kind k v]
+
+  let construct ~table ~length ~growth_allowed ~hashable ~num_iterators =
+    { table
+    ; length
+    ; growth_allowed
+    ; hashable
+    ; num_iterators__do_not_read_write_directly = Atomic.make num_iterators
+    }
+  ;;
+
+  let num_iterators t = t.num_iterators__do_not_read_write_directly
+  [@@synchro __ = (unsync, sync)]
+  ;;
+
+  let ensure_mutation_allowed t =
+    let num_iterators = num_iterators t in
+    if Atomic.get num_iterators > 0
+    then failwith "Hashtbl: mutation not allowed during iteration"
+  ;;
+
+  let without_mutating t f =
+    let num_iterators = num_iterators t in
+    Atomic.incr num_iterators;
+    match f () with
+    | x ->
+      Atomic.decr num_iterators;
+      x
+    | exception exn ->
+      Atomic.decr num_iterators;
+      raise exn
+  [@@synchro __ = (unsync, sync)]
+  ;;
+end
 
 let sexp_of_key t = t.hashable.Hashable.sexp_of_t
 let compare_key t = t.hashable.Hashable.compare
 
-let ensure_mutation_allowed t =
-  if not t.mutation_allowed then failwith "Hashtbl: mutation not allowed during iteration"
-;;
+include struct
+  let[@mode nonportable] construct = construct
 
-let[@mode nonportable] construct
-  ~table
-  ~length
-  ~growth_allowed
-  ~hashable
-  ~mutation_allowed
-  =
-  { table; length; growth_allowed; hashable; mutation_allowed }
-;;
-
-let[@mode portable] construct
-  : 'k 'v.
-  table:(('k, 'v) Avltree.t[@kind k v]) array
-  -> length:int
-  -> growth_allowed:bool
-  -> hashable:'k Hashable.t
-  -> mutation_allowed:bool
-  -> (('k, 'v) t[@kind k v])
-  =
-  fun ~table ~length ~growth_allowed ~hashable ~mutation_allowed ->
-  let _table = Modes.Portable.cross table in
-  let _length = Modes.Portable.cross length in
-  let _growth_allowed = growth_allowed in
-  let _hashable = hashable in
-  let _mutation_allowed = Modes.Portable.cross mutation_allowed in
-  Stdlib.Obj.magic_portable { table; length; growth_allowed; hashable; mutation_allowed }
-;;
+  let[@mode portable] construct
+    : 'k 'v.
+    table:(('k, 'v) Avltree.t[@kind k v]) array
+    -> length:int
+    -> growth_allowed:bool
+    -> hashable:'k Hashable.t
+    -> num_iterators:int
+    -> (('k, 'v) t[@kind k v])
+    =
+    fun ~table ~length ~growth_allowed ~hashable ~num_iterators ->
+    let _table = Modes.Portable.cross table in
+    let _length = Modes.Portable.cross length in
+    let _growth_allowed = growth_allowed in
+    let _hashable = hashable in
+    let _num_iterators = Modes.Portable.cross num_iterators in
+    Stdlib.Obj.magic_portable
+      (construct ~table ~length ~growth_allowed ~hashable ~num_iterators)
+  ;;
+end
 
 (* The default size is chosen to be 0 (as opposed to 128 as it was before) because:
    - 128 can create substantial memory overhead (x10) when creating many tables, most
@@ -82,12 +111,12 @@ let[@mode portable] construct
 let create ?(growth_allowed = true) ?(size = 0) ~hashable () =
   let size = Int.min (Int.max 1 size) max_table_length in
   let size = Int.ceil_pow2 size in
-  (construct [@kind k v] [@mode p])
+  (construct [@mode p])
     ~table:(Array.create ~len:size ((Avltree.get_empty [@kind k v]) ()))
     ~length:0
     ~growth_allowed
     ~hashable
-    ~mutation_allowed:true
+    ~num_iterators:0
 [@@mode p = (nonportable, portable)]
 ;;
 
@@ -148,13 +177,13 @@ let capacity t = Array.length t.table [@@mode c = (uncontended, shared)]
 let growth_allowed t = t.growth_allowed [@@mode c = (uncontended, contended)]
 
 let set t ~key ~data =
-  (ensure_mutation_allowed [@kind k v]) t;
+  ensure_mutation_allowed t;
   ignore ((add_worker [@kind k v]) ~replace:true t ~key ~data : bool);
   (maybe_resize_table [@kind k v]) t
 ;;
 
 let add t ~key ~data =
-  (ensure_mutation_allowed [@kind k v]) t;
+  ensure_mutation_allowed t;
   let added = (add_worker [@kind k v]) ~replace:false t ~key ~data in
   if added
   then (
@@ -164,9 +193,10 @@ let add t ~key ~data =
 ;;
 
 let singleton ?growth_allowed ?size ~hashable key data =
-  let t = (create [@kind k v]) ?growth_allowed ?size ~hashable () in
+  let t = (create [@kind k v] [@mode p]) ?growth_allowed ?size ~hashable () in
   (set [@kind k v]) t ~key ~data;
   t
+[@@mode p = (nonportable, portable)]
 ;;
 
 let add_exn t ~key ~data =
@@ -184,15 +214,14 @@ let clear t =
   if t.length = 0
   then ()
   else (
-    (ensure_mutation_allowed [@kind k v]) t;
+    ensure_mutation_allowed t;
     for i = 0 to Array.length t.table - 1 do
       t.table.(i) <- (Avltree.get_empty [@kind k v]) ()
     done;
     t.length <- 0)
 ;;
 
-let[@kind k = k, v = v, r = (value_or_null, bits64, float64)]
-   [@mode __ = local, c = (uncontended, shared)] find_and_call
+let[@kind k = k, v = v, r = all] [@mode __ = local, c = (uncontended, shared)] find_and_call
   (type k)
   t
   (key : k)
@@ -216,9 +245,7 @@ let[@kind k = k, v = v, r = (value_or_null, bits64, float64)]
       ~if_not_found
 ;;
 
-let[@kind k = k, v = v, r = (value_or_null, bits64, float64)]
-   [@mode __ = global, c = (uncontended, shared)]
-   [@inline] find_and_call
+let[@kind k = k, v = v, r = all] [@mode __ = global, c = (uncontended, shared)] [@inline] find_and_call
   t
   key
   ~if_found
@@ -253,7 +280,7 @@ let mem (type k) t (key : k) =
 ;;
 
 let remove t key =
-  (ensure_mutation_allowed [@kind k v]) t;
+  ensure_mutation_allowed t;
   let i = (slot [@kind k v]) t key in
   let root = t.table.(i) in
   let removed = ref false in
@@ -267,52 +294,49 @@ let remove t key =
 let length t = t.length [@@mode c = (uncontended, shared)]
 let is_empty t = (length [@kind k v] [@mode c]) t = 0 [@@mode c = (uncontended, shared)]
 
-let fold (type k v) (t : ((k, v) t[@kind k v])) ~init ~f =
+let fold t ~init ~f =
   if (length [@kind k v]) t = 0
   then init
-  else (
-    let n = Array.length t.table in
-    let acc = ref init in
-    let m = t.mutation_allowed in
-    match
-      t.mutation_allowed <- false;
+  else
+    (without_mutating [@synchro s]) t (fun () ->
+      let n = Array.length t.table in
+      let acc = ref init in
       for i = 0 to n - 1 do
-        match Array.unsafe_get t.table i with
+        match (Array.unsafe_get [@mode c]) t.table i with
         | Avltree.Empty -> ()
         | Avltree.Leaf { key; value = data } -> acc := f ~key ~data !acc
-        | bucket -> acc := (Avltree.fold [@kind k v]) bucket ~init:!acc ~f
-      done
-    with
-    | () ->
-      t.mutation_allowed <- m;
-      !acc
-    | exception exn ->
-      t.mutation_allowed <- m;
-      raise exn)
+        | bucket -> acc := (Avltree.fold [@kind k v] [@mode c]) bucket ~init:!acc ~f
+      done;
+      !acc)
+    [@nontail]
+[@@synchro s @ c = (unsync_uncontended, sync_shared)]
 ;;
 
 let[@mode local] iteri t ~f =
   if t.length = 0
   then ()
-  else (
-    let n = Array.length t.table in
-    let m = t.mutation_allowed in
-    match
-      t.mutation_allowed <- false;
+  else
+    (without_mutating [@synchro s]) t (fun () ->
+      let n = Array.length t.table in
       for i = 0 to n - 1 do
-        match Array.unsafe_get t.table i with
+        match (Array.unsafe_get [@mode c]) t.table i with
         | Avltree.Empty -> ()
         | Avltree.Leaf { key; value = data } -> f ~key ~data
-        | bucket -> (Avltree.iter [@kind k v]) bucket ~f
-      done
-    with
-    | () -> t.mutation_allowed <- m
-    | exception exn ->
-      t.mutation_allowed <- m;
-      raise exn)
+        | bucket -> (Avltree.iter [@kind k v] [@mode c]) bucket ~f
+      done)
+    [@nontail]
+[@@synchro s @ c = (unsync_uncontended, sync_shared)]
 ;;
 
-let[@mode global] [@inline] iteri t ~f = (iteri [@kind k v] [@mode local]) t ~f
+let[@mode global] [@inline] iteri t ~f =
+  (iteri [@kind k v] [@mode local] [@synchro s]) t ~f
+[@@synchro s = (unsync, sync)]
+;;
+
+let iter t ~f =
+  (iteri [@kind k v] [@mode l] [@synchro s]) t ~f:(fun ~key:_ ~data -> f data) [@nontail]
+[@@mode l = (local, global)] [@@synchro s @ c = (unsync_uncontended, sync_shared)]
+;;
 
 let find_or_add t id ~default =
   (find_and_call [@kind k v v])
@@ -336,19 +360,10 @@ let findi_or_add t id ~default =
       default) [@nontail]
 ;;]
 
-let%template[@kind
-              k = (value_or_null, float64, bits64)
-              , v = (value_or_null, float64, bits64)
-              , a = (value_or_null, float64, bits64)
-              , r = (value_or_null, float64, bits64)]
-            [@mode c = (uncontended, shared)] find_and_call1
-  (t : (_ t[@kind k v]))
-  (key : _)
-  ~a
-  ~if_found
-  ~if_not_found
-  : _
-  =
+[%%template
+[@@@mode.default c = (uncontended, shared)]
+
+let find_and_call1 (t : (_ t[@kind k v])) (key : _) ~a ~if_found ~if_not_found : _ =
   match (Array.get [@mode c]) t.table ((slot [@kind k v]) t key) with
   | Avltree.Empty -> if_not_found key a
   | Avltree.Leaf { key = k; value = v } ->
@@ -361,45 +376,16 @@ let%template[@kind
       ~a
       ~if_found
       ~if_not_found
+[@@kind k = all, v = all, a = all, r = all]
 ;;
 
-let find_and_call2 t key ~a ~b ~if_found ~if_not_found =
-  match t.table.(slot t key) with
+let find_and_call2 (type k) t (key : k) ~a ~b ~if_found ~if_not_found =
+  match (Array.get [@mode c]) t.table (slot t key) with
   | Avltree.Empty -> if_not_found key a b
   | Avltree.Leaf { key = k; value = v } ->
     if compare_key t k key = 0 then if_found v a b else if_not_found key a b
   | tree ->
-    Avltree.find_and_call2 tree ~compare:(compare_key t) key ~a ~b ~if_found ~if_not_found
-;;
-
-let findi_and_call t key ~if_found ~if_not_found =
-  (* with a good hash function these first two cases will be the overwhelming majority,
-     and Avltree.find is recursive, so it can't be inlined, so doing this avoids a
-     function call in most cases. *)
-  match t.table.(slot t key) with
-  | Avltree.Empty -> if_not_found key
-  | Avltree.Leaf { key = k; value = v } ->
-    if compare_key t k key = 0 then if_found ~key:k ~data:v else if_not_found key
-  | tree ->
-    Avltree.findi_and_call tree ~compare:(compare_key t) key ~if_found ~if_not_found
-;;
-
-let findi_and_call1 t key ~a ~if_found ~if_not_found =
-  match t.table.(slot t key) with
-  | Avltree.Empty -> if_not_found key a
-  | Avltree.Leaf { key = k; value = v } ->
-    if compare_key t k key = 0 then if_found ~key:k ~data:v a else if_not_found key a
-  | tree ->
-    Avltree.findi_and_call1 tree ~compare:(compare_key t) key ~a ~if_found ~if_not_found
-;;
-
-let findi_and_call2 t key ~a ~b ~if_found ~if_not_found =
-  match t.table.(slot t key) with
-  | Avltree.Empty -> if_not_found key a b
-  | Avltree.Leaf { key = k; value = v } ->
-    if compare_key t k key = 0 then if_found ~key:k ~data:v a b else if_not_found key a b
-  | tree ->
-    Avltree.findi_and_call2
+    (Avltree.find_and_call2 [@mode c])
       tree
       ~compare:(compare_key t)
       key
@@ -409,59 +395,109 @@ let findi_and_call2 t key ~a ~b ~if_found ~if_not_found =
       ~if_not_found
 ;;
 
-let iter t ~f = iteri t ~f:(fun ~key:_ ~data -> f data) [@nontail]
+let findi_and_call (type k) t (key : k) ~if_found ~if_not_found =
+  (* with a good hash function these first two cases will be the overwhelming majority,
+     and Avltree.find is recursive, so it can't be inlined, so doing this avoids a
+     function call in most cases. *)
+  match (Array.get [@mode c]) t.table (slot t key) with
+  | Avltree.Empty -> if_not_found key
+  | Avltree.Leaf { key = k; value = v } ->
+    if compare_key t k key = 0 then if_found ~key:k ~data:v else if_not_found key
+  | tree ->
+    (Avltree.findi_and_call [@mode c])
+      tree
+      ~compare:(compare_key t)
+      key
+      ~if_found
+      ~if_not_found
+;;
+
+let findi_and_call1 (type k) t (key : k) ~a ~if_found ~if_not_found =
+  match (Array.get [@mode c]) t.table (slot t key) with
+  | Avltree.Empty -> if_not_found key a
+  | Avltree.Leaf { key = k; value = v } ->
+    if compare_key t k key = 0 then if_found ~key:k ~data:v a else if_not_found key a
+  | tree ->
+    (Avltree.findi_and_call1 [@mode c])
+      tree
+      ~compare:(compare_key t)
+      key
+      ~a
+      ~if_found
+      ~if_not_found
+;;
+
+let findi_and_call2 (type k) t (key : k) ~a ~b ~if_found ~if_not_found =
+  match (Array.get [@mode c]) t.table (slot t key) with
+  | Avltree.Empty -> if_not_found key a b
+  | Avltree.Leaf { key = k; value = v } ->
+    if compare_key t k key = 0 then if_found ~key:k ~data:v a b else if_not_found key a b
+  | tree ->
+    (Avltree.findi_and_call2 [@mode c])
+      tree
+      ~compare:(compare_key t)
+      key
+      ~a
+      ~b
+      ~if_found
+      ~if_not_found
+;;]
+
 let iter_keys t ~f = iteri t ~f:(fun ~key ~data:_ -> f key) [@nontail]
 
 [%%template
-[@@@kind.default
-  k = (bits64, float64, value_or_null), v = (bits64, float64, value_or_null)]
+[@@@kind.default k = all, v = all]
+[@@@mode.default c = (uncontended, shared)]
 
 let rec choose_nonempty table i =
-  let avltree = Array.unsafe_get table i in
+  let avltree = (Array.unsafe_get [@mode c]) table i in
   if (Avltree.is_empty [@kind k v]) avltree
   then (
     let i = (i + 1) land (Array.length table - 1) in
-    (choose_nonempty [@kind k v]) table i)
-  else (Avltree.choose_exn [@kind k v]) avltree
+    (choose_nonempty [@kind k v] [@mode c]) table i)
+  else (Avltree.choose_exn [@kind k v] [@mode c]) avltree
 ;;
 
 let choose_exn (t : (_ t[@kind k v])) =
   if t.length = 0 then raise_s (Sexp.message "[Hashtbl.choose_exn] of empty hashtbl" []);
-  (choose_nonempty [@kind k v]) t.table 0
+  (choose_nonempty [@kind k v] [@mode c]) t.table 0
 ;;]
 
-let%template[@inline] [@mode global] wrap_pair (k, v) = k, v
+[%%template
+[@@@mode.default c = (uncontended, shared)]
 
-let%template[@inline] [@mode local] wrap_pair (k, v) =
+let[@inline] [@mode global] wrap_pair (k, v) = k, v
+
+let[@inline] [@mode local] wrap_pair (k, v) =
   { Modes.Global.global = k }, { Modes.Global.global = v }
 ;;
 
-let%template[@mode m = (global, local)] choose t =
+let[@mode m = (global, local), c = c] choose t =
   if is_empty t
   then None
   else (
-    let k, v = (wrap_pair [@mode m]) (choose_nonempty t.table 0) in
+    let k, v = (wrap_pair [@mode m]) ((choose_nonempty [@mode c]) t.table 0) in
     Some (k, v) [@exclave_if_local m])
 ;;
 
 let choose_randomly_nonempty ~random_state t =
   let start_idx = Random.State.int random_state (Array.length t.table) in
-  choose_nonempty t.table start_idx
+  (choose_nonempty [@mode c]) t.table start_idx
 ;;
 
 let choose_randomly ?(random_state = Random.State.get_default ()) t =
   if is_empty t
   then None
   else (
-    let k, v = choose_randomly_nonempty ~random_state t in
+    let k, v = (choose_randomly_nonempty [@mode c]) ~random_state t in
     Some (k, v))
 ;;
 
 let choose_randomly_exn ?(random_state = Random.State.get_default ()) t =
   if t.length = 0
   then raise_s (Sexp.message "[Hashtbl.choose_randomly_exn] of empty hashtbl" []);
-  choose_randomly_nonempty ~random_state t
-;;
+  (choose_randomly_nonempty [@mode c]) ~random_state t
+;;]
 
 let invariant invariant_key invariant_data t =
   for i = 0 to Array.length t.table - 1 do
@@ -476,24 +512,35 @@ let invariant invariant_key invariant_data t =
   assert (real_len = t.length)
 ;;
 
-let find_or_null t key =
-  find_and_call t key ~if_found:(fun v -> This v) ~if_not_found:(fun _ -> Null) [@nontail]
+[%%template
+[@@@mode.default c = (uncontended, shared)]
+
+let find_or_null =
+  let if_found v : (_ Modes.t[@modality c]) = { modal = This v } in
+  let if_not_found _ : (_ Modes.t[@modality c]) = { modal = Null } in
+  fun t key -> ((find_and_call [@mode c]) t key ~if_found ~if_not_found).modal
 ;;
 
-let%template[@kind
-              k = (value_or_null, bits64, float64), v = (value_or_null, bits64, float64)] find_exn
-  =
-  let if_found v _ = v in
-  let if_not_found k (t : (_ t[@kind k v])) =
+let find_exn =
+  let if_found v _ : (_ Modes.t[@modality c] [@kind v]) = { modal = v } in
+  let if_not_found k (t : ((_ t[@kind k v]) Modes.t[@modality c])) =
     (raise [@kind v])
-      (Not_found_s (List [ Atom "Hashtbl.find_exn: not found"; t.hashable.sexp_of_t k ]))
+      (Not_found_s
+         (List [ Atom "Hashtbl.find_exn: not found"; t.modal.hashable.sexp_of_t k ]))
   in
   let find_exn t key =
-    (find_and_call1 [@kind k v value_or_null v]) t key ~a:t ~if_found ~if_not_found
+    ((find_and_call1 [@kind k v value_or_null v] [@mode c])
+       t
+       key
+       ~a:({ modal = t } : (_ Modes.t[@modality c]))
+       ~if_found
+       ~if_not_found)
+      .modal
   in
   (* named to preserve symbol in compiled binary *)
   find_exn
-;;
+[@@kind k = all, v = all]
+;;]
 
 let existsi t ~f =
   with_return (fun r ->
@@ -516,10 +563,7 @@ let count t ~f =
 ;;
 
 [%%template
-[@@@kind.default
-  k = (value_or_null, bits64, float64)
-  , v = (value_or_null, bits64, float64)
-  , v' = (value_or_null, bits64, float64)]
+[@@@kind.default k = all, v = all, v' = all]
 
 let mapi (t : (_ t[@kind k v])) ~f =
   let new_t =
@@ -583,19 +627,14 @@ let partition_tf t ~f = partitioni_tf t ~f:(fun ~key:_ ~data -> f data) [@nontai
 
 (* Some hashtbl implementations may be able to perform this more efficiently than two
    separate lookups *)
-let%template[@kind
-              k = (bits64, float64, value_or_null), v = (bits64, float64, value_or_null)] find_and_remove
-  t
-  id
-  =
+let[@kind k = all, v = all] find_and_remove t id =
   let result = (find [@kind k v]) t id in
   if (Option.is_some [@kind v]) result then (remove [@kind k v]) t id;
   result
 ;;
 
 [%%template
-[@@@kind.default
-  k = (float64, bits64, value_or_null), v = (float64, bits64, value_or_null)]
+[@@@kind.default k = all, v = all]
 
 let change t id ~f =
   match (f ((find [@kind k v]) t id) : (_ Option.t[@kind v])) with
@@ -631,7 +670,7 @@ let incr ?(by = 1) ?(remove_if_zero = false) t key = incr_by ~remove_if_zero t k
 let decr ?(by = 1) ?(remove_if_zero = false) t key = incr_by ~remove_if_zero t key (-by)
 
 [%%template
-[@@@kind k = (float64, bits64, value_or_null), v = (float64, bits64, value_or_null)]
+[@@@kind k = all, v = all]
 
 type ('k, 'v) l = (('k, ('v List.t[@kind v])) t[@kind k value_or_null])
 
@@ -651,10 +690,14 @@ let remove_multi (t : _ l) key =
 ;;
 
 let find_multi t key : (_ List.t[@kind v]) =
-  match (find [@kind k value_or_null]) t key with
+  match (find [@kind k value_or_null] [@mode c]) t key with
   | None -> []
   | Some l -> l
+[@@mode c = (uncontended, shared)]
 ;;]
+
+[%%template
+[@@@mode.default p = (nonportable, portable)]
 
 let create_mapped ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
   let size =
@@ -662,7 +705,7 @@ let create_mapped ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
     | Some s -> s
     | None -> List.length rows
   in
-  let res = create ?growth_allowed ~hashable ~size () in
+  let res = (create [@mode p]) ?growth_allowed ~hashable ~size () in
   let dupes = ref [] in
   List.iter rows ~f:(fun r ->
     let key = get_key r in
@@ -673,13 +716,13 @@ let create_mapped ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
   | keys -> `Duplicate_keys (List.dedup_and_sort ~compare:hashable.Hashable.compare keys)
 ;;
 
-let create_mapped_multi ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
+let create_mapped_multi (type b) ?growth_allowed ?size ~hashable ~get_key ~get_data rows =
   let size =
     match size with
     | Some s -> s
     | None -> List.length rows
   in
-  let res = create ?growth_allowed ~size ~hashable () in
+  let res : (_, b list) t = (create [@mode p]) ?growth_allowed ~size ~hashable () in
   List.iter rows ~f:(fun r ->
     let key = get_key r in
     let data = get_data r in
@@ -688,38 +731,51 @@ let create_mapped_multi ?growth_allowed ?size ~hashable ~get_key ~get_data rows 
 ;;
 
 let of_alist ?growth_allowed ?size ~hashable lst =
-  match create_mapped ?growth_allowed ?size ~hashable ~get_key:fst ~get_data:snd lst with
+  match
+    (create_mapped [@mode p])
+      ?growth_allowed
+      ?size
+      ~hashable
+      ~get_key:fst
+      ~get_data:snd
+      lst
+  with
   | `Ok t -> `Ok t
   | `Duplicate_keys k -> `Duplicate_key (List.hd_exn k)
 ;;
 
 let of_alist_report_all_dups ?growth_allowed ?size ~hashable lst =
-  create_mapped ?growth_allowed ?size ~hashable ~get_key:fst ~get_data:snd lst
+  (create_mapped [@mode p]) ?growth_allowed ?size ~hashable ~get_key:fst ~get_data:snd lst
 ;;
 
 let of_alist_or_error ?growth_allowed ?size ~hashable lst =
-  match of_alist ?growth_allowed ?size ~hashable lst with
+  match (of_alist [@mode p]) ?growth_allowed ?size ~hashable lst with
   | `Ok v -> Result.Ok v
   | `Duplicate_key key ->
     let sexp_of_key = hashable.Hashable.sexp_of_t in
-    Or_error.error "Hashtbl.of_alist_exn: duplicate key" key sexp_of_key
+    (Or_error.error [@mode p]) "Hashtbl.of_alist_exn: duplicate key" key sexp_of_key
 ;;
 
 let of_alist_exn ?growth_allowed ?size ~hashable lst =
-  match of_alist_or_error ?growth_allowed ?size ~hashable lst with
+  match (of_alist_or_error [@mode p]) ?growth_allowed ?size ~hashable lst with
   | Result.Ok v -> v
   | Result.Error e -> Error.raise e
 ;;
 
 let of_alist_multi ?growth_allowed ?size ~hashable lst =
-  create_mapped_multi ?growth_allowed ?size ~hashable ~get_key:fst ~get_data:snd lst
-;;
+  (create_mapped_multi [@mode p])
+    ?growth_allowed
+    ?size
+    ~hashable
+    ~get_key:fst
+    ~get_data:snd
+    lst
+;;]
 
 (* A hack around the fact we can't have boxed tuples with unboxed types. *)
 module KV = struct
   [%%template
-  [@@@kind.default
-    k = (bits64, float64, value_or_null), v = (bits64, float64, value_or_null)]
+  [@@@kind.default k = all, v = all]
 
   type ('k, 'v) t =
     { key : 'k
@@ -734,8 +790,7 @@ module KV = struct
 end
 
 [%%template
-[@@@kind.default
-  k = (bits64, float64, value_or_null), v = (bits64, float64, value_or_null)]
+[@@@kind.default k = all, v = all]
 
 let to_alist (type k v) (t : ((k, v) t[@kind k v])) : ((k, v) KV.t[@kind k v]) List.t =
   (fold [@kind k v])
@@ -754,12 +809,7 @@ let sexp_of_t (type k v) sexp_of_key sexp_of_data (t : ((k, v) t[@kind k v])) : 
 
 let to_alist t = to_alist t |> KV.to_pairs
 
-let%template[@mode p = (nonportable, portable)] t_of_sexp
-  ~hashable
-  k_of_sexp
-  d_of_sexp
-  sexp
-  =
+let[@mode p = (nonportable, portable)] t_of_sexp ~hashable k_of_sexp d_of_sexp sexp =
   let alist = list_of_sexp (pair_of_sexp k_of_sexp d_of_sexp) sexp in
   match of_alist ~hashable alist ~size:(List.length alist) with
   | `Ok v -> v
@@ -787,22 +837,23 @@ let t_sexp_grammar
 ;;
 
 [%%template
-[@@@kind.default
-  k = (value_or_null, bits64, float64), v = (value_or_null, bits64, float64)]
+[@@@kind.default k = all, v = all]
+[@@@synchro.default s @ c = (unsync_uncontended, sync_shared)]
 
-let keys (t : (_ t[@kind k v])) =
-  (fold [@kind k v])
-    t
-    ~init:([] : (_ List.t[@kind k]))
-    ~f:(fun ~key ~data:_ acc -> key :: acc)
-;;
+open struct
+  let[@inline] get_all t ~f =
+    ((fold [@kind k v] [@synchro s])
+       t
+       ~init:({ modal = [] } : ((_ List.t[@kind a]) Modes.t[@modality c]))
+       ~f:(fun ~key ~data { modal = acc } : ((_ List.t[@kind a]) Modes.t[@modality c]) ->
+         { modal = f ~key ~data :: acc }))
+      .modal
+  [@@kind k = k, v = v, a = (k, v)]
+  ;;
+end
 
-let data (t : (_ t[@kind k v])) =
-  (fold [@kind k v])
-    t
-    ~init:([] : (_ List.t[@kind v]))
-    ~f:(fun ~key:_ ~data list -> data :: list)
-;;]
+let keys t = (get_all [@kind k v k]) t ~f:(fun ~key ~data:_ -> key)
+let data t = (get_all [@kind k v v]) t ~f:(fun ~key:_ ~data -> data)]
 
 let add_to_groups groups ~get_key ~get_data ~combine ~rows =
   List.iter rows ~f:(fun row ->
@@ -817,18 +868,21 @@ let add_to_groups groups ~get_key ~get_data ~combine ~rows =
   [@nontail]
 ;;
 
+[%%template
+[@@@mode.default p = (nonportable, portable)]
+
 let group ?growth_allowed ?size ~hashable ~get_key ~get_data ~combine rows =
-  let res = create ?growth_allowed ?size ~hashable () in
+  let res = (create [@mode p]) ?growth_allowed ?size ~hashable () in
   add_to_groups res ~get_key ~get_data ~combine ~rows;
   res
 ;;
 
 let create_with_key ?growth_allowed ?size ~hashable ~get_key rows =
-  create_mapped ?growth_allowed ?size ~hashable ~get_key ~get_data:Fn.id rows
+  (create_mapped [@mode p]) ?growth_allowed ?size ~hashable ~get_key ~get_data:Fn.id rows
 ;;
 
 let create_with_key_or_error ?growth_allowed ?size ~hashable ~get_key rows =
-  match create_with_key ?growth_allowed ?size ~hashable ~get_key rows with
+  match (create_with_key [@mode p]) ?growth_allowed ?size ~hashable ~get_key rows with
   | `Ok t -> Result.Ok t
   | `Duplicate_keys keys ->
     let sexp_of_key = hashable.Hashable.sexp_of_t in
@@ -839,22 +893,12 @@ let create_with_key_or_error ?growth_allowed ?size ~hashable ~get_key rows =
 ;;
 
 let create_with_key_exn ?growth_allowed ?size ~hashable ~get_key rows =
-  Or_error.ok_exn (create_with_key_or_error ?growth_allowed ?size ~hashable ~get_key rows)
-;;
-
-let without_mutating t f =
-  if t.mutation_allowed
-  then (
-    t.mutation_allowed <- false;
-    match f () with
-    | x ->
-      t.mutation_allowed <- true;
-      x
-    | exception exn ->
-      t.mutation_allowed <- true;
-      raise exn)
-  else f ()
-;;
+  match
+    (create_with_key_or_error [@mode p]) ?growth_allowed ?size ~hashable ~get_key rows
+  with
+  | Ok res -> res
+  | Error error -> Error.raise error
+;;]
 
 let merge =
   let maybe_set t ~key ~f d =
@@ -930,7 +974,7 @@ let mapi_inplace t ~f =
 
 let map_inplace t ~f = mapi_inplace t ~f:(fun ~key:_ ~data -> f data) [@nontail]
 
-let%template[@mode local] equal equal t t' =
+let[@mode local] equal equal t t' =
   length t = length t'
   && (with_return (fun r ->
         without_mutating t' (fun () ->
@@ -943,19 +987,20 @@ let%template[@mode local] equal equal t t' =
   [@nontail])
 ;;
 
-let%template[@mode global] [@inline] equal equal t t' =
-  (equal [@mode local]) [%eta2 equal] t t'
-;;
-
-let%template similar = (equal [@mode m]) [@@mode m = (local, global)]
+let[@mode global] [@inline] equal equal t t' = (equal [@mode local]) [%eta2 equal] t t'
+let similar = (equal [@mode m]) [@@mode m = (local, global)]
 
 module Accessors = struct
   let invariant = invariant
-  let choose = choose
-  let%template choose = (choose [@mode m]) [@@mode m = (local, global)]
-  let choose_exn = choose_exn
-  let choose_randomly = choose_randomly
-  let choose_randomly_exn = choose_randomly_exn
+
+  [%%template
+  [@@@mode.default c = (uncontended, shared)]
+
+  let choose = (choose [@mode m c]) [@@mode m = (local, global), c = c]
+  let choose_exn = (choose_exn [@mode c])
+  let choose_randomly = (choose_randomly [@mode c])
+  let choose_randomly_exn = (choose_randomly_exn [@mode c])]
+
   let clear = clear
   let copy = copy
   let remove = remove
@@ -967,7 +1012,7 @@ module Accessors = struct
   let update_and_return = update_and_return
   let add_multi = add_multi
   let remove_multi = remove_multi
-  let find_multi = find_multi
+  let%template find_multi = (find_multi [@mode c]) [@@mode c = (uncontended, shared)]
   let mem = mem
   let iter_keys = iter_keys
   let iter = iter
@@ -994,15 +1039,20 @@ module Accessors = struct
   let partitioni_tf = partitioni_tf
   let find_or_add = find_or_add
   let findi_or_add = findi_or_add
-  let find = find
-  let find_or_null = find_or_null
-  let find_exn = find_exn
-  let find_and_call = find_and_call
-  let find_and_call1 = find_and_call1
-  let find_and_call2 = find_and_call2
-  let findi_and_call = findi_and_call
-  let findi_and_call1 = findi_and_call1
-  let findi_and_call2 = findi_and_call2
+
+  [%%template
+  [@@@mode.default c = (uncontended, shared)]
+
+  let find = (find [@mode c])
+  let find_or_null = (find_or_null [@mode c])
+  let find_exn = (find_exn [@mode c])
+  let find_and_call = (find_and_call [@mode c])
+  let find_and_call1 = (find_and_call1 [@mode c])
+  let find_and_call2 = (find_and_call2 [@mode c])
+  let findi_and_call = (findi_and_call [@mode c])
+  let findi_and_call1 = (findi_and_call1 [@mode c])
+  let findi_and_call2 = (findi_and_call2 [@mode c])]
+
   let find_and_remove = find_and_remove
   let to_alist = to_alist
   let merge = merge
@@ -1060,7 +1110,7 @@ end = struct
   ;;
 
   let t_of_sexp k_of_sexp d_of_sexp sexp =
-    (t_of_sexp [@modality p]) ~hashable k_of_sexp d_of_sexp sexp
+    (t_of_sexp [@mode p]) ~hashable k_of_sexp d_of_sexp sexp
   ;;
 
   let of_alist_multi ?growth_allowed ?size l =
@@ -1096,7 +1146,7 @@ module Poly = struct
   let capacity = capacity
   let growth_allowed = growth_allowed
 
-  include%template Creators [@modality portable] (struct
+  include Creators [@modality portable] (struct
       type 'a t = 'a
 
       let hashable = hashable
@@ -1118,8 +1168,8 @@ module Private = struct
 end
 
 [%%template
-[@@@kind.default
-  k = (bits64, float64, value_or_null), v = (bits64, float64, value_or_null)]
+[@@@kind.default k = all, v = all]
+[@@@mode.default p = (nonportable, portable)]
 
 let create ?growth_allowed ?size m =
   (create [@kind k v] [@mode p])
@@ -1127,57 +1177,81 @@ let create ?growth_allowed ?size m =
     ?growth_allowed
     ?size
     ()
-[@@mode p = (nonportable, portable)]
 ;;
 
 let singleton ?growth_allowed ?size m k v =
-  (singleton [@kind k v])
-    ~hashable:((Hashable.of_key [@kind k]) m)
+  (singleton [@kind k v] [@mode p])
+    ~hashable:((Hashable.of_key [@kind k] [@mode p]) m)
     ?growth_allowed
     ?size
     k
     v
-;;]
+;;]]
+
+[%%template
+[@@@mode p = (nonportable, portable)]
+
+let hashable = (Hashable.of_key [@mode p])
+
+[@@@mode.default p]
 
 let of_alist ?growth_allowed ?size m l =
-  of_alist ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
+  (of_alist [@mode p]) ~hashable:(hashable m) ?growth_allowed ?size l
 ;;
 
 let of_alist_report_all_dups ?growth_allowed ?size m l =
-  of_alist_report_all_dups ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
+  (of_alist_report_all_dups [@mode p]) ~hashable:(hashable m) ?growth_allowed ?size l
 ;;
 
 let of_alist_or_error ?growth_allowed ?size m l =
-  of_alist_or_error ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
+  (of_alist_or_error [@mode p]) ~hashable:(hashable m) ?growth_allowed ?size l
 ;;
 
 let of_alist_exn ?growth_allowed ?size m l =
-  of_alist_exn ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
+  (of_alist_exn [@mode p]) ~hashable:(hashable m) ?growth_allowed ?size l
 ;;
 
 let of_alist_multi ?growth_allowed ?size m l =
-  of_alist_multi ~hashable:(Hashable.of_key m) ?growth_allowed ?size l
+  (of_alist_multi [@mode p]) ~hashable:(hashable m) ?growth_allowed ?size l
 ;;
 
 let create_mapped ?growth_allowed ?size m ~get_key ~get_data l =
-  create_mapped ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key ~get_data l
+  (create_mapped [@mode p])
+    ~hashable:(hashable m)
+    ?growth_allowed
+    ?size
+    ~get_key
+    ~get_data
+    l
 ;;
 
 let create_with_key ?growth_allowed ?size m ~get_key l =
-  create_with_key ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key l
+  (create_with_key [@mode p]) ~hashable:(hashable m) ?growth_allowed ?size ~get_key l
 ;;
 
 let create_with_key_or_error ?growth_allowed ?size m ~get_key l =
-  create_with_key_or_error ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key l
+  (create_with_key_or_error [@mode p])
+    ~hashable:(hashable m)
+    ?growth_allowed
+    ?size
+    ~get_key
+    l
 ;;
 
 let create_with_key_exn ?growth_allowed ?size m ~get_key l =
-  create_with_key_exn ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key l
+  (create_with_key_exn [@mode p]) ~hashable:(hashable m) ?growth_allowed ?size ~get_key l
 ;;
 
 let group ?growth_allowed ?size m ~get_key ~get_data ~combine l =
-  group ~hashable:(Hashable.of_key m) ?growth_allowed ?size ~get_key ~get_data ~combine l
-;;
+  (group [@mode p])
+    ~hashable:(hashable m)
+    ?growth_allowed
+    ?size
+    ~get_key
+    ~get_data
+    ~combine
+    l
+;;]
 
 let hashable_s t = Hashable.to_key t.hashable
 

@@ -2,6 +2,7 @@ open! Import
 open Container.Export
 module Array = Array0
 module List = List1
+module%template Derived = Container.Derived [@kind.explicit value_or_null]
 
 module Step = struct
   (* 'a is an item in the sequence, 's is the state that will produce the remainder of
@@ -425,7 +426,8 @@ let return x =
     | Some x -> Yield { value = x; state = None })
 ;;
 
-include%template Monad.Make [@modality portable] (struct
+include%template
+  Monad.Make [@kind value_or_null mod maybe_null] [@modality portable] (struct
     type nonrec 'a t = 'a t
 
     let map = `Custom map
@@ -786,9 +788,9 @@ let counti t ~f =
   foldi t ~init:0 ~f:(fun i acc elt -> acc + Bool.to_int (f i elt)) [@nontail]
 ;;
 
-let sum m t ~f = Container.sum ~fold m t ~f
-let min_elt t ~compare = Container.min_elt ~fold t ~compare
-let max_elt t ~compare = Container.max_elt ~fold t ~compare
+let sum m t ~f = Derived.sum ~fold m t ~f
+let min_elt t ~compare = Derived.min_elt ~fold t ~compare
+let max_elt t ~compare = Derived.max_elt ~fold t ~compare
 
 let init n ~f =
   unfold_step ~init:0 ~f:(fun i ->

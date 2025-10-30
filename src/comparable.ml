@@ -66,7 +66,7 @@ let not_equal cmp a b = cmp a b <> 0
 
 [%%template
 [@@@mode.default m = (global, local)]
-[@@@kind.default k = (value, float64, bits32, bits64, word)]
+[@@@kind.default k = base_or_null]
 
 let geq cmp a b = cmp a b >= 0
 let leq cmp a b = cmp a b <= 0
@@ -185,7 +185,7 @@ type 'a reversed = 'a
 
 [%%template
 [@@@mode.default m = (global, local)]
-[@@@kind.default k = (value, float64, bits32, bits64, word)]
+[@@@kind.default k = base_or_null]
 
 (* compare [x] and [y] lexicographically using functions in the list [cmps] *)
 let rec lexicographic cmps x y =

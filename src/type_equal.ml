@@ -12,7 +12,11 @@ include Type_equal_defns (struct
 let refl = T
 let sym (type a b) (T : (a, b) t) : (b, a) t = T
 let trans (type a b c) (T : (a, b) t) (T : (b, c) t) : (a, c) t = T
-let conv (type a b) (T : (a, b) t) (a : a) : b = a
+
+let%template conv (type a b) (T : (a, b) t) (a : a) : b = a
+[@@kind k = (value_or_null, value_or_null & bits64)]
+[@@mode l = (global, local), v = (read_write, read, immutable)]
+;;
 
 [%%template
 [@@@kind.default k1 = (any, value)]
