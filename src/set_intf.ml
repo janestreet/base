@@ -354,10 +354,7 @@ module type Set = sig @@ portable
       the second identifies the comparator, which determines the comparison function that
       is used for ordering elements in this set. Many operations (e.g., {!union}), require
       that they be passed sets with the same element type and the same comparator type. *)
-  type (!'elt
-       , !'cmp)
-       t :
-       value mod contended portable with 'elt with ('elt, 'cmp) Comparator.t
+  type (!'elt, !'cmp) t : immutable_data with 'elt with ('elt, 'cmp) Comparator.t
   [@@deriving compare ~localize, globalize]
 
   (** Tests internal invariants of the set data structure. Returns true on success. *)
@@ -830,6 +827,96 @@ module type Set = sig @@ portable
       with type ('a, 'b, 'c) access_options := ('a, 'b, 'c) With_comparator.t
 
     val empty_without_value_restriction : (_, _) t
+
+    (** Low-level constructors for balanced trees. If not carefully used, the results
+        might violate the normal invariants of a tree. *)
+    module Expert : sig
+      (** Sexp prints the internal node structure. *)
+      type nonrec ('a, 'cmp) t = ('a, 'cmp) t [@@deriving sexp_of]
+
+      (** Just the tree balance checks from [invariants]. Excludes the checks in
+          [order_invariants]. *)
+      val balance_invariants : (_, _) t -> bool
+
+      (** Just the key ordering checks from [invariants]. Excludes the checks in
+          [balance_invariants]. *)
+      val order_invariants : comparator:('a, 'cmp) Comparator.t -> ('a, 'cmp) t -> bool
+
+      (** Reports whether two trees are sufficiently balanced for
+          [create_assuming_balanced_unchecked]. Two trees with the same or mirrored shape
+          are guaranteed to be balanced. The left and right subtrees of a [Node]
+          constructor are also guaranteed to be balanced.
+
+          We do not describe our balance invariants in detail in this interface, as they
+          have changed in the past and may change again in the future. *)
+      val are_balanced : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
+
+      (** Reports whether two trees are sufficiently balanced for
+          [create_and_rebalance_at_most_once_unchecked].
+
+          If two trees satisfy [are_balanced], at most a single key is added or removed
+          from one of them, and the tree is rebuilt via
+          [create_and_rebalance_at_most_once_unchecked], then the result should satisfy
+          [need_rebalance_at_most_once].
+
+          The preceding operations are equivalent to a single call to most single-key
+          update functions, e.g. [add], [remove], [change], etc. *)
+      val need_rebalance_at_most_once : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
+
+      (** [create_assuming_balanced_unchecked left key data right] constructs a single
+          [Node]. Given keys must be unique and strictly sorted, and
+          [are_balanced left right] must be true. Otherwise set/tree behavior will be
+          unspecified. *)
+      val create_assuming_balanced_unchecked
+        :  ('a, 'cmp) t
+        -> 'a
+        -> ('a, 'cmp) t
+        -> ('a, 'cmp) t
+
+      (** [create_and_rebalance_at_most_once_unchecked left key data right] constructs a
+          [Node], possibly rebalancing [left] and [right] once. Given keys must be unique
+          and strictly sorted, and [need_rebalance_at_most_once left right] must be true.
+          Otherwise set/tree behavior will be unspecified. *)
+      val create_and_rebalance_at_most_once_unchecked
+        :  ('a, 'cmp) t
+        -> 'a
+        -> ('a, 'cmp) t
+        -> ('a, 'cmp) t
+
+      (** [create_and_rebalance_unchecked left key data right] constructs a [Node],
+          possibly rebalancing [left] and [right] recursively. Given keys must be unique
+          and strictly sorted. Otherwise set/tree behavior will be unspecified. The
+          subtrees may be arbitrarily imbalanced with respect to each other. *)
+      val create_and_rebalance_unchecked
+        :  ('a, 'cmp) t
+        -> 'a
+        -> ('a, 'cmp) t
+        -> ('a, 'cmp) t
+
+      (** [concat_and_rebalance_at_most_once_unchecked left right] appends [left] and
+          [right] in that order, possibly rebalancing the result once. Given keys must be
+          unique and strictly sorted, and [are_balanced left right] must be true.
+          Otherwise set/tree behavior will be unspecified. *)
+      val concat_and_rebalance_at_most_once_unchecked
+        :  ('a, 'cmp) t
+        -> ('a, 'cmp) t
+        -> ('a, 'cmp) t
+
+      (** [concat_and_rebalance_unchecked left right] appends [left] and [right] in that
+          order, rebalancing the result recursively. Given keys must be unique and
+          strictly sorted. Otherwise set/tree behavior will be unspecified. The subtrees
+          may be arbitrarily imbalanced with respect to each other. *)
+      val concat_and_rebalance_unchecked : ('a, 'cmp) t -> ('a, 'cmp) t -> ('a, 'cmp) t
+
+      (** Like [Tree.singleton], but does not require a comparator. *)
+      val singleton : 'a -> ('a, 'cmp) t
+
+      (** Equivalent to [empty_without_value_restriction]. *)
+      val empty : ('a, 'cmp) t
+
+      (** Compute a tree's length from its weight field. *)
+      val length_of_weight : weight -> int
+    end
   end
 
   (** Using comparator is a similar interface as the toplevel of [Set], except the
@@ -880,24 +967,4 @@ module type Set = sig @@ portable
     with type 'elt tree :=
       ('elt, Comparator.Poly.comparator_witness) Using_comparator.Tree.t
     with type ('elt, 'cmp) set := ('elt, 'cmp) t
-
-  (**/**)
-
-  module Private : sig
-    module Tree : sig
-      type 'a t
-
-      val balance_invariants : 'a t -> bool
-      val are_balanced : 'a t -> 'a t -> bool
-      val are_almost_balanced : 'a t -> 'a t -> bool
-      val expose : 'a t -> ('a t * 'a * 'a t) option
-      val empty : 'a t
-      val create_if_balanced : 'a t -> 'a -> 'a t -> 'a t
-      val create_if_almost_balanced : 'a t -> 'a -> 'a t -> 'a t
-      val create_even_if_completely_unbalanced : 'a t -> 'a -> 'a t -> 'a t
-    end
-  end
-  [@@alert
-    set_private
-      "These definitions are only for testing the internal implementation of Set."]
 end

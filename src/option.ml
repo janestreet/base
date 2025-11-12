@@ -8,43 +8,30 @@ type ('a : value_or_null) t = 'a option =
   | None
   | Some of 'a
 
-[%%rederive.portable
-  type ('a : value_or_null) t = 'a option
-  [@@deriving compare ~localize, globalize, hash, sexp_grammar]]
-
 [%%template
+[@@@kind_set.define
+  values
+  = (immediate, immediate64, value mod external_, value mod external64, value_or_null)]
+
 [@@@kind kr1 = (value & value)]
 [@@@kind kr2 = (value & value & value)]
 [@@@kind kr3 = (value & value & value & value)]
 
-[@@@kind.default
-  k
-  = ( value_or_null
-    , float64
-    , bits32
-    , bits64
-    , word
-    , immediate
-    , immediate64
-    , value & float64
-    , value & bits32
-    , value & bits64
-    , value & word
-    , value & immediate
-    , value & immediate64
-    , value & value
-    , value & kr1
-    , value & kr2
-    , value & kr3 )]
+[%%template
+[@@@kind k = values]
 
-open struct
-  type nonrec ('a : k) t = ('a t[@kind k]) =
-    | None
-    | Some of 'a
-end
+[%%rederive.portable
+  type ('a : value_or_null) t = 'a option
+  [@@deriving compare ~localize, globalize, hash, sexp_grammar] [@@kind k]]]
 
 include struct
-  [@@@kind.default k]
+  [@@@kind.default k = (base_non_value, values, value & (base_with_imm, kr1, kr2, kr3))]
+
+  open struct
+    type nonrec ('a : any) t = ('a t[@kind k]) =
+      | None
+      | Some of 'a
+  end
 
   let t_of_sexp a__of_sexp (sexp : Sexplib0.Sexp.t) : _ t =
     if Dynamic.get read_old_option_format
@@ -74,6 +61,15 @@ include struct
     | None when write_old_option_format -> List []
     | None -> Atom "none"
   ;;
+end
+
+[%%template
+[@@@kind.default k = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
+
+open struct
+  type nonrec ('a : any) t = ('a t[@kind k]) =
+    | None
+    | Some of 'a
 end
 
 [@@@mode.default m = (global, local)]
@@ -118,26 +114,7 @@ let value_map t ~default ~(local_ f) =
   match t with
   | Some x -> f x [@exclave_if_local m]
   | None -> default
-[@@kind
-  ki = k
-  , ko
-    = ( value_or_null
-      , float64
-      , bits32
-      , bits64
-      , word
-      , immediate
-      , immediate64
-      , value & float64
-      , value & bits32
-      , value & bits64
-      , value & word
-      , value & immediate
-      , value & immediate64
-      , value & value
-      , value & kr1
-      , value & kr2
-      , value & kr3 )]
+[@@kind ki = k, ko = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
 ;;]
 
 let invariant f t = iter t ~f
@@ -205,34 +182,13 @@ let find_map t ~f =
 
 [%%template
 [@@@mode.default m = (global, local)]
-[@@@kind kr1 = (value & value)]
-[@@@kind kr2 = (value & value & value)]
-[@@@kind kr3 = (value & value & value & value)]
 
 let equal f (t : (_ t[@kind k])) (t' : (_ t[@kind k])) =
   match t, t' with
   | None, None -> true
   | Some x, Some x' -> f x x'
   | _ -> false
-[@@kind
-  k
-  = ( value_or_null
-    , float64
-    , bits32
-    , bits64
-    , word
-    , immediate
-    , immediate64
-    , value & float64
-    , value & bits32
-    , value & bits64
-    , value & word
-    , value & immediate
-    , value & immediate64
-    , value & value
-    , value & kr1
-    , value & kr2
-    , value & kr3 )]
+[@@kind k = (base_non_value, values, value & (base_with_imm, kr1, kr2, kr3))]
 ;;
 
 let some x = Some x [@exclave_if_local m]
@@ -284,47 +240,9 @@ let try_with_join f =
 ;;
 
 [%%template
-[@@@kind kr1 = (value & value)]
-[@@@kind kr2 = (value & value & value)]
-[@@@kind kr3 = (value & value & value & value)]
-
 [@@@kind.default
-  ki
-  = ( value_or_null
-    , float64
-    , bits32
-    , bits64
-    , word
-    , immediate
-    , immediate64
-    , value & float64
-    , value & bits32
-    , value & bits64
-    , value & word
-    , value & immediate
-    , value & immediate64
-    , value & value
-    , value & kr1
-    , value & kr2
-    , value & kr3 )
-  , ko
-    = ( value_or_null
-      , float64
-      , bits32
-      , bits64
-      , word
-      , immediate
-      , immediate64
-      , value & float64
-      , value & bits32
-      , value & bits64
-      , value & word
-      , value & immediate
-      , value & immediate64
-      , value & value
-      , value & kr1
-      , value & kr2
-      , value & kr3 )]
+  ki = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))
+  , ko = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
 
 let[@mode local] map (t : (_ t[@kind ki])) ~f : (_ t[@kind ko]) = exclave_
   match t with
@@ -404,4 +322,4 @@ module%template Local = struct
       module Open_on_rhs = struct end
     end
   end
-end
+end]

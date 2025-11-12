@@ -16,14 +16,14 @@ module Definitions = struct
   [@@deriving sexp ~stackify, compare ~localize, globalize]
 end
 
-module type S = sig
+module type%template [@kind.explicit k = (value, value_or_null)] S = sig
   open Definitions
 
-  type t = Stdlib.Obj.t
+  type t : k
 
   external%template repr
-    :  ('a[@local_opt]) @ c o p u
-    -> (t[@local_opt]) @ c o p u
+    : ('a : k).
+    ('a[@local_opt]) @ c o p u -> (t[@local_opt]) @ c o p u
     = "%obj_magic"
   [@@mode
     c = (uncontended, shared, contended)
@@ -33,12 +33,22 @@ module type S = sig
 
   (** [dup t] returns a shallow copy of [t]. However if [t] is immutable then it might be
       returned unchanged. *)
-  val dup : t -> t
+  external dup : t -> t = "%obj_dup"
 
-  external tag : t @ contended local once -> int = "caml_obj_tag" [@@noalloc]
-  val size : t @ contended local once -> int [@@zero_alloc]
+  (** Returns the tag of the block. *)
+  external tag : t @ contended local once -> int = "caml_obj_tag"
+  [@@noalloc]
+
+  (** Computes the total size (in words) of the value. *)
+  val size : t @ contended local once -> int
+  [@@zero_alloc]
+
+  (** Tests if the argument is an immediate value (int or variant constructor). *)
   external is_int : t @ contended local once -> bool = "%obj_is_int"
-  val is_block : t @ contended local once -> bool [@@zero_alloc]
+
+  (** Tests if the argument is a heap-allocated block. *)
+  val is_block : t @ contended local once -> bool
+  [@@zero_alloc]
 
   (** Checks whether a value is stack-allocated. *)
   external is_stack : t @ contended local once -> bool = "caml_obj_is_stack"
@@ -54,23 +64,12 @@ module type S = sig
 
   (** Computes the total size (in words, including the headers) of all heap blocks
       accessible from the argument. Statically allocated blocks are included. *)
-  val reachable_words : t -> int
+  external reachable_words : t -> int @@ portable = "caml_obj_reachable_words"
 
   module Expert : sig
-    include module type of struct
-      include Stdlib.Obj
-    end
-
-    external new_mixed_block
-      :  tag:int
-      -> total_words:int
-      -> scannable_words:int
-      -> t
-      = "Base_obj_new_mixed_block"
-
     external%template obj
-      :  (t[@local_opt]) @ c o p u
-      -> ('a[@local_opt]) @ c o p u
+      : ('a : k).
+      (t[@local_opt]) @ c o p u -> ('a[@local_opt]) @ c o p u
       = "%obj_magic"
     [@@mode
       c = (uncontended, shared, contended)
@@ -78,8 +77,11 @@ module type S = sig
       , p = (nonportable, portable)
       , u = (aliased, unique)]
 
-    val%template field : t @ l -> int -> t @ l [@@mode l = (local, global)]
-    val%template set_field : t @ l -> int -> t -> unit [@@mode l = (local, global)]
+    [%%template:
+    [@@@mode.default l = (local, global)]
+
+    val field : t @ l -> int -> t @ l
+    val set_field : t @ l -> int -> t -> unit]
 
     external raw_field : (t[@local_opt]) -> int -> raw_data = "caml_obj_raw_field"
 
@@ -100,7 +102,9 @@ module type Obj = sig @@ portable
     include Definitions
   end
 
-  include S (** @inline *)
+  type t = Stdlib.Obj.t
+
+  include%template S [@kind.explicit value] with type t := t (** @inline *)
 
   val uniquely_reachable_words : t array -> int array * int
   [@@ocaml.doc
@@ -178,5 +182,37 @@ module type Obj = sig @@ portable
     include module type of struct
       include Stdlib.Ephemeron
     end
+  end
+
+  module Expert : sig
+    include module type of struct
+      include Stdlib.Obj
+    end
+
+    include module type of Expert
+
+    external new_mixed_block
+      :  tag:int
+      -> total_words:int
+      -> scannable_words:int
+      -> t
+      = "Base_obj_new_mixed_block"
+  end
+
+  module Nullable : sig
+    (** Versions of [Obj] functions that work on [maybe_null] values.
+
+        Defines a distinct type to avoid optimizations assuming its values are [non_null]. *)
+
+    type t : value_or_null
+
+    include%template S [@kind.explicit value_or_null] with type t := t (** @inline *)
+
+    (** Tests if the argument is an immediate value (int, variant constructor, or null). *)
+    val is_immediate : t @ contended local once -> bool
+    [@@zero_alloc]
+
+    external is_null : t @ contended local once -> bool = "%is_null"
+    val null_tag : int
   end
 end

@@ -4,6 +4,20 @@ module Either = Either0
 include List1
 include Constructors
 
+module%template Derived = struct
+  include Container.Derived [@kind.explicit value_or_null]
+  include Indexed_container.Derived [@kind.explicit value_or_null]
+end
+
+[%%template
+  open struct
+    [@@@kind.default k = value_with_imm]
+
+    type ('a : value_or_null) t = 'a list =
+      | []
+      | ( :: ) of 'a * ('a t[@kind k])
+  end]
+
 (* This itself includes [List0]. *)
 
 let invalid_argf = Printf.invalid_argf
@@ -20,7 +34,7 @@ module Or_unequal_lengths = struct
 end
 
 let invariant f t = iter t ~f
-let of_list t = t
+let%template of_list t = t [@@alloc __ = (heap, stack)]
 let singleton x = [ x ]
 
 let range' ~compare ~stride ?(start = `inclusive) ?(stop = `exclusive) start_i stop_i =
@@ -63,9 +77,11 @@ let range' ~compare ~stride ?(start = `inclusive) ?(stop = `exclusive) start_i s
   loop start_i [@nontail]
 ;;
 
+let compare_int = Replace_polymorphic_compare.Int_replace_polymorphic_compare.compare
+
 let range ?(stride = 1) ?(start = `inclusive) ?(stop = `exclusive) start_i stop_i =
   if stride = 0 then invalid_arg "List.range: stride must be non-zero";
-  range' ~compare ~stride:(fun x -> x + stride) ~start ~stop start_i stop_i
+  range' ~compare:compare_int ~stride:(fun x -> x + stride) ~start ~stop start_i stop_i
 ;;
 
 let hd t =
@@ -83,10 +99,10 @@ let tl t =
 [@@@warning "-incompatible-with-upstream"]
 
 [%%template
-[@@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
+[@@@kind k = base_or_null_with_imm]
 
 open struct
-  type nonrec ('a : k) t = ('a t[@kind k]) =
+  type nonrec ('a : any) t = ('a t[@kind k]) =
     | []
     | ( :: ) of 'a * ('a t[@kind k])
 end
@@ -100,13 +116,19 @@ let nth t n : (_ Option0.t[@kind k]) =
     let rec nth_aux t n : (_ Option0.t[@kind k]) =
       match t with
       | [] -> None
-      | a :: t -> if n = 0 then Some a else nth_aux t (n - 1)
+      | a :: t ->
+        if n = 0
+        then Some a [@exclave_if_local l]
+        else (
+          let n = n - 1 in
+          nth_aux t n [@exclave_if_local l])
     in
-    nth_aux t n)
+    nth_aux t n [@exclave_if_local l])
+[@@mode l = (local, global)]
 ;;
 
 let nth_exn t n =
-  match (nth [@kind k]) t n with
+  match[@exclave_if_stack a] (nth [@kind k] [@mode l]) t n with
   | None ->
     (match
        (invalid_argf
@@ -118,25 +140,34 @@ let nth_exn t n =
      with
      | _ -> .)
   | Some a -> a
+[@@alloc a @ l = (stack_local, heap_global)]
 ;;
+
+let[@mode local] nth_exn = (nth_exn [@kind k] [@alloc stack])
+let[@mode global] nth_exn = (nth_exn [@kind k] [@alloc heap])
 
 let init_internal n ~f ~name =
   if n < 0 then invalid_argf "%s %d" name n ();
-  let rec loop i accum =
+  let rec loop i accum ~f =
     assert (i >= 0);
-    if i = 0 then accum else loop (i - 1) (f (i - 1) :: accum)
+    if i = 0 then accum else loop (i - 1) (f (i - 1) :: accum) ~f [@exclave_if_stack a]
   in
-  loop n [] [@nontail]
+  loop n [] ~f [@nontail] [@exclave_if_stack a]
+[@@alloc a = (heap, stack)]
 ;;
 
-let init n ~f = (init_internal [@kind k]) n ~f ~name:"List.init"
+let init n ~f =
+  (init_internal [@kind k] [@alloc a]) n ~f ~name:"List.init" [@exclave_if_stack a]
+[@@alloc a = (heap, stack)]
+;;
 
 let iteri l ~f =
   ignore
-    ((fold [@kind k value_or_null]) l ~init:0 ~f:(fun i x ->
+    ((fold [@kind k value_or_null] [@mode m global]) l ~init:0 ~f:(fun i x ->
        f i x;
        i + 1)
      : int)
+[@@mode m = (global, local)]
 ;;
 
 let mem t a ~equal =
@@ -145,6 +176,7 @@ let mem t a ~equal =
     | b :: bs -> equal a b || loop equal a bs
   in
   loop equal a t
+[@@mode m = (global, local)]
 ;;]
 
 let unordered_append l1 l2 =
@@ -285,21 +317,40 @@ let rev_filter t ~f =
   find ~f [] t
 ;;
 
-let[@tail_mod_cons] rec filter l ~f =
+let filteri l ~f =
+  let[@tail_mod_cons] rec local_ loop pos l =
+    match l with
+    | [] -> []
+    | hd :: tl -> if f pos hd then hd :: loop (pos + 1) tl else loop (pos + 1) tl
+  in
+  loop 0 l [@nontail]
+;;
+
+let%template[@tail_mod_cons] rec filter l ~f =
   match l with
   | [] -> []
   | hd :: tl -> if f hd then hd :: filter tl ~f else filter tl ~f
+[@@alloc a = heap]
 ;;
 
-let find_map t ~f =
-  let rec loop = function
+let%template find_map_alloc t ~f =
+  let rec loop ~f = function
     | [] -> None
     | x :: l ->
-      (match f x with
-       | None -> loop l
+      (match[@exclave_if_stack a] f x with
+       | None -> loop ~f l
        | Some _ as r -> r)
   in
-  loop t [@nontail]
+  loop ~f t [@nontail] [@exclave_if_local mo]
+[@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
+;;
+
+let%template find_map = (find_map_alloc [@mode mi] [@alloc heap])
+[@@mode mi = (global, local), mo = global]
+;;
+
+let%template find_map = (find_map_alloc [@mode mi] [@alloc stack])
+[@@mode mi = (global, local), mo = local]
 ;;
 
 let find_map_exn =
@@ -314,12 +365,14 @@ let find_map_exn =
   find_map_exn
 ;;
 
-let find t ~f =
-  let rec loop = function
+let%template find t ~f =
+  let rec loop ~f = function
     | [] -> None
-    | x :: l -> if f x then Some x else loop l
+    | x :: l ->
+      if f x then Some x [@exclave_if_local m] else loop ~f l [@exclave_if_local m]
   in
-  loop t [@nontail]
+  loop ~f t [@nontail] [@exclave_if_local m]
+[@@mode m = (global, local)]
 ;;
 
 let find_exn =
@@ -334,13 +387,19 @@ let find_exn =
   find_exn
 ;;
 
-let findi t ~f =
-  let rec loop i t =
+let%template findi t ~f =
+  let rec loop ~f i t =
     match t with
     | [] -> None
-    | x :: l -> if f i x then Some (i, x) else loop (i + 1) l
+    | x :: l ->
+      if f i x
+      then Some (i, x) [@exclave_if_local m]
+      else (
+        let next = i + 1 in
+        loop ~f next l [@exclave_if_local m])
   in
-  loop 0 t [@nontail]
+  loop ~f 0 t [@nontail] [@exclave_if_local m]
+[@@mode m = (global, local)]
 ;;
 
 let findi_exn =
@@ -354,16 +413,27 @@ let findi_exn =
   findi_exn
 ;;
 
-let find_mapi t ~f =
-  let rec loop i t =
-    match t with
+let%template find_mapi_alloc t ~f =
+  let rec loop ~f i t =
+    match[@exclave_if_stack a] t with
     | [] -> None
     | x :: l ->
       (match f i x with
        | Some _ as result -> result
-       | None -> loop (i + 1) l)
+       | None ->
+         let next = i + 1 in
+         loop ~f next l)
   in
-  loop 0 t [@nontail]
+  loop ~f 0 t [@nontail] [@exclave_if_local mo]
+[@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
+;;
+
+let%template find_mapi = (find_mapi_alloc [@mode mi] [@alloc heap])
+[@@mode mi = (global, local), mo = global]
+;;
+
+let%template find_mapi = (find_mapi_alloc [@mode mi] [@alloc stack])
+[@@mode mi = (global, local), mo = local]
 ;;
 
 let find_mapi_exn =
@@ -378,30 +448,30 @@ let find_mapi_exn =
   find_mapi_exn
 ;;
 
-let for_alli t ~f =
+let%template for_alli t ~f =
   let rec loop i t =
     match t with
     | [] -> true
     | hd :: tl -> f i hd && loop (i + 1) tl
   in
   loop 0 t [@nontail]
+[@@mode m = (global, local)]
 ;;
 
-let existsi t ~f =
+let%template existsi t ~f =
   let rec loop i t =
     match t with
     | [] -> false
     | hd :: tl -> f i hd || loop (i + 1) tl
   in
   loop 0 t [@nontail]
+[@@mode m = (global, local)]
 ;;
 
-(** For the container interface. *)
 let fold_left = fold
-
-let of_array = Array.to_list
+let%template of_array = (Array.to_list [@alloc a]) [@@alloc a = (heap, stack)]
 let to_array = Array.of_list
-let to_list t = t
+let%template to_list t = t [@@alloc __ = (heap, stack)]
 
 (** Tail recursive versions of standard [List] module *)
 
@@ -416,50 +486,230 @@ let[@tail_mod_cons] rec append_loop l1 l2 =
     x1 :: x2 :: x3 :: x4 :: x5 :: (append_loop [@tailcall]) tl l2
 ;;
 
-let append l1 l2 =
+let%template append l1 l2 =
   match l2 with
   | [] -> l1
-  | _ :: _ -> append_loop l1 l2
+  | _ :: _ -> (append_loop [@alloc a]) l1 l2 [@exclave_if_stack a]
+[@@alloc a = heap]
+;;
+
+let%template append l1 l2 =
+  match (l2 : (_ t[@kind k])) with
+  | [] -> l1
+  | _ :: _ -> (rev [@kind k]) ((rev_append [@kind k]) l2 ((rev [@kind k]) l1))
+[@@kind k = (base_non_value, immediate, immediate64)] [@@alloc a = heap]
+;;
+
+(* call-stack size <= first input data-stack size *)
+let%template append =
+  let loop_tail l1 l2 = exclave_
+    (rev_append [@kind k] [@alloc a]) ((rev [@kind k] [@alloc a]) l1) l2
+  in
+  let rec loop l1 l2 ~depth =
+    match (l1 : (_ t[@kind k])) with
+    | [] -> l2
+    | x :: xs ->
+      exclave_
+      let xs =
+        if depth <= max_non_tailcall
+        then loop xs l2 ~depth:(depth + 1)
+        else (loop_tail [@inlined never]) xs l2
+      in
+      x :: xs
+  in
+  fun [@zero_alloc] l1 l2 ->
+    match (l2 : (_ t[@kind k])) with
+    | [] -> l1
+    | _ :: _ -> exclave_ loop l1 l2 ~depth:0
+[@@kind k = (base_non_value, immediate, immediate64, value)] [@@alloc a = stack]
+;;
+
+(* call-stack size <= output data-stack size *)
+let%template filteri =
+  let rec loop_tail i xs ~acc ~f = exclave_
+    match (xs : (_ t[@kind k])) with
+    | [] -> (rev [@kind k] [@alloc stack]) acc
+    | x :: xs ->
+      let acc : (_ t[@kind k]) = if f i x then x :: acc else acc in
+      (loop_tail [@tailcall]) (i + 1) xs ~acc ~f
+  in
+  let rec loop i xs ~f : (_ t[@kind k]) =
+    match (xs : (_ t[@kind k])) with
+    | [] -> []
+    | x :: xs ->
+      exclave_
+      let res = f i x in
+      let i = i + 1 in
+      (match res with
+       | false -> (loop [@tailcall]) i xs ~f
+       | true ->
+         let xs =
+           if i <= max_non_tailcall
+           then loop i xs ~f
+           else (loop_tail [@inlined never]) i xs ~acc:[] ~f
+         in
+         x :: xs)
+  in
+  fun t ~f -> exclave_ loop 0 t ~f
+[@@kind k = base_with_imm] [@@alloc stack]
+;;
+
+(* call-stack size <= output data-stack size *)
+let%template filter t ~f = exclave_ (filteri [@kind k] [@alloc a]) t ~f:(fun _ x -> f x)
+[@@kind k = base_with_imm] [@@alloc a = stack]
 ;;
 
 [%%template
-[@@@kind.default
-  ka = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)
-  , kb = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
+[@@@kind.default ka = base_or_null_with_imm, kb = base_or_null_with_imm]
 
 let rev_mapi l ~f =
-  let rec loop i acc : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
+  let rec loop ~f i acc : (_ t[@kind ka]) @ mi -> (_ t[@kind kb]) @ mo = function
     | [] -> acc
-    | h :: t -> loop (i + 1) (f i h :: acc) t
+    | h :: t -> loop ~f (i + 1) (f i h :: acc) t [@exclave_if_stack a]
   in
-  loop 0 [] l [@nontail]
+  loop ~f 0 [] l [@nontail] [@exclave_if_stack a]
+[@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
+;;
+
+let mapi l ~f =
+  let rec loop_tail i xs ~acc ~f : (_ t[@kind kb]) = exclave_
+    match (xs : (_ t[@kind ka])) with
+    | [] -> (rev [@kind kb] [@alloc a]) acc
+    | x :: xs -> (loop_tail [@tailcall]) (i + 1) xs ~acc:(f i x :: acc) ~f
+  in
+  let rec loop i xs ~f : (_ t[@kind kb]) =
+    match (xs : (_ t[@kind ka])) with
+    | [] -> []
+    | x :: xs ->
+      exclave_
+      let y = f i x in
+      let i = i + 1 in
+      let ys =
+        if i <= max_non_tailcall
+        then loop i xs ~f
+        else (loop_tail [@inlined never]) i xs ~acc:[] ~f
+      in
+      y :: ys
+  in
+  exclave_ loop 0 l ~f
+[@@mode mi = (global, local)] [@@alloc a = stack]
+;;
+
+(* call-stack size <= input and output data-stack size *)
+let map t ~f = exclave_
+  (mapi [@kind ka kb] [@mode mi] [@alloc a]) t ~f:(fun _ x -> exclave_ f x)
+[@@mode mi = (global, local)] [@@alloc a = stack]
+;;
+
+(* call-stack size <= output data-stack size *)
+let filter_mapi =
+  let rec loop_tail i (xs @ mi) ~acc ~f = exclave_
+    match (xs : (_ t[@kind ka])) with
+    | [] -> (rev [@kind kb] [@alloc a]) acc
+    | x :: xs ->
+      let acc =
+        match (f i x : (_ Option0.t[@kind kb])) with
+        | None -> acc
+        | Some y -> y :: acc
+      in
+      (loop_tail [@tailcall]) (i + 1) xs ~acc ~f
+  in
+  let rec loop i (xs @ mi) ~f : (_ t[@kind kb]) =
+    match (xs : (_ t[@kind ka])) with
+    | [] -> []
+    | x :: xs ->
+      exclave_
+      let y = f i x in
+      let i = i + 1 in
+      (match (y : (_ Option0.t[@kind kb])) with
+       | None -> (loop [@tailcall]) i xs ~f
+       | Some y ->
+         let ys =
+           if i <= max_non_tailcall
+           then loop i xs ~f
+           else (loop_tail [@inlined never]) i xs ~acc:[] ~f
+         in
+         y :: ys)
+  in
+  fun t ~f -> exclave_ loop 0 t ~f
+[@@mode mi = (global, local)] [@@alloc a = stack]
+;;
+
+(* call-stack size <= output data-stack size *)
+let filter_map t ~f = exclave_
+  (filter_mapi [@kind ka kb] [@mode mi] [@alloc a]) t ~f:(fun _ x -> exclave_ f x)
+[@@mode mi = (global, local)] [@@alloc a = stack]
+;;
+
+(* call-stack size <= input data stack size + max inner list data stack size
+
+  unlike other functions, the maximum call-stack depth is [2 * max_non_tailcall] *)
+let concat_mapi =
+  let loop_tail (t : (_ t[@kind ka])) ~i ~f = exclave_
+    let #(_, expanded) =
+      (fold [@kind ka (value_or_null & value_or_null)] [@mode mi mo])
+        t
+        ~init:#(i, ([] : ('b t[@kind kb])))
+        ~f:(fun #(i, acc) x -> exclave_
+          #(i + 1, (rev_append [@kind kb] [@alloc a]) (f i x) acc))
+    in
+    (rev [@kind kb] [@alloc a]) expanded
+  in
+  let rec loop xs ~i ~f =
+    match (xs : (_ t[@kind ka])) with
+    | [] -> ([] : (_ t[@kind kb]))
+    | x :: xs ->
+      exclave_
+      let expanded_hd = f i x in
+      let expanded_tl =
+        if i <= max_non_tailcall
+        then loop xs ~i:(i + 1) ~f
+        else (loop_tail [@inlined never]) xs ~i:(i + 1) ~f
+      in
+      (append [@kind kb] [@alloc a]) expanded_hd expanded_tl
+  in
+  fun t ~f -> exclave_ loop t ~i:0 ~f
+[@@mode mi = (global, local)] [@@alloc a @ mo = stack_local]
+;;
+
+let concat_map l ~f =
+  (concat_mapi [@kind ka kb] [@mode mi] [@alloc a]) l ~f:(fun _ x ->
+    f x [@exclave_if_stack a])
+  [@nontail] [@exclave_if_stack a]
+[@@mode mi = (global, local)] [@@alloc a = stack]
 ;;
 
 let foldi t ~init ~f =
   let #(_, r) =
-    (fold [@kind ka (value_or_null & kb)]) t ~init:#(0, init) ~f:(fun #(i, acc) v ->
-      #(i + 1, f i acc v))
+    (fold [@kind ka (value_or_null & kb)] [@mode mi mo])
+      t
+      ~init:#(0, init)
+      ~f:(fun #(i, acc) v -> #(i + 1, f i acc v))
   in
   r
+[@@mode mi = (global, local), mo = global]
+;;
+
+let foldi t ~init ~f = exclave_
+  let #(_, r) =
+    (fold [@kind ka (value_or_null & kb)] [@mode mi mo])
+      t
+      ~init:#(0, init)
+      ~f:(fun #(i, acc) v -> exclave_ #(i + 1, f i acc v))
+  in
+  r
+[@@mode mi = (global, local), mo = local]
 ;;]
 
 [%%template
-[@@@kind.default
-  ka = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)
-  , kb = (value_or_null, immediate, immediate64)]
+[@@@kind.default ka = base_or_null_with_imm, kb = value_or_null_with_imm]
 
 open struct
-  type nonrec ('a : ka) t = ('a t[@kind ka]) =
+  type nonrec ('a : any) t = ('a t[@kind ka]) =
     | []
     | ( :: ) of 'a * ('a t[@kind ka])
   [@@kind ka]
 end
-
-let[@tail_mod_cons] rec map l ~f : (_ t[@kind kb]) =
-  match l with
-  | [] -> []
-  | x :: tl -> f x :: (map [@kind ka kb] [@tailcall]) tl ~f
-;;
 
 let mapi l ~f =
   let[@tail_mod_cons] rec local_ loop i = function
@@ -467,15 +717,17 @@ let mapi l ~f =
     | h :: t -> f i h :: loop (i + 1) t
   in
   loop 0 l [@nontail]
+[@@mode mi = (global, local)] [@@alloc a = heap]
 ;;
 
-let[@tail_mod_cons] rec filter_map l ~f : (_ t[@kind kb]) =
-  match l with
-  | [] -> []
-  | hd :: tl ->
-    (match (f hd : (_ Option0.t[@kind kb])) with
-     | None -> (filter_map [@kind ka kb]) tl ~f
-     | Some x -> x :: (filter_map [@kind ka kb]) tl ~f)
+let map l ~f =
+  let[@tail_mod_cons] rec loop l ~f : (_ t[@kind kb]) =
+    match l with
+    | [] -> []
+    | x :: tl -> f x :: (loop [@tailcall]) tl ~f
+  in
+  loop l ~f
+[@@mode mi = (global, local)] [@@alloc a = heap]
 ;;
 
 let filter_mapi l ~f =
@@ -488,6 +740,20 @@ let filter_mapi l ~f =
        | Some x -> x :: loop (pos + 1) tl)
   in
   loop 0 l [@nontail]
+[@@mode mi = (global, local)] [@@alloc a = heap]
+;;
+
+let filter_map l ~f =
+  let[@tail_mod_cons] rec loop l ~f : (_ t[@kind kb]) =
+    match l with
+    | [] -> []
+    | hd :: tl ->
+      (match (f hd : (_ Option0.t[@kind kb])) with
+       | None -> loop tl ~f
+       | Some x -> x :: loop tl ~f)
+  in
+  loop l ~f
+[@@mode mi = (global, local)] [@@alloc a = heap]
 ;;
 
 let concat_mapi l ~(local_ f) =
@@ -506,14 +772,18 @@ let concat_mapi l ~(local_ f) =
       x1 :: x2 :: x3 :: x4 :: x5 :: inner_loop pos tl l2
   in
   outer_loop 0 l [@nontail]
+[@@mode mi = (global, local)] [@@alloc a = heap]
 ;;
 
-let concat_map l ~(local_ f) =
-  (concat_mapi [@kind ka kb]) l ~f:(fun _ x -> f x) [@nontail]
+let concat_map l ~(f @ local) =
+  (concat_mapi [@kind ka kb] [@mode mi] [@alloc a]) l ~f:(fun _ x ->
+    f x [@exclave_if_stack a])
+  [@nontail] [@exclave_if_stack a]
+[@@mode mi = (global, local)] [@@alloc a = heap]
 ;;]
 
 [%%template
-[@@@kind.default k = (float64, bits32, bits64, word, immediate, immediate64)]
+[@@@kind.default k = (base_non_value, immediate, immediate64)]
 
 (* Copied from [Sexplib0] for templating *)
 
@@ -541,7 +811,7 @@ let sexp_of_t : _ -> (_ t[@kind k]) @ local -> Sexplib0.Sexp.t @ local =
 ;;]
 
 [%%template
-[@@@kind.default k = (float64, bits32, bits64, word, immediate, immediate64)]
+[@@@kind.default k = (base_non_value, immediate, immediate64)]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -570,21 +840,15 @@ let filteri l ~f =
       (loop [@tailcall]) ~acc (pos + 1) tl
   in
   (loop ~acc:[] 0 l |> (rev [@kind k])) [@nontail]
-;;
-
-let append l1 l2 =
-  match l2 with
-  | [] -> l1
-  | _ :: _ -> (rev [@kind k]) ((rev_append [@kind k]) l2 ((rev [@kind k]) l1))
 ;;]
 
 [%%template
-[@@@kind.default
-  ka = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)
-  , kb = (float64, bits32, bits64, word)]
+[@@@kind.default ka = base_or_null_with_imm, kb = base_non_value]
+[@@@mode.default mi = (global, local)]
+[@@@alloc.default a = heap]
 
 open struct
-  type nonrec ('a : ka) t = ('a t[@kind ka]) =
+  type nonrec ('a : any) t = ('a t[@kind ka]) =
     | []
     | ( :: ) of 'a * ('a t[@kind ka])
   [@@kind ka]
@@ -594,18 +858,20 @@ let map (l : (_ t[@kind ka])) ~f : (_ t[@kind kb]) =
   match l with
   | [] -> []
   | [ x ] -> [ f x ]
-  | _ :: _ -> ((rev_map [@kind ka kb]) l ~f |> (rev [@kind kb])) [@nontail]
+  | _ :: _ ->
+    ((rev_map [@kind ka kb] [@mode mi] [@alloc a]) l ~f |> (rev [@kind kb])) [@nontail]
 ;;
 
 let mapi (l : (_ t[@kind ka])) ~(local_ f) : (_ t[@kind kb]) =
   match l with
   | [] -> []
   | [ x ] -> [ f 0 x ]
-  | _ :: _ -> ((rev_mapi [@kind ka kb]) l ~f |> (rev [@kind kb])) [@nontail]
+  | _ :: _ ->
+    ((rev_mapi [@kind ka kb] [@mode mi] [@alloc a]) l ~f |> (rev [@kind kb])) [@nontail]
 ;;
 
 let filter_map l ~f =
-  let rec local_ loop ~acc : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
+  let rec local_ loop ~acc : (_ t[@kind ka]) @ mi -> (_ t[@kind kb]) = function
     | [] -> acc
     | hd :: tl ->
       (match (f hd : (_ Option0.t[@kind kb])) with
@@ -616,7 +882,7 @@ let filter_map l ~f =
 ;;
 
 let filter_mapi l ~f =
-  let rec local_ loop ~acc pos : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
+  let rec local_ loop ~acc pos : (_ t[@kind ka]) @ mi -> (_ t[@kind kb]) = function
     | [] -> acc
     | hd :: tl ->
       (match (f pos hd : (_ Option0.t[@kind kb])) with
@@ -627,7 +893,7 @@ let filter_mapi l ~f =
 ;;
 
 let concat_mapi l ~(local_ f) =
-  let rec local_ loop ~acc pos : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
+  let rec local_ loop ~acc pos : (_ t[@kind ka]) @ mi -> (_ t[@kind kb]) = function
     | [] -> []
     | [ hd ] -> (rev_append [@kind kb]) acc (f pos hd)
     | hd :: (_ :: _ as tl) ->
@@ -638,7 +904,7 @@ let concat_mapi l ~(local_ f) =
 ;;
 
 let concat_map l ~(local_ f) =
-  let rec local_ loop ~acc : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
+  let rec local_ loop ~acc : (_ t[@kind ka]) @ mi -> (_ t[@kind kb]) = function
     | [] -> []
     | [ hd ] -> (rev_append [@kind kb]) acc (f hd)
     | hd :: (_ :: _ as tl) ->
@@ -773,15 +1039,6 @@ let fold_mapi t ~init ~f =
       y)
   in
   !acc, result
-;;
-
-let filteri l ~f =
-  let[@tail_mod_cons] rec local_ loop pos l =
-    match l with
-    | [] -> []
-    | hd :: tl -> if f pos hd then hd :: loop (pos + 1) tl else loop (pos + 1) tl
-  in
-  loop 0 l [@nontail]
 ;;
 
 let reduce l ~f =
@@ -1290,56 +1547,84 @@ let all_equal t ~equal =
   | x :: xs -> if all_equal_to xs x ~equal then Some x else None
 ;;
 
-let count t ~f = Container.count ~fold t ~f
-let sum m t ~f = Container.sum ~fold m t ~f
+let%template sum m t ~f =
+  (Derived.sum [@mode mi mo]) ~fold:(fold [@mode mi mo]) m t ~f [@exclave_if_local mo]
+[@@mode mi = (global, local), mo = (global, local)]
+;;
 
-let min_elt t ~compare =
+[%%template
+let min_elt_alloc t ~compare =
   match t with
   | [] -> None
   | elt :: t ->
-    Some (fold t ~init:elt ~f:(fun acc elt -> if compare acc elt > 0 then elt else acc))
+    Some
+      ((fold [@mode m m]) t ~init:elt ~f:(fun acc elt ->
+         if compare acc elt > 0 then elt else acc))
+    [@exclave_if_stack a]
+[@@alloc a @ m = (heap_global, stack_local)]
 ;;
 
-let max_elt t ~compare =
+let min_elt = (min_elt_alloc [@alloc heap]) [@@mode global]
+let min_elt = (min_elt_alloc [@alloc stack]) [@@mode local]
+
+let max_elt_alloc t ~compare =
   match t with
   | [] -> None
   | elt :: t ->
-    Some (fold t ~init:elt ~f:(fun acc elt -> if compare acc elt < 0 then elt else acc))
+    Some
+      ((fold [@mode m m]) t ~init:elt ~f:(fun acc elt ->
+         if compare acc elt < 0 then elt else acc))
+    [@exclave_if_stack a]
+[@@alloc a @ m = (heap_global, stack_local)]
 ;;
+
+let max_elt = (max_elt_alloc [@alloc heap]) [@@mode global]
+let max_elt = (max_elt_alloc [@alloc stack]) [@@mode local]
+
+[@@@mode.default m = (global, local)]
+
+let count t ~f = (Derived.count [@mode m]) ~fold:(fold [@mode m global]) t ~f
 
 let counti t ~f =
-  foldi t ~init:0 ~f:(fun idx count a -> if f idx a then count + 1 else count) [@nontail]
-;;
+  (foldi [@mode m global]) t ~init:0 ~f:(fun idx count a ->
+    if f idx a then count + 1 else count)
+  [@nontail]
+;;]
 
 let create ~len x =
   init_internal len ~f:(local_ fun _ -> x) ~name:"List.create" [@nontail]
 ;;
 
+[%%template
+[@@@alloc.default a @ mo = (heap_global, stack_local)]
+
+let filter_opt l = (filter_map [@mode mo] [@alloc a]) l ~f:Fn.id [@exclave_if_stack a]
+
+[@@@mode.default mi = (global, local)]
+
 let rev_filter_map l ~f =
-  let rec loop l accum =
-    match l with
+  let rec loop l ~f accum =
+    match[@exclave_if_stack a] l with
     | [] -> accum
     | hd :: tl ->
       (match f hd with
-       | Some x -> loop tl (x :: accum)
-       | None -> loop tl accum)
+       | Some x -> loop tl ~f (x :: accum)
+       | None -> loop tl ~f accum)
   in
-  loop l [] [@nontail]
+  loop l ~f [] [@nontail] [@exclave_if_stack a]
 ;;
 
 let rev_filter_mapi l ~f =
-  let rec loop i l accum =
-    match l with
+  let rec loop ~f i l accum =
+    match[@exclave_if_stack a] l with
     | [] -> accum
     | hd :: tl ->
       (match f i hd with
-       | Some x -> loop (i + 1) tl (x :: accum)
-       | None -> loop (i + 1) tl accum)
+       | Some x -> loop ~f (i + 1) tl (x :: accum)
+       | None -> loop ~f (i + 1) tl accum)
   in
-  loop 0 l [] [@nontail]
-;;
-
-let filter_opt l = filter_map l ~f:Fn.id
+  loop ~f 0 l [] [@nontail] [@exclave_if_stack a]
+;;]
 
 let partition3_map t ~f =
   let rec loop t fst snd trd =
@@ -1354,28 +1639,39 @@ let partition3_map t ~f =
   loop t [] [] [] [@nontail]
 ;;
 
-let partition_tf t ~f =
-  let f x : _ Either.t = if f x then First x else Second x in
-  partition_map t ~f [@nontail]
+let%template partition_tf t ~f =
+  (let f x : _ Either.t = (if f x then First x else Second x) [@exclave_if_stack a] in
+   (partition_map [@mode m] [@alloc a]) t ~f [@nontail])
+  [@exclave_if_stack a]
+[@@alloc a @ m = (heap_global, stack_local)]
 ;;
 
-let partition_result t = partition_map t ~f:Result.to_either
-
-let partition_mapi t ~f =
-  let rec loop i t fst snd =
-    match t with
-    | [] -> rev fst, rev snd
-    | x :: t ->
-      (match (f i x : _ Either0.t) with
-       | First y -> loop (i + 1) t (y :: fst) snd
-       | Second y -> loop (i + 1) t fst (y :: snd))
-  in
-  loop 0 t [] [] [@nontail]
+let%template partition_result (t @ m) =
+  (partition_map [@mode m] [@alloc a])
+    t
+    ~f:(Result.to_either [@mode m]) [@exclave_if_stack a]
+[@@alloc a @ m = (heap_global, stack_local)]
 ;;
 
-let partitioni_tf t ~f =
-  let f i x : _ Either.t = if f i x then First x else Second x in
-  partition_mapi t ~f [@nontail]
+let%template partition_mapi t ~f =
+  (let rec loop i t fst snd =
+     match[@exclave_if_stack a] t with
+     | [] -> (rev [@alloc a]) fst, (rev [@alloc a]) snd
+     | x :: t ->
+       (match (f i x : _ Either0.t) with
+        | First y -> loop (i + 1) t (y :: fst) snd
+        | Second y -> loop (i + 1) t fst (y :: snd))
+   in
+   loop 0 t [] [] [@nontail])
+  [@exclave_if_stack a]
+[@@mode m = (global, local)] [@@alloc a = (heap, stack)]
+;;
+
+let%template partitioni_tf t ~f =
+  (let f i x : _ Either.t = (if f i x then First x else Second x) [@exclave_if_stack a] in
+   (partition_mapi [@mode m] [@alloc a]) t ~f [@nontail])
+  [@exclave_if_stack a]
+[@@alloc a @ m = (heap_global, stack_local)]
 ;;
 
 let of_iter ~iter =
@@ -1410,22 +1706,30 @@ module Assoc = struct
     |> map ~f:pair_of_group
   ;;
 
-  let find t ~equal key =
-    match find t ~f:(fun (key', _) -> equal key key') with
+  let%template find t ~equal key =
+    match[@exclave_if_stack a]
+      (find [@mode l]) t ~f:(fun (key', _) -> equal key key')
+    with
     | None -> None
     | Some x -> Some (snd x)
+  [@@alloc a @ l = (stack_local, heap_global)]
   ;;
 
-  let find_exn =
+  let%template[@mode local] find = (find [@alloc stack])
+  let%template[@mode global] find = (find [@alloc heap])
+
+  let%template find_exn =
     let not_found = Not_found_s (Atom "List.Assoc.find_exn: not found") in
     let rec find_exn t ~equal key =
       match t with
       | [] ->
         raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
-      | (key', value) :: t -> if equal key key' then value else find_exn t ~equal key
+      | (key', value) :: t ->
+        if equal key key' then value else find_exn t ~equal key [@exclave_if_local l]
     in
     (* named to preserve symbol in compiled binary *)
     find_exn
+  [@@mode l = (local, global)]
   ;;
 
   let mem t ~equal key =
@@ -1502,6 +1806,24 @@ let chunks_of l ~length =
   aux length [] l
 ;;
 
+let chunk_evenly t ~into =
+  if into <= 0 then invalid_argf "List.chunk_evenly: Expected [into] > 0, got %d" into ();
+  let num_items = length t in
+  let smaller_bucket_size = num_items / into in
+  let num_smaller_into = into - (num_items mod into) in
+  let[@tail_mod_cons] rec (loop @ local) t ~into =
+    match into with
+    | 0 -> []
+    | _ ->
+      let bucket_size =
+        if into <= num_smaller_into then smaller_bucket_size else smaller_bucket_size + 1
+      in
+      let this_bucket, remaining = split_n t bucket_size in
+      this_bucket :: loop remaining ~into:(into - 1)
+  in
+  loop t ~into [@nontail]
+;;
+
 let split_while xs ~f =
   let rec loop acc = function
     | hd :: tl when f hd -> loop (hd :: acc) tl
@@ -1553,7 +1875,11 @@ let cartesian_product list1 list2 =
     outer_loop list1 [@nontail])
 ;;
 
-let concat l = fold_right l ~init:[] ~f:append
+let%template concat l =
+  (fold_right [@mode m m]) l ~init:[] ~f:(append [@alloc a]) [@exclave_if_stack a]
+[@@alloc a @ m = (heap_global, stack_local)]
+;;
+
 let concat_no_order l = fold l ~init:[] ~f:(fun acc l -> rev_append l acc)
 let cons x l = x :: l
 
@@ -1683,15 +2009,63 @@ let intersperse t ~sep =
   | x :: xs -> x :: fold_right xs ~init:[] ~f:(fun y acc -> sep :: y :: acc)
 ;;
 
-let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
-let fold_result t ~init ~f = Container.fold_result ~fold_until ~init ~f t
-
-let foldi_until t ~init ~f ~finish =
-  Indexed_container.foldi_until ~fold_until ~init ~f t ~finish
+let%template fold_until_alloc t ~init ~f ~finish =
+  let rec loop t ~init ~f ~finish =
+    match[@exclave_if_stack a] t with
+    | [] -> finish init
+    | a :: xs ->
+      (match f init a with
+       | Container.Continue_or_stop.Continue x -> (loop [@tailcall]) xs ~init:x ~f ~finish
+       | Stop x -> x)
+  in
+  loop t ~init ~f ~finish [@exclave_if_stack a]
+[@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
 ;;
 
-let iter_until t ~f ~finish = Container.iter_until ~fold_until t ~f ~finish
-let iteri_until t ~f ~finish = Indexed_container.iteri_until ~foldi_until t ~f ~finish
+let%template fold_until = (fold_until_alloc [@mode mi] [@alloc heap])
+[@@mode mi = (global, local), mo = global]
+;;
+
+let%template fold_until = (fold_until_alloc [@mode mi] [@alloc stack])
+[@@mode mi = (global, local), mo = local]
+;;
+
+let%template fold_result t ~init ~f =
+  (Derived.fold_result [@mode mi mo])
+    ~fold_until:(fold_until [@mode mi mo])
+    ~init
+    ~f
+    t [@exclave_if_local mo]
+[@@mode mi = (global, local), mo = (global, local)]
+;;
+
+let%template foldi_until t ~init ~f ~finish =
+  (Derived.foldi_until [@mode mi mo])
+    ~fold_until:(fold_until [@mode mi mo])
+    ~init
+    ~f
+    t
+    ~finish [@exclave_if_local mo]
+[@@mode mi = (global, local), mo = (global, local)]
+;;
+
+let%template iter_until t ~f ~finish =
+  (Derived.iter_until [@mode mi mo])
+    ~fold_until:(fold_until [@mode mi mo])
+    t
+    ~f
+    ~finish [@exclave_if_local mo]
+[@@mode mi = (global, local), mo = (global, local)]
+;;
+
+let%template iteri_until t ~f ~finish =
+  (Derived.iteri_until [@mode mi mo])
+    ~foldi_until:(foldi_until [@mode mi mo])
+    t
+    ~f
+    ~finish [@exclave_if_local mo]
+[@@mode mi = (global, local), mo = (global, local)]
+;;
 
 let is_suffix list ~suffix ~equal:(local_ (equal_elt : _ -> _ -> _)) =
   let list_len = length list in
@@ -1699,3 +2073,7 @@ let is_suffix list ~suffix ~equal:(local_ (equal_elt : _ -> _ -> _)) =
   list_len >= suffix_len
   && equal_with_local_closure equal_elt (drop list (list_len - suffix_len)) suffix
 ;;
+
+module Private = struct
+  let max_non_tailcall = max_non_tailcall
+end

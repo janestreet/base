@@ -13,16 +13,7 @@ module type Error = sig @@ portable
   include Info.S0 with type t := t (** @open *)
 
   [%%template:
-  [@@@kind.default
-    k
-    = ( value_or_null
-      , immediate
-      , immediate64
-      , bits64
-      , bits32
-      , word
-      , float64
-      , bits32 & bits32 )]
+  [@@@kind.default k = (base_or_null_with_imm, bits32 & bits32)]
 
   (** Note that the exception raised by this function maintains a reference to the [t]
       passed in. *)

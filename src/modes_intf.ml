@@ -532,7 +532,7 @@ module Definitions = struct
           This type does not cross locality to enforce the relationship between
           mode-crossing and phantom types in the [with] clauses on [type t] below. *)
       type actually_local :
-        value mod aliased contended external_ many non_null portable unyielding
+        value mod aliased contended external_ forkable many non_null portable unyielding
 
       (** Phantom type parameter for {!t} which represents that the inhabitant is known to
           be [global]. *)
@@ -558,7 +558,7 @@ module Definitions = struct
            t :
            immediate
            with 'a @@ global
-           with 'locality @@ aliased contended many portable unyielding
+           with 'locality @@ aliased contended forkable many portable unyielding
 
       include
         Without_crossing
@@ -571,7 +571,7 @@ module Definitions = struct
 end
 
 module type Modes = sig @@ portable
-  type%template 'a t = { modal : 'a @@ a c g m p }
+  type%template ('a : k) t = { modal : 'a @@ a c g m p }
   [@@unboxed]
   [@@modality
     g = (local, global)
@@ -579,6 +579,7 @@ module type Modes = sig @@ portable
     , c = (uncontended, shared, contended)
     , m = (once, many)
     , a = (unique, aliased)]
+  [@@kind k = base_or_null]
 
   (** Wrap values in the [global_] mode, even in a [local_] context. *)
   module Global : sig
@@ -607,7 +608,7 @@ module type Modes = sig @@ portable
   module Contended : sig
     type ('a : value_or_null) t : value_or_null mod contended =
       { contended : 'a @@ contended }
-    [@@unboxed]
+    [@@unboxed] [@@deriving of_sexp]
 
     (** Require a value has a type that mode-crosses contention. This is useful for
         assisting type inference as well as improving error messages. *)
@@ -615,7 +616,8 @@ module type Modes = sig @@ portable
   end
 
   module Shared : sig
-    type ('a : value_or_null) t = { shared : 'a @@ shared } [@@unboxed]
+    type ('a : value_or_null) t = { shared : 'a @@ shared }
+    [@@unboxed] [@@deriving of_sexp]
   end
 
   module Portended : sig
@@ -627,6 +629,7 @@ module type Modes = sig @@ portable
   module Many : sig
     type ('a : value_or_null) t : value_or_null mod many = { many : 'a @@ many }
     [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
   end
 
   module Aliased : sig
@@ -634,15 +637,48 @@ module type Modes = sig @@ portable
     [@@unboxed]
   end
 
+  module Aliased_many : sig
+    type ('a : value_or_null) t : value_or_null mod aliased many =
+      { aliased_many : 'a @@ aliased many }
+    [@@unboxed]
+  end
+
+  module Forkable : sig
+    type ('a : value_or_null) t : value_or_null mod forkable =
+      { forkable : 'a @@ forkable }
+    [@@unboxed]
+  end
+
   module Unyielding : sig
     type ('a : value_or_null) t : value_or_null mod unyielding =
       { unyielding : 'a @@ unyielding }
     [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+  end
+
+  module Stateless : sig
+    type ('a : value_or_null) t : value_or_null mod stateless =
+      { stateless : 'a @@ stateless }
+    [@@unboxed]
+  end
+
+  module Observing : sig
+    type ('a : value_or_null) t = { observing : 'a @@ observing } [@@unboxed]
+  end
+
+  module Immutable : sig
+    type ('a : value_or_null) t : value_or_null mod immutable =
+      { immutable : 'a @@ immutable }
+    [@@unboxed]
+  end
+
+  module Read : sig
+    type ('a : value_or_null) t = { read : 'a @@ read } [@@unboxed]
   end
 
   module Immutable_data : sig
     type ('a : value mod non_float) t : immutable_data =
-      { immutable_data : 'a @@ immutable many stateless unyielding }
+      { immutable_data : 'a @@ forkable immutable many stateless unyielding }
     [@@unboxed]
   end
 
@@ -658,7 +694,9 @@ module type Modes = sig @@ portable
   (** Abstract over whether a value is [portable] or [nonportable] *)
   module At_portability : sig
     type nonportable_ :
-      value mod aliased contended external_ global many non_null unyielding
+      value mod aliased contended external_ forkable global many non_null unyielding
+    [@@allow_redundant_modalities
+      "While [global] implies [forkable unyielding], we include them for clarity"]
 
     (** Phantom type parameter for {!t} which represents that the inhabitant is known to
         be [portable]. *)
@@ -687,7 +725,9 @@ module type Modes = sig @@ portable
          t :
          immediate
          with 'a @@ portable
-         with 'portability @@ aliased contended global many unyielding
+         with 'portability @@ aliased contended forkable global many unyielding
+    [@@allow_redundant_modalities
+      "While [global] implies [forkable unyielding], we include them for clarity"]
     [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
     external wrap_portable
@@ -871,16 +911,19 @@ module type Modes = sig @@ portable
     type ('a : value_or_null) global : value_or_null mod global = 'a Global.t =
       { global : 'a @@ global }
     [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
 
     type ('a : value_or_null) portable : value_or_null mod portable = 'a Portable.t =
       { portable : 'a @@ portable }
     [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
 
     type ('a : value_or_null) contended : value_or_null mod contended = 'a Contended.t =
       { contended : 'a @@ contended }
-    [@@unboxed]
+    [@@unboxed] [@@deriving of_sexp]
 
-    type ('a : value_or_null) shared = 'a Shared.t = { shared : 'a @@ shared } [@@unboxed]
+    type ('a : value_or_null) shared = 'a Shared.t = { shared : 'a @@ shared }
+    [@@unboxed] [@@deriving of_sexp]
 
     type ('a : value_or_null) portended : value_or_null mod contended portable =
           'a Portended.t =
@@ -890,19 +933,43 @@ module type Modes = sig @@ portable
     type ('a : value_or_null) many : value_or_null mod many = 'a Many.t =
       { many : 'a @@ many }
     [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
 
     type ('a : value_or_null) aliased : value_or_null mod aliased = 'a Aliased.t =
       { aliased : 'a @@ aliased }
+    [@@unboxed]
+
+    type ('a : value_or_null) aliased_many : value_or_null mod aliased many =
+          'a Aliased_many.t =
+      { aliased_many : 'a @@ aliased many }
+    [@@unboxed]
+
+    type ('a : value_or_null) forkable : value_or_null mod forkable = 'a Forkable.t =
+      { forkable : 'a @@ forkable }
     [@@unboxed]
 
     type ('a : value_or_null) unyielding : value_or_null mod unyielding =
           'a Unyielding.t =
       { unyielding : 'a @@ unyielding }
     [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+
+    type ('a : value_or_null) stateless : value_or_null mod stateless = 'a Stateless.t =
+      { stateless : 'a @@ stateless }
+    [@@unboxed]
+
+    type ('a : value_or_null) observing = 'a Observing.t = { observing : 'a @@ observing }
+    [@@unboxed]
+
+    type ('a : value_or_null) immutable : value_or_null mod immutable = 'a Immutable.t =
+      { immutable : 'a @@ immutable }
+    [@@unboxed]
+
+    type ('a : value_or_null) read = 'a Read.t = { read : 'a @@ read } [@@unboxed]
 
     type ('a : value mod non_float) immutable_data : immutable_data =
           'a Immutable_data.t =
-      { immutable_data : 'a @@ immutable many stateless unyielding }
+      { immutable_data : 'a @@ forkable immutable many stateless unyielding }
     [@@unboxed]
   end
 end

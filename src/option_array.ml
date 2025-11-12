@@ -106,6 +106,7 @@ module Cheap_option = struct
     ;;
 
     let[@inline] to_option x = if is_some x then Some (value_unsafe x) else None
+    let[@inline] to_or_null x = if is_some x then This (value_unsafe x) else Null
 
     let[@inline] to_option_local x = exclave_
       if is_some x then Some (value_unsafe x) else None
@@ -135,6 +136,7 @@ let init n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.of_option (f i)) 
 let init_some n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.some (f i)) [@nontail]
 let length = Uniform_array.length
 let[@inline] get t i = Cheap_option.to_option (Uniform_array.get t i)
+let[@inline] get_or_null t i = Cheap_option.to_or_null (Uniform_array.get t i)
 let[@inline] get_local t i = exclave_ Cheap_option.to_option_local (Uniform_array.get t i)
 let get_some_exn t i = Cheap_option.value_exn (Uniform_array.get t i)
 let is_none t i = Cheap_option.is_none (Uniform_array.get t i)

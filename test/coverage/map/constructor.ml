@@ -810,8 +810,8 @@ module Constructor = struct
         (access Impl.merge_by_case)
           (value a)
           (value b)
-          ~left:(one_side left)
-          ~right:(one_side right)
+          ~first:(one_side left)
+          ~second:(one_side right)
           ~both:(two_sides both)
       | Merge_disjoint_exn (a, b) -> (access Impl.merge_disjoint_exn) (value a) (value b)
       | Split (side, key, t) -> (access Impl.split) (value t) key |> Side.select3 side

@@ -2,11 +2,11 @@
 
 module Uchar := Uchar0
 
-external get : (bytes[@local_opt]) -> (int[@local_opt]) -> char = "%bytes_safe_get"
+external get : (bytes[@local_opt]) @ read -> (int[@local_opt]) -> char = "%bytes_safe_get"
 external length : (bytes[@local_opt]) @ immutable -> int = "%bytes_length"
 
 external unsafe_get
-  :  (bytes[@local_opt])
+  :  (bytes[@local_opt]) @ read
   -> (int[@local_opt])
   -> char
   = "%bytes_unsafe_get"
@@ -36,7 +36,7 @@ external unsafe_blit_string
 [@@noalloc]
 
 external unsafe_get_int64
-  :  (bytes[@local_opt])
+  :  (bytes[@local_opt]) @ read
   -> (int[@local_opt])
   -> int64
   = "%caml_bytes_get64u"
@@ -49,7 +49,7 @@ external unsafe_set_int64
   = "%caml_bytes_set64u"
 
 external unsafe_get_int32
-  :  (bytes[@local_opt])
+  :  (bytes[@local_opt]) @ read
   -> (int[@local_opt])
   -> int32
   = "%caml_bytes_get32u"
@@ -62,7 +62,7 @@ external unsafe_set_int32
   = "%caml_bytes_set32u"
 
 external unsafe_get_int16
-  :  (bytes[@local_opt])
+  :  (bytes[@local_opt]) @ read
   -> (int[@local_opt])
   -> int
   = "%caml_bytes_get16u"

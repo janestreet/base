@@ -85,9 +85,13 @@ module type Bytes = sig @@ portable
   external length : (t[@local_opt]) @ immutable -> int = "%bytes_length"
 
   (** [get t i] returns the [i]th byte of [t]. *)
-  val get : local_ t -> int -> char
+  val get : t @ local read -> int -> char
 
-  external unsafe_get : (t[@local_opt]) -> (int[@local_opt]) -> char = "%bytes_unsafe_get"
+  external unsafe_get
+    :  (t[@local_opt]) @ read
+    -> (int[@local_opt])
+    -> char
+    = "%bytes_unsafe_get"
 
   (** [set t i c] sets the [i]th byte of [t] to [c]. *)
   external set
@@ -105,7 +109,7 @@ module type Bytes = sig @@ portable
     = "%bytes_unsafe_set"
 
   external unsafe_get_int64
-    :  (t[@local_opt])
+    :  (t[@local_opt]) @ read
     -> (int[@local_opt])
     -> int64
     = "%caml_bytes_get64u"
@@ -118,7 +122,7 @@ module type Bytes = sig @@ portable
     = "%caml_bytes_set64u"
 
   external unsafe_get_int32
-    :  (t[@local_opt])
+    :  (t[@local_opt]) @ read
     -> (int[@local_opt])
     -> int32
     = "%caml_bytes_get32u"
@@ -131,7 +135,7 @@ module type Bytes = sig @@ portable
     = "%caml_bytes_set32u"
 
   external unsafe_get_int16
-    :  (t[@local_opt])
+    :  (t[@local_opt]) @ read
     -> (int[@local_opt])
     -> int
     = "%caml_bytes_get16u"

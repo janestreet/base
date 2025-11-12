@@ -18,7 +18,10 @@ let trans (type (a : any) (b : any) (c : any)) (T : (a, b) t) (T : (b, c) t) : (
   T
 ;;
 
-let conv (type a b) (T : (a, b) t) (a : a) : b = a
+let%template conv (type (a : k) (b : k)) (T : (a, b) t) (a : a @ l v) : b @ l v = a
+[@@kind k = (value_or_null, value_or_null & bits64)]
+[@@mode l = (global, local), v = (read_write, read, immutable)]
+;;
 
 [%%template
 [@@@kind.default k1 = (any, value)]
@@ -123,10 +126,10 @@ module Id = struct
     ; (* Sexp of the type-equal id. *)
       id_sexp : Sexp.t
     ; (* [key] value for the type. *)
-      type_key : 'a key @@ contended
+      type_key : 'a key @@ immutable
     ; (* type equality: given another key, produce an [equal] if they represent the same
          type instance *)
-      type_equal : ('b : any). 'b key @ contended -> ('a, 'b) equal option
+      type_equal : ('b : any). 'b key @ immutable -> ('a, 'b) equal option
     }
 
   let%template uid a = a.uid [@@mode m = (global, local)]

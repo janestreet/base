@@ -5,6 +5,9 @@ open! Import
 
 [@@@warning "-incompatible-with-upstream"]
 
+[%%template
+[@@@kind_set.define values = (value_with_imm, value mod external_, value mod external64)]
+
 module Definitions = struct
   [%%template
   [@@@mode.default m = (global, local)]
@@ -26,7 +29,7 @@ module Definitions = struct
     val get : 'a t @ m' -> int -> 'a @ m' [@@mode m' = (global, m)]
     val length : _ t @ m' -> int [@@mode m' = (global, m)]
   end
-  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]]
+  [@@kind k = values]]
 
   module Which_target_by_key = struct
     type t =
@@ -95,7 +98,7 @@ module Definitions = struct
     val binary_search_segmented : (('a t, 'a) binary_search_segmented[@mode m'])
     [@@mode m' = (global, m)]
   end
-  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]]
+  [@@kind k = values]]
 end
 
 module type Binary_searchable = sig @@ portable
@@ -111,5 +114,5 @@ module type Binary_searchable = sig @@ portable
 
   module%template.portable Make1 (T : Indexable1 [@mode m] [@kind k]) :
     S1 [@mode m] [@kind k] with type 'a t := 'a T.t
-  [@@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]]
-end
+  [@@kind k = values]]
+end]

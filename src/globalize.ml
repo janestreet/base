@@ -24,7 +24,7 @@ external globalize_string : local_ string -> string @@ portable = "%obj_dup"
 let globalize_unit (() as u) = u
 
 [%%template
-[@@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value)]
+[@@@kind k = base_with_imm]
 
 external globalize_array'
   :  local_ ('a : k) array

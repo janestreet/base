@@ -5,11 +5,11 @@ open! Import
 [%%template
 type nonrec ('a : k) t = (('a, Error.t) Result.t[@kind k])
 [@@deriving compare ~localize, equal ~localize, globalize, sexp]
-[@@kind k = (float64, bits32, bits64, word)]
+[@@kind k = base_non_value]
 
 type nonrec ('a : value_or_null) t = ('a, Error.t) Result.t
 [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-[@@kind k = (value, immediate, immediate64)]]
+[@@kind k = value_or_null_with_imm]]
 
 let ( >>= ) = Result.( >>= )
 let ( >>| ) = Result.( >>| )
@@ -18,9 +18,7 @@ let ignore_m = Result.ignore_m
 let join = Result.join
 
 let%template map = (Result.map [@kind ki ko])
-[@@kind
-  ki = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)
-  , ko = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+[@@kind ki = base_or_null_with_imm, ko = base_or_null_with_imm]
 ;;
 
 let return = Result.return
@@ -41,8 +39,12 @@ let map2 a b ~f =
 ;;
 
 module%template For_applicative =
-Applicative.Make_using_map2__local [@modality portable] (struct
-    type nonrec 'a t = 'a t
+Applicative.Make_using_map2
+  [@kind value_or_null mod maybe_null]
+  [@mode local]
+  [@modality portable]
+  (struct
+    type nonrec ('a : value_or_null) t = 'a t
 
     let return = return
     let map = `Custom map
@@ -87,8 +89,7 @@ let%template try_with ?(backtrace = false) f =
 let try_with_join ?backtrace f = join (try_with ?backtrace f)
 
 [%%template
-[@@@kind.default
-  k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+[@@@kind.default k = base_or_null_with_imm]
 
 let ok_exn : ('a : k). ('a t[@kind k]) -> 'a = function
   | Ok x -> x
@@ -162,6 +163,27 @@ let all_unit list =
 ;;
 
 let combine_errors list = combine_internal list ~on_ok:Fn.id ~on_error:Error.of_list
+
+module Modes = struct
+  include Modes
+
+  module Portable = struct
+    include Portable
+
+    external wrap_result_list
+      : ('a : value_or_null) ('b : value_or_null).
+      (('a, 'b) Result.t list[@local_opt]) @ portable
+      -> (('a t, 'b t) Result.t list[@local_opt]) @ portable
+      @@ portable
+      = "%identity"
+
+    external unwrap_list
+      : ('a : value_or_null).
+      ('a t list[@local_opt]) -> ('a list[@local_opt]) @ portable
+      @@ portable
+      = "%identity"
+  end
+end
 
 let%template combine_errors list =
   (combine_internal [@mode portable])

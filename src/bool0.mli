@@ -8,7 +8,7 @@ external select
   bool -> ('a[@local_opt]) -> ('a[@local_opt]) -> ('a[@local_opt])
   @@ portable
   = "caml_csel_value"
-[@@kind k = (value_or_null, immediate, immediate64)]
+[@@kind k = value_or_null_with_imm]
 [@@noalloc]
 [@@no_effects]
 [@@no_coeffects]
@@ -16,12 +16,5 @@ external select
 
 val select : ('a : k). bool -> 'a @ m -> 'a @ m -> 'a @ m @@ portable
 [@@kind
-  k
-  = ( float64
-    , bits32
-    , bits64
-    , word
-    , value & value
-    , value & value & value
-    , value & value & value & value )]
+  k = (base_non_value, value & value, value & value & value, value & value & value & value)]
 [@@zero_alloc]]

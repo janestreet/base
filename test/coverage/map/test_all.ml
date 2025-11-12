@@ -55,10 +55,6 @@ module When_unmatched = When_unmatched
 module Or_duplicate = Or_duplicate
 module Symmetric_diff_element = Symmetric_diff_element
 
-(** private exports - untested *)
-
-module Private = Private [@@alert "-map_private"]
-
 (** types *)
 
 type nonrec ('k, 'v, 'c) t = ('k, 'v, 'c) t
@@ -273,6 +269,10 @@ module Tree = struct
   (** polymorphic constructor - untested *)
 
   let empty_without_value_restriction = empty_without_value_restriction
+
+  (** expert interface - untested *)
+
+  module Expert = Map.Tree.Expert
 
   (** builders *)
 

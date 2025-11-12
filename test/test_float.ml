@@ -387,21 +387,22 @@ let%test "int_pow misc" =
 ;;
 
 (* some ugly corner cases with extremely large exponents and some serious precision loss *)
-let%expect_test ("int_pow bad cases" [@tags "64-bits-only", "not-with-nix"]) =
+let%expect_test ("int_pow bad cases" [@tags "64-bits-only"]) =
   let a = one_ulp `Down 1. in
   let b = one_ulp `Up 1. in
   let large = 1 lsl 61 in
   let small = Int.neg large in
   (* this huge discrepancy comes from the fact that [1 / a = b] but this is a very poor
      approximation, and in particular [1 / b = one_ulp `Down a = a * a]. *)
-  print_s [%message (a **. of_int small : t)];
-  [%expect {| ("a **. (of_int small)" 1.5114276650041252E+111) |}];
-  print_s [%message (int_pow a small : t)];
-  [%expect {| ("int_pow a small" 2.2844048619719663E+222) |}];
-  print_s [%message (int_pow b large : t)];
-  [%expect {| ("int_pow b large" 2.2844048619719663E+222) |}];
-  print_s [%message (b **. of_int large : t)];
-  [%expect {| ("b **. (of_int large)" 2.2844135865396268E+222) |}]
+  Expect_test_helpers_base.with_sexp_round_floats ~significant_digits:16 (fun () ->
+    print_s [%message (a **. of_int small : t)];
+    [%expect {| ("a **. (of_int small)" 1.5114276650041249e+111) |}];
+    print_s [%message (int_pow a small : t)];
+    [%expect {| ("int_pow a small" 2.284404861971966e+222) |}];
+    print_s [%message (int_pow b large : t)];
+    [%expect {| ("int_pow b large" 2.284404861971966e+222) |}];
+    print_s [%message (b **. of_int large : t)];
+    [%expect {| ("b **. (of_int large)" 2.2844135865396271e+222) |}])
 ;;
 
 let%test_unit "sign_exn" =
@@ -1209,10 +1210,11 @@ let%expect_test "iround_exn" =
   require_equal (module Int) (-3) (Float.iround_exn ~dir:`Nearest (-3.4))
 ;;
 
-let%expect_test ("log" [@tags "not-with-nix"]) =
+let%expect_test "log" =
   let test float =
-    let log2 = Float.log2 float in
-    let log10 = Float.log10 float in
+    let normalize_nan float = Bool.select (Float.is_nan float) Float.nan float in
+    let log2 = Float.log2 float |> normalize_nan in
+    let log10 = Float.log10 float |> normalize_nan in
     let ratio = log2 /. log10 in
     let ratio =
       (* NAN behavior differs in js_of_ocaml *)

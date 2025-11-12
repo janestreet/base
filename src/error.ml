@@ -10,9 +10,9 @@ include Info0
 let t_sexp_grammar : t Sexplib0.Sexp_grammar.t = { untyped = Any "Error.t" }
 
 [%%template
-[@@@kind.default
-  k
-  = (value_or_null, immediate, immediate64, bits64, bits32, word, float64, bits32 & bits32)]
+(* Move [value_or_null] first, because the compiler for some reason will otherwise print
+   [raise__bits64] in stack traces. *)
+[@@@kind.default k = (value_or_null, base_or_null_with_imm, bits32 & bits32)]
 
 let[@cold] raise (type a : k) t : a = (raise [@kind k]) (to_exn t)
 let[@cold] raise_s (type a : k) sexp : a = (raise [@kind k]) (create_s sexp)

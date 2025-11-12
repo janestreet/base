@@ -31,6 +31,10 @@ val to_array : 'a t -> 'a option Array.t
     range 0 to [length t - 1]. *)
 val get : 'a t -> int -> 'a option
 
+(** Similar to [get], but uses [or_null] to avoid allocation. *)
+val get_or_null : 'a t -> int -> 'a or_null
+[@@zero_alloc]
+
 (** Similar to [get], but allocates result in the caller's stack region instead of heap. *)
 val get_local : local_ 'a t -> int -> local_ 'a option
 

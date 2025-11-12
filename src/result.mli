@@ -12,7 +12,7 @@ type ('ok : k, 'err : value_or_null) t =
   | Ok of 'ok
   | Error of 'err
 [@@deriving sexp ~stackify, compare ~localize, equal ~localize, globalize]
-[@@kind k = (float64, bits32, bits64, word)]
+[@@kind k = base_non_value]
 
 (** ['ok] is the return type, and ['err] is often an error message string.
 
@@ -34,7 +34,7 @@ type ('ok : value_or_null, 'err : value_or_null) t = ('ok, 'err) Stdlib.result =
   | Error of 'err
 [@@deriving
   sexp ~stackify, sexp_grammar, compare ~localize, equal ~localize, hash, globalize]
-[@@kind k = (value_or_null, immediate, immediate64)]]
+[@@kind k = value_or_null_with_imm]]
 
 include%template
   Monad.S2
@@ -54,8 +54,7 @@ val fail : 'err -> (_, 'err) t
 val failf : ('a, unit, string, (_, string) t) format4 -> 'a
 
 [%%template:
-[@@@kind.default
-  k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+[@@@kind.default k = base_or_null_with_imm]
 
 val is_ok : ('ok : k) ('err : value_or_null). (('ok, 'err) t[@kind k]) -> bool
 val is_error : ('ok : k) ('err : value_or_null). (('ok, 'err) t[@kind k]) -> bool]
@@ -84,9 +83,7 @@ val iter_error
 val%template map
   : ('a : ki) ('b : ko) 'err.
   (('a, 'err) t[@kind ki]) -> f:local_ ('a -> 'b) -> (('b, 'err) t[@kind ko])
-[@@kind
-  ki = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)
-  , ko = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+[@@kind ki = base_or_null_with_imm, ko = base_or_null_with_imm]
 
 val map_error
   : ('ok : value_or_null) ('err : value_or_null) ('c : value_or_null).
@@ -125,9 +122,10 @@ val combine_errors_unit
           Result.to_either (Result.try_with (fun () -> Int.of_string string)))
       ;;
     ]} *)
-val to_either
+val%template to_either
   : ('ok : value_or_null) ('err : value_or_null).
-  ('ok, 'err) t -> ('ok, 'err) Either0.t
+  ('ok, 'err) t @ m -> ('ok, 'err) Either0.t @ m
+[@@mode m = (global, local)]
 
 val of_either
   : ('ok : value_or_null) ('err : value_or_null).
@@ -144,8 +142,7 @@ module Export : sig
     | Error of 'err
 
   [%%template:
-  [@@@kind.default
-    k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+  [@@@kind.default k = base_or_null_with_imm]
 
   val is_ok : ('ok : k) ('err : value_or_null). (('ok, 'err) t[@kind k]) -> bool
   val is_error : ('ok : k) ('err : value_or_null). (('ok, 'err) t[@kind k]) -> bool]

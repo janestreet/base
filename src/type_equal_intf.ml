@@ -217,7 +217,9 @@ module type Type_equal = sig @@ portable
       ]}
 
       this would give a type error. *)
-  val conv : ('a, 'b) t -> 'a -> 'b
+  val%template conv : ('a : k) ('b : k). ('a, 'b) t -> 'a @ l v -> 'b @ l v
+  [@@kind k = (value_or_null, value_or_null & bits64)]
+  [@@mode l = (global, local), v = (read_write, read, immutable)]
 
   (** It is always safe to conclude that if type [a] equals [b], then for any type ['a t],
       type [a t] equals [b t]. The OCaml type checker uses this fact when it can. However,
@@ -256,7 +258,7 @@ module type Type_equal = sig @@ portable
       types. Unlike values of type [Type_equal.t], values of type [Id.t] do have semantic
       content and must have a nontrivial runtime representation. *)
   module Id : sig
-    type ('a : any) t : value mod contended [@@deriving sexp_of]
+    type ('a : any) t : value mod immutable [@@deriving sexp_of]
 
     (** @inline *)
     include module type of Type_equal_id_defns (struct

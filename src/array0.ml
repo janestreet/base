@@ -80,7 +80,8 @@ module Array = struct
   [@@layout_poly]
 
   [%%template
-  [@@@kind.default k = (value, immediate, immediate64)]
+  [@@@kind.default k = value_or_null_with_imm]
+  [@@@kind k = k mod separable]
 
   (* [unsafe_blit] can't be [[@noalloc]] because, even though it does not allocate, it
      still can induce a minor GC *)
@@ -160,13 +161,25 @@ module Array = struct
     -> unit
     @@ portable
     = "base_array_unsafe_float_blit"
-  [@@noalloc] [@@kind k = float64]]
+  [@@noalloc] [@@kind k = float64]
+
+  external unsafe_blit
+    : ('a : k).
+    src:('a array[@local_opt])
+    -> src_pos:int
+    -> dst:('a array[@local_opt])
+    -> dst_pos:int
+    -> len:int
+    -> unit
+    @@ portable
+    = "caml_array_blit" "caml_unboxed_float32_vect_blit"
+  [@@noalloc] [@@kind k = float32]]
 end
 
 include Array
 
 [%%template
-[@@@kind.default k = (float64, bits32, bits64, word)]
+[@@@kind.default k = base_non_value]
 
 let unsafe_fill t pos len x =
   for i = pos to pos + len - 1 do
@@ -202,11 +215,33 @@ let create_float_uninitialized ~len =
     invalid_argf "Array.create_float_uninitialized ~len:%d: invalid length" len ()
 ;;
 
-let%template append = Stdlib.Array.append [@@kind k = (value, immediate, immediate64)]
+include struct
+  external append_prim
+    : ('a : value_or_null mod separable).
+    'a array -> 'a array -> 'a array
+    @@ portable
+    = "caml_array_append"
 
-let%template append t1 t2 = (concat [@kind k]) [ t1; t2 ]
-[@@kind k = (float64, bits32, bits64, word)]
-;;
+  [%%template
+  (* Copied from [Stdlib.Array], with type annotations added for templating *)
+  let copy a =
+    let l = length a in
+    if l = 0 then [||] else unsafe_sub a 0 l
+  ;;
+
+  let%template append : type (a : k mod separable). a array -> a array -> a array =
+    fun a1 a2 ->
+    let l1 = length a1 in
+    if l1 = 0
+    then copy a2
+    else if length a2 = 0
+    then unsafe_sub a1 0 l1
+    else append_prim a1 a2
+  [@@kind k = value_or_null_with_imm]
+  ;;]
+end
+
+let%template append t1 t2 = (concat [@kind k]) [ t1; t2 ] [@@kind k = base_non_value]
 
 let blit ~(local_ src) ~src_pos ~(local_ dst) ~dst_pos ~len =
   Ordered_collection_common0.check_pos_len_exn
@@ -232,7 +267,8 @@ let%template fold_right (t @ m) ~(local_ f : _ @ m -> _ -> _) ~init =
 ;;
 
 [%%template
-[@@@kind.default k1 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+[@@@kind.default k' = base_or_null_with_imm]
+[@@@kind k = k' mod separable]
 
 let init len ~(local_ f : _ -> _) =
   if len = 0
@@ -249,28 +285,31 @@ let init len ~(local_ f : _ -> _) =
 [@@alloc a = (heap, stack)]
 ;;
 
-let sub (local_ a) ~pos ~len =
+let sub : type (a : k). a array @ local -> pos:int -> len:int -> a array =
+  fun a ~pos ~len ->
   if pos < 0 || len < 0 || pos > length a - len
   then invalid_arg "Array.sub"
-  else (unsafe_sub [@kind k1]) a pos len
+  else (unsafe_sub [@kind k']) a pos len
 ;;
 
 (* Copied from [Stdlib.Array], with type annotations added for templating *)
-let to_list a =
-  let rec tolist i res : (_ List0.Constructors.t[@kind k1]) =
-    if i < 0 then res else tolist (i - 1) (unsafe_get a i :: res)
+let to_list : type (a : k). a array @ local -> (a List0.Constructors.t[@kind k']) @ m =
+  fun t ->
+  let rec tolist t i res : (_ List0.Constructors.t[@kind k']) =
+    if i < 0 then res else tolist t (i - 1) (unsafe_get t i :: res) [@exclave_if_stack a]
   in
-  tolist (length a - 1) []
+  tolist t (length t - 1) [] [@exclave_if_stack a]
+[@@alloc a @ m = (heap_global, stack_local)]
 ;;
 
 (* Copied from [Stdlib.Array], with type annotations added for templating and some
    functions changed to the equivalent base ones *)
-let of_list = function
-  | ([] : (_ List0.Constructors.t[@kind k1])) -> [||]
+let of_list : type (a : k). (a List0.Constructors.t[@kind k']) -> a array = function
+  | ([] : (_ List0.Constructors.t[@kind k'])) -> [||]
   | hd :: tl as l ->
-    let a = create ~len:((List0.length [@kind k1]) l) hd in
+    let a = create ~len:((List0.length [@kind k']) l) hd in
     let rec fill i = function
-      | ([] : (_ List0.Constructors.t[@kind k1])) -> a
+      | ([] : (_ List0.Constructors.t[@kind k'])) -> a
       | hd :: tl ->
         unsafe_set a i hd;
         fill (i + 1) tl
@@ -278,10 +317,11 @@ let of_list = function
     fill 1 tl
 ;;
 
-let fill (local_ a) ~pos ~len v =
+let fill : type (a : k). a array @ local -> pos:int -> len:int -> a -> unit =
+  fun a ~pos ~len v ->
   if pos < 0 || len < 0 || pos > length a - len
   then invalid_arg "Array.fill"
-  else (unsafe_fill [@kind k1]) a pos len v
+  else (unsafe_fill [@kind k']) a pos len v
 ;;
 
 let swap (local_ t) i j =
@@ -294,44 +334,53 @@ let swap (local_ t) i j =
 [@@@array.iter]
 
 [%%template
-  let iter (type a : ki) (t : a array) ~(local_ f : _ -> _) =
+  let iter (type a : ki mod separable) (t : a array) ~(local_ f : _ -> _) =
     for i = 0 to length t - 1 do
       f (unsafe_get t i)
     done
-  [@@kind ki = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  [@@kind ki = base_or_null_with_imm]
   ;;]
 
 [@@@end]
 [@@@array.iteri]
 
 [%%template
-  let iteri (type a : ki) (t : a array) ~(local_ f : _ -> _ -> _) =
+  let iteri (type a : ki mod separable) (t : a array) ~(local_ f : _ -> _ -> _) =
     for i = 0 to length t - 1 do
       f i (unsafe_get t i)
     done
-  [@@kind ki = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  [@@kind ki = base_or_null_with_imm]
   ;;]
 
 [@@@end]
 [@@@array.fold]
 
 [%%template
-  let fold (type (a : ki) (b : ko)) (t : a array) ~init ~(local_ f : _ -> _ -> _) : b =
+  let fold
+    (type (a : ki mod separable) (b : ko))
+    (t : a array)
+    ~init
+    ~(local_ f : _ -> _ -> _)
+    : b
+    =
     let length = length t in
     let rec loop i acc =
       if i < length then loop (i + 1) ((f [@inlined hint]) acc (unsafe_get t i)) else acc
     in
     (loop [@inlined]) 0 init [@nontail]
-  [@@kind
-    ki = (value, immediate, immediate64, float64, bits32, bits64, word)
-    , ko = (value, immediate, immediate64, float64, bits32, bits64, word)]
+  [@@kind ki = base_with_imm, ko = base_with_imm]
   ;;]
 
 [@@@end]
 [@@@array.map]
 
 [%%template
-  let map (type (a : ki) (b : ko)) (local_ (t : a array)) ~(local_ f : _ -> _) : b array =
+  let map
+    (type (a : ki mod separable) (b : ko))
+    (local_ (t : a array))
+    ~(local_ f : _ -> _)
+    : b array
+    =
     let len = length t in
     if len = 0
     then [||]
@@ -341,13 +390,16 @@ let swap (local_ t) i j =
         unsafe_set r i (f (unsafe_get t i))
       done;
       r)
-  [@@kind
-    ki = (value, immediate, immediate64, float64, bits32, bits64, word)
-    , ko = (float64, bits32, bits64, word)]
+  [@@kind ki = base_with_imm, ko = base_non_value]
   ;;]
 
 [%%template
-  let map (type (a : ki) (b : ko)) (local_ (t : a array)) ~(local_ f : _ -> _) : b array =
+  let map
+    (type (a : ki mod separable) (b : ko))
+    (local_ (t : a array))
+    ~(local_ f : _ -> _)
+    : b array
+    =
     let len = length t in
     if len = 0
     then [||]
@@ -357,16 +409,16 @@ let swap (local_ t) i j =
         unsafe_set r i (f (unsafe_get t i))
       done;
       r)
-  [@@kind
-    ki = (value, immediate, immediate64, float64, bits32, bits64, word)
-    , ko = (value, immediate, immediate64)]
+  [@@kind ki = base_with_imm, ko = value_with_imm]
   ;;]
 
 [@@@end]
 [@@@array.mapi]
 
 [%%template
-  let mapi (type (a : ki) (b : ko)) (t : a array) ~(local_ f : _ -> _ -> _) : b array =
+  let mapi (type (a : ki mod separable) (b : ko)) (t : a array) ~(local_ f : _ -> _ -> _)
+    : b array
+    =
     let len = length t in
     if len = 0
     then [||]
@@ -376,13 +428,13 @@ let swap (local_ t) i j =
         unsafe_set r i (f i (unsafe_get t i))
       done;
       r)
-  [@@kind
-    ki = (value, immediate, immediate64, float64, bits32, bits64, word)
-    , ko = (float64, bits32, bits64, word)]
+  [@@kind ki = base_with_imm, ko = base_non_value]
   ;;]
 
 [%%template
-  let mapi (type (a : ki) (b : ko)) (t : a array) ~(local_ f : _ -> _ -> _) : b array =
+  let mapi (type (a : ki mod separable) (b : ko)) (t : a array) ~(local_ f : _ -> _ -> _)
+    : b array
+    =
     let len = length t in
     if len = 0
     then [||]
@@ -392,9 +444,7 @@ let swap (local_ t) i j =
         unsafe_set r i (f i (unsafe_get t i))
       done;
       r)
-  [@@kind
-    ki = (value, immediate, immediate64, float64, bits32, bits64, word)
-    , ko = (value, immediate, immediate64)]
+  [@@kind ki = base_with_imm, ko = value_with_imm]
   ;;]
 
 [@@@end]

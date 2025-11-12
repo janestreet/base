@@ -49,10 +49,6 @@ module Without_comparator = Without_comparator
 
 module Merge_to_sequence_element = Merge_to_sequence_element
 
-(** private module - untested *)
-
-module Private = Private [@alert "-set_private"]
-
 (** types *)
 
 type nonrec ('e, 'c) t = ('e, 'c) t
@@ -261,6 +257,10 @@ module Tree = struct
   (** polymorphic constructor - untested *)
 
   let empty_without_value_restriction = empty_without_value_restriction
+
+  (** expert interface - untested *)
+
+  module Expert = Set.Tree.Expert
 
   (** creators and accessors and transformers *)
 

@@ -7,24 +7,22 @@ module type List0 = sig @@ portable
       | ( :: ) of 'a * ('a t[@kind k])
     [@@kind
       k
-      = ( float64
-        , bits32
-        , bits64
-        , word
-        , immediate
-        , immediate64
+      = ( base_non_value
         , value_or_null & value_or_null
         , value_or_null & value_or_null & value_or_null
         , value_or_null & value_or_null & value_or_null & value_or_null )]
     [@@deriving compare ~localize, equal ~localize]
 
-    type ('a : value_or_null) t = 'a list =
-      | []
-      | ( :: ) of 'a * 'a t
+    type%template ('a : value_or_null) t = 'a list
+    [@@kind
+      __
+      = (immediate, immediate64, value mod external_, value mod external64, value_or_null)]
+    [@@deriving compare ~localize, equal ~localize]
   end
 
   open Constructors
 
+  val max_non_tailcall : int
   val hd_exn : ('a : value_or_null). 'a t -> 'a
   val tl_exn : ('a : value_or_null). 'a t -> 'a t
   val unzip : ('a : value_or_null) ('b : value_or_null). ('a * 'b) t -> 'a t * 'b t
@@ -32,10 +30,7 @@ module type List0 = sig @@ portable
   [%%template:
   [@@@kind.default
     k
-    = ( float64
-      , bits32
-      , bits64
-      , word
+    = ( base_non_value
       , immediate
       , immediate64
       , value_or_null
@@ -44,8 +39,12 @@ module type List0 = sig @@ portable
       , value_or_null & value_or_null & value_or_null & value_or_null )]
 
   val length : ('a : k). ('a t[@kind k]) @ immutable local -> int
-  val exists : ('a : k). ('a t[@kind k]) -> f:('a -> bool) @ local -> bool
-  val iter : ('a : k). ('a t[@kind k]) -> f:('a -> unit) @ local -> unit
+
+  val exists : ('a : k). ('a t[@kind k]) @ m -> f:('a @ m -> bool) @ local -> bool
+  [@@mode m = (local, global)]
+
+  val iter : ('a : k). ('a t[@kind k]) @ m -> f:('a @ m -> unit) @ local -> unit
+  [@@mode m = (local, global)]
 
   val rev_append
     : ('a : k).
@@ -55,7 +54,8 @@ module type List0 = sig @@ portable
   val rev : ('a : k). ('a t[@kind k]) @ m -> ('a t[@kind k]) @ m
   [@@alloc __ @ m = (stack_local, heap_global)]
 
-  val for_all : ('a : k). ('a t[@kind k]) -> f:('a -> bool) @ local -> bool
+  val for_all : ('a : k). ('a t[@kind k]) @ m -> f:('a @ m -> bool) @ local -> bool
+  [@@mode m = (local, global)]
 
   [@@@kind ka = k]
 
@@ -69,29 +69,17 @@ module type List0 = sig @@ portable
   [@@kind
     ka = ka
     , kb
-      = ( float64
-        , bits32
-        , bits64
-        , word
-        , immediate
-        , immediate64
-        , value_or_null
-        , value_or_null & float64
-        , value_or_null & bits32
-        , value_or_null & bits64
-        , value_or_null & word
-        , value_or_null & immediate
-        , value_or_null & immediate64
-        , value_or_null & value_or_null
+      = ( base_or_null_with_imm
+        , value_or_null & base_or_null_with_imm
         , value_or_null & value_or_null & value_or_null
         , value_or_null & value_or_null & value_or_null & value_or_null )]
 
-  [@@@kind.default
-    kb = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
+  [@@@kind.default kb = base_or_null_with_imm]
 
   val rev_map
     : ('a : ka) ('b : kb).
-    ('a t[@kind ka]) -> f:('a -> 'b) @ local -> ('b t[@kind kb])]
+    ('a t[@kind ka]) @ ma -> f:('a @ ma -> 'b @ mb) @ local -> ('b t[@kind kb]) @ mb
+  [@@mode ma = (local, global)] [@@alloc __ @ mb = (stack_local, heap_global)]]
 
   val fold2_ok
     : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).

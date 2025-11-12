@@ -226,7 +226,6 @@ module State = struct
     let seed = Capsule.Data.wrap ~access seed in
     Capsule.Password.with_current access (stack_ fun password ->
       let password = Capsule.Password.shared password in
-      let password = Basement.Stdlib_shim.Obj.magic_unyielding password in
       with_stdlib t ~f:(stack_ fun state -> assign_capsule ~password ~src:seed ~dst:state)
       [@nontail])
     [@nontail]
@@ -423,7 +422,6 @@ let set_state s =
     let capsule = Capsule.Data.wrap ~access state in
     Capsule.Password.with_current access (stack_ fun password ->
       let password = Capsule.Password.shared password in
-      let password = Basement.Stdlib_shim.Obj.magic_unyielding password in
       State.with_stdlib (State.get_default ()) ~f:(stack_ fun default ->
         assign_capsule ~password ~src:capsule ~dst:default)
       [@nontail])

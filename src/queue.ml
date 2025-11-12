@@ -249,7 +249,10 @@ let dequeue_back t = if is_empty t then None else Some (dequeue_back_nonempty t)
 let front_nonempty t = Option_array.unsafe_get_some_exn t.elts t.front
 let back_nonempty t = Option_array.unsafe_get_some_exn t.elts (back_index t)
 let last_nonempty t = unsafe_get t (t.length - 1)
-let peek t = if is_empty t then None else Some (front_nonempty t)
+let peek_or_null t = if is_empty t then Null else This (front_nonempty t)
+
+(* See the comment on [dequeue] for why this is inlined. *)
+let[@inline] peek t = peek_or_null t |> Or_null.to_option
 let peek_exn t = if is_empty t then raise Stdlib.Queue.Empty else front_nonempty t
 let peek_back t = if is_empty t then None else Some (back_nonempty t)
 let peek_back_exn t = if is_empty t then raise Stdlib.Queue.Empty else back_nonempty t

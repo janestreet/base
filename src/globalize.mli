@@ -26,7 +26,7 @@ val globalize_unit : local_ unit -> unit
 val%template globalize_array
   : ('a : k) ('b : any).
   (local_ 'a -> 'b) -> local_ 'a array -> 'a array
-[@@kind k = (float64, bits32, bits64, word, immediate, immediate64, value)]
+[@@kind k = base_with_imm]
 
 val globalize_floatarray : local_ floatarray -> floatarray
 val globalize_lazy_t : (local_ 'a -> 'b) -> local_ 'a lazy_t -> 'a lazy_t

@@ -10,6 +10,18 @@
 
 open! Import0
 
+(* For [[@@deriving compare]] below *)
+open Ppx_compare_lib.Builtin
+
+(* Before OCaml got the [@tail_mod_cons] transformation, these are the limits we used for
+   various [List] operations in [Base] and [Core]. *)
+let max_non_tailcall =
+  match Sys.backend_type with
+  | Sys.Native | Sys.Bytecode -> 1_000
+  (* We don't know the size of the stack, better be safe and assume it's small. *)
+  | Sys.Other _ -> 50
+;;
+
 let hd_exn = Stdlib.List.hd
 let tl_exn = Stdlib.List.tl
 let unzip = Stdlib.List.split
@@ -20,20 +32,22 @@ module%template Constructors = struct
     | ( :: ) of 'a * ('a t[@kind k])
   [@@kind
     k
-    = ( float64
-      , bits32
-      , bits64
-      , word
-      , immediate
-      , immediate64
+    = ( base_non_value
       , value_or_null & value_or_null
       , value_or_null & value_or_null & value_or_null
       , value_or_null & value_or_null & value_or_null & value_or_null )]
   [@@deriving compare ~localize, equal ~localize]
 
+  [@@@kind.default
+    k = (immediate, immediate64, value mod external_, value mod external64, value_or_null)]
+
   type ('a : value_or_null) t = 'a list =
     | []
-    | ( :: ) of 'a * 'a t
+    | ( :: ) of 'a * ('a t[@kind k])
+
+  [%%rederive
+    type ('a : value_or_null) t = 'a list
+    [@@deriving compare ~localize, equal ~localize] [@@kind k]]
 end
 
 open Constructors
@@ -44,10 +58,7 @@ open Constructors
 [%%template
 [@@@kind.default
   k
-  = ( float64
-    , bits32
-    , bits64
-    , word
+  = ( base_non_value
     , immediate
     , immediate64
     , value_or_null
@@ -56,7 +67,7 @@ open Constructors
     , value_or_null & value_or_null & value_or_null & value_or_null )]
 
 open struct
-  type nonrec ('a : k) t = ('a t[@kind k]) =
+  type nonrec ('a : any) t = ('a t[@kind k]) =
     | []
     | ( :: ) of 'a * ('a t[@kind k])
   [@@kind k]
@@ -70,25 +81,36 @@ let length =
   fun (local_ l) -> length_aux 0 l
 ;;
 
-let rec exists t ~(local_ f) =
-  match t with
-  | [] -> false
-  | x :: xs -> if f x then true else (exists [@kind k]) xs ~f
+let exists t ~f =
+  let rec loop t ~f =
+    match t with
+    | [] -> false
+    | x :: xs -> if f x then true else loop xs ~f
+  in
+  loop t ~f
+[@@mode m = (local, global)]
 ;;
 
-let rec iter t ~(local_ f : _ -> _) =
-  match t with
-  | [] -> ()
-  | a :: l ->
-    f a;
-    (iter [@kind k]) l ~f
+let iter t ~f =
+  let rec loop t ~f =
+    match t with
+    | [] -> ()
+    | a :: l ->
+      f a;
+      loop l ~f
+  in
+  loop t ~f
+[@@mode m = (local, global)]
 ;;
 
 (* Copied from [Stdlib] for templating *)
-let rec rev_append (l1 @ m) (l2 @ m) =
-  match l1 with
-  | [] -> l2
-  | a :: l -> (rev_append [@alloc a] [@kind k]) l (a :: l2) [@exclave_if_stack a]
+let rev_append (l1 @ m) (l2 @ m) =
+  let rec loop l1 l2 =
+    match l1 with
+    | [] -> l2
+    | a :: l -> loop l (a :: l2) [@exclave_if_stack a]
+  in
+  loop l1 l2 [@exclave_if_stack a]
 [@@alloc a @ m = (stack_local, heap_global)]
 ;;
 
@@ -100,7 +122,9 @@ let rev (l @ m) =
 [@@alloc a @ m = (stack_local, heap_global)]
 ;;
 
-let for_all t ~(local_ f) = not ((exists [@kind k]) t ~f:(fun x -> not (f x)))
+let for_all t ~(f @ local) = not ((exists [@kind k] [@mode m]) t ~f:(fun x -> not (f x)))
+[@@mode m = (local, global)]
+;;
 
 [@@@kind ka = k]
 
@@ -108,20 +132,8 @@ let for_all t ~(local_ f) = not ((exists [@kind k]) t ~f:(fun x -> not (f x)))
 [@@@kind.default
   ka = ka
   , kb
-    = ( float64
-      , bits32
-      , bits64
-      , word
-      , value_or_null
-      , immediate
-      , immediate64
-      , value_or_null & float64
-      , value_or_null & bits32
-      , value_or_null & bits64
-      , value_or_null & word
-      , value_or_null & immediate
-      , value_or_null & immediate64
-      , value_or_null & value_or_null
+    = ( base_or_null_with_imm
+      , value_or_null & base_or_null_with_imm
       , value_or_null & value_or_null & value_or_null
       , value_or_null & value_or_null & value_or_null & value_or_null )]
 
@@ -147,15 +159,15 @@ let fold = (fold_alloc [@mode ma] [@alloc heap] [@kind ka kb])
 [@@mode ma = (local, global), mb = global]
 ;;]
 
-[@@@kind.default
-  kb = (float64, bits32, bits64, word, immediate, immediate64, value_or_null)]
+[@@@kind.default kb = base_or_null_with_imm]
 
 let rev_map =
-  let rec rmap_f f accu : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
+  let rec rmap_f f accu : (_ t[@kind ka]) @ ma -> (_ t[@kind kb]) @ mb = function
     | [] -> accu
-    | a :: l -> rmap_f f (f a :: accu) l
+    | a :: l -> rmap_f f (f a :: accu) l [@exclave_if_stack ab]
   in
-  fun l ~(local_ f) -> rmap_f f [] l
+  fun l ~(local_ f) -> rmap_f f [] l [@exclave_if_stack ab]
+[@@mode ma = (local, global)] [@@alloc ab @ mb = (stack_local, heap_global)]
 ;;]
 
 let rec fold2_ok l1 l2 ~init ~(local_ f : _ -> _ -> _ -> _) =

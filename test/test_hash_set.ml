@@ -417,6 +417,22 @@ end = struct
     require (not (Hs.equal (Hs.of_list [ 1 ]) (Hs.of_list [ 2 ])));
     require (Hs.equal (Hs.of_list [ 1 ]) (Hs.of_list [ 1 ]))
   ;;
+
+  let of_array = Hash_set.of_array
+
+  let%expect_test "of_array" =
+    let test array =
+      print_s [%sexp (Hash_set.of_array (module Int) array : int Hash_set.t)]
+    in
+    test [||];
+    [%expect {| () |}];
+    test [| 1; 2; 3; 4; 5 |];
+    [%expect {| (1 2 3 4 5) |}];
+    test [| 5; 4; 3; 2; 1 |];
+    [%expect {| (1 2 3 4 5) |}];
+    test [| 3; 1; 4; 1; 5 |];
+    [%expect {| (1 3 4 5) |}]
+  ;;
 end
 
 (* This module exists to check, at compile-time, that [Creators] is a subset of

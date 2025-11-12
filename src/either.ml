@@ -53,9 +53,7 @@ let equal eq1 eq2 (t1 : (_ t[@kind kf ks]) @ m) (t2 : (_ t[@kind kf ks]) @ m) =
   | First x, First y -> eq1 x y
   | Second x, Second y -> eq2 x y
   | First _, Second _ | Second _, First _ -> false
-[@@kind
-  kf = (float64, bits32, bits64, word, value, immediate, immediate64)
-  , ks = (float64, bits32, bits64, word, value, immediate, immediate64)]
+[@@kind kf = base_or_null_with_imm, ks = base_or_null_with_imm]
 ;;]
 
 let invariant f s = function
@@ -64,27 +62,30 @@ let invariant f s = function
 ;;
 
 module Focus = struct
-  type ('a, 'b) t =
+  type ('a : value_or_null, 'b) t =
     | Focus of { global_ value : 'a }
     | Other of { global_ value : 'b }
 end
 
 module Make_focused (M : sig
   @@ portable
-    type (+'a, +'b) t
+    type (+'a : value_or_null, +'b) t
 
-    val return : 'a -> ('a, _) t
-    val other : 'b -> (_, 'b) t
-    val focus : ('a, 'b) t -> local_ ('a, 'b) Focus.t
+    val return : ('a : value_or_null) 'b. 'a -> ('a, 'b) t
+    val other : ('a : value_or_null) 'b. 'b -> ('a, 'b) t
+    val focus : ('a : value_or_null) 'b. ('a, 'b) t -> local_ ('a, 'b) Focus.t
 
     val combine
-      :  ('a, 'd) t
+      : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) 'd.
+      ('a, 'd) t
       -> ('b, 'd) t
       -> f:local_ ('a -> 'b -> 'c)
       -> other:local_ ('d -> 'd -> 'd)
       -> ('c, 'd) t
 
-    val bind : ('a, 'b) t -> f:local_ ('a -> ('c, 'b) t) -> ('c, 'b) t
+    val bind
+      : ('a : value_or_null) 'b ('c : value_or_null).
+      ('a, 'b) t -> f:local_ ('a -> ('c, 'b) t) -> ('c, 'b) t
   end) =
 struct
   include M
@@ -95,8 +96,9 @@ struct
     res
   ;;
 
-  include%template Monad.Make2 [@mode local] [@modality portable] (struct
-      type nonrec ('a, 'b) t = ('a, 'b) t
+  include%template
+    Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local] [@modality portable] (struct
+      type nonrec ('a : value_or_null, 'b) t = ('a, 'b) t
 
       let return = return
       let bind = bind
@@ -104,13 +106,20 @@ struct
     end)
 
   module%template App =
-  Applicative.Make2_using_map2 [@mode local] [@modality portable] (struct
-      type nonrec ('a, 'b) t = ('a, 'b) t
+  Applicative.Make2_using_map2
+    [@kind value_or_null mod maybe_null]
+    [@mode local]
+    [@modality portable]
+    (struct
+      type nonrec ('a : value_or_null, 'b) t = ('a, 'b) t
 
       let return = return
       let map = `Custom map
 
-      let map2 : ('a, 'x) t -> ('b, 'x) t -> f:local_ ('a -> 'b -> 'c) -> ('c, 'x) t =
+      let map2
+        : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) 'x.
+        ('a, 'x) t -> ('b, 'x) t -> f:local_ ('a -> 'b -> 'c) -> ('c, 'x) t
+        =
         fun t1 t2 ~f ->
         bind t1 ~f:(fun x -> bind t2 ~f:(fun y -> return (f x y)) [@nontail]) [@nontail]
       ;;
@@ -172,7 +181,7 @@ struct
 end
 
 module First = Make_focused (struct
-    type nonrec ('a, 'b) t = ('a, 'b) t
+    type nonrec ('a : value_or_null, 'b) t = ('a, 'b) t
 
     let return = first
     let other = second
@@ -199,7 +208,7 @@ module First = Make_focused (struct
   end)
 
 module Second = Make_focused (struct
-    type nonrec ('a, 'b) t = ('b, 'a) t
+    type nonrec ('a : value_or_null, 'b) t = ('b, 'a) t
 
     let return = second
     let other = first
@@ -226,7 +235,7 @@ module Second = Make_focused (struct
   end)
 
 module Export = struct
-  type ('f, 's) _either = ('f, 's) t =
+  type ('f : value_or_null, 's : value_or_null) _either = ('f, 's) t =
     | First of 'f
     | Second of 's
 end

@@ -25,10 +25,10 @@ module Definitions = struct
     type ('fn, 'key, 'data, 'phantom) accessor
 
     (** Whether the dictionary is empty. *)
-    val is_empty : (_, _, _) t -> bool
+    val is_empty : (_, _, _) t @ local -> bool
 
     (** How many key/value pairs the dictionary contains. *)
-    val length : (_, _, _) t -> int
+    val length : (_, _, _) t @ local -> int
 
     (** All key/value pairs. *)
     val to_alist : ('key, 'data, _) t -> ('key key * 'data) list

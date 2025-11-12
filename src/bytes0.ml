@@ -20,7 +20,7 @@ module Sys = Sys0
 
 module Primitives = struct
   external get
-    :  (bytes[@local_opt])
+    :  (bytes[@local_opt]) @ read
     -> (int[@local_opt])
     -> char
     @@ portable
@@ -29,7 +29,7 @@ module Primitives = struct
   external length : (bytes[@local_opt]) @ immutable -> int @@ portable = "%bytes_length"
 
   external unsafe_get
-    :  (bytes[@local_opt])
+    :  (bytes[@local_opt]) @ read
     -> (int[@local_opt])
     -> char
     @@ portable
@@ -64,7 +64,7 @@ module Primitives = struct
   [@@noalloc]
 
   external unsafe_get_int64
-    :  (bytes[@local_opt])
+    :  (bytes[@local_opt]) @ read
     -> (int[@local_opt])
     -> int64
     @@ portable
@@ -79,7 +79,7 @@ module Primitives = struct
     = "%caml_bytes_set64u"
 
   external unsafe_get_int32
-    :  (bytes[@local_opt])
+    :  (bytes[@local_opt]) @ read
     -> (int[@local_opt])
     -> int32
     @@ portable
@@ -94,7 +94,7 @@ module Primitives = struct
     = "%caml_bytes_set32u"
 
   external unsafe_get_int16
-    :  (bytes[@local_opt])
+    :  (bytes[@local_opt]) @ read
     -> (int[@local_opt])
     -> int
     @@ portable

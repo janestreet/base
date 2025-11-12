@@ -7,9 +7,7 @@ let map x ~f : (_ t[@kind ko]) =
   match (x : (_ t[@kind ki])) with
   | Error err -> Error err
   | Ok x -> Ok (f x)
-[@@kind
-  ki = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)
-  , ko = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+[@@kind ki = base_or_null_with_imm, ko = base_or_null_with_imm]
 ;;
 
 include
@@ -56,8 +54,7 @@ Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local] [@modality portab
   end)
 
 [%%template
-[@@@kind.default
-  k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+[@@@kind.default k = base_or_null_with_imm]
 
 let is_ok : (_ t[@kind k]) -> bool = function
   | Ok _ -> true
@@ -103,9 +100,9 @@ let iter_error v ~f =
   | Error x -> f x
 ;;
 
-let to_either : _ t -> _ Either.t = function
-  | Ok x -> First x
-  | Error x -> Second x
+let%template[@mode m = (global, local)] to_either : _ t @ m -> _ Either.t @ m = function
+  | Ok x -> First x [@exclave_if_local m]
+  | Error x -> Second x [@exclave_if_local m]
 ;;
 
 let of_either : _ Either.t -> _ t = function
@@ -136,8 +133,7 @@ module Export = struct
     | Error of 'err
 
   [%%template
-  [@@@kind.default
-    k = (value_or_null, immediate, immediate64, float64, bits32, bits64, word)]
+  [@@@kind.default k = base_or_null_with_imm]
 
   let is_error = (is_error [@kind k])
   let is_ok = (is_ok [@kind k])]

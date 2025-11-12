@@ -1,8 +1,8 @@
 open! Import
 
-type 'a t = 'a or_null
+type 'a t = 'a or_null [@@or_null_reexport]
 
-external is_null : local_ _ or_null -> bool @@ portable = "%is_null"
+external is_null : _ or_null @ immutable local -> bool @@ portable = "%is_null"
 
 external unsafe_value : ('a t[@local_opt]) -> ('a[@local_opt]) @@ portable = "%identity"
 [@@alert unsafe_optimizations_if_misapplied]

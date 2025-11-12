@@ -7,19 +7,24 @@ open! Import
 
 module Definitions = struct
   module type Operators = sig
-    type 'a t := 'a iarray
+    type ('a : any mod separable) t := 'a iarray
 
     (** An alias for [get]. *)
-    external ( .:() ) : ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
+    external ( .:() )
+      : ('a : any mod separable).
+      ('a t[@local_opt]) -> int -> ('a[@local_opt])
+      = "%array_safe_get"
+    [@@layout_poly]
   end
 
   module type Public = sig
     type (+'a : any mod separable) t
 
     [%%rederive:
-      type nonrec 'a t = 'a t
-      [@@deriving
-        compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]
+      type nonrec ('a : value_or_null mod separable) t = 'a t
+      [@@deriving compare ~localize, equal ~localize, sexp ~stackify, sexp_grammar]]
+
+    [%%rederive: type nonrec 'a t = 'a t [@@deriving globalize, hash]]
 
     (** Standard interfaces *)
 
@@ -45,19 +50,19 @@ module Definitions = struct
     [@@@mode.default c = (uncontended, shared, contended), p = (portable, nonportable)]
 
     external get
-      :  ('a t[@local_opt]) @ c p
-      -> int
-      -> ('a[@local_opt]) @ c p
+      : ('a : any mod separable).
+      ('a t[@local_opt]) @ c p -> int -> ('a[@local_opt]) @ c p
       = "%array_safe_get"
+    [@@layout_poly]
 
     val%template get_opt : 'a t @ c m p -> int -> 'a option @ c m p
     [@@mode c] [@@alloc __ @ m = (heap_global, stack_local)]
 
     external unsafe_get
-      :  ('a t[@local_opt]) @ c p
-      -> int
-      -> ('a[@local_opt]) @ c p
-      = "%array_unsafe_get"]
+      : ('a : any mod separable).
+      ('a t[@local_opt]) @ c p -> int -> ('a[@local_opt]) @ c p
+      = "%array_unsafe_get"
+    [@@layout_poly]]
 
     val last_exn : 'a t -> 'a
 
@@ -122,7 +127,7 @@ module Definitions = struct
     val combine_errors_unit : unit Or_error.t t -> unit Or_error.t
 
     [%%template:
-    [@@@kind.default ka = value, kacc = (value, bits64, bits32, word, float64)]
+    [@@@kind.default ka = value, kacc = base_or_null]
 
     val fold
       : ('a : ka) ('acc : kacc).
@@ -281,7 +286,7 @@ module Definitions = struct
       val cartesian_product : local_ 'a t -> local_ 'b t -> local_ ('a * 'b) t
 
       [%%template:
-      [@@@kind.default ka = value, kacc = (value, bits64, bits32, word, float64)]
+      [@@@kind.default ka = value, kacc = base_or_null]
 
       val fold
         : ('a : ka) ('acc : kacc).
@@ -341,12 +346,17 @@ module Definitions = struct
         so violates the invariants of the immutable array. The OCaml compiler might rely
         on these invariants when compiling or optimizing code that uses immutable arrays. *)
 
-    val unsafe_to_array__promise_no_mutation : 'a t -> 'a array
+    [%%template:
+    [@@@mode.default c = (uncontended, shared)]
+
+    val unsafe_to_array__promise_no_mutation
+      : ('a : any mod separable).
+      'a t @ c -> 'a array @ c
 
     external unsafe_of_array__promise_no_mutation
-      :  ('a array[@local_opt])
-      -> ('a t[@local_opt])
-      = "%array_to_iarray"
+      : ('a : any mod separable).
+      ('a array[@local_opt]) @ c -> ('a t[@local_opt]) @ c
+      = "%array_to_iarray"]
   end
 end
 

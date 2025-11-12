@@ -31,322 +31,246 @@ module Definitions = struct
   [@@mode m = (global, local)]
 
   [%%template
-  [@@@kind.default
-    k1 = (value, float64, bits32, bits64, word, immediate, immediate64)
-    , k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
+  [@@@kind k1 = (value, base_or_null_with_imm), k2 = (value, base_or_null_with_imm)]
 
-  type ('t, 'a : k1, 'finish : k2) iteri_until =
-    't @ mi
-    -> f:
-         (int
-          -> 'a @ mi
-          -> ((unit, 'finish) Container.Continue_or_stop.t[@kind value k2]) @ mo)
-       @ local
-    -> finish:(int -> 'finish @ mo) @ local
-    -> 'finish @ mo
-  [@@mode mi = (global, local), mo = (global, local)]
+  include struct
+    type ('t, 'a : k1, 'finish : k2) iteri_until =
+      't @ mi
+      -> f:
+           (int
+            -> 'a @ mi
+            -> ((unit, 'finish) Container.Continue_or_stop.t[@kind value k2]) @ mo)
+         @ local
+      -> finish:(int -> 'finish @ mo) @ local
+      -> 'finish @ mo
+    [@@mode mi = (global, local), mo = (global, local)] [@@kind k1 = k1, k2 = k2]
 
-  [@@@kind.default k3 = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    type ('a, 'b, 'c) _supress_unused = ('a, 'b, 'c) iteri_until
+  end
 
-  type ('t, 'a : k1, 'accum : k2, 'finish : k3) foldi_until =
-    't @ mi
-    -> init:'accum @ mo
-    -> f:
-         (int
-          -> 'accum @ mo
-          -> 'a @ mi
-          -> (('accum, 'finish) Container.Continue_or_stop.t[@kind k2 k3]) @ mo)
-       @ local
-    -> finish:(int -> 'accum @ mo -> 'finish @ mo) @ local
-    -> 'finish @ mo
-  [@@mode mi = (global, local), mo = (global, local)]]
+  [@@@kind k3 = (value, base_or_null_with_imm)]
+
+  include struct
+    type ('t, 'a : k1, 'accum : k2, 'finish : k3) foldi_until =
+      't @ mi
+      -> init:'accum @ mo
+      -> f:
+           (int
+            -> 'accum @ mo
+            -> 'a @ mi
+            -> (('accum, 'finish) Container.Continue_or_stop.t[@kind k2 k3]) @ mo)
+         @ local
+      -> finish:(int -> 'accum @ mo -> 'finish @ mo) @ local
+      -> 'finish @ mo
+    [@@kind k1 = k1, k2 = k2, k3 = k3] [@@mode mi = (global, local), mo = (global, local)]
+
+    type ('a, 'b, 'c, 'd) _supress_unused = ('a, 'b, 'c, 'd) foldi_until
+  end]
 
   [%%template
   [@@@mode.default m = (global, local)]
+  [@@@kind_set.define base_with_imm = (value, base_with_imm)]
 
-  module type Iterators_with_index = sig
-    include Container.Generic_types [@kind k]
+  module type
+    [@kind_set.explicit
+      (ks, ks_not_in_t)
+      = ( (value, value)
+        , (value_or_null, value_or_null)
+        , (immediate, value)
+        , (immediate64, value)
+        , (base_with_imm, base) )] Iterators_with_index_without_findi = sig
+    include Container.Generic_types [@kind_set.explicit ks]
 
     (** These are all like their equivalents in [Container] except that an index starting
         at 0 is added as the first argument to [f]. *)
 
-    val foldi : ((('a, _, _) t, 'a elt, _) foldi[@mode mi mo])
-    [@@mode mi = (global, m), mo = (global, m)]
+    [%%template:
+    [@@@kind.default_if_multiple k1 = ks]
 
-    val foldi_until : ((('a, _, _) t, 'a elt, _, _) foldi_until[@mode mi mo])
-    [@@mode mi = (global, m), mo = (global, m)]
+    type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1]) [@@kind value]
+    type ('a : k1) elt : k1 := ('a elt[@kind k1]) [@@kind value]
 
-    val iteri : ((('a, _, _) t, 'a elt) iteri[@mode m]) [@@mode m = (global, m)]
+    [@@@mode.default mi = (global, m)]
 
-    val iteri_until : ((('a, _, _) t, 'a elt, 'final) iteri_until[@mode mi mo])
-    [@@mode mi = (global, m), mo = (global, m)]
+    val iteri : ('a : k1) 'p1 'p2. ((('a, 'p1, 'p2) t, 'a elt) iteri[@mode mi])
 
-    val existsi : ('a, _, _) t @ m -> f:(int -> 'a elt @ m -> bool) @ local -> bool
-    [@@mode m = (global, m)]
+    val existsi
+      : ('a : k1) 'p1 'p2.
+      ('a, 'p1, 'p2) t @ mi -> f:(int -> 'a elt @ mi -> bool) @ local -> bool
 
-    val for_alli : ('a, _, _) t @ m -> f:(int -> 'a elt @ m -> bool) @ local -> bool
-    [@@mode m = (global, m)]
+    val for_alli
+      : ('a : k1) 'p1 'p2.
+      ('a, 'p1, 'p2) t @ mi -> f:(int -> 'a elt @ mi -> bool) @ local -> bool
 
-    val counti : ('a, _, _) t @ m -> f:(int -> 'a elt @ m -> bool) @ local -> int
-    [@@mode m = (global, m)]
+    val counti
+      : ('a : k1) 'p1 'p2.
+      ('a, 'p1, 'p2) t @ mi -> f:(int -> 'a elt @ mi -> bool) @ local -> int
 
-    val findi
-      :  ('a, _, _) t @ m
-      -> f:(int -> 'a elt @ m -> bool) @ local
-      -> (int * 'a elt) option @ m
-    [@@mode m = (global, m)]
+    [@@@kind.default_if_multiple k2 = ks_not_in_t]
+    [@@@mode.default mo = (global, m)]
+
+    val foldi
+      : ('a : k1) 'p1 'p2 ('acc : k2).
+      ((('a, 'p1, 'p2) t, 'a elt, 'acc) foldi[@mode mi mo])
+
+    val iteri_until
+      : ('a : k1) 'p1 'p2 ('final : k2).
+      ((('a, 'p1, 'p2) t, 'a elt, 'final) iteri_until[@mode mi mo] [@kind k1 k2])
 
     val find_mapi
-      :  ('a, _, _) t @ mi
-      -> f:(int -> 'a elt @ mi -> 'b option @ mo) @ local
-      -> 'b option @ mo
-    [@@mode mi = (global, m), mo = (global, m)]
+      : ('a : k1) 'p1 'p2 ('b : k2).
+      ('a, 'p1, 'p2) t @ mi
+      -> f:(int -> 'a elt @ mi -> ('b Option0.t[@kind k2]) @ mo) @ local
+      -> ('b Option0.t[@kind k2]) @ mo
+
+    [@@@kind.default_if_multiple k3 = ks_not_in_t]
+
+    val foldi_until
+      : ('a : k1) 'p1 'p2 ('acc : k2) ('final : k3).
+      ((('a, 'p1, 'p2) t, 'a elt, 'acc, 'final) foldi_until[@mode mi mo] [@kind k1 k2 k3])]
   end
-  [@@kind k = (value, immediate, immediate64)]
 
-  module type Iterators_with_index__base = sig
-    include Container.Generic_types__base
+  module type
+    [@kind_set.explicit ks = (value, value_or_null, immediate, immediate64)] Iterators_with_index = sig
+    (** Use a boxed product just for the [value] versions for backwards-compatibility *)
 
-    (** These are all like their equivalents in [Container] except that an index starting
-        at 0 is added as the first argument to [f]. *)
+    include Iterators_with_index_without_findi [@kind_set.explicit ks] [@mode m]
 
-    [@@@kind k1 = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    [@@@kind.default_if_multiple k = ks]
 
-    include sig
-        type ('a : k1, 'b, 'c) t
-        type ('a : k1) elt : k1
+    val findi
+      : ('a : k) 'p1 'p2.
+      (('a, 'p1, 'p2) t[@kind k]) @ m
+      -> f:(int -> ('a elt[@kind k]) @ m -> bool) @ local
+      -> (int * ('a elt[@kind k])) option @ m
+    [@@mode m = (global, m)]
+  end
 
-        [@@@kind.default k1]
-        [@@@mode.default mi = (global, m)]
+  module type Iterators_with_index = Iterators_with_index [@kind_set.explicit ks]
+  [@@kind_set ks = value]
 
-        val iteri : ((('a, _, _) t, 'a elt) iteri[@mode m])
-        val existsi : ('a, _, _) t @ m -> f:(int -> 'a elt @ m -> bool) @ local -> bool
-        val for_alli : ('a, _, _) t @ m -> f:(int -> 'a elt @ m -> bool) @ local -> bool
-        val counti : ('a, _, _) t @ m -> f:(int -> 'a elt @ m -> bool) @ local -> int
+  module type [@kind_set.explicit ks = base_with_imm] Iterators_with_index = sig
+    include Iterators_with_index_without_findi [@kind_set.explicit ks] [@mode m]
 
-        val findi
-          :  ('a, _, _) t @ m
-          -> f:(int -> 'a elt @ m -> bool) @ local
-          -> (#(int * 'a elt) Option0.t[@kind value & k1]) @ m
+    [@@@kind.default_if_multiple k = ks]
 
-        [@@@kind.default
-          k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
-
-        [@@@mode.default mo = (global, m)]
-
-        val foldi : ((('a, _, _) t, 'a elt, _) foldi[@mode mi mo])
-
-        val iteri_until
-          : ((('a, _, _) t, 'a elt, 'final) iteri_until[@mode mi mo] [@kind k1 k2])
-
-        val find_mapi
-          :  ('a, _, _) t @ mi
-          -> f:(int -> 'a elt @ mi -> ('b Option0.t[@kind k2]) @ mo) @ local
-          -> ('b Option0.t[@kind k2]) @ mo
-
-        [@@@kind.default
-          k3 = (value, float64, bits32, bits64, word, immediate, immediate64)]
-
-        val foldi_until
-          : ((('a, _, _) t, 'a elt, _, _) foldi_until[@mode mi mo] [@kind k1 k2 k3])
-      end
-      with type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1])
-       and type ('a : k1) elt := ('a elt[@kind k1])
+    val findi
+      : ('a : k) 'p1 'p2.
+      (('a, 'p1, 'p2) t[@kind k]) @ m
+      -> f:(int -> ('a elt[@kind k]) @ m -> bool) @ local
+      -> (#(int * ('a elt[@kind k])) Option0.t[@kind value & k]) @ m
+    [@@mode m = (global, m)]
   end]
 
   [%%template
   [@@@alloc.default a @ m = (heap_global, stack_local)]
 
-  module type Generic = sig
-    include Container.Generic [@alloc a]
+  module type
+    [@kind_set.explicit
+      ks = (value, value_or_null, immediate, immediate64, base_with_imm)] Generic = sig
+    include Container.Generic [@kind_set.explicit ks] [@alloc a]
 
     include
       Iterators_with_index
-      [@mode m]
-      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
-       and type 'a elt := 'a elt
+    [@kind_set.explicit ks]
+    [@mode m]
+    [@with:
+      [@@@kind.default k = ks]
+
+      type ('a : k, 'b, 'c) t := (('a, 'b, 'c) t[@kind k])
+      type ('a : k) elt := ('a elt[@kind k])]
   end
 
-  module type Generic__base = sig
-    include Container.Generic__base [@alloc a]
+  module type Generic = sig
+    include Generic [@kind_set.explicit ks] [@alloc a]
 
     include
-      Iterators_with_index__base
-      [@mode m]
+      Container.Generic
+      [@alloc a]
       with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
-       and type ('a, 'b, 'c) t__float64 := ('a, 'b, 'c) t__float64
-       and type ('a, 'b, 'c) t__bits32 := ('a, 'b, 'c) t__bits32
-       and type ('a, 'b, 'c) t__bits64 := ('a, 'b, 'c) t__bits64
-       and type ('a, 'b, 'c) t__word := ('a, 'b, 'c) t__word
-       and type ('a, 'b, 'c) t__immediate := ('a, 'b, 'c) t__immediate
-       and type ('a, 'b, 'c) t__immediate64 := ('a, 'b, 'c) t__immediate64
        and type 'a elt := 'a elt
-       and type 'a elt__float64 := 'a elt__float64
-       and type 'a elt__bits32 := 'a elt__bits32
-       and type 'a elt__bits64 := 'a elt__bits64
-       and type 'a elt__word := 'a elt__word
-       and type 'a elt__immediate := 'a elt__immediate
-       and type 'a elt__immediate64 := 'a elt__immediate64
   end
+  [@@kind_set ks = value]
 
   (** Like [Generic], but [mem] does not accept an [equal] function, since [Make0] already
       takes [Elt.equal]. *)
-  module type S0 = sig
-    include Container.S0 [@alloc a]
 
-    include
-      Iterators_with_index [@mode m] with type (_, _, _) t := t and type _ elt := elt
-  end
-
-  module type S0__base = sig
-    include Container.S0__base [@alloc a]
-
-    include
-      Iterators_with_index__base
-      [@mode m]
-      with type ('a, _, _) t := t
-       and type ('a, _, _) t__float64 := t__float64
-       and type ('a, _, _) t__bits32 := t__bits32
-       and type ('a, _, _) t__bits64 := t__bits64
-       and type ('a, _, _) t__word := t__word
-       and type ('a, _, _) t__immediate := t__immediate
-       and type ('a, _, _) t__immediate64 := t__immediate64
-       and type _ elt := elt
-       and type _ elt__float64 := elt__float64
-       and type _ elt__bits32 := elt__bits32
-       and type _ elt__bits64 := elt__bits64
-       and type _ elt__word := elt__word
-       and type _ elt__immediate := elt__immediate
-       and type _ elt__immediate64 := elt__immediate64
-  end
-
-  module type S1 = sig
-    include Container.S1 [@kind k] [@alloc a]
+  module type
+    [@kind_set.explicit ks = (value, immediate, immediate64, base_with_imm)] S0 = sig
+    include Container.S0 [@kind_set.explicit ks] [@alloc a]
 
     include
       Iterators_with_index
-      [@kind k] [@mode m]
-      with type ('a, _, _) t := 'a t
-       and type 'a elt := 'a
-  end
-  [@@kind k = (value, immediate, immediate64)]
+    [@kind_set.explicit ks]
+    [@mode m]
+    [@with:
+      [@@@kind.default k = ks]
 
-  module type S1__base = sig
-    include Container.S1__base [@alloc a]
+      type ('a, _, _) t := (t[@kind k])
+      type _ elt := (elt[@kind k])]
+  end
+
+  module type S0 = S0 [@kind_set.explicit ks] [@alloc a] [@@kind_set ks = value]
+
+  [@@@kind_set.default.explicit
+    ks = (value, value_or_null, immediate, immediate64, base_with_imm)]
+
+  module type S1 = sig
+    include Container.S1 [@kind_set.explicit ks] [@alloc a]
 
     include
-      Iterators_with_index__base
-      [@mode m]
-      with type ('a, _, _) t := 'a t
-       and type ('a, _, _) t__float64 := 'a t__float64
-       and type ('a, _, _) t__bits32 := 'a t__bits32
-       and type ('a, _, _) t__bits64 := 'a t__bits64
-       and type ('a, _, _) t__word := 'a t__word
-       and type ('a, _, _) t__immediate := 'a t__immediate
-       and type ('a, _, _) t__immediate64 := 'a t__immediate64
-       and type 'a elt := 'a
-       and type 'a elt__float64 := 'a
-       and type 'a elt__bits32 := 'a
-       and type 'a elt__bits64 := 'a
-       and type 'a elt__word := 'a
-       and type 'a elt__immediate := 'a
-       and type 'a elt__immediate64 := 'a
+      Iterators_with_index
+    [@kind_set.explicit ks]
+    [@mode m]
+    [@with:
+      [@@@kind.default k = ks]
+
+      type ('a : k, _, _) t := ('a t[@kind k])
+      type ('a : k) elt := 'a]
   end
 
+  module type S1 = S1 [@kind_set.explicit ks] [@alloc a] [@@kind_set ks = value]
+
   module type Creators_with_index = sig
-    include Container.Generic_types
+    include Container.Generic_types [@kind_set.explicit ks]
+
+    [%%template:
+    [@@@kind.default_if_multiple k1 = ks]
+
+    type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1]) [@@kind value]
+    type ('a : k1) elt := ('a elt[@kind k1]) [@@kind value]
 
     (** [init n ~f] is equivalent to [of_list [f 0; f 1; ...; f (n-1)]]. It raises an
         exception if [n < 0]. *)
-    val init : int -> f:(int -> 'a elt @ m) @ local -> ('a, _, _) t @ m
+    val init
+      : ('a : k1) 'p1 'p2.
+      int -> f:(int -> 'a elt @ m) @ local -> ('a, 'p1, 'p2) t @ m
     [@@alloc __ @ m = (heap_global, a @ m)]
 
-    (** [mapi] is like map. Additionally, it passes in the index of each element as the
-        first argument to the mapped function. *)
-    val mapi
-      :  ('a, 'p1, 'p2) t @ mi
-      -> f:(int -> 'a elt @ mi -> 'b elt @ mo) @ local
-      -> ('b, 'p1, 'p2) t @ mo
-    [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
-
     val filteri
-      :  ('a, 'p1, 'p2) t @ m
+      : ('a : k1) 'p1 'p2.
+      ('a, 'p1, 'p2) t @ m
       -> f:(int -> 'a elt @ m -> bool) @ local
       -> ('a, 'p1, 'p2) t @ m
     [@@alloc __ @ m = (heap_global, a @ m)]
 
-    (** filter_mapi is like [filter_map]. Additionally, it passes in the index of each
-        element as the first argument to the mapped function. *)
-    val filter_mapi
-      :  ('a, 'p1, 'p2) t @ mi
-      -> f:(int -> 'a elt @ mi -> 'b elt option @ mo) @ local
-      -> ('b, 'p1, 'p2) t @ mo
-    [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
-
-    (** [concat_mapi t ~f] is like concat_map. Additionally, it passes the index as an
-        argument. *)
-    val concat_mapi
-      :  ('a, 'p1, 'p2) t @ mi
-      -> f:(int -> 'a elt @ mi -> ('b, 'p1, 'p2) t @ mo) @ local
-      -> ('b, 'p1, 'p2) t @ mo
-    [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
-
     (** [partitioni_tf t ~f] is like partition_tf. Additionally, it passes the index as an
         argument. *)
     val partitioni_tf
-      :  ('a, 'p1, 'p2) t @ m
+      : ('a : k1) 'p1 'p2.
+      ('a, 'p1, 'p2) t @ m
       -> f:(int -> 'a elt @ m -> bool) @ local
       -> ('a, 'p1, 'p2) t * ('a, 'p1, 'p2) t @ m
-    [@@alloc __ @ m = (heap_global, a @ m)]
+    [@@alloc __ @ m = (heap_global, a @ m)]]
 
-    (** [partition_mapi t ~f] is like partition_map. Additionally, it passes the index as
-        an argument. *)
-    val partition_mapi
-      :  ('a, 'p1, 'p2) t @ mi
-      -> f:(int -> 'a elt @ mi -> ('b elt, 'c elt) Either0.t @ mo) @ local
-      -> ('b, 'p1, 'p2) t * ('c, 'p1, 'p2) t @ mo
-    [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
-  end
-
-  module type Creators_with_index__base = sig
-    include Container.Generic_types__base
-
-    [@@@kind.default k1 = (value, float64, bits32, bits64, word, immediate, immediate64)]
-
-    include sig
-        type ('a : k1, 'b, 'c) t
-        type ('a : k1) elt : k1
-
-        [@@@kind.default k1]
-
-        (** [init n ~f] is equivalent to [of_list [f 0; f 1; ...; f (n-1)]]. It raises an
-            exception if [n < 0]. *)
-        val init : int -> f:(int -> 'a elt @ m) @ local -> ('a, _, _) t @ m
-        [@@alloc __ @ m = (heap_global, a @ m)]
-
-        val filteri
-          :  ('a, 'p1, 'p2) t @ m
-          -> f:(int -> 'a elt @ m -> bool) @ local
-          -> ('a, 'p1, 'p2) t @ m
-        [@@alloc __ @ m = (heap_global, a @ m)]
-
-        (** [partitioni_tf t ~f] is like partition_tf. Additionally, it passes the index
-            as an argument. *)
-        val partitioni_tf
-          :  ('a, 'p1, 'p2) t @ m
-          -> f:(int -> 'a elt @ m -> bool) @ local
-          -> ('a, 'p1, 'p2) t * ('a, 'p1, 'p2) t @ m
-        [@@alloc __ @ m = (heap_global, a @ m)]
-      end
-      with type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1])
-       and type ('a : k1) elt := ('a elt[@kind k1])
-
-    [@@@kind.default k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    [@@@kind.default_if_multiple k1 = ks]
+    [@@@kind.default_if_multiple k2 = ks]
 
     (** [mapi] is like map. Additionally, it passes in the index of each element as the
         first argument to the mapped function. *)
     val mapi
-      :  (('a, 'p1, 'p2) t[@kind k1]) @ m
+      : ('a : k1) 'p1 'p2 ('b : k2).
+      (('a, 'p1, 'p2) t[@kind k1]) @ m
       -> f:(int -> ('a elt[@kind k1]) @ m -> ('b elt[@kind k2]) @ n) @ local
       -> (('b, 'p1, 'p2) t[@kind k2]) @ n
     [@@mode m = (global, m)] [@@alloc __ @ n = (heap_global, a @ m)]
@@ -354,7 +278,8 @@ module Definitions = struct
     (** filter_mapi is like [filter_map]. Additionally, it passes in the index of each
         element as the first argument to the mapped function. *)
     val filter_mapi
-      :  (('a, 'p1, 'p2) t[@kind k1]) @ m
+      : ('a : k1) 'p1 'p2 ('b : k2).
+      (('a, 'p1, 'p2) t[@kind k1]) @ m
       -> f:(int -> ('a elt[@kind k1]) @ m -> (('b elt[@kind k2]) Option0.t[@kind k2]) @ n)
          @ local
       -> (('b, 'p1, 'p2) t[@kind k2]) @ n
@@ -363,17 +288,19 @@ module Definitions = struct
     (** [concat_mapi t ~f] is like concat_map. Additionally, it passes the index as an
         argument. *)
     val concat_mapi
-      :  (('a, 'p1, 'p2) t[@kind k1]) @ m
+      : ('a : k1) 'p1 'p2 ('b : k2).
+      (('a, 'p1, 'p2) t[@kind k1]) @ m
       -> f:(int -> ('a elt[@kind k1]) @ m -> (('b, 'p1, 'p2) t[@kind k2]) @ n) @ local
       -> (('b, 'p1, 'p2) t[@kind k2]) @ n
     [@@mode m = (global, m)] [@@alloc __ @ n = (heap_global, a @ m)]
 
-    [@@@kind.default k3 = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    [@@@kind.default_if_multiple k3 = ks]
 
     (** [partition_mapi t ~f] is like partition_map. Additionally, it passes the index as
         an argument. *)
     val partition_mapi
-      :  (('a, 'p1, 'p2) t[@kind k1]) @ m
+      : ('a : k1) 'p1 'p2 ('b : k2) ('c : k3).
+      (('a, 'p1, 'p2) t[@kind k1]) @ m
       -> f:
            (int
             -> ('a elt[@kind k1]) @ m
@@ -383,173 +310,101 @@ module Definitions = struct
     [@@mode m = (global, m)] [@@alloc __ @ n = (heap_global, a @ m)]
   end
 
+  module type Creators_with_index = Creators_with_index [@kind_set.explicit ks] [@alloc a]
+  [@@kind_set ks = value]
+
   module type Generic_with_creators = sig
-    include Generic [@alloc a]
+    include Generic [@kind_set.explicit ks] [@alloc a]
 
     include
       Container.Creators
-      [@alloc a]
-      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
-       and type 'a elt := 'a elt
+    [@kind_set.explicit ks]
+    [@alloc a]
+    [@with:
+      [@@@kind.default k = ks]
+
+      type ('a : k, 'b, 'c) t := (('a, 'b, 'c) t[@kind k])
+      type ('a : k) elt := ('a elt[@kind k])]
 
     include
       Creators_with_index
-      [@alloc a]
-      with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) t
-       and type 'a elt := 'a elt
+    [@kind_set.explicit ks]
+    [@alloc a]
+    [@with:
+      [@@@kind.default k = ks]
+
+      type ('a : k, 'b, 'c) t := (('a, 'b, 'c) t[@kind k])
+      type ('a : k) elt := ('a elt[@kind k])]
   end
 
-  module type Generic_with_creators__base = sig
-    include Generic__base [@alloc a]
+  module type Generic_with_creators = sig
+    include Generic_with_creators [@kind_set.explicit ks] [@alloc a]
 
     include
-      Container.Creators__base
+      Container.Generic_with_creators
       [@alloc a]
       with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
-       and type ('a, 'b, 'c) t__float64 := ('a, 'b, 'c) t__float64
-       and type ('a, 'b, 'c) t__bits32 := ('a, 'b, 'c) t__bits32
-       and type ('a, 'b, 'c) t__bits64 := ('a, 'b, 'c) t__bits64
-       and type ('a, 'b, 'c) t__word := ('a, 'b, 'c) t__word
-       and type ('a, 'b, 'c) t__immediate := ('a, 'b, 'c) t__immediate
-       and type ('a, 'b, 'c) t__immediate64 := ('a, 'b, 'c) t__immediate64
        and type 'a elt := 'a elt
-       and type 'a elt__float64 := 'a elt__float64
-       and type 'a elt__bits32 := 'a elt__bits32
-       and type 'a elt__bits64 := 'a elt__bits64
-       and type 'a elt__word := 'a elt__word
-       and type 'a elt__immediate := 'a elt__immediate
-       and type 'a elt__immediate64 := 'a elt__immediate64
-
-    include
-      Creators_with_index__base
-      [@alloc a]
-      with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
-       and type ('a, 'b, 'c) t__float64 := ('a, 'b, 'c) t__float64
-       and type ('a, 'b, 'c) t__bits32 := ('a, 'b, 'c) t__bits32
-       and type ('a, 'b, 'c) t__bits64 := ('a, 'b, 'c) t__bits64
-       and type ('a, 'b, 'c) t__word := ('a, 'b, 'c) t__word
-       and type ('a, 'b, 'c) t__immediate := ('a, 'b, 'c) t__immediate
-       and type ('a, 'b, 'c) t__immediate64 := ('a, 'b, 'c) t__immediate64
-       and type 'a elt := 'a elt
-       and type 'a elt__float64 := 'a elt__float64
-       and type 'a elt__bits32 := 'a elt__bits32
-       and type 'a elt__bits64 := 'a elt__bits64
-       and type 'a elt__word := 'a elt__word
-       and type 'a elt__immediate := 'a elt__immediate
-       and type 'a elt__immediate64 := 'a elt__immediate64
   end
+  [@@kind_set ks = value]]
+
+  [%%template
+  [@@@alloc.default a @ m = (heap_global, stack_local)]
 
   (** Like [Generic_with_creators], but [mem] does not accept an [equal] function, since
       [Make0_with_creators] already takes [Elt.equal]. *)
-  module type S0_with_creators = sig
-    include S0 [@alloc a]
+
+  module type [@kind_set.explicit ks = (value, base_with_imm)] S0_with_creators = sig
+    include S0 [@kind_set.explicit ks] [@alloc a]
 
     include
-      Container.Creators
-      [@alloc a]
-      with type (_, _, _) t := t
-       and type _ elt := elt
-       and type (_, _, _) concat := t list
+      Container.S0_with_creators
+    [@kind_set.explicit ks]
+    [@alloc a]
+    [@with:
+      [@@@kind.default k = ks]
+
+      type t := (t[@kind k])
+      type elt := (elt[@kind k])]
 
     include
-      Creators_with_index [@alloc a] with type (_, _, _) t := t and type _ elt := elt
+      Creators_with_index
+    [@kind_set.explicit ks]
+    [@alloc a]
+    [@with:
+      [@@@kind.default k = ks]
+
+      type ('a, _, _) t := (t[@kind k])
+      type _ elt := (elt[@kind k])]
   end
 
-  module type S0_with_creators__base = sig
-    include S0__base [@alloc a]
+  module type S0_with_creators = S0_with_creators [@kind_set.explicit ks] [@alloc a]
+  [@@kind_set ks = value]
 
-    include
-      Container.Creators__base
-      [@alloc a]
-      with type ('a, _, _) t := t
-       and type ('a, _, _) t__float64 := t__float64
-       and type ('a, _, _) t__bits32 := t__bits32
-       and type ('a, _, _) t__bits64 := t__bits64
-       and type ('a, _, _) t__word := t__word
-       and type ('a, _, _) t__immediate := t__immediate
-       and type ('a, _, _) t__immediate64 := t__immediate64
-       and type _ elt := elt
-       and type _ elt__float64 := elt__float64
-       and type _ elt__bits32 := elt__bits32
-       and type _ elt__bits64 := elt__bits64
-       and type _ elt__word := elt__word
-       and type _ elt__immediate := elt__immediate
-       and type _ elt__immediate64 := elt__immediate64
-       and type ('a, _, _) concat := t list
-
-    include
-      Creators_with_index__base
-      [@alloc a]
-      with type ('a, _, _) t := t
-       and type ('a, _, _) t__float64 := t__float64
-       and type ('a, _, _) t__bits32 := t__bits32
-       and type ('a, _, _) t__bits64 := t__bits64
-       and type ('a, _, _) t__word := t__word
-       and type ('a, _, _) t__immediate := t__immediate
-       and type ('a, _, _) t__immediate64 := t__immediate64
-       and type _ elt := elt
-       and type _ elt__float64 := elt__float64
-       and type _ elt__bits32 := elt__bits32
-       and type _ elt__bits64 := elt__bits64
-       and type _ elt__word := elt__word
-       and type _ elt__immediate := elt__immediate
-       and type _ elt__immediate64 := elt__immediate64
-  end
+  [@@@kind_set.default.explicit ks = (value, value_or_null, base_with_imm)]
 
   module type S1_with_creators = sig
-    include S1 [@alloc a]
+    include S1 [@kind_set.explicit ks] [@alloc a]
 
     include
-      Container.Creators
-      [@alloc a]
-      with type ('a, _, _) t := 'a t
-       and type 'a elt := 'a
-       and type ('a, _, _) concat := 'a t
+      Container.S1_with_creators
+    [@kind_set.explicit ks]
+    [@alloc a]
+    [@with: type ('a : k) t := ('a t[@kind k]) [@@kind k = ks]]
 
     include
-      Creators_with_index [@alloc a] with type ('a, _, _) t := 'a t and type 'a elt := 'a
+      Creators_with_index
+    [@kind_set.explicit ks]
+    [@alloc a]
+    [@with:
+      [@@@kind.default k = ks]
+
+      type ('a : k, _, _) t := ('a t[@kind k])
+      type ('a : k) elt := 'a]
   end
 
-  module type S1_with_creators__base = sig
-    include S1__base [@alloc a]
-
-    include
-      Container.Creators__base
-      [@alloc a]
-      with type ('a, _, _) t := 'a t
-       and type ('a, _, _) t__float64 := 'a t__float64
-       and type ('a, _, _) t__bits32 := 'a t__bits32
-       and type ('a, _, _) t__bits64 := 'a t__bits64
-       and type ('a, _, _) t__word := 'a t__word
-       and type ('a, _, _) t__immediate := 'a t__immediate
-       and type ('a, _, _) t__immediate64 := 'a t__immediate64
-       and type 'a elt := 'a
-       and type 'a elt__float64 := 'a
-       and type 'a elt__bits32 := 'a
-       and type 'a elt__bits64 := 'a
-       and type 'a elt__word := 'a
-       and type 'a elt__immediate := 'a
-       and type 'a elt__immediate64 := 'a
-       and type ('a, _, _) concat := 'a t
-
-    include
-      Creators_with_index__base
-      [@alloc a]
-      with type ('a, _, _) t := 'a t
-       and type ('a, _, _) t__float64 := 'a t__float64
-       and type ('a, _, _) t__bits32 := 'a t__bits32
-       and type ('a, _, _) t__bits64 := 'a t__bits64
-       and type ('a, _, _) t__word := 'a t__word
-       and type ('a, _, _) t__immediate := 'a t__immediate
-       and type ('a, _, _) t__immediate64 := 'a t__immediate64
-       and type 'a elt := 'a
-       and type 'a elt__float64 := 'a
-       and type 'a elt__bits32 := 'a
-       and type 'a elt__bits64 := 'a
-       and type 'a elt__word := 'a
-       and type 'a elt__immediate := 'a
-       and type 'a elt__immediate64 := 'a
-  end]
+  module type S1_with_creators = S1_with_creators [@kind_set.explicit ks] [@alloc a]
+  [@@kind_set ks = value]]
 
   module type Make_gen_arg = sig
     include Container.Make_gen_arg [@mode m]
@@ -632,13 +487,14 @@ module Definitions = struct
        and type ('a, _, _) concat := 'a list
   end
 
-  module type%template Derived = sig
+  module type [@kind.explicit k = (value, value_or_null)] Derived = sig
     [@@@mode.default m = (global, local)]
 
     (** Generic definition of [foldi_until] in terms of [fold_until]. *)
 
     val foldi_until
-      :  fold_until:(('t, 'a, 'acc, 'final) fold_until[@mode mi mo])
+      : ('a : k) 't ('acc : k) ('final : k).
+      fold_until:(('t, 'a, 'acc, 'final) fold_until[@mode mi mo])
       -> (('t, 'a, 'acc, 'final) foldi_until[@mode mi mo])
     [@@mode mi = m, mo = (global, local)]
 
@@ -647,23 +503,27 @@ module Definitions = struct
         E.g., [iteri ~fold t ~f = ignore (fold t ~init:0 ~f:(fun i x -> f i x; i + 1))]. *)
 
     val foldi
-      :  fold:(('t, 'a, 'acc) fold[@mode mi mo])
-      -> (('t, 'a, 'acc) foldi[@mode mi mo])
+      : ('a : k) 't ('acc : k).
+      fold:(('t, 'a, 'acc) fold[@mode mi mo]) -> (('t, 'a, 'acc) foldi[@mode mi mo])
     [@@mode mi = m, mo = (global, local)]
 
-    val iteri : fold:(('t, 'a, int) fold[@mode m global]) -> (('t, 'a) iteri[@mode m])
+    val iteri
+      : ('a : k) 't.
+      fold:(('t, 'a, int) fold[@mode m global]) -> (('t, 'a) iteri[@mode m])
 
     (** Generic definition of [iteri_until] in terms of [foldi_until]. *)
 
     val iteri_until
-      :  foldi_until:(('t, 'a, unit, 'final) foldi_until[@mode mi mo])
+      : ('a : k) 't ('final : k).
+      foldi_until:(('t, 'a, unit, 'final) foldi_until[@mode mi mo])
       -> (('t, 'a, 'final) iteri_until[@mode mi mo])
     [@@mode mi = m, mo = (global, local)]
 
     (** Generic definitions of indexed container operations in terms of [foldi]. *)
 
     val counti
-      :  foldi:(('t, 'a, int) foldi[@mode m global])
+      : ('a : k) 't.
+      foldi:(('t, 'a, int) foldi[@mode m global])
       -> 't @ m
       -> f:(int -> 'a @ m -> bool) @ local
       -> int
@@ -671,25 +531,29 @@ module Definitions = struct
     (** Generic definitions of indexed container operations in terms of [iteri]. *)
 
     val existsi
-      :  iteri_until:(('t, 'a, bool) iteri_until[@mode m global])
+      : ('a : k) 't.
+      iteri_until:(('t, 'a, bool) iteri_until[@mode m global])
       -> 't @ m
       -> f:(int -> 'a @ m -> bool) @ local
       -> bool
 
     val for_alli
-      :  iteri_until:(('t, 'a, bool) iteri_until[@mode m global])
+      : ('a : k) 't.
+      iteri_until:(('t, 'a, bool) iteri_until[@mode m global])
       -> 't @ m
       -> f:(int -> 'a @ m -> bool) @ local
       -> bool
 
     val findi
-      :  iteri_until:(('t, 'a, (int * 'a) option) iteri_until[@mode m m])
+      : ('a : k) 't.
+      iteri_until:(('t, 'a, (int * 'a) option) iteri_until[@mode m m])
       -> 't @ m
       -> f:(int -> 'a @ m -> bool) @ local
       -> (int * 'a) option @ m
 
     val find_mapi
-      :  iteri_until:(('t, 'a, 'b option) iteri_until[@mode mi mo])
+      : ('a : k) 't ('b : k).
+      iteri_until:(('t, 'a, 'b option) iteri_until[@mode mi mo])
       -> 't @ mi
       -> f:(int -> 'a @ mi -> 'b option @ mo) @ local
       -> 'b option @ mo
@@ -707,7 +571,10 @@ module type Indexed_container = sig @@ portable
       [iteri], but the idea is that [Indexed_container_intf] should be included only for
       containers that have a meaningful underlying ordering. *)
 
-  include Derived
+  module%template Derived : Derived [@kind.explicit k]
+  [@@kind.explicit k = (value, value_or_null)]
+
+  include module type of Derived [@kind.explicit value]
 
   module%template.portable Make (T : Make_arg [@mode m]) :
     S1 [@alloc a] with type 'a t := 'a T.t

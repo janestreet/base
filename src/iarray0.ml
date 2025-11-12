@@ -4,34 +4,39 @@ open! Import0
 
 type (+'a : any mod separable) t = 'a iarray
 
+[%%template
+[@@@mode.default c = (uncontended, shared)]
+
 (* This one should not operate on local arrays, because that would be more unsafe:
    extraction from a local array gets *global* elements. So if this function worked
    on local arrays it could be used to forget that a value was local by storing it
    in a local iarray, converting, and then extracting from the local array. *)
 external unsafe_to_array__promise_no_mutation
-  : 'a.
-  'a t -> 'a array
+  : ('a : any mod separable).
+  'a t @ c -> 'a array @ c
   @@ portable
   = "%array_of_iarray"
 
 (* In contrast to the function above, this one is safe to work on locals. Well, just
    as safe as it is on globals. *)
 external unsafe_of_array__promise_no_mutation
-  : 'a.
-  ('a array[@local_opt]) -> ('a t[@local_opt])
+  : ('a : any mod separable).
+  ('a array[@local_opt]) @ c -> ('a t[@local_opt]) @ c
   @@ portable
-  = "%array_to_iarray"
+  = "%array_to_iarray"]
 
 (** Operators *)
 
 module O = struct
   external ( .:() )
-    :  ('a t[@local_opt])
-    -> int
-    -> ('a[@local_opt])
+    : ('a : any mod separable).
+    ('a t[@local_opt]) -> int -> ('a[@local_opt])
     @@ portable
     = "%array_safe_get"
+  [@@layout_poly]
 end
+
+open O
 
 (** Indexing and length *)
 
@@ -39,18 +44,18 @@ end
 [@@@mode.default c = (uncontended, shared, contended), p = (portable, nonportable)]
 
 external get
-  :  ('a t[@local_opt]) @ c p
-  -> int
-  -> ('a[@local_opt]) @ c p
+  : ('a : any mod separable).
+  ('a t[@local_opt]) @ c p -> int -> ('a[@local_opt]) @ c p
   @@ portable
   = "%array_safe_get"
+[@@layout_poly]
 
 external unsafe_get
-  :  ('a t[@local_opt]) @ c p
-  -> int
-  -> ('a[@local_opt]) @ c p
+  : ('a : any mod separable).
+  ('a t[@local_opt]) @ c p -> int -> ('a[@local_opt]) @ c p
   @@ portable
-  = "%array_unsafe_get"]
+  = "%array_unsafe_get"
+[@@layout_poly]]
 
 external length
   : ('a : any mod separable).

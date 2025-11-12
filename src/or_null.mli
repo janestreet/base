@@ -20,7 +20,7 @@ open! Import
 
 (** {2 Type and Interfaces} *)
 
-type 'a t = 'a or_null
+type 'a t = 'a or_null [@@or_null_reexport]
 
 [%%rederive:
   type nonrec ('a : value mod non_null) t : value_or_null mod everything with 'a = 'a t
@@ -134,10 +134,10 @@ val%template map_to_option
 (** {5 Predicates} *)
 
 (** [is_null t] returns true iff [t = Null]. *)
-val is_null : 'a t @ local -> bool
+val is_null : 'a t @ immutable local -> bool
 
 (** [is_this t] returns true iff [t = This x]. *)
-val is_this : 'a t @ local -> bool
+val is_this : 'a t @ immutable local -> bool
 
 (** {6 Let syntax} *)
 

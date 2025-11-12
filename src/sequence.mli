@@ -40,13 +40,18 @@ type (+'a : any) t [@@deriving globalize]
 
 type 'a sequence := 'a t
 
-include Indexed_container.S1 with type 'a t := 'a t
-include Monad.S with type 'a t := 'a t
+include%template
+  Indexed_container.S1
+  [@kind_set.explicit value_or_null]
+  with type ('a : value_or_null) t := 'a t
+
+include%template
+  Monad.S [@kind value_or_null mod maybe_null] with type ('a : value_or_null) t := 'a t
 
 (** [empty] is a sequence with no elements. *)
 val empty : ('a : any). 'a t
 
-val get_empty : unit -> _ t @ portable
+val get_empty : ('a : value_or_null). unit -> 'a t @ portable
 
 (** [next] returns the next element of a sequence and the next tail if the sequence is not
     finished. *)
@@ -66,7 +71,7 @@ module Step : sig
     | Done
     | Skip of { state : 's }
     | Yield :
-        ('a : value) 's.
+        ('a : value_or_null) 's.
         { value : 'a
         ; state : 's
         }
@@ -159,7 +164,7 @@ val for_alli : 'a t -> f:local_ (int -> 'a -> bool) -> bool
 
 (** [append t1 t2] first produces the elements of [t1], then produces the elements of
     [t2]. *)
-val append : 'a t -> 'a t -> 'a t
+val append : ('a : value_or_null). 'a t -> 'a t -> 'a t
 
 (** [concat tt] produces the elements of each inner sequence sequentially. If any inner
     sequences are infinite, elements of subsequent inner sequences will not be reached. *)
@@ -336,7 +341,7 @@ val cycle_list_exn : 'a list -> 'a t
 val repeat : 'a -> 'a t
 
 (** [singleton a] produces [a] exactly once. *)
-val singleton : 'a -> 'a t
+val singleton : ('a : value_or_null). 'a -> 'a t
 
 (** [delayed_fold] allows to do an on-demand fold, while maintaining a state.
 
@@ -374,9 +379,9 @@ val iter_m
 
 (** [to_list_rev t] returns a list of the elements of [t], in reverse order. It is faster
     than [to_list]. *)
-val to_list_rev : 'a t -> 'a list
+val to_list_rev : ('a : value_or_null). 'a t -> 'a list
 
-val of_list : 'a list -> 'a t
+val of_list : ('a : value_or_null). 'a list -> 'a t
 
 (** [of_lazy t_lazy] produces a sequence that forces [t_lazy] the first time it needs to
     compute an element. *)

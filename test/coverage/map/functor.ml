@@ -1381,8 +1381,8 @@ module Test_transformers
             merge_by_case
             (Impl.mapi a ~f:(fun ~key ~data -> key, `Left data))
             (Impl.mapi b ~f:(fun ~key ~data -> key, `Right data))
-            ~left:(One_side.to_when_unmatched left)
-            ~right:(One_side.to_when_unmatched right)
+            ~first:(One_side.to_when_unmatched left)
+            ~second:(One_side.to_when_unmatched right)
             ~both:(Two_sides.to_when_matched both)
           |> data
         in

@@ -6,7 +6,8 @@ let dequeue_or_null t = if is_empty t then Null else This (Linked_queue0.pop t)
 let[@inline] dequeue t = dequeue_or_null t |> Or_null.to_option
 let dequeue_exn = [%eta1 Linked_queue0.pop]
 let dequeue_and_ignore_exn (type elt) (t : elt t) = ignore (dequeue_exn t : elt)
-let peek t = if is_empty t then None else Some (Linked_queue0.peek t)
+let peek_or_null t = if is_empty t then Null else This (Linked_queue0.peek t)
+let[@inline] peek t = peek_or_null t |> Or_null.to_option
 let peek_exn = [%eta1 Linked_queue0.peek]
 
 let drain t ~f ~while_ =

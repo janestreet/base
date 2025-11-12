@@ -18,10 +18,10 @@ module Definitions = struct
       | Set_to of 'data
   end
 
-  module type Accessors = sig
+  module type%template [@mode maybe_shared = (uncontended, shared)] Accessors = sig
     (** The type of keys. This will be ['key] for polymorphic dictionaries, or some fixed
         type for dictionaries with monomorphic keys. *)
-    type 'key key
+    type 'key key : value mod maybe_shared with 'key
 
     (** Dictionaries. Their keys have type ['key key]. Each key's associated value has
         type ['data]. The dictionary may be distinguished by a ['phantom] type. *)
@@ -58,15 +58,23 @@ module Definitions = struct
 
     (** Produces the current value, or absence thereof, for a given key. *)
     val find
-      : ( ('key, 'data, 'phantom) t -> 'key key -> 'data option
-          , 'key
-          , 'data
-          , 'phantom )
-          accessor
+      : ('key : value mod maybe_shared) 'data 'phantom.
+      ( ('key, 'data, 'phantom) t @ maybe_shared -> 'key key -> 'data option @ maybe_shared
+        , 'key
+        , 'data
+        , 'phantom )
+        accessor
+    [@@mode maybe_shared = (uncontended, maybe_shared)]
 
     (** Like [find]. Raises if there is no value for the given key. *)
     val find_exn
-      : (('key, 'data, 'phantom) t -> 'key key -> 'data, 'key, 'data, 'phantom) accessor
+      : ('key : value mod maybe_shared) 'data 'phantom.
+      ( ('key, 'data, 'phantom) t @ maybe_shared -> 'key key -> 'data @ maybe_shared
+        , 'key
+        , 'data
+        , 'phantom )
+        accessor
+    [@@mode maybe_shared = (uncontended, maybe_shared)]
 
     (** Like [find]. Adds the value [default ()] if none exists, then returns it. *)
     val find_or_add
@@ -90,29 +98,31 @@ module Definitions = struct
     (** Like [find]. Calls [if_found data] if a value exists, or [if_not_found key]
         otherwise. Avoids allocation [Some]. *)
     val find_and_call
-      : 'key 'data 'phantom ('c : value_or_null).
-      ( ('key, 'data, 'phantom) t
+      : ('key : value mod maybe_shared) 'data 'phantom ('c : value_or_null).
+      ( ('key, 'data, 'phantom) t @ maybe_shared
         -> 'key key
-        -> if_found:local_ ('data -> 'c)
+        -> if_found:local_ ('data @ maybe_shared -> 'c)
         -> if_not_found:local_ ('key key -> 'c)
         -> 'c
         , 'key
         , 'data
         , 'phantom )
         accessor
+    [@@mode maybe_shared = (uncontended, maybe_shared)]
 
     (** Like [findi]. Calls [if_found ~key ~data] if a value exists. *)
     val findi_and_call
-      : 'key 'data 'phantom ('c : value_or_null).
-      ( ('key, 'data, 'phantom) t
+      : ('key : value mod maybe_shared) 'data 'phantom ('c : value_or_null).
+      ( ('key, 'data, 'phantom) t @ maybe_shared
         -> 'key key
-        -> if_found:local_ (key:'key key -> data:'data -> 'c)
+        -> if_found:local_ (key:'key key -> data:'data @ maybe_shared -> 'c)
         -> if_not_found:local_ ('key key -> 'c)
         -> 'c
         , 'key
         , 'data
         , 'phantom )
         accessor
+    [@@mode maybe_shared = (uncontended, maybe_shared)]
 
     (** Like [find]. Removes the value for [key], if any, from the dictionary before
         returning it. *)

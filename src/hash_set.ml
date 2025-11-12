@@ -139,6 +139,17 @@ let of_list ?growth_allowed ?size m l =
   t
 ;;
 
+let of_array ?growth_allowed ?size m a =
+  let size =
+    match size with
+    | Some x -> x
+    | None -> Array.length a
+  in
+  let t = Hashtbl.create ?growth_allowed ~size m in
+  Array.iter a ~f:(fun k -> add t k);
+  t
+;;
+
 let t_of_sexp m e_of_sexp sexp =
   match sexp with
   | Sexp.Atom _ -> of_sexp_error "Hash_set.t_of_sexp requires a list" sexp
@@ -172,6 +183,10 @@ end = struct
 
   let of_list ?growth_allowed ?size l =
     of_list ?growth_allowed ?size (Hashable.to_key Elt.hashable) l
+  ;;
+
+  let of_array ?growth_allowed ?size a =
+    of_array ?growth_allowed ?size (Hashable.to_key Elt.hashable) a
   ;;
 
   let t_of_sexp e_of_sexp sexp = t_of_sexp (Hashable.to_key Elt.hashable) e_of_sexp sexp

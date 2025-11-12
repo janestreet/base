@@ -10,8 +10,10 @@ include Array
 
 type ('a : any mod separable) t = 'a array
 
-type%template ('a : k) t = 'a array
-[@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+[%%template
+[@@@kind_set.define values = (value_with_imm, value mod external_, value mod external64)]
+
+type%template ('a : k) t = 'a array [@@kind k = (base_non_value, immediate, immediate64)]
 
 [%%rederive.portable
   type nonrec 'a t = 'a array [@@deriving globalize, sexp ~stackify, sexp_grammar]]
@@ -45,8 +47,7 @@ type%template ('a : k) t = 'a array
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
 
 module%template.portable
-  [@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
-  [@modality p] Sorter (S : sig
+  [@kind k = values] [@modality p] Sorter (S : sig
     type ('a : k) t
 
     val get : local_ 'a t -> int -> 'a
@@ -296,9 +297,7 @@ struct
 end
 [@@inline]
 
-module%template
-  [@kind k = (value, immediate, immediate64, value mod external_, value mod external64)] Sort =
-Sorter [@kind k] [@modality portable] (struct
+module%template [@kind k = values] Sort = Sorter [@kind k] [@modality portable] (struct
     type nonrec ('a : k) t = 'a t
 
     let get = unsafe_get
@@ -314,9 +313,7 @@ let%template get_opt arr n : (_ Option.t[@kind k]) =
     Some ((unsafe_get [@mode c]) arr n)
     (* SAFETY: bounds checked above *) [@exclave_if_stack a]
   else None
-[@@mode c = (uncontended, shared)]
-[@@kind k = (value, immediate, immediate64, float64, bits32, bits64, word)]
-[@@alloc a = (heap, stack)]
+[@@mode c = (uncontended, shared)] [@@kind k = base_with_imm] [@@alloc a = (heap, stack)]
 ;;
 
 let is_sorted t ~compare =
@@ -369,22 +366,13 @@ let raise_length_mismatch name n1 n2 =
 ;;
 
 [%%template
-let length t = length t
-[@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
-;;
+let length t = length t [@@kind k = (base_non_value, immediate, immediate64)]
 
-[@@@kind.default k1 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+[@@@kind.default k1 = base_with_imm]
 
 let to_array t = t
 let of_array t = t
 let is_empty t = (length [@kind k1]) t = 0
-
-let sum (type a : k1) (module M : Container.Summable with type t = a[@kind k1]) t ~f =
-  let toplevel_get = Toplevel_value.get [@kind k1] in
-  (fold [@kind k1 k1]) t ~init:((toplevel_get [@inlined]) M.zero) ~f:(fun n a ->
-    M.( + ) n (f a))
-  [@nontail]
-;;
 
 let for_all t ~f =
   let i = ref (length t - 1) in
@@ -560,7 +548,16 @@ let of_list_rev (l : (_ List.Constructors.t[@kind k1])) =
     t
 ;;
 
-[@@@kind.default k2 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+[%%template
+[@@@kind.default k1 = k1]
+[@@@kind.default k2 = base]
+
+let sum (type sum : k2) (module M : Container.Summable with type t = sum[@kind k2]) t ~f =
+  let toplevel_get = Toplevel_value.get [@kind k2] in
+  (fold [@kind k1 k2]) t ~init:((toplevel_get [@inlined]) M.zero) ~f:(fun n a ->
+    M.( + ) n (f a))
+  [@nontail]
+;;
 
 let iteri_until t ~f ~finish =
   let length = length t in
@@ -666,7 +663,9 @@ let foldi t ~init ~f =
     else acc
   in
   (loop [@inlined]) 0 init [@nontail]
-;;
+;;]
+
+[@@@kind.default k2 = base_with_imm]
 
 let filter_mapi t ~f =
   let r = ref [||] in
@@ -744,7 +743,7 @@ let for_all2_exn t1 t2 ~f =
 ;;]]
 
 [%%template
-[@@@kind.default k1 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+[@@@kind.default k1 = base_with_imm]
 
 let filter t ~f =
   (filter_map [@kind k1 k1]) t ~f:(fun x -> if f x then Some x else None) [@nontail]
@@ -763,21 +762,8 @@ let globalize = (globalize_array [@kind k1])
 let equal = (equal_array [@kind k1] [@mode m])
 let compare = (compare_array [@kind k1] [@mode m])]
 
-[@@@kind.default k2 = (value, immediate, immediate64, float64, bits32, bits64, word)]
-
-let of_list_rev_map xs ~f =
-  let t = (of_list_map [@kind k1 k2]) xs ~f in
-  (rev_inplace [@kind k2]) t;
-  t
-;;
-
-let of_list_rev_mapi xs ~f =
-  let t = (of_list_mapi [@kind k1 k2]) xs ~f in
-  (rev_inplace [@kind k2]) t;
-  t
-;;
-
-[@@@kind.default k3 = (value, immediate, immediate64, float64, bits32, bits64, word)]
+[%%template
+[@@@kind.default k1 = k1, k2 = base, k3 = base]
 
 let foldi_until t ~init ~f ~finish =
   let length = length t in
@@ -801,7 +787,23 @@ let fold_until t ~init ~f ~finish =
     ~init
     ~f:(fun _i acc x -> f acc x)
     ~finish:(fun _i acc -> finish acc) [@nontail]
+;;]
+
+[@@@kind.default k2 = base_with_imm]
+
+let of_list_rev_map xs ~f =
+  let t = (of_list_map [@kind k1 k2]) xs ~f in
+  (rev_inplace [@kind k2]) t;
+  t
 ;;
+
+let of_list_rev_mapi xs ~f =
+  let t = (of_list_mapi [@kind k1 k2]) xs ~f in
+  (rev_inplace [@kind k2]) t;
+  t
+;;
+
+[@@@kind.default k3 = base_with_imm]
 
 let partition_mapi t ~f =
   let (both : (_ Either0.t[@kind k2 k3]) t) = (mapi [@kind k1 value]) t ~f in
@@ -823,7 +825,7 @@ let partition_map t ~f =
 ;;]
 
 [%%template
-[@@@kind.default k = (value, immediate, immediate64, float64, bits32, bits64, word)]
+[@@@kind.default k = base_with_imm]
 
 let partitioni_tf t ~f =
   (partition_mapi [@kind k k k]) t ~f:(fun i x -> if f i x then First x else Second x)
@@ -851,7 +853,7 @@ let sexp_of_t (sexp_of_elt : _ @ m -> Sexp0.t @ m) (t @ m) : Sexp0.t =
    in
    List ((loop [@inlined]) (length t - 1) []))
   [@exclave_if_stack a]
-[@@kind k = (float64, bits32, bits64, word)]
+[@@kind k = base_non_value]
 ;;]
 
 [%%template
@@ -862,7 +864,7 @@ let t_of_sexp elt_of_sexp (sexp : Sexp0.t) =
   | List [] -> [||]
   | List (_ :: _ as l) -> (of_list_map [@kind value k]) l ~f:elt_of_sexp
   | Atom _ -> of_sexp_error "array_of_sexp: list needed" sexp
-[@@kind k = (float64, bits32, bits64, word)]
+[@@kind k = base_non_value]
 ;;]
 
 (* We generated [findi]s that return [value & value]s, but for backwards compatibility we
@@ -1107,12 +1109,7 @@ let transpose_exn tt =
 
 [@@@warning "-incompatible-with-upstream"]
 
-let%template[@kind
-              k1 = (value, float64, bits32, bits64, word, immediate, immediate64)
-              , k2 = (value, float64, bits32, bits64, word, immediate, immediate64)] map
-  t
-  ~f
-  =
+let%template[@kind k1 = base_with_imm, k2 = base_with_imm] map t ~f =
   (map [@kind k1 k2]) t ~f
 ;;
 
@@ -1168,17 +1165,12 @@ let sub t ~pos ~len = sub t ~pos ~len
 let invariant invariant_a t = iter t ~f:invariant_a
 
 module Private = struct
-  module%template
-    [@kind k = (value, immediate, immediate64, value mod external_, value mod external64)] Sort =
-    Sort
-    [@kind k]
+  module%template [@kind k = values] Sort = Sort [@kind k]
 
-  module%template.portable
-    [@kind k = (value, immediate, immediate64, value mod external_, value mod external64)]
-    [@modality p] Sorter =
+  module%template.portable [@kind k = values] [@modality p] Sorter =
     Sorter
     [@kind k]
     [@modality p]
-end
+end]
 
 let array_should_be_polymorphic_over_value_or_null = ()

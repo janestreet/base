@@ -4,7 +4,7 @@ open struct
   module Result = Result0
 end
 
-type%template 'a t = { modal : 'a @@ a c g m p }
+type%template ('a : k) t = { modal : 'a @@ a c g m p }
 [@@unboxed]
 [@@modality
   g = (local, global)
@@ -12,6 +12,7 @@ type%template 'a t = { modal : 'a @@ a c g m p }
   , c = (uncontended, shared, contended)
   , m = (once, many)
   , a = (unique, aliased)]
+[@@kind k = base_or_null]
 
 module Global = struct
   include Modes_intf.Definitions.Global
@@ -450,6 +451,8 @@ module Contended = struct
     { contended : 'a @@ contended }
   [@@unboxed]
 
+  let t_of_sexp of_sexp sexp = { contended = of_sexp sexp }
+
   external cross
     : ('a : value mod contended).
     'a @ contended -> 'a
@@ -459,6 +462,8 @@ end
 
 module Shared = struct
   type ('a : value_or_null) t = { shared : 'a @@ shared } [@@unboxed]
+
+  let t_of_sexp of_sexp sexp = { shared = of_sexp sexp }
 end
 
 module Portended = struct
@@ -468,7 +473,9 @@ module Portended = struct
 end
 
 module Many = struct
-  type ('a : value_or_null) t : value_or_null mod many = { many : 'a @@ many } [@@unboxed]
+  type ('a : value_or_null) t : value_or_null mod many = { many : 'a @@ many }
+  [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
 end
 
 module Aliased = struct
@@ -476,15 +483,49 @@ module Aliased = struct
   [@@unboxed]
 end
 
+module Aliased_many = struct
+  type ('a : value_or_null) t : value_or_null mod aliased many =
+    { aliased_many : 'a @@ aliased many }
+  [@@unboxed]
+end
+
+module Forkable = struct
+  type ('a : value_or_null) t : value_or_null mod forkable = { forkable : 'a @@ forkable }
+  [@@unboxed]
+end
+
 module Unyielding = struct
   type ('a : value_or_null) t : value_or_null mod unyielding =
     { unyielding : 'a @@ unyielding }
   [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
+  let t_of_sexp of_sexp sexp = { unyielding = of_sexp sexp }
+end
+
+module Stateless = struct
+  type ('a : value_or_null) t : value_or_null mod stateless =
+    { stateless : 'a @@ stateless }
+  [@@unboxed]
+end
+
+module Observing = struct
+  type ('a : value_or_null) t = { observing : 'a @@ observing } [@@unboxed]
+end
+
+module Immutable = struct
+  type ('a : value_or_null) t : value_or_null mod immutable =
+    { immutable : 'a @@ immutable }
+  [@@unboxed]
+end
+
+module Read = struct
+  type ('a : value_or_null) t = { read : 'a @@ read } [@@unboxed]
 end
 
 module Immutable_data = struct
   type ('a : value mod non_float) t : immutable_data =
-    { immutable_data : 'a @@ immutable many stateless unyielding }
+    { immutable_data : 'a @@ forkable immutable many stateless unyielding }
   [@@unboxed]
 end
 
@@ -496,7 +537,7 @@ module At_locality = struct
 
   (* This type must not cross locality. *)
   type actually_local :
-    value mod aliased contended external_ many non_null portable unyielding
+    value mod aliased contended external_ forkable many non_null portable unyielding
 
   type global : immediate = [ `global ]
   [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
@@ -512,7 +553,7 @@ module At_locality = struct
        t :
        immediate
        with 'a @@ global
-       with 'locality @@ aliased contended many portable unyielding
+       with 'locality @@ aliased contended forkable many portable unyielding
 
   external wrap : 'a 'loc. 'a -> ('a, 'loc) t @@ portable = "%identity"
   external unwrap : 'a 'loc. ('a, 'loc) t -> 'a @@ portable = "%identity"
@@ -550,7 +591,9 @@ end
 
 module At_portability = struct
   type nonportable_ :
-    value mod aliased contended external_ global many non_null unyielding
+    value mod aliased contended external_ forkable global many non_null unyielding
+  [@@allow_redundant_modalities
+    "While [global] implies [forkable unyielding], we include them for clarity"]
   [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
 
   (* We only need [hash_fold] and local comparisons. *)
@@ -572,7 +615,9 @@ module At_portability = struct
        t :
        immediate
        with 'a @@ portable
-       with 'portability @@ aliased contended global many unyielding
+       with 'portability @@ aliased contended forkable global many unyielding
+  [@@allow_redundant_modalities
+    "While [global] implies [forkable unyielding], we include them for clarity"]
 
   external wrap_portable
     :  ('a[@local_opt]) @ portable
@@ -717,16 +762,24 @@ module Export = struct
   type ('a : value_or_null) global : value_or_null mod global = 'a Global.t =
     { global : 'a @@ global }
   [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
+  let global_of_sexp = Global.t_of_sexp
 
   type ('a : value_or_null) portable : value_or_null mod portable = 'a Portable.t =
     { portable : 'a @@ portable }
   [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
 
   type ('a : value_or_null) contended : value_or_null mod contended = 'a Contended.t =
     { contended : 'a @@ contended }
   [@@unboxed]
 
+  let contended_of_sexp = Contended.t_of_sexp
+
   type ('a : value_or_null) shared = 'a Shared.t = { shared : 'a @@ shared } [@@unboxed]
+
+  let shared_of_sexp = Shared.t_of_sexp
 
   type ('a : value_or_null) portended : value_or_null mod contended portable =
         'a Portended.t =
@@ -736,16 +789,42 @@ module Export = struct
   type ('a : value_or_null) many : value_or_null mod many = 'a Many.t =
     { many : 'a @@ many }
   [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
 
   type ('a : value_or_null) aliased : value_or_null mod aliased = 'a Aliased.t =
     { aliased : 'a @@ aliased }
   [@@unboxed]
 
+  type ('a : value_or_null) aliased_many : value_or_null mod aliased many =
+        'a Aliased_many.t =
+    { aliased_many : 'a @@ aliased many }
+  [@@unboxed]
+
+  type ('a : value_or_null) forkable : value_or_null mod forkable = 'a Forkable.t =
+    { forkable : 'a @@ forkable }
+  [@@unboxed]
+
   type ('a : value_or_null) unyielding : value_or_null mod unyielding = 'a Unyielding.t =
     { unyielding : 'a @@ unyielding }
   [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
+  let unyielding_of_sexp = Unyielding.t_of_sexp
+
+  type ('a : value_or_null) stateless : value_or_null mod stateless = 'a Stateless.t =
+    { stateless : 'a @@ stateless }
+  [@@unboxed]
+
+  type ('a : value_or_null) observing = 'a Observing.t = { observing : 'a @@ observing }
+  [@@unboxed]
+
+  type ('a : value_or_null) immutable : value_or_null mod immutable = 'a Immutable.t =
+    { immutable : 'a @@ immutable }
+  [@@unboxed]
+
+  type ('a : value_or_null) read = 'a Read.t = { read : 'a @@ read } [@@unboxed]
 
   type ('a : value mod non_float) immutable_data : immutable_data = 'a Immutable_data.t =
-    { immutable_data : 'a @@ immutable many stateless unyielding }
+    { immutable_data : 'a @@ forkable immutable many stateless unyielding }
   [@@unboxed]
 end

@@ -83,6 +83,79 @@ let%test_unit _ =
     [%expect {| (Failure "Obj.uniquely_reachable_words is not available in wasm.") |}]
   ;;]
 
+(* Nullable. *)
+
+let%test_unit "tagged integers" =
+  let x = This 42 in
+  let r = Nullable.repr x in
+  [%test_result: bool] (Nullable.is_null r) ~expect:false;
+  [%test_result: bool] (Nullable.is_int r) ~expect:true;
+  [%test_result: bool] (Nullable.is_immediate r) ~expect:true;
+  [%test_result: bool] (Nullable.is_block r) ~expect:false;
+  let r' = Sys.opaque_identity r in
+  [%test_result: int Or_null.t] (Nullable.Expert.obj r') ~expect:x;
+  [%test_result: stack_or_heap] (Nullable.stack_or_heap r') ~expect:Immediate;
+  [%test_result: uniform_or_mixed]
+    ([%globalize: uniform_or_mixed] (Nullable.uniform_or_mixed r'))
+    ~expect:Immediate;
+  [%test_result: int] (Nullable.tag r') ~expect:int_tag
+;;
+
+let%test_unit "blocks" =
+  let s = This "hello" in
+  let r = Nullable.repr s in
+  [%test_result: bool] (Nullable.is_null r) ~expect:false;
+  [%test_result: bool] (Nullable.is_int r) ~expect:false;
+  [%test_result: bool] (Nullable.is_immediate r) ~expect:false;
+  [%test_result: bool] (Nullable.is_block r) ~expect:true;
+  let r' = Sys.opaque_identity r in
+  [%test_result: string Or_null.t] (Nullable.Expert.obj r') ~expect:s;
+  [%test_result: stack_or_heap] (Nullable.stack_or_heap r') ~expect:Heap;
+  [%test_result: uniform_or_mixed]
+    ([%globalize: uniform_or_mixed] (Nullable.uniform_or_mixed r'))
+    ~expect:Uniform;
+  [%test_result: int] (Nullable.tag r') ~expect:string_tag
+;;
+
+let%test_unit "nulls" =
+  let r = Nullable.repr Null in
+  [%test_result: bool] (Nullable.is_null r) ~expect:true;
+  [%test_result: bool] (Nullable.is_int r) ~expect:false;
+  [%test_result: bool] (Nullable.is_immediate r) ~expect:true;
+  [%test_result: bool] (Nullable.is_block r) ~expect:false;
+  let r' = Sys.opaque_identity r in
+  [%test_result: int Or_null.t] (Nullable.Expert.obj r') ~expect:Null;
+  [%test_result: stack_or_heap] (Nullable.stack_or_heap r') ~expect:Immediate;
+  [%test_result: uniform_or_mixed]
+    ([%globalize: uniform_or_mixed] (Nullable.uniform_or_mixed r'))
+    ~expect:Immediate;
+  [%test_result: int] (Nullable.tag r') ~expect:Nullable.null_tag
+;;
+
+let%test_unit "[magic]ing and [or_null]" =
+  [%test_result: string] (magic (This "hello")) ~expect:"hello";
+  [%test_result: string Or_null.t] (magic "world") ~expect:(This "world");
+  [%test_result: int Or_null.t] (magic (Null : int or_null)) ~expect:Null
+;;
+
+type record =
+  { mutable a : string Or_null.t
+  ; mutable b : int Or_null.t
+  }
+[@@deriving sexp_of, compare, equal]
+
+let%test_unit "[or_null] fields" =
+  let x = Nullable.repr { a = Null; b = This 33 } in
+  let f1 = Nullable.Expert.field x 0 in
+  [%test_result: int Or_null.t] (Nullable.Expert.obj f1) ~expect:Null;
+  let f2 = Nullable.Expert.field x 1 in
+  [%test_result: int Or_null.t] (Nullable.Expert.obj f2) ~expect:(This 33);
+  let y = { a = This "hello"; b = Null } in
+  Nullable.Expert.set_field x 0 (Nullable.repr y.a);
+  Nullable.Expert.set_field x 1 (Nullable.repr y.b);
+  [%test_result: record] (Nullable.Expert.obj x) ~expect:y
+;;
+
 module%test [@name "[new_mixed_block]"] _ = struct
   module Metadata = struct
     type t =

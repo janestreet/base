@@ -11,206 +11,223 @@ include Container_intf.Definitions
    locality as the [elt] argument and that information needs to propagate through [fold].
 *)
 
-[%%template
-[@@@mode.default m = (global, local)]
+module%template [@kind.explicit k = (value, value_or_null)] Derived : Derived
+[@kind.explicit k] = struct
+  include struct
+    [@@@mode.default m = (global, local)]
 
-let[@inline] fold_until ~fold t ~init ~f ~finish =
-  (With_return.with_return [@inlined]) (fun [@inline] { return } ->
-    (finish [@inlined hint])
-      ((fold [@inlined hint]) t ~init ~f:(fun [@inline] acc item ->
-         match (f [@inlined hint]) acc item with
-         | Continue_or_stop.Continue x -> x
-         | Stop x -> return x)))
-  [@nontail]
-;;
+    let[@inline] fold_until ~fold t ~init ~f ~finish =
+      (With_return.with_return [@inlined]) (fun [@inline] { return } ->
+        (finish [@inlined hint])
+          ((fold [@inlined hint]) t ~init ~f:(fun [@inline] acc item ->
+             match (f [@inlined hint]) acc item with
+             | Continue_or_stop.Continue x -> x
+             | Stop x -> return x)))
+      [@nontail]
+    ;;
 
-let[@inline] fold_alloc ~fold_until t ~init ~f =
-  (fold_until [@inlined hint])
-    t
-    ~init
-    ~f:(fun [@inline] acc x -> Continue_or_stop.Continue (f acc x) [@exclave_if_stack a])
-    ~finish:Fn.id [@nontail] [@exclave_if_stack a]
-[@@mode mi = m] [@@alloc a @ mo = (heap_global, stack_local)]
-;;
+    let[@inline] fold_alloc ~fold_until t ~init ~f =
+      (fold_until [@inlined hint])
+        t
+        ~init
+        ~f:(fun [@inline] acc x ->
+          Continue_or_stop.Continue (f acc x) [@exclave_if_stack a])
+        ~finish:Fn.id [@nontail] [@exclave_if_stack a]
+    [@@mode mi = m] [@@alloc a @ mo = (heap_global, stack_local)]
+    ;;
 
-let fold = (fold_alloc [@mode mi] [@alloc heap]) [@@mode mi = m, mo = global]
-let fold = (fold_alloc [@mode mi] [@alloc stack]) [@@mode mi = m, mo = local]
+    let fold = (fold_alloc [@mode mi] [@alloc heap]) [@@mode mi = m, mo = global]
+    let fold = (fold_alloc [@mode mi] [@alloc stack]) [@@mode mi = m, mo = local]
 
-let[@inline] iter_until_alloc ~fold_until t ~f ~finish =
-  (fold_until [@inlined hint])
-    t
-    ~init:()
-    ~f:(fun [@inline] () x -> f x [@exclave_if_local mo])
-    ~finish:(fun [@inline] () -> finish () [@exclave_if_local mo])
-  [@nontail] [@exclave_if_stack a]
-[@@mode mi = m] [@@alloc a @ mo = (heap_global, stack_local)]
-;;
+    let[@inline] iter_until_alloc ~fold_until t ~f ~finish =
+      (fold_until [@inlined hint])
+        t
+        ~init:()
+        ~f:(fun [@inline] () x -> f x [@exclave_if_local mo])
+        ~finish:(fun [@inline] () -> finish () [@exclave_if_local mo])
+      [@nontail] [@exclave_if_stack a]
+    [@@mode mi = m] [@@alloc a @ mo = (heap_global, stack_local)]
+    ;;
 
-let iter_until = (iter_until_alloc [@mode mi] [@alloc heap]) [@@mode mi = m, mo = global]
-let iter_until = (iter_until_alloc [@mode mi] [@alloc stack]) [@@mode mi = m, mo = local]
+    let iter_until = (iter_until_alloc [@mode mi] [@alloc heap])
+    [@@mode mi = m, mo = global]
+    ;;
 
-let[@inline] iter_via_fold ~fold t ~f =
-  (fold [@inlined hint]) t ~init:() ~f:(fun [@inline] () x -> f x) [@nontail]
-;;
+    let iter_until = (iter_until_alloc [@mode mi] [@alloc stack])
+    [@@mode mi = m, mo = local]
+    ;;
 
-let[@inline] iter_via_iter_until ~iter_until t ~f =
-  (iter_until [@inlined hint])
-    t
-    ~f:(fun [@inline] a ->
-      f a;
-      Continue_or_stop.Continue ())
-    ~finish:Fn.id [@nontail]
-;;
+    let[@inline] iter_via_fold ~fold t ~f =
+      (fold [@inlined hint]) t ~init:() ~f:(fun [@inline] () x -> f x) [@nontail]
+    ;;
 
-let[@inline] count ~fold t ~f =
-  (fold [@inlined hint]) t ~init:0 ~f:(fun [@inline] n a -> if f a then n + 1 else n)
-  [@nontail]
-;;
+    let[@inline] iter_via_iter_until ~iter_until t ~f =
+      (iter_until [@inlined hint])
+        t
+        ~f:(fun [@inline] a ->
+          f a;
+          Continue_or_stop.Continue ())
+        ~finish:Fn.id [@nontail]
+    ;;
 
-let[@inline] sum_alloc (type a) ~fold (module M : Summable with type t = a[@mode mo]) t ~f
-  =
-  (fold [@inlined hint]) t ~init:M.zero ~f:(fun [@inline] n a ->
-    M.( + ) n (f a) [@exclave_if_stack a])
-  [@nontail] [@exclave_if_stack a]
-[@@mode mi = m] [@@alloc a @ mo = (heap_global, stack_local)]
-;;
+    let[@inline] count ~fold t ~f =
+      (fold [@inlined hint]) t ~init:0 ~f:(fun [@inline] n a -> if f a then n + 1 else n)
+      [@nontail]
+    ;;
 
-let sum = (sum_alloc [@mode mi] [@alloc heap]) [@@mode mi = m, mo = global]
-let sum = (sum_alloc [@mode mi] [@alloc stack]) [@@mode mi = m, mo = local]
+    let[@inline] sum_alloc
+      (type a : k)
+      ~fold
+      (module M : Summable with type t = a[@kind.explicit k] [@mode mo])
+      t
+      ~f
+      =
+      (fold [@inlined hint]) t ~init:M.zero ~f:(fun [@inline] n a ->
+        M.( + ) n (f a) [@exclave_if_stack a])
+      [@nontail] [@exclave_if_stack a]
+    [@@mode mi = m] [@@alloc a @ mo = (heap_global, stack_local)]
+    ;;
 
-let[@inline] fold_result_alloc ~fold_until t ~init ~f =
-  (fold_until [@inlined hint])
-    t
-    ~init
-    ~f:(fun [@inline] acc item ->
-      match[@exclave_if_stack a] f acc item with
-      | Result.Ok x -> Continue_or_stop.Continue x
-      | Error _ as e -> Continue_or_stop.Stop e)
-    ~finish:(fun [@inline] x -> Result.Ok x [@exclave_if_local mo])
-  [@nontail] [@exclave_if_stack a]
-[@@mode mi = m] [@@alloc a @ mo = (heap_global, stack_local)]
-;;
+    let sum = (sum_alloc [@mode mi] [@alloc heap]) [@@mode mi = m, mo = global]
+    let sum = (sum_alloc [@mode mi] [@alloc stack]) [@@mode mi = m, mo = local]
 
-let fold_result = (fold_result_alloc [@mode mi] [@alloc heap])
-[@@mode mi = m, mo = global]
-;;
+    let[@inline] fold_result_alloc ~fold_until t ~init ~f =
+      (fold_until [@inlined hint])
+        t
+        ~init
+        ~f:(fun [@inline] acc item ->
+          match[@exclave_if_stack a] f acc item with
+          | Result.Ok x -> Continue_or_stop.Continue x
+          | Error _ as e -> Continue_or_stop.Stop e)
+        ~finish:(fun [@inline] x -> Result.Ok x [@exclave_if_local mo])
+      [@nontail] [@exclave_if_stack a]
+    [@@mode mi = m] [@@alloc a @ mo = (heap_global, stack_local)]
+    ;;
 
-let fold_result = (fold_result_alloc [@mode mi] [@alloc stack])
-[@@mode mi = m, mo = local]
-;;]
+    let fold_result = (fold_result_alloc [@mode mi] [@alloc heap])
+    [@@mode mi = m, mo = global]
+    ;;
 
-let%template[@inline] min_elt_alloc ~fold t ~compare =
-  (fold [@inlined hint]) t ~init:None ~f:(fun [@inline] acc elt ->
-    match acc with
-    | None -> Some elt [@exclave_if_local m]
-    | Some min -> if compare min elt > 0 then Some elt [@exclave_if_local m] else acc)
-  [@nontail] [@exclave_if_stack a]
-[@@alloc a @ m = (heap_global, stack_local)]
-;;
+    let fold_result = (fold_result_alloc [@mode mi] [@alloc stack])
+    [@@mode mi = m, mo = local]
+    ;;
+  end
 
-let%template min_elt = (min_elt_alloc [@alloc heap]) [@@mode global]
-let%template min_elt = (min_elt_alloc [@alloc stack]) [@@mode local]
+  let%template[@inline] min_elt_alloc ~fold t ~compare =
+    (fold [@inlined hint]) t ~init:None ~f:(fun [@inline] acc elt ->
+      match acc with
+      | None -> Some elt [@exclave_if_local m]
+      | Some min -> if compare min elt > 0 then Some elt [@exclave_if_local m] else acc)
+    [@nontail] [@exclave_if_stack a]
+  [@@alloc a @ m = (heap_global, stack_local)]
+  ;;
 
-let%template[@inline] max_elt_alloc ~fold t ~compare =
-  (fold [@inlined hint]) t ~init:None ~f:(fun [@inline] acc elt ->
-    match acc with
-    | None -> Some elt [@exclave_if_local m]
-    | Some max -> if compare max elt < 0 then Some elt [@exclave_if_local m] else acc)
-  [@nontail] [@exclave_if_stack a]
-[@@alloc a @ m = (heap_global, stack_local)]
-;;
+  let%template min_elt = (min_elt_alloc [@alloc heap]) [@@mode global]
+  let%template min_elt = (min_elt_alloc [@alloc stack]) [@@mode local]
 
-let%template max_elt = (max_elt_alloc [@alloc heap]) [@@mode global]
-let%template max_elt = (max_elt_alloc [@alloc stack]) [@@mode local]
+  let%template[@inline] max_elt_alloc ~fold t ~compare =
+    (fold [@inlined hint]) t ~init:None ~f:(fun [@inline] acc elt ->
+      match acc with
+      | None -> Some elt [@exclave_if_local m]
+      | Some max -> if compare max elt < 0 then Some elt [@exclave_if_local m] else acc)
+    [@nontail] [@exclave_if_stack a]
+  [@@alloc a @ m = (heap_global, stack_local)]
+  ;;
 
-[%%template
-[@@@mode.default m = (global, local)]
+  let%template max_elt = (max_elt_alloc [@alloc heap]) [@@mode global]
+  let%template max_elt = (max_elt_alloc [@alloc stack]) [@@mode local]
 
-let[@inline] length ~fold c =
-  (fold [@inlined hint]) c ~init:0 ~f:(fun [@inline] acc _ -> acc + 1)
-;;
+  [%%template
+  [@@@mode.default m = (global, local)]
 
-let[@inline] is_empty ~iter_until c =
-  (iter_until [@inlined hint])
-    c
-    ~f:(fun [@inline] _ -> Continue_or_stop.Stop false)
-    ~finish:(fun [@inline] () -> true)
-;;
+  let[@inline] length ~fold c =
+    (fold [@inlined hint]) c ~init:0 ~f:(fun [@inline] acc _ -> acc + 1)
+  ;;
 
-let[@inline] mem ~iter_until c x ~equal =
-  (iter_until [@inlined hint])
-    c
-    ~f:(fun [@inline] y ->
-      if equal x y then Continue_or_stop.Stop true else Continue_or_stop.Continue ())
-    ~finish:(fun [@inline] () -> false) [@nontail]
-;;
+  let[@inline] is_empty ~iter_until c =
+    (iter_until [@inlined hint])
+      c
+      ~f:(fun [@inline] _ -> Continue_or_stop.Stop false)
+      ~finish:(fun [@inline] () -> true)
+  ;;
 
-let[@inline] exists ~iter_until c ~f =
-  (iter_until [@inlined hint])
-    c
-    ~f:(fun [@inline] x ->
-      if f x then Continue_or_stop.Stop true else Continue_or_stop.Continue ())
-    ~finish:(fun [@inline] () -> false) [@nontail]
-;;
+  let[@inline] mem ~iter_until c x ~equal =
+    (iter_until [@inlined hint])
+      c
+      ~f:(fun [@inline] y ->
+        if equal x y then Continue_or_stop.Stop true else Continue_or_stop.Continue ())
+      ~finish:(fun [@inline] () -> false) [@nontail]
+  ;;
 
-let[@inline] for_all ~iter_until c ~f =
-  (iter_until [@inlined hint])
-    c
-    ~f:(fun [@inline] x ->
-      if f x then Continue_or_stop.Continue () else Continue_or_stop.Stop false)
-    ~finish:(fun [@inline] () -> true) [@nontail]
-;;]
+  let[@inline] exists ~iter_until c ~f =
+    (iter_until [@inlined hint])
+      c
+      ~f:(fun [@inline] x ->
+        if f x then Continue_or_stop.Stop true else Continue_or_stop.Continue ())
+      ~finish:(fun [@inline] () -> false) [@nontail]
+  ;;
 
-let%template[@inline] find_map_alloc ~iter_until c ~f =
-  (iter_until [@inlined hint])
-    c
-    ~f:(fun [@inline] x ->
-      match[@exclave_if_stack a] f x with
-      | None -> Continue_or_stop.Continue ()
-      | Some _ as res -> Continue_or_stop.Stop res)
-    ~finish:(fun [@inline] () -> None) [@nontail] [@exclave_if_stack a]
-[@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
-;;
+  let[@inline] for_all ~iter_until c ~f =
+    (iter_until [@inlined hint])
+      c
+      ~f:(fun [@inline] x ->
+        if f x then Continue_or_stop.Continue () else Continue_or_stop.Stop false)
+      ~finish:(fun [@inline] () -> true) [@nontail]
+  ;;]
 
-let%template find_map = (find_map_alloc [@mode mi] [@alloc heap])
-[@@mode mi = (global, local), mo = global]
-;;
+  let%template[@inline] find_map_alloc ~iter_until c ~f =
+    (iter_until [@inlined hint])
+      c
+      ~f:(fun [@inline] x ->
+        match[@exclave_if_stack a] f x with
+        | None -> Continue_or_stop.Continue ()
+        | Some _ as res -> Continue_or_stop.Stop res)
+      ~finish:(fun [@inline] () -> None) [@nontail] [@exclave_if_stack a]
+  [@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
+  ;;
 
-let%template find_map = (find_map_alloc [@mode mi] [@alloc stack])
-[@@mode mi = (global, local), mo = local]
-;;
+  let%template find_map = (find_map_alloc [@mode mi] [@alloc heap])
+  [@@mode mi = (global, local), mo = global]
+  ;;
 
-let%template[@inline] find_alloc ~iter_until c ~f =
-  (iter_until [@inlined hint])
-    c
-    ~f:(fun [@inline] x ->
-      if f x
-      then Continue_or_stop.Stop (Some x) [@exclave_if_local m]
-      else Continue_or_stop.Continue ())
-    ~finish:(fun [@inline] () -> None [@exclave_if_local m])
-  [@nontail] [@exclave_if_stack a]
-[@@alloc a @ m = (heap_global, stack_local)]
-;;
+  let%template find_map = (find_map_alloc [@mode mi] [@alloc stack])
+  [@@mode mi = (global, local), mo = local]
+  ;;
 
-let%template find = (find_alloc [@alloc heap]) [@@mode global]
-let%template find = (find_alloc [@alloc stack]) [@@mode local]
+  let%template[@inline] find_alloc ~iter_until c ~f =
+    (iter_until [@inlined hint])
+      c
+      ~f:(fun [@inline] x ->
+        if f x
+        then Continue_or_stop.Stop (Some x) [@exclave_if_local m]
+        else Continue_or_stop.Continue ())
+      ~finish:(fun [@inline] () -> None [@exclave_if_local m])
+    [@nontail] [@exclave_if_stack a]
+  [@@alloc a @ m = (heap_global, stack_local)]
+  ;;
 
-let%template[@inline] to_list ~fold c =
-  (List.rev [@alloc a])
-    ((fold [@inlined hint]) c ~init:[] ~f:(fun [@inline] acc x ->
-       x :: acc [@exclave_if_local m])) [@exclave_if_stack a]
-[@@alloc a @ m = (heap_global, stack_local)]
-;;
+  let%template find = (find_alloc [@alloc heap]) [@@mode global]
+  let%template find = (find_alloc [@alloc stack]) [@@mode local]
 
-let[@inline] to_array ~length ~iter c =
-  let array = ref [||] in
-  let i = ref 0 in
-  (iter [@inlined hint]) c ~f:(fun [@inline] x ->
-    if !i = 0 then array := Array.create ~len:((length [@inlined hint]) c) x;
-    !array.(!i) <- x;
-    incr i);
-  !array
-;;
+  let%template[@inline] to_list ~fold c =
+    (List.rev [@alloc a])
+      ((fold [@inlined hint]) c ~init:[] ~f:(fun [@inline] acc x ->
+         x :: acc [@exclave_if_local m])) [@exclave_if_stack a]
+  [@@alloc a @ m = (heap_global, stack_local)]
+  ;;
+
+  let[@inline] to_array ~length ~iter c =
+    let array = ref [||] in
+    let i = ref 0 in
+    (iter [@inlined hint]) c ~f:(fun [@inline] x ->
+      if !i = 0 then array := Array.create ~len:((length [@inlined hint]) c) x;
+      !array.(!i) <- x;
+      incr i);
+    !array
+  ;;
+end
+
+include%template Derived [@kind.explicit value]
 
 module%template.portable Make_gen (T : Make_gen_arg [@mode m]) :
   Generic

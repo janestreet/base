@@ -7,7 +7,7 @@ module Sexp = Sexp0
 let raise_s = Error.raise_s
 
 [%%template
-[@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+[@@@kind.default k = base_or_null_with_imm]
 
 let invariant ~(here : [%call_pos]) t sexp_of_t f : unit =
   try f () with

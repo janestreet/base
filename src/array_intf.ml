@@ -18,18 +18,15 @@ module Definitions = struct
           support. When the appropriate compiler features land, we will remove this
           binding and fix up relevant client code. |}]
 
-    include
-      Indexed_container.S1_with_creators__base
-      with type 'a t := 'a t
-       and type 'a t__float64 = 'a t
-       and type 'a t__bits32 = 'a t
-       and type 'a t__bits64 = 'a t
-       and type 'a t__word = 'a t
-       and type 'a t__immediate = 'a t
-       and type 'a t__immediate64 = 'a t
-
     [%%template:
-    [@@@kind k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    include
+      Indexed_container.S1_with_creators
+    [@kind_set.explicit base_with_imm]
+    [@with:
+      type 'a t := 'a t
+      type 'a t = 'a t [@@kind base_non_value, immediate, immediate64]]
+
+    [@@@kind k = base_with_imm]
 
     [%%rederive:
       type nonrec ('a : k) t = 'a t
@@ -42,9 +39,7 @@ module Definitions = struct
     include Invariant.S1 with type 'a t := 'a t
 
     val%template map : ('a : k1) ('b : k2). 'a t -> f:local_ ('a -> 'b) -> 'b t
-    [@@kind
-      k1 = (value, float64, bits32, bits64, word, immediate, immediate64)
-      , k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    [@@kind k1 = base_with_imm, k2 = base_with_imm]
 
     (** Maximum length of a normal array. The maximum length of a float array is
         [max_length/2] on 32-bit machines and [max_length] on 64-bit machines. *)
@@ -76,7 +71,7 @@ module Definitions = struct
       : ('a : k).
       'a array @ c local -> int -> ('a Option.t[@kind k]) @ c m
     [@@mode c = (uncontended, shared)]
-    [@@kind k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    [@@kind k = base_with_imm]
     [@@alloc a @ m = (heap_global, stack_local)]
 
     (** [Array.set a n x] modifies array [a] in place, replacing element number [n] with
@@ -172,7 +167,7 @@ module Definitions = struct
     val copy_matrix : local_ 'a t t -> 'a t t
 
     [%%template:
-    [@@@kind.default k = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    [@@@kind.default k = base_with_imm]
 
     (** Like [Array.append], but concatenates a list of arrays. *)
     val concat : ('a : k). local_ 'a t list -> 'a t
@@ -201,10 +196,10 @@ module Definitions = struct
     include Blit.S1 with type 'a t := 'a t
 
     val%template unsafe_blit : ('a : k). ('a array, 'a array) Blit.blit
-    [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+    [@@kind k = (base_non_value, immediate, immediate64)]
 
     val%template sub : ('a : k). ('a array, 'a array) Blit.sub
-    [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+    [@@kind k = (base_non_value, immediate, immediate64)]
 
     val%template foldi_right
       :  'a t @ local
@@ -300,7 +295,7 @@ module Definitions = struct
     val map_inplace : local_ 'a t -> f:local_ ('a -> 'a) -> unit
 
     [%%template:
-    [@@@kind.default k1 = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    [@@@kind.default k1 = base_with_imm]
 
     (** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true. It raises
         [Stdlib.Not_found] or [Not_found_s] if there is no such [a]. *)
@@ -318,7 +313,8 @@ module Definitions = struct
     (** [of_list_rev l] converts from list then reverses in place. *)
     val of_list_rev : ('a : k1). ('a List.t[@kind k1]) -> 'a t
 
-    [@@@kind.default k2 = (value, float64, bits32, bits64, word, immediate, immediate64)]
+    [%%template:
+    [@@@kind.default k1 = k1, k2 = base]
 
     (** Returns the first evaluation of [f] that returns [Some]. Raises [Stdlib.Not_found]
         or [Not_found_s] if [f] always returns [None]. *)
@@ -329,7 +325,20 @@ module Definitions = struct
     (** [find_mapi_exn] is like [find_map_exn] but passes the index as an argument. *)
     val find_mapi_exn
       : ('a : k1) ('b : k2).
-      'a t -> f:local_ (int -> 'a -> ('b Option.t[@kind k2])) -> 'b
+      'a t -> f:local_ (int -> 'a -> ('b Option.t[@kind k2])) -> 'b]
+
+    [%%template:
+    [@@@kind.default
+      k1 = k1
+      , (k2_for_mangling, k2)
+        = ( (value, value_or_null mod separable)
+          , (bits64, bits64)
+          , (bits32, bits32)
+          , (word, word)
+          , (float64, float64)
+          , (float32, float32)
+          , (immediate, immediate)
+          , (immediate64, immediate64) )]
 
     (** [of_list_map l ~f] is the same as [of_list (List.map l ~f)]. *)
     val of_list_map
@@ -339,7 +348,9 @@ module Definitions = struct
     (** [of_list_mapi l ~f] is the same as [of_list (List.mapi l ~f)]. *)
     val of_list_mapi
       : ('a : k1) ('b : k2).
-      ('a List.t[@kind k1]) -> f:local_ (int -> 'a -> 'b) -> 'b t
+      ('a List.t[@kind k1]) -> f:local_ (int -> 'a -> 'b) -> 'b t]
+
+    [@@@kind.default k2 = base_with_imm]
 
     (** [of_list_rev_map l ~f] is the same as [of_list (List.rev_map l ~f)]. *)
     val of_list_rev_map
@@ -368,7 +379,7 @@ module Definitions = struct
     (** [findi_exn t f] returns the first index [i] of [t] for which [f i t.(i)] is true.
         It raises [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)
     val%template findi_exn : ('a : k). 'a t -> f:local_ (int -> 'a -> bool) -> #(int * 'a)
-    [@@kind k = (float64, bits32, bits64, word, immediate, immediate64)]
+    [@@kind k = (base_non_value, immediate, immediate64)]
 
     (** For backwards compatibility, we return a boxed product for the value-only version
         of [findi_exn] (instead of a [value & value] product) *)
@@ -461,10 +472,10 @@ module type Array = sig @@ portable
 
     https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
-    module Sort : sig
+    module%template [@kind k = value_with_imm] Sort : sig
       module type Sort = sig @@ portable
         val sort
-          :  local_ 'a t
+          :  local_ ('a : k) t
           -> compare:local_ ('a -> 'a -> int)
           -> left:int
           -> right:int
@@ -478,7 +489,7 @@ module type Array = sig @@ portable
         include Sort
 
         val five_element_sort
-          :  local_ 'a t
+          :  local_ ('a : k) t
           -> compare:local_ ('a -> 'a -> int)
           -> int
           -> int
@@ -490,8 +501,7 @@ module type Array = sig @@ portable
     end
 
     module%template.portable
-      [@kind
-        k = (value, immediate, immediate64, value mod external_, value mod external64)] Sorter (S : sig
+      [@kind k = (value_with_imm, value mod external_, value mod external64)] Sorter (S : sig
         type ('a : k) t
 
         val get : local_ 'a t -> int -> 'a
