@@ -25,7 +25,7 @@ let () =
             Out_channel.(
               output_string oc program;
               flush oc);
-            Sys.command (Printf.sprintf "cc %s -mpopcnt -o /dev/null >/dev/null 2>&1" f)
+            Sys.command (Printf.sprintf "cc %s -mpopcnt -c -o /dev/null >/dev/null 2>&1" f)
             = 0)
       in
       Flags.write_sexp !output (if has_popcnt then [ "-mpopcnt" ] else []))
