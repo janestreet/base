@@ -77,7 +77,9 @@ module Definitions = struct
     val singleton : 'a -> 'a t
     val create : len:int -> 'a -> mutate:local_ (local_ 'a array -> unit) -> 'a iarray
 
-    val%template init : int -> f:(int -> 'a @ m) @ local -> 'a t @ m
+    val%template init
+      : ('a : value_or_null mod separable).
+      int -> f:(int -> 'a @ m) @ local -> 'a t @ m
     [@@alloc __ @ m = (heap_global, stack_local)]
 
     (** Conversions *)

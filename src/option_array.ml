@@ -33,8 +33,8 @@ module Cheap_option = struct
   end = struct
     (* It is safe to claim that ['a t] is immutable data as long as ['a] is immutable
        data:
-         - the [None] values are immutable blocks or immediates.
-         - the [Some x] values are the value [x] (of type ['a]) itself.
+       - the [None] values are immutable blocks or immediates.
+       - the [Some x] values are the value [x] (of type ['a]) itself.
     *)
     type +'a t : immutable_data with 'a
 
@@ -60,10 +60,10 @@ module Cheap_option = struct
          anything than any number we can choose ourselves.
 
          We are using a polymorphic variant instead of an integer constant because there
-         is a compiler bug where it wrongly assumes that the result of [if _ then c else
-         y] is not a pointer if [c] is an integer compile-time constant.  This is being
-         fixed in https://github.com/ocaml/ocaml/pull/555.  The "memory corruption" test
-         below demonstrates the issue.  *)
+         is a compiler bug where it wrongly assumes that the result of
+         [if _ then c else y] is not a pointer if [c] is an integer compile-time constant.
+         This is being fixed in https://github.com/ocaml/ocaml/pull/555. The "memory
+         corruption" test below demonstrates the issue. *)
       Stdlib.Obj.magic_portable (Stdlib.Obj.magic `x6e8ee3478e1d7449)
     ;;
 

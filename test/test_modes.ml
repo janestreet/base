@@ -60,8 +60,8 @@ module M : sig
 
   val return_at_max : string -> t @ global many portable uncontended
 end = struct
-  (* Demonstrate that [failwithf] can be used to produce a value at the maximum mode
-   of all mode axes (that we remembered to list here). *)
+  (* Demonstrate that [failwithf] can be used to produce a value at the maximum mode of
+     all mode axes (that we remembered to list here). *)
 
   type t
 

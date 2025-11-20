@@ -5,7 +5,7 @@
     This is a wrapper of the standard library's [Random] library, though it does not share
     state with that library. *)
 
-(*_
+(*_ {v
   (***********************************************************************)
   (*                                                                     *)
   (*                           Objective Caml                            *)
@@ -17,7 +17,8 @@
   (*  under the terms of the Apache 2.0 license. See ../THIRD-PARTY.txt  *)
   (*  for details.                                                       *)
   (*                                                                     *)
-  (***********************************************************************) *)
+  (***********************************************************************)
+    v} *)
 
 open! Import
 

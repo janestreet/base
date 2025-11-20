@@ -37,7 +37,7 @@ val check_pos_len_exn : pos:int -> len:int -> total_length:int -> unit
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-  https://opensource.janestreet.com/standards/#private-submodules *)
+    https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   val slow_check_pos_len_exn : pos:int -> len:int -> total_length:int -> unit
 end

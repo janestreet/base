@@ -232,8 +232,8 @@ module Definitions = struct
     val of_nativeint_exn : nativeint -> t
     val to_nativeint_exn : t -> nativeint
 
-    (*_ N.b. we provide separate local-accepting versions so that they may be implemented as
-      the identity function, as an optimization. *)
+    (*_ N.b. we provide separate local-accepting versions so that they may be implemented
+        as the identity function, as an optimization. *)
     val of_local_int32_exn : local_ int32 -> local_ t
     val to_local_int32_exn : local_ t -> local_ int32
     val of_local_int64_exn : local_ int64 -> local_ t
@@ -368,7 +368,7 @@ module Definitions = struct
 
     module O : sig
       (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even
-      when compiling without cross library inlining. *)
+          when compiling without cross library inlining. *)
       external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%addint"
       external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%subint"
       external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%mulint"
@@ -420,8 +420,8 @@ module Definitions = struct
         These functions return the least-significant bits of the input. In cases where
         optional conversions return [Some x], truncating conversions return [x]. *)
 
-    (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
-    compiling without cross library inlining. *)
+    (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even
+        when compiling without cross library inlining. *)
     external to_int32_trunc : t -> (int32[@local_opt]) = "%int32_of_int"
     external of_int32_trunc : local_ int32 -> t = "%int32_to_int"
     external of_int64_trunc : local_ int64 -> t = "%int64_to_int"
@@ -440,13 +440,13 @@ module Definitions = struct
         undefined. *)
     external bswap16 : t -> t = "%bswap16"
     (*_ Declared as an external so that the compiler skips the caml_apply_X wrapping even
-    when compiling without cross library inlining. *)
+        when compiling without cross library inlining. *)
 
     (**/**)
 
     (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+        https://opensource.janestreet.com/standards/#private-submodules *)
     module Private : sig
       (*_ For ../bench/bench_int.ml *)
       module O_F : sig

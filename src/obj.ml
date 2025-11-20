@@ -138,7 +138,8 @@ struct
     (* We have to write both implementations because it doesn't make sense to template
        over an allocator, but the local version needs exclave. If [Sys.opaque_identity]
        preserved the fact that [t] is regional rather than local to this function, we
-       could instead write {[
+       could instead write
+       {[
          let%template[@mode m = (global, local)] [@inline always] field t i =
            let t = Sys.opaque_identity t in
            field i [@exclave_if_local m]

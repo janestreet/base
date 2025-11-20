@@ -25,7 +25,7 @@ include%template
 
 include Invariant.S1 with type 'a t := 'a t
 
-(** Implements cartesian-product behavior for [map] and [bind]. **)
+(** Implements cartesian-product behavior for [map] and [bind]. *)
 module Cartesian_product : sig
   include%template
     Applicative.S

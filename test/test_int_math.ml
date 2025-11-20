@@ -104,9 +104,9 @@ module Test (X : Make_arg) : sig end = struct
     let%test_unit "deterministic" =
       let big1 = of_int_exn 118_310_344 in
       let big2 = of_int_exn 828_172_408 in
-      (* Important to test the case where one value is a multiple of the other.  Note that
-           the [x + one] and [y + one] cases in [check_natural_numbers] ensure that we also
-           test non-multiple cases. *)
+      (* Important to test the case where one value is a multiple of the other. Note that
+         the [x + one] and [y + one] cases in [check_natural_numbers] ensure that we also
+         test non-multiple cases. *)
       assert (big2 = big1 * of_int_exn 7);
       let values = [ zero; one; big1; big2 ] in
       List.iter values ~f:(fun x ->
@@ -172,9 +172,9 @@ module%test [@name "int rounding quickcheck tests"] _ = struct
         Integer.quickcheck_generator_incl
           (Integer.( / ) Integer.min_value factor)
           (Integer.( / ) Integer.max_value factor)
-      (* Then we choose an offset such that [multiplier * factor] is the nearest value
-           to round to. [quickcheck_generator_incl] puts extra weight on the [-factor/2,
-           factor/2] bounds, and we also weight 0 heavily. *)
+      (* Then we choose an offset such that [multiplier * factor] is the nearest value to
+         round to. [quickcheck_generator_incl] puts extra weight on the
+         [-factor/2, factor/2] bounds, and we also weight 0 heavily. *)
       and offset =
         let half_factor = Integer.( / ) factor (Integer.of_int_exn 2) in
         Base_quickcheck.Generator.weighted_union
@@ -234,9 +234,8 @@ module%test [@name "int rounding quickcheck tests"] _ = struct
       && is_close_enough number rounded ~factor
       && is_in_correct_direction number ~dir ~rounded ~factor
     in
-    (* Round correctly by finding a multiple of the factor, and trying +/-factor away
-         from that. If this returns [None], there should be no correct representable
-         result. *)
+    (* Round correctly by finding a multiple of the factor, and trying +/-factor away from
+       that. If this returns [None], there should be no correct representable result. *)
     let round_correctly number ~dir ~factor =
       let rounded0 = factor * (number / factor) in
       match

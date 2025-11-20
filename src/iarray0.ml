@@ -8,17 +8,17 @@ type (+'a : any mod separable) t = 'a iarray
 [@@@mode.default c = (uncontended, shared)]
 
 (* This one should not operate on local arrays, because that would be more unsafe:
-   extraction from a local array gets *global* elements. So if this function worked
-   on local arrays it could be used to forget that a value was local by storing it
-   in a local iarray, converting, and then extracting from the local array. *)
+   extraction from a local array gets *global* elements. So if this function worked on
+   local arrays it could be used to forget that a value was local by storing it in a local
+   iarray, converting, and then extracting from the local array. *)
 external unsafe_to_array__promise_no_mutation
   : ('a : any mod separable).
   'a t @ c -> 'a array @ c
   @@ portable
   = "%array_of_iarray"
 
-(* In contrast to the function above, this one is safe to work on locals. Well, just
-   as safe as it is on globals. *)
+(* In contrast to the function above, this one is safe to work on locals. Well, just as
+   safe as it is on globals. *)
 external unsafe_of_array__promise_no_mutation
   : ('a : any mod separable).
   ('a array[@local_opt]) @ c -> ('a t[@local_opt]) @ c

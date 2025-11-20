@@ -52,8 +52,7 @@ module%test _ = struct
   let%test_unit _ =
     let v = lazy 42 in
     let (_ : int) =
-      (* no needed, but the purpose of this test is not to test this compiler
-           optimization *)
+      (* no needed, but the purpose of this test is not to test this compiler optimization *)
       force v
     in
     assert (is_val v);

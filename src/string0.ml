@@ -1,8 +1,8 @@
 (* [String0] defines string functions that are primitives or can be simply defined in
    terms of [Stdlib.String]. [String0] is intended to completely express the part of
    [Stdlib.String] that [Base] uses -- no other file in Base other than string0.ml should
-   use [Stdlib.String].  [String0] has few dependencies, and so is available early in Base's
-   build order.
+   use [Stdlib.String]. [String0] has few dependencies, and so is available early in
+   Base's build order.
 
    All Base files that need to use strings, including the subscript syntax [x.[i]] which
    the OCaml parser desugars into calls to [String], and come before [Base.String] in
@@ -12,8 +12,8 @@
      module String = String0
    ]}
 
-   Defining [module String = String0] is also necessary because it prevents
-   ocamldep from mistakenly causing a file to depend on [Base.String]. *)
+   Defining [module String = String0] is also necessary because it prevents ocamldep from
+   mistakenly causing a file to depend on [Base.String]. *)
 
 open! Import0
 
@@ -603,17 +603,17 @@ let init n ~f =
 
    2. If there is no such [i], then return [t].
 
-   3. If there is such an [i], allocate a string, [out], to hold the result.  [out] has
-   length [n - 1], which is the maximum possible output size given that there is at least
-   one character not satisfying [f].
+   3. If there is such an [i], allocate a string, [out], to hold the result. [out] has
+      length [n - 1], which is the maximum possible output size given that there is at
+      least one character not satisfying [f].
 
    4. Copy characters at indices 0 ... [i - 1] from [t] to [out].
 
    5. Walk through characters at indices [i+1] ... [n-1] of [t], copying those that
-   satisfy [f] from [t] to [out].
+      satisfy [f] from [t] to [out].
 
-   6. If we completely filled [out], then return it.  If not, return the prefix of [out]
-   that we did fill in.
+   6. If we completely filled [out], then return it. If not, return the prefix of [out]
+      that we did fill in.
 
    This algorithm has the property that it doesn't allocate a new string if there's
    nothing to filter, which is a common case. *)

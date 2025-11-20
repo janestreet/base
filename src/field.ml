@@ -1,27 +1,27 @@
-(* The type [t] should be abstract to make the fset and set functions unavailable
-   for private types at the level of types (and not by putting None in the field).
-   Unfortunately, making the type abstract means that when creating fields (through
-   a [create] function) value restriction kicks in. This is worked around by instead
-   not making the type abstract, but forcing anyone breaking the abstraction to use
-   the [For_generated_code] module, making it obvious to any reader that something ugly
-   is going on.
-   t_with_perm (and derivatives) is the type that users really use. It is a constructor
-   because:
+(* The type [t] should be abstract to make the fset and set functions unavailable for
+   private types at the level of types (and not by putting None in the field).
+   Unfortunately, making the type abstract means that when creating fields (through a
+   [create] function) value restriction kicks in. This is worked around by instead not
+   making the type abstract, but forcing anyone breaking the abstraction to use the
+   [For_generated_code] module, making it obvious to any reader that something ugly is
+   going on. t_with_perm (and derivatives) is the type that users really use. It is a
+   constructor because:
    1. it makes type errors more readable (less aliasing)
    2. the typer in ocaml 4.01 allows this:
 
    {[
      module A = struct
-       type t = {a : int}
+       type t = { a : int }
      end
+
      type t = A.t
+
      let f (x : t) = x.a
    ]}
 
-   (although with Warning 40: a is used out of scope)
-   which means that if [t_with_perm] was really an alias on [For_generated_code.t],
-   people could say [t.setter] and break the abstraction with no indication that
-   something ugly is going on in the source code.
+   (although with Warning 40: a is used out of scope) which means that if [t_with_perm]
+   was really an alias on [For_generated_code.t], people could say [t.setter] and break
+   the abstraction with no indication that something ugly is going on in the source code.
    The warning is (I think) for people who want to make their code compatible with
    previous versions of ocaml, so we may very well turn it off.
 

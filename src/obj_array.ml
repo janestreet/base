@@ -4,8 +4,8 @@ module Sexp = Sexp0
 module String = String0
 
 (* We maintain the property that all values of type [t] do not have the tag
-   [double_array_tag].  Some functions below assume this in order to avoid testing the
-   tag, and will segfault if this property doesn't hold. *)
+   [double_array_tag]. Some functions below assume this in order to avoid testing the tag,
+   and will segfault if this property doesn't hold. *)
 type t = Stdlib.Obj.t array
 
 let invariant t =
@@ -36,7 +36,7 @@ let _not_a_float_1 = Not_a_float_1 42
 
 let[@zero_alloc] get (local_ t) i =
   (* Make the compiler believe [t] is an array not containing floats so it does not check
-     if [t] is tagged with [Double_array_tag].  It is NOT ok to use [int array] since (if
+     if [t] is tagged with [Double_array_tag]. It is NOT ok to use [int array] since (if
      this function is inlined and the array contains in-heap boxed values) wrong register
      typing may result, leading to a failure to register necessary GC roots. *)
   Stdlib.Obj.repr
@@ -80,10 +80,10 @@ let[@inline always] unsafe_set_int_assuming_currently_int t i int =
 ;;
 
 (* For [set] and [unsafe_set], if a pointer is involved, we first do a physical-equality
-   test to see if the pointer is changing.  If not, we don't need to do the [set], which
-   saves a call to [caml_modify].  We think this physical-equality test is worth it
-   because it is very cheap (both values are already available from the [is_int] test)
-   and because [caml_modify] is expensive. *)
+   test to see if the pointer is changing. If not, we don't need to do the [set], which
+   saves a call to [caml_modify]. We think this physical-equality test is worth it because
+   it is very cheap (both values are already available from the [is_int] test) and because
+   [caml_modify] is expensive. *)
 
 let set t i obj =
   (* We use [get] first but then we use [Array.unsafe_set] since we know that [i] is
@@ -118,8 +118,8 @@ let swap t i j =
 ;;
 
 let create ~len x =
-  (* If we can, use [Array.create] directly. Even though [is_int] check is subsumed by
-     the tag check, checking it is much faster, since it avoids a C function call.  *)
+  (* If we can, use [Array.create] directly. Even though [is_int] check is subsumed by the
+     tag check, checking it is much faster, since it avoids a C function call. *)
   if Stdlib.Obj.is_int x || Stdlib.Obj.tag x <> Stdlib.Obj.double_tag
   then Array.create ~len x
   else (
@@ -162,10 +162,10 @@ let unsafe_clear_if_pointer t i =
 let unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len =
   (* When [phys_equal src dst], we need to check whether [dst_pos < src_pos] and have the
      for loop go in the right direction so that we don't overwrite data that we still need
-     to read.  When [not (phys_equal src dst)], doing this is harmless.  From a
+     to read. When [not (phys_equal src dst)], doing this is harmless. From a
      memory-performance perspective, it doesn't matter whether one loops up or down.
      Constant-stride access, forward or backward, should be indistinguishable (at least on
-     an intel i7).  So, we don't do a check for [phys_equal src dst] and always loop up in
+     an intel i7). So, we don't do a check for [phys_equal src dst] and always loop up in
      that case. *)
   if dst_pos < src_pos
   then

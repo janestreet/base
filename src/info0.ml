@@ -81,8 +81,8 @@ module Computed = struct
     | Final of Message.t
 
   (* Just as [state] is a specialized implementation of [Lazy], [portable_state] is a
-     specialized implementation of [Portable_lazy]. (The states correspond directly to
-     the states implementing [Portable_lazy.t].)
+     specialized implementation of [Portable_lazy]. (The states correspond directly to the
+     states implementing [Portable_lazy.t].)
   *)
   and portable_state =
     | Portable_initial of info Portable_lazy.t constructor
@@ -112,9 +112,9 @@ module Computed = struct
     | In_info of 'info
 
   (* The (portable) prefix of a portable stack is a series of frames that produce portable
-     values. The (nonportable) suffix does not produce portable values. The distinction
-     is important because we want to be able to store the values produced from the prefix
-     in a [Portable_atomic.t], which only accepts portable values.
+     values. The (nonportable) suffix does not produce portable values. The distinction is
+     important because we want to be able to store the values produced from the prefix in
+     a [Portable_atomic.t], which only accepts portable values.
   *)
   module Portable_stack = struct
     type t =
@@ -155,8 +155,8 @@ module Computed = struct
   end
 
   (* A mode-polymorphic way of computing the [Cons_list] constructor. An alternative
-     implementation would be to duplicate this code (once for each mode), but we
-     found it to be sufficiently complex to warrant factoring it out.
+     implementation would be to duplicate this code (once for each mode), but we found it
+     to be sufficiently complex to warrant factoring it out.
   *)
   let%template[@inline always] compute_info_list_wrapper
     ~fwd_prefix
@@ -188,8 +188,7 @@ module Computed = struct
   ;;
 
   (* A mode-polymorphic way of computing constructors. Similarly to
-     [compute_info_list_wrapper], we found that the complexity warranted factoring
-     it out.
+     [compute_info_list_wrapper], we found that the complexity warranted factoring it out.
   *)
   let%template[@inline always] compute_constructor_wrapper
     (cons @ p)
@@ -212,9 +211,9 @@ module Computed = struct
   [@@mode p = (portable, nonportable)]
   ;;
 
-  (* The following mutually-recursive functions compute a [Message.t] from an [info].
-     All calls below are tail calls: we want to avoid using the call stack in favor
-     of our own manual stack. *)
+  (* The following mutually-recursive functions compute a [Message.t] from an [info]. All
+     calls below are tail calls: we want to avoid using the call stack in favor of our own
+     manual stack. *)
   let rec compute_info (info : info) stack =
     match info.global with
     | Constant message -> compute_message message stack
@@ -239,13 +238,13 @@ module Computed = struct
       compute_message (Could_not_construct (Atom "cycle while computing message")) stack
     | Final message -> compute_message message stack
 
-  (* Inlined from the implementation of [Portable_lazy]. Defunctionalizing the thunk
-     we're computing allows us to use our manual stack rather than the callstack, which
-     lets us be tail recursive and avoid blowing the stack when computing highly
-     nested error values.
+  (* Inlined from the implementation of [Portable_lazy]. Defunctionalizing the thunk we're
+     computing allows us to use our manual stack rather than the callstack, which lets us
+     be tail recursive and avoid blowing the stack when computing highly nested error
+     values.
 
-     See also [compute_staged_nonportable], which is similarly inlined from [Lazy] but
-     is simpler.
+     See also [compute_staged_nonportable], which is similarly inlined from [Lazy] but is
+     simpler.
   *)
   and compute_staged_portable info stack =
     match Portable_atomic.get info.state with
@@ -253,8 +252,8 @@ module Computed = struct
       let computing = Portable_computing (Domain.self ()) in
       (match Portable_atomic.compare_and_set info.state uncomputed computing with
        | false ->
-         (* Someone else beat us to starting the thunk! This can only happen to us
-            once, so we just try again without any calls to cpu_relax. *)
+         (* Someone else beat us to starting the thunk! This can only happen to us once,
+            so we just try again without any calls to cpu_relax. *)
          compute_staged_portable info stack
        | true ->
          compute_constructor_portable cons (Portable_stack.push (In_info info) stack))
@@ -483,8 +482,8 @@ exception Exn of t @@ portable
 
 let () =
   (* We install a custom exn-converter rather than use
-     [exception Exn of t [@@deriving sexp]] to eliminate the extra
-     wrapping of "(Exn ...)". *)
+     [exception Exn of t [@@deriving sexp]] to eliminate the extra wrapping of "(Exn
+     ...)". *)
   Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Exn] (function
     | Exn t -> sexp_of_t t
     | _ ->

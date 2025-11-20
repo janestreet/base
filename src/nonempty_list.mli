@@ -44,6 +44,7 @@ val create : ('a : k). 'a -> ('a List.t[@kind k]) -> 'a t
 (** [init n ~f] creates a list of length [n] where the element at index [i] is the value
     of [f i]. Raises if [n < 1]. [f] is called on indices from the highest to lowest, so
     the order of side effects is reversed: [Nonempty_list.init 3 ~f:print_int] prints
+
     [210]. *)
 val init : ('a : k). int -> f:local_ (int -> 'a) -> 'a t
 

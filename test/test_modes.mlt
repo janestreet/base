@@ -10,7 +10,8 @@ type ('a : value mod global) require_global
 
 (* Tests for Modes.At_locality.t *)
 
-(* [('a, Modes.At_locality.global) Modes.At_locality.t] crosses locality even if ['a] doesn't *)
+(* [('a, Modes.At_locality.global) Modes.At_locality.t] crosses locality even if ['a]
+   doesn't *)
 
 type _crosses_locality =
   (string, Modes.At_locality.global) Modes.At_locality.t require_global
@@ -23,7 +24,8 @@ let crosses_locality (x : (_, Modes.At_locality.global) Modes.At_locality.t @ lo
 
 [%%expect {| |}]
 
-(* [('a, Modes.At_locality.local) Modes.At_locality.t] doesn't cross locality even if ['a] does *)
+(* [('a, Modes.At_locality.local) Modes.At_locality.t] doesn't cross locality even if ['a]
+   does *)
 
 type _doesn't_cross_locality =
   (int, Modes.At_locality.local) Modes.At_locality.t require_global
@@ -70,8 +72,8 @@ Error: This value is local but is expected to be global.
 
 (* Tests for Modes.At_portability.t *)
 
-(* [('a, Modes.At_portability.portable) Modes.At_portability.t] crosses portability even if
-   ['a] doesn't *)
+(* [('a, Modes.At_portability.portable) Modes.At_portability.t] crosses portability even
+   if ['a] doesn't *)
 
 type _crosses_portability =
   (int -> int, Modes.At_portability.portable) Modes.At_portability.t require_portable

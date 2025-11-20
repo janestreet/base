@@ -24,8 +24,8 @@
       structures (arrays, lists, strings).
     - [Result], [Error], and [Or_error], supporting the or-error pattern. *)
 
-(*_ We hide this from the web docs because the line wrapping is bad, making it
-  pretty much inscrutable. *)
+(*_ We hide this from the web docs because the line wrapping is bad, making it pretty much
+    inscrutable. *)
 (**/**)
 
 (* The intent is to shadow all of INRIA's standard library.  Modules below would cause
@@ -201,7 +201,7 @@ module Export = struct
 
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
   [%%rederive.portable
-    type 'a array = 'a Array.t
+    type ('a : value_or_null mod separable) array = 'a Array.t
     [@@deriving
       compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]]
 
@@ -406,8 +406,8 @@ module Export = struct
 
   external force : ('a Lazy.t[@local_opt]) -> 'a @@ portable = "%lazy_force"
 
-  (* Export ['a or_null] with constructors [Null] and [This] whenever Base is opened,
-     so uses of those identifiers work in both upstream OCaml and OxCaml. *)
+  (* Export ['a or_null] with constructors [Null] and [This] whenever Base is opened, so
+     uses of those identifiers work in both upstream OCaml and OxCaml. *)
 
   type 'a or_null = 'a Or_null.t
   [@@or_null_reexport]
@@ -423,8 +423,8 @@ include Modes.Export (** @inline *)
 exception Not_found_s = Not_found_s
 
 (* We perform these side effects here because we want them to run for any code that uses
-   [Base].  If this were in another module in [Base] that was not used in some program,
-   then the side effects might not be run in that program.  This will run as long as the
+   [Base]. If this were in another module in [Base] that was not used in some program,
+   then the side effects might not be run in that program. This will run as long as the
    program refers to at least one value directly in [Base]; referring to values in
    [Base.Bool], for example, is not sufficient. *)
 let () = Backtrace.initialize_module ()

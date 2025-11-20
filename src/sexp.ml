@@ -3,8 +3,8 @@ open! Import
 include%template Comparable.Make [@modality portable] (Sexp0)
 
 include Sexp0
-(* we include [sexp] last to ensure we get a faster [equal] than the one
-   produced by [Comparable.Make] *)
+(* we include [sexp] last to ensure we get a faster [equal] than the one produced by
+   [Comparable.Make] *)
 
 let cross_portable = Basement.Portability_hacks.Cross.Portable.magic
 let cross_contended = Basement.Portability_hacks.Cross.Contended.magic

@@ -19,8 +19,11 @@ module%template.portable Of_stringable
   with type t := M.t
 
 module%template.portable Of_sexpable
-    (Sexpable : S
-  [@alloc a])
+    (Sexpable : sig
+       type t
+
+       include S [@alloc a] with type t := t
+     end)
     (M : sig
        type t
 
@@ -31,8 +34,11 @@ module%template.portable Of_sexpable
 [@@@kind.default ka = (value, any)]
 
 module%template.portable Of_sexpable1
-    (Sexpable : S1
-  [@kind ka] [@alloc a])
+    (Sexpable : sig
+       type ('a : ka) t
+
+       include S1 [@kind ka] [@alloc a] with type ('a : ka) t := ('a : ka) t
+     end)
     (M : sig
        type ('a : ka) t
 
@@ -45,8 +51,14 @@ module%template.portable Of_sexpable1
 [@@@kind.default kb = (value, any)]
 
 module%template.portable Of_sexpable2
-    (Sexpable : S2
-  [@kind ka kb] [@alloc a])
+    (Sexpable : sig
+       type ('a : ka, 'b : kb) t
+
+       include
+         S2
+         [@kind ka kb] [@alloc a]
+         with type ('a : ka, 'b : kb) t := ('a : ka, 'b : kb) t
+     end)
     (M : sig
        type ('a : ka, 'b : kb) t
 
@@ -59,8 +71,14 @@ module%template.portable Of_sexpable2
 [@@@kind.default kc = (value, any)]
 
 module%template.portable Of_sexpable3
-    (Sexpable : S3
-  [@kind ka kb kc] [@alloc a])
+    (Sexpable : sig
+       type ('a : ka, 'b : kb, 'c : kc) t
+
+       include
+         S3
+         [@kind ka kb kc] [@alloc a]
+         with type ('a : ka, 'b : kb, 'c : kc) t := ('a : ka, 'b : kb, 'c : kc) t
+     end)
     (M : sig
        type ('a : ka, 'b : kb, 'c : kc) t
 

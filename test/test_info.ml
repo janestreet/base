@@ -142,7 +142,7 @@ let%expect_test "show how backtraces are printed" =
   (* This is a real backtrace from some random OCaml program.
 
      The words [Raised] and [Called] have been lowercased to fool the expect test
-     collector and prevent it from complaining about the presence of a backtrace.  This is
+     collector and prevent it from complaining about the presence of a backtrace. This is
      fine for this test because we are using a static string as the source for the
      backtrace, rather than actually raising (which might change output between compiler
      versions). *)
@@ -202,8 +202,8 @@ let%expect_test "portabilize" =
     forcing lazy
     forcing thunk
     |}];
-  (* The info constructed with [of_portable_lazy] wasn't forced
-     by [portabilize] because it's already portable. *)
+  (* The info constructed with [of_portable_lazy] wasn't forced by [portabilize] because
+     it's already portable. *)
   print_endline (Atomic.get portable_lazy_status);
   [%expect {| <unforced> |}];
   List.iter examples ~f:(fun info -> print_s [%sexp (info : t)]);

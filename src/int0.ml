@@ -1,18 +1,18 @@
-(* [Int0] defines integer functions that are primitives or can be simply
-   defined in terms of [Stdlib]. [Int0] is intended to completely express the
-   part of [Stdlib] that [Base] uses for integers -- no other file in Base other
-   than int0.ml should use these functions directly through [Stdlib]. [Int0] has
-   few dependencies, and so is available early in Base's build order.
+(* [Int0] defines integer functions that are primitives or can be simply defined in terms
+   of [Stdlib]. [Int0] is intended to completely express the part of [Stdlib] that [Base]
+   uses for integers -- no other file in Base other than int0.ml should use these
+   functions directly through [Stdlib]. [Int0] has few dependencies, and so is available
+   early in Base's build order.
 
-   All Base files that need to use ints and come before [Base.Int] in build
-   order should do:
+   All Base files that need to use ints and come before [Base.Int] in build order should
+   do:
 
    {[
-     module Int  = Int0
+     module Int = Int0
    ]}
 
-   Defining [module Int = Int0] is also necessary because it prevents ocamldep
-   from mistakenly causing a file to depend on [Base.Int]. *)
+   Defining [module Int = Int0] is also necessary because it prevents ocamldep from
+   mistakenly causing a file to depend on [Base.Int]. *)
 
 external format : string @ local -> int -> string @@ portable = "caml_format_int"
 

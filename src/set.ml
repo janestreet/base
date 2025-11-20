@@ -39,10 +39,10 @@ module Tree0 = struct
      We define the weight comparisons below as [is_too_heavy] and [may_rotate_just_once].
 
      [1] Binary search trees of bounded balance, Nievergelt and Reingold, SIAM Journal on
-     Computing Vol. 2, Iss. 1 (1973). https://dl.acm.org/doi/pdf/10.1145/800152.804906
+         Computing Vol. 2, Iss. 1 (1973). https://dl.acm.org/doi/pdf/10.1145/800152.804906
 
      [2] Balancing weight-balanced trees, Hirai and Yamamoto, JFP 21 (3): 287–307, 2011.
-     https://yoichihirai.com/bst.pdf *)
+         https://yoichihirai.com/bst.pdf *)
 
   type ('a, 'cmp) t =
     | Empty
@@ -65,23 +65,33 @@ module Tree0 = struct
 
   (* Checks for failure of the balance invariant in one direction:
 
-     {[ not (wt(A) <= wt(B) * 5/2) ]}
+     {[
+       not (wt A <= wt B * 5 / 2)
+     ]}
 
      We negate it by changing [<=] to [>].
 
-     {[ wt(A) > wt(B) * 5/2 ]}
+     {[
+       wt A > wt B * 5 / 2
+     ]}
 
      We avoid division by multiplying both sides by two.
 
-     {[ wt(A) * 2 > wt(B) * 5 ]}
+     {[
+       wt A * 2 > wt B * 5
+     ]}
 
      We stick to powers of two by changing [x * 5] to [x * 4 + x].
 
-     {[ wt(A) * 2 > wt(B) * 4 + wt(B) ]}
+     {[
+       wt A * 2 > (wt B * 4) + wt B
+     ]}
 
      And we avoid multiplication by using shifts for multiplication by 2 and by 4.
 
-     {[ wt(A) << 1 > wt(B) << 2 + wt(B) ]}
+     {[
+       wt A << 1 > wt B << 2 + wt B
+     ]}
   *)
   let is_too_heavy ~weight:wtA ~for_weight:wtB =
     (* See? Just like above! *)
@@ -91,23 +101,33 @@ module Tree0 = struct
 
   (* Checks if we can use a single rotation for the currently-lower siblings:
 
-     {[ wt(A) < wt(B) * 3/2 ]}
+     {[
+       wt A < wt B * 3 / 2
+     ]}
 
      We avoid division by multiplying both sides by two.
 
-     {[ wt(A) * 2 < wt(B) * 3 ]}
+     {[
+       wt A * 2 < wt B * 3
+     ]}
 
      We stick to powers of two by changing [x * 3] to [x * 2 + x].
 
-     {[ wt(A) * 2 < wt(B) * 2 + wt(B) ]}
+     {[
+       wt A * 2 < (wt B * 2) + wt B
+     ]}
 
      We incur one fewer multiplication by moving [wt(B) * 2] to the left.
 
-     {[ (wt(A) - wt(B)) * 2 < wt(B) ]}
+     {[
+       (wt A - wt B) * 2 < wt B
+     ]}
 
      And we avoid multiplication by using shift for multiplication by 2.
 
-     {[ (wt(A) - wt(B)) << 1 < wt(B) ]}
+     {[
+       wt A - wt B << 1 < wt B
+     ]}
   *)
   let may_rotate_just_once ~inner_sibling_weight:wtA ~outer_sibling_weight:wtB =
     (* See? Just like above! *)
@@ -170,9 +190,9 @@ module Tree0 = struct
     | Leaf { elt = _ } | Node _ -> false
   ;;
 
-  (* Creates a new node with left son l, value v and right son r.
-     We must have all elements of l < v < all elements of r.
-     l and r must be balanced and neither [is_too_heavy] for the other. *)
+  (* Creates a new node with left son l, value v and right son r. We must have all
+     elements of l < v < all elements of r. l and r must be balanced and neither
+     [is_too_heavy] for the other. *)
 
   let[@inline always] create l v r =
     let wl = (weight [@inlined]) l in
@@ -181,8 +201,8 @@ module Tree0 = struct
     if w = 2 then Leaf { elt = v } else Node { left = l; elt = v; right = r; weight = w }
   ;;
 
-  (* We must call [f] with increasing indexes, because the bin_prot reader in
-     Core.Set needs it. *)
+  (* We must call [f] with increasing indexes, because the bin_prot reader in Core.Set
+     needs it. *)
   let of_increasing_iterator_unchecked ~len ~f =
     let rec loop n ~f i =
       match n with
@@ -243,8 +263,8 @@ module Tree0 = struct
         Result.Ok (of_sorted_array_unchecked array ~compare_elt))
   ;;
 
-  (* Same as create, but performs one step of rebalancing if necessary.
-     Assumes l and r balanced and either [is_too_heavy] by at most 1. *)
+  (* Same as create, but performs one step of rebalancing if necessary. Assumes l and r
+     balanced and either [is_too_heavy] by at most 1. *)
 
   let bal l v r =
     let wl = (weight [@inlined]) l in
@@ -345,8 +365,8 @@ module Tree0 = struct
     open struct
       (* These helpers are intended only to be called from [join]. *)
 
-      (* For [join_rotating_right l lv m rv r], the arguments correspond to an
-         unbalanced tree with the shape:
+      (* For [join_rotating_right l lv m rv r], the arguments correspond to an unbalanced
+         tree with the shape:
          {v
                  rv
                 /  \
@@ -385,8 +405,8 @@ module Tree0 = struct
 
       (* Rotating left proceeds symmetrically to rotating right. *)
 
-      (* For [join_rotating_left l lv m rv r], the arguments correspond to an
-         unbalanced tree with the shape:
+      (* For [join_rotating_left l lv m rv r], the arguments correspond to an unbalanced
+         tree with the shape:
          {v
                  lv
                 /  \
@@ -494,7 +514,7 @@ module Tree0 = struct
     | Node { left = l; elt = v; right = r; weight = _ } -> bal (remove_min_elt l) v r
   ;;
 
-  (* Merge two trees l and r into one.  All elements of l must precede the elements of r.
+  (* Merge two trees l and r into one. All elements of l must precede the elements of r.
      Assume either l or r [is_too_heavy] by at most 1. *)
   let merge t1 t2 =
     match t1, t2 with
@@ -503,7 +523,7 @@ module Tree0 = struct
     | _, _ -> bal t1 (min_elt_exn t2) (remove_min_elt t2)
   ;;
 
-  (* Merge two trees l and r into one.  All elements of l must precede the elements of r.
+  (* Merge two trees l and r into one. All elements of l must precede the elements of r.
      No assumption on the weights of l and r. *)
   let concat t1 t2 =
     match t1, t2 with
@@ -953,8 +973,8 @@ module Tree0 = struct
       | Node { left = l1; elt = v1; right = r1; weight = _ }, Leaf { elt = v2 } ->
         (match l1, r1 with
          | Empty, Empty ->
-           (* This case shouldn't occur in practice because we should have constructed
-              a Leaf {elt=rather} than a Node with two Empty subtrees *)
+           (* This case shouldn't occur in practice because we should have constructed a
+              Leaf [{elt=rather}] than a Node with two Empty subtrees *)
            compare_elt v1 v2 = 0
          | _, _ -> false)
       | ( Node { left = l1; elt = v1; right = r1; weight = _ }
@@ -1140,8 +1160,8 @@ module Tree0 = struct
       let res = Array.create ~len:(w - 1) v in
       let pos_ref = ref 0 in
       let rec loop = function
-        (* Invariant: on entry and on exit to [loop], !pos_ref is the next
-           available cell in the array. *)
+        (* Invariant: on entry and on exit to [loop], !pos_ref is the next available cell
+           in the array. *)
         | Empty -> ()
         | Leaf { elt = v } ->
           res.(!pos_ref) <- v;
@@ -1287,10 +1307,9 @@ module Tree0 = struct
 end
 
 type ('a, 'comparator) t =
-  { (* [comparator] is the first field so that polymorphic equality fails on a map due
-       to the functional value in the comparator.
-       Note that this does not affect polymorphic [compare]: that still produces
-       nonsense. *)
+  { (* [comparator] is the first field so that polymorphic equality fails on a map due to
+       the functional value in the comparator. Note that this does not affect polymorphic
+       [compare]: that still produces nonsense. *)
     global_ comparator : ('a, 'comparator) Comparator.t
   ; tree : ('a, 'comparator) Tree0.t
   }

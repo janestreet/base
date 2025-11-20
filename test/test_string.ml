@@ -716,8 +716,8 @@ module%test Search_pattern = struct
   let%test _ =
     [%compare.equal: string list]
       (split_on (create "") "abcd")
-      (* [index_all (create "")] includes the occurrences at index 0 and at the end of
-           the string, and the result of [split_on (create "")] is a consequence of this
+      (* [index_all (create "")] includes the occurrences at index 0 and at the end of the
+         string, and the result of [split_on (create "")] is a consequence of this
       *)
       [ ""; "a"; "b"; "c"; "d"; "" ]
   ;;
@@ -1128,8 +1128,8 @@ module%test Hash = struct
     List.iter
       ~f:(fun string ->
         assert (Int.( = ) (hash string) (Stdlib.Hashtbl.hash string));
-        (* with 31-bit integers, the hash computed by ppx_hash overflows so it doesn't match
-             polymorphic hash exactly. *)
+        (* with 31-bit integers, the hash computed by ppx_hash overflows so it doesn't
+           match polymorphic hash exactly. *)
         if Int.( > ) Int.num_bits 31
         then assert (Int.( = ) (hash string) ([%hash: string] string)))
       [ "Oh Gloria inmarcesible! Oh jubilo inmortal!"

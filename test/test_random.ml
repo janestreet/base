@@ -250,8 +250,8 @@ let%expect_test "nativeint_incl" =
   [%expect {| |}]
 ;;
 
-(* The int63 functions come from [Int63] rather than [Random], but we test them here
-   along with the others anyway. *)
+(* The int63 functions come from [Int63] rather than [Random], but we test them here along
+   with the others anyway. *)
 
 let%expect_test "int63" =
   let i = Int63.of_int in
@@ -322,14 +322,14 @@ let%expect_test "char" =
 ;;
 
 module%test [@name "float upper bound is inclusive despite docs"] _ = struct
-  (* The fact that this test passes doesn't demonstrate that the bug has gone away,
-       since the test was explicitly contrived to provoke the bug. *)
+  (* The fact that this test passes doesn't demonstrate that the bug has gone away, since
+     the test was explicitly contrived to provoke the bug. *)
 
-  (* This bug is more clearly illustrated by copying the implementation of
-       [Random.float] from the stdlib (which is just re-exported by Base).
+  (* This bug is more clearly illustrated by copying the implementation of [Random.float]
+     from the stdlib (which is just re-exported by Base).
 
-       Basically, when [r1 /. scale +. r2] requires more than 53 bits of precision, and
-       [bits2] consists of all 1s, rounding causes [rawfloat] to return 1. *)
+     Basically, when [r1 /. scale +. r2] requires more than 53 bits of precision, and
+     [bits2] consists of all 1s, rounding causes [rawfloat] to return 1. *)
 
   let rawfloat bits1 bits2 =
     let scale = 1073741824.0
@@ -340,8 +340,8 @@ module%test [@name "float upper bound is inclusive despite docs"] _ = struct
 
   let%expect_test "likelihood of failure" =
     (* test 256 states of the random number generator, highest as 60-bit numbers, out of
-         which 64 would have yield a float exactly equal to 1 if [Random.State.float] was
-         not recursive. *)
+       which 64 would have yield a float exactly equal to 1 if [Random.State.float] was
+       not recursive. *)
     let lbound = (1 lsl 30) - (1 lsl 8) in
     let ubound = (1 lsl 30) - 1 in
     let bits2 = ubound in

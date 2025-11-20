@@ -152,8 +152,8 @@ let append (hd :: tl) l = hd :: (List.append [@kind k]) tl l
 
 let init n ~f =
   if n < 1 then Printf.invalid_argf "Nonempty_list.init %d" n ();
-  (* [List.init] calls [f] on the highest index first and works its way down.
-     We do the same here. *)
+  (* [List.init] calls [f] on the highest index first and works its way down. We do the
+     same here. *)
   let tl = (List.init [@kind k]) (n - 1) ~f:(fun i -> f (i + 1)) in
   let hd = f 0 in
   hd :: tl

@@ -73,9 +73,9 @@ include%template Pretty_printer.Register [@modality portable] (struct
     let module_name = "Base.Int"
   end)
 
-(* Open replace_polymorphic_compare after including functor instantiations so
-   they do not shadow its definitions. This is here so that efficient versions
-   of the comparison functions are available within this module. *)
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
 open! Int_replace_polymorphic_compare
 
 let invariant (_ : t) = ()

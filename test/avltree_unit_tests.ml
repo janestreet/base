@@ -254,8 +254,8 @@ module%test _ : module type of Avltree = struct
       end)
       ~f:(fun (constructors, key, data, replace) ->
         let t, map = (reify [@kind k v]) constructors in
-        (* test [added], other aspects of [add] are tested via [reify] in the
-              [invariant] test above *)
+        (* test [added], other aspects of [add] are tested via [reify] in the [invariant]
+           test above *)
         let added = ref false in
         let (_ : (_ t[@kind k v])) =
           (add [@kind k v])
@@ -279,7 +279,7 @@ module%test _ : module type of Avltree = struct
       ~f:(fun (constructors, key) ->
         let t, map = (reify [@kind k v]) constructors in
         (* test [removed], other aspects of [remove] are tested via [reify] in the
-              [invariant] test above *)
+           [invariant] test above *)
         let removed = ref false in
         let (_ : (_ t[@kind k v])) =
           (remove [@kind k v]) t (Key.unbox key) ~compare ~removed

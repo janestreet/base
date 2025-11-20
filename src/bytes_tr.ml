@@ -2,11 +2,11 @@ open! Import0.Int_replace_polymorphic_compare
 module Bytes = Bytes0
 module String = String0
 
-(* Construct a byte string of length 256, mapping every input character code to
-   its corresponding output character.
+(* Construct a byte string of length 256, mapping every input character code to its
+   corresponding output character.
 
-   Benchmarks indicate that this is faster than the lambda (including cost of
-   this function), even if target/replacement are just 2 characters each.
+   Benchmarks indicate that this is faster than the lambda (including cost of this
+   function), even if target/replacement are just 2 characters each.
 
    Return None if the translation map is equivalent to just the identity. *)
 let tr_create_map ~(local_ target) ~(local_ replacement) =

@@ -82,10 +82,10 @@ module Tree0 = struct
      We define the weight comparisons below as [is_too_heavy] and [may_rotate_just_once].
 
      [1] Binary search trees of bounded balance, Nievergelt and Reingold, SIAM Journal on
-     Computing Vol. 2, Iss. 1 (1973). https://dl.acm.org/doi/pdf/10.1145/800152.804906
+         Computing Vol. 2, Iss. 1 (1973). https://dl.acm.org/doi/pdf/10.1145/800152.804906
 
      [2] Balancing weight-balanced trees, Hirai and Yamamoto, JFP 21 (3): 287–307, 2011.
-     https://yoichihirai.com/bst.pdf *)
+         https://yoichihirai.com/bst.pdf *)
 
   type ('k, 'v, 'cmp) t =
     | Empty
@@ -111,23 +111,33 @@ module Tree0 = struct
 
   (* Checks for failure of the balance invariant in one direction:
 
-     {[ not (wt(A) <= wt(B) * 5/2) ]}
+     {[
+       not (wt A <= wt B * 5 / 2)
+     ]}
 
      We negate it by changing [<=] to [>].
 
-     {[ wt(A) > wt(B) * 5/2 ]}
+     {[
+       wt A > wt B * 5 / 2
+     ]}
 
      We avoid division by multiplying both sides by two.
 
-     {[ wt(A) * 2 > wt(B) * 5 ]}
+     {[
+       wt A * 2 > wt B * 5
+     ]}
 
      We stick to powers of two by changing [x * 5] to [x * 4 + x].
 
-     {[ wt(A) * 2 > wt(B) * 4 + wt(B) ]}
+     {[
+       wt A * 2 > (wt B * 4) + wt B
+     ]}
 
      And we avoid multiplication by using shifts for multiplication by 2 and by 4.
 
-     {[ wt(A) << 1 > wt(B) << 2 + wt(B) ]}
+     {[
+       wt A << 1 > wt B << 2 + wt B
+     ]}
   *)
   let is_too_heavy ~weight:wtA ~for_weight:wtB =
     (* See? Just like above! *)
@@ -137,23 +147,33 @@ module Tree0 = struct
 
   (* Checks if we can use a single rotation for the currently-lower siblings:
 
-     {[ wt(A) < wt(B) * 3/2 ]}
+     {[
+       wt A < wt B * 3 / 2
+     ]}
 
      We avoid division by multiplying both sides by two.
 
-     {[ wt(A) * 2 < wt(B) * 3 ]}
+     {[
+       wt A * 2 < wt B * 3
+     ]}
 
      We stick to powers of two by changing [x * 3] to [x * 2 + x].
 
-     {[ wt(A) * 2 < wt(B) * 2 + wt(B) ]}
+     {[
+       wt A * 2 < (wt B * 2) + wt B
+     ]}
 
      We incur one fewer multiplication by moving [wt(B) * 2] to the left.
 
-     {[ (wt(A) - wt(B)) * 2 < wt(B) ]}
+     {[
+       (wt A - wt B) * 2 < wt B
+     ]}
 
      And we avoid multiplication by using shift for multiplication by 2.
 
-     {[ (wt(A) - wt(B)) << 1 < wt(B) ]}
+     {[
+       wt A - wt B << 1 < wt B
+     ]}
   *)
   let may_rotate_just_once ~inner_sibling_weight:wtA ~outer_sibling_weight:wtB =
     (* See? Just like above! *)
@@ -216,8 +236,8 @@ module Tree0 = struct
   let create l x d r = create_with_weights ~wl:(weight l) ~wr:(weight r) l x d r
   let singleton key data = Leaf { key; data }
 
-  (* We must call [f] with increasing indexes, because the bin_prot reader in
-     Core.Map needs it. *)
+  (* We must call [f] with increasing indexes, because the bin_prot reader in Core.Map
+     needs it. *)
   let of_increasing_iterator_unchecked ~len ~f =
     let rec loop n ~f i : (_, _, _) t =
       match n with
@@ -411,8 +431,8 @@ module Tree0 = struct
       bal l v d r
   ;;
 
-  (* specialization of [set'] for the case when [key] is greater than all the
-     existing keys  *)
+  (* specialization of [set'] for the case when [key] is greater than all the existing
+     keys *)
   let rec set_max t key data =
     match t with
     | Empty -> Leaf { key; data }
@@ -860,7 +880,7 @@ module Tree0 = struct
       | Empty -> init
       | Leaf { key = k; data = d } ->
         if compare_key k min < 0 || compare_key k max > 0
-        then (* k < min || k > max *)
+        then (*=k < min || k > max *)
           init
         else f ~key:k ~data:d init
       | Node { left = l; key = k; data = d; right = r; weight = _ } ->
@@ -1279,11 +1299,10 @@ module Tree0 = struct
 
     (* [drop_phys_equal_prefix tree1 acc1 tree2 acc2] drops the largest physically-equal
        prefix of tree1 and tree2 that they share, and then prepends the remaining data
-       into acc1 and acc2, respectively.
-       This can be asymptotically faster than [cons] even if it skips a small proportion
-       of the tree because [cons] is always O(log(n)) in the size of the tree, while
-       this function is O(log(n/m)) where [m] is the size of the part of the tree that
-       is skipped. *)
+       into acc1 and acc2, respectively. This can be asymptotically faster than [cons]
+       even if it skips a small proportion of the tree because [cons] is always O(log(n))
+       in the size of the tree, while this function is O(log(n/m)) where [m] is the size
+       of the part of the tree that is skipped. *)
     let rec drop_phys_equal_prefix tree1 acc1 tree2 acc2 =
       if phys_equal tree1 tree2
       then (* Trees are equal, drop them *)
@@ -1937,9 +1956,9 @@ module Tree0 = struct
   ;;
 
   (* Dispatch to [merge_by_case_internal], case by case. Determine which tree to recur on
-     first by [both], then based on [weight tree1] and [weight tree2] if a choice
-     remains. We prefer to walk the larger tree so we don't have to repeat [split] on a
-     large tree more often than necessary in [merge_by_case_internal] above. *)
+     first by [both], then based on [weight tree1] and [weight tree2] if a choice remains.
+     We prefer to walk the larger tree so we don't have to repeat [split] on a large tree
+     more often than necessary in [merge_by_case_internal] above. *)
   let merge_by_case
     (type k a b c d)
     (tree1 : (k, a, d) tree)
@@ -2179,6 +2198,35 @@ module Tree0 = struct
     if n < 0 || n >= length t then None else Some (loop t n)
   ;;
 
+  let split_n t n =
+    if n <= 0
+    then Empty, t
+    else if n >= length t
+    then t, Empty
+    else (
+      (* Only call this when [0 < n && n < length t]. *)
+      let rec split_n_nontrivial t n =
+        match t with
+        | Empty | Leaf _ ->
+          (* Precondition cannot be met in these cases. *)
+          assert false
+        | Node { left; key; data; right; weight = _ } ->
+          let left_len = length left in
+          if n < left_len
+          then (
+            let prefix, suffix = split_n_nontrivial left n in
+            prefix, join suffix key data right)
+          else if n = left_len
+          then left, join Empty key data right
+          else if n = left_len + 1
+          then join left key data Empty, right
+          else (
+            let prefix, suffix = split_n_nontrivial right (n - left_len - 1) in
+            join left key data prefix, suffix)
+      in
+      split_n_nontrivial t n)
+  ;;
+
   let rec find_first_satisfying t ~f =
     match t with
     | Empty -> None
@@ -2310,8 +2358,8 @@ module Tree0 = struct
     match of_alist alist ~compare_key with
     | `Ok v -> v
     | `Duplicate_key k ->
-      (* find the sexp of a duplicate key, so the error is narrowed to a key and not
-         the whole map *)
+      (* find the sexp of a duplicate key, so the error is narrowed to a key and not the
+         whole map *)
       let alist_sexps = list_of_sexp (pair_of_sexp Fn.id Fn.id) sexp in
       let found_first_k = ref false in
       List.iter2_ok alist alist_sexps ~f:(fun (k2, _) (k2_sexp, _) ->
@@ -2419,10 +2467,9 @@ module Tree0 = struct
 end
 
 type ('k, 'v, 'comparator) t =
-  { (* [comparator] is the first field so that polymorphic equality fails on a map due
-       to the functional value in the comparator.
-       Note that this does not affect polymorphic [compare]: that still produces
-       nonsense. *)
+  { (* [comparator] is the first field so that polymorphic equality fails on a map due to
+       the functional value in the comparator. Note that this does not affect polymorphic
+       [compare]: that still produces nonsense. *)
     global_ comparator : ('k, 'comparator) Comparator.t
   ; tree : ('k, 'v, 'comparator) Tree0.t
   }
@@ -2694,6 +2741,7 @@ module Accessors = struct
   let nth t n = Tree0.nth t.tree n
   let nth_exn t n = Option.value_exn (nth t n)
   let rank t key = Tree0.rank t.tree key ~compare_key:(compare_key t)
+  let split_n t n = Tree0.split_n t.tree n |> like2 t
   let sexp_of_t sexp_of_k sexp_of_v _ t = Tree0.sexp_of_t sexp_of_k sexp_of_v t.tree
 
   let to_sequence ?order ?keys_greater_or_equal_to ?keys_less_or_equal_to t =
@@ -2741,8 +2789,8 @@ module Accessors = struct
   end
 end
 
-(* [0] is used as the [length] argument everywhere in this module, since trees do not
-   have their lengths stored at the root, unlike maps. The values are discarded always. *)
+(* [0] is used as the [length] argument everywhere in this module, since trees do not have
+   their lengths stored at the root, unlike maps. The values are discarded always. *)
 module Tree = struct
   type weight = int
 
@@ -3106,6 +3154,7 @@ module Tree = struct
     Tree0.rank t key ~compare_key:(Comparator.compare comparator)
   ;;
 
+  let split_n t n = Tree0.split_n t n
   let sexp_of_t sexp_of_k sexp_of_v _ t = Tree0.sexp_of_t sexp_of_k sexp_of_v t
 
   let t_of_sexp_direct ~comparator k_of_sexp v_of_sexp sexp =

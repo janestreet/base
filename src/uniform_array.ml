@@ -1,8 +1,7 @@
 open! Import
 
-(* WARNING:
-   We use non-memory-safe and non-mode-safe things throughout the [Trusted] module.
-   Most of it is only safe in combination with the type signature (e.g. exposing
+(* WARNING: We use non-memory-safe and non-mode-safe things throughout the [Trusted]
+   module. Most of it is only safe in combination with the type signature (e.g. exposing
    [val copy : 'a t -> 'b t] would be a big mistake. Likewise, exposing
    ['a t : immutable_data with 'a] would be a big mistake.). *)
 module Trusted : sig @@ portable
@@ -55,10 +54,10 @@ end = struct
   type ('a : value_or_null) t : mutable_data with 'a = { arr : Obj_array.t }
   [@@unboxed] [@@unsafe_allow_any_mode_crossing]
 
-  (* Convert possibly null values to/from [Stdlib.Obj.t]. Normally discouraged
-     due to e.g. the possibility of [Stdlib.Obj.t or_null], but it's safe to put null
-     pointers into an [Obj_array.t]. Uses [%obj_magic] instead of [%opaque] since
-     nullability is not relevant in the cmm. *)
+  (* Convert possibly null values to/from [Stdlib.Obj.t]. Normally discouraged due to e.g.
+     the possibility of [Stdlib.Obj.t or_null], but it's safe to put null pointers into an
+     [Obj_array.t]. Uses [%obj_magic] instead of [%opaque] since nullability is not
+     relevant in the cmm. *)
   external repr : ('a : value_or_null). 'a -> Stdlib.Obj.t @@ portable = "%obj_magic"
   external obj : ('a : value_or_null). Stdlib.Obj.t -> 'a @@ portable = "%obj_magic"
 
@@ -75,9 +74,9 @@ end = struct
   let[@zero_alloc] get t i = obj (Obj_array.get t.arr i)
   let set t i x : unit = Obj_array.set t.arr i (repr x)
 
-  (* We annotate the return types on this and other functions to help document the
-     fact that (i) we're trying to avoid partial application, and (ii) we've
-     successfully avoided it.
+  (* We annotate the return types on this and other functions to help document the fact
+     that (i) we're trying to avoid partial application, and (ii) we've successfully
+     avoided it.
   *)
   let[@zero_alloc] unsafe_get_local (type a : value_or_null) t i : a =
     obj (Obj_array.unsafe_get t.arr i)
@@ -387,8 +386,8 @@ let t_sexp_grammar (type elt : value_or_null) (grammar : elt Sexplib0.Sexp_gramm
   Sexplib0.Sexp_grammar.coerce (list_sexp_grammar grammar)
 ;;
 
-(* Copied from the implementation of [sexp_of_array]. We can't reuse the array
-   conversion functions directly because [or_null array]s are forbidden. *)
+(* Copied from the implementation of [sexp_of_array]. We can't reuse the array conversion
+   functions directly because [or_null array]s are forbidden. *)
 let sexp_of_t sexp_of__a t =
   let lst_ref = ref [] in
   for i = length t - 1 downto 0 do
@@ -432,7 +431,8 @@ include%template Blit.Make1 [@modality portable] (struct
 let min_elt t ~compare = Container.min_elt ~fold t ~compare
 let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
-(* This is the same as the ppx_compare [compare_array] but uses our [unsafe_get] and [length]. *)
+(* This is the same as the ppx_compare [compare_array] but uses our [unsafe_get] and
+   [length]. *)
 let compare__local compare_elt a b =
   if phys_equal a b
   then 0

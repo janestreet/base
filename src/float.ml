@@ -157,8 +157,7 @@ external log : (t[@local_opt]) -> t @@ portable = "caml_log_float" "log"
 (* X86 docs say:
 
    If only one value is a NaN (SNaN or QNaN) for this instruction, the second source
-   operand, either a NaN or a valid floating-point value
-   is written to the result.
+   operand, either a NaN or a valid floating-point value is written to the result.
 
    So we have to be VERY careful how we use these!
 
@@ -195,7 +194,7 @@ let of_string_opt = float_of_string_opt
 
 external format_float : string -> local_ t -> string @@ portable = "caml_format_float"
 
-(* Stolen from [pervasives.ml].  Adds a "." at the end if needed.  It is in
+(* Stolen from [pervasives.ml]. Adds a "." at the end if needed. It is in
    [pervasives.mli], but it also says not to use it directly, so we copy and paste the
    code. It makes the assumption on the string passed in argument that it was returned by
    [format_float]. *)
@@ -212,13 +211,11 @@ let valid_float_lexem s =
   loop 0
 ;;
 
-(* Let [y] be a power of 2.  Then the next representable float is:
-   [z = y * (1 + 2 ** -52)]
-   and the previous one is
-   [x = y * (1 - 2 ** -53)]
+(* Let [y] be a power of 2. Then the next representable float is: [z = y * (1 + 2 ** -52)]
+   and the previous one is [x = y * (1 - 2 ** -53)]
 
-   In general, every two adjacent floats are within a factor of between [1 + 2**-53]
-   and [1 + 2**-52] from each other, that is within [1 + 1.1e-16] and [1 + 2.3e-16].
+   In general, every two adjacent floats are within a factor of between [1 + 2**-53] and
+   [1 + 2**-52] from each other, that is within [1 + 1.1e-16] and [1 + 2.3e-16].
 
    So if the decimal representation of a float starts with "1", then its adjacent floats
    will usually differ from it by 1, and sometimes by 2, at the 17th significant digit
@@ -301,9 +298,9 @@ let valid_float_lexem s =
 
    Skipping the '%.16g' in the above procedure saves us some time, but it means that, as
    seen in the second example above, occasionally numbers with exactly 16 significant
-   digits will have an error introduced at the 17th digit.  That is probably OK for
-   typical use, because a number with 16 significant digits is "ugly" already.  Adding one
-   more doesn't make it much worse for a human reader.
+   digits will have an error introduced at the 17th digit. That is probably OK for typical
+   use, because a number with 16 significant digits is "ugly" already. Adding one more
+   doesn't make it much worse for a human reader.
 
    On the other hand, we cannot skip '%.15g' and only look at '%.16g' and '%.17g', since
    the inaccuracy at the 16th digit might introduce the noise we want to avoid:
@@ -342,16 +339,16 @@ let to_int64 = Int64.of_float
 let iround_lbound = lower_bound_for_int Int.num_bits
 let iround_ubound = upper_bound_for_int Int.num_bits
 
-(* The performance of the "exn" rounding functions is important, so they are written
-   out separately, and tuned individually.  (We could have the option versions call
-   the "exn" versions, but that imposes arguably gratuitous overhead---especially
-   in the case where the capture of backtraces is enabled upon "with"---and that seems
-   not worth it when compared to the relatively small amount of code duplication.) *)
+(* The performance of the "exn" rounding functions is important, so they are written out
+   separately, and tuned individually. (We could have the option versions call the "exn"
+   versions, but that imposes arguably gratuitous overhead---especially in the case where
+   the capture of backtraces is enabled upon "with"---and that seems not worth it when
+   compared to the relatively small amount of code duplication.) *)
 
 (* Error reporting below is very carefully arranged so that, e.g., [iround_nearest_exn]
    itself can be inlined into callers such that they don't need to allocate a box for the
-   [float] argument.  This is done with a box [box] function carefully chosen to allow the
-   compiler to create a separate box for the float only in error cases.  See, e.g.,
+   [float] argument. This is done with a box [box] function carefully chosen to allow the
+   compiler to create a separate box for the float only in error cases. See, e.g.,
    [../../zero/test/price_test.ml] for a mechanical test of this property when building
    with [X_LIBRARY_INLINING=true]. *)
 
@@ -517,8 +514,8 @@ let iround_nearest_exn =
    that it is [@zero_alloc]. *)
 let[@inline] iround_nearest_exn t = iround_nearest_exn t
 
-(* The following [iround_exn] and [iround] functions are slower than the ones above.
-   Their equivalence to those functions is tested in the unit tests below. *)
+(* The following [iround_exn] and [iround] functions are slower than the ones above. Their
+   equivalence to those functions is tested in the unit tests below. *)
 
 let[@inline] iround_exn ?(dir = `Nearest) t =
   match dir with
@@ -591,7 +588,7 @@ let round_nearest_half_to_even t =
   then box t
   else (
     let floor = floor t in
-    (* [ceil_or_succ = if t is an integer then t +. 1. else ceil t].  Faster than [ceil]. *)
+    (* [ceil_or_succ = if t is an integer then t +. 1. else ceil t]. Faster than [ceil]. *)
     let ceil_or_succ = floor +. 1. in
     let diff_floor = t -. floor in
     let diff_ceil = ceil_or_succ -. t in
@@ -758,22 +755,21 @@ let sexp_of_t__stack t = exclave_
 
 let to_padded_compact_string_custom t ?(prefix = "") ~kilo ~mega ~giga ~tera ?peta () =
   (* Round a ratio toward the nearest integer, resolving ties toward the nearest even
-     number.  For sane inputs (in particular, when [denominator] is an integer and
-     [abs numerator < 2e52]) this should be accurate.  Otherwise, the result might be a
+     number. For sane inputs (in particular, when [denominator] is an integer and
+     [abs numerator < 2e52]) this should be accurate. Otherwise, the result might be a
      little bit off, but we don't really use that case. *)
   let iround_ratio_exn ~numerator ~denominator =
     let k = floor (numerator /. denominator) in
     (* if [abs k < 2e53], then both [k] and [k +. 1.] are accurately represented, and in
-       particular [k +. 1. > k].  If [denominator] is also an integer, and
+       particular [k +. 1. > k]. If [denominator] is also an integer, and
        [abs (denominator *. (k +. 1)) < 2e53] (and in some other cases, too), then [lower]
-       and [higher] are actually both accurate.  Since (roughly)
-       [numerator = denominator *. k] then for [abs numerator < 2e52] we should be
-       fine. *)
+       and [higher] are actually both accurate. Since (roughly)
+       [numerator = denominator *. k] then for [abs numerator < 2e52] we should be fine. *)
     let lower = denominator *. k in
     let higher = denominator *. (k +. 1.) in
-    (* Subtracting numbers within a factor of two from each other is accurate.
-       So either the two subtractions below are accurate, or k = 0, or k = -1.
-       In case of a tie, round to even. *)
+    (* Subtracting numbers within a factor of two from each other is accurate. So either
+       the two subtractions below are accurate, or k = 0, or k = -1. In case of a tie,
+       round to even. *)
     let diff_right = higher -. numerator in
     let diff_left = numerator -. lower in
     let k = iround_nearest_exn k in
@@ -857,12 +853,11 @@ let to_padded_compact_string t =
   to_padded_compact_string_custom t ~kilo:"k" ~mega:"m" ~giga:"g" ~tera:"t" ~peta:"p" ()
 ;;
 
-(* Performance note: Initializing the accumulator to 1 results in one extra
-   multiply; e.g., to compute x ** 4, we in principle only need 2 multiplies,
-   but this function will have 3 multiplies.  However, attempts to avoid this
-   (like decrementing n and initializing accum to be x, or handling small
-   exponents as a special case) have not yielded anything that is a net
-   improvement.
+(* Performance note: Initializing the accumulator to 1 results in one extra multiply;
+   e.g., to compute x ** 4, we in principle only need 2 multiplies, but this function will
+   have 3 multiplies. However, attempts to avoid this (like decrementing n and
+   initializing accum to be x, or handling small exponents as a special case) have not
+   yielded anything that is a net improvement.
 *)
 let int_pow x n =
   let open Int_replace_polymorphic_compare in
@@ -882,21 +877,20 @@ let int_pow x n =
       n := ~- (!n);
       if !n < 0
       then (
-        (* n must have been min_int, so it is now so big that it has wrapped around.
-           We decrement it so that it looks positive again, but accordingly have
-           to put an extra factor of x in the accumulator.
+        (* n must have been min_int, so it is now so big that it has wrapped around. We
+           decrement it so that it looks positive again, but accordingly have to put an
+           extra factor of x in the accumulator.
         *)
         accum := !x;
         decr n));
-    (* Letting [a] denote (the original value of) [x ** n], we maintain
-       the invariant that [(x ** n) *. accum = a]. *)
+    (* Letting [a] denote (the original value of) [x ** n], we maintain the invariant that
+       [(x ** n) *. accum = a]. *)
     while !n > 1 do
       if !n land 1 <> 0 then accum := !x *. !accum;
       x := !x *. !x;
       n := !n lsr 1
     done;
-    (* n is necessarily 1 at this point, so there is one additional
-       multiplication by x. *)
+    (* n is necessarily 1 at this point, so there is one additional multiplication by x. *)
     !x *. !accum)
 ;;
 
@@ -905,7 +899,7 @@ let int_pow x n =
 
 let square x = (x *. x) [@exclave_if_local m]
 
-(* The desired behavior here is to propagate a nan if either argument is nan. Because
+(*=The desired behavior here is to propagate a nan if either argument is nan. Because
    the first comparison will always return false if either argument is nan, it suffices
    to check if x is nan. Then, when x is nan or both x and y are nan, we return x = nan;
    and when y is nan but not x, we return y = nan.
@@ -964,17 +958,17 @@ let round_gen x ~how =
       let abs_dd = Int.abs dd in
       if abs_dd > 22 || sd >= 16
          (* 10**22 is exactly representable as a float, but 10**23 is not, so use the slow
-            path.  Similarly, if we need 16 significant digits in the result, then the integer
-            [round_nearest (x <op> order)] might not be exactly representable as a float, since
-            for some ranges we only have 15 digits of precision guaranteed.
+            path. Similarly, if we need 16 significant digits in the result, then the
+            integer [round_nearest (x <op> order)] might not be exactly representable as a
+            float, since for some ranges we only have 15 digits of precision guaranteed.
 
             That said, we are still rounding twice here:
 
             1) first time when rounding [x *. order] or [x /. order] to the nearest float
-            (just the normal way floating-point multiplication or division works),
+               (just the normal way floating-point multiplication or division works),
 
             2) second time when applying [round_nearest_half_to_even] to the result of the
-            above operation
+               above operation
 
             So for arguments within an ulp from a tie we might still produce an off-by-one
             result. *)
@@ -1159,8 +1153,8 @@ include%template Comparable.With_zero [@modality portable] (struct
     let zero = zero
   end)
 
-(* These are partly here as a performance hack to avoid some boxing we're getting with
-   the versions we get from [With_zero].  They also make [Float.is_negative nan] and
+(* These are partly here as a performance hack to avoid some boxing we're getting with the
+   versions we get from [With_zero]. They also make [Float.is_negative nan] and
    [Float.is_non_positive nan] return [false]; the versions we get from [With_zero] return
    [true]. *)
 let is_positive t = t > 0.
@@ -1306,9 +1300,8 @@ module Shadow = struct
   let max = (max [@mode m])]
 end
 
-(* Include type-specific [Replace_polymorphic_compare] at the end, after
-   including functor application that could shadow its definitions. This is
-   here so that efficient versions of the comparison functions are exported by
-   this module. *)
+(* Include type-specific [Replace_polymorphic_compare] at the end, after including functor
+   application that could shadow its definitions. This is here so that efficient versions
+   of the comparison functions are exported by this module. *)
 include Float_replace_polymorphic_compare
 include Shadow

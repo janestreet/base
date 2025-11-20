@@ -1,9 +1,9 @@
 (* [Char0] defines char functions that are primitives or can be simply defined in terms of
-   [Stdlib.Char].  [Char0] is intended to completely express the part of [Stdlib.Char] that
+   [Stdlib.Char]. [Char0] is intended to completely express the part of [Stdlib.Char] that
    [Base] uses -- no other file in Base other than char0.ml should use [Stdlib.Char].
-   [Char0] has few dependencies, and so is available early in Base's build order.  All
-   Base files that need to use chars and come before [Base.Char] in build order should do
-   [module Char = Char0].  Defining [module Char = Char0] is also necessary because it
+   [Char0] has few dependencies, and so is available early in Base's build order. All Base
+   files that need to use chars and come before [Base.Char] in build order should do
+   [module Char = Char0]. Defining [module Char = Char0] is also necessary because it
    prevents ocamldep from mistakenly causing a file to depend on [Base.Char]. *)
 
 open! Import0
@@ -15,9 +15,9 @@ let to_int = Stdlib.Char.code
 let unsafe_of_int = Stdlib.Char.unsafe_chr
 let uppercase = Stdlib.Char.uppercase_ascii
 
-(* We use our own range test when converting integers to chars rather than
-   calling [Stdlib.Char.chr] because it's simple and it saves us a function call
-   and the try-with (exceptions cost, especially in the world with backtraces). *)
+(* We use our own range test when converting integers to chars rather than calling
+   [Stdlib.Char.chr] because it's simple and it saves us a function call and the try-with
+   (exceptions cost, especially in the world with backtraces). *)
 let int_is_ok i = 0 <= i && i <= 255
 let min_value = unsafe_of_int 0
 let max_value = unsafe_of_int 255

@@ -1,11 +1,10 @@
-(* [Sys0] defines functions that are primitives or can be simply defined in
-   terms of [Stdlib.Sys].  [Sys0] is intended to completely express the part of
-   [Stdlib.Sys] that [Base] uses -- no other file in Base other than sys.ml
-   should use [Stdlib.Sys]. [Sys0] has few dependencies, and so is available
-   early in Base's build order.  All Base files that need to use these
-   functions and come before [Base.Sys] in build order should do
-   [module Sys = Sys0].  Defining [module Sys = Sys0] is also necessary because
-   it prevents ocamldep from mistakenly causing a file to depend on [Base.Sys]. *)
+(* [Sys0] defines functions that are primitives or can be simply defined in terms of
+   [Stdlib.Sys]. [Sys0] is intended to completely express the part of [Stdlib.Sys] that
+   [Base] uses -- no other file in Base other than sys.ml should use [Stdlib.Sys]. [Sys0]
+   has few dependencies, and so is available early in Base's build order. All Base files
+   that need to use these functions and come before [Base.Sys] in build order should do
+   [module Sys = Sys0]. Defining [module Sys = Sys0] is also necessary because it prevents
+   ocamldep from mistakenly causing a file to depend on [Base.Sys]. *)
 
 open! Import0
 

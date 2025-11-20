@@ -1,12 +1,12 @@
 (* [Array0] defines array functions that are primitives or can be simply defined in terms
-   of [Stdlib.Array].  [Array0] is intended to completely express the part of [Stdlib.Array]
-   that [Base] uses -- no other file in Base other than array0.ml should use [Stdlib.Array].
-   [Array0] has few dependencies, and so is available early in Base's build order.  All
-   Base files that need to use arrays and come before [Base.Array] in build order should
-   do [module Array = Array0].  This includes uses of subscript syntax ([x.(i)], [x.(i) <-
-   e]), which the OCaml parser desugars into calls to [Array.get] and [Array.set].
-   Defining [module Array = Array0] is also necessary because it prevents ocamldep from
-   mistakenly causing a file to depend on [Base.Array]. *)
+   of [Stdlib.Array]. [Array0] is intended to completely express the part of
+   [Stdlib.Array] that [Base] uses -- no other file in Base other than array0.ml should
+   use [Stdlib.Array]. [Array0] has few dependencies, and so is available early in Base's
+   build order. All Base files that need to use arrays and come before [Base.Array] in
+   build order should do [module Array = Array0]. This includes uses of subscript syntax
+   ([x.(i)], [x.(i) <- e]), which the OCaml parser desugars into calls to [Array.get] and
+   [Array.set]. Defining [module Array = Array0] is also necessary because it prevents
+   ocamldep from mistakenly causing a file to depend on [Base.Array]. *)
 
 [@@@warning "-incompatible-with-upstream"]
 

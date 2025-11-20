@@ -61,10 +61,10 @@ let range' ~compare ~stride ?(start = `inclusive) ?(stop = `exclusive) start_i s
          invalid_arg "List.range': stride function cannot change direction"
        | Less, `Less | Greater, `Greater -> i :: loop next_i)
     | Less, `Greater | Greater, `Less ->
-      (* stepped past [stop_i].  Finished. *)
+      (* stepped past [stop_i]. Finished. *)
       []
     | Equal, _ ->
-      (* reached [stop_i].  Finished. *)
+      (* reached [stop_i]. Finished. *)
       (match stop with
        | `inclusive -> [ i ]
        | `exclusive -> [])
@@ -643,7 +643,7 @@ let filter_map t ~f = exclave_
 
 (* call-stack size <= input data stack size + max inner list data stack size
 
-  unlike other functions, the maximum call-stack depth is [2 * max_non_tailcall] *)
+   unlike other functions, the maximum call-stack depth is [2 * max_non_tailcall] *)
 let concat_mapi =
   let loop_tail (t : (_ t[@kind ka])) ~i ~f = exclave_
     let #(_, expanded) =
@@ -1055,7 +1055,7 @@ let reduce_exn l ~f =
 
 let reduce_balanced l ~f =
   (* Call the "size" of a value the number of list elements that have been combined into
-     it via calls to [f].  We proceed by using [f] to combine elements in the accumulator
+     it via calls to [f]. We proceed by using [f] to combine elements in the accumulator
      of the same size until we can't combine any more, then getting a new element from the
      input list and repeating.
 
@@ -1066,10 +1066,10 @@ let reduce_balanced l ~f =
 
      These conditions enforce that list of elements of each size is precisely the binary
      expansion of the number of elements consumed: if you've consumed 13 = 0b1101
-     elements, you have one element of size 8, one of size 4, and one of size 1.  Hence
+     elements, you have one element of size 8, one of size 4, and one of size 1. Hence
      when a new element comes along, the number of combinings you need to do is the number
      of trailing 1s in the binary expansion of [num], the number of elements that have
-     already gone into the accumulator.  The accumulator is in ascending order of size, so
+     already gone into the accumulator. The accumulator is in ascending order of size, so
      the next element to combine with is always the head of the list. *)
   let rec step_accum num acc x =
     if num land 1 = 0

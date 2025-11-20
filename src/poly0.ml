@@ -1,9 +1,9 @@
 (** Primitives for polymorphic compare. *)
 
 (*_ Polymorphic compiler primitives can't be aliases as this doesn't play well with
-  inlining. (If aliased without a type annotation, the compiler would implement them
-  using the generic code doing a C call, and it's this code that would be inlined.) As a
-  result we have to copy the [external ...] declaration here. *)
+    inlining. (If aliased without a type annotation, the compiler would implement them
+    using the generic code doing a C call, and it's this code that would be inlined.) As a
+    result we have to copy the [external ...] declaration here. *)
 external ( < ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%lessthan"
 external ( <= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%lessequal"
 external ( <> ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%notequal"

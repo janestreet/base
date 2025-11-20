@@ -1,5 +1,4 @@
 open! Import0
-open Globalize
 open Hash.Builtin
 open Ppx_compare_lib.Builtin
 include Sexplib0.Sexp
@@ -8,7 +7,7 @@ include Sexplib0.Sexp
 type t = Sexplib0.Sexp.t =
   | Atom of string
   | List of t list
-[@@deriving compare ~localize, globalize, hash]
+[@@deriving compare ~localize, hash]
 
 let t_sexp_grammar = Sexplib0.Sexp_conv.sexp_t_sexp_grammar
 let of_string = ()

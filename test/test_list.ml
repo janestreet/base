@@ -782,10 +782,10 @@ module%test [@name "reduce_balanced"] _ = struct
 
   let%test_unit "longer" =
     (* pairs (index, number of times f called on me) to check:
-         1. f called on results in index order
-         2. total number of calls on any element is low
-         called on 2^n + 1 to demonstrate lack of balance (most elements are distance 7 from
-         the tree root, but one is distance 1) *)
+       1. f called on results in index order
+       2. total number of calls on any element is low called on 2^n + 1 to demonstrate
+          lack of balance (most elements are distance 7 from the tree root, but one is
+          distance 1) *)
     let data = map (range 0 65) ~f:(fun i -> [ i, 0 ]) in
     let f x y = map (x @ y) ~f:(fun (ix, cx) -> ix, cx + 1) in
     match reduce_balanced data ~f with

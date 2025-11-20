@@ -222,7 +222,7 @@ module%test [@name "[symmetric_diff]"] _ = struct
   ;;
 
   (* This is a deterministic benchmark rather than a test, measuring the number of
-       comparisons made by fold_symmetric_diff. *)
+     comparisons made by fold_symmetric_diff. *)
   let%expect_test "number of key comparisons" =
     let count = ref 0 in
     let measure_comparisons f =
@@ -243,8 +243,8 @@ module%test [@name "[symmetric_diff]"] _ = struct
     in
     let test size =
       let map_pairs =
-        (* We measure every step of building up a map from one side. This covers
-             different stages of rebalancing along the way. *)
+        (* We measure every step of building up a map from one side. This covers different
+           stages of rebalancing along the way. *)
         List.folding_map
           (List.init size ~f:Int.succ)
           ~init:(Map.singleton (module Key) 0 0)

@@ -92,7 +92,7 @@ let%expect_test "of_string" =
   (* max_value + 1 *)
   test "9_223_372_036_854_775_808";
   [%expect {| (Error (Failure Int64.of_string)) |}];
-  (* min_value  *)
+  (* min_value *)
   test "-9_223_372_036_854_775_808";
   [%expect {| (Ok -9_223_372_036_854_775_808) |}];
   (* min_value - 1 *)

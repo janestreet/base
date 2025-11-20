@@ -6,7 +6,7 @@ type ('a, 'witness) t : value mod contended portable with 'witness @@ contended 
   ; sexp_of_t : 'a -> Sexp.t
   }
 [@@unsafe_allow_any_mode_crossing]
-(* SAFETY
+(*=SAFETY
    ======
    The type system is not currently expressive enough to express something like "this
    field has a portable modality, iff this type parameter has a particular kind". So we

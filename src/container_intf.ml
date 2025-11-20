@@ -23,9 +23,9 @@ end
   extra_values = (immediate, immediate64, value mod external_, value mod external64)]
 
 (*_ We move [value] to the beginning of [base_with_imm] so that when we make the
-      destructive substitutions for [t] in the signatures below, we define the [value]
-      versions of all the functions first before hiding the real [t] behind aliases to
-      e.g. [t [@kind bits64]]. *)
+    destructive substitutions for [t] in the signatures below, we define the [value]
+    versions of all the functions first before hiding the real [t] behind aliases to e.g.
+    [t [@kind bits64]]. *)
 [@@@kind_set.define base_with_imm = (value, base_with_imm)]
 
 module Definitions = struct
@@ -98,11 +98,11 @@ module Definitions = struct
   include struct
     [@@@alloc.default a @ m = (heap_global, stack_local)]
 
-    (*_ We template the following interfaces over the set of kinds that are allowed in
-      the container [t]. Each such kind set has an associated set of kinds allowed in
-      types that appear as function arguments/returns but are not put into [t]. For
-      example, a container that only allows [immediate]s can easily still implement [fold]
-      with a [value] accumulator. *)
+    (*_ We template the following interfaces over the set of kinds that are allowed in the
+        container [t]. Each such kind set has an associated set of kinds allowed in types
+        that appear as function arguments/returns but are not put into [t]. For example, a
+        container that only allows [immediate]s can easily still implement [fold] with a
+        [value] accumulator. *)
     [@@@kind_set.default.explicit
       (ks, ks_not_in_t)
       = ( (value, value)
@@ -118,18 +118,19 @@ module Definitions = struct
 
       include sig
         (*_ Here, we use [default_if_multiple] because this interface:
-        (1) Sometimes uses [ks] to represent a single kind that we eventually would make
-            an abstract kind
-        (2) Sometimes uses [ks] to represent a "universe" of kinds that the interface
-            broadly understands and supports all combinations of (which we eventually will
-            replace with layout polymorphism)
+            (1) Sometimes uses [ks] to represent a single kind that we eventually would
+                make an abstract kind
+            (2) Sometimes uses [ks] to represent a "universe" of kinds that the interface
+                broadly understands and supports all combinations of (which we eventually
+                will replace with layout polymorphism)
 
-        In case (1), there is only one version of each function, so we don't actually want
-        to mangle it over [k = ks] (because it's silly for users of e.g. [imm_array] to
-        have to call [(length [@kind immediate64])] to compute the length of their array).
+            In case (1), there is only one version of each function, so we don't actually
+            want to mangle it over [k = ks] (because it's silly for users of e.g.
+            [imm_array] to have to call [(length [@kind immediate64])] to compute the
+            length of their array).
 
-        In case (2), since there are many versions of each function, we mangle the
-        functions. *)
+            In case (2), since there are many versions of each function, we mangle the
+            functions. *)
 
         [@@@kind.default_if_multiple k1 = ks]
 

@@ -215,14 +215,14 @@ module%test Make = Test_applicative_s (Applicative.Make_using_map2__local (struc
     let map = `Define_using_map2
   end))
 
-(* While law-abiding applicatives shouldn't be relying functions being called
-   the minimal number of times, it is good for performance that things be this
-   way. For many applicatives this will not matter very much, but for others,
-   like Bonsai, it is a little more significant, since extra calls construct
-   more Incremental nodes, yielding more strain on the Incremental stabilizer.
+(* While law-abiding applicatives shouldn't be relying functions being called the minimal
+   number of times, it is good for performance that things be this way. For many
+   applicatives this will not matter very much, but for others, like Bonsai, it is a
+   little more significant, since extra calls construct more Incremental nodes, yielding
+   more strain on the Incremental stabilizer.
 
-   The point is that we should not assume that the input applicative instance
-   can be frivolous in creating nodes in the applicative call-tree.
+   The point is that we should not assume that the input applicative instance can be
+   frivolous in creating nodes in the applicative call-tree.
 *)
 let%expect_test _ =
   let module A = struct

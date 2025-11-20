@@ -1,6 +1,6 @@
 (* The [globalize_{bool,char,unit}] functions are written as matches plus the identity
    function so that the type checker can give them the desired type, without having to do
-   anything special.  However, [globalize_int] cannot be written this way, so we resort to
+   anything special. However, [globalize_int] cannot be written this way, so we resort to
    using an [external]. *)
 
 [@@@warning "-incompatible-with-upstream"]
@@ -24,11 +24,11 @@ external globalize_string : local_ string -> string @@ portable = "%obj_dup"
 let globalize_unit (() as u) = u
 
 [%%template
-[@@@kind k = base_with_imm]
+[@@@kind k = base_or_null_with_imm]
 
 external globalize_array'
-  :  local_ ('a : k) array
-  -> ('a : k) array
+  : ('a : k mod separable).
+  local_ 'a array -> 'a array
   @@ portable
   = "%obj_dup"
 

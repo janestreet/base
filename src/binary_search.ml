@@ -1,12 +1,11 @@
 open! Import
 open Int_replace_polymorphic_compare
 
-(* These functions implement a search for the first (resp. last) element
-   satisfying a predicate, assuming that the predicate is increasing on
-   the container, meaning that, if the container is [u1...un], there exists a
-   k such that p(u1)=....=p(uk) = false and p(uk+1)=....=p(un)= true.
-   If this k = 1 (resp n), find_last_not_satisfying (resp find_first_satisfying)
-   will return None. *)
+(* These functions implement a search for the first (resp. last) element satisfying a
+   predicate, assuming that the predicate is increasing on the container, meaning that, if
+   the container is [u1...un], there exists a k such that p(u1)=....=p(uk) = false and
+   p(uk+1)=....=p(un)= true. If this k = 1 (resp n), find_last_not_satisfying (resp
+   find_first_satisfying) will return None. *)
 
 [%%template
 [@@@mode.default m = (global, local)]
@@ -28,8 +27,7 @@ let rec linear_search_first_satisfying (t @ m) ~get ~lo ~hi ~pred = exclave_
      on which [pred] is [true] is between [lo] and [hi]. *)
 (* Invariant: the first element satisfying [pred], if it exists is between [lo] and [hi] *)
 let rec find_range_near_first_satisfying (t @ m) ~get ~lo ~hi ~pred = exclave_
-  (* Warning: this function will not terminate if the constant (currently 8) is
-     set <= 1 *)
+  (* Warning: this function will not terminate if the constant (currently 8) is set <= 1 *)
   if hi - lo <= 8
   then lo, hi
   else (
@@ -38,8 +36,8 @@ let rec find_range_near_first_satisfying (t @ m) ~get ~lo ~hi ~pred = exclave_
        (* INVARIANT check: it means the first satisfying element is between [lo] and [mid] *)
     then
       (find_range_near_first_satisfying [@mode m]) t ~get ~lo ~hi:mid ~pred
-      (* INVARIANT check: it means the first satisfying element, if it exists,
-         is between [mid+1] and [hi] *)
+      (* INVARIANT check: it means the first satisfying element, if it exists, is between
+         [mid+1] and [hi] *)
     else (find_range_near_first_satisfying [@mode m]) t ~get ~lo:(mid + 1) ~hi ~pred)
 ;;
 
@@ -53,9 +51,8 @@ let find_first_satisfying ?pos ?len (t @ m) ~get ~length ~pred = exclave_
   (linear_search_first_satisfying [@mode m]) t ~get ~lo ~hi ~pred
 ;;
 
-(* Takes an array with shape [true,...true,false,...false] (i.e., the _reverse_ of what
-   is described above) and returns the index of the last true or None if there are no
-   true*)
+(* Takes an array with shape [true,...true,false,...false] (i.e., the _reverse_ of what is
+   described above) and returns the index of the last true or None if there are no true *)
 let find_last_satisfying ?pos ?len (t @ m) ~pred ~get ~length = exclave_
   let pos, len =
     Ordered_collection_common.get_pos_len_exn () ?pos ?len ~total_length:(length t)
@@ -69,8 +66,8 @@ let find_last_satisfying ?pos ?len (t @ m) ~pred ~get ~length = exclave_
         not (pred x))
     with
     | None -> Some (pos + len - 1)
-    (* This means that all elements satisfy pred.
-       There is at least an element as (len > 0) *)
+    (* This means that all elements satisfy pred. There is at least an element as (len >
+       0) *)
     | Some i when i = pos -> None (* no element satisfies pred *)
     | Some i -> Some (i - 1))
 ;;

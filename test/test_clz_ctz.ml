@@ -43,20 +43,18 @@ include Make (struct
 
     let%expect_test "zero" =
       (* [clz 0] is guaranteed to be num_bits for int. We compute clz on the tagged
-         representation of int's, and the binary representation of the int [0] is
-         num_bits 0's followed by a 1 (the tag bit). *)
+         representation of int's, and the binary representation of the int [0] is num_bits
+         0's followed by a 1 (the tag bit). *)
       [%test_result: int] ~expect:num_bits (clz 0)
     ;;
 
-    (* [ctz 0] is unspecified. On linux it seems to be stable and equal to the system
-       word size (which is num_bits + 1).
-       ran 2019-02-11 on linux:
+    (* [ctz 0] is unspecified. On linux it seems to be stable and equal to the system word
+       size (which is num_bits + 1). ran 2019-02-11 on linux:
        {v
         [%test_result: int] ~expect:(num_bits + 1) (ctz 0)
        v}
 
-       in javascript, it is 32 (which is num_bits):
-       ran 2019-02-11 on javascript:
+       in javascript, it is 32 (which is num_bits): ran 2019-02-11 on javascript:
        {v
         [%test_result: int] ~expect:(num_bits) (ctz 0)
        v}

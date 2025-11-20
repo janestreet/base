@@ -130,11 +130,11 @@ let%test_unit _ =
   [%test_result: int list] (to_list (range 0 5000)) ~expect:(List.range 0 5000)
 ;;
 
-(* Functions used for testing by comparing to List implementation*)
+(* Functions used for testing by comparing to List implementation *)
 let test_to_list s f g = [%test_result: int list] (to_list (f s)) ~expect:(g (to_list s))
 
-(* For testing, we create a sequence which is equal to 1;2;3;4;5, but
-   with a more interesting structure inside*)
+(* For testing, we create a sequence which is equal to 1;2;3;4;5, but with a more
+   interesting structure inside *)
 
 let s12345 =
   map

@@ -12,6 +12,7 @@ build: [
 depends: [
   "ocaml" {>= "5.1.0"}
   "basement"
+  "capsule0"
   "ocaml_intrinsics_kernel"
   "ppx_array_base"
   "ppx_base"

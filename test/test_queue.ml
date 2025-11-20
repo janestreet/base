@@ -1193,7 +1193,7 @@ module%test _ : module type of Queue = struct
     in
     assert (does_raise (fun () -> filter_inplace t ~f));
     (* even though we said to drop the first element, the aborted call to [filter_inplace]
-          shouldn't have made that change *)
+       shouldn't have made that change *)
     (match peek_exn t with
      | `drop_this -> ()
      | `new_element | `enqueue_new_element | `unreachable ->
@@ -1242,5 +1242,5 @@ module%test _ : module type of Queue = struct
     ;;
   end
 end
-(* This signature is here to remind us to update the unit tests whenever we
-      change [Queue]. *)
+(* This signature is here to remind us to update the unit tests whenever we change
+   [Queue]. *)

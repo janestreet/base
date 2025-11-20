@@ -4,8 +4,8 @@ module type Hashtbl_for_testing = sig
   include Hashtbl.Accessors with type 'key key = 'key
   include Invariant.S2 with type ('key, 'data) t := ('key, 'data) t
 
-  (* we don't define [module Poly : Hashtbl.S_poly] because we want to require only
-     the minimal number of constructors necessary to implement the tests, and also avoid
+  (* we don't define [module Poly : Hashtbl.S_poly] because we want to require only the
+     minimal number of constructors necessary to implement the tests, and also avoid
      conflicting with any existing names. *)
 
   val create_poly : ?size:int -> unit -> ('key, 'data) t
@@ -338,7 +338,7 @@ module Make (Hashtbl : Hashtbl_for_testing) = struct
 end
 
 (* typechecking this code is a compile-time test that [Creators] is a specialization of
-   [Creators_generic].  *)
+   [Creators_generic]. *)
 module _ : sig end = struct
   module Make_creators_check
       (Type : T.T2)

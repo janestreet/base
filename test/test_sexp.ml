@@ -8,9 +8,9 @@ let%expect_test "escaped_with_utf8 quotes" =
   [%expect {| hV\" |}]
 ;;
 
-(* Make sure we avoid turning "\195\188" ("ü") into "\252" which would be an invalid
-   UTF-8 string, but is what we'd get if we naively do this, because it's a valid
-   latin-1 encoding:
+(* Make sure we avoid turning "\195\188" ("ü") into "\252" which would be an invalid UTF-8
+   string, but is what we'd get if we naively do this, because it's a valid latin-1
+   encoding:
 
    {v
      utop # Uchar.Utf8.of_string "ü" |> Uchar.to_char;;

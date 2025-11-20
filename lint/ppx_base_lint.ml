@@ -148,7 +148,7 @@ let check current_module =
                   (remove_loc#attributes new_attrs))
           then (
             (* Remove attributes written by the user that correspond to attributes in the
-             expansion *)
+               expansion *)
             List.iter attrs ~f:(fun a ->
               if is_part_of_expansion a
               then Driver.register_correction ~loc:a.attr_loc ~repl:"");

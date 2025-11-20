@@ -21,7 +21,7 @@ module Definitions = struct
     [@@@mode m = (global, local)]
 
     type ('a : any, 'b) compare_fn := 'a @ m -> 'a @ m -> 'b
-    type ('a, 'b : any) fn := 'a @ m -> 'b @ m
+    type ('a : any, 'b : any) fn := 'a @ m -> 'b @ m
     type ('a : any) select_fn := 'a @ m -> 'a @ m -> 'a @ m
 
     [@@@mode.default m]
@@ -29,10 +29,12 @@ module Definitions = struct
 
     (** [lexicographic cmps x y] compares [x] and [y] lexicographically using functions in
         the list [cmps]. *)
-    val lexicographic : ('a : k, int) compare_fn list -> ('a, int) compare_fn
+    val lexicographic : ('a : k). ('a, int) compare_fn list -> ('a, int) compare_fn
 
     (** [lift cmp ~f x y] compares [x] and [y] by comparing [f x] and [f y] via [cmp]. *)
-    val lift : ('a : k, 'result) compare_fn -> f:('b, 'a) fn -> ('b, 'result) compare_fn
+    val lift
+      : ('a : k) ('b : value_or_null) 'result.
+      ('a, 'result) compare_fn -> f:('b, 'a) fn -> ('b, 'result) compare_fn
 
     (** [reverse cmp x y = cmp y x]
 
@@ -43,16 +45,16 @@ module Definitions = struct
         [Comparable.S] provides [ascending] and [descending], which are more readable as a
         pair than [compare] and [reverse compare]. Similarly, [<=] is more idiomatic than
         [reverse (>=)]. *)
-    val reverse : ('a : k, 'result) compare_fn -> ('a, 'result) compare_fn
+    val reverse : ('a : k) 'result. ('a, 'result) compare_fn -> ('a, 'result) compare_fn
 
-    val compare_reversed : ('a : k, int) compare_fn -> ('a reversed, int) compare_fn
+    val compare_reversed : ('a : k). ('a, int) compare_fn -> ('a reversed, int) compare_fn
 
     (** The functions below are analogues of the type-specific functions exported by the
         [Comparable.S] interface. *)
 
-    val equal : ('a : k, int) compare_fn -> ('a, bool) compare_fn
-    val max : ('a : k, int) compare_fn -> 'a select_fn
-    val min : ('a : k, int) compare_fn -> 'a select_fn
+    val equal : ('a : k). ('a, int) compare_fn -> ('a, bool) compare_fn
+    val max : ('a : k). ('a, int) compare_fn -> 'a select_fn
+    val min : ('a : k). ('a, int) compare_fn -> 'a select_fn
   end
 
   module type%template

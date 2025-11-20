@@ -762,73 +762,65 @@ let%expect_test "[chunks_of]" =
     |}]
 ;;
 
+[%%template
+let print sexp_of t = t |> sexp_of |> Sexplib.Sexp.to_string_hum |> print_endline
+
 let%expect_test "templated map{,i}" =
-  let%template[@kind k = (value, bits64, float64)] print t f =
-    for i = 0 to length t - 1 do
-      let x = get t i in
-      print_s (f x)
-    done
-  in
   let t = Array.init 6 ~f:(fun i -> Int63.of_int (i + 1)) in
-  print t Int63.sexp_of_t;
-  [%expect
-    {|
-    1
-    2
-    3
-    4
-    5
-    6
-    |}];
+  print [%sexp_of: (Int63.t Array.t[@kind immediate64])] t;
+  [%expect {| (1 2 3 4 5 6) |}];
   let t =
     (mapi [@kind immediate64 value]) t ~f:(fun i x -> {%string|%{i#Int}%{x#Int63}|})
   in
-  print t String.sexp_of_t;
-  [%expect
-    {|
-    01
-    12
-    23
-    34
-    45
-    56
-    |}];
+  print [%sexp_of: string array] t;
+  [%expect {| (01 12 23 34 45 56) |}];
   let t = (map [@kind value bits64]) t ~f:(fun x -> Int64_u.(of_string x + #1L)) in
-  (print [@kind bits64]) t Int64_u.sexp_of_t;
-  [%expect
-    {|
-    2
-    13
-    24
-    35
-    46
-    57
-    |}];
+  print [%sexp_of: (Int64_u.t Array.t[@kind bits64])] t;
+  [%expect {| (2 13 24 35 46 57) |}];
   let t =
     (mapi [@kind bits64 float64]) t ~f:(fun i x ->
       let f = Int64_u.to_float x in
       let i = Float_u.of_int i in
       Float_u.((f * #2.25) - i))
   in
-  (print [@kind float64]) t Float_u.sexp_of_t;
-  [%expect
-    {|
-    4.5
-    28.25
-    52
-    75.75
-    99.5
-    123.25
-    |}];
+  print [%sexp_of: (Float_u.t Array.t[@kind float64])] t;
+  [%expect {| (4.5 28.25 52 75.75 99.5 123.25) |}];
   let t = (map [@kind float64 immediate]) t ~f:(fun x -> Float_u.(x > #55.0)) in
-  print t Bool.sexp_of_t;
+  print [%sexp_of: (bool Array.t[@kind immediate])] t;
+  [%expect {| (false false false true true true) |}]
+;;
+
+let%expect_test "derivers on value_or_null" =
+  let t = [| Null; This 2; This 3; Null |] in
+  let t' = stack_ [| Null; This 2; This 3; Null |] in
+  print [%sexp_of: int or_null array] t;
+  print [%sexp_of: Int.t Or_null.t Array.t] t;
   [%expect
     {|
-    false
-    false
-    false
-    true
-    true
-    true
+    (() (2) (3) ())
+    (() (2) (3) ())
+    |}];
+  print
+    [%sexp_of: int or_null array]
+    (t |> [%sexp_of: int or_null array] |> [%of_sexp: int or_null array]);
+  print
+    [%sexp_of: Int.t Or_null.t Array.t]
+    (t |> [%sexp_of: Int.t Or_null.t Array.t] |> [%of_sexp: Int.t Or_null.t Array.t]);
+  [%expect
+    {|
+    (() (2) (3) ())
+    (() (2) (3) ())
+    |}];
+  print [%sexp_of: int] (([%compare: int or_null array] [@mode local]) t t');
+  [%expect {| 0 |}];
+  t'.(0) <- This 1;
+  print [%sexp_of: int] (([%compare: Int.t Or_null.t Array.t] [@mode local]) t t');
+  [%expect {| -1 |}];
+  print [%sexp_of: int or_null array] ([%globalize: int or_null array] t');
+  print [%sexp_of: Int.t Or_null.t Array.t] ([%globalize: Int.t Or_null.t Array.t] t');
+  [%expect
+    {|
+    ((1) (2) (3) ())
+    ((1) (2) (3) ())
     |}]
-;;
+;;]

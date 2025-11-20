@@ -1,7 +1,6 @@
-(* A 63bit integer is a 64bit integer with its bits shifted to the left
-   and its lowest bit set to 0.
-   This is the same kind of encoding as OCaml int on 64bit architecture.
-   The only difference being the lowest bit (immediate bit) set to 1. *)
+(* A 63bit integer is a 64bit integer with its bits shifted to the left and its lowest bit
+   set to 0. This is the same kind of encoding as OCaml int on 64bit architecture. The
+   only difference being the lowest bit (immediate bit) set to 1. *)
 
 open! Import
 module Sexp = Sexp0
@@ -159,11 +158,9 @@ module T = struct
     Printf.failwithf "Int63.of_string: invalid input %S" (globalize_string x) ()
   ;;
 
-  (*
-     "sign" refers to whether the number starts with a '-'
-     "signedness = false" means the rest of the number is parsed as unsigned and then cast
-     to signed with wrap-around modulo 2^i
-     "signedness = true" means no such craziness happens
+  (* "sign" refers to whether the number starts with a '-' "signedness = false" means the
+     rest of the number is parsed as unsigned and then cast to signed with wrap-around
+     modulo 2^i "signedness = true" means no such craziness happens
 
      The terminology and the logic is due to the code in byterun/ints.c in ocaml 4.03
      ([parse_sign_and_base] function).
@@ -448,8 +445,7 @@ end
 
 let repr = Repr.Int64
 
-(* Include type-specific [Replace_polymorphic_compare] at the end, after
-   including functor application that could shadow its definitions. This is
-   here so that efficient versions of the comparison functions are exported by
-   this module. *)
+(* Include type-specific [Replace_polymorphic_compare] at the end, after including functor
+   application that could shadow its definitions. This is here so that efficient versions
+   of the comparison functions are exported by this module. *)
 include Int64_replace_polymorphic_compare

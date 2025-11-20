@@ -96,9 +96,8 @@ module%test Avoid_stack_overflow = struct
   ;;
 end
 
-(* Most tests are for the default, non-portable version of error functions.
-   This test helps us gain confidence that the portable versions of error
-   functions are equivalent.
+(* Most tests are for the default, non-portable version of error functions. This test
+   helps us gain confidence that the portable versions of error functions are equivalent.
 *)
 module%test Portable_feature_parity = struct
   module Operation = struct

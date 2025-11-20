@@ -1,12 +1,12 @@
 open! Import
 module Int = Int0
 module Char = Char0
-module Capsule = Basement.Capsule
+module Capsule = Capsule_expert
 
 (* Unfortunately, because the standard library does not expose
-   [Stdlib.Random.State.default], we have to construct our own.  We then build the
-   [Stdlib.Random.int], [Stdlib.Random.bool] functions and friends using that default state in
-   exactly the same way as the standard library. *)
+   [Stdlib.Random.State.default], we have to construct our own. We then build the
+   [Stdlib.Random.int], [Stdlib.Random.bool] functions and friends using that default
+   state in exactly the same way as the standard library. *)
 module Random_repr : sig
   val assign
     :  src:Stdlib.Random.State.t @ local
@@ -43,7 +43,7 @@ end = struct
 end
 
 (* Regression tests ought to be deterministic because that way anyone who breaks the test
-   knows that it's their code that broke the test.  If tests are nondeterministic, a test
+   knows that it's their code that broke the test. If tests are nondeterministic, a test
    failure may instead happen because the test runner got unlucky and uncovered an
    existing bug in the code supposedly being "protected" by the test in question. *)
 let forbid_nondeterminism_in_tests ~allow_in_tests =
@@ -123,18 +123,18 @@ module State = struct
       let%template state_initializer =
         if am_testing
         then (
-          (* We define Base's default random state as a copy of OCaml's default random state.
-             This means that programs that use Base.Random will see the same sequence of
-             random bits as if they had used Stdlib.Random. However, because [get_state] returns
-             a copy, Base.Random and OCaml.Random are not using the same state. If a program
-             used both, each of them would go through the same sequence of random bits. To
-             avoid that, we reset OCaml's random state to a different seed, giving it a
-             different sequence. *)
+          (* We define Base's default random state as a copy of OCaml's default random
+             state. This means that programs that use Base.Random will see the same
+             sequence of random bits as if they had used Stdlib.Random. However, because
+             [get_state] returns a copy, Base.Random and OCaml.Random are not using the
+             same state. If a program used both, each of them would go through the same
+             sequence of random bits. To avoid that, we reset OCaml's random state to a
+             different seed, giving it a different sequence. *)
           let (P (type k) (key : k Capsule.Key.t)) = Capsule.create () in
           let initial_state = copy_into_capsule (Stdlib.Random.get_state ()) in
           Stdlib.Random.init 137;
-          (* This function is run at most once per domain, and we only destroy the
-             key on the initial domain. *)
+          (* This function is run at most once per domain, and we only destroy the key on
+             the initial domain. *)
           (Obj.magic_many [@mode portable]) (fun () ->
             if Stdlib.Domain.is_main_domain ()
             then (
@@ -176,8 +176,8 @@ module State = struct
     let[@inline] with_stdlib ~f t =
       match unwrap t with
       | Default ->
-        (* This is thread safe because the state is only updated via a non-preemptable
-           C call, [f] does not yield, and [f] does not borrow the state. *)
+        (* This is thread safe because the state is only updated via a non-preemptable C
+           call, [f] does not yield, and [f] does not borrow the state. *)
         let default_state = Obj.magic_uncontended (DLS.get default_state) in
         f default_state [@nontail]
       | Custom st -> f (Lazy.force st)

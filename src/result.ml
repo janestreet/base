@@ -100,15 +100,18 @@ let iter_error v ~f =
   | Error x -> f x
 ;;
 
-let%template[@mode m = (global, local)] to_either : _ t @ m -> _ Either.t @ m = function
+[%%template
+[@@@mode.default m = (global, local)]
+
+let to_either : _ t @ m -> _ Either.t @ m = function
   | Ok x -> First x [@exclave_if_local m]
   | Error x -> Second x [@exclave_if_local m]
 ;;
 
-let of_either : _ Either.t -> _ t = function
-  | First x -> Ok x
-  | Second x -> Error x
-;;
+let of_either : _ Either.t @ m -> _ t @ m = function
+  | First x -> Ok x [@exclave_if_local m]
+  | Second x -> Error x [@exclave_if_local m]
+;;]
 
 let ok_if_true bool ~error = if bool then Ok () else Error error
 
@@ -146,11 +149,15 @@ let combine t1 t2 ~ok ~err =
   | Error err1, Error err2 -> Error (err err1 err2)
 ;;
 
+[%%template
+[@@@alloc.default a @ m = (heap_global, stack_local)]
+
 let combine_errors l =
-  let ok, errs = List1.partition_map l ~f:to_either in
-  match errs with
-  | [] -> Ok ok
-  | _ :: _ -> Error errs
-;;
+  (let ok, errs = (List1.partition_map [@mode m] [@alloc a]) l ~f:(to_either [@mode m]) in
+   match errs with
+   | [] -> Ok ok
+   | _ :: _ -> Error errs)
+  [@exclave_if_stack a]
+;;]
 
 let combine_errors_unit l = map (combine_errors l) ~f:(fun (_ : unit list) -> ())

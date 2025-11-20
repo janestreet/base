@@ -105,8 +105,8 @@ external bswap64 : local_ t -> (t[@local_opt]) @@ portable = "%bswap_int64"
 let[@inline always] bswap16 x = shift_right_logical (bswap64 x) 48
 
 let[@inline always] bswap32 x =
-  (* This is strictly better than coercing to an int32 to perform byteswap. Coercing
-     from an int32 will add unnecessary shift operations to sign extend the number
+  (* This is strictly better than coercing to an int32 to perform byteswap. Coercing from
+     an int32 will add unnecessary shift operations to sign extend the number
      appropriately.
   *)
   shift_right_logical (bswap64 x) 32
@@ -356,8 +356,7 @@ module Summable = struct
   let[@inline] ( - ) x y = x - y
 end
 
-(* Include type-specific [Replace_polymorphic_compare] at the end, after
-   including functor application that could shadow its definitions. This is
-   here so that efficient versions of the comparison functions are exported by
-   this module. *)
+(* Include type-specific [Replace_polymorphic_compare] at the end, after including functor
+   application that could shadow its definitions. This is here so that efficient versions
+   of the comparison functions are exported by this module. *)
 include Int64_replace_polymorphic_compare

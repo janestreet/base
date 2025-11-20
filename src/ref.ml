@@ -17,9 +17,19 @@ end)
    contents : 'a } ] which would result in different (and unwanted) behavior.  *)
 type ('a : value_or_null) t = 'a ref = { mutable contents : 'a }
 
-external create : 'a -> ('a t[@local_opt]) @@ portable = "%makemutable"
-external ( ! ) : ('a t[@local_opt]) -> 'a @@ portable = "%field0"
-external ( := ) : ('a t[@local_opt]) -> 'a -> unit @@ portable = "%setfield0"
+external create
+  : ('a : value_or_null).
+  'a -> ('a t[@local_opt])
+  @@ portable
+  = "%makemutable"
+
+external ( ! ) : ('a : value_or_null). ('a t[@local_opt]) -> 'a @@ portable = "%field0"
+
+external ( := )
+  : ('a : value_or_null).
+  ('a t[@local_opt]) -> 'a -> unit
+  @@ portable
+  = "%setfield0"
 
 let swap t1 t2 =
   let tmp = !t1 in

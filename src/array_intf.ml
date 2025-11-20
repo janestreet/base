@@ -26,14 +26,15 @@ module Definitions = struct
       type 'a t := 'a t
       type 'a t = 'a t [@@kind base_non_value, immediate, immediate64]]
 
-    [@@@kind k = base_with_imm]
+    [@@@kind k = base_or_null_with_imm]
 
     [%%rederive:
-      type nonrec ('a : k) t = 'a t
+      type nonrec ('a : k mod separable) t = 'a t
       [@@kind k]
       [@@deriving compare ~localize, equal ~localize, sexp ~stackify, globalize]]]
 
-    [%%rederive: type nonrec 'a t = 'a t [@@deriving sexp_grammar]]
+    [%%rederive:
+      type nonrec ('a : value_or_null mod separable) t = 'a t [@@deriving sexp_grammar]]
 
     include Indexed_container.S1_with_creators with type 'a t := 'a t
     include Invariant.S1 with type 'a t := 'a t
@@ -147,7 +148,9 @@ module Definitions = struct
     val create_float_uninitialized : len:int -> float t
 
     (** [init n ~f] creates an array of length [n] with index [i] set to [f i]. *)
-    val%template init : int -> f:(int -> 'a) @ local -> 'a array @ m
+    val%template init
+      : ('a : value_or_null mod separable).
+      int -> f:(int -> 'a) @ local -> 'a array @ m
     [@@alloc __ @ m = (heap_global, stack_local)]
 
     (** [Array.make_matrix dimx dimy e] returns a two-dimensional array (an array of
@@ -470,7 +473,7 @@ module type Array = sig @@ portable
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+      https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     module%template [@kind k = value_with_imm] Sort : sig
       module type Sort = sig @@ portable

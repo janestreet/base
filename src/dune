@@ -20,8 +20,8 @@
  (ocamlopt_flags
   :standard
   (:include ocamlopt-flags))
- (libraries ppx_hash.base_internalhash_types basement ocaml_intrinsics_kernel
-   sexplib0 shadow_stdlib)
+ (libraries ppx_hash.base_internalhash_types basement capsule0.expert
+   ocaml_intrinsics_kernel sexplib0 shadow_stdlib)
  (preprocess
   (pps ppx_base ppx_base_internal ppx_base_lint ppx_array_base
     -do-not-correct-cold-attributes -require-template-extension

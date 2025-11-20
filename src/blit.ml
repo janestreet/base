@@ -46,8 +46,7 @@ module%template.portable Make1_phantom2_distinct
   ;;
 
   (* [sub] and [subo] ensure that every position of the created sequence is populated by
-     an element of the source array.  Thus every element of [dst] below is well
-     defined. *)
+     an element of the source array. Thus every element of [dst] below is well defined. *)
   let sub src ~pos ~len =
     Ordered_collection_common.check_pos_len_exn ~pos ~len ~total_length:(Src.length src);
     let dst = Dst.create_like ~len src in

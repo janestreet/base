@@ -263,6 +263,8 @@ module Definitions = struct
           , ('k, 'v, 'cmp) t -> 'k key -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
           access_options
 
+    val split_n : ('k, 'v, 'cmp) t -> int -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
+
     val append
       : ( 'k
           , 'cmp
@@ -875,7 +877,13 @@ module type Map = sig @@ portable
     -> f:('v option -> 'v option) @ local
     -> ('k, 'v, 'cmp) t
 
-  (** [update t key ~f] is [change t key ~f:(fun o -> Some (f o))]. *)
+  (** [update t key ~f] returns a new map which is the same as [t] but sets the value
+      corresponding to [key] to the result of [f].
+
+      [f] is called with Some value if [key] is present in the map, otherwise None.
+
+      [update] can never remove an item from the map. See [change] if you need to remove
+      values. *)
   val update : ('k, 'v, 'cmp) t -> 'k -> f:('v option -> 'v) @ local -> ('k, 'v, 'cmp) t
 
   (** [update_and_return t key ~f] is like [update t key ~f], but also returns the new
@@ -1192,11 +1200,8 @@ module type Map = sig @@ portable
     -> 'a
 
   (** [split t key] returns a map of keys strictly less than [key], the mapping of [key]
-      if any, and a map of keys strictly greater than [key].
-
-      Runtime is O(m + log n), where n is the size of the input map and m is the size of
-      the smaller of the two output maps. The O(m) term is due to the need to calculate
-      the length of the output maps. *)
+      if any, and a map of keys strictly greater than [key]. Runtime is O(log n), where n
+      is the size of the input map. *)
   val split
     :  ('k, 'v, 'cmp) t
     -> 'k
@@ -1217,6 +1222,10 @@ module type Map = sig @@ portable
       the smaller of the two output maps. The O(m) term is due to the need to calculate
       the length of the output maps. *)
   val split_lt_ge : ('k, 'v, 'cmp) t -> 'k -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
+
+  (** [split_n t n = l, r] such that [append ~lower_part:l ~upper_part:r = `Ok t] and
+      [length l = n], or as close as possible if [n < 0] or [n > length t]. *)
+  val split_n : ('k, 'v, 'cmp) t -> int -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
 
   (** [count_lt t key] returns the number of keys in [t] that are strictly less than
       [key].

@@ -46,7 +46,7 @@ end
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-  https://opensource.janestreet.com/standards/#private-submodules *)
+    https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   val int_pow : local_ int -> local_ int -> int
   val int64_pow : local_ int64 -> local_ int64 -> int64

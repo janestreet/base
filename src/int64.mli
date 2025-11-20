@@ -10,9 +10,8 @@ include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t
 
 module O : sig
-  (*_ Declared as externals
-    so that the compiler skips the caml_apply_X wrapping even when
-    compiling without cross library inlining. *)
+  (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
+      compiling without cross library inlining. *)
   external ( + ) : local_ t -> local_ t -> (t[@local_opt]) = "%int64_add"
   external ( - ) : local_ t -> local_ t -> (t[@local_opt]) = "%int64_sub"
   external ( * ) : local_ t -> local_ t -> (t[@local_opt]) = "%int64_mul"
@@ -46,7 +45,7 @@ include module type of O
 (** {2 Conversion functions} *)
 
 (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
-  compiling without cross library inlining. *)
+    compiling without cross library inlining. *)
 external of_int : int -> (t[@local_opt]) = "%int64_of_int"
 external of_int32 : local_ int32 -> (t[@local_opt]) = "%int64_of_int32"
 external of_int64 : (t[@local_opt]) -> (t[@local_opt]) = "%identity"
@@ -61,7 +60,7 @@ val to_nativeint : local_ t -> nativeint option
     optional conversions return [Some x], truncating conversions return [x]. *)
 
 (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even when
-  compiling without cross library inlining. *)
+    compiling without cross library inlining. *)
 external to_int_trunc : local_ t -> int = "%int64_to_int"
 external to_int32_trunc : local_ t -> (int32[@local_opt]) = "%int64_to_int32"
 external to_nativeint_trunc : local_ t -> (nativeint[@local_opt]) = "%int64_to_nativeint"
@@ -98,5 +97,5 @@ val bswap32 : local_ t -> t
 val bswap48 : local_ t -> t
 
 (*_ Declared as an external so that the compiler skips the caml_apply_X wrapping even when
-  compiling without cross library inlining. *)
+    compiling without cross library inlining. *)
 external bswap64 : local_ t -> (t[@local_opt]) = "%bswap_int64"

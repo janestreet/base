@@ -1,9 +1,9 @@
 (* [List0] defines list functions that are primitives or can be simply defined in terms of
-   [Stdlib.List].  [List0] is intended to completely express the part of [Stdlib.List] that
+   [Stdlib.List]. [List0] is intended to completely express the part of [Stdlib.List] that
    [Base] uses -- no other file in Base other than list0.ml should use [Stdlib.List].
-   [List0] has few dependencies, and so is available early in Base's build order.  All
-   Base files that need to use lists and come before [Base.List] in build order should do
-   [module List = List0].  Defining [module List = List0] is also necessary because it
+   [List0] has few dependencies, and so is available early in Base's build order. All Base
+   files that need to use lists and come before [Base.List] in build order should do
+   [module List = List0]. Defining [module List = List0] is also necessary because it
    prevents ocamldep from mistakenly causing a file to depend on [Base.List]. *)
 
 [@@@warning "-incompatible-with-upstream"]

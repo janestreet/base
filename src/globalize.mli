@@ -24,9 +24,9 @@ val globalize_string : local_ string -> string
 val globalize_unit : local_ unit -> unit
 
 val%template globalize_array
-  : ('a : k) ('b : any).
+  : ('a : k mod separable) ('b : any).
   (local_ 'a -> 'b) -> local_ 'a array -> 'a array
-[@@kind k = base_with_imm]
+[@@kind k = base_or_null_with_imm]
 
 val globalize_floatarray : local_ floatarray -> floatarray
 val globalize_lazy_t : (local_ 'a -> 'b) -> local_ 'a lazy_t -> 'a lazy_t

@@ -1,4 +1,4 @@
-(* This module is included in [Import].  It is aimed at modules that define the standard
+(* This module is included in [Import]. It is aimed at modules that define the standard
    combinators for [sexp_of], [of_sexp], [compare] and [hash] and are included in
    [Import]. *)
 
@@ -58,7 +58,8 @@ module Stdlib = struct
   include Stdlib.StdLabels
   include Stdlib.MoreLabels
 
-  (* Shadow unsafe [Stdlib] functions with their safe versions from [Basement.Stdlib_shim]. *)
+  (* Shadow unsafe [Stdlib] functions with their safe versions from
+     [Basement.Stdlib_shim]. *)
 
   module Atomic = struct
     include Stdlib.Atomic
@@ -174,8 +175,7 @@ external ( := )
   @@ portable
   = "%setfield0"
 
-(* These need to be defined as an external otherwise the compiler won't unbox
-   references. *)
+(* These need to be defined as an external otherwise the compiler won't unbox references. *)
 external ( ! ) : ('a : value_or_null). ('a ref[@local_opt]) -> 'a @@ portable = "%field0"
 
 external ref
@@ -248,7 +248,7 @@ external incr : (int ref[@local_opt]) -> unit @@ portable = "%incr"
 let float_of_string = Stdlib.float_of_string
 
 (* [am_testing] is used in a few places to behave differently when in testing mode, such
-   as in [random.ml].  [am_testing] is implemented using [Base_am_testing], a weak C/js
+   as in [random.ml]. [am_testing] is implemented using [Base_am_testing], a weak C/js
    primitive that returns [false], but when linking an inline-test-runner executable, is
    overridden by another primitive that returns [true]. *)
 external am_testing : unit -> bool @@ portable = "Base_am_testing"
