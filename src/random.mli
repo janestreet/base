@@ -6,18 +6,18 @@
     state with that library. *)
 
 (*_ {v
-  (***********************************************************************)
-  (*                                                                     *)
-  (*                           Objective Caml                            *)
-  (*                                                                     *)
-  (*              Damien Doligez, projet Para, INRIA Rocquencourt        *)
-  (*                                                                     *)
-  (*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-  (*  en Automatique.  All rights reserved.  This file is distributed    *)
-  (*  under the terms of the Apache 2.0 license. See ../THIRD-PARTY.txt  *)
-  (*  for details.                                                       *)
-  (*                                                                     *)
-  (***********************************************************************)
+  (***********************************************************************
+   *
+   *                           Objective Caml
+   *
+   *              Damien Doligez, projet Para, INRIA Rocquencourt
+   *
+   *  Copyright 1996 Institut National de Recherche en Informatique et
+   *  en Automatique.  All rights reserved.  This file is distributed
+   *  under the terms of the Apache 2.0 license. See ../THIRD-PARTY.txt
+   *  for details.
+   *
+   ***********************************************************************)
     v} *)
 
 open! Import

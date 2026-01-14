@@ -293,7 +293,7 @@ module O = struct
      the [Int_math.Make] functor, and we didn't want to degrade their performance.
 
      We won't pre-emptively do the same for new functions, unless someone cares, on a case
-     by case fashion.  *)
+     by case fashion. *)
 
   let ( % ) x y =
     if y <= zero

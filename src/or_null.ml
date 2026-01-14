@@ -4,7 +4,15 @@ type 'a t = 'a or_null [@@or_null_reexport]
 
 external is_null : _ or_null @ immutable local -> bool @@ portable = "%is_null"
 
-external unsafe_value : ('a t[@local_opt]) -> ('a[@local_opt]) @@ portable = "%identity"
+[%%template
+  external unsafe_value : 'a t @ m -> 'a @ m @@ portable = "%obj_magic"
+  [@@mode m = (global, local)]]
+
+external really_unsafe_value
+  :  ('a t[@local_opt])
+  -> ('a[@local_opt])
+  @@ portable
+  = "%identity"
 [@@alert unsafe_optimizations_if_misapplied]
 
 module Optional_syntax = struct
@@ -12,7 +20,7 @@ module Optional_syntax = struct
     let[@zero_alloc] [@inline] is_none t = is_null t
 
     let[@inline] unsafe_value t =
-      (unsafe_value [@alert "-unsafe_optimizations_if_misapplied"]) t
+      (really_unsafe_value [@alert "-unsafe_optimizations_if_misapplied"]) t
     ;;
   end
 end
@@ -230,13 +238,13 @@ let[@inline] [@mode global] try_with_join f =
 ;;
 
 let value t ~default = exclave_
-  (unsafe_value [@alert "-unsafe_optimizations_if_misapplied"])
+  (really_unsafe_value [@alert "-unsafe_optimizations_if_misapplied"])
     (Bool.select (is_null t) (This default) t)
 [@@inline] [@@mode local]
 ;;
 
 let value t ~default =
-  (unsafe_value [@alert "-unsafe_optimizations_if_misapplied"])
+  (really_unsafe_value [@alert "-unsafe_optimizations_if_misapplied"])
     (Bool.select (is_null t) (This default) t)
 [@@inline] [@@mode global]
 ;;
@@ -253,6 +261,9 @@ let[@inline] first_this t t' =
   Bool.select is_null t' t [@exclave_if_local m]
 ;;]
 
+(* redefine [is_null] as a let bind so we can mark it [@zero_alloc]. It is not exposed as
+   an external and externals exposed as vals cannot be marked [@zero_alloc]. *)
+let[@inline] is_null t = is_null t
 let[@inline] is_this t = not (is_null t)
 let[@inline] length t = Bool.to_int (is_this t)
 

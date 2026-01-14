@@ -369,7 +369,7 @@ module State = struct
       else in_range state lo hi
   ;;
 
-  (* Return a uniformly random float in [0, 1). *)
+  (*=Return a uniformly random float in [0, 1). *)
   let[@inline] rawfloat state =
     let result = ref 0.0 in
     while

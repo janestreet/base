@@ -31,24 +31,16 @@ module Constructors : module type of Option0
 
 type ('a : k) t = ('a Constructors.t[@kind k])
 [@@deriving compare ~localize, equal ~localize, sexp ~stackify]
-[@@kind k = (base_non_value, value & (base_with_imm, kr1, kr2, kr3))]
+[@@kind k = (base_non_value, value & (base, kr1, kr2, kr3))]
 
 type ('a : value_or_null) t = 'a option =
   | None
   | Some of 'a
 
-type ('a : value_or_null) t = 'a t
-[@@kind __ = (immediate, immediate64, value mod external_, value mod external64)]
-
-[%%template:
-[@@@kind
-  k = (value_or_null, immediate, immediate64, value mod external_, value mod external64)]
-
 [%%rederive:
-  type nonrec ('a : value_or_null) t = ('a t[@kind k])
-  [@@kind k]
+  type nonrec ('a : value_or_null) t = 'a t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]
 
 include Invariant.S1 with type 'a t := 'a t
 
@@ -83,7 +75,7 @@ include%template
 
 [%%template:
 [@@@mode.default m = (global, local)]
-[@@@kind.default k = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
+[@@@kind.default k = (base_or_null, value & (base, kr1, kr2, kr3))]
 
 (** Extracts the underlying value if present, otherwise returns [default]. *)
 val value : ('a : k). ('a t[@kind k]) @ m -> default:'a @ m -> 'a @ m
@@ -104,7 +96,7 @@ val value_or_thunk
 val iter : ('a : k). ('a t[@kind k]) @ m -> f:('a @ m -> unit) @ local -> unit
 
 [@@@kind ki = k]
-[@@@kind.default ko = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
+[@@@kind.default ko = (base_or_null, value & (base, kr1, kr2, kr3))]
 
 (** Extracts the underlying value and applies [f] to it if present, otherwise returns
     [default]. *)
@@ -199,7 +191,7 @@ val some_if_thunk : ('a : value_or_null). bool -> (unit -> 'a @ m) @ local -> 'a
 (** {2 Predicates} *)
 
 [%%template:
-[@@@kind.default k = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
+[@@@kind.default k = (base_or_null, value & (base, kr1, kr2, kr3))]
 
 (** [is_none t] returns true iff [t = None]. *)
 val is_none : ('a : k). ('a t[@kind k]) @ contended local -> bool

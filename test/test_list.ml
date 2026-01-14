@@ -275,6 +275,21 @@ module [@kind k = value] [@alloc a @ l = (stack_local, heap_global)] _ = struct
       ([%test_eq: Elt.t option] [@alloc stack]) actual expected [@nontail])
   ;;
 
+  let%test_unit [%name name "find_or_null"] =
+    Base_quickcheck.Test.run_exn ~config (module Harness) ~f:(fun list ->
+      let f x = Elt.compare x (Elt.of_int 7) > 0 in
+      let actual =
+        (List.find_or_null [@kind k] [@mode l]) (Harness.unbox list) ~f
+        |> (Or_null.to_option [@mode l])
+      in
+      let expected =
+        match Stdlib.List.find_opt (fun x -> f (Elt.unbox x)) list with
+        | Some x -> Some (Elt.unbox x)
+        | None -> None
+      in
+      ([%test_eq: Elt.t option] [@alloc stack]) actual expected [@nontail])
+  ;;
+
   let%test_unit [%name name "findi"] =
     Base_quickcheck.Test.run_exn ~config (module Harness) ~f:(fun list ->
       let f i x = i > 2 && Elt.compare x (Elt.of_int 4) <= 0 in
@@ -491,6 +506,51 @@ module [@kind k = value] [@alloc a @ l = (stack_local, heap_global)] _ = struct
         |> Stdlib.List.rev
       in
       ([%test_eq: Harness.t] [@alloc stack]) actual expected [@nontail])
+  ;;
+
+  let%test_unit [%name name "nth"] =
+    Base_quickcheck.Test.run_exn
+      ~config
+      (module struct
+        type t = Harness.t * int [@@deriving quickcheck, sexp_of]
+
+        let quickcheck_generator =
+          let open Base_quickcheck.Generator.Let_syntax in
+          let%bind harness_list = Harness.quickcheck_generator in
+          let%bind idx_to_look_for =
+            Base_quickcheck.Generator.small_positive_or_zero_int
+          in
+          return (harness_list, idx_to_look_for)
+        ;;
+      end)
+      ~f:(fun (list, idx) ->
+        let actual = (List.nth [@kind k k] [@mode l]) (Harness.unbox list) idx in
+        let expected = Stdlib.List.nth_opt list idx in
+        ([%test_eq: Elt.t option] [@alloc stack]) actual expected [@nontail])
+  ;;
+
+  let%test_unit [%name name "nth_or_null"] =
+    Base_quickcheck.Test.run_exn
+      ~config
+      (module struct
+        type t = Harness.t * int [@@deriving quickcheck, sexp_of]
+
+        let quickcheck_generator =
+          let open Base_quickcheck.Generator.Let_syntax in
+          let%bind harness_list = Harness.quickcheck_generator in
+          let%bind idx_to_look_for =
+            Base_quickcheck.Generator.small_positive_or_zero_int
+          in
+          return (harness_list, idx_to_look_for)
+        ;;
+      end)
+      ~f:(fun (list, idx) ->
+        let actual =
+          (List.nth_or_null [@kind k k] [@mode l]) (Harness.unbox list) idx
+          |> (Or_null.to_option [@mode l])
+        in
+        let expected = Stdlib.List.nth_opt list idx in
+        ([%test_eq: Elt.t option] [@alloc stack]) actual expected [@nontail])
   ;;
 end
 

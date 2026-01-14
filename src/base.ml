@@ -28,7 +28,7 @@
     inscrutable. *)
 (**/**)
 
-(* The intent is to shadow all of INRIA's standard library.  Modules below would cause
+(* The intent is to shadow all of INRIA's standard library. Modules below would cause
    compilation errors without being removed from [Shadow_stdlib] before inclusion. *)
 
 include (
@@ -98,7 +98,6 @@ module Comparable = Comparable
 module Comparator = Comparator
 module Comparisons = Comparisons
 module Container = Container
-module Container_with_local = Container_with_local
 module Dynamic = Dynamic
 module Either = Either
 module Equal = Equal
@@ -189,6 +188,7 @@ end
 
 module Exported_for_specific_uses = struct
   module Globalize = Globalize
+  module Integer_to_string = Integer_to_string
   module Obj_array = Obj_array
 
   let am_testing = am_testing

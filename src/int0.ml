@@ -16,7 +16,7 @@
 
 external format : string @ local -> int -> string @@ portable = "caml_format_int"
 
-let to_string (local_ n) = format "%d" n
+let to_string (local_ n) = Integer_to_string.int_to_string n
 
 external of_string : string @ local -> int @@ portable = "caml_int_of_string"
 

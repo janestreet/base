@@ -71,6 +71,7 @@ let name (Field field) = field.name
     , value & value & value & bits32
     , value & value & value & value & value
     , value & value & value & value & value & value
+    , value & value & value & value & value & value & value
     , float64 & float64 & float64 & float64 & float64 & float64
     , (float64 & float64 & float64 & float64 & float64 & float64)
       & (float64 & float64 & float64 & float64 & float64 & float64)

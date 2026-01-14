@@ -27,7 +27,7 @@ exception Reraised of string * t
 val create_s : Sexp.t -> t
 
 (** [create_s_lazy lazy_sexp] is like [create_s], but takes a lazily generated sexp. *)
-val create_s_lazy : Sexp.t Lazy.t -> t @@ nonportable
+val create_s_lazy : Sexp.t Portable_lazy.t -> t
 
 (** Same as [raise], except that the backtrace is not recorded. *)
 val raise_without_backtrace : ('a : value_or_null). t -> 'a @ portable unique

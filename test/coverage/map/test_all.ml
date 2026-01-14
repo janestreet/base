@@ -67,7 +67,7 @@ module type Hash_fold_m = Hash_fold_m
 module type Globalize_m = Globalize_m
 module type M_sexp_grammar = M_sexp_grammar
 module type M_of_sexp = M_of_sexp
-module type Sexp_of_m = Sexp_of_m
+module type%template [@alloc a = (heap, stack)] Sexp_of_m = Sexp_of_m [@alloc a]
 
 (** functor for ppx deriving - tested below *)
 
@@ -100,7 +100,7 @@ let%expect_test _ =
 
 (** sexp conversions and grammar *)
 
-let sexp_of_m__t = sexp_of_m__t
+let%template[@alloc a = (heap, stack)] sexp_of_m__t = (sexp_of_m__t [@alloc a])
 let m__t_of_sexp = m__t_of_sexp
 
 let%expect_test _ =
@@ -404,4 +404,10 @@ module Using_comparator = struct
       Functor.Transformers with module Types := Instances.Types.Using_comparator)
 
   module Tree = Tree
+end
+
+(** Enum module *)
+
+module Private = struct
+  module Enum = Test_enum
 end

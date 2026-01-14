@@ -4,14 +4,22 @@ open struct
   module Result = Result0
 end
 
-type%template ('a : k) t = { modal : 'a @@ a c g m p }
+type%template ('a : k) t = { modal : 'a @@ a c m p }
+[@@unboxed]
+[@@modality
+  a = aliased
+  , p = (nonportable, portable)
+  , c = (uncontended, shared, contended)
+  , m = (once, many)]
+[@@kind k = base_or_null]
+
+type%template ('a : k) t = { modal : 'a @@ c g m p }
 [@@unboxed]
 [@@modality
   g = (local, global)
   , p = (nonportable, portable)
   , c = (uncontended, shared, contended)
-  , m = (once, many)
-  , a = (unique, aliased)]
+  , m = (once, many)]
 [@@kind k = base_or_null]
 
 module Global = struct
@@ -713,14 +721,19 @@ module Contended_via_portable = struct
 end
 
 module Mod = struct
-  type%template ('a : any) t =
-    | Mod : ('a : any mod a c g m p). ('a t[@modality g p c m a])
+  type%template ('a : any) t = Mod : ('a : any mod a c m p). ('a t[@modality a p c m])
+  [@@modality
+    a = aliased
+    , p = (nonportable, portable)
+    , c = (uncontended, shared, contended)
+    , m = (once, many)]
+
+  type%template ('a : any) t = Mod : ('a : any mod c g m p). ('a t[@modality g p c m])
   [@@modality
     g = (local, global)
     , p = (nonportable, portable)
     , c = (uncontended, shared, contended)
-    , m = (once, many)
-    , a = (unique, aliased)]
+    , m = (once, many)]
 
   module Global = struct
     type%template ('a : any) t = ('a t[@modality global]) =

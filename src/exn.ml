@@ -6,7 +6,7 @@ type t = exn [@@deriving sexp_of]
 exception Finally of t * t [@@deriving sexp]
 exception Reraised of string * t [@@deriving sexp]
 exception Sexp of Sexp.t
-exception Sexp_lazy of Sexp.t Lazy.t
+exception Sexp_lazy of Sexp.t Portable_lazy.t
 
 (* We install a custom exn-converter rather than use:
 
@@ -22,7 +22,7 @@ let () =
       (* Reaching this branch indicates a bug in sexplib. *)
       assert false);
   Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Sexp_lazy] (function
-    | Sexp_lazy t -> Lazy.force t
+    | Sexp_lazy t -> Portable_lazy.force t
     | _ -> assert false)
 ;;
 

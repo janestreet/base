@@ -153,7 +153,7 @@ let combine t1 t2 ~ok ~err =
 [@@@alloc.default a @ m = (heap_global, stack_local)]
 
 let combine_errors l =
-  (let ok, errs = (List1.partition_map [@mode m] [@alloc a]) l ~f:(to_either [@mode m]) in
+  (let ok, errs = (List0.partition_map [@mode m] [@alloc a]) l ~f:(to_either [@mode m]) in
    match errs with
    | [] -> Ok ok
    | _ :: _ -> Error errs)

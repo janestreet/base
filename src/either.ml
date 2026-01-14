@@ -53,7 +53,7 @@ let equal eq1 eq2 (t1 : (_ t[@kind kf ks]) @ m) (t2 : (_ t[@kind kf ks]) @ m) =
   | First x, First y -> eq1 x y
   | Second x, Second y -> eq2 x y
   | First _, Second _ | Second _, First _ -> false
-[@@kind kf = base_or_null_with_imm, ks = base_or_null_with_imm]
+[@@kind kf = base_or_null, ks = base_or_null]
 ;;]
 
 let invariant f s = function

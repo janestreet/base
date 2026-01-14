@@ -52,9 +52,9 @@ module%test Type_equal = struct
 
   (* the following is rejected by the compiler *)
   (* let _a_to_b (a : A.t) =
-     *   let T = Id.same_witness_exn A.id B.id in
-     *   (a : B.t)
-    *)
+   *   let T = Id.same_witness_exn A.id B.id in
+   *   (a : B.t)
+   *)
 
   module C = struct
     type 'a t

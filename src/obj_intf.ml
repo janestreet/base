@@ -178,6 +178,13 @@ module type Obj = sig @@ portable
   [@@mode
     c = (uncontended, shared, contended), o = (many, once), p = (nonportable, portable)]
 
+  external%template magic_read_write_uncontended
+    : ('a : any).
+    ('a[@local_opt]) @ immutable o p u -> ('a[@local_opt]) @ o p u
+    = "%identity"
+  [@@layout_poly]
+  [@@mode o = (many, once), p = (nonportable, portable), u = (aliased, unique)]
+
   module Ephemeron : sig
     include module type of struct
       include Stdlib.Ephemeron

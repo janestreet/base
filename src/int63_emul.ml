@@ -195,7 +195,7 @@ module T = struct
     else sign, true
   ;;
 
-  let to_string x = Stdlib.Int64.to_string (globalize_int64 (unwrap x))
+  let to_string x = Integer_to_string.int64_to_string (unwrap x) [@nontail]
 
   let of_string_raw str =
     let sign, signedness = sign_and_signedness str in

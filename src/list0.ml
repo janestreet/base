@@ -38,16 +38,12 @@ module%template Constructors = struct
       , value_or_null & value_or_null & value_or_null & value_or_null )]
   [@@deriving compare ~localize, equal ~localize]
 
-  [@@@kind.default
-    k = (immediate, immediate64, value mod external_, value mod external64, value_or_null)]
-
   type ('a : value_or_null) t = 'a list =
     | []
-    | ( :: ) of 'a * ('a t[@kind k])
+    | ( :: ) of 'a * 'a t
 
   [%%rederive
-    type ('a : value_or_null) t = 'a list
-    [@@deriving compare ~localize, equal ~localize] [@@kind k]]
+    type ('a : value_or_null) t = 'a list [@@deriving compare ~localize, equal ~localize]]
 end
 
 open Constructors
@@ -55,13 +51,15 @@ open Constructors
 (* Some of these are eta expanded in order to permute parameter order to follow Base
    conventions. *)
 
+let is_empty = function
+  | [] -> true
+  | _ -> false
+;;
+
 [%%template
 [@@@kind.default
   k
-  = ( base_non_value
-    , immediate
-    , immediate64
-    , value_or_null
+  = ( base_or_null
     , value_or_null & value_or_null
     , value_or_null & value_or_null & value_or_null
     , value_or_null & value_or_null & value_or_null & value_or_null )]
@@ -132,8 +130,8 @@ let for_all t ~(f @ local) = not ((exists [@kind k] [@mode m]) t ~f:(fun x -> no
 [@@@kind.default
   ka = ka
   , kb
-    = ( base_or_null_with_imm
-      , value_or_null & base_or_null_with_imm
+    = ( base_or_null
+      , value_or_null & base_or_null
       , value_or_null & value_or_null & value_or_null
       , value_or_null & value_or_null & value_or_null & value_or_null )]
 
@@ -159,7 +157,7 @@ let fold = (fold_alloc [@mode ma] [@alloc heap] [@kind ka kb])
 [@@mode ma = (local, global), mb = global]
 ;;]
 
-[@@@kind.default kb = base_or_null_with_imm]
+[@@@kind.default kb = base_or_null]
 
 let rev_map =
   let rec rmap_f f accu : (_ t[@kind ka]) @ ma -> (_ t[@kind kb]) @ mb = function
@@ -220,6 +218,55 @@ let rev_map2_ok =
 
 let nontail_mapi t ~f = Stdlib.List.mapi t ~f
 let partition t ~f = Stdlib.List.partition t ~f
+
+[%%template
+[@@@mode.default mi = (global, local)]
+[@@@alloc.default a @ mo = (heap_global, stack_local)]
+
+let partition_map_unboxed_tail ~fst ~snd ~f xs =
+  let rec loop ~fst ~snd ~(f @ local) = function
+    | [] -> #((rev [@alloc a]) fst, (rev [@alloc a]) snd) [@exclave_if_stack a]
+    | x :: xs ->
+      (let #(fst, snd) =
+         match (f x : _ Either0.t) with
+         | First y -> #(y :: fst, snd)
+         | Second y -> #(fst, y :: snd)
+       in
+       loop ~fst ~snd ~f xs)
+      [@exclave_if_stack a]
+  in
+  loop ~fst ~snd ~f xs [@exclave_if_stack a]
+;;
+
+(* call-stack size <= input data-stack size *)
+let partition_map_unboxed ~depth ~f xs =
+  let rec loop ~depth ~f = function
+    | [] -> #([], [])
+    | x :: xs ->
+      (let y = f x in
+       let #(fst, snd) =
+         if depth <= max_non_tailcall
+         then loop ~depth:(depth + 1) ~f xs
+         else
+           (partition_map_unboxed_tail [@mode mi] [@alloc a] [@inlined never])
+             ~fst:[]
+             ~snd:[]
+             ~f
+             xs
+       in
+       (match (y : _ Either0.t) with
+        | First y -> #(y :: fst, snd)
+        | Second y -> #(fst, y :: snd)))
+      [@exclave_if_stack a]
+  in
+  loop ~depth ~f xs [@exclave_if_stack a]
+;;
+
+let partition_map t ~f =
+  (let #(fst, snd) = (partition_map_unboxed [@mode mi] [@alloc a]) ~depth:0 ~f t in
+   fst, snd)
+  [@exclave_if_stack a]
+;;]
 
 module For_fold_right = struct
   module%template [@mode global] Wrapper = struct

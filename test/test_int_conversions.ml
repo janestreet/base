@@ -251,3 +251,40 @@ module%test Make_hex = struct
     [%expect {| String |}]
   ;;
 end
+
+[%%test
+  module Integer_of_string_constants = struct
+    module Integer_of_string = Base.Exported_for_specific_uses.Integer_to_string
+
+    [%%expect_test
+      let "pow10" =
+        let actual = Integer_of_string.Private.Constants.pow10 in
+        let expect =
+          let set_int64 b pos v =
+            Bytes.unsafe_set_int64 b pos (if Sys.big_endian then Int64.bswap64 v else v)
+          in
+          let b = Bytes.create (20 * 8) in
+          let x = ref 1L in
+          for i = 0 to 18 do
+            let v =
+              let open Int64.O in
+              !x - 1L
+            in
+            set_int64 b (i * 8) v;
+            x
+            := let open Int64.O in
+               !x * 10L
+          done;
+          set_int64 b (19 * 8) Int64.max_value;
+          Bytes.to_string b
+        in
+        require_equal (module String) actual expect
+      ;;]
+
+    [%%expect_test
+      let "digit_pairs" =
+        let actual = Integer_of_string.Private.Constants.digit_pairs in
+        let expect = List.init 100 ~f:(Printf.sprintf "%02i") |> String.concat in
+        require_equal (module String) actual expect
+      ;;]
+  end]

@@ -103,58 +103,50 @@ module Definitions = struct
       val type_equal_id : t Id.t
     end
 
-    [@@@kind.default ka = (value, immediate64)]
-
     module type Arg1 = sig
-      type (!'a : ka) t [@@deriving sexp_of]
+      type !'a t [@@deriving sexp_of]
 
       val name : string
     end
 
     module type S1 = sig
-      type ('a : ka) t
+      type 'a t
 
       val type_equal_id : 'a Id.t -> 'a t Id.t
     end
 
-    [@@@kind.default kb = (value, immediate64)]
-
-    module type Arg2 = sig
+    module type%template [@kind ka = (value, immediate64), kb = value] Arg2 = sig
       type (!'a : ka, !'b : kb) t [@@deriving sexp_of]
 
       val name : string
     end
 
-    module type S2 = sig
+    module type%template [@kind ka = (value, immediate64), kb = value] S2 = sig
       type ('a : ka, 'b : kb) t
 
-      val type_equal_id : 'a Id.t -> 'b Id.t -> ('a, 'b) t Id.t
+      val type_equal_id : ('a : ka) ('b : kb). 'a Id.t -> 'b Id.t -> ('a, 'b) t Id.t
     end
 
-    [@@@kind.default kc = (value, immediate64)]
-
     module type Arg3 = sig
-      type (!'a : ka, !'b : kb, !'c : kc) t [@@deriving sexp_of]
+      type (!'a, !'b, !'c) t [@@deriving sexp_of]
 
       val name : string
     end
 
     module type S3 = sig
-      type ('a : ka, 'b : kb, 'c : kc) t
+      type ('a, 'b, 'c) t
 
       val type_equal_id : 'a Id.t -> 'b Id.t -> 'c Id.t -> ('a, 'b, 'c) t Id.t
     end
 
-    [@@@kind.default kd = (value, immediate64)]
-
     module type Arg4 = sig
-      type (!'a : ka, !'b : kb, !'c : kc, !'d : kd) t [@@deriving sexp_of]
+      type (!'a, !'b, !'c, !'d) t [@@deriving sexp_of]
 
       val name : string
     end
 
     module type S4 = sig
-      type ('a : ka, 'b : kb, 'c : kc, 'd : kd) t
+      type ('a, 'b, 'c, 'd) t
 
       val type_equal_id
         :  'a Id.t

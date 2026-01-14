@@ -18,8 +18,8 @@ let rec linear_search_first_satisfying (t @ m) ~get ~lo ~hi ~pred = exclave_
   else (linear_search_first_satisfying [@mode m]) t ~get ~lo:(lo + 1) ~hi ~pred
 ;;
 
-(* Takes a container [t], a predicate [pred] and two indices [lo < hi], such that
-   [pred] is increasing on [t] between [lo] and [hi].
+(* Takes a container [t], a predicate [pred] and two indices [lo < hi], such that [pred]
+   is increasing on [t] between [lo] and [hi].
 
    return a range (lo, hi) where:
    - lo and hi are close enough together for a linear search

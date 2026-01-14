@@ -10,7 +10,7 @@ module T = struct
 
   external format : string -> local_ int32 -> string @@ portable = "caml_int32_format"
 
-  let to_string n = format "%d" n
+  let to_string = Integer_to_string.int32_to_string
 
   external of_string
     :  local_ string

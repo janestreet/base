@@ -12,8 +12,8 @@ module Int = struct
   let max (x : t) y = if x > y then x else y
 end
 
-(* Its important that Empty have no args. It's tempting to make this type a record
-   (e.g. to hold the compare function), but a lot of memory is saved by Empty being an
+(* Its important that Empty have no args. It's tempting to make this type a record (e.g.
+   to hold the compare function), but a lot of memory is saved by Empty being an
    immediate, since all unused buckets in the hashtbl don't use any memory (besides the
    array cell) *)
 

@@ -317,6 +317,8 @@ let dedup_and_sort t ~compare = List.dedup_and_sort ~compare (to_list t) |> of_l
 let permute ?random_state t = List.permute ?random_state (to_list t) |> of_list_exn
 let random_element ?random_state t = to_list t |> List.random_element_exn ?random_state
 let all_equal t ~equal = to_list t |> List.all_equal ~equal
+let is_sorted t = to_list t |> List.is_sorted
+let is_sorted_strictly t = to_list t |> List.is_sorted_strictly
 
 let min_elt' (hd :: tl) ~compare =
   List.fold tl ~init:hd ~f:(fun min elt -> if compare min elt > 0 then elt else min)
@@ -355,14 +357,12 @@ let map_of_alist_multi_rev alist = map_of_container_multi_rev List.fold alist
 let map_of_sequence_multi sequence = map_of_container_multi Sequence.fold sequence
 let map_of_sequence_multi_rev sequence = map_of_container_multi_rev Sequence.fold sequence
 
-let%template fold_nonempty (hd :: tl @ ma) ~(init @ local) ~(f @ local) =
-  (List.fold [@mode ma mb]) tl ~init:(init hd) ~f
-[@@mode ma = (global, local), mb = global]
-;;
-
-let%template fold_nonempty (hd :: tl @ ma) ~(init @ local) ~(f @ local) = exclave_
-  (List.fold [@mode ma mb]) tl ~init:(init hd) ~f
-[@@mode ma = (global, local), mb = local]
+let%template fold_nonempty (hd :: tl) ~init ~f =
+  (List.fold [@mode li lo])
+    tl
+    ~init:(init hd)
+    ~f [@exclave_if_local lo ~reasons:[ May_return_local ]]
+[@@mode li = (local, global), lo = (local, global)]
 ;;
 
 let map_of_list_with_key_multi_rev list ~comparator ~get_key =

@@ -3,13 +3,12 @@ open! Import
 [@@@warning "-incompatible-with-upstream"]
 
 [%%template
-type nonrec ('a : k) t = (('a, Error.t) Result.t[@kind k])
-[@@deriving compare ~localize, equal ~localize, globalize, sexp]
-[@@kind k = base_non_value]
+  type nonrec ('a : k) t = (('a, Error.t) Result.t[@kind k])
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp]
+  [@@kind k = base_non_value]]
 
 type nonrec ('a : value_or_null) t = ('a, Error.t) Result.t
 [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-[@@kind k = value_or_null_with_imm]]
 
 let ( >>= ) = Result.( >>= )
 let ( >>| ) = Result.( >>| )
@@ -18,7 +17,7 @@ let ignore_m = Result.ignore_m
 let join = Result.join
 
 let%template map = (Result.map [@kind ki ko])
-[@@kind ki = base_or_null_with_imm, ko = base_or_null_with_imm]
+[@@kind ki = base_or_null, ko = base_or_null]
 ;;
 
 let return = Result.return
@@ -89,7 +88,7 @@ let%template try_with ?(backtrace = false) f =
 let try_with_join ?backtrace f = join (try_with ?backtrace f)
 
 [%%template
-[@@@kind.default k = base_or_null_with_imm]
+[@@@kind.default k = base_or_null]
 
 let ok_exn : ('a : k). ('a t[@kind k]) -> 'a = function
   | Ok x -> x

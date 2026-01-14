@@ -24,6 +24,9 @@ module Definitions = struct
 
     include Container.Generic with type ('a, 'cmp, _) t := ('a, 'cmp) t
 
+    val is_empty : _ t @ local -> bool
+    val length : _ t @ local -> int
+
     type ('a, 'cmp) tree
 
     (** The [access_options] type is used to make [Accessors_generic] flexible as to
@@ -282,9 +285,8 @@ module Definitions = struct
   module type For_deriving = sig
     type ('a, 'b) t
 
-    module type Sexp_of_m = sig
-      type t [@@deriving sexp_of]
-    end
+    module type%template [@alloc a = (heap, stack)] Sexp_of_m = Sexpable.Sexp_of
+    [@alloc a]
 
     module type M_of_sexp = sig
       type t [@@deriving of_sexp]
@@ -301,7 +303,11 @@ module Definitions = struct
     module type Globalize_m = sig end
     module type Hash_fold_m = Hasher.S
 
-    val sexp_of_m__t : (module Sexp_of_m with type t = 'elt) -> ('elt, 'cmp) t -> Sexp.t
+    val%template sexp_of_m__t
+      :  ((module Sexp_of_m with type t = 'elt)[@alloc a])
+      -> ('elt, 'cmp) t @ m
+      -> Sexp.t @ m
+    [@@alloc a @ m = (heap_global, stack_local)]
 
     val m__t_of_sexp
       :  (module M_of_sexp with type t = 'elt and type comparator_witness = 'cmp)
@@ -337,6 +343,83 @@ module Definitions = struct
       -> Hash.state
 
     val hash_m__t : (module Hash_fold_m with type t = 'elt) -> ('elt, _) t -> int
+  end
+
+  (**/**)
+
+  (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+      https://opensource.janestreet.com/standards/#private-submodules *)
+  module Private = struct
+    module type Enum = sig
+      type ('a, 'cmp) tree
+
+      (** Phantom types, to avoid mixing up enumeration directions. *)
+
+      type increasing
+      type decreasing
+
+      (** Enum type *)
+
+      type ('a, 'cmp, 'direction) nonempty =
+        | More of 'a * ('a, 'cmp) tree * ('a, 'cmp, 'direction) t
+
+      and ('a, 'cmp, 'direction) t = ('a, 'cmp, 'direction) nonempty or_null
+
+      (** Constructors *)
+
+      val cons
+        :  ('a, 'cmp) tree @ local
+        -> ('a, 'cmp, increasing) t
+        -> ('a, 'cmp, increasing) t
+
+      val cons_right
+        :  ('a, 'cmp) tree @ local
+        -> ('a, 'cmp, decreasing) t
+        -> ('a, 'cmp, decreasing) t
+
+      val of_set : ('a, 'cmp) tree @ local -> ('a, 'cmp, increasing) t
+      val of_set_right : ('a, 'cmp) tree @ local -> ('a, 'cmp, decreasing) t
+
+      val starting_at_increasing
+        :  ('a, 'cmp) tree @ local
+        -> 'a
+        -> ('a -> 'a -> int)
+        -> ('a, 'cmp, increasing) t
+
+      val starting_at_decreasing
+        :  ('a, 'cmp) tree @ local
+        -> 'a
+        -> ('a -> 'a -> int)
+        -> ('a, 'cmp, decreasing) t
+
+      (** Comparing two enums, or two trees using enums behind the scenes *)
+
+      val symmetric_diff
+        :  ('a, 'cmp) tree
+        -> ('a, 'cmp) tree
+        -> compare_elt:('a -> 'a -> int)
+        -> ('a, 'a) Either0.t Sequence.t
+
+      val compare
+        :  ('a -> 'a -> int)
+        -> ('a, 'cmp, increasing) t
+        -> ('a, 'cmp, increasing) t
+        -> int
+
+      (** Traversing two enums *)
+
+      val iter2
+        :  ('a -> 'a -> int)
+        -> ('a, 'cmp, increasing) t
+        -> ('a, 'cmp, increasing) t
+        -> f:(('a, 'a) Map.Merge_element.t -> unit) @ local
+        -> unit
+
+      (** Traversing one enum *)
+
+      val iter : f:('a -> unit) @ local -> ('a, 'cmp, increasing) t -> unit
+    end
   end
 end
 
@@ -378,10 +461,10 @@ module type Set = sig @@ portable
   val singleton : ('a, 'cmp) Comparator.Module.t -> 'a -> ('a, 'cmp) t
 
   (** Returns the cardinality of the set. [O(1)]. *)
-  val length : (_, _) t -> int
+  val length : (_, _) t @ local -> int
 
   (** [is_empty t] is [true] iff [t] is empty. [O(1)]. *)
-  val is_empty : (_, _) t -> bool
+  val is_empty : (_, _) t @ local -> bool
 
   (** [mem t a] returns [true] iff [a] is in [t]. [O(log n)]. *)
   val mem : ('a, _) t -> 'a -> bool
@@ -967,4 +1050,13 @@ module type Set = sig @@ portable
     with type 'elt tree :=
       ('elt, Comparator.Poly.comparator_witness) Using_comparator.Tree.t
     with type ('elt, 'cmp) set := ('elt, 'cmp) t
+
+  (**/**)
+
+  (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+      https://opensource.janestreet.com/standards/#private-submodules *)
+  module Private : sig
+    module Enum : Private.Enum with type ('a, 'cmp) tree := ('a, 'cmp) Tree.t
+  end
 end

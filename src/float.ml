@@ -818,9 +818,9 @@ let to_padded_compact_string_custom t ?(prefix = "") ~kilo ~mega ~giga ~tera ?pe
         else sprintf "%s%d%s%d" prefix i mag d
       in
       (* While the standard metric prefixes (e.g. capital "M" rather than "m", [1]) are
-         nominally more correct, this hinders readability in our case.  E.g., 10G6 and
-         1066 look too similar.  That's an extreme example, but in general k,m,g,t,p
-         probably stand out better than K,M,G,T,P when interspersed with digits.
+         nominally more correct, this hinders readability in our case. E.g., 10G6 and 1066
+         look too similar. That's an extreme example, but in general k,m,g,t,p probably
+         stand out better than K,M,G,T,P when interspersed with digits.
 
          [1] http://en.wikipedia.org/wiki/Metric_prefix *)
       (* The trick here is that:
@@ -865,7 +865,7 @@ let int_pow x n =
   then 1.
   else (
     (* Using [box x] on the following line convinces the compiler to avoid a certain
-       boxing (that would result in allocation in each iteration).  Soon, the compiler
+       boxing (that would result in allocation in each iteration). Soon, the compiler
        shouldn't need this "hint" to avoid the boxing. *)
     let x = ref (box x) in
     let n = ref n in
@@ -1002,7 +1002,6 @@ let between t ~low ~high = low <= t && t <= high
 let clamp_exn t ~min ~max =
   (* Also fails if [min] or [max] is nan *)
   assert (min <= max);
-  (* clamp_unchecked is in float0.ml *)
   clamp_unchecked
     ~to_clamp_maybe_nan:t
     ~min_which_is_not_nan:min

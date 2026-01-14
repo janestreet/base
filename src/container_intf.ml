@@ -19,14 +19,7 @@ end
 [@@@warning "-incompatible-with-upstream"]
 
 [%%template
-[@@@kind_set.define
-  extra_values = (immediate, immediate64, value mod external_, value mod external64)]
-
-(*_ We move [value] to the beginning of [base_with_imm] so that when we make the
-    destructive substitutions for [t] in the signatures below, we define the [value]
-    versions of all the functions first before hiding the real [t] behind aliases to e.g.
-    [t [@kind bits64]]. *)
-[@@@kind_set.define base_with_imm = (value, base_with_imm)]
+[@@@kind_set.define base_with_ext = (base, value mod external64)]
 
 module Definitions = struct
   module Export = struct
@@ -39,18 +32,6 @@ module Definitions = struct
         | Continue of 'a
         | Stop of 'b
       [@@kind ka = base_or_null, kb = base_or_null]
-
-      type ('a : any, 'b : any) t = (('a, 'b) t[@kind value_or_null kb])
-      [@@kind ka = extra_values, kb = base_or_null]
-
-      type ('a : any, 'b : any) t = (('a, 'b) t[@kind ka value_or_null])
-      [@@kind ka = (base_or_null, extra_values), kb = extra_values]
-
-      type ('a : any, 'b : any) t = (('a, 'b) t[@kind value_or_null kb])
-      [@@kind ka = value, kb = (base_non_value, extra_values)]
-
-      type ('a : any, 'b : any) t = (('a, 'b) t[@kind ka value_or_null])
-      [@@kind ka = (base_non_value, extra_values), kb = value]
     end
   end
 
@@ -72,7 +53,7 @@ module Definitions = struct
   [@@mode m = (global, local)]
 
   module type Summable = Summable [@kind.explicit value_or_null] [@mode m]
-  [@@kind.explicit __ = (value, extra_values)] [@@mode m = (global, local)]
+  [@@kind.explicit __ = (value, value mod external64)] [@@mode m = (global, local)]
 
   module type Summable = Summable [@kind.explicit value] [@mode m]
   [@@mode m = (global, local)]
@@ -84,14 +65,7 @@ module Definitions = struct
     type ('a : k) elt : k
   end
   [@@kind_set.explicit
-    ks
-    = ( value
-      , value_or_null
-      , immediate
-      , immediate64
-      , value mod external_
-      , value mod external64
-      , base_with_imm )]
+    ks = (value, value_or_null, value mod external64, base, base_with_ext)]
 
   module type Generic_types = Generic_types [@kind_set.explicit value]
 
@@ -101,17 +75,11 @@ module Definitions = struct
     (*_ We template the following interfaces over the set of kinds that are allowed in the
         container [t]. Each such kind set has an associated set of kinds allowed in types
         that appear as function arguments/returns but are not put into [t]. For example, a
-        container that only allows [immediate]s can easily still implement [fold] with a
-        [value] accumulator. *)
+        container that only allows [value mod external64]s can easily still implement
+        [fold] with a [value] accumulator. That kind set is currently [ks or value]. *)
+
     [@@@kind_set.default.explicit
-      (ks, ks_not_in_t)
-      = ( (value, value)
-        , (value_or_null, value_or_null)
-        , (immediate, value)
-        , (immediate64, value)
-        , (value mod external_, value)
-        , (value mod external64, value)
-        , (base_with_imm, base) )]
+      ks = (value, value_or_null, value mod external64, base_with_ext)]
 
     module type Generic_without_mem = sig
       include Generic_types [@kind_set.explicit ks]
@@ -173,12 +141,13 @@ module Definitions = struct
           : ('a : k1) 'p1 'p2.
           ('a, 'p1, 'p2) t @ m
           -> f:('a elt @ m -> bool) @ local
-          -> ('a elt Option.t[@kind k1]) @ m
+          -> ('a elt Option.t[@kind k1 or value_or_null]) @ m
         [@@mode m = (global, m)]
 
         val to_list
           : ('a : k1) 'p1 'p2.
-          ('a, 'p1, 'p2) t @ m -> ('a elt List0.Constructors.t[@kind k1]) @ m
+          ('a, 'p1, 'p2) t @ m
+          -> ('a elt List0.Constructors.t[@kind k1 or value_or_null]) @ m
         [@@alloc __ @ m = (heap_global, a @ m)]
 
         (** Returns a min (resp. max) element from the collection using the provided
@@ -189,17 +158,17 @@ module Definitions = struct
           : ('a : k1) 'p1 'p2.
           ('a, 'p1, 'p2) t @ m
           -> compare:('a elt @ m -> 'a elt @ m -> int) @ local
-          -> ('a elt Option.t[@kind k1]) @ m
+          -> ('a elt Option.t[@kind k1 or value_or_null]) @ m
         [@@mode m = (global, m)]
 
         val max_elt
           : ('a : k1) 'p1 'p2.
           ('a, 'p1, 'p2) t @ m
           -> compare:('a elt @ m -> 'a elt @ m -> int) @ local
-          -> ('a elt Option.t[@kind k1]) @ m
+          -> ('a elt Option.t[@kind k1 or value_or_null]) @ m
         [@@mode m = (global, m)]
 
-        [@@@kind.default_if_multiple k2 = ks_not_in_t]
+        [@@@kind.default_if_multiple k2 = (ks or value)]
 
         (** Returns the sum of [f i] for all [i] in the container. The order in which the
             elements will be summed is unspecified. *)
@@ -217,7 +186,11 @@ module Definitions = struct
         val iter_until
           : ('a : k1) 'p1 'p2 ('final : k2).
           ('a, 'p1, 'p2) t @ mi
-          -> f:('a elt @ mi -> ((unit, 'final) Continue_or_stop.t[@kind value k2]) @ mo)
+          -> f:
+               ('a elt @ mi
+                -> ((unit, 'final) Continue_or_stop.t
+                   [@kind value_or_null (k2 or value_or_null)])
+                   @ mo)
              @ local
           -> finish:(unit -> 'final @ mo) @ local
           -> 'final @ mo
@@ -253,7 +226,7 @@ module Definitions = struct
           -> ('b Option.t[@kind k2]) @ mo
         [@@mode mi = (global, m), mo = (global, m)]
 
-        [@@@kind.default_if_multiple k3 = ks_not_in_t]
+        [@@@kind.default_if_multiple k3 = (ks or value)]
 
         (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If
             [f] returns [Stop _] the computation ceases and results in that value. If [f]
@@ -291,7 +264,9 @@ module Definitions = struct
           -> f:
                ('acc @ mo
                 -> 'a elt @ mi
-                -> (('acc, 'final) Continue_or_stop.t[@kind k2 k3]) @ mo)
+                -> (('acc, 'final) Continue_or_stop.t
+                   [@kind (k2 or value_or_null) (k3 or value_or_null)])
+                   @ mo)
              @ local
           -> finish:('acc @ mo -> 'final @ mo) @ local
           -> 'final @ mo
@@ -355,7 +330,7 @@ module Definitions = struct
               [value_or_null] elements cannot reside in arrays. We could
               template-specialize a separate [S0] for [value_or_null] that does not
               contain [to_array], but do not currently have a need for it. *)
-        (value, immediate, immediate64, base_with_imm)] S0 = sig
+        (value, value mod external64, base_with_ext)] S0 = sig
       include sig
         [@@@kind.default k = ks]
 
@@ -382,7 +357,7 @@ module Definitions = struct
     module type S0 = S0 [@kind_set.explicit ks] [@alloc a] [@@kind_set ks = value]
 
     module type
-      [@kind_set.explicit ks = (value, immediate, immediate64, base_with_imm)] S0_phantom = sig
+      [@kind_set.explicit ks = (value, value mod external64, base_with_ext)] S0_phantom = sig
       include sig
         [@@@kind.default k = ks]
 
@@ -414,14 +389,7 @@ module Definitions = struct
     [@@@alloc.default a @ m = (heap_global, stack_local)]
 
     [@@@kind_set.default.explicit
-      (ks, ks_not_in_t)
-      = ( (value, value)
-        , (value_or_null, value_or_null)
-        , (immediate, value)
-        , (immediate64, value)
-        , (value mod external_, value)
-        , (value mod external64, value)
-        , (base_with_imm, base) )]
+      ks = (value, value_or_null, value mod external64, base_with_ext)]
 
     (** Signature for polymorphic container, e.g., ['a list] or ['a array]. *)
 
@@ -481,7 +449,8 @@ module Definitions = struct
 
         val of_list
           : ('a : k1) 'p1 'p2.
-          ('a elt List0.Constructors.t[@kind k1]) @ m -> ('a, 'p1, 'p2) t @ m
+          ('a elt List0.Constructors.t[@kind k1 or value_or_null]) @ m
+          -> ('a, 'p1, 'p2) t @ m
         [@@alloc __ @ m = (heap_global, a @ m)]
 
         (** E.g., [append (of_list [a; b]) (of_list [c; d; e])] is
@@ -532,7 +501,9 @@ module Definitions = struct
       val filter_map
         : ('a : k1) 'p1 'p2 ('b : k2).
         (('a, 'p1, 'p2) t[@kind k1]) @ mi
-        -> f:(('a elt[@kind k1]) @ mi -> (('b elt[@kind k2]) Option.t[@kind k2]) @ mo)
+        -> f:
+             (('a elt[@kind k1]) @ mi
+              -> (('b elt[@kind k2]) Option.t[@kind k2 or value_or_null]) @ mo)
            @ local
         -> (('b, 'p1, 'p2) t[@kind k2]) @ mo
       [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
@@ -553,7 +524,9 @@ module Definitions = struct
         (('a, 'p1, 'p2) t[@kind k1]) @ mi
         -> f:
              (('a elt[@kind k1]) @ mi
-              -> ((('b elt[@kind k2]), ('c elt[@kind k3])) Either.t[@kind k2 k3]) @ mo)
+              -> ((('b elt[@kind k2]), ('c elt[@kind k3])) Either.t
+                 [@kind (k2 or value_or_null) (k3 or value_or_null)])
+                 @ mo)
            @ local
         -> (('b, 'p1, 'p2) t[@kind k2]) * (('c, 'p1, 'p2) t[@kind k3]) @ mo
       [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
@@ -613,7 +586,7 @@ module Definitions = struct
 
     (*_ This is outside the template because an [immediate] container can't contain itself *)
 
-    module type [@kind_set.explicit ks = (value, base_with_imm)] S0_with_creators = sig
+    module type [@kind_set.explicit ks = (value, base_with_ext)] S0_with_creators = sig
       include sig
         [@@@kind.default k = ks]
 
@@ -646,7 +619,7 @@ module Definitions = struct
     [@@kind_set ks = value]
 
     module type
-      [@kind_set.explicit ks = (value, value_or_null, base_with_imm)] S1_with_creators = sig
+      [@kind_set.explicit ks = (value, value_or_null, base_with_ext)] S1_with_creators = sig
       type ('a : k) t [@@kind k = ks]
 
       include

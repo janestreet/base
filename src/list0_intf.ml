@@ -13,11 +13,7 @@ module type List0 = sig @@ portable
         , value_or_null & value_or_null & value_or_null & value_or_null )]
     [@@deriving compare ~localize, equal ~localize]
 
-    type%template ('a : value_or_null) t = 'a list
-    [@@kind
-      __
-      = (immediate, immediate64, value mod external_, value mod external64, value_or_null)]
-    [@@deriving compare ~localize, equal ~localize]
+    type ('a : value_or_null) t = 'a list [@@deriving compare ~localize, equal ~localize]
   end
 
   open Constructors
@@ -26,14 +22,19 @@ module type List0 = sig @@ portable
   val hd_exn : ('a : value_or_null). 'a t -> 'a
   val tl_exn : ('a : value_or_null). 'a t -> 'a t
   val unzip : ('a : value_or_null) ('b : value_or_null). ('a * 'b) t -> 'a t * 'b t
+  val is_empty : ('a : value_or_null). 'a list @ local -> bool
+
+  val%template partition_map
+    : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
+    'a list @ mi
+    -> f:('a @ mi -> ('b, 'c) Either0.t @ mo) @ local
+    -> 'b list * 'c list @ mo
+  [@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
 
   [%%template:
   [@@@kind.default
     k
-    = ( base_non_value
-      , immediate
-      , immediate64
-      , value_or_null
+    = ( base_or_null
       , value_or_null & value_or_null
       , value_or_null & value_or_null & value_or_null
       , value_or_null & value_or_null & value_or_null & value_or_null )]
@@ -69,12 +70,12 @@ module type List0 = sig @@ portable
   [@@kind
     ka = ka
     , kb
-      = ( base_or_null_with_imm
-        , value_or_null & base_or_null_with_imm
+      = ( base_or_null
+        , value_or_null & base_or_null
         , value_or_null & value_or_null & value_or_null
         , value_or_null & value_or_null & value_or_null & value_or_null )]
 
-  [@@@kind.default kb = base_or_null_with_imm]
+  [@@@kind.default kb = base_or_null]
 
   val rev_map
     : ('a : ka) ('b : kb).

@@ -33,10 +33,15 @@ type 'a t = 'a or_null [@@or_null_reexport]
 
 (** Extracts the underlying value if present, otherwise returns [default]. *)
 val value : 'a t @ m -> default:'a @ m -> 'a @ m
+[@@zero_alloc]
 
 (** Extracts the underlying value, or raises if there is no value present. The raised
     error will include the provided location. *)
 val value_exn : here:[%call_pos] -> 'a t @ m -> 'a @ m
+[@@zero_alloc]
+
+(** Unsafely casts ['a t] to ['a]. Equivalent to [Obj.magic]. *)
+val unsafe_value : 'a t @ m -> 'a @ m
 
 (** Extracts the underlying value if present, otherwise executes and returns the result of
     [default]. [default] is only executed if the underlying value is absent. *)
@@ -51,7 +56,7 @@ val value_map : 'a t @ m -> default:'b @ m -> f:('a @ m -> 'b @ m) @ local once 
 val map : 'a t @ m -> f:('a @ m -> 'b @ m) @ local once -> 'b t @ m
 val both : 'a t @ m -> 'b t @ m -> ('a * 'b) t @ m
 val bind : 'a t @ m -> f:('a @ m -> 'b t @ m) @ local once -> 'b t @ m
-val to_list : 'a t @ m -> 'a list @ m
+val to_list : 'a t @ m -> 'a list @ m [@@zero_alloc_if_local m]
 
 val fold
   :  'a t @ m
@@ -103,10 +108,11 @@ val try_with : (unit -> 'a @ m) @ local once -> 'a t @ m
 val try_with_join : (unit -> 'a t @ m) @ local once -> 'a t @ m
 
 (** [this x = This x]. *)
-val this : 'a @ m -> 'a t @ m
+val this : 'a @ m -> 'a t @ m [@@zero_alloc]
 
 (** [first_this t1 t2] returns [t1] if it has an underlying value, or [t2] otherwise. *)
 val first_this : 'a t @ m -> 'a t @ m -> 'a t @ m
+[@@zero_alloc]
 
 (** [first_this_thunk a b] is like [first_this], but it only computes [b ()] if [a] is
     [None] *)
@@ -114,15 +120,18 @@ val first_this_thunk : 'a t @ m -> (unit -> 'a t @ m) @ local once -> 'a t @ m
 
 (** [this_if b x] converts a value [x] to [This x] if [b], and [Null] otherwise. *)
 val this_if : bool -> 'a @ m -> 'a t @ m
+[@@zero_alloc]
 
 (** Like [this_if], but only computes [x ()] if [b] is true. *)
 val this_if_thunk : bool -> (unit -> 'a @ m) @ local once -> 'a t @ m
 
 (** [to_option (This x) = Some x] and [to_option Null = None]. *)
 val to_option : 'a t @ m -> 'a option @ m
+[@@zero_alloc_if_local m]
 
 (** [of_option (Some x) = This x] and [of_option None = Null]. *)
-val of_option : 'a option @ m -> 'a t @ m]
+val of_option : 'a option @ m -> 'a t @ m
+[@@zero_alloc]]
 
 (** [map_to_option t ~f] is the same as [map t ~f |> to_option] *)
 val%template map_to_option
@@ -135,9 +144,11 @@ val%template map_to_option
 
 (** [is_null t] returns true iff [t = Null]. *)
 val is_null : 'a t @ immutable local -> bool
+[@@zero_alloc]
 
 (** [is_this t] returns true iff [t = This x]. *)
 val is_this : 'a t @ immutable local -> bool
+[@@zero_alloc]
 
 (** {6 Let syntax} *)
 

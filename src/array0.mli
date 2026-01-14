@@ -52,7 +52,7 @@ external unsafe_set
 [@@layout_poly]
 
 [%%template:
-[@@@kind.default k = value_with_imm]
+[@@@kind.default k = (value, value mod external64)]
 
 external unsafe_fill
   : ('a : k).
@@ -74,7 +74,7 @@ val%template unsafe_blit
   -> dst_pos:int
   -> len:int
   -> unit
-[@@kind k = base_with_imm]
+[@@kind k = (base, value mod external64)]
 
 [%%template:
 [@@@kind.default k = base_non_value]
@@ -101,7 +101,7 @@ val%template fold_right : 'a array @ m -> f:('a @ m -> 'b -> 'b) @ local -> init
 val stable_sort : 'a array -> compare:('a -> 'a -> int) -> unit
 
 [%%template:
-[@@@kind.default k' = base_or_null_with_imm]
+[@@@kind.default k' = (base_or_null, value mod external64)]
 [@@@kind k = k' mod separable]
 
 val init : ('a : k). int -> f:(int -> 'a) @ local -> 'a array @ m
@@ -110,17 +110,19 @@ val init : ('a : k). int -> f:(int -> 'a) @ local -> 'a array @ m
 val iter : ('a : k). 'a array -> f:('a -> unit) @ local -> unit
 val iteri : ('a : k). 'a array -> f:(int -> 'a -> unit) @ local -> unit
 
-val to_list : ('a : k). 'a array @ m -> ('a List0.Constructors.t[@kind k']) @ m
+val to_list
+  : ('a : k).
+  'a array @ m -> ('a List0.Constructors.t[@kind k' or value_or_null]) @ m
 [@@alloc __ @ m = (heap_global, stack_local)]
 
-val of_list : ('a : k). ('a List0.Constructors.t[@kind k']) -> 'a array
+val of_list : ('a : k). ('a List0.Constructors.t[@kind k' or value_or_null]) -> 'a array
 val sub : ('a : k). 'a array @ local -> pos:int -> len:int -> 'a array
 val append : ('a : k). 'a array -> 'a array -> 'a array
 val fill : ('a : k). 'a array @ local -> pos:int -> len:int -> 'a -> unit
 val swap : ('a : k). 'a array @ local -> int -> int -> unit]
 
 [%%template:
-[@@@kind.default k1 = base_with_imm, k2 = base_with_imm]
+[@@@kind.default k1 = (base, value mod external64), k2 = (base, value mod external64)]
 
 val fold : ('a : k1) ('b : k2). 'a array -> init:'b -> f:('b -> 'a -> 'b) @ local -> 'b
 val map : ('a : k1) ('b : k2). 'a array @ local -> f:('a -> 'b) @ local -> 'b array

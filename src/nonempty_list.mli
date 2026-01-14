@@ -147,6 +147,14 @@ val findi_exn : 'a t -> f:local_ (int -> 'a -> bool) -> int * 'a
     or [None] if no such element exists. *)
 val all_equal : 'a t -> equal:local_ ('a -> 'a -> bool) -> 'a option
 
+(** [is_sorted t ~compare] returns [true] iff for all adjacent [a1; a2] in [t],
+    [compare a1 a2 <= 0]. *)
+val is_sorted : 'a t -> compare:local_ ('a -> 'a -> int) -> bool
+
+(** [is_sorted_strictly t ~compare] returns [true] iff for all adjacent [a1; a2] in [t],
+    [compare a1 a2 < 0]. *)
+val is_sorted_strictly : 'a t -> compare:local_ ('a -> 'a -> int) -> bool
+
 (** [min_elt'] and [max_elt'] differ from [min_elt] and [max_elt] (included in
     [Container.S1]) in that they don't return options. *)
 val min_elt' : 'a t -> compare:local_ ('a -> 'a -> int) -> 'a

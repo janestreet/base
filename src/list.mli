@@ -11,7 +11,7 @@ module Constructors : module type of List0.Constructors
 [@@@warning "-incompatible-with-upstream"]
 
 type%template ('a : k) t = (('a : k) Constructors.t[@kind k])
-[@@kind k = (base_non_value, immediate, immediate64)]
+[@@kind k = base_non_value]
 [@@deriving compare ~localize, equal ~localize, sexp_of ~stackify]
 
 type ('a : value_or_null) t = 'a list
@@ -62,7 +62,7 @@ val create : ('a : value_or_null). len:int -> 'a -> 'a list
 val singleton : ('a : value_or_null). 'a -> 'a t
 
 [%%template:
-[@@@kind k = base_or_null_with_imm]
+[@@@kind k = base_or_null]
 
 type ('a : k) t := ('a t[@kind k])
 
@@ -106,7 +106,13 @@ val rev_append : ('a : k). 'a t @ l -> 'a t @ l -> 'a t @ l
 val rev : ('a : k). 'a t @ l -> 'a t @ l]
 
 [%%template:
-[@@@kind.default ka = base_or_null_with_imm, kb = base_or_null_with_imm]
+[@@@mode.default l = (local, global)]
+
+val find_or_null : 'a t @ l -> f:('a @ l -> bool) @ local -> 'a or_null @ l
+val nth_or_null : 'a t @ l -> int -> 'a or_null @ l]
+
+[%%template:
+[@@@kind.default ka = base_or_null, kb = base_or_null]
 [@@@mode.default ma = (local, global)]
 [@@@alloc.default __ @ mb = (heap_global, stack_local)]
 
@@ -153,7 +159,7 @@ val concat_mapi
   -> ('b t[@kind kb]) @ mb]
 
 [%%template:
-[@@@kind.default ka = base_or_null_with_imm, kb = base_or_null_with_imm]
+[@@@kind.default ka = base_or_null, kb = base_or_null]
 [@@@mode.default ma = (local, global), mb = (local, global)]
 
 val fold
@@ -269,6 +275,9 @@ val%template partition_result
     than being copied. *)
 val split_n : ('a : value_or_null). 'a t -> int -> 'a t * 'a t
 
+[%%template:
+[@@@alloc.default __ @ l = (heap_global, stack_local)]
+
 (** Sort a list in increasing order according to a comparison function. The comparison
     function must return 0 if its arguments compare as equal, a positive integer if the
     first is greater, and a negative integer if the first is smaller (see [Array.sort] for
@@ -280,10 +289,14 @@ val split_n : ('a : value_or_null). 'a t -> int -> 'a t * 'a t
 
     Presently, the sort is stable, meaning that two equal elements in the input will be in
     the same order in the output. *)
-val sort : ('a : value_or_null). 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
+val sort
+  : ('a : value_or_null).
+  'a t @ l -> compare:local_ ('a @ l -> 'a @ l -> int) -> 'a t @ l
 
 (** Like [sort], but guaranteed to be stable. *)
-val stable_sort : ('a : value_or_null). 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
+val stable_sort
+  : ('a : value_or_null).
+  'a t @ l -> compare:local_ ('a @ l -> 'a @ l -> int) -> 'a t @ l]
 
 (** Merges two lists: assuming that [l1] and [l2] are sorted according to the comparison
     function [compare], [merge compare l1 l2] will return a sorted list containing all the
@@ -615,6 +628,11 @@ module Assoc : sig
   val%template find
     : ('a : value_or_null) ('b : value_or_null).
     ('a, 'b) t @ l -> equal:local_ ('a @ l -> 'a @ l -> bool) -> 'a @ l -> 'b option @ l
+  [@@mode l = (local, global)]
+
+  val%template find_or_null
+    : ('a : value) ('b : value).
+    ('a, 'b) t @ l -> equal:local_ ('a @ l -> 'a @ l -> bool) -> 'a @ l -> 'b or_null @ l
   [@@mode l = (local, global)]
 
   val%template find_exn

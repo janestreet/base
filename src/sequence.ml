@@ -1,7 +1,7 @@
 open! Import
 open Container.Export
 module Array = Array0
-module List = List1
+module List = List0
 module%template Derived = Container.Derived [@kind.explicit value_or_null]
 
 module Step = struct

@@ -30,6 +30,17 @@ module Accessors = struct
   let find t ~f = find_map t ~f:(fun a -> if f a then Some a else None) [@nontail]
   let add t k = Hashtbl.set t ~key:k ~data:()
 
+  let get_or_add t k =
+    Hashtbl.findi_and_call1
+      t
+      k
+      ~a:t
+      ~if_found:(fun ~key ~data:_ _t -> key)
+      ~if_not_found:(fun key t ->
+        Hashtbl.set t ~key ~data:();
+        key)
+  ;;
+
   let strict_add t k : Ok_or_duplicate.t =
     if mem t k
     then Duplicate

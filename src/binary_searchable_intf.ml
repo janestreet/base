@@ -6,7 +6,7 @@ open! Import
 [@@@warning "-incompatible-with-upstream"]
 
 [%%template
-[@@@kind_set.define values = (value_with_imm, value mod external_, value mod external64)]
+[@@@kind_set.define values = (value, value mod external64)]
 
 module Definitions = struct
   [%%template

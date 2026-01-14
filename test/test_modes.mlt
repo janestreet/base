@@ -67,7 +67,7 @@ let doesn't_cross_locality
 [%%expect
   {|
 Line _, characters _-_:
-Error: This value is local but is expected to be global.
+Error: This value is local to the parent region but is expected to be global.
 |}]
 
 (* Tests for Modes.At_portability.t *)
@@ -106,12 +106,11 @@ Error: This type
        The kind of (Base.int, Base.Modes.At_portability.nonportable)
                    Base.Modes.At_portability.t is
            immutable_data
-             mod global aliased yielding unforkable
+             mod global unforkable yielding
              with Base.Modes.At_portability.nonportable_
                     @@
                     global
                     many
-                    aliased
                     contended.
        But the kind of (Base.int, Base.Modes.At_portability.nonportable)
                        Base.Modes.At_portability.t must be a subkind of
@@ -152,7 +151,7 @@ Error: This type
                     Base.Modes.At_portability.nonportable)
                    Base.Modes.At_portability.t is
            value
-             mod aliased portable immutable non_float
+             mod portable aliased immutable non_float
              with Base.Modes.At_portability.nonportable_ @@ aliased contended.
        But the kind of (Base.int -> Base.int,
                         Base.Modes.At_portability.nonportable)

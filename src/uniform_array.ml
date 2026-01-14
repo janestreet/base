@@ -44,12 +44,12 @@ module Trusted : sig @@ portable
   val sub : ('a : value_or_null). 'a t -> pos:int -> len:int -> 'a t
   val invariant : ('a : value_or_null). 'a t -> unit
 end = struct
-  (* It is safe to claim that ['a t] is mutable data as long as ['a] is mutable
-     data: we only store ['a]s (mutably).
+  (* It is safe to claim that ['a t] is mutable data as long as ['a] is mutable data: we
+     only store ['a]s (mutably).
 
-     Forging a mode-crossing claim requires minting a new type, so we can't
-     just say [type 'a t : mutable_data with 'a = Obj_array.t]. That's why
-     we mint an unboxed record instead.
+     Forging a mode-crossing claim requires minting a new type, so we can't just say
+     [type 'a t : mutable_data with 'a = Obj_array.t]. That's why we mint an unboxed
+     record instead.
   *)
   type ('a : value_or_null) t : mutable_data with 'a = { arr : Obj_array.t }
   [@@unboxed] [@@unsafe_allow_any_mode_crossing]

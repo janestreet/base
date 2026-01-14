@@ -15,14 +15,13 @@ module Sexp := Sexp0
 [@@@warning "-incompatible-with-upstream"]
 
 [%%template:
-type ('a : k) t = (('a, Error.t) Result.t[@kind k])
-[@@deriving compare ~localize, equal ~localize, globalize, sexp]
-[@@kind k = base_non_value]
+  type ('a : k) t = (('a, Error.t) Result.t[@kind k])
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp]
+  [@@kind k = base_non_value]]
 
 (** Serialization and comparison of an [Error] force the error's lazy message. *)
-type ('a : value_or_null) t = (('a, Error.t) Result.t[@kind k])
+type ('a : value_or_null) t = ('a, Error.t) Result.t
 [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-[@@kind k = value_or_null_with_imm]]
 
 (** [Applicative] functions don't have quite the same semantics as
     [Applicative.Of_Monad(Or_error)] would give -- [apply (Error e1) (Error e2)] returns
@@ -63,7 +62,7 @@ val ok : ('ok : value_or_null). 'ok t -> 'ok option
 (** [ok_exn t] throws an exception if [t] is an [Error], and otherwise returns the
     contents of the [Ok] constructor. *)
 val%template ok_exn : ('a : k). ('a t[@kind k]) -> 'a
-[@@kind k = base_or_null_with_imm]
+[@@kind k = base_or_null]
 
 (** [of_exn ?backtrace exn] is [Error (Error.of_exn ?backtrace exn)]. *)
 val of_exn : ('a : value_or_null). ?backtrace:[ `Get | `This of string ] -> exn -> 'a t
@@ -149,7 +148,7 @@ val unimplemented : ('a : value_or_null). string -> 'a t @ portable
 val%template map
   : ('a : ki) ('b : ko).
   ('a t[@kind ki]) -> f:local_ ('a -> 'b) -> ('b t[@kind ko])
-[@@kind ki = base_or_null_with_imm, ko = base_or_null_with_imm]
+[@@kind ki = base_or_null, ko = base_or_null]
 
 val iter : ('a : value_or_null). 'a t -> f:local_ ('a -> unit) -> unit
 val iter_error : ('a : value_or_null). 'a t -> f:local_ (Error.t -> unit) -> unit

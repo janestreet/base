@@ -138,9 +138,9 @@ module Computed = struct
   [@@mode p = (portable, nonportable)]
   ;;
 
-  (* The [M] modules allow us to use a form of mode polymorphism
-     in [compute_info_list_wrapper]. [M [@portable]] wraps portable
-     values, [M] wraps non-portable values.
+  (* The [M] modules allow us to use a form of mode polymorphism in
+     [compute_info_list_wrapper]. [M [@portable]] wraps portable values, [M] wraps
+     non-portable values.
   *)
 
   module%template [@mode portable] M = Modes.Portable
@@ -493,8 +493,8 @@ let () =
 
 let portabilize (t : t) : t =
   match t.global with
-  (* As an optimization: if the value is already known-portable, there's no need to
-     force its computation. *)
+  (* As an optimization: if the value is already known-portable, there's no need to force
+     its computation. *)
   | Staged_portable x -> { global = Staged_portable x }
   | Constant x -> { global = Constant x }
   | Staged_nonportable _ -> [%template of_message [@mode portable]] (to_message t)

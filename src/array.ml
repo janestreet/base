@@ -11,9 +11,9 @@ include Array
 type ('a : any mod separable) t = 'a array
 
 [%%template
-[@@@kind_set.define values = (value_with_imm, value mod external_, value mod external64)]
+[@@@kind_set.define base_with_ext = (base, value mod external64)]
 
-type%template ('a : k) t = 'a array [@@kind k = (base_non_value, immediate, immediate64)]
+type%template ('a : k) t = 'a array [@@kind k = (base_non_value, value mod external64)]
 
 [%%rederive.portable
   type nonrec ('a : value_or_null mod separable) t = 'a array
@@ -47,7 +47,7 @@ type%template ('a : k) t = 'a array [@@kind k = (base_non_value, immediate, imme
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
 
 module%template.portable
-  [@kind k = values] [@modality p] Sorter (S : sig
+  [@kind k = (value, value mod external64)] [@modality p] Sorter (S : sig
     type ('a : k) t
 
     val get : local_ 'a t -> int -> 'a
@@ -293,7 +293,8 @@ struct
 end
 [@@inline]
 
-module%template [@kind k = values] Sort = Sorter [@kind k] [@modality portable] (struct
+module%template [@kind k = (value, value mod external64)] Sort =
+Sorter [@kind k] [@modality portable] (struct
     type nonrec ('a : k) t = 'a t
 
     let get = unsafe_get
@@ -303,13 +304,13 @@ module%template [@kind k = values] Sort = Sorter [@kind k] [@modality portable] 
 
 let sort = Sort.sort
 
-let%template get_opt arr n : (_ Option.t[@kind k]) =
+let%template get_opt arr n : (_ Option.t[@kind k or value_or_null]) =
   if 0 <= n && n < length arr
   then
     Some ((unsafe_get [@mode c]) arr n)
     (* SAFETY: bounds checked above *) [@exclave_if_stack a]
   else None
-[@@mode c = (uncontended, shared)] [@@kind k = base_with_imm] [@@alloc a = (heap, stack)]
+[@@mode c = (uncontended, shared)] [@@kind k = base] [@@alloc a = (heap, stack)]
 ;;
 
 let is_sorted t ~compare =
@@ -362,13 +363,13 @@ let raise_length_mismatch name n1 n2 =
 ;;
 
 [%%template
-let length t = length t [@@kind k = (base_non_value, immediate, immediate64)]
+let length t = length t [@@kind k = (base_non_value, value mod external64)]
 
-[@@@kind.default k1 = base_with_imm]
+[@@@kind.default k1 = base_with_ext]
 
 let to_array t = t
 let of_array t = t
-let is_empty t = (length [@kind k1]) t = 0
+let is_empty t = length t = 0
 
 let for_all t ~f =
   let i = ref (length t - 1) in
@@ -425,7 +426,9 @@ let existsi t ~f =
 
 let mem t a ~equal = (exists [@kind k1]) t ~f:(equal a) [@nontail]
 
-let[@inline always] extremal_element t ~compare ~keep_left_if : (_ Option.t[@kind k1]) =
+let[@inline always] extremal_element t ~compare ~keep_left_if
+  : (_ Option.t[@kind k1 or value_or_null])
+  =
   if (is_empty [@kind k1]) t
   then None
   else (
@@ -436,7 +439,7 @@ let[@inline always] extremal_element t ~compare ~keep_left_if : (_ Option.t[@kin
         let x = unsafe_get t i in
         loop
           (i + 1)
-          ((Bool0.select [@kind k1])
+          ((Bool0.select [@kind k1 or value_or_null])
              ((keep_left_if [@inlined]) ((compare [@inlined hint]) x result))
              x
              result))
@@ -475,7 +478,7 @@ let find t ~(f @ local) =
   (findi_internal [@inlined] [@kind k1 value])
     t
     ~f:(fun _ v -> f v)
-    ~if_found:(fun ~i:_ ~value : (_ Option.t[@kind k1]) -> Some value)
+    ~if_found:(fun ~i:_ ~value : (_ Option.t[@kind k1 or value_or_null]) -> Some value)
     ~if_not_found:(fun () -> None) [@nontail]
 ;;
 
@@ -485,14 +488,16 @@ let find_exn t ~(f @ local) =
     ~f:(fun _i x -> f x)
     ~if_found:(fun ~i:_ ~value -> value)
     ~if_not_found:(fun () ->
-      (raise [@kind k1]) (Not_found_s (Atom "Array.find_exn: not found"))) [@nontail]
+      (raise [@kind k1 or value_or_null]) (Not_found_s (Atom "Array.find_exn: not found")))
+  [@nontail]
 ;;
 
 let findi t ~f =
   (findi_internal [@inlined] [@kind k1 value])
     t
     ~f
-    ~if_found:(fun ~i ~value : (_ Option.t[@kind value & k1]) -> Some #(i, value))
+    ~if_found:(fun ~i ~value : (_ Option.t[@kind value & (k1 or value)]) ->
+      Some #(i, value))
     ~if_not_found:(fun () -> None)
 ;;
 
@@ -502,11 +507,12 @@ let findi_exn t ~f =
     ~f
     ~if_found:(fun ~i ~value -> #(i, value))
     ~if_not_found:(fun () ->
-      (raise [@kind value & k1]) (Not_found_s (Atom "Array.findi_exn: not found")))
+      (raise [@kind value & (k1 or value)])
+        (Not_found_s (Atom "Array.findi_exn: not found")))
 ;;
 
 (* The [value] version of this implementation initializes the output only once, based on
-     the primitive [caml_array_sub]. Other approaches, like [init] or [map], first
+   the primitive [caml_array_sub]. Other approaches, like [init] or [map], first
    initialize with a fixed value, then blit from the source. *)
 let copy t = (sub [@kind k1]) t ~pos:0 ~len:(length t)
 
@@ -526,11 +532,11 @@ let rev t =
   t
 ;;
 
-let of_list_rev (l : (_ List.Constructors.t[@kind k1])) =
+let of_list_rev (l : (_ List.Constructors.t[@kind k1 or value_or_null])) =
   match l with
   | [] -> [||]
   | a :: l ->
-    let len = 1 + (List.length [@kind k1]) l in
+    let len = 1 + (List.length [@kind k1 or value_or_null]) l in
     let t = create ~len a in
     let r = ref l in
     (* We start at [len - 2] because we already put [a] at [t.(len - 1)]. *)
@@ -562,7 +568,7 @@ let iteri_until t ~f ~finish =
     then (
       match
         ((f [@inlined hint]) i (unsafe_get t i)
-         : (_ Container.Continue_or_stop.t[@kind value k2]))
+         : (_ Container.Continue_or_stop.t[@kind value_or_null (k2 or value_or_null)]))
       with
       | Continue () -> loop (i + 1)
       | Stop res -> res)
@@ -661,13 +667,13 @@ let foldi t ~init ~f =
   (loop [@inlined]) 0 init [@nontail]
 ;;]
 
-[@@@kind.default k2 = base_with_imm]
+[@@@kind.default k2 = base_with_ext]
 
 let filter_mapi t ~f =
   let r = ref [||] in
   let k = ref 0 in
   for i = 0 to length t - 1 do
-    match (f i (unsafe_get t i) : (_ Option.t[@kind k2])) with
+    match (f i (unsafe_get t i) : (_ Option.t[@kind k2 or value_or_null])) with
     | None -> ()
     | Some a ->
       if !k = 0 then r := create ~len:(length t) a;
@@ -689,12 +695,16 @@ let check_length2_exn name t1 t2 =
 
 (* [of_list_map] and [of_list_rev_map] are based on functions from the OCaml distribution. *)
 
-let of_list_map (xs : (_ List.Constructors.t[@kind k1])) ~f =
+let of_list_map (xs : (_ List.Constructors.t[@kind k1 or value_or_null])) ~f =
   match xs with
   | [] -> [||]
   | hd :: tl ->
-    let a = create ~len:(1 + (List.length [@kind k1]) tl) ((f [@inlined hint]) hd) in
-    let rec fill i : (_ List.Constructors.t[@kind k1]) -> _ = function
+    let a =
+      create
+        ~len:(1 + (List.length [@kind k1 or value_or_null]) tl)
+        ((f [@inlined hint]) hd)
+    in
+    let rec fill i : (_ List.Constructors.t[@kind k1 or value_or_null]) -> _ = function
       | [] -> a
       | hd :: tl ->
         unsafe_set a i ((f [@inlined hint]) hd);
@@ -703,12 +713,16 @@ let of_list_map (xs : (_ List.Constructors.t[@kind k1])) ~f =
     fill 1 tl [@nontail]
 ;;
 
-let of_list_mapi (xs : (_ List.Constructors.t[@kind k1])) ~f =
+let of_list_mapi (xs : (_ List.Constructors.t[@kind k1 or value_or_null])) ~f =
   match xs with
   | [] -> [||]
   | hd :: tl ->
-    let a = create ~len:(1 + (List.length [@kind k1]) tl) ((f [@inlined hint]) 0 hd) in
-    let rec fill a i : (_ List.Constructors.t[@kind k1]) -> _ = function
+    let a =
+      create
+        ~len:(1 + (List.length [@kind k1 or value_or_null]) tl)
+        ((f [@inlined hint]) 0 hd)
+    in
+    let rec fill a i : (_ List.Constructors.t[@kind k1 or value_or_null]) -> _ = function
       | [] -> a
       | hd :: tl ->
         unsafe_set a i ((f [@inlined hint]) i hd);
@@ -737,8 +751,17 @@ let for_all2_exn t1 t2 ~f =
   (loop [@inlined]) (length t1 - 1) [@nontail]
 ;;]]
 
+let globalize = (globalize_array [@kind k]) [@@kind k = base]
+
 [%%template
-[@@@kind.default k1 = base_with_imm]
+[@@@kind.default k = base]
+[@@@mode.default m = (global, local)]
+
+let equal = (equal_array [@kind k] [@mode m])
+let compare = (compare_array [@kind k] [@mode m])]
+
+[%%template
+[@@@kind.default k1 = base_with_ext]
 
 let filter t ~f =
   (filter_map [@kind k1 k1]) t ~f:(fun x -> if f x then Some x else None) [@nontail]
@@ -747,15 +770,6 @@ let filter t ~f =
 let filteri t ~f =
   (filter_mapi [@kind k1 k1]) t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
 ;;
-
-let globalize = (globalize_array [@kind k1])
-
-[%%template
-[@@@kind.default k1]
-[@@@mode.default m = (global, local)]
-
-let equal = (equal_array [@kind k1] [@mode m])
-let compare = (compare_array [@kind k1] [@mode m])]
 
 [%%template
 [@@@kind.default k1 = k1, k2 = base, k3 = base]
@@ -767,7 +781,8 @@ let foldi_until t ~init ~f ~finish =
     then (
       match
         ((f [@inlined hint]) i acc (unsafe_get t i)
-         : (_ Container.Continue_or_stop.t[@kind k2 k3]))
+         : (_ Container.Continue_or_stop.t
+           [@kind (k2 or value_or_null) (k3 or value_or_null)]))
       with
       | Continue acc -> loop (i + 1) acc
       | Stop res -> res)
@@ -784,7 +799,7 @@ let fold_until t ~init ~f ~finish =
     ~finish:(fun _i acc -> finish acc) [@nontail]
 ;;]
 
-[@@@kind.default k2 = base_with_imm]
+[@@@kind.default k2 = base_with_ext]
 
 let of_list_rev_map xs ~f =
   let t = (of_list_map [@kind k1 k2]) xs ~f in
@@ -798,18 +813,20 @@ let of_list_rev_mapi xs ~f =
   t
 ;;
 
-[@@@kind.default k3 = base_with_imm]
+[@@@kind.default k3 = base_with_ext]
 
 let partition_mapi t ~f =
-  let (both : (_ Either0.t[@kind k2 k3]) t) = (mapi [@kind k1 value]) t ~f in
+  let (both : (_ Either0.t[@kind (k2 or value_or_null) (k3 or value_or_null)]) t) =
+    (mapi [@kind k1 value]) t ~f
+  in
   let firsts =
     (filter_map [@kind value k2]) both ~f:(function
-      | First x -> (Some x : (_ Option.t[@kind k2]))
+      | First x -> (Some x : (_ Option.t[@kind k2 or value_or_null]))
       | Second _ -> None)
   in
   let seconds =
     (filter_map [@kind value k3]) both ~f:(function
-      | First _ -> (None : (_ Option.t[@kind k3]))
+      | First _ -> (None : (_ Option.t[@kind k3 or value_or_null]))
       | Second x -> Some x)
   in
   firsts, seconds
@@ -820,7 +837,7 @@ let partition_map t ~f =
 ;;]
 
 [%%template
-[@@@kind.default k = base_with_imm]
+[@@@kind.default k = base_with_ext]
 
 let partitioni_tf t ~f =
   (partition_mapi [@kind k k k]) t ~f:(fun i x -> if f i x then First x else Second x)
@@ -838,8 +855,6 @@ let partition_tf t ~f = (partitioni_tf [@kind k]) t ~f:(fun _ x -> f x) [@nontai
 [%%template
 [@@@alloc.default a @ m = (heap_global, stack_local)]
 
-let sexp_of_t = (sexp_of_t [@alloc a]) [@@kind k = (immediate, immediate64)]
-
 let sexp_of_t (sexp_of_elt : _ @ m -> Sexp0.t @ m) (t @ m) : Sexp0.t =
   (let rec loop i res =
      if i < 0
@@ -852,15 +867,13 @@ let sexp_of_t (sexp_of_elt : _ @ m -> Sexp0.t @ m) (t @ m) : Sexp0.t =
 ;;]
 
 [%%template
-let t_of_sexp = t_of_sexp [@@kind k = (immediate, immediate64)]
-
-let t_of_sexp elt_of_sexp (sexp : Sexp0.t) =
-  match sexp with
-  | List [] -> [||]
-  | List (_ :: _ as l) -> (of_list_map [@kind value k]) l ~f:elt_of_sexp
-  | Atom _ -> of_sexp_error "array_of_sexp: list needed" sexp
-[@@kind k = base_non_value]
-;;]
+  let t_of_sexp elt_of_sexp (sexp : Sexp0.t) =
+    match sexp with
+    | List [] -> [||]
+    | List (_ :: _ as l) -> (of_list_map [@kind value k]) l ~f:elt_of_sexp
+    | Atom _ -> of_sexp_error "array_of_sexp: list needed" sexp
+  [@@kind k = base_non_value]
+  ;;]
 
 (* We generated [findi]s that return [value & value]s, but for backwards compatibility we
    want to return the boxed product instead when dealing only with values. *)
@@ -1104,7 +1117,7 @@ let transpose_exn tt =
 
 [@@@warning "-incompatible-with-upstream"]
 
-let%template[@kind k1 = base_with_imm, k2 = base_with_imm] map t ~f =
+let%template[@kind k1 = base_with_ext, k2 = base_with_ext] map t ~f =
   (map [@kind k1 k2]) t ~f
 ;;
 
@@ -1160,9 +1173,9 @@ let sub t ~pos ~len = sub t ~pos ~len
 let invariant invariant_a t = iter t ~f:invariant_a
 
 module Private = struct
-  module%template [@kind k = values] Sort = Sort [@kind k]
+  module%template [@kind k = (value, value mod external64)] Sort = Sort [@kind k]
 
-  module%template.portable [@kind k = values] [@modality p] Sorter =
+  module%template.portable [@kind k = (value, value mod external64)] [@modality p] Sorter =
     Sorter
     [@kind k]
     [@modality p]

@@ -16,7 +16,7 @@ module T = struct
     @@ portable
     = "caml_nativeint_format"
 
-  let to_string i = format "%d" i
+  let to_string = Integer_to_string.nativeint_to_string
 
   external of_string
     :  local_ string

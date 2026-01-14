@@ -33,10 +33,10 @@
 
 open! Import
 
-type (+'a : any) t [@@deriving globalize]
+type (!+'a : any) t [@@deriving globalize]
 
 [%%rederive:
-  type nonrec +'a t = 'a t [@@deriving compare ~localize, equal ~localize, sexp_of]]
+  type nonrec !+'a t = 'a t [@@deriving compare ~localize, equal ~localize, sexp_of]]
 
 type 'a sequence := 'a t
 

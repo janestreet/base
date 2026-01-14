@@ -1,15 +1,15 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                           Objective Caml                            *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Apache 2.0 license. See ../THIRD-PARTY.txt  *)
-(*  for details.                                                       *)
-(*                                                                     *)
-(***********************************************************************)
+(***********************************************************************
+ *
+ *                           Objective Caml
+ *
+ *            Xavier Leroy, projet Cristal, INRIA Rocquencourt
+ *
+ *  Copyright 1996 Institut National de Recherche en Informatique et
+ *  en Automatique.  All rights reserved.  This file is distributed
+ *  under the terms of the Apache 2.0 license. See ../THIRD-PARTY.txt
+ *  for details.
+ *
+ ***********************************************************************)
 
 (* Sets over ordered types *)
 
@@ -702,64 +702,63 @@ module Tree0 = struct
     diff s1 s2
   ;;
 
-  module Enum = struct
+  module Enum : Private.Enum with type ('a, 'cmp) tree := ('a, 'cmp) tree = struct
     type increasing
     type decreasing
 
-    type ('a, 'cmp, 'direction) t =
-      | End
+    type ('a, 'cmp, 'direction) nonempty =
       | More of 'a * ('a, 'cmp) tree * ('a, 'cmp, 'direction) t
+
+    and ('a, 'cmp, 'direction) t = ('a, 'cmp, 'direction) nonempty or_null
 
     let rec cons s (e : (_, _, increasing) t) : (_, _, increasing) t =
       match s with
       | Empty -> e
-      | Leaf { elt = v } -> More (v, Empty, e)
-      | Node { left = l; elt = v; right = r; weight = _ } -> cons l (More (v, r, e))
+      | Leaf { elt = v } -> This (More (v, Empty, e))
+      | Node { left = l; elt = v; right = r; weight = _ } ->
+        cons l (This (More (v, r, e)))
     ;;
 
     let rec cons_right s (e : (_, _, decreasing) t) : (_, _, decreasing) t =
       match s with
       | Empty -> e
-      | Leaf { elt = v } -> More (v, Empty, e)
-      | Node { left = l; elt = v; right = r; weight = _ } -> cons_right r (More (v, l, e))
+      | Leaf { elt = v } -> This (More (v, Empty, e))
+      | Node { left = l; elt = v; right = r; weight = _ } ->
+        cons_right r (This (More (v, l, e)))
     ;;
 
-    let of_set s : (_, _, increasing) t = cons s End
-    let of_set_right s : (_, _, decreasing) t = cons_right s End
+    let of_set s : (_, _, increasing) t = cons s Null
+    let of_set_right s : (_, _, decreasing) t = cons_right s Null
 
     let starting_at_increasing t key compare : (_, _, increasing) t =
       let rec loop t e =
         match t with
         | Empty -> e
-        | Leaf { elt = v } ->
-          loop (Node { left = Empty; elt = v; right = Empty; weight = 2 }) e
-        | Node { left = _; elt = v; right = r; weight = _ } when compare v key < 0 ->
-          loop r e
-        | Node { left = l; elt = v; right = r; weight = _ } -> loop l (More (v, r, e))
+        | Leaf { elt = v } -> if compare v key < 0 then e else This (More (v, Empty, e))
+        | Node { left = l; elt = v; right = r; weight = _ } ->
+          if compare v key < 0 then loop r e else loop l (This (More (v, r, e)))
       in
-      loop t End
+      loop t Null
     ;;
 
     let starting_at_decreasing t key compare : (_, _, decreasing) t =
       let rec loop t e =
         match t with
         | Empty -> e
-        | Leaf { elt = v } ->
-          loop (Node { left = Empty; elt = v; right = Empty; weight = 2 }) e
-        | Node { left = l; elt = v; right = _; weight = _ } when compare v key > 0 ->
-          loop l e
-        | Node { left = l; elt = v; right = r; weight = _ } -> loop r (More (v, l, e))
+        | Leaf { elt = v } -> if compare v key > 0 then e else This (More (v, Empty, e))
+        | Node { left = l; elt = v; right = r; weight = _ } ->
+          if compare v key > 0 then loop l e else loop r (This (More (v, l, e)))
       in
-      loop t End
+      loop t Null
     ;;
 
     let compare compare_elt e1 e2 =
       let rec loop e1 e2 =
         match e1, e2 with
-        | End, End -> 0
-        | End, _ -> -1
-        | _, End -> 1
-        | More (v1, r1, e1), More (v2, r2, e2) ->
+        | Null, Null -> 0
+        | Null, _ -> -1
+        | _, Null -> 1
+        | This (More (v1, r1, e1)), This (More (v2, r2, e2)) ->
           let c = compare_elt v1 v2 in
           if c <> 0
           then c
@@ -771,8 +770,8 @@ module Tree0 = struct
     ;;
 
     let rec iter ~f = function
-      | End -> ()
-      | More (a, tree, enum) ->
+      | Null -> ()
+      | This (More (a, tree, enum)) ->
         f a;
         iter (cons tree enum) ~f
     ;;
@@ -780,10 +779,10 @@ module Tree0 = struct
     let iter2 compare_elt t1 t2 ~f =
       let rec loop t1 t2 =
         match t1, t2 with
-        | End, End -> ()
-        | End, _ -> iter t2 ~f:(fun a -> f (`Right a)) [@nontail]
-        | _, End -> iter t1 ~f:(fun a -> f (`Left a)) [@nontail]
-        | More (a1, tree1, enum1), More (a2, tree2, enum2) ->
+        | Null, Null -> ()
+        | Null, _ -> iter t2 ~f:(fun a -> f (`Right a)) [@nontail]
+        | _, Null -> iter t1 ~f:(fun a -> f (`Left a)) [@nontail]
+        | This (More (a1, tree1, enum1)), This (More (a2, tree2, enum2)) ->
           let compare_result = compare_elt a1 a2 in
           if compare_result = 0
           then (
@@ -803,12 +802,13 @@ module Tree0 = struct
     let symmetric_diff t1 t2 ~compare_elt =
       let step state : ((_, _) Either.t, _) Sequence.Step.t =
         match state with
-        | End, End -> Done
-        | End, More (elt, tree, enum) ->
-          Yield { value = Second elt; state = End, cons tree enum }
-        | More (elt, tree, enum), End ->
-          Yield { value = First elt; state = cons tree enum, End }
-        | (More (a1, tree1, enum1) as left), (More (a2, tree2, enum2) as right) ->
+        | Null, Null -> Done
+        | Null, This (More (elt, tree, enum)) ->
+          Yield { value = Second elt; state = Null, cons tree enum }
+        | This (More (elt, tree, enum)), Null ->
+          Yield { value = First elt; state = cons tree enum, Null }
+        | ( (This (More (a1, tree1, enum1)) as left)
+          , (This (More (a2, tree2, enum2)) as right) ) ->
           let compare_result = compare_elt a1 a2 in
           if compare_result = 0
           then (
@@ -829,8 +829,9 @@ module Tree0 = struct
   let to_sequence_increasing comparator ~from_elt t =
     let next enum =
       match enum with
-      | Enum.End -> Sequence.Step.Done
-      | Enum.More (k, t, e) -> Sequence.Step.Yield { value = k; state = Enum.cons t e }
+      | Null -> Sequence.Step.Done
+      | This (Enum.More (k, t, e)) ->
+        Sequence.Step.Yield { value = k; state = Enum.cons t e }
     in
     let init =
       match from_elt with
@@ -843,8 +844,8 @@ module Tree0 = struct
   let to_sequence_decreasing comparator ~from_elt t =
     let next enum =
       match enum with
-      | Enum.End -> Sequence.Step.Done
-      | Enum.More (k, t, e) ->
+      | Null -> Sequence.Step.Done
+      | This (Enum.More (k, t, e)) ->
         Sequence.Step.Yield { value = k; state = Enum.cons_right t e }
     in
     let init =
@@ -1039,12 +1040,23 @@ module Tree0 = struct
   let count t ~f = Container.count ~fold t ~f
   let sum m t ~f = Container.sum ~fold m t ~f
 
-  let rec fold_right s ~init:accu ~f =
-    match s with
-    | Empty -> accu
-    | Leaf { elt = v } -> f v accu
-    | Node { left = l; elt = v; right = r; weight = _ } ->
-      fold_right ~f l ~init:(f v (fold_right ~f r ~init:accu))
+  let%template[@mode m = (global, local)] fold_right
+    (s @ m)
+    ~init
+    ~(f : (_ @ m -> _ @ m -> _ @ m) @ local)
+    : _ @ m
+    =
+    (let rec loop accu t =
+       match[@exclave_if_local m ~reasons:[ May_return_local ]] t with
+       | Empty -> accu
+       | Leaf { elt = v } -> f v accu
+       | Node { left = l; elt = v; right = r; weight = _ } ->
+         let accu = loop accu r in
+         let accu = f v accu in
+         loop accu l
+     in
+     loop init s [@nontail])
+    [@exclave_if_local m ~reasons:[ May_return_local ]]
   ;;
 
   let rec for_all t ~f:p =
@@ -1275,8 +1287,16 @@ module Tree0 = struct
     | sexp -> of_sexp_error "Set.t_of_sexp: list needed" sexp
   ;;
 
-  let sexp_of_t sexp_of_a t =
-    Sexp.List (fold_right t ~init:[] ~f:(fun el acc -> sexp_of_a el :: acc))
+  let%template[@alloc a @ m = (heap_global, stack_local)] sexp_of_t
+    (type a)
+    (sexp_of_a : a @ m -> Sexp.t @ m)
+    (t @ m)
+    : Sexp.t @ m
+    =
+    Sexp.List
+      ((fold_right [@mode m]) t ~init:[] ~f:(fun el acc ->
+         sexp_of_a el :: acc [@exclave_if_stack a]))
+    [@exclave_if_stack a]
   ;;
 
   module Named = struct
@@ -1424,7 +1444,10 @@ module Accessors = struct
   let nth t i = Tree0.nth t.tree i
   let rank t v = Tree0.rank t.tree v ~compare_elt:(compare_elt t)
   let remove_index t i = like t (Tree0.remove_index t.tree i ~compare_elt:(compare_elt t))
-  let sexp_of_t sexp_of_a _ t = Tree0.sexp_of_t sexp_of_a t.tree
+
+  let%template[@alloc a = (heap, stack)] sexp_of_t sexp_of_a _ t =
+    (Tree0.sexp_of_t [@alloc a]) sexp_of_a t.tree [@exclave_if_stack a]
+  ;;
 
   let to_sequence ?order ?greater_or_equal_to ?less_or_equal_to t =
     Tree0.to_sequence t.comparator ?order ?greater_or_equal_to ?less_or_equal_to t.tree
@@ -1760,9 +1783,7 @@ struct
   type nonrec t = (Elt.t, Elt.comparator_witness) t
 end
 
-module type Sexp_of_m = sig
-  type t [@@deriving sexp_of]
-end
+module type%template [@alloc a = (heap, stack)] Sexp_of_m = Sexpable.Sexp_of [@alloc a]
 
 module type M_of_sexp = sig
   type t [@@deriving of_sexp]
@@ -1779,8 +1800,15 @@ module type Equal_m = sig end
 module type Globalize_m = sig end
 module type Hash_fold_m = Hasher.S
 
-let sexp_of_m__t (type elt) (module Elt : Sexp_of_m with type t = elt) t =
-  sexp_of_t Elt.sexp_of_t (fun _ -> Sexp.Atom "_") t
+let%template[@alloc a @ m = (heap_global, stack_local)] sexp_of_m__t
+  (type elt)
+  (module Elt : Sexp_of_m with type t = elt[@alloc a])
+  t
+  =
+  (sexp_of_t [@alloc a])
+    (Elt.sexp_of_t [@alloc a])
+    (fun _ -> Sexp.Atom "_")
+    t [@exclave_if_stack a]
 ;;
 
 let m__t_of_sexp
@@ -1846,4 +1874,8 @@ module Poly = struct
   let filter_map a ~f = Using_comparator.filter_map ~comparator a ~f
   let of_tree tree = { comparator; tree }
   let to_tree t = t.tree
+end
+
+module Private = struct
+  module Enum = Tree0.Enum
 end

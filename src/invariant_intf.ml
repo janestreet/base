@@ -15,7 +15,7 @@ module Definitions = struct
   end
 
   [%%template
-  [@@@kind.default ka = base_with_imm]
+  [@@@kind.default ka = base]
 
   module type S1 = sig
     type ('a : ka) t : any
@@ -23,7 +23,7 @@ module Definitions = struct
     val invariant : 'a inv -> 'a t inv [@@kind ka]
   end
 
-  [@@@kind.default kb = base_with_imm]
+  [@@@kind.default kb = base]
 
   module type S2 = sig
     type ('a : ka, 'b : kb) t : any
@@ -31,7 +31,7 @@ module Definitions = struct
     val invariant : 'a inv -> 'b inv -> ('a, 'b) t inv [@@kind ka kb]
   end
 
-  [@@@kind.default kc = base_with_imm]
+  [@@@kind.default kc = base]
 
   module type S3 = sig
     type ('a : ka, 'b : kb, 'c : kc) t : any
@@ -62,7 +62,7 @@ module type Invariant = sig @@ portable
   end
 
   [%%template:
-  [@@@kind.default k = base_with_imm]
+  [@@@kind.default k = base]
 
   (** [invariant t sexp_of_t f] runs [f ()], and if [f] raises, wraps the exception in an
       [Error.t] that states "invariant failed" and includes both the exception raised by

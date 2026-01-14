@@ -120,7 +120,9 @@ val%template map : bytes @ local -> f:(char -> char) @ local -> bytes @ m
 [@@alloc a @ m = (stack_local, heap_global)]
 
 val mapi : bytes @ local -> f:(int -> char -> char) @ local -> bytes
-val sub : bytes -> pos:int -> len:int -> bytes
+
+val%template sub : bytes @ m -> pos:int -> len:int -> bytes @ m
+[@@alloc a @ m = (stack_local, heap_global)]
 
 external unsafe_blit
   :  src:(bytes[@local_opt])

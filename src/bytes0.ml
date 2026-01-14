@@ -366,8 +366,6 @@ let mapi (local_ t) ~(local_ f : _ -> _ -> _) =
     r)
 ;;
 
-let sub = Stdlib.Bytes.sub
-
 external unsafe_blit
   :  src:(bytes[@local_opt])
   -> src_pos:int
@@ -378,6 +376,16 @@ external unsafe_blit
   @@ portable
   = "caml_blit_bytes"
 [@@noalloc]
+
+(* This is lifted from [Stdlib], but templated *)
+let%template[@alloc a = (heap, stack)] sub src ~pos:src_pos ~len =
+  if [@exclave_if_stack a] src_pos < 0 || len < 0 || src_pos > length src - len
+  then invalid_arg "Bytes0.sub"
+  else (
+    let dst = (create [@alloc a]) len in
+    unsafe_blit ~src ~src_pos ~dst ~dst_pos:0 ~len;
+    dst)
+;;
 
 let to_string = Stdlib.Bytes.to_string
 let of_string = Stdlib.Bytes.of_string

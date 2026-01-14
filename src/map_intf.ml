@@ -470,9 +470,8 @@ module Definitions = struct
   module type For_deriving = sig
     type ('a, 'b, 'c) t
 
-    module type Sexp_of_m = sig
-      type t [@@deriving sexp_of]
-    end
+    module type%template [@alloc a = (heap, stack)] Sexp_of_m = Sexpable.Sexp_of
+    [@alloc a]
 
     module type M_of_sexp = sig
       type t [@@deriving of_sexp]
@@ -489,11 +488,12 @@ module Definitions = struct
     module type Hash_fold_m = Hasher.S
     module type Globalize_m = sig end
 
-    val sexp_of_m__t
-      :  (module Sexp_of_m with type t = 'k)
-      -> ('v -> Sexp.t)
-      -> ('k, 'v, 'cmp) t
-      -> Sexp.t
+    val%template sexp_of_m__t
+      :  ((module Sexp_of_m with type t = 'k)[@alloc a])
+      -> ('v @ m -> Sexp.t @ m)
+      -> ('k, 'v, 'cmp) t @ m
+      -> Sexp.t @ m
+    [@@alloc a @ m = (heap_global, stack_local)]
 
     val m__t_of_sexp
       :  (module M_of_sexp with type t = 'k and type comparator_witness = 'cmp)
@@ -547,6 +547,117 @@ module Definitions = struct
       -> Hash.state
       -> ('k, 'v, _) t
       -> Hash.state
+  end
+
+  (**/**)
+
+  (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+      https://opensource.janestreet.com/standards/#private-submodules *)
+  module Private = struct
+    module type Enum = sig
+      type ('k, 'v, 'cmp) tree
+
+      (** Phantom types, to avoid mixing up enumeration directions. *)
+
+      type increasing
+      type decreasing
+
+      (** Enum type *)
+
+      type ('k, 'v, 'cmp, 'direction) nonempty =
+        | More of 'k * 'v * ('k, 'v, 'cmp) tree * ('k, 'v, 'cmp, 'direction) t
+
+      and ('k, 'v, 'cmp, 'direction) t = ('k, 'v, 'cmp, 'direction) nonempty or_null
+
+      (** Constructors *)
+
+      val cons
+        :  ('k, 'v, 'cmp) tree
+        -> ('k, 'v, 'cmp, increasing) t
+        -> ('k, 'v, 'cmp, increasing) t
+
+      val cons_right
+        :  ('k, 'v, 'cmp) tree
+        -> ('k, 'v, 'cmp, decreasing) t
+        -> ('k, 'v, 'cmp, decreasing) t
+
+      val of_tree : ('k, 'v, 'cmp) tree -> ('k, 'v, 'cmp, increasing) t
+      val of_tree_right : ('k, 'v, 'cmp) tree -> ('k, 'v, 'cmp, decreasing) t
+
+      val starting_at_increasing
+        :  ('k, 'v, 'cmp) tree @ local
+        -> 'k
+        -> ('k -> 'k -> int)
+        -> ('k, 'v, 'cmp, increasing) t
+
+      val starting_at_decreasing
+        :  ('k, 'v, 'cmp) tree @ local
+        -> 'k
+        -> ('k -> 'k -> int)
+        -> ('k, 'v, 'cmp, decreasing) t
+
+      (** Comparing two enums, or two trees using enums behind the scenes *)
+
+      val drop_phys_equal_prefix
+        :  ('k, 'v, 'cmp) tree @ local
+        -> ('k, 'v, 'cmp, 'dir) t
+        -> ('k, 'v, 'cmp) tree @ local
+        -> ('k, 'v, 'cmp, 'dir) t
+        -> ('k, 'v, 'cmp, 'dir) t * ('k, 'v, 'cmp, 'dir) t
+
+      val symmetric_diff
+        :  ('k, 'v, 'cmp) tree
+        -> ('k, 'v, 'cmp) tree
+        -> compare_key:('k -> 'k -> int)
+        -> data_equal:('v -> 'v -> bool)
+        -> ('k, 'v) Symmetric_diff_element.t Sequence.t
+
+      val fold_symmetric_diff
+        :  ('k, 'v, 'cmp) tree
+        -> ('k, 'v, 'cmp) tree
+        -> compare_key:('k -> 'k -> int) @ local
+        -> data_equal:('v -> 'v -> bool) @ local
+        -> init:'acc
+        -> f:('acc -> ('k, 'v) Symmetric_diff_element.t -> 'acc) @ local
+        -> 'acc
+
+      val compare
+        :  ('k -> 'k -> int)
+        -> ('v -> ('v -> int) @ local)
+           (** This (otherwise odd) use of [local] makes a single [Enum.compare] usable by
+               both [Map.compare_direct] and [Map.compare_direct [@mode local]]. *)
+        -> ('k, 'v, 'cmp, increasing) t
+        -> ('k, 'v, 'cmp, increasing) t
+        -> int
+
+      val equal
+        :  ('k -> 'k -> int)
+        -> ('v -> ('v -> bool) @ local)
+           (** This (otherwise odd) use of [local] makes a single [Enum.equal] usable by
+               both [Map.equal] and [Map.equal [@mode local]]. *)
+        -> ('k, 'v, 'cmp, increasing) t
+        -> ('k, 'v, 'cmp, increasing) t
+        -> bool
+
+      (** Traversing two enums *)
+
+      val fold2
+        :  ('k -> 'k -> int)
+        -> ('k, 'v1, 'cmp, increasing) t
+        -> ('k, 'v2, 'cmp, increasing) t
+        -> init:'kcc
+        -> f:(key:'k -> data:('v1, 'v2) Merge_element.t -> 'kcc -> 'kcc) @ local
+        -> 'kcc
+
+      (** Traversing one enum *)
+
+      val fold
+        :  init:'acc
+        -> f:(key:'k -> data:'v -> 'acc -> 'acc) @ local
+        -> ('k, 'v, 'cmp, increasing) t
+        -> 'acc
+    end
   end
 end
 
@@ -1689,4 +1800,13 @@ module type Map = sig @@ portable
 
   (** Extract a tree from a map. *)
   val to_tree : ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) Using_comparator.Tree.t
+
+  (**/**)
+
+  (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+      https://opensource.janestreet.com/standards/#private-submodules *)
+  module Private : sig
+    module Enum : Private.Enum with type ('k, 'v, 'cmp) tree := ('k, 'v, 'cmp) Tree.t
+  end
 end

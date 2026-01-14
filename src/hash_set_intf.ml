@@ -51,6 +51,10 @@ module Definitions = struct
 
     val add : 'a t -> 'a -> unit
 
+    (** Get an element, adding it if it doesn't exist. This can be useful e.g. in order to
+        use [Hash_set] for interning. *)
+    val get_or_add : 'a t -> 'a -> 'a
+
     (** [strict_add t x] returns [Ok] if [x] was not in [t], or [Duplicate] if it was. *)
     val strict_add : 'a t -> 'a -> Ok_or_duplicate.t
 

@@ -5,9 +5,7 @@ include Binary_searchable_intf.Definitions
 
 [%%template
 [@@@mode.default m = (global, local)]
-
-[@@@kind.default
-  k = (value, immediate, immediate64, value mod external_, value mod external64)]
+[@@@kind.default k = (value, value mod external64)]
 
 module type Arg = sig
   type ('a : k) elt

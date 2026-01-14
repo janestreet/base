@@ -67,7 +67,9 @@ end = struct
         let mem t x ~equal:_ = mem t x
 
         module Elt = struct
-          type _ t = int [@@deriving compare, equal, quickcheck, sexp_of]
+          type _ t = int
+          [@@deriving
+            compare ~localize, equal ~localize, quickcheck, sexp_of ~stackify, globalize]
         end
 
         module Simple = struct
@@ -157,6 +159,35 @@ end = struct
         require_not_equal (module Int_hash_set) source copied;
         Hash_set.strict_add_exn copied absent;
         require_equal (module Int_hash_set) source copied)
+  ;;
+
+  let get_or_add = Hash_set.get_or_add
+
+  module Test = struct
+    type t = { inner : int [@hash.ignore] [@compare.ignore] }
+    [@@deriving compare, hash, sexp, fields ~getters]
+
+    let create inner = { inner }
+  end
+
+  let%expect_test "get_or_add" =
+    let set = Hash_set.create (module Int) in
+    require_equal (module Int) (get_or_add set 0) 0;
+    require_equal (module Int_hash_set) set (Hash_set.of_list (module Int) [ 0 ]);
+    require_equal (module Int) (get_or_add set 0) 0;
+    require_equal (module Int_hash_set) set (Hash_set.of_list (module Int) [ 0 ]);
+    require_equal (module Int) (get_or_add set 1) 1;
+    require_equal (module Int_hash_set) set (Hash_set.of_list (module Int) [ 0; 1 ]);
+    require_equal (module Int) (get_or_add set 1) 1;
+    require_equal (module Int_hash_set) set (Hash_set.of_list (module Int) [ 0; 1 ]);
+    (* Check that we get back the original object *)
+    let set = Hash_set.create (module Test) in
+    let element = Test.create 1 in
+    let new_element = Test.create 2 in
+    require (not (phys_equal element new_element));
+    require (phys_equal (get_or_add set element) element);
+    require (phys_equal (get_or_add set new_element) element);
+    [%expect {| |}]
   ;;
 
   let strict_add = Hash_set.strict_add
