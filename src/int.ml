@@ -73,9 +73,9 @@ include%template Pretty_printer.Register [@modality portable] (struct
     let module_name = "Base.Int"
   end)
 
-(* Open replace_polymorphic_compare after including functor instantiations so
-   they do not shadow its definitions. This is here so that efficient versions
-   of the comparison functions are available within this module. *)
+(* Open replace_polymorphic_compare after including functor instantiations so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
 open! Int_replace_polymorphic_compare
 
 let invariant (_ : t) = ()
@@ -283,7 +283,7 @@ module O = struct
      the [Int_math.Make] functor, and we didn't want to degrade their performance.
 
      We won't pre-emptively do the same for new functions, unless someone cares, on a case
-     by case fashion.  *)
+     by case fashion. *)
 
   let ( % ) x y =
     if y <= zero

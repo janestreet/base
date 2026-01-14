@@ -41,6 +41,7 @@ val name : (_, _, _) t_with_perm -> string
     , value & value & value & bits32
     , value & value & value & value & value
     , value & value & value & value & value & value
+    , value & value & value & value & value & value & value
     , float64 & float64 & float64 & float64 & float64 & float64
     , (float64 & float64 & float64 & float64 & float64 & float64)
       & (float64 & float64 & float64 & float64 & float64 & float64)

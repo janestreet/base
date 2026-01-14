@@ -1,18 +1,18 @@
-(* [Bytes0] defines string functions that are primitives or can be simply
-   defined in terms of [Stdlib.Bytes]. [Bytes0] is intended to completely express
-   the part of [Stdlib.Bytes] that [Base] uses -- no other file in Base other
-   than bytes0.ml should use [Stdlib.Bytes]. [Bytes0] has few dependencies, and
-   so is available early in Base's build order.
+(* [Bytes0] defines string functions that are primitives or can be simply defined in terms
+   of [Stdlib.Bytes]. [Bytes0] is intended to completely express the part of
+   [Stdlib.Bytes] that [Base] uses -- no other file in Base other than bytes0.ml should
+   use [Stdlib.Bytes]. [Bytes0] has few dependencies, and so is available early in Base's
+   build order.
 
-   All Base files that need to use strings and come before [Base.Bytes] in
-   build order should do:
+   All Base files that need to use strings and come before [Base.Bytes] in build order
+   should do:
 
    {[
-     module Bytes  = Bytes0
+     module Bytes = Bytes0
    ]}
 
-   Defining [module Bytes = Bytes0] is also necessary because it prevents
-   ocamldep from mistakenly causing a file to depend on [Base.Bytes]. *)
+   Defining [module Bytes = Bytes0] is also necessary because it prevents ocamldep from
+   mistakenly causing a file to depend on [Base.Bytes]. *)
 
 open! Import0
 module Uchar = Uchar0
@@ -316,8 +316,6 @@ let mapi t ~(f : _ -> _ -> _) =
     r)
 ;;
 
-let sub = Stdlib.Bytes.sub
-
 external unsafe_blit
   :  src:(bytes[@local_opt])
   -> src_pos:int
@@ -327,6 +325,16 @@ external unsafe_blit
   -> unit
   = "caml_blit_bytes"
 [@@noalloc]
+
+(* This is lifted from [Stdlib], but templated *)
+let%template[@alloc a = (heap, stack)] sub src ~pos:src_pos ~len =
+  if [@exclave_if_stack a] src_pos < 0 || len < 0 || src_pos > length src - len
+  then invalid_arg "Bytes0.sub"
+  else (
+    let dst = (create [@alloc a]) len in
+    unsafe_blit ~src ~src_pos ~dst ~dst_pos:0 ~len;
+    dst)
+;;
 
 let to_string = Stdlib.Bytes.to_string
 let of_string = Stdlib.Bytes.of_string

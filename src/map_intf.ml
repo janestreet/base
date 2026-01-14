@@ -257,6 +257,8 @@ module Definitions = struct
           , ('k, 'v, 'cmp) t -> 'k key -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t )
           access_options
 
+    val split_n : ('k, 'v, 'cmp) t -> int -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
+
     val append
       : ( 'k
           , 'cmp
@@ -303,8 +305,8 @@ module Definitions = struct
           , 'cmp
           , ('k, 'v1, 'cmp) t
             -> ('k, 'v2, 'cmp) t
-            -> left:('k key, 'v1, 'v3) When_unmatched.t
-            -> right:('k key, 'v2, 'v3) When_unmatched.t
+            -> first:('k key, 'v1, 'v3) When_unmatched.t
+            -> second:('k key, 'v2, 'v3) When_unmatched.t
             -> both:('k key, 'v1, 'v2, 'v3) When_matched.t
             -> ('k, 'v3, 'cmp) t )
           access_options
@@ -455,9 +457,8 @@ module Definitions = struct
   module type For_deriving = sig
     type ('a, 'b, 'c) t
 
-    module type Sexp_of_m = sig
-      type t [@@deriving sexp_of]
-    end
+    module type%template [@alloc a = (heap, stack)] Sexp_of_m = Sexpable.Sexp_of
+    [@alloc a]
 
     module type M_of_sexp = sig
       type t [@@deriving of_sexp]
@@ -474,11 +475,12 @@ module Definitions = struct
     module type Hash_fold_m = Hasher.S
     module type Globalize_m = sig end
 
-    val sexp_of_m__t
-      :  (module Sexp_of_m with type t = 'k)
+    val%template sexp_of_m__t
+      :  ((module Sexp_of_m with type t = 'k)[@alloc a])
       -> ('v -> Sexp.t)
       -> ('k, 'v, 'cmp) t
       -> Sexp.t
+    [@@alloc a @ m = (heap_global, stack_local)]
 
     val m__t_of_sexp
       :  (module M_of_sexp with type t = 'k and type comparator_witness = 'cmp)
@@ -527,6 +529,117 @@ module Definitions = struct
       -> Hash.state
       -> ('k, 'v, _) t
       -> Hash.state
+  end
+
+  (**/**)
+
+  (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+      https://opensource.janestreet.com/standards/#private-submodules *)
+  module Private = struct
+    module type Enum = sig
+      type ('k, 'v, 'cmp) tree
+
+      (** Phantom types, to avoid mixing up enumeration directions. *)
+
+      type increasing
+      type decreasing
+
+      (** Enum type *)
+
+      type ('k, 'v, 'cmp, 'direction) nonempty =
+        | More of 'k * 'v * ('k, 'v, 'cmp) tree * ('k, 'v, 'cmp, 'direction) t
+
+      and ('k, 'v, 'cmp, 'direction) t = ('k, 'v, 'cmp, 'direction) nonempty or_null
+
+      (** Constructors *)
+
+      val cons
+        :  ('k, 'v, 'cmp) tree
+        -> ('k, 'v, 'cmp, increasing) t
+        -> ('k, 'v, 'cmp, increasing) t
+
+      val cons_right
+        :  ('k, 'v, 'cmp) tree
+        -> ('k, 'v, 'cmp, decreasing) t
+        -> ('k, 'v, 'cmp, decreasing) t
+
+      val of_tree : ('k, 'v, 'cmp) tree -> ('k, 'v, 'cmp, increasing) t
+      val of_tree_right : ('k, 'v, 'cmp) tree -> ('k, 'v, 'cmp, decreasing) t
+
+      val starting_at_increasing
+        :  ('k, 'v, 'cmp) tree
+        -> 'k
+        -> ('k -> 'k -> int)
+        -> ('k, 'v, 'cmp, increasing) t
+
+      val starting_at_decreasing
+        :  ('k, 'v, 'cmp) tree
+        -> 'k
+        -> ('k -> 'k -> int)
+        -> ('k, 'v, 'cmp, decreasing) t
+
+      (** Comparing two enums, or two trees using enums behind the scenes *)
+
+      val drop_phys_equal_prefix
+        :  ('k, 'v, 'cmp) tree
+        -> ('k, 'v, 'cmp, 'dir) t
+        -> ('k, 'v, 'cmp) tree
+        -> ('k, 'v, 'cmp, 'dir) t
+        -> ('k, 'v, 'cmp, 'dir) t * ('k, 'v, 'cmp, 'dir) t
+
+      val symmetric_diff
+        :  ('k, 'v, 'cmp) tree
+        -> ('k, 'v, 'cmp) tree
+        -> compare_key:('k -> 'k -> int)
+        -> data_equal:('v -> 'v -> bool)
+        -> ('k, 'v) Symmetric_diff_element.t Sequence.t
+
+      val fold_symmetric_diff
+        :  ('k, 'v, 'cmp) tree
+        -> ('k, 'v, 'cmp) tree
+        -> compare_key:('k -> 'k -> int)
+        -> data_equal:('v -> 'v -> bool)
+        -> init:'acc
+        -> f:('acc -> ('k, 'v) Symmetric_diff_element.t -> 'acc)
+        -> 'acc
+
+      val compare
+        :  ('k -> 'k -> int)
+        -> ('v -> 'v -> int)
+           (** This (otherwise odd) use of [local] makes a single [Enum.compare] usable by
+               both [Map.compare_direct] and [Map.compare_direct [@mode local]]. *)
+        -> ('k, 'v, 'cmp, increasing) t
+        -> ('k, 'v, 'cmp, increasing) t
+        -> int
+
+      val equal
+        :  ('k -> 'k -> int)
+        -> ('v -> 'v -> bool)
+           (** This (otherwise odd) use of [local] makes a single [Enum.equal] usable by
+               both [Map.equal] and [Map.equal [@mode local]]. *)
+        -> ('k, 'v, 'cmp, increasing) t
+        -> ('k, 'v, 'cmp, increasing) t
+        -> bool
+
+      (** Traversing two enums *)
+
+      val fold2
+        :  ('k -> 'k -> int)
+        -> ('k, 'v1, 'cmp, increasing) t
+        -> ('k, 'v2, 'cmp, increasing) t
+        -> init:'kcc
+        -> f:(key:'k -> data:('v1, 'v2) Merge_element.t -> 'kcc -> 'kcc)
+        -> 'kcc
+
+      (** Traversing one enum *)
+
+      val fold
+        :  init:'acc
+        -> f:(key:'k -> data:'v -> 'acc -> 'acc)
+        -> ('k, 'v, 'cmp, increasing) t
+        -> 'acc
+    end
   end
 end
 
@@ -846,7 +959,13 @@ module type Map = sig
       [find m key = f (find t key)]. *)
   val change : ('k, 'v, 'cmp) t -> 'k -> f:('v option -> 'v option) -> ('k, 'v, 'cmp) t
 
-  (** [update t key ~f] is [change t key ~f:(fun o -> Some (f o))]. *)
+  (** [update t key ~f] returns a new map which is the same as [t] but sets the value
+      corresponding to [key] to the result of [f].
+
+      [f] is called with Some value if [key] is present in the map, otherwise None.
+
+      [update] can never remove an item from the map. See [change] if you need to remove
+      values. *)
   val update : ('k, 'v, 'cmp) t -> 'k -> f:('v option -> 'v) -> ('k, 'v, 'cmp) t
 
   (** [update_and_return t key ~f] is like [update t key ~f], but also returns the new
@@ -1072,8 +1191,8 @@ module type Map = sig
   val merge_by_case
     :  ('k, 'v1, 'cmp) t
     -> ('k, 'v2, 'cmp) t
-    -> left:('k, 'v1, 'v3) When_unmatched.t
-    -> right:('k, 'v2, 'v3) When_unmatched.t
+    -> first:('k, 'v1, 'v3) When_unmatched.t
+    -> second:('k, 'v2, 'v3) When_unmatched.t
     -> both:('k, 'v1, 'v2, 'v3) When_matched.t
     -> ('k, 'v3, 'cmp) t
 
@@ -1147,11 +1266,8 @@ module type Map = sig
     -> 'a
 
   (** [split t key] returns a map of keys strictly less than [key], the mapping of [key]
-      if any, and a map of keys strictly greater than [key].
-
-      Runtime is O(m + log n), where n is the size of the input map and m is the size of
-      the smaller of the two output maps. The O(m) term is due to the need to calculate
-      the length of the output maps. *)
+      if any, and a map of keys strictly greater than [key]. Runtime is O(log n), where n
+      is the size of the input map. *)
   val split
     :  ('k, 'v, 'cmp) t
     -> 'k
@@ -1172,6 +1288,10 @@ module type Map = sig
       the smaller of the two output maps. The O(m) term is due to the need to calculate
       the length of the output maps. *)
   val split_lt_ge : ('k, 'v, 'cmp) t -> 'k -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
+
+  (** [split_n t n = l, r] such that [append ~lower_part:l ~upper_part:r = `Ok t] and
+      [length l = n], or as close as possible if [n < 0] or [n > length t]. *)
+  val split_n : ('k, 'v, 'cmp) t -> int -> ('k, 'v, 'cmp) t * ('k, 'v, 'cmp) t
 
   (** [count_lt t key] returns the number of keys in [t] that are strictly less than
       [key].
@@ -1635,4 +1755,13 @@ module type Map = sig
 
   (** Extract a tree from a map. *)
   val to_tree : ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) Using_comparator.Tree.t
+
+  (**/**)
+
+  (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+      https://opensource.janestreet.com/standards/#private-submodules *)
+  module Private : sig
+    module Enum : Private.Enum with type ('k, 'v, 'cmp) tree := ('k, 'v, 'cmp) Tree.t
+  end
 end

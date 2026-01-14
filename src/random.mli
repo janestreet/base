@@ -3,19 +3,20 @@
     This is a wrapper of the standard library's [Random] library, though it does not share
     state with that library. *)
 
-(*_
-  (***********************************************************************)
-  (*                                                                     *)
-  (*                           Objective Caml                            *)
-  (*                                                                     *)
-  (*              Damien Doligez, projet Para, INRIA Rocquencourt        *)
-  (*                                                                     *)
-  (*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-  (*  en Automatique.  All rights reserved.  This file is distributed    *)
-  (*  under the terms of the Apache 2.0 license. See ../THIRD-PARTY.txt  *)
-  (*  for details.                                                       *)
-  (*                                                                     *)
-  (***********************************************************************) *)
+(*_ {v
+  (***********************************************************************
+   *
+   *                           Objective Caml
+   *
+   *              Damien Doligez, projet Para, INRIA Rocquencourt
+   *
+   *  Copyright 1996 Institut National de Recherche en Informatique et
+   *  en Automatique.  All rights reserved.  This file is distributed
+   *  under the terms of the Apache 2.0 license. See ../THIRD-PARTY.txt
+   *  for details.
+   *
+   ***********************************************************************)
+    v} *)
 
 open! Import
 

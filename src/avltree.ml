@@ -12,8 +12,8 @@ module Int = struct
   let max (x : t) y = if x > y then x else y
 end
 
-(* Its important that Empty have no args. It's tempting to make this type a record
-   (e.g. to hold the compare function), but a lot of memory is saved by Empty being an
+(* Its important that Empty have no args. It's tempting to make this type a record (e.g.
+   to hold the compare function), but a lot of memory is saved by Empty being an
    immediate, since all unused buckets in the hashtbl don't use any memory (besides the
    array cell) *)
 
@@ -83,15 +83,11 @@ let invariant compare =
 
 let invariant t ~compare = (invariant [@kind k v]) compare t
 
-(* In the following comments,
-   't is balanced' means that 'invariant t' does not
-   raise an exception.  This implies of course that each node's height field is
-   correct.
-   't is balanceable' means that height of the left and right subtrees of t
-   differ by at most 3. *)
+(* In the following comments, 't is balanced' means that 'invariant t' does not raise an
+   exception. This implies of course that each node's height field is correct. 't is
+   balanceable' means that height of the left and right subtrees of t differ by at most 3. *)
 
-(* @pre: left and right subtrees have correct heights
-   @post: output has the correct height *)
+(* @pre: left and right subtrees have correct heights @post: output has the correct height *)
 let update_height = function
   | Node ({ left; key = _; value = _; height = old_height; right } as x) ->
     let new_height =
@@ -101,26 +97,23 @@ let update_height = function
   | Empty | Leaf _ -> assert false
 ;;
 
-(* @pre: left and right subtrees are balanced
-   @pre: tree is balanceable
-   @post: output is balanced (in particular, height is correct) *)
+(* @pre: left and right subtrees are balanced @pre: tree is balanceable @post: output is
+   balanced (in particular, height is correct) *)
 let balance tree =
   match tree with
   | Empty | Leaf _ -> tree
   | Node ({ left; key = _; value = _; height = _; right } as root_node) ->
     let hl = (height [@kind k v]) left
     and hr = (height [@kind k v]) right in
-    (* + 2 is critically important, lowering it to 1 will break the Leaf
-       assumptions in the code below, and will force us to promote leaf nodes in
-       the balance routine. It's also faster, since it will balance less often.
-       Note that the following code is delicate.  The update_height calls must
-       occur in the correct order, since update_height assumes its children have
-       the correct heights.  *)
+    (* + 2 is critically important, lowering it to 1 will break the Leaf assumptions in
+         the code below, and will force us to promote leaf nodes in the balance routine.
+         It's also faster, since it will balance less often. Note that the following code
+         is delicate. The update_height calls must occur in the correct order, since
+         update_height assumes its children have the correct heights. *)
     if hl > hr + 2
     then (
       match left with
-      (* It cannot be a leaf, because even if right is empty, a leaf
-         is only height 1 *)
+      (* It cannot be a leaf, because even if right is empty, a leaf is only height 1 *)
       | Empty | Leaf _ -> assert false
       | Node
           ({ left = left_node_left
@@ -137,8 +130,8 @@ let balance tree =
           (update_height [@kind k v]) left;
           left)
         else (
-          (* if right is a leaf, then left must be empty. That means
-             height is 2. Even if hr is empty we still can't get here. *)
+          (* if right is a leaf, then left must be empty. That means height is 2. Even if
+             hr is empty we still can't get here. *)
           match left_node_right with
           | Empty | Leaf _ -> assert false
           | Node
@@ -191,9 +184,8 @@ let balance tree =
       tree)
 ;;
 
-(* @pre: t is balanced.
-   @post: result is balanced, with new node inserted
-   @post: !added = true iff the shape of the input tree changed.  *)
+(* @pre: t is balanced. @post: result is balanced, with new node inserted @post: !added =
+   true iff the shape of the input tree changed. *)
 
 let rec add t ~replace ~compare ~added ~key:k ~data:v =
   match t with
@@ -202,9 +194,8 @@ let rec add t ~replace ~compare ~added ~key:k ~data:v =
     Leaf { key = k; value = v }
   | Leaf ({ key = k'; value = _ } as r) ->
     let c = compare k' k in
-    (* This compare is reversed on purpose, we are pretending
-       that the leaf was just inserted instead of the other way
-       round, that way we only allocate one node. *)
+    (* This compare is reversed on purpose, we are pretending that the leaf was just
+       inserted instead of the other way round, that way we only allocate one node. *)
     if c = 0
     then (
       added := false;

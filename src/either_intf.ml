@@ -51,7 +51,7 @@ module type Either = sig
 
   include sig
       type%template ('f, 's) t = (('f, 's) Either0.t[@kind kf ks])
-      [@@kind kf = base_or_null_with_imm, ks = base_or_null_with_imm]
+      [@@kind kf = base_or_null, ks = base_or_null]
       [@@deriving compare ~localize, equal ~localize, sexp ~stackify, sexp_grammar]
     end
     with type ('f, 's) t := ('f, 's) t

@@ -29,10 +29,12 @@ module Definitions = struct
 
     (** [lexicographic cmps x y] compares [x] and [y] lexicographically using functions in
         the list [cmps]. *)
-    val lexicographic : ('a, int) compare_fn list -> ('a, int) compare_fn
+    val lexicographic : 'a. ('a, int) compare_fn list -> ('a, int) compare_fn
 
     (** [lift cmp ~f x y] compares [x] and [y] by comparing [f x] and [f y] via [cmp]. *)
-    val lift : ('a, 'result) compare_fn -> f:('b, 'a) fn -> ('b, 'result) compare_fn
+    val lift
+      : 'a 'b 'result.
+      ('a, 'result) compare_fn -> f:('b, 'a) fn -> ('b, 'result) compare_fn
 
     (** [reverse cmp x y = cmp y x]
 
@@ -43,16 +45,16 @@ module Definitions = struct
         [Comparable.S] provides [ascending] and [descending], which are more readable as a
         pair than [compare] and [reverse compare]. Similarly, [<=] is more idiomatic than
         [reverse (>=)]. *)
-    val reverse : ('a, 'result) compare_fn -> ('a, 'result) compare_fn
+    val reverse : 'a 'result. ('a, 'result) compare_fn -> ('a, 'result) compare_fn
 
-    val compare_reversed : ('a, int) compare_fn -> ('a reversed, int) compare_fn
+    val compare_reversed : 'a. ('a, int) compare_fn -> ('a reversed, int) compare_fn
 
     (** The functions below are analogues of the type-specific functions exported by the
         [Comparable.S] interface. *)
 
-    val equal : ('a, int) compare_fn -> ('a, bool) compare_fn
-    val max : ('a, int) compare_fn -> 'a select_fn
-    val min : ('a, int) compare_fn -> 'a select_fn
+    val equal : 'a. ('a, int) compare_fn -> ('a, bool) compare_fn
+    val max : 'a. ('a, int) compare_fn -> 'a select_fn
+    val min : 'a. ('a, int) compare_fn -> 'a select_fn
   end
 
   module type%template

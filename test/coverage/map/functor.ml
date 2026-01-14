@@ -1381,8 +1381,8 @@ module Test_transformers
             merge_by_case
             (Impl.mapi a ~f:(fun ~key ~data -> key, `Left data))
             (Impl.mapi b ~f:(fun ~key ~data -> key, `Right data))
-            ~left:(One_side.to_when_unmatched left)
-            ~right:(One_side.to_when_unmatched right)
+            ~first:(One_side.to_when_unmatched left)
+            ~second:(One_side.to_when_unmatched right)
             ~both:(Two_sides.to_when_matched both)
           |> data
         in
@@ -1482,6 +1482,22 @@ module Test_transformers
            List.partition_tf (to_alist t) ~f:(fun (key, _) -> Key.( < ) key k)
          in
          create of_alist_exn before, create of_alist_exn after))
+
+  and split_n = split_n
+
+  and () =
+    quickcheck_m (module Inst) ~f:(fun t ->
+      let t = Inst.value t in
+      for n = -1 to length t + 1 do
+        let l, r = split_n t n in
+        require_equal (module Int) (length l) (Int.clamp_exn n ~min:0 ~max:(length t));
+        require_equal
+          (module Inst.Value)
+          (match (access append) ~lower_part:l ~upper_part:r with
+           | `Ok t -> t
+           | `Overlapping_key_ranges -> assert false)
+          t
+      done)
 
   and append = append
 

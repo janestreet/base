@@ -1,15 +1,15 @@
 open! Import
 open Container.Export
 module Array = Array0
-module List = List1
+module List = List0
 module%template Derived = Container.Derived [@kind.explicit value_or_null]
 
 module Step = struct
-  (* 'a is an item in the sequence, 's is the state that will produce the remainder of
-     the sequence *)
+  (* 'a is an item in the sequence, 's is the state that will produce the remainder of the
+     sequence *)
   type (+'a, 's) t =
     | Done
-    | Skip of { state : 's }
+    | Skip : 'a 's. { state : 's } -> ('a, 's) t
     | Yield :
         'a 's.
         { value : 'a

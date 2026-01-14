@@ -36,10 +36,19 @@ type 'a t := ('a t[@kind k])
 [@@@kind.default k]
 
 val create : 'a. 'a -> ('a List.t[@kind k]) -> 'a t
+
+(** [init n ~f] creates a list of length [n] where the element at index [i] is the value
+    of [f i]. Raises if [n < 1]. [f] is called on indices from the highest to lowest, so
+    the order of side effects is reversed: [Nonempty_list.init 3 ~f:print_int] prints
+
+    [210]. *)
 val init : 'a. int -> f:(int -> 'a) -> 'a t
 
 val of_list : 'a. ('a List.t[@kind k]) -> 'a t option
 [@@mode m = (global, local)] [@@zero_alloc_if_local m]
+
+val of_list_or_null : 'a. ('a List.t[@kind k]) -> 'a t or_null
+[@@mode m = (global, local)] [@@zero_alloc]
 
 val of_list_error : 'a. ('a List.t[@kind k]) -> 'a t Or_error.t
 [@@mode m = (global, local)]
@@ -120,6 +129,14 @@ val findi_exn : 'a t -> f:(int -> 'a -> bool) -> int * 'a
 (** [all_equal] returns a single element of the list that is equal to all other elements,
     or [None] if no such element exists. *)
 val all_equal : 'a t -> equal:('a -> 'a -> bool) -> 'a option
+
+(** [is_sorted t ~compare] returns [true] iff for all adjacent [a1; a2] in [t],
+    [compare a1 a2 <= 0]. *)
+val is_sorted : 'a t -> compare:('a -> 'a -> int) -> bool
+
+(** [is_sorted_strictly t ~compare] returns [true] iff for all adjacent [a1; a2] in [t],
+    [compare a1 a2 < 0]. *)
+val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) -> bool
 
 (** [min_elt'] and [max_elt'] differ from [min_elt] and [max_elt] (included in
     [Container.S1]) in that they don't return options. *)

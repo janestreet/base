@@ -1,6 +1,6 @@
 (* The [globalize_{bool,char,unit}] functions are written as matches plus the identity
    function so that the type checker can give them the desired type, without having to do
-   anything special.  However, [globalize_int] cannot be written this way, so we resort to
+   anything special. However, [globalize_int] cannot be written this way, so we resort to
    using an [external]. *)
 
 let globalize_bool = function
@@ -22,9 +22,9 @@ external globalize_string : string -> string = "caml_obj_dup"
 let globalize_unit (() as u) = u
 
 [%%template
-[@@@kind k = base_with_imm]
+[@@@kind k = base_or_null_with_imm]
 
-external globalize_array' : 'a array -> 'a array = "caml_obj_dup"
+external globalize_array' : 'a. 'a array -> 'a array = "caml_obj_dup"
 
 let globalize_array _ a = globalize_array' a [@@kind k]]
 

@@ -98,8 +98,8 @@ end = struct
     [%expect {| ((t1 (10)) (t2 (20)) (result false)) |}]
   ;;
 
-  let is_null = Or_null.is_null
-  let is_this = Or_null.is_this
+  let is_null t = Or_null.is_null t
+  let is_this t = Or_null.is_this t
 
   let%expect_test "is_null and is_this" =
     let test_predicates t =
@@ -120,7 +120,9 @@ end = struct
     [%expect {| ("length (This 42)" 1) |}]
   ;;
 
-  let%template[@mode m = (global, local)] to_option = (Or_null.to_option [@mode m])
+  let%template[@mode m = (global, local)] to_option t =
+    (Or_null.to_option [@mode m]) t [@exclave_if_local m]
+  ;;
 
   let%expect_test "to_option" =
     print_s [%sexp (to_option Null : int option)];
@@ -141,7 +143,9 @@ end = struct
     [%expect {| (43) |}]
   ;;
 
-  let%template[@mode m = (global, local)] of_option = (Or_null.of_option [@mode m])
+  let%template[@mode m = (global, local)] of_option o =
+    (Or_null.of_option [@mode m]) o [@exclave_if_local m]
+  ;;
 
   let%expect_test "of_option" =
     print_s [%sexp (of_option None : int or_null)];
@@ -150,7 +154,9 @@ end = struct
     [%expect {| (42) |}]
   ;;
 
-  let%template[@mode m = (global, local)] value = (Or_null.value [@mode m])
+  let%template[@mode m = (global, local)] value t ~default =
+    (Or_null.value [@mode m]) t ~default [@exclave_if_local m]
+  ;;
 
   let%expect_test "value" =
     print_s [%sexp (value Null ~default:42 : int)];
@@ -159,7 +165,9 @@ end = struct
     [%expect {| 5 |}]
   ;;
 
-  let%template[@mode m = (global, local)] value_exn = (Or_null.value_exn [@mode m])
+  let%template[@mode m = (global, local)] value_exn ?(here = Stdlib.Lexing.dummy_pos) t =
+    (Or_null.value_exn [@mode m]) ~here t [@exclave_if_local m]
+  ;;
 
   let%expect_test "value_exn" =
     (* Location information should be excluded when [here] is [Lexing.dummy_pos], which is
@@ -170,6 +178,13 @@ end = struct
     Expect_test_helpers_base.require_does_raise (fun () ->
       value_exn Null ~here:Lexing.dummy_pos);
     [%expect {| "Or_null.value_exn Null" |}]
+  ;;
+
+  let%template[@mode m = (global, local)] unsafe_value = (Or_null.unsafe_value [@mode m])
+
+  let%expect_test "unsafe_value" =
+    print_s [%sexp (unsafe_value (This 42) : int)];
+    [%expect {| 42 |}]
   ;;
 
   let%template[@mode m = (global, local)] value_or_thunk =
@@ -214,7 +229,9 @@ end = struct
     [%expect {| 10 |}]
   ;;
 
-  let%template[@mode m = (global, local)] this = (Or_null.this [@mode m])
+  let%template[@mode m = (global, local)] this x =
+    (Or_null.this [@mode m]) x [@exclave_if_local m]
+  ;;
 
   let%expect_test "this" =
     print_s [%sexp (this 42 : int or_null)];
@@ -234,7 +251,9 @@ end = struct
     [%expect {| ((1 2)) |}]
   ;;
 
-  let%template[@mode m = (global, local)] this_if = (Or_null.this_if [@mode m])
+  let%template[@mode m = (global, local)] this_if b a =
+    (Or_null.this_if [@mode m]) b a [@exclave_if_local m]
+  ;;
 
   let%expect_test "this_if" =
     print_s [%sexp (this_if true 42 : int or_null)];
@@ -284,7 +303,9 @@ end = struct
     [%expect {| (value 42) |}]
   ;;
 
-  let%template[@mode m = (global, local)] first_this = (Or_null.first_this [@mode m])
+  let%template[@mode m = (global, local)] first_this a b =
+    (Or_null.first_this [@mode m]) a b [@exclave_if_local m]
+  ;;
 
   let%expect_test "first_this" =
     print_s [%sexp (first_this Null Null : int or_null)];
@@ -346,7 +367,10 @@ end = struct
     [%expect {| ("fold (This 100)" 142) |}]
   ;;
 
-  let%template[@mode m = (global, local)] to_list = (Or_null.to_list [@mode m])
+  let%template[@mode m = (global, local)] to_list t =
+    (Or_null.to_list [@mode m]) t [@exclave_if_local m]
+  ;;
+
   let%template[@mode m = (global, local)] to_array = (Or_null.to_array [@mode m])
 
   let%expect_test "to_list and to_array" =

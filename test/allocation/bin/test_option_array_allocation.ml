@@ -31,12 +31,12 @@ let () =
 
      This situation is called "match-in-match" (the inner [if] is essentially a match).
      The OCaml compiler and Flambda optimizer don't handle match-in-match well, and so
-     cannot eliminate the allocation of [Some].  Flambda2 is expected to eliminate the
+     cannot eliminate the allocation of [Some]. Flambda2 is expected to eliminate the
      allocation, at which point we can [require_no_allocation] (possibly annotating the
      test with [@tags "fast-flambda"]).
 
-     Note that Flambda 2 only eliminates the allocation in optimized mode.
-     In classic mode, it will remain.  This file is compiled with optimized mode.
+     Note that Flambda 2 only eliminates the allocation in optimized mode. In classic
+     mode, it will remain. This file is compiled with optimized mode.
   *)
   let compiler_eliminates_the_allocation =
     (* [Version_util.x_library_inlining] is the whole reason this is a separate

@@ -7,23 +7,15 @@ type 'a t = 'a option =
   | Some of 'a
 
 [%%template
-[@@@kind_set.define
-  values
-  = (immediate, immediate64, value mod external_, value mod external64, value_or_null)]
-
 [@@@kind kr1 = (value & value)]
 [@@@kind kr2 = (value & value & value)]
 [@@@kind kr3 = (value & value & value & value)]
 
-[%%template
-[@@@kind k = values]
-
 [%%rederive.portable
-  type 'a t = 'a option
-  [@@deriving compare ~localize, globalize, hash, sexp_grammar] [@@kind k]]]
+  type 'a t = 'a option [@@deriving compare ~localize, globalize, hash, sexp_grammar]]
 
 include struct
-  [@@@kind.default k = (base_non_value, values, value & (base_with_imm, kr1, kr2, kr3))]
+  [@@@kind.default k = (base_or_null, value & (base, kr1, kr2, kr3))]
 
   open struct
     type nonrec 'a t = ('a t[@kind k]) =
@@ -62,7 +54,7 @@ include struct
 end
 
 [%%template
-[@@@kind.default k = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
+[@@@kind.default k = (base_or_null, value & (base, kr1, kr2, kr3))]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -112,7 +104,7 @@ let value_map t ~default ~f =
   match t with
   | Some x -> f x [@exclave_if_local m]
   | None -> default
-[@@kind ki = k, ko = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
+[@@kind ki = k, ko = (base_or_null, value & (base, kr1, kr2, kr3))]
 ;;]
 
 let invariant f t = iter t ~f
@@ -186,7 +178,7 @@ let equal f (t : (_ t[@kind k])) (t' : (_ t[@kind k])) =
   | None, None -> true
   | Some x, Some x' -> f x x'
   | _ -> false
-[@@kind k = (base_non_value, values, value & (base_with_imm, kr1, kr2, kr3))]
+[@@kind k = (base_or_null, value & (base, kr1, kr2, kr3))]
 ;;
 
 let some x = Some x [@exclave_if_local m]
@@ -239,8 +231,8 @@ let try_with_join f =
 
 [%%template
 [@@@kind.default
-  ki = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))
-  , ko = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
+  ki = (base_or_null, value & (base, kr1, kr2, kr3))
+  , ko = (base_or_null, value & (base, kr1, kr2, kr3))]
 
 let[@mode local] map (t : (_ t[@kind ki])) ~f : (_ t[@kind ko]) =
   match t with

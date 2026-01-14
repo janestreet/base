@@ -4,8 +4,8 @@ open Base_quickcheck
 let quickcheck_generator_int = Generator.small_strictly_positive_int
 
 (* We change the generator for lists to get larger lists. Instead of splitting the size
-     budget between the list's lengths and its element sizes, we generate those two
-     separately within the full size budget. *)
+   budget between the list's lengths and its element sizes, we generate those two
+   separately within the full size budget. *)
 let quickcheck_generator_list g =
   Generator.small_positive_or_zero_int
   |> Generator.bind ~f:(fun length -> Generator.list_with_length g ~length)

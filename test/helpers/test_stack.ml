@@ -64,8 +64,8 @@ module Debug (Stack : S) : S with type 'a t = 'a Stack.t = struct
 end
 
 module Test (Stack : S) : S with type 'a t = 'a Stack.t =
-(* This signature is here to remind us to add a unit test whenever we add something to
-   the stack interface. *)
+(* This signature is here to remind us to add a unit test whenever we add something to the
+   stack interface. *)
 struct
   open Stack
 

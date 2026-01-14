@@ -103,7 +103,11 @@ module type String = sig
 
   val subo : ?pos:int -> ?len:int -> t -> t]
 
-  include Indexed_container.S0_with_creators with type t := t with type elt = char
+  include%template
+    Indexed_container.S0_with_creators
+    [@alloc stack]
+    with type t := t
+    with type elt = char
 
   include%template Identifiable.S [@mode local] [@modality portable] with type t := t
 
@@ -287,7 +291,7 @@ module type String = sig
 
     (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-      https://opensource.janestreet.com/standards/#private-submodules *)
+        https://opensource.janestreet.com/standards/#private-submodules *)
     module Private : sig
       type public = t
 
@@ -396,11 +400,15 @@ module type String = sig
       from the beginning and end of [s]. *)
   val strip : ?drop:(char -> bool) -> t -> t
 
+  [%%template:
+  [@@@mode.default mi = (global, local)]
+  [@@@alloc.default a @ mo = (heap_global, stack_local)]
+
   (** Like [map], but allows the replacement of a single character with zero or two or
       more characters. *)
   val concat_map : ?sep:t -> t -> f:(char -> t) -> t
 
-  val concat_mapi : ?sep:t -> t -> f:(int -> char -> t) -> t
+  val concat_mapi : ?sep:t -> t -> f:(int -> char -> t) -> t]
 
   (** [tr ~target ~replacement s] replaces every instance of [target] in [s] with
       [replacement]. *)

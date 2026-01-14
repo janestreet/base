@@ -551,11 +551,19 @@ module type Modes = sig
   type%template 'a t = { modal : 'a }
   [@@unboxed]
   [@@modality
+    a = aliased
+    , p = (nonportable, portable)
+    , c = (uncontended, shared, contended)
+    , m = (once, many)]
+  [@@kind k = base_or_null]
+
+  type%template 'a t = { modal : 'a }
+  [@@unboxed]
+  [@@modality
     g = (local, global)
     , p = (nonportable, portable)
     , c = (uncontended, shared, contended)
-    , m = (once, many)
-    , a = (unique, aliased)]
+    , m = (once, many)]
   [@@kind k = base_or_null]
 
   (** Wrap values in the [global_] mode, even in a [local_] context. *)
@@ -580,7 +588,7 @@ module type Modes = sig
   end
 
   module Contended : sig
-    type 'a t = { contended : 'a } [@@unboxed]
+    type 'a t = { contended : 'a } [@@unboxed] [@@deriving of_sexp]
 
     (** Require a value has a type that mode-crosses contention. This is useful for
         assisting type inference as well as improving error messages. *)
@@ -588,7 +596,7 @@ module type Modes = sig
   end
 
   module Shared : sig
-    type 'a t = { shared : 'a } [@@unboxed]
+    type 'a t = { shared : 'a } [@@unboxed] [@@deriving of_sexp]
   end
 
   module Portended : sig
@@ -596,11 +604,17 @@ module type Modes = sig
   end
 
   module Many : sig
-    type 'a t = { many : 'a } [@@unboxed]
+    type 'a t = { many : 'a }
+    [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
   end
 
   module Aliased : sig
     type 'a t = { aliased : 'a } [@@unboxed]
+  end
+
+  module Aliased_many : sig
+    type 'a t = { aliased_many : 'a } [@@unboxed]
   end
 
   module Forkable : sig
@@ -608,7 +622,25 @@ module type Modes = sig
   end
 
   module Unyielding : sig
-    type 'a t = { unyielding : 'a } [@@unboxed]
+    type 'a t = { unyielding : 'a }
+    [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+  end
+
+  module Stateless : sig
+    type 'a t = { stateless : 'a } [@@unboxed]
+  end
+
+  module Observing : sig
+    type 'a t = { observing : 'a } [@@unboxed]
+  end
+
+  module Immutable : sig
+    type 'a t = { immutable : 'a } [@@unboxed]
+  end
+
+  module Read : sig
+    type 'a t = { read : 'a } [@@unboxed]
   end
 
   module Immutable_data : sig
@@ -772,13 +804,19 @@ module type Modes = sig
       runtime content, but the fact that you have a ['a Mod.t] in hand lets you recover
       mode-crossing information about ['a]. *)
   module Mod : sig
-    type%template 'a t = Mod : 'a. ('a t[@modality g p c m a])
+    type%template 'a t = Mod : 'a. ('a t[@modality a p c m])
+    [@@modality
+      a = aliased
+      , p = (nonportable, portable)
+      , c = (uncontended, shared, contended)
+      , m = (once, many)]
+
+    type%template 'a t = Mod : 'a. ('a t[@modality g p c m])
     [@@modality
       g = (local, global)
       , p = (nonportable, portable)
       , c = (uncontended, shared, contended)
-      , m = (once, many)
-      , a = (unique, aliased)]
+      , m = (once, many)]
 
     (** Aliases of [Mod] for specific modalities. These aliases aren't necessary, but they
         are a bit more convenient than ppx_template (e.g. they are auto-completed in
@@ -815,15 +853,36 @@ module type Modes = sig
 
   (** Can be [open]ed or [include]d to bring field names into scope. *)
   module Export : sig
-    type 'a global = 'a Global.t = { global : 'a } [@@unboxed]
-    type 'a portable = 'a Portable.t = { portable : 'a } [@@unboxed]
-    type 'a contended = 'a Contended.t = { contended : 'a } [@@unboxed]
-    type 'a shared = 'a Shared.t = { shared : 'a } [@@unboxed]
+    type 'a global = 'a Global.t = { global : 'a }
+    [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+
+    type 'a portable = 'a Portable.t = { portable : 'a }
+    [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
+    type 'a contended = 'a Contended.t = { contended : 'a }
+    [@@unboxed] [@@deriving of_sexp]
+
+    type 'a shared = 'a Shared.t = { shared : 'a } [@@unboxed] [@@deriving of_sexp]
     type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
-    type 'a many = 'a Many.t = { many : 'a } [@@unboxed]
+
+    type 'a many = 'a Many.t = { many : 'a }
+    [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
     type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
+    type 'a aliased_many = 'a Aliased_many.t = { aliased_many : 'a } [@@unboxed]
     type 'a forkable = 'a Forkable.t = { forkable : 'a } [@@unboxed]
-    type 'a unyielding = 'a Unyielding.t = { unyielding : 'a } [@@unboxed]
+
+    type 'a unyielding = 'a Unyielding.t = { unyielding : 'a }
+    [@@unboxed]
+    [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+
+    type 'a stateless = 'a Stateless.t = { stateless : 'a } [@@unboxed]
+    type 'a observing = 'a Observing.t = { observing : 'a } [@@unboxed]
+    type 'a immutable = 'a Immutable.t = { immutable : 'a } [@@unboxed]
+    type 'a read = 'a Read.t = { read : 'a } [@@unboxed]
     type 'a immutable_data = 'a Immutable_data.t = { immutable_data : 'a } [@@unboxed]
   end
 end

@@ -7,11 +7,19 @@ end
 type%template 'a t = { modal : 'a }
 [@@unboxed]
 [@@modality
+  a = aliased
+  , p = (nonportable, portable)
+  , c = (uncontended, shared, contended)
+  , m = (once, many)]
+[@@kind k = base_or_null]
+
+type%template 'a t = { modal : 'a }
+[@@unboxed]
+[@@modality
   g = (local, global)
   , p = (nonportable, portable)
   , c = (uncontended, shared, contended)
-  , m = (once, many)
-  , a = (unique, aliased)]
+  , m = (once, many)]
 [@@kind k = base_or_null]
 
 module Global = struct
@@ -338,11 +346,15 @@ end
 module Contended = struct
   type 'a t = { contended : 'a } [@@unboxed]
 
+  let t_of_sexp of_sexp sexp = { contended = of_sexp sexp }
+
   external cross : 'a. 'a -> 'a = "%identity"
 end
 
 module Shared = struct
   type 'a t = { shared : 'a } [@@unboxed]
+
+  let t_of_sexp of_sexp sexp = { shared = of_sexp sexp }
 end
 
 module Portended = struct
@@ -350,11 +362,17 @@ module Portended = struct
 end
 
 module Many = struct
-  type 'a t = { many : 'a } [@@unboxed]
+  type 'a t = { many : 'a }
+  [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
 end
 
 module Aliased = struct
   type 'a t = { aliased : 'a } [@@unboxed]
+end
+
+module Aliased_many = struct
+  type 'a t = { aliased_many : 'a } [@@unboxed]
 end
 
 module Forkable = struct
@@ -362,7 +380,27 @@ module Forkable = struct
 end
 
 module Unyielding = struct
-  type 'a t = { unyielding : 'a } [@@unboxed]
+  type 'a t = { unyielding : 'a }
+  [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
+  let t_of_sexp of_sexp sexp = { unyielding = of_sexp sexp }
+end
+
+module Stateless = struct
+  type 'a t = { stateless : 'a } [@@unboxed]
+end
+
+module Observing = struct
+  type 'a t = { observing : 'a } [@@unboxed]
+end
+
+module Immutable = struct
+  type 'a t = { immutable : 'a } [@@unboxed]
+end
+
+module Read = struct
+  type 'a t = { read : 'a } [@@unboxed]
 end
 
 module Immutable_data = struct
@@ -520,13 +558,19 @@ module Contended_via_portable = struct
 end
 
 module Mod = struct
-  type%template 'a t = Mod : 'a. ('a t[@modality g p c m a])
+  type%template 'a t = Mod : 'a. ('a t[@modality a p c m])
+  [@@modality
+    a = aliased
+    , p = (nonportable, portable)
+    , c = (uncontended, shared, contended)
+    , m = (once, many)]
+
+  type%template 'a t = Mod : 'a. ('a t[@modality g p c m])
   [@@modality
     g = (local, global)
     , p = (nonportable, portable)
     , c = (uncontended, shared, contended)
-    , m = (once, many)
-    , a = (unique, aliased)]
+    , m = (once, many)]
 
   module Global = struct
     type%template 'a t = ('a t[@modality global]) = Mod : 'a. 'a t
@@ -558,14 +602,43 @@ module Mod = struct
 end
 
 module Export = struct
-  type 'a global = 'a Global.t = { global : 'a } [@@unboxed]
-  type 'a portable = 'a Portable.t = { portable : 'a } [@@unboxed]
+  type 'a global = 'a Global.t = { global : 'a }
+  [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
+  let global_of_sexp = Global.t_of_sexp
+
+  type 'a portable = 'a Portable.t = { portable : 'a }
+  [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
   type 'a contended = 'a Contended.t = { contended : 'a } [@@unboxed]
+
+  let contended_of_sexp = Contended.t_of_sexp
+
   type 'a shared = 'a Shared.t = { shared : 'a } [@@unboxed]
+
+  let shared_of_sexp = Shared.t_of_sexp
+
   type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
-  type 'a many = 'a Many.t = { many : 'a } [@@unboxed]
+
+  type 'a many = 'a Many.t = { many : 'a }
+  [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
   type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
+  type 'a aliased_many = 'a Aliased_many.t = { aliased_many : 'a } [@@unboxed]
   type 'a forkable = 'a Forkable.t = { forkable : 'a } [@@unboxed]
-  type 'a unyielding = 'a Unyielding.t = { unyielding : 'a } [@@unboxed]
+
+  type 'a unyielding = 'a Unyielding.t = { unyielding : 'a }
+  [@@unboxed]
+  [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+
+  let unyielding_of_sexp = Unyielding.t_of_sexp
+
+  type 'a stateless = 'a Stateless.t = { stateless : 'a } [@@unboxed]
+  type 'a observing = 'a Observing.t = { observing : 'a } [@@unboxed]
+  type 'a immutable = 'a Immutable.t = { immutable : 'a } [@@unboxed]
+  type 'a read = 'a Read.t = { read : 'a } [@@unboxed]
   type 'a immutable_data = 'a Immutable_data.t = { immutable_data : 'a } [@@unboxed]
 end

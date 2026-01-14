@@ -80,16 +80,22 @@ val combine
   -> err:('err -> 'err -> 'err)
   -> ('ok3, 'err) t
 
+[%%template:
+[@@@alloc.default __ @ m = (heap_global, stack_local)]
+
 (** [combine_errors ts] returns [Ok] if every element in [ts] is [Ok], else it returns
     [Error] with all the errors in [ts].
 
     This is similar to [all] from [Monad.S2], with the difference that [all] only returns
     the first error. *)
-val combine_errors : 'ok 'err. ('ok, 'err) t list -> ('ok list, 'err list) t
+val combine_errors : 'ok 'err. ('ok, 'err) t list -> ('ok list, 'err list) t]
 
 (** [combine_errors_unit] returns [Ok] if every element in [ts] is [Ok ()], else it
     returns [Error] with all the errors in [ts], like [combine_errors]. *)
 val combine_errors_unit : 'err. (unit, 'err) t list -> (unit, 'err list) t
+
+[%%template:
+[@@@mode.default m = (global, local)]
 
 (** [to_either] is useful with [List.partition_map]. For example:
 
@@ -99,10 +105,9 @@ val combine_errors_unit : 'err. (unit, 'err) t list -> (unit, 'err list) t
           Result.to_either (Result.try_with (fun () -> Int.of_string string)))
       ;;
     ]} *)
-val%template to_either : 'ok 'err. ('ok, 'err) t -> ('ok, 'err) Either0.t
-[@@mode m = (global, local)]
+val to_either : 'ok 'err. ('ok, 'err) t -> ('ok, 'err) Either0.t
 
-val of_either : 'ok 'err. ('ok, 'err) Either0.t -> ('ok, 'err) t
+val of_either : 'ok 'err. ('ok, 'err) Either0.t -> ('ok, 'err) t]
 
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
 val ok_if_true : 'err. bool -> error:'err -> (unit, 'err) t

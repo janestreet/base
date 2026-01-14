@@ -1,4 +1,4 @@
-(** An inefficient, dead-simple implementation of percentile statistics. **)
+(** An inefficient, dead-simple implementation of percentile statistics. *)
 
 open! Base
 

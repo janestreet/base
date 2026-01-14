@@ -1,8 +1,8 @@
 open! Import
 open! Blit
 
-(* This unit test checks that when [blit] calls [unsafe_blit], the slices are valid.
-   It also checks that [blit] doesn't call [unsafe_blit] when there is a range error. *)
+(* This unit test checks that when [blit] calls [unsafe_blit], the slices are valid. It
+   also checks that [blit] doesn't call [unsafe_blit] when there is a range error. *)
 module%test _ = struct
   let blit_was_called = ref false
   let slices_are_valid = ref (Ok ())

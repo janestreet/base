@@ -3,9 +3,11 @@
 open! Import
 
 [%%template
-[@@@kind_set.define values = (value_with_imm, value mod external_, value mod external64)]
+[@@@kind_set.define values = (value, value mod external64)]
 
 module Definitions = struct
+  [@@@mode.default v = (read_write, read, immutable)]
+
   (** If [blit : (src, dst) blit], then [blit ~src ~src_pos ~len ~dst ~dst_pos] blits
       [len] values from [src] starting at position [src_pos] to [dst] at position
       [dst_pos]. Furthermore, [blit] raises if [src_pos], [len], and [dst_pos] don't
@@ -54,35 +56,35 @@ module Definitions = struct
 
   (** Blit for distinct [src] and [dst] types that each have two parameters: ['elt] that
       must be the same in both types, and ['phantom] that can be different. *)
-  module type%template S1_phantom2_distinct = sig
+  module type S1_phantom2_distinct = sig
     type ('elt, 'p1, 'p2) src
     type ('elt, 'p1, 'p2) dst
 
-    val blit : (('a, _, _) src, ('a, _, _) dst) blit
-    val blito : (('a, _, _) src, ('a, _, _) dst) blito
-    val unsafe_blit : (('a, _, _) src, ('a, _, _) dst) blit
-    val sub : (('a, _, _) src, ('a, _, _) dst) sub
-    val subo : (('a, _, _) src, ('a, _, _) dst) subo
+    val blit : ((('a, _, _) src, ('a, _, _) dst) blit[@mode v])
+    val blito : ((('a, _, _) src, ('a, _, _) dst) blito[@mode v])
+    val unsafe_blit : ((('a, _, _) src, ('a, _, _) dst) blit[@mode v])
+    val sub : ((('a, _, _) src, ('a, _, _) dst) sub[@mode v])
+    val subo : ((('a, _, _) src, ('a, _, _) dst) subo[@mode v])
   end
   [@@kind k = values]
 
-  module type%template S = sig
+  module type S = sig
     type t
 
     include
       S1_phantom2_distinct
-      [@kind k]
+      [@kind k] [@mode v]
       with type (_, _, _) src := t
        and type (_, _, _) dst := t
   end
   [@@kind k = values]
 
-  module type%template S1 = sig
+  module type S1 = sig
     type 'a t
 
     include
       S1_phantom2_distinct
-      [@kind k]
+      [@kind k] [@mode v]
       with type ('a, _, _) src := 'a t
        and type ('a, _, _) dst := 'a t
   end
@@ -93,18 +95,21 @@ module Definitions = struct
     type dst
 
     include
-      S1_phantom2_distinct with type (_, _, _) src := src and type (_, _, _) dst := dst
+      S1_phantom2_distinct
+      [@mode v]
+      with type (_, _, _) src := src
+       and type (_, _, _) dst := dst
   end
 
   module type S_distinct_global = sig
     type src
     type dst
 
-    val blit : (src, dst) blit_global
-    val blito : (src, dst) blito_global
-    val unsafe_blit : (src, dst) blit_global
-    val sub : (src, dst) sub_global
-    val subo : (src, dst) subo_global
+    val blit : ((src, dst) blit_global[@mode v])
+    val blito : ((src, dst) blito_global[@mode v])
+    val unsafe_blit : ((src, dst) blit_global[@mode v])
+    val sub : ((src, dst) sub_global[@mode v])
+    val subo : ((src, dst) subo_global[@mode v])
   end
 
   module type S_phantom_distinct = sig
@@ -113,6 +118,7 @@ module Definitions = struct
 
     include
       S1_phantom2_distinct
+      [@mode v]
       with type (_, 'a, _) src := 'a src
        and type (_, 'a, _) dst := 'a dst
   end
@@ -120,15 +126,15 @@ module Definitions = struct
   module type S_to_string = sig
     type t
 
-    val sub : (t, string) sub
-    val subo : (t, string) subo
+    val sub : ((t, string) sub[@mode v])
+    val subo : ((t, string) subo[@mode v])
   end
 
   module type S_to_string_global = sig
     type t
 
-    val sub : (t, string) sub_global
-    val subo : (t, string) subo_global
+    val sub : ((t, string) sub_global[@mode v])
+    val subo : ((t, string) subo_global[@mode v])
   end
 
   (** Users of modules matching the blit signatures [S], [S1], [S_phantom_distinct], and
@@ -141,7 +147,7 @@ module Definitions = struct
     val length : t -> int
   end
 
-  module type%template Sequence1 = sig
+  module type Sequence1 = sig
     type 'a t
 
     (** [Make1*] guarantees to only call [create_like ~len t] with [len > 0] if
@@ -149,7 +155,7 @@ module Definitions = struct
     val create_like : len:int -> 'a t -> 'a t
 
     val length : _ t -> int
-    val unsafe_blit : ('a t, 'a t) blit
+    val unsafe_blit : (('a t, 'a t) blit[@mode v])
   end
   [@@kind k = values]
 end
@@ -158,6 +164,8 @@ module type Blit = sig
   include module type of struct
     include Definitions
   end
+
+  [@@@mode.default v = (read_write, read, immutable)]
 
   (** There are various [Make*] functors that turn an [unsafe_blit] function into a [blit]
       function. The functors differ in whether the sequence type is monomorphic or
@@ -178,32 +186,33 @@ module type Blit = sig
 
   (** [Make] is for blitting between two values of the same monomorphic type. *)
   module%template.portable Make (Sequence : sig
-      include Sequence
+      include Sequence [@mode v]
 
       val create : len:int -> t
-      val unsafe_blit : (t, t) blit
-    end) : S with type t := Sequence.t
+      val unsafe_blit : ((t, t) blit[@mode v])
+    end) : S [@mode v] with type t := Sequence.t
 
   (** [Make_distinct] is for blitting between values of distinct monomorphic types. *)
   module%template.portable Make_distinct
-      (Src : Sequence)
+      (Src : Sequence
+    [@mode v])
       (Dst : sig
          include Sequence
 
          val create : len:int -> t
-         val unsafe_blit : (Src.t, t) blit
-       end) : S_distinct with type src := Src.t with type dst := Dst.t
+         val unsafe_blit : ((Src.t, t) blit[@mode v])
+       end) : S_distinct [@mode v] with type src := Src.t with type dst := Dst.t
 
   module%template.portable Make_to_string
       (T : sig
          type t
        end)
-      (To_bytes : S_distinct with type src := T.t with type dst := bytes) :
-    S_to_string with type t := T.t
+      (To_bytes : S_distinct [@mode v] with type src := T.t with type dst := bytes) :
+    S_to_string [@mode v] with type t := T.t
 
   (** [Make1] is for blitting between two values of the same polymorphic type. *)
-  module%template.portable Make1 (Sequence : Sequence1 [@kind k]) :
-    S1 [@kind k] with type 'a t := 'a Sequence.t
+  module%template.portable Make1 (Sequence : Sequence1 [@kind k] [@mode v]) :
+    S1 [@kind k] [@mode v] with type 'a t := 'a Sequence.t
   [@@kind k = values]
 
   module%template.portable Make1_phantom2_distinct
@@ -217,9 +226,10 @@ module type Blit = sig
 
          val length : (_, _, _) t -> int
          val create_like : len:int -> ('elt, _, _) Src.t -> ('elt, _, _) t
-         val unsafe_blit : (('elt, _, _) Src.t, ('elt, _, _) t) blit
+         val unsafe_blit : ((('elt, _, _) Src.t, ('elt, _, _) t) blit[@mode v])
        end) :
     S1_phantom2_distinct
+    [@mode v]
     with type ('elt, 'p1, 'p2) src := ('elt, 'p1, 'p2) Src.t
     with type ('elt, 'p1, 'p2) dst := ('elt, 'p1, 'p2) Dst.t
 end]

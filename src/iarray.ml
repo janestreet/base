@@ -22,27 +22,12 @@ let%template get_opt t n =
 ;;
 
 (** Local allocation *)
-module Local = struct
-  let length = length
-  let is_empty = is_empty
+module%template Local0 = struct
   let last_exn t = t.:(length t - 1)
-  let of_list = I.of_list_local
-  let to_list = I.to_list_local
   let init = I.init_local
   let append = I.append_local
-  let for_all t ~f = I.for_all_local t ~f
-  let exists t ~f = I.exists_local t ~f
-  let iteri t ~f = I.iteri_local t ~f
-  let iter t ~f = I.iter_local t ~f
   let iter2_exn t1 t2 ~f = I.iter2_local t1 t2 ~f
-  let find t ~f = I.find_opt_local t ~f
-  let find_map t ~f = I.find_map_local t ~f
-  let mapi t ~f = I.mapi_local t ~f
-  let mapi_to_global t ~f = I.mapi_local_input t ~f
-  let mapi_of_global t ~f = I.mapi_local_output t ~f
   let map t ~f = I.map_local t ~f
-  let map_to_global t ~f = I.map_local_input t ~f
-  let map_of_global t ~f = I.map_local_output t ~f
   let map2_exn t1 t2 ~f = I.map2_local t1 t2 ~f
   let sub t ~pos ~len = I.sub_local t ~pos ~len
 
@@ -52,36 +37,6 @@ module Local = struct
     in
     sub t ~pos ~len
   ;;
-
-  [%%template
-  [@@@kind ka = value, kacc = base]
-
-  let rec foldi_loop t ~f ~len ~pos ~acc =
-    if len = pos
-    then acc
-    else foldi_loop t ~f ~len ~pos:(pos + 1) ~acc:(f pos acc (unsafe_get t pos))
-  ;;
-
-  [@@@kind.default ka = ka, kacc = kacc]
-
-  let foldi (type a acc) (t : a t) ~(init : acc) ~f =
-    foldi_loop t ~f ~len:(length t) ~pos:0 ~acc:init
-  ;;
-
-  let fold t ~init ~f =
-    (foldi [@inlined hint] [@kind ka kacc])
-      ~f:(fun [@inline always] _ acc a -> f acc a)
-      ~init
-      t
-  ;;
-
-  let fold_right (type a acc) (t : a t) ~(init : acc) ~f =
-    let rec loop pos acc =
-      let pos = pos - 1 in
-      if pos < 0 then acc else loop pos (f (unsafe_get t pos) acc)
-    in
-    loop (length t) init [@nontail]
-  ;;]
 
   let prefix t ~len = sub t ~pos:0 ~len
   let suffix t ~len = sub t ~pos:(length t - len) ~len
@@ -99,110 +54,6 @@ module Local = struct
     let arr = Array.create_local ~len x in
     (mutate [@inlined hint]) arr;
     unsafe_of_array__promise_no_mutation arr
-  ;;
-
-  let rec existsi_loop t ~f ~len ~pos =
-    if len = pos
-    then false
-    else if f pos (unsafe_get t pos)
-    then true
-    else existsi_loop t ~f ~len ~pos:(pos + 1)
-  ;;
-
-  let rec for_alli_loop t ~f ~len ~pos =
-    if len = pos
-    then true
-    else if f pos (unsafe_get t pos)
-    then for_alli_loop t ~f ~len ~pos:(pos + 1)
-    else false
-  ;;
-
-  let for_alli t ~f = for_alli_loop t ~f ~len:(length t) ~pos:0
-  let existsi t ~f = existsi_loop t ~f ~len:(length t) ~pos:0
-  let mem t x ~equal = exists t ~f:(fun y -> equal x y) [@nontail]
-
-  let rec fold_result_loop t ~f ~len ~pos ~acc =
-    if len = pos
-    then Ok acc
-    else (
-      match f acc (unsafe_get t pos) with
-      | Error _ as error -> error
-      | Ok acc -> fold_result_loop t ~f ~len ~pos:(pos + 1) ~acc)
-  ;;
-
-  let fold_result t ~init ~f = fold_result_loop t ~f ~len:(length t) ~pos:0 ~acc:init
-
-  let rec fold_until_loop t ~f ~finish ~len ~pos ~acc =
-    if len = pos
-    then finish acc
-    else (
-      match (f acc (unsafe_get t pos) : _ Container.Continue_or_stop.t) with
-      | Stop res -> res
-      | Continue acc -> fold_until_loop t ~f ~finish ~len ~pos:(pos + 1) ~acc)
-  ;;
-
-  let fold_until t ~init ~f ~finish =
-    fold_until_loop t ~f ~finish ~len:(length t) ~pos:0 ~acc:init
-  ;;
-
-  let counti t ~f = foldi t ~init:0 ~f:(fun i n x -> n + Bool.to_int (f i x)) [@nontail]
-  let count t ~f = counti t ~f:(fun _ x -> f x) [@nontail]
-
-  let sum (type a) (module Summable : Container_with_local.Summable with type t = a) t ~f =
-    fold t ~init:Summable.zero ~f:(fun sum elt -> Summable.( + ) sum (f elt))
-  ;;
-
-  let rec findi_loop t ~f ~len ~pos =
-    if len = pos
-    then None
-    else (
-      let x = unsafe_get t pos in
-      if f pos x then Some (pos, x) else findi_loop t ~f ~len ~pos:(pos + 1))
-  ;;
-
-  let findi t ~f = findi_loop t ~f ~len:(length t) ~pos:0
-
-  let rec find_mapi_loop t ~f ~len ~pos =
-    if len = pos
-    then None
-    else (
-      match f pos (unsafe_get t pos) with
-      | Some _ as some -> some
-      | None -> find_mapi_loop t ~f ~len ~pos:(pos + 1))
-  ;;
-
-  let find_mapi t ~f = find_mapi_loop t ~f ~len:(length t) ~pos:0
-
-  let rec min_elt_loop t ~compare ~len ~pos ~acc =
-    if len = pos
-    then acc
-    else (
-      let elt = unsafe_get t pos in
-      let acc = Bool.select (compare elt acc < 0) elt acc in
-      min_elt_loop t ~compare ~len ~pos:(pos + 1) ~acc)
-  ;;
-
-  let min_elt t ~compare =
-    let len = length t in
-    if len = 0
-    then None
-    else Some (min_elt_loop t ~compare ~len ~pos:1 ~acc:(unsafe_get t 0))
-  ;;
-
-  let rec max_elt_loop t ~compare ~len ~pos ~acc =
-    if len = pos
-    then acc
-    else (
-      let elt = unsafe_get t pos in
-      let acc = Bool.select (compare elt acc > 0) elt acc in
-      max_elt_loop t ~compare ~len ~pos:(pos + 1) ~acc)
-  ;;
-
-  let max_elt t ~compare =
-    let len = length t in
-    if len = 0
-    then None
-    else Some (max_elt_loop t ~compare ~len ~pos:1 ~acc:(unsafe_get t 0))
   ;;
 
   open struct
@@ -238,25 +89,14 @@ module Local = struct
       unsafe_of_array__promise_no_mutation res)
   ;;
 
-  let iteri_list_local : type a. a list -> f:(int -> a -> unit) -> unit =
-    fun list ~f ->
-    let rec loop i list ~f =
-      match list with
-      | [] -> ()
-      | head :: tail ->
-        f i head;
-        loop (i + 1) tail ~f
-    in
-    loop 0 list ~f
-  ;;
-
   let of_list_rev list =
     match list with
     | [] -> get_empty ()
     | head :: tail ->
       let len = 1 + List.length tail in
       let array = make_mutable_local len head in
-      iteri_list_local tail ~f:(fun i x -> unsafe_set_local array (len - i - 2) x);
+      (List.iteri [@mode local]) tail ~f:(fun i x ->
+        unsafe_set_local array (len - i - 2) x);
       unsafe_of_array__promise_no_mutation array
   ;;
 
@@ -306,12 +146,6 @@ module Local = struct
       unsafe_of_array__promise_no_mutation (loop 1 list ~f ~first)
   ;;
 
-  let[@zero_alloc] int_m () =
-    (module Int : Container_with_local.Summable with type t = int)
-  ;;
-
-  let int_m = Portability_hacks.magic_portable__needs_base_and_core int_m
-
   let rec concat_loop ~outer ~outer_pos ~outer_len ~dst ~dst_pos ~dst_len =
     if outer_pos = outer_len
     then unsafe_of_array__promise_no_mutation dst
@@ -336,8 +170,16 @@ module Local = struct
           ~dst_len))
   ;;
 
+  let sum_length ts =
+    let n = length ts in
+    let rec loop ts i acc =
+      if i = n then acc else loop ts (i + 1) (acc + length (unsafe_get ts i))
+    in
+    loop ts 0 0
+  ;;
+
   let concat outer =
-    let dst_len = sum (int_m ()) outer ~f:length in
+    let dst_len = sum_length outer in
     concat_loop
       ~outer
       ~outer_pos:0
@@ -348,7 +190,6 @@ module Local = struct
   ;;
 
   let concat_map t ~f = concat (map t ~f)
-  let concat_mapi t ~f = concat (mapi t ~f)
 
   let rec filteri_loop t ~f ~len ~pos ~to_ =
     if len = pos
@@ -370,8 +211,6 @@ module Local = struct
     else unsafe_of_array__promise_no_mutation (filteri_loop t ~f ~len ~pos:0 ~to_:0)
   ;;
 
-  let filter t ~f = filteri t ~f:(fun _ x -> f x)
-
   let make_mutable_local_optional len opt =
     match opt with
     | Some elt -> make_mutable_local len elt
@@ -380,24 +219,27 @@ module Local = struct
       [||]
   ;;
 
+  [%%template
+  [@@@mode.default l = (global, local)]
+
   let rec filter_mapi_loop t ~f ~len ~pos ~to_ ~maybe_res =
     if len = pos
     then make_mutable_local_optional to_ maybe_res
     else (
       match f pos (unsafe_get t pos) with
       | Some res as maybe_res ->
-        let array = filter_mapi_loop t ~f ~len ~pos:(pos + 1) ~to_:(to_ + 1) ~maybe_res in
+        let array =
+          (filter_mapi_loop [@mode l]) t ~f ~len ~pos:(pos + 1) ~to_:(to_ + 1) ~maybe_res
+        in
         unsafe_set_local array to_ res;
         array
-      | None -> filter_mapi_loop t ~f ~len ~pos:(pos + 1) ~to_ ~maybe_res)
+      | None -> (filter_mapi_loop [@mode l]) t ~f ~len ~pos:(pos + 1) ~to_ ~maybe_res)
   ;;
 
   let filter_mapi t ~f =
     unsafe_of_array__promise_no_mutation
-      (filter_mapi_loop t ~f ~len:(length t) ~pos:0 ~to_:0 ~maybe_res:None)
-  ;;
-
-  let filter_map t ~f = filter_mapi t ~f:(fun _ x -> f x)
+      ((filter_mapi_loop [@mode l]) t ~f ~len:(length t) ~pos:0 ~to_:0 ~maybe_res:None)
+  ;;]
 
   let rec partitioni_tf_loop t ~f ~len ~pos ~l ~r =
     if len = pos
@@ -430,12 +272,13 @@ module Local = struct
       , unsafe_of_array__promise_no_mutation r_arr ))
   ;;
 
-  let partition_tf t ~f = partitioni_tf t ~f:(fun _ x -> f x)
-
   let is_some = function
     | Some _ -> true
     | None -> false
   ;;
+
+  [%%template
+  [@@@mode.default li = (global, local)]
 
   let rec partition_mapi_loop t ~f ~len ~pos ~l ~r ~maybe_l ~maybe_r =
     if len = pos
@@ -444,7 +287,7 @@ module Local = struct
       match (f pos (unsafe_get t pos) : _ Either.t) with
       | First res ->
         let ((arr, _) as pair) =
-          partition_mapi_loop
+          (partition_mapi_loop [@mode li])
             t
             ~f
             ~len
@@ -458,7 +301,7 @@ module Local = struct
         pair
       | Second res ->
         let ((_, arr) as pair) =
-          partition_mapi_loop
+          (partition_mapi_loop [@mode li])
             t
             ~f
             ~len
@@ -478,13 +321,20 @@ module Local = struct
     then get_empty (), get_empty ()
     else (
       let l_arr, r_arr =
-        partition_mapi_loop t ~f ~len ~pos:0 ~l:0 ~r:0 ~maybe_l:None ~maybe_r:None
+        (partition_mapi_loop [@mode li])
+          t
+          ~f
+          ~len
+          ~pos:0
+          ~l:0
+          ~r:0
+          ~maybe_l:None
+          ~maybe_r:None
       in
       ( unsafe_of_array__promise_no_mutation l_arr
       , unsafe_of_array__promise_no_mutation r_arr ))
-  ;;
+  ;;]
 
-  let partition_map t ~f = partition_mapi t ~f:(fun _ x -> f x)
   let cartesian_product t1 t2 = concat_map t1 ~f:(fun x1 -> map t2 ~f:(fun x2 -> x1, x2))
 
   let rec fold_mapi_local_loop t ~acc ~f ~pos ~len ~fst_elt =
@@ -527,8 +377,11 @@ end
 
 (** Constructors *)
 
-let init len ~f = unsafe_of_array__promise_no_mutation (Array.init len ~f)
-let%template[@alloc stack] init = Local.init
+let%template[@alloc heap] init len ~f =
+  unsafe_of_array__promise_no_mutation (Array.init len ~f)
+;;
+
+let%template[@alloc stack] init = Local0.init
 let singleton x = unsafe_of_array__promise_no_mutation [| x |]
 
 let[@inline] create ~len x ~mutate =
@@ -601,8 +454,14 @@ end
 
 (** Conversions *)
 
-let of_array = I.of_array
-let of_list = I.of_list
+let%template[@alloc heap] of_list = I.of_list
+let%template[@alloc stack] of_list = I.of_list_local
+let%template[@alloc heap] of_array = I.of_array
+
+let%template[@alloc stack] of_array a =
+  (init [@alloc stack]) (Array.length a) ~f:(fun i -> Array.unsafe_get a i)
+;;
+
 let of_list_rev list = unsafe_of_array__promise_no_mutation (Array.of_list_rev list)
 let of_list_map list ~f = unsafe_of_array__promise_no_mutation (Array.of_list_map list ~f)
 
@@ -669,38 +528,53 @@ let t_sexp_grammar (a_sexp_grammar : 'a Sexplib0.Sexp_grammar.t)
 
 (** Indexed container *)
 
+[%%template
+[@@@mode.default m = (global, local)]
+
 let iteri t ~(f : _ -> _ -> _) =
   for pos = 0 to length t - 1 do
     f pos (unsafe_get t pos)
   done
 ;;
 
-let iter t ~f = iteri t ~f:(fun _ x -> f x) [@nontail]
+let iter t ~f = (iteri [@mode m]) t ~f:(fun _ x -> f x) [@nontail]]
 
 [%%template
-[@@@kind.default ka = value, kacc = base]
+[@@@kind.default ka = value, kacc = base_or_null]
+[@@@mode.default mi = (global, local), mo = (global, local)]
 
 let foldi (type a acc) (t : a t) ~(init : acc) ~f : acc =
   let n = length t in
-  let rec loop pos acc =
-    if pos = n then acc else loop (pos + 1) (f pos acc (unsafe_get t pos))
-  in
-  loop 0 init [@nontail]
+  (let rec loop pos acc =
+     if [@exclave_if_local mo ~reasons:[ May_return_local ]] pos = n
+     then acc
+     else loop (pos + 1) (f pos acc (unsafe_get t pos))
+   in
+   loop 0 init [@nontail])
+  [@exclave_if_local mo ~reasons:[ May_return_local ]]
 ;;
 
 let fold t ~init ~f =
-  (foldi [@inlined hint] [@kind ka kacc]) t ~init ~f:(fun [@inline always] _ acc x ->
-    f acc x)
-  [@nontail]
+  (foldi [@inlined hint] [@kind ka kacc] [@mode mi mo])
+    t
+    ~init
+    ~f:(fun [@inline always] _ acc x -> f acc x [@exclave_if_local mo])
+  [@nontail] [@exclave_if_local mo ~reasons:[ May_return_local ]]
 ;;
 
 let fold_right (type a acc) (t : a t) ~(init : acc) ~f =
-  let rec loop pos acc =
-    let pos = pos - 1 in
-    if pos < 0 then acc else loop pos (f (unsafe_get t pos) acc)
-  in
-  loop (length t) init [@nontail]
+  (let rec loop pos acc =
+     let pos = pos - 1 in
+     if [@exclave_if_local mo ~reasons:[ May_return_local ]] pos < 0
+     then acc
+     else loop pos (f (unsafe_get t pos) acc)
+   in
+   loop (length t) init [@nontail])
+  [@exclave_if_local mo ~reasons:[ May_return_local ]]
 ;;]
+
+[%%template
+[@@@mode.default m = (global, local)]
 
 let existsi t ~(f : _ -> _ -> _) =
   let n = length t in
@@ -719,100 +593,148 @@ let for_alli t ~(f : _ -> _ -> _) =
 ;;
 
 let counti t ~f =
-  foldi t ~init:0 ~f:(fun pos acc x -> acc + Bool.to_int (f pos x)) [@nontail]
-;;
+  (foldi [@mode m global]) t ~init:0 ~f:(fun pos acc x -> acc + Bool.to_int (f pos x))
+  [@nontail]
+;;]
 
-let find_mapi t ~f =
+let%template find_mapi t ~f =
   let n = length t in
-  let rec loop pos =
-    if pos = n
-    then None
-    else (
-      match f pos (unsafe_get t pos) with
-      | Some _ as some -> some
-      | None -> loop (pos + 1))
-  in
-  loop 0 [@nontail]
+  (let rec loop pos =
+     if [@exclave_if_local mo ~reasons:[ May_return_local ]] pos = n
+     then None
+     else (
+       match f pos (unsafe_get t pos) with
+       | Some _ as some -> some
+       | None -> loop (pos + 1))
+   in
+   loop 0 [@nontail])
+  [@exclave_if_local mo ~reasons:[ May_return_local ]]
+[@@mode mi = (global, local), mo = (global, local)]
 ;;
 
-let findi t ~f =
-  find_mapi t ~f:(fun i x -> if f i x then Some (i, x) else None) [@nontail]
+let%template findi t ~f =
+  (find_mapi [@mode m m]) t ~f:(fun i x ->
+    if [@exclave_if_local m ~reasons:[ May_return_regional; Will_return_unboxed ]] f i x
+    then Some (i, x)
+    else None)
+  [@nontail] [@exclave_if_local m ~reasons:[ May_return_local ]]
+[@@mode m = (global, local)]
 ;;
+
+[%%template
+[@@@mode.default mi = (global, local), mo = (global, local)]
 
 let fold_result t ~init ~f =
   let n = length t in
-  let rec loop pos acc =
-    if pos = n
-    then Ok acc
-    else (
-      match f acc (unsafe_get t pos) with
-      | Error _ as err -> err
-      | Ok acc -> loop (pos + 1) acc)
-  in
-  loop 0 init [@nontail]
+  (let rec loop pos acc =
+     if [@exclave_if_local mo ~reasons:[ May_return_local ]] pos = n
+     then Ok acc
+     else (
+       match f acc (unsafe_get t pos) with
+       | Error _ as err -> err
+       | Ok acc -> loop (pos + 1) acc)
+   in
+   loop 0 init [@nontail])
+  [@exclave_if_local mo ~reasons:[ May_return_local ]]
 ;;
 
 let foldi_until t ~init ~f ~finish =
   let n = length t in
-  let rec loop pos acc =
-    if pos = n
-    then finish pos acc
-    else (
-      match (f pos acc (unsafe_get t pos) : (_, _) Container.Continue_or_stop.t) with
-      | Stop x -> x
-      | Continue acc -> loop (pos + 1) acc)
-  in
-  loop 0 init [@nontail]
+  (let rec loop pos acc =
+     if [@exclave_if_local mo ~reasons:[ May_return_local ]] pos = n
+     then finish pos acc
+     else (
+       match (f pos acc (unsafe_get t pos) : (_, _) Container.Continue_or_stop.t) with
+       | Stop x -> x
+       | Continue acc -> loop (pos + 1) acc)
+   in
+   loop 0 init [@nontail])
+  [@exclave_if_local mo ~reasons:[ May_return_local ]]
 ;;
 
 let fold_until t ~init ~f ~finish =
-  foldi_until
+  (foldi_until [@mode mi mo])
     t
     ~init
-    ~f:(fun _ acc x -> f acc x)
-    ~finish:(fun _ acc -> finish acc) [@nontail]
+    ~f:(fun _ acc x -> f acc x [@exclave_if_local mo])
+    ~finish:(fun _ acc -> finish acc [@exclave_if_local mo])
+  [@nontail] [@exclave_if_local mo ~reasons:[ May_return_local ]]
 ;;
 
 let iteri_until t ~f ~finish =
   let n = length t in
-  let rec loop pos =
-    if pos = n
-    then finish pos
-    else (
-      match (f pos (unsafe_get t pos) : (_, _) Container.Continue_or_stop.t) with
-      | Stop x -> x
-      | Continue () -> loop (pos + 1))
-  in
-  loop 0 [@nontail]
+  (let rec loop pos =
+     if [@exclave_if_local mo ~reasons:[ May_return_local ]] pos = n
+     then finish pos
+     else (
+       match (f pos (unsafe_get t pos) : (_, _) Container.Continue_or_stop.t) with
+       | Stop x -> x
+       | Continue () -> loop (pos + 1))
+   in
+   loop 0 [@nontail])
+  [@exclave_if_local mo ~reasons:[ May_return_local ]]
 ;;
 
 let iter_until t ~f ~finish =
-  iteri_until t ~f:(fun _ x -> f x) ~finish:(fun _ -> finish ()) [@nontail]
+  (iteri_until [@mode mi mo])
+    t
+    ~f:(fun _ x -> f x [@exclave_if_local mo])
+    ~finish:(fun _ -> finish () [@exclave_if_local mo])
+  [@nontail] [@exclave_if_local mo ~reasons:[ May_return_local ]]
+;;]
+
+[%%template
+[@@@mode.default m = (global, local)]
+
+let exists t ~f = (existsi [@mode m]) t ~f:(fun _ x -> f x) [@nontail]
+let for_all t ~f = (for_alli [@mode m]) t ~f:(fun _ x -> f x) [@nontail]
+let count t ~f = (counti [@mode m]) t ~f:(fun _ x -> f x) [@nontail]]
+
+[%%template
+  let sum (type a) (module M : Container.Summable with type t = a[@mode mo]) t ~f =
+    (fold [@mode mi mo]) t ~init:M.zero ~f:(fun acc x ->
+      M.( + ) acc (f x) [@exclave_if_local mo ~reasons:[ May_return_local ]])
+    [@nontail] [@exclave_if_local mo ~reasons:[ May_return_local ]]
+  [@@mode mi = (global, local), mo = (global, local)]
+  ;;]
+
+let%template mem t elt ~equal = (exists [@mode m]) t ~f:(fun x -> equal elt x) [@nontail]
+[@@mode m = (global, local)]
 ;;
 
-let exists t ~f = existsi t ~f:(fun _ x -> f x) [@nontail]
-let for_all t ~f = for_alli t ~f:(fun _ x -> f x) [@nontail]
-let count t ~f = counti t ~f:(fun _ x -> f x) [@nontail]
-
-let sum (type a) (module M : Container.Summable with type t = a) t ~f =
-  fold t ~init:M.zero ~f:(fun acc x -> M.( + ) acc (f x)) [@nontail]
+let%template find_map t ~f =
+  (find_mapi [@mode mi mo]) t ~f:(fun _ x -> f x [@exclave_if_local mo])
+  [@nontail] [@exclave_if_local mo ~reasons:[ May_return_local ]]
+[@@mode mi = (global, local), mo = (global, local)]
 ;;
 
-let mem t elt ~equal = exists t ~f:(fun x -> equal elt x) [@nontail]
-let find_map t ~f = find_mapi t ~f:(fun _ x -> f x) [@nontail]
-let find t ~f = find_map t ~f:(fun x -> Option.some_if (f x) x) [@nontail]
+[%%template
+[@@@mode.default m = (global, local)]
+
+let find t ~f =
+  (find_map [@mode m m]) t ~f:(fun x ->
+    match[@exclave_if_local m ~reasons:[ May_return_regional; Will_return_unboxed ]]
+      f x
+    with
+    | true -> Some x
+    | false -> None)
+  [@nontail] [@exclave_if_local m ~reasons:[ May_return_local ]]
+;;
 
 let[@inline] best_elt t ~first_is_better_than_second =
-  match length t with
+  match[@exclave_if_local m ~reasons:[ May_return_regional; Will_return_unboxed ]]
+    length t
+  with
   | 0 -> None
   | n ->
     let rec loop pos acc =
-      if pos = n
+      if [@exclave_if_local m ~reasons:[ May_return_regional; Will_return_unboxed ]] pos
+                                                                                     = n
       then Some acc
       else (
         let x = unsafe_get t pos in
         let acc =
-          Bool.select ((first_is_better_than_second [@inlined hint]) x acc) x acc
+          Bool.select ((first_is_better_than_second [@inlined always]) x acc) x acc
         in
         loop (pos + 1) acc)
     in
@@ -820,14 +742,19 @@ let[@inline] best_elt t ~first_is_better_than_second =
 ;;
 
 let min_elt t ~compare =
-  best_elt t ~first_is_better_than_second:(fun x y -> compare x y < 0) [@nontail]
+  (let first_is_better_than_second x y = compare x y < 0 in
+   (best_elt [@mode m]) t ~first_is_better_than_second [@nontail])
+  [@exclave_if_local m ~reasons:[ May_return_regional; Will_return_unboxed ]]
 ;;
 
 let max_elt t ~compare =
-  best_elt t ~first_is_better_than_second:(fun x y -> compare x y > 0) [@nontail]
-;;
+  (let first_is_better_than_second x y = compare x y > 0 in
+   (best_elt [@mode m]) t ~first_is_better_than_second [@nontail])
+  [@exclave_if_local m ~reasons:[ May_return_regional; Will_return_unboxed ]]
+;;]
 
-let to_list = I.to_list
+let%template[@alloc heap] to_list = I.to_list
+let%template[@alloc stack] to_list = I.to_list_local
 let to_array = I.to_array
 
 (** Invariants *)
@@ -852,11 +779,12 @@ let random_element ?(random_state = Random.State.get_default ()) t =
 
 (** Concatenation *)
 
-let append = I.append
+let%template[@alloc heap] append = I.append
+let%template[@alloc stack] append = Local0.append
 let[@zero_alloc] int_m () = (module Int : Container.Summable with type t = int)
 let int_m = Portability_hacks.magic_portable__needs_base_and_core int_m
 
-let concat outer =
+let%template[@alloc heap] concat outer =
   let total_len = sum (int_m ()) outer ~f:length in
   if total_len = 0
   then get_empty ()
@@ -879,6 +807,8 @@ let concat outer =
     assert (!pos = total_len);
     unsafe_of_array__promise_no_mutation array)
 ;;
+
+let%template[@alloc stack] concat = Local0.concat
 
 (** Subsequences *)
 
@@ -908,10 +838,23 @@ let group t ~break =
 
 (** Transformations *)
 
-let mapi t ~f = init (length t) ~f:(fun i -> f i (unsafe_get t i)) [@nontail]
-let map t ~f = init (length t) ~f:(fun i -> f (unsafe_get t i)) [@nontail]
+let%template mapi t ~f = init (length t) ~f:(fun i -> f i (unsafe_get t i)) [@nontail]
+[@@mode global] [@@alloc heap]
+;;
 
-let filteri t ~f =
+let%template mapi t ~f = I.mapi_local_input t ~f [@@mode local] [@@alloc heap]
+let%template mapi t ~f = I.mapi_local t ~f [@@mode local] [@@alloc stack]
+let%template mapi t ~f = I.mapi_local_output t ~f [@@mode global] [@@alloc stack]
+
+let%template map t ~f = init (length t) ~f:(fun i -> f (unsafe_get t i)) [@nontail]
+[@@mode global] [@@alloc heap]
+;;
+
+let%template map t ~f = I.map_local_input t ~f [@@mode local] [@@alloc heap]
+let%template map t ~f = I.map_local t ~f [@@mode local] [@@alloc stack]
+let%template map t ~f = I.map_local_output t ~f [@@mode global] [@@alloc stack]
+
+let%template[@alloc heap] filteri t ~f =
   let len = length t in
   if len = 0
   then get_empty ()
@@ -931,9 +874,14 @@ let filteri t ~f =
     loop 0 0 [@nontail])
 ;;
 
-let filter t ~f = filteri t ~f:(fun _ x -> f x) [@nontail]
+let%template[@alloc stack] filteri = Local0.filteri
 
-let filter_mapi t ~f =
+let%template filter t ~f =
+  (filteri [@alloc a]) t ~f:(fun _ x -> f x) [@nontail] [@exclave_if_stack a]
+[@@alloc a @ m = (heap_global, stack_local)]
+;;
+
+let%template filter_mapi t ~(f : _ -> _ -> _) =
   let len = length t in
   let rec loop pos out out_len =
     if pos = len
@@ -951,15 +899,33 @@ let filter_mapi t ~f =
           loop (pos + 1) out (out_len + 1)))
   in
   loop 0 [||] 0 [@nontail]
+[@@mode mi = (global, local)] [@@alloc heap]
 ;;
 
-let filter_map t ~f = filter_mapi t ~f:(fun _ x -> f x) [@nontail]
-let concat_map t ~f = concat (map t ~f)
-let concat_mapi t ~f = concat (mapi t ~f)
+let%template filter_mapi = (Local0.filter_mapi [@mode mi])
+[@@mode mi = (global, local)] [@@alloc stack]
+;;
+
+[%%template
+[@@@mode.default mi = (global, local)]
+[@@@alloc.default a @ mo = (heap_global, stack_local)]
+
+let filter_map t ~(f : _ -> _) =
+  (filter_mapi [@mode mi] [@alloc a]) t ~f:(fun _ x -> f x [@exclave_if_stack a])
+  [@nontail] [@exclave_if_stack a]
+;;
+
+let concat_map t ~f =
+  (concat [@alloc a]) ((map [@mode mi] [@alloc a]) t ~f) [@exclave_if_stack a]
+;;
+
+let concat_mapi t ~f =
+  (concat [@alloc a]) ((mapi [@mode mi] [@alloc a]) t ~f) [@exclave_if_stack a]
+;;]
 
 (** Partitions *)
 
-let partitioni_tf t ~f =
+let%template[@alloc heap] partitioni_tf t ~f =
   let len = length t in
   if len = 0
   then get_empty (), get_empty ()
@@ -983,9 +949,14 @@ let partitioni_tf t ~f =
     loop 0 0 0 [@nontail])
 ;;
 
-let partition_tf t ~f = partitioni_tf t ~f:(fun _ x -> f x) [@nontail]
+let%template[@alloc stack] partitioni_tf t ~f = Local0.partitioni_tf t ~f [@nontail]
 
-let partition_mapi t ~f =
+let%template partition_tf t ~f =
+  (partitioni_tf [@alloc a]) t ~f:(fun _ x -> f x) [@nontail] [@exclave_if_stack a]
+[@@alloc a @ m = (heap_global, stack_local)]
+;;
+
+let%template partition_mapi t ~f =
   let len = length t in
   let rec loop pos fsts fsts_len snds snds_len =
     if pos = len
@@ -1010,9 +981,18 @@ let partition_mapi t ~f =
           loop (pos + 1) fsts fsts_len snds (snds_len + 1)))
   in
   loop 0 [||] 0 [||] 0 [@nontail]
+[@@mode mi = (global, local)] [@@alloc a @ mo = heap_global]
 ;;
 
-let partition_map t ~f = partition_mapi t ~f:(fun _ x -> f x) [@nontail]
+let%template partition_mapi t ~f = (Local0.partition_mapi [@mode mi]) t ~f [@nontail]
+[@@mode mi = (global, local)] [@@alloc a @ mo = stack_local]
+;;
+
+let%template partition_map t ~f =
+  (partition_mapi [@mode mi] [@alloc a]) t ~f:(fun _ x -> f x [@exclave_if_stack a])
+  [@nontail] [@exclave_if_stack a]
+[@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
+;;
 
 (** Functional update *)
 
@@ -1120,7 +1100,8 @@ let rev t =
    we use
    {[
      unsafe_of_array__promise_no_mutation [||]
-   ]}. *)
+   ]}
+   . *)
 
 let split_n t_orig n =
   if n <= 0
@@ -1178,6 +1159,61 @@ let is_sorted_strictly t ~compare =
   Array.is_sorted_strictly ~compare (unsafe_to_array__promise_no_mutation t)
 ;;
 
+module%template Local = struct
+  include Local0
+
+  [%%template
+  [@@@kind.default ka = value, kacc = base_or_null]
+
+  let fold = (fold [@kind ka kacc] [@mode local local])
+  let foldi = (foldi [@kind ka kacc] [@mode local local])
+  let fold_right = (fold_right [@kind ka kacc] [@mode local local])]
+
+  (* The following are exported (and thus tested) through [Iarray]'s [Container] interface *)
+
+  let length = length
+  let is_empty = is_empty
+  let mem = (mem [@mode local])
+  let iter = (iter [@mode local])
+  let fold_result = (fold_result [@mode local local])
+  let fold_until = (fold_until [@mode local local])
+  let exists = (exists [@mode local])
+  let for_all = (for_all [@mode local])
+  let count = (count [@mode local])
+  let sum = (sum [@mode local local])
+  let find = (find [@mode local])
+  let find_map = (find_map [@mode local local])
+  let to_list = (to_list [@alloc stack])
+  let min_elt = (min_elt [@mode local])
+  let max_elt = (max_elt [@mode local])
+  let of_list = (of_list [@alloc stack])
+  let append = (append [@alloc stack])
+  let concat = (concat [@alloc stack])
+  let map = (map [@mode local] [@alloc stack])
+  let map_to_global = (map [@mode local] [@alloc heap])
+  let map_of_global = (map [@mode global] [@alloc stack])
+  let filter = (filter [@alloc stack])
+  let filter_map = (filter_map [@mode local] [@alloc stack])
+  let concat_map = (concat_map [@mode local] [@alloc stack])
+  let partition_tf = (partition_tf [@alloc stack])
+  let partition_map = (partition_map [@mode local] [@alloc stack])
+  let iteri = (iteri [@mode local])
+  let existsi = (existsi [@mode local])
+  let for_alli = (for_alli [@mode local])
+  let counti = (counti [@mode local])
+  let findi = (findi [@mode local])
+  let find_mapi = (find_mapi [@mode local local])
+  let partitioni_tf = (partitioni_tf [@alloc stack])
+  let partition_mapi = (partition_mapi [@mode local] [@alloc stack])
+  let init = (init [@alloc stack])
+  let mapi = (mapi [@mode local] [@alloc stack])
+  let mapi_to_global = (mapi [@mode local] [@alloc heap])
+  let mapi_of_global = (mapi [@mode global] [@alloc stack])
+  let filteri = (filteri [@alloc stack])
+  let filter_mapi = (filter_mapi [@mode local] [@alloc stack])
+  let concat_mapi = (concat_mapi [@mode local] [@alloc stack])
+end
+
 module Unique = struct
   let[@inline] init len ~(f : _ -> _) : _ =
     (* SAFETY:
@@ -1219,9 +1255,8 @@ module Unique = struct
   let iter t ~f = (iteri [@inlined]) t ~f:(fun [@inline] _ x -> f x) [@nontail]
 
   let[@inline] unzip t : _ t * _ t =
-    (* SAFETY:
-       We know the returned arrays are unique because of the contract of [unzip] - each
-       element of the argument array, which is unique, is split into one of the two
+    (* SAFETY: We know the returned arrays are unique because of the contract of [unzip] -
+       each element of the argument array, which is unique, is split into one of the two
        returned arrays, both of which are newly allocated
     *)
     Obj.magic_unique (unzip t)

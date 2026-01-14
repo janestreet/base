@@ -1,6 +1,8 @@
 open! Import
 
 [%%template
+[@@@kind_set.define base_with_ext = (base, value mod external64)]
+
 module Definitions = struct
   type ('t, 'a, 'accum) fold = 't -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
   [@@mode mi = (global, local), mo = (global, local)]
@@ -20,20 +22,22 @@ module Definitions = struct
   type ('t, 'a) iteri = 't -> f:(int -> 'a -> unit) -> unit [@@mode m = (global, local)]
 
   [%%template
-  [@@@kind k1 = (value, base_or_null_with_imm), k2 = (value, base_or_null_with_imm)]
+  [@@@kind k1 = base_or_null, k2 = base_or_null]
 
   include struct
     type ('t, 'a, 'finish) iteri_until =
       't
-      -> f:(int -> 'a -> ((unit, 'finish) Container.Continue_or_stop.t[@kind value k2]))
+      -> f:
+           (int
+            -> 'a
+            -> ((unit, 'finish) Container.Continue_or_stop.t
+               [@kind value_or_null (k2 or value_or_null)]))
       -> finish:(int -> 'finish)
       -> 'finish
     [@@mode mi = (global, local), mo = (global, local)] [@@kind k1 = k1, k2 = k2]
-
-    type ('a, 'b, 'c) _supress_unused = ('a, 'b, 'c) iteri_until
   end
 
-  [@@@kind k3 = (value, base_or_null_with_imm)]
+  [@@@kind k3 = base_or_null]
 
   include struct
     type ('t, 'a, 'accum, 'finish) foldi_until =
@@ -43,26 +47,18 @@ module Definitions = struct
            (int
             -> 'accum
             -> 'a
-            -> (('accum, 'finish) Container.Continue_or_stop.t[@kind k2 k3]))
+            -> (('accum, 'finish) Container.Continue_or_stop.t
+               [@kind (k2 or value_or_null) (k3 or value_or_null)]))
       -> finish:(int -> 'accum -> 'finish)
       -> 'finish
     [@@kind k1 = k1, k2 = k2, k3 = k3] [@@mode mi = (global, local), mo = (global, local)]
-
-    type ('a, 'b, 'c, 'd) _supress_unused = ('a, 'b, 'c, 'd) foldi_until
   end]
 
   [%%template
   [@@@mode.default m = (global, local)]
-  [@@@kind_set.define base_with_imm = (value, base_with_imm)]
 
   module type
-    [@kind_set.explicit
-      (ks, ks_not_in_t)
-      = ( (value, value)
-        , (value_or_null, value_or_null)
-        , (immediate, value)
-        , (immediate64, value)
-        , (base_with_imm, base) )] Iterators_with_index_without_findi = sig
+    [@kind_set.explicit ks = (value, value_or_null, value mod external64, base_with_ext)] Iterators_with_index_without_findi = sig
     include Container.Generic_types [@kind_set.explicit ks]
 
     (** These are all like their equivalents in [Container] except that an index starting
@@ -81,14 +77,15 @@ module Definitions = struct
     val for_alli : 'a 'p1 'p2. ('a, 'p1, 'p2) t -> f:(int -> 'a elt -> bool) -> bool
     val counti : 'a 'p1 'p2. ('a, 'p1, 'p2) t -> f:(int -> 'a elt -> bool) -> int
 
-    [@@@kind.default_if_multiple k2 = ks_not_in_t]
+    [@@@kind.default_if_multiple k2 = (ks or value)]
     [@@@mode.default mo = (global, m)]
 
     val foldi : 'a 'p1 'p2 'acc. ((('a, 'p1, 'p2) t, 'a elt, 'acc) foldi[@mode mi mo])
 
     val iteri_until
       : 'a 'p1 'p2 'final.
-      ((('a, 'p1, 'p2) t, 'a elt, 'final) iteri_until[@mode mi mo] [@kind k1 k2])
+      ((('a, 'p1, 'p2) t, 'a elt, 'final) iteri_until
+      [@mode mi mo] [@kind (k1 or value_or_null) (k2 or value_or_null)])
 
     val find_mapi
       : 'a 'p1 'p2 'b.
@@ -96,15 +93,17 @@ module Definitions = struct
       -> f:(int -> 'a elt -> ('b Option0.t[@kind k2]))
       -> ('b Option0.t[@kind k2])
 
-    [@@@kind.default_if_multiple k3 = ks_not_in_t]
+    [@@@kind.default_if_multiple k3 = (ks or value)]
 
     val foldi_until
       : 'a 'p1 'p2 'acc 'final.
-      ((('a, 'p1, 'p2) t, 'a elt, 'acc, 'final) foldi_until[@mode mi mo] [@kind k1 k2 k3])]
+      ((('a, 'p1, 'p2) t, 'a elt, 'acc, 'final) foldi_until
+      [@mode mi mo]
+      [@kind (k1 or value_or_null) (k2 or value_or_null) (k3 or value_or_null)])]
   end
 
   module type
-    [@kind_set.explicit ks = (value, value_or_null, immediate, immediate64)] Iterators_with_index = sig
+    [@kind_set.explicit ks = (value, value_or_null, value mod external64)] Iterators_with_index = sig
     (** Use a boxed product just for the [value] versions for backwards-compatibility *)
 
     include Iterators_with_index_without_findi [@kind_set.explicit ks] [@mode m]
@@ -122,7 +121,7 @@ module Definitions = struct
   module type Iterators_with_index = Iterators_with_index [@kind_set.explicit ks]
   [@@kind_set ks = value]
 
-  module type [@kind_set.explicit ks = base_with_imm] Iterators_with_index = sig
+  module type [@kind_set.explicit ks = base_with_ext] Iterators_with_index = sig
     include Iterators_with_index_without_findi [@kind_set.explicit ks] [@mode m]
 
     [@@@kind.default_if_multiple k = ks]
@@ -131,7 +130,7 @@ module Definitions = struct
       : 'a 'p1 'p2.
       (('a, 'p1, 'p2) t[@kind k])
       -> f:(int -> ('a elt[@kind k]) -> bool)
-      -> ((int * ('a elt[@kind k])) Option0.t[@kind value & k])
+      -> ((int * ('a elt[@kind k])) Option0.t[@kind value & (k or value)])
     [@@mode m = (global, m)]
   end]
 
@@ -139,8 +138,7 @@ module Definitions = struct
   [@@@alloc.default a @ m = (heap_global, stack_local)]
 
   module type
-    [@kind_set.explicit
-      ks = (value, value_or_null, immediate, immediate64, base_with_imm)] Generic = sig
+    [@kind_set.explicit ks = (value, value_or_null, value mod external64, base_with_ext)] Generic = sig
     include Container.Generic [@kind_set.explicit ks] [@alloc a]
 
     include
@@ -169,7 +167,7 @@ module Definitions = struct
       takes [Elt.equal]. *)
 
   module type
-    [@kind_set.explicit ks = (value, immediate, immediate64, base_with_imm)] S0 = sig
+    [@kind_set.explicit ks = (value, value mod external64, base_with_ext)] S0 = sig
     include Container.S0 [@kind_set.explicit ks] [@alloc a]
 
     include
@@ -186,7 +184,7 @@ module Definitions = struct
   module type S0 = S0 [@kind_set.explicit ks] [@alloc a] [@@kind_set ks = value]
 
   [@@@kind_set.default.explicit
-    ks = (value, value_or_null, immediate, immediate64, base_with_imm)]
+    ks = (value, value_or_null, value mod external64, base_with_ext)]
 
   module type S1 = sig
     include Container.S1 [@kind_set.explicit ks] [@alloc a]
@@ -247,7 +245,10 @@ module Definitions = struct
     val filter_mapi
       : 'a 'p1 'p2 'b.
       (('a, 'p1, 'p2) t[@kind k1])
-      -> f:(int -> ('a elt[@kind k1]) -> (('b elt[@kind k2]) Option0.t[@kind k2]))
+      -> f:
+           (int
+            -> ('a elt[@kind k1])
+            -> (('b elt[@kind k2]) Option0.t[@kind k2 or value_or_null]))
       -> (('b, 'p1, 'p2) t[@kind k2])
     [@@mode m = (global, m)] [@@alloc __ @ n = (heap_global, a @ m)]
 
@@ -270,7 +271,8 @@ module Definitions = struct
       -> f:
            (int
             -> ('a elt[@kind k1])
-            -> ((('b elt[@kind k2]), ('c elt[@kind k3])) Either0.t[@kind k2 k3]))
+            -> ((('b elt[@kind k2]), ('c elt[@kind k3])) Either0.t
+               [@kind (k2 or value_or_null) (k3 or value_or_null)]))
       -> (('b, 'p1, 'p2) t[@kind k2]) * (('c, 'p1, 'p2) t[@kind k3])
     [@@mode m = (global, m)] [@@alloc __ @ n = (heap_global, a @ m)]
   end
@@ -319,7 +321,7 @@ module Definitions = struct
   (** Like [Generic_with_creators], but [mem] does not accept an [equal] function, since
       [Make0_with_creators] already takes [Elt.equal]. *)
 
-  module type [@kind_set.explicit ks = (value, base_with_imm)] S0_with_creators = sig
+  module type [@kind_set.explicit ks = (value, base_with_ext)] S0_with_creators = sig
     include S0 [@kind_set.explicit ks] [@alloc a]
 
     include
@@ -346,7 +348,7 @@ module Definitions = struct
   module type S0_with_creators = S0_with_creators [@kind_set.explicit ks] [@alloc a]
   [@@kind_set ks = value]
 
-  [@@@kind_set.default.explicit ks = (value, value_or_null, base_with_imm)]
+  [@@@kind_set.default.explicit ks = (value, value_or_null, base_with_ext)]
 
   module type S1_with_creators = sig
     include S1 [@kind_set.explicit ks] [@alloc a]

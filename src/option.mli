@@ -27,24 +27,16 @@ module Constructors : module type of Option0
 
 type 'a t = ('a Constructors.t[@kind k])
 [@@deriving compare ~localize, equal ~localize, sexp ~stackify]
-[@@kind k = (base_non_value, value & (base_with_imm, kr1, kr2, kr3))]
+[@@kind k = (base_non_value, value & (base, kr1, kr2, kr3))]
 
 type 'a t = 'a option =
   | None
   | Some of 'a
 
-type 'a t = 'a t
-[@@kind __ = (immediate, immediate64, value mod external_, value mod external64)]
-
-[%%template:
-[@@@kind
-  k = (value_or_null, immediate, immediate64, value mod external_, value mod external64)]
-
 [%%rederive:
-  type nonrec 'a t = ('a t[@kind k])
-  [@@kind k]
+  type nonrec 'a t = 'a t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]
 
 include Invariant.S1 with type 'a t := 'a t
 
@@ -75,7 +67,7 @@ include%template
 
 [%%template:
 [@@@mode.default m = (global, local)]
-[@@@kind.default k = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
+[@@@kind.default k = (base_or_null, value & (base, kr1, kr2, kr3))]
 
 (** Extracts the underlying value if present, otherwise returns [default]. *)
 val value : 'a. ('a t[@kind k]) -> default:'a -> 'a
@@ -98,7 +90,7 @@ val value_or_thunk : 'a. ('a t[@kind k]) -> default:(unit -> 'a) -> 'a
 val iter : 'a. ('a t[@kind k]) -> f:('a -> unit) -> unit
 
 [@@@kind ki = k]
-[@@@kind.default ko = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
+[@@@kind.default ko = (base_or_null, value & (base, kr1, kr2, kr3))]
 
 (** Extracts the underlying value and applies [f] to it if present, otherwise returns
     [default]. *)
@@ -177,7 +169,7 @@ val some_if_thunk : 'a. bool -> (unit -> 'a) -> 'a t]
 (** {2 Predicates} *)
 
 [%%template:
-[@@@kind.default k = (base_or_null_with_imm, value & (base_with_imm, kr1, kr2, kr3))]
+[@@@kind.default k = (base_or_null, value & (base, kr1, kr2, kr3))]
 
 (** [is_none t] returns true iff [t = None]. *)
 val is_none : 'a. ('a t[@kind k]) -> bool

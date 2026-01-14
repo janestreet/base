@@ -1,12 +1,12 @@
 (* [Array0] defines array functions that are primitives or can be simply defined in terms
-   of [Stdlib.Array].  [Array0] is intended to completely express the part of [Stdlib.Array]
-   that [Base] uses -- no other file in Base other than array0.ml should use [Stdlib.Array].
-   [Array0] has few dependencies, and so is available early in Base's build order.  All
-   Base files that need to use arrays and come before [Base.Array] in build order should
-   do [module Array = Array0].  This includes uses of subscript syntax ([x.(i)], [x.(i) <-
-   e]), which the OCaml parser desugars into calls to [Array.get] and [Array.set].
-   Defining [module Array = Array0] is also necessary because it prevents ocamldep from
-   mistakenly causing a file to depend on [Base.Array]. *)
+   of [Stdlib.Array]. [Array0] is intended to completely express the part of
+   [Stdlib.Array] that [Base] uses -- no other file in Base other than array0.ml should
+   use [Stdlib.Array]. [Array0] has few dependencies, and so is available early in Base's
+   build order. All Base files that need to use arrays and come before [Base.Array] in
+   build order should do [module Array = Array0]. This includes uses of subscript syntax
+   ([x.(i)], [x.(i) <- e]), which the OCaml parser desugars into calls to [Array.get] and
+   [Array.set]. Defining [module Array = Array0] is also necessary because it prevents
+   ocamldep from mistakenly causing a file to depend on [Base.Array]. *)
 
 open! Import0
 module Sys = Sys0
@@ -50,7 +50,7 @@ module Array = struct
   [@@layout_poly]
 
   [%%template
-  [@@@kind.default k = value_or_null_with_imm]
+  [@@@kind.default k = (value_or_null, value mod external64)]
   [@@@kind k = k mod separable]
 
   (* [unsafe_blit] can't be [[@noalloc]] because, even though it does not allocate, it
@@ -138,7 +138,7 @@ include struct
     else if length a2 = 0
     then unsafe_sub a1 0 l1
     else append_prim a1 a2
-  [@@kind k = value_or_null_with_imm]
+  [@@kind k = (value_or_null, value mod external64)]
   ;;]
 end
 
@@ -168,7 +168,7 @@ let%template fold_right t ~(f : _ -> _ -> _) ~init =
 ;;
 
 [%%template
-[@@@kind.default k' = base_or_null_with_imm]
+[@@@kind.default k' = (base_or_null, value mod external64)]
 [@@@kind k = k' mod separable]
 
 let init len ~(f : _ -> _) =
@@ -194,9 +194,9 @@ let sub : type a. a array -> pos:int -> len:int -> a array =
 ;;
 
 (* Copied from [Stdlib.Array], with type annotations added for templating *)
-let to_list : type a. a array -> (a List0.Constructors.t[@kind k']) =
+let to_list : type a. a array -> (a List0.Constructors.t[@kind k' or value_or_null]) =
   fun t ->
-  let rec tolist t i res : (_ List0.Constructors.t[@kind k']) =
+  let rec tolist t i res : (_ List0.Constructors.t[@kind k' or value_or_null]) =
     if i < 0 then res else tolist t (i - 1) (unsafe_get t i :: res) [@exclave_if_stack a]
   in
   tolist t (length t - 1) [] [@exclave_if_stack a]
@@ -205,12 +205,13 @@ let to_list : type a. a array -> (a List0.Constructors.t[@kind k']) =
 
 (* Copied from [Stdlib.Array], with type annotations added for templating and some
    functions changed to the equivalent base ones *)
-let of_list : type a. (a List0.Constructors.t[@kind k']) -> a array = function
-  | ([] : (_ List0.Constructors.t[@kind k'])) -> [||]
+let of_list : type a. (a List0.Constructors.t[@kind k' or value_or_null]) -> a array
+  = function
+  | ([] : (_ List0.Constructors.t[@kind k' or value_or_null])) -> [||]
   | hd :: tl as l ->
-    let a = create ~len:((List0.length [@kind k']) l) hd in
+    let a = create ~len:((List0.length [@kind k' or value_or_null]) l) hd in
     let rec fill i = function
-      | ([] : (_ List0.Constructors.t[@kind k'])) -> a
+      | ([] : (_ List0.Constructors.t[@kind k' or value_or_null])) -> a
       | hd :: tl ->
         unsafe_set a i hd;
         fill (i + 1) tl
@@ -239,7 +240,7 @@ let swap t i j =
     for i = 0 to length t - 1 do
       f (unsafe_get t i)
     done
-  [@@kind ki = base_or_null_with_imm]
+  [@@kind ki = (base_or_null, value mod external64)]
   ;;]
 
 [@@@end]
@@ -250,7 +251,7 @@ let swap t i j =
     for i = 0 to length t - 1 do
       f i (unsafe_get t i)
     done
-  [@@kind ki = base_or_null_with_imm]
+  [@@kind ki = (base_or_null, value mod external64)]
   ;;]
 
 [@@@end]
@@ -263,7 +264,7 @@ let swap t i j =
       if i < length then loop (i + 1) ((f [@inlined hint]) acc (unsafe_get t i)) else acc
     in
     (loop [@inlined]) 0 init [@nontail]
-  [@@kind ki = base_with_imm, ko = base_with_imm]
+  [@@kind ki = (base, value mod external64), ko = (base, value mod external64)]
   ;;]
 
 [@@@end]
@@ -280,7 +281,7 @@ let swap t i j =
         unsafe_set r i (f (unsafe_get t i))
       done;
       r)
-  [@@kind ki = base_with_imm, ko = base_non_value]
+  [@@kind ki = (base, value mod external64), ko = base_non_value]
   ;;]
 
 [%%template
@@ -294,7 +295,7 @@ let swap t i j =
         unsafe_set r i (f (unsafe_get t i))
       done;
       r)
-  [@@kind ki = base_with_imm, ko = value_with_imm]
+  [@@kind ki = (base, value mod external64), ko = (value, value mod external64)]
   ;;]
 
 [@@@end]
@@ -311,7 +312,7 @@ let swap t i j =
         unsafe_set r i (f i (unsafe_get t i))
       done;
       r)
-  [@@kind ki = base_with_imm, ko = base_non_value]
+  [@@kind ki = (base, value mod external64), ko = base_non_value]
   ;;]
 
 [%%template
@@ -325,7 +326,7 @@ let swap t i j =
         unsafe_set r i (f i (unsafe_get t i))
       done;
       r)
-  [@@kind ki = base_with_imm, ko = value_with_imm]
+  [@@kind ki = (base, value mod external64), ko = (value, value mod external64)]
   ;;]
 
 [@@@end]

@@ -11,14 +11,13 @@ open! Import
 module Sexp := Sexp0
 
 [%%template:
-type 'a t = (('a, Error.t) Result.t[@kind k])
-[@@deriving compare ~localize, equal ~localize, globalize, sexp]
-[@@kind k = base_non_value]
+  type 'a t = (('a, Error.t) Result.t[@kind k])
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp]
+  [@@kind k = base_non_value]]
 
 (** Serialization and comparison of an [Error] force the error's lazy message. *)
-type 'a t = (('a, Error.t) Result.t[@kind k])
+type 'a t = ('a, Error.t) Result.t
 [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp, sexp_grammar]
-[@@kind k = value_or_null_with_imm]]
 
 (** [Applicative] functions don't have quite the same semantics as
     [Applicative.Of_Monad(Or_error)] would give -- [apply (Error e1) (Error e2)] returns
@@ -55,7 +54,7 @@ val ok : 'ok. 'ok t -> 'ok option
 (** [ok_exn t] throws an exception if [t] is an [Error], and otherwise returns the
     contents of the [Ok] constructor. *)
 val%template ok_exn : 'a. ('a t[@kind k]) -> 'a
-[@@kind k = base_or_null_with_imm]
+[@@kind k = base_or_null]
 
 (** [of_exn ?backtrace exn] is [Error (Error.of_exn ?backtrace exn)]. *)
 val of_exn : 'a. ?backtrace:[ `Get | `This of string ] -> exn -> 'a t
@@ -130,7 +129,7 @@ val tag_arg : 'a 'b. 'a t -> string -> 'b -> ('b -> Sexp.t) -> 'a t
 val unimplemented : 'a. string -> 'a t
 
 val%template map : 'a 'b. ('a t[@kind ki]) -> f:('a -> 'b) -> ('b t[@kind ko])
-[@@kind ki = base_or_null_with_imm, ko = base_or_null_with_imm]
+[@@kind ki = base_or_null, ko = base_or_null]
 
 val iter : 'a. 'a t -> f:('a -> unit) -> unit
 val iter_error : 'a. 'a t -> f:(Error.t -> unit) -> unit

@@ -5,7 +5,7 @@ module Sexp = Sexp0
 let raise_s = Error.raise_s
 
 [%%template
-[@@@kind.default k = base_or_null_with_imm]
+[@@@kind.default k = base_or_null]
 
 let invariant ?(here = Stdlib.Lexing.dummy_pos) t sexp_of_t f : unit =
   try f () with

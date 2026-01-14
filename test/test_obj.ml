@@ -22,7 +22,7 @@ let%test_unit _ =
     ~expect:Immediate
 ;;
 
-(* global*)
+(* global *)
 let%test_unit _ =
   [%test_result: stack_or_heap]
     (let s = "hello" in

@@ -11,11 +11,7 @@ module type List0 = sig
         , value_or_null & value_or_null & value_or_null & value_or_null )]
     [@@deriving compare ~localize, equal ~localize]
 
-    type%template 'a t = 'a list
-    [@@kind
-      __
-      = (immediate, immediate64, value mod external_, value mod external64, value_or_null)]
-    [@@deriving compare ~localize, equal ~localize]
+    type 'a t = 'a list [@@deriving compare ~localize, equal ~localize]
   end
 
   open Constructors
@@ -24,14 +20,17 @@ module type List0 = sig
   val hd_exn : 'a. 'a t -> 'a
   val tl_exn : 'a. 'a t -> 'a t
   val unzip : 'a 'b. ('a * 'b) t -> 'a t * 'b t
+  val is_empty : 'a. 'a list -> bool
+
+  val%template partition_map
+    : 'a 'b 'c.
+    'a list -> f:('a -> ('b, 'c) Either0.t) -> 'b list * 'c list
+  [@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
 
   [%%template:
   [@@@kind.default
     k
-    = ( base_non_value
-      , immediate
-      , immediate64
-      , value_or_null
+    = ( base_or_null
       , value_or_null & value_or_null
       , value_or_null & value_or_null & value_or_null
       , value_or_null & value_or_null & value_or_null & value_or_null )]
@@ -55,12 +54,12 @@ module type List0 = sig
   [@@kind
     ka = ka
     , kb
-      = ( base_or_null_with_imm
-        , value_or_null & base_or_null_with_imm
+      = ( base_or_null
+        , value_or_null & base_or_null
         , value_or_null & value_or_null & value_or_null
         , value_or_null & value_or_null & value_or_null & value_or_null )]
 
-  [@@@kind.default kb = base_or_null_with_imm]
+  [@@@kind.default kb = base_or_null]
 
   val rev_map : 'a 'b. ('a t[@kind ka]) -> f:('a -> 'b) -> ('b t[@kind kb])
   [@@mode ma = (local, global)] [@@alloc __ @ mb = (stack_local, heap_global)]]

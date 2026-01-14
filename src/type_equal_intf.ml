@@ -100,8 +100,6 @@ module Definitions = struct
       val type_equal_id : t Id.t
     end
 
-    [@@@kind.default ka = (value, immediate64)]
-
     module type Arg1 = sig
       type !'a t [@@deriving sexp_of]
 
@@ -114,21 +112,17 @@ module Definitions = struct
       val type_equal_id : 'a Id.t -> 'a t Id.t
     end
 
-    [@@@kind.default kb = (value, immediate64)]
-
-    module type Arg2 = sig
+    module type%template [@kind ka = (value, immediate64), kb = value] Arg2 = sig
       type (!'a, !'b) t [@@deriving sexp_of]
 
       val name : string
     end
 
-    module type S2 = sig
+    module type%template [@kind ka = (value, immediate64), kb = value] S2 = sig
       type ('a, 'b) t
 
-      val type_equal_id : 'a Id.t -> 'b Id.t -> ('a, 'b) t Id.t
+      val type_equal_id : 'a 'b. 'a Id.t -> 'b Id.t -> ('a, 'b) t Id.t
     end
-
-    [@@@kind.default kc = (value, immediate64)]
 
     module type Arg3 = sig
       type (!'a, !'b, !'c) t [@@deriving sexp_of]
@@ -141,8 +135,6 @@ module Definitions = struct
 
       val type_equal_id : 'a Id.t -> 'b Id.t -> 'c Id.t -> ('a, 'b, 'c) t Id.t
     end
-
-    [@@@kind.default kd = (value, immediate64)]
 
     module type Arg4 = sig
       type (!'a, !'b, !'c, !'d) t [@@deriving sexp_of]

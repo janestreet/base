@@ -89,3 +89,10 @@ let%expect_test ("find_or_add shouldn't allocate" [@tags "no-js"]) =
   require_no_allocation (fun () -> Hashtbl.find_or_add t 100 ~default);
   [%expect {| |}]
 ;;
+
+let%expect_test ("[Hash_set.get_or_add] shouldn't allocate" [@tags "no-js"]) =
+  let t = Hash_set.create (module String.Caseless) ~size:16 ~growth_allowed:false in
+  Hash_set.add t "hello";
+  let _ : string = require_no_allocation (fun () -> Hash_set.get_or_add t "HELLO") in
+  [%expect {| |}]
+;;

@@ -7,7 +7,7 @@ module Invariant := Invariant_intf.Definitions
 module Constructors : module type of List0.Constructors
 
 type%template 'a t = ('a Constructors.t[@kind k])
-[@@kind k = (base_non_value, immediate, immediate64)]
+[@@kind k = base_non_value]
 [@@deriving compare ~localize, equal ~localize, sexp_of ~stackify]
 
 type 'a t = 'a list
@@ -21,7 +21,7 @@ include%template
 
 include Invariant.S1 with type 'a t := 'a t
 
-(** Implements cartesian-product behavior for [map] and [bind]. **)
+(** Implements cartesian-product behavior for [map] and [bind]. *)
 module Cartesian_product : sig
   include%template
     Applicative.S
@@ -54,7 +54,7 @@ val create : 'a. len:int -> 'a -> 'a list
 val singleton : 'a. 'a -> 'a t
 
 [%%template:
-[@@@kind k = base_or_null_with_imm]
+[@@@kind k = base_or_null]
 
 type 'a t := ('a t[@kind k])
 
@@ -67,13 +67,18 @@ val length : 'a. 'a t -> int
 (** Return the [n]-th element of the given list. The first element (head of the list) is
     at position 0. Raise if the list is too short or [n] is negative. *)
 val nth_exn : 'a. 'a t -> int -> 'a
+[@@mode l = (local, global)]
 
-val nth : 'a. 'a t -> int -> ('a Option0.t[@kind k])
+val nth : 'a. 'a t -> int -> ('a Option0.t[@kind k]) [@@mode l = (local, global)]
 val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool [@@mode l = (local, global)]
 
 [@@@alloc.default a @ l = (stack_local, heap_global)]
 
+(** [init n ~f] creates a list of length [n] where the element at index [i] is the value
+    of [f i]. Raises if [n < 0]. [f] is called on indices from the highest to lowest, so
+    the order of side effects is reversed: [List.init 3 ~f:print_int] prints [210]. *)
 val init : 'a. int -> f:(int -> 'a) -> 'a t
+
 val append : 'a. 'a t -> 'a t -> 'a t
 val filteri : 'a. 'a t -> f:(int -> 'a -> bool) -> 'a t
 val filter : 'a. 'a t -> f:('a -> bool) -> 'a t
@@ -86,7 +91,13 @@ val rev_append : 'a. 'a t -> 'a t -> 'a t
 val rev : 'a. 'a t -> 'a t]
 
 [%%template:
-[@@@kind.default ka = base_or_null_with_imm, kb = base_or_null_with_imm]
+[@@@mode.default l = (local, global)]
+
+val find_or_null : 'a t -> f:('a -> bool) -> 'a or_null
+val nth_or_null : 'a t -> int -> 'a or_null]
+
+[%%template:
+[@@@kind.default ka = base_or_null, kb = base_or_null]
 [@@@mode.default ma = (local, global)]
 [@@@alloc.default __ @ mb = (heap_global, stack_local)]
 
@@ -114,7 +125,7 @@ val concat_mapi
   ('a t[@kind ka]) -> f:(int -> 'a -> ('b t[@kind kb])) -> ('b t[@kind kb])]
 
 [%%template:
-[@@@kind.default ka = base_or_null_with_imm, kb = base_or_null_with_imm]
+[@@@kind.default ka = base_or_null, kb = base_or_null]
 [@@@mode.default ma = (local, global), mb = (local, global)]
 
 val fold : 'a 'b. ('a t[@kind ka]) -> init:'b -> f:('b -> 'a -> 'b) -> 'b
@@ -193,6 +204,9 @@ val%template partition_result : 'ok 'error. ('ok, 'error) Result.t t -> 'ok t * 
     than being copied. *)
 val split_n : 'a. 'a t -> int -> 'a t * 'a t
 
+[%%template:
+[@@@alloc.default __ @ l = (heap_global, stack_local)]
+
 (** Sort a list in increasing order according to a comparison function. The comparison
     function must return 0 if its arguments compare as equal, a positive integer if the
     first is greater, and a negative integer if the first is smaller (see [Array.sort] for
@@ -207,7 +221,7 @@ val split_n : 'a. 'a t -> int -> 'a t * 'a t
 val sort : 'a. 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 (** Like [sort], but guaranteed to be stable. *)
-val stable_sort : 'a. 'a t -> compare:('a -> 'a -> int) -> 'a t
+val stable_sort : 'a. 'a t -> compare:('a -> 'a -> int) -> 'a t]
 
 (** Merges two lists: assuming that [l1] and [l2] are sorted according to the comparison
     function [compare], [merge compare l1 l2] will return a sorted list containing all the
@@ -481,8 +495,17 @@ module Assoc : sig
   (** Removes all existing entries with the same key before adding. *)
   val add : 'a 'b. ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b -> ('a, 'b) t
 
-  val find : 'a 'b. ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b option
-  val find_exn : 'a 'b. ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b
+  val%template find : 'a 'b. ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b option
+  [@@mode l = (local, global)]
+
+  val%template find_or_null
+    : 'a 'b.
+    ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b or_null
+  [@@mode l = (local, global)]
+
+  val%template find_exn : 'a 'b. ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> 'b
+  [@@mode l = (local, global)]
+
   val mem : 'a 'b. ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> bool
   val remove : 'a 'b. ('a, 'b) t -> equal:('a -> 'a -> bool) -> 'a -> ('a, 'b) t
   val map : 'a 'b 'c. ('a, 'b) t -> f:('b -> 'c) -> ('a, 'c) t

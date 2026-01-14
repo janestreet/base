@@ -1,4 +1,4 @@
-(* This module is included in [Import].  It is aimed at modules that define the standard
+(* This module is included in [Import]. It is aimed at modules that define the standard
    combinators for [sexp_of], [of_sexp], [compare] and [hash] and are included in
    [Import]. *)
 
@@ -56,12 +56,13 @@ module Stdlib = struct
   include Stdlib.StdLabels
   include Stdlib.MoreLabels
 
-  (* Shadow unsafe [Stdlib] functions with their safe versions from [Basement.Stdlib_shim]. *)
+  (* Shadow unsafe [Stdlib] functions with their safe versions from
+     [Basement.Stdlib_shim]. *)
 
   module Atomic = struct
     include Stdlib.Atomic
+    include Basement.Stdlib_shim.Atomic
     include Basement.Stdlib_shim.Atomic.Local
-    module Contended = Basement.Stdlib_shim.Atomic.Contended
   end
 
   module Domain = struct
@@ -157,8 +158,7 @@ include Int_replace_polymorphic_compare
    direct set or caml_modify. *)
 external ( := ) : 'a. ('a ref[@local_opt]) -> 'a -> unit = "%setfield0"
 
-(* These need to be defined as an external otherwise the compiler won't unbox
-   references. *)
+(* These need to be defined as an external otherwise the compiler won't unbox references. *)
 external ( ! ) : 'a. ('a ref[@local_opt]) -> 'a = "%field0"
 external ref : 'a. 'a -> ('a ref[@local_opt]) = "%makemutable"
 
@@ -188,7 +188,7 @@ external snd : 'a 'b. ('a * 'b[@local_opt]) -> ('b[@local_opt]) = "%field1"
 
 (* [raise] needs to be defined as an external as the compiler automatically replaces
    '%raise' by '%reraise' when appropriate. *)
-  external%template raise : 'a. exn -> 'a = "%reraise" [@@kind k = value_or_null_with_imm]
+  external%template raise : 'a. exn -> 'a = "%reraise"
 
 [%%template
 [@@@kind kr1 = (value & value)]
@@ -199,7 +199,7 @@ let raise : 'a. exn -> 'a =
   fun exn ->
   match (raise exn : Nothing0.t) with
   | _ -> .
-[@@kind k = (base_non_value, value & (base_with_imm, kr1, kr2, kr3), bits32 & bits32)]
+[@@kind k = (base_non_value, value & (base, kr1, kr2, kr3), bits32 & bits32)]
 ;;]
 
 external phys_equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%eq"
@@ -210,7 +210,7 @@ external incr : (int ref[@local_opt]) -> unit = "%incr"
 let float_of_string = Stdlib.float_of_string
 
 (* [am_testing] is used in a few places to behave differently when in testing mode, such
-   as in [random.ml].  [am_testing] is implemented using [Base_am_testing], a weak C/js
+   as in [random.ml]. [am_testing] is implemented using [Base_am_testing], a weak C/js
    primitive that returns [false], but when linking an inline-test-runner executable, is
    overridden by another primitive that returns [true]. *)
 external am_testing : unit -> bool = "Base_am_testing"

@@ -158,10 +158,10 @@ let%test_unit _ =
 
 module%test IEEE = struct
   (* Note: IEEE 754 defines NaN values to be those where the exponent is all 1s and the
-       mantissa is nonzero.  test_result<t> sees nan values as equal because it is based
-       on [compare] rather than [=].  (If [x] and [x'] are nan, [compare x x'] returns 0,
-       whereas [x = x'] returns [false].  This is the case regardless of whether or not
-       [x] and [x'] are bit-identical values of nan.)  *)
+     mantissa is nonzero. test_result<t> sees nan values as equal because it is based on
+     [compare] rather than [=]. (If [x] and [x'] are nan, [compare x x'] returns 0,
+     whereas [x = x'] returns [false]. This is the case regardless of whether or not [x]
+     and [x'] are bit-identical values of nan.) *)
   let f (t : t) (negative : bool) (exponent : int) (mantissa : Int63.t) : unit =
     let str = to_string t in
     let is_nan = is_nan t in
@@ -243,19 +243,19 @@ module%test _ = struct
   let boundary f ~closer_to_zero ~at =
     assert (f > 0.);
     (* If [f] looks like an odd multiple of 0.05, it might be slightly under-represented
-         as a float, e.g.
+       as a float, e.g.
 
-         1. -. 0.95 = 0.0500000000000000444
+       1. -. 0.95 = 0.0500000000000000444
 
-         In such case, sadly, the right way for [to_padded_compact_string], just as for
-         [sprintf "%.1f"], is to round it down.  However, the next representable number
-         should be rounded up:
+       In such case, sadly, the right way for [to_padded_compact_string], just as for
+       [sprintf "%.1f"], is to round it down. However, the next representable number
+       should be rounded up:
 
-         # let x = 0.95 in sprintf "%.0f / %.1f / %.2f / %.3f / %.20f" x x x x x;;
-         - : string = "1 / 0.9 / 0.95 / 0.950 / 0.94999999999999995559"
+       # let x = 0.95 in sprintf "%.0f / %.1f / %.2f / %.3f / %.20f" x x x x x;;
+       - : string = "1 / 0.9 / 0.95 / 0.950 / 0.94999999999999995559"
 
-         # let x = incr 0.95 in sprintf "%.0f / %.1f / %.2f / %.3f / %.20f" x x x x x ;;
-         - : string = "1 / 1.0 / 0.95 / 0.950 / 0.95000000000000006661"
+       # let x = incr 0.95 in sprintf "%.0f / %.1f / %.2f / %.3f / %.20f" x x x x x ;;
+       - : string = "1 / 1.0 / 0.95 / 0.950 / 0.95000000000000006661"
     *)
     let f =
       if f >= 1000.
@@ -283,8 +283,9 @@ module%test _ = struct
   let%test_unit _ = boundary 0.15 ~closer_to_zero:"0.1" ~at:"0.2"
 
   (* glibc printf resolves ties to even, cf.
-       http://www.exploringbinary.com/inconsistent-rounding-of-printed-floating-point-numbers/
-       Ties are resolved differently in JavaScript - mark some tests as no running with JavaScript.
+     http://www.exploringbinary.com/inconsistent-rounding-of-printed-floating-point-numbers/
+     Ties are resolved differently in JavaScript - mark some tests as no running with
+     JavaScript.
   *)
   let%test_unit (_ [@tags "no-js"]) =
     boundary (* tie *) 0.25 ~closer_to_zero:"0.2" ~at:"0.2"
@@ -428,7 +429,7 @@ module%test _ = struct
 
   let () = Random.init 137
 
-  (* round:
+  (*=round:
        ...  <-)[-><-)[-><-)[-><-)[-><-)[-><-)[->   ...
        ... -+-----+-----+-----+-----+-----+-----+- ...
        ... -3    -2    -1     0     1     2     3  ...
@@ -485,7 +486,7 @@ module%test _ = struct
         -0.5 < y -. x && y -. x <= 0.5)
   ;;
 
-  (* iround_down:
+  (*=iround_down:
        ... )[<---)[<---)[<---)[<---)[<---)[<---)[  ...
        ... -+-----+-----+-----+-----+-----+-----+- ...
        ... -3    -2    -1     0     1     2     3  ...
@@ -505,7 +506,7 @@ module%test _ = struct
         0. <= x -. y && x -. y < 1.)
   ;;
 
-  (* iround_up:
+  (*=iround_up:
        ...  ](--->](--->](--->](--->](--->](--->]( ...
        ... -+-----+-----+-----+-----+-----+-----+- ...
        ... -3    -2    -1     0     1     2     3  ...
@@ -525,7 +526,7 @@ module%test _ = struct
         0. <= y -. x && y -. x < 1.)
   ;;
 
-  (* iround_towards_zero:
+  (*=iround_towards_zero:
        ...  ](--->](--->](---><--->)[<---)[<---)[  ...
        ... -+-----+-----+-----+-----+-----+-----+- ...
        ... -3    -2    -1     0     1     2     3  ...
@@ -773,10 +774,10 @@ module%test _ = struct
     if result >= Int.max_value - 255
     then
       (* On a 64-bit box, [float x > Int.max_value] when [x >= Int.max_value - 255], so
-           [iround (float x)] would be out of bounds.  So we try again.  This branch of code
-           runs with probability 6e-17 :-)  As such, we have some fixed tests in
-           [extremities_test] above, to ensure that we do always check some examples in
-           that range. *)
+         [iround (float x)] would be out of bounds. So we try again. This branch of code
+         runs with probability 6e-17 :-) As such, we have some fixed tests in
+         [extremities_test] above, to ensure that we do always check some examples in that
+         range. *)
       absirand ()
     else result
   ;;
@@ -849,14 +850,14 @@ struct
      [Int64.max_value]. This is due to the limited instruction set provided by wasm; there
      are two instructions that convert a float to an i64:
 
-     - trunc: traps when the result would be out of range. (a "trap" is
-       basically an unrecoverable exception)
-     - trunc_sat: "saturates" the result when it is out of range, rather than
-       trapping. If the result would be an overflow, it gets clamped to
-       [max_int], and if it would be an underflow, it gets clamped to [min_int].
+     - trunc: traps when the result would be out of range. (a "trap" is basically an
+       unrecoverable exception)
+     - trunc_sat: "saturates" the result when it is out of range, rather than trapping. If
+       the result would be an overflow, it gets clamped to [max_int], and if it would be
+       an underflow, it gets clamped to [min_int].
 
-     The wasm_of_ocaml compiler uses trunc_sat to avoid trapping, but this
-     means it yields a different result on out-of-range results.
+     The wasm_of_ocaml compiler uses trunc_sat to avoid trapping, but this means it yields
+     a different result on out-of-range results.
   *)
   let bigger_than_upper_bound_overflows ~wasm =
     let upper_bound = Int64.of_float float_upper_bound in
@@ -987,6 +988,7 @@ end
 let%test _ = round_nearest 3.6 = 4. && round_nearest (-3.6) = -4.
 
 (* The redefinition of [sexp_of_t] in float.ml assumes sexp conversion uses E rather than
+
    e. *)
 let%test_unit "e vs E" =
   [%test_result: Sexp.t] [%sexp (1.4e100 : t)] ~expect:(Atom "1.4E+100")
@@ -1085,7 +1087,7 @@ let%expect_test "mathematical constants" =
   eq sqrt_pi "1.772453850905516027298167483341145182797549456122387128213";
   eq sqrt_2pi "2.506628274631000502415765284811045253006986740609938316629";
   eq euler_gamma_constant "0.577215664901532860606512090082402431042159335939923598805";
-  (* Check size of diff from  ordinary computation. *)
+  (* Check size of diff from ordinary computation. *)
   printf "sqrt pi diff  : %.20f\n" (sqrt_pi - sqrt pi);
   printf "sqrt 2pi diff : %.20f\n" (sqrt_2pi - sqrt (2. * pi));
   [%expect

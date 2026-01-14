@@ -10,15 +10,15 @@ sig
   [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
 end)
 
-(* In the definition of [t], we do not have [[@@deriving compare, sexp]] because
-   in general, syntax extensions tend to use the implementation when available rather than
-   using the alias.  Here that would lead to use the record representation [ { mutable
-   contents : 'a } ] which would result in different (and unwanted) behavior.  *)
+(* In the definition of [t], we do not have [[@@deriving compare, sexp]] because in
+   general, syntax extensions tend to use the implementation when available rather than
+   using the alias. Here that would lead to use the record representation
+   [ { mutable contents : 'a } ] which would result in different (and unwanted) behavior. *)
 type 'a t = 'a ref = { mutable contents : 'a }
 
-external create : 'a -> ('a t[@local_opt]) = "%makemutable"
-external ( ! ) : ('a t[@local_opt]) -> 'a = "%field0"
-external ( := ) : ('a t[@local_opt]) -> 'a -> unit = "%setfield0"
+external create : 'a. 'a -> ('a t[@local_opt]) = "%makemutable"
+external ( ! ) : 'a. ('a t[@local_opt]) -> 'a = "%field0"
+external ( := ) : 'a. ('a t[@local_opt]) -> 'a -> unit = "%setfield0"
 
 let swap t1 t2 =
   let tmp = !t1 in

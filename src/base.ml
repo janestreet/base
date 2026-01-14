@@ -24,11 +24,11 @@
       structures (arrays, lists, strings).
     - [Result], [Error], and [Or_error], supporting the or-error pattern. *)
 
-(*_ We hide this from the web docs because the line wrapping is bad, making it
-  pretty much inscrutable. *)
+(*_ We hide this from the web docs because the line wrapping is bad, making it pretty much
+    inscrutable. *)
 (**/**)
 
-(* The intent is to shadow all of INRIA's standard library.  Modules below would cause
+(* The intent is to shadow all of INRIA's standard library. Modules below would cause
    compilation errors without being removed from [Shadow_stdlib] before inclusion. *)
 
 include (
@@ -97,7 +97,6 @@ module Comparable = Comparable
 module Comparator = Comparator
 module Comparisons = Comparisons
 module Container = Container
-module Container_with_local = Container_with_local
 module Dynamic = Dynamic
 module Either = Either
 module Equal = Equal
@@ -188,6 +187,7 @@ end
 
 module Exported_for_specific_uses = struct
   module Globalize = Globalize
+  module Integer_to_string = Integer_to_string
   module Obj_array = Obj_array
 
   let am_testing = am_testing
@@ -331,8 +331,8 @@ module Export = struct
 
   (** Pair operations *)
 
-  let fst = fst
-  let snd = snd
+  external fst : 'a 'b. ('a * 'b[@local_opt]) -> ('a[@local_opt]) = "%field0"
+  external snd : 'a 'b. ('a * 'b[@local_opt]) -> ('b[@local_opt]) = "%field1"
 
   (** Exceptions stuff *)
 
@@ -348,8 +348,8 @@ module Export = struct
   external phys_equal : 'a. ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%eq"
   external force : ('a Lazy.t[@local_opt]) -> 'a = "%lazy_force"
 
-  (* Export ['a or_null] with constructors [Null] and [This] whenever Base is opened,
-     so uses of those identifiers work in both upstream OCaml and OxCaml. *)
+  (* Export ['a or_null] with constructors [Null] and [This] whenever Base is opened, so
+     uses of those identifiers work in both upstream OCaml and OxCaml. *)
 
   type 'a or_null = 'a Or_null.t =
     | Null
@@ -366,8 +366,8 @@ include Modes.Export (** @inline *)
 exception Not_found_s = Not_found_s
 
 (* We perform these side effects here because we want them to run for any code that uses
-   [Base].  If this were in another module in [Base] that was not used in some program,
-   then the side effects might not be run in that program.  This will run as long as the
+   [Base]. If this were in another module in [Base] that was not used in some program,
+   then the side effects might not be run in that program. This will run as long as the
    program refers to at least one value directly in [Base]; referring to values in
    [Base.Bool], for example, is not sufficient. *)
 let () = Backtrace.initialize_module ()

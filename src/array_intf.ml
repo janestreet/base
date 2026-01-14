@@ -4,6 +4,9 @@ open! Import
 module Option = Option0
 module List = List0.Constructors
 
+[%%template
+[@@@kind_set.define base_with_ext = (base, value mod external64)]
+
 module Definitions = struct
   module type Public = sig
     type 'a t
@@ -13,12 +16,12 @@ module Definitions = struct
     [%%template:
     include
       Indexed_container.S1_with_creators
-    [@kind_set.explicit base_with_imm]
+    [@kind_set.explicit base_with_ext]
     [@with:
       type 'a t := 'a t
-      type 'a t = 'a t [@@kind base_non_value, immediate, immediate64]]
+      type 'a t = 'a t [@@kind __ = (base_non_value, value mod external64)]]
 
-    [@@@kind k = base_with_imm]
+    [@@@kind k = base_or_null]
 
     [%%rederive:
       type nonrec 'a t = 'a t
@@ -31,7 +34,7 @@ module Definitions = struct
     include Invariant.S1 with type 'a t := 'a t
 
     val%template map : 'a 'b. 'a t -> f:('a -> 'b) -> 'b t
-    [@@kind k1 = base_with_imm, k2 = base_with_imm]
+    [@@kind k1 = base_with_ext, k2 = base_with_ext]
 
     (** Maximum length of a normal array. The maximum length of a float array is
         [max_length/2] on 32-bit machines and [max_length] on 64-bit machines. *)
@@ -55,9 +58,9 @@ module Definitions = struct
     [@@layout_poly] [@@mode m = (uncontended, shared)]
 
     (** Like {!get}, but returns [None] instead of raising. *)
-    val%template get_opt : 'a. 'a array -> int -> ('a Option.t[@kind k])
+    val%template get_opt : 'a. 'a array -> int -> ('a Option.t[@kind k or value_or_null])
     [@@mode c = (uncontended, shared)]
-    [@@kind k = base_with_imm]
+    [@@kind k = base]
     [@@alloc a @ m = (heap_global, stack_local)]
 
     (** [Array.set a n x] modifies array [a] in place, replacing element number [n] with
@@ -108,7 +111,7 @@ module Definitions = struct
     val create_float_uninitialized : len:int -> float t
 
     (** [init n ~f] creates an array of length [n] with index [i] set to [f i]. *)
-    val%template init : int -> f:(int -> 'a) -> 'a array
+    val%template init : 'a. int -> f:(int -> 'a) -> 'a array
     [@@alloc __ @ m = (heap_global, stack_local)]
 
     (** [Array.make_matrix dimx dimy e] returns a two-dimensional array (an array of
@@ -128,7 +131,7 @@ module Definitions = struct
     val copy_matrix : 'a t t -> 'a t t
 
     [%%template:
-    [@@@kind.default k = base_with_imm]
+    [@@@kind.default k = base_with_ext]
 
     (** Like [Array.append], but concatenates a list of arrays. *)
     val concat : 'a. 'a t list -> 'a t
@@ -157,10 +160,10 @@ module Definitions = struct
     include Blit.S1 with type 'a t := 'a t
 
     val%template unsafe_blit : 'a. ('a array, 'a array) Blit.blit
-    [@@kind k = (base_non_value, immediate, immediate64)]
+    [@@kind k = (base_non_value, value mod external64)]
 
     val%template sub : 'a. ('a array, 'a array) Blit.sub
-    [@@kind k = (base_non_value, immediate, immediate64)]
+    [@@kind k = (base_non_value, value mod external64)]
 
     val%template foldi_right : 'a t -> init:'acc -> f:(int -> 'a -> 'acc -> 'acc) -> 'acc
     [@@alloc a @ m = (stack_local, heap_global)]
@@ -229,7 +232,7 @@ module Definitions = struct
     val map_inplace : 'a t -> f:('a -> 'a) -> unit
 
     [%%template:
-    [@@@kind.default k1 = base_with_imm]
+    [@@@kind.default k1 = base_with_ext]
 
     (** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true. It raises
         [Stdlib.Not_found] or [Not_found_s] if there is no such [a]. *)
@@ -245,7 +248,7 @@ module Definitions = struct
     val rev : 'a. 'a t -> 'a t
 
     (** [of_list_rev l] converts from list then reverses in place. *)
-    val of_list_rev : 'a. ('a List.t[@kind k1]) -> 'a t
+    val of_list_rev : 'a. ('a List.t[@kind k1 or value_or_null]) -> 'a t
 
     [%%template:
     [@@@kind.default k1 = k1, k2 = base]
@@ -258,31 +261,30 @@ module Definitions = struct
     val find_mapi_exn : 'a 'b. 'a t -> f:(int -> 'a -> ('b Option.t[@kind k2])) -> 'b]
 
     [%%template:
-    [@@@kind.default
-      k1 = k1
-      , (k2_for_mangling, k2)
-        = ( (value, value_or_null mod separable)
-          , (bits64, bits64)
-          , (bits32, bits32)
-          , (word, word)
-          , (float64, float64)
-          , (float32, float32)
-          , (immediate, immediate)
-          , (immediate64, immediate64) )]
+    [@@@kind.default k1 = k1, k2 = base_with_ext]
+    [@@@kind k2 = (k2 or (value mod external64, value_or_null mod separable))]
 
     (** [of_list_map l ~f] is the same as [of_list (List.map l ~f)]. *)
-    val of_list_map : 'a 'b. ('a List.t[@kind k1]) -> f:('a -> 'b) -> 'b t
+    val of_list_map
+      : 'a 'b.
+      ('a List.t[@kind k1 or value_or_null]) -> f:('a -> 'b) -> 'b t
 
     (** [of_list_mapi l ~f] is the same as [of_list (List.mapi l ~f)]. *)
-    val of_list_mapi : 'a 'b. ('a List.t[@kind k1]) -> f:(int -> 'a -> 'b) -> 'b t]
+    val of_list_mapi
+      : 'a 'b.
+      ('a List.t[@kind k1 or value_or_null]) -> f:(int -> 'a -> 'b) -> 'b t]
 
-    [@@@kind.default k2 = base_with_imm]
+    [@@@kind.default k2 = base_with_ext]
 
     (** [of_list_rev_map l ~f] is the same as [of_list (List.rev_map l ~f)]. *)
-    val of_list_rev_map : 'a 'b. ('a List.t[@kind k1]) -> f:('a -> 'b) -> 'b t
+    val of_list_rev_map
+      : 'a 'b.
+      ('a List.t[@kind k1 or value_or_null]) -> f:('a -> 'b) -> 'b t
 
     (** [of_list_rev_mapi l ~f] is the same as [of_list (List.rev_mapi l ~f)]. *)
-    val of_list_rev_mapi : 'a 'b. ('a List.t[@kind k1]) -> f:(int -> 'a -> 'b) -> 'b t
+    val of_list_rev_mapi
+      : 'a 'b.
+      ('a List.t[@kind k1 or value_or_null]) -> f:(int -> 'a -> 'b) -> 'b t
 
     [%%template:
     [@@@kind.default k1 k2]
@@ -297,7 +299,7 @@ module Definitions = struct
     (** [findi_exn t f] returns the first index [i] of [t] for which [f i t.(i)] is true.
         It raises [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)
     val%template findi_exn : 'a. 'a t -> f:(int -> 'a -> bool) -> int * 'a
-    [@@kind k = (base_non_value, immediate, immediate64)]
+    [@@kind k = (base_non_value, value mod external64)]
 
     (** For backwards compatibility, we return a boxed product for the value-only version
         of [findi_exn] (instead of a [value & value] product) *)
@@ -380,9 +382,9 @@ module type Array = sig
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+      https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
-    module%template [@kind k = value_with_imm] Sort : sig
+    module%template [@kind k = (value, value mod external64)] Sort : sig
       module type Sort = sig
         val sort : 'a t -> compare:('a -> 'a -> int) -> left:int -> right:int -> unit
       end
@@ -406,7 +408,7 @@ module type Array = sig
     end
 
     module%template.portable
-      [@kind k = (value_with_imm, value mod external_, value mod external64)] Sorter (S : sig
+      [@kind k = (value, value mod external64)] Sorter (S : sig
         type 'a t
 
         val get : 'a t -> int -> 'a
@@ -416,4 +418,4 @@ module type Array = sig
       val sort : ?pos:int -> ?len:int -> 'a S.t -> compare:('a -> 'a -> int) -> unit
     end
   end
-end
+end]

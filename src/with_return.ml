@@ -5,7 +5,7 @@ open! Import
 type 'a return = { return : 'b. 'a -> 'b } [@@unboxed]
 
 let with_return (type a) f =
-  (* Raised to indicate ~return was called.  Local so that the exception is tied to a
+  (* Raised to indicate ~return was called. Local so that the exception is tied to a
      particular call of [with_return]. *)
   let exception Return of a in
   let is_alive = ref true in

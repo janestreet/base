@@ -54,7 +54,7 @@ module%test [@name "Result.Error"] _ = struct
   ;;
 
   (* The rest of the Monad functions are derived using the Monad.Make functor, which is
-       well-tested. *)
+     well-tested. *)
 end
 
 module%test [@name "can contain nulls"] _ = struct
@@ -68,8 +68,7 @@ module%test [@name "can contain nulls"] _ = struct
   let _ : _ Result.t = Ok Null
   let _ : _ Result.t = Error Null
 
-  (* This isn't directly exposed anywhere by Base, but
-  it gets re-exported by Core. *)
+  (* This isn't directly exposed anywhere by Base, but it gets re-exported by Core. *)
   let _ : _ Result.Export._result = Ok Null
   let _ : _ Result.Export._result = Error Null
 

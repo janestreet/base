@@ -44,8 +44,20 @@ val append : string -> string -> string
 val lowercase : string -> string
 val uppercase : string -> string]
 
-val iter : string -> f:(char -> unit) -> unit
+val%template iter : string -> f:(char -> unit) -> unit [@@mode m = (global, local)]
+
 val split_lines : string -> string list
+
+val unsafe_blits
+  :  dst:bytes
+  -> dst_pos:int
+  -> sep:string
+  -> sep_len:int
+  -> string list
+  -> unit
+
+[%%template:
+[@@@alloc.default a @ m = (heap @ global, stack @ local)]
 
 (** [init n ~f] is equivalent to [of_list [f 0; f 1; ...; f (n-1)]]. It raises an
     exception if [n < 0]. *)
@@ -54,4 +66,7 @@ val init : int -> f:(int -> char) -> string
 (** [filter t ~f] returns all the elements of [t] that satisfy the predicate [f]. *)
 val filter : string -> f:(char -> bool) -> string
 
-val filteri : string -> f:(int -> char -> bool) -> string
+val filteri : string -> f:(int -> char -> bool) -> string]
+
+val%template smart_globalize : string -> string
+[@@alloc __ @ m = (heap_global, stack_local)]

@@ -15,8 +15,7 @@ let%expect_test "[invariant]" =
 
 let%expect_test "[invariant] handles [Lexing.dummy_pos]" =
   (* Location information should be excluded when [here] is [Lexing.dummy_pos], which is
-     the default value of [here] in the external version of Base for [%call_pos]
-     arguments *)
+     the default value of [here] in the external version of Base for [%call_pos] arguments *)
   require_does_raise (fun () ->
     invariant ~here:Lexing.dummy_pos 32 sexp_of_int (fun () ->
       failwith "deliberate error"));

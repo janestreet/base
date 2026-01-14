@@ -8,19 +8,19 @@ type 'a t = 'a Stdlib.ref = { mutable contents : 'a }
 
 (*_ defined as externals to avoid breaking the inliner *)
 
-external create : 'a -> ('a t[@local_opt]) = "%makemutable"
-external ( ! ) : ('a t[@local_opt]) -> 'a = "%field0"
-external ( := ) : ('a t[@local_opt]) -> 'a -> unit = "%setfield0"
+external create : 'a. 'a -> ('a t[@local_opt]) = "%makemutable"
+external ( ! ) : 'a. ('a t[@local_opt]) -> 'a = "%field0"
+external ( := ) : 'a. ('a t[@local_opt]) -> 'a -> unit = "%setfield0"
 
 (** [swap t1 t2] swaps the values in [t1] and [t2]. *)
-val swap : 'a t -> 'a t -> unit
+val swap : 'a. 'a t -> 'a t -> unit
 
 (** [replace t f] is [t := f !t] *)
-val replace : 'a t -> ('a -> 'a) -> unit
+val replace : 'a. 'a t -> ('a -> 'a) -> unit
 
 (** [set_temporarily t a ~f] sets [t] to [a], calls [f ()], and then restores [t] to its
     value prior to [set_temporarily] being called, whether [f] returns or raises. *)
-val set_temporarily : 'a t -> 'a -> f:(unit -> 'b) -> 'b
+val set_temporarily : 'a 'b. 'a t -> 'a -> f:(unit -> 'b) -> 'b
 
 module And_value : sig
   type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~stackify]

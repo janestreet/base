@@ -152,6 +152,13 @@ module type Obj = sig
   [@@mode
     c = (uncontended, shared, contended), o = (many, once), p = (nonportable, portable)]
 
+  external%template magic_read_write_uncontended
+    : 'a.
+    ('a[@local_opt]) -> ('a[@local_opt])
+    = "%identity"
+  [@@layout_poly]
+  [@@mode o = (many, once), p = (nonportable, portable), u = (aliased, unique)]
+
   module Ephemeron : sig
     include module type of struct
       include Stdlib.Ephemeron

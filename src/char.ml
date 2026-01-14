@@ -70,8 +70,8 @@ let is_alpha = function
   | _ -> false
 ;;
 
-(* Writing these out, instead of calling [is_alpha] and [is_digit], reduces
-   runtime by approx. 30% *)
+(* Writing these out, instead of calling [is_alpha] and [is_digit], reduces runtime by
+   approx. 30% *)
 let is_alphanum = function
   | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' -> true
   | _ -> false
@@ -141,8 +141,7 @@ module Caseless = struct
   let equal__local t1 t2 = equal_int (compare__local t1 t2) 0
 end
 
-(* Include type-specific [Replace_polymorphic_compare] at the end, after
-   including functor application that could shadow its definitions. This is
-   here so that efficient versions of the comparison functions are exported by
-   this module. *)
+(* Include type-specific [Replace_polymorphic_compare] at the end, after including functor
+   application that could shadow its definitions. This is here so that efficient versions
+   of the comparison functions are exported by this module. *)
 include Char_replace_polymorphic_compare

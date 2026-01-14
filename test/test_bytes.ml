@@ -41,7 +41,7 @@ module%test [@name "Unsafe primitives"] _ = struct
     printf "0x%04x" (Bytes.unsafe_get_int16 buffer 2);
     [%expect {| 0xffff |}];
     (* Ensure that [16-bit] operations are indeed 16-bit, meaning it doesn't affect
-         anything other than x[pos] and x[pos + 1]. *)
+       anything other than x[pos] and x[pos + 1]. *)
     Bytes.unsafe_set_int16 buffer 4 0;
     Bytes.unsafe_set_int16 buffer 2 ((1 lsl 16) + 1);
     printf "0x%04x" (Bytes.unsafe_get_int16 buffer 2);
@@ -55,8 +55,8 @@ module%test [@name "Unsafe primitives"] _ = struct
     Bytes.unsafe_set_int32 buffer 0 0xdeadbeefl;
     printf "%lx" (Bytes.unsafe_get_int32 buffer 0);
     [%expect {| deadbeef |}];
-    (* Ensure that Bytes.get will retrieve the individual positions byte values as
-         written by Bytes.unsafe_set_int32. *)
+    (* Ensure that Bytes.get will retrieve the individual positions byte values as written
+       by Bytes.unsafe_set_int32. *)
     for i = 0 to 3 do
       let chr = Bytes.get buffer i in
       printf "buffer[%d] = 0x%02x\n" i (Char.to_int chr)
@@ -79,8 +79,8 @@ module%test [@name "Unsafe primitives"] _ = struct
     Bytes.unsafe_set_int64 buffer 0 0x12345678_deadbeefL;
     printf "%Lx" (Bytes.unsafe_get_int64 buffer 0);
     [%expect {| 12345678deadbeef |}];
-    (* Ensure that Bytes.get will retrieve the individual positions byte values as
-         written by Bytes.unsafe_set_int64. *)
+    (* Ensure that Bytes.get will retrieve the individual positions byte values as written
+       by Bytes.unsafe_set_int64. *)
     for i = 0 to 7 do
       let chr = Bytes.get buffer i in
       printf "buffer[%d] = 0x%02x\n" i (Char.to_int chr)

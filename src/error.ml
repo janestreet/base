@@ -1,5 +1,5 @@
 (* This module is trying to minimize dependencies on modules in Core, so as to allow
-   [Error] and [Or_error] to be used in various places.  Please avoid adding new
+   [Error] and [Or_error] to be used in various places. Please avoid adding new
    dependencies. *)
 
 open! Import
@@ -10,15 +10,15 @@ let t_sexp_grammar : t Sexplib0.Sexp_grammar.t = { untyped = Any "Error.t" }
 [%%template
 (* Move [value_or_null] first, because the compiler for some reason will otherwise print
    [raise__bits64] in stack traces. *)
-[@@@kind.default k = (value_or_null, base_or_null_with_imm, bits32 & bits32)]
+[@@@kind.default k = (value_or_null, base_or_null, bits32 & bits32)]
 
 let[@cold] raise (type a) t : a = (raise [@kind k]) (to_exn t)
 let[@cold] raise_s (type a) sexp : a = (raise [@kind k]) (create_s sexp)
 
 (* Tailcalls to raising functions are to be avoided, as the stack traces are much worse.
    Instead, we try really hard to inline wrapper functions that just perform non-tail
-   calls to the raising functions. That way, even if a call to [Error.raise] appears
-   in tail position, the post-inlining result doesn't perform a tail call.
+   calls to the raising functions. That way, even if a call to [Error.raise] appears in
+   tail position, the post-inlining result doesn't perform a tail call.
 *)
 let[@inline always] raise (type a) t : a = (raise [@kind k]) t [@nontail]
 let[@inline always] raise_s (type a) sexp : a = (raise_s [@kind k]) sexp [@nontail]]

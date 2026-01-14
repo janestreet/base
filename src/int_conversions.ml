@@ -23,10 +23,8 @@ let min_int64 = Stdlib.Int64.min_int
 let max_int64 = Stdlib.Int64.max_int
 let min_nativeint = Stdlib.Nativeint.min_int
 let max_nativeint = Stdlib.Nativeint.max_int
-let int_to_string = Stdlib.string_of_int
-let int32_to_string = Stdlib.Int32.to_string
-let int64_to_string = Stdlib.Int64.to_string
-let nativeint_to_string = Stdlib.Nativeint.to_string
+
+include Integer_to_string
 
 (* int <-> int32 *)
 

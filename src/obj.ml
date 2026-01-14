@@ -30,6 +30,13 @@ external%template magic_unique : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%id
 [@@mode
   c = (uncontended, shared, contended), o = (many, once), p = (nonportable, portable)]
 
+external%template magic_read_write_uncontended
+  : 'a.
+  ('a[@local_opt]) -> ('a[@local_opt])
+  = "%identity"
+[@@layout_poly]
+[@@mode o = (many, once), p = (nonportable, portable), u = (aliased, unique)]
+
 module%template
   [@inline] [@kind.explicit k = (value, value_or_null)] Make (T : sig
     type t
@@ -107,7 +114,8 @@ struct
     (* We have to write both implementations because it doesn't make sense to template
        over an allocator, but the local version needs exclave. If [Sys.opaque_identity]
        preserved the fact that [t] is regional rather than local to this function, we
-       could instead write {[
+       could instead write
+       {[
          let%template[@mode m = (global, local)] [@inline always] field t i =
            let t = Sys.opaque_identity t in
            field i [@exclave_if_local m]

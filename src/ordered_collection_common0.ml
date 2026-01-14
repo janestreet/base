@@ -24,8 +24,7 @@ let check_pos_len_exn ~pos ~len ~total_length =
      [a < 0 || b < 0] is the same as [a lor b < 0].
 
      [pos + len] can overflow, so [pos > total_length - len] is not equivalent to
-     [total_length - len - pos < 0], we need to test for [pos + len] overflow as
-     well. *)
+     [total_length - len - pos < 0], we need to test for [pos + len] overflow as well. *)
   let stop = pos + len in
   if pos lor len lor stop lor (total_length - stop) < 0
   then slow_check_pos_len_exn ~pos ~len ~total_length

@@ -30,7 +30,9 @@ module Definitions = struct
 
     include%template Binary_searchable.S1 [@mode local] with type 'a t := 'a t
 
-    include Indexed_container.S1_with_creators with type 'a t := 'a t
+    include%template
+      Indexed_container.S1_with_creators [@alloc stack] with type 'a t := 'a t
+
     include Invariant.S1 with type 'a t := 'a t
 
     (** Operators *)
@@ -70,7 +72,7 @@ module Definitions = struct
     val singleton : 'a -> 'a t
     val create : len:int -> 'a -> mutate:('a array -> unit) -> 'a iarray
 
-    val%template init : int -> f:(int -> 'a) -> 'a t
+    val%template init : 'a. int -> f:(int -> 'a) -> 'a t
     [@@alloc __ @ m = (heap_global, stack_local)]
 
     (** Conversions *)
@@ -120,7 +122,8 @@ module Definitions = struct
     val combine_errors_unit : unit Or_error.t t -> unit Or_error.t
 
     [%%template:
-    [@@@kind.default ka = value, kacc = base]
+    [@@@kind.default ka = value, kacc = base_or_null]
+    [@@@mode.default li = (global, local), lo = (global, local)]
 
     val fold : 'a 'acc. 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
     val foldi : 'a 'acc. 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc) -> 'acc
@@ -179,7 +182,68 @@ module Definitions = struct
 
     (** Operations for local iarrays. *)
     module Local : sig
-      include Container_with_local.S1_indexed_with_creators with type 'a t := 'a t
+      (*_ Lifted from [Container_with_local]. All instantiate [Container] functions *)
+
+      val length : _ t -> int
+      val is_empty : _ t -> bool
+      val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
+      val iter : 'a t -> f:('a -> unit) -> unit
+
+      val fold_result
+        :  'a t
+        -> init:'acc
+        -> f:('acc -> 'a -> ('acc, 'e) Result.t)
+        -> ('acc, 'e) Result.t
+
+      val fold_until
+        :  'a t
+        -> init:'acc
+        -> f:('acc -> 'a -> ('acc, 'final) Container.Continue_or_stop.t)
+        -> finish:('acc -> 'final)
+        -> 'final
+
+      val exists : 'a t -> f:('a -> bool) -> bool
+      val for_all : 'a t -> f:('a -> bool) -> bool
+      val count : 'a t -> f:('a -> bool) -> int
+
+      val%template sum
+        :  ((module Container.Summable with type t = 'sum)[@mode local])
+        -> 'a t
+        -> f:('a -> 'sum)
+        -> 'sum
+
+      val find : 'a t -> f:('a -> bool) -> 'a option
+      val find_map : 'a t -> f:('a -> 'b option) -> 'b option
+      val to_list : 'a t -> 'a list
+      val min_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+      val max_elt : 'a t -> compare:('a -> 'a -> int) -> 'a option
+      val of_list : 'a list -> 'a t
+      val append : 'a t -> 'a t -> 'a t
+      val concat : 'a t t -> 'a t
+      val map : 'a t -> f:('a -> 'b) -> 'b t
+      val map_to_global : 'a t -> f:('a -> 'b) -> 'b t
+      val map_of_global : 'a t -> f:('a -> 'b) -> 'b t
+      val filter : 'a t -> f:('a -> bool) -> 'a t
+      val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
+      val concat_map : 'a t -> f:('a -> 'b t) -> 'b t
+      val partition_tf : 'a t -> f:('a -> bool) -> 'a t * 'a t
+      val partition_map : 'a t -> f:('a -> ('b, 'c) Either.t) -> 'b t * 'c t
+      val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
+      val existsi : 'a t -> f:(int -> 'a -> bool) -> bool
+      val for_alli : 'a t -> f:(int -> 'a -> bool) -> bool
+      val counti : 'a t -> f:(int -> 'a -> bool) -> int
+      val findi : 'a t -> f:(int -> 'a -> bool) -> (int * 'a) option
+      val find_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b option
+      val partitioni_tf : 'a t -> f:(int -> 'a -> bool) -> 'a t * 'a t
+      val partition_mapi : 'a t -> f:(int -> 'a -> ('b, 'c) Either.t) -> 'b t * 'c t
+      val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
+      val mapi_to_global : 'a t -> f:(int -> 'a -> 'b) -> 'b t
+      val mapi_of_global : 'a t -> f:(int -> 'a -> 'b) -> 'b t
+      val filteri : 'a t -> f:(int -> 'a -> bool) -> 'a t
+      val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
+      val concat_mapi : 'a t -> f:(int -> 'a -> 'b t) -> 'b t
+
+      (*_ [Iarray]-specific *)
 
       val last_exn : 'a t -> 'a
 
@@ -235,7 +299,7 @@ module Definitions = struct
       val cartesian_product : 'a t -> 'b t -> ('a * 'b) t
 
       [%%template:
-      [@@@kind.default ka = value, kacc = base]
+      [@@@kind.default ka = value, kacc = base_or_null]
 
       val fold : 'a 'acc. 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
       val foldi : 'a 'acc. 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc) -> 'acc
@@ -291,16 +355,16 @@ module type Iarray = sig
   (**/**)
 
   module Private : sig
-    module Test_unsafe_local_implementations : module type of struct
-      let concat = Local.concat
-      let concat_map = Local.concat_map
-      let concat_mapi = Local.concat_mapi
-      let filter = Local.filter
-      let filteri = Local.filteri
-      let filter_map = Local.filter_map
-      let filter_mapi = Local.filter_mapi
-      let partition_tf = Local.partition_tf
-      let partition_map = Local.partition_map
+    module%template Test_unsafe_local_implementations : module type of struct
+      let concat = (concat [@alloc stack])
+      let concat_map = (concat_map [@mode local] [@alloc stack])
+      let concat_mapi = (concat_mapi [@mode local] [@alloc stack])
+      let filter = (filter [@alloc stack])
+      let filteri = (filteri [@alloc stack])
+      let filter_map = (filter_map [@mode local] [@alloc stack])
+      let filter_mapi = (filter_mapi [@mode local] [@alloc stack])
+      let partition_tf = (partition_tf [@alloc stack])
+      let partition_map = (partition_map [@mode local] [@alloc stack])
       let fold_map = Local.fold_map
       let fold_mapi = Local.fold_mapi
     end

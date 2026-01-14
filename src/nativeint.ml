@@ -11,7 +11,7 @@ module T = struct
 
   external format : string -> nativeint -> string = "caml_nativeint_format"
 
-  let to_string i = format "%d" i
+  let to_string = Integer_to_string.nativeint_to_string
 
   external of_string
     :  string
@@ -323,10 +323,9 @@ module Summable = struct
   let[@inline] ( - ) x y = x - y
 end
 
-(* Include type-specific [Replace_polymorphic_compare] at the end, after
-   including functor application that could shadow its definitions. This is
-   here so that efficient versions of the comparison functions are exported by
-   this module. *)
+(* Include type-specific [Replace_polymorphic_compare] at the end, after including functor
+   application that could shadow its definitions. This is here so that efficient versions
+   of the comparison functions are exported by this module. *)
 include Nativeint_replace_polymorphic_compare
 
 external bswap : t -> (t[@local_opt]) = "%bswap_native"

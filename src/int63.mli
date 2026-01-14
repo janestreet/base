@@ -82,7 +82,7 @@ val random_incl : ?state:Random.State.t -> t -> t -> t
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-  https://opensource.janestreet.com/standards/#private-submodules *)
+    https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   (** [val repr] states how [Int63.t] is represented, i.e., as an [int] or an [int64], and
       can be used for building [Int63] operations that behave differently depending on the

@@ -25,7 +25,7 @@ exception Reraised of string * t
 val create_s : Sexp.t -> t
 
 (** [create_s_lazy lazy_sexp] is like [create_s], but takes a lazily generated sexp. *)
-val create_s_lazy : Sexp.t Lazy.t -> t
+val create_s_lazy : Sexp.t Portable_lazy.t -> t
 
 (** Same as [raise], except that the backtrace is not recorded. *)
 val raise_without_backtrace : 'a. t -> 'a
@@ -111,7 +111,7 @@ val initialize_module : unit -> unit
 
 (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-  https://opensource.janestreet.com/standards/#private-submodules *)
+    https://opensource.janestreet.com/standards/#private-submodules *)
 module Private : sig
   val clear_backtrace : unit -> unit
 end

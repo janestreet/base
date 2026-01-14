@@ -1,5 +1,6 @@
 [%%template:
 [@@@mode.default m = (global, local)]
+[@@@mode.default c = (uncontended, shared, contended)]
 
 external select
   : 'a.

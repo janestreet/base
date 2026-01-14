@@ -1,10 +1,10 @@
 open StdLabels
 
 let () =
-  (* -permissive indicates that we should tolerate additions to stdlib.
-     It's [true] in public-release so that new versions of the stdlib can be compatible
-     with base, but it should be [false] internally so that we remember to
-     consider implementing the equivalents in base. *)
+  (* -permissive indicates that we should tolerate additions to stdlib. It's [true] in
+     public-release so that new versions of the stdlib can be compatible with base, but it
+     should be [false] internally so that we remember to consider implementing the
+     equivalents in base. *)
   let permissive, cmi_fn, oc =
     match Sys.argv with
     | [| _; "-caml-cmi"; cmi_fn; "-o"; fn |] -> false, cmi_fn, open_out fn

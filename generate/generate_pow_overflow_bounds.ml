@@ -1,9 +1,7 @@
-(* NB: This needs to be pure OCaml (no Base!), since we need this in order to build
-   Base. *)
+(* NB: This needs to be pure OCaml (no Base!), since we need this in order to build Base. *)
 
 (* This module generates lookup tables to detect integer overflow when calculating integer
-   exponents.  At index [e], [table.[e]^e] will not overflow, but [(table[e] + 1)^e]
-   will. *)
+   exponents. At index [e], [table.[e]^e] will not overflow, but [(table[e] + 1)^e] will. *)
 module Z = Zarith.Z
 
 type mode =

@@ -680,7 +680,7 @@ module Definitions = struct
     val classify : t -> Class.t
 
     (*_ Caution: If we remove this sig item, [sign] will still be present from
-    [Comparable.With_zero]. *)
+        [Comparable.With_zero]. *)
 
     val sign : t -> Sign.t
     [@@deprecated "[since 2016-01] Replace [sign] with [robust_sign] or [sign_exn]"]
@@ -732,7 +732,7 @@ module type Float = sig
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
-    https://opensource.janestreet.com/standards/#private-submodules *)
+      https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     val box : t -> t
 

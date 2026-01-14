@@ -100,9 +100,9 @@ include struct
 end
 
 (* The default size is chosen to be 0 (as opposed to 128 as it was before) because:
-   - 128 can create substantial memory overhead (x10) when creating many tables, most
-     of which are not big (say, if you have a hashtbl of hashtbl). And memory overhead is
-     not that easy to profile.
+   - 128 can create substantial memory overhead (x10) when creating many tables, most of
+     which are not big (say, if you have a hashtbl of hashtbl). And memory overhead is not
+     that easy to profile.
    - if a hashtbl is going to grow, it's not clear why 128 is markedly better than other
      sizes (if you going to stick 1000 elements, you're going to grow the hashtable once
      or twice anyway)
@@ -132,10 +132,10 @@ let add_worker t ~replace ~key ~data =
   let added = ref false in
   let new_root =
     (* The avl tree might replace the value [replace=true] or do nothing [replace=false]
-       to the entry, in that case the table did not get bigger, so we should not
-       increment length, we pass in the bool ref t.added so that it can tell us whether
-       it added or replaced. We do it this way to avoid extra allocation. Since the bool
-       is an immediate it does not go through the write barrier. *)
+       to the entry, in that case the table did not get bigger, so we should not increment
+       length, we pass in the bool ref t.added so that it can tell us whether it added or
+       replaced. We do it this way to avoid extra allocation. Since the bool is an
+       immediate it does not go through the write barrier. *)
     (Avltree.add [@kind k v])
       ~replace
       root
@@ -145,8 +145,7 @@ let add_worker t ~replace ~key ~data =
       ~data
   in
   if !added then t.length <- t.length + 1;
-  (* This little optimization saves a caml_modify when the tree
-     hasn't been rebalanced. *)
+  (* This little optimization saves a caml_modify when the tree hasn't been rebalanced. *)
   if not (phys_equal new_root root) then t.table.(i) <- new_root;
   !added
 ;;
@@ -814,8 +813,8 @@ let[@mode p = (nonportable, portable)] t_of_sexp ~hashable k_of_sexp d_of_sexp s
   match of_alist ~hashable alist ~size:(List.length alist) with
   | `Ok v -> v
   | `Duplicate_key k ->
-    (* find the sexp of a duplicate key, so the error is narrowed to a key and not
-       the whole map *)
+    (* find the sexp of a duplicate key, so the error is narrowed to a key and not the
+       whole map *)
     let alist_sexps = list_of_sexp (pair_of_sexp Fn.id Fn.id) sexp in
     let found_first_k = ref false in
     List.iter2_exn alist alist_sexps ~f:(fun (k2, _) (k2_sexp, _) ->

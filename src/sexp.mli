@@ -1,5 +1,5 @@
-(*_ This module is separated from Sexp to avoid circular dependencies as many things use
-  s-expressions *)
+(*_ This module is separated from Sexp to avoid circular dependencies as many things
+       use s-expressions *)
 
 (** @inline *)
 include module type of struct

@@ -1,7 +1,7 @@
 open! Import
 module Array = Array0
 module Either = Either0
-include List1
+include List0
 include Constructors
 
 module%template Derived = struct
@@ -9,14 +9,13 @@ module%template Derived = struct
   include Indexed_container.Derived [@kind.explicit value_or_null]
 end
 
-[%%template
-  open struct
-    [@@@kind.default k = value_with_imm]
-
-    type 'a t = 'a list =
-      | []
-      | ( :: ) of 'a * ('a t[@kind k])
-  end]
+(* This ensures that the [[]] and [::] in scope are those of the [value] version of list;
+   [include Constructors] above gives the non-value versions higher precedence. *)
+open struct
+  type 'a t = 'a list =
+    | []
+    | ( :: ) of 'a * 'a t
+end
 
 (* This itself includes [List0]. *)
 
@@ -60,10 +59,10 @@ let range' ~compare ~stride ?(start = `inclusive) ?(stop = `exclusive) start_i s
          invalid_arg "List.range': stride function cannot change direction"
        | Less, `Less | Greater, `Greater -> i :: loop next_i)
     | Less, `Greater | Greater, `Less ->
-      (* stepped past [stop_i].  Finished. *)
+      (* stepped past [stop_i]. Finished. *)
       []
     | Equal, _ ->
-      (* reached [stop_i].  Finished. *)
+      (* reached [stop_i]. Finished. *)
       (match stop with
        | `inclusive -> [ i ]
        | `exclusive -> [])
@@ -96,7 +95,7 @@ let tl t =
 ;;
 
 [%%template
-[@@@kind k = base_or_null_with_imm]
+[@@@kind k = base_or_null]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -113,13 +112,19 @@ let nth t n : (_ Option0.t[@kind k]) =
     let rec nth_aux t n : (_ Option0.t[@kind k]) =
       match t with
       | [] -> None
-      | a :: t -> if n = 0 then Some a else nth_aux t (n - 1)
+      | a :: t ->
+        if n = 0
+        then Some a [@exclave_if_local l]
+        else (
+          let n = n - 1 in
+          nth_aux t n [@exclave_if_local l])
     in
-    nth_aux t n)
+    nth_aux t n [@exclave_if_local l])
+[@@mode l = (local, global)]
 ;;
 
 let nth_exn t n =
-  match (nth [@kind k]) t n with
+  match[@exclave_if_stack a] (nth [@kind k] [@mode l]) t n with
   | None ->
     (match
        (invalid_argf
@@ -131,7 +136,11 @@ let nth_exn t n =
      with
      | _ -> .)
   | Some a -> a
+[@@alloc a @ l = (stack_local, heap_global)]
 ;;
+
+let[@mode local] nth_exn = (nth_exn [@kind k] [@alloc stack])
+let[@mode global] nth_exn = (nth_exn [@kind k] [@alloc heap])
 
 let init_internal n ~f ~name =
   if n < 0 then invalid_argf "%s %d" name n ();
@@ -165,6 +174,24 @@ let mem t a ~equal =
   loop equal a t
 [@@mode m = (global, local)]
 ;;]
+
+let%template nth_or_null t n =
+  if n < 0
+  then Null
+  else (
+    let rec nth_aux t n : 'a or_null =
+      match t with
+      | [] -> Null
+      | a :: t ->
+        if n = 0
+        then This a
+        else (
+          let n = n - 1 in
+          nth_aux t n [@exclave_if_local l])
+    in
+    nth_aux t n [@exclave_if_local l])
+[@@mode l = (local, global)]
+;;
 
 let unordered_append l1 l2 =
   match l1, l2 with
@@ -362,6 +389,15 @@ let%template find t ~f =
 [@@mode m = (global, local)]
 ;;
 
+let%template find_or_null t ~f =
+  let rec loop ~f = function
+    | [] -> Null
+    | x :: l -> if f x then This x else loop ~f l [@exclave_if_local m]
+  in
+  loop ~f t [@exclave_if_local m]
+[@@mode m = (global, local)]
+;;
+
 let find_exn =
   let not_found = Not_found_s (Atom "List.find_exn: not found") in
   let rec find_exn t ~f =
@@ -484,7 +520,7 @@ let%template append l1 l2 =
   match (l2 : (_ t[@kind k])) with
   | [] -> l1
   | _ :: _ -> (rev [@kind k]) ((rev_append [@kind k]) l2 ((rev [@kind k]) l1))
-[@@kind k = (base_non_value, immediate, immediate64)] [@@alloc a = heap]
+[@@kind k = base_non_value] [@@alloc a = heap]
 ;;
 
 (* call-stack size <= first input data-stack size *)
@@ -507,7 +543,7 @@ let%template append =
     match (l2 : (_ t[@kind k])) with
     | [] -> l1
     | _ :: _ -> loop l1 l2 ~depth:0
-[@@kind k = (base_non_value, immediate, immediate64, value)] [@@alloc a = stack]
+[@@kind k = base] [@@alloc a = stack]
 ;;
 
 (* call-stack size <= output data-stack size *)
@@ -536,16 +572,16 @@ let%template filteri =
          x :: xs)
   in
   fun t ~f -> loop 0 t ~f
-[@@kind k = base_with_imm] [@@alloc stack]
+[@@kind k = base] [@@alloc stack]
 ;;
 
 (* call-stack size <= output data-stack size *)
 let%template filter t ~f = (filteri [@kind k] [@alloc a]) t ~f:(fun _ x -> f x)
-[@@kind k = base_with_imm] [@@alloc a = stack]
+[@@kind k = base] [@@alloc a = stack]
 ;;
 
 [%%template
-[@@@kind.default ka = base_or_null_with_imm, kb = base_or_null_with_imm]
+[@@@kind.default ka = base_or_null, kb = base_or_null]
 
 let rev_mapi l ~f =
   let rec loop ~f i acc : (_ t[@kind ka]) -> (_ t[@kind kb]) = function
@@ -625,7 +661,7 @@ let filter_map t ~f =
 
 (* call-stack size <= input data stack size + max inner list data stack size
 
-  unlike other functions, the maximum call-stack depth is [2 * max_non_tailcall] *)
+   unlike other functions, the maximum call-stack depth is [2 * max_non_tailcall] *)
 let concat_mapi =
   let loop_tail (t : (_ t[@kind ka])) ~i ~f =
     let _, expanded =
@@ -682,7 +718,7 @@ let foldi t ~init ~f =
 ;;]
 
 [%%template
-[@@@kind.default ka = base_or_null_with_imm, kb = value_or_null_with_imm]
+[@@@kind.default ka = base_or_null, kb = value_or_null]
 
 open struct
   type nonrec 'a t = ('a t[@kind ka]) =
@@ -763,7 +799,7 @@ let concat_map l ~f =
 ;;]
 
 [%%template
-[@@@kind.default k = (base_non_value, immediate, immediate64)]
+[@@@kind.default k = base_non_value]
 
 (* Copied from [Sexplib0] for templating *)
 
@@ -791,7 +827,7 @@ let sexp_of_t : _ -> (_ t[@kind k]) -> Sexplib0.Sexp.t =
 ;;]
 
 [%%template
-[@@@kind.default k = (base_non_value, immediate, immediate64)]
+[@@@kind.default k = base_non_value]
 
 open struct
   type nonrec 'a t = ('a t[@kind k]) =
@@ -823,7 +859,7 @@ let filteri l ~f =
 ;;]
 
 [%%template
-[@@@kind.default ka = base_or_null_with_imm, kb = base_non_value]
+[@@@kind.default ka = base_or_null, kb = base_non_value]
 [@@@mode.default mi = (global, local)]
 [@@@alloc.default a = heap]
 
@@ -1035,7 +1071,7 @@ let reduce_exn l ~f =
 
 let reduce_balanced l ~f =
   (* Call the "size" of a value the number of list elements that have been combined into
-     it via calls to [f].  We proceed by using [f] to combine elements in the accumulator
+     it via calls to [f]. We proceed by using [f] to combine elements in the accumulator
      of the same size until we can't combine any more, then getting a new element from the
      input list and repeating.
 
@@ -1046,10 +1082,10 @@ let reduce_balanced l ~f =
 
      These conditions enforce that list of elements of each size is precisely the binary
      expansion of the number of elements consumed: if you've consumed 13 = 0b1101
-     elements, you have one element of size 8, one of size 4, and one of size 1.  Hence
+     elements, you have one element of size 8, one of size 4, and one of size 1. Hence
      when a new element comes along, the number of combinings you need to do is the number
      of trailing 1s in the binary expansion of [num], the number of elements that have
-     already gone into the accumulator.  The accumulator is in ascending order of size, so
+     already gone into the accumulator. The accumulator is in ascending order of size, so
      the next element to combine with is always the head of the list. *)
   let rec step_accum num acc x =
     if num land 1 = 0
@@ -1117,27 +1153,30 @@ let[@tail_mod_cons] rec merge l1 l2 ~compare =
     if compare h1 h2 <= 0 then h1 :: merge t1 l2 ~compare else h2 :: merge l1 t2 ~compare
 ;;
 
-let stable_sort l ~compare:cmp =
+(* The [[@alloc stack]] version of this function will allocate O(n log n) stack space in
+   the callers region. See the comments on
+   [Local_iterators_to_be_replaced.List.dedup_and_sort_local] for details. *)
+let%template[@alloc a @ l = (heap_global, stack_local)] stable_sort l ~compare:cmp =
   let rec rev_merge cmp l1 l2 accu =
-    match l1, l2 with
-    | [], l2 -> rev_append l2 accu
-    | l1, [] -> rev_append l1 accu
+    match[@exclave_if_stack a] l1, l2 with
+    | [], l2 -> (rev_append [@alloc a]) l2 accu
+    | l1, [] -> (rev_append [@alloc a]) l1 accu
     | h1 :: t1, h2 :: t2 ->
       if cmp h1 h2 <= 0
       then rev_merge cmp t1 l2 (h1 :: accu)
       else rev_merge cmp l1 t2 (h2 :: accu)
   in
   let rec rev_merge_rev cmp l1 l2 accu =
-    match l1, l2 with
-    | [], l2 -> rev_append l2 accu
-    | l1, [] -> rev_append l1 accu
+    match[@exclave_if_stack a] l1, l2 with
+    | [], l2 -> (rev_append [@alloc a]) l2 accu
+    | l1, [] -> (rev_append [@alloc a]) l1 accu
     | h1 :: t1, h2 :: t2 ->
       if cmp h1 h2 > 0
       then rev_merge_rev cmp t1 l2 (h1 :: accu)
       else rev_merge_rev cmp l1 t2 (h2 :: accu)
   in
-  let rec sort n l =
-    match n, l with
+  let rec sort cmp n l =
+    match[@exclave_if_stack a] n, l with
     | 2, x1 :: x2 :: tl ->
       let s = if cmp x1 x2 <= 0 then [ x1; x2 ] else [ x2; x1 ] in
       s, tl
@@ -1160,11 +1199,11 @@ let stable_sort l ~compare:cmp =
     | n, l ->
       let n1 = n asr 1 in
       let n2 = n - n1 in
-      let s1, l2 = rev_sort n1 l in
-      let s2, tl = rev_sort n2 l2 in
+      let s1, l2 = rev_sort cmp n1 l in
+      let s2, tl = rev_sort cmp n2 l2 in
       rev_merge_rev cmp s1 s2 [], tl
-  and rev_sort n l =
-    match n, l with
+  and rev_sort cmp n l =
+    match[@exclave_if_stack a] n, l with
     | 2, x1 :: x2 :: tl ->
       let s = if cmp x1 x2 > 0 then [ x1; x2 ] else [ x2; x1 ] in
       s, tl
@@ -1187,15 +1226,15 @@ let stable_sort l ~compare:cmp =
     | n, l ->
       let n1 = n asr 1 in
       let n2 = n - n1 in
-      let s1, l2 = sort n1 l in
-      let s2, tl = sort n2 l2 in
+      let s1, l2 = sort cmp n1 l in
+      let s2, tl = sort cmp n2 l2 in
       rev_merge cmp s1 s2 [], tl
   in
   let len = length l in
-  if len < 2 then l else fst (sort len l)
+  if [@exclave_if_stack a] len < 2 then l else fst (sort cmp len l)
 ;;
 
-let sort = stable_sort
+let%template[@alloc a = (heap, stack)] sort = (stable_sort [@alloc a])
 
 let sort_and_group l ~compare =
   (l |> stable_sort ~compare |> group ~break:(fun x y -> compare x y <> 0)) [@nontail]
@@ -1680,22 +1719,37 @@ module Assoc = struct
     |> map ~f:pair_of_group
   ;;
 
+  [%%template
   let find t ~equal key =
-    match find t ~f:(fun (key', _) -> equal key key') with
+    match[@exclave_if_local l ~reasons:[ May_return_regional; Will_return_unboxed ]]
+      (find [@mode l]) t ~f:(fun (key', _) -> equal key key')
+    with
     | None -> None
     | Some x -> Some (snd x)
+  [@@mode l = (local, global)]
   ;;
 
-  let find_exn =
+  let find_or_null t ~equal key =
+    match[@exclave_if_local l ~reasons:[ May_return_regional ]]
+      (find_or_null [@mode l]) t ~f:(fun (key', _) -> equal key key')
+    with
+    | Null -> Null
+    | This x -> This (snd x)
+  [@@mode l = (local, global)]
+  ;;]
+
+  let%template find_exn =
     let not_found = Not_found_s (Atom "List.Assoc.find_exn: not found") in
     let rec find_exn t ~equal key =
       match t with
       | [] ->
         raise (Portability_hacks.magic_uncontended__promise_deeply_immutable not_found)
-      | (key', value) :: t -> if equal key key' then value else find_exn t ~equal key
+      | (key', value) :: t ->
+        if equal key key' then value else find_exn t ~equal key [@exclave_if_local l]
     in
     (* named to preserve symbol in compiled binary *)
     find_exn
+  [@@mode l = (local, global)]
   ;;
 
   let mem t ~equal key =

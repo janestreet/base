@@ -5,14 +5,17 @@ type 'a t = 'a or_null =
   | This of 'a
 
 external is_null : 'a t -> bool = "%obj_is_int"
-external unsafe_value : 'a t -> 'a = "%field0"
+
+[%%template external unsafe_value : 'a t -> 'a = "%field0" [@@mode m = (global, local)]]
+
+external really_unsafe_value : 'a t -> 'a = "%field0"
 
 module Optional_syntax = struct
   module Optional_syntax = struct
     let[@zero_alloc] [@inline] is_none t = is_null t
 
     let[@inline] unsafe_value t =
-      (unsafe_value [@alert "-unsafe_optimizations_if_misapplied"]) t
+      (really_unsafe_value [@alert "-unsafe_optimizations_if_misapplied"]) t
     ;;
   end
 end
@@ -247,6 +250,9 @@ let[@inline] first_this t t' =
   Bool.select is_null t' t [@exclave_if_local m]
 ;;]
 
+(* redefine [is_null] as a let bind so we can mark it [@zero_alloc]. It is not exposed as
+   an external and externals exposed as vals cannot be marked [@zero_alloc]. *)
+let[@inline] is_null t = is_null t
 let[@inline] is_this t = not (is_null t)
 let[@inline] length t = Bool.to_int (is_this t)
 

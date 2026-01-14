@@ -33,8 +33,8 @@ module Cheap_option = struct
   end = struct
     (* It is safe to claim that ['a t] is immutable data as long as ['a] is immutable
        data:
-         - the [None] values are immutable blocks or immediates.
-         - the [Some x] values are the value [x] (of type ['a]) itself.
+       - the [None] values are immutable blocks or immediates.
+       - the [Some x] values are the value [x] (of type ['a]) itself.
     *)
     type +'a t
 
@@ -60,10 +60,10 @@ module Cheap_option = struct
          anything than any number we can choose ourselves.
 
          We are using a polymorphic variant instead of an integer constant because there
-         is a compiler bug where it wrongly assumes that the result of [if _ then c else
-         y] is not a pointer if [c] is an integer compile-time constant.  This is being
-         fixed in https://github.com/ocaml/ocaml/pull/555.  The "memory corruption" test
-         below demonstrates the issue.  *)
+         is a compiler bug where it wrongly assumes that the result of
+         [if _ then c else y] is not a pointer if [c] is an integer compile-time constant.
+         This is being fixed in https://github.com/ocaml/ocaml/pull/555. The "memory
+         corruption" test below demonstrates the issue. *)
       Stdlib.Obj.magic_portable (Stdlib.Obj.magic `x6e8ee3478e1d7449)
     ;;
 
@@ -106,6 +106,7 @@ module Cheap_option = struct
     ;;
 
     let[@inline] to_option x = if is_some x then Some (value_unsafe x) else None
+    let[@inline] to_or_null x = if is_some x then This (value_unsafe x) else Null
     let[@inline] to_option_local x = if is_some x then Some (value_unsafe x) else None
     let to_sexpable = to_option
     let of_sexpable = of_option
@@ -131,6 +132,7 @@ let init n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.of_option (f i)) 
 let init_some n ~f = Uniform_array.init n ~f:(fun i -> Cheap_option.some (f i)) [@nontail]
 let length = Uniform_array.length
 let[@inline] get t i = Cheap_option.to_option (Uniform_array.get t i)
+let[@inline] get_or_null t i = Cheap_option.to_or_null (Uniform_array.get t i)
 let[@inline] get_local t i = Cheap_option.to_option_local (Uniform_array.get t i)
 let get_some_exn t i = Cheap_option.value_exn (Uniform_array.get t i)
 let is_none t i = Cheap_option.is_none (Uniform_array.get t i)

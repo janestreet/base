@@ -716,8 +716,8 @@ module%test Search_pattern = struct
   let%test _ =
     [%compare.equal: string list]
       (split_on (create "") "abcd")
-      (* [index_all (create "")] includes the occurrences at index 0 and at the end of
-           the string, and the result of [split_on (create "")] is a consequence of this
+      (* [index_all (create "")] includes the occurrences at index 0 and at the end of the
+         string, and the result of [split_on (create "")] is a consequence of this
       *)
       [ ""; "a"; "b"; "c"; "d"; "" ]
   ;;
@@ -1106,14 +1106,14 @@ let%test_unit _ =
 
 let%test_unit _ =
   let s = "hello" in
-  [%test_result: bool] ~expect:true (phys_equal (filter s ~f:(fun _ -> true)) s)
+  [%test_result: bool] ~expect:true (equal (filter s ~f:(fun _ -> true)) s)
 ;;
 
 let%test_unit _ =
   let s = "abc" in
   let r = ref 0 in
   assert (
-    phys_equal
+    equal
       s
       (filter s ~f:(fun _ ->
          Int.incr r;
@@ -1128,8 +1128,8 @@ module%test Hash = struct
     List.iter
       ~f:(fun string ->
         assert (Int.( = ) (hash string) (Stdlib.Hashtbl.hash string));
-        (* with 31-bit integers, the hash computed by ppx_hash overflows so it doesn't match
-             polymorphic hash exactly. *)
+        (* with 31-bit integers, the hash computed by ppx_hash overflows so it doesn't
+           match polymorphic hash exactly. *)
         if Int.( > ) Int.num_bits 31
         then assert (Int.( = ) (hash string) ([%hash: string] string)))
       [ "Oh Gloria inmarcesible! Oh jubilo inmortal!"
@@ -1893,3 +1893,64 @@ module%test Escaping = struct
   let%test _ = lstrip_literal ~drop:Char.is_alpha ~escape_char:'b' "foo boar" = " boar"
   let%test _ = rstrip_literal ~drop:Char.is_alpha ~escape_char:'b' "foo boar" = "foo bo"
 end
+
+[%%template
+  module [@mode li = (global, local)] [@alloc a @ lo = (heap_global, stack_local)] _ =
+  struct
+    let f c =
+      let c = Char.to_string c in
+      c ^ c
+    ;;
+
+    let%test_unit "concat_map sep:None" =
+      ([%test_eq: string] [@alloc a])
+        ((concat_map [@mode li] [@alloc a]) "abc" ~f)
+        "aabbcc"
+    ;;
+
+    let%test_unit "concat_map sep:Some" =
+      ([%test_eq: string] [@alloc a])
+        ((concat_map [@mode li] [@alloc a]) ~sep:"," "abc" ~f)
+        "aa,bb,cc"
+    ;;
+
+    let f _ = ""
+
+    let%test_unit "concat_map sep:None empty" =
+      ([%test_eq: string] [@alloc a]) ((concat_map [@mode li] [@alloc a]) "abc" ~f) ""
+    ;;
+
+    let%test_unit "concat_map sep:Some empty" =
+      ([%test_eq: string] [@alloc a])
+        ((concat_map [@mode li] [@alloc a]) ~sep:"," "abc" ~f)
+        ",,"
+    ;;
+
+    let%test_unit "concat_map sep:None emptier" =
+      ([%test_eq: string] [@alloc a]) ((concat_map [@mode li] [@alloc a]) "" ~f) ""
+    ;;
+
+    let%test_unit "concat_map sep:Some emptier" =
+      ([%test_eq: string] [@alloc a])
+        ((concat_map [@mode li] [@alloc a]) ~sep:"," "" ~f)
+        ""
+    ;;
+  end]
+
+[%%template
+  module [@mode li = (global, local)] [@alloc a @ lo = (heap_global, stack_local)] _ =
+  struct
+    let f i c = String.init (i + 1) ~f:(fun _ -> c)
+
+    let%test_unit "concat_mapi sep:None" =
+      ([%test_eq: string] [@alloc a])
+        ((concat_mapi [@mode li] [@alloc a]) "abc" ~f)
+        "abbccc"
+    ;;
+
+    let%test_unit "concat_mapi sep:Some" =
+      ([%test_eq: string] [@alloc a])
+        ((concat_mapi [@mode li] [@alloc a]) ~sep:"," "abc" ~f)
+        "a,bb,ccc"
+    ;;
+  end]

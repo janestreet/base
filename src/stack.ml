@@ -4,9 +4,9 @@ include Stack_intf.Definitions
 
 let raise_s = Error.raise_s
 
-(* This implementation is similar to [Deque] in that it uses an array of ['a] and
-   a mutable [int] to indicate what in the array is used.  We choose to implement [Stack]
-   directly rather than on top of [Deque] for performance reasons.  E.g. a simple
+(* This implementation is similar to [Deque] in that it uses an array of ['a] and a
+   mutable [int] to indicate what in the array is used. We choose to implement [Stack]
+   directly rather than on top of [Deque] for performance reasons. E.g. a simple
    microbenchmark shows that push/pop is about 20% faster. *)
 type 'a t =
   { mutable length : int
@@ -25,8 +25,7 @@ let invariant invariant_a ({ length; elts } as t) : unit =
     for i = 0 to length - 1 do
       invariant_a (Option_array.get_some_exn elts i)
     done;
-    (* We maintain the invariant that unused elements are unset to avoid a space
-       leak. *)
+    (* We maintain the invariant that unused elements are unset to avoid a space leak. *)
     for i = length to Option_array.length elts - 1 do
       assert (not (Option_array.is_some elts i))
     done

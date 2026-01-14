@@ -6,7 +6,7 @@ type t = exn [@@deriving sexp_of]
 exception Finally of t * t [@@deriving sexp]
 exception Reraised of string * t [@@deriving sexp]
 exception Sexp of Sexp.t
-exception Sexp_lazy of Sexp.t Lazy.t
+exception Sexp_lazy of Sexp.t Portable_lazy.t
 
 (* We install a custom exn-converter rather than use:
 
@@ -22,7 +22,7 @@ let () =
       (* Reaching this branch indicates a bug in sexplib. *)
       assert false);
   Sexplib0.Sexp_conv.Exn_converter.add [%extension_constructor Sexp_lazy] (function
-    | Sexp_lazy t -> Lazy.force t
+    | Sexp_lazy t -> Portable_lazy.force t
     | _ -> assert false)
 ;;
 
@@ -126,7 +126,7 @@ let handle_uncaught_aux ~do_at_exit ~exit_or_ignore f =
     let raw_backtrace = Stdlib.Printexc.get_raw_backtrace () in
     (* One reason to run [do_at_exit] handlers before printing out the error message is
        that it helps curses applications bring the terminal in a good state, otherwise the
-       error message might get corrupted.  Also, the OCaml top-level uncaught exception
+       error message might get corrupted. Also, the OCaml top-level uncaught exception
        handler does the same. *)
     (try do_at_exit () with
      | _ -> ());
@@ -164,8 +164,8 @@ let reraise_uncaught str func =
 external clear_backtrace : unit -> unit = "Base_clear_caml_backtrace_pos" [@@noalloc]
 
 let raise_without_backtrace e =
-  (* We clear the backtrace to reduce confusion, so that people don't think whatever
-     is stored corresponds to this raise. *)
+  (* We clear the backtrace to reduce confusion, so that people don't think whatever is
+     stored corresponds to this raise. *)
   clear_backtrace ();
   Stdlib.raise_notrace e
 ;;

@@ -3,9 +3,9 @@ include Sign0
 
 include%template Identifiable.Make [@modality portable] (Sign0)
 
-(* Open [Replace_polymorphic_compare] after including functor applications so
-   they do not shadow its definitions. This is here so that efficient versions
-   of the comparison functions are available within this module. *)
+(* Open [Replace_polymorphic_compare] after including functor applications so they do not
+   shadow its definitions. This is here so that efficient versions of the comparison
+   functions are available within this module. *)
 open! Replace_polymorphic_compare
 
 let to_string_hum = function
@@ -28,7 +28,7 @@ let flip = function
 
 let ( * ) t t' = of_int (to_int t * to_int t')
 
-(* Include type-specific [Replace_polymorphic_compare at the end, after any
+(*=Include type-specific [Replace_polymorphic_compare at the end, after any
    functor applications that could shadow its definitions. This is here so
    that efficient versions of the comparison functions are exported by this
    module. *)
