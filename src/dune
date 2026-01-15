@@ -45,4 +45,4 @@
  (targets ocamlopt-flags)
  (deps)
  (action
-  (bash "echo '()' > ocamlopt-flags")))
+  (with-stdout-to ocamlopt-flags (echo "()"))))
