@@ -353,6 +353,7 @@ module Contended = struct
   let t_of_sexp of_sexp sexp = { contended = of_sexp sexp }
 
   external cross : 'a. 'a -> 'a = "%identity"
+  external wrap_list : 'a list -> 'a t list = "%identity"
 end
 
 module Shared = struct

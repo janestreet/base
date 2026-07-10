@@ -59,11 +59,11 @@ module Definitions = struct
 
   module type
     [@kind_set.explicit
-      (ks, ks_not_in_t)
-      = ( (value, value)
-        , (value_or_null, value_or_null)
-        , (value mod external64, value)
-        , (base_or_null_with_ext, base_or_null) )] Iterators_with_index_without_findi = sig
+      (ks, ks_not_in_t, ks_for_3, ks_not_in_t_for_3)
+      = ( (value, value, value, value)
+        , (value_or_null, value_or_null, value_or_null, value_or_null)
+        , (value mod external64, value, value mod external64, value)
+        , (base_or_null_with_ext, base_or_null, value_or_null, value_or_null) )] Iterators_with_index_without_findi = sig
     include Container.Generic_types [@kind_set.explicit ks]
 
     type ('a, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1]) [@@kind.explicit k1 = ks]
@@ -100,9 +100,19 @@ module Definitions = struct
       : 'a 'p1 'p2 'b.
       ('a, 'p1, 'p2) t
       -> f:(int -> 'a elt -> ('b Option0.t[@kind k2 or value_or_null]))
-      -> ('b Option0.t[@kind k2 or value_or_null])
+      -> ('b Option0.t[@kind k2 or value_or_null])]
 
-    [@@@kind.default_if_multiple k3 = ks_not_in_t]
+    [%%template:
+    [@@@kind.default_if_multiple k1' = ks_for_3]
+    [@@@kind k1 = k1' mod separable]
+
+    type ('a, 'b, 'c) t := (('a, 'b, 'c) t[@kind.explicit k1']) [@@kind value]
+    type 'a elt := ('a elt[@kind.explicit k1']) [@@kind value]
+
+    [@@@mode.default mi = (global, m)]
+    [@@@kind.default_if_multiple k2 = ks_not_in_t_for_3]
+    [@@@mode.default mo = (global, m)]
+    [@@@kind.default_if_multiple k3 = ks_not_in_t_for_3]
 
     val foldi_until
       : 'a 'p1 'p2 'acc 'final.
@@ -201,7 +211,12 @@ module Definitions = struct
       end
     end
 
-    [@@@kind_set ks = (value, value_or_null, value mod external64, base_or_null_with_ext)]
+    [@@@kind_set
+      (ks, ks_for_3)
+      = ( (value, value)
+        , (value_or_null, value_or_null)
+        , (value mod external64, value mod external64)
+        , (base_or_null_with_ext, value_or_null) )]
 
     include struct
       [@@@alloc.default a]
@@ -254,6 +269,7 @@ module Definitions = struct
           -> ('a, 'p1, 'p2) t * ('a, 'p1, 'p2) t
         [@@alloc __ @ m = (heap_global, a @ m)]]
 
+        [%%template:
         [@@@kind.default_if_multiple k1' = ks]
         [@@@kind.default_if_multiple k2' = ks]
         [@@@kind k1 = k1' mod separable, k2 = k2' mod separable]
@@ -290,10 +306,13 @@ module Definitions = struct
                 -> ('a elt[@kind.explicit k1'])
                 -> (('b, 'p1, 'p2) t[@kind.explicit k2']))
           -> (('b, 'p1, 'p2) t[@kind.explicit k2'])
-        [@@mode m = (global, m)] [@@alloc __ @ n = (heap_global, a @ m)]
+        [@@mode m = (global, m)] [@@alloc __ @ n = (heap_global, a @ m)]]
 
-        [@@@kind.default_if_multiple k3' = ks]
-        [@@@kind k3 = k3' mod separable]
+        [%%template:
+        [@@@kind.default_if_multiple k1' = ks_for_3]
+        [@@@kind.default_if_multiple k2' = ks_for_3]
+        [@@@kind.default_if_multiple k3' = ks_for_3]
+        [@@@kind k1 = k1' mod separable, k2 = k2' mod separable, k3 = k3' mod separable]
 
         (** [partition_mapi t ~f] is like partition_map. Additionally, it passes the index
             as an argument. *)
@@ -307,7 +326,7 @@ module Definitions = struct
                    [@kind (k2' or value_or_null) (k3' or value_or_null)]))
           -> (('b, 'p1, 'p2) t[@kind.explicit k2'])
              * (('c, 'p1, 'p2) t[@kind.explicit k3'])
-        [@@mode m = (global, m)] [@@alloc __ @ n = (heap_global, a @ m)]
+        [@@mode m = (global, m)] [@@alloc __ @ n = (heap_global, a @ m)]]
       end
 
       module type Generic_with_creators = sig

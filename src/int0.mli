@@ -1,5 +1,7 @@
 external format : string -> int -> string = "caml_format_int"
-val to_string : int -> string
+
+val%template to_string : int -> string [@@alloc __ @ m = (heap @ global, stack @ local)]
+
 external of_string : string -> int = "caml_int_of_string"
 val of_string_opt : string -> int option
 val to_float : int -> float

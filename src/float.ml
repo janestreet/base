@@ -8,7 +8,7 @@ include Float0
 let raise_s = Error.raise_s
 
 module T = struct
-  type t = float [@@deriving hash, globalize, sexp ~stackify, sexp_grammar]
+  type t = float [@@deriving hash, globalize, sexp ~stackify ~unboxed, sexp_grammar]
 
   let compare = Float_replace_polymorphic_compare.compare
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }

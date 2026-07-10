@@ -23,7 +23,7 @@ module type%template [@kind.explicit k = (value, value_or_null)] S = sig
 
   external%template repr : 'a. ('a[@local_opt]) -> (t[@local_opt]) = "%identity"
   [@@mode
-    c = (uncontended, shared, contended)
+    c = (uncontended, shared, contended, read, write, immutable)
     , o = (many, once)
     , p = (nonportable, portable)
     , u = (aliased, unique)]

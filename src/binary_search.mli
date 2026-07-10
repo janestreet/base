@@ -45,7 +45,8 @@ open! Import
     [binary_search] does not check that [compare] orders [t], and behavior is unspecified
     if [compare] doesn't order [t]. Behavior is also unspecified if [compare] mutates [t]. *)
 val binary_search
-  :  ?pos:int
+  : 'elt 'key 't.
+  ?pos:int
   -> ?len:int
   -> 't
   -> length:('t -> int)
@@ -80,7 +81,8 @@ val binary_search
     diagram, and behavior is unspecified if [segment_of] doesn't segment [t]. Behavior is
     also unspecified if [segment_of] mutates [t]. *)
 val binary_search_segmented
-  :  ?pos:int
+  : 'elt 't.
+  ?pos:int
   -> ?len:int
   -> 't
   -> length:('t -> int)

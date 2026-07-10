@@ -135,6 +135,15 @@ val of_either : 'ok 'err. ('ok, 'err) Either0.t -> ('ok, 'err) t [@@zero_alloc_i
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
 val ok_if_true : 'err. bool -> error:'err -> (unit, 'err) t
 
+(** [transpose_opt x] transposes a [result] of an [option] into an [option] of a [result]
+
+    Concretely, [Ok None] maps to [None], [Ok (Some x)] maps to [Some (Ok x)], and
+    [Error e] maps to [Some (Error e)].
+
+    Inverse of {!Option.transpose_result}. *)
+val transpose_opt : 'ok 'err. ('ok option, 'err) t -> ('ok, 'err) t option
+[@@alloc __ @ m = (stack_local, heap_global)]
+
 val try_with : 'a. (unit -> 'a) -> ('a, exn) t
 
 module Export : sig

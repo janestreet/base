@@ -102,7 +102,7 @@ val find : ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> ('v Option.t[@kind v
 
 include sig
   [@@@mode.default c = (uncontended, shared)]
-  [@@@kind r = all]
+  [@@@kind r = v]
 
   (** [find_and_call t ~compare k ~if_found ~if_not_found]
 
@@ -119,7 +119,7 @@ include sig
     -> if_found:('v -> 'r)
     -> if_not_found:('k -> 'r)
     -> 'r
-  [@@kind k = k, v = v, r = r]
+  [@@kind k = k, v = v, r = (r, value_or_null)]
 
   val findi_and_call
     : 'k 'v 'r.
@@ -131,7 +131,7 @@ include sig
     -> 'r
   [@@kind k = k, v = v, r = r]
 
-  [@@@kind a = all]
+  [@@@kind a = value_or_null]
 
   val find_and_call1
     : 'k 'v 'a 'r.
@@ -155,7 +155,7 @@ include sig
     -> 'r
   [@@kind k = k, v = v, a = a, r = r]
 
-  [@@@kind b = all]
+  [@@@kind b = value_or_null]
 
   val find_and_call2
     : 'k 'v 'a 'b 'r.

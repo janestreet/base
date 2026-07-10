@@ -36,6 +36,7 @@ module Definitions = struct
 
     (** How many key/value pairs the dictionary contains. *)
     val length : (_, _, 'phantom) t -> int
+    [@@zero_alloc]
 
     (** All key/value pairs. *)
     val to_alist : ('key, 'data, 'phantom) t -> ('key key * 'data) list

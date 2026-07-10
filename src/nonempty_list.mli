@@ -123,6 +123,8 @@ val filter_mapi_or_null
   : 'a 'b.
   ('a t[@kind ka]) -> f:(int -> 'a -> 'b or_null) -> 'b List.t
 
+val rev_map : 'a 'b. ('a t[@kind ka]) -> f:('a -> 'b) -> ('b t[@kind kb])
+val rev_mapi : 'a 'b. ('a t[@kind ka]) -> f:(int -> 'a -> 'b) -> ('b t[@kind kb])
 val concat_map : 'a 'b. ('a t[@kind ka]) -> f:('a -> ('b t[@kind kb])) -> ('b t[@kind kb])
 val bind : 'a 'b. ('a t[@kind ka]) -> f:('a -> ('b t[@kind kb])) -> ('b t[@kind kb])]
 

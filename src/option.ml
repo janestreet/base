@@ -219,6 +219,14 @@ let merge a b ~f =
   | Some a, Some b -> Some (f a b)
 ;;
 
+let transpose_result t =
+  match[@exclave_if_stack a] t with
+  | Some (Ok v) -> Ok (Some v)
+  | Some (Error e) -> Error e
+  | None -> Ok None
+[@@alloc a = (stack, heap)]
+;;
+
 let filter t ~f =
   match t with
   | Some v as o when f v -> o

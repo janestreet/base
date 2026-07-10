@@ -22,7 +22,9 @@ val create : 'a. len:int -> 'a -> 'a t
 val singleton : 'a. 'a -> 'a t
 val init : 'a. int -> f:(int -> 'a) -> 'a t
 val length : 'a. 'a t -> int
-val get : 'a. 'a t -> int -> 'a
+
+val%template get : 'a. 'a t -> int -> 'a [@@mode c = (uncontended, shared)]
+
 val unsafe_get : 'a. 'a t -> int -> 'a
 val set : 'a. 'a t -> int -> 'a -> unit
 val unsafe_set : 'a. 'a t -> int -> 'a -> unit
@@ -52,6 +54,14 @@ val iteri : 'a. 'a t -> f:(int -> 'a -> unit) -> unit
 
 val fold : 'a 'acc. 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
 val foldi : 'a 'acc. 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc) -> 'acc
+
+val fold_until
+  : 'a 'acc 'final.
+  'a t
+  -> init:'acc
+  -> f:('acc -> 'a -> ('acc, 'final) Container.Continue_or_stop.t)
+  -> finish:('acc -> 'final)
+  -> 'final
 
 (** [unsafe_to_array_inplace__promise_not_a_float] converts from a [t] to an [array] in
     place. This function is unsafe if the underlying type is a float. *)

@@ -18,9 +18,17 @@ open! Import
 
 (** {2 Type and Interfaces} *)
 
-type 'a t = 'a or_null =
-  | Null
-  | This of 'a
+(**/**)
+
+module T : sig
+  type 'a t = 'a or_null =
+    | Null
+    | This of 'a
+end
+
+(**/**)
+
+include module type of T (** @inline *)
 
 [%%rederive:
   type nonrec 'a t = 'a t

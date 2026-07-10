@@ -444,7 +444,7 @@ module type Array = sig
     end
 
     module%template.portable
-      [@kind k = base_or_null_with_ext] Sorter (S : sig
+      [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)] Sorter (S : sig
         [@@@kind k = k mod separable]
 
         type 'a t

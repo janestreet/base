@@ -2391,6 +2391,80 @@ module Tree0 = struct
         |> Error.raise)
   ;;
 
+  let merge_aligned_error ~name t1 t2 ~comparator =
+    let compare_key = Comparator.compare comparator in
+    let sexp_of_key = Comparator.sexp_of_t comparator in
+    let only_in_first, only_in_second =
+      fold2
+        t1
+        t2
+        ~compare_key
+        ~init:([], [])
+        ~f:(fun ~key ~data (only_in_first, only_in_second) ->
+          match data with
+          | `Left _ -> key :: only_in_first, only_in_second
+          | `Right _ -> only_in_first, key :: only_in_second
+          | `Both _ -> only_in_first, only_in_second)
+    in
+    Error.create_s
+      (Sexp.message
+         (name ^ ": keys not aligned")
+         [ "only in first", sexp_of_list sexp_of_key only_in_first
+         ; "only in second", sexp_of_list sexp_of_key only_in_second
+         ])
+  ;;
+
+  let merge_aligned_internal ~name t1 t2 ~comparator ~f ~on_success ~on_failure =
+    if length t1 <> length t2
+    then on_failure (merge_aligned_error ~name t1 t2 ~comparator)
+    else (
+      let merged =
+        merge_by_case
+          t1
+          t2
+          ~compare_key:(Comparator.compare comparator)
+          ~first:Drop
+          ~second:Drop
+          ~both:(Map f)
+      in
+      if length merged <> length t1
+      then on_failure (merge_aligned_error ~name t1 t2 ~comparator)
+      else on_success merged)
+  ;;
+
+  let merge_aligned t1 t2 ~comparator ~f =
+    merge_aligned_internal
+      ~name:"Map.merge_aligned"
+      t1
+      t2
+      ~comparator
+      ~f
+      ~on_success:(fun t -> Ok t)
+      ~on_failure:(fun e -> Error e)
+  ;;
+
+  let zip t1 t2 ~comparator =
+    merge_aligned_internal
+      t1
+      t2
+      ~comparator
+      ~name:"Map.zip"
+      ~f:(fun ~key:_ v1 v2 -> v1, v2)
+      ~on_success:(fun t -> Ok t)
+      ~on_failure:(fun e -> Error e)
+  ;;
+
+  let zip_exn t1 t2 ~comparator =
+    merge_aligned_internal
+      t1
+      t2
+      ~comparator
+      ~name:"Map.zip_exn"
+      ~f:(fun ~key:_ v1 v2 -> v1, v2)
+      ~on_success:Fn.id
+      ~on_failure:Error.raise
+  ;;
+
   module Closest_key_impl = struct
     (* [marker] and [repackage] allow us to create "logical" options without actually
        allocating any options. Passing [Found key value] to a function is equivalent to
@@ -2970,6 +3044,17 @@ module Accessors = struct
       (Tree0.merge_skewed t1.tree t2.tree ~combine ~compare_key:(compare_key t1))
   ;;
 
+  let merge_aligned t1 t2 ~f =
+    Tree0.merge_aligned t1.tree t2.tree ~comparator:t1.comparator ~f
+    |> Or_error.map ~f:(fun t -> like t1 t)
+  ;;
+
+  let zip t1 t2 =
+    Tree0.zip t1.tree t2.tree ~comparator:t1.comparator
+    |> Or_error.map ~f:(fun t -> like t1 t)
+  ;;
+
+  let zip_exn t1 t2 = like t1 (Tree0.zip_exn t1.tree t2.tree ~comparator:t1.comparator)
   let min_elt t = Tree0.min_elt t.tree
   let min_elt_exn t = Tree0.min_elt_exn t.tree
   let max_elt t = Tree0.max_elt t.tree
@@ -3377,6 +3462,9 @@ module Tree = struct
     Tree0.merge_skewed t1 t2 ~combine ~compare_key:(Comparator.compare comparator)
   ;;
 
+  let merge_aligned ~comparator t1 t2 ~f = Tree0.merge_aligned t1 t2 ~comparator ~f
+  let zip ~comparator t1 t2 = Tree0.zip t1 t2 ~comparator
+  let zip_exn ~comparator t1 t2 = Tree0.zip_exn t1 t2 ~comparator
   let min_elt t = Tree0.min_elt t
   let min_elt_exn t = Tree0.min_elt_exn t
   let max_elt t = Tree0.max_elt t
@@ -3508,6 +3596,7 @@ module Tree = struct
     type ('k, 'v, 'w) t = ('k, 'v, 'w) Tree0.Build_increasing.t
 
     let empty = Tree0.Build_increasing.empty
+    let get_empty = Tree0.Build_increasing.get_empty
 
     let add_exn t ~comparator ~key ~data =
       match Tree0.Build_increasing.max_key t with

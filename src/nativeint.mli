@@ -2,7 +2,7 @@
 
 open! Import
 
-type t = nativeint [@@deriving globalize]
+type t = nativeint [@@deriving globalize, sexp ~stackify ~unboxed]
 
 include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t

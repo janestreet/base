@@ -320,6 +320,28 @@ module Definitions = struct
             -> ('k, 'v3, 'cmp) t )
           access_options
 
+    val merge_aligned
+      : ( 'k
+          , 'cmp
+          , ('k, 'v1, 'cmp) t
+            -> ('k, 'v2, 'cmp) t
+            -> f:(key:'k key -> 'v1 -> 'v2 -> 'v)
+            -> ('k, 'v, 'cmp) t Or_error.t )
+          access_options
+
+    val zip
+      : ( 'k
+          , 'cmp
+          , ('k, 'v1, 'cmp) t -> ('k, 'v2, 'cmp) t -> ('k, 'v1 * 'v2, 'cmp) t Or_error.t
+          )
+          access_options
+
+    val zip_exn
+      : ( 'k
+          , 'cmp
+          , ('k, 'v1, 'cmp) t -> ('k, 'v2, 'cmp) t -> ('k, 'v1 * 'v2, 'cmp) t )
+          access_options
+
     val filter_map_or_null
       :  ('k, 'v1, 'cmp) t
       -> f:('v1 -> 'v2 or_null)
@@ -1204,6 +1226,13 @@ module type Map = sig
       including all errors otherwise. *)
   val combine_errors : ('k, 'v Or_error.t, 'cmp) t -> ('k, 'v, 'cmp) t Or_error.t
 
+  (** Given two maps, produces a map of tuples. Returns an [Error] if the key sets of the
+      two maps differ. *)
+  val zip : ('k, 'v1, 'cmp) t -> ('k, 'v2, 'cmp) t -> ('k, 'v1 * 'v2, 'cmp) t Or_error.t
+
+  (** Like [zip], but raises on error. *)
+  val zip_exn : ('k, 'v1, 'cmp) t -> ('k, 'v2, 'cmp) t -> ('k, 'v1 * 'v2, 'cmp) t
+
   (** Given a map of tuples, produces a tuple of maps. Equivalent to:
       [map t ~f:fst, map t ~f:snd] *)
   val unzip : ('k, 'v1 * 'v2, 'cmp) t -> ('k, 'v1, 'cmp) t * ('k, 'v2, 'cmp) t
@@ -1282,6 +1311,14 @@ module type Map = sig
     -> second:('k, 'v2, 'v3) When_unmatched.t
     -> both:('k, 'v1, 'v2, 'v3) When_matched.t
     -> ('k, 'v3, 'cmp) t
+
+  (** Merges two maps with the same set of keys. Returns an [Error] if the key sets are
+      not the same. *)
+  val merge_aligned
+    :  ('k, 'v1, 'cmp) t
+    -> ('k, 'v2, 'cmp) t
+    -> f:(key:'k -> 'v1 -> 'v2 -> 'v)
+    -> ('k, 'v, 'cmp) t Or_error.t
 
   (** [symmetric_diff t1 t2 ~data_equal] returns a list of changes between [t1] and [t2].
       It is intended to be efficient in the case where [t1] and [t2] share a large amount
@@ -1671,6 +1708,7 @@ module type Map = sig
       type ('k, 'v, 'w) t
 
       val empty : ('k, 'v, 'w) t
+      val get_empty : unit -> ('k, 'v, 'w) t
 
       (** Time complexity of [add_exn] is amortized constant-time (if [t] is used
           linearly), with a worst-case O(log(n)) time. *)

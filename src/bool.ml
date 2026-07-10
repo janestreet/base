@@ -6,7 +6,8 @@ let invalid_argf = Printf.invalid_argf
 
 module T = struct
   type t = bool
-  [@@deriving compare ~localize, enumerate, globalize, hash, sexp ~stackify, sexp_grammar]
+  [@@deriving
+    compare ~localize, enumerate, globalize, hash, sexp ~stackify ~unboxed, sexp_grammar]
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 

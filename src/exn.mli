@@ -54,11 +54,14 @@ val to_string : t -> string
 (** Machine format, single-line. *)
 val to_string_mach : t -> string
 
+[%%template:
+[@@@mode.default l = (global, local)]
+
 (** Executes [f] and afterwards executes [finally], whether [f] throws an exception or
     not. *)
 val protectx : 'a 'b. f:('a -> 'b) -> 'a -> finally:('a -> unit) -> 'b
 
-val protect : 'a. f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
+val protect : 'a. f:(unit -> 'a) -> finally:(unit -> unit) -> 'a]
 
 (** [handle_uncaught ~exit f] catches an exception escaping [f] and prints an error
     message to stderr. Exits with return code 1 if [exit] is [true], and returns unit
@@ -67,6 +70,10 @@ val protect : 'a. f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
     Note that since OCaml 4.02.0, you don't need to use this at the entry point of your
     program, as the OCaml runtime will do better than this function. *)
 val handle_uncaught : exit:bool -> (unit -> unit) -> unit
+
+(** [handle_uncaught_and_ignore f] is [handle_uncaught f ~exit:false]. It is defined as
+    its own function since hard-coding [~exit:false] allows it to be [portable]. *)
+val handle_uncaught_and_ignore : (unit -> unit) -> unit
 
 (** [handle_uncaught_and_exit f] returns [f ()], unless that raises, in which case it
     prints the exception and exits nonzero. *)

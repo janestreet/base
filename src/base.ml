@@ -211,17 +211,32 @@ module Export = struct
 
   type bool = Bool.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+    compare ~localize
+    , equal ~localize
+    , globalize
+    , hash
+    , sexp ~stackify ~unboxed
+    , sexp_grammar]
 
   type char = Char.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+    compare ~localize
+    , equal ~localize
+    , globalize
+    , hash
+    , sexp ~stackify ~unboxed
+    , sexp_grammar]
 
   type exn = Exn.t [@@deriving sexp_of]
 
   type float = Float.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+    compare ~localize
+    , equal ~localize
+    , globalize
+    , hash
+    , sexp ~stackify ~unboxed
+    , sexp_grammar]
 
   type 'a iarray = 'a Iarray.t
 
@@ -236,11 +251,21 @@ module Export = struct
 
   type int32 = Int32.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+    compare ~localize
+    , equal ~localize
+    , globalize
+    , hash
+    , sexp ~stackify ~unboxed
+    , sexp_grammar]
 
   type int64 = Int64.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+    compare ~localize
+    , equal ~localize
+    , globalize
+    , hash
+    , sexp ~stackify ~unboxed
+    , sexp_grammar]
 
   type 'a list = 'a List.t
   [@@deriving
@@ -248,7 +273,12 @@ module Export = struct
 
   type nativeint = Nativeint.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+    compare ~localize
+    , equal ~localize
+    , globalize
+    , hash
+    , sexp ~stackify ~unboxed
+    , sexp_grammar]
 
   type 'a option = 'a Option.t
   [@@deriving
@@ -281,7 +311,12 @@ module Export = struct
 
   type unit = Unit.t
   [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+    compare ~localize
+    , equal ~localize
+    , globalize
+    , hash
+    , sexp ~stackify ~unboxed
+    , sexp_grammar]
 
   (** Format stuff *)
 

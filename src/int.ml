@@ -112,9 +112,9 @@ external of_nativeint_trunc : (nativeint[@local_opt]) -> t = "%nativeint_to_int"
 let pred i = i - 1
 let succ i = i + 1
 let to_int i = i
-let to_int_exn = to_int
+let[@zero_alloc] to_int_exn i = to_int i
 let of_int i = i
-let of_int_exn = of_int
+let[@zero_alloc] of_int_exn i = of_int i
 let max_value = Stdlib.max_int
 let min_value = Stdlib.min_int
 let max_value_30_bits = 0x3FFF_FFFF
@@ -258,7 +258,7 @@ module Pre_O = struct
   external neg : (t[@local_opt]) -> t = "%negint"
 
   let zero = zero
-  let of_int_exn = of_int_exn
+  let[@zero_alloc] of_int_exn i = of_int_exn i
 end
 
 module O = struct
@@ -292,6 +292,8 @@ module O = struct
      We won't pre-emptively do the same for new functions, unless someone cares, on a case
      by case fashion. *)
 
+  external unsafe_div : int -> int -> int = "%divint"
+
   let ( % ) x y =
     if y <= zero
     then
@@ -311,8 +313,11 @@ module O = struct
         "%s /%% %s in core_int.ml: divisor should be positive"
         (to_string x)
         (to_string y)
-        ();
-    if x < zero then ((x + one) / y) - one else x / y
+        ()
+    else (
+      (* It's safe to use unchecked division here because we already raised if [y <= zero] *)
+      let offset = Bool.to_int (x < zero) in
+      unsafe_div (x + offset) y - offset)
   ;;
 
   let ( // ) x y = to_float x /. to_float y

@@ -14,7 +14,10 @@ module Trusted : sig
   val create_nullable_obj_array : 'a. len:int -> 'a t
   val create : 'a. len:int -> 'a -> 'a t
   val singleton : 'a. 'a -> 'a t
-  val get : 'a. 'a t -> int -> 'a [@@zero_alloc]
+
+  val%template get : 'a. 'a t -> int -> 'a
+  [@@zero_alloc] [@@mode c = (uncontended, shared)]
+
   val set : 'a. 'a t -> int -> 'a -> unit
   val swap : 'a. 'a t -> int -> int -> unit
   val unsafe_get : 'a. 'a t -> int -> 'a [@@zero_alloc]
@@ -48,7 +51,9 @@ end = struct
      [Obj_array.t]. Uses [%identity] instead of [%opaque] since nullability is not
      relevant in the cmm. *)
   external repr : 'a. 'a -> Stdlib.Obj.t = "%identity"
-  external obj : 'a. Stdlib.Obj.t -> 'a = "%identity"
+
+  external%template obj : 'a. Stdlib.Obj.t -> 'a = "%identity"
+  [@@mode c = (uncontended, shared)]
 
   let empty = { arr = Obj_array.empty }
   let[@inline] get_empty () = { arr = Obj_array.get_empty () }
@@ -61,7 +66,10 @@ end = struct
 
   (* *)
 
-  let[@zero_alloc] get t i = obj (Obj_array.get t.arr i)
+  let%template[@zero_alloc] get t i = (obj [@mode c]) ((Obj_array.get [@mode c]) t.arr i)
+  [@@mode c = (uncontended, shared)]
+  ;;
+
   let set t i x : unit = Obj_array.set t.arr i (repr x)
 
   (* We annotate the return types on this and other functions to help document the fact
@@ -152,6 +160,19 @@ let fold t ~init ~f =
     r := f !r (unsafe_get t i)
   done;
   !r
+;;
+
+let fold_until t ~init ~(f : _ -> _ -> _) ~finish =
+  let len = length t in
+  let rec loop i acc =
+    if i >= len
+    then finish acc
+    else (
+      match f acc (unsafe_get t i) with
+      | Container.Continue_or_stop.Continue acc -> loop (i + 1) acc
+      | Stop x -> x)
+  in
+  loop 0 init [@nontail]
 ;;
 
 let to_list t = Stdlib.List.init ~len:(length t) ~f:(fun i -> get t i)

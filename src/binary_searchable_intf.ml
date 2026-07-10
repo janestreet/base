@@ -4,7 +4,8 @@
 open! Import
 
 [%%template
-[@@@kind_set.define values = (value, value mod external64)]
+[@@@kind_set.define
+  values = (value, value mod external64, value_or_null mod external64 non_float)]
 
 module Definitions = struct
   [%%template
@@ -24,7 +25,7 @@ module Definitions = struct
   module type Indexable1 = sig
     type 'a t
 
-    val get : 'a t -> int -> 'a [@@mode m' = (global, m)]
+    val get : 'a. 'a t -> int -> 'a [@@mode m' = (global, m)]
     val length : _ t -> int [@@mode m' = (global, m)]
   end
   [@@kind k = values]]

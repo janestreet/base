@@ -142,6 +142,14 @@ module Definitions = struct
         [data]. *)
     val change_or_null : ('a, 'b) t -> 'a key -> f:('b or_null -> 'b or_null) -> unit
 
+    (** [update_or_null t ~f] is like [update t ~f] , but the function [f] receives
+        ['v or_null] instead of ['v option]. *)
+    val update_or_null : ('a, 'b) t -> 'a key -> f:('b or_null -> 'b) -> unit
+
+    (** [update_or_null_and_return t ~f] is like [update_and_return t ~f], but the
+        function [f] receives ['v or_null] instead of ['v option]. *)
+    val update_or_null_and_return : ('a, 'b) t -> 'a key -> f:('b or_null -> 'b) -> 'b
+
     (** [equal f t1 t2] and [similar f t1 t2] both return true iff [t1] and [t2] have the
         same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)]. [equal] and
         [similar] only differ in their types. *)
@@ -502,7 +510,9 @@ module Definitions = struct
         ?growth_allowed:bool -> ?size:int -> ('k key[@mode p]) -> 'k -> 'v -> ('k, 'v) t
       [@@mode p = (nonportable, portable)]
 
-      val length : 'k 'v. ('k, 'v) t -> int [@@mode c = (uncontended, shared)]
+      val length : 'k 'v. ('k, 'v) t -> int
+      [@@mode c = (uncontended, shared)] [@@zero_alloc]
+
       val capacity : 'k 'v. ('k, 'v) t -> int [@@mode c = (uncontended, shared)]
       val growth_allowed : 'k 'v. ('k, 'v) t -> bool [@@mode c = (uncontended, contended)]
       val is_empty : 'k 'v. ('k, 'v) t -> bool [@@mode c = (uncontended, shared)]
@@ -522,7 +532,7 @@ module Definitions = struct
       val find_and_call
         : 'k 'v 'a.
         ('k, 'v) t -> 'k -> if_found:('v -> 'a) -> if_not_found:('k -> 'a) -> 'a
-      [@@kind k = k, v = v, r = all] [@@mode c = (uncontended, shared)]
+      [@@kind k = k, v = v, r = v] [@@mode c = (uncontended, shared)]
 
       val find_and_call1
         : 'k 'v 'a 'r.
@@ -532,7 +542,7 @@ module Definitions = struct
         -> if_found:('v -> 'a -> 'r)
         -> if_not_found:('k -> 'a -> 'r)
         -> 'r
-      [@@kind k = k, v = v, a = all, r = all] [@@mode c = (uncontended, shared)]
+      [@@kind k = k, v = v, a = value_or_null, r = v] [@@mode c = (uncontended, shared)]
 
       val update : 'k 'v. ('k, 'v) t -> 'k -> f:(('v Option.t[@kind v]) -> 'v) -> unit
 

@@ -22,10 +22,17 @@ module Definitions = struct
     type +'a t
 
     [%%rederive:
+      (** Default derivers use [value_or_null] rather than [any]. *)
       type nonrec 'a t = 'a t
-      [@@deriving compare ~localize, equal ~localize, sexp ~stackify, sexp_grammar]]
+      [@@deriving
+        compare ~localize, equal ~localize, sexp ~stackify, globalize, sexp_grammar]]
 
-    [%%rederive: type nonrec 'a t = 'a t [@@deriving globalize, hash]]
+    (** We add type aliases for derivers that use other kinds. *)
+    type%template nonrec 'a t = 'a t
+    [@@kind k = (base_non_value, value_or_null mod external64)]
+    [@@deriving compare ~localize, equal ~localize, sexp ~stackify, globalize]
+
+    [%%rederive: type nonrec 'a t = 'a t [@@deriving hash]]
 
     (** Standard interfaces *)
 
@@ -62,6 +69,22 @@ module Definitions = struct
     (** Like [findi] but returning [or_null] instead of [option]. *)
     val%template findi_or_null : 'a. 'a t -> f:(int -> 'a -> bool) -> (int * 'a) or_null
     [@@mode m = (global, local)]
+
+    [%%template:
+    [@@@mode.default
+      li = (global, local), lo = (global, local), u = (unique, aliased), o = (many, once)]
+
+    (** Like [find_map] but with a function returning [or_null] instead of [option]. *)
+    val find_map_or_null : 'a 'b. 'a t -> f:('a -> 'b or_null) -> 'b or_null
+
+    (** Like [find_mapi] but with a function returning [or_null] instead of [option]. *)
+    val find_mapi_or_null : 'a 'b. 'a t -> f:(int -> 'a -> 'b or_null) -> 'b or_null]
+
+    val%template of_array : 'a. 'a array -> 'a t
+    [@@kind k = (base_or_null, value_or_null mod external64)]
+
+    val%template to_array : 'a. 'a t -> 'a array
+    [@@kind k = (base_or_null, value_or_null mod external64)]
 
     include Invariant.S1 with type 'a t := 'a t
 
@@ -146,6 +169,7 @@ module Definitions = struct
       val sort_and_group : 'a t -> compare:('a -> 'a -> int) -> 'a t t
       val is_sorted : 'a t -> compare:('a -> 'a -> int) -> bool
       val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) -> bool
+      val find_a_dup : 'a t -> compare:('a -> 'a -> int) -> 'a option
 
       (** Combining elements *)
 

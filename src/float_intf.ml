@@ -12,7 +12,7 @@ module Definitions = struct
 
     open! Import
 
-    type t = float [@@deriving globalize, sexp ~stackify, sexp_grammar]
+    type t = float [@@deriving globalize, sexp ~stackify ~unboxed, sexp_grammar]
 
     include Floatable.S with type t := t
 

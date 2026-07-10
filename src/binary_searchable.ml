@@ -3,13 +3,15 @@ include Binary_searchable_intf.Definitions
 
 [%%template
 [@@@mode.default m = (global, local)]
-[@@@kind.default k = (value, value mod external64)]
+
+[@@@kind.default
+  k = (value, value mod external64, value_or_null mod external64 non_float)]
 
 module type Arg = sig
   type 'a elt
   type 'a t
 
-  val get : 'a t -> int -> 'a elt [@@mode m' = (global, m)]
+  val get : 'a. 'a t -> int -> 'a elt [@@mode m' = (global, m)]
   val length : _ t -> int [@@mode m' = (global, m)]
 end
 

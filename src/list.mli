@@ -257,6 +257,15 @@ val stable_sort : 'a. 'a t -> compare:('a -> 'a -> int) -> 'a t]
     will be before the elements of [l2]. *)
 val merge : 'a. 'a t -> 'a t -> compare:('a -> 'a -> int) -> 'a t
 
+(** Merges a list of [k] sorted lists into one sorted list, in O(n log k) time where [n]
+    is the total number of elements across all input lists. Elements that compare equal
+    appear in the same order as the input lists (i.e., elements of an earlier list come
+    before equal elements of a later list).
+
+    Implemented by pairwise merging, so the per-comparison cost is small but it allocates
+    O(n log k) intermediate cons cells. *)
+val merge_all : 'a. 'a t t -> compare:('a -> 'a -> int) -> 'a t
+
 [%%template:
 [@@@mode.default l = (global, local)]
 

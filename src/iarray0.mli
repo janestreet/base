@@ -2,7 +2,13 @@ open! Import
 
 type +'a t = 'a iarray
 
-[%%rederive: type 'a t = 'a iarray [@@deriving equal ~localize, sexp_of ~stackify]]
+[%%rederive:
+  type nonrec 'a t = 'a t
+  [@@deriving equal ~localize, compare ~localize, sexp_of ~stackify]]
+
+type%template 'a t = 'a t
+[@@kind k = (base_non_value, value_or_null mod external64)]
+[@@deriving equal ~localize, compare ~localize, sexp_of ~stackify]
 
 [%%template:
 [@@@mode.default c = (uncontended, shared)]

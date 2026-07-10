@@ -141,6 +141,16 @@ val call : 'a. 'a -> f:('a -> unit) t -> unit
     [b]. *)
 val merge : 'a. 'a t -> 'a t -> f:('a -> 'a -> 'a) -> 'a t
 
+(** [transpose_result x] transposes an [option] of a [result] into a [result] of an
+    [option].
+
+    Concretely, [None] maps to [Ok None], [Some (Ok x)] maps to [Ok (Some x)], and
+    [Some (Error e)] maps to [Error e].
+
+    Inverse of {!Result.transpose_opt}. *)
+val transpose_result : 'ok 'err. ('ok, 'err) Result.t t -> ('ok t, 'err) Result.t
+[@@alloc __ @ m = (stack_local, heap_global)]
+
 val filter : 'a. 'a t -> f:('a -> bool) -> 'a t
 
 (** {2 Constructors} *)

@@ -608,6 +608,8 @@ module type Modes = sig
     (** Require a value has a type that mode-crosses contention. This is useful for
         assisting type inference as well as improving error messages. *)
     external cross : 'a. 'a -> 'a = "%identity"
+
+    external wrap_list : 'a list -> 'a t list = "%identity"
   end
 
   module Shared : sig

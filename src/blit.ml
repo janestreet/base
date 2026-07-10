@@ -85,7 +85,12 @@ module%template.portable Make1_phantom2_distinct
   ;;
 end
 [@@kind.explicit_plus_unmangled
-  k = (value, value mod external64, value_or_null, value_or_null mod separable)]
+  k
+  = ( value
+    , value mod external64
+    , value_or_null
+    , value_or_null mod separable
+    , value_or_null mod external64 non_float )]
 
 module%template.portable
   [@modality p] Make1
@@ -104,7 +109,12 @@ struct
       (Seq)
 end
 [@@kind.explicit_plus_unmangled
-  k = (value, value mod external64, value_or_null, value_or_null mod separable)]
+  k
+  = ( value
+    , value mod external64
+    , value_or_null
+    , value_or_null mod separable
+    , value_or_null mod external64 non_float )]
 
 module%template.portable
   [@modality p] Make1_zero_alloc
@@ -164,7 +174,12 @@ struct
   ;;
 end
 [@@kind.explicit_plus_unmangled
-  k = (value, value mod external64, value_or_null, value_or_null mod separable)]
+  k
+  = ( value
+    , value mod external64
+    , value_or_null
+    , value_or_null mod separable
+    , value_or_null mod external64 non_float )]
 
 module%template.portable
   [@modality p] Make (Sequence : sig

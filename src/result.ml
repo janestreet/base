@@ -143,6 +143,14 @@ let of_either : _ Either.t -> _ t = function
 
 let ok_if_true bool ~error = if bool then Ok () else Error error
 
+let transpose_opt t =
+  match[@exclave_if_stack a] t with
+  | Ok None -> None
+  | Ok (Some v) -> Some (Ok v)
+  | Error e -> Some (Error e)
+[@@alloc a = (stack, heap)]
+;;
+
 let try_with f =
   try Ok (f ()) with
   | exn -> Error exn

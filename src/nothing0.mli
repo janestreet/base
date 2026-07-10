@@ -1,4 +1,4 @@
-type t = |
+type t = Basement.nothing = |
 [@@deriving
   compare ~localize
   , enumerate

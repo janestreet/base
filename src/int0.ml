@@ -16,7 +16,10 @@
 
 external format : string -> int -> string = "caml_format_int"
 
-let to_string n = Integer_to_string.int_to_string n
+let%template to_string n =
+  (Integer_to_string.int_to_string [@alloc a]) n [@exclave_if_stack a]
+[@@alloc a = (heap, stack)]
+;;
 
 external of_string : string -> int = "caml_int_of_string"
 

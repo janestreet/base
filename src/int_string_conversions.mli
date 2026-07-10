@@ -15,6 +15,24 @@ module Make (I : sig
   val sexp_of_t : I.t -> Sexp.t]
 end
 
+(** like {!Make}, but also provides conversions for the unboxed version of the type *)
+module%template
+  [@kind k = (bits32, bits64, word)] Make_unboxed (I : sig
+    type t
+
+    val to_string : t -> string [@@alloc a @ m = (heap_global, stack_local)]
+
+    type unboxed
+
+    val box : unboxed -> t
+  end) : sig
+  [@@@alloc.default a @ m = (heap_global, stack_local)]
+
+  val to_string_hum : ?delimiter:char (** defaults to ['_'] *) -> I.t -> string
+  val sexp_of_t : I.t -> Sexp.t
+  val sexp_of_t_u : I.unboxed -> Sexp.t
+end
+
 (** in the output, [to_string], [of_string], [sexp_of_t], and [t_of_sexp] convert between
     [t] and signed hexadecimal with an optional "0x" or "0X" prefix. *)
 module Make_hex (I : sig

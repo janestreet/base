@@ -1,8 +1,12 @@
 open! Import
 
-type 'a t = 'a or_null =
-  | Null
-  | This of 'a
+module T = struct
+  type 'a t = 'a or_null =
+    | Null
+    | This of 'a
+end
+
+include T
 
 external is_null : 'a t -> bool = "%obj_is_int"
 
