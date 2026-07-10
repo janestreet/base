@@ -1,4 +1,4 @@
-type t = |
+type t = Basement.nothing = |
 
 let unreachable_code_local = function
   | (_ : t) -> .

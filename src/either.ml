@@ -9,8 +9,6 @@ open struct
     | Second of 'b
 end
 
-[@@@warning "-incompatible-with-upstream"]
-
 let swap = function
   | First x -> Second x
   | Second x -> First x

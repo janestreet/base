@@ -20,7 +20,15 @@ open! Import
 
 (** {2 Type and Interfaces} *)
 
-type 'a t = 'a or_null [@@or_null_reexport]
+(**/**)
+
+module T : sig
+  type 'a t = 'a or_null [@@or_null_reexport]
+end
+
+(**/**)
+
+include module type of T (** @inline *)
 
 [%%rederive:
   type nonrec ('a : value mod non_null) t : value_or_null mod everything with 'a = 'a t

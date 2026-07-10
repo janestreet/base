@@ -22,10 +22,17 @@ module Definitions = struct
     type (+'a : any mod separable) t
 
     [%%rederive:
+      (** Default derivers use [value_or_null] rather than [any]. *)
       type nonrec ('a : value_or_null mod separable) t = 'a t
-      [@@deriving compare ~localize, equal ~localize, sexp ~stackify, sexp_grammar]]
+      [@@deriving
+        compare ~localize, equal ~localize, sexp ~stackify, globalize, sexp_grammar]]
 
-    [%%rederive: type nonrec 'a t = 'a t [@@deriving globalize, hash]]
+    (** We add type aliases for derivers that use other kinds. *)
+    type%template nonrec ('a : k mod separable) t = 'a t
+    [@@kind k = (base_non_value, value_or_null mod external64)]
+    [@@deriving compare ~localize, equal ~localize, sexp ~stackify, globalize]
+
+    [%%rederive: type nonrec 'a t = 'a t [@@deriving hash]]
 
     (** Standard interfaces *)
 
@@ -76,6 +83,28 @@ module Definitions = struct
       : ('a : value).
       'a t @ m -> f:(int -> 'a @ m -> bool) @ local -> (int * 'a) or_null @ m
     [@@mode m = (global, local)]
+
+    [%%template:
+    [@@@mode.default
+      li = (global, local), lo = (global, local), u = (unique, aliased), o = (many, once)]
+
+    (** Like [find_map] but with a function returning [or_null] instead of [option]. *)
+    val find_map_or_null
+      : ('a : value) ('b : value).
+      'a t @ li -> f:('a @ li -> 'b or_null @ lo o u) @ local -> 'b or_null @ lo o u
+
+    (** Like [find_mapi] but with a function returning [or_null] instead of [option]. *)
+    val find_mapi_or_null
+      : ('a : value) ('b : value).
+      'a t @ li
+      -> f:(int -> 'a @ li -> 'b or_null @ lo o u) @ local
+      -> 'b or_null @ lo o u]
+
+    val%template of_array : ('a : k mod separable). 'a array -> 'a t
+    [@@kind k = (base_or_null, value_or_null mod external64)]
+
+    val%template to_array : ('a : k mod separable). 'a t -> 'a array
+    [@@kind k = (base_or_null, value_or_null mod external64)]
 
     include Invariant.S1 with type 'a t := 'a t
 
@@ -169,6 +198,7 @@ module Definitions = struct
       val sort_and_group : 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t t
       val is_sorted : 'a t -> compare:local_ ('a -> 'a -> int) -> bool
       val is_sorted_strictly : 'a t -> compare:local_ ('a -> 'a -> int) -> bool
+      val find_a_dup : 'a t -> compare:local_ ('a -> 'a -> int) -> 'a option
 
       (** Combining elements *)
 
@@ -402,12 +432,11 @@ module Definitions = struct
       val to_array_of_immediates
         : ('i : immediate64_or_null).
         'i t @ local -> 'i array @ local
-      [@@zero_alloc] [@@warning "-incompatible-with-upstream"]
+      [@@zero_alloc]
 
       val sort_immediates
         : ('i : immediate64_or_null).
         'i t @ local -> compare:('i -> 'i -> int) @ local -> 'i t @ local
-      [@@warning "-incompatible-with-upstream"]
 
       module Let_syntax : sig
         val return : local_ 'a -> local_ 'a t

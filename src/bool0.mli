@@ -1,5 +1,3 @@
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template:
 [@@@mode.default m = (global, local)]
 [@@@mode.default c = (uncontended, shared, contended)]

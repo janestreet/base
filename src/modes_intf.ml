@@ -639,6 +639,8 @@ module type Modes = sig @@ portable
     (** Require a value has a type that mode-crosses contention. This is useful for
         assisting type inference as well as improving error messages. *)
     external cross : ('a : value mod contended). 'a @ contended -> 'a = "%identity"
+
+    external wrap_list : 'a list @ contended -> 'a t list = "%identity"
   end
 
   module Shared : sig

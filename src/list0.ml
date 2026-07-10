@@ -6,8 +6,6 @@
    [module List = List0]. Defining [module List = List0] is also necessary because it
    prevents ocamldep from mistakenly causing a file to depend on [Base.List]. *)
 
-[@@@warning "-incompatible-with-upstream"]
-
 open! Import0
 
 (* For [[@@deriving compare]] below *)
@@ -95,24 +93,24 @@ let length =
 ;;
 
 let exists t ~f =
-  let rec exists_loop t ~f =
+  let rec exists_loop t =
     match t with
     | [] -> false
-    | x :: xs -> if f x then true else exists_loop xs ~f
+    | x :: xs -> if f x then true else exists_loop xs
   in
-  exists_loop t ~f
+  exists_loop t [@nontail]
 [@@mode l = (local, global)]
 ;;
 
 let iter t ~f =
-  let rec iter_loop t ~f =
+  let rec iter_loop t =
     match t with
     | [] -> ()
     | a :: l ->
       f a;
-      iter_loop l ~f
+      iter_loop l
   in
-  iter_loop t ~f
+  iter_loop t [@nontail]
 [@@mode l = (local, global)]
 ;;
 
@@ -146,26 +144,29 @@ let fold
   ~(f : (b @ mb -> a @ ma -> b @ mb) @ local)
   : b @ mb
   =
-  let rec fold_loop ~f (acc : b @ mb) (l : (a t[@kind ka]) @ ma) =
-    match l with
-    | [] -> acc
-    | a :: l ->
-      fold_loop ~f (f acc a) l [@exclave_if_local mb ~reasons:[ May_return_local ]]
-  in
-  fold_loop ~f init t [@nontail] [@exclave_if_local mb]
+  (let rec fold_loop (acc : b @ mb) (l : (a t[@kind ka]) @ ma) =
+     match l with
+     | [] -> acc
+     | a :: l ->
+       fold_loop (f acc a) l [@exclave_if_local mb ~reasons:[ May_return_local ]]
+   in
+   fold_loop init t [@nontail])
+  [@exclave_if_local mb ~reasons:[ May_return_local ]]
 [@@mode ma = (local, global), mb = (local, global)]
 (* list.ml's [foldi] implementation uses an unboxed record in the accumulator to track
    both [accum] and [i] so we add [value_or_null] & all_ks]. *)
 [@@kind ka = all_ks, kb = (all_ks, value_or_null & all_ks)]
 ;;
 
-let rev_map =
-  let rec rmap_f f accu : (_ t[@kind ka]) @ ma -> (_ t[@kind kb]) @ mb = function
-    | [] -> accu
-    | a :: l -> rmap_f f (f a :: accu) l [@exclave_if_stack ab]
-  in
-  fun (type (a : ka) (b : kb)) (l : (a t[@kind ka]) @ ma) ~(local_ f) : (b t[@kind kb]) ->
-    rmap_f f [] l [@exclave_if_stack ab]
+let rev_map (type (a : ka) (b : kb)) (l : (a t[@kind ka]) @ ma) ~(local_ f)
+  : (b t[@kind kb])
+  =
+  (let rec rmap_f accu : (_ t[@kind ka]) @ ma -> (_ t[@kind kb]) @ mb = function
+     | [] -> accu
+     | a :: l -> rmap_f (f a :: accu) l [@exclave_if_stack ab]
+   in
+   rmap_f [] l [@nontail])
+  [@exclave_if_stack ab]
 [@@mode ma = (local, global)]
 [@@alloc ab @ mb = (stack_local, heap_global)]
 [@@kind ka = all_ks, kb = all_ks]
@@ -185,13 +186,16 @@ let rec exists2_ok l1 l2 ~(local_ f : _ -> _ -> _) =
   | _, _ -> invalid_arg "List.exists2"
 ;;
 
-let%template rec iter2_ok l1 l2 ~(local_ f : _ @ l -> _ @ l -> unit) =
-  match l1, l2 with
-  | [], [] -> ()
-  | a1 :: l1, a2 :: l2 ->
-    f a1 a2;
-    (iter2_ok [@mode l]) l1 l2 ~f
-  | _, _ -> invalid_arg "List.iter2"
+let%template iter2_ok l1 l2 ~(local_ f : _ @ l -> _ @ l -> unit) =
+  let rec iter2_ok_loop l1 l2 =
+    match l1, l2 with
+    | [], [] -> ()
+    | a1 :: l1, a2 :: l2 ->
+      f a1 a2;
+      iter2_ok_loop l1 l2
+    | _, _ -> invalid_arg "List.iter2"
+  in
+  iter2_ok_loop l1 l2 [@nontail]
 [@@mode l = (global, local)]
 ;;
 
@@ -227,43 +231,35 @@ let partition t ~f = Stdlib.List.partition t ~f
 [@@@mode.default li = (global, local)]
 [@@@alloc.default a @ lo = (heap_global, stack_local)]
 
-let partition_map_unboxed_tail ~fst ~snd ~f xs =
-  let rec partition_map_unboxed_tail_loop ~fst ~snd ~(f @ local) = function
-    | [] -> #((rev [@alloc a]) fst, (rev [@alloc a]) snd) [@exclave_if_stack a]
-    | x :: xs ->
-      (let #(fst, snd) =
-         match (f x : _ Either0.t) with
-         | First y -> #(y :: fst, snd)
-         | Second y -> #(fst, y :: snd)
-       in
-       partition_map_unboxed_tail_loop ~fst ~snd ~f xs)
-      [@exclave_if_stack a]
-  in
-  partition_map_unboxed_tail_loop ~fst ~snd ~f xs [@exclave_if_stack a]
-;;
-
 (* call-stack size <= input data-stack size *)
 let partition_map_unboxed ~depth ~f xs =
-  let rec partition_map_unboxed_loop ~depth ~f = function
-    | [] -> #([], [])
-    | x :: xs ->
-      (let y = f x in
-       let #(fst, snd) =
-         if depth <= max_non_tailcall
-         then partition_map_unboxed_loop ~depth:(depth + 1) ~f xs
-         else
-           (partition_map_unboxed_tail [@mode li] [@alloc a] [@inlined never])
-             ~fst:[]
-             ~snd:[]
-             ~f
-             xs
-       in
-       (match (y : _ Either0.t) with
-        | First y -> #(y :: fst, snd)
-        | Second y -> #(fst, y :: snd)))
-      [@exclave_if_stack a]
-  in
-  partition_map_unboxed_loop ~depth ~f xs [@exclave_if_stack a]
+  (let rec partition_map_unboxed_tail ~fst ~snd = function
+     | [] -> #((rev [@alloc a]) fst, (rev [@alloc a]) snd) [@exclave_if_stack a]
+     | x :: xs ->
+       (let #(fst, snd) =
+          match (f x : _ Either0.t) with
+          | First y -> #(y :: fst, snd)
+          | Second y -> #(fst, y :: snd)
+        in
+        partition_map_unboxed_tail ~fst ~snd xs)
+       [@exclave_if_stack a]
+   in
+   let rec partition_map_unboxed_loop ~depth = function
+     | [] -> #([], [])
+     | x :: xs ->
+       (let y = f x in
+        let #(fst, snd) =
+          if depth <= max_non_tailcall
+          then partition_map_unboxed_loop ~depth:(depth + 1) xs
+          else (partition_map_unboxed_tail [@inlined never]) ~fst:[] ~snd:[] xs
+        in
+        (match (y : _ Either0.t) with
+         | First y -> #(y :: fst, snd)
+         | Second y -> #(fst, y :: snd)))
+       [@exclave_if_stack a]
+   in
+   partition_map_unboxed_loop ~depth xs [@nontail])
+  [@exclave_if_stack a]
 ;;
 
 let partition_map t ~f =

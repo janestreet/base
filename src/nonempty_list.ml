@@ -267,6 +267,18 @@ let mapi (hd :: tl) ~f : (_ t[@kind kb]) =
   [@exclave_if_stack a]
 ;;
 
+let rev_mapi (hd :: tl : (_ t[@kind ka]) @ li) ~(f @ local) =
+  (let rec rev_mapi_loop i (acc @ lo) (last @ lo) (rest : (_ List.t[@kind ka]) @ li)
+     : (_ t[@kind kb])
+     =
+     match rest with
+     | [] -> last :: acc [@exclave_if_stack a]
+     | hd :: tl -> rev_mapi_loop (i + 1) (last :: acc) (f i hd) tl [@exclave_if_stack a]
+   in
+   rev_mapi_loop 1 [] (f 0 hd) tl [@nontail])
+  [@exclave_if_stack a]
+;;
+
 let filter_map (hd :: tl) ~f : (_ List.t[@kind kb]) @ lo =
   match[@exclave_if_stack a] (f hd : (_ Option.t[@kind kb])) with
   | None -> (List.filter_map [@kind ka kb] [@mode li] [@alloc a]) tl ~f
@@ -299,6 +311,12 @@ let filter_mapi_or_null (hd :: tl) ~f : _ List.t =
 
 let map t ~f =
   (mapi [@kind ka kb] [@mode li] [@alloc a]) t ~f:(fun (_ : int) x ->
+    f x [@exclave_if_stack a])
+  [@nontail] [@exclave_if_stack a]
+;;
+
+let rev_map t ~f =
+  (rev_mapi [@kind ka kb] [@mode li] [@alloc a] [@inlined]) t ~f:(fun (_ : int) x ->
     f x [@exclave_if_stack a])
   [@nontail] [@exclave_if_stack a]
 ;;

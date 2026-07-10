@@ -1,5 +1,3 @@
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template
 [@@@kind_set.define
   all_ks_non_value

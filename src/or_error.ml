@@ -1,7 +1,5 @@
 open! Import
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template
 [@@@kind_set.define all_ks_non_value = base_non_value]
 [@@@kind_set.define all_ks = (all_ks_non_value, value_or_null)]

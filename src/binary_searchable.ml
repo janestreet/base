@@ -1,17 +1,17 @@
 open! Import
 include Binary_searchable_intf.Definitions
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template
 [@@@mode.default m = (global, local)]
-[@@@kind.default k = (value, value mod external64)]
+
+[@@@kind.default
+  k = (value, value mod external64, value_or_null mod external64 non_float)]
 
 module type Arg = sig
-  type ('a : k) elt
+  type ('a : k) elt : k
   type ('a : k) t
 
-  val get : 'a t @ m' -> int -> 'a elt @ m' [@@mode m' = (global, m)]
+  val get : ('a : k). 'a t @ m' -> int -> 'a elt @ m' [@@mode m' = (global, m)]
   val length : _ t @ m' -> int [@@mode m' = (global, m)]
 end
 

@@ -131,8 +131,6 @@ module Make (X : Make_arg) = struct
     if rval < zero then rval + y else rval
   ;;
 
-  let one = of_int_exn 1
-
   let ( /% ) x y =
     if y <= zero
     then
@@ -141,7 +139,8 @@ module Make (X : Make_arg) = struct
         (to_string (globalize x))
         (to_string (globalize y))
         ();
-    if x < zero then ((x + one) / y) - one else x / y
+    let offset = x < zero |> Bool.to_int |> of_int_exn in
+    ((x + offset) / y) - offset
   ;;
 
   (** float division of integers *)

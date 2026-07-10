@@ -2,8 +2,6 @@ open! Import
 open Type_equal_intf.Definitions
 module Sexp = Sexp0
 
-[@@@warning "-incompatible-with-upstream"]
-
 type ('a : any, 'b : any) t = T : ('a : any). ('a, 'a) t [@@deriving sexp_of ~stackify]
 type ('a : any, 'b : any) equal = ('a, 'b) t
 

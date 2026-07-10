@@ -5,8 +5,6 @@
 open! Import
 module Invariant := Invariant_intf.Definitions
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template:
 [@@@kind_set.define all_ks_non_value = base_non_value]
 [@@@kind_set.define all_ks = (all_ks_non_value, value_or_null_with_imm)]
@@ -60,8 +58,8 @@ val failf : ('a, unit, string, (_, string) t) format4 -> 'a
 [%%template:
 [@@@kind.default k = all_ks]
 
-val is_ok : ('ok : k) ('err : value_or_null). (('ok, 'err) t[@kind k]) -> bool
-val is_error : ('ok : k) ('err : value_or_null). (('ok, 'err) t[@kind k]) -> bool]
+val is_ok : ('ok : k) ('err : value_or_null). (('ok, 'err) t[@kind k]) @ local -> bool
+val is_error : ('ok : k) ('err : value_or_null). (('ok, 'err) t[@kind k]) @ local -> bool]
 
 val ok : ('ok : value_or_null) ('err : value_or_null). ('ok, 'err) t -> 'ok option
 val ok_or_null : 'ok ('err : value_or_null). ('ok, 'err) t -> 'ok or_null [@@zero_alloc]
@@ -169,6 +167,17 @@ val of_either
 
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
 val ok_if_true : ('err : value_or_null). bool -> error:'err -> (unit, 'err) t
+
+(** [transpose_opt x] transposes a [result] of an [option] into an [option] of a [result]
+
+    Concretely, [Ok None] maps to [None], [Ok (Some x)] maps to [Some (Ok x)], and
+    [Error e] maps to [Some (Error e)].
+
+    Inverse of {!Option.transpose_result}. *)
+val transpose_opt
+  : ('ok : value_or_null) ('err : value_or_null).
+  ('ok option, 'err) t @ m -> ('ok, 'err) t option @ m
+[@@alloc __ @ m = (stack_local, heap_global)]
 
 val try_with : ('a : value_or_null). (unit -> 'a) @ local once -> ('a, exn) t
 

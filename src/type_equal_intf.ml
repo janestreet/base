@@ -32,8 +32,6 @@
 open! Import
 module Sexp = Sexp0
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template
 [@@@kind_set.define smaller_all = (any, value)]
 [@@@kind_set.define all = (smaller_all, value_or_null)]

@@ -1,5 +1,3 @@
-[@@@warning "-incompatible-with-upstream"]
-
 external box_int64 : (int64#[@unboxed]) -> int64 @ local @@ portable = "%box_int64"
 external unbox_int64 : int64 @ local -> (int64#[@unboxed]) @@ portable = "%unbox_int64"
 external box_float : (float#[@unboxed]) -> float @ local @@ portable = "%box_float"

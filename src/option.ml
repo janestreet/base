@@ -2,8 +2,6 @@ open! Import
 module Constructors = Option0
 include Constructors
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template
 [@@@kind kr1 = (value_or_null & value_or_null)]
 [@@@kind kr2 = (value_or_null & kr1)]
@@ -220,6 +218,14 @@ let merge a b ~f =
   match a, b with
   | None, x | x, None -> x
   | Some a, Some b -> Some (f a b)
+;;
+
+let transpose_result t =
+  match[@exclave_if_stack a] t with
+  | Some (Ok v) -> Ok (Some v)
+  | Some (Error e) -> Error e
+  | None -> Ok None
+[@@alloc a = (stack, heap)]
 ;;
 
 let filter t ~f =

@@ -3,8 +3,6 @@ module Sexp = Sexp0
 
 type ('a : any) inv = 'a -> unit
 
-[@@@warning "-incompatible-with-upstream"]
-
 module Definitions = struct
   type ('a : any) t = 'a inv
 

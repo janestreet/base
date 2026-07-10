@@ -34,15 +34,18 @@ type not_a_float =
 let _not_a_float_0 = Not_a_float_0
 let _not_a_float_1 = Not_a_float_1 42
 
-let[@zero_alloc] get (local_ t) i =
+let%template[@zero_alloc] get (local_ t) i =
   (* Make the compiler believe [t] is an array not containing floats so it does not check
      if [t] is tagged with [Double_array_tag]. It is NOT ok to use [int array] since (if
      this function is inlined and the array contains in-heap boxed values) wrong register
      typing may result, leading to a failure to register necessary GC roots. *)
-  Stdlib.Obj.repr
+  (Obj.repr [@mode c])
     (* [Sys.opaque_identity] is required on the array because this code breaks the usual
        assumptions about array kinds that the Flambda 2 optimiser can see. *)
-    ((Sys.opaque_identity (Obj.magic (t : t) : not_a_float array)).(i) : not_a_float)
+    ((Sys.opaque_identity [@mode c])
+       ((Array.get [@mode c]) ((Obj.magic [@mode c]) (t : t) : not_a_float array) i)
+     : not_a_float)
+[@@mode c = (uncontended, shared)]
 ;;
 
 let[@inline always] [@zero_alloc] unsafe_get t i =

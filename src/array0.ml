@@ -8,8 +8,6 @@
    [Array.set]. Defining [module Array = Array0] is also necessary because it prevents
    ocamldep from mistakenly causing a file to depend on [Base.Array]. *)
 
-[@@@warning "-incompatible-with-upstream"]
-
 open! Import0
 module Sys = Sys0
 

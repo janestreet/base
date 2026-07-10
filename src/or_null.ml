@@ -1,6 +1,10 @@
 open! Import
 
-type 'a t = 'a or_null [@@or_null_reexport]
+module T = struct
+  type 'a t = 'a or_null [@@or_null_reexport]
+end
+
+include T
 
 external is_null : _ or_null @ immutable local -> bool @@ portable = "%is_null"
 

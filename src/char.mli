@@ -5,7 +5,7 @@
 open! Import
 
 (** An alias for the type of characters. *)
-type t = char [@@deriving enumerate, globalize, sexp ~stackify, sexp_grammar]
+type t = char [@@deriving enumerate, globalize, sexp ~stackify ~unboxed, sexp_grammar]
 
 include%template Identifiable.S [@mode local] [@modality portable] with type t := t
 include%template Stringable.S [@mode local] [@alloc stack] with type t := t

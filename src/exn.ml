@@ -53,8 +53,11 @@ let to_string exc = Sexp.to_string_hum ~indent:2 (sexp_of_exn exc)
 let to_string_mach exc = Sexp.to_string_mach (sexp_of_exn exc)
 let sexp_of_t = sexp_of_exn
 
+[%%template
+[@@@mode.default l = (global, local)]
+
 let protectx ~f x ~(finally : _ -> unit) =
-  match f x with
+  match[@exclave_if_local l ~reasons:[ May_return_local ]] f x with
   | res ->
     finally x;
     res
@@ -67,7 +70,7 @@ let protectx ~f x ~(finally : _ -> unit) =
        raise_with_original_backtrace (Finally (exn, final_exn)) bt)
 ;;
 
-let protect ~f ~finally = protectx ~f () ~finally
+let protect ~f ~finally = (protectx [@mode l]) ~f () ~finally [@exclave_if_local l]]
 
 let does_raise (type a) (f : unit -> a) =
   try
@@ -149,6 +152,10 @@ let handle_uncaught_and_exit f =
 
 let handle_uncaught_and_exit_immediately f =
   handle_uncaught_aux f ~exit_or_ignore:exit_immediately ~do_at_exit:ignore
+;;
+
+let handle_uncaught_and_ignore f =
+  handle_uncaught_aux f ~exit_or_ignore:ignore ~do_at_exit:ignore
 ;;
 
 let handle_uncaught ~exit:must_exit f =

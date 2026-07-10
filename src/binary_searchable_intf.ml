@@ -3,10 +3,9 @@
 
 open! Import
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template
-[@@@kind_set.define values = (value, value mod external64)]
+[@@@kind_set.define
+  values = (value, value mod external64, value_or_null mod external64 non_float)]
 
 module Definitions = struct
   [%%template
@@ -26,7 +25,7 @@ module Definitions = struct
   module type Indexable1 = sig
     type ('a : k) t
 
-    val get : 'a t @ m' -> int -> 'a @ m' [@@mode m' = (global, m)]
+    val get : ('a : k). 'a t @ m' -> int -> 'a @ m' [@@mode m' = (global, m)]
     val length : _ t @ m' -> int [@@mode m' = (global, m)]
   end
   [@@kind k = values]]
@@ -113,6 +112,6 @@ module type Binary_searchable = sig @@ portable
     S [@mode m] with type t := T.t with type elt := T.elt
 
   module%template.portable Make1 (T : Indexable1 [@mode m] [@kind k]) :
-    S1 [@mode m] [@kind k] with type 'a t := 'a T.t
+    S1 [@mode m] [@kind k] with type ('a : k) t := 'a T.t
   [@@kind k = values]]
 end]

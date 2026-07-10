@@ -2,8 +2,6 @@ open! Import
 module Sexp = Sexp0
 module Info = Info0
 
-[@@@warning "-incompatible-with-upstream"]
-
 module type Error = sig @@ portable
   (** A lazy string, implemented with [Info], but intended specifically for error
       messages. *)

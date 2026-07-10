@@ -158,6 +158,14 @@ val filter_mapi_or_null
   : ('a : ka) 'b.
   ('a t[@kind ka]) @ ma -> f:(int -> 'a @ ma -> 'b or_null @ mb) @ local -> 'b List.t @ mb
 
+val rev_map
+  : ('a : ka) ('b : kb).
+  ('a t[@kind ka]) @ ma -> f:('a @ ma -> 'b @ mb) @ local -> ('b t[@kind kb]) @ mb
+
+val rev_mapi
+  : ('a : ka) ('b : kb).
+  ('a t[@kind ka]) @ ma -> f:(int -> 'a @ ma -> 'b @ mb) @ local -> ('b t[@kind kb]) @ mb
+
 val concat_map
   : ('a : ka) ('b : kb).
   ('a t[@kind ka]) @ ma

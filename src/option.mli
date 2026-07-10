@@ -1,7 +1,5 @@
 @@ portable
 
-[@@@warning "-incompatible-with-upstream"]
-
 (** The option type indicates whether a meaningful value is present. It is frequently used
     to represent success or failure, using [None] for failure. To be more descriptive
     about why a function failed, see the {!Or_error} module.
@@ -162,6 +160,18 @@ val call : ('a : value_or_null). 'a -> f:('a -> unit) t @ local once -> unit
     are [Some], returns [Some] of the result of applying [f] to the contents of [a] and
     [b]. *)
 val merge : ('a : value_or_null). 'a t -> 'a t -> f:('a -> 'a -> 'a) @ local once -> 'a t
+
+(** [transpose_result x] transposes an [option] of a [result] into a [result] of an
+    [option].
+
+    Concretely, [None] maps to [Ok None], [Some (Ok x)] maps to [Ok (Some x)], and
+    [Some (Error e)] maps to [Error e].
+
+    Inverse of {!Result.transpose_opt}. *)
+val transpose_result
+  : ('ok : value_or_null) ('err : value_or_null).
+  ('ok, 'err) Result.t t @ m -> ('ok t, 'err) Result.t @ m
+[@@alloc __ @ m = (stack_local, heap_global)]
 
 val filter : ('a : value_or_null). 'a t -> f:('a -> bool) @ local once -> 'a t
 

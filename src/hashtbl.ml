@@ -242,7 +242,8 @@ let clear t =
     t.length <- 0)
 ;;
 
-let[@kind k = k, v = v, r = all] [@mode __ = local, c = (uncontended, shared)] find_and_call
+let[@kind k = k, v = v, r = (v, value_or_null)]
+   [@mode __ = local, c = (uncontended, shared)] find_and_call
   (type k : k mod c)
   (t @ c)
   (key : k)
@@ -266,7 +267,7 @@ let[@kind k = k, v = v, r = all] [@mode __ = local, c = (uncontended, shared)] f
       ~if_not_found
 ;;
 
-let[@kind k = k, v = v, r = all] [@mode __ = global, c = (uncontended, shared)] [@inline] find_and_call
+let[@kind k = k, v = v, r = v] [@mode __ = global, c = (uncontended, shared)] [@inline] find_and_call
   t
   key
   ~if_found
@@ -388,6 +389,8 @@ let findi_or_add t id ~default =
 
 [%%template
 [@@@mode.default c = (uncontended, shared)]
+[@@@kind.default k = all, v = all, a = value_or_null]
+[@@@kind.default r = v]
 
 let find_and_call1
   (t : (_ t[@kind k v]) @ c)
@@ -409,8 +412,10 @@ let find_and_call1
       ~a
       ~if_found
       ~if_not_found
-[@@kind k = all, v = all, a = all, r = all]
-;;
+;;]
+
+[%%template
+[@@@mode.default c = (uncontended, shared)]
 
 let find_and_call2 (type k : value mod c) t (key : k) ~a ~b ~if_found ~if_not_found =
   match (Array.get [@mode c]) t.table (slot t key) with
@@ -692,6 +697,14 @@ let update t id ~f =
   let (_ : _) = ((update_and_return [@kind k v]) t id ~f : _) in
   ()
 ;;]
+
+let update_or_null_and_return t id ~f =
+  let data = f (find_or_null t id) in
+  set t ~key:id ~data;
+  data
+;;
+
+let update_or_null t id ~f = ignore (update_or_null_and_return t id ~f : _)
 
 let change_or_null t id ~f =
   match f (find_or_null t id) with
@@ -1095,7 +1108,9 @@ module Accessors = struct
   let change = change
   let change_or_null = change_or_null
   let update = update
+  let update_or_null = update_or_null
   let update_and_return = update_and_return
+  let update_or_null_and_return = update_or_null_and_return
   let add_multi = add_multi
   let remove_multi = remove_multi
   let%template find_multi = (find_multi [@mode c]) [@@mode c = (uncontended, shared)]
@@ -1110,7 +1125,7 @@ module Accessors = struct
   let count = count
   let counti = counti
   let fold = fold
-  let length = length
+  let length = [%eta1 length]
   let is_empty = is_empty
   let map = map
   let mapi = mapi

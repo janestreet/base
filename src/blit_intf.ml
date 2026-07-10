@@ -2,11 +2,14 @@
 
 open! Import
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template
 [@@@kind_set.define
-  values = (value, value mod external64, value_or_null, value_or_null mod separable)]
+  values
+  = ( value
+    , value mod external64
+    , value_or_null
+    , value_or_null mod separable
+    , value_or_null mod external64 non_float )]
 
 module Definitions = struct
   [@@@mode.default v = (read_write, read, immutable)]

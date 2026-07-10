@@ -16,8 +16,6 @@ open struct
   module Result = Result0
 end
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template
 [@@@kind_set.define base_or_null_with_ext = (base_or_null, value_or_null mod external64)]
 
@@ -68,7 +66,13 @@ module Definitions = struct
     type ('a : k) elt : k
   end
   [@@kind_set.explicit_plus_unmangled
-    ks = (value, value_or_null, value mod external64, base, base_or_null_with_ext)]
+    ks
+    = ( value
+      , value_or_null
+      , value mod external64
+      , value_or_null mod external64 non_float
+      , base
+      , base_or_null_with_ext )]
 
   include struct
     [@@@alloc a @ m = (heap_global, stack_local)]
@@ -77,14 +81,24 @@ module Definitions = struct
         container [t]. Each such kind set has an associated set of kinds allowed in types
         that appear as function arguments/returns but are not put into [t]. For example, a
         container that only allows [value mod external64]s can easily still implement
-        [fold] with a [value] accumulator. *)
+        [fold] with a [value] accumulator.
+
+        Because the functions with three type variables ([fold_until] and [partition_map])
+        are rarely needed and are very expensive to generate for the entire cubic space of
+        possible kinds, we also additionally restrict the [ks] and [ks_not_in_t] for the
+        cubic functions specifically.
+    *)
 
     [@@@kind_set
-      (ks, ks_not_in_t)
-      = ( (value, value)
-        , (value_or_null, value_or_null)
-        , (value mod external64, value)
-        , (base_or_null_with_ext, base_or_null) )]
+      (ks, ks_not_in_t, ks_for_3, ks_not_in_t_for_3)
+      = ( (value, value, value, value)
+        , (value_or_null, value_or_null, value_or_null, value_or_null)
+        , (value mod external64, value, value mod external64, value)
+        , ( value_or_null mod external64 non_float
+          , value_or_null
+          , value_or_null mod external64 non_float
+          , value_or_null )
+        , (base_or_null_with_ext, base_or_null, value_or_null, value_or_null) )]
 
     include struct
       [@@@alloc.default a]
@@ -243,8 +257,17 @@ module Definitions = struct
             -> f:('a elt @ mi -> ('b Option.t[@kind k2 or value_or_null]) @ mo) @ local
             -> ('b Option.t[@kind k2 or value_or_null]) @ mo
           [@@mode mi = (global, m), mo = (global, m)]
+        end
 
-          [@@@kind.default_if_multiple k3 = ks_not_in_t]
+        include sig
+          [@@@kind.default_if_multiple k1' = ks_for_3]
+          [@@@kind k1 = k1' mod separable]
+
+          type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind.explicit k1']) [@@kind value]
+          type ('a : k1) elt : k1 := ('a elt[@kind.explicit k1']) [@@kind value]
+
+          [@@@kind.default_if_multiple k2 = ks_not_in_t_for_3]
+          [@@@kind.default_if_multiple k3 = ks_not_in_t_for_3]
 
           (** [fold_until t ~init ~f ~finish] is a short-circuiting version of [fold]. If
               [f] returns [Stop _] the computation ceases and results in that value. If
@@ -396,7 +419,15 @@ module Definitions = struct
 
   include struct
     [@@@alloc a @ m = (heap_global, stack_local)]
-    [@@@kind_set ks = (value, value_or_null, value mod external64, base_or_null_with_ext)]
+
+    (*_ See the explanation of [ks_for_3] above *)
+    [@@@kind_set
+      (ks, ks_for_3)
+      = ( (value, value)
+        , (value_or_null, value_or_null)
+        , (value mod external64, value mod external64)
+        , (value_or_null mod external64 non_float, value_or_null mod external64 non_float)
+        , (base_or_null_with_ext, value_or_null) )]
 
     include struct
       [@@@alloc.default a]
@@ -497,54 +528,60 @@ module Definitions = struct
           [@@alloc __ @ m = (heap_global, a @ m)]
         end
 
-        [@@@kind.default_if_multiple k1' = ks]
-        [@@@kind.default_if_multiple k2' = ks]
-        [@@@kind k1 = k1' mod separable, k2 = k2' mod separable]
+        include sig
+          [@@@kind.default_if_multiple k1' = ks]
+          [@@@kind.default_if_multiple k2' = ks]
+          [@@@kind k1 = k1' mod separable, k2 = k2' mod separable]
 
-        (** [map f (of_list [a1; ...; an])] applies [f] to [a1], [a2], ..., [an], in
-            order, and builds a result equivalent to [of_list [f a1; ...; f an]]. *)
-        val map
-          : ('a : k1) 'p1 'p2 ('b : k2).
-          (('a, 'p1, 'p2) t[@kind k1']) @ mi
-          -> f:(('a elt[@kind k1']) @ mi -> ('b elt[@kind k2']) @ mo) @ local
-          -> (('b, 'p1, 'p2) t[@kind k2']) @ mo
-        [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
+          (** [map f (of_list [a1; ...; an])] applies [f] to [a1], [a2], ..., [an], in
+              order, and builds a result equivalent to [of_list [f a1; ...; f an]]. *)
+          val map
+            : ('a : k1) 'p1 'p2 ('b : k2).
+            (('a, 'p1, 'p2) t[@kind k1']) @ mi
+            -> f:(('a elt[@kind k1']) @ mi -> ('b elt[@kind k2']) @ mo) @ local
+            -> (('b, 'p1, 'p2) t[@kind k2']) @ mo
+          [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
 
-        (** [filter_map t ~f] applies [f] to every [x] in [t]. The result contains every
-            [y] for which [f x] returns [Some y]. *)
-        val filter_map
-          : ('a : k1) 'p1 'p2 ('b : k2).
-          (('a, 'p1, 'p2) t[@kind k1']) @ mi
-          -> f:
-               (('a elt[@kind k1']) @ mi
-                -> (('b elt[@kind k2']) Option.t[@kind k2' or value_or_null]) @ mo)
-             @ local
-          -> (('b, 'p1, 'p2) t[@kind k2']) @ mo
-        [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
+          (** [filter_map t ~f] applies [f] to every [x] in [t]. The result contains every
+              [y] for which [f x] returns [Some y]. *)
+          val filter_map
+            : ('a : k1) 'p1 'p2 ('b : k2).
+            (('a, 'p1, 'p2) t[@kind k1']) @ mi
+            -> f:
+                 (('a elt[@kind k1']) @ mi
+                  -> (('b elt[@kind k2']) Option.t[@kind k2' or value_or_null]) @ mo)
+               @ local
+            -> (('b, 'p1, 'p2) t[@kind k2']) @ mo
+          [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
 
-        (** [concat_map t ~f] is equivalent to [concat (map t ~f)]. *)
-        val concat_map
-          : ('a : k1) 'p1 'p2 ('b : k2).
-          (('a, 'p1, 'p2) t[@kind k1']) @ mi
-          -> f:(('a elt[@kind k1']) @ mi -> (('b, 'p1, 'p2) t[@kind k2']) @ mo) @ local
-          -> (('b, 'p1, 'p2) t[@kind k2']) @ mo
-        [@@mode mi = (global, m)] [@@alloc a @ mo = (heap_global, a @ m)]
+          (** [concat_map t ~f] is equivalent to [concat (map t ~f)]. *)
+          val concat_map
+            : ('a : k1) 'p1 'p2 ('b : k2).
+            (('a, 'p1, 'p2) t[@kind k1']) @ mi
+            -> f:(('a elt[@kind k1']) @ mi -> (('b, 'p1, 'p2) t[@kind k2']) @ mo) @ local
+            -> (('b, 'p1, 'p2) t[@kind k2']) @ mo
+          [@@mode mi = (global, m)] [@@alloc a @ mo = (heap_global, a @ m)]
+        end
 
-        [@@@kind.default_if_multiple k3' = ks]
-        [@@@kind k3 = k3' mod separable]
+        include sig
+          [@@@kind.default_if_multiple k1' = ks_for_3]
+          [@@@kind.default_if_multiple k2' = ks_for_3]
+          [@@@kind.default_if_multiple k3' = ks_for_3]
+          [@@@kind k1 = k1' mod separable, k2 = k2' mod separable, k3 = k3' mod separable]
 
-        (** [partition_map t ~f] partitions [t] according to [f]. *)
-        val partition_map
-          : ('a : k1) 'p1 'p2 ('b : k2) ('c : k3).
-          (('a, 'p1, 'p2) t[@kind k1']) @ mi
-          -> f:
-               (('a elt[@kind k1']) @ mi
-                -> ((('b elt[@kind k2']), ('c elt[@kind k3'])) Either.t
-                   [@kind (k2' or value_or_null) (k3' or value_or_null)])
-                   @ mo)
-             @ local
-          -> (('b, 'p1, 'p2) t[@kind k2']) * (('c, 'p1, 'p2) t[@kind k3']) @ mo
-        [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
+          (** [partition_map t ~f] partitions [t] according to [f]. *)
+          val partition_map
+            : ('a : k1) 'p1 'p2 ('b : k2) ('c : k3).
+            (('a, 'p1, 'p2) t[@kind k1']) @ mi
+            -> f:
+                 (('a elt[@kind k1']) @ mi
+                  -> ((('b elt[@kind k2']), ('c elt[@kind k3'])) Either.t
+                     [@kind (k2' or value_or_null) (k3' or value_or_null)])
+                     @ mo)
+               @ local
+            -> (('b, 'p1, 'p2) t[@kind k2']) * (('c, 'p1, 'p2) t[@kind k3']) @ mo
+          [@@mode mi = (global, m)] [@@alloc __ @ mo = (heap_global, a @ m)]
+        end
       end
 
       module type Generic_with_creators = sig

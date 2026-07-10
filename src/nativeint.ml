@@ -5,15 +5,20 @@ include Nativeint_replace_polymorphic_compare
 
 module T = struct
   module T0 = struct
-    type t = nativeint [@@deriving globalize, hash, of_sexp, sexp_grammar]
+    type t = nativeint [@@deriving globalize, hash, of_sexp ~unboxed, sexp_grammar]
 
     let%template[@alloc a = (heap, stack)] to_string =
       (Integer_to_string.nativeint_to_string [@alloc a])
     ;;
+
+    type unboxed = nativeint#
+
+    let box = Basement.Primitives.box_nativeint
   end
 
   include T0
-  include Int_string_conversions.Make (T0)
+
+  include%template Int_string_conversions.Make_unboxed [@kind word] (T0)
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = Nativeint_replace_polymorphic_compare.compare

@@ -10,8 +10,6 @@
 
     Further globalize functions can be generated with `ppx_globalize`. *)
 
-[@@@warning "-incompatible-with-upstream"]
-
 (*_ It's tempting to make [maybe_globalize] templated over the mode of the input too,
     however it's not clear whether we'll be able to support that in the future (once it
     works via first-class language features rather than ppx_template).

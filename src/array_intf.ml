@@ -4,8 +4,6 @@ open! Import
 module Option = Option0
 module List = List0.Constructors
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template
 [@@@kind_set.define base_or_null_with_ext = (base_or_null, value_or_null mod external64)]
 
@@ -116,7 +114,7 @@ module Definitions = struct
     [%%template:
       external create
         : ('a : any mod separable).
-        len:int -> 'a -> 'a array @ m
+        len:int -> 'a -> 'a array @ m unique
         = "%makearray_dynamic"
       [@@ocaml.doc
         {| [create ~len x] creates an array of length [len] with the value [x] populated in
@@ -126,7 +124,7 @@ module Definitions = struct
 
     external create_local
       : ('a : any mod separable).
-      len:int -> 'a -> 'a array @ local
+      len:int -> 'a -> 'a array @ local unique
       = "%makearray_dynamic"
     [@@ocaml.doc
       {| [create_local ~len x] is like [create]. It allocates the array on the local
@@ -541,7 +539,7 @@ module type Array = sig @@ portable
     end
 
     module%template.portable
-      [@kind k = base_or_null_with_ext] Sorter (S : sig
+      [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)] Sorter (S : sig
         [@@@kind k = k mod separable]
 
         type ('a : k) t

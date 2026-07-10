@@ -20,8 +20,8 @@
  (ocamlopt_flags
   :standard
   (:include ocamlopt-flags))
- (libraries base_internalhash_types basement capsule0.expert
-   nonempty_list_type ocaml_intrinsics_kernel sexplib0 shadow_stdlib)
+ (libraries base_internalhash_types basement capsule0.prim nonempty_list_type
+   ocaml_intrinsics_kernel sexplib0 shadow_stdlib)
  (preprocess
   (pps ppx_base ppx_base_internal ppx_base_lint
     -compare-require-explicit-locality ppx_array_base

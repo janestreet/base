@@ -1,7 +1,5 @@
 @@ portable
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template:
 [@@@kind kr1 = (value_or_null & value_or_null)]
 [@@@kind kr2 = (value_or_null & kr1)]

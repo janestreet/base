@@ -224,7 +224,7 @@ let rec add t ~replace ~compare ~added ~key:k ~data:v =
       if !added then (balance [@kind k v]) t else t)
 ;;
 
-let[@kind k = k, v = v, a = all, b = all, r = all]
+let[@kind k = k, v = v, a = value_or_null, b = value_or_null, r = (v, value_or_null)]
    [@mode c = (uncontended, shared)]
    [@inline always] rec findi_and_call_impl
   : type (k : k mod c) (v : v) (a : a) (b : b) (r : r) if_ in_.
@@ -265,9 +265,9 @@ let[@kind k = k, v = v, a = all, b = all, r = all]
 
 [%%template
 [@@@mode.default c = (uncontended, shared)]
-[@@@kind r = all]
+[@@@kind r = v]
 
-let[@kind k = k, v = v, r = r] find_and_call =
+let[@kind k = k, v = v, r = (r, value_or_null)] find_and_call =
   let call_if_found ~if_found ~key:_ ~data () () = if_found data in
   let call_if_not_found ~if_not_found key () () = if_not_found key in
   fun (t @ c) ~compare k ~if_found ~if_not_found ->
@@ -299,7 +299,7 @@ let[@kind k = k, v = v, r = r] findi_and_call =
       ~if_not_found
 ;;
 
-[@@@kind a = all]
+[@@@kind a = value_or_null]
 
 let[@kind k = k, v = v, a = a, r = r] find_and_call1 =
   let call_if_found ~if_found ~key:_ ~data arg () = if_found data arg in
@@ -333,7 +333,7 @@ let[@kind k = k, v = v, a = a, r = r] findi_and_call1 =
       ~if_not_found
 ;;
 
-[@@@kind b = all]
+[@@@kind b = value_or_null]
 
 let[@kind k = k, v = v, a = a, b = b, r = r] find_and_call2 =
   let call_if_found ~if_found ~key:_ ~data arg1 arg2 = if_found data arg1 arg2 in

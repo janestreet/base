@@ -473,6 +473,8 @@ module Contended = struct
     'a @ contended -> 'a
     @@ portable
     = "%identity"
+
+  external wrap_list : 'a list @ contended -> 'a t list @@ portable = "%identity"
 end
 
 module Shared = struct

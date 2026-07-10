@@ -2,8 +2,6 @@
    combinators for [sexp_of], [of_sexp], [compare] and [hash] and are included in
    [Import]. *)
 
-[@@@warning "-incompatible-with-upstream"]
-
 include (
   Shadow_stdlib :
     module type of struct
@@ -44,8 +42,6 @@ include (
     with module Uchar := Shadow_stdlib.Uchar
     with module Unit := Shadow_stdlib.Unit)
 [@ocaml.warning "-3"]
-
-[@@@warning "-incompatible-with-upstream"]
 
 type ('a : value_or_null) ref = 'a Stdlib.ref = { mutable contents : 'a }
 type ('a : any mod separable) iarray = 'a Basement.Stdlib_iarray_labels.t

@@ -6,7 +6,7 @@ include Char0
 
 module T = struct
   type t = char
-  [@@deriving compare ~localize, hash, globalize, sexp ~stackify, sexp_grammar]
+  [@@deriving compare ~localize, hash, globalize, sexp ~stackify ~unboxed, sexp_grammar]
 
   let%template[@alloc a = (heap, stack)] to_string t =
     (String.make [@alloc a]) 1 t [@exclave_if_stack a]

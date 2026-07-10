@@ -108,7 +108,7 @@ val find
 
 include sig
   [@@@mode.default c = (uncontended, shared)]
-  [@@@kind r = all]
+  [@@@kind r = v]
 
   (** [find_and_call t ~compare k ~if_found ~if_not_found]
 
@@ -125,7 +125,7 @@ include sig
     -> if_found:local_ ('v @ c -> 'r)
     -> if_not_found:local_ ('k -> 'r)
     -> 'r
-  [@@kind k = k, v = v, r = r]
+  [@@kind k = k, v = v, r = (r, value_or_null)]
 
   val findi_and_call
     : ('k : k mod c) ('v : v) ('r : r).
@@ -137,7 +137,7 @@ include sig
     -> 'r
   [@@kind k = k, v = v, r = r]
 
-  [@@@kind a = all]
+  [@@@kind a = value_or_null]
 
   val find_and_call1
     : ('k : k mod c) ('v : v) ('a : a) ('r : r).
@@ -161,7 +161,7 @@ include sig
     -> ('r : r)
   [@@kind k = k, v = v, a = a, r = r]
 
-  [@@@kind b = all]
+  [@@@kind b = value_or_null]
 
   val find_and_call2
     : ('k : k mod c) ('v : v) ('a : a) ('b : b) ('r : r).

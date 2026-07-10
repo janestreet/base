@@ -598,14 +598,16 @@ module Tree0 = struct
 
   (* Implementation of the set operations *)
 
-  let rec mem t x ~compare_elt =
+  let[@zero_alloc] rec mem t x ~compare_elt =
     match t with
     | Empty -> false
     | Leaf { elt = v } ->
-      let c = compare_elt x v in
+      (* ZA machinery is not strong enough to handle compare, and practical compare
+         functions are ZA; we get more value out of pretending. *)
+      let c = (compare_elt [@zero_alloc assume]) x v in
       c = 0
     | Node { left = l; elt = v; right = r; weight = _ } ->
-      let c = compare_elt x v in
+      let c = (compare_elt [@zero_alloc assume]) x v in
       c = 0 || mem (if c < 0 then l else r) x ~compare_elt
   ;;
 

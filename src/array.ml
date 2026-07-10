@@ -6,8 +6,6 @@ module Option = Option0
 module List = List0
 include Array
 
-[@@@warning "-incompatible-with-upstream"]
-
 type ('a : any mod separable) t = 'a array
 
 [%%template
@@ -48,7 +46,8 @@ type%template ('a : k) t = 'a array
    - http://www.sorting-algorithms.com/quick-sort-3-way *)
 
 module%template.portable
-  [@kind k = base_or_null_with_ext] [@modality p] Sorter (S : sig
+  [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)]
+  [@modality p] Sorter (S : sig
     [@@@kind k = k mod separable]
 
     type ('a : k) t
@@ -330,7 +329,8 @@ struct
 end
 [@@inline]
 
-module%template [@kind k = base_or_null_with_ext] Sort =
+module%template
+  [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)] Sort =
 Sorter [@kind k] [@modality portable] (struct
     type nonrec ('a : k mod separable) t = 'a t
 
@@ -820,34 +820,6 @@ let filteri t ~f =
   (filter_mapi [@kind k1 k1]) t ~f:(fun i x -> if f i x then Some x else None) [@nontail]
 ;;
 
-[%%template
-[@@@kind.default k1 = k1, k2 = base_or_null, k3 = base_or_null]
-
-let foldi_until t ~init ~f ~finish =
-  let length = length t in
-  let rec loop i acc =
-    if i < length
-    then (
-      match
-        ((f [@inlined hint]) i acc (unsafe_get t i)
-         : (_ Container.Continue_or_stop.t
-           [@kind (k2 or value_or_null) (k3 or value_or_null)]))
-      with
-      | Continue acc -> loop (i + 1) acc
-      | Stop res -> res)
-    else finish i acc
-  in
-  (loop [@inlined]) 0 init [@nontail]
-;;
-
-let fold_until t ~init ~f ~finish =
-  (foldi_until [@kind k1 k2 k3] [@inlined])
-    t
-    ~init
-    ~f:(fun _i acc x -> f acc x)
-    ~finish:(fun _i acc -> finish acc) [@nontail]
-;;]
-
 [@@@kind.default k2 = base_or_null_with_ext]
 
 let of_list_rev_map xs ~f =
@@ -860,36 +832,58 @@ let of_list_rev_mapi xs ~f =
   let t = (of_list_mapi [@kind k1 k2]) xs ~f in
   (rev_inplace [@kind k2]) t;
   t
-;;
-
-[@@@kind.default k3 = base_or_null_with_ext]
-
-let partition_mapi t ~f =
-  let (both : (_ Either0.t[@kind (k2 or value_or_null) (k3 or value_or_null)]) t) =
-    (mapi [@kind k1 value_or_null]) t ~f
-  in
-  let firsts =
-    (filter_map [@kind value_or_null k2]) both ~f:(function
-      | First x -> (Some x : (_ Option.t[@kind k2 or value_or_null]))
-      | Second _ -> None)
-  in
-  let seconds =
-    (filter_map [@kind value_or_null k3]) both ~f:(function
-      | First _ -> (None : (_ Option.t[@kind k3 or value_or_null]))
-      | Second x -> Some x)
-  in
-  firsts, seconds
-;;
-
-let partition_map t ~f =
-  (partition_mapi [@kind k1 k2 k3]) t ~f:(fun _ x -> f x) [@nontail]
 ;;]
 
 [%%template
 [@@@kind.default k = base_or_null_with_ext]
 
+let partition_mapi t ~f =
+  let (both : (_ Either0.t[@kind (k or value_or_null) (k or value_or_null)]) t) =
+    (mapi [@kind k value_or_null]) t ~f
+  in
+  let firsts =
+    (filter_map [@kind value_or_null k]) both ~f:(function
+      | First x -> (Some x : (_ Option.t[@kind k or value_or_null]))
+      | Second _ -> None)
+  in
+  let seconds =
+    (filter_map [@kind value_or_null k]) both ~f:(function
+      | First _ -> (None : (_ Option.t[@kind k or value_or_null]))
+      | Second x -> Some x)
+  in
+  firsts, seconds
+;;]
+
+let partition_map t ~f = partition_mapi t ~f:(fun _ x -> f x) [@nontail]
+
+let foldi_until t ~init ~f ~finish =
+  let length = length t in
+  let rec loop i acc =
+    if i < length
+    then (
+      match
+        ((f [@inlined hint]) i acc (unsafe_get t i) : _ Container.Continue_or_stop.t)
+      with
+      | Continue acc -> loop (i + 1) acc
+      | Stop res -> res)
+    else finish i acc
+  in
+  (loop [@inlined]) 0 init [@nontail]
+;;
+
+let fold_until t ~init ~f ~finish =
+  (foldi_until [@inlined])
+    t
+    ~init
+    ~f:(fun _i acc x -> f acc x)
+    ~finish:(fun _i acc -> finish acc) [@nontail]
+;;
+
+[%%template
+[@@@kind.default k = base_or_null_with_ext]
+
 let partitioni_tf t ~f =
-  (partition_mapi [@kind k k k]) t ~f:(fun i x -> if f i x then First x else Second x)
+  (partition_mapi [@kind k]) t ~f:(fun i x -> if f i x then First x else Second x)
   [@nontail]
 ;;
 
@@ -1181,8 +1175,6 @@ let transpose_exn tt =
   | Some tt' -> tt'
 ;;
 
-[@@@warning "-incompatible-with-upstream"]
-
 let%template[@kind k1 = base_or_null_with_ext, k2 = base_or_null_with_ext] map t ~f =
   (map [@kind k1 k2]) t ~f
 ;;
@@ -1239,9 +1231,14 @@ let sub t ~pos ~len = sub t ~pos ~len
 let invariant invariant_a t = iter t ~f:invariant_a
 
 module Private = struct
-  module%template [@kind k = base_or_null_with_ext] Sort = Sort [@kind k]
+  module%template
+    [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)] Sort =
+    Sort
+    [@kind k]
 
-  module%template.portable [@kind k = base_or_null_with_ext] [@modality p] Sorter =
+  module%template.portable
+    [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)]
+    [@modality p] Sorter =
     Sorter
     [@kind k]
     [@modality p]

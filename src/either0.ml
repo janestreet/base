@@ -1,7 +1,5 @@
 open! Import
 
-[@@@warning "-incompatible-with-upstream"]
-
 type%template ('f : kf, 's : ks) t =
   | First of 'f
   | Second of 's

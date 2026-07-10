@@ -26,7 +26,7 @@ module type%template [@kind.explicit k = (value, value_or_null)] S = sig
     ('a[@local_opt]) @ c o p u -> (t[@local_opt]) @ c o p u
     = "%obj_magic"
   [@@mode
-    c = (uncontended, shared, contended)
+    c = (uncontended, shared, contended, read, write, immutable)
     , o = (many, once)
     , p = (nonportable, portable)
     , u = (aliased, unique)]
@@ -239,7 +239,7 @@ module type Obj = sig @@ portable
     val is_immediate : t @ contended local once -> bool
     [@@zero_alloc]
 
-    external is_null : t @ contended local once -> bool = "%is_null"
+    external is_null : t @ immutable local once -> bool = "%is_null"
     val null_tag : int
 
     external of_or_null

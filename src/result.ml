@@ -2,8 +2,6 @@ open! Import
 module Either = Either0
 include Result0
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template
 [@@@kind_set.define all_ks_non_value = base_non_value]
 [@@@kind_set.define all_ks = (all_ks_non_value, value_or_null_with_imm)]
@@ -70,12 +68,12 @@ Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local] [@modality portab
 [%%template
 [@@@kind.default k = all_ks]
 
-let is_ok : (_ t[@kind k]) -> bool = function
+let is_ok : (_ t[@kind k]) @ local -> bool = function
   | Ok _ -> true
   | Error _ -> false
 ;;
 
-let is_error : (_ t[@kind k]) -> bool = function
+let is_error : (_ t[@kind k]) @ local -> bool = function
   | Ok _ -> false
   | Error _ -> true
 ;;]
@@ -144,6 +142,14 @@ let of_either : _ Either.t @ m -> _ t @ m = function
 ;;]
 
 let ok_if_true bool ~error = if bool then Ok () else Error error
+
+let transpose_opt t =
+  match[@exclave_if_stack a] t with
+  | Ok None -> None
+  | Ok (Some v) -> Some (Ok v)
+  | Error e -> Some (Error e)
+[@@alloc a = (stack, heap)]
+;;
 
 let try_with f =
   try Ok (f ()) with

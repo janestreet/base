@@ -1,6 +1,0 @@
-(library
- (name base_test_allocation)
- (libraries async base core expect_test_helpers_async
-   expect_test_helpers_core stdio unboxed)
- (preprocess
-  (pps ppx_jane)))

@@ -7,8 +7,6 @@
     abstracts over which constructor is the focus. To use these functions, use the [First]
     or [Second] modules in [S]. *)
 
-[@@@warning "-incompatible-with-upstream"]
-
 open! Import
 
 module Definitions = struct

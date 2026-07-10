@@ -371,6 +371,8 @@ module Definitions = struct
 
     include S with type t := t (** @inline *)
 
+    include Intable.S_with_zero_alloc with type t := t (** @inline *)
+
     module O : sig
       (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even
           when compiling without cross library inlining. *)

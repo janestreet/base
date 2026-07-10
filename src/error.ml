@@ -5,8 +5,6 @@
 open! Import
 include Info0
 
-[@@@warning "-incompatible-with-upstream"]
-
 let t_sexp_grammar : t Sexplib0.Sexp_grammar.t = { untyped = Any "Error.t" }
 
 [%%template

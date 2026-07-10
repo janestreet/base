@@ -150,6 +150,18 @@ module Definitions = struct
       -> f:local_ ('b or_null -> 'b or_null)
       -> unit
 
+    (** [update_or_null t ~f] is like [update t ~f] , but the function [f] receives
+        ['v or_null] instead of ['v option]. *)
+    val update_or_null : ('a, 'b) t -> 'a key -> f:local_ ('b or_null -> 'b) -> unit
+
+    (** [update_or_null_and_return t ~f] is like [update_and_return t ~f], but the
+        function [f] receives ['v or_null] instead of ['v option]. *)
+    val update_or_null_and_return
+      :  ('a, 'b) t
+      -> 'a key
+      -> f:local_ ('b or_null -> 'b)
+      -> 'b
+
     (** [equal f t1 t2] and [similar f t1 t2] both return true iff [t1] and [t2] have the
         same keys and for all keys [k], [f (find_exn t1 k) (find_exn t2 k)]. [equal] and
         [similar] only differ in their types. *)
@@ -521,7 +533,7 @@ module Definitions = struct
       [@@mode p = (nonportable, portable)]
 
       val length : ('k : k) ('v : v). ('k, 'v) t @ c -> int
-      [@@mode c = (uncontended, shared)]
+      [@@mode c = (uncontended, shared)] [@@zero_alloc]
 
       val capacity : ('k : k) ('v : v). ('k, 'v) t @ c -> int
       [@@mode c = (uncontended, shared)]
@@ -559,7 +571,7 @@ module Definitions = struct
         -> if_found:local_ ('v @ c -> 'a)
         -> if_not_found:local_ ('k @ c -> 'a)
         -> 'a
-      [@@kind k = k, v = v, r = all] [@@mode c = (uncontended, shared)]
+      [@@kind k = k, v = v, r = v] [@@mode c = (uncontended, shared)]
 
       val find_and_call1
         : ('k : k mod c) ('v : v) ('a : a) ('r : r).
@@ -569,7 +581,7 @@ module Definitions = struct
         -> if_found:local_ ('v @ c -> 'a -> 'r)
         -> if_not_found:local_ ('k -> 'a -> 'r)
         -> 'r
-      [@@kind k = k, v = v, a = all, r = all] [@@mode c = (uncontended, shared)]
+      [@@kind k = k, v = v, a = value_or_null, r = v] [@@mode c = (uncontended, shared)]
 
       val update
         : ('k : k) ('v : v).

@@ -1,7 +1,5 @@
 @@ portable
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template:
   external create
     : ('a : any mod separable).

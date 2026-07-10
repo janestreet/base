@@ -8,8 +8,6 @@ open! Import
 module Invariant := Invariant_intf.Definitions
 module Constructors : module type of List0.Constructors
 
-[@@@warning "-incompatible-with-upstream"]
-
 [%%template:
 [@@@kind_set.define all_ks_non_value = base_non_value]
 [@@@kind_set.define all_ks = (all_ks_non_value, value_or_null)]
@@ -312,7 +310,7 @@ val partition_result
 
     In either of these cases, the input list is returned as one side of the pair, rather
     than being copied. *)
-val split_n : ('a : value_or_null). 'a t @ l -> int -> 'a t * 'a t @ l
+val split_n : ('a : value_or_null). 'a t @ l -> int -> #('a t * 'a t) @ l
 [@@zero_alloc_if_stack a]
 
 (** Sort a list in increasing order according to a comparison function. The comparison
@@ -341,6 +339,15 @@ val stable_sort
     elements of [l1] and [l2]. If several elements compare equal, the elements of [l1]
     will be before the elements of [l2]. *)
 val merge : ('a : value_or_null). 'a t -> 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
+
+(** Merges a list of [k] sorted lists into one sorted list, in O(n log k) time where [n]
+    is the total number of elements across all input lists. Elements that compare equal
+    appear in the same order as the input lists (i.e., elements of an earlier list come
+    before equal elements of a later list).
+
+    Implemented by pairwise merging, so the per-comparison cost is small but it allocates
+    O(n log k) intermediate cons cells. *)
+val merge_all : ('a : value_or_null). 'a t t -> compare:local_ ('a -> 'a -> int) -> 'a t
 
 [%%template:
 [@@@mode.default l = (global, local)]
@@ -711,7 +718,7 @@ val rev_filter_map
     element as the first argument to the mapped function. Tail-recursive. *)
 val rev_filter_mapi
   : ('a : value_or_null) ('b : value_or_null).
-  'a t @ li -> f:(int -> 'a @ li -> 'b option @ lo) -> 'b t @ lo
+  'a t @ li -> f:(int -> 'a @ li -> 'b option @ lo) @ local -> 'b t @ lo
 
 (** Like [rev_filter_map] but with a function returning [or_null] instead of [option]. *)
 val rev_filter_map_or_null
@@ -722,7 +729,7 @@ val rev_filter_map_or_null
 (** Like [rev_filter_mapi] but with a function returning [or_null] instead of [option]. *)
 val rev_filter_mapi_or_null
   :  'a t @ li
-  -> f:(int -> 'a @ li -> 'b or_null @ lo)
+  -> f:(int -> 'a @ li -> 'b or_null @ lo) @ local
   -> 'b t @ lo]
 
 (** Create a list of every value [iter] passes to [f], in chronological order. *)

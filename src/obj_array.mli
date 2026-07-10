@@ -30,8 +30,8 @@ val length : local_ t @ contended -> int
 (** [get t i] and [unsafe_get t i] return the object at index [i]. [set t i o] and
     [unsafe_set t i o] set index [i] to [o]. In no case is the object copied. The
     [unsafe_*] variants omit the bounds check of [i]. *)
-val get : local_ t -> int -> Stdlib.Obj.t
-[@@zero_alloc]
+val%template get : local_ t @ c -> int -> Stdlib.Obj.t @ c
+[@@zero_alloc] [@@mode c = (uncontended, shared)]
 
 val unsafe_get : local_ t -> int -> Stdlib.Obj.t [@@zero_alloc]
 val set : local_ t -> int -> Stdlib.Obj.t -> unit

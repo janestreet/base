@@ -87,6 +87,26 @@ struct
   ;;]
 end
 
+module%template
+  [@kind k = (bits32, bits64, word)] Make_unboxed (I : sig
+  @@ portable
+    type t
+
+    val to_string : local_ t -> string @ m [@@alloc a @ m = (heap_global, stack_local)]
+
+    type unboxed : k
+
+    val box : unboxed -> t @ local
+  end) =
+struct
+  include Make (I)
+
+  let sexp_of_t_u unboxed =
+    (sexp_of_t [@alloc a]) (I.box unboxed) [@exclave_if_stack a] [@nontail]
+  [@@alloc a = (heap, stack)]
+  ;;
+end
+
 module Make_hex (I : sig
   @@ portable
     type t : value mod contended portable [@@deriving compare ~localize, hash]

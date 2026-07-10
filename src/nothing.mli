@@ -45,10 +45,10 @@ type t = | [@@deriving enumerate, globalize, sexp ~stackify, sexp_grammar]
     {[
       let f (Ok i : (int, Nothing.t) Result.t) = i
     ]} *)
-val unreachable_code : t -> _
+val unreachable_code : t -> _ @ unique
 
 (** The same as [unreachable_code], but for local [t]s. *)
-val unreachable_code_local : local_ t -> _
+val unreachable_code_local : local_ t -> _ @ unique
 
 (** It may seem weird that this is identifiable, but we're just trying to anticipate all
     the contexts in which people may need this. It would be a crying shame if you had some
