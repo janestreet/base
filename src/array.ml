@@ -396,7 +396,7 @@ let[@inline always] extremal_element t ~compare ~keep_left_if =
     let result = ref (unsafe_get t 0) in
     for i = 1 to length t - 1 do
       let x = unsafe_get t i in
-      result := Bool.select ((keep_left_if [@inlined]) (compare x !result)) x !result
+      result := Bool.select ((keep_left_if [@inlined hint]) (compare x !result)) x !result
     done;
     Some !result)
 ;;

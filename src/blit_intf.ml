@@ -163,6 +163,7 @@ module type Blit = sig
   end)
   (To_bytes : S_distinct with type src := T.t with type dst := bytes) :
     S_to_string with type t := T.t
+  [@@warning "-67"]
 
   (** [Make1] is for blitting between two values of the same polymorphic type. *)
   module Make1 (Sequence : Sequence1) : S1 with type 'a t := 'a Sequence.t
