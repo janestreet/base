@@ -110,7 +110,7 @@ function Base_caml_modf_positive_float_exn(a, b) {
 var base_array_unsafe_float_blit = caml_array_blit
 
 //Provides: Base_string_concat_array
-//Requires: caml_ml_string_length, caml_create_bytes, caml_blit_bytes
+//Requires: caml_ml_string_length, caml_create_bytes, caml_blit_string
 //Requires: caml_string_of_bytes, caml_string_of_jsstring
 function Base_string_concat_array(v_string_array, v_sep) {
   // Arrays have a header element at the beginning, so the indices in this function
@@ -127,12 +127,12 @@ function Base_string_concat_array(v_string_array, v_sep) {
   let pos = 0;
   for (let i = 1; i < v_string_array.length; i++) {
     if (i !== 1) {
-      caml_blit_bytes(v_sep, 0, result, pos, sep_len);
+      caml_blit_string(v_sep, 0, result, pos, sep_len);
       pos += sep_len;
     }
     const string = v_string_array[i];
     const len = caml_ml_string_length(string);
-    caml_blit_bytes(string, 0, result, pos, len);
+    caml_blit_string(string, 0, result, pos, len);
     pos += len;
   }
   return caml_string_of_bytes(result);
