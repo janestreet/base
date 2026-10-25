@@ -1521,7 +1521,7 @@ module type Map = sig
 
       When neither [keys_greater_or_equal_to] nor [keys_less_or_equal_to] are provided,
       the cost is O(log n) up front and amortized O(1) to produce each element. If either
-      is provided (and is used by the order parameter provided), then the the cost is O(n)
+      is provided (and is used by the order parameter provided), then the cost is O(n)
       up front, and amortized O(1) to produce each element. *)
   val to_sequence
     :  ?order:[ `Increasing_key (** default *) | `Decreasing_key ]

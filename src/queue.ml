@@ -237,7 +237,7 @@ let dequeue_exn t = if is_empty t then raise Stdlib.Queue.Empty else dequeue_non
 let dequeue_or_null t = if is_empty t then Null else This (dequeue_nonempty t)
 
 (* Often, one will immediately match on the resulting option. Inlining the creation of the
-   option into the function that immediately destructures that option lets the complier
+   option into the function that immediately destructures that option lets the compiler
    eliminate that option altogether. *)
 let[@inline] dequeue t = dequeue_or_null t |> Or_null.to_option
 let dequeue_and_ignore_exn (type elt) (t : elt t) = ignore (dequeue_exn t : elt)

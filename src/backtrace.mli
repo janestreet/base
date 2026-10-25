@@ -79,7 +79,7 @@ module Exn : sig
 
       Note that this may return a misleading backtrace instead of [None] if different
       raise events happen to raise physically equal exceptions. Consider the example
-      below. Here if [e = Not_found] and [g] usees [Not_found] internally then the
+      below. Here if [e = Not_found] and [g] uses [Not_found] internally then the
       backtrace will correspond to the internal backtrace in [g] instead of the one used
       in [f], which is not desirable.
 

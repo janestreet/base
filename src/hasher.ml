@@ -14,14 +14,14 @@ module type S = sig
       1. [hash_fold_t state x] should mix all the information present in [x] in the state.
          That is, by default, [hash_fold_t] will traverse the full term [x] (this is a
          significant change for Hashtbl.hash which by default stops traversing the term
-         after after considering a small number of "significant values"). [hash_fold_t]
+         after considering a small number of "significant values"). [hash_fold_t]
          must not discard the [state].
 
       2. [hash_fold_t] must be compatible with the associated [compare] function: that is,
          for all [x] [y] and [s], [compare x y = 0] must imply
          [hash_fold_t s x = hash_fold_t s y].
 
-      3. To avoid avoid systematic collisions, [hash_fold_t] should expand to different
+      3. To avoid systematic collisions, [hash_fold_t] should expand to different
          sequences of built-in mixing functions for different values of [x]. No such
          sequence is allowed to be a prefix of another.
 

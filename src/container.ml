@@ -5,7 +5,7 @@ module Result = Result0
 module List = List0
 include Container_intf.Definitions
 
-(* We belive the functions in this file will be expressible using mode-polymorphism but it
+(* We believe the functions in this file will be expressible using mode-polymorphism but it
    requires more complicated lifetime information to express. For example, the [f]
    argument to [fold] needs to promise that it returns an unboxed thing that has the same
    locality as the [elt] argument and that information needs to propagate through [fold].

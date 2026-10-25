@@ -811,7 +811,7 @@ module Definitions = struct
     include sig
       [@@@mode.default m = (global, local)]
 
-      (** Generic defintions that rely on [With_return] and therefore don't support local
+      (** Generic definitions that rely on [With_return] and therefore don't support local
           return values. *)
 
       val fold_until
@@ -936,7 +936,7 @@ module Definitions = struct
       -> 'b option
     [@@mode mi = (global, local), mo = (global, local)]
 
-    (** Generic definitons of container operations in terms of [iter] and [length]. *)
+    (** Generic definitions of container operations in terms of [iter] and [length]. *)
 
     val to_array : 't 'a. length:'t length -> iter:('t, 'a) iter -> 't -> 'a array
   end

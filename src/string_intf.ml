@@ -77,7 +77,7 @@ module Definitions = struct
          count bytes"]
   end
 
-  (** Iterface for Unicode encodings, specialized for string representation. *)
+  (** Interface for Unicode encodings, specialized for string representation. *)
   module type Utf_as_string = Utf with type t = private string
 end
 
