@@ -22,13 +22,13 @@
       | Greater -> ...
     ]} *)
 
-open! Import
+open! Import0
 
 type t =
   | Less
   | Equal
   | Greater
-[@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+[@@deriving compare, equal, hash, sexp, sexp_grammar]
 
 (*_ Avoid [@@deriving enumerate] due to circular dependency *)
 val all : t list

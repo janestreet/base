@@ -1,5 +1,7 @@
 open! Import
+module Float = Float0
 module Sexp = Sexp0
+module Sign = Sign0
 include Int_intf.Definitions
 include Int0
 
@@ -7,9 +9,7 @@ module T = struct
   module T0 = struct
     type t = int [@@deriving globalize, hash, of_sexp, sexp_grammar]
 
-    let%template[@alloc a = (heap, stack)] to_string =
-      (Integer_to_string.int_to_string [@alloc a])
-    ;;
+    let to_string = Integer_to_string.int_to_string
   end
 
   include T0
@@ -25,8 +25,8 @@ module T = struct
 end
 
 let num_bits = Int_conversions.num_bits_int
-let float_lower_bound = Float0.lower_bound_for_int num_bits
-let float_upper_bound = Float0.upper_bound_for_int num_bits
+let float_lower_bound = Float.lower_bound_for_int num_bits
+let float_upper_bound = Float.upper_bound_for_int num_bits
 let to_float = (Stdlib.float_of_int :> int -> _)
 let of_float_unchecked = Stdlib.int_of_float
 
@@ -37,7 +37,7 @@ let of_float f =
   else
     Printf.invalid_argf
       "Int.of_float: argument (%f) is out of range or NaN"
-      (Float0.box f)
+      (Float.box f)
       ()
 ;;
 
@@ -46,10 +46,9 @@ let one = 1
 let minus_one = -1
 
 include T
+include Comparator.Make (T)
 
-include%template Comparator.Make [@modality portable] (T)
-
-include%template Comparable.With_zero [@modality portable] (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero
@@ -61,7 +60,7 @@ include Int_string_conversions.Make (T)
 include Int_string_conversions.Make_hex (struct
     open Int_replace_polymorphic_compare
 
-    type t = int [@@deriving compare ~localize, hash]
+    type t = int [@@deriving compare, hash]
 
     let zero = zero
 
@@ -73,7 +72,7 @@ include Int_string_conversions.Make_hex (struct
     let module_name = "Base.Int.Hex"
   end)
 
-include%template Pretty_printer.Register [@modality portable] (struct
+include Pretty_printer.Register (struct
     type nonrec t = t
 
     let to_string = to_string
@@ -153,81 +152,11 @@ let bit_and a b = a land b
 let bit_xor a b = a lxor b
 let pow = Int_math.Private.int_pow
 let ( ** ) b e = pow b e
-
-module Pow2 = struct
-  open! Import
-
-  let raise_s = Error.raise_s
-
-  let non_positive_argument () =
-    Printf.invalid_argf "argument must be strictly positive" ()
-  ;;
-
-  (** "ceiling power of 2 - 1" - Least power of 2 minus 1 greater than or equal to x. *)
-  let ceil_pow2_minus_1 n =
-    (* This does not let [Nativeint]s escape and allocations are optimized away.
-       [Stdlib.Nativeint] is used to avoid a dependency cycle. *)
-    let open Stdlib.Nativeint in
-    let n = of_int n in
-    let n = logor n (shift_right_logical n 1) in
-    let n = logor n (shift_right_logical n 2) in
-    let n = logor n (shift_right_logical n 4) in
-    let n = logor n (shift_right_logical n 8) in
-    let n = logor n (shift_right_logical n 16) in
-    to_int
-      (if (* This condition should get constant folded and there should be no branch. *)
-          Stdlib.Sys.int_size > 32
-       then logor n (shift_right_logical n 32)
-       else n)
-  ;;
-
-  (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
-  let ceil_pow2 x =
-    if x <= 0 then non_positive_argument ();
-    let x = x - 1 in
-    let x = ceil_pow2_minus_1 x in
-    x + 1
-  ;;
-
-  (** "floor power of 2" - Largest power of 2 less than or equal to x. *)
-  let floor_pow2 x =
-    if x <= 0 then non_positive_argument ();
-    let x = ceil_pow2_minus_1 x in
-    x - (x lsr 1)
-  ;;
-
-  let is_pow2 x =
-    if x <= 0 then non_positive_argument ();
-    x land (x - 1) = 0
-  ;;
-
-  let clz = Ocaml_intrinsics_kernel.Int.count_leading_zeros
-  let ctz = Ocaml_intrinsics_kernel.Int.count_trailing_zeros
-
-  let[@cold] log2_bad_input i =
-    raise_s (Sexp.message "[Int.floor_log2] got invalid input" [ "", sexp_of_int i ])
-  ;;
-
-  (** Hacker's Delight Second Edition p106 *)
-  let floor_log2 i = if i <= 0 then log2_bad_input i else num_bits - 1 - clz i
-
-  let[@cold] log2_bad_input i =
-    raise_s (Sexp.message "[Int.ceil_log2] got invalid input" [ "", sexp_of_int i ])
-  ;;
-
-  let ceil_log2 i =
-    if i <= 0 then log2_bad_input i;
-    if i = 1 then 0 else num_bits - clz (i - 1)
-  ;;
-end
-
-include Pow2
-
 let sign = Sign.of_int
 let popcount = Popcount.int_popcount
 
 include Int_string_conversions.Make_binary (struct
-    type t = int [@@deriving compare ~localize, equal ~localize, hash]
+    type t = int [@@deriving compare, equal, hash]
 
     let ( land ) = ( land )
 
@@ -316,7 +245,7 @@ module O = struct
         ()
     else (
       (* It's safe to use unchecked division here because we already raised if [y <= zero] *)
-      let offset = Bool.to_int (x < zero) in
+      let offset = bool_to_int (x < zero) in
       unsafe_div (x + offset) y - offset)
   ;;
 

@@ -1,7 +1,6 @@
-open! Import
-
-include%template Comparable.Make [@modality portable] (Sexp0)
-
+open! Import0
+module Char = Char0
+include Comparable.Make (Sexp0)
 include Sexp0
 (* we include [sexp] last to ensure we get a faster [equal] than the one produced by
    [Comparable.Make] *)

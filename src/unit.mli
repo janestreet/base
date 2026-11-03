@@ -1,9 +1,8 @@
 (** Module for the type [unit]. *)
 
-open! Import
+open! Import0
 
-type t = unit [@@deriving enumerate, globalize, sexp ~stackify ~unboxed, sexp_grammar]
+type t = unit [@@deriving enumerate, globalize, sexp ~unboxed, sexp_grammar]
 
-include%template Identifiable.S [@mode local] [@modality portable] with type t := t
-
+include Identifiable.S with type t := t
 include Invariant.S with type t := t

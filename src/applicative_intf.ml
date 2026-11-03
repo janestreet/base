@@ -15,13 +15,9 @@
       http://staff.city.ac.uk/~ross/papers/Applicative.pdf
     v} *)
 
-open! Import
+open! Import0
 
 module Definitions = struct
-  [%%template
-  [@@@kind.default k = (value, value_or_null mod maybe_null)]
-  [@@@mode.default m = (global, local), p = (nonportable, portable)]
-
   (** Module types below provide both global and local versions. In OxCaml, the latter
       accept local [~f] closures.
 
@@ -86,14 +82,14 @@ module Definitions = struct
   module type S2_kernel = sig
     type ('a, 'p) t
 
-    include S3_kernel [@kind k] [@mode m p] with type ('a, 'p, _) t := ('a, 'p) t
+    include S3_kernel with type ('a, 'p, _) t := ('a, 'p) t
   end
 
   (** Applicative operations for applicatives with one type parameter. *)
   module type S_kernel = sig
     type 'a t
 
-    include S3_kernel [@kind k] [@mode m p] with type ('a, _, _) t := 'a t
+    include S3_kernel with type ('a, _, _) t := 'a t
   end
 
   (** Infix operators. This module type subsumes the other [Index*] types below. *)
@@ -110,14 +106,14 @@ module Definitions = struct
   module type Applicative_infix2 = sig
     type ('a, 'p) t
 
-    include Applicative_infix3 [@kind k] [@mode m p] with type ('a, 'p, _) t := ('a, 'p) t
+    include Applicative_infix3 with type ('a, 'p, _) t := ('a, 'p) t
   end
 
   (** Infix operators for applicatives with one type parameter. *)
   module type Applicative_infix = sig
     type 'a t
 
-    include Applicative_infix3 [@kind k] [@mode m p] with type ('a, _, _) t := 'a t
+    include Applicative_infix3 with type ('a, _, _) t := 'a t
   end
 
   (** Complete applicative interface. Extends [_kernel] with infix operators.
@@ -126,27 +122,25 @@ module Definitions = struct
   module type S3 = sig
     type ('a, 'p, 'q) t
 
-    include S3_kernel [@kind k] [@mode m p] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
-
-    include
-      Applicative_infix3 [@kind k] [@mode m p] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
+    include S3_kernel with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
+    include Applicative_infix3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
 
     module Applicative_infix :
-      Applicative_infix3 [@kind k] [@mode m p] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
+      Applicative_infix3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
   end
 
   (** Complete applicative interface with two type parameters. *)
   module type S2 = sig
     type ('a, 'p) t
 
-    include S3 [@kind k] [@mode m p] with type ('a, 'p, _) t := ('a, 'p) t
+    include S3 with type ('a, 'p, _) t := ('a, 'p) t
   end
 
   (** Complete applicative interface with one type parameter. *)
   module type S = sig
     type 'a t
 
-    include S3 [@kind k] [@mode m p] with type ('a, _, _) t := 'a t
+    include S3 with type ('a, _, _) t := 'a t
   end
 
   (** Supports [let%map] syntax. See [ppx_let] documentation.
@@ -162,8 +156,7 @@ module Definitions = struct
     module Let_syntax : sig
       val return : 'a 'p 'q. 'a -> ('a, 'p, 'q) t
 
-      include
-        Applicative_infix3 [@kind k] [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
+      include Applicative_infix3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
 
       module Let_syntax : sig
         val return : 'a 'p 'q. 'a -> ('a, 'p, 'q) t
@@ -179,14 +172,14 @@ module Definitions = struct
   module type Let_syntax2 = sig
     type ('a, 'p) t
 
-    include Let_syntax3 [@kind k] [@mode m] with type ('a, 'p, _) t := ('a, 'p) t
+    include Let_syntax3 with type ('a, 'p, _) t := ('a, 'p) t
   end
 
   (** Supports [let%map] syntax for applicatives with one type parameter. *)
   module type Let_syntax = sig
     type 'a t
 
-    include Let_syntax3 [@kind k] [@mode m] with type ('a, _, _) t := 'a t
+    include Let_syntax3 with type ('a, _, _) t := 'a t
   end
 
   (** [Lazy_applicative] is an applicative whose structure may be computed on-demand,
@@ -194,7 +187,7 @@ module Definitions = struct
       over large data structures, where otherwise we have to pay O(n) up-front cost both
       in time and in memory. *)
   module type Lazy_applicative = sig
-    include S [@kind k] [@mode m]
+    include S
 
     val of_thunk : 'a. (unit -> 'a t) -> 'a t
   end
@@ -209,22 +202,21 @@ module Definitions = struct
     val map : 'a 'b 'p 'q. ('a, 'p, 'q) t -> f:('a -> 'b) -> ('b, 'p, 'q) t
     val both : 'a 'b 'p 'q. ('a, 'p, 'q) t -> ('b, 'p, 'q) t -> ('a * 'b, 'p, 'q) t
 
-    include
-      Applicative_infix3 [@kind k] [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
+    include Applicative_infix3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) t
   end
 
   (** Argument to [Make_let_syntax2]. *)
   module type For_let_syntax2 = sig
     type ('a, 'p) t
 
-    include For_let_syntax3 [@kind k] [@mode m] with type ('a, 'p, _) t := ('a, 'p) t
+    include For_let_syntax3 with type ('a, 'p, _) t := ('a, 'p) t
   end
 
   (** Argument to [Make_let_syntax]. *)
   module type For_let_syntax = sig
     type 'a t
 
-    include For_let_syntax3 [@kind k] [@mode m] with type ('a, _, _) t := 'a t
+    include For_let_syntax3 with type ('a, _, _) t := 'a t
   end
 
   (** Argument to [Make3_using_map2].
@@ -253,18 +245,15 @@ module Definitions = struct
   module type Basic_using_map2 = sig
     type 'a t
 
-    include Basic3_using_map2 [@kind k] [@mode m] with type ('a, _, _) t := 'a t
+    include Basic3_using_map2 with type ('a, _, _) t := 'a t
   end
 
   (** Argument to [Make2_using_map2]. *)
   module type Basic2_using_map2 = sig
     type ('a, 'p) t
 
-    include Basic3_using_map2 [@kind k] [@mode m] with type ('a, 'p, _) t := ('a, 'p) t
-  end]
-
-  [%%template
-  [@@@kind.default k = (value, value_or_null mod maybe_null)]
+    include Basic3_using_map2 with type ('a, 'p, _) t := ('a, 'p) t
+  end
 
   module type Basic3 = sig
     type ('a, 'p, 'q) t
@@ -286,15 +275,15 @@ module Definitions = struct
   module type Basic = sig
     type 'a t
 
-    include Basic3 [@kind k] with type ('a, _, _) t := 'a t
+    include Basic3 with type ('a, _, _) t := 'a t
   end
 
   (** Argument to [Make2]. *)
   module type Basic2 = sig
     type ('a, 'p) t
 
-    include Basic3 [@kind k] with type ('a, 'p, _) t := ('a, 'p) t
-  end]
+    include Basic3 with type ('a, 'p, _) t := ('a, 'p) t
+  end
 end
 
 module type Applicative = sig
@@ -302,78 +291,55 @@ module type Applicative = sig
     include Definitions
   end
 
-  [%%template:
   (** The identity applicative. Useful as an argument to functors that require a monad, to
       produce a non-applicative result. *)
-  module%template [@mode p = (portable, nonportable)] Ident :
-    S [@kind value_or_null mod maybe_null] [@mode local p] with type 'a t = 'a
-
-  [@@@kind.default k = (value, value_or_null mod maybe_null)]
+  module Ident : S with type 'a t = 'a
 
   (** Produces a monad with one type parameter. *)
-  module%template.portable Make (X : Basic [@kind k]) :
-    S [@kind k] with type 'a t := 'a X.t
+  module Make (X : Basic) : S with type 'a t := 'a X.t
 
   (** Produces a monad with two type parameters. *)
-  module%template.portable Make2 (X : Basic2 [@kind k]) :
-    S2 [@kind k] with type ('a, 'p) t := ('a, 'p) X.t
+  module Make2 (X : Basic2) : S2 with type ('a, 'p) t := ('a, 'p) X.t
 
   (** Produces a monad with three type parameters. *)
-  module%template.portable Make3 (X : Basic3 [@kind k]) :
-    S3 [@kind k] with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t
-
-  [@@@mode.default m = (global, local)]
+  module Make3 (X : Basic3) : S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t
 
   (** Produces a monad with one type parameter. *)
-  module%template.portable Make_using_map2 (X : Basic_using_map2 [@kind k] [@mode m]) :
-    S [@kind k] [@mode m] with type 'a t := 'a X.t
+  module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t
 
   (** Produces a monad with two type parameters. *)
-  module%template.portable Make2_using_map2 (X : Basic2_using_map2 [@kind k] [@mode m]) :
-    S2 [@kind k] [@mode m] with type ('a, 'p) t := ('a, 'p) X.t
+  module Make2_using_map2 (X : Basic2_using_map2) :
+    S2 with type ('a, 'p) t := ('a, 'p) X.t
 
   (** Produces a monad with three type parameters. *)
-  module%template.portable Make3_using_map2 (X : Basic3_using_map2 [@kind k] [@mode m]) :
-    S3 [@kind k] [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t
+  module Make3_using_map2 (X : Basic3_using_map2) :
+    S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t
 
   (** Converts a monad with one type parameter to an applicative. *)
-  module%template.portable Of_monad (M : Monad.S [@kind k] [@mode m]) :
-    S [@kind k] [@mode m] with type 'a t := 'a M.t
+  module Of_monad (M : Monad.S) : S with type 'a t := 'a M.t
 
   (** Converts a monad with two type parameters to an applicative. *)
-  module%template.portable Of_monad2 (M : Monad.S2 [@kind k] [@mode m]) :
-    S2 [@kind k] [@mode m] with type ('a, 'p) t := ('a, 'p) M.t
+  module Of_monad2 (M : Monad.S2) : S2 with type ('a, 'p) t := ('a, 'p) M.t
 
   (** Converts a monad with three type parameters to an applicative. *)
-  module%template.portable Of_monad3 (M : Monad.S3 [@kind k] [@mode m]) :
-    S3 [@kind k] [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t
+  module Of_monad3 (M : Monad.S3) : S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t
 
   (** Composes two applicatives, one nested inside the other. *)
-  module%template.portable Compose
-      (Inner : S
-    [@kind k] [@mode m])
-      (Outer : S
-    [@kind k] [@mode m]) : S [@kind k] [@mode m] with type 'a t = 'a Inner.t Outer.t
+  module Compose (Inner : S) (Outer : S) : S with type 'a t = 'a Inner.t Outer.t
 
   (** Combines two applicatives as a pair. *)
-  module%template.portable Pair
-      (Fst : S
-    [@kind k] [@mode m])
-      (Snd : S
-    [@kind k] [@mode m]) : S [@kind k] [@mode m] with type 'a t = 'a Fst.t * 'a Snd.t
-
-  [@@@modality.default p = (nonportable, portable)]
+  module Pair (Fst : S) (Snd : S) : S with type 'a t = 'a Fst.t * 'a Snd.t
 
   (** Constructs a [Let_syntax] module for an applicative with one type parameter. *)
   module Make_let_syntax
       (X : sig
-         include For_let_syntax [@kind k] [@mode m]
+         include For_let_syntax
        end)
       (Intf : sig
          module type S
        end)
       (Impl : Intf.S) : sig
-      include Let_syntax [@kind k] [@mode m]
+      include Let_syntax
     end
     with type 'a t := 'a X.t
     with module Open_on_rhs_intf := Intf
@@ -381,13 +347,13 @@ module type Applicative = sig
   (** Constructs a [Let_syntax] module for an applicative with two type parameters. *)
   module Make_let_syntax2
       (X : sig
-         include For_let_syntax2 [@kind k] [@mode m]
+         include For_let_syntax2
        end)
       (Intf : sig
          module type S
        end)
       (Impl : Intf.S) : sig
-      include Let_syntax2 [@kind k] [@mode m]
+      include Let_syntax2
     end
     with type ('a, 'p) t := ('a, 'p) X.t
     with module Open_on_rhs_intf := Intf
@@ -395,14 +361,14 @@ module type Applicative = sig
   (** Constructs a [Let_syntax] module for an applicative with three type parameters. *)
   module Make_let_syntax3
       (X : sig
-         include For_let_syntax3 [@kind k] [@mode m]
+         include For_let_syntax3
        end)
       (Intf : sig
          module type S
        end)
       (Impl : Intf.S) : sig
-      include Let_syntax3 [@kind k] [@mode m]
+      include Let_syntax3
     end
     with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t
-    with module Open_on_rhs_intf := Intf]
+    with module Open_on_rhs_intf := Intf
 end

@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Sexp = Sexp0
 
 module Definitions = struct
@@ -7,11 +7,10 @@ module Definitions = struct
       first-class modules.
 
       @canonical Base.Hashable.Key *)
-  module type%template
-    [@modality p = (portable, nonportable)] [@mode m = (local, global)] Key = sig
+  module type Key = sig
     type t [@@deriving sexp_of]
 
-    val compare : ([%compare: t][@mode.explicit m]) [@@mode m = (global, m)]
+    val compare : [%compare: t]
 
     (** This used to be documented to guarantee that hash functions don't return negative
         numbers, but as of 2026-04-16 this guarantee was seldom true. *)
@@ -32,13 +31,8 @@ module type Hashable = sig
 
   val equal : 'a t -> 'a t -> bool
   val poly : 'a t
-
-  val%template of_key : 'a. ((module Key with type t = 'a)[@modality p]) -> 'a t
-  [@@modality p = (portable, nonportable)]
-
-  val%template to_key : 'a. 'a t -> ((module Key with type t = 'a)[@modality p])
-  [@@modality p = (portable, nonportable)]
-
+  val of_key : 'a. (module Key with type t = 'a) -> 'a t
+  val to_key : 'a. 'a t -> (module Key with type t = 'a)
   val hash_param : int -> int -> 'a -> int
   val hash : 'a -> int
 end

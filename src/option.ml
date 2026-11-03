@@ -1,24 +1,17 @@
 open! Import
 module Constructors = Option0
+module Error = Error0
+module Iarray = Iarray0
+module Nothing = Nothing0
+module Source_code_position = Source_code_position0
 include Constructors
 
-[%%template
-[@@@kind kr1 = (value_or_null & value_or_null)]
-[@@@kind kr2 = (value_or_null & kr1)]
-
-[@@@kind_set.define
-  all_ks_non_value = (base_non_value, value_or_null & (base_or_null, kr2))]
-
-[@@@kind_set.define all_ks = (all_ks_non_value, value_or_null)]
-
 [%%rederive.portable
-  type 'a t = 'a option [@@deriving compare ~localize, globalize, hash, sexp_grammar]]
+  type 'a t = 'a option [@@deriving compare, globalize, hash, sexp_grammar]]
 
 include struct
-  [@@@kind.default k = all_ks]
-
   open struct
-    type nonrec 'a t = ('a t[@kind.explicit k]) =
+    type nonrec 'a t = 'a t =
       | None
       | Some of 'a
   end
@@ -39,13 +32,11 @@ include struct
       | List _ -> of_sexp_error "option_of_sexp: list must be (some el)" sexp)
   ;;
 
-  [@@@alloc.default a = (heap, stack)]
-
   (* Copied and templated from [Sexplib0] *)
 
   let sexp_of_t sexp_of__a option : Sexplib0.Sexp.t =
     let write_old_option_format = Dynamic.get write_old_option_format in
-    match[@exclave_if_stack a] option with
+    match option with
     | Some x when write_old_option_format -> List [ sexp_of__a x ]
     | Some x -> List [ Atom "some"; sexp_of__a x ]
     | None when write_old_option_format -> List []
@@ -54,16 +45,11 @@ include struct
 end
 
 include struct
-  [%%template
-  [@@@kind.default k = all_ks]
-
   open struct
-    type nonrec 'a t = ('a t[@kind.explicit k]) =
+    type nonrec 'a t = 'a t =
       | None
       | Some of 'a
   end
-
-  [@@@mode.default m = (global, local)]
 
   let value t ~default =
     match t with
@@ -80,7 +66,7 @@ include struct
         | None, None ->
           if Source_code_position.is_dummy here
           then Error.of_string "Option.value_exn None"
-          else Error.create "Option.value_exn None" here Source_code_position0.sexp_of_t
+          else Error.create "Option.value_exn None" here Source_code_position.sexp_of_t
         | Some e, None -> e
         | None, Some m -> Error.of_string m
         | Some e, Some m -> Error.tag e ~tag:m
@@ -92,7 +78,7 @@ include struct
   let value_or_thunk o ~default =
     match o with
     | Some x -> x
-    | None -> default () [@exclave_if_local m]
+    | None -> default ()
   ;;
 
   let iter o ~f =
@@ -103,10 +89,9 @@ include struct
 
   let value_map t ~default ~f =
     match t with
-    | Some x -> f x [@exclave_if_local m]
+    | Some x -> f x
     | None -> default
-  [@@kind ki = k, ko = all_ks]
-  ;;]
+  ;;
 end
 
 let invariant f t = iter t ~f
@@ -125,15 +110,14 @@ let to_array t =
 
 let to_iarray t =
   match t with
-  | None -> Iarray0.unsafe_of_array__promise_no_mutation [||]
-  | Some x -> Iarray0.unsafe_of_array__promise_no_mutation [| x |]
+  | None -> Iarray.unsafe_of_array__promise_no_mutation [||]
+  | Some x -> Iarray.unsafe_of_array__promise_no_mutation [| x |]
 ;;
 
-let%template to_list t =
+let to_list t =
   match t with
   | None -> []
-  | Some x -> [ x ] [@exclave_if_local m]
-[@@mode m = (global, local)]
+  | Some x -> [ x ]
 ;;
 
 let for_all t ~f =
@@ -178,18 +162,14 @@ let find_map t ~f =
   | Some a -> f a
 ;;
 
-[%%template
-[@@@mode.default m = (global, local)]
-
-let equal f (t : (_ t[@kind k])) (t' : (_ t[@kind k])) =
+let equal f (t : _ t) (t' : _ t) =
   match t, t' with
   | None, None -> true
   | Some x, Some x' -> f x x'
   | _ -> false
-[@@kind k = all_ks]
 ;;
 
-let some x = Some x [@exclave_if_local m]
+let some x = Some x
 
 let first_some x y =
   match x with
@@ -200,18 +180,11 @@ let first_some x y =
 let first_some_thunk x y =
   match x with
   | Some _ -> x
-  | None -> y () [@exclave_if_local m]
+  | None -> y ()
 ;;
 
-let some_if cond x = if cond then Some x [@exclave_if_local m] else None]
-
-let%template[@mode global] some_if_thunk cond thunk =
-  if cond then Some (thunk ()) else None
-;;
-
-let%template[@mode local] some_if_thunk cond thunk =
-  if cond then Some (thunk ()) else None
-;;
+let some_if cond x = if cond then Some x else None
+let some_if_thunk cond thunk = if cond then Some (thunk ()) else None
 
 let merge a b ~f =
   match a, b with
@@ -220,11 +193,10 @@ let merge a b ~f =
 ;;
 
 let transpose_result t =
-  match[@exclave_if_stack a] t with
+  match t with
   | Some (Ok v) -> Ok (Some v)
   | Some (Error e) -> Error e
   | None -> Ok None
-[@@alloc a = (stack, heap)]
 ;;
 
 let filter t ~f =
@@ -245,31 +217,19 @@ let try_with_join f =
   | exception _ -> None
 ;;
 
-let%template[@mode local] both x y =
-  match x, y with
-  | None, _ | _, None -> None
-  | Some x, Some y -> Some (x, y)
-;;
+let return a : _ t = Some a
 
-[%%template
-[@@@mode.default m = (global, local)]
-[@@@kind ko = all_ks]
-
-let[@kind ko] return a : (_ t[@kind ko]) = Some a [@exclave_if_local m]
-
-[@@@kind.default ki = all_ks, ko = ko]
-
-let map (t : (_ t[@kind ki])) ~f : (_ t[@kind ko]) =
+let map (t : _ t) ~f : _ t =
   match t with
   | None -> None
-  | Some a -> Some (f a) [@exclave_if_local m ~reasons:[ Will_return_unboxed ]]
+  | Some a -> Some (f a)
 ;;
 
-let bind (t : (_ t[@kind ki])) ~f : (_ t[@kind ko]) =
+let bind (t : _ t) ~f : _ t =
   match t with
   | None -> None
-  | Some a -> f a [@exclave_if_local m]
-;;]
+  | Some a -> f a
+;;
 
 module Monad_arg = struct
   type 'a t = 'a option
@@ -280,9 +240,7 @@ module Monad_arg = struct
   let bind = bind
 end
 
-include%template
-  Monad.Make [@kind value_or_null mod maybe_null] [@mode local] [@modality portable]
-    (Monad_arg)
+include Monad.Make (Monad_arg)
 
 module Applicative_arg = struct
   type 'a t = 'a option
@@ -297,29 +255,24 @@ module Applicative_arg = struct
   ;;
 end
 
-include%template
-  Applicative.Make_using_map2
-    [@kind value_or_null mod maybe_null]
-    [@mode local]
-    [@modality portable]
-    (Applicative_arg)
+include Applicative.Make_using_map2 (Applicative_arg)
 
-module%template Local = struct
+module Local = struct
   module Let_syntax = struct
-    let return = (return [@mode local])
-    let ( >>| ) x f = (map [@mode local]) x ~f
-    let ( >>= ) x f = (bind [@mode local]) x ~f
+    let return = return
+    let ( >>| ) x f = map x ~f
+    let ( >>= ) x f = bind x ~f
 
     module Let_syntax = struct
-      let return = (return [@mode local])
-      let map = (map [@mode local])
-      let bind = (bind [@mode local])
-      let both = (both [@mode local])
+      let return = return
+      let map = map
+      let bind = bind
+      let both = both
 
       module Open_on_rhs = struct end
     end
   end
-end]
+end
 
 include struct
   let map = Monad_arg.custom_map

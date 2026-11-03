@@ -1,21 +1,14 @@
 open! Import0
+module Array = Array0
+module Sexp = Sexp0
 open Ppx_compare_lib.Builtin
 
 (** Abstract type and unsafe casts *)
 
 type +'a t = 'a iarray
 
-type%template 'a t = 'a t [@@kind k = (base_non_value, value_or_null mod external64)]
-
-[%%template
-[@@@kind.default k = (base_or_null, value_or_null mod external64)]
-[@@@mode.default m = (global, local)]
-
-let equal = (equal_iarray [@kind k] [@mode m])
-let compare = (compare_iarray [@kind k] [@mode m])]
-
-[%%template
-[@@@mode.default c = (uncontended, shared)]
+let equal = equal_iarray
+let compare = compare_iarray
 
 (* This one should not operate on local arrays, because that would be more unsafe:
    extraction from a local array gets *global* elements. So if this function worked on
@@ -28,7 +21,7 @@ external unsafe_to_array__promise_no_mutation : 'a. 'a t -> 'a array = "%identit
 external unsafe_of_array__promise_no_mutation
   : 'a.
   ('a array[@local_opt]) -> ('a t[@local_opt])
-  = "%identity"]
+  = "%identity"
 
 (** Operators *)
 
@@ -44,9 +37,6 @@ open O
 
 (** Indexing and length *)
 
-[%%template
-[@@@mode.default c = (uncontended, shared, contended), p = (portable, nonportable)]
-
 external get : 'a. ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
 [@@layout_poly]
 
@@ -54,7 +44,7 @@ external unsafe_get
   : 'a.
   ('a t[@local_opt]) -> int -> ('a[@local_opt])
   = "%array_unsafe_get"
-[@@layout_poly]]
+[@@layout_poly]
 
 external length : 'a. ('a t[@local_opt]) -> int = "%array_length" [@@layout_poly]
 
@@ -68,24 +58,10 @@ let map t ~f = init (length t) ~f:(fun i -> f (unsafe_get t i)) [@nontail]
 
 (* sexp serialization is copied from that of [array] in [Sexplib0] *)
 
-[%%template
-[@@@kind.default k = base_or_null]
-
 let sexp_of_t sexp_of__a (ar : _ t) =
   let lst_ref = ref [] in
   for i = length ar - 1 downto 0 do
     lst_ref := sexp_of__a ar.:(i) :: !lst_ref
   done;
-  Sexp0.List !lst_ref
-;;
-
-let[@alloc stack] sexp_of_t sexp_of__a (ar : _ t) =
-  let rec loop i acc =
-    if i < 0 then Sexp0.List acc else loop (i - 1) (sexp_of__a (get ar i) :: acc)
-  in
-  loop (length ar - 1) []
-;;]
-
-let%template sexp_of_t = (sexp_of_t [@kind value_or_null] [@alloc a])
-[@@kind __ = value_or_null mod external64] [@@alloc a = (heap, stack)]
+  Sexp.List !lst_ref
 ;;

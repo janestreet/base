@@ -3,22 +3,18 @@
    only difference being the lowest bit (immediate bit) set to 1. *)
 
 open! Import
+module Float = Float0
 module Sexp = Sexp0
 include Int64_replace_polymorphic_compare
 module Conv = Int_conversions
 
 module W : sig
-  type t = int64
-  [@@deriving compare ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+  type t = int64 [@@deriving globalize, hash, sexp, sexp_grammar]
 
-  include%template Comparator.S [@modality portable] with type t := t
-
-  [%%template:
-  [@@@alloc.default a @ m = (heap_global, stack_local)]
+  include Comparator.S with type t := t
 
   val to_string : t -> string
-  val to_string_hum : ?delimiter:char -> t -> string]
-
+  val to_string_hum : ?delimiter:char -> t -> string
   val wrap_exn : int64 -> t
   val wrap_modulo : int64 -> t
   val unwrap : t -> int64
@@ -52,11 +48,6 @@ module W : sig
   val of_int64 : int64 -> t option
   val of_int64_exn : int64 -> t
   val of_int64_trunc : int64 -> t
-  val compare : t -> t -> int
-
-  val%template compare : t -> t -> int [@@mode local]
-  val%template equal : t -> t -> bool [@@mode local]
-
   val ceil_pow2 : t -> t
   val floor_pow2 : t -> t
   val ceil_log2 : t -> t
@@ -67,14 +58,12 @@ module W : sig
 end = struct
   module T = struct
     module T0 = struct
-      type t = int64 [@@deriving compare ~localize, globalize, hash, sexp_grammar]
+      type t = int64 [@@deriving globalize, hash, sexp_grammar]
+
+      include Int64_replace_polymorphic_compare
 
       let unwrap x = Stdlib.Int64.shift_right x 1
-
-      let%template[@alloc a = (heap, stack)] to_string x =
-        (Integer_to_string.int64_to_string [@alloc a])
-          (unwrap x) [@nontail] [@exclave_if_stack a]
-      ;;
+      let to_string x = Integer_to_string.int64_to_string (unwrap x) [@nontail]
     end
 
     include T0
@@ -82,8 +71,7 @@ end = struct
   end
 
   include T
-
-  include%template Comparator.Make [@modality portable] (T)
+  include Comparator.Make (T)
 
   let wrap_exn x =
     (* Raises if the int64 value does not fit on int63. *)
@@ -136,9 +124,6 @@ end = struct
   let of_int64_exn = wrap_exn
   let of_int64_trunc t = wrap_modulo t
   let t_of_sexp x = globalize (wrap_exn (int64_of_sexp x)) [@nontail]
-  let compare (x : t) y = compare x y
-  let%template[@mode local] compare (x : t) y = (compare [@mode local]) x y
-  let%template[@mode local] equal (x : t) y = (equal [@mode local]) x y
   let is_pow2 x = Int64.is_pow2 (unwrap x) [@nontail]
 
   let clz x =
@@ -149,7 +134,7 @@ end = struct
 
   let ctz x = (Int64.ctz (unwrap x) |> wrap_modulo) [@nontail]
   let floor_pow2 x = globalize (wrap_exn (Int64.floor_pow2 (unwrap x))) [@nontail]
-  let ceil_pow2 x = globalize (wrap_exn (Int64.floor_pow2 (unwrap x))) [@nontail]
+  let ceil_pow2 x = globalize (wrap_exn (Int64.ceil_pow2 (unwrap x))) [@nontail]
   let floor_log2 x = Int64.floor_log2 (unwrap x) |> wrap_modulo
   let ceil_log2 x = Int64.ceil_log2 (unwrap x) |> wrap_modulo
 end
@@ -157,20 +142,16 @@ end
 open W
 
 module T = struct
-  type t = W.t [@@deriving globalize, hash, sexp ~stackify, sexp_grammar]
+  type t = W.t [@@deriving globalize, hash, sexp, sexp_grammar]
   type comparator_witness = W.comparator_witness
 
   let comparator = W.comparator
-  let compare = W.compare
-  let%template[@mode local] compare = (W.compare [@mode local])
-  let%template[@mode local] equal = (W.equal [@mode local])
   let invariant = W.invariant
 
-  [%%template
-  [@@@alloc.default a = (heap, stack)]
+  include Int64_replace_polymorphic_compare
 
-  let to_string = (W.to_string [@alloc a])
-  let to_string_hum = (W.to_string_hum [@alloc a])]
+  let to_string = W.to_string
+  let to_string_hum = W.to_string_hum
 
   (* We don't expect [hash] to follow the behavior of int in 64bit architecture *)
   let _ = hash
@@ -256,8 +237,8 @@ end
 include T
 
 let num_bits = 63
-let float_lower_bound = Float0.lower_bound_for_int num_bits
-let float_upper_bound = Float0.upper_bound_for_int num_bits
+let float_lower_bound = Float.lower_bound_for_int num_bits
+let float_upper_bound = Float.upper_bound_for_int num_bits
 let shift_right_logical = shift_right_logical
 let shift_right = shift_right
 let shift_left = shift_left
@@ -295,7 +276,7 @@ let of_float t =
   else
     Printf.invalid_argf
       "Int63.of_float: argument (%f) is out of range or NaN"
-      (Float0.box t)
+      (Float.box t)
       ()
 ;;
 
@@ -306,7 +287,7 @@ let of_int64_trunc = of_int64_trunc
 let to_local_int64 = to_int64
 let to_int64 x = globalize_int64 (to_local_int64 x) [@nontail]
 
-include%template Comparable.With_zero [@modality portable] (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero
@@ -364,7 +345,7 @@ let to_nativeint_trunc x = Conv.int64_to_nativeint_trunc (unwrap x)
 let num_bits = of_int_exn num_bits
 
 include Int_string_conversions.Make_hex (struct
-    type t = T.t [@@deriving compare ~localize, hash]
+    type t = T.t [@@deriving compare, hash]
 
     let zero = zero
     let neg = ( ~- )
@@ -379,7 +360,7 @@ include Int_string_conversions.Make_hex (struct
     let module_name = "Base.Int63.Hex"
   end)
 
-include%template Pretty_printer.Register [@modality portable] (struct
+include Pretty_printer.Register (struct
     type nonrec t = t
 
     let to_string x = to_string x
@@ -432,7 +413,7 @@ end
 include O
 
 include Int_string_conversions.Make_binary (struct
-    type t = T.t [@@deriving compare ~localize, equal ~localize, hash]
+    type t = T.t [@@deriving compare, equal, hash]
 
     let ( land ) = ( land )
     let ( lsr ) = ( lsr )
@@ -454,15 +435,7 @@ module Summable = struct
   let[@inline] ( - ) x y = x - y
 end
 
-module Repr = struct
-  type emulated = t
-
-  type ('underlying_type, 'intermediate_type) t =
-    | Int : (int, int) t
-    | Int64 : (int64, emulated) t
-end
-
-let repr = Repr.Int64
+let repr = Int63_type.Repr.Int64
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after including functor
    application that could shadow its definitions. This is here so that efficient versions

@@ -29,19 +29,16 @@
     sequence (the [f] passed to [unfold]) raises, in which case the exception will
     cascade. *)
 
-open! Import
+open! Import0
 
 type !+'a t [@@deriving globalize]
 
-[%%rederive:
-  type nonrec !+'a t = 'a t [@@deriving compare ~localize, equal ~localize, sexp_of]]
+[%%rederive: type nonrec !+'a t = 'a t [@@deriving compare, equal, sexp_of]]
 
 type 'a sequence := 'a t
 
-include%template
-  Indexed_container.S1 [@kind_set.explicit value_or_null] with type 'a t := 'a t
-
-include%template Monad.S [@kind value_or_null mod maybe_null] with type 'a t := 'a t
+include Indexed_container.S1 with type 'a t := 'a t
+include Monad.S with type 'a t := 'a t
 
 (** [empty] is a sequence with no elements. *)
 val empty : 'a. 'a t
@@ -71,7 +68,7 @@ module Step : sig
         ; state : 's
         }
         -> ('a, 's) t
-  [@@deriving sexp_of ~stackify]
+  [@@deriving sexp_of]
 end
 
 (** [unfold_step ~init ~f] constructs a sequence by giving an initial state [init] and a
@@ -137,7 +134,7 @@ module Merge_with_duplicates_element : sig
     | Left of 'a
     | Right of 'b
     | Both of 'a * 'b
-  [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+  [@@deriving compare, equal, hash, sexp, sexp_grammar]
 end
 
 (** [merge_with_duplicates_element t1 t2 ~compare] is like [merge], except that for each
@@ -391,7 +388,7 @@ val of_list : 'a. 'a list -> 'a t
 
 (** [of_lazy t_lazy] produces a sequence that forces [t_lazy] the first time it needs to
     compute an element. *)
-val of_lazy : 'a. 'a t Lazy.t -> 'a t
+val of_lazy : 'a. 'a t lazy_t -> 'a t
 
 (** [memoize t] produces each element of [t], but also memoizes them so that if you
     consume the same element multiple times it is only computed once. It's a non-eager

@@ -1,72 +1,40 @@
-open! Import
+open! Import0
+module Sys = Sys0
 include Obj_intf.Definitions
 
-external%template magic : 'a 'b. ('a[@local_opt]) -> ('b[@local_opt]) = "%identity"
-[@@layout_poly]
-[@@mode
-  c = (uncontended, shared, contended, read, immutable)
-  , o = (many, once)
-  , p = (nonportable, shareable, portable, reading, stateless)
-  , u = (aliased, unique)]
+external magic : 'a 'b. ('a[@local_opt]) -> ('b[@local_opt]) = "%identity" [@@layout_poly]
 
-external%template magic_portable : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
+external magic_portable : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
 [@@layout_poly]
-[@@mode
-  c = (uncontended, shared, contended, read, immutable)
-  , o = (many, once)
-  , u = (aliased, unique)]
 
-external%template magic_uncontended
+external magic_uncontended : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
+[@@layout_poly]
+
+external magic_many : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
+[@@layout_poly]
+
+external magic_unyielding : 'a. 'a -> 'a = "%identity" [@@layout_poly]
+
+external magic_unique : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
+[@@layout_poly]
+
+external magic_read_write_uncontended
   : 'a.
   ('a[@local_opt]) -> ('a[@local_opt])
   = "%identity"
 [@@layout_poly]
-[@@mode
-  o = (many, once)
-  , p = (nonportable, shareable, portable, reading, stateless)
-  , u = (aliased, unique)]
 
-external%template magic_many : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
-[@@layout_poly]
-[@@mode
-  c = (uncontended, shared, contended), p = (nonportable, portable), u = (aliased, unique)]
-
-external%template magic_unyielding : 'a. 'a -> 'a = "%identity"
-[@@layout_poly]
-[@@mode
-  c = (uncontended, shared, contended)
-  , o = (many, once)
-  , p = (nonportable, portable)
-  , u = (aliased, unique)]
-
-external%template magic_unique : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
-[@@layout_poly]
-[@@mode
-  c = (uncontended, shared, contended), o = (many, once), p = (nonportable, portable)]
-
-external%template magic_read_write_uncontended
-  : 'a.
-  ('a[@local_opt]) -> ('a[@local_opt])
-  = "%identity"
-[@@layout_poly]
-[@@mode o = (many, once), p = (nonportable, portable), u = (aliased, unique)]
-
-module%template
-  [@inline] [@kind.explicit k = (value, value_or_null)] Make (T : sig
+module
+  [@inline]
+  Make (T : sig
     type t
 
-    val is_immediate : t -> bool [@@zero_alloc]
+    val is_immediate : t -> bool [@@zero_alloc strict]
   end) =
 struct
   open T
 
-  external%template repr : 'a. ('a[@local_opt]) -> (t[@local_opt]) = "%identity"
-  [@@mode
-    c = (uncontended, shared, contended, read, write, immutable)
-    , o = (many, once)
-    , p = (nonportable, portable)
-    , u = (aliased, unique)]
-
+  external repr : 'a. ('a[@local_opt]) -> (t[@local_opt]) = "%identity"
   external dup : t -> t = "caml_obj_dup"
   external tag : t -> int = "caml_obj_tag" [@@noalloc]
   external size : t -> int = "%obj_size"
@@ -74,18 +42,16 @@ struct
   (** Flambda2 attempts to track whether a block is an array, and %obj_size and %obj_field
       may only be used on unspecialized blocks. Hence we wrap them with [opaque_identity],
       which makes Flambda2 forget any additional information about the block. *)
-  let%template[@inline always] size t =
-    size ((Sys.opaque_identity [@mode contended once nonportable aliased]) t)
-  ;;
+  let[@inline always] size t = size (Sys.opaque_identity t)
 
   let[@inline] is_immediate t = is_immediate t
   let[@inline] is_block t = not (is_immediate t)
 
   external is_stack : t -> bool = "caml_dummy_obj_is_stack" [@@noalloc]
 
-  let%template stack_or_heap repr : stack_or_heap =
+  let stack_or_heap repr : stack_or_heap =
     (* [is_immediate] and [is_stack] do not actually consume [repr]. *)
-    let repr = (magic_many [@mode contended nonportable aliased]) repr in
+    let repr = magic_many repr in
     if is_immediate repr
     then Immediate
     else (
@@ -98,9 +64,9 @@ struct
   external reserved_header_bits : t -> int = "caml_dummy_succ_scannable_prefix_len"
   [@@noalloc]
 
-  let%template uniform_or_mixed repr : uniform_or_mixed =
+  let uniform_or_mixed repr : uniform_or_mixed =
     (* [is_immediate] and [reserved_header_bits] do not actually consume [repr]. *)
-    let repr = (magic_many [@mode contended nonportable aliased]) repr in
+    let repr = magic_many repr in
     if is_immediate repr
     then Immediate
     else (
@@ -116,13 +82,7 @@ struct
   external reachable_words : t -> int = "caml_obj_reachable_words"
 
   module Expert = struct
-    external%template obj : 'a. (t[@local_opt]) -> ('a[@local_opt]) = "%identity"
-    [@@mode
-      c = (uncontended, shared, contended)
-      , o = (many, once)
-      , p = (nonportable, portable)
-      , u = (aliased, unique)]
-
+    external obj : 'a. (t[@local_opt]) -> ('a[@local_opt]) = "%identity"
     external field : (t[@local_opt]) -> int -> (t[@local_opt]) = "%obj_field"
 
     (* We have to write both implementations because it doesn't make sense to template
@@ -135,14 +95,12 @@ struct
            field i [@exclave_if_local m]
          ;;
        ]} *)
-    let[@inline always] [@mode local] field t i = field (Sys.opaque_identity t) i
+
     let[@inline always] field t i = field (Sys.opaque_identity t) i
 
     external set_field : (t[@local_opt]) -> int -> t -> unit = "%obj_set_field"
 
-    let%template[@inline always] set_field t i f = set_field (Sys.opaque_identity t) i f
-    [@@mode l = (local, global)]
-    ;;
+    let[@inline always] set_field t i f = set_field (Sys.opaque_identity t) i f
 
     external raw_field : (t[@local_opt]) -> int -> raw_data = "caml_obj_raw_field"
 
@@ -159,7 +117,7 @@ type t = Stdlib.Obj.t
 
 external is_int : t -> bool = "%obj_is_int"
 
-include%template Make [@kind.explicit value] (struct
+include Make (struct
     type nonrec t = t
 
     let[@inline] is_immediate t = is_int t
@@ -205,7 +163,7 @@ module Nullable = struct
 
   external is_int : t -> bool = "%obj_is_int"
 
-  include%template Make [@kind.explicit value_or_null] (struct
+  include Make (struct
       type nonrec t = t
 
       let is_immediate t = is_int t [@@inline]

@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 include Info0
 
 module Utf8 = struct

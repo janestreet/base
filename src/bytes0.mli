@@ -88,20 +88,16 @@ external unsafe_fill : bytes -> pos:int -> len:int -> char -> unit = "caml_fill_
 val fill : bytes -> pos:int -> len:int -> char -> unit
 val empty : bytes
 val get_empty : unit -> bytes [@@zero_alloc]
-external unsafe_create_local : int -> bytes = "Base_unsafe_create_local_bytes" [@@noalloc]
+external unsafe_create_local : int -> bytes = "Base_unsafe_create_local_bytes"
 val create_local : int -> bytes [@@zero_alloc]
-
-[%%template:
-[@@@alloc.default a @ l = (heap @ global, stack @ local)]
-
-val create : int -> bytes [@@zero_alloc_if_stack a]
-val make : int -> char -> bytes [@@zero_alloc_if_stack a]
+val create : int -> bytes
+val make : int -> char -> bytes
 val map : bytes -> f:(char -> char) -> bytes
 val mapi : bytes -> f:(int -> char -> char) -> bytes
-val copy : bytes -> bytes [@@zero_alloc_if_stack a]
-val sub : bytes -> pos:int -> len:int -> bytes [@@zero_alloc_if_stack a]
-val to_string : bytes -> string [@@zero_alloc_if_stack a]
-val of_string : string -> bytes [@@zero_alloc_if_stack a]]
+val copy : bytes -> bytes
+val sub : bytes -> pos:int -> len:int -> bytes
+val to_string : bytes -> string
+val of_string : string -> bytes
 
 external unsafe_blit
   :  src:(bytes[@local_opt])

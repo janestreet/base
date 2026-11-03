@@ -1,24 +1,20 @@
 open! Import
 open! Stdlib.Nativeint
+module Float = Float0
 module Sexp = Sexp0
 include Nativeint_replace_polymorphic_compare
 
 module T = struct
   module T0 = struct
-    type t = nativeint [@@deriving globalize, hash, of_sexp ~unboxed, sexp_grammar]
+    type t = nativeint [@@deriving globalize, hash, of_sexp, sexp_grammar]
 
-    let%template[@alloc a = (heap, stack)] to_string =
-      (Integer_to_string.nativeint_to_string [@alloc a])
-    ;;
-
-    type unboxed = nativeint
-
-    let box = Basement.Primitives.box_nativeint
+    let t_u_of_sexp sexp = Nativeint_u.unbox (t_of_sexp sexp)
+    let to_string = Integer_to_string.nativeint_to_string
   end
 
   include T0
-
-  include%template Int_string_conversions.Make_unboxed [@kind word] (T0)
+  include Int_string_conversions.Make (T0)
+  include Provide_unboxed (Nativeint_u)
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = Nativeint_replace_polymorphic_compare.compare
@@ -37,10 +33,9 @@ module T = struct
 end
 
 include T
+include Comparator.Make (T)
 
-include%template Comparator.Make [@modality portable] (T)
-
-include%template Comparable.With_zero [@modality portable] (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero
@@ -51,7 +46,7 @@ module Conv = Int_conversions
 include Int_string_conversions.Make_hex (struct
     open Nativeint_replace_polymorphic_compare
 
-    type t = nativeint [@@deriving compare ~localize, hash]
+    type t = nativeint [@@deriving compare, hash]
 
     let zero = zero
 
@@ -63,7 +58,7 @@ include Int_string_conversions.Make_hex (struct
     let module_name = "Base.Nativeint.Hex"
   end)
 
-include%template Pretty_printer.Register [@modality portable] (struct
+include Pretty_printer.Register (struct
     type nonrec t = t
 
     let to_string = to_string
@@ -77,8 +72,8 @@ open! Nativeint_replace_polymorphic_compare
 
 let invariant (_ : t) = ()
 let num_bits = Word_size.num_bits Word_size.word_size |> of_int
-let float_lower_bound = Float0.lower_bound_for_int (num_bits |> to_int)
-let float_upper_bound = Float0.upper_bound_for_int (num_bits |> to_int)
+let float_lower_bound = Float.lower_bound_for_int (num_bits |> to_int)
+let float_upper_bound = Float.upper_bound_for_int (num_bits |> to_int)
 
 external shift_right_logical : t -> int -> t = "%nativeint_lsr"
 external shift_right : t -> int -> t = "%nativeint_asr"
@@ -129,7 +124,7 @@ let of_float f =
   else
     Printf.invalid_argf
       "Nativeint.of_float: argument (%f) is out of range or NaN"
-      (Float0.box f)
+      (Float.box f)
       ()
 ;;
 
@@ -187,11 +182,7 @@ end
 include O
 
 module Pow2 = struct
-  let raise_s = Error.raise_s
-
-  let non_positive_argument () =
-    Printf.invalid_argf "argument must be strictly positive" ()
-  ;;
+  let non_positive_argument () = invalid_arg "argument must be strictly positive"
 
   external ( land ) : t -> t -> t = "%nativeint_and"
 
@@ -232,23 +223,13 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if i <= 0n
-    then
-      raise_s
-        (Sexp.message
-           "[Nativeint.floor_log2] got invalid input"
-           [ "", sexp_of_nativeint (globalize i) ]);
+    if i <= 0n then invalid_arg ("Nativeint.floor_log2: " ^ to_string i);
     num_bits - 1n - clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if i <= 0n
-    then
-      raise_s
-        (Sexp.message
-           "[Nativeint.ceil_log2] got invalid input"
-           [ "", sexp_of_nativeint (globalize i) ]);
+    if i <= 0n then invalid_arg ("Nativeint.ceil_log2: " ^ to_string i);
     if i = 1n
     then 0n
     else (
@@ -310,7 +291,7 @@ let to_int64 = Conv.nativeint_to_int64
 let to_local_int64 = Conv.nativeint_to_int64
 
 include Int_string_conversions.Make_binary (struct
-    type t = nativeint [@@deriving compare ~localize, equal ~localize, hash]
+    type t = nativeint [@@deriving compare, equal, hash]
 
     let ( land ) = ( land )
 

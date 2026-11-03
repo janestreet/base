@@ -3,6 +3,8 @@
    adding new dependencies. *)
 
 open! Import
+module List = List0
+module Source_code_position = Source_code_position0
 include Info_intf.Definitions
 module Sexp = Sexp0
 module String = String0
@@ -11,9 +13,7 @@ module Portable_atomic = Basement.Portable_atomic
 
 type global_exn = exn Modes.Global.t
 
-let%template sexp_of_global_exn g = g |> Modes.Global.unwrap |> sexp_of_exn
-[@@alloc __ = (heap, stack)]
-;;
+let sexp_of_global_exn g = g |> Modes.Global.unwrap |> sexp_of_exn
 
 module Message = struct
   type t =
@@ -21,16 +21,16 @@ module Message = struct
     | String of string
     | Exn of global_exn
     | Sexp of Sexp.t
-    | Tag_sexp of string * Sexp.t * Source_code_position0.t option
+    | Tag_sexp of string * Sexp.t * Source_code_position.t option
     | Tag_t of string * t
     | Tag_arg of string * Sexp.t * t
     | Of_list of int option * t list
     | With_backtrace of t * string (* backtrace *)
-  [@@deriving sexp_of ~stackify]
+  [@@deriving sexp_of]
 
-  let%template[@alloc a @ m = (heap_global, stack_local)] rec to_sexps_hum (t : t) ac =
-    match[@exclave_if_stack a] t with
-    | Could_not_construct _ as t -> (sexp_of_t [@alloc a]) t :: ac
+  let rec to_sexps_hum (t : t) ac =
+    match t with
+    | Could_not_construct _ as t -> sexp_of_t t :: ac
     | String string -> Atom string :: ac
     | Exn { global = exn } -> Exn.sexp_of_t exn :: ac
     | Sexp sexp -> sexp :: ac
@@ -41,26 +41,21 @@ module Message = struct
          ::
          (match here with
           | None -> []
-          | Some here -> [ (Source_code_position0.sexp_of_t [@alloc a]) here ]))
+          | Some here -> [ Source_code_position.sexp_of_t here ]))
       :: ac
-    | Tag_t (tag, t) -> List (Atom tag :: (to_sexps_hum [@alloc a]) t []) :: ac
+    | Tag_t (tag, t) -> List (Atom tag :: to_sexps_hum t []) :: ac
     | Tag_arg (tag, sexp, t) ->
-      let body = sexp :: (to_sexps_hum [@alloc a]) t [] in
+      let body = sexp :: to_sexps_hum t [] in
       if String.length tag = 0 then List body :: ac else List (Atom tag :: body) :: ac
     | With_backtrace (t, backtrace) ->
       Sexp.List
-        [ (to_sexp_hum [@alloc a]) t
-        ; (sexp_of_list [@alloc a])
-            (sexp_of_string [@alloc a])
-            ((String.split_lines [@alloc a]) backtrace)
-        ]
+        [ to_sexp_hum t; sexp_of_list sexp_of_string (String.split_lines backtrace) ]
       :: ac
     | Of_list (_, ts) ->
-      (List.fold [@mode m m]) ((List.rev [@alloc a]) ts) ~init:ac ~f:(fun ac t ->
-        (to_sexps_hum [@alloc a]) t ac [@exclave_if_stack a])
+      List.fold (List.rev ts) ~init:ac ~f:(fun ac t -> to_sexps_hum t ac)
 
-  and[@alloc a = (heap, stack)] to_sexp_hum t =
-    match[@exclave_if_stack a] (to_sexps_hum [@alloc a]) t [] with
+  and to_sexp_hum t =
+    match to_sexps_hum t [] with
     | [ sexp ] -> sexp
     | sexps -> Sexp.List sexps
   ;;
@@ -140,19 +135,18 @@ module Computed = struct
     let push x { portable; nonportable } = { portable = x :: portable; nonportable }
   end
 
-  let%template compute_frame frame message =
+  let compute_frame frame message =
     match frame with
     | In_info info -> `Info info
     | In_tag_arg (tag, arg) -> `Frame (Tag_arg (tag, arg, message))
     | In_tag_t tag -> `Frame (Tag_t (tag, message))
     | In_list { fwd_prefix; rev_suffix } -> `List (fwd_prefix, message :: rev_suffix)
-  [@@mode p = (portable, nonportable)]
   ;;
 
   (* A mode-polymorphic way of computing constructors. Similarly to
      [compute_info_list_wrapper], we found that the complexity warranted factoring it out.
   *)
-  let%template[@inline always] compute_constructor_wrapper
+  let[@inline always] compute_constructor_wrapper
     cons
     stack
     ~compute_info
@@ -170,7 +164,6 @@ module Computed = struct
       (match lazy_force lazy_info with
        | info -> compute_info info stack
        | exception exn -> compute_message (Could_not_construct (sexp_of_exn exn)) stack)
-  [@@mode p = (portable, nonportable)]
   ;;
 
   (* The following mutually-recursive functions compute a [Message.t] from an [info]. All
@@ -279,7 +272,7 @@ module Computed = struct
       ~push_stack:(fun x xs -> x :: xs)
 
   and compute_constructor_portable cons stack =
-    [%template compute_constructor_wrapper [@mode portable]]
+    compute_constructor_wrapper
       cons
       stack
       ~compute_info:compute_info_portable
@@ -294,7 +287,7 @@ module Computed = struct
       compute_message message (Modes.Portable_via_contended.unwrap nonportable)
     | { portable = frame :: portable; nonportable } ->
       let stack : Portable_stack.t = { portable; nonportable } in
-      (match [%template compute_frame [@mode portable]] frame message with
+      (match compute_frame frame message with
        | `Frame message -> compute_message_portable message stack
        | `List (fwd_prefix, rev_suffix) ->
          compute_info_list_portable ~fwd_prefix ~rev_suffix stack
@@ -316,11 +309,8 @@ module Computed = struct
 
   (* Helper functions for converting and constructing [info]. *)
 
-  let%template[@alloc a = (heap, stack)] to_message info = compute_info info []
-
-  let%template of_message message : info = { global = Constant message }
-  [@@mode p = (portable, nonportable)]
-  ;;
+  let to_message info = compute_info info []
+  let of_message message : info = { global = Constant message }
 
   let is_computed : info -> bool =
     fun t ->
@@ -358,14 +348,6 @@ module Computed = struct
   let of_thunked_message lazy_message =
     of_cons (Cons_lazy_info (lazy (of_message (lazy_message ()))))
   ;;
-
-  let%template of_thunked_message lazy_message =
-    of_portable_cons
-      (Cons_lazy_info
-         (Portable_lazy.from_fun (fun () ->
-            (of_message [@mode portable]) (lazy_message ()))))
-  [@@mode portable]
-  ;;
 end
 
 open Computed
@@ -377,16 +359,11 @@ let invariant _ = ()
 
 (* It is OK to use [Message.to_sexp_hum], which is not stable, because [t_of_sexp] below
    can handle any sexp. *)
-let%template[@alloc a = (heap, stack)] sexp_of_t t =
-  (Message.to_sexp_hum [@alloc a]) ((to_message [@alloc a]) t) [@exclave_if_stack a]
-;;
-
-let%template t_of_sexp sexp = (of_message [@mode portable]) (Sexp sexp)
+let sexp_of_t t = Message.to_sexp_hum (to_message t)
+let t_of_sexp sexp = of_message (Sexp sexp)
 let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = { untyped = Any "Info.t" }
 let compare t1 t2 = Sexp.compare (sexp_of_t t1) (sexp_of_t t2)
-let%template[@mode local] compare t1 t2 = compare (globalize t1) (globalize t2)
 let equal t1 t2 = Sexp.equal (sexp_of_t t1) (sexp_of_t t2)
-let%template[@mode local] equal t1 t2 = equal (globalize t1) (globalize t2)
 let hash_fold_t state t = Sexp.hash_fold_t state (sexp_of_t t)
 let hash t = Hash.run hash_fold_t t
 
@@ -397,8 +374,8 @@ let to_string_hum t =
 ;;
 
 let to_string_mach t = Sexp.to_string_mach (sexp_of_t t)
-let%template of_string message = (of_message [@mode portable]) (String message)
-let%template create_s sexp = (of_message [@mode portable]) (Sexp sexp)
+let of_string message = of_message (String message)
+let create_s sexp = of_message (Sexp sexp)
 let createf format = Printf.ksprintf of_string format
 let createf_portable format = Printf.ksprintf (fun string () -> of_string string) format
 
@@ -411,46 +388,23 @@ let of_lazy_sexp l = of_thunked_message (fun () -> Sexp (Lazy.force l))
 (* Portable lazies *)
 
 let of_portable_lazy_t = of_portable_lazy_info
+let of_portable_lazy l = of_thunked_message (fun () -> String (Portable_lazy.force l))
+let of_portable_lazy_sexp l = of_thunked_message (fun () -> Sexp (Portable_lazy.force l))
+let of_thunk f = of_thunked_message (fun () -> String (f ()))
 
-let%template of_portable_lazy l =
-  (of_thunked_message [@mode portable]) (fun () -> String (Portable_lazy.force l))
-;;
-
-let%template of_portable_lazy_sexp l =
-  (of_thunked_message [@mode portable]) (fun () -> Sexp (Portable_lazy.force l))
-;;
-
-let%template of_thunk f = (of_thunked_message [@mode p]) (fun () -> String (f ()))
-[@@mode p = (portable, nonportable)]
-;;
-
-let%template[@kind k = (bits64, float64, value)] [@mode p = (portable, nonportable)] create
-  ?here
-  ?strict
-  tag
-  x
-  sexp_of_x
-  =
+let create ?here ?strict tag x sexp_of_x =
   match strict with
-  | None -> (of_thunked_message [@mode p]) (fun () -> Tag_sexp (tag, sexp_of_x x, here))
-  | Some () -> (of_message [@mode p]) (Tag_sexp (tag, sexp_of_x x, here))
+  | None -> of_thunked_message (fun () -> Tag_sexp (tag, sexp_of_x x, here))
+  | Some () -> of_message (Tag_sexp (tag, sexp_of_x x, here))
 ;;
 
 let tag t ~tag = of_cons (Cons_tag_t (tag, t))
 let tag_s t ~tag = of_cons (Cons_tag_arg ("", tag, t))
 let of_list ts = of_cons (Cons_list ts)
-let%template[@mode portable] tag t ~tag = of_portable_cons (Cons_tag_t (tag, t))
-let%template[@mode portable] tag_s t ~tag = of_portable_cons (Cons_tag_arg ("", tag, t))
-let%template[@mode portable] of_list ts = of_portable_cons (Cons_list ts)
 let tag_lazy t ~tag = of_thunked_cons (fun () -> Cons_tag_t (Lazy.force tag, t))
 
 let tag_portable_lazy t ~tag =
   of_thunked_cons (fun () -> Cons_tag_t (Portable_lazy.force tag, t))
-;;
-
-let%template tag_portable_lazy t ~tag =
-  of_portable_thunked_cons (fun () -> Cons_tag_t (Portable_lazy.force tag, t))
-[@@mode portable]
 ;;
 
 let tag_s_lazy t ~tag = of_thunked_cons (fun () -> Cons_tag_arg ("", Lazy.force tag, t))
@@ -459,18 +413,8 @@ let tag_s_portable_lazy t ~tag =
   of_thunked_cons (fun () -> Cons_tag_arg ("", Portable_lazy.force tag, t))
 ;;
 
-let%template tag_s_portable_lazy t ~tag =
-  of_portable_thunked_cons (fun () -> Cons_tag_arg ("", Portable_lazy.force tag, t))
-[@@mode portable]
-;;
-
 let tag_arg t tag x sexp_of_x =
   of_thunked_cons (fun () -> Cons_tag_arg (tag, sexp_of_x x, t))
-;;
-
-let%template tag_arg t tag x sexp_of_x =
-  of_portable_thunked_cons (fun () -> Cons_tag_arg (tag, sexp_of_x x, t))
-[@@mode portable]
 ;;
 
 exception Exn of t
@@ -492,7 +436,7 @@ let portabilize (t : t) : t =
      its computation. *)
   | Staged_portable x -> { global = Staged_portable x }
   | Constant x -> { global = Constant x }
-  | Staged_nonportable _ -> [%template of_message [@mode portable]] (to_message t)
+  | Staged_nonportable _ -> of_message (to_message t)
 ;;
 
 let to_exn t =
@@ -504,7 +448,7 @@ let to_exn t =
     | _ -> Exn (portabilize t))
 ;;
 
-let%template of_exn ?backtrace exn =
+let of_exn ?backtrace exn =
   let backtrace =
     match backtrace with
     | None -> None
@@ -514,15 +458,13 @@ let%template of_exn ?backtrace exn =
   match exn, backtrace with
   | Exn t, None -> t
   | Exn t, Some backtrace ->
-    (of_thunked_message [@mode portable]) (fun () ->
-      With_backtrace (to_message t, backtrace))
+    of_thunked_message (fun () -> With_backtrace (to_message t, backtrace))
   | _, None -> of_message (Exn { global = exn })
   | _, Some backtrace ->
-    (of_thunked_message [@mode portable]) (fun () ->
-      With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace))
+    of_thunked_message (fun () -> With_backtrace (Sexp (Exn.sexp_of_t exn), backtrace))
 ;;
 
-include%template Pretty_printer.Register_pp [@mode portable] (struct
+include Pretty_printer.Register_pp (struct
     type nonrec t = t
 
     let module_name = "Base.Info"
@@ -532,13 +474,12 @@ include%template Pretty_printer.Register_pp [@mode portable] (struct
 module Internal_repr = struct
   include Message
 
-  let%template to_info = (of_message [@mode p]) [@@mode p = (portable, nonportable)]
+  let to_info = of_message
   let of_info = to_message
 end
 
 module Portable = struct
-  type nonrec t = t Modes.Portable.t
-  [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+  type nonrec t = t Modes.Portable.t [@@deriving compare, equal, hash, sexp, sexp_grammar]
 
   let globalize t =
     t |> Modes.Portable.unwrap |> globalize |> portabilize |> Modes.Portable.wrap
@@ -546,11 +487,7 @@ module Portable = struct
 
   let create_s sexp = sexp |> create_s |> Modes.Portable.wrap
   let of_string str = str |> of_string |> Modes.Portable.wrap
-
-  let%template of_list xs =
-    xs |> Modes.Portable.unwrap_list |> (of_list [@mode portable]) |> Modes.Portable.wrap
-  ;;
-
+  let of_list xs = xs |> Modes.Portable.unwrap_list |> of_list |> Modes.Portable.wrap
   let of_portable_lazy_sexp sexp = sexp |> of_portable_lazy_sexp |> Modes.Portable.wrap
   let of_portable_lazy str = str |> of_portable_lazy |> Modes.Portable.wrap
 
@@ -561,26 +498,21 @@ module Portable = struct
     |> Modes.Portable.wrap
   ;;
 
-  let%template create ?here ?strict message arg sexp_of_arg =
-    (create [@kind k] [@mode portable]) ?here ?strict message arg sexp_of_arg
-    |> Modes.Portable.wrap
-  [@@kind k = (bits64, float64, value)]
+  let create ?here ?strict message arg sexp_of_arg =
+    create ?here ?strict message arg sexp_of_arg |> Modes.Portable.wrap
   ;;
 
-  let%template tag_s t ~tag =
-    t |> Modes.Portable.unwrap |> (tag_s [@mode portable]) ~tag |> Modes.Portable.wrap
+  let tag_s t ~tag = t |> Modes.Portable.unwrap |> tag_s ~tag |> Modes.Portable.wrap
+
+  let tag t ~tag:string =
+    t |> Modes.Portable.unwrap |> tag ~tag:string |> Modes.Portable.wrap
   ;;
 
-  let%template tag t ~tag =
-    t |> Modes.Portable.unwrap |> (tag [@mode portable]) ~tag |> Modes.Portable.wrap
+  let tag_arg t message x f =
+    tag_arg (Modes.Portable.unwrap t) message x f |> Modes.Portable.wrap
   ;;
 
-  let%template tag_arg t message x f =
-    (tag_arg [@mode portable]) (Modes.Portable.unwrap t) message x f
-    |> Modes.Portable.wrap
-  ;;
-
-  let%template of_thunk f = (of_thunk [@mode portable]) f |> Modes.Portable.wrap
+  let of_thunk f = of_thunk f |> Modes.Portable.wrap
   let createf fmt = Printf.ksprintf of_string fmt
 end
 

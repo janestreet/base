@@ -1,12 +1,11 @@
 (** Boolean type extended to be enumerable, hashable, sexpable, comparable, and
     stringable. *)
 
-open! Import
+open! Import0
 
-type t = bool [@@deriving enumerate, globalize, sexp ~stackify ~unboxed, sexp_grammar]
+type t = bool [@@deriving enumerate, globalize, sexp ~unboxed, sexp_grammar]
 
-include%template Identifiable.S [@mode local] [@modality portable] with type t := t
-
+include Identifiable.S with type t := t
 include Invariant.S with type t := t
 
 (** - [to_int true = 1]

@@ -3,7 +3,7 @@
 
     Functions are exposed in their respective modules. *)
 
-open! Import
+open! Import0
 
 val int_popcount : int -> int
 val int32_popcount : int32 -> int32

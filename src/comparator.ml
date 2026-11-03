@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Sexp = Sexp0
 
 type ('a, 'witness) t =
@@ -50,17 +50,17 @@ let to_module (type a b) t : (a, b) Module.t =
   end)
 ;;
 
-let%template[@modality p = (nonportable, portable)] make (type t) ~compare ~sexp_of_t =
+let make (type t) ~compare ~sexp_of_t =
   (module struct
     type comparable_t = t
     type comparator_witness
 
     let comparator : (t, comparator_witness) comparator = { compare; sexp_of_t }
   end : S_fc
-    with type comparable_t = t[@modality p])
+    with type comparable_t = t)
 ;;
 
-module%template.portable S_to_S1 (S : S) = struct
+module S_to_S1 (S : S) = struct
   type 'a t = S.t
   type comparator_witness = S.comparator_witness
 
@@ -69,12 +69,8 @@ module%template.portable S_to_S1 (S : S) = struct
   let comparator = comparator
 end
 
-[%%template
-[@@@mode.default m = (local, global)]
-
-module%template.portable
-  [@modality p] Make (M : sig
-    type t [@@deriving (compare [@mode.explicit m]), sexp_of]
+module Make (M : sig
+    type t [@@deriving compare, sexp_of]
   end) =
 struct
   type comparator_witness
@@ -88,13 +84,12 @@ struct
   ;;
 end
 
-module%template.portable
-  [@modality p] Make1 (M : sig
+module Make1 (M : sig
     type 'a t
 
-    val compare : 'a t -> 'a t -> int [@@mode m = (global, m)]
+    val compare : 'a t -> 'a t -> int
     val sexp_of_t : 'a t -> Sexp.t
-  end) : S1 [@modality p] with type 'a t := 'a M.t = struct
+  end) : S1 with type 'a t := 'a M.t = struct
   type comparator_witness
 
   let comparator =
@@ -104,12 +99,12 @@ module%template.portable
     let sexp_of_t = M.sexp_of_t in
     { compare; sexp_of_t }
   ;;
-end]
+end
 
 module Poly = struct
   type 'a t = 'a
 
-  include%template Make1 [@modality portable] (struct
+  include Make1 (struct
       type 'a t = 'a
 
       let compare = Poly.compare
@@ -117,16 +112,10 @@ module Poly = struct
     end)
 end
 
-[%%template
-[@@@mode.default m = (local, global)]
-
-module%template.portable
-  [@modality p] Derived_phantom (M : sig
+module Derived_phantom (M : sig
     type ('a, 'b) t
 
     val compare : ('a -> 'a -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
-    [@@mode m = (global, m)]
-
     val sexp_of_t : ('a -> Sexp.t) -> ('a, _) t -> Sexp.t
   end) =
 struct
@@ -149,8 +138,7 @@ struct
   ;;
 end
 
-module%template.portable
-  [@modality p] Derived2_phantom (M : sig
+module Derived2_phantom (M : sig
     type ('a, 'b, 'c) t
 
     val compare
@@ -159,7 +147,6 @@ module%template.portable
       -> ('a, 'b, 'c) t
       -> ('a, 'b, 'c) t
       -> int
-    [@@mode m = (global, m)]
 
     val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b, _) t -> Sexp.t
   end) =
@@ -187,22 +174,20 @@ struct
   ;;
 end
 
-module%template.portable
-  [@modality p] Derived (M : sig
-    type 'a t [@@deriving (compare [@mode.explicit m]), sexp_of]
+module Derived (M : sig
+    type 'a t [@@deriving compare, sexp_of]
   end) =
-Derived_phantom [@mode m] [@modality p] (struct
+Derived_phantom (struct
     include M
 
     type ('a, _) t = 'a M.t
   end)
 
-module%template.portable
-  [@modality p] Derived2 (M : sig
-    type ('a, 'b) t [@@deriving (compare [@mode.explicit m]), sexp_of]
+module Derived2 (M : sig
+    type ('a, 'b) t [@@deriving compare, sexp_of]
   end) =
-Derived2_phantom [@mode m] [@modality p] (struct
+Derived2_phantom (struct
     include M
 
     type ('a, 'b, _) t = ('a, 'b) M.t
-  end)]
+  end)

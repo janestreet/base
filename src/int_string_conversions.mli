@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 open Int_intf.Definitions
 module Sexp := Sexp0
 
@@ -6,37 +6,26 @@ module Sexp := Sexp0
 module Make (I : sig
     type t
 
-    val%template to_string : t -> string [@@alloc a @ m = (heap_global, stack_local)]
+    val to_string : t -> string
   end) : sig
-  [%%template:
-  [@@@alloc.default a @ m = (heap_global, stack_local)]
-
-  val to_string_hum : ?delimiter:char (** defaults to ['_'] *) -> I.t -> string
-  val sexp_of_t : I.t -> Sexp.t]
-end
-
-(** like {!Make}, but also provides conversions for the unboxed version of the type *)
-module%template
-  [@kind k = (bits32, bits64, word)] Make_unboxed (I : sig
-    type t
-
-    val to_string : t -> string [@@alloc a @ m = (heap_global, stack_local)]
-
-    type unboxed
-
-    val box : unboxed -> t
-  end) : sig
-  [@@@alloc.default a @ m = (heap_global, stack_local)]
-
   val to_string_hum : ?delimiter:char (** defaults to ['_'] *) -> I.t -> string
   val sexp_of_t : I.t -> Sexp.t
-  val sexp_of_t_u : I.unboxed -> Sexp.t
+
+  (** Provides conversions for the unboxed version of the type. Includes [value] for OCaml
+      compatibility after template erasure. *)
+  module Provide_unboxed (U : sig
+      type t
+
+      val box : t -> I.t
+    end) : sig
+    val sexp_of_t_u : U.t -> Sexp.t
+  end
 end
 
 (** in the output, [to_string], [of_string], [sexp_of_t], and [t_of_sexp] convert between
     [t] and signed hexadecimal with an optional "0x" or "0X" prefix. *)
 module Make_hex (I : sig
-    type t [@@deriving compare ~localize, hash]
+    type t [@@deriving compare, hash]
 
     (** [to_string] and [of_string] convert between [t] and unsigned, unprefixed
         hexadecimal. They must be able to handle all non-negative values and also
@@ -55,7 +44,7 @@ end
 (** in the output, [to_string], [to_string_hum], and [sexp_of_t] convert [t] to an
     unsigned binary representation with an "0b" prefix. *)
 module Make_binary (I : sig
-    type t [@@deriving compare ~localize, equal ~localize, hash]
+    type t [@@deriving compare, equal, hash]
 
     val clz : t -> t
     val ( lsr ) : t -> int -> t
@@ -79,13 +68,10 @@ val sexp_of_int_style : [ `No_underscores | `Underscores ] Dynamic.t
     starting from the right.
     v} *)
 
-[%%template:
-[@@@alloc.default a @ m = (heap_global, stack_local)]
-
 val insert_delimiter_every : string -> delimiter:char -> chars_per_delimiter:int -> string
 
 (** [insert_delimiter_every ~chars_per_delimiter:3] *)
 val insert_delimiter : string -> delimiter:char -> string
 
 (** [insert_delimiter ~delimiter:'_'] *)
-val insert_underscores : string -> string]
+val insert_underscores : string -> string

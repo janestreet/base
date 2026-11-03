@@ -1,4 +1,5 @@
 open! Import
+module Error = Error0
 module Sexp = Sexp0
 include Bool0
 
@@ -6,8 +7,7 @@ let invalid_argf = Printf.invalid_argf
 
 module T = struct
   type t = bool
-  [@@deriving
-    compare ~localize, enumerate, globalize, hash, sexp ~stackify ~unboxed, sexp_grammar]
+  [@@deriving compare, enumerate, globalize, hash, sexp ~unboxed, sexp_grammar]
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 
@@ -21,10 +21,9 @@ module T = struct
 end
 
 include T
+include Comparator.Make (T)
 
-include%template Comparator.Make [@modality portable] (T)
-
-include%template Pretty_printer.Register [@modality portable] (struct
+include Pretty_printer.Register (struct
     type nonrec t = t
 
     let to_string = to_string
@@ -48,10 +47,11 @@ let clamp_exn t ~min ~max =
 let clamp t ~min ~max =
   if min > max
   then
-    Or_error.error_s
-      (Sexp.message
-         "clamp requires [min <= max]"
-         [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ])
+    Error
+      (Error.create_s
+         (Sexp.message
+            "clamp requires [min <= max]"
+            [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ]))
   else Ok (clamp_unchecked t ~min ~max)
 ;;
 

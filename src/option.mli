@@ -9,38 +9,24 @@
       # let h = Hashtbl.of_alist_exn (module String) [ ("Bar", "Value") ];;
       val h : (string, string) Base.Hashtbl.t = <abstr>
       # (Hashtbl.find h "Foo" : _ option);;
-      - : string option = Base.Option.None
+      - : string option = Option.None
       # (Hashtbl.find h "Bar" : _ option);;
-      - : string option = Base.Option.Some "Value"
+      - : string option = Option.Some "Value"
     ]} *)
 
-open! Import
+open! Import0
+module Error := Error0
 
 (** {2 Type and Interfaces} *)
 
 module Constructors : module type of Option0
-
-[%%template:
-[@@@kind kr1 = (value_or_null & value_or_null)]
-[@@@kind kr2 = (value_or_null & kr1)]
-
-[@@@kind_set.define
-  all_ks_non_value = (base_non_value, value_or_null & (base_or_null, kr2))]
-
-[@@@kind_set.define all_ks = (all_ks_non_value, value_or_null)]
-
-type 'a t = ('a Constructors.t[@kind k])
-[@@deriving compare ~localize, equal ~localize, sexp ~stackify]
-[@@kind k = all_ks_non_value]
 
 type 'a t = 'a option =
   | None
   | Some of 'a
 
 [%%rederive:
-  type nonrec 'a t = 'a t
-  [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]
+  type nonrec 'a t = 'a t [@@deriving compare, equal, globalize, hash, sexp, sexp_grammar]]
 
 include Invariant.S1 with type 'a t := 'a t
 
@@ -53,8 +39,7 @@ include Invariant.S1 with type 'a t := 'a t
     - [Some f <*> None = None]
     - [Some f <*> Some x = Some (f x)] *)
 
-include
-  Applicative.S [@kind value_or_null mod maybe_null] [@mode local] with type 'a t := 'a t
+include Applicative.S with type 'a t := 'a t
 
 (** {3 Monadic interface}
 
@@ -64,47 +49,35 @@ include
     - [(None >>= f) = None]
     - [(Some x >>= f) = f x] *)
 
-include Monad.S [@kind value_or_null mod maybe_null] [@mode local] with type 'a t := 'a t
+include Monad.S with type 'a t := 'a t
 
 (** {2 Extracting Underlying Values} *)
 
 include sig
-  [@@@mode.default m = (global, local)]
-  [@@@kind.default k = all_ks]
-
-  val return : 'a. 'a -> ('a t[@kind k]) [@@zero_alloc_if_local m]
+  val return : 'a. 'a -> 'a t
 
   (** Extracts the underlying value if present, otherwise returns [default]. *)
-  val value : 'a. ('a t[@kind k]) -> default:'a -> 'a
-  [@@zero_alloc_if_local m]
+  val value : 'a. 'a t -> default:'a -> 'a
 
   (** Extracts the underlying value, or raises if there is no value present. The raised
       error can be augmented using the [~error] and [~message] optional arguments. If
       neither is provided, the raised error will include the provided location. *)
   val value_exn
     : 'a.
-    ?here:Stdlib.Lexing.position
-    -> ?error:Error.t
-    -> ?message:string
-    -> ('a t[@kind k])
-    -> 'a
-  [@@zero_alloc_if_local m]
+    ?here:Stdlib.Lexing.position -> ?error:Error.t -> ?message:string -> 'a t -> 'a
 
   (** Extracts the underlying value if present, otherwise executes and returns the result
       of [default]. [default] is only executed if the underlying value is absent. *)
-  val value_or_thunk : 'a. ('a t[@kind k]) -> default:(unit -> 'a) -> 'a
+  val value_or_thunk : 'a. 'a t -> default:(unit -> 'a) -> 'a
 
-  val iter : 'a. ('a t[@kind k]) -> f:('a -> unit) -> unit
-
-  [@@@kind ki = k]
-  [@@@kind.default ko = all_ks]
+  val iter : 'a. 'a t -> f:('a -> unit) -> unit
 
   (** Extracts the underlying value and applies [f] to it if present, otherwise returns
       [default]. *)
-  val value_map : 'a 'b. ('a t[@kind ki]) -> default:'b -> f:('a -> 'b) -> 'b
+  val value_map : 'a 'b. 'a t -> default:'b -> f:('a -> 'b) -> 'b
 
-  val map : 'a 'b. ('a t[@kind ki]) -> f:('a -> 'b) -> ('b t[@kind ko])
-  val bind : 'a 'b. ('a t[@kind ki]) -> f:('a -> ('b t[@kind ko])) -> ('b t[@kind ko])
+  val map : 'a 'b. 'a t -> f:('a -> 'b) -> 'b t
+  val bind : 'a 'b. 'a t -> f:('a -> 'b t) -> 'b t
 end
 
 (** On [None], returns [init]. On [Some x], returns [f init x]. *)
@@ -128,7 +101,7 @@ val find : 'a. 'a t -> f:('a -> bool) -> 'a option
 (** On [None], returns [None]. On [Some x], returns [f x]. *)
 val find_map : 'a 'b. 'a t -> f:('a -> 'b option) -> 'b option
 
-val to_list : 'a. 'a t -> 'a list [@@mode m = (global, local)]
+val to_list : 'a. 'a t -> 'a list
 val to_array : 'a. 'a t -> 'a array
 val to_iarray : 'a. 'a t -> 'a iarray
 
@@ -149,7 +122,6 @@ val merge : 'a. 'a t -> 'a t -> f:('a -> 'a -> 'a) -> 'a t
 
     Inverse of {!Result.transpose_opt}. *)
 val transpose_result : 'ok 'err. ('ok, 'err) Result.t t -> ('ok t, 'err) Result.t
-[@@alloc __ @ m = (stack_local, heap_global)]
 
 val filter : 'a. 'a t -> f:('a -> bool) -> 'a t
 
@@ -164,8 +136,6 @@ val try_with : 'a. (unit -> 'a) -> 'a t
 val try_with_join : 'a. (unit -> 'a t) -> 'a t
 
 include sig
-  [@@@mode.default m = (global, local)]
-
   (** Wraps the [Some] constructor as a function. *)
   val some : 'a. 'a -> 'a t
 
@@ -186,13 +156,11 @@ end
 (** {2 Predicates} *)
 
 include sig
-  [@@@kind.default k = all_ks]
-
   (** [is_none t] returns true iff [t = None]. *)
-  val is_none : 'a. ('a t[@kind k]) -> bool
+  val is_none : 'a. 'a t -> bool
 
   (** [is_some t] returns true iff [t = Some x]. *)
-  val is_some : 'a. ('a t[@kind k]) -> bool
+  val is_some : 'a. 'a t -> bool
 end
 
 module Local : sig
@@ -214,4 +182,4 @@ module Local : sig
       module Open_on_rhs : sig end
     end
   end
-end]
+end

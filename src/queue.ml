@@ -1,5 +1,9 @@
 open! Import
 include Queue_intf.Definitions
+module Array = Array0
+module Error = Error0
+module Iarray = Iarray0
+module Int = Int0
 module Sexp = Sexp0
 
 (* [t] stores the [t.length] queue elements at consecutive increasing indices of [t.elts],
@@ -42,7 +46,7 @@ let check_index_exn t i =
     Error.raise_s
       (Sexp.message
          "Queue index out of bounds"
-         [ "index", i |> Int.sexp_of_t; "length", t.length |> Int.sexp_of_t ])
+         [ "index", i |> sexp_of_int; "length", t.length |> sexp_of_int ])
 ;;
 
 let get t i =
@@ -70,7 +74,7 @@ let ensure_no_mutation t num_mutations =
   if t.num_mutations <> num_mutations then raise_mutation_during_iteration t
 ;;
 
-let%template[@mode local] compare =
+let compare_internal =
   let rec unsafe_compare_from compare_elt pos ~t1 ~t2 ~len1 ~len2 ~mut1 ~mut2 =
     match pos = len1, pos = len2 with
     | true, true -> 0
@@ -99,9 +103,9 @@ let%template[@mode local] compare =
         ~mut2:t2.num_mutations
 ;;
 
-let%template compare compare_elt t1 t2 = (compare [@mode local]) compare_elt t1 t2
+let compare compare_elt t1 t2 = compare_internal compare_elt t1 t2
 
-let%template[@mode local] equal =
+let equal_internal =
   let rec unsafe_equal_from equal_elt pos ~t1 ~t2 ~mut1 ~mut2 ~len =
     pos = len
     ||
@@ -126,7 +130,7 @@ let%template[@mode local] equal =
          ~mut2:t2.num_mutations
 ;;
 
-let%template equal equal_elt t1 t2 = (equal [@mode local]) equal_elt t1 t2
+let equal equal_elt t1 t2 = equal_internal equal_elt t1 t2
 
 let invariant invariant_a t =
   let { num_mutations; mask = _; elts; front; length } = t in
@@ -157,7 +161,7 @@ let create (type a) ?capacity () : a t =
         Error.raise_s
           (Sexp.message
              "cannot have queue with negative capacity"
-             [ "capacity", capacity |> Int.sexp_of_t ])
+             [ "capacity", capacity |> sexp_of_int ])
       else if capacity = 0
       then 1
       else Int.ceil_pow2 capacity
@@ -172,7 +176,7 @@ let create (type a) ?capacity () : a t =
 
 let blit_to_array ~src dst =
   assert (src.length <= Option_array.length dst);
-  let front_len = Int.min src.length (capacity src - src.front) in
+  let front_len = min src.length (capacity src - src.front) in
   let rest_len = src.length - front_len in
   Option_array.blit ~len:front_len ~src:src.elts ~src_pos:src.front ~dst ~dst_pos:0;
   Option_array.blit ~len:rest_len ~src:src.elts ~src_pos:0 ~dst ~dst_pos:front_len
@@ -289,7 +293,7 @@ let blit_transfer ~src ~dst ?len () =
         Error.raise_s
           (Sexp.message
              "Queue.blit_transfer: negative length"
-             [ "length", len |> Int.sexp_of_t ]);
+             [ "length", len |> sexp_of_int ]);
       min len src.length
   in
   if len > 0
@@ -314,7 +318,7 @@ let blit_transfer ~src ~dst ?len () =
 let enqueue_all t l =
   (* Traversing the list up front to compute its length is probably (but not definitely)
      better than doubling the underlying array size several times for large queues. *)
-  set_capacity t (Int.max (capacity t) (t.length + List.length l));
+  set_capacity t (max (capacity t) (t.length + List.length l));
   List.iter l ~f:(fun x -> enqueue t x)
 ;;
 
@@ -357,11 +361,9 @@ let iteri t ~f =
   done
 ;;
 
-let%template[@alloc a = (heap, stack)] to_list t =
-  (List.init [@alloc a]) t.length ~f:(fun idx -> unsafe_get t idx) [@exclave_if_stack a]
-;;
+let to_list t = List.init t.length ~f:(fun idx -> unsafe_get t idx)
 
-module%template C = Indexed_container.Make [@modality portable] (struct
+module C = Indexed_container.Make (struct
     type nonrec 'a t = 'a t
 
     let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish
@@ -474,7 +476,7 @@ let init len ~f =
   if len < 0
   then
     Error.raise_s
-      (Sexp.message "Queue.init: negative length" [ "length", len |> Int.sexp_of_t ]);
+      (Sexp.message "Queue.init: negative length" [ "length", len |> sexp_of_int ]);
   let t = create ~capacity:len () in
   assert (Option_array.length t.elts >= len);
   for i = 0 to len - 1 do
@@ -516,10 +518,7 @@ let singleton x =
   t
 ;;
 
-let%template[@alloc a = (heap, stack)] sexp_of_t sexp_of_a t =
-  ((to_list [@alloc a]) t |> (List.sexp_of_t [@alloc a]) sexp_of_a) [@exclave_if_stack a]
-;;
-
+let sexp_of_t sexp_of_a t = to_list t |> List.sexp_of_t sexp_of_a
 let t_of_sexp a_of_sexp sexp = List.t_of_sexp a_of_sexp sexp |> of_list
 
 let t_sexp_grammar (type a) (grammar : a Sexplib0.Sexp_grammar.t)

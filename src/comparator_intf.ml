@@ -1,7 +1,7 @@
 (** Comparison and serialization for a type, using a witness type to distinguish between
     comparison functions with different behavior. *)
 
-open! Import
+open! Import0
 module Sexp = Sexp0
 
 module Definitions (T : sig
@@ -9,9 +9,6 @@ module Definitions (T : sig
   end) =
 struct
   open T
-
-  [%%template
-  [@@@modality.default p = (nonportable, portable)]
 
   module type S = sig
     type t
@@ -30,7 +27,7 @@ struct
   module type S_fc = sig
     type comparable_t
 
-    include S [@modality p] with type t := comparable_t
+    include S with type t := comparable_t
   end
 
   module type Derived = sig
@@ -67,7 +64,7 @@ struct
       :  ('a, 'cmp_a) comparator
       -> ('b, 'cmp_b) comparator
       -> (('a, 'b, _) t, ('cmp_a, 'cmp_b) comparator_witness) comparator
-  end]
+  end
 end
 
 module type Comparator = sig
@@ -100,13 +97,12 @@ module type Comparator = sig
       {[
         include (val Comparator.make ~compare ~sexp_of_t)
       ]} *)
-  val%template make
+  val make
     :  compare:('a -> 'a -> int)
     -> sexp_of_t:('a -> Sexp.t)
-    -> ((module S_fc with type comparable_t = 'a)[@mode p])
-  [@@mode p = (nonportable, portable)]
+    -> (module S_fc with type comparable_t = 'a)
 
-  module%template Poly : S1 [@modality portable] with type 'a t = 'a
+  module Poly : S1 with type 'a t = 'a
 
   module Module : sig
     (** First-class module providing a comparator and witness type. *)
@@ -116,61 +112,50 @@ module type Comparator = sig
   val of_module : ('a, 'b) Module.t -> ('a, 'b) t
   val to_module : ('a, 'b) t -> ('a, 'b) Module.t
 
-  module%template.portable S_to_S1 (S : S) :
+  module S_to_S1 (S : S) :
     S1 with type 'a t = S.t with type comparator_witness = S.comparator_witness
-
-  [%%template:
-  [@@@mode.default m = (local, global)]
 
   (** [Make] creates a [comparator] value and its phantom [comparator_witness] type for a
       nullary type. *)
-  module%template.portable
-    [@modality p] Make (M : sig
-      type t [@@deriving (compare [@mode.explicit m]), sexp_of]
-    end) : S [@modality p] with type t := M.t
+  module Make (M : sig
+      type t [@@deriving compare, sexp_of]
+    end) : S with type t := M.t
 
   (** [Make1] creates a [comparator] value and its phantom [comparator_witness] type for a
       unary type. It takes a [compare] and [sexp_of_t] that have non-standard types
       because the [Comparator.t] type doesn't allow passing in additional values for the
       type argument. *)
-  module%template.portable
-    [@modality p] Make1 (M : sig
+  module Make1 (M : sig
       type 'a t
 
-      val compare : 'a t -> 'a t -> int [@@mode m = (global, m)]
+      val compare : 'a t -> 'a t -> int
       val sexp_of_t : _ t -> Sexp.t
-    end) : S1 [@modality p] with type 'a t := 'a M.t
+    end) : S1 with type 'a t := 'a M.t
 
   (** [Derived] creates a [comparator] function that constructs a comparator for the type
       ['a t] given a comparator for the type ['a]. *)
-  module%template.portable
-    [@modality p] Derived (M : sig
-      type 'a t [@@deriving (compare [@mode.explicit m]), sexp_of]
-    end) : Derived [@modality p] with type 'a t := 'a M.t
+  module Derived (M : sig
+      type 'a t [@@deriving compare, sexp_of]
+    end) : Derived with type 'a t := 'a M.t
 
   (** [Derived2] creates a [comparator] function that constructs a comparator for the type
       [('a, 'b) t] given comparators for the type ['a] and ['b]. *)
-  module%template.portable
-    [@modality p] Derived2 (M : sig
-      type ('a, 'b) t [@@deriving (compare [@mode.explicit m]), sexp_of]
-    end) : Derived2 [@modality p] with type ('a, 'b) t := ('a, 'b) M.t
+  module Derived2 (M : sig
+      type ('a, 'b) t [@@deriving compare, sexp_of]
+    end) : Derived2 with type ('a, 'b) t := ('a, 'b) M.t
 
   (** [Derived_phantom] creates a [comparator] function that constructs a comparator for
       the type [('a, 'b) t] given a comparator for the type ['a]. *)
-  module%template.portable
-    [@modality p] Derived_phantom (M : sig
+  module Derived_phantom (M : sig
       type ('a, 'b) t
 
       val compare : ('a -> 'a -> int) -> ('a, 'b) t -> ('a, 'b) t -> int
-      [@@mode m = (global, m)]
-
       val sexp_of_t : ('a -> Sexp.t) -> ('a, _) t -> Sexp.t
-    end) : Derived_phantom [@modality p] with type ('a, 'b) t := ('a, 'b) M.t
+    end) : Derived_phantom with type ('a, 'b) t := ('a, 'b) M.t
 
   (** [Derived2_phantom] creates a [comparator] function that constructs a comparator for
       the type [('a, 'b, 'c) t] given a comparator for the types ['a] and ['b]. *)
-  module%template.portable
-    [@modality p] Derived2_phantom (M : sig
+  module Derived2_phantom (M : sig
       type ('a, 'b, 'c) t
 
       val compare
@@ -179,8 +164,7 @@ module type Comparator = sig
         -> ('a, 'b, 'c) t
         -> ('a, 'b, 'c) t
         -> int
-      [@@mode m = (global, m)]
 
       val sexp_of_t : ('a -> Sexp.t) -> ('b -> Sexp.t) -> ('a, 'b, _) t -> Sexp.t
-    end) : Derived2_phantom [@modality p] with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t]
+    end) : Derived2_phantom with type ('a, 'b, 'c) t := ('a, 'b, 'c) M.t
 end

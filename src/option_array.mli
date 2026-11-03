@@ -3,7 +3,7 @@
     instead. It uses a special representation for [None] that's guaranteed to never
     collide with any representation of [Some x]. *)
 
-open! Import
+open! Import0
 
 type 'a t
 
@@ -26,7 +26,7 @@ val init_some : int -> f:(int -> 'a) -> 'a t
 val init : int -> f:(int -> 'a option) -> 'a t
 val of_array : 'a option array -> 'a t
 val of_array_some : 'a array -> 'a t
-val to_array : 'a t -> 'a option Array.t
+val to_array : 'a t -> 'a option array
 
 (** [get t i] returns the element number [i] of array [t], raising if [i] is outside the
     range 0 to [length t - 1]. *)
@@ -107,7 +107,7 @@ module For_testing : sig
     val is_some : _ t -> bool
     val value_exn : 'a t -> 'a
     val value_unsafe : 'a t -> 'a
-    val to_option : 'a t -> 'a Option.t
-    val of_option : 'a Option.t -> 'a t
+    val to_option : 'a t -> 'a option
+    val of_option : 'a option -> 'a t
   end
 end

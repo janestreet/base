@@ -1,4 +1,7 @@
 open! Import
+module Either = Either0
+module Option = Option0
+module Sexp = Sexp0
 
 (* WARNING: We use non-memory-safe and non-mode-safe things throughout the [Trusted]
    module. Most of it is only safe in combination with the type signature (e.g. exposing
@@ -14,10 +17,7 @@ module Trusted : sig
   val create_nullable_obj_array : 'a. len:int -> 'a t
   val create : 'a. len:int -> 'a -> 'a t
   val singleton : 'a. 'a -> 'a t
-
-  val%template get : 'a. 'a t -> int -> 'a
-  [@@zero_alloc] [@@mode c = (uncontended, shared)]
-
+  val get : 'a. 'a t -> int -> 'a [@@zero_alloc]
   val set : 'a. 'a t -> int -> 'a -> unit
   val swap : 'a. 'a t -> int -> int -> unit
   val unsafe_get : 'a. 'a t -> int -> 'a [@@zero_alloc]
@@ -51,9 +51,7 @@ end = struct
      [Obj_array.t]. Uses [%identity] instead of [%opaque] since nullability is not
      relevant in the cmm. *)
   external repr : 'a. 'a -> Stdlib.Obj.t = "%identity"
-
-  external%template obj : 'a. Stdlib.Obj.t -> 'a = "%identity"
-  [@@mode c = (uncontended, shared)]
+  external obj : 'a. Stdlib.Obj.t -> 'a = "%identity"
 
   let empty = { arr = Obj_array.empty }
   let[@inline] get_empty () = { arr = Obj_array.get_empty () }
@@ -66,10 +64,7 @@ end = struct
 
   (* *)
 
-  let%template[@zero_alloc] get t i = (obj [@mode c]) ((Obj_array.get [@mode c]) t.arr i)
-  [@@mode c = (uncontended, shared)]
-  ;;
-
+  let[@zero_alloc] get t i = obj (Obj_array.get t.arr i)
   let set t i x : unit = Obj_array.set t.arr i (repr x)
 
   (* We annotate the return types on this and other functions to help document the fact
@@ -193,9 +188,9 @@ let of_list_rev l =
 
 (* It is not safe for [to_array] to be the identity function because we have code that
    relies on [float array]s being unboxed, for example in [bin_write_array]. *)
-let%template[@alloc a = (heap, stack)] to_array t =
+let to_array t =
   let n = length t in
-  (Array.init [@alloc a]) n ~f:(fun i -> unsafe_get t i) [@exclave_if_stack a]
+  Array.init n ~f:(fun i -> unsafe_get t i)
 ;;
 
 let exists t ~f =
@@ -270,7 +265,7 @@ let map2_exn t1 t2 ~f =
 ;;
 
 let concat ts =
-  let total_len = List.sum (module Int) ts ~f:(fun t -> length t) in
+  let total_len = List.fold ts ~init:0 ~f:(fun acc t -> acc + length t) in
   let res = unsafe_create_uninitialized ~len:total_len in
   ignore
     (List.fold ts ~init:0 ~f:(fun so_far t ->
@@ -394,11 +389,8 @@ let t_sexp_grammar (type elt) (grammar : elt Sexplib0.Sexp_grammar.t)
   Sexplib0.Sexp_grammar.coerce (list_sexp_grammar grammar)
 ;;
 
-let%template[@alloc a = (heap, stack)] sexp_of_t sexp_of__a t =
-  Sexp.List
-    ((List.init [@alloc a]) (length t) ~f:(fun i ->
-       sexp_of__a (unsafe_get t i) [@exclave_if_stack a]))
-  [@exclave_if_stack a]
+let sexp_of_t sexp_of__a t =
+  Sexp.List (List.init (length t) ~f:(fun i -> sexp_of__a (unsafe_get t i)))
 ;;
 
 let t_of_sexp a__of_sexp sexp =
@@ -417,7 +409,7 @@ let t_of_sexp a__of_sexp sexp =
   | Atom _ -> of_sexp_error "Uniform_array.t_of_sexp: list needed" sexp
 ;;
 
-include%template Blit.Make1 [@modality portable] [@kind.explicit value_or_null] (struct
+include Blit.Make1 (struct
     type nonrec 'a t = 'a t
 
     let length = length
@@ -438,7 +430,7 @@ let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
 (* This is the same as the ppx_compare [compare_array] but uses our [unsafe_get] and
    [length]. *)
-let%template[@mode local] compare compare_elt a b =
+let compare_internal compare_elt a b =
   if phys_equal a b
   then 0
   else (
@@ -460,9 +452,9 @@ let%template[@mode local] compare compare_elt a b =
       loop 0 [@nontail]))
 ;;
 
-let%template compare compare_elt a b = (compare [@mode local]) compare_elt a b
+let compare compare_elt a b = compare_internal compare_elt a b
 
-module%template Sort = Array.Private.Sorter [@modality portable] (struct
+module Sort = Array.Private.Sorter (struct
     type nonrec 'a t = 'a t
 
     let length = length
@@ -472,7 +464,7 @@ module%template Sort = Array.Private.Sorter [@modality portable] (struct
 
 let sort = Sort.sort
 
-include%template Binary_searchable.Make1 [@modality portable] (struct
+include Binary_searchable.Make1 (struct
     type nonrec 'a t = 'a t
 
     let length = length

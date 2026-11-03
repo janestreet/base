@@ -1,11 +1,12 @@
-open! Import
+open! Import0
+module Either = Either0
+module Result = Result0
 module Sexp = Sexp0
 
 module Definitions = struct
-  module type%template Elt_plain = sig
-    type t [@@deriving (compare [@mode.explicit m]), sexp_of]
+  module type Elt_plain = sig
+    type t [@@deriving compare, sexp_of]
   end
-  [@@mode m = (local, global)]
 
   module Without_comparator = Map.Without_comparator
   module With_comparator = Map.With_comparator
@@ -46,13 +47,8 @@ module Definitions = struct
           , ('a, 'cmp) t -> ('a, 'cmp) t -> ('a elt, 'a elt) Either.t Sequence.t )
           access_options
 
-    val%template compare_direct
-      : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> int) access_options
-    [@@mode m = (local, global)]
-
-    val%template equal : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) access_options
-    [@@mode m = (local, global)]
-
+    val compare_direct : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> int) access_options
+    val equal : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) access_options
     val is_subset : ('a, 'cmp, ('a, 'cmp) t -> of_:('a, 'cmp) t -> bool) access_options
     val are_disjoint : ('a, 'cmp, ('a, 'cmp) t -> ('a, 'cmp) t -> bool) access_options
 
@@ -101,6 +97,15 @@ module Definitions = struct
     val nth : ('a, _) t -> int -> 'a elt option
     val rank : ('a, 'cmp, ('a, 'cmp) t -> 'a elt -> int option) access_options
     val to_tree : ('a, 'cmp) t -> ('a, 'cmp) tree
+
+    val closest_elt
+      : ( 'a
+          , 'cmp
+          , ('a, 'cmp) t
+            -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
+            -> 'a elt
+            -> 'a elt option )
+          access_options
 
     val to_sequence
       : ( 'a
@@ -273,8 +278,7 @@ module Definitions = struct
   module type For_deriving = sig
     type ('a, 'b) t
 
-    module type%template [@alloc a = (heap, stack)] Sexp_of_m = Sexpable.Sexp_of
-    [@alloc a]
+    module type Sexp_of_m = Sexpable.Sexp_of
 
     module type M_of_sexp = sig
       type t [@@deriving of_sexp]
@@ -291,11 +295,7 @@ module Definitions = struct
     module type Globalize_m = sig end
     module type Hash_fold_m = Hasher.S
 
-    val%template sexp_of_m__t
-      :  ((module Sexp_of_m with type t = 'elt)[@alloc a])
-      -> ('elt, 'cmp) t
-      -> Sexp.t
-    [@@alloc a @ m = (heap_global, stack_local)]
+    val sexp_of_m__t : (module Sexp_of_m with type t = 'elt) -> ('elt, 'cmp) t -> Sexp.t
 
     val m__t_of_sexp
       :  (module M_of_sexp with type t = 'elt and type comparator_witness = 'cmp)
@@ -308,17 +308,6 @@ module Definitions = struct
 
     val compare_m__t : (module Compare_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> int
     val equal_m__t : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
-
-    val%template compare_m__t
-      :  (module Compare_m)
-      -> ('elt, 'cmp) t
-      -> ('elt, 'cmp) t
-      -> int
-    [@@mode local]
-
-    val%template equal_m__t : (module Equal_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t -> bool
-    [@@mode local]
-
     val globalize_m__t : (module Globalize_m) -> ('elt, 'cmp) t -> ('elt, 'cmp) t
 
     val hash_fold_m__t
@@ -437,8 +426,7 @@ module type Set = sig
       the second identifies the comparator, which determines the comparison function that
       is used for ordering elements in this set. Many operations (e.g., {!union}), require
       that they be passed sets with the same element type and the same comparator type. *)
-  type (!'elt, !'cmp) t
-  [@@sexp.phantom: 'cmp] [@@deriving compare ~localize, globalize, sexp_of]
+  type (!'elt, !'cmp) t [@@sexp.phantom: 'cmp] [@@deriving compare, globalize, sexp_of]
 
   (** Tests internal invariants of the set data structure. Returns true on success. *)
   val invariants : (_, _) t -> bool
@@ -451,8 +439,7 @@ module type Set = sig
   val globalize0 : ('a, 'cmp) t -> ('a, 'cmp) t
 
   (** Creates an empty set based on the provided comparator. *)
-  val%template empty : 'a 'cmp. ('a, 'cmp) Comparator.Module.t -> ('a, 'cmp) t
-  [@@mode p = (nonportable, portable)]
+  val empty : 'a 'cmp. ('a, 'cmp) Comparator.Module.t -> ('a, 'cmp) t
 
   (** Creates a set based on the provided comparator that contains only the provided
       element. *)
@@ -504,8 +491,7 @@ module type Set = sig
   (** [compare_direct t1 t2] compares the sets [t1] and [t2]. It returns the same result
       as [compare], but unlike compare, doesn't require arguments to be passed in for the
       type parameters of the set. [O(length t1 + length t2)]. *)
-  val%template compare_direct : ('a, 'cmp) t -> ('a, 'cmp) t -> int
-  [@@mode m = (local, global)]
+  val compare_direct : ('a, 'cmp) t -> ('a, 'cmp) t -> int
 
   (** Hash function: a building block to use when hashing data structures containing sets
       in them. [hash_fold_direct hash_fold_key] is compatible with [compare_direct] iff
@@ -515,8 +501,7 @@ module type Set = sig
 
   (** [equal t1 t2] returns [true] iff the two sets have the same elements.
       [O(length t1 + length t2)] *)
-  val%template equal : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
-  [@@mode m = (local, global)]
+  val equal : ('a, 'cmp) t -> ('a, 'cmp) t -> bool
 
   (** [exists t ~f] returns [true] iff there exists an [a] in [t] for which [f a]. [O(n)],
       but returns as soon as it finds an [a] for which [f a]. *)
@@ -771,6 +756,21 @@ module type Set = sig
      thing to use. Consider using [to_list] along with [List.sort_and_group] or \
      [List.group]."]
 
+  (** [closest_elt t dir x] returns the element in [t] closest to [x] that satisfies the
+      given inequality bound.
+
+      For example, [closest_elt t `Less_than x] would be the element closest to [x] that
+      is strictly less than [x].
+
+      [to_sequence] can be used to get the same results as [closest_elt]. It is less
+      efficient for individual lookups but more efficient for finding many elements
+      starting at some value. *)
+  val closest_elt
+    :  ('a, _) t
+    -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
+    -> 'a
+    -> 'a option
+
   (** [to_sequence t] converts the set [t] to a sequence of the elements between
       [greater_or_equal_to] and [less_or_equal_to] inclusive in the order indicated by
       [order]. If [greater_or_equal_to > less_or_equal_to] the sequence is empty. Cost is
@@ -912,7 +912,7 @@ module type Set = sig
         might violate the normal invariants of a tree. *)
     module Expert : sig
       (** Sexp prints the internal node structure. *)
-      type nonrec ('a, 'cmp) t = ('a, 'cmp) t [@@deriving equal ~localize, sexp_of]
+      type nonrec ('a, 'cmp) t = ('a, 'cmp) t [@@deriving equal, sexp_of]
 
       (** Just the tree balance checks from [invariants]. Excludes the checks in
           [order_invariants]. *)
@@ -1026,7 +1026,7 @@ module type Set = sig
     val comparator : ('a, 'cmp) t -> ('a, 'cmp) Comparator.t
     val hash_fold_direct : 'elt Hash.folder -> ('elt, 'cmp) t Hash.folder
 
-    module%template.portable Empty_without_value_restriction (Elt : Comparator.S1) : sig
+    module Empty_without_value_restriction (Elt : Comparator.S1) : sig
       val empty : ('a Elt.t, Elt.comparator_witness) t
     end
 

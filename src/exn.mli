@@ -5,7 +5,7 @@
     found, the standard converter in [Printexc] will be used to generate an atomic
     S-expression. *)
 
-open! Import
+open! Import0
 module Sexp := Sexp0
 
 type t = exn [@@deriving sexp_of]
@@ -54,14 +54,11 @@ val to_string : t -> string
 (** Machine format, single-line. *)
 val to_string_mach : t -> string
 
-[%%template:
-[@@@mode.default l = (global, local)]
-
 (** Executes [f] and afterwards executes [finally], whether [f] throws an exception or
     not. *)
 val protectx : 'a 'b. f:('a -> 'b) -> 'a -> finally:('a -> unit) -> 'b
 
-val protect : 'a. f:(unit -> 'a) -> finally:(unit -> unit) -> 'a]
+val protect : 'a. f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
 
 (** [handle_uncaught ~exit f] catches an exception escaping [f] and prints an error
     message to stderr. Exits with return code 1 if [exit] is [true], and returns unit

@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 include Either_intf.Definitions
 module List = List0
 include Either0
@@ -43,16 +43,12 @@ let map t ~first ~second =
 let first x = First x
 let second x = Second x
 
-[%%template
-[@@@mode.default m = (global, local)]
-
-let equal eq1 eq2 (t1 : (_ t[@kind kf ks])) (t2 : (_ t[@kind kf ks])) =
+let equal eq1 eq2 (t1 : _ t) (t2 : _ t) =
   match t1, t2 with
   | First x, First y -> eq1 x y
   | Second x, Second y -> eq2 x y
   | First _, Second _ | Second _, First _ -> false
-[@@kind kf = base_or_null, ks = base_or_null]
-;;]
+;;
 
 let invariant f s = function
   | First x -> f x
@@ -91,8 +87,7 @@ struct
     res
   ;;
 
-  include%template
-    Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local] [@modality portable] (struct
+  include Monad.Make2 (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return
@@ -100,12 +95,7 @@ struct
       let map = `Custom map
     end)
 
-  module%template App =
-  Applicative.Make2_using_map2
-    [@kind value_or_null mod maybe_null]
-    [@mode local]
-    [@modality portable]
-    (struct
+  module App = Applicative.Make2_using_map2 (struct
       type nonrec ('a, 'b) t = ('a, 'b) t
 
       let return = return

@@ -1,7 +1,7 @@
 (** An interface to use for int-like types, e.g., {{!Base.Int} [Int]} and {{!Base.Int64}
     [Int64]}. *)
 
-open! Import
+open! Import0
 
 module Definitions = struct
   module type Round = sig
@@ -42,23 +42,21 @@ module Definitions = struct
   module type To_string_hum = sig
     type t
 
-    val%template to_string_hum : ?delimiter:char -> t -> string
-    [@@alloc a @ m = (heap_global, stack_local)]
+    val to_string_hum : ?delimiter:char -> t -> string
 
     (** Alias for [to_string_hum] where a submodule is more convenient, for instance:
         [%string "%{x#Int.Hum}"] *)
     module Hum : sig
-      val%template to_string : ?delimiter:char -> t -> string
-      [@@alloc a @ m = (heap_global, stack_local)]
+      val to_string : ?delimiter:char -> t -> string
     end
   end
 
   (** String format for integers, [to_string] / [sexp_of_t] direction only. Includes
       comparisons and hash functions for [[@@deriving]]. *)
   module type To_string_format = sig
-    type t [@@deriving sexp_of ~stackify, compare ~localize, hash]
+    type t [@@deriving sexp_of, compare, hash]
 
-    val%template to_string : t -> string [@@alloc a @ m = (heap_global, stack_local)]
+    val to_string : t -> string
 
     include To_string_hum with type t := t
   end
@@ -67,10 +65,9 @@ module Definitions = struct
       / [t_of_sexp] directions. Includes comparisons and hash functions for
       [[@@deriving]]. *)
   module type String_format = sig
-    type t [@@deriving sexp ~stackify, sexp_grammar, compare ~localize, hash]
+    type t [@@deriving sexp, sexp_grammar, compare, hash]
 
-    include%template Stringable.S [@alloc stack] with type t := t
-
+    include Stringable.S with type t := t
     include To_string_hum with type t := t
   end
 
@@ -89,14 +86,12 @@ module Definitions = struct
   end
 
   module type S_common = sig
-    type t [@@deriving sexp ~stackify, sexp_grammar]
+    type t [@@deriving sexp, sexp_grammar]
 
     include Floatable.S_local_input with type t := t
     include Intable.S with type t := t
-
-    include%template Identifiable.S [@mode local] [@modality portable] with type t := t
-    include%template Stringable.S [@mode local] [@alloc stack] with type t := t
-
+    include Identifiable.S with type t := t
+    include Stringable.S with type t := t
     include Comparable.With_zero with type t := t
     include Invariant.S with type t := t
     include Hexable with type t := t
@@ -105,8 +100,7 @@ module Definitions = struct
     val of_string_opt : string -> t option
 
     (** [delimiter] is an underscore by default. *)
-    val%template to_string_hum : ?delimiter:char -> t -> string
-    [@@alloc a @ m = (heap_global, stack_local)]
+    val to_string_hum : ?delimiter:char -> t -> string
 
     (** {2 Infix operators and constants} *)
 

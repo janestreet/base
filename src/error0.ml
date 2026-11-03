@@ -1,0 +1,40 @@
+(* This module is trying to minimize dependencies on modules in Core, so as to allow
+   [Error] and [Or_error] to be used in various places. Please avoid adding new
+   dependencies. *)
+
+open! Import0
+include Info0
+
+let t_sexp_grammar : t Sexplib0.Sexp_grammar.t = { untyped = Any "Error.t" }
+
+(* Move [value_or_null] first, because the compiler for some reason will otherwise print
+   [raise__bits64] in stack traces. *)
+
+let[@cold] raise (type a) t : a = raise (to_exn t)
+let[@cold] raise_s (type a) sexp : a = raise (create_s sexp)
+
+(* Tailcalls to raising functions are to be avoided, as the stack traces are much worse.
+   Instead, we try really hard to inline wrapper functions that just perform non-tail
+   calls to the raising functions. That way, even if a call to [Error.raise] appears in
+   tail position, the post-inlining result doesn't perform a tail call.
+*)
+let[@inline always] raise (type a) t : a = raise t [@nontail]
+let[@inline always] raise_s (type a) sexp : a = raise_s sexp [@nontail]
+let to_info t = t
+let of_info t = t
+
+let reraise_uncaught t ~f =
+  try f () with
+  | exn ->
+    let bt = Stdlib.Printexc.get_raw_backtrace () in
+    Exn.raise_with_original_backtrace
+      (to_exn (tag_s_lazy (of_exn exn) ~tag:(lazy (sexp_of_t t))))
+      bt
+;;
+
+include Pretty_printer.Register_pp (struct
+    type nonrec t = t
+
+    let module_name = "Base.Error"
+    let pp = pp
+  end)

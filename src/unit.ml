@@ -1,12 +1,9 @@
 open! Import
 
 module T = struct
-  type t = unit
-  [@@deriving enumerate, globalize, hash, sexp ~stackify ~unboxed, sexp_grammar]
+  type t = unit [@@deriving enumerate, globalize, hash, sexp ~unboxed, sexp_grammar]
 
   let compare _ _ = 0
-  let%template[@mode local] compare _ _ = 0
-  let%template[@mode local] equal _ _ = true
 
   let of_string = function
     | "()" -> ()
@@ -18,7 +15,6 @@ module T = struct
 end
 
 include T
-
-include%template Identifiable.Make [@modality portable] (T)
+include Identifiable.Make (T)
 
 let invariant () = ()

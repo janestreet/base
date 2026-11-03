@@ -1,8 +1,7 @@
-type%template ('f, 's) t =
+type ('f, 's) t =
   | First of 'f
   | Second of 's
-[@@kind kf = base_or_null, ks = base_or_null]
-[@@deriving compare ~localize, sexp ~stackify, sexp_grammar]
+[@@deriving compare, sexp, sexp_grammar]
 
 [%%rederive:
   type nonrec ('f, 's) t = ('f, 's) t =

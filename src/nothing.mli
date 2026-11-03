@@ -5,7 +5,7 @@
     For instance, [Async.Rpc.Pipe_rpc.t] is parameterized by an error type, but a user may
     want to define a Pipe RPC that can't fail. *)
 
-open! Import
+open! Import0
 
 (** Having [[@@deriving enumerate]] may seem strange due to the fact that generated
     [val all : t list] is the empty list, so it seems like it could be of no use.
@@ -23,7 +23,7 @@ open! Import
     of some larger type.
 
     Similar arguments apply for other derivers, like [globalize] and [sexp_grammar]. *)
-type t = | [@@deriving enumerate, globalize, sexp ~stackify, sexp_grammar]
+type t = | [@@deriving enumerate, globalize, sexp, sexp_grammar]
 
 (** Because there are no values of type [Nothing.t], a piece of code that has a value of
     type [Nothing.t] must be unreachable. In such an unreachable piece of code, one can
@@ -45,16 +45,15 @@ type t = | [@@deriving enumerate, globalize, sexp ~stackify, sexp_grammar]
     ]} *)
 val unreachable_code : t -> _
 
-(** The same as [unreachable_code], but for local [t]s. *)
-val unreachable_code_local : t -> _
-
 (** It may seem weird that this is identifiable, but we're just trying to anticipate all
     the contexts in which people may need this. It would be a crying shame if you had some
     variant type involving [Nothing.t] that you wished to make identifiable, but were
     prevented for lack of [Identifiable.S] here.
 
     Obviously, [of_string] and [t_of_sexp] will raise an exception. *)
-include%template Identifiable.S [@mode local] [@modality portable] with type t := t
+include Identifiable.S with type t := t
+
+include Stringable.S with type t := t
 
 (** Ignores [None] and guarantees there is no [Some _]. A better replacement for [ignore]. *)
 val must_be_none : t option -> unit

@@ -2,8 +2,7 @@
     to use polymorphic compare in some small scope of a file within which polymorphic
     compare has been hidden *)
 
-external%template compare : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
-[@@mode m = (global, local)]
+external compare : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
 
 (** [ascending] is identical to [compare]. [descending x y = ascending y x]. These are
     intended to be mnemonic when used like [List.sort ~compare:ascending] and
@@ -18,9 +17,6 @@ external ( <> ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%notequal"
 external ( = ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
 external ( > ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%greaterthan"
 external ( >= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%greaterequal"
-
-external%template equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
-[@@mode m = (global, local)]
-
+external equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
 val min : 'a -> 'a -> 'a
 val max : 'a -> 'a -> 'a

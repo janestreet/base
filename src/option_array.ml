@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module Array = Array0
 
 (** ['a Cheap_option.t] is like ['a option], but it doesn't box [some _] values.
 
@@ -119,8 +120,7 @@ module Cheap_option = struct
   end
 
   include T1
-
-  include%template Sexpable.Of_sexpable1 [@modality portable] (Option) (T1)
+  include Sexpable.Of_sexpable1 (Option) (T1)
 end
 
 type 'a t = 'a Cheap_option.t Uniform_array.t
@@ -177,7 +177,7 @@ let foldi input ~init ~f =
 
 let fold input ~init ~f = foldi input ~init ~f:(fun (_ : int) acc x -> f acc x) [@nontail]
 
-include%template Indexed_container.Make_gen [@modality portable] (struct
+include Indexed_container.Make_gen (struct
     type nonrec ('a, _, _) t = 'a t
     type 'a elt = 'a option
 
@@ -221,7 +221,7 @@ let of_array_some array =
 
 let to_array t = Array.init (length t) ~f:(fun i -> unsafe_get t i)
 
-include%template Blit.Make1 [@modality portable] (struct
+include Blit.Make1 (struct
     type nonrec 'a t = 'a t
 
     let length = length

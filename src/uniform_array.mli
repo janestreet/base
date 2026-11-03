@@ -6,10 +6,10 @@
 
     It can often be faster than [Array] if you use it with non-floats. *)
 
-open! Import
+open! Import0
 
 (** See [Base.Array] for comments. *)
-type 'a t [@@deriving sexp ~stackify, sexp_grammar, compare ~localize]
+type 'a t [@@deriving sexp, sexp_grammar, compare]
 
 val invariant : 'a. 'a t -> unit
 val empty : 'a. 'a t
@@ -22,9 +22,7 @@ val create : 'a. len:int -> 'a -> 'a t
 val singleton : 'a. 'a -> 'a t
 val init : 'a. int -> f:(int -> 'a) -> 'a t
 val length : 'a. 'a t -> int
-
-val%template get : 'a. 'a t -> int -> 'a [@@mode c = (uncontended, shared)]
-
+val get : 'a. 'a t -> int -> 'a
 val unsafe_get : 'a. 'a t -> int -> 'a
 val set : 'a. 'a t -> int -> 'a -> unit
 val unsafe_set : 'a. 'a t -> int -> 'a -> unit
@@ -71,13 +69,12 @@ val unsafe_to_array_inplace__promise_not_a_float : 'a t -> 'a array
     returning a reference to the underlying array. *)
 val of_array : 'a array -> 'a t
 
-val%template to_array : 'a t -> 'a array [@@alloc __ @ m = (heap_global, stack_local)]
-
+val to_array : 'a t -> 'a array
 val of_list : 'a. 'a list -> 'a t
 val of_list_rev : 'a. 'a list -> 'a t
 val to_list : 'a. 'a t -> 'a list
 
-include%template Blit.S1 [@kind.explicit value_or_null] with type 'a t := 'a t
+include Blit.S1 with type 'a t := 'a t
 
 val copy : 'a. 'a t -> 'a t
 val exists : 'a. 'a t -> f:('a -> bool) -> bool

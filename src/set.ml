@@ -16,6 +16,12 @@
 (* Sets over ordered types *)
 
 open! Import
+module Array = Array0
+module Either = Either0
+module Error = Error0
+module Int = Int0
+module Result = Result0
+module Sexp = Sexp0
 include Set_intf.Definitions
 
 let with_return = With_return.with_return
@@ -1111,18 +1117,17 @@ module Tree0 = struct
   let count t ~f = Container.count ~fold t ~f
   let sum m t ~f = Container.sum ~fold m t ~f
 
-  let%template[@mode m = (global, local)] fold_right s ~init ~(f : _ -> _ -> _) : _ =
-    (let rec loop accu t =
-       match[@exclave_if_local m ~reasons:[ May_return_local ]] t with
-       | Empty -> accu
-       | Leaf { elt = v } -> f v accu
-       | Node { left = l; elt = v; right = r; weight = _ } ->
-         let accu = loop accu r in
-         let accu = f v accu in
-         loop accu l
-     in
-     loop init s [@nontail])
-    [@exclave_if_local m ~reasons:[ May_return_local ]]
+  let fold_right s ~init ~(f : _ -> _ -> _) : _ =
+    let rec loop accu t =
+      match t with
+      | Empty -> accu
+      | Leaf { elt = v } -> f v accu
+      | Node { left = l; elt = v; right = r; weight = _ } ->
+        let accu = loop accu r in
+        let accu = f v accu in
+        loop accu l
+    in
+    loop init s [@nontail]
   ;;
 
   let rec for_all t ~f:p =
@@ -1307,6 +1312,73 @@ module Tree0 = struct
     | Some e -> e
   ;;
 
+  module Closest_elt_impl = struct
+    (* [marker] and [repackage] allow us to create "logical" options without actually
+       allocating any options. Passing [Found elt] to a function is equivalent to passing
+       [Some elt]; passing [Missing ()] is equivalent to passing [None]. *)
+    type ('a, 'a_opt) marker =
+      | Missing : ('a, unit) marker
+      | Found : ('a, 'a) marker
+
+    let repackage (type a a_opt) (marker : (a, a_opt) marker) (elt : a_opt) : a option =
+      match marker with
+      | Missing -> None
+      | Found -> Some elt
+    ;;
+
+    (* The type signature is explicit here to allow polymorphic recursion. *)
+    let rec loop
+      : 'a 'cmp 'a_opt.
+      ('a, 'cmp) tree
+      -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
+      -> 'a
+      -> compare_elt:('a -> 'a -> int)
+      -> ('a, 'a_opt) marker
+      -> 'a_opt
+      -> 'a option
+      =
+      fun t dir elt ~compare_elt found_marker found_elt ->
+      match t with
+      | Empty -> repackage found_marker found_elt
+      | Leaf { elt = elt' } ->
+        let c = compare_elt elt' elt in
+        if match dir with
+           | `Greater_or_equal_to -> c >= 0
+           | `Greater_than -> c > 0
+           | `Less_or_equal_to -> c <= 0
+           | `Less_than -> c < 0
+        then Some elt'
+        else repackage found_marker found_elt
+      | Node { left = l; elt = elt'; right = r; weight = _ } ->
+        let c = compare_elt elt' elt in
+        if c = 0
+        then (
+          (* This is a base case (no recursive call). *)
+          match dir with
+          | `Greater_or_equal_to | `Less_or_equal_to -> Some elt'
+          | `Greater_than ->
+            if is_empty r then repackage found_marker found_elt else min_elt r
+          | `Less_than ->
+            if is_empty l then repackage found_marker found_elt else max_elt l)
+        else (
+          (* We are guaranteed here that elt' <> elt. *)
+          (* This is the only recursive case. *)
+          match dir with
+          | `Greater_or_equal_to | `Greater_than ->
+            if c > 0
+            then loop l dir elt ~compare_elt Found elt'
+            else loop r dir elt ~compare_elt found_marker found_elt
+          | `Less_or_equal_to | `Less_than ->
+            if c < 0
+            then loop r dir elt ~compare_elt Found elt'
+            else loop l dir elt ~compare_elt found_marker found_elt)
+    ;;
+
+    let closest_elt t dir elt ~compare_elt = loop t dir elt ~compare_elt Missing ()
+  end
+
+  let closest_elt = Closest_elt_impl.closest_elt
+
   let rank t elt ~compare_elt =
     let rec loop t acc =
       match t with
@@ -1353,16 +1425,8 @@ module Tree0 = struct
     | sexp -> of_sexp_error "Set.t_of_sexp: list needed" sexp
   ;;
 
-  let%template[@alloc a @ m = (heap_global, stack_local)] sexp_of_t
-    (type a)
-    (sexp_of_a : a -> Sexp.t)
-    t
-    : Sexp.t
-    =
-    Sexp.List
-      ((fold_right [@mode m]) t ~init:[] ~f:(fun el acc ->
-         sexp_of_a el :: acc [@exclave_if_stack a]))
-    [@exclave_if_stack a]
+  let sexp_of_t (type a) (sexp_of_a : a -> Sexp.t) t : Sexp.t =
+    Sexp.List (fold_right t ~init:[] ~f:(fun el acc -> sexp_of_a el :: acc))
   ;;
 
   module Named = struct
@@ -1451,14 +1515,8 @@ module Accessors = struct
     Tree0.symmetric_diff t1.tree t2.tree ~compare_elt:(compare_elt t1)
   ;;
 
-  let%template[@mode m = (local, global)] compare_direct t1 t2 =
-    Tree0.compare (compare_elt t1) t1.tree t2.tree
-  ;;
-
-  let%template[@mode m = (local, global)] equal t1 t2 =
-    Tree0.equal t1.tree t2.tree ~compare_elt:(compare_elt t1)
-  ;;
-
+  let compare_direct t1 t2 = Tree0.compare (compare_elt t1) t1.tree t2.tree
+  let equal t1 t2 = Tree0.equal t1.tree t2.tree ~compare_elt:(compare_elt t1)
   let is_subset t ~of_ = Tree0.is_subset t.tree ~of_:of_.tree ~compare_elt:(compare_elt t)
 
   let are_disjoint t1 t2 =
@@ -1507,10 +1565,8 @@ module Accessors = struct
   let nth t i = Tree0.nth t.tree i
   let rank t v = Tree0.rank t.tree v ~compare_elt:(compare_elt t)
   let remove_index t i = like t (Tree0.remove_index t.tree i ~compare_elt:(compare_elt t))
-
-  let%template[@alloc a = (heap, stack)] sexp_of_t sexp_of_a t =
-    (Tree0.sexp_of_t [@alloc a]) sexp_of_a t.tree [@exclave_if_stack a]
-  ;;
+  let sexp_of_t sexp_of_a t = Tree0.sexp_of_t sexp_of_a t.tree
+  let closest_elt t dir a = Tree0.closest_elt t.tree dir a ~compare_elt:(compare_elt t)
 
   let to_sequence ?order ?greater_or_equal_to ?less_or_equal_to t =
     Tree0.to_sequence t.comparator ?order ?greater_or_equal_to ?less_or_equal_to t.tree
@@ -1540,10 +1596,6 @@ end
 include Accessors
 
 let compare _ _ t1 t2 = compare_direct t1 t2
-
-let%template[@mode local] compare _ _ t1 t2 =
-  compare_direct (globalize0 t1) (globalize0 t2)
-;;
 
 module Tree = struct
   module Enum = Tree0.Enum0
@@ -1610,14 +1662,8 @@ module Tree = struct
     Tree0.symmetric_diff t1 t2 ~compare_elt:(ce comparator)
   ;;
 
-  let%template[@mode m = (local, global)] compare_direct ~comparator t1 t2 =
-    Tree0.compare (ce comparator) t1 t2
-  ;;
-
-  let%template[@mode m = (local, global)] equal ~comparator t1 t2 =
-    Tree0.equal t1 t2 ~compare_elt:(ce comparator)
-  ;;
-
+  let compare_direct ~comparator t1 t2 = Tree0.compare (ce comparator) t1 t2
+  let equal ~comparator t1 t2 = Tree0.equal t1 t2 ~compare_elt:(ce comparator)
   let is_subset ~comparator t ~of_ = Tree0.is_subset t ~of_ ~compare_elt:(ce comparator)
 
   let are_disjoint ~comparator t1 t2 =
@@ -1648,6 +1694,10 @@ module Tree = struct
   let sexp_of_t sexp_of_a t = Tree0.sexp_of_t sexp_of_a t
   let to_tree t = t
   let of_tree ~comparator:_ t = t
+
+  let closest_elt ~comparator t dir a =
+    Tree0.closest_elt t dir a ~compare_elt:(ce comparator)
+  ;;
 
   let to_sequence ~comparator ?order ?greater_or_equal_to ?less_or_equal_to t =
     Tree0.to_sequence comparator ?order ?greater_or_equal_to ?less_or_equal_to t
@@ -1696,7 +1746,7 @@ module Tree = struct
           ; right : ('a, 'cmp) t [@globalized]
           ; weight : int
           }
-    [@@deriving equal ~localize, sexp_of]
+    [@@deriving equal, sexp_of]
 
     let balance_invariants t = Tree0.balance_invariants t
 
@@ -1753,11 +1803,9 @@ module Using_comparator = struct
       (Tree0.t_of_sexp_direct ~compare_elt:(Comparator.compare comparator) a_of_sexp sexp)
   ;;
 
-  let%template empty ~comparator = { comparator; tree = Tree0.Empty }
-  [@@mode p = (portable, nonportable)]
-  ;;
+  let empty ~comparator = { comparator; tree = Tree0.Empty }
 
-  module%template.portable Empty_without_value_restriction (Elt : Comparator.S1) = struct
+  module Empty_without_value_restriction (Elt : Comparator.S1) = struct
     let empty = { comparator = Elt.comparator; tree = Tree0.Empty }
   end
 
@@ -1815,9 +1863,8 @@ end
 
 let to_comparator = Comparator.of_module
 
-let%template empty (type cw) (m : (_, cw) Comparator.Module.t) =
-  (Using_comparator.empty [@mode p]) ~comparator:(to_comparator m)
-[@@mode p = (nonportable, portable)]
+let empty (type cw) (m : (_, cw) Comparator.Module.t) =
+  Using_comparator.empty ~comparator:(to_comparator m)
 ;;
 
 let singleton m a = Using_comparator.singleton ~comparator:(to_comparator m) a
@@ -1848,7 +1895,7 @@ struct
   type nonrec t = (Elt.t, Elt.comparator_witness) t
 end
 
-module type%template [@alloc a = (heap, stack)] Sexp_of_m = Sexpable.Sexp_of [@alloc a]
+module type Sexp_of_m = Sexpable.Sexp_of
 
 module type M_of_sexp = sig
   type t [@@deriving of_sexp]
@@ -1865,12 +1912,8 @@ module type Equal_m = sig end
 module type Globalize_m = sig end
 module type Hash_fold_m = Hasher.S
 
-let%template[@alloc a @ m = (heap_global, stack_local)] sexp_of_m__t
-  (type elt)
-  (module Elt : Sexp_of_m with type t = elt[@alloc a])
-  t
-  =
-  (sexp_of_t [@alloc a]) (Elt.sexp_of_t [@alloc a]) t [@exclave_if_stack a]
+let sexp_of_m__t (type elt) (module Elt : Sexp_of_m with type t = elt) t =
+  sexp_of_t Elt.sexp_of_t t
 ;;
 
 let m__t_of_sexp
@@ -1889,15 +1932,6 @@ let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt)
 
 let compare_m__t (module _ : Compare_m) t1 t2 = compare_direct t1 t2
 let equal_m__t (module _ : Equal_m) t1 t2 = equal t1 t2
-
-let%template[@mode local] compare_m__t (module _ : Compare_m) t1 t2 =
-  (compare_direct [@mode local]) t1 t2
-;;
-
-let%template[@mode local] equal_m__t (module _ : Equal_m) t1 t2 =
-  (equal [@mode local]) t1 t2
-;;
-
 let globalize_m__t (module _ : Globalize_m) t = globalize0 t
 
 let hash_fold_m__t (type elt) (module Elt : Hash_fold_m with type t = elt) state =
@@ -1917,8 +1951,7 @@ module Poly = struct
 
   let comparator = Comparator.Poly.comparator
 
-  include%template
-    Using_comparator.Empty_without_value_restriction [@modality portable] (Comparator.Poly)
+  include Using_comparator.Empty_without_value_restriction (Comparator.Poly)
 
   let singleton a = Using_comparator.singleton ~comparator a
   let union_list a = Using_comparator.union_list ~comparator a

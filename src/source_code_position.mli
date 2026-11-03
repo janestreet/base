@@ -1,7 +1,7 @@
 (** One typically obtains a [Source_code_position.t] using a [[%here]] expression, which
     is implemented by the [ppx_here] preprocessor. *)
 
-open! Import
+open! Import0
 
 (** See INRIA's OCaml documentation for a description of these fields.
 
@@ -13,9 +13,9 @@ type t = Stdlib.Lexing.position =
   ; pos_bol : int
   ; pos_cnum : int
   }
-[@@deriving hash, sexp_of ~stackify]
+[@@deriving hash, sexp_of]
 
-include%template Comparable.S [@mode local] [@modality portable] with type t := t
+include Comparable.S with type t := t
 
 (** [to_string t] converts [t] to the form ["FILE:LINE:COL"]. *)
 val to_string : t -> string

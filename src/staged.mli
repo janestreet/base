@@ -38,12 +38,9 @@
     (Note that in many cases, including perhaps the one above, it's preferable to create a
     custom type rather than use [Staged].) *)
 
-open! Import
+open! Import0
 
 type +'a t
 
-[%%template:
-[@@@mode.default p = (nonportable, portable)]
-
 external stage : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
-external unstage : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"]
+external unstage : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"

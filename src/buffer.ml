@@ -1,4 +1,5 @@
 open! Import
+module Bytes = Bytes0
 open Modes.Export
 include Buffer_intf.Definitions
 include Stdlib.Buffer
@@ -11,15 +12,15 @@ let add_substring t s ~pos ~len = add_substring t s pos len
 let add_subbytes t s ~pos ~len = add_subbytes t s pos len
 let sexp_of_t t = sexp_of_string (contents t)
 
-module%template To_bytes =
-  Blit.Make_distinct [@modality portable]
+module To_bytes =
+  Blit.Make_distinct
     (struct
       type nonrec t = t Modes.Global.t
 
       let length t = length t.global
     end)
     (struct
-      type t = Bytes.t Modes.Global.t
+      type t = bytes Modes.Global.t
 
       let create ~len = { global = Bytes.create len }
       let length t = Bytes.length t.global

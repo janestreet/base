@@ -1,6 +1,6 @@
 (** Various combinators for functions. *)
 
-open! Import
+open! Import0
 
 (** A "pipe" operator. [x |> f] is equivalent to [f x].
 
@@ -23,7 +23,7 @@ val non : ('a -> bool) -> 'a -> bool
 val forever : (unit -> unit) -> exn
 
 (** [apply_n_times ~n f x] is the [n]-fold application of [f] to [x]. *)
-val apply_n_times : n:int -> ('a -> 'a) -> 'a -> 'a
+val apply_n_times : 'a. n:int -> ('a -> 'a) -> 'a -> 'a
 
 (** The identity function.
 
@@ -32,9 +32,7 @@ external id : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%identity"
 [@@layout_poly]
 
 (** [compose f g x] is [f (g x)]. *)
-val%template compose : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
-[@@modality p = (portable, nonportable)]
+val compose : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
 
 (** Reverses the order of arguments for a binary function. *)
-val%template flip : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c
-[@@modality p = (portable, nonportable)]
+val flip : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c

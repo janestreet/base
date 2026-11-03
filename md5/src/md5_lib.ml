@@ -4,8 +4,8 @@ type t = string
 let empty = Digest.string ""
 let make s = if s = empty then empty else s
 let make_local s = if s = empty then empty else s
-let compare__local = compare
 let compare = compare
+let equal = ( = )
 let length = 16
 let to_binary s = s
 let to_binary_local s = s
@@ -17,7 +17,6 @@ let of_binary_exn s =
 
 let unsafe_of_binary = make
 let[@zero_alloc] unsafe_of_binary_local s = make_local s
-let[@zero_alloc] unsafe_of_binary__local s = make_local s
 
 external globalize : t -> t = "caml_obj_dup"
 

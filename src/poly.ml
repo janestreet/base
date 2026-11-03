@@ -4,6 +4,8 @@
     inlining. (If aliased without a type annotation, the compiler would implement them
     using the generic code doing a C call, and it's this code that would be inlined.) As a
     result we have to copy the [external ...] declaration here. *)
+module Bool = Bool0
+
 external ( < ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%lessthan"
 external ( <= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%lessequal"
 external ( <> ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%notequal"
@@ -14,12 +16,9 @@ external ascending : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
 
 (** We provide templated names so [include Poly] satisfies relevant interfaces. *)
 
-external%template compare : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
-[@@mode m = (global, local)]
-
-external%template equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
-[@@mode m = (global, local)]
+external compare : ('a[@local_opt]) -> ('a[@local_opt]) -> int = "%compare"
+external equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
 
 let descending x y = compare y x
-let max x y = Bool0.select (x >= y) x y
-let min x y = Bool0.select (x <= y) x y
+let max x y = Bool.select (x >= y) x y
+let min x y = Bool.select (x <= y) x y

@@ -1,6 +1,6 @@
 (** Functions for ordered collections. *)
 
-open! Import
+open! Import0
 
 include module type of Ordered_collection_common0 (** @inline *)
 

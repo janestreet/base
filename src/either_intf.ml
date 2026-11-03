@@ -7,21 +7,15 @@
     abstracts over which constructor is the focus. To use these functions, use the [First]
     or [Second] modules in [S]. *)
 
-open! Import
+open! Import0
+module Either = Either0
 
 module Definitions = struct
   module type Focused = sig
     type (+'focus, +'other) t
 
-    include%template
-      Monad.S2
-      [@kind value_or_null mod maybe_null] [@mode local]
-      with type ('a, 'b) t := ('a, 'b) t
-
-    include%template
-      Applicative.S2
-      [@kind value_or_null mod maybe_null] [@mode local]
-      with type ('a, 'b) t := ('a, 'b) t
+    include Monad.S2 with type ('a, 'b) t := ('a, 'b) t
+    include Applicative.S2 with type ('a, 'b) t := ('a, 'b) t
 
     val value : 'a 'b. ('a, 'b) t -> default:'a -> 'a
     val to_option : 'a 'b. ('a, 'b) t -> 'a option
@@ -45,14 +39,12 @@ module type Either = sig
     include Definitions
   end
 
-  type ('f, 's) t = ('f, 's) Either0.t =
+  type ('f, 's) t = ('f, 's) Either.t =
     | First of 'f
     | Second of 's
 
   include sig
-      type%template ('f, 's) t = (('f, 's) Either0.t[@kind kf ks])
-      [@@kind kf = base_or_null, ks = base_or_null]
-      [@@deriving compare ~localize, equal ~localize, sexp ~stackify, sexp_grammar]
+      type ('f, 's) t = ('f, 's) Either.t [@@deriving compare, equal, sexp, sexp_grammar]
     end
     with type ('f, 's) t := ('f, 's) t
 

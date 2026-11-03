@@ -7,7 +7,8 @@
     We then provide instantiations of these interfaces with 1, 2, and 3 type parameters
     for [t]. These cover more common usage patterns for the interfaces. *)
 
-open! Import
+open! Import0
+module Either = Either0
 
 (** These definitions are re-exported by [Dictionary_mutable]. *)
 module Definitions = struct
@@ -18,7 +19,7 @@ module Definitions = struct
       | Set_to of 'data
   end
 
-  module type%template [@mode maybe_shared = (uncontended, shared)] Accessors = sig
+  module type Accessors = sig
     (** The type of keys. This will be ['key] for polymorphic dictionaries, or some fixed
         type for dictionaries with monomorphic keys. *)
     type 'key key
@@ -65,13 +66,11 @@ module Definitions = struct
         , 'data
         , 'phantom )
         accessor
-    [@@mode maybe_shared = (uncontended, maybe_shared)]
 
     (** Like [find]. Raises if there is no value for the given key. *)
     val find_exn
       : 'key 'data 'phantom.
       (('key, 'data, 'phantom) t -> 'key key -> 'data, 'key, 'data, 'phantom) accessor
-    [@@mode maybe_shared = (uncontended, maybe_shared)]
 
     (** Like [find]. Adds the value [default ()] if none exists, then returns it. *)
     val find_or_add
@@ -102,7 +101,6 @@ module Definitions = struct
         , 'data
         , 'phantom )
         accessor
-    [@@mode maybe_shared = (uncontended, maybe_shared)]
 
     (** Like [findi]. Calls [if_found ~key ~data] if a value exists. *)
     val findi_and_call
@@ -116,7 +114,6 @@ module Definitions = struct
         , 'data
         , 'phantom )
         accessor
-    [@@mode maybe_shared = (uncontended, maybe_shared)]
 
     (** Like [find]. Removes the value for [key], if any, from the dictionary before
         returning it. *)

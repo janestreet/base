@@ -33,22 +33,6 @@ type ('record, 'field) t = ([ `Read | `Set_and_create ], 'record, 'field) t_with
 type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
 val name : (_, _, _) t_with_perm -> string
-
-[%%template:
-[@@@kind.default
-  k
-  = ( base_or_null_with_imm
-    , value & value & value & bits32
-    , value & value & value & value & value
-    , value & value & value & value & value & value
-    , value & value & value & value & value & value & value
-    , float64 & float64 & float64 & float64 & float64 & float64
-    , (float64 & float64 & float64 & float64 & float64 & float64)
-      & (float64 & float64 & float64 & float64 & float64 & float64)
-      & (value & value & value & value & value & value)
-      & value
-      & value )]
-
 val get : 'perm 'r 'a. ('perm, 'r, 'a) t_with_perm -> 'r -> 'a
 val fset : 'a 'r. ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> 'a -> 'r
 
@@ -62,7 +46,7 @@ val map : 'a 'r. ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> f:('a -> 'a
 
 val updater
   : 'a 'r.
-  ([> `Set_and_create ], 'r, 'a) t_with_perm -> ('r -> f:('a -> 'a) -> unit) option]
+  ([> `Set_and_create ], 'r, 'a) t_with_perm -> ('r -> f:('a -> 'a) -> unit) option
 
 type ('perm, 'record, 'result) user =
   { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }

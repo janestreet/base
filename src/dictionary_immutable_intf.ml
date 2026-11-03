@@ -7,7 +7,10 @@
     We then provide instantiations of these interfaces with 1, 2, and 3 type parameters
     for [t]. These cover more common usage patterns for the interfaces. *)
 
-open! Import
+open! Import0
+module Either = Either0
+module Nonempty_list = Nonempty_list_type.Nonempty_list
+module Result = Result0
 
 (** These definitions are re-exported by [Dictionary_immutable]. *)
 module Definitions = struct
@@ -65,6 +68,15 @@ module Definitions = struct
         as having an empty list. *)
     val find_multi
       : ( ('key, 'data list, 'phantom) t -> 'key key -> 'data list
+          , 'key
+          , 'data
+          , 'phantom )
+          accessor
+
+    (** Like [find_multi], but operating on nonempty lists. Converts found values to plain
+        lists, and returns the empty list if no value is found. *)
+    val find_multi_nonempty
+      : ( ('key, 'data Nonempty_list.t, 'phantom) t -> 'key key -> 'data list
           , 'key
           , 'data
           , 'phantom )
@@ -299,6 +311,17 @@ module Definitions = struct
           , 'phantom )
           transformer
 
+    (** Like [change]. Returns the new value, if any. *)
+    val change_and_return
+      : ( ('key, 'data, 'phantom) t
+          -> 'key key
+          -> f:('data option -> 'data option)
+          -> 'data option * ('key, 'data, 'phantom) t
+          , 'key
+          , 'data
+          , 'phantom )
+          transformer
+
     (** Adds [data] to the existing key/value pair for [key]. Interprets a missing key as
         having an empty list. *)
     val add_multi
@@ -311,10 +334,31 @@ module Definitions = struct
           , 'phantom )
           transformer
 
+    (** Like [add_multi], but operating on nonempty lists. *)
+    val add_multi_nonempty
+      : ( ('key, 'data Nonempty_list.t, 'phantom) t
+          -> key:'key key
+          -> data:'data
+          -> ('key, 'data Nonempty_list.t, 'phantom) t
+          , 'key
+          , 'data
+          , 'phantom )
+          transformer
+
     (** Removes one element from the existing key/value pair for [key]. Removes the key
         entirely if the new list is empty. *)
     val remove_multi
       : ( ('key, 'data list, 'phantom) t -> 'key key -> ('key, 'data list, 'phantom) t
+          , 'key
+          , 'data
+          , 'phantom )
+          transformer
+
+    (** Like [remove_multi], but operating on nonempty lists. *)
+    val remove_multi_nonempty
+      : ( ('key, 'data Nonempty_list.t, 'phantom) t
+          -> 'key key
+          -> ('key, 'data Nonempty_list.t, 'phantom) t
           , 'key
           , 'data
           , 'phantom )
@@ -539,6 +583,14 @@ module Definitions = struct
           , 'phantom )
           creator
 
+    (** Like [of_alist_multi], but typefully expresses the nonempty property. *)
+    val of_alist_multi_nonempty
+      : ( ('key key * 'data) list -> ('key, 'data Nonempty_list.t, 'phantom) t
+          , 'key
+          , 'data
+          , 'phantom )
+          creator
+
     (** Produces a dictionary using each key/value pair. Combines all values for a given
         key with [init] using [f]. *)
     val of_alist_fold
@@ -595,6 +647,14 @@ module Definitions = struct
           , 'phantom )
           creator
 
+    (** Like [of_sequence_multi], but typefully expresses the nonempty property. *)
+    val of_sequence_multi_nonempty
+      : ( ('key key * 'data) Sequence.t -> ('key, 'data Nonempty_list.t, 'phantom) t
+          , 'key
+          , 'data
+          , 'phantom )
+          creator
+
     (** Like [of_alist_fold]. Consumes a sequence. *)
     val of_sequence_fold
       : ( ('key key * 'data) Sequence.t
@@ -645,6 +705,16 @@ module Definitions = struct
     (** Like [of_alist_multi]. Consume values for which keys can be computed. *)
     val of_list_with_key_multi
       : ( 'data list -> get_key:('data -> 'key key) -> ('key, 'data list, 'phantom) t
+          , 'key
+          , 'data
+          , 'phantom )
+          creator
+
+    (** Like [of_list_with_key_multi], but typefully expresses the nonempty property. *)
+    val of_list_with_key_multi_nonempty
+      : ( 'data list
+          -> get_key:('data -> 'key key)
+          -> ('key, 'data Nonempty_list.t, 'phantom) t
           , 'key
           , 'data
           , 'phantom )

@@ -1,7 +1,7 @@
 (** An interface for stacks that follows [Core]'s conventions, as opposed to OCaml's
     standard [Stack] module. *)
 
-open! Import
+open! Import0
 
 module Definitions = struct
   module type S = sig

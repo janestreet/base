@@ -1,10 +1,9 @@
 (* A few small things copied from other parts of Base because they depend on us, so we
    can't use them. *)
 
-open! Import
-module Sexp = Sexp0
-
-let raise_s = Error.raise_s
+open! Import0
+module Nothing = Nothing0
+module Option = Option0
 
 module Int = struct
   type t = int
@@ -17,25 +16,21 @@ end
    immediate, since all unused buckets in the hashtbl don't use any memory (besides the
    array cell) *)
 
-[%%template
-[@@@kind_set.define all = (bits64, float64, value_or_null)]
-
 (* We deliberately leave the [k = value, v = value] for last so that
    [t[@kind value value]] is defined last and the constructors can be inferred to
    correspond to the "regular" version of the type. The inference appears rather delicate,
    so moving the [[@@@kind.default]] to after the type definition and adding a poly
    attribute separately on the type might break code after the end of the templated
    section. *)
-[@@@kind.default k = all, v = all]
 
 type ('k, 'v) t =
   | Empty
   | Node of
-      { mutable left : (('k, 'v) t[@kind k v])
+      { mutable left : ('k, 'v) t
       ; key : 'k
       ; mutable value : 'v
       ; mutable height : int
-      ; mutable right : (('k, 'v) t[@kind k v])
+      ; mutable right : ('k, 'v) t
       }
   | Leaf of
       { key : 'k
@@ -60,7 +55,7 @@ let invariant compare =
   let rec inv = function
     | Empty | Leaf _ -> ()
     | Node { left; key = k; value = _; height = h; right } ->
-      let hl, hr = (height [@kind k v]) left, (height [@kind k v]) right in
+      let hl, hr = height left, height right in
       inv left;
       inv right;
       legal_left_key k left;
@@ -81,7 +76,7 @@ let invariant compare =
   inv
 ;;
 
-let invariant t ~compare = (invariant [@kind k v]) compare t
+let invariant t ~compare = invariant compare t
 
 (* In the following comments, 't is balanced' means that 'invariant t' does not raise an
    exception. This implies of course that each node's height field is correct. 't is
@@ -90,9 +85,7 @@ let invariant t ~compare = (invariant [@kind k v]) compare t
 (* @pre: left and right subtrees have correct heights @post: output has the correct height *)
 let update_height = function
   | Node ({ left; key = _; value = _; height = old_height; right } as x) ->
-    let new_height =
-      Int.max ((height [@kind k v]) left) ((height [@kind k v]) right) + 1
-    in
+    let new_height = Int.max (height left) (height right) + 1 in
     if new_height <> old_height then x.height <- new_height
   | Empty | Leaf _ -> assert false
 ;;
@@ -103,8 +96,8 @@ let balance tree =
   match tree with
   | Empty | Leaf _ -> tree
   | Node ({ left; key = _; value = _; height = _; right } as root_node) ->
-    let hl = (height [@kind k v]) left
-    and hr = (height [@kind k v]) right in
+    let hl = height left
+    and hr = height right in
     (* + 2 is critically important, lowering it to 1 will break the Leaf assumptions in
          the code below, and will force us to promote leaf nodes in the balance routine.
          It's also faster, since it will balance less often. Note that the following code
@@ -122,12 +115,12 @@ let balance tree =
            ; height = _
            ; right = left_node_right
            } as left_node) ->
-        if (height [@kind k v]) left_node_left >= (height [@kind k v]) left_node_right
+        if height left_node_left >= height left_node_right
         then (
           root_node.left <- left_node_right;
           left_node.right <- tree;
-          (update_height [@kind k v]) tree;
-          (update_height [@kind k v]) left;
+          update_height tree;
+          update_height left;
           left)
         else (
           (* if right is a leaf, then left must be empty. That means height is 2. Even if
@@ -141,9 +134,9 @@ let balance tree =
             root_node.left <- lr_right;
             lr_node.right <- tree;
             lr_node.left <- left;
-            (update_height [@kind k v]) left;
-            (update_height [@kind k v]) tree;
-            (update_height [@kind k v]) left_node_right;
+            update_height left;
+            update_height tree;
+            update_height left_node_right;
             left_node_right))
     else if hr > hl + 2
     then (
@@ -157,12 +150,12 @@ let balance tree =
            ; height = _
            ; right = right_node_right
            } as right_node) ->
-        if (height [@kind k v]) right_node_right >= (height [@kind k v]) right_node_left
+        if height right_node_right >= height right_node_left
         then (
           root_node.right <- right_node_left;
           right_node.left <- tree;
-          (update_height [@kind k v]) tree;
-          (update_height [@kind k v]) right;
+          update_height tree;
+          update_height right;
           right)
         else (
           (* see above for an explanation of why this cannot be a leaf *)
@@ -175,12 +168,12 @@ let balance tree =
             root_node.right <- rl_left;
             rl_node.left <- tree;
             rl_node.right <- right;
-            (update_height [@kind k v]) right;
-            (update_height [@kind k v]) tree;
-            (update_height [@kind k v]) right_node_left;
+            update_height right;
+            update_height tree;
+            update_height right_node_left;
             right_node_left))
     else (
-      (update_height [@kind k v]) tree;
+      update_height tree;
       tree)
 ;;
 
@@ -216,19 +209,17 @@ let rec add t ~replace ~compare ~added ~key:k ~data:v =
     else (
       if c < 0
       then (
-        let left' = (add [@kind k v]) left ~replace ~added ~compare ~key:k ~data:v in
+        let left' = add left ~replace ~added ~compare ~key:k ~data:v in
         if not (phys_equal left' left) then r.left <- left')
       else (
-        let right' = (add [@kind k v]) right ~replace ~added ~compare ~key:k ~data:v in
+        let right' = add right ~replace ~added ~compare ~key:k ~data:v in
         if not (phys_equal right' right) then r.right <- right');
-      if !added then (balance [@kind k v]) t else t)
+      if !added then balance t else t)
 ;;
 
-let[@kind k = k, v = v, a = value_or_null, b = value_or_null, r = (v, value_or_null)]
-   [@mode c = (uncontended, shared)]
-   [@inline always] rec findi_and_call_impl
+let[@inline always] rec findi_and_call_impl
   : type k v a b r if_ in_.
-    ((k, v) t[@kind k v])
+    (k, v) t
     -> compare:(k -> k -> int)
     -> k
     -> a
@@ -251,7 +242,7 @@ let[@kind k = k, v = v, a = value_or_null, b = value_or_null, r = (v, value_or_n
     if c = 0
     then call_if_found ~if_found ~key:k' ~data:v arg1 arg2
     else
-      (findi_and_call_impl [@kind k v a b r] [@mode c])
+      findi_and_call_impl
         (if c < 0 then left else right)
         ~compare
         k
@@ -263,15 +254,11 @@ let[@kind k = k, v = v, a = value_or_null, b = value_or_null, r = (v, value_or_n
         ~if_not_found
 ;;
 
-[%%template
-[@@@mode.default c = (uncontended, shared)]
-[@@@kind r = v]
-
-let[@kind k = k, v = v, r = (r, value_or_null)] find_and_call =
+let find_and_call =
   let call_if_found ~if_found ~key:_ ~data () () = if_found data in
   let call_if_not_found ~if_not_found key () () = if_not_found key in
   fun t ~compare k ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v value_or_null value_or_null r] [@mode c])
+    findi_and_call_impl
       t
       ~compare
       k
@@ -283,11 +270,11 @@ let[@kind k = k, v = v, r = (r, value_or_null)] find_and_call =
       ~if_not_found
 ;;
 
-let[@kind k = k, v = v, r = r] findi_and_call =
+let findi_and_call =
   let call_if_found ~if_found ~key ~data () () = if_found ~key ~data in
   let call_if_not_found ~if_not_found key () () = if_not_found key in
   fun t ~compare k ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v value_or_null value_or_null r] [@mode c])
+    findi_and_call_impl
       t
       ~compare
       k
@@ -299,13 +286,11 @@ let[@kind k = k, v = v, r = r] findi_and_call =
       ~if_not_found
 ;;
 
-[@@@kind a = value_or_null]
-
-let[@kind k = k, v = v, a = a, r = r] find_and_call1 =
+let find_and_call1 =
   let call_if_found ~if_found ~key:_ ~data arg () = if_found data arg in
   let call_if_not_found ~if_not_found key arg () = if_not_found key arg in
   fun t ~compare k ~a ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v a value_or_null r] [@mode c])
+    findi_and_call_impl
       t
       ~compare
       k
@@ -317,11 +302,11 @@ let[@kind k = k, v = v, a = a, r = r] find_and_call1 =
       ~if_not_found
 ;;
 
-let[@kind k = k, v = v, a = a, r = r] findi_and_call1 =
+let findi_and_call1 =
   let call_if_found ~if_found ~key ~data arg () = if_found ~key ~data arg in
   let call_if_not_found ~if_not_found key arg () = if_not_found key arg in
   fun t ~compare k ~a ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v a value_or_null r] [@mode c])
+    findi_and_call_impl
       t
       ~compare
       k
@@ -333,13 +318,11 @@ let[@kind k = k, v = v, a = a, r = r] findi_and_call1 =
       ~if_not_found
 ;;
 
-[@@@kind b = value_or_null]
-
-let[@kind k = k, v = v, a = a, b = b, r = r] find_and_call2 =
+let find_and_call2 =
   let call_if_found ~if_found ~key:_ ~data arg1 arg2 = if_found data arg1 arg2 in
   let call_if_not_found ~if_not_found key arg1 arg2 = if_not_found key arg1 arg2 in
   fun t ~compare k ~a ~b ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v a b r] [@mode c])
+    findi_and_call_impl
       t
       ~compare
       k
@@ -351,11 +334,11 @@ let[@kind k = k, v = v, a = a, b = b, r = r] find_and_call2 =
       ~if_not_found
 ;;
 
-let[@kind k = k, v = v, a = a, b = b, r = r] findi_and_call2 =
+let findi_and_call2 =
   let call_if_found ~if_found ~key ~data arg1 arg2 = if_found ~key ~data arg1 arg2 in
   let call_if_not_found ~if_not_found key arg1 arg2 = if_not_found key arg1 arg2 in
   fun t ~compare k ~a ~b ~if_found ~if_not_found ->
-    (findi_and_call_impl [@kind k v a b r] [@mode c])
+    findi_and_call_impl
       t
       ~compare
       k
@@ -365,33 +348,18 @@ let[@kind k = k, v = v, a = a, b = b, r = r] findi_and_call2 =
       ~call_if_not_found
       ~if_found
       ~if_not_found
-;;]
+;;
 
 let find =
-  let if_found v : ((_ Option.t[@kind v]) Modes.t[@mode c]) = { modal = Some v } in
-  let if_not_found _ : ((_ Option.t[@kind v]) Modes.t[@mode c]) = { modal = None } in
-  fun t ~compare k ->
-    ((find_and_call [@kind k v value_or_null] [@mode c])
-       t
-       ~compare
-       k
-       ~if_found
-       ~if_not_found)
-      .modal
-[@@mode c = (uncontended, shared)]
+  let if_found v : _ Option.t Modes.t = { modal = Some v } in
+  let if_not_found _ : _ Option.t Modes.t = { modal = None } in
+  fun t ~compare k -> (find_and_call t ~compare k ~if_found ~if_not_found).modal
 ;;
 
 let mem =
   let if_found _ = true in
   let if_not_found _ = false in
-  fun t ~compare k ->
-    (find_and_call [@kind k v value_or_null] [@mode c])
-      t
-      ~compare
-      k
-      ~if_found
-      ~if_not_found
-[@@mode c = (uncontended, shared)]
+  fun t ~compare k -> find_and_call t ~compare k ~if_found ~if_not_found
 ;;
 
 let rec remove =
@@ -411,7 +379,7 @@ let rec remove =
       Leaf { key = k; value = v }
     | Node ({ left; key = _; value = _; height = _; right = _ } as r) ->
       r.left <- remove_min_elt left;
-      (balance [@kind k v]) tree
+      balance tree
   in
   let merge t1 t2 =
     match t1, t2 with
@@ -419,7 +387,7 @@ let rec remove =
     | t, Empty -> t
     | _, _ ->
       let tree = min_elt t2 in
-      (balance [@kind k v])
+      balance
         (match tree with
          | Empty -> assert false
          | Leaf { key = k; value = v } ->
@@ -428,7 +396,7 @@ let rec remove =
              { left = t1
              ; key = k
              ; value = v
-             ; height = Int.max ((height [@kind k v]) t1) ((height [@kind k v]) t2) + 1
+             ; height = Int.max (height t1) (height t2) + 1
              ; right = t2
              }
          | Node r ->
@@ -458,12 +426,12 @@ let rec remove =
       else (
         if c < 0
         then (
-          let left' = (remove [@kind k v]) left ~removed ~compare k in
+          let left' = remove left ~removed ~compare k in
           if not (phys_equal left' left) then r.left <- left')
         else (
-          let right' = (remove [@kind k v]) right ~removed ~compare k in
+          let right' = remove right ~removed ~compare k in
           if not (phys_equal right' right) then r.right <- right');
-        if !removed then (balance [@kind k v]) t else t)
+        if !removed then balance t else t)
 ;;
 
 let rec fold t ~init ~f =
@@ -493,20 +461,12 @@ let rec fold t ~init ~f =
       } -> f ~key:rkey ~data:rdata (f ~key ~data init)
   | Node
       { left; key; value = data; height = _; right = Leaf { key = rkey; value = rdata } }
-    -> f ~key:rkey ~data:rdata (f ~key ~data ((fold [@kind k v] [@mode c]) left ~init ~f))
+    -> f ~key:rkey ~data:rdata (f ~key ~data (fold left ~init ~f))
   | Node
       { left = Leaf { key = lkey; value = ldata }; key; value = data; height = _; right }
-    ->
-    (fold [@kind k v] [@mode c])
-      right
-      ~init:(f ~key ~data (f ~key:lkey ~data:ldata init))
-      ~f
+    -> fold right ~init:(f ~key ~data (f ~key:lkey ~data:ldata init)) ~f
   | Node { left; key; value = data; height = _; right } ->
-    (fold [@kind k v] [@mode c])
-      right
-      ~init:(f ~key ~data ((fold [@kind k v] [@mode c]) left ~init ~f))
-      ~f
-[@@mode c = (uncontended, shared)]
+    fold right ~init:(f ~key ~data (fold left ~init ~f)) ~f
 ;;
 
 let rec iter t ~f =
@@ -514,10 +474,17 @@ let rec iter t ~f =
   | Empty -> ()
   | Leaf { key; value = data } -> f ~key ~data
   | Node { left; key; value = data; height = _; right } ->
-    (iter [@kind k v] [@mode c]) left ~f;
+    iter left ~f;
     f ~key ~data;
-    (iter [@kind k v] [@mode c]) right ~f
-[@@mode c = (uncontended, shared)]
+    iter right ~f
+;;
+
+let rec exists t ~f =
+  match t with
+  | Empty -> false
+  | Leaf { key; value = data } -> f ~key ~data
+  | Node { left; key; value = data; height = _; right } ->
+    exists left ~f || f ~key ~data || exists right ~f
 ;;
 
 let rec mapi_inplace t ~f =
@@ -525,18 +492,17 @@ let rec mapi_inplace t ~f =
   | Empty -> ()
   | Leaf ({ key; value } as t) -> t.value <- f ~key ~data:value
   | Node ({ left; key; value; height = _; right } as t) ->
-    (mapi_inplace [@kind k v]) ~f left;
+    mapi_inplace ~f left;
     t.value <- f ~key ~data:value;
-    (mapi_inplace [@kind k v]) ~f right
+    mapi_inplace ~f right
 ;;
 
 let choose_exn = function
   | Empty ->
-    (match raise_s (Sexp.message "[Avltree.choose_exn] of empty hashtbl" []) with
+    (match invalid_arg "[Avltree.choose_exn] of empty hashtbl" with
      | (_ : Nothing.t) -> .)
   | Leaf { key; value; _ } | Node { key; value; _ } -> key, value
-[@@mode c = (uncontended, shared)]
-;;]
+;;
 
 let rec first t =
   match t with

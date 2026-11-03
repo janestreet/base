@@ -1,16 +1,9 @@
 (** Module types for a [binary_search] function for a sequence, and functors for building
     [binary_search] functions. *)
 
-open! Import
-
-[%%template
-[@@@kind_set.define
-  values = (value, value mod external64, value_or_null mod external64 non_float)]
+open! Import0
 
 module Definitions = struct
-  [%%template
-  [@@@mode.default m = (global, local)]
-
   (** An [Indexable] type is a finite sequence of elements indexed by consecutive integers
       [0] ... [length t - 1]. [get] and [length] must be O(1) for the resulting
       [binary_search] to be lg(n). *)
@@ -18,17 +11,16 @@ module Definitions = struct
     type elt
     type t
 
-    val get : t -> int -> elt [@@mode m' = (global, m)]
-    val length : t -> int [@@mode m' = (global, m)]
+    val get : t -> int -> elt
+    val length : t -> int
   end
 
   module type Indexable1 = sig
     type 'a t
 
-    val get : 'a. 'a t -> int -> 'a [@@mode m' = (global, m)]
-    val length : _ t -> int [@@mode m' = (global, m)]
+    val get : 'a. 'a t -> int -> 'a
+    val length : _ t -> int
   end
-  [@@kind k = values]]
 
   module Which_target_by_key = struct
     type t =
@@ -49,9 +41,6 @@ module Definitions = struct
       ]
     [@@deriving enumerate]
   end
-
-  [%%template
-  [@@@mode.default m = (global, local)]
 
   type ('t, 'elt, 'key) binary_search =
     ?pos:int
@@ -76,12 +65,11 @@ module Definitions = struct
 
     (** See [Binary_search.binary_search] in binary_search.ml *)
 
-    val binary_search : ((t, elt, 'key) binary_search[@mode m']) [@@mode m' = (global, m)]
+    val binary_search : (t, elt, 'key) binary_search
 
     (** See [Binary_search.binary_search_segmented] in binary_search.ml *)
 
-    val binary_search_segmented : ((t, elt) binary_search_segmented[@mode m'])
-    [@@mode m' = (global, m)]
+    val binary_search_segmented : (t, elt) binary_search_segmented
   end
 
   module type S1 = sig
@@ -89,15 +77,12 @@ module Definitions = struct
 
     (** See [Binary_search.binary_search] in binary_search.ml *)
 
-    val binary_search : (('a t, 'a, 'key) binary_search[@mode m'])
-    [@@mode m' = (global, m)]
+    val binary_search : ('a t, 'a, 'key) binary_search
 
     (** See [Binary_search.binary_search_segmented] in binary_search.ml *)
 
-    val binary_search_segmented : (('a t, 'a) binary_search_segmented[@mode m'])
-    [@@mode m' = (global, m)]
+    val binary_search_segmented : ('a t, 'a) binary_search_segmented
   end
-  [@@kind k = values]]
 end
 
 module type Binary_searchable = sig
@@ -105,13 +90,6 @@ module type Binary_searchable = sig
     include Definitions
   end
 
-  [%%template:
-  [@@@mode.default m = (global, local)]
-
-  module%template.portable Make (T : Indexable [@mode m]) :
-    S [@mode m] with type t := T.t with type elt := T.elt
-
-  module%template.portable Make1 (T : Indexable1 [@mode m] [@kind k]) :
-    S1 [@mode m] [@kind k] with type 'a t := 'a T.t
-  [@@kind k = values]]
-end]
+  module Make (T : Indexable) : S with type t := T.t with type elt := T.elt
+  module Make1 (T : Indexable1) : S1 with type 'a t := 'a T.t
+end

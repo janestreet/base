@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 let invalid_argf = Printf.invalid_argf
 let negative_exponent () = Printf.invalid_argf "exponent can not be negative" ()
@@ -119,7 +119,7 @@ module Make (X : Make_arg) = struct
         (to_string (globalize x))
         (to_string (globalize y))
         ();
-    let offset = x < zero |> Bool.to_int |> of_int_exn in
+    let offset = x < zero |> bool_to_int |> of_int_exn in
     ((x + offset) / y) - offset
   ;;
 

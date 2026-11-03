@@ -55,22 +55,6 @@ type ('record, 'field) t = ([ `Read | `Set_and_create ], 'record, 'field) t_with
 type ('record, 'field) readonly_t = ([ `Read ], 'record, 'field) t_with_perm
 
 let name (Field field) = field.name
-
-[%%template
-[@@@kind.default
-  k
-  = ( base_or_null_with_imm
-    , value & value & value & bits32
-    , value & value & value & value & value
-    , value & value & value & value & value & value
-    , value & value & value & value & value & value & value
-    , float64 & float64 & float64 & float64 & float64 & float64
-    , (float64 & float64 & float64 & float64 & float64 & float64)
-      & (float64 & float64 & float64 & float64 & float64 & float64)
-      & (value & value & value & value & value & value)
-      & value
-      & value )]
-
 let get (Field field) = field.getter
 let fset (Field field) = field.fset
 let setter (Field field) = field.setter
@@ -80,7 +64,7 @@ let updater (Field field) =
   match field.setter with
   | None -> None
   | Some setter -> Some (fun r ~f -> setter r (f (field.getter r)))
-;;]
+;;
 
 type ('perm, 'record, 'result) user =
   { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }

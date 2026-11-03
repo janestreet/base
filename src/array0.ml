@@ -10,24 +10,22 @@
 
 open! Import0
 module Sys = Sys0
+module Int = Int0
+module List = List0
+module Ordered_collection_common = Ordered_collection_common0
 
 let invalid_argf = Printf.invalid_argf
 
 module Array = struct
-  [%%template
-    external create : len:int -> 'a -> 'a array = "caml_make_vect"
-    [@@alloc __ = (heap, stack)]]
+  external create : len:int -> 'a -> 'a array = "caml_make_vect"
 
   let create_local = create
   let magic_create_uninitialized ~len = create ~len (Stdlib.Obj.magic 0)
 
   external create_float_uninitialized : int -> float array = "caml_make_float_vect"
 
-  external%template get
-    : 'a.
-    ('a array[@local_opt]) -> (int[@local_opt]) -> 'a
-    = "%array_safe_get"
-  [@@layout_poly] [@@mode m = (uncontended, shared)]
+  external get : 'a. ('a array[@local_opt]) -> (int[@local_opt]) -> 'a = "%array_safe_get"
+  [@@layout_poly]
 
   external length : 'a. ('a array[@local_opt]) -> int = "%array_length" [@@layout_poly]
 
@@ -37,21 +35,17 @@ module Array = struct
     = "%array_safe_set"
   [@@layout_poly]
 
-  external%template unsafe_get
+  external unsafe_get
     : 'a.
     ('a array[@local_opt]) -> (int[@local_opt]) -> 'a
     = "%array_unsafe_get"
-  [@@mode m = (uncontended, shared)] [@@layout_poly]
+  [@@layout_poly]
 
   external unsafe_set
     : 'a.
     ('a array[@local_opt]) -> (int[@local_opt]) -> 'a -> unit
     = "%array_unsafe_set"
   [@@layout_poly]
-
-  [%%template
-  [@@@kind.default k = value_or_null]
-  [@@@kind k = k mod separable]
 
   (* [unsafe_blit] can't be [[@noalloc]] because, even though it does not allocate, it
      still can induce a minor GC *)
@@ -67,61 +61,13 @@ module Array = struct
 
   external unsafe_fill : 'a. 'a array -> int -> int -> 'a -> unit = "caml_array_fill"
   external unsafe_sub : 'a. 'a array -> int -> int -> 'a array = "caml_array_sub"
-  external concat : 'a. 'a array list -> 'a array = "caml_array_concat"]
-
-  [%%template
-    external unsafe_blit
-      :  src:('a array[@local_opt])
-      -> src_pos:int
-      -> dst:('a array[@local_opt])
-      -> dst_pos:int
-      -> len:int
-      -> unit
-      = "caml_array_blit"
-    [@@kind __ = (base_non_value, value_or_null mod external64)]]
+  external concat : 'a. 'a array list -> 'a array = "caml_array_concat"
 end
 
 include Array
 
-[%%template
 (* We use [magic_create_uninitialized] with the non-value layouts below. For
    [value mod external64], we define a special version that initializes with [Null]. *)
-let magic_create_uninitialized ~len = create ~len (Obj.magic Null)
-[@@kind value_or_null mod external64]
-;;
-
-let magic_create_uninitialized ~len = magic_create_uninitialized ~len
-[@@kind k = base_non_value]
-;;
-
-[@@@kind.default k' = (base_non_value, value_or_null mod external64)]
-[@@@kind k = k' mod separable]
-
-let unsafe_fill (t : _ array) pos len (x : _) =
-  for i = pos to pos + len - 1 do
-    unsafe_set t i x
-  done
-;;
-
-let unsafe_sub (t : _ array) pos len =
-  let res = (magic_create_uninitialized [@kind k']) ~len in
-  (unsafe_blit [@kind k']) ~src:t ~src_pos:pos ~dst:res ~dst_pos:0 ~len;
-  res
-;;
-
-let concat (ts : _ array list) =
-  let len =
-    (List0.fold [@mode local local]) ts ~init:0 ~f:(fun acc t -> acc + length t)
-  in
-  let res = (magic_create_uninitialized [@kind k']) ~len in
-  let _total_length =
-    (List0.fold [@mode local local]) ts ~init:0 ~f:(fun start t ->
-      let len = length t in
-      (unsafe_blit [@kind k']) ~src:t ~src_pos:0 ~dst:res ~dst_pos:start ~len;
-      start + len)
-  in
-  res
-;;]
 
 let max_length = Sys.max_array_length
 
@@ -151,42 +97,21 @@ include struct
   ;;
 end
 
-let%template append (t1 : _ array) t2 =
-  let len1 = length t1 in
-  let len2 = length t2 in
-  let res = (magic_create_uninitialized [@kind k]) ~len:(len1 + len2) in
-  (unsafe_blit [@kind k]) ~src:t1 ~src_pos:0 ~dst:res ~dst_pos:0 ~len:len1;
-  (unsafe_blit [@kind k]) ~src:t2 ~src_pos:0 ~dst:res ~dst_pos:len1 ~len:len2;
-  res
-[@@kind k = (base_non_value, value_or_null mod external64)]
-;;
-
 let blit ~src ~src_pos ~dst ~dst_pos ~len =
-  Ordered_collection_common0.check_pos_len_exn
-    ~pos:src_pos
-    ~len
-    ~total_length:(length src);
-  Ordered_collection_common0.check_pos_len_exn
-    ~pos:dst_pos
-    ~len
-    ~total_length:(length dst);
+  Ordered_collection_common.check_pos_len_exn ~pos:src_pos ~len ~total_length:(length src);
+  Ordered_collection_common.check_pos_len_exn ~pos:dst_pos ~len ~total_length:(length dst);
   unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len
 ;;
 
 let make_matrix = Stdlib.Array.make_matrix
 
-let%template fold_right t ~(f : _ -> _ -> _) ~init =
+let fold_right t ~(f : _ -> _ -> _) ~init =
   let r = ref init in
   for i = length t - 1 downto 0 do
-    r := f ((unsafe_get [@mode m]) t i) !r
+    r := f (unsafe_get t i) !r
   done;
   !r
-[@@mode m = (uncontended, shared)]
 ;;
-
-[%%template
-[@@@kind.default k' = (base_or_null, value_or_null mod external64)]
-[@@@kind k = k' mod separable]
 
 let init len ~(f : _ -> _) : _ array =
   if len = 0
@@ -194,41 +119,37 @@ let init len ~(f : _ -> _) : _ array =
   else if len < 0
   then invalid_arg "Array.init"
   else (
-    (let res = (create [@alloc a]) ~len (f 0) in
-     for i = 1 to Int0.pred len do
-       unsafe_set res i (f i)
-     done;
-     res)
-    [@exclave_if_stack a])
-[@@alloc a @ l = (heap_global, stack_local)]
+    let res = create ~len (f 0) in
+    for i = 1 to Int.pred len do
+      unsafe_set res i (f i)
+    done;
+    res)
 ;;
 
 let sub : type a. a array -> pos:int -> len:int -> a array =
   fun a ~pos ~len ->
   if pos < 0 || len < 0 || pos > length a - len
   then invalid_arg "Array.sub"
-  else (unsafe_sub [@kind k']) a pos len
+  else unsafe_sub a pos len
 ;;
 
 (* Copied from [Stdlib.Array], with type annotations added for templating *)
-let to_list : type a. a array -> (a List0.Constructors.t[@kind k' or value_or_null]) =
+let to_list : type a. a array -> a List.Constructors.t =
   fun t ->
-  let rec tolist t i res : (_ List0.Constructors.t[@kind k' or value_or_null]) =
-    if i < 0 then res else tolist t (i - 1) (unsafe_get t i :: res) [@exclave_if_stack a]
+  let rec tolist t i res : _ List.Constructors.t =
+    if i < 0 then res else tolist t (i - 1) (unsafe_get t i :: res)
   in
-  tolist t (length t - 1) [] [@exclave_if_stack a]
-[@@alloc a @ m = (heap_global, stack_local)]
+  tolist t (length t - 1) []
 ;;
 
 (* Copied from [Stdlib.Array], with type annotations added for templating and some
    functions changed to the equivalent base ones *)
-let of_list : type a. (a List0.Constructors.t[@kind k' or value_or_null]) -> a array
-  = function
-  | ([] : (_ List0.Constructors.t[@kind k' or value_or_null])) -> [||]
+let of_list : type a. a List.Constructors.t -> a array = function
+  | ([] : _ List.Constructors.t) -> [||]
   | hd :: tl as l ->
-    let a = create ~len:((List0.length [@kind k' or value_or_null]) l) hd in
+    let a = create ~len:(List.length l) hd in
     let rec fill i = function
-      | ([] : (_ List0.Constructors.t[@kind k' or value_or_null])) -> a
+      | ([] : _ List.Constructors.t) -> a
       | hd :: tl ->
         unsafe_set a i hd;
         fill (i + 1) tl
@@ -240,7 +161,7 @@ let fill : type a. a array -> pos:int -> len:int -> a -> unit =
   fun a ~pos ~len v ->
   if pos < 0 || len < 0 || pos > length a - len
   then invalid_arg "Array.fill"
-  else (unsafe_fill [@kind k']) a pos len v
+  else unsafe_fill a pos len v
 ;;
 
 let swap (t : _ array) i j =
@@ -248,109 +169,65 @@ let swap (t : _ array) i j =
   let elt_j = t.(j) in
   unsafe_set t i elt_j;
   unsafe_set t j elt_i
-;;]
+;;
 
 [@@@array.iter]
 
-[%%template
-  let iter (type a) (t : a array) ~(f : _ -> _) =
-    for i = 0 to length t - 1 do
-      f (unsafe_get t i)
-    done
-  [@@kind ki = (base_or_null, value_or_null mod external64)]
-  ;;]
+let iter (type a) (t : a array) ~(f : _ -> _) =
+  for i = 0 to length t - 1 do
+    f (unsafe_get t i)
+  done
+;;
 
 [@@@end]
 [@@@array.iteri]
 
-[%%template
-  let iteri (type a) (t : a array) ~(f : _ -> _ -> _) =
-    for i = 0 to length t - 1 do
-      f i (unsafe_get t i)
-    done
-  [@@kind ki = (base_or_null, value_or_null mod external64)]
-  ;;]
+let iteri (type a) (t : a array) ~(f : _ -> _ -> _) =
+  for i = 0 to length t - 1 do
+    f i (unsafe_get t i)
+  done
+;;
 
 [@@@end]
 [@@@array.fold]
 
-[%%template
-  let fold (type a b) (t : a array) ~init ~(f : _ -> _ -> _) : b =
-    let length = length t in
-    let rec loop i acc =
-      if i < length then loop (i + 1) ((f [@inlined hint]) acc (unsafe_get t i)) else acc
-    in
-    (loop [@inlined]) 0 init [@nontail]
-  [@@kind
-    ki = (base_or_null, value_or_null mod external64)
-    , ko = (base_or_null, value_or_null mod external64)]
-  ;;]
+let fold (type a b) (t : a array) ~init ~(f : _ -> _ -> _) : b =
+  let length = length t in
+  let rec loop i acc =
+    if i < length then loop (i + 1) ((f [@inlined hint]) acc (unsafe_get t i)) else acc
+  in
+  (loop [@inlined]) 0 init [@nontail]
+;;
 
 [@@@end]
 [@@@array.map]
 
-[%%template
-  let map (type a b) (t : a array) ~(f : _ -> _) : b array =
-    let len = length t in
-    if len = 0
-    then [||]
-    else (
-      let r = magic_create_uninitialized ~len in
-      for i = 0 to len - 1 do
-        unsafe_set r i (f (unsafe_get t i))
-      done;
-      r)
-  [@@kind ki = (base_or_null, value_or_null mod external64), ko = base_non_value]
-  ;;]
-
-[%%template
-  let map (type a b) (t : a array) ~(f : _ -> _) : b array =
-    let len = length t in
-    if len = 0
-    then [||]
-    else (
-      let r = create ~len (f (unsafe_get t 0)) in
-      for i = 1 to len - 1 do
-        unsafe_set r i (f (unsafe_get t i))
-      done;
-      r)
-  [@@kind
-    ki = (base_or_null, value_or_null mod external64)
-    , ko = (value_or_null, value_or_null mod external64)]
-  ;;]
+let map (type a b) (t : a array) ~(f : _ -> _) : b array =
+  let len = length t in
+  if len = 0
+  then [||]
+  else (
+    let r = create ~len (f (unsafe_get t 0)) in
+    for i = 1 to len - 1 do
+      unsafe_set r i (f (unsafe_get t i))
+    done;
+    r)
+;;
 
 [@@@end]
 [@@@array.mapi]
 
-[%%template
-  let mapi (type a b) (t : a array) ~(f : _ -> _ -> _) : b array =
-    let len = length t in
-    if len = 0
-    then [||]
-    else (
-      let r = magic_create_uninitialized ~len in
-      for i = 0 to len - 1 do
-        unsafe_set r i (f i (unsafe_get t i))
-      done;
-      r)
-  [@@kind ki = (base_or_null, value_or_null mod external64), ko = base_non_value]
-  ;;]
-
-[%%template
-  let mapi (type a b) (t : a array) ~(f : _ -> _ -> _) : b array =
-    let len = length t in
-    if len = 0
-    then [||]
-    else (
-      let r = create ~len (f 0 (unsafe_get t 0)) in
-      for i = 1 to len - 1 do
-        unsafe_set r i (f i (unsafe_get t i))
-      done;
-      r)
-  [@@kind
-    ki = (base_or_null, value_or_null mod external64)
-    , ko = (value_or_null, value_or_null mod external64)]
-  ;;]
+let mapi (type a b) (t : a array) ~(f : _ -> _ -> _) : b array =
+  let len = length t in
+  if len = 0
+  then [||]
+  else (
+    let r = create ~len (f 0 (unsafe_get t 0)) in
+    for i = 1 to len - 1 do
+      unsafe_set r i (f i (unsafe_get t i))
+    done;
+    r)
+;;
 
 [@@@end]
 

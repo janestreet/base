@@ -1,4 +1,7 @@
 open! Import
+module Bool = Bool0
+module Error = Error0
+module Source_code_position = Source_code_position0
 
 module T = struct
   type 'a t = 'a or_null =
@@ -9,9 +12,7 @@ end
 include T
 
 external is_null : 'a t -> bool = "%obj_is_int"
-
-[%%template external unsafe_value : 'a t -> 'a = "%field0" [@@mode m = (global, local)]]
-
+external unsafe_value : 'a t -> 'a = "%field0"
 external really_unsafe_value : 'a t -> 'a = "%field0"
 
 module Optional_syntax = struct
@@ -24,19 +25,16 @@ module Optional_syntax = struct
   end
 end
 
-[%%rederive.portable type 'a t = 'a or_null [@@deriving globalize, sexp ~stackify, hash]]
+[%%rederive.portable type 'a t = 'a or_null [@@deriving globalize, sexp, hash]]
 
 let[@cold] raise_value_exn ~here =
   let error =
     if Source_code_position.is_dummy here
     then Error.of_string "Or_null.value_exn Null"
-    else Error.create "Or_null.value_exn Null" here Source_code_position0.sexp_of_t
+    else Error.create "Or_null.value_exn Null" here Source_code_position.sexp_of_t
   in
   Error.raise error
 ;;
-
-[%%template
-[@@@mode.default m = (global, local)]
 
 let[@inline] compare compare_elt t1 t2 =
   match t1, t2 with
@@ -62,7 +60,7 @@ let[@inline] value_exn ?(here = Stdlib.Lexing.dummy_pos) t =
 let[@inline] value_or_thunk o ~default =
   match o with
   | This x -> x
-  | Null -> default () [@exclave_if_local m]
+  | Null -> default ()
 ;;
 
 let[@inline] iter o ~f =
@@ -73,41 +71,40 @@ let[@inline] iter o ~f =
 
 let[@inline] value_map t ~default ~f =
   match t with
-  | This x -> f x [@exclave_if_local m]
+  | This x -> f x
   | Null -> default
 ;;
 
 let[@inline] both t1 t2 =
   match t1, t2 with
   | Null, _ | _, Null -> Null
-  | This x, This y -> This (x, y) [@exclave_if_local m]
+  | This x, This y -> This (x, y)
 ;;
 
 let[@inline] bind t ~f =
   match t with
-  | This x -> f x [@exclave_if_local m]
+  | This x -> f x
   | Null -> Null
 ;;
 
 let[@inline] to_list t =
   match t with
   | Null -> []
-  | This x -> [ x ] [@exclave_if_local m]
+  | This x -> [ x ]
 ;;
 
-let[@inline] this a = This a [@exclave_if_local m]
+let[@inline] this a = This a
 
 let[@inline] first_this_thunk t t' =
   match t with
   | This _ -> t
-  | Null -> t' () [@exclave_if_local m]
+  | Null -> t' ()
 ;;
 
 let[@inline] fold t ~init ~f =
   match t with
   | Null -> init
-  | This x -> f init x [@exclave_if_local n]
-[@@mode m = m, n = (global, local)]
+  | This x -> f init x
 ;;
 
 let[@inline] mem t a ~equal =
@@ -137,7 +134,7 @@ let[@inline] find t ~f =
 
 let[@inline] to_array = function
   | Null -> [||]
-  | This x -> [| x |] [@exclave_if_local m]
+  | This x -> [| x |]
 ;;
 
 let[@inline] call x ~f =
@@ -148,79 +145,46 @@ let[@inline] call x ~f =
 
 let[@inline] to_option = function
   | Null -> None
-  | This x -> Some x [@exclave_if_local m]
+  | This x -> Some x
 ;;
 
 let[@inline] of_option = function
   | None -> Null
   | Some x -> This x
-;;]
+;;
 
-let%template[@inline] map_to_option t ~f =
+let[@inline] map_to_option t ~f =
   match t with
   | Null -> None
-  | This x -> Some (f x) [@exclave_if_stack a]
-[@@alloc a = (heap, stack)]
+  | This x -> Some (f x)
 ;;
 
-[%%template
-let[@inline] [@mode local] map t ~f =
+let[@inline] map t ~f =
   match t with
   | Null -> Null
   | This a -> This (f a)
 ;;
 
-let[@inline] [@mode global] map t ~f =
-  match t with
-  | Null -> Null
-  | This a -> This (f a)
-;;
-
-let[@inline] [@mode local] this_if_thunk b f =
+let[@inline] this_if_thunk b f =
   match b with
   | true -> This (f ())
   | false -> Null
 ;;
 
-let[@inline] [@mode global] this_if_thunk b f =
-  match b with
-  | true -> This (f ())
-  | false -> Null
-;;
-
-let[@inline] [@mode local] merge a b ~f =
+let[@inline] merge a b ~f =
   match a, b with
   | Null, Null -> Null
   | Null, This x | This x, Null -> This x
   | This x, This y -> This (f x y)
 ;;
 
-let[@inline] [@mode global] merge a b ~f =
-  match a, b with
-  | Null, Null -> Null
-  | Null, This x | This x, Null -> This x
-  | This x, This y -> This (f x y)
-;;
-
-let[@inline] [@mode local] try_with f =
+let[@inline] try_with f =
   match f () with
   | x -> This x
   | exception _ -> Null
 ;;
 
-let[@inline] [@mode global] try_with f =
-  match f () with
-  | x -> This x
-  | exception _ -> Null
-;;
-
-let[@inline] [@mode local] try_with_join f =
-  match f () with
-  | x -> x
-  | exception _ -> Null
-;;
-
-let[@inline] [@mode global] try_with_join f =
+let[@inline] try_with_join f =
   match f () with
   | x -> x
   | exception _ -> Null
@@ -230,26 +194,24 @@ let value t ~default =
   match t with
   | Null -> default
   | This x -> x
-[@@inline] [@@mode m = (local, global)]
+[@@inline]
 ;;
-
-[@@@mode.default m = (global, local)]
 
 let[@inline] this_if b x =
   let this = This x in
-  Bool.select b this Null [@exclave_if_local m]
+  Bool.select b this Null
 ;;
 
 let[@inline] first_this t t' =
   let is_null = is_null t in
-  Bool.select is_null t' t [@exclave_if_local m]
-;;]
+  Bool.select is_null t' t
+;;
 
 (* redefine [is_null] as a let bind so we can mark it [@zero_alloc]. It is not exposed as
    an external and externals exposed as vals cannot be marked [@zero_alloc]. *)
 let[@inline] is_null t = is_null t
 let[@inline] is_this t = not (is_null t)
-let[@inline] length t = Bool.to_int (is_this t)
+let[@inline] length t = bool_to_int (is_this t)
 
 module Let_syntax = struct
   let return = this
@@ -268,13 +230,13 @@ end
 
 module Local = struct
   module Let_syntax = struct
-    let%template return = (this [@mode local])
+    let return = this
 
     module Let_syntax = struct
-      let%template return = (this [@mode local])
-      let%template bind = (bind [@mode local])
-      let%template map = (map [@mode local])
-      let%template both = (both [@mode local])
+      let return = this
+      let bind = bind
+      let map = map
+      let both = both
 
       module Open_on_rhs = struct end
     end

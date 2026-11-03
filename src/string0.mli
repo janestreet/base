@@ -23,9 +23,7 @@ val max_length : int
 val ( ^ ) : string -> string -> string
 val capitalize : string -> string
 val compare : string -> string -> int
-
-val%template escaped : string -> string [@@alloc a @ l = (heap @ global, stack @ local)]
-
+val escaped : string -> string
 val sub : string -> pos:int -> len:int -> string
 val uncapitalize : string -> string
 val is_valid_utf_8 : string -> bool
@@ -36,18 +34,13 @@ val get_utf_16be_uchar : string -> byte_pos:int -> Uchar.utf_decode
 val get_utf_16le_uchar : string -> byte_pos:int -> Uchar.utf_decode
 val get_utf_32le_uchar : string -> byte_pos:int -> Uchar.utf_decode
 val get_utf_32be_uchar : string -> byte_pos:int -> Uchar.utf_decode
-
-[%%template:
-[@@@alloc.default a @ m = (stack_local, heap_global)]
-
 val make : int -> char -> string
 val concat : ?sep:string -> string list -> string
 val append : string -> string -> string
 val lowercase : string -> string
 val uppercase : string -> string
-val split_lines : string -> string list]
-
-val%template iter : string -> f:(char -> unit) -> unit [@@mode m = (global, local)]
+val split_lines : string -> string list
+val iter : string -> f:(char -> unit) -> unit
 
 val unsafe_blits
   :  dst:bytes
@@ -57,9 +50,6 @@ val unsafe_blits
   -> string list
   -> unit
 
-[%%template:
-[@@@alloc.default a @ m = (heap @ global, stack @ local)]
-
 (** [init n ~f] is equivalent to [of_list [f 0; f 1; ...; f (n-1)]]. It raises an
     exception if [n < 0]. *)
 val init : int -> f:(int -> char) -> string
@@ -67,7 +57,5 @@ val init : int -> f:(int -> char) -> string
 (** [filter t ~f] returns all the elements of [t] that satisfy the predicate [f]. *)
 val filter : string -> f:(char -> bool) -> string
 
-val filteri : string -> f:(int -> char -> bool) -> string]
-
-val%template smart_globalize : string -> string
-[@@alloc __ @ m = (heap_global, stack_local)]
+val filteri : string -> f:(int -> char -> bool) -> string
+val smart_globalize : string -> string

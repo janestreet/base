@@ -1,12 +1,13 @@
-open! Import
+open! Import0
+module Bool = Bool0
 
 type t =
   | Less
   | Equal
   | Greater
-[@@deriving compare ~localize, hash, enumerate, sexp ~stackify, sexp_grammar]
+[@@deriving compare, hash, enumerate, sexp, sexp_grammar]
 
-let%template[@mode m = (local, global)] equal a b = (compare [@mode m]) a b = 0
+let equal a b = compare a b = 0
 
 module Export = struct
   type _ordering = t =
@@ -15,7 +16,7 @@ module Export = struct
     | Greater
 end
 
-let of_int n = Bool0.select (n < 0) Less (Bool0.select (n = 0) Equal Greater)
+let of_int n = Bool.select (n < 0) Less (Bool.select (n = 0) Equal Greater)
 
 external magic_transparent : t -> int = "%identity"
 

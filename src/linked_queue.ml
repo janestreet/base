@@ -1,4 +1,6 @@
 open! Import
+module Array = Array0
+module Iarray = Iarray0
 include Linked_queue0
 
 let enqueue t x = Linked_queue0.push x t
@@ -16,7 +18,7 @@ let drain t ~f ~while_ =
   done
 ;;
 
-module%template C = Indexed_container.Make [@modality portable] (struct
+module C = Indexed_container.Make (struct
     type nonrec 'a t = 'a t
 
     let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish

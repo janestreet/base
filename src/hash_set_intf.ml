@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Sexp = Sexp0
 
 module Definitions = struct
@@ -8,7 +8,7 @@ module Definitions = struct
     type t =
       | Absent
       | Ok
-    [@@deriving compare ~localize, enumerate, equal ~localize, hash, sexp_of]
+    [@@deriving compare, enumerate, equal, hash, sexp_of]
 
     let is_ok = function
       | Absent -> false
@@ -25,7 +25,7 @@ module Definitions = struct
     type t =
       | Duplicate
       | Ok
-    [@@deriving compare ~localize, enumerate, equal ~localize, hash, sexp_of]
+    [@@deriving compare, enumerate, equal, hash, sexp_of]
 
     let is_ok = function
       | Duplicate -> false
@@ -76,9 +76,7 @@ module Definitions = struct
     val strict_remove_exn : 'a t -> 'a -> unit
 
     val clear : 'a t -> unit
-
-    val%template equal : 'a t -> 'a t -> bool [@@mode m = (local, global)]
-
+    val equal : 'a t -> 'a t -> bool
     val filter : 'a t -> f:('a -> bool) -> 'a t
     val filter_inplace : 'a t -> f:('a -> bool) -> unit
 
@@ -184,8 +182,7 @@ module Definitions = struct
       :  (module M_sexp_grammar with type t = 'elt)
       -> 'elt t Sexplib0.Sexp_grammar.t
 
-    val%template equal_m__t : (module Equal_m) -> 'elt t -> 'elt t -> bool
-    [@@mode m = (local, global)]
+    val equal_m__t : (module Equal_m) -> 'elt t -> 'elt t -> bool
   end
 end
 
@@ -221,7 +218,7 @@ module type Hash_set = sig
     include Accessors with type 'a t := 'a t with type 'a elt := 'a elt
   end
 
-  module%template.portable Creators (Elt : sig
+  module Creators (Elt : sig
       type 'a t
 
       val hashable : 'a t Hashable.t

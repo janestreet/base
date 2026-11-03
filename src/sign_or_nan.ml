@@ -6,7 +6,7 @@ module T = struct
     | Zero
     | Pos
     | Nan
-  [@@deriving sexp ~stackify, sexp_grammar, compare ~localize, hash, enumerate]
+  [@@deriving sexp, sexp_grammar, compare, hash, enumerate]
 
   let of_string s = t_of_sexp (sexp_of_string s)
   let to_string t = string_of_sexp (sexp_of_t t)
@@ -23,16 +23,13 @@ module Replace_polymorphic_compare = struct
   let ascending (x : T.t) y = Poly.ascending x y
   let descending (x : T.t) y = Poly.descending x y
   let compare (x : T.t) y = Poly.compare x y
-  let%template[@mode local] compare (x : T.t) y = Poly.compare x y
   let equal (x : T.t) y = Poly.equal x y
-  let%template[@mode local] equal (x : T.t) y = Poly.equal x y
   let max (x : T.t) y = if x >= y then x else y
   let min (x : T.t) y = if x <= y then x else y
 end
 
 include T
-
-include%template Identifiable.Make [@modality portable] (T)
+include Identifiable.Make (T)
 
 (* Open [Replace_polymorphic_compare] after including functor applications so they do not
    shadow its definitions. This is here so that efficient versions of the comparison

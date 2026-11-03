@@ -38,7 +38,7 @@
     [return] as a record field. We are clobbering the namespace of record fields but that
     is much more acceptable. *)
 
-open! Import
+open! Import0
 
 type -'a return = private { return : 'b. 'a -> 'b } [@@unboxed]
 

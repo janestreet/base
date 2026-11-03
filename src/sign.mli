@@ -1,15 +1,15 @@
 (** A type for representing the sign of a numeric value. *)
 
-open! Import
+open! Import0
 
 type t = Sign0.t =
   | Neg
   | Zero
   | Pos
-[@@deriving enumerate, sexp ~stackify, sexp_grammar]
+[@@deriving enumerate, sexp, sexp_grammar]
 
 (** This provides [to_string]/[of_string], sexp conversion, Map, Hashtbl, etc. *)
-include%template Identifiable.S [@mode local] [@modality portable] with type t := t
+include Identifiable.S with type t := t
 
 (** Returns the human-readable strings "positive", "negative", "zero". *)
 val to_string_hum : t -> string

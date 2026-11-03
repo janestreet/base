@@ -1,111 +1,85 @@
-open! Import
+open! Import0
+module Bytes = Bytes0
+module Char = Char0
 module Sexp = Sexp0
 module String = String0
 
 (* string conversions *)
 
-[%%template
-[@@@alloc.default a @ m = (heap_global, stack_local)]
-
 let insert_delimiter_every input ~delimiter ~chars_per_delimiter =
-  (let input_length = String.length input in
-   if input_length <= chars_per_delimiter
-   then input
-   else (
-     let has_sign =
-       match input.[0] with
-       | '+' | '-' -> true
-       | _ -> false
-     in
-     let num_digits = if has_sign then input_length - 1 else input_length in
-     let num_delimiters = (num_digits - 1) / chars_per_delimiter in
-     let output_length = input_length + num_delimiters in
-     let output = (Bytes.create [@alloc a]) output_length in
-     let input_pos = ref (input_length - 1) in
-     let output_pos = ref (output_length - 1) in
-     let num_chars_until_delimiter = ref chars_per_delimiter in
-     let first_digit_pos = if has_sign then 1 else 0 in
-     while !input_pos >= first_digit_pos do
-       if !num_chars_until_delimiter = 0
-       then (
-         Bytes.set output !output_pos delimiter;
-         decr output_pos;
-         num_chars_until_delimiter := chars_per_delimiter);
-       Bytes.set output !output_pos input.[!input_pos];
-       decr input_pos;
-       decr output_pos;
-       decr num_chars_until_delimiter
-     done;
-     if has_sign then Bytes.set output 0 input.[0];
-     Bytes.unsafe_to_string ~no_mutation_while_string_reachable:output))
-  [@exclave_if_stack a]
+  let input_length = String.length input in
+  if input_length <= chars_per_delimiter
+  then input
+  else (
+    let has_sign =
+      match input.[0] with
+      | '+' | '-' -> true
+      | _ -> false
+    in
+    let num_digits = if has_sign then input_length - 1 else input_length in
+    let num_delimiters = (num_digits - 1) / chars_per_delimiter in
+    let output_length = input_length + num_delimiters in
+    let output = Bytes.create output_length in
+    let input_pos = ref (input_length - 1) in
+    let output_pos = ref (output_length - 1) in
+    let num_chars_until_delimiter = ref chars_per_delimiter in
+    let first_digit_pos = if has_sign then 1 else 0 in
+    while !input_pos >= first_digit_pos do
+      if !num_chars_until_delimiter = 0
+      then (
+        Bytes.set output !output_pos delimiter;
+        decr output_pos;
+        num_chars_until_delimiter := chars_per_delimiter);
+      Bytes.set output !output_pos input.[!input_pos];
+      decr input_pos;
+      decr output_pos;
+      decr num_chars_until_delimiter
+    done;
+    if has_sign then Bytes.set output 0 input.[0];
+    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:output)
 ;;
 
 let insert_delimiter input ~delimiter =
-  (insert_delimiter_every [@alloc a])
-    input
-    ~delimiter
-    ~chars_per_delimiter:3 [@exclave_if_stack a]
+  insert_delimiter_every input ~delimiter ~chars_per_delimiter:3
 ;;
 
-let insert_underscores input =
-  (insert_delimiter [@alloc a]) input ~delimiter:'_' [@exclave_if_stack a]
-;;]
-
+let insert_underscores input = insert_delimiter input ~delimiter:'_'
 let sexp_of_int_style = Sexp.of_int_style
 
 module Make (I : sig
     type t
 
-    val%template to_string : t -> string [@@alloc a @ m = (heap_global, stack_local)]
+    val to_string : t -> string
   end) =
 struct
   open I
 
   let chars_per_delimiter = 3
 
-  [%%template
-  [@@@alloc.default a = (heap, stack)]
-
   let to_string_hum ?(delimiter = '_') t =
-    (insert_delimiter_every [@alloc a])
-      ((to_string [@alloc a]) t)
-      ~delimiter
-      ~chars_per_delimiter [@exclave_if_stack a]
+    insert_delimiter_every (to_string t) ~delimiter ~chars_per_delimiter
   ;;
 
   let sexp_of_t t =
-    (let s = (to_string [@alloc a]) t in
-     Sexp.Atom
-       (match Dynamic.get sexp_of_int_style with
-        | `Underscores ->
-          (insert_delimiter_every [@alloc a]) s ~chars_per_delimiter ~delimiter:'_'
-        | `No_underscores -> s))
-    [@exclave_if_stack a]
-  ;;]
-end
-
-module%template
-  [@kind k = (bits32, bits64, word)] Make_unboxed (I : sig
-    type t
-
-    val to_string : t -> string [@@alloc a @ m = (heap_global, stack_local)]
-
-    type unboxed
-
-    val box : unboxed -> t
-  end) =
-struct
-  include Make (I)
-
-  let sexp_of_t_u unboxed =
-    (sexp_of_t [@alloc a]) (I.box unboxed) [@exclave_if_stack a] [@nontail]
-  [@@alloc a = (heap, stack)]
+    let s = to_string t in
+    Sexp.Atom
+      (match Dynamic.get sexp_of_int_style with
+       | `Underscores -> insert_delimiter_every s ~chars_per_delimiter ~delimiter:'_'
+       | `No_underscores -> s)
   ;;
+
+  module Provide_unboxed (U : sig
+      type t
+
+      val box : t -> I.t
+    end) =
+  struct
+    let sexp_of_t_u unboxed = sexp_of_t (U.box unboxed) [@nontail]
+  end
 end
 
 module Make_hex (I : sig
-    type t [@@deriving compare ~localize, hash]
+    type t [@@deriving compare, hash]
 
     val to_string : t -> string
     val of_string : string -> t
@@ -116,7 +90,7 @@ module Make_hex (I : sig
   end) =
 struct
   module T_hex = struct
-    type t = I.t [@@deriving compare ~localize, hash]
+    type t = I.t [@@deriving compare, hash]
 
     let chars_per_delimiter = 4
 
@@ -130,18 +104,15 @@ struct
       if I.( < ) t I.zero then "-0x" ^ make_suffix (I.neg t) else "0x" ^ make_suffix t
     ;;
 
-    [%%template
-    [@@@alloc.default a = (heap, stack)]
-
     let to_string t = to_string' t ?delimiter:None
-    let to_string_hum ?(delimiter = '_') t = to_string' t ~delimiter]
+    let to_string_hum ?(delimiter = '_') t = to_string' t ~delimiter
 
     let invalid str =
       Printf.failwithf "%s.of_string: invalid input %S" I.module_name str ()
     ;;
 
     let of_string_with_delimiter str =
-      I.of_string (String.filter str ~f:(fun c -> Char.( <> ) c '_'))
+      I.of_string (String.filter str ~f:(fun c -> not (Char.equal c '_')))
     ;;
 
     let of_string str =
@@ -160,17 +131,16 @@ struct
 
   module Hex = struct
     include T_hex
-
-    include%template Sexpable.Of_stringable [@modality portable] [@alloc stack] (T_hex)
+    include Sexpable.Of_stringable (T_hex)
 
     module Hum = struct
-      let%template[@alloc a = (heap, stack)] to_string = (to_string_hum [@alloc a])
+      let to_string = to_string_hum
     end
   end
 end
 
 module Make_binary (I : sig
-    type t [@@deriving compare ~localize, equal ~localize, hash]
+    type t [@@deriving compare, equal, hash]
 
     val clz : t -> t
     val ( lsr ) : t -> int -> t
@@ -183,49 +153,37 @@ module Make_binary (I : sig
   end) =
 struct
   module Binary = struct
-    type t = I.t [@@deriving compare ~localize, hash]
+    type t = I.t [@@deriving compare, hash]
 
-    let%template bits t =
+    let bits t =
       let open I in
-      (if (equal [@mode local]) t zero then zero else num_bits - clz t) |> to_int_trunc
+      (if equal t zero then zero else num_bits - clz t) |> to_int_trunc
     ;;
 
-    [%%template
-    [@@@alloc a = (heap, stack)]
-
-    let ( ^ ) = (String.append [@alloc a])
-
-    [@@@alloc.default a]
+    let ( ^ ) = String.append
 
     let to_string_suffix (t : t) =
       let bits = bits t in
       if bits = 0
       then "0"
       else
-        (String.init [@alloc a]) bits ~f:(fun char_index ->
+        String.init bits ~f:(fun char_index ->
           let bit_index = bits - char_index - 1 in
           let bit = I.((t lsr bit_index) land one) in
           Char.unsafe_of_int (Char.to_int '0' + I.to_int_trunc bit))
-        [@nontail] [@exclave_if_stack a]
+        [@nontail]
     ;;
 
-    let to_string (t : t) = ("0b" ^ (to_string_suffix [@alloc a]) t) [@exclave_if_stack a]
+    let to_string (t : t) = "0b" ^ to_string_suffix t
 
     let to_string_hum ?(delimiter = '_') t =
-      ("0b"
-       ^ (insert_delimiter_every [@alloc a])
-           ((to_string_suffix [@alloc a]) t)
-           ~delimiter
-           ~chars_per_delimiter:4)
-      [@exclave_if_stack a]
+      "0b" ^ insert_delimiter_every (to_string_suffix t) ~delimiter ~chars_per_delimiter:4
     ;;
 
-    let sexp_of_t (t : t) : Sexp.t =
-      Atom ((to_string_hum [@alloc a]) t) [@exclave_if_stack a]
-    ;;]
+    let sexp_of_t (t : t) : Sexp.t = Atom (to_string_hum t)
 
     module Hum = struct
-      let%template[@alloc a = (heap, stack)] to_string = (to_string_hum [@alloc a])
+      let to_string = to_string_hum
     end
   end
 end

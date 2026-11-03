@@ -1,10 +1,10 @@
-open! Import
+open! Import0
 module Sys = Sys0
 
 type t =
   | W32
   | W64
-[@@deriving sexp_of ~stackify]
+[@@deriving sexp_of]
 
 let num_bits = function
   | W32 -> 32

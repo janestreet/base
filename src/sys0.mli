@@ -37,13 +37,8 @@ end
 val getenv_exn : string -> string
 val getenv : string -> string option
 
-external%template opaque_identity : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%opaque"
+external opaque_identity : 'a. ('a[@local_opt]) -> ('a[@local_opt]) = "%opaque"
 [@@layout_poly]
-[@@mode
-  c = (uncontended, shared, contended)
-  , o = (many, once)
-  , p = (nonportable, portable)
-  , u = (aliased, unique)]
 
 external opaque_identity_global : 'a. 'a -> 'a = "%opaque" [@@layout_poly]
 

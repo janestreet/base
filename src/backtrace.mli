@@ -5,7 +5,7 @@
     + Snapshots of the stack obtained on demand ([Backtrace.get])
     + The stack frames unwound when an exception is raised ([Backtrace.Exn]) *)
 
-open! Import
+open! Import0
 
 (** A [Backtrace.t] is a snapshot of the stack obtained by calling [Backtrace.get]. It is
     represented as a string with newlines separating the frames. [sexp_of_t] splits the
@@ -90,7 +90,7 @@ module Exn : sig
           let bt = Backtrace.Exn.most_recent_for_exn e in
           ...
       ]} *)
-  val most_recent_for_exn : Exn.t -> t option
+  val most_recent_for_exn : exn -> t option
 end
 
 (** User code never calls this. It is called only in [base.ml], as a top-level side

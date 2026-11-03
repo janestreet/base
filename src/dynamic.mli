@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 (** A value of type ['a Dynamic.t] is a dynamically scoped variable of type ['a].
 
@@ -16,10 +16,8 @@ type 'a t = 'a Basement.Dynamic.t
 
 (** [make v] creates a new dynamic variable with initial root value [v].
 
-    Since any domain can access the [Dynamic.t], the value must be portable. Since any
-    domain can access and modify the [Dynamic.t] without synchronization, the type of
-    values in the [Dynamic.t] must cross the contention axis. *)
-val make : 'a. 'a -> 'a t
+    Since any domain can access the [Dynamic.t], the value must be portable. *)
+val make : 'a -> 'a t
 
 (** [get dynamic] retrieves the current value of the dynamic variable [dynamic] in the
     current fiber.
@@ -27,7 +25,7 @@ val make : 'a. 'a -> 'a t
     Within a call to [with_temporarily], this returns the {i local} value of the dynamic
     variable (the value that was passed to [with_temporarily]. Outside of a call to
     [with_temporarily], this returns the {i root} value *)
-val get : 'a. 'a t -> 'a
+val get : 'a t -> 'a
 
 (** [set_root dynamic v] sets the {i root} value of [dynamic] to [v].
 
@@ -37,7 +35,7 @@ val get : 'a. 'a t -> 'a
 
     Note that it is almost always the wrong choice to call this function anywhere other
     than the top-level. *)
-val set_root : 'a. 'a t -> 'a -> unit
+val set_root : 'a t -> 'a -> unit
 
 (** [with_temporarily dynamic v ~f] invokes [f] in a context where [dynamic] is set to
     [v], then restores [dynamic] to the parent value (either the root value, or the value

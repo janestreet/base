@@ -13,9 +13,7 @@ module Specialize_polymorphic_compare = struct
       external ( <= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessequal"
       external ( >= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterequal"
       external compare : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"
-      external compare__local : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"
       external equal : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
-      external equal__local : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
       val ascending : t -> t -> int
       val descending : t -> t -> int
       val max : t -> t -> t
@@ -33,9 +31,7 @@ module Specialize_polymorphic_compare = struct
       external ( <= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessequal"
       external ( >= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterequal"
       external compare : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"
-      external compare__local : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"
       external equal : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
-      external equal__local : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
 
       let ascending x y = compare x y
       let descending x y = compare y x

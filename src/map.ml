@@ -14,7 +14,13 @@
 [@@@ocamlformat "enable"]
 
 open! Import
+module Array = Array0
+module Either = Either0
+module Error = Error0
+module Int = Int0
 module List = List0
+module Sexp = Sexp0
+module Source_code_position = Source_code_position0
 include Map_intf.Definitions
 
 module Finished_or_unfinished = struct
@@ -450,13 +456,14 @@ module Tree0 = struct
     find_and_add_or_set t ~key ~data ~compare_key ~sexp_of_key ~add_or_set:Add_exn
   ;;
 
-  let add_exn_internal t ~key ~data ~compare_key ~sexp_of_key =
+  let add_exn_internal t ~key ~data ~compare_key =
     find_and_add_or_set
       t
       ~key
       ~data
       ~compare_key
-      ~sexp_of_key
+      ~sexp_of_key:(fun (* Safe because [~add_or_set:Add_exn_internal] *)
+                          _ -> List [])
       ~add_or_set:Add_exn_internal
   ;;
 
@@ -466,7 +473,8 @@ module Tree0 = struct
       ~key
       ~data
       ~compare_key
-      ~sexp_of_key:(fun _ -> List [])
+      ~sexp_of_key:(fun (* Safe because [~add_or_set:Set] *)
+                          _ -> List [])
       ~add_or_set:Set
   ;;
 
@@ -816,9 +824,11 @@ module Tree0 = struct
     | This l -> l
   ;;
 
-  let add_multi t ~key ~data ~compare_key =
-    let data = data :: find_multi t key ~compare_key in
-    set ~key ~data t ~compare_key
+  let find_multi_nonempty t x ~compare_key =
+    let open Nonempty_list_type.Nonempty_list in
+    match find_or_null t x ~compare_key with
+    | Null -> []
+    | This (hd :: tl) -> hd :: tl
   ;;
 
   let find_exn =
@@ -829,9 +839,9 @@ module Tree0 = struct
               (Atom "Map.find_exn: not found"
                :: sexp_of_key key
                ::
-               (if Source_code_position0.is_dummy here
+               (if Source_code_position.is_dummy here
                 then []
-                else [ Source_code_position0.sexp_of_t here ]))))
+                else [ Source_code_position.sexp_of_t here ]))))
     in
     let rec find_exn t x ~compare_key ~sexp_of_key ~here =
       match t with
@@ -1070,7 +1080,7 @@ module Tree0 = struct
       if c = 0
       then (
         let d' = f (Some d) in
-        Leaf { key = v; data = d' })
+        Leaf { key; data = d' })
       else if c < 0
       then (
         let l = update Empty key ~f ~compare_key in
@@ -1093,23 +1103,87 @@ module Tree0 = struct
         bal l v d r)
   ;;
 
+  let rec update_or_null t key ~f ~compare_key =
+    match t with
+    | Empty ->
+      let data = f Null in
+      Leaf { key; data }
+    | Leaf { key = v; data = d } ->
+      let c = compare_key key v in
+      if c = 0
+      then (
+        let d' = f (This d) in
+        Leaf { key; data = d' })
+      else if c < 0
+      then (
+        let l = update_or_null Empty key ~f ~compare_key in
+        bal l v d Empty)
+      else (
+        let r = update_or_null Empty key ~f ~compare_key in
+        bal Empty v d r)
+    | Node { left = l; key = v; data = d; right = r; weight = w } ->
+      let c = compare_key key v in
+      if c = 0
+      then (
+        let data = f (This d) in
+        Node { left = l; key; data; right = r; weight = w })
+      else if c < 0
+      then (
+        let l = update_or_null l key ~f ~compare_key in
+        bal l v d r)
+      else (
+        let r = update_or_null r key ~f ~compare_key in
+        bal l v d r)
+  ;;
+
   let update_and_return t key ~f ~compare_key =
-    let result_ref = ref None in
+    let result_ref = ref Null in
     let new_t =
       update t key ~compare_key ~f:(fun elt ->
         let res = f elt in
-        result_ref := Some res;
+        result_ref := This res;
         res)
     in
-    (* This [Option.value_exn] is safe because it is guaranteed by [update] that [f] will
+    (* This [Or_null.value_exn] is safe because it is guaranteed by [update] that [f] will
        be called exactly once. *)
-    !result_ref |> Option.value_exn |> Modes.Global.wrap, new_t
+    Or_null.value_exn !result_ref, new_t
+  ;;
+
+  let change_and_return t key ~f ~compare_key =
+    let result_ref = ref None in
+    let new_t =
+      change t key ~compare_key ~f:(fun elt ->
+        let res = f elt in
+        result_ref := res;
+        res)
+    in
+    !result_ref, new_t
+  ;;
+
+  let add_multi t ~key ~data ~compare_key =
+    update_or_null t key ~compare_key ~f:(function
+      | Null -> [ data ]
+      | This l -> data :: l)
+  ;;
+
+  let add_multi_nonempty t ~key ~data ~compare_key =
+    let open Nonempty_list_type.Nonempty_list in
+    update_or_null t key ~compare_key ~f:(function
+      | Null -> [ data ]
+      | This (hd :: tl) -> data :: hd :: tl)
   ;;
 
   let remove_multi t key ~compare_key =
-    change t key ~compare_key ~f:(function
-      | None | Some ([] | [ _ ]) -> None
-      | Some (_ :: (_ :: _ as non_empty_tail)) -> Some non_empty_tail)
+    change_or_null t key ~compare_key ~f:(function
+      | Null | This ([] | [ _ ]) -> Null
+      | This (_ :: (_ :: _ as non_empty_tail)) -> This non_empty_tail)
+  ;;
+
+  let remove_multi_nonempty t key ~compare_key =
+    let open Nonempty_list_type.Nonempty_list in
+    change_or_null t key ~compare_key ~f:(function
+      | Null | This [ _ ] -> Null
+      | This (_ :: hd :: tl) -> This (hd :: tl))
   ;;
 
   let rec iter_keys t ~f =
@@ -1206,16 +1280,15 @@ module Tree0 = struct
     | Stop stop -> stop
   ;;
 
-  let%template[@mode m = (global, local)] fold_right t ~init ~f =
-    (let rec loop accu t =
-       match[@exclave_if_local m ~reasons:[ May_return_local ]] t with
-       | Empty -> accu
-       | Leaf { key = v; data = d } -> f ~key:v ~data:d accu
-       | Node { left = l; key = v; data = d; right = r; weight = _ } ->
-         loop (f ~key:v ~data:d (loop accu r)) l
-     in
-     loop init t [@nontail])
-    [@exclave_if_local m ~reasons:[ May_return_local ]]
+  let fold_right t ~init ~f =
+    let rec loop accu t =
+      match t with
+      | Empty -> accu
+      | Leaf { key = v; data = d } -> f ~key:v ~data:d accu
+      | Node { left = l; key = v; data = d; right = r; weight = _ } ->
+        loop (f ~key:v ~data:d (loop accu r)) l
+    in
+    loop init t [@nontail]
   ;;
 
   let rec filter_mapi t ~f =
@@ -1893,13 +1966,10 @@ module Tree0 = struct
 
   let[@inline always] of_foldable' ~fold foldable ~init ~f ~compare_key =
     (fold [@inlined hint]) foldable ~init:Empty ~f:(fun accum (key, data) ->
-      let prev_data =
-        match find accum key ~compare_key with
-        | None -> init
-        | Some prev -> prev
-      in
-      let data = f prev_data data in
-      set accum ~key ~data ~compare_key [@nontail])
+      update accum key ~compare_key ~f:(function
+        | None -> f init data
+        | Some prev -> f prev data)
+        [@nontail])
     [@nontail]
   ;;
 
@@ -1910,12 +1980,10 @@ module Tree0 = struct
 
     let of_foldable_reduce foldable ~f ~compare_key =
       M.fold foldable ~init:Empty ~f:(fun accum (key, data) ->
-        let new_data =
-          match find accum key ~compare_key with
+        update accum key ~compare_key ~f:(function
           | None -> data
-          | Some prev -> f prev data
-        in
-        set accum ~key ~data:new_data ~compare_key [@nontail])
+          | Some prev -> f prev data)
+          [@nontail])
       [@nontail]
     ;;
 
@@ -1957,6 +2025,15 @@ module Tree0 = struct
       let alist = M.fold foldable ~init:[] ~f:(fun l x -> x :: l) in
       of_foldable' alist ~fold:List.fold ~init:[] ~f:(fun l x -> x :: l) ~compare_key
     ;;
+
+    (* Same strategy as [of_foldable_multi]. We can't use [of_foldable'] because there is
+       no empty [Nonempty_list.t] to use as [~init]. *)
+    let of_foldable_multi_nonempty foldable ~compare_key =
+      let alist = M.fold foldable ~init:[] ~f:(fun l x -> x :: l) in
+      List.fold alist ~init:Empty ~f:(fun t (key, data) ->
+        add_multi_nonempty t ~key ~data ~compare_key)
+      [@nontail]
+    ;;
   end
 
   module Of_alist = Of_foldable (struct
@@ -1973,6 +2050,7 @@ module Tree0 = struct
   let of_alist_or_error = Of_alist.of_foldable_or_error
   let of_alist_exn = Of_alist.of_foldable_exn
   let of_alist_multi = Of_alist.of_foldable_multi
+  let of_alist_multi_nonempty = Of_alist.of_foldable_multi_nonempty
 
   module Of_sequence = Of_foldable (struct
       let name = "sequence"
@@ -1988,6 +2066,7 @@ module Tree0 = struct
   let of_sequence_or_error = Of_sequence.of_foldable_or_error
   let of_sequence_exn = Of_sequence.of_foldable_exn
   let of_sequence_multi = Of_sequence.of_foldable_multi
+  let of_sequence_multi_nonempty = Of_sequence.of_foldable_multi_nonempty
 
   let of_list_with_key list ~get_key ~compare_key =
     with_return (fun r ->
@@ -2030,6 +2109,13 @@ module Tree0 = struct
         let list = Option.value option ~default:[] in
         data :: list)
       [@nontail])
+    [@nontail]
+  ;;
+
+  let of_list_with_key_multi_nonempty list ~get_key ~compare_key =
+    let list = List.rev list in
+    List.fold list ~init:Empty ~f:(fun t data ->
+      add_multi_nonempty t ~key:(get_key data) ~data ~compare_key)
     [@nontail]
   ;;
 
@@ -2712,16 +2798,9 @@ module Tree0 = struct
       assert false
   ;;
 
-  let%template[@alloc a @ m = (heap_global, stack_local)] sexp_of_t
-    sexp_of_key
-    sexp_of_value
-    t
-    =
-    (let f ~key ~data acc =
-       Sexp.List [ sexp_of_key key; sexp_of_value data ] :: acc [@exclave_if_stack a]
-     in
-     Sexp.List ((fold_right [@mode m]) ~f t ~init:[]))
-    [@exclave_if_stack a]
+  let sexp_of_t sexp_of_key sexp_of_value t =
+    let f ~key ~data acc = Sexp.List [ sexp_of_key key; sexp_of_value data ] :: acc in
+    Sexp.List (fold_right ~f t ~init:[])
   ;;
 
   let combine_errors t ~sexp_of_key =
@@ -2735,12 +2814,11 @@ module Tree0 = struct
 
   let map_keys t1 ~f ~comparator =
     let compare_key = Comparator.compare comparator in
-    let sexp_of_key = Comparator.sexp_of_t comparator in
     with_return (fun { return } ->
       `Ok
         (fold t1 ~init:Empty ~f:(fun ~key ~data t2 ->
            let key = f key in
-           try add_exn_internal t2 ~key ~data ~compare_key ~sexp_of_key with
+           try add_exn_internal t2 ~key ~data ~compare_key with
            | Duplicate -> return (`Duplicate_key key))))
     [@nontail]
   ;;
@@ -2772,8 +2850,7 @@ module Tree0 = struct
           [@nontail]))
   ;;
 
-  module%template.portable Make_applicative_traversals (A : Applicative.Lazy_applicative) =
-  struct
+  module Make_applicative_traversals (A : Applicative.Lazy_applicative) = struct
     let rec mapi t ~f =
       match t with
       | Empty -> A.return Empty
@@ -2858,12 +2935,7 @@ module Accessors = struct
   let add_exn_internal t ~key ~data =
     like
       t
-      (Tree0.add_exn_internal
-         t.tree
-         ~key
-         ~data
-         ~compare_key:(compare_key t)
-         ~sexp_of_key:(Comparator.sexp_of_t t.comparator)) [@nontail]
+      (Tree0.add_exn_internal t.tree ~key ~data ~compare_key:(compare_key t)) [@nontail]
   ;;
 
   let add t ~key ~data =
@@ -2876,11 +2948,27 @@ module Accessors = struct
     like t (Tree0.add_multi t.tree ~key ~data ~compare_key:(compare_key t)) [@nontail]
   ;;
 
+  let add_multi_nonempty t ~key ~data =
+    like
+      t
+      (Tree0.add_multi_nonempty t.tree ~key ~data ~compare_key:(compare_key t)) [@nontail]
+  ;;
+
   let remove_multi t key =
     like t (Tree0.remove_multi t.tree key ~compare_key:(compare_key t)) [@nontail]
   ;;
 
+  let remove_multi_nonempty t key =
+    like
+      t
+      (Tree0.remove_multi_nonempty t.tree key ~compare_key:(compare_key t)) [@nontail]
+  ;;
+
   let find_multi t key = Tree0.find_multi t.tree key ~compare_key:(compare_key t)
+
+  let find_multi_nonempty t key =
+    Tree0.find_multi_nonempty t.tree key ~compare_key:(compare_key t)
+  ;;
 
   let change t key ~f =
     like t (Tree0.change t.tree key ~f ~compare_key:(compare_key t)) [@nontail]
@@ -2894,11 +2982,22 @@ module Accessors = struct
     like t (Tree0.update t.tree key ~f ~compare_key:(compare_key t)) [@nontail]
   ;;
 
+  let update_or_null t key ~f =
+    like t (Tree0.update_or_null t.tree key ~f ~compare_key:(compare_key t)) [@nontail]
+  ;;
+
   let update_and_return t key ~f =
     let result, new_t =
       Tree0.update_and_return t.tree key ~f ~compare_key:(compare_key t)
     in
-    Modes.Global.unwrap result, like t new_t
+    result, like t new_t
+  ;;
+
+  let change_and_return t key ~f =
+    let result, new_t =
+      Tree0.change_and_return t.tree key ~f ~compare_key:(compare_key t)
+    in
+    result, like t new_t
   ;;
 
   let find_exn ?(here = Stdlib.Lexing.dummy_pos) t key =
@@ -2989,14 +3088,11 @@ module Accessors = struct
 
   let unzip t = like2 t (Tree0.unzip t.tree)
 
-  let%template[@mode m = (local, global)] compare_direct compare_data t1 t2 =
+  let compare_direct compare_data t1 t2 =
     Tree0.compare (compare_key t1) compare_data t1.tree t2.tree
   ;;
 
-  let%template[@mode m = (local, global)] equal data_equal t1 t2 =
-    Tree0.equal (compare_key t1) data_equal t1.tree t2.tree
-  ;;
-
+  let equal data_equal t1 t2 = Tree0.equal (compare_key t1) data_equal t1.tree t2.tree
   let keys t = Tree0.keys t.tree
   let data t = Tree0.data t.tree
   let to_alist ?key_order t = Tree0.to_alist ?key_order t.tree
@@ -3119,10 +3215,7 @@ module Accessors = struct
   let nth_exn t n = Option.value_exn (nth t n)
   let rank t key = Tree0.rank t.tree key ~compare_key:(compare_key t)
   let split_n t n = Tree0.split_n t.tree n |> like2 t
-
-  let%template[@alloc a = (heap, stack)] sexp_of_t sexp_of_k sexp_of_v t =
-    (Tree0.sexp_of_t [@alloc a]) sexp_of_k sexp_of_v t.tree [@exclave_if_stack a]
-  ;;
+  let sexp_of_t sexp_of_k sexp_of_v t = Tree0.sexp_of_t sexp_of_k sexp_of_v t.tree
 
   let to_sequence ?order ?keys_greater_or_equal_to ?keys_less_or_equal_to t =
     Tree0.to_sequence
@@ -3151,11 +3244,8 @@ module Accessors = struct
     | None -> like_maybe_no_op t Tree0.Empty [@nontail]
   ;;
 
-  module%template.portable
-    [@modality p] Make_applicative_traversals
-      (A : Applicative.Lazy_applicative) =
-  struct
-    module Tree_traversals = Tree0.Make_applicative_traversals [@modality p] (A)
+  module Make_applicative_traversals (A : Applicative.Lazy_applicative) = struct
+    module Tree_traversals = Tree0.Make_applicative_traversals (A)
 
     let mapi t ~f =
       A.map (Tree_traversals.mapi t.tree ~f) ~f:(fun new_tree ->
@@ -3216,6 +3306,10 @@ module Tree = struct
     Tree0.of_alist_multi alist ~compare_key:(Comparator.compare comparator)
   ;;
 
+  let of_alist_multi_nonempty ~comparator alist =
+    Tree0.of_alist_multi_nonempty alist ~compare_key:(Comparator.compare comparator)
+  ;;
+
   let of_alist_fold ~comparator alist ~init ~f =
     Tree0.of_alist_fold alist ~init ~f ~compare_key:(Comparator.compare comparator)
   ;;
@@ -3249,6 +3343,10 @@ module Tree = struct
     Tree0.of_sequence_multi seq ~compare_key:(Comparator.compare comparator)
   ;;
 
+  let of_sequence_multi_nonempty ~comparator seq =
+    Tree0.of_sequence_multi_nonempty seq ~compare_key:(Comparator.compare comparator)
+  ;;
+
   let of_sequence_fold ~comparator seq ~init ~f =
     Tree0.of_sequence_fold seq ~init ~f ~compare_key:(Comparator.compare comparator)
   ;;
@@ -3271,6 +3369,13 @@ module Tree = struct
 
   let of_list_with_key_multi ~comparator list ~get_key =
     Tree0.of_list_with_key_multi
+      list
+      ~get_key
+      ~compare_key:(Comparator.compare comparator)
+  ;;
+
+  let of_list_with_key_multi_nonempty ~comparator list ~get_key =
+    Tree0.of_list_with_key_multi_nonempty
       list
       ~get_key
       ~compare_key:(Comparator.compare comparator)
@@ -3316,12 +3421,7 @@ module Tree = struct
   ;;
 
   let add_exn_internal ~comparator t ~key ~data =
-    Tree0.add_exn_internal
-      t
-      ~key
-      ~data
-      ~compare_key:(Comparator.compare comparator)
-      ~sexp_of_key:(Comparator.sexp_of_t comparator)
+    Tree0.add_exn_internal t ~key ~data ~compare_key:(Comparator.compare comparator)
   ;;
 
   let add ~comparator t ~key ~data =
@@ -3333,12 +3433,24 @@ module Tree = struct
     Tree0.add_multi t ~key ~data ~compare_key:(Comparator.compare comparator)
   ;;
 
+  let add_multi_nonempty ~comparator t ~key ~data =
+    Tree0.add_multi_nonempty t ~key ~data ~compare_key:(Comparator.compare comparator)
+  ;;
+
   let remove_multi ~comparator t key =
     Tree0.remove_multi t key ~compare_key:(Comparator.compare comparator)
   ;;
 
+  let remove_multi_nonempty ~comparator t key =
+    Tree0.remove_multi_nonempty t key ~compare_key:(Comparator.compare comparator)
+  ;;
+
   let find_multi ~comparator t key =
     Tree0.find_multi t key ~compare_key:(Comparator.compare comparator)
+  ;;
+
+  let find_multi_nonempty ~comparator t key =
+    Tree0.find_multi_nonempty t key ~compare_key:(Comparator.compare comparator)
   ;;
 
   let change ~comparator t key ~f =
@@ -3353,11 +3465,22 @@ module Tree = struct
     Tree0.update t key ~f ~compare_key:(Comparator.compare comparator)
   ;;
 
+  let update_or_null ~comparator t key ~f =
+    Tree0.update_or_null t key ~f ~compare_key:(Comparator.compare comparator)
+  ;;
+
   let update_and_return ~comparator t key ~f =
     let result, tree =
       Tree0.update_and_return t key ~f ~compare_key:(Comparator.compare comparator)
     in
-    Modes.Global.unwrap result, tree
+    result, tree
+  ;;
+
+  let change_and_return ~comparator t key ~f =
+    let result, tree =
+      Tree0.change_and_return t key ~f ~compare_key:(Comparator.compare comparator)
+    in
+    result, tree
   ;;
 
   let find_exn ~comparator ?(here = Stdlib.Lexing.dummy_pos) t key =
@@ -3421,11 +3544,11 @@ module Tree = struct
 
   let unzip = Tree0.unzip
 
-  let%template[@mode m = (local, global)] compare_direct ~comparator compare_data t1 t2 =
+  let compare_direct ~comparator compare_data t1 t2 =
     Tree0.compare (Comparator.compare comparator) compare_data t1 t2
   ;;
 
-  let%template[@mode m = (local, global)] equal ~comparator data_equal t1 t2 =
+  let equal ~comparator data_equal t1 t2 =
     Tree0.equal (Comparator.compare comparator) data_equal t1 t2
   ;;
 
@@ -3574,9 +3697,7 @@ module Tree = struct
     | None -> Empty
   ;;
 
-  module%template.portable [@modality p] Make_applicative_traversals =
-    Tree0.Make_applicative_traversals
-    [@modality p]
+  module Make_applicative_traversals = Tree0.Make_applicative_traversals
 
   let map_keys ~comparator t ~f = Tree0.map_keys ~comparator t ~f
   let map_keys_exn ~comparator t ~f = Tree0.map_keys_exn ~comparator t ~f
@@ -3622,7 +3743,7 @@ module Tree = struct
           ; right : ('k, 'v, 'cmp) t [@globalized]
           ; weight : int
           }
-    [@@deriving equal ~localize, sexp_of]
+    [@@deriving equal, sexp_of]
 
     let balance_invariants t = Tree0.balance_invariants t
 
@@ -3670,10 +3791,7 @@ module Using_comparator = struct
 
   include Accessors
 
-  let%template empty ~comparator = { tree = Tree0.Empty; comparator }
-  [@@mode p = (portable, nonportable)]
-  ;;
-
+  let empty ~comparator = { tree = Tree0.Empty; comparator }
   let singleton ~comparator k v = { comparator; tree = Tree0.singleton k v }
   let of_tree ~comparator tree = { comparator; tree }
   let to_tree = to_tree
@@ -3710,6 +3828,12 @@ module Using_comparator = struct
     of_tree
       ~comparator
       (Tree0.of_alist_multi alist ~compare_key:(Comparator.compare comparator))
+  ;;
+
+  let of_alist_multi_nonempty ~comparator alist =
+    of_tree
+      ~comparator
+      (Tree0.of_alist_multi_nonempty alist ~compare_key:(Comparator.compare comparator))
   ;;
 
   let of_alist_fold ~comparator alist ~init ~f =
@@ -3765,6 +3889,12 @@ module Using_comparator = struct
       (Tree0.of_sequence_multi seq ~compare_key:(Comparator.compare comparator))
   ;;
 
+  let of_sequence_multi_nonempty ~comparator seq =
+    of_tree
+      ~comparator
+      (Tree0.of_sequence_multi_nonempty seq ~compare_key:(Comparator.compare comparator))
+  ;;
+
   let of_sequence_fold ~comparator seq ~init ~f =
     of_tree
       ~comparator
@@ -3796,6 +3926,14 @@ module Using_comparator = struct
 
   let of_list_with_key_multi ~comparator list ~get_key =
     Tree0.of_list_with_key_multi
+      list
+      ~get_key
+      ~compare_key:(Comparator.compare comparator)
+    |> of_tree ~comparator
+  ;;
+
+  let of_list_with_key_multi_nonempty ~comparator list ~get_key =
+    Tree0.of_list_with_key_multi_nonempty
       list
       ~get_key
       ~compare_key:(Comparator.compare comparator)
@@ -3842,7 +3980,7 @@ module Using_comparator = struct
     |> map ~f:(fun x -> of_tree ~comparator:outer_comparator x)
   ;;
 
-  module%template.portable Empty_without_value_restriction (K : Comparator.S1) = struct
+  module Empty_without_value_restriction (K : Comparator.S1) = struct
     let empty = { tree = Tree0.Empty; comparator = K.comparator }
   end
 
@@ -3855,9 +3993,8 @@ let comparator_s t = Comparator.to_module t.comparator
 let to_comparator = Comparator.of_module
 let of_tree m tree = of_tree ~comparator:(to_comparator m) tree
 
-let%template empty (type cw) (m : (_, cw) Comparator.Module.t) =
-  (Using_comparator.empty [@mode p]) ~comparator:(to_comparator m)
-[@@mode p = (nonportable, portable)]
+let empty (type cw) (m : (_, cw) Comparator.Module.t) =
+  Using_comparator.empty ~comparator:(to_comparator m)
 ;;
 
 let singleton m a = Using_comparator.singleton ~comparator:(to_comparator m) a
@@ -3869,6 +4006,10 @@ let of_alist_or_error m a =
 
 let of_alist_exn m a = Using_comparator.of_alist_exn ~comparator:(to_comparator m) a
 let of_alist_multi m a = Using_comparator.of_alist_multi ~comparator:(to_comparator m) a
+
+let of_alist_multi_nonempty m a =
+  Using_comparator.of_alist_multi_nonempty ~comparator:(to_comparator m) a
+;;
 
 let of_alist_fold m a ~init ~f =
   Using_comparator.of_alist_fold ~comparator:(to_comparator m) a ~init ~f
@@ -3909,6 +4050,10 @@ let of_sequence_multi m s =
   Using_comparator.of_sequence_multi ~comparator:(to_comparator m) s
 ;;
 
+let of_sequence_multi_nonempty m s =
+  Using_comparator.of_sequence_multi_nonempty ~comparator:(to_comparator m) s
+;;
+
 let of_sequence_fold m s ~init ~f =
   Using_comparator.of_sequence_fold ~comparator:(to_comparator m) s ~init ~f
 ;;
@@ -3933,6 +4078,13 @@ let of_list_with_key_multi m l ~get_key =
   Using_comparator.of_list_with_key_multi ~comparator:(to_comparator m) l ~get_key
 ;;
 
+let of_list_with_key_multi_nonempty m l ~get_key =
+  Using_comparator.of_list_with_key_multi_nonempty
+    ~comparator:(to_comparator m)
+    l
+    ~get_key
+;;
+
 let of_list_with_key_fold m l ~get_key ~init ~f =
   Using_comparator.of_list_with_key_fold ~comparator:(to_comparator m) l ~get_key ~init ~f
 ;;
@@ -3953,7 +4105,7 @@ struct
   type nonrec 'v t = (K.t, 'v, K.comparator_witness) t
 end
 
-module type%template [@alloc a = (heap, stack)] Sexp_of_m = Sexpable.Sexp_of [@alloc a]
+module type Sexp_of_m = Sexpable.Sexp_of
 
 module type M_of_sexp = sig
   type t [@@deriving of_sexp]
@@ -3970,13 +4122,8 @@ module type Equal_m = sig end
 module type Hash_fold_m = Hasher.S
 module type Globalize_m = sig end
 
-let%template[@alloc a @ m = (heap_global, stack_local)] sexp_of_m__t
-  (type k)
-  (module K : Sexp_of_m with type t = k[@alloc a])
-  sexp_of_v
-  t
-  =
-  (sexp_of_t [@alloc a]) (K.sexp_of_t [@alloc a]) sexp_of_v t [@exclave_if_stack a]
+let sexp_of_m__t (type k) (module K : Sexp_of_m with type t = k) sexp_of_v t =
+  sexp_of_t K.sexp_of_t sexp_of_v t
 ;;
 
 let m__t_of_sexp
@@ -4021,15 +4168,6 @@ let m__t_sexp_grammar
 
 let compare_m__t (module _ : Compare_m) compare_v t1 t2 = compare_direct compare_v t1 t2
 let equal_m__t (module _ : Equal_m) equal_v t1 t2 = equal equal_v t1 t2
-
-let%template[@mode local] compare_m__t (module _ : Compare_m) compare_v t1 t2 =
-  (compare_direct [@mode local]) compare_v t1 t2
-;;
-
-let%template[@mode local] equal_m__t (module _ : Equal_m) equal_v t1 t2 =
-  (equal [@mode local]) equal_v t1 t2
-;;
-
 let globalize_m__t (module _ : Globalize_m) _ t = globalize0 t
 
 let hash_fold_m__t (type k) (module K : Hash_fold_m with type t = k) hash_fold_v state =
@@ -4048,14 +4186,14 @@ module Poly = struct
   let comparator = Comparator.Poly.comparator
   let of_tree tree = { tree; comparator }
 
-  include%template
-    Using_comparator.Empty_without_value_restriction [@modality portable] (Comparator.Poly)
+  include Using_comparator.Empty_without_value_restriction (Comparator.Poly)
 
   let singleton a = Using_comparator.singleton ~comparator a
   let of_alist a = Using_comparator.of_alist ~comparator a
   let of_alist_or_error a = Using_comparator.of_alist_or_error ~comparator a
   let of_alist_exn a = Using_comparator.of_alist_exn ~comparator a
   let of_alist_multi a = Using_comparator.of_alist_multi ~comparator a
+  let of_alist_multi_nonempty a = Using_comparator.of_alist_multi_nonempty ~comparator a
   let of_alist_fold a ~init ~f = Using_comparator.of_alist_fold ~comparator a ~init ~f
   let of_alist_reduce a ~f = Using_comparator.of_alist_reduce ~comparator a ~f
 
@@ -4077,6 +4215,10 @@ module Poly = struct
   let of_sequence_exn s = Using_comparator.of_sequence_exn ~comparator s
   let of_sequence_multi s = Using_comparator.of_sequence_multi ~comparator s
 
+  let of_sequence_multi_nonempty s =
+    Using_comparator.of_sequence_multi_nonempty ~comparator s
+  ;;
+
   let of_sequence_fold s ~init ~f =
     Using_comparator.of_sequence_fold ~comparator s ~init ~f
   ;;
@@ -4097,6 +4239,10 @@ module Poly = struct
 
   let of_list_with_key_multi l ~get_key =
     Using_comparator.of_list_with_key_multi ~comparator l ~get_key
+  ;;
+
+  let of_list_with_key_multi_nonempty l ~get_key =
+    Using_comparator.of_list_with_key_multi_nonempty ~comparator l ~get_key
   ;;
 
   let of_list_with_key_fold l ~get_key ~init ~f =

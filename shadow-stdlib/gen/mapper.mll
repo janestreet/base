@@ -320,6 +320,7 @@ rule line = parse
 
   | "module " (id as id) " = Stdlib__" (id as id2) (_* as line)
       {
+        if id = "Iarray" then "" else
         Printf.sprintf "module %s = Stdlib.%s %s\n%s"
           id (String.capitalize_ascii id2) line
           (match module_replacement id with

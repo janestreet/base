@@ -1,8 +1,11 @@
 (** 64-bit integers. *)
 
-open! Import
+open! Import0
 
-type t = int64 [@@deriving globalize, sexp ~stackify ~unboxed]
+type t = int64 [@@deriving globalize, sexp]
+
+val sexp_of_t_u : Int64_u.t -> Sexp0.t
+val t_u_of_sexp : Sexp0.t -> Int64_u.t
 
 include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t

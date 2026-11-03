@@ -1,29 +1,25 @@
 open! Import
 module Array = Array0
+module Error = Error0
 module Sexp = Sexp0
 module String = String0
 include Char0
 
 module T = struct
-  type t = char
-  [@@deriving compare ~localize, hash, globalize, sexp ~stackify ~unboxed, sexp_grammar]
+  type t = char [@@deriving compare, hash, globalize, sexp ~unboxed, sexp_grammar]
 
-  let%template[@alloc a = (heap, stack)] to_string t =
-    (String.make [@alloc a]) 1 t [@exclave_if_stack a]
-  ;;
+  let to_string t = String.make 1 t
 
-  let%template of_string s =
+  let of_string s =
     match String.length s with
     | 1 -> String.unsafe_get s 0
-    | _ ->
-      failwith
-        (String.concat [ "Char.of_string: \""; (String.escaped [@alloc stack]) s; "\"" ])
+    | _ -> failwith (String.concat [ "Char.of_string: \""; String.escaped s; "\"" ])
   ;;
 end
 
 include T
 
-include%template Identifiable.Make [@modality portable] (struct
+include Identifiable.Make (struct
     include T
 
     let module_name = "Base.Char"
@@ -131,19 +127,15 @@ end
 
 module Caseless = struct
   module T = struct
-    type t = char [@@deriving sexp ~stackify, sexp_grammar]
+    type t = char [@@deriving sexp, sexp_grammar]
 
     let compare c1 c2 = compare (lowercase c1) (lowercase c2)
-    let%template[@mode local] compare c1 c2 = compare c1 c2
     let hash_fold_t state t = hash_fold_char state (lowercase t)
     let hash t = Hash.run hash_fold_t t
   end
 
   include T
-
-  include%template Comparable.Make [@modality portable] (T)
-
-  let%template[@mode local] equal t1 t2 = equal_int ((compare [@mode local]) t1 t2) 0
+  include Comparable.Make (T)
 end
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after including functor

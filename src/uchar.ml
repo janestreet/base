@@ -1,5 +1,6 @@
 open! Import
 module Bytes = Bytes0
+module Error = Error0
 module Sexp = Sexp0
 module String = String0
 include Uchar_intf.Definitions
@@ -14,10 +15,7 @@ let hash t = Hash.run hash_fold_t t
 
 (* Not for export. String formats exported via [Utf*] modules below. *)
 let to_string_internal t = Printf.sprintf "U+%04X" (to_int t)
-
-let%template[@alloc a = (heap, stack)] sexp_of_t t =
-  Sexp.Atom (to_string_internal t) [@exclave_if_stack a]
-;;
+let sexp_of_t t = Sexp.Atom (to_string_internal t)
 
 let t_of_sexp sexp =
   match sexp with
@@ -31,14 +29,14 @@ let t_sexp_grammar : t Sexplib0.Sexp_grammar.t =
   Sexplib0.Sexp_grammar.coerce string_sexp_grammar
 ;;
 
-include%template Pretty_printer.Register [@modality portable] (struct
+include Pretty_printer.Register (struct
     type nonrec t = t
 
     let module_name = module_name
     let to_string = to_string_internal
   end)
 
-include%template Comparable.Make [@modality portable] (struct
+include Comparable.Make (struct
     type nonrec t = t
 
     let compare = compare
@@ -93,11 +91,8 @@ let to_char_exn c =
 module Decode_result = struct
   type t = Uchar0.utf_decode
 
-  [%%template
-  [@@@mode.default m = (local, global)]
-
   let compare : t -> t -> int = Poly.compare
-  let equal : t -> t -> bool = Poly.equal]
+  let equal : t -> t -> bool = Poly.equal
 
   let hash_fold_t : Hash.state -> t -> Hash.state =
     fun state t -> hash_fold_int state (Hashable.hash t)
@@ -107,10 +102,7 @@ module Decode_result = struct
   let is_valid = Uchar0.utf_decode_is_valid
   let bytes_consumed = Uchar0.utf_decode_length
   let uchar_or_replacement_char = Uchar0.utf_decode_uchar
-
-  let%template[@alloc a = (heap, stack)] sexp_of_t t =
-    (sexp_of_t [@alloc a]) (uchar_or_replacement_char t) [@exclave_if_stack a]
-  ;;
+  let sexp_of_t t = sexp_of_t (uchar_or_replacement_char t)
 
   let uchar t =
     match is_valid t with

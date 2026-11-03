@@ -1,22 +1,24 @@
 open! Import
 open! Printf
 module Bytes = Bytes0
+module Error = Error0
 module Sexp = Sexp0
+module Sign = Sign0
+module Sys = Sys0
 include Float_intf.Definitions
 include Float0
 
 let raise_s = Error.raise_s
 
 module T = struct
-  type t = float [@@deriving hash, globalize, sexp ~stackify ~unboxed, sexp_grammar]
+  type t = float [@@deriving hash, globalize, sexp ~unboxed, sexp_grammar]
 
   let compare = Float_replace_polymorphic_compare.compare
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 end
 
 include T
-
-include%template Comparator.Make [@modality portable] (T)
+include Comparator.Make (T)
 
 (* We include type-specific [Replace_polymorphic_compare] at the end, after including
    functor application that could shadow its definitions. This is here so that efficient
@@ -574,6 +576,16 @@ let iround_nearest_half_to_even =
 let int63_round_lbound = lower_bound_for_int Int63.(num_bits |> to_int_trunc)
 let int63_round_ubound = upper_bound_for_int Int63.(num_bits |> to_int_trunc)
 
+let int63_round_up_or_null t =
+  if t > 0.0
+  then (
+    let t' = round_up t in
+    if t' <= int63_round_ubound then This (Int63.of_float_unchecked t') else Null)
+  else if t >= int63_round_lbound
+  then This (Int63.of_float_unchecked t)
+  else Null
+;;
+
 let int63_round_up_exn t =
   if t > 0.0
   then (
@@ -585,6 +597,14 @@ let int63_round_up_exn t =
   then Int63.of_float_unchecked t
   else
     invalid_argf "Float.int63_round_up_exn: argument (%f) is too small or NaN" (box t) ()
+;;
+
+let int63_round_down_or_null t =
+  if t >= 0.0
+  then if t <= int63_round_ubound then This (Int63.of_float_unchecked t) else Null
+  else (
+    let t' = round_down t in
+    if t' >= int63_round_lbound then This (Int63.of_float_unchecked t') else Null)
 ;;
 
 let int63_round_down_exn t =
@@ -624,6 +644,27 @@ let int63_round_nearest_portable_alloc_exn t0 =
       ()
 ;;
 
+let int63_round_nearest_portable_alloc_or_null t =
+  let t = (round_nearest_inline [@ocaml.inlined always]) t in
+  if t > 0.
+  then if t <= int63_round_ubound then This (Int63.of_float_unchecked t) else Null
+  else if t >= int63_round_lbound
+  then This (Int63.of_float_unchecked t)
+  else Null
+;;
+
+let[@inline] int63_round_nearest_arch64_noalloc_or_null f =
+  match iround_nearest_or_null f with
+  | Null -> Null
+  | This i -> This (Int63.of_int i)
+;;
+
+let int63_round_nearest_or_null =
+  match Word_size.word_size with
+  | W64 -> int63_round_nearest_arch64_noalloc_or_null
+  | W32 -> int63_round_nearest_portable_alloc_or_null
+;;
+
 let[@inline] int63_round_nearest_arch64_noalloc_exn f =
   Int63.of_int (iround_nearest_exn f)
 ;;
@@ -649,7 +690,7 @@ module Class = struct
     | Normal
     | Subnormal
     | Zero
-  [@@deriving compare ~localize, enumerate, equal ~localize, sexp ~stackify, sexp_grammar]
+  [@@deriving compare, enumerate, equal, sexp, sexp_grammar]
 
   let to_string t = string_of_sexp (sexp_of_t t)
   let of_string s = t_of_sexp (sexp_of_string s)
@@ -703,23 +744,6 @@ let sexp_of_t t =
        raise_s (Sexp.message "[sexp_of_float] produced strange sexp" [ "sexp", sexp ])
      | Atom string ->
        if String.contains string 'E' then sexp else Atom (insert_underscores string))
-;;
-
-let%template[@alloc stack] sexp_of_t t =
-  let sexp = (sexp_of_t [@alloc stack]) t in
-  match Dynamic.get Sexp.of_float_style with
-  | `No_underscores -> sexp
-  | `Underscores ->
-    (match sexp with
-     | List _ ->
-       raise_s
-         (Sexp.message
-            "[sexp_of_float] produced strange sexp"
-            [ "sexp", Sexp.globalize sexp ])
-     | Atom string ->
-       if String.contains string 'E'
-       then sexp
-       else Atom (insert_underscores (globalize_string string)))
 ;;
 
 let to_padded_compact_string_custom t ?(prefix = "") ~kilo ~mega ~giga ~tera ?peta () =
@@ -863,10 +887,7 @@ let int_pow x n =
     !x *. !accum)
 ;;
 
-[%%template
-[@@@mode.default m = (global, local)]
-
-let square x = (x *. x) [@exclave_if_local m]
+let square x = x *. x
 
 (*=The desired behavior here is to propagate a nan if either argument is nan. Because
    the first comparison will always return false if either argument is nan, it suffices
@@ -958,13 +979,13 @@ let round_significant x ~significant_digits =
       ()
   else (
     let how = `significant_digits significant_digits in
-    (round_gen [@mode m]) x ~how [@exclave_if_local m])
+    round_gen x ~how)
 ;;
 
 let round_decimal x ~decimal_digits =
   let how = `decimal_digits decimal_digits in
-  (round_gen [@mode m]) x ~how [@exclave_if_local m]
-;;]
+  round_gen x ~how
+;;
 
 let between t ~low ~high = low <= t && t <= high
 
@@ -1077,16 +1098,12 @@ module Terse = struct
 
   let t_of_sexp = t_of_sexp
   let to_string x = format_float "%.8G" x
-
-  let%template[@alloc a = (heap, stack)] sexp_of_t x =
-    Sexp.Atom (to_string x) [@exclave_if_stack a]
-  ;;
-
+  let sexp_of_t x = Sexp.Atom (to_string x)
   let of_string x = of_string x
   let t_sexp_grammar = t_sexp_grammar
 end
 
-include%template Comparable.With_zero [@modality portable] (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero
@@ -1101,7 +1118,7 @@ let is_non_negative t = t >= 0.
 let is_negative t = t < 0.
 let is_non_positive t = t <= 0.
 
-include%template Pretty_printer.Register [@modality portable] (struct
+include Pretty_printer.Register (struct
     include T
 
     let module_name = "Base.Float"
@@ -1173,11 +1190,9 @@ end
 
 module Shadow = struct
   (* These functions specifically replace defaults in replace_polymorphic_compare. *)
-  [%%template
-  [@@@mode.default m = (global, local)]
 
-  let min = (min [@mode m])
-  let max = (max [@mode m])]
+  let min = min
+  let max = max
 end
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after including functor

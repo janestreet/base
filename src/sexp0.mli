@@ -10,12 +10,9 @@ include
    and module Private := Sexplib0.Sexp.Private
 
 include Ppx_compare_lib.Equal.S with type t := t
-
-include%template Ppx_compare_lib.Equal.S [@mode local] with type t := t
-
+include Ppx_compare_lib.Equal.S with type t := t
 include Ppx_compare_lib.Comparable.S with type t := t
-
-include%template Ppx_compare_lib.Comparable.S [@mode local] with type t := t
+include Ppx_compare_lib.Comparable.S with type t := t
 
 val t_sexp_grammar : t Sexplib0.Sexp_grammar.t
 val invariant : t -> unit

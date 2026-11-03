@@ -1,61 +1,38 @@
-open! Import
+open! Import0
 include Binary_searchable_intf.Definitions
-
-[%%template
-[@@@mode.default m = (global, local)]
-
-[@@@kind.default
-  k = (value, value mod external64, value_or_null mod external64 non_float)]
 
 module type Arg = sig
   type 'a elt
   type 'a t
 
-  val get : 'a. 'a t -> int -> 'a elt [@@mode m' = (global, m)]
-  val length : _ t -> int [@@mode m' = (global, m)]
+  val get : 'a. 'a t -> int -> 'a elt
+  val length : _ t -> int
 end
 
-module%template.portable Make_gen (T : Arg [@mode m] [@kind k]) = struct
-  let[@mode m' = (global, m)] get = (T.get [@mode m'])
-  let[@mode m' = (global, m)] length = (T.length [@mode m'])
+module Make_gen (T : Arg) = struct
+  let get = T.get
+  let length = T.length
 
-  let[@mode m' = (global, m)] binary_search ?pos ?len t ~compare how v =
-    (Binary_search.binary_search [@mode m'])
-      ?pos
-      ?len
-      t
-      ~get:(get [@mode m'])
-      ~length:(length [@mode m'])
-      ~compare
-      how
-      v
+  let binary_search ?pos ?len t ~compare how v =
+    Binary_search.binary_search ?pos ?len t ~get ~length ~compare how v
   ;;
 
-  let[@mode m' = (global, m)] binary_search_segmented ?pos ?len t ~segment_of how =
-    (Binary_search.binary_search_segmented [@mode m'])
-      ?pos
-      ?len
-      t
-      ~get:(get [@mode m'])
-      ~length:(length [@mode m'])
-      ~segment_of
-      how
+  let binary_search_segmented ?pos ?len t ~segment_of how =
+    Binary_search.binary_search_segmented ?pos ?len t ~get ~length ~segment_of how
   ;;
 end
 
-module%template.portable [@modality p] Make (T : Indexable [@mode m]) =
-Make_gen [@mode m] [@modality p] (struct
+module Make (T : Indexable) = Make_gen (struct
     include T
 
     type 'a elt = T.elt
     type 'a t = T.t
   end)
 
-module%template.portable [@modality p] Make1 (T : Indexable1 [@mode m] [@kind k]) =
-Make_gen [@mode m] [@kind k] [@modality p] (struct
+module Make1 (T : Indexable1) = Make_gen (struct
     type 'a elt = 'a
     type 'a t = 'a T.t
 
-    let[@mode m' = (global, m)] get = (T.get [@mode m'])
-    let[@mode m' = (global, m)] length = (T.length [@mode m'])
-  end)]
+    let get = T.get
+    let length = T.length
+  end)

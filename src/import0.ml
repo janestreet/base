@@ -7,7 +7,6 @@ include (
     module type of struct
       include Shadow_stdlib
     end
-    with type 'a ref := 'a ref
     with type ('a, 'b, 'c) format := ('a, 'b, 'c) format
     with type ('a, 'b, 'c, 'd) format4 := ('a, 'b, 'c, 'd) format4
     with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
@@ -90,6 +89,10 @@ module Stdlib = struct
 end
 
 module Portability_hacks = Basement.Portability_hacks
+module Primitives = Basement.Primitives
+module Int32_u = Primitives.Int32_u
+module Int64_u = Primitives.Int64_u
+module Nativeint_u = Primitives.Nativeint_u
 
 external ( |> ) : 'a -> (('a -> 'b)[@local_opt]) -> 'b = "%revapply"
 
@@ -146,9 +149,6 @@ external ( /. )
   = "%divfloat"
 
 module Hash = Ppx_hash_lib.Std.Hash
-
-module Poly = Poly0 (** @canonical Base.Poly *)
-
 include Replace_polymorphic_compare
 include Int_replace_polymorphic_compare
 
@@ -186,21 +186,7 @@ external snd : 'a 'b. ('a * 'b[@local_opt]) -> ('b[@local_opt]) = "%field1"
 
 (* [raise] needs to be defined as an external as the compiler automatically replaces
    '%raise' by '%reraise' when appropriate. *)
-  external%template raise : 'a. exn -> 'a = "%reraise"
-
-[%%template
-[@@@kind kr1 = (value & value)]
-[@@@kind kr2 = (value & value & value)]
-[@@@kind kr3 = (value & value & value & value)]
-
-let raise : 'a. exn -> 'a =
-  fun exn ->
-  match (raise exn : Nothing0.t) with
-  | _ -> .
-[@@kind
-  k = (base_non_value, value_or_null & (base_or_null, kr1, kr2, kr3), bits32 & bits32)]
-;;]
-
+external raise : 'a. exn -> 'a = "%reraise"
 external phys_equal : 'a. ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%eq"
 external decr : (int ref[@local_opt]) -> unit = "%decr"
 external incr : (int ref[@local_opt]) -> unit = "%incr"

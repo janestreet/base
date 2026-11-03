@@ -1,23 +1,19 @@
 open! Import
 open! Stdlib.Int64
+module Float = Float0
 module Sexp = Sexp0
 
 module T = struct
   module T0 = struct
-    type t = int64 [@@deriving globalize, hash, of_sexp ~unboxed, sexp_grammar]
+    type t = int64 [@@deriving globalize, hash, of_sexp, sexp_grammar]
 
-    let%template[@alloc a = (heap, stack)] to_string =
-      (Integer_to_string.int64_to_string [@alloc a])
-    ;;
-
-    type unboxed = int64
-
-    let box = Basement.Primitives.box_int64
+    let t_u_of_sexp sexp = Int64_u.unbox (t_of_sexp sexp)
+    let to_string = Integer_to_string.int64_to_string
   end
 
   include T0
-
-  include%template Int_string_conversions.Make_unboxed [@kind bits64] (T0)
+  include Int_string_conversions.Make (T0)
+  include Provide_unboxed (Int64_u)
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = Int64_replace_polymorphic_compare.compare
@@ -36,12 +32,11 @@ module T = struct
 end
 
 include T
-
-include%template Comparator.Make [@modality portable] (T)
+include Comparator.Make (T)
 
 let num_bits = 64
-let float_lower_bound = Float0.lower_bound_for_int num_bits
-let float_upper_bound = Float0.upper_bound_for_int num_bits
+let float_lower_bound = Float.lower_bound_for_int num_bits
+let float_upper_bound = Float.upper_bound_for_int num_bits
 let num_bits = of_int num_bits
 
 external float_of_bits
@@ -92,7 +87,7 @@ let of_float f =
   else
     Printf.invalid_argf
       "Int64.of_float: argument (%f) is out of range or NaN"
-      (Float0.box f)
+      (Float.box f)
       ()
 ;;
 
@@ -114,7 +109,7 @@ let[@inline always] bswap32 x =
 
 let[@inline always] bswap48 x = shift_right_logical (bswap64 x) 16
 
-include%template Comparable.With_zero [@modality portable] (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero
@@ -236,11 +231,7 @@ let succ n = n + 1L
 module Pow2 = struct
   open O
 
-  let raise_s = Error.raise_s
-
-  let non_positive_argument () =
-    Printf.invalid_argf "argument must be strictly positive" ()
-  ;;
+  let non_positive_argument () = invalid_arg "argument must be strictly positive"
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 x =
@@ -277,23 +268,13 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if i <= 0L
-    then
-      raise_s
-        (Sexp.message
-           "[Int64.floor_log2] got invalid input"
-           [ "", sexp_of_int64 (globalize i) ]);
+    if i <= 0L then invalid_arg ("Int64.floor_log2: " ^ to_string i);
     num_bits - 1L - clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if i <= 0L
-    then
-      raise_s
-        (Sexp.message
-           "[Int64.ceil_log2] got invalid input"
-           [ "", sexp_of_int64 (globalize i) ]);
+    if i <= 0L then invalid_arg ("Int64.ceil_log2: " ^ to_string i);
     if i = 1L
     then 0L
     else (
@@ -305,7 +286,7 @@ end
 include Pow2
 
 include Int_string_conversions.Make_hex (struct
-    type t = int64 [@@deriving compare ~localize, hash]
+    type t = int64 [@@deriving compare, hash]
 
     let zero = zero
     let neg = neg
@@ -316,7 +297,7 @@ include Int_string_conversions.Make_hex (struct
   end)
 
 include Int_string_conversions.Make_binary (struct
-    type t = int64 [@@deriving compare ~localize, equal ~localize, hash]
+    type t = int64 [@@deriving compare, equal, hash]
 
     let ( land ) = ( land )
     let ( lsr ) = ( lsr )
@@ -328,7 +309,7 @@ include Int_string_conversions.Make_binary (struct
     let ( - ) = O.( - )
   end)
 
-include%template Pretty_printer.Register [@modality portable] (struct
+include Pretty_printer.Register (struct
     type nonrec t = t
 
     let to_string = to_string

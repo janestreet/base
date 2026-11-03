@@ -1,28 +1,28 @@
 open! Import
 include Stdlib.Lazy
 
-type 'a t = 'a lazy_t [@@deriving sexp ~stackify, sexp_grammar]
+type 'a t = 'a lazy_t [@@deriving sexp, sexp_grammar]
 
 external force : ('a t[@local_opt]) -> 'a = "%lazy_force"
 
 let globalize = Globalize.globalize_lazy_t
 let map t ~f = lazy (f (force t))
 
-let%template[@mode local] compare compare_a t1 t2 =
+let compare_internal compare_a t1 t2 =
   if phys_equal t1 t2 then 0 else compare_a (force t1) (force t2)
 ;;
 
-let%template compare compare_a t1 t2 = (compare [@mode local]) compare_a t1 t2
+let compare compare_a t1 t2 = compare_internal compare_a t1 t2
 
-let%template[@mode local] equal equal_a t1 t2 =
+let equal_internal equal_a t1 t2 =
   if phys_equal t1 t2 then true else equal_a (force t1) (force t2)
 ;;
 
-let%template equal equal_a t1 t2 = (equal [@mode local]) equal_a t1 t2
+let equal equal_a t1 t2 = equal_internal equal_a t1 t2
 let hash_fold_t = Hash.Builtin.hash_fold_lazy_t
 let peek t = if is_val t then Some (force t) else None
 
-include%template Monad.Make [@modality portable] (struct
+include Monad.Make (struct
     type nonrec 'a t = 'a t
 
     let return x = from_val x
@@ -36,9 +36,7 @@ module T_unforcing = struct
 
   let is_val t = Obj.tag (Obj.repr t) <> Stdlib.Obj.lazy_tag
 
-  let%template[@alloc a = (heap, stack)] sexp_of_t sexp_of_a t =
-    if [@exclave_if_stack a] is_val t
-    then sexp_of_a (force t)
-    else (sexp_of_string [@alloc a]) "<unforced lazy>"
+  let sexp_of_t sexp_of_a t =
+    if is_val t then sexp_of_a (force t) else sexp_of_string "<unforced lazy>"
   ;;
 end

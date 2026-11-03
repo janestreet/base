@@ -1,7 +1,8 @@
 (** An internal-only module factored out due to a circular dependency between core_array
     and core_list. Contains code for permuting an array. *)
 
-open! Import
+open! Import0
+module Ordered_collection_common = Ordered_collection_common0
 include Array0
 
 let permute ?(random_state = Random.State.get_default ()) ?(pos = 0) ?len t =
@@ -13,7 +14,7 @@ let permute ?(random_state = Random.State.get_default ()) ?(pos = 0) ?len t =
     | Some l -> l
     | None -> total_length - pos
   in
-  Ordered_collection_common0.check_pos_len_exn ~pos ~len ~total_length;
+  Ordered_collection_common.check_pos_len_exn ~pos ~len ~total_length;
   let num_swaps = len - 1 in
   for i = num_swaps downto 1 do
     let this_i = pos + i in

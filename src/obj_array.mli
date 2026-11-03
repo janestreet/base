@@ -2,7 +2,7 @@
     of [Uniform_array] internally. [Obj.t Uniform_array.t] should be used in place of
     [Obj_array.t]. *)
 
-open! Import
+open! Import0
 
 type t [@@deriving sexp_of]
 
@@ -28,8 +28,8 @@ val length : t -> int
 (** [get t i] and [unsafe_get t i] return the object at index [i]. [set t i o] and
     [unsafe_set t i o] set index [i] to [o]. In no case is the object copied. The
     [unsafe_*] variants omit the bounds check of [i]. *)
-val%template get : t -> int -> Stdlib.Obj.t
-[@@zero_alloc] [@@mode c = (uncontended, shared)]
+val get : t -> int -> Stdlib.Obj.t
+[@@zero_alloc]
 
 val unsafe_get : t -> int -> Stdlib.Obj.t [@@zero_alloc]
 val set : t -> int -> Stdlib.Obj.t -> unit

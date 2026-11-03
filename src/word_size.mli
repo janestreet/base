@@ -1,11 +1,11 @@
 (** For determining the word size that the program is using. *)
 
-open! Import
+open! Import0
 
 type t =
   | W32
   | W64
-[@@deriving sexp_of ~stackify]
+[@@deriving sexp_of]
 
 val num_bits : t -> int
 

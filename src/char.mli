@@ -1,13 +1,12 @@
 (** A type for 8-bit characters. *)
 
-open! Import
+open! Import0
 
 (** An alias for the type of characters. *)
-type t = char [@@deriving enumerate, globalize, sexp ~stackify ~unboxed, sexp_grammar]
+type t = char [@@deriving enumerate, globalize, sexp ~unboxed, sexp_grammar]
 
-include%template Identifiable.S [@mode local] [@modality portable] with type t := t
-include%template Stringable.S [@mode local] [@alloc stack] with type t := t
-
+include Identifiable.S with type t := t
+include Stringable.S with type t := t
 include Invariant.S with type t := t
 module O : Comparisons.Infix with type t := t
 
@@ -82,9 +81,9 @@ val max_value : t
 (** [Caseless] compares and hashes characters ignoring case, so that for example
     [Caseless.equal 'A' 'a'] and [Caseless.('a' < 'B')] are [true]. *)
 module Caseless : sig
-  type nonrec t = t [@@deriving hash, sexp ~stackify, sexp_grammar]
+  type nonrec t = t [@@deriving hash, sexp, sexp_grammar]
 
-  include%template Comparable.S [@modality portable] with type t := t
-  include%template Ppx_compare_lib.Equal.S [@mode local] with type t := t
-  include%template Ppx_compare_lib.Comparable.S [@mode local] with type t := t
+  include Comparable.S with type t := t
+  include Ppx_compare_lib.Equal.S with type t := t
+  include Ppx_compare_lib.Comparable.S with type t := t
 end

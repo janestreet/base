@@ -1,4 +1,5 @@
 open! Import
+module Error = Error0
 module Sexp = Sexp0
 include Stack_intf.Definitions
 
@@ -63,7 +64,7 @@ let iter t ~f =
   done
 ;;
 
-module%template C = Container.Make [@modality portable] (struct
+module C = Container.Make (struct
     type nonrec 'a t = 'a t
 
     let fold_until t ~init ~f ~finish = Container.fold_until ~fold ~init ~f t ~finish

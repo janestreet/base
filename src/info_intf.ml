@@ -37,9 +37,10 @@
 
     Note that an [Info.t] can be created from any arbitrary sexp with [Info.t_of_sexp]. *)
 
-open! Import
-module Invariant = Invariant_intf.Definitions
-module Sexp = Sexp0
+open! Import0
+module Modes = Basement.Modes
+module Portable_lazy = Basement.Portable_lazy
+module Sexp = Sexplib0.Sexp
 
 module Definitions = struct
   module type Internal_repr = sig
@@ -52,16 +53,15 @@ module Definitions = struct
       | String of string
       | Exn of exn Modes.Global.t
       | Sexp of Sexp.t
-      | Tag_sexp of string * Sexp.t * Source_code_position0.t option
+      | Tag_sexp of string * Sexp.t * Stdlib.Lexing.position option
       | Tag_t of string * t
       | Tag_arg of string * Sexp.t * t
       | Of_list of int option * t list
       | With_backtrace of t * string (** The second argument is the backtrace *)
-    [@@deriving sexp_of ~stackify]
+    [@@deriving sexp_of]
 
     val of_info : info -> t
-
-    val%template to_info : t -> info [@@mode p = (portable, nonportable)]
+    val to_info : t -> info
   end
 
   (** [Info.t Modes.Portable.t] with some common ppxes derived on it. It also re-exports
@@ -71,8 +71,7 @@ module Definitions = struct
     type info
 
     type t = info Modes.Portable.t
-    [@@deriving
-      compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+    [@@deriving compare, equal, globalize, hash, sexp, sexp_grammar]
 
     val create_s : Sexp.t -> t
     val of_string : string -> t
@@ -81,10 +80,9 @@ module Definitions = struct
     val of_portable_lazy_sexp : Sexp.t Portable_lazy.t -> t
     val of_portable_lazy_t : t Portable_lazy.t -> t
 
-    val%template create
+    val create
       : 'a.
-      ?here:Source_code_position0.t -> ?strict:unit -> string -> 'a -> ('a -> Sexp.t) -> t
-    [@@kind k = (bits64, float64, value_or_null)]
+      ?here:Stdlib.Lexing.position -> ?strict:unit -> string -> 'a -> ('a -> Sexp.t) -> t
 
     val tag_s : t -> tag:Sexp.t -> t
     val tag : t -> tag:string -> t
@@ -95,9 +93,7 @@ module Definitions = struct
 
   module type S0 = sig
     (** Serialization and comparison force the lazy message. *)
-    type t
-    [@@deriving
-      compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+    type t [@@deriving compare, equal, globalize, hash, sexp, sexp_grammar]
 
     type info := t
 
@@ -106,7 +102,7 @@ module Definitions = struct
         domains. *)
     val t_of_sexp : Sexp.t -> t
 
-    include Invariant.S with type t := t
+    val invariant : t -> unit
 
     (** [to_string_hum] forces the lazy message, which might be an expensive operation.
 
@@ -125,12 +121,10 @@ module Definitions = struct
     (** Be careful that the body of the lazy or thunk does not access mutable data, since
         it will only be called at an undetermined later point. *)
 
-    val of_lazy : string Lazy.t -> t
-    val of_lazy_sexp : Sexp.t Lazy.t -> t
-    val of_lazy_t : t Lazy.t -> t
-
-    val%template of_thunk : (unit -> string) -> t [@@mode p = (portable, nonportable)]
-
+    val of_lazy : string lazy_t -> t
+    val of_lazy_sexp : Sexp.t lazy_t -> t
+    val of_lazy_t : t lazy_t -> t
+    val of_thunk : (unit -> string) -> t
     val of_portable_lazy : string Portable_lazy.t -> t
     val of_portable_lazy_sexp : Sexp.t Portable_lazy.t -> t
     val of_portable_lazy_t : t Portable_lazy.t -> t
@@ -139,11 +133,9 @@ module Definitions = struct
         is converted to a sexp. So if [a] is mutated in the time between the call to
         [create] and the sexp conversion, those mutations will be reflected in the sexp.
         Use [~strict:()] to force [sexp_of_a a] to be computed immediately. *)
-    val%template create
+    val create
       : 'a.
-      ?here:Source_code_position0.t -> ?strict:unit -> string -> 'a -> ('a -> Sexp.t) -> t
-    [@@kind k = (bits64, float64, value_or_null)]
-    [@@mode (p, c) = ((nonportable, uncontended), (portable, contended))]
+      ?here:Stdlib.Lexing.position -> ?strict:unit -> string -> 'a -> ('a -> Sexp.t) -> t
 
     val create_s : Sexp.t -> t
 
@@ -156,34 +148,28 @@ module Definitions = struct
     val createf_portable : ('a, unit, string, unit -> t) format4 -> 'a
 
     (** Adds a string to the front. *)
-    val%template tag : t -> tag:string -> t
-    [@@mode p = (portable, nonportable)]
+    val tag : t -> tag:string -> t
 
     (** Adds a sexp to the front. *)
-    val%template tag_s : t -> tag:Sexp.t -> t
-    [@@mode p = (portable, nonportable)]
+    val tag_s : t -> tag:Sexp.t -> t
 
     (** Adds a lazy string to the front. *)
-    val tag_lazy : t -> tag:string Lazy.t -> t
+    val tag_lazy : t -> tag:string lazy_t -> t
 
     (** Adds a portable lazy string to the front. *)
-    val%template tag_portable_lazy : t -> tag:string Portable_lazy.t -> t
-    [@@mode p = (portable, nonportable)]
+    val tag_portable_lazy : t -> tag:string Portable_lazy.t -> t
 
     (** Adds a lazy sexp to the front. *)
-    val tag_s_lazy : t -> tag:Sexp.t Lazy.t -> t
+    val tag_s_lazy : t -> tag:Sexp.t lazy_t -> t
 
     (** Adds a portable lazy sexp to the front. *)
-    val%template tag_s_portable_lazy : t -> tag:Sexp.t Portable_lazy.t -> t
-    [@@mode p = (portable, nonportable)]
+    val tag_s_portable_lazy : t -> tag:Sexp.t Portable_lazy.t -> t
 
     (** Adds a string and some other data in the form of an s-expression at the front. *)
-    val%template tag_arg : 'a. t -> string -> 'a -> ('a -> Sexp.t) -> t
-    [@@mode (p, c) = ((nonportable, uncontended), (portable, contended))]
+    val tag_arg : 'a. t -> string -> 'a -> ('a -> Sexp.t) -> t
 
     (** Combines multiple infos into one. *)
-    val%template of_list : t list -> t
-    [@@mode p = (portable, nonportable)]
+    val of_list : t list -> t
 
     (** [of_exn] and [to_exn] are primarily used with [Error], but their definitions have
         to be here because they refer to the underlying representation.
@@ -194,7 +180,7 @@ module Definitions = struct
     val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> t
 
     val to_exn : t -> exn
-    val pp : Formatter.t -> t -> unit
+    val pp : Stdlib.Format.formatter -> t -> unit
 
     module Internal_repr : Internal_repr with type info := t
     module Portable : Portable with type info := info

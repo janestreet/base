@@ -32,10 +32,7 @@
     feat) with the same memory overhead, sane add semantics (the add semantics they used
     were a performance hack), and worst-case log(N) insertion, lookup, and removal. *)
 
-open! Import
-
-[%%template:
-[@@@kind_set.define all = (value_or_null, bits64, float64)]
+open! Import0
 
 (** We expose [t] to allow an optimization in Hashtbl that makes iter and fold more than
     twice as fast. We keep the type private to reduce opportunities for external code to
@@ -44,28 +41,23 @@ open! Import
 type ('k, 'v) t = private
   | Empty
   | Node of
-      { mutable left : (('k, 'v) t[@kind k v])
+      { mutable left : ('k, 'v) t
       ; key : 'k
       ; mutable value : 'v
       ; mutable height : int
-      ; mutable right : (('k, 'v) t[@kind k v])
+      ; mutable right : ('k, 'v) t
       }
   | Leaf of
       { key : 'k
       ; mutable value : 'v
       }
-[@@kind k = all, v = all]
 
 (** Returns the first (leftmost) or last (rightmost) element in the tree. *)
 
 val first : ('k, 'v) t -> ('k * 'v) option
 val last : ('k, 'v) t -> ('k * 'v) option
 
-[@@@kind k = all, v = all]
-
-type ('k, 'v) t := (('k, 'v) t[@kind k v])
-
-[@@@kind.default k v]
+type ('k, 'v) t := ('k, 'v) t
 
 val empty : ('k, 'v) t
 val get_empty : 'k 'v. unit -> ('k, 'v) t [@@zero_alloc]
@@ -97,13 +89,9 @@ val add
 
 (** If the specified key exists in the tree, returns the corresponding value. O(log(N))
     time and O(1) space. *)
-val find : ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> ('v Option.t[@kind v])
-[@@mode c = (uncontended, shared)]
+val find : ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> 'v Option.t
 
 include sig
-  [@@@mode.default c = (uncontended, shared)]
-  [@@@kind r = v]
-
   (** [find_and_call t ~compare k ~if_found ~if_not_found]
 
       is equivalent to:
@@ -119,7 +107,6 @@ include sig
     -> if_found:('v -> 'r)
     -> if_not_found:('k -> 'r)
     -> 'r
-  [@@kind k = k, v = v, r = (r, value_or_null)]
 
   val findi_and_call
     : 'k 'v 'r.
@@ -129,9 +116,6 @@ include sig
     -> if_found:(key:'k -> data:'v -> 'r)
     -> if_not_found:('k -> 'r)
     -> 'r
-  [@@kind k = k, v = v, r = r]
-
-  [@@@kind a = value_or_null]
 
   val find_and_call1
     : 'k 'v 'a 'r.
@@ -142,7 +126,6 @@ include sig
     -> if_found:('v -> 'a -> 'r)
     -> if_not_found:('k -> 'a -> 'r)
     -> 'r
-  [@@kind k = k, v = v, a = a, r = r]
 
   val findi_and_call1
     : 'k 'v 'a 'r.
@@ -153,9 +136,6 @@ include sig
     -> if_found:(key:'k -> data:'v -> 'a -> 'r)
     -> if_not_found:('k -> 'a -> 'r)
     -> 'r
-  [@@kind k = k, v = v, a = a, r = r]
-
-  [@@@kind b = value_or_null]
 
   val find_and_call2
     : 'k 'v 'a 'b 'r.
@@ -167,7 +147,6 @@ include sig
     -> if_found:('v -> 'a -> 'b -> 'r)
     -> if_not_found:('k -> 'a -> 'b -> 'r)
     -> 'r
-  [@@kind k = k, v = v, a = a, b = b, r = r]
 
   val findi_and_call2
     : 'k 'v 'a 'b 'r.
@@ -179,12 +158,10 @@ include sig
     -> if_found:(key:'k -> data:'v -> 'a -> 'b -> 'r)
     -> if_not_found:('k -> 'a -> 'b -> 'r)
     -> 'r
-  [@@kind k = k, v = v, a = a, b = b, r = r]
 end
 
 (** Returns true if key is present in the tree, and false otherwise. *)
 val mem : 'k 'v. ('k, 'v) t -> compare:('k -> 'k -> int) -> 'k -> bool
-[@@mode c = (uncontended, shared)]
 
 (** Removes key destructively from the tree if it exists, returning the new root node.
     Previous root nodes are not usable anymore; do so at your peril. The [removed] ref
@@ -197,13 +174,14 @@ val remove
 val fold
   : 'k 'v 'acc.
   ('k, 'v) t -> init:'acc -> f:(key:'k -> data:'v -> 'acc -> 'acc) -> 'acc
-[@@mode c = (uncontended, shared)]
 
 (** Iterates over the tree. *)
 val iter : 'k 'v. ('k, 'v) t -> f:(key:'k -> data:'v -> unit) -> unit
-[@@mode c = (uncontended, shared)]
+
+(** Returns [true] iff [f] returns [true] for some entry *)
+val exists : 'k 'v. ('k, 'v) t -> f:(key:'k -> data:'v -> bool) -> bool
 
 (** Map over the tree, changing the data in place. *)
 val mapi_inplace : 'k 'v. ('k, 'v) t -> f:(key:'k -> data:'v -> 'v) -> unit
 
-val choose_exn : 'k 'v. ('k, 'v) t -> 'k * 'v [@@mode c = (uncontended, shared)]]
+val choose_exn : 'k 'v. ('k, 'v) t -> 'k * 'v

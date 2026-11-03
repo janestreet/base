@@ -1,4 +1,6 @@
-open! Import
+open! Import0
+module Int63 = Int63_type
+module Sign = Sign0
 
 module Definitions = struct
   module type S = sig
@@ -10,21 +12,20 @@ module Definitions = struct
         evaluates to [true]. This is related to 80-bit registers being used for
         calculations; you can force representation as a 64-bit value by let-binding. *)
 
-    open! Import
+    open! Import0
 
-    type t = float [@@deriving globalize, sexp ~stackify ~unboxed, sexp_grammar]
+    type t = float [@@deriving globalize, sexp ~unboxed, sexp_grammar]
 
     include Floatable.S with type t := t
 
     (** [max] and [min] will return nan if either argument is nan. *)
 
-    include%template Identifiable.S [@mode local] [@modality portable] with type t := t
+    include Identifiable.S with type t := t
 
     val of_string : string -> t
     val of_string_opt : string -> t option
 
-    include%template Comparable.With_zero [@mode local] with type t := t
-
+    include Comparable.With_zero with type t := t
     include Invariant.S with type t := t
     include Comparisons.S_with_local_opt with type t := t
 
@@ -159,6 +160,9 @@ module Definitions = struct
     val iround_down_exn : t -> int [@@zero_alloc]
     val iround_up_exn : t -> int [@@zero_alloc]
     val iround_nearest_exn : t -> int [@@zero_alloc]
+    val int63_round_down_or_null : t -> Int63.t or_null
+    val int63_round_up_or_null : t -> Int63.t or_null
+    val int63_round_nearest_or_null : t -> Int63.t or_null
     val int63_round_down_exn : t -> Int63.t
     val int63_round_up_exn : t -> Int63.t
     val int63_round_nearest_exn : t -> Int63.t
@@ -174,9 +178,6 @@ module Definitions = struct
     val iround_ubound : t
     val int63_round_lbound : t
     val int63_round_ubound : t
-
-    [%%template:
-    [@@@mode.default m = (global, local)]
 
     (** [round_significant x ~significant_digits:n] rounds to the nearest number with [n]
         significant digits. More precisely: it returns the representable float closest to
@@ -252,7 +253,7 @@ module Definitions = struct
 
         All the considerations mentioned in [round_significant] apply (both functions use
         the same code path). *)
-    val round_decimal : t -> decimal_digits:int -> t]
+    val round_decimal : t -> decimal_digits:int -> t
 
     val is_nan : t -> bool
 
@@ -269,12 +270,8 @@ module Definitions = struct
         values, except when one of the values is a [nan], in which case the other is
         returned. (Returns [nan] if both arguments are [nan].) *)
 
-    [%%template:
-    [@@@mode.default m = (global, local)]
-
     val min_inan : t -> t -> t
-    val max_inan : t -> t -> t]
-
+    val max_inan : t -> t -> t
     external ( + ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%addfloat"
     external ( - ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%subfloat"
     external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> (t[@local_opt]) = "%mulfloat"
@@ -536,8 +533,7 @@ module Definitions = struct
     val int_pow : t -> int -> t
 
     (** [square x] returns [x *. x]. *)
-    val%template square : t -> t
-    [@@mode m = (global, local)]
+    val square : t -> t
 
     (** [ldexp x n] returns [x *. 2 ** n] *)
     external ldexp
@@ -683,8 +679,7 @@ module Definitions = struct
         | Normal
         | Subnormal
         | Zero
-      [@@deriving
-        compare ~localize, enumerate, equal ~localize, sexp ~stackify, sexp_grammar]
+      [@@deriving compare, enumerate, equal, sexp, sexp_grammar]
 
       include Stringable.S with type t := t
     end
@@ -726,9 +721,9 @@ module Definitions = struct
 
     (** S-expressions contain at most 8 significant digits. *)
     module Terse : sig
-      type nonrec t = t [@@deriving sexp ~stackify, sexp_grammar]
+      type nonrec t = t [@@deriving sexp, sexp_grammar]
 
-      include%template Stringable.S [@mode local] with type t := t
+      include Stringable.S with type t := t
     end
   end
 end

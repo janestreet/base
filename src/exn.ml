@@ -49,11 +49,8 @@ let to_string exc = Sexp.to_string_hum ~indent:2 (sexp_of_exn exc)
 let to_string_mach exc = Sexp.to_string_mach (sexp_of_exn exc)
 let sexp_of_t = sexp_of_exn
 
-[%%template
-[@@@mode.default l = (global, local)]
-
 let protectx ~f x ~(finally : _ -> unit) =
-  match[@exclave_if_local l ~reasons:[ May_return_local ]] f x with
+  match f x with
   | res ->
     finally x;
     res
@@ -66,7 +63,7 @@ let protectx ~f x ~(finally : _ -> unit) =
        raise_with_original_backtrace (Finally (exn, final_exn)) bt)
 ;;
 
-let protect ~f ~finally = (protectx [@mode l]) ~f () ~finally [@exclave_if_local l]]
+let protect ~f ~finally = protectx ~f () ~finally
 
 let does_raise (type a) (f : unit -> a) =
   try
@@ -95,7 +92,7 @@ module Serialized = struct
   ;;
 end
 
-include%template Pretty_printer.Register_pp [@modality portable] (struct
+include Pretty_printer.Register_pp (struct
     type t = exn
 
     let pp ppf t = Serialized.of_exn t |> Serialized.pp ppf

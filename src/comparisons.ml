@@ -1,6 +1,6 @@
 (** Interfaces for infix comparison operators and comparison functions. *)
 
-open! Import
+open! Import0
 
 (** [Infix] lists the typical infix comparison operators. These functions are provided by
     [<M>.O] modules, i.e., modules that expose monomorphic infix comparisons over some
@@ -16,17 +16,14 @@ module type Infix = sig
   val ( <> ) : t -> t -> bool
 end
 
-module type%template [@mode m = (global, local)] S = sig
+module type S = sig
   include Infix
-
-  [%%template:
-  [@@@mode.default m = (global, m)]
 
   val equal : t -> t -> bool
 
   (** [compare t1 t2] returns 0 if [t1] is equal to [t2], a negative integer if [t1] is
       less than [t2], and a positive integer if [t1] is greater than [t2]. *)
-  val compare : t -> t -> int]
+  val compare : t -> t -> int
 
   val min : t -> t -> t
   val max : t -> t -> t
@@ -43,20 +40,13 @@ module type Infix_with_local_opt = sig
   external ( >= ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%greaterequal"
 end
 
-module type%template [@mode m = (global, local)] S_with_local_opt = sig
+module type S_with_local_opt = sig
   include Infix_with_local_opt
 
-  [%%template:
-  [@@@mode.default m = (global, m)]
-
   external equal : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
-  external compare : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"]
-
-  [%%template:
-  [@@@mode.default m = (global, local)]
-
+  external compare : (t[@local_opt]) -> (t[@local_opt]) -> int = "%compare"
   val min : t -> t -> t
-  val max : t -> t -> t]
+  val max : t -> t -> t
 end
 
 module type Infix_with_zero_alloc = sig
@@ -70,18 +60,15 @@ module type Infix_with_zero_alloc = sig
   val ( <> ) : t -> t -> bool [@@zero_alloc]
 end
 
-module type%template [@mode m = (global, local)] S_with_zero_alloc = sig
+module type S_with_zero_alloc = sig
   include Infix_with_zero_alloc
-
-  [%%template:
-  [@@@mode.default m = (global, m)]
 
   val equal : t -> t -> bool [@@zero_alloc]
 
   (** [compare t1 t2] returns 0 if [t1] is equal to [t2], a negative integer if [t1] is
       less than [t2], and a positive integer if [t1] is greater than [t2]. *)
   val compare : t -> t -> int
-  [@@zero_alloc]]
+  [@@zero_alloc]
 
   val min : t -> t -> t [@@zero_alloc]
   val max : t -> t -> t [@@zero_alloc]
@@ -98,18 +85,15 @@ module type Infix_with_zero_alloc_strict = sig
   val ( <> ) : t -> t -> bool [@@zero_alloc strict]
 end
 
-module type%template [@mode m = (global, local)] S_with_zero_alloc_strict = sig
+module type S_with_zero_alloc_strict = sig
   include Infix_with_zero_alloc_strict
-
-  [%%template:
-  [@@@mode.default m = (global, m)]
 
   val equal : t -> t -> bool [@@zero_alloc strict]
 
   (** [compare t1 t2] returns 0 if [t1] is equal to [t2], a negative integer if [t1] is
       less than [t2], and a positive integer if [t1] is greater than [t2]. *)
   val compare : t -> t -> int
-  [@@zero_alloc strict]]
+  [@@zero_alloc strict]
 
   val min : t -> t -> t [@@zero_alloc strict]
   val max : t -> t -> t [@@zero_alloc strict]

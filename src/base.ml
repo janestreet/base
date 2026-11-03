@@ -103,7 +103,7 @@ module Container = Container
 module Dynamic = Dynamic
 module Either = Either
 module Equal = Equal
-module Error = Error_with_extras
+module Error = Error
 module Exn = Exn
 module Field = Field
 module Float = Float
@@ -115,6 +115,7 @@ module Hash_set = Hash_set
 module Hashable = Hashable
 module Hasher = Hasher
 module Hashtbl = Hashtbl
+module Hlist = Hlist
 module Iarray = Iarray
 module Identifiable = Identifiable
 module Indexed_container = Indexed_container
@@ -203,120 +204,56 @@ module Export = struct
 
   (* [deriving hash] is missing for [array] and [ref] since these types are mutable. *)
   [%%rederive.portable
-    type 'a array = 'a Array.t
-    [@@deriving
-      compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]]
+    type 'a array = 'a Array.t [@@deriving compare, equal, globalize, sexp, sexp_grammar]]
 
-  type nonrec floatarray = floatarray [@@deriving globalize, sexp ~stackify, sexp_grammar]
+  type nonrec floatarray = floatarray [@@deriving globalize, sexp, sexp_grammar]
 
   type bool = Bool.t
-  [@@deriving
-    compare ~localize
-    , equal ~localize
-    , globalize
-    , hash
-    , sexp ~stackify ~unboxed
-    , sexp_grammar]
+  [@@deriving compare, equal, globalize, hash, sexp ~unboxed, sexp_grammar]
 
   type char = Char.t
-  [@@deriving
-    compare ~localize
-    , equal ~localize
-    , globalize
-    , hash
-    , sexp ~stackify ~unboxed
-    , sexp_grammar]
+  [@@deriving compare, equal, globalize, hash, sexp ~unboxed, sexp_grammar]
 
   type exn = Exn.t [@@deriving sexp_of]
 
   type float = Float.t
-  [@@deriving
-    compare ~localize
-    , equal ~localize
-    , globalize
-    , hash
-    , sexp ~stackify ~unboxed
-    , sexp_grammar]
+  [@@deriving compare, equal, globalize, hash, sexp ~unboxed, sexp_grammar]
 
   type 'a iarray = 'a Iarray.t
 
   [%%rederive.portable
     type 'a iarray = 'a Iarray.t
-    [@@deriving
-      compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]
+    [@@deriving compare, equal, globalize, sexp, sexp_grammar]]
 
-  type int = Int.t
-  [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+  [%%rederive.portable type 'a iarray = 'a Iarray.t [@@deriving hash]]
 
-  type int32 = Int32.t
-  [@@deriving
-    compare ~localize
-    , equal ~localize
-    , globalize
-    , hash
-    , sexp ~stackify ~unboxed
-    , sexp_grammar]
-
-  type int64 = Int64.t
-  [@@deriving
-    compare ~localize
-    , equal ~localize
-    , globalize
-    , hash
-    , sexp ~stackify ~unboxed
-    , sexp_grammar]
+  type int = Int.t [@@deriving compare, equal, globalize, hash, sexp, sexp_grammar]
+  type int32 = Int32.t [@@deriving compare, equal, globalize, hash, sexp, sexp_grammar]
+  type int64 = Int64.t [@@deriving compare, equal, globalize, hash, sexp, sexp_grammar]
 
   type 'a list = 'a List.t
-  [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+  [@@deriving compare, equal, globalize, hash, sexp, sexp_grammar]
 
   type nativeint = Nativeint.t
-  [@@deriving
-    compare ~localize
-    , equal ~localize
-    , globalize
-    , hash
-    , sexp ~stackify ~unboxed
-    , sexp_grammar]
+  [@@deriving compare, equal, globalize, hash, sexp, sexp_grammar]
 
   type 'a option = 'a Option.t
-  [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
-
-  type%template nonrec 'a option = ('a Option.t[@kind k])
-  [@@deriving compare ~localize, equal ~localize, sexp ~stackify]
-  [@@kind k = base_non_value]
+  [@@deriving compare, equal, globalize, hash, sexp, sexp_grammar]
 
   type ('a, 'b) result = ('a, 'b) Result.t
-  [@@deriving
-    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+  [@@deriving compare, equal, globalize, hash, sexp, sexp_grammar]
 
-  type%template nonrec ('a, 'b) result = (('a, 'b) Result.t[@kind k])
-  [@@deriving compare ~localize, equal ~localize, sexp ~stackify]
-  [@@kind k = base_non_value]
-
-  type 'a ref = 'a Ref.t
-  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
-
-  type string = String.t
-  [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+  type 'a ref = 'a Ref.t [@@deriving compare, equal, globalize, sexp, sexp_grammar]
+  type string = String.t [@@deriving compare, equal, hash, sexp, sexp_grammar]
 
   let globalize_string : string -> string = Globalize.globalize_string
 
-  type bytes = Bytes.t
-  [@@deriving compare ~localize, equal ~localize, sexp ~stackify, sexp_grammar]
+  type bytes = Bytes.t [@@deriving compare, equal, sexp, sexp_grammar]
 
   let globalize_bytes : bytes -> bytes = Globalize.globalize_bytes
 
   type unit = Unit.t
-  [@@deriving
-    compare ~localize
-    , equal ~localize
-    , globalize
-    , hash
-    , sexp ~stackify ~unboxed
-    , sexp_grammar]
+  [@@deriving compare, equal, globalize, hash, sexp ~unboxed, sexp_grammar]
 
   (** Format stuff *)
 
@@ -389,7 +326,7 @@ module Export = struct
   (** Misc *)
 
   external phys_equal : 'a. ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%eq"
-  external force : ('a Lazy.t[@local_opt]) -> 'a = "%lazy_force"
+  external force : ('a lazy_t[@local_opt]) -> 'a = "%lazy_force"
 
   (* Export ['a or_null] with constructors [Null] and [This] whenever Base is opened, so
      uses of those identifiers work in both upstream OCaml and OxCaml. *)
@@ -399,12 +336,9 @@ module Export = struct
     | This of 'a
 
   [%%rederive
-    type 'a or_null = 'a Or_null.t
-    [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp ~stackify]]
+    type 'a or_null = 'a Or_null.t [@@deriving compare, equal, globalize, hash, sexp]]
 
-  let%template[@alloc a = (heap, stack)] maybe_globalize =
-    (Globalize.maybe_globalize [@alloc a])
-  ;;
+  let maybe_globalize = Globalize.maybe_globalize
 end
 
 include Export

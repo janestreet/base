@@ -7,9 +7,8 @@ include Sexplib0.Sexp
 type t = Sexplib0.Sexp.t =
   | Atom of string
   | List of t list
-[@@deriving compare ~localize, hash]
+[@@deriving compare, hash]
 
 let t_sexp_grammar = Sexplib0.Sexp_conv.sexp_t_sexp_grammar
 let of_string = ()
 let invariant (_ : t) = ()
-let%template[@mode local] equal a b = (compare [@mode local]) a b = 0

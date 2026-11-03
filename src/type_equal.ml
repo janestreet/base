@@ -1,8 +1,9 @@
 open! Import
 open Type_equal_intf.Definitions
+module Error = Error0
 module Sexp = Sexp0
 
-type ('a, 'b) t = T : 'a. ('a, 'a) t [@@deriving sexp_of ~stackify]
+type ('a, 'b) t = T : 'a. ('a, 'a) t [@@deriving sexp_of]
 type ('a, 'b) equal = ('a, 'b) t
 
 include Type_equal_defns (struct
@@ -12,15 +13,7 @@ include Type_equal_defns (struct
 let refl = T
 let sym (type a b) (T : (a, b) t) : (b, a) t = T
 let trans (type a b c) (T : (a, b) t) (T : (b, c) t) : (a, c) t = T
-
-let%template conv (type a b) (T : (a, b) t) (a : a) : b = a
-[@@kind k = (value_or_null, value_or_null & bits64)]
-[@@mode l = (global, local), v = (read_write, read, immutable)]
-;;
-
-[%%template
-[@@@kind_set.define smaller_all = (any, value)]
-[@@@kind_set.define all = (smaller_all, value_or_null)]
+let conv (type a b) (T : (a, b) t) (a : a) : b = a
 
 module Lift (X : sig
     type 'a t
@@ -28,9 +21,6 @@ module Lift (X : sig
 struct
   let lift (type a b) (T : (a, b) t) : (a X.t, b X.t) t = T
 end
-[@@kind.explicit k1 = all]
-
-module Lift = Lift [@kind.explicit value]
 
 module Lift2 (X : sig
     type ('a1, 'a2) t
@@ -42,11 +32,6 @@ struct
     T
   ;;
 end
-[@@kind.explicit k1 = all, k2 = all]
-
-module Lift2 = Lift2 [@kind.explicit value value]
-
-[@@@kind.default k1 = smaller_all, k2 = smaller_all, k3 = smaller_all]
 
 module Lift3 (X : sig
     type ('a1, 'a2, 'a3) t
@@ -58,8 +43,6 @@ struct
     T
   ;;
 end
-
-[@@@kind.default k4 = smaller_all]
 
 module Lift4 (X : sig
     type ('a1, 'a2, 'a3, 'a4) t
@@ -75,7 +58,7 @@ struct
     =
     T
   ;;
-end]
+end
 
 let detuple2 (type a1 a2 b1 b2) (T : (a1 * a2, b1 * b2) t) : (a1, b1) t * (a2, b2) t =
   T, T
@@ -90,12 +73,12 @@ module Id = struct
   module Uid = struct
     (* A unique id contains an [int] representing a (possibly parameterized) type, and a
        list of uids for the parameters to that type. *)
-    type t = T of int * t list [@@deriving compare ~localize, hash, sexp_of ~stackify]
+    type t = T of int * t list [@@deriving compare, hash, sexp_of]
 
-    include%template Comparable.Make [@mode local] [@modality portable] (struct
+    include Comparable.Make (struct
         type nonrec t = t
 
-        let[@mode l = (local, global)] compare = (compare [@mode l])
+        let compare = compare
         let sexp_of_t = sexp_of_t
       end)
 
@@ -134,15 +117,8 @@ module Id = struct
 
   type 'a t = { immutable : (module S with type t = 'a) } [@@unboxed]
 
-  let%template uid (type a) ({ immutable = (module M) } : a t) = M.uid
-  [@@mode m = (global, local)]
-  ;;
-
-  let%template[@mode m = (global, local)] name (type a) ({ immutable = (module M) } : a t)
-    =
-    M.id_name
-  ;;
-
+  let uid (type a) ({ immutable = (module M) } : a t) = M.uid
+  let name (type a) ({ immutable = (module M) } : a t) = M.id_name
   let sexp_of_t (type a) _ ({ immutable = (module M) } : a t) = M.id_sexp
   let to_sexp (type a) ({ immutable = (module M) } : a t) = M.sexp_of_t
   let hash t = Uid.hash (uid t)
@@ -179,7 +155,7 @@ module Id = struct
       type nonrec 'a t = 'a t
     end)
 
-  module%template.portable Create0 (T : Arg0) = struct
+  module Create0 (T : Arg0) = struct
     type _ key += T0 : T.t key
 
     let type_equal_id : T.t t =
@@ -204,7 +180,7 @@ module Id = struct
     ;;
   end
 
-  module%template.portable Create1 (T : Arg1) = struct
+  module Create1 (T : Arg1) = struct
     type _ key += T1 : 'a key -> 'a T.t key
 
     let type_equal_id (type a) ({ immutable = (module A) } : a t) : a T.t t =
@@ -233,11 +209,7 @@ module Id = struct
     ;;
   end
 
-  module%template.portable
-    [@kind a = (value, immediate64), b = value] Create2
-      (T : Arg2
-    [@kind a b]) =
-  struct
+  module Create2 (T : Arg2) = struct
     type _ key += T2 : 'a 'b. 'a key * 'b key -> ('a, 'b) T.t key
 
     let type_equal_id
@@ -271,7 +243,7 @@ module Id = struct
     ;;
   end
 
-  module%template.portable Create3 (T : Arg3) = struct
+  module Create3 (T : Arg3) = struct
     type _ key += T3 : 'a key * 'b key * 'c key -> ('a, 'b, 'c) T.t key
 
     let type_equal_id
@@ -306,7 +278,7 @@ module Id = struct
     ;;
   end
 
-  module%template.portable Create4 (T : Arg4) = struct
+  module Create4 (T : Arg4) = struct
     type _ key += T4 : 'a key * 'b key * 'c key * 'd key -> ('a, 'b, 'c, 'd) T.t key
 
     let type_equal_id
@@ -354,7 +326,7 @@ module Id = struct
     ;;
   end
 
-  let%template create (type a) ~name sexp_of_t : a t =
+  let create (type a) ~name sexp_of_t : a t =
     let open struct
       type _ key += T0 : a key
     end in
@@ -375,6 +347,5 @@ module Id = struct
           ;;
         end)
     }
-  [@@mode p = (nonportable, portable)]
   ;;
 end

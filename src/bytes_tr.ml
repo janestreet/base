@@ -1,5 +1,6 @@
 open! Import0.Int_replace_polymorphic_compare
 module Bytes = Bytes0
+module Char = Char0
 module String = String0
 
 (* Construct a byte string of length 256, mapping every input character code to its
@@ -28,14 +29,14 @@ let tr_create_map ~target ~replacement =
   let rec have_any_different tr_map i =
     if i = 256
     then false
-    else if Char.( <> ) (Bytes0.unsafe_get tr_map i) (Char.of_int_exn i)
+    else if not (Char.equal (Bytes.unsafe_get tr_map i) (Char.of_int_exn i))
     then true
     else have_any_different tr_map (i + 1)
   in
   (* quick check on the first target character which will 99% be true *)
   let first_target = target.[0] in
-  if Char.( <> ) (Bytes0.unsafe_get tr_map (Char.to_int first_target)) first_target
+  if (not (Char.equal (Bytes.unsafe_get tr_map (Char.to_int first_target)) first_target))
      || have_any_different tr_map 0
-  then Some (Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:tr_map)
+  then Some (Bytes.unsafe_to_string ~no_mutation_while_string_reachable:tr_map)
   else None
 ;;

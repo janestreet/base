@@ -1,6 +1,6 @@
 (* belongs in Common, but moved here to avoid circular dependencies *)
 
-open! Import
+open! Import0
 
 type 'a return = { return : 'b. 'a -> 'b } [@@unboxed]
 

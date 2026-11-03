@@ -1,4 +1,7 @@
-open! Import
+open! Import0
+module Either = Either0
+module Nonempty_list = Nonempty_list_type.Nonempty_list
+module Result = Result0
 module Sexp = Sexp0
 
 module Definitions = struct
@@ -7,7 +10,7 @@ module Definitions = struct
       [ `Ok of 'a
       | `Duplicate
       ]
-    [@@deriving compare ~localize, equal ~localize, sexp_of]
+    [@@deriving compare, equal, sexp_of]
   end
 
   module Without_comparator = struct
@@ -24,7 +27,7 @@ module Definitions = struct
 
   module Symmetric_diff_element = struct
     type ('k, 'v) t = 'k * [ `Left of 'v | `Right of 'v | `Unequal of 'v * 'v ]
-    [@@deriving compare ~localize, equal ~localize, sexp, sexp_grammar]
+    [@@deriving compare, equal, sexp, sexp_grammar]
   end
 
   module Merge_element = struct
@@ -33,7 +36,7 @@ module Definitions = struct
       | `Right of 'right
       | `Both of 'left * 'right
       ]
-    [@@deriving compare ~localize, equal ~localize, sexp_of]
+    [@@deriving compare, equal, sexp_of]
   end
 
   module When_unmatched = struct
@@ -72,7 +75,7 @@ module Definitions = struct
     type t =
       | Continue
       | Stop
-    [@@deriving compare ~localize, enumerate, equal ~localize, sexp_of]
+    [@@deriving compare, enumerate, equal, sexp_of]
   end
 
   (** @canonical Base.Map.Finished_or_unfinished *)
@@ -80,7 +83,7 @@ module Definitions = struct
     type t =
       | Finished
       | Unfinished
-    [@@deriving compare ~localize, enumerate, equal ~localize, sexp_of]
+    [@@deriving compare, enumerate, equal, sexp_of]
   end
 
   module type Accessors_generic = sig
@@ -130,19 +133,17 @@ module Definitions = struct
             -> 'acc )
           access_options
 
-    val%template compare_direct
+    val compare_direct
       : ( 'k
           , 'cmp
           , ('v -> 'v -> int) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> int )
           access_options
-    [@@mode m = (local, global)]
 
-    val%template equal
+    val equal
       : ( 'k
           , 'cmp
           , ('v -> 'v -> bool) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> bool )
           access_options
-    [@@mode m = (local, global)]
 
     val to_alist
       :  ?key_order:[ `Increasing | `Decreasing ]
@@ -238,12 +239,19 @@ module Definitions = struct
        and type ('key, 'data, 'cmp) t := ('key, 'data, 'cmp) t
        and type ('fn, 'key, _, 'cmp) transformer := ('key, 'cmp, 'fn) access_options
 
-    (** Like [change] but [f] receives and returns ['v or_null] instead of ['v option]. *)
+    (** Like [change], but [f] receives and returns ['v or_null] instead of ['v option]. *)
     val change_or_null
       : ( 'k
           , 'cmp
           , ('k, 'v, 'cmp) t -> 'k key -> f:('v or_null -> 'v or_null) -> ('k, 'v, 'cmp) t
           )
+          access_options
+
+    (** Like [update] but [f] receives ['v or_null] instead of ['v option]. *)
+    val update_or_null
+      : ( 'k
+          , 'cmp
+          , ('k, 'v, 'cmp) t -> 'k key -> f:('v or_null -> 'v) -> ('k, 'v, 'cmp) t )
           access_options
 
     val split
@@ -354,8 +362,7 @@ module Definitions = struct
 
     val filter_opt : ('k, 'v option, 'cmp) t -> ('k, 'v, 'cmp) t
 
-    module%template.portable Make_applicative_traversals
-        (A : Applicative.Lazy_applicative) : sig
+    module Make_applicative_traversals (A : Applicative.Lazy_applicative) : sig
       val mapi
         :  ('k, 'v1, 'cmp) t
         -> f:(key:'k key -> data:'v1 -> 'v2 A.t)
@@ -500,8 +507,7 @@ module Definitions = struct
   module type For_deriving = sig
     type ('a, 'b, 'c) t
 
-    module type%template [@alloc a = (heap, stack)] Sexp_of_m = Sexpable.Sexp_of
-    [@alloc a]
+    module type Sexp_of_m = Sexpable.Sexp_of
 
     module type M_of_sexp = sig
       type t [@@deriving of_sexp]
@@ -518,12 +524,11 @@ module Definitions = struct
     module type Hash_fold_m = Hasher.S
     module type Globalize_m = sig end
 
-    val%template sexp_of_m__t
-      :  ((module Sexp_of_m with type t = 'k)[@alloc a])
+    val sexp_of_m__t
+      :  (module Sexp_of_m with type t = 'k)
       -> ('v -> Sexp.t)
       -> ('k, 'v, 'cmp) t
       -> Sexp.t
-    [@@alloc a @ m = (heap_global, stack_local)]
 
     val m__t_of_sexp
       :  (module M_of_sexp with type t = 'k and type comparator_witness = 'cmp)
@@ -543,28 +548,12 @@ module Definitions = struct
       -> ('k, 'v, 'cmp) t
       -> int
 
-    val%template compare_m__t
-      :  (module Compare_m)
-      -> ('v -> 'v -> int)
-      -> ('k, 'v, 'cmp) t
-      -> ('k, 'v, 'cmp) t
-      -> int
-    [@@mode local]
-
     val equal_m__t
       :  (module Equal_m)
       -> ('v -> 'v -> bool)
       -> ('k, 'v, 'cmp) t
       -> ('k, 'v, 'cmp) t
       -> bool
-
-    val%template equal_m__t
-      :  (module Equal_m)
-      -> ('v -> 'v -> bool)
-      -> ('k, 'v, 'cmp) t
-      -> ('k, 'v, 'cmp) t
-      -> bool
-    [@@mode local]
 
     val globalize_m__t : (module Globalize_m) -> _ -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t
 
@@ -741,7 +730,7 @@ module type Map = sig
     type t = Finished_or_unfinished.t =
       | Finished
       | Unfinished
-    [@@deriving compare ~localize, enumerate, equal ~localize, sexp_of]
+    [@@deriving compare, enumerate, equal, sexp_of]
 
     (** Maps [Continue] to [Finished] and [Stop] to [Unfinished]. *)
     val of_continue_or_stop : Continue_or_stop.t -> t
@@ -756,7 +745,7 @@ module type Map = sig
       | `Right of 'right
       | `Both of 'left * 'right
       ]
-    [@@deriving compare ~localize, equal ~localize, sexp_of]
+    [@@deriving compare, equal, sexp_of]
 
     val left : ('left, _) t -> 'left option
     val right : (_, 'right) t -> 'right option
@@ -781,8 +770,7 @@ module type Map = sig
   val globalize0 : ('key, 'data, 'cmp) t -> ('key, 'data, 'cmp) t
 
   (** The empty map. *)
-  val%template empty : 'a 'b 'cmp. ('a, 'cmp) Comparator.Module.t -> ('a, 'b, 'cmp) t
-  [@@mode p = (nonportable, portable)]
+  val empty : 'a 'b 'cmp. ('a, 'cmp) Comparator.Module.t -> ('a, 'b, 'cmp) t
 
   (** A map with one (key, data) pair. *)
   val singleton : ('a, 'cmp) Comparator.Module.t -> 'a -> 'b -> ('a, 'b, 'cmp) t
@@ -811,6 +799,12 @@ module type Map = sig
     :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) list
     -> ('a, 'b list, 'cmp) t
+
+  (** Like [of_alist_multi], but typefully expresses the nonempty property. *)
+  val of_alist_multi_nonempty
+    :  ('a, 'cmp) Comparator.Module.t
+    -> ('a * 'b) list
+    -> ('a, 'b Nonempty_list.t, 'cmp) t
 
   (** Combines an association list into a map, folding together bound values with common
       keys. The accumulator is per-key.
@@ -932,12 +926,18 @@ module type Map = sig
       in the map for a given key appear in the same order as they did in the association
       list.
 
-      [of_sequence_multi c seq] behaves like [of_alist_exn c (Sequence.to_list seq)] but
+      [of_sequence_multi c seq] behaves like [of_alist_multi c (Sequence.to_list seq)] but
       does not allocate the intermediate list. *)
   val of_sequence_multi
     :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) Sequence.t
     -> ('a, 'b list, 'cmp) t
+
+  (** Like [of_sequence_multi], but typefully expresses the nonempty property. *)
+  val of_sequence_multi_nonempty
+    :  ('a, 'cmp) Comparator.Module.t
+    -> ('a * 'b) Sequence.t
+    -> ('a, 'b Nonempty_list.t, 'cmp) t
 
   (** Combines an association sequence into a map, folding together bound values with
       common keys.
@@ -992,6 +992,13 @@ module type Map = sig
     -> get_key:('v -> 'k)
     -> ('k, 'v list, 'cmp) t
 
+  (** Like [of_list_with_key_multi], but typefully expresses the nonempty property. *)
+  val of_list_with_key_multi_nonempty
+    :  ('k, 'cmp) Comparator.Module.t
+    -> 'v list
+    -> get_key:('v -> 'k)
+    -> ('k, 'v Nonempty_list.t, 'cmp) t
+
   (** Like [of_list_with_key]; resolves duplicate keys the same way [of_alist_fold] does. *)
   val of_list_with_key_fold
     :  ('k, 'cmp) Comparator.Module.t
@@ -1031,19 +1038,36 @@ module type Map = sig
       head of the existing list. *)
   val add_multi : ('k, 'v list, 'cmp) t -> key:'k -> data:'v -> ('k, 'v list, 'cmp) t
 
+  (** Like [add_multi], but operating on nonempty lists. *)
+  val add_multi_nonempty
+    :  ('k, 'v Nonempty_list.t, 'cmp) t
+    -> key:'k
+    -> data:'v
+    -> ('k, 'v Nonempty_list.t, 'cmp) t
+
   (** If the key is present, then remove its head element; if the result is empty, remove
       the key. *)
   val remove_multi : ('k, 'v list, 'cmp) t -> 'k -> ('k, 'v list, 'cmp) t
 
+  (** Like [remove_multi], but operating on nonempty lists. *)
+  val remove_multi_nonempty
+    :  ('k, 'v Nonempty_list.t, 'cmp) t
+    -> 'k
+    -> ('k, 'v Nonempty_list.t, 'cmp) t
+
   (** Returns the value bound to the given key, or the empty list if there is none. *)
   val find_multi : ('k, 'v list, 'cmp) t -> 'k -> 'v list
+
+  (** Like [find_multi], but operating on nonempty lists. Converts found values to plain
+      lists, and returns the empty list if no value is found. *)
+  val find_multi_nonempty : ('k, 'v Nonempty_list.t, 'cmp) t -> 'k -> 'v list
 
   (** [change t key ~f] returns a new map [m] that is the same as [t] on all keys except
       for [key], and whose value for [key] is defined by [f], i.e.,
       [find m key = f (find t key)]. *)
   val change : ('k, 'v, 'cmp) t -> 'k -> f:('v option -> 'v option) -> ('k, 'v, 'cmp) t
 
-  (** Like [change] but [f] receives and returns ['v or_null] instead of ['v option]. *)
+  (** Like [change], but [f] receives and returns ['v or_null] instead of ['v option]. *)
   val change_or_null
     :  ('k, 'v, 'cmp) t
     -> 'k
@@ -1059,6 +1083,9 @@ module type Map = sig
       values. *)
   val update : ('k, 'v, 'cmp) t -> 'k -> f:('v option -> 'v) -> ('k, 'v, 'cmp) t
 
+  (** Like [update] but [f] receives ['v or_null] instead of ['v option]. *)
+  val update_or_null : ('k, 'v, 'cmp) t -> 'k -> f:('v or_null -> 'v) -> ('k, 'v, 'cmp) t
+
   (** [update_and_return t key ~f] is like [update t key ~f], but also returns the new
       value. *)
   val update_and_return
@@ -1066,6 +1093,14 @@ module type Map = sig
     -> 'k
     -> f:('v option -> 'v)
     -> 'v * ('k, 'v, 'cmp) t
+
+  (** [change_and_return t key ~f] is like [change t key ~f], but also returns the new
+      value, if any. *)
+  val change_and_return
+    :  ('k, 'v, 'cmp) t
+    -> 'k
+    -> f:('v option -> 'v option)
+    -> 'v option * ('k, 'v, 'cmp) t
 
   (** Returns [Some value] bound to the given key, or [None] if none exists. *)
   val find : ('k, 'v, 'cmp) t -> 'k -> 'v option
@@ -1239,12 +1274,7 @@ module type Map = sig
 
   (** Returns a total ordering between maps. The first argument is a total ordering used
       to compare data associated with equal keys in the two maps. *)
-  val%template compare_direct
-    :  ('v -> 'v -> int)
-    -> ('k, 'v, 'cmp) t
-    -> ('k, 'v, 'cmp) t
-    -> int
-  [@@mode m = (local, global)]
+  val compare_direct : ('v -> 'v -> int) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> int
 
   (** Hash function: a building block to use when hashing data structures containing maps
       in them. [hash_fold_direct hash_fold_key] is compatible with [compare_direct] iff
@@ -1255,8 +1285,7 @@ module type Map = sig
   (** [equal cmp m1 m2] tests whether the maps [m1] and [m2] are equal, that is, contain
       the same keys and associate each key with the same value. [cmp] is the equality
       predicate used to compare the values associated with the keys. *)
-  val%template equal : ('v -> 'v -> bool) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> bool
-  [@@mode m = (local, global)]
+  val equal : ('v -> 'v -> bool) -> ('k, 'v, 'cmp) t -> ('k, 'v, 'cmp) t -> bool
 
   (** Returns a list of the keys in the given map. *)
   val keys : ('k, _, _) t -> 'k list
@@ -1604,8 +1633,7 @@ module type Map = sig
   (** Creates traversals to reconstruct a map within an applicative. Uses
       [Lazy_applicative] so that the map can be traversed within the applicative, rather
       than needing to be traversed all at once, outside the applicative. *)
-  module%template.portable Make_applicative_traversals
-      (A : Applicative.Lazy_applicative) : sig
+  module Make_applicative_traversals (A : Applicative.Lazy_applicative) : sig
     val mapi
       :  ('k, 'v1, 'cmp) t
       -> f:(key:'k -> data:'v1 -> 'v2 A.t)
@@ -1729,8 +1757,7 @@ module type Map = sig
         might violate the normal invariants of a tree. *)
     module Expert : sig
       (** Sexp prints the internal node structure. *)
-      type nonrec ('k, 'v, 'cmp) t = ('k, 'v, 'cmp) t
-      [@@deriving equal ~localize, sexp_of]
+      type nonrec ('k, 'v, 'cmp) t = ('k, 'v, 'cmp) t [@@deriving equal, sexp_of]
 
       (** Just the tree balance checks from [invariants]. Excludes the checks in
           [order_invariants]. *)
@@ -1860,7 +1887,7 @@ module type Map = sig
 
     (** To get around the value restriction, apply the functor and include it. You can see
         an example of this in the [Poly] submodule below. *)
-    module%template.portable Empty_without_value_restriction (K : Comparator.S1) : sig
+    module Empty_without_value_restriction (K : Comparator.S1) : sig
       val empty : ('a K.t, 'v, K.comparator_witness) t
     end
 

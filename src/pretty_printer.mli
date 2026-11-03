@@ -17,7 +17,7 @@
     toplevel. One common way to do it in vanilla toplevel is to call
     [#require "core.top"]. *)
 
-open! Import
+open! Import0
 
 (** [all ()] returns all pretty printers that have been [register]ed. *)
 val all : unit -> string list
@@ -38,7 +38,7 @@ end
     any "."s in [module_name]. For example, if [module_name] is "A.B" and "A.B" is not a
     valid identifier because "A" is a valid library that doesn't expose a module "B", then
     "A.B.pp" will not be a valid identifier. *)
-module%template.portable Register (M : sig
+module Register (M : sig
     type t
 
     val module_name : string
@@ -47,7 +47,7 @@ module%template.portable Register (M : sig
 
 (** [Register_pp] is like [Register], but allows a custom [pp] function rather than using
     [to_string]. *)
-module%template.portable Register_pp (M : sig
+module Register_pp (M : sig
     include S
 
     val module_name : string

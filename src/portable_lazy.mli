@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module Sexp := Sexp0
 
 (** A value of type ['a Portable_lazy.t] is a deferred computation that has a result of
     type ['a].
@@ -7,11 +8,9 @@ open! Import
     multiple threads force a ['a Portable_lazy.t] simultaneously, the computation will
     only be executed once, and the same result will be returned by all threads.
 
-    Threads that force a ['a Portable_lazy.t] while it is already being computed by
-    another thread will block via spinning and calls to [Domain.cpu_relax], without use of
-    synchronization primitives or thread parking. This means that [Portable_lazy] may not
-    be suitable for long-running computations which are likely to be forced by many
-    threads simultaneously, and where prompt wakeup of blocked threads is important. *)
+    A thread that forces a ['a Portable_lazy.t] while it is already being computed by
+    another thread will block until the computation finishes; it parks on a mutex and
+    condition variable rather than spinning. *)
 
 type 'a t = 'a Basement.Portable_lazy.t
 
@@ -49,8 +48,26 @@ val map : 'a 'b. 'a t -> f:('a -> 'b) -> 'b t
     [portable], as it may be run by any thread. *)
 val bind : 'a 'b. 'a t -> f:('a -> 'b t) -> 'b t
 
-[%%template:
-[@@@mode.default m = (global, local)]
+(** {6 Let syntax} *)
+
+module Let_syntax : sig
+  val return : 'a. 'a -> 'a t
+
+  (** Pronounced "map". Infix form of [map]. *)
+  val ( >>| ) : 'a 'b. 'a t -> ('a -> 'b) -> 'b t
+
+  (** Pronounced "bind". Infix form of [bind]. *)
+  val ( >>= ) : 'a 'b. 'a t -> ('a -> 'b t) -> 'b t
+
+  module Let_syntax : sig
+    val return : 'a. 'a -> 'a t
+    val map : 'a 'b. 'a t -> f:('a -> 'b) -> 'b t
+    val bind : 'a 'b. 'a t -> f:('a -> 'b t) -> 'b t
+    val both : 'a 'b. 'a t -> 'b t -> ('a * 'b) t
+
+    module Open_on_rhs : sig end
+  end
+end
 
 (** [compare compare_a t1 t2] forces both suspensions [t1] and [t2], and then returns the
     result of [compare_a] called on the two results. *)
@@ -58,12 +75,12 @@ val compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int
 
 (** [equal equal_a t1 t2] forces both suspensions [t1] and [t2], and then returns the
     result of [equal_a] called on the two results. *)
-val equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool]
+val equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
-val sexp_of_t : 'a. ('a -> Sexp0.t) -> 'a t -> Sexp0.t
+val sexp_of_t : 'a. ('a -> Sexp.t) -> 'a t -> Sexp.t
 
 (** [t_of_sexp a_of_sexp sexp] eagerly evaluates [a_of_sexp sexp]. *)
-val t_of_sexp : 'a. (Sexp0.t -> 'a) -> Sexp0.t -> 'a t
+val t_of_sexp : 'a. (Sexp.t -> 'a) -> Sexp.t -> 'a t
 
 val t_sexp_grammar : 'a. 'a Sexplib0.Sexp_grammar.t -> 'a t Sexplib0.Sexp_grammar.t
 val hash_fold_t : 'a. (Hash.state -> 'a -> Hash.state) -> Hash.state -> 'a t -> Hash.state

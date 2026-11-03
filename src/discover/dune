@@ -1,5 +1,0 @@
-(executables
- (modes byte exe)
- (names discover)
- (libraries dune-configurator)
- (preprocess no_preprocessing))

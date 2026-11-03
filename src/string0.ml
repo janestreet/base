@@ -19,6 +19,7 @@ open! Import0
 
 open struct
   module Sys = Sys0
+  module Bool = Bool0
   module Char = Char0
   module Uchar = Uchar0
   module Bytes = Bytes0
@@ -63,21 +64,20 @@ include String
 
 let max_length = Sys.max_string_length
 
-let%template[@alloc a = (heap, stack)] append s1 s2 =
-  (let l1 = length s1
-   and l2 = length s2 in
-   let s = (Bytes.create [@alloc a]) (l1 + l2) in
-   Bytes.unsafe_blit_string ~src:s1 ~src_pos:0 ~dst:s ~dst_pos:0 ~len:l1;
-   Bytes.unsafe_blit_string ~src:s2 ~src_pos:0 ~dst:s ~dst_pos:l1 ~len:l2;
-   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s)
-  [@exclave_if_stack a]
+let append s1 s2 =
+  let l1 = length s1
+  and l2 = length s2 in
+  let s = Bytes.create (l1 + l2) in
+  Bytes.unsafe_blit_string ~src:s1 ~src_pos:0 ~dst:s ~dst_pos:0 ~len:l1;
+  Bytes.unsafe_blit_string ~src:s2 ~src_pos:0 ~dst:s ~dst_pos:l1 ~len:l2;
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s
 ;;
 
 let ( ^ ) s1 s2 = append s1 s2
 let capitalize = Stdlib.String.capitalize_ascii
 let compare = Stdlib.String.compare
 
-let%template[@alloc a = (heap, stack)] escaped s =
+let escaped s =
   let n = ref 0 in
   for i = 0 to length s - 1 do
     n
@@ -88,10 +88,10 @@ let%template[@alloc a = (heap, stack)] escaped s =
        | ' ' .. '~' -> 1
        | _ -> 4
   done;
-  if [@exclave_if_stack a] !n = length s
+  if !n = length s
   then s
   else (
-    let s' = (Bytes.create [@alloc a]) !n in
+    let s' = Bytes.create !n in
     n := 0;
     for i = 0 to length s - 1 do
       (match unsafe_get s i with
@@ -130,24 +130,19 @@ let%template[@alloc a = (heap, stack)] escaped s =
     Bytes.unsafe_to_string ~no_mutation_while_string_reachable:s')
 ;;
 
-let%template[@alloc a = (heap, stack)] make n c =
-  Bytes.unsafe_to_string
-    ~no_mutation_while_string_reachable:((Bytes.make [@alloc a]) n c)
-  [@exclave_if_stack a]
-;;
+let make n c = Bytes.unsafe_to_string ~no_mutation_while_string_reachable:(Bytes.make n c)
 
-let%template[@alloc a @ m = (stack_local, heap_global)] sub t ~pos ~len =
-  (let t = Bytes.unsafe_of_string_promise_no_mutation t in
-   let t = (Bytes.sub [@alloc a]) t ~pos ~len in
-   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t)
-  [@exclave_if_stack a]
+let sub t ~pos ~len =
+  let t = Bytes.unsafe_of_string_promise_no_mutation t in
+  let t = Bytes.sub t ~pos ~len in
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t
 ;;
 
 let uncapitalize = Stdlib.String.uncapitalize_ascii
 
 open struct
-  let dec_invalid = Uchar0.utf_decode_invalid
-  let[@inline] dec_ret n u = Uchar0.utf_decode n (Uchar0.unsafe_of_int u)
+  let dec_invalid = Uchar.utf_decode_invalid
+  let[@inline] dec_ret n u = Uchar.utf_decode n (Uchar.unsafe_of_int u)
   let[@inline] not_in_x80_to_xBF b = b lsr 6 <> 0b10
   let[@inline] not_in_xA0_to_xBF b = b lsr 5 <> 0b101
   let[@inline] not_in_x80_to_x9F b = b lsr 5 <> 0b100
@@ -319,7 +314,7 @@ let is_valid_utf_8 b =
     then true
     else (
       let get = unsafe_get_uint8 in
-      match Char0.unsafe_of_int (get b i) with
+      match Char.unsafe_of_int (get b i) with
       | '\x00' .. '\x7F' -> loop max b (i + 1)
       | '\xC2' .. '\xDF' ->
         let last = i + 1 in
@@ -532,22 +527,21 @@ include struct
       unsafe_blits ~dst ~dst_pos:(dst_pos + length hd + sep_len) ~sep ~sep_len tl
   ;;
 
-  include%template (
+  include (
   struct
-    let[@alloc m = heap] smart_globalize a = Globalize.globalize_string a
-    let[@alloc m = stack] smart_globalize a = a
+    let smart_globalize a = Globalize.globalize_string a
   end :
   sig
-    val smart_globalize : string -> string [@@alloc __ @ m = (heap_global, stack_local)]
+    val smart_globalize : string -> string
   end)
 
-  let%template[@alloc a = (heap, stack)] concat ?(sep = "") l =
-    match[@exclave_if_stack a] l with
+  let concat ?(sep = "") l =
+    match l with
     | [] -> ""
-    | [ x ] -> (smart_globalize [@alloc a]) x
+    | [ x ] -> smart_globalize x
     | l ->
       let sep_len = length sep in
-      let dst = (Bytes.create [@alloc a]) (sum_lengths 0 sep_len l) in
+      let dst = Bytes.create (sum_lengths 0 sep_len l) in
       unsafe_blits ~dst ~dst_pos:0 ~sep ~sep_len l;
       Bytes.unsafe_to_string ~no_mutation_while_string_reachable:dst
   ;;
@@ -555,88 +549,68 @@ end
 
 let lowercase string =
   let string =
-    Bytes.unsafe_of_string_promise_no_mutation string |> Bytes.map ~f:Char0.lowercase
-  in
-  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
-;;
-
-let%template[@alloc stack] lowercase string =
-  let string =
-    Bytes.unsafe_of_string_promise_no_mutation string
-    |> (Bytes.map [@alloc stack]) ~f:Char0.lowercase
+    Bytes.unsafe_of_string_promise_no_mutation string |> Bytes.map ~f:Char.lowercase
   in
   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
 
 let uppercase string =
   let string =
-    Bytes.unsafe_of_string_promise_no_mutation string |> Bytes.map ~f:Char0.uppercase
+    Bytes.unsafe_of_string_promise_no_mutation string |> Bytes.map ~f:Char.uppercase
   in
   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
 
-let%template[@alloc stack] uppercase string =
-  let string =
-    Bytes.unsafe_of_string_promise_no_mutation string
-    |> (Bytes.map [@alloc stack]) ~f:Char0.uppercase
-  in
-  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
-;;
-
-let%template[@mode l = (global, local)] iter t ~f =
+let iter t ~f =
   for i = 0 to length t - 1 do
     f (unsafe_get t i)
   done
 ;;
 
-let%template split_lines =
+let split_lines =
   let back_up_pos_and_eol_at_newline ~t ~pos =
-    let pos = pos - Bool0.select (pos > 0 && Char0.equal t.[pos - 1] '\r') 2 1 in
+    let pos = pos - Bool.select (pos > 0 && Char.equal t.[pos - 1] '\r') 2 1 in
     let eol = pos + 1 in
     pos, eol
   in
   fun t ->
-    (let n = length t in
-     if n = 0
-     then []
-     else (
-       (* Invariant: [-1 <= pos < eol]. *)
-       let pos = n - 1 in
-       let eol = n in
-       (* We treat the end of the string specially, because if the string ends with a
-          newline, we don't want an extra empty string at the end of the output. *)
-       let pos, eol =
-         if Char0.equal t.[pos] '\n'
-         then back_up_pos_and_eol_at_newline ~t ~pos
-         else pos, eol
-       in
-       let rec loop ~pos ~eol ac =
-         (if pos >= 0
-          then
-            if not (Char0.equal t.[pos] '\n')
-            then loop ~pos:(pos - 1) ~eol ac
-            else (
-              (* Because [pos < eol], we know that [start <= eol]. *)
-              let start = pos + 1 in
-              let ac = (sub [@alloc a]) t ~pos:start ~len:(eol - start) :: ac in
-              let pos, eol = back_up_pos_and_eol_at_newline ~t ~pos in
-              loop ~pos ~eol ac)
-          else (sub [@alloc a]) t ~pos:0 ~len:eol :: ac)
-         [@exclave_if_stack a]
-       in
-       loop ~pos ~eol []))
-    [@exclave_if_stack a]
-[@@alloc a @ m = (stack_local, heap_global)]
+    let n = length t in
+    if n = 0
+    then []
+    else (
+      (* Invariant: [-1 <= pos < eol]. *)
+      let pos = n - 1 in
+      let eol = n in
+      (* We treat the end of the string specially, because if the string ends with a
+         newline, we don't want an extra empty string at the end of the output. *)
+      let pos, eol =
+        if Char.equal t.[pos] '\n'
+        then back_up_pos_and_eol_at_newline ~t ~pos
+        else pos, eol
+      in
+      let rec loop ~pos ~eol ac =
+        if pos >= 0
+        then
+          if not (Char.equal t.[pos] '\n')
+          then loop ~pos:(pos - 1) ~eol ac
+          else (
+            (* Because [pos < eol], we know that [start <= eol]. *)
+            let start = pos + 1 in
+            let ac = sub t ~pos:start ~len:(eol - start) :: ac in
+            let pos, eol = back_up_pos_and_eol_at_newline ~t ~pos in
+            loop ~pos ~eol ac)
+        else sub t ~pos:0 ~len:eol :: ac
+      in
+      loop ~pos ~eol [])
 ;;
 
-let%template[@alloc a @ lo = (heap @ global, stack @ local)] init n ~f =
+let init n ~f =
   if n < 0 then Printf.invalid_argf "String.init %d" n ();
-  (let t = (Bytes.create [@alloc a]) n in
-   for i = 0 to n - 1 do
-     Bytes.set t i (f i)
-   done;
-   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t)
-  [@exclave_if_stack a]
+  let t = Bytes.create n in
+  for i = 0 to n - 1 do
+    Bytes.set t i (f i)
+  done;
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t
 ;;
 
 (* [filter t f] is implemented by the following algorithm.
@@ -662,19 +636,16 @@ let%template[@alloc a @ lo = (heap @ global, stack @ local)] init n ~f =
    This algorithm has the property that it doesn't allocate a new string if there's
    nothing to filter, which is a common case. *)
 
-[%%template
-[@@@alloc.default a @ l = (heap_global, stack_local)]
-
 let filter t ~f =
   let n = length t in
   let i = ref 0 in
   while !i < n && f t.[!i] do
     incr i
   done;
-  if [@exclave_if_stack a] !i = n
-  then (smart_globalize [@alloc a]) t
+  if !i = n
+  then smart_globalize t
   else (
-    let out = (Bytes.create [@alloc a]) (n - 1) in
+    let out = Bytes.create (n - 1) in
     Bytes.blit_string ~src:t ~src_pos:0 ~dst:out ~dst_pos:0 ~len:!i;
     let out_pos = ref !i in
     incr i;
@@ -686,9 +657,7 @@ let filter t ~f =
         incr out_pos);
       incr i
     done;
-    let out =
-      if !out_pos = n - 1 then out else (Bytes.sub [@alloc a]) out ~pos:0 ~len:!out_pos
-    in
+    let out = if !out_pos = n - 1 then out else Bytes.sub out ~pos:0 ~len:!out_pos in
     Bytes.unsafe_to_string ~no_mutation_while_string_reachable:out)
 ;;
 
@@ -699,10 +668,10 @@ let filteri t ~f =
   while !i < n && f !i t.[!i] do
     incr i
   done;
-  if [@exclave_if_stack a] !i = n
-  then (smart_globalize [@alloc a]) t
+  if !i = n
+  then smart_globalize t
   else (
-    let out = (Bytes.create [@alloc a]) (n - 1) in
+    let out = Bytes.create (n - 1) in
     Bytes.blit_string ~src:t ~src_pos:0 ~dst:out ~dst_pos:0 ~len:!i;
     let out_pos = ref !i in
     incr i;
@@ -714,8 +683,6 @@ let filteri t ~f =
         incr out_pos);
       incr i
     done;
-    let out =
-      if !out_pos = n - 1 then out else (Bytes.sub [@alloc a]) out ~pos:0 ~len:!out_pos
-    in
+    let out = if !out_pos = n - 1 then out else Bytes.sub out ~pos:0 ~len:!out_pos in
     Bytes.unsafe_to_string ~no_mutation_while_string_reachable:out)
-;;]
+;;

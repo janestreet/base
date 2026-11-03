@@ -2,10 +2,10 @@ type t =
   | Neg
   | Zero
   | Pos
-[@@deriving sexp ~stackify, sexp_grammar, compare ~localize, hash, enumerate]
+[@@deriving sexp, sexp_grammar, compare, hash, enumerate]
 
-module%template Replace_polymorphic_compare : sig
-  include Comparisons.S [@mode local] with type t := t
+module Replace_polymorphic_compare : sig
+  include Comparisons.S with type t := t
 
   val ascending : t -> t -> int
   val descending : t -> t -> int

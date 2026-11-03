@@ -1,26 +1,18 @@
-open! Import
+open! Import0
 include Identifiable_intf.Definitions
 
-[%%template
-[@@@mode.default m = (global, local)]
-[@@@alloc.default a = (heap, stack)]
-
-module%template.portable [@modality p] Make (T : Arg [@mode m] [@alloc a]) = struct
+module Make (T : Arg) = struct
   include T
-  include Comparable.Make [@mode m] [@modality p] (T)
-  include Pretty_printer.Register [@modality p] (T)
+  include Comparable.Make (T)
+  include Pretty_printer.Register (T)
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
 end
 
-module%template.portable
-  [@modality p] Make_using_comparator
-    (T : Arg_with_comparator
-  [@mode m] [@modality p] [@alloc a]) =
-struct
+module Make_using_comparator (T : Arg_with_comparator) = struct
   include T
-  include Comparable.Make_using_comparator [@mode m] [@modality p] (T)
-  include Pretty_printer.Register [@modality p] (T)
+  include Comparable.Make_using_comparator (T)
+  include Pretty_printer.Register (T)
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
-end]
+end

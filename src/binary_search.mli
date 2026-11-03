@@ -23,10 +23,7 @@
         `First_on_right
     ]} *)
 
-open! Import
-
-[%%template:
-[@@@mode.default m = (global, local)]
+open! Import0
 
 (** [binary_search ?pos ?len t ~length ~get ~compare which elt] takes [t] that is sorted
     in increasing order according to [compare], where [compare] and [elt] divide [t] into
@@ -89,4 +86,4 @@ val binary_search_segmented
   -> get:('t -> int -> 'elt)
   -> segment_of:('elt -> [ `Left | `Right ])
   -> [ `Last_on_left | `First_on_right ]
-  -> int option]
+  -> int option

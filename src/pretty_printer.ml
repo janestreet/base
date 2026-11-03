@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 let r = ref [ "Base.Sexp.pp_hum" ]
 let all () = !r
@@ -10,7 +10,7 @@ module type S = sig
   val pp : Formatter.t -> t -> unit
 end
 
-module%template.portable Register_pp (M : sig
+module Register_pp (M : sig
     include S
 
     val module_name : string
@@ -21,14 +21,13 @@ struct
   let () = register (M.module_name ^ ".pp")
 end
 
-module%template.portable
-  [@modality m] Register (M : sig
+module Register (M : sig
     type t
 
     val module_name : string
     val to_string : t -> string
   end) =
-Register_pp [@modality m] (struct
+Register_pp (struct
     include M
 
     let pp formatter t = Stdlib.Format.pp_print_string formatter (M.to_string t)

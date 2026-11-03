@@ -1,27 +1,20 @@
-open! Import
+open! Import0
 module Array = Array0
+module Either = Either0
 open Container.Export
 include Indexed_container_intf.Definitions
 
-module%template [@kind.explicit k = (value, value_or_null)] Derived : Derived
-[@kind.explicit k] = struct
+module Derived : Derived = struct
   let[@inline] foldi_alloc ~fold t ~init ~f =
     let i = ref 0 in
     (fold [@inlined hint]) t ~init ~f:(fun [@inline] acc v ->
       let idx = !i in
       i := idx + 1;
-      f idx acc v [@exclave_if_local mo])
-    [@nontail] [@exclave_if_stack a]
-  [@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
+      f idx acc v)
+    [@nontail]
   ;;
 
-  let foldi = (foldi_alloc [@mode mi] [@alloc heap])
-  [@@mode mi = (global, local), mo = global]
-  ;;
-
-  let foldi = (foldi_alloc [@mode mi] [@alloc stack])
-  [@@mode mi = (global, local), mo = local]
-  ;;
+  let foldi = foldi_alloc
 
   let foldi_until ~fold_until t ~init ~f ~finish =
     let i = ref 0 in
@@ -31,42 +24,25 @@ module%template [@kind.explicit k = (value, value_or_null)] Derived : Derived
       ~f:(fun [@inline] acc v ->
         let idx = !i in
         i := idx + 1;
-        f idx acc v [@exclave_if_local mo])
+        f idx acc v)
       ~finish:(fun [@inline] acc ->
         let i = !i in
-        finish i acc [@exclave_if_local mo]) [@nontail] [@exclave_if_stack a]
-  [@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
+        finish i acc) [@nontail]
   ;;
 
-  let foldi_until = (foldi_until [@mode mi] [@alloc stack])
-  [@@mode mi = (global, local), mo = local]
-  ;;
-
-  let foldi_until = (foldi_until [@mode mi] [@alloc heap])
-  [@@mode mi = (global, local), mo = global]
-  ;;
+  let foldi_until = foldi_until
 
   let[@inline] iteri_until_alloc ~foldi_until t ~f ~finish =
     (foldi_until [@inlined hint])
       t
       ~init:()
-      ~f:(fun [@inline] i () x -> f i x [@exclave_if_stack a])
-      ~finish:(fun [@inline] i () -> finish i [@exclave_if_stack a])
-    [@nontail] [@exclave_if_stack a]
-  [@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
+      ~f:(fun [@inline] i () x -> f i x)
+      ~finish:(fun [@inline] i () -> finish i) [@nontail]
   ;;
 
-  let iteri_until = (iteri_until_alloc [@mode mi] [@alloc heap])
-  [@@mode mi = (global, local), mo = global]
-  ;;
-
-  let iteri_until = (iteri_until_alloc [@mode mi] [@alloc stack])
-  [@@mode mi = (global, local), mo = local]
-  ;;
+  let iteri_until = iteri_until_alloc
 
   include struct
-    [@@@mode.default m = (global, local)]
-
     let[@inline] iteri ~fold t ~f =
       ignore
         ((fold [@inlined hint]) t ~init:0 ~f:(fun [@inline] i x ->
@@ -103,131 +79,74 @@ module%template [@kind.explicit k = (value, value_or_null)] Derived : Derived
       c
       ~f:(fun [@inline] i x ->
         if f i x
-        then Continue_or_stop.Stop (Some (i, x)) [@exclave_if_local m]
-        else Continue_or_stop.Continue () [@exclave_if_local m])
-      ~finish:(fun [@inline] _ -> None [@exclave_if_local m])
-    [@nontail] [@exclave_if_stack a]
-  [@@alloc a @ m = (heap_global, stack_local)]
+        then Continue_or_stop.Stop (Some (i, x))
+        else Continue_or_stop.Continue ())
+      ~finish:(fun [@inline] _ -> None) [@nontail]
   ;;
 
-  let findi = (findi_alloc [@alloc heap]) [@@mode m = global]
-  let findi = (findi_alloc [@alloc stack]) [@@mode m = local]
+  let findi = findi_alloc
 
   let[@inline] find_mapi_alloc ~iteri_until t ~f =
     (iteri_until [@inlined hint])
       t
       ~f:(fun [@inline] i x ->
-        match[@exclave_if_stack a] f i x with
+        match f i x with
         | None -> Continue_or_stop.Continue ()
         | Some _ as res -> Continue_or_stop.Stop res)
-      ~finish:(fun [@inline] _ -> None [@exclave_if_local mo])
-    [@nontail] [@exclave_if_stack a]
-  [@@mode mi = (global, local)] [@@alloc a @ mo = (heap_global, stack_local)]
+      ~finish:(fun [@inline] _ -> None) [@nontail]
   ;;
 
-  let find_mapi = (find_mapi_alloc [@mode mi] [@alloc heap])
-  [@@mode mi = (global, local), mo = global]
-  ;;
-
-  let find_mapi = (find_mapi_alloc [@mode mi] [@alloc stack])
-  [@@mode mi = (global, local), mo = local]
-  ;;
+  let find_mapi = find_mapi_alloc
 end
 
-include%template Derived [@kind.explicit value]
+include Derived
 
 (* Allows [Make_gen] to share a [Container.Generic] implementation with, e.g.,
    [Container.Make_gen_with_creators]. *)
-module%template.portable Make_gen_with_container
-    (T : Make_gen_arg
-  [@mode m])
+module Make_gen_with_container
+    (T : Make_gen_arg)
     (C : Container.Generic
-         [@alloc a]
          with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
           and type 'a elt := 'a T.elt) :
   Generic
-  [@alloc a]
   with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
    and type 'a elt := 'a T.elt = struct
   include C
 
   let iteri =
-    match T.iteri [@mode m] with
+    match T.iteri with
     | `Custom iteri -> iteri
-    | `Define_using_fold ->
-      fun t ~f -> (iteri [@mode m]) ~fold:(fold [@mode m global]) t ~f [@nontail]
-  [@@mode m = (global, m)]
+    | `Define_using_fold -> fun t ~f -> iteri ~fold t ~f [@nontail]
   ;;
 
   let foldi =
-    match T.foldi [@mode mi mo] with
+    match T.foldi with
     | `Custom foldi -> foldi
-    | `Define_using_fold ->
-      fun t ~init ~f ->
-        (foldi [@mode mi mo]) ~fold:(fold [@mode mi mo]) t ~init ~f [@exclave_if_local mo]
-  [@@mode mi = (global, m), mo = (global, m)]
+    | `Define_using_fold -> fun t ~init ~f -> foldi ~fold t ~init ~f
   ;;
 
-  let foldi_until t ~init ~f ~finish =
-    (foldi_until [@mode mi mo])
-      ~fold_until:(fold_until [@mode mi mo])
-      t
-      ~init
-      ~f
-      ~finish [@exclave_if_local mo]
-  [@@mode mi = (global, m), mo = (global, m)]
-  ;;
-
-  let iteri_until t ~f ~finish =
-    (iteri_until [@mode mi mo])
-      ~foldi_until:(foldi_until [@mode mi mo])
-      t
-      ~f
-      ~finish [@exclave_if_local mo]
-  [@@mode mi = (global, m), mo = (global, m)]
-  ;;
-
-  let counti t ~f = (counti [@mode m]) ~foldi:(foldi [@mode m global]) t ~f
-  [@@mode m = (global, m)]
-  ;;
-
-  let existsi t ~f = (existsi [@mode m]) ~iteri_until:(iteri_until [@mode m global]) t ~f
-  [@@mode m = (global, m)]
-  ;;
-
-  let for_alli t ~f =
-    (for_alli [@mode m]) ~iteri_until:(iteri_until [@mode m global]) t ~f
-  [@@mode m = (global, m)]
-  ;;
-
-  let find_mapi t ~f =
-    (find_mapi [@mode mi mo])
-      ~iteri_until:(iteri_until [@mode mi mo])
-      t
-      ~f [@exclave_if_local mo]
-  [@@mode mi = (global, m), mo = (global, m)]
-  ;;
-
-  let findi t ~f =
-    (findi [@mode m]) ~iteri_until:(iteri_until [@mode m m]) t ~f [@exclave_if_local m]
-  [@@mode m = (global, m)]
-  ;;
+  let foldi_until t ~init ~f ~finish = foldi_until ~fold_until t ~init ~f ~finish
+  let iteri_until t ~f ~finish = iteri_until ~foldi_until t ~f ~finish
+  let counti t ~f = counti ~foldi t ~f
+  let existsi t ~f = existsi ~iteri_until t ~f
+  let for_alli t ~f = for_alli ~iteri_until t ~f
+  let find_mapi t ~f = find_mapi ~iteri_until t ~f
+  let findi t ~f = findi ~iteri_until t ~f
 end
-[@@alloc a @ m = (heap_global, stack_local)] [@@inline always]
+[@@inline always]
 
-module%template.portable [@modality p] Make_gen (T : Make_gen_arg [@mode m]) :
+module Make_gen (T : Make_gen_arg) :
   Generic
-  [@alloc a]
   with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
    and type 'a elt := 'a T.elt = struct
-  module C = Container.Make_gen [@modality p] [@alloc a] (T)
+  module C = Container.Make_gen (T)
   include C
-  include Make_gen_with_container [@modality p] [@alloc a] (T) (C)
+  include Make_gen_with_container (T) (C)
 end
-[@@alloc a @ m = (heap_global, stack_local)] [@@inline always]
+[@@inline always]
 
-module%template.portable [@modality p] Make (T : Make_arg [@mode m]) = struct
-  include Make_gen [@modality p] [@alloc a] (struct
+module Make (T : Make_arg) = struct
+  include Make_gen (struct
       include T
 
       type ('a, _, _) t = 'a T.t
@@ -236,35 +155,29 @@ module%template.portable [@modality p] Make (T : Make_arg [@mode m]) = struct
 
   let to_array t = Container.to_array ~length ~iter t
 end
-[@@alloc a @ m = (heap_global, stack_local)] [@@inline always]
+[@@inline always]
 
-module%template.portable [@modality p] Make0 (T : Make0_arg [@mode m]) = struct
-  include Make_gen [@modality p] [@alloc a] (struct
+module Make0 (T : Make0_arg) = struct
+  include Make_gen (struct
       include T
 
       type (_, _, _) t = T.t
       type 'a elt = T.Elt.t
     end)
 
-  let mem t x = (mem [@mode m]) t x ~equal:(T.Elt.equal [@mode m])
-  [@@mode m = (global, m)]
-  ;;
-
+  let mem t x = mem t x ~equal:T.Elt.equal
   let to_array t = Container.to_array ~length ~iter t
 end
-[@@alloc a @ m = (heap_global, stack_local)]
 
-module%template.portable
-  [@modality m] Make_gen_with_creators
-    (T : Make_gen_with_creators_arg) :
+module Make_gen_with_creators (T : Make_gen_with_creators_arg) :
   Generic_with_creators
   with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
    and type 'a elt := 'a T.elt
    and type ('a, 'phantom1, 'phantom2) concat := ('a, 'phantom1, 'phantom2) T.concat =
 struct
-  module C = Container.Make_gen_with_creators [@modality m] (T)
+  module C = Container.Make_gen_with_creators (T)
   include C
-  include Make_gen_with_container [@modality m] (T) (C)
+  include Make_gen_with_container (T) (C)
 
   let of_array = T.of_array
   let to_array t = Container.to_array ~length ~iter t
@@ -302,13 +215,13 @@ struct
     let array = Array.mapi (to_array t) ~f in
     let xs =
       Array.fold_right array ~init:[] ~f:(fun either acc ->
-        match (either : _ Either0.t) with
+        match (either : _ Either.t) with
         | First x -> x :: acc
         | Second _ -> acc)
     in
     let ys =
       Array.fold_right array ~init:[] ~f:(fun either acc ->
-        match (either : _ Either0.t) with
+        match (either : _ Either.t) with
         | First _ -> acc
         | Second x -> x :: acc)
     in
@@ -320,9 +233,8 @@ struct
   ;;
 end
 
-module%template.portable [@modality m] Make_with_creators (T : Make_with_creators_arg) =
-struct
-  include Make_gen_with_creators [@modality m] (struct
+module Make_with_creators (T : Make_with_creators_arg) = struct
+  include Make_gen_with_creators (struct
       include T
 
       type ('a, _, _) t = 'a T.t
@@ -336,9 +248,8 @@ struct
   let of_array = T.of_array
 end
 
-module%template.portable [@modality m] Make0_with_creators (T : Make0_with_creators_arg) =
-struct
-  include Make_gen_with_creators [@modality m] (struct
+module Make0_with_creators (T : Make0_with_creators_arg) = struct
+  include Make_gen_with_creators (struct
       include T
 
       type (_, _, _) t = T.t

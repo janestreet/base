@@ -3,7 +3,10 @@
     Immutable arrays have fixed contents and length, like a list. They have a flat, linear
     memory representation and constant-time random access, like an array. *)
 
-open! Import
+open! Import0
+module Either = Either0
+module List = List0
+module Result = Result0
 open Modes.Export
 
 module Definitions = struct
@@ -23,68 +26,40 @@ module Definitions = struct
 
     [%%rederive:
       (** Default derivers use [value_or_null] rather than [any]. *)
-      type nonrec 'a t = 'a t
-      [@@deriving
-        compare ~localize, equal ~localize, sexp ~stackify, globalize, sexp_grammar]]
+      type nonrec 'a t = 'a t [@@deriving compare, equal, sexp, globalize, sexp_grammar]]
 
     (** We add type aliases for derivers that use other kinds. *)
-    type%template nonrec 'a t = 'a t
-    [@@kind k = (base_non_value, value_or_null mod external64)]
-    [@@deriving compare ~localize, equal ~localize, sexp ~stackify, globalize]
 
     [%%rederive: type nonrec 'a t = 'a t [@@deriving hash]]
 
     (** Standard interfaces *)
 
-    include%template Binary_searchable.S1 [@mode local] with type 'a t := 'a t
+    val init : 'a. int -> f:(int -> 'a) -> 'a t
 
-    include%template
-      Indexed_container.S1_with_creators
-      [@kind_set.explicit value_or_null] [@alloc stack]
-      with type 'a t := 'a t
+    include Binary_searchable.S1 with type 'a t := 'a t
+    include Indexed_container.S1_with_creators with type 'a t := 'a t
 
-    val%template map : 'a 'b. 'a t -> f:('a -> 'b) -> 'b t
-    [@@kind ki = (value_or_null, float64), ko = (value_or_null, float64)]
-    [@@mode mi = (global, local)]
-    [@@alloc a @ mo = (heap_global, stack_local)]
-
-    val%template mapi : 'a 'b. 'a t -> f:(int -> 'a -> 'b) -> 'b t
-    [@@kind ki = value_or_null, ko = value_or_null]
-    [@@mode mi = (global, local)]
-    [@@alloc a @ mo = (heap_global, stack_local)]
-
-    val%template iteri : 'a. 'a t -> f:(int -> 'a -> unit) -> unit
-    [@@kind ki = value_or_null] [@@mode mi = (global, local)]
-
-    val%template iter : 'a. 'a t -> f:('a -> unit) -> unit
-    [@@kind ki = value_or_null] [@@mode mi = (global, local)]
-
-    val%template for_all : 'a. 'a t -> f:('a -> bool) -> bool
-    [@@kind ki = value_or_null] [@@mode mi = (global, local)]
+    val init : 'a. int -> f:(int -> 'a) -> 'a t
+    val map : 'a 'b. 'a t -> f:('a -> 'b) -> 'b t
+    val mapi : 'a 'b. 'a t -> f:(int -> 'a -> 'b) -> 'b t
+    val iteri : 'a. 'a t -> f:(int -> 'a -> unit) -> unit
+    val iter : 'a. 'a t -> f:('a -> unit) -> unit
+    val for_all : 'a. 'a t -> f:('a -> bool) -> bool
 
     (** Like [find] but returning [or_null] instead of [option]. *)
-    val%template find_or_null : 'a. 'a t -> f:('a -> bool) -> 'a or_null
-    [@@mode m = (global, local)]
+    val find_or_null : 'a. 'a t -> f:('a -> bool) -> 'a or_null
 
     (** Like [findi] but returning [or_null] instead of [option]. *)
-    val%template findi_or_null : 'a. 'a t -> f:(int -> 'a -> bool) -> (int * 'a) or_null
-    [@@mode m = (global, local)]
-
-    [%%template:
-    [@@@mode.default
-      li = (global, local), lo = (global, local), u = (unique, aliased), o = (many, once)]
+    val findi_or_null : 'a. 'a t -> f:(int -> 'a -> bool) -> (int * 'a) or_null
 
     (** Like [find_map] but with a function returning [or_null] instead of [option]. *)
     val find_map_or_null : 'a 'b. 'a t -> f:('a -> 'b or_null) -> 'b or_null
 
     (** Like [find_mapi] but with a function returning [or_null] instead of [option]. *)
-    val find_mapi_or_null : 'a 'b. 'a t -> f:(int -> 'a -> 'b or_null) -> 'b or_null]
+    val find_mapi_or_null : 'a 'b. 'a t -> f:(int -> 'a -> 'b or_null) -> 'b or_null
 
-    val%template of_array : 'a. 'a array -> 'a t
-    [@@kind k = (base_or_null, value_or_null mod external64)]
-
-    val%template to_array : 'a. 'a t -> 'a array
-    [@@kind k = (base_or_null, value_or_null mod external64)]
+    val of_array : 'a. 'a array -> 'a t
+    val to_array : 'a. 'a t -> 'a array
 
     include Invariant.S1 with type 'a t := 'a t
 
@@ -97,20 +72,16 @@ module Definitions = struct
 
     external length : 'a. ('a t[@local_opt]) -> int = "%array_length" [@@layout_poly]
 
-    [%%template:
-    [@@@mode.default c = (uncontended, shared, contended), p = (portable, nonportable)]
-
     external get : 'a. ('a t[@local_opt]) -> int -> ('a[@local_opt]) = "%array_safe_get"
     [@@layout_poly]
 
-    val%template get_opt : 'a t -> int -> 'a option
-    [@@mode c] [@@alloc __ @ m = (heap_global, stack_local)]
+    val get_opt : 'a t -> int -> 'a option
 
     external unsafe_get
       : 'a.
       ('a t[@local_opt]) -> int -> ('a[@local_opt])
       = "%array_unsafe_get"
-    [@@layout_poly]]
+    [@@layout_poly]
 
     include sig
       [@@@implicit_kind: 'a]
@@ -127,9 +98,6 @@ module Definitions = struct
       val empty : _ t
       val singleton : 'a -> 'a t
       val create : len:int -> 'a -> mutate:('a array -> unit) -> 'a iarray
-
-      val%template init : 'a. int -> f:(int -> 'a) -> 'a t
-      [@@alloc __ @ m = (heap_global, stack_local)]
 
       (** Conversions *)
 
@@ -177,16 +145,9 @@ module Definitions = struct
       val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
       val combine_errors : 'a Or_error.t t -> 'a t Or_error.t
       val combine_errors_unit : unit Or_error.t t -> unit Or_error.t
-
-      [%%template:
-      [@@@kind.default ka = value_or_null, kacc = base_or_null]
-      [@@@kind ka' = ka mod separable]
-      [@@@mode.default li = (global, local), lo = (global, local)]
-
       val fold : 'a 'acc. 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
       val foldi : 'a 'acc. 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc) -> 'acc
-      val fold_right : 'a 'acc. 'a t -> init:'acc -> f:('a -> 'acc -> 'acc) -> 'acc]
-
+      val fold_right : 'a 'acc. 'a t -> init:'acc -> f:('a -> 'acc -> 'acc) -> 'acc
       val fold_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
 
       val fold_mapi
@@ -280,8 +241,8 @@ module Definitions = struct
       val for_all : 'a t -> f:('a -> bool) -> bool
       val count : 'a t -> f:('a -> bool) -> int
 
-      val%template sum
-        :  ((module Container.Summable with type t = 'sum)[@mode local])
+      val sum
+        :  (module Container.Summable with type t = 'sum)
         -> 'a t
         -> f:('a -> 'sum)
         -> 'sum
@@ -373,15 +334,9 @@ module Definitions = struct
       val iter2_exn : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit
       val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
       val cartesian_product : 'a t -> 'b t -> ('a * 'b) t
-
-      [%%template:
-      [@@@kind.default ka = value_or_null, kacc = base_or_null]
-      [@@@kind ka' = ka mod separable]
-
       val fold : 'a 'acc. 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
       val foldi : 'a 'acc. 'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc) -> 'acc
-      val fold_right : 'a 'acc. 'a t -> init:'acc -> f:('a -> 'acc -> 'acc) -> 'acc]
-
+      val fold_right : 'a 'acc. 'a t -> init:'acc -> f:('a -> 'acc -> 'acc) -> 'acc
       val fold_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
 
       val fold_mapi
@@ -422,15 +377,12 @@ module Definitions = struct
         so violates the invariants of the immutable array. The OCaml compiler might rely
         on these invariants when compiling or optimizing code that uses immutable arrays. *)
 
-    [%%template:
-    [@@@mode.default c = (uncontended, shared)]
-
     val unsafe_to_array__promise_no_mutation : 'a. 'a t -> 'a array
 
     external unsafe_of_array__promise_no_mutation
       : 'a.
       ('a array[@local_opt]) -> ('a t[@local_opt])
-      = "%identity"]
+      = "%identity"
   end
 end
 
@@ -444,16 +396,16 @@ module type Iarray = sig
   (**/**)
 
   module Private : sig
-    module%template Test_unsafe_local_implementations : module type of struct
-      let concat = (concat [@alloc stack])
-      let concat_map = (concat_map [@mode local] [@alloc stack])
-      let concat_mapi = (concat_mapi [@mode local] [@alloc stack])
-      let filter = (filter [@alloc stack])
-      let filteri = (filteri [@alloc stack])
-      let filter_map = (filter_map [@mode local] [@alloc stack])
-      let filter_mapi = (filter_mapi [@mode local] [@alloc stack])
-      let partition_tf = (partition_tf [@alloc stack])
-      let partition_map = (partition_map [@mode local] [@alloc stack])
+    module Test_unsafe_local_implementations : module type of struct
+      let concat = concat
+      let concat_map = concat_map
+      let concat_mapi = concat_mapi
+      let filter = filter
+      let filteri = filteri
+      let filter_map = filter_map
+      let filter_mapi = filter_mapi
+      let partition_tf = partition_tf
+      let partition_map = partition_map
       let fold_map = Local.fold_map
       let fold_mapi = Local.fold_mapi
     end

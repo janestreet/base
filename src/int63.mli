@@ -8,13 +8,13 @@
     marshalling [Int63] will not work between 32-bit and 64-bit platforms -- [unmarshal]
     will segfault. *)
 
-open! Import
+open! Import0
 
 (** The [@@immediate64] attribute is to indicate that [t] is implemented by a type that is
     immediate only on 64 bit platforms. It is currently ignored by the compiler, however
     we are hoping that one day it will be taken into account so that the compiler can omit
     [caml_modify] when dealing with mutable data structures holding [Int63.t] values. *)
-type t [@@deriving globalize] [@@immediate64]
+type t = Int63_type.t [@@deriving globalize] [@@immediate64]
 
 include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t
@@ -88,12 +88,12 @@ module Private : sig
       can be used for building [Int63] operations that behave differently depending on the
       representation (e.g., see core_int63.ml). *)
   module Repr : sig
-    type ('underlying_type, 'intermediate_type) t =
-      | Int : (int, int) t
-      | Int64 : (int64, Int63_emul.t) t
+    type _ t =
+      | Int : int t
+      | Int64 : int64 t
   end
 
-  val repr : (t, t) Repr.t
+  val repr : t Repr.t
 
   module Emul = Int63_emul
 end

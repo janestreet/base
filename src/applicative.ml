@@ -1,12 +1,8 @@
-open! Import
+open! Import0
 module List = List0
 include Applicative_intf.Definitions
 
-[%%template
-[@@@kind.default k = (value, value_or_null mod maybe_null)]
-
-module%template.portable Make3 (X : Basic3 [@kind k]) :
-  S3 [@kind k] with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t = struct
+module Make3 (X : Basic3) : S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t = struct
   include X
 
   let ( <*> ) = apply
@@ -35,25 +31,20 @@ module%template.portable Make3 (X : Basic3 [@kind k]) :
   end
 end
 
-module%template.portable [@modality p] Make2 (X : Basic2 [@kind k]) :
-  S2 [@kind k] with type ('a, 'p) t := ('a, 'p) X.t =
-Make3 [@kind k] [@modality p] (struct
+module Make2 (X : Basic2) : S2 with type ('a, 'p) t := ('a, 'p) X.t = Make3 (struct
     include X
 
     type ('a, 'p, _) t = ('a, 'p) X.t
   end)
 
-module%template.portable [@modality p] Make (X : Basic [@kind k]) :
-  S [@kind k] with type 'a t := 'a X.t = Make3 [@kind k] [@modality p] (struct
+module Make (X : Basic) : S with type 'a t := 'a X.t = Make3 (struct
     include X
 
     type ('a, _, _) t = 'a X.t
   end)
 
-[@@@mode.default m = (global, local)]
-
-module%template.portable Make3_using_map2 (X : Basic3_using_map2 [@kind k] [@mode m]) :
-  S3 [@kind k] [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t = struct
+module Make3_using_map2 (X : Basic3_using_map2) :
+  S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t = struct
   include X
 
   let apply tf ta = map2 tf ta ~f:(fun f a -> f a)
@@ -87,29 +78,22 @@ module%template.portable Make3_using_map2 (X : Basic3_using_map2 [@kind k] [@mod
   end
 end
 
-module%template.portable
-  [@modality p] Make2_using_map2
-    (X : Basic2_using_map2
-  [@kind k] [@mode m]) : S2 [@kind k] [@mode m] with type ('a, 'p) t := ('a, 'p) X.t =
-Make3_using_map2 [@kind k] [@mode m] [@modality p] (struct
+module Make2_using_map2 (X : Basic2_using_map2) :
+  S2 with type ('a, 'p) t := ('a, 'p) X.t = Make3_using_map2 (struct
     include X
 
     type ('a, 'p, _) t = ('a, 'p) X.t
   end)
 
-module%template.portable
-  [@modality p] Make_using_map2
-    (X : Basic_using_map2
-  [@kind k] [@mode m]) : S [@kind k] [@mode m] with type 'a t := 'a X.t =
-Make3_using_map2 [@kind k] [@mode m] [@modality p] (struct
+module Make_using_map2 (X : Basic_using_map2) : S with type 'a t := 'a X.t =
+Make3_using_map2 (struct
     include X
 
     type ('a, _, _) t = 'a X.t
   end)
 
-module%template.portable [@modality p] Of_monad3 (M : Monad.S3 [@kind k] [@mode m]) :
-  S3 [@kind k] [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t =
-Make3_using_map2 [@kind k] [@mode m] [@modality p] (struct
+module Of_monad3 (M : Monad.S3) : S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t =
+Make3_using_map2 (struct
     type ('a, 'p, 'q) t = ('a, 'p, 'q) M.t
 
     let return = M.return
@@ -121,31 +105,23 @@ Make3_using_map2 [@kind k] [@mode m] [@modality p] (struct
     let map = `Custom M.map
   end)
 
-module%template.portable [@modality p] Of_monad2 (M : Monad.S2 [@kind k] [@mode m]) :
-  S2 [@kind k] [@mode m] with type ('a, 'p) t := ('a, 'p) M.t =
-Of_monad3 [@kind k] [@mode m] [@modality p] (struct
+module Of_monad2 (M : Monad.S2) : S2 with type ('a, 'p) t := ('a, 'p) M.t =
+Of_monad3 (struct
     include M
 
     type ('a, 'p, _) t = ('a, 'p) M.t
   end)
 
-module%template.portable [@modality p] Of_monad (M : Monad.S [@kind k] [@mode m]) :
-  S [@kind k] [@mode m] with type 'a t := 'a M.t =
-Of_monad3 [@kind k] [@mode m] [@modality p] (struct
+module Of_monad (M : Monad.S) : S with type 'a t := 'a M.t = Of_monad3 (struct
     include M
 
     type ('a, _, _) t = 'a M.t
   end)
 
-module%template.portable
-  [@modality p] Compose
-    (F : S
-  [@kind k] [@mode m])
-    (G : S
-  [@kind k] [@mode m]) : S [@kind k] [@mode m] with type 'a t = 'a F.t G.t = struct
+module Compose (F : S) (G : S) : S with type 'a t = 'a F.t G.t = struct
   type 'a t = 'a F.t G.t
 
-  include Make_using_map2 [@kind k] [@mode m] [@modality p] (struct
+  include Make_using_map2 (struct
       type nonrec 'a t = 'a t
 
       let return a = G.return (F.return a)
@@ -155,15 +131,10 @@ module%template.portable
     end)
 end
 
-module%template.portable
-  [@modality p] Pair
-    (F : S
-  [@kind k] [@mode m])
-    (G : S
-  [@kind k] [@mode m]) : S [@kind k] [@mode m] with type 'a t = 'a F.t * 'a G.t = struct
+module Pair (F : S) (G : S) : S with type 'a t = 'a F.t * 'a G.t = struct
   type 'a t = 'a F.t * 'a G.t
 
-  include Make_using_map2 [@kind k] [@mode m] [@modality p] (struct
+  include Make_using_map2 (struct
       type nonrec 'a t = 'a t
 
       let return a = F.return a, G.return a
@@ -173,17 +144,15 @@ module%template.portable
     end)
 end
 
-[@@@modality.default p = (nonportable, portable)]
-
 module Make_let_syntax3
     (X : sig
-       include For_let_syntax3 [@kind k] [@mode m]
+       include For_let_syntax3
      end)
     (Intf : sig
        module type S
      end)
     (Impl : Intf.S) : sig
-    include Let_syntax3 [@kind k] [@mode m]
+    include Let_syntax3
   end
   with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t
   with module Open_on_rhs_intf := Intf = struct
@@ -199,17 +168,17 @@ end
 
 module Make_let_syntax2
     (X : sig
-       include For_let_syntax2 [@kind k] [@mode m]
+       include For_let_syntax2
      end)
     (Intf : sig
        module type S
      end)
     (Impl : Intf.S) : sig
-    include Let_syntax2 [@kind k] [@mode m]
+    include Let_syntax2
   end
   with type ('a, 'p) t := ('a, 'p) X.t
   with module Open_on_rhs_intf := Intf =
-  Make_let_syntax3 [@kind k] [@mode m] [@modality p]
+  Make_let_syntax3
     (struct
       include X
 
@@ -220,26 +189,26 @@ module Make_let_syntax2
 
 module Make_let_syntax
     (X : sig
-       include For_let_syntax [@kind k] [@mode m]
+       include For_let_syntax
      end)
     (Intf : sig
        module type S
      end)
     (Impl : Intf.S) : sig
-    include Let_syntax [@kind k] [@mode m]
+    include Let_syntax
   end
   with type 'a t := 'a X.t
   with module Open_on_rhs_intf := Intf =
-  Make_let_syntax3 [@kind k] [@mode m] [@modality p]
+  Make_let_syntax3
     (struct
       include X
 
       type ('a, _, _) t = 'a X.t
     end)
     (Intf)
-    (Impl)]
+    (Impl)
 
-module%template [@mode p = (portable, nonportable)] Ident = struct
+module Ident = struct
   type 'a t = 'a
 
   let return x = x

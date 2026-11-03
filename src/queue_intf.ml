@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 module Definitions = struct
   (** An interface for queues that follows Base's conventions, as opposed to OCaml's
@@ -105,7 +105,7 @@ module type Queue = sig
 
       Also see {!Linked_queue}, which has different performance characteristics. *)
 
-  type 'a t [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify]
+  type 'a t [@@deriving compare, equal, globalize, sexp]
 
   include S with type 'a t := 'a t
   include Invariant.S1 with type 'a t := 'a t

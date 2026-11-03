@@ -1,7 +1,7 @@
 (** This module implements derived integer operations (e.g., modulo, rounding to
     multiples) based on other basic operations. *)
 
-open! Import
+open! Import0
 open Int_intf.Definitions
 
 module type Make_arg = sig

@@ -1,12 +1,9 @@
-open! Import
+open! Import0
 
 module Definitions = struct
-  [%%template
-  [@@@kind.default k = (value, value_or_null mod maybe_null)]
-  [@@@mode.default m = (global, local)]
-
-  (** Module types below provide both global and local versions. In OxCaml, the latter
-      accept local [~f] closures. *)
+  (** Module types below provide both global/local versions and many/once versions. In
+      OxCaml, the local version accepts local [~f] closures, and the once version accepts
+      [~f @ once]. *)
 
   (** Monad operations. A monad abstracts the notion of composable, sequenced
       computations. An ['a t] represents a computation returning ['a].
@@ -58,35 +55,28 @@ module Definitions = struct
   module type S_kernel = sig
     type 'a t
 
-    include S3_indexed_kernel [@kind k] [@mode m] with type ('a, _, _, _, _) t := 'a t
+    include S3_indexed_kernel with type ('a, _, _, _, _) t := 'a t
   end
 
   (** Monad operations for monads with two type parameters. *)
   module type S2_kernel = sig
     type ('a, 'p) t
 
-    include
-      S3_indexed_kernel [@kind k] [@mode m] with type ('a, _, _, 'p, _) t := ('a, 'p) t
+    include S3_indexed_kernel with type ('a, _, _, 'p, _) t := ('a, 'p) t
   end
 
   (** Monad operations for monads with three type parameters. *)
   module type S3_kernel = sig
     type ('a, 'p, 'q) t
 
-    include
-      S3_indexed_kernel
-      [@kind k] [@mode m]
-      with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
+    include S3_indexed_kernel with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
   end
 
   (** Monad operations for monads with index type parameters. *)
   module type S_indexed_kernel = sig
     type ('a, 'i, 'j) t
 
-    include
-      S3_indexed_kernel
-      [@kind k] [@mode m]
-      with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
+    include S3_indexed_kernel with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
   end
 
   (** Infix operators. This module type subsumes the other [Index*] types below. *)
@@ -108,30 +98,28 @@ module Definitions = struct
   module type Infix = sig
     type 'a t
 
-    include Infix3_indexed [@kind k] [@mode m] with type ('a, _, _, _, _) t := 'a t
+    include Infix3_indexed with type ('a, _, _, _, _) t := 'a t
   end
 
   (** Infix operators for monads with two type parameters. *)
   module type Infix2 = sig
     type ('a, 'p) t
 
-    include Infix3_indexed [@kind k] [@mode m] with type ('a, _, _, 'p, _) t := ('a, 'p) t
+    include Infix3_indexed with type ('a, _, _, 'p, _) t := ('a, 'p) t
   end
 
   (** Infix operators for monads with three type parameters. *)
   module type Infix3 = sig
     type ('a, 'p, 'q) t
 
-    include
-      Infix3_indexed [@kind k] [@mode m] with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
+    include Infix3_indexed with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
   end
 
   (** Infix operators for monads with index type parameters. *)
   module type Infix_indexed = sig
     type ('a, 'i, 'j) t
 
-    include
-      Infix3_indexed [@kind k] [@mode m] with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
+    include Infix3_indexed with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
   end
 
   (** Supports [let%bind] and [let%map] syntax. See [ppx_let] documentation.
@@ -143,10 +131,7 @@ module Definitions = struct
     module Let_syntax : sig
       val return : 'a 'i 'p 'q. 'a -> ('a, 'i, 'i, 'p, 'q) t
 
-      include
-        Infix3_indexed
-        [@kind k] [@mode m]
-        with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) t
+      include Infix3_indexed with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) t
 
       module Let_syntax : sig
         val return : 'a 'i 'p 'q. 'a -> ('a, 'i, 'i, 'p, 'q) t
@@ -174,48 +159,39 @@ module Definitions = struct
   module type Syntax = sig
     type 'a t
 
-    include Syntax3_indexed [@kind k] [@mode m] with type ('a, _, _, _, _) t := 'a t
+    include Syntax3_indexed with type ('a, _, _, _, _) t := 'a t
   end
 
   (** Supports [let%bind] and [let%map] syntax for monads with two type parameters. *)
   module type Syntax2 = sig
     type ('a, 'p) t
 
-    include
-      Syntax3_indexed [@kind k] [@mode m] with type ('a, _, _, 'p, _) t := ('a, 'p) t
+    include Syntax3_indexed with type ('a, _, _, 'p, _) t := ('a, 'p) t
   end
 
   (** Supports [let%bind] and [let%map] syntax for monads with three type parameters. *)
   module type Syntax3 = sig
     type ('a, 'p, 'q) t
 
-    include
-      Syntax3_indexed [@kind k] [@mode m] with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
+    include Syntax3_indexed with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
   end
 
   (** Supports [let%bind] and [let%map] syntax for monads with index type parameters. *)
   module type Syntax_indexed = sig
     type ('a, 'i, 'j) t
 
-    include
-      Syntax3_indexed [@kind k] [@mode m] with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
+    include Syntax3_indexed with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
   end
 
   (** Monad interface except for [let%bind] and [let%map] support.
 
       This module type subsumes the other [S*_without_syntax] types below. *)
   module type S3_indexed_without_syntax = sig
-    include S3_indexed_kernel [@kind k] [@mode m]
-
-    include
-      Infix3_indexed
-      [@kind k] [@mode m]
-      with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) t
+    include S3_indexed_kernel
+    include Infix3_indexed with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) t
 
     module Monad_infix :
-      Infix3_indexed
-      [@kind k] [@mode m]
-      with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) t
+      Infix3_indexed with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) t
   end
 
   (** Monad interface except for [let%bind] and [let%map] support for monads with one type
@@ -223,8 +199,7 @@ module Definitions = struct
   module type S_without_syntax = sig
     type 'a t
 
-    include
-      S3_indexed_without_syntax [@kind k] [@mode m] with type ('a, _, _, _, _) t := 'a t
+    include S3_indexed_without_syntax with type ('a, _, _, _, _) t := 'a t
   end
 
   (** Monad interface except for [let%bind] and [let%map] support for monads with two type
@@ -232,10 +207,7 @@ module Definitions = struct
   module type S2_without_syntax = sig
     type ('a, 'p) t
 
-    include
-      S3_indexed_without_syntax
-      [@kind k] [@mode m]
-      with type ('a, _, _, 'p, _) t := ('a, 'p) t
+    include S3_indexed_without_syntax with type ('a, _, _, 'p, _) t := ('a, 'p) t
   end
 
   (** Monad interface except for [let%bind] and [let%map] support for monads with three
@@ -243,10 +215,7 @@ module Definitions = struct
   module type S3_without_syntax = sig
     type ('a, 'p, 'q) t
 
-    include
-      S3_indexed_without_syntax
-      [@kind k] [@mode m]
-      with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
+    include S3_indexed_without_syntax with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
   end
 
   (** Monad interface except for [let%bind] and [let%map] support for monads with index
@@ -254,10 +223,7 @@ module Definitions = struct
   module type S_indexed_without_syntax = sig
     type ('a, 'i, 'j) t
 
-    include
-      S3_indexed_without_syntax
-      [@kind k] [@mode m]
-      with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
+    include S3_indexed_without_syntax with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
   end
 
   (** Complete monad interface. Extends [_kernel] with infix operators and support for
@@ -265,42 +231,36 @@ module Definitions = struct
 
       This module type subsumes the other [S*] types below. *)
   module type S3_indexed = sig
-    include S3_indexed_without_syntax [@kind k] [@mode m]
-
-    include
-      Syntax3_indexed
-      [@kind k] [@mode m]
-      with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) t
+    include S3_indexed_without_syntax
+    include Syntax3_indexed with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) t
   end
 
   (** Complete monad interface with one type parameter. *)
   module type S = sig
     type 'a t
 
-    include S3_indexed [@kind k] [@mode m] with type ('a, _, _, _, _) t := 'a t
+    include S3_indexed with type ('a, _, _, _, _) t := 'a t
   end
 
   (** Complete monad interface with two type parameters. *)
   module type S2 = sig
     type ('a, 'p) t
 
-    include S3_indexed [@kind k] [@mode m] with type ('a, _, _, 'p, _) t := ('a, 'p) t
+    include S3_indexed with type ('a, _, _, 'p, _) t := ('a, 'p) t
   end
 
   (** Complete monad interface with three type parameters. *)
   module type S3 = sig
     type ('a, 'p, 'q) t
 
-    include
-      S3_indexed [@kind k] [@mode m] with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
+    include S3_indexed with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
   end
 
   (** Complete monad interface with index type parameters. *)
   module type S_indexed = sig
     type ('a, 'i, 'j) t
 
-    include
-      S3_indexed [@kind k] [@mode m] with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
+    include S3_indexed with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
   end
 
   (** Argument to [Make*]. This module type subsumes the other [Basic*] types below. *)
@@ -329,31 +289,29 @@ module Definitions = struct
   module type Basic = sig
     type 'a t
 
-    include Basic3_indexed [@kind k] [@mode m] with type ('a, _, _, _, _) t := 'a t
+    include Basic3_indexed with type ('a, _, _, _, _) t := 'a t
   end
 
   (** Argument to [Make2] for monads with two type parameters. *)
   module type Basic2 = sig
     type ('a, 'p) t
 
-    include Basic3_indexed [@kind k] [@mode m] with type ('a, _, _, 'p, _) t := ('a, 'p) t
+    include Basic3_indexed with type ('a, _, _, 'p, _) t := ('a, 'p) t
   end
 
   (** Argument to [Make3] for monads with three type parameters. *)
   module type Basic3 = sig
     type ('a, 'p, 'q) t
 
-    include
-      Basic3_indexed [@kind k] [@mode m] with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
+    include Basic3_indexed with type ('a, _, _, 'p, 'q) t := ('a, 'p, 'q) t
   end
 
   (** Argument to [Make_indexed] for monads with index type parameters. *)
   module type Basic_indexed = sig
     type ('a, 'i, 'j) t
 
-    include
-      Basic3_indexed [@kind k] [@mode m] with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
-  end]
+    include Basic3_indexed with type ('a, 'i, 'j, _, _) t := ('a, 'i, 'j) t
+  end
 end
 
 module type Monad = sig
@@ -361,71 +319,60 @@ module type Monad = sig
     include Definitions
   end
 
-  [%%template:
   (** The identity monad. Useful as an argument to functors that require a monad, to
       produce a non-monadic result. *)
-  module Ident : S [@kind value_or_null mod maybe_null] [@mode local] with type 'a t = 'a
-
-  [@@@kind.default k = (value, value_or_null mod maybe_null)]
-  [@@@mode.default m = (global, local)]
+  module Ident : S with type 'a t = 'a
 
   (** Produces a monad with one type parameter. *)
-  module%template.portable Make (X : Basic [@kind k] [@mode m]) :
-    S [@kind k] [@mode m] with type 'a t := 'a X.t
+  module Make (X : Basic) : S with type 'a t := 'a X.t
 
   (** Produces a monad with two type parameters. *)
-  module%template.portable Make2 (X : Basic2 [@kind k] [@mode m]) :
-    S2 [@kind k] [@mode m] with type ('a, 'p) t := ('a, 'p) X.t
+  module Make2 (X : Basic2) : S2 with type ('a, 'p) t := ('a, 'p) X.t
 
   (** Produces a monad with three type parameters. *)
-  module%template.portable Make3 (X : Basic3 [@kind k] [@mode m]) :
-    S3 [@kind k] [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t
+  module Make3 (X : Basic3) : S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) X.t
 
   (** Produces a monad with index type parameters. *)
-  module%template.portable Make_indexed (X : Basic_indexed [@kind k] [@mode m]) :
-    S_indexed [@kind k] [@mode m] with type ('a, 'i, 'j) t := ('a, 'i, 'j) X.t
+  module Make_indexed (X : Basic_indexed) :
+    S_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) X.t
 
   (** Converts between monadic types with one type parameter. *)
-  module%template.portable Of_monad
-      (Monad : S
-    [@kind k] [@mode m])
+  module Of_monad
+      (Monad : S)
       (M : sig
          type 'a t
 
          val to_monad : 'a. 'a t -> 'a Monad.t
          val of_monad : 'a. 'a Monad.t -> 'a t
-       end) : S [@kind k] [@mode m] with type 'a t := 'a M.t
+       end) : S with type 'a t := 'a M.t
 
   (** Converts between monadic types with two type parameters. *)
-  module%template.portable Of_monad2
-      (Monad : S2
-    [@kind k] [@mode m])
+  module Of_monad2
+      (Monad : S2)
       (M : sig
          type ('a, 'p) t
 
          val to_monad : 'a 'p. ('a, 'p) t -> ('a, 'p) Monad.t
          val of_monad : 'a 'p. ('a, 'p) Monad.t -> ('a, 'p) t
-       end) : S2 [@kind k] [@mode m] with type ('a, 'p) t := ('a, 'p) M.t
+       end) : S2 with type ('a, 'p) t := ('a, 'p) M.t
 
   (** Converts between monadic types with three type parameters. *)
-  module%template.portable Of_monad3
-      (Monad : S3
-    [@kind k] [@mode m])
+  module Of_monad3
+      (Monad : S3)
       (M : sig
          type ('a, 'p, 'q) t
 
          val to_monad : 'a 'p 'q. ('a, 'p, 'q) t -> ('a, 'p, 'q) Monad.t
          val of_monad : 'a 'p 'q. ('a, 'p, 'q) Monad.t -> ('a, 'p, 'q) t
-       end) : S3 [@kind k] [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t
+       end) : S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t
 
   (** Converts between monadic types with index type parameters. *)
-  module%template.portable Of_monad_indexed
-      (Monad : S_indexed
-    [@kind k] [@mode m])
+  module Of_monad_indexed
+      (Monad : S_indexed)
       (M : sig
          type ('a, 'i, 'j) t
 
          val to_monad : 'a 'i 'j. ('a, 'i, 'j) t -> ('a, 'i, 'j) Monad.t
          val of_monad : 'a 'i 'j. ('a, 'i, 'j) Monad.t -> ('a, 'i, 'j) t
-       end) : S_indexed [@kind k] [@mode m] with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t]
+       end) : S_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t
 end

@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Int = Int0
 module Char = Char0
 module Capsule = Capsule_prim
@@ -106,7 +106,7 @@ module State = struct
     module DLS = Basement.Stdlib_shim.Domain.Safe.DLS
 
     let default_state =
-      let%template state_initializer =
+      let state_initializer =
         if am_testing
         then (
           (* We define Base's default random state as a copy of OCaml's default random
@@ -121,7 +121,7 @@ module State = struct
           Stdlib.Random.init 137;
           (* This function is run at most once per domain, and we only destroy the key on
              the initial domain. *)
-          (Obj.magic_many [@mode portable]) (fun () ->
+          Obj.magic_many (fun () ->
             if Stdlib.Domain.is_main_domain ()
             then (
               let access = Capsule.Key.destroy key in
@@ -148,7 +148,7 @@ module State = struct
 
     type inner =
       | Default
-      | Custom of Stdlib.Random.State.t Lazy.t
+      | Custom of Stdlib.Random.State.t lazy_t
 
     type t = inner Modes.Portable_via_contended.t
 
@@ -405,7 +405,7 @@ let self_init ?allow_in_tests () = full_init (random_seed ?allow_in_tests ())
 let set_state s =
   State.with_stdlib s ~f:(fun state ->
     let (P access) = Capsule.current () in
-    let capsule = Capsule.Data.wrap ~access state in
+    let capsule = Capsule.Data.Local.wrap ~access state in
     Capsule.Password.with_current access (fun password ->
       let password = Capsule.Password.shared password in
       State.with_stdlib (State.get_default ()) ~f:(fun default ->

@@ -14,7 +14,7 @@
     despite admitting [bind], is not a [Monad] (or even an [Applicative]), since it's not
     an endofunctor taking types to types of the same kind. *)
 
-open! Import
+open! Import0
 
 (** {2 Type and Interfaces} *)
 
@@ -30,14 +30,9 @@ end
 
 include module type of T (** @inline *)
 
-[%%rederive:
-  type nonrec 'a t = 'a t
-  [@@deriving compare ~localize, equal ~localize, globalize, hash, sexp ~stackify]]
+[%%rederive: type nonrec 'a t = 'a t [@@deriving compare, equal, globalize, hash, sexp]]
 
 (** {3 Accessors} *)
-
-[%%template:
-[@@@mode.default m = (global, local)]
 
 (** Extracts the underlying value if present, otherwise returns [default]. *)
 val value : 'a t -> default:'a -> 'a
@@ -64,11 +59,8 @@ val value_map : 'a t -> default:'b -> f:('a -> 'b) -> 'b
 val map : 'a t -> f:('a -> 'b) -> 'b t
 val both : 'a t -> 'b t -> ('a * 'b) t
 val bind : 'a t -> f:('a -> 'b t) -> 'b t
-val to_list : 'a t -> 'a list [@@zero_alloc_if_local m]
-
+val to_list : 'a t -> 'a list
 val fold : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc) -> 'acc
-[@@mode m = m, n = (global, local)]
-
 val mem : 'a t -> 'a -> equal:('a -> 'a -> bool) -> bool
 
 (** On [Null], returns [false]. On [This x], returns [f x]. *)
@@ -90,14 +82,11 @@ val call : 'a -> f:('a -> unit) t -> unit
     [b] are [None], returns [None]. If only one is [Some], returns that one, and if both
     are [Some], returns [Some] of the result of applying [f] to the contents of [a] and
     [b]. *)
-val merge : 'a t -> 'a t -> f:('a -> 'a -> 'a) -> 'a t]
+val merge : 'a t -> 'a t -> f:('a -> 'a -> 'a) -> 'a t
 
 val length : 'a t -> int
 
 (** {4 Constructors} *)
-
-[%%template:
-[@@@mode.default m = (global, local)]
 
 (** [try_with f] returns [This x] if [f] returns [x] and [Null] if [f] raises an
     exception. See [Result.try_with] if you'd like to know which exception. *)
@@ -127,15 +116,13 @@ val this_if_thunk : bool -> (unit -> 'a) -> 'a t
 
 (** [to_option (This x) = Some x] and [to_option Null = None]. *)
 val to_option : 'a t -> 'a option
-[@@zero_alloc_if_local m]
 
 (** [of_option (Some x) = This x] and [of_option None = Null]. *)
 val of_option : 'a option -> 'a t
-[@@zero_alloc]]
+[@@zero_alloc]
 
 (** [map_to_option t ~f] is the same as [map t ~f |> to_option] *)
-val%template map_to_option : 'a t -> f:('a -> 'b) -> 'b option
-[@@alloc __ @ m = (heap_global, stack_local)]
+val map_to_option : 'a t -> f:('a -> 'b) -> 'b option
 
 (** {5 Predicates} *)
 

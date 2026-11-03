@@ -1,13 +1,12 @@
 open! Import
+module List = List0
 
 include (
 struct
-  type 'a t = 'a ref
-  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
+  type 'a t = 'a ref [@@deriving compare, equal, globalize, sexp, sexp_grammar]
 end :
 sig
-  type 'a t = 'a ref
-  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
+  type 'a t = 'a ref [@@deriving compare, equal, globalize, sexp, sexp_grammar]
 end)
 
 (* In the definition of [t], we do not have [[@@deriving compare, sexp]] because in
@@ -35,7 +34,7 @@ let set_temporarily t a ~f =
 ;;
 
 module And_value = struct
-  type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~stackify]
+  type t = T : 'a ref * 'a -> t [@@deriving sexp_of]
 
   let set (T (r, a)) = r := a
   let sets ts = List.iter ts ~f:set

@@ -1,8 +1,11 @@
 (** Processor-native integers. *)
 
-open! Import
+open! Import0
 
-type t = nativeint [@@deriving globalize, sexp ~stackify ~unboxed]
+type t = nativeint [@@deriving globalize, sexp]
+
+val sexp_of_t_u : Nativeint_u.t -> Sexp0.t
+val t_u_of_sexp : Sexp0.t -> Nativeint_u.t
 
 include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t

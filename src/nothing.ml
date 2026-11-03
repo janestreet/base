@@ -1,11 +1,15 @@
-open! Import
+open! Import0
+module Either = Either0
+module Result = Result0
 include Nothing0
 
-include%template Identifiable.Make [@modality portable] (struct
+include Identifiable.Make (struct
     include Nothing0
 
     let module_name = "Base.Nothing"
   end)
+
+let of_string = Nothing0.of_string
 
 let must_be_none : t option -> unit = function
   | None -> ()

@@ -1,5 +1,8 @@
 open! Import
 module Array = Array0
+module Char = Char0
+module List = List0
+module Ordered_collection_common = Ordered_collection_common0
 module Sexp = Sexp0
 module String = String0
 include Bytes_intf.Definitions
@@ -7,7 +10,7 @@ include Bytes_intf.Definitions
 let stage = Staged.stage
 
 module T = struct
-  type t = bytes [@@deriving globalize, sexp ~stackify, sexp_grammar]
+  type t = bytes [@@deriving globalize, sexp, sexp_grammar]
 
   include Bytes0
 
@@ -17,32 +20,24 @@ end
 
 include T
 
-module%template To_bytes =
-Blit.Make [@mode unique read] [@alloc stack] [@modality portable] (struct
+module To_bytes = Blit.Make (struct
     include T
 
-    let[@alloc a = (heap, stack)] create ~len =
-      (create [@alloc a]) len [@exclave_if_stack a]
-    ;;
+    let create ~len = create len
   end)
 
 include To_bytes
-
-include%template Comparator.Make [@modality portable] (T)
-include%template Pretty_printer.Register_pp [@modality portable] (T)
+include Comparator.Make (T)
+include Pretty_printer.Register_pp (T)
 
 (* Open replace_polymorphic_compare after including functor instantiations so they do not
    shadow its definitions. This is here so that efficient versions of the comparison
    functions are available within this module. *)
 open! Bytes_replace_polymorphic_compare
+module To_string = Blit.Make_to_string (T) (To_bytes)
 
-module%template To_string =
-  Blit.Make_to_string [@mode unique read] [@alloc stack] [@modality portable]
-    (T)
-    (To_bytes)
-
-module%template From_string =
-  Blit.Make_distinct [@mode unique] [@alloc stack] [@modality portable]
+module From_string =
+  Blit.Make_distinct
     (struct
       type t = string
 
@@ -51,10 +46,7 @@ module%template From_string =
     (struct
       type nonrec t = t
 
-      let[@alloc a = (heap, stack)] create ~len =
-        (create [@alloc a]) len [@exclave_if_stack a]
-      ;;
-
+      let create ~len = create len
       let length = length
       let unsafe_blit = unsafe_blit_string
     end)
@@ -69,43 +61,34 @@ let rec unsafe_set_char_list t l i =
     unsafe_set_char_list t l (i + 1)
 ;;
 
-[%%template
-[@@@alloc.default a = (heap, stack)]
-
 let init n ~f =
   if Int_replace_polymorphic_compare.( < ) n 0
   then Printf.invalid_argf "Bytes.init %d" n ();
-  (let t = (create [@alloc a]) n in
-   for i = 0 to n - 1 do
-     unsafe_set t i (f i)
-   done;
-   t)
-  [@exclave_if_stack a]
+  let t = create n in
+  for i = 0 to n - 1 do
+    unsafe_set t i (f i)
+  done;
+  t
 ;;
 
 let of_char_list l =
-  (let t = (create [@alloc a]) (List.length l) in
-   unsafe_set_char_list t l 0;
-   t)
-  [@exclave_if_stack a]
+  let t = create (List.length l) in
+  unsafe_set_char_list t l 0;
+  t
 ;;
 
 let to_list t =
   let rec loop t i acc =
     if Int_replace_polymorphic_compare.( < ) i 0
     then acc
-    else loop t (i - 1) (unsafe_get t i :: acc) [@exclave_if_stack a]
+    else loop t (i - 1) (unsafe_get t i :: acc)
   in
-  loop t (length t - 1) [] [@exclave_if_stack a]
+  loop t (length t - 1) []
 ;;
 
-let to_array t =
-  (Array.init [@alloc a]) (length t) ~f:(fun i -> unsafe_get t i)
-  [@nontail] [@exclave_if_stack a]
-;;
-
-let map t ~f = (map [@alloc a]) t ~f [@exclave_if_stack a]
-let mapi t ~f = (mapi [@alloc a]) t ~f [@exclave_if_stack a]]
+let to_array t = Array.init (length t) ~f:(fun i -> unsafe_get t i) [@nontail]
+let map t ~f = map t ~f
+let mapi t ~f = mapi t ~f
 
 let fold =
   let rec loop t ~f ~len ~pos acc =

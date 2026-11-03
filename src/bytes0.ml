@@ -272,14 +272,12 @@ include struct
   let set_uchar_utf_32be b i c = set_utf_32_uchar ~set_int32:set_int32_be b i c
 end
 
-external unsafe_create_local : int -> bytes = "Base_unsafe_create_local_bytes" [@@noalloc]
+external unsafe_create_local : int -> bytes = "Base_unsafe_create_local_bytes"
 
 let[@zero_alloc] create_local len =
-  if len > Sys0.max_string_length then invalid_arg "Bytes.create_local";
+  if len < 0 || len > Sys.max_string_length then invalid_arg "Bytes.create_local";
   unsafe_create_local len
 ;;
-
-let%template[@alloc stack] create x = create_local x [@@zero_alloc]
 
 external unsafe_fill : bytes -> pos:int -> len:int -> char -> unit = "caml_fill_bytes"
 [@@noalloc]
@@ -308,22 +306,18 @@ external unsafe_of_string_promise_no_mutation
   -> (bytes[@local_opt])
   = "%bytes_of_string"
 
-[%%template
-[@@@alloc.default a = (heap, stack)]
-
 let make n c =
-  (let t = (create [@alloc a]) n in
-   unsafe_fill t ~pos:0 ~len:n c;
-   t)
-  [@exclave_if_stack a]
+  let t = create n in
+  unsafe_fill t ~pos:0 ~len:n c;
+  t
 ;;
 
 let map t ~f =
   let l = length t in
-  if [@exclave_if_stack a] l = 0
+  if l = 0
   then Obj.magic_unique (unsafe_of_string_promise_no_mutation "")
   else (
-    let r = (create [@alloc a]) l in
+    let r = create l in
     for i = 0 to l - 1 do
       unsafe_set r i (f (unsafe_get t i))
     done;
@@ -332,10 +326,10 @@ let map t ~f =
 
 let mapi t ~f =
   let l = length t in
-  if [@exclave_if_stack a] l = 0
+  if l = 0
   then Obj.magic_unique (unsafe_of_string_promise_no_mutation "")
   else (
-    let r = (create [@alloc a]) l in
+    let r = create l in
     for i = 0 to l - 1 do
       unsafe_set r i (f i (unsafe_get t i))
     done;
@@ -344,25 +338,20 @@ let mapi t ~f =
 
 let copy src =
   let len = length src in
-  (let dst = (create [@alloc a]) len in
-   unsafe_blit ~src ~src_pos:0 ~dst ~dst_pos:0 ~len;
-   dst)
-  [@exclave_if_stack a]
+  let dst = create len in
+  unsafe_blit ~src ~src_pos:0 ~dst ~dst_pos:0 ~len;
+  dst
 ;;
 
 (* This is lifted from [Stdlib], but templated *)
 let sub src ~pos:src_pos ~len =
-  if [@exclave_if_stack a] src_pos < 0 || len < 0 || src_pos > length src - len
+  if src_pos < 0 || len < 0 || src_pos > length src - len
   then invalid_arg "Bytes0.sub"
   else (
-    let dst = (create [@alloc a]) len in
+    let dst = create len in
     unsafe_blit ~src ~src_pos ~dst ~dst_pos:0 ~len;
     dst)
 ;;
 
-let to_string b = unique_to_string ((copy [@alloc a]) b) [@exclave_if_stack a]
-
-let of_string s =
-  (copy [@alloc a])
-    (unsafe_of_string_promise_no_mutation s) [@nontail] [@exclave_if_stack a]
-;;]
+let to_string b = unique_to_string (copy b)
+let of_string s = copy (unsafe_of_string_promise_no_mutation s) [@nontail]

@@ -5,8 +5,7 @@
 
 open Basement.Or_null_shim.Export
 
-let%template[@alloc stack] [@inline] maybe_globalize _ value = value
-let%template[@alloc heap] [@inline] maybe_globalize globalize value = globalize value
+let[@inline] maybe_globalize globalize value = globalize value
 
 let globalize_bool = function
   | (true | false) as b -> b
@@ -26,12 +25,9 @@ external globalize_string : string -> string = "caml_obj_dup"
 
 let globalize_unit (() as u) = u
 
-[%%template
-[@@@kind k = base_or_null_with_imm]
-
 external globalize_array' : 'a. 'a array -> 'a array = "caml_obj_dup"
 
-let globalize_array _ a = globalize_array' a [@@kind k]]
+let globalize_array _ a = globalize_array' a
 
 external globalize_floatarray : floatarray -> floatarray = "caml_obj_dup"
 

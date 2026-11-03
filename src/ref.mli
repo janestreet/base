@@ -1,10 +1,10 @@
 (** Module for the type [ref], mutable indirection cells [r] containing a value of type
     ['a], accessed with [!r] and set by [r := a]. *)
 
-open! Import
+open! Import0
 
 type 'a t = 'a Stdlib.ref = { mutable contents : 'a }
-[@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
+[@@deriving compare, equal, globalize, sexp, sexp_grammar]
 
 (*_ defined as externals to avoid breaking the inliner *)
 
@@ -23,7 +23,7 @@ val replace : 'a. 'a t -> ('a -> 'a) -> unit
 val set_temporarily : 'a 'b. 'a t -> 'a -> f:(unit -> 'b) -> 'b
 
 module And_value : sig
-  type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~stackify]
+  type t = T : 'a ref * 'a -> t [@@deriving sexp_of]
 
   (** [set (T (r, x))] is equivalent to [r := x]. *)
   val set : t -> unit

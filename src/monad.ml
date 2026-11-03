@@ -1,15 +1,18 @@
 open! Import
-module List = List0
 include Monad_intf.Definitions
 
-[%%template
-[@@@kind.default k = (value, value_or_null mod maybe_null)]
-[@@@mode.default m = (global, local)]
+(* A local copy of [List0.rev], to avoid depending on [List0]. Defined once at the top of
+   the file so that it is not duplicated by each templated functor below. *)
+let list_rev list =
+  let rec loop acc = function
+    | [] -> acc
+    | x :: xs -> loop (x :: acc) xs
+  in
+  loop [] list
+;;
 
-module%template.portable Make3_indexed (M : Basic3_indexed [@kind k] [@mode m]) :
-  S3_indexed
-  [@kind k] [@mode m]
-  with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) M.t = struct
+module Make3_indexed (M : Basic3_indexed) :
+  S3_indexed with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) M.t = struct
   let bind = M.bind
   let return = M.return
   let map_via_bind ma ~f = M.bind ma ~f:(fun a -> M.return (f a)) [@nontail]
@@ -47,7 +50,7 @@ module%template.portable Make3_indexed (M : Basic3_indexed [@kind k] [@mode m]) 
 
   let all =
     let rec loop vs = function
-      | [] -> return (List.rev vs)
+      | [] -> return (list_rev vs)
       | t :: ts -> t >>= fun v -> loop (v :: vs) ts
     in
     fun ts -> loop [] ts
@@ -59,45 +62,35 @@ module%template.portable Make3_indexed (M : Basic3_indexed [@kind k] [@mode m]) 
   ;;
 end
 
-module%template.portable
-  [@modality p] Make_indexed
-    (M : Basic_indexed
-  [@kind k] [@mode m]) :
-  S_indexed [@kind k] [@mode m] with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t =
-Make3_indexed [@kind k] [@mode m] [@modality p] (struct
+module Make_indexed (M : Basic_indexed) :
+  S_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t = Make3_indexed (struct
     include M
 
     type ('a, 'i, 'j, _, _) t = ('a, 'i, 'j) M.t
   end)
 
-module%template.portable [@modality p] Make3 (M : Basic3 [@kind k] [@mode m]) :
-  S3 [@kind k] [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t =
-Make3_indexed [@kind k] [@mode m] [@modality p] (struct
+module Make3 (M : Basic3) : S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t =
+Make3_indexed (struct
     include M
 
     type ('a, _, _, 'p, 'q) t = ('a, 'p, 'q) M.t
   end)
 
-module%template.portable [@modality p] Make2 (M : Basic2 [@kind k] [@mode m]) :
-  S2 [@kind k] [@mode m] with type ('a, 'p) t := ('a, 'p) M.t =
-Make3_indexed [@kind k] [@mode m] [@modality p] (struct
+module Make2 (M : Basic2) : S2 with type ('a, 'p) t := ('a, 'p) M.t =
+Make3_indexed (struct
     include M
 
     type ('a, _, _, 'p, _) t = ('a, 'p) M.t
   end)
 
-module%template.portable [@modality p] Make (M : Basic [@kind k] [@mode m]) :
-  S [@kind k] [@mode m] with type 'a t := 'a M.t =
-Make3_indexed [@kind k] [@mode m] [@modality p] (struct
+module Make (M : Basic) : S with type 'a t := 'a M.t = Make3_indexed (struct
     include M
 
     type ('a, _, _, _, _) t = 'a M.t
   end)
 
-module%template.portable
-  [@modality p] Of_monad3_indexed
-    (Monad : S3_indexed
-  [@kind k] [@mode m])
+module Of_monad3_indexed
+    (Monad : S3_indexed)
     (M : sig
        type ('a, 'i, 'j, 'p, 'q) t
 
@@ -108,11 +101,8 @@ module%template.portable
        val of_monad
          : 'a 'i 'j 'p 'q.
          ('a, 'i, 'j, 'p, 'q) Monad.t -> ('a, 'i, 'j, 'p, 'q) t
-     end) :
-  S3_indexed
-  [@kind k] [@mode m]
-  with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) M.t =
-Make3_indexed [@kind k] [@mode m] [@modality p] (struct
+     end) : S3_indexed with type ('a, 'i, 'j, 'p, 'q) t := ('a, 'i, 'j, 'p, 'q) M.t =
+Make3_indexed (struct
     type ('a, 'i, 'j, 'p, 'q) t = ('a, 'i, 'j, 'p, 'q) M.t
 
     let return a = M.of_monad (Monad.return a)
@@ -120,17 +110,15 @@ Make3_indexed [@kind k] [@mode m] [@modality p] (struct
     let map = `Custom (fun t ~f -> M.of_monad (Monad.map (M.to_monad t) ~f))
   end)
 
-module%template.portable
-  [@modality p] Of_monad_indexed
-    (Monad : S_indexed
-  [@kind k] [@mode m])
+module Of_monad_indexed
+    (Monad : S_indexed)
     (M : sig
        type ('a, 'i, 'j) t
 
        val to_monad : 'a 'i 'j. ('a, 'i, 'j) t -> ('a, 'i, 'j) Monad.t
        val of_monad : 'a 'i 'j. ('a, 'i, 'j) Monad.t -> ('a, 'i, 'j) t
-     end) : S_indexed [@kind k] [@mode m] with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t =
-  Of_monad3_indexed [@kind k] [@mode m] [@modality p]
+     end) : S_indexed with type ('a, 'i, 'j) t := ('a, 'i, 'j) M.t =
+  Of_monad3_indexed
     (struct
       include Monad
 
@@ -142,17 +130,15 @@ module%template.portable
       type ('a, 'i, 'j, _, _) t = ('a, 'i, 'j) M.t
     end)
 
-module%template.portable
-  [@modality p] Of_monad3
-    (Monad : S3
-  [@kind k] [@mode m])
+module Of_monad3
+    (Monad : S3)
     (M : sig
        type ('a, 'p, 'q) t
 
        val to_monad : 'a 'p 'q. ('a, 'p, 'q) t -> ('a, 'p, 'q) Monad.t
        val of_monad : 'a 'p 'q. ('a, 'p, 'q) Monad.t -> ('a, 'p, 'q) t
-     end) : S3 [@kind k] [@mode m] with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t =
-  Of_monad3_indexed [@kind k] [@mode m] [@modality p]
+     end) : S3 with type ('a, 'p, 'q) t := ('a, 'p, 'q) M.t =
+  Of_monad3_indexed
     (struct
       include Monad
 
@@ -164,17 +150,15 @@ module%template.portable
       type ('a, _, _, 'p, 'q) t = ('a, 'p, 'q) M.t
     end)
 
-module%template.portable
-  [@modality p] Of_monad2
-    (Monad : S2
-  [@kind k] [@mode m])
+module Of_monad2
+    (Monad : S2)
     (M : sig
        type ('a, 'p) t
 
        val to_monad : 'a 'p. ('a, 'p) t -> ('a, 'p) Monad.t
        val of_monad : 'a 'p. ('a, 'p) Monad.t -> ('a, 'p) t
-     end) : S2 [@kind k] [@mode m] with type ('a, 'p) t := ('a, 'p) M.t =
-  Of_monad3_indexed [@kind k] [@mode m] [@modality p]
+     end) : S2 with type ('a, 'p) t := ('a, 'p) M.t =
+  Of_monad3_indexed
     (struct
       include Monad
 
@@ -186,17 +170,15 @@ module%template.portable
       type ('a, _, _, 'p, _) t = ('a, 'p) M.t
     end)
 
-module%template.portable
-  [@modality p] Of_monad
-    (Monad : S
-  [@kind k] [@mode m])
+module Of_monad
+    (Monad : S)
     (M : sig
        type 'a t
 
        val to_monad : 'a. 'a t -> 'a Monad.t
        val of_monad : 'a. 'a Monad.t -> 'a t
-     end) : S [@kind k] [@mode m] with type 'a t := 'a M.t =
-  Of_monad3_indexed [@kind k] [@mode m] [@modality p]
+     end) : S with type 'a t := 'a M.t =
+  Of_monad3_indexed
     (struct
       include Monad
 
@@ -206,7 +188,7 @@ module%template.portable
       include M
 
       type ('a, _, _, _, _) t = 'a M.t
-    end)]
+    end)
 
 module Ident = struct
   type 'a t = 'a

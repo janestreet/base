@@ -7,6 +7,7 @@
 open! Import
 
 open struct
+  module Either = Either0
   module Result = Result0
 end
 
@@ -76,8 +77,7 @@ module Definitions = struct
     end
 
     module type Global = sig
-      type 'a t
-      [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+      type 'a t [@@deriving compare, equal, hash, sexp, sexp_grammar]
 
       (** Globalize a [t]. Takes an argument because [[%globalize]] will pass one for
           ['a], but [globalize] is a no-op so it discards the argument. *)
@@ -145,29 +145,29 @@ module Definitions = struct
 
       (** Wrapping and unwrapping [Either]. *)
 
-      external wrap_either : ('a, 'b) Either0.t -> ('a t, 'b t) Either0.t = "%identity"
+      external wrap_either : ('a, 'b) Either.t -> ('a t, 'b t) Either.t = "%identity"
 
       external unwrap_either
-        :  (('a t, 'b t) Either0.t[@local_opt])
-        -> (('a, 'b) Either0.t[@local_opt])
+        :  (('a t, 'b t) Either.t[@local_opt])
+        -> (('a, 'b) Either.t[@local_opt])
         = "%identity"
 
       (** Wrapping and unwrapping [Either.First]. *)
 
-      external wrap_first : ('a, 'b) Either0.t -> ('a t, 'b) Either0.t = "%identity"
+      external wrap_first : ('a, 'b) Either.t -> ('a t, 'b) Either.t = "%identity"
 
       external unwrap_first
-        :  (('a t, 'b) Either0.t[@local_opt])
-        -> (('a, 'b) Either0.t[@local_opt])
+        :  (('a t, 'b) Either.t[@local_opt])
+        -> (('a, 'b) Either.t[@local_opt])
         = "%identity"
 
       (** Wrapping and unwrapping [Either.Second]. *)
 
-      external wrap_second : ('a, 'b) Either0.t -> ('a, 'b t) Either0.t = "%identity"
+      external wrap_second : ('a, 'b) Either.t -> ('a, 'b t) Either.t = "%identity"
 
       external unwrap_second
-        :  (('a, 'b t) Either0.t[@local_opt])
-        -> (('a, 'b) Either0.t[@local_opt])
+        :  (('a, 'b t) Either.t[@local_opt])
+        -> (('a, 'b) Either.t[@local_opt])
         = "%identity"
 
       (** Wrapping and unwrapping [Result]. *)
@@ -260,9 +260,7 @@ module Definitions = struct
 
   module Portable = struct
     module type Portable = sig
-      type 'a t
-      [@@deriving
-        compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+      type 'a t [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
 
       val t_of_sexp : (Sexplib0.Sexp.t -> 'a) -> Sexplib0.Sexp.t -> 'a t
 
@@ -337,50 +335,38 @@ module Definitions = struct
       (** Wrapping and unwrapping [Either]. *)
 
       external wrap_either
-        :  (('a, 'b) Either0.t[@local_opt])
-        -> (('a t, 'b t) Either0.t[@local_opt])
+        :  (('a, 'b) Either.t[@local_opt])
+        -> (('a t, 'b t) Either.t[@local_opt])
         = "%identity"
 
       external unwrap_either
-        :  (('a t, 'b t) Either0.t[@local_opt])
-        -> (('a, 'b) Either0.t[@local_opt])
+        :  (('a t, 'b t) Either.t[@local_opt])
+        -> (('a, 'b) Either.t[@local_opt])
         = "%identity"
 
       (** Wrapping and unwrapping [Either.First]. *)
 
       external wrap_first
-        :  (('a, 'b) Either0.t[@local_opt])
-        -> (('a t, 'b) Either0.t[@local_opt])
+        :  (('a, 'b) Either.t[@local_opt])
+        -> (('a t, 'b) Either.t[@local_opt])
         = "%identity"
 
       external unwrap_first
-        :  (('a t, 'b) Either0.t[@local_opt])
-        -> (('a, 'b) Either0.t[@local_opt])
+        :  (('a t, 'b) Either.t[@local_opt])
+        -> (('a, 'b) Either.t[@local_opt])
         = "%identity"
-
-      external%template unwrap_first
-        :  (('a t, 'b) Either0.t[@local_opt])
-        -> (('a, 'b) Either0.t[@local_opt])
-        = "%identity"
-      [@@mode portable]
 
       (** Wrapping and unwrapping [Either.Second]. *)
 
       external wrap_second
-        :  (('a, 'b) Either0.t[@local_opt])
-        -> (('a, 'b t) Either0.t[@local_opt])
+        :  (('a, 'b) Either.t[@local_opt])
+        -> (('a, 'b t) Either.t[@local_opt])
         = "%identity"
 
       external unwrap_second
-        :  (('a, 'b t) Either0.t[@local_opt])
-        -> (('a, 'b) Either0.t[@local_opt])
+        :  (('a, 'b t) Either.t[@local_opt])
+        -> (('a, 'b) Either.t[@local_opt])
         = "%identity"
-
-      external%template unwrap_second
-        :  (('a, 'b t) Either0.t[@local_opt])
-        -> (('a, 'b) Either0.t[@local_opt])
-        = "%identity"
-      [@@mode portable]
 
       (** Wrapping and unwrapping [Result]. *)
 
@@ -418,12 +404,6 @@ module Definitions = struct
         -> (('a, 'b) Result.t[@local_opt])
         = "%identity"
 
-      external%template unwrap_ok
-        :  (('a t, 'b) Result.t[@local_opt])
-        -> (('a, 'b) Result.t[@local_opt])
-        = "%identity"
-      [@@mode portable]
-
       (** Wrapping and unwrapping [Result.Error]. *)
 
       external wrap_error
@@ -436,11 +416,29 @@ module Definitions = struct
         -> (('a, 'b) Result.t[@local_opt])
         = "%identity"
 
-      external%template unwrap_error
-        :  (('a, 'b t) Result.t[@local_opt])
-        -> (('a, 'b) Result.t[@local_opt])
+      (** Wrapping and unwrapping [Result.Ok] in [Result.t list]. *)
+
+      external wrap_ok_list
+        :  (('a, 'b) Result.t list[@local_opt])
+        -> (('a t, 'b) Result.t list[@local_opt])
         = "%identity"
-      [@@mode portable]
+
+      external unwrap_ok_list
+        :  (('a t, 'b) Result.t list[@local_opt])
+        -> (('a, 'b) Result.t list[@local_opt])
+        = "%identity"
+
+      (** Wrapping and unwrapping [Result.Error] in [Result.t list]. *)
+
+      external wrap_error_list
+        :  (('a, 'b) Result.t list[@local_opt])
+        -> (('a, 'b t) Result.t list[@local_opt])
+        = "%identity"
+
+      external unwrap_error_list
+        :  (('a, 'b t) Result.t list[@local_opt])
+        -> (('a, 'b) Result.t list[@local_opt])
+        = "%identity"
 
       (** Wrapping and unwrapping two-tuples. *)
 
@@ -457,17 +455,8 @@ module Definitions = struct
         -> ('a * 'b[@local_opt])
         = "%identity"
 
-      external%template unwrap_fst
-        :  ('a t * 'b[@local_opt])
-        -> ('a * 'b[@local_opt])
-        = "%identity"
-      [@@mode p = (portable, nonportable)]
-
-      external%template unwrap_snd
-        :  ('a * 'b t[@local_opt])
-        -> ('a * 'b[@local_opt])
-        = "%identity"
-      [@@mode p = (portable, nonportable)]
+      external unwrap_fst : ('a t * 'b[@local_opt]) -> ('a * 'b[@local_opt]) = "%identity"
+      external unwrap_snd : ('a * 'b t[@local_opt]) -> ('a * 'b[@local_opt]) = "%identity"
     end
   end
 
@@ -480,24 +469,12 @@ module Definitions = struct
         [ `global
         | `local of actually_local
         ]
-      [@@deriving
-        compare ~localize
-        , equal ~localize
-        , hash
-        , sexp_of ~localize ~stackify
-        , sexp_grammar]
+      [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
 
-      type global = [ `global ]
-      [@@deriving
-        compare ~localize
-        , equal ~localize
-        , hash
-        , sexp_of ~localize ~stackify
-        , sexp_grammar]
+      type global = [ `global ] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
 
       type (+'a, 'locality) t
-      [@@deriving
-        compare ~localize, equal ~localize, hash, globalize, sexp_of, sexp_grammar]
+      [@@deriving compare, equal, hash, globalize, sexp_of, sexp_grammar]
 
       (** Create a global wrapper. Can have any phantom type. *)
       val wrap : 'a -> ('a, _) t
@@ -541,15 +518,7 @@ module Definitions = struct
         | `local of actually_local
         ]
 
-      (** Abstract over whether a value is [global] or [local], with zero runtime cost,
-          supporting mode crossing locality in the global case
-
-          [('a, global) t] represents a ['a] that is known to be [global]. This type
-          importantly mode-crosses along the locality axis, even if ['a] usually does not.
-
-          [('a, local) t] represents a ['a] whose locality is unknown. This type does not
-          mode-cross along the locality axis, even if ['a] usually does. *)
-      type (+'a, +'locality) t
+      type ('a, _) t = 'a
 
       include
         Without_crossing
@@ -562,23 +531,7 @@ module Definitions = struct
 end
 
 module type Modes = sig
-  type%template 'a t = { modal : 'a }
-  [@@unboxed]
-  [@@modality
-    a = aliased
-    , p = (nonportable, portable)
-    , c = (uncontended, shared, contended)
-    , m = (once, many)]
-  [@@kind k = base_or_null]
-
-  type%template 'a t = { modal : 'a }
-  [@@unboxed]
-  [@@modality
-    g = (local, global)
-    , p = (nonportable, portable)
-    , c = (uncontended, shared, contended, read, immutable)
-    , m = (once, many)]
-  [@@kind k = (base_or_null, (value_or_null & bits64) & word)]
+  type 'a t = { modal : 'a } [@@unboxed]
 
   (** Wrap values in the [global_] mode, even in a [local_] context. *)
   module Global : sig
@@ -623,12 +576,12 @@ module type Modes = sig
 
   module Many : sig
     type 'a t = 'a Basement.Modes.many = { many : 'a }
-    [@@unboxed]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+    [@@unboxed] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
   end
 
   module Aliased : sig
-    type 'a t = 'a Basement.Modes.aliased = { aliased : 'a } [@@unboxed]
+    type 'a t = 'a Basement.Modes.aliased = { aliased : 'a }
+    [@@unboxed] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
 
     (** Construct a [t] *)
     val wrap : 'a -> 'a t
@@ -638,7 +591,8 @@ module type Modes = sig
   end
 
   module Aliased_many : sig
-    type 'a t = 'a Basement.Modes.aliased_many = { aliased_many : 'a } [@@unboxed]
+    type 'a t = 'a Basement.Modes.aliased_many = { aliased_many : 'a }
+    [@@deriving compare, equal, hash, sexp_of, sexp_grammar] [@@unboxed]
   end
 
   module Forkable : sig
@@ -647,8 +601,7 @@ module type Modes = sig
 
   module Unyielding : sig
     type 'a t = 'a Basement.Modes.unyielding = { unyielding : 'a }
-    [@@unboxed]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+    [@@unboxed] [@@deriving compare, equal, hash, sexp, sexp_grammar]
   end
 
   module Stateless : sig
@@ -683,14 +636,13 @@ module type Modes = sig
   (** Abstract over whether a value is [portable] or [nonportable] *)
   module At_portability : sig
     type nonportable_
-    [@@allow_redundant_modalities
-      "While [global] implies [forkable unyielding], we include them for clarity"]
+    (*_ [global] implies [aliased forkable unyielding], but we include them for clarity. *)
+    [@@warning "-redundant-modality"]
 
     (** Phantom type parameter for {!t} which represents that the inhabitant is known to
         be [portable]. *)
     type portable = [ `portable ]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
-    [@@immediate]
+    [@@deriving compare, equal, hash, sexp_of, sexp_grammar] [@@immediate]
 
     (** Phantom type parameter for {!t} which represents that the portability of the
         inhabitant is unknown, and so must be assumed to be [nonportable]. *)
@@ -698,7 +650,7 @@ module type Modes = sig
       [ `portable
       | `nonportable of nonportable_
       ]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+    [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
 
     (** Abstract over whether a value is [portable] or [nonportable], with zero runtime
         cost.
@@ -710,9 +662,9 @@ module type Modes = sig
         [('a, nonportable) t] represents a ['a] whose portability is unknown. This type
         does not mode-cross along the portability axis, even if ['a] usually does. *)
     type (+!'a, +'portability) t
-    [@@allow_redundant_modalities
-      "While [global] implies [forkable unyielding], we include them for clarity"]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+    (*_ [global] implies [aliased forkable unyielding], but we include them for clarity. *)
+    [@@warning "-redundant-modality"]
+    [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
 
     external wrap_portable : ('a[@local_opt]) -> (('a, _) t[@local_opt]) = "%identity"
 
@@ -747,29 +699,11 @@ module type Modes = sig
           [@@modality p = (portable, nonportable)]
         ]} *)
 
-    [%%template:
     type portability = nonportable
-    [@@mode nonportable]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
+    [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
 
-    type portability = portable
-    [@@mode portable]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp_of, sexp_grammar]
-
-    external wrap
-      :  ('a[@local_opt])
-      -> (('a, (portability[@mode p])) t[@local_opt])
-      = "%identity"
-    [@@mode p = (portable, nonportable)]
-
-    external unwrap
-      :  (('a, (portability[@mode p])) t[@local_opt])
-      -> ('a[@local_opt])
-      = "%identity"
-    [@@mode p = portable]
-
+    external wrap : ('a[@local_opt]) -> (('a, portability) t[@local_opt]) = "%identity"
     external unwrap : (('a, _) t[@local_opt]) -> ('a[@local_opt]) = "%identity"
-    [@@mode __ = nonportable]]
   end
 
   (** Allow a type to mode-cross portability by disallowing contended access to it. This
@@ -795,9 +729,17 @@ module type Modes = sig
           { init : (unit -> unit) Portable_via_contended.t
           ; users : string list
           }
-      ]} *)
+      ]}
+
+      The mode-crossing of ['a Portable_via_contended.t] is as follows:
+      - It crosses [portable], even if ['a] doesn't
+      - It doesn't cross [contended], even if ['a] does
+      - On all other axes, it inherits the mode-crossing of ['a]
+        - In particular, it can cross [immutable] despite not crossing [contended]. *)
   module Portable_via_contended : sig
     type +'a t
+    (*_ [global] implies [aliased forkable unyielding], but we include them for clarity. *)
+    [@@warning "-redundant-modality"]
 
     (** The [uncontended] annotations below are redundant, but present to emphasize their
         importance for safety. *)
@@ -808,12 +750,26 @@ module type Modes = sig
     (** If the contained value is of a type that crosses portability, it's safe to extract
         it, even if it has crossed a capsule boundary. *)
     external unwrap_contended : 'a. ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+
+    (** Wrappers and unwrappers for data structures. *)
+
+    external wrap_list : ('a list[@local_opt]) -> ('a t list[@local_opt]) = "%identity"
+    external unwrap_list : ('a t list[@local_opt]) -> ('a list[@local_opt]) = "%identity"
   end
 
   (** Allow a type to mode-cross from contended by prohibiting it from being moved to
-      another domain (i.e., by ensuring it's nonportable). *)
+      another domain (i.e., by ensuring it's nonportable).
+
+      The mode-crossing of ['a Contended_via_portable.t] is as follows:
+      - It crosses [contended], even if ['a] doesn't
+      - It doesn't cross [portable], even if ['a] does
+      - On all other axes, it inherits the mode-crossing of ['a]
+        - In particular, it can cross [stateless] despite not crossing [portable]. *)
   module Contended_via_portable : sig
-    type +'a t [@@deriving sexp_of]
+    type +'a t
+    (*_ [global] implies [aliased forkable unyielding], but we include them for clarity. *)
+    [@@warning "-redundant-modality"]
+    [@@deriving sexp_of]
 
     external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
     external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
@@ -824,66 +780,95 @@ module type Modes = sig
     val refute_portable : _ t -> _
   end
 
+  (** Allow any type to be [mod many] by making aliased references unusable. This allows
+      you to turn a type that cares about either or both of [unique] and [once] into one
+      that cares only about [unique]. For example, you can use this to store a [@ once]
+      closure in a [Capsule.Owned.t].
+
+      The mode-crossing of ['a t] is as follows:
+      - It crosses [many], even if ['a] doesn't
+      - It doesn't cross [aliased], even if ['a] does
+      - It doesn't cross [global], even if ['a] does, because a type can't cross [global]
+        without also crossing [aliased]
+      - On all other axes, it inherits the mode-crossing of ['a]. *)
+  module Many_via_aliased : sig
+    type !+'a t
+
+    external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
+    external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+  end
+
+  (** Allow any type to be [mod aliased] by making all references to it [once]. This
+      allows you to turn a type that cares about either or both of [unique] and [once]
+      into one that cares only about [once].
+
+      The mode-crossing of ['a t] is as follows:
+      - It crosses [aliased], even if ['a] doesn't
+      - It doesn't cross [many], even if ['a] does
+      - On all other axes, it inherits the mode-crossing of ['a]. *)
+  module Aliased_via_many : sig
+    type !+'a t
+
+    external wrap : ('a[@local_opt]) -> ('a t[@local_opt]) = "%identity"
+    external unwrap : ('a t[@local_opt]) -> ('a[@local_opt]) = "%identity"
+
+    (** It's impossible to construct a [t @ many]. [refute_many] lets you use this fact to
+        prove that you're in unreachable code. *)
+    val refute_many : _ t -> _
+  end
+
   (** A witness of mode-crossing. In spirit, it's similar to [Type_equal.t]: there's no
       runtime content, but the fact that you have a ['a Mod.t] in hand lets you recover
       mode-crossing information about ['a]. *)
   module Mod : sig
-    type%template 'a t = Mod : 'a. ('a t[@modality a p c m])
-    [@@modality
-      a = aliased
-      , p = (nonportable, portable)
-      , c = (uncontended, shared, contended)
-      , m = (once, many)]
+    module Generic : sig
+      type 'a t = Mod : 'a. 'a t
+    end
 
-    type%template 'a t = Mod : 'a. ('a t[@modality g p c m])
-    [@@modality
-      g = (local, global)
-      , p = (nonportable, portable)
-      , c = (uncontended, shared, contended)
-      , m = (once, many)]
+    include module type of struct
+      include Generic
+    end
 
     (** Aliases of [Mod] for specific modalities. These aliases aren't necessary, but they
         are a bit more convenient than ppx_template (e.g. they are auto-completed in
         editors). *)
 
     module Global : sig
-      type%template 'a t = ('a t[@modality global]) = Mod : 'a. 'a t
+      type 'a t = 'a Generic.t = Mod : 'a. 'a t
     end
 
     module Portable : sig
-      type%template 'a t = ('a t[@modality portable]) = Mod : 'a. 'a t
+      type 'a t = 'a Generic.t = Mod : 'a. 'a t
     end
 
     module Contended : sig
-      type%template 'a t = ('a t[@modality contended]) = Mod : 'a. 'a t
+      type 'a t = 'a Generic.t = Mod : 'a. 'a t
     end
 
     module Shared : sig
-      type%template 'a t = ('a t[@modality shared]) = Mod : 'a. 'a t
+      type 'a t = 'a Generic.t = Mod : 'a. 'a t
     end
 
     module Portended : sig
-      type%template 'a t = ('a t[@modality portable contended]) = Mod : 'a. 'a t
+      type 'a t = 'a Generic.t = Mod : 'a. 'a t
     end
 
     module Many : sig
-      type%template 'a t = ('a t[@modality many]) = Mod : 'a. 'a t
+      type 'a t = 'a Generic.t = Mod : 'a. 'a t
     end
 
     module Aliased : sig
-      type%template 'a t = ('a t[@modality aliased]) = Mod : 'a. 'a t
+      type 'a t = 'a Generic.t = Mod : 'a. 'a t
     end
   end
 
   (** Can be [open]ed or [include]d to bring field names into scope. *)
   module Export : sig
     type 'a global = 'a Global.t = { global : 'a }
-    [@@unboxed]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+    [@@unboxed] [@@deriving compare, equal, hash, sexp, sexp_grammar]
 
     type 'a portable = 'a Portable.t = { portable : 'a }
-    [@@unboxed]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+    [@@unboxed] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
 
     type 'a contended = 'a Contended.t = { contended : 'a }
     [@@unboxed] [@@deriving of_sexp]
@@ -892,16 +877,18 @@ module type Modes = sig
     type 'a portended = 'a Portended.t = { portended : 'a } [@@unboxed]
 
     type 'a many = 'a Many.t = { many : 'a }
-    [@@unboxed]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify, sexp_grammar]
+    [@@unboxed] [@@deriving compare, equal, hash, sexp_of, sexp_grammar]
 
-    type 'a aliased = 'a Aliased.t = { aliased : 'a } [@@unboxed]
-    type 'a aliased_many = 'a Aliased_many.t = { aliased_many : 'a } [@@unboxed]
+    type 'a aliased = 'a Aliased.t = { aliased : 'a }
+    [@@deriving compare, equal, hash, sexp_of, sexp_grammar] [@@unboxed]
+
+    type 'a aliased_many = 'a Aliased_many.t = { aliased_many : 'a }
+    [@@deriving compare, equal, hash, sexp_of, sexp_grammar] [@@unboxed]
+
     type 'a forkable = 'a Forkable.t = { forkable : 'a } [@@unboxed]
 
     type 'a unyielding = 'a Unyielding.t = { unyielding : 'a }
-    [@@unboxed]
-    [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+    [@@unboxed] [@@deriving compare, equal, hash, sexp, sexp_grammar]
 
     type 'a stateless = 'a Stateless.t = { stateless : 'a } [@@unboxed]
     type 'a reading = 'a Reading.t = { reading : 'a } [@@unboxed]

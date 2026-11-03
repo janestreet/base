@@ -2,7 +2,7 @@ open! Import
 open Container.Export
 module Array = Array0
 module List = List0
-module%template Derived = Container.Derived [@kind.explicit value_or_null]
+module Derived = Container.Derived
 
 module Step = struct
   (* 'a is an item in the sequence, 's is the state that will produce the remainder of the
@@ -16,7 +16,7 @@ module Step = struct
         ; state : 's
         }
         -> ('a, 's) t
-  [@@deriving sexp_of ~stackify]
+  [@@deriving sexp_of]
 end
 
 open Step
@@ -426,8 +426,7 @@ let return x =
     | Some x -> Yield { value = x; state = None })
 ;;
 
-include%template
-  Monad.Make [@kind value_or_null mod maybe_null] [@modality portable] (struct
+include Monad.Make (struct
     type nonrec 'a t = 'a t
 
     let map = `Custom map
@@ -464,7 +463,7 @@ module Merge_with_duplicates_element = struct
     | Left of 'a
     | Right of 'b
     | Both of 'a * 'b
-  [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
+  [@@deriving compare, equal, hash, sexp, sexp_grammar]
 end
 
 let merge_with_duplicates
@@ -801,10 +800,10 @@ let remove_consecutive_duplicates s ~equal =
     | None | Some _ -> Yield { value = a; state = Some a })
 ;;
 
-let count s ~f = fold s ~init:0 ~f:(fun acc elt -> acc + Bool.to_int (f elt)) [@nontail]
+let count s ~f = fold s ~init:0 ~f:(fun acc elt -> acc + bool_to_int (f elt)) [@nontail]
 
 let counti t ~f =
-  foldi t ~init:0 ~f:(fun i acc elt -> acc + Bool.to_int (f i elt)) [@nontail]
+  foldi t ~init:0 ~f:(fun i acc elt -> acc + bool_to_int (f i elt)) [@nontail]
 ;;
 
 let sum m t ~f = Derived.sum ~fold m t ~f
@@ -1059,7 +1058,7 @@ let force_eagerly t = of_list (to_list t)
 
 let memoize (type a) (Sequence { state = s; next }) =
   let module M = struct
-    type t = T of (a, t) Step.t Lazy.t
+    type t = T of (a, t) Step.t lazy_t
   end
   in
   let rec memoize s = M.T (lazy (find_step s))
@@ -1117,18 +1116,10 @@ let compare compare_a (Sequence l) (Sequence r) =
   loop compare_a l.state l.next r.state r.next
 ;;
 
-let%template[@mode local] compare compare_a t1 t2 =
-  compare (fun x y -> compare_a x y) (globalize () t1) (globalize () t2)
-;;
-
 let equal equal_a t1 t2 =
   for_all (zip_full t1 t2) ~f:(function
     | `Both (a1, a2) -> equal_a a1 a2
     | `Left _ | `Right _ -> false)
-;;
-
-let%template[@mode local] equal equal_a t1 t2 =
-  equal (fun x y -> equal_a x y) (globalize () t1) (globalize () t2)
 ;;
 
 let round_robin list =
@@ -1218,8 +1209,7 @@ module Generator = struct
   end
 
   include T
-
-  include%template Monad.Make2 [@modality portable] (T)
+  include Monad.Make2 (T)
 
   let yield e k = Wrap (Yield { value = e; state = k })
   let to_steps t = t (fun () -> Wrap Done)

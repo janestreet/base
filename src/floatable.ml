@@ -1,6 +1,6 @@
 (** Module type with float conversion functions. *)
 
-open! Import
+open! Import0
 
 module type S = sig
   type t

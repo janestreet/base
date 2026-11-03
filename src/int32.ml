@@ -1,23 +1,20 @@
 open! Import
 open! Stdlib.Int32
+module Bool = Bool0
+module Float = Float0
 module Sexp = Sexp0
 
 module T = struct
   module T0 = struct
-    type t = int32 [@@deriving globalize, hash, of_sexp ~unboxed, sexp_grammar]
+    type t = int32 [@@deriving globalize, hash, of_sexp, sexp_grammar]
 
-    let%template[@alloc a = (heap, stack)] to_string =
-      (Integer_to_string.int32_to_string [@alloc a])
-    ;;
-
-    type unboxed = int32
-
-    let box = Basement.Primitives.box_int32
+    let t_u_of_sexp sexp = Int32_u.unbox (t_of_sexp sexp)
+    let to_string = Integer_to_string.int32_to_string
   end
 
   include T0
-
-  include%template Int_string_conversions.Make_unboxed [@kind bits32] (T0)
+  include Int_string_conversions.Make (T0)
+  include Provide_unboxed (Int32_u)
 
   external format : string -> int32 -> string = "caml_int32_format"
 
@@ -36,12 +33,11 @@ module T = struct
 end
 
 include T
-
-include%template Comparator.Make [@modality portable] (T)
+include Comparator.Make (T)
 
 let num_bits = 32l
-let float_lower_bound = Float0.lower_bound_for_int (num_bits |> to_int)
-let float_upper_bound = Float0.upper_bound_for_int (num_bits |> to_int)
+let float_lower_bound = Float.lower_bound_for_int (num_bits |> to_int)
+let float_upper_bound = Float.upper_bound_for_int (num_bits |> to_int)
 
 external float_of_bits
   :  t
@@ -99,11 +95,11 @@ let of_float f =
   else
     Printf.invalid_argf
       "Int32.of_float: argument (%f) is out of range or NaN"
-      (Float0.box f)
+      (Float.box f)
       ()
 ;;
 
-include%template Comparable.With_zero [@modality portable] (struct
+include Comparable.With_zero (struct
     include T
 
     let zero = zero
@@ -114,8 +110,8 @@ module Compare = struct
 
   let ascending = compare
   let descending x y = compare y x
-  let min x y = Bool0.select (x <= y) x y
-  let max x y = Bool0.select (x >= y) x y
+  let min x y = Bool.select (x <= y) x y
+  let max x y = Bool.select (x >= y) x y
   let between t ~low ~high = low <= t && t <= high
   let clamp_unchecked t ~min:min_ ~max:max_ = min t max_ |> max min_
 
@@ -234,11 +230,7 @@ include O
 module Pow2 = struct
   open O
 
-  let raise_s = Error.raise_s
-
-  let non_positive_argument () =
-    Printf.invalid_argf "argument must be strictly positive" ()
-  ;;
+  let non_positive_argument () = invalid_arg "argument must be strictly positive"
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 x =
@@ -273,23 +265,13 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if i <= 0l
-    then
-      raise_s
-        (Sexp.message
-           "[Int32.floor_log2] got invalid input"
-           [ "", sexp_of_int32 (globalize i) ]);
+    if i <= 0l then invalid_arg ("Int32.floor_log2: " ^ to_string i);
     num_bits - 1l - clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if i <= 0l
-    then
-      raise_s
-        (Sexp.message
-           "[Int32.ceil_log2] got invalid input"
-           [ "", sexp_of_int32 (globalize i) ]);
+    if i <= 0l then invalid_arg ("Int32.ceil_log2: " ^ to_string i);
     (* The [i = 1] check is needed because clz(0) is undefined *)
     if i = 1l
     then 0l
@@ -303,7 +285,7 @@ include Pow2
 include Int_string_conversions.Make (T)
 
 include Int_string_conversions.Make_hex (struct
-    type t = int32 [@@deriving compare ~localize, hash]
+    type t = int32 [@@deriving compare, hash]
 
     let zero = zero
 
@@ -316,7 +298,7 @@ include Int_string_conversions.Make_hex (struct
   end)
 
 include Int_string_conversions.Make_binary (struct
-    type t = int32 [@@deriving compare ~localize, equal ~localize, hash]
+    type t = int32 [@@deriving compare, equal, hash]
 
     let ( land ) = ( land )
 
@@ -330,7 +312,7 @@ include Int_string_conversions.Make_binary (struct
     let ( - ) = ( - )
   end)
 
-include%template Pretty_printer.Register [@modality portable] (struct
+include Pretty_printer.Register (struct
     type nonrec t = t
 
     let to_string = to_string

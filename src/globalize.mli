@@ -21,9 +21,7 @@
     allocators will be covariant over their mode parameter but that means you would be
     able to pass a heap allocator in as the witness of a local value, so it wouldn't get
     globalized, effectively magic-ing something from local to global. *)
-  val%template maybe_globalize : ('a -> 'a) -> 'a -> 'a
-  [@@alloc a @ l = (heap_global, stack_local)]
-
+val maybe_globalize : ('a -> 'a) -> 'a -> 'a
 val globalize_bool : bool -> bool
 val globalize_char : char -> char
 val globalize_float : float -> float
@@ -34,10 +32,7 @@ val globalize_nativeint : nativeint -> nativeint
 val globalize_bytes : bytes -> bytes
 val globalize_string : string -> string
 val globalize_unit : unit -> unit
-
-val%template globalize_array : 'a 'b. ('a -> 'b) -> 'a array -> 'a array
-[@@kind k = base_or_null_with_imm]
-
+val globalize_array : 'a 'b. ('a -> 'b) -> 'a array -> 'a array
 val globalize_floatarray : floatarray -> floatarray
 val globalize_lazy_t : ('a -> 'b) -> 'a lazy_t -> 'a lazy_t
 val globalize_list : 'a 'b. ('a -> 'b) -> 'a list -> 'b list

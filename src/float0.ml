@@ -1,4 +1,5 @@
 open! Import
+module Sys = Sys0
 
 (* Open replace_polymorphic_compare after including functor instantiations so they do not
    shadow its definitions. This is here so that efficient versions of the comparison
@@ -30,7 +31,11 @@ let to_int64_preserve_order t =
   else Some (Stdlib.Int64.neg (Stdlib.Int64.bits_of_float (globalize_float (-.t))))
 ;;
 
-let to_int64_preserve_order_exn x = Option.value_exn (to_int64_preserve_order x)
+let to_int64_preserve_order_exn x =
+  match to_int64_preserve_order x with
+  | Some x -> x
+  | None -> invalid_arg "Float0.to_int64_preserve_order_exn: value is nan"
+;;
 
 (* N.b. the calls to [globalize_int64] are no-ops at runtime since the int64 is unboxed
    and then consumed by [float_of_bits], so the compiler knows not to re-box it. *)
@@ -111,6 +116,6 @@ let box =
      and then consumed by addition, so the compiler knows not to re-box it. The
      implementation of flambda's heuristics is such that an arithmetic operation is
      necessary for the behavior we want; it is insufficient to simply globalize it. *)
-  let x = Sys0.opaque_identity ~-.0. in
+  let x = Sys.opaque_identity ~-.0. in
   fun f -> globalize_float f +. x
 ;;

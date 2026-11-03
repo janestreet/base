@@ -9,9 +9,12 @@
 
     [Int32.t] is boxed on both 32-bit and 64-bit machines. *)
 
-open! Import
+open! Import0
 
-type t = int32 [@@deriving globalize, sexp ~stackify ~unboxed]
+type t = int32 [@@deriving globalize, sexp]
+
+val sexp_of_t_u : Int32_u.t -> Sexp0.t
+val t_u_of_sexp : Sexp0.t -> Int32_u.t
 
 include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t

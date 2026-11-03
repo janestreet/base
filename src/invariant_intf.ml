@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Sexp = Sexp0
 
 type 'a inv = 'a -> unit
@@ -12,30 +12,23 @@ module Definitions = struct
     val invariant : t inv
   end
 
-  [%%template
-  [@@@kind.default ka = base]
-
   module type S1 = sig
     type 'a t
 
-    val invariant : 'a inv -> 'a t inv [@@kind ka]
+    val invariant : 'a inv -> 'a t inv
   end
-
-  [@@@kind.default kb = base]
 
   module type S2 = sig
     type ('a, 'b) t
 
-    val invariant : 'a inv -> 'b inv -> ('a, 'b) t inv [@@kind ka kb]
+    val invariant : 'a inv -> 'b inv -> ('a, 'b) t inv
   end
-
-  [@@@kind.default kc = base]
 
   module type S3 = sig
     type ('a, 'b, 'c) t
 
-    val invariant : 'a inv -> 'b inv -> 'c inv -> ('a, 'b, 'c) t inv [@@kind ka kb kc]
-  end]
+    val invariant : 'a inv -> 'b inv -> 'c inv -> ('a, 'b, 'c) t inv
+  end
 end
 
 module type Invariant = sig
@@ -59,9 +52,6 @@ module type Invariant = sig
     include Definitions
   end
 
-  [%%template:
-  [@@@kind.default k = base_or_null]
-
   (** [invariant t sexp_of_t f] runs [f ()], and if [f] raises, wraps the exception in an
       [Error.t] that states "invariant failed" and includes both the exception raised by
       [f], as well as [sexp_of_t t]. Idiomatic usage looks like:
@@ -81,11 +71,8 @@ module type Invariant = sig
       It's okay to use [ [%sexp_of: _ t] ] because the exceptions raised by [check_a] will
       show the parts that are opaque at top-level. *)
   val invariant
-    :  ?here:Stdlib.Lexing.position
-    -> 'a
-    -> ('a -> Sexp.t)
-    -> (unit -> unit)
-    -> unit
+    : 'a.
+    ?here:Stdlib.Lexing.position -> 'a -> ('a -> Sexp.t) -> (unit -> unit) -> unit
 
   (** [check_field] is used when checking invariants using [Fields.iter]. It wraps an
       exception raised when checking a field with the field's name. Idiomatic usage looks
@@ -104,5 +91,5 @@ module type Invariant = sig
             Fields.iter ~foo:(check Foo.invariant) ~bar:(check Bar.invariant))
         ;;
       ]} *)
-  val check_field : 'a 'b. 'a -> 'b t -> ('a, 'b) Field.t -> unit]
+  val check_field : 'a 'b. 'a -> 'b t -> ('a, 'b) Field.t -> unit
 end

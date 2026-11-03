@@ -1,4 +1,6 @@
 open! Import
+module Array = Array0
+module Sexp = Sexp0
 include Hash_set_intf.Definitions
 
 let hashable_s = Hashtbl.hashable_s
@@ -42,11 +44,9 @@ module Accessors = struct
   ;;
 
   let strict_add t k : Ok_or_duplicate.t =
-    if mem t k
-    then Duplicate
-    else (
-      Hashtbl.set t ~key:k ~data:();
-      Ok)
+    match Hashtbl.add t ~key:k ~data:() with
+    | `Ok -> Ok
+    | `Duplicate -> Duplicate
   ;;
 
   let strict_add_or_error t k =
@@ -59,11 +59,9 @@ module Accessors = struct
   let remove = Hashtbl.remove
 
   let strict_remove t k : Ok_or_absent.t =
-    if mem t k
-    then (
-      remove t k;
-      Ok)
-    else Absent
+    let old_length = length t in
+    remove t k;
+    if length t = old_length then Absent else Ok
   ;;
 
   let strict_remove_or_error t k =
@@ -106,11 +104,7 @@ module Accessors = struct
 
   let exists t ~f = Hashtbl.existsi t ~f:(fun ~key ~data:() -> f key) [@nontail]
   let for_all t ~f = not (Hashtbl.existsi t ~f:(fun ~key ~data:() -> not (f key)))
-
-  let%template equal t1 t2 = (Hashtbl.equal [@mode m]) (fun () () -> true) t1 t2
-  [@@mode m = (local, global)]
-  ;;
-
+  let equal t1 t2 = Hashtbl.equal (fun () () -> true) t1 t2
   let copy t = Hashtbl.copy t
   let filter t ~f = Hashtbl.filteri t ~f:(fun ~key ~data:() -> f key) [@nontail]
   let union t1 t2 = Hashtbl.merge t1 t2 ~f:(fun ~key:_ _ -> Some ())
@@ -174,7 +168,7 @@ let t_of_sexp m e_of_sexp sexp =
     t
 ;;
 
-module%template.portable Creators (Elt : sig
+module Creators (Elt : sig
     type 'a t
 
     val hashable : 'a t Hashable.t
@@ -209,7 +203,7 @@ module Poly = struct
 
   let hashable = poly_hashable
 
-  include%template Creators [@modality portable] (struct
+  include Creators (struct
       type 'a t = 'a
 
       let hashable = hashable
@@ -237,9 +231,7 @@ let m__t_sexp_grammar (type elt) (module Elt : M_sexp_grammar with type t = elt)
   Sexplib0.Sexp_grammar.coerce (list_sexp_grammar Elt.t_sexp_grammar)
 ;;
 
-let%template[@mode m = (local, global)] equal_m__t (module _ : Equal_m) t1 t2 =
-  (equal [@mode m]) t1 t2
-;;
+let equal_m__t (module _ : Equal_m) t1 t2 = equal t1 t2
 
 module Private = struct
   let hashable = Hashtbl.Private.hashable
