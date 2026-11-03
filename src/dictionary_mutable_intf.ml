@@ -7,7 +7,8 @@
     We then provide instantiations of these interfaces with 1, 2, and 3 type parameters
     for [t]. These cover more common usage patterns for the interfaces. *)
 
-open! Import
+open! Import0
+module Either = Either0
 
 (** These definitions are re-exported by [Dictionary_mutable]. *)
 module Definitions = struct
@@ -79,7 +80,7 @@ module Definitions = struct
 
     (** Like [find]. Adds the value [default ()] if none exists, then returns it. *)
     val find_or_add
-      : ( ('key, 'data, 'phantom) t -> 'key key -> default:local_ (unit -> 'data) -> 'data
+      : ( ('key, 'data, 'phantom) t -> 'key key -> default:(unit -> 'data) @ local -> 'data
           , 'key
           , 'data
           , 'phantom )
@@ -89,7 +90,7 @@ module Definitions = struct
     val findi_or_add
       : ( ('key, 'data, 'phantom) t
           -> 'key key
-          -> default:local_ ('key key -> 'data)
+          -> default:('key key -> 'data) @ local
           -> 'data
           , 'key
           , 'data
@@ -102,8 +103,8 @@ module Definitions = struct
       : ('key : value mod maybe_shared) 'data 'phantom ('c : value_or_null).
       ( ('key, 'data, 'phantom) t @ maybe_shared
         -> 'key key
-        -> if_found:local_ ('data @ maybe_shared -> 'c)
-        -> if_not_found:local_ ('key key -> 'c)
+        -> if_found:('data @ maybe_shared -> 'c) @ local
+        -> if_not_found:('key key -> 'c) @ local
         -> 'c
         , 'key
         , 'data
@@ -116,8 +117,8 @@ module Definitions = struct
       : ('key : value mod maybe_shared) 'data 'phantom ('c : value_or_null).
       ( ('key, 'data, 'phantom) t @ maybe_shared
         -> 'key key
-        -> if_found:local_ (key:'key key -> data:'data @ maybe_shared -> 'c)
-        -> if_not_found:local_ ('key key -> 'c)
+        -> if_found:(key:'key key -> data:'data @ maybe_shared -> 'c) @ local
+        -> if_not_found:('key key -> 'c) @ local
         -> 'c
         , 'key
         , 'data
@@ -168,7 +169,7 @@ module Definitions = struct
     val change
       : ( ('key, 'data, 'phantom) t
           -> 'key key
-          -> f:local_ ('data option -> 'data option)
+          -> f:('data option -> 'data option) @ local
           -> unit
           , 'key
           , 'data
@@ -178,7 +179,10 @@ module Definitions = struct
     (** Adds or replaces the value for a given key, depending on its current value or lack
         thereof. *)
     val update
-      : ( ('key, 'data, 'phantom) t -> 'key key -> f:local_ ('data option -> 'data) -> unit
+      : ( ('key, 'data, 'phantom) t
+          -> 'key key
+          -> f:('data option -> 'data) @ local
+          -> unit
           , 'key
           , 'data
           , 'phantom )
@@ -188,7 +192,7 @@ module Definitions = struct
     val update_and_return
       :  ('key, 'data, 'phantom) t
       -> 'key key
-      -> f:local_ ('data option -> 'data)
+      -> f:('data option -> 'data) @ local
       -> 'data
 
     (** Adds [by] to the value for [key], default 0 if [key] is absent. May remove [key]
@@ -244,34 +248,34 @@ module Definitions = struct
     val fold
       :  ('key, 'data, 'phantom) t
       -> init:'acc
-      -> f:local_ (key:'key key -> data:'data -> 'acc -> 'acc)
+      -> f:(key:'key key -> data:'data -> 'acc -> 'acc) @ local
       -> 'acc
 
     (** Whether every value satisfies [f]. *)
-    val for_all : (_, 'data, 'phantom) t -> f:local_ ('data -> bool) -> bool
+    val for_all : (_, 'data, 'phantom) t -> f:('data -> bool) @ local -> bool
 
     (** Like [for_all]. The predicate may also depend on the associated key. *)
     val for_alli
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> bool)
+      -> f:(key:'key key -> data:'data -> bool) @ local
       -> bool
 
     (** Whether at least one value satisfies [f]. *)
-    val exists : (_, 'data, 'phantom) t -> f:local_ ('data -> bool) -> bool
+    val exists : (_, 'data, 'phantom) t -> f:('data -> bool) @ local -> bool
 
     (** Like [exists]. The predicate may also depend on the associated key. *)
     val existsi
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> bool)
+      -> f:(key:'key key -> data:'data -> bool) @ local
       -> bool
 
     (** How many values satisfy [f]. *)
-    val count : (_, 'data, 'phantom) t -> f:local_ ('data -> bool) -> int
+    val count : (_, 'data, 'phantom) t -> f:('data -> bool) @ local -> int
 
     (** Like [count]. The predicate may also depend on the associated key. *)
     val counti
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> bool)
+      -> f:(key:'key key -> data:'data -> bool) @ local
       -> int
 
     (** Arbitrary, deterministic key/value pair if non-empty. *)
@@ -282,127 +286,130 @@ module Definitions = struct
 
     (** Arbitrary, pseudo-random key/value pair if non-empty. *)
     val choose_randomly
-      :  ?random_state:Random.State.t
+      :  ?random_state:Random.State.t @ local
       -> ('key, 'data, 'phantom) t
       -> ('key key * 'data) option
 
     (** Like [choose_randomly]. Raises if empty. *)
     val choose_randomly_exn
-      :  ?random_state:Random.State.t
+      :  ?random_state:Random.State.t @ local
       -> ('key, 'data, 'phantom) t
       -> 'key key * 'data
 
     (** Calls [f] for every key. *)
-    val iter_keys : ('key, _, 'phantom) t -> f:local_ ('key key -> unit) -> unit
+    val iter_keys : ('key, _, 'phantom) t -> f:('key key -> unit) @ local -> unit
 
     (** Calls [f] for every value. *)
-    val iter : (_, 'data, 'phantom) t -> f:local_ ('data -> unit) -> unit
+    val iter : (_, 'data, 'phantom) t -> f:('data -> unit) @ local -> unit
 
     (** Calls [f] for every key/value pair. *)
     val iteri
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> unit)
+      -> f:(key:'key key -> data:'data -> unit) @ local
       -> unit
 
     (** Transforms every value. *)
     val map
       :  ('key, 'data, 'phantom) t
-      -> f:local_ ('data -> 'c)
+      -> f:('data -> 'c) @ local
       -> ('key, 'c, 'phantom) t
 
     (** Like [map]. The transformation may also depend on the associated key. *)
     val mapi
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> 'c)
+      -> f:(key:'key key -> data:'data -> 'c) @ local
       -> ('key, 'c, 'phantom) t
 
     (** Like [map]. Modifies the input. *)
-    val map_inplace : (_, 'data, 'phantom) t -> f:local_ ('data -> 'data) -> unit
+    val map_inplace : (_, 'data, 'phantom) t -> f:('data -> 'data) @ local -> unit
 
     (** Like [mapi]. Modifies the input. *)
     val mapi_inplace
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> 'data)
+      -> f:(key:'key key -> data:'data -> 'data) @ local
       -> unit
 
     (** Produces only those key/value pairs whose key satisfies [f]. *)
     val filter_keys
       :  ('key, 'data, 'phantom) t
-      -> f:local_ ('key key -> bool)
+      -> f:('key key -> bool) @ local
       -> ('key, 'data, 'phantom) t
 
     (** Produces only those key/value pairs whose value satisfies [f]. *)
     val filter
       :  ('key, 'data, 'phantom) t
-      -> f:local_ ('data -> bool)
+      -> f:('data -> bool) @ local
       -> ('key, 'data, 'phantom) t
 
     (** Produces only those key/value pairs which satisfy [f]. *)
     val filteri
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> bool)
+      -> f:(key:'key key -> data:'data -> bool) @ local
       -> ('key, 'data, 'phantom) t
 
     (** Like [filter_keys]. Modifies the input. *)
-    val filter_keys_inplace : ('key, _, 'phantom) t -> f:local_ ('key key -> bool) -> unit
+    val filter_keys_inplace
+      :  ('key, _, 'phantom) t
+      -> f:('key key -> bool) @ local
+      -> unit
 
     (** Like [filter]. Modifies the input. *)
-    val filter_inplace : (_, 'data, 'phantom) t -> f:local_ ('data -> bool) -> unit
+    val filter_inplace : (_, 'data, 'phantom) t -> f:('data -> bool) @ local -> unit
 
     (** Like [filteri]. Modifies the input. *)
     val filteri_inplace
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> bool)
+      -> f:(key:'key key -> data:'data -> bool) @ local
       -> unit
 
     (** Produces key/value pairs for which [f] produces [Some]. *)
     val filter_map
       :  ('key, 'data, 'phantom) t
-      -> f:local_ ('data -> 'c option)
+      -> f:('data -> 'c option) @ local
       -> ('key, 'c, 'phantom) t
 
     (** Like [filter_map]. The new value may also depend on the associated key. *)
     val filter_mapi
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> 'c option)
+      -> f:(key:'key key -> data:'data -> 'c option) @ local
       -> ('key, 'c, 'phantom) t
 
     (** Like [filter_map]. Modifies the input. *)
     val filter_map_inplace
       :  (_, 'data, 'phantom) t
-      -> f:local_ ('data -> 'data option)
+      -> f:('data -> 'data option) @ local
       -> unit
 
     (** Like [filter_mapi]. Modifies the input. *)
     val filter_mapi_inplace
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> 'data option)
+      -> f:(key:'key key -> data:'data -> 'data option) @ local
       -> unit
 
     (** Splits one dictionary into two. The first contains key/value pairs for which the
         value satisfies [f]. The second contains the remainder. *)
     val partition_tf
       :  ('key, 'data, 'phantom) t
-      -> f:local_ ('data -> bool)
+      -> f:('data -> bool) @ local
       -> ('key, 'data, 'phantom) t * ('key, 'data, 'phantom) t
 
     (** Like [partition_tf]. The predicate may also depend on the associated key. *)
     val partitioni_tf
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> bool)
+      -> f:(key:'key key -> data:'data -> bool) @ local
       -> ('key, 'data, 'phantom) t * ('key, 'data, 'phantom) t
 
     (** Splits one dictionary into two, corresponding respectively to [First _] and
         [Second _] results from [f]. *)
     val partition_map
       :  ('key, 'data, 'phantom) t
-      -> f:local_ ('data -> ('c, 'd) Either.t)
+      -> f:('data -> ('c, 'd) Either.t) @ local
       -> ('key, 'c, 'phantom) t * ('key, 'd, 'phantom) t
 
     (** Like [partition_map]. The split may also depend on the associated key. *)
     val partition_mapi
       :  ('key, 'data, 'phantom) t
-      -> f:local_ (key:'key key -> data:'data -> ('c, 'd) Either.t)
+      -> f:(key:'key key -> data:'data -> ('c, 'd) Either.t) @ local
       -> ('key, 'c, 'phantom) t * ('key, 'd, 'phantom) t
 
     (** Merges two dictionaries by fully traversing both. Not suitable for efficiently
@@ -414,12 +421,10 @@ module Definitions = struct
       : ( ('key, 'data1, 'phantom) t
           -> ('key, 'data2, 'phantom) t
           -> f:
-               local_ (key:'key key
-                       -> [ `Left of 'data1
-                          | `Right of 'data2
-                          | `Both of 'data1 * 'data2
-                          ]
-                       -> 'data3 option)
+               (key:'key key
+                -> [ `Left of 'data1 | `Right of 'data2 | `Both of 'data1 * 'data2 ]
+                -> 'data3 option)
+             @ local
           -> ('key, 'data3, 'phantom) t
           , 'key
           , 'data3
@@ -431,11 +436,8 @@ module Definitions = struct
     val merge_into
       : ( src:('key, 'data1, 'phantom) t
           -> dst:('key, 'data2, 'phantom) t
-          -> f:
-               local_ (key:'key key
-                       -> 'data1
-                       -> 'data2 option
-                       -> 'data2 Merge_into_action.t)
+          -> f:(key:'key key -> 'data1 -> 'data2 option -> 'data2 Merge_into_action.t)
+             @ local
           -> unit
           , 'key
           , 'data
@@ -540,8 +542,8 @@ module Definitions = struct
     (** Like [of_alist]. Consume a list of elements for which key/value pairs can be
         computed. *)
     val create_mapped
-      : ( get_key:local_ ('a -> 'key key)
-          -> get_data:local_ ('a -> 'data)
+      : ( get_key:('a -> 'key key) @ local
+          -> get_data:('a -> 'data) @ local
           -> 'a list
           -> [ `Ok of ('key, 'data, 'phantom) t | `Duplicate_keys of 'key key list ]
           , 'key
@@ -551,7 +553,7 @@ module Definitions = struct
 
     (** Like [of_alist]. Consume values for which keys can be computed. *)
     val create_with_key
-      : ( get_key:local_ ('data -> 'key key)
+      : ( get_key:('data -> 'key key) @ local
           -> 'data list
           -> [ `Ok of ('key, 'data, 'phantom) t | `Duplicate_keys of 'key key list ]
           , 'key
@@ -561,7 +563,7 @@ module Definitions = struct
 
     (** Like [of_alist_or_error]. Consume values for which keys can be computed. *)
     val create_with_key_or_error
-      : ( get_key:local_ ('data -> 'key key)
+      : ( get_key:('data -> 'key key) @ local
           -> 'data list
           -> ('key, 'data, 'phantom) t Or_error.t
           , 'key
@@ -571,7 +573,7 @@ module Definitions = struct
 
     (** Like [of_alist_exn]. Consume values for which keys can be computed. *)
     val create_with_key_exn
-      : ( get_key:local_ ('data -> 'key key) -> 'data list -> ('key, 'data, 'phantom) t
+      : ( get_key:('data -> 'key key) @ local -> 'data list -> ('key, 'data, 'phantom) t
           , 'key
           , 'data
           , 'phantom )
@@ -580,9 +582,9 @@ module Definitions = struct
     (** Like [create_mapped]. Multiple values for a key are [combine]d rather than
         producing an error. *)
     val group
-      : ( get_key:local_ ('a -> 'key key)
-          -> get_data:local_ ('a -> 'data)
-          -> combine:local_ ('data -> 'data -> 'data)
+      : ( get_key:('a -> 'key key) @ local
+          -> get_data:('a -> 'data) @ local
+          -> combine:('data -> 'data -> 'data) @ local
           -> 'a list
           -> ('key, 'data, 'phantom) t
           , 'key

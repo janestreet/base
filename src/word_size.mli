@@ -2,7 +2,7 @@
 
 (** For determining the word size that the program is using. *)
 
-open! Import
+open! Import0
 
 type t =
   | W32

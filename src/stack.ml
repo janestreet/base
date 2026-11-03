@@ -1,4 +1,5 @@
 open! Import
+module Error = Error0
 module Sexp = Sexp0
 include Stack_intf.Definitions
 

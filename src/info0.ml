@@ -3,6 +3,8 @@
    adding new dependencies. *)
 
 open! Import
+module List = List0
+module Source_code_position = Source_code_position0
 include Info_intf.Definitions
 module Sexp = Sexp0
 module String = String0
@@ -21,7 +23,7 @@ module Message = struct
     | String of string
     | Exn of global_exn
     | Sexp of Sexp.t
-    | Tag_sexp of string * Sexp.t * Source_code_position0.t option
+    | Tag_sexp of string * Sexp.t * Source_code_position.t option
     | Tag_t of string * t
     | Tag_arg of string * Sexp.t * t
     | Of_list of int option * t list
@@ -41,7 +43,7 @@ module Message = struct
          ::
          (match here with
           | None -> []
-          | Some here -> [ (Source_code_position0.sexp_of_t [@alloc a]) here ]))
+          | Some here -> [ (Source_code_position.sexp_of_t [@alloc a]) here ]))
       :: ac
     | Tag_t (tag, t) -> List (Atom tag :: (to_sexps_hum [@alloc a]) t []) :: ac
     | Tag_arg (tag, sexp, t) ->
@@ -317,10 +319,7 @@ module Computed = struct
   (* Helper functions for converting and constructing [info]. *)
 
   let%template[@alloc a = (heap, stack)] to_message info = compute_info info []
-
-  let%template of_message (message @ p) : info = { global = Constant message }
-  [@@mode p = (portable, nonportable)]
-  ;;
+  let of_message message : info @ portable = { global = Constant message }
 
   let is_computed : info -> bool =
     fun t ->
@@ -361,9 +360,7 @@ module Computed = struct
 
   let%template of_thunked_message lazy_message =
     of_portable_cons
-      (Cons_lazy_info
-         (Portable_lazy.from_fun (fun () ->
-            (of_message [@mode portable]) (lazy_message ()))))
+      (Cons_lazy_info (Portable_lazy.from_fun (fun () -> of_message (lazy_message ()))))
   [@@mode portable]
   ;;
 end
@@ -381,7 +378,7 @@ let%template[@alloc a = (heap, stack)] sexp_of_t t =
   (Message.to_sexp_hum [@alloc a]) ((to_message [@alloc a]) t) [@exclave_if_stack a]
 ;;
 
-let%template t_of_sexp sexp = (of_message [@mode portable]) (Sexp sexp)
+let t_of_sexp sexp = of_message (Sexp sexp)
 let (t_sexp_grammar : t Sexplib0.Sexp_grammar.t) = { untyped = Any "Info.t" }
 let compare t1 t2 = Sexp.compare (sexp_of_t t1) (sexp_of_t t2)
 let%template[@mode local] compare t1 t2 = compare (globalize t1) (globalize t2)
@@ -397,8 +394,8 @@ let to_string_hum t =
 ;;
 
 let to_string_mach t = Sexp.to_string_mach (sexp_of_t t)
-let%template of_string message = (of_message [@mode portable]) (String message)
-let%template create_s sexp = (of_message [@mode portable]) (Sexp sexp)
+let of_string message = of_message (String message)
+let create_s sexp = of_message (Sexp sexp)
 let createf format = Printf.ksprintf of_string format
 let createf_portable format = Printf.ksprintf (fun string () -> of_string string) format
 
@@ -433,7 +430,7 @@ let%template[@kind k = (bits64, float64, value)] [@mode p = (portable, nonportab
   =
   match strict with
   | None -> (of_thunked_message [@mode p]) (fun () -> Tag_sexp (tag, sexp_of_x x, here))
-  | Some () -> (of_message [@mode p]) (Tag_sexp (tag, sexp_of_x x, here))
+  | Some () -> of_message (Tag_sexp (tag, sexp_of_x x, here))
 ;;
 
 let tag t ~tag = of_cons (Cons_tag_t (tag, t))
@@ -492,7 +489,7 @@ let portabilize (t : t) : t =
      its computation. *)
   | Staged_portable x -> { global = Staged_portable x }
   | Constant x -> { global = Constant x }
-  | Staged_nonportable _ -> [%template of_message [@mode portable]] (to_message t)
+  | Staged_nonportable _ -> of_message (to_message t)
 ;;
 
 let to_exn t =
@@ -532,7 +529,7 @@ include%template Pretty_printer.Register_pp [@mode portable] (struct
 module Internal_repr = struct
   include Message
 
-  let%template to_info = (of_message [@mode p]) [@@mode p = (portable, nonportable)]
+  let to_info = of_message
   let of_info = to_message
 end
 
@@ -571,8 +568,11 @@ module Portable = struct
     t |> Modes.Portable.unwrap |> (tag_s [@mode portable]) ~tag |> Modes.Portable.wrap
   ;;
 
-  let%template tag t ~tag =
-    t |> Modes.Portable.unwrap |> (tag [@mode portable]) ~tag |> Modes.Portable.wrap
+  let%template tag t ~tag:string =
+    t
+    |> Modes.Portable.unwrap
+    |> (tag [@mode portable]) ~tag:string
+    |> Modes.Portable.wrap
   ;;
 
   let%template tag_arg t message x f =

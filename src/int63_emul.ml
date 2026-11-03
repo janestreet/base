@@ -3,13 +3,13 @@
    only difference being the lowest bit (immediate bit) set to 1. *)
 
 open! Import
+module Float = Float0
 module Sexp = Sexp0
 include Int64_replace_polymorphic_compare
 module Conv = Int_conversions
 
 module W : sig @@ portable
-  type t = int64
-  [@@deriving compare ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
+  type t = int64 [@@deriving globalize, hash, sexp ~stackify, sexp_grammar]
 
   include%template Comparator.S [@modality portable] with type t := t
 
@@ -19,55 +19,52 @@ module W : sig @@ portable
   val to_string : t @ local -> string @ m
   val to_string_hum : ?delimiter:char -> t @ local -> string @ m]
 
-  val wrap_exn : local_ int64 -> local_ t
-  val wrap_modulo : local_ int64 -> t
-  val unwrap : local_ t -> local_ int64
+  val wrap_exn : int64 @ local -> t @ local
+  val wrap_modulo : int64 @ local -> t
+  val unwrap : t @ local -> int64 @ local
 
   (** Returns a non-negative int64 that is equal to the input int63 modulo 2^63. *)
-  val unwrap_unsigned : local_ t -> int64
+  val unwrap_unsigned : t @ local -> int64
 
   val invariant : t -> unit
-  val add : local_ t -> local_ t -> t
-  val sub : local_ t -> local_ t -> t
-  val neg : local_ t -> t
+  val add : t @ local -> t @ local -> t
+  val sub : t @ local -> t @ local -> t
+  val neg : t @ local -> t
   val abs : t -> t
-  val abs_local : local_ t -> local_ t
-  val succ : local_ t -> t
-  val pred : local_ t -> t
-  val mul : local_ t -> local_ t -> t
-  val pow : local_ t -> local_ t -> t
-  val div : local_ t -> local_ t -> t
-  val rem : local_ t -> local_ t -> t
-  val popcount : local_ t -> t
-  val bit_not : local_ t -> t
-  val bit_xor : local_ t -> local_ t -> t
-  val bit_or : local_ t -> local_ t -> t
-  val bit_and : local_ t -> local_ t -> t
-  val shift_left : local_ t -> int -> t
-  val shift_right : local_ t -> int -> t
-  val shift_right_logical : local_ t -> int -> t
+  val abs_local : t @ local -> t @ local
+  val succ : t @ local -> t
+  val pred : t @ local -> t
+  val mul : t @ local -> t @ local -> t
+  val pow : t @ local -> t @ local -> t
+  val div : t @ local -> t @ local -> t
+  val rem : t @ local -> t @ local -> t
+  val popcount : t @ local -> t
+  val bit_not : t @ local -> t
+  val bit_xor : t @ local -> t @ local -> t
+  val bit_or : t @ local -> t @ local -> t
+  val bit_and : t @ local -> t @ local -> t
+  val shift_left : t @ local -> int -> t
+  val shift_right : t @ local -> int -> t
+  val shift_right_logical : t @ local -> int -> t
   val min_value : t
   val max_value : t
-  val to_int64 : local_ t -> local_ int64
-  val of_int64 : local_ int64 -> t option
-  val of_int64_exn : local_ int64 -> local_ t
-  val of_int64_trunc : local_ int64 -> t
-  val compare : t -> t -> int
-
-  val%template compare : local_ t -> local_ t -> int [@@mode local]
-  val%template equal : local_ t -> local_ t -> bool [@@mode local]
-
-  val ceil_pow2 : local_ t -> t
-  val floor_pow2 : local_ t -> t
-  val ceil_log2 : local_ t -> t
-  val floor_log2 : local_ t -> t
-  val is_pow2 : local_ t -> bool
-  val clz : local_ t -> t
-  val ctz : local_ t -> t
+  val to_int64 : t @ local -> int64 @ local
+  val of_int64 : int64 @ local -> t option
+  val of_int64_exn : int64 @ local -> t @ local
+  val of_int64_trunc : int64 @ local -> t
+  val ceil_pow2 : t @ local -> t
+  val floor_pow2 : t @ local -> t
+  val ceil_log2 : t @ local -> t
+  val floor_log2 : t @ local -> t
+  val is_pow2 : t @ local -> bool
+  val clz : t @ local -> t
+  val ctz : t @ local -> t
 end = struct
   module T = struct
     module T0 = struct
-      type t = int64 [@@deriving compare ~localize, globalize, hash, sexp_grammar]
+      type t = int64 [@@deriving globalize, hash, sexp_grammar]
+
+      include Int64_replace_polymorphic_compare
 
       let unwrap x = exclave_ Stdlib.Int64.shift_right x 1
 
@@ -136,9 +133,6 @@ end = struct
   let of_int64_exn = wrap_exn
   let of_int64_trunc t = wrap_modulo t
   let t_of_sexp x = globalize (wrap_exn (int64_of_sexp x)) [@nontail]
-  let compare (x : t) y = compare x y
-  let%template[@mode local] compare (x : t) y = (compare [@mode local]) x y
-  let%template[@mode local] equal (x : t) y = (equal [@mode local]) x y
   let is_pow2 x = Int64.is_pow2 (unwrap x) [@nontail]
 
   let clz x =
@@ -149,7 +143,7 @@ end = struct
 
   let ctz x = (Int64.ctz (unwrap x) |> wrap_modulo) [@nontail]
   let floor_pow2 x = globalize (wrap_exn (Int64.floor_pow2 (unwrap x))) [@nontail]
-  let ceil_pow2 x = globalize (wrap_exn (Int64.floor_pow2 (unwrap x))) [@nontail]
+  let ceil_pow2 x = globalize (wrap_exn (Int64.ceil_pow2 (unwrap x))) [@nontail]
   let floor_log2 x = Int64.floor_log2 (unwrap x) |> wrap_modulo
   let ceil_log2 x = Int64.ceil_log2 (unwrap x) |> wrap_modulo
 end
@@ -161,10 +155,9 @@ module T = struct
   type comparator_witness = W.comparator_witness
 
   let comparator = W.comparator
-  let compare = W.compare
-  let%template[@mode local] compare = (W.compare [@mode local])
-  let%template[@mode local] equal = (W.equal [@mode local])
   let invariant = W.invariant
+
+  include Int64_replace_polymorphic_compare
 
   [%%template
   [@@@alloc.default a = (heap, stack)]
@@ -256,8 +249,8 @@ end
 include T
 
 let num_bits = 63
-let float_lower_bound = Float0.lower_bound_for_int num_bits
-let float_upper_bound = Float0.upper_bound_for_int num_bits
+let float_lower_bound = Float.lower_bound_for_int num_bits
+let float_upper_bound = Float.upper_bound_for_int num_bits
 let shift_right_logical = shift_right_logical
 let shift_right = shift_right
 let shift_left = shift_left
@@ -295,7 +288,7 @@ let of_float t =
   else
     Printf.invalid_argf
       "Int63.of_float: argument (%f) is out of range or NaN"
-      (Float0.box t)
+      (Float.box t)
       ()
 ;;
 
@@ -454,15 +447,7 @@ module Summable = struct
   let[@inline] ( - ) x y = x - y
 end
 
-module Repr = struct
-  type emulated = t
-
-  type ('underlying_type, 'intermediate_type) t =
-    | Int : (int, int) t
-    | Int64 : (int64, emulated) t
-end
-
-let repr = Repr.Int64
+let repr = Int63_type.Repr.Int64
 
 (* Include type-specific [Replace_polymorphic_compare] at the end, after including functor
    application that could shadow its definitions. This is here so that efficient versions

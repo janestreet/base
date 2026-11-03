@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module Sys = Sys0
 
 
 module Constants =
@@ -73,7 +74,7 @@ module I64 =
   end
 module I64u =
   struct
-    type t = int64#
+    type t = Int64_u.t
     external of_int64 :
       ((int64)[@local_opt ]) -> ((t)[@unboxed ]) @@ stateless =
         "%unbox_int64"
@@ -106,7 +107,7 @@ module I64u =
     let (<) t1 t2 = I64.(<) (to_int64 t1) (to_int64 t2)[@@inline ]
     let (<>) t1 t2 = I64.(<>) (to_int64 t1) (to_int64 t2)[@@inline ]
     external unsafe_get_int64 :
-      ((string)[@local_opt ]) -> int64# -> int64# @@ stateless =
+      ((string)[@local_opt ]) -> Int64_u.t -> Int64_u.t @@ stateless =
         "%caml_string_get64u#_indexed_by_int64#"
     external swap64 : int64 -> int64 @@ stateless = "%bswap_int64"
     let swap64 v = of_int64 (swap64 (to_int64 v))

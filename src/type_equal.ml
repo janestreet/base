@@ -1,5 +1,6 @@
 open! Import
 open Type_equal_intf.Definitions
+module Error = Error0
 module Sexp = Sexp0
 
 type ('a : any, 'b : any) t = T : ('a : any). ('a, 'a) t [@@deriving sexp_of ~stackify]
@@ -31,9 +32,7 @@ module Lift (X : sig
 struct
   let lift (type (a : k1) (b : k1)) (T : (a, b) t) : (a X.t, b X.t) t = T
 end
-[@@kind.explicit k1 = all]
-
-module Lift = Lift [@kind.explicit value]
+[@@kind.explicit_plus_unmangled k1 = all]
 
 module Lift2 (X : sig
     type ('a1 : k1, 'a2 : k2) t
@@ -48,9 +47,7 @@ struct
     T
   ;;
 end
-[@@kind.explicit k1 = all, k2 = all]
-
-module Lift2 = Lift2 [@kind.explicit value value]
+[@@kind.explicit_plus_unmangled k1 = all, k2 = all]
 
 [@@@kind.default k1 = smaller_all, k2 = smaller_all, k3 = smaller_all]
 
@@ -139,7 +136,8 @@ module Id = struct
 
     (* type equality: given another key, produce an [equal] if they represent the same
        type instance *)
-    val type_equal : ('a : any). 'a key @ immutable -> (t, 'a) equal option [@@zero_alloc]
+    val type_equal : ('a : any). 'a key @ immutable local -> (t, 'a) equal option
+    [@@zero_alloc]
   end
 
   type ('a : any) t = { immutable : (module S with type t = 'a) @@ immutable } [@@unboxed]
@@ -160,10 +158,10 @@ module Id = struct
   let hash t = Uid.hash (uid t)
   let hash_fold_t state t = Uid.hash_fold_t state (uid t)
 
-  let same_witness
+  let%template[@mode m = (global, local)] same_witness
     (type (a : any) (b : any))
-    ({ immutable = (module A) } : a t)
-    ({ immutable = (module B) } : b t)
+    ({ immutable = (module A) } : a t @ m)
+    ({ immutable = (module B) } : b t @ m)
     =
     A.type_equal B.type_key
   ;;
@@ -205,7 +203,7 @@ module Id = struct
             let type_key = T0
             let uid = Uid.create type_key []
 
-            let type_equal (type other : any) (otherkey : other key)
+            let type_equal (type other : any) (otherkey : other key @ local)
               : (T.t, other) equal option
               =
               match otherkey with
@@ -231,7 +229,7 @@ module Id = struct
             let type_key = T1 A.type_key
             let uid = Uid.create type_key [ A.uid ]
 
-            let type_equal (type other : any) (otherkey : other key)
+            let type_equal (type other : any) (otherkey : other key @ local)
               : (a T.t, other) equal option
               =
               match otherkey with
@@ -247,7 +245,8 @@ module Id = struct
   end
 
   module%template.portable
-    [@kind a = (value, immediate64), b = value] Create2
+    [@kind a = (value, immediate64), b = value]
+    Create2
       (T : Arg2
     [@kind a b]) =
   struct
@@ -269,7 +268,7 @@ module Id = struct
             let type_key = T2 (A.type_key, B.type_key)
             let uid = Uid.create type_key [ A.uid; B.uid ]
 
-            let type_equal (type other : any) (otherkey : other key)
+            let type_equal (type other : any) (otherkey : other key @ local)
               : ((a, b) T.t, other) equal option
               =
               match otherkey with
@@ -304,7 +303,7 @@ module Id = struct
             let type_key = T3 (A.type_key, B.type_key, C.type_key)
             let uid = Uid.create type_key [ A.uid; B.uid; C.uid ]
 
-            let type_equal (type other : any) (otherkey : other key)
+            let type_equal (type other : any) (otherkey : other key @ local)
               : ((a, b, c) T.t, other) equal option
               =
               match otherkey with
@@ -347,7 +346,7 @@ module Id = struct
             let type_key = T4 (A.type_key, B.type_key, C.type_key, D.type_key)
             let uid = Uid.create type_key [ A.uid; B.uid; C.uid; D.uid ]
 
-            let type_equal (type other : any) (otherkey : other key)
+            let type_equal (type other : any) (otherkey : other key @ local)
               : ((a, b, c, d) T.t, other) equal option
               =
               match otherkey with
@@ -381,7 +380,7 @@ module Id = struct
           let type_key = T0
           let uid = Uid.create type_key []
 
-          let type_equal (type other : any) (otherkey : other key)
+          let type_equal (type other : any) (otherkey : other key @ local)
             : (a, other) equal option
             =
             match otherkey with

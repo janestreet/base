@@ -153,7 +153,7 @@ external create : int -> bytes @ unique @@ portable = "caml_create_bytes"
 include struct
   open struct
     external unsafe_set_uint8
-      :  local_ bytes
+      :  bytes @ local
       -> int
       -> int
       -> unit
@@ -161,17 +161,23 @@ include struct
       = "%bytes_unsafe_set"
 
     external unsafe_set_uint16_ne
-      :  local_ bytes
+      :  bytes @ local
       -> int
       -> int
       -> unit
       @@ portable
       = "%caml_bytes_set16u"
 
-    external set_int8 : local_ bytes -> int -> int -> unit @@ portable = "%bytes_safe_set"
+    external set_int8
+      :  bytes @ local
+      -> int
+      -> int
+      -> unit
+      @@ portable
+      = "%bytes_safe_set"
 
     external set_int32_ne
-      :  local_ bytes
+      :  bytes @ local
       -> int
       -> int32
       -> unit
@@ -319,14 +325,14 @@ external unsafe_create_local
 [@@noalloc]
 
 let[@zero_alloc] create_local len = exclave_
-  if len > Sys0.max_string_length then invalid_arg "Bytes.create_local";
+  if len < 0 || len > Sys.max_string_length then invalid_arg "Bytes.create_local";
   unsafe_create_local len
 ;;
 
 let%template[@alloc stack] create x = exclave_ create_local x [@@zero_alloc]
 
 external unsafe_fill
-  :  local_ bytes
+  :  bytes @ local
   -> pos:int
   -> len:int
   -> char

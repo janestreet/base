@@ -1,6 +1,6 @@
 (** Standard type for [blit] functions, and reusable code for validating [blit] arguments. *)
 
-open! Import
+open! Import0
 
 [%%template
 [@@@kind_set.define

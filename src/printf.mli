@@ -134,7 +134,7 @@ val kbprintf
     arguments". *)
 
 (** Raises [Failure]. *)
-val failwithf : ('r, unit, string, unit -> _ @ portable) format4 -> 'r
+val failwithf : ('r, unit, string, unit -> _ @ portable unique) format4 -> 'r
 
 (** Raises [Invalid_arg]. *)
-val invalid_argf : ('r, unit, string, unit -> _ @ portable) format4 -> 'r
+val invalid_argf : ('r, unit, string, unit -> _ @ portable unique) format4 -> 'r

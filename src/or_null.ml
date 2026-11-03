@@ -1,4 +1,7 @@
 open! Import
+module Bool = Bool0
+module Error = Error0
+module Source_code_position = Source_code_position0
 
 module T = struct
   type 'a t = 'a or_null [@@or_null_reexport]
@@ -37,7 +40,7 @@ let[@cold] raise_value_exn ~here =
   let error =
     if Source_code_position.is_dummy here
     then Error.of_string "Or_null.value_exn Null"
-    else Error.create "Or_null.value_exn Null" here Source_code_position0.sexp_of_t
+    else Error.create "Or_null.value_exn Null" here Source_code_position.sexp_of_t
   in
   Error.raise error
 ;;
@@ -261,7 +264,7 @@ let[@inline] first_this t t' =
    an external and externals exposed as vals cannot be marked [@zero_alloc]. *)
 let[@inline] is_null t = is_null t
 let[@inline] is_this t = not (is_null t)
-let[@inline] length t = Bool.to_int (is_this t)
+let[@inline] length t = bool_to_int (is_this t)
 
 module Let_syntax = struct
   let return = this

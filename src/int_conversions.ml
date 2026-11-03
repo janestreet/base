@@ -34,10 +34,10 @@ let int32_to_int_failure x =
   convert_failure (globalize_int32 x) "int32" "int" int32_to_string
 ;;
 
-external int32_to_int_trunc : local_ int32 -> int @@ portable = "%int32_to_int"
+external int32_to_int_trunc : int32 @ local -> int @@ portable = "%int32_to_int"
 
 external int_to_int32_trunc
-  :  local_ int
+  :  int @ local
   -> (int32[@local_opt])
   @@ portable
   = "%int32_of_int"
@@ -85,8 +85,8 @@ let[@cold] [@zero_alloc] int64_to_int_failure x =
 
 let () = assert (num_bits_int < num_bits_int64)
 
-external int_to_int64 : local_ int -> (int64[@local_opt]) @@ portable = "%int64_of_int"
-external int64_to_int_trunc : local_ int64 -> int @@ portable = "%int64_to_int"
+external int_to_int64 : int @ local -> (int64[@local_opt]) @@ portable = "%int64_of_int"
+external int64_to_int_trunc : int64 @ local -> int @@ portable = "%int64_to_int"
 
 let%template int64_is_representable_as_int =
   let min = int_to_int64 Int.min_value in
@@ -120,13 +120,13 @@ let nativeint_to_int_failure x =
 let () = assert (num_bits_int <= num_bits_nativeint)
 
 external int_to_nativeint
-  :  local_ int
+  :  int @ local
   -> (nativeint[@local_opt])
   @@ portable
   = "%nativeint_of_int"
 
 external nativeint_to_int_trunc
-  :  local_ nativeint
+  :  nativeint @ local
   -> int
   @@ portable
   = "%nativeint_to_int"
@@ -161,13 +161,13 @@ let int64_to_int32_failure x =
 let () = assert (num_bits_int32 < num_bits_int64)
 
 external int32_to_int64
-  :  local_ int32
+  :  int32 @ local
   -> (int64[@local_opt])
   @@ portable
   = "%int64_of_int32"
 
 external int64_to_int32_trunc
-  :  local_ int64
+  :  int64 @ local
   -> (int32[@local_opt])
   @@ portable
   = "%int64_to_int32"
@@ -203,13 +203,13 @@ let nativeint_to_int32_failure x =
 let () = assert (num_bits_int32 <= num_bits_nativeint)
 
 external int32_to_nativeint
-  :  local_ int32
+  :  int32 @ local
   -> (nativeint[@local_opt])
   @@ portable
   = "%nativeint_of_int32"
 
 external nativeint_to_int32_trunc
-  :  local_ nativeint
+  :  nativeint @ local
   -> (int32[@local_opt])
   @@ portable
   = "%nativeint_to_int32"
@@ -246,13 +246,13 @@ let int64_to_nativeint_failure x =
 let () = assert (num_bits_int64 >= num_bits_nativeint)
 
 external int64_to_nativeint_trunc
-  :  local_ int64
+  :  int64 @ local
   -> (nativeint[@local_opt])
   @@ portable
   = "%int64_to_nativeint"
 
 external nativeint_to_int64
-  :  local_ nativeint
+  :  nativeint @ local
   -> (int64[@local_opt])
   @@ portable
   = "%int64_of_nativeint"

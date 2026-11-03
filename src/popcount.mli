@@ -5,9 +5,9 @@
 
     Functions are exposed in their respective modules. *)
 
-open! Import
+open! Import0
 
-val int_popcount : local_ int -> int
-val int32_popcount : local_ int32 -> int32
-val int64_popcount : local_ int64 -> int64
-val nativeint_popcount : local_ nativeint -> nativeint
+val int_popcount : int @ local -> int
+val int32_popcount : int32 @ local -> int32
+val int64_popcount : int64 @ local -> int64
+val nativeint_popcount : nativeint @ local -> nativeint

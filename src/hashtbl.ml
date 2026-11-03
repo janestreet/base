@@ -1,5 +1,11 @@
 open! Import
 include Hashtbl_intf.Definitions
+module Array = Array0
+module Either = Either0
+module Error = Error0
+module Int = Int0
+module Result = Result0
+module Sexp = Sexp0
 module Subatomic = Basement.Subatomic
 
 module type Key = Key.S
@@ -37,8 +43,10 @@ include struct
     { mutable table : (('k, 'v) Avltree.t[@kind k v]) array
     ; mutable length : int
     ; growth_allowed : bool
-    ; hashable : 'k Hashable.t @@ global
+    ; global_ hashable : 'k Hashable.t
     ; mutable num_iterators__do_not_read_write_directly : int [@atomic]
+    (* Increased during all iteration operations, decreased when they are finished.
+       Mutation is only allowed when [num_iterators = 0]. *)
     }
 
   let construct (type v : v) ~table ~length ~growth_allowed ~hashable ~num_iterators
@@ -52,16 +60,14 @@ include struct
     }
   ;;
 
-  let num_iterators t = exclave_
+  let[@synchro unsync] num_iterators t = exclave_
     Subatomic.Loc.unsafe_of_atomic_loc
       [%atomic.loc t.num_iterators__do_not_read_write_directly]
-  [@@synchro unsync]
   ;;
 
-  let num_iterators t = exclave_
+  let[@synchro sync] num_iterators t = exclave_
     Subatomic.Loc.Shared.unsafe_of_atomic_loc
       [%atomic.loc t.num_iterators__do_not_read_write_directly]
-  [@@synchro sync]
   ;;
 
   let ensure_mutation_allowed t =
@@ -71,10 +77,10 @@ include struct
   ;;
 
   open struct
-    let incr x = Subatomic.Loc.set x (Subatomic.Loc.get x + 1) [@@synchro unsync]
-    let incr x = Subatomic.Loc.Shared.incr x [@@synchro sync]
-    let decr x = Subatomic.Loc.set x (Subatomic.Loc.get x - 1) [@@synchro unsync]
-    let decr x = Subatomic.Loc.Shared.decr x [@@synchro sync]
+    let[@synchro unsync] incr x = Subatomic.Loc.set x (Subatomic.Loc.get x + 1)
+    let[@synchro sync] incr x = Subatomic.Loc.Shared.incr x
+    let[@synchro unsync] decr x = Subatomic.Loc.set x (Subatomic.Loc.get x - 1)
+    let[@synchro sync] decr x = Subatomic.Loc.Shared.decr x
   end
 
   let without_mutating t f =
@@ -131,7 +137,7 @@ end
 let create (type v : v mod p) ?(growth_allowed = true) ?(size = 0) ~hashable ()
   : ((_, v) t[@kind k v])
   =
-  let size = Int.min (Int.max 1 size) max_table_length in
+  let size = min (max 1 size) max_table_length in
   let size = Int.ceil_pow2 size in
   (construct [@kind k v] [@mode p])
     ~table:(Array.create ~len:size ((Avltree.get_empty [@kind k v]) ()))
@@ -177,7 +183,7 @@ let maybe_resize_table t =
   let should_grow = t.length > len in
   if should_grow && t.growth_allowed
   then (
-    let new_array_length = Int.min (len * 2) max_table_length in
+    let new_array_length = min (len * 2) max_table_length in
     if new_array_length > len
     then (
       let new_table =
@@ -242,8 +248,7 @@ let clear t =
     t.length <- 0)
 ;;
 
-let[@kind k = k, v = v, r = (v, value_or_null)]
-   [@mode __ = local, c = (uncontended, shared)] find_and_call
+let[@kind k = k, v = v, r = (v, value_or_null)] [@mode c = (uncontended, shared)] find_and_call_internal
   (type k : k mod c)
   (t @ c)
   (key : k)
@@ -273,14 +278,14 @@ let[@kind k = k, v = v, r = v] [@mode __ = global, c = (uncontended, shared)] [@
   ~if_found
   ~if_not_found
   =
-  (find_and_call [@mode local c] [@kind k v r]) t key ~if_found ~if_not_found
+  (find_and_call_internal [@mode c] [@kind k v r]) t key ~if_found ~if_not_found
 ;;
 
-let[@mode __ = local, c = (uncontended, shared)] find =
+let[@mode c = (uncontended, shared)] find_internal =
   let if_found v : ((_ Option.t[@kind v]) Modes.t[@mode c]) = { modal = Some v } in
   let if_not_found _ : ((_ Option.t[@kind v]) Modes.t[@mode c]) = { modal = None } in
   fun t key ->
-    ((find_and_call [@mode local c] [@kind k v value_or_null])
+    ((find_and_call_internal [@mode c] [@kind k v value_or_null])
        t
        key
        ~if_found
@@ -289,7 +294,7 @@ let[@mode __ = local, c = (uncontended, shared)] find =
 ;;
 
 let[@mode __ = global, c = (uncontended, shared)] find =
-  [%eta2 find [@mode local c] [@kind k v]]
+  [%eta2 find_internal [@mode c] [@kind k v]]
 ;;
 
 let mem (type k : k mod c) t (key : k) =
@@ -334,7 +339,7 @@ let fold t ~init ~f =
 [@@synchro s @ c = (unsync_uncontended, sync_shared)]
 ;;
 
-let[@mode local] iteri t ~f =
+let iteri_internal t ~f =
   if t.length = 0
   then ()
   else
@@ -350,8 +355,8 @@ let[@mode local] iteri t ~f =
 [@@synchro s @ c = (unsync_uncontended, sync_shared)]
 ;;
 
-let[@mode global] [@inline] iteri t ~f =
-  (iteri [@kind k v] [@mode local] [@synchro s]) t ~f
+let[@mode __ = (local, global)] [@inline] iteri t ~f =
+  (iteri_internal [@kind k v] [@synchro s]) t ~f
 [@@synchro s = (unsync, sync)]
 ;;
 
@@ -524,18 +529,20 @@ let choose_exn (t : (_ t[@kind k v])) =
 [%%template
 [@@@mode.default c = (uncontended, shared)]
 
-let[@inline] [@mode global] wrap_pair #(k, v) = #(k, v)
-
-let[@inline] [@mode local] wrap_pair #(k, v) =
-  #({ Modes.Global.global = k }, { Modes.Global.global = v })
-;;
-
-let[@mode m = (global, local), c = c] choose t =
+let choose_local t = exclave_
   if is_empty t
   then None
   else (
-    let #(k, v) = (wrap_pair [@mode m]) ((choose_nonempty [@mode c]) t.table 0) in
-    Some (k, v) [@exclave_if_local m])
+    let #(k, v) = (choose_nonempty [@mode c]) t.table 0 in
+    Some ({ Modes.Global.global = k }, { Modes.Global.global = v }))
+;;
+
+let choose t =
+  if is_empty t
+  then None
+  else (
+    let #(k, v) = (choose_nonempty [@mode c]) t.table 0 in
+    Some (k, v))
 ;;
 
 let choose_randomly_nonempty ~random_state t =
@@ -588,10 +595,19 @@ let find_exn =
 ;;]
 
 let existsi t ~f =
-  with_return (fun r ->
-    iteri t ~f:(fun ~key ~data -> if f ~key ~data then r.return true);
-    false)
-  [@nontail]
+  t.length <> 0
+  && (without_mutating t (fun () ->
+        let n = Array.length t.table in
+        let rec loop i =
+          i < n
+          && ((match Array.unsafe_get t.table i with
+               | Avltree.Empty -> false
+               | Avltree.Leaf { key; value = data } -> f ~key ~data
+               | bucket -> Avltree.exists bucket ~f)
+              || loop (i + 1))
+        in
+        loop 0 [@nontail])
+  [@nontail])
 ;;
 
 let exists t ~f = existsi t ~f:(fun ~key:_ ~data -> f data) [@nontail]
@@ -675,6 +691,14 @@ let partition_tf t ~f = partitioni_tf t ~f:(fun ~key:_ ~data -> f data) [@nontai
 let[@kind k = all, v = all] find_and_remove t id =
   let result = (find [@kind k v]) t id in
   if (Option.is_some [@kind v]) result then (remove [@kind k v]) t id;
+  result
+;;
+
+let find_and_remove_or_null t id =
+  let result = find_or_null t id in
+  (match result with
+   | This _ -> remove t id
+   | Null -> ());
   result
 ;;
 
@@ -866,7 +890,7 @@ end
 [@@@kind.default k = all, v = all]
 
 let to_alist (type (k : k) (v : v)) (t : ((k, v) t[@kind k v]))
-  : ((k, v) KV.t[@kind k v]) List.t
+  : ((k, v) KV.t[@kind k v]) list
   =
   (fold [@kind k v])
     ~f:(fun ~key ~data list -> ({ key; data } : (_ KV.t[@kind k v])) :: list)
@@ -1072,7 +1096,9 @@ let map_inplace t ~f =
   (mapi_inplace [@kind k v]) t ~f:(fun ~key:_ ~data -> f data) [@nontail]
 ;;]
 
-let[@mode local] equal equal t t' =
+let[@mode local] find = [%eta2 find_internal]
+
+let equal_internal equal t t' =
   length t = length t'
   && (with_return (fun r ->
         without_mutating t' (fun () ->
@@ -1085,7 +1111,10 @@ let[@mode local] equal equal t t' =
   [@nontail])
 ;;
 
-let[@mode global] [@inline] equal equal t t' = (equal [@mode local]) [%eta2 equal] t t'
+let[@mode __ = (local, global)] [@inline] equal equal t t' =
+  equal_internal [%eta2 equal] t t'
+;;
+
 let similar = (equal [@mode m]) [@@mode m = (local, global)]
 
 module Accessors = struct
@@ -1094,7 +1123,8 @@ module Accessors = struct
   [%%template
   [@@@mode.default c = (uncontended, shared)]
 
-  let choose = (choose [@mode m c]) [@@mode m = (local, global), c = c]
+  let choose = (choose [@mode c]) [@@mode c = c]
+  let choose_local = (choose_local [@mode c]) [@@mode c = c]
   let choose_exn = (choose_exn [@mode c])
   let choose_randomly = (choose_randomly [@mode c])
   let choose_randomly_exn = (choose_randomly_exn [@mode c])]
@@ -1155,6 +1185,7 @@ module Accessors = struct
   let findi_and_call2 = (findi_and_call2 [@mode c])]
 
   let find_and_remove = find_and_remove
+  let find_and_remove_or_null = find_and_remove_or_null
   let to_alist = to_alist
   let merge = merge
   let merge_into = merge_into
@@ -1175,7 +1206,8 @@ module Accessors = struct
 end
 
 module%template.portable
-  [@modality p] Creators (Key : sig
+  [@modality p]
+  Creators (Key : sig
     type 'a t
 
     val hashable : 'a t Hashable.t
@@ -1388,4 +1420,6 @@ let m__t_sexp_grammar (type k) (module K : M_sexp_grammar with type t = k) v_gra
   t_sexp_grammar K.t_sexp_grammar v_grammar
 ;;
 
-let equal_m__t (module _ : Equal_m) equal_v t1 t2 = equal equal_v t1 t2
+let%template[@mode m = (local, global)] equal_m__t (module _ : Equal_m) equal_v t1 t2 =
+  (equal [@mode m]) equal_v t1 t2
+;;

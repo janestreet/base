@@ -16,7 +16,7 @@
     despite admitting [bind], is not a [Monad] (or even an [Applicative]), since it's not
     an endofunctor taking types to types of the same kind. *)
 
-open! Import
+open! Import0
 
 (** {2 Type and Interfaces} *)
 

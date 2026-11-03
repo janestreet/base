@@ -1,6 +1,27 @@
-open! Import
+open! Import0
+module Char = Char0
+module Int = Int0
 module Sexp = Sexp0
+module String = String0
 module Sys = Sys0
+
+open struct
+  let string_starts_with string char =
+    String.length string >= 1 && Char.equal char (String.get string 0)
+  ;;
+
+  let string_contains_pair string char1 char2 =
+    let len = String.length string in
+    let rec string_contains_pair_starting_at pos =
+      let next = pos + 1 in
+      next < len
+      && ((Char.equal char1 (String.get string pos)
+           && Char.equal char2 (String.get string next))
+          || string_contains_pair_starting_at next)
+    in
+    string_contains_pair_starting_at 0
+  ;;
+end
 
 type t = Stdlib.Printexc.raw_backtrace
 
@@ -32,17 +53,19 @@ module Exn = struct
     let ocamlrunparam_mentions_backtraces =
       match Sys.getenv "OCAMLRUNPARAM" with
       | None -> false
-      | Some x -> List.exists (String.split x ~on:',') ~f:(String.is_prefix ~prefix:"b")
+      | Some string ->
+        string_starts_with string 'b' || string_contains_pair string ',' 'b'
     in
     if not ocamlrunparam_mentions_backtraces then set_recording true
   ;;
 
   (* the caller set something, they are responsible *)
 
-  let with_recording b ~f =
+  let%template[@mode m = (global, local)] with_recording b ~f =
     let saved = am_recording () in
     set_recording b;
-    Exn.protect ~f ~finally:(fun () -> set_recording saved)
+    (Exn.protect [@mode m]) ~f ~finally:(fun () -> set_recording saved)
+    [@nontail] [@exclave_if_local m ~reasons:[ May_return_local ]]
   ;;
 end
 

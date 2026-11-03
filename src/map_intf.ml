@@ -1,4 +1,7 @@
-open! Import
+open! Import0
+module Either = Either0
+module Nonempty_list = Nonempty_list_type.Nonempty_list
+module Result = Result0
 module Sexp = Sexp0
 
 module Definitions = struct
@@ -244,14 +247,22 @@ module Definitions = struct
        and type ('key, 'data, 'cmp) t := ('key, 'data, 'cmp) t
        and type ('fn, 'key, _, 'cmp) transformer := ('key, 'cmp, 'fn) access_options
 
-    (** Like [change] but [f] receives and returns ['v or_null] instead of ['v option]. *)
+    (** Like [change], but [f] receives and returns ['v or_null] instead of ['v option]. *)
     val change_or_null
       : ( 'k
           , 'cmp
           , ('k, 'v, 'cmp) t
             -> 'k key
-            -> f:local_ ('v or_null -> 'v or_null)
+            -> f:('v or_null -> 'v or_null) @ local
             -> ('k, 'v, 'cmp) t )
+          access_options
+
+    (** Like [update] but [f] receives ['v or_null] instead of ['v option]. *)
+    val update_or_null
+      : ( 'k
+          , 'cmp
+          , ('k, 'v, 'cmp) t -> 'k key -> f:('v or_null -> 'v) @ local -> ('k, 'v, 'cmp) t
+          )
           access_options
 
     val split
@@ -839,6 +850,12 @@ module type Map = sig @@ portable
     -> ('a * 'b) list
     -> ('a, 'b list, 'cmp) t
 
+  (** Like [of_alist_multi], but typefully expresses the nonempty property. *)
+  val of_alist_multi_nonempty
+    :  ('a, 'cmp) Comparator.Module.t
+    -> ('a * 'b) list
+    -> ('a, 'b Nonempty_list.t, 'cmp) t
+
   (** Combines an association list into a map, folding together bound values with common
       keys. The accumulator is per-key.
 
@@ -959,12 +976,18 @@ module type Map = sig @@ portable
       in the map for a given key appear in the same order as they did in the association
       list.
 
-      [of_sequence_multi c seq] behaves like [of_alist_exn c (Sequence.to_list seq)] but
+      [of_sequence_multi c seq] behaves like [of_alist_multi c (Sequence.to_list seq)] but
       does not allocate the intermediate list. *)
   val of_sequence_multi
     :  ('a, 'cmp) Comparator.Module.t
     -> ('a * 'b) Sequence.t
     -> ('a, 'b list, 'cmp) t
+
+  (** Like [of_sequence_multi], but typefully expresses the nonempty property. *)
+  val of_sequence_multi_nonempty
+    :  ('a, 'cmp) Comparator.Module.t
+    -> ('a * 'b) Sequence.t
+    -> ('a, 'b Nonempty_list.t, 'cmp) t
 
   (** Combines an association sequence into a map, folding together bound values with
       common keys.
@@ -1019,6 +1042,13 @@ module type Map = sig @@ portable
     -> get_key:('v -> 'k) @ local
     -> ('k, 'v list, 'cmp) t
 
+  (** Like [of_list_with_key_multi], but typefully expresses the nonempty property. *)
+  val of_list_with_key_multi_nonempty
+    :  ('k, 'cmp) Comparator.Module.t
+    -> 'v list
+    -> get_key:('v -> 'k) @ local
+    -> ('k, 'v Nonempty_list.t, 'cmp) t
+
   (** Like [of_list_with_key]; resolves duplicate keys the same way [of_alist_fold] does. *)
   val of_list_with_key_fold
     :  ('k, 'cmp) Comparator.Module.t
@@ -1058,12 +1088,29 @@ module type Map = sig @@ portable
       head of the existing list. *)
   val add_multi : ('k, 'v list, 'cmp) t -> key:'k -> data:'v -> ('k, 'v list, 'cmp) t
 
+  (** Like [add_multi], but operating on nonempty lists. *)
+  val add_multi_nonempty
+    :  ('k, 'v Nonempty_list.t, 'cmp) t
+    -> key:'k
+    -> data:'v
+    -> ('k, 'v Nonempty_list.t, 'cmp) t
+
   (** If the key is present, then remove its head element; if the result is empty, remove
       the key. *)
   val remove_multi : ('k, 'v list, 'cmp) t -> 'k -> ('k, 'v list, 'cmp) t
 
+  (** Like [remove_multi], but operating on nonempty lists. *)
+  val remove_multi_nonempty
+    :  ('k, 'v Nonempty_list.t, 'cmp) t
+    -> 'k
+    -> ('k, 'v Nonempty_list.t, 'cmp) t
+
   (** Returns the value bound to the given key, or the empty list if there is none. *)
   val find_multi : ('k, 'v list, 'cmp) t -> 'k -> 'v list
+
+  (** Like [find_multi], but operating on nonempty lists. Converts found values to plain
+      lists, and returns the empty list if no value is found. *)
+  val find_multi_nonempty : ('k, 'v Nonempty_list.t, 'cmp) t -> 'k -> 'v list
 
   (** [change t key ~f] returns a new map [m] that is the same as [t] on all keys except
       for [key], and whose value for [key] is defined by [f], i.e.,
@@ -1074,7 +1121,7 @@ module type Map = sig @@ portable
     -> f:('v option -> 'v option) @ local
     -> ('k, 'v, 'cmp) t
 
-  (** Like [change] but [f] receives and returns ['v or_null] instead of ['v option]. *)
+  (** Like [change], but [f] receives and returns ['v or_null] instead of ['v option]. *)
   val change_or_null
     :  ('k, 'v, 'cmp) t
     -> 'k
@@ -1090,6 +1137,13 @@ module type Map = sig @@ portable
       values. *)
   val update : ('k, 'v, 'cmp) t -> 'k -> f:('v option -> 'v) @ local -> ('k, 'v, 'cmp) t
 
+  (** Like [update] but [f] receives ['v or_null] instead of ['v option]. *)
+  val update_or_null
+    :  ('k, 'v, 'cmp) t
+    -> 'k
+    -> f:('v or_null -> 'v) @ local
+    -> ('k, 'v, 'cmp) t
+
   (** [update_and_return t key ~f] is like [update t key ~f], but also returns the new
       value. *)
   val update_and_return
@@ -1097,6 +1151,14 @@ module type Map = sig @@ portable
     -> 'k
     -> f:('v option -> 'v) @ local
     -> 'v * ('k, 'v, 'cmp) t
+
+  (** [change_and_return t key ~f] is like [change t key ~f], but also returns the new
+      value, if any. *)
+  val change_and_return
+    :  ('k, 'v, 'cmp) t
+    -> 'k
+    -> f:('v option -> 'v option) @ local
+    -> 'v option * ('k, 'v, 'cmp) t
 
   (** Returns [Some value] bound to the given key, or [None] if none exists. *)
   val find : ('k, 'v, 'cmp) t -> 'k -> 'v option

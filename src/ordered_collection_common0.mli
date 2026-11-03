@@ -25,11 +25,11 @@ open! Import0
       len' = match len with None -> total_length - pos' | Some i -> i
     v} *)
 val get_pos_len_exn
-  :  ?pos:local_ int
-  -> ?len:local_ int
+  :  ?pos:int @ local
+  -> ?len:int @ local
   -> unit
   -> total_length:int
-  -> local_ int * int
+  -> int * int @ local
 
 (** [check_pos_len_exn ~pos ~len ~total_length] raises unless
     [pos >= 0 && len >= 0 && pos + len <= total_length]. *)

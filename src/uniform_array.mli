@@ -8,7 +8,7 @@
 
     It can often be faster than [Array] if you use it with non-floats. *)
 
-open! Import
+open! Import0
 
 (** See [Base.Array] for comments. *)
 type ('a : value_or_null) t : mutable_data with 'a
@@ -23,58 +23,58 @@ val get_empty : ('a : value_or_null). unit -> 'a t
 
 val create : ('a : value_or_null). len:int -> 'a -> 'a t
 val singleton : ('a : value_or_null). 'a -> 'a t
-val init : ('a : value_or_null). int -> f:local_ (int -> 'a) -> 'a t
-val length : ('a : value_or_null). local_ 'a t @ contended -> int
+val init : ('a : value_or_null). int -> f:(int -> 'a) @ local -> 'a t
+val length : ('a : value_or_null). 'a t @ contended local -> int
 
-val%template get : ('a : value_or_null). local_ 'a t @ c -> int -> 'a @ c
+val%template get : ('a : value_or_null). 'a t @ c local -> int -> 'a @ c
 [@@mode c = (uncontended, shared)]
 
-val unsafe_get : ('a : value_or_null). local_ 'a t -> int -> 'a
-val set : ('a : value_or_null). local_ 'a t -> int -> 'a -> unit
-val unsafe_set : ('a : value_or_null). local_ 'a t -> int -> 'a -> unit
-val swap : ('a : value_or_null). local_ 'a t -> int -> int -> unit
+val unsafe_get : ('a : value_or_null). 'a t @ local -> int -> 'a
+val set : ('a : value_or_null). 'a t @ local -> int -> 'a -> unit
+val unsafe_set : ('a : value_or_null). 'a t @ local -> int -> 'a -> unit
+val swap : ('a : value_or_null). 'a t @ local -> int -> int -> unit
 
 (** [unsafe_set_omit_phys_equal_check] is like [unsafe_set], except it doesn't do a
     [phys_equal] check to try to skip [caml_modify]. It is safe to call this even if the
     values are [phys_equal]. *)
 val unsafe_set_omit_phys_equal_check
   : ('a : value_or_null).
-  local_ 'a t -> int -> 'a -> unit
+  'a t @ local -> int -> 'a -> unit
 
 (** [unsafe_set_with_caml_modify] always calls [caml_modify] before setting and never gets
     the old value. This is like [unsafe_set_omit_phys_equal_check] except it doesn't check
     whether the old value and the value being set are integers to try to skip
     [caml_modify]. *)
-val unsafe_set_with_caml_modify : ('a : value_or_null). local_ 'a t -> int -> 'a -> unit
+val unsafe_set_with_caml_modify : ('a : value_or_null). 'a t @ local -> int -> 'a -> unit
 
 (** Same as [unsafe_set_with_caml_modify], but with bounds check. *)
-val set_with_caml_modify : ('a : value_or_null). local_ 'a t -> int -> 'a -> unit
+val set_with_caml_modify : ('a : value_or_null). 'a t @ local -> int -> 'a -> unit
 
-val map : ('a : value_or_null) ('b : value_or_null). 'a t -> f:local_ ('a -> 'b) -> 'b t
+val map : ('a : value_or_null) ('b : value_or_null). 'a t -> f:('a -> 'b) @ local -> 'b t
 
 val mapi
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> f:local_ (int -> 'a -> 'b) -> 'b t
+  'a t -> f:(int -> 'a -> 'b) @ local -> 'b t
 
-val iter : ('a : value_or_null). 'a t -> f:local_ ('a -> unit) -> unit
+val iter : ('a : value_or_null). 'a t -> f:('a -> unit) @ local -> unit
 
 (** Like {!iter}, but the function is applied to the index of the element as first
     argument, and the element itself as second argument. *)
-val iteri : ('a : value_or_null). 'a t -> f:local_ (int -> 'a -> unit) -> unit
+val iteri : ('a : value_or_null). 'a t -> f:(int -> 'a -> unit) @ local -> unit
 
 val fold
   : ('a : value_or_null) ('acc : value_or_null).
-  'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc) -> 'acc
+  'a t -> init:'acc -> f:('acc -> 'a -> 'acc) @ local -> 'acc
 
 val foldi
   : ('a : value_or_null) ('acc : value_or_null).
-  'a t -> init:'acc -> f:local_ (int -> 'acc -> 'a -> 'acc) -> 'acc
+  'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc) @ local -> 'acc
 
 val fold_until
   : ('a : value_or_null) ('acc : value_or_null) ('final : value_or_null).
   'a t
   -> init:'acc
-  -> f:local_ ('acc -> 'a -> ('acc, 'final) Container.Continue_or_stop.t)
+  -> f:('acc -> 'a -> ('acc, 'final) Container.Continue_or_stop.t) @ local
   -> finish:('acc -> 'final)
   -> 'final
 
@@ -97,67 +97,72 @@ include%template
   Blit.S1 [@kind.explicit value_or_null] with type ('a : value_or_null) t := 'a t
 
 val copy : ('a : value_or_null). 'a t -> 'a t
-val exists : ('a : value_or_null). 'a t -> f:local_ ('a -> bool) -> bool
-val existsi : ('a : value_or_null). 'a t -> f:local_ (int -> 'a -> bool) -> bool
-val for_all : ('a : value_or_null). 'a t -> f:local_ ('a -> bool) -> bool
-val for_alli : ('a : value_or_null). 'a t -> f:local_ (int -> 'a -> bool) -> bool
+val exists : ('a : value_or_null). 'a t -> f:('a -> bool) @ local -> bool
+val existsi : ('a : value_or_null). 'a t -> f:(int -> 'a -> bool) @ local -> bool
+val for_all : ('a : value_or_null). 'a t -> f:('a -> bool) @ local -> bool
+val for_alli : ('a : value_or_null). 'a t -> f:(int -> 'a -> bool) @ local -> bool
 val concat : ('a : value_or_null). 'a t list -> 'a t
 
 val concat_map
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> f:local_ ('a -> 'b t) -> 'b t
+  'a t -> f:('a -> 'b t) @ local -> 'b t
 
 val concat_mapi
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> f:local_ (int -> 'a -> 'b t) -> 'b t
+  'a t -> f:(int -> 'a -> 'b t) @ local -> 'b t
 
 val partition_map
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-  'a t -> f:local_ ('a -> ('b, 'c) Either.t) -> 'b t * 'c t
+  'a t -> f:('a -> ('b, 'c) Either.t) @ local -> 'b t * 'c t
 
-val filter : ('a : value_or_null). 'a t -> f:local_ ('a -> bool) -> 'a t
-val filteri : ('a : value_or_null). 'a t -> f:local_ (int -> 'a -> bool) -> 'a t
+val filter : ('a : value_or_null). 'a t -> f:('a -> bool) @ local -> 'a t
+val filteri : ('a : value_or_null). 'a t -> f:(int -> 'a -> bool) @ local -> 'a t
 
 val filter_map
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> f:local_ ('a -> 'b option) -> 'b t
+  'a t -> f:('a -> 'b option) @ local -> 'b t
 
 val filter_mapi
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> f:local_ (int -> 'a -> 'b option) -> 'b t
+  'a t -> f:(int -> 'a -> 'b option) @ local -> 'b t
 
-val find : ('a : value_or_null). 'a t -> f:local_ ('a -> bool) -> 'a option
+val find : ('a : value_or_null). 'a t -> f:('a -> bool) @ local -> 'a option
 
 val findi
   : ('a : value_or_null).
-  'a t -> f:local_ (int -> 'a -> bool) -> (int * 'a) option
+  'a t -> f:(int -> 'a -> bool) @ local -> (int * 'a) option
 
 val find_map
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> f:local_ ('a -> 'b option) -> 'b option
+  'a t -> f:('a -> 'b option) @ local -> 'b option
 
 val find_mapi
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> f:local_ (int -> 'a -> 'b option) -> 'b option
+  'a t -> f:(int -> 'a -> 'b option) @ local -> 'b option
 
 (** Functions with the 2 suffix raise an exception if the lengths of the two given arrays
     aren't the same. *)
 val map2_exn
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b -> 'c) -> 'c t
+  'a t -> 'b t -> f:('a -> 'b -> 'c) @ local -> 'c t
 
 val fold2_exn
   : ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
-  'a t -> 'b t -> init:'acc -> f:local_ ('acc -> 'a -> 'b -> 'acc) -> 'acc
+  'a t -> 'b t -> init:'acc -> f:('acc -> 'a -> 'b -> 'acc) @ local -> 'acc
 
-val min_elt : 'a t -> compare:local_ ('a -> 'a -> int) -> 'a option
-val max_elt : 'a t -> compare:local_ ('a -> 'a -> int) -> 'a option
+val min_elt : 'a t -> compare:('a -> 'a -> int) @ local -> 'a option
+val max_elt : 'a t -> compare:('a -> 'a -> int) @ local -> 'a option
 
 (** [sort] uses constant heap space.
 
     To sort only part of the array, specify [pos] to be the index to start sorting from
     and [len] indicating how many elements to sort. *)
-val sort : ?pos:int -> ?len:int -> local_ 'a t -> compare:local_ ('a -> 'a -> int) -> unit
+val sort
+  :  ?pos:int
+  -> ?len:int
+  -> 'a t @ local
+  -> compare:('a -> 'a -> int) @ local
+  -> unit
 
 include Binary_searchable.S1 with type 'a t := 'a t
 
@@ -181,16 +186,16 @@ val create_nullable_obj_array : len:int -> Obj.Nullable.t t
 
     [unsafe_set_int] is similar but does not assume anything about the target. *)
 val unsafe_set_assuming_currently_int
-  :  local_ Stdlib.Obj.t t
+  :  Stdlib.Obj.t t @ local
   -> int
   -> Stdlib.Obj.t
   -> unit
 
-val unsafe_set_int_assuming_currently_int : local_ Stdlib.Obj.t t -> int -> int -> unit
-val unsafe_set_int : local_ Stdlib.Obj.t t -> int -> int -> unit
+val unsafe_set_int_assuming_currently_int : Stdlib.Obj.t t @ local -> int -> int -> unit
+val unsafe_set_int : Stdlib.Obj.t t @ local -> int -> int -> unit
 
 (** [unsafe_clear_if_pointer t i] prevents [t.(i)] from pointing to anything to prevent
     space leaks. It does this by setting [t.(i)] to [Stdlib.Obj.repr 0]. As a performance
     hack, it only does this when [not (Stdlib.Obj.is_int t.(i))]. It is an error to access
     the cleared index before setting it again. *)
-val unsafe_clear_if_pointer : local_ Stdlib.Obj.t t -> int -> unit
+val unsafe_clear_if_pointer : Stdlib.Obj.t t @ local -> int -> unit

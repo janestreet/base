@@ -1,5 +1,7 @@
 @@ portable
 
+module List := List0
+
 [%%template:
   external create
     : ('a : any mod separable).
@@ -51,17 +53,17 @@ external unsafe_set
 
 external unsafe_fill
   : ('a : value_or_null mod separable).
-  local_ 'a array -> int -> int -> 'a -> unit
+  'a array @ local -> int -> int -> 'a -> unit
   = "caml_array_fill"
 
 external unsafe_sub
   : ('a : value_or_null mod separable).
-  local_ 'a array -> int -> int -> 'a array
+  'a array @ local -> int -> int -> 'a array
   = "caml_array_sub"
 
 external concat
   : ('a : value_or_null mod separable).
-  local_ 'a array list -> 'a array
+  'a array list @ local -> 'a array
   = "caml_array_concat"
 
 val%template unsafe_blit
@@ -120,10 +122,10 @@ val iteri : ('a : k). 'a array -> f:(int -> 'a -> unit) @ local -> unit
 
 val to_list
   : ('a : k).
-  'a array @ m -> ('a List0.Constructors.t[@kind k' or value_or_null]) @ m
+  'a array @ m -> ('a List.Constructors.t[@kind k' or value_or_null]) @ m
 [@@alloc __ @ m = (heap_global, stack_local)]
 
-val of_list : ('a : k). ('a List0.Constructors.t[@kind k' or value_or_null]) -> 'a array
+val of_list : ('a : k). ('a List.Constructors.t[@kind k' or value_or_null]) -> 'a array
 val sub : ('a : k). 'a array @ local -> pos:int -> len:int -> 'a array
 val append : ('a : k). 'a array -> 'a array -> 'a array
 val fill : ('a : k). 'a array @ local -> pos:int -> len:int -> 'a -> unit

@@ -1,7 +1,7 @@
 (** Module types for a [binary_search] function for a sequence, and functors for building
     [binary_search] functions. *)
 
-open! Import
+open! Import0
 
 [%%template
 [@@@kind_set.define
@@ -57,18 +57,18 @@ module Definitions = struct
     ?pos:int
     -> ?len:int
     -> 't @ m
-    -> compare:local_ ('elt @ m -> 'key @ m -> int)
+    -> compare:('elt @ m -> 'key @ m -> int) @ local
     -> Which_target_by_key.t
     -> 'key @ m
-    -> local_ int option
+    -> int option @ local
 
   type ('t, 'elt) binary_search_segmented =
     ?pos:int
     -> ?len:int
     -> 't @ m
-    -> segment_of:local_ ('elt @ m -> [ `Left | `Right ])
+    -> segment_of:('elt @ m -> [ `Left | `Right ]) @ local
     -> Which_target_by_segment.t
-    -> local_ int option
+    -> int option @ local
 
   module type S = sig
     type elt

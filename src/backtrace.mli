@@ -7,7 +7,7 @@
     + Snapshots of the stack obtained on demand ([Backtrace.get])
     + The stack frames unwound when an exception is raised ([Backtrace.Exn]) *)
 
-open! Import
+open! Import0
 
 (** A [Backtrace.t] is a snapshot of the stack obtained by calling [Backtrace.get]. It is
     represented as a string with newlines separating the frames. [sexp_of_t] splits the
@@ -63,7 +63,9 @@ val elide : bool Dynamic.t
 module Exn : sig
   val am_recording : unit -> bool
   val set_recording : bool -> unit
-  val with_recording : bool -> f:(unit -> 'a) @ local once -> 'a
+
+  val%template with_recording : bool -> f:(unit -> 'a @ m) @ local once -> 'a @ m
+  [@@mode m = (global, local)]
 
   (** [most_recent ()] returns a backtrace containing the stack that was unwound by the
       most recently raised exception.
@@ -92,7 +94,7 @@ module Exn : sig
           let bt = Backtrace.Exn.most_recent_for_exn e in
           ...
       ]} *)
-  val most_recent_for_exn : Exn.t -> t option
+  val most_recent_for_exn : exn -> t option
 end
 
 (** User code never calls this. It is called only in [base.ml], as a top-level side

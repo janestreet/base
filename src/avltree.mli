@@ -34,7 +34,7 @@
     feat) with the same memory overhead, sane add semantics (the add semantics they used
     were a performance hack), and worst-case log(N) insertion, lookup, and removal. *)
 
-open! Import
+open! Import0
 
 [%%template:
 [@@@kind_set.define all = (value_or_null, bits64, float64)]
@@ -91,8 +91,8 @@ val add
   : ('k : k) ('v : v).
   ('k, 'v) t
   -> replace:bool
-  -> compare:local_ ('k -> 'k -> int)
-  -> added:local_ bool ref
+  -> compare:('k -> 'k -> int) @ local
+  -> added:bool ref @ local
   -> key:'k
   -> data:'v
   -> ('k, 'v) t
@@ -100,8 +100,8 @@ val add
 (** If the specified key exists in the tree, returns the corresponding value. O(log(N))
     time and O(1) space. *)
 val find
-  :  ('k : k mod c, 'v) t @ c
-  -> compare:local_ ('k -> 'k -> int)
+  :  ('k : k mod c non_null separable, 'v) t @ c
+  -> compare:('k -> 'k -> int) @ local
   -> 'k
   -> ('v Option.t[@kind v]) @ c
 [@@mode c = (uncontended, shared)]
@@ -120,20 +120,20 @@ include sig
   val find_and_call
     : ('k : k mod c) ('v : v) ('r : r).
     ('k, 'v) t @ c
-    -> compare:local_ ('k -> 'k -> int)
+    -> compare:('k -> 'k -> int) @ local
     -> 'k
-    -> if_found:local_ ('v @ c -> 'r)
-    -> if_not_found:local_ ('k -> 'r)
+    -> if_found:('v @ c -> 'r) @ local
+    -> if_not_found:('k -> 'r) @ local
     -> 'r
   [@@kind k = k, v = v, r = (r, value_or_null)]
 
   val findi_and_call
     : ('k : k mod c) ('v : v) ('r : r).
     ('k, 'v) t @ c
-    -> compare:local_ ('k -> 'k -> int)
+    -> compare:('k -> 'k -> int) @ local
     -> 'k
-    -> if_found:local_ (key:'k -> data:'v @ c -> 'r)
-    -> if_not_found:local_ ('k -> 'r)
+    -> if_found:(key:'k -> data:'v @ c -> 'r) @ local
+    -> if_not_found:('k -> 'r) @ local
     -> 'r
   [@@kind k = k, v = v, r = r]
 
@@ -142,22 +142,22 @@ include sig
   val find_and_call1
     : ('k : k mod c) ('v : v) ('a : a) ('r : r).
     ('k, 'v) t @ c
-    -> compare:local_ ('k -> 'k -> int)
+    -> compare:('k -> 'k -> int) @ local
     -> 'k
     -> a:'a
-    -> if_found:local_ ('v @ c -> 'a -> 'r)
-    -> if_not_found:local_ ('k -> 'a -> 'r)
+    -> if_found:('v @ c -> 'a -> 'r) @ local
+    -> if_not_found:('k -> 'a -> 'r) @ local
     -> 'r
   [@@kind k = k, v = v, a = a, r = r]
 
   val findi_and_call1
     : ('k : k mod c) ('v : v) ('a : a) ('r : r).
     ('k, 'v) t @ c
-    -> compare:local_ ('k -> 'k -> int)
+    -> compare:('k -> 'k -> int) @ local
     -> 'k
     -> a:'a
-    -> if_found:local_ (key:'k -> data:'v @ c -> 'a -> 'r)
-    -> if_not_found:local_ ('k -> 'a -> 'r)
+    -> if_found:(key:'k -> data:'v @ c -> 'a -> 'r) @ local
+    -> if_not_found:('k -> 'a -> 'r) @ local
     -> ('r : r)
   [@@kind k = k, v = v, a = a, r = r]
 
@@ -166,24 +166,24 @@ include sig
   val find_and_call2
     : ('k : k mod c) ('v : v) ('a : a) ('b : b) ('r : r).
     ('k, 'v) t @ c
-    -> compare:local_ ('k -> 'k -> int)
+    -> compare:('k -> 'k -> int) @ local
     -> 'k
     -> a:'a
     -> b:'b
-    -> if_found:local_ ('v @ c -> 'a -> 'b -> 'r)
-    -> if_not_found:local_ ('k -> 'a -> 'b -> 'r)
+    -> if_found:('v @ c -> 'a -> 'b -> 'r) @ local
+    -> if_not_found:('k -> 'a -> 'b -> 'r) @ local
     -> 'r
   [@@kind k = k, v = v, a = a, b = b, r = r]
 
   val findi_and_call2
     : ('k : k mod c) ('v : v) ('a : a) ('b : b) ('r : r).
     ('k, 'v) t @ c
-    -> compare:local_ ('k -> 'k -> int)
+    -> compare:('k -> 'k -> int) @ local
     -> 'k
     -> a:'a
     -> b:'b
-    -> if_found:local_ (key:'k -> data:'v @ c -> 'a -> 'b -> 'r)
-    -> if_not_found:local_ ('k -> 'a -> 'b -> 'r)
+    -> if_found:(key:'k -> data:'v @ c -> 'a -> 'b -> 'r) @ local
+    -> if_not_found:('k -> 'a -> 'b -> 'r) @ local
     -> 'r
   [@@kind k = k, v = v, a = a, b = b, r = r]
 end
@@ -191,7 +191,7 @@ end
 (** Returns true if key is present in the tree, and false otherwise. *)
 val mem
   : ('k : k mod c) ('v : v).
-  ('k, 'v) t @ c -> compare:local_ ('k -> 'k -> int) -> 'k -> bool
+  ('k, 'v) t @ c -> compare:('k -> 'k -> int) @ local -> 'k -> bool
 [@@mode c = (uncontended, shared)]
 
 (** Removes key destructively from the tree if it exists, returning the new root node.
@@ -200,8 +200,8 @@ val mem
 val remove
   : ('k : k) ('v : v).
   ('k, 'v) t
-  -> removed:local_ bool ref
-  -> compare:local_ ('k -> 'k -> int)
+  -> removed:bool ref @ local
+  -> compare:('k -> 'k -> int) @ local
   -> 'k
   -> ('k, 'v) t
 
@@ -210,20 +210,25 @@ val fold
   : ('k : k) ('v : v) ('acc : value_or_null).
   ('k, 'v) t @ c
   -> init:'acc
-  -> f:local_ (key:'k @ c -> data:'v @ c -> 'acc -> 'acc)
+  -> f:(key:'k @ c -> data:'v @ c -> 'acc -> 'acc) @ local
   -> 'acc
 [@@mode c = (uncontended, shared)]
 
 (** Iterates over the tree. *)
 val iter
   : ('k : k) ('v : v).
-  ('k, 'v) t @ c -> f:local_ (key:'k @ c -> data:'v @ c -> unit) -> unit
+  ('k, 'v) t @ c -> f:(key:'k @ c -> data:'v @ c -> unit) @ local -> unit
 [@@mode c = (uncontended, shared)]
+
+(** Returns [true] iff [f] returns [true] for some entry *)
+val exists
+  : ('k : k) ('v : v).
+  ('k, 'v) t -> f:(key:'k -> data:'v -> bool) @ local -> bool
 
 (** Map over the tree, changing the data in place. *)
 val mapi_inplace
   : ('k : k) ('v : v).
-  ('k, 'v) t -> f:local_ (key:'k -> data:'v -> 'v) -> unit
+  ('k, 'v) t -> f:(key:'k -> data:'v -> 'v) @ local -> unit
 
 val choose_exn : ('k : k) ('v : v). ('k, 'v) t @ c -> #('k * 'v) @ c
 [@@mode c = (uncontended, shared)]]

@@ -40,7 +40,7 @@
     (Note that in many cases, including perhaps the one above, it's preferable to create a
     custom type rather than use [Staged].) *)
 
-open! Import
+open! Import0
 
 type +'a t
 

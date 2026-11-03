@@ -1,8 +1,8 @@
 (** Fixed-length, mutable vector of elements with O(1) [get] and [set] operations. *)
 
-open! Import
+open! Import0
 module Option = Option0
-module List = List0.Constructors
+module List = List0
 
 [%%template
 [@@@kind_set.define base_or_null_with_ext = (base_or_null, value_or_null mod external64)]
@@ -29,7 +29,7 @@ module Definitions = struct
       type ('a : k mod separable) t = 'a t
       [@@kind k = (base_non_value, value_or_null mod external64)]]
 
-    [@@@kind k = base_or_null]
+    [@@@kind k = base_or_null_with_ext]
 
     [%%rederive:
       type nonrec ('a : k mod separable) t = 'a t
@@ -48,7 +48,7 @@ module Definitions = struct
 
     val%template map
       : ('a : k1 mod separable) ('b : k2 mod separable).
-      'a t -> f:local_ ('a -> 'b) -> 'b t
+      'a t -> f:('a -> 'b) @ local -> 'b t
     [@@kind k1 = base_or_null_with_ext, k2 = base_or_null_with_ext]
 
     (** Maximum length of a normal array. The maximum length of a float array is
@@ -83,6 +83,10 @@ module Definitions = struct
     [@@mode c = (uncontended, shared)]
     [@@kind k = base]
     [@@alloc a @ m = (heap_global, stack_local)]
+
+    (** Like {!get}, but returns [Null] instead of raising. *)
+    val%template get_or_null : 'a array @ c local -> int -> 'a Or_null.t @ c
+    [@@mode c = (uncontended, shared)]
 
     (** [Array.set a n x] modifies array [a] in place, replacing element number [n] with
         [x]. You can also write [a.(n) <- x] instead of [Array.set a n x].
@@ -133,7 +137,7 @@ module Definitions = struct
 
     external magic_create_uninitialized
       : ('a : any mod separable).
-      len:int -> ('a array[@local_opt])
+      len:int -> ('a array[@local_opt]) @ unique
       = "%makearray_dynamic_uninit"
     [@@ocaml.doc
       {| [magic_create_uninitialized ~len] creates an array of length [len] with
@@ -176,25 +180,25 @@ module Definitions = struct
 
     (** [Array.copy_matrix t] returns a fresh copy of the array of arrays [t]. This is
         typically used when [t] is a matrix created by [Array.make_matrix]. *)
-    val copy_matrix : local_ 'a t t -> 'a t t
+    val copy_matrix : 'a t t @ local -> 'a t t
 
     [%%template:
     [@@@kind.default k' = base_or_null_with_ext]
     [@@@kind k = k' mod separable]
 
     (** Like [Array.append], but concatenates a list of arrays. *)
-    val concat : ('a : k). local_ 'a t list -> 'a t
+    val concat : ('a : k). 'a t list @ local -> 'a t
 
     (** [Array.copy a] returns a copy of [a], that is, a fresh array containing the same
         elements as [a]. *)
-    val copy : ('a : k). local_ 'a t -> 'a t
+    val copy : ('a : k). 'a t @ local -> 'a t
 
     (** [Array.fill a ofs len x] modifies the array [a] in place, storing [x] in elements
         number [ofs] to [ofs + len - 1].
 
         Raise [Invalid_argument "Array.fill"] if [ofs] and [len] do not designate a valid
         subarray of [a]. *)
-    val fill : ('a : k). local_ 'a t -> pos:int -> len:int -> 'a -> unit]
+    val fill : ('a : k). 'a t @ local -> pos:int -> len:int -> 'a -> unit]
 
     (** [Array.blit v1 o1 v2 o2 len] copies [len] elements from array [v1], starting at
         element number [o1], to array [v2], starting at element number [o2]. It works
@@ -227,12 +231,12 @@ module Definitions = struct
 
       (** [folding_map] is a version of [map] that threads an accumulator through calls to
           [f]. *)
-      val folding_map : 'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc * 'b) -> 'b t
+      val folding_map : 'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) @ local -> 'b t
 
       val folding_mapi
         :  'a t
         -> init:'acc
-        -> f:local_ (int -> 'acc -> 'a -> 'acc * 'b)
+        -> f:(int -> 'acc -> 'a -> 'acc * 'b) @ local
         -> 'b t
 
       (** [Array.fold_map] is a combination of [Array.fold] and [Array.map] that threads
@@ -240,13 +244,13 @@ module Definitions = struct
       val fold_map
         :  'a t
         -> init:'acc
-        -> f:local_ ('acc -> 'a -> 'acc * 'b)
+        -> f:('acc -> 'a -> 'acc * 'b) @ local
         -> 'acc * 'b t
 
       val fold_mapi
         :  'a t
         -> init:'acc
-        -> f:local_ (int -> 'acc -> 'a -> 'acc * 'b)
+        -> f:(int -> 'acc -> 'a -> 'acc * 'b) @ local
         -> 'acc * 'b t
 
       (** [Array.fold_right f a ~init] computes
@@ -254,7 +258,7 @@ module Definitions = struct
           array [a]. *)
       val%template fold_right
         :  'a t @ m
-        -> f:local_ ('a @ m -> 'acc -> 'acc)
+        -> f:('a @ m -> 'acc -> 'acc) @ local
         -> init:'acc
         -> 'acc
       [@@mode m = (uncontended, shared)]
@@ -268,7 +272,7 @@ module Definitions = struct
         from and [len] indicating how many elements to sort. *)
     val sort
       : ('a : k mod separable).
-      ?pos:int -> ?len:int -> local_ 'a t -> compare:local_ ('a -> 'a -> int) -> unit
+      ?pos:int -> ?len:int -> 'a t @ local -> compare:('a -> 'a -> int) @ local -> unit
     [@@kind k = base_or_null_with_ext]
 
     val stable_sort : 'a t -> compare:('a -> 'a -> int) -> unit
@@ -277,13 +281,13 @@ module Definitions = struct
     [@@@kind.default k = base_or_null_with_ext]
     [@@@kind k = k mod separable]
 
-    val is_sorted : ('a : k). local_ 'a t -> compare:local_ ('a -> 'a -> int) -> bool
+    val is_sorted : ('a : k). 'a t @ local -> compare:('a -> 'a -> int) @ local -> bool
 
     (** [is_sorted_strictly xs ~compare] iff [is_sorted xs ~compare] and no two
         consecutive elements in [xs] are equal according to [compare]. *)
     val is_sorted_strictly
       : ('a : k).
-      local_ 'a t -> compare:local_ ('a -> 'a -> int) -> bool]
+      'a t @ local -> compare:('a -> 'a -> int) @ local -> bool]
 
     (** Merges two arrays: assuming that [a1] and [a2] are sorted according to the
         comparison function [compare], [merge a1 a2 ~compare] will return a sorted array
@@ -291,14 +295,14 @@ module Definitions = struct
         the elements of [a1] will be before the elements of [a2]. *)
     val merge
       : ('a : k mod separable).
-      'a t -> 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
+      'a t -> 'a t -> compare:('a -> 'a -> int) @ local -> 'a t
     [@@kind k = base_or_null_with_ext]
 
     include sig
       [@@@implicit_kind: ('a : value_or_null mod separable)]
       [@@@implicit_kind: ('b : value_or_null mod separable)]
 
-      val partitioni_tf : 'a t -> f:local_ (int -> 'a -> bool) -> 'a t * 'a t
+      val partitioni_tf : 'a t -> f:(int -> 'a -> bool) @ local -> 'a t * 'a t
       val cartesian_product : 'a t -> 'b t -> ('a * 'b) t
 
       (** [transpose] in the sense of a matrix transpose. It returns [None] if the arrays
@@ -315,18 +319,18 @@ module Definitions = struct
       (** Functions with the 2 suffix raise an exception if the lengths of the two given
           arrays aren't the same. *)
 
-      val iter2_exn : 'a t -> 'b t -> f:local_ ('a -> 'b -> unit) -> unit
-      val map2_exn : 'a t -> 'b t -> f:local_ ('a -> 'b -> 'c) -> 'c t
+      val iter2_exn : 'a t -> 'b t -> f:('a -> 'b -> unit) @ local -> unit
+      val map2_exn : 'a t -> 'b t -> f:('a -> 'b -> 'c) @ local -> 'c t
 
       val fold2_exn
         :  'a t
         -> 'b t
         -> init:'acc
-        -> f:local_ ('acc -> 'a -> 'b -> 'acc)
+        -> f:('acc -> 'a -> 'b -> 'acc) @ local
         -> 'acc
 
       (** Modifies an array in place, applying [f] to every element of the array *)
-      val map_inplace : local_ 'a t -> f:local_ ('a -> 'a) -> unit
+      val map_inplace : 'a t @ local -> f:('a -> 'a) @ local -> unit
     end
 
     [%%template:
@@ -335,19 +339,21 @@ module Definitions = struct
 
     (** [find_exn f t] returns the first [a] in [t] for which [f t.(i)] is true. It raises
         [Stdlib.Not_found] or [Not_found_s] if there is no such [a]. *)
-    val find_exn : ('a : k1). 'a t -> f:local_ ('a -> bool) -> 'a
+    val find_exn : ('a : k1). 'a t -> f:('a -> bool) @ local -> 'a
 
     (** [swap arr i j] swaps the value at index [i] with that at index [j]. *)
-    val swap : ('a : k1). local_ 'a t -> int -> int -> unit
+    val swap : ('a : k1). 'a t @ local -> int -> int -> unit
 
     (** [rev_inplace t] reverses [t] in place. *)
-    val rev_inplace : ('a : k1). local_ 'a t -> unit
+    val rev_inplace : ('a : k1). 'a t @ local -> unit
 
     (** [rev t] returns a reversed copy of [t] *)
     val rev : ('a : k1). 'a t -> 'a t
 
     (** [of_list_rev l] converts from list then reverses in place. *)
-    val of_list_rev : ('a : k1). ('a List.t[@kind k1' or value_or_null]) -> 'a t
+    val of_list_rev
+      : ('a : k1).
+      ('a List.Constructors.t[@kind k1' or value_or_null]) -> 'a t
 
     [%%template:
     [@@@kind.default k1' = k1', k2 = base_or_null]
@@ -356,12 +362,12 @@ module Definitions = struct
         or [Not_found_s] if [f] always returns [None]. *)
     val find_map_exn
       : ('a : k1) ('b : k2).
-      'a t -> f:local_ ('a -> ('b Option.t[@kind k2])) -> 'b
+      'a t -> f:('a -> ('b Option.t[@kind k2])) @ local -> 'b
 
     (** [find_mapi_exn] is like [find_map_exn] but passes the index as an argument. *)
     val find_mapi_exn
       : ('a : k1) ('b : k2).
-      'a t -> f:local_ (int -> 'a -> ('b Option.t[@kind k2])) -> 'b]
+      'a t -> f:(int -> 'a -> ('b Option.t[@kind k2])) @ local -> 'b]
 
     [@@@kind.default k2' = base_or_null_with_ext]
     [@@@kind k2 = k2' mod separable]
@@ -369,22 +375,26 @@ module Definitions = struct
     (** [of_list_map l ~f] is the same as [of_list (List.map l ~f)]. *)
     val of_list_map
       : ('a : k1') ('b : k2).
-      ('a List.t[@kind k1' or value_or_null]) -> f:local_ ('a -> 'b) -> 'b t
+      ('a List.Constructors.t[@kind k1' or value_or_null]) -> f:('a -> 'b) @ local -> 'b t
 
     (** [of_list_mapi l ~f] is the same as [of_list (List.mapi l ~f)]. *)
     val of_list_mapi
       : ('a : k1') ('b : k2).
-      ('a List.t[@kind k1' or value_or_null]) -> f:local_ (int -> 'a -> 'b) -> 'b t
+      ('a List.Constructors.t[@kind k1' or value_or_null])
+      -> f:(int -> 'a -> 'b) @ local
+      -> 'b t
 
     (** [of_list_rev_map l ~f] is the same as [of_list (List.rev_map l ~f)]. *)
     val of_list_rev_map
       : ('a : k1') ('b : k2).
-      ('a List.t[@kind k1' or value_or_null]) -> f:local_ ('a -> 'b) -> 'b t
+      ('a List.Constructors.t[@kind k1' or value_or_null]) -> f:('a -> 'b) @ local -> 'b t
 
     (** [of_list_rev_mapi l ~f] is the same as [of_list (List.rev_mapi l ~f)]. *)
     val of_list_rev_mapi
       : ('a : k1') ('b : k2).
-      ('a List.t[@kind k1' or value_or_null]) -> f:local_ (int -> 'a -> 'b) -> 'b t
+      ('a List.Constructors.t[@kind k1' or value_or_null])
+      -> f:(int -> 'a -> 'b) @ local
+      -> 'b t
 
     [%%template:
     [@@@kind.default k1' k2']
@@ -404,37 +414,37 @@ module Definitions = struct
         It raises [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)
     val%template findi_exn
       : ('a : k mod separable).
-      'a t -> f:local_ (int -> 'a -> bool) -> #(int * 'a)
+      'a t -> f:(int -> 'a -> bool) @ local -> #(int * 'a)
     [@@kind k = (base_non_value, value_or_null mod external64)]
 
     (** Like [find] but returning [or_null] instead of [option]. *)
-    val find_or_null : ('a : value). 'a t -> f:local_ ('a -> bool) -> 'a or_null
+    val find_or_null : ('a : value). 'a t -> f:('a -> bool) @ local -> 'a or_null
 
     (** Like [findi] but returning [or_null] instead of [option]. *)
     val findi_or_null
       : ('a : value).
-      'a t -> f:local_ (int -> 'a -> bool) -> (int * 'a) or_null
+      'a t -> f:(int -> 'a -> bool) @ local -> (int * 'a) or_null
 
     include sig
       [@@@implicit_kind: ('a : value_or_null mod separable)]
 
       (** For backwards compatibility, we return a boxed product for the value-only
           version of [findi_exn] (instead of a [value & value] product) *)
-      val findi_exn : 'a t -> f:local_ (int -> 'a -> bool) -> int * 'a
+      val findi_exn : 'a t -> f:(int -> 'a -> bool) @ local -> int * 'a
 
       (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive
           elements [(a1, a2)] in [t] such that [equal a1 a2]. They are returned in the
           same order as they appear in [t]. *)
       val find_consecutive_duplicate
         :  'a t
-        -> equal:local_ ('a -> 'a -> bool)
+        -> equal:('a -> 'a -> bool) @ local
         -> ('a * 'a) option
 
       (** [reduce f [a1; ...; an]] is [Some (f (... (f (f a1 a2) a3) ...) an)]. Returns
           [None] on the empty array. *)
-      val reduce : 'a t -> f:local_ ('a -> 'a -> 'a) -> 'a option
+      val reduce : 'a t -> f:('a -> 'a -> 'a) @ local -> 'a option
 
-      val reduce_exn : 'a t -> f:local_ ('a -> 'a -> 'a) -> 'a
+      val reduce_exn : 'a t -> f:('a -> 'a -> 'a) @ local -> 'a
 
       (** [permute ?random_state ?pos ?len t] randomly permutes [t] in place.
 
@@ -444,10 +454,10 @@ module Definitions = struct
           [permute] side-effects [random_state] by repeated calls to [Random.State.int].
           If [random_state] is not supplied, [permute] uses [Random.State.default]. *)
       val permute
-        :  ?random_state:Random.State.t
+        :  ?random_state:Random.State.t @ local
         -> ?pos:int
         -> ?len:int
-        -> local_ 'a t
+        -> 'a t @ local
         -> unit
 
       (** [random_element ?random_state t] is [None] if [t] is empty, else it is [Some x]
@@ -455,9 +465,9 @@ module Definitions = struct
 
           [random_element] side-effects [random_state] by calling [Random.State.int]. If
           [random_state] is not supplied, [random_element] uses [Random.State.default]. *)
-      val random_element : ?random_state:Random.State.t -> 'a t -> 'a option
+      val random_element : ?random_state:Random.State.t @ local -> 'a t -> 'a option
 
-      val random_element_exn : ?random_state:Random.State.t -> 'a t -> 'a
+      val random_element_exn : ?random_state:Random.State.t @ local -> 'a t -> 'a
 
       (** [split_n t n] returns a pair of arrays [(first, second)] where [first] contains
           the first [n] elements of [t] and [second] contains the remaining elements.
@@ -481,7 +491,7 @@ module Definitions = struct
 
       (** [sorted_copy ar compare] returns a shallow copy of [ar] that is sorted. Similar
           to List.sort *)
-      val sorted_copy : local_ 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
+      val sorted_copy : 'a t @ local -> compare:('a -> 'a -> int) @ local -> 'a t
 
       val last : 'a t -> 'a
       [@@deprecated "[since 2024-07] This was renamed to [last_exn]"]
@@ -516,7 +526,11 @@ module type Array = sig @@ portable
       module type Sort = sig @@ portable
         val sort
           : ('a : k mod separable).
-          local_ 'a t -> compare:local_ ('a -> 'a -> int) -> left:int -> right:int -> unit
+          'a t @ local
+          -> compare:('a -> 'a -> int) @ local
+          -> left:int
+          -> right:int
+          -> unit
       end
 
       module Insertion_sort : Sort
@@ -527,8 +541,8 @@ module type Array = sig @@ portable
 
         val five_element_sort
           : ('a : k mod separable).
-          local_ 'a t
-          -> compare:local_ ('a -> 'a -> int)
+          'a t @ local
+          -> compare:('a -> 'a -> int) @ local
           -> int
           -> int
           -> int
@@ -539,18 +553,23 @@ module type Array = sig @@ portable
     end
 
     module%template.portable
-      [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)] Sorter (S : sig
+      [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)]
+      Sorter (S : sig
         [@@@kind k = k mod separable]
 
         type ('a : k) t
 
-        val get : ('a : k). local_ 'a t -> int -> 'a
-        val set : ('a : k). local_ 'a t -> int -> 'a -> unit
-        val length : ('a : k). local_ 'a t -> int
+        val get : ('a : k). 'a t @ local -> int -> 'a
+        val set : ('a : k). 'a t @ local -> int -> 'a -> unit
+        val length : ('a : k). 'a t @ local -> int
       end) : sig
       val sort
         : ('a : k mod separable).
-        ?pos:int -> ?len:int -> local_ 'a S.t -> compare:local_ ('a -> 'a -> int) -> unit
+        ?pos:int
+        -> ?len:int
+        -> 'a S.t @ local
+        -> compare:('a -> 'a -> int) @ local
+        -> unit
     end
   end
 end]

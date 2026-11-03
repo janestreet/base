@@ -1,10 +1,9 @@
 (* A few small things copied from other parts of Base because they depend on us, so we
    can't use them. *)
 
-open! Import
-module Sexp = Sexp0
-
-let raise_s = Error.raise_s
+open! Import0
+module Nothing = Nothing0
+module Option = Option0
 
 module Int = struct
   type t = int
@@ -520,6 +519,14 @@ let rec iter t ~f =
 [@@mode c = (uncontended, shared)]
 ;;
 
+let rec exists t ~f =
+  match t with
+  | Empty -> false
+  | Leaf { key; value = data } -> f ~key ~data
+  | Node { left; key; value = data; height = _; right } ->
+    (exists [@kind k v]) left ~f || f ~key ~data || (exists [@kind k v]) right ~f
+;;
+
 let rec mapi_inplace t ~f =
   match t with
   | Empty -> ()
@@ -532,7 +539,7 @@ let rec mapi_inplace t ~f =
 
 let choose_exn = function
   | Empty ->
-    (match raise_s (Sexp.message "[Avltree.choose_exn] of empty hashtbl" []) with
+    (match invalid_arg "[Avltree.choose_exn] of empty hashtbl" with
      | (_ : Nothing.t) -> .)
   | Leaf { key; value; _ } | Node { key; value; _ } -> #(key, value)
 [@@mode c = (uncontended, shared)]

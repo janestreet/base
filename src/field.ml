@@ -75,6 +75,12 @@ let name (Field field) = field.name
       & (float64 & float64 & float64 & float64 & float64 & float64)
       & (value & value & value & value & value & value)
       & value
+      & value
+    , (float64 & float64 & float64 & float64 & float64 & float64) & value
+    , (value & value & value & value & value & value) & value
+    , ((float64 & float64 & float64 & float64 & float64 & float64) & value)
+      & (float64 & float64 & float64 & float64 & float64 & float64)
+      & ((value & value & value & value & value & value) & value)
       & value )]
 
 let get (Field field) = field.getter

@@ -2,7 +2,7 @@
 
 (** Conversions between various integer types *)
 
-open! Import
+open! Import0
 
 (** Ocaml has the following integer types, with the following bit widths on 32-bit and
     64-bit architectures.
@@ -37,52 +37,52 @@ open! Import
       val foo_to_bar : foo -> bar option
       val foo_to_bar_exn : foo -> bar
     ]} *)
-val int_to_int32 : local_ int -> int32 option
+val int_to_int32 : int @ local -> int32 option
 
-val int_to_int32_exn : local_ int -> local_ int32
-external int_to_int32_trunc : local_ int -> (int32[@local_opt]) = "%int32_of_int"
-external int_to_int64 : local_ int -> (int64[@local_opt]) = "%int64_of_int"
-external int_to_nativeint : local_ int -> (nativeint[@local_opt]) = "%nativeint_of_int"
-val int32_to_int : local_ int32 -> int option
-val int32_to_int_exn : local_ int32 -> int
-val int32_to_int_trunc : local_ int32 -> int
-external int32_to_int64 : local_ int32 -> (int64[@local_opt]) = "%int64_of_int32"
+val int_to_int32_exn : int @ local -> int32 @ local
+external int_to_int32_trunc : int @ local -> (int32[@local_opt]) = "%int32_of_int"
+external int_to_int64 : int @ local -> (int64[@local_opt]) = "%int64_of_int"
+external int_to_nativeint : int @ local -> (nativeint[@local_opt]) = "%nativeint_of_int"
+val int32_to_int : int32 @ local -> int option
+val int32_to_int_exn : int32 @ local -> int
+val int32_to_int_trunc : int32 @ local -> int
+external int32_to_int64 : int32 @ local -> (int64[@local_opt]) = "%int64_of_int32"
 
 external int32_to_nativeint
-  :  local_ int32
+  :  int32 @ local
   -> (nativeint[@local_opt])
   = "%nativeint_of_int32"
 
-val int32_is_representable_as_int : local_ int32 -> bool
-val int64_to_int : local_ int64 -> int option
-val int64_to_int_exn : local_ int64 -> int
-val int64_to_int_trunc : local_ int64 -> int
-val int64_to_int32 : local_ int64 -> int32 option
-val int64_to_int32_exn : local_ int64 -> local_ int32 [@@zero_alloc]
-external int64_to_int32_trunc : local_ int64 -> (int32[@local_opt]) = "%int64_to_int32"
-val int64_to_nativeint : local_ int64 -> nativeint option
-val int64_to_nativeint_exn : local_ int64 -> local_ nativeint
+val int32_is_representable_as_int : int32 @ local -> bool
+val int64_to_int : int64 @ local -> int option
+val int64_to_int_exn : int64 @ local -> int
+val int64_to_int_trunc : int64 @ local -> int
+val int64_to_int32 : int64 @ local -> int32 option
+val int64_to_int32_exn : int64 @ local -> int32 @ local [@@zero_alloc]
+external int64_to_int32_trunc : int64 @ local -> (int32[@local_opt]) = "%int64_to_int32"
+val int64_to_nativeint : int64 @ local -> nativeint option
+val int64_to_nativeint_exn : int64 @ local -> nativeint @ local
 
 external int64_to_nativeint_trunc
-  :  local_ int64
+  :  int64 @ local
   -> (nativeint[@local_opt])
   = "%int64_to_nativeint"
 
-val int64_fit_on_int63_exn : local_ int64 -> unit
-val int64_is_representable_as_int63 : local_ int64 -> bool
-val nativeint_to_int : local_ nativeint -> int option
-val nativeint_to_int_exn : local_ nativeint -> int
-val nativeint_to_int_trunc : local_ nativeint -> int
-val nativeint_to_int32 : local_ nativeint -> int32 option
-val nativeint_to_int32_exn : local_ nativeint -> local_ int32
+val int64_fit_on_int63_exn : int64 @ local -> unit
+val int64_is_representable_as_int63 : int64 @ local -> bool
+val nativeint_to_int : nativeint @ local -> int option
+val nativeint_to_int_exn : nativeint @ local -> int
+val nativeint_to_int_trunc : nativeint @ local -> int
+val nativeint_to_int32 : nativeint @ local -> int32 option
+val nativeint_to_int32_exn : nativeint @ local -> int32 @ local
 
 external nativeint_to_int32_trunc
-  :  local_ nativeint
+  :  nativeint @ local
   -> (int32[@local_opt])
   = "%nativeint_to_int32"
 
 external nativeint_to_int64
-  :  local_ nativeint
+  :  nativeint @ local
   -> (int64[@local_opt])
   = "%int64_of_nativeint"
 

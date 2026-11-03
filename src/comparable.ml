@@ -1,5 +1,8 @@
 open! Import
+module Bool = Bool0
+module Error = Error0
 module Sexp = Sexp0
+module Sign = Sign0
 include Comparable_intf.Definitions
 
 [%%template
@@ -18,22 +21,23 @@ struct
   let is_non_negative t = (compare [@mode m]) t zero >= 0
   let is_negative t = (compare [@mode m]) t zero < 0
   let is_non_positive t = (compare [@mode m]) t zero <= 0
-  let sign t = Sign0.of_int ((compare [@mode m]) t zero)
+  let sign t = Sign.of_int ((compare [@mode m]) t zero)
 end
 [@@modality (p, c) = ((nonportable, uncontended), (portable, contended))]
 
 module%template.portable
-  [@modality p] Poly (T : sig
+  [@modality p]
+  Poly (T : sig
     type t [@@deriving sexp_of]
   end) =
 struct
   module Replace_polymorphic_compare = struct
     type t = T.t [@@deriving sexp_of]
 
-    include Poly
+    include (Poly : module type of Poly)
   end
 
-  include Poly
+  include (Poly : module type of Poly)
 
   let between t ~low ~high = low <= t && t <= high
   let clamp_unchecked t ~min:min_ ~max:max_ = max min_ (min max_ t)
@@ -46,10 +50,11 @@ struct
   let clamp t ~min ~max =
     if min > max
     then
-      Or_error.error_s
-        (Sexp.message
-           "clamp requires [min <= max]"
-           [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ])
+      Error
+        (Error.create_s
+           (Sexp.message
+              "clamp requires [min <= max]"
+              [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ]))
     else Ok (clamp_unchecked t ~min ~max)
   ;;
 
@@ -75,12 +80,12 @@ let equal cmp a b = cmp a b = 0
 
 let min cmp t t' =
   let is_leq = (leq [@mode m] [@kind k]) cmp t t' in
-  (Bool0.select [@mode m] [@kind k]) is_leq t t' [@exclave_if_local m]
+  (Bool.select [@mode m] [@kind k]) is_leq t t' [@exclave_if_local m]
 ;;
 
 let max cmp t t' =
   let is_geq = (geq [@mode m] [@kind k]) cmp t t' in
-  (Bool0.select [@mode m] [@kind k]) is_geq t t' [@exclave_if_local m]
+  (Bool.select [@mode m] [@kind k]) is_geq t t' [@exclave_if_local m]
 ;;]
 
 [%%template
@@ -112,24 +117,25 @@ end
 [@@inline always]
 
 module%template.portable
-  [@modality p] Comparisons (T : sig
+  [@modality p]
+  Comparisons (T : sig
     type t [@@deriving compare [@mode.explicit m]]
   end) : Comparisons [@mode m] with type t := T.t = struct
   include Infix [@mode m] [@modality p] (T)
 
-  let[@mode m = (global, m)] compare = (T.compare [@mode m])
+  [%%template
+  [@@@mode.default m = (global, m)]
 
-  let[@mode m = (global, m)] [@inline] equal x y =
-    (equal [@mode m]) (T.compare [@mode m]) x y
-  ;;
-
-  let min t t' = min compare t t'
-  let max t t' = max compare t t'
+  let compare = (T.compare [@mode m])
+  let[@inline] equal x y = (equal [@mode m]) (T.compare [@mode m]) x y
+  let min t t' = (min [@mode m]) (compare [@mode m]) t t' [@exclave_if_local m]
+  let max t t' = (max [@mode m]) (compare [@mode m]) t t' [@exclave_if_local m]]
 end
 [@@inline always]
 
 module%template.portable
-  [@modality p] Comparisons_with_zero_alloc (T : sig
+  [@modality p]
+  Comparisons_with_zero_alloc (T : sig
     type t [@@deriving (compare [@mode.explicit m]) ~zero_alloc]
   end) : Comparisons_with_zero_alloc [@mode m] with type t := T.t = struct
   include Infix_with_zero_alloc [@mode m] [@modality p] (T)
@@ -142,7 +148,8 @@ end
 [@@inline always]
 
 module%template.portable
-  [@modality p] Make_using_comparator (T : sig
+  [@modality p]
+  Make_using_comparator (T : sig
     type t [@@deriving sexp_of]
 
     include Using_comparator_arg [@mode m] with type t := t
@@ -172,16 +179,18 @@ struct
   let clamp t ~min ~max =
     if min > max
     then
-      Or_error.error_s
-        (Sexp.message
-           "clamp requires [min <= max]"
-           [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ])
+      Error
+        (Error.create_s
+           (Sexp.message
+              "clamp requires [min <= max]"
+              [ "min", T.sexp_of_t min; "max", T.sexp_of_t max ]))
     else Ok (clamp_unchecked t ~min ~max)
   ;;
 end
 
 module%template.portable
-  [@modality p] Make (T : sig
+  [@modality p]
+  Make (T : sig
     type t [@@deriving (compare [@mode.explicit m]), sexp_of]
   end) =
 Make_using_comparator [@inlined hint] [@modality p] [@mode m] (struct
@@ -190,7 +199,8 @@ Make_using_comparator [@inlined hint] [@modality p] [@mode m] (struct
   end)
 
 module%template.portable
-  [@modality p] Inherit
+  [@modality p]
+  Inherit
     (C : sig
        type t [@@deriving compare [@mode.explicit m]]
      end)

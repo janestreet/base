@@ -1,4 +1,6 @@
-open! Import
+open! Import0
+module Int63 = Int63_type
+module Sign = Sign0
 
 module Definitions = struct
   module type S = sig
@@ -10,7 +12,7 @@ module Definitions = struct
         evaluates to [true]. This is related to 80-bit registers being used for
         calculations; you can force representation as a 64-bit value by let-binding. *)
 
-    open! Import
+    open! Import0
 
     type t = float [@@deriving globalize, sexp ~stackify ~unboxed, sexp_grammar]
 
@@ -20,8 +22,8 @@ module Definitions = struct
 
     include%template Identifiable.S [@mode local] [@modality portable] with type t := t
 
-    val of_string : local_ string -> t
-    val of_string_opt : local_ string -> t option
+    val of_string : string @ local -> t
+    val of_string_opt : string @ local -> t option
 
     include%template Comparable.With_zero [@mode local] with type t := t
 
@@ -76,26 +78,26 @@ module Definitions = struct
     (** An order-preserving bijection between all floats except for nans, and all int64s
         with absolute value smaller than or equal to [2**63 - 2**52]. Note both 0. and -0.
         map to 0L. *)
-    val to_int64_preserve_order : local_ t -> int64 option
+    val to_int64_preserve_order : t @ local -> int64 option
 
-    val to_int64_preserve_order_exn : local_ t -> int64
+    val to_int64_preserve_order_exn : t @ local -> int64
 
     (** Returns [nan] if the absolute value of the argument is too large. *)
-    val of_int64_preserve_order : local_ int64 -> t
+    val of_int64_preserve_order : int64 @ local -> t
 
     (** The next or previous representable float. ULP stands for "unit of least
         precision", and is the spacing between floating point numbers. Both
         [one_ulp `Up infinity] and [one_ulp `Down neg_infinity] return a nan. *)
-    val one_ulp : [ `Up | `Down ] -> local_ t -> t
+    val one_ulp : [ `Up | `Down ] -> t @ local -> t
 
     (** Note that this doesn't round trip in either direction. For example,
         [Float.to_int (Float.of_int max_int) <> max_int]. *)
     val of_int : int -> t
 
-    val to_int : local_ t -> int
-    val of_int63 : local_ Int63.t -> t
-    val of_int64 : local_ int64 -> t
-    val to_int64 : local_ t -> int64
+    val to_int : t @ local -> int
+    val of_int63 : Int63.t @ local -> t
+    val of_int64 : int64 @ local -> t
+    val to_int64 : t @ local -> int64
 
     (** [round] rounds a float to an integer float. [iround{,_exn}] rounds a float to an
         int. Both round according to a direction [dir], with default [dir] being
@@ -133,42 +135,48 @@ module Definitions = struct
         - [round_* i = i] for any float [i] that is an integer.
 
         - [iround_*_exn (of_int i) = i] for any int [i] with [-2**52 <= i <= 2**52]. *)
-    val round : ?dir:local_ [ `Zero | `Nearest | `Up | `Down ] -> local_ t -> t
+    val round : ?dir:[ `Zero | `Nearest | `Up | `Down ] @ local -> t @ local -> t
 
-    val iround : ?dir:local_ [ `Zero | `Nearest | `Up | `Down ] -> local_ t -> int option
+    val iround
+      :  ?dir:[ `Zero | `Nearest | `Up | `Down ] @ local
+      -> t @ local
+      -> int option
 
-    val iround_exn : ?dir:local_ [ `Zero | `Nearest | `Up | `Down ] -> local_ t -> int
+    val iround_exn : ?dir:[ `Zero | `Nearest | `Up | `Down ] @ local -> t @ local -> int
     [@@zero_alloc]
 
-    val round_towards_zero : local_ t -> t
-    val round_down : local_ t -> t
-    val round_up : local_ t -> t
+    val round_towards_zero : t @ local -> t
+    val round_down : t @ local -> t
+    val round_up : t @ local -> t
 
     (** Rounds half integers up. *)
-    val round_nearest : local_ t -> t
+    val round_nearest : t @ local -> t
 
     (** Rounds half integers to the even integer. *)
-    val round_nearest_half_to_even : local_ t -> t
+    val round_nearest_half_to_even : t @ local -> t
 
-    val iround_towards_zero : local_ t -> int option
-    val iround_down : local_ t -> int option
-    val iround_up : local_ t -> int option
-    val iround_nearest : local_ t -> int option
-    val iround_towards_zero_or_null : local_ t -> int or_null [@@zero_alloc]
-    val iround_down_or_null : local_ t -> int or_null [@@zero_alloc]
-    val iround_up_or_null : local_ t -> int or_null [@@zero_alloc]
-    val iround_nearest_or_null : local_ t -> int or_null [@@zero_alloc]
-    val iround_towards_zero_exn : local_ t -> int [@@zero_alloc]
-    val iround_down_exn : local_ t -> int [@@zero_alloc]
-    val iround_up_exn : local_ t -> int [@@zero_alloc]
-    val iround_nearest_exn : local_ t -> int [@@zero_alloc]
-    val int63_round_down_exn : local_ t -> Int63.t
-    val int63_round_up_exn : local_ t -> Int63.t
-    val int63_round_nearest_exn : local_ t -> Int63.t
+    val iround_towards_zero : t @ local -> int option
+    val iround_down : t @ local -> int option
+    val iround_up : t @ local -> int option
+    val iround_nearest : t @ local -> int option
+    val iround_towards_zero_or_null : t @ local -> int or_null [@@zero_alloc]
+    val iround_down_or_null : t @ local -> int or_null [@@zero_alloc]
+    val iround_up_or_null : t @ local -> int or_null [@@zero_alloc]
+    val iround_nearest_or_null : t @ local -> int or_null [@@zero_alloc]
+    val iround_towards_zero_exn : t @ local -> int [@@zero_alloc]
+    val iround_down_exn : t @ local -> int [@@zero_alloc]
+    val iround_up_exn : t @ local -> int [@@zero_alloc]
+    val iround_nearest_exn : t @ local -> int [@@zero_alloc]
+    val int63_round_down_or_null : t @ local -> Int63.t or_null
+    val int63_round_up_or_null : t @ local -> Int63.t or_null
+    val int63_round_nearest_or_null : t @ local -> Int63.t or_null
+    val int63_round_down_exn : t @ local -> Int63.t
+    val int63_round_up_exn : t @ local -> Int63.t
+    val int63_round_nearest_exn : t @ local -> Int63.t
 
     (** If the argument is NaN, infinite, or otherwise cannot be represented, no exception
         is raised and the result is an unspecified int64. *)
-    val iround_nearest_half_to_even : local_ t -> int64
+    val iround_nearest_half_to_even : t @ local -> int64
 
     (** If [f < iround_lbound || f > iround_ubound], then [iround*] functions will refuse
         to round [f], returning [None] or raising as appropriate. *)
@@ -257,16 +265,16 @@ module Definitions = struct
         the same code path). *)
     val round_decimal : t @ m -> decimal_digits:int -> t @ m]
 
-    val is_nan : local_ t -> bool
+    val is_nan : t @ local -> bool
 
     (** A float is infinite when it is either [infinity] or [neg_infinity]. *)
-    val is_inf : local_ t -> bool
+    val is_inf : t @ local -> bool
 
     (** A float is finite when neither [is_nan] nor [is_inf] is true. *)
-    val is_finite : local_ t -> bool
+    val is_finite : t @ local -> bool
 
     (** [is_integer x] is [true] if and only if [x] is an integer. *)
-    val is_integer : local_ t -> bool
+    val is_integer : t @ local -> bool
 
     (** [min_inan] and [max_inan] return, respectively, the min and max of the two given
         values, except when one of the values is a [nan], in which case the other is
@@ -427,7 +435,7 @@ module Definitions = struct
         [3.14] as [3.1400000000000001243]. The only exception is that occasionally it will
         output 17 significant digits when the number can be represented with just 16 (but
         not 15 or less) of them. *)
-    val to_string : local_ t -> string
+    val to_string : t @ local -> string
 
     (** Pretty print float, for example
         [to_string_hum ~decimals:3 1234.1999 = "1_234.200"]
@@ -439,7 +447,7 @@ module Definitions = struct
       -> ?strip_zero:bool (** defaults to [false] *)
       -> ?explicit_plus:bool
            (** Forces a + in front of non-negative values. Defaults to [false] *)
-      -> local_ t
+      -> t @ local
       -> string
 
     (** Produce a lossy compact string representation of the float. The float is scaled by
@@ -499,13 +507,13 @@ module Definitions = struct
               ()
           ;;
         ]} *)
-    val to_padded_compact_string : local_ t -> string
+    val to_padded_compact_string : t @ local -> string
 
     (** Similar to [to_padded_compact_string] but allows the user to provide different
         abbreviations. This can be useful to display currency values, e.g. $1mm3, where
         prefix="$", mega="mm". *)
     val to_padded_compact_string_custom
-      :  local_ t
+      :  t @ local
       -> ?prefix:string
       -> kilo:string
       -> mega:string
@@ -536,7 +544,7 @@ module Definitions = struct
         Depending on context, calling this function might or might not allocate 2 minor
         words. Even if called in a way that causes allocation, it still appears to be
         faster than [**]. *)
-    val int_pow : local_ t -> int -> t
+    val int_pow : t @ local -> int -> t
 
     (** [square x] returns [x *. x]. *)
     val%template square : t @ m -> t @ m
@@ -692,7 +700,7 @@ module Definitions = struct
       include Stringable.S with type t := t
     end
 
-    val classify : local_ t -> Class.t
+    val classify : t @ local -> Class.t
 
     (*_ Caution: If we remove this sig item, [sign] will still be present from
         [Comparable.With_zero]. *)
@@ -702,11 +710,11 @@ module Definitions = struct
 
     (** The sign of a float. Both [-0.] and [0.] map to [Zero]. Raises on nan. All other
         values map to [Neg] or [Pos]. *)
-    val sign_exn : local_ t -> Sign.t
+    val sign_exn : t @ local -> Sign.t
 
     (** The sign of a float, with support for NaN. Both [-0.] and [0.] map to [Zero]. All
         NaN values map to [Nan]. All other values map to [Neg] or [Pos]. *)
-    val sign_or_nan : local_ t -> Sign_or_nan.t
+    val sign_or_nan : t @ local -> Sign_or_nan.t
 
     (** These functions construct and destruct 64-bit floating point numbers based on
         their IEEE representation with a sign bit, an 11-bit non-negative (biased)
@@ -723,13 +731,13 @@ module Definitions = struct
     val create_ieee
       :  negative:bool
       -> exponent:int
-      -> mantissa:local_ Int63.t
+      -> mantissa:Int63.t @ local
       -> t Or_error.t
 
-    val create_ieee_exn : negative:bool -> exponent:int -> mantissa:local_ Int63.t -> t
-    val ieee_negative : local_ t -> bool
-    val ieee_exponent : local_ t -> int
-    val ieee_mantissa : local_ t -> Int63.t
+    val create_ieee_exn : negative:bool -> exponent:int -> mantissa:Int63.t @ local -> t
+    val ieee_negative : t @ local -> bool
+    val ieee_exponent : t @ local -> int
+    val ieee_mantissa : t @ local -> Int63.t
 
     (** S-expressions contain at most 8 significant digits. *)
     module Terse : sig
@@ -753,7 +761,7 @@ module type Float = sig @@ portable
 
       https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
-    val box : local_ t -> t
+    val box : t @ local -> t
 
     val clamp_unchecked
       :  to_clamp_maybe_nan:t

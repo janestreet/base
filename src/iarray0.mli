@@ -1,6 +1,6 @@
 @@ portable
 
-open! Import
+open! Import0
 
 type (+'a : any mod separable) t = 'a iarray
 

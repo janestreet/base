@@ -1,10 +1,14 @@
 open! Import
 module Array = Array0
 module Bytes = Bytes0
+module Either = Either0
+module Error = Error0
+module Iarray = Iarray0
 module Int = Int0
+module Ordered_collection_common = Ordered_collection_common0
 module Sexp = Sexp0
-module Uchar = Uchar0
 module String = String0
+module Uchar = Uchar0
 include String_intf.Definitions
 include String
 
@@ -208,7 +212,7 @@ module Search_pattern0 = struct
       !matched_chars > 0
       && not (char_equal next_text_char (unsafe_get pattern !matched_chars))
     do
-      matched_chars := Iarray0.unsafe_get kmp_array (!matched_chars - 1)
+      matched_chars := Iarray.unsafe_get kmp_array (!matched_chars - 1)
     done;
     if char_equal next_text_char (unsafe_get pattern !matched_chars)
     then matched_chars := !matched_chars + 1;
@@ -241,7 +245,7 @@ module Search_pattern0 = struct
               ~kmp_array:
                 ((* The array won't be mutated for the duration of this function call, and
                     the function doesn't save the iarray reference. *)
-                 Iarray0.unsafe_of_array__promise_no_mutation
+                 Iarray.unsafe_of_array__promise_no_mutation
                    kmp_array)
               ~char_equal;
          Array.unsafe_set kmp_array i !matched_chars
@@ -250,7 +254,7 @@ module Search_pattern0 = struct
      ; case_sensitive
      ; kmp_array =
          (* The array won't be mutated from now on. *)
-         Iarray0.unsafe_of_array__promise_no_mutation kmp_array
+         Iarray.unsafe_of_array__promise_no_mutation kmp_array
      })
     [@exclave_if_stack a]
   ;;
@@ -311,7 +315,7 @@ module Search_pattern0 = struct
           found := (j - k) :: !found;
           (* we just found a match in the previous iteration *)
           match may_overlap with
-          | true -> matched_chars := Iarray0.unsafe_get kmp_array (k - 1)
+          | true -> matched_chars := Iarray.unsafe_get kmp_array (k - 1)
           | false -> matched_chars := 0);
         if j < n
         then (
@@ -398,7 +402,7 @@ module Search_pattern0 = struct
     type nonrec t = t =
       { pattern : string
       ; case_sensitive : bool
-      ; kmp_array : int Iarray0.t
+      ; kmp_array : int Iarray.t
       }
     [@@deriving equal ~localize, sexp_of ~stackify]
 
@@ -520,7 +524,7 @@ module Caseless = struct
             && equal_loop ~pos:(pos + 1) ~len ~string1 ~string2)
       ;;
 
-      let%template[@mode local] equal string1 string2 =
+      let%template equal_internal string1 string2 =
         phys_equal string1 string2
         ||
         let len1 = String.length string1 in
@@ -528,9 +532,9 @@ module Caseless = struct
         len1 = len2 && equal_loop ~pos:0 ~len:len1 ~string1 ~string2
       ;;
 
-      let%template equal a b = (equal [@mode local]) a b
-      let%template ( = ) a b = (equal [@mode local]) a b
-      let%template ( <> ) a b = not ((equal [@mode local]) a b)
+      let%template[@mode __ = (local, global)] equal a b = equal_internal a b
+      let%template ( = ) a b = equal_internal a b
+      let%template ( <> ) a b = not (equal_internal a b)
     end
 
     let char_compare_caseless c1 c2 = Char.compare (Char.lowercase c1) (Char.lowercase c2)
@@ -547,7 +551,7 @@ module Caseless = struct
         | _ -> c)
     ;;
 
-    let%template[@mode local] compare string1 string2 =
+    let%template compare_internal string1 string2 =
       if phys_equal string1 string2
       then 0
       else
@@ -559,7 +563,7 @@ module Caseless = struct
           ~len2:(String.length string2)
     ;;
 
-    let%template compare a b = (compare [@mode local]) a b
+    let%template[@mode __ = (local, global)] compare a b = compare_internal a b
 
     let hash_fold_t state t =
       let len = length t in
@@ -589,7 +593,7 @@ module Caseless = struct
 
   include T
 
-  include%template Comparable.Make [@modality portable] (T)
+  include%template Comparable.Make [@mode local] [@modality portable] (T)
 
   (* we define equality after [Comparable.Make] so that we expose our faster version of
      equality instead of the version based on [compare] *)
@@ -1039,8 +1043,8 @@ let tr_multi ~target ~replacement =
 ;;
 
 external concat_array
-  :  local_ string array
-  -> sep:local_ string
+  :  string array @ local
+  -> sep:string @ local
   -> string
   @@ portable
   = "Base_string_concat_array"
@@ -1281,18 +1285,43 @@ include Hash
 let pp ppf string = Stdlib.Format.fprintf ppf "%S" string
 let of_char c = make 1 c
 
-let%template[@alloc a @ l = (heap_global, stack_local)] of_char_list (l @ local) =
+[%%template
+[@@@alloc.default a @ l = (heap_global, stack_local)]
+
+let of_char_list (l @ local) =
   (let t = (Bytes.create [@alloc a]) (List.length l) in
    (List.iteri [@mode local]) l ~f:(fun i c -> Bytes.set t i c);
    Bytes.unsafe_to_string ~no_mutation_while_string_reachable:t)
   [@exclave_if_stack a]
 ;;
 
-let%template[@alloc a = (heap, stack)] of_list = (of_char_list [@alloc a])
+let of_list = (of_char_list [@alloc a])
 
-let%template[@alloc a = (heap, stack)] of_array a =
-  (init [@alloc a]) (Array.length a) ~f:(Array.get a) [@exclave_if_stack a]
+(* SAFETY: [init] is only going to call [f] with values 0.. Array.length *)
+let of_array a =
+  (init [@alloc a]) (Array.length a) ~f:(Array.unsafe_get a) [@exclave_if_stack a]
 ;;
+
+(* SAFETY: [init] is only going to call [f] with values 0.. Array.length *)
+let of_iarray (a @ local) =
+  (init [@alloc a]) (Iarray.length a) ~f:(fun i -> Iarray.unsafe_get a i [@nontail])
+  [@nontail] [@exclave_if_stack a]
+;;
+
+(** SAFETY: This is safe because [char] crosses locality and uniqueness. *)
+external unique_char_iarray_of_array
+  :  (char array[@local_opt]) @ unique
+  -> (char iarray[@local_opt]) @ unique
+  @@ portable
+  = "%identity"
+
+(* Safely converts a (potentially aliased) string to an iarray with 1 copy. *)
+let to_iarray (t @ local) : char iarray @ unique =
+  ((Array.init [@alloc a] [@kind value_or_null mod external64]) (length t) ~f:(fun pos ->
+     unsafe_get t pos)
+   |> unique_char_iarray_of_array)
+  [@exclave_if_stack a]
+;;]
 
 let to_sequence t =
   let len = length t in
@@ -1596,7 +1625,7 @@ module Escaping = struct
     let arr = Array.create ~len:256 (-1) in
     let vals = Array.create ~len:256 false in
     let rec loop = function
-      | [] -> Ok (Iarray0.unsafe_of_array__promise_no_mutation arr)
+      | [] -> Ok (Iarray.unsafe_of_array__promise_no_mutation arr)
       | (c_from, c_to) :: l ->
         let k, v =
           match func with
@@ -2079,10 +2108,10 @@ module Make_utf (Format : sig
   @@ portable
     val codec_name : string
     val module_name : string
-    val is_valid : local_ t -> bool
+    val is_valid : t @ local -> bool
     val byte_length : Uchar.t -> int
-    val get_decode_result : local_ t -> byte_pos:int -> Uchar.utf_decode
-    val set : local_ bytes -> int -> Uchar.t -> int
+    val get_decode_result : t @ local -> byte_pos:int -> Uchar.utf_decode
+    val set : bytes @ local -> int -> Uchar.t -> int
   end) =
 struct
   type elt = Uchar.t
@@ -2321,8 +2350,8 @@ module Make_utf32 (Format : sig
   @@ portable
     val codec_name : string
     val module_name : string
-    val get_decode_result : local_ t -> byte_pos:int -> Uchar.utf_decode
-    val set : local_ bytes -> int -> Uchar.t -> int
+    val get_decode_result : t @ local -> byte_pos:int -> Uchar.utf_decode
+    val set : bytes @ local -> int -> Uchar.t -> int
   end) =
 Make_utf (struct
     open Int_replace_polymorphic_compare

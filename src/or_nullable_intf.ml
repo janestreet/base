@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 module%template Definitions = struct
   [@@@mode.default m = (global, local)]

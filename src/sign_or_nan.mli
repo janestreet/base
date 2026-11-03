@@ -3,7 +3,7 @@
 (** An extension to [Sign] with a [Nan] constructor, for representing the sign of
     float-like numeric values. *)
 
-open! Import
+open! Import0
 
 type t =
   | Neg

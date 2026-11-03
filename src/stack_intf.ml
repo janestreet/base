@@ -1,7 +1,7 @@
 (** An interface for stacks that follows [Core]'s conventions, as opposed to OCaml's
     standard [Stack] module. *)
 
-open! Import
+open! Import0
 
 module Definitions = struct
   module type S = sig
@@ -52,17 +52,17 @@ module Definitions = struct
     (** [until_empty t f] repeatedly pops an element [a] off of [t] and runs [f a], until
         [t] becomes empty. It is fine if [f] adds more elements to [t], in which case the
         most-recently-added element will be processed next. *)
-    val until_empty : 'a t -> local_ ('a -> unit) -> unit
+    val until_empty : 'a t -> ('a -> unit) @ local -> unit
 
     (** [filter_map t ~f] creates a new stack with only the elements for which [f] returns
         [Some] *)
-    val filter_map : 'a t -> f:local_ ('a -> 'b option) -> 'b t
+    val filter_map : 'a t -> f:('a -> 'b option) @ local -> 'b t
 
     (** [filter t ~f] creates a new stack with only the elements that satisfy [f]. *)
-    val filter : 'a t -> f:local_ ('a -> bool) -> 'a t
+    val filter : 'a t -> f:('a -> bool) @ local -> 'a t
 
     (** [filter_inplace t ~f] removes all elements of [t] that don't satisfy [f]. *)
-    val filter_inplace : 'a t -> f:local_ ('a -> bool) -> unit
+    val filter_inplace : 'a t -> f:('a -> bool) @ local -> unit
   end
 end
 

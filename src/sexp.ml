@@ -1,6 +1,7 @@
-open! Import
+open! Import0
+module Char = Char0
 
-include%template Comparable.Make [@modality portable] (Sexp0)
+include%template Comparable.Make [@mode local] [@modality portable] (Sexp0)
 
 include Sexp0
 (* we include [sexp] last to ensure we get a faster [equal] than the one produced by

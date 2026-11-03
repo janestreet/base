@@ -14,7 +14,7 @@
       include Equal.S1 with type 'a t := 'a t
     ]} *)
 
-open! Import
+open! Import0
 
 [%%template
 [@@@mode.default m = (global, local)]

@@ -4,9 +4,7 @@ module T = struct
   type t = unit
   [@@deriving enumerate, globalize, hash, sexp ~stackify ~unboxed, sexp_grammar]
 
-  let compare _ _ = 0
-  let%template[@mode local] compare _ _ = 0
-  let%template[@mode local] equal _ _ = true
+  let%template[@mode __ = (global, local)] compare _ _ = 0
 
   let of_string = function
     | "()" -> ()
@@ -19,6 +17,6 @@ end
 
 include T
 
-include%template Identifiable.Make [@modality portable] (T)
+include%template Identifiable.Make [@mode local] [@modality portable] (T)
 
 let invariant () = ()

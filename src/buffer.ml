@@ -1,4 +1,5 @@
 open! Import
+module Bytes = Bytes0
 open Modes.Export
 include Buffer_intf.Definitions
 include Stdlib.Buffer
@@ -19,7 +20,7 @@ module%template To_bytes =
       let length t = length t.global
     end)
     (struct
-      type t = Bytes.t Modes.Global.t
+      type t = bytes Modes.Global.t
 
       let create ~len = { global = Bytes.create len }
       let length t = Bytes.length t.global

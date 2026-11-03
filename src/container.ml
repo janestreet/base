@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Array = Array0
 module Either = Either0
 module Result = Result0
@@ -372,7 +372,8 @@ end
 [@@alloc a @ m = (heap_global, stack_local)]
 
 module%template.portable
-  [@modality p] Make_gen_with_creators
+  [@modality p]
+  Make_gen_with_creators
     (T : Make_gen_with_creators_arg) :
   Generic_with_creators
   with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t

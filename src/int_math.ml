@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 let invalid_argf = Printf.invalid_argf
 let negative_exponent () = Printf.invalid_argf "exponent can not be negative" ()
@@ -9,8 +9,8 @@ external int_math_int_pow : int -> int -> int @@ portable = "Base_int_math_int_p
 [@@noalloc]
 
 external int_math_int64_pow
-  :  local_ int64
-  -> local_ int64
+  :  int64 @ local
+  -> int64 @ local
   -> int64
   @@ portable
   = "Base_int_math_int64_pow_stub" "Base_int_math_int64_pow_stub_unboxed"
@@ -93,27 +93,27 @@ let int63_pow_on_int64 base exponent =
 module type Make_arg = sig @@ portable
   type t : value mod contended portable
 
-  val globalize : local_ t -> t
+  val globalize : t @ local -> t
 
   include Floatable.S_local_input with type t := t
   include Stringable.S with type t := t
 
-  val ( + ) : local_ t -> local_ t -> t
-  val ( - ) : local_ t -> local_ t -> t
-  val ( * ) : local_ t -> local_ t -> t
-  val ( / ) : local_ t -> local_ t -> t
-  val ( ~- ) : local_ t -> t
-  val ( <> ) : local_ t -> local_ t -> bool
-  val ( <= ) : local_ t -> local_ t -> bool
-  val ( >= ) : local_ t -> local_ t -> bool
-  val ( = ) : local_ t -> local_ t -> bool
-  val ( < ) : local_ t -> local_ t -> bool
-  val ( > ) : local_ t -> local_ t -> bool
+  val ( + ) : t @ local -> t @ local -> t
+  val ( - ) : t @ local -> t @ local -> t
+  val ( * ) : t @ local -> t @ local -> t
+  val ( / ) : t @ local -> t @ local -> t
+  val ( ~- ) : t @ local -> t
+  val ( <> ) : t @ local -> t @ local -> bool
+  val ( <= ) : t @ local -> t @ local -> bool
+  val ( >= ) : t @ local -> t @ local -> bool
+  val ( = ) : t @ local -> t @ local -> bool
+  val ( < ) : t @ local -> t @ local -> bool
+  val ( > ) : t @ local -> t @ local -> bool
   val abs : t -> t
   val neg : t -> t
   val zero : t
   val of_int_exn : int -> t
-  val rem : local_ t -> local_ t -> t
+  val rem : t @ local -> t @ local -> t
 end
 
 module Make (X : Make_arg) = struct
@@ -139,7 +139,7 @@ module Make (X : Make_arg) = struct
         (to_string (globalize x))
         (to_string (globalize y))
         ();
-    let offset = x < zero |> Bool.to_int |> of_int_exn in
+    let offset = x < zero |> bool_to_int |> of_int_exn in
     ((x + offset) / y) - offset
   ;;
 

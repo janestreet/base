@@ -1,12 +1,14 @@
-open! Import
+open! Import0
+module Bytes = Bytes0
+module Ordered_collection_common = Ordered_collection_common0
 include Blit_intf.Definitions
 
 let%template[@mode l = (global, local), u = aliased] possibly_unsafe_bytes_to_string b =
-  Bytes0.unsafe_to_string ~no_mutation_while_string_reachable:b [@exclave_if_local l]
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:b [@exclave_if_local l]
 ;;
 
 let%template[@mode l = (global, local), u = unique] possibly_unsafe_bytes_to_string b =
-  Bytes0.unique_to_string b [@exclave_if_local l]
+  Bytes.unique_to_string b [@exclave_if_local l]
 ;;
 
 [%%template
@@ -93,7 +95,8 @@ end
     , value_or_null mod external64 non_float )]
 
 module%template.portable
-  [@modality p] Make1
+  [@modality p]
+  Make1
     (Sequence : Sequence1
   [@kind.explicit k] [@mode u v] [@alloc a]) =
 struct
@@ -117,7 +120,8 @@ end
     , value_or_null mod external64 non_float )]
 
 module%template.portable
-  [@modality p] Make1_zero_alloc
+  [@modality p]
+  Make1_zero_alloc
     (Sequence : Sequence1_zero_alloc
   [@kind.explicit k] [@mode u v] [@alloc a]) =
 struct
@@ -182,7 +186,8 @@ end
     , value_or_null mod external64 non_float )]
 
 module%template.portable
-  [@modality p] Make (Sequence : sig
+  [@modality p]
+  Make (Sequence : sig
     include Sequence [@mode v]
 
     val create : len:int -> t @ l u [@@alloc a @ l = (heap @ global, a @ l)]
@@ -207,7 +212,8 @@ struct
 end
 
 module%template.portable
-  [@modality p] Make_distinct
+  [@modality p]
+  Make_distinct
     (Src : Sequence
   [@mode v])
     (Dst : sig

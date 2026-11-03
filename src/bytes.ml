@@ -1,5 +1,8 @@
 open! Import
 module Array = Array0
+module Char = Char0
+module List = List0
+module Ordered_collection_common = Ordered_collection_common0
 module Sexp = Sexp0
 module String = String0
 include Bytes_intf.Definitions

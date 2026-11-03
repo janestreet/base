@@ -19,6 +19,7 @@ open! Import0
 
 open struct
   module Sys = Sys0
+  module Bool = Bool0
   module Char = Char0
   module Uchar = Uchar0
   module Bytes = Bytes0
@@ -171,8 +172,8 @@ let%template[@alloc a @ m = (stack_local, heap_global)] sub (t @ m) ~pos ~len =
 let uncapitalize = Stdlib.String.uncapitalize_ascii
 
 open struct
-  let dec_invalid = Uchar0.utf_decode_invalid
-  let[@inline] dec_ret n u = Uchar0.utf_decode n (Uchar0.unsafe_of_int u)
+  let dec_invalid = Uchar.utf_decode_invalid
+  let[@inline] dec_ret n u = Uchar.utf_decode n (Uchar.unsafe_of_int u)
   let[@inline] not_in_x80_to_xBF b = b lsr 6 <> 0b10
   let[@inline] not_in_xA0_to_xBF b = b lsr 5 <> 0b101
   let[@inline] not_in_x80_to_x9F b = b lsr 5 <> 0b100
@@ -344,7 +345,7 @@ let is_valid_utf_8 (b @ local) =
     then true
     else (
       let get = unsafe_get_uint8 in
-      match Char0.unsafe_of_int (get b i) with
+      match Char.unsafe_of_int (get b i) with
       | '\x00' .. '\x7F' -> loop max b (i + 1)
       | '\xC2' .. '\xDF' ->
         let last = i + 1 in
@@ -582,7 +583,7 @@ end
 
 let lowercase string =
   let string =
-    Bytes.unsafe_of_string_promise_no_mutation string |> Bytes.map ~f:Char0.lowercase
+    Bytes.unsafe_of_string_promise_no_mutation string |> Bytes.map ~f:Char.lowercase
   in
   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
@@ -590,14 +591,14 @@ let lowercase string =
 let%template[@alloc stack] lowercase (string @ local) = exclave_
   let string =
     Bytes.unsafe_of_string_promise_no_mutation string
-    |> (Bytes.map [@alloc stack]) ~f:Char0.lowercase
+    |> (Bytes.map [@alloc stack]) ~f:Char.lowercase
   in
   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
 
 let uppercase string =
   let string =
-    Bytes.unsafe_of_string_promise_no_mutation string |> Bytes.map ~f:Char0.uppercase
+    Bytes.unsafe_of_string_promise_no_mutation string |> Bytes.map ~f:Char.uppercase
   in
   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
@@ -605,7 +606,7 @@ let uppercase string =
 let%template[@alloc stack] uppercase (string @ local) = exclave_
   let string =
     Bytes.unsafe_of_string_promise_no_mutation string
-    |> (Bytes.map [@alloc stack]) ~f:Char0.uppercase
+    |> (Bytes.map [@alloc stack]) ~f:Char.uppercase
   in
   Bytes.unsafe_to_string ~no_mutation_while_string_reachable:string
 ;;
@@ -618,7 +619,7 @@ let%template[@mode l = (global, local)] iter t ~(local_ f) =
 
 let%template split_lines =
   let back_up_pos_and_eol_at_newline ~t ~pos =
-    let pos = pos - Bool0.select (pos > 0 && Char0.equal t.[pos - 1] '\r') 2 1 in
+    let pos = pos - Bool.select (pos > 0 && Char.equal t.[pos - 1] '\r') 2 1 in
     let eol = pos + 1 in
     #(pos, eol)
   in
@@ -633,14 +634,14 @@ let%template split_lines =
        (* We treat the end of the string specially, because if the string ends with a
           newline, we don't want an extra empty string at the end of the output. *)
        let #(pos, eol) =
-         if Char0.equal t.[pos] '\n'
+         if Char.equal t.[pos] '\n'
          then back_up_pos_and_eol_at_newline ~t ~pos
          else #(pos, eol)
        in
        let rec loop ~pos ~eol ac =
          (if pos >= 0
           then
-            if not (Char0.equal t.[pos] '\n')
+            if not (Char.equal t.[pos] '\n')
             then loop ~pos:(pos - 1) ~eol ac
             else (
               (* Because [pos < eol], we know that [start <= eol]. *)

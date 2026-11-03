@@ -12,7 +12,7 @@ build: [
 ]
 depends: [
   "ocaml" {>= "5.1.0"}
-  "base_internalhash_types"
+  "base_stubs"
   "basement"
   "capsule0"
   "nonempty_list_type"
@@ -22,8 +22,7 @@ depends: [
   "ppxlib_jane"
   "sexplib0"
   "dune"                    {>= "3.17.0"}
-  "dune-configurator"
-  "ppxlib"                  {>= "0.33.0" & < "0.36.0"}
+  "ppxlib"                  {>= "0.39.0"}
 ]
 available: arch != "x86_32"
 conflicts: [

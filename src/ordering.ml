@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module Bool = Bool0
 
 type t =
   | Less
@@ -15,7 +16,7 @@ module Export = struct
     | Greater
 end
 
-let of_int n = Bool0.select (n < 0) Less (Bool0.select (n = 0) Equal Greater)
+let of_int n = Bool.select (n < 0) Less (Bool.select (n = 0) Equal Greater)
 
 external magic_transparent : t -> int @@ portable = "%identity"
 

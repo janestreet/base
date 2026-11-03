@@ -3,7 +3,7 @@
 (** Boolean type extended to be enumerable, hashable, sexpable, comparable, and
     stringable. *)
 
-open! Import
+open! Import0
 
 type t = bool [@@deriving enumerate, globalize, sexp ~stackify ~unboxed, sexp_grammar]
 

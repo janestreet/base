@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 include Binary_searchable_intf.Definitions
 
 [%%template

@@ -5,13 +5,14 @@
     [Container.S1] in the signature for every container-like data structure ([Array],
     [List], [String], ...) to ensure a consistent interface. *)
 
-open! Import
+open! Import0
 
 open struct
   (*_ If we just bind these aliases directly, without the [open struct ... end], then mdx
       sometimes gets confused by seeing these aliases to constructors and prints e.g.
       [Base.Container_intf.Option.Some] instead of [Some] *)
   module Either = Either0
+  module List = List0
   module Option = Option0
   module Result = Result0
 end
@@ -107,8 +108,12 @@ module Definitions = struct
       module type Generic_without_mem = sig
         include Generic_types [@kind_set.explicit ks]
 
-        type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1]) [@@kind.explicit k1 = ks]
-        type ('a : k1) elt : k1 := ('a elt[@kind k1]) [@@kind.explicit k1 = ks]
+        [%%template:
+        [@@@kind.default.explicit k1' = ks]
+        [@@@kind k1 = k1' mod separable]
+
+        type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1'])
+        type ('a : k1) elt : k1 := ('a elt[@kind k1'])]
 
         include sig
           (*_ Here, we use [default_if_multiple] because this interface:
@@ -174,7 +179,7 @@ module Definitions = struct
           val to_list
             : ('a : k1) 'p1 'p2.
             ('a, 'p1, 'p2) t @ m
-            -> ('a elt List0.Constructors.t[@kind k1' or value_or_null]) @ m
+            -> ('a elt List.Constructors.t[@kind k1' or value_or_null]) @ m
           [@@alloc __ @ m = (heap_global, a @ m)]
 
           (** Returns a min (resp. max) element from the collection using the provided
@@ -362,7 +367,8 @@ module Definitions = struct
         anything else. *)
     module type
       [@kind_set.explicit_plus_unmangled
-        ks = (value, value_or_null, value mod external64, base_or_null_with_ext)] S0 = sig
+        ks = (value, value_or_null, value mod external64, base_or_null_with_ext)]
+      S0 = sig
       include sig
         [@@@kind.default k' = ks]
         [@@@kind k = k' mod separable]
@@ -390,7 +396,8 @@ module Definitions = struct
 
     module type
       [@kind_set.explicit_plus_unmangled
-        ks = (value, value_or_null, value mod external64, base_or_null_with_ext)] S0_phantom = sig
+        ks = (value, value_or_null, value mod external64, base_or_null_with_ext)]
+      S0_phantom = sig
       include sig
         [@@@kind.default k' = ks]
         [@@@kind k = k' mod separable]
@@ -478,8 +485,13 @@ module Definitions = struct
       module type Creators = sig
         include Generic_types [@kind_set.explicit ks]
 
-        type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1]) [@@kind.explicit k1 = ks]
-        type ('a : k1) elt : k1 := ('a elt[@kind k1]) [@@kind.explicit k1 = ks]
+        [%%template:
+        [@@@kind.default.explicit k1' = ks]
+        [@@@kind k1 = k1' mod separable]
+
+        type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1'])
+        type ('a : k1) elt : k1 := ('a elt[@kind k1'])]
+
         type (_, _, _) concat
 
         include sig
@@ -491,7 +503,7 @@ module Definitions = struct
 
           val of_list
             : ('a : k1) 'p1 'p2.
-            ('a elt List0.Constructors.t[@kind k1' or value_or_null]) @ m
+            ('a elt List.Constructors.t[@kind k1' or value_or_null]) @ m
             -> ('a, 'p1, 'p2) t @ m
           [@@alloc __ @ m = (heap_global, a @ m)]
 
@@ -639,7 +651,8 @@ module Definitions = struct
           itself *)
 
       module type
-        [@kind_set.explicit_plus_unmangled ks = (value, base_or_null_with_ext)] S0_with_creators = sig
+        [@kind_set.explicit_plus_unmangled ks = (value, base_or_null_with_ext)]
+        S0_with_creators = sig
         include sig
           [@@@kind.default k' = ks]
           [@@@kind k = k' mod separable]
@@ -711,7 +724,7 @@ module Definitions = struct
     -> 'acc @ mo
   [@@mode mi = (global, local), mo = (global, local)]
 
-  type ('t, 'a : any, 'acc : any, 'final : any) fold_until =
+  type ('t, 'a : any, 'acc : value_or_null, 'final : value_or_null) fold_until =
     't @ mi
     -> init:'acc @ mo
     -> f:('acc @ mo -> 'a @ mi -> ('acc, 'final) Continue_or_stop.t @ mo) @ local
@@ -722,7 +735,7 @@ module Definitions = struct
   type ('t, 'a : any) iter = 't @ m -> f:('a @ m -> unit) @ local -> unit
   [@@mode m = (global, local)]
 
-  type ('t, 'a : any, 'final : any) iter_until =
+  type ('t, 'a : any, 'final : value_or_null) iter_until =
     't @ mi
     -> f:('a @ mi -> (unit, 'final) Continue_or_stop.t @ mo) @ local
     -> finish:(unit -> 'final @ mo) @ local

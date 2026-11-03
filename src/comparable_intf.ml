@@ -1,4 +1,6 @@
-open! Import
+open! Import0
+module Error = Error0
+module Sign = Sign0
 
 module Definitions = struct
   module type Infix = Comparisons.Infix
@@ -58,14 +60,16 @@ module Definitions = struct
   end
 
   module type%template
-    [@mode global] [@modality p = (portable, nonportable)] Using_comparator_arg = sig
+    [@mode global] [@modality p = (portable, nonportable)]
+    Using_comparator_arg = sig
     type t
 
     include Comparator.S [@modality p] with type t := t
   end
 
   module type%template
-    [@mode local] [@modality p = (portable, nonportable)] Using_comparator_arg = sig
+    [@mode local] [@modality p = (portable, nonportable)]
+    Using_comparator_arg = sig
     type t [@@deriving compare [@mode local]]
 
     include Comparator.S [@modality p] with type t := t
@@ -80,7 +84,7 @@ module Definitions = struct
     val is_non_positive : t @ m -> bool
 
     (** Returns [Neg], [Zero], or [Pos] in a way consistent with the above functions. *)
-    val sign : t @ m -> Sign0.t
+    val sign : t @ m -> Sign.t
   end
   [@@mode m = (global, local)]
 
@@ -106,7 +110,8 @@ module Definitions = struct
         Raises if [not (min <= max)]. *)
     val clamp_exn : t -> min:t -> max:t -> t
 
-    val clamp : t -> min:t -> max:t -> t Or_error.t
+    (*_ We avoid a dependency on [Or_error] by writing [(_, Error.t) Result.t]. *)
+    val clamp : t -> min:t -> max:t -> (t, Error.t) Result.t
 
     include Comparator.S [@modality p] with type t := t
   end
@@ -237,7 +242,8 @@ module type Comparable = sig @@ portable
       the created [Comparator.t] (and hence the mode crossing of {!Map.t} with this type
       as a key). See {!Map} for more information *)
   module%template.portable
-    [@modality p] Make (T : sig
+    [@modality p]
+    Make (T : sig
       type t [@@deriving (compare [@mode.explicit m]), sexp_of]
     end) : S [@modality p] [@mode m] with type t := T.t
 
@@ -249,7 +255,8 @@ module type Comparable = sig @@ portable
     S [@mode m] with type t := T.t with type comparator_witness := T.comparator_witness
 
   module%template.portable
-    [@modality p] Poly (T : sig
+    [@modality p]
+    Poly (T : sig
       type t [@@deriving sexp_of]
     end) : S [@modality p] [@mode m] with type t := T.t
 

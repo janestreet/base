@@ -1,4 +1,6 @@
 open! Import
+module Array = Array0
+module Iarray = Iarray0
 include Linked_queue0
 
 let enqueue t x = Linked_queue0.push x t

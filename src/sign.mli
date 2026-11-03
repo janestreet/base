@@ -2,7 +2,7 @@
 
 (** A type for representing the sign of a numeric value. *)
 
-open! Import
+open! Import0
 
 type t = Sign0.t =
   | Neg

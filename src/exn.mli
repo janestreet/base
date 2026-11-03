@@ -7,7 +7,7 @@
     found, the standard converter in [Printexc] will be used to generate an atomic
     S-expression. *)
 
-open! Import
+open! Import0
 module Sexp := Sexp0
 
 type t = exn [@@deriving sexp_of]
@@ -50,7 +50,7 @@ val reraise : ('a : value_or_null). t -> string -> 'a @ portable unique
         with exn ->
           Exn.reraisef exn "Foobar is buggy on: %s" str ()
     ]} *)
-val reraisef : t -> ('a, unit, string, unit -> _) format4 -> 'a
+val reraisef : t -> ('a, unit, string, unit -> _ @ portable unique) format4 -> 'a
 
 (** Human-readable, multi-line. *)
 val to_string : t -> string

@@ -1,4 +1,6 @@
 open! Import
+module Array = Array0
+module Sexp = Sexp0
 include Hash_set_intf.Definitions
 
 let hashable_s = Hashtbl.hashable_s
@@ -42,11 +44,9 @@ module Accessors = struct
   ;;
 
   let strict_add t k : Ok_or_duplicate.t =
-    if mem t k
-    then Duplicate
-    else (
-      Hashtbl.set t ~key:k ~data:();
-      Ok)
+    match Hashtbl.add t ~key:k ~data:() with
+    | `Ok -> Ok
+    | `Duplicate -> Duplicate
   ;;
 
   let strict_add_or_error t k =
@@ -59,11 +59,9 @@ module Accessors = struct
   let remove = Hashtbl.remove
 
   let strict_remove t k : Ok_or_absent.t =
-    if mem t k
-    then (
-      remove t k;
-      Ok)
-    else Absent
+    let old_length = length t in
+    remove t k;
+    if length t = old_length then Absent else Ok
   ;;
 
   let strict_remove_or_error t k =

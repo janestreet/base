@@ -1,6 +1,8 @@
 open! Import
 module Array = Array0
 module Either = Either0
+module Nothing = Nothing0
+module Option = Option0
 
 [%%template
 [@@@kind_set.define all_ks_non_value = base_non_value]
@@ -113,18 +115,18 @@ let[@zero_alloc] tl_or_null t =
 [@@@kind k = all_ks]
 
 open struct
-  type nonrec ('a : any) t = ('a t[@kind.explicit k]) =
+  type nonrec ('a : k) t = ('a t[@kind.explicit k]) =
     | []
     | ( :: ) of 'a * ('a t[@kind.explicit k])
 end
 
 [@@@kind.default k]
 
-let nth t n : (_ Option0.t[@kind k]) =
+let nth t n : (_ Option.t[@kind k]) =
   if n < 0
   then None
   else (
-    let rec nth_aux t n : (_ Option0.t[@kind k]) =
+    let rec nth_aux t n : (_ Option.t[@kind k]) =
       match t with
       | [] -> None
       | a :: t ->
@@ -149,7 +151,7 @@ let nth_exn t n =
           n
           ((length [@kind k]) t)
           ()
-        : Nothing0.t)
+        : Nothing.t)
      with
      | _ -> .)
   | Some a -> a
@@ -174,7 +176,7 @@ let init n ~f =
 
 let init_i64 n ~f =
   let open struct
-    type t = int64#
+    type t = Int64_u.t
 
     external ( - ) : t -> t -> t @@ portable = "%int64#_sub"
     external ( < ) : t -> t -> bool @@ portable = "%int64#_lessthan"
@@ -390,10 +392,13 @@ let filteri l ~f =
   filteri_loop 0 l [@nontail]
 ;;
 
-let%template[@tail_mod_cons] rec filter l ~f =
-  match l with
-  | [] -> []
-  | hd :: tl -> if f hd then hd :: filter tl ~f else filter tl ~f
+let%template filter =
+  let[@tail_mod_cons] rec filter l ~f =
+    match l with
+    | [] -> []
+    | hd :: tl -> if f hd then hd :: filter tl ~f else filter tl ~f
+  in
+  filter
 [@@alloc a = heap]
 ;;
 
@@ -613,7 +618,7 @@ let%template append l1 l2 =
 let%template append l1 l2 =
   match (l2 : (_ t[@kind k])) with
   | [] -> l1
-  | _ :: _ -> (rev [@kind k]) ((rev_append [@kind k]) l2 ((rev [@kind k]) l1))
+  | _ :: _ -> (rev_append [@kind k]) ((rev [@kind k]) l1) l2
 [@@kind k = all_ks_non_value] [@@alloc a = heap]
 ;;
 
@@ -754,7 +759,7 @@ let filter_mapi_internal t ~f = exclave_
     | [] -> (rev [@kind kb] [@alloc a]) acc
     | x :: xs ->
       let acc =
-        match (f #(i, x) : (_ Option0.t[@kind kb])) with
+        match (f #(i, x) : (_ Option.t[@kind kb])) with
         | None -> acc
         | Some y -> y :: acc
       in
@@ -767,7 +772,7 @@ let filter_mapi_internal t ~f = exclave_
       exclave_
       let y = f #(i, x) in
       let i = i + 1 in
-      (match (y : (_ Option0.t[@kind kb])) with
+      (match (y : (_ Option.t[@kind kb])) with
        | None -> (filter_mapi_stack_loop [@tailcall]) i xs
        | Some y ->
          let ys =
@@ -922,7 +927,7 @@ let[@inline] filter_map_or_null t ~f = exclave_
 [@@@kind.default ka = all_ks, kb = value_or_null]
 
 open struct
-  type nonrec ('a : any) t = ('a t[@kind ka]) =
+  type nonrec ('a : ka) t = ('a t[@kind ka]) =
     | []
     | ( :: ) of 'a * ('a t[@kind ka])
   [@@kind ka]
@@ -953,7 +958,7 @@ let filter_mapi l ~f =
     match l with
     | [] -> []
     | hd :: tl ->
-      (match (f pos hd : (_ Option0.t[@kind kb])) with
+      (match (f pos hd : (_ Option.t[@kind kb])) with
        | None -> filter_mapi_loop (pos + 1) tl
        | Some x -> x :: filter_mapi_loop (pos + 1) tl)
   in
@@ -965,7 +970,7 @@ let filter_map l ~f =
     match l with
     | [] -> []
     | hd :: tl ->
-      (match (f hd : (_ Option0.t[@kind kb])) with
+      (match (f hd : (_ Option.t[@kind kb])) with
        | None -> filter_map_loop tl
        | Some x -> x :: filter_map_loop tl)
   in
@@ -1058,7 +1063,7 @@ let sexp_of_t : _ -> (_ t[@kind k]) @ local -> Sexplib0.Sexp.t @ local =
 [@@@kind.default k = all_ks_non_value]
 
 open struct
-  type nonrec ('a : any) t = ('a t[@kind k]) =
+  type nonrec ('a : k) t = ('a t[@kind k]) =
     | []
     | ( :: ) of 'a * ('a t[@kind k])
   [@@kind k]
@@ -1092,7 +1097,7 @@ let filteri l ~f =
 [@@@alloc.default a = heap]
 
 open struct
-  type nonrec ('a : any) t = ('a t[@kind ka]) =
+  type nonrec ('a : ka) t = ('a t[@kind ka]) =
     | []
     | ( :: ) of 'a * ('a t[@kind ka])
   [@@kind ka]
@@ -1118,7 +1123,7 @@ let filter_map l ~f =
   let rec local_ filter_map_loop ~acc : (_ t[@kind ka]) @ li -> (_ t[@kind kb]) = function
     | [] -> acc
     | hd :: tl ->
-      (match (f hd : (_ Option0.t[@kind kb])) with
+      (match (f hd : (_ Option.t[@kind kb])) with
        | Some hd -> (filter_map_loop [@tailcall]) ~acc:(hd :: acc) tl
        | None -> (filter_map_loop [@tailcall]) ~acc tl)
   in
@@ -1130,7 +1135,7 @@ let filter_mapi l ~f =
     = function
     | [] -> acc
     | hd :: tl ->
-      (match (f pos hd : (_ Option0.t[@kind kb])) with
+      (match (f pos hd : (_ Option.t[@kind kb])) with
        | Some hd -> (filter_mapi_loop [@tailcall]) ~acc:(hd :: acc) (pos + 1) tl
        | None -> (filter_mapi_loop [@tailcall]) ~acc (pos + 1) tl)
   in
@@ -1498,8 +1503,7 @@ let%template groupi l ~break = exclave_
   in
   match groups with
   | [] -> []
-  | l ->
-    (map [@mode local] [@alloc stack]) l ~f:(rev [@alloc stack]) |> (rev [@alloc stack])
+  | l -> (rev_map [@mode local] [@alloc stack]) l ~f:(rev [@alloc stack])
 [@@alloc a = stack]
 ;;
 
@@ -1881,8 +1885,8 @@ let find_consecutive_duplicate t ~equal =
 
 (* returns list without adjacent duplicates *)
 let remove_consecutive_duplicates ?(which_to_keep = `Last) list ~equal =
-  let rec remove_consecutive_duplicates_loop to_keep accum = function
-    | [] -> to_keep :: accum
+  let[@tail_mod_cons] rec remove_consecutive_duplicates_loop to_keep = function
+    | [] -> [ to_keep ]
     | hd :: tl ->
       if equal hd to_keep
       then (
@@ -1891,12 +1895,12 @@ let remove_consecutive_duplicates ?(which_to_keep = `Last) list ~equal =
           | `First -> to_keep
           | `Last -> hd
         in
-        remove_consecutive_duplicates_loop to_keep accum tl)
-      else remove_consecutive_duplicates_loop hd (to_keep :: accum) tl
+        remove_consecutive_duplicates_loop to_keep tl)
+      else to_keep :: remove_consecutive_duplicates_loop hd tl
   in
   match list with
   | [] -> []
-  | hd :: tl -> rev (remove_consecutive_duplicates_loop hd [] tl)
+  | hd :: tl -> remove_consecutive_duplicates_loop hd tl [@nontail]
 ;;
 
 let find_a_dup l ~compare =
@@ -2089,7 +2093,7 @@ let%template partition_mapi t ~f =
      match[@exclave_if_stack a] t with
      | [] -> (rev [@alloc a]) fst, (rev [@alloc a]) snd
      | x :: t ->
-       (match (f i x : _ Either0.t) with
+       (match (f i x : _ Either.t) with
         | First y -> partition_mapi_loop (i + 1) t (y :: fst) snd
         | Second y -> partition_mapi_loop (i + 1) t fst (y :: snd))
    in
@@ -2188,21 +2192,28 @@ module Assoc = struct
 end
 
 let sub l ~pos ~len =
-  (* We use [pos > length l - len] rather than [pos + len > length l] to avoid the
-     possibility of overflow. *)
-  if pos < 0 || len < 0 || pos > length l - len then invalid_arg "List.sub";
-  let stop = pos + len in
-  let[@tail_mod_cons] rec local_ sub_loop i l =
-    match l with
-    | [] -> []
-    | hd :: tl ->
-      if i < pos
-      then sub_loop (i + 1) tl
-      else if i < stop
-      then hd :: sub_loop (i + 1) tl
-      else []
+  if pos < 0 || len < 0 then invalid_arg "List.sub";
+  let rec drop_for_sub l n =
+    if n = 0
+    then l
+    else (
+      match l with
+      | [] -> invalid_arg "List.sub"
+      | _ :: tl -> drop_for_sub tl (n - 1))
   in
-  sub_loop 0 l [@nontail]
+  (* We don't try to share [take_for_sub n l] with [l]. Unlike [take] and [split_n] where
+     that applies whenever [n >= length l], here it only applies when [n = length l]. It's
+     significantly less likely, and so currently (2026-09) we think it's less worth
+     complicating the implementation. *)
+  let[@tail_mod_cons] rec take_for_sub l n =
+    if n = 0
+    then []
+    else (
+      match l with
+      | [] -> invalid_arg "List.sub"
+      | hd :: tl -> hd :: take_for_sub tl (n - 1))
+  in
+  take_for_sub (drop_for_sub l pos) len
 ;;
 
 let%template split_n t_orig n =
@@ -2506,14 +2517,17 @@ let rec compare cmp a b =
     if n = 0 then compare cmp xs ys else n
 ;;
 
-let%template[@mode local] rec compare cmp a b =
-  match a, b with
-  | [], [] -> 0
-  | [], _ -> -1
-  | _, [] -> 1
-  | x :: xs, y :: ys ->
-    let n = cmp x y in
-    if n = 0 then (compare [@mode local]) cmp xs ys else n
+let%template[@mode local] compare =
+  let rec compare cmp a b =
+    match a, b with
+    | [], [] -> 0
+    | [], _ -> -1
+    | _, [] -> 1
+    | x :: xs, y :: ys ->
+      let n = cmp x y in
+      if n = 0 then compare cmp xs ys else n
+  in
+  compare
 ;;
 
 let hash_fold_t = hash_fold_list

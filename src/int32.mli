@@ -11,9 +11,14 @@
 
     [Int32.t] is boxed on both 32-bit and 64-bit machines. *)
 
-open! Import
+open! Import0
 
-type t = int32 [@@deriving globalize, sexp ~stackify ~unboxed]
+type t = int32 [@@deriving globalize, sexp ~stackify]
+
+val%template sexp_of_t_u : Int32_u.t -> Sexp0.t @ m
+[@@alloc a @ m = (heap_global, stack_local)]
+
+val t_u_of_sexp : Sexp0.t -> Int32_u.t
 
 include Int.S with type t := t
 include Replace_polymorphic_compare.S with type t := t
@@ -21,13 +26,13 @@ include Replace_polymorphic_compare.S with type t := t
 (** {2 Conversion functions} *)
 
 val of_int : int -> t option
-val to_int : local_ t -> int option
+val to_int : t @ local -> int option
 external of_int32 : (int32[@local_opt]) -> (t[@local_opt]) = "%identity"
 external to_int32 : (t[@local_opt]) -> (int32[@local_opt]) = "%identity"
-val of_nativeint : local_ nativeint -> t option
-external to_nativeint : local_ t -> (nativeint[@local_opt]) = "%nativeint_of_int32"
-val of_int64 : local_ int64 -> t option
-val of_local_int64_exn : local_ int64 -> local_ t [@@zero_alloc]
+val of_nativeint : nativeint @ local -> t option
+external to_nativeint : t @ local -> (nativeint[@local_opt]) = "%nativeint_of_int32"
+val of_int64 : int64 @ local -> t option
+val of_local_int64_exn : int64 @ local -> t @ local [@@zero_alloc]
 
 (** {3 Truncating conversions}
 
@@ -35,9 +40,9 @@ val of_local_int64_exn : local_ int64 -> local_ t [@@zero_alloc]
     optional conversions return [Some x], truncating conversions return [x]. *)
 
 external of_int_trunc : int -> (t[@local_opt]) = "%int32_of_int"
-val to_int_trunc : local_ t -> int
-external of_nativeint_trunc : local_ nativeint -> (t[@local_opt]) = "%nativeint_to_int32"
-external of_int64_trunc : local_ int64 -> (t[@local_opt]) = "%int64_to_int32"
+val to_int_trunc : t @ local -> int
+external of_nativeint_trunc : nativeint @ local -> (t[@local_opt]) = "%nativeint_to_int32"
+external of_int64_trunc : int64 @ local -> (t[@local_opt]) = "%int64_to_int32"
 
 (** {3 Low-level float conversions} *)
 
@@ -45,7 +50,7 @@ external of_int64_trunc : local_ int64 -> (t[@local_opt]) = "%int64_to_int32"
     its bit representation. We make no promises about the exact rounding behavior, or what
     happens in case of over- or underflow. *)
 external bits_of_float
-  :  local_ float
+  :  float @ local
   -> t
   = "caml_int32_bits_of_float" "caml_int32_bits_of_float_unboxed"
 [@@unboxed] [@@noalloc]
@@ -53,7 +58,7 @@ external bits_of_float
 (** Creates a 32-bit IEEE-754 "single" float from the given bits, and converts it to a
     regular 64-bit OCaml float. *)
 external float_of_bits
-  :  local_ t
+  :  t @ local
   -> float
   = "caml_int32_float_of_bits" "caml_int32_float_of_bits_unboxed"
 [@@unboxed] [@@noalloc]
@@ -71,5 +76,5 @@ external float_of_bits
     The x86 instruction sequence that demonstrates the overhead is in
     [base/bench/bench_int.ml] *)
 
-val bswap16 : local_ t -> t
-external bswap32 : local_ t -> (t[@local_opt]) = "%bswap_int32"
+val bswap16 : t @ local -> t
+external bswap32 : t @ local -> (t[@local_opt]) = "%bswap_int32"

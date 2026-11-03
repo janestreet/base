@@ -4,6 +4,8 @@
     inlining. (If aliased without a type annotation, the compiler would implement them
     using the generic code doing a C call, and it's this code that would be inlined.) As a
     result we have to copy the [external ...] declaration here. *)
+module Bool = Bool0
+
 external ( < ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%lessthan"
 external ( <= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%lessequal"
 external ( <> ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool @@ portable = "%notequal"
@@ -38,5 +40,14 @@ external%template equal
 [@@mode m = (global, local)]
 
 let descending x y = compare y x
-let max x y = Bool0.select (x >= y) x y
-let min x y = Bool0.select (x <= y) x y
+
+[%%template
+[@@@mode.default m = (global, local)]
+
+let max x y =
+  Bool.select (x >= y) x y [@exclave_if_local m ~reasons:[ May_return_regional ]]
+;;
+
+let min x y =
+  Bool.select (x <= y) x y [@exclave_if_local m ~reasons:[ May_return_regional ]]
+;;]

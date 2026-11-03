@@ -3,7 +3,7 @@
 (** Module for the type [ref], mutable indirection cells [r] containing a value of type
     ['a], accessed with [!r] and set by [r := a]. *)
 
-open! Import
+open! Import0
 
 type ('a : value_or_null) t = 'a Stdlib.ref = { mutable contents : 'a }
 [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]
@@ -18,11 +18,11 @@ external ( := ) : ('a : value_or_null). ('a t[@local_opt]) -> 'a -> unit = "%set
 val swap : ('a : value_or_null). 'a t -> 'a t -> unit
 
 (** [replace t f] is [t := f !t] *)
-val replace : ('a : value_or_null). 'a t -> local_ ('a -> 'a) -> unit
+val replace : ('a : value_or_null). 'a t -> ('a -> 'a) @ local -> unit
 
 (** [set_temporarily t a ~f] sets [t] to [a], calls [f ()], and then restores [t] to its
     value prior to [set_temporarily] being called, whether [f] returns or raises. *)
-val set_temporarily : ('a : value_or_null) 'b. 'a t -> 'a -> f:local_ (unit -> 'b) -> 'b
+val set_temporarily : ('a : value_or_null) 'b. 'a t -> 'a -> f:(unit -> 'b) @ local -> 'b
 
 module And_value : sig
   type t = T : 'a ref * 'a -> t [@@deriving sexp_of ~stackify]
@@ -40,4 +40,4 @@ end
 (** [sets_temporarily [ ...; T (ti, ai); ... ] ~f] sets each [ti] to [ai], calls [f ()],
     and then restores all [ti] to their value prior to [sets_temporarily] being called,
     whether [f] returns or raises. *)
-val sets_temporarily : And_value.t list -> f:local_ (unit -> 'a) -> 'a
+val sets_temporarily : And_value.t list -> f:(unit -> 'a) @ local -> 'a

@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 include Identifiable_intf.Definitions
 
 [%%template
@@ -14,7 +14,8 @@ module%template.portable [@modality p] Make (T : Arg [@mode m] [@alloc a]) = str
 end
 
 module%template.portable
-  [@modality p] Make_using_comparator
+  [@modality p]
+  Make_using_comparator
     (T : Arg_with_comparator
   [@mode m] [@modality p] [@alloc a]) =
 struct

@@ -1,6 +1,6 @@
 (** Module type with float conversion functions. *)
 
-open! Import
+open! Import0
 
 module type S = sig
   type t
@@ -12,6 +12,6 @@ end
 module type S_local_input = sig
   type t
 
-  val of_float : local_ float -> t
-  val to_float : local_ t -> float
+  val of_float : float @ local -> t
+  val to_float : t @ local -> float
 end

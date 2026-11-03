@@ -7,6 +7,8 @@
    prevents ocamldep from mistakenly causing a file to depend on [Base.List]. *)
 
 open! Import0
+module Either = Either0
+module Sys = Sys0
 
 (* For [[@@deriving compare]] below *)
 open Ppx_compare_lib.Builtin
@@ -78,7 +80,7 @@ let is_empty = function
 [@@@kind.default k = all_ks]
 
 open struct
-  type nonrec ('a : any) t = ('a t[@kind k]) =
+  type nonrec ('a : k) t = ('a t[@kind k]) =
     | []
     | ( :: ) of 'a * ('a t[@kind k])
   [@@kind k]
@@ -206,12 +208,12 @@ let rec for_all2_ok l1 l2 ~(local_ f : _ -> _ -> _) =
   | _, _ -> invalid_arg "List.for_all2"
 ;;
 
-let rec nontail_map t ~(local_ f) =
+let[@tail_mod_cons] rec map t ~(local_ f) =
   match t with
   | [] -> []
   | x :: xs ->
     let y = f x in
-    y :: nontail_map xs ~f
+    y :: map xs ~f
 ;;
 
 let rev_map2_ok =
@@ -224,7 +226,7 @@ let rev_map2_ok =
   fun l1 l2 ~(local_ f : _ -> _ -> _) -> rmap2_f f [] l1 l2
 ;;
 
-let nontail_mapi t ~f = Stdlib.List.mapi t ~f
+let mapi t ~f = Stdlib.List.mapi t ~f
 let partition t ~f = Stdlib.List.partition t ~f
 
 [%%template
@@ -237,7 +239,7 @@ let partition_map_unboxed ~depth ~f xs =
      | [] -> #((rev [@alloc a]) fst, (rev [@alloc a]) snd) [@exclave_if_stack a]
      | x :: xs ->
        (let #(fst, snd) =
-          match (f x : _ Either0.t) with
+          match (f x : _ Either.t) with
           | First y -> #(y :: fst, snd)
           | Second y -> #(fst, y :: snd)
         in
@@ -253,7 +255,7 @@ let partition_map_unboxed ~depth ~f xs =
           then partition_map_unboxed_loop ~depth:(depth + 1) xs
           else (partition_map_unboxed_tail [@inlined never]) ~fst:[] ~snd:[] xs
         in
-        (match (y : _ Either0.t) with
+        (match (y : _ Either.t) with
          | First y -> #(y :: fst, snd)
          | Second y -> #(fst, y :: snd)))
        [@exclave_if_stack a]
@@ -270,13 +272,14 @@ let partition_map t ~f =
 
 module For_fold_right = struct
   module%template [@mode global] Wrapper = struct
+    (* Avoid dependency on [Modes], plus generalizes [wrap_list] to [value_or_null]. *)
     external wrap_list
       : ('a : value_or_null).
-      'a list -> 'a Modes.Global.t list
+      'a list -> 'a Basement.Modes.global list
       @@ portable
       = "%identity"
 
-    let[@inline] unwrap { Modes.Global.global } = global
+    let[@inline] unwrap { Basement.Modes.global } = global
   end
 
   module%template [@mode local] Wrapper = struct

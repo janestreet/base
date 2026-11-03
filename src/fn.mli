@@ -2,7 +2,7 @@
 
 (** Various combinators for functions. *)
 
-open! Import
+open! Import0
 
 (** A "pipe" operator. [x |> f] is equivalent to [f x].
 
@@ -25,10 +25,10 @@ val non : ('a -> bool) -> 'a -> bool
 
 (** [forever f] runs [f ()] until it throws an exception and returns the exception. This
     function is useful for read_line loops, etc. *)
-val forever : local_ (unit -> unit) -> exn
+val forever : (unit -> unit) @ local -> exn
 
 (** [apply_n_times ~n f x] is the [n]-fold application of [f] to [x]. *)
-val apply_n_times : n:int -> local_ ('a -> 'a) -> 'a -> 'a
+val apply_n_times : ('a : value_or_null). n:int -> ('a -> 'a) @ local -> 'a -> 'a
 
 (** The identity function.
 

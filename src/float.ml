@@ -1,7 +1,10 @@
 open! Import
 open! Printf
 module Bytes = Bytes0
+module Error = Error0
 module Sexp = Sexp0
+module Sign = Sign0
+module Sys = Sys0
 include Float_intf.Definitions
 include Float0
 
@@ -189,7 +192,7 @@ let of_string s =
 
 let of_string_opt = float_of_string_opt
 
-external format_float : string -> local_ t -> string @@ portable = "caml_format_float"
+external format_float : string -> t @ local -> string @@ portable = "caml_format_float"
 
 (* Stolen from [pervasives.ml]. Adds a "." at the end if needed. It is in
    [pervasives.mli], but it also says not to use it directly, so we copy and paste the
@@ -632,6 +635,16 @@ let iround_nearest_half_to_even =
 let int63_round_lbound = lower_bound_for_int Int63.(num_bits |> to_int_trunc)
 let int63_round_ubound = upper_bound_for_int Int63.(num_bits |> to_int_trunc)
 
+let int63_round_up_or_null t =
+  if t > 0.0
+  then (
+    let t' = round_up t in
+    if t' <= int63_round_ubound then This (Int63.of_float_unchecked t') else Null)
+  else if t >= int63_round_lbound
+  then This (Int63.of_float_unchecked t)
+  else Null
+;;
+
 let int63_round_up_exn t =
   if t > 0.0
   then (
@@ -643,6 +656,14 @@ let int63_round_up_exn t =
   then Int63.of_float_unchecked t
   else
     invalid_argf "Float.int63_round_up_exn: argument (%f) is too small or NaN" (box t) ()
+;;
+
+let int63_round_down_or_null t =
+  if t >= 0.0
+  then if t <= int63_round_ubound then This (Int63.of_float_unchecked t) else Null
+  else (
+    let t' = round_down t in
+    if t' >= int63_round_lbound then This (Int63.of_float_unchecked t') else Null)
 ;;
 
 let int63_round_down_exn t =
@@ -680,6 +701,27 @@ let int63_round_nearest_portable_alloc_exn t0 =
       "Float.int63_round_nearest_portable_alloc_exn: argument (%f) is too small or NaN"
       (box t0)
       ()
+;;
+
+let int63_round_nearest_portable_alloc_or_null t =
+  let t = (round_nearest_inline [@ocaml.inlined always]) t in
+  if t > 0.
+  then if t <= int63_round_ubound then This (Int63.of_float_unchecked t) else Null
+  else if t >= int63_round_lbound
+  then This (Int63.of_float_unchecked t)
+  else Null
+;;
+
+let[@inline] int63_round_nearest_arch64_noalloc_or_null f =
+  match iround_nearest_or_null f with
+  | Null -> Null
+  | This i -> This (Int63.of_int i)
+;;
+
+let int63_round_nearest_or_null =
+  match Word_size.word_size with
+  | W64 -> int63_round_nearest_arch64_noalloc_or_null
+  | W32 -> int63_round_nearest_portable_alloc_or_null
 ;;
 
 let[@inline] int63_round_nearest_arch64_noalloc_exn f =

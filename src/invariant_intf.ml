@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Sexp = Sexp0
 
 type ('a : any) inv = 'a -> unit
@@ -81,11 +81,8 @@ module type Invariant = sig @@ portable
       It's okay to use [ [%sexp_of: _ t] ] because the exceptions raised by [check_a] will
       show the parts that are opaque at top-level. *)
   val invariant
-    :  here:[%call_pos]
-    -> ('a : k)
-    -> local_ ('a -> Sexp.t)
-    -> local_ (unit -> unit)
-    -> unit
+    : ('a : k).
+    here:[%call_pos] -> 'a -> ('a -> Sexp.t) @ local -> (unit -> unit) @ local -> unit
 
   (** [check_field] is used when checking invariants using [Fields.iter]. It wraps an
       exception raised when checking a field with the field's name. Idiomatic usage looks

@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Sexp = Sexp0
 
 module Definitions = struct
@@ -8,7 +8,8 @@ module Definitions = struct
 
       @canonical Base.Hashable.Key *)
   module type%template
-    [@modality p = (portable, nonportable)] [@mode m = (local, global)] Key = sig
+    [@modality p = (portable, nonportable)] [@mode m = (local, global)]
+    Key = sig
     @@ p
     type t : any [@@deriving sexp_of]
 

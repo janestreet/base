@@ -1,37 +1,37 @@
 open! Import
 open! Stdlib.Nativeint
+module Float = Float0
 module Sexp = Sexp0
 include Nativeint_replace_polymorphic_compare
 
 module T = struct
   module T0 = struct
-    type t = nativeint [@@deriving globalize, hash, of_sexp ~unboxed, sexp_grammar]
+    type t = nativeint [@@deriving globalize, hash, of_sexp, sexp_grammar]
+
+    let t_u_of_sexp sexp = Nativeint_u.unbox (t_of_sexp sexp)
 
     let%template[@alloc a = (heap, stack)] to_string =
       (Integer_to_string.nativeint_to_string [@alloc a])
     ;;
-
-    type unboxed = nativeint#
-
-    let box = Basement.Primitives.box_nativeint
   end
 
   include T0
+  include Int_string_conversions.Make (T0)
 
-  include%template Int_string_conversions.Make_unboxed [@kind word] (T0)
+  include%template Provide_unboxed [@kind word] (Nativeint_u)
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = Nativeint_replace_polymorphic_compare.compare
 
   external format
     :  string
-    -> local_ nativeint
+    -> nativeint @ local
     -> string
     @@ portable
     = "caml_nativeint_format"
 
   external of_string
-    :  local_ string
+    :  string @ local
     -> (t[@unboxed])
     @@ portable
     = "caml_nativeint_of_string" "caml_nativeint_of_string_unboxed"
@@ -61,7 +61,7 @@ include Int_string_conversions.Make_hex (struct
 
     let zero = zero
 
-    external neg : local_ t -> t @@ portable = "%nativeint_neg"
+    external neg : t @ local -> t @@ portable = "%nativeint_neg"
 
     let ( < ) = ( < )
     let to_string i = format "%nx" i
@@ -83,48 +83,48 @@ open! Nativeint_replace_polymorphic_compare
 
 let invariant (_ : t) = ()
 let num_bits = Word_size.num_bits Word_size.word_size |> of_int
-let float_lower_bound = Float0.lower_bound_for_int (num_bits |> to_int)
-let float_upper_bound = Float0.upper_bound_for_int (num_bits |> to_int)
+let float_lower_bound = Float.lower_bound_for_int (num_bits |> to_int)
+let float_upper_bound = Float.upper_bound_for_int (num_bits |> to_int)
 
-external shift_right_logical : local_ t -> int -> t @@ portable = "%nativeint_lsr"
-external shift_right : local_ t -> int -> t @@ portable = "%nativeint_asr"
-external shift_left : local_ t -> int -> t @@ portable = "%nativeint_lsl"
-external bit_xor : local_ t -> local_ t -> t @@ portable = "%nativeint_xor"
-external bit_or : local_ t -> local_ t -> t @@ portable = "%nativeint_or"
-external bit_and : local_ t -> local_ t -> t @@ portable = "%nativeint_and"
+external shift_right_logical : t @ local -> int -> t @@ portable = "%nativeint_lsr"
+external shift_right : t @ local -> int -> t @@ portable = "%nativeint_asr"
+external shift_left : t @ local -> int -> t @@ portable = "%nativeint_lsl"
+external bit_xor : t @ local -> t @ local -> t @@ portable = "%nativeint_xor"
+external bit_or : t @ local -> t @ local -> t @@ portable = "%nativeint_or"
+external bit_and : t @ local -> t @ local -> t @@ portable = "%nativeint_and"
 
 let bit_not n = bit_xor n (-1n)
 let min_value = min_int
 let max_value = max_int
 
-external neg : local_ t -> t @@ portable = "%nativeint_neg"
+external neg : t @ local -> t @@ portable = "%nativeint_neg"
 
 let abs = abs
 let abs_local n = if n >= 0n then n else neg n
 
-external ( / ) : local_ t -> local_ t -> t @@ portable = "%nativeint_div"
-external ( * ) : local_ t -> local_ t -> t @@ portable = "%nativeint_mul"
-external ( - ) : local_ t -> local_ t -> t @@ portable = "%nativeint_sub"
-external ( + ) : local_ t -> local_ t -> t @@ portable = "%nativeint_add"
+external ( / ) : t @ local -> t @ local -> t @@ portable = "%nativeint_div"
+external ( * ) : t @ local -> t @ local -> t @@ portable = "%nativeint_mul"
+external ( - ) : t @ local -> t @ local -> t @@ portable = "%nativeint_sub"
+external ( + ) : t @ local -> t @ local -> t @@ portable = "%nativeint_add"
 
 let pred n = n - 1n
 let succ n = n + 1n
 
-external rem : local_ t -> local_ t -> t @@ portable = "%nativeint_mod"
+external rem : t @ local -> t @ local -> t @@ portable = "%nativeint_mod"
 
 let minus_one = minus_one
 let one = one
 let zero = zero
 
 external to_float
-  :  local_ t
+  :  t @ local
   -> float
   @@ portable
   = "caml_nativeint_to_float" "caml_nativeint_to_float_unboxed"
 [@@unboxed] [@@noalloc]
 
 external of_float_unchecked
-  :  local_ float
+  :  float @ local
   -> t
   @@ portable
   = "caml_nativeint_of_float" "caml_nativeint_of_float_unboxed"
@@ -137,7 +137,7 @@ let of_float f =
   else
     Printf.invalid_argf
       "Nativeint.of_float: argument (%f) is out of range or NaN"
-      (Float0.box f)
+      (Float.box f)
       ()
 ;;
 
@@ -195,13 +195,9 @@ end
 include O
 
 module Pow2 = struct
-  let raise_s = Error.raise_s
+  let non_positive_argument () = invalid_arg "argument must be strictly positive"
 
-  let non_positive_argument () =
-    Printf.invalid_argf "argument must be strictly positive" ()
-  ;;
-
-  external ( land ) : local_ t -> local_ t -> t @@ portable = "%nativeint_and"
+  external ( land ) : t @ local -> t @ local -> t @@ portable = "%nativeint_and"
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 (local_ (x : nativeint)) =
@@ -240,23 +236,13 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if i <= 0n
-    then
-      raise_s
-        (Sexp.message
-           "[Nativeint.floor_log2] got invalid input"
-           [ "", sexp_of_nativeint (globalize i) ]);
+    if i <= 0n then invalid_arg ("Nativeint.floor_log2: " ^ to_string i);
     num_bits - 1n - clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if i <= 0n
-    then
-      raise_s
-        (Sexp.message
-           "[Nativeint.ceil_log2] got invalid input"
-           [ "", sexp_of_nativeint (globalize i) ]);
+    if i <= 0n then invalid_arg ("Nativeint.ceil_log2: " ^ to_string i);
     if i = 1n
     then 0n
     else (
@@ -298,7 +284,7 @@ let to_local_nativeint_exn = to_nativeint
 let popcount = Popcount.nativeint_popcount
 
 external of_int : int -> (t[@local_opt]) @@ portable = "%nativeint_of_int"
-external of_int32 : local_ int32 -> (t[@local_opt]) @@ portable = "%nativeint_of_int32"
+external of_int32 : int32 @ local -> (t[@local_opt]) @@ portable = "%nativeint_of_int32"
 
 let of_int32_exn = of_int32
 let of_local_int32_exn = of_int32
@@ -307,7 +293,7 @@ let to_local_int32_exn = Conv.nativeint_to_int32_exn
 let to_int32_exn t = globalize_int32 (to_local_int32_exn t) [@nontail]
 
 external to_int32_trunc
-  :  local_ t
+  :  t @ local
   -> (int32[@local_opt])
   @@ portable
   = "%nativeint_to_int32"
@@ -317,7 +303,7 @@ let of_local_int64_exn = Conv.int64_to_nativeint_exn
 let of_int64_exn i = globalize (of_local_int64_exn i) [@nontail]
 
 external of_int64_trunc
-  :  local_ int64
+  :  int64 @ local
   -> (nativeint[@local_opt])
   @@ portable
   = "%int64_to_nativeint"
@@ -330,7 +316,7 @@ include Int_string_conversions.Make_binary (struct
 
     let ( land ) = ( land )
 
-    external ( lsr ) : local_ t -> int -> t @@ portable = "%nativeint_lsr"
+    external ( lsr ) : t @ local -> int -> t @@ portable = "%nativeint_lsr"
 
     let clz = clz
     let num_bits = num_bits
@@ -355,4 +341,4 @@ end
    of the comparison functions are exported by this module. *)
 include Nativeint_replace_polymorphic_compare
 
-external bswap : local_ t -> (t[@local_opt]) @@ portable = "%bswap_native"
+external bswap : t @ local -> (t[@local_opt]) @@ portable = "%bswap_native"

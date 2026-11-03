@@ -24,7 +24,7 @@
       | Greater -> ...
     ]} *)
 
-open! Import
+open! Import0
 
 type t =
   | Less

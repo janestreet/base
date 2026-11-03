@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 include Sign0
 
 include%template Identifiable.Make [@modality portable] (Sign0)

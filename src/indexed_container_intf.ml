@@ -1,4 +1,6 @@
-open! Import
+open! Import0
+module Either = Either0
+module Option = Option0
 
 [%%template
 [@@@kind_set.define base_or_null_with_ext = (base_or_null, value_or_null mod external64)]
@@ -11,7 +13,7 @@ module Definitions = struct
     -> 'accum @ mo
   [@@mode mi = (global, local), mo = (global, local)]
 
-  type ('t, 'a : any, 'accum : any, 'finish : any) fold_until =
+  type ('t, 'a : any, 'accum : value_or_null, 'finish : value_or_null) fold_until =
     't @ mi
     -> init:'accum @ mo
     -> f:('accum @ mo -> 'a @ mi -> ('accum, 'finish) Container.Continue_or_stop.t @ mo)
@@ -76,11 +78,16 @@ module Definitions = struct
       = ( (value, value, value, value)
         , (value_or_null, value_or_null, value_or_null, value_or_null)
         , (value mod external64, value, value mod external64, value)
-        , (base_or_null_with_ext, base_or_null, value_or_null, value_or_null) )] Iterators_with_index_without_findi = sig
+        , (base_or_null_with_ext, base_or_null, value_or_null, value_or_null) )]
+    Iterators_with_index_without_findi = sig
     include Container.Generic_types [@kind_set.explicit ks]
 
-    type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1]) [@@kind.explicit k1 = ks]
-    type ('a : k1) elt : k1 := ('a elt[@kind k1]) [@@kind.explicit k1 = ks]
+    [%%template:
+    [@@@kind.default.explicit k1' = ks]
+    [@@@kind k1 = k1' mod separable]
+
+    type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1'])
+    type ('a : k1) elt : k1 := ('a elt[@kind k1'])]
 
     (** These are all like their equivalents in [Container] except that an index starting
         at 0 is added as the first argument to [f]. *)
@@ -123,8 +130,8 @@ module Definitions = struct
     val find_mapi
       : ('a : k1) 'p1 'p2 ('b : k2).
       ('a, 'p1, 'p2) t @ mi
-      -> f:(int -> 'a elt @ mi -> ('b Option0.t[@kind k2 or value_or_null]) @ mo) @ local
-      -> ('b Option0.t[@kind k2 or value_or_null]) @ mo]
+      -> f:(int -> 'a elt @ mi -> ('b Option.t[@kind k2 or value_or_null]) @ mo) @ local
+      -> ('b Option.t[@kind k2 or value_or_null]) @ mo]
 
     [%%template:
     [@@@kind.default_if_multiple k1' = ks_for_3]
@@ -146,7 +153,8 @@ module Definitions = struct
   end
 
   module type
-    [@kind_set.explicit_plus_unmangled ks = (value, value_or_null, value mod external64)] Iterators_with_index = sig
+    [@kind_set.explicit_plus_unmangled ks = (value, value_or_null, value mod external64)]
+    Iterators_with_index = sig
     (** Use a boxed product just for the [value] versions for backwards-compatibility *)
 
     include Iterators_with_index_without_findi [@kind_set.explicit ks] [@mode m]
@@ -172,7 +180,7 @@ module Definitions = struct
       : ('a : k) 'p1 'p2.
       (('a, 'p1, 'p2) t[@kind k']) @ m
       -> f:(int -> ('a elt[@kind k']) @ m -> bool) @ local
-      -> (#(int * ('a elt[@kind k'])) Option0.t
+      -> (#(int * ('a elt[@kind k'])) Option.t
          [@kind value_or_null & (k' or value_or_null)])
          @ m
     [@@mode m = (global, m)]
@@ -186,7 +194,8 @@ module Definitions = struct
 
     module type
       [@kind_set.explicit
-        ks = (value, value_or_null, value mod external64, base_or_null_with_ext)] Generic = sig
+        ks = (value, value_or_null, value mod external64, base_or_null_with_ext)]
+      Generic = sig
       include Container.Generic [@kind_set.explicit ks] [@alloc a]
 
       include
@@ -200,6 +209,10 @@ module Definitions = struct
         type ('a : k, 'b, 'c) t := (('a, 'b, 'c) t[@kind k'])
         type ('a : k) elt := ('a elt[@kind k'])]
     end
+  end
+
+  include struct
+    [@@@alloc.default a]
 
     module type Generic = sig
       include Generic [@kind_set.explicit ks] [@alloc a]
@@ -220,7 +233,8 @@ module Definitions = struct
 
       module type
         [@kind_set.explicit_plus_unmangled
-          ks = (value, value mod external64, base_or_null_with_ext)] S0 = sig
+          ks = (value, value mod external64, base_or_null_with_ext)]
+        S0 = sig
         include Container.S0 [@kind_set.explicit ks] [@alloc a]
 
         include
@@ -236,14 +250,14 @@ module Definitions = struct
       end
     end
 
-    [@@@kind_set
-      (ks, ks_for_3)
-      = ( (value, value)
-        , (value_or_null, value_or_null)
-        , (value mod external64, value mod external64)
-        , (base_or_null_with_ext, value_or_null) )]
-
     include struct
+      [@@@kind_set
+        (ks, ks_for_3)
+        = ( (value, value)
+          , (value_or_null, value_or_null)
+          , (value mod external64, value mod external64)
+          , (base_or_null_with_ext, value_or_null) )]
+
       [@@@alloc.default a]
       [@@@kind_set.default.explicit_plus_unmangled ks]
 
@@ -265,8 +279,12 @@ module Definitions = struct
       module type Creators_with_index = sig
         include Container.Generic_types [@kind_set.explicit ks]
 
-        type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1]) [@@kind.explicit k1 = ks]
-        type ('a : k1) elt := ('a elt[@kind k1]) [@@kind.explicit k1 = ks]
+        [%%template:
+        [@@@kind.default.explicit k1' = ks]
+        [@@@kind k1 = k1' mod separable]
+
+        type ('a : k1, 'b, 'c) t := (('a, 'b, 'c) t[@kind k1'])
+        type ('a : k1) elt : k1 := ('a elt[@kind k1'])]
 
         [%%template:
         [@@@kind.default_if_multiple k1' = ks]
@@ -324,7 +342,7 @@ module Definitions = struct
           -> f:
                (int
                 -> ('a elt[@kind.explicit k1']) @ m
-                -> (('b elt[@kind.explicit k2']) Option0.t
+                -> (('b elt[@kind.explicit k2']) Option.t
                    [@kind.explicit k2' or value_or_null])
                    @ n)
              @ local
@@ -358,7 +376,7 @@ module Definitions = struct
           -> f:
                (int
                 -> ('a elt[@kind.explicit k1']) @ m
-                -> ((('b elt[@kind.explicit k2']), ('c elt[@kind.explicit k3'])) Either0.t
+                -> ((('b elt[@kind.explicit k2']), ('c elt[@kind.explicit k3'])) Either.t
                    [@kind (k2' or value_or_null) (k3' or value_or_null)])
                    @ n)
              @ local
@@ -394,18 +412,18 @@ module Definitions = struct
           type ('a : k) elt := ('a elt[@kind k'])]
       end
       [@@kind_set.explicit ks]
-
-      module type%template Generic_with_creators = sig
-        include Generic_with_creators [@kind_set.explicit ks] [@alloc a]
-
-        include
-          Container.Generic_with_creators
-          [@alloc a]
-          with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
-           and type 'a elt := 'a elt
-      end
-      [@@kind_set ks = value] [@@alloc a]
     end
+
+    module type%template Generic_with_creators = sig
+      include Generic_with_creators [@kind_set.explicit ks] [@alloc a]
+
+      include
+        Container.Generic_with_creators
+        [@alloc a]
+        with type ('a, 'b, 'c) t := ('a, 'b, 'c) t
+         and type 'a elt := 'a elt
+    end
+    [@@kind_set ks = value] [@@alloc a]
   end]
 
   [%%template
@@ -418,7 +436,8 @@ module Definitions = struct
         [Make0_with_creators] already takes [Elt.equal]. *)
 
     module type
-      [@kind_set.explicit_plus_unmangled ks = (value, base_or_null_with_ext)] S0_with_creators = sig
+      [@kind_set.explicit_plus_unmangled ks = (value, base_or_null_with_ext)]
+      S0_with_creators = sig
       include S0 [@kind_set.explicit ks] [@alloc a]
 
       include

@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Int = Int0
 module Char = Char0
 module Capsule = Capsule_prim
@@ -94,12 +94,12 @@ sig
 
   (* This is safe because the resulting state is unique. *)
   val copy_into_capsule
-    :  Stdlib.Random.State.t
+    :  Stdlib.Random.State.t @ local
     -> (Stdlib.Random.State.t, 'k) Capsule.Data.t
 
   (* This is safe because the resulting state is unique. *)
   val split_into_capsule
-    :  Stdlib.Random.State.t
+    :  Stdlib.Random.State.t @ local
     -> (Stdlib.Random.State.t, 'k) Capsule.Data.t
 end)
 
@@ -115,7 +115,9 @@ module State = struct
 
     val with_stdlib
       : ('a : value mod contended portable).
-      f:(Stdlib.Random.State.t -> 'a) @ local portable unyielding -> t -> 'a
+      f:(Stdlib.Random.State.t @ local -> 'a) @ local portable unyielding
+      -> t @ local
+      -> 'a
   end = struct
     module DLS = Basement.Stdlib_shim.Domain.Safe.DLS
 
@@ -162,7 +164,7 @@ module State = struct
 
     type inner =
       | Default
-      | Custom of Stdlib.Random.State.t Lazy.t
+      | Custom of Stdlib.Random.State.t lazy_t
 
     type t = inner Modes.Portable_via_contended.t
 
@@ -419,7 +421,7 @@ let self_init ?allow_in_tests () = full_init (random_seed ?allow_in_tests ())
 let set_state s =
   State.with_stdlib s ~f:(stack_ fun state ->
     let (P access) = Capsule.current () in
-    let capsule = Capsule.Data.wrap ~access state in
+    let capsule = Capsule.Data.Local.wrap ~access state in
     Capsule.Password.with_current access (stack_ fun password ->
       let password = Capsule.Password.shared password in
       State.with_stdlib (State.get_default ()) ~f:(stack_ fun default ->

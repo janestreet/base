@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Sexp = Sexp0
 
 type ('a, 'witness) t : value mod contended portable with 'witness @@ contended =
@@ -73,7 +73,8 @@ end
 [@@@mode.default m = (local, global)]
 
 module%template.portable
-  [@modality p] Make (M : sig
+  [@modality p]
+  Make (M : sig
     type t [@@deriving (compare [@mode.explicit m]), sexp_of]
   end) =
 struct
@@ -89,7 +90,8 @@ struct
 end
 
 module%template.portable
-  [@modality p] Make1 (M : sig
+  [@modality p]
+  Make1 (M : sig
     type 'a t
 
     val compare : 'a t @ m -> 'a t @ m -> int [@@mode m = (global, m)]
@@ -121,7 +123,8 @@ end
 [@@@mode.default m = (local, global)]
 
 module%template.portable
-  [@modality p] Derived_phantom (M : sig
+  [@modality p]
+  Derived_phantom (M : sig
     type ('a, 'b) t
 
     val compare : ('a @ m -> 'a @ m -> int) -> ('a, 'b) t @ m -> ('a, 'b) t @ m -> int
@@ -150,7 +153,8 @@ struct
 end
 
 module%template.portable
-  [@modality p] Derived2_phantom (M : sig
+  [@modality p]
+  Derived2_phantom (M : sig
     type ('a, 'b, 'c) t
 
     val compare
@@ -188,7 +192,8 @@ struct
 end
 
 module%template.portable
-  [@modality p] Derived (M : sig
+  [@modality p]
+  Derived (M : sig
     type 'a t [@@deriving (compare [@mode.explicit m]), sexp_of]
   end) =
 Derived_phantom [@mode m] [@modality p] (struct
@@ -198,7 +203,8 @@ Derived_phantom [@mode m] [@modality p] (struct
   end)
 
 module%template.portable
-  [@modality p] Derived2 (M : sig
+  [@modality p]
+  Derived2 (M : sig
     type ('a, 'b) t [@@deriving (compare [@mode.explicit m]), sexp_of]
   end) =
 Derived2_phantom [@mode m] [@modality p] (struct

@@ -69,7 +69,9 @@ module Specialize_polymorphic_compare = struct
       val ascending : t -> t -> int @@ portable
       val descending : t -> t -> int @@ portable
       val max : t -> t -> t @@ portable
-      val min : t -> t -> t @@ portable]
+      val min : t -> t -> t @@ portable
+      val max__local : t @ local -> t @ local -> t @ local @@ portable
+      val min__local : t @ local -> t @ local -> t @ local @@ portable]
   ;;
 
   let structure ~loc =
@@ -139,7 +141,9 @@ module Specialize_polymorphic_compare = struct
       let ascending x y = compare x y
       let descending x y = compare y x
       let max x y = Bool0.select (x >= y) x y
-      let min x y = Bool0.select (x <= y) x y]
+      let min x y = Bool0.select (x <= y) x y
+      let max__local (local_ x) (local_ y) = exclave_ Bool0.select (x >= y) x y
+      let min__local (local_ x) (local_ y) = exclave_ Bool0.select (x <= y) x y]
   ;;
 
   let check_decl decl =

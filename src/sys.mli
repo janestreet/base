@@ -125,7 +125,7 @@ external%template opaque_identity
   = "%opaque"
 [@@layout_poly]
 [@@mode
-  c = (uncontended, shared, contended)
+  c = (uncontended, shared, contended, read, write, immutable)
   , o = (many, once)
   , p = (nonportable, portable)
   , u = (aliased, unique)]

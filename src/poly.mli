@@ -24,5 +24,8 @@ external ( >= ) : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%greaterequal"
 external%template equal : ('a[@local_opt]) -> ('a[@local_opt]) -> bool = "%equal"
 [@@mode m = (global, local)]
 
-val min : 'a -> 'a -> 'a
-val max : 'a -> 'a -> 'a
+[%%template:
+[@@@mode.default m = (global, local)]
+
+val min : 'a @ m -> 'a @ m -> 'a @ m
+val max : 'a @ m -> 'a @ m -> 'a @ m]

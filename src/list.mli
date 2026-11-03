@@ -4,8 +4,10 @@
     (i.e., O(n)) access to the back of the list. The comparison functions on lists are
     lexicographic. *)
 
-open! Import
+open! Import0
 module Invariant := Invariant_intf.Definitions
+module Either := Either0
+module Option := Option0
 module Constructors : module type of List0.Constructors
 
 [%%template:
@@ -86,7 +88,7 @@ val length : ('a : k). 'a t @ immutable local -> int
 val nth_exn : ('a : k). 'a t @ l -> int -> 'a @ l
 [@@mode l = (local, global)]
 
-val nth : ('a : k). 'a t @ l -> int -> ('a Option0.t[@kind k]) @ l
+val nth : ('a : k). 'a t @ l -> int -> ('a Option.t[@kind k]) @ l
 [@@mode l = (local, global)]
 
 val mem : 'a t @ l -> 'a @ l -> equal:('a @ l -> 'a @ l -> bool) @ local -> bool
@@ -100,7 +102,7 @@ val mem : 'a t @ l -> 'a @ l -> equal:('a @ l -> 'a @ l -> bool) @ local -> bool
 val init : ('a : k). int -> f:(int -> 'a @ l) @ local -> 'a t @ l
 
 (** *)
-val init_i64 : ('a : k). int64# -> f:(int64# -> 'a @ l) @ local -> 'a t @ l
+val init_i64 : ('a : k). Int64_u.t -> f:(Int64_u.t -> 'a @ l) @ local -> 'a t @ l
 
 val append : ('a : k). 'a t @ l -> 'a t @ l -> 'a t @ l
 val filteri : ('a : k). 'a t @ l -> f:(int -> 'a @ l -> bool) @ local -> 'a t @ l
@@ -146,13 +148,13 @@ val rev_mapi
 val filter_map
   : ('a : ka) ('b : kb).
   ('a t[@kind ka]) @ la
-  -> f:('a @ la -> ('b Option0.t[@kind kb]) @ lb) @ local
+  -> f:('a @ la -> ('b Option.t[@kind kb]) @ lb) @ local
   -> ('b t[@kind kb]) @ lb
 
 val filter_mapi
   : ('a : ka) ('b : kb).
   ('a t[@kind ka]) @ la
-  -> f:(int -> 'a @ la -> ('b Option0.t[@kind kb]) @ lb) @ local
+  -> f:(int -> 'a @ la -> ('b Option.t[@kind kb]) @ lb) @ local
   -> ('b t[@kind kb]) @ lb
 
 val concat_map
@@ -212,38 +214,38 @@ val unordered_append : ('a : value_or_null). 'a t -> 'a t -> 'a t
     version will raise if the two lists have different lengths. *)
 val iter2_exn
   : ('a : value_or_null) ('b : value_or_null).
-  'a t @ l -> 'b t @ l -> f:local_ ('a @ l -> 'b @ l -> unit) -> unit
+  'a t @ l -> 'b t @ l -> f:('a @ l -> 'b @ l -> unit) @ local -> unit
 
 val iter2
   : ('a : value_or_null) ('b : value_or_null).
   'a t @ l
   -> 'b t @ l
-  -> f:local_ ('a @ l -> 'b @ l -> unit)
+  -> f:('a @ l -> 'b @ l -> unit) @ local
   -> unit Or_unequal_lengths.t @ l]
 
 (** [rev_map2_exn l1 l2 ~f] gives the same result as [List.rev (List.map2_exn l1 l2 ~f)],
     but is more efficient. *)
 val rev_map2_exn
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b -> 'c) -> 'c t
+  'a t -> 'b t -> f:('a -> 'b -> 'c) @ local -> 'c t
 
 val rev_map2
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b -> 'c) -> 'c t Or_unequal_lengths.t
+  'a t -> 'b t -> f:('a -> 'b -> 'c) @ local -> 'c t Or_unequal_lengths.t
 
 (** [fold2 ~f ~init:a [b1; ...; bn] [c1; ...; cn]] is
     [f (... (f (f a b1 c1) b2 c2) ...) bn cn]. The exn version will raise if the two lists
     have different lengths. *)
 val fold2_exn
   : ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
-  'a t -> 'b t -> init:'acc -> f:local_ ('acc -> 'a -> 'b -> 'acc) -> 'acc
+  'a t -> 'b t -> init:'acc -> f:('acc -> 'a -> 'b -> 'acc) @ local -> 'acc
 
 val fold2
   : ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
   'a t
   -> 'b t
   -> init:'acc
-  -> f:local_ ('acc -> 'a -> 'b -> 'acc)
+  -> f:('acc -> 'a -> 'b -> 'acc) @ local
   -> 'acc Or_unequal_lengths.t
 
 (** [fold_right2 ~f [a1; ...; an] [b1; ...; bn] ~init:c] is
@@ -251,13 +253,13 @@ val fold2
     have different lengths. *)
 val fold_right2_exn
   : ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b -> 'acc -> 'acc) -> init:'acc -> 'acc
+  'a t -> 'b t -> f:('a -> 'b -> 'acc -> 'acc) @ local -> init:'acc -> 'acc
 
 val fold_right2
   : ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
   'a t
   -> 'b t
-  -> f:local_ ('a -> 'b -> 'acc -> 'acc)
+  -> f:('a -> 'b -> 'acc -> 'acc) @ local
   -> init:'acc
   -> 'acc Or_unequal_lengths.t
 
@@ -265,33 +267,33 @@ val fold_right2
     the two lists have different lengths. *)
 val for_all2_exn
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b -> bool) -> bool
+  'a t -> 'b t -> f:('a -> 'b -> bool) @ local -> bool
 
 val for_all2
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b -> bool) -> bool Or_unequal_lengths.t
+  'a t -> 'b t -> f:('a -> 'b -> bool) @ local -> bool Or_unequal_lengths.t
 
 (** Like {!List.exists}, but for a two-argument predicate. The exn version will raise if
     the two lists have different lengths. *)
 val exists2_exn
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b -> bool) -> bool
+  'a t -> 'b t -> f:('a -> 'b -> bool) @ local -> bool
 
 val exists2
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b -> bool) -> bool Or_unequal_lengths.t
+  'a t -> 'b t -> f:('a -> 'b -> bool) @ local -> bool Or_unequal_lengths.t
 
 (** Like [filter], but reverses the order of the input list. *)
-val rev_filter : ('a : value_or_null). 'a t -> f:local_ ('a -> bool) -> 'a t
+val rev_filter : ('a : value_or_null). 'a t -> f:('a -> bool) @ local -> 'a t
 
 val%template partition_map
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-  'a t @ li -> f:('a @ li -> ('b, 'c) Either0.t @ lo) @ local -> 'b t * 'c t @ lo
+  'a t @ li -> f:('a @ li -> ('b, 'c) Either.t @ lo) @ local -> 'b t * 'c t @ lo
 [@@mode li = (global, local)] [@@alloc __ @ lo = (heap_global, stack_local)]
 
 val partition3_map
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) ('d : value_or_null).
-  'a t -> f:local_ ('a -> [ `Fst of 'b | `Snd of 'c | `Trd of 'd ]) -> 'b t * 'c t * 'd t
+  'a t -> f:('a -> [ `Fst of 'b | `Snd of 'c | `Trd of 'd ]) @ local -> 'b t * 'c t * 'd t
 
 [%%template:
 [@@@alloc.default a @ l = (heap_global, stack_local)]
@@ -327,18 +329,20 @@ val split_n : ('a : value_or_null). 'a t @ l -> int -> #('a t * 'a t) @ l
     the same order in the output. *)
 val sort
   : ('a : value_or_null).
-  'a t @ l -> compare:local_ ('a @ l -> 'a @ l -> int) -> 'a t @ l
+  'a t @ l -> compare:('a @ l -> 'a @ l -> int) @ local -> 'a t @ l
 
 (** Like [sort], but guaranteed to be stable. *)
 val stable_sort
   : ('a : value_or_null).
-  'a t @ l -> compare:local_ ('a @ l -> 'a @ l -> int) -> 'a t @ l]
+  'a t @ l -> compare:('a @ l -> 'a @ l -> int) @ local -> 'a t @ l]
 
 (** Merges two lists: assuming that [l1] and [l2] are sorted according to the comparison
     function [compare], [merge compare l1 l2] will return a sorted list containing all the
     elements of [l1] and [l2]. If several elements compare equal, the elements of [l1]
     will be before the elements of [l2]. *)
-val merge : ('a : value_or_null). 'a t -> 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
+val merge
+  : ('a : value_or_null).
+  'a t -> 'a t -> compare:('a -> 'a -> int) @ local -> 'a t
 
 (** Merges a list of [k] sorted lists into one sorted list, in O(n log k) time where [n]
     is the total number of elements across all input lists. Elements that compare equal
@@ -347,7 +351,7 @@ val merge : ('a : value_or_null). 'a t -> 'a t -> compare:local_ ('a -> 'a -> in
 
     Implemented by pairwise merging, so the per-comparison cost is small but it allocates
     O(n log k) intermediate cons cells. *)
-val merge_all : ('a : value_or_null). 'a t t -> compare:local_ ('a -> 'a -> int) -> 'a t
+val merge_all : ('a : value_or_null). 'a t t -> compare:('a -> 'a -> int) @ local -> 'a t
 
 [%%template:
 [@@@mode.default l = (global, local)]
@@ -366,11 +370,11 @@ val tl_exn : ('a : value_or_null). 'a t @ l -> 'a t @ l
 (** Like [find_exn], but passes the index as an argument. *)
 val findi_exn
   : ('a : value_or_null).
-  'a t @ l -> f:local_ (int -> 'a @ l -> bool) -> int * 'a @ l
+  'a t @ l -> f:(int -> 'a @ l -> bool) @ local -> int * 'a @ l
 
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f]. It raises
     [Stdlib.Not_found] or [Not_found_s] if there is no such element. *)
-val find_exn : ('a : value_or_null). 'a t @ l -> f:local_ ('a @ l -> bool) -> 'a @ l]
+val find_exn : ('a : value_or_null). 'a t @ l -> f:('a @ l -> bool) @ local -> 'a @ l]
 
 (** Like [find_map] but with a function returning [or_null] instead of [option]. *)
 val%template find_map_or_null
@@ -387,12 +391,12 @@ val find_map_or_null_exn : 'a t -> f:('a -> 'b or_null) @ local -> 'b
     [Not_found_s] if [f] always returns [None]. *)
 val find_map_exn
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> f:local_ ('a -> 'b option) -> 'b
+  'a t -> f:('a -> 'b option) @ local -> 'b
 
 (** Like [find_map_exn], but passes the index as an argument. *)
 val find_mapi_exn
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> f:local_ (int -> 'a -> 'b option) -> 'b
+  'a t -> f:(int -> 'a -> 'b option) @ local -> 'b
 
 (** Like [find_mapi] but with a function returning [or_null] instead of [option]. *)
 val%template find_mapi_or_null
@@ -410,11 +414,11 @@ val find_mapi_or_null_exn : 'a t -> f:(int -> 'a -> 'b or_null) @ local -> 'b
     the mapped result list is returned; the final accumulator value is discarded. *)
 val folding_map
   : ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
-  'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc * 'b) -> 'b t
+  'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) @ local -> 'b t
 
 val folding_mapi
   : ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
-  'a t -> init:'acc -> f:local_ (int -> 'acc -> 'a -> 'acc * 'b) -> 'b t
+  'a t -> init:'acc -> f:(int -> 'acc -> 'a -> 'acc * 'b) @ local -> 'b t
 
 [%%template:
 [@@@mode.default li = (global, local)]
@@ -427,14 +431,14 @@ val fold_map
   : ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
   'a t @ li
   -> init:'acc @ lo
-  -> f:local_ ('acc @ lo -> 'a @ li -> 'acc * 'b @ lo)
+  -> f:('acc @ lo -> 'a @ li -> 'acc * 'b @ lo) @ local
   -> 'acc * 'b t @ lo
 
 val fold_mapi
   : ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
   'a t @ li
   -> init:'acc @ lo
-  -> f:local_ (int -> 'acc @ lo -> 'a @ li -> 'acc * 'b @ lo)
+  -> f:(int -> 'acc @ lo -> 'a @ li -> 'acc * 'b @ lo) @ local
   -> 'acc * 'b t @ lo
 
 (** [map2 [a1; ...; an] [b1; ...; bn] ~f] is [[f a1 b1; ...; f an bn]]. The exn version
@@ -442,40 +446,40 @@ val fold_mapi
 
 val map2_exn
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-  'a t @ li -> 'b t @ li -> f:local_ ('a @ li -> 'b @ li -> 'c @ lo) -> 'c t @ lo
+  'a t @ li -> 'b t @ li -> f:('a @ li -> 'b @ li -> 'c @ lo) @ local -> 'c t @ lo
 
 val map2
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
   'a t @ li
   -> 'b t @ li
-  -> f:local_ ('a @ li -> 'b @ li -> 'c @ lo)
+  -> f:('a @ li -> 'b @ li -> 'c @ lo) @ local
   -> 'c t Or_unequal_lengths.t @ lo]
 
 (** Analogous to [rev_map2]. *)
 
 val rev_map3_exn
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) ('d : value_or_null).
-  'a t -> 'b t -> 'c t -> f:local_ ('a -> 'b -> 'c -> 'd) -> 'd t
+  'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) @ local -> 'd t
 
 val rev_map3
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) ('d : value_or_null).
-  'a t -> 'b t -> 'c t -> f:local_ ('a -> 'b -> 'c -> 'd) -> 'd t Or_unequal_lengths.t
+  'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) @ local -> 'd t Or_unequal_lengths.t
 
 (** Analogous to [map2]. *)
 
 val map3_exn
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) ('d : value_or_null).
-  'a t -> 'b t -> 'c t -> f:local_ ('a -> 'b -> 'c -> 'd) -> 'd t
+  'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) @ local -> 'd t
 
 val map3
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) ('d : value_or_null).
-  'a t -> 'b t -> 'c t -> f:local_ ('a -> 'b -> 'c -> 'd) -> 'd t Or_unequal_lengths.t
+  'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) @ local -> 'd t Or_unequal_lengths.t
 
 (** [rev_map_append l1 l2 ~f] reverses [l1] mapping [f] over each element, and appends the
     result to the front of [l2]. *)
 val rev_map_append
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b) -> 'b t
+  'a t -> 'b t -> f:('a -> 'b) @ local -> 'b t
 
 (** [fold_right [a1; ...; an] ~f ~init:b] is [f a1 (f a2 (... (f an b) ...))]. *)
 val%template fold_right
@@ -491,7 +495,7 @@ val%template fold_right
     signature where this equivalence does not hold. *)
 val fold_left
   : ('a : value_or_null) ('acc : value_or_null).
-  'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc) -> 'acc
+  'a t -> init:'acc -> f:('acc -> 'a -> 'acc) @ local -> 'acc
 
 (** Transform a list of pairs into a pair of lists: [unzip [(a1,b1); ...; (an,bn)]] is
     [([a1; ...; an], [b1; ...; bn])]. *)
@@ -532,11 +536,11 @@ val zip3_exn : 'a t -> 'b t -> 'c t -> ('a * 'b * 'c) t
     empty list. Tail recursive. *)
 val reduce
   : ('a : value_or_null).
-  'a t @ l -> f:local_ ('a @ l -> 'a @ l -> 'a @ l) -> 'a option @ l
+  'a t @ l -> f:('a @ l -> 'a @ l -> 'a @ l) @ local -> 'a option @ l
 
 val reduce_exn
   : ('a : value_or_null).
-  'a t @ l -> f:local_ ('a @ l -> 'a @ l -> 'a @ l) -> 'a @ l]
+  'a t @ l -> f:('a @ l -> 'a @ l -> 'a @ l) @ local -> 'a @ l]
 
 (** [reduce_balanced] returns the same value as [reduce] when [f] is associative, but
     differs in that the tree of nested applications of [f] has logarithmic depth.
@@ -544,9 +548,11 @@ val reduce_exn
     This is useful when your ['a] grows in size as you reduce it and [f] becomes more
     expensive with bigger inputs. For example, [reduce_balanced ~f:(^)] takes [n*log(n)]
     time, while [reduce ~f:(^)] takes quadratic time. *)
-val reduce_balanced : ('a : value_or_null). 'a t -> f:local_ ('a -> 'a -> 'a) -> 'a option
+val reduce_balanced
+  : ('a : value_or_null).
+  'a t -> f:('a -> 'a -> 'a) @ local -> 'a option
 
-val reduce_balanced_exn : ('a : value_or_null). 'a t -> f:local_ ('a -> 'a -> 'a) -> 'a
+val reduce_balanced_exn : ('a : value_or_null). 'a t -> f:('a -> 'a -> 'a) @ local -> 'a
 
 [%%template:
 [@@@alloc.default __ @ l = (heap_global, stack_local)]
@@ -564,7 +570,7 @@ val reduce_balanced_exn : ('a : value_or_null). 'a t -> f:local_ ('a -> 'a -> 'a
     ]} *)
 val group
   : ('a : value_or_null).
-  'a t @ l -> break:local_ ('a @ l -> 'a @ l -> bool) -> 'a t t @ l
+  'a t @ l -> break:('a @ l -> 'a @ l -> bool) @ local -> 'a t t @ l
 
 (** This is just like [group], except that you get the index in the original list of the
     current element along with the two elements.
@@ -579,12 +585,12 @@ val group
     ]} *)
 val groupi
   : ('a : value_or_null).
-  'a t @ l -> break:local_ (int -> 'a @ l -> 'a @ l -> bool) -> 'a t t @ l]
+  'a t @ l -> break:(int -> 'a @ l -> 'a @ l -> bool) @ local -> 'a t t @ l]
 
 (** Group equal elements into the same buckets. Sorting is stable. *)
 val sort_and_group
   : ('a : value_or_null).
-  'a t -> compare:local_ ('a -> 'a -> int) -> 'a t t
+  'a t -> compare:('a -> 'a -> int) @ local -> 'a t t
 
 (** [chunks_of l ~length] returns a list of lists whose concatenation is equal to the
     original list. Every list has [length] elements, except for possibly the last list,
@@ -609,12 +615,12 @@ val last_exn : ('a : value_or_null). 'a t -> 'a
 (** [is_prefix xs ~prefix] returns [true] if [xs] starts with [prefix]. *)
 val is_prefix
   : ('a : value_or_null).
-  'a t -> prefix:'a t -> equal:local_ ('a -> 'a -> bool) -> bool
+  'a t -> prefix:'a t -> equal:('a -> 'a -> bool) @ local -> bool
 
 (** [is_suffix xs ~suffix] returns [true] if [xs] ends with [suffix]. *)
 val is_suffix
   : ('a : value_or_null).
-  'a t -> suffix:'a t -> equal:local_ ('a -> 'a -> bool) -> bool
+  'a t -> suffix:'a t -> equal:('a -> 'a -> bool) @ local -> bool
 
 (** [find_consecutive_duplicate t ~equal] returns the first pair of consecutive elements
     [(a1, a2)] in [t] such that [equal a1 a2]. They are returned in the same order as they
@@ -622,7 +628,7 @@ val is_suffix
     predicate on consecutive elements. *)
 val find_consecutive_duplicate
   : ('a : value_or_null).
-  'a t -> equal:local_ ('a -> 'a -> bool) -> ('a * 'a) option
+  'a t -> equal:('a -> 'a -> bool) @ local -> ('a * 'a) option
 
 (** Returns the given list with consecutive duplicates removed. The relative order of the
     other elements is unaffected. The element kept from a run of duplicates is determined
@@ -631,34 +637,34 @@ val remove_consecutive_duplicates
   : ('a : value_or_null).
   ?which_to_keep:[ `First | `Last ] (** default = `Last *)
   -> 'a t
-  -> equal:local_ ('a -> 'a -> bool)
+  -> equal:('a -> 'a -> bool) @ local
   -> 'a t
 
 (** Returns the given list with duplicates removed and in sorted order. Of duplicates in
     the original list, the element occurring last in the original list is kept. *)
 val%template dedup_and_sort
   : ('a : value_or_null).
-  'a t @ l -> compare:local_ ('a @ l -> 'a @ l -> int) -> 'a t @ l
+  'a t @ l -> compare:('a @ l -> 'a @ l -> int) @ local -> 'a t @ l
 [@@alloc __ @ l = (heap_global, stack_local)]
 
 (** Returns the original list, dropping all occurrences of duplicates after the first. *)
-val stable_dedup : ('a : value_or_null). 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
+val stable_dedup : ('a : value_or_null). 'a t -> compare:('a -> 'a -> int) @ local -> 'a t
 
 (** [find_a_dup] returns a duplicate from the list (with no guarantees about which
     duplicate you get), or [None] if there are no dups. *)
 val find_a_dup
   : ('a : value_or_null).
-  'a t -> compare:local_ ('a -> 'a -> int) -> 'a option
+  'a t -> compare:('a -> 'a -> int) @ local -> 'a option
 
 (** Returns true if there are any two elements in the list which are the same. O(n log n)
     time complexity. *)
-val contains_dup : ('a : value_or_null). 'a t -> compare:local_ ('a -> 'a -> int) -> bool
+val contains_dup : ('a : value_or_null). 'a t -> compare:('a -> 'a -> int) @ local -> bool
 
 (** [find_all_dups] returns a list of all elements that occur more than once, with no
     guarantees about order. O(n log n) time complexity. *)
 val find_all_dups
   : ('a : value_or_null).
-  'a t -> compare:local_ ('a -> 'a -> int) -> 'a list
+  'a t -> compare:('a -> 'a -> int) @ local -> 'a list
 
 [%%template:
 [@@@mode.default l = (global, local)]
@@ -686,8 +692,8 @@ val range
     one call to the next. *)
 val range'
   : ('a : value_or_null).
-  compare:local_ ('a -> 'a -> int)
-  -> stride:local_ ('a -> 'a)
+  compare:('a -> 'a -> int) @ local
+  -> stride:('a -> 'a) @ local
   -> ?start:[ `inclusive | `exclusive ] (** default = `inclusive *)
   -> ?stop:[ `inclusive | `exclusive ] (** default = `exclusive *)
   -> 'a
@@ -733,7 +739,7 @@ val rev_filter_mapi_or_null
   -> 'b t @ lo]
 
 (** Create a list of every value [iter] passes to [f], in chronological order. *)
-val of_iter : ('a : value_or_null). iter:local_ (f:local_ ('a -> unit) -> unit) -> 'a t
+val of_iter : ('a : value_or_null). iter:(f:('a -> unit) @ local -> unit) @ local -> 'a t
 
 (** Interpret a list of (key, value) pairs as a map in which only the first occurrence of
     a key affects the semantics, i.e.:
@@ -754,34 +760,34 @@ module Assoc : sig
   (** Removes all existing entries with the same key before adding. *)
   val add
     : ('a : value_or_null) ('b : value_or_null).
-    ('a, 'b) t -> equal:local_ ('a -> 'a -> bool) -> 'a -> 'b -> ('a, 'b) t
+    ('a, 'b) t -> equal:('a -> 'a -> bool) @ local -> 'a -> 'b -> ('a, 'b) t
 
   val%template find
     : ('a : value_or_null) ('b : value_or_null).
-    ('a, 'b) t @ l -> equal:local_ ('a @ l -> 'a @ l -> bool) -> 'a @ l -> 'b option @ l
+    ('a, 'b) t @ l -> equal:('a @ l -> 'a @ l -> bool) @ local -> 'a @ l -> 'b option @ l
   [@@mode l = (local, global)]
 
   val%template find_or_null
     : ('a : value) ('b : value).
-    ('a, 'b) t @ l -> equal:local_ ('a @ l -> 'a @ l -> bool) -> 'a @ l -> 'b or_null @ l
+    ('a, 'b) t @ l -> equal:('a @ l -> 'a @ l -> bool) @ local -> 'a @ l -> 'b or_null @ l
   [@@mode l = (local, global)]
 
   val%template find_exn
     : ('a : value_or_null) ('b : value_or_null).
-    ('a, 'b) t @ l -> equal:local_ ('a @ l -> 'a @ l -> bool) -> 'a @ l -> 'b @ l
+    ('a, 'b) t @ l -> equal:('a @ l -> 'a @ l -> bool) @ local -> 'a @ l -> 'b @ l
   [@@mode l = (local, global)]
 
   val mem
     : ('a : value_or_null) ('b : value_or_null).
-    ('a, 'b) t -> equal:local_ ('a -> 'a -> bool) -> 'a -> bool
+    ('a, 'b) t -> equal:('a -> 'a -> bool) @ local -> 'a -> bool
 
   val remove
     : ('a : value_or_null) ('b : value_or_null).
-    ('a, 'b) t -> equal:local_ ('a -> 'a -> bool) -> 'a -> ('a, 'b) t
+    ('a, 'b) t -> equal:('a -> 'a -> bool) @ local -> 'a -> ('a, 'b) t
 
   val map
     : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-    ('a, 'b) t -> f:local_ ('b -> 'c) -> ('a, 'c) t
+    ('a, 'b) t -> f:('b -> 'c) @ local -> ('a, 'c) t
 
   (** Bijectivity is not guaranteed because we allow a key to appear more than once. *)
   val inverse : ('a : value_or_null) ('b : value_or_null). ('a, 'b) t -> ('b, 'a) t
@@ -791,13 +797,13 @@ module Assoc : sig
       non-consecutive duplicate keys in the input will remain in the output. *)
   val group
     : ('a : value_or_null) ('b : value_or_null).
-    ('a * 'b) list -> equal:local_ ('a -> 'a -> bool) -> ('a, 'b list) t
+    ('a * 'b) list -> equal:('a -> 'a -> bool) @ local -> ('a, 'b list) t
 
   (** Converts an association list with potential duplicate keys into an association list
       of (non-empty) lists with no duplicate keys. *)
   val sort_and_group
     : ('a : value_or_null) ('b : value_or_null).
-    ('a * 'b) list -> compare:local_ ('a -> 'a -> int) -> ('a, 'b list) t
+    ('a * 'b) list -> compare:('a -> 'a -> int) @ local -> ('a, 'b list) t
 end
 
 (** [sub pos len l] is the [len]-element sublist of [l], starting at [pos]. *)
@@ -816,13 +822,13 @@ val take : ('a : value_or_null). 'a t @ l -> int -> 'a t @ l]
 val drop : ('a : value_or_null). 'a t -> int -> 'a t
 
 (** [take_while l ~f] returns the longest prefix of [l] for which [f] is [true]. *)
-val take_while : ('a : value_or_null). 'a t -> f:local_ ('a -> bool) -> 'a t
+val take_while : ('a : value_or_null). 'a t -> f:('a -> bool) @ local -> 'a t
 
 (** [drop_while l ~f] drops the longest prefix of [l] for which [f] is [true]. *)
-val drop_while : ('a : value_or_null). 'a t -> f:local_ ('a -> bool) -> 'a t
+val drop_while : ('a : value_or_null). 'a t -> f:('a -> bool) @ local -> 'a t
 
 (** [split_while xs ~f = (take_while xs ~f, drop_while xs ~f)]. *)
-val split_while : ('a : value_or_null). 'a t -> f:local_ ('a -> bool) -> 'a t * 'a t
+val split_while : ('a : value_or_null). 'a t -> f:('a -> bool) @ local -> 'a t * 'a t
 
 (** [drop_last l] drops the last element of [l], returning [None] if [l] is [empty]. *)
 val drop_last : ('a : value_or_null). 'a t -> 'a t option
@@ -846,7 +852,7 @@ val%template cartesian_product
 
     [permute] side-effects [random_state] by repeated calls to [Random.State.int]. If
     [random_state] is not supplied, [permute] uses [Random.State.default]. *)
-val permute : ('a : value). ?random_state:Random.State.t -> 'a t -> 'a t
+val permute : ('a : value). ?random_state:Random.State.t @ local -> 'a t -> 'a t
 
 (** [random_element ?random_state t] is [None] if [t] is empty, else it is [Some x] for
     some [x] chosen uniformly at random from [t].
@@ -855,19 +861,21 @@ val permute : ('a : value). ?random_state:Random.State.t -> 'a t -> 'a t
     [random_state] is not supplied, [random_element] uses [Random.State.default]. *)
 val random_element
   : ('a : value_or_null).
-  ?random_state:Random.State.t -> 'a t -> 'a option
+  ?random_state:Random.State.t @ local -> 'a t -> 'a option
 
-val random_element_exn : ('a : value_or_null). ?random_state:Random.State.t -> 'a t -> 'a
+val random_element_exn
+  : ('a : value_or_null).
+  ?random_state:Random.State.t @ local -> 'a t -> 'a
 
 (** [is_sorted t ~compare] returns [true] iff for all adjacent [a1; a2] in [t],
     [compare a1 a2 <= 0].
 
     [is_sorted_strictly] is similar, except it uses [<] instead of [<=]. *)
-val is_sorted : ('a : value_or_null). 'a t -> compare:local_ ('a -> 'a -> int) -> bool
+val is_sorted : ('a : value_or_null). 'a t -> compare:('a -> 'a -> int) @ local -> bool
 
 val is_sorted_strictly
   : ('a : value_or_null).
-  'a t -> compare:local_ ('a -> 'a -> int) -> bool
+  'a t -> compare:('a -> 'a -> int) @ local -> bool
 
 module Infix : sig
   val ( @ ) : ('a : value_or_null). 'a t -> 'a t -> 'a t

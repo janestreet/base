@@ -1,4 +1,6 @@
 open! Import0
+module Array = Array0
+module Sexp = Sexp0
 open Ppx_compare_lib.Builtin
 
 (** Abstract type and unsafe casts *)
@@ -86,19 +88,20 @@ let map t ~f = init (length t) ~f:(fun i -> f (unsafe_get t i)) [@nontail]
 (* sexp serialization is copied from that of [array] in [Sexplib0] *)
 
 [%%template
-[@@@kind.default k = base_or_null]
+[@@@kind.default k' = base_or_null]
+[@@@kind k = k' mod separable]
 
 let sexp_of_t sexp_of__a (ar : (_ : k) t) =
   let lst_ref = ref [] in
   for i = length ar - 1 downto 0 do
     lst_ref := sexp_of__a ar.:(i) :: !lst_ref
   done;
-  Sexp0.List !lst_ref
+  Sexp.List !lst_ref
 ;;
 
 let[@alloc stack] sexp_of_t sexp_of__a (ar : (_ : k) t) = exclave_
   let rec loop i acc = exclave_
-    if i < 0 then Sexp0.List acc else loop (i - 1) (sexp_of__a (get ar i) :: acc)
+    if i < 0 then Sexp.List acc else loop (i - 1) (sexp_of__a (get ar i) :: acc)
   in
   loop (length ar - 1) []
 ;;]

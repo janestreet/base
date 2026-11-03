@@ -1,6 +1,6 @@
 @@ portable
 
-open! Import
+open! Import0
 
 (** A ['a t] represents a non-empty list, as evidenced by the fact that there is no [[]]
     variant. The sexp representation is as a regular list (i.e., the same as the
@@ -75,9 +75,9 @@ val iteri : ('a : k). 'a t @ m -> f:(int -> 'a @ m -> unit) @ local -> unit
 
 (** [min_elt'] and [max_elt'] differ from [min_elt] and [max_elt] (included in
     [Container.S1]) in that they don't return options. *)
-val min_elt' : ('a : k). 'a t @ m -> compare:local_ ('a @ m -> 'a @ m -> int) -> 'a @ m
+val min_elt' : ('a : k). 'a t @ m -> compare:('a @ m -> 'a @ m -> int) @ local -> 'a @ m
 
-val max_elt' : ('a : k). 'a t @ m -> compare:local_ ('a @ m -> 'a @ m -> int) -> 'a @ m
+val max_elt' : ('a : k). 'a t @ m -> compare:('a @ m -> 'a @ m -> int) @ local -> 'a @ m
 val nth : ('a : k). 'a t @ m -> int -> ('a Option.t[@kind k]) @ m
 val nth_exn : ('a : k). 'a t @ m -> int -> 'a @ m
 val reduce : ('a : k). 'a t @ m -> f:('a @ m -> 'a @ m -> 'a @ m) @ local -> 'a @ m
@@ -146,7 +146,7 @@ val filter_map
 
 val filter_map_or_null
   : ('a : ka) 'b.
-  ('a t[@kind ka]) @ ma -> f:('a @ ma -> 'b or_null @ mb) @ local -> 'b List.t @ mb
+  ('a t[@kind ka]) @ ma -> f:('a @ ma -> 'b or_null @ mb) @ local -> 'b list @ mb
 
 val filter_mapi
   : ('a : ka) ('b : kb).
@@ -156,7 +156,7 @@ val filter_mapi
 
 val filter_mapi_or_null
   : ('a : ka) 'b.
-  ('a t[@kind ka]) @ ma -> f:(int -> 'a @ ma -> 'b or_null @ mb) @ local -> 'b List.t @ mb
+  ('a t[@kind ka]) @ ma -> f:(int -> 'a @ ma -> 'b or_null @ mb) @ local -> 'b list @ mb
 
 val rev_map
   : ('a : ka) ('b : kb).
@@ -179,7 +179,7 @@ val bind
   -> ('b t[@kind kb]) @ mb]
 
 val ( @ ) : ('a : value_or_null). 'a t -> 'a t -> 'a t
-val append' : ('a : value_or_null). 'a List.t -> 'a t -> 'a t
+val append' : ('a : value_or_null). 'a list -> 'a t -> 'a t
 val unzip : ('a : value_or_null) ('b : value_or_null). ('a * 'b) t -> 'a t * 'b t
 
 val unzip3
@@ -196,32 +196,40 @@ val zip3_exn : 'a t -> 'b t -> 'c t -> ('a * 'b * 'c) t
 
 val map2
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b -> 'c) -> 'c t List.Or_unequal_lengths.t
+  'a t -> 'b t -> f:('a -> 'b -> 'c) @ local -> 'c t List.Or_unequal_lengths.t
 
 val map2_exn
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-  'a t -> 'b t -> f:local_ ('a -> 'b -> 'c) -> 'c t
+  'a t -> 'b t -> f:('a -> 'b -> 'c) @ local -> 'c t
 
 val filter_opt : ('a : value_or_null). 'a option t -> 'a list
 val concat : ('a : value_or_null). 'a t nonempty_list -> 'a t
 val drop_last : ('a : value_or_null). 'a t -> 'a list
+val of_iarray : 'a iarray -> 'a t option
+
+val%template to_iarray : 'a t @ l -> 'a iarray @ l
+[@@alloc a @ l = (heap_global, stack_local)]
+
 val to_sequence : ('a : value_or_null). 'a t -> 'a Sequence.t
-val sort : ('a : value_or_null). 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
-val group : ('a : value_or_null). 'a t -> break:local_ ('a -> 'a -> bool) -> 'a t t
+val sort : ('a : value_or_null). 'a t -> compare:('a -> 'a -> int) @ local -> 'a t
+val group : ('a : value_or_null). 'a t -> break:('a -> 'a -> bool) @ local -> 'a t t
 
 val sort_and_group
   : ('a : value_or_null).
-  'a t -> compare:local_ ('a -> 'a -> int) -> 'a t t
+  'a t -> compare:('a -> 'a -> int) @ local -> 'a t t
 
-val stable_sort : ('a : value_or_null). 'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
+val stable_sort : ('a : value_or_null). 'a t -> compare:('a -> 'a -> int) @ local -> 'a t
 val stable_dedup : ('a : value_or_null). 'a t -> compare:('a -> 'a -> int) -> 'a t
 
 val dedup_and_sort
   : ('a : value_or_null).
-  'a t -> compare:local_ ('a -> 'a -> int) -> 'a t
+  'a t -> compare:('a -> 'a -> int) @ local -> 'a t
 
-val permute : ?random_state:Random.State.t -> 'a t -> 'a t
-val random_element : ('a : value_or_null). ?random_state:Random.State.t -> 'a t -> 'a
+val permute : ?random_state:Random.State.t @ local -> 'a t -> 'a t
+
+val random_element
+  : ('a : value_or_null).
+  ?random_state:Random.State.t @ local -> 'a t -> 'a
 
 val cartesian_product
   : ('a : value_or_null) ('b : value_or_null).
@@ -229,15 +237,15 @@ val cartesian_product
 
 val fold_right
   : ('a : value_or_null) ('b : value_or_null).
-  'a t -> init:'b -> f:local_ ('a -> 'b -> 'b) -> 'b
+  'a t -> init:'b -> f:('a -> 'b -> 'b) @ local -> 'b
 
 val folding_map
   : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-  'a t -> init:'b -> f:local_ ('b -> 'a -> 'b * 'c) -> 'c t
+  'a t -> init:'b -> f:('b -> 'a -> 'b * 'c) @ local -> 'c t
 
 val fold_map
   : ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
-  'a t -> init:'acc -> f:local_ ('acc -> 'a -> 'acc * 'b) -> 'acc * 'b t
+  'a t -> init:'acc -> f:('acc -> 'a -> 'acc * 'b) @ local -> 'acc * 'b t
 
 val findi_exn : 'a t -> f:(int -> 'a -> bool) @ local -> int * 'a
 
@@ -252,15 +260,15 @@ val all_equal
 
 (** [is_sorted t ~compare] returns [true] iff for all adjacent [a1; a2] in [t],
     [compare a1 a2 <= 0]. *)
-val is_sorted : 'a t -> compare:local_ ('a -> 'a -> int) -> bool
+val is_sorted : 'a t -> compare:('a -> 'a -> int) @ local -> bool
 
 (** [is_sorted_strictly t ~compare] returns [true] iff for all adjacent [a1; a2] in [t],
     [compare a1 a2 < 0]. *)
-val is_sorted_strictly : 'a t -> compare:local_ ('a -> 'a -> int) -> bool
+val is_sorted_strictly : 'a t -> compare:('a -> 'a -> int) @ local -> bool
 
 (** [transpose] takes an n x m list of lists to an m x n list of lists. Hence, if the
     input lists are all non-empty, the output lists will also all be non-empty. *)
-val transpose : ('a : value_or_null). 'a t t -> 'a t t Option.t
+val transpose : ('a : value_or_null). 'a t t -> 'a t t option
 
 val transpose_exn : ('a : value_or_null). 'a t t -> 'a t t
 
@@ -353,7 +361,7 @@ val option_all : 'a option t -> 'a t option
 val remove_consecutive_duplicates
   :  ?which_to_keep:[ `First | `Last ] (** default = `Last *)
   -> 'a t
-  -> equal:local_ ('a -> 'a -> bool)
+  -> equal:('a -> 'a -> bool) @ local
   -> 'a t
 
 module Partition : sig
@@ -389,10 +397,10 @@ end
 
     At least one of the two parts must be nonempty, which is represented by the type of
     [Partition.t]. *)
-val partition_tf : 'a t -> f:local_ ('a -> bool) -> ('a, 'a) Partition.t
+val partition_tf : 'a t -> f:('a -> bool) @ local -> ('a, 'a) Partition.t
 
 (** Like [partition_tf], but returns the parts in two lists instead. *)
-val partition_tf' : 'a t -> f:local_ ('a -> bool) -> 'a list * 'a list
+val partition_tf' : 'a t -> f:('a -> bool) @ local -> 'a list * 'a list
 
 (** [partition_map t ~f] partitions [t] according to [f].
 
@@ -400,13 +408,13 @@ val partition_tf' : 'a t -> f:local_ ('a -> bool) -> 'a list * 'a list
     [Partition.t]. *)
 val partition_map
   :  'a t
-  -> f:local_ ('a -> ('fst, 'snd) Either.t)
+  -> f:('a -> ('fst, 'snd) Either.t) @ local
   -> ('fst, 'snd) Partition.t
 
 (** Like [partition_map], but returns the parts in two lists instead. *)
 val partition_map'
   :  'a t
-  -> f:local_ ('a -> ('fst, 'snd) Either.t)
+  -> f:('a -> ('fst, 'snd) Either.t) @ local
   -> 'fst list * 'snd list
 
 (** [partition_result t] returns a pair [t1, t2], where [t1] is the all [Ok] elements in
@@ -445,5 +453,5 @@ end
 
 val partition3_map
   :  'a t
-  -> f:local_ ('a -> [ `Fst of 'fst | `Snd of 'snd | `Trd of 'trd ])
+  -> f:('a -> [ `Fst of 'fst | `Snd of 'snd | `Trd of 'trd ]) @ local
   -> ('fst, 'snd, 'trd) Partition3.t]

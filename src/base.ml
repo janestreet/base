@@ -46,6 +46,7 @@ include (
     with module Bytes := Shadow_stdlib.Bytes
     with module Char := Shadow_stdlib.Char
     with module Condition := Shadow_stdlib.Condition
+    with module Dynamic := Shadow_stdlib.Dynamic
     with module Either := Shadow_stdlib.Either
     with module Float := Shadow_stdlib.Float
     with module Hashtbl := Shadow_stdlib.Hashtbl
@@ -104,7 +105,7 @@ module Container = Container
 module Dynamic = Dynamic
 module Either = Either
 module Equal = Equal
-module Error = Error_with_extras
+module Error = Error
 module Exn = Exn
 module Field = Field
 module Float = Float
@@ -116,6 +117,7 @@ module Hash_set = Hash_set
 module Hashable = Hashable
 module Hasher = Hasher
 module Hashtbl = Hashtbl
+module Hlist = Hlist
 module Iarray = Iarray
 module Identifiable = Identifiable
 module Indexed_container = Indexed_container
@@ -208,6 +210,10 @@ module Export = struct
     [@@deriving
       compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]]
 
+  type%template ('a : k mod separable) array = ('a Array.t[@kind k])
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify]
+  [@@kind k = (base_non_value, value_or_null mod external64)]
+
   type nonrec floatarray = floatarray [@@deriving globalize, sexp ~stackify, sexp_grammar]
 
   type bool = Bool.t
@@ -242,9 +248,15 @@ module Export = struct
   type ('a : any mod separable) iarray = 'a Iarray.t
 
   [%%rederive.portable
-    type 'a iarray = 'a Iarray.t
+    type ('a : value_or_null mod separable) iarray = 'a Iarray.t
     [@@deriving
-      compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]]
+      compare ~localize, equal ~localize, globalize, sexp ~stackify, sexp_grammar]]
+
+  [%%rederive.portable type 'a iarray = 'a Iarray.t [@@deriving hash]]
+
+  type%template ('a : k mod separable) iarray = ('a Iarray.t[@kind k])
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp ~stackify]
+  [@@kind k = (base_non_value, value_or_null mod external64)]
 
   type int = Int.t
   [@@deriving
@@ -252,21 +264,11 @@ module Export = struct
 
   type int32 = Int32.t
   [@@deriving
-    compare ~localize
-    , equal ~localize
-    , globalize
-    , hash
-    , sexp ~stackify ~unboxed
-    , sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type int64 = Int64.t
   [@@deriving
-    compare ~localize
-    , equal ~localize
-    , globalize
-    , hash
-    , sexp ~stackify ~unboxed
-    , sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type ('a : value_or_null) list = 'a List.t
   [@@deriving
@@ -274,12 +276,7 @@ module Export = struct
 
   type nativeint = Nativeint.t
   [@@deriving
-    compare ~localize
-    , equal ~localize
-    , globalize
-    , hash
-    , sexp ~stackify ~unboxed
-    , sexp_grammar]
+    compare ~localize, equal ~localize, globalize, hash, sexp ~stackify, sexp_grammar]
 
   type ('a : value_or_null) option = 'a Option.t
   [@@deriving
@@ -447,7 +444,7 @@ module Export = struct
     @@ portable
     = "%eq"
 
-  external force : ('a Lazy.t[@local_opt]) -> 'a @@ portable = "%lazy_force"
+  external force : ('a lazy_t[@local_opt]) -> 'a @@ portable = "%lazy_force"
 
   (* Export ['a or_null] with constructors [Null] and [This] whenever Base is opened, so
      uses of those identifiers work in both upstream OCaml and OxCaml. *)

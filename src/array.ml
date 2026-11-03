@@ -1,9 +1,13 @@
 open! Import
 include Array_intf.Definitions
 module Array = Array0
-module Result = Result0
-module Option = Option0
+module Bool = Bool0
+module Either = Either0
 module List = List0
+module Option = Option0
+module Ordered_collection_common = Ordered_collection_common0
+module Result = Result0
+module Sexp = Sexp0
 include Array
 
 type ('a : any mod separable) t = 'a array
@@ -11,7 +15,7 @@ type ('a : any mod separable) t = 'a array
 [%%template
 [@@@kind_set.define base_or_null_with_ext = (base_or_null, value_or_null mod external64)]
 
-type%template ('a : k) t = 'a array
+type%template ('a : k mod separable) t = 'a array
 [@@kind k = (base_non_value, value_or_null mod external64)]
 
 [%%rederive.portable
@@ -47,14 +51,15 @@ type%template ('a : k) t = 'a array
 
 module%template.portable
   [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)]
-  [@modality p] Sorter (S : sig
+  [@modality p]
+  Sorter (S : sig
     [@@@kind k = k mod separable]
 
     type ('a : k) t
 
-    val get : ('a : k). local_ 'a t -> int -> 'a
-    val set : ('a : k). local_ 'a t -> int -> 'a -> unit
-    val length : ('a : k). local_ 'a t -> int
+    val get : ('a : k). 'a t @ local -> int -> 'a
+    val set : ('a : k). 'a t @ local -> int -> 'a -> unit
+    val length : ('a : k). 'a t @ local -> int
   end) =
 struct
   [@@@kind k = k mod separable]
@@ -70,8 +75,8 @@ struct
   module type Sort = sig @@ p
     val sort
       : ('a : k).
-      local_ 'a t
-      -> compare:local_ ('a -> 'a -> int)
+      'a t @ local
+      -> compare:('a -> 'a -> int) @ local
       -> left:int (* leftmost index of sub-array to sort *)
       -> right:int (* rightmost index of sub-array to sort *)
       -> unit
@@ -154,8 +159,8 @@ struct
 
     val five_element_sort
       : ('a : k).
-      local_ 'a t
-      -> compare:local_ ('a -> 'a -> int)
+      'a t @ local
+      -> compare:('a -> 'a -> int) @ local
       -> int
       -> int
       -> int
@@ -330,7 +335,8 @@ end
 [@@inline]
 
 module%template
-  [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)] Sort =
+  [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)]
+  Sort =
 Sorter [@kind k] [@modality portable] (struct
     type nonrec ('a : k mod separable) t = 'a t
 
@@ -352,6 +358,11 @@ let%template get_opt arr n : (_ Option.t[@kind k or value_or_null]) =
     (* SAFETY: bounds checked above *) [@exclave_if_stack a]
   else None
 [@@mode c = (uncontended, shared)] [@@kind k = base] [@@alloc a = (heap, stack)]
+;;
+
+let%template get_or_null arr n : _ or_null =
+  if 0 <= n && n < length arr then This ((unsafe_get [@mode c]) arr n) else Null
+[@@mode c = (uncontended, shared)]
 ;;
 
 let folding_map t ~init ~f =
@@ -442,7 +453,7 @@ let for_alli t ~f =
 let count t ~(local_ f) =
   let local_ result = ref 0 in
   for i = 0 to Array.length t - 1 do
-    result := !result + (f (Array.unsafe_get t i) |> Bool.to_int)
+    result := !result + (f (Array.unsafe_get t i) |> bool_to_int)
   done;
   !result
 ;;
@@ -450,7 +461,7 @@ let count t ~(local_ f) =
 let counti t ~(local_ f) =
   let local_ result = ref 0 in
   for i = 0 to Array.length t - 1 do
-    result := !result + (f i (Array.unsafe_get t i) |> Bool.to_int)
+    result := !result + (f i (Array.unsafe_get t i) |> bool_to_int)
   done;
   !result
 ;;
@@ -488,7 +499,7 @@ let[@inline always] extremal_element t ~compare ~keep_left_if
         let x = unsafe_get t i in
         loop
           (i + 1)
-          ((Bool0.select [@kind k1 or value_or_null])
+          ((Bool.select [@kind k1 or value_or_null])
              ((keep_left_if [@inlined]) ((compare [@inlined hint]) x result))
              x
              result))
@@ -580,7 +591,9 @@ let rev t =
   t
 ;;
 
-let of_list_rev (l : (_ List.Constructors.t[@kind k1 or value_or_null])) : (_ : k1) t =
+let of_list_rev (l : (_ List.Constructors.t[@kind k1 or value_or_null]))
+  : (_ : k1 mod separable) t
+  =
   match l with
   | [] -> [||]
   | a :: l ->
@@ -714,7 +727,7 @@ let foldi t ~init ~f =
 
 [@@@kind.default k2 = base_or_null_with_ext]
 
-let filter_mapi (t : (_ : k1) t) ~f : (_ : k2) t =
+let filter_mapi (t : (_ : k1 mod separable) t) ~f : (_ : k2 mod separable) t =
   let r = ref [||] in
   let k = ref 0 in
   for i = 0 to length t - 1 do
@@ -743,7 +756,9 @@ let check_length2_exn name t1 t2 =
 
 (* [of_list_map] and [of_list_rev_map] are based on functions from the OCaml distribution. *)
 
-let of_list_map (xs : (_ List.Constructors.t[@kind k1 or value_or_null])) ~f : (_ : k2) t =
+let of_list_map (xs : (_ List.Constructors.t[@kind k1 or value_or_null])) ~f
+  : (_ : k2 mod separable) t
+  =
   match xs with
   | [] -> [||]
   | hd :: tl ->
@@ -761,7 +776,8 @@ let of_list_map (xs : (_ List.Constructors.t[@kind k1 or value_or_null])) ~f : (
     fill 1 tl [@nontail]
 ;;
 
-let of_list_mapi (xs : (_ List.Constructors.t[@kind k1 or value_or_null])) ~f : (_ : k2) t
+let of_list_mapi (xs : (_ List.Constructors.t[@kind k1 or value_or_null])) ~f
+  : (_ : k2 mod separable) t
   =
   match xs with
   | [] -> [||]
@@ -800,10 +816,12 @@ let for_all2_exn t1 t2 ~f =
   (loop [@inlined]) (length t1 - 1) [@nontail]
 ;;]]
 
-let globalize = (globalize_array [@kind k]) [@@kind k = base]
+let globalize = (globalize_array [@kind k])
+[@@kind k = (base, value_or_null mod external64)]
+;;
 
 [%%template
-[@@@kind.default k = base]
+[@@@kind.default k = (base, value_or_null mod external64)]
 [@@@mode.default m = (global, local)]
 
 let equal = (equal_array [@kind k] [@mode m])
@@ -838,7 +856,7 @@ let of_list_rev_mapi xs ~f =
 [@@@kind.default k = base_or_null_with_ext]
 
 let partition_mapi t ~f =
-  let (both : (_ Either0.t[@kind (k or value_or_null) (k or value_or_null)]) t) =
+  let (both : (_ Either.t[@kind (k or value_or_null) (k or value_or_null)]) t) =
     (mapi [@kind k value_or_null]) t ~f
   in
   let firsts =
@@ -898,7 +916,7 @@ let partition_tf t ~f = (partitioni_tf [@kind k]) t ~f:(fun _ x -> f x) [@nontai
 [%%template
 [@@@alloc.default a @ m = (heap_global, stack_local)]
 
-let sexp_of_t (sexp_of_elt : _ @ m -> Sexp0.t @ m) (t @ m) : Sexp0.t =
+let sexp_of_t (sexp_of_elt : _ @ m -> Sexp.t @ m) (t @ m) : Sexp.t =
   (let rec loop i res =
      if i < 0
      then res
@@ -910,13 +928,20 @@ let sexp_of_t (sexp_of_elt : _ @ m -> Sexp0.t @ m) (t @ m) : Sexp0.t =
 ;;]
 
 [%%template
-  let t_of_sexp elt_of_sexp (sexp : Sexp0.t) =
+  let t_of_sexp elt_of_sexp (sexp : Sexp.t) =
     match sexp with
     | List [] -> [||]
     | List (_ :: _ as l) -> (of_list_map [@kind value_or_null k]) l ~f:elt_of_sexp
     | Atom _ -> of_sexp_error "array_of_sexp: list needed" sexp
-  [@@kind k = base_non_value]
+  [@@kind k = (base_non_value, value_or_null mod external64)]
   ;;]
+
+(* Since [sexp_of_t] is read-only with respect to the array, there is no performance
+   benefit to compiling a [mod external64] version separately. So we share the [value]
+   version to decrease the bloat. *)
+let%template sexp_of_t = (sexp_of_t [@kind value_or_null] [@alloc a])
+[@@kind __ = value_or_null mod external64] [@@alloc a = (heap, stack)]
+;;
 
 (* We generated [findi]s that return [value & value]s, but for backwards compatibility we
    want to return the boxed product instead when dealing only with values. *)
@@ -1232,13 +1257,15 @@ let invariant invariant_a t = iter t ~f:invariant_a
 
 module Private = struct
   module%template
-    [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)] Sort =
+    [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)]
+    Sort =
     Sort
     [@kind k]
 
   module%template.portable
     [@kind k = (base_or_null_with_ext, value_or_null mod external64 non_float)]
-    [@modality p] Sorter =
+    [@modality p]
+    Sorter =
     Sorter
     [@kind k]
     [@modality p]

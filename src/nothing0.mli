@@ -10,7 +10,8 @@ type t = Basement.nothing = |
   , sexp ~stackify
   , sexp_grammar]
 
-val unreachable_code_local : t @ local -> _ @ unique
-val unreachable_code : t -> _ @ unique
-val to_string : t -> string
-val of_string : string -> t
+val unreachable_code : t @ local -> _ @ unique
+
+val%template to_string : t @ m -> string @ m [@@alloc a @ m = (heap_global, stack_local)]
+
+val of_string : string @ local -> t

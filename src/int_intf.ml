@@ -1,7 +1,7 @@
 (** An interface to use for int-like types, e.g., {{!Base.Int} [Int]} and {{!Base.Int64}
     [Int64]}. *)
 
-open! Import
+open! Import0
 
 module Definitions = struct
   module type Round = sig
@@ -32,28 +32,28 @@ module Definitions = struct
         hard-coded. If you are writing performance-critical code you should use these. *)
 
     val round
-      :  ?dir:local_ [ `Zero | `Nearest | `Up | `Down ]
-      -> local_ t
-      -> to_multiple_of:local_ t
+      :  ?dir:[ `Zero | `Nearest | `Up | `Down ] @ local
+      -> t @ local
+      -> to_multiple_of:t @ local
       -> t
 
-    val round_towards_zero : local_ t -> to_multiple_of:local_ t -> t
-    val round_down : local_ t -> to_multiple_of:local_ t -> t
-    val round_up : local_ t -> to_multiple_of:local_ t -> t
-    val round_nearest : local_ t -> to_multiple_of:local_ t -> t
+    val round_towards_zero : t @ local -> to_multiple_of:t @ local -> t
+    val round_down : t @ local -> to_multiple_of:t @ local -> t
+    val round_up : t @ local -> to_multiple_of:t @ local -> t
+    val round_nearest : t @ local -> to_multiple_of:t @ local -> t
   end
 
   (** Human-readable serialization. *)
   module type To_string_hum = sig
     type t
 
-    val%template to_string_hum : ?delimiter:char -> local_ t -> string @ m
+    val%template to_string_hum : ?delimiter:char -> t @ local -> string @ m
     [@@alloc a @ m = (heap_global, stack_local)]
 
     (** Alias for [to_string_hum] where a submodule is more convenient, for instance:
         [%string "%{x#Int.Hum}"] *)
     module Hum : sig
-      val%template to_string : ?delimiter:char -> local_ t -> string @ m
+      val%template to_string : ?delimiter:char -> t @ local -> string @ m
       [@@alloc a @ m = (heap_global, stack_local)]
     end
   end
@@ -63,7 +63,7 @@ module Definitions = struct
   module type To_string_format = sig
     type t [@@deriving sexp_of ~stackify, compare ~localize, hash]
 
-    val%template to_string : local_ t -> string @ m
+    val%template to_string : t @ local -> string @ m
     [@@alloc a @ m = (heap_global, stack_local)]
 
     include To_string_hum with type t := t
@@ -108,10 +108,10 @@ module Definitions = struct
     include Hexable with type t := t
     include Binaryable with type t := t
 
-    val of_string_opt : local_ string -> t option
+    val of_string_opt : string @ local -> t option
 
     (** [delimiter] is an underscore by default. *)
-    val%template to_string_hum : ?delimiter:char -> local_ t -> string @ m
+    val%template to_string_hum : ?delimiter:char -> t @ local -> string @ m
     [@@alloc a @ m = (heap_global, stack_local)]
 
     (** {2 Infix operators and constants} *)
@@ -119,17 +119,17 @@ module Definitions = struct
     val zero : t
     val one : t
     val minus_one : t
-    val ( + ) : local_ t -> local_ t -> t
-    val ( - ) : local_ t -> local_ t -> t
-    val ( * ) : local_ t -> local_ t -> t
+    val ( + ) : t @ local -> t @ local -> t
+    val ( - ) : t @ local -> t @ local -> t
+    val ( * ) : t @ local -> t @ local -> t
 
     (** Integer exponentiation *)
-    val ( ** ) : local_ t -> local_ t -> t
+    val ( ** ) : t @ local -> t @ local -> t
 
     (** Negation *)
 
-    val neg : local_ t -> t
-    val ( ~- ) : local_ t -> t
+    val neg : t @ local -> t
+    val ( ~- ) : t @ local -> t
 
     (** There are two pairs of integer division and remainder functions, [/%] and [%], and
         [/] and [rem]. They both satisfy the same equation relating the quotient and the
@@ -151,31 +151,31 @@ module Definitions = struct
         other hand, [rem x y] returns a negative value if and only if [x < 0]; that value
         satisfies [abs (rem x y) <= abs y - 1]. *)
 
-    val ( /% ) : local_ t -> local_ t -> t
-    val ( % ) : local_ t -> local_ t -> t
-    val ( / ) : local_ t -> local_ t -> t
-    val rem : local_ t -> local_ t -> t
+    val ( /% ) : t @ local -> t @ local -> t
+    val ( % ) : t @ local -> t @ local -> t
+    val ( / ) : t @ local -> t @ local -> t
+    val rem : t @ local -> t @ local -> t
 
     (** Float division of integers. *)
-    val ( // ) : local_ t -> local_ t -> float
+    val ( // ) : t @ local -> t @ local -> float
 
     (** Same as [bit_and]. *)
-    val ( land ) : local_ t -> local_ t -> t
+    val ( land ) : t @ local -> t @ local -> t
 
     (** Same as [bit_or]. *)
-    val ( lor ) : local_ t -> local_ t -> t
+    val ( lor ) : t @ local -> t @ local -> t
 
     (** Same as [bit_xor]. *)
-    val ( lxor ) : local_ t -> local_ t -> t
+    val ( lxor ) : t @ local -> t @ local -> t
 
     (** Same as [bit_not]. *)
-    val lnot : local_ t -> t
+    val lnot : t @ local -> t
 
     (** Same as [shift_left]. *)
-    val ( lsl ) : local_ t -> int -> t
+    val ( lsl ) : t @ local -> int -> t
 
     (** Same as [shift_right]. *)
-    val ( asr ) : local_ t -> int -> t
+    val ( asr ) : t @ local -> int -> t
 
     (** {2 Other common functions} *)
 
@@ -187,46 +187,46 @@ module Definitions = struct
 
     (** Like [abs], but for locally-allocated values. If the argument is already positive,
         then this is the identity (as is [abs] itself). *)
-    val abs_local : local_ t -> local_ t
+    val abs_local : t @ local -> t @ local
 
     (** {2 Successor and predecessor functions} *)
 
-    val succ : local_ t -> t
-    val pred : local_ t -> t
+    val succ : t @ local -> t
+    val pred : t @ local -> t
 
     (** {2 Exponentiation} *)
 
     (** [pow base exponent] returns [base] raised to the power of [exponent]. It is OK if
         [base <= 0]. [pow] raises if [exponent < 0], or an integer overflow would occur. *)
-    val pow : local_ t -> local_ t -> t
+    val pow : t @ local -> t @ local -> t
 
     (** {2 Bit-wise logical operations} *)
 
     (** These are identical to [land], [lor], etc. except they're not infix and have
         different names. *)
-    val bit_and : local_ t -> local_ t -> t
+    val bit_and : t @ local -> t @ local -> t
 
-    val bit_or : local_ t -> local_ t -> t
-    val bit_xor : local_ t -> local_ t -> t
-    val bit_not : local_ t -> t
+    val bit_or : t @ local -> t @ local -> t
+    val bit_xor : t @ local -> t @ local -> t
+    val bit_not : t @ local -> t
 
     (** Returns the number of 1 bits in the binary representation of the input. *)
-    val popcount : local_ t -> t
+    val popcount : t @ local -> t
 
     (** {2 Bit-shifting operations}
 
         The results are unspecified for negative shifts and shifts [>= num_bits]. *)
 
     (** Shifts left, filling in with zeroes. *)
-    val shift_left : local_ t -> int -> t
+    val shift_left : t @ local -> int -> t
 
     (** Shifts right, preserving the sign of the input. *)
-    val shift_right : local_ t -> int -> t
+    val shift_right : t @ local -> int -> t
 
     (** {2 Increment and decrement functions for integer references} *)
 
-    val decr : local_ t ref -> unit
-    val incr : local_ t ref -> unit
+    val decr : t ref @ local -> unit
+    val incr : t ref @ local -> unit
 
     (** {2 Conversion functions to related integer types} *)
 
@@ -239,17 +239,17 @@ module Definitions = struct
 
     (*_ N.b. we provide separate local-accepting versions so that they may be implemented
         as the identity function, as an optimization. *)
-    val of_local_int32_exn : local_ int32 -> local_ t
-    val to_local_int32_exn : local_ t -> local_ int32
-    val of_local_int64_exn : local_ int64 -> local_ t
-    val to_local_int64 : local_ t -> local_ int64
-    val of_local_nativeint_exn : local_ nativeint -> local_ t
-    val to_local_nativeint_exn : local_ t -> local_ nativeint
+    val of_local_int32_exn : int32 @ local -> t @ local
+    val to_local_int32_exn : t @ local -> int32 @ local
+    val of_local_int64_exn : int64 @ local -> t @ local
+    val to_local_int64 : t @ local -> int64 @ local
+    val of_local_nativeint_exn : nativeint @ local -> t @ local
+    val to_local_nativeint_exn : t @ local -> nativeint @ local
 
     (** [of_float_unchecked] truncates the given floating point number to an integer,
         rounding towards zero. The result is unspecified if the argument is nan or falls
         outside the range of representable integers. *)
-    val of_float_unchecked : local_ float -> t
+    val of_float_unchecked : float @ local -> t
 
     module Summable : sig
       type nonrec t = t
@@ -263,34 +263,34 @@ module Definitions = struct
   module type Operators_unbounded = sig
     type t
 
-    val ( + ) : local_ t -> local_ t -> t
-    val ( - ) : local_ t -> local_ t -> t
-    val ( * ) : local_ t -> local_ t -> t
-    val ( / ) : local_ t -> local_ t -> t
-    val ( ~- ) : local_ t -> t
-    val ( ** ) : local_ t -> local_ t -> t
+    val ( + ) : t @ local -> t @ local -> t
+    val ( - ) : t @ local -> t @ local -> t
+    val ( * ) : t @ local -> t @ local -> t
+    val ( / ) : t @ local -> t @ local -> t
+    val ( ~- ) : t @ local -> t
+    val ( ** ) : t @ local -> t @ local -> t
 
     include Comparisons.Infix with type t := t
 
     val abs : t -> t
-    val abs_local : local_ t -> local_ t
-    val neg : local_ t -> t
+    val abs_local : t @ local -> t @ local
+    val neg : t @ local -> t
     val zero : t
-    val ( % ) : local_ t -> local_ t -> t
-    val ( /% ) : local_ t -> local_ t -> t
-    val ( // ) : local_ t -> local_ t -> float
-    val ( land ) : local_ t -> local_ t -> t
-    val ( lor ) : local_ t -> local_ t -> t
-    val ( lxor ) : local_ t -> local_ t -> t
-    val lnot : local_ t -> t
-    val ( lsl ) : local_ t -> int -> t
-    val ( asr ) : local_ t -> int -> t
+    val ( % ) : t @ local -> t @ local -> t
+    val ( /% ) : t @ local -> t @ local -> t
+    val ( // ) : t @ local -> t @ local -> float
+    val ( land ) : t @ local -> t @ local -> t
+    val ( lor ) : t @ local -> t @ local -> t
+    val ( lxor ) : t @ local -> t @ local -> t
+    val lnot : t @ local -> t
+    val ( lsl ) : t @ local -> int -> t
+    val ( asr ) : t @ local -> int -> t
   end
 
   module type Operators = sig
     include Operators_unbounded
 
-    val ( lsr ) : local_ t -> int -> t
+    val ( lsr ) : t @ local -> int -> t
   end
 
   (** [S_unbounded] is a generic interface for unbounded integers, e.g. [Bignum.Bigint].
@@ -318,41 +318,41 @@ module Definitions = struct
     val min_value : t
 
     (** Same as [shift_right_logical]. *)
-    val ( lsr ) : local_ t -> int -> t
+    val ( lsr ) : t @ local -> int -> t
 
     (** Shifts right, filling in with zeroes, which will not preserve the sign of the
         input. *)
-    val shift_right_logical : local_ t -> int -> t
+    val shift_right_logical : t @ local -> int -> t
 
     (** [ceil_pow2 x] returns the smallest power of 2 that is greater than or equal to
         [x]. The implementation may only be called for [x > 0]. Example:
         [ceil_pow2 17 = 32] *)
-    val ceil_pow2 : local_ t -> t
+    val ceil_pow2 : t @ local -> t
 
     (** [floor_pow2 x] returns the largest power of 2 that is less than or equal to [x].
         The implementation may only be called for [x > 0]. Example: [floor_pow2 17 = 16] *)
-    val floor_pow2 : local_ t -> t
+    val floor_pow2 : t @ local -> t
 
     (** [ceil_log2 x] returns the ceiling of log-base-2 of [x], and raises if [x <= 0]. *)
-    val ceil_log2 : local_ t -> t
+    val ceil_log2 : t @ local -> t
 
     (** [floor_log2 x] returns the floor of log-base-2 of [x], and raises if [x <= 0]. *)
-    val floor_log2 : local_ t -> t
+    val floor_log2 : t @ local -> t
 
     (** [is_pow2 x] returns true iff [x] is a power of 2. [is_pow2] raises if [x <= 0]. *)
-    val is_pow2 : local_ t -> bool
+    val is_pow2 : t @ local -> bool
 
     (** Returns the number of leading zeros in the binary representation of the input, as
         an integer between 0 and one less than [num_bits].
 
         The results are unspecified for [t = 0]. *)
-    val clz : local_ t -> t
+    val clz : t @ local -> t
 
     (** Returns the number of trailing zeros in the binary representation of the input, as
         an integer between 0 and one less than [num_bits].
 
         The results are unspecified for [t = 0]. *)
-    val ctz : local_ t -> t
+    val ctz : t @ local -> t
 
     (** A sub-module designed to be opened to make working with ints more convenient. *)
     module O : Operators with type t := t
@@ -381,7 +381,7 @@ module Definitions = struct
       external ( * ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%mulint"
       external ( / ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%divint"
       external ( ~- ) : (t[@local_opt]) -> t = "%negint"
-      val ( ** ) : local_ t -> local_ t -> t
+      val ( ** ) : t @ local -> t @ local -> t
       external ( = ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%equal"
       external ( <> ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%notequal"
       external ( < ) : (t[@local_opt]) -> (t[@local_opt]) -> bool = "%lessthan"
@@ -391,14 +391,14 @@ module Definitions = struct
       external ( land ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%andint"
       external ( lor ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%orint"
       external ( lxor ) : (t[@local_opt]) -> (t[@local_opt]) -> t = "%xorint"
-      val lnot : local_ t -> t
+      val lnot : t @ local -> t
       val abs : t -> t
-      val abs_local : local_ t -> local_ t
+      val abs_local : t @ local -> t @ local
       external neg : (t[@local_opt]) -> t = "%negint"
       val zero : t
-      val ( % ) : local_ t -> local_ t -> t
-      val ( /% ) : local_ t -> local_ t -> t
-      val ( // ) : local_ t -> local_ t -> float
+      val ( % ) : t @ local -> t @ local -> t
+      val ( /% ) : t @ local -> t @ local -> t
+      val ( // ) : t @ local -> t @ local -> float
       external ( lsl ) : (t[@local_opt]) -> (int[@local_opt]) -> t = "%lslint"
       external ( asr ) : (t[@local_opt]) -> (int[@local_opt]) -> t = "%asrint"
       external ( lsr ) : (t[@local_opt]) -> (int[@local_opt]) -> t = "%lsrint"
@@ -415,11 +415,11 @@ module Definitions = struct
 
     val of_int : int -> t
     val to_int : t -> int
-    val of_int32 : local_ int32 -> t option
+    val of_int32 : int32 @ local -> t option
     val to_int32 : t -> int32 option
-    val of_int64 : local_ int64 -> t option
-    val of_int64_exn : local_ int64 -> t
-    val of_nativeint : local_ nativeint -> t option
+    val of_int64 : int64 @ local -> t option
+    val of_int64_exn : int64 @ local -> t
+    val of_nativeint : nativeint @ local -> t option
     external to_nativeint : t -> (nativeint[@local_opt]) = "%nativeint_of_int"
 
     (** {3 Truncating conversions}
@@ -430,9 +430,9 @@ module Definitions = struct
     (*_ Declared as externals so that the compiler skips the caml_apply_X wrapping even
         when compiling without cross library inlining. *)
     external to_int32_trunc : t -> (int32[@local_opt]) = "%int32_of_int"
-    external of_int32_trunc : local_ int32 -> t = "%int32_to_int"
-    external of_int64_trunc : local_ int64 -> t = "%int64_to_int"
-    external of_nativeint_trunc : local_ nativeint -> t = "%nativeint_to_int"
+    external of_int32_trunc : int32 @ local -> t = "%int32_to_int"
+    external of_int64_trunc : int64 @ local -> t = "%int64_to_int"
+    external of_nativeint_trunc : nativeint @ local -> t = "%nativeint_to_int"
 
     (** {2 Byte swap operations}
 
@@ -457,9 +457,9 @@ module Definitions = struct
     module Private : sig
       (*_ For ../bench/bench_int.ml *)
       module O_F : sig
-        val ( % ) : local_ int -> local_ int -> int
-        val ( /% ) : local_ int -> local_ int -> int
-        val ( // ) : local_ int -> local_ int -> float
+        val ( % ) : int @ local -> int @ local -> int
+        val ( /% ) : int @ local -> int @ local -> int
+        val ( // ) : int @ local -> int @ local -> float
       end
     end
   end

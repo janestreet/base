@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module Uchar = Uchar0
 
 module Definitions = struct
   (** Interface for Unicode encodings, such as UTF-8. Written with an abstract type, and
@@ -12,13 +13,13 @@ module Definitions = struct
 
     (** Interpret [t] as a container of Unicode scalar values, rather than of ASCII
         characters. Indexes, length, etc. are with respect to [Uchar.t]. *)
-    include Indexed_container.S0_with_creators with type t := t and type elt = Uchar0.t
+    include Indexed_container.S0_with_creators with type t := t and type elt = Uchar.t
 
     (** Produce a sequence of unicode characters. *)
-    val to_sequence : t -> Uchar0.t Sequence.t
+    val to_sequence : t -> Uchar.t Sequence.t
 
     (** Reports whether a string is valid in this encoding. *)
-    val is_valid : local_ string -> bool
+    val is_valid : string @ local -> bool
 
     (** Create a [t] from a string by replacing any byte sequences that are invalid in
         this encoding with [Uchar.replacement_char]. This can be used to decode strings
@@ -27,7 +28,7 @@ module Definitions = struct
 
     (** Decodes the Unicode scalar value at the given byte index in this encoding. Raises
         if [byte_pos] does not refer to the start of a Unicode scalar value. *)
-    val get : t -> byte_pos:int -> Uchar0.t
+    val get : t -> byte_pos:int -> Uchar.t
 
     (** Creates a [t] without sanitizing or validating the string. Other functions in this
         interface may raise or produce unpredictable results if the string is invalid in
@@ -36,14 +37,14 @@ module Definitions = struct
 
     (** Attempts to decode the Unicode scalar value at the given byte index in this
         encoding, without first sanitizing or validating the string. *)
-    val get_unchecked : local_ string -> byte_pos:int -> Uchar0.utf_decode
+    val get_unchecked : string @ local -> byte_pos:int -> Uchar.utf_decode
 
     (** Similar to [String.split], but splits on a [Uchar.t] in [t]. If you want to split
         on a [char], first convert it with [Uchar.of_char], but note that the actual
         byte(s) on which [t] is split may not be the same as the [char] byte depending on
         both [char] and the encoding of [t]. For example, splitting on 'α' in UTF-8 or on
         '\n' in UTF-16 is actually splitting on a 2-byte sequence. *)
-    val split : t -> on:Uchar0.t -> t list
+    val split : t -> on:Uchar.t -> t list
 
     (** The name of this encoding scheme; e.g., "UTF-8". *)
     val codec_name : string
@@ -89,7 +90,7 @@ module type String = sig @@ portable
   (** An extension of the standard [StringLabels]. If you [open Base], you'll get these
       extensions in the [String] module. *)
 
-  open! Import
+  open! Import0
 
   type t = string [@@deriving globalize, sexp ~stackify, sexp_grammar]
 
@@ -117,7 +118,7 @@ module type String = sig @@ portable
   (** Maximum length of a string. *)
   val max_length : int
 
-  val mem : local_ t -> char -> bool
+  val mem : t @ local -> char -> bool
   external length : (t[@local_opt]) -> int = "%string_length"
   external get : (t[@local_opt]) -> (int[@local_opt]) -> char = "%string_safe_get"
 
@@ -153,7 +154,7 @@ module type String = sig @@ portable
       conventions of OCaml. *)
   val escaped : t -> t
 
-  val contains : ?pos:int -> ?len:int -> local_ t -> char -> bool
+  val contains : ?pos:int -> ?len:int -> t @ local -> char -> bool
 
   (** Operates on the whole string using the US-ASCII character set, e.g.
       [uppercase "foo" = "FOO"]. *)
@@ -180,18 +181,18 @@ module type String = sig @@ portable
       that for example [Caseless.is_suffix "OCaml" ~suffix:"AmL"] and
       [Caseless.is_prefix "OCaml" ~prefix:"oc"] are [true]. *)
   module Caseless : sig
-    type nonrec t = t [@@deriving hash, sexp ~stackify, sexp_grammar]
+    type nonrec t = t
+    [@@deriving compare ~localize, equal ~localize, hash, sexp ~stackify, sexp_grammar]
 
-    include%template Comparable.S [@modality portable] with type t := t
-    include%template Ppx_compare_lib.Comparable.S [@mode local] with type t := t
+    include%template Comparable.S [@mode local] [@modality portable] with type t := t
 
-    val is_suffix : local_ t -> suffix:local_ t -> bool
-    val is_prefix : local_ t -> prefix:local_ t -> bool
-    val is_substring : local_ t -> substring:local_ t -> bool
-    val is_substring_at : local_ t -> pos:int -> substring:local_ t -> bool
-    val substr_index : ?pos:int -> local_ t -> pattern:local_ t -> int option
-    val substr_index_exn : ?pos:int -> local_ t -> pattern:t -> int
-    val substr_index_all : local_ t -> may_overlap:bool -> pattern:local_ t -> int list
+    val is_suffix : t @ local -> suffix:t @ local -> bool
+    val is_prefix : t @ local -> prefix:t @ local -> bool
+    val is_substring : t @ local -> substring:t @ local -> bool
+    val is_substring_at : t @ local -> pos:int -> substring:t @ local -> bool
+    val substr_index : ?pos:int -> t @ local -> pattern:t @ local -> int option
+    val substr_index_exn : ?pos:int -> t @ local -> pattern:t -> int
+    val substr_index_all : t @ local -> may_overlap:bool -> pattern:t @ local -> int list
 
     [%%template:
     [@@@alloc.default a @ m = (heap @ global, stack @ local)]
@@ -231,6 +232,14 @@ module type String = sig @@ portable
   (** Read the characters in a full sequence and produce a string. *)
   val of_sequence : char Sequence.t -> t
 
+  (** Produce a string of the characters in an iarray. *)
+  val%template of_iarray : char iarray @ local -> t @ l
+  [@@alloc a @ l = (stack_local, heap_global)]
+
+  (** Produce an iarray of the characters in a string *)
+  val%template to_iarray : t @ local -> char iarray @ l
+  [@@alloc a @ l = (stack_local, heap_global)]
+
   (** Substring search and replace functions. They use the Knuth-Morris-Pratt algorithm
       (KMP) under the hood.
 
@@ -252,16 +261,16 @@ module type String = sig @@ portable
     [@@mode m = (global, local)]
 
     (** [case_sensitive t] returns whether [t] matches strings case-sensitively. *)
-    val case_sensitive : local_ t -> bool
+    val case_sensitive : t @ local -> bool
 
     (** [matches pat str] returns true if [str] matches [pat] *)
-    val matches : local_ t -> local_ string -> bool
+    val matches : t @ local -> string @ local -> bool
 
     (** [pos < 0] or [pos >= length string] result in no match (hence [index] returns
         [None] and [index_exn] raises). *)
-    val index : ?pos:int -> local_ t -> in_:local_ string -> int option
+    val index : ?pos:int -> t @ local -> in_:string @ local -> int option
 
-    val index_exn : ?pos:int -> t -> in_:local_ string -> int
+    val index_exn : ?pos:int -> t -> in_:string @ local -> int
 
     (** [may_overlap] determines whether after a successful match, [index_all] should
         start looking for another one at the very next position ([~may_overlap:true]), or
@@ -272,7 +281,7 @@ module type String = sig @@ portable
         - [index_all (create "aaa") ~may_overlap:true ~in_:"aaaaBaaaaaa" = [0; 1; 5; 6; 7; 8]]
 
         E.g., [replace_all] internally calls [index_all ~may_overlap:false]. *)
-    val index_all : local_ t -> may_overlap:bool -> in_:local_ string -> int list
+    val index_all : t @ local -> may_overlap:bool -> in_:string @ local -> int list
 
     [%%template:
     [@@@alloc.default a @ m = (heap @ global, stack @ local)]
@@ -300,7 +309,7 @@ module type String = sig @@ portable
 
     (** Similar to [String.split] or [String.split_on_chars], but instead uses a given
         search pattern as the separator. Separators are non-overlapping. *)
-    val split_on : local_ t -> string -> string list
+    val split_on : t @ local -> string -> string list
 
     (**/**)
 
@@ -326,10 +335,10 @@ module type String = sig @@ portable
       complete. [pos < 0] or [pos >= length t] result in no match (hence [substr_index]
       returns [None] and [substr_index_exn] raises). [may_overlap] indicates whether to
       report overlapping matches, see [Search_pattern.index_all]. *)
-  val substr_index : ?pos:int -> local_ t -> pattern:local_ t -> int option
+  val substr_index : ?pos:int -> t @ local -> pattern:t @ local -> int option
 
-  val substr_index_exn : ?pos:int -> local_ t -> pattern:t -> int
-  val substr_index_all : local_ t -> may_overlap:bool -> pattern:local_ t -> int list
+  val substr_index_exn : ?pos:int -> t @ local -> pattern:t -> int
+  val substr_index_all : t @ local -> may_overlap:bool -> pattern:t @ local -> int list
 
   [%%template:
   [@@@alloc.default a @ m = (heap @ global, stack @ local)]
@@ -345,10 +354,10 @@ module type String = sig @@ portable
   val substr_replace_all : t @ m -> pattern:t @ local -> with_:t @ local -> t @ m]
 
   (** [is_substring ~substring:"bar" "foo bar baz"] is true. *)
-  val is_substring : local_ t -> substring:local_ t -> bool
+  val is_substring : t @ local -> substring:t @ local -> bool
 
   (** [is_substring_at "foo bar baz" ~pos:4 ~substring:"bar"] is true. *)
-  val is_substring_at : local_ t -> pos:int -> substring:local_ t -> bool
+  val is_substring_at : t @ local -> pos:int -> substring:t @ local -> bool
 
   (** Returns the reversed list of characters contained in a list. *)
   val to_list_rev : t -> char list
@@ -357,10 +366,10 @@ module type String = sig @@ portable
   val rev : t -> t
 
   (** [is_suffix s ~suffix] returns [true] if [s] ends with [suffix]. *)
-  val is_suffix : local_ t -> suffix:local_ t -> bool
+  val is_suffix : t @ local -> suffix:t @ local -> bool
 
   (** [is_prefix s ~prefix] returns [true] if [s] starts with [prefix]. *)
-  val is_prefix : local_ t -> prefix:local_ t -> bool
+  val is_prefix : t @ local -> prefix:t @ local -> bool
 
   (** If the string [s] contains the character [on], then [lsplit2_exn s ~on] returns a
       pair containing [s] split around the first appearance of [on] (from the left).
@@ -396,17 +405,17 @@ module type String = sig @@ portable
   (** [lstrip ?drop s] returns a string with consecutive chars satisfying [drop] (by
       default white space, e.g. tabs, spaces, newlines, and carriage returns) stripped
       from the beginning of [s]. *)
-  val lstrip : ?drop:local_ (char -> bool) -> t @ m -> t @ m
+  val lstrip : ?drop:(char -> bool) @ local -> t @ m -> t @ m
 
   (** [rstrip ?drop s] returns a string with consecutive chars satisfying [drop] (by
       default white space, e.g. tabs, spaces, newlines, and carriage returns) stripped
       from the end of [s]. *)
-  val rstrip : ?drop:local_ (char -> bool) -> t @ m -> t @ m
+  val rstrip : ?drop:(char -> bool) @ local -> t @ m -> t @ m
 
   (** [strip ?drop s] returns a string with consecutive chars satisfying [drop] (by
       default white space, e.g. tabs, spaces, newlines, and carriage returns) stripped
       from the beginning and end of [s]. *)
-  val strip : ?drop:local_ (char -> bool) -> t @ m -> t @ m]
+  val strip : ?drop:(char -> bool) @ local -> t @ m -> t @ m]
 
   (** [split_lines t] returns the list of lines that comprise [t]. The lines do not
       include the trailing ["\n"] or ["\r\n"]. *)
@@ -414,11 +423,11 @@ module type String = sig @@ portable
 
   (** [lfindi ?pos t ~f] returns the smallest [i >= pos] such that [f i t.[i]], if there
       is such an [i]. By default, [pos = 0]. *)
-  val lfindi : ?pos:int -> local_ t -> f:local_ (int -> char -> bool) -> int option
+  val lfindi : ?pos:int -> t @ local -> f:(int -> char -> bool) @ local -> int option
 
   (** [rfindi ?pos t ~f] returns the largest [i <= pos] such that [f i t.[i]], if there is
       such an [i]. By default [pos = length t - 1]. *)
-  val rfindi : ?pos:int -> local_ t -> f:local_ (int -> char -> bool) -> int option
+  val rfindi : ?pos:int -> t @ local -> f:(int -> char -> bool) @ local -> int option
 
   [%%template:
   [@@@mode.default mi = (global, local)]
@@ -426,9 +435,9 @@ module type String = sig @@ portable
 
   (** Like [map], but allows the replacement of a single character with zero or two or
       more characters. *)
-  val concat_map : ?sep:t @ mi -> t @ mi -> f:local_ (char -> t @ mo) -> t @ mo
+  val concat_map : ?sep:t @ mi -> t @ mi -> f:(char -> t @ mo) @ local -> t @ mo
 
-  val concat_mapi : ?sep:t @ mi -> t @ mi -> f:local_ (int -> char -> t @ mo) -> t @ mo]
+  val concat_mapi : ?sep:t @ mi -> t @ mi -> f:(int -> char -> t @ mo) @ local -> t @ mo]
 
   (** [tr ~target ~replacement s] replaces every instance of [target] in [s] with
       [replacement]. *)
@@ -513,7 +522,7 @@ module type String = sig @@ portable
   val common_prefix2_length : t -> t -> int
 
   (** [concat_array sep ar] like {!String.concat}, but operates on arrays. *)
-  val concat_array : ?sep:local_ t -> local_ t array -> t
+  val concat_array : ?sep:t @ local -> t array @ local -> t
 
   (** Builds a multiline text from a list of lines. Each line is terminated and then
       concatenated.
@@ -721,10 +730,10 @@ module type String = sig @@ portable
         escaping or escaped. This makes sense if you're trying to get rid of junk
         whitespace (for example), because escaped whitespace seems more likely to be
         deliberate and not junk. *)
-    val lstrip_literal : ?drop:local_ (char -> bool) -> t -> escape_char:char -> t
+    val lstrip_literal : ?drop:(char -> bool) @ local -> t -> escape_char:char -> t
 
-    val rstrip_literal : ?drop:local_ (char -> bool) -> t -> escape_char:char -> t
-    val strip_literal : ?drop:local_ (char -> bool) -> t -> escape_char:char -> t
+    val rstrip_literal : ?drop:(char -> bool) @ local -> t -> escape_char:char -> t
+    val strip_literal : ?drop:(char -> bool) @ local -> t -> escape_char:char -> t
   end
 
   (** UTF-8 encoding. See [Utf] interface. *)

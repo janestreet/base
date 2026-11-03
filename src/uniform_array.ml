@@ -1,4 +1,7 @@
 open! Import
+module Either = Either0
+module Option = Option0
+module Sexp = Sexp0
 
 (* WARNING: We use non-memory-safe and non-mode-safe things throughout the [Trusted]
    module. Most of it is only safe in combination with the type signature (e.g. exposing
@@ -15,36 +18,39 @@ module Trusted : sig @@ portable
   val create : ('a : value_or_null). len:int -> 'a -> 'a t
   val singleton : ('a : value_or_null). 'a -> 'a t
 
-  val%template get : ('a : value_or_null). local_ 'a t @ c -> int -> 'a @ c
+  val%template get : ('a : value_or_null). 'a t @ c local -> int -> 'a @ c
   [@@zero_alloc] [@@mode c = (uncontended, shared)]
 
-  val set : ('a : value_or_null). local_ 'a t -> int -> 'a -> unit
-  val swap : ('a : value_or_null). local_ 'a t -> int -> int -> unit
-  val unsafe_get : ('a : value_or_null). local_ 'a t -> int -> 'a [@@zero_alloc]
-  val unsafe_get_local : ('a : value_or_null). local_ 'a t -> int -> 'a [@@zero_alloc]
-  val unsafe_set : ('a : value_or_null). local_ 'a t -> int -> 'a -> unit
+  val set : ('a : value_or_null). 'a t @ local -> int -> 'a -> unit
+  val swap : ('a : value_or_null). 'a t @ local -> int -> int -> unit
+  val unsafe_get : ('a : value_or_null). 'a t @ local -> int -> 'a [@@zero_alloc]
+  val unsafe_get_local : ('a : value_or_null). 'a t @ local -> int -> 'a [@@zero_alloc]
+  val unsafe_set : ('a : value_or_null). 'a t @ local -> int -> 'a -> unit
 
   val unsafe_set_omit_phys_equal_check
     : ('a : value_or_null).
-    local_ 'a t -> int -> 'a -> unit
+    'a t @ local -> int -> 'a -> unit
 
-  val unsafe_set_int : ('a : value_or_null). local_ 'a t -> int -> int -> unit
+  val unsafe_set_int : ('a : value_or_null). 'a t @ local -> int -> int -> unit
 
   val unsafe_set_int_assuming_currently_int
     : ('a : value_or_null).
-    local_ 'a t -> int -> int -> unit
+    'a t @ local -> int -> int -> unit
 
   val unsafe_set_assuming_currently_int
     : ('a : value_or_null).
-    local_ 'a t -> int -> 'a -> unit
+    'a t @ local -> int -> 'a -> unit
 
-  val unsafe_set_with_caml_modify : ('a : value_or_null). local_ 'a t -> int -> 'a -> unit
+  val unsafe_set_with_caml_modify
+    : ('a : value_or_null).
+    'a t @ local -> int -> 'a -> unit
+
   val unsafe_to_array_inplace__promise_not_a_float : 'a t -> 'a array
-  val set_with_caml_modify : ('a : value_or_null). local_ 'a t -> int -> 'a -> unit
-  val length : ('a : value_or_null). local_ 'a t @ contended -> int
+  val set_with_caml_modify : ('a : value_or_null). 'a t @ local -> int -> 'a -> unit
+  val length : ('a : value_or_null). 'a t @ contended local -> int
   val unsafe_blit : ('a : value_or_null). ('a t, 'a t) Blit.blit
   val copy : ('a : value_or_null). 'a t -> 'a t
-  val unsafe_clear_if_pointer : ('a : value_or_null). local_ 'a t -> int -> unit
+  val unsafe_clear_if_pointer : ('a : value_or_null). 'a t @ local -> int -> unit
   val sub : ('a : value_or_null). 'a t -> pos:int -> len:int -> 'a t
   val invariant : ('a : value_or_null). 'a t -> unit
 end = struct
@@ -289,7 +295,7 @@ let map2_exn t1 t2 ~f =
 ;;
 
 let concat ts =
-  let total_len = List.sum (module Int) ts ~f:(fun t -> length t) in
+  let total_len = List.fold ts ~init:0 ~f:(fun acc t -> acc + length t) in
   let res = unsafe_create_uninitialized ~len:total_len in
   ignore
     (List.fold ts ~init:0 ~f:(fun so_far t ->
@@ -457,7 +463,7 @@ let max_elt t ~compare = Container.max_elt ~fold t ~compare
 
 (* This is the same as the ppx_compare [compare_array] but uses our [unsafe_get] and
    [length]. *)
-let%template[@mode local] compare compare_elt a b =
+let%template compare_internal compare_elt a b =
   if phys_equal a b
   then 0
   else (
@@ -479,7 +485,9 @@ let%template[@mode local] compare compare_elt a b =
       loop 0 [@nontail]))
 ;;
 
-let%template compare compare_elt a b = (compare [@mode local]) compare_elt a b
+let%template[@mode __ = (local, global)] compare compare_elt a b =
+  compare_internal compare_elt a b
+;;
 
 module%template Sort = Array.Private.Sorter [@modality portable] (struct
     type nonrec ('a : value_or_null) t = 'a t

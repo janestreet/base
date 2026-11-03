@@ -1,6 +1,7 @@
 @@ portable
 
-open! Import
+open! Import0
+module Sexp := Sexp0
 
 (** A value of type ['a Portable_lazy.t] is a deferred computation that has a result of
     type ['a].
@@ -9,11 +10,9 @@ open! Import
     multiple threads force a ['a Portable_lazy.t] simultaneously, the computation will
     only be executed once, and the same result will be returned by all threads.
 
-    Threads that force a ['a Portable_lazy.t] while it is already being computed by
-    another thread will block via spinning and calls to [Domain.cpu_relax], without use of
-    synchronization primitives or thread parking. This means that [Portable_lazy] may not
-    be suitable for long-running computations which are likely to be forced by many
-    threads simultaneously, and where prompt wakeup of blocked threads is important. *)
+    A thread that forces a ['a Portable_lazy.t] while it is already being computed by
+    another thread will block until the computation finishes; it parks on a mutex and
+    condition variable rather than spinning. *)
 
 type ('a : value_or_null) t : value mod contended portable = 'a Basement.Portable_lazy.t
 
@@ -59,6 +58,40 @@ val bind
   : ('a : value_or_null) ('b : value_or_null).
   'a t -> f:('a @ contended portable -> 'b t) @ once portable -> 'b t
 
+(** {6 Let syntax} *)
+
+module Let_syntax : sig
+  val return : ('a : value_or_null). 'a @ contended portable -> 'a t
+
+  (** Pronounced "map". Infix form of [map]. *)
+  val ( >>| )
+    : ('a : value_or_null) ('b : value_or_null).
+    'a t -> ('a @ contended portable -> 'b @ contended portable) @ once portable -> 'b t
+
+  (** Pronounced "bind". Infix form of [bind]. *)
+  val ( >>= )
+    : ('a : value_or_null) ('b : value_or_null).
+    'a t -> ('a @ contended portable -> 'b t) @ once portable -> 'b t
+
+  module Let_syntax : sig
+    val return : ('a : value_or_null). 'a @ contended portable -> 'a t
+
+    val map
+      : ('a : value_or_null) ('b : value_or_null).
+      'a t
+      -> f:('a @ contended portable -> 'b @ contended portable) @ once portable
+      -> 'b t
+
+    val bind
+      : ('a : value_or_null) ('b : value_or_null).
+      'a t -> f:('a @ contended portable -> 'b t) @ once portable -> 'b t
+
+    val both : ('a : value_or_null) ('b : value_or_null). 'a t -> 'b t -> ('a * 'b) t
+
+    module Open_on_rhs : sig end
+  end
+end
+
 [%%template:
 [@@@mode.default m = (global, local)]
 
@@ -74,10 +107,10 @@ val equal
   : ('a : value_or_null mod contended).
   ('a @ m -> 'a @ m -> bool) -> 'a t @ m -> 'a t @ m -> bool]
 
-val sexp_of_t : ('a : value_or_null mod contended). ('a -> Sexp0.t) -> 'a t -> Sexp0.t
+val sexp_of_t : ('a : value_or_null mod contended). ('a -> Sexp.t) -> 'a t -> Sexp.t
 
 (** [t_of_sexp a_of_sexp sexp] eagerly evaluates [a_of_sexp sexp]. *)
-val t_of_sexp : ('a : value_or_null mod portable). (Sexp0.t -> 'a) -> Sexp0.t -> 'a t
+val t_of_sexp : ('a : value_or_null mod portable). (Sexp.t -> 'a) -> Sexp.t -> 'a t
 
 val t_sexp_grammar
   : ('a : value_or_null).

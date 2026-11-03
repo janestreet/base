@@ -1,3 +1,5 @@
+module Either = Either0
+
 [%%template
 [@@@kind_set.define
   all_ks_non_value
@@ -41,7 +43,7 @@ module type List0 = sig @@ portable
   val%template partition_map
     : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
     'a list @ li
-    -> f:('a @ li -> ('b, 'c) Either0.t @ lo) @ local
+    -> f:('a @ li -> ('b, 'c) Either.t @ lo) @ local
     -> 'b list * 'c list @ lo
   [@@mode li = (global, local)] [@@alloc a @ lo = (heap_global, stack_local)]
 
@@ -100,7 +102,7 @@ module type List0 = sig @@ portable
     : ('a : value_or_null) ('b : value_or_null).
     'a t -> 'b t -> f:('a -> 'b -> bool) @ local -> bool
 
-  val nontail_map
+  val map
     : ('a : value_or_null) ('b : value_or_null).
     'a t -> f:('a -> 'b) @ local -> 'b t
 
@@ -108,7 +110,7 @@ module type List0 = sig @@ portable
     : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
     'a t -> 'b t -> f:('a -> 'b -> 'c) @ local -> 'c t
 
-  val nontail_mapi
+  val mapi
     : ('a : value_or_null) ('b : value_or_null).
     'a t -> f:(int -> 'a -> 'b) -> 'b t
 

@@ -1,6 +1,6 @@
 (** Functor that adds integer conversion functions to a module. *)
 
-open! Import
+open! Import0
 
 module type S = sig
   type t

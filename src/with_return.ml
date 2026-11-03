@@ -1,6 +1,6 @@
 (* belongs in Common, but moved here to avoid circular dependencies *)
 
-open! Import
+open! Import0
 
 type ('a : value_or_null) return = { return : ('b : value_or_null). 'a -> 'b } [@@unboxed]
 

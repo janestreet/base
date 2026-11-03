@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 (** Signatures required of types which can be used in [[@@deriving hash]]. *)
 

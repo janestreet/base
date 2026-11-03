@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module Uchar = Uchar0
 
 module Definitions = struct
   (** Interface for Unicode encodings, such as UTF-8. *)
@@ -6,7 +7,7 @@ module Definitions = struct
     type t := bytes
 
     (** Writes a Unicode character to a given position using this encoding. *)
-    val set : t @ local -> int -> Uchar0.t -> int
+    val set : t @ local -> int -> Uchar.t -> int
   end
 end
 
@@ -22,7 +23,7 @@ module type Bytes = sig @@ portable
       bytes (of type [char]). Each byte can be indexed in constant time for reading or
       writing. *)
 
-  open! Import
+  open! Import0
 
   type t = bytes [@@deriving globalize, sexp ~stackify, sexp_grammar]
 

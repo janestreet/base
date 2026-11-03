@@ -1,5 +1,9 @@
 open! Import
 open Modes.Export
+module Either = Either0
+module Error = Error0
+module Ordered_collection_common = Ordered_collection_common0
+module Sexp = Sexp0
 include Iarray_intf.Definitions
 include Iarray0
 module I = Basement.Stdlib_iarray_labels
@@ -66,21 +70,21 @@ module%template Local0 = struct
        unsafety. *)
     external make_mutable_local
       : ('a : value_or_null mod separable).
-      int -> local_ 'a -> local_ 'a array
+      int -> 'a @ local -> 'a array @ local
       @@ portable
       = "caml_array_make_local"
 
     external unsafe_set_local
       : ('a : value_or_null mod separable).
-      local_ 'a array -> int -> local_ 'a -> unit
+      'a array @ local -> int -> 'a @ local -> unit
       @@ portable
       = "%array_unsafe_set"
 
     external unsafe_blit_local
       : ('a : value_or_null mod separable).
-      src:local_ 'a t
+      src:'a t @ local
       -> src_pos:int
-      -> dst:local_ 'a array
+      -> dst:'a array @ local
       -> dst_pos:int
       -> len:int
       -> unit
@@ -412,12 +416,80 @@ end
 
 (** Constructors *)
 
-let%template[@alloc heap] init len ~f =
+include struct
+  (* These functions are copied from stdlib_iarray_labels.ml in basement because we cannot
+     use ppx_template in that library. *)
+  open struct
+    (* VERY UNSAFE: Any of these functions can be used to violate the "no forward
+       pointers" restriction for the local stack if not used carefully. Each of these can
+       either make a local mutable array or mutate its contents, and if not careful, this
+       can lead to an array's contents pointing forwards. *)
+
+    external create_local
+      : ('a : any mod separable).
+      len:int -> 'a @ local -> 'a array @ local
+      @@ portable
+      = "%makearray_dynamic"
+    [@@layout_poly]
+
+    external unsafe_of_local_array
+      : ('a : any mod separable).
+      'a array @ local -> 'a iarray @ local
+      @@ portable
+      = "%array_to_iarray"
+    [@@layout_poly]
+
+    external unsafe_set_local
+      : ('a : any mod separable).
+      'a array @ local -> int -> 'a @ local -> unit
+      @@ portable
+      = "%array_unsafe_set"
+    [@@layout_poly]
+  end
+
+  let%template[@inline always] unsafe_init
+    (type a : k mod separable)
+    l
+    (f : (int -> a @ local) @ local)
+    = exclave_
+    if l = 0
+    then unsafe_of_local_array [||]
+    else (
+      (* The design of this function is exceedingly delicate, and is the only way we can
+         correctly allocate a local array on the stack via mutation. We are subject to the
+         "no forward pointers" constraint on the local stack; we're not allowed to make
+         pointers to later-allocated objects even within the same stack frame. Thus, in
+         order to get this right, we consume O(n) call-stack space: we allocate the values
+         to put in the array, and only *then* recurse, creating the array as the very last
+         thing of all and *returning* it. This is why the [f i] call is the first thing in
+         the function, and why it's not tail-recursive; if it were tail-recursive, then we
+         wouldn't have anywhere to put the array elements during the whole process. *)
+      let rec go i = exclave_
+        let x = f i in
+        if i = l - 1
+        then create_local ~len:l x
+        else (
+          let res = go (i + 1) in
+          unsafe_set_local res i x;
+          res)
+      in
+      unsafe_of_local_array (go 0))
+  [@@kind k = (base_or_null, value_or_null mod external64)] [@@alloc stack]
+  ;;
+end
+
+[%%template
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
+
+let[@alloc heap] init len ~f =
   unsafe_of_array__promise_no_mutation ((Array.init [@kind k]) len ~f)
-[@@kind k = (base_or_null, value_or_null mod external64)]
 ;;
 
-let%template[@alloc stack] init = Local0.init
+let[@alloc stack] init len ~f = exclave_
+  if len < 0 then invalid_arg "Iarray.init";
+  (unsafe_init [@kind k] [@alloc stack] [@inlined]) len f
+;;]
+
 let singleton x = unsafe_of_array__promise_no_mutation [| x |]
 
 let[@inline] create ~len x ~mutate =
@@ -488,6 +560,56 @@ module To_array = struct
   ;;
 end
 
+(* We use [Intermediate_array] internally where we build up a result array whose length is
+   bounded by the length of the input. It abstracts over the common pattern of:
+   - Allocate an intermediate array of the known maximum length
+   - Populate an increasing prefix
+   - Blit-out the populated prefix at the end
+*)
+module Intermediate_array : sig @@ portable
+  type ('a : value_or_null mod separable) t : value_or_null & value
+
+  val empty : ('a : value_or_null mod separable). unit -> 'a t @ unique
+  val len : ('a : value_or_null mod separable). 'a t @ local -> int
+
+  val push
+    : ('a : value_or_null mod separable).
+    'a t @ unique -> orig_len:int -> 'a -> 'a t @ unique
+
+  val extract
+    : ('a : value_or_null mod separable).
+    'a t @ unique -> orig_len:int -> 'a iarray
+end = struct
+  type ('a : value_or_null mod separable) t =
+    #{ out : 'a array or_null
+     ; out_len : int
+     }
+
+  let[@inline] empty () = #{ out = Null; out_len = 0 }
+  let[@inline] len #{ out = _; out_len } = out_len
+
+  let[@inline] push #{ out; out_len } ~orig_len x =
+    (* [out] should be allocated on the heap to avoid scanning the intermediate array
+       every time there is a minor collection *)
+    let out @ global =
+      match out with
+      | Null -> Array.create ~len:orig_len x
+      | This out ->
+        Array.unsafe_set (borrow_ out) out_len x;
+        out
+    in
+    #{ out = This out; out_len = out_len + 1 }
+  ;;
+
+  let[@inline] extract #{ out; out_len } ~orig_len =
+    match out with
+    | Null -> get_empty ()
+    | This out ->
+      let res = if out_len = orig_len then out else Array.sub out ~pos:0 ~len:out_len in
+      unsafe_of_array__promise_no_mutation res
+  ;;
+end
+
 (** Conversions *)
 
 let%template[@alloc heap] of_list = I.of_list
@@ -496,7 +618,7 @@ let%template[@alloc stack] of_list = I.of_list_local
 [%%template
 [@@@kind.default k = (base_or_null, value_or_null mod external64)]
 
-let[@alloc heap] of_array arr : (_ : k) t =
+let[@alloc heap] of_array arr : (_ : k mod separable) t =
   unsafe_of_array__promise_no_mutation ((Array.copy [@kind k]) arr)
 ;;]
 
@@ -509,7 +631,7 @@ let of_list_rev list = unsafe_of_array__promise_no_mutation (Array.of_list_rev l
 let%template of_list_map list ~f =
   unsafe_of_array__promise_no_mutation
     ((Array.of_list_map [@kind value_or_null k]) list ~f)
-[@@kind __ = value_or_null, k = (base_or_null, value_or_null mod external64)]
+[@@kind __ = value_or_null, k = base_or_null]
 ;;
 
 let of_list_mapi list ~f =
@@ -530,9 +652,13 @@ let to_sequence t =
 
 (** Exports for deriving *)
 
-let%template globalize globalize_elt (t : (_ : k) t @ local) =
+let%template globalize globalize_elt (t : (_ : k mod separable) t @ local) =
   (init [@kind k]) (length t) ~f:(fun i -> globalize_elt (get t i) [@nontail]) [@nontail]
-[@@kind k = (base_or_null, value_or_null mod external64)]
+[@@kind k = base_or_null]
+;;
+
+let%template globalize = (globalize [@kind value_or_null])
+[@@kind __ = value_or_null mod external64]
 ;;
 
 let hash_fold_t hash_fold_elt state t =
@@ -541,11 +667,15 @@ let hash_fold_t hash_fold_elt state t =
 
 (* sexp serialization is copied from that of [array] in [Sexplib0] *)
 
-let%template t_of_sexp elt_of_sexp sexp : (_ : k) t =
+let%template t_of_sexp elt_of_sexp sexp : (_ : k mod separable) t =
   match (sexp : Sexp.t) with
   | Atom _ -> Sexplib0.Sexp_conv.of_sexp_error "iarray_of_sexp: list expected" sexp
   | List sexps -> (of_list_map [@kind value_or_null k]) ~f:elt_of_sexp sexps
-[@@kind k = (base_or_null, value_or_null mod external64)]
+[@@kind k = base_or_null]
+;;
+
+let%template t_of_sexp = (t_of_sexp [@kind value_or_null])
+[@@kind __ = value_or_null mod external64]
 ;;
 
 let t_sexp_grammar (a_sexp_grammar : 'a Sexplib0.Sexp_grammar.t)
@@ -848,6 +978,17 @@ let find_map_or_null t ~f =
 let%template[@alloc heap] to_list = I.to_list
 let%template[@alloc stack] to_list = I.to_list_local
 
+let%template to_list
+  : type (a : k). a t @ m -> (a List.Constructors.t[@kind k or value_or_null]) @ m
+  =
+  fun t ->
+  let rec tolist t i res : (_ List.Constructors.t[@kind k or value_or_null]) =
+    if i < 0 then res else tolist t (i - 1) (unsafe_get t i :: res) [@exclave_if_stack a]
+  in
+  tolist t (length t - 1) [] [@exclave_if_stack a]
+[@@kind k = base_non_value] [@@alloc a @ m = (heap_global, stack_local)]
+;;
+
 let%template to_array arr =
   (Array.copy [@kind k]) (unsafe_to_array__promise_no_mutation arr)
 [@@kind k = (base_or_null, value_or_null mod external64)]
@@ -877,11 +1018,9 @@ let random_element ?(random_state = Random.State.get_default ()) t =
 
 let%template[@alloc heap] append = I.append
 let%template[@alloc stack] append = Local0.append
-let[@zero_alloc] int_m () = (module Int : Container.Summable with type t = int)
-let int_m = Portability_hacks.magic_portable__needs_base_and_core int_m
 
 let%template[@alloc heap] concat outer =
-  let total_len = sum (int_m ()) outer ~f:length in
+  let total_len = fold outer ~init:0 ~f:(fun acc t -> acc + length t) in
   if total_len = 0
   then get_empty ()
   else (
@@ -918,142 +1057,65 @@ let group t ~break =
   if len = 0
   then get_empty ()
   else (
-    let local_ out = Array.create_local ~len (get_empty ()) in
-    let rec local_ loop ~pos ~start_pos ~out_len =
+    let out = Intermediate_array.empty () in
+    let rec local_ loop ~pos ~start_pos ~out =
       if start_pos <> pos
          && (pos = len || break (unsafe_get t (pos - 1)) (unsafe_get t pos))
       then (
-        Array.unsafe_set out out_len (sub t ~pos:start_pos ~len:(pos - start_pos));
-        loop ~pos ~start_pos:pos ~out_len:(out_len + 1))
+        let out =
+          Intermediate_array.push
+            out
+            ~orig_len:len
+            (sub t ~pos:start_pos ~len:(pos - start_pos))
+        in
+        loop ~pos ~start_pos:pos ~out)
       else if pos = len
-      then Of_array.sub out ~pos:0 ~len:out_len
-      else loop ~pos:(pos + 1) ~start_pos ~out_len
+      then Intermediate_array.extract out ~orig_len:len
+      else loop ~pos:(pos + 1) ~start_pos ~out
     in
-    loop ~pos:0 ~start_pos:0 ~out_len:0 [@nontail])
+    loop ~pos:0 ~start_pos:0 ~out [@nontail])
 ;;
 
 (** Transformations *)
 
-let%template mapi t ~f = init (length t) ~f:(fun i -> f i (unsafe_get t i)) [@nontail]
-[@@mode global] [@@alloc heap]
+[%%template
+[@@@kind.default ki = (value_or_null, float64), ko = (value_or_null, float64)]
+[@@@mode.default mi = (global, local)]
+[@@@alloc.default a @ mo = (heap @ global, stack @ local)]
+
+let map t ~f =
+  (init [@kind ko] [@alloc a] [@inlined]) (length t) ~f:(fun [@inline] i ->
+    f (unsafe_get t i) [@nontail] [@exclave_if_local mo ~reasons:[ May_return_local ]])
+  [@nontail] [@exclave_if_stack a]
 ;;
 
-let%template mapi t ~f = I.mapi_local_input t ~f [@@mode local] [@@alloc heap]
-let%template mapi t ~f = exclave_ I.mapi_local t ~f [@@mode local] [@@alloc stack]
-let%template mapi t ~f = exclave_ I.mapi_local_output t ~f [@@mode global] [@@alloc stack]
-
-include struct
-  (* These functions are copied from stdlib_iarray_labels.ml in basement because we cannot
-     use ppx_template in that library. *)
-  open struct
-    (* VERY UNSAFE: Any of these functions can be used to violate the "no forward
-       pointers" restriction for the local stack if not used carefully. Each of these can
-       either make a local mutable array or mutate its contents, and if not careful, this
-       can lead to an array's contents pointing forwards. *)
-
-    external create_local
-      : ('a : any mod separable).
-      len:int -> 'a @ local -> 'a array @ local
-      @@ portable
-      = "%makearray_dynamic"
-    [@@layout_poly]
-
-    external unsafe_of_local_array
-      : ('a : any mod separable).
-      local_ 'a array -> local_ 'a iarray
-      @@ portable
-      = "%array_to_iarray"
-    [@@layout_poly]
-
-    external unsafe_set_local
-      : ('a : any mod separable).
-      local_ 'a array -> int -> local_ 'a -> unit
-      @@ portable
-      = "%array_unsafe_set"
-    [@@layout_poly]
-  end
-
-  let%template[@inline always] unsafe_init
-    (type a : k mod separable)
-    l
-    (local_ (f : int -> local_ a))
-    = exclave_
-    if l = 0
-    then unsafe_of_local_array [||]
-    else (
-      (* The design of this function is exceedingly delicate, and is the only way we can
-         correctly allocate a local array on the stack via mutation. We are subject to the
-         "no forward pointers" constraint on the local stack; we're not allowed to make
-         pointers to later-allocated objects even within the same stack frame. Thus, in
-         order to get this right, we consume O(n) call-stack space: we allocate the values
-         to put in the array, and only *then* recurse, creating the array as the very last
-         thing of all and *returning* it. This is why the [f i] call is the first thing in
-         the function, and why it's not tail-recursive; if it were tail-recursive, then we
-         wouldn't have anywhere to put the array elements during the whole process. *)
-      let rec go i = exclave_
-        let x = f i in
-        if i = l - 1
-        then create_local ~len:l x
-        else (
-          let res = go (i + 1) in
-          unsafe_set_local res i x;
-          res)
-      in
-      unsafe_of_local_array (go 0))
-  [@@kind k = (value_or_null, float64)] [@@alloc stack]
-  ;;
-end
-
-let%template map
-  (type (a : ki mod separable) (b : ko mod separable))
-  (t : a t @ mi)
-  ~(f : (a @ mi -> b @ local) @ local)
-  = exclave_
-  (unsafe_init [@kind ko] [@alloc stack]) (length t) (fun i -> exclave_
-    f (unsafe_get t i))
-[@@kind ki = (value_or_null, float64), ko = (value_or_null, float64)]
-[@@mode mi = (global, local)]
-[@@alloc stack]
-;;
-
-let%template map
-  (type (a : ki mod separable) (b : ko mod separable))
-  (t : a t @ m)
-  ~(f @ local)
-  : b t
-  =
-  let l = length t in
-  if l = 0
-  then I.unsafe_of_array [||]
-  else (
-    let r = Array.create ~len:l (f (unsafe_get t 0)) in
-    for i = 1 to l - 1 do
-      Array.unsafe_set r i (f (unsafe_get t i))
-    done;
-    I.unsafe_of_array r)
-[@@kind ki = (value_or_null, float64), ko = (value_or_null, float64)]
-[@@mode m = (global, local)]
-[@@alloc heap]
-;;
+let mapi t ~f =
+  (init [@kind ko] [@alloc a] [@inlined]) (length t) ~f:(fun [@inline] i ->
+    f i (unsafe_get t i) [@nontail] [@exclave_if_local mo ~reasons:[ May_return_local ]])
+  [@nontail] [@exclave_if_stack a]
+;;]
 
 let%template[@alloc heap] filteri t ~f =
   let len = length t in
   if len = 0
   then get_empty ()
   else (
-    let local_ out = Array.create_local ~len (unsafe_get t 0) in
-    let rec local_ loop pos out_len =
+    let out = Intermediate_array.empty () in
+    let rec local_ loop pos out =
       if pos = len
-      then if out_len = len then t else Of_array.sub out ~pos:0 ~len:out_len [@nontail]
+      then
+        if Intermediate_array.len (borrow_ out) = len
+        then t
+        else Intermediate_array.extract out ~orig_len:len [@nontail]
       else (
         let x = unsafe_get t pos in
         match f pos x with
-        | false -> loop (pos + 1) out_len
+        | false -> loop (pos + 1) out
         | true ->
-          Array.unsafe_set out out_len x;
-          loop (pos + 1) (out_len + 1))
+          let out = Intermediate_array.push out ~orig_len:len x in
+          loop (pos + 1) out)
     in
-    loop 0 0 [@nontail])
+    loop 0 out [@nontail])
 ;;
 
 let%template[@alloc stack] filteri = Local0.filteri
@@ -1065,22 +1127,17 @@ let%template filter t ~f =
 
 let%template filter_mapi (t @ mi) ~(local_ f : _ -> _ @ mi -> _) =
   let len = length t in
-  let rec local_ loop pos out out_len =
+  let rec local_ loop pos out =
     if pos = len
-    then Of_array.sub out ~pos:0 ~len:out_len [@nontail]
+    then Intermediate_array.extract out ~orig_len:len [@nontail]
     else (
       match f pos (unsafe_get t pos) with
-      | None -> loop (pos + 1) out out_len
+      | None -> loop (pos + 1) out
       | Some y ->
-        if out_len = 0
-        then (
-          let out = Array.create_local ~len y in
-          loop (pos + 1) out 1 [@nontail])
-        else (
-          Array.unsafe_set out out_len y;
-          loop (pos + 1) out (out_len + 1)))
+        let out = Intermediate_array.push out ~orig_len:len y in
+        loop (pos + 1) out)
   in
-  loop 0 [||] 0 [@nontail]
+  loop 0 (Intermediate_array.empty ()) [@nontail]
 [@@mode mi = (global, local)] [@@alloc heap]
 ;;
 
@@ -1112,23 +1169,20 @@ let%template[@alloc heap] partitioni_tf t ~f =
   if len = 0
   then get_empty (), get_empty ()
   else (
-    let x0 = unsafe_get t 0 in
-    let fsts = Array.create_local ~len x0 in
-    let snds = Array.create_local ~len x0 in
-    let rec local_ loop pos fsts_len snds_len =
+    let fsts = Intermediate_array.empty () in
+    let snds = Intermediate_array.empty () in
+    let rec local_ loop pos fsts snds =
       if pos = len
-      then Of_array.sub fsts ~pos:0 ~len:fsts_len, Of_array.sub snds ~pos:0 ~len:snds_len
+      then
+        ( Intermediate_array.extract fsts ~orig_len:len
+        , Intermediate_array.extract snds ~orig_len:len )
       else (
         let x = unsafe_get t pos in
         match f pos x with
-        | true ->
-          Array.unsafe_set fsts fsts_len x;
-          loop (pos + 1) (fsts_len + 1) snds_len
-        | false ->
-          Array.unsafe_set snds snds_len x;
-          loop (pos + 1) fsts_len (snds_len + 1))
+        | true -> loop (pos + 1) (Intermediate_array.push fsts x ~orig_len:len) snds
+        | false -> loop (pos + 1) fsts (Intermediate_array.push snds x ~orig_len:len))
     in
-    loop 0 0 0 [@nontail])
+    loop 0 fsts snds [@nontail])
 ;;
 
 let%template[@alloc stack] partitioni_tf t ~f = exclave_
@@ -1142,29 +1196,17 @@ let%template partition_tf (t @ m) ~f @ m =
 
 let%template partition_mapi t ~f =
   let len = length t in
-  let rec local_ loop pos fsts fsts_len snds snds_len =
+  let rec local_ loop pos fsts snds =
     if pos = len
-    then Of_array.sub fsts ~pos:0 ~len:fsts_len, Of_array.sub snds ~pos:0 ~len:snds_len
+    then
+      ( Intermediate_array.extract fsts ~orig_len:len
+      , Intermediate_array.extract snds ~orig_len:len )
     else (
       match (f pos (unsafe_get t pos) : _ Either.t) with
-      | First x ->
-        if fsts_len = 0
-        then (
-          let fsts = Array.create_local ~len x in
-          loop (pos + 1) fsts 1 snds snds_len [@nontail])
-        else (
-          Array.unsafe_set fsts fsts_len x;
-          loop (pos + 1) fsts (fsts_len + 1) snds snds_len)
-      | Second x ->
-        if snds_len = 0
-        then (
-          let snds = Array.create_local ~len x in
-          loop (pos + 1) fsts fsts_len snds 1 [@nontail])
-        else (
-          Array.unsafe_set snds snds_len x;
-          loop (pos + 1) fsts fsts_len snds (snds_len + 1)))
+      | First x -> loop (pos + 1) (Intermediate_array.push fsts x ~orig_len:len) snds
+      | Second x -> loop (pos + 1) fsts (Intermediate_array.push snds x ~orig_len:len))
   in
-  loop 0 [||] 0 [||] 0 [@nontail]
+  loop 0 (Intermediate_array.empty ()) (Intermediate_array.empty ()) [@nontail]
 [@@mode mi = (global, local)] [@@alloc a @ mo = heap_global]
 ;;
 
@@ -1238,24 +1280,35 @@ let fold_mapi t ~init ~f =
 
 (** Multiple arrays *)
 
-let zip t1 t2 =
+let%template[@alloc heap] zip t1 t2 =
   Array.zip
     (unsafe_to_array__promise_no_mutation t1)
     (unsafe_to_array__promise_no_mutation t2)
   |> Option.map ~f:unsafe_of_array__promise_no_mutation
 ;;
 
-let zip_exn t1 t2 =
+let%template[@alloc stack] zip t1 t2 = exclave_
+  if length t1 <> length t2 then None else Some (I.combine_local t1 t2)
+;;
+
+let%template[@alloc heap] zip_exn t1 t2 =
   Array.zip_exn
     (unsafe_to_array__promise_no_mutation t1)
     (unsafe_to_array__promise_no_mutation t2)
   |> unsafe_of_array__promise_no_mutation
 ;;
 
-let unzip t =
+let%template[@alloc stack] zip_exn t1 t2 = exclave_
+  if length t1 <> length t2 then failwith "Array.zip_exn";
+  I.combine_local t1 t2
+;;
+
+let%template[@alloc heap] unzip t =
   let fsts, snds = Array.unzip (unsafe_to_array__promise_no_mutation t) in
   unsafe_of_array__promise_no_mutation fsts, unsafe_of_array__promise_no_mutation snds
 ;;
+
+let%template[@alloc stack] unzip = [%eta1 exclave_ I.split_local]
 
 let map2_exn t1 t2 ~f =
   Array.map2_exn

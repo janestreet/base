@@ -7,7 +7,7 @@
 
     This module also provides functors for conveniently constructing identifiable modules. *)
 
-open! Import
+open! Import0
 
 module Definitions = struct
   [%%template
@@ -68,11 +68,17 @@ module type%template Identifiable = sig @@ portable
           include Identifiable.Make (T)
         end
       ]} *)
-  module%template.portable [@modality p] Make (M : Arg [@mode m] [@alloc a]) :
-    S [@mode m] [@modality p] [@alloc a] with type t := M.t
+  module%template.portable
+    [@modality p]
+    (Make
+    @@ nonportable)
+      (M : Arg
+    [@mode m] [@alloc a]) : S [@mode m] [@modality p] [@alloc a] with type t := M.t
 
   module%template.portable
-    [@modality p] Make_using_comparator
+    [@modality p]
+    (Make_using_comparator
+    @@ nonportable)
       (M : Arg_with_comparator
     [@mode m] [@modality p] [@alloc a]) :
     S

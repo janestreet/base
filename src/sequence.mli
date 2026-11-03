@@ -31,7 +31,7 @@
     sequence (the [f] passed to [unfold]) raises, in which case the exception will
     cascade. *)
 
-open! Import
+open! Import0
 
 type (!+'a : any) t [@@deriving globalize]
 
@@ -177,10 +177,10 @@ val tl_eagerly_exn : ('a : value_or_null). 'a t -> 'a t
 
 (** [find_exn t ~f] returns the first element of [t] that satisfies [f]. It raises if
     there is no such element. *)
-val find_exn : ('a : value_or_null). 'a t -> f:local_ ('a -> bool) -> 'a
+val find_exn : ('a : value_or_null). 'a t -> f:('a -> bool) @ local -> 'a
 
 (** Like [for_all], but passes the index as an argument. *)
-val for_alli : ('a : value_or_null). 'a t -> f:local_ (int -> 'a -> bool) -> bool
+val for_alli : ('a : value_or_null). 'a t -> f:(int -> 'a -> bool) @ local -> bool
 
 (** [append t1 t2] first produces the elements of [t1], then produces the elements of
     [t2]. *)
@@ -230,9 +230,9 @@ val zip_full
 
 (** [reduce_exn f [a1; ...; an]] is [f (... (f (f a1 a2) a3) ...) an]. It fails on the
     empty sequence. *)
-val reduce_exn : ('a : value_or_null). 'a t -> f:local_ ('a -> 'a -> 'a) -> 'a
+val reduce_exn : ('a : value_or_null). 'a t -> f:('a -> 'a -> 'a) @ local -> 'a
 
-val reduce : ('a : value_or_null). 'a t -> f:local_ ('a -> 'a -> 'a) -> 'a option
+val reduce : ('a : value_or_null). 'a t -> f:('a -> 'a -> 'a) @ local -> 'a option
 
 (** [group l ~break] returns a sequence of lists (i.e., groups) whose concatenation is
     equal to the original sequence. Each group is broken where [break] returns true on a
@@ -252,7 +252,7 @@ val group : ('a : value_or_null). 'a t -> break:('a -> 'a -> bool) -> 'a list t
     appear in [t]. *)
 val find_consecutive_duplicate
   : ('a : value_or_null).
-  'a t -> equal:local_ ('a -> 'a -> bool) -> ('a * 'a) option
+  'a t -> equal:('a -> 'a -> bool) @ local -> ('a * 'a) option
 
 (** The same sequence with consecutive duplicates removed. The relative order of the other
     elements is unaffected. *)
@@ -325,7 +325,7 @@ val drop_while : ('a : value_or_null). 'a t -> f:('a -> bool) -> 'a t
     (if the element is added to the final state of the sequence using [shift_right]). *)
 val drop_while_option
   : ('a : value_or_null).
-  'a t -> f:local_ ('a -> bool) -> ('a * 'a t) option
+  'a t -> f:('a -> bool) @ local -> ('a * 'a t) option
 
 (** [split_n t n] immediately consumes the first [n] elements of [t] and returns the
     consumed prefix, as a list, along with the unevaluated tail of [t]. *)
@@ -428,7 +428,7 @@ val of_list : ('a : value_or_null). 'a list -> 'a t
 
 (** [of_lazy t_lazy] produces a sequence that forces [t_lazy] the first time it needs to
     compute an element. *)
-val of_lazy : ('a : value_or_null). 'a t Lazy.t -> 'a t
+val of_lazy : ('a : value_or_null). 'a t lazy_t -> 'a t
 
 (** [memoize t] produces each element of [t], but also memoizes them so that if you
     consume the same element multiple times it is only computed once. It's a non-eager

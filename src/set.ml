@@ -16,6 +16,12 @@
 (* Sets over ordered types *)
 
 open! Import
+module Array = Array0
+module Either = Either0
+module Error = Error0
+module Int = Int0
+module Result = Result0
+module Sexp = Sexp0
 include Set_intf.Definitions
 
 let with_return = With_return.with_return
@@ -60,7 +66,7 @@ module Tree0 = struct
 
   type ('a, 'cmp) tree = ('a, 'cmp) t [@@deriving sexp_of]
 
-  let globalize0 : 'a 'cmp. local_ ('a, 'cmp) t -> ('a, 'cmp) t = function
+  let globalize0 : 'a 'cmp. ('a, 'cmp) t @ local -> ('a, 'cmp) t = function
     | Empty -> Empty
     | Leaf { elt } -> Leaf { elt }
     | Node { left; elt; right; weight } -> Node { left; elt; right; weight }
@@ -1312,6 +1318,73 @@ module Tree0 = struct
     | Some e -> e
   ;;
 
+  module Closest_elt_impl = struct
+    (* [marker] and [repackage] allow us to create "logical" options without actually
+       allocating any options. Passing [Found elt] to a function is equivalent to passing
+       [Some elt]; passing [Missing ()] is equivalent to passing [None]. *)
+    type ('a, 'a_opt) marker =
+      | Missing : ('a, unit) marker
+      | Found : ('a, 'a) marker
+
+    let repackage (type a a_opt) (marker : (a, a_opt) marker) (elt : a_opt) : a option =
+      match marker with
+      | Missing -> None
+      | Found -> Some elt
+    ;;
+
+    (* The type signature is explicit here to allow polymorphic recursion. *)
+    let rec loop
+      : 'a 'cmp 'a_opt.
+      ('a, 'cmp) tree
+      -> [ `Greater_or_equal_to | `Greater_than | `Less_or_equal_to | `Less_than ]
+      -> 'a
+      -> compare_elt:('a -> 'a -> int)
+      -> ('a, 'a_opt) marker
+      -> 'a_opt
+      -> 'a option
+      =
+      fun t dir elt ~compare_elt found_marker found_elt ->
+      match t with
+      | Empty -> repackage found_marker found_elt
+      | Leaf { elt = elt' } ->
+        let c = compare_elt elt' elt in
+        if match dir with
+           | `Greater_or_equal_to -> c >= 0
+           | `Greater_than -> c > 0
+           | `Less_or_equal_to -> c <= 0
+           | `Less_than -> c < 0
+        then Some elt'
+        else repackage found_marker found_elt
+      | Node { left = l; elt = elt'; right = r; weight = _ } ->
+        let c = compare_elt elt' elt in
+        if c = 0
+        then (
+          (* This is a base case (no recursive call). *)
+          match dir with
+          | `Greater_or_equal_to | `Less_or_equal_to -> Some elt'
+          | `Greater_than ->
+            if is_empty r then repackage found_marker found_elt else min_elt r
+          | `Less_than ->
+            if is_empty l then repackage found_marker found_elt else max_elt l)
+        else (
+          (* We are guaranteed here that elt' <> elt. *)
+          (* This is the only recursive case. *)
+          match dir with
+          | `Greater_or_equal_to | `Greater_than ->
+            if c > 0
+            then loop l dir elt ~compare_elt Found elt'
+            else loop r dir elt ~compare_elt found_marker found_elt
+          | `Less_or_equal_to | `Less_than ->
+            if c < 0
+            then loop r dir elt ~compare_elt Found elt'
+            else loop l dir elt ~compare_elt found_marker found_elt)
+    ;;
+
+    let closest_elt t dir elt ~compare_elt = loop t dir elt ~compare_elt Missing ()
+  end
+
+  let closest_elt = Closest_elt_impl.closest_elt
+
   let rank t elt ~compare_elt =
     let rec local_ loop t acc =
       match t with
@@ -1520,6 +1593,8 @@ module Accessors = struct
     (Tree0.sexp_of_t [@alloc a]) sexp_of_a t.tree [@exclave_if_stack a]
   ;;
 
+  let closest_elt t dir a = Tree0.closest_elt t.tree dir a ~compare_elt:(compare_elt t)
+
   let to_sequence ?order ?greater_or_equal_to ?less_or_equal_to t =
     Tree0.to_sequence t.comparator ?order ?greater_or_equal_to ?less_or_equal_to t.tree
   ;;
@@ -1656,6 +1731,10 @@ module Tree = struct
   let sexp_of_t sexp_of_a t = Tree0.sexp_of_t sexp_of_a t
   let to_tree t = t
   let of_tree ~comparator:_ t = t
+
+  let closest_elt ~comparator t dir a =
+    Tree0.closest_elt t dir a ~compare_elt:(ce comparator)
+  ;;
 
   let to_sequence ~comparator ?order ?greater_or_equal_to ?less_or_equal_to t =
     Tree0.to_sequence comparator ?order ?greater_or_equal_to ?less_or_equal_to t

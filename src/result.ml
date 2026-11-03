@@ -1,5 +1,6 @@
-open! Import
+open! Import0
 module Either = Either0
+module List = List0
 include Result0
 
 [%%template
@@ -7,27 +8,28 @@ include Result0
 [@@@kind_set.define all_ks = (all_ks_non_value, value_or_null_with_imm)]
 
 [%%template
-[@@@mode.default m = (global, local)]
+[@@@mode.default l = (global, local)]
 [@@@kind ko = all_ks]
 
-let[@kind ko] return (x @ m) : (_ t[@kind ko]) @ m = Ok x [@exclave_if_local m]
+let[@kind ko] return (x @ l) : (_ t[@kind ko]) @ l = Ok x [@exclave_if_local l]
 
 [@@@kind.default ki = all_ks, ko = ko]
 
-let bind (x @ m) ~f : (_ t[@kind ko]) @ m =
+let bind (x @ l) ~f : (_ t[@kind ko]) @ l =
   match (x : (_ t[@kind ki])) with
-  | Error err -> Error err [@exclave_if_local m]
-  | Ok x -> f x [@exclave_if_local m]
+  | Error err -> Error err [@exclave_if_local l]
+  | Ok x -> f x [@exclave_if_local l]
 ;;
 
 let map x ~f : (_ t[@kind ko]) =
-  match[@exclave_if_local m ~reasons:[ Will_return_unboxed ]] (x : (_ t[@kind ki])) with
+  match[@exclave_if_local l ~reasons:[ Will_return_unboxed ]] (x : (_ t[@kind ki])) with
   | Error err -> Error err
   | Ok x -> Ok (f x)
 ;;]
 
 include%template
-  Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local] [@modality portable] (struct
+  Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local once] [@modality portable]
+    (struct
     type nonrec ('a : value_or_null, 'b) t = ('a, 'b) t
 
     let bind = bind
@@ -48,11 +50,11 @@ let%template map_error (type a : k) (t : ((a, _) t[@kind k])) ~f : ((a, _) t[@ki
   match[@exclave_if_stack a] t with
   | Ok _ as x -> x
   | Error x -> Error (f x)
-[@@kind k = all_ks] [@@alloc a @ m = (heap_global, stack_local)]
+[@@kind k = all_ks] [@@alloc a @ l = (heap_global, stack_local)]
 ;;
 
 module%template Error =
-Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local] [@modality portable] (struct
+Monad.Make2 [@kind value_or_null mod maybe_null] [@mode local once] [@modality portable] (struct
     type nonrec ('a : value_or_null, 'b) t = ('b, 'a) t
 
     let bind x ~f =
@@ -129,16 +131,16 @@ let iter_error v ~f =
 ;;
 
 [%%template
-[@@@mode.default m = (global, local)]
+[@@@mode.default l = (global, local)]
 
-let to_either : _ t @ m -> _ Either.t @ m = function
-  | Ok x -> First x [@exclave_if_local m]
-  | Error x -> Second x [@exclave_if_local m]
+let to_either : _ t @ l -> _ Either.t @ l = function
+  | Ok x -> First x [@exclave_if_local l]
+  | Error x -> Second x [@exclave_if_local l]
 ;;
 
-let of_either : _ Either.t @ m -> _ t @ m = function
-  | First x -> Ok x [@exclave_if_local m]
-  | Second x -> Error x [@exclave_if_local m]
+let of_either : _ Either.t @ l -> _ t @ l = function
+  | First x -> Ok x [@exclave_if_local l]
+  | Second x -> Error x [@exclave_if_local l]
 ;;]
 
 let ok_if_true bool ~error = if bool then Ok () else Error error
@@ -186,10 +188,10 @@ let combine t1 t2 ~ok ~err =
 ;;
 
 [%%template
-[@@@alloc.default a @ m = (heap_global, stack_local)]
+[@@@alloc.default a @ l = (heap_global, stack_local)]
 
 let combine_errors l =
-  (let ok, errs = (List0.partition_map [@mode m] [@alloc a]) l ~f:(to_either [@mode m]) in
+  (let ok, errs = (List.partition_map [@mode l] [@alloc a]) l ~f:(to_either [@mode l]) in
    match errs with
    | [] -> Ok ok
    | _ :: _ -> Error errs)

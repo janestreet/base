@@ -8,17 +8,22 @@ external force : ('a t[@local_opt]) -> 'a @@ portable = "%lazy_force"
 let globalize = Globalize.globalize_lazy_t
 let map t ~f = lazy (f (force t))
 
-let%template[@mode local] compare compare_a t1 t2 =
+let%template compare_internal compare_a t1 t2 =
   if phys_equal t1 t2 then 0 else compare_a (force t1) (force t2)
 ;;
 
-let%template compare compare_a t1 t2 = (compare [@mode local]) compare_a t1 t2
+let%template[@mode __ = (local, global)] compare compare_a t1 t2 =
+  compare_internal compare_a t1 t2
+;;
 
-let%template[@mode local] equal equal_a t1 t2 =
+let%template equal_internal equal_a t1 t2 =
   if phys_equal t1 t2 then true else equal_a (force t1) (force t2)
 ;;
 
-let%template equal equal_a t1 t2 = (equal [@mode local]) equal_a t1 t2
+let%template[@mode __ = (local, global)] equal equal_a t1 t2 =
+  equal_internal equal_a t1 t2
+;;
+
 let hash_fold_t = Hash.Builtin.hash_fold_lazy_t
 let peek t = if is_val t then Some (force t) else None
 

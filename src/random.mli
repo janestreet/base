@@ -20,7 +20,7 @@
   (***********************************************************************)
     v} *)
 
-open! Import
+open! Import0
 
 (** {6 Basic functions} *)
 
@@ -121,26 +121,26 @@ module State : sig
   (** Creates a new state and initializes it with a system-dependent low-entropy seed. *)
   val make_self_init : ?allow_in_tests:bool -> unit -> t
 
-  val copy : t -> t
+  val copy : t @ local -> t
 
   (** These functions are the same as the basic functions, except that they use (and
       update) the given PRNG state instead of the default one. *)
 
-  val bits : t -> int
-  val bits64 : t -> int64
-  val int : t -> int -> int
-  val int32 : t -> int32 -> int32
-  val nativeint : t -> nativeint -> nativeint
-  val int64 : t -> int64 -> int64
-  val float : t -> float -> float
-  val int_incl : t -> int -> int -> int
-  val int32_incl : t -> int32 -> int32 -> int32
-  val nativeint_incl : t -> nativeint -> nativeint -> nativeint
-  val int64_incl : t -> int64 -> int64 -> int64
-  val float_range : t -> float -> float -> float
-  val bool : t -> bool
-  val char : t -> char
-  val ascii : t -> char
+  val bits : t @ local -> int
+  val bits64 : t @ local -> int64
+  val int : t @ local -> int -> int
+  val int32 : t @ local -> int32 -> int32
+  val nativeint : t @ local -> nativeint -> nativeint
+  val int64 : t @ local -> int64 -> int64
+  val float : t @ local -> float -> float
+  val int_incl : t @ local -> int -> int -> int
+  val int32_incl : t @ local -> int32 -> int32 -> int32
+  val nativeint_incl : t @ local -> nativeint -> nativeint -> nativeint
+  val int64_incl : t @ local -> int64 -> int64 -> int64
+  val float_range : t @ local -> float -> float -> float
+  val bool : t @ local -> bool
+  val char : t @ local -> char
+  val ascii : t @ local -> char
 end
 
 (** Sets the state of the generator used by the basic functions. *)

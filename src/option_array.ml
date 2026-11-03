@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module Array = Array0
 
 (** ['a Cheap_option.t] is like ['a option], but it doesn't box [some _] values.
 
@@ -30,7 +31,7 @@ module Cheap_option = struct
     val is_some : ('a : value_or_null). 'a t -> bool
     val value_exn : ('a : value_or_null). 'a t -> 'a
     val value_unsafe : ('a : value_or_null). 'a t -> 'a
-    val iter_some : ('a : value_or_null). 'a t -> f:local_ ('a -> unit) -> unit
+    val iter_some : ('a : value_or_null). 'a t -> f:('a -> unit) @ local -> unit
     val get_none : ('a : value_or_null). unit -> 'a t
   end = struct
     (* It is safe to claim that ['a t] is immutable data as long as ['a] is immutable

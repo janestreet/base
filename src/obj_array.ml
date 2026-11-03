@@ -1,7 +1,8 @@
-open! Import
+open! Import0
 module Int = Int0
 module Sexp = Sexp0
 module String = String0
+module Sys = Sys0
 
 (* We maintain the property that all values of type [t] do not have the tag
    [double_array_tag]. Some functions below assume this in order to avoid testing the tag,

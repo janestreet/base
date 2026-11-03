@@ -37,9 +37,10 @@
 
     Note that an [Info.t] can be created from any arbitrary sexp with [Info.t_of_sexp]. *)
 
-open! Import
-module Invariant = Invariant_intf.Definitions
-module Sexp = Sexp0
+open! Import0
+module Modes = Basement.Modes
+module Portable_lazy = Basement.Portable_lazy
+module Sexp = Sexplib0.Sexp
 
 module Definitions = struct
   module type Internal_repr = sig
@@ -52,16 +53,15 @@ module Definitions = struct
       | String of string
       | Exn of exn Modes.Global.t
       | Sexp of Sexp.t
-      | Tag_sexp of string * Sexp.t * Source_code_position0.t option
+      | Tag_sexp of string * Sexp.t * Stdlib.Lexing.position option
       | Tag_t of string * t
       | Tag_arg of string * Sexp.t * t
       | Of_list of int option * t list
       | With_backtrace of t * string (** The second argument is the backtrace *)
     [@@deriving sexp_of ~stackify]
 
-    val of_info : local_ info -> t
-
-    val%template to_info : t @ p -> info @ p [@@mode p = (portable, nonportable)]
+    val of_info : info @ local -> t
+    val to_info : t -> info @ portable
   end
 
   (** [Info.t Modes.Portable.t] with some common ppxes derived on it. It also re-exports
@@ -83,7 +83,7 @@ module Definitions = struct
 
     val%template create
       : ('a : k mod contended).
-      ?here:Source_code_position0.t
+      ?here:Stdlib.Lexing.position
       -> ?strict:unit
       -> string
       -> 'a @ portable
@@ -115,7 +115,7 @@ module Definitions = struct
         domains. *)
     val t_of_sexp : Sexp.t -> t @ portable
 
-    include Invariant.S with type t := t
+    val invariant : t -> unit
 
     (** [to_string_hum] forces the lazy message, which might be an expensive operation.
 
@@ -134,9 +134,9 @@ module Definitions = struct
     (** Be careful that the body of the lazy or thunk does not access mutable data, since
         it will only be called at an undetermined later point. *)
 
-    val of_lazy : string Lazy.t -> t
-    val of_lazy_sexp : Sexp.t Lazy.t -> t
-    val of_lazy_t : t Lazy.t -> t
+    val of_lazy : string lazy_t -> t
+    val of_lazy_sexp : Sexp.t lazy_t -> t
+    val of_lazy_t : t lazy_t -> t
 
     val%template of_thunk : (unit -> string) @ p -> t @ p
     [@@mode p = (portable, nonportable)]
@@ -151,7 +151,7 @@ module Definitions = struct
         Use [~strict:()] to force [sexp_of_a a] to be computed immediately. *)
     val%template create
       : ('a : k).
-      ?here:Source_code_position0.t
+      ?here:Stdlib.Lexing.position
       -> ?strict:unit
       -> string
       -> 'a @ p
@@ -179,14 +179,14 @@ module Definitions = struct
     [@@mode p = (portable, nonportable)]
 
     (** Adds a lazy string to the front. *)
-    val tag_lazy : t -> tag:string Lazy.t -> t
+    val tag_lazy : t -> tag:string lazy_t -> t
 
     (** Adds a portable lazy string to the front. *)
     val%template tag_portable_lazy : t @ p -> tag:string Portable_lazy.t -> t @ p
     [@@mode p = (portable, nonportable)]
 
     (** Adds a lazy sexp to the front. *)
-    val tag_s_lazy : t -> tag:Sexp.t Lazy.t -> t
+    val tag_s_lazy : t -> tag:Sexp.t lazy_t -> t
 
     (** Adds a portable lazy sexp to the front. *)
     val%template tag_s_portable_lazy : t @ p -> tag:Sexp.t Portable_lazy.t -> t @ p
@@ -211,7 +211,7 @@ module Definitions = struct
     val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> t @ portable
 
     val to_exn : t -> exn
-    val pp : Formatter.t -> t -> unit
+    val pp : Stdlib.Format.formatter -> t -> unit
 
     module Internal_repr : Internal_repr with type info := t
     module Portable : Portable with type info := info

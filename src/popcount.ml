@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 let int_popcount = Ocaml_intrinsics_kernel.Int.count_set_bits
 let int64_popcount = Ocaml_intrinsics_kernel.Int64.count_set_bits

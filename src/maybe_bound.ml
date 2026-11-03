@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module List = List0
 
 type interval_comparison =
   | Below_lower_bound
@@ -15,10 +16,14 @@ type ('a : k) t =
   | Unbounded
 [@@deriving sexp ~stackify, sexp_grammar, globalize]
 
-let all (all_of_a : ('a List.t[@kind k])) : ('a t[@kind k]) list =
-  (List.map [@kind k value_or_null]) all_of_a ~f:(fun a : ('a t[@kind k]) -> Incl a)
-  @ (List.map [@kind k value_or_null]) all_of_a ~f:(fun a : ('a t[@kind k]) -> Excl a)
-  @ [ (Unbounded : ('a t[@kind k])) ]
+let all (all_of_a : ('a List.Constructors.t[@kind k])) : ('a t[@kind k]) list =
+  List.rev_append
+    ((List.rev_map [@kind k value_or_null]) all_of_a ~f:(fun a : ('a t[@kind k]) ->
+       Incl a))
+    (List.rev_append
+       ((List.rev_map [@kind k value_or_null]) all_of_a ~f:(fun a : ('a t[@kind k]) ->
+          Excl a))
+       [ (Unbounded : ('a t[@kind k])) ])
 ;;
 
 let map (t : (_ t[@kind k])) ~f : (_ t[@kind k]) =

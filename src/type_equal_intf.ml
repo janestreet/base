@@ -49,9 +49,7 @@ module Definitions = struct
 
       val lift : ('a : k1) ('b : k1). ('a, 'b) Type_equal.t -> ('a t, 'b t) Type_equal.t
     end
-    [@@kind.explicit k1 = all]
-
-    module type Lift = Lift [@kind.explicit value]
+    [@@kind.explicit_plus_unmangled k1 = all]
 
     module type Lift2 = sig @@ portable
       type ('a : k1, 'b : k2) t
@@ -62,9 +60,7 @@ module Definitions = struct
         -> ('a2, 'b2) Type_equal.t
         -> (('a1, 'a2) t, ('b1, 'b2) t) Type_equal.t
     end
-    [@@kind.explicit k1 = all, k2 = all]
-
-    module type Lift2 = Lift2 [@kind.explicit value value]
+    [@@kind.explicit_plus_unmangled k1 = all, k2 = all]
 
     [@@@kind.default k1 = smaller_all, k2 = smaller_all, k3 = smaller_all]
 
@@ -228,15 +224,11 @@ module type Type_equal = sig @@ portable
 
   module Lift (T : T1 [@kind.explicit k1]) :
     Lift [@kind.explicit k1] with type ('a : k1) t := 'a T.t
-  [@@kind.explicit k1 = all]
-
-  module Lift (T : T1) : Lift with type 'a t := 'a T.t
+  [@@kind.explicit_plus_unmangled k1 = all]
 
   module Lift2 (T : T2 [@kind.explicit k1 k2]) :
     Lift2 [@kind.explicit k1 k2] with type ('a : k1, 'b : k2) t := ('a, 'b) T.t
-  [@@kind.explicit k1 = all, k2 = all]
-
-  module Lift2 (T : T2) : Lift2 with type ('a, 'b) t := ('a, 'b) T.t
+  [@@kind.explicit_plus_unmangled k1 = all, k2 = all]
 
   include sig
     [@@@kind.default k1 = smaller_all, k2 = smaller_all, k3 = smaller_all]
@@ -302,8 +294,10 @@ module type Type_equal = sig @@ portable
 
     val same : (_ : any) t -> (_ : any) t -> bool [@@zero_alloc]
 
-    val same_witness : ('a : any) ('b : any). 'a t -> 'b t -> ('a, 'b) equal option
-    [@@zero_alloc]
+    val same_witness
+      : ('a : any) ('b : any).
+      'a t @ m -> 'b t @ m -> ('a, 'b) equal option
+    [@@mode m = (global, local)] [@@zero_alloc]
 
     val same_witness_exn : ('a : any) ('b : any). 'a t -> 'b t -> ('a, 'b) equal
     [@@zero_alloc]
@@ -312,7 +306,8 @@ module type Type_equal = sig @@ portable
     module%template.portable Create1 (T : Arg1) : S1 with type 'a t := 'a T.t
 
     module%template.portable
-      [@kind a = (value, immediate64), b = value] Create2
+      [@kind a = (value, immediate64), b = value]
+      Create2
         (T : Arg2
       [@kind a b]) : S2 [@kind a b] with type ('a, 'b) t := ('a, 'b) T.t
 

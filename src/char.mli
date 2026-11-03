@@ -2,7 +2,7 @@
 
 (** A type for 8-bit characters. *)
 
-open! Import
+open! Import0
 
 (** An alias for the type of characters. *)
 type t = char [@@deriving enumerate, globalize, sexp ~stackify ~unboxed, sexp_grammar]

@@ -3,39 +3,21 @@
  (deps
   (:first_dep ../generate/generate_pow_overflow_bounds.exe))
  (action
-  (run %{first_dep} -atomic -o %{targets}))
+  (bash "%{first_dep} -atomic -o %{targets}"))
  (mode fallback))
 
 (library
- (foreign_stubs
-  (language c)
-  (names array_stubs bytes_stubs exn_stubs float_stubs iarray_stubs int_stubs
-    int_math_stubs obj_stubs string_stubs am_testing)
-  (flags
-   :standard
-   -D_LARGEFILE64_SOURCE
-   (:include mpopcnt.sexp)))
  (name base)
  (public_name base)
  (ocamlopt_flags
   :standard
   (:include ocamlopt-flags))
- (libraries base_internalhash_types basement capsule0.prim nonempty_list_type
+ (libraries base_stubs basement capsule0.prim nonempty_list_type
    ocaml_intrinsics_kernel sexplib0 shadow_stdlib)
  (preprocess
   (pps ppx_base ppx_base_internal ppx_base_lint
     -compare-require-explicit-locality ppx_array_base
-    -require-template-extension -type-conv-keep-w32=both))
- (js_of_ocaml
-  (javascript_files runtime.js))
- (wasm_of_ocaml
-  (javascript_files runtime.js)
-  (wasm_files runtime.wat)))
-
-(rule
- (targets mpopcnt.sexp)
- (action
-  (run ./discover/discover.exe -o %{targets})))
+    -require-template-extension -type-conv-keep-w32=both)))
 
 (ocamllex hex_lexer)
 

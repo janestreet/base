@@ -1,4 +1,6 @@
-open! Import
+open! Import0
+module Bytes = Bytes0
+module Char = Char0
 module Sexp = Sexp0
 module String = String0
 
@@ -58,7 +60,7 @@ module Make (I : sig
   @@ portable
     type t
 
-    val%template to_string : local_ t -> string @ m
+    val%template to_string : t @ local -> string @ m
     [@@alloc a @ m = (heap_global, stack_local)]
   end) =
 struct
@@ -85,37 +87,32 @@ struct
         | `No_underscores -> s))
     [@exclave_if_stack a]
   ;;]
-end
 
-module%template
-  [@kind k = (bits32, bits64, word)] Make_unboxed (I : sig
-  @@ portable
-    type t
+  module%template
+    [@kind k = (bits32, bits64, word, value)]
+    Provide_unboxed (U : sig
+    @@ portable
+      type t : k
 
-    val to_string : local_ t -> string @ m [@@alloc a @ m = (heap_global, stack_local)]
-
-    type unboxed : k
-
-    val box : unboxed -> t @ local
-  end) =
-struct
-  include Make (I)
-
-  let sexp_of_t_u unboxed =
-    (sexp_of_t [@alloc a]) (I.box unboxed) [@exclave_if_stack a] [@nontail]
-  [@@alloc a = (heap, stack)]
-  ;;
+      val box : t -> I.t @ local
+    end) =
+  struct
+    let sexp_of_t_u unboxed =
+      (sexp_of_t [@alloc a]) (U.box unboxed) [@exclave_if_stack a] [@nontail]
+    [@@alloc a = (heap, stack)]
+    ;;
+  end
 end
 
 module Make_hex (I : sig
   @@ portable
     type t : value mod contended portable [@@deriving compare ~localize, hash]
 
-    val to_string : local_ t -> string
+    val to_string : t @ local -> string
     val of_string : string -> t
     val zero : t
-    val ( < ) : local_ t -> local_ t -> bool
-    val neg : local_ t -> t
+    val ( < ) : t @ local -> t @ local -> bool
+    val neg : t @ local -> t
     val module_name : string
   end) =
 struct
@@ -145,7 +142,7 @@ struct
     ;;
 
     let of_string_with_delimiter str =
-      I.of_string (String.filter str ~f:(fun c -> Char.( <> ) c '_'))
+      I.of_string (String.filter str ~f:(fun c -> not (Char.equal c '_')))
     ;;
 
     let of_string str =
@@ -178,14 +175,14 @@ module Make_binary (I : sig
     type t : value mod contended portable
     [@@deriving compare ~localize, equal ~localize, hash]
 
-    val clz : local_ t -> t
-    val ( lsr ) : local_ t -> int -> t
-    val ( land ) : local_ t -> local_ t -> t
-    val to_int_trunc : local_ t -> int
+    val clz : t @ local -> t
+    val ( lsr ) : t @ local -> int -> t
+    val ( land ) : t @ local -> t @ local -> t
+    val to_int_trunc : t @ local -> int
     val num_bits : t
     val zero : t
     val one : t
-    val ( - ) : local_ t -> local_ t -> t
+    val ( - ) : t @ local -> t @ local -> t
   end) =
 struct
   module Binary = struct

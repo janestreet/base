@@ -1,31 +1,31 @@
 open! Import
 open! Stdlib.Int64
+module Float = Float0
 module Sexp = Sexp0
 
 module T = struct
   module T0 = struct
-    type t = int64 [@@deriving globalize, hash, of_sexp ~unboxed, sexp_grammar]
+    type t = int64 [@@deriving globalize, hash, of_sexp, sexp_grammar]
+
+    let t_u_of_sexp sexp = Int64_u.unbox (t_of_sexp sexp)
 
     let%template[@alloc a = (heap, stack)] to_string =
       (Integer_to_string.int64_to_string [@alloc a])
     ;;
-
-    type unboxed = int64#
-
-    let box = Basement.Primitives.box_int64
   end
 
   include T0
+  include Int_string_conversions.Make (T0)
 
-  include%template Int_string_conversions.Make_unboxed [@kind bits64] (T0)
+  include%template Provide_unboxed [@kind bits64] (Int64_u)
 
   let hashable : t Hashable.t = { hash; compare; sexp_of_t }
   let compare = Int64_replace_polymorphic_compare.compare
 
-  external format : string -> local_ int64 -> string @@ portable = "caml_int64_format"
+  external format : string -> int64 @ local -> string @@ portable = "caml_int64_format"
 
   external of_string
-    :  local_ string
+    :  string @ local
     -> (int64[@unboxed])
     @@ portable
     = "caml_int64_of_string" "caml_int64_of_string_unboxed"
@@ -41,30 +41,30 @@ include T
 include%template Comparator.Make [@modality portable] (T)
 
 let num_bits = 64
-let float_lower_bound = Float0.lower_bound_for_int num_bits
-let float_upper_bound = Float0.upper_bound_for_int num_bits
+let float_lower_bound = Float.lower_bound_for_int num_bits
+let float_upper_bound = Float.upper_bound_for_int num_bits
 let num_bits = of_int num_bits
 
 external float_of_bits
-  :  local_ t
+  :  t @ local
   -> float
   @@ portable
   = "caml_int64_float_of_bits" "caml_int64_float_of_bits_unboxed"
 [@@unboxed] [@@noalloc] [@@builtin]
 
 external bits_of_float
-  :  local_ float
+  :  float @ local
   -> t
   @@ portable
   = "caml_int64_bits_of_float" "caml_int64_bits_of_float_unboxed"
 [@@unboxed] [@@noalloc] [@@builtin]
 
-external shift_right_logical : local_ t -> int -> t @@ portable = "%int64_lsr"
-external shift_right : local_ t -> int -> t @@ portable = "%int64_asr"
-external shift_left : local_ t -> int -> t @@ portable = "%int64_lsl"
-external bit_xor : local_ t -> local_ t -> t @@ portable = "%int64_xor"
-external bit_or : local_ t -> local_ t -> t @@ portable = "%int64_or"
-external bit_and : local_ t -> local_ t -> t @@ portable = "%int64_and"
+external shift_right_logical : t @ local -> int -> t @@ portable = "%int64_lsr"
+external shift_right : t @ local -> int -> t @@ portable = "%int64_asr"
+external shift_left : t @ local -> int -> t @@ portable = "%int64_lsl"
+external bit_xor : t @ local -> t @ local -> t @@ portable = "%int64_xor"
+external bit_or : t @ local -> t @ local -> t @@ portable = "%int64_or"
+external bit_and : t @ local -> t @ local -> t @@ portable = "%int64_and"
 
 let bit_not n = bit_xor n (-1L)
 let min_value = min_int
@@ -77,21 +77,21 @@ let abs_local n = exclave_
 
 let pow = Int_math.Private.int64_pow
 
-external rem : local_ t -> local_ t -> t @@ portable = "%int64_mod"
+external rem : t @ local -> t @ local -> t @@ portable = "%int64_mod"
 
 let minus_one = minus_one
 let one = one
 let zero = zero
 
 external to_float
-  :  local_ t
+  :  t @ local
   -> float
   @@ portable
   = "caml_int64_to_float" "caml_int64_to_float_unboxed"
 [@@unboxed] [@@noalloc] [@@builtin]
 
 external of_float_unchecked
-  :  local_ float
+  :  float @ local
   -> t
   @@ portable
   = "caml_int64_of_float" "caml_int64_of_float_unboxed"
@@ -104,7 +104,7 @@ let of_float f =
   else
     Printf.invalid_argf
       "Int64.of_float: argument (%f) is out of range or NaN"
-      (Float0.box f)
+      (Float.box f)
       ()
 ;;
 
@@ -112,7 +112,7 @@ let of_float f =
    boxing the int64s more often. *)
 let ( ** ) = pow
 
-external bswap64 : local_ t -> (t[@local_opt]) @@ portable = "%bswap_int64"
+external bswap64 : t @ local -> (t[@local_opt]) @@ portable = "%bswap_int64"
 
 let[@inline always] bswap16 x = shift_right_logical (bswap64 x) 48
 
@@ -169,17 +169,17 @@ let popcount = Popcount.int64_popcount
 
 module Conv = Int_conversions
 
-external to_int_trunc : local_ t -> int @@ portable = "%int64_to_int"
-external to_int32_trunc : local_ t -> (int32[@local_opt]) @@ portable = "%int64_to_int32"
+external to_int_trunc : t @ local -> int @@ portable = "%int64_to_int"
+external to_int32_trunc : t @ local -> (int32[@local_opt]) @@ portable = "%int64_to_int32"
 
 external to_nativeint_trunc
-  :  local_ t
+  :  t @ local
   -> (nativeint[@local_opt])
   @@ portable
   = "%int64_to_nativeint"
 
 external of_int : int -> (t[@local_opt]) @@ portable = "%int64_of_int"
-external of_int32 : local_ int32 -> (t[@local_opt]) @@ portable = "%int64_of_int32"
+external of_int32 : int32 @ local -> (t[@local_opt]) @@ portable = "%int64_of_int32"
 
 let of_int_exn = of_int
 let to_int = Conv.int64_to_int
@@ -191,7 +191,7 @@ let to_local_int32_exn = Conv.int64_to_int32_exn
 let to_int32_exn t = globalize_int32 (to_local_int32_exn t) [@nontail]
 
 external of_nativeint
-  :  local_ nativeint
+  :  nativeint @ local
   -> (t[@local_opt])
   @@ portable
   = "%int64_of_nativeint"
@@ -203,11 +203,11 @@ let to_local_nativeint_exn = Conv.int64_to_nativeint_exn
 let to_nativeint_exn t = globalize_nativeint (to_local_nativeint_exn t) [@nontail]
 
 module Pre_O = struct
-  external ( + ) : local_ t -> local_ t -> (t[@local_opt]) @@ portable = "%int64_add"
-  external ( - ) : local_ t -> local_ t -> (t[@local_opt]) @@ portable = "%int64_sub"
-  external ( * ) : local_ t -> local_ t -> (t[@local_opt]) @@ portable = "%int64_mul"
-  external ( / ) : local_ t -> local_ t -> (t[@local_opt]) @@ portable = "%int64_div"
-  external ( ~- ) : local_ t -> (t[@local_opt]) @@ portable = "%int64_neg"
+  external ( + ) : t @ local -> t @ local -> (t[@local_opt]) @@ portable = "%int64_add"
+  external ( - ) : t @ local -> t @ local -> (t[@local_opt]) @@ portable = "%int64_sub"
+  external ( * ) : t @ local -> t @ local -> (t[@local_opt]) @@ portable = "%int64_mul"
+  external ( / ) : t @ local -> t @ local -> (t[@local_opt]) @@ portable = "%int64_div"
+  external ( ~- ) : t @ local -> (t[@local_opt]) @@ portable = "%int64_neg"
 
   let ( ** ) = ( ** )
 
@@ -216,7 +216,7 @@ module Pre_O = struct
   let abs = abs
   let abs_local = abs_local
 
-  external neg : local_ t -> (t[@local_opt]) @@ portable = "%int64_neg"
+  external neg : t @ local -> (t[@local_opt]) @@ portable = "%int64_neg"
 
   let zero = zero
   let of_int_exn = of_int_exn
@@ -239,15 +239,27 @@ module O = struct
       let to_string = T.to_string
     end)
 
-  external ( land ) : local_ t -> local_ t -> (t[@local_opt]) @@ portable = "%int64_and"
-  external ( lor ) : local_ t -> local_ t -> (t[@local_opt]) @@ portable = "%int64_or"
-  external ( lxor ) : local_ t -> local_ t -> (t[@local_opt]) @@ portable = "%int64_xor"
+  external ( land ) : t @ local -> t @ local -> (t[@local_opt]) @@ portable = "%int64_and"
+  external ( lor ) : t @ local -> t @ local -> (t[@local_opt]) @@ portable = "%int64_or"
+  external ( lxor ) : t @ local -> t @ local -> (t[@local_opt]) @@ portable = "%int64_xor"
 
   let lnot = bit_not
 
-  external ( lsl ) : local_ t -> int -> (t[@local_opt]) @@ portable = "%int64_lsl"
-  external ( asr ) : local_ t -> local_ int -> (t[@local_opt]) @@ portable = "%int64_asr"
-  external ( lsr ) : local_ t -> local_ int -> (t[@local_opt]) @@ portable = "%int64_lsr"
+  external ( lsl ) : t @ local -> int -> (t[@local_opt]) @@ portable = "%int64_lsl"
+
+  external ( asr )
+    :  t @ local
+    -> int @ local
+    -> (t[@local_opt])
+    @@ portable
+    = "%int64_asr"
+
+  external ( lsr )
+    :  t @ local
+    -> int @ local
+    -> (t[@local_opt])
+    @@ portable
+    = "%int64_lsr"
 end
 
 include O
@@ -258,11 +270,7 @@ let succ n = n + 1L
 module Pow2 = struct
   open O
 
-  let raise_s = Error.raise_s
-
-  let non_positive_argument () =
-    Printf.invalid_argf "argument must be strictly positive" ()
-  ;;
+  let non_positive_argument () = invalid_arg "argument must be strictly positive"
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 x =
@@ -299,23 +307,13 @@ module Pow2 = struct
 
   (** Hacker's Delight Second Edition p106 *)
   let floor_log2 i =
-    if i <= 0L
-    then
-      raise_s
-        (Sexp.message
-           "[Int64.floor_log2] got invalid input"
-           [ "", sexp_of_int64 (globalize i) ]);
+    if i <= 0L then invalid_arg ("Int64.floor_log2: " ^ to_string i);
     num_bits - 1L - clz i
   ;;
 
   (** Hacker's Delight Second Edition p106 *)
   let ceil_log2 i =
-    if i <= 0L
-    then
-      raise_s
-        (Sexp.message
-           "[Int64.ceil_log2] got invalid input"
-           [ "", sexp_of_int64 (globalize i) ]);
+    if i <= 0L then invalid_arg ("Int64.ceil_log2: " ^ to_string i);
     if i = 1L
     then 0L
     else (

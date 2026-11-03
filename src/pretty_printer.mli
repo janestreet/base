@@ -17,7 +17,7 @@
     toplevel. One common way to do it in vanilla toplevel is to call
     [#require "core.top"]. *)
 
-open! Import
+open! Import0
 
 (** [all ()] returns all pretty printers that have been [register]ed. *)
 val all : unit -> string list

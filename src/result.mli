@@ -2,8 +2,9 @@
 
 (** [Result] is often used to handle error messages. *)
 
-open! Import
+open! Import0
 module Invariant := Invariant_intf.Definitions
+module Either := Either0
 
 [%%template:
 [@@@kind_set.define all_ks_non_value = base_non_value]
@@ -40,12 +41,12 @@ type ('ok : value_or_null, 'err : value_or_null) t = ('ok, 'err) Stdlib.result =
 
 include%template
   Monad.S2
-  [@kind value_or_null mod maybe_null] [@mode local]
+  [@kind value_or_null mod maybe_null] [@mode local once]
   with type ('a : value_or_null, 'err) t := ('a, 'err) t
 
 module%template Error :
   Monad.S2
-  [@kind value_or_null mod maybe_null] [@mode local]
+  [@kind value_or_null mod maybe_null] [@mode local once]
   with type ('err : value_or_null, 'a) t := ('a, 'err) t
 
 include Invariant.S2 with type ('ok, 'err) t := ('ok, 'err) t
@@ -89,32 +90,32 @@ val iter_error
   ('ok, 'err) t -> f:('err -> unit) @ local once -> unit
 
 [%%template:
-[@@@mode.default m = (global, local)]
+[@@@mode.default l = (global, local)]
 [@@@kind ko = all_ks]
 
-val return : ('ok : ko) 'err. 'ok @ m -> (('ok, 'err) t[@kind ko]) @ m
-[@@zero_alloc_if_local m] [@@kind ko]
+val return : ('ok : ko) 'err. 'ok @ l -> (('ok, 'err) t[@kind ko]) @ l
+[@@zero_alloc_if_local l] [@@kind ko]
 
 [@@@kind.default ki = all_ks, ko = ko]
 
 val bind
   : ('a : ki) ('b : ko) 'err.
-  (('a, 'err) t[@kind ki]) @ m
-  -> f:('a @ m -> (('b, 'err) t[@kind ko]) @ m) @ local
-  -> (('b, 'err) t[@kind ko]) @ m
+  (('a, 'err) t[@kind ki]) @ l
+  -> f:('a @ l -> (('b, 'err) t[@kind ko]) @ l) @ local once
+  -> (('b, 'err) t[@kind ko]) @ l
 
 val map
   : ('a : ki) ('b : ko) 'err.
-  (('a, 'err) t[@kind ki]) @ m
-  -> f:('a @ m -> 'b @ m) @ local
-  -> (('b, 'err) t[@kind ko]) @ m]
+  (('a, 'err) t[@kind ki]) @ l
+  -> f:('a @ l -> 'b @ l) @ local once
+  -> (('b, 'err) t[@kind ko]) @ l]
 
 val%template map_error
   : ('ok : k) ('err : value_or_null) ('c : value_or_null).
-  (('ok, 'err) t[@kind k]) @ m
-  -> f:('err @ m -> 'c @ m) @ local once
-  -> (('ok, 'c) t[@kind k]) @ m
-[@@kind k = all_ks] [@@alloc __ @ m = (heap_global, stack_local)]
+  (('ok, 'err) t[@kind k]) @ l
+  -> f:('err @ l -> 'c @ l) @ local once
+  -> (('ok, 'c) t[@kind k]) @ l
+[@@kind k = all_ks] [@@alloc __ @ l = (heap_global, stack_local)]
 
 (** Returns [Ok] if both are [Ok] and [Error] otherwise. *)
 val combine
@@ -127,7 +128,7 @@ val combine
   -> ('ok3, 'err) t
 
 [%%template:
-[@@@alloc.default __ @ m = (heap_global, stack_local)]
+[@@@alloc.default __ @ l = (heap_global, stack_local)]
 
 (** [combine_errors ts] returns [Ok] if every element in [ts] is [Ok], else it returns
     [Error] with all the errors in [ts].
@@ -136,7 +137,7 @@ val combine
     the first error. *)
 val combine_errors
   : ('ok : value_or_null) ('err : value_or_null).
-  ('ok, 'err) t list @ m -> ('ok list, 'err list) t @ m]
+  ('ok, 'err) t list @ l -> ('ok list, 'err list) t @ l]
 
 (** [combine_errors_unit] returns [Ok] if every element in [ts] is [Ok ()], else it
     returns [Error] with all the errors in [ts], like [combine_errors]. *)
@@ -145,7 +146,7 @@ val combine_errors_unit
   (unit, 'err) t list -> (unit, 'err list) t
 
 [%%template:
-[@@@mode.default m = (global, local)]
+[@@@mode.default l = (global, local)]
 
 (** [to_either] is useful with [List.partition_map]. For example:
 
@@ -157,13 +158,13 @@ val combine_errors_unit
     ]} *)
 val to_either
   : ('ok : value_or_null) ('err : value_or_null).
-  ('ok, 'err) t @ m -> ('ok, 'err) Either0.t @ m
-[@@zero_alloc_if_local m]
+  ('ok, 'err) t @ l -> ('ok, 'err) Either.t @ l
+[@@zero_alloc_if_local l]
 
 val of_either
   : ('ok : value_or_null) ('err : value_or_null).
-  ('ok, 'err) Either0.t @ m -> ('ok, 'err) t @ m
-[@@zero_alloc_if_local m]]
+  ('ok, 'err) Either.t @ l -> ('ok, 'err) t @ l
+[@@zero_alloc_if_local l]]
 
 (** [ok_if_true] returns [Ok ()] if [bool] is true, and [Error error] if it is false. *)
 val ok_if_true : ('err : value_or_null). bool -> error:'err -> (unit, 'err) t
@@ -176,8 +177,8 @@ val ok_if_true : ('err : value_or_null). bool -> error:'err -> (unit, 'err) t
     Inverse of {!Option.transpose_result}. *)
 val transpose_opt
   : ('ok : value_or_null) ('err : value_or_null).
-  ('ok option, 'err) t @ m -> ('ok, 'err) t option @ m
-[@@alloc __ @ m = (stack_local, heap_global)]
+  ('ok option, 'err) t @ l -> ('ok, 'err) t option @ l
+[@@alloc __ @ l = (stack_local, heap_global)]
 
 val try_with : ('a : value_or_null). (unit -> 'a) @ local once -> ('a, exn) t
 

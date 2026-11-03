@@ -3,7 +3,8 @@
 (** Used for specifying a bound (either upper or lower) as inclusive, exclusive, or
     unbounded. *)
 
-open! Import
+open! Import0
+module List := List0
 
 type interval_comparison =
   | Below_lower_bound
@@ -25,19 +26,19 @@ include sig
     | Unbounded
   [@@deriving sexp ~stackify, sexp_grammar, globalize]
 
-  val all : ('a List.t[@kind k]) -> ('a t[@kind k]) list
-  val map : ('a t[@kind k]) -> f:local_ ('a -> 'b) -> ('b t[@kind k])
+  val all : ('a List.Constructors.t[@kind k]) -> ('a t[@kind k]) list
+  val map : ('a t[@kind k]) -> f:('a -> 'b) @ local -> ('b t[@kind k])
 
   val is_lower_bound
     :  ('a t[@kind k])
     -> of_:'a
-    -> compare:local_ ('a -> 'a -> int)
+    -> compare:('a -> 'a -> int) @ local
     -> bool
 
   val is_upper_bound
     :  ('a t[@kind k])
     -> of_:'a
-    -> compare:local_ ('a -> 'a -> int)
+    -> compare:('a -> 'a -> int) @ local
     -> bool
 
   (** [interval_contains_exn ~lower ~upper x ~compare] raises if [lower] and [upper] are
@@ -46,7 +47,7 @@ include sig
     :  lower:('a t[@kind k])
     -> upper:('a t[@kind k])
     -> 'a
-    -> compare:local_ ('a -> 'a -> int)
+    -> compare:('a -> 'a -> int) @ local
     -> bool
 
   (** [bounds_crossed ~lower ~upper ~compare] returns true if [lower > upper].
@@ -55,7 +56,7 @@ include sig
   val bounds_crossed
     :  lower:('a t[@kind k])
     -> upper:('a t[@kind k])
-    -> compare:local_ ('a -> 'a -> int)
+    -> compare:('a -> 'a -> int) @ local
     -> bool
 
   (** [compare_to_interval_exn ~lower ~upper x ~compare] raises if [lower] and [upper] are
@@ -64,6 +65,6 @@ include sig
     :  lower:('a t[@kind k])
     -> upper:('a t[@kind k])
     -> 'a
-    -> compare:local_ ('a -> 'a -> int)
+    -> compare:('a -> 'a -> int) @ local
     -> interval_comparison
 end]

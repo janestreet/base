@@ -1,11 +1,11 @@
 open! Import
+module Error = Error0
 module Sexp = Sexp0
 module _ = Popcount
 
 let raise_s = Error.raise_s
 
-module Repr = Int63_emul.Repr
-include Sys0.Make_immediate64 (Int) (Int63_emul)
+type t = Int63_type.t
 
 module Backend = struct
   module type S = sig @@ portable
@@ -15,23 +15,23 @@ module Backend = struct
       include Replace_polymorphic_compare.S with type t := t
 
       val of_int : int -> t
-      val to_int : local_ t -> int option
-      val to_int_trunc : local_ t -> int
-      val of_int32 : local_ int32 -> t
-      val to_int32 : local_ t -> int32 option
-      val to_int32_trunc : local_ t -> int32
-      val of_int64 : local_ int64 -> t option
-      val of_int64_exn : local_ int64 -> t
-      val of_int64_trunc : local_ int64 -> t
-      val of_nativeint : local_ nativeint -> t option
-      val to_nativeint : local_ t -> nativeint option
-      val of_nativeint_trunc : local_ nativeint -> t
-      val to_nativeint_trunc : local_ t -> nativeint
-      val of_float_unchecked : local_ float -> t
-      val repr : (t, t) Int63_emul.Repr.t
-      val bswap16 : local_ t -> t
-      val bswap32 : local_ t -> t
-      val bswap48 : local_ t -> t
+      val to_int : t @ local -> int option
+      val to_int_trunc : t @ local -> int
+      val of_int32 : int32 @ local -> t
+      val to_int32 : t @ local -> int32 option
+      val to_int32_trunc : t @ local -> int32
+      val of_int64 : int64 @ local -> t option
+      val of_int64_exn : int64 @ local -> t
+      val of_int64_trunc : int64 @ local -> t
+      val of_nativeint : nativeint @ local -> t option
+      val to_nativeint : t @ local -> nativeint option
+      val of_nativeint_trunc : nativeint @ local -> t
+      val to_nativeint_trunc : t @ local -> nativeint
+      val of_float_unchecked : float @ local -> t
+      val repr : t Int63_type.Repr.t
+      val bswap16 : t @ local -> t
+      val bswap32 : t @ local -> t
+      val bswap48 : t @ local -> t
     end
     with type t := t
 
@@ -47,16 +47,16 @@ module Backend = struct
     let of_int32 x = globalize_int (of_local_int32_exn x)
     let to_nativeint_trunc x = to_nativeint x
     let to_nativeint x = Some (to_nativeint x)
-    let repr = Int63_emul.Repr.Int
-    let bswap16 = (bswap16 :> local_ t -> t)
+    let repr = Int63_type.Repr.Int
+    let bswap16 = (bswap16 :> t @ local -> t)
     let bswap32 t = Int64.to_int_trunc (Int64.bswap32 (Int64.of_int t))
     let bswap48 t = Int64.to_int_trunc (Int64.bswap48 (Int64.of_int t))
   end
 
   let impl : (module S) =
-    match repr with
-    | Immediate -> (module Native : S)
-    | Non_immediate -> (module Int63_emul : S)
+    match Int63_type.repr with
+    | Int -> (module Native : S)
+    | Int64 -> (module Int63_emul : S)
   ;;
 end
 
@@ -111,7 +111,11 @@ module Overflow_exn = struct
   ;;
 
   let abs t = if t = min_value then failwith "abs overflow" else abs t
-  let abs_local t = if t = min_value then failwith "abs_local overflow" else abs_local t
+
+  let abs_local t =
+    if t = min_value then failwith "abs_local overflow" else exclave_ abs_local t
+  ;;
+
   let neg t = if t = min_value then failwith "neg overflow" else neg t
 end
 
@@ -146,7 +150,7 @@ let random_incl =
 ;;
 
 module Private = struct
-  module Repr = Repr
+  module Repr = Int63_type.Repr
 
   let repr = repr
 

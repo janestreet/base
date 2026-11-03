@@ -1,5 +1,6 @@
 open! Import
 module Array = Array0
+module Error = Error0
 module Sexp = Sexp0
 module String = String0
 include Char0

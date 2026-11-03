@@ -1,5 +1,9 @@
 open! Import
 module Constructors = Option0
+module Error = Error0
+module Iarray = Iarray0
+module Nothing = Nothing0
+module Source_code_position = Source_code_position0
 include Constructors
 
 [%%template
@@ -7,7 +11,7 @@ include Constructors
 [@@@kind kr2 = (value_or_null & kr1)]
 
 [@@@kind_set.define
-  all_ks_non_value = (base_non_value, value_or_null & (base_or_null, kr2))]
+  all_ks_non_value = (base_non_value, value_or_null & (base_or_null, kr2, void))]
 
 [@@@kind_set.define all_ks = (all_ks_non_value, value_or_null)]
 
@@ -19,7 +23,7 @@ include struct
   [@@@kind.default k = all_ks]
 
   open struct
-    type nonrec ('a : any) t = ('a t[@kind.explicit k]) =
+    type nonrec ('a : k) t = ('a t[@kind.explicit k]) =
       | None
       | Some of 'a
   end
@@ -59,7 +63,7 @@ include struct
   [@@@kind.default k = all_ks]
 
   open struct
-    type nonrec ('a : any) t = ('a t[@kind.explicit k]) =
+    type nonrec ('a : k) t = ('a t[@kind.explicit k]) =
       | None
       | Some of 'a
   end
@@ -81,7 +85,7 @@ include struct
         | None, None ->
           if Source_code_position.is_dummy here
           then Error.of_string "Option.value_exn None"
-          else Error.create "Option.value_exn None" here Source_code_position0.sexp_of_t
+          else Error.create "Option.value_exn None" here Source_code_position.sexp_of_t
         | Some e, None -> e
         | None, Some m -> Error.of_string m
         | Some e, Some m -> Error.tag e ~tag:m
@@ -126,8 +130,8 @@ let to_array t =
 
 let to_iarray t =
   match t with
-  | None -> Iarray0.unsafe_of_array__promise_no_mutation [||]
-  | Some x -> Iarray0.unsafe_of_array__promise_no_mutation [| x |]
+  | None -> Iarray.unsafe_of_array__promise_no_mutation [||]
+  | Some x -> Iarray.unsafe_of_array__promise_no_mutation [| x |]
 ;;
 
 let%template to_list t =
@@ -215,9 +219,10 @@ let%template[@mode local] some_if_thunk cond thunk = exclave_
 ;;
 
 let merge a b ~f =
-  match a, b with
+  match[@exclave_if_stack a] a, b with
   | None, x | x, None -> x
   | Some a, Some b -> Some (f a b)
+[@@alloc a = (stack, heap)]
 ;;
 
 let transpose_result t =
@@ -235,15 +240,17 @@ let filter t ~f =
 ;;
 
 let try_with f =
-  match f () with
+  match[@exclave_if_stack a] f () with
   | x -> Some x
   | exception _ -> None
+[@@alloc a = (stack, heap)]
 ;;
 
 let try_with_join f =
-  match f () with
+  match[@exclave_if_local m ~reasons:[ May_return_local ]] f () with
   | x -> x
   | exception _ -> None
+[@@mode m = (local, global)]
 ;;
 
 let%template[@mode local] both x y =

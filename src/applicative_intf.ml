@@ -15,7 +15,7 @@
       http://staff.city.ac.uk/~ross/papers/Applicative.pdf
     v} *)
 
-open! Import
+open! Import0
 
 module Definitions = struct
   [%%template
@@ -109,6 +109,7 @@ module Definitions = struct
   module type Applicative_infix3 = sig
     type ('a : k, 'p, 'q) t : k
 
+
     val ( <*> )
       : ('a : k) ('b : k) 'p 'q.
       ('a @ p -> 'b @ p, 'p, 'q) t @ p -> ('a, 'p, 'q) t @ p -> ('b, 'p, 'q) t @ p
@@ -140,6 +141,7 @@ module Definitions = struct
 
     include Applicative_infix3 [@kind k] [@mode m p] with type ('a : k, _, _) t := 'a t
   end
+
 
   (** Complete applicative interface. Extends [_kernel] with infix operators.
 
@@ -423,7 +425,7 @@ module type Applicative = sig @@ portable
       (Intf : sig
          module type S
        end)
-      (Impl : Intf.S) : sig @@ p
+      (Impl : Intf.S @ p) : sig @@ p
       include Let_syntax [@kind k] [@mode m]
     end
     with type ('a : k) t := 'a X.t
@@ -438,7 +440,7 @@ module type Applicative = sig @@ portable
       (Intf : sig
          module type S
        end)
-      (Impl : Intf.S) : sig @@ p
+      (Impl : Intf.S @ p) : sig @@ p
       include Let_syntax2 [@kind k] [@mode m]
     end
     with type ('a : k, 'p) t := ('a, 'p) X.t
@@ -453,7 +455,7 @@ module type Applicative = sig @@ portable
       (Intf : sig
          module type S
        end)
-      (Impl : Intf.S) : sig @@ p
+      (Impl : Intf.S @ p) : sig @@ p
       include Let_syntax3 [@kind k] [@mode m]
     end
     with type ('a : k, 'p, 'q) t := ('a, 'p, 'q) X.t

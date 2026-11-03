@@ -1,8 +1,8 @@
-open! Import
+open! Import0
 module Sexp = Sexp0
 module Info = Info0
 
-module type Error = sig @@ portable
+module type Error0 = sig @@ portable
   (** A lazy string, implemented with [Info], but intended specifically for error
       messages. *)
 
@@ -15,9 +15,9 @@ module type Error = sig @@ portable
 
   (** Note that the exception raised by this function maintains a reference to the [t]
       passed in. *)
-  val raise : ('a : k). t -> 'a @ portable
+  val raise : ('a : k). t -> 'a @ portable unique
 
-  val raise_s : ('a : k). Sexp.t -> 'a @ portable]
+  val raise_s : ('a : k). Sexp.t -> 'a @ portable unique]
 
   (** Re-raise exceptions raised from [f] with this [t] as context. If this function
       raises, the exception maintains a reference to the [t] passed in. *)
@@ -31,7 +31,7 @@ module type Error = sig @@ portable
 end
 
 module type Error_with_extras = sig @@ portable
-  include Error (** @inline *)
+  include Error0 (** @inline *)
 
   include Info.S with type t := t (** @inline *)
 end

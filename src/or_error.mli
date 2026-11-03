@@ -9,8 +9,10 @@
       val do_something_linux_specific : (unit -> unit) Or_error.t
     ]} *)
 
-open! Import
+open! Import0
+module Error := Error0
 module Sexp := Sexp0
+module Source_code_position := Source_code_position0
 
 [%%template:
 [@@@kind_set.define all_ks_non_value = base_non_value]
@@ -53,9 +55,11 @@ val is_error : ('a : value_or_null). 'a t -> bool
 val%template try_with
   : ('a : k).
   ?backtrace:bool (** defaults to [false] *)
-  -> (unit -> 'a @ p) @ local once
-  -> ('a t[@kind k]) @ p
-[@@mode p = (nonportable, portable)] [@@kind k = base_or_null]
+  -> (unit -> 'a @ l p) @ local once
+  -> ('a t[@kind k]) @ l p
+[@@mode p = (nonportable, portable)]
+[@@kind k = base_or_null]
+[@@alloc __ @ l = (heap @ global, stack @ local)]
 
 val try_with_join
   : ('a : value_or_null).
@@ -90,26 +94,26 @@ val of_exn_result
 val of_option : ('a : value_or_null). 'a option -> error:Error.t -> 'a t
 
 (** Calls [of_option ~error:(Error.of_lazy_t error)]. *)
-val of_option_lazy : ('a : value_or_null). 'a option -> error:Error.t Lazy.t -> 'a t
+val of_option_lazy : ('a : value_or_null). 'a option -> error:Error.t lazy_t -> 'a t
 
 (** Calls [of_option ~error:(Error.of_lazy_sexp error)]. *)
-val of_option_lazy_sexp : ('a : value_or_null). 'a option -> error:Sexp.t Lazy.t -> 'a t
+val of_option_lazy_sexp : ('a : value_or_null). 'a option -> error:Sexp.t lazy_t -> 'a t
 
 (** Calls [of_option ~error:(Error.of_lazy error)]. *)
-val of_option_lazy_string : ('a : value_or_null). 'a option -> error:string Lazy.t -> 'a t
+val of_option_lazy_string : ('a : value_or_null). 'a option -> error:string lazy_t -> 'a t
 
 (** [of_or_null t ~error] returns [Ok 'a] if [t] is [This 'a], and otherwise returns the
     supplied [error] as [Error error]. *)
 val of_or_null : 'a or_null -> error:Error.t -> 'a t
 
 (** Calls [of_or_null ~error:(Error.of_lazy_t error)]. *)
-val of_or_null_lazy : 'a or_null -> error:Error.t Lazy.t -> 'a t
+val of_or_null_lazy : 'a or_null -> error:Error.t lazy_t -> 'a t
 
 (** Calls [of_or_null ~error:(Error.of_lazy_sexp error)]. *)
-val of_or_null_lazy_sexp : 'a or_null -> error:Sexp.t Lazy.t -> 'a t
+val of_or_null_lazy_sexp : 'a or_null -> error:Sexp.t lazy_t -> 'a t
 
 (** Calls [of_or_null ~error:(Error.of_lazy error)]. *)
-val of_or_null_lazy_string : 'a or_null -> error:string Lazy.t -> 'a t
+val of_or_null_lazy_string : 'a or_null -> error:string lazy_t -> 'a t
 
 (** [error] is a wrapper around [Error.create]:
 
@@ -123,7 +127,7 @@ val of_or_null_lazy_string : 'a or_null -> error:string Lazy.t -> 'a t
     [sexp_of_a a] to be computed immediately. *)
 val%template error
   : ('a : value_or_null mod c) ('b : value_or_null).
-  ?here:Source_code_position0.t
+  ?here:Source_code_position.t
   -> ?strict:unit
   -> string
   -> 'a @ p
@@ -159,10 +163,10 @@ val%template tag_s : ('a : k). ('a t[@kind k]) @ p -> tag:Sexp.t -> ('a t[@kind 
 [@@mode p = (portable, nonportable)] [@@kind k = base_or_null]
 
 (** [tag_lazy] is like [tag] with a lazy tag. *)
-val tag_lazy : ('a : value_or_null). 'a t -> tag:string Lazy.t -> 'a t
+val tag_lazy : ('a : value_or_null). 'a t -> tag:string lazy_t -> 'a t
 
 (** [tag_s_lazy] is like [tag] with a lazy sexp tag. *)
-val tag_s_lazy : ('a : value_or_null). 'a t -> tag:Sexp.t Lazy.t -> 'a t
+val tag_s_lazy : ('a : value_or_null). 'a t -> tag:Sexp.t lazy_t -> 'a t
 
 (** [tag_arg] is like [tag], with a tag that has a sexpable argument. *)
 val tag_arg
@@ -228,3 +232,66 @@ val find_ok : ('a : value_or_null). 'a t list -> 'a t
 val find_map_ok
   : ('a : value_or_null) ('b : value_or_null).
   'a list -> f:('a -> 'b t) @ local -> 'b t]
+
+(** [('a, Error.Portable.t) Result.t] with some common ppxes derived on it. It also
+    re-exports some functions of [Or_error] so users don't need to frequently wrap and
+    unwrap [Error.Portable.t]. *)
+module Portable : sig
+  module Sexp := Sexp0
+
+  type 'a t = ('a, Error.Portable.t) Result.t
+  [@@deriving compare ~localize, equal ~localize, globalize, sexp]
+
+  include%template Applicative.S [@mode local] with type 'a t := 'a t
+  include%template Monad.S [@mode local] with type 'a t := 'a t
+
+  val ok : 'ok t -> 'ok option
+  val ok_exn : 'a t -> 'a
+
+  val error
+    : 'a ('b : value mod contended).
+    ?here:Source_code_position0.t
+    -> ?strict:unit
+    -> string
+    -> 'b @ portable
+    -> ('b -> Sexp.t) @ portable
+    -> 'a t
+
+  val error_s : Sexp.t -> _ t
+  val error_string : string -> _ t
+  val tag : 'a t -> tag:string -> 'a t
+  val tag_s : 'a t -> tag:Sexp.t -> 'a t
+
+  val tag_arg
+    : 'a ('b : value mod contended).
+    'a t -> string -> 'b @ portable -> ('b -> Sexp.t) @ portable -> 'a t
+
+  val combine_errors : 'a t list -> 'a list t
+  val combine_errors_unit : unit t list -> unit t
+
+  (** [try_with f] catches exceptions thrown by [f] and returns them as portable errors.
+      [try_with_join] is like [try_with], except that [f] may return an [Error] directly. *)
+  val try_with : ?backtrace:bool -> (unit -> 'a) @ local once -> 'a t
+
+  val try_with_join : ?backtrace:bool -> (unit -> 'a t) @ local once -> 'a t
+
+  (** [errorf format arg1 arg2 ...] is [error_string (sprintf format arg1 arg2 ...)]. *)
+  val errorf : ('a, unit, string, 'b t) format4 -> 'a
+
+  (** [of_exn ?backtrace exn] is
+      [Error (Error.to_portable (Error.of_exn ?backtrace exn))]. *)
+  val of_exn : ?backtrace:[ `Get | `This of string ] -> exn -> 'a t
+
+  val of_exn_result : ?backtrace:[ `Get | `This of string ] -> ('a, exn) Result.t -> 'a t
+end
+
+val%template of_portable : 'a Portable.t @ p -> 'a t @ p
+[@@mode p = (nonportable, portable)]
+
+val to_portable : 'a t @ portable -> 'a Portable.t @ portable
+
+(** Constructs a [Portable.t] out of a possibly non-portable [t].
+
+    This operation is a no-op for [Ok], but it's not a no-op because it needs to force any
+    non-portable computation of the input error. *)
+val portabilize : 'a t -> 'a Portable.t

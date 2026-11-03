@@ -11,12 +11,13 @@
       # let h = Hashtbl.of_alist_exn (module String) [ ("Bar", "Value") ];;
       val h : (string, string) Base.Hashtbl.t = <abstr>
       # (Hashtbl.find h "Foo" : _ option);;
-      - : string option = Base.Option.None
+      - : string option = Option.None
       # (Hashtbl.find h "Bar" : _ option);;
-      - : string option = Base.Option.Some "Value"
+      - : string option = Option.Some "Value"
     ]} *)
 
-open! Import
+open! Import0
+module Error := Error0
 
 (** {2 Type and Interfaces} *)
 
@@ -27,7 +28,7 @@ module Constructors : module type of Option0
 [@@@kind kr2 = (value_or_null & kr1)]
 
 [@@@kind_set.define
-  all_ks_non_value = (base_non_value, value_or_null & (base_or_null, kr2))]
+  all_ks_non_value = (base_non_value, value_or_null & (base_or_null, kr2, void))]
 
 [@@@kind_set.define all_ks = (all_ks_non_value, value_or_null)]
 
@@ -159,7 +160,10 @@ val call : ('a : value_or_null). 'a -> f:('a -> unit) t @ local once -> unit
     [b] are [None], returns [None]. If only one is [Some], returns that one, and if both
     are [Some], returns [Some] of the result of applying [f] to the contents of [a] and
     [b]. *)
-val merge : ('a : value_or_null). 'a t -> 'a t -> f:('a -> 'a -> 'a) @ local once -> 'a t
+val merge
+  : ('a : value_or_null).
+  'a t @ m -> 'a t @ m -> f:('a @ m -> 'a @ m -> 'a @ m) @ local once -> 'a t @ m
+[@@alloc __ @ m = (stack_local, heap_global)]
 
 (** [transpose_result x] transposes an [option] of a [result] into a [result] of an
     [option].
@@ -179,11 +183,13 @@ val filter : ('a : value_or_null). 'a t -> f:('a -> bool) @ local once -> 'a t
 
 (** [try_with f] returns [Some x] if [f] returns [x] and [None] if [f] raises an
     exception. See [Result.try_with] if you'd like to know which exception. *)
-val try_with : ('a : value_or_null). (unit -> 'a) @ local once -> 'a t
+val try_with : ('a : value_or_null). (unit -> 'a @ m) @ local once -> 'a t @ m
+[@@alloc __ @ m = (stack_local, heap_global)]
 
 (** [try_with_join f] returns the optional value returned by [f] if it exits normally, and
     [None] if [f] raises an exception. *)
-val try_with_join : ('a : value_or_null). (unit -> 'a t) @ local once -> 'a t
+val try_with_join : ('a : value_or_null). (unit -> 'a t @ m) @ local once -> 'a t @ m
+[@@mode m = (local, global)]
 
 include sig
   [@@@mode.default m = (global, local)]

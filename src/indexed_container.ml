@@ -1,5 +1,6 @@
-open! Import
+open! Import0
 module Array = Array0
+module Either = Either0
 open Container.Export
 include Indexed_container_intf.Definitions
 
@@ -255,7 +256,8 @@ end
 [@@alloc a @ m = (heap_global, stack_local)]
 
 module%template.portable
-  [@modality m] Make_gen_with_creators
+  [@modality m]
+  Make_gen_with_creators
     (T : Make_gen_with_creators_arg) :
   Generic_with_creators
   with type ('a, 'phantom1, 'phantom2) t := ('a, 'phantom1, 'phantom2) T.t
@@ -302,13 +304,13 @@ struct
     let array = Array.mapi (to_array t) ~f in
     let xs =
       Array.fold_right array ~init:[] ~f:(fun either acc ->
-        match (either : _ Either0.t) with
+        match (either : _ Either.t) with
         | First x -> x :: acc
         | Second _ -> acc)
     in
     let ys =
       Array.fold_right array ~init:[] ~f:(fun either acc ->
-        match (either : _ Either0.t) with
+        match (either : _ Either.t) with
         | First _ -> acc
         | Second x -> x :: acc)
     in

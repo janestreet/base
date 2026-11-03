@@ -7,9 +7,6 @@
     [expr], without computing [expr] itself yet. "Forcing" the suspension will then
     compute [expr] and return its result.
 
-    Note: [lazy_t] is the built-in type constructor used by the compiler for the [lazy]
-    keyword. You should not use it directly. Always use [Lazy.t] instead.
-
     Note: [Lazy.force] is not thread-safe. If you use this module in a multi-threaded
     program, you will need to add some locks.
 
@@ -20,7 +17,7 @@
     system. Without the [-rectypes] option, such ill-founded recursive definitions are
     rejected by the type-checker. *)
 
-open! Import
+open! Import0
 
 type 'a t = 'a lazy_t
 [@@deriving

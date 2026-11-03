@@ -3,6 +3,9 @@
 open Import
 open Ppx_compare_lib.Builtin
 open Globalize
+module Error = Error0
+module Nothing = Nothing0
+module Sexp = Sexp0
 
 [%%template
 [@@@kind_set.define all_ks_non_value = base_non_value]
@@ -72,7 +75,7 @@ end
 include For_deriving
 
 module Format = struct
-  type 'a t = 'a List.t [@@deriving sexp ~stackify]
+  type 'a t = 'a list [@@deriving sexp ~stackify]
 end
 
 module To = struct
@@ -285,7 +288,7 @@ let filter_map (hd :: tl) ~f : (_ List.t[@kind kb]) @ lo =
   | Some hd -> hd :: (List.filter_map [@kind ka kb] [@mode li] [@alloc a]) tl ~f
 ;;
 
-let filter_map_or_null (hd :: tl) ~f : _ List.t @ lo =
+let filter_map_or_null (hd :: tl) ~f : _ list @ lo =
   match[@exclave_if_stack a] (f hd : _ or_null) with
   | Null -> (List.filter_map_or_null [@kind ka] [@mode li] [@alloc a]) tl ~f
   | This hd -> hd :: (List.filter_map_or_null [@kind ka] [@mode li] [@alloc a]) tl ~f
@@ -300,7 +303,7 @@ let filter_mapi (hd :: tl) ~f : (_ List.t[@kind kb]) =
   [@exclave_if_stack a]
 ;;
 
-let filter_mapi_or_null (hd :: tl) ~f : _ List.t =
+let filter_mapi_or_null (hd :: tl) ~f : _ list =
   (let hd = f 0 hd in
    let[@inline always] f i x = f (i + 1) x [@exclave_if_stack a] in
    match (hd : _ or_null) with
@@ -398,6 +401,12 @@ let drop_last (hd :: tl) =
   | Some l -> hd :: l
 ;;
 
+let of_iarray t = of_list (Iarray.to_list t)
+
+let%template[@alloc a @ l = (heap_global, stack_local)] to_iarray t =
+  (Iarray.of_list [@alloc a]) ((to_list [@mode l]) t) [@exclave_if_stack a]
+;;
+
 let to_sequence t =
   (* [to_list] just performs one [::], so this sequence is created with only constant
      up-front work *)
@@ -436,12 +445,7 @@ let all_equal t ~equal =
 
 let is_sorted t = to_list t |> List.is_sorted
 let is_sorted_strictly t = to_list t |> List.is_sorted_strictly
-
-let map_add_multi map ~key ~data =
-  Map.update map key ~f:(function
-    | None -> singleton data
-    | Some t -> cons data t)
-;;
+let map_add_multi map ~key ~data = Map.add_multi_nonempty map ~key ~data
 
 let hashtbl_add_multi map ~key ~data =
   Hashtbl.update map key ~f:(function
@@ -454,17 +458,13 @@ let map_of_container_multi_rev fold container ~comparator =
     map_add_multi acc ~key ~data)
 ;;
 
-let map_of_container_multi fold container ~comparator =
-  (* [map_of_container_multi_rev] will reverse the elements of the container that we pass
-     into it, so instead of passing in [container] directly, fold over it to construct a
-     list that contains its elements in reverse order *)
-  let reversed = fold container ~init:[] ~f:(fun l x -> List.cons x l) in
-  map_of_container_multi_rev List.fold reversed ~comparator
+let map_of_alist_multi alist ~comparator = Map.of_alist_multi_nonempty comparator alist
+let map_of_alist_multi_rev alist = map_of_container_multi_rev List.fold alist
+
+let map_of_sequence_multi sequence ~comparator =
+  Map.of_sequence_multi_nonempty comparator sequence
 ;;
 
-let map_of_alist_multi alist = map_of_container_multi List.fold alist
-let map_of_alist_multi_rev alist = map_of_container_multi_rev List.fold alist
-let map_of_sequence_multi sequence = map_of_container_multi Sequence.fold sequence
 let map_of_sequence_multi_rev sequence = map_of_container_multi_rev Sequence.fold sequence
 
 let%template fold_nonempty (type a : ka) (hd :: tl : (a t[@kind ka])) ~init ~f =
@@ -482,7 +482,7 @@ let map_of_list_with_key_multi_rev list ~comparator ~get_key =
 ;;
 
 let map_of_list_with_key_multi list ~comparator ~get_key =
-  map_of_list_with_key_multi_rev (List.rev list) ~comparator ~get_key
+  Map.of_list_with_key_multi_nonempty comparator list ~get_key
 ;;
 
 let fold_right (hd :: tl) ~init:acc ~f =

@@ -36,31 +36,31 @@ module type%template [@kind.explicit k = (value, value_or_null)] S = sig
   external dup : t -> t = "%obj_dup"
 
   (** Returns the tag of the block. *)
-  external tag : t @ contended local once -> int = "caml_obj_tag"
+  external tag : t @ immutable local once -> int = "caml_obj_tag"
   [@@noalloc]
 
   (** Computes the total size (in words) of the value. *)
-  val size : t @ contended local once -> int
-  [@@zero_alloc]
+  val size : t @ immutable local once -> int
+  [@@zero_alloc strict]
 
   (** Tests if the argument is an immediate value (int or variant constructor). *)
-  external is_int : t @ contended local once -> bool = "%obj_is_int"
+  external is_int : t @ immutable local once -> bool = "%obj_is_int"
 
   (** Tests if the argument is a heap-allocated block. *)
-  val is_block : t @ contended local once -> bool
-  [@@zero_alloc]
+  val is_block : t @ immutable local once -> bool
+  [@@zero_alloc strict]
 
   (** Checks whether a value is stack-allocated. *)
-  external is_stack : t @ contended local once -> bool = "caml_obj_is_stack"
+  external is_stack : t @ immutable local once -> bool = "caml_obj_is_stack"
   [@@noalloc]
 
   (** Checks if a value is immediate, stack-allocated, or heap-allocated. *)
-  val stack_or_heap : t @ contended local once -> stack_or_heap
-  [@@zero_alloc]
+  val stack_or_heap : t @ immutable local once -> stack_or_heap
+  [@@zero_alloc strict]
 
   (** Checks if a value is immediate, a uniform block, or a mixed block. *)
-  val uniform_or_mixed : t @ contended local once -> uniform_or_mixed @ local
-  [@@zero_alloc]
+  val uniform_or_mixed : t @ immutable local once -> uniform_or_mixed @ local
+  [@@zero_alloc strict]
 
   (** Computes the total size (in words, including the headers) of all heap blocks
       accessible from the argument. Statically allocated blocks are included. *)
@@ -72,7 +72,7 @@ module type%template [@kind.explicit k = (value, value_or_null)] S = sig
       (t[@local_opt]) @ c o p u -> ('a[@local_opt]) @ c o p u
       = "%obj_magic"
     [@@mode
-      c = (uncontended, shared, contended)
+      c = (uncontended, shared, contended, read, write, immutable)
       , o = (many, once)
       , p = (nonportable, portable)
       , u = (aliased, unique)]
@@ -80,8 +80,10 @@ module type%template [@kind.explicit k = (value, value_or_null)] S = sig
     [%%template:
     [@@@mode.default l = (local, global)]
 
+    (*_ [field] has no [@@zero_alloc] annotation because reading a field of a flat float
+        array (a block with [double_array_tag]) allocates a boxed float. *)
     val field : t @ l -> int -> t @ l
-    val set_field : t @ l -> int -> t -> unit]
+    val set_field : t @ l -> int -> t -> unit [@@zero_alloc strict]]
 
     external raw_field : (t[@local_opt]) -> int -> raw_data = "caml_obj_raw_field"
 
@@ -142,7 +144,7 @@ module type Obj = sig @@ portable
     = "%obj_magic"
   [@@layout_poly]
   [@@mode
-    c = (uncontended, shared, contended, read, immutable)
+    c = (uncontended, shared, contended, read, write, immutable)
     , o = (many, once)
     , p = (nonportable, shareable, portable, reading, stateless)
     , u = (aliased, unique)]
@@ -153,7 +155,7 @@ module type Obj = sig @@ portable
     = "%identity"
   [@@layout_poly]
   [@@mode
-    c = (uncontended, shared, contended, read, immutable)
+    c = (uncontended, shared, contended, read, write, immutable)
     , o = (many, once)
     , u = (aliased, unique)]
 
@@ -173,7 +175,7 @@ module type Obj = sig @@ portable
     = "%identity"
   [@@layout_poly]
   [@@mode
-    c = (uncontended, shared, contended)
+    c = (uncontended, shared, contended, read, write, immutable)
     , p = (nonportable, portable)
     , u = (aliased, unique)]
 
@@ -236,22 +238,40 @@ module type Obj = sig @@ portable
     include%template S [@kind.explicit value_or_null] with type t := t (** @inline *)
 
     (** Tests if the argument is an immediate value (int, variant constructor, or null). *)
-    val is_immediate : t @ contended local once -> bool
-    [@@zero_alloc]
+    val is_immediate : t @ immutable local once -> bool
+    [@@zero_alloc strict]
 
     external is_null : t @ immutable local once -> bool = "%is_null"
     val null_tag : int
 
-    external of_or_null
-      :  (Stdlib.Obj.t or_null[@local_opt])
-      -> (t[@local_opt])
+    external%template of_or_null
+      :  (Stdlib.Obj.t or_null[@local_opt]) @ c o p u
+      -> (t[@local_opt]) @ c o p u
       = "%identity"
+    [@@mode
+      c = (uncontended, shared, contended, read, write, immutable)
+      , o = (many, once)
+      , p = (nonportable, portable)
+      , u = (aliased, unique)]
 
-    external to_or_null
-      :  (t[@local_opt])
-      -> (Stdlib.Obj.t or_null[@local_opt])
+    external%template to_or_null
+      :  (t[@local_opt]) @ c o p u
+      -> (Stdlib.Obj.t or_null[@local_opt]) @ c o p u
       = "%identity"
+    [@@mode
+      c = (uncontended, shared, contended, read, write, immutable)
+      , o = (many, once)
+      , p = (nonportable, portable)
+      , u = (aliased, unique)]
   end
 
-  external nullable : (t[@local_opt]) -> (Nullable.t[@local_opt]) = "%obj_magic"
+  external%template nullable
+    :  (t[@local_opt]) @ c o p u
+    -> (Nullable.t[@local_opt]) @ c o p u
+    = "%obj_magic"
+  [@@mode
+    c = (uncontended, shared, contended, read, write, immutable)
+    , o = (many, once)
+    , p = (nonportable, portable)
+    , u = (aliased, unique)]
 end

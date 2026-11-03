@@ -16,29 +16,29 @@ let globalize_char = function
   | '\x00' .. '\xFF' as c -> c
 ;;
 
-external globalize_float : local_ float -> float @@ portable = "%obj_dup"
-external globalize_int : local_ int -> int @@ portable = "%identity"
-external globalize_int32 : local_ int32 -> int32 @@ portable = "%obj_dup"
-external globalize_int64 : local_ int64 -> int64 @@ portable = "%obj_dup"
-external globalize_nativeint : local_ nativeint -> nativeint @@ portable = "%obj_dup"
-external globalize_bytes : local_ bytes -> bytes @ unique @@ portable = "%obj_dup"
-external globalize_string : local_ string -> string @ unique @@ portable = "%obj_dup"
+external globalize_float : float @ local -> float @@ portable = "%obj_dup"
+external globalize_int : int @ local -> int @@ portable = "%identity"
+external globalize_int32 : int32 @ local -> int32 @@ portable = "%obj_dup"
+external globalize_int64 : int64 @ local -> int64 @@ portable = "%obj_dup"
+external globalize_nativeint : nativeint @ local -> nativeint @@ portable = "%obj_dup"
+external globalize_bytes : bytes @ local -> bytes @ unique @@ portable = "%obj_dup"
+external globalize_string : string @ local -> string @ unique @@ portable = "%obj_dup"
 
 let globalize_unit (() as u) = u
 
 [%%template
-[@@@kind k = base_or_null_with_imm]
+[@@@kind k = (base_or_null_with_imm, value_or_null mod external64)]
 
 external globalize_array'
   : ('a : k mod separable).
-  local_ 'a array -> 'a array
+  'a array @ local -> 'a array
   @@ portable
   = "%obj_dup"
 
 let globalize_array _ a = globalize_array' a [@@kind k]]
 
 external globalize_floatarray
-  :  local_ floatarray
+  :  floatarray @ local
   -> floatarray @ unique
   @@ portable
   = "%obj_dup"
@@ -67,6 +67,6 @@ let globalize_result globalize_a globalize_b t =
 let globalize_ref' r = ref !r
 let globalize_ref _ r = globalize_ref' r
 
-external globalize_lazy_t_mono : local_ 'a lazy_t -> 'a lazy_t @@ portable = "%identity"
+external globalize_lazy_t_mono : 'a lazy_t @ local -> 'a lazy_t @@ portable = "%identity"
 
 let globalize_lazy_t _ t = globalize_lazy_t_mono t

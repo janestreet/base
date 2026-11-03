@@ -26,8 +26,12 @@ module Replace_polymorphic_compare = struct
   let%template[@mode local] compare (local_ (x : T.t)) (local_ y) = Poly.compare x y
   let equal (x : T.t) y = Poly.equal x y
   let%template[@mode local] equal (local_ (x : T.t)) (local_ y) = Poly.equal x y
+
+  [%%template
+  [@@@mode.default m = (global, local)]
+
   let max (x : T.t) y = if x >= y then x else y
-  let min (x : T.t) y = if x <= y then x else y
+  let min (x : T.t) y = if x <= y then x else y]
 end
 
 include T

@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Sexp = Sexp0
 
 module Definitions = struct
@@ -79,8 +79,8 @@ module Definitions = struct
 
     val%template equal : 'a t @ m -> 'a t @ m -> bool [@@mode m = (local, global)]
 
-    val filter : 'a t -> f:local_ ('a -> bool) -> 'a t
-    val filter_inplace : 'a t -> f:local_ ('a -> bool) -> unit
+    val filter : 'a t -> f:('a -> bool) @ local -> 'a t
+    val filter_inplace : 'a t -> f:('a -> bool) @ local -> unit
 
     (** [inter t1 t2] computes the set intersection of [t1] and [t2]. Runs in O(min(length
         t1, length t2)). Behavior is undefined if [t1] and [t2] don't have the same
@@ -91,7 +91,7 @@ module Definitions = struct
     val union_in_place : dst:'a t -> src:'a t -> unit
     val diff : 'a t -> 'a t -> 'a t
     val of_hashtbl_keys : ('a, _) Hashtbl.t -> 'a t
-    val to_hashtbl : 'key t -> f:local_ ('key -> 'data) -> ('key, 'data) Hashtbl.t
+    val to_hashtbl : 'key t -> f:('key -> 'data) @ local -> ('key, 'data) Hashtbl.t
     val capacity : _ t -> int
   end
 

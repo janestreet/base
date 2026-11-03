@@ -2,7 +2,7 @@
 
 (** Module for the type [unit]. *)
 
-open! Import
+open! Import0
 
 type t = unit [@@deriving enumerate, globalize, sexp ~stackify ~unboxed, sexp_grammar]
 

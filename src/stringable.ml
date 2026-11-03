@@ -1,13 +1,14 @@
 (** Provides type-specific conversion functions to and from [string]. *)
 
-open! Import
+open! Import0
 
-(** Templated to provide two [of_string] functions. The first may stack allocate, and
+(** Templated to provide two [to_string] functions. The first may stack allocate, and
     always takes its input at the same mode as its output. The second may take local
     input, and always produces global output. In the default case of global input and heap
     output, they are equivalent and one shadows the other. *)
 module type%template
-  [@mode l = (local, global)] [@alloc a @ m = (heap_global, stack_local)] To_stringable = sig
+  [@mode l = (local, global)] [@alloc a @ m = (heap_global, stack_local)]
+  To_stringable = sig
   type t
 
   val to_string : t @ m -> string @ m [@@alloc a]

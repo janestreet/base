@@ -1,6 +1,6 @@
 (** Interfaces for infix comparison operators and comparison functions. *)
 
-open! Import
+open! Import0
 
 (** [Infix] lists the typical infix comparison operators. These functions are provided by
     [<M>.O] modules, i.e., modules that expose monomorphic infix comparisons over some
@@ -26,10 +26,10 @@ module type%template [@mode m = (global, local)] S = sig
 
   (** [compare t1 t2] returns 0 if [t1] is equal to [t2], a negative integer if [t1] is
       less than [t2], and a positive integer if [t1] is greater than [t2]. *)
-  val compare : t @ m -> t @ m -> int]
+  val compare : t @ m -> t @ m -> int
 
-  val min : t -> t -> t
-  val max : t -> t -> t
+  val min : t @ m -> t @ m -> t @ m
+  val max : t @ m -> t @ m -> t @ m]
 end
 
 module type Infix_with_local_opt = sig

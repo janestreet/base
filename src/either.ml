@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 include Either_intf.Definitions
 module List = List0
 include Either0
@@ -71,19 +71,19 @@ module Make_focused (M : sig
 
     val return : ('a : value_or_null) 'b. 'a -> ('a, 'b) t
     val other : ('a : value_or_null) 'b. 'b -> ('a, 'b) t
-    val focus : ('a : value_or_null) 'b. ('a, 'b) t -> local_ ('a, 'b) Focus.t
+    val focus : ('a : value_or_null) 'b. ('a, 'b) t -> ('a, 'b) Focus.t @ local
 
     val combine
       : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) 'd.
       ('a, 'd) t
       -> ('b, 'd) t
-      -> f:local_ ('a -> 'b -> 'c)
-      -> other:local_ ('d -> 'd -> 'd)
+      -> f:('a -> 'b -> 'c) @ local
+      -> other:('d -> 'd -> 'd) @ local
       -> ('c, 'd) t
 
     val bind
       : ('a : value_or_null) 'b ('c : value_or_null).
-      ('a, 'b) t -> f:local_ ('a -> ('c, 'b) t) -> ('c, 'b) t
+      ('a, 'b) t -> f:('a -> ('c, 'b) t) @ local -> ('c, 'b) t
   end) =
 struct
   include M
@@ -116,7 +116,7 @@ struct
 
       let map2
         : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) 'x.
-        ('a, 'x) t -> ('b, 'x) t -> f:local_ ('a -> 'b -> 'c) -> ('c, 'x) t
+        ('a, 'x) t -> ('b, 'x) t -> f:('a -> 'b -> 'c) @ local -> ('c, 'x) t
         =
         fun t1 t2 ~f ->
         bind t1 ~f:(fun x -> bind t2 ~f:(fun y -> return (f x y)) [@nontail]) [@nontail]

@@ -10,6 +10,9 @@
 
 open! Import0
 module Sys = Sys0
+module Int = Int0
+module List = List0
+module Ordered_collection_common = Ordered_collection_common0
 
 let invalid_argf = Printf.invalid_argf
 
@@ -96,19 +99,19 @@ module Array = struct
 
   external unsafe_fill
     : ('a : k).
-    local_ 'a array -> int -> int -> 'a -> unit
+    'a array @ local -> int -> int -> 'a -> unit
     @@ portable
     = "caml_array_fill"
 
   external unsafe_sub
     : ('a : k).
-    local_ 'a array -> int -> int -> 'a array
+    'a array @ local -> int -> int -> 'a array
     @@ portable
     = "caml_array_sub"
 
   external concat
     : ('a : k).
-    local_ 'a array list -> 'a array
+    'a array list @ local -> 'a array
     @@ portable
     = "caml_array_concat"]
 
@@ -203,12 +206,10 @@ let unsafe_sub (t : (_ : k) array) pos len =
 ;;
 
 let concat (ts : (_ : k) array list @ local) =
-  let len =
-    (List0.fold [@mode local local]) ts ~init:0 ~f:(fun acc t -> acc + length t)
-  in
+  let len = (List.fold [@mode local local]) ts ~init:0 ~f:(fun acc t -> acc + length t) in
   let res = (magic_create_uninitialized [@kind k']) ~len in
   let _total_length =
-    (List0.fold [@mode local local]) ts ~init:0 ~f:(fun start t ->
+    (List.fold [@mode local local]) ts ~init:0 ~f:(fun start t ->
       let len = length t in
       (unsafe_blit [@kind k']) ~src:t ~src_pos:0 ~dst:res ~dst_pos:start ~len;
       start + len)
@@ -248,7 +249,7 @@ include struct
   ;;
 end
 
-let%template append (t1 : (_ : k) array) t2 =
+let%template append (t1 : (_ : k mod separable) array) t2 =
   let len1 = length t1 in
   let len2 = length t2 in
   let res = (magic_create_uninitialized [@kind k]) ~len:(len1 + len2) in
@@ -259,14 +260,8 @@ let%template append (t1 : (_ : k) array) t2 =
 ;;
 
 let blit ~(local_ src) ~src_pos ~(local_ dst) ~dst_pos ~len =
-  Ordered_collection_common0.check_pos_len_exn
-    ~pos:src_pos
-    ~len
-    ~total_length:(length src);
-  Ordered_collection_common0.check_pos_len_exn
-    ~pos:dst_pos
-    ~len
-    ~total_length:(length dst);
+  Ordered_collection_common.check_pos_len_exn ~pos:src_pos ~len ~total_length:(length src);
+  Ordered_collection_common.check_pos_len_exn ~pos:dst_pos ~len ~total_length:(length dst);
   unsafe_blit ~src ~src_pos ~dst ~dst_pos ~len
 ;;
 
@@ -292,7 +287,7 @@ let init len ~(local_ f : _ -> _) : (_ : k) array @ l =
   then invalid_arg "Array.init"
   else (
     (let res = (create [@alloc a]) ~len (f 0) in
-     for i = 1 to Int0.pred len do
+     for i = 1 to Int.pred len do
        unsafe_set (borrow_ res) i (f i)
      done;
      res)
@@ -310,10 +305,10 @@ let sub : type (a : k). a array @ local -> pos:int -> len:int -> a array =
 (* Copied from [Stdlib.Array], with type annotations added for templating *)
 let to_list
   : type (a : k).
-    a array @ local -> (a List0.Constructors.t[@kind k' or value_or_null]) @ m
+    a array @ local -> (a List.Constructors.t[@kind k' or value_or_null]) @ m
   =
   fun t ->
-  let rec tolist t i res : (_ List0.Constructors.t[@kind k' or value_or_null]) =
+  let rec tolist t i res : (_ List.Constructors.t[@kind k' or value_or_null]) =
     if i < 0 then res else tolist t (i - 1) (unsafe_get t i :: res) [@exclave_if_stack a]
   in
   tolist t (length t - 1) [] [@exclave_if_stack a]
@@ -322,13 +317,13 @@ let to_list
 
 (* Copied from [Stdlib.Array], with type annotations added for templating and some
    functions changed to the equivalent base ones *)
-let of_list : type (a : k). (a List0.Constructors.t[@kind k' or value_or_null]) -> a array
+let of_list : type (a : k). (a List.Constructors.t[@kind k' or value_or_null]) -> a array
   = function
-  | ([] : (_ List0.Constructors.t[@kind k' or value_or_null])) -> [||]
+  | ([] : (_ List.Constructors.t[@kind k' or value_or_null])) -> [||]
   | hd :: tl as l ->
-    let a = create ~len:((List0.length [@kind k' or value_or_null]) l) hd in
+    let a = create ~len:((List.length [@kind k' or value_or_null]) l) hd in
     let rec fill i = function
-      | ([] : (_ List0.Constructors.t[@kind k' or value_or_null])) -> a
+      | ([] : (_ List.Constructors.t[@kind k' or value_or_null])) -> a
       | hd :: tl ->
         unsafe_set a i hd;
         fill (i + 1) tl

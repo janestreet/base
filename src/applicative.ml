@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module List = List0
 include Applicative_intf.Definitions
 
@@ -88,7 +88,8 @@ module%template.portable Make3_using_map2 (X : Basic3_using_map2 [@kind k] [@mod
 end
 
 module%template.portable
-  [@modality p] Make2_using_map2
+  [@modality p]
+  Make2_using_map2
     (X : Basic2_using_map2
   [@kind k] [@mode m]) : S2 [@kind k] [@mode m] with type ('a : k, 'p) t := ('a, 'p) X.t =
 Make3_using_map2 [@kind k] [@mode m] [@modality p] (struct
@@ -98,7 +99,8 @@ Make3_using_map2 [@kind k] [@mode m] [@modality p] (struct
   end)
 
 module%template.portable
-  [@modality p] Make_using_map2
+  [@modality p]
+  Make_using_map2
     (X : Basic_using_map2
   [@kind k] [@mode m]) : S [@kind k] [@mode m] with type ('a : k) t := 'a X.t =
 Make3_using_map2 [@kind k] [@mode m] [@modality p] (struct
@@ -138,7 +140,8 @@ Of_monad3 [@kind k] [@mode m] [@modality p] (struct
   end)
 
 module%template.portable
-  [@modality p] Compose
+  [@modality p]
+  Compose
     (F : S
   [@kind k] [@mode m])
     (G : S
@@ -156,7 +159,8 @@ module%template.portable
 end
 
 module%template.portable
-  [@modality p] Pair
+  [@modality p]
+  Pair
     (F : S
   [@kind k] [@mode m])
     (G : S
@@ -184,7 +188,7 @@ module Make_let_syntax3
     (Intf : sig
        module type S
      end)
-    (Impl : Intf.S) : sig @@ p
+    (Impl : Intf.S @ p) : sig @@ p
     include Let_syntax3 [@kind k] [@mode m]
   end
   with type ('a : k, 'p, 'q) t := ('a, 'p, 'q) X.t
@@ -207,7 +211,7 @@ module Make_let_syntax2
     (Intf : sig
        module type S
      end)
-    (Impl : Intf.S) : sig @@ p
+    (Impl : Intf.S @ p) : sig @@ p
     include Let_syntax2 [@kind k] [@mode m]
   end
   with type ('a : k, 'p) t := ('a, 'p) X.t
@@ -229,7 +233,7 @@ module Make_let_syntax
     (Intf : sig
        module type S
      end)
-    (Impl : Intf.S) : sig @@ p
+    (Impl : Intf.S @ p) : sig @@ p
     include Let_syntax [@kind k] [@mode m]
   end
   with type ('a : k) t := 'a X.t

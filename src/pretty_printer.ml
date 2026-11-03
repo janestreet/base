@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 let r = ref [ "Base.Sexp.pp_hum" ]
 let all () = !r
@@ -22,7 +22,8 @@ struct
 end
 
 module%template.portable
-  [@modality m] Register (M : sig
+  [@modality m]
+  Register (M : sig
     type t
 
     val module_name : string

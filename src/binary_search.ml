@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module Ordered_collection_common = Ordered_collection_common0
 open Int_replace_polymorphic_compare
 
 (* These functions implement a search for the first (resp. last) element satisfying a

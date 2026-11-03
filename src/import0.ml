@@ -7,7 +7,6 @@ include (
     module type of struct
       include Shadow_stdlib
     end
-    with type ('a : value_or_null) ref := 'a ref
     with type ('a, 'b, 'c) format := ('a, 'b, 'c) format
     with type ('a, 'b, 'c, 'd) format4 := ('a, 'b, 'c, 'd) format4
     with type ('a, 'b, 'c, 'd, 'e, 'f) format6 := ('a, 'b, 'c, 'd, 'e, 'f) format6
@@ -18,6 +17,7 @@ include (
     with module Buffer := Shadow_stdlib.Buffer
     with module Bytes := Shadow_stdlib.Bytes
     with module Char := Shadow_stdlib.Char
+    with module Dynamic := Shadow_stdlib.Dynamic
     with module Either := Shadow_stdlib.Either
     with module Float := Shadow_stdlib.Float
     with module Hashtbl := Shadow_stdlib.Hashtbl
@@ -91,6 +91,10 @@ module Stdlib = struct
 end
 
 module Portability_hacks = Basement.Portability_hacks
+module Primitives = Basement.Primitives
+module Int32_u = Primitives.Int32_u
+module Int64_u = Primitives.Int64_u
+module Nativeint_u = Primitives.Nativeint_u
 
 external ( |> ) : 'a -> (('a -> 'b)[@local_opt]) -> 'b @@ portable = "%revapply"
 
@@ -158,9 +162,6 @@ external ( /. )
   = "%divfloat"
 
 module Hash = Ppx_hash_lib.Std.Hash
-
-module Poly = Poly0 (** @canonical Base.Poly *)
-
 include Replace_polymorphic_compare
 include Int_replace_polymorphic_compare
 
@@ -196,7 +197,7 @@ external ( ~-. ) : (float[@local_opt]) -> (float[@local_opt]) @@ portable = "%ne
 
 let ( asr ) = Stdlib.( asr )
 
-external ( land ) : local_ int -> local_ int -> int @@ portable = "%andint"
+external ( land ) : int @ local -> int @ local -> int @@ portable = "%andint"
 
 let lnot = Stdlib.lnot
 let ( lor ) = Stdlib.( lor )
@@ -235,7 +236,7 @@ external snd
 
 let raise : ('a : k). (exn -> 'a @ portable unique) @ portable =
   fun exn ->
-  match (raise exn : Nothing0.t) with
+  match (raise exn : Basement.nothing) with
   | _ -> .
 [@@kind
   k = (base_non_value, value_or_null & (base_or_null, kr1, kr2, kr3), bits32 & bits32)]

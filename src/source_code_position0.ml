@@ -47,11 +47,11 @@ let%template[@alloc a = (heap, stack)] sexp_of_t t =
   Sexp.Atom ((to_string [@alloc a]) t) [@exclave_if_stack a]
 ;;
 
-let%template[@mode local] equal (local_ a) (local_ b) =
+let%template equal_internal (local_ a) (local_ b) =
   equal_int ((compare [@mode local]) a b) 0
 ;;
 
-let%template equal = [%eta2 equal [@mode local]]
+let%template[@mode __ = (local, global)] equal = [%eta2 equal_internal]
 
 let of_pos (pos_fname, pos_lnum, pos_cnum, _) =
   { pos_fname; pos_lnum; pos_cnum; pos_bol = 0 }

@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module Uchar = Uchar0
 
 module Definitions = struct
   (** Interface for encoding and decoding individual Unicode scalar values. See
@@ -8,10 +9,10 @@ module Definitions = struct
 
         [of_string] interprets a string as one Unicode scalar value in this encoding, and
         raises if the string cannot be interpreted as such. *)
-    include Stringable.S with type t := Uchar0.t
+    include Stringable.S with type t := Uchar.t
 
     (** Returns the number of bytes used for a given scalar value in this encoding. *)
-    val byte_length : Uchar0.t -> int
+    val byte_length : Uchar.t -> int
 
     (** The name of this encoding scheme; e.g., "UTF-8". *)
     val codec_name : string
@@ -30,9 +31,9 @@ module type Uchar = sig @@ portable
       See also [String.Utf*] submodules for Unicode support with multiple [Uchar.t] values
       encoded in a string. *)
 
-  open! Import
+  open! Import0
 
-  type t = Uchar0.t [@@deriving hash, sexp ~stackify, sexp_grammar]
+  type t = Uchar.t [@@deriving hash, sexp ~stackify, sexp_grammar]
   type uchar := t
 
   include%template Comparable.S [@mode local] [@modality portable] with type t := t
@@ -97,7 +98,7 @@ module type Uchar = sig @@ portable
 
   (** Result of decoding a UTF codec that may contain invalid encodings. *)
   module Decode_result : sig
-    type t : immediate = Uchar0.utf_decode
+    type t : immediate = Uchar.utf_decode
     [@@deriving compare ~localize, equal ~localize, hash, sexp_of ~stackify]
 
     (** [true] iff [t] represents a Unicode scalar value. *)

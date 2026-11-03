@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 module Definitions = struct
   (** An interface for queues that follows Base's conventions, as opposed to OCaml's
@@ -22,7 +22,7 @@ module Definitions = struct
     val of_array : 'a array -> 'a t
 
     (** [init n ~f] is equivalent to [of_list (List.init n ~f)]. *)
-    val init : int -> f:local_ (int -> 'a) -> 'a t
+    val init : int -> f:(int -> 'a) @ local -> 'a t
 
     (** [enqueue t a] adds [a] to the end of [t]. *)
     val enqueue : 'a t -> 'a -> unit
@@ -46,7 +46,7 @@ module Definitions = struct
         [while_] returns false. A common use case is tracking the sum of data in a recent
         time interval: [t] contains timestamped data, [while_] checks for elements with an
         old timestamp, and [f] subtracts data from the sum. *)
-    val drain : 'a t -> f:local_ ('a -> unit) -> while_:local_ ('a -> bool) -> unit
+    val drain : 'a t -> f:('a -> unit) @ local -> while_:('a -> bool) @ local -> unit
 
     (** [peek t] returns but does not remove the front element of [t], if any. *)
     val peek : 'a t -> 'a option
@@ -60,31 +60,31 @@ module Definitions = struct
     (** [copy t] returns a copy of [t]. *)
     val copy : 'a t -> 'a t
 
-    val map : 'a t -> f:local_ ('a -> 'b) -> 'b t
-    val mapi : 'a t -> f:local_ (int -> 'a -> 'b) -> 'b t
+    val map : 'a t -> f:('a -> 'b) @ local -> 'b t
+    val mapi : 'a t -> f:(int -> 'a -> 'b) @ local -> 'b t
 
     (** Creates a new queue with elements equal to [List.concat_map ~f (to_list t)]. *)
-    val concat_map : 'a t -> f:local_ ('a -> 'b list) -> 'b t
+    val concat_map : 'a t -> f:('a -> 'b list) @ local -> 'b t
 
-    val concat_mapi : 'a t -> f:local_ (int -> 'a -> 'b list) -> 'b t
+    val concat_mapi : 'a t -> f:(int -> 'a -> 'b list) @ local -> 'b t
 
     (** [filter_map] creates a new queue with elements equal to
         [List.filter_map ~f (to_list t)]. *)
-    val filter_map : 'a t -> f:local_ ('a -> 'b option) -> 'b t
+    val filter_map : 'a t -> f:('a -> 'b option) @ local -> 'b t
 
-    val filter_mapi : 'a t -> f:local_ (int -> 'a -> 'b option) -> 'b t
+    val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) @ local -> 'b t
 
     (** [filter] is like [filter_map], except with [List.filter]. *)
-    val filter : 'a t -> f:local_ ('a -> bool) -> 'a t
+    val filter : 'a t -> f:('a -> bool) @ local -> 'a t
 
-    val filteri : 'a t -> f:local_ (int -> 'a -> bool) -> 'a t
+    val filteri : 'a t -> f:(int -> 'a -> bool) @ local -> 'a t
 
     (** [filter_inplace t ~f] removes all elements of [t] that don't satisfy [f]. If [f]
         raises, [t] is unchanged. This is inplace in that it modifies [t]; however, it
         uses space linear in the final length of [t]. *)
-    val filter_inplace : 'a t -> f:local_ ('a -> bool) -> unit
+    val filter_inplace : 'a t -> f:('a -> bool) @ local -> unit
 
-    val filteri_inplace : 'a t -> f:local_ (int -> 'a -> bool) -> unit
+    val filteri_inplace : 'a t -> f:(int -> 'a -> bool) @ local -> unit
   end
 end
 

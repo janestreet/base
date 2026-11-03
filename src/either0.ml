@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 
 type%template ('f : kf, 's : ks) t =
   | First of 'f

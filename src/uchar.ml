@@ -1,5 +1,6 @@
 open! Import
 module Bytes = Bytes0
+module Error = Error0
 module Sexp = Sexp0
 module String = String0
 include Uchar_intf.Definitions
@@ -132,8 +133,8 @@ module Make_utf (Format : sig
     val codec_name : string
     val module_name : string
     val byte_length : t -> int
-    val get_decode_result : local_ string -> byte_pos:int -> Decode_result.t
-    val set : local_ bytes -> int -> t -> int
+    val get_decode_result : string @ local -> byte_pos:int -> Decode_result.t
+    val set : bytes @ local -> int -> t -> int
   end) : sig
   @@ portable
   include Utf

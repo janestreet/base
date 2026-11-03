@@ -56,6 +56,32 @@ module%template.portable Of_sexpable
   ;;
 end
 
+module%template.portable
+  [@modality p]
+  Of_sexpable_with_grammar
+    (Sexpable : sig
+       type t [@@deriving sexp_grammar]
+
+       include S [@alloc a] with type t := t
+     end)
+    (M : sig
+       type t
+
+       val to_sexpable : t @ m -> Sexpable.t @ m [@@alloc __ @ m = (a @ m, heap_global)]
+       val of_sexpable : Sexpable.t -> t
+     end) : sig
+    type t [@@deriving sexp_grammar]
+
+    include S [@alloc a] with type t := t
+  end
+  with type t := M.t = struct
+  include Of_sexpable [@modality p] [@alloc a] (Sexpable) (M)
+
+  let t_sexp_grammar : M.t Sexplib0.Sexp_grammar.t =
+    Sexplib0.Sexp_grammar.coerce Sexpable.t_sexp_grammar
+  ;;
+end
+
 [@@@kind.default ka = (value, any)]
 
 module%template.portable Of_sexpable1

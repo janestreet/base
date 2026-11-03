@@ -25,7 +25,7 @@
         `First_on_right
     ]} *)
 
-open! Import
+open! Import0
 
 [%%template:
 [@@@mode.default m = (global, local)]
@@ -51,9 +51,9 @@ val binary_search
   ?pos:int @ local
   -> ?len:int @ local
   -> 't @ m
-  -> length:local_ ('t @ m -> int)
-  -> get:local_ ('t @ m -> int -> 'elt @ m)
-  -> compare:local_ ('elt @ m -> 'key @ m -> int)
+  -> length:('t @ m -> int) @ local
+  -> get:('t @ m -> int -> 'elt @ m) @ local
+  -> compare:('elt @ m -> 'key @ m -> int) @ local
   -> [ `Last_strictly_less_than (** [         | < elt X |                       ] *)
      | `Last_less_than_or_equal_to (** [      |      <= elt       X |           ] *)
      | `Last_equal_to (** [                             |   = elt X |           ] *)
@@ -62,7 +62,7 @@ val binary_search
      | `First_strictly_greater_than (** [                           | X > elt | ] *)
      ]
   -> 'key @ m
-  -> local_ int option
+  -> int option @ local
 
 (** [binary_search_segmented ?pos ?len t ~length ~get ~segment_of which] takes a
     [segment_of] function that divides [t] into two (possibly empty) segments:
@@ -87,8 +87,8 @@ val binary_search_segmented
   ?pos:int @ local
   -> ?len:int @ local
   -> 't @ m
-  -> length:local_ ('t @ m -> int)
-  -> get:local_ ('t @ m -> int -> 'elt @ m)
-  -> segment_of:local_ ('elt @ m -> [ `Left | `Right ])
+  -> length:('t @ m -> int) @ local
+  -> get:('t @ m -> int -> 'elt @ m) @ local
+  -> segment_of:('elt @ m -> [ `Left | `Right ]) @ local
   -> [ `Last_on_left | `First_on_right ]
-  -> local_ int option]
+  -> int option @ local]

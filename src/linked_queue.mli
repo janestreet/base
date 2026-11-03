@@ -2,7 +2,7 @@
 
 (** This module is a Base-style wrapper around OCaml's standard [Queue] module. *)
 
-open! Import
+open! Import0
 
 include Queue.S with type 'a t = 'a Stdlib.Queue.t (** @inline *)
 

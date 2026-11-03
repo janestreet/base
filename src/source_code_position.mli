@@ -3,7 +3,7 @@
 (** One typically obtains a [Source_code_position.t] using a [[%here]] expression, which
     is implemented by the [ppx_here] preprocessor. *)
 
-open! Import
+open! Import0
 
 (** See INRIA's OCaml documentation for a description of these fields.
 
@@ -33,4 +33,4 @@ val here_or_there : here:[%call_pos] -> t option -> t
 
     [Stdlib.Lexing.dummy_pos] is a position guaranteed to be different from any valid
     position. *)
-val is_dummy : local_ t -> bool
+val is_dummy : t @ local -> bool

@@ -1,4 +1,4 @@
-open! Import
+open! Import0
 module Sexp = Sexp0
 include Hashable_intf.Definitions
 

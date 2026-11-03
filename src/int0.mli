@@ -13,3 +13,10 @@ val max_value : int
 val min_value : int
 val succ : int -> int
 val pred : int -> int
+val ceil_pow2 : local_ int -> int
+val floor_pow2 : local_ int -> int
+val is_pow2 : local_ int -> bool
+val clz : local_ int -> int
+val ctz : local_ int -> int
+val floor_log2 : local_ int -> int
+val ceil_log2 : local_ int -> int

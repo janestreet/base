@@ -1,4 +1,5 @@
-open! Import
+open! Import0
+module Sys = Sys0
 include Obj_intf.Definitions
 
 external%template magic
@@ -8,7 +9,7 @@ external%template magic
   = "%obj_magic"
 [@@layout_poly]
 [@@mode
-  c = (uncontended, shared, contended, read, immutable)
+  c = (uncontended, shared, contended, read, write, immutable)
   , o = (many, once)
   , p = (nonportable, shareable, portable, reading, stateless)
   , u = (aliased, unique)]
@@ -20,7 +21,7 @@ external%template magic_portable
   = "%identity"
 [@@layout_poly]
 [@@mode
-  c = (uncontended, shared, contended, read, immutable)
+  c = (uncontended, shared, contended, read, write, immutable)
   , o = (many, once)
   , u = (aliased, unique)]
 
@@ -42,7 +43,9 @@ external%template magic_many
   = "%identity"
 [@@layout_poly]
 [@@mode
-  c = (uncontended, shared, contended), p = (nonportable, portable), u = (aliased, unique)]
+  c = (uncontended, shared, contended, read, write, immutable)
+  , p = (nonportable, portable)
+  , u = (aliased, unique)]
 
 external%template magic_unyielding
   : ('a : any).
@@ -74,11 +77,12 @@ external%template magic_read_write_uncontended
 [@@mode o = (many, once), p = (nonportable, portable), u = (aliased, unique)]
 
 module%template
-  [@inline] [@kind.explicit k = (value, value_or_null)] Make (T : sig
+  [@inline] [@kind.explicit k = (value, value_or_null)]
+  Make (T : sig
   @@ portable
     type t : k
 
-    val is_immediate : t @ contended local once -> bool [@@zero_alloc]
+    val is_immediate : t @ immutable local once -> bool [@@zero_alloc strict]
   end) =
 struct
   open T
@@ -95,25 +99,25 @@ struct
     , u = (aliased, unique)]
 
   external dup : t -> t @@ portable = "%obj_dup"
-  external tag : t @ contended local once -> int @@ portable = "caml_obj_tag" [@@noalloc]
-  external size : t @ contended local once -> int @@ portable = "%obj_size"
+  external tag : t @ immutable local once -> int @@ portable = "caml_obj_tag" [@@noalloc]
+  external size : t @ immutable local once -> int @@ portable = "%obj_size"
 
   (** Flambda2 attempts to track whether a block is an array, and %obj_size and %obj_field
       may only be used on unspecialized blocks. Hence we wrap them with [opaque_identity],
       which makes Flambda2 forget any additional information about the block. *)
   let%template[@inline always] size t =
-    size ((Sys.opaque_identity [@mode contended once nonportable aliased]) t)
+    size ((Sys.opaque_identity [@mode immutable once nonportable aliased]) t)
   ;;
 
   let[@inline] is_immediate t = is_immediate t
   let[@inline] is_block t = not (is_immediate t)
 
-  external is_stack : t @ contended local once -> bool @@ portable = "caml_obj_is_stack"
+  external is_stack : t @ immutable local once -> bool @@ portable = "caml_obj_is_stack"
   [@@noalloc]
 
   let%template stack_or_heap repr : stack_or_heap =
     (* [is_immediate] and [is_stack] do not actually consume [repr]. *)
-    let repr = (magic_many [@mode contended nonportable aliased]) repr in
+    let repr = (magic_many [@mode immutable nonportable aliased]) repr in
     if is_immediate repr
     then Immediate
     else (
@@ -124,7 +128,7 @@ struct
   ;;
 
   external reserved_header_bits
-    :  t @ contended local once
+    :  t @ immutable local once
     -> int
     @@ portable
     = "caml_succ_scannable_prefix_len"
@@ -132,7 +136,7 @@ struct
 
   let%template uniform_or_mixed repr : uniform_or_mixed = exclave_
     (* [is_immediate] and [reserved_header_bits] do not actually consume [repr]. *)
-    let repr = (magic_many [@mode contended nonportable aliased]) repr in
+    let repr = (magic_many [@mode immutable nonportable aliased]) repr in
     if is_immediate repr
     then Immediate
     else (
@@ -154,7 +158,7 @@ struct
       @@ portable
       = "%obj_magic"
     [@@mode
-      c = (uncontended, shared, contended)
+      c = (uncontended, shared, contended, read, write, immutable)
       , o = (many, once)
       , p = (nonportable, portable)
       , u = (aliased, unique)]
@@ -205,7 +209,7 @@ end
 
 type t = Stdlib.Obj.t
 
-external is_int : t @ contended local once -> bool @@ portable = "%obj_is_int"
+external is_int : t @ immutable local once -> bool @@ portable = "%obj_is_int"
 
 include%template Make [@kind.explicit value] (struct
     type nonrec t = t
@@ -258,7 +262,7 @@ end
 module Nullable = struct
   type t : value_or_null
 
-  external is_int : t @ contended local once -> bool @@ portable = "%obj_is_int"
+  external is_int : t @ immutable local once -> bool @@ portable = "%obj_is_int"
   external is_null : t @ immutable local once -> bool @@ portable = "%is_null"
 
   include%template Make [@kind.explicit value_or_null] (struct
@@ -266,7 +270,7 @@ module Nullable = struct
 
       [%%template
         let is_immediate t =
-          let t = (magic_many [@mode contended nonportable aliased]) t in
+          let t = (magic_many [@mode immutable nonportable aliased]) t in
           is_int t || is_null t
         [@@inline]
         ;;]
@@ -274,17 +278,36 @@ module Nullable = struct
 
   let null_tag = 1010
 
-  external of_or_null
-    :  (Stdlib.Obj.t or_null[@local_opt])
-    -> (t[@local_opt])
+  external%template of_or_null
+    :  (Stdlib.Obj.t or_null[@local_opt]) @ c o p u
+    -> (t[@local_opt]) @ c o p u
     @@ portable
     = "%identity"
+  [@@mode
+    c = (uncontended, shared, contended, read, write, immutable)
+    , o = (many, once)
+    , p = (nonportable, portable)
+    , u = (aliased, unique)]
 
-  external to_or_null
-    :  (t[@local_opt])
-    -> (Stdlib.Obj.t or_null[@local_opt])
+  external%template to_or_null
+    :  (t[@local_opt]) @ c o p u
+    -> (Stdlib.Obj.t or_null[@local_opt]) @ c o p u
     @@ portable
     = "%identity"
+  [@@mode
+    c = (uncontended, shared, contended, read, write, immutable)
+    , o = (many, once)
+    , p = (nonportable, portable)
+    , u = (aliased, unique)]
 end
 
-external nullable : (t[@local_opt]) -> (Nullable.t[@local_opt]) @@ portable = "%obj_magic"
+external%template nullable
+  :  (t[@local_opt]) @ c o p u
+  -> (Nullable.t[@local_opt]) @ c o p u
+  @@ portable
+  = "%obj_magic"
+[@@mode
+  c = (uncontended, shared, contended, read, write, immutable)
+  , o = (many, once)
+  , p = (nonportable, portable)
+  , u = (aliased, unique)]

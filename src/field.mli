@@ -50,6 +50,12 @@ val name : (_, _ : any, _ : any) t_with_perm -> string
       & (float64 & float64 & float64 & float64 & float64 & float64)
       & (value & value & value & value & value & value)
       & value
+      & value
+    , (float64 & float64 & float64 & float64 & float64 & float64) & value
+    , (value & value & value & value & value & value) & value
+    , ((float64 & float64 & float64 & float64 & float64 & float64) & value)
+      & (float64 & float64 & float64 & float64 & float64 & float64)
+      & ((value & value & value & value & value & value) & value)
       & value )]
 
 val get : 'perm ('r : any) ('a : k). ('perm, 'r, 'a) t_with_perm -> 'r -> 'a
@@ -66,11 +72,12 @@ val setter
     [any] values. *)
 val map
   : ('a : k) 'r.
-  ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> f:local_ ('a -> 'a) -> 'r
+  ([> `Set_and_create ], 'r, 'a) t_with_perm -> 'r -> f:('a -> 'a) @ local -> 'r
 
 val updater
   : ('a : k) 'r.
-  ([> `Set_and_create ], 'r, 'a) t_with_perm -> ('r -> f:local_ ('a -> 'a) -> unit) option]
+  ([> `Set_and_create ], 'r, 'a) t_with_perm
+  -> ('r -> f:('a -> 'a) @ local -> unit) option]
 
 type ('perm, 'record : any, 'result) user =
   { f : 'field. ('perm, 'record, 'field) t_with_perm -> 'result }

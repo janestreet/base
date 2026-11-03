@@ -26,45 +26,45 @@
   val%template maybe_globalize : ('a @ local -> 'a) -> 'a @ local -> 'a @ l
   [@@alloc a @ l = (heap_global, stack_local)]
 
-val globalize_bool : local_ bool -> bool
-val globalize_char : local_ char -> char
-val globalize_float : local_ float -> float
-val globalize_int : local_ int -> int
-val globalize_int32 : local_ int32 -> int32
-val globalize_int64 : local_ int64 -> int64
-val globalize_nativeint : local_ nativeint -> nativeint
-val globalize_bytes : local_ bytes -> bytes @ unique
-val globalize_string : local_ string -> string @ unique
-val globalize_unit : local_ unit -> unit
+val globalize_bool : bool @ local -> bool
+val globalize_char : char @ local -> char
+val globalize_float : float @ local -> float
+val globalize_int : int @ local -> int
+val globalize_int32 : int32 @ local -> int32
+val globalize_int64 : int64 @ local -> int64
+val globalize_nativeint : nativeint @ local -> nativeint
+val globalize_bytes : bytes @ local -> bytes @ unique
+val globalize_string : string @ local -> string @ unique
+val globalize_unit : unit @ local -> unit
 
 val%template globalize_array
   : ('a : k mod separable) ('b : any).
-  (local_ 'a -> 'b) -> local_ 'a array -> 'a array
-[@@kind k = base_or_null_with_imm]
+  ('a @ local -> 'b) -> 'a array @ local -> 'a array
+[@@kind k = (base_or_null_with_imm, value_or_null mod external64)]
 
-val globalize_floatarray : local_ floatarray -> floatarray @ unique
-val globalize_lazy_t : (local_ 'a -> 'b) -> local_ 'a lazy_t -> 'a lazy_t
+val globalize_floatarray : floatarray @ local -> floatarray @ unique
+val globalize_lazy_t : ('a @ local -> 'b) -> 'a lazy_t @ local -> 'a lazy_t
 
 val globalize_list
   : ('a : value_or_null) ('b : value_or_null).
-  (local_ 'a -> 'b) -> local_ 'a list -> 'b list
+  ('a @ local -> 'b) -> 'a list @ local -> 'b list
 
 val globalize_option
   : ('a : value_or_null) ('b : value_or_null).
-  (local_ 'a -> 'b) -> local_ 'a option -> 'b option
+  ('a @ local -> 'b) -> 'a option @ local -> 'b option
 
 val globalize_or_null
-  :  (local_ 'a -> 'b)
-  -> local_ 'a Basement.Or_null_shim.t
+  :  ('a @ local -> 'b)
+  -> 'a Basement.Or_null_shim.t @ local
   -> 'b Basement.Or_null_shim.t
 
 val globalize_result
   : ('ok : value_or_null) ('err : value_or_null).
-  (local_ 'ok -> 'ok)
-  -> (local_ 'err -> 'err)
-  -> local_ ('ok, 'err) result
+  ('ok @ local -> 'ok)
+  -> ('err @ local -> 'err)
+  -> ('ok, 'err) result @ local
   -> ('ok, 'err) result
 
 val globalize_ref
   : ('a : value_or_null) ('b : value_or_null).
-  (local_ 'a -> 'b) -> local_ 'a ref -> 'a ref
+  ('a @ local -> 'b) -> 'a ref @ local -> 'a ref

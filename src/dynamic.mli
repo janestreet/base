@@ -1,6 +1,6 @@
 @@ portable
 
-open! Import
+open! Import0
 
 (** A value of type ['a Dynamic.t] is a dynamically scoped variable of type ['a].
 
@@ -18,10 +18,8 @@ type 'a t : value mod contended portable = 'a Basement.Dynamic.t
 
 (** [make v] creates a new dynamic variable with initial root value [v].
 
-    Since any domain can access the [Dynamic.t], the value must be portable. Since any
-    domain can access and modify the [Dynamic.t] without synchronization, the type of
-    values in the [Dynamic.t] must cross the contention axis. *)
-val make : ('a : value mod contended). 'a @ portable -> 'a t
+    Since any domain can access the [Dynamic.t], the value must be portable. *)
+val make : 'a @ contended portable -> 'a t
 
 (** [get dynamic] retrieves the current value of the dynamic variable [dynamic] in the
     current fiber.
@@ -29,7 +27,7 @@ val make : ('a : value mod contended). 'a @ portable -> 'a t
     Within a call to [with_temporarily], this returns the {i local} value of the dynamic
     variable (the value that was passed to [with_temporarily]. Outside of a call to
     [with_temporarily], this returns the {i root} value *)
-val get : ('a : value mod contended). 'a t -> 'a @ portable
+val get : 'a t -> 'a @ contended portable
 
 (** [set_root dynamic v] sets the {i root} value of [dynamic] to [v].
 
@@ -39,11 +37,11 @@ val get : ('a : value mod contended). 'a t -> 'a @ portable
 
     Note that it is almost always the wrong choice to call this function anywhere other
     than the top-level. *)
-val set_root : ('a : value mod contended). 'a t -> 'a @ portable -> unit
+val set_root : 'a t -> 'a @ contended portable -> unit
 
 (** [with_temporarily dynamic v ~f] invokes [f] in a context where [dynamic] is set to
     [v], then restores [dynamic] to the parent value (either the root value, or the value
     set by a surrounding call to [with_temporarily]). *)
 val with_temporarily
-  : ('a : value mod contended) 'b.
-  'a t -> 'a @ portable -> f:(unit -> 'b) @ once -> 'b
+  : 'a ('b : value_or_null).
+  'a t -> 'a @ contended portable -> f:(unit -> 'b) @ local once -> 'b

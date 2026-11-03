@@ -801,10 +801,10 @@ let remove_consecutive_duplicates s ~equal =
     | None | Some _ -> Yield { value = a; state = Some a })
 ;;
 
-let count s ~f = fold s ~init:0 ~f:(fun acc elt -> acc + Bool.to_int (f elt)) [@nontail]
+let count s ~f = fold s ~init:0 ~f:(fun acc elt -> acc + bool_to_int (f elt)) [@nontail]
 
 let counti t ~f =
-  foldi t ~init:0 ~f:(fun i acc elt -> acc + Bool.to_int (f i elt)) [@nontail]
+  foldi t ~init:0 ~f:(fun i acc elt -> acc + bool_to_int (f i elt)) [@nontail]
 ;;
 
 let sum m t ~f = Derived.sum ~fold m t ~f
@@ -1059,7 +1059,7 @@ let force_eagerly t = of_list (to_list t)
 
 let memoize (type a : value_or_null) (Sequence { state = s; next }) =
   let module M = struct
-    type t = T of (a, t) Step.t Lazy.t
+    type t = T of (a, t) Step.t lazy_t
   end
   in
   let rec memoize s = M.T (lazy (find_step s))

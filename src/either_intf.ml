@@ -7,7 +7,8 @@
     abstracts over which constructor is the focus. To use these functions, use the [First]
     or [Second] modules in [S]. *)
 
-open! Import
+open! Import0
+module Either = Either0
 
 module Definitions = struct
   module type Focused = sig
@@ -28,23 +29,23 @@ module Definitions = struct
 
     val with_return
       : ('a : value_or_null) 'b.
-      local_ (local_ 'a With_return.return -> 'b) -> ('a, 'b) t
+      ('a With_return.return @ local -> 'b) @ local -> ('a, 'b) t
 
     val combine
       : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) 'd.
       ('a, 'd) t
       -> ('b, 'd) t
-      -> f:local_ ('a -> 'b -> 'c)
-      -> other:local_ ('d -> 'd -> 'd)
+      -> f:('a -> 'b -> 'c) @ local
+      -> other:('d -> 'd -> 'd) @ local
       -> ('c, 'd) t
 
     val combine_all
       : ('a : value_or_null) 'b.
-      ('a, 'b) t list -> f:local_ ('b -> 'b -> 'b) -> ('a list, 'b) t
+      ('a, 'b) t list -> f:('b -> 'b -> 'b) @ local -> ('a list, 'b) t
 
     val combine_all_unit
       : 'b.
-      (unit, 'b) t list -> f:local_ ('b -> 'b -> 'b) -> (unit, 'b) t
+      (unit, 'b) t list -> f:('b -> 'b -> 'b) @ local -> (unit, 'b) t
   end
 end
 
@@ -53,12 +54,12 @@ module type Either = sig @@ portable
     include Definitions
   end
 
-  type ('f : value_or_null, 's : value_or_null) t = ('f, 's) Either0.t =
+  type ('f : value_or_null, 's : value_or_null) t = ('f, 's) Either.t =
     | First of 'f
     | Second of 's
 
   include sig
-      type%template ('f : kf, 's : ks) t = (('f, 's) Either0.t[@kind kf ks])
+      type%template ('f : kf, 's : ks) t = (('f, 's) Either.t[@kind kf ks])
       [@@kind kf = base_or_null, ks = base_or_null]
       [@@deriving compare ~localize, equal ~localize, sexp ~stackify, sexp_grammar]
     end
@@ -77,15 +78,15 @@ module type Either = sig @@ portable
 
   val iter
     : ('a : value_or_null) ('b : value_or_null).
-    ('a, 'b) t -> first:local_ ('a -> unit) -> second:local_ ('b -> unit) -> unit
+    ('a, 'b) t -> first:('a -> unit) @ local -> second:('b -> unit) @ local -> unit
 
   val value_map
     : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null).
-    ('a, 'b) t -> first:local_ ('a -> 'c) -> second:local_ ('b -> 'c) -> 'c
+    ('a, 'b) t -> first:('a -> 'c) @ local -> second:('b -> 'c) @ local -> 'c
 
   val map
     : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null) ('d : value_or_null).
-    ('a, 'b) t -> first:local_ ('a -> 'c) -> second:local_ ('b -> 'd) -> ('c, 'd) t
+    ('a, 'b) t -> first:('a -> 'c) @ local -> second:('b -> 'd) @ local -> ('c, 'd) t
 
   module First : Focused with type ('a : value_or_null, 'b) t = ('a, 'b) t
   module Second : Focused with type ('a : value_or_null, 'b) t = ('b, 'a) t
