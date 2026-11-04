@@ -14,13 +14,21 @@ external int_math_int64_pow
   = "Base_int_math_int64_pow_stub" "Base_int_math_int64_pow_stub_unboxed"
 [@@unboxed] [@@noalloc]
 
+(* We compare against separate positive and negative bounds rather than using [abs base]:
+   [abs min_value] overflows, and odd powers of negative bases can reach [min_value], whose
+   magnitude is one more than [max_value]. *)
 let int_pow base exponent =
   if exponent < 0 then negative_exponent ();
-  if abs base > 1
+  if (base > 1 || base < -1)
      && (exponent > 63
-         || abs base
-            > (Portability_hacks.Cross.Contended.(cross (iarray infer))
-                 Pow_overflow_bounds.int_positive_overflow_bounds).:(exponent))
+         || (base >= 0
+             && base
+                > (Portability_hacks.Cross.Contended.(cross (iarray infer))
+                     Pow_overflow_bounds.int_positive_overflow_bounds).:(exponent))
+         || (base < 0
+             && base
+                < (Portability_hacks.Cross.Contended.(cross (iarray infer))
+                     Pow_overflow_bounds.int_negative_overflow_bounds).:(exponent)))
   then overflow ();
   int_math_int_pow base exponent
 ;;
@@ -31,9 +39,6 @@ module Int64_with_comparisons = struct
   external ( < ) : (int64[@local_opt]) -> (int64[@local_opt]) -> bool = "%lessthan"
   external ( > ) : (int64[@local_opt]) -> (int64[@local_opt]) -> bool = "%greaterthan"
   external ( >= ) : (int64[@local_opt]) -> (int64[@local_opt]) -> bool = "%greaterequal"
-  external neg : (int64[@local_opt]) -> (int64[@local_opt]) = "%int64_neg"
-
-  let abs_local n = if n >= 0L then n else neg n
 end
 
 (* we don't do [abs] in int64 case to avoid allocation *)
@@ -59,13 +64,20 @@ let int64_pow base exponent =
 let int63_pow_on_int64 base exponent =
   let open Int64_with_comparisons in
   if exponent < 0L then negative_exponent ();
-  if abs_local base > 1L
+  if (base > 1L || base < -1L)
      && (exponent > 63L
-         || abs_local base
-            > (Portability_hacks.Cross.Contended.(cross (iarray infer))
-                 Pow_overflow_bounds.int63_on_int64_positive_overflow_bounds).:(to_int
-                                                                                  exponent)
-        )
+         || (base >= 0L
+             && base
+                > (Portability_hacks.Cross.Contended.(cross (iarray infer))
+                     Pow_overflow_bounds.int63_on_int64_positive_overflow_bounds).:(to_int
+                                                                                      exponent)
+            )
+         || (base < 0L
+             && base
+                < (Portability_hacks.Cross.Contended.(cross (iarray infer))
+                     Pow_overflow_bounds.int63_on_int64_negative_overflow_bounds).:(to_int
+                                                                                      exponent)
+            ))
   then overflow ();
   int_math_int64_pow base exponent
 ;;

@@ -50,7 +50,11 @@ let format_entry typ b =
   let s = Z.to_string b in
   match typ with
   | Int ->
-    if safe_to_print_as_int b then s else Printf.sprintf "Stdlib.Int64.to_int %sL" s
+    if safe_to_print_as_int (Z.abs b)
+    then s
+    else if Z.sign b < 0
+    then Printf.sprintf "Stdlib.Int64.to_int (%sL)" s
+    else Printf.sprintf "Stdlib.Int64.to_int %sL" s
   | Int32 -> s ^ "l"
   | Int63 | Int64 -> s ^ "L"
 ;;
@@ -75,13 +79,6 @@ let ocaml_type_name = function
   | Int -> "int"
   | Int32 -> "int32"
   | Int63 | Int64 -> "int64"
-;;
-
-let generate_negative_bounds = function
-  | Int -> false
-  | Int32 -> false
-  | Int63 -> false
-  | Int64 -> true
 ;;
 
 let highest_base exponent max_val =
@@ -110,11 +107,17 @@ let pr fmt = Printf.fprintf oc (fmt ^^ "\n")
 let gen_array ~typ ~bits ~sign ~indent =
   let pr fmt = pr ("%*s" ^^ fmt) indent "" in
   let max_val = max_big_int_for_bits bits in
-  let pos_bounds = Array.init 64 ~f:(fun i -> highest_base i max_val) in
   let bounds =
     match sign with
-    | Pos -> pos_bounds
-    | Neg -> Array.map pos_bounds ~f:Z.( ~- )
+    | Pos -> Array.init 64 ~f:(fun i -> highest_base i max_val)
+    | Neg ->
+      (* The minimum value is [-(max_val + 1)], so for odd exponents (and for exponents 0
+         and 1) a negative base can have one more unit of magnitude than a positive one,
+         e.g. [(-2) ** 63 = Int64.min_value]. For even exponents the result is positive
+         and the positive bound applies. *)
+      Array.init 64 ~f:(fun i ->
+        let limit = if i land 1 = 1 || i = 0 then Z.(max_val + one) else max_val in
+        Z.( ~- ) (highest_base i limit))
   in
   pr "Iarray.unsafe_of_array__promise_no_mutation (";
   pr "[| %s" (format_entry typ bounds.(0));
@@ -138,27 +141,24 @@ let gen_bounds typ =
        | Pos -> "positive"
        | Neg -> "negative")
   in
-  pr "let %s : %s iarray =" (array_name typ Pos) (ocaml_type_name typ);
-  pr "  Portability_hacks.Cross.Portable.(cross (iarray infer))";
-  pr "  (";
-  (match typ with
-   | Int ->
-     pr "  match Int_conversions.num_bits_int with";
-     pr "  | 32 -> Iarray.map %s ~f:Stdlib.Int32.to_int" (array_name Int32 Pos);
-     pr "  | 63 ->";
-     gen_array ~typ ~bits:63 ~sign:Pos ~indent:4;
-     pr "  | 31 ->";
-     gen_array ~typ ~bits:31 ~sign:Pos ~indent:4;
-     pr "  | _ -> assert false"
-   | _ -> gen_array ~typ ~bits:(bits typ) ~sign:Pos ~indent:2);
-  pr "  )";
-  if generate_negative_bounds typ
-  then (
-    pr "let %s : %s iarray =" (array_name typ Neg) (ocaml_type_name typ);
+  let gen_table sign =
+    pr "let %s : %s iarray =" (array_name typ sign) (ocaml_type_name typ);
     pr "  Portability_hacks.Cross.Portable.(cross (iarray infer))";
     pr "  (";
-    gen_array ~typ ~bits:(bits typ) ~sign:Neg ~indent:2;
-    pr "  )")
+    (match typ with
+     | Int ->
+       pr "  match Int_conversions.num_bits_int with";
+       pr "  | 32 -> Iarray.map %s ~f:Stdlib.Int32.to_int" (array_name Int32 sign);
+       pr "  | 63 ->";
+       gen_array ~typ ~bits:63 ~sign ~indent:4;
+       pr "  | 31 ->";
+       gen_array ~typ ~bits:31 ~sign ~indent:4;
+       pr "  | _ -> assert false"
+     | _ -> gen_array ~typ ~bits:(bits typ) ~sign ~indent:2);
+    pr "  )"
+  in
+  gen_table Pos;
+  gen_table Neg
 ;;
 
 let () =
