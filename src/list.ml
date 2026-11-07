@@ -72,7 +72,26 @@ let compare_int = Replace_polymorphic_compare.Int_replace_polymorphic_compare.co
 
 let range ?(stride = 1) ?(start = `inclusive) ?(stop = `exclusive) start_i stop_i =
   if stride = 0 then invalid_arg "List.range: stride must be non-zero";
-  range' ~compare:compare_int ~stride:(fun x -> x + stride) ~start ~stop start_i stop_i
+  let stride_is_positive = stride > 0 in
+  let stride_overflows i next_i =
+    if stride_is_positive then next_i < i else next_i > i
+  in
+  let[@tail_mod_cons] rec range_loop i =
+    match Ordering.of_int (compare_int i stop_i), stride_is_positive with
+    | Less, true | Greater, false ->
+      let next_i = i + stride in
+      if stride_overflows i next_i then [ i ] else i :: range_loop next_i
+    | Less, false | Greater, true -> []
+    | Equal, _ ->
+      (match stop with
+       | `inclusive -> [ i ]
+       | `exclusive -> [])
+  in
+  match start with
+  | `inclusive -> range_loop start_i [@nontail]
+  | `exclusive ->
+    let next_i = start_i + stride in
+    if stride_overflows start_i next_i then [] else range_loop next_i [@nontail]
 ;;
 
 let hd t =

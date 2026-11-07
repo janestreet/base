@@ -149,23 +149,43 @@ let to_list (Sequence { state = s; next }) =
 let sexp_of_t sexp_of_a t = sexp_of_list sexp_of_a (to_list t)
 
 let range ?(stride = 1) ?(start = `inclusive) ?(stop = `exclusive) start_v stop_v =
-  let step =
+  let step next =
     match stop with
     | `inclusive when stride >= 0 ->
-      fun i -> if i > stop_v then Done else Yield { value = i; state = i + stride }
+      fun i -> if i > stop_v then Done else Yield { value = i; state = next i }
     | `inclusive ->
-      fun i -> if i < stop_v then Done else Yield { value = i; state = i + stride }
+      fun i -> if i < stop_v then Done else Yield { value = i; state = next i }
     | `exclusive when stride >= 0 ->
-      fun i -> if i >= stop_v then Done else Yield { value = i; state = i + stride }
+      fun i -> if i >= stop_v then Done else Yield { value = i; state = next i }
     | `exclusive ->
-      fun i -> if i <= stop_v then Done else Yield { value = i; state = i + stride }
+      fun i -> if i <= stop_v then Done else Yield { value = i; state = next i }
   in
   let init =
     match start with
     | `inclusive -> start_v
     | `exclusive -> start_v + stride
   in
-  unfold_step ~init ~f:step
+  if (if stride >= 0 then init < start_v else init > start_v)
+  then unfold_step ~init:() ~f:(fun () -> Done)
+  else (
+    (* Keep an int state when stepping cannot overflow, to avoid allocating an option per
+       element. *)
+    let can_overflow =
+      if stride >= 0
+      then stop_v > Int0.max_value - stride
+      else stop_v < Int0.min_value - stride
+    in
+    if can_overflow
+    then (
+      let next i =
+        let next_i = i + stride in
+        if (if stride >= 0 then next_i < i else next_i > i) then None else Some next_i
+      in
+      let step = step next in
+      unfold_step ~init:(Some init) ~f:(function
+        | None -> Done
+        | Some i -> step i))
+    else unfold_step ~init ~f:(step (fun i -> i + stride)))
 ;;
 
 let of_lazy t_lazy =
