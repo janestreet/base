@@ -231,6 +231,7 @@ module Pow2 = struct
   open O
 
   let non_positive_argument () = invalid_arg "argument must be strictly positive"
+  let overflow () = invalid_arg "integer overflow in ceil_pow2"
 
   (** "ceiling power of 2" - Least power of 2 greater than or equal to x. *)
   let ceil_pow2 x =
@@ -241,7 +242,9 @@ module Pow2 = struct
     let x = x lor (x lsr 4) in
     let x = x lor (x lsr 8) in
     let x = x lor (x lsr 16) in
-    x + 1l
+    let x = x + 1l in
+    if x < 0l then overflow ();
+    x
   ;;
 
   (** "floor power of 2" - Largest power of 2 less than or equal to x. *)

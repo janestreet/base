@@ -183,6 +183,7 @@ include O
 
 module Pow2 = struct
   let non_positive_argument () = invalid_arg "argument must be strictly positive"
+  let overflow () = invalid_arg "integer overflow in ceil_pow2"
 
   external ( land ) : t -> t -> t = "%nativeint_and"
 
@@ -198,7 +199,9 @@ module Pow2 = struct
     (* The next line is superfluous on 32-bit architectures, but it's faster to do it
        anyway than to branch *)
     let x = x lor (x lsr 32) in
-    x + 1n
+    let x = x + 1n in
+    if x < 0n then overflow ();
+    x
   ;;
 
   (** "floor power of 2" - Largest power of 2 less than or equal to x. *)

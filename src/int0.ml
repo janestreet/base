@@ -35,6 +35,7 @@ let pred = Stdlib.pred
 module Pow2 = struct
   let num_bits = Stdlib.Sys.int_size
   let non_positive_argument () = invalid_arg "argument must be strictly positive"
+  let overflow () = invalid_arg "integer overflow in ceil_pow2"
 
   (** "ceiling power of 2 - 1" - Least power of 2 minus 1 greater than or equal to x. *)
   let ceil_pow2_minus_1 n =
@@ -59,7 +60,9 @@ module Pow2 = struct
     if x <= 0 then non_positive_argument ();
     let x = x - 1 in
     let x = ceil_pow2_minus_1 x in
-    x + 1
+    let x = x + 1 in
+    if x < 0 then overflow ();
+    x
   ;;
 
   (** "floor power of 2" - Largest power of 2 less than or equal to x. *)

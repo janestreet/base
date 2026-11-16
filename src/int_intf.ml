@@ -313,8 +313,8 @@ module Definitions = struct
     val shift_right_logical : t -> int -> t
 
     (** [ceil_pow2 x] returns the smallest power of 2 that is greater than or equal to
-        [x]. The implementation may only be called for [x > 0]. Example:
-        [ceil_pow2 17 = 32] *)
+        [x]. The implementation may only be called for [x > 0], and raises if the result
+        does not fit in [t]. Example: [ceil_pow2 17 = 32] *)
     val ceil_pow2 : t -> t
 
     (** [floor_pow2 x] returns the largest power of 2 that is less than or equal to [x].
