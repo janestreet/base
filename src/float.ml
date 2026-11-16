@@ -962,7 +962,16 @@ let round_gen x ~how =
 
             So for arguments within an ulp from a tie we might still produce an off-by-one
             result. *)
-      then of_string (sprintf "%.*g" sd (globalize x))
+      then
+        if sd = 0
+        then (
+          (* [x] is below [10**(-dd)] in magnitude, so it rounds to [0] or to
+             [10**(-dd)]. [%.0g] would keep one significant digit instead. *)
+          let unit = of_string (sprintf "1e%d" (-dd)) in
+          if Float_replace_polymorphic_compare.( > ) (abs x) (unit /. 2.)
+          then copysign unit x
+          else copysign 0. x)
+        else of_string (sprintf "%.*g" sd (globalize x))
       else (
         let order = int_pow 10. abs_dd in
         if dd >= 0
