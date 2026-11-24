@@ -1065,7 +1065,7 @@ let chunks_of t ~length:chunk_length =
   if length = 0
   then unsafe_of_array__promise_no_mutation [||]
   else (
-    let num_chunks = (length + chunk_length - 1) / chunk_length in
+    let num_chunks = ((length - 1) / chunk_length) + 1 in
     init num_chunks ~f:(fun i ->
       let start = i * chunk_length in
       let current_chunk_length = min chunk_length (length - start) in
